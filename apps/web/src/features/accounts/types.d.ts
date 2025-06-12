@@ -9,4 +9,7 @@ export type Account = {
   ethereum: EthereumWallet["address"][];
   solana: SolanaWallet["address"][];
   bitcoin: BitcoinWallet["address"][];
+  encryptedMnemonic?: string;
+  argonSalt?: string;
+  aesGcmIV?: string;
 };

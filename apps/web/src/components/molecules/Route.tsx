@@ -1,46 +1,38 @@
 import clsx from "clsx";
-import type { IconName } from "lucide-react/dynamic";
+import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import Link from "next/link";
-import { Icon } from "../atoms/Icon";
-
-interface Props {
-  icon: IconName;
-  label: string;
-  href: string;
-  round?: true;
-  description?: string;
-}
-
-interface RectProps extends Props {
-  description: string;
-}
-
-interface RoundProps extends Props {
-  round: true;
-}
 
 export const Route = ({
+  variant = "primary",
+  href,
   icon,
   label,
-  href,
-  round,
-  description,
-}: RectProps | RoundProps) => (
+  className,
+}: {
+  variant?: "primary" | "secondary" | "terciary";
+  href: string;
+  icon?: IconName;
+  label: string;
+  className?: string;
+}) => (
   <Link
     href={href}
     className={clsx(
-      "bg-mycelia-100 items-center",
-      round
-        ? "flex flex-col justify-center rounded-full py-3 px-5 aspect-square"
-        : "grid grid-cols-[min-content_1fr] grid-rows-2 rounded-sm px-2 py-4 gap-y-2 gap-x-4"
+      "flex items-center rounded-2xl gap-4",
+      variant === "terciary" ? "p-4" : "pl-9 pr-5 py-6.5",
+      {
+        primary: "bg-tint text-teko-50",
+        secondary: "bg-teko-100 text-teko-900",
+        terciary: "bg-teko-50 text-teko-600 border-teko-600 border",
+      }[variant],
+      className
     )}
   >
-    <Icon
-      name={icon}
-      size={round ? "md" : "lg"}
-      className="row-span-2 col-span-1"
-    />
-    {round ? <h6>{label}</h6> : <h3>{label}</h3>}
-    {round ? null : <h5>{description}</h5>}
+    {variant === "terciary" ? (
+      <h5 className="flex-1 text-center">{label}</h5>
+    ) : (
+      <h4 className="flex-1">{label}</h4>
+    )}
+    {icon ? <DynamicIcon name={icon} size={30} /> : null}
   </Link>
 );

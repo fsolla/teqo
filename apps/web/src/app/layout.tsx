@@ -1,19 +1,7 @@
 import { QueryClientProvider } from "@/lib/QueryClientProvider";
 import { WagmiProvider } from "@/lib/WagmiProvider";
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import Head from "next/head";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "MYCELIA",
@@ -80,21 +68,7 @@ export default function RootLayout({
     <WagmiProvider>
       <QueryClientProvider>
         <html lang="en">
-          <Head>
-            <link
-              rel="icon"
-              href="/favicon-dark.ico"
-              media="(prefers-color-scheme: dark)"
-            />
-            <link
-              rel="icon"
-              href="/favicon-light.ico"
-              media="(prefers-color-scheme: light)"
-            />
-          </Head>
-          <body
-            className={`${geistSans.variable} ${geistMono.variable} antialiased h-dvh flex flex-col overflow-hidden bg-mycelia-50 dark:bg-mycelia-900 relative dark:text-mycelia-100 text-mycelia-850 max-w-110 mx-auto`}
-          >
+          <body className="antialiased h-dvh overflow-hidden bg-teko-50 relative text-teko-900 max-w-113 mx-auto caret-tint">
             {children}
           </body>
         </html>

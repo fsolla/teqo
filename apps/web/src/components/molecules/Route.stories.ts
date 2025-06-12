@@ -10,7 +10,11 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    icon: { control: "select", options: ["home", "settings", "user"] },
+    icon: {
+      control: "select",
+      options: ["chevron-right", "file-text", "hard-drive-upload"],
+    },
+    variant: { control: "select", options: ["primary", "secondary"] },
   },
 } satisfies Meta<typeof Route>;
 
@@ -18,20 +22,27 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Primary: Story = {
   args: {
-    icon: "key-round" as IconName,
-    label: "Import",
-    href: "/account/add/import",
-    description: "Import an existing account",
+    icon: "chevron-right" as IconName,
+    label: "Enter with Teko",
+    href: "/",
   },
 };
 
-export const Round: Story = {
+export const Secondary: Story = {
   args: {
-    icon: "scan-qr-code" as IconName,
-    label: "Connect",
-    href: "/account/connect",
-    round: true,
+    variant: "secondary",
+    icon: "file-text" as IconName,
+    label: "Import recovery phrase",
+    href: "/",
+  },
+};
+
+export const Terciary: Story = {
+  args: {
+    variant: "terciary",
+    label: "Import private key",
+    href: "/",
   },
 };

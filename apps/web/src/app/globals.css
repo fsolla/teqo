@@ -14,6 +14,30 @@ button {
   --color-mycelia-100: var(--color-gray-200);
   --color-mycelia-850: #3e3e3e;
   --color-mycelia-900: var(--color-black);
+
+  --color-teko-50: var(--color-white);
+  --color-teko-100: #eeeeee;
+  --color-teko-200: #d1d1d1;
+  --color-teko-300: #cdcdcd;
+  --color-teko-400: #989c9f;
+  --color-teko-500: #818181;
+  --color-teko-600: #686868;
+  --color-teko-800: #222425;
+  --color-teko-850: #1c1d1e;
+  --color-teko-900: var(--color-black);
+
+  --color-tint: #6cb7e1;
+
+  --animate-beam: beam 3s ease-in-out infinite;
+
+  @keyframes beam {
+    0% {
+      width: 0;
+    }
+    100% {
+      width: 100%;
+    }
+  }
 }
 
 @utility scrollbar-hidden {
@@ -26,32 +50,48 @@ button {
   scrollbar-width: none; /* Firefox */
 }
 
+@utility flex-center {
+  @apply flex items-center justify-center;
+}
+
+@utility text-h1 {
+  font-size: 1.75rem; /* 28px */
+  @apply font-semibold;
+}
+
 @layer base {
   h1 {
-    @apply text-4xl font-bold;
+    @apply text-h1;
   }
 
   h2 {
+    @apply text-2xl font-extrabold tracking-tighter;
+  }
+
+  h3,
+  input {
     @apply text-xl font-medium;
   }
 
-  h3 {
-    @apply text-base font-semibold;
-  }
-
   h4 {
-    @apply text-base font-medium;
+    font-size: 0.9375rem; /* 15px */
+    @apply font-semibold tracking-tight;
   }
 
   h5 {
-    @apply text-sm font-medium;
+    @apply text-xs tracking-tight;
   }
 
   h6 {
-    @apply text-xs font-medium;
+    font-size: 0.5rem; /* 8px */
+    @apply tracking-tight;
   }
 
   p {
-    @apply text-base font-normal;
+    @apply text-base;
+  }
+
+  input {
+    @apply outline-hidden;
   }
 }
