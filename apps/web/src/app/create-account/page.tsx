@@ -13,7 +13,7 @@ export default function Page() {
       description="Almost ready..."
     >
       <div className="flex-1" />
-      <div className="w-full h-1 bg-teko-100 relative">
+      <div className="w-full h-1 bg-teqo-100 relative">
         <div className="h-full bg-tint animate-beam" />
       </div>
     </InputView>

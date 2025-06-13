@@ -15,8 +15,8 @@ export const Forward = ({
   <Link
     href={href}
     className={clsx(
-      "text-teko-50 rounded-full p-2 flex-center aspect-square size-fit",
-      disabled ? "bg-teko-300" : "bg-tint",
+      "text-teqo-50 rounded-full p-2 flex-center aspect-square size-fit",
+      disabled ? "bg-teqo-300" : "bg-tint",
       className
     )}
     aria-disabled={disabled}

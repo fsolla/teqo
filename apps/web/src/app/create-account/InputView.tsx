@@ -18,7 +18,7 @@ export const InputView = ({
     )}
   >
     <h2>{title}</h2>
-    <p className="text-teko-400">{description}</p>
+    <p className="text-teqo-400">{description}</p>
     {children}
   </main>
 );

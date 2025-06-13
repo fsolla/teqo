@@ -21,9 +21,9 @@ export const Route = ({
       "flex items-center rounded-2xl gap-4",
       variant === "terciary" ? "p-4" : "pl-9 pr-5 py-6.5",
       {
-        primary: "bg-tint text-teko-50",
-        secondary: "bg-teko-100 text-teko-900",
-        terciary: "bg-teko-50 text-teko-600 border-teko-600 border",
+        primary: "bg-tint text-teqo-50",
+        secondary: "bg-teqo-100 text-teqo-900",
+        terciary: "bg-teqo-50 text-teqo-600 border-teqo-600 border",
       }[variant],
       className
     )}

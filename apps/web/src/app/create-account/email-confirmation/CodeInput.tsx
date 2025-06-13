@@ -66,7 +66,7 @@ export const CodeInput = ({
       required
       className={clsx(
         "border rounded-2xl text-center outline-hidden text-h1 w-12.5",
-        emailCode?.length ? "border-tint" : "border-teko-200"
+        emailCode?.length ? "border-tint" : "border-teqo-200"
       )}
       pattern="^[0-9]$"
       value={emailCode ?? ""}

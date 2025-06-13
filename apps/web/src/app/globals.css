@@ -15,16 +15,16 @@ button {
   --color-mycelia-850: #3e3e3e;
   --color-mycelia-900: var(--color-black);
 
-  --color-teko-50: var(--color-white);
-  --color-teko-100: #eeeeee;
-  --color-teko-200: #d1d1d1;
-  --color-teko-300: #cdcdcd;
-  --color-teko-400: #989c9f;
-  --color-teko-500: #818181;
-  --color-teko-600: #686868;
-  --color-teko-800: #222425;
-  --color-teko-850: #1c1d1e;
-  --color-teko-900: var(--color-black);
+  --color-teqo-50: var(--color-white);
+  --color-teqo-100: #eeeeee;
+  --color-teqo-200: #d1d1d1;
+  --color-teqo-300: #cdcdcd;
+  --color-teqo-400: #989c9f;
+  --color-teqo-500: #818181;
+  --color-teqo-600: #686868;
+  --color-teqo-800: #222425;
+  --color-teqo-850: #1c1d1e;
+  --color-teqo-900: var(--color-black);
 
   --color-tint: #6cb7e1;
 

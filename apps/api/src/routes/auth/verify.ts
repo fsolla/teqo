@@ -32,9 +32,9 @@ export const verifyRouter = express
         user = await prisma.user.create({ data: { email } });
       }
 
-      const token = Auth.generate(user.id);
+      Auth.refreshCookie(res, user.id);
 
-      res.status(200).json({ token });
+      res.status(200);
     } catch (err) {
       console.error("Error:", err);
       res.status(500).json({ error: "Internal server error" });

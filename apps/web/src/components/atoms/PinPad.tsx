@@ -35,7 +35,7 @@ export const PinPad = ({
   return (
     <button
       onClick={handleClick}
-      className="bg-teko-100 size-12.5 flex-center rounded-full"
+      className="bg-teqo-100 size-12.5 flex-center rounded-full"
     >
       {value === "Backspace" ? <Delete size={30} /> : null}
       {value !== "Backspace" ? <h1>{value}</h1> : null}

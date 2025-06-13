@@ -6,11 +6,11 @@ import { coinRouter } from "./routes/coin";
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-const allowedOrigins = [
-  "http://localhost:3000", // Development (Next.js local)
-  "https://mycelia.solla.dev", // Production
-  "https://my.teqo.app", // Production"
-];
+const allowedOrigins = ["https://mycelia.solla.dev", "https://my.teqo.app"];
+
+if (process.env.NODE_ENV === "development") {
+  allowedOrigins.unshift("http://localhost:3000");
+}
 
 app.use(rateLimiterHighest);
 
@@ -23,6 +23,7 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
+    credentials: true,
   })
 );
 

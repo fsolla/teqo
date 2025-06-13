@@ -68,7 +68,7 @@ export default function RootLayout({
     <WagmiProvider>
       <QueryClientProvider>
         <html lang="en">
-          <body className="antialiased h-dvh overflow-hidden bg-teko-50 relative text-teko-900 max-w-113 mx-auto caret-tint">
+          <body className="antialiased h-dvh overflow-hidden bg-teqo-50 relative text-teqo-900 max-w-113 mx-auto caret-tint">
             {children}
           </body>
         </html>
