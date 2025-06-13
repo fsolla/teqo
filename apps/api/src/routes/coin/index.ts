@@ -1,8 +1,11 @@
 import { Router } from "express";
-import metadataRoute from "./metadata";
+import { rateLimiterHigh } from "src/lib/rateLimiter";
+import { metadataRouter } from "./metadata";
 
-const coinRouter = Router();
+const router = Router();
 
-coinRouter.use(metadataRoute);
+router.use(rateLimiterHigh);
 
-export default coinRouter;
+router.use(metadataRouter);
+
+export const coinRouter = router;

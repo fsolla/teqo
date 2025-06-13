@@ -10,6 +10,6 @@
             "@api/*": ["/*"]
         }
     },
-    "include": ["src"]
+    "include": ["src", "./*.d.ts"],
 }
   

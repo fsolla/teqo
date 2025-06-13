@@ -1,5 +1,5 @@
 {
-  "name": "@mycelia/api",
+  "name": "@teqo/api",
   "version": "0.1.0",
   "description": "Mycelia — A personal Web3 playground for experimenting with wallet connectivity, smart contract interactions, and decentralized UX.",
   "private": true,
@@ -18,10 +18,16 @@
   "homepage": "https://mycelia.solla.dev",
   "dependencies": {
     "@prisma/client": "^6.8.2",
+    "@types/express-rate-limit": "^5.1.3",
+    "@types/jsonwebtoken": "^9.0.9",
     "alchemy-sdk": "^3.5.10",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "prisma": "^6.8.2"
+    "express-rate-limit": "^7.5.0",
+    "ioredis": "^5.6.1",
+    "jsonwebtoken": "^9.0.2",
+    "prisma": "^6.8.2",
+    "resend": "^4.5.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.18",

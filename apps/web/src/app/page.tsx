@@ -1,13 +1,12 @@
-"use client";
-import { useAccountStore } from "@/features/accounts/hooks/useAccountStore";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-export default function Home() {
-  const account = useAccountStore.use.current();
+export default async function Home() {
+  const token = (await cookies()).get("token")?.value;
 
-  if (account) {
-    return redirect("/main");
-  } else {
+  if (!token) {
     return redirect("/welcome/0");
   }
+
+  return <main className="h-full">Main</main>;
 }

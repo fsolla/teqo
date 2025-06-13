@@ -1,5 +1,5 @@
 {
-  "name": "@mycelia/web",
+  "name": "@teqo/web",
   "version": "0.1.0",
   "description": "Mycelia Web — A personal Web3 playground for experimenting with wallet connectivity, smart contract interactions, and decentralized UX.",
   "private": true,

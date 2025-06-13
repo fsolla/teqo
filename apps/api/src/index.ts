@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
-import coinRouter from "./routes/coin";
+import { rateLimiterHighest } from "./lib/rateLimiter";
+import { coinRouter } from "./routes/coin";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -8,7 +9,10 @@ const PORT = process.env.PORT || 4000;
 const allowedOrigins = [
   "http://localhost:3000", // Development (Next.js local)
   "https://mycelia.solla.dev", // Production
+  "https://my.teqo.app", // Production"
 ];
+
+app.use(rateLimiterHighest);
 
 app.use(
   cors({

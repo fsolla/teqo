@@ -16,7 +16,7 @@ export const useTokenMetadata = (tokenAddress: Address) =>
         };
       }
 
-      return fetch(`${API_BASE_URL}/coin/metadata/${tokenAddress}`).then(
+      return fetch(`${API_URL}/coin/metadata/${tokenAddress}`).then(
         (res) => res.json() as unknown as TokenMetadataResponse
       );
     },
@@ -26,7 +26,7 @@ export const useTokenMetadata = (tokenAddress: Address) =>
     refetchOnWindowFocus: false,
   });
 
-const API_BASE_URL =
+const API_URL =
   process.env.NODE_ENV === "development"
     ? "http://localhost:4000"
-    : "https://mycelia-api.solla.dev";
+    : process.env.NEXT_PUBLIC_API_URL;
