@@ -47,16 +47,7 @@
 		zstd
 	}
 
-	# Try files with HTML extension and handle SPA routing
-	try_files {path} {path}.html {path}/index.html /index.html
-
-	# Handle 404 errors
-	handle_errors {
-		rewrite * /{err.status_code}.html
-		file_server
-	}
-
-    # the handle_path directive WILL strip /api/ from the path before proxying
+	# the handle_path directive WILL strip /api/ from the path before proxying
 	# use `handle` instead of `handle_path` if you dont want to strip the /api/ path
 	# this is needed if your backend's api routes don't start with /api/
 	# change paths as needed
@@ -83,5 +74,14 @@
 			# sets the Host header to the header to the dynamic name and port options
 			header_up Host {upstream_hostport}
 		}
+	}
+
+	# Try files with HTML extension and handle SPA routing
+	try_files {path} {path}.html {path}/index.html /index.html
+
+	# Handle 404 errors
+	handle_errors {
+		rewrite * /{err.status_code}.html
+		file_server
 	}
 }

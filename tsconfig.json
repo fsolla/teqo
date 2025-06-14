@@ -10,7 +10,7 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@mycelia/*": ["apps/*"]
+      "@teqo/*": ["apps/*"]
     }
   },
   "exclude": ["node_modules", "dist"]

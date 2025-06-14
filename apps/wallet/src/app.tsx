@@ -1,11 +1,11 @@
-import { useState } from 'preact/hooks'
-import preactLogo from './assets/preact.svg'
-import appLogo from '/favicon.svg'
-import PWABadge from './PWABadge.tsx'
-import './app.css'
+import { useState } from "preact/hooks";
+import PWABadge from "./PWABadge.tsx";
+import "./app.css";
+import preactLogo from "./assets/preact.svg";
+import appLogo from "/favicon.svg";
 
 export function App() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
 
   return (
     <>
@@ -17,7 +17,7 @@ export function App() {
           <img src={preactLogo} class="logo preact" alt="Preact logo" />
         </a>
       </div>
-      <h1>Teqo</h1>
+      <h1>Teqo!</h1>
       <div class="card">
         <button onClick={() => setCount((count) => count + 1)}>
           count is {count}
@@ -27,7 +27,7 @@ export function App() {
         </p>
       </div>
       <p>
-        Check out{' '}
+        Check out{" "}
         <a
           href="https://preactjs.com/guide/v10/getting-started#create-a-vite-powered-preact-app"
           target="_blank"
@@ -41,5 +41,5 @@ export function App() {
       </p>
       <PWABadge />
     </>
-  )
+  );
 }
