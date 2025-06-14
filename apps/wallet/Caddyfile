@@ -1,0 +1,87 @@
+{
+	admin off
+	persist_config off
+	auto_https off
+
+	log {
+		format json
+	}
+
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+:{$PORT:80} {
+	log {
+		format json
+	}
+
+	respond /health 200
+
+	# Security headers
+	header {
+		# Enable cross-site filter (XSS) and tell browsers to block detected attacks
+		X-XSS-Protection "1; mode=block"
+		# Prevent some browsers from MIME-sniffing a response away from the declared Content-Type
+		X-Content-Type-Options "nosniff"
+		# Keep referrer data off of HTTP connections
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Enable strict Content Security Policy
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: https: *; style-src 'self' 'unsafe-inline' https: *; script-src 'self' 'unsafe-inline' https: *; font-src 'self' data: https: *; connect-src 'self' https: *; media-src 'self' https: *; object-src 'none'; frame-src 'self' https: *;"
+		# Remove Server header
+		-Server
+	}
+
+	root * {{.STATIC_FILE_ROOT}}
+
+	# Handle static files
+	file_server {
+		hide .git
+		hide .env*
+	}
+
+	# Compression with more formats
+	encode {
+		gzip
+		zstd
+	}
+
+	# Try files with HTML extension and handle SPA routing
+	try_files {path} {path}.html {path}/index.html /index.html
+
+	# Handle 404 errors
+	handle_errors {
+		rewrite * /{err.status_code}.html
+		file_server
+	}
+
+    # the handle_path directive WILL strip /api/ from the path before proxying
+	# use `handle` instead of `handle_path` if you dont want to strip the /api/ path
+	# this is needed if your backend's api routes don't start with /api/
+	# change paths as needed
+	handle_path {$BACKEND_PATH:/api}/* {
+		# the /api/ prefix WILL be stripped from the uri sent to the proxy host
+		#
+		# proxy all requests for /api/* to the backend, configure this variable in the service settings
+		reverse_proxy {
+			# for private networking replicas are exposed as multiple dns results, use those dns results as the upstreams
+			dynamic a {
+				name {$BACKEND_DOMAIN}
+				port {$BACKEND_PORT}
+				refresh 1s
+				dial_timeout 30s
+				versions ipv4 ipv6
+			}
+
+			# configure load balancing settings
+			import lb_settings
+
+			# configure passive health checks
+			import passive_health_checks
+
+			# sets the Host header to the header to the dynamic name and port options
+			header_up Host {upstream_hostport}
+		}
+	}
+}
