@@ -1,4 +1,3 @@
-import cors from "cors";
 import express from "express";
 import { rateLimiterHighest } from "./lib/rateLimiter";
 import { coinRouter } from "./routes/coin";
@@ -18,17 +17,17 @@ if (process.env.NODE_ENV === "development") {
 
 app.use(rateLimiterHighest);
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (origin && allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-  })
-);
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       if (origin && allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//   })
+// );
 
 app.use(express.json());
 
