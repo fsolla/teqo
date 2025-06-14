@@ -12,9 +12,9 @@
 	}
 }
 
-:{$PORT:80} {
+:{$PORT} {
 	log {
-		format json
+		format json # set access log format to json mode
 	}
 
 	handle /api/* {
@@ -31,6 +31,12 @@
 
 			header_up Host {upstream_hostport}
 		}
+	}
+}
+
+:{$PORT:80} {
+	log {
+		format json
 	}
 
 	respond /health 200
@@ -49,18 +55,16 @@
 		-Server
 	}
 
-	# handle {
-	# 	root * dist
+	root * dist
 
-	# 	# Handle static files
-	# 	file_server {
-	# 		hide .git
-	# 		hide .env*
-	# 	}
+	# Handle static files
+	file_server {
+		hide .git
+		hide .env*
+	}
 
-	# 	# Try files with HTML extension and handle SPA routing
-	# 	try_files {path} {path}.html {path}/index.html /index.html
-	# }
+	# Try files with HTML extension and handle SPA routing
+	try_files {path} {path}.html {path}/index.html /index.html
 
 	# Compression with more formats
 	encode {
