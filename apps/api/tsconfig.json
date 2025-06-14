@@ -10,10 +10,7 @@
         "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true,
         "resolveJsonModule": true,
-        "baseUrl": ".",
-        "paths": {
-            "@api/*": ["/src/**"]
-        }
+        "baseUrl": "."
     },
     "include": ["src", "./*.d.ts"],
     "exclude": ["node_modules", "dist"]
