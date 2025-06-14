@@ -12,7 +12,7 @@
         "resolveJsonModule": true,
         "baseUrl": ".",
         "paths": {
-            "@api/*": ["/*"]
+            "@api/*": ["/src/**"]
         }
     },
     "include": ["src", "./*.d.ts"],
