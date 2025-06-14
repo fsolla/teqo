@@ -32,12 +32,6 @@
 			header_up Host {upstream_hostport}
 		}
 	}
-}
-
-:{$PORT:80} {
-	log {
-		format json
-	}
 
 	respond /health 200
 
