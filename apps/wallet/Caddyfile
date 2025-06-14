@@ -17,16 +17,10 @@
 		format json
 	}
 
-	# the handle_path directive WILL strip /api/ from the path before proxying
-	# use `handle` instead of `handle_path` if you dont want to strip the /api/ path
-	# this is needed if your backend's api routes don't start with /api/
-	# change paths as needed
-	handle_path {$BACKEND_PATH:/api}/* {
-		# the /api/ prefix WILL be stripped from the uri sent to the proxy host
-		#
-		# proxy all requests for /api/* to the backend, configure this variable in the service settings
+	handle_path /api/* {
+		uri strip_prefix /api
+
 		reverse_proxy {
-			# for private networking replicas are exposed as multiple dns results, use those dns results as the upstreams
 			dynamic a {
 				name {$BACKEND_DOMAIN}
 				port {$BACKEND_PORT}
@@ -35,13 +29,6 @@
 				versions ipv4 ipv6
 			}
 
-			# configure load balancing settings
-			# import lb_settings
-
-			# configure passive health checks
-			# import passive_health_checks
-
-			# sets the Host header to the header to the dynamic name and port options
 			header_up Host {upstream_hostport}
 		}
 	}
