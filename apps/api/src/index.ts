@@ -6,7 +6,11 @@ import { coinRouter } from "./routes/coin";
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-const allowedOrigins = ["https://mycelia.solla.dev", "https://my.teqo.app"];
+const allowedOrigins = [
+  "https://mycelia.solla.dev",
+  "https://my.teqo.app",
+  "https://api.teqo.app",
+];
 
 if (process.env.NODE_ENV === "development") {
   allowedOrigins.unshift("http://localhost:3000");
