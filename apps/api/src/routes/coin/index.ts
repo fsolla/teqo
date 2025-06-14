@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { rateLimiterHigh } from "src/lib/rateLimiter";
+import { rateLimiterHigh } from "../../lib/rateLimiter";
 import { metadataRouter } from "./metadata";
 
 const router = Router();

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { rateLimiterLow } from "src/lib/rateLimiter";
+import { rateLimiterLow } from "../../lib/rateLimiter";
 import { requestRouter } from "./request";
 import { validateRouter } from "./validate";
 import { verifyRouter } from "./verify";

@@ -1,7 +1,7 @@
 import express from "express";
-import { Auth } from "src/lib/Auth";
-import { prisma } from "src/lib/prisma";
-import { VerificationCode } from "src/lib/VerificationCode";
+import { Auth } from "../../lib/Auth";
+import { prisma } from "../../lib/prisma";
+import { VerificationCode } from "../../lib/VerificationCode";
 
 export const verifyRouter = express
   .Router()

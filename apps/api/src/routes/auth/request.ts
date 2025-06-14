@@ -1,6 +1,6 @@
 import express from "express";
-import { rateLimiterLowest } from "src/lib/rateLimiter";
-import { VerificationCode } from "src/lib/VerificationCode";
+import { rateLimiterLowest } from "../../lib/rateLimiter";
+import { VerificationCode } from "../../lib/VerificationCode";
 
 export const requestRouter = express
   .Router()

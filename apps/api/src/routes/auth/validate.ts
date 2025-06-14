@@ -1,6 +1,6 @@
 import express from "express";
-import { Auth } from "src/lib/Auth";
-import { rateLimiterLowest } from "src/lib/rateLimiter";
+import { Auth } from "../../lib/Auth";
+import { rateLimiterLowest } from "../../lib/rateLimiter";
 
 export const validateRouter = express
   .Router()

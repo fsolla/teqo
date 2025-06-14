@@ -1,6 +1,6 @@
 import { Alchemy, Network } from "alchemy-sdk";
 import express from "express";
-import { prisma } from "src/lib/prisma";
+import { prisma } from "../../lib/prisma";
 
 const config = {
   apiKey: process.env.ALCHEMY_API_KEY,
