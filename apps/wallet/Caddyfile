@@ -75,10 +75,10 @@
 			}
 
 			# configure load balancing settings
-			import lb_settings
+			# import lb_settings
 
 			# configure passive health checks
-			import passive_health_checks
+			# import passive_health_checks
 
 			# sets the Host header to the header to the dynamic name and port options
 			header_up Host {upstream_hostport}
