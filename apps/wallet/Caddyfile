@@ -49,18 +49,18 @@
 		-Server
 	}
 
-	handle {
-		root * dist
+	# handle {
+	# 	root * dist
 
-		# Handle static files
-		file_server {
-			hide .git
-			hide .env*
-		}
+	# 	# Handle static files
+	# 	file_server {
+	# 		hide .git
+	# 		hide .env*
+	# 	}
 
-		# Try files with HTML extension and handle SPA routing
-		try_files {path} {path}.html {path}/index.html /index.html
-	}
+	# 	# Try files with HTML extension and handle SPA routing
+	# 	try_files {path} {path}.html {path}/index.html /index.html
+	# }
 
 	# Compression with more formats
 	encode {
