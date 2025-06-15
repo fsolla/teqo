@@ -2,7 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { createSelectors } from "./createSelectors";
 
-interface Account {}
+interface Account {
+  name: string;
+}
 
 interface AccountStore {
   accounts: Account[];
@@ -11,8 +13,8 @@ interface AccountStore {
 export const useAccountStore = createSelectors(
   create<AccountStore>()(
     persist(
-      (set, get) => ({
-        accounts: [],
+      () => ({
+        accounts: [] as Account[],
       }),
       { name: "account-store" }
     )
