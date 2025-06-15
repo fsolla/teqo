@@ -1,70 +1,101 @@
 @import "tailwindcss";
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+#app {
+  @apply h-dvh;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+* {
+  box-sizing: border-box;
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+@theme {
+  --color-candy-500: #9b87f5;
+  --color-mycelia-50: var(--color-white);
+  --color-mycelia-100: var(--color-gray-200);
+  --color-mycelia-850: #3e3e3e;
+  --color-mycelia-900: var(--color-black);
+
+  --color-teqo-50: var(--color-white);
+  --color-teqo-100: #eeeeee;
+  --color-teqo-200: #d1d1d1;
+  --color-teqo-300: #cdcdcd;
+  --color-teqo-400: #989c9f;
+  --color-teqo-500: #818181;
+  --color-teqo-600: #686868;
+  --color-teqo-800: #222425;
+  --color-teqo-850: #1c1d1e;
+  --color-teqo-900: var(--color-black);
+
+  --color-tint: #6cb7e1;
+
+  --animate-beam: beam 3s ease-in-out infinite;
+
+  @keyframes beam {
+    0% {
+      width: 0;
+    }
+    100% {
+      width: 100%;
+    }
   }
-  a:hover {
-    color: #747bff;
+}
+
+@utility scrollbar-hidden {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none;
   }
-  button {
-    background-color: #f9f9f9;
+
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+@utility flex-center {
+  @apply flex items-center justify-center;
+}
+
+@utility text-h1 {
+  font-size: 1.75rem; /* 28px */
+  @apply font-semibold;
+}
+
+@layer base {
+  h1 {
+    @apply text-h1;
+  }
+
+  h2 {
+    @apply text-2xl font-extrabold tracking-tighter;
+  }
+
+  h3,
+  input {
+    @apply text-xl font-medium;
+  }
+
+  h4 {
+    font-size: 0.9375rem; /* 15px */
+    @apply font-semibold tracking-tight;
+  }
+
+  h5 {
+    @apply text-xs tracking-tight;
+  }
+
+  h6 {
+    font-size: 0.5rem; /* 8px */
+    @apply tracking-tight;
+  }
+
+  p {
+    @apply text-base;
+  }
+
+  input {
+    @apply outline-hidden;
   }
 }
