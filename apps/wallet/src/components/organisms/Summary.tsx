@@ -1,6 +1,12 @@
 import clsx from "clsx";
-import type { IconName } from "lucide-react/dynamic";
-import { Icon } from "../atoms/Icon";
+import {
+  ChartCandlestick,
+  Coins,
+  Images,
+  SlidersHorizontal,
+  type LucideIcon,
+} from "lucide-preact";
+import { IconSize } from "../../constants/IconSize";
 import { Image } from "../atoms/Image";
 
 export const Summary = () => (
@@ -30,22 +36,22 @@ export const Summary = () => (
     </div>
     <nav className="flex gap-9 items-center">
       <button>
-        <Icon name="sliders-horizontal" size="sm" />
+        <SlidersHorizontal size={IconSize.sm} />
       </button>
       <div className="flex-1" />
-      <Tab icon="coins" label="Coins" active />
-      <Tab icon="images" label="NFTs" />
-      <Tab icon="chart-candlestick" label="DeFi" />
+      <Tab Icon={Coins} label="Coins" active />
+      <Tab Icon={Images} label="NFTs" />
+      <Tab Icon={ChartCandlestick} label="DeFi" />
     </nav>
   </section>
 );
 
 const Tab = ({
-  icon,
+  Icon,
   label,
   active,
 }: {
-  icon: IconName;
+  Icon: LucideIcon;
   label: string;
   active?: true;
 }) => (
@@ -53,7 +59,7 @@ const Tab = ({
     className={clsx("text-teqo-300", active && "text-teqo-900")}
     disabled={active}
   >
-    <Icon name={icon} size="sm" />
+    <Icon size={IconSize.sm} />
     <h6>{label}</h6>
   </button>
 );
