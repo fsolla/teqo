@@ -8,16 +8,53 @@ button {
   @apply cursor-pointer;
 }
 
+input {
+  @apply outline-none;
+}
+
 @theme {
+  --color-blue-100: #8a8eb5;
   --color-blue-400: #3d95f9;
   --color-blue-950: #06071c;
 
+  --color-cyan-500: #1dd7fd;
+
   --color-green-400: #15aa78;
 
-  --color-purple: #4a22b8;
+  --color-pink-500: #a54bf2;
+
+  --color-purple-400: #4a22b8;
+  --color-purple-500: #5f56e1;
+  --color-purple-600: #451fb2;
 
   --text-3xl: 2rem /* 32px */;
   --text-6xl: 4rem /* 64px */;
+}
+
+@utility scrollbar-hidden {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+@utility flex-center {
+  @apply flex items-center justify-center;
+}
+
+@utility bg-gradient-cyan-to-purple {
+  @apply bg-linear-83 from-cyan-500 to-purple-500;
+}
+
+@utility bg-gradient-pink-to-purple {
+  @apply bg-linear-86 from-pink-500 to-purple-600;
+}
+
+@utility text-h5 {
+  @apply text-base font-semibold lg:text-xl;
 }
 
 @layer base {
@@ -38,7 +75,7 @@ button {
   }
 
   h5 {
-    @apply text-base font-semibold lg:text-xl;
+    @apply text-h5;
   }
 
   h6 {
