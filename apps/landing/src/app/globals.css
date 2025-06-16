@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+* {
+  @apply box-border;
+}
+
+button {
+  @apply cursor-pointer;
+}
+
+@theme {
+  --color-blue-400: #3d95f9;
+  --color-blue-950: #06071c;
+
+  --color-green-400: #15aa78;
+
+  --color-purple: #4a22b8;
+
+  --text-3xl: 2rem /* 32px */;
+  --text-6xl: 4rem /* 64px */;
+}
+
+@layer base {
+  h1 {
+    @apply text-3xl font-black lg:text-6xl;
+  }
+
+  h2 {
+    @apply text-2xl lg:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl font-extralight lg:text-3xl;
+  }
+
+  h4 {
+    @apply text-xl font-medium lg:text-2xl;
+  }
+
+  h5 {
+    @apply text-base font-semibold lg:text-xl;
+  }
+
+  h6 {
+    @apply text-xs font-light;
+  }
+
+  p {
+    @apply text-base font-light lg:text-xl;
+  }
+}
