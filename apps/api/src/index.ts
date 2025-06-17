@@ -8,7 +8,7 @@ import { subscribeRouter } from "./routes/subscribe";
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-const allowedOrigins = [process.env.LANDING_URL, process.env.WALLET_URL];
+const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",");
 
 app.set("trust proxy", 1);
 

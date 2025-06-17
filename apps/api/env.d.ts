@@ -5,5 +5,6 @@ declare namespace NodeJS {
     REDIS_URL: string;
     ALCHEMY_API_KEY: string;
     RESEND_API_KEY: string;
+    ALLOWED_ORIGINS: `${string},${string},${string},${string}`;
   }
 }
