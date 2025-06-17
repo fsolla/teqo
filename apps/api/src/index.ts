@@ -11,14 +11,9 @@ const PORT = process.env.PORT || 4000;
 const allowedOrigins = [
   "https://mycelia.solla.dev",
   "https://teqo.app",
-  "https://www.teqo.app",
   "https://my.teqo.app",
   "https://api.teqo.app",
 ];
-
-if (process.env.NODE_ENV === "development") {
-  allowedOrigins.unshift("http://localhost:3000");
-}
 
 app.use(rateLimiterHighest);
 
@@ -26,7 +21,11 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, or same-origin requests)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (
+        process.env.NODE_ENV === "development" ||
+        !origin ||
+        allowedOrigins.includes(origin)
+      ) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
