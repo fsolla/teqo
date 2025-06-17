@@ -9,6 +9,9 @@ export const EmailInput = ({ className }: { className?: string }) => {
   const handleSubmit: MouseEventHandler<HTMLButtonElement> = () => {
     fetch("/api/subscribe", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ email: ref.current?.value }),
     });
   };
