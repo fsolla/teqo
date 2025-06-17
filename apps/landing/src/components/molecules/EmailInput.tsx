@@ -5,6 +5,7 @@ export const EmailInput = ({ className }: { className?: string }) => (
     method="POST"
     action="/api/subscribe"
     className={clsx("flex max-lg:flex-col items-stretch gap-2", className)}
+    content="application/json"
   >
     <input
       type="email"
