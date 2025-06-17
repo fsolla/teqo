@@ -1,6 +1,6 @@
 import express from "express";
-import { rateLimiterLowest } from "src/lib/rateLimiter";
 import { prisma } from "../lib/prisma";
+import { rateLimiterLowest } from "../lib/rateLimiter";
 
 export const subscribeRouter = express
   .Router()
