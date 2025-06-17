@@ -53,13 +53,17 @@ input {
   @apply bg-linear-86 from-pink-500 to-purple-600;
 }
 
+@utility text-h1 {
+  @apply text-3xl font-black lg:text-6xl;
+}
+
 @utility text-h5 {
   @apply text-base font-semibold lg:text-xl;
 }
 
 @layer base {
   h1 {
-    @apply text-3xl font-black lg:text-6xl;
+    @apply text-h1;
   }
 
   h2 {
@@ -79,7 +83,7 @@ input {
   }
 
   h6 {
-    @apply text-xs font-light;
+    @apply text-xs font-light lg:text-sm;
   }
 
   p {

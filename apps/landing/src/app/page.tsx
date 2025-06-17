@@ -1,44 +1,21 @@
 import { EarlyAccess } from "@/components/sections/EarlyAccess";
+import { Footer } from "@/components/sections/Footer";
 import { Hero } from "@/components/sections/Hero";
 import { HowItWorks } from "@/components/sections/HowItWorks";
 import { ProblemAndSolution } from "@/components/sections/ProblemAndSolution";
 import { TekoMeaning } from "@/components/sections/TekoMeaning";
-import Image from "next/image";
 
 export default function Home() {
   return (
-    <main className="flex flex-col gap-15">
+    <main className="flex flex-col gap-30 items-center">
       <Hero />
-      <TekoMeaning />
-      <ProblemAndSolution />
-      <HowItWorks />
-      <EarlyAccess />
-      <footer className="flex flex-col bg-blue-950 text-white px-5 py-6 gap-3">
-        <span className="text-2xl font-bold">
-          <Image
-            src="/logo.svg"
-            width={133.64}
-            height={90}
-            alt="Teqo Logo"
-            className="inline-block w-7 mr-2"
-          />
-          Teqo
-        </span>
-        <h6>
-          Sua carteira digital que torna Web3 simples, segura e acessível.
-          <br />
-          Propriedade digital com clareza e intenção.
-        </h6>
-        <div className="h-0.25 bg-white opacity-20 mt-3" />
-        <div className="flex">
-          <h6 className="flex-1">
-            © 2025 Teqo.
-            <br />
-            Todos os direitos reservados.
-          </h6>
-          <h6 className="text-right">Construído com intenção.</h6>
-        </div>
-      </footer>
+      <div className="flex flex-col gap-30 lg:max-w-245.75 max-w-210">
+        <TekoMeaning />
+        <ProblemAndSolution />
+        <HowItWorks />
+        <EarlyAccess />
+      </div>
+      <Footer />
     </main>
   );
 }

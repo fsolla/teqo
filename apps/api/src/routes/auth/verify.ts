@@ -26,11 +26,11 @@ export const verifyRouter = express
         return;
       }
 
-      let user = await prisma.user.findUnique({ where: { email } });
-
-      if (!user) {
-        user = await prisma.user.create({ data: { email } });
-      }
+      const user = await prisma.user.upsert({
+        where: { email },
+        update: {},
+        create: { email },
+      });
 
       Auth.refreshCookie(res, user.id);
 

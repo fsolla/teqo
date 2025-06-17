@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import clsx from "clsx";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -12,14 +13,21 @@ const inter = Inter({
   variable: "--font-inter", // optional if using CSS vars
 });
 
+export const viewport: Viewport = {
+  initialScale: 1,
+  width: "device-width",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.className}>
-      <body className="antialiased h-dvh">{children}</body>
+    <html lang="en" className={clsx("scrollbar-hidden", inter.className)}>
+      <body className="antialiased h-dvh w-dvw overflow-x-hidden">
+        {children}
+      </body>
     </html>
   );
 }

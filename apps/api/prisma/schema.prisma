@@ -42,3 +42,11 @@ model User {
 
   @@index([email])
 }
+
+model Waitlist {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}

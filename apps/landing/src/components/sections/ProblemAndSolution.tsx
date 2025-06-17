@@ -1,9 +1,9 @@
 import clsx from "clsx";
-import type { PropsWithChildren, ReactNode } from "react";
 
 export const ProblemAndSolution = () => (
-  <section className="px-5 flex flex-col gap-12">
-    <Group title="Web3 hoje" className="text-gray-500">
+  <section className="px-5 flex max-md:flex-col gap-12 md:gap-4.5 justify-center">
+    <div className="flex flex-col max-md:gap-6 md:gap-y-7.5 md:gap-x-[max-content] md:grid grid-cols-2 grid-rows-[auto_auto_auto_auto] grid-flow-col lg:w-236.75">
+      <h2 className="flex flex-col justify-end text-gray-500">Web3 hoje</h2>
       <Item
         title="Medo de perder tudo"
         description="Chaves privadas, seeds phrases, contratos. A responsabilidade toda está em suas mãos, sem rede de segurança."
@@ -16,17 +16,12 @@ export const ProblemAndSolution = () => (
         title="Falta de clareza"
         description="Você nunca sabe exatamente o que está acontecendo, quanto vai custar, ou se deu certo."
       />
-    </Group>
-    <Group
-      title={
-        <>
-          <h1 className="bg-gradient-cyan-to-purple bg-clip-text text-transparent inline-block">
-            Teqo
-          </h1>{" "}
-          é a solução
-        </>
-      }
-    >
+      <h2 className="text-gray-500">
+        <span className="bg-gradient-cyan-to-purple bg-clip-text text-transparent text-h1">
+          Teqo
+        </span>{" "}
+        é a solução
+      </h2>
       <Item
         title="Recuperação assistida"
         description="Protegemos sua chave cripiografada em nosso cofre. Você sempre terá acesso à sua conta, hoje e sempre."
@@ -42,7 +37,7 @@ export const ProblemAndSolution = () => (
         description="Sempre sabemos o que está acontecendo, quanto custa, e damos feedback claro sobre cada ação."
         className="text-blue-400"
       />
-    </Group>
+    </div>
   </section>
 );
 
@@ -56,20 +51,12 @@ const Item = ({
   className?: string;
 }) => (
   <div
-    className={clsx("pl-6 px-1.5 flex flex-col gap-1 border-l-3", className)}
+    className={clsx(
+      "pl-6 py-1.5 flex flex-col gap-1 border-l-3 md:max-w-85.25 lg:max-w-105.5 text-gray-500 justify-center",
+      className
+    )}
   >
     <h4>{title}</h4>
-    <p className={clsx(className && "text-gray-500")}>{description}</p>
-  </div>
-);
-
-const Group = ({
-  title,
-  children,
-  className,
-}: PropsWithChildren<{ title: ReactNode; className?: string }>) => (
-  <div className={clsx("flex flex-col gap-6", className)}>
-    <h2>{title}</h2>
-    {children}
+    <p className="text-gray-500">{description}</p>
   </div>
 );
