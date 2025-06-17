@@ -1,9 +1,10 @@
 import express from "express";
+import { rateLimiterLowest } from "src/lib/rateLimiter";
 import { prisma } from "../lib/prisma";
 
 export const subscribeRouter = express
   .Router()
-  .post("/subscribe", async (req, res) => {
+  .post("/subscribe", rateLimiterLowest, async (req, res) => {
     const { email } = req.body;
 
     if (!email?.trim().match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
