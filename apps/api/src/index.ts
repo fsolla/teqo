@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 4000;
 const allowedOrigins = [
   "https://mycelia.solla.dev",
   "https://teqo.app",
+  "https://www.teqo.app",
   "https://my.teqo.app",
   "https://api.teqo.app",
 ];
