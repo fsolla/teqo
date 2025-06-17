@@ -8,12 +8,7 @@ import { subscribeRouter } from "./routes/subscribe";
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-const allowedOrigins = [
-  "https://mycelia.solla.dev",
-  "https://teqo.app",
-  "https://my.teqo.app",
-  "https://api.teqo.app",
-];
+const allowedOrigins = [process.env.LANDING_URL, process.env.WALLET_URL];
 
 app.set("trust proxy", 1);
 
@@ -22,9 +17,12 @@ app.use(rateLimiterHighest);
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, or same-origin requests)
+      console.log("🌐 Incoming Origin:", origin);
+      console.log("✅ Allowed Origins:", allowedOrigins);
+
       if (
         process.env.NODE_ENV === "development" ||
+        // Allow requests with no origin (like mobile apps, curl, or same-origin requests)
         !origin ||
         allowedOrigins.includes(origin)
       ) {
