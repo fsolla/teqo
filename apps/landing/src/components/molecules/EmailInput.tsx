@@ -1,12 +1,12 @@
 "use client";
 
 import clsx from "clsx";
-import { useRef, type MouseEventHandler } from "react";
+import { useRef, type FormEventHandler } from "react";
 
 export const EmailInput = ({ className }: { className?: string }) => {
   const ref = useRef<HTMLInputElement>(null);
 
-  const handleSubmit: MouseEventHandler<HTMLButtonElement> = () => {
+  const handleSubmit: FormEventHandler<HTMLFormElement> = () => {
     fetch("/api/subscribe", {
       method: "POST",
       headers: {
@@ -17,8 +17,9 @@ export const EmailInput = ({ className }: { className?: string }) => {
   };
 
   return (
-    <div
+    <form
       className={clsx("flex max-lg:flex-col items-stretch gap-2", className)}
+      onSubmit={handleSubmit}
     >
       <input
         ref={ref}
@@ -31,10 +32,9 @@ export const EmailInput = ({ className }: { className?: string }) => {
       <button
         type="submit"
         className="text-h5 text-white bg-gradient-pink-to-purple rounded-2xl px-5 py-3 lg:px-7 lg:py-4"
-        onClick={handleSubmit}
       >
         Reservar
       </button>
-    </div>
+    </form>
   );
 };
