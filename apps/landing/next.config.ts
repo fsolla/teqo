@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "https://api.teqo.app/:path*",
+        destination: `${process.env.API_URL}/:path*`,
       },
     ];
   },

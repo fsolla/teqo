@@ -15,6 +15,8 @@ const allowedOrigins = [
   "https://api.teqo.app",
 ];
 
+app.set("trust proxy", 1);
+
 app.use(rateLimiterHighest);
 
 app.use(
