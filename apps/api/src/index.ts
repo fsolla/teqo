@@ -1,7 +1,9 @@
 import cors from "cors";
 import express from "express";
 import { rateLimiterHighest } from "./lib/rateLimiter";
+import { authRouter } from "./routes/auth";
 import { coinRouter } from "./routes/coin";
+import { subscribeRouter } from "./routes/subscribe";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -35,7 +37,11 @@ app.use(
 
 app.use(express.json());
 
+app.use("/auth", authRouter);
+
 app.use("/coin", coinRouter);
+
+app.use(subscribeRouter);
 
 app.get("/ping", (_, res) => {
   res.json({ pong: true });

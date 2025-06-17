@@ -12,4 +12,4 @@ router.use(requestRouter);
 router.use(validateRouter);
 router.use(verifyRouter);
 
-export const coinRouter = router;
+export const authRouter = router;
