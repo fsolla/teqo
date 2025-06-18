@@ -6,9 +6,9 @@ export const HowItWorks = () => (
   <section className="max-lg:px-5 flex flex-col gap-4">
     <h2 className="mb-2 lg:text-center lg:mb-6">
       Como{" "}
-      <h1 className="bg-gradient-cyan-to-purple bg-clip-text text-transparent inline-block">
+      <span className="text-h1 bg-gradient-cyan-to-purple bg-clip-text text-transparent inline-block">
         Teqo
-      </h1>{" "}
+      </span>{" "}
       funciona?
     </h2>
     <div className="flex flex-col gap-4 lg:grid grid-cols-3">

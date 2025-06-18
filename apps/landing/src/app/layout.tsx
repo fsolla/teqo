@@ -24,8 +24,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={clsx("scrollbar-hidden", inter.className)}>
-      <body className="antialiased h-dvh w-dvw overflow-x-hidden">
+    <html
+      lang="en"
+      className={clsx(
+        "scrollbar-hidden h-dvh w-dvw overflow-x-hidden",
+        inter.className
+      )}
+    >
+      <body className="antialiased h-dvh w-dvw overflow-x-hidden relative scrollbar-hidden">
         {children}
       </body>
     </html>

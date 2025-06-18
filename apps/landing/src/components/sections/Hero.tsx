@@ -2,8 +2,8 @@ import Image from "next/image";
 import { EmailInput } from "../molecules/EmailInput";
 
 export const Hero = () => (
-  <header className="h-dvh bg-blue-950 flex-center flex-col w-full">
-    <div className="flex flex-col items-stretch justify-center max-lg:w-77.5 gap-4 lg:gap-7.5">
+  <header className="h-dvh bg-blue-950 flex-center flex-col w-full px-2">
+    <div className="flex flex-col items-stretch justify-center max-lg:max-w-77.5 gap-4 lg:gap-7.5">
       <Image
         src="/logo.svg"
         width={133.64}

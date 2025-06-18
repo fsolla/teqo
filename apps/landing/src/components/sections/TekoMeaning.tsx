@@ -11,10 +11,6 @@ export const TekoMeaning = () => (
         alt="decoration left quote"
         className="max-lg:w-10.5 absolute -top-6 -left-7 md:-top-13 md:-left-13.5 lg:-top-22 lg:-left-30.25"
       />
-      <NoWrap>Teko é uma palavra Guarani que</NoWrap>{" "}
-      <NoWrap>significa {'"modo de ser"'}</NoWrap>.<br />
-      <NoWrap>A forma como vivemos</NoWrap> e nos{" "}
-      <NoWrap>relacionamos com o mundo</NoWrap>.
       <Image
         src="/right-quote.svg"
         width={70.46}
@@ -22,6 +18,10 @@ export const TekoMeaning = () => (
         alt="decoration right quote"
         className="max-lg:w-10.5 absolute -bottom-6 -right-7 md:-bottom-13 md:-right-13.5 lg:-bottom-22 lg:-right-30.25"
       />
+      <NoWrap>Teko é uma palavra Guarani que</NoWrap>{" "}
+      <NoWrap>significa {'"modo de ser"'}</NoWrap>.<br />
+      <NoWrap>A forma como vivemos</NoWrap> e nos{" "}
+      <NoWrap>relacionamos com o mundo</NoWrap>.
     </h3>
   </section>
 );
