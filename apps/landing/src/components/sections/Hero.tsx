@@ -12,16 +12,16 @@ export const Hero = () => (
         className="self-center max-lg:h-16"
       />
       <h1 className="text-white text-center">
-        Seu mundo digital.
+        Your digital world
         <br />
         <span className="bg-gradient-cyan-to-purple bg-clip-text text-transparent">
-          Suas regras.
+          Your rules
         </span>
       </h1>
       <EmailInput />
       <p className="text-blue-100 text-center">
-        Teqo é a carteira digital que torna Web3 <br className="lg:hidden" />
-        simples, segura e acessível.
+        Teqo is the digital wallet that makes Web3 simple, secure, and
+        accessible
       </p>
     </div>
   </header>

@@ -14,7 +14,7 @@ export const EmailInput = ({ className }: { className?: string }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<Modal>(null);
 
-  const handleSubmit: FormEventHandler<HTMLButtonElement> = (e) => {
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
 
     fetch("/api/subscribe", {
@@ -28,22 +28,25 @@ export const EmailInput = ({ className }: { className?: string }) => {
 
   return (
     <form
-      className={clsx("flex max-lg:flex-col items-stretch gap-2", className)}
+      className={clsx(
+        "flex max-lg:flex-col items-stretch gap-2 text-white",
+        className
+      )}
+      onSubmit={handleSubmit}
     >
       <input
         ref={inputRef}
         type="email"
         name="email"
-        placeholder="Seu melhor e-mail"
-        className="text-white px-5 py-3 rounded-2xl border border-blue-100 placeholder-blue-100 flex-1 lg:min-w-121.5"
+        placeholder="Your best email"
+        className="px-5 py-3 rounded-2xl border border-blue-100 placeholder-blue-100 flex-1 lg:min-w-121.5"
         required
       />
       <button
         type="submit"
         className="text-h5 text-white bg-gradient-pink-to-purple rounded-2xl px-5 py-3 lg:px-7 lg:py-4 active:opacity-80 active:scale-98 transition-all duration-75"
-        onClick={handleSubmit}
       >
-        Reservar
+        Reserve
       </button>
       <Modal ref={modalRef}>
         <div className="bg-white p-4 px-5 flex flex-col gap-2 min-w-74 relative">
@@ -56,10 +59,9 @@ export const EmailInput = ({ className }: { className?: string }) => {
           >
             <X size={16} />
           </button>
-          <h5>Bem-vindo(a)</h5>
+          <h5>Welcome</h5>
           <p>
-            Você agora faz parte do grupo que vai experimentar o Teqo em
-            primeira mão.
+            You are now part of the group that will experience Teqo firsthand.
           </p>
         </div>
       </Modal>

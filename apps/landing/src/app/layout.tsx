@@ -1,6 +1,8 @@
+import { i18n } from "@/lib/i18n";
 import clsx from "clsx";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { use } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -23,6 +25,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  use(i18n.init());
+
   return (
     <html
       lang="en"

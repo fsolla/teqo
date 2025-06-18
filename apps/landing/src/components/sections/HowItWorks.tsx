@@ -5,28 +5,23 @@ import type { ReactNode } from "react";
 export const HowItWorks = () => (
   <section className="max-lg:px-5 flex flex-col gap-4">
     <h2 className="mb-2 lg:text-center lg:mb-6">
-      Como{" "}
+      How{" "}
       <span className="text-h1 bg-gradient-cyan-to-purple bg-clip-text text-transparent inline-block">
         Teqo
       </span>{" "}
-      funciona?
+      Works?
     </h2>
     <div className="flex flex-col gap-4 lg:grid grid-cols-3">
       <Item
-        title="Crie sua conta"
-        description="Sua chave privada é protegida automaticamente."
+        title="Create your account"
+        description="Your private key is automatically protected."
         className="text-green-400"
       />
       <Item
-        title="Gerencie com clareza"
+        title="Manage with clarity"
         description={
           <>
-            <span className="lg:hidden">
-              Veja todos seus ativos digitais organizados de forma simples.
-            </span>
-            <span className="max-lg:hidden">
-              Organize seus ativos digitais de forma simples.
-            </span>
+            Organize your digital assets in a simple way.
             <br />
             Tokens, NFTs, domínios.
           </>
@@ -34,8 +29,8 @@ export const HowItWorks = () => (
         className="text-purple-400"
       />
       <Item
-        title="Transacione sem medo"
-        description="Cada ação é explicada antes de acontecer. Acompanhe o progresso em tempo real."
+        title="Transact without fear"
+        description="Each action is explained before it happens. Track progress in real time."
         className="text-blue-400"
       />
     </div>
@@ -44,21 +39,20 @@ export const HowItWorks = () => (
         <div className="flex max-md:flex-col gap-1 md:gap-6.5 bg-white rounded-2xl py-6 px-7.5 items-center">
           <div className="flex flex-col gap-1">
             <h4 className="bg-gradient-pink-to-purple bg-clip-text text-transparent inline-block">
-              Recuperação assistida por padrão
+              Assisted recovery by default
             </h4>
             <p className="text-gray-500">
-              Diferente de outras carteiras, você não precisa se preocupar em
-              perder suas chaves. Protegemos tudo de forma segura para que você
-              sempre tenha acesso.
+              Unlike other wallets, you don’t need to worry about losing your
+              keys. We protect everything securely so you always have access.
             </p>
           </div>
           <ShieldCheck className="max-md:mt-2 w-80" />
         </div>
       </div>
       <h6 className="px-10">
-        <strong className="font-bold">Para usuários avançados:</strong> Você
-        pode desativar essa proteção e usar de forma completamente
-        auto-custodial quando quiser.
+        <strong className="font-bold">For advanced users:</strong> You can
+        disable this protection and use it in fully self-custodial mode whenever
+        you want.
       </h6>
     </div>
   </section>

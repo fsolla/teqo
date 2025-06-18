@@ -13,18 +13,18 @@ export const Footer = () => (
       Teqo
     </span>
     <h6>
-      Sua carteira digital que torna Web3 simples, segura e acessível.
+      Your digital wallet that makes Web3 simple, secure, and accessible.
       <br />
-      Propriedade digital com clareza e intenção.
+      Digital ownership with clarity and intention
     </h6>
     <div className="h-0.25 bg-white opacity-20 mt-3" />
     <div className="flex">
       <h6 className="flex-1">
         © 2025 Teqo.
         <br />
-        Todos os direitos reservados.
+        All rights reserved.
       </h6>
-      <h6 className="text-right">Construído com intenção.</h6>
+      <h6 className="text-right">Built with intention.</h6>
     </div>
   </footer>
 );
