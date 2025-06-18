@@ -40,7 +40,7 @@ export const EmailInput = ({ className }: { className?: string }) => {
       />
       <button
         type="submit"
-        className="text-h5 text-white bg-gradient-pink-to-purple rounded-2xl px-5 py-3 lg:px-7 lg:py-4"
+        className="text-h5 text-white bg-gradient-pink-to-purple rounded-2xl px-5 py-3 lg:px-7 lg:py-4 active:opacity-80 active:scale-98 transition-all duration-75"
         onClick={handleSubmit}
       >
         Reservar
@@ -48,7 +48,10 @@ export const EmailInput = ({ className }: { className?: string }) => {
       <Modal ref={modalRef}>
         <div className="bg-white p-4 px-5 flex flex-col gap-2 min-w-74 relative">
           <button
-            onClick={modalRef.current?.close}
+            onClick={(e) => {
+              e.preventDefault();
+              modalRef.current?.close();
+            }}
             className="absolute top-4 right-5"
           >
             <X size={16} />
