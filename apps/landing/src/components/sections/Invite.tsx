@@ -4,9 +4,9 @@ import { EmailInput } from "../molecules/EmailInput";
 export const Invite = () => (
   <section
     id="invite"
-    className="snap-start h-dvh w-dvw relative flex bg-cyan-200 text-white overflow-hidden"
+    className="snap-start h-dvh w-dvw relative flex bg-cyan-200 text-white overflow-hidden p-5 md:pt-[6dvh] lg:pt-[9dvh] md:px-17.5"
   >
-    <div className="z-10 flex flex-col layout-max-width w-full h-full flex-1 p-5 md:pt-[6dvh] lg:pt-[9dvh] md:px-17.5">
+    <div className="z-10 flex flex-col layout-max-width w-full h-full flex-1">
       <div className="flex-15" />
       <h3>
         Step in

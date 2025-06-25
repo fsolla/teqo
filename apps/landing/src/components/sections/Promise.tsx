@@ -11,7 +11,7 @@ export const Promise = () => (
         <br />
         MONEY
       </h1>
-      <div className="flex flex-col gap-5 flex-1 2xl:ml-8 4xl:ml-10">
+      <div className="flex flex-col gap-5 flex-1">
         <p>Teqo gives you an account you truly own</p>
         <div className="flex-1" />
         <Link

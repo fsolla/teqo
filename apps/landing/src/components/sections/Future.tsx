@@ -1,8 +1,8 @@
 import Image from "next/image";
 
 export const Future = () => (
-  <section className="snap-start h-dvh w-dvw relative flex bg-black text-white overflow-hidden">
-    <div className="z-10 flex flex-col layout-max-width w-full h-full flex-1 p-5 md:pt-[6dvh] lg:pt-[9dvh] md:px-17.5">
+  <section className="snap-start h-dvh w-dvw relative flex bg-black text-white overflow-hidden p-5 md:pt-[6dvh] lg:pt-[9dvh] md:px-17.5">
+    <div className="z-10 flex flex-col layout-max-width w-full h-full flex-1">
       <h2>
         JOIN
         <br />

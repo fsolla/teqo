@@ -1,8 +1,8 @@
 import Image from "next/image";
 
 export const Trust = () => (
-  <section className="snap-start h-dvh w-dvw relative text-black bg-white">
-    <div className="layout-max-width px-5 py-10 flex flex-col gap-5 md:pt-[6dvh] lg:pt-[9dvh] md:px-17.5 md:pb-8 md:portrait:pb-12">
+  <section className="snap-start h-dvh w-dvw relative text-black bg-white px-5 py-10 md:pt-[6dvh] lg:pt-[9dvh] md:px-17.5 md:pb-8 md:portrait:pb-12">
+    <div className="layout-max-width flex flex-col gap-5">
       <h2>
         SAFE
         <br />

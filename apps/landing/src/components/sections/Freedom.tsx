@@ -2,8 +2,8 @@ import Image from "next/image";
 import { NoWrap } from "../atoms/NoWrap";
 
 export const Freedom = () => (
-  <section className="snap-start h-dvh w-dvw relative flex overflow-hidden">
-    <div className="z-10 flex flex-col layout-max-width w-full h-full flex-1 text-black p-5 md:pt-[6dvh] lg:pt-[9dvh] md:px-17.5">
+  <section className="snap-start h-dvh w-dvw relative flex overflow-hidden p-5 md:pt-[6dvh] lg:pt-[9dvh] md:px-17.5">
+    <div className="z-10 flex flex-col layout-max-width w-full h-full flex-1 text-black">
       <div className="flex flex-col gap-3">
         <h2>MOVE</h2>
         <h3 className="opacity-30">WITHOUT PERMISSION</h3>
@@ -17,7 +17,8 @@ export const Freedom = () => (
         <NoWrap>Teqo gives you freedom.</NoWrap>{" "}
         <NoWrap>And support when you need it.</NoWrap>
         <br />
-        We don’t lock you in. We help you move forward.
+        <NoWrap>We don’t lock you in.</NoWrap>{" "}
+        <NoWrap>We help you move forward.</NoWrap>
       </p>
       <div className="flex-3 landscape:flex-6" />
     </div>
