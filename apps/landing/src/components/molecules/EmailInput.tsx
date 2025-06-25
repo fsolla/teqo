@@ -1,21 +1,30 @@
 "use client";
 
-import clsx from "clsx";
 import { X } from "lucide-react";
 import {
   useImperativeHandle,
   useRef,
-  type FormEventHandler,
+  type MouseEventHandler,
   type PropsWithChildren,
   type Ref,
 } from "react";
 
-export const EmailInput = ({ className }: { className?: string }) => {
+export const EmailInput = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<Modal>(null);
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
+  const handleSubmit: MouseEventHandler<HTMLButtonElement> = (e) => {
     e.preventDefault();
+
+    console.log({
+      value: inputRef.current?.value,
+      valid: inputRef.current?.validity.valid,
+    });
+
+    if (!inputRef.current?.value || !inputRef.current.validity.valid) {
+      inputRef.current?.focus();
+      return;
+    }
 
     fetch("/api/subscribe", {
       method: "POST",
@@ -23,30 +32,31 @@ export const EmailInput = ({ className }: { className?: string }) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ email: inputRef.current?.value }),
-    }).then(() => modalRef.current?.open());
+    }).then(() => {
+      if (inputRef.current) {
+        inputRef.current.value = "";
+        inputRef.current.blur();
+      }
+
+      modalRef.current?.open();
+    });
   };
 
   return (
-    <form
-      className={clsx(
-        "flex max-lg:flex-col items-stretch gap-2 text-white",
-        className
-      )}
-      onSubmit={handleSubmit}
-    >
+    <>
       <input
         ref={inputRef}
         type="email"
         name="email"
         placeholder="Your best email"
-        className="px-5 py-3 rounded-2xl border border-blue-100 placeholder-blue-100 flex-1 lg:min-w-121.5"
-        required
+        className="bg-white rounded-2xl px-4 py-3 text-black placeholder:text-gray-400 inset-shadow-sm inset-shadow-black/50 max-w-md"
       />
+      <div className="flex-1" />
       <button
-        type="submit"
-        className="text-h5 text-white bg-gradient-pink-to-purple rounded-2xl px-5 py-3 lg:px-7 lg:py-4 active:opacity-80 active:scale-98 transition-all duration-75"
+        onClick={handleSubmit}
+        className="px-6 py-3 rounded-2xl bg-linear-150 from-blue-800 from-20% to-blue-900 to-95% w-fit active:opacity-80 active:scale-95"
       >
-        Reserve
+        <h5>JOIN WAITLIST</h5>
       </button>
       <Modal ref={modalRef}>
         <div className="bg-white p-4 px-5 flex flex-col gap-2 min-w-74 relative">
@@ -65,7 +75,7 @@ export const EmailInput = ({ className }: { className?: string }) => {
           </p>
         </div>
       </Modal>
-    </form>
+    </>
   );
 };
 

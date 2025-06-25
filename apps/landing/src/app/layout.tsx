@@ -1,5 +1,4 @@
 import { i18n } from "@/lib/i18n";
-import clsx from "clsx";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { use } from "react";
@@ -28,16 +27,8 @@ export default function RootLayout({
   use(i18n.init());
 
   return (
-    <html
-      lang="en"
-      className={clsx(
-        "scrollbar-hidden h-dvh w-dvw overflow-x-hidden",
-        inter.className
-      )}
-    >
-      <body className="antialiased h-dvh w-dvw overflow-x-hidden relative scrollbar-hidden">
-        {children}
-      </body>
+    <html lang="en" className={`${inter.className}`}>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

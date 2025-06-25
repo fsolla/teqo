@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 export const Footer = () => (
-  <footer className="flex flex-col bg-blue-950 text-white px-5 py-6 gap-3 w-full">
+  <footer className="snap-start flex flex-col bg-blue-950 text-white px-5 py-6 gap-3 w-full">
     <span className="text-2xl font-bold">
       <Image
         src="/logo.svg"
