@@ -21,10 +21,11 @@ input {
   --breakpoint-4xl: 120rem; /* 1920px */
 
   --color-blue-100: #8a8eb5;
+  --color-blue-300: #047edf;
   --color-blue-400: #0275da;
   --color-blue-500: #0276da;
   --color-blue-600: #0165bf;
-  --color-blue-700: #0168c4;
+  --color-blue-700: #0077d7;
   --color-blue-800: #013f78;
   --color-blue-900: #021d42;
   --color-blue-950: #06071c;

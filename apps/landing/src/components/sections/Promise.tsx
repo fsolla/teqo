@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const Promise = () => (
-  <section className="snap-start h-dvh w-dvw  relative flex flex-col text-white p-5 gap-5 md:pt-[6dvh] lg:pt-[9dvh] md:px-17.5 md:pb-8 md:portrait:pb-12 overflow-hidden bg-[#0168c7]">
+  <section className="snap-start h-dvh w-dvw  relative flex flex-col text-white p-5 gap-5 md:pt-[6dvh] lg:pt-[9dvh] md:px-17.5 md:pb-8 md:portrait:pb-12 overflow-hidden bg-linear-150 from-blue-300 to-blue-700">
     <div className="flex flex-col w-full flex-1 gap-5 z-20 layout-max-width">
       <h1>
         OWN
@@ -29,12 +29,11 @@ export const Promise = () => (
       </div>
     </div>
     <Image
-      src="/promise.jpg"
-      width={6699}
-      height={4466}
+      src="/promise.png"
+      width={1727}
+      height={1384}
       alt="A man in blue clothing and a white bucket hat stands thoughtfully in a minimalist blue studio, casting a long shadow onto a curved backdrop lit by a spotlight"
-      className="max-md:w-[747px] md:w-dvw md:portrait:w-[150%] lg:landscape:h-[150%] lg:w-auto self-center z-10 absolute top-1/2 -translate-y-[45%] lg:-translate-y-[35%] lg:landscape:-translate-y-[52%] max-md:translate-x-[2%] md:portrait:-translate-x-[8%] md:left-0 md:translate-x-[8%]"
+      className="absolute w-[80%] bottom-1/2 translate-y-[70%] right-1/2 max-md:translate-x-1/2 md:w-[65%] md:right-[5dvw] lg:w-1/2 lg:translate-y-[65%]"
     />
-    <div className="h-1/2 w-dvw  absolute bottom-0 left-0 bg-[#0168c7]" />
   </section>
 );
