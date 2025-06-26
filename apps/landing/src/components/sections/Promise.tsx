@@ -33,7 +33,7 @@ export const Promise = () => (
       width={1727}
       height={1384}
       alt="A man in blue clothing and a white bucket hat stands thoughtfully in a minimalist blue studio, casting a long shadow onto a curved backdrop lit by a spotlight"
-      className="absolute w-[80%] bottom-1/2 translate-y-[70%] right-1/2 max-md:translate-x-1/2 md:w-[65%] md:right-[5dvw] lg:w-1/2 lg:translate-y-[65%]"
+      className="absolute w-[80%] bottom-1/2 translate-y-[70%] right-1/2 max-md:translate-x-1/2 md:w-[65%] md:right-[5dvw] lg:w-1/2 lg:translate-y-[65%] 3xl:translate-y-[60%]"
     />
   </section>
 );
