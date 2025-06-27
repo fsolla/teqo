@@ -1,6 +1,7 @@
 import { Redirect, Route, Switch } from "wouter-preact";
 import PWABadge from "./PWABadge.tsx";
 import { Home } from "./pages/Home.tsx";
+import { SignIn } from "./pages/SignIn.tsx";
 import { useAccountStore } from "./stores/useAccountStore.ts";
 
 export function App() {
@@ -16,7 +17,11 @@ export function App() {
               <Redirect to="/" />
             </Route>
           </>
-        ) : null}
+        ) : (
+          <>
+            <Route path="/" component={SignIn} />
+          </>
+        )}
       </Switch>
       <PWABadge />
     </>
