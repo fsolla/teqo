@@ -1,4 +1,5 @@
 import express from "express";
+import { prisma } from "../../lib/prisma";
 import { rateLimiterLowest } from "../../lib/rateLimiter";
 import { VerificationCode } from "../../lib/VerificationCode";
 
@@ -13,6 +14,23 @@ export const requestRouter = express
     }
 
     try {
+      const user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+
+      if (!user) {
+        const waitlistEntry = await prisma.waitlist.findUnique({
+          where: { email: email.toLowerCase() },
+        });
+
+        if (!waitlistEntry?.approved) {
+          res
+            .status(403)
+            .json({ error: "Not eligible to create an account yet" });
+          return;
+        }
+      }
+
       await VerificationCode.create(email);
       res.status(200).json({ success: true });
     } catch (err) {

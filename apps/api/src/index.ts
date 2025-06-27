@@ -17,9 +17,6 @@ app.use(rateLimiterHighest);
 app.use(
   cors({
     origin: (origin, callback) => {
-      console.log("🌐 Incoming Origin:", origin);
-      console.log("✅ Allowed Origins:", allowedOrigins);
-
       if (
         process.env.NODE_ENV === "development" ||
         // Allow requests with no origin (like mobile apps, curl, or same-origin requests)

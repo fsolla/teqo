@@ -1,17 +1,5 @@
 @import "tailwindcss";
 
-#app {
-  @apply h-dvh;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-button {
-  cursor: pointer;
-}
-
 @theme {
   --color-candy-500: #9b87f5;
   --color-mycelia-50: var(--color-white);
@@ -64,6 +52,22 @@ button {
 }
 
 @layer base {
+  #app {
+    @apply h-dvh;
+  }
+
+  * {
+    @apply box-border caret-tint;
+  }
+
+  button {
+    @apply cursor-pointer;
+  }
+
+  input {
+    @apply outline-hidden;
+  }
+
   h1 {
     @apply text-h1;
   }

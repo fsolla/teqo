@@ -1,9 +1,10 @@
 import { ChevronRight } from "lucide-preact";
 import { Link } from "wouter-preact";
+import { Page } from "../components/templates/Page";
 
 export const SignIn = () => {
   return (
-    <main className="bg-white h-full flex flex-col px-5">
+    <Page>
       <div className="flex-1" />
       <h1 className="text-center">Teqo</h1>
       <div className="flex-1" />
@@ -15,6 +16,6 @@ export const SignIn = () => {
         <ChevronRight size={30} />
       </Link>
       <div className="flex-1" />
-    </main>
+    </Page>
   );
 };
