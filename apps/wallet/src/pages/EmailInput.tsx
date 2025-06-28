@@ -23,11 +23,9 @@ export const EmailInput = () => {
 
     const email = inputRef.current.value.trim().toLowerCase();
 
-    post("/api/auth/eligible", { email }).then(({ eligible }) => {
-      if (eligible) {
-        setEmail(email);
-        navigate("/input/email/confirmation");
-      }
+    return post("/api/auth/request", { email }).then(() => {
+      setEmail(email);
+      navigate("/input/email/confirmation");
     });
   };
 

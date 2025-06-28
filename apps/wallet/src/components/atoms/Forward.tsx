@@ -1,6 +1,10 @@
 import clsx from "clsx";
-import { ArrowRight } from "lucide-preact";
-import type { MouseEvent, MouseEventHandler } from "preact/compat";
+import { ArrowRight, LoaderCircle } from "lucide-preact";
+import {
+  useState,
+  type MouseEvent,
+  type MouseEventHandler,
+} from "preact/compat";
 import { Link } from "wouter-preact";
 
 export const Forward = ({
@@ -14,6 +18,8 @@ export const Forward = ({
   disabled?: boolean;
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }) => {
+  const [isLoading, setIsLoading] = useState(false);
+
   const aggregateClassName = clsx(
     "text-teqo-50 rounded-full p-2 flex-center aspect-square size-fit",
     disabled ? "bg-teqo-300" : "bg-tint",
@@ -33,13 +39,23 @@ export const Forward = ({
     );
   }
 
+  const handleClick: MouseEventHandler<HTMLButtonElement> = async (e) => {
+    setIsLoading(true);
+    await onClick?.(e);
+    setIsLoading(false);
+  };
+
   return (
     <button
       className={aggregateClassName}
-      disabled={disabled}
-      onClick={onClick}
+      disabled={disabled || isLoading}
+      onClick={handleClick}
     >
-      <ArrowRight size={24} />
+      {isLoading ? (
+        <LoaderCircle size={24} className="animate-spin" />
+      ) : (
+        <ArrowRight size={24} />
+      )}
     </button>
   );
 };

@@ -50,14 +50,14 @@ export class VerificationCode {
   // --- Private Helper Methods ---
 
   /**
-   * Generates a cryptographically secure 6-digit verification code.
+   * Generates a cryptographically secure 4-digit verification code.
    *
-   * @returns A string representing the 6-digit verification code, padded with leading zeros if necessary.
+   * @returns A string representing the 4-digit verification code, padded with leading zeros if necessary.
    */
   private static generate() {
     const buffer = crypto.randomBytes(4);
-    const randomInt = buffer.readUInt32BE() % 1000000;
-    return randomInt.toString().padStart(6, "0");
+    const randomInt = buffer.readUInt32BE() % 10000;
+    return randomInt.toString().padStart(4, "0");
   }
 
   /**
