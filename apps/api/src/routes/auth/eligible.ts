@@ -6,7 +6,7 @@ import { rateLimiterLowest } from "../../lib/rateLimiter";
 export const eligibleRouter = express
   .Router()
   .post("/eligible", rateLimiterLowest, async (req, res) => {
-    const { email } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
 
     if (!email?.trim().match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       res.status(400).json({ error: "Invalid email" });

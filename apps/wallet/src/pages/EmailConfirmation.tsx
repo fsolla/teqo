@@ -1,18 +1,22 @@
-import { useLocation } from "wouter-preact";
+import { Redirect, useLocation } from "wouter-preact";
 import { Forward } from "../components/atoms/Forward";
 import { CodeInput, useCodeInput } from "../components/molecules/CodeInput";
 import { Page } from "../components/templates/Page";
 import { post } from "../lib/post";
-import { useCreateAccountStore } from "../stores/useCreateAccountStore";
 
 export const EmailConfirmation = () => {
   const [, navigate] = useLocation();
-  const email = useCreateAccountStore.use.email();
   const [code, setCode] = useCodeInput(["", "", "", ""]);
   const isValid = code.every((v) => v !== "");
 
+  const email = history.state?.email;
+
+  if (!email) {
+    return <Redirect to="/input/email" />;
+  }
+
   const handleSubmit = () => {
-    if (!isValid) {
+    if (!email || !isValid) {
       return;
     }
 
@@ -27,6 +31,7 @@ export const EmailConfirmation = () => {
       description="We've sent a confirmation code to your email."
     >
       <CodeInput value={code} setValue={setCode} />
+      <div className="flex-1" />
       <Forward
         onClick={handleSubmit}
         disabled={!isValid}

@@ -4,6 +4,8 @@ import { QueryClientProvider } from "./lib/QueryClientProvider.tsx";
 import { EmailConfirmation } from "./pages/EmailConfirmation.tsx";
 import { EmailInput } from "./pages/EmailInput.tsx";
 import { Home } from "./pages/Home.tsx";
+import { NameInput } from "./pages/NameInput.tsx";
+import { PinSetupRoutes } from "./pages/PinSetupRoutes.tsx";
 import { SignIn } from "./pages/SignIn.tsx";
 import { useAccountStore } from "./stores/useAccountStore.ts";
 
@@ -17,9 +19,6 @@ export function App() {
           {hasAccount ? (
             <>
               <Route path="/" component={Home} />
-              <Route>
-                <Redirect to="/" />
-              </Route>
             </>
           ) : (
             <>
@@ -29,8 +28,13 @@ export function App() {
                 path="/input/email/confirmation"
                 component={EmailConfirmation}
               />
+              <Route path="/input/name" component={NameInput} />
+              <PinSetupRoutes />
             </>
           )}
+          <Route>
+            <Redirect to="/" />
+          </Route>
         </Switch>
         <PWABadge />
       </>

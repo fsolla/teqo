@@ -98,7 +98,7 @@ export class VerificationCode {
     await resend.emails.send({
       from: "Teqo <no-reply@teqo.app>",
       to: email,
-      subject: "Your Teqo verification code",
+      subject: `${code} is your Teqo verification code`,
       html: `
           <p>Your verification code is:</p>
           <h2>${code}</h2>

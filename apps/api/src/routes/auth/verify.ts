@@ -6,9 +6,11 @@ import { VerificationCode } from "../../lib/VerificationCode";
 export const verifyRouter = express
   .Router()
   .post("/verify", async (req, res) => {
-    const { email, code } = req.body;
+    const { code } = req.body;
 
-    if (!email?.trim().match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    const email = req.body.email?.trim().toLowerCase();
+
+    if (!email?.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       res.status(400).json({ error: "Invalid email" });
       return;
     }

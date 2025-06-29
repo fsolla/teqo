@@ -8,13 +8,19 @@ interface Account {
 
 interface AccountStore {
   accounts: Account[];
+  createAccount: (name: string, pin: string) => void;
 }
 
 export const useAccountStore = createSelectors(
   create<AccountStore>()(
     persist(
-      () => ({
+      (set) => ({
         accounts: [] as Account[],
+        createAccount: (name: string, pin: string) => {
+          set((state) => ({
+            accounts: [...state.accounts, { name }],
+          }));
+        },
       }),
       { name: "account-store" }
     )
