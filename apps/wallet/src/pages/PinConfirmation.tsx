@@ -31,7 +31,7 @@ export const PinConfirmation = ({
       return;
     }
 
-    createAccount(name, pin);
+    return createAccount(name, pin);
   };
 
   return (

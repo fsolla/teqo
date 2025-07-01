@@ -20,7 +20,7 @@ export const PinInput = ({
 
   const handlePinSubmit = () => {
     if (isValid) {
-      navigate("/confirm/pin");
+      navigate("/confirm/pin", { state: { name: history.state?.name } });
     }
   };
 
