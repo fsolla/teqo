@@ -32,7 +32,10 @@ export const useAccountStore = createSelectors(
       (set) => ({
         accounts: [] as Account[],
         createAccount: async (name: string, pin: string) => {
-          const data = await getAccountData(pin, generateMnemonic(wordlist));
+          const data = await getAccountData(
+            pin,
+            generateMnemonic(wordlist, 256)
+          );
 
           set((state) => ({
             accounts: [...state.accounts, { name, ...data }],
