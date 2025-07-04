@@ -1,4 +1,4 @@
-import { Delete } from "lucide-react";
+import { Delete } from "lucide-preact";
 import type { Dispatch, StateUpdater } from "preact/hooks";
 
 export const PinPad = ({
