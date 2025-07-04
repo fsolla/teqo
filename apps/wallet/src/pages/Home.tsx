@@ -25,21 +25,21 @@ export const Home = () => {
           </p>
           <ul className="flex gap-2 mt-5">
             <Link
-              href="/buy/bitcoin"
+              href="/buy/btc"
               className="bg-gray-100 rounded-2xl p-2 w-25 h-25 flex flex-col justify-between"
             >
               <Image src="/coins/bitcoin.svg" alt="Bitcoin" size="md" />
               <h4 className="mx-1">Bitcoin</h4>
             </Link>
             <Link
-              href="/buy/ethereum"
+              href="/buy/eth"
               className="bg-gray-100 rounded-2xl p-2 w-25 h-25 flex flex-col justify-between"
             >
               <Image src="/coins/ethereum.svg" alt="Ethereum" size="md" />
               <h4 className="mx-1">Ethereum</h4>
             </Link>
             <Link
-              href="/buy/solana"
+              href="/buy/sol"
               className="bg-gray-100 rounded-2xl p-2 w-25 h-25 flex flex-col justify-between"
             >
               <Image src="/coins/solana.svg" alt="Solana" size="md" />

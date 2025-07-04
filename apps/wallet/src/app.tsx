@@ -1,6 +1,7 @@
 import { Redirect, Route, Switch } from "wouter-preact";
 import PWABadge from "./PWABadge.tsx";
 import { QueryClientProvider } from "./lib/QueryClientProvider.tsx";
+import { Buy } from "./pages/Buy.tsx";
 import { EmailConfirmation } from "./pages/EmailConfirmation.tsx";
 import { EmailInput } from "./pages/EmailInput.tsx";
 import { Home } from "./pages/Home.tsx";
@@ -19,6 +20,7 @@ export function App() {
           {hasAccount ? (
             <>
               <Route path="/" component={Home} />
+              <Route path="/buy/:coin" component={Buy} />
             </>
           ) : (
             <>
