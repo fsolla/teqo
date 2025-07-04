@@ -51,6 +51,11 @@
   @apply font-semibold;
 }
 
+@utility text-h4 {
+  font-size: 0.9375rem; /* 15px */
+  @apply font-semibold tracking-tight;
+}
+
 @layer base {
   #app {
     @apply h-dvh;
@@ -62,6 +67,11 @@
 
   button {
     @apply cursor-pointer;
+  }
+
+  button,
+  a {
+    @apply active:opacity-80 active:scale-105;
   }
 
   input {
@@ -82,8 +92,7 @@
   }
 
   h4 {
-    font-size: 0.9375rem; /* 15px */
-    @apply font-semibold tracking-tight;
+    @apply text-h4;
   }
 
   h5 {
