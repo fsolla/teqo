@@ -3,6 +3,7 @@ import { useRef, useState } from "preact/hooks";
 import { useLocation } from "wouter-preact";
 import { Forward } from "../components/atoms/Forward";
 import { Page } from "../components/templates/Page";
+import { getT } from "../lib/i18n";
 import { post } from "../lib/post";
 
 export const EmailInput = () => {
@@ -27,18 +28,21 @@ export const EmailInput = () => {
   };
 
   return (
-    <Page title="Choose your Email" description="Enter your best email">
+    <Page
+      title={t("Choose your Email")}
+      description={t("Enter your best email")}
+    >
       <input
         ref={inputRef}
         type="email"
         name="email"
-        placeholder="your@email.com"
+        placeholder={t("your@email.com")}
         autoFocus
         autoCapitalize="none"
         autoCorrect="off"
         required
         maxLength={254}
-        title="Please enter a valid email address."
+        title={t("Please enter a valid email address.")}
         onChange={handleInput}
       />
       <div className="flex-1" />
@@ -50,3 +54,11 @@ export const EmailInput = () => {
     </Page>
   );
 };
+
+const t = getT({
+  "Choose your Email": "Escolha seu Email",
+  "Enter your best email": "Insira seu melhor email",
+  "Please enter a valid email address.":
+    "Por favor, insira um endereço de email válido.",
+  "your@email.com": "seu@email.com",
+});

@@ -3,6 +3,7 @@ import { Forward } from "../components/atoms/Forward";
 import { PinDots } from "../components/molecules/PinDots";
 import { PinPadBoard } from "../components/molecules/PinPadBoard";
 import { Page } from "../components/templates/Page";
+import { getT } from "../lib/i18n";
 import { useAccountStore } from "../stores/useAccountStore";
 
 export const PinConfirmation = ({
@@ -36,8 +37,8 @@ export const PinConfirmation = ({
 
   return (
     <Page
-      title="Confirm your PIN"
-      description="Re-enter your 4-digit PIN to confirm"
+      title={t("Confirm your PIN")}
+      description={t("Re-enter your 4-digit PIN to confirm")}
     >
       <PinDots size={size} isFilled={isFilled} />
       <PinPadBoard setValue={setValue} />
@@ -50,3 +51,9 @@ export const PinConfirmation = ({
     </Page>
   );
 };
+
+const t = getT({
+  "Confirm your PIN": "Confirme seu PIN",
+  "Re-enter your 4-digit PIN to confirm":
+    "Digite novamente seu PIN de 4 dígitos para confirmar",
+});

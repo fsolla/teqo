@@ -8,14 +8,15 @@ import {
 } from "lucide-preact";
 import { Link } from "wouter-preact";
 import { IconSize } from "../../constants/IconSize";
+import { getT } from "../../lib/i18n";
 
 export const NavBar = () => (
   <nav className="flex justify-between w-full">
-    <ActionLink href="/connect" Icon={ScanQrCode} label="Connect" />
-    <ActionLink href="/swap" Icon={SendToBack} label="Swap" />
-    <ActionLink href="/buy-sell" Icon={Banknote} label="Buy/Sell" />
-    <ActionLink href="/send" Icon={SendHorizontal} label="Send" />
-    <ActionLink href="/receive" Icon={QrCode} label="Receive" />
+    <ActionLink href="/connect" Icon={ScanQrCode} label={t("Connect")} />
+    <ActionLink href="/swap" Icon={SendToBack} label={t("Swap")} />
+    <ActionLink href="/buy-sell" Icon={Banknote} label={t("Buy/Sell")} />
+    <ActionLink href="/send" Icon={SendHorizontal} label={t("Send")} />
+    <ActionLink href="/receive" Icon={QrCode} label={t("Receive")} />
   </nav>
 );
 
@@ -33,3 +34,11 @@ const ActionLink = ({
     {label}
   </Link>
 );
+
+const t = getT({
+  Connect: "Conectar",
+  Swap: "Trocar",
+  "Buy/Sell": "Comprar/Vender",
+  Send: "Enviar",
+  Receive: "Receber",
+});

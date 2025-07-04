@@ -2,6 +2,7 @@ import { Redirect, useLocation } from "wouter-preact";
 import { Forward } from "../components/atoms/Forward";
 import { CodeInput, useCodeInput } from "../components/molecules/CodeInput";
 import { Page } from "../components/templates/Page";
+import { getT } from "../lib/i18n";
 import { post } from "../lib/post";
 
 export const EmailConfirmation = () => {
@@ -27,8 +28,8 @@ export const EmailConfirmation = () => {
 
   return (
     <Page
-      title="Confirm your Email"
-      description="We've sent a confirmation code to your email."
+      title={t("Confirm your Email")}
+      description={t("We've sent a confirmation code to your email.")}
     >
       <CodeInput value={code} setValue={setCode} />
       <div className="flex-1" />
@@ -40,3 +41,9 @@ export const EmailConfirmation = () => {
     </Page>
   );
 };
+
+const t = getT({
+  "Confirm your Email": "Confirme seu Email",
+  "We've sent a confirmation code to your email.":
+    "Nós enviamos um código de confirmação para seu email.",
+});

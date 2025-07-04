@@ -4,6 +4,7 @@ import { Forward } from "../components/atoms/Forward";
 import { PinDots } from "../components/molecules/PinDots";
 import { PinPadBoard } from "../components/molecules/PinPadBoard";
 import { Page } from "../components/templates/Page";
+import { getT } from "../lib/i18n";
 
 export const PinInput = ({
   value,
@@ -26,8 +27,8 @@ export const PinInput = ({
 
   return (
     <Page
-      title="Choose your PIN"
-      description="Enter a 4-digit PIN to secure your account"
+      title={t("Choose your PIN")}
+      description={t("Enter a 4-digit PIN to secure your account")}
     >
       <PinDots size={size} isFilled={isFilled} />
       <PinPadBoard setValue={setValue} />
@@ -40,3 +41,9 @@ export const PinInput = ({
     </Page>
   );
 };
+
+const t = getT({
+  "Choose your PIN": "Escolha seu PIN",
+  "Enter a 4-digit PIN to secure your account":
+    "Digite um PIN de 4 dígitos para proteger sua conta",
+});

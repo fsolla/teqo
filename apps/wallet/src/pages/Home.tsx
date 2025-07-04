@@ -1,6 +1,7 @@
 import { Link } from "wouter-preact";
 import { Image } from "../components/atoms/Image";
 import { NavBar } from "../components/organisms/NavBar";
+import { getT } from "../lib/i18n";
 import { useAccountStore } from "../stores/useAccountStore";
 
 export const Home = () => {
@@ -19,14 +20,15 @@ export const Home = () => {
       <main className="flex-1 p-5 flex flex-col">
         <div className="flex-1" />
         <section>
-          <h1>Welcome</h1>
+          <h1>{t("Welcome")}</h1>
           <p className="text-gray-400">
-            Buy crypto and start your Web3 journey.
+            {t("Buy crypto and start your Web3 journey.")}
           </p>
           <ul className="flex gap-2 mt-5">
             <Link
               href="/buy/btc"
               className="bg-gray-100 rounded-2xl p-2 w-25 h-25 flex flex-col justify-between"
+              state={{ back: "/" }}
             >
               <Image src="/coins/bitcoin.svg" alt="Bitcoin" size="md" />
               <h4 className="mx-1">Bitcoin</h4>
@@ -34,6 +36,7 @@ export const Home = () => {
             <Link
               href="/buy/eth"
               className="bg-gray-100 rounded-2xl p-2 w-25 h-25 flex flex-col justify-between"
+              state={{ back: "/" }}
             >
               <Image src="/coins/ethereum.svg" alt="Ethereum" size="md" />
               <h4 className="mx-1">Ethereum</h4>
@@ -41,6 +44,7 @@ export const Home = () => {
             <Link
               href="/buy/sol"
               className="bg-gray-100 rounded-2xl p-2 w-25 h-25 flex flex-col justify-between"
+              state={{ back: "/" }}
             >
               <Image src="/coins/solana.svg" alt="Solana" size="md" />
               <h4 className="mx-1">Solana</h4>
@@ -64,3 +68,9 @@ const useAccountSymbol = () =>
         .join("") + name[1].toUpperCase()
     ).slice(0, 2);
   });
+
+const t = getT({
+  Welcome: "Bem-vindo",
+  "Buy crypto and start your Web3 journey.":
+    "Compre criptomoedas e comece sua jornada Web3.",
+});
