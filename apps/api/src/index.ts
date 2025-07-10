@@ -3,6 +3,7 @@ import express from "express";
 import { rateLimiterHighest } from "./lib/rateLimiter";
 import { authRouter } from "./routes/auth";
 import { coinRouter } from "./routes/coin";
+import { fernRouter } from "./routes/fern";
 import { subscribeRouter } from "./routes/subscribe";
 
 const app = express();
@@ -38,6 +39,8 @@ app.use("/auth", authRouter);
 app.use("/coin", coinRouter);
 
 app.use(subscribeRouter);
+
+app.use(fernRouter);
 
 app.get("/ping", (_, res) => {
   res.json({ pong: true });
