@@ -1,0 +1,158 @@
+# Teqo Project Rules
+
+## Project Overview
+
+Teqo is a self-custodial, multi-chain Web3 wallet focused on intentional digital ownership.
+
+- Landing page: https://teqo.app
+- Web wallet: https://my.teqo.app
+- API: https://api.teqo.app
+- Repository: https://github.com/fsolla/teqo
+
+## Monorepo Structure
+
+- `apps/web` - Main wallet app (Next.js 15, React 19)
+- `apps/api` - Backend server (Express, Prisma, PostgreSQL)
+- `apps/landing` - Marketing landing page (Next.js 15)
+- `apps/wallet` - Mobile PWA alternative (Vite, Preact) - currently paused
+- `packages/` - Shared utilities
+
+## Tech Stack & Conventions
+
+### Frontend (apps/web, apps/landing)
+
+- **Framework**: Next.js 15 with App Router
+- **React**: Version 19 with Server Components by default
+- **Styling**: Tailwind CSS v4 (use @theme for custom colors/utilities)
+- **State**: Zustand for global state, TanStack Query for server state
+- **Components**: Atomic design (atoms → molecules → organisms → templates)
+- **Naming**: PascalCase for components, camelCase for hooks/utils
+
+### Custom Tailwind Theme
+
+Colors defined in globals.css under @theme:
+
+- `teqo-50` to `teqo-900` - Main grayscale palette
+- `tint` - Accent color (#6cb7e1)
+- `candy-500` - Secondary accent (#9b87f5)
+
+### Backend (apps/api)
+
+- **Framework**: Express.js 5
+- **ORM**: Prisma with PostgreSQL
+- **Caching**: Redis via ioredis
+- **Auth**: JWT + email verification via Resend
+- **Rate Limiting**: express-rate-limit
+
+### Chains Supported
+
+- Ethereum (viem, wagmi)
+- Solana (@solana/web3.js)
+- Bitcoin (bitcoinjs-lib)
+
+## Code Style
+
+### Functions
+
+- Always use arrow functions
+
+```typescript
+// ✅ Good
+const handleClick = () => { ... };
+const fetchData = async () => { ... };
+
+// ❌ Avoid
+function handleClick() { ... }
+```
+
+### Exports
+
+- Use named exports, never default exports
+- Exception: Next.js pages/layouts require `export default`
+- Exception: Config files (`next.config.ts`, `vite.config.ts`, `vitest.config.ts`)
+- Exception: Storybook stories (`meta` object must be default exported)
+
+```typescript
+// ✅ Good
+export const MyComponent = () => { ... };
+export const useMyHook = () => { ... };
+
+// ❌ Avoid (unless required by framework)
+export default function MyComponent() { ... }
+```
+
+### TypeScript
+
+- Prefer `interface` over `type` for object shapes
+- Use `type` only for unions, intersections, or primitives
+
+```typescript
+// ✅ Good
+interface User {
+  id: string;
+  name: string;
+}
+
+type Status = "pending" | "complete" | "error";
+
+// ❌ Avoid
+type User = {
+  id: string;
+  name: string;
+};
+```
+
+## Code Patterns
+
+### Zustand Stores
+
+Use createSelectors pattern for type-safe selectors:
+
+```typescript
+export const useMyStore = createSelectors(
+  create<MyStore>()(
+    devtools((set) => ({
+      // state and actions
+    }))
+  )
+);
+```
+
+### API Routes (apps/api)
+
+- Group routes by domain: `/auth`, `/coin`, etc.
+- Use rate limiters on all routes
+- Return JSON responses
+
+### i18n (apps/landing)
+
+Uses a simple translation pattern with `getT()` for server components.
+
+## Design Philosophy
+
+- **Mobile-first**: Design for mobile, enhance for desktop
+- **Clarity over cleverness**: Simple, obvious UI choices
+- **Security with empathy**: Explain security concepts, don't intimidate
+- **Right-hand ergonomics**: Controls within thumb reach
+
+## File Naming
+
+- Components: `PascalCase.tsx`
+- Hooks: `useCamelCase.ts`
+- Utils/libs: `camelCase.ts`
+- Stores: `useMyStore.ts`
+
+## When Making Changes
+
+1. Follow existing patterns in the codebase
+2. Use the established color palette (teqo-\*, tint, candy)
+3. Keep components small and focused
+4. Prefer Server Components unless client interactivity is needed
+5. Always use TypeScript with proper types
+6. Run builds to verify changes: `npm run build --workspace=apps/web`
+
+## Branding
+
+- Product name: "Teqo"
+- Tagline: "Digital ownership with intention"
+- Voice: Clear, empowering, dignified - never fear-based
