@@ -10,10 +10,6 @@ button {
 
 @theme {
   --color-candy-500: #9b87f5;
-  --color-mycelia-50: var(--color-white);
-  --color-mycelia-100: var(--color-gray-200);
-  --color-mycelia-850: #3e3e3e;
-  --color-mycelia-900: var(--color-black);
 
   --color-teqo-50: var(--color-white);
   --color-teqo-100: #eeeeee;

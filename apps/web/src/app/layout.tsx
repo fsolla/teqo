@@ -4,22 +4,22 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MYCELIA",
+  title: "Teqo",
   description:
-    "Tap into the network. Mycelia is a personal Web3 playground built with Next.js, wagmi, and viem.",
-  metadataBase: new URL("https://mycelia.solla.dev"),
+    "Digital ownership with intention. A self-custodial multi-chain wallet built for clarity, flow, and dignity.",
+  metadataBase: new URL("https://teqo.app"),
   openGraph: {
-    title: "Mycelia",
+    title: "Teqo",
     description:
-      "Tap into the network. Mycelia is a personal Web3 playground built with Next.js, wagmi, and viem.",
-    url: "https://mycelia.solla.dev",
-    siteName: "Mycelia",
+      "Digital ownership with intention. A self-custodial multi-chain wallet built for clarity, flow, and dignity.",
+    url: "https://teqo.app",
+    siteName: "Teqo",
     images: [
       {
         url: "/og.png",
         width: 1200,
         height: 630,
-        alt: "Mycelia Open Graph Preview",
+        alt: "Teqo - Digital Ownership with Intention",
       },
     ],
     locale: "en_US",
@@ -27,9 +27,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Mycelia",
+    title: "Teqo",
     description:
-      "Tap into the network. A Web3 playground powered by Next.js, wagmi, and viem.",
+      "Digital ownership with intention. A self-custodial multi-chain wallet.",
     images: ["/og.png"],
     creator: "@franciscosolla",
   },

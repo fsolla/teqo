@@ -19,6 +19,7 @@ interface CreateAccountStore {
   setPinConfirm: (pin: string) => void;
   pinConfirmed: boolean;
   setPinConfirmed: (confirmed: boolean) => void;
+  reset: () => void;
 }
 
 const initialState = {

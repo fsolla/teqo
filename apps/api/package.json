@@ -1,7 +1,7 @@
 {
-  "name": "api",
+  "name": "@teqo/api",
   "version": "0.1.0",
-  "description": "Mycelia — A personal Web3 playground for experimenting with wallet connectivity, smart contract interactions, and decentralized UX.",
+  "description": "Teqo API - Backend server for the Teqo Web3 wallet.",
   "private": true,
   "main": "dist/index.js",
   "scripts": {

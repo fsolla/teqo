@@ -1,17 +1,33 @@
-import { i18n } from "@/lib/i18n";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { use } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Teqo",
+  description:
+    "Digital ownership with intention. A Web3 wallet built for clarity, flow, and dignity.",
+  metadataBase: new URL("https://teqo.app"),
+  openGraph: {
+    title: "Teqo",
+    description:
+      "Digital ownership with intention. A Web3 wallet built for clarity, flow, and dignity.",
+    url: "https://teqo.app",
+    siteName: "Teqo",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Teqo",
+    description:
+      "Digital ownership with intention. A Web3 wallet built for clarity, flow, and dignity.",
+  },
 };
 
 const inter = Inter({
   subsets: ["latin"],
-  display: "swap", // better for performance
-  variable: "--font-inter", // optional if using CSS vars
+  display: "swap",
+  variable: "--font-inter",
 });
 
 export const viewport: Viewport = {
@@ -24,8 +40,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  use(i18n.init());
-
   return (
     <html lang="en" className={`${inter.className}`}>
       <body className="antialiased">{children}</body>

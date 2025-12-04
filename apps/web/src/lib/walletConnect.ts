@@ -3,10 +3,10 @@ import UniversalProvider from "@walletconnect/universal-provider";
 export const provider = await UniversalProvider.init({
   projectId: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID,
   metadata: {
-    name: "Mycelia",
-    description: "Tap into the network",
-    url: "https://mycelia.solla.dev",
-    icons: ["https://mycelia.solla.dev/favicon-dark.png"],
+    name: "Teqo",
+    description: "Digital ownership with intention",
+    url: "https://teqo.app",
+    icons: ["https://teqo.app/favicon-dark.png"],
   },
 });
 

@@ -1,7 +1,7 @@
 {
   "name": "@teqo/web",
   "version": "0.1.0",
-  "description": "Mycelia Web — A personal Web3 playground for experimenting with wallet connectivity, smart contract interactions, and decentralized UX.",
+  "description": "Teqo - A self-custodial multi-chain Web3 wallet built for clarity, flow, and dignity.",
   "private": true,
   "scripts": {
     "test": "jest",
@@ -31,7 +31,7 @@
   ],
   "author": "Francisco Solla <fsolla@pm.me>",
   "license": "MIT",
-  "homepage": "https://mycelia.solla.dev",
+  "homepage": "https://teqo.app",
   "dependencies": {
     "@scure/bip32": "^1.7.0",
     "@scure/bip39": "^1.6.0",
