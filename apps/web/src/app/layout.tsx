@@ -7,12 +7,12 @@ export const metadata: Metadata = {
   title: "Teqo",
   description:
     "Digital ownership with intention. A self-custodial multi-chain wallet built for clarity, flow, and dignity.",
-  metadataBase: new URL("https://teqo.app"),
+  metadataBase: new URL("https://my.teqo.app"),
   openGraph: {
     title: "Teqo",
     description:
       "Digital ownership with intention. A self-custodial multi-chain wallet built for clarity, flow, and dignity.",
-    url: "https://teqo.app",
+    url: "https://my.teqo.app",
     siteName: "Teqo",
     images: [
       {
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     description:
       "Digital ownership with intention. A self-custodial multi-chain wallet.",
     images: ["/og.png"],
-    creator: "@franciscosolla",
+    creator: "@fsolla",
   },
   icons: {
     icon: [

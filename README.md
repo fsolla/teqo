@@ -1,8 +1,9 @@
 # Teqo
 
-[![Version](https://img.shields.io/badge/version-0.5.0-purple)](https://github.com/franciscosolla/teqo)
-[![License](https://img.shields.io/github/license/franciscosolla/teqo?color=blue)](LICENSE)
-[![Live App](https://img.shields.io/badge/demo-live-success)](https://teqo.app)
+[![Version](https://img.shields.io/badge/version-0.5.0-purple)](https://github.com/fsolla/teqo)
+[![License](https://img.shields.io/github/license/fsolla/teqo?color=blue)](LICENSE)
+[![Live App](https://img.shields.io/badge/demo-live-success)](https://my.teqo.app)
+[![Landing Page](https://img.shields.io/badge/landing-teqo.app-blue)](https://teqo.app)
 [![Design System](https://img.shields.io/badge/design-Figma-blueviolet)](https://www.figma.com/design/cdSqctVxKmW6ujcba09bzt/Mycelia?node-id=0-1&p=f&t=AX5JHTBaMtKcPEt4-0)
 
 > A self-custodial, multi-chain, multi-account crypto wallet built with clarity, flow, and dignity.
@@ -84,7 +85,7 @@ teqo/
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/franciscosolla/teqo.git
+git clone https://github.com/fsolla/teqo.git
 cd teqo
 npm install
 ```
@@ -154,4 +155,4 @@ Teqo is a long-term exploration of intentional digital ownership and wallet UX d
 
 ## License
 
-MIT
+AGPL-3.0

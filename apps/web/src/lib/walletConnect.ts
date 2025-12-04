@@ -5,8 +5,8 @@ export const provider = await UniversalProvider.init({
   metadata: {
     name: "Teqo",
     description: "Digital ownership with intention",
-    url: "https://teqo.app",
-    icons: ["https://teqo.app/favicon-dark.png"],
+    url: "https://my.teqo.app",
+    icons: ["https://my.teqo.app/favicon-dark.png"],
   },
 });
 
