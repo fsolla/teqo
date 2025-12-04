@@ -113,7 +113,9 @@ Focus: Market research, storytelling, positioning, campaign execution
 
 - **Live Prototype:** [teqo.app](http://teqo.app)
 - **Code Repository:** [github.com/fsolla/teqo](http://github.com/fsolla/teqo)
-- **Figma Design:** [Teqo Design on Figma](https://www.figma.com/design/cdSqctVxKmW6ujcba09bzt/Mycelia?node-id=0-1&p=f&t=ZewQTzbp457BpxLV-0)
+- **Figma Design:** [Teqo Design on Figma](https://www.figma.com/files/team/1523753106972410398/project/412193540/Teqo)
+  - [Web App](https://www.figma.com/design/cdSqctVxKmW6ujcba09bzt/App)
+  - [Landing Page](https://www.figma.com/design/iACOa0lkV3nTXsadNWNS4t/Landing)
 
 ---
 

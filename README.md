@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/github/license/fsolla/teqo?color=blue)](LICENSE)
 [![Live App](https://img.shields.io/badge/demo-live-success)](https://my.teqo.app)
 [![Landing Page](https://img.shields.io/badge/landing-teqo.app-blue)](https://teqo.app)
-[![Design System](https://img.shields.io/badge/design-Figma-blueviolet)](https://www.figma.com/design/cdSqctVxKmW6ujcba09bzt/Mycelia?node-id=0-1&p=f&t=AX5JHTBaMtKcPEt4-0)
+[![Design System](https://img.shields.io/badge/design-Figma-blueviolet)](https://www.figma.com/files/team/1523753106972410398/project/412193540/Teqo)
 
 > A self-custodial, multi-chain, multi-account crypto wallet built with clarity, flow, and dignity.
 
@@ -141,7 +141,9 @@ npm run dev --workspace=apps/landing  # http://localhost:3001
 - **Progressive disclosure**: Complexity revealed as needed, not all at once
 - **Security with empathy**: Clear explanations, no fear-based UX
 
-> Design System: [Figma](https://www.figma.com/design/cdSqctVxKmW6ujcba09bzt/Mycelia?node-id=0-1&p=f&t=AX5JHTBaMtKcPEt4-0)
+> Design System: [Figma Project](https://www.figma.com/files/team/1523753106972410398/project/412193540/Teqo)
+> - [Web App Design](https://www.figma.com/design/cdSqctVxKmW6ujcba09bzt/App)
+> - [Landing Page Design](https://www.figma.com/design/iACOa0lkV3nTXsadNWNS4t/Landing)
 
 ---
 
