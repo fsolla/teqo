@@ -2,7 +2,9 @@
 
 ## Project Overview
 
-Teqo is a self-custodial, multi-chain Web3 wallet focused on intentional digital ownership.
+Teqo is a **fully self-custodial**, multi-chain Web3 wallet focused on intentional digital ownership.
+
+**Security Model**: The server NEVER has access to seed phrases, private keys, or PINs. All cryptographic operations happen client-side only.
 
 - Landing page: https://teqo.app
 - Web wallet: https://my.teqo.app
@@ -134,6 +136,12 @@ Uses a simple translation pattern with `getT()` for server components.
 - **Clarity over cleverness**: Simple, obvious UI choices
 - **Security with empathy**: Explain security concepts, don't intimidate
 - **Right-hand ergonomics**: Controls within thumb reach
+
+## Copy & CTAs
+
+- Use sentence case for buttons and CTAs (only first letter capitalized)
+  - ✅ "Create new wallet"
+  - ❌ "Create New Wallet"
 
 ## File Naming
 

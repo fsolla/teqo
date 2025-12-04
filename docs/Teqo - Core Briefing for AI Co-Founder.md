@@ -1,6 +1,19 @@
-# Teqo - Web3 Wallet for Intentional Digital Ownership
+# Teqo - Self-Custodial Web3 Wallet
 
 **Status:** Startup in Prototype Phase
+
+---
+
+## 🔐 Self-Custodial by Design
+
+**Teqo is fully self-custodial.** Your seed phrase and private keys never leave your device.
+
+- Seed phrases are generated client-side using industry-standard BIP-39
+- Private keys are derived locally and never transmitted
+- Encryption happens entirely in the browser (AES-GCM + Argon2id)
+- The server has zero access to your funds
+
+**You are in complete control. Always.**
 
 ---
 
@@ -12,6 +25,7 @@ Teqo exists to make digital ownership accessible, clear, and empowering, for bot
 
 **Philosophy:**
 
+- **Self-custodial first**: your keys, your crypto, no exceptions.
 - Focused on **intentional ownership**: not speculative hype or financial gaming.
 - **Chain-agnostic** and **identity-aware**: digital ownership is fluid and personal.
 - Inspired by **Cypherpunk values**: privacy, autonomy, freedom.
@@ -22,7 +36,7 @@ Teqo exists to make digital ownership accessible, clear, and empowering, for bot
 
 ## 🔍 Summary
 
-**Teqo** is a Web3-native wallet and digital asset manager.  
+**Teqo** is a fully self-custodial Web3 wallet and digital asset manager.  
 It enables users to manage **tokens, NFTs, domains, credentials** and more, across Ethereum, Solana, and Bitcoin, through a **clean, human-centered interface**.
 
 Teqo serves:

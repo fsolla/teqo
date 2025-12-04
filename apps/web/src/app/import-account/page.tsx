@@ -23,7 +23,7 @@ export default function Page() {
       />
       <Route
         href="/create-account/email-input"
-        label="Enter with Teqo"
+        label="Create new wallet"
         icon="chevron-right"
         className="col-span-2"
       />

@@ -7,11 +7,11 @@ export default function Page() {
       <h1 className="flex-1 text-center">Teqo</h1>
       <Route
         href="/create-account/email-input"
-        label="Enter with Teqo"
+        label="Create new wallet"
         icon="chevron-right"
       />
       <Link href="/import-account" className="pl-9 pr-5 py-6.5">
-        <h5 className="flex-1 text-center">Import existing wallet</h5>
+        <h5 className="flex-1 text-center">I already have a wallet</h5>
       </Link>
     </main>
   );

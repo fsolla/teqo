@@ -25,7 +25,7 @@ type Story = StoryObj<typeof meta>;
 export const Primary: Story = {
   args: {
     icon: "chevron-right" as IconName,
-    label: "Enter with Teqo",
+    label: "Create new wallet",
     href: "/",
   },
 };

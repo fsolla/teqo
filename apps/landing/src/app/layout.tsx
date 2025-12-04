@@ -5,12 +5,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Teqo",
   description:
-    "Digital ownership with intention. A Web3 wallet built for clarity, flow, and dignity.",
+    "Your keys, your crypto. A self-custodial Web3 wallet built for clarity, flow, and dignity.",
   metadataBase: new URL("https://teqo.app"),
   openGraph: {
     title: "Teqo",
     description:
-      "Digital ownership with intention. A Web3 wallet built for clarity, flow, and dignity.",
+      "Your keys, your crypto. A self-custodial Web3 wallet built for clarity, flow, and dignity.",
     url: "https://teqo.app",
     siteName: "Teqo",
     locale: "en_US",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Teqo",
     description:
-      "Digital ownership with intention. A Web3 wallet built for clarity, flow, and dignity.",
+      "Your keys, your crypto. A self-custodial Web3 wallet built for clarity, flow, and dignity.",
   },
 };
 

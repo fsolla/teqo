@@ -6,7 +6,9 @@
 [![Landing Page](https://img.shields.io/badge/landing-teqo.app-blue)](https://teqo.app)
 [![Design System](https://img.shields.io/badge/design-Figma-blueviolet)](https://www.figma.com/files/team/1523753106972410398/project/412193540/Teqo)
 
-> A self-custodial, multi-chain, multi-account crypto wallet built with clarity, flow, and dignity.
+> A fully self-custodial, multi-chain crypto wallet built with clarity, flow, and dignity.
+
+**🔐 Your keys, your crypto.** Teqo never has access to your private keys or seed phrase. Everything is generated and encrypted locally on your device.
 
 ---
 
@@ -22,14 +24,36 @@ Teqo is a Web3 wallet for **intentional digital ownership**. We build for:
 
 ## Features
 
+- **Fully self-custodial**: Your seed phrase never leaves your device
 - **Multi-chain support**: Ethereum, Solana, Bitcoin
 - **Multi-account management**: Create, import, and watch wallets
 - **Account types**:
-  - **Owned**: Generated from mnemonic phrase, fully controlled
+  - **Owned**: Generated from mnemonic phrase, fully controlled by you
   - **Watched**: Import addresses for observation only
   - **Connected**: Link via WalletConnect or browser extensions (MetaMask, Phantom)
-- **PIN-encrypted seed storage**: AES-GCM encryption with Argon2id key derivation
+- **Client-side encryption**: AES-GCM encryption with Argon2id key derivation
 - **Mobile-first, responsive design**
+
+---
+
+## Security Model
+
+Teqo is **100% self-custodial**:
+
+| What                   | Where                            |
+| ---------------------- | -------------------------------- |
+| Seed phrase generation | Client only (browser)            |
+| Private key derivation | Client only (browser)            |
+| Seed phrase encryption | Client only (AES-GCM + Argon2id) |
+| Encrypted seed storage | Client only (localStorage)       |
+
+**The server never receives:**
+
+- Your seed phrase (encrypted or plaintext)
+- Your private keys
+- Your PIN
+
+The API server only handles public data: token metadata, price feeds, and optional email for notifications.
 
 ---
 
@@ -142,6 +166,7 @@ npm run dev --workspace=apps/landing  # http://localhost:3001
 - **Security with empathy**: Clear explanations, no fear-based UX
 
 > Design System: [Figma Project](https://www.figma.com/files/team/1523753106972410398/project/412193540/Teqo)
+>
 > - [Web App Design](https://www.figma.com/design/cdSqctVxKmW6ujcba09bzt/App)
 > - [Landing Page Design](https://www.figma.com/design/iACOa0lkV3nTXsadNWNS4t/Landing)
 
