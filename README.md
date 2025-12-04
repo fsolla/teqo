@@ -59,14 +59,19 @@ The API server only handles public data: token metadata, price feeds, and option
 
 ## Tech Stack
 
-### Web App (`apps/web`)
+### Wallet App (`apps/wallet`) — Active
+
+- **Framework**: Vite, Preact
+- **Styling**: Tailwind CSS v4
+- **State**: Zustand, TanStack Query
+- **Chains**: viem, @solana/web3.js, @scure/btc-signer
+- **PWA**: vite-plugin-pwa
+
+### Legacy Web App (`apps/web`) — Reference Only
 
 - **Framework**: Next.js 15, React 19
 - **Styling**: Tailwind CSS v4
 - **State**: Zustand, TanStack Query, wagmi
-- **Chains**: viem, @solana/web3.js, bitcoinjs-lib
-- **Wallet Connectivity**: WalletConnect v2, MetaMask, Phantom
-- **Data**: Alchemy, DeFiLlama
 
 ### API Server (`apps/api`)
 
@@ -87,7 +92,8 @@ The API server only handles public data: token metadata, price feeds, and option
 ```
 teqo/
 ├── apps/
-│   ├── web/        # Main wallet app (Next.js)
+│   ├── wallet/     # Main wallet PWA (Vite, Preact) ← Active development
+│   ├── web/        # Legacy reference code (Next.js)
 │   ├── api/        # Backend server (Express)
 │   └── landing/    # Marketing site (Next.js)
 ├── packages/       # Shared utilities

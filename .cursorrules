@@ -13,10 +13,10 @@ Teqo is a **fully self-custodial**, multi-chain Web3 wallet focused on intention
 
 ## Monorepo Structure
 
-- `apps/web` - Main wallet app (Next.js 15, React 19)
+- `apps/wallet` - **ACTIVE** Main wallet PWA (Vite, Preact) ← Focus development here
+- `apps/web` - Legacy/reference code (Next.js 15, React 19) - kept for reference only
 - `apps/api` - Backend server (Express, Prisma, PostgreSQL)
 - `apps/landing` - Marketing landing page (Next.js 15)
-- `apps/wallet` - Mobile PWA alternative (Vite, Preact) - currently paused
 - `packages/` - Shared utilities
 
 ## Tech Stack & Conventions

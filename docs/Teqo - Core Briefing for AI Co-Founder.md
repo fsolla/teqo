@@ -45,8 +45,8 @@ Teqo serves:
 - Web3 newcomers who want to explore **without fear or confusion**.
 
 **Current focus:**  
-Web app MVP (mobile and desktop responsive), with backend server in development.  
-Mobile app is paused to focus on web MVP and user testing.
+PWA wallet app (`apps/wallet`) using Vite + Preact, optimized for mobile.  
+The Next.js app (`apps/web`) is kept as legacy reference code only.
 
 ---
 

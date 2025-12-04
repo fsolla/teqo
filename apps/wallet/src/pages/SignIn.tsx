@@ -13,7 +13,7 @@ export const SignIn = () => {
         href="/input/email"
         className="bg-tint px-8.5 py-6.5 text-white flex justify-between items-center rounded-2xl"
       >
-        <h4>{t("Enter with Teqo")}</h4>
+        <h4>{t("Create new wallet")}</h4>
         <ChevronRight size={30} />
       </Link>
       <div className="flex-1" />
@@ -22,5 +22,5 @@ export const SignIn = () => {
 };
 
 const t = getT({
-  "Enter with Teqo": "Entrar com Teqo",
+  "Create new wallet": "Criar nova carteira",
 });
