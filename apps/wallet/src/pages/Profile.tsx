@@ -179,10 +179,9 @@ export const Profile = () => {
       <main className="flex-1 overflow-y-auto scrollbar-hidden">
         {/* Profile Header */}
         <section className="flex flex-col items-center py-8 border-b border-teqo-100">
-          <div className="rounded-full p-4 w-20 h-20 bg-teqo-100 flex-center mb-3">
+          <div className="rounded-full p-4 w-20 h-20 bg-teqo-100 flex-center">
             <Wallet size={32} className="text-teqo-600" />
           </div>
-          <h3 className="font-semibold">{t("My wallet")}</h3>
         </section>
 
         {/* Wallet Addresses */}
@@ -523,7 +522,6 @@ const SettingsButton = ({
 );
 
 const t = getT({
-  "My wallet": "Minha carteira",
   "Wallet addresses": "Endereços da carteira",
   Settings: "Configurações",
   "Recovery phrase": "Frase de recuperação",
