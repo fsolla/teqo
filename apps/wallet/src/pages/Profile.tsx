@@ -5,7 +5,6 @@ import {
   Eye,
   KeyRound,
   LogOut,
-  Shield,
   Wallet,
   X,
 } from "lucide-preact";
@@ -235,11 +234,6 @@ export const Profile = () => {
               icon={<KeyRound size={IconSize.md} />}
               label={t("Change PIN")}
               onClick={openChangePinModal}
-            />
-            <SettingsRow
-              icon={<Shield size={IconSize.md} />}
-              label={t("Security")}
-              href="/profile/security"
             />
           </div>
         </section>
@@ -482,25 +476,6 @@ const AddressRow = ({
   </button>
 );
 
-const SettingsRow = ({
-  icon,
-  label,
-  href,
-}: {
-  icon: preact.JSX.Element;
-  label: string;
-  href: string;
-}) => (
-  <Link
-    href={href}
-    className="flex items-center gap-3 p-4 rounded-xl hover:bg-teqo-100/50 transition-colors"
-  >
-    <span className="text-teqo-600">{icon}</span>
-    <span className="flex-1 font-medium">{label}</span>
-    <ChevronRight size={IconSize.md} className="text-teqo-300" />
-  </Link>
-);
-
 const SettingsButton = ({
   icon,
   label,
@@ -526,7 +501,6 @@ const t = getT({
   Settings: "Configurações",
   "Recovery phrase": "Frase de recuperação",
   "Change PIN": "Alterar PIN",
-  Security: "Segurança",
   "Sign out": "Sair",
   "Copied!": "Copiado!",
   "Enter your PIN to reveal your recovery phrase":
