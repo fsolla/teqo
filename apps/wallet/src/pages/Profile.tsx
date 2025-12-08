@@ -2,22 +2,38 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
+  Eye,
   KeyRound,
   LogOut,
   Shield,
   Wallet,
+  X,
 } from "lucide-preact";
 import { useState } from "preact/hooks";
 import { Link, useLocation } from "wouter-preact";
+import { PinDots } from "../components/molecules/PinDots";
+import { PinPadBoard } from "../components/molecules/PinPadBoard";
 import { IconSize } from "../constants/IconSize";
 import { getT } from "../lib/i18n";
-import { useAccountStore } from "../stores/useAccountStore";
+import {
+  decryptMnemonicWithPIN,
+  useAccountStore,
+} from "../stores/useAccountStore";
+
+const PIN_SIZE = 4;
 
 export const Profile = () => {
   const account = useAccountStore((state) => state.accounts[0]);
   const signOut = useAccountStore((state) => state.signOut);
   const [, navigate] = useLocation();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+
+  // Recovery phrase modal state
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [pin, setPin] = useState("");
+  const [mnemonic, setMnemonic] = useState<string | null>(null);
+  const [pinError, setPinError] = useState(false);
+  const [copiedMnemonic, setCopiedMnemonic] = useState(false);
 
   const handleSignOut = () => {
     signOut();
@@ -32,6 +48,47 @@ export const Profile = () => {
 
   const truncateAddress = (address: string) =>
     `${address.slice(0, 6)}...${address.slice(-4)}`;
+
+  const openRecoveryModal = () => {
+    setShowRecoveryModal(true);
+    setPin("");
+    setMnemonic(null);
+    setPinError(false);
+    setCopiedMnemonic(false);
+  };
+
+  const closeRecoveryModal = () => {
+    setShowRecoveryModal(false);
+    setPin("");
+    setMnemonic(null);
+    setPinError(false);
+    setCopiedMnemonic(false);
+  };
+
+  const handlePinSubmit = async () => {
+    if (pin.length !== PIN_SIZE || !account) return;
+
+    try {
+      const decrypted = await decryptMnemonicWithPIN(
+        account.encryptedMnemonic,
+        account.argonSalt,
+        account.aesGcmIV,
+        pin
+      );
+      setMnemonic(decrypted);
+      setPinError(false);
+    } catch {
+      setPinError(true);
+      setPin("");
+    }
+  };
+
+  const copyMnemonic = async () => {
+    if (!mnemonic) return;
+    await navigator.clipboard.writeText(mnemonic);
+    setCopiedMnemonic(true);
+    setTimeout(() => setCopiedMnemonic(false), 2000);
+  };
 
   return (
     <div className="h-dvh w-dvw flex flex-col overflow-hidden bg-white">
@@ -92,6 +149,11 @@ export const Profile = () => {
             {t("Settings")}
           </h4>
           <div className="flex flex-col gap-1">
+            <SettingsButton
+              icon={<Eye size={IconSize.md} />}
+              label={t("Recovery phrase")}
+              onClick={openRecoveryModal}
+            />
             <SettingsRow
               icon={<KeyRound size={IconSize.md} />}
               label={t("Change PIN")}
@@ -117,6 +179,85 @@ export const Profile = () => {
           </button>
         </section>
       </main>
+
+      {/* Recovery Phrase Modal */}
+      {showRecoveryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-end z-50">
+          <div className="bg-white w-full rounded-t-3xl p-5 pb-10 animate-slide-up">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-semibold">{t("Recovery phrase")}</h3>
+              <button
+                type="button"
+                onClick={closeRecoveryModal}
+                className="p-2 -mr-2 text-teqo-400"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {!mnemonic ? (
+              // PIN Entry View
+              <div className="flex flex-col">
+                <p className="text-teqo-400 text-center mb-2">
+                  {t("Enter your PIN to reveal your recovery phrase")}
+                </p>
+                {pinError && (
+                  <p className="text-red-500 text-center text-sm">
+                    {t("Incorrect PIN. Please try again.")}
+                  </p>
+                )}
+                <PinDots
+                  size={PIN_SIZE}
+                  isFilled={(index) => pin.length > index}
+                />
+                <PinPadBoard setValue={setPin} />
+                <button
+                  type="button"
+                  onClick={handlePinSubmit}
+                  disabled={pin.length !== PIN_SIZE}
+                  className="mt-6 bg-tint text-white py-4 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t("Confirm")}
+                </button>
+              </div>
+            ) : (
+              // Mnemonic View
+              <div className="flex flex-col">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                  <p className="text-amber-800 text-sm">
+                    {t(
+                      "Never share your recovery phrase. Anyone with these words can access your wallet."
+                    )}
+                  </p>
+                </div>
+                <div className="bg-teqo-100/50 rounded-xl p-4 mb-4">
+                  <div className="grid grid-cols-3 gap-2">
+                    {mnemonic.split(" ").map((word, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 bg-white rounded-lg px-2 py-1.5"
+                      >
+                        <span className="text-teqo-300 text-xs w-4">
+                          {index + 1}
+                        </span>
+                        <span className="font-mono text-sm">{word}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyMnemonic}
+                  className="flex items-center justify-center gap-2 bg-teqo-100 py-4 rounded-xl font-medium"
+                >
+                  <Copy size={IconSize.sm} />
+                  {copiedMnemonic ? t("Copied!") : t("Copy to clipboard")}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -171,12 +312,40 @@ const SettingsRow = ({
   </Link>
 );
 
+const SettingsButton = ({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: preact.JSX.Element;
+  label: string;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="flex items-center gap-3 p-4 rounded-xl hover:bg-teqo-100/50 transition-colors text-left"
+  >
+    <span className="text-teqo-600">{icon}</span>
+    <span className="flex-1 font-medium">{label}</span>
+    <ChevronRight size={IconSize.md} className="text-teqo-300" />
+  </button>
+);
+
 const t = getT({
   "My wallet": "Minha carteira",
   "Wallet addresses": "Endereços da carteira",
   Settings: "Configurações",
+  "Recovery phrase": "Frase de recuperação",
   "Change PIN": "Alterar PIN",
   Security: "Segurança",
   "Sign out": "Sair",
   "Copied!": "Copiado!",
+  "Enter your PIN to reveal your recovery phrase":
+    "Digite seu PIN para revelar sua frase de recuperação",
+  "Incorrect PIN. Please try again.": "PIN incorreto. Tente novamente.",
+  Confirm: "Confirmar",
+  "Never share your recovery phrase. Anyone with these words can access your wallet.":
+    "Nunca compartilhe sua frase de recuperação. Qualquer pessoa com essas palavras pode acessar sua carteira.",
+  "Copy to clipboard": "Copiar",
 });
