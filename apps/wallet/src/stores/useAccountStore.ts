@@ -1,5 +1,9 @@
 import { HDKey } from "@scure/bip32";
-import { generateMnemonic, mnemonicToSeed } from "@scure/bip39";
+import {
+  generateMnemonic,
+  mnemonicToSeed,
+  validateMnemonic,
+} from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english";
 import * as btc from "@scure/btc-signer";
 import { Keypair } from "@solana/web3.js";
@@ -23,6 +27,7 @@ interface Account {
 interface AccountStore {
   accounts: Account[];
   createAccount: (pin: string) => Promise<void>;
+  importAccount: (mnemonic: string, pin: string) => Promise<void>;
   signOut: () => void;
 }
 
@@ -36,6 +41,13 @@ export const useAccountStore = createSelectors(
             pin,
             generateMnemonic(wordlist, 256)
           );
+
+          set((state) => ({
+            accounts: [...state.accounts, data],
+          }));
+        },
+        importAccount: async (mnemonic: string, pin: string) => {
+          const data = await getAccountData(pin, mnemonic);
 
           set((state) => ({
             accounts: [...state.accounts, data],
@@ -58,6 +70,9 @@ const getAccountData = (pin: string, mnemonic: string) =>
     ...addresses,
     ...encryptedData,
   }));
+
+export const isValidMnemonic = (mnemonic: string) =>
+  validateMnemonic(mnemonic, wordlist);
 
 export const getAddresses = async (mnemonic: string) => {
   const seed = await mnemonicToSeed(mnemonic);

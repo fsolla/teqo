@@ -21,7 +21,9 @@ export const PinInput = ({
 
   const handlePinSubmit = () => {
     if (isValid) {
-      navigate("/confirm/pin");
+      // Pass along mnemonic if importing
+      const mnemonic = history.state?.mnemonic;
+      navigate("/confirm/pin", { state: mnemonic ? { mnemonic } : undefined });
     }
   };
 
