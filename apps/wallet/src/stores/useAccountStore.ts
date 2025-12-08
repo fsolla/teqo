@@ -12,7 +12,6 @@ import { persist } from "zustand/middleware";
 import { createSelectors } from "./createSelectors";
 
 interface Account {
-  name: string;
   ethereum: Address[];
   solana: string[];
   bitcoin: string[];
@@ -23,7 +22,8 @@ interface Account {
 
 interface AccountStore {
   accounts: Account[];
-  createAccount: (name: string, pin: string) => Promise<void>;
+  createAccount: (pin: string) => Promise<void>;
+  signOut: () => void;
 }
 
 export const useAccountStore = createSelectors(
@@ -31,15 +31,18 @@ export const useAccountStore = createSelectors(
     persist(
       (set) => ({
         accounts: [] as Account[],
-        createAccount: async (name: string, pin: string) => {
+        createAccount: async (pin: string) => {
           const data = await getAccountData(
             pin,
             generateMnemonic(wordlist, 256)
           );
 
           set((state) => ({
-            accounts: [...state.accounts, { name, ...data }],
+            accounts: [...state.accounts, data],
           }));
+        },
+        signOut: () => {
+          set({ accounts: [] });
         },
       }),
       { name: "account-store" }

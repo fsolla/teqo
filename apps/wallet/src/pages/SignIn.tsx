@@ -10,7 +10,7 @@ export const SignIn = () => {
       <h1 className="text-center">Teqo</h1>
       <div className="flex-1" />
       <Link
-        href="/input/email"
+        href="/input/pin"
         className="bg-tint px-8.5 py-6.5 text-white flex justify-between items-center rounded-2xl"
       >
         <h4>{t("Create new wallet")}</h4>

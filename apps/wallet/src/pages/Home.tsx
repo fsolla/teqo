@@ -1,20 +1,18 @@
+import { Wallet } from "lucide-preact";
 import { Link } from "wouter-preact";
 import { Image } from "../components/atoms/Image";
 import { NavBar } from "../components/organisms/NavBar";
 import { getT } from "../lib/i18n";
-import { useAccountStore } from "../stores/useAccountStore";
 
 export const Home = () => {
-  const symbol = useAccountSymbol();
-
   return (
     <div className="h-dvh w-dvw flex flex-col overflow-hidden">
       <header className="flex p-5">
         <Link
           href="/profile"
-          className="rounded-full p-2.5 w-10 h-10 bg-gray-100 aspect-square flex-center text-h4"
+          className="rounded-full p-2.5 w-10 h-10 bg-gray-100 aspect-square flex-center"
         >
-          {symbol}
+          <Wallet size={18} className="text-teqo-600" />
         </Link>
       </header>
       <main className="flex-1 p-5 flex flex-col">
@@ -56,18 +54,6 @@ export const Home = () => {
     </div>
   );
 };
-
-const useAccountSymbol = () =>
-  useAccountStore((state) => {
-    const name = state.accounts[0]?.name;
-    if (!name) return undefined;
-    return (
-      name
-        .split(" ")
-        .map((word) => word[0].toUpperCase())
-        .join("") + name[1].toUpperCase()
-    ).slice(0, 2);
-  });
 
 const t = getT({
   Welcome: "Bem-vindo",

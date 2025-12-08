@@ -7,6 +7,7 @@ import { EmailInput } from "./pages/EmailInput.tsx";
 import { Home } from "./pages/Home.tsx";
 import { NameInput } from "./pages/NameInput.tsx";
 import { PinSetupRoutes } from "./pages/PinSetupRoutes.tsx";
+import { Profile } from "./pages/Profile.tsx";
 import { SignIn } from "./pages/SignIn.tsx";
 import { useAccountStore } from "./stores/useAccountStore.ts";
 
@@ -20,6 +21,7 @@ export function App() {
           {hasAccount ? (
             <>
               <Route path="/" component={Home} />
+              <Route path="/profile" component={Profile} />
               <Route path="/buy/:coin" component={Buy} />
             </>
           ) : (

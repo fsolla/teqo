@@ -26,13 +26,7 @@ export const PinConfirmation = ({
       return;
     }
 
-    const name = history.state?.name;
-
-    if (!name) {
-      return;
-    }
-
-    return createAccount(name, pin);
+    return createAccount(pin);
   };
 
   return (

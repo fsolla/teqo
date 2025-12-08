@@ -21,7 +21,7 @@ export const PinInput = ({
 
   const handlePinSubmit = () => {
     if (isValid) {
-      navigate("/confirm/pin", { state: { name: history.state?.name } });
+      navigate("/confirm/pin");
     }
   };
 
