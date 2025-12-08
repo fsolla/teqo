@@ -35,6 +35,20 @@ export const Profile = () => {
   const [pinError, setPinError] = useState(false);
   const [copiedMnemonic, setCopiedMnemonic] = useState(false);
 
+  // Change PIN modal state
+  const [showChangePinModal, setShowChangePinModal] = useState(false);
+  const [changePinStep, setChangePinStep] = useState<
+    "current" | "new" | "confirm" | "success"
+  >("current");
+  const [currentPin, setCurrentPin] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [confirmNewPin, setConfirmNewPin] = useState("");
+  const [changePinError, setChangePinError] = useState<string | null>(null);
+  const [decryptedMnemonic, setDecryptedMnemonic] = useState<string | null>(
+    null
+  );
+  const changePin = useAccountStore((state) => state.changePin);
+
   const handleSignOut = () => {
     signOut();
     navigate("/");
@@ -88,6 +102,70 @@ export const Profile = () => {
     await navigator.clipboard.writeText(mnemonic);
     setCopiedMnemonic(true);
     setTimeout(() => setCopiedMnemonic(false), 2000);
+  };
+
+  // Change PIN handlers
+  const openChangePinModal = () => {
+    setShowChangePinModal(true);
+    setChangePinStep("current");
+    setCurrentPin("");
+    setNewPin("");
+    setConfirmNewPin("");
+    setChangePinError(null);
+    setDecryptedMnemonic(null);
+  };
+
+  const closeChangePinModal = () => {
+    setShowChangePinModal(false);
+    setChangePinStep("current");
+    setCurrentPin("");
+    setNewPin("");
+    setConfirmNewPin("");
+    setChangePinError(null);
+    setDecryptedMnemonic(null);
+  };
+
+  const handleVerifyCurrentPin = async () => {
+    if (currentPin.length !== PIN_SIZE || !account) return;
+
+    try {
+      const decrypted = await decryptMnemonicWithPIN(
+        account.encryptedMnemonic,
+        account.argonSalt,
+        account.aesGcmIV,
+        currentPin
+      );
+      setDecryptedMnemonic(decrypted);
+      setChangePinError(null);
+      setChangePinStep("new");
+    } catch {
+      setChangePinError(t("Incorrect PIN. Please try again."));
+      setCurrentPin("");
+    }
+  };
+
+  const handleNewPinSubmit = () => {
+    if (newPin.length !== PIN_SIZE) return;
+    setChangePinStep("confirm");
+  };
+
+  const handleConfirmNewPin = async () => {
+    if (confirmNewPin.length !== PIN_SIZE) return;
+
+    if (confirmNewPin !== newPin) {
+      setChangePinError(t("PINs don't match. Please try again."));
+      setConfirmNewPin("");
+      return;
+    }
+
+    if (!decryptedMnemonic) return;
+
+    try {
+      await changePin(decryptedMnemonic, newPin);
+      setChangePinStep("success");
+    } catch {
+      setChangePinError(t("Failed to change PIN. Please try again."));
+    }
   };
 
   return (
@@ -154,10 +232,10 @@ export const Profile = () => {
               label={t("Recovery phrase")}
               onClick={openRecoveryModal}
             />
-            <SettingsRow
+            <SettingsButton
               icon={<KeyRound size={IconSize.md} />}
               label={t("Change PIN")}
-              href="/profile/pin"
+              onClick={openChangePinModal}
             />
             <SettingsRow
               icon={<Shield size={IconSize.md} />}
@@ -258,6 +336,118 @@ export const Profile = () => {
           </div>
         </div>
       )}
+
+      {/* Change PIN Modal */}
+      {showChangePinModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-end z-50">
+          <div className="bg-white w-full rounded-t-3xl p-5 pb-10 animate-slide-up">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-semibold">{t("Change PIN")}</h3>
+              <button
+                type="button"
+                onClick={closeChangePinModal}
+                className="p-2 -mr-2 text-teqo-400"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {changePinStep === "current" && (
+              <div className="flex flex-col">
+                <p className="text-teqo-400 text-center mb-2">
+                  {t("Enter your current PIN")}
+                </p>
+                {changePinError && (
+                  <p className="text-red-500 text-center text-sm">
+                    {changePinError}
+                  </p>
+                )}
+                <PinDots
+                  size={PIN_SIZE}
+                  isFilled={(index) => currentPin.length > index}
+                />
+                <PinPadBoard setValue={setCurrentPin} />
+                <button
+                  type="button"
+                  onClick={handleVerifyCurrentPin}
+                  disabled={currentPin.length !== PIN_SIZE}
+                  className="mt-6 bg-tint text-white py-4 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t("Confirm")}
+                </button>
+              </div>
+            )}
+
+            {changePinStep === "new" && (
+              <div className="flex flex-col">
+                <p className="text-teqo-400 text-center mb-2">
+                  {t("Enter your new PIN")}
+                </p>
+                <PinDots
+                  size={PIN_SIZE}
+                  isFilled={(index) => newPin.length > index}
+                />
+                <PinPadBoard setValue={setNewPin} />
+                <button
+                  type="button"
+                  onClick={handleNewPinSubmit}
+                  disabled={newPin.length !== PIN_SIZE}
+                  className="mt-6 bg-tint text-white py-4 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t("Continue")}
+                </button>
+              </div>
+            )}
+
+            {changePinStep === "confirm" && (
+              <div className="flex flex-col">
+                <p className="text-teqo-400 text-center mb-2">
+                  {t("Confirm your new PIN")}
+                </p>
+                {changePinError && (
+                  <p className="text-red-500 text-center text-sm">
+                    {changePinError}
+                  </p>
+                )}
+                <PinDots
+                  size={PIN_SIZE}
+                  isFilled={(index) => confirmNewPin.length > index}
+                />
+                <PinPadBoard setValue={setConfirmNewPin} />
+                <button
+                  type="button"
+                  onClick={handleConfirmNewPin}
+                  disabled={confirmNewPin.length !== PIN_SIZE}
+                  className="mt-6 bg-tint text-white py-4 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t("Change PIN")}
+                </button>
+              </div>
+            )}
+
+            {changePinStep === "success" && (
+              <div className="flex flex-col items-center py-8">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex-center mb-4">
+                  <KeyRound size={32} className="text-green-600" />
+                </div>
+                <h4 className="font-semibold text-lg mb-2">
+                  {t("PIN changed successfully")}
+                </h4>
+                <p className="text-teqo-400 text-center text-sm mb-6">
+                  {t("Your wallet is now secured with your new PIN.")}
+                </p>
+                <button
+                  type="button"
+                  onClick={closeChangePinModal}
+                  className="w-full bg-tint text-white py-4 rounded-xl font-medium"
+                >
+                  {t("Done")}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -348,4 +538,16 @@ const t = getT({
   "Never share your recovery phrase. Anyone with these words can access your wallet.":
     "Nunca compartilhe sua frase de recuperação. Qualquer pessoa com essas palavras pode acessar sua carteira.",
   "Copy to clipboard": "Copiar",
+  "Enter your current PIN": "Digite seu PIN atual",
+  "Enter your new PIN": "Digite seu novo PIN",
+  "Confirm your new PIN": "Confirme seu novo PIN",
+  Continue: "Continuar",
+  "PINs don't match. Please try again.":
+    "Os PINs não coincidem. Tente novamente.",
+  "Failed to change PIN. Please try again.":
+    "Falha ao alterar PIN. Tente novamente.",
+  "PIN changed successfully": "PIN alterado com sucesso",
+  "Your wallet is now secured with your new PIN.":
+    "Sua carteira agora está protegida com seu novo PIN.",
+  Done: "Concluído",
 });

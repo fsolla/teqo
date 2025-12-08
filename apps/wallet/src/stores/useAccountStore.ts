@@ -28,6 +28,7 @@ interface AccountStore {
   accounts: Account[];
   createAccount: (pin: string) => Promise<void>;
   importAccount: (mnemonic: string, pin: string) => Promise<void>;
+  changePin: (mnemonic: string, newPin: string) => Promise<void>;
   signOut: () => void;
 }
 
@@ -51,6 +52,21 @@ export const useAccountStore = createSelectors(
 
           set((state) => ({
             accounts: [...state.accounts, data],
+          }));
+        },
+        changePin: async (mnemonic: string, newPin: string) => {
+          // Re-encrypt mnemonic with new PIN
+          const newEncryptedData = await encryptMnemonicWithPIN(mnemonic, newPin);
+
+          set((state) => ({
+            accounts: state.accounts.map((account, index) =>
+              index === 0
+                ? {
+                    ...account,
+                    ...newEncryptedData,
+                  }
+                : account
+            ),
           }));
         },
         signOut: () => {
