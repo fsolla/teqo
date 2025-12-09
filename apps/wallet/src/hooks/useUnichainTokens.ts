@@ -1,13 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { createPublicClient, erc20Abi, http } from "viem";
-import { unichain } from "viem/chains";
 import { useAccountStore } from "../stores/useAccountStore";
 
-// Unichain client using public RPC
-const uniClient = createPublicClient({
-  chain: unichain,
-  transport: http("https://mainnet.unichain.org"),
-});
+const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY;
+const ALCHEMY_UNI_URL = `https://unichain-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 
 export interface UnichainTokenBalance {
   contractAddress: string;
@@ -18,73 +13,86 @@ export interface UnichainTokenBalance {
   logo: string | null;
 }
 
-// Known tokens on Unichain with their logos
-// We'll expand this list as more tokens become available
-const KNOWN_TOKENS: Record<
-  string,
-  { name: string; symbol: string; decimals: number; logo: string | null }
-> = {
-  // USDC on Unichain
-  "0x078d782b760474a361dda0af3839290b0ef57ad6": {
-    name: "USD Coin",
-    symbol: "USDC",
-    decimals: 6,
-    logo: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png",
-  },
-  // WETH on Unichain
-  "0x4200000000000000000000000000000000000006": {
-    name: "Wrapped Ether",
-    symbol: "WETH",
-    decimals: 18,
-    logo: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png",
-  },
+interface AlchemyTokenBalance {
+  contractAddress: string;
+  tokenBalance: string;
+}
+
+interface AlchemyTokenMetadata {
+  name: string;
+  symbol: string;
+  decimals: number;
+  logo: string | null;
+}
+
+// Fetch token balances from Alchemy Unichain
+const fetchTokenBalances = async (
+  address: string
+): Promise<AlchemyTokenBalance[]> => {
+  const response = await fetch(ALCHEMY_UNI_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      method: "alchemy_getTokenBalances",
+      params: [address, "erc20"],
+      id: 1,
+    }),
+  });
+
+  const data = await response.json();
+  return data.result?.tokenBalances ?? [];
 };
 
-// Fetch balance for a single token
-const fetchTokenBalance = async (
-  tokenAddress: `0x${string}`,
-  ownerAddress: `0x${string}`
-): Promise<bigint> => {
-  try {
-    const balance = await uniClient.readContract({
-      address: tokenAddress,
-      abi: erc20Abi,
-      functionName: "balanceOf",
-      args: [ownerAddress],
-    });
-    return balance;
-  } catch {
-    return 0n;
-  }
+// Fetch token metadata from Alchemy Unichain
+const fetchTokenMetadata = async (
+  contractAddress: string
+): Promise<AlchemyTokenMetadata> => {
+  const response = await fetch(ALCHEMY_UNI_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      method: "alchemy_getTokenMetadata",
+      params: [contractAddress],
+      id: 1,
+    }),
+  });
+
+  const data = await response.json();
+  return data.result;
 };
 
-// Fetch all Unichain token data
+// Fetch all Unichain token data (balances + metadata)
 const fetchUnichainTokens = async (
   address: string
 ): Promise<UnichainTokenBalance[]> => {
-  const ownerAddress = address as `0x${string}`;
-  const tokens: UnichainTokenBalance[] = [];
+  const tokenBalances = await fetchTokenBalances(address);
 
-  // Check known tokens for balances
-  for (const [contractAddress, tokenInfo] of Object.entries(KNOWN_TOKENS)) {
-    const balance = await fetchTokenBalance(
-      contractAddress as `0x${string}`,
-      ownerAddress
-    );
+  // Filter out zero balances
+  const nonZeroBalances = tokenBalances.filter(
+    (t) => t.tokenBalance && BigInt(t.tokenBalance) > 0n
+  );
 
-    if (balance > 0n) {
-      tokens.push({
-        contractAddress: contractAddress.toLowerCase(),
-        balance: Number(balance) / 10 ** tokenInfo.decimals,
-        name: tokenInfo.name,
-        symbol: tokenInfo.symbol,
-        decimals: tokenInfo.decimals,
-        logo: tokenInfo.logo,
-      });
-    }
-  }
+  // Fetch metadata for each token
+  const tokensWithMetadata = await Promise.all(
+    nonZeroBalances.map(async (token) => {
+      const metadata = await fetchTokenMetadata(token.contractAddress);
+      const rawBalance = BigInt(token.tokenBalance);
+      const balance = Number(rawBalance) / 10 ** (metadata.decimals || 18);
 
-  return tokens;
+      return {
+        contractAddress: token.contractAddress.toLowerCase(),
+        balance,
+        name: metadata.name || "Unknown",
+        symbol: metadata.symbol || "???",
+        decimals: metadata.decimals || 18,
+        logo: metadata.logo,
+      };
+    })
+  );
+
+  return tokensWithMetadata;
 };
 
 export const useUnichainTokens = () => {
@@ -99,4 +107,3 @@ export const useUnichainTokens = () => {
     gcTime: 5 * 60_000, // 5 minutes
   });
 };
-

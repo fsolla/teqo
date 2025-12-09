@@ -18,10 +18,10 @@ const arbClient = createPublicClient({
   transport: http(`https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`),
 });
 
-// Unichain client using public RPC
+// Unichain client using Alchemy
 const uniClient = createPublicClient({
   chain: unichain,
-  transport: http("https://mainnet.unichain.org"),
+  transport: http(`https://unichain-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`),
 });
 
 // Solana connection using Alchemy
