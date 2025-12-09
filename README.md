@@ -25,14 +25,14 @@ Teqo is a Web3 wallet for **intentional digital ownership**. We build for:
 ## Features
 
 - **Fully self-custodial**: Your seed phrase never leaves your device
-- **Multi-chain support**: Ethereum, Solana, Bitcoin
+- **Multi-chain support**: Ethereum, Solana, Bitcoin + Ethereum L2s (Arbitrum, Base, Linea, Unichain)
 - **Multi-account management**: Create, import, and watch wallets
 - **Account types**:
   - **Owned**: Generated from mnemonic phrase, fully controlled by you
   - **Watched**: Import addresses for observation only
   - **Connected**: Link via WalletConnect or browser extensions (MetaMask, Phantom)
 - **Client-side encryption**: AES-GCM encryption with Argon2id key derivation
-- **Mobile-first, responsive design**
+- **Mobile-first PWA**: Installable progressive web app with offline support
 
 ---
 
@@ -62,10 +62,12 @@ The API server only handles public data: token metadata, price feeds, and option
 ### Wallet App (`apps/wallet`) — Active
 
 - **Framework**: Vite, Preact
+- **Routing**: wouter-preact
 - **Styling**: Tailwind CSS v4
 - **State**: Zustand, TanStack Query
-- **Chains**: viem, @solana/web3.js, @scure/btc-signer
-- **PWA**: vite-plugin-pwa
+- **Crypto**: libsodium (encryption), @scure/bip32 & @scure/bip39 (key derivation)
+- **Chains**: viem (EVM), @solana/web3.js + Jupiter API, @scure/btc-signer
+- **PWA**: vite-plugin-pwa with workbox
 
 ### Legacy Web App (`apps/web`) — Reference Only
 
@@ -125,22 +127,23 @@ npm install
 Copy the example files and fill in your values:
 
 ```bash
-cp apps/web/.env.example apps/web/.env
 cp apps/api/.env.example apps/api/.env
 ```
-
-**Required for `apps/web`:**
-
-- `NEXT_PUBLIC_ALCHEMY_API_KEY` — [Get one at Alchemy](https://www.alchemy.com/)
-- `NEXT_PUBLIC_REOWN_PROJECT_ID` — [Get one at Reown](https://cloud.reown.com/)
 
 **Required for `apps/api`:**
 
 - `DATABASE_URL` — PostgreSQL connection string
 - `REDIS_URL` — Redis connection string
-- `ALCHEMY_API_KEY` — Same as above
+- `ALCHEMY_API_KEY` — [Get one at Alchemy](https://www.alchemy.com/)
 - `RESEND_API_KEY` — [Get one at Resend](https://resend.com/)
 - `JWT_SECRET` — Generate with `openssl rand -base64 32`
+
+**Required for `apps/wallet`:**
+
+- `VITE_ALCHEMY_API_KEY` — [Get one at Alchemy](https://www.alchemy.com/) (for EVM chain data)
+- `VITE_JUPITER_API_KEY` — [Get one at Jupiter](https://portal.jup.ag/) (for Solana token balances)
+
+> **Note:** The wallet app connects to the API at `https://api.teqo.app` by default.
 
 ### 3. Database Setup (API only)
 
@@ -157,9 +160,10 @@ npx prisma migrate dev
 npx turbo run dev
 
 # Or run individually
-npm run dev --workspace=apps/web      # http://localhost:3000
+npm run dev --workspace=apps/wallet   # http://localhost:5173 ← Active
 npm run dev --workspace=apps/api      # http://localhost:4000
 npm run dev --workspace=apps/landing  # http://localhost:3001
+npm run dev --workspace=apps/web      # http://localhost:3000 (legacy)
 ```
 
 ---
