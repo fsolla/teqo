@@ -11,6 +11,7 @@ export interface Coin {
   icon: string | null;
   balance: number;
   usd: number;
+  network: "ethereum" | "solana" | "bitcoin" | null;
 }
 
 const NATIVE_COIN_CONFIG = {
@@ -68,6 +69,7 @@ export const useCoins = () => {
             ...NATIVE_COIN_CONFIG[id],
             balance: balances[id],
             usd: balances[id] * (nativePrices[id] ?? 0),
+            network: null, // Native coins don't show network badge
           });
         }
       });
@@ -84,6 +86,7 @@ export const useCoins = () => {
           icon: token.logo,
           balance: token.balance,
           usd: token.balance * price,
+          network: "ethereum", // ERC-20 tokens are on Ethereum
         });
       });
     }

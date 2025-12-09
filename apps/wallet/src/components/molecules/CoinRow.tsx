@@ -1,6 +1,12 @@
 import type { Coin } from "../../hooks/useCoins";
 
-export const CoinRow = ({ name, symbol, icon, balance, usd }: Coin) => {
+const NETWORK_ICONS = {
+  ethereum: "/coins/ethereum.svg",
+  solana: "/coins/solana.svg",
+  bitcoin: "/coins/bitcoin.svg",
+} as const;
+
+export const CoinRow = ({ name, symbol, icon, balance, usd, network }: Coin) => {
   const formattedUsd = usd.toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
@@ -15,13 +21,22 @@ export const CoinRow = ({ name, symbol, icon, balance, usd }: Coin) => {
 
   return (
     <article className="flex items-center gap-3 py-3">
-      {icon ? (
-        <img src={icon} alt={name} className="w-12 h-12 rounded-full" />
-      ) : (
-        <div className="w-12 h-12 rounded-full bg-teqo-100 flex-center text-lg font-bold text-teqo-600">
-          {symbol.slice(0, 2)}
-        </div>
-      )}
+      <div className="relative">
+        {icon ? (
+          <img src={icon} alt={name} className="w-12 h-12 rounded-full" />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-teqo-100 flex-center text-lg font-bold text-teqo-600">
+            {symbol.slice(0, 2)}
+          </div>
+        )}
+        {network && (
+          <img
+            src={NETWORK_ICONS[network]}
+            alt={network}
+            className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white bg-white"
+          />
+        )}
+      </div>
       <div className="flex-1">
         <h4>{name}</h4>
         <p className="text-sm text-teqo-400">{symbol}</p>
