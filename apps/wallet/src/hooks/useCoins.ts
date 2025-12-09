@@ -3,6 +3,7 @@ import { useArbitrumTokens } from "./useArbitrumTokens";
 import { useBalances } from "./useBalances";
 import { useCoinPrices } from "./useCoinPrices";
 import { useEthereumTokens } from "./useEthereumTokens";
+import { useLineaTokens } from "./useLineaTokens";
 import { useSolanaTokens } from "./useSolanaTokens";
 import { useTokenPrices, type TokenPriceQuery } from "./useTokenPrices";
 import { useUnichainTokens } from "./useUnichainTokens";
@@ -14,7 +15,14 @@ export interface Coin {
   icon: string | null;
   balance: number;
   usd: number;
-  network: "ethereum" | "arbitrum" | "unichain" | "solana" | "bitcoin" | null;
+  network:
+    | "ethereum"
+    | "arbitrum"
+    | "unichain"
+    | "linea"
+    | "solana"
+    | "bitcoin"
+    | null;
 }
 
 const NATIVE_COIN_CONFIG = {
@@ -71,6 +79,13 @@ export const useCoins = () => {
     isFetching: uniTokensFetching,
   } = useUnichainTokens();
 
+  // Fetch ERC-20 tokens (Linea)
+  const {
+    data: lineaTokens,
+    isLoading: lineaTokensLoading,
+    isFetching: lineaTokensFetching,
+  } = useLineaTokens();
+
   // Build token price queries for all networks
   const tokenPriceQueries = useMemo<TokenPriceQuery[]>(() => {
     const queries: TokenPriceQuery[] = [];
@@ -93,6 +108,12 @@ export const useCoins = () => {
       );
     }
 
+    if (lineaTokens) {
+      lineaTokens.forEach((t) =>
+        queries.push({ address: t.contractAddress, network: "linea" })
+      );
+    }
+
     if (solanaTokens) {
       solanaTokens.forEach((t) =>
         queries.push({ address: t.mint, network: "solana" })
@@ -100,7 +121,7 @@ export const useCoins = () => {
     }
 
     return queries;
-  }, [ethereumTokens, arbitrumTokens, unichainTokens, solanaTokens]);
+  }, [ethereumTokens, arbitrumTokens, unichainTokens, lineaTokens, solanaTokens]);
 
   // Fetch prices for all tokens
   const { data: tokenPrices, isLoading: tokenPricesLoading } =
@@ -146,6 +167,19 @@ export const useCoins = () => {
           balance: balances.unichain,
           usd: balances.unichain * (nativePrices.ethereum ?? 0),
           network: "unichain", // Show Unichain badge
+        });
+      }
+
+      // Add Linea ETH (same price as Ethereum)
+      if (balances.linea > 0) {
+        coinList.push({
+          id: "linea-eth",
+          name: "Ethereum",
+          symbol: "ETH",
+          icon: "/coins/ethereum.svg",
+          balance: balances.linea,
+          usd: balances.linea * (nativePrices.ethereum ?? 0),
+          network: "linea", // Show Linea badge
         });
       }
     }
@@ -198,6 +232,22 @@ export const useCoins = () => {
       });
     }
 
+    // Add ERC-20 tokens (Linea)
+    if (lineaTokens && tokenPrices) {
+      lineaTokens.forEach((token) => {
+        const price = tokenPrices[token.contractAddress] ?? 0;
+        coinList.push({
+          id: `linea:${token.contractAddress}`,
+          name: token.name,
+          symbol: token.symbol,
+          icon: token.logo,
+          balance: token.balance,
+          usd: token.balance * price,
+          network: "linea",
+        });
+      });
+    }
+
     // Add SPL tokens (Solana)
     if (solanaTokens && tokenPrices) {
       solanaTokens.forEach((token) => {
@@ -222,6 +272,7 @@ export const useCoins = () => {
     ethereumTokens,
     arbitrumTokens,
     unichainTokens,
+    lineaTokens,
     solanaTokens,
     tokenPrices,
   ]);
@@ -239,6 +290,7 @@ export const useCoins = () => {
     ethTokensLoading ||
     arbTokensLoading ||
     uniTokensLoading ||
+    lineaTokensLoading ||
     solTokensLoading ||
     tokenPricesLoading;
   const isFetching =
@@ -246,6 +298,7 @@ export const useCoins = () => {
     ethTokensFetching ||
     arbTokensFetching ||
     uniTokensFetching ||
+    lineaTokensFetching ||
     solTokensFetching;
 
   return {
