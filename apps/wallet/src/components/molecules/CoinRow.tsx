@@ -15,7 +15,13 @@ export const CoinRow = ({ name, symbol, icon, balance, usd }: Coin) => {
 
   return (
     <article className="flex items-center gap-3 py-3">
-      <img src={icon} alt={name} className="w-12 h-12" />
+      {icon ? (
+        <img src={icon} alt={name} className="w-12 h-12 rounded-full" />
+      ) : (
+        <div className="w-12 h-12 rounded-full bg-teqo-100 flex-center text-lg font-bold text-teqo-600">
+          {symbol.slice(0, 2)}
+        </div>
+      )}
       <div className="flex-1">
         <h4>{name}</h4>
         <p className="text-sm text-teqo-400">{symbol}</p>
