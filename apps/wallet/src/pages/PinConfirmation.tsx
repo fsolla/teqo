@@ -18,6 +18,7 @@ export const PinConfirmation = ({
   pin: string;
 }) => {
   const createAccount = useAccountStore.use.createAccount();
+  const importAccount = useAccountStore.use.importAccount();
   const isFilled = (index: number) => value.length > index;
   const isValid = value.length === size && value === pin;
 
@@ -26,13 +27,13 @@ export const PinConfirmation = ({
       return;
     }
 
-    const name = history.state?.name;
-
-    if (!name) {
-      return;
+    // Check if we're importing an existing wallet
+    const mnemonic = history.state?.mnemonic;
+    if (mnemonic) {
+      return importAccount(mnemonic, pin);
     }
 
-    return createAccount(name, pin);
+    return createAccount(pin);
   };
 
   return (
