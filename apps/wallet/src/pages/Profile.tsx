@@ -1,7 +1,9 @@
 import {
+  Check,
   ChevronLeft,
   ChevronRight,
   Copy,
+  DollarSign,
   Eye,
   KeyRound,
   LogOut,
@@ -18,6 +20,12 @@ import {
   decryptMnemonicWithPIN,
   useAccountStore,
 } from "../stores/useAccountStore";
+import {
+  CURRENCIES,
+  getCurrencyConfig,
+  useSettingsStore,
+  type Currency,
+} from "../stores/useSettingsStore";
 
 const PIN_SIZE = 4;
 
@@ -47,6 +55,17 @@ export const Profile = () => {
     null
   );
   const changePin = useAccountStore((state) => state.changePin);
+
+  // Currency selector state
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const currency = useSettingsStore((state) => state.currency);
+  const setCurrency = useSettingsStore((state) => state.setCurrency);
+  const currencyConfig = getCurrencyConfig(currency);
+
+  const handleSelectCurrency = (newCurrency: Currency) => {
+    setCurrency(newCurrency);
+    setShowCurrencyModal(false);
+  };
 
   const handleSignOut = () => {
     signOut();
@@ -225,6 +244,12 @@ export const Profile = () => {
             {t("Settings")}
           </h4>
           <div className="flex flex-col gap-1">
+            <SettingsButton
+              icon={<DollarSign size={IconSize.md} />}
+              label={t("Currency")}
+              value={`${currencyConfig.symbol} ${currencyConfig.code}`}
+              onClick={() => setShowCurrencyModal(true)}
+            />
             <SettingsButton
               icon={<Eye size={IconSize.md} />}
               label={t("Recovery phrase")}
@@ -441,6 +466,48 @@ export const Profile = () => {
           </div>
         </div>
       )}
+
+      {/* Currency Selector Modal */}
+      {showCurrencyModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-end z-50">
+          <div className="bg-white w-full rounded-t-3xl p-5 pb-10 animate-slide-up max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-semibold">{t("Select currency")}</h3>
+              <button
+                type="button"
+                onClick={() => setShowCurrencyModal(false)}
+                className="p-2 -mr-2 text-teqo-400"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-1 overflow-y-auto">
+              {CURRENCIES.map((curr) => (
+                <button
+                  key={curr.code}
+                  type="button"
+                  onClick={() => handleSelectCurrency(curr.code)}
+                  className={`flex items-center gap-3 p-4 rounded-xl transition-colors ${
+                    currency === curr.code
+                      ? "bg-tint/10 text-tint"
+                      : "hover:bg-teqo-100/50"
+                  }`}
+                >
+                  <span className="w-8 text-lg font-medium">{curr.symbol}</span>
+                  <div className="flex-1 text-left">
+                    <p className="font-medium">{curr.code}</p>
+                    <p className="text-sm text-teqo-400">{curr.name}</p>
+                  </div>
+                  {currency === curr.code && (
+                    <Check size={IconSize.md} className="text-tint" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -479,10 +546,12 @@ const AddressRow = ({
 const SettingsButton = ({
   icon,
   label,
+  value,
   onClick,
 }: {
   icon: preact.JSX.Element;
   label: string;
+  value?: string;
   onClick: () => void;
 }) => (
   <button
@@ -492,6 +561,7 @@ const SettingsButton = ({
   >
     <span className="text-teqo-600">{icon}</span>
     <span className="flex-1 font-medium">{label}</span>
+    {value && <span className="text-teqo-400 text-sm">{value}</span>}
     <ChevronRight size={IconSize.md} className="text-teqo-300" />
   </button>
 );
@@ -499,6 +569,8 @@ const SettingsButton = ({
 const t = getT({
   "Wallet addresses": "Endereços da carteira",
   Settings: "Configurações",
+  Currency: "Moeda",
+  "Select currency": "Selecionar moeda",
   "Recovery phrase": "Frase de recuperação",
   "Change PIN": "Alterar PIN",
   "Sign out": "Sair",

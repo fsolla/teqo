@@ -1,19 +1,17 @@
 import { ChevronDown, ChevronUp, Loader2 } from "lucide-preact";
 import { useMemo, useState } from "preact/hooks";
 import { useCoins } from "../../hooks/useCoins";
+import { useConvertCurrency } from "../../hooks/useExchangeRates";
+import { formatCurrency } from "../../lib/formatCurrency";
 import { getT } from "../../lib/i18n";
 import { CoinGroupRow } from "../molecules/CoinGroupRow";
 
 export const CoinsSection = () => {
   const { groupedCoins, totalUsd, hasData, isLoading, isFetching } = useCoins();
   const [showZeroValue, setShowZeroValue] = useState(false);
+  const { convert, currency } = useConvertCurrency();
 
-  const formattedTotal = totalUsd.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  const formattedTotal = formatCurrency(convert(totalUsd), currency);
 
   // Split grouped coins into those with value and those without
   const { coinsWithValue, coinsWithoutValue } = useMemo(() => {
@@ -49,7 +47,12 @@ export const CoinsSection = () => {
         {/* Coins with value */}
         <div className="flex flex-col">
           {coinsWithValue.map((group) => (
-            <CoinGroupRow key={group.symbol} group={group} />
+            <CoinGroupRow
+              key={group.symbol}
+              group={group}
+              convertCurrency={convert}
+              currency={currency}
+            />
           ))}
         </div>
 
@@ -80,7 +83,12 @@ export const CoinsSection = () => {
             {showZeroValue && (
               <div className="flex flex-col">
                 {coinsWithoutValue.map((group) => (
-                  <CoinGroupRow key={group.symbol} group={group} />
+                  <CoinGroupRow
+                    key={group.symbol}
+                    group={group}
+                    convertCurrency={convert}
+                    currency={currency}
+                  />
                 ))}
               </div>
             )}

@@ -1,5 +1,7 @@
 import { useState } from "preact/hooks";
 import type { CoinGroup, Network } from "../../hooks/useCoins";
+import { formatCurrency } from "../../lib/formatCurrency";
+import type { Currency } from "../../stores/useSettingsStore";
 
 const NETWORK_ICONS: Record<Network, string> = {
   ethereum: "/coins/ethereum.svg",
@@ -13,18 +15,22 @@ const NETWORK_ICONS: Record<Network, string> = {
 
 interface CoinGroupRowProps {
   group: CoinGroup;
+  convertCurrency: (usd: number) => number;
+  currency: Currency;
 }
 
-export const CoinGroupRow = ({ group }: CoinGroupRowProps) => {
+export const CoinGroupRow = ({
+  group,
+  convertCurrency,
+  currency,
+}: CoinGroupRowProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasMultipleNetworks = group.entries.length > 1;
 
-  const formattedTotalUsd = group.totalUsd.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  const formattedTotalValue = formatCurrency(
+    convertCurrency(group.totalUsd),
+    currency
+  );
 
   const formattedTotalBalance = group.totalBalance.toLocaleString("en-US", {
     minimumFractionDigits: 2,
@@ -80,9 +86,9 @@ export const CoinGroupRow = ({ group }: CoinGroupRowProps) => {
           <p className="text-sm text-teqo-400">{group.symbol}</p>
         </div>
 
-        {/* Balance and USD value */}
+        {/* Balance and fiat value */}
         <div className="text-right">
-          <h4>{formattedTotalUsd}</h4>
+          <h4>{formattedTotalValue}</h4>
           <p className="text-sm text-teqo-400">{formattedTotalBalance}</p>
         </div>
       </article>
@@ -91,17 +97,18 @@ export const CoinGroupRow = ({ group }: CoinGroupRowProps) => {
       {isExpanded && hasMultipleNetworks && (
         <div className="ml-6 border-l-2 border-teqo-100 pl-4">
           {sortedEntries.map((coin) => (
-            <NetworkEntry key={coin.id} coin={coin} />
+            <NetworkEntry
+              key={coin.id}
+              coin={coin}
+              convertCurrency={convertCurrency}
+              currency={currency}
+            />
           ))}
         </div>
       )}
     </div>
   );
 };
-
-interface NetworkEntryProps {
-  coin: CoinGroup["entries"][number];
-}
 
 const MAX_CONTAINER_WIDTH = 33; // 70% of 48px coin icon
 const ICON_SIZE = 16; // w-4 = 16px
@@ -165,15 +172,16 @@ const NetworkIconsStack = ({ networks }: NetworkIconsStackProps) => {
 
 interface NetworkEntryProps {
   coin: CoinGroup["entries"][number];
+  convertCurrency: (usd: number) => number;
+  currency: Currency;
 }
 
-const NetworkEntry = ({ coin }: NetworkEntryProps) => {
-  const formattedUsd = coin.usd.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+const NetworkEntry = ({
+  coin,
+  convertCurrency,
+  currency,
+}: NetworkEntryProps) => {
+  const formattedValue = formatCurrency(convertCurrency(coin.usd), currency);
 
   const formattedBalance = coin.balance.toLocaleString("en-US", {
     minimumFractionDigits: 2,
@@ -204,9 +212,9 @@ const NetworkEntry = ({ coin }: NetworkEntryProps) => {
         <p className="text-sm text-teqo-600">{networkName}</p>
       </div>
 
-      {/* Balance and USD value */}
+      {/* Balance and fiat value */}
       <div className="text-right">
-        <p className="text-sm">{formattedUsd}</p>
+        <p className="text-sm">{formattedValue}</p>
         <p className="text-xs text-teqo-400">{formattedBalance}</p>
       </div>
     </article>
