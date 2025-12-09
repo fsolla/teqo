@@ -1,7 +1,7 @@
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { useQuery } from "@tanstack/react-query";
 import { createPublicClient, formatEther, http } from "viem";
-import { arbitrum, mainnet } from "viem/chains";
+import { arbitrum, mainnet, unichain } from "viem/chains";
 import { useAccountStore } from "../stores/useAccountStore";
 
 const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY;
@@ -16,6 +16,12 @@ const ethClient = createPublicClient({
 const arbClient = createPublicClient({
   chain: arbitrum,
   transport: http(`https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`),
+});
+
+// Unichain client using public RPC
+const uniClient = createPublicClient({
+  chain: unichain,
+  transport: http("https://mainnet.unichain.org"),
 });
 
 // Solana connection using Alchemy
@@ -35,6 +41,14 @@ const fetchEthBalance = async (address: string): Promise<number> => {
 // Fetch Arbitrum ETH balance
 const fetchArbEthBalance = async (address: string): Promise<number> => {
   const balance = await arbClient.getBalance({
+    address: address as `0x${string}`,
+  });
+  return Number(formatEther(balance));
+};
+
+// Fetch Unichain ETH balance
+const fetchUniEthBalance = async (address: string): Promise<number> => {
+  const balance = await uniClient.getBalance({
     address: address as `0x${string}`,
   });
   return Number(formatEther(balance));
@@ -62,6 +76,7 @@ const fetchBtcBalance = async (address: string): Promise<number> => {
 export interface Balances {
   ethereum: number;
   arbitrum: number;
+  unichain: number;
   solana: number;
   bitcoin: number;
 }
@@ -89,6 +104,14 @@ export const useBalances = () => {
     gcTime: 5 * 60_000,
   });
 
+  const uniQuery = useQuery({
+    queryKey: ["balance", "unichain", ethAddress],
+    queryFn: () => fetchUniEthBalance(ethAddress!),
+    enabled: !!ethAddress,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+  });
+
   const solQuery = useQuery({
     queryKey: ["balance", "solana", solAddress],
     queryFn: () => fetchSolBalance(solAddress!),
@@ -109,17 +132,20 @@ export const useBalances = () => {
     balances: {
       ethereum: ethQuery.data ?? 0,
       arbitrum: arbQuery.data ?? 0,
+      unichain: uniQuery.data ?? 0,
       solana: solQuery.data ?? 0,
       bitcoin: btcQuery.data ?? 0,
     },
     isLoading:
       ethQuery.isLoading ||
       arbQuery.isLoading ||
+      uniQuery.isLoading ||
       solQuery.isLoading ||
       btcQuery.isLoading,
     isError:
       ethQuery.isError ||
       arbQuery.isError ||
+      uniQuery.isError ||
       solQuery.isError ||
       btcQuery.isError,
   };

@@ -3,6 +3,7 @@ import type { Coin } from "../../hooks/useCoins";
 const NETWORK_ICONS = {
   ethereum: "/coins/ethereum.svg",
   arbitrum: "/coins/arbitrum.svg",
+  unichain: "/coins/unichain.svg",
   solana: "/coins/solana.svg",
   bitcoin: "/coins/bitcoin.svg",
 } as const;

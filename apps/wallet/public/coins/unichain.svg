@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <circle cx="24" cy="24" r="24" fill="#FF007A"/>
+  <path d="M24 8C15.163 8 8 15.163 8 24s7.163 16 16 16 16-7.163 16-16S32.837 8 24 8zm0 28c-6.627 0-12-5.373-12-12s5.373-12 12-12 12 5.373 12 12-5.373 12-12 12z" fill="white" fill-opacity="0.2"/>
+  <text x="24" y="31" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="white">U</text>
+</svg>
+

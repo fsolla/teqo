@@ -5,6 +5,7 @@ import { useCoinPrices } from "./useCoinPrices";
 import { useEthereumTokens } from "./useEthereumTokens";
 import { useSolanaTokens } from "./useSolanaTokens";
 import { useTokenPrices, type TokenPriceQuery } from "./useTokenPrices";
+import { useUnichainTokens } from "./useUnichainTokens";
 
 export interface Coin {
   id: string;
@@ -13,7 +14,7 @@ export interface Coin {
   icon: string | null;
   balance: number;
   usd: number;
-  network: "ethereum" | "arbitrum" | "solana" | "bitcoin" | null;
+  network: "ethereum" | "arbitrum" | "unichain" | "solana" | "bitcoin" | null;
 }
 
 const NATIVE_COIN_CONFIG = {
@@ -63,6 +64,13 @@ export const useCoins = () => {
     isFetching: solTokensFetching,
   } = useSolanaTokens();
 
+  // Fetch ERC-20 tokens (Unichain)
+  const {
+    data: unichainTokens,
+    isLoading: uniTokensLoading,
+    isFetching: uniTokensFetching,
+  } = useUnichainTokens();
+
   // Build token price queries for all networks
   const tokenPriceQueries = useMemo<TokenPriceQuery[]>(() => {
     const queries: TokenPriceQuery[] = [];
@@ -79,6 +87,12 @@ export const useCoins = () => {
       );
     }
 
+    if (unichainTokens) {
+      unichainTokens.forEach((t) =>
+        queries.push({ address: t.contractAddress, network: "unichain" })
+      );
+    }
+
     if (solanaTokens) {
       solanaTokens.forEach((t) =>
         queries.push({ address: t.mint, network: "solana" })
@@ -86,7 +100,7 @@ export const useCoins = () => {
     }
 
     return queries;
-  }, [ethereumTokens, arbitrumTokens, solanaTokens]);
+  }, [ethereumTokens, arbitrumTokens, unichainTokens, solanaTokens]);
 
   // Fetch prices for all tokens
   const { data: tokenPrices, isLoading: tokenPricesLoading } =
@@ -119,6 +133,19 @@ export const useCoins = () => {
           balance: balances.arbitrum,
           usd: balances.arbitrum * (nativePrices.ethereum ?? 0),
           network: "arbitrum", // Show Arbitrum badge
+        });
+      }
+
+      // Add Unichain ETH (same price as Ethereum)
+      if (balances.unichain > 0) {
+        coinList.push({
+          id: "unichain-eth",
+          name: "Ethereum",
+          symbol: "ETH",
+          icon: "/coins/ethereum.svg",
+          balance: balances.unichain,
+          usd: balances.unichain * (nativePrices.ethereum ?? 0),
+          network: "unichain", // Show Unichain badge
         });
       }
     }
@@ -155,6 +182,22 @@ export const useCoins = () => {
       });
     }
 
+    // Add ERC-20 tokens (Unichain)
+    if (unichainTokens && tokenPrices) {
+      unichainTokens.forEach((token) => {
+        const price = tokenPrices[token.contractAddress] ?? 0;
+        coinList.push({
+          id: `uni:${token.contractAddress}`,
+          name: token.name,
+          symbol: token.symbol,
+          icon: token.logo,
+          balance: token.balance,
+          usd: token.balance * price,
+          network: "unichain",
+        });
+      });
+    }
+
     // Add SPL tokens (Solana)
     if (solanaTokens && tokenPrices) {
       solanaTokens.forEach((token) => {
@@ -178,6 +221,7 @@ export const useCoins = () => {
     nativePrices,
     ethereumTokens,
     arbitrumTokens,
+    unichainTokens,
     solanaTokens,
     tokenPrices,
   ]);
@@ -194,12 +238,14 @@ export const useCoins = () => {
     nativePricesLoading ||
     ethTokensLoading ||
     arbTokensLoading ||
+    uniTokensLoading ||
     solTokensLoading ||
     tokenPricesLoading;
   const isFetching =
     nativePricesFetching ||
     ethTokensFetching ||
     arbTokensFetching ||
+    uniTokensFetching ||
     solTokensFetching;
 
   return {
