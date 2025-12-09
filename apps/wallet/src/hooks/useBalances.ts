@@ -4,14 +4,19 @@ import { createPublicClient, formatEther, http } from "viem";
 import { mainnet } from "viem/chains";
 import { useAccountStore } from "../stores/useAccountStore";
 
-// Ethereum client using public RPC
+const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY;
+
+// Ethereum client using Alchemy
 const ethClient = createPublicClient({
   chain: mainnet,
-  transport: http("https://cloudflare-eth.com"),
+  transport: http(`https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`),
 });
 
-// Solana connection
-const solConnection = new Connection("https://api.mainnet-beta.solana.com");
+// Solana connection using Alchemy
+const solConnection = new Connection(
+  `https://solana-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+  "confirmed"
+);
 
 // Fetch Ethereum balance
 const fetchEthBalance = async (address: string): Promise<number> => {

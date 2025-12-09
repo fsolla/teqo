@@ -12,6 +12,7 @@
     "@scure/bip32": "^1.7.0",
     "@scure/bip39": "^1.6.0",
     "@scure/btc-signer": "^1.8.1",
+    "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.2",
     "@tailwindcss/vite": "^4.1.10",
     "@tanstack/react-query": "^5.81.5",
@@ -22,6 +23,7 @@
     "preact": "^10.25.4",
     "tailwindcss": "^4.1.7",
     "viem": "^2.31.4",
+    "vite-plugin-node-polyfills": "^0.24.0",
     "wouter-preact": "^3.7.1",
     "zustand": "^5.0.5"
   },

@@ -14,13 +14,18 @@ interface DeFiLlamaResponse {
 
 export type TokenPrices = Record<string, number>;
 
-const fetchTokenPrices = async (
-  tokenAddresses: string[]
-): Promise<TokenPrices> => {
-  if (tokenAddresses.length === 0) return {};
+export interface TokenPriceQuery {
+  address: string;
+  network: "ethereum" | "solana";
+}
 
-  // Format addresses for DeFiLlama: ethereum:{address}
-  const coinIds = tokenAddresses.map((addr) => `ethereum:${addr}`).join(",");
+const fetchTokenPrices = async (
+  tokens: TokenPriceQuery[]
+): Promise<TokenPrices> => {
+  if (tokens.length === 0) return {};
+
+  // Format addresses for DeFiLlama: {network}:{address}
+  const coinIds = tokens.map((t) => `${t.network}:${t.address}`).join(",");
 
   const response = await fetch(
     `https://coins.llama.fi/prices/current/${coinIds}`
@@ -29,19 +34,24 @@ const fetchTokenPrices = async (
 
   // Convert to a simple address -> price map
   const prices: TokenPrices = {};
-  for (const address of tokenAddresses) {
-    const key = `ethereum:${address}`;
-    prices[address] = data.coins[key]?.price ?? 0;
+  for (const token of tokens) {
+    const key = `${token.network}:${token.address}`;
+    prices[token.address] = data.coins[key]?.price ?? 0;
   }
 
   return prices;
 };
 
-export const useTokenPrices = (tokenAddresses: string[]) => {
+export const useTokenPrices = (tokens: TokenPriceQuery[]) => {
+  // Create a stable query key by sorting addresses
+  const sortedKey = [...tokens]
+    .sort((a, b) => a.address.localeCompare(b.address))
+    .map((t) => `${t.network}:${t.address}`);
+
   return useQuery({
-    queryKey: ["tokenPrices", ...tokenAddresses.sort()],
-    queryFn: () => fetchTokenPrices(tokenAddresses),
-    enabled: tokenAddresses.length > 0,
+    queryKey: ["tokenPrices", ...sortedKey],
+    queryFn: () => fetchTokenPrices(tokens),
+    enabled: tokens.length > 0,
     staleTime: 30_000, // 30 seconds
     gcTime: 5 * 60_000, // 5 minutes
   });

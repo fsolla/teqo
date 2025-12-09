@@ -2,7 +2,8 @@ import { useMemo } from "preact/hooks";
 import { useBalances } from "./useBalances";
 import { useCoinPrices } from "./useCoinPrices";
 import { useEthereumTokens } from "./useEthereumTokens";
-import { useTokenPrices } from "./useTokenPrices";
+import { useSolanaTokens } from "./useSolanaTokens";
+import { useTokenPrices, type TokenPriceQuery } from "./useTokenPrices";
 
 export interface Coin {
   id: string;
@@ -43,19 +44,39 @@ export const useCoins = () => {
   // Fetch ERC-20 tokens
   const {
     data: ethereumTokens,
-    isLoading: tokensLoading,
-    isFetching: tokensFetching,
+    isLoading: ethTokensLoading,
+    isFetching: ethTokensFetching,
   } = useEthereumTokens();
 
-  // Get token addresses for price fetching
-  const tokenAddresses = useMemo(
-    () => ethereumTokens?.map((t) => t.contractAddress) ?? [],
-    [ethereumTokens]
-  );
+  // Fetch SPL tokens
+  const {
+    data: solanaTokens,
+    isLoading: solTokensLoading,
+    isFetching: solTokensFetching,
+  } = useSolanaTokens();
 
-  // Fetch prices for ERC-20 tokens
+  // Build token price queries for both networks
+  const tokenPriceQueries = useMemo<TokenPriceQuery[]>(() => {
+    const queries: TokenPriceQuery[] = [];
+
+    if (ethereumTokens) {
+      ethereumTokens.forEach((t) =>
+        queries.push({ address: t.contractAddress, network: "ethereum" })
+      );
+    }
+
+    if (solanaTokens) {
+      solanaTokens.forEach((t) =>
+        queries.push({ address: t.mint, network: "solana" })
+      );
+    }
+
+    return queries;
+  }, [ethereumTokens, solanaTokens]);
+
+  // Fetch prices for all tokens
   const { data: tokenPrices, isLoading: tokenPricesLoading } =
-    useTokenPrices(tokenAddresses);
+    useTokenPrices(tokenPriceQueries);
 
   const coins = useMemo(() => {
     const coinList: Coin[] = [];
@@ -80,20 +101,36 @@ export const useCoins = () => {
       ethereumTokens.forEach((token) => {
         const price = tokenPrices[token.contractAddress] ?? 0;
         coinList.push({
-          id: token.contractAddress,
+          id: `eth:${token.contractAddress}`,
           name: token.name,
           symbol: token.symbol,
           icon: token.logo,
           balance: token.balance,
           usd: token.balance * price,
-          network: "ethereum", // ERC-20 tokens are on Ethereum
+          network: "ethereum",
+        });
+      });
+    }
+
+    // Add SPL tokens
+    if (solanaTokens && tokenPrices) {
+      solanaTokens.forEach((token) => {
+        const price = tokenPrices[token.mint] ?? 0;
+        coinList.push({
+          id: `sol:${token.mint}`,
+          name: token.name,
+          symbol: token.symbol,
+          icon: token.logo,
+          balance: token.balance,
+          usd: token.balance * price,
+          network: "solana",
         });
       });
     }
 
     // Sort by USD value (highest first)
     return coinList.sort((a, b) => b.usd - a.usd);
-  }, [balances, nativePrices, ethereumTokens, tokenPrices]);
+  }, [balances, nativePrices, ethereumTokens, solanaTokens, tokenPrices]);
 
   const totalUsd = useMemo(
     () => coins.reduce((sum, coin) => sum + coin.usd, 0),
@@ -103,8 +140,13 @@ export const useCoins = () => {
   const hasCoins = totalUsd > 0 || coins.length > 0;
   const hasData = nativePrices !== undefined;
   const isLoading =
-    balancesLoading || nativePricesLoading || tokensLoading || tokenPricesLoading;
-  const isFetching = nativePricesFetching || tokensFetching;
+    balancesLoading ||
+    nativePricesLoading ||
+    ethTokensLoading ||
+    solTokensLoading ||
+    tokenPricesLoading;
+  const isFetching =
+    nativePricesFetching || ethTokensFetching || solTokensFetching;
 
   return {
     coins,
