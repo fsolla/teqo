@@ -49,8 +49,8 @@ export const useCoins = () => {
       })
     );
 
-    // Sort by USD value (highest first)
-    return coinList.sort((a, b) => b.usd - a.usd);
+    // Filter to only show coins with balance, sort by USD value (highest first)
+    return coinList.filter((coin) => coin.balance > 0).sort((a, b) => b.usd - a.usd);
   }, [balances, prices]);
 
   const totalUsd = useMemo(
