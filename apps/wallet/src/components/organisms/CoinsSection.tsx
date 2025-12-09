@@ -1,10 +1,12 @@
-import { Loader2 } from "lucide-preact";
+import { ChevronDown, ChevronUp, Loader2 } from "lucide-preact";
+import { useMemo, useState } from "preact/hooks";
 import { useCoins } from "../../hooks/useCoins";
 import { getT } from "../../lib/i18n";
 import { CoinRow } from "../molecules/CoinRow";
 
 export const CoinsSection = () => {
   const { coins, totalUsd, hasData, isLoading, isFetching } = useCoins();
+  const [showZeroValue, setShowZeroValue] = useState(false);
 
   const formattedTotal = totalUsd.toLocaleString("en-US", {
     style: "currency",
@@ -13,12 +15,20 @@ export const CoinsSection = () => {
     maximumFractionDigits: 2,
   });
 
+  // Split coins into those with value and those without
+  const { coinsWithValue, coinsWithoutValue } = useMemo(() => {
+    const withValue = coins.filter((coin) => coin.usd > 0);
+    const withoutValue = coins.filter((coin) => coin.usd === 0);
+    return { coinsWithValue: withValue, coinsWithoutValue: withoutValue };
+  }, [coins]);
+
   // Show skeleton only if loading and no data available
   if (isLoading && !hasData) {
     return <CoinsSkeleton />;
   }
 
   const showLoadingIndicator = isFetching || isLoading;
+  const hasZeroValueCoins = coinsWithoutValue.length > 0;
 
   return (
     <section className="flex flex-col">
@@ -35,11 +45,47 @@ export const CoinsSection = () => {
             <Loader2 size={14} className="text-teqo-400 animate-spin" />
           )}
         </div>
+
+        {/* Coins with value */}
         <div className="flex flex-col">
-          {coins.map((coin) => (
+          {coinsWithValue.map((coin) => (
             <CoinRow key={coin.id} {...coin} />
           ))}
         </div>
+
+        {/* Separator for zero-value coins */}
+        {hasZeroValueCoins && (
+          <>
+            <button
+              type="button"
+              onClick={() => setShowZeroValue(!showZeroValue)}
+              className="flex items-center justify-center gap-2 w-full py-3 mt-2 text-teqo-400 text-sm"
+            >
+              <div className="flex-1 h-px bg-teqo-100" />
+              <span className="flex items-center gap-1 px-2">
+                {showZeroValue ? t("Hide") : t("Show")} {coinsWithoutValue.length}{" "}
+                {coinsWithoutValue.length === 1
+                  ? t("coin without value")
+                  : t("coins without value")}
+                {showZeroValue ? (
+                  <ChevronUp size={16} />
+                ) : (
+                  <ChevronDown size={16} />
+                )}
+              </span>
+              <div className="flex-1 h-px bg-teqo-100" />
+            </button>
+
+            {/* Coins without value (collapsible) */}
+            {showZeroValue && (
+              <div className="flex flex-col">
+                {coinsWithoutValue.map((coin) => (
+                  <CoinRow key={coin.id} {...coin} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </section>
   );
@@ -73,4 +119,8 @@ const CoinsSkeleton = () => (
 
 const t = getT({
   Coins: "Moedas",
+  Show: "Mostrar",
+  Hide: "Ocultar",
+  "coin without value": "moeda sem valor",
+  "coins without value": "moedas sem valor",
 });

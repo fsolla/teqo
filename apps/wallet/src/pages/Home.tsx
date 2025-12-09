@@ -19,7 +19,7 @@ export const Home = () => {
           <Wallet size={18} className="text-teqo-600" />
         </Link>
       </header>
-      <main className="flex-1 p-5 flex flex-col overflow-y-auto">
+      <main className="flex-1 p-5 flex flex-col overflow-y-auto scrollbar-hidden">
         {hasCoins ? <CoinsSection /> : <WelcomeSection />}
       </main>
       <NavBar />
