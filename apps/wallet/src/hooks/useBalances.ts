@@ -1,7 +1,7 @@
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { useQuery } from "@tanstack/react-query";
 import { createPublicClient, formatEther, http } from "viem";
-import { mainnet } from "viem/chains";
+import { arbitrum, mainnet } from "viem/chains";
 import { useAccountStore } from "../stores/useAccountStore";
 
 const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY;
@@ -10,6 +10,12 @@ const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY;
 const ethClient = createPublicClient({
   chain: mainnet,
   transport: http(`https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`),
+});
+
+// Arbitrum client using Alchemy
+const arbClient = createPublicClient({
+  chain: arbitrum,
+  transport: http(`https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`),
 });
 
 // Solana connection using Alchemy
@@ -21,6 +27,14 @@ const solConnection = new Connection(
 // Fetch Ethereum balance
 const fetchEthBalance = async (address: string): Promise<number> => {
   const balance = await ethClient.getBalance({
+    address: address as `0x${string}`,
+  });
+  return Number(formatEther(balance));
+};
+
+// Fetch Arbitrum ETH balance
+const fetchArbEthBalance = async (address: string): Promise<number> => {
+  const balance = await arbClient.getBalance({
     address: address as `0x${string}`,
   });
   return Number(formatEther(balance));
@@ -47,6 +61,7 @@ const fetchBtcBalance = async (address: string): Promise<number> => {
 
 export interface Balances {
   ethereum: number;
+  arbitrum: number;
   solana: number;
   bitcoin: number;
 }
@@ -64,6 +79,14 @@ export const useBalances = () => {
     enabled: !!ethAddress,
     staleTime: 30_000, // 30 seconds
     gcTime: 5 * 60_000, // 5 minutes
+  });
+
+  const arbQuery = useQuery({
+    queryKey: ["balance", "arbitrum", ethAddress],
+    queryFn: () => fetchArbEthBalance(ethAddress!),
+    enabled: !!ethAddress,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   const solQuery = useQuery({
@@ -85,10 +108,19 @@ export const useBalances = () => {
   return {
     balances: {
       ethereum: ethQuery.data ?? 0,
+      arbitrum: arbQuery.data ?? 0,
       solana: solQuery.data ?? 0,
       bitcoin: btcQuery.data ?? 0,
     },
-    isLoading: ethQuery.isLoading || solQuery.isLoading || btcQuery.isLoading,
-    isError: ethQuery.isError || solQuery.isError || btcQuery.isError,
+    isLoading:
+      ethQuery.isLoading ||
+      arbQuery.isLoading ||
+      solQuery.isLoading ||
+      btcQuery.isLoading,
+    isError:
+      ethQuery.isError ||
+      arbQuery.isError ||
+      solQuery.isError ||
+      btcQuery.isError,
   };
 };

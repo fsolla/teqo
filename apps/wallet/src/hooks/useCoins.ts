@@ -1,4 +1,5 @@
 import { useMemo } from "preact/hooks";
+import { useArbitrumTokens } from "./useArbitrumTokens";
 import { useBalances } from "./useBalances";
 import { useCoinPrices } from "./useCoinPrices";
 import { useEthereumTokens } from "./useEthereumTokens";
@@ -12,7 +13,7 @@ export interface Coin {
   icon: string | null;
   balance: number;
   usd: number;
-  network: "ethereum" | "solana" | "bitcoin" | null;
+  network: "ethereum" | "arbitrum" | "solana" | "bitcoin" | null;
 }
 
 const NATIVE_COIN_CONFIG = {
@@ -41,27 +42,40 @@ export const useCoins = () => {
     isFetching: nativePricesFetching,
   } = useCoinPrices();
 
-  // Fetch ERC-20 tokens
+  // Fetch ERC-20 tokens (Ethereum)
   const {
     data: ethereumTokens,
     isLoading: ethTokensLoading,
     isFetching: ethTokensFetching,
   } = useEthereumTokens();
 
-  // Fetch SPL tokens
+  // Fetch ERC-20 tokens (Arbitrum)
+  const {
+    data: arbitrumTokens,
+    isLoading: arbTokensLoading,
+    isFetching: arbTokensFetching,
+  } = useArbitrumTokens();
+
+  // Fetch SPL tokens (Solana)
   const {
     data: solanaTokens,
     isLoading: solTokensLoading,
     isFetching: solTokensFetching,
   } = useSolanaTokens();
 
-  // Build token price queries for both networks
+  // Build token price queries for all networks
   const tokenPriceQueries = useMemo<TokenPriceQuery[]>(() => {
     const queries: TokenPriceQuery[] = [];
 
     if (ethereumTokens) {
       ethereumTokens.forEach((t) =>
         queries.push({ address: t.contractAddress, network: "ethereum" })
+      );
+    }
+
+    if (arbitrumTokens) {
+      arbitrumTokens.forEach((t) =>
+        queries.push({ address: t.contractAddress, network: "arbitrum" })
       );
     }
 
@@ -72,7 +86,7 @@ export const useCoins = () => {
     }
 
     return queries;
-  }, [ethereumTokens, solanaTokens]);
+  }, [ethereumTokens, arbitrumTokens, solanaTokens]);
 
   // Fetch prices for all tokens
   const { data: tokenPrices, isLoading: tokenPricesLoading } =
@@ -81,7 +95,7 @@ export const useCoins = () => {
   const coins = useMemo(() => {
     const coinList: Coin[] = [];
 
-    // Add native coins
+    // Add native coins (Ethereum, Solana, Bitcoin)
     if (nativePrices) {
       (["ethereum", "solana", "bitcoin"] as const).forEach((id) => {
         if (balances[id] > 0) {
@@ -94,9 +108,22 @@ export const useCoins = () => {
           });
         }
       });
+
+      // Add Arbitrum ETH (same price as Ethereum)
+      if (balances.arbitrum > 0) {
+        coinList.push({
+          id: "arbitrum-eth",
+          name: "Ethereum",
+          symbol: "ETH",
+          icon: "/coins/ethereum.svg",
+          balance: balances.arbitrum,
+          usd: balances.arbitrum * (nativePrices.ethereum ?? 0),
+          network: "arbitrum", // Show Arbitrum badge
+        });
+      }
     }
 
-    // Add ERC-20 tokens
+    // Add ERC-20 tokens (Ethereum)
     if (ethereumTokens && tokenPrices) {
       ethereumTokens.forEach((token) => {
         const price = tokenPrices[token.contractAddress] ?? 0;
@@ -112,7 +139,23 @@ export const useCoins = () => {
       });
     }
 
-    // Add SPL tokens
+    // Add ERC-20 tokens (Arbitrum)
+    if (arbitrumTokens && tokenPrices) {
+      arbitrumTokens.forEach((token) => {
+        const price = tokenPrices[token.contractAddress] ?? 0;
+        coinList.push({
+          id: `arb:${token.contractAddress}`,
+          name: token.name,
+          symbol: token.symbol,
+          icon: token.logo,
+          balance: token.balance,
+          usd: token.balance * price,
+          network: "arbitrum",
+        });
+      });
+    }
+
+    // Add SPL tokens (Solana)
     if (solanaTokens && tokenPrices) {
       solanaTokens.forEach((token) => {
         const price = tokenPrices[token.mint] ?? 0;
@@ -130,7 +173,14 @@ export const useCoins = () => {
 
     // Sort by USD value (highest first)
     return coinList.sort((a, b) => b.usd - a.usd);
-  }, [balances, nativePrices, ethereumTokens, solanaTokens, tokenPrices]);
+  }, [
+    balances,
+    nativePrices,
+    ethereumTokens,
+    arbitrumTokens,
+    solanaTokens,
+    tokenPrices,
+  ]);
 
   const totalUsd = useMemo(
     () => coins.reduce((sum, coin) => sum + coin.usd, 0),
@@ -143,10 +193,14 @@ export const useCoins = () => {
     balancesLoading ||
     nativePricesLoading ||
     ethTokensLoading ||
+    arbTokensLoading ||
     solTokensLoading ||
     tokenPricesLoading;
   const isFetching =
-    nativePricesFetching || ethTokensFetching || solTokensFetching;
+    nativePricesFetching ||
+    ethTokensFetching ||
+    arbTokensFetching ||
+    solTokensFetching;
 
   return {
     coins,

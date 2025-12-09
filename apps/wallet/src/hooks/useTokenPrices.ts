@@ -16,7 +16,7 @@ export type TokenPrices = Record<string, number>;
 
 export interface TokenPriceQuery {
   address: string;
-  network: "ethereum" | "solana";
+  network: "ethereum" | "arbitrum" | "solana";
 }
 
 const fetchTokenPrices = async (
