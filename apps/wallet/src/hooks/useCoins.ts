@@ -9,6 +9,15 @@ import { useSolanaTokens } from "./useSolanaTokens";
 import { useTokenPrices, type TokenPriceQuery } from "./useTokenPrices";
 import { useUnichainTokens } from "./useUnichainTokens";
 
+export type Network =
+  | "ethereum"
+  | "arbitrum"
+  | "unichain"
+  | "linea"
+  | "base"
+  | "solana"
+  | "bitcoin";
+
 export interface Coin {
   id: string;
   name: string;
@@ -16,15 +25,17 @@ export interface Coin {
   icon: string | null;
   balance: number;
   usd: number;
-  network:
-    | "ethereum"
-    | "arbitrum"
-    | "unichain"
-    | "linea"
-    | "base"
-    | "solana"
-    | "bitcoin"
-    | null;
+  network: Network | null;
+}
+
+export interface CoinGroup {
+  symbol: string;
+  name: string;
+  icon: string | null;
+  totalBalance: number;
+  totalUsd: number;
+  networks: Network[];
+  entries: Coin[];
 }
 
 const NATIVE_COIN_CONFIG = {
@@ -329,6 +340,42 @@ export const useCoins = () => {
     tokenPrices,
   ]);
 
+  // Group coins by symbol
+  const groupedCoins = useMemo(() => {
+    const groups = new Map<string, CoinGroup>();
+
+    for (const coin of coins) {
+      const key = coin.symbol.toUpperCase();
+      const existing = groups.get(key);
+
+      if (existing) {
+        existing.totalBalance += coin.balance;
+        existing.totalUsd += coin.usd;
+        existing.entries.push(coin);
+        if (coin.network && !existing.networks.includes(coin.network)) {
+          existing.networks.push(coin.network);
+        }
+        // Use icon from mainnet entry if available, or first entry with icon
+        if (!existing.icon && coin.icon) {
+          existing.icon = coin.icon;
+        }
+      } else {
+        groups.set(key, {
+          symbol: coin.symbol,
+          name: coin.name,
+          icon: coin.icon,
+          totalBalance: coin.balance,
+          totalUsd: coin.usd,
+          networks: coin.network ? [coin.network] : [],
+          entries: [coin],
+        });
+      }
+    }
+
+    // Convert to array and sort by total USD value
+    return Array.from(groups.values()).sort((a, b) => b.totalUsd - a.totalUsd);
+  }, [coins]);
+
   const totalUsd = useMemo(
     () => coins.reduce((sum, coin) => sum + coin.usd, 0),
     [coins]
@@ -357,6 +404,7 @@ export const useCoins = () => {
 
   return {
     coins,
+    groupedCoins,
     totalUsd,
     hasCoins,
     hasData,

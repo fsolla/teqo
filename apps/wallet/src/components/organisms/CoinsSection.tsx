@@ -2,10 +2,10 @@ import { ChevronDown, ChevronUp, Loader2 } from "lucide-preact";
 import { useMemo, useState } from "preact/hooks";
 import { useCoins } from "../../hooks/useCoins";
 import { getT } from "../../lib/i18n";
-import { CoinRow } from "../molecules/CoinRow";
+import { CoinGroupRow } from "../molecules/CoinGroupRow";
 
 export const CoinsSection = () => {
-  const { coins, totalUsd, hasData, isLoading, isFetching } = useCoins();
+  const { groupedCoins, totalUsd, hasData, isLoading, isFetching } = useCoins();
   const [showZeroValue, setShowZeroValue] = useState(false);
 
   const formattedTotal = totalUsd.toLocaleString("en-US", {
@@ -15,12 +15,12 @@ export const CoinsSection = () => {
     maximumFractionDigits: 2,
   });
 
-  // Split coins into those with value and those without
+  // Split grouped coins into those with value and those without
   const { coinsWithValue, coinsWithoutValue } = useMemo(() => {
-    const withValue = coins.filter((coin) => coin.usd > 0);
-    const withoutValue = coins.filter((coin) => coin.usd === 0);
+    const withValue = groupedCoins.filter((group) => group.totalUsd > 0);
+    const withoutValue = groupedCoins.filter((group) => group.totalUsd === 0);
     return { coinsWithValue: withValue, coinsWithoutValue: withoutValue };
-  }, [coins]);
+  }, [groupedCoins]);
 
   // Show skeleton only if loading and no data available
   if (isLoading && !hasData) {
@@ -48,8 +48,8 @@ export const CoinsSection = () => {
 
         {/* Coins with value */}
         <div className="flex flex-col">
-          {coinsWithValue.map((coin) => (
-            <CoinRow key={coin.id} {...coin} />
+          {coinsWithValue.map((group) => (
+            <CoinGroupRow key={group.symbol} group={group} />
           ))}
         </div>
 
@@ -79,8 +79,8 @@ export const CoinsSection = () => {
             {/* Coins without value (collapsible) */}
             {showZeroValue && (
               <div className="flex flex-col">
-                {coinsWithoutValue.map((coin) => (
-                  <CoinRow key={coin.id} {...coin} />
+                {coinsWithoutValue.map((group) => (
+                  <CoinGroupRow key={group.symbol} group={group} />
                 ))}
               </div>
             )}
