@@ -150,6 +150,13 @@ Uses a simple translation pattern with `getT()` for server components.
 - Utils/libs: `camelCase.ts`
 - Stores: `useMyStore.ts`
 
+## Git Operations
+
+- **NEVER commit or push changes automatically**
+- Only run `git commit` or `git push` when the user explicitly asks to "commit", "push", or "commit and push"
+- Always wait for user review and approval before any git operations
+- When asked to make changes, only modify files - do not commit
+
 ## When Making Changes
 
 1. Follow existing patterns in the codebase
