@@ -5,6 +5,7 @@ const NETWORK_ICONS = {
   arbitrum: "/coins/arbitrum.svg",
   unichain: "/coins/unichain.svg",
   linea: "/coins/linea.svg",
+  base: "/coins/base.svg",
   solana: "/coins/solana.svg",
   bitcoin: "/coins/bitcoin.svg",
 } as const;

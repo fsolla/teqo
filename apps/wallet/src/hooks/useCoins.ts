@@ -1,6 +1,7 @@
 import { useMemo } from "preact/hooks";
 import { useArbitrumTokens } from "./useArbitrumTokens";
 import { useBalances } from "./useBalances";
+import { useBaseTokens } from "./useBaseTokens";
 import { useCoinPrices } from "./useCoinPrices";
 import { useEthereumTokens } from "./useEthereumTokens";
 import { useLineaTokens } from "./useLineaTokens";
@@ -20,6 +21,7 @@ export interface Coin {
     | "arbitrum"
     | "unichain"
     | "linea"
+    | "base"
     | "solana"
     | "bitcoin"
     | null;
@@ -86,6 +88,13 @@ export const useCoins = () => {
     isFetching: lineaTokensFetching,
   } = useLineaTokens();
 
+  // Fetch ERC-20 tokens (Base)
+  const {
+    data: baseTokens,
+    isLoading: baseTokensLoading,
+    isFetching: baseTokensFetching,
+  } = useBaseTokens();
+
   // Build token price queries for all networks
   const tokenPriceQueries = useMemo<TokenPriceQuery[]>(() => {
     const queries: TokenPriceQuery[] = [];
@@ -114,6 +123,12 @@ export const useCoins = () => {
       );
     }
 
+    if (baseTokens) {
+      baseTokens.forEach((t) =>
+        queries.push({ address: t.contractAddress, network: "base" })
+      );
+    }
+
     if (solanaTokens) {
       solanaTokens.forEach((t) =>
         queries.push({ address: t.mint, network: "solana" })
@@ -121,7 +136,14 @@ export const useCoins = () => {
     }
 
     return queries;
-  }, [ethereumTokens, arbitrumTokens, unichainTokens, lineaTokens, solanaTokens]);
+  }, [
+    ethereumTokens,
+    arbitrumTokens,
+    unichainTokens,
+    lineaTokens,
+    baseTokens,
+    solanaTokens,
+  ]);
 
   // Fetch prices for all tokens
   const { data: tokenPrices, isLoading: tokenPricesLoading } =
@@ -180,6 +202,19 @@ export const useCoins = () => {
           balance: balances.linea,
           usd: balances.linea * (nativePrices.ethereum ?? 0),
           network: "linea", // Show Linea badge
+        });
+      }
+
+      // Add Base ETH (same price as Ethereum)
+      if (balances.base > 0) {
+        coinList.push({
+          id: "base-eth",
+          name: "Ethereum",
+          symbol: "ETH",
+          icon: "/coins/ethereum.svg",
+          balance: balances.base,
+          usd: balances.base * (nativePrices.ethereum ?? 0),
+          network: "base", // Show Base badge
         });
       }
     }
@@ -248,6 +283,22 @@ export const useCoins = () => {
       });
     }
 
+    // Add ERC-20 tokens (Base)
+    if (baseTokens && tokenPrices) {
+      baseTokens.forEach((token) => {
+        const price = tokenPrices[token.contractAddress] ?? 0;
+        coinList.push({
+          id: `base:${token.contractAddress}`,
+          name: token.name,
+          symbol: token.symbol,
+          icon: token.logo,
+          balance: token.balance,
+          usd: token.balance * price,
+          network: "base",
+        });
+      });
+    }
+
     // Add SPL tokens (Solana)
     if (solanaTokens && tokenPrices) {
       solanaTokens.forEach((token) => {
@@ -273,6 +324,7 @@ export const useCoins = () => {
     arbitrumTokens,
     unichainTokens,
     lineaTokens,
+    baseTokens,
     solanaTokens,
     tokenPrices,
   ]);
@@ -291,6 +343,7 @@ export const useCoins = () => {
     arbTokensLoading ||
     uniTokensLoading ||
     lineaTokensLoading ||
+    baseTokensLoading ||
     solTokensLoading ||
     tokenPricesLoading;
   const isFetching =
@@ -299,6 +352,7 @@ export const useCoins = () => {
     arbTokensFetching ||
     uniTokensFetching ||
     lineaTokensFetching ||
+    baseTokensFetching ||
     solTokensFetching;
 
   return {
