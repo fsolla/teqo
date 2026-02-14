@@ -1,7 +1,23 @@
 {
   "name": "teqo",
   "version": "1.0.0",
-  "description": "A blank template to get started with Payload 3.0",
+  "description": "White-label civic engagement platform for Brazilian politicians, launched with deputado Jorge Solla.",
+  "keywords": [
+    "politics",
+    "brazil",
+    "civic-engagement",
+    "white-label",
+    "payload-cms"
+  ],
+  "homepage": "https://codeberg.org/fsolla/teqo",
+  "repository": {
+    "type": "git",
+    "url": "https://codeberg.org/fsolla/teqo.git"
+  },
+  "bugs": {
+    "url": "https://codeberg.org/fsolla/teqo/issues"
+  },
+  "author": "Francisco Solla",
   "license": "MIT",
   "type": "module",
   "scripts": {
