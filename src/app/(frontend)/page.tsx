@@ -5,7 +5,6 @@ import React from 'react'
 import { fileURLToPath } from 'url'
 
 import config from '@/payload.config'
-import './styles.css'
 
 export default async function HomePage() {
   const headers = await getHeaders()
@@ -53,6 +52,9 @@ export default async function HomePage() {
         <a className="codeLink" href={fileURL}>
           <code>app/(frontend)/page.tsx</code>
         </a>
+      </div>
+      <div className="mt-4 rounded-md border border-white bg-white px-3 py-1 text-sm text-black">
+        Tailwind is active: utility classes are being applied.
       </div>
     </div>
   )

@@ -1,3 +1,6 @@
+@import "tailwindcss";
+@source "../../**/*.{js,ts,jsx,tsx,mdx}";
+
 :root {
   --font-mono: 'Roboto Mono', monospace;
 }
