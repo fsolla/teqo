@@ -77,4 +77,13 @@ export const SiteSettings: GlobalConfig = {
   hooks: {
     afterChange: [revalidate],
   },
+  versions: {
+    drafts: {
+      autosave: {
+        interval: 1000,
+      },
+      schedulePublish: true,
+    },
+    max: 10,
+  },
 }

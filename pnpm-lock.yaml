@@ -11,6 +11,9 @@ importers:
       '@payloadcms/db-postgres':
         specifier: 3.76.1
         version: 3.76.1(payload@3.76.1(graphql@16.12.0)(typescript@5.7.3))
+      '@payloadcms/live-preview-react':
+        specifier: ^3.76.1
+        version: 3.76.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@payloadcms/next':
         specifier: 3.76.1
         version: 3.76.1(@types/react@19.2.9)(graphql@16.12.0)(monaco-editor@0.55.1)(next@15.4.11(@babel/core@7.29.0)(@playwright/test@1.58.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.77.4))(payload@3.76.1(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.7.3)
@@ -1359,6 +1362,15 @@ packages:
     peerDependencies:
       graphql: ^16.8.1
       payload: 3.76.1
+
+  '@payloadcms/live-preview-react@3.76.1':
+    resolution: {integrity: sha512-UwOAi2w2oYzPDncyANxgKkWiXq0KSFN5ajFzT/9IybSWJ1F9N1FIMphTeoEaT58GBHfX8vx/Mbqb8MSmVjh1mA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.1 || ^19.1.2 || ^19.2.1
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.1 || ^19.1.2 || ^19.2.1
+
+  '@payloadcms/live-preview@3.76.1':
+    resolution: {integrity: sha512-wD9955QDBlXRONKGsNpeB0Y2FBikUjifnPk2ydrE3vFn4H5X4WLekOc1lVOQ8XhAxn7lj7w3kJaARgjU54uSKQ==}
 
   '@payloadcms/next@3.76.1':
     resolution: {integrity: sha512-0d5Irrhr632OToX8hKRqDBZJN/2w9xbJJXcZnGZ73YB67Srcb/UYcdNjItahmCbA9APKqlmK2zihgVoQ5NN2wA==}
@@ -5512,6 +5524,14 @@ snapshots:
       tsx: 4.21.0
     transitivePeerDependencies:
       - typescript
+
+  '@payloadcms/live-preview-react@3.76.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
+    dependencies:
+      '@payloadcms/live-preview': 3.76.1
+      react: 19.2.1
+      react-dom: 19.2.1(react@19.2.1)
+
+  '@payloadcms/live-preview@3.76.1': {}
 
   '@payloadcms/next@3.76.1(@types/react@19.2.9)(graphql@16.12.0)(monaco-editor@0.55.1)(next@15.4.11(@babel/core@7.29.0)(@playwright/test@1.58.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.77.4))(payload@3.76.1(graphql@16.12.0)(typescript@5.7.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.7.3)':
     dependencies:

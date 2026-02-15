@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.76.1",
+    "@payloadcms/live-preview-react": "^3.76.1",
     "@payloadcms/next": "3.76.1",
     "@payloadcms/richtext-lexical": "3.76.1",
     "@payloadcms/ui": "3.76.1",
