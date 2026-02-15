@@ -9,6 +9,7 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { SiteSettings } from './globals/SiteSettings'
 import { pt } from 'payload/i18n/pt'
+import { HomePage } from './globals/HomePage'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -21,11 +22,11 @@ export default buildConfig({
     },
     livePreview: {
       url: 'http://localhost:3000',
-      globals: ['site-settings'],
+      globals: ['site-settings', 'home'],
     },
   },
   collections: [Users, Media],
-  globals: [SiteSettings],
+  globals: [SiteSettings, HomePage],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

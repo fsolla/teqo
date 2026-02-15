@@ -1,10 +1,13 @@
+import { revalidateGlobal } from '@/utilities/globals'
 import { revalidateTag } from 'next/cache'
 import type { GlobalConfig } from 'payload'
 
-const revalidate = async () => revalidateTag('global_site-settings')
+const slug = 'site-settings'
+
+const revalidate = async () => revalidateGlobal(slug)
 
 export const SiteSettings: GlobalConfig = {
-  slug: 'site-settings',
+  slug,
   label: 'Configurações do site',
   admin: {
     group: 'Configurações',

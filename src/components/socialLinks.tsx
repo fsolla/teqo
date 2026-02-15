@@ -1,4 +1,4 @@
-import { getCachedGlobal } from '@/utilities/getGlobals'
+import { getCachedGlobal } from '@/utilities/globals'
 import Link from 'next/link'
 
 type IconProps = {
