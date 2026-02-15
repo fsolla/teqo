@@ -26,8 +26,8 @@ export default async function HomePage() {
             width={65}
           />
         </picture>
-        {!user && <h1>Welcome to your new project.</h1>}
-        {user && <h1>Welcome back, {user.email}</h1>}
+        {!user && <h1>Boas-vindas ao seu novo projeto.</h1>}
+        {user && <h1>Que bom ver você de volta, {user.email}.</h1>}
         <div className="links">
           <a
             className="admin"
@@ -35,7 +35,7 @@ export default async function HomePage() {
             rel="noopener noreferrer"
             target="_blank"
           >
-            Go to admin panel
+            Ir para o painel administrativo
           </a>
           <a
             className="docs"
@@ -43,18 +43,18 @@ export default async function HomePage() {
             rel="noopener noreferrer"
             target="_blank"
           >
-            Documentation
+            Documentação
           </a>
         </div>
       </div>
       <div className="footer">
-        <p>Update this page by editing</p>
+        <p>Atualize esta página editando</p>
         <a className="codeLink" href={fileURL}>
           <code>app/(frontend)/page.tsx</code>
         </a>
       </div>
       <div className="mt-4 rounded-md border border-white bg-white px-3 py-1 text-sm text-black">
-        Tailwind is active: utility classes are being applied.
+        Tailwind está ativo: as classes utilitárias estão sendo aplicadas.
       </div>
     </div>
   )
