@@ -16,6 +16,9 @@ export const SiteSettings: GlobalConfig = {
     read: () => true,
     update: ({ req: { user } }) => Boolean(user),
   },
+  hooks: {
+    afterChange: [revalidate],
+  },
   fields: [
     {
       name: 'headerTitle',
@@ -77,9 +80,6 @@ export const SiteSettings: GlobalConfig = {
       ],
     },
   ],
-  hooks: {
-    afterChange: [revalidate],
-  },
   versions: {
     drafts: {
       autosave: {

@@ -92,10 +92,12 @@ export interface Config {
   globals: {
     'site-settings': SiteSetting;
     home: Home;
+    metadata: Metadatum;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     home: HomeSelect<false> | HomeSelect<true>;
+    metadata: MetadataSelect<false> | MetadataSelect<true>;
   };
   locale: null;
   user: User;
@@ -487,6 +489,31 @@ export interface Home {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "metadata".
+ */
+export interface Metadatum {
+  id: number;
+  URL: string;
+  title: string;
+  description: string;
+  keywords: {
+    keyword: string;
+    id?: string | null;
+  }[];
+  openGraph: {
+    siteName: string;
+    description: string;
+  };
+  twitter: {
+    creator: string;
+    description: string;
+  };
+  image?: (number | null) | Media;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -510,6 +537,37 @@ export interface SiteSettingsSelect<T extends boolean = true> {
  * via the `definition` "home_select".
  */
 export interface HomeSelect<T extends boolean = true> {
+  image?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "metadata_select".
+ */
+export interface MetadataSelect<T extends boolean = true> {
+  URL?: T;
+  title?: T;
+  description?: T;
+  keywords?:
+    | T
+    | {
+        keyword?: T;
+        id?: T;
+      };
+  openGraph?:
+    | T
+    | {
+        siteName?: T;
+        description?: T;
+      };
+  twitter?:
+    | T
+    | {
+        creator?: T;
+        description?: T;
+      };
   image?: T;
   updatedAt?: T;
   createdAt?: T;
