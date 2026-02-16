@@ -11,6 +11,7 @@ import { SiteSettings } from './globals/SiteSettings'
 import { pt } from 'payload/i18n/pt'
 import { HomePage } from './globals/HomePage'
 import { Metadata } from './globals/Metadata'
+import { Petition } from './collections/Petition'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -26,7 +27,7 @@ export default buildConfig({
       globals: [SiteSettings.slug, HomePage.slug],
     },
   },
-  collections: [Users, Media],
+  collections: [Users, Media, Petition],
   globals: [SiteSettings, HomePage, Metadata],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

@@ -7,6 +7,9 @@ import { getPayload } from 'payload'
 
 type Collection = keyof Config['collections']
 
+export const getDocuments = <Slug extends Collection>(collection: Slug, depth?: number) =>
+  getPayload({ config: configPromise }).then((payload) => payload.find({ collection, depth }))
+
 export const getDocumentById = <Slug extends Collection>(
   collection: Slug,
   id: string,
