@@ -1,5 +1,4 @@
 import { revalidateGlobal } from '@/utilities/globals'
-import { revalidateTag } from 'next/cache'
 import type { GlobalConfig } from 'payload'
 
 const slug = 'site-settings'

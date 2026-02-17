@@ -5,7 +5,6 @@ import './styles.css'
 import { RefreshRouteOnSave } from '@/utilities/RefreshRouteOnSave'
 import { Metadata } from 'next'
 import { getCachedGlobal } from '@/utilities/globals'
-import { Media } from '@/payload-types'
 import { getCachedDocumentById } from '@/utilities/documents'
 
 export async function generateMetadata(): Promise<Metadata> {
