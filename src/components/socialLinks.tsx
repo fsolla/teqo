@@ -79,7 +79,7 @@ type SocialLinksProps = {
 }
 
 export const SocialLinks = async ({ ariaLabel }: SocialLinksProps) => {
-  const { socialLinks: links } = await getCachedGlobal('site-settings', 2)()
+  const { socialLinks: links } = await getCachedGlobal('site-settings', 2)
 
   if (!links?.length) return null
 

@@ -1,19 +1,19 @@
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
-import React from 'react'
-import './styles.css'
+import { getCachedDocumentById } from '@/utilities/documents'
+import { getCachedGlobal } from '@/utilities/globals'
 import { RefreshRouteOnSave } from '@/utilities/RefreshRouteOnSave'
 import { Metadata } from 'next'
-import { getCachedGlobal } from '@/utilities/globals'
-import { getCachedDocumentById } from '@/utilities/documents'
+import React from 'react'
+import './styles.css'
 
 export async function generateMetadata(): Promise<Metadata> {
-  const payload = await getCachedGlobal('metadata')()
+  const payload = await getCachedGlobal('metadata')
 
   let image = payload.image
 
   if (typeof image === 'number') {
-    image = await getCachedDocumentById('media', String(payload.image))()
+    image = await getCachedDocumentById('media', String(payload.image))
   }
 
   return {
