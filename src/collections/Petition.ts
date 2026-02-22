@@ -10,7 +10,7 @@ export const Petition: CollectionConfig<typeof slug> = {
     plural: 'Abaixo-assinados',
   },
   admin: {
-    group: 'Coleções',
+    group: 'Abaixo-assinados',
     useAsTitle: 'title',
     livePreview: {
       url: ({ data }) => `/abaixo-assinado/${data.id}`,

@@ -12,6 +12,9 @@ import { pt } from 'payload/i18n/pt'
 import { HomePage } from './globals/HomePage'
 import { Metadata } from './globals/Metadata'
 import { Petition } from './collections/Petition'
+import { Contact } from './collections/Contact'
+import { Consent } from './collections/Consent'
+import { Signature } from './collections/Signature'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -27,7 +30,7 @@ export default buildConfig({
       globals: [SiteSettings.slug, HomePage.slug],
     },
   },
-  collections: [Users, Media, Petition],
+  collections: [Users, Media, Petition, Contact, Consent, Signature],
   globals: [SiteSettings, HomePage, Metadata],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

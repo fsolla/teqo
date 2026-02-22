@@ -70,6 +70,9 @@ export interface Config {
     users: User;
     media: Media;
     petition: Petition;
+    contact: Contact;
+    consent: Consent;
+    signature: Signature;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -81,6 +84,9 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     petition: PetitionSelect<false> | PetitionSelect<true>;
+    contact: ContactSelect<false> | ContactSelect<true>;
+    consent: ConsentSelect<false> | ConsentSelect<true>;
+    signature: SignatureSelect<false> | SignatureSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -209,6 +215,71 @@ export interface Petition {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact".
+ */
+export interface Contact {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  state:
+    | 'AC'
+    | 'AL'
+    | 'AM'
+    | 'AP'
+    | 'BA'
+    | 'CE'
+    | 'DF'
+    | 'ES'
+    | 'GO'
+    | 'MA'
+    | 'MG'
+    | 'MS'
+    | 'MT'
+    | 'PA'
+    | 'PB'
+    | 'PE'
+    | 'PI'
+    | 'PR'
+    | 'RJ'
+    | 'RN'
+    | 'RO'
+    | 'RR'
+    | 'RS'
+    | 'SC'
+    | 'SE'
+    | 'SP'
+    | 'TO';
+  city: string;
+  postalCode?: string | null;
+  comment?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "consent".
+ */
+export interface Consent {
+  id: number;
+  text: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "signature".
+ */
+export interface Signature {
+  id: number;
+  contact: number | Contact;
+  petition: string | Petition;
+  consent: number | Consent;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -334,6 +405,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'petition';
         value: string | Petition;
+      } | null)
+    | ({
+        relationTo: 'contact';
+        value: number | Contact;
+      } | null)
+    | ({
+        relationTo: 'consent';
+        value: number | Consent;
+      } | null)
+    | ({
+        relationTo: 'signature';
+        value: number | Signature;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -430,6 +513,41 @@ export interface PetitionSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact_select".
+ */
+export interface ContactSelect<T extends boolean = true> {
+  name?: T;
+  email?: T;
+  phone?: T;
+  state?: T;
+  city?: T;
+  postalCode?: T;
+  comment?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "consent_select".
+ */
+export interface ConsentSelect<T extends boolean = true> {
+  text?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "signature_select".
+ */
+export interface SignatureSelect<T extends boolean = true> {
+  contact?: T;
+  petition?: T;
+  consent?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

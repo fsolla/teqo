@@ -1,11 +1,32 @@
 'use client'
 
-import { Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field'
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Petition } from '@/payload-types'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import z from 'zod'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
+import { STATES } from '@/lib/states'
+import { NativeSelect, NativeSelectOption } from './ui/native-select'
+import { ReactEventHandler, useEffect, useState } from 'react'
+import { CitiesByState } from '@/lib/cities'
+import { Textarea } from './ui/textarea'
+import { Button } from './ui/button'
 
 interface PetitionFormProps {
   id: string
@@ -26,6 +47,23 @@ export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
     },
   })
 
+  const [cityOptions, setCityOptions] = useState<string[]>([])
+
+  const handleStateUpdate: ReactEventHandler<HTMLSelectElement> = (e) => {
+    if (!e.currentTarget.value) {
+      setCityOptions([])
+      return
+    }
+
+    const state = e.currentTarget.value as keyof typeof CitiesByState
+
+    setCityOptions(CitiesByState[state])
+
+    console.log('ran')
+  }
+
+  console.log(cityOptions)
+
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     console.log(data)
   }
@@ -34,61 +72,83 @@ export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
     <form id={id} onSubmit={methods.handleSubmit(onSubmit)}>
       <FieldSet>
         <FieldLegend>Revogar concessão da orla de Salvador</FieldLegend>
-        <FieldDescription>Assine esta petição e ajude a manter a orla de Salvador para todos nós!</FieldDescription>
+        <FieldDescription>
+          Assine esta petição e ajude a manter a orla de Salvador para todos nós!
+        </FieldDescription>
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="name">
-              Nome Completo
-            </FieldLabel>
-            <Input id="name" placeholder="Digite seu nome completo" autoComplete='name' maxLength={120} required />
+            <FieldLabel htmlFor="name">Nome Completo</FieldLabel>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Digite seu nome completo"
+              autoComplete="name"
+              maxLength={120}
+              required
+            />
           </Field>
           <Field>
-            <FieldLabel htmlFor="email">
-              E-mail
-            </FieldLabel>
-            <Input id="email" placeholder="Digite seu e-mail" autoComplete='email' inputMode="email" type='text' maxLength={254} required />
+            <FieldLabel htmlFor="email">E-mail</FieldLabel>
+            <Input
+              id="email"
+              placeholder="Digite seu e-mail"
+              autoComplete="email"
+              inputMode="email"
+              type="text"
+              maxLength={254}
+              required
+            />
           </Field>
           <Field>
-            <FieldLabel htmlFor="phone">
-              Celular
-            </FieldLabel>
-            <Input id="phone" placeholder="(71) 99999-9999" autoComplete='tel' inputMode="tel" type='tel' maxLength={15} required />
+            <FieldLabel htmlFor="phone">Celular</FieldLabel>
+            <Input
+              id="phone"
+              placeholder="(71) 99999-9999"
+              autoComplete="tel"
+              inputMode="tel"
+              type="tel"
+              maxLength={15}
+              required
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="state">Estado</FieldLabel>
+            <NativeSelect name="state" onChange={handleStateUpdate} required>
+              <NativeSelectOption value="">Selecione um estado</NativeSelectOption>
+              {Object.keys(CitiesByState).map((state) => (
+                <NativeSelectOption key={state} value={state}>
+                  {state}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="city">Cidade</FieldLabel>
+            <NativeSelect name="city" disabled={!cityOptions.length} required>
+              <NativeSelectOption value="">Selecione uma cidade</NativeSelectOption>
+              {cityOptions.map((city) => (
+                <NativeSelectOption key={city} value={city}>
+                  {city}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="postalCode">CEP</FieldLabel>
+            <Input id="postalCode" type="text" placeholder="00000-000" />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="comment">Comentário</FieldLabel>
+            <Textarea />
+          </Field>
+          <Field>
+            <Button type="submit">Assinar</Button>
           </Field>
         </FieldGroup>
       </FieldSet>
     </form>
   )
 }
-
-const STATES = [
-  'AC',
-  'AL',
-  'AM',
-  'AP',
-  'BA',
-  'CE',
-  'DF',
-  'ES',
-  'GO',
-  'MA',
-  'MG',
-  'MS',
-  'MT',
-  'PA',
-  'PB',
-  'PE',
-  'PI',
-  'PR',
-  'RJ',
-  'RN',
-  'RO',
-  'RR',
-  'RS',
-  'SC',
-  'SE',
-  'SP',
-  'TO',
-]
 
 const formSchema = z.object({
   name: z

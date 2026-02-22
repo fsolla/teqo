@@ -10,7 +10,7 @@ const baseIconClass = 'h-5 w-5'
 const InstagramIcon = ({ className }: IconProps) => (
   <svg
     viewBox="0 0 24 24"
-    fill="white"
+    fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
     className={className || baseIconClass}
     aria-hidden
@@ -23,7 +23,7 @@ const InstagramIcon = ({ className }: IconProps) => (
 const FacebookIcon = ({ className }: IconProps) => (
   <svg
     viewBox="0 0 24 24"
-    fill="white"
+    fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
     className={className || baseIconClass}
     aria-hidden
@@ -37,7 +37,7 @@ const YoutubeIcon = ({ className }: IconProps) => (
   <svg
     role="img"
     viewBox="0 0 24 24"
-    fill="white"
+    fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
     className={className || baseIconClass}
     aria-hidden
@@ -50,7 +50,7 @@ const YoutubeIcon = ({ className }: IconProps) => (
 const GlobeIcon = ({ className }: IconProps) => (
   <svg
     viewBox="0 0 24 24"
-    fill="white"
+    fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
     className={className || baseIconClass}
     aria-hidden
@@ -84,31 +84,27 @@ export const SocialLinks = async ({ ariaLabel }: SocialLinksProps) => {
   if (!links?.length) return null
 
   return (
-    <nav aria-label={ariaLabel}>
-      <ul className="flex items-center gap-3">
-        {links.map((link) => {
-          if (!link.enabled || !link.url) return null
+    <nav aria-label={ariaLabel} className="flex items-center gap-3">
+      {links.map((link) => {
+        if (!link.enabled || !link.url) return null
 
-          const platform = link.platform ?? 'custom'
-          const Icon = icons[platform] ?? GlobeIcon
-          const label =
-            link.label?.trim() ?? defaultA11yLabels[platform] ?? defaultA11yLabels.custom
+        const platform = link.platform ?? 'custom'
+        const Icon = icons[platform] ?? GlobeIcon
+        const label = link.label?.trim() ?? defaultA11yLabels[platform] ?? defaultA11yLabels.custom
 
-          return (
-            <li key={`${platform}-${link.url}`}>
-              <Link
-                href={link.url}
-                aria-label={label}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex rounded-md p-1 transition-opacity hover:opacity-80"
-              >
-                <Icon />
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
+        return (
+          <Link
+            key={`${platform}-${link.url}`}
+            href={link.url}
+            aria-label={label}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <Icon />
+          </Link>
+        )
+      })}
     </nav>
   )
 }

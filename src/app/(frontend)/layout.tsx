@@ -6,6 +6,10 @@ import { RefreshRouteOnSave } from '@/utilities/RefreshRouteOnSave'
 import { Metadata } from 'next'
 import React from 'react'
 import './styles.css'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
 export async function generateMetadata(): Promise<Metadata> {
   const payload = await getCachedGlobal('metadata')
@@ -62,12 +66,19 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props
 
   return (
-    <html lang="pt-BR">
-      <body>
-        <RefreshRouteOnSave />
-        <Header />
-        {children}
-        <Footer />
+    <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
+      <body className="antialiased">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <RefreshRouteOnSave />
+          <Header />
+          {children}
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   )
