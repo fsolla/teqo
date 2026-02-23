@@ -15,6 +15,7 @@ import { Petition } from './collections/Petition'
 import { Contact } from './collections/Contact'
 import { Consent } from './collections/Consent'
 import { Signature } from './collections/Signature'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -43,7 +44,14 @@ export default buildConfig({
     },
   }),
   sharp,
-  plugins: [],
+  plugins: [
+    vercelBlobStorage({
+      collections: {
+        media: true,
+      },
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    }),
+  ],
   i18n: {
     fallbackLanguage: 'pt', // use 'pt' (not 'pt-BR') for Payload admin language code
     supportedLanguages: { pt },

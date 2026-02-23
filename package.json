@@ -40,6 +40,7 @@
     "@payloadcms/live-preview-react": "^3.76.1",
     "@payloadcms/next": "3.76.1",
     "@payloadcms/richtext-lexical": "3.76.1",
+    "@payloadcms/storage-vercel-blob": "^3.77.0",
     "@payloadcms/ui": "3.76.1",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-select": "^2.2.6",
