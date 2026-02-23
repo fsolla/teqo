@@ -8,6 +8,8 @@ import React from 'react'
 import './styles.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Inter } from 'next/font/google'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import { Analytics } from '@vercel/analytics/next'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
@@ -74,6 +76,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
           enableSystem
           disableTransitionOnChange
         >
+          <SpeedInsights />
+          <Analytics />
           <RefreshRouteOnSave />
           <Header />
           {children}

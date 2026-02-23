@@ -25,4 +25,5 @@ export const getCachedGlobal = async <Slug extends Global>(slug: Slug, depth?: n
   return await getGlobal(slug, depth)
 }
 
-export const revalidateGlobal = <Slug extends Global>(slug: Slug) => revalidateTag(getTag(slug), 'max')
+export const revalidateGlobal = <Slug extends Global>(slug: Slug) =>
+  revalidateTag(getTag(slug), 'max')
