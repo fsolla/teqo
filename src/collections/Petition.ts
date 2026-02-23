@@ -62,5 +62,30 @@ export const Petition: CollectionConfig<typeof slug> = {
       label: 'Corpo',
       required: true,
     },
+    {
+      name: 'form',
+      type: 'group',
+      label: 'Formulário',
+      required: true,
+      fields: [
+        {
+          name: 'title',
+          type: 'text',
+          label: 'Título',
+        },
+        {
+          name: 'subtitle',
+          type: 'text',
+          label: 'Subtítulo',
+        },
+        {
+          name: 'consent',
+          type: 'relationship',
+          label: 'Consentimento',
+          relationTo: 'consent',
+          required: true,
+        },
+      ],
+    },
   ],
 }

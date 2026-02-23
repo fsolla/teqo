@@ -5648,4 +5648,4 @@ export const CitiesByState = {
     'Wanderlândia',
     'Xambioá',
   ],
-}
+} as const

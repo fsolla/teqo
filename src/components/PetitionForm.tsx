@@ -11,22 +11,14 @@ import {
 import { Input } from '@/components/ui/input'
 import { Petition } from '@/payload-types'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import z from 'zod'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select'
-import { STATES } from '@/lib/states'
+import { type SubmitHandler, useForm } from 'react-hook-form'
 import { NativeSelect, NativeSelectOption } from './ui/native-select'
-import { ReactEventHandler, useEffect, useState } from 'react'
+import { useState, useTransition } from 'react'
 import { CitiesByState } from '@/lib/cities'
 import { Textarea } from './ui/textarea'
 import { Button } from './ui/button'
+import { petitionFormSchema, type PetitionFormInput } from '@/lib/schemas/petition-form'
+import { submitPetitionSignature } from '@/app/(frontend)/actions/submitPetitionSignature'
 
 interface PetitionFormProps {
   id: string
@@ -34,47 +26,64 @@ interface PetitionFormProps {
 }
 
 export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
-  const methods = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const methods = useForm<PetitionFormInput>({
+    resolver: zodResolver(petitionFormSchema),
     defaultValues: {
       name: '',
       email: '',
       phone: '',
-      state: '',
+      state: undefined,
       city: '',
       postalCode: '',
       comment: '',
     },
   })
 
-  const [cityOptions, setCityOptions] = useState<string[]>([])
+  const [isSubmitting, startTransition] = useTransition()
 
-  const handleStateUpdate: ReactEventHandler<HTMLSelectElement> = (e) => {
-    if (!e.currentTarget.value) {
+  const [cityOptions, setCityOptions] = useState<readonly string[]>([])
+
+  const handleStateUpdate = (stateValue?: keyof typeof CitiesByState) => {
+    if (!stateValue) {
       setCityOptions([])
+      methods.setValue('city', '')
       return
     }
 
-    const state = e.currentTarget.value as keyof typeof CitiesByState
-
-    setCityOptions(CitiesByState[state])
-
-    console.log('ran')
+    setCityOptions(CitiesByState[stateValue])
+    methods.setValue('city', '')
   }
 
-  console.log(cityOptions)
+  const onSubmit: SubmitHandler<PetitionFormInput> = (input) => {
+    const consentId =
+      typeof petition.form?.consent === 'number' ? petition.form.consent : petition.form.consent.id
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log(data)
+    startTransition(async () => {
+      try {
+        await submitPetitionSignature({
+          ...input,
+          petitionId: petition.id,
+          consentId,
+        })
+        methods.reset()
+        setCityOptions([])
+      } catch {
+        methods.setError('root', {
+          message: 'Falha ao enviar assinatura. Tente novamente.',
+        })
+      }
+    })
   }
 
   return (
     <form id={id} onSubmit={methods.handleSubmit(onSubmit)}>
       <FieldSet>
-        <FieldLegend>Revogar concessão da orla de Salvador</FieldLegend>
-        <FieldDescription>
-          Assine esta petição e ajude a manter a orla de Salvador para todos nós!
-        </FieldDescription>
+        {petition.form.title ? <FieldLegend>{petition.form.title}</FieldLegend> : null}
+        {petition.form.subtitle ? (
+          <FieldDescription>
+            Assine esta petição e ajude a manter a orla de Salvador para todos nós!
+          </FieldDescription>
+        ) : null}
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="name">Nome Completo</FieldLabel>
@@ -84,6 +93,7 @@ export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
               placeholder="Digite seu nome completo"
               autoComplete="name"
               maxLength={120}
+              {...methods.register('name')}
               required
             />
           </Field>
@@ -96,6 +106,7 @@ export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
               inputMode="email"
               type="text"
               maxLength={254}
+              {...methods.register('email')}
               required
             />
           </Field>
@@ -108,12 +119,16 @@ export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
               inputMode="tel"
               type="tel"
               maxLength={15}
+              {...methods.register('phone')}
               required
             />
           </Field>
           <Field>
             <FieldLabel htmlFor="state">Estado</FieldLabel>
-            <NativeSelect name="state" onChange={handleStateUpdate} required>
+            <NativeSelect
+              required
+              {...methods.register('state', { onChange: (e) => handleStateUpdate(e.target.value) })}
+            >
               <NativeSelectOption value="">Selecione um estado</NativeSelectOption>
               {Object.keys(CitiesByState).map((state) => (
                 <NativeSelectOption key={state} value={state}>
@@ -124,7 +139,12 @@ export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
           </Field>
           <Field>
             <FieldLabel htmlFor="city">Cidade</FieldLabel>
-            <NativeSelect name="city" disabled={!cityOptions.length} required>
+            <NativeSelect
+              id="city"
+              {...methods.register('city')}
+              disabled={!cityOptions.length}
+              required
+            >
               <NativeSelectOption value="">Selecione uma cidade</NativeSelectOption>
               {cityOptions.map((city) => (
                 <NativeSelectOption key={city} value={city}>
@@ -135,48 +155,32 @@ export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
           </Field>
           <Field>
             <FieldLabel htmlFor="postalCode">CEP</FieldLabel>
-            <Input id="postalCode" type="text" placeholder="00000-000" />
+            <Input
+              id="postalCode"
+              type="text"
+              placeholder="00000-000"
+              {...methods.register('postalCode')}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="comment">Comentário</FieldLabel>
-            <Textarea />
+            <Textarea id="comment" {...methods.register('comment')} />
           </Field>
           <Field>
-            <Button type="submit">Assinar</Button>
+            {typeof petition.form.consent !== 'number' ? (
+              <FieldDescription>{petition.form.consent.text}</FieldDescription>
+            ) : null}
+            {methods.formState.errors.root?.message ? (
+              <FieldDescription className="text-destructive">
+                {methods.formState.errors.root.message}
+              </FieldDescription>
+            ) : null}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Enviando...' : 'Assinar'}
+            </Button>
           </Field>
         </FieldGroup>
       </FieldSet>
     </form>
   )
 }
-
-const formSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, 'Nome deve ter pelo menos 2 caracteres')
-    .max(120, 'Nome deve ter no máximo 100 caracteres')
-    .regex(
-      /^(?=.* )[\p{L}\p{M}]+(?:[- ][\p{L}\p{M}]+)*$/u,
-      'Informe nome e sobrenome. Use apenas letras, no máximo um espaço ou hífen entre termos, e sem espaço no início ou no fim.',
-    ),
-  email: z.email('Email inválido'),
-  phone: z
-    .string()
-    .trim()
-    .length(11, 'Telefone celular inválido')
-    .regex(/^\d{11}$/, 'Telefone celular inválido'),
-  state: z.literal(STATES, 'Estado inválido'),
-  city: z.string().trim().min(3, 'Cidade inválida').max(100, 'Cidade muito longa'),
-  postalCode: z
-    .string()
-    .trim()
-    .regex(/^(?:\d{8})?$/, 'CEP inválido')
-    .optional(),
-  comment: z
-    .string()
-    .trim()
-    .max(1000, 'Comentário muito longo')
-    .refine((v) => !/<\/?[a-z][\s\S]*>/i.test(v), 'O comentário não pode conter HTML')
-    .optional(),
-})

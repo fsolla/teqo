@@ -209,9 +209,24 @@ export interface Petition {
     };
     [k: string]: unknown;
   };
+  form: {
+    title?: string | null;
+    subtitle?: string | null;
+    consent: number | Consent;
+  };
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "consent".
+ */
+export interface Consent {
+  id: number;
+  text: string;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -253,16 +268,6 @@ export interface Contact {
   city: string;
   postalCode?: string | null;
   comment?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "consent".
- */
-export interface Consent {
-  id: number;
-  text: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -510,6 +515,13 @@ export interface PetitionSelect<T extends boolean = true> {
   subtitle?: T;
   enabled?: T;
   body?: T;
+  form?:
+    | T
+    | {
+        title?: T;
+        subtitle?: T;
+        consent?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

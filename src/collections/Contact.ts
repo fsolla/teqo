@@ -1,4 +1,4 @@
-import { STATES } from '@/lib/states'
+import { CitiesByState } from '@/lib/cities'
 import { CollectionConfig } from 'payload'
 
 export const Contact: CollectionConfig = {
@@ -38,7 +38,7 @@ export const Contact: CollectionConfig = {
       name: 'state',
       type: 'select',
       label: 'Estado',
-      options: STATES,
+      options: Object.keys(CitiesByState) as (keyof typeof CitiesByState)[],
       required: true,
     },
     {
