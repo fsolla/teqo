@@ -18,9 +18,6 @@ export const Petition: CollectionConfig<typeof slug> = {
   },
   versions: {
     drafts: {
-      autosave: {
-        interval: 1000,
-      },
       schedulePublish: true,
     },
     maxPerDoc: 5,
