@@ -13,7 +13,7 @@ export async function generateStaticParams() {
 }
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const petition = await getCachedDocumentById('petition', (await params).id)
+  const petition = await getCachedDocumentById('petition', (await params).id)()
 
   if (!petition || !petition.enabled) {
     return notFound()

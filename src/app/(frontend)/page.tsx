@@ -4,12 +4,12 @@ import { getCachedGlobal } from '@/utilities/globals'
 import Image from 'next/image'
 
 export default async function HomePage() {
-  const payload = await getCachedGlobal('home', 2)
+  const payload = await getCachedGlobal('home', 2)()
 
   let image: Media
 
   if (typeof payload.image === 'number') {
-    image = await getCachedDocumentById('media', `${payload.image}`)
+    image = await getCachedDocumentById('media', `${payload.image}`)()
   } else {
     image = payload.image
   }

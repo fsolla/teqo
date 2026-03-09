@@ -14,12 +14,12 @@ import { Analytics } from '@vercel/analytics/next'
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
 export async function generateMetadata(): Promise<Metadata> {
-  const payload = await getCachedGlobal('metadata')
+  const payload = await getCachedGlobal('metadata')()
 
   let image = payload.image
 
   if (typeof image === 'number') {
-    image = await getCachedDocumentById('media', String(payload.image))
+    image = await getCachedDocumentById('media', String(payload.image))()
   }
 
   return {

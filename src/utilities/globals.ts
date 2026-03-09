@@ -1,7 +1,7 @@
 import type { Config } from 'src/payload-types'
 
 import configPromise from '@payload-config'
-import { cacheTag, revalidateTag } from 'next/cache'
+import { revalidateTag, unstable_cache } from 'next/cache'
 import { getPayload } from 'payload'
 
 type Global = keyof Config['globals']
@@ -19,11 +19,7 @@ export async function getGlobal<Slug extends Global>(slug: Slug, depth?: number)
 
 const getTag = (slug: string) => `global_${slug}`
 
-export const getCachedGlobal = async <Slug extends Global>(slug: Slug, depth?: number) => {
-  'use cache'
-  cacheTag(getTag(slug))
-  return await getGlobal(slug, depth)
-}
+export const getCachedGlobal = <Slug extends Global>(slug: Slug, depth?: number) =>
+  unstable_cache(async () => getGlobal(slug, depth), [getTag(slug)])
 
-export const revalidateGlobal = <Slug extends Global>(slug: Slug) =>
-  revalidateTag(getTag(slug), 'max')
+export const revalidateGlobal = <Slug extends Global>(slug: Slug) => revalidateTag(getTag(slug))

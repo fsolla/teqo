@@ -29,7 +29,15 @@ export const Petition: CollectionConfig<typeof slug> = {
     read: () => true,
   },
   hooks: {
-    beforeChange: [({ data }) => revalidateDocumentById(slug, data.id)],
+    afterChange: [
+      ({ doc, previousDoc, operation }) => {
+        // Admin create view creates the initial draft during render.
+        // Skip cache invalidation only for that first draft creation.
+        if (operation === 'create' && doc._status !== 'published') return
+
+        revalidateDocumentById(slug, previousDoc?.id ?? doc.id)
+      },
+    ],
   },
   fields: [
     {

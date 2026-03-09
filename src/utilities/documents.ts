@@ -1,7 +1,7 @@
-import { Config } from '@/payload-types'
+import type { Config } from '@/payload-types'
 
 import configPromise from '@payload-config'
-import { cacheTag, revalidateTag } from 'next/cache'
+import { revalidateTag, unstable_cache } from 'next/cache'
 import { getPayload } from 'payload'
 
 type Collection = keyof Config['collections']
@@ -21,15 +21,14 @@ export const getDocumentById = <Slug extends Collection>(
 const getTag = <Slug extends Collection>(collection: Slug, id: string) =>
   `document_${collection}:${id}`
 
-export const getCachedDocumentById = async <Slug extends Collection>(
+export const getCachedDocumentById = <Slug extends Collection>(
   collection: Slug,
   id: string,
   depth?: number,
-) => {
-  'use cache'
-  cacheTag(getTag(collection, id))
-  return await getDocumentById(collection, id, depth)
-}
+) =>
+  unstable_cache(() => getDocumentById(collection, id, depth), [getTag(collection, id)], {
+    tags: [getTag(collection, id)],
+  })
 
 export const revalidateDocumentById = <Slug extends Collection>(collection: Slug, id: string) =>
-  revalidateTag(getTag(collection, id), 'max')
+  revalidateTag(getTag(collection, id))
