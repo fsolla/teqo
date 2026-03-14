@@ -15,10 +15,15 @@ export default async function HomePage() {
   }
 
   return (
-    // Main element occupies the whole screen width and the height of screen minus height of header
-    <main className="w-screen h-screen overflow-hidden">
+    <main className="w-screen">
       {image?.url ? (
-        <Image src={image.url} alt={image.alt} width={image.width!} height={image.height!} />
+        <Image
+          className="w-screen"
+          src={image.url}
+          alt={image.alt}
+          width={image.width!}
+          height={image.height!}
+        />
       ) : null}
     </main>
   )

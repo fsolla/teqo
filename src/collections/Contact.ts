@@ -56,11 +56,5 @@ export const Contact: CollectionConfig = {
       minLength: 8,
       maxLength: 8,
     },
-    {
-      name: 'comment',
-      type: 'textarea',
-      label: 'Comentario',
-      maxLength: 1000,
-    },
   ],
 }

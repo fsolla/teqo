@@ -1,5 +1,3 @@
-import { Footer } from '@/components/Footer'
-import { Header } from '@/components/Header'
 import { getCachedDocumentById } from '@/utilities/documents'
 import { getCachedGlobal } from '@/utilities/globals'
 import { RefreshRouteOnSave } from '@/utilities/RefreshRouteOnSave'
@@ -68,20 +66,18 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props
 
   return (
-    <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
-      <body className="antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+    <html
+      lang="pt-BR"
+      className={`${inter.variable} w-screen h-screen scrollbar-hide`}
+      style={{ colorScheme: 'light' }}
+      suppressHydrationWarning
+    >
+      <body className="antialiased w-screen scrollbar-hide">
+        <ThemeProvider attribute="class">
           <SpeedInsights />
           <Analytics />
           <RefreshRouteOnSave />
-          <Header />
           {children}
-          <Footer />
         </ThemeProvider>
       </body>
     </html>

@@ -16,6 +16,7 @@ import { Contact } from './collections/Contact'
 import { Consent } from './collections/Consent'
 import { Signature } from './collections/Signature'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+import { Subscription } from './collections/Subscription'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -31,7 +32,7 @@ export default buildConfig({
       globals: [SiteSettings.slug, HomePage.slug],
     },
   },
-  collections: [Users, Media, Petition, Contact, Consent, Signature],
+  collections: [Users, Media, Petition, Contact, Consent, Signature, Subscription],
   globals: [SiteSettings, HomePage, Metadata],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

@@ -73,6 +73,7 @@ export interface Config {
     contact: Contact;
     consent: Consent;
     signature: Signature;
+    subscription: Subscription;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -87,6 +88,7 @@ export interface Config {
     contact: ContactSelect<false> | ContactSelect<true>;
     consent: ConsentSelect<false> | ConsentSelect<true>;
     signature: SignatureSelect<false> | SignatureSelect<true>;
+    subscription: SubscriptionSelect<false> | SubscriptionSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -270,7 +272,6 @@ export interface Contact {
     | 'TO';
   city: string;
   postalCode?: string | null;
-  comment?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -283,6 +284,19 @@ export interface Signature {
   contact: number | Contact;
   petition: string | Petition;
   consent: number | Consent;
+  comment?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscription".
+ */
+export interface Subscription {
+  id: number;
+  contact: number | Contact;
+  consent: number | Consent;
+  comment?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -425,6 +439,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'signature';
         value: number | Signature;
+      } | null)
+    | ({
+        relationTo: 'subscription';
+        value: number | Subscription;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -540,7 +558,6 @@ export interface ContactSelect<T extends boolean = true> {
   state?: T;
   city?: T;
   postalCode?: T;
-  comment?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -561,6 +578,18 @@ export interface SignatureSelect<T extends boolean = true> {
   contact?: T;
   petition?: T;
   consent?: T;
+  comment?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscription_select".
+ */
+export interface SubscriptionSelect<T extends boolean = true> {
+  contact?: T;
+  consent?: T;
+  comment?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -644,7 +673,7 @@ export interface SiteSetting {
   headerTitle?: string | null;
   socialLinks?:
     | {
-        platform: 'instagram' | 'facebook' | 'youtube';
+        platform: 'instagram' | 'facebook' | 'youtube' | 'whatsapp';
         url: string;
         /**
          * Rótulo opcional para acessibilidade. Se estiver vazio, usamos um rótulo padrão da plataforma.

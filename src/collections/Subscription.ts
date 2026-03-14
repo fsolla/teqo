@@ -1,13 +1,13 @@
 import { CollectionConfig } from 'payload'
 
-export const Signature: CollectionConfig = {
-  slug: 'signature',
+export const Subscription: CollectionConfig = {
+  slug: 'subscription',
   labels: {
     singular: 'Assinatura',
     plural: 'Assinaturas',
   },
   admin: {
-    group: 'Abaixo-assinados',
+    group: 'Contatos',
   },
   fields: [
     {
@@ -16,13 +16,6 @@ export const Signature: CollectionConfig = {
       label: 'Contato',
       required: true,
       relationTo: 'contact',
-    },
-    {
-      type: 'relationship',
-      name: 'petition',
-      label: 'Abaixo-assinado',
-      required: true,
-      relationTo: 'petition',
     },
     {
       type: 'relationship',

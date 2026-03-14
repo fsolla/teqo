@@ -9,24 +9,53 @@ type SubmitPetitionSignatureInput = PetitionFormInput & {
   consentId: number
 }
 
-export const submitPetitionSignature = async (input: SubmitPetitionSignatureInput) => {
-  const { petitionId, consentId, ...contactInput } = input
+export const submitPetitionSignature = async ({
+  petitionId,
+  consentId,
+  comment,
+  ...contactInput
+}: SubmitPetitionSignatureInput) => {
   const data = petitionFormSchema.parse(contactInput)
   const payload = await getPayload({ config })
 
-  const contact = await payload.create({
-    collection: 'contact',
-    data,
-  })
+  const transactionID = await payload.db.beginTransaction()
 
-  await payload.create({
-    collection: 'signature',
-    data: {
-      contact: contact.id,
-      petition: petitionId,
-      consent: consentId,
-    },
-  })
+  if (!transactionID) {
+    throw new Error('Failed to begin transaction')
+  }
 
-  return { ok: true as const }
+  try {
+    const contact = await payload.create({
+      collection: 'contact',
+      data,
+      req: { transactionID },
+    })
+
+    await Promise.all([
+      payload.create({
+        collection: 'signature',
+        data: {
+          contact: contact.id,
+          petition: petitionId,
+          consent: consentId,
+          comment,
+        },
+        req: { transactionID },
+      }),
+      payload.create({
+        collection: 'subscription',
+        data: {
+          contact: contact.id,
+          consent: consentId,
+        },
+        req: { transactionID },
+      }),
+    ])
+
+    await payload.db.commitTransaction(transactionID)
+    return { ok: true }
+  } catch (error) {
+    await payload.db.rollbackTransaction(transactionID)
+    throw error
+  }
 }
