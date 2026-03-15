@@ -13,7 +13,7 @@ export const Consent: CollectionConfig = {
   fields: [
     {
       name: 'text',
-      type: 'text',
+      type: 'richText',
       label: 'Texto',
       required: true,
     },

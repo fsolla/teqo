@@ -22,6 +22,7 @@ import { PhoneInput } from './PhoneInput'
 import { StateSelect } from './StateSelect'
 import { CitySelect } from './CitySelect'
 import { PostalCodeInput } from './PostalCodeInput'
+import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
 
 interface PetitionFormProps {
   id: string
@@ -105,7 +106,11 @@ export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
             </Field>
             <Field>
               {typeof petition.form.consent !== 'number' ? (
-                <FieldDescription>{petition.form.consent.text}</FieldDescription>
+                <FieldDescription
+                  dangerouslySetInnerHTML={{
+                    __html: convertLexicalToHTML({ data: petition.form.consent.text }),
+                  }}
+                />
               ) : null}
               {methods.formState.errors.root?.message ? (
                 <FieldDescription className="text-destructive">

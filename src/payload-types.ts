@@ -229,7 +229,21 @@ export interface Petition {
  */
 export interface Consent {
   id: number;
-  text: string;
+  text: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
   updatedAt: string;
   createdAt: string;
 }

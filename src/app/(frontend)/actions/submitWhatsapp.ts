@@ -25,6 +25,7 @@ export const submitWhatsapp = async (input: WhatsAppFormInput) => {
       collection: 'subscription',
       data: {
         contact: contact.id,
+        consent: 2,
         comment,
       },
       req: { transactionID },
