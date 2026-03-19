@@ -72,7 +72,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       style={{ colorScheme: 'light' }}
       suppressHydrationWarning
     >
-      <body className="antialiased w-screen scrollbar-hide">
+      <body className="antialiased w-screen scrollbar-hide overflow-hidden">
         <ThemeProvider attribute="class">
           <SpeedInsights />
           <Analytics />
