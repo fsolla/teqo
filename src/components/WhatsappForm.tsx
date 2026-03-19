@@ -16,9 +16,10 @@ import { submitWhatsapp } from '@/app/(frontend)/actions/submitWhatsapp'
 
 interface WhatsappFormProps {
   classname?: string
+  onSubmit: () => void
 }
 
-export const WhatsappForm = ({ classname }: WhatsappFormProps) => {
+export const WhatsappForm = ({ classname, onSubmit }: WhatsappFormProps) => {
   const methods = useForm<WhatsAppFormInput>({
     resolver: zodResolver(whatsAppFormSchema),
     defaultValues: {
@@ -33,11 +34,12 @@ export const WhatsappForm = ({ classname }: WhatsappFormProps) => {
 
   const [isSubmitting, startTransition] = useTransition()
 
-  const onSubmit: SubmitHandler<WhatsAppFormInput> = (input) => {
+  const handleSubmit: SubmitHandler<WhatsAppFormInput> = (input) => {
     startTransition(async () => {
       try {
         await submitWhatsapp(input)
         methods.reset()
+        onSubmit()
       } catch {
         methods.setError('root', {
           message: 'Falha ao enviar assinatura. Tente novamente.',
@@ -50,7 +52,7 @@ export const WhatsappForm = ({ classname }: WhatsappFormProps) => {
     <FormProvider {...methods}>
       <form
         id="mandato-no-whatsapp"
-        onSubmit={methods.handleSubmit(onSubmit)}
+        onSubmit={methods.handleSubmit(handleSubmit)}
         className={classname}
       >
         <FieldGroup>
