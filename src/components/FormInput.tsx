@@ -28,13 +28,16 @@ export const FormInput = <
   onChange,
   ...props
 }: FormInpuProps<TFieldValues, TFieldName>) => {
-  const { register } = useFormContext<TFieldValues>()
-  const { onChange: onValueChange, ...registerResult } = register(name, options)
+  const { onChange: onValueChange, ...registerResult } = useFormContext<TFieldValues>().register(
+    name,
+    options,
+  )
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    const targetValue = e.target.value
-    const formattedValue = format?.(targetValue) ?? targetValue
-    e.target.value = formattedValue
+    if (format) {
+      e.target.value = format(e.target.value)
+    }
+
     onValueChange(e)
     onChange?.(e)
   }
