@@ -10,18 +10,31 @@ export const NameInput = (props: ComponentProps<'input'>) => (
     autoComplete="name"
     maxLength={120}
     minLength={2}
-    format={sanitize}
+    format={format}
+    sanitize={sanitize}
     required
     {...props}
   />
 )
 
-const sanitize = (value: string) =>
+const format = (value: string) =>
   value
     .normalize('NFC')
     .replace(/[^\p{L}\p{M}\s-]+/gu, '')
-    .replace(/-+/g, '-')
+    .trimStart()
     .replace(/\s+/g, ' ')
-    .replace(/\s*-\s*/g, '-')
-    .trim()
+    .replace(/-{2,}/g, '-')
+    .replace(/(^|\s)-+/gu, '$1')
+    .toLowerCase()
+    .replace(/\b\p{L}+\b/gu, (word) =>
+      connectors.has(word) ? word : word[0].toUpperCase() + word.slice(1),
+    )
     .slice(0, 120)
+
+const sanitize = (value: string) =>
+  format(value)
+    .trim()
+    .replace(/(^|\s)-+/gu, '$1')
+    .replace(/-(?!\p{L})/gu, '')
+
+const connectors = new Set(['da', 'das', 'de', 'di', 'do', 'dos', 'du', 'e'])

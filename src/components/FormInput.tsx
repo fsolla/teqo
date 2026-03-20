@@ -1,13 +1,13 @@
 'use client'
 
-import { ChangeEventHandler, type ComponentProps } from 'react'
+import type {
+  CompositionEventHandler,
+  FocusEventHandler,
+  InputEventHandler,
+  ComponentProps,
+} from 'react'
 import { Input } from './ui/input'
-import {
-  type FieldPath,
-  type FieldValues,
-  type RegisterOptions,
-  useFormContext,
-} from 'react-hook-form'
+import { type FieldPath, type FieldValues, useFormContext } from 'react-hook-form'
 
 interface FormInpuProps<
   TFieldValues extends FieldValues,
@@ -25,22 +25,50 @@ export const FormInput = <
   name,
   format,
   sanitize,
-  onChange,
   ...props
 }: FormInpuProps<TFieldValues, TFieldName>) => {
-  const { onChange: onValueChange, ...registerResult } = useFormContext<TFieldValues>().register(
+  const { onChange, onBlur, ...registerResult } = useFormContext<TFieldValues>().register(
     name,
     sanitize ? { setValueAs: sanitize } : undefined,
   )
 
-  const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    if (format) {
-      e.target.value = format(e.target.value)
-    }
-
-    onValueChange(e)
-    onChange?.(e)
+  const handleUpdate = (e: EventTarget & HTMLInputElement, value: string) => {
+    const selectionStart = e.selectionStart
+    e.value = value
+    e.setSelectionRange(selectionStart, selectionStart)
   }
 
-  return <Input {...props} {...registerResult} onChange={handleChange} />
+  const handleInput: InputEventHandler<HTMLInputElement> = (e) => {
+    if (e.nativeEvent.isComposing) {
+      return
+    }
+
+    if (format) {
+      handleUpdate(e.currentTarget, format(e.currentTarget.value))
+    }
+
+    onChange(e)
+  }
+
+  const handleCompositionEnd: CompositionEventHandler<HTMLInputElement> | undefined = format
+    ? (e) => handleUpdate(e.currentTarget, format(e.currentTarget.value))
+    : undefined
+
+  const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
+    handleUpdate(
+      e.currentTarget,
+      format?.(sanitize?.(e.currentTarget.value) ?? e.currentTarget.value) ?? e.currentTarget.value,
+    )
+    onBlur(e)
+  }
+
+  return (
+    <Input
+      {...props}
+      {...registerResult}
+      onInput={handleInput}
+      onCompositionEnd={handleCompositionEnd}
+      onBlur={handleBlur}
+    />
+  )
 }
