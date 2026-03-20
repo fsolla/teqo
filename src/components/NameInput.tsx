@@ -3,12 +3,13 @@ import { FormInput } from './FormInput'
 
 export const NameInput = (props: ComponentProps<'input'>) => (
   <FormInput
-    form="name"
+    name="name"
     id="name"
     type="text"
     placeholder="Digite seu nome completo"
     autoComplete="name"
     maxLength={120}
+    minLength={2}
     required
     {...props}
   />

@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { WhatsAppFormInput, whatsAppFormSchema } from '@/lib/schemas/whatsapp-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FormProvider, SubmitHandler, useForm } from 'react-hook-form'
-import { useTransition } from 'react'
+import { useEffect, useTransition } from 'react'
 import { submitWhatsapp } from '@/app/(frontend)/actions/submitWhatsapp'
 
 interface WhatsappFormProps {
@@ -40,7 +40,8 @@ export const WhatsappForm = ({ classname, onSubmit }: WhatsappFormProps) => {
         await submitWhatsapp(input)
         methods.reset()
         onSubmit()
-      } catch {
+      } catch (e) {
+        console.log(e)
         methods.setError('root', {
           message: 'Falha ao enviar assinatura. Tente novamente.',
         })
@@ -78,11 +79,15 @@ export const WhatsappForm = ({ classname, onSubmit }: WhatsappFormProps) => {
               id="comment"
               {...methods.register('comment')}
               placeholder='Campo de Interesse: "O que você mais quer ver no canal?" (Votações, Bastidores, Ações Sociais, Agenda).'
-              required
               className="min-h-22"
             />
           </Field>
           <Field>
+            {methods.formState.errors.root?.message ? (
+              <FieldDescription className="text-destructive">
+                {methods.formState.errors.root.message}
+              </FieldDescription>
+            ) : null}
             <Button
               type="submit"
               disabled={isSubmitting}

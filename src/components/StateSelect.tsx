@@ -6,7 +6,7 @@ interface StateSelectProps {
   placeholder?: string
 }
 
-export const StateSelect = ({ placeholder = 'Selecione um estado' }) => {
+export const StateSelect = ({ placeholder = 'Selecione um estado' }: StateSelectProps) => {
   const { register } = useFormContext()
 
   return (
