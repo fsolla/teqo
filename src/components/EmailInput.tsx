@@ -7,6 +7,7 @@ export const EmailInput = (props: ComponentProps<'input'>) => (
     id="email"
     placeholder="Digite seu e-mail"
     autoComplete="email"
+    format={sanitize}
     inputMode="email"
     type="text"
     minLength={5}
@@ -15,3 +16,5 @@ export const EmailInput = (props: ComponentProps<'input'>) => (
     {...props}
   />
 )
+
+const sanitize = (value: string) => value.toLowerCase().replace(/\s+/g, '').slice(0, 254)
