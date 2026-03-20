@@ -33,9 +33,10 @@ export const FormInput = <
   )
 
   const handleUpdate = (e: EventTarget & HTMLInputElement, value: string) => {
-    const selectionStart = e.selectionStart
+    const selectiondistance = e.value.length - (e.selectionEnd ?? 0)
     e.value = value
-    e.setSelectionRange(selectionStart, selectionStart)
+    const caretPos = value.length - selectiondistance
+    e.setSelectionRange(caretPos, caretPos)
   }
 
   const handleInput: InputEventHandler<HTMLInputElement> = (e) => {
