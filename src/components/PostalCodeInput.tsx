@@ -8,9 +8,7 @@ export const PostalCodeInput = (props: ComponentProps<'input'>) => (
     type="text"
     placeholder="00000-000"
     format={format}
-    options={{
-      setValueAs: sanitize,
-    }}
+    sanitize={sanitize}
     pattern="^(?:\d{8})?$"
     {...props}
   />

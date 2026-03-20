@@ -14,8 +14,8 @@ interface FormInpuProps<
   TFieldName extends FieldPath<TFieldValues>,
 > extends ComponentProps<'input'> {
   name: TFieldName
-  options?: RegisterOptions<TFieldValues, TFieldName>
   format?: (value: string) => string
+  sanitize?: (value: string) => string
 }
 
 export const FormInput = <
@@ -23,14 +23,14 @@ export const FormInput = <
   TFieldName extends FieldPath<TFieldValues>,
 >({
   name,
-  options,
   format,
+  sanitize,
   onChange,
   ...props
 }: FormInpuProps<TFieldValues, TFieldName>) => {
   const { onChange: onValueChange, ...registerResult } = useFormContext<TFieldValues>().register(
     name,
-    options,
+    sanitize ? { setValueAs: sanitize } : undefined,
   )
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {

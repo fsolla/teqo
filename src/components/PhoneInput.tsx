@@ -11,18 +11,16 @@ export const PhoneInput = (props: ComponentProps<'input'>) => (
     type="tel"
     maxLength={15}
     minLength={15}
-    format={formatPhone}
-    options={{
-      setValueAs: sanitizePhone,
-    }}
+    format={format}
+    sanitize={sanitize}
     {...props}
   />
 )
 
-const sanitizePhone = (value: string) => value.replace(/\D/g, '').slice(0, 11)
+const sanitize = (value: string) => value.replace(/\D/g, '').slice(0, 11)
 
-const formatPhone = (value: string) => {
-  const digits = sanitizePhone(value)
+const format = (value: string) => {
+  const digits = sanitize(value)
 
   if (!digits) return ''
   if (digits.length <= 2) return `(${digits}`
