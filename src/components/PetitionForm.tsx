@@ -11,7 +11,7 @@ import {
 import { Petition } from '@/payload-types'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FormProvider, type SubmitHandler, useForm } from 'react-hook-form'
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { Textarea } from './ui/textarea'
 import { Button } from './ui/button'
 import { petitionFormSchema, type PetitionFormInput } from '@/lib/schemas/petition-form'
@@ -22,6 +22,7 @@ import { PhoneInput } from './PhoneInput'
 import { StateSelect } from './StateSelect'
 import { CitySelect } from './CitySelect'
 import { PostalCodeInput } from './PostalCodeInput'
+import { PetitionSuccessDialog } from './PetitionSuccessDialog'
 
 interface PetitionFormProps {
   id: string
@@ -44,6 +45,7 @@ export const PetitionForm = ({ id, petition, consentHTML }: PetitionFormProps) =
   })
 
   const [isSubmitting, startTransition] = useTransition()
+  const [isSuccessOpen, setIsSuccessOpen] = useState(false)
 
   const onSubmit: SubmitHandler<PetitionFormInput> = (input) => {
     const consentId =
@@ -57,6 +59,7 @@ export const PetitionForm = ({ id, petition, consentHTML }: PetitionFormProps) =
           consentId,
         })
         methods.reset()
+        setIsSuccessOpen(true)
       } catch {
         methods.setError('root', {
           message: 'Falha ao enviar assinatura. Tente novamente.',
@@ -67,6 +70,11 @@ export const PetitionForm = ({ id, petition, consentHTML }: PetitionFormProps) =
 
   return (
     <FormProvider {...methods}>
+      <PetitionSuccessDialog
+        open={isSuccessOpen}
+        onOpenChange={setIsSuccessOpen}
+        petitionTitle={petition.title}
+      />
       <form id={id} onSubmit={methods.handleSubmit(onSubmit)}>
         <FieldSet>
           {petition.form.title ? <FieldLegend>{petition.form.title}</FieldLegend> : null}
