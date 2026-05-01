@@ -2,9 +2,24 @@ import { PetitionForm } from '@/components/PetitionForm'
 import { SignatureCounter } from '@/components/SignatureCounter'
 import { getSignatureCount } from '@/app/(frontend)/actions/getSignatureCount'
 import { getCachedDocumentById, getDocuments } from '@/utilities/documents'
+import { getCachedGlobal } from '@/utilities/globals'
+import { extractFirstImageFromLexical } from '@/utilities/extractFirstImageFromLexical'
 import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
+import type { Media } from '@/payload-types'
+import type { Metadata } from 'next'
+import type { Article, WithContext } from 'schema-dts'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+
+const MAX_DESCRIPTION_LENGTH = 200
+
+const stripTrailingSlash = (url: string) => url.replace(/\/+$/, '')
+
+const truncate = (text: string, max: number) =>
+  text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`
+
+const toAbsoluteUrl = (url: string, siteUrl: string) =>
+  /^https?:\/\//i.test(url) ? url : `${stripTrailingSlash(siteUrl)}${url.startsWith('/') ? '' : '/'}${url}`
 
 export async function generateStaticParams() {
   const payload = await getDocuments('petition')
@@ -14,11 +29,128 @@ export async function generateStaticParams() {
   }))
 }
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const petition = await getCachedDocumentById('petition', id)()
+
+  if (!petition || !petition.enabled) {
+    return {}
+  }
+
+  const globalMetadata = await getCachedGlobal('metadata')()
+  const siteUrl = stripTrailingSlash(globalMetadata.URL)
+  const canonicalUrl = `${siteUrl}/abaixo-assinado/${petition.id}`
+
+  const bodyImage = extractFirstImageFromLexical(petition.body)
+  let fallbackImage: Media | null = null
+  if (!bodyImage && globalMetadata.image) {
+    fallbackImage =
+      typeof globalMetadata.image === 'number'
+        ? await getCachedDocumentById('media', String(globalMetadata.image))()
+        : globalMetadata.image
+  }
+  const image = bodyImage ?? fallbackImage
+
+  const description = truncate(petition.subtitle, MAX_DESCRIPTION_LENGTH)
+  const title = `${petition.title} | ${globalMetadata.openGraph.siteName}`
+
+  const keywords = [
+    ...globalMetadata.keywords
+      .map((k) => (typeof k === 'string' ? k : k.keyword))
+      .filter((k): k is string => typeof k === 'string'),
+    'abaixo-assinado',
+    'petição',
+    petition.title,
+  ]
+
+  const ogImages =
+    image?.url
+      ? [
+          {
+            url: toAbsoluteUrl(image.url, siteUrl),
+            width: image.width ?? undefined,
+            height: image.height ?? undefined,
+            alt: image.alt,
+          },
+        ]
+      : []
+
+  return {
+    title,
+    description,
+    keywords,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      type: 'article',
+      locale: 'pt-BR',
+      url: canonicalUrl,
+      siteName: globalMetadata.openGraph.siteName,
+      title,
+      description,
+      images: ogImages,
+      publishedTime: petition.createdAt,
+      modifiedTime: petition.updatedAt,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      creator: globalMetadata.twitter.creator,
+      images: ogImages.map((img) => img.url),
+    },
+  }
+}
+
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const petition = await getCachedDocumentById('petition', (await params).id)()
+  const { id } = await params
+  const petition = await getCachedDocumentById('petition', id)()
 
   if (!petition || !petition.enabled) {
     return notFound()
+  }
+
+  const globalMetadata = await getCachedGlobal('metadata')()
+  const siteUrl = stripTrailingSlash(globalMetadata.URL)
+  const canonicalUrl = `${siteUrl}/abaixo-assinado/${petition.id}`
+
+  const bodyImage = extractFirstImageFromLexical(petition.body)
+  let fallbackImage: Media | null = null
+  if (!bodyImage && globalMetadata.image) {
+    fallbackImage =
+      typeof globalMetadata.image === 'number'
+        ? await getCachedDocumentById('media', String(globalMetadata.image))()
+        : globalMetadata.image
+  }
+  const ogImage = bodyImage ?? fallbackImage
+  const ogImageUrl = ogImage?.url ? toAbsoluteUrl(ogImage.url, siteUrl) : undefined
+
+  const jsonLd: WithContext<Article> = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: petition.title,
+    description: truncate(petition.subtitle, MAX_DESCRIPTION_LENGTH),
+    inLanguage: 'pt-BR',
+    url: canonicalUrl,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+    datePublished: petition.createdAt,
+    dateModified: petition.updatedAt,
+    ...(ogImageUrl ? { image: [ogImageUrl] } : {}),
+    author: {
+      '@type': 'Organization',
+      name: globalMetadata.openGraph.siteName,
+      url: siteUrl,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: globalMetadata.openGraph.siteName,
+      url: siteUrl,
+    },
   }
 
   const consentHTML =
@@ -33,6 +165,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       data-theme="petition"
       className="h-screen w-screen overflow-y-auto bg-background text-foreground"
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <section className="relative overflow-hidden border-b border-border bg-[var(--petition-hero)] text-[var(--petition-hero-foreground)]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--petition-hero-glow),transparent_40%),radial-gradient(circle_at_bottom_left,var(--petition-hero-depth),transparent_46%)]" />
         <div className="relative mx-auto flex min-h-[72vh] w-full max-w-5xl items-center justify-center px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
