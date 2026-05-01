@@ -28,6 +28,7 @@ export const contactSchema = z.object({
     .string()
     .trim()
     .regex(/^(?:\d{8})?$/, 'CEP inválido')
+    .transform((v) => (v === '' ? undefined : v))
     .optional(),
 })
 
