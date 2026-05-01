@@ -76,10 +76,10 @@ export async function generateMetadata({
         {
           url: imageUrl,
           secureUrl: imageUrl,
-          width: image.width ?? undefined,
-          height: image.height ?? undefined,
-          alt: image.alt,
-          type: image.mimeType ?? undefined,
+          width: image?.width ?? undefined,
+          height: image?.height ?? undefined,
+          alt: image?.alt,
+          type: image?.mimeType ?? undefined,
         },
       ]
     : []
