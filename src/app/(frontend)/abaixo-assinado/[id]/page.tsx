@@ -19,7 +19,9 @@ const truncate = (text: string, max: number) =>
   text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`
 
 const toAbsoluteUrl = (url: string, siteUrl: string) =>
-  /^https?:\/\//i.test(url) ? url : `${stripTrailingSlash(siteUrl)}${url.startsWith('/') ? '' : '/'}${url}`
+  /^https?:\/\//i.test(url)
+    ? url
+    : `${stripTrailingSlash(siteUrl)}${url.startsWith('/') ? '' : '/'}${url}`
 
 export async function generateStaticParams() {
   const payload = await getDocuments('petition')
@@ -67,17 +69,20 @@ export async function generateMetadata({
     petition.title,
   ]
 
-  const ogImages =
-    image?.url
-      ? [
-          {
-            url: toAbsoluteUrl(image.url, siteUrl),
-            width: image.width ?? undefined,
-            height: image.height ?? undefined,
-            alt: image.alt,
-          },
-        ]
-      : []
+  const imageUrl = image?.url ? toAbsoluteUrl(image.url, siteUrl) : undefined
+
+  const ogImages = imageUrl
+    ? [
+        {
+          url: imageUrl,
+          secureUrl: imageUrl,
+          width: image.width ?? undefined,
+          height: image.height ?? undefined,
+          alt: image.alt,
+          type: image.mimeType ?? undefined,
+        },
+      ]
+    : []
 
   return {
     title,
