@@ -73,6 +73,10 @@ export const SignatureCounter = ({
       }
     }
 
+    // Busca o valor real imediatamente ao montar,
+    // pois o initialCount pode estar defasado (página gerada estaticamente).
+    refetch()
+
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') refetch()
     }, POLL_INTERVAL_MS)
