@@ -52,8 +52,14 @@ export const submitPetitionSignature = async ({
       }),
     ])
 
+    const { totalDocs: signatureNumber } = await payload.count({
+      collection: 'signature',
+      where: { petition: { equals: petitionId } },
+      req: { transactionID },
+    })
+
     await payload.db.commitTransaction(transactionID)
-    return { ok: true }
+    return { ok: true, signatureNumber }
   } catch (error) {
     await payload.db.rollbackTransaction(transactionID)
     throw error

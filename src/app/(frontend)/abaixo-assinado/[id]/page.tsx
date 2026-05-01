@@ -1,4 +1,6 @@
 import { PetitionForm } from '@/components/PetitionForm'
+import { SignatureCounter } from '@/components/SignatureCounter'
+import { getSignatureCount } from '@/app/(frontend)/actions/getSignatureCount'
 import { getCachedDocumentById, getDocuments } from '@/utilities/documents'
 import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
 import Link from 'next/link'
@@ -24,6 +26,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       ? convertLexicalToHTML({ data: petition.form.consent.text })
       : ''
 
+  const signatureCount = await getSignatureCount(petition.id)
+
   return (
     <main
       data-theme="petition"
@@ -42,6 +46,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             <h2 className="max-w-2xl border-none text-lg leading-relaxed text-[var(--petition-hero-muted)] sm:text-xl">
               {petition.subtitle}
             </h2>
+            <SignatureCounter
+              petitionId={petition.id}
+              initialCount={signatureCount}
+              variant="hero"
+            />
             <div className="flex flex-wrap justify-center gap-3 border-t border-white/15 pt-6">
               <Link
                 href="#formulario"
@@ -83,6 +92,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               Preencha o formulário para somar apoio público à proposta. Os dados serão usados
               apenas para registrar sua participação nesta campanha.
             </p>
+            <SignatureCounter
+              petitionId={petition.id}
+              initialCount={signatureCount}
+              variant="card"
+            />
           </div>
           <div className="rounded-xl border border-border bg-card p-5 text-card-foreground shadow-[0_24px_60px_rgb(122_25_18/0.12)] sm:p-7">
             <PetitionForm id="formulario" petition={petition} consentHTML={consentHTML} />

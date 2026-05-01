@@ -16,12 +16,16 @@ interface PetitionSuccessDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   petitionTitle: string
+  signatureNumber: number | null
 }
+
+const numberFormatter = new Intl.NumberFormat('pt-BR')
 
 export const PetitionSuccessDialog = ({
   open,
   onOpenChange,
   petitionTitle,
+  signatureNumber,
 }: PetitionSuccessDialogProps) => {
   const [shareUrl, setShareUrl] = useState('')
 
@@ -51,6 +55,15 @@ export const PetitionSuccessDialog = ({
           <DialogTitle className="border-none pb-0 text-xl font-bold leading-tight sm:text-2xl">
             Obrigado por assinar!
           </DialogTitle>
+          {signatureNumber !== null ? (
+            <p className="mt-2 text-sm text-[var(--petition-hero-muted)] sm:text-base">
+              Você é a assinatura nº{' '}
+              <span className="font-bold tabular-nums text-[var(--petition-hero-foreground)]">
+                {numberFormatter.format(signatureNumber)}
+              </span>
+              .
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-col gap-4 bg-card px-6 py-6 text-card-foreground sm:px-8 sm:py-7">
           <DialogDescription>

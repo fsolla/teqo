@@ -23,6 +23,10 @@ import { StateSelect } from './StateSelect'
 import { CitySelect } from './CitySelect'
 import { PostalCodeInput } from './PostalCodeInput'
 import { PetitionSuccessDialog } from './PetitionSuccessDialog'
+import {
+  SIGNATURE_CREATED_EVENT,
+  type SignatureCreatedDetail,
+} from './SignatureCounter'
 
 interface PetitionFormProps {
   id: string
@@ -46,6 +50,7 @@ export const PetitionForm = ({ id, petition, consentHTML }: PetitionFormProps) =
 
   const [isSubmitting, startTransition] = useTransition()
   const [isSuccessOpen, setIsSuccessOpen] = useState(false)
+  const [signatureNumber, setSignatureNumber] = useState<number | null>(null)
 
   const onSubmit: SubmitHandler<PetitionFormInput> = (input) => {
     const consentId =
@@ -53,12 +58,18 @@ export const PetitionForm = ({ id, petition, consentHTML }: PetitionFormProps) =
 
     startTransition(async () => {
       try {
-        await submitPetitionSignature({
+        const result = await submitPetitionSignature({
           ...input,
           petitionId: petition.id,
           consentId,
         })
         methods.reset()
+        setSignatureNumber(result.signatureNumber)
+        const detail: SignatureCreatedDetail = {
+          petitionId: petition.id,
+          count: result.signatureNumber,
+        }
+        window.dispatchEvent(new CustomEvent(SIGNATURE_CREATED_EVENT, { detail }))
         setIsSuccessOpen(true)
       } catch {
         methods.setError('root', {
@@ -74,6 +85,7 @@ export const PetitionForm = ({ id, petition, consentHTML }: PetitionFormProps) =
         open={isSuccessOpen}
         onOpenChange={setIsSuccessOpen}
         petitionTitle={petition.title}
+        signatureNumber={signatureNumber}
       />
       <form id={id} onSubmit={methods.handleSubmit(onSubmit)}>
         <FieldSet>
