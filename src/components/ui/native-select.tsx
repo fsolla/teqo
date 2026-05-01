@@ -20,11 +20,11 @@ function NativeSelect({ className, size = 'default', ...props }: NativeSelectPro
       <select
         data-slot="native-select"
         data-size={size}
-        className="w-full min-w-0 appearance-none rounded-full border border-white/80 bg-white px-4 py-2 text-sm text-black transition-colors outline-none select-none selection:bg-primary selection:text-primary-foreground placeholder:text-black/80 focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-white/70 disabled:text-black/70 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=sm]:h-7 data-[size=sm]:rounded-[min(var(--radius-md),10px)] data-[size=sm]:py-0.5"
+        className="w-full min-w-0 appearance-none rounded-full border border-[var(--field-border)] bg-[var(--field-background)] px-4 py-2 text-sm text-[var(--field-foreground)] transition-colors outline-none select-none selection:bg-primary selection:text-primary-foreground placeholder:text-[var(--field-placeholder)] focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-[var(--field-disabled-background)] disabled:text-[var(--field-disabled-foreground)] aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=sm]:h-7 data-[size=sm]:rounded-[min(var(--radius-md),10px)] data-[size=sm]:py-0.5"
         {...props}
       />
       <ChevronDownIcon
-        className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-black/60 select-none"
+        className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-[var(--field-icon)] select-none"
         aria-hidden="true"
         data-slot="native-select-icon"
       />

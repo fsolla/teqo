@@ -43,6 +43,8 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },
+    // Local dev can point at the shared production DB; never auto-push schema changes.
+    push: false,
   }),
   sharp,
   plugins: [

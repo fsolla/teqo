@@ -104,6 +104,51 @@ body,
   --sidebar-ring: oklch(0.9 0.14 143);
   --background: #ae1603;
   --foreground: oklch(0.98 0.004 197.1);
+  --field-background: #ffffff;
+  --field-foreground: #000000;
+  --field-placeholder: rgb(0 0 0 / 80%);
+  --field-border: rgb(255 255 255 / 80%);
+  --field-disabled-background: rgb(255 255 255 / 70%);
+  --field-disabled-foreground: rgb(0 0 0 / 70%);
+  --field-icon: rgb(0 0 0 / 60%);
+}
+
+[data-theme="petition"] {
+  --background: #fff8f2;
+  --foreground: #2c2522;
+  --card: #ffffff;
+  --card-foreground: #2c2522;
+  --popover: #ffffff;
+  --popover-foreground: #2c2522;
+  --primary: #c51414;
+  --primary-foreground: #ffffff;
+  --secondary: #ffe8df;
+  --secondary-foreground: #5f1715;
+  --muted: #f4e7de;
+  --muted-foreground: #675c56;
+  --accent: #ffcf2e;
+  --accent-foreground: #332300;
+  --border: rgb(189 119 104 / 24%);
+  --input: rgb(189 119 104 / 32%);
+  --ring: #c51414;
+  --destructive: #b42318;
+  --petition-hero: #b6120f;
+  --petition-hero-foreground: #fffaf5;
+  --petition-hero-muted: #ffe2d6;
+  --petition-hero-chip: rgb(255 255 255 / 12%);
+  --petition-hero-chip-foreground: #fff7ed;
+  --petition-hero-glow: rgb(255 207 46 / 24%);
+  --petition-hero-depth: rgb(122 0 0 / 35%);
+  --petition-hero-cta: #ffcf2e;
+  --petition-hero-cta-foreground: #332300;
+  --petition-form-section: #f6ebe4;
+  --field-background: #ffffff;
+  --field-foreground: #2c2522;
+  --field-placeholder: rgb(44 37 34 / 58%);
+  --field-border: #ddc7bc;
+  --field-disabled-background: #ece0d9;
+  --field-disabled-foreground: rgb(44 37 34 / 55%);
+  --field-icon: rgb(44 37 34 / 58%);
 }
 
 .dark {

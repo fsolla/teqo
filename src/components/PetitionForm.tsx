@@ -22,14 +22,14 @@ import { PhoneInput } from './PhoneInput'
 import { StateSelect } from './StateSelect'
 import { CitySelect } from './CitySelect'
 import { PostalCodeInput } from './PostalCodeInput'
-import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
 
 interface PetitionFormProps {
   id: string
   petition: Petition
+  consentHTML: string
 }
 
-export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
+export const PetitionForm = ({ id, petition, consentHTML }: PetitionFormProps) => {
   const methods = useForm<PetitionFormInput>({
     resolver: zodResolver(petitionFormSchema),
     defaultValues: {
@@ -71,9 +71,7 @@ export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
         <FieldSet>
           {petition.form.title ? <FieldLegend>{petition.form.title}</FieldLegend> : null}
           {petition.form.subtitle ? (
-            <FieldDescription>
-              Assine esta petição e ajude a manter a orla de Salvador para todos nós!
-            </FieldDescription>
+            <FieldDescription>{petition.form.subtitle}</FieldDescription>
           ) : null}
           <FieldGroup>
             <Field>
@@ -105,10 +103,11 @@ export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
               <Textarea id="comment" {...methods.register('comment')} />
             </Field>
             <Field>
-              {typeof petition.form.consent !== 'number' ? (
-                <FieldDescription
+              {consentHTML ? (
+                <div
+                  className="petition-consent text-left text-sm leading-normal font-normal text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:text-primary [&_p]:m-0 [&_strong]:font-semibold [&_strong]:text-foreground"
                   dangerouslySetInnerHTML={{
-                    __html: convertLexicalToHTML({ data: petition.form.consent.text }),
+                    __html: consentHTML,
                   }}
                 />
               ) : null}
@@ -117,7 +116,11 @@ export const PetitionForm = ({ id, petition }: PetitionFormProps) => {
                   {methods.formState.errors.root.message}
                 </FieldDescription>
               ) : null}
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="text-primary-foreground hover:text-primary-foreground"
+              >
                 {isSubmitting ? 'Enviando...' : 'Assinar'}
               </Button>
             </Field>
