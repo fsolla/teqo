@@ -1,33 +1,43 @@
-import { useFormContext, useWatch } from 'react-hook-form'
-import { NativeSelect, NativeSelectOption } from './ui/native-select'
 import { CitiesByState } from '@/lib/cities'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
+import { useFormContext, useWatch } from 'react-hook-form'
+import { FormCombobox, type ComboboxOption } from './FormCombobox'
 
 interface CitySelectProps {
   placeholder?: string
 }
 
 export const CitySelect = ({ placeholder = 'Selecione uma cidade' }: CitySelectProps) => {
-  const { register, control, setValue } = useFormContext()
+  const { control, setValue } = useFormContext()
   const state: keyof typeof CitiesByState | undefined = useWatch({
     control,
     name: 'state',
   })
 
-  const cityOptions = state?.length ? CitiesByState[state] : []
+  const options = useMemo<ComboboxOption[]>(
+    () =>
+      state
+        ? CitiesByState[state]
+            .map((city) => ({ value: city, label: city }))
+            .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+        : [],
+    [state],
+  )
 
   useEffect(() => {
-    setValue('city', undefined)
-  }, [state])
+    setValue('city', '')
+  }, [state, setValue])
 
   return (
-    <NativeSelect id="city" {...register('city')} disabled={!cityOptions.length} required>
-      <NativeSelectOption value="">{placeholder}</NativeSelectOption>
-      {cityOptions.map((city) => (
-        <NativeSelectOption key={city} value={city}>
-          {city}
-        </NativeSelectOption>
-      ))}
-    </NativeSelect>
+    <FormCombobox
+      name="city"
+      id="city"
+      options={options}
+      placeholder={placeholder}
+      minChars={1}
+      disabled={!options.length}
+      required
+      emptyMessage="Nenhuma cidade encontrada."
+    />
   )
 }

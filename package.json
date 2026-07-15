@@ -41,6 +41,7 @@
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
   },
   "dependencies": {
+    "@base-ui/react": "^1.6.0",
     "@hookform/resolvers": "^5.2.2",
     "@payloadcms/db-postgres": "3.79.0",
     "@payloadcms/live-preview-react": "3.79.0",

@@ -1,22 +1,24 @@
-import { useFormContext } from 'react-hook-form'
-import { NativeSelect, NativeSelectOption } from './ui/native-select'
-import { CitiesByState } from '@/lib/cities'
+import { StateNames } from '@/lib/states'
+import { FormCombobox, type ComboboxOption } from './FormCombobox'
 
 interface StateSelectProps {
   placeholder?: string
 }
 
-export const StateSelect = ({ placeholder = 'Selecione um estado' }: StateSelectProps) => {
-  const { register } = useFormContext()
+const stateOptions: ComboboxOption[] = Object.entries(StateNames)
+  .map(([code, name]) => ({ value: code, label: name, keywords: [code] }))
+  .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
 
+export const StateSelect = ({ placeholder = 'Selecione um estado' }: StateSelectProps) => {
   return (
-    <NativeSelect required {...register('state')}>
-      <NativeSelectOption value="">{placeholder}</NativeSelectOption>
-      {Object.keys(CitiesByState).map((state) => (
-        <NativeSelectOption key={state} value={state}>
-          {state}
-        </NativeSelectOption>
-      ))}
-    </NativeSelect>
+    <FormCombobox
+      name="state"
+      id="state"
+      options={stateOptions}
+      placeholder={placeholder}
+      minChars={1}
+      required
+      emptyMessage="Nenhum estado encontrado."
+    />
   )
 }

@@ -2,6 +2,48 @@
 
 Custom Components allow you to fully customize the Admin Panel by swapping in your own React components. You can replace nearly every part of the interface or add entirely new functionality.
 
+## Project Conventions (Teqo)
+
+These conventions apply to all first-party components we author. The only exception is `src/components/ui/*`, which is generated/managed by the shadcn CLI and kept verbatim (including its `export function` declarations and `import * as React from 'react'` style) so it stays easy to update from upstream.
+
+1. **Declare components with `export const`, not `export function`.** Use arrow functions:
+
+   ```tsx
+   // ✅ First-party component
+   export const MyComponent = ({ title }: MyComponentProps) => {
+     return <h1>{title}</h1>
+   }
+
+   // ❌ Reserved for src/components/ui/* (shadcn) only
+   export function MyComponent({ title }: MyComponentProps) {
+     return <h1>{title}</h1>
+   }
+   ```
+
+   For a generic component in a `.tsx` file, the `extends` clause keeps the type parameter unambiguous from JSX:
+
+   ```tsx
+   export const FormField = <TFieldValues extends FieldValues = FieldValues>(
+     props: FormFieldProps<TFieldValues>,
+   ) => {
+     /* ... */
+   }
+   ```
+
+2. **Import React hooks by name; do not use the `React.*` namespace.** Import each hook (and other named React APIs) directly:
+
+   ```tsx
+   // ✅ First-party component
+   import { useCallback, useMemo, useState } from 'react'
+
+   const [open, setOpen] = useState(false)
+
+   // ❌ Reserved for src/components/ui/* (shadcn) only
+   import * as React from 'react'
+
+   const [open, setOpen] = React.useState(false)
+   ```
+
 ## Component Types
 
 There are four main types of Custom Components:
