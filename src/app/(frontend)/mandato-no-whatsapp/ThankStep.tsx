@@ -19,7 +19,7 @@ export const ThankStep = () => (
         <br />
         CLIQUE NO BOTÃO ABAIXO E EM SEGUIDA CLIQUE
         <br />
-        EM 'ENTRAR' PARA CONFIRMAR.
+        EM &apos;ENTRAR&apos; PARA CONFIRMAR.
       </h2>
       <Button className="bg-[#99c343] font-bold text-base py-3 rounded-full mx-2 lg:max-w-100 lg:mx-0 lg:row-start-4">
         <Link href="https://whatsapp.com/channel/0029Vb5cJcT30LKLFkdN5P25" target="_blank">
