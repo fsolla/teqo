@@ -1,10 +1,15 @@
 import { defineConfig, devices } from '@playwright/test'
+import { config as loadEnv } from 'dotenv'
+
+import { assertTestDatabase } from './tests/helpers/assertTestDatabase'
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * e2e tests boot a real dev server that seeds/deletes records, so they must run
+ * against the isolated test database — never .env / .env.local (production).
+ * `override: true` guarantees the test DB wins over anything in the shell.
  */
-import 'dotenv/config'
+loadEnv({ path: '.env.test', override: true })
+assertTestDatabase(process.env.DATABASE_URL)
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -35,7 +40,17 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm dev',
-    reuseExistingServer: true,
+    /*
+     * Never reuse a dev server a developer may already have running against the
+     * production database — always start a fresh one bound to the test DB.
+     */
+    reuseExistingServer: false,
     url: 'http://localhost:3000',
+    /* Force the isolated test database into the server process. */
+    env: {
+      DATABASE_URL: process.env.DATABASE_URL as string,
+      PAYLOAD_SECRET: process.env.PAYLOAD_SECRET ?? 'test-only-secret-not-used-in-production',
+      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
+    },
   },
 })

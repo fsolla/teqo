@@ -1,43 +1,28 @@
-version: '3'
-
 services:
-  payload:
-    image: node:18-alpine
+  # Local development database. This is the ONLY database local dev and the
+  # test suite should ever touch — never point DATABASE_URL at the production
+  # Neon instance for local work (see the guard in scripts/guard-dev-db.mjs).
+  postgres:
+    # Pinned to match the production Neon major version (17), so pg_dump/restore
+    # from prod (see `pnpm db:pull`) works without version mismatches.
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: teqo
+      POSTGRES_PASSWORD: teqo
+      POSTGRES_DB: teqo
     ports:
-      - '3000:3000'
+      - '5432:5432'
     volumes:
-      - .:/home/node/app
-      - node_modules:/home/node/app/node_modules
-    working_dir: /home/node/app/
-    command: sh -c "corepack enable && corepack prepare pnpm@latest --activate && pnpm install && pnpm dev"
-    depends_on:
-      - mongo
-      # - postgres
-    env_file:
-      - .env
-
-  # Ensure your DATABASE_URL uses 'mongo' as the hostname ie. mongodb://mongo/my-db-name
-  mongo:
-    image: mongo:latest
-    ports:
-      - '27017:27017'
-    command:
-      - --storageEngine=wiredTiger
-    volumes:
-      - data:/data/db
-    logging:
-      driver: none
-
-  # Uncomment the following to use postgres
-  # postgres:
-  #   restart: always
-  #   image: postgres:latest
-  #   volumes:
-  #     - pgdata:/var/lib/postgresql/data
-  #   ports:
-  #     - "5432:5432"
+      - pgdata:/var/lib/postgresql/data
+      # Runs only on first initialization of the volume. Creates the dedicated
+      # teqo_test database so automated tests never share state with dev data.
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U teqo -d teqo']
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
-  data:
-  # pgdata:
-  node_modules:
+  pgdata:

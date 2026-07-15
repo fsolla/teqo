@@ -1,6 +1,8 @@
 import { getPayload } from 'payload'
 import config from '../../src/payload.config.js'
 
+import { assertTestDatabase } from './assertTestDatabase'
+
 export const testUser = {
   email: 'dev@payloadcms.com',
   password: 'test',
@@ -10,6 +12,7 @@ export const testUser = {
  * Seeds a test user for e2e admin tests.
  */
 export async function seedTestUser(): Promise<void> {
+  assertTestDatabase(process.env.DATABASE_URL)
   const payload = await getPayload({ config })
 
   // Delete existing test user if any
@@ -33,6 +36,7 @@ export async function seedTestUser(): Promise<void> {
  * Cleans up test user after tests
  */
 export async function cleanupTestUser(): Promise<void> {
+  assertTestDatabase(process.env.DATABASE_URL)
   const payload = await getPayload({ config })
 
   await payload.delete({

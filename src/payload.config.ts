@@ -2,21 +2,21 @@ import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
-import { fileURLToPath } from 'url'
 import sharp from 'sharp'
+import { fileURLToPath } from 'url'
 
-import { Users } from './collections/Users'
-import { Media } from './collections/Media'
-import { SiteSettings } from './globals/SiteSettings'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { pt } from 'payload/i18n/pt'
+import { Consent } from './collections/Consent'
+import { Contact } from './collections/Contact'
+import { Media } from './collections/Media'
+import { Petition } from './collections/Petition'
+import { Signature } from './collections/Signature'
+import { Subscription } from './collections/Subscription'
+import { Users } from './collections/Users'
 import { HomePage } from './globals/HomePage'
 import { Metadata } from './globals/Metadata'
-import { Petition } from './collections/Petition'
-import { Contact } from './collections/Contact'
-import { Consent } from './collections/Consent'
-import { Signature } from './collections/Signature'
-import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
-import { Subscription } from './collections/Subscription'
+import { SiteSettings } from './globals/SiteSettings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -43,7 +43,10 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },
-    // Local dev can point at the shared production DB; never auto-push schema changes.
+    // Schema changes are applied via committed migrations (pnpm migrate:create /
+    // pnpm migrate), never auto-pushed. `pnpm build` runs `payload migrate` before
+    // building, so migrations apply to prod on every Vercel deploy.
+    migrationDir: path.resolve(dirname, 'migrations'),
     push: false,
   }),
   sharp,

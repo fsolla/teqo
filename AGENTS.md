@@ -2,6 +2,40 @@
 
 You are an expert Payload CMS developer. When working with Payload projects, follow these rules:
 
+## Teqo Project Context (read this first)
+
+Teqo is the digital platform for deputado federal Jorge Solla (PT-BA): public site + editorial CMS + (soon) an internal `/campanha` campaign-management area, all in this one Next.js + Payload app. Full architecture/decision doc lives outside this repo at `plano-arquitetura-campanha-2026.md` (Cowork workspace) — check it for the "why" behind decisions below.
+
+**Locked decisions — do not relitigate without a new concrete reason:**
+
+- Single Next.js app, three route groups: `(frontend)` public site, `(payload)` admin, `(campanha)` internal campaign tool (roles: assessores). No separate Rust service, no separate frontend app for `/campanha` — model it as Payload collections (it already has native `point` fields + `near` queries for the political map).
+- Hosting stays on Vercel for now. No self-host/Coolify migration in progress.
+- Donations are NOT handled in this app — they run through QueroApoiar (`apoiar.me/jorgesolla`, TSE-homologated). The site only needs a "Doar" link/CTA out to that URL.
+
+**Real conventions already established in this codebase (follow these, not just the generic patterns below):**
+
+- `Contact` is the normalized "person" record (name, email, phone, state/city via `src/lib/cities.ts`, CEP). Don't create a parallel "person" collection for new features (e.g. líderanças/apoiadores) — add a join collection that relates to `Contact`, the same way `Signature` and `Subscription` do.
+- Every action that writes to more than one collection (see `src/app/(frontend)/actions/*.ts`) wraps the writes in a Payload transaction (`payload.db.beginTransaction/commitTransaction/rollbackTransaction`) and passes `req: { transactionID }` to every `payload.create`/`payload.update` call. Follow this pattern for any new multi-collection write.
+- LGPD consent is tracked via a `Consent` collection (richText, versioned) referenced by relationship from `Signature`/`Subscription`. Any new form/opt-in flow should link to a `Consent` document the same way — don't invent a new consent mechanism.
+- Cache invalidation: collections/globals call `revalidateDocumentById` (`src/utilities/documents.ts`) / `revalidateGlobal` (`src/utilities/globals.ts`) in an `afterChange` hook. Add the same hook to any new collection/global that backs a public page.
+- Admin UI is organized via `admin.group` (e.g. `'Abaixo-assinados'`, `'Contatos'`, `'Configurações'`, `'Paginas'`) — group new collections consistently instead of leaving them ungrouped.
+- i18n: Payload admin defaults to `pt` (not `pt-BR` — see `payload.config.ts`, `payload/i18n/pt`).
+
+**Database & local development (safety-critical — production is a live Neon Postgres with real citizens' PII):**
+
+- Local dev and tests must NEVER touch production. Local dev runs against a local Docker Postgres (`pnpm db:start`); `pnpm dev` refuses a non-local `DATABASE_URL` (guard: `scripts/guard-dev-db.mjs`) unless `ALLOW_REMOTE_DB=true`. Tests load `.env.test` (`teqo_test`) and refuse any database whose name doesn't end in `_test` (`tests/helpers/assertTestDatabase.ts`). Never repoint `.env`/`.env.local`/`.env.test` `DATABASE_URL` at Neon. Full workflow lives in the `local-database` skill (`.cursor/skills/local-database`).
+- Schema changes go through committed Payload migrations — `push: false` everywhere, never flip it on against a remote DB. Edit configs → `pnpm migrate:create <name>` → commit `src/migrations/*` (both `.ts` and `.json`, plus `index.ts`) → `pnpm migrate` locally. `pnpm build` runs `payload migrate`, so **every Vercel deploy applies pending migrations to prod**. Prod is baselined at migration `20260715_163458_initial` — never regenerate or replace the initial migration. Full workflow (incl. hand-written data/reconciliation migrations) lives in the `payload-migrations` skill (`.cursor/skills/payload-migrations`).
+- `Consent.text` was reconciled from `varchar` to `jsonb` via `20260715_163500_consent_text_to_jsonb` (matching the `richText` field). Any future field-type change is a migration, not a manual DB edit.
+- To copy production content locally, use `pnpm db:pull` (`scripts/db-pull.mjs`): it only reads prod, only writes local, and excludes supporter PII (`contact`/`signature`/`subscription` row data).
+
+## Known Gaps (as of 2026-07-15 — resolve before relying on this file for onboarding new devs)
+
+1. **`Users` has no `roles` field yet.** The RBAC examples below are generic Payload patterns, not yet implemented here — every admin user today has full access. Add `roles` (e.g. `admin`/`editor`/`assessor`) before opening the admin to more people or building `/campanha`.
+2. **`Consent` document IDs are hardcoded** in code (e.g. `consent: 2` in `submitWhatsapp.ts`). Fragile — breaks silently if that document is ever recreated with a different ID, and blocks having a reproducible local seed. Consider referencing by a stable slug/key instead. (The column-type drift is fixed; the hardcoded-ID fragility remains.)
+3. **No `Pages`/`Posts` collections yet** for institutional content (bio, propostas, notícias/imprensa). `HomePage` global today only has a single image field — most homepage content is still hardcoded in `src/app/(frontend)/(home)/page.tsx`. This is the biggest gap for reproducing jorgesolla.com.br content in Payload.
+
+**Recently resolved (2026-07-15):** local Postgres now runs via `docker-compose.yml` (Postgres 17, matching prod, auto-creating `teqo_test`); Payload migrations are set up with prod baselined; dev/test database guards prevent accidental production access. See the two database skills.
+
 ## Core Principles
 
 1. **TypeScript-First**: Always use TypeScript with proper types from Payload
@@ -15,19 +49,23 @@ You are an expert Payload CMS developer. When working with Payload projects, fol
 
 - To validate typescript correctness after modifying code run `tsc --noEmit`
 - Generate import maps after creating or modifying components.
+- Any change to a collection/global/field schema requires a migration: `pnpm migrate:create <name>`, then `pnpm migrate` locally. Never rely on `push` (it is `false`). See the `payload-migrations` skill.
 
 ## Project Structure
+
+Generic Payload layout (aspirational — `access/` and `hooks/` as separate dirs don't exist yet in this repo; access control and hooks are currently written inline inside each collection/global file):
 
 ```
 src/
 ├── app/
-│   ├── (frontend)/          # Frontend routes
-│   └── (payload)/           # Payload admin routes
-├── collections/             # Collection configs
-├── globals/                 # Global configs
-├── components/              # Custom React components
-├── hooks/                   # Hook functions
-├── access/                  # Access control functions
+│   ├── (frontend)/          # Frontend routes + server actions (src/app/(frontend)/actions/*.ts)
+│   ├── (payload)/           # Payload admin routes
+│   └── (campanha)/          # NOT YET CREATED — planned internal campaign-management area
+├── collections/             # Collection configs (Users, Media, Petition, Signature, Consent, Contact, Subscription)
+├── globals/                 # Global configs (SiteSettings, HomePage, Metadata)
+├── components/              # Custom React components (incl. components/ui from shadcn)
+├── lib/                     # cities.ts, zod schemas (lib/schemas/*)
+├── utilities/                # documents.ts / globals.ts (revalidation helpers)
 └── payload.config.ts        # Main config
 ```
 
@@ -725,7 +763,6 @@ export const Posts: CollectionConfig = {
 ### Performance Best Practices
 
 1. **Import correctly:**
-
    - Admin Panel: `import { Button } from '@payloadcms/ui'`
    - Frontend: `import { Button } from '@payloadcms/ui/elements/Button'`
 
@@ -740,7 +777,6 @@ export const Posts: CollectionConfig = {
    ```
 
 3. **Prefer Server Components** - Only use Client Components when you need:
-
    - State (useState, useReducer)
    - Effects (useEffect)
    - Event handlers (onClick, onChange)
@@ -1040,19 +1076,16 @@ For deeper exploration of specific topics, refer to the context files located in
 ### Available Context Files
 
 1. **`payload-overview.md`** - High-level architecture and core concepts
-
    - Payload structure and initialization
    - Configuration fundamentals
    - Database adapters overview
 
 2. **`security-critical.md`** - Critical security patterns (⚠️ IMPORTANT)
-
    - Local API access control
    - Transaction safety in hooks
    - Preventing infinite hook loops
 
 3. **`collections.md`** - Collection configurations
-
    - Basic collection patterns
    - Auth collections with RBAC
    - Upload collections
@@ -1060,7 +1093,6 @@ For deeper exploration of specific topics, refer to the context files located in
    - Globals
 
 4. **`fields.md`** - Field types and patterns
-
    - All field types with examples
    - Conditional fields
    - Virtual fields
@@ -1068,13 +1100,11 @@ For deeper exploration of specific topics, refer to the context files located in
    - Common field patterns
 
 5. **`field-type-guards.md`** - TypeScript field type utilities
-
    - Field type checking utilities
    - Safe type narrowing
    - Runtime field validation
 
 6. **`access-control.md`** - Permission patterns
-
    - Collection-level access
    - Field-level access
    - Row-level security
@@ -1082,48 +1112,41 @@ For deeper exploration of specific topics, refer to the context files located in
    - Multi-tenant access control
 
 7. **`access-control-advanced.md`** - Complex access patterns
-
    - Nested document access
    - Cross-collection permissions
    - Dynamic role hierarchies
    - Performance optimization
 
 8. **`hooks.md`** - Lifecycle hooks
-
    - Collection hooks
    - Field hooks
    - Hook context patterns
    - Common hook recipes
 
 9. **`queries.md`** - Database operations
-
    - Local API usage
    - Query operators
    - Complex queries with AND/OR
    - Performance optimization
 
 10. **`endpoints.md`** - Custom API endpoints
-
     - REST endpoint patterns
     - Authentication in endpoints
     - Error handling
     - Route parameters
 
 11. **`adapters.md`** - Database and storage adapters
-
     - MongoDB, PostgreSQL, SQLite patterns
     - Storage adapter usage (S3, Azure, GCS, etc.)
     - Custom adapter development
 
 12. **`plugin-development.md`** - Creating plugins
-
     - Plugin architecture
     - Modifying configuration
     - Plugin hooks
     - Best practices
 
 13. **`components.md`** - Custom Components
-
     - Component types (Root, Collection, Global, Field)
     - Server vs Client Components
     - Component paths and definition

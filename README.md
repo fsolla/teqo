@@ -32,10 +32,49 @@ Teqo then becomes a configurable base product for other politicians in Brazil:
 
 ## Local Development
 
-1. Copy environment variables: `cp .env.example .env`
-2. Install dependencies: `pnpm install`
-3. Start development server: `pnpm dev`
-4. Open: `http://localhost:3000`
+> **Production safety:** the production database is a live Neon Postgres holding real citizens' data. Local development and tests run against a **local** Postgres and must never point at production. `pnpm dev` refuses to start against a non-local database, and the test suite refuses any database whose name doesn't end in `_test`.
+
+### First-time setup
+
+1. Install dependencies: `pnpm install`
+2. Create your env file: `cp .env.example .env.local`
+3. Start Docker, then start the local database: `pnpm db:start`
+   - This runs Postgres 17 (matching production) and auto-creates a `teqo_test` database for the test suite.
+4. Make sure `DATABASE_URL` in `.env.local` points at local:
+   ```
+   DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo
+   ```
+5. Load a schema + content into the local database — pick one:
+   - **Mirror production content (recommended):** `PROD_DATABASE_URL="<unpooled Neon URL>" pnpm db:pull`
+     Copies production's schema and content into local. It only reads production and **excludes supporter PII** (`contact`/`signature`/`subscription` data).
+   - **Empty schema from migrations:** `pnpm migrate`
+6. Start the dev server: `pnpm dev`
+7. Open: `http://localhost:3000`
+
+Useful scripts: `pnpm db:start` / `pnpm db:stop` (local Postgres), `pnpm db:pull` (refresh local content from prod).
+
+### Database migrations
+
+Schema is managed by committed Payload migrations (`src/migrations/`); `push` is disabled everywhere.
+
+To change the schema:
+
+1. Edit the collection/global/field config.
+2. Generate a migration: `pnpm migrate:create <name>`
+3. Review and commit the generated files in `src/migrations/` (both `.ts` and `.json`, plus `index.ts`).
+4. Apply it locally: `pnpm migrate` (check status anytime with `pnpm migrate:status`).
+
+**Deploying to production:** `pnpm build` runs `payload migrate` before building, so every Vercel deploy automatically applies pending migrations to the production database. Do not run migrations against production by hand.
+
+### Running tests
+
+Tests use the isolated `teqo_test` database (config in `.env.test`). Prepare its schema once with:
+
+```
+DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test pnpm migrate
+```
+
+Then run `pnpm test` (or `pnpm test:int` / `pnpm test:e2e`).
 
 ## Tech Stack
 
