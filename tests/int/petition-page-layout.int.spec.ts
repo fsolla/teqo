@@ -33,7 +33,7 @@ describe('petition page layout', () => {
 
   it('scopes the petition color system to the petition page', () => {
     expect(pageSource).toContain('data-theme="petition"')
-    expect(stylesSource).toContain('[data-theme="petition"]')
+    expect(stylesSource).toMatch(/\[data-theme=['"]petition['"]\]/)
     expect(stylesSource).toContain('--petition-hero')
     expect(stylesSource).toContain('--petition-form-section')
   })

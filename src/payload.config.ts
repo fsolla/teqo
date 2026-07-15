@@ -11,8 +11,10 @@ import { Consent } from './collections/Consent'
 import { Contact } from './collections/Contact'
 import { Media } from './collections/Media'
 import { Petition } from './collections/Petition'
+import { Post } from './collections/Post'
 import { Signature } from './collections/Signature'
 import { Subscription } from './collections/Subscription'
+import { Tag } from './collections/Tag'
 import { Users } from './collections/Users'
 import { HomePage } from './globals/HomePage'
 import { Metadata } from './globals/Metadata'
@@ -32,7 +34,7 @@ export default buildConfig({
       globals: [SiteSettings.slug, HomePage.slug],
     },
   },
-  collections: [Users, Media, Petition, Contact, Consent, Signature, Subscription],
+  collections: [Users, Media, Petition, Contact, Consent, Signature, Subscription, Post, Tag],
   globals: [SiteSettings, HomePage, Metadata],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

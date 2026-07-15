@@ -74,6 +74,8 @@ export interface Config {
     consent: Consent;
     signature: Signature;
     subscription: Subscription;
+    post: Post;
+    tag: Tag;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -89,6 +91,8 @@ export interface Config {
     consent: ConsentSelect<false> | ConsentSelect<true>;
     signature: SignatureSelect<false> | SignatureSelect<true>;
     subscription: SubscriptionSelect<false> | SubscriptionSelect<true>;
+    post: PostSelect<false> | PostSelect<true>;
+    tag: TagSelect<false> | TagSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -316,6 +320,60 @@ export interface Subscription {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "post".
+ */
+export interface Post {
+  id: number;
+  title: string;
+  /**
+   * Gerado automaticamente a partir do título quando vazio.
+   */
+  slug?: string | null;
+  type: 'noticia' | 'campanha' | 'artigo' | 'evento';
+  category: number | Tag;
+  tags?: (number | Tag)[] | null;
+  subtitle?: string | null;
+  coverImage?: (number | null) | Media;
+  publishedDate?: string | null;
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tag".
+ */
+export interface Tag {
+  id: number;
+  name: string;
+  /**
+   * Gerado automaticamente a partir do nome quando vazio.
+   */
+  slug?: string | null;
+  /**
+   * Esconde do site todas as publicações com esta tag.
+   */
+  hidden?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -457,6 +515,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'subscription';
         value: number | Subscription;
+      } | null)
+    | ({
+        relationTo: 'post';
+        value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'tag';
+        value: number | Tag;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -604,6 +670,35 @@ export interface SubscriptionSelect<T extends boolean = true> {
   contact?: T;
   consent?: T;
   comment?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "post_select".
+ */
+export interface PostSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  type?: T;
+  category?: T;
+  tags?: T;
+  subtitle?: T;
+  coverImage?: T;
+  publishedDate?: T;
+  body?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tag_select".
+ */
+export interface TagSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  hidden?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -815,10 +910,15 @@ export interface TaskSchedulePublish {
   input: {
     type?: ('publish' | 'unpublish') | null;
     locale?: string | null;
-    doc?: {
-      relationTo: 'petition';
-      value: string | Petition;
-    } | null;
+    doc?:
+      | ({
+          relationTo: 'petition';
+          value: string | Petition;
+        } | null)
+      | ({
+          relationTo: 'post';
+          value: number | Post;
+        } | null);
     global?: 'site-settings' | null;
     user?: (number | null) | User;
   };

@@ -44,6 +44,8 @@ These conventions apply to all first-party components we author. The only except
    const [open, setOpen] = React.useState(false)
    ```
 
+3. **All code identifiers are in English.** This covers variable, function, parameter, type/interface names, local constants, and Next.js dynamic route segment folder names used as param keys (e.g. `[type]/[category]/[slug]`, not `[tipo]/[categoria]`). Portuguese is allowed ONLY in: user-visible string literals (JSX text, button/labels), image `alt` text, SEO/metadata values (title/description/keywords), Payload admin config text (`labels`/`singular`/`plural`/`admin.description`/field `label`), and intentional URL slug/enum VALUES kept in Portuguese for SEO (e.g. `post.type` values `noticia|campanha|artigo|evento`, tag/category slugs like `saude`). Never translate those data/URL values or admin labels. Renaming a route segment folder changes only the param KEY, never the public URL.
+
 ## Component Types
 
 There are four main types of Custom Components:

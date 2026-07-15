@@ -111,9 +111,38 @@ body,
   --field-disabled-background: rgb(255 255 255 / 70%);
   --field-disabled-foreground: rgb(0 0 0 / 70%);
   --field-icon: rgb(0 0 0 / 60%);
+  /* Brand header bar. Defined on :root so it is inherited by every theme
+     (including "editorial") and stays the same red regardless of palette. */
+  --site-header: #ae1603;
+  --site-header-foreground: #fff8f2;
+  --site-header-muted: rgb(255 248 242 / 72%);
+  --site-header-border: rgb(255 255 255 / 18%);
 }
 
-[data-theme="petition"] {
+/* Light, neutral editorial palette for the public Posts pages (listings +
+   article). Mirrors the shadcn token contract with a brand-red primary. */
+[data-theme='editorial'] {
+  --background: #f6f4f3;
+  --foreground: #201b1a;
+  --card: #ffffff;
+  --card-foreground: #201b1a;
+  --popover: #ffffff;
+  --popover-foreground: #201b1a;
+  --primary: #c51414;
+  --primary-foreground: #ffffff;
+  --secondary: #efe9e7;
+  --secondary-foreground: #4a3f3d;
+  --muted: #efe9e7;
+  --muted-foreground: #6c615e;
+  --accent: #f3edeb;
+  --accent-foreground: #201b1a;
+  --destructive: #b42318;
+  --border: rgb(32 27 26 / 12%);
+  --input: rgb(32 27 26 / 16%);
+  --ring: #c51414;
+}
+
+[data-theme='petition'] {
   --background: #fff8f2;
   --foreground: #2c2522;
   --card: #ffffff;
