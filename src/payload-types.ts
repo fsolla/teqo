@@ -64,10 +64,12 @@ export type SupportedTimezones =
 export interface Config {
   auth: {
     users: UserAuthOperations;
+    campaignUser: CampaignUserAuthOperations;
   };
   blocks: {};
   collections: {
     users: User;
+    campaignUser: CampaignUser;
     media: Media;
     petition: Petition;
     contact: Contact;
@@ -85,6 +87,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    campaignUser: CampaignUserSelect<false> | CampaignUserSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     petition: PetitionSelect<false> | PetitionSelect<true>;
     contact: ContactSelect<false> | ContactSelect<true>;
@@ -117,7 +120,7 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User;
+  user: User | CampaignUser;
   jobs: {
     tasks: {
       schedulePublish: TaskSchedulePublish;
@@ -130,6 +133,24 @@ export interface Config {
   };
 }
 export interface UserAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
+  };
+}
+export interface CampaignUserAuthOperations {
   forgotPassword: {
     email: string;
     password: string;
@@ -171,6 +192,32 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaignUser".
+ */
+export interface CampaignUser {
+  id: number;
+  name: string;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'campaignUser';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -493,6 +540,10 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
+        relationTo: 'campaignUser';
+        value: number | CampaignUser;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -525,10 +576,15 @@ export interface PayloadLockedDocument {
         value: number | Tag;
       } | null);
   globalSlug?: string | null;
-  user: {
-    relationTo: 'users';
-    value: number | User;
-  };
+  user:
+    | {
+        relationTo: 'users';
+        value: number | User;
+      }
+    | {
+        relationTo: 'campaignUser';
+        value: number | CampaignUser;
+      };
   updatedAt: string;
   createdAt: string;
 }
@@ -538,10 +594,15 @@ export interface PayloadLockedDocument {
  */
 export interface PayloadPreference {
   id: number;
-  user: {
-    relationTo: 'users';
-    value: number | User;
-  };
+  user:
+    | {
+        relationTo: 'users';
+        value: number | User;
+      }
+    | {
+        relationTo: 'campaignUser';
+        value: number | CampaignUser;
+      };
   key?: string | null;
   value?:
     | {
@@ -571,6 +632,29 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaignUser_select".
+ */
+export interface CampaignUserSelect<T extends boolean = true> {
+  name?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

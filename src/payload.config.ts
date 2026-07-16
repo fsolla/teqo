@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url'
 
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { pt } from 'payload/i18n/pt'
+import { CampaignUser } from './collections/CampaignUser'
 import { Consent } from './collections/Consent'
 import { Contact } from './collections/Contact'
 import { Media } from './collections/Media'
@@ -34,7 +35,18 @@ export default buildConfig({
       globals: [SiteSettings.slug, HomePage.slug],
     },
   },
-  collections: [Users, Media, Petition, Contact, Consent, Signature, Subscription, Post, Tag],
+  collections: [
+    Users,
+    CampaignUser,
+    Media,
+    Petition,
+    Contact,
+    Consent,
+    Signature,
+    Subscription,
+    Post,
+    Tag,
+  ],
   globals: [SiteSettings, HomePage, Metadata],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

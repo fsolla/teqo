@@ -8,7 +8,7 @@ Teqo is the digital platform for deputado federal Jorge Solla (PT-BA): public si
 
 **Locked decisions — do not relitigate without a new concrete reason:**
 
-- Single Next.js app, three route groups: `(frontend)` public site, `(payload)` admin, `(campanha)` internal campaign tool (roles: assessores). No separate Rust service, no separate frontend app for `/campanha` — model it as Payload collections (it already has native `point` fields + `near` queries for the political map).
+- Single Next.js app, three route groups: `(frontend)` public site, `(payload)` admin, `(campanha)` internal campaign tool (roles: assessores). No separate Rust service, no separate frontend app for `/campanha` — model it as Payload collections (it already has native `point` fields + `near` queries for the political map). The `(campanha)` route group now EXISTS with an auth barrier — it is NOT built on `users` + roles but on a **separate Payload auth collection** `campaignUser` (see "Campaign auth" below).
 - Hosting stays on Vercel for now. No self-host/Coolify migration in progress.
 - Donations are NOT handled in this app — they run through QueroApoiar (`apoiar.me/jorgesolla`, TSE-homologated). The site only needs a "Doar" link/CTA out to that URL.
 
@@ -32,7 +32,7 @@ Teqo is the digital platform for deputado federal Jorge Solla (PT-BA): public si
 
 ## Known Gaps (as of 2026-07-15 — resolve before relying on this file for onboarding new devs)
 
-1. **`Users` has no `roles` field yet.** The RBAC examples below are generic Payload patterns, not yet implemented here — every admin user today has full access. Add `roles` (e.g. `admin`/`editor`/`assessor`) before opening the admin to more people or building `/campanha`.
+1. **No `roles` field on either auth collection yet.** The RBAC examples below are generic Payload patterns, not yet implemented here — every `users` (admin) user today has full access, and the `/campanha` barrier is currently just "any authenticated `campaignUser` = full access" (see "Campaign auth" below). Roles are deferred until a `/campanha` screen actually needs to gate on them; add `roles` (e.g. `admin`/`editor`/`assessor`) to the relevant collection at that point (and before opening the admin to more people).
 2. **`Consent` document IDs are hardcoded** in code (e.g. `consent: 2` in `submitWhatsapp.ts`). Fragile — breaks silently if that document is ever recreated with a different ID, and blocks having a reproducible local seed. Consider referencing by a stable slug/key instead. (The column-type drift is fixed; the hardcoded-ID fragility remains.)
 3. **`Post`/`Tag` ship the news system, but there is still no `Pages` collection for institutional content.** Partly resolved: the `post`/`tag` collections back the news/publications system, and the home "Últimas notícias" list plus the `/[type]`, `/[type]/[category]`, and article routes are live (see "Posts & Tags" below). Still hardcoded/pending: the home hero heading + subtitle copy (`HomePage` global still exposes only a single `image` field — the text lives in `src/app/(frontend)/(home)/page.tsx`), and there is no `Pages` collection yet for institutional content such as the bio and propostas.
 
@@ -73,6 +73,17 @@ curl -X POST "https://<prod-domain>/api/revalidate" \
 - **Responses:** `200 { revalidated: true, tag: 'posts' }` on success; `401` if the secret is missing/wrong; `500` if `REVALIDATE_SECRET` is not configured on the server.
 - This POST is the required last step of the post-seed / direct-DB-change runbook.
 
+## Campaign auth (`/campanha`)
+
+The internal `/campanha` area is gated by its own authentication, deliberately kept **isolated from the Payload admin (`/admin`)** so a campaign session and an admin session can coexist in the same browser.
+
+- **`campaignUser` collection** (`src/collections/CampaignUser.ts`) — a **separate Payload auth collection** (`auth: true`), labels "Usuário"/"Usuários", admin group "Campanha", with a single `name` field on top of the built-in auth fields. It is NOT `users`: `admin.user` in `payload.config.ts` stays `users`, so a `campaignUser` cannot log into `/admin` (it can still be managed there by an admin). This is why `/campanha` is not built on `users` + roles.
+- **Isolated session cookie `campaign-token`.** The flow sets its own httpOnly cookie named `campaign-token` (constant `CAMPAIGN_TOKEN_COOKIE` in `src/utilities/campaignAuth.ts`), scoped to `path: '/campanha'`, `sameSite: 'lax'`, and `secure` only in production. It is deliberately NOT the default `payload-token` cookie — using a distinct name + path is what lets a campaign session and a Payload admin session live side by side without clobbering each other.
+- **Session verification — `getCampaignUser()`** (`src/utilities/campaignAuth.ts`). Reads the `campaign-token` cookie, calls `payload.auth({ headers })` with an `Authorization: JWT <token>` header, and returns the user only when `user.collection === 'campaignUser'` (otherwise `null`) — so an admin `payload-token` can never satisfy the campaign barrier.
+- **Login/logout server actions** (`src/app/(campanha)/campanha/actions/auth.ts`). `loginCampaign` validates input with `campaignLoginSchema` (`src/lib/schemas/campaign-login.ts`), calls `payload.login({ collection: 'campaignUser' })`, and — because the Local API returns a token WITHOUT setting a cookie — sets the `campaign-token` cookie itself (using the collection's `auth.tokenExpiration` as `maxAge`) before redirecting to `/campanha`. `logoutCampaign` clears the cookie (`maxAge: 0`) and redirects to `/campanha/login`.
+- **Route layout.** The route group's root layout `src/app/(campanha)/layout.tsx` renders the `<html>`/`<body>` with `data-theme="campaign"`. The public login lives at `src/app/(campanha)/campanha/login/` (`page.tsx` + client `LoginForm.tsx`). Everything gated sits in the `(app)` group, whose layout (`src/app/(campanha)/campanha/(app)/layout.tsx`) calls `getCampaignUser()` and `redirect('/campanha/login')` when there is no session — that layout is the barrier.
+- **Migration.** Adding the collection required migration `20260716_010420_add_campaign_user` (creates `campaign_user` + `campaign_user_sessions` tables and the related `payload_locked_documents_rels` / `payload_preferences_rels` columns).
+
 ## Core Principles
 
 1. **TypeScript-First**: Always use TypeScript with proper types from Payload
@@ -97,8 +108,8 @@ src/
 ├── app/
 │   ├── (frontend)/          # Frontend routes + server actions (src/app/(frontend)/actions/*.ts)
 │   ├── (payload)/           # Payload admin routes
-│   └── (campanha)/          # NOT YET CREATED — planned internal campaign-management area
-├── collections/             # Collection configs (Users, Media, Petition, Signature, Consent, Contact, Subscription, Post, Tag)
+│   └── (campanha)/          # Internal campaign-management area (auth barrier, see "Campaign auth")
+├── collections/             # Collection configs (Users, CampaignUser, Media, Petition, Signature, Consent, Contact, Subscription, Post, Tag)
 ├── globals/                 # Global configs (SiteSettings, HomePage, Metadata)
 ├── components/              # Custom React components (incl. components/ui from shadcn)
 ├── lib/                     # cities.ts, zod schemas (lib/schemas/*)

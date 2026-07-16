@@ -180,6 +180,39 @@ body,
   --field-icon: rgb(44 37 34 / 58%);
 }
 
+/* Clean, neutral light palette for the internal /campanha area (login +
+   management panel). Mirrors the shadcn token contract with a brand-red
+   primary and defines the --field-* tokens so the custom Input renders with a
+   visible border on the white card. Applied via data-theme="campaign" on the
+   (campanha) layout, so it never affects the public (frontend) pages. */
+[data-theme='campaign'] {
+  --background: #ffffff;
+  --foreground: #1c1917;
+  --card: #ffffff;
+  --card-foreground: #1c1917;
+  --popover: #ffffff;
+  --popover-foreground: #1c1917;
+  --primary: #c51414;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f5f4;
+  --secondary-foreground: #292524;
+  --muted: #f4f4f5;
+  --muted-foreground: #6b7280;
+  --accent: #f4f4f5;
+  --accent-foreground: #1c1917;
+  --destructive: #b42318;
+  --border: rgb(28 25 23 / 12%);
+  --input: rgb(28 25 23 / 16%);
+  --ring: #c51414;
+  --field-background: #ffffff;
+  --field-foreground: #1c1917;
+  --field-placeholder: rgb(28 25 23 / 50%);
+  --field-border: #d6d3d1;
+  --field-disabled-background: #f5f5f4;
+  --field-disabled-foreground: rgb(28 25 23 / 55%);
+  --field-icon: rgb(28 25 23 / 55%);
+}
+
 .dark {
   --background: oklch(0.148 0.004 228.8);
   --foreground: oklch(0.987 0.002 197.1);
