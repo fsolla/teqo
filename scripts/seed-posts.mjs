@@ -26,6 +26,7 @@
 import { config as loadEnv } from 'dotenv'
 import { JSDOM } from 'jsdom'
 import { convertHTMLToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical'
+import { del as blobDel } from '@vercel/blob'
 import { getPayload } from 'payload'
 
 // Mirror Next.js precedence (.env.local wins over .env) without clobbering a
@@ -418,6 +419,24 @@ async function ensureCoverMedia(payload, { slug, coverUrl, alt }) {
   if (existing.docs.length > 0) return { id: existing.docs[0].id, created: false }
 
   const buffer = Buffer.from(await res.arrayBuffer())
+
+  // The Vercel Blob store is SHARED across environments, and the storage plugin
+  // (@payloadcms/storage-vercel-blob) calls `put()` without `allowOverwrite` and
+  // exposes no option to enable it. So a blob left behind under this deterministic
+  // key (`<slug>.<ext>`) by an earlier run in another environment would make the
+  // upload throw "This blob already exists". We have no DB media row for it here
+  // (checked above), so it's an orphan — delete it first so the upload is
+  // deterministic and this seed stays re-runnable. `del` is idempotent (no-op
+  // when the blob is absent).
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN
+  if (blobToken) {
+    try {
+      await blobDel(filename, { token: blobToken })
+    } catch (err) {
+      console.warn(`[seed:posts]   blob pre-delete skipped for ${filename}: ${err.message}`)
+    }
+  }
+
   const media = await payload.create({
     collection: 'media',
     data: { alt: alt || slug },
