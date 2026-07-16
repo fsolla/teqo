@@ -1,9 +1,8 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
-import { logoutCampaign } from '@/app/(campanha)/campanha/actions/auth'
-import { Button } from '@/components/ui/button'
+import { CampaignSidebar } from '@/components/campanha/campaign-sidebar'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 
 export default async function CampaignAppLayout({ children }: { children: React.ReactNode }) {
@@ -14,23 +13,14 @@ export default async function CampaignAppLayout({ children }: { children: React.
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between border-b px-4 py-3">
-        <nav className="flex items-center gap-4">
-          <Link href="/campanha" className="font-bold">
-            Campanha
-          </Link>
-        </nav>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">{user.name}</span>
-          <form action={logoutCampaign}>
-            <Button type="submit" variant="outline" size="sm">
-              Sair
-            </Button>
-          </form>
-        </div>
-      </header>
-      <main className="flex-1 p-4">{children}</main>
-    </div>
+    <SidebarProvider>
+      <CampaignSidebar user={{ name: user.name, email: user.email }} />
+      <SidebarInset>
+        <header className="flex h-12 items-center border-b px-4 md:hidden">
+          <SidebarTrigger />
+        </header>
+        <main className="flex-1 p-4 md:p-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

@@ -211,6 +211,33 @@ body,
   --field-disabled-background: #f5f5f4;
   --field-disabled-foreground: rgb(28 25 23 / 55%);
   --field-icon: rgb(28 25 23 / 55%);
+  /* Light rail for the campaign app shell (not the public-site dark sidebar). */
+  --sidebar: #fafaf9;
+  --sidebar-foreground: #1c1917;
+  --sidebar-primary: #c51414;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5f5f4;
+  --sidebar-accent-foreground: #1c1917;
+  --sidebar-border: rgb(28 25 23 / 12%);
+  --sidebar-ring: #c51414;
+}
+
+/*
+ * Cropped full-width Solla mark for the campaign sidebar.
+ * Source SVG viewBox is 430.9×300.5 but ink sits roughly in y 134–188 —
+ * size the box to ink height and pin the mask on the ink’s vertical center.
+ */
+.campaign-logo {
+  aspect-ratio: 430.9 / 64;
+  mask-image: url(/LOGO_SOLLA_BRANCO.svg);
+  mask-size: 100% auto;
+  mask-repeat: no-repeat;
+  /* Ink vertical center ≈ (134.4 + 187.8) / 2 / 300.5 */
+  mask-position: center 53.6%;
+  -webkit-mask-image: url(/LOGO_SOLLA_BRANCO.svg);
+  -webkit-mask-size: 100% auto;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center 53.6%;
 }
 
 .dark {
