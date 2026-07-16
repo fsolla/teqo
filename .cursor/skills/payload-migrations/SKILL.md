@@ -13,6 +13,13 @@ Schema is managed exclusively by committed migrations in `src/migrations/`. `pus
 
 Production is already baselined at migration `20260715_163458_initial` (marked applied in prod's `payload_migrations`). **Never regenerate, rename, or replace the initial migration** — doing so would make prod try to recreate existing tables.
 
+Current chain (`src/migrations/index.ts`, order matters):
+
+1. `20260715_163458_initial` — baseline.
+2. `20260715_163500_consent_text_to_jsonb` — hand-written `Consent.text` `varchar` → `jsonb` reconciliation.
+3. `20260715_181058_add_post_and_tag` — creates the `post`/`tag` tables (+ versions/`_rels`) and the `enum_post_type` (`noticia|campanha|artigo|evento`) enum.
+4. `20260715_215834_rename_tag_visible_to_hidden` — hand-written, data-preserving inversion of the tag visibility flag (`visible` → `hidden`, backfilled as its logical inverse).
+
 ## Making a schema change
 
 1. Make sure the local DB is running and current: `pnpm db:start`, `DATABASE_URL` local, `pnpm migrate`.
@@ -31,7 +38,7 @@ Production is already baselined at migration `20260715_163458_initial` (marked a
 
 For changes Payload's diff can't generate (data backfills, type reconciliations), add a file manually and register it in `index.ts`. Make it **idempotent** so it's safe on databases already in the target state.
 
-Follow the existing example `src/migrations/20260715_163500_consent_text_to_jsonb.ts`:
+Two existing examples: `src/migrations/20260715_163500_consent_text_to_jsonb.ts` (guarded type reconciliation) and `src/migrations/20260715_215834_rename_tag_visible_to_hidden.ts` (a data-preserving column rename that backfills `hidden = NOT visible` instead of letting the generated diff drop + recreate the column and lose which tags were toggled). Follow the consent example's guard pattern:
 
 ```ts
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'

@@ -17,7 +17,7 @@ Teqo is the digital platform for deputado federal Jorge Solla (PT-BA): public si
 - `Contact` is the normalized "person" record (name, email, phone, state/city via `src/lib/cities.ts`, CEP). Don't create a parallel "person" collection for new features (e.g. líderanças/apoiadores) — add a join collection that relates to `Contact`, the same way `Signature` and `Subscription` do.
 - Every action that writes to more than one collection (see `src/app/(frontend)/actions/*.ts`) wraps the writes in a Payload transaction (`payload.db.beginTransaction/commitTransaction/rollbackTransaction`) and passes `req: { transactionID }` to every `payload.create`/`payload.update` call. Follow this pattern for any new multi-collection write.
 - LGPD consent is tracked via a `Consent` collection (richText, versioned) referenced by relationship from `Signature`/`Subscription`. Any new form/opt-in flow should link to a `Consent` document the same way — don't invent a new consent mechanism.
-- Cache invalidation: collections/globals call `revalidateDocumentById` (`src/utilities/documents.ts`) / `revalidateGlobal` (`src/utilities/globals.ts`) in an `afterChange` hook. Add the same hook to any new collection/global that backs a public page.
+- Cache invalidation: collections/globals call `revalidateDocumentById` (`src/utilities/documents.ts`) / `revalidateGlobal` (`src/utilities/globals.ts`) in an `afterChange` hook. Add the same hook to any new collection/global that backs a public page. Collections whose listing is cached under a shared tag also call the listing helper (`revalidateCollectionListing`, e.g. `revalidatePostsListing()` → `revalidateTag('posts')`) — see "Posts & Tags" below.
 - Admin UI is organized via `admin.group` (e.g. `'Abaixo-assinados'`, `'Contatos'`, `'Configurações'`, `'Paginas'`) — group new collections consistently instead of leaving them ungrouped.
 - i18n: Payload admin defaults to `pt` (not `pt-BR` — see `payload.config.ts`, `payload/i18n/pt`).
 - Language & naming conventions: ALL code identifiers are in English — variable, function, parameter, type/interface names, local constants, and Next.js dynamic route segment folder names used as param keys (e.g. `[type]/[category]/[slug]`, not `[tipo]/[categoria]`). Portuguese is allowed ONLY in: user-visible string literals (JSX text, button/labels), image `alt` text, SEO/metadata values (title/description/keywords), Payload admin config text (`labels`/`singular`/`plural`/`admin.description`/field `label`), and intentional URL slug/enum VALUES kept in Portuguese for SEO (e.g. the `post.type` enum values `noticia|campanha|artigo|evento`, tag/category slugs like `saude`, `eleitoral`). Never translate those data/URL values or admin labels. Renaming a route segment folder changes only the param KEY, never the public URL (segment values come from the data).
@@ -28,14 +28,50 @@ Teqo is the digital platform for deputado federal Jorge Solla (PT-BA): public si
 - Schema changes go through committed Payload migrations — `push: false` everywhere, never flip it on against a remote DB. Edit configs → `pnpm migrate:create <name>` → commit `src/migrations/*` (both `.ts` and `.json`, plus `index.ts`) → `pnpm migrate` locally. `pnpm build` runs `payload migrate`, so **every Vercel deploy applies pending migrations to prod**. Prod is baselined at migration `20260715_163458_initial` — never regenerate or replace the initial migration. Full workflow (incl. hand-written data/reconciliation migrations) lives in the `payload-migrations` skill (`.cursor/skills/payload-migrations`).
 - `Consent.text` was reconciled from `varchar` to `jsonb` via `20260715_163500_consent_text_to_jsonb` (matching the `richText` field). Any future field-type change is a migration, not a manual DB edit.
 - To copy production content locally, use `pnpm db:pull` (`scripts/db-pull.mjs`): it only reads prod, only writes local, and excludes supporter PII (`contact`/`signature`/`subscription` row data).
+- To (re)populate news content, `pnpm db:seed:posts` fetches articles live from jorgesolla.com.br into the LOCAL db (same non-local `DATABASE_URL` guard as `pnpm dev`). It writes from a CLI process outside the deployed runtime, so after seeding — or after ANY direct-DB change — you must bust the production `posts` cache via `POST /api/revalidate`. See "Posts & Tags" below.
 
 ## Known Gaps (as of 2026-07-15 — resolve before relying on this file for onboarding new devs)
 
 1. **`Users` has no `roles` field yet.** The RBAC examples below are generic Payload patterns, not yet implemented here — every admin user today has full access. Add `roles` (e.g. `admin`/`editor`/`assessor`) before opening the admin to more people or building `/campanha`.
 2. **`Consent` document IDs are hardcoded** in code (e.g. `consent: 2` in `submitWhatsapp.ts`). Fragile — breaks silently if that document is ever recreated with a different ID, and blocks having a reproducible local seed. Consider referencing by a stable slug/key instead. (The column-type drift is fixed; the hardcoded-ID fragility remains.)
-3. **No `Pages`/`Posts` collections yet** for institutional content (bio, propostas, notícias/imprensa). `HomePage` global today only has a single image field — most homepage content is still hardcoded in `src/app/(frontend)/(home)/page.tsx`. This is the biggest gap for reproducing jorgesolla.com.br content in Payload.
+3. **`Post`/`Tag` ship the news system, but there is still no `Pages` collection for institutional content.** Partly resolved: the `post`/`tag` collections back the news/publications system, and the home "Últimas notícias" list plus the `/[type]`, `/[type]/[category]`, and article routes are live (see "Posts & Tags" below). Still hardcoded/pending: the home hero heading + subtitle copy (`HomePage` global still exposes only a single `image` field — the text lives in `src/app/(frontend)/(home)/page.tsx`), and there is no `Pages` collection yet for institutional content such as the bio and propostas.
 
-**Recently resolved (2026-07-15):** local Postgres now runs via `docker-compose.yml` (Postgres 17, matching prod, auto-creating `teqo_test`); Payload migrations are set up with prod baselined; dev/test database guards prevent accidental production access. See the two database skills.
+**Recently resolved (2026-07-15):** local Postgres now runs via `docker-compose.yml` (Postgres 17, matching prod, auto-creating `teqo_test`); Payload migrations are set up with prod baselined; dev/test database guards prevent accidental production access (see the two database skills). The `post`/`tag` collections and the public news/article/listing routes shipped and are deployed (see "Posts & Tags" below).
+
+## Posts & Tags (news / publications)
+
+The public news/publications system is backed by two collections (both in the `Publicações` admin group) plus the helpers in `src/utilities/posts.ts`.
+
+- **`post`** (`src/collections/Post.ts`) — fields: `title`, `slug` (unique, indexed, auto-slugified from `title` when left empty), `type` (select enum `noticia|campanha|artigo|evento`), `category` (required single relationship → `tag`), `tags` (`hasMany` relationship → `tag`), `subtitle`, `coverImage` (upload → `media`), `publishedDate`, `body` (richText). Has drafts/versions (`schedulePublish`, `maxPerDoc: 5`).
+- **`tag`** (`src/collections/Tag.ts`) — fields: `name`, `slug` (unique, indexed, auto-slugified from `name`), and `hidden` (checkbox, admin label "Esconder", default `false`). Tags are the shared taxonomy for both `post.category` and `post.tags`.
+
+**Tags are a taxonomy, not a person record.** The `Contact` convention above applies to *people*; `tag` is publication metadata (categories + a visibility control flag), so post/tag relations do not touch `Contact`. Don't fold taxonomy into `Contact` or vice-versa.
+
+**Electoral visibility control (`hidden` + fail-closed `isPostVisible`).** Marking a tag `hidden` hides every post that references it — as `category` or in `tags` — with a single toggle. This exists so campaign / pre-candidacy content (tagged `eleitoral`) can be pulled from the public site during the electoral period. `isPostVisible(post)` (`src/utilities/posts.ts`) returns true only when the post is `published` AND none of its related tags (`category` + `tags`) is `hidden`. It **fails closed**: an unpopulated relation (a bare numeric id) is treated as hiding, so callers must fetch with `depth >= 1`. Every public read filters through `getVisiblePosts()`, which applies this predicate to the cached published list.
+
+**URLs and Portuguese SEO values.** The canonical article path is `/[type]/[category]/[slug]` (e.g. `/noticia/saude/<slug>`), with `/[type]` and `/[type]/[category]` listing routes and the home "Últimas notícias" list. The `type` enum values (`noticia|campanha|artigo|evento`) and tag/category slugs (`saude`, `eleitoral`, …) are deliberately Portuguese for SEO and are **data, not identifiers** — never translate them (see the naming-conventions bullet above). The route folders are `[type]/[category]/[slug]` (English param keys); the article route redirects any stale/mismatched URL to the canonical path derived from the post's *current* `type` + category slug. Article pages emit JSON-LD (`Article`) and Open Graph metadata.
+
+**Caching (mixed ISR, `posts` tag).** Public reads go through the `unstable_cache` wrappers in `src/utilities/posts.ts` (`getCachedPublishedPosts`, `getCachedPostBySlug`), all tagged `posts`. The routes set `export const dynamicParams = true` and build `generateStaticParams` from `getVisiblePosts()`: known paths are statically generated, unknown ones render on demand, and everything stays cached until the `posts` tag is busted. `revalidatePostsListing()` (`src/utilities/documents.ts`) is `revalidateTag('posts')` (the listing tag is `` `${collection}s` `` → `posts`), so one call busts the home page, every listing route, and every article route at once.
+
+**Self-revalidation on admin edits.** Both collections have an `afterChange` hook. `post` busts its own document tag + the `posts` listing on every publish/update (skipping only the initial draft that the admin create view generates during render). `tag` is broader: on change it re-reads every post referencing that tag (as `category` or in `tags`, passing `req` for transaction safety) and revalidates each one plus the listing — so flipping `hidden` is reflected on the site immediately.
+
+**Seeding news content (`pnpm db:seed:posts`).** `scripts/seed-posts.mjs` (loaded via `scripts/seed-loader.mjs`) fetches ~39 articles live from jorgesolla.com.br (WordPress REST API, with an HTML-crawl fallback), imports them as `type: 'noticia'` published posts, converts the WP HTML body to Payload Lexical, and uploads cover images to Vercel Blob. The taxonomy (categories + the `eleitoral` control tag, and the per-slug classification) is hardcoded in the script; it reads/writes the `hidden` flag. It is **idempotent by slug** (existing posts are skipped; tags/media are reused by slug/filename) and reuses the same non-local `DATABASE_URL` guard as `pnpm dev` (override only with `ALLOW_REMOTE_DB=true`). The Vercel Blob store is shared across environments, so before uploading a cover it deletes any orphan blob left under the same deterministic `<slug>.<ext>` key, keeping the seed re-runnable.
+
+### Revalidating after a manual/direct DB change
+
+Admin edits made through the deployed app self-revalidate via the `afterChange` hooks above. But any write that does **not** go through the deployed Payload runtime — direct SQL, `pnpm db:seed:posts`, a DB restore / `db:pull` — will **not** bust production's frozen `posts` cache. (Even when such a write triggers the hook, its `revalidateTag('posts')` runs in that CLI/local process and cannot touch the deployed server's cache.) The pages keep serving stale content until the tag is busted.
+
+Bust it with the secured endpoint (`src/app/(frontend)/api/revalidate/route.ts`), which calls `revalidatePostsListing()`:
+
+```bash
+curl -X POST "https://<prod-domain>/api/revalidate" \
+  -H "x-revalidate-secret: $REVALIDATE_SECRET"
+```
+
+- **Auth:** send the secret via `x-revalidate-secret` or `Authorization: Bearer <secret>`; it is compared to `REVALIDATE_SECRET` with a constant-time check.
+- `REVALIDATE_SECRET` must be set in the Vercel **production** env (and in your local env if you want to test the endpoint). It is documented in `.env.example`.
+- **Responses:** `200 { revalidated: true, tag: 'posts' }` on success; `401` if the secret is missing/wrong; `500` if `REVALIDATE_SECRET` is not configured on the server.
+- This POST is the required last step of the post-seed / direct-DB-change runbook.
 
 ## Core Principles
 
@@ -62,11 +98,11 @@ src/
 │   ├── (frontend)/          # Frontend routes + server actions (src/app/(frontend)/actions/*.ts)
 │   ├── (payload)/           # Payload admin routes
 │   └── (campanha)/          # NOT YET CREATED — planned internal campaign-management area
-├── collections/             # Collection configs (Users, Media, Petition, Signature, Consent, Contact, Subscription)
+├── collections/             # Collection configs (Users, Media, Petition, Signature, Consent, Contact, Subscription, Post, Tag)
 ├── globals/                 # Global configs (SiteSettings, HomePage, Metadata)
 ├── components/              # Custom React components (incl. components/ui from shadcn)
 ├── lib/                     # cities.ts, zod schemas (lib/schemas/*)
-├── utilities/                # documents.ts / globals.ts (revalidation helpers)
+├── utilities/                # documents.ts / globals.ts / posts.ts (revalidation + posts helpers)
 └── payload.config.ts        # Main config
 ```
 

@@ -42,6 +42,23 @@ PROD_DATABASE_URL="<unpooled Neon URL>" pnpm db:pull
 - It **excludes PII**: row data of `contact`, `signature`, `subscription` (and their `_rels`) is not copied; the table structure is kept.
 - It resets and rebuilds the local `public` schema, so it overwrites local data.
 
+## Seed news content (`pnpm db:seed:posts`)
+
+```bash
+pnpm db:seed:posts
+```
+
+- `scripts/seed-posts.mjs` fetches ~39 articles **live** from jorgesolla.com.br (WordPress REST API, HTML-crawl fallback) and imports them into `post`/`tag`/`media` as published `noticia` posts, converting the WP HTML body to Payload Lexical and uploading covers to Vercel Blob.
+- Same safety guard as `pnpm dev`: it refuses a non-local `DATABASE_URL` unless `ALLOW_REMOTE_DB=true`.
+- **Idempotent by slug** — re-running skips existing posts and reuses tags/media, so it never duplicates. Because the Vercel Blob store is shared across environments, it deletes any orphan blob under the deterministic `<slug>.<ext>` key before uploading, so it stays re-runnable.
+- **Post-seed revalidation (required for prod):** the seed writes from a CLI process outside the deployed runtime, so it does **not** bust production's frozen `posts` cache. After seeding prod content — or after ANY direct-DB write — bust it:
+
+  ```bash
+  curl -X POST "https://<prod-domain>/api/revalidate" -H "x-revalidate-secret: $REVALIDATE_SECRET"
+  ```
+
+  `REVALIDATE_SECRET` must be set in the Vercel production env. See the "Posts & Tags" section in `AGENTS.md` for the full rationale (returns `401` on a bad secret, `500` if the secret is unset).
+
 ## Prepare / reset the test database
 
 The test DB needs the schema applied via migrations:

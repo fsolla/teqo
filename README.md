@@ -51,7 +51,17 @@ Teqo then becomes a configurable base product for other politicians in Brazil:
 6. Start the dev server: `pnpm dev`
 7. Open: `http://localhost:3000`
 
-Useful scripts: `pnpm db:start` / `pnpm db:stop` (local Postgres), `pnpm db:pull` (refresh local content from prod).
+Useful scripts: `pnpm db:start` / `pnpm db:stop` (local Postgres), `pnpm db:pull` (refresh local content from prod), `pnpm db:seed:posts` (import news posts/tags fresh from the live jorgesolla.com.br site into the local db; idempotent by slug, refuses a non-local database).
+
+### Content & cache revalidation
+
+Public news pages (`/[type]`, `/[type]/[category]`, articles, and the home news list) are cached under a shared `posts` tag. Editing a post or tag in the deployed admin self-revalidates via `afterChange` hooks. Any write that bypasses the deployed runtime — a direct-DB seed (`pnpm db:seed:posts`), SQL, or a restore — does **not** bust production's cache, so afterwards call the secured endpoint:
+
+```
+curl -X POST "https://<prod-domain>/api/revalidate" -H "x-revalidate-secret: $REVALIDATE_SECRET"
+```
+
+`REVALIDATE_SECRET` must be set in the Vercel production env (see `.env.example`). See the "Posts & Tags" section of `AGENTS.md` for the full model.
 
 ### Database migrations
 
