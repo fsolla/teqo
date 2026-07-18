@@ -77,6 +77,7 @@ vi.mock('@/utilities/nucleusUpdateUi', () => ({
 }))
 vi.mock('@/utilities/nucleusUi', () => ({
   organizationKindLabels: { territorial: 'Territorial' },
+  formatNucleusTerritoryLabel: () => 'Metropolitano de Salvador',
 }))
 vi.mock('@/utilities/phone', () => ({ buildWhatsAppUrl: vi.fn() }))
 vi.mock('@/app/(campaign)/campanha/(app)/nucleos/[slug]/coordinatorAssignmentFormActions', () => ({
@@ -144,10 +145,10 @@ describe('campaign nucleus summary layout', () => {
       status: 'ativo',
       organizationKind: 'territorial',
       organizationLabel: null,
-      neighborhood: null,
+      neighborhoods: [],
       locality: null,
-      city: 'Salvador',
-      region: 'Metropolitano de Salvador',
+      cities: ['Salvador'],
+      regions: ['Metropolitano de Salvador'],
       tseZones: [],
       confirmedVoteEstimate: null,
       proposedVoteEstimate: null,

@@ -324,7 +324,7 @@ describe('campaign authentication foundation', () => {
           slug: slugify(nucleusName),
           status: nucleusStatus,
           coordinators: [target.id],
-          city: 'Salvador',
+          cities: ['Salvador'],
           organizationKind: 'territorial',
         },
         depth: 0,

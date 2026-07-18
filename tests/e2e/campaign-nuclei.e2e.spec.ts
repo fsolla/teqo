@@ -27,7 +27,7 @@ test.describe('Campaign nucleus journeys', () => {
     await campaign.login(page, generalEmail, password)
     await page.goto(`${campaign.baseURL}/campanha/nucleos/novo`)
     await page.getByLabel('Nome do núcleo *').fill(nucleusName)
-    await page.getByLabel('Território de identidade').fill('Irecê')
+    await page.getByLabel('Territórios de identidade').fill('Irecê')
     await page.getByRole('option', { name: 'Irecê', exact: true }).click()
     const zoneInput = page.getByLabel('Adicionar Zona TSE')
     await zoneInput.pressSequentially('58,12 58')
@@ -92,7 +92,7 @@ test.describe('Campaign nucleus journeys', () => {
         collection: 'electoralNucleus',
         data: {
           name: campaign.fixtures.value('Núcleo designação'),
-          city: 'Salvador',
+          cities: ['Salvador'],
           coordinators: [general.id],
           organizationKind: 'territorial',
         } as never,
@@ -145,7 +145,7 @@ test.describe('Campaign nucleus journeys', () => {
         collection: 'electoralNucleus',
         data: {
           name: nucleusName,
-          city: 'Salvador',
+          cities: ['Salvador'],
           organizationKind: 'territorial',
         } as never,
         depth: 0,
@@ -199,7 +199,7 @@ test.describe('Campaign nucleus journeys', () => {
         collection: 'electoralNucleus',
         data: {
           name: campaign.fixtures.value('Núcleo responsivo'),
-          city: 'Salvador',
+          cities: ['Salvador'],
           organizationKind: 'territorial',
         } as never,
         depth: 0,

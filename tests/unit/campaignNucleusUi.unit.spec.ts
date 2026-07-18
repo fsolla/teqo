@@ -78,28 +78,29 @@ describe('campaign nucleus UI contracts', () => {
     expect(matchesAtWordStart('São Félix', 'fel')).toBe(true)
   })
 
-  it('selects a municipality with the keyboard and derives its territory', async () => {
+  it('adds a municipality as a chip via the strict combobox and derives its territory chip', async () => {
     render(createElement(NucleusTerritoryFields))
-    const region = screen.getByLabelText('Território de identidade') as HTMLInputElement
-    const city = screen.getByLabelText('Município') as HTMLInputElement
+    const city = screen.getByLabelText('Municípios') as HTMLInputElement
 
     fireEvent.focus(city)
     fireEvent.change(city, { target: { value: 'Seab' } })
     fireEvent.keyDown(city, { key: 'ArrowDown' })
     fireEvent.keyDown(city, { key: 'Enter' })
 
-    await waitFor(() => expect(city.value).toBe('Seabra'))
-    expect(region.value).toBe('Chapada Diamantina')
+    await waitFor(() => expect(city.value).toBe(''))
+    expect(screen.getByText('Seabra')).toBeTruthy()
+    expect(screen.getByText('Chapada Diamantina')).toBeTruthy()
+    expect(screen.queryByLabelText('Territórios de identidade')).toBeNull()
   })
 
-  it('uses neutral editable lookup identifiers and submits only canonical hidden fields', () => {
+  it('uses neutral editable lookup identifiers and exposes only the canonical hidden fields', () => {
     const { container } = render(
       createElement(NucleusTerritoryFields, {
-        fieldErrors: { region: ['Território inválido.'], city: ['Município inválido.'] },
+        fieldErrors: { regions: ['Território inválido.'], cities: ['Município inválido.'] },
       }),
     )
-    const region = screen.getByLabelText('Território de identidade') as HTMLInputElement
-    const city = screen.getByLabelText('Município') as HTMLInputElement
+    const region = screen.getByLabelText('Territórios de identidade') as HTMLInputElement
+    const city = screen.getByLabelText('Municípios') as HTMLInputElement
 
     for (const input of [region, city]) {
       expect(input.autocomplete).toBe('off')
@@ -118,10 +119,11 @@ describe('campaign nucleus UI contracts', () => {
     expect(region.id).toBe('nucleus-lookup-a')
     expect(city.id).toBe('nucleus-lookup-b')
     expect(region.id).not.toBe(city.id)
-    expect(container.querySelectorAll('input[type="hidden"][name="region"]')).toHaveLength(1)
-    expect(container.querySelectorAll('input[type="hidden"][name="city"]')).toHaveLength(1)
-    expect(container.querySelectorAll('[name="region"]')).toHaveLength(1)
-    expect(container.querySelectorAll('[name="city"]')).toHaveLength(1)
+    expect(container.querySelectorAll('input[type="hidden"][name="cities"]')).toHaveLength(0)
+    expect(container.querySelectorAll('input[type="hidden"][name="regions"]')).toHaveLength(0)
+    expect(container.querySelectorAll('input[type="hidden"][name="neighborhoods"]')).toHaveLength(
+      0,
+    )
     expect(region.getAttribute('aria-describedby')).toBe('nucleus-lookup-a-error')
     expect(city.getAttribute('aria-describedby')).toBe('nucleus-lookup-b-error')
     expect(screen.getByText('Território inválido.').id).toBe('nucleus-lookup-a-error')
@@ -130,7 +132,7 @@ describe('campaign nucleus UI contracts', () => {
 
   it('shows only word-start municipality matches', () => {
     render(createElement(NucleusTerritoryFields))
-    const city = screen.getByLabelText('Município')
+    const city = screen.getByLabelText('Municípios')
 
     fireEvent.focus(city)
     fireEvent.change(city, { target: { value: 'sal' } })
@@ -141,10 +143,10 @@ describe('campaign nucleus UI contracts', () => {
     expect(screen.queryByRole('option', { name: 'Cruz das Almas' })).toBeNull()
   })
 
-  it('clears invalid strict values on blur and exposes their errors', () => {
+  it('clears an invalid region or city draft on blur and exposes an error', () => {
     render(createElement(NucleusTerritoryFields))
-    const region = screen.getByLabelText('Território de identidade') as HTMLInputElement
-    const city = screen.getByLabelText('Município') as HTMLInputElement
+    const region = screen.getByLabelText('Territórios de identidade') as HTMLInputElement
+    const city = screen.getByLabelText('Municípios') as HTMLInputElement
 
     fireEvent.change(region, { target: { value: 'Território inventado' } })
     fireEvent.blur(region)
@@ -159,45 +161,94 @@ describe('campaign nucleus UI contracts', () => {
     expect(screen.getByText('Selecione um município válido da Bahia.')).toBeTruthy()
   })
 
-  it('filters municipalities to the selected territory', () => {
+  it('allows manually adding regions only until a city is selected, after which they become derived', async () => {
     render(createElement(NucleusTerritoryFields))
-    const region = screen.getByLabelText('Território de identidade')
-    const city = screen.getByLabelText('Município')
+    const region = screen.getByLabelText('Territórios de identidade') as HTMLInputElement
+    const city = screen.getByLabelText('Municípios') as HTMLInputElement
 
+    fireEvent.focus(region)
     fireEvent.change(region, { target: { value: 'Itaparica' } })
-    fireEvent.blur(region)
+    fireEvent.keyDown(region, { key: 'ArrowDown' })
+    fireEvent.keyDown(region, { key: 'Enter' })
+    expect(screen.getByText('Itaparica')).toBeTruthy()
 
     fireEvent.focus(city)
-    fireEvent.change(city, { target: { value: 'pa' } })
+    fireEvent.change(city, { target: { value: 'Salvador' } })
     fireEvent.keyDown(city, { key: 'ArrowDown' })
-    expect(screen.getByRole('option', { name: 'Paulo Afonso' })).toBeTruthy()
-    expect(screen.queryByRole('option', { name: 'Salvador' })).toBeNull()
+    fireEvent.keyDown(city, { key: 'Enter' })
+
+    await waitFor(() => expect(screen.queryByLabelText('Territórios de identidade')).toBeNull())
+    expect(screen.queryByText('Itaparica')).toBeNull()
+    expect(screen.getByText('Metropolitano de Salvador')).toBeTruthy()
   })
 
-  it('auto-selects territory and clears neighborhood when municipality changes or clears', () => {
+  it('derives regions from multiple cities across territories', () => {
+    render(createElement(NucleusTerritoryFields))
+    const city = screen.getByLabelText('Municípios') as HTMLInputElement
+
+    fireEvent.focus(city)
+    fireEvent.change(city, { target: { value: 'Seab' } })
+    fireEvent.keyDown(city, { key: 'ArrowDown' })
+    fireEvent.keyDown(city, { key: 'Enter' })
+
+    fireEvent.focus(city)
+    fireEvent.change(city, { target: { value: 'Salv' } })
+    fireEvent.keyDown(city, { key: 'ArrowDown' })
+    fireEvent.keyDown(city, { key: 'Enter' })
+
+    expect(screen.getByText('Seabra')).toBeTruthy()
+    expect(screen.getByText('Salvador')).toBeTruthy()
+    expect(screen.getByText('Chapada Diamantina')).toBeTruthy()
+    expect(screen.getByText('Metropolitano de Salvador')).toBeTruthy()
+  })
+
+  it('enables neighborhoods only when exactly one city is set, resetting them otherwise', async () => {
     render(
       createElement(NucleusTerritoryFields, {
-        values: {
-          city: 'Seabra',
-          neighborhood: 'Centro',
-        },
+        values: { cities: ['Seabra'], neighborhoods: ['Centro'] },
       }),
     )
-    const region = screen.getByLabelText('Território de identidade') as HTMLInputElement
-    const city = screen.getByLabelText('Município') as HTMLInputElement
-    const neighborhood = screen.getByLabelText('Bairro') as HTMLInputElement
+    const neighborhood = screen.getByLabelText('Bairros') as HTMLInputElement
+    expect(neighborhood.disabled).toBe(false)
+    expect(screen.getByText('Centro')).toBeTruthy()
 
+    const city = screen.getByLabelText('Municípios') as HTMLInputElement
+    fireEvent.focus(city)
     fireEvent.change(city, { target: { value: 'Salvador' } })
-    fireEvent.blur(city)
-    expect(region.value).toBe('Metropolitano de Salvador')
-    expect(neighborhood.value).toBe('')
+    fireEvent.keyDown(city, { key: 'ArrowDown' })
+    fireEvent.keyDown(city, { key: 'Enter' })
 
-    fireEvent.change(neighborhood, { target: { value: 'Barra' } })
-    fireEvent.change(city, { target: { value: '' } })
-    fireEvent.blur(city)
-    expect(city.value).toBe('')
-    expect(neighborhood.value).toBe('')
-    expect(neighborhood.disabled).toBe(true)
+    await waitFor(() => expect(neighborhood.disabled).toBe(true))
+    expect(screen.queryByText('Centro')).toBeNull()
+  })
+
+  it('removes a city chip and re-derives the territory from the remaining cities', async () => {
+    render(createElement(NucleusTerritoryFields, { values: { cities: ['Seabra', 'Salvador'] } }))
+    expect(screen.getByText('Chapada Diamantina')).toBeTruthy()
+    expect(screen.getByText('Metropolitano de Salvador')).toBeTruthy()
+
+    fireEvent.click(screen.getByLabelText('Remover município Seabra'))
+
+    await waitFor(() => expect(screen.queryByText('Chapada Diamantina')).toBeNull())
+    expect(screen.getByText('Metropolitano de Salvador')).toBeTruthy()
+    expect(screen.queryByText('Seabra')).toBeNull()
+  })
+
+  it('adds multiple neighborhoods via Enter and removes the last one via Backspace', () => {
+    render(createElement(NucleusTerritoryFields, { values: { cities: ['Seabra'] } }))
+    const neighborhood = screen.getByLabelText('Bairros') as HTMLInputElement
+
+    fireEvent.change(neighborhood, { target: { value: 'Centro' } })
+    fireEvent.keyDown(neighborhood, { key: 'Enter' })
+    fireEvent.change(neighborhood, { target: { value: 'Bairro Novo' } })
+    fireEvent.keyDown(neighborhood, { key: 'Enter' })
+
+    expect(screen.getByText('Centro')).toBeTruthy()
+    expect(screen.getByText('Bairro Novo')).toBeTruthy()
+
+    fireEvent.keyDown(neighborhood, { key: 'Backspace' })
+    expect(screen.queryByText('Bairro Novo')).toBeNull()
+    expect(screen.getByText('Centro')).toBeTruthy()
   })
 
   it('builds an active, scoped Payload query from URL filters', () => {
@@ -217,8 +268,8 @@ describe('campaign nucleus UI contracts', () => {
         {
           or: [{ name: { contains: '58' } }, { 'tseZones.zoneNumber': { equals: 58 } }],
         },
-        { region: { equals: 'Chapada Diamantina' } },
-        { city: { equals: 'Seabra' } },
+        { regions: { equals: 'Chapada Diamantina' } },
+        { cities: { equals: 'Seabra' } },
         { 'tseZones.zoneNumber': { equals: 58 } },
         { coordinators: { exists: true } },
         { confirmedVoteEstimate: { exists: false } },
@@ -242,9 +293,8 @@ describe('campaign nucleus UI contracts', () => {
   it('parses the progressive-enhancement create form into domain input', () => {
     const formData = new FormData()
     formData.set('name', 'Núcleo Chapada')
-    formData.set('region', 'Chapada Diamantina')
-    formData.set('city', 'Seabra')
-    formData.set('neighborhood', 'Centro')
+    formData.append('cities', 'Seabra')
+    formData.append('neighborhoods', 'Centro')
     formData.set('organizationKind', 'territorial')
     formData.set('tseZones', '58, 59')
     formData.append('coordinators', '12')
@@ -252,9 +302,9 @@ describe('campaign nucleus UI contracts', () => {
 
     expect(parseNucleusCreateFormData(formData)).toEqual({
       name: 'Núcleo Chapada',
-      region: 'Chapada Diamantina',
-      city: 'Seabra',
-      neighborhood: 'Centro',
+      regions: ['Chapada Diamantina'],
+      cities: ['Seabra'],
+      neighborhoods: ['Centro'],
       locality: undefined,
       territoryNotes: undefined,
       organizationKind: 'territorial',
@@ -270,7 +320,6 @@ describe('campaign nucleus UI contracts', () => {
     const formData = new FormData()
     formData.set('id', '12')
     formData.set('name', 'Núcleo Chapada')
-    formData.set('region', '')
     formData.set('organizationKind', 'territorial')
     formData.set('locality', 'Centro')
     formData.append('coordinators', '99')
@@ -280,9 +329,9 @@ describe('campaign nucleus UI contracts', () => {
     expect(parsed).toMatchObject({
       id: 12,
       tseZones: [],
-      region: null,
-      city: null,
-      neighborhood: null,
+      regions: [],
+      cities: [],
+      neighborhoods: [],
       locality: 'Centro',
       sectorKind: null,
       organizationLabel: null,
@@ -296,13 +345,11 @@ describe('campaign nucleus UI contracts', () => {
     expect(parsed).not.toHaveProperty('coordinators')
   })
 
-  it('rejects clearing region, city, and locality with a linked city error', () => {
+  it('rejects clearing regions, cities, and locality together', () => {
     const formData = new FormData()
     formData.set('id', '12')
     formData.set('name', 'Núcleo Chapada')
     formData.set('organizationKind', 'territorial')
-    formData.set('region', '')
-    formData.set('city', '')
     formData.set('locality', '')
 
     expect(() => parseNucleusUpdateFormData(formData)).toThrow(
@@ -310,17 +357,16 @@ describe('campaign nucleus UI contracts', () => {
     )
   })
 
-  it('drops neighborhood input when the city is blank', () => {
+  it('drops neighborhood input when no city is selected', () => {
     const formData = new FormData()
     formData.set('id', '12')
     formData.set('name', 'Núcleo Chapada')
-    formData.set('region', 'Chapada Diamantina')
-    formData.set('city', '')
-    formData.set('neighborhood', 'Centro')
+    formData.append('regions', 'Chapada Diamantina')
+    formData.append('neighborhoods', 'Centro')
     formData.set('locality', 'Comunidade rural')
     formData.set('organizationKind', 'territorial')
 
-    expect(parseNucleusUpdateFormData(formData).neighborhood).toBeNull()
+    expect(parseNucleusUpdateFormData(formData).neighborhoods).toEqual([])
   })
 
   it('parses Zona TSE tags as sorted unique bounded numbers', () => {
@@ -360,9 +406,9 @@ describe('campaign nucleus UI contracts', () => {
         slug: 'nucleo-seguro',
         status: 'ativo',
         coordinators: [99],
-        region: 'Chapada Diamantina',
-        city: 'Seabra',
-        neighborhood: 'Centro',
+        regions: ['Chapada Diamantina'],
+        cities: ['Seabra'],
+        neighborhoods: ['Centro'],
         organizationKind: 'territorial',
         sectorKind: 'rural',
         tseZones: [],
@@ -394,8 +440,7 @@ describe('campaign nucleus UI contracts', () => {
   it('rejects malformed Zona TSE tokens instead of dropping them', () => {
     const formData = new FormData()
     formData.set('name', 'Núcleo Chapada')
-    formData.set('region', 'Chapada Diamantina')
-    formData.set('city', 'Seabra')
+    formData.append('cities', 'Seabra')
     formData.set('organizationKind', 'territorial')
     formData.set('tseZones', '58, inválida')
 
@@ -438,9 +483,9 @@ describe('campaign nucleus UI contracts', () => {
             name: 'Quilombo Rio das Rãs',
             slug: 'quilombo-rio-das-ras',
             coordinators: [{ id: 2, name: 'João Silva' }],
-            region: 'Velho Chico',
-            city: 'Bom Jesus da Lapa',
-            neighborhood: null,
+            regions: ['Velho Chico'],
+            cities: ['Bom Jesus da Lapa'],
+            neighborhoods: [],
             locality: null,
             organizationKind: 'territorial',
             organizationLabel: null,
@@ -471,8 +516,8 @@ describe('campaign nucleus UI contracts', () => {
     )
 
     expect(html).toContain('Nome do núcleo')
-    expect(html).toContain('Território de identidade')
-    expect(html).toContain('Município')
+    expect(html).toContain('Territórios de identidade')
+    expect(html).toContain('Municípios')
     expect(html).toContain('Zonas TSE')
     expect(html).toContain('Coordenação Geral (você)')
     expect(html).toContain('João Silva')
@@ -501,9 +546,9 @@ describe('campaign nucleus UI contracts', () => {
           id: 12,
           name: 'Núcleo Chapada',
           slug: 'nucleo-chapada',
-          region: 'Chapada Diamantina',
-          city: 'Seabra',
-          neighborhood: null,
+          regions: ['Chapada Diamantina'],
+          cities: ['Seabra'],
+          neighborhoods: [],
           locality: null,
           territoryNotes: null,
           organizationKind: 'territorial',

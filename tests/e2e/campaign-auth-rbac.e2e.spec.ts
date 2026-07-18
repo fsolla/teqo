@@ -75,7 +75,7 @@ test.describe('Campaign authentication and role scope', () => {
         collection: 'electoralNucleus',
         data: {
           name: foreignName,
-          city: 'Salvador',
+          cities: ['Salvador'],
           organizationKind: 'territorial',
         } as never,
         depth: 0,
@@ -133,7 +133,7 @@ test.describe('Campaign authentication and role scope', () => {
         collection: 'electoralNucleus',
         data: {
           name: nucleusName,
-          city: 'Salvador',
+          cities: ['Salvador'],
           organizationKind: 'territorial',
         } as never,
         depth: 0,
@@ -143,7 +143,7 @@ test.describe('Campaign authentication and role scope', () => {
         collection: 'electoralNucleus',
         data: {
           name: campaign.fixtures.value('Núcleo fora do escopo'),
-          city: 'Salvador',
+          cities: ['Salvador'],
           organizationKind: 'territorial',
         } as never,
         depth: 0,

@@ -1,5 +1,6 @@
 import type { CampaignUser, ElectoralNucleus } from '@/payload-types'
 import type { SupportStatus } from '@/lib/schemas/leadership'
+import { formatNucleusTerritoryLabel } from '@/utilities/nucleusUi'
 
 export type CoordinatorSummary = {
   id: number
@@ -11,9 +12,9 @@ export type DashboardNucleusRecord = {
   id: number
   name: string
   slug: string
-  region: ElectoralNucleus['region']
-  city: string | null
-  neighborhood: string | null
+  regions: string[]
+  cities: string[]
+  neighborhoods: string[]
   locality: string | null
   organizationKind: ElectoralNucleus['organizationKind']
   organizationLabel: string | null
@@ -105,8 +106,8 @@ const percentage = (part: number, total: number): number =>
 const isOverdue = (lastUpdateAt: string | null, now: Date): boolean =>
   !lastUpdateAt || now.getTime() - new Date(lastUpdateAt).getTime() > 7 * 24 * 60 * 60 * 1000
 
-const territoryLabel = ({ neighborhood, locality, city, region }: DashboardNucleusRecord): string =>
-  [neighborhood, locality, city, region].filter(Boolean).join(' · ') || 'Território não informado'
+const territoryLabel = (nucleus: DashboardNucleusRecord): string =>
+  formatNucleusTerritoryLabel(nucleus) || 'Território não informado'
 
 const organizationLabel = ({
   organizationKind,

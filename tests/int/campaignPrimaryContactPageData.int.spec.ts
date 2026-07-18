@@ -43,7 +43,7 @@ describe('campaign primary contact page data', () => {
       collection: 'electoralNucleus',
       data: {
         name: campaignFixtures().value('Núcleo contato principal'),
-        region: 'Chapada Diamantina',
+        regions: ['Chapada Diamantina'],
         locality: 'Chapada Diamantina',
         organizationKind: 'territorial',
       } as never,
@@ -143,7 +143,7 @@ describe('campaign primary contact page data', () => {
       data: {
         name: campaignFixtures().value('Núcleo contato escopo'),
         coordinators: [coordinator.id],
-        region: 'Chapada Diamantina',
+        regions: ['Chapada Diamantina'],
         locality: 'Chapada Diamantina',
         organizationKind: 'territorial',
       } as never,

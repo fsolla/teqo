@@ -4,7 +4,7 @@ import {
   bahiaIdentityTerritories,
   type BahiaIdentityTerritory,
   isBahiaMunicipality,
-  validateBahiaTerritoryPair,
+  territoriesForCities,
 } from '@/lib/bahiaTerritories'
 import {
   organizationKinds,
@@ -16,6 +16,7 @@ import {
   checkboxFormValue,
   FormDataBoundaryError,
   optionalFormText,
+  repeatedFormTexts,
   repeatedRelationshipFormValues,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
@@ -27,15 +28,19 @@ const parseZoneNumbers = (value: string | undefined): Array<{ zoneNumber: number
 const parseSharedNucleusFormData = (formData: FormData) => {
   const organizationKind = optionalFormText(formData, 'organizationKind')
   const sectorKind = optionalFormText(formData, 'sectorKind')
-  const region = optionalFormText(formData, 'region')
-  const city = optionalFormText(formData, 'city')
+  const cities = repeatedFormTexts(formData, 'cities')
+  const regions =
+    cities.length > 0
+      ? territoriesForCities(cities)
+      : (repeatedFormTexts(formData, 'regions') as BahiaIdentityTerritory[])
+  const neighborhoods = cities.length === 1 ? repeatedFormTexts(formData, 'neighborhoods') : []
   const partnerName = optionalFormText(formData, 'partnerName')
 
   return {
     name: optionalFormText(formData, 'name') ?? '',
-    region: region as BahiaIdentityTerritory | undefined,
-    city,
-    neighborhood: city ? optionalFormText(formData, 'neighborhood') : undefined,
+    regions,
+    cities,
+    neighborhoods,
     locality: optionalFormText(formData, 'locality'),
     territoryNotes: optionalFormText(formData, 'territoryNotes'),
     organizationKind: organizationKind as (typeof organizationKinds)[number],
@@ -54,24 +59,40 @@ const parseSharedNucleusFormData = (formData: FormData) => {
 }
 
 const validateTerritoryFormData = (
-  territory: { region?: string; city?: string; locality?: string },
+  territory: {
+    regions: string[]
+    cities: string[]
+    neighborhoods: string[]
+    locality?: string
+  },
   { requireGeography }: { requireGeography: boolean },
 ) => {
-  if (territory.region && !bahiaIdentityTerritories.includes(territory.region as never)) {
-    throw new FormDataBoundaryError('region', 'Território de identidade inválido.')
+  for (const region of territory.regions) {
+    if (!bahiaIdentityTerritories.includes(region as never)) {
+      throw new FormDataBoundaryError('regions', 'Território de identidade inválido.')
+    }
   }
-  if (territory.city && !isBahiaMunicipality(territory.city)) {
-    throw new FormDataBoundaryError('city', 'Município inválido.')
+  for (const city of territory.cities) {
+    if (!isBahiaMunicipality(city)) {
+      throw new FormDataBoundaryError('cities', 'Município inválido.')
+    }
   }
-  if (!validateBahiaTerritoryPair(territory.region as BahiaIdentityTerritory, territory.city)) {
+  if (territory.neighborhoods.length > 0 && territory.cities.length !== 1) {
     throw new FormDataBoundaryError(
-      'city',
-      'O município não pertence ao território de identidade selecionado.',
+      'neighborhoods',
+      territory.cities.length === 0
+        ? 'Informe o município antes do bairro.'
+        : 'Bairros só podem ser informados quando há exatamente um município.',
     )
   }
-  if (requireGeography && !territory.region && !territory.city && !territory.locality) {
+  if (
+    requireGeography &&
+    territory.regions.length === 0 &&
+    territory.cities.length === 0 &&
+    !territory.locality
+  ) {
     throw new FormDataBoundaryError(
-      'city',
+      'cities',
       'Informe o território de identidade, município ou localidade do núcleo.',
     )
   }
@@ -96,9 +117,9 @@ export const parseNucleusUpdateFormData = (formData: FormData): NucleusUpdateInp
   return {
     ...shared,
     id: requiredRelationshipFormValue(formData, 'id'),
-    region: shared.region ?? null,
-    city: shared.city ?? null,
-    neighborhood: shared.neighborhood ?? null,
+    regions: shared.regions,
+    cities: shared.cities,
+    neighborhoods: shared.neighborhoods,
     locality: shared.locality ?? null,
     territoryNotes: shared.territoryNotes ?? null,
     organizationLabel: shared.organizationLabel ?? null,

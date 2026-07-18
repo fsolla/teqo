@@ -1,9 +1,13 @@
 # Zonas TSE por município (auto-preenchimento)
 
 Status: rascunho
-Atualizado em: 2026-07-17
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
+Atualizado em: 2026-07-18
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A → A2)
 Responsável: —
+
+## Premissa atualizada (A1 entregue)
+
+A1 ([territorio-multi-municipio-bairro.md](territorio-multi-municipio-bairro.md)) renomeou o território do núcleo para arrays `regions` / `cities` / `neighborhoods` (`text` + `hasMany`). Este plano **nasce contra `cities[]`**: o auto-preenchimento de zonas passa a ser a **união** das zonas oficiais de todos os municípios selecionados (não “a zona do município”). Bairros continuam a exigir exatamente um município (regra A1), então os modos com bairro permanecem escopados a um único município.
 
 ## Referência visual (UX Pilot)
 
@@ -20,7 +24,7 @@ Como usar (parte deste plano — seção "Zonas Eleitorais (TSE)"):
 
 ## Contexto
 
-Hoje o campo **Zonas TSE** do formulário do núcleo (`TseZoneInput` em `src/components/campaign/TseZoneInput.tsx`) é sempre de preenchimento manual livre: o usuário digita números de 1 a 999, separados por vírgula/espaço/Enter, e o servidor só valida unicidade e intervalo (`parseTseZoneNumbers` em `src/utilities/nucleusUi.ts`, `validateNucleusTerritoryAndZones` em `src/collections/ElectoralNucleus.ts`, `validateGeographyAndZones` em `src/lib/schemas/nucleus.ts`). Não há nenhuma relação entre o município selecionado e as zonas informadas — o usuário precisa saber (ou adivinhar) quais zonas cobrem aquele município.
+Hoje o campo **Zonas TSE** do formulário do núcleo (`TseZoneInput` em `src/components/campaign/TseZoneInput.tsx`) é sempre de preenchimento manual livre: o usuário digita números de 1 a 999, separados por vírgula/espaço/Enter, e o servidor só valida unicidade e intervalo (`parseTseZoneNumbers` em `src/utilities/tseZone.ts`, `validateNucleusTerritoryAndZones` em `src/collections/ElectoralNucleus.ts`). Não há nenhuma relação entre o(s) município(s) selecionado(s) e as zonas informadas — o usuário precisa saber (ou adivinhar) quais zonas cobrem aquele território.
 
 O TSE publica, como dado aberto, a correspondência oficial entre município e zona eleitoral (cada par município×zona aparece no conjunto "Eleitorado por município e zona", por UF). A decisão de produto (2026-07-17) é usar esse cadastro oficial para **preencher automaticamente** as Zonas TSE do núcleo a partir do município selecionado, sem edição manual nesse caso. O território de identidade já é auto-selecionado hoje quando o município muda (`territoryForCity` em `src/lib/bahiaTerritories.ts`, já wired em `NucleusTerritoryFields`); este plano preserva esse comportamento e o documenta como parte do mesmo fluxo.
 

@@ -28,6 +28,7 @@ import {
   type NucleusDetailTab,
 } from '@/utilities/nucleusDetailTabUi'
 import type { AccessibleNucleusContext } from '@/utilities/nucleusPageData'
+import { formatNucleusTerritoryLabel } from '@/utilities/nucleusUi'
 import type {
   NucleusDetailViewModel,
   NucleusTabsViewModel,
@@ -190,9 +191,7 @@ const OverviewContent = ({
         </CardHeader>
         <CardContent>
           <p>
-            {[nucleus.neighborhood, nucleus.locality, nucleus.city, nucleus.region]
-              .filter(Boolean)
-              .join(' · ')}
+            {formatNucleusTerritoryLabel(nucleus)}
           </p>
         </CardContent>
       </Card>
@@ -252,9 +251,7 @@ const TerritoryContent = ({ nucleus }: { nucleus: NucleusTabsViewModel }) => (
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
         <p>
-          {[nucleus.neighborhood, nucleus.locality, nucleus.city, nucleus.region]
-            .filter(Boolean)
-            .join(' · ')}
+          {formatNucleusTerritoryLabel(nucleus)}
         </p>
         {nucleus.kind === 'staff' && nucleus.territoryNotes ? (
           <p className="text-muted-foreground">{nucleus.territoryNotes}</p>

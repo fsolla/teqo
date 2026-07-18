@@ -107,7 +107,7 @@ describe('campaign leadership exported form actions', () => {
       collection: 'electoralNucleus',
       data: {
         name: campaignFixtures().value('Núcleo regional action'),
-        region: 'Irecê',
+        regions: ['Irecê'],
         organizationKind: 'territorial',
       } as never,
       depth: 0,
@@ -158,7 +158,7 @@ describe('campaign leadership exported form actions', () => {
       collection: 'electoralNucleus',
       data: {
         name: campaignFixtures().value('Núcleo ação mínima'),
-        region: 'Irecê',
+        regions: ['Irecê'],
         organizationKind: 'territorial',
       } as never,
       depth: 0,

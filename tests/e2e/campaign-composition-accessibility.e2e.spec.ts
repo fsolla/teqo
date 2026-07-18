@@ -27,7 +27,7 @@ test.describe('Campaign composition and accessibility', () => {
         collection: 'electoralNucleus',
         data: {
           name: campaign.fixtures.value('Núcleo composição'),
-          city: 'Salvador',
+          cities: ['Salvador'],
           organizationKind: 'territorial',
         } as never,
         depth: 0,

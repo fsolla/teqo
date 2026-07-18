@@ -33,6 +33,26 @@ export const sectorKindLabels: Record<NonNullable<ElectoralNucleus['sectorKind']
   outro: 'Outro',
 }
 
+export const formatNucleusTerritoryLabel = ({
+  neighborhoods = [],
+  locality,
+  cities = [],
+  regions = [],
+}: {
+  neighborhoods?: string[] | null
+  locality?: string | null
+  cities?: string[] | null
+  regions?: string[] | null
+}): string =>
+  [
+    (neighborhoods ?? []).join(', '),
+    locality,
+    (cities ?? []).join(', '),
+    (regions ?? []).join(', '),
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
 export type NucleusListState = {
   page: number
   q?: string
@@ -130,8 +150,8 @@ export const buildNucleusListWhere = (state: NucleusListState): Where => {
     }
     filters.push({ or: searchFilters })
   }
-  if (state.region) filters.push({ region: { equals: state.region } })
-  if (state.city) filters.push({ city: { equals: state.city } })
+  if (state.region) filters.push({ regions: { equals: state.region } })
+  if (state.city) filters.push({ cities: { equals: state.city } })
   if (state.tseZone) {
     filters.push({ 'tseZones.zoneNumber': { equals: state.tseZone } })
   }

@@ -354,7 +354,7 @@ export class CampaignFixtures {
       name,
       slug: input.slug ?? this.value('nucleo'),
       status: input.status ?? 'ativo',
-      city: input.city === undefined ? 'Salvador' : input.city,
+      cities: input.cities === undefined ? ['Salvador'] : input.cities,
       organizationKind: input.organizationKind ?? 'territorial',
     }
     const nucleus = await this.rootPayload.create({

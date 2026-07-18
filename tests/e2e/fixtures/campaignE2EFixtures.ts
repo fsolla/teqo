@@ -269,7 +269,7 @@ export const test = base.extend<CampaignE2ETestFixtures>({
         collection: 'electoralNucleus',
         data: {
           name: sentinelName,
-          city: 'Salvador',
+          cities: ['Salvador'],
           organizationKind: 'territorial',
         } as never,
         depth: 0,

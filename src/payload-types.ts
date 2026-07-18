@@ -351,9 +351,9 @@ export interface ElectoralNucleus {
   slug: string;
   status: 'ativo' | 'arquivado';
   coordinators?: (number | CampaignUser)[] | null;
-  region?: string | null;
-  city?: string | null;
-  neighborhood?: string | null;
+  regions?: string[] | null;
+  cities?: string[] | null;
+  neighborhoods?: string[] | null;
   locality?: string | null;
   territoryNotes?: string | null;
   organizationKind:
@@ -994,9 +994,9 @@ export interface ElectoralNucleusSelect<T extends boolean = true> {
   slug?: T;
   status?: T;
   coordinators?: T;
-  region?: T;
-  city?: T;
-  neighborhood?: T;
+  regions?: T;
+  cities?: T;
+  neighborhoods?: T;
   locality?: T;
   territoryNotes?: T;
   organizationKind?: T;

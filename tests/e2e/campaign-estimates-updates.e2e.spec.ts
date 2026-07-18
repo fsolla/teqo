@@ -27,7 +27,7 @@ test.describe('Campaign estimates and field updates', () => {
         collection: 'electoralNucleus',
         data: {
           name: campaign.fixtures.value('Núcleo estimativa'),
-          city: 'Salvador',
+          cities: ['Salvador'],
           coordinators: [staff.id],
           organizationKind: 'territorial',
         } as never,
@@ -86,7 +86,7 @@ test.describe('Campaign estimates and field updates', () => {
         collection: 'electoralNucleus',
         data: {
           name: campaign.fixtures.value('Núcleo atualização'),
-          city: 'Salvador',
+          cities: ['Salvador'],
           coordinators: [staff.id],
           organizationKind: 'territorial',
         } as never,

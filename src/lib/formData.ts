@@ -114,6 +114,21 @@ export const repeatedRelationshipFormValues = (formData: FormData, field: string
   return [...new Set(values)].sort((left, right) => left - right)
 }
 
+export const repeatedFormTexts = (formData: FormData, field: string): string[] => {
+  const seen = new Set<string>()
+  const values: string[] = []
+  for (const value of formData.getAll(field)) {
+    if (typeof value !== 'string') {
+      throw new FormDataBoundaryError(field, 'Arquivos não são aceitos neste campo.')
+    }
+    const trimmed = value.trim()
+    if (!trimmed || seen.has(trimmed)) continue
+    seen.add(trimmed)
+    values.push(trimmed)
+  }
+  return values
+}
+
 export const checkboxFormValue = (formData: FormData, field: string): boolean => {
   const entry = formEntry(formData, field)
   if (!entry.present) return false

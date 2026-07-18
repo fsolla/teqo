@@ -1,12 +1,15 @@
 import type { CampaignUser, ElectoralNucleus } from '@/payload-types'
 import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 
+const asStringArray = (value: string[] | null | undefined): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+
 export const nucleusFormSelect = {
   name: true,
   slug: true,
-  region: true,
-  city: true,
-  neighborhood: true,
+  regions: true,
+  cities: true,
+  neighborhoods: true,
   locality: true,
   territoryNotes: true,
   organizationKind: true,
@@ -20,9 +23,9 @@ export const nucleusListSelect = {
   name: true,
   slug: true,
   coordinators: true,
-  region: true,
-  city: true,
-  neighborhood: true,
+  regions: true,
+  cities: true,
+  neighborhoods: true,
   locality: true,
   organizationKind: true,
   organizationLabel: true,
@@ -37,9 +40,9 @@ export type NucleusListViewModel = {
   name: string
   slug: string
   coordinators: Array<{ id: number; name: string }>
-  region: ElectoralNucleus['region']
-  city: string | null
-  neighborhood: string | null
+  regions: string[]
+  cities: string[]
+  neighborhoods: string[]
   locality: string | null
   organizationKind: ElectoralNucleus['organizationKind']
   organizationLabel: string | null
@@ -53,9 +56,9 @@ export const nucleusStaffDetailSelect = {
   name: true,
   slug: true,
   status: true,
-  region: true,
-  city: true,
-  neighborhood: true,
+  regions: true,
+  cities: true,
+  neighborhoods: true,
   locality: true,
   territoryNotes: true,
   organizationKind: true,
@@ -91,9 +94,9 @@ export const nucleusLeadershipDetailSelect = {
   name: true,
   slug: true,
   status: true,
-  region: true,
-  city: true,
-  neighborhood: true,
+  regions: true,
+  cities: true,
+  neighborhoods: true,
   locality: true,
   organizationKind: true,
   organizationLabel: true,
@@ -105,9 +108,9 @@ export type NucleusFormViewModel = {
   id: number
   name: string
   slug: string
-  region: ElectoralNucleus['region']
-  city: string | null
-  neighborhood: string | null
+  regions: string[]
+  cities: string[]
+  neighborhoods: string[]
   locality: string | null
   territoryNotes: string | null
   organizationKind: ElectoralNucleus['organizationKind']
@@ -124,9 +127,9 @@ export type NucleusFormViewModel = {
 
 export type StaffNucleusTabsViewModel = {
   kind: 'staff'
-  region: ElectoralNucleus['region']
-  city: string | null
-  neighborhood: string | null
+  regions: string[]
+  cities: string[]
+  neighborhoods: string[]
   locality: string | null
   territoryNotes: string | null
   tseZones: number[]
@@ -150,9 +153,9 @@ export type StaffNucleusTabsViewModel = {
 
 export type LeadershipNucleusTabsViewModel = {
   kind: 'leadership'
-  region: ElectoralNucleus['region']
-  city: string | null
-  neighborhood: string | null
+  regions: string[]
+  cities: string[]
+  neighborhoods: string[]
   locality: string | null
   tseZones: number[]
 }
@@ -164,9 +167,9 @@ type NucleusDetailBaseViewModel = {
   name: string
   slug: string
   status: ElectoralNucleus['status']
-  region: ElectoralNucleus['region']
-  city: string | null
-  neighborhood: string | null
+  regions: string[]
+  cities: string[]
+  neighborhoods: string[]
   locality: string | null
   organizationKind: ElectoralNucleus['organizationKind']
   organizationLabel: string | null
@@ -206,9 +209,9 @@ export const toNucleusListViewModel = (nucleus: ElectoralNucleus): NucleusListVi
         isPopulatedRelationship<CampaignUser>(coordinator),
       )
       .map(({ id, name }) => ({ id, name })) ?? [],
-  region: nucleus.region ?? null,
-  city: nucleus.city ?? null,
-  neighborhood: nucleus.neighborhood ?? null,
+  regions: asStringArray(nucleus.regions),
+  cities: asStringArray(nucleus.cities),
+  neighborhoods: asStringArray(nucleus.neighborhoods),
   locality: nucleus.locality ?? null,
   organizationKind: nucleus.organizationKind,
   organizationLabel: nucleus.organizationLabel ?? null,
@@ -222,9 +225,9 @@ export const toNucleusFormViewModel = (nucleus: ElectoralNucleus): NucleusFormVi
   id: nucleus.id,
   name: nucleus.name,
   slug: nucleus.slug,
-  region: nucleus.region ?? null,
-  city: nucleus.city ?? null,
-  neighborhood: nucleus.neighborhood ?? null,
+  regions: asStringArray(nucleus.regions),
+  cities: asStringArray(nucleus.cities),
+  neighborhoods: asStringArray(nucleus.neighborhoods),
   locality: nucleus.locality ?? null,
   territoryNotes: nucleus.territoryNotes ?? null,
   organizationKind: nucleus.organizationKind,
@@ -246,9 +249,9 @@ const toNucleusDetailBaseViewModel = (nucleus: ElectoralNucleus): NucleusDetailB
   name: nucleus.name,
   slug: nucleus.slug,
   status: nucleus.status,
-  region: nucleus.region ?? null,
-  city: nucleus.city ?? null,
-  neighborhood: nucleus.neighborhood ?? null,
+  regions: asStringArray(nucleus.regions),
+  cities: asStringArray(nucleus.cities),
+  neighborhoods: asStringArray(nucleus.neighborhoods),
   locality: nucleus.locality ?? null,
   organizationKind: nucleus.organizationKind,
   organizationLabel: nucleus.organizationLabel ?? null,
@@ -295,9 +298,9 @@ export const toStaffNucleusTabsViewModel = (
   nucleus: ElectoralNucleus,
 ): StaffNucleusTabsViewModel => ({
   kind: 'staff',
-  region: nucleus.region ?? null,
-  city: nucleus.city ?? null,
-  neighborhood: nucleus.neighborhood ?? null,
+  regions: asStringArray(nucleus.regions),
+  cities: asStringArray(nucleus.cities),
+  neighborhoods: asStringArray(nucleus.neighborhoods),
   locality: nucleus.locality ?? null,
   territoryNotes: nucleus.territoryNotes ?? null,
   tseZones: nucleus.tseZones?.map(({ zoneNumber }) => zoneNumber) ?? [],
@@ -328,9 +331,9 @@ export const toLeadershipNucleusTabsViewModel = (
   nucleus: ElectoralNucleus,
 ): LeadershipNucleusTabsViewModel => ({
   kind: 'leadership',
-  region: nucleus.region ?? null,
-  city: nucleus.city ?? null,
-  neighborhood: nucleus.neighborhood ?? null,
+  regions: asStringArray(nucleus.regions),
+  cities: asStringArray(nucleus.cities),
+  neighborhoods: asStringArray(nucleus.neighborhoods),
   locality: nucleus.locality ?? null,
   tseZones: nucleus.tseZones?.map(({ zoneNumber }) => zoneNumber) ?? [],
 })

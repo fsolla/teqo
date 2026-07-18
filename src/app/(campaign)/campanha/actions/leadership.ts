@@ -94,7 +94,8 @@ const createValidatedLeadershipRecord = async (
         const contactReused = Boolean(contactID)
 
         if (!contactID) {
-          const city = nucleus.city ?? nucleus.locality
+          const cities = Array.isArray(nucleus.cities) ? nucleus.cities : []
+          const city = cities.length === 1 ? cities[0] : (nucleus.locality ?? null)
           const contact = await payload.create({
             collection: 'contact',
             data: {

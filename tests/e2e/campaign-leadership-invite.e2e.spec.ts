@@ -26,7 +26,7 @@ test.describe('Campaign leadership and invite journeys', () => {
         collection: 'electoralNucleus',
         data: {
           name: campaign.fixtures.value('Núcleo liderança'),
-          region: 'Irecê',
+          regions: ['Irecê'],
           organizationKind: 'territorial',
         } as never,
         depth: 0,
@@ -95,7 +95,7 @@ test.describe('Campaign leadership and invite journeys', () => {
         collection: 'electoralNucleus',
         data: {
           name: campaign.fixtures.value('Núcleo painel'),
-          city: 'Salvador',
+          cities: ['Salvador'],
           organizationKind: 'territorial',
         } as never,
         depth: 0,
@@ -252,7 +252,7 @@ test.describe('Campaign leadership and invite journeys', () => {
           collection: 'electoralNucleus',
           data: {
             name: campaign.fixtures.value('Núcleo convite'),
-            city: 'Salvador',
+            cities: ['Salvador'],
             organizationKind: 'territorial',
           } as never,
           depth: 0,

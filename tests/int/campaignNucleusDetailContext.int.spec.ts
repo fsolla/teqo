@@ -29,8 +29,8 @@ describe('campaign accessible nucleus detail context', () => {
     })
     const nucleus = await campaignFixtures().createNucleus({
       name: campaignFixtures().value('Núcleo contexto real'),
-      region: 'Metropolitano de Salvador',
-      city: 'Salvador',
+      regions: ['Metropolitano de Salvador'],
+      cities: ['Salvador'],
       organizationKind: 'territorial',
     })
 

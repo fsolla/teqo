@@ -287,8 +287,8 @@ describe('campaign nucleus automatic filters', () => {
             {
               or: [{ name: { contains: '58' } }, { 'tseZones.zoneNumber': { equals: 58 } }],
             },
-            { region: { equals: 'Chapada Diamantina' } },
-            { city: { equals: 'Seabra' } },
+            { regions: { equals: 'Chapada Diamantina' } },
+            { cities: { equals: 'Seabra' } },
             { 'tseZones.zoneNumber': { equals: 58 } },
             { coordinators: { exists: true } },
             { confirmedVoteEstimate: { exists: false } },

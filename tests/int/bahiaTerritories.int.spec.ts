@@ -92,19 +92,19 @@ describe('Bahia identity territory mapping', () => {
     expect(validateBahiaTerritoryPair('Chapada Diamantina', 'Salvador')).toBe(false)
   })
 
-  it('rejects mismatched territory and municipality pairs on the server', () => {
-    const mismatched = {
-      name: 'Núcleo incompatível',
-      region: 'Chapada Diamantina',
-      city: 'Salvador',
+  it('derives the region from cities, overriding a mismatched manually provided region', () => {
+    const withMismatchedRegion = {
+      name: 'Núcleo com território derivado',
+      regions: ['Chapada Diamantina'],
+      cities: ['Salvador'],
       organizationKind: 'territorial',
     } as const
 
-    expect(() => nucleusCreateSchema.parse(mismatched)).toThrow(
-      'município não pertence ao território',
-    )
-    expect(() => nucleusUpdateSchema.parse({ id: 1, ...mismatched })).toThrow(
-      'município não pertence ao território',
-    )
+    expect(nucleusCreateSchema.parse(withMismatchedRegion).regions).toEqual([
+      'Metropolitano de Salvador',
+    ])
+    expect(
+      nucleusUpdateSchema.parse({ id: 1, ...withMismatchedRegion }).regions,
+    ).toEqual(['Metropolitano de Salvador'])
   })
 })

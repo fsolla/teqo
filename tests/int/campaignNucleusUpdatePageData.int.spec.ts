@@ -73,8 +73,8 @@ describe('campaign nucleus update page data queries', () => {
     })
     const nucleus = await campaignFixtures().createNucleus({
       name: campaignFixtures().value('Núcleo feed real'),
-      region: 'Metropolitano de Salvador',
-      city: 'Salvador',
+      regions: ['Metropolitano de Salvador'],
+      cities: ['Salvador'],
       organizationKind: 'territorial',
     })
     for (let index = 0; index < 4; index += 1) {
@@ -121,8 +121,8 @@ describe('campaign nucleus update page data queries', () => {
     })
     const nucleus = await campaignFixtures().createNucleus({
       name: campaignFixtures().value('Núcleo preview real'),
-      region: 'Metropolitano de Salvador',
-      city: 'Salvador',
+      regions: ['Metropolitano de Salvador'],
+      cities: ['Salvador'],
       organizationKind: 'territorial',
     })
     for (let index = 0; index < 4; index += 1) {

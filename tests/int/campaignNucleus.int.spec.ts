@@ -35,7 +35,7 @@ const validNucleusInput = {
   get name() {
     return campaignFixtures().value('Núcleo Chapada')
   },
-  region: 'Chapada Diamantina' as const,
+  regions: ['Chapada Diamantina'],
   locality: 'Chapada Diamantina',
   organizationKind: 'territorial' as const,
   tseZones: [{ zoneNumber: 58, label: '58ª ZE — Seabra' }],
@@ -59,10 +59,10 @@ describe('electoral nucleus domain', () => {
     ).toBe(417)
   })
 
-  it('requires a region, city, or locality for every nucleus', () => {
+  it('requires regions, cities, or a locality for every nucleus', () => {
     const result = nucleusCreateSchema.safeParse({
       ...validNucleusInput,
-      region: undefined,
+      regions: undefined,
       locality: undefined,
     })
 
@@ -79,12 +79,13 @@ describe('electoral nucleus domain', () => {
     expect(
       nucleusUpdateSchema.parse({
         id: 1,
-        city: '   ',
+        cities: [],
         territoryNotes: '   ',
       }),
     ).toEqual({
       id: 1,
-      city: null,
+      cities: [],
+      regions: [],
       territoryNotes: null,
     })
     expect(nucleusUpdateSchema.parse({ id: 1 })).toEqual({ id: 1 })
@@ -136,7 +137,7 @@ describe('electoral nucleus domain', () => {
       sectorKind: 'sindical',
     })
 
-    expect(result.region).toBe('Chapada Diamantina')
+    expect(result.regions).toEqual(['Chapada Diamantina'])
     expect(result.organizationKind).toBe('sindicato')
     expect(result.sectorKind).toBe('sindical')
   })
@@ -202,26 +203,26 @@ describe('electoral nucleus domain', () => {
     expect(results.filter(({ status }) => status === 'rejected')).toHaveLength(1)
   })
 
-  it('validates Bahia regions, cities, territory pairs, and neighborhood dependencies', async () => {
+  it('validates Bahia regions, cities, and neighborhood dependencies', async () => {
     expect(() =>
       nucleusCreateSchema.parse({
         ...validNucleusInput,
-        region: 'Região inventada',
+        regions: ['Região inventada'],
       }),
     ).toThrow()
 
     expect(() =>
       nucleusCreateSchema.parse({
         ...validNucleusInput,
-        city: 'Município inventado',
+        cities: ['Município inventado'],
       }),
     ).toThrow('município válido')
 
     expect(() =>
       nucleusCreateSchema.parse({
         ...validNucleusInput,
-        city: undefined,
-        neighborhood: 'Centro',
+        cities: undefined,
+        neighborhoods: ['Centro'],
       }),
     ).toThrow('município antes do bairro')
 
@@ -230,86 +231,122 @@ describe('electoral nucleus domain', () => {
         collection: 'electoralNucleus',
         data: {
           ...validNucleusInput,
-          city: 'Salvador',
+          cities: ['Município inventado'],
         } as never,
         depth: 0,
       }),
-    ).rejects.toThrow('município não pertence ao território')
+    ).rejects.toThrow('município válido')
+  })
 
+  it('derives regions from multiple cities across territories, overriding a manual region', async () => {
     const nucleus = await payload.create({
       collection: 'electoralNucleus',
       data: {
         ...validNucleusInput,
-        city: 'Seabra',
+        name: campaignFixtures().value('Núcleo multi-território'),
+        regions: ['Irecê'],
+        cities: ['Seabra', 'Salvador'],
       } as never,
       depth: 0,
     })
-    await expect(
-      payload.update({
-        collection: 'electoralNucleus',
-        id: nucleus.id,
-        data: { city: 'Salvador' },
-        depth: 0,
-      }),
-    ).rejects.toThrow('município não pertence ao território')
+
+    expect(nucleus.cities).toEqual(['Seabra', 'Salvador'])
+    expect(nucleus.regions).toEqual(['Chapada Diamantina', 'Metropolitano de Salvador'])
+
+    const updated = await payload.update({
+      collection: 'electoralNucleus',
+      id: nucleus.id,
+      data: { cities: ['Salvador'] },
+      depth: 0,
+    })
+    expect(updated.cities).toEqual(['Salvador'])
+    expect(updated.regions).toEqual(['Metropolitano de Salvador'])
   })
 
-  it('allows a neighborhood-only PATCH to preserve the existing city', async () => {
+  it('allows multiple neighborhoods only when exactly one city is set', async () => {
     const general = await campaignFixtures().createCampaignUser('geral')
     const nucleus = await createElectoralNucleus(payload, general, {
       ...validNucleusInput,
-      name: campaignFixtures().value('Núcleo com bairro atualizado'),
-      city: 'Seabra',
+      name: campaignFixtures().value('Núcleo com bairros múltiplos'),
+      cities: ['Seabra'],
+      neighborhoods: ['Centro', 'Bairro Novo'],
     })
 
-    const updated = await updateElectoralNucleus(payload, general, {
-      id: nucleus.id,
-      neighborhood: 'Centro',
-    })
-
-    expect(updated.city).toBe('Seabra')
-    expect(updated.neighborhood).toBe('Centro')
+    expect(nucleus.cities).toEqual(['Seabra'])
+    expect(nucleus.neighborhoods).toEqual(['Centro', 'Bairro Novo'])
   })
 
-  it('rejects explicitly clearing city while providing a neighborhood', () => {
+  it('rejects neighborhoods when more than one city is selected', async () => {
+    expect(() =>
+      nucleusCreateSchema.parse({
+        ...validNucleusInput,
+        cities: ['Seabra', 'Salvador'],
+        neighborhoods: ['Centro'],
+      }),
+    ).toThrow('exatamente um município')
+
+    await expect(
+      payload.create({
+        collection: 'electoralNucleus',
+        data: {
+          ...validNucleusInput,
+          name: campaignFixtures().value('Núcleo com bairro em dois municípios'),
+          cities: ['Seabra', 'Salvador'],
+          neighborhoods: ['Centro'],
+        } as never,
+        depth: 0,
+      }),
+    ).rejects.toThrow('exatamente um município')
+  })
+
+  it('requires resending cities together with neighborhoods on a PATCH', () => {
     expect(() =>
       nucleusUpdateSchema.parse({
         id: 1,
-        city: null,
-        neighborhood: 'Centro',
+        neighborhoods: ['Centro'],
       }),
     ).toThrow('município antes do bairro')
   })
 
-  it('rejects clearing city when an omitted existing neighborhood remains', async () => {
+  it('rejects explicitly clearing cities while providing a neighborhood', () => {
+    expect(() =>
+      nucleusUpdateSchema.parse({
+        id: 1,
+        cities: [],
+        neighborhoods: ['Centro'],
+      }),
+    ).toThrow('município antes do bairro')
+  })
+
+  it('rejects clearing cities when an omitted existing neighborhood remains', async () => {
     const general = await campaignFixtures().createCampaignUser('geral')
     const nucleus = await createElectoralNucleus(payload, general, {
       ...validNucleusInput,
       name: campaignFixtures().value('Núcleo com bairro preservado'),
-      city: 'Seabra',
-      neighborhood: 'Centro',
+      cities: ['Seabra'],
+      neighborhoods: ['Centro'],
     })
 
     await expect(
       updateElectoralNucleus(payload, general, {
         id: nucleus.id,
-        city: null,
+        cities: null,
       }),
     ).rejects.toThrow('município antes do bairro')
   })
 
-  it('allows the form to clear city and neighborhood when other geography remains', async () => {
+  it('allows the form to clear cities and neighborhoods when other geography remains', async () => {
     const general = await campaignFixtures().createCampaignUser('geral')
     const nucleus = await createElectoralNucleus(payload, general, {
       ...validNucleusInput,
       name: campaignFixtures().value('Núcleo com geografia pelo formulário'),
-      city: 'Seabra',
-      neighborhood: 'Centro',
+      cities: ['Seabra'],
+      neighborhoods: ['Centro'],
     })
     const formData = new FormData()
     formData.set('id', String(nucleus.id))
     formData.set('name', nucleus.name)
-    formData.set('region', 'Chapada Diamantina')
+    formData.append('regions', 'Chapada Diamantina')
     formData.set('locality', 'Zona rural')
     formData.set('organizationKind', 'territorial')
 
@@ -319,9 +356,9 @@ describe('electoral nucleus domain', () => {
       parseNucleusUpdateFormData(formData),
     )
 
-    expect(updated.city).toBeNull()
-    expect(updated.neighborhood).toBeNull()
-    expect(updated.region).toBe('Chapada Diamantina')
+    expect(updated.cities).toEqual([])
+    expect(updated.neighborhoods).toEqual([])
+    expect(updated.regions).toEqual(['Chapada Diamantina'])
     expect(updated.locality).toBe('Zona rural')
   })
 
@@ -370,7 +407,7 @@ describe('electoral nucleus domain', () => {
         collection: 'electoralNucleus',
         data: {
           ...validNucleusInput,
-          region: undefined,
+          regions: undefined,
           locality: '   ',
         } as never,
       }),
@@ -397,8 +434,8 @@ describe('electoral nucleus domain', () => {
         collection: 'electoralNucleus',
         id: nucleus.id,
         data: {
-          city: null,
-          region: null,
+          cities: [],
+          regions: [],
           locality: null,
         },
       }),
@@ -409,16 +446,16 @@ describe('electoral nucleus domain', () => {
       data: {
         ...validNucleusInput,
         name: campaignFixtures().value('Núcleo com geografia normalizada'),
-        region: 'Chapada Diamantina',
-        city: 'Seabra',
+        regions: ['Chapada Diamantina'],
+        cities: ['Seabra'],
         locality: ' Chapada Diamantina ',
-        neighborhood: ' Centro ',
+        neighborhoods: [' Centro '],
         tseZones: [{ zoneNumber: 64 }],
       } as never,
     })
 
-    expect(trimmed.region).toBe('Chapada Diamantina')
-    expect(trimmed.neighborhood).toBe('Centro')
+    expect(trimmed.regions).toEqual(['Chapada Diamantina'])
+    expect(trimmed.neighborhoods).toEqual(['Centro'])
     expect(trimmed.locality).toBe('Chapada Diamantina')
   })
 
@@ -463,7 +500,7 @@ describe('electoral nucleus domain', () => {
 
     expect(nucleus.status).toBe('ativo')
     expect(nucleus.createdBy).toBe(general.id)
-    expect(nucleus.region).toBe('Chapada Diamantina')
+    expect(nucleus.regions).toEqual(['Chapada Diamantina'])
     expect(nucleus.coordinators).toContain(general.id)
   })
 
@@ -533,7 +570,7 @@ describe('electoral nucleus domain', () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordenador')
     const formData = new FormData()
     formData.set('name', campaignFixtures().value('Núcleo via formulário'))
-    formData.set('city', 'Salvador')
+    formData.append('cities', 'Salvador')
     formData.set('organizationKind', 'territorial')
 
     const created = await createElectoralNucleus(
@@ -834,13 +871,47 @@ describe('electoral nucleus domain', () => {
     ).toBe(true)
   })
 
+  it('filters nuclei by regions and cities using Payload equals queries', async () => {
+    const general = await campaignFixtures().createCampaignUser('geral')
+    const chapada = await createElectoralNucleus(payload, general, {
+      ...validNucleusInput,
+      name: campaignFixtures().value('Núcleo Chapada equals'),
+      cities: ['Seabra'],
+    })
+    const salvador = await createElectoralNucleus(payload, general, {
+      ...validNucleusInput,
+      name: campaignFixtures().value('Núcleo Salvador equals'),
+      cities: ['Salvador'],
+    })
+
+    const byRegion = await payload.find({
+      collection: 'electoralNucleus',
+      depth: 0,
+      where: { regions: { equals: 'Chapada Diamantina' } },
+      user: general,
+      overrideAccess: false,
+    })
+    expect(byRegion.docs.map(({ id }) => id)).toContain(chapada.id)
+    expect(byRegion.docs.map(({ id }) => id)).not.toContain(salvador.id)
+
+    const byCity = await payload.find({
+      collection: 'electoralNucleus',
+      depth: 0,
+      where: { cities: { equals: 'Salvador' } },
+      user: general,
+      overrideAccess: false,
+    })
+    expect(byCity.docs.map(({ id }) => id)).toContain(salvador.id)
+    expect(byCity.docs.map(({ id }) => id)).not.toContain(chapada.id)
+  })
+
   it('explicitly clears editable optional nucleus fields', async () => {
     const general = await campaignFixtures().createCampaignUser('geral')
     const coordinator = await campaignFixtures().createCampaignUser('coordenador')
     const nucleus = await createElectoralNucleus(payload, general, {
       ...validNucleusInput,
       coordinators: [coordinator.id],
-      city: 'Seabra',
+      cities: ['Seabra'],
       locality: 'Centro',
       organizationLabel: 'Associação local',
       sectorKind: 'rural',
@@ -857,7 +928,7 @@ describe('electoral nucleus domain', () => {
       id: nucleus.id,
       coordinators: [],
       tseZones: [],
-      city: null,
+      cities: null,
       locality: 'Centro',
       sectorKind: null,
       organizationLabel: null,
@@ -871,7 +942,8 @@ describe('electoral nucleus domain', () => {
 
     expect(cleared.coordinators).toEqual([coordinator.id])
     expect(cleared.tseZones).toEqual([])
-    expect(cleared.city).toBeNull()
+    expect(cleared.cities).toEqual([])
+    expect(cleared.regions).toEqual([])
     expect(cleared.locality).toBe('Centro')
     expect(cleared.sectorKind).toBeNull()
     expect(cleared.organizationLabel).toBeNull()
@@ -884,10 +956,10 @@ describe('electoral nucleus domain', () => {
 
     const clearedLocality = await updateElectoralNucleus(payload, general, {
       id: nucleus.id,
-      city: 'Seabra',
+      cities: ['Seabra'],
       locality: null,
     })
-    expect(clearedLocality.city).toBe('Seabra')
+    expect(clearedLocality.cities).toEqual(['Seabra'])
     expect(clearedLocality.locality).toBeNull()
   })
 

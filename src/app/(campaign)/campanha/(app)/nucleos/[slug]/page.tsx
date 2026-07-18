@@ -35,7 +35,7 @@ import {
   resolveNucleusDetailTab,
 } from '@/utilities/nucleusDetailTabUi'
 import { NucleusNotFoundError } from '@/utilities/nucleusPageData'
-import { organizationKindLabels } from '@/utilities/nucleusUi'
+import { formatNucleusTerritoryLabel, organizationKindLabels } from '@/utilities/nucleusUi'
 
 type NucleusDetailPageProps = {
   params: Promise<{ slug: string }>
@@ -80,9 +80,7 @@ export default async function NucleusDetailPage({ params, searchParams }: Nucleu
     null,
     isStaffView ? view.proposedVoteEstimateVersion : null,
   )
-  const territory = [view.neighborhood, view.locality, view.city, view.region]
-    .filter(Boolean)
-    .join(' · ')
+  const territory = formatNucleusTerritoryLabel(view)
   const voteEstimateFocusTargetId = `vote-estimate-${view.id}-focus-target`
 
   return (

@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
-import { organizationKindLabels } from '@/utilities/nucleusUi'
+import { formatNucleusTerritoryLabel, organizationKindLabels } from '@/utilities/nucleusUi'
 import type { NucleusListViewModel } from '@/utilities/nucleusViewModels'
 
 export type NucleusListProps = {
@@ -32,7 +32,7 @@ const getInitials = (name: string): string =>
     .toUpperCase()
 
 const getTerritory = (nucleus: NucleusListViewModel): string =>
-  [nucleus.neighborhood, nucleus.locality, nucleus.city, nucleus.region].filter(Boolean).join(' · ')
+  formatNucleusTerritoryLabel(nucleus)
 
 const getOrganization = (nucleus: NucleusListViewModel): string =>
   nucleus.organizationLabel ?? organizationKindLabels[nucleus.organizationKind]

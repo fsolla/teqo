@@ -15,9 +15,9 @@ import { requireRelationshipId } from '@/utilities/relationship'
 const dashboardStaffNucleusSelect = {
   name: true,
   slug: true,
-  region: true,
-  city: true,
-  neighborhood: true,
+  regions: true,
+  cities: true,
+  neighborhoods: true,
   locality: true,
   organizationKind: true,
   organizationLabel: true,
@@ -31,9 +31,9 @@ const dashboardStaffNucleusSelect = {
 const dashboardLeadershipNucleusSelect = {
   name: true,
   slug: true,
-  region: true,
-  city: true,
-  neighborhood: true,
+  regions: true,
+  cities: true,
+  neighborhoods: true,
   locality: true,
   organizationKind: true,
   organizationLabel: true,
@@ -51,9 +51,9 @@ type RawDashboardNucleus = {
   id: number
   name: string
   slug: string
-  region?: DashboardNucleusRecord['region']
-  city?: string | null
-  neighborhood?: string | null
+  regions?: string[] | null
+  cities?: string[] | null
+  neighborhoods?: string[] | null
   locality?: string | null
   organizationKind: DashboardNucleusRecord['organizationKind']
   organizationLabel?: string | null
@@ -63,6 +63,9 @@ type RawDashboardNucleus = {
   proposedVoteEstimate?: number | null
   lastUpdateAt?: string | null
 }
+
+const asStringArray = (value: string[] | null | undefined): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 
 type RawDashboardLeadership = {
   nucleus: number | { id: number }
@@ -76,9 +79,9 @@ const toDashboardNucleusRecord = (
   id: nucleus.id,
   name: nucleus.name,
   slug: nucleus.slug,
-  region: nucleus.region ?? null,
-  city: nucleus.city ?? null,
-  neighborhood: nucleus.neighborhood ?? null,
+  regions: asStringArray(nucleus.regions),
+  cities: asStringArray(nucleus.cities),
+  neighborhoods: asStringArray(nucleus.neighborhoods),
   locality: nucleus.locality ?? null,
   organizationKind: nucleus.organizationKind,
   organizationLabel: nucleus.organizationLabel ?? null,

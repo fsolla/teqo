@@ -4,8 +4,13 @@ import { APIError } from 'payload'
 import {
   isBahiaIdentityTerritory,
   isBahiaMunicipality,
-  validateBahiaTerritoryPair,
+  territoriesForCities,
 } from '@/lib/bahiaTerritories'
+import {
+  MAX_NUCLEUS_CITIES,
+  MAX_NUCLEUS_NEIGHBORHOODS,
+  MAX_NUCLEUS_REGIONS,
+} from '@/lib/schemas/nucleus'
 import {
   canCreateElectoralNucleus,
   canCreateNucleusCoordinators,
@@ -24,6 +29,31 @@ import { slugify } from '@/utilities/slug'
 
 const trimmedText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
 
+const normalizeTextArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return []
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const item of value) {
+    const trimmed = typeof item === 'string' ? item.trim() : ''
+    if (!trimmed || seen.has(trimmed)) continue
+    seen.add(trimmed)
+    result.push(trimmed)
+  }
+  return result
+}
+
+const resolveTerritoryArray = (
+  data: Record<string, unknown> | undefined,
+  originalDoc: Record<string, unknown> | undefined,
+  field: 'regions' | 'cities' | 'neighborhoods',
+  operation: 'create' | 'update' | 'delete',
+): string[] => {
+  if (operation === 'update' && data && !(field in data)) {
+    return normalizeTextArray(originalDoc?.[field])
+  }
+  return normalizeTextArray(data?.[field])
+}
+
 const validateNucleusTerritoryAndZones: CollectionBeforeValidateHook = ({
   data,
   operation,
@@ -32,34 +62,57 @@ const validateNucleusTerritoryAndZones: CollectionBeforeValidateHook = ({
   if (!data) return data
 
   const nextData = operation === 'update' ? { ...originalDoc, ...data } : data
-  const region = trimmedText(nextData?.region)
-  const city = trimmedText(nextData?.city)
-  const neighborhood = trimmedText(nextData?.neighborhood)
+  const cities = resolveTerritoryArray(data, originalDoc, 'cities', operation)
+  const neighborhoods = resolveTerritoryArray(data, originalDoc, 'neighborhoods', operation)
+  let regions = resolveTerritoryArray(data, originalDoc, 'regions', operation)
   const locality = trimmedText(nextData?.locality)
   const territoryNotes = trimmedText(nextData?.territoryNotes)
 
-  if (region && !isBahiaIdentityTerritory(region)) {
-    throw new APIError('Selecione um território de identidade válido da Bahia.', 400)
+  if (cities.length > MAX_NUCLEUS_CITIES) {
+    throw new APIError(`Informe no máximo ${MAX_NUCLEUS_CITIES} municípios.`, 400)
   }
-  if (city && !isBahiaMunicipality(city)) {
-    throw new APIError('Selecione um município válido da Bahia.', 400)
+  if (regions.length > MAX_NUCLEUS_REGIONS) {
+    throw new APIError(`Informe no máximo ${MAX_NUCLEUS_REGIONS} territórios.`, 400)
   }
-  if (!validateBahiaTerritoryPair(region, city)) {
-    throw new APIError('O município não pertence ao território de identidade selecionado.', 400)
+  if (neighborhoods.length > MAX_NUCLEUS_NEIGHBORHOODS) {
+    throw new APIError(`Informe no máximo ${MAX_NUCLEUS_NEIGHBORHOODS} bairros.`, 400)
   }
-  if (neighborhood && !city) {
-    throw new APIError('Informe o município antes do bairro.', 400)
+
+  for (const city of cities) {
+    if (!isBahiaMunicipality(city)) {
+      throw new APIError('Selecione um município válido da Bahia.', 400)
+    }
   }
-  if (!region && !city && !locality) {
+
+  if (cities.length > 0) {
+    regions = territoriesForCities(cities)
+  } else {
+    for (const region of regions) {
+      if (!isBahiaIdentityTerritory(region)) {
+        throw new APIError('Selecione um território de identidade válido da Bahia.', 400)
+      }
+    }
+  }
+
+  if (neighborhoods.length > 0 && cities.length !== 1) {
+    throw new APIError(
+      cities.length === 0
+        ? 'Informe o município antes do bairro.'
+        : 'Bairros só podem ser informados quando há exatamente um município.',
+      400,
+    )
+  }
+
+  if (regions.length === 0 && cities.length === 0 && !locality) {
     throw new APIError(
       'Informe o território de identidade, município ou localidade do núcleo.',
       400,
     )
   }
 
-  data.region = region || null
-  data.city = city || null
-  data.neighborhood = neighborhood || null
+  data.regions = regions
+  data.cities = cities
+  data.neighborhoods = cities.length === 1 ? neighborhoods : []
   data.locality = locality || null
   data.territoryNotes = territoryNotes || null
 
@@ -131,7 +184,7 @@ export const ElectoralNucleus: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'name',
-    defaultColumns: ['name', 'status', 'region', 'city', 'updatedAt'],
+    defaultColumns: ['name', 'status', 'regions', 'cities', 'updatedAt'],
   },
   access: {
     create: canCreateElectoralNucleus,
@@ -247,29 +300,40 @@ export const ElectoralNucleus: CollectionConfig = {
       filterOptions: eligibleNucleusCoordinatorWhere,
     },
     {
-      name: 'region',
+      name: 'regions',
       type: 'text',
-      label: 'Território de identidade',
+      label: 'Territórios de identidade',
+      hasMany: true,
       index: true,
-      validate: (value: unknown) =>
-        value === null ||
-        value === undefined ||
-        (typeof value === 'string' && isBahiaIdentityTerritory(value))
+      maxRows: MAX_NUCLEUS_REGIONS,
+      validate: (value: unknown) => {
+        if (value === null || value === undefined) return true
+        if (!Array.isArray(value)) {
+          return 'Selecione um território de identidade válido da Bahia.'
+        }
+        return value.every(
+          (item) => typeof item === 'string' && isBahiaIdentityTerritory(item.trim()),
+        )
           ? true
-          : 'Selecione um território de identidade válido da Bahia.',
+          : 'Selecione um território de identidade válido da Bahia.'
+      },
     },
     {
-      name: 'city',
+      name: 'cities',
       type: 'text',
-      label: 'Município',
+      label: 'Municípios',
+      hasMany: true,
       maxLength: 120,
       index: true,
+      maxRows: MAX_NUCLEUS_CITIES,
     },
     {
-      name: 'neighborhood',
+      name: 'neighborhoods',
       type: 'text',
-      label: 'Bairro',
+      label: 'Bairros',
+      hasMany: true,
       maxLength: 160,
+      maxRows: MAX_NUCLEUS_NEIGHBORHOODS,
     },
     {
       name: 'locality',

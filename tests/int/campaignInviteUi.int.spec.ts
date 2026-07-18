@@ -125,9 +125,7 @@ const createPublicInviteScenario = async (
     collection: 'electoralNucleus',
     data: {
       name: campaignFixtures().value('Núcleo convite UI'),
-      territoryKind: 'municipio',
-      state: 'BA',
-      city: 'Salvador',
+      cities: ['Salvador'],
       organizationKind: 'territorial',
     } as never,
     depth: 0,
