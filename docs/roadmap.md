@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-18 (MVP + Ciclo 2 deployados; A2 entregue: cadastro município↔ZE + chips opt-in no formulário de território)
+Atualizado em: 2026-07-18 (MVP + Ciclo 2 deployados; A2 entregue: cadastro município↔ZE + chips opt-in; C2 engenharia pronta — merge/deploy + Consent keys jurídicos ainda pendentes)
 
 Registro canônico no repositório dos planos futuros e débitos conhecidos. Status operacional do ciclo atual de Núcleos fica em [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc); este arquivo lista o que ainda é futuro ou bloqueador, **em ordem de execução**, com dependências e paralelismo explícitos.
 
@@ -161,7 +161,7 @@ Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, C2 (enge
 
 | Ordem | Item                                                                                                                 | Plano                                            | Depende de                       | Paralelizável com |
 | ----- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------- | ----------------- |
-| 7     | C2 Cadastro nominal de apoiadores (a peça central pré-16/08; engenharia não espera o jurídico — o app falha fechado) | [detalhes](plans/cadastro-nominal-apoiadores.md) | produção: lote jurídico (Onda 0) | A4, C3            |
+| 7     | C2 Cadastro nominal de apoiadores _(engenharia pronta 2026-07-18 — merge/deploy + Consent keys ainda pendentes)_ | [detalhes](plans/cadastro-nominal-apoiadores.md) | produção: lote jurídico (Onda 0) | A4, C3            |
 | 8     | A4 Baseline no produto + insight Gap vs 2022                                                                         | [detalhes](plans/baseline-eleitoral-tse.md)      | A3 + B1 (suave: A2)              | C2, C3            |
 | 9     | C3 Eventos / agenda de mobilização (`actionPlan`)                                                                    | [detalhes](plans/eventos-agenda-mobilizacao.md)  | A1                               | C2, A4            |
 

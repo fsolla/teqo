@@ -12,6 +12,7 @@ import type {
   ElectoralNucleus,
   Leadership,
   NucleusUpdate,
+  Supporter,
   User,
 } from '@/payload-types'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
@@ -21,6 +22,7 @@ type CampaignCollection =
   | 'campaignInvite'
   | 'nucleusUpdate'
   | 'leadership'
+  | 'supporter'
   | 'electoralNucleus'
   | 'contact'
   | 'campaignUser'
@@ -75,6 +77,7 @@ const emptyOwnedIDs = (): OwnedIDs => ({
   campaignInvite: new Set(),
   nucleusUpdate: new Set(),
   leadership: new Set(),
+  supporter: new Set(),
   electoralNucleus: new Set(),
   contact: new Set(),
   campaignUser: new Set(),
@@ -384,6 +387,40 @@ export class CampaignFixtures {
     return leadership
   }
 
+  async createSupporter(
+    input: Partial<
+      Pick<
+        Supporter,
+        | 'contact'
+        | 'nucleus'
+        | 'voteIntention'
+        | 'source'
+        | 'consent'
+        | 'consentContentHash'
+        | 'consentedAt'
+        | 'notes'
+        | 'consentNote'
+        | 'createdBy'
+      >
+    > &
+      Pick<Supporter, 'contact'>,
+  ): Promise<Supporter> {
+    const supporter = await this.rootPayload.create({
+      collection: 'supporter',
+      data: {
+        source: 'manual',
+        ...input,
+        contact: relationshipID(input.contact),
+        ...(input.nucleus ? { nucleus: relationshipID(input.nucleus) } : {}),
+        ...(input.createdBy ? { createdBy: relationshipID(input.createdBy) } : {}),
+        ...(input.consent ? { consent: relationshipID(input.consent) } : {}),
+      },
+      depth: 0,
+    })
+    this.own('supporter', supporter)
+    return supporter
+  }
+
   async createNucleusUpdate(input: NucleusUpdateInput): Promise<NucleusUpdate> {
     const update = await this.rootPayload.create({
       collection: 'nucleusUpdate',
@@ -497,6 +534,28 @@ export class CampaignFixtures {
       for (const update of updates.docs) this.own('nucleusUpdate', update)
     }
 
+    const contactIDs = [...this.owned.contact]
+    if (contactIDs.length > 0 || nucleusIDs.length > 0) {
+      const supporterConditions: Where[] = []
+      if (contactIDs.length > 0) supporterConditions.push({ contact: { in: contactIDs } })
+      if (nucleusIDs.length > 0) supporterConditions.push({ nucleus: { in: nucleusIDs } })
+      if (this.owned.supporter.size > 0) {
+        supporterConditions.push({ id: { in: [...this.owned.supporter] } })
+      }
+      if (supporterConditions.length > 0) {
+        const supporters = await this.rootPayload.find({
+          collection: 'supporter',
+          where: { or: supporterConditions },
+          depth: 0,
+          pagination: false,
+        })
+        for (const supporter of supporters.docs) {
+          this.own('supporter', supporter)
+          this.own('contact', relationshipID(supporter.contact))
+        }
+      }
+    }
+
     const lockedDocumentConditions = [
       ['campaign_invite_id', this.owned.campaignInvite],
       ['campaign_user_id', this.owned.campaignUser],
@@ -504,6 +563,7 @@ export class CampaignFixtures {
       ['contact_id', this.owned.contact],
       ['electoral_nucleus_id', this.owned.electoralNucleus],
       ['leadership_id', this.owned.leadership],
+      ['supporter_id', this.owned.supporter],
       ['nucleus_update_id', this.owned.nucleusUpdate],
       ['users_id', this.owned.users],
     ]
@@ -565,6 +625,7 @@ export class CampaignFixtures {
         'campaignInvite',
         'nucleusUpdate',
         'leadership',
+        'supporter',
         'electoralNucleus',
         'contact',
         'campaignUser',

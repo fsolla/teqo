@@ -73,6 +73,7 @@ export interface Config {
     campaignInvite: CampaignInvite;
     electoralNucleus: ElectoralNucleus;
     leadership: Leadership;
+    supporter: Supporter;
     nucleusUpdate: NucleusUpdate;
     electionTally: ElectionTally;
     electionCandidateVote: ElectionCandidateVote;
@@ -98,6 +99,7 @@ export interface Config {
     campaignInvite: CampaignInviteSelect<false> | CampaignInviteSelect<true>;
     electoralNucleus: ElectoralNucleusSelect<false> | ElectoralNucleusSelect<true>;
     leadership: LeadershipSelect<false> | LeadershipSelect<true>;
+    supporter: SupporterSelect<false> | SupporterSelect<true>;
     nucleusUpdate: NucleusUpdateSelect<false> | NucleusUpdateSelect<true>;
     electionTally: ElectionTallySelect<false> | ElectionTallySelect<true>;
     electionCandidateVote: ElectionCandidateVoteSelect<false> | ElectionCandidateVoteSelect<true>;
@@ -446,6 +448,28 @@ export interface Consent {
     };
     [k: string]: unknown;
   };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "supporter".
+ */
+export interface Supporter {
+  id: number;
+  contact: number | Contact;
+  nucleus?: (number | null) | ElectoralNucleus;
+  voteIntention?: ('certo' | 'tende_a_certo' | 'indeciso' | 'outro') | null;
+  consent?: (number | null) | Consent;
+  consentContentHash?: string | null;
+  consentedAt?: string | null;
+  voteIntentionConsent?: (number | null) | Consent;
+  voteIntentionConsentContentHash?: string | null;
+  voteIntentionConsentedAt?: string | null;
+  source: 'import_csv' | 'manual' | 'convite' | 'evento';
+  consentNote?: string | null;
+  notes?: string | null;
+  createdBy?: (number | null) | CampaignUser;
   updatedAt: string;
   createdAt: string;
 }
@@ -823,6 +847,10 @@ export interface PayloadLockedDocument {
         value: number | Leadership;
       } | null)
     | ({
+        relationTo: 'supporter';
+        value: number | Supporter;
+      } | null)
+    | ({
         relationTo: 'nucleusUpdate';
         value: number | NucleusUpdate;
       } | null)
@@ -1070,6 +1098,27 @@ export interface LeadershipSelect<T extends boolean = true> {
   consentedAt?: T;
   notes?: T;
   consentNote?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "supporter_select".
+ */
+export interface SupporterSelect<T extends boolean = true> {
+  contact?: T;
+  nucleus?: T;
+  voteIntention?: T;
+  consent?: T;
+  consentContentHash?: T;
+  consentedAt?: T;
+  voteIntentionConsent?: T;
+  voteIntentionConsentContentHash?: T;
+  voteIntentionConsentedAt?: T;
+  source?: T;
+  consentNote?: T;
+  notes?: T;
   createdBy?: T;
   updatedAt?: T;
   createdAt?: T;

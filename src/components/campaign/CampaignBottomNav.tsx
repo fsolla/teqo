@@ -9,14 +9,20 @@ import type { CampaignUser } from '@/payload-types'
 
 export const CampaignBottomNav = ({ role }: { role: CampaignUser['role'] }) => {
   const pathname = usePathname()
+  const navItems = getCampaignNav(role)
 
   return (
     <nav
       aria-label="Navegação principal"
       className="fixed inset-x-0 bottom-0 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <ul className="m-0 grid grid-cols-2 list-none p-0">
-        {getCampaignNav(role).map((item) => {
+      <ul
+        className={cn(
+          'm-0 grid list-none p-0',
+          navItems.length >= 3 ? 'grid-cols-3' : 'grid-cols-2',
+        )}
+      >
+        {navItems.map((item) => {
           const active = isCampaignNavActive(pathname, item.href)
 
           return (

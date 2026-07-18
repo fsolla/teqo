@@ -22,6 +22,7 @@ import { Petition } from './collections/Petition'
 import { Post } from './collections/Post'
 import { Signature } from './collections/Signature'
 import { Subscription } from './collections/Subscription'
+import { Supporter } from './collections/Supporter'
 import { Tag } from './collections/Tag'
 import { Users } from './collections/Users'
 import { HomePage } from './globals/HomePage'
@@ -48,6 +49,7 @@ export default buildConfig({
     CampaignInvite,
     ElectoralNucleus,
     Leadership,
+    Supporter,
     NucleusUpdate,
     ElectionTally,
     ElectionCandidateVote,

@@ -27,14 +27,24 @@ import { matchesAtWordStart } from '@/utilities/wordStartFilter'
 
 describe('campaign nucleus UI contracts', () => {
   afterEach(cleanup)
-  it('keeps cycle-one navigation limited to home and nuclei', () => {
+  it('exposes home, nuclei, and supporters navigation scoped by role', () => {
     expect(campaignNav.map(({ href, title }) => ({ href, title }))).toEqual([
       { href: '/campanha', title: 'Início' },
       { href: '/campanha/nucleos', title: 'Núcleos' },
+      { href: '/campanha/apoiadores', title: 'Apoiadores' },
     ])
-    expect(getCampaignNav('lideranca')[1]?.title).toBe('Meus núcleos')
+    expect(getCampaignNav('geral').map(({ href }) => href)).toEqual([
+      '/campanha',
+      '/campanha/nucleos',
+      '/campanha/apoiadores',
+    ])
+    expect(getCampaignNav('lideranca').map(({ href, title }) => ({ href, title }))).toEqual([
+      { href: '/campanha', title: 'Início' },
+      { href: '/campanha/nucleos', title: 'Meus núcleos' },
+    ])
     expect(isCampaignNavActive('/campanha/nucleos/nucleo-chapada', '/campanha/nucleos')).toBe(true)
     expect(isCampaignNavActive('/campanha/nucleos', '/campanha')).toBe(false)
+    expect(isCampaignNavActive('/campanha/apoiadores/1', '/campanha/apoiadores')).toBe(true)
   })
 
   it('normalizes list URL state and rejects unsupported filter values', () => {

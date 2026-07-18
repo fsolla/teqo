@@ -280,6 +280,40 @@ export const canReadLeadershipInternal: FieldAccess = async ({ req }) => {
 
 export const canManageLeadershipInternal: FieldAccess = canReadLeadershipInternal
 
+export const canCreateSupporter: Access = async ({ data, req }) => {
+  if (isPayloadAdmin(req.user)) return true
+
+  const currentUser = await getFreshCampaignUser(req)
+  if (isCampaignGeneral(currentUser)) return true
+  if (currentUser?.role !== 'coordenador') return false
+
+  const nucleus = relationshipId(data?.nucleus)
+  if (!nucleus) return false
+
+  const nucleusIDs = await getAccessibleNucleusIds(req, currentUser)
+  return nucleusIDs?.includes(nucleus) ?? false
+}
+
+export const canReadSupporter: Access = async ({ req }) => {
+  if (isPayloadAdmin(req.user)) return true
+
+  const currentUser = await getFreshCampaignUser(req)
+  if (isCampaignGeneral(currentUser)) return true
+  if (currentUser?.role !== 'coordenador') return false
+
+  const nucleusIDs = await getAccessibleNucleusIds(req, currentUser)
+
+  return {
+    nucleus: {
+      in: nucleusIDs ?? [],
+    },
+  }
+}
+
+export const canManageSupporter: Access = canReadSupporter
+
+export const canDeleteSupporter: Access = ({ req }) => isPayloadAdmin(req.user)
+
 export const canCreateNucleusCoordinators: FieldAccess = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
@@ -478,7 +512,7 @@ export const getAccessibleContactIds = async (
   }
 
   const nucleusIDs = await getAccessibleNucleusIds(req, currentUser)
-  const where =
+  const leadershipWhere =
     currentUser.role === 'lideranca'
       ? {
           and: [{ user: { equals: currentUser.id } }, { supportStatus: { equals: 'engajado' } }],
@@ -490,24 +524,48 @@ export const getAccessibleContactIds = async (
         }
 
   const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
-  const result = await find({
-    collection: 'leadership',
-    depth: 0,
-    limit: 0,
-    overrideAccess: true,
-    pagination: false,
-    req,
-    select: { contact: true },
-    where,
-  })
+  const collections = req.payload.collections as Record<string, unknown>
+  const contactIDs: ContactID[] = []
 
-  const ids = [
-    ...new Set(
-      result.docs
-        .map((doc) => relationshipId(doc.contact))
-        .filter((id): id is number => id !== null),
-    ),
-  ]
+  if (collections.leadership) {
+    const leadershipResult = await find({
+      collection: 'leadership',
+      depth: 0,
+      limit: 0,
+      overrideAccess: true,
+      pagination: false,
+      req,
+      select: { contact: true },
+      where: leadershipWhere,
+    })
+    for (const doc of leadershipResult.docs) {
+      const id = relationshipId(doc.contact)
+      if (id !== null) contactIDs.push(id)
+    }
+  }
+
+  if (currentUser.role === 'coordenador' && collections.supporter) {
+    const supporterResult = await find({
+      collection: 'supporter',
+      depth: 0,
+      limit: 0,
+      overrideAccess: true,
+      pagination: false,
+      req,
+      select: { contact: true },
+      where: {
+        nucleus: {
+          in: nucleusIDs ?? [],
+        },
+      },
+    })
+    for (const doc of supporterResult.docs) {
+      const id = relationshipId(doc.contact)
+      if (id !== null) contactIDs.push(id)
+    }
+  }
+
+  const ids = [...new Set(contactIDs)]
   context[cacheKey] = ids
 
   return ids

@@ -1,6 +1,7 @@
-import { HomeIcon, Layers3Icon, type LucideIcon } from 'lucide-react'
+import { HomeIcon, Layers3Icon, UsersIcon, type LucideIcon } from 'lucide-react'
 
 import type { CampaignUser } from '@/payload-types'
+import { canAccessSupporterArea } from '@/utilities/supporterUi'
 
 export type CampaignNavItem = {
   title: string
@@ -19,14 +20,21 @@ export const campaignNav: CampaignNavItem[] = [
     href: '/campanha/nucleos',
     icon: Layers3Icon,
   },
+  {
+    title: 'Apoiadores',
+    href: '/campanha/apoiadores',
+    icon: UsersIcon,
+  },
 ]
 
 export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] =>
-  campaignNav.map((item) =>
-    item.href === '/campanha/nucleos' && role === 'lideranca'
-      ? { ...item, title: 'Meus núcleos' }
-      : item,
-  )
+  campaignNav
+    .filter((item) => item.href !== '/campanha/apoiadores' || canAccessSupporterArea(role))
+    .map((item) =>
+      item.href === '/campanha/nucleos' && role === 'lideranca'
+        ? { ...item, title: 'Meus núcleos' }
+        : item,
+    )
 
 /** Home matches only exactly; other items also match nested paths. */
 export const isCampaignNavActive = (pathname: string, href: string): boolean => {
