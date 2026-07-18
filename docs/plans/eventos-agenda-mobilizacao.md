@@ -61,3 +61,4 @@ Cada documento `actionPlan` é uma ação/evento calendarizável (caminhada, com
 ## Não escopo
 
 - Collection dedicada `actionUpdate`, captura nominal de presentes, calendário/mapa, link a `electoralNucleus`, recorrência, notificações (D2).
+- Escala/DRY pós-entrega (território/contato compostos, selects por aba, RMW de tasks/updates, índice `status+startAt`) — C7 / [escala-dry-pos-c3.md](escala-dry-pos-c3.md).

@@ -105,6 +105,7 @@ flowchart TD
 - Reabrir decisões de v1 do C2 (telefone obrigatório, kit mínimo, import só `geral`, etc.) — [cadastro-nominal-apoiadores.md](cadastro-nominal-apoiadores.md).
 - Agregado de apoiadores no overview de núcleos — follow-up de B1.
 - GOTV / dia D — C5.
+- Escala/DRY de planos de ação (`actionPlan`) — C7 / [escala-dry-pos-c3.md](escala-dry-pos-c3.md) (consome `campaignListUrl` da Fase 2 deste plano quando existir).
 - Push/notificações — D2 / [notifications.md](notifications.md).
 - Índices `pg_trgm` / FTS em `contact` (mencionado na review de perf; só se busca ILIKE virar gargalo medido).
 
