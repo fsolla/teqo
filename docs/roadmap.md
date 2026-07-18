@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-17 (revisão de priorização orientada ao calendário eleitoral)
+Atualizado em: 2026-07-18 (código do MVP de Núcleos enviado; priorização eleitoral mantida)
 
 Registro canônico no repositório dos planos futuros e débitos conhecidos. Status operacional do ciclo atual de Núcleos fica em [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc); este arquivo lista o que ainda é futuro ou bloqueador, **em ordem de execução**, com dependências e paralelismo explícitos.
 
@@ -29,7 +29,7 @@ Registro canônico no repositório dos planos futuros e débitos conhecidos. Sta
 
 ## Onda 0 — Caminho crítico para `/campanha` em produção
 
-O MVP de Núcleos está **code-complete** (ondas 1–8). O que separa a vertical da produção não é engenharia — é jurídico + operação de deploy. Estes itens começam **imediatamente** e correm em paralelo a qualquer trilha de engenharia:
+O MVP de Núcleos está **entregue em código** (ondas 1–8 + refactors; commit em `main` em 2026-07-18). A migration `20260718_010733_consolidate_campaign_schema` aplica automaticamente no `pnpm build` da Vercel. O que ainda separa a vertical de uso operacional com dados reais é jurídico + smoke pós-deploy:
 
 1. **Lote jurídico único de LGPD/Consent** _(externo — assessoria jurídica eleitoral; é o caminho crítico da vertical inteira)_. Uma única rodada cobrindo:
    - Base do art. 11 da LGPD + texto versionado de `Consent.key = 'lideranca-autopreenchimento'` (bloqueador do MVP de Núcleos; o app falha fechado sem a chave).
@@ -38,15 +38,15 @@ O MVP de Núcleos está **code-complete** (ondas 1–8). O que separa a vertical
    - **Aviso de Privacidade / política de privacidade institucional** (obrigação do controlador antes de coleta em massa; também é item do site público).
    - Avaliação de necessidade de RIPD (tratamento em larga escala + dado sensível).
    - Racional: fatiar em rodadas separadas multiplica o lead time externo; quatro textos + aviso numa rodada só.
-2. **Checklist de verificação e deploy** do AGENTS.md (migrations `Ran: Yes`, types, lint, testes int/E2E, build local, envs Vercel — incl. `REVALIDATE_SECRET`, `NEXT_PUBLIC_SITE_URL` HTTPS).
-3. **Lançamento do MVP assim que (1) liberar a chave de liderança + (2) fechar.** Decisão de sequenciamento: **não** esperar a migração multi-município para lançar. Prós de lançar antes: coordenadores estruturam núcleos reais durante as convenções (20/07–05/08), cada semana vale capacidade de campo; a migration multi-município é in-place com backfill seguro e pode rodar com dados reais pequenos. Contras: uma migration a mais pós-lançamento. O contra é barato; o pró é tempo de campanha, que não volta.
+2. **Smoke pós-deploy** _(após o build Vercel aplicar a migration)_: conferir `NEXT_PUBLIC_SITE_URL` HTTPS exato, login `/campanha`, criar núcleo de teste, e só então cadastrar o Consent de liderança. Checklist completo no AGENTS.md.
+3. **Ativação com dados reais assim que (1) liberar a chave de liderança.** Decisão de sequenciamento: **não** esperar a migração multi-município. Prós: coordenadores estruturam núcleos reais durante as convenções (20/07–05/08); a migration multi-município é in-place com backfill seguro e pode rodar com dados reais pequenos. Contras: uma migration a mais pós-lançamento. O contra é barato; o pró é tempo de campanha, que não volta.
 4. **Onboarding do time real** (usuários `geral`/`coordenador`, primeiros núcleos, treinamento básico de campo).
 
 ## Campanha (`/campanha`)
 
 ### Ciclo 1 — Núcleos (entregue)
 
-MVP de território + reporte implementado (ondas 1–8): auth isolada `campaignUser` (`geral` / `coordenador` / `lideranca`), núcleos com slug canônico, lideranças, estimativas sugerir/confirmar, atualizações semanais, convites WhatsApp (`wa.me`, hash, uso único), dashboard e hardening. Detalhes: [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
+MVP de território + reporte implementado e enviado (ondas 1–8 + refactors de composição/infra/fixtures): auth isolada `campaignUser` (`geral` / `coordenador` / `lideranca`), núcleos com slug canônico, designação de coordenador, lideranças, estimativas sugerir/confirmar com versão UUID, atualizações semanais, convites WhatsApp (`wa.me`, hash, uso único), dashboard e hardening. Território atual ainda é `region`/`city`/`neighborhood` unitários; multi-município permanece no item A1. Detalhes: [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
 ### Grafo de dependências
 
@@ -173,7 +173,7 @@ Itens sem seta de entrada (**paralelizáveis a qualquer momento**): A1, A3, B1, 
 
 | Item                                                                                                                                                                                                              | Status                              | Fonte                                                                       |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------------------------- |
-| Lote jurídico único LGPD (4 textos de `Consent` + Aviso de Privacidade + avaliação de RIPD) — ver Onda 0. O app falha fechado sem as chaves                                                                       | **caminho crítico; iniciar já**     | notebook Núcleos; AGENTS checklist; planos cadastro-nominal e notifications |
+| Lote jurídico único LGPD (4 textos de `Consent` + Aviso de Privacidade + avaliação de RIPD) — ver Onda 0. Código do MVP já em `main`; o app falha fechado sem as chaves                                           | **caminho crítico; iniciar já**     | notebook Núcleos; AGENTS checklist; planos cadastro-nominal e notifications |
 | RBAC em `users` — todo usuário do admin Payload tem acesso total; necessário antes de abrir `/admin` a equipe maior. Nota: o import de apoiadores foi desenhado no `/campanha` justamente para não depender disso | pendente                            | AGENTS Known Gap #1                                                         |
 | Fluxos públicos ainda hardcodam ID de Consent (ex. `consent: 2` em `submitWhatsapp.ts`); migrar para chave estável como na campanha                                                                               | pendente                            | AGENTS Known Gap #2; plano-arquitetura                                      |
 | Collection `Pages` inexistente; hero/copy da home ainda hardcoded — bio, propostas e páginas institucionais                                                                                                       | pendente (não bloqueia `/campanha`) | AGENTS Known Gap #3                                                         |

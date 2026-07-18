@@ -4,7 +4,7 @@ You are an expert Payload CMS developer. When working with Payload projects, fol
 
 ## Teqo Project Context (read this first)
 
-Teqo is the digital platform for deputado federal Jorge Solla (PT-BA): public site + editorial CMS + (soon) an internal `/campanha` campaign-management area, all in this one Next.js + Payload app. Full architecture/decision doc lives outside this repo at `plano-arquitetura-campanha-2026.md` (Cowork workspace) — check it for the "why" behind decisions below.
+Teqo is the digital platform for deputado federal Jorge Solla (PT-BA): public site + editorial CMS + an internal `/campanha` campaign-management area, all in this one Next.js + Payload app. Full architecture/decision doc lives outside this repo at `plano-arquitetura-campanha-2026.md` (Cowork workspace) — check it for the "why" behind decisions below.
 
 **Locked decisions — do not relitigate without a new concrete reason:**
 
@@ -16,7 +16,7 @@ Teqo is the digital platform for deputado federal Jorge Solla (PT-BA): public si
 
 - `Contact` is the normalized "person" record (name, email, phone, state/city via `src/lib/cities.ts`, CEP). Don't create a parallel "person" collection for new features (e.g. líderanças/apoiadores) — add a join collection that relates to `Contact`, the same way `Signature` and `Subscription` do.
 - Every action that writes to more than one collection (see `src/app/(frontend)/actions/*.ts`) wraps the writes in a Payload transaction (`payload.db.beginTransaction/commitTransaction/rollbackTransaction`) and passes `req: { transactionID }` to every `payload.create`/`payload.update` call. Follow this pattern for any new multi-collection write.
-- LGPD consent is tracked via a `Consent` collection (richText, versioned) referenced by relationship from `Signature`/`Subscription`. Any new form/opt-in flow should link to a `Consent` document the same way — don't invent a new consent mechanism.
+- LGPD consent is tracked via a `Consent` collection (richText, versioned, optional stable `key`) referenced by relationship from `Signature`/`Subscription`/campaign `leadership`. New campaign opt-in flows resolve Consent by stable `key` (e.g. `lideranca-autopreenchimento`) and fail closed when missing — don't invent a parallel consent mechanism or hardcode document IDs for new work.
 - Cache invalidation: collections/globals call `revalidateDocumentById` (`src/utilities/documents.ts`) / `revalidateGlobal` (`src/utilities/globals.ts`) in an `afterChange` hook. Add the same hook to any new collection/global that backs a public page. Collections whose listing is cached under a shared tag also call the listing helper (`revalidateCollectionListing`, e.g. `revalidatePostsListing()` → `revalidateTag('posts')`) — see "Posts & Tags" below.
 - Admin UI is organized via `admin.group` (e.g. `'Abaixo-assinados'`, `'Contatos'`, `'Configurações'`, `'Paginas'`) — group new collections consistently instead of leaving them ungrouped.
 - i18n: Payload admin defaults to `pt` (not `pt-BR` — see `payload.config.ts`, `payload/i18n/pt`).
@@ -30,15 +30,16 @@ Teqo is the digital platform for deputado federal Jorge Solla (PT-BA): public si
 - To copy production content locally, use `pnpm db:pull` (`scripts/db-pull.mjs`): it only reads prod, only writes local, and excludes supporter PII (`contact`/`signature`/`subscription` row data).
 - To (re)populate news content, `pnpm db:seed:posts` fetches articles live from jorgesolla.com.br into the LOCAL db (same non-local `DATABASE_URL` guard as `pnpm dev`). It writes from a CLI process outside the deployed runtime, so after seeding — or after ANY direct-DB change — you must bust the production `posts` cache via `POST /api/revalidate`. See "Posts & Tags" below.
 
-## Known Gaps (as of 2026-07-15 — resolve before relying on this file for onboarding new devs)
+## Known Gaps (as of 2026-07-18 — resolve before relying on this file for onboarding new devs)
 
 Backlog consolidado (bloqueadores, site, campanha, white-label): [`docs/roadmap.md`](docs/roadmap.md).
 
 1. **Payload admin RBAC is still absent.** The campaign auth collection now has `role`, but the `users` admin collection still has no roles; every admin user has full Payload admin access. Add admin roles before opening `/admin` to a broader team.
 2. **Legacy public consent flows still hardcode document IDs** (e.g. `consent: 2` in `submitWhatsapp.ts`). The campaign leadership flow does not: it requires `Consent.key = 'lideranca-autopreenchimento'` and fails closed when missing. Migrating the older public flows remains separate work.
 3. **`Post`/`Tag` ship the news system, but there is still no `Pages` collection for institutional content.** Partly resolved: the `post`/`tag` collections back the news/publications system, and the home "Últimas notícias" list plus the `/[type]`, `/[type]/[category]`, and article routes are live (see "Posts & Tags" below). Still hardcoded/pending: the home hero heading + subtitle copy (`HomePage` global still exposes only a single `image` field — the text lives in `src/app/(frontend)/(home)/page.tsx`), and there is no `Pages` collection yet for institutional content such as the bio and propostas.
+4. **Campaign LGPD consent text is not yet configured in production.** Invites and self-service leadership flows fail closed until an admin creates `Consent.key = 'lideranca-autopreenchimento'` with counsel-approved copy (see deploy checklist).
 
-**Recently resolved (2026-07-15):** local Postgres now runs via `docker-compose.yml` (Postgres 17, matching prod, auto-creating `teqo_test`); Payload migrations are set up with prod baselined; dev/test database guards prevent accidental production access (see the two database skills). The `post`/`tag` collections and the public news/article/listing routes shipped and are deployed (see "Posts & Tags" below).
+**Recently resolved (2026-07-18):** the `/campanha` nuclei MVP shipped (auth/RBAC, nuclei, leaderships, vote estimates, updates, WhatsApp invites, dashboard) with consolidated migration `20260718_010733_consolidate_campaign_schema`. Earlier (2026-07-15): local Postgres via `docker-compose.yml` (Postgres 17, `teqo_test`); Payload migrations baselined; dev/test database guards; `post`/`tag` news routes deployed (see "Posts & Tags" below).
 
 ## Posts & Tags (news / publications)
 
@@ -92,17 +93,18 @@ The first `/campanha` operational cycle is centered on `electoralNucleus`; a Nú
 
 - **Collections:** `electoralNucleus` (territory, coordinators, TSE zone references, intelligence and vote estimates), `leadership` (unique `Contact`↔nucleus join with support status), `nucleusUpdate` (immutable field reports), and `campaignInvite` (single-use WhatsApp invite hashes). All are in admin group `Campanha`.
 - **Canonical nucleus URLs:** nuclei use a unique canonical `slug` generated from `name` and route through `/campanha/nucleos/[slug]`. IDs stay internal. Names are immutable after creation so existing shared links remain durable without an alias table.
-- **Role scope:** `geral` sees/manages all nuclei and confirms estimates; `coordenador` sees assigned nuclei and manages their leaderships, updates, invites, and estimates; `lideranca` sees only nuclei linked through an engaged leadership record, creates own updates, and suggests estimates.
-- **Sensitive fields:** `leadership.supportStatus`, internal notes, consent notes, and strategic nucleus intelligence are staff-only and are excluded from leadership view models. Revoking `engajado` revokes nucleus access immediately.
+- **Territory (current cycle):** Bahia is implicit. Nuclei use single `region` / `city` / `neighborhood` / `locality` / `territoryNotes` validated against official Bahia identity territories (`src/lib/bahiaTerritories.ts`). Multi-município/bairro arrays remain a planned follow-up (`docs/plans/territorio-multi-municipio-bairro.md`).
+- **Role scope:** `geral` sees/manages all nuclei, assigns coordinators, and confirms estimates; `coordenador` sees assigned nuclei and manages their leaderships, updates, invites, and estimates; `lideranca` sees only nuclei linked through an engaged leadership record, creates own updates, and suggests estimates.
+- **Sensitive fields:** `leadership.supportStatus`, internal notes, consent notes, and strategic nucleus intelligence are staff-only and are excluded from leadership view models. Revoking `engajado` revokes nucleus access immediately. Dashboard aggregates omit Payload-redacted missing statuses and fail closed on invalid enum values.
 - **People and consent:** leaderships always reuse `Contact`; multi-collection writes are transactional. Self-service updates accept a strict whitelist derived from the invite token. Campaign consent is looked up only by the stable key `lideranca-autopreenchimento`.
-- **Invites:** only SHA-256 token hashes are persisted. Public invite pages are dynamic, `no-store`, `noindex,nofollow`, `no-referrer`, and have no third-party application scripts. Login invites are allowed only for engaged leaderships.
-- **Vote estimates:** proposals never overwrite the confirmed value; only a coordinator assigned to the nucleus or `geral` may confirm.
+- **Invites:** only SHA-256 token hashes are persisted. Absolute invite URLs require a valid `NEXT_PUBLIC_SITE_URL` (exact HTTPS DNS origin in production). Public invite pages are dynamic, `no-store`, `noindex,nofollow`, `no-referrer`, and have no third-party application scripts. Login invites are allowed only for engaged leaderships.
+- **Vote estimates:** proposals never overwrite the confirmed value; each proposal carries a server-generated UUID version compared under advisory lock on confirm. Only a coordinator assigned to the nucleus or `geral` may confirm.
 
 ### Local verification and deploy checklist
 
 1. Confirm `DATABASE_URL` is `postgresql://teqo:teqo@localhost:5432/teqo` and `.env.test` points to `teqo_test`; never use Neon for development, tests, E2E, or local builds.
 2. Run `pnpm db:start`, `pnpm migrate:status`, and `DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test pnpm migrate:status`; every migration must show `Ran: Yes`.
-3. Run `pnpm generate:types`, `pnpm generate:importmap` when components changed, `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test:int`, `pnpm test:e2e`, and `pnpm build` against the local database.
+3. Run `pnpm generate:types`, `pnpm generate:importmap` when components changed, `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (unit + int), `pnpm test:e2e` (or `pnpm test:all`), and `pnpm build` against the local database. Payload CLI scripts (`migrate`, `generate:*`, `payload`) and the build migrate step use `--conditions=react-server` so `server-only` modules load correctly outside Next.js.
 4. Scan every edited runtime source file with Aikido and resolve new findings before handoff. Do not expand hardening work into unrelated pre-existing findings without an explicit scope change.
 5. Review Vercel environment variables and migration SQL before deploy; `pnpm build` applies pending migrations to production automatically.
 6. **Mandatory production blocker:** do not insert real leadership/support data or enable invites until electoral counsel documents the LGPD art. 11 basis, approves the specific versioned consent text, and an admin creates it with exactly `Consent.key = 'lideranca-autopreenchimento'`. The app intentionally fails closed when this key is absent.
@@ -132,11 +134,11 @@ src/
 │   ├── (frontend)/          # Frontend routes + server actions (src/app/(frontend)/actions/*.ts)
 │   ├── (payload)/           # Payload admin routes
 │   └── (campaign)/          # Internal campaign-management area (auth barrier, see "Campaign auth")
-├── collections/             # Collection configs (Users, CampaignUser, Media, Petition, Signature, Consent, Contact, Subscription, Post, Tag)
+├── collections/             # Users, CampaignUser, CampaignInvite, ElectoralNucleus, Leadership, NucleusUpdate, Media, Petition, Signature, Consent, Contact, Subscription, Post, Tag
 ├── globals/                 # Global configs (SiteSettings, HomePage, Metadata)
-├── components/              # Custom React components (incl. components/ui from shadcn)
-├── lib/                     # cities.ts, zod schemas (lib/schemas/*)
-├── utilities/                # documents.ts / globals.ts / posts.ts (revalidation + posts helpers)
+├── components/              # Custom React components (campaign/*, ui from shadcn)
+├── lib/                     # cities.ts, bahiaTerritories.ts, formData.ts, zod schemas (lib/schemas/*)
+├── utilities/               # campaign*, nucleus*, posts, documents, globals, locks, etc.
 └── payload.config.ts        # Main config
 ```
 

@@ -14,11 +14,11 @@ The goal is to help political teams build direct, durable relationships with the
 
 ### Phase 1: Jorge Solla Website
 
-Initial delivery focuses on Jorge Solla's public website and communication workflows:
+Initial delivery focuses on Jorge Solla's public website, editorial CMS, and the internal `/campanha` tool:
 
-- Public-facing content and updates
-- Institutional pages and biography
-- Media and campaign communication assets
+- Public-facing content and updates (news/`post` + `tag` live)
+- Institutional pages and biography (still pending a `Pages` collection)
+- Internal campaign operations: electoral nuclei, leaderships, estimates, updates, WhatsApp invites
 - Editorial operations through Payload CMS
 
 ### Phase 2: White-Label Platform
@@ -84,7 +84,11 @@ Tests use the isolated `teqo_test` database (config in `.env.test`). Prepare its
 DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test pnpm migrate
 ```
 
-Then run `pnpm test` (or `pnpm test:int` / `pnpm test:e2e`).
+Then run:
+
+- `pnpm test` — unit + integration
+- `pnpm test:e2e` — Playwright (requires the test DB schema and a free port)
+- `pnpm test:all` — unit + integration + E2E
 
 ## Tech Stack
 
@@ -92,6 +96,12 @@ Then run `pnpm test` (or `pnpm test:int` / `pnpm test:e2e`).
 - Next.js
 - PostgreSQL (via `@payloadcms/db-postgres`)
 - TypeScript
+
+## Campaign (`/campanha`)
+
+Internal campaign tool for electoral nuclei, local leaderships, vote estimates, field updates, and WhatsApp invites. Authenticated separately from `/admin` via the `campaignUser` collection (`geral` / `coordenador` / `lideranca`). Operational status and decisions: [`.cursor/rules/projects/nucleos-eleitorais.mdc`](.cursor/rules/projects/nucleos-eleitorais.mdc). Conventions and deploy checklist: `AGENTS.md` (“Campaign auth” / “Campaign nuclei MVP”).
+
+**Production blocker:** do not load real leadership data or enable invites until counsel-approved `Consent.key = 'lideranca-autopreenchimento'` exists. Absolute invite URLs require `NEXT_PUBLIC_SITE_URL` as an exact HTTPS DNS origin in production.
 
 ## Roadmap
 
