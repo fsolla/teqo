@@ -56,9 +56,9 @@ MVP de território + reporte implementado e enviado (ondas 1–8 + refactors de 
 - **C1 Compartilhar página** — diálogo no detalhe do núcleo com destinatários WhatsApp (coordenação geral, coordenadores, lideranças engajadas) + copiar link; envia só o link, não concede acesso. [Plano](plans/compartilhar-pagina.md).
 - **D1 PWA `/campanha`** — manifest + service worker escopados em `/campanha`, shell offline, toast de instalação (Android/iOS) e limpeza de cache no logout; fundação do push (D2). [Plano](plans/pwa-campanha.md).
 
-### Ciclo 2+ — A2 entregue em 2026-07-18
+### Ciclo 2+ — A2 entregue e mesclado em `main` (2026-07-18)
 
-- **A2 Zonas TSE + sugestões cruzadas** — cadastro estático `bahiaTseZones` (TSE 2024 `detalhe_votacao_munzona` BA, 417 municípios), motor puro `territorySuggestions`, coordenador `NucleusTerritoryAndZonesFields` com chips `{rótulo} +` opt-in (município/TI → ZEs; irmãos do TI e cidades da ZE → Municípios). Sem migration, sem igualdade forçada no save. [Plano](plans/zonas-por-municipio.md).
+- **A2 Zonas TSE + sugestões cruzadas** — cadastro estático `bahiaTseZones` (TSE 2024 `detalhe_votacao_munzona` BA, 417 municípios), motor puro `territorySuggestions` (inclui `outsideZones`), coordenador `NucleusTerritoryAndZonesFields` com chips `{rótulo} +` opt-in (município/TI → ZEs; irmãos do TI e cidades da ZE → Municípios), `TseZoneInput` controlado. Sem migration, sem igualdade forçada no save. [Plano](plans/zonas-por-municipio.md).
 
 ### Referências de design (UX Pilot, 2026-07-18)
 
