@@ -5,6 +5,10 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Design: [`Baseline-Eleitoral-2022.png`](../design-refs/latest/Baseline-Eleitoral-2022.png) — card "Insights do território", linha "Mais votado aqui em 2022: Dep. Fulano (PP) · Solla ficou em 4º lugar · 2.100 votos à frente"; a linha "Mais votado aqui em 2022" do bloco de baseline também alimenta este insight. Implementar como um card do stack `NucleusInsights.tsx` ([baseline-eleitoral-tse.md](baseline-eleitoral-tse.md)), com os tokens claros do tema `campaign` em vez da paleta antiga do HTML/PNG.
+
 ## Contexto
 
 Saber onde Solla foi bem é só metade; a outra é saber **quem o superou localmente** e por quanto. O baseline TSE 2022 (ver [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md)) guarda o conjunto completo de candidatos por geografia, com flag de eleito — podemos dizer, por núcleo, quem foi o mais votado para deputado federal ali em 2022, qual a margem sobre Solla, e em que colocação Solla ficou. É inteligência competitiva: onde há adversário forte a desmontar e onde Solla já é o referencial.

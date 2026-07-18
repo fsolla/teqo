@@ -5,6 +5,18 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Design: [`Notificacoes-PWA.png`](../design-refs/latest/Notificacoes-PWA.png) · [`Notificacoes-PWA.html`](../design-refs/latest/Notificacoes-PWA.html) — **compartilhado com [pwa-campanha.md](pwa-campanha.md)** (o banner de instalação no rodapé pertence àquele plano).
+
+![Central de notificações + banner de instalação PWA](../design-refs/latest/Notificacoes-PWA.png)
+
+Como usar (parte deste plano — o sino):
+
+- **Adotar a estrutura:** sino no header com contagem; bottom sheet "Notificações" com "4 não lidas", ação "Marcar todas como lidas", itens com ícone por tipo de evento, título com o núcleo/entidade ("Estimativa aguardando confirmação — Núcleo Quilombo Rio das Rãs"), linha de detalhe (autor + ação), data relativa e ponto de não lida. Os quatro tipos exemplificados (estimativa aguardando confirmação, novo apoiador, novo reporte de campo, plano de ação precisa de atenção) são um bom ponto de partida para o enum `type` da collection `Notification` — dois deles dependem dos domínios C2/C3 existirem.
+- **Falta desenhar (não bloqueia):** a tela de opt-in de push com o checkbox de consentimento LGPD (`campanha-notificacoes-push`) e a nota de limitação do iOS — seguir o padrão do bloco "Consentimento LGPD" da [`Apoiador-Ficha.png`](../design-refs/latest/Apoiador-Ficha.png).
+- **Ajustar cores:** paleta antiga no HTML/PNG; implementar com tokens do tema `campaign` e componentes `Sheet`/`Drawer` existentes.
+
 ## Contexto
 
 Coordenadores e lideranças precisam ser avisados de eventos da campanha (convite aceito, novo `nucleusUpdate`, estimativa aguardando confirmação) sem depender só do canal de WhatsApp. Este plano cobre dois canais de notificação dentro da vertical `/campanha`:

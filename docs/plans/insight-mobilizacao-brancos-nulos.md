@@ -5,6 +5,10 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Design: [`Baseline-Eleitoral-2022.png`](../design-refs/latest/Baseline-Eleitoral-2022.png) — card "Insights do território", linha "Oportunidade de mobilização: 142 brancos/nulos + 680 abstenções = 822 votos possíveis". Implementar como um card do stack `NucleusInsights.tsx` ([baseline-eleitoral-tse.md](baseline-eleitoral-tse.md)), com os tokens claros do tema `campaign` em vez da paleta antiga do HTML/PNG.
+
 ## Contexto
 
 Em 2022, parte significativa dos eleitores aptos de cada geografia não gerou voto útil: **abstenções** (não compareceu), **votos em branco** e **votos nulos** (compareceu mas não votou em candidato válido). Esses eleitores são potencial de mobilização — gente que, bem engajada, pode virar voto. O baseline TSE 2022 (ver [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md)) traz `electionTally.abstencoes`, `votosBranco` e `votosNulo` por município+zona; hoje o `/campanha` não os usa.

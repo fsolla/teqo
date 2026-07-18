@@ -5,6 +5,27 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos", linha 56)
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Três designs cobrem este plano:
+
+| Tela                                         | Arquivos                                                                                                                                                                  |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lista de apoiadores (`/campanha/apoiadores`) | [`Apoiadores-Lista.png`](../design-refs/latest/Apoiadores-Lista.png) · [`Apoiadores-Lista.html`](../design-refs/latest/Apoiadores-Lista.html)                             |
+| Ficha do apoiador                            | [`Apoiador-Ficha.png`](../design-refs/latest/Apoiador-Ficha.png) · [`Apoiador-Ficha.html`](../design-refs/latest/Apoiador-Ficha.html)                                     |
+| Import CSV (desktop, wizard 3 passos)        | [`Importar-CSV-Apoiadores.png`](../design-refs/latest/Importar-CSV-Apoiadores.png) · [`Importar-CSV-Apoiadores.html`](../design-refs/latest/Importar-CSV-Apoiadores.html) |
+
+![Lista de apoiadores](../design-refs/latest/Apoiadores-Lista.png)
+![Ficha do apoiador](../design-refs/latest/Apoiador-Ficha.png)
+![Import CSV de apoiadores](../design-refs/latest/Importar-CSV-Apoiadores.png)
+
+Como usar:
+
+- **Lista — adotar:** KPIs no topo (total / "Certo + Tende" / "Indecisos"), busca por nome/telefone/município, filtros "Intenção de voto" e "Território", linhas com nome + município + núcleo vinculado (ou "sem núcleo vinculado" — reflete a decisão de núcleo opcional) + badge de intenção + telefone; estado "Sem telefone cadastrado" em itálico; CTAs "Importar CSV" e "+ Novo".
+- **Ficha — adotar:** é a tela que melhor materializa as decisões LGPD do plano: bloco destacado "Consentimento LGPD" com checkbox nominal, link para a Política de Privacidade e registro "Consentimento registrado em … · Coletor: …" (`consentedAt` + `createdBy`); segmented control de intenção de voto **desabilitado até o consentimento** ("Disponível somente após confirmação do consentimento LGPD" — consentimento destacado, chave `apoiador-intencao-voto`); seção "Kit de compartilhamento" com mensagem pronta, "Enviar no WhatsApp"/"Copiar texto" e a nota "A mensagem é enviada pelo celular de {nome} — não é disparo em massa da campanha" (art. 33 §2º); ação "Remover meus dados" (descadastramento art. 18).
+- **Import — adotar:** wizard em 3 passos (Upload → Conferir prévia → Confirmação) com chips de contagem ("412 prontos" / "37 duplicados (pelo telefone)" / "3 erros"), tabela de prévia com status por linha (`ok`, `duplicado pelo telefone`, `telefone inválido`, `município não reconhecido`), toggle "Todos | Só erros", "Baixar relatório de erros" e resumo final. Corresponde ao `importSupporters` (dedup por telefone + preview de erros por linha). O sidebar desktop do design mostra a navegação-alvo (Início, Núcleos, Lideranças, Apoiadores, Planos de ação, Atualizações, Territórios) — usar como referência do shell desktop, mas só adicionar entradas de domínios que existirem.
+- **Ajustar cores:** paleta antiga (navy/vermelho escuro) no HTML/PNG; implementar com tokens do tema `campaign` (sidebar clara `#FAFAF9`, primário `#C51414`, badges de intenção com os pares pastel claros). Avatares com foto viram iniciais; "solla.ba" no kit é placeholder — a URL real vem de `NEXT_PUBLIC_SITE_URL`.
+
 ## Contexto
 
 Hoje a campanha só cadastra pessoas via `leadership` — a junção única `Contact`↔núcleo que carrega status de apoio, vínculo com `campaignUser` (acesso ao app) e consentimento. Não existe base nominal de apoiadores "comuns": eleitores que declaram apoio mas não são lideranças engajadas com acesso à plataforma. O roadmap pede explicitamente o cadastro nominal em massa via `Contact` + junção, **sem nunca criar uma collection "pessoa/apoiador" paralela** (decisão travada no AGENTS.md, espelhada por `Signature`/`Subscription`).

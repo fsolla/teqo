@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <script>
+      window.FontAwesomeConfig = {
+        autoReplaceSvg: 'nest',
+      }
+    </script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Núcleos – Visão Geral</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#8E0E23',
+              'primary-light': '#B01C35',
+              'primary-xlight': '#F9E8EB',
+              gold: '#C8874B',
+              'gold-light': '#FDF3EC',
+              navy: '#1B2B4B',
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 pb-24">
+    <!-- Header -->
+    <header
+      id="header"
+      class="bg-navy sticky top-0 z-20 px-4 py-3 flex items-center justify-between"
+    >
+      <div class="flex items-center gap-3">
+        <div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-star text-white text-xs"></i>
+        </div>
+        <h1 class="text-white font-bold text-sm">Núcleos Eleitorais</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="relative text-white/70 p-1.5">
+          <i class="fa-solid fa-bell text-base"></i>
+          <span
+            class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full border border-navy"
+          ></span>
+        </button>
+        <button
+          class="bg-primary text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+        >
+          <i class="fa-solid fa-plus text-xs"></i> Novo
+        </button>
+      </div>
+    </header>
+
+    <!-- Scope badge -->
+    <div class="px-4 pt-3 pb-1">
+      <span
+        class="inline-flex items-center gap-1.5 bg-gold-light border border-gold/30 text-xs font-semibold text-navy px-3 py-1.5 rounded-full"
+      >
+        <i class="fa-solid fa-shield-halved text-gold text-xs"></i> Coordenação Geral · vê todos os
+        núcleos
+      </span>
+    </div>
+
+    <!-- Search + Filter -->
+    <div class="px-4 pt-2 pb-3 space-y-2">
+      <div class="relative">
+        <input
+          type="text"
+          placeholder="Buscar núcleo ou zona…"
+          class="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-navy placeholder-gray-300"
+        />
+        <i
+          class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
+        ></i>
+      </div>
+      <!-- Active filter chips -->
+      <div class="flex gap-2 flex-wrap">
+        <span
+          class="inline-flex items-center gap-1.5 bg-navy text-white text-xs font-semibold px-2.5 py-1 rounded-full"
+        >
+          Velho Chico
+          <button class="ml-0.5 opacity-70"><i class="fa-solid fa-xmark text-xs"></i></button>
+        </span>
+        <span
+          class="inline-flex items-center gap-1.5 bg-navy text-white text-xs font-semibold px-2.5 py-1 rounded-full"
+        >
+          ZE 12 <button class="ml-0.5 opacity-70"><i class="fa-solid fa-xmark text-xs"></i></button>
+        </span>
+        <button class="text-xs text-primary font-semibold">+ Filtros</button>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════ -->
+    <!-- OVERVIEW PANEL                   -->
+    <!-- ════════════════════════════════ -->
+    <section id="overview-panel" class="px-4 space-y-3 mb-4">
+      <!-- Caption -->
+      <p class="text-xs text-gray-500 flex items-center gap-1.5">
+        <i class="fa-solid fa-filter text-gray-400 text-xs"></i>
+        Mostrando agregados de <strong class="text-navy mx-0.5">14 núcleos</strong> filtrados
+      </p>
+
+      <!-- Estimativa de votos -->
+      <div id="card-estimativa" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">
+              Estimativa de votos
+            </p>
+            <div class="flex items-baseline gap-2">
+              <span class="text-3xl font-extrabold text-navy leading-none">18.740</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-0.5">votos estimados nos 14 núcleos</p>
+          </div>
+          <div
+            class="w-9 h-9 rounded-xl bg-primary-xlight flex items-center justify-center flex-shrink-0"
+          >
+            <i class="fa-solid fa-ballot-check text-primary"></i>
+          </div>
+        </div>
+        <!-- Progress -->
+        <div class="mb-3">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-gray-600">Com estimativa confirmada</span>
+            <span class="font-bold text-green-700">71%</span>
+          </div>
+          <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full bg-green-500 rounded-full" style="width: 71%"></div>
+          </div>
+          <p class="text-xs text-gray-400 mt-1">10 confirmadas · 4 pendentes</p>
+        </div>
+        <span
+          class="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full"
+        >
+          <i class="fa-solid fa-clock text-xs"></i> 3 sugestões pendentes
+        </span>
+      </div>
+
+      <!-- Cobertura + Baseline 2022 (two-col) -->
+      <div class="grid grid-cols-2 gap-3">
+        <!-- Cobertura -->
+        <div id="card-cobertura" class="bg-white border border-gray-200 rounded-xl shadow-sm p-3.5">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Cobertura</p>
+            <i class="fa-solid fa-user-shield text-blue-500 text-sm"></i>
+          </div>
+          <p class="text-2xl font-extrabold text-navy leading-none mb-1">86%</p>
+          <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1.5">
+            <div class="h-full bg-blue-500 rounded-full" style="width: 86%"></div>
+          </div>
+          <p class="text-xs text-gray-400">12 de 14 com coordenador</p>
+        </div>
+        <!-- Baseline 2022 -->
+        <div id="card-baseline" class="bg-white border border-gray-200 rounded-xl shadow-sm p-3.5">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Baseline 2022</p>
+            <i class="fa-solid fa-chart-line text-primary text-sm"></i>
+          </div>
+          <p class="text-xl font-extrabold text-navy leading-none mb-1">+2.140</p>
+          <p class="text-xs text-gray-400 mb-2">votos acima do patamar</p>
+          <div class="flex flex-col gap-1 text-xs">
+            <span class="text-green-700 font-semibold flex items-center gap-1"
+              ><i class="fa-solid fa-arrow-up text-xs"></i> 8 acima</span
+            >
+            <span class="text-amber-600 font-semibold flex items-center gap-1"
+              ><i class="fa-solid fa-arrow-down text-xs"></i> 6 abaixo</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Últimas atualizações -->
+      <div id="card-updates" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">
+            Últimas atualizações
+          </p>
+          <a href="#" class="text-xs text-primary font-semibold">Ver todas</a>
+        </div>
+        <div class="space-y-3">
+          <!-- Row 1 -->
+          <div class="flex items-start gap-3">
+            <img
+              src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg"
+              class="w-8 h-8 rounded-full object-cover flex-shrink-0"
+            />
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span
+                  class="bg-primary-xlight text-primary text-xs font-bold px-2 py-0.5 rounded-full"
+                  >Semanal</span
+                >
+                <span class="text-xs text-gray-400">há 1 dia</span>
+              </div>
+              <p class="text-xs text-gray-700">
+                João S. · <span class="text-primary font-medium">Quilombo Rio das Rãs</span>
+              </p>
+            </div>
+          </div>
+          <!-- Row 2 -->
+          <div class="flex items-start gap-3">
+            <img
+              src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg"
+              class="w-8 h-8 rounded-full object-cover flex-shrink-0"
+            />
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="bg-amber-50 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full"
+                  >Urgente</span
+                >
+                <span class="text-xs text-gray-400">há 2 dias</span>
+              </div>
+              <p class="text-xs text-gray-700">
+                Maria L. · <span class="text-primary font-medium">Sindicato Rural Oeste</span>
+              </p>
+            </div>
+          </div>
+          <!-- Row 3 -->
+          <div class="flex items-start gap-3">
+            <img
+              src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-4.jpg"
+              class="w-8 h-8 rounded-full object-cover flex-shrink-0"
+            />
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full"
+                  >Nota</span
+                >
+                <span class="text-xs text-gray-400">há 3 dias</span>
+              </div>
+              <p class="text-xs text-gray-700">
+                Pedro A. · <span class="text-primary font-medium">Igreja Batista Central</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- end overview panel -->
+
+    <!-- List header -->
+    <div class="px-4 mb-2">
+      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">
+        14 núcleos filtrados
+      </p>
+    </div>
+
+    <!-- Nuclei list -->
+    <section id="nucleos-list" class="px-4 space-y-2">
+      <!-- Item 1 -->
+      <div
+        class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 cursor-pointer active:bg-gray-50 transition-colors"
+      >
+        <div class="flex items-start justify-between mb-2">
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-navy text-sm">Quilombo Rio das Rãs</p>
+            <p class="text-xs text-gray-500">
+              Bom Jesus da Lapa ·
+              <span
+                class="font-mono font-semibold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs"
+                >ZE 12</span
+              >
+            </p>
+          </div>
+          <span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full ml-2"
+            >Confirmada</span
+          >
+        </div>
+        <div class="flex items-center gap-4 text-xs text-gray-600">
+          <span><i class="fa-solid fa-users text-gray-400 mr-1"></i>12 lideranças</span>
+          <span><i class="fa-solid fa-ballot-check text-gray-400 mr-1"></i>1.200 votos</span>
+          <span class="text-green-700 font-semibold ml-auto"
+            ><i class="fa-solid fa-arrow-up text-xs mr-0.5"></i>+12%</span
+          >
+        </div>
+      </div>
+
+      <!-- Item 2 -->
+      <div
+        class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 cursor-pointer active:bg-gray-50 transition-colors"
+      >
+        <div class="flex items-start justify-between mb-2">
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-navy text-sm">Sindicato Rural Oeste</p>
+            <p class="text-xs text-gray-500">
+              Brumado ·
+              <span
+                class="font-mono font-semibold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs"
+                >ZE 5</span
+              >
+              <span
+                class="font-mono font-semibold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs"
+                >ZE 7</span
+              >
+            </p>
+          </div>
+          <span
+            class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full ml-2 whitespace-nowrap"
+            >Sugestão pend.</span
+          >
+        </div>
+        <div class="flex items-center gap-4 text-xs text-gray-600">
+          <span><i class="fa-solid fa-users text-gray-400 mr-1"></i>16 lideranças</span>
+          <span><i class="fa-solid fa-ballot-check text-gray-400 mr-1"></i>3.400 votos</span>
+          <span class="text-amber-600 font-semibold ml-auto"
+            ><i class="fa-solid fa-arrow-down text-xs mr-0.5"></i>−8%</span
+          >
+        </div>
+      </div>
+
+      <!-- Item 3 -->
+      <div
+        class="bg-white border border-amber-200 rounded-xl shadow-sm p-4 cursor-pointer active:bg-gray-50 transition-colors"
+      >
+        <div class="flex items-start justify-between mb-2">
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-navy text-sm">Assentamento Vitória</p>
+            <p class="text-xs text-gray-500">
+              Feira de Santana ·
+              <span
+                class="font-mono font-semibold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs"
+                >ZE 5</span
+              >
+            </p>
+          </div>
+          <span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full ml-2"
+            >Confirmada</span
+          >
+        </div>
+        <div class="flex items-center gap-4 text-xs text-gray-600">
+          <span><i class="fa-solid fa-users text-gray-400 mr-1"></i>7 lideranças</span>
+          <span><i class="fa-solid fa-ballot-check text-gray-400 mr-1"></i>900 votos</span>
+          <span class="text-amber-600 font-semibold ml-auto flex items-center gap-1"
+            ><i class="fa-solid fa-triangle-exclamation text-xs"></i>Sem coord.</span
+          >
+        </div>
+      </div>
+
+      <!-- Item 4 -->
+      <div
+        class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 cursor-pointer active:bg-gray-50 transition-colors"
+      >
+        <div class="flex items-start justify-between mb-2">
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-navy text-sm">Igreja Batista Central</p>
+            <p class="text-xs text-gray-500">
+              Vitória da Conquista ·
+              <span
+                class="font-mono font-semibold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs"
+                >ZE 8</span
+              >
+            </p>
+          </div>
+          <span
+            class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full ml-2 whitespace-nowrap"
+            >Sugestão pend.</span
+          >
+        </div>
+        <div class="flex items-center gap-4 text-xs text-gray-600">
+          <span><i class="fa-solid fa-users text-gray-400 mr-1"></i>11 lideranças</span>
+          <span><i class="fa-solid fa-ballot-check text-gray-400 mr-1"></i>650 votos</span>
+          <span class="text-amber-600 font-semibold ml-auto"
+            ><i class="fa-solid fa-arrow-down text-xs mr-0.5"></i>−5%</span
+          >
+        </div>
+      </div>
+
+      <!-- Item 5 -->
+      <div
+        class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 cursor-pointer active:bg-gray-50 transition-colors"
+      >
+        <div class="flex items-start justify-between mb-2">
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-navy text-sm">Quilombo Palmares II</p>
+            <p class="text-xs text-gray-500">
+              Caetité · <span class="text-gray-400 italic text-xs">sem ZE</span>
+            </p>
+          </div>
+          <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full ml-2"
+            >Sem estimativa</span
+          >
+        </div>
+        <div class="flex items-center gap-4 text-xs text-gray-600">
+          <span><i class="fa-solid fa-users text-gray-400 mr-1"></i>4 lideranças</span>
+          <span><i class="fa-solid fa-ballot-check text-gray-400 mr-1"></i>—</span>
+          <span class="text-amber-600 font-semibold ml-auto flex items-center gap-1"
+            ><i class="fa-solid fa-triangle-exclamation text-xs"></i>Sem coord.</span
+          >
+        </div>
+      </div>
+
+      <p class="text-center text-xs text-gray-400 py-3">
+        Mostrando 5 de 14 · <span class="text-primary font-semibold">Ver mais</span>
+      </p>
+    </section>
+
+    <!-- FAB -->
+    <div class="fixed bottom-20 right-4 z-30">
+      <button
+        class="bg-primary text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center"
+      >
+        <i class="fa-solid fa-plus text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Bottom nav -->
+    <nav
+      id="bottom-nav"
+      class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex z-20"
+    >
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-400">
+        <i class="fa-solid fa-house text-base"></i>
+        <span class="text-xs mt-0.5">Início</span>
+      </a>
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-primary">
+        <i class="fa-solid fa-layer-group text-base"></i>
+        <span class="text-xs mt-0.5 font-semibold">Núcleos</span>
+      </a>
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-400">
+        <i class="fa-solid fa-user-group text-base"></i>
+        <span class="text-xs mt-0.5">Apoiadores</span>
+      </a>
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-400">
+        <i class="fa-solid fa-calendar-days text-base"></i>
+        <span class="text-xs mt-0.5">Agenda</span>
+      </a>
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-400">
+        <i class="fa-solid fa-users text-base"></i>
+        <span class="text-xs mt-0.5">Lideranças</span>
+      </a>
+    </nav>
+  </body>
+</html>

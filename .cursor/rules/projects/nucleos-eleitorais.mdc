@@ -26,6 +26,7 @@ alwaysApply: false
 - Em 2026-07-17, a Refactor Phase 4A consolidou as dez migrations locais não publicadas de `20260717_*` em `20260718_010733_consolidate_campaign_schema`, mantendo intacta a história rastreada até `20260716_010420_add_campaign_user`; os bancos locais foram reconciliados sem alterar dados de aplicação.
 - Em 2026-07-18, o follow-up Phase 4C fixou o Playwright em dois workers por padrão, adicionou guardas automáticos de erros do navegador/console/5xx, fortaleceu privacidade HTML+Flight por papel e tornou o login por teclado uma interação real com Enter e cookie verificado.
 - Em 2026-07-18, a projeção do dashboard omite `supportStatus` ausente por redação de acesso e lança invariante genérico se um valor não-vazio inválido chegar à fronteira; agregação e badge são exaustivos no enum.
+- Em 2026-07-18, os designs UX Pilot dos próximos ciclos foram versionados em `docs/design-refs/latest/` (11 pares `.png`+`.html`) e mapeados aos itens do roadmap — tabela "Referências de design (UX Pilot)" em `docs/roadmap.md`, com seção "Referência visual (UX Pilot)" em cada plano. Decisão: a UX/estrutura dos designs é a referência; a paleta NÃO — os arquivos vieram na paleta antiga (vermelho escuro/navy/dourado) e toda implementação usa os tokens claros do tema `data-theme='campaign'`. Sem design nesta leva: dobradinha, mapa, demandas, detalhe do plano de ação, opt-in de push e fill-ins.
 
 ## Decisões
 

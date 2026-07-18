@@ -5,6 +5,19 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Design: [`Baseline-Eleitoral-2022.png`](../design-refs/latest/Baseline-Eleitoral-2022.png) · [`Baseline-Eleitoral-2022.html`](../design-refs/latest/Baseline-Eleitoral-2022.html) — a tela também contém o card "Insights do território", que pertence aos planos de insight separados (ver abaixo).
+
+![Baseline eleitoral 2022 no detalhe do núcleo](../design-refs/latest/Baseline-Eleitoral-2022.png)
+
+Como usar:
+
+- **Adotar a estrutura (Fases 2 e 4 deste plano):** bloco "Baseline eleitoral 2022" na aba Visão geral do núcleo com: linha destacada de Solla (votos 2022 + barra), linhas secundárias de Lula (Presidente, 2º turno) e Jerônimo (Governador); sub-bloco "Eleitorado 2022" (válidos, brancos, nulos, abstenções); linha "Mais votado aqui em 2022"; e o alerta âmbar do insight Gap vs 2022 ("Faltam 350 votos para o patamar de 2022" com a conta estimativa vs. resultado). Os quatro estados do gap descritos na Fase 4 seguem esse mesmo formato de alerta (âmbar/verde/informativo).
+- **Pertence aos planos de insight separados (não implementar junto):** o card "Insights do território" (taxa de conversão, território de defesa, alavancagem da chapa, oportunidade de mobilização, mais votado/ranking) é a referência visual dos cinco planos `insight-*.md` — cada linha do card corresponde a um plano. A arquitetura do componente (`NucleusInsights.tsx`, stack de cards com ícone + veredito de uma linha + número de apoio) deve nascer extensível conforme já previsto.
+- **Overview da lista:** o bloco compacto "Baseline 2022" da Fase 3 aparece no design [`Lista-Nucleos-Overview.png`](../design-refs/latest/Lista-Nucleos-Overview.png) (gap total + "8 acima · 6 abaixo").
+- **Ajustar cores:** paleta antiga no HTML/PNG (header vermelho escuro, destaque de Solla em vermelho escuro). Implementar com tokens do tema `campaign`: destaque de Solla pode usar `#C51414` sobre fundo claro; alerta do gap usa o par âmbar (`#FEF3C7`/`#92400E`) ou verde (`#DCFCE7`/`#166534`).
+
 ## Contexto
 
 Os resultados das eleições passadas são **dados abertos públicos** do TSE (Portal de Dados Abertos, licença Creative Commons Atribuição), disponíveis por **município e zona eleitoral** (e por seção). Hoje o `/campanha` só tem a estimativa manual de votos (sugerir/confirmar); não há referência histórica. A decisão de produto (2026-07-17) é importar os resultados oficiais de 2022 (presidente, governador, dep. federal, dep. estadual) por município+zona e usá-los como **baseline histórico** em três lugares: no detalhe do núcleo, no overview da lista de núcleos (escopado pelos filtros), e em insights automáticos para coordenadores e lideranças.

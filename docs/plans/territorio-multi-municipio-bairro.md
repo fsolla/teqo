@@ -5,6 +5,19 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Design: [`Formulario-Territorio.png`](../design-refs/latest/Formulario-Territorio.png) · [`Formulario-Territorio.html`](../design-refs/latest/Formulario-Territorio.html) — **compartilhado com [zonas-por-municipio.md](zonas-por-municipio.md)** (a mesma tela cobre os dois planos).
+
+![Formulário de território do núcleo](../design-refs/latest/Formulario-Territorio.png)
+
+Como usar (parte deste plano — bloco Território):
+
+- **Adotar a estrutura:** "Municípios" como combobox multi-seleção com chips removíveis + contagem "2 municípios selecionados"; "Territórios de Identidade" como chips derivados somente leitura com cadeado e legenda "Derivados dos municípios selecionados · não é possível editar" (materializa a regra 3 — `regions` rederivado no servidor); "Bairros" desabilitado com placeholder "Selecione municípios primeiro" e o aviso "Bairros exigem um único município selecionado" (regra 5).
+- **Divergência a resolver na implementação:** no design o campo de bairros aparece desabilitado com 2 municípios e o aviso âmbar simultaneamente; a regra é: habilitar bairros somente com exatamente 1 município e limpar bairros ao passar para >1 (mostrar o aviso como helper text, não como erro).
+- **Fora deste plano:** a seção "Zonas Eleitorais (TSE)" com chips "sugerida" pertence a [zonas-por-municipio.md](zonas-por-municipio.md).
+- **Ajustar cores:** paleta antiga no HTML/PNG. Implementar com `StrictCombobox`/`NucleusTerritoryFields` existentes e os tokens do tema `campaign` (chips neutros claros; chips de município selecionado não precisam ser navy).
+
 ## Contexto
 
 Hoje o território do Núcleo Eleitoral é modelado com campos **single-valued** em `src/collections/ElectoralNucleus.ts`:

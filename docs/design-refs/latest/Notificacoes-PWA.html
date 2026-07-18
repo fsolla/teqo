@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <script>
+      window.FontAwesomeConfig = {
+        autoReplaceSvg: 'nest',
+      }
+    </script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notificações</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#8E0E23',
+              'primary-light': '#B01C35',
+              'primary-xlight': '#F9E8EB',
+              gold: '#C8874B',
+              'gold-light': '#FDF3EC',
+              navy: '#1B2B4B',
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 pb-24" style="min-height: 840px; position: relative">
+    <!-- Background: Inicio Coordenador blurred behind sheet -->
+    <!-- Main screen content (dimmed) -->
+    <div class="opacity-30 pointer-events-none">
+      <header class="bg-navy px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0"
+          >
+            <i class="fa-solid fa-star text-white text-xs"></i>
+          </div>
+          <h1 class="text-white font-bold text-sm">Início</h1>
+        </div>
+        <button class="relative text-white/70 p-1.5">
+          <i class="fa-solid fa-bell text-xl"></i>
+          <span
+            class="absolute top-1 right-1 w-2.5 h-2.5 bg-primary rounded-full border-2 border-navy"
+          ></span>
+        </button>
+      </header>
+      <div class="px-4 pt-3">
+        <span
+          class="inline-flex items-center gap-1.5 bg-gold-light border border-gold/30 text-xs font-semibold text-navy px-3 py-1.5 rounded-full"
+        >
+          <i class="fa-solid fa-shield-halved text-gold text-xs"></i> Coordenação Geral
+        </span>
+      </div>
+      <div class="px-4 pt-4 grid grid-cols-2 gap-3">
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <p class="text-xs text-gray-500">Núcleos ativos</p>
+          <p class="text-2xl font-extrabold text-navy">47</p>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <p class="text-xs text-gray-500">Apoiadores</p>
+          <p class="text-2xl font-extrabold text-navy">1.847</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════ -->
+    <!-- NOTIFICATION CENTER SHEET        -->
+    <!-- ════════════════════════════════ -->
+    <div class="absolute inset-0 bg-black/40 flex items-end" style="z-index: 50">
+      <div
+        id="notif-sheet"
+        class="w-full bg-white rounded-t-2xl shadow-2xl"
+        style="max-height: 640px; display: flex; flex-direction: column"
+      >
+        <!-- Handle -->
+        <div class="flex justify-center pt-3 pb-0 flex-shrink-0">
+          <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
+        </div>
+
+        <!-- Sheet header -->
+        <div
+          class="px-5 pt-3 pb-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0"
+        >
+          <div>
+            <h2 class="text-base font-bold text-navy">Notificações</h2>
+            <span class="text-xs text-primary font-semibold">4 não lidas</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <button class="text-xs text-primary font-semibold hover:underline">
+              Marcar todas como lidas
+            </button>
+            <button class="text-gray-400 hover:text-navy p-1 rounded-lg">
+              <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Notifications list -->
+        <div class="overflow-y-auto flex-1 divide-y divide-gray-50 px-1">
+          <!-- Unread -->
+          <div
+            class="flex items-start gap-3 px-4 py-4 bg-primary-xlight/40 cursor-pointer active:bg-primary-xlight"
+          >
+            <div
+              class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5"
+            >
+              <i class="fa-solid fa-clock text-amber-600 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-navy leading-snug">
+                Estimativa aguardando confirmação — Núcleo Quilombo Rio das Rãs
+              </p>
+              <p class="text-xs text-gray-500 mt-0.5">
+                João Santos sugeriu 1.200 votos · confirme ou ajuste
+              </p>
+              <p class="text-xs text-primary font-semibold mt-1">há 2 horas</p>
+            </div>
+            <div class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></div>
+          </div>
+
+          <!-- Unread -->
+          <div
+            class="flex items-start gap-3 px-4 py-4 bg-primary-xlight/40 cursor-pointer active:bg-primary-xlight"
+          >
+            <div
+              class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5"
+            >
+              <i class="fa-solid fa-user-plus text-green-600 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-navy leading-snug">
+                Novo apoiador cadastrado — Sindicato Rural Oeste
+              </p>
+              <p class="text-xs text-gray-500 mt-0.5">Maria Lima adicionou Antônio Carlos Leal</p>
+              <p class="text-xs text-primary font-semibold mt-1">há 4 horas</p>
+            </div>
+            <div class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></div>
+          </div>
+
+          <!-- Unread -->
+          <div
+            class="flex items-start gap-3 px-4 py-4 bg-primary-xlight/40 cursor-pointer active:bg-primary-xlight"
+          >
+            <div
+              class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5"
+            >
+              <i class="fa-solid fa-newspaper text-blue-600 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-navy leading-snug">
+                Novo reporte de campo — Igreja Batista Central
+              </p>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Pedro Alves publicou uma atualização urgente
+              </p>
+              <p class="text-xs text-primary font-semibold mt-1">há 1 dia</p>
+            </div>
+            <div class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></div>
+          </div>
+
+          <!-- Unread -->
+          <div
+            class="flex items-start gap-3 px-4 py-4 bg-primary-xlight/40 cursor-pointer active:bg-primary-xlight"
+          >
+            <div
+              class="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5"
+            >
+              <i class="fa-solid fa-calendar-xmark text-red-600 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-navy leading-snug">
+                Plano de ação precisa de atenção — Comício (Rascunho)
+              </p>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Data ainda não definida · confirme ou cancele
+              </p>
+              <p class="text-xs text-primary font-semibold mt-1">há 2 dias</p>
+            </div>
+            <div class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></div>
+          </div>
+
+          <!-- Read -->
+          <div class="flex items-start gap-3 px-4 py-3.5 cursor-pointer active:bg-gray-50">
+            <div
+              class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5"
+            >
+              <i class="fa-solid fa-file-import text-gray-500 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-gray-700 leading-snug">
+                Importação de CSV concluída
+              </p>
+              <p class="text-xs text-gray-400 mt-0.5">
+                412 apoiadores importados · 37 duplicados ignorados
+              </p>
+              <p class="text-xs text-gray-400 mt-1">há 3 dias</p>
+            </div>
+          </div>
+
+          <!-- Read -->
+          <div class="flex items-start gap-3 px-4 py-3.5 cursor-pointer active:bg-gray-50">
+            <div
+              class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5"
+            >
+              <i class="fa-solid fa-user-shield text-gray-500 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-gray-700 leading-snug">
+                Bem-vindo ao Solla Campanha!
+              </p>
+              <p class="text-xs text-gray-400 mt-0.5">
+                Seu acesso de Coordenação Geral foi ativado
+              </p>
+              <p class="text-xs text-gray-400 mt-1">há 12 dias</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PWA install prompt inside sheet footer -->
+        <div
+          id="pwa-prompt"
+          class="flex-shrink-0 mx-4 my-3 bg-navy text-white rounded-xl p-3 flex items-center gap-3"
+        >
+          <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-mobile-screen text-white text-sm"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-bold leading-snug">Instale o app da campanha</p>
+            <p class="text-xs text-white/60 mt-0.5">Acesse mais rápido e receba avisos</p>
+          </div>
+          <button class="bg-white text-navy text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0">
+            Instalar
+          </button>
+          <button class="text-white/50 p-1 flex-shrink-0">
+            <i class="fa-solid fa-xmark text-xs"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════ -->
+    <!-- PUSH OPT-IN SCREEN              -->
+    <!-- (shown as a separate card below, for reference) -->
+    <!-- In production this appears on its own route      -->
+    <!-- ════════════════════════════════ -->
+  </body>
+</html>

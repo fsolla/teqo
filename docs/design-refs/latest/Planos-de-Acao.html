@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <script>
+      window.FontAwesomeConfig = {
+        autoReplaceSvg: 'nest',
+      }
+    </script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Planos de Ação</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#8E0E23',
+              'primary-light': '#B01C35',
+              'primary-xlight': '#F9E8EB',
+              gold: '#C8874B',
+              'gold-light': '#FDF3EC',
+              navy: '#1B2B4B',
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+      .filter-tab.active {
+        background: #1b2b4b;
+        color: white;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 pb-24">
+    <!-- Header -->
+    <header
+      id="header"
+      class="bg-navy sticky top-0 z-20 px-4 py-3 flex items-center justify-between"
+    >
+      <div class="flex items-center gap-3">
+        <div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-star text-white text-xs"></i>
+        </div>
+        <h1 class="text-white font-bold text-sm">Planos de Ação</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="relative text-white/70 p-1.5">
+          <i class="fa-solid fa-bell text-base"></i>
+          <span
+            class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full border border-navy"
+          ></span>
+        </button>
+        <button
+          class="bg-primary text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+        >
+          <i class="fa-solid fa-plus text-xs"></i> Novo
+        </button>
+      </div>
+    </header>
+
+    <!-- Scope badge -->
+    <div class="px-4 pt-3 pb-1">
+      <span
+        class="inline-flex items-center gap-1.5 bg-gold-light border border-gold/30 text-xs font-semibold text-navy px-3 py-1.5 rounded-full"
+      >
+        <i class="fa-solid fa-shield-halved text-gold text-xs"></i> Coordenação Geral
+      </span>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="px-4 pt-3 pb-2 flex gap-2 overflow-x-auto">
+      <button
+        class="filter-tab active flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-navy transition-colors"
+      >
+        Próximos
+      </button>
+      <button
+        class="filter-tab flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:border-navy transition-colors"
+      >
+        Todos
+      </button>
+      <button
+        class="filter-tab flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:border-navy transition-colors"
+      >
+        Realizados
+      </button>
+      <button
+        class="filter-tab flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:border-navy transition-colors"
+      >
+        Rascunhos
+      </button>
+    </div>
+
+    <!-- Additional filters -->
+    <div class="px-4 pb-3">
+      <div class="flex gap-2 overflow-x-auto">
+        <select
+          class="flex-shrink-0 text-xs border border-gray-200 rounded-lg px-3 py-2 text-navy bg-white focus:outline-none"
+        >
+          <option>Tipo de ação</option>
+          <option>Caminhada</option>
+          <option>Comício</option>
+          <option>Carreata</option>
+          <option>Panfletagem</option>
+          <option>Porta a porta</option>
+          <option>Reunião de apoio</option>
+        </select>
+        <select
+          class="flex-shrink-0 text-xs border border-gray-200 rounded-lg px-3 py-2 text-navy bg-white focus:outline-none"
+        >
+          <option>Território</option>
+          <option>Velho Chico</option>
+          <option>Sertão do São Francisco</option>
+        </select>
+        <select
+          class="flex-shrink-0 text-xs border border-gray-200 rounded-lg px-3 py-2 text-navy bg-white focus:outline-none"
+        >
+          <option>Status</option>
+          <option>Planejado</option>
+          <option>Confirmado</option>
+          <option>Realizado</option>
+          <option>Cancelado</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Events list -->
+    <section id="events-list" class="px-4 space-y-3">
+      <!-- Event 1: Caminhada — Confirmado -->
+      <div
+        class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden cursor-pointer active:bg-gray-50"
+      >
+        <!-- Kind + date bar -->
+        <div class="flex items-center justify-between px-4 pt-3 pb-2">
+          <span
+            class="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full"
+          >
+            <i class="fa-solid fa-person-walking text-xs"></i> Caminhada
+          </span>
+          <span
+            class="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full"
+          >
+            <i class="fa-solid fa-circle-check text-xs"></i> Confirmado
+          </span>
+        </div>
+        <div class="px-4 pb-3">
+          <h3 class="font-bold text-navy text-sm mb-1">Caminhada no Centro Histórico</h3>
+          <div class="flex items-center gap-3 text-xs text-gray-500 mb-2">
+            <span><i class="fa-solid fa-calendar text-gray-400 mr-1"></i>Dom, 3 ago · 08h00</span>
+            <span
+              ><i class="fa-solid fa-location-dot text-gray-400 mr-1"></i>Bom Jesus da Lapa</span
+            >
+          </div>
+          <div class="flex items-center gap-2">
+            <span
+              class="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full"
+              >Velho Chico</span
+            >
+            <span class="text-xs text-gray-500">· Resp: João Santos</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event 2: Reunião de apoio — Planejado -->
+      <div
+        class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden cursor-pointer active:bg-gray-50"
+      >
+        <div class="flex items-center justify-between px-4 pt-3 pb-2">
+          <span
+            class="inline-flex items-center gap-1.5 bg-purple-50 border border-purple-200 text-purple-700 text-xs font-bold px-2.5 py-1 rounded-full"
+          >
+            <i class="fa-solid fa-handshake text-xs"></i> Reunião de apoio
+          </span>
+          <span
+            class="inline-flex items-center gap-1.5 bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full"
+          >
+            <i class="fa-solid fa-clock text-xs"></i> Planejado
+          </span>
+        </div>
+        <div class="px-4 pb-3">
+          <h3 class="font-bold text-navy text-sm mb-1">Reunião com lideranças quilombolas</h3>
+          <div class="flex items-center gap-3 text-xs text-gray-500 mb-2">
+            <span><i class="fa-solid fa-calendar text-gray-400 mr-1"></i>Ter, 5 ago · 18h30</span>
+            <span><i class="fa-solid fa-location-dot text-gray-400 mr-1"></i>Brumado</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span
+              class="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full"
+              >Sertão do São Francisco</span
+            >
+            <span class="text-xs text-gray-500">· Resp: Maria Lima</span>
+          </div>
+          <!-- Tarefas progress -->
+          <div class="mt-2 flex items-center gap-2">
+            <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-primary rounded-full" style="width: 40%"></div>
+            </div>
+            <span class="text-xs text-gray-500">2/5 tarefas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event 3: Porta a porta — Confirmado -->
+      <div
+        class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden cursor-pointer active:bg-gray-50"
+      >
+        <div class="flex items-center justify-between px-4 pt-3 pb-2">
+          <span
+            class="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full"
+          >
+            <i class="fa-solid fa-door-open text-xs"></i> Porta a porta
+          </span>
+          <span
+            class="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full"
+          >
+            <i class="fa-solid fa-circle-check text-xs"></i> Confirmado
+          </span>
+        </div>
+        <div class="px-4 pb-3">
+          <h3 class="font-bold text-navy text-sm mb-1">Porta a porta Bairro Novo</h3>
+          <div class="flex items-center gap-3 text-xs text-gray-500 mb-2">
+            <span><i class="fa-solid fa-calendar text-gray-400 mr-1"></i>Sáb, 9 ago · 09h00</span>
+            <span><i class="fa-solid fa-location-dot text-gray-400 mr-1"></i>Feira de Santana</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span
+              class="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full"
+              >Bacia do Jacuípe</span
+            >
+            <span class="text-xs text-gray-500">· Resp: Pedro Alves</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event 4: Comício — Rascunho -->
+      <div
+        class="bg-white border border-dashed border-gray-300 rounded-xl shadow-sm overflow-hidden cursor-pointer active:bg-gray-50 opacity-75"
+      >
+        <div class="flex items-center justify-between px-4 pt-3 pb-2">
+          <span
+            class="inline-flex items-center gap-1.5 bg-red-50 border border-red-200 text-red-700 text-xs font-bold px-2.5 py-1 rounded-full"
+          >
+            <i class="fa-solid fa-microphone text-xs"></i> Comício
+          </span>
+          <span
+            class="inline-flex items-center gap-1.5 bg-gray-100 text-gray-500 text-xs font-bold px-2.5 py-1 rounded-full"
+          >
+            <i class="fa-solid fa-pencil text-xs"></i> Rascunho
+          </span>
+        </div>
+        <div class="px-4 pb-3">
+          <h3 class="font-bold text-navy text-sm mb-1">Comício de encerramento (planejado)</h3>
+          <div class="flex items-center gap-3 text-xs text-gray-400 mb-2">
+            <span><i class="fa-solid fa-calendar text-gray-300 mr-1"></i>Data a definir</span>
+            <span
+              ><i class="fa-solid fa-location-dot text-gray-300 mr-1"></i>Vitória da Conquista</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Event 5: Panfletagem — Realizado -->
+      <div
+        class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden cursor-pointer active:bg-gray-50 opacity-70"
+      >
+        <div class="flex items-center justify-between px-4 pt-3 pb-2">
+          <span
+            class="inline-flex items-center gap-1.5 bg-gray-100 border border-gray-200 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full"
+          >
+            <i class="fa-solid fa-file-alt text-xs"></i> Panfletagem
+          </span>
+          <span
+            class="inline-flex items-center gap-1.5 bg-gray-100 text-gray-500 text-xs font-bold px-2.5 py-1 rounded-full"
+          >
+            <i class="fa-solid fa-flag-checkered text-xs"></i> Realizado
+          </span>
+        </div>
+        <div class="px-4 pb-3">
+          <h3 class="font-bold text-gray-600 text-sm mb-1">Panfletagem no mercado municipal</h3>
+          <div class="flex items-center gap-3 text-xs text-gray-400">
+            <span><i class="fa-solid fa-calendar text-gray-300 mr-1"></i>20 jul · Salvador</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-center text-xs text-gray-400 py-3">
+        5 de 23 planos · <span class="text-primary font-semibold">Ver mais</span>
+      </p>
+    </section>
+
+    <!-- FAB -->
+    <div class="fixed bottom-20 right-4 z-30">
+      <button
+        class="bg-primary text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center"
+      >
+        <i class="fa-solid fa-plus text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Bottom nav -->
+    <nav
+      id="bottom-nav"
+      class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex z-20"
+    >
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-400">
+        <i class="fa-solid fa-house text-base"></i>
+        <span class="text-xs mt-0.5">Início</span>
+      </a>
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-400">
+        <i class="fa-solid fa-layer-group text-base"></i>
+        <span class="text-xs mt-0.5">Núcleos</span>
+      </a>
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-400">
+        <i class="fa-solid fa-user-group text-base"></i>
+        <span class="text-xs mt-0.5">Apoiadores</span>
+      </a>
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-primary">
+        <i class="fa-solid fa-calendar-days text-base"></i>
+        <span class="text-xs mt-0.5 font-semibold">Agenda</span>
+      </a>
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-400">
+        <i class="fa-solid fa-users text-base"></i>
+        <span class="text-xs mt-0.5">Lideranças</span>
+      </a>
+    </nav>
+  </body>
+</html>

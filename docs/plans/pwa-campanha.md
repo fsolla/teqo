@@ -5,6 +5,17 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos", linha 62)
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Design: [`Notificacoes-PWA.png`](../design-refs/latest/Notificacoes-PWA.png) · [`Notificacoes-PWA.html`](../design-refs/latest/Notificacoes-PWA.html) — **compartilhado com [notifications.md](notifications.md)** (a central de notificações pertence àquele plano).
+
+![Banner de instalação PWA no rodapé](../design-refs/latest/Notificacoes-PWA.png)
+
+Como usar (parte deste plano — o banner de instalação no rodapé):
+
+- **Adotar o conteúdo:** banner fixo inferior com ícone do app, título "Instale o app da campanha", subtítulo "Acesse mais rápido e receba avisos", botão "Instalar" e X de dispensa — exatamente o `InstallPwaToast` da seção "Toast de instalação" (Android chama `deferredPrompt.prompt()`; iOS abre o passo a passo no Drawer; X grava `sessionStorage`).
+- **Ajuste:** o plano implementa isso via `<Toaster>` (sonner) já montado, não como barra fixa custom — usar o design como referência de conteúdo/hierarquia, não de posicionamento exato. Cores do design (navy) viram os tokens claros do tema `campaign`.
+
 ## Contexto
 
 A vertical `/campanha` é a ferramenta de campo da campanha: coordenadores e lideranças acessam o app pelo celular, muitas vezes em locais com conexão instável. Transformar `/campanha` em um PWA instalável (com ícone na tela inicial, splash e capacidade offline básica) melhora a experiência de campo e desbloqueia o push web no iOS (que só recebe push com o PWA instalado — ver [plans/notifications.md](./notifications.md)).

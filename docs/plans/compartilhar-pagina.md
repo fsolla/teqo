@@ -5,6 +5,19 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos", linha 51)
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Design: [`Compartilhar-Nucleo.png`](../design-refs/latest/Compartilhar-Nucleo.png) · [`Compartilhar-Nucleo.html`](../design-refs/latest/Compartilhar-Nucleo.html)
+
+![Compartilhar núcleo](../design-refs/latest/Compartilhar-Nucleo.png)
+
+Como usar:
+
+- **Adotar a estrutura:** bottom sheet no mobile com título "Compartilhar núcleo", subtítulo reforçando "envia apenas o link, não concede acesso" (copy que materializa a decisão travada), três seções de destinatários ("Com coordenação geral", "Com coordenador", "Com liderança" — nome + papel + botão verde "Abrir" com ícone WhatsApp) e a seção "Copiar link" com a URL canônica truncada + botão "Copiar".
+- **Ajuste em relação ao plano:** o plano especifica `Dialog` central (como `LeadershipInviteDialog`); o design mostra bottom sheet. Adotar o padrão responsivo já usado no painel de lideranças (Sheet/Drawer no mobile, Dialog no desktop) — a estrutura interna do design vale para ambos.
+- **Lembrar das regras que o design não mostra:** ocultar a seção "Com liderança" para o papel `lideranca`; ocultar destinatários sem telefone; ocultar seções vazias; estado "copiado" após o clique.
+- **Ajustar cores:** paleta antiga no HTML/PNG (header vermelho escuro, navy). Implementar com os tokens do tema `campaign` e componentes `src/components/ui`; avatares com foto viram iniciais.
+
 ## Contexto
 
 Hoje o detalhe do núcleo (`/campanha/nucleos/[slug]`) só tem ações de escrita (Editar, Nova liderança, Nova atualização, Arquivar). Não existe um caminho rápido para um usuário da campanha mandar o link daquele núcleo a outra pessoa do mesmo núcleo. A decisão de produto (2026-07-17) é adicionar um botão **Compartilhar** que oferece quatro destinos: coordenação geral, coordenador, liderança ou copiar link. Para os três primeiros, abre o WhatsApp via `wa.me` com o telefone do destinatário — o mesmo padrão já usado pelos convites, **sem WhatsApp Business API**.

@@ -5,6 +5,10 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Design: [`Baseline-Eleitoral-2022.png`](../design-refs/latest/Baseline-Eleitoral-2022.png) — card "Insights do território", linha "Território de defesa · Base sólida — prioridade: manter engajamento" com chip de classificação à direita (`Defesa` em verde). Os quatro estados usam pares de badge do tema `campaign`: defesa = verde, ataque = contorno vermelho, indecisa = âmbar, perdida = cinza. Implementar como um card do stack `NucleusInsights.tsx` ([baseline-eleitoral-tse.md](baseline-eleitoral-tse.md)), ajustando a paleta antiga do HTML/PNG para os tokens claros.
+
 ## Contexto
 
 A literatura de territorialização eleitoral (Politipédia AVM, OPUS, Seja Eleito) classifica cada território em quatro zonas operacionais — **defesa** (voto histórico favorável, meta: manter), **ataque** (desfavorável mas relevante, meta: virar/reduzir margem), **indecisa** (pulverizada, baixa rejeição, meta: consolidar) e **perdida** (desfavorável e elástica, meta: minimizar perda) — para alocar esforço de forma proporcional ao retorno. Hoje o `/campanha` não classifica núcleos; com o baseline TSE 2022 (ver [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md)) podemos derivar uma primeira classificação a partir do histórico.

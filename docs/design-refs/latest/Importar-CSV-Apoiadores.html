@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <script>
+      window.FontAwesomeConfig = {
+        autoReplaceSvg: 'nest',
+      }
+    </script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Importar CSV – Apoiadores</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#8E0E23',
+              'primary-light': '#B01C35',
+              'primary-xlight': '#F9E8EB',
+              gold: '#C8874B',
+              'gold-light': '#FDF3EC',
+              navy: '#1B2B4B',
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 flex">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-60 min-h-screen bg-navy flex flex-col fixed top-0 left-0 z-30">
+      <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
+        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-star text-white text-sm"></i>
+        </div>
+        <div>
+          <p class="text-white font-bold text-sm leading-tight">Jorge Solla</p>
+          <p class="text-white/40 text-xs">Bahia · Dep. Federal</p>
+        </div>
+      </div>
+      <div class="px-5 py-3">
+        <span
+          class="inline-flex items-center gap-1.5 bg-primary/20 text-primary-xlight text-xs font-semibold px-3 py-1.5 rounded-full border border-primary/30"
+        >
+          <i class="fa-solid fa-shield-halved text-xs"></i> Coordenação Geral
+        </span>
+      </div>
+      <nav class="flex-1 px-3 py-2 space-y-0.5">
+        <a
+          href="#"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:bg-white/10 hover:text-white text-sm transition-colors"
+        >
+          <i class="fa-solid fa-house w-4 text-center"></i> Início
+        </a>
+        <a
+          href="#"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:bg-white/10 hover:text-white text-sm transition-colors"
+        >
+          <i class="fa-solid fa-layer-group w-4 text-center"></i> Núcleos
+        </a>
+        <a
+          href="#"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:bg-white/10 hover:text-white text-sm transition-colors"
+        >
+          <i class="fa-solid fa-users w-4 text-center"></i> Lideranças
+        </a>
+        <a
+          href="#"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/20 text-white font-semibold text-sm"
+        >
+          <i class="fa-solid fa-user-group w-4 text-center text-primary-xlight"></i> Apoiadores
+        </a>
+        <a
+          href="#"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:bg-white/10 hover:text-white text-sm transition-colors"
+        >
+          <i class="fa-solid fa-calendar-days w-4 text-center"></i> Planos de ação
+        </a>
+        <a
+          href="#"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:bg-white/10 hover:text-white text-sm transition-colors"
+        >
+          <i class="fa-solid fa-newspaper w-4 text-center"></i> Atualizações
+        </a>
+        <a
+          href="#"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:bg-white/10 hover:text-white text-sm transition-colors"
+        >
+          <i class="fa-solid fa-map w-4 text-center"></i> Territórios
+        </a>
+      </nav>
+      <div class="px-4 py-4 border-t border-white/10 flex items-center gap-3">
+        <img
+          src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg"
+          class="w-8 h-8 rounded-full object-cover"
+        />
+        <div class="flex-1 min-w-0">
+          <p class="text-white text-xs font-semibold truncate">Carlos Mendes</p>
+          <p class="text-white/40 text-xs truncate">Coord. Geral</p>
+        </div>
+        <button class="text-white/40 hover:text-white">
+          <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="ml-60 flex-1">
+      <header
+        id="topbar"
+        class="sticky top-0 z-20 bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-3">
+          <button class="text-gray-500 hover:text-navy p-1.5 rounded-lg hover:bg-gray-100">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <div>
+            <h1 class="text-lg font-bold text-navy">Importar apoiadores via CSV</h1>
+            <p class="text-xs text-gray-500">
+              Importe uma planilha para adicionar apoiadores em lote
+            </p>
+          </div>
+        </div>
+        <button class="relative text-gray-500 hover:text-navy p-2 rounded-lg hover:bg-gray-100">
+          <i class="fa-solid fa-bell text-lg"></i>
+          <span
+            class="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full border border-white"
+          ></span>
+        </button>
+      </header>
+
+      <div class="px-8 py-6 max-w-5xl">
+        <!-- Step indicator -->
+        <div id="step-indicator" class="flex items-center gap-0 mb-8">
+          <!-- Step 1 — completed -->
+          <div class="flex items-center gap-2">
+            <div
+              class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0"
+            >
+              <i class="fa-solid fa-check text-white text-xs"></i>
+            </div>
+            <span class="text-sm font-semibold text-green-700">Upload do arquivo</span>
+          </div>
+          <div class="flex-1 h-0.5 bg-primary mx-3"></div>
+          <!-- Step 2 — active -->
+          <div class="flex items-center gap-2">
+            <div
+              class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"
+            >
+              <span class="text-white text-xs font-bold">2</span>
+            </div>
+            <span class="text-sm font-bold text-primary">Conferir prévia</span>
+          </div>
+          <div class="flex-1 h-0.5 bg-gray-200 mx-3"></div>
+          <!-- Step 3 — pending -->
+          <div class="flex items-center gap-2">
+            <div
+              class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0"
+            >
+              <span class="text-gray-500 text-xs font-bold">3</span>
+            </div>
+            <span class="text-sm text-gray-400">Confirmação</span>
+          </div>
+        </div>
+
+        <!-- ── STEP 1: Upload (shown as completed, for reference) ──────── -->
+        <!-- (would be the drag-drop zone — already past) -->
+
+        <!-- ── STEP 2: Preview table ──────────────────────────────────── -->
+        <section id="preview-section" class="space-y-4">
+          <!-- Summary chips -->
+          <div class="flex flex-wrap gap-3 items-center">
+            <div
+              class="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-sm font-semibold px-4 py-2 rounded-xl"
+            >
+              <i class="fa-solid fa-check-circle text-green-600"></i>
+              <span><strong>412</strong> prontos para importar</span>
+            </div>
+            <div
+              class="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold px-4 py-2 rounded-xl"
+            >
+              <i class="fa-solid fa-copy text-amber-600"></i>
+              <span><strong>37</strong> duplicados (pelo telefone)</span>
+            </div>
+            <div
+              class="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm font-semibold px-4 py-2 rounded-xl"
+            >
+              <i class="fa-solid fa-circle-xmark text-red-600"></i>
+              <span><strong>3</strong> erros</span>
+            </div>
+            <button
+              class="ml-auto text-xs text-primary font-semibold hover:underline flex items-center gap-1"
+            >
+              <i class="fa-solid fa-download"></i> Baixar relatório de erros
+            </button>
+          </div>
+
+          <!-- Preview table -->
+          <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+              <p class="text-sm font-semibold text-navy">Prévia — 452 linhas no arquivo</p>
+              <div class="flex gap-2">
+                <button
+                  class="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-600 hover:border-primary hover:text-primary"
+                >
+                  Todos
+                </button>
+                <button
+                  class="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-600 hover:border-primary hover:text-primary bg-red-50 border-red-200 text-red-700"
+                >
+                  Só erros
+                </button>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="bg-gray-50 border-b border-gray-200">
+                    <th
+                      class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-8"
+                    >
+                      #
+                    </th>
+                    <th
+                      class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
+                    >
+                      Nome
+                    </th>
+                    <th
+                      class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
+                    >
+                      Telefone
+                    </th>
+                    <th
+                      class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
+                    >
+                      Município
+                    </th>
+                    <th
+                      class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
+                    >
+                      Intenção
+                    </th>
+                    <th
+                      class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
+                    >
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <!-- Row OK -->
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-xs text-gray-400">1</td>
+                    <td class="px-4 py-3 font-medium text-navy">Maria das Dores Souza</td>
+                    <td class="px-4 py-3 text-gray-700">(77) 9 9000-1111</td>
+                    <td class="px-4 py-3 text-gray-700">Bom Jesus da Lapa</td>
+                    <td class="px-4 py-3">
+                      <span
+                        class="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full"
+                        >Certo</span
+                      >
+                    </td>
+                    <td class="px-4 py-3">
+                      <span
+                        class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full"
+                      >
+                        <i class="fa-solid fa-check text-xs"></i> ok
+                      </span>
+                    </td>
+                  </tr>
+
+                  <!-- Row OK -->
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-xs text-gray-400">2</td>
+                    <td class="px-4 py-3 font-medium text-navy">Antônio Carlos Leal</td>
+                    <td class="px-4 py-3 text-gray-700">(77) 9 9111-2222</td>
+                    <td class="px-4 py-3 text-gray-700">Brumado</td>
+                    <td class="px-4 py-3">
+                      <span
+                        class="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full"
+                        >Tende a certo</span
+                      >
+                    </td>
+                    <td class="px-4 py-3">
+                      <span
+                        class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full"
+                      >
+                        <i class="fa-solid fa-check text-xs"></i> ok
+                      </span>
+                    </td>
+                  </tr>
+
+                  <!-- Row DUPLICADO -->
+                  <tr class="hover:bg-amber-50 bg-amber-50/50">
+                    <td class="px-4 py-3 text-xs text-gray-400">3</td>
+                    <td class="px-4 py-3 font-medium text-navy">Joelma Pereira</td>
+                    <td class="px-4 py-3 text-gray-700">(75) 9 8200-3333</td>
+                    <td class="px-4 py-3 text-gray-700">Feira de Santana</td>
+                    <td class="px-4 py-3">
+                      <span
+                        class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full"
+                        >Indeciso</span
+                      >
+                    </td>
+                    <td class="px-4 py-3">
+                      <span
+                        class="inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full"
+                      >
+                        <i class="fa-solid fa-copy text-xs"></i> duplicado pelo telefone
+                      </span>
+                    </td>
+                  </tr>
+
+                  <!-- Row ERRO -->
+                  <tr class="hover:bg-red-50 bg-red-50/40">
+                    <td class="px-4 py-3 text-xs text-gray-400">4</td>
+                    <td class="px-4 py-3 font-medium text-navy">Roberto Bispo</td>
+                    <td class="px-4 py-3 text-red-600 font-semibold">—</td>
+                    <td class="px-4 py-3 text-gray-700">Vitória da Conquista</td>
+                    <td class="px-4 py-3"><span class="text-xs text-gray-400 italic">—</span></td>
+                    <td class="px-4 py-3">
+                      <span
+                        class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-full"
+                      >
+                        <i class="fa-solid fa-xmark text-xs"></i> telefone inválido
+                      </span>
+                    </td>
+                  </tr>
+
+                  <!-- Row OK -->
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-xs text-gray-400">5</td>
+                    <td class="px-4 py-3 font-medium text-navy">Simone Oliveira</td>
+                    <td class="px-4 py-3 text-gray-700">(77) 9 9444-5555</td>
+                    <td class="px-4 py-3 text-gray-700">Caetité</td>
+                    <td class="px-4 py-3">
+                      <span
+                        class="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full"
+                        >Certo</span
+                      >
+                    </td>
+                    <td class="px-4 py-3">
+                      <span
+                        class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full"
+                      >
+                        <i class="fa-solid fa-check text-xs"></i> ok
+                      </span>
+                    </td>
+                  </tr>
+
+                  <!-- Row ERRO -->
+                  <tr class="hover:bg-red-50 bg-red-50/40">
+                    <td class="px-4 py-3 text-xs text-gray-400">6</td>
+                    <td class="px-4 py-3 font-medium text-navy">Fernanda Costa</td>
+                    <td class="px-4 py-3 text-gray-700">(71) 9 7777-8888</td>
+                    <td class="px-4 py-3 text-red-600 font-semibold">Municipio Invalido</td>
+                    <td class="px-4 py-3"><span class="text-xs text-gray-400 italic">—</span></td>
+                    <td class="px-4 py-3">
+                      <span
+                        class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-full"
+                      >
+                        <i class="fa-solid fa-xmark text-xs"></i> município não reconhecido
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="px-5 py-3 border-t border-gray-100 bg-gray-50 text-xs text-gray-500">
+              Mostrando 6 de 452 linhas ·
+              <span class="text-primary font-semibold cursor-pointer">Ver todas</span>
+            </div>
+          </div>
+
+          <!-- Action row -->
+          <div class="flex items-center justify-between pt-2">
+            <button
+              class="flex items-center gap-2 text-sm text-gray-600 border border-gray-200 rounded-xl px-4 py-2.5 hover:bg-gray-100 transition-colors"
+            >
+              <i class="fa-solid fa-arrow-left text-xs"></i> Voltar e substituir arquivo
+            </button>
+            <div class="flex items-center gap-3">
+              <p class="text-xs text-gray-500">
+                Serão importados <strong class="text-navy">412 apoiadores</strong> · 37 duplicados
+                ignorados · 3 erros pulados
+              </p>
+              <button
+                class="bg-primary text-white text-sm font-bold px-6 py-2.5 rounded-xl hover:bg-primary-light transition-colors flex items-center gap-2"
+              >
+                <i class="fa-solid fa-file-import"></i> Confirmar importação
+              </button>
+            </div>
+          </div>
+
+          <!-- ── STEP 3: Confirmation summary (success state shown below — would appear after confirm) ── -->
+          <div
+            id="confirmation-summary"
+            class="bg-green-50 border border-green-200 rounded-xl p-6 text-center mt-4"
+          >
+            <div
+              class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3"
+            >
+              <i class="fa-solid fa-check-circle text-green-600 text-2xl"></i>
+            </div>
+            <h3 class="text-base font-bold text-green-800 mb-1">Importação concluída!</h3>
+            <p class="text-sm text-green-700 mb-4">
+              <strong>412 importados</strong> · <strong>37 duplicados ignorados</strong> ·
+              <strong>3 erros</strong>
+            </p>
+            <div class="flex items-center justify-center gap-3">
+              <button
+                class="text-sm text-gray-600 border border-gray-200 rounded-xl px-4 py-2 hover:bg-gray-50"
+              >
+                Baixar relatório
+              </button>
+              <button
+                class="bg-primary text-white text-sm font-bold px-5 py-2 rounded-xl hover:bg-primary-light"
+              >
+                Ver apoiadores
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

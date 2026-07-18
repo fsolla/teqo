@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <script>
+      window.FontAwesomeConfig = {
+        autoReplaceSvg: 'nest',
+      }
+    </script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ficha do Apoiador</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#8E0E23',
+              'primary-light': '#B01C35',
+              'primary-xlight': '#F9E8EB',
+              gold: '#C8874B',
+              'gold-light': '#FDF3EC',
+              navy: '#1B2B4B',
+              wa: '#25D366',
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+      .seg-btn {
+        transition: all 0.15s;
+      }
+      .seg-btn.active {
+        background: #8e0e23;
+        color: white;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 pb-28">
+    <!-- Header -->
+    <header id="header" class="bg-primary sticky top-0 z-20 px-4 py-3 flex items-center gap-3">
+      <button class="text-white p-1"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+      <div class="flex-1 min-w-0">
+        <h1 class="text-white font-bold text-sm truncate">Maria das Dores Souza</h1>
+        <p class="text-white/60 text-xs">Apoiadora · Bom Jesus da Lapa</p>
+      </div>
+      <button class="text-white/70 p-1.5"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+    </header>
+
+    <!-- Scope badge -->
+    <div class="px-4 pt-3 pb-1">
+      <span
+        class="inline-flex items-center gap-1.5 bg-gold-light border border-gold/30 text-xs font-semibold text-navy px-3 py-1.5 rounded-full"
+      >
+        <i class="fa-solid fa-shield-halved text-gold text-xs"></i> Coordenação Geral
+      </span>
+    </div>
+
+    <!-- Avatar + intent badge -->
+    <div
+      class="mx-4 mt-3 mb-3 bg-white border border-gray-200 rounded-2xl shadow-sm p-4 flex items-center gap-4"
+    >
+      <img
+        src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-6.jpg"
+        class="w-16 h-16 rounded-full object-cover border-2 border-primary/20 flex-shrink-0"
+      />
+      <div class="flex-1 min-w-0">
+        <h2 class="text-base font-bold text-navy">Maria das Dores Souza</h2>
+        <p class="text-xs text-gray-500 mt-0.5">Cadastrada em 10/07/2025 · por João S.</p>
+        <div class="flex items-center gap-2 mt-2">
+          <span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-1 rounded-full"
+            >Certo</span
+          >
+          <span class="text-xs text-gray-400">intenção de voto</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-4 space-y-4">
+      <!-- Contato -->
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 space-y-3">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Dados de contato</p>
+
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2 text-sm text-navy">
+            <i class="fa-solid fa-phone text-gray-400 w-4 text-center"></i>
+            <span>(77) 9 9000-1111</span>
+          </div>
+          <button
+            class="flex items-center gap-1.5 bg-wa text-white text-xs font-bold px-3 py-1.5 rounded-lg"
+          >
+            <i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2 text-sm text-navy border-t border-gray-100 pt-3">
+          <i class="fa-solid fa-location-dot text-gray-400 w-4 text-center"></i>
+          <div>
+            <p class="font-semibold">Bom Jesus da Lapa</p>
+            <p class="text-xs text-gray-500">Bahia · Velho Chico</p>
+          </div>
+        </div>
+
+        <!-- Núcleo vinculado -->
+        <div class="flex items-center justify-between border-t border-gray-100 pt-3">
+          <div class="flex items-center gap-2 text-sm text-navy">
+            <i class="fa-solid fa-layer-group text-gray-400 w-4 text-center"></i>
+            <span class="text-primary font-semibold">Quilombo Rio das Rãs</span>
+          </div>
+          <button
+            class="text-xs text-gray-500 border border-gray-200 rounded-lg px-2.5 py-1 hover:border-primary hover:text-primary transition-colors"
+          >
+            Mudar
+          </button>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!-- LGPD CONSENT BLOCK — visually distinct     -->
+      <!-- ══════════════════════════════════════════ -->
+      <div id="lgpd-block" class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 space-y-3">
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-shield text-blue-500 text-base mt-0.5 flex-shrink-0"></i>
+          <div>
+            <p class="text-sm font-bold text-blue-800">Consentimento LGPD</p>
+            <p class="text-xs text-blue-600 mt-0.5">
+              O apoiador deve ter consentido previamente o uso de seus dados para fins eleitorais.
+            </p>
+          </div>
+        </div>
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked
+            class="w-5 h-5 mt-0.5 rounded accent-blue-600 flex-shrink-0"
+          />
+          <p class="text-xs text-blue-800">
+            Confirmo que <strong>Maria das Dores Souza</strong> consentiu o uso de seus dados
+            pessoais para comunicação da campanha de <strong>Jorge Solla</strong>, conforme a
+            <span class="underline cursor-pointer">Política de Privacidade</span>.
+          </p>
+        </label>
+        <p class="text-xs text-blue-500 flex items-center gap-1">
+          <i class="fa-solid fa-circle-info text-xs"></i>
+          Consentimento registrado em 10/07/2025 · Coletor: João Santos
+        </p>
+      </div>
+
+      <!-- Intenção de voto — segmented control (gated by LGPD) -->
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 space-y-3">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Intenção de voto</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            class="seg-btn active text-xs font-bold py-3 rounded-xl border border-primary bg-primary text-white"
+          >
+            Certo
+          </button>
+          <button
+            class="seg-btn text-xs font-bold py-3 rounded-xl border border-gray-200 text-gray-600 bg-gray-50"
+          >
+            Tende a certo
+          </button>
+          <button
+            class="seg-btn text-xs font-bold py-3 rounded-xl border border-gray-200 text-gray-600 bg-gray-50"
+          >
+            Indeciso
+          </button>
+          <button
+            class="seg-btn text-xs font-bold py-3 rounded-xl border border-gray-200 text-gray-600 bg-gray-50"
+          >
+            Outro
+          </button>
+        </div>
+        <p class="text-xs text-gray-400">
+          Disponível somente após confirmação do consentimento LGPD
+        </p>
+      </div>
+
+      <!-- Kit de compartilhamento -->
+      <div
+        id="kit-compartilhamento"
+        class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 space-y-3"
+      >
+        <p
+          class="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2"
+        >
+          <i class="fa-solid fa-share-nodes text-primary text-sm"></i>
+          Kit de compartilhamento
+        </p>
+        <p class="text-xs text-gray-600">
+          Mensagem pronta para <strong>Maria</strong> encaminhar nos próprios contatos.
+          <em>Nunca disparada pela campanha.</em>
+        </p>
+
+        <!-- Ready-made message -->
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
+          <p class="text-xs text-gray-700 leading-relaxed">
+            "Oi! Tô apoiando <strong>Jorge Solla</strong> para Deputado Federal pela Bahia. Ele tem
+            um histórico de luta pela saúde e pelos direitos da nossa comunidade. Se você ainda não
+            decidiu, vale conhecer o trabalho dele! 🌟 <br />solla.ba"
+          </p>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            class="flex items-center justify-center gap-2 bg-wa text-white text-xs font-bold py-3 rounded-xl"
+          >
+            <i class="fa-brands fa-whatsapp text-base"></i> Enviar no WhatsApp
+          </button>
+          <button
+            class="flex items-center justify-center gap-2 border border-gray-200 text-navy text-xs font-bold py-3 rounded-xl hover:bg-gray-50"
+          >
+            <i class="fa-solid fa-copy text-sm"></i> Copiar texto
+          </button>
+        </div>
+
+        <div class="border-t border-gray-100 pt-3">
+          <p class="text-xs text-gray-400 text-center">
+            <i class="fa-solid fa-circle-info text-gray-400 mr-1"></i>
+            A mensagem é enviada pelo celular de <strong>Maria</strong> — não é disparo em massa da
+            campanha
+          </p>
+        </div>
+      </div>
+
+      <!-- Remover dados -->
+      <div
+        class="bg-white border border-red-100 rounded-xl shadow-sm p-4 flex items-center justify-between"
+      >
+        <div>
+          <p class="text-sm font-semibold text-red-700">Remover meus dados</p>
+          <p class="text-xs text-gray-500 mt-0.5">Exclui todos os dados desta pessoa do sistema</p>
+        </div>
+        <button
+          class="flex items-center gap-1.5 border border-red-200 text-red-700 text-xs font-bold px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
+        >
+          <i class="fa-solid fa-trash text-xs"></i> Remover
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom action bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 z-20">
+      <button
+        class="w-full bg-primary text-white text-sm font-bold py-3 rounded-xl hover:bg-primary-light transition-colors flex items-center justify-center gap-2"
+      >
+        <i class="fa-solid fa-floppy-disk"></i> Salvar alterações
+      </button>
+    </div>
+
+    <script>
+      document.querySelectorAll('.seg-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          document.querySelectorAll('.seg-btn').forEach(function (b) {
+            b.classList.remove('active', 'bg-primary', 'text-white', 'border-primary')
+            b.classList.add('bg-gray-50', 'text-gray-600', 'border-gray-200')
+          })
+          this.classList.add('active', 'bg-primary', 'text-white', 'border-primary')
+          this.classList.remove('bg-gray-50', 'text-gray-600', 'border-gray-200')
+        })
+      })
+    </script>
+  </body>
+</html>

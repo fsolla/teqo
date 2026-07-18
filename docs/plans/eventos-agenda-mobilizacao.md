@@ -5,6 +5,25 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos", linha 54)
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Dois designs cobrem este plano:
+
+| Tela                                 | Arquivos                                                                                                                                              |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lista de planos (`/campanha/planos`) | [`Planos-de-Acao.png`](../design-refs/latest/Planos-de-Acao.png) · [`Planos-de-Acao.html`](../design-refs/latest/Planos-de-Acao.html)                 |
+| Form novo plano                      | [`Novo-Plano-de-Acao.png`](../design-refs/latest/Novo-Plano-de-Acao.png) · [`Novo-Plano-de-Acao.html`](../design-refs/latest/Novo-Plano-de-Acao.html) |
+
+![Lista de planos de ação](../design-refs/latest/Planos-de-Acao.png)
+![Form de novo plano de ação](../design-refs/latest/Novo-Plano-de-Acao.png)
+
+Como usar:
+
+- **Lista — adotar:** tabs de janela/status ("Próximos" default, "Todos", "Realizados", "Rascunhos"), filtros "Tipo de ação" e "Território", cards com badge de `kind` (Caminhada, Reunião de apoio, Porta a porta, Comício, Panfletagem — cada tipo com cor própria clara), badge de `status` (Confirmado verde, Planejado azul, Rascunho outline, Realizado cinza), data/hora + município, chip do Território de Identidade, "Resp: {nome}" e barra de progresso de tarefas ("2/5 tarefas"). O card de rascunho com "Data a definir" esmaecido é um bom estado para `startAt` pendente em rascunho — mas atenção: o plano define `startAt` obrigatório; se rascunho puder ficar sem data, registrar em "Questões em aberto".
+- **Form — adotar:** seções "Informações básicas" (título, tipo, descrição opcional), "Data e horário" (data + início obrigatórios, término opcional com helper "Deixe em branco se a duração for indefinida"), "Território" (municípios multi-chip + território derivado automático — mesmo padrão de [`Formulario-Territorio.png`](../design-refs/latest/Formulario-Territorio.png), confirmando que o bloco nasce no modelo multi-município), "Pessoas responsáveis" (coordenadores com "+ Adicionar", responsável principal) e "Status inicial" (Planejado | Rascunho como radio cards).
+- **Falta desenhar (não bloqueia):** o detalhe do plano com tabs "Visão geral / Tarefas / Atualizações" não veio nesta leva — seguir o padrão `NucleusTabNav` do detalhe do núcleo; o checklist de tarefas pode reusar o formato de linhas do design da lista.
+- **Ajustar cores:** paleta antiga no HTML/PNG; implementar com tokens do tema `campaign`. A entrada "Agenda" do bottom nav só entra quando este domínio existir.
+
 ## Contexto
 
 O roadmap lista "Eventos / presença e agenda de mobilização" como próximo ciclo da vertical `/campanha` (plano-arquitetura §4). Hoje a campanha só modela território (núcleo) e reporte (atualização); não há como planejar, escalar e acompanhar ações de campo — caminhadas, comícios, carreatas, panfletagens, reuniões de apoio, lançamentos, convenções, atos, entrevistas — nem ver o que vem a seguir.

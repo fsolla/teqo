@@ -5,6 +5,10 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Design: [`Baseline-Eleitoral-2022.png`](../design-refs/latest/Baseline-Eleitoral-2022.png) — card "Insights do território", linha "Alavancagem da chapa: 22% · Da base Lula/Jerônimo ainda não convertida". Implementar como um card do stack `NucleusInsights.tsx` ([baseline-eleitoral-tse.md](baseline-eleitoral-tse.md)), com os tokens claros do tema `campaign` em vez da paleta antiga do HTML/PNG.
+
 ## Contexto
 
 Solla apoia a chapa principal do PT (Lula para presidente, Jerônimo para governador, ambos nº 13). Os votos que Lula e Jerônimo receberam em 2022 numa geografia são o **teto natural do PT** no local — um piso de simpatia partidária que a candidatura de Solla pode capturar como dobradinha. Com o baseline TSE 2022 (ver [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md)), podemos medir quanto da base da chapa a estimativa do núcleo já captura e quanto ainda falta — meta implícita de alavancagem.

@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <script>
+      window.FontAwesomeConfig = {
+        autoReplaceSvg: 'nest',
+      }
+    </script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dia D – Operação Eleitoral</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#8E0E23',
+              'primary-light': '#B01C35',
+              'primary-xlight': '#F9E8EB',
+              gold: '#C8874B',
+              'gold-light': '#FDF3EC',
+              navy: '#1B2B4B',
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+      .supporter-btn {
+        transition: all 0.2s;
+      }
+      .supporter-btn.votou {
+        background: #dcfce7;
+        border-color: #16a34a;
+        color: #166534;
+      }
+      .supporter-btn.confirmou {
+        background: #dbeafe;
+        border-color: #2563eb;
+        color: #1e40af;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 pb-24">
+    <!-- Header -->
+    <header
+      id="header"
+      class="bg-primary sticky top-0 z-30 px-4 py-3 flex items-center justify-between"
+    >
+      <div>
+        <div class="flex items-center gap-2 mb-0.5">
+          <i class="fa-solid fa-flag text-white/90 text-sm"></i>
+          <h1 class="text-white font-bold text-sm">Dia D — 4 de outubro</h1>
+        </div>
+        <p class="text-white/70 text-xs">
+          Quilombo Rio das Rãs · <span class="font-mono">ZE 12</span>
+        </p>
+      </div>
+      <!-- Sync status -->
+      <div class="flex flex-col items-end gap-1">
+        <span
+          class="inline-flex items-center gap-1.5 bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"
+        >
+          <i class="fa-solid fa-wifi text-xs"></i> Sincronizado
+        </span>
+        <p class="text-white/50 text-xs">às 08:42</p>
+      </div>
+    </header>
+
+    <!-- Sticky progress header -->
+    <div id="progress-header" class="sticky z-20 bg-navy px-4 py-3" style="top: 60px">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <p class="text-white font-bold text-lg leading-none">62% da base</p>
+          <p class="text-white/60 text-xs mt-0.5">1.240 de 2.000 confirmados</p>
+        </div>
+        <div class="text-right">
+          <p class="text-white/80 text-xs">Votaram</p>
+          <p class="text-green-400 font-extrabold text-xl leading-none">830</p>
+        </div>
+      </div>
+      <!-- Progress bar -->
+      <div class="h-3 bg-white/20 rounded-full overflow-hidden">
+        <div
+          class="h-full rounded-full"
+          style="width: 62%; background: linear-gradient(to right, #22c55e, #86efac)"
+        ></div>
+      </div>
+      <div class="flex items-center justify-between mt-1.5 text-xs">
+        <span class="text-white/60">0</span>
+        <span class="text-green-400 font-semibold">62% confirmados vão votar</span>
+        <span class="text-white/60">2.000</span>
+      </div>
+    </div>
+
+    <!-- Filter chips -->
+    <div
+      class="px-4 py-3 flex gap-2 overflow-x-auto bg-white border-b border-gray-200 sticky z-10"
+      style="top: 140px"
+    >
+      <button
+        class="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full border-2 border-primary bg-primary text-white"
+      >
+        Todos (2.000)
+      </button>
+      <button
+        class="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:border-navy"
+      >
+        Ainda não confirmados (760)
+      </button>
+      <button
+        class="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:border-navy"
+      >
+        Votaram (830)
+      </button>
+    </div>
+
+    <!-- Scope badge -->
+    <div class="px-4 pt-3 pb-1">
+      <span
+        class="inline-flex items-center gap-1.5 bg-gold-light border border-gold/30 text-xs font-semibold text-navy px-3 py-1.5 rounded-full"
+      >
+        <i class="fa-solid fa-eye text-gold text-xs"></i> Visão do coordenador · Quilombo Rio das
+        Rãs
+      </span>
+    </div>
+
+    <!-- Legend -->
+    <div class="px-4 pt-2 pb-3 flex items-center gap-4 text-xs">
+      <div class="flex items-center gap-1.5">
+        <div class="w-3 h-3 rounded-full bg-gray-200 border border-gray-300"></div>
+        <span class="text-gray-500">Não confirmado</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <div class="w-3 h-3 rounded-full bg-blue-200 border border-blue-400"></div>
+        <span class="text-gray-500">Vai votar</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <div class="w-3 h-3 rounded-full bg-green-400 border border-green-600"></div>
+        <span class="text-gray-500">Votou ✓</span>
+      </div>
+    </div>
+
+    <!-- Supporter list — big tap targets -->
+    <section id="supporter-list" class="px-4 space-y-2">
+      <!-- Item: Votou (confirmed voted) -->
+      <div class="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-4">
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-navy text-sm">Maria das Dores Souza</p>
+          <p class="text-xs text-gray-500">Seção 42 · ZE 12</p>
+        </div>
+        <button
+          class="supporter-btn votou text-xs font-bold px-4 py-3 rounded-xl border-2 min-w-[90px] text-center"
+        >
+          <i class="fa-solid fa-check-circle mr-1"></i> Votou ✓
+        </button>
+      </div>
+
+      <!-- Item: Confirmou que vai votar -->
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-4">
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-navy text-sm">Antônio Carlos Leal</p>
+          <p class="text-xs text-gray-500">Seção 42 · ZE 12</p>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <button
+            class="supporter-btn confirmou text-xs font-bold px-3 py-2 rounded-xl border-2 text-center whitespace-nowrap"
+          >
+            <i class="fa-solid fa-thumbs-up mr-1"></i> Vai votar
+          </button>
+          <button
+            onclick="markVotou(this)"
+            class="text-xs font-bold px-3 py-2 rounded-xl border-2 border-green-400 text-green-700 bg-white text-center whitespace-nowrap hover:bg-green-50"
+          >
+            Confirmar votou
+          </button>
+        </div>
+      </div>
+
+      <!-- Item: Não confirmado -->
+      <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4">
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-navy text-sm">Joelma Pereira</p>
+          <p class="text-xs text-gray-500">Seção 38 · ZE 12</p>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <button
+            onclick="markConfirmou(this)"
+            class="supporter-btn text-xs font-bold px-3 py-2.5 rounded-xl border-2 border-blue-300 text-blue-700 bg-blue-50 text-center whitespace-nowrap hover:bg-blue-100"
+          >
+            Confirmou que vai votar
+          </button>
+        </div>
+      </div>
+
+      <!-- Item: Não confirmado -->
+      <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4">
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-navy text-sm">Roberto Bispo</p>
+          <p class="text-xs text-gray-500">Seção 38 · ZE 12</p>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <button
+            onclick="markConfirmou(this)"
+            class="supporter-btn text-xs font-bold px-3 py-2.5 rounded-xl border-2 border-blue-300 text-blue-700 bg-blue-50 text-center whitespace-nowrap hover:bg-blue-100"
+          >
+            Confirmou que vai votar
+          </button>
+        </div>
+      </div>
+
+      <!-- Item: Votou -->
+      <div class="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-4">
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-navy text-sm">Simone Oliveira</p>
+          <p class="text-xs text-gray-500">Seção 45 · ZE 12</p>
+        </div>
+        <button
+          class="supporter-btn votou text-xs font-bold px-4 py-3 rounded-xl border-2 min-w-[90px] text-center"
+        >
+          <i class="fa-solid fa-check-circle mr-1"></i> Votou ✓
+        </button>
+      </div>
+
+      <!-- Item: Não confirmado -->
+      <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4">
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-navy text-sm">José Nascimento</p>
+          <p class="text-xs text-gray-500">Seção 40 · ZE 12</p>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <button
+            onclick="markConfirmou(this)"
+            class="supporter-btn text-xs font-bold px-3 py-2.5 rounded-xl border-2 border-blue-300 text-blue-700 bg-blue-50 text-center whitespace-nowrap hover:bg-blue-100"
+          >
+            Confirmou que vai votar
+          </button>
+        </div>
+      </div>
+
+      <!-- Item: Não confirmado -->
+      <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4">
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-navy text-sm">Ana Paula Ferreira</p>
+          <p class="text-xs text-gray-500">Seção 38 · ZE 12</p>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <button
+            onclick="markConfirmou(this)"
+            class="supporter-btn text-xs font-bold px-3 py-2.5 rounded-xl border-2 border-blue-300 text-blue-700 bg-blue-50 text-center whitespace-nowrap hover:bg-blue-100"
+          >
+            Confirmou que vai votar
+          </button>
+        </div>
+      </div>
+
+      <p class="text-center text-xs text-gray-400 py-3">
+        Mostrando 7 de 2.000 · <span class="text-primary font-semibold">Carregar mais</span>
+      </p>
+    </section>
+
+    <!-- Offline warning banner (example) -->
+    <div
+      id="offline-banner"
+      class="hidden fixed top-20 left-4 right-4 z-40 bg-amber-50 border border-amber-300 rounded-xl px-4 py-3 flex items-center gap-3 shadow-lg"
+    >
+      <i class="fa-solid fa-wifi-slash text-amber-600 text-lg flex-shrink-0"></i>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-bold text-amber-800">Sem conexão — modo offline</p>
+        <p class="text-xs text-amber-600">
+          As marcações serão sincronizadas quando a conexão voltar
+        </p>
+      </div>
+      <span
+        class="text-xs font-bold text-amber-700 bg-amber-200 px-2 py-0.5 rounded-full flex-shrink-0"
+        >3 pend.</span
+      >
+    </div>
+
+    <!-- Bottom nav -->
+    <nav
+      id="bottom-nav"
+      class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex z-20"
+    >
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-400">
+        <i class="fa-solid fa-house text-base"></i>
+        <span class="text-xs mt-0.5">Início</span>
+      </a>
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-400">
+        <i class="fa-solid fa-layer-group text-base"></i>
+        <span class="text-xs mt-0.5">Núcleos</span>
+      </a>
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-400">
+        <i class="fa-solid fa-user-group text-base"></i>
+        <span class="text-xs mt-0.5">Apoiadores</span>
+      </a>
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-primary">
+        <i class="fa-solid fa-flag text-base"></i>
+        <span class="text-xs mt-0.5 font-semibold">Dia D</span>
+      </a>
+      <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-400">
+        <i class="fa-solid fa-users text-base"></i>
+        <span class="text-xs mt-0.5">Lideranças</span>
+      </a>
+    </nav>
+
+    <script>
+      function markConfirmou(btn) {
+        var row = btn.closest('div.flex.flex-col')
+        row.innerHTML =
+          '<button onclick="markVotou(this)" class="text-xs font-bold px-3 py-2 rounded-xl border-2 border-blue-400 text-blue-700 bg-blue-50 text-center whitespace-nowrap">Confirmou que vai votar</button><button onclick="markVotou(this)" class="text-xs font-bold px-3 py-2 rounded-xl border-2 border-green-400 text-green-700 bg-white text-center whitespace-nowrap hover:bg-green-50">Confirmar votou</button>'
+        var card = btn.closest('.bg-white')
+        if (card) {
+          card.classList.remove('bg-white', 'border-gray-200')
+          card.classList.add('bg-blue-50', 'border-blue-200')
+        }
+      }
+      function markVotou(btn) {
+        var card = btn.closest('[class*="rounded-xl"]')
+        card.classList.remove('bg-blue-50', 'border-blue-200', 'bg-white', 'border-gray-200')
+        card.classList.add('bg-green-50', 'border-green-200')
+        var actionArea = btn.closest('.flex.flex-col') || btn.closest('.flex.items-center.gap-4')
+        var parent = card.querySelector('.flex.flex-col') || card.lastElementChild
+        if (parent)
+          parent.innerHTML =
+            '<button class="supporter-btn votou text-xs font-bold px-4 py-3 rounded-xl border-2 min-w-[90px] text-center"><i class="fa-solid fa-check-circle mr-1"></i> Votou ✓</button>'
+      }
+    </script>
+  </body>
+</html>

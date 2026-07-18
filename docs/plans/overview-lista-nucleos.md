@@ -5,6 +5,18 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos", linha 50)
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Design: [`Lista-Nucleos-Overview.png`](../design-refs/latest/Lista-Nucleos-Overview.png) · [`Lista-Nucleos-Overview.html`](../design-refs/latest/Lista-Nucleos-Overview.html)
+
+![Overview da lista de núcleos](../design-refs/latest/Lista-Nucleos-Overview.png)
+
+Como usar:
+
+- **Adotar a estrutura:** header → busca → chips de filtro ativos → caption "Mostrando agregados de 14 núcleos filtrados" → blocos de overview → lista. O bloco "Estimativa de votos" (total grande + barra de "% com estimativa confirmada" + badge "3 sugestões pendentes") e os blocos compactos "Cobertura" e "Últimas atualizações" (autor, badge de tipo, data relativa, núcleo, "Ver todas") correspondem exatamente aos objetivos deste plano.
+- **Fora deste plano:** o bloco "Baseline 2022" que aparece no design é a Fase 3 de [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md) — só ganha UI quando aquele plano for implementado (mantém-se a decisão "sem UI órfã"). O bottom nav com "Apoiadores" e "Agenda" antecipa os domínios C2/C3; as entradas só entram quando existirem.
+- **Ajustar cores e código:** o HTML/PNG usa a paleta antiga (vermelho escuro `#8E0E23`, navy `#1B2B4B`, dourado `#C8874B`) e Tailwind via CDN. Implementar com os componentes shadcn existentes (`src/components/ui`) e os tokens do tema `data-theme='campaign'` (`src/app/(frontend)/styles.css`): fundo branco, primário `#C51414`, superfícies neutras claras. O header navy do design vira o shell claro atual; avatares com foto viram avatares de iniciais (padrão do app).
+
 ## Contexto
 
 Hoje `/campanha/nucleos` é só cabeçalho + filtros + lista paginada (25/página). Não há agregados: o usuário precisa varrer a lista (ou ir ao dashboard `/campanha`) para sentir quanto daquela seleção tem estimativa confirmada, quantos votos somam, ou quais foram os últimos reportes. O dashboard geral já calcula esses agregados, mas para **todos** os núcleos ativos — não respeita os filtros de território/cobertura/estimativa da lista.

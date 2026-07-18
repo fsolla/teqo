@@ -5,6 +5,19 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Design: [`Formulario-Territorio.png`](../design-refs/latest/Formulario-Territorio.png) · [`Formulario-Territorio.html`](../design-refs/latest/Formulario-Territorio.html) — **compartilhado com [territorio-multi-municipio-bairro.md](territorio-multi-municipio-bairro.md)** (a mesma tela cobre os dois planos).
+
+![Formulário de território do núcleo — seção Zonas TSE](../design-refs/latest/Formulario-Territorio.png)
+
+Como usar (parte deste plano — seção "Zonas Eleitorais (TSE)"):
+
+- **Adotar a estrutura:** banner informativo "Zonas sugeridas pelo cadastro oficial do TSE — confira antes de salvar", lista de zonas como linhas com checkbox + número ("ZE 12"), badge "sugerida" e o município de origem como legenda — bom formato para o modo multi-município (união das zonas, cada uma rastreável ao município).
+- **Divergências a resolver na implementação:** o design mostra checkboxes editáveis e um link "Adicionar zona manualmente" para todos os casos; o plano define 4 modos — no modo 1 (municípios sem bairro) as zonas são **somente leitura** (sem checkbox, sem adicionar manual); checkbox/edição vale para os modos 2 e 3 (restrito ao conjunto permitido); entrada manual livre só no modo 4. Usar o visual das linhas do design, trocando checkbox por badge estático no modo read-only.
+- **Manter do design:** a zona desmarcada "ZE 7 (zona adicional)" ilustra bem o modo 2/3 (subconjunto permitido).
+- **Ajustar cores:** paleta antiga no HTML/PNG; implementar com `TseZoneInput` + tokens do tema `campaign` (chips TSE `#F1F3F5`/`#3F4854`).
+
 ## Contexto
 
 Hoje o campo **Zonas TSE** do formulário do núcleo (`TseZoneInput` em `src/components/campaign/TseZoneInput.tsx`) é sempre de preenchimento manual livre: o usuário digita números de 1 a 999, separados por vírgula/espaço/Enter, e o servidor só valida unicidade e intervalo (`parseTseZoneNumbers` em `src/utilities/nucleusUi.ts`, `validateNucleusTerritoryAndZones` em `src/collections/ElectoralNucleus.ts`, `validateGeographyAndZones` em `src/lib/schemas/nucleus.ts`). Não há nenhuma relação entre o município selecionado e as zonas informadas — o usuário precisa saber (ou adivinhar) quais zonas cobrem aquele município.

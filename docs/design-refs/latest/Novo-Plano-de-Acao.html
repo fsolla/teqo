@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <script>
+      window.FontAwesomeConfig = {
+        autoReplaceSvg: 'nest',
+      }
+    </script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Novo Plano de Ação</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#8E0E23',
+              'primary-light': '#B01C35',
+              'primary-xlight': '#F9E8EB',
+              gold: '#C8874B',
+              'gold-light': '#FDF3EC',
+              navy: '#1B2B4B',
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 pb-28">
+    <!-- Header -->
+    <header id="header" class="bg-navy sticky top-0 z-20 px-4 py-3 flex items-center gap-3">
+      <button class="text-white p-1"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+      <div class="flex-1">
+        <h1 class="text-white font-bold text-sm">Novo Plano de Ação</h1>
+        <p class="text-white/60 text-xs">Preencha os dados do evento</p>
+      </div>
+    </header>
+
+    <!-- Scope badge -->
+    <div class="px-4 pt-3 pb-1">
+      <span
+        class="inline-flex items-center gap-1.5 bg-gold-light border border-gold/30 text-xs font-semibold text-navy px-3 py-1.5 rounded-full"
+      >
+        <i class="fa-solid fa-shield-halved text-gold text-xs"></i> Coordenação Geral
+      </span>
+    </div>
+
+    <form class="px-4 pt-4 space-y-4" onsubmit="return false">
+      <!-- Informações básicas -->
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 space-y-4">
+        <h3 class="text-sm font-bold text-navy">Informações básicas</h3>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5"
+            >Título <span class="text-primary">*</span></label
+          >
+          <input
+            type="text"
+            placeholder="Ex: Caminhada no Centro Histórico"
+            class="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary placeholder-gray-300"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5"
+            >Tipo de ação <span class="text-primary">*</span></label
+          >
+          <select
+            class="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-primary/25 bg-white"
+          >
+            <option value="" disabled selected>Selecione o tipo…</option>
+            <option>Caminhada</option>
+            <option>Comício</option>
+            <option>Carreata</option>
+            <option>Panfletagem</option>
+            <option>Porta a porta</option>
+            <option>Reunião de apoio</option>
+            <option>Outro</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5"
+            >Descrição (opcional)</label
+          >
+          <textarea
+            rows="3"
+            placeholder="Contexto, objetivo e observações do plano…"
+            class="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary placeholder-gray-300 resize-none"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Data e horário -->
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 space-y-4">
+        <h3 class="text-sm font-bold text-navy">Data e horário</h3>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5"
+              >Data <span class="text-primary">*</span></label
+            >
+            <input
+              type="date"
+              class="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-primary/25 bg-white"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5"
+              >Início <span class="text-primary">*</span></label
+            >
+            <input
+              type="time"
+              class="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-primary/25 bg-white"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5"
+            >Término (opcional)</label
+          >
+          <input
+            type="time"
+            class="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-primary/25 bg-white"
+            placeholder="—"
+          />
+          <p class="text-xs text-gray-400 mt-1">Deixe em branco se a duração for indefinida</p>
+        </div>
+      </div>
+
+      <!-- Território (multi-município — same pattern as Territory Form) -->
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 space-y-4">
+        <h3 class="text-sm font-bold text-navy flex items-center gap-2">
+          <i class="fa-solid fa-map-location-dot text-primary text-sm"></i> Território
+        </h3>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5"
+            >Municípios <span class="text-primary">*</span></label
+          >
+          <div class="flex flex-wrap gap-2 mb-2">
+            <span
+              class="inline-flex items-center gap-1.5 bg-navy text-white text-xs font-semibold px-3 py-1.5 rounded-full"
+            >
+              Bom Jesus da Lapa
+              <button type="button" class="ml-0.5 opacity-70">
+                <i class="fa-solid fa-xmark text-xs"></i>
+              </button>
+            </span>
+          </div>
+          <div class="relative">
+            <input
+              type="text"
+              placeholder="Buscar município…"
+              class="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary pr-10"
+            />
+            <i
+              class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"
+            ></i>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            Território de identidade
+            <span class="normal-case font-normal text-gray-400 ml-1">(automático)</span>
+          </label>
+          <span
+            class="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold px-3 py-1.5 rounded-full"
+          >
+            <i class="fa-solid fa-lock text-amber-400 text-xs"></i> Velho Chico
+          </span>
+        </div>
+      </div>
+
+      <!-- Pessoas responsáveis -->
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 space-y-4">
+        <h3 class="text-sm font-bold text-navy">Pessoas responsáveis</h3>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5"
+            >Coordenadores</label
+          >
+          <!-- Selected person -->
+          <div class="flex items-center gap-3 mb-2">
+            <img
+              src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg"
+              class="w-8 h-8 rounded-full object-cover flex-shrink-0"
+            />
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-navy truncate">João Santos</p>
+              <p class="text-xs text-gray-500">Coord. Núcleo · Bom Jesus da Lapa</p>
+            </div>
+            <button type="button" class="text-gray-400 hover:text-red-600 p-1.5">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+          <button
+            type="button"
+            class="flex items-center gap-2 text-primary text-xs font-semibold border border-dashed border-primary/40 rounded-xl px-3 py-2 w-full justify-center hover:bg-primary-xlight transition-colors"
+          >
+            <i class="fa-solid fa-plus text-xs"></i> Adicionar coordenador
+          </button>
+        </div>
+
+        <div class="border-t border-gray-100 pt-4">
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5"
+            >Responsável principal <span class="text-primary">*</span></label
+          >
+          <select
+            class="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-primary/25 bg-white"
+          >
+            <option>João Santos</option>
+            <option>Maria Lima</option>
+            <option>Pedro Alves</option>
+            <option>Carlos Mendes</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Status inicial -->
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3"
+          >Status inicial</label
+        >
+        <div class="grid grid-cols-2 gap-2">
+          <label
+            class="flex items-center gap-2.5 p-3 border-2 border-primary rounded-xl cursor-pointer bg-primary-xlight"
+          >
+            <input type="radio" name="status" value="planejado" checked class="accent-primary" />
+            <div>
+              <p class="text-xs font-bold text-primary">Planejado</p>
+              <p class="text-xs text-gray-500">Em organização</p>
+            </div>
+          </label>
+          <label
+            class="flex items-center gap-2.5 p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-gray-300"
+          >
+            <input type="radio" name="status" value="rascunho" class="accent-primary" />
+            <div>
+              <p class="text-xs font-bold text-navy">Rascunho</p>
+              <p class="text-xs text-gray-500">Ainda indefinido</p>
+            </div>
+          </label>
+        </div>
+      </div>
+    </form>
+
+    <!-- Bottom action bar -->
+    <div
+      class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 flex gap-3 z-20"
+    >
+      <button
+        type="button"
+        class="flex-1 border border-gray-200 text-navy text-sm font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="flex-1 bg-primary text-white text-sm font-bold py-3 rounded-xl hover:bg-primary-light transition-colors flex items-center justify-center gap-2"
+      >
+        <i class="fa-solid fa-calendar-plus text-sm"></i> Criar plano
+      </button>
+    </div>
+  </body>
+</html>

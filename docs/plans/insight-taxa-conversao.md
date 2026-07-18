@@ -5,6 +5,10 @@ Atualizado em: 2026-07-17
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
+## Referência visual (UX Pilot)
+
+Design: [`Baseline-Eleitoral-2022.png`](../design-refs/latest/Baseline-Eleitoral-2022.png) — card "Insights do território", primeira linha: "Taxa de conversão: 18% do eleitorado apto · 850 votos / 4.700 eleitores aptos" (ícone + veredito de uma linha + números de apoio). Implementar como um card do stack `NucleusInsights.tsx` (arquitetura definida em [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md)), com os tokens claros do tema `campaign` em vez da paleta antiga do HTML/PNG.
+
 ## Contexto
 
 Com o baseline TSE 2022 importado (ver [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md)), temos `electionTally.aptos` (eleitores aptos) por município+zona. A estimativa confirmada do núcleo (`confirmedVoteEstimate`) hoje só é comparada com o voto histórico de Solla (Gap vs 2022). Falta medir a estimativa contra o **tamanho do eleitorado apto** da geografia — ou seja, qual % do eleitorado potencial da zona a estimativa representa. É o indicador que separa "reduto consolidado" de "oportunidade de crescimento", segundo a literatura de estratégia eleitoral.
