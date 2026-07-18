@@ -37,7 +37,7 @@ export const MAX_NUCLEUS_REGIONS = 27
 export const MAX_NUCLEUS_CITIES = 27
 export const MAX_NUCLEUS_NEIGHBORHOODS = 30
 
-const dedupeTrimmedStrings = (values: string[]): string[] => {
+export const dedupeTrimmedStrings = (values: readonly string[]): string[] => {
   const seen = new Set<string>()
   const result: string[] = []
   for (const value of values) {

@@ -4,36 +4,30 @@ import { useMemo, useState } from 'react'
 import { XIcon } from 'lucide-react'
 
 import { StrictCombobox } from '@/components/campaign/StrictCombobox'
+import { TerritorySuggestionChips } from '@/components/campaign/TerritorySuggestionChips'
+import { TseZoneInput } from '@/components/campaign/TseZoneInput'
 import { Badge } from '@/components/ui/Badge'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
 import { territoriesForCities } from '@/lib/bahiaTerritories'
 import {
+  dedupeTrimmedStrings,
   MAX_NUCLEUS_CITIES,
   MAX_NUCLEUS_NEIGHBORHOODS,
   MAX_NUCLEUS_REGIONS,
 } from '@/lib/schemas/nucleus'
+import { buildTerritorySuggestions } from '@/lib/territorySuggestions'
 import {
-  municipalityComboboxOptions,
+  allMunicipalityComboboxOptions,
   territoryComboboxOptions,
 } from '@/utilities/territoryComboboxOptions'
+import { sortedUniqueZoneNumbers } from '@/utilities/tseZone'
 
-type TerritoryValues = {
+type TerritoryAndZonesValues = {
   regions?: string[] | null
   cities?: string[] | null
   neighborhoods?: string[] | null
-}
-
-const uniquePreserveOrder = (values: string[]): string[] => {
-  const seen = new Set<string>()
-  const result: string[] = []
-  for (const value of values) {
-    const trimmed = value.trim()
-    if (!trimmed || seen.has(trimmed)) continue
-    seen.add(trimmed)
-    result.push(trimmed)
-  }
-  return result
+  tseZones?: number[] | null
 }
 
 const ChipList = ({
@@ -57,18 +51,19 @@ const ChipList = ({
   </div>
 )
 
-export const NucleusTerritoryFields = ({
+export const NucleusTerritoryAndZonesFields = ({
   values,
   fieldErrors = {},
 }: {
-  values?: TerritoryValues
+  values?: TerritoryAndZonesValues
   fieldErrors?: Record<string, string[]>
 }) => {
-  const [regions, setRegions] = useState(() => uniquePreserveOrder(values?.regions ?? []))
-  const [cities, setCities] = useState(() => uniquePreserveOrder(values?.cities ?? []))
+  const [regions, setRegions] = useState(() => dedupeTrimmedStrings(values?.regions ?? []))
+  const [cities, setCities] = useState(() => dedupeTrimmedStrings(values?.cities ?? []))
   const [neighborhoods, setNeighborhoods] = useState(() =>
-    uniquePreserveOrder(values?.neighborhoods ?? []),
+    dedupeTrimmedStrings(values?.neighborhoods ?? []),
   )
+  const [tseZones, setTseZones] = useState(() => sortedUniqueZoneNumbers(values?.tseZones ?? []))
   const [cityDraft, setCityDraft] = useState('')
   const [regionDraft, setRegionDraft] = useState('')
   const [neighborhoodDraft, setNeighborhoodDraft] = useState('')
@@ -82,16 +77,28 @@ export const NucleusTerritoryFields = ({
   const regionsAreDerived = cities.length > 0
   const neighborhoodsEnabled = cities.length === 1
 
+  const { zoneSuggestions, citySuggestions, outsideZones } = useMemo(
+    () =>
+      buildTerritorySuggestions({
+        cities,
+        regions: displayRegions,
+        tseZones,
+      }),
+    [cities, displayRegions, tseZones],
+  )
+
   const visibleRegionError = regionError ?? errorFor('regions')
   const visibleCityError = cityError ?? errorFor('cities')
   const visibleNeighborhoodError = neighborhoodError ?? errorFor('neighborhoods')
 
-  const availableCityOptions = municipalityComboboxOptions().filter(
-    (option) => !cities.includes(option.value),
-  )
-  const availableRegionOptions = territoryComboboxOptions.filter(
-    (option) => !regions.includes(option.value),
-  )
+  const availableCityOptions = useMemo(() => {
+    const selected = new Set(cities)
+    return allMunicipalityComboboxOptions.filter((option) => !selected.has(option.value))
+  }, [cities])
+  const availableRegionOptions = useMemo(() => {
+    const selected = new Set(regions)
+    return territoryComboboxOptions.filter((option) => !selected.has(option.value))
+  }, [regions])
 
   const addCity = (nextCity: string) => {
     if (!nextCity) return
@@ -101,7 +108,7 @@ export const NucleusTerritoryFields = ({
       return
     }
     setCities((current) => {
-      const next = uniquePreserveOrder([...current, nextCity])
+      const next = dedupeTrimmedStrings([...current, nextCity])
       if (next.length !== 1) setNeighborhoods([])
       return next
     })
@@ -126,7 +133,7 @@ export const NucleusTerritoryFields = ({
       setRegionDraft('')
       return
     }
-    setRegions((current) => uniquePreserveOrder([...current, nextRegion]))
+    setRegions((current) => dedupeTrimmedStrings([...current, nextRegion]))
     setRegionDraft('')
     setRegionError(undefined)
   }
@@ -152,7 +159,7 @@ export const NucleusTerritoryFields = ({
       setNeighborhoodDraft('')
       return
     }
-    setNeighborhoods((current) => uniquePreserveOrder([...current, trimmed]))
+    setNeighborhoods((current) => dedupeTrimmedStrings([...current, trimmed]))
     setNeighborhoodDraft('')
     setNeighborhoodError(undefined)
   }
@@ -214,6 +221,11 @@ export const NucleusTerritoryFields = ({
 
       <Field data-invalid={Boolean(visibleCityError)} className="sm:col-span-2">
         <FieldLabel htmlFor="nucleus-lookup-b">Municípios</FieldLabel>
+        <TerritorySuggestionChips
+          kind="city"
+          suggestions={citySuggestions}
+          onAccept={(suggestion) => addCity(suggestion.city)}
+        />
         {cities.length ? (
           <ChipList
             values={cities}
@@ -298,6 +310,30 @@ export const NucleusTerritoryFields = ({
         </FieldDescription>
         {visibleNeighborhoodError ? (
           <FieldError id="neighborhoods-error">{visibleNeighborhoodError}</FieldError>
+        ) : null}
+      </Field>
+
+      <Field data-invalid={Boolean(errorFor('tseZones'))} className="sm:col-span-2">
+        <FieldLabel htmlFor="tseZoneDraft">Zonas TSE</FieldLabel>
+        {zoneSuggestions.length > 0 ? (
+          <FieldDescription>
+            Zonas sugeridas pelo cadastro oficial do TSE — confira antes de salvar.
+          </FieldDescription>
+        ) : null}
+        <TerritorySuggestionChips
+          kind="zone"
+          suggestions={zoneSuggestions}
+          onAccept={(suggestion) =>
+            setTseZones((current) => sortedUniqueZoneNumbers([...current, ...suggestion.zonesToAdd]))
+          }
+        />
+        <TseZoneInput value={tseZones} onChange={setTseZones} error={errorFor('tseZones')} />
+        {outsideZones.length > 0 ? (
+          <FieldDescription className="text-amber-700 dark:text-amber-400">
+            {outsideZones.length === 1
+              ? `Zona ${outsideZones[0]} não aparece no cadastro dos municípios/TIs selecionados.`
+              : `Zonas ${outsideZones.join(', ')} não aparecem no cadastro dos municípios/TIs selecionados.`}
+          </FieldDescription>
         ) : null}
       </Field>
     </div>

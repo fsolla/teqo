@@ -1,9 +1,12 @@
 # Zonas TSE por município + sugestões cruzadas de território
 
-Status: rascunho
+Status: entregue
 Atualizado em: 2026-07-18
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A → A2)
 Responsável: —
+
+Revisões:
+- 2026-07-18 (entrega): cadastro estático `bahiaTseZones` a partir do TSE 2024 `detalhe_votacao_munzona` BA (SHA-256 no cabeçalho); motor `territorySuggestions` + chips opt-in no coordenador `NucleusTerritoryAndZonesFields`; sem migration. Corrigido drift factual: a validação server-side existente chama-se `validateTerritoryAndZones` (não `validateGeographyAndZones`). Reuso de `canonicalizeMunicipalityName` / aliases de A3 na geração do dataset.
 
 ## Premissa atualizada (A1 entregue)
 
@@ -58,7 +61,7 @@ Exemplo canônico (TI oficial `Vale do Jiquiriçá`):
 
 - **Sugestão opt-in, nunca auto-gravação forçada de ZEs/municípios irmãos.** Adicionar Itiruçu **não** preenche `tseZones` sozinho; só aparece o chip até o usuário clicar (ou digitar). Municípios irmãos e municípios-por-ZE idem. (Decisão de produto 2026-07-18; revisa o auto-preenchimento forçado de 2026-07-17.)
 - **TI a partir do município continua automático** via A1 (`territoriesForCities` / rederivação no servidor). Isso **não** é chip de sugestão — é derivação. Remover municípios restaura edição manual de `regions`.
-- **Mapeamento como dado estático versionado.** `src/lib/bahiaTseZones.ts` a partir do “Eleitorado por município e zona” (UF BA), cabeçalho com URL, versão/data e SHA-256 — estilo `bahiaTerritories.ts`. Fixture independente nunca lido a partir do módulo TypeScript.
+- **Mapeamento como dado estático versionado.** `src/lib/bahiaTseZones.ts` a partir do TSE 2024 `detalhe_votacao_munzona` (UF BA — cobertura eleição-validada dos 417 municípios; preferido aos resultados 2022 por risco de remanejamento de zonas), cabeçalho com URL, data de extração e SHA-256 — estilo `bahiaTerritories.ts`. Nomes TSE reconciliados via `canonicalizeMunicipalityName`. Fixture independente nunca lido a partir do módulo TypeScript.
 - **Sem migration.** Campo `tseZones` já é `array<{ zoneNumber, label }>`.
 - **Estado compartilhado.** Hoje `NucleusTerritoryFields` e `TseZoneInput` são siblings com estado independente em `NucleusForm`. Subir estado de `regions` / `cities` / `neighborhoods` / `tseZones` para um coordenador cliente (ex. `NucleusTerritoryAndZonesFields`) que emite hidden inputs e calcula sugestões.
 - **União, não replace.** Clique em 「Itiruçu +」 = `tseZones ∪ tseZonesForCity('Itiruçu')`. Clique em 「Vale do Jiquiriçá +」 = união de todas as ZEs de `citiesForTerritory('Vale do Jiquiriçá')`. Clique em 「Maracás +」 = adiciona o município (respeitando `MAX_NUCLEUS_CITIES`).
@@ -139,7 +142,7 @@ Componentes:
 - `src/components/campaign/NucleusForm.tsx`, `NucleusTerritoryFields.tsx`, `TseZoneInput.tsx` — formulário a coordenar
 - `src/lib/bahiaTerritories.ts`, `tests/fixtures/bahia-identity-territories.official.json`, `tests/int/bahiaTerritories.int.spec.ts` — padrão a espelhar
 - `src/collections/ElectoralNucleus.ts` — `validateNucleusTerritoryAndZones`
-- `src/lib/schemas/nucleus.ts` — `validateGeographyAndZones`
+- `src/lib/schemas/nucleus.ts` — `validateTerritoryAndZones`
 - `src/utilities/tseZone.ts` / `nucleusUi.ts` — parse de ZEs
 - `docs/design-refs/latest/Formulario-Territorio.{png,html}` — referência visual (banner + “sugerida”)
 - Portal de Dados Abertos do TSE — “Eleitorado por município e zona” (UF BA): https://dadosabertos.tse.jus.br/

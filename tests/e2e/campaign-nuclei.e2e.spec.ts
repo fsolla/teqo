@@ -61,6 +61,82 @@ test.describe('Campaign nucleus journeys', () => {
     expect(created.docs[0]?.tseZones?.map(({ zoneNumber }) => zoneNumber)).toEqual([12, 58])
   })
 
+  test('accepts opt-in territory suggestion chips for cities and TSE zones', async ({
+    campaign,
+    page,
+  }) => {
+    test.setTimeout(240_000)
+    const generalEmail = `${campaign.fixtures.value('suggestions')}@example.com`
+    const password = campaign.fixtures.value('SuggestionsPassword')
+    const nucleusName = campaign.fixtures.value('Núcleo sugestões')
+    await campaign.transaction(async (payload, req) => {
+      await payload.create({
+        collection: 'campaignUser',
+        data: {
+          name: campaign.fixtures.value('Coordenação Geral'),
+          email: generalEmail,
+          password,
+          role: 'geral',
+        },
+        depth: 0,
+        req,
+      })
+    })
+
+    await campaign.login(page, generalEmail, password)
+    await page.goto(`${campaign.baseURL}/campanha/nucleos/novo`)
+    await page.getByLabel('Nome do núcleo *').fill(nucleusName)
+
+    const cityInput = page.getByLabel('Municípios')
+    await cityInput.fill('Itiruçu')
+    await page.getByRole('option', { name: 'Itiruçu', exact: true }).click()
+    await expect(
+      page.getByRole('button', { name: 'Remover território Vale do Jiquiriçá' }),
+    ).toBeVisible()
+
+    // Wait for both suggestion strips to settle (city siblings remount the strip).
+    const zoneChip = page.getByRole('button', { name: 'Adicionar zonas TSE de Itiruçu' })
+    await expect(zoneChip).toBeVisible()
+    await expect(page.getByRole('button', { name: /\+\d+ sugestões|Adicionar município / }).first()).toBeVisible()
+    // Native DOM click — Playwright's pointer click can race the strip remount.
+    await zoneChip.evaluate((el: HTMLElement) => el.click())
+    await expect(page.getByRole('button', { name: 'Remover Zona TSE 37' })).toBeVisible()
+
+    const expandCities = page.getByRole('button', { name: /\+\d+ sugestões/ })
+    if (await expandCities.count()) {
+      await expandCities.evaluate((el: HTMLElement) => el.click())
+    }
+    const cityChip = page.getByRole('button', { name: 'Adicionar município Maracás' })
+    await expect(cityChip).toBeVisible()
+    await cityChip.evaluate((el: HTMLElement) => el.click())
+    await expect(page.getByRole('button', { name: 'Remover município Maracás' })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Criar núcleo' }).click()
+    await expect
+      .poll(
+        async () =>
+          (
+            await campaign.payload.find({
+              collection: 'electoralNucleus',
+              where: { name: { equals: nucleusName } },
+              depth: 0,
+              limit: 1,
+            })
+          ).docs[0],
+        { timeout: 30_000 },
+      )
+      .toBeTruthy()
+
+    const created = await campaign.payload.find({
+      collection: 'electoralNucleus',
+      where: { name: { equals: nucleusName } },
+      depth: 0,
+      limit: 1,
+    })
+    expect(created.docs[0]?.cities).toEqual(expect.arrayContaining(['Itiruçu', 'Maracás']))
+    expect(created.docs[0]?.tseZones?.map(({ zoneNumber }) => zoneNumber)).toEqual([37])
+  })
+
   test('updates coordinator assignment from the nucleus detail', async ({ campaign, page }) => {
     test.slow()
     const email = `${campaign.fixtures.value('assignment')}@example.com`

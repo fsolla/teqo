@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-18 (MVP + Ciclo 2 deployados; A2 revisado: sugestões cruzadas opt-in no formulário de território, em vez de auto-preenchimento forçado)
+Atualizado em: 2026-07-18 (MVP + Ciclo 2 deployados; A2 entregue: cadastro município↔ZE + chips opt-in no formulário de território)
 
 Registro canônico no repositório dos planos futuros e débitos conhecidos. Status operacional do ciclo atual de Núcleos fica em [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc); este arquivo lista o que ainda é futuro ou bloqueador, **em ordem de execução**, com dependências e paralelismo explícitos.
 
@@ -56,6 +56,10 @@ MVP de território + reporte implementado e enviado (ondas 1–8 + refactors de 
 - **C1 Compartilhar página** — diálogo no detalhe do núcleo com destinatários WhatsApp (coordenação geral, coordenadores, lideranças engajadas) + copiar link; envia só o link, não concede acesso. [Plano](plans/compartilhar-pagina.md).
 - **D1 PWA `/campanha`** — manifest + service worker escopados em `/campanha`, shell offline, toast de instalação (Android/iOS) e limpeza de cache no logout; fundação do push (D2). [Plano](plans/pwa-campanha.md).
 
+### Ciclo 2+ — A2 entregue em 2026-07-18
+
+- **A2 Zonas TSE + sugestões cruzadas** — cadastro estático `bahiaTseZones` (TSE 2024 `detalhe_votacao_munzona` BA, 417 municípios), motor puro `territorySuggestions`, coordenador `NucleusTerritoryAndZonesFields` com chips `{rótulo} +` opt-in (município/TI → ZEs; irmãos do TI e cidades da ZE → Municípios). Sem migration, sem igualdade forçada no save. [Plano](plans/zonas-por-municipio.md).
+
 ### Referências de design (UX Pilot, 2026-07-18)
 
 Os designs gerados pelo UX Pilot para os próximos ciclos estão em [`docs/design-refs/latest/`](design-refs/latest/) (pares `.png` + `.html` com o mesmo nome). **A UX/estrutura é a referência a seguir; a paleta não é** — os arquivos usam a paleta antiga (vermelho escuro `#8E0E23`, navy `#1B2B4B`, dourado `#C8874B`); toda implementação usa os tokens claros do tema `data-theme='campaign'` (`src/app/(frontend)/styles.css`: fundo branco, primário `#C51414`, superfícies neutras). Cada plano detalha o uso na sua seção "Referência visual (UX Pilot)".
@@ -89,7 +93,7 @@ flowchart TD
 
     subgraph TrilhaA["Trilha A — dados eleitorais e território"]
         A1["A1 Território multi-município/bairro<br/>(migration) ✓"]
-        A2["A2 Zonas TSE + sugestões cruzadas<br/>(chips opt-in território↔ZE)"]
+        A2["A2 Zonas TSE + sugestões cruzadas<br/>(chips opt-in território↔ZE) ✓"]
         A3["A3 Baseline TSE 2022 — Fase 1<br/>(import, collections) ✓"]
         A4["A4 Baseline no produto + Gap vs 2022<br/>(detalhe, overview)"]
         A5["A5 Insights: conversão, classificação,<br/>alavancagem, mobilização, competitiva"]
@@ -138,7 +142,7 @@ flowchart TD
     JUR -.chave de push.-> D2
 ```
 
-Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, C2 (engenharia — produção espera o jurídico), além dos fill-ins (visitados recentemente, listas globais, reset de senha, higiene PascalCase). **Entregues em 2026-07-18** (✓ no grafo): A1, A3, B1, C1 e D1 — ver "Ciclo 2" acima. Destravados por eles: A2 (nasce contra `cities[]`; UX revisada 2026-07-18 para chips `{rótulo} +` opt-in), A4 (A3 + B1 prontos), C3/C4 (A1 pronto) e D2 push (D1 pronto; falta a chave jurídica).
+Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, C2 (engenharia — produção espera o jurídico), além dos fill-ins (visitados recentemente, listas globais, reset de senha, higiene PascalCase). **Entregues em 2026-07-18** (✓ no grafo): A1, A2, A3, B1, C1 e D1 — ver "Ciclo 2" acima. Destravados por eles: A4 (A2/A3 + B1 prontos), C3/C4 (A1 pronto) e D2 push (D1 pronto; falta a chave jurídica).
 
 ### Sequência de execução por janela do calendário
 
@@ -148,7 +152,7 @@ Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, C2 (enge
 | ----- | ---------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------- | ----------------- |
 | 1     | Onda 0 (jurídico em lote + deploy + lançamento)                  | —                                                      | externo                               | tudo              |
 | 2     | A1 Território multi-município/bairro **(entregue 2026-07-18)**   | [detalhes](plans/territorio-multi-municipio-bairro.md) | —                                     | B1, C1, A3        |
-| 3     | A2 Zonas TSE + sugestões cruzadas (chips opt-in território↔ZE)   | [detalhes](plans/zonas-por-municipio.md)               | A1 (nasce contra `cities[]`)          | B1 ✓, C1 ✓, A3 ✓  |
+| 3     | A2 Zonas TSE + sugestões cruzadas (chips opt-in território↔ZE) **(entregue 2026-07-18)** | [detalhes](plans/zonas-por-municipio.md)               | A1 (nasce contra `cities[]`)          | B1 ✓, C1 ✓, A3 ✓  |
 | 4     | B1 Overview da lista de núcleos **(entregue 2026-07-18)**        | [detalhes](plans/overview-lista-nucleos.md)            | —                                     | A1, A2, C1        |
 | 5     | C1 Compartilhar página **(entregue 2026-07-18)**                 | [detalhes](plans/compartilhar-pagina.md)               | —                                     | tudo              |
 | 6     | A3 Baseline TSE 2022 — Fase 1 (import) **(entregue 2026-07-18)** | [detalhes](plans/baseline-eleitoral-tse.md)            | — (dado público; sem bloqueador LGPD) | tudo              |

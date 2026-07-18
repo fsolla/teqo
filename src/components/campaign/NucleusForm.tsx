@@ -3,8 +3,7 @@
 import { useActionState } from 'react'
 import Link from 'next/link'
 
-import { NucleusTerritoryFields } from '@/components/campaign/NucleusTerritoryFields'
-import { TseZoneInput } from '@/components/campaign/TseZoneInput'
+import { NucleusTerritoryAndZonesFields } from '@/components/campaign/NucleusTerritoryAndZonesFields'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -169,7 +168,7 @@ export const NucleusFormFields = ({
         </CardHeader>
         <CardContent>
           <FieldGroup>
-            <NucleusTerritoryFields values={nucleus} fieldErrors={fieldErrors} />
+            <NucleusTerritoryAndZonesFields values={nucleus} fieldErrors={fieldErrors} />
             <div className="grid gap-4 sm:grid-cols-2">
               <Field data-invalid={Boolean(errorFor('locality'))}>
                 <FieldLabel htmlFor="locality">Localidade</FieldLabel>
@@ -205,10 +204,6 @@ export const NucleusFormFields = ({
               {errorFor('territoryNotes') ? (
                 <FieldError id="territoryNotes-error">{errorFor('territoryNotes')}</FieldError>
               ) : null}
-            </Field>
-            <Field data-invalid={Boolean(errorFor('tseZones'))}>
-              <FieldLabel htmlFor="tseZoneDraft">Zonas TSE</FieldLabel>
-              <TseZoneInput defaultValues={nucleus?.tseZones ?? []} error={errorFor('tseZones')} />
             </Field>
           </FieldGroup>
         </CardContent>

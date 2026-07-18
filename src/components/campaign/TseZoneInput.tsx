@@ -6,31 +6,37 @@ import { XIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 import { FieldDescription, FieldError } from '@/components/ui/field'
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
-import { parseTseZoneNumbers, TseZoneParseError } from '@/utilities/tseZone'
-
-const sortedUnique = (values: number[]): number[] =>
-  [...new Set(values)].sort((left, right) => left - right)
+import {
+  parseTseZoneNumbers,
+  sortedUniqueZoneNumbers,
+  TseZoneParseError,
+} from '@/utilities/tseZone'
 
 export const TseZoneInput = ({
-  defaultValues = [],
+  value,
+  onChange,
   error,
 }: {
-  defaultValues?: number[]
+  value: number[]
+  onChange: (zones: number[]) => void
   error?: string
 }) => {
-  const [zones, setZones] = useState(() => sortedUnique(defaultValues))
   const [draft, setDraft] = useState('')
   const [localError, setLocalError] = useState<string>()
   const visibleError = localError ?? error
 
-  const commit = (value: string) => {
-    if (!value.trim()) {
+  const setZones = (updater: number[] | ((current: number[]) => number[])) => {
+    onChange(sortedUniqueZoneNumbers(typeof updater === 'function' ? updater(value) : updater))
+  }
+
+  const commit = (raw: string) => {
+    if (!raw.trim()) {
       setDraft('')
       return
     }
     try {
-      const parsed = parseTseZoneNumbers(value)
-      setZones((current) => sortedUnique([...current, ...parsed]))
+      const parsed = parseTseZoneNumbers(raw)
+      setZones((current) => [...current, ...parsed])
       setDraft('')
       setLocalError(undefined)
     } catch (parseError) {
@@ -42,9 +48,9 @@ export const TseZoneInput = ({
 
   return (
     <>
-      <input type="hidden" name="tseZones" value={zones.join(',')} />
+      <input type="hidden" name="tseZones" value={value.join(',')} />
       <InputGroup className="min-h-11 h-auto flex-wrap gap-1 p-1">
-        {zones.map((zoneNumber) => (
+        {value.map((zoneNumber) => (
           <Badge
             key={zoneNumber}
             asChild
@@ -84,7 +90,7 @@ export const TseZoneInput = ({
             if (event.key === 'Enter') {
               event.preventDefault()
               commit(draft)
-            } else if (event.key === 'Backspace' && !draft && zones.length > 0) {
+            } else if (event.key === 'Backspace' && !draft && value.length > 0) {
               setZones((current) => current.slice(0, -1))
             }
           }}

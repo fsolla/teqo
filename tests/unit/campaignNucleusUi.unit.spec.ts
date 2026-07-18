@@ -1,4 +1,4 @@
-import { createElement } from 'react'
+import { createElement, useState } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -8,7 +8,7 @@ import { ArchiveNucleusDialog } from '@/components/campaign/ArchiveNucleusDialog
 import { NucleusFormFields } from '@/components/campaign/NucleusForm'
 import { NucleusList } from '@/components/campaign/NucleusList'
 import { getNucleusPaginationPages } from '@/components/campaign/NucleusPagination'
-import { NucleusTerritoryFields } from '@/components/campaign/NucleusTerritoryFields'
+import { NucleusTerritoryAndZonesFields } from '@/components/campaign/NucleusTerritoryAndZonesFields'
 import { TseZoneInput } from '@/components/campaign/TseZoneInput'
 import { campaignNav, getCampaignNav, isCampaignNavActive } from '@/components/campaign/nav'
 import {
@@ -79,7 +79,7 @@ describe('campaign nucleus UI contracts', () => {
   })
 
   it('adds a municipality as a chip via the strict combobox and derives its territory chip', async () => {
-    render(createElement(NucleusTerritoryFields))
+    render(createElement(NucleusTerritoryAndZonesFields))
     const city = screen.getByLabelText('Municípios') as HTMLInputElement
 
     fireEvent.focus(city)
@@ -95,7 +95,7 @@ describe('campaign nucleus UI contracts', () => {
 
   it('uses neutral editable lookup identifiers and exposes only the canonical hidden fields', () => {
     const { container } = render(
-      createElement(NucleusTerritoryFields, {
+      createElement(NucleusTerritoryAndZonesFields, {
         fieldErrors: { regions: ['Território inválido.'], cities: ['Município inválido.'] },
       }),
     )
@@ -131,7 +131,7 @@ describe('campaign nucleus UI contracts', () => {
   })
 
   it('shows only word-start municipality matches', () => {
-    render(createElement(NucleusTerritoryFields))
+    render(createElement(NucleusTerritoryAndZonesFields))
     const city = screen.getByLabelText('Municípios')
 
     fireEvent.focus(city)
@@ -144,7 +144,7 @@ describe('campaign nucleus UI contracts', () => {
   })
 
   it('clears an invalid region or city draft on blur and exposes an error', () => {
-    render(createElement(NucleusTerritoryFields))
+    render(createElement(NucleusTerritoryAndZonesFields))
     const region = screen.getByLabelText('Territórios de identidade') as HTMLInputElement
     const city = screen.getByLabelText('Municípios') as HTMLInputElement
 
@@ -162,7 +162,7 @@ describe('campaign nucleus UI contracts', () => {
   })
 
   it('allows manually adding regions only until a city is selected, after which they become derived', async () => {
-    render(createElement(NucleusTerritoryFields))
+    render(createElement(NucleusTerritoryAndZonesFields))
     const region = screen.getByLabelText('Territórios de identidade') as HTMLInputElement
     const city = screen.getByLabelText('Municípios') as HTMLInputElement
 
@@ -183,7 +183,7 @@ describe('campaign nucleus UI contracts', () => {
   })
 
   it('derives regions from multiple cities across territories', () => {
-    render(createElement(NucleusTerritoryFields))
+    render(createElement(NucleusTerritoryAndZonesFields))
     const city = screen.getByLabelText('Municípios') as HTMLInputElement
 
     fireEvent.focus(city)
@@ -204,7 +204,7 @@ describe('campaign nucleus UI contracts', () => {
 
   it('enables neighborhoods only when exactly one city is set, resetting them otherwise', async () => {
     render(
-      createElement(NucleusTerritoryFields, {
+      createElement(NucleusTerritoryAndZonesFields, {
         values: { cities: ['Seabra'], neighborhoods: ['Centro'] },
       }),
     )
@@ -223,7 +223,7 @@ describe('campaign nucleus UI contracts', () => {
   })
 
   it('removes a city chip and re-derives the territory from the remaining cities', async () => {
-    render(createElement(NucleusTerritoryFields, { values: { cities: ['Seabra', 'Salvador'] } }))
+    render(createElement(NucleusTerritoryAndZonesFields, { values: { cities: ['Seabra', 'Salvador'] } }))
     expect(screen.getByText('Chapada Diamantina')).toBeTruthy()
     expect(screen.getByText('Metropolitano de Salvador')).toBeTruthy()
 
@@ -235,7 +235,7 @@ describe('campaign nucleus UI contracts', () => {
   })
 
   it('adds multiple neighborhoods via Enter and removes the last one via Backspace', () => {
-    render(createElement(NucleusTerritoryFields, { values: { cities: ['Seabra'] } }))
+    render(createElement(NucleusTerritoryAndZonesFields, { values: { cities: ['Seabra'] } }))
     const neighborhood = screen.getByLabelText('Bairros') as HTMLInputElement
 
     fireEvent.change(neighborhood, { target: { value: 'Centro' } })
@@ -369,6 +369,38 @@ describe('campaign nucleus UI contracts', () => {
     expect(parseNucleusUpdateFormData(formData).neighborhoods).toEqual([])
   })
 
+  it('offers opt-in TSE zone and sibling city suggestion chips and unions on accept', async () => {
+    render(createElement(NucleusTerritoryAndZonesFields))
+    const city = screen.getByLabelText('Municípios') as HTMLInputElement
+
+    fireEvent.focus(city)
+    fireEvent.change(city, { target: { value: 'Itiruçu' } })
+    fireEvent.keyDown(city, { key: 'ArrowDown' })
+    fireEvent.keyDown(city, { key: 'Enter' })
+
+    await waitFor(() => expect(screen.getByText('Itiruçu')).toBeTruthy())
+    expect(screen.getByText('Vale do Jiquiriçá')).toBeTruthy()
+
+    const zoneChip = await screen.findByRole('button', {
+      name: 'Adicionar zonas TSE de Itiruçu',
+    })
+    expect(
+      screen.getByRole('button', { name: 'Adicionar zonas TSE de Vale do Jiquiriçá' }),
+    ).toBeTruthy()
+
+    const expandCities = screen.queryByRole('button', { name: /\+\d+ sugestões/ })
+    if (expandCities) fireEvent.click(expandCities)
+    const cityChip = await screen.findByRole('button', { name: 'Adicionar município Maracás' })
+
+    fireEvent.click(zoneChip)
+    await waitFor(() => expect(screen.getByLabelText('Remover Zona TSE 37')).toBeTruthy())
+    expect(screen.queryByRole('button', { name: 'Adicionar zonas TSE de Itiruçu' })).toBeNull()
+
+    fireEvent.click(cityChip)
+    await waitFor(() => expect(screen.getByLabelText('Remover município Maracás')).toBeTruthy())
+    expect(screen.queryByRole('button', { name: 'Adicionar município Maracás' })).toBeNull()
+  })
+
   it('parses Zona TSE tags as sorted unique bounded numbers', () => {
     expect(parseTseZoneNumbers('58, 12 58\n5')).toEqual([5, 12, 58])
     expect(() => parseTseZoneNumbers('58;59')).toThrow('apenas números')
@@ -376,7 +408,11 @@ describe('campaign nucleus UI contracts', () => {
   })
 
   it('renders sorted unique Zona TSE tags inside the editable input group', () => {
-    render(createElement(TseZoneInput, { defaultValues: [58] }))
+    const ControlledTseZoneInput = () => {
+      const [zones, setZones] = useState([58])
+      return createElement(TseZoneInput, { value: zones, onChange: setZones })
+    }
+    render(createElement(ControlledTseZoneInput))
     const input = screen.getByLabelText('Adicionar Zona TSE')
 
     fireEvent.change(input, { target: { value: '12' } })

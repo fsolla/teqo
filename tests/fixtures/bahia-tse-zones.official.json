@@ -1,0 +1,2553 @@
+{
+  "provenance": {
+    "description": "Test-only evidence of Bahia municipality↔TSE zone pairs derived independently from the TSE 2024 detalhe_votacao_munzona BA CSV. It was not generated from src/lib/bahiaTseZones.ts.",
+    "source": {
+      "portal": "https://dadosabertos.tse.jus.br/dataset/resultados-2024",
+      "resource": "Detalhe da apuração por município e zona",
+      "url": "https://cdn.tse.jus.br/estatistica/sead/odsele/detalhe_votacao_munzona/detalhe_votacao_munzona_2024.zip",
+      "entry": "detalhe_votacao_munzona_2024_BA.csv",
+      "electionYear": 2024,
+      "downloadSha256": "24e75fcf98a57b2362c33d46eb96b99a4b7070966cfc7f6398e12240e3f679f0"
+    },
+    "normalization": "TSE NM_MUNICIPIO spellings were reconciled to canonical bahiaTerritories names via accent/case folding plus known aliases (Camacan, Dias d'Ávila, Muquém de São Francisco, Santa Teresinha). The evidence SHA-256 covers every canonical municipality and its sorted unique zone numbers."
+  },
+  "municipalityCount": 417,
+  "assignments": [
+    {
+      "municipality": "Abaíra",
+      "zones": [
+        105
+      ]
+    },
+    {
+      "municipality": "Abaré",
+      "zones": [
+        158
+      ]
+    },
+    {
+      "municipality": "Acajutiba",
+      "zones": [
+        21
+      ]
+    },
+    {
+      "municipality": "Adustina",
+      "zones": [
+        52
+      ]
+    },
+    {
+      "municipality": "Água Fria",
+      "zones": [
+        74
+      ]
+    },
+    {
+      "municipality": "Aiquara",
+      "zones": [
+        147
+      ]
+    },
+    {
+      "municipality": "Alagoinhas",
+      "zones": [
+        163
+      ]
+    },
+    {
+      "municipality": "Alcobaça",
+      "zones": [
+        112
+      ]
+    },
+    {
+      "municipality": "Almadina",
+      "zones": [
+        135
+      ]
+    },
+    {
+      "municipality": "Amargosa",
+      "zones": [
+        36
+      ]
+    },
+    {
+      "municipality": "Amélia Rodrigues",
+      "zones": [
+        192
+      ]
+    },
+    {
+      "municipality": "América Dourada",
+      "zones": [
+        199
+      ]
+    },
+    {
+      "municipality": "Anagé",
+      "zones": [
+        161
+      ]
+    },
+    {
+      "municipality": "Andaraí",
+      "zones": [
+        119
+      ]
+    },
+    {
+      "municipality": "Andorinha",
+      "zones": [
+        45
+      ]
+    },
+    {
+      "municipality": "Angical",
+      "zones": [
+        126
+      ]
+    },
+    {
+      "municipality": "Anguera",
+      "zones": [
+        157
+      ]
+    },
+    {
+      "municipality": "Antas",
+      "zones": [
+        82
+      ]
+    },
+    {
+      "municipality": "Antônio Cardoso",
+      "zones": [
+        143
+      ]
+    },
+    {
+      "municipality": "Antônio Gonçalves",
+      "zones": [
+        53
+      ]
+    },
+    {
+      "municipality": "Aporá",
+      "zones": [
+        44
+      ]
+    },
+    {
+      "municipality": "Apuarema",
+      "zones": [
+        23
+      ]
+    },
+    {
+      "municipality": "Araças",
+      "zones": [
+        200
+      ]
+    },
+    {
+      "municipality": "Aracatu",
+      "zones": [
+        90
+      ]
+    },
+    {
+      "municipality": "Araci",
+      "zones": [
+        123
+      ]
+    },
+    {
+      "municipality": "Aramari",
+      "zones": [
+        163
+      ]
+    },
+    {
+      "municipality": "Arataca",
+      "zones": [
+        166
+      ]
+    },
+    {
+      "municipality": "Aratuípe",
+      "zones": [
+        30
+      ]
+    },
+    {
+      "municipality": "Aurelino Leal",
+      "zones": [
+        73
+      ]
+    },
+    {
+      "municipality": "Baianópolis",
+      "zones": [
+        126
+      ]
+    },
+    {
+      "municipality": "Baixa Grande",
+      "zones": [
+        86
+      ]
+    },
+    {
+      "municipality": "Banzaê",
+      "zones": [
+        110
+      ]
+    },
+    {
+      "municipality": "Barra",
+      "zones": [
+        77
+      ]
+    },
+    {
+      "municipality": "Barra da Estiva",
+      "zones": [
+        169
+      ]
+    },
+    {
+      "municipality": "Barra do Choça",
+      "zones": [
+        139
+      ]
+    },
+    {
+      "municipality": "Barra do Mendes",
+      "zones": [
+        176
+      ]
+    },
+    {
+      "municipality": "Barra do Rocha",
+      "zones": [
+        134
+      ]
+    },
+    {
+      "municipality": "Barreiras",
+      "zones": [
+        70,
+        75
+      ]
+    },
+    {
+      "municipality": "Barro Alto",
+      "zones": [
+        174
+      ]
+    },
+    {
+      "municipality": "Barro Preto",
+      "zones": [
+        136
+      ]
+    },
+    {
+      "municipality": "Barrocas",
+      "zones": [
+        150
+      ]
+    },
+    {
+      "municipality": "Belmonte",
+      "zones": [
+        34
+      ]
+    },
+    {
+      "municipality": "Belo Campo",
+      "zones": [
+        177
+      ]
+    },
+    {
+      "municipality": "Biritinga",
+      "zones": [
+        150
+      ]
+    },
+    {
+      "municipality": "Boa Nova",
+      "zones": [
+        59
+      ]
+    },
+    {
+      "municipality": "Boa Vista do Tupim",
+      "zones": [
+        42
+      ]
+    },
+    {
+      "municipality": "Bom Jesus da Lapa",
+      "zones": [
+        71
+      ]
+    },
+    {
+      "municipality": "Bom Jesus da Serra",
+      "zones": [
+        59
+      ]
+    },
+    {
+      "municipality": "Boninal",
+      "zones": [
+        105
+      ]
+    },
+    {
+      "municipality": "Bonito",
+      "zones": [
+        69
+      ]
+    },
+    {
+      "municipality": "Boquira",
+      "zones": [
+        65
+      ]
+    },
+    {
+      "municipality": "Botuporã",
+      "zones": [
+        168
+      ]
+    },
+    {
+      "municipality": "Brejões",
+      "zones": [
+        36
+      ]
+    },
+    {
+      "municipality": "Brejolândia",
+      "zones": [
+        190
+      ]
+    },
+    {
+      "municipality": "Brotas de Macaúbas",
+      "zones": [
+        94
+      ]
+    },
+    {
+      "municipality": "Brumado",
+      "zones": [
+        90
+      ]
+    },
+    {
+      "municipality": "Buerarema",
+      "zones": [
+        166
+      ]
+    },
+    {
+      "municipality": "Buritirama",
+      "zones": [
+        77
+      ]
+    },
+    {
+      "municipality": "Caatiba",
+      "zones": [
+        201
+      ]
+    },
+    {
+      "municipality": "Cabaceiras do Paraguaçu",
+      "zones": [
+        131
+      ]
+    },
+    {
+      "municipality": "Cachoeira",
+      "zones": [
+        118
+      ]
+    },
+    {
+      "municipality": "Caculé",
+      "zones": [
+        93
+      ]
+    },
+    {
+      "municipality": "Caém",
+      "zones": [
+        167
+      ]
+    },
+    {
+      "municipality": "Caetanos",
+      "zones": [
+        58
+      ]
+    },
+    {
+      "municipality": "Caetité",
+      "zones": [
+        63
+      ]
+    },
+    {
+      "municipality": "Cafarnaum",
+      "zones": [
+        55
+      ]
+    },
+    {
+      "municipality": "Cairu",
+      "zones": [
+        31
+      ]
+    },
+    {
+      "municipality": "Caldeirão Grande",
+      "zones": [
+        115
+      ]
+    },
+    {
+      "municipality": "Camacan",
+      "zones": [
+        133
+      ]
+    },
+    {
+      "municipality": "Camaçari",
+      "zones": [
+        170,
+        171
+      ]
+    },
+    {
+      "municipality": "Camamu",
+      "zones": [
+        78
+      ]
+    },
+    {
+      "municipality": "Campo Alegre de Lourdes",
+      "zones": [
+        67
+      ]
+    },
+    {
+      "municipality": "Campo Formoso",
+      "zones": [
+        53
+      ]
+    },
+    {
+      "municipality": "Canápolis",
+      "zones": [
+        99
+      ]
+    },
+    {
+      "municipality": "Canarana",
+      "zones": [
+        174
+      ]
+    },
+    {
+      "municipality": "Canavieiras",
+      "zones": [
+        116
+      ]
+    },
+    {
+      "municipality": "Candeal",
+      "zones": [
+        114
+      ]
+    },
+    {
+      "municipality": "Candeias",
+      "zones": [
+        127
+      ]
+    },
+    {
+      "municipality": "Candiba",
+      "zones": [
+        64
+      ]
+    },
+    {
+      "municipality": "Cândido Sales",
+      "zones": [
+        40
+      ]
+    },
+    {
+      "municipality": "Cansanção",
+      "zones": [
+        50
+      ]
+    },
+    {
+      "municipality": "Canudos",
+      "zones": [
+        83
+      ]
+    },
+    {
+      "municipality": "Capela do Alto Alegre",
+      "zones": [
+        196
+      ]
+    },
+    {
+      "municipality": "Capim Grosso",
+      "zones": [
+        191
+      ]
+    },
+    {
+      "municipality": "Caraíbas",
+      "zones": [
+        161
+      ]
+    },
+    {
+      "municipality": "Caravelas",
+      "zones": [
+        112
+      ]
+    },
+    {
+      "municipality": "Cardeal da Silva",
+      "zones": [
+        144
+      ]
+    },
+    {
+      "municipality": "Carinhanha",
+      "zones": [
+        125
+      ]
+    },
+    {
+      "municipality": "Casa Nova",
+      "zones": [
+        66
+      ]
+    },
+    {
+      "municipality": "Castro Alves",
+      "zones": [
+        43
+      ]
+    },
+    {
+      "municipality": "Catolândia",
+      "zones": [
+        100
+      ]
+    },
+    {
+      "municipality": "Catu",
+      "zones": [
+        129
+      ]
+    },
+    {
+      "municipality": "Caturama",
+      "zones": [
+        111
+      ]
+    },
+    {
+      "municipality": "Central",
+      "zones": [
+        159
+      ]
+    },
+    {
+      "municipality": "Chorrochó",
+      "zones": [
+        158
+      ]
+    },
+    {
+      "municipality": "Cícero Dantas",
+      "zones": [
+        82
+      ]
+    },
+    {
+      "municipality": "Cipó",
+      "zones": [
+        79
+      ]
+    },
+    {
+      "municipality": "Coaraci",
+      "zones": [
+        135
+      ]
+    },
+    {
+      "municipality": "Cocos",
+      "zones": [
+        61
+      ]
+    },
+    {
+      "municipality": "Conceição da Feira",
+      "zones": [
+        108
+      ]
+    },
+    {
+      "municipality": "Conceição do Almeida",
+      "zones": [
+        184
+      ]
+    },
+    {
+      "municipality": "Conceição do Coité",
+      "zones": [
+        132
+      ]
+    },
+    {
+      "municipality": "Conceição do Jacuípe",
+      "zones": [
+        192
+      ]
+    },
+    {
+      "municipality": "Conde",
+      "zones": [
+        21
+      ]
+    },
+    {
+      "municipality": "Condeúba",
+      "zones": [
+        60
+      ]
+    },
+    {
+      "municipality": "Contendas do Sincorá",
+      "zones": [
+        58
+      ]
+    },
+    {
+      "municipality": "Coração de Maria",
+      "zones": [
+        130
+      ]
+    },
+    {
+      "municipality": "Cordeiros",
+      "zones": [
+        60
+      ]
+    },
+    {
+      "municipality": "Coribe",
+      "zones": [
+        61
+      ]
+    },
+    {
+      "municipality": "Coronel João Sá",
+      "zones": [
+        52
+      ]
+    },
+    {
+      "municipality": "Correntina",
+      "zones": [
+        124
+      ]
+    },
+    {
+      "municipality": "Cotegipe",
+      "zones": [
+        98
+      ]
+    },
+    {
+      "municipality": "Cravolândia",
+      "zones": [
+        38
+      ]
+    },
+    {
+      "municipality": "Crisópolis",
+      "zones": [
+        81
+      ]
+    },
+    {
+      "municipality": "Cristópolis",
+      "zones": [
+        126
+      ]
+    },
+    {
+      "municipality": "Cruz das Almas",
+      "zones": [
+        142
+      ]
+    },
+    {
+      "municipality": "Curaçá",
+      "zones": [
+        85
+      ]
+    },
+    {
+      "municipality": "Dário Meira",
+      "zones": [
+        147
+      ]
+    },
+    {
+      "municipality": "Dias d'Ávila",
+      "zones": [
+        186
+      ]
+    },
+    {
+      "municipality": "Dom Basílio",
+      "zones": [
+        101
+      ]
+    },
+    {
+      "municipality": "Dom Macedo Costa",
+      "zones": [
+        202
+      ]
+    },
+    {
+      "municipality": "Elísio Medrado",
+      "zones": [
+        107
+      ]
+    },
+    {
+      "municipality": "Encruzilhada",
+      "zones": [
+        152
+      ]
+    },
+    {
+      "municipality": "Entre Rios",
+      "zones": [
+        144
+      ]
+    },
+    {
+      "municipality": "Érico Cardoso",
+      "zones": [
+        111
+      ]
+    },
+    {
+      "municipality": "Esplanada",
+      "zones": [
+        21
+      ]
+    },
+    {
+      "municipality": "Euclides da Cunha",
+      "zones": [
+        102
+      ]
+    },
+    {
+      "municipality": "Eunápolis",
+      "zones": [
+        188,
+        203
+      ]
+    },
+    {
+      "municipality": "Fátima",
+      "zones": [
+        82
+      ]
+    },
+    {
+      "municipality": "Feira da Mata",
+      "zones": [
+        125
+      ]
+    },
+    {
+      "municipality": "Feira de Santana",
+      "zones": [
+        154,
+        155,
+        156,
+        157
+      ]
+    },
+    {
+      "municipality": "Filadélfia",
+      "zones": [
+        149
+      ]
+    },
+    {
+      "municipality": "Firmino Alves",
+      "zones": [
+        137
+      ]
+    },
+    {
+      "municipality": "Floresta Azul",
+      "zones": [
+        29
+      ]
+    },
+    {
+      "municipality": "Formosa do Rio Preto",
+      "zones": [
+        187
+      ]
+    },
+    {
+      "municipality": "Gandu",
+      "zones": [
+        151
+      ]
+    },
+    {
+      "municipality": "Gavião",
+      "zones": [
+        191
+      ]
+    },
+    {
+      "municipality": "Gentio do Ouro",
+      "zones": [
+        68
+      ]
+    },
+    {
+      "municipality": "Glória",
+      "zones": [
+        84
+      ]
+    },
+    {
+      "municipality": "Gongogi",
+      "zones": [
+        73
+      ]
+    },
+    {
+      "municipality": "Governador Mangabeira",
+      "zones": [
+        131
+      ]
+    },
+    {
+      "municipality": "Guajeru",
+      "zones": [
+        93
+      ]
+    },
+    {
+      "municipality": "Guanambi",
+      "zones": [
+        64
+      ]
+    },
+    {
+      "municipality": "Guaratinga",
+      "zones": [
+        189
+      ]
+    },
+    {
+      "municipality": "Heliópolis",
+      "zones": [
+        110
+      ]
+    },
+    {
+      "municipality": "Iaçu",
+      "zones": [
+        193
+      ]
+    },
+    {
+      "municipality": "Ibiassucê",
+      "zones": [
+        93
+      ]
+    },
+    {
+      "municipality": "Ibicaraí",
+      "zones": [
+        29
+      ]
+    },
+    {
+      "municipality": "Ibicoara",
+      "zones": [
+        169
+      ]
+    },
+    {
+      "municipality": "Ibicuí",
+      "zones": [
+        146
+      ]
+    },
+    {
+      "municipality": "Ibipeba",
+      "zones": [
+        176
+      ]
+    },
+    {
+      "municipality": "Ibipitanga",
+      "zones": [
+        65
+      ]
+    },
+    {
+      "municipality": "Ibiquera",
+      "zones": [
+        42
+      ]
+    },
+    {
+      "municipality": "Ibirapitanga",
+      "zones": [
+        134
+      ]
+    },
+    {
+      "municipality": "Ibirapuã",
+      "zones": [
+        153
+      ]
+    },
+    {
+      "municipality": "Ibirataia",
+      "zones": [
+        24
+      ]
+    },
+    {
+      "municipality": "Ibitiara",
+      "zones": [
+        88
+      ]
+    },
+    {
+      "municipality": "Ibititá",
+      "zones": [
+        104
+      ]
+    },
+    {
+      "municipality": "Ibotirama",
+      "zones": [
+        173
+      ]
+    },
+    {
+      "municipality": "Ichu",
+      "zones": [
+        132
+      ]
+    },
+    {
+      "municipality": "Igaporã",
+      "zones": [
+        168
+      ]
+    },
+    {
+      "municipality": "Igrapiúna",
+      "zones": [
+        32
+      ]
+    },
+    {
+      "municipality": "Iguaí",
+      "zones": [
+        146
+      ]
+    },
+    {
+      "municipality": "Ilhéus",
+      "zones": [
+        25,
+        26
+      ]
+    },
+    {
+      "municipality": "Inhambupe",
+      "zones": [
+        44
+      ]
+    },
+    {
+      "municipality": "Ipecaetá",
+      "zones": [
+        143
+      ]
+    },
+    {
+      "municipality": "Ipiaú",
+      "zones": [
+        24
+      ]
+    },
+    {
+      "municipality": "Ipirá",
+      "zones": [
+        62
+      ]
+    },
+    {
+      "municipality": "Ipupiara",
+      "zones": [
+        94
+      ]
+    },
+    {
+      "municipality": "Irajuba",
+      "zones": [
+        76
+      ]
+    },
+    {
+      "municipality": "Iramaia",
+      "zones": [
+        169
+      ]
+    },
+    {
+      "municipality": "Iraquara",
+      "zones": [
+        89
+      ]
+    },
+    {
+      "municipality": "Irará",
+      "zones": [
+        74
+      ]
+    },
+    {
+      "municipality": "Irecê",
+      "zones": [
+        95
+      ]
+    },
+    {
+      "municipality": "Itabela",
+      "zones": [
+        189
+      ]
+    },
+    {
+      "municipality": "Itaberaba",
+      "zones": [
+        42
+      ]
+    },
+    {
+      "municipality": "Itabuna",
+      "zones": [
+        27,
+        28
+      ]
+    },
+    {
+      "municipality": "Itacaré",
+      "zones": [
+        198
+      ]
+    },
+    {
+      "municipality": "Itaeté",
+      "zones": [
+        119
+      ]
+    },
+    {
+      "municipality": "Itagi",
+      "zones": [
+        147
+      ]
+    },
+    {
+      "municipality": "Itagibá",
+      "zones": [
+        147
+      ]
+    },
+    {
+      "municipality": "Itagimirim",
+      "zones": [
+        188
+      ]
+    },
+    {
+      "municipality": "Itaguaçu da Bahia",
+      "zones": [
+        68
+      ]
+    },
+    {
+      "municipality": "Itaju do Colônia",
+      "zones": [
+        137
+      ]
+    },
+    {
+      "municipality": "Itajuípe",
+      "zones": [
+        136
+      ]
+    },
+    {
+      "municipality": "Itamaraju",
+      "zones": [
+        172
+      ]
+    },
+    {
+      "municipality": "Itamari",
+      "zones": [
+        151
+      ]
+    },
+    {
+      "municipality": "Itambé",
+      "zones": [
+        201
+      ]
+    },
+    {
+      "municipality": "Itanagra",
+      "zones": [
+        185
+      ]
+    },
+    {
+      "municipality": "Itanhém",
+      "zones": [
+        148
+      ]
+    },
+    {
+      "municipality": "Itaparica",
+      "zones": [
+        141
+      ]
+    },
+    {
+      "municipality": "Itapé",
+      "zones": [
+        27
+      ]
+    },
+    {
+      "municipality": "Itapebi",
+      "zones": [
+        188
+      ]
+    },
+    {
+      "municipality": "Itapetinga",
+      "zones": [
+        140
+      ]
+    },
+    {
+      "municipality": "Itapicuru",
+      "zones": [
+        81
+      ]
+    },
+    {
+      "municipality": "Itapitanga",
+      "zones": [
+        135
+      ]
+    },
+    {
+      "municipality": "Itaquara",
+      "zones": [
+        76
+      ]
+    },
+    {
+      "municipality": "Itarantim",
+      "zones": [
+        138
+      ]
+    },
+    {
+      "municipality": "Itatim",
+      "zones": [
+        107
+      ]
+    },
+    {
+      "municipality": "Itiruçu",
+      "zones": [
+        37
+      ]
+    },
+    {
+      "municipality": "Itiúba",
+      "zones": [
+        149
+      ]
+    },
+    {
+      "municipality": "Itororó",
+      "zones": [
+        137
+      ]
+    },
+    {
+      "municipality": "Ituaçu",
+      "zones": [
+        58
+      ]
+    },
+    {
+      "municipality": "Ituberá",
+      "zones": [
+        32
+      ]
+    },
+    {
+      "municipality": "Iuiú",
+      "zones": [
+        175
+      ]
+    },
+    {
+      "municipality": "Jaborandi",
+      "zones": [
+        61
+      ]
+    },
+    {
+      "municipality": "Jacaraci",
+      "zones": [
+        92
+      ]
+    },
+    {
+      "municipality": "Jacobina",
+      "zones": [
+        46
+      ]
+    },
+    {
+      "municipality": "Jaguaquara",
+      "zones": [
+        76
+      ]
+    },
+    {
+      "municipality": "Jaguarari",
+      "zones": [
+        179
+      ]
+    },
+    {
+      "municipality": "Jaguaripe",
+      "zones": [
+        30
+      ]
+    },
+    {
+      "municipality": "Jandaíra",
+      "zones": [
+        49
+      ]
+    },
+    {
+      "municipality": "Jequié",
+      "zones": [
+        22,
+        23
+      ]
+    },
+    {
+      "municipality": "Jeremoabo",
+      "zones": [
+        51
+      ]
+    },
+    {
+      "municipality": "Jiquiriçá",
+      "zones": [
+        109
+      ]
+    },
+    {
+      "municipality": "Jitaúna",
+      "zones": [
+        24
+      ]
+    },
+    {
+      "municipality": "João Dourado",
+      "zones": [
+        199
+      ]
+    },
+    {
+      "municipality": "Juazeiro",
+      "zones": [
+        47,
+        48
+      ]
+    },
+    {
+      "municipality": "Jucuruçu",
+      "zones": [
+        172
+      ]
+    },
+    {
+      "municipality": "Jussara",
+      "zones": [
+        159
+      ]
+    },
+    {
+      "municipality": "Jussari",
+      "zones": [
+        28
+      ]
+    },
+    {
+      "municipality": "Jussiape",
+      "zones": [
+        101
+      ]
+    },
+    {
+      "municipality": "Lafaiete Coutinho",
+      "zones": [
+        23
+      ]
+    },
+    {
+      "municipality": "Lagoa Real",
+      "zones": [
+        63
+      ]
+    },
+    {
+      "municipality": "Laje",
+      "zones": [
+        109
+      ]
+    },
+    {
+      "municipality": "Lajedão",
+      "zones": [
+        153
+      ]
+    },
+    {
+      "municipality": "Lajedinho",
+      "zones": [
+        87
+      ]
+    },
+    {
+      "municipality": "Lajedo do Tabocal",
+      "zones": [
+        37
+      ]
+    },
+    {
+      "municipality": "Lamarão",
+      "zones": [
+        160
+      ]
+    },
+    {
+      "municipality": "Lapão",
+      "zones": [
+        104
+      ]
+    },
+    {
+      "municipality": "Lauro de Freitas",
+      "zones": [
+        180
+      ]
+    },
+    {
+      "municipality": "Lençóis",
+      "zones": [
+        89
+      ]
+    },
+    {
+      "municipality": "Licínio de Almeida",
+      "zones": [
+        117
+      ]
+    },
+    {
+      "municipality": "Livramento de Nossa Senhora",
+      "zones": [
+        101
+      ]
+    },
+    {
+      "municipality": "Luís Eduardo Magalhães",
+      "zones": [
+        205
+      ]
+    },
+    {
+      "municipality": "Macajuba",
+      "zones": [
+        87
+      ]
+    },
+    {
+      "municipality": "Macarani",
+      "zones": [
+        91
+      ]
+    },
+    {
+      "municipality": "Macaúbas",
+      "zones": [
+        65
+      ]
+    },
+    {
+      "municipality": "Macururé",
+      "zones": [
+        158
+      ]
+    },
+    {
+      "municipality": "Madre de Deus",
+      "zones": [
+        162
+      ]
+    },
+    {
+      "municipality": "Maetinga",
+      "zones": [
+        161
+      ]
+    },
+    {
+      "municipality": "Maiquinique",
+      "zones": [
+        91
+      ]
+    },
+    {
+      "municipality": "Mairi",
+      "zones": [
+        86
+      ]
+    },
+    {
+      "municipality": "Malhada",
+      "zones": [
+        125
+      ]
+    },
+    {
+      "municipality": "Malhada de Pedras",
+      "zones": [
+        90
+      ]
+    },
+    {
+      "municipality": "Manoel Vitorino",
+      "zones": [
+        22
+      ]
+    },
+    {
+      "municipality": "Mansidão",
+      "zones": [
+        97
+      ]
+    },
+    {
+      "municipality": "Maracás",
+      "zones": [
+        37
+      ]
+    },
+    {
+      "municipality": "Maragogipe",
+      "zones": [
+        118
+      ]
+    },
+    {
+      "municipality": "Maraú",
+      "zones": [
+        78
+      ]
+    },
+    {
+      "municipality": "Marcionílio Souza",
+      "zones": [
+        193
+      ]
+    },
+    {
+      "municipality": "Mascote",
+      "zones": [
+        133
+      ]
+    },
+    {
+      "municipality": "Mata de São João",
+      "zones": [
+        185
+      ]
+    },
+    {
+      "municipality": "Matina",
+      "zones": [
+        113
+      ]
+    },
+    {
+      "municipality": "Medeiros Neto",
+      "zones": [
+        153
+      ]
+    },
+    {
+      "municipality": "Miguel Calmon",
+      "zones": [
+        103
+      ]
+    },
+    {
+      "municipality": "Milagres",
+      "zones": [
+        193
+      ]
+    },
+    {
+      "municipality": "Mirangaba",
+      "zones": [
+        167
+      ]
+    },
+    {
+      "municipality": "Mirante",
+      "zones": [
+        59
+      ]
+    },
+    {
+      "municipality": "Monte Santo",
+      "zones": [
+        50
+      ]
+    },
+    {
+      "municipality": "Morpará",
+      "zones": [
+        173
+      ]
+    },
+    {
+      "municipality": "Morro do Chapéu",
+      "zones": [
+        55
+      ]
+    },
+    {
+      "municipality": "Mortugaba",
+      "zones": [
+        92
+      ]
+    },
+    {
+      "municipality": "Mucugê",
+      "zones": [
+        119
+      ]
+    },
+    {
+      "municipality": "Mucuri",
+      "zones": [
+        35
+      ]
+    },
+    {
+      "municipality": "Mulungu do Morro",
+      "zones": [
+        55
+      ]
+    },
+    {
+      "municipality": "Mundo Novo",
+      "zones": [
+        54
+      ]
+    },
+    {
+      "municipality": "Muniz Ferreira",
+      "zones": [
+        202
+      ]
+    },
+    {
+      "municipality": "Muquém de São Francisco",
+      "zones": [
+        98
+      ]
+    },
+    {
+      "municipality": "Muritiba",
+      "zones": [
+        131
+      ]
+    },
+    {
+      "municipality": "Mutuípe",
+      "zones": [
+        109
+      ]
+    },
+    {
+      "municipality": "Nazaré",
+      "zones": [
+        30
+      ]
+    },
+    {
+      "municipality": "Nilo Peçanha",
+      "zones": [
+        32
+      ]
+    },
+    {
+      "municipality": "Nordestina",
+      "zones": [
+        106
+      ]
+    },
+    {
+      "municipality": "Nova Canaã",
+      "zones": [
+        146
+      ]
+    },
+    {
+      "municipality": "Nova Fátima",
+      "zones": [
+        196
+      ]
+    },
+    {
+      "municipality": "Nova Ibiá",
+      "zones": [
+        151
+      ]
+    },
+    {
+      "municipality": "Nova Itarana",
+      "zones": [
+        36
+      ]
+    },
+    {
+      "municipality": "Nova Redenção",
+      "zones": [
+        119
+      ]
+    },
+    {
+      "municipality": "Nova Soure",
+      "zones": [
+        79
+      ]
+    },
+    {
+      "municipality": "Nova Viçosa",
+      "zones": [
+        35
+      ]
+    },
+    {
+      "municipality": "Novo Horizonte",
+      "zones": [
+        88
+      ]
+    },
+    {
+      "municipality": "Novo Triunfo",
+      "zones": [
+        82
+      ]
+    },
+    {
+      "municipality": "Olindina",
+      "zones": [
+        81
+      ]
+    },
+    {
+      "municipality": "Oliveira dos Brejinhos",
+      "zones": [
+        94
+      ]
+    },
+    {
+      "municipality": "Ouriçangas",
+      "zones": [
+        74
+      ]
+    },
+    {
+      "municipality": "Ourolândia",
+      "zones": [
+        167
+      ]
+    },
+    {
+      "municipality": "Palmas de Monte Alto",
+      "zones": [
+        175
+      ]
+    },
+    {
+      "municipality": "Palmeiras",
+      "zones": [
+        89
+      ]
+    },
+    {
+      "municipality": "Paramirim",
+      "zones": [
+        111
+      ]
+    },
+    {
+      "municipality": "Paratinga",
+      "zones": [
+        173
+      ]
+    },
+    {
+      "municipality": "Paripiranga",
+      "zones": [
+        52
+      ]
+    },
+    {
+      "municipality": "Pau Brasil",
+      "zones": [
+        133
+      ]
+    },
+    {
+      "municipality": "Paulo Afonso",
+      "zones": [
+        84,
+        181
+      ]
+    },
+    {
+      "municipality": "Pé de Serra",
+      "zones": [
+        114
+      ]
+    },
+    {
+      "municipality": "Pedrão",
+      "zones": [
+        130
+      ]
+    },
+    {
+      "municipality": "Pedro Alexandre",
+      "zones": [
+        51
+      ]
+    },
+    {
+      "municipality": "Piatã",
+      "zones": [
+        105
+      ]
+    },
+    {
+      "municipality": "Pilão Arcado",
+      "zones": [
+        195
+      ]
+    },
+    {
+      "municipality": "Pindaí",
+      "zones": [
+        117
+      ]
+    },
+    {
+      "municipality": "Pindobaçu",
+      "zones": [
+        115
+      ]
+    },
+    {
+      "municipality": "Pintadas",
+      "zones": [
+        62
+      ]
+    },
+    {
+      "municipality": "Piraí do Norte",
+      "zones": [
+        151
+      ]
+    },
+    {
+      "municipality": "Piripá",
+      "zones": [
+        177
+      ]
+    },
+    {
+      "municipality": "Piritiba",
+      "zones": [
+        54
+      ]
+    },
+    {
+      "municipality": "Planaltino",
+      "zones": [
+        37
+      ]
+    },
+    {
+      "municipality": "Planalto",
+      "zones": [
+        139
+      ]
+    },
+    {
+      "municipality": "Poções",
+      "zones": [
+        59
+      ]
+    },
+    {
+      "municipality": "Pojuca",
+      "zones": [
+        200
+      ]
+    },
+    {
+      "municipality": "Ponto Novo",
+      "zones": [
+        149
+      ]
+    },
+    {
+      "municipality": "Porto Seguro",
+      "zones": [
+        121,
+        122
+      ]
+    },
+    {
+      "municipality": "Potiraguá",
+      "zones": [
+        138
+      ]
+    },
+    {
+      "municipality": "Prado",
+      "zones": [
+        112
+      ]
+    },
+    {
+      "municipality": "Presidente Dutra",
+      "zones": [
+        95
+      ]
+    },
+    {
+      "municipality": "Presidente Jânio Quadros",
+      "zones": [
+        60
+      ]
+    },
+    {
+      "municipality": "Presidente Tancredo Neves",
+      "zones": [
+        197
+      ]
+    },
+    {
+      "municipality": "Queimadas",
+      "zones": [
+        106
+      ]
+    },
+    {
+      "municipality": "Quijingue",
+      "zones": [
+        102
+      ]
+    },
+    {
+      "municipality": "Quixabeira",
+      "zones": [
+        191
+      ]
+    },
+    {
+      "municipality": "Rafael Jambeiro",
+      "zones": [
+        43
+      ]
+    },
+    {
+      "municipality": "Remanso",
+      "zones": [
+        67
+      ]
+    },
+    {
+      "municipality": "Retirolândia",
+      "zones": [
+        196
+      ]
+    },
+    {
+      "municipality": "Riachão das Neves",
+      "zones": [
+        182
+      ]
+    },
+    {
+      "municipality": "Riachão do Jacuípe",
+      "zones": [
+        114
+      ]
+    },
+    {
+      "municipality": "Riacho de Santana",
+      "zones": [
+        113
+      ]
+    },
+    {
+      "municipality": "Ribeira do Amparo",
+      "zones": [
+        79
+      ]
+    },
+    {
+      "municipality": "Ribeira do Pombal",
+      "zones": [
+        110
+      ]
+    },
+    {
+      "municipality": "Ribeirão do Largo",
+      "zones": [
+        152
+      ]
+    },
+    {
+      "municipality": "Rio de Contas",
+      "zones": [
+        101
+      ]
+    },
+    {
+      "municipality": "Rio do Antônio",
+      "zones": [
+        93
+      ]
+    },
+    {
+      "municipality": "Rio do Pires",
+      "zones": [
+        111
+      ]
+    },
+    {
+      "municipality": "Rio Real",
+      "zones": [
+        49
+      ]
+    },
+    {
+      "municipality": "Rodelas",
+      "zones": [
+        158
+      ]
+    },
+    {
+      "municipality": "Ruy Barbosa",
+      "zones": [
+        87
+      ]
+    },
+    {
+      "municipality": "Salinas da Margarida",
+      "zones": [
+        30
+      ]
+    },
+    {
+      "municipality": "Salvador",
+      "zones": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "municipality": "Santa Bárbara",
+      "zones": [
+        160
+      ]
+    },
+    {
+      "municipality": "Santa Brígida",
+      "zones": [
+        181
+      ]
+    },
+    {
+      "municipality": "Santa Cruz Cabrália",
+      "zones": [
+        121
+      ]
+    },
+    {
+      "municipality": "Santa Cruz da Vitória",
+      "zones": [
+        29
+      ]
+    },
+    {
+      "municipality": "Santa Inês",
+      "zones": [
+        38
+      ]
+    },
+    {
+      "municipality": "Santa Luzia",
+      "zones": [
+        133
+      ]
+    },
+    {
+      "municipality": "Santa Maria da Vitória",
+      "zones": [
+        72
+      ]
+    },
+    {
+      "municipality": "Santa Rita de Cássia",
+      "zones": [
+        97
+      ]
+    },
+    {
+      "municipality": "Santa Teresinha",
+      "zones": [
+        107
+      ]
+    },
+    {
+      "municipality": "Santaluz",
+      "zones": [
+        145
+      ]
+    },
+    {
+      "municipality": "Santana",
+      "zones": [
+        99
+      ]
+    },
+    {
+      "municipality": "Santanópolis",
+      "zones": [
+        74
+      ]
+    },
+    {
+      "municipality": "Santo Amaro",
+      "zones": [
+        178
+      ]
+    },
+    {
+      "municipality": "Santo Antônio de Jesus",
+      "zones": [
+        56,
+        202
+      ]
+    },
+    {
+      "municipality": "Santo Estêvão",
+      "zones": [
+        143
+      ]
+    },
+    {
+      "municipality": "São Desidério",
+      "zones": [
+        100
+      ]
+    },
+    {
+      "municipality": "São Domingos",
+      "zones": [
+        120
+      ]
+    },
+    {
+      "municipality": "São Felipe",
+      "zones": [
+        184
+      ]
+    },
+    {
+      "municipality": "São Félix",
+      "zones": [
+        118
+      ]
+    },
+    {
+      "municipality": "São Félix do Coribe",
+      "zones": [
+        72
+      ]
+    },
+    {
+      "municipality": "São Francisco do Conde",
+      "zones": [
+        162
+      ]
+    },
+    {
+      "municipality": "São Gabriel",
+      "zones": [
+        95
+      ]
+    },
+    {
+      "municipality": "São Gonçalo dos Campos",
+      "zones": [
+        108
+      ]
+    },
+    {
+      "municipality": "São José da Vitória",
+      "zones": [
+        166
+      ]
+    },
+    {
+      "municipality": "São José do Jacuípe",
+      "zones": [
+        191
+      ]
+    },
+    {
+      "municipality": "São Miguel das Matas",
+      "zones": [
+        36
+      ]
+    },
+    {
+      "municipality": "São Sebastião do Passé",
+      "zones": [
+        128
+      ]
+    },
+    {
+      "municipality": "Sapeaçu",
+      "zones": [
+        142
+      ]
+    },
+    {
+      "municipality": "Sátiro Dias",
+      "zones": [
+        44
+      ]
+    },
+    {
+      "municipality": "Saubara",
+      "zones": [
+        178
+      ]
+    },
+    {
+      "municipality": "Saúde",
+      "zones": [
+        115
+      ]
+    },
+    {
+      "municipality": "Seabra",
+      "zones": [
+        88
+      ]
+    },
+    {
+      "municipality": "Sebastião Laranjeiras",
+      "zones": [
+        175
+      ]
+    },
+    {
+      "municipality": "Senhor do Bonfim",
+      "zones": [
+        45
+      ]
+    },
+    {
+      "municipality": "Sento Sé",
+      "zones": [
+        96
+      ]
+    },
+    {
+      "municipality": "Serra do Ramalho",
+      "zones": [
+        71
+      ]
+    },
+    {
+      "municipality": "Serra Dourada",
+      "zones": [
+        190
+      ]
+    },
+    {
+      "municipality": "Serra Preta",
+      "zones": [
+        155
+      ]
+    },
+    {
+      "municipality": "Serrinha",
+      "zones": [
+        150
+      ]
+    },
+    {
+      "municipality": "Serrolândia",
+      "zones": [
+        46
+      ]
+    },
+    {
+      "municipality": "Simões Filho",
+      "zones": [
+        33
+      ]
+    },
+    {
+      "municipality": "Sítio do Mato",
+      "zones": [
+        71
+      ]
+    },
+    {
+      "municipality": "Sítio do Quinto",
+      "zones": [
+        51
+      ]
+    },
+    {
+      "municipality": "Sobradinho",
+      "zones": [
+        66
+      ]
+    },
+    {
+      "municipality": "Souto Soares",
+      "zones": [
+        174
+      ]
+    },
+    {
+      "municipality": "Tabocas do Brejo Velho",
+      "zones": [
+        190
+      ]
+    },
+    {
+      "municipality": "Tanhaçu",
+      "zones": [
+        58
+      ]
+    },
+    {
+      "municipality": "Tanque Novo",
+      "zones": [
+        168
+      ]
+    },
+    {
+      "municipality": "Tanquinho",
+      "zones": [
+        160
+      ]
+    },
+    {
+      "municipality": "Taperoá",
+      "zones": [
+        32
+      ]
+    },
+    {
+      "municipality": "Tapiramutá",
+      "zones": [
+        54
+      ]
+    },
+    {
+      "municipality": "Teixeira de Freitas",
+      "zones": [
+        183
+      ]
+    },
+    {
+      "municipality": "Teodoro Sampaio",
+      "zones": [
+        130
+      ]
+    },
+    {
+      "municipality": "Teofilândia",
+      "zones": [
+        123
+      ]
+    },
+    {
+      "municipality": "Teolândia",
+      "zones": [
+        197
+      ]
+    },
+    {
+      "municipality": "Terra Nova",
+      "zones": [
+        128
+      ]
+    },
+    {
+      "municipality": "Tremedal",
+      "zones": [
+        177
+      ]
+    },
+    {
+      "municipality": "Tucano",
+      "zones": [
+        80
+      ]
+    },
+    {
+      "municipality": "Uauá",
+      "zones": [
+        83
+      ]
+    },
+    {
+      "municipality": "Ubaíra",
+      "zones": [
+        38
+      ]
+    },
+    {
+      "municipality": "Ubaitaba",
+      "zones": [
+        73
+      ]
+    },
+    {
+      "municipality": "Ubatã",
+      "zones": [
+        134
+      ]
+    },
+    {
+      "municipality": "Uibaí",
+      "zones": [
+        159
+      ]
+    },
+    {
+      "municipality": "Umburanas",
+      "zones": [
+        167
+      ]
+    },
+    {
+      "municipality": "Una",
+      "zones": [
+        116
+      ]
+    },
+    {
+      "municipality": "Urandi",
+      "zones": [
+        117
+      ]
+    },
+    {
+      "municipality": "Uruçuca",
+      "zones": [
+        198
+      ]
+    },
+    {
+      "municipality": "Utinga",
+      "zones": [
+        69
+      ]
+    },
+    {
+      "municipality": "Valença",
+      "zones": [
+        31
+      ]
+    },
+    {
+      "municipality": "Valente",
+      "zones": [
+        120
+      ]
+    },
+    {
+      "municipality": "Várzea da Roça",
+      "zones": [
+        86
+      ]
+    },
+    {
+      "municipality": "Várzea do Poço",
+      "zones": [
+        103
+      ]
+    },
+    {
+      "municipality": "Várzea Nova",
+      "zones": [
+        55
+      ]
+    },
+    {
+      "municipality": "Varzedo",
+      "zones": [
+        56
+      ]
+    },
+    {
+      "municipality": "Vera Cruz",
+      "zones": [
+        141
+      ]
+    },
+    {
+      "municipality": "Vereda",
+      "zones": [
+        148
+      ]
+    },
+    {
+      "municipality": "Vitória da Conquista",
+      "zones": [
+        39,
+        40,
+        41
+      ]
+    },
+    {
+      "municipality": "Wagner",
+      "zones": [
+        69
+      ]
+    },
+    {
+      "municipality": "Wanderley",
+      "zones": [
+        98
+      ]
+    },
+    {
+      "municipality": "Wenceslau Guimarães",
+      "zones": [
+        197
+      ]
+    },
+    {
+      "municipality": "Xique-Xique",
+      "zones": [
+        68
+      ]
+    }
+  ],
+  "evidenceSha256": "4f23bbc46c87891b66ca9aeee453bc9e513618edc3e0dea67ef0ae63ed61d624"
+}

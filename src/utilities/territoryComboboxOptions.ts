@@ -15,7 +15,10 @@ const toOptions = (values: readonly string[]): StrictComboboxOption[] =>
 
 export const territoryComboboxOptions = toOptions(bahiaIdentityTerritories)
 
+/** Full Bahia municipality list — stable module reference for client filters. */
+export const allMunicipalityComboboxOptions = toOptions(bahiaMunicipalities)
+
 export const municipalityComboboxOptions = (region?: string | null): StrictComboboxOption[] =>
-  toOptions(
-    region && isBahiaIdentityTerritory(region) ? citiesForTerritory(region) : bahiaMunicipalities,
-  )
+  region && isBahiaIdentityTerritory(region)
+    ? toOptions(citiesForTerritory(region))
+    : allMunicipalityComboboxOptions
