@@ -1,8 +1,10 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import React from 'react'
 
+import { RegisterServiceWorker } from '@/components/campaign/RegisterServiceWorker'
 import { VoteEstimateFocusProvider } from '@/components/campaign/VoteEstimateFocusProvider'
+import { CAMPAIGN_PWA_MANIFEST_PATH, CAMPAIGN_PWA_THEME_COLOR } from '@/utilities/campaignPwa'
 
 import '../(frontend)/styles.css'
 
@@ -14,6 +16,19 @@ export const metadata: Metadata = {
     index: false,
     follow: false,
   },
+  manifest: CAMPAIGN_PWA_MANIFEST_PATH,
+  appleWebApp: {
+    capable: true,
+    title: 'Campanha',
+    statusBarStyle: 'default',
+  },
+  icons: {
+    apple: '/campaign-icons/apple-touch-icon.png',
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: CAMPAIGN_PWA_THEME_COLOR,
 }
 
 export default function CampanhaRootLayout({ children }: { children: React.ReactNode }) {
@@ -26,6 +41,7 @@ export default function CampanhaRootLayout({ children }: { children: React.React
     >
       <body className="bg-background bg-none text-foreground antialiased">
         <VoteEstimateFocusProvider>{children}</VoteEstimateFocusProvider>
+        <RegisterServiceWorker />
       </body>
     </html>
   )

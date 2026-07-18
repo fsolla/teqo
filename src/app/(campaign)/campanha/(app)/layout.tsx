@@ -3,6 +3,7 @@ import React from 'react'
 
 import { CampaignBottomNav } from '@/components/campaign/CampaignBottomNav'
 import { CampaignSidebar } from '@/components/campaign/CampaignSidebar'
+import { InstallPwaToast } from '@/components/campaign/InstallPwaToast'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/Sidebar'
 import { Toaster } from '@/components/ui/Toaster'
 import { getCampaignUser } from '@/utilities/campaignAuth'
@@ -38,6 +39,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
         </div>
         <CampaignBottomNav role={user.role} />
         <Toaster position="top-center" />
+        <InstallPwaToast />
       </SidebarInset>
     </SidebarProvider>
   )

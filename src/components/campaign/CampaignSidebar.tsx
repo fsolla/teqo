@@ -1,5 +1,6 @@
 'use client'
 
+import type { FormEvent } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -21,6 +22,7 @@ import {
   useSidebar,
 } from '@/components/ui/Sidebar'
 import type { CampaignUser } from '@/payload-types'
+import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 
 export type CampaignSidebarUser = {
   name: string
@@ -37,6 +39,12 @@ const roleLabels: Record<CampaignUser['role'], string> = {
 export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
   const pathname = usePathname()
   const { isMobile, setOpenMobile } = useSidebar()
+
+  const handleLogout = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    await clearCampaignPwaCaches()
+    await logoutCampaign()
+  }
 
   return (
     <Sidebar collapsible="none" className="h-svh shrink-0 border-r border-sidebar-border">
@@ -82,7 +90,7 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
             <span className="truncate text-xs text-muted-foreground">{user.email}</span>
           ) : null}
         </div>
-        <form action={logoutCampaign}>
+        <form action={logoutCampaign} onSubmit={handleLogout}>
           <Button
             type="submit"
             variant="outline"
