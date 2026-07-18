@@ -8,15 +8,10 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/
 import type { NucleusUpdatesPageData } from '@/utilities/nucleusUpdatePageData'
 import {
   buildNucleusUpdateHref,
+  nucleusUpdateKindLabels,
   type NucleusUpdateListState,
   type NucleusUpdateViewModel,
 } from '@/utilities/nucleusUpdateUi'
-
-const kindLabels: Record<NucleusUpdateViewModel['kind'], string> = {
-  semanal: 'Semanal',
-  urgente: 'Urgente',
-  nota: 'Nota',
-}
 
 const roleLabels: Record<NucleusUpdateViewModel['authorRole'], string> = {
   geral: 'Coordenação geral',
@@ -26,7 +21,7 @@ const roleLabels: Record<NucleusUpdateViewModel['authorRole'], string> = {
 
 const updateFilters: Array<{ label: string; state: NucleusUpdateListState }> = [
   { label: 'Todas', state: { page: 1 } },
-  ...Object.entries(kindLabels).map(([kind, label]) => ({
+  ...Object.entries(nucleusUpdateKindLabels).map(([kind, label]) => ({
     label,
     state: { kind: kind as NucleusUpdateListState['kind'], page: 1 },
   })),
@@ -45,7 +40,7 @@ const UpdateCard = ({ update, now }: { update: NucleusUpdateViewModel; now: stri
       <CardHeader>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={update.kind === 'urgente' ? 'destructive' : 'secondary'}>
-            {kindLabels[update.kind]}
+            {nucleusUpdateKindLabels[update.kind]}
           </Badge>
           <span className="text-sm text-muted-foreground">
             {relativeDate(update.createdAt, now)}

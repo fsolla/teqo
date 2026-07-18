@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   getCampaignUser: vi.fn(),
   getPayload: vi.fn(),
   loadNucleusListPageData: vi.fn(),
+  loadNucleusListOverviewData: vi.fn(),
   redirect: vi.fn((href: string) => {
     throw new Error(`redirect:${href}`)
   }),
@@ -18,6 +19,9 @@ vi.mock('@/utilities/campaignAuth', () => ({
 vi.mock('@/utilities/nucleusPageData', () => ({
   loadNucleusListPageData: mocks.loadNucleusListPageData,
 }))
+vi.mock('@/utilities/nucleusListOverviewPageData', () => ({
+  loadNucleusListOverviewData: mocks.loadNucleusListOverviewData,
+}))
 
 import NucleiPage from '@/app/(campaign)/campanha/(app)/nucleos/page'
 
@@ -26,6 +30,7 @@ describe('campaign nucleus server page canonical URL', () => {
     vi.clearAllMocks()
     mocks.getCampaignUser.mockResolvedValue({ id: 9, role: 'coordenador' })
     mocks.getPayload.mockResolvedValue({})
+    mocks.loadNucleusListOverviewData.mockResolvedValue(null)
   })
 
   it('redirects a noncanonical query before loading Payload data', async () => {
@@ -37,9 +42,7 @@ describe('campaign nucleus server page canonical URL', () => {
           obsoleteFilter: 'legacy',
         }),
       }),
-    ).rejects.toThrow(
-      'redirect:/campanha/nucleos?region=Chapada+Diamantina&city=Mucug%C3%AA',
-    )
+    ).rejects.toThrow('redirect:/campanha/nucleos?region=Chapada+Diamantina&city=Mucug%C3%AA')
 
     expect(mocks.getCampaignUser).not.toHaveBeenCalled()
     expect(mocks.getPayload).not.toHaveBeenCalled()

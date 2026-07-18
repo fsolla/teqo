@@ -8,6 +8,7 @@ import { getPayload } from 'payload'
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { NucleusFilters } from '@/components/campaign/NucleusFilters'
 import { NucleusList } from '@/components/campaign/NucleusList'
+import { NucleusListOverview } from '@/components/campaign/NucleusListOverview'
 import { NucleusPagination } from '@/components/campaign/NucleusPagination'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +20,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/Empty'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { loadNucleusListOverviewData } from '@/utilities/nucleusListOverviewPageData'
 import { loadNucleusListPageData } from '@/utilities/nucleusPageData'
 import {
   buildNucleusFiltersKey,
@@ -40,7 +42,11 @@ export default async function NucleiPage({ searchParams }: NucleiPageProps) {
 
   if (!user) return null
 
-  const { result, scope } = await loadNucleusListPageData(payload, user, rawSearchParams)
+  const now = new Date()
+  const [{ result, scope }, overview] = await Promise.all([
+    loadNucleusListPageData(payload, user, rawSearchParams),
+    loadNucleusListOverviewData(payload, user, canonicalUrl.state),
+  ])
   const resolvedUrl = resolveNucleusListUrl(rawSearchParams, result.totalPages)
 
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
@@ -72,6 +78,7 @@ export default async function NucleiPage({ searchParams }: NucleiPageProps) {
 
       {result.docs.length ? (
         <>
+          {overview ? <NucleusListOverview view={overview} now={now} /> : null}
           <NucleusList
             nuclei={result.docs.map((nucleus) =>
               toNucleusListViewModel(nucleus as ElectoralNucleus),

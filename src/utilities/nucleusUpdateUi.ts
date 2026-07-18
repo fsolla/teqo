@@ -11,6 +11,12 @@ import {
 
 export const nucleusUpdatePageSize = 10
 
+export const nucleusUpdateKindLabels: Record<NucleusUpdate['kind'], string> = {
+  semanal: 'Semanal',
+  urgente: 'Urgente',
+  nota: 'Nota',
+}
+
 export type NucleusUpdateListState = {
   kind?: NucleusUpdate['kind']
   page: number
