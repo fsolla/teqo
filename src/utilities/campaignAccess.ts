@@ -377,7 +377,7 @@ export const getAccessibleNucleusIds = async (
   return uniqueIDs
 }
 
-export const canReadCampaignUserPhone: FieldAccess = async ({ id, req }) => {
+export const canReadCampaignUserPhone: FieldAccess = async ({ doc, id, req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
@@ -392,6 +392,28 @@ export const canReadCampaignUserPhone: FieldAccess = async ({ id, req }) => {
   const context = req.context as Record<string, unknown>
   const cacheKey = `${CAMPAIGN_USER_PHONE_ACCESS_CONTEXT_KEY}:${currentUser.id}:${targetUserID}`
   if (typeof context[cacheKey] === 'boolean') return context[cacheKey]
+
+  let targetRole =
+    typeof doc === 'object' && doc !== null && 'role' in doc ? doc.role : undefined
+  if (targetRole === undefined) {
+    try {
+      const target = await req.payload.findByID({
+        collection: 'campaignUser',
+        id: targetUserID,
+        depth: 0,
+        select: { role: true },
+        overrideAccess: true,
+        req,
+      })
+      targetRole = target.role
+    } catch {
+      // Missing target only — fall through to the coordinator-scope check.
+    }
+  }
+  if (targetRole === 'geral') {
+    context[cacheKey] = true
+    return true
+  }
 
   const nucleusIDs = await getAccessibleNucleusIds(req, currentUser)
   if (!nucleusIDs?.length) {

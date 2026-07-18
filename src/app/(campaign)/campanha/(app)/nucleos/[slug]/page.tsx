@@ -9,6 +9,7 @@ import {
   assignNucleusCoordinatorsFormAction,
   loadCoordinatorAssignmentOptions,
 } from '@/app/(campaign)/campanha/(app)/nucleos/[slug]/coordinatorAssignmentFormActions'
+import { loadNucleusShareRecipients } from '@/app/(campaign)/campanha/(app)/nucleos/[slug]/shareRecipientsActions'
 import { confirmVoteEstimateFormAction } from '@/app/(campaign)/campanha/(app)/nucleos/[slug]/voteEstimateFormActions'
 import { ArchiveNucleusDialog } from '@/components/campaign/ArchiveNucleusDialog'
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
@@ -16,6 +17,7 @@ import { CoordinatorAssignmentCard } from '@/components/campaign/CoordinatorAssi
 import { CoordinatorAssignmentDialog } from '@/components/campaign/CoordinatorAssignmentDialog'
 import { NucleusActiveTab, NucleusActiveTabLoading } from '@/components/campaign/NucleusActiveTab'
 import { NucleusTabNav } from '@/components/campaign/NucleusTabNav'
+import { ShareNucleusDialogShell } from '@/components/campaign/ShareNucleusDialogShell'
 import { TseZoneBadge } from '@/components/campaign/TseZoneBadge'
 import { VoteEstimateCard } from '@/components/campaign/VoteEstimateCard'
 import { VoteEstimateDialogShell } from '@/components/campaign/VoteEstimateDialogShell'
@@ -115,6 +117,11 @@ export default async function NucleusDetailPage({ params, searchParams }: Nucleu
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <ShareNucleusDialogShell
+              loadRecipients={loadNucleusShareRecipients.bind(null, view.slug)}
+              nucleusName={view.name}
+              senderName={user.name}
+            />
             {canEdit ? (
               <Button asChild variant="outline" className="min-h-11">
                 <Link href={`/campanha/nucleos/${view.slug}/editar`}>

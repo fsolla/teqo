@@ -175,6 +175,33 @@ describe('campaign user contact phone', () => {
     })
   })
 
+  it('lets coordenador and lideranca read contact phones of geral users', async () => {
+    await withCampaignFixtures(payload, async (fixtures) => {
+      const generalPhone = fixtures.phone()
+      const general = await fixtures.createCampaignUser('geral', { phone: generalPhone })
+      const coordinator = await fixtures.createCampaignUser('coordenador', {
+        phone: fixtures.phone(),
+      })
+      const leader = await fixtures.createCampaignUser('lideranca', {
+        phone: fixtures.phone(),
+      })
+      const nucleus = await fixtures.createNucleus({ coordinators: [coordinator.id] })
+      await createEngagedPhoneAccessGraph(fixtures, general, leader, nucleus.id)
+
+      for (const viewer of [coordinator, leader]) {
+        const visible = await payload.findByID({
+          collection: 'campaignUser',
+          id: general.id,
+          depth: 0,
+          select: { name: true, phone: true },
+          user: viewer,
+          overrideAccess: false,
+        })
+        expect(visible.phone).toBe(generalPhone)
+      }
+    })
+  })
+
   it('allows owner and geral field updates but protects create from ordinary users', async () => {
     await withCampaignFixtures(payload, async (fixtures) => {
       const owner = await fixtures.createCampaignUser('lideranca', {
