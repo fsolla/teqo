@@ -187,11 +187,7 @@ const upsertContactByPhone = async ({
   return { contactID: contact.id, reused: false }
 }
 
-const createValidatedSupporter = async (
-  payload: Payload,
-  actor: CampaignUser,
-  input: unknown,
-) => {
+const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, input: unknown) => {
   const data = supporterCreateSchema.parse(input)
 
   try {
@@ -271,11 +267,8 @@ const createValidatedSupporter = async (
   }
 }
 
-export const createSupporterRecord = (
-  payload: Payload,
-  actor: CampaignUser,
-  input: unknown,
-) => createValidatedSupporter(payload, actor, input)
+export const createSupporterRecord = (payload: Payload, actor: CampaignUser, input: unknown) =>
+  createValidatedSupporter(payload, actor, input)
 
 export const createSupporter = async (input: unknown) => {
   const { payload, actor } = await getCampaignActionContext()
@@ -350,9 +343,7 @@ const mapImportHeader = (header: string): string | null => {
   return aliases[normalized] ?? null
 }
 
-const parseVoteIntentionCell = (
-  value: string,
-): SupporterVoteIntention | undefined | 'invalid' => {
+const parseVoteIntentionCell = (value: string): SupporterVoteIntention | undefined | 'invalid' => {
   const trimmed = value.trim()
   if (!trimmed) return undefined
   const normalized = normalizeImportHeader(trimmed).replace(/-/g, '_')
@@ -524,9 +515,8 @@ export const previewSupporterImportText = async (
   const counts = {
     ok: rows.filter(isSupporterImportOkRow).length,
     duplicate: rows.filter((row) => row.status === 'duplicado_pelo_telefone').length,
-    error: rows.filter(
-      (row) => row.status !== 'ok' && row.status !== 'duplicado_pelo_telefone',
-    ).length,
+    error: rows.filter((row) => row.status !== 'ok' && row.status !== 'duplicado_pelo_telefone')
+      .length,
   }
 
   return { rows, counts }

@@ -9,18 +9,12 @@ import {
 } from '@/lib/schemas/primitives'
 import { normalizeSearchPhrase } from '@/utilities/wordStartFilter'
 
-export const supporterVoteIntentions = [
-  'certo',
-  'tende_a_certo',
-  'indeciso',
-  'outro',
-] as const
+export const supporterVoteIntentions = ['certo', 'tende_a_certo', 'indeciso', 'outro'] as const
 
 export type SupporterVoteIntention = (typeof supporterVoteIntentions)[number]
 
 export const isSupporterVoteIntention = (value: unknown): value is SupporterVoteIntention =>
-  typeof value === 'string' &&
-  (supporterVoteIntentions as readonly string[]).includes(value)
+  typeof value === 'string' && (supporterVoteIntentions as readonly string[]).includes(value)
 
 const canonicalMunicipalityBySearchValue = new Map(
   bahiaMunicipalities.map((city) => [normalizeSearchPhrase(city), city]),

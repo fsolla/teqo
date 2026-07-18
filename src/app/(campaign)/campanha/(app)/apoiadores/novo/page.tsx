@@ -1,6 +1,6 @@
+import config from '@payload-config'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { createSupporterFormAction } from '@/app/(campaign)/campanha/(app)/apoiadores/novo/formActions'

@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import { PhoneIcon } from 'lucide-react'
+import Link from 'next/link'
 
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -13,8 +13,8 @@ import {
   TableRow,
 } from '@/components/ui/Table'
 import { formatBrazilianPhoneInput } from '@/utilities/phone'
-import type { SupporterListItemViewModel } from '@/utilities/supporterViewModels'
 import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
+import type { SupporterListItemViewModel } from '@/utilities/supporterViewModels'
 
 export type SupporterListProps = {
   supporters: SupporterListItemViewModel[]

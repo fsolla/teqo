@@ -1,9 +1,9 @@
 'use client'
 
+import { CheckCircle2Icon, FileUpIcon, UploadIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
-import { CheckCircle2Icon, FileUpIcon, UploadIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -17,12 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldLabel,
-} from '@/components/ui/field'
+import { Field, FieldContent, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import {
@@ -95,9 +90,7 @@ export const SupporterImportWizard = () => {
         setStep(1)
       } catch (previewError) {
         setError(
-          previewError instanceof Error
-            ? previewError.message
-            : 'Não foi possível ler o arquivo.',
+          previewError instanceof Error ? previewError.message : 'Não foi possível ler o arquivo.',
         )
       }
     })
@@ -145,10 +138,16 @@ export const SupporterImportWizard = () => {
             <span
               className={cn(
                 'inline-flex size-7 items-center justify-center rounded-full border text-xs font-semibold',
-                index <= step ? 'border-primary bg-primary text-primary-foreground' : 'text-muted-foreground',
+                index <= step
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'text-muted-foreground',
               )}
             >
-              {index < step ? <CheckCircle2Icon className="size-4" aria-hidden="true" /> : index + 1}
+              {index < step ? (
+                <CheckCircle2Icon className="size-4" aria-hidden="true" />
+              ) : (
+                index + 1
+              )}
             </span>
             <span className={index <= step ? 'font-medium' : 'text-muted-foreground'}>{label}</span>
             {index < steps.length - 1 ? <span className="text-muted-foreground">→</span> : null}
@@ -235,9 +234,7 @@ export const SupporterImportWizard = () => {
                     <TableCell>{row.telefone}</TableCell>
                     <TableCell>{row.municipio || '—'}</TableCell>
                     <TableCell>
-                      {row.voteIntention
-                        ? supporterVoteIntentionLabels[row.voteIntention]
-                        : '—'}
+                      {row.voteIntention ? supporterVoteIntentionLabels[row.voteIntention] : '—'}
                     </TableCell>
                     <TableCell>{importStatusLabels[row.status]}</TableCell>
                   </TableRow>
@@ -282,7 +279,11 @@ export const SupporterImportWizard = () => {
               disabled={!operatorAttested || preview.counts.ok === 0 || isPending}
               onClick={confirmImport}
             >
-              {isPending ? <Spinner data-icon="inline-start" /> : <UploadIcon data-icon="inline-start" />}
+              {isPending ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <UploadIcon data-icon="inline-start" />
+              )}
               {isPending ? 'Importando…' : `Importar ${preview.counts.ok} apoiadores`}
             </Button>
           </div>

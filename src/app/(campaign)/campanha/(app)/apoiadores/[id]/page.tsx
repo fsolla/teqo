@@ -1,12 +1,10 @@
+import config from '@payload-config'
+import { ArrowLeftIcon, ShieldCheckIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import config from '@payload-config'
 import { getPayload } from 'payload'
-import { ArrowLeftIcon, ShieldCheckIcon } from 'lucide-react'
 
-import {
-  setSupporterVoteIntentionFormAction,
-} from '@/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions'
+import { setSupporterVoteIntentionFormAction } from '@/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions'
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { ConsentText } from '@/components/campaign/ConsentText'
 import { RemoveSupporterDataButton } from '@/components/campaign/RemoveSupporterDataButton'
@@ -22,8 +20,8 @@ import {
   loadSupporterDetailPageData,
   SupporterNotFoundError,
 } from '@/utilities/supporterPageData'
-import { parseSupporterId } from '@/utilities/supporterViewModels'
 import { canAccessSupporterArea, supporterVoteIntentionLabels } from '@/utilities/supporterUi'
+import { parseSupporterId } from '@/utilities/supporterViewModels'
 
 type SupporterDetailPageProps = {
   params: Promise<{ id: string }>
@@ -59,7 +57,8 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
     ? supporterVoteIntentionLabels[supporter.voteIntention]
     : null
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'https://jorgesolla.com.br'
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'https://jorgesolla.com.br'
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">

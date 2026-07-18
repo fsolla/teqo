@@ -1,7 +1,7 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { SupporterFormState } from '@/app/(campaign)/campanha/(app)/apoiadores/novo/formActions'
@@ -21,10 +21,10 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
-import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/utilities/phone'
-import type { SupporterNucleusOption } from '@/utilities/supporterViewModels'
-import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
+import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/utilities/phone'
+import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
+import type { SupporterNucleusOption } from '@/utilities/supporterViewModels'
 
 export type SupporterFormAction = (
   state: SupporterFormState,
@@ -218,9 +218,7 @@ export const SupporterForm = ({
         </Field>
 
         <Field data-invalid={nucleusField.invalid}>
-          <FieldLabel htmlFor="supporter-nucleus">
-            Núcleo{requireNucleus ? ' *' : ''}
-          </FieldLabel>
+          <FieldLabel htmlFor="supporter-nucleus">Núcleo{requireNucleus ? ' *' : ''}</FieldLabel>
           <NativeSelect
             id="supporter-nucleus"
             name="nucleus"

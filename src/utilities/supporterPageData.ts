@@ -6,17 +6,17 @@ import {
   getSupporterVoteIntentionConsent,
 } from '@/utilities/campaignConsent'
 import {
-  toSupporterDetailViewModel,
-  type SupporterDetailViewModel,
-  type SupporterListOverviewViewModel,
-  type SupporterNucleusOption,
-} from '@/utilities/supporterViewModels'
-import {
   buildSupporterListWhere,
   resolveSupporterListUrl,
   supporterPageSize,
   type SupporterListState,
 } from '@/utilities/supporterUi'
+import {
+  toSupporterDetailViewModel,
+  type SupporterDetailViewModel,
+  type SupporterListOverviewViewModel,
+  type SupporterNucleusOption,
+} from '@/utilities/supporterViewModels'
 
 type SupporterListSearchParams = Record<string, string | string[] | undefined>
 

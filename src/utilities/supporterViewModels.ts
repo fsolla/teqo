@@ -48,7 +48,9 @@ export type SupporterDetailViewModel = {
 const contactFromSupporter = (supporter: { contact: Supporter['contact'] }): Contact | null =>
   isPopulatedRelationship<Contact>(supporter.contact) ? supporter.contact : null
 
-const nucleusFromSupporter = (supporter: { nucleus?: Supporter['nucleus'] }): ElectoralNucleus | null =>
+const nucleusFromSupporter = (supporter: {
+  nucleus?: Supporter['nucleus']
+}): ElectoralNucleus | null =>
   isPopulatedRelationship<ElectoralNucleus>(supporter.nucleus) ? supporter.nucleus : null
 
 export const toSupporterListItemViewModel = (

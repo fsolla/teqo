@@ -144,6 +144,7 @@ Componentes:
 - Uso da base no dia D — C5.
 - Campo `supportLevel` — fora do v1.
 - Mesclar `leadership` em `supporter` — `leadership` segue responsável pelo acesso ao app.
+- **Escala/DRY pós-v1** (shells compartilhados com núcleos, import bulk drizzle, preview token, KPI agregado, StrictCombobox/AlertDialog) — item **C6**, plano [escala-dry-pos-c2.md](escala-dry-pos-c2.md).
 
 ## Bloqueador obrigatório de produção
 
@@ -156,6 +157,7 @@ Antes de importar dados reais ou capturar intenção de voto: a assessoria jurí
 ## Revisões
 
 - **2026-07-18:** auditoria pré-implementação C2. Corrigidas refs defasadas (`campaignConsent.ts` em vez de `campaignInvite.ts` / `supporterConsent.ts`; `contactPhoneInvariant.ts` em vez de `supporterDedup.ts`). Decisões fechadas: telefone obrigatório; kit mínimo no v1; enum de intenção; coexistência com leadership; import só `geral`; `supportLevel` fora do v1; `removeSupporterData` com anonimização condicionada a outros joins.
+- **2026-07-18 (pós-simplify):** follow-ups de escala/DRY adiados do v1 registrados como **C6** ([escala-dry-pos-c2.md](escala-dry-pos-c2.md)).
 
 ## Referências
 
