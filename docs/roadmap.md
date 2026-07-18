@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-18 (código do MVP de Núcleos enviado; priorização eleitoral mantida)
+Atualizado em: 2026-07-18 (MVP + Ciclo 2 deployados; A2 revisado: sugestões cruzadas opt-in no formulário de território, em vez de auto-preenchimento forçado)
 
 Registro canônico no repositório dos planos futuros e débitos conhecidos. Status operacional do ciclo atual de Núcleos fica em [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc); este arquivo lista o que ainda é futuro ou bloqueador, **em ordem de execução**, com dependências e paralelismo explícitos.
 
@@ -29,7 +29,7 @@ Registro canônico no repositório dos planos futuros e débitos conhecidos. Sta
 
 ## Onda 0 — Caminho crítico para `/campanha` em produção
 
-O MVP de Núcleos está **entregue em código** (ondas 1–8 + refactors; commit em `main` em 2026-07-18). A migration `20260718_010733_consolidate_campaign_schema` aplica automaticamente no `pnpm build` da Vercel. O que ainda separa a vertical de uso operacional com dados reais é jurídico + smoke pós-deploy:
+O MVP de Núcleos está **entregue e deployado** (ondas 1–8 + refactors; 2026-07-18), junto com A1 (território multi-município/bairro), A3 (baseline TSE 2022 — modelo + import), B1 (overview da lista), C1 (compartilhar página) e D1 (PWA). As migrations (`20260718_010733_consolidate_campaign_schema`, `20260718_190559_territorio_multi_municipio_bairro`, `20260718_195854_add_election_results`) aplicam automaticamente no `pnpm build` da Vercel. O que ainda separa a vertical de uso operacional com dados reais é jurídico + smoke pós-deploy:
 
 1. **Lote jurídico único de LGPD/Consent** _(externo — assessoria jurídica eleitoral; é o caminho crítico da vertical inteira)_. Uma única rodada cobrindo:
    - Base do art. 11 da LGPD + texto versionado de `Consent.key = 'lideranca-autopreenchimento'` (bloqueador do MVP de Núcleos; o app falha fechado sem a chave).
@@ -39,14 +39,22 @@ O MVP de Núcleos está **entregue em código** (ondas 1–8 + refactors; commit
    - Avaliação de necessidade de RIPD (tratamento em larga escala + dado sensível).
    - Racional: fatiar em rodadas separadas multiplica o lead time externo; quatro textos + aviso numa rodada só.
 2. **Smoke pós-deploy** _(após o build Vercel aplicar a migration)_: conferir `NEXT_PUBLIC_SITE_URL` HTTPS exato, login `/campanha`, criar núcleo de teste, e só então cadastrar o Consent de liderança. Checklist completo no AGENTS.md.
-3. **Ativação com dados reais assim que (1) liberar a chave de liderança.** Decisão de sequenciamento: **não** esperar a migração multi-município. Prós: coordenadores estruturam núcleos reais durante as convenções (20/07–05/08); a migration multi-município é in-place com backfill seguro e pode rodar com dados reais pequenos. Contras: uma migration a mais pós-lançamento. O contra é barato; o pró é tempo de campanha, que não volta.
+3. **Ativação com dados reais assim que (1) liberar a chave de liderança.** (A decisão de 2026-07-17 de não esperar a migração multi-município ficou superada: A1 foi entregue e deployado antes da ativação — coordenadores já estruturam núcleos reais durante as convenções, 20/07–05/08, com o território definitivo.)
 4. **Onboarding do time real** (usuários `geral`/`coordenador`, primeiros núcleos, treinamento básico de campo).
 
 ## Campanha (`/campanha`)
 
 ### Ciclo 1 — Núcleos (entregue)
 
-MVP de território + reporte implementado e enviado (ondas 1–8 + refactors de composição/infra/fixtures): auth isolada `campaignUser` (`geral` / `coordenador` / `lideranca`), núcleos com slug canônico, designação de coordenador, lideranças, estimativas sugerir/confirmar com versão UUID, atualizações semanais, convites WhatsApp (`wa.me`, hash, uso único), dashboard e hardening. Território atual ainda é `region`/`city`/`neighborhood` unitários; multi-município permanece no item A1. Detalhes: [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
+MVP de território + reporte implementado e enviado (ondas 1–8 + refactors de composição/infra/fixtures): auth isolada `campaignUser` (`geral` / `coordenador` / `lideranca`), núcleos com slug canônico, designação de coordenador, lideranças, estimativas sugerir/confirmar com versão UUID, atualizações semanais, convites WhatsApp (`wa.me`, hash, uso único), dashboard e hardening. Detalhes: [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
+
+### Ciclo 2 — entregues em 2026-07-18 (mesclados e deployados)
+
+- **A1 Território multi-município/bairro** — `regions`/`cities`/`neighborhoods` viram arrays `hasMany` com backfill (`20260718_190559_territorio_multi_municipio_bairro`); bairros exigem município único; regiões derivadas no servidor. [Plano](plans/territorio-multi-municipio-bairro.md).
+- **A3 Baseline TSE 2022 — Fase 1** — collections `electionTally`/`electionCandidateVote`/`electionCandidate` (grupo admin `Dados Eleitorais`), migration `20260718_195854_add_election_results`, import local `pnpm db:seed:tse` idempotente por escopo (year, office, turn). Sem UI ainda — a UI é A4. [Plano](plans/baseline-eleitoral-tse.md).
+- **B1 Overview da lista de núcleos** — painel agregado (estimativa de votos, cobertura, últimas atualizações) entre filtros e lista, reagindo aos mesmos filtros da URL, com escopo por papel. [Plano](plans/overview-lista-nucleos.md).
+- **C1 Compartilhar página** — diálogo no detalhe do núcleo com destinatários WhatsApp (coordenação geral, coordenadores, lideranças engajadas) + copiar link; envia só o link, não concede acesso. [Plano](plans/compartilhar-pagina.md).
+- **D1 PWA `/campanha`** — manifest + service worker escopados em `/campanha`, shell offline, toast de instalação (Android/iOS) e limpeza de cache no logout; fundação do push (D2). [Plano](plans/pwa-campanha.md).
 
 ### Referências de design (UX Pilot, 2026-07-18)
 
@@ -57,7 +65,7 @@ Os designs gerados pelo UX Pilot para os próximos ciclos estão em [`docs/desig
 | B1 Overview da lista de núcleos       | `Lista-Nucleos-Overview`                                                         | [overview-lista-nucleos.md](plans/overview-lista-nucleos.md)                                                                                                                                                                                                                          |
 | C1 Compartilhar página                | `Compartilhar-Nucleo`                                                            | [compartilhar-pagina.md](plans/compartilhar-pagina.md)                                                                                                                                                                                                                                |
 | A1 Território multi-município/bairro  | `Formulario-Territorio` (bloco Território)                                       | [territorio-multi-municipio-bairro.md](plans/territorio-multi-municipio-bairro.md)                                                                                                                                                                                                    |
-| A2 Zonas TSE por município            | `Formulario-Territorio` (seção Zonas TSE)                                        | [zonas-por-municipio.md](plans/zonas-por-municipio.md)                                                                                                                                                                                                                                |
+| A2 Zonas TSE + sugestões cruzadas     | `Formulario-Territorio` (seção Zonas TSE + chips `{rótulo} +`)                   | [zonas-por-municipio.md](plans/zonas-por-municipio.md)                                                                                                                                                                                                                                |
 | A3/A4 Baseline TSE 2022 + Gap vs 2022 | `Baseline-Eleitoral-2022` (+ bloco "Baseline 2022" em `Lista-Nucleos-Overview`)  | [baseline-eleitoral-tse.md](plans/baseline-eleitoral-tse.md)                                                                                                                                                                                                                          |
 | A5 Insights (5 planos)                | `Baseline-Eleitoral-2022` (card "Insights do território", uma linha por insight) | [conversão](plans/insight-taxa-conversao.md) · [classificação](plans/insight-classificacao-territorial.md) · [alavancagem](plans/insight-alavancagem-chapa.md) · [mobilização](plans/insight-mobilizacao-brancos-nulos.md) · [competitiva](plans/insight-inteligencia-competitiva.md) |
 | C2 Cadastro nominal de apoiadores     | `Apoiadores-Lista`, `Apoiador-Ficha`, `Importar-CSV-Apoiadores`                  | [cadastro-nominal-apoiadores.md](plans/cadastro-nominal-apoiadores.md)                                                                                                                                                                                                                |
@@ -80,8 +88,8 @@ flowchart TD
     end
 
     subgraph TrilhaA["Trilha A — dados eleitorais e território"]
-        A1["A1 Território multi-município/bairro<br/>(migration)"]
-        A2["A2 Zonas TSE por município<br/>(auto-preenchimento)"]
+        A1["A1 Território multi-município/bairro<br/>(migration) ✓"]
+        A2["A2 Zonas TSE + sugestões cruzadas<br/>(chips opt-in território↔ZE)"]
         A3["A3 Baseline TSE 2022 — Fase 1<br/>(import, collections) ✓"]
         A4["A4 Baseline no produto + Gap vs 2022<br/>(detalhe, overview)"]
         A5["A5 Insights: conversão, classificação,<br/>alavancagem, mobilização, competitiva"]
@@ -89,14 +97,14 @@ flowchart TD
     end
 
     subgraph TrilhaB["Trilha B — superfícies de coordenação"]
-        B1["B1 Overview da lista de núcleos"]
+        B1["B1 Overview da lista de núcleos ✓"]
         B2["B2 Mapa Fase 1 (geometrias)"]
         B3["B3 Mapa Fase 2 (Leaflet nas superfícies)"]
         B4["B4 Camada de zonas TSE no mapa"]
     end
 
     subgraph TrilhaC["Trilha C — operação de campo"]
-        C1["C1 Compartilhar página"]
+        C1["C1 Compartilhar página ✓"]
         C2["C2 Cadastro nominal de apoiadores"]
         C3["C3 Eventos / agenda de mobilização"]
         C4["C4 Demandas"]
@@ -104,7 +112,7 @@ flowchart TD
     end
 
     subgraph TrilhaD["Trilha D — plataforma e engajamento"]
-        D1["D1 PWA /campanha"]
+        D1["D1 PWA /campanha ✓"]
         D2["D2 Notificações (push + sino)"]
     end
 
@@ -130,20 +138,20 @@ flowchart TD
     JUR -.chave de push.-> D2
 ```
 
-Itens sem seta de entrada (**paralelizáveis a qualquer momento**): A1, B1, B2, C1, C2 (engenharia — produção espera o jurídico), D1, além dos fill-ins (visitados recentemente, listas globais, reset de senha, higiene PascalCase). **A3 entregue** (2026-07-18) — collections + `pnpm db:seed:tse`.
+Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, C2 (engenharia — produção espera o jurídico), além dos fill-ins (visitados recentemente, listas globais, reset de senha, higiene PascalCase). **Entregues em 2026-07-18** (✓ no grafo): A1, A3, B1, C1 e D1 — ver "Ciclo 2" acima. Destravados por eles: A2 (nasce contra `cities[]`; UX revisada 2026-07-18 para chips `{rótulo} +` opt-in), A4 (A3 + B1 prontos), C3/C4 (A1 pronto) e D2 push (D1 pronto; falta a chave jurídica).
 
 ### Sequência de execução por janela do calendário
 
 **Janela 1 — agora → 05/08 (convenções): colocar a vertical em produção e consertar a fundação de dados.**
 
-| Ordem | Item                                            | Plano                                                  | Depende de                                                                                | Paralelizável com |
-| ----- | ----------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------- | ----------------- |
-| 1     | Onda 0 (jurídico em lote + deploy + lançamento) | —                                                      | externo                                                                                   | tudo              |
-| 2     | A1 Território multi-município/bairro **(entregue 2026-07-18)** | [detalhes](plans/territorio-multi-municipio-bairro.md) | — | B1, C1, A3        |
-| 3     | A2 Zonas TSE por município (auto-preenchimento) | [detalhes](plans/zonas-por-municipio.md)               | A1 (nasce contra `cities[]`)                                                              | B1, C1, A3        |
-| 4     | B1 Overview da lista de núcleos                 | [detalhes](plans/overview-lista-nucleos.md)            | —                                                                                         | A1, A2, C1        |
-| 5     | C1 Compartilhar página (quick win de campo)     | [detalhes](plans/compartilhar-pagina.md)               | —                                                                                         | tudo              |
-| 6     | A3 Baseline TSE 2022 — Fase 1 (import) **feito** | [detalhes](plans/baseline-eleitoral-tse.md)            | — (dado público; sem bloqueador LGPD)                                                     | tudo              |
+| Ordem | Item                                                             | Plano                                                  | Depende de                            | Paralelizável com |
+| ----- | ---------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------- | ----------------- |
+| 1     | Onda 0 (jurídico em lote + deploy + lançamento)                  | —                                                      | externo                               | tudo              |
+| 2     | A1 Território multi-município/bairro **(entregue 2026-07-18)**   | [detalhes](plans/territorio-multi-municipio-bairro.md) | —                                     | B1, C1, A3        |
+| 3     | A2 Zonas TSE + sugestões cruzadas (chips opt-in território↔ZE)   | [detalhes](plans/zonas-por-municipio.md)               | A1 (nasce contra `cities[]`)          | B1 ✓, C1 ✓, A3 ✓  |
+| 4     | B1 Overview da lista de núcleos **(entregue 2026-07-18)**        | [detalhes](plans/overview-lista-nucleos.md)            | —                                     | A1, A2, C1        |
+| 5     | C1 Compartilhar página **(entregue 2026-07-18)**                 | [detalhes](plans/compartilhar-pagina.md)               | —                                     | tudo              |
+| 6     | A3 Baseline TSE 2022 — Fase 1 (import) **(entregue 2026-07-18)** | [detalhes](plans/baseline-eleitoral-tse.md)            | — (dado público; sem bloqueador LGPD) | tudo              |
 
 **Janela 2 — 05/08 → 16/08 (pré-propaganda): base nominal + inteligência + agenda prontas para o arranque.**
 
@@ -155,13 +163,13 @@ Itens sem seta de entrada (**paralelizáveis a qualquer momento**): A1, B1, B2, 
 
 **Janela 3 — 16/08 → set (campanha de rua): inteligência ampliada, visualização e engajamento.**
 
-| Ordem | Item                                                                                                                       | Plano                                                                                                                                                                                                                                                                                 | Depende de                                                      | Paralelizável com |
-| ----- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------- |
-| 10    | A5 Insights derivados do baseline (5 itens, paralelizáveis entre si; conversão e classificação exigem limiares de produto) | [conversão](plans/insight-taxa-conversao.md) · [classificação](plans/insight-classificacao-territorial.md) · [alavancagem](plans/insight-alavancagem-chapa.md) · [mobilização](plans/insight-mobilizacao-brancos-nulos.md) · [competitiva](plans/insight-inteligencia-competitiva.md) | A4                                                              | B2/B3, C4, D1     |
-| 11    | B2 + B3 Mapa da Bahia (geometrias + Leaflet)                                                                               | [detalhes](plans/mapa-bahia-geometrias.md)                                                                                                                                                                                                                                            | B3 ← B1+B2 (suave: A4 para coroplético de baseline/classe)      | A5, C4, D1        |
-| 12    | C4 Demandas                                                                                                                | [detalhes](plans/demandas-campanha.md)                                                                                                                                                                                                                                                | A1 (suave: C3 para a relação `actionPlan`)                      | A5, B3, D1        |
-| 13    | D1 PWA `/campanha`                                                                                                         | [detalhes](plans/pwa-campanha.md)                                                                                                                                                                                                                                                     | —                                                               | tudo              |
-| 14    | D2 Notificações (push + sino) — sino não depende do PWA; push sim                                                          | [detalhes](plans/notifications.md)                                                                                                                                                                                                                                                    | D1 (push) + chave `campanha-notificacoes-push` do lote jurídico | A5, B3, C4        |
+| Ordem | Item                                                                                                                       | Plano                                                                                                                                                                                                                                                                                 | Depende de                                                        | Paralelizável com |
+| ----- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------- |
+| 10    | A5 Insights derivados do baseline (5 itens, paralelizáveis entre si; conversão e classificação exigem limiares de produto) | [conversão](plans/insight-taxa-conversao.md) · [classificação](plans/insight-classificacao-territorial.md) · [alavancagem](plans/insight-alavancagem-chapa.md) · [mobilização](plans/insight-mobilizacao-brancos-nulos.md) · [competitiva](plans/insight-inteligencia-competitiva.md) | A4                                                                | B2/B3, C4, D1     |
+| 11    | B2 + B3 Mapa da Bahia (geometrias + Leaflet)                                                                               | [detalhes](plans/mapa-bahia-geometrias.md)                                                                                                                                                                                                                                            | B3 ← B1+B2 (suave: A4 para coroplético de baseline/classe)        | A5, C4, D1        |
+| 12    | C4 Demandas                                                                                                                | [detalhes](plans/demandas-campanha.md)                                                                                                                                                                                                                                                | A1 (suave: C3 para a relação `actionPlan`)                        | A5, B3, D1        |
+| 13    | D1 PWA `/campanha` **(entregue antecipado em 2026-07-18)**                                                                 | [detalhes](plans/pwa-campanha.md)                                                                                                                                                                                                                                                     | —                                                                 | tudo              |
+| 14    | D2 Notificações (push + sino) — sino não depende do PWA; push sim                                                          | [detalhes](plans/notifications.md)                                                                                                                                                                                                                                                    | D1 ✓ (push) + chave `campanha-notificacoes-push` do lote jurídico | A5, B3, C4        |
 
 **Janela 4 — set → 04/10 (reta final): dobradinha, dia D e estabilização.**
 
@@ -179,12 +187,13 @@ Itens sem seta de entrada (**paralelizáveis a qualquer momento**): A1, B1, B2, 
 - **Reset de senha self-service + foto de perfil** (UX adiada do ciclo 1). _(plano MVP)_
 - **Higiene de código:** varredura PascalCase dos componentes legados. _(notebook Núcleos)_
 
-**Cortes seguros se o prazo apertar** (nesta ordem): B4 camada de zonas, B3 mapa Leaflet, C4 demandas, D2 push (mantendo o sino), D1 PWA, fill-ins. **Não cortáveis:** Onda 0 (jurídico/Consent), C2 cadastro de apoiadores, C3 eventos/agenda, A4 baseline + gap — são respectivamente o risco legal, a base de dados, a operação da propaganda e o instrumento de alocação de esforço.
+**Cortes seguros se o prazo apertar** (nesta ordem): B4 camada de zonas, B3 mapa Leaflet, C4 demandas, D2 push (mantendo o sino), fill-ins (D1 PWA já entregue, saiu da lista de cortes). **Não cortáveis:** Onda 0 (jurídico/Consent), C2 cadastro de apoiadores, C3 eventos/agenda, A4 baseline + gap — são respectivamente o risco legal, a base de dados, a operação da propaganda e o instrumento de alocação de esforço.
 
 ### Itens consolidados/removidos nesta revisão (2026-07-17)
 
 - **"Insight: Gap vs 2022" como item separado** — removido: é a Fase 4 do plano de [baseline TSE 2022](plans/baseline-eleitoral-tse.md) (item A4), não um item próprio.
 - **"Import do cadastro oficial de zonas TSE e/ou polígonos GeoJSON"** — absorvido: o cadastro tabular é o plano [zonas-por-municipio](plans/zonas-por-municipio.md) (A2); os polígonos são a camada de zonas do [plano do mapa](plans/mapa-bahia-geometrias.md) (B4).
+- **"Sugestões cruzadas no formulário de território"** (chips `{Município} +` / `{TI} +` em ZEs; irmãos do TI e cidades da ZE em Municípios) — absorvido em A2 na revisão 2026-07-18; substitui o auto-preenchimento forçado + read-only da versão 2026-07-17 do mesmo plano.
 - **"Notificações WhatsApp Business API"** — movido para fora de escopo: a Meta veda o WhatsApp Business API para campanhas políticas no Brasil e a Res. TSE 23.610 (art. 33) veda disparo em massa (pesquisa em [cadastro-nominal-apoiadores.md](plans/cadastro-nominal-apoiadores.md)). Push + sino ([notifications.md](plans/notifications.md)) cobrem a necessidade.
 - **"Previsão estatística de votos"** — mantido, mas explicitamente **fora do horizonte deste ciclo eleitoral**: sem dado acumulado suficiente antes de 04/10; o baseline TSE + estimativa manual + insights são o "mínimo honesto" (design-ux §4.5). Reavaliar pós-eleição.
 - **Dependência baseline → zonas-por-municipio** — rebaixada de dura para suave: `citiesForTerritory` já existe e as rows de `electionTally` resolvem cidade↔zona (ver revisão nos planos).

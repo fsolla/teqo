@@ -59,6 +59,18 @@ pnpm db:seed:posts
 
   `REVALIDATE_SECRET` must be set in the Vercel production env. See the "Posts & Tags" section in `AGENTS.md` for the full rationale (returns `401` on a bad secret, `500` if the secret is unset).
 
+## Seed TSE 2022 election results (`pnpm db:seed:tse`)
+
+```bash
+pnpm db:seed:tse
+TSE_CACHE_DIR=./data/tse pnpm db:seed:tse   # reuse downloaded zips
+```
+
+- `scripts/seed-tse-results.mjs` downloads the TSE open-data zips for the 2022 general election (provenance URLs + SHA-256 in the script header), parses the Bahia scope, and imports into `electionTally` / `electionCandidateVote` / `electionCandidate` via a drizzle transaction.
+- Same safety guard as `pnpm dev`: it refuses a non-local `DATABASE_URL` unless `ALLOW_REMOTE_DB=true`.
+- **Idempotent by scope** — each `(year, office, turn)` scope is replaced wholesale (delete + bulk insert), so re-running never duplicates.
+- No revalidation step: campaign pages are dynamic with auth (no ISR tags). Downloads are cached under `data/tse/` (gitignored).
+
 ## Prepare / reset the test database
 
 The test DB needs the schema applied via migrations:

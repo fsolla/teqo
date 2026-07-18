@@ -1,9 +1,22 @@
 # Overview na lista de núcleos
 
-Status: rascunho
-Atualizado em: 2026-07-17
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos", linha 50)
+Status: **implementado** (2026-07-18)
+Atualizado em: 2026-07-18
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B → B1)
 Responsável: —
+
+## Como foi implementado (2026-07-18)
+
+Entregue conforme a abordagem proposta: `loadNucleusListOverviewData` (`src/utilities/nucleusListOverviewPageData.ts`) + `buildNucleusListOverviewViewModel` (`src/utilities/nucleusListOverviewViewModels.ts`) + componente server `NucleusListOverview` (`src/components/campaign/NucleusListOverview.tsx`), integrado em `src/app/(campaign)/campanha/(app)/nucleos/page.tsx` entre filtros e lista. Sem collection, migration ou server action; todas as queries com `user` + `overrideAccess: false`. Questões em aberto resolvidas:
+
+- **`lideranca` vê o overview** — sim, com `select` reduzido (sem `proposedVoteEstimate`) e sem o badge de sugestões pendentes; as atualizações da prévia são só as próprias (escopo do access control) e o autor é resolvido localmente sem query extra.
+- **Preview de atualizações: 3** (`nucleusListOverviewPreviewLimit`), com autor, badge de tipo, data relativa e link para `?tab=updates`.
+- **Pendente = `proposedVoteEstimate != null`**, espelhando o dashboard; o total soma apenas confirmadas.
+- **Bloco Cobertura incluído** (% de núcleos com coordenador no conjunto filtrado).
+- **Overview oculto** quando o conjunto filtrado é vazio (loader retorna `null`).
+- **Eventos/Demandas**: apenas o ponto de extensão comentado no componente, sem UI órfã.
+
+Testes: `tests/int/campaignNucleusListOverview.int.spec.ts`, `tests/unit/campaignNucleusListOverview.unit.spec.ts`. O restante do documento é o plano original, mantido como registro.
 
 ## Referência visual (UX Pilot)
 

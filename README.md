@@ -51,7 +51,7 @@ Teqo then becomes a configurable base product for other politicians in Brazil:
 6. Start the dev server: `pnpm dev`
 7. Open: `http://localhost:3000`
 
-Useful scripts: `pnpm db:start` / `pnpm db:stop` (local Postgres), `pnpm db:pull` (refresh local content from prod), `pnpm db:seed:posts` (import news posts/tags fresh from the live jorgesolla.com.br site into the local db; idempotent by slug, refuses a non-local database).
+Useful scripts: `pnpm db:start` / `pnpm db:stop` (local Postgres), `pnpm db:pull` (refresh local content from prod), `pnpm db:seed:posts` (import news posts/tags fresh from the live jorgesolla.com.br site into the local db; idempotent by slug, refuses a non-local database), `pnpm db:seed:tse` (import TSE 2022 Bahia election results into the local db; idempotent per year/office/turn scope, refuses a non-local database).
 
 ### Content & cache revalidation
 

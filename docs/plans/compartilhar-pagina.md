@@ -1,9 +1,21 @@
 # Compartilhar página do núcleo
 
-Status: rascunho
-Atualizado em: 2026-07-17
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos", linha 51)
+Status: **implementado** (2026-07-18)
+Atualizado em: 2026-07-18
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha C → C1)
 Responsável: —
+
+## Como foi implementado (2026-07-18)
+
+Entregue com `ShareNucleusDialogShell` + `ShareNucleusDialog` (`src/components/campaign/`), `getNucleusShareRecipients` (`src/utilities/nucleusShareRecipients.ts`) e a Server Action `loadNucleusShareRecipients` (`src/app/(campaign)/campanha/(app)/nucleos/[slug]/shareRecipientsActions.ts`). Botão no header do detalhe, template de mensagem e `wa.me` + copiar link conforme o plano. Desvios e refinamentos em relação ao texto original:
+
+- **Carregamento sob demanda, não no `Promise.all` da página.** Os destinatários são buscados por uma Server Action de leitura só quando o diálogo abre (shell lazy no padrão dos demais diálogos), evitando serializar telefones no HTML da página.
+- **Leituras privilegiadas atrás do gate do núcleo.** Em vez de depender do field access por linha (`overrideAccess: false`, que causaria N+1 checagens de telefone), o loader confirma primeiro o acesso do ator ao núcleo (`overrideAccess: false`) e só então lê as três seções com `overrideAccess: true`, retornando apenas `{ id, name, phone }`.
+- **Seção "Com liderança" restrita a `supportStatus = 'engajado'`** e omitida para o papel `lideranca` (o loader retorna lista vazia; o componente oculta seções vazias).
+- **`canReadCampaignUserPhone` ampliado:** telefone de usuários `geral` é legível por qualquer usuário de campanha autenticado (para contato), mantendo a regra de escopo por núcleo para os demais.
+- **UI: Dialog central único** (não Sheet/Drawer responsivo); destinatário sem telefone não aparece; estados de loading/erro/retry e "copiado" implementados.
+
+Testes: `tests/int/campaignNucleusShareRecipients.int.spec.ts`, `tests/int/campaignUserPhone.int.spec.ts`, `tests/unit/campaignNucleusShare.unit.spec.ts`. O restante do documento é o plano original, mantido como registro.
 
 ## Referência visual (UX Pilot)
 

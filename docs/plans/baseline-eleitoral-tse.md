@@ -171,15 +171,17 @@ Cada insight é uma **derivação de leitura** (sem escrita, sem `Consent`, sem 
 ## Arquivos a criar/alterar
 
 **Fase 1 (A3) — feitos:**
+
 - Criar: `src/collections/ElectionTally.ts`, `ElectionCandidateVote.ts`, `ElectionCandidate.ts`; `src/lib/electionResults.ts`, `electionResultsParse.ts`, `electionResultsBuild.ts`, `electionResultsCsv.ts`, `electionResultsZip.ts`, `electionCandidateIdentity.ts`; `src/utilities/electionResultsImport.ts`; `scripts/seed-tse-results.mjs`; migration `20260718_195854_add_election_results`; fixtures `tests/fixtures/tse/*`; testes unit/int.
 - Alterar: `src/payload.config.ts`, `src/utilities/campaignAccess.ts` (`canReadElectionData` / `canMutateElectionData`), `package.json` (`db:seed:tse`), `scripts/seed-loader.mjs` (stub `server-only`), `.gitignore` (`/data/tse/`).
 
 **Fases 2–5 (A4+) — ainda a criar:**
+
 - `src/lib/electionInsights.ts`, `src/utilities/nucleusElectoralBaseline.ts`, `src/components/campaign/NucleusElectoralBaseline.tsx`, `NucleusInsights.tsx`, `scripts/reconcile-running-again.mjs`; alterar páginas do núcleo / overview.
 
 ## Dependências
 
-1. `zonas-por-municipio.md` — **dependência suave, não bloqueante** (revisado em 2026-07-17). A agregação funciona sem ele: `citiesForTerritory` já existe em `bahiaTerritories.ts` e as zonas de cada cidade saem das próprias rows de `electionTally`. O que aquele plano melhora é a **qualidade do input**: com auto-preenchimento, `electoralNucleus.tseZones` deixa de depender de digitação manual (zonas erradas produzem baseline errado; zonas ausentes caem no fallback correto "todas as zonas da cidade"). Recomendado implementá-lo antes ou em paralelo, mas este plano pode ser executado de forma independente.
+1. `zonas-por-municipio.md` — **dependência suave, não bloqueante** (revisado em 2026-07-17; UX A2 revisada 2026-07-18 para chips opt-in). A agregação funciona sem ele: `citiesForTerritory` já existe em `bahiaTerritories.ts` e as zonas de cada cidade saem das próprias rows de `electionTally`. O que aquele plano melhora é a **qualidade do input**: com sugestões município/TI→ZE, `electoralNucleus.tseZones` deixa de depender só de digitação manual (zonas erradas produzem baseline errado; zonas ausentes caem no fallback correto "todas as zonas da cidade"). Recomendado implementá-lo antes ou em paralelo, mas este plano pode ser executado de forma independente.
 2. `territorio-multi-municipio-bairro.md` (torna `cities[]`) — `getNucleusElectoralBaseline` já desenhado para iterar sobre `cities[]`; funciona igualmente com o modelo single atual (array de 1).
 
 ## Não escopo

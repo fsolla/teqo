@@ -1,0 +1,84 @@
+# Template de plano (`docs/plans/<slug>.md`)
+
+Estrutura extraída dos planos existentes (`overview-lista-nucleos.md`, `visitados-recentemente.md`, etc.). Manter as seções nesta ordem; omitir "Referência visual" apenas quando não houver design.
+
+````markdown
+# <Título do item em pt-BR>
+
+Status: rascunho
+Atualizado em: <YYYY-MM-DD>
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (<seção e/ou ID, ex.: "Trilha C, item C6">)
+Responsável: —
+
+## Referência visual (UX Pilot)
+
+<!-- Só se existir design em docs/design-refs/latest/. -->
+
+Design: [`<Nome>.png`](../design-refs/latest/<Nome>.png) · [`<Nome>.html`](../design-refs/latest/<Nome>.html)
+
+![<alt em pt-BR>](../design-refs/latest/<Nome>.png)
+
+Como usar:
+
+- **Adotar a estrutura:** <o que do design corresponde aos objetivos deste plano>.
+- **Fora deste plano:** <partes do design que pertencem a outros planos, com links>.
+- **Ajustar cores e código:** o HTML/PNG usa a paleta antiga (vermelho escuro `#8E0E23`, navy `#1B2B4B`, dourado `#C8874B`) e Tailwind via CDN. Implementar com os componentes shadcn existentes (`src/components/ui`) e os tokens do tema `data-theme='campaign'` (`src/app/(frontend)/styles.css`): fundo branco, primário `#C51414`, superfícies neutras claras.
+
+## Contexto
+
+<Estado atual do sistema (com caminhos de arquivo reais), o problema/oportunidade, e a decisão
+de produto que originou o item, com data. Responde "por que isso existe".>
+
+## Objetivos
+
+- <Resultados verificáveis, um por bullet. Incluir os "guardrails" que valem para o item
+  inteiro: access control, sem migration / com migration, sem Consent / qual Consent, etc.>
+
+## Decisões travadas
+
+- **<Decisão em negrito>.** <Racional e fonte com data (decisão de produto YYYY-MM-DD,
+  AGENTS.md, roadmap...). Decisão sem "por quê" não é decisão travada.>
+- **i18n e naming** seguem o AGENTS.md: identificadores em inglês (<listar os principais
+  nomes propostos>), strings visíveis em pt-BR.
+
+## Questões em aberto
+
+- **<Pergunta>?** <Contexto curto.> **Recomendação:** <posição concreta>. <"Definir com
+  produto" quando aplicável — mas nunca pergunta sem recomendação.>
+
+## Abordagem proposta
+
+\```mermaid
+flowchart LR
+<fluxo de dados/componentes da solução>
+\```
+
+Componentes:
+
+- **`<NomeDoComponente/função>`** (em `src/<caminho real>`): <responsabilidade, assinatura,
+  o que reusa. Queries Payload com `user` levam `overrideAccess: false`; escrita
+  multi-collection é transacional; hooks propagam `req`.>
+- <um bullet por componente/arquivo novo ou alterado>
+- **<Migration>**: <se houver: nome sugerido `pnpm migrate:create <nome>`, o que adiciona,
+  se tem backfill. Se não houver: "Sem migration, sem collection, sem server action.">
+
+## Dependências
+
+- <Itens do roadmap dos quais depende (duras e suaves, identificadas) — ou "Nenhuma de
+  outro plano." + o que reusa do código existente, com caminhos.>
+
+## Não escopo
+
+- <Cada exclusão explícita, citando o plano/item do roadmap para onde ela vai.>
+
+## Referências
+
+- `docs/roadmap.md` (<seção/linhas>)
+- <arquivos-fonte reais que o implementador vai abrir, um por bullet, com o porquê>
+- AGENTS.md — <quais convenções se aplicam: Campaign auth, naming, overrideAccess, etc.>
+````
+
+Notas:
+
+- No bloco mermaid acima, remover as barras invertidas dos fences internos (`\``` → ` ``` `).
+- Nível de detalhe alvo: ~100–130 linhas, como os planos existentes. Menos que isso costuma significar que o Passo 3 (exploração do código) foi pulado.

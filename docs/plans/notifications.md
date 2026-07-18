@@ -78,7 +78,7 @@ Componentes:
 
 ## Dependências
 
-- PWA de `/campanha` — push exige o service worker registrado. Ver [plans/pwa-campanha.md](./pwa-campanha.md). **O sino in-app não depende do PWA** e pode ser entregue antes, se fizer sentido faseá-lo.
+- PWA de `/campanha` — push exige o service worker registrado. **Entregue em 2026-07-18** ([plans/pwa-campanha.md](./pwa-campanha.md)); o SW em `src/utilities/campaignPwa.ts` já reserva os handlers `push`/`notificationclick`. **O sino in-app não depende do PWA** e pode ser entregue antes, se fizer sentido faseá-lo.
 - `Consent.key = 'campanha-notificacoes-push'` criada por admin após aprovação jurídica (mesmo padrão fail-closed do `lideranca-autopreenchimento`; texto no lote jurídico único do roadmap).
 - Migration para as collections `Notification` e `PushSubscription` (`pnpm migrate:create`).
 

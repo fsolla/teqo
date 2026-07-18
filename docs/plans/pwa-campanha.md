@@ -1,9 +1,24 @@
 # PWA / offline só em `/campanha`
 
-Status: rascunho
-Atualizado em: 2026-07-17
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos", linha 62)
+Status: **implementado** (2026-07-18)
+Atualizado em: 2026-07-18
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha D → D1)
 Responsável: —
+
+## Como foi implementado (2026-07-18)
+
+Entregue conforme a abordagem proposta, com as questões em aberto resolvidas assim:
+
+- **Servir SW e manifest:** opção (a) — route handlers em `src/app/(campaign)/campanha/manifest.webmanifest/route.ts` e `src/app/(campaign)/campanha/sw.js/route.ts`; constantes e script do SW gerados em `src/utilities/campaignPwa.ts`.
+- **Estratégia de cache:** `network-first` para navegação (com fallback à página `/campanha/offline`) e para GETs same-origin sob `/campanha` — não SWR. Precache mínimo: `/campanha/login`, `/campanha/offline` e os ícones (`public/campaign-icons/`, cache-first). **Nunca cacheia:** requests RSC/Flight (payloads personalizados jamais vão ao Cache Storage) e as páginas de convite `/campanha/convite/*` (no-store por design).
+- **Versionamento/atualização:** nome do cache = `campanha-<buildId>` (`VERCEL_GIT_COMMIT_SHA`/`VERCEL_DEPLOYMENT_ID`, `dev` local); `skipWaiting` + `clients.claim` no activate, que também expurga caches de builds antigos. Sem UX de "nova versão" — o deploy troca o cache.
+- **Ícones:** PNG 192/512 + maskable 512 + apple-touch em `public/campaign-icons/`; `theme_color #c51414`, `background_color #ffffff`, `display: standalone`, `lang: pt-BR`.
+- **Logout invalida cache:** `clearCampaignPwaCaches` (`src/utilities/campaignPwaClient.ts`) roda no cliente antes de `logoutCampaign` (Cache API wipe + postMessage ao SW).
+- **Registro:** `RegisterServiceWorker` no root layout `(campaign)`, só em produção, com falha silenciosa.
+- **Toast de instalação:** `InstallPwaToast` no layout `(app)` conforme a seção abaixo — sonner persistente, `beforeinstallprompt` no Android, passo a passo iOS em `Drawer`, dispensa em `sessionStorage`.
+- **Métricas de adoção:** adiadas.
+
+Handlers `push`/`notificationclick` seguem como placeholder para o D2 ([notifications.md](notifications.md) — push destravado). Testes: `tests/unit/campaignPwa.unit.spec.ts`, `tests/e2e/campaign-pwa.e2e.spec.ts`. O restante do documento é o plano original, mantido como registro.
 
 ## Referência visual (UX Pilot)
 

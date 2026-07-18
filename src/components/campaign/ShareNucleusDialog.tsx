@@ -1,18 +1,13 @@
 'use client'
 
-import { useState } from 'react'
 import { CheckIcon, CopyIcon, LinkIcon, MessageCircleIcon } from 'lucide-react'
+import { useState } from 'react'
 
 import type { NucleusShareRecipientsResult } from '@/app/(campaign)/campanha/(app)/nucleos/[slug]/shareRecipientsActions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Avatar, AvatarFallback } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/button'
-import {
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Spinner } from '@/components/ui/Spinner'
 import type { NucleusShareRecipient } from '@/utilities/nucleusShareRecipients'
 import { buildWhatsAppUrl } from '@/utilities/phone'
@@ -141,7 +136,7 @@ export const ShareNucleusDialog = ({
   }
 
   return (
-    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+    <DialogContent className="max-h-[90vh] overflow-x-hidden overflow-y-auto sm:max-w-md">
       <DialogHeader>
         <DialogTitle>Compartilhar núcleo</DialogTitle>
         <DialogDescription>
@@ -180,7 +175,7 @@ export const ShareNucleusDialog = ({
       ) : null}
 
       {data && !loading ? (
-        <div className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           <RecipientSection
             title="Com coordenação geral"
             roleLabel="Coord. Geral"
@@ -209,7 +204,12 @@ export const ShareNucleusDialog = ({
                 <LinkIcon className="size-4 shrink-0" aria-hidden="true" />
                 <span className="truncate">{data.nucleusUrl}</span>
               </div>
-              <Button type="button" variant="secondary" className="min-h-11 shrink-0" onClick={copyLink}>
+              <Button
+                type="button"
+                variant="secondary"
+                className="min-h-11 shrink-0"
+                onClick={copyLink}
+              >
                 {copied ? (
                   <CheckIcon data-icon="inline-start" aria-hidden="true" />
                 ) : (

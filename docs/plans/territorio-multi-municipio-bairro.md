@@ -60,12 +60,12 @@ O rascunho dizia `contains`, mas em Payload `contains` é substring. A associaç
 
 ## Questões em aberto — resolvidas na implementação
 
-| Questão | Resolução |
-| --- | --- |
-| Tipo do campo Payload | `text` + `hasMany` para os três campos |
-| Admin Payload UI | inputs nativos hasMany; combobox rico só em `/campanha` |
-| Limite máximo | 27 municípios/TIs, 30 bairros |
-| Filtro cross-territory | aparece ao filtrar por qualquer TI tocado (`equals`) |
+| Questão                | Resolução                                               |
+| ---------------------- | ------------------------------------------------------- |
+| Tipo do campo Payload  | `text` + `hasMany` para os três campos                  |
+| Admin Payload UI       | inputs nativos hasMany; combobox rico só em `/campanha` |
+| Limite máximo          | 27 municípios/TIs, 30 bairros                           |
+| Filtro cross-territory | aparece ao filtrar por qualquer TI tocado (`equals`)    |
 
 ## Dependências
 
@@ -74,4 +74,4 @@ O rascunho dizia `contains`, mas em Payload `contains` é substring. A associaç
 
 ## Não escopo
 
-Array estruturado por município; mapa/PostGIS; auto-preenchimento A2; mudar `Contact.city` além da regra de derivação na criação de liderança.
+Array estruturado por município; mapa/PostGIS; sugestões cruzadas A2 (`bahiaTseZones` + chips opt-in); mudar `Contact.city` além da regra de derivação na criação de liderança.
