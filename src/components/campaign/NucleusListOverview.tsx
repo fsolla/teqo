@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/Progress'
+import { actionPlanKindLabels } from '@/lib/schemas/actionPlan'
+import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 import type { NucleusListOverviewViewModel } from '@/utilities/nucleusListOverviewViewModels'
 import { nucleusUpdateKindLabels } from '@/utilities/nucleusUpdateUi'
 
@@ -122,6 +124,40 @@ export const NucleusListOverview = ({
       </CardContent>
     </Card>
 
-    {/* Extension points for future roadmap domains (Eventos / Demandas): plug new cards here when those collections exist. */}
+    <Card>
+      <CardHeader>
+        <CardTitle>Próximos eventos</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {view.upcomingActionPlans.length ? (
+          <ul className="flex flex-col gap-3">
+            {view.upcomingActionPlans.map((plan) => (
+              <li
+                key={plan.id}
+                className="flex flex-col gap-1 border-b pb-3 last:border-b-0 last:pb-0"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary">{actionPlanKindLabels[plan.kind]}</Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {formatBahiaDateTimeLabel(plan.startAt)}
+                    {plan.city ? ` · ${plan.city}` : ''}
+                  </span>
+                </div>
+                <Link
+                  href={`/campanha/planos/${plan.slug}`}
+                  className="text-sm text-primary underline-offset-4 hover:underline"
+                >
+                  {plan.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">Nenhum evento agendado</p>
+        )}
+      </CardContent>
+    </Card>
+
+    {/* Extension points for future roadmap domains (Demandas): plug new cards here when those collections exist. */}
   </section>
 )

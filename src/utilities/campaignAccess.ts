@@ -10,7 +10,11 @@ type ContactID = number
 
 const ACCESSIBLE_NUCLEUS_IDS_CONTEXT_KEY = 'campaignAccessibleNucleusIds'
 const ACCESSIBLE_CONTACT_IDS_CONTEXT_KEY = 'campaignAccessibleContactIds'
+const ACCESSIBLE_LEADERSHIP_IDS_CONTEXT_KEY = 'campaignAccessibleLeadershipIds'
 const CAMPAIGN_USER_PHONE_ACCESS_CONTEXT_KEY = 'campaignUserPhoneAccess'
+
+type LeadershipID = number
+type AccessibleLeadershipIDs = LeadershipID[] | null
 
 export const isPayloadAdmin = (user: CampaignActor): user is User => user?.collection === 'users'
 
@@ -337,6 +341,59 @@ export const canReadElectionData: Access = ({ req }) =>
 /** Election reference data is mutated only by Payload admins (or CLI with overrideAccess). */
 export const canMutateElectionData: Access = ({ req }) => isPayloadAdmin(req.user)
 
+const canStaffCreateActionPlan: FieldAccess = async ({ req }) => {
+  if (isPayloadAdmin(req.user)) return true
+
+  const currentUser = await getFreshCampaignUser(req)
+  return currentUser?.role === 'geral' || currentUser?.role === 'coordenador'
+}
+
+export const canCreateActionPlan: Access = canStaffCreateActionPlan
+
+export const canReadActionPlan: Access = async ({ req }): Promise<boolean | Where> => {
+  if (isPayloadAdmin(req.user)) return true
+
+  const currentUser = await getFreshCampaignUser(req)
+  if (!currentUser) return false
+  if (isCampaignGeneral(currentUser)) return true
+
+  if (currentUser.role === 'coordenador') {
+    return {
+      coordinators: {
+        contains: currentUser.id,
+      },
+    }
+  }
+
+  if (currentUser.role === 'lideranca') {
+    const leadershipIDs = await getAccessibleLeadershipIds(req, currentUser)
+    return {
+      leadership: {
+        in: leadershipIDs ?? [],
+      },
+    }
+  }
+
+  return false
+}
+
+/** Same row scope as read — liderança write limits are enforced in `beforeChange`. */
+export const canUpdateActionPlan: Access = canReadActionPlan
+
+export const canDeleteActionPlan: Access = ({ req }) => isPayloadAdmin(req.user)
+
+export const canSetActionPlanSystemField: FieldAccess = ({ req }) => isPayloadAdmin(req.user)
+
+export const canSetActionPlanStatus: FieldAccess = canStaffCreateActionPlan
+
+export const canCreateActionPlanCoordinators: FieldAccess = canStaffCreateActionPlan
+
+export const canManageActionPlanCoordinators: FieldAccess = async ({ req }) => {
+  if (isPayloadAdmin(req.user)) return true
+
+  return isCampaignGeneral(await getFreshCampaignUser(req))
+}
+
 type DynamicFind = (args: {
   collection: string
   depth: number
@@ -569,4 +626,73 @@ export const getAccessibleContactIds = async (
   context[cacheKey] = ids
 
   return ids
+}
+
+/**
+ * Returns null for unrestricted general coordination, otherwise the engaged
+ * leadership IDs currently linked to the authenticated campaign user.
+ */
+export const getAccessibleLeadershipIds = async (
+  req: PayloadRequest,
+  user: CampaignActor = req.user,
+): Promise<AccessibleLeadershipIDs> => {
+  const currentUser =
+    isCampaignUser(user) && user === req.user ? await getFreshCampaignUser(req, user) : user
+
+  if (!isCampaignUser(currentUser)) return []
+  if (isCampaignGeneral(currentUser)) return null
+
+  const context = req.context as Record<string, unknown>
+  const cacheKey = `${ACCESSIBLE_LEADERSHIP_IDS_CONTEXT_KEY}:${currentUser.id}:${currentUser.role}`
+  const cached = context[cacheKey]
+
+  if (Array.isArray(cached)) {
+    return cached.filter((id): id is number => typeof id === 'number')
+  }
+
+  const collections = req.payload.collections as Record<string, unknown>
+  const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
+  let ids: LeadershipID[] = []
+
+  if (currentUser.role === 'lideranca' && collections.leadership) {
+    const result = await find({
+      collection: 'leadership',
+      depth: 0,
+      limit: 0,
+      overrideAccess: true,
+      pagination: false,
+      req,
+      select: { id: true },
+      where: {
+        and: [{ user: { equals: currentUser.id } }, { supportStatus: { equals: 'engajado' } }],
+      },
+    })
+
+    ids = result.docs.map((doc) => relationshipId(doc.id)).filter((id): id is number => id !== null)
+  }
+
+  if (currentUser.role === 'coordenador' && collections.leadership) {
+    const nucleusIDs = await getAccessibleNucleusIds(req, currentUser)
+    const result = await find({
+      collection: 'leadership',
+      depth: 0,
+      limit: 0,
+      overrideAccess: true,
+      pagination: false,
+      req,
+      select: { id: true },
+      where: {
+        nucleus: {
+          in: nucleusIDs ?? [],
+        },
+      },
+    })
+
+    ids = result.docs.map((doc) => relationshipId(doc.id)).filter((id): id is number => id !== null)
+  }
+
+  const uniqueIDs = [...new Set(ids)]
+  context[cacheKey] = uniqueIDs
+
+  return uniqueIDs
 }

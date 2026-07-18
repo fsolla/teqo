@@ -37,21 +37,21 @@ describe('campaign nucleus list overview page data', () => {
 
     const filteredA = await fixtures.createNucleus({
       name: fixtures.value('Overview A'),
-      region: 'Velho Chico',
-      city: 'Bom Jesus da Lapa',
+      regions: ['Velho Chico'],
+      cities: ['Bom Jesus da Lapa'],
       coordinators: [author.id],
       organizationKind: 'territorial',
     })
     const filteredB = await fixtures.createNucleus({
       name: fixtures.value('Overview B'),
-      region: 'Velho Chico',
-      city: 'Bom Jesus da Lapa',
+      regions: ['Velho Chico'],
+      cities: ['Bom Jesus da Lapa'],
       organizationKind: 'territorial',
     })
     const outside = await fixtures.createNucleus({
       name: fixtures.value('Overview fora'),
-      region: 'Metropolitano de Salvador',
-      city: 'Salvador',
+      regions: ['Metropolitano de Salvador'],
+      cities: ['Salvador'],
       organizationKind: 'territorial',
     })
 
@@ -131,15 +131,15 @@ describe('campaign nucleus list overview page data', () => {
 
     const assigned = await fixtures.createNucleus({
       name: fixtures.value('Atribuído overview'),
-      region: 'Metropolitano de Salvador',
-      city: 'Salvador',
+      regions: ['Metropolitano de Salvador'],
+      cities: ['Salvador'],
       coordinators: [coordinator.id],
       organizationKind: 'territorial',
     })
     const other = await fixtures.createNucleus({
       name: fixtures.value('Não atribuído'),
-      region: 'Metropolitano de Salvador',
-      city: 'Salvador',
+      regions: ['Metropolitano de Salvador'],
+      cities: ['Salvador'],
       coordinators: [otherCoordinator.id],
       organizationKind: 'territorial',
     })
@@ -184,8 +184,8 @@ describe('campaign nucleus list overview page data', () => {
 
     const nucleus = await fixtures.createNucleus({
       name: fixtures.value('Núcleo liderança'),
-      region: 'Metropolitano de Salvador',
-      city: 'Salvador',
+      regions: ['Metropolitano de Salvador'],
+      cities: ['Salvador'],
       coordinators: [staffAuthor.id],
       organizationKind: 'territorial',
     })

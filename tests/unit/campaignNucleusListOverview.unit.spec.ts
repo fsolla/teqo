@@ -42,6 +42,7 @@ describe('buildNucleusListOverviewViewModel', () => {
         nucleus({ id: 4 }),
       ],
       recentUpdates: [],
+      upcomingActionPlans: [],
     })
 
     expect(view.totalFiltered).toBe(4)
@@ -66,6 +67,7 @@ describe('buildNucleusListOverviewViewModel', () => {
         nucleus({ id: 2, proposedVoteEstimate: 400 }),
       ],
       recentUpdates: [],
+      upcomingActionPlans: [],
     })
 
     expect(view.estimate).not.toHaveProperty('pendingSuggestionsCount')
@@ -92,6 +94,7 @@ describe('NucleusListOverview', () => {
           createdAt: '2026-07-17T12:00:00.000Z',
         },
       ],
+      upcomingActionPlans: [],
     })
 
     const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))
@@ -116,6 +119,7 @@ describe('NucleusListOverview', () => {
         nucleus({ id: 2, proposedVoteEstimate: 400 }),
       ],
       recentUpdates: [],
+      upcomingActionPlans: [],
     })
 
     const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))

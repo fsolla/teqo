@@ -75,6 +75,7 @@ export interface Config {
     leadership: Leadership;
     supporter: Supporter;
     nucleusUpdate: NucleusUpdate;
+    actionPlan: ActionPlan;
     electionTally: ElectionTally;
     electionCandidateVote: ElectionCandidateVote;
     electionCandidate: ElectionCandidate;
@@ -101,6 +102,7 @@ export interface Config {
     leadership: LeadershipSelect<false> | LeadershipSelect<true>;
     supporter: SupporterSelect<false> | SupporterSelect<true>;
     nucleusUpdate: NucleusUpdateSelect<false> | NucleusUpdateSelect<true>;
+    actionPlan: ActionPlanSelect<false> | ActionPlanSelect<true>;
     electionTally: ElectionTallySelect<false> | ElectionTallySelect<true>;
     electionCandidateVote: ElectionCandidateVoteSelect<false> | ElectionCandidateVoteSelect<true>;
     electionCandidate: ElectionCandidateSelect<false> | ElectionCandidateSelect<true>;
@@ -492,6 +494,63 @@ export interface NucleusUpdate {
   createdAt: string;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "actionPlan".
+ */
+export interface ActionPlan {
+  id: number;
+  title: string;
+  slug: string;
+  kind:
+    | 'caminhada'
+    | 'comicio'
+    | 'carreata'
+    | 'panfletagem'
+    | 'porta_a_porta'
+    | 'reuniao_apoio'
+    | 'lancamento'
+    | 'convencao'
+    | 'ato'
+    | 'entrevista'
+    | 'producao_conteudo'
+    | 'digital'
+    | 'outro';
+  status: 'rascunho' | 'planejado' | 'confirmado' | 'realizado' | 'cancelado';
+  description?: string | null;
+  startAt?: string | null;
+  endAt?: string | null;
+  deadline?: string | null;
+  regions?: string[] | null;
+  cities?: string[] | null;
+  neighborhoods?: string[] | null;
+  locality?: string | null;
+  territoryNotes?: string | null;
+  coordinators?: (number | CampaignUser)[] | null;
+  responsible?: (number | null) | Contact;
+  leadership?: (number | null) | Leadership;
+  tasks?:
+    | {
+        title: string;
+        responsible?: (number | null) | Contact;
+        due?: string | null;
+        done?: boolean | null;
+        doneAt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updates?:
+    | {
+        body: string;
+        author?: (number | null) | CampaignUser;
+        createdAt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  createdBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Totais oficiais TSE por município e zona (dado público).
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -855,6 +914,10 @@ export interface PayloadLockedDocument {
         value: number | NucleusUpdate;
       } | null)
     | ({
+        relationTo: 'actionPlan';
+        value: number | ActionPlan;
+      } | null)
+    | ({
         relationTo: 'electionTally';
         value: number | ElectionTally;
       } | null)
@@ -1137,6 +1200,49 @@ export interface NucleusUpdateSelect<T extends boolean = true> {
   activeVolunteers?: T;
   newSupports?: T;
   body?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "actionPlan_select".
+ */
+export interface ActionPlanSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  kind?: T;
+  status?: T;
+  description?: T;
+  startAt?: T;
+  endAt?: T;
+  deadline?: T;
+  regions?: T;
+  cities?: T;
+  neighborhoods?: T;
+  locality?: T;
+  territoryNotes?: T;
+  coordinators?: T;
+  responsible?: T;
+  leadership?: T;
+  tasks?:
+    | T
+    | {
+        title?: T;
+        responsible?: T;
+        due?: T;
+        done?: T;
+        doneAt?: T;
+        id?: T;
+      };
+  updates?:
+    | T
+    | {
+        body?: T;
+        author?: T;
+        createdAt?: T;
+        id?: T;
+      };
+  createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -73,6 +73,49 @@ const addCivilDays = (civil: CivilDateTime, days: number): CivilDateTime => {
   }
 }
 
+const bahiaDateTimeInputPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/
+
+/**
+ * Converts a `datetime-local` input value (interpreted as Bahia civil time,
+ * since campaign staff operate in that timezone) into a UTC ISO instant.
+ * Returns null when the value does not match the expected input shape.
+ */
+export const parseBahiaDateTimeInput = (value: string): string | null => {
+  const match = bahiaDateTimeInputPattern.exec(value)
+  if (!match) return null
+  const [, year, month, day, hour, minute] = match
+
+  return zonedCivilToInstant({
+    year: Number(year),
+    month: Number(month),
+    day: Number(day),
+    hour: Number(hour),
+    minute: Number(minute),
+    second: 0,
+  }).toISOString()
+}
+
+/** Formats a UTC ISO instant as a `datetime-local` input value in Bahia civil time. */
+export const formatIsoAsBahiaDateTimeInput = (iso: string): string => {
+  const { year, month, day, hour, minute } = getZonedParts(new Date(iso))
+  const pad = (value: number): string => String(value).padStart(2, '0')
+
+  return `${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}`
+}
+
+const bahiaDateTimeDisplayFormatter = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: BAHIA_TIME_ZONE,
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
+/** Formats a UTC ISO instant as `dd/mm/aaaa às hh:mm` in Bahia civil time. */
+export const formatBahiaDateTimeLabel = (iso: string): string =>
+  bahiaDateTimeDisplayFormatter.format(new Date(iso)).replace(', ', ' às ')
+
 export const getBahiaWeekRange = (now: Date): { start: Date; end: Date } => {
   const local = getZonedParts(now)
   const localMidnight = { ...local, hour: 0, minute: 0, second: 0 }

@@ -1,6 +1,7 @@
 import type { Payload } from 'payload'
 
 import type { CampaignUser, NucleusUpdate } from '@/payload-types'
+import { loadUpcomingActionPlansPreview } from '@/utilities/actionPlanUpcomingPreview'
 import {
   buildNucleusListOverviewViewModel,
   nucleusListOverviewPreviewLimit,
@@ -54,17 +55,26 @@ export const loadNucleusListOverviewData = async (
   payload: Pick<Payload, 'find'>,
   user: CampaignUser,
   state: NucleusListState,
+  now = new Date(),
 ): Promise<NucleusListOverviewViewModel | null> => {
-  const nucleusResult = await payload.find({
-    collection: 'electoralNucleus',
-    where: buildNucleusListWhere(state),
-    depth: 0,
-    pagination: false,
-    select:
-      user.role === 'lideranca' ? overviewLeadershipNucleusSelect : overviewStaffNucleusSelect,
-    user,
-    overrideAccess: false,
-  })
+  const upcomingFilters = {
+    ...(state.region ? { region: state.region } : {}),
+    ...(state.city ? { city: state.city } : {}),
+  }
+
+  const [nucleusResult, upcomingActionPlans] = await Promise.all([
+    payload.find({
+      collection: 'electoralNucleus',
+      where: buildNucleusListWhere(state),
+      depth: 0,
+      pagination: false,
+      select:
+        user.role === 'lideranca' ? overviewLeadershipNucleusSelect : overviewStaffNucleusSelect,
+      user,
+      overrideAccess: false,
+    }),
+    loadUpcomingActionPlansPreview(payload, user, now, { filters: upcomingFilters }),
+  ])
 
   const rawNuclei = nucleusResult.docs as unknown as RawOverviewNucleus[]
   if (rawNuclei.length === 0) return null
@@ -133,5 +143,6 @@ export const loadNucleusListOverviewData = async (
     nuclei,
     recentUpdates,
     role: user.role,
+    upcomingActionPlans,
   })
 }

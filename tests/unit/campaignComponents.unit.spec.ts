@@ -109,6 +109,7 @@ describe('campaign visual foundation', () => {
       ],
       0,
       new Date('2026-07-18T12:00:00-03:00'),
+      [],
     )
 
     expect(view.supportCounts).toEqual({

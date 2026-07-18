@@ -7,6 +7,7 @@ import * as migration_20260718_010733_consolidate_campaign_schema from './202607
 import * as migration_20260718_190559_territorio_multi_municipio_bairro from './20260718_190559_territorio_multi_municipio_bairro';
 import * as migration_20260718_195854_add_election_results from './20260718_195854_add_election_results';
 import * as migration_20260718_222656_add_supporter from './20260718_222656_add_supporter';
+import * as migration_20260718_222832_add_action_plan from './20260718_222832_add_action_plan';
 
 export const migrations = [
   {
@@ -52,6 +53,11 @@ export const migrations = [
   {
     up: migration_20260718_222656_add_supporter.up,
     down: migration_20260718_222656_add_supporter.down,
-    name: '20260718_222656_add_supporter'
+    name: '20260718_222656_add_supporter',
+  },
+  {
+    up: migration_20260718_222832_add_action_plan.up,
+    down: migration_20260718_222832_add_action_plan.down,
+    name: '20260718_222832_add_action_plan',
   },
 ];

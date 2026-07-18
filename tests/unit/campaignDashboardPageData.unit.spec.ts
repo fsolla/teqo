@@ -26,6 +26,9 @@ const dashboardPayload = (leaderships: Array<{ nucleus: number; supportStatus?: 
       if (collection === 'nucleusUpdate') {
         return { docs: [], totalDocs: 0 }
       }
+      if (collection === 'actionPlan') {
+        return { docs: [], totalDocs: 0 }
+      }
       throw new Error(`Unexpected collection: ${collection}`)
     }),
   }) as unknown as Payload

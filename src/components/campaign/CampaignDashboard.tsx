@@ -30,7 +30,10 @@ import {
   EmptyTitle,
 } from '@/components/ui/Empty'
 import { Progress } from '@/components/ui/Progress'
+import { actionPlanKindLabels } from '@/lib/schemas/actionPlan'
 import { leadershipSupportStatuses } from '@/lib/schemas/leadership'
+import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
+import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 import type {
   DashboardQueueItem,
   GeneralDashboardViewModel,
@@ -113,6 +116,45 @@ const QueueList = ({
         </ul>
       ) : (
         <p className="text-sm text-muted-foreground">{empty}</p>
+      )}
+    </CardContent>
+  </Card>
+)
+
+const UpcomingActionPlansCard = ({ plans }: { plans: ActionPlanUpcomingPreviewRecord[] }) => (
+  <Card>
+    <CardHeader className="flex-row items-center justify-between">
+      <CardTitle>Próximos eventos</CardTitle>
+      <Button asChild variant="ghost" size="sm" className="min-h-11">
+        <Link href="/campanha/planos">
+          Ver todos
+          <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
+        </Link>
+      </Button>
+    </CardHeader>
+    <CardContent>
+      {plans.length ? (
+        <ul className="flex flex-col gap-3">
+          {plans.map((plan) => (
+            <li key={plan.id} className="flex flex-col gap-1 border-b pb-3 last:border-b-0 last:pb-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">{actionPlanKindLabels[plan.kind]}</Badge>
+                <span className="text-sm text-muted-foreground">
+                  {formatBahiaDateTimeLabel(plan.startAt)}
+                  {plan.city ? ` · ${plan.city}` : ''}
+                </span>
+              </div>
+              <Link
+                href={`/campanha/planos/${plan.slug}`}
+                className="text-sm text-primary underline-offset-4 hover:underline"
+              >
+                {plan.title}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-muted-foreground">Nenhum evento agendado</p>
       )}
     </CardContent>
   </Card>
@@ -202,6 +244,8 @@ const GeneralDashboard = ({ view }: { view: GeneralDashboardViewModel }) => (
         />
       </div>
     </section>
+
+    <UpcomingActionPlansCard plans={view.upcomingActionPlans} />
   </div>
 )
 
@@ -218,6 +262,9 @@ const CoordinatorDashboard = ({
       <h1 className="text-2xl font-bold tracking-tight">Sua região</h1>
       <p className="text-muted-foreground">O que precisa de atenção nos seus núcleos?</p>
     </header>
+
+    <UpcomingActionPlansCard plans={view.upcomingActionPlans} />
+
     {view.cards.length ? (
       <div className="grid gap-4 lg:grid-cols-2">
         {view.cards.map((card) => (
@@ -277,6 +324,9 @@ const LeadershipDashboard = ({
         Envie seu reporte e acompanhe a estimativa confirmada.
       </p>
     </header>
+
+    <UpcomingActionPlansCard plans={view.upcomingActionPlans} />
+
     {view.cards.length ? (
       <div className="grid gap-4 md:grid-cols-2">
         {view.cards.map((card) => (

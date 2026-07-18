@@ -21,6 +21,7 @@ type CampaignCollection =
   | 'users'
   | 'campaignInvite'
   | 'nucleusUpdate'
+  | 'actionPlan'
   | 'leadership'
   | 'supporter'
   | 'electoralNucleus'
@@ -76,6 +77,7 @@ const emptyOwnedIDs = (): OwnedIDs => ({
   users: new Set(),
   campaignInvite: new Set(),
   nucleusUpdate: new Set(),
+  actionPlan: new Set(),
   leadership: new Set(),
   supporter: new Set(),
   electoralNucleus: new Set(),
@@ -272,6 +274,14 @@ export class CampaignFixtures {
         pagination: false,
       }),
       this.rootPayload.find({
+        collection: 'actionPlan',
+        where: {
+          or: [{ title: { contains: this.runID } }, { slug: { contains: this.runID } }],
+        },
+        depth: 0,
+        pagination: false,
+      }),
+      this.rootPayload.find({
         collection: 'consent',
         where: { key: { contains: this.runID } },
         depth: 0,
@@ -283,7 +293,8 @@ export class CampaignFixtures {
     for (const user of roots[1].docs) this.own('campaignUser', user)
     for (const contact of roots[2].docs) this.own('contact', contact)
     for (const nucleus of roots[3].docs) this.own('electoralNucleus', nucleus)
-    for (const consent of roots[4].docs) this.own('consent', consent)
+    for (const plan of roots[4].docs) this.own('actionPlan', plan)
+    for (const consent of roots[5].docs) this.own('consent', consent)
   }
 
   async createCampaignUser(
@@ -557,6 +568,7 @@ export class CampaignFixtures {
     }
 
     const lockedDocumentConditions = [
+      ['action_plan_id', this.owned.actionPlan],
       ['campaign_invite_id', this.owned.campaignInvite],
       ['campaign_user_id', this.owned.campaignUser],
       ['consent_id', this.owned.consent],
@@ -624,6 +636,7 @@ export class CampaignFixtures {
       for (const collection of [
         'campaignInvite',
         'nucleusUpdate',
+        'actionPlan',
         'leadership',
         'supporter',
         'electoralNucleus',

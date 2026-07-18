@@ -2,6 +2,7 @@ import type { Payload } from 'payload'
 
 import type { CampaignUser } from '@/payload-types'
 import { isSupportStatus } from '@/lib/schemas/leadership'
+import { loadUpcomingActionPlansPreview } from '@/utilities/actionPlanUpcomingPreview'
 import { getBahiaWeekRange } from '@/utilities/campaignTime'
 import { loadCoordinatorSummaries } from '@/utilities/nucleusCoordinatorOptions'
 import {
@@ -102,7 +103,7 @@ export const getCampaignDashboardPageData = async (
   now = new Date(),
 ) => {
   const week = getBahiaWeekRange(now)
-  const [nucleusResult, leadershipResult, updateResult] = await Promise.all([
+  const [nucleusResult, leadershipResult, updateResult, upcomingActionPlans] = await Promise.all([
     payload.find({
       collection: 'electoralNucleus',
       where: { status: { equals: 'ativo' } },
@@ -142,6 +143,7 @@ export const getCampaignDashboardPageData = async (
           overrideAccess: false,
         })
       : Promise.resolve({ totalDocs: 0 }),
+    loadUpcomingActionPlansPreview(payload, user, now),
   ])
 
   const rawNuclei = nucleusResult.docs as unknown as RawDashboardNucleus[]
@@ -184,8 +186,14 @@ export const getCampaignDashboardPageData = async (
   })
 
   if (user.role === 'geral') {
-    return buildGeneralDashboardViewModel(nuclei, leaderships, updateResult.totalDocs, now)
+    return buildGeneralDashboardViewModel(
+      nuclei,
+      leaderships,
+      updateResult.totalDocs,
+      now,
+      upcomingActionPlans,
+    )
   }
 
-  return buildScopedDashboardViewModel(user.role, nuclei, leaderships, now)
+  return buildScopedDashboardViewModel(user.role, nuclei, leaderships, now, upcomingActionPlans)
 }

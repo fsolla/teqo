@@ -17,10 +17,8 @@ export const CampaignBottomNav = ({ role }: { role: CampaignUser['role'] }) => {
       className="fixed inset-x-0 bottom-0 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul
-        className={cn(
-          'm-0 grid list-none p-0',
-          navItems.length >= 3 ? 'grid-cols-3' : 'grid-cols-2',
-        )}
+        className="m-0 grid list-none p-0"
+        style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}
       >
         {navItems.map((item) => {
           const active = isCampaignNavActive(pathname, item.href)

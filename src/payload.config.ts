@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url'
 
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { pt } from 'payload/i18n/pt'
+import { ActionPlan } from './collections/ActionPlan'
 import { CampaignInvite } from './collections/CampaignInvite'
 import { CampaignUser } from './collections/CampaignUser'
 import { Consent } from './collections/Consent'
@@ -51,6 +52,7 @@ export default buildConfig({
     Leadership,
     Supporter,
     NucleusUpdate,
+    ActionPlan,
     ElectionTally,
     ElectionCandidateVote,
     ElectionCandidate,

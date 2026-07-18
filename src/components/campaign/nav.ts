@@ -1,4 +1,4 @@
-import { HomeIcon, Layers3Icon, UsersIcon, type LucideIcon } from 'lucide-react'
+import { CalendarDaysIcon, HomeIcon, Layers3Icon, UsersIcon, type LucideIcon } from 'lucide-react'
 
 import type { CampaignUser } from '@/payload-types'
 import { canAccessSupporterArea } from '@/utilities/supporterUi'
@@ -19,6 +19,11 @@ export const campaignNav: CampaignNavItem[] = [
     title: 'Núcleos',
     href: '/campanha/nucleos',
     icon: Layers3Icon,
+  },
+  {
+    title: 'Planos',
+    href: '/campanha/planos',
+    icon: CalendarDaysIcon,
   },
   {
     title: 'Apoiadores',

@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-18 (MVP + Ciclo 2 deployados; A2 entregue; C2 engenharia pronta; C6 registrado — escala/DRY pós-C2 para depois do merge)
+Atualizado em: 2026-07-18 (MVP + Ciclo 2 deployados; A2 entregue; C2 engenharia pronta; C3 Planos de Ação implementado; C6 registrado — escala/DRY pós-C2)
 
 Registro canônico no repositório dos planos futuros e débitos conhecidos. Status operacional do ciclo atual de Núcleos fica em [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc); este arquivo lista o que ainda é futuro ou bloqueador, **em ordem de execução**, com dependências e paralelismo explícitos.
 
@@ -112,7 +112,7 @@ flowchart TD
         C1["C1 Compartilhar página ✓"]
         C2["C2 Cadastro nominal de apoiadores"]
         C6["C6 Escala e DRY pós-C2<br/>(import/listas/forms)"]
-        C3["C3 Eventos / agenda de mobilização"]
+        C3["C3 Eventos / agenda de mobilização ✓"]
         C4["C4 Demandas"]
         C5["C5 Operação dia D / GOTV<br/>(proposto, a validar)"]
     end
@@ -146,7 +146,7 @@ flowchart TD
     JUR -.chave de push.-> D2
 ```
 
-Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, C2 (engenharia — produção espera o jurídico), além dos fill-ins (visitados recentemente, listas globais, reset de senha, higiene PascalCase). **Entregues em 2026-07-18** (✓ no grafo): A1, A2, A3, B1, C1 e D1 — ver "Ciclo 2" acima. Destravados por eles: A4 (A2/A3 + B1 prontos), C3/C4 (A1 pronto), C6 (após merge de C2) e D2 push (D1 pronto; falta a chave jurídica).
+Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, C2 (engenharia — produção espera o jurídico), além dos fill-ins (visitados recentemente, listas globais, reset de senha, higiene PascalCase). **Entregues em 2026-07-18** (✓ no grafo): A1, A2, A3, B1, C1, C3 e D1 — ver "Ciclo 2" acima e C3 abaixo. Destravados por eles: A4 (A2/A3 + B1 prontos), C4 (A1 + C3 prontos), C6 (após merge de C2) e D2 push (D1 pronto; falta a chave jurídica).
 
 ### Sequência de execução por janela do calendário
 
@@ -168,7 +168,7 @@ Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, C2 (enge
 | 7     | C2 Cadastro nominal de apoiadores _(engenharia pronta 2026-07-18 — merge/deploy + Consent keys ainda pendentes)_ | [detalhes](plans/cadastro-nominal-apoiadores.md) | produção: lote jurídico (Onda 0) | A4, C3, C6        |
 | 8     | C6 Escala e DRY pós-C2 (import em massa, KPI, shells compartilhados com núcleos)                                 | [detalhes](plans/escala-dry-pos-c2.md)           | C2 (merge)                       | A4, C3            |
 | 9     | A4 Baseline no produto + insight Gap vs 2022                                                                     | [detalhes](plans/baseline-eleitoral-tse.md)      | A3 + B1 (suave: A2)              | C2, C3, C6        |
-| 10    | C3 Eventos / agenda de mobilização (`actionPlan`)                                                                | [detalhes](plans/eventos-agenda-mobilizacao.md)  | A1                               | C2, A4, C6        |
+| 10    | C3 Eventos / agenda de mobilização (`actionPlan`) **(implementado 2026-07-18)**                                  | [detalhes](plans/eventos-agenda-mobilizacao.md)  | A1                               | C2, A4, C6        |
 
 **Janela 3 — 16/08 → set (campanha de rua): inteligência ampliada, visualização e engajamento.**
 

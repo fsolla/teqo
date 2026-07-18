@@ -1,5 +1,6 @@
 import type { CampaignUser, ElectoralNucleus } from '@/payload-types'
 import type { SupportStatus } from '@/lib/schemas/leadership'
+import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
 import { formatNucleusTerritoryLabel } from '@/utilities/nucleusUi'
 
 export type CoordinatorSummary = {
@@ -56,6 +57,7 @@ export type GeneralDashboardViewModel = {
     withoutRecentUpdate: DashboardQueueItem[]
     pendingEstimate: DashboardQueueItem[]
   }
+  upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
 }
 
 export type CoordinatorDashboardCard = {
@@ -94,10 +96,12 @@ export type ScopedDashboardViewModel =
   | {
       role: 'coordenador'
       cards: CoordinatorDashboardCard[]
+      upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
     }
   | {
       role: 'lideranca'
       cards: LeadershipDashboardCard[]
+      upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
     }
 
 const percentage = (part: number, total: number): number =>
@@ -168,6 +172,7 @@ export const buildGeneralDashboardViewModel = (
   leaderships: DashboardLeadershipRecord[],
   updatesThisWeek: number,
   now: Date,
+  upcomingActionPlans: ActionPlanUpcomingPreviewRecord[],
 ): GeneralDashboardViewModel => {
   const coordinatedCount = nuclei.filter(({ coordinators }) => coordinators.length > 0).length
   const confirmedCount = nuclei.filter(
@@ -202,6 +207,7 @@ export const buildGeneralDashboardViewModel = (
         )
         .map(toQueueItem),
     },
+    upcomingActionPlans,
   }
 }
 
@@ -210,6 +216,7 @@ export const buildScopedDashboardViewModel = (
   nuclei: DashboardNucleusRecord[],
   leaderships: DashboardLeadershipRecord[],
   now: Date,
+  upcomingActionPlans: ActionPlanUpcomingPreviewRecord[],
 ): ScopedDashboardViewModel => {
   if (role === 'lideranca') {
     return {
@@ -224,6 +231,7 @@ export const buildScopedDashboardViewModel = (
         confirmedVoteEstimate: nucleus.confirmedVoteEstimate,
         coordinators: coordinatorContacts(nucleus.coordinators),
       })),
+      upcomingActionPlans,
     }
   }
   const { countsByNucleus } = aggregateLeaderships(leaderships)
@@ -247,5 +255,6 @@ export const buildScopedDashboardViewModel = (
         disputed: 0,
       },
     })),
+    upcomingActionPlans,
   }
 }

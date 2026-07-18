@@ -45,7 +45,7 @@ export default async function NucleiPage({ searchParams }: NucleiPageProps) {
   const now = new Date()
   const [{ result, scope }, overview] = await Promise.all([
     loadNucleusListPageData(payload, user, rawSearchParams),
-    loadNucleusListOverviewData(payload, user, canonicalUrl.state),
+    loadNucleusListOverviewData(payload, user, canonicalUrl.state, now),
   ])
   const resolvedUrl = resolveNucleusListUrl(rawSearchParams, result.totalPages)
 

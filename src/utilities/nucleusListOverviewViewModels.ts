@@ -1,4 +1,5 @@
 import type { CampaignUser, NucleusUpdate } from '@/payload-types'
+import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
 
 export const nucleusListOverviewPreviewLimit = 3
 
@@ -34,6 +35,7 @@ export type NucleusListOverviewViewModel = {
     percent: number
   }
   recentUpdates: NucleusListOverviewUpdateRecord[]
+  upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
 }
 
 const percentage = (part: number, total: number): number =>
@@ -43,10 +45,12 @@ export const buildNucleusListOverviewViewModel = ({
   nuclei,
   recentUpdates,
   role,
+  upcomingActionPlans,
 }: {
   nuclei: NucleusListOverviewNucleusRecord[]
   recentUpdates: NucleusListOverviewUpdateRecord[]
   role: CampaignUser['role']
+  upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
 }): NucleusListOverviewViewModel => {
   const totalFiltered = nuclei.length
   const confirmedCount = nuclei.filter(
@@ -77,5 +81,6 @@ export const buildNucleusListOverviewViewModel = ({
       percent: percentage(coordinatedCount, totalFiltered),
     },
     recentUpdates,
+    upcomingActionPlans,
   }
 }
