@@ -11,6 +11,14 @@ import { Analytics } from '@vercel/analytics/next'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
+const fallbackMetadata = {
+  URL: 'https://jorgesolla.com.br',
+  title: 'Jorge Solla',
+  description: 'Notícias, campanhas e a atuação do deputado Jorge Solla pela Bahia.',
+  openGraphSiteName: 'Jorge Solla',
+  twitterCreator: '@jorgesolla',
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const payload = await getCachedGlobal('metadata')()
 
@@ -21,9 +29,9 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   return {
-    title: payload.title,
-    description: payload.description,
-    keywords: payload.keywords.filter((keyword) => typeof keyword === 'string'),
+    title: payload.title || fallbackMetadata.title,
+    description: payload.description || fallbackMetadata.description,
+    keywords: (payload.keywords ?? []).map(({ keyword }) => keyword).filter(Boolean),
     authors: [
       { name: 'Francisco Solla', url: 'https://solla.dev' },
       { name: 'Teqo', url: 'https://teqo.app' },
@@ -37,10 +45,10 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: 'website',
       locale: 'pt-BR',
-      url: payload.URL,
-      siteName: payload.openGraph.siteName,
-      title: payload.title,
-      description: payload.description,
+      url: payload.URL || fallbackMetadata.URL,
+      siteName: payload.openGraph?.siteName || fallbackMetadata.openGraphSiteName,
+      title: payload.title || fallbackMetadata.title,
+      description: payload.description || fallbackMetadata.description,
       images: image?.url
         ? [
             {
@@ -54,9 +62,10 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: payload.title,
-      description: payload.twitter.description,
-      creator: payload.twitter.creator,
+      title: payload.title || fallbackMetadata.title,
+      description:
+        payload.twitter?.description || payload.description || fallbackMetadata.description,
+      creator: payload.twitter?.creator || fallbackMetadata.twitterCreator,
       images: image?.url ? [image.url] : [],
     },
   }

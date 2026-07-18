@@ -93,8 +93,6 @@ Then run `pnpm test` (or `pnpm test:int` / `pnpm test:e2e`).
 - PostgreSQL (via `@payloadcms/db-postgres`)
 - TypeScript
 
-## Roadmap Notes
+## Roadmap
 
-- Prioritize audience ownership and portability of data.
-- Keep modules generic enough for reuse across different political contexts.
-- Default to secure, access-controlled features for campaign and institutional teams.
+Backlog and future plans live in [`docs/roadmap.md`](docs/roadmap.md) (blockers, public site, `/campanha` next cycles, admin RBAC, white-label).

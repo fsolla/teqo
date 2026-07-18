@@ -1,0 +1,95 @@
+---
+description: Estado do projeto Núcleos Eleitorais
+alwaysApply: false
+---
+
+# Núcleos Eleitorais
+
+## Status
+
+- Onda 1 (auth/RBAC e fundação visual): concluída e aprovada em 2026-07-16.
+- Onda 2 (domínio Núcleo): implementada em 2026-07-16; aguardando integração/revisão.
+- Onda 3B (domínio Liderança): implementada em 2026-07-16; migration aplicada nos bancos locais de desenvolvimento e teste.
+- Onda 3A (UI Núcleo): concluída e aprovada em 2026-07-16.
+- Onda 4A (UI Lideranças): implementada em 2026-07-16 com lista responsiva, filtros, ficha/formulário, contato principal e serialização específica por papel.
+- Onda 4B (Inteligência do Núcleo): implementada em 2026-07-17 com fluxo seguro de sugerir/confirmar estimativas, edição de forças/riscos/perfis/dobrada/contato principal e DTOs mínimos por papel.
+- Onda 6B (domínio de convites): implementada em 2026-07-17 com Consent por chave estável, convites WhatsApp com hash/expiração/revogação, consumo transacional de uso único, autopreenchimento restrito e criação/recuperação de acesso.
+- Onda 6A (dashboard e atualizações): implementada e revisada em 2026-07-17 com agregados só de núcleos ativos, semana exata `America/Bahia`, feed paginado por URL e contato contextual da coordenação.
+- Onda 7 (UI de convites): implementada em 2026-07-17 com ação WhatsApp por liderança, bloqueio por Consent/status e rota pública dinâmica de autopreenchimento/acesso/recuperação.
+- Onda 8 (hardening): implementada em 2026-07-17 com E2E por papel, negativa de escopo, convite público/WhatsApp sem navegação real, verificação responsiva 360/390/768/1440, correção de alvos de toque no login, documentação e checklist de deploy.
+- Em 2026-07-17, a listagem de Núcleos passou a aplicar filtros automaticamente pelo estado da URL, sem botão de confirmação, com comboboxes territoriais estritos compartilhados com o formulário.
+- Em 2026-07-17, o contato principal passou a usar busca remota limitada e escopada no detalhe do núcleo, sem serializar a lista completa de lideranças.
+- Em 2026-07-17, o feed paginado de atualizações e a prévia das três mais recentes passaram a usar loaders separados por aba, sem consulta de prévia fora da visão geral.
+- Em 2026-07-17, o painel de lideranças passou a restaurar foco deterministicamente no fechamento de Sheet/Drawer e ganhou E2E real de URL, histórico, responsividade e privacidade de Flight.
+- Em 2026-07-17, o login de campanha removeu React Hook Form/Zod do bundle cliente em favor de formulário nativo com `useActionState`; `Table` voltou a ser módulo estático sem fronteira cliente.
+- Em 2026-07-17, os filtros da lista passaram a montar uma única árvore de controles em um disclosure responsivo; o estado canônico vindo do servidor remonta a ilha por chave de query, sem sincronização por `useSearchParams`.
+- Em 2026-07-17, a composição Phase 1 separou o cartão estático de coordenação no servidor dos controles cliente; opções elegíveis e revisão do Núcleo agora são carregadas somente ao abrir o seletor. Editores pesados de inteligência, estimativa, atualização, liderança e convite passaram a fronteiras lazy locais.
+- Em 2026-07-17, os shells lazy passaram a manter seus gatilhos Radix montados durante carregamento e edição, com restauração real de foco validada no navegador; o carregamento de coordenação permanece cancelável e só bloqueia fechamento durante a gravação.
+- Em 2026-07-17, falhas nos chunks lazy de inteligência, atualização, convite e estimativa ganharam estado de erro acessível, fechamento seguro e nova tentativa controlada sem rejeição não tratada ou spinner infinito.
+- Em 2026-07-17, o fluxo lazy de estimativa passou a transportar uma intenção explícita de foco através do refresh RSC: sugestão foca revisão, confirmação e edição focam o gatilho de editar, com fallback estável no cartão.
+- Em 2026-07-17, a Refactor Phase 2C centralizou os advisory locks transacionais PostgreSQL e separou namespaces por domínio, com regressões concorrentes validadas.
+- Em 2026-07-17, o follow-up Phase 2C tornou `contact-phone:<normalizado>` um invariante único para todo create/update de `Contact`; mudanças bloqueiam telefones antigo+novo em ordem determinística, rejeitam outro titular sem merge e preservam o convite em rollback.
+- Em 2026-07-17, a Refactor Phase 2D reduziu `actions/invite.ts` a uma orquestração de 44 linhas e separou repositório SQL, criação e resgate em módulos `server-only`, preservando 488 testes de integração.
+- Em 2026-07-17, a Refactor Phase 4A consolidou as dez migrations locais não publicadas de `20260717_*` em `20260718_010733_consolidate_campaign_schema`, mantendo intacta a história rastreada até `20260716_010420_add_campaign_user`; os bancos locais foram reconciliados sem alterar dados de aplicação.
+- Em 2026-07-18, o follow-up Phase 4C fixou o Playwright em dois workers por padrão, adicionou guardas automáticos de erros do navegador/console/5xx, fortaleceu privacidade HTML+Flight por papel e tornou o login por teclado uma interação real com Enter e cookie verificado.
+- Em 2026-07-18, a exceção concorrente de `SupportStatusBadge` foi rastreada a projeções em voo nas quais o acesso de campo podia omitir `supportStatus`; o agregado do dashboard agora valida o enum e omite registros incompletos sem inventar um status padrão.
+
+## Decisões
+
+- Núcleo Eleitoral é a unidade operacional; Zona TSE é uma referência oficial adicional.
+- Todo núcleo exige geografia; natureza organizativa e setor são dimensões complementares.
+- Exclusão no app é substituída por arquivamento.
+- `lastUpdateAt` existe como placeholder até o domínio de atualizações.
+- `Contact` tem e-mail opcional no banco, telefone normalizado/indexado e acesso por escopo; os schemas públicos continuam exigindo e-mail.
+- `Leadership` é a junção única contato↔núcleo; acesso de liderança e contato exige vínculo `engajado`, e avaliação interna não é serializada para a titular.
+- A UI de liderança usa view models separados: coordenação recebe avaliação interna; papel `lideranca` recebe somente a própria ficha sem `supportStatus`, `notes` ou `consentNote`.
+- A deduplicação de `Contact` por telefone usa `pg_advisory_xact_lock(hashtextextended(phone, 0))` na própria sessão Drizzle da transação Payload, evitando duplicatas entre instâncias concorrentes.
+- O DTO da própria liderança contém somente nome, celular, e-mail, setor e confirmação pela pessoa.
+- “Convidar pelo WhatsApp” cria convite de uso único e abre `wa.me` no navegador; os E2E substituem `window.open` e validam a URL sem navegar para o WhatsApp.
+- Sugestões de estimativa não alteram o valor confirmado; confirmação exige coordenação geral ou coordenador designado, deriva autoria/data no servidor e exige justificativa quando ajusta a proposta.
+- Sugestão e confirmação da estimativa usam o mesmo `pg_advisory_xact_lock` por núcleo na sessão exata da transação Payload, serializando concorrência entre instâncias.
+- Em 2026-07-17, cada sugestão de estimativa passou a receber uma versão UUID derivada no servidor; confirmações vinculam e comparam essa versão sob o mesmo lock, impedindo confirmações ABA obsoletas mesmo quando o valor volta a ser igual.
+- Em 2026-07-17, links de convite passaram a exigir `NEXT_PUBLIC_SITE_URL` HTTPS e não local em produção; desenvolvimento/teste preferem a origem HTTP real da requisição local, sem confiar em `Host`/`X-Forwarded-*` sobre a configuração de produção.
+- Em 2026-07-17, a origem de convites foi endurecida: produção ignora headers e exige `NEXT_PUBLIC_SITE_URL` como origem HTTPS exata (sem credenciais, path, query ou fragmento); desenvolvimento/teste só aceita headers para `localhost`, `127.0.0.1` ou `::1` exatos e usa a configuração explícita como único fallback.
+- O detalhe do núcleo usa selects/DTOs discriminados por papel: liderança recebe apenas identificação, território básico, Zonas TSE e estimativa confirmada; inteligência estratégica e metadados de proposta/auditoria ficam restritos ao staff.
+- Componentes React novos da Onda 4B usam arquivo PascalCase idêntico ao export principal; a renomeação dos componentes legados fica para a varredura separada.
+- O consentimento de autopreenchimento é resolvido exclusivamente pela chave `lideranca-autopreenchimento`; ausência bloqueia criação e resgate sem fallback por ID.
+- Convites persistem somente SHA-256 do token aleatório de 32 bytes, expiram em sete dias e revogam o convite ativo anterior do mesmo tipo/vínculo.
+- O consumo usa `UPDATE ... WHERE` transacional com estado ativo e expiração, garantindo uso único mesmo sob corrida; falhas posteriores fazem rollback e preservam o convite.
+- Autopreenchimento altera somente contato público, setor e consentimento; login exige vínculo engajado e só recupera uma conta existente quando `leadership.user` já aponta exatamente para ela. Coincidência de username sem vínculo é rejeitada, e uma conta nova sempre nasce como `lideranca`.
+- `campaignUser.phone` é o celular opcional de contato; `username` permanece exclusivamente identidade de autenticação e nunca alimenta DTOs de contato. Leitura do telefone exige admin, titular, geral ou vínculo contextual por núcleo acessível.
+- A ficha de liderança recebe somente `{ configured: boolean }` sobre o Consent; login fica indisponível fora de `engajado`, enquanto Consent ausente desabilita todos os convites com estado explícito.
+- A rota pública `/campanha/convite/[token]` consulta exclusivamente o hash e serializa nome/celular/e-mail/gênero/setor/texto de Consent; estados inexistente/usado/expirado são indistinguíveis, sem avaliação interna.
+- A rota pública força renderização dinâmica e no-store, usa `noindex,nofollow,nocache` e `referrer: no-referrer`; o resgate de login define o cookie isolado existente e redireciona apenas para `/campanha`.
+- O Consent aceito só é preservado sem novo checkbox quando seu ID coincide com o documento atualmente configurado pela chave estável; versão diferente exige aceite explícito antes da troca, e rejeições fazem rollback sem substituir a relação anterior.
+- O token bruto não é persistido nem enviado em campos de perfil. A verificação E2E mostrou que o Next.js serializa o segmento dinâmico e o argumento ligado da Server Action no HTML/Flight da própria página; a fronteira de segurança comprovada é `no-store`, `noindex`, `no-referrer`, nenhum request de terceiro e links externos com `noreferrer`. O token continua inevitavelmente presente na URL/documento same-origin.
+- Campos opcionais self-service distinguem ausente (`undefined`, mantém valor) de vazio explícito (`null`, limpa valor), e o texto Lexical do Consent usa o renderer JSX oficial do Payload para preservar estrutura sem HTML injetado.
+- O login de campanha garante alvos de toque mínimos de 44 px para identificador, senha e submit, com foco visível e ordem de teclado testada.
+- A validação do login permanece autoritativa no servidor por `campaignLoginSchema`; o cliente usa apenas constraints nativas, metadados de autofill e estado pendente/erro da Server Action.
+- Em 2026-07-17, toda senha recebida por `FormData` passou por uma fronteira central que rejeita ausência, vazio e `File`, mas preserva exatamente espaços e demais caracteres; apenas identificadores continuam normalizados.
+- O shell mantém o documento sem overflow horizontal e o conteúdo em scroll interno nas larguras 360, 390, 768 e 1440 px.
+- Em 2026-07-17, os caminhos internos foram renomeados para inglês: route group `(campaign)` e componentes em `src/components/campaign`; o segmento real `campanha` foi preservado, portanto as URLs continuam `/campanha`.
+- Em 2026-07-17, Bahia passou a ser implícita no Núcleo. O território usa `region`, `city`, `neighborhood`, `locality` e `territoryNotes`; `state`, `territoryKind`, coordenadas e raio foram removidos. Região/cidade devem seguir a composição oficial vigente dos Territórios de Identidade.
+- Em 2026-07-17, a composição oficial dos 417 municípios foi incorporada a partir da lista municipal da SECULT Bahia, validada pelos 27 códigos/contagens do mapa SEI 2024 (versão DPA 20/12/2024) e pela cobertura exata de `CitiesByState.BA`. O arquivo documenta as URLs oficiais; o formulário sincroniza município/território e o servidor rejeita pares incompatíveis.
+- Em 2026-07-17, Núcleos receberam `slug` canônico único e as rotas passaram a `/campanha/nucleos/[slug]`. Para manter links duráveis sem uma tabela de aliases desproporcional neste ciclo, o nome ficou imutável após a criação; IDs permanecem internos nas relações e ações.
+- Em 2026-07-17, responsáveis por Núcleo passaram a aceitar `campaignUser.role = geral|coordenador`; `lideranca` é rejeitada também em escritas diretas da Local API. Nos formulários, o usuário geral atual aparece primeiro com o rótulo visual “(você)”, sem alterar o nome persistido.
+- Os filtros de Núcleos usam `router.replace`, reiniciam a paginação, preservam os demais parâmetros e sincronizam novamente a partir da URL em navegação voltar/avançar; a consulta Payload no servidor permanece a fonte dos resultados.
+- A composição dos filtros usa uma única instância dos comboboxes oficiais. Atualizações rápidas derivam a próxima URL do estado controlado local, e a navegação canônica do servidor remonta a ilha pelo resultado de `buildNucleusFiltersKey`.
+- O seletor de contato principal fixa o contato atual separadamente e retorna no máximo 99 alternativas quando ele existe (100 itens renderizados no total); a busca autenticada resolve o slug uma vez, restringe ao núcleo acessível e consulta somente lideranças engajadas.
+- As opções de responsáveis nunca fazem parte do DTO da página do Núcleo: uma Server Action exclusiva de `geral` retorna apenas `{ id, name, isCurrent }` e `expectedUpdatedAt` ao abrir o diálogo; respostas obsoletas após fechamento/reabertura são ignoradas no cliente e a gravação continua protegida pela revisão e pelo lock existentes.
+- Os diálogos lazy são controlados pelo shell que contém o gatilho persistente. Modos de estimativa mantêm um Root por gatilho para que Escape, overlay e X retornem ao botão exato; após sucesso com revalidação RSC, o modo de origem é transportado até a árvore atualizada para restaurar o foco.
+- O carregamento dos módulos lazy compartilha somente uma pequena máquina de estados `idle|loading|ready|error`; cada shell conserva seu `import()` dinâmico e, após rejeição, fechar ou tentar novamente invalida a tentativa anterior para permitir um loader novo.
+- O foco pós-sucesso da estimativa é condicionado aos dados atualizados (`proposedVoteEstimate` ou revisão de confirmação), usa refs dos gatilhos remontados e nunca timeout/RAF; quando o gatilho esperado não existe, o título focável do cartão recebe o foco.
+- Advisory locks de runtime usam a sessão exata da transação Payload via `postgresTransactionLocks.ts`, com chaves textuais deduplicadas/ordenadas e namespaces independentes (`vote-estimate`, `nucleus-updates`, `primary-contact`, convites, telefone de contato e designação de coordenação). Leases de Consent permanecem exclusivamente em helpers de teste.
+- A fronteira pública de convites exporta somente as três Server Actions; helpers privilegiados de SQL, autorização, token, consentimento e recuperação ficam em módulos `server-only`, com limites arquiteturais cobertos por teste.
+- Em 2026-07-17, `Contact.city` passou a opcional porque Núcleos podem representar um Território de Identidade sem município/localidade; os fluxos públicos continuam exigindo cidade em seus próprios schemas. O cadastro de liderança mascara o celular no cliente, normaliza 11 dígitos no servidor e preserva valores/erros após falhas.
+- Em 2026-07-17, decisão de produto: `Município` e `Bairro` do Núcleo passam a aceitar múltiplas entradas (arrays planos `cities`/`neighborhoods`), e `region` vira `regions` derivado no servidor a partir dos municípios, permitindo cruzar Territórios de Identidade. Bairros exigem município único; filtros da lista mudam de `equals` para `contains`. Modelo A (arrays planos) escolhido em vez de array estruturado por município. Plano: [`docs/plans/territorio-multi-municipio-bairro.md`](../../../docs/plans/territorio-multi-municipio-bairro.md); item do roadmap: "Território multi-município e multi-bairro".
+- O DTO paginado de atualizações contém somente filtro/paginação/feed; a visão geral chama um loader dedicado que busca `limit: 3` e apenas os autores necessários à prévia.
+- A lista paginada de lideranças seleciona e serializa somente os campos da linha; avaliação interna e dados completos de contato são carregados apenas para a liderança selecionada. O fechamento usa `onCloseAutoFocus` no Sheet e `finalFocus` no Drawer, focaliza a linha de origem (ou o título do Núcleo) antes de navegar para a URL canônica, sem RAF/timeout.
+- Fonte: `/Users/francisco.solla/.cursor/plans/núcleos_eleitorais_mvp_7f788d29.plan.md`.
+
+## Bloqueadores e próximas frentes
+
+- **Bloqueador obrigatório de produção:** antes de dados reais ou convites, a assessoria jurídica eleitoral deve documentar a base do art. 11 da LGPD, aprovar o texto versionado específico e cadastrar `Consent.key = 'lideranca-autopreenchimento'`. Em 2026-07-17 esse texto entrou num **lote jurídico único** com os demais consents da campanha (`apoiador-cadastro`, `apoiador-intencao-voto`, `campanha-notificacoes-push`) e o Aviso de Privacidade — ver "Onda 0" do roadmap.
+- Em 2026-07-17 o roadmap foi repriorizado orientado ao calendário eleitoral (Res. TSE 23.760/2026: propaganda a partir de 16/08, 1º turno 04/10), com ordem de execução, trilhas paralelas (A dados eleitorais/território, B superfícies de coordenação, C operação de campo, D plataforma) e grafo de dependências. Decisões de sequenciamento: lançar o MVP antes da migração multi-município; multi-município antes de zonas-por-municipio/eventos/demandas; baseline TSE independente de zonas-por-municipio (dependência rebaixada a suave); WhatsApp Business API movido a fora de escopo (vedação Meta + Res. 23.610 art. 33).
+- Backlog consolidado do produto (admin RBAC, mapa, eventos, demandas, apoiadores, listas globais, site, white-label): [`docs/roadmap.md`](../../../docs/roadmap.md).

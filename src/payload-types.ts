@@ -70,6 +70,10 @@ export interface Config {
   collections: {
     users: User;
     campaignUser: CampaignUser;
+    campaignInvite: CampaignInvite;
+    electoralNucleus: ElectoralNucleus;
+    leadership: Leadership;
+    nucleusUpdate: NucleusUpdate;
     media: Media;
     petition: Petition;
     contact: Contact;
@@ -88,6 +92,10 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     campaignUser: CampaignUserSelect<false> | CampaignUserSelect<true>;
+    campaignInvite: CampaignInviteSelect<false> | CampaignInviteSelect<true>;
+    electoralNucleus: ElectoralNucleusSelect<false> | ElectoralNucleusSelect<true>;
+    leadership: LeadershipSelect<false> | LeadershipSelect<true>;
+    nucleusUpdate: NucleusUpdateSelect<false> | NucleusUpdateSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     petition: PetitionSelect<false> | PetitionSelect<true>;
     contact: ContactSelect<false> | ContactSelect<true>;
@@ -151,22 +159,34 @@ export interface UserAuthOperations {
   };
 }
 export interface CampaignUserAuthOperations {
-  forgotPassword: {
-    email: string;
-    password: string;
-  };
-  login: {
-    email: string;
-    password: string;
-  };
+  forgotPassword:
+    | {
+        email: string;
+      }
+    | {
+        username: string;
+      };
+  login:
+    | {
+        email: string;
+        password: string;
+      }
+    | {
+        password: string;
+        username: string;
+      };
   registerFirstUser: {
-    email: string;
     password: string;
+    username?: string;
+    email?: string;
   };
-  unlock: {
-    email: string;
-    password: string;
-  };
+  unlock:
+    | {
+        email: string;
+      }
+    | {
+        username: string;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -200,9 +220,12 @@ export interface User {
 export interface CampaignUser {
   id: number;
   name: string;
+  role: 'geral' | 'coordenador' | 'lideranca';
+  phone?: string | null;
   updatedAt: string;
   createdAt: string;
-  email: string;
+  email?: string | null;
+  username?: string | null;
   resetPasswordToken?: string | null;
   resetPasswordExpiration?: string | null;
   salt?: string | null;
@@ -218,6 +241,225 @@ export interface CampaignUser {
     | null;
   password?: string | null;
   collection: 'campaignUser';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaignInvite".
+ */
+export interface CampaignInvite {
+  id: number;
+  tokenHash: string;
+  leadership: number | Leadership;
+  kind: 'login' | 'autopreenchimento';
+  expiresAt: string;
+  usedAt?: string | null;
+  revokedAt?: string | null;
+  createdBy: number | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "leadership".
+ */
+export interface Leadership {
+  id: number;
+  contact: number | Contact;
+  nucleus: number | ElectoralNucleus;
+  sector?:
+    | (
+        | 'religioso'
+        | 'sindical'
+        | 'comunitario'
+        | 'rural'
+        | 'empresarial'
+        | 'juventude'
+        | 'saude'
+        | 'educacao'
+        | 'cultura'
+        | 'outro'
+      )
+    | null;
+  sectorNotes?: string | null;
+  supportStatus: 'engajado' | 'a_abordar' | 'em_disputa' | 'negativo';
+  user?: (number | null) | CampaignUser;
+  consent?: (number | null) | Consent;
+  consentContentHash?: string | null;
+  consentedAt?: string | null;
+  notes?: string | null;
+  consentNote?: string | null;
+  createdBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact".
+ */
+export interface Contact {
+  id: number;
+  name: string;
+  email?: string | null;
+  phone: string;
+  gender?: ('feminino' | 'masculino' | 'outro' | 'nao_informado') | null;
+  state:
+    | 'AC'
+    | 'AL'
+    | 'AM'
+    | 'AP'
+    | 'BA'
+    | 'CE'
+    | 'DF'
+    | 'ES'
+    | 'GO'
+    | 'MA'
+    | 'MG'
+    | 'MS'
+    | 'MT'
+    | 'PA'
+    | 'PB'
+    | 'PE'
+    | 'PI'
+    | 'PR'
+    | 'RJ'
+    | 'RN'
+    | 'RO'
+    | 'RR'
+    | 'RS'
+    | 'SC'
+    | 'SE'
+    | 'SP'
+    | 'TO';
+  city?: string | null;
+  postalCode?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "electoralNucleus".
+ */
+export interface ElectoralNucleus {
+  id: number;
+  name: string;
+  slug: string;
+  status: 'ativo' | 'arquivado';
+  coordinators?: (number | CampaignUser)[] | null;
+  region?: string | null;
+  city?: string | null;
+  neighborhood?: string | null;
+  locality?: string | null;
+  territoryNotes?: string | null;
+  organizationKind:
+    | 'territorial'
+    | 'associacao'
+    | 'sindicato'
+    | 'religioso'
+    | 'movimento'
+    | 'categoria_profissional'
+    | 'outro';
+  organizationLabel?: string | null;
+  sectorKind?:
+    | ('rural' | 'religioso' | 'sindical' | 'empresarial' | 'juventude' | 'saude' | 'educacao' | 'cultura' | 'outro')
+    | null;
+  tseZones?:
+    | {
+        zoneNumber: number;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  primaryContact?: (number | null) | Contact;
+  voterProfiles?:
+    | {
+        label: string;
+        ageRange?: string | null;
+        incomeBand?: string | null;
+        occupation?: string | null;
+        localTraits?: string | null;
+        notes?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  strengths?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  risks?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  confirmedVoteEstimate?: number | null;
+  confirmedVoteEstimateAt?: string | null;
+  confirmedVoteEstimateBy?: (number | null) | CampaignUser;
+  confirmationNote?: string | null;
+  proposedVoteEstimate?: number | null;
+  proposedVoteEstimateAt?: string | null;
+  proposedVoteEstimateBy?: (number | null) | CampaignUser;
+  proposedVoteEstimateVersion?: string | null;
+  ticketAlliance?: {
+    partnerName?: string | null;
+    office?: string | null;
+    isCampaignPartner?: boolean | null;
+    notes?: string | null;
+  };
+  /**
+   * Preenchido automaticamente quando o domínio de atualizações for ativado.
+   */
+  lastUpdateAt?: string | null;
+  createdBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "consent".
+ */
+export interface Consent {
+  id: number;
+  /**
+   * Identificador estável para referências no código.
+   */
+  key?: string | null;
+  text: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nucleusUpdate".
+ */
+export interface NucleusUpdate {
+  id: number;
+  nucleus: number | ElectoralNucleus;
+  author: number | CampaignUser;
+  kind: 'semanal' | 'urgente' | 'nota';
+  worked?: string | null;
+  failed?: string | null;
+  needs?: string | null;
+  activeVolunteers?: number | null;
+  newSupports?: number | null;
+  body?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -273,72 +515,6 @@ export interface Petition {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "consent".
- */
-export interface Consent {
-  id: number;
-  text: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "contact".
- */
-export interface Contact {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  state:
-    | 'AC'
-    | 'AL'
-    | 'AM'
-    | 'AP'
-    | 'BA'
-    | 'CE'
-    | 'DF'
-    | 'ES'
-    | 'GO'
-    | 'MA'
-    | 'MG'
-    | 'MS'
-    | 'MT'
-    | 'PA'
-    | 'PB'
-    | 'PE'
-    | 'PI'
-    | 'PR'
-    | 'RJ'
-    | 'RN'
-    | 'RO'
-    | 'RR'
-    | 'RS'
-    | 'SC'
-    | 'SE'
-    | 'SP'
-    | 'TO';
-  city: string;
-  postalCode?: string | null;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -544,6 +720,22 @@ export interface PayloadLockedDocument {
         value: number | CampaignUser;
       } | null)
     | ({
+        relationTo: 'campaignInvite';
+        value: number | CampaignInvite;
+      } | null)
+    | ({
+        relationTo: 'electoralNucleus';
+        value: number | ElectoralNucleus;
+      } | null)
+    | ({
+        relationTo: 'leadership';
+        value: number | Leadership;
+      } | null)
+    | ({
+        relationTo: 'nucleusUpdate';
+        value: number | NucleusUpdate;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -655,9 +847,12 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface CampaignUserSelect<T extends boolean = true> {
   name?: T;
+  role?: T;
+  phone?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
+  username?: T;
   resetPasswordToken?: T;
   resetPasswordExpiration?: T;
   salt?: T;
@@ -671,6 +866,127 @@ export interface CampaignUserSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaignInvite_select".
+ */
+export interface CampaignInviteSelect<T extends boolean = true> {
+  tokenHash?: T;
+  leadership?: T;
+  kind?: T;
+  expiresAt?: T;
+  usedAt?: T;
+  revokedAt?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "electoralNucleus_select".
+ */
+export interface ElectoralNucleusSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  status?: T;
+  coordinators?: T;
+  region?: T;
+  city?: T;
+  neighborhood?: T;
+  locality?: T;
+  territoryNotes?: T;
+  organizationKind?: T;
+  organizationLabel?: T;
+  sectorKind?: T;
+  tseZones?:
+    | T
+    | {
+        zoneNumber?: T;
+        label?: T;
+        id?: T;
+      };
+  primaryContact?: T;
+  voterProfiles?:
+    | T
+    | {
+        label?: T;
+        ageRange?: T;
+        incomeBand?: T;
+        occupation?: T;
+        localTraits?: T;
+        notes?: T;
+        id?: T;
+      };
+  strengths?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  risks?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  confirmedVoteEstimate?: T;
+  confirmedVoteEstimateAt?: T;
+  confirmedVoteEstimateBy?: T;
+  confirmationNote?: T;
+  proposedVoteEstimate?: T;
+  proposedVoteEstimateAt?: T;
+  proposedVoteEstimateBy?: T;
+  proposedVoteEstimateVersion?: T;
+  ticketAlliance?:
+    | T
+    | {
+        partnerName?: T;
+        office?: T;
+        isCampaignPartner?: T;
+        notes?: T;
+      };
+  lastUpdateAt?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "leadership_select".
+ */
+export interface LeadershipSelect<T extends boolean = true> {
+  contact?: T;
+  nucleus?: T;
+  sector?: T;
+  sectorNotes?: T;
+  supportStatus?: T;
+  user?: T;
+  consent?: T;
+  consentContentHash?: T;
+  consentedAt?: T;
+  notes?: T;
+  consentNote?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nucleusUpdate_select".
+ */
+export interface NucleusUpdateSelect<T extends boolean = true> {
+  nucleus?: T;
+  author?: T;
+  kind?: T;
+  worked?: T;
+  failed?: T;
+  needs?: T;
+  activeVolunteers?: T;
+  newSupports?: T;
+  body?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -719,6 +1035,7 @@ export interface ContactSelect<T extends boolean = true> {
   name?: T;
   email?: T;
   phone?: T;
+  gender?: T;
   state?: T;
   city?: T;
   postalCode?: T;
@@ -730,6 +1047,7 @@ export interface ContactSelect<T extends boolean = true> {
  * via the `definition` "consent_select".
  */
 export interface ConsentSelect<T extends boolean = true> {
+  key?: T;
   text?: T;
   updatedAt?: T;
   createdAt?: T;

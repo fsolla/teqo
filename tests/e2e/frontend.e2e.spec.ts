@@ -1,21 +1,13 @@
-import { expect, Page, test } from '@playwright/test'
+import { expect, test } from './fixtures/e2eTest'
 
 test.describe('Frontend', () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let page: Page
-
-  test.beforeAll(async ({ browser }) => {
-    const context = await browser.newContext()
-    page = await context.newPage()
-  })
-
   test('can go on homepage', async ({ page }) => {
-    await page.goto('http://localhost:3000')
+    await page.goto('/')
 
-    await expect(page).toHaveTitle(/Payload Blank Template/)
+    await expect(page).toHaveTitle(/Jorge Solla/)
 
     const heading = page.locator('h1').first()
 
-    await expect(heading).toHaveText('Welcome to your new project.')
+    await expect(heading).toHaveText('O mandato do tamanho da Bahia')
   })
 })

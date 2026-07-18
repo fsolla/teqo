@@ -1,6 +1,6 @@
 import { PostCard } from '@/components/PostCard'
 import { SiteHeader } from '@/components/SiteHeader'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/Badge'
 import { Separator } from '@/components/ui/separator'
 import { getCachedGlobal } from '@/utilities/globals'
 import { stripTrailingSlash } from '@/utilities/seo'

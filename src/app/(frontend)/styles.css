@@ -2,7 +2,6 @@
 
 @plugin 'tailwindcss-animate';
 @import 'tw-animate-css';
-@import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
@@ -62,6 +61,24 @@ body,
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-scope-border: var(--scope-border);
+  --color-scope-foreground: var(--scope-foreground);
+  --color-scope: var(--scope);
+  --color-tse-foreground: var(--tse-foreground);
+  --color-tse: var(--tse);
+  --color-support-engaged-foreground: var(--support-engaged-foreground);
+  --color-support-engaged: var(--support-engaged);
+  --color-support-to-approach-foreground: var(--support-to-approach-foreground);
+  --color-support-to-approach: var(--support-to-approach);
+  --color-support-disputed-foreground: var(--support-disputed-foreground);
+  --color-support-disputed: var(--support-disputed);
+  --color-support-negative-foreground: var(--support-negative-foreground);
+  --color-support-negative: var(--support-negative);
+  --color-estimate-confirmed-foreground: var(--estimate-confirmed-foreground);
+  --color-estimate-confirmed: var(--estimate-confirmed);
+  --color-estimate-pending-foreground: var(--estimate-pending-foreground);
+  --color-estimate-pending: var(--estimate-pending);
+  --color-cadence-overdue: var(--cadence-overdue);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -184,8 +201,9 @@ body,
    management panel). Mirrors the shadcn token contract with a brand-red
    primary and defines the --field-* tokens so the custom Input renders with a
    visible border on the white card. Applied via data-theme="campaign" on the
-   (campanha) layout, so it never affects the public (frontend) pages. */
+   (campaign) layout, so it never affects the public (frontend) pages. */
 [data-theme='campaign'] {
+  --radius: 0.5rem;
   --background: #ffffff;
   --foreground: #1c1917;
   --card: #ffffff;
@@ -220,6 +238,51 @@ body,
   --sidebar-accent-foreground: #1c1917;
   --sidebar-border: rgb(28 25 23 / 12%);
   --sidebar-ring: #c51414;
+  --scope: #fff5ed;
+  --scope-foreground: #6b2d15;
+  --scope-border: #e8c5ae;
+  --tse: #f1f3f5;
+  --tse-foreground: #3f4854;
+  --support-engaged: #dcfce7;
+  --support-engaged-foreground: #166534;
+  --support-to-approach: #eef0f3;
+  --support-to-approach-foreground: #46505c;
+  --support-disputed: #fef3c7;
+  --support-disputed-foreground: #92400e;
+  --support-negative: #fee2e2;
+  --support-negative-foreground: #991b1b;
+  --estimate-confirmed: #dcfce7;
+  --estimate-confirmed-foreground: #166534;
+  --estimate-pending: #fef3c7;
+  --estimate-pending-foreground: #92400e;
+  --cadence-overdue: #b42318;
+}
+
+[data-theme='campaign']
+  :is(
+    [data-slot='input'],
+    [data-slot='input-group'],
+    [data-slot='combobox-trigger'],
+    [data-slot='native-select'],
+    [data-slot='select-trigger']
+  ) {
+  border-radius: var(--radius-md);
+}
+
+/* The public-site base `h1` is centered + display-sized for article heroes.
+   Campaign dashboard headings are left-aligned section titles, so undo the
+   base centering and text balancing here; each heading keeps its own
+   size/weight utility classes. The base `p { not-first:mt-6 }` is also for
+   article body flow — campaign layouts space subtitles via flex gap, so the
+   extra top margin would stack on top of the gap and create a large gap
+   between a title and its subtitle. */
+[data-theme='campaign'] h1 {
+  text-align: left;
+  text-wrap: initial;
+}
+
+[data-theme='campaign'] p {
+  margin-top: 0;
 }
 
 /*
@@ -302,7 +365,7 @@ body,
   }
 
   p {
-    @apply leading-7 [&:not(:first-child)]:mt-6;
+    @apply leading-7 not-first:mt-6;
   }
 
   blockquote {

@@ -7,10 +7,14 @@ import { fileURLToPath } from 'url'
 
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { pt } from 'payload/i18n/pt'
+import { CampaignInvite } from './collections/CampaignInvite'
 import { CampaignUser } from './collections/CampaignUser'
 import { Consent } from './collections/Consent'
 import { Contact } from './collections/Contact'
+import { ElectoralNucleus } from './collections/ElectoralNucleus'
+import { Leadership } from './collections/Leadership'
 import { Media } from './collections/Media'
+import { NucleusUpdate } from './collections/NucleusUpdate'
 import { Petition } from './collections/Petition'
 import { Post } from './collections/Post'
 import { Signature } from './collections/Signature'
@@ -38,6 +42,10 @@ export default buildConfig({
   collections: [
     Users,
     CampaignUser,
+    CampaignInvite,
+    ElectoralNucleus,
+    Leadership,
+    NucleusUpdate,
     Media,
     Petition,
     Contact,

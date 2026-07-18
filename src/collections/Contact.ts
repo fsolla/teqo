@@ -1,5 +1,41 @@
 import { CitiesByState } from '@/lib/cities'
-import { CollectionConfig } from 'payload'
+import {
+  acquireContactPhoneLocks,
+  assertContactPhoneAvailable,
+} from '@/utilities/contactPhoneInvariant'
+import {
+  canManageContacts,
+  canReadContacts,
+} from '@/utilities/campaignAccess'
+import { normalizeBrazilianPhone } from '@/utilities/phone'
+import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
+import { APIError } from 'payload'
+
+const enforceUniqueContactPhone: CollectionBeforeChangeHook = async ({
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  const phone = String(data.phone ?? originalDoc?.phone ?? '')
+  const oldPhone =
+    operation === 'update' && typeof originalDoc?.phone === 'string'
+      ? originalDoc.phone
+      : undefined
+
+  await acquireContactPhoneLocks(
+    req.payload,
+    req,
+    oldPhone === undefined ? [phone] : [oldPhone, phone],
+  )
+  await assertContactPhoneAvailable(
+    req.payload,
+    req,
+    phone,
+    operation === 'update' ? Number(originalDoc?.id) : undefined,
+  )
+  return data
+}
 
 export const Contact: CollectionConfig = {
   slug: 'contact',
@@ -10,6 +46,36 @@ export const Contact: CollectionConfig = {
   admin: {
     group: 'Contatos',
     useAsTitle: 'name',
+  },
+  access: {
+    create: canManageContacts,
+    read: canReadContacts,
+    update: canManageContacts,
+    delete: canManageContacts,
+  },
+  hooks: {
+    beforeValidate: [
+      ({ data }) => {
+        if (!data || data.phone === undefined) return data
+
+        const input = String(data.phone)
+        if (/^\d{11}$/.test(input)) {
+          if (!/^[1-9]{2}9\d{8}$/.test(input)) {
+            throw new APIError('Celular brasileiro inválido.', 400)
+          }
+          return data
+        }
+
+        const phone = normalizeBrazilianPhone(input)
+        if (!phone) {
+          throw new APIError('Celular brasileiro inválido.', 400)
+        }
+
+        data.phone = phone
+        return data
+      },
+    ],
+    beforeChange: [enforceUniqueContactPhone],
   },
   fields: [
     {
@@ -24,7 +90,7 @@ export const Contact: CollectionConfig = {
       name: 'email',
       type: 'email',
       label: 'E-mail',
-      required: true,
+      required: false,
     },
     {
       name: 'phone',
@@ -33,6 +99,18 @@ export const Contact: CollectionConfig = {
       minLength: 11,
       maxLength: 11,
       required: true,
+      index: true,
+    },
+    {
+      name: 'gender',
+      type: 'select',
+      label: 'Gênero',
+      options: [
+        { label: 'Feminino', value: 'feminino' },
+        { label: 'Masculino', value: 'masculino' },
+        { label: 'Outro', value: 'outro' },
+        { label: 'Não informado', value: 'nao_informado' },
+      ],
     },
     {
       name: 'state',
@@ -47,7 +125,7 @@ export const Contact: CollectionConfig = {
       label: 'Cidade',
       minLength: 2,
       maxLength: 100,
-      required: true,
+      required: false,
     },
     {
       name: 'postalCode',

@@ -1,7 +1,10 @@
+import type { Crumb } from '@/components/SiteHeader'
+import { SiteHeader } from '@/components/SiteHeader'
+import { Badge } from '@/components/ui/Badge'
+import type { Media, Post } from '@/payload-types'
 import { getCachedDocumentById } from '@/utilities/documents'
-import { getCachedGlobal } from '@/utilities/globals'
 import { extractFirstImageFromLexical } from '@/utilities/extractFirstImageFromLexical'
-import { stripTrailingSlash, toAbsoluteUrl, truncate } from '@/utilities/seo'
+import { getCachedGlobal } from '@/utilities/globals'
 import {
   POST_TYPE_LABELS,
   formatPostDate,
@@ -15,15 +18,12 @@ import {
   isPostType,
   isPostVisible,
 } from '@/utilities/posts'
-import { SiteHeader } from '@/components/SiteHeader'
-import type { Crumb } from '@/components/SiteHeader'
-import { Badge } from '@/components/ui/badge'
+import { stripTrailingSlash, toAbsoluteUrl, truncate } from '@/utilities/seo'
 import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
-import type { Media, Post } from '@/payload-types'
 import type { Metadata } from 'next'
-import type { Article, WithContext } from 'schema-dts'
 import Image from 'next/image'
 import { notFound, redirect } from 'next/navigation'
+import type { Article, WithContext } from 'schema-dts'
 
 export const dynamicParams = true
 
@@ -235,7 +235,7 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
 
         {coverImage?.url ? (
           <figure className="mx-auto w-full max-w-4xl px-4 pt-10 sm:px-6 lg:px-8 lg:pt-12">
-            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border">
+            <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border">
               <Image
                 src={coverImage.url}
                 alt={coverImage.alt ?? post.title}

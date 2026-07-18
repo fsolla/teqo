@@ -1,0 +1,46 @@
+{
+  "provenance": {
+    "description": "Test-only evidence derived independently by spatially joining official SEI territory polygons to the official 2024-12-20 Bahia municipality polygons. It was not generated from src/lib/bahiaTerritories.ts.",
+    "territorySource": {
+      "url": "https://map.geo.sei.ba.gov.br/arcgis/rest/services/servicos_sei/REGIONALIZACAO_TEMATICA_ATLAS/FeatureServer/0/query?where=1%3D1&outFields=codti%2Cnomti&returnGeometry=true&outSR=4326&f=geojson",
+      "layer": "REG_TI_A_100K_2022_GCS_SIR_SEPLAN",
+      "downloadSha256": "c5d806dcbecb68ded3a8779490b7be020993f0847e7ce26e6edf30c0b8b1ff7c"
+    },
+    "municipalitySource": {
+      "url": "https://ftp.sei.ba.gov.br/Geoinformacao/dpa/est/2024/DPA_A_100K_2024_12_20_GCS_SIR_SEI_SHP.zip",
+      "version": "DPA 2024-12-20",
+      "downloadSha256": "f693979036c325b3ae20d58218a2d2a9033e02c4c3e74c71ddc2b0a7b74ef218"
+    },
+    "normalization": "Each municipality polygon representative point was spatially joined to exactly one territory polygon. Official DPA spellings were reconciled to canonical application spellings for Araças, Dias d’Ávila, Ibirapuã, Itaeté, Iuiú, Lafaiete Coutinho, Muquém de São Francisco, Pau Brasil, and Santa Teresinha. The evidence SHA-256 covers every normalized municipality-to-territory-code assignment plus the territory code/name/count rows."
+  },
+  "territories": [
+    { "code": "01", "name": "Irecê", "municipalityCount": 20 },
+    { "code": "02", "name": "Velho Chico", "municipalityCount": 16 },
+    { "code": "03", "name": "Chapada Diamantina", "municipalityCount": 24 },
+    { "code": "04", "name": "Sisal", "municipalityCount": 20 },
+    { "code": "05", "name": "Litoral Sul", "municipalityCount": 26 },
+    { "code": "06", "name": "Baixo Sul", "municipalityCount": 15 },
+    { "code": "07", "name": "Extremo Sul", "municipalityCount": 13 },
+    { "code": "08", "name": "Médio Sudoeste da Bahia", "municipalityCount": 13 },
+    { "code": "09", "name": "Vale do Jiquiriçá", "municipalityCount": 20 },
+    { "code": "10", "name": "Sertão do São Francisco", "municipalityCount": 10 },
+    { "code": "11", "name": "Bacia do Rio Grande", "municipalityCount": 14 },
+    { "code": "12", "name": "Bacia do Paramirim", "municipalityCount": 8 },
+    { "code": "13", "name": "Sertão Produtivo", "municipalityCount": 20 },
+    { "code": "14", "name": "Piemonte do Paraguaçu", "municipalityCount": 13 },
+    { "code": "15", "name": "Bacia do Jacuípe", "municipalityCount": 15 },
+    { "code": "16", "name": "Piemonte da Diamantina", "municipalityCount": 9 },
+    { "code": "17", "name": "Semiárido Nordeste II", "municipalityCount": 18 },
+    { "code": "18", "name": "Litoral Norte e Agreste Baiano", "municipalityCount": 20 },
+    { "code": "19", "name": "Portal do Sertão", "municipalityCount": 17 },
+    { "code": "20", "name": "Sudoeste Baiano", "municipalityCount": 24 },
+    { "code": "21", "name": "Recôncavo", "municipalityCount": 19 },
+    { "code": "22", "name": "Médio Rio de Contas", "municipalityCount": 16 },
+    { "code": "23", "name": "Bacia do Rio Corrente", "municipalityCount": 11 },
+    { "code": "24", "name": "Itaparica", "municipalityCount": 6 },
+    { "code": "25", "name": "Piemonte Norte do Itapicuru", "municipalityCount": 9 },
+    { "code": "26", "name": "Metropolitano de Salvador", "municipalityCount": 13 },
+    { "code": "27", "name": "Costa do Descobrimento", "municipalityCount": 8 }
+  ],
+  "evidenceSha256": "6a0d330abea2f28bc413cd8dd4ff315efdb34dcdf1756f8b97e5365833409e72"
+}

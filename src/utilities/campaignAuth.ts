@@ -1,12 +1,46 @@
+import 'server-only'
+
 import type { CampaignUser } from '@/payload-types'
 
 import configPromise from '@payload-config'
 import { cookies } from 'next/headers'
-import { getPayload } from 'payload'
+import { getPayload, type Payload } from 'payload'
+import { cache } from 'react'
 
 export const CAMPAIGN_TOKEN_COOKIE = 'campaign-token'
+export const CAMPAIGN_COOKIE_PATH = '/campanha'
+const DEFAULT_TOKEN_EXPIRATION = 7200
 
-export const getCampaignUser = async (): Promise<CampaignUser | null> => {
+type CampaignAuthPayload = Pick<Payload, 'auth' | 'findByID'>
+type CampaignCookiePayload = Pick<Payload, 'collections'>
+export type AuthenticatedCampaignUser = CampaignUser & { email: string }
+
+export const authenticateCampaignToken = async (
+  token: string,
+  payload: CampaignAuthPayload,
+): Promise<AuthenticatedCampaignUser | null> => {
+  try {
+    const headers = new Headers({ Authorization: `JWT ${token}` })
+    const { user } = await payload.auth({ headers })
+
+    if (user?.collection !== 'campaignUser') return null
+
+    const currentUser = await payload.findByID({
+      collection: 'campaignUser',
+      id: user.id,
+      depth: 0,
+    })
+
+    return {
+      ...currentUser,
+      email: currentUser.email ?? '',
+    }
+  } catch {
+    return null
+  }
+}
+
+export const getCampaignUserRaw = async (): Promise<AuthenticatedCampaignUser | null> => {
   const cookieStore = await cookies()
   const token = cookieStore.get(CAMPAIGN_TOKEN_COOKIE)?.value
 
@@ -14,11 +48,24 @@ export const getCampaignUser = async (): Promise<CampaignUser | null> => {
 
   const payload = await getPayload({ config: configPromise })
 
-  const headers = new Headers({ Authorization: `JWT ${token}` })
+  return authenticateCampaignToken(token, payload)
+}
 
-  const { user } = await payload.auth({ headers })
+export const getCampaignUser = cache(getCampaignUserRaw)
 
-  if (user?.collection !== 'campaignUser') return null
+export const setCampaignAuthCookie = async (
+  token: string,
+  payload: CampaignCookiePayload,
+): Promise<void> => {
+  const tokenExpiration =
+    payload.collections.campaignUser?.config.auth?.tokenExpiration ?? DEFAULT_TOKEN_EXPIRATION
+  const cookieStore = await cookies()
 
-  return user
+  cookieStore.set(CAMPAIGN_TOKEN_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: CAMPAIGN_COOKIE_PATH,
+    maxAge: tokenExpiration,
+  })
 }

@@ -12,6 +12,17 @@ export const Consent: CollectionConfig = {
   },
   fields: [
     {
+      name: 'key',
+      type: 'text',
+      label: 'Chave estável',
+      required: false,
+      unique: true,
+      index: true,
+      admin: {
+        description: 'Identificador estável para referências no código.',
+      },
+    },
+    {
       name: 'text',
       type: 'richText',
       label: 'Texto',
