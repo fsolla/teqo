@@ -11,6 +11,9 @@ import { CampaignInvite } from './collections/CampaignInvite'
 import { CampaignUser } from './collections/CampaignUser'
 import { Consent } from './collections/Consent'
 import { Contact } from './collections/Contact'
+import { ElectionCandidate } from './collections/ElectionCandidate'
+import { ElectionCandidateVote } from './collections/ElectionCandidateVote'
+import { ElectionTally } from './collections/ElectionTally'
 import { ElectoralNucleus } from './collections/ElectoralNucleus'
 import { Leadership } from './collections/Leadership'
 import { Media } from './collections/Media'
@@ -46,6 +49,9 @@ export default buildConfig({
     ElectoralNucleus,
     Leadership,
     NucleusUpdate,
+    ElectionTally,
+    ElectionCandidateVote,
+    ElectionCandidate,
     Media,
     Petition,
     Contact,

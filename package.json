@@ -26,6 +26,7 @@
     "db:stop": "docker compose down",
     "db:pull": "node scripts/db-pull.mjs",
     "db:seed:posts": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-posts.mjs",
+    "db:seed:tse": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-tse-results.mjs",
     "dev": "node scripts/guard-dev-db.mjs && cross-env NODE_OPTIONS=--no-deprecation next dev",
     "devsafe": "rm -rf .next && node scripts/guard-dev-db.mjs && cross-env NODE_OPTIONS=--no-deprecation next dev",
     "generate:importmap": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server\" payload generate:importmap",
@@ -89,8 +90,10 @@
     "@types/node": "22.19.9",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/yauzl": "^3.4.0",
     "@vercel/blob": "2.3.1",
     "@vitejs/plugin-react": "4.5.2",
+    "csv-parse": "^7.0.1",
     "eslint": "^9.39.2",
     "eslint-config-next": "15.4.11",
     "eslint-config-prettier": "^10.1.8",
@@ -104,7 +107,8 @@
     "typescript": "5.7.3",
     "typescript-eslint": "^8.55.0",
     "vite-tsconfig-paths": "6.0.5",
-    "vitest": "4.0.18"
+    "vitest": "4.0.18",
+    "yauzl": "^3.4.0"
   },
   "engines": {
     "node": "^18.20.2 || >=20.9.0",

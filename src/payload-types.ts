@@ -74,6 +74,9 @@ export interface Config {
     electoralNucleus: ElectoralNucleus;
     leadership: Leadership;
     nucleusUpdate: NucleusUpdate;
+    electionTally: ElectionTally;
+    electionCandidateVote: ElectionCandidateVote;
+    electionCandidate: ElectionCandidate;
     media: Media;
     petition: Petition;
     contact: Contact;
@@ -96,6 +99,9 @@ export interface Config {
     electoralNucleus: ElectoralNucleusSelect<false> | ElectoralNucleusSelect<true>;
     leadership: LeadershipSelect<false> | LeadershipSelect<true>;
     nucleusUpdate: NucleusUpdateSelect<false> | NucleusUpdateSelect<true>;
+    electionTally: ElectionTallySelect<false> | ElectionTallySelect<true>;
+    electionCandidateVote: ElectionCandidateVoteSelect<false> | ElectionCandidateVoteSelect<true>;
+    electionCandidate: ElectionCandidateSelect<false> | ElectionCandidateSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     petition: PetitionSelect<false> | PetitionSelect<true>;
     contact: ContactSelect<false> | ContactSelect<true>;
@@ -462,6 +468,91 @@ export interface NucleusUpdate {
   createdAt: string;
 }
 /**
+ * Totais oficiais TSE por município e zona (dado público).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "electionTally".
+ */
+export interface ElectionTally {
+  id: number;
+  year: number;
+  office: 'presidente' | 'governador' | 'deputado_federal' | 'deputado_estadual';
+  turn: '1' | '2';
+  state: string;
+  cityCode: string;
+  cityName: string;
+  zoneNumber: number;
+  aptos: number;
+  comparecimento: number;
+  abstencoes: number;
+  votosValidos: number;
+  votosNominaisValidos: number;
+  votosLegenda: number;
+  votosBranco: number;
+  votosNulo: number;
+  votosAnulados: number;
+  winnerCandidateNumber?: number | null;
+  winnerCandidateName?: string | null;
+  winnerVotes?: number | null;
+  winnerCoalition?: string | null;
+  winnerParty?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Votos nominais oficiais TSE por município e zona (dado público).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "electionCandidateVote".
+ */
+export interface ElectionCandidateVote {
+  id: number;
+  year: number;
+  office: 'presidente' | 'governador' | 'deputado_federal' | 'deputado_estadual';
+  turn: '1' | '2';
+  state: string;
+  cityCode: string;
+  cityName: string;
+  zoneNumber: number;
+  candidateNumber: number;
+  candidateName: string;
+  coalition?: string | null;
+  party?: string | null;
+  voteType: 'nominal' | 'legenda';
+  votes: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Registro de candidatura TSE (dado público).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "electionCandidate".
+ */
+export interface ElectionCandidate {
+  id: number;
+  year: number;
+  office: 'presidente' | 'governador' | 'deputado_federal' | 'deputado_estadual';
+  turn: '1' | '2';
+  state: string;
+  candidateNumber: number;
+  urnaName: string;
+  completeName?: string | null;
+  party?: string | null;
+  coalition?: string | null;
+  candidateStatus?: string | null;
+  elected?: boolean | null;
+  electedBy?: ('QP' | 'média' | '2º turno') | null;
+  totalVotesState?: number | null;
+  /**
+   * sha256(nome urna + naturalidade + partido); só dados públicos.
+   */
+  identityKey?: string | null;
+  runningAgain2026: 'sim' | 'nao' | 'desconhecido';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
@@ -736,6 +827,18 @@ export interface PayloadLockedDocument {
         value: number | NucleusUpdate;
       } | null)
     | ({
+        relationTo: 'electionTally';
+        value: number | ElectionTally;
+      } | null)
+    | ({
+        relationTo: 'electionCandidateVote';
+        value: number | ElectionCandidateVote;
+      } | null)
+    | ({
+        relationTo: 'electionCandidate';
+        value: number | ElectionCandidate;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -985,6 +1088,79 @@ export interface NucleusUpdateSelect<T extends boolean = true> {
   activeVolunteers?: T;
   newSupports?: T;
   body?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "electionTally_select".
+ */
+export interface ElectionTallySelect<T extends boolean = true> {
+  year?: T;
+  office?: T;
+  turn?: T;
+  state?: T;
+  cityCode?: T;
+  cityName?: T;
+  zoneNumber?: T;
+  aptos?: T;
+  comparecimento?: T;
+  abstencoes?: T;
+  votosValidos?: T;
+  votosNominaisValidos?: T;
+  votosLegenda?: T;
+  votosBranco?: T;
+  votosNulo?: T;
+  votosAnulados?: T;
+  winnerCandidateNumber?: T;
+  winnerCandidateName?: T;
+  winnerVotes?: T;
+  winnerCoalition?: T;
+  winnerParty?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "electionCandidateVote_select".
+ */
+export interface ElectionCandidateVoteSelect<T extends boolean = true> {
+  year?: T;
+  office?: T;
+  turn?: T;
+  state?: T;
+  cityCode?: T;
+  cityName?: T;
+  zoneNumber?: T;
+  candidateNumber?: T;
+  candidateName?: T;
+  coalition?: T;
+  party?: T;
+  voteType?: T;
+  votes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "electionCandidate_select".
+ */
+export interface ElectionCandidateSelect<T extends boolean = true> {
+  year?: T;
+  office?: T;
+  turn?: T;
+  state?: T;
+  candidateNumber?: T;
+  urnaName?: T;
+  completeName?: T;
+  party?: T;
+  coalition?: T;
+  candidateStatus?: T;
+  elected?: T;
+  electedBy?: T;
+  totalVotesState?: T;
+  identityKey?: T;
+  runningAgain2026?: T;
   updatedAt?: T;
   createdAt?: T;
 }

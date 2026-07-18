@@ -1,8 +1,8 @@
 # Baseline eleitoral TSE 2022
 
-Status: rascunho
-Atualizado em: 2026-07-17
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
+Status: Fase 1 (A3) implementada — modelo + import
+Atualizado em: 2026-07-18
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (A3/A4 Baseline TSE 2022)
 Responsável: —
 
 ## Referência visual (UX Pilot)
@@ -43,13 +43,16 @@ Candidatos de interesse (destaques na UI): **Solla = dep. federal BA, PT, nº 13
 - **Access control:** dado público TSE. `read` para autenticado em `campaignUser` ou `users` (não aberto ao público). `create/update/delete` admin only. Sem `Consent`, sem transação em runtime. Import via CLI com `overrideAccess: true` fora do runtime deployado.
 - **Sem PII.** Não persistir CPF nem título eleitoral. A identidade cross-ano usa `identityKey = sha256(normalize(urnaName) + birthCity + birthState + party)` — só dados públicos da consulta de candidaturas.
 - **Migration** `add_election_results` (push:false). `pnpm build` aplica em prod no deploy. Não esbarra no bloqueador LGPD (dado público, sem liderança real).
-- **Import idempotente** pela chave única (upsert), com proveniência (URL, data, SHA-256) no cabeçalho do script. Sem step de revalidate (páginas de campanha são dinâmicas com auth, sem ISR/tag).
+- **Import idempotente por escopo** `(year, office, turn)`: delete + bulk insert via `payload.db.drizzle` (não upsert row a row). Proveniência (URL, SHA-256) no cabeçalho de `scripts/seed-tse-results.mjs`. Sem step de revalidate (páginas de campanha são dinâmicas com auth, sem ISR/tag).
+- **Sem votos de legenda na v1.** Campo `voteType` permanece no schema; só rows `nominal` são importadas. O agregado `votosLegenda` do tally cobre o que os insights precisam. Dataset `votacao_partido_munzona` fica fora do escopo A3.
+- **Votos anulados sub judice (2022):** `electionCandidateVote.votes` ← `QT_VOTOS_NOMINAIS` (apurados); validade fica no tally (`votosNominaisValidos`, `votosAnulados`).
+- **Mapeamento de município:** `NM_MUNICIPIO` (TSE) → nome canônico de `bahiaTerritories.ts` via normalização case/acento/apóstrofo; falha alta em município não mapeado; persiste `cityCode` (TSE) + `cityName` canônico. Teste cobre os 417 municípios.
 - **Agregação núcleo→baseline é autossuficiente** (revisão 2026-07-17): `citiesForTerritory` **já existe** em `src/lib/bahiaTerritories.ts` (não vem do plano `zonas-por-municipio.md`), e a correspondência cidade↔zona pode ser resolvida pelas próprias rows de `electionTally` (cada par cidade×zona importado é uma row — `where cityName = C` retorna todas as zonas da cidade). `tseZonesForCity` (plano `zonas-por-municipio.md`) é **opcional**: quando existir, vira a fonte preferida por ser validada por fixture. Sem `tseZones` → todas as zonas da(s) cidade(s); só `region` → todas as cidades do território; sem geografia → estado "sem baseline TSE".
 - **i18n e naming** seguem o AGENTS.md: identificadores em inglês, strings visíveis em pt-BR.
 
 ## Questões em aberto
 
-- Mapeamento `CD_MUNICIPIO` (TSE) → nome canônico em `CitiesByState.BA`: usar `NM_MUNICIPIO` do CSV + validação cruzada.
+- ~~Mapeamento `CD_MUNICIPIO` (TSE) → nome canônico~~ — resolvido na Fase 1 via `canonicalizeMunicipalityName` + `cityCode` persistido.
 - Limiares de classificação territorial (defesa/ataque/indecisa/perdida) — definir com produto.
 - Mostrar 1º e 2º turno para presidente/governador, ou só o decisivo? Recomendação: ambos, com destaque ao decisivo.
 - `lideranca` vê ranking/competidor? Recomendação: sim, é dado público e útil ao engajamento.
@@ -96,7 +99,7 @@ flowchart LR
 
 ### Fases
 
-1. **Modelo + import** — collections, migration, `scripts/seed-tse-results.mjs` + `pnpm db:seed:tse`, helpers `src/lib/electionResults.ts` e `src/lib/electionCandidateIdentity.ts`, teste int (totais conhecidos, `elected=true` para Solla/Lula/Jerônimo, idempotência).
+1. **Modelo + import** — **feito (A3, 2026-07-18).** Collections `electionTally` / `electionCandidateVote` / `electionCandidate`, migration `20260718_195854_add_election_results`, `pnpm db:seed:tse`, helpers em `src/lib/electionResults*.ts` + `electionCandidateIdentity.ts`, import drizzle em `src/utilities/electionResultsImport.ts`, testes unit/int com fixtures em `tests/fixtures/tse/`. Seed local BA 2022: **211.014** votos nominais, **2.700** apurações, **1.654** candidatos (6 escopos office×turn).
 2. **Detalhe do núcleo** — bloco "Baseline eleitoral 2022" na aba overview; view model `NucleusElectoralBaselineViewModel` em `src/utilities/nucleusViewModels.ts`; componente `src/components/campaign/NucleusElectoralBaseline.tsx`.
 3. **Overview da lista** — estende `overview-lista-nucleos.md`: somar baselines sobre o conjunto filtrado (`buildNucleusListWhere`); novo bloco no `NucleusListOverview`.
 4. **Insights automáticos (Gap vs 2022)** — implementa somente o insight "Gap vs 2022" (ver seção "Insights automáticos" abaixo). `src/components/campaign/NucleusInsights.tsx` + `src/lib/electionInsights.ts`. Os demais insights viram itens separados no roadmap com planos próprios.
@@ -167,8 +170,12 @@ Cada insight é uma **derivação de leitura** (sem escrita, sem `Consent`, sem 
 
 ## Arquivos a criar/alterar
 
-- Criar: `src/collections/ElectionTally.ts`, `src/collections/ElectionCandidateVote.ts`, `src/collections/ElectionCandidate.ts`, `src/lib/electionResults.ts`, `src/lib/electionInsights.ts`, `src/lib/electionCandidateIdentity.ts`, `src/utilities/nucleusElectoralBaseline.ts`, `src/components/campaign/NucleusElectoralBaseline.tsx`, `src/components/campaign/NucleusInsights.tsx`, `scripts/seed-tse-results.mjs`, `scripts/reconcile-running-again.mjs`, migration `add_election_results`, testes int. (Os demais componentes de insight — `electionAlliances.ts`, `DobradinhaOpportunities.tsx` etc. — ficam nos planos separados dos respectivos insights.)
-- Alterar: `src/payload.config.ts`, `src/app/(campaign)/campanha/(app)/nucleos/[slug]/page.tsx` + `src/utilities/nucleusDetailPageData.ts`, `src/utilities/nucleusPageData.ts`/`nucleusViewModels.ts`, overview da lista, `package.json` (`db:seed:tse`).
+**Fase 1 (A3) — feitos:**
+- Criar: `src/collections/ElectionTally.ts`, `ElectionCandidateVote.ts`, `ElectionCandidate.ts`; `src/lib/electionResults.ts`, `electionResultsParse.ts`, `electionResultsBuild.ts`, `electionResultsCsv.ts`, `electionResultsZip.ts`, `electionCandidateIdentity.ts`; `src/utilities/electionResultsImport.ts`; `scripts/seed-tse-results.mjs`; migration `20260718_195854_add_election_results`; fixtures `tests/fixtures/tse/*`; testes unit/int.
+- Alterar: `src/payload.config.ts`, `src/utilities/campaignAccess.ts` (`canReadElectionData` / `canMutateElectionData`), `package.json` (`db:seed:tse`), `scripts/seed-loader.mjs` (stub `server-only`), `.gitignore` (`/data/tse/`).
+
+**Fases 2–5 (A4+) — ainda a criar:**
+- `src/lib/electionInsights.ts`, `src/utilities/nucleusElectoralBaseline.ts`, `src/components/campaign/NucleusElectoralBaseline.tsx`, `NucleusInsights.tsx`, `scripts/reconcile-running-again.mjs`; alterar páginas do núcleo / overview.
 
 ## Dependências
 

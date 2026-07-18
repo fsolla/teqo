@@ -82,7 +82,7 @@ flowchart TD
     subgraph TrilhaA["Trilha A — dados eleitorais e território"]
         A1["A1 Território multi-município/bairro<br/>(migration)"]
         A2["A2 Zonas TSE por município<br/>(auto-preenchimento)"]
-        A3["A3 Baseline TSE 2022 — Fase 1<br/>(import, collections)"]
+        A3["A3 Baseline TSE 2022 — Fase 1<br/>(import, collections) ✓"]
         A4["A4 Baseline no produto + Gap vs 2022<br/>(detalhe, overview)"]
         A5["A5 Insights: conversão, classificação,<br/>alavancagem, mobilização, competitiva"]
         A6["A6 Dobradinha 2026"]
@@ -130,7 +130,7 @@ flowchart TD
     JUR -.chave de push.-> D2
 ```
 
-Itens sem seta de entrada (**paralelizáveis a qualquer momento**): A1, A3, B1, B2, C1, C2 (engenharia — produção espera o jurídico), D1, além dos fill-ins (visitados recentemente, listas globais, reset de senha, higiene PascalCase).
+Itens sem seta de entrada (**paralelizáveis a qualquer momento**): A1, B1, B2, C1, C2 (engenharia — produção espera o jurídico), D1, além dos fill-ins (visitados recentemente, listas globais, reset de senha, higiene PascalCase). **A3 entregue** (2026-07-18) — collections + `pnpm db:seed:tse`.
 
 ### Sequência de execução por janela do calendário
 
@@ -143,7 +143,7 @@ Itens sem seta de entrada (**paralelizáveis a qualquer momento**): A1, A3, B1, 
 | 3     | A2 Zonas TSE por município (auto-preenchimento) | [detalhes](plans/zonas-por-municipio.md)               | A1 (nasce contra `cities[]`)                                                              | B1, C1, A3        |
 | 4     | B1 Overview da lista de núcleos                 | [detalhes](plans/overview-lista-nucleos.md)            | —                                                                                         | A1, A2, C1        |
 | 5     | C1 Compartilhar página (quick win de campo)     | [detalhes](plans/compartilhar-pagina.md)               | —                                                                                         | tudo              |
-| 6     | A3 Baseline TSE 2022 — Fase 1 (import)          | [detalhes](plans/baseline-eleitoral-tse.md)            | — (dado público; sem bloqueador LGPD)                                                     | tudo              |
+| 6     | A3 Baseline TSE 2022 — Fase 1 (import) **feito** | [detalhes](plans/baseline-eleitoral-tse.md)            | — (dado público; sem bloqueador LGPD)                                                     | tudo              |
 
 **Janela 2 — 05/08 → 16/08 (pré-propaganda): base nominal + inteligência + agenda prontas para o arranque.**
 

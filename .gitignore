@@ -42,6 +42,9 @@ next-env.d.ts
 
 /media
 
+# TSE open-data zip cache (pnpm db:seed:tse)
+/data/tse/
+
 # Playwright
 node_modules/
 /test-results/

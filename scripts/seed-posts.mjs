@@ -29,6 +29,8 @@ import { convertHTMLToLexical, editorConfigFactory } from '@payloadcms/richtext-
 import { del as blobDel } from '@vercel/blob'
 import { getPayload } from 'payload'
 
+import { assertLocalDatabase } from './assert-local-database.mjs'
+
 // Mirror Next.js precedence (.env.local wins over .env) without clobbering a
 // DATABASE_URL already set in the real environment.
 loadEnv({ path: '.env.local' })
@@ -36,47 +38,9 @@ loadEnv({ path: '.env' })
 
 const config = (await import('../src/payload.config.ts')).default
 
-// ---------------------------------------------------------------------------
-// DB-safety guard (same shape as scripts/guard-dev-db.mjs)
-// ---------------------------------------------------------------------------
-
-const OVERRIDE_FLAG = 'ALLOW_REMOTE_DB'
-const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', 'postgres'])
-
 const die = (message) => {
   console.error(`\n[seed:posts] ${message}\n`)
   process.exit(1)
-}
-
-const assertLocalDatabase = () => {
-  const databaseUrl = process.env.DATABASE_URL
-  if (!databaseUrl) die('DATABASE_URL is not set. Refusing to seed.')
-
-  if (process.env[OVERRIDE_FLAG] === 'true' || process.env[OVERRIDE_FLAG] === '1') {
-    console.warn(
-      `\n[seed:posts] ${OVERRIDE_FLAG} is set — seeding a remote database on purpose. Be careful.\n`,
-    )
-    return
-  }
-
-  let host
-  try {
-    host = new URL(databaseUrl).hostname
-  } catch {
-    die('DATABASE_URL is not a valid connection string.')
-  }
-
-  if (!LOCAL_HOSTS.has(host)) {
-    die(
-      `DATABASE_URL points at a non-local host ("${host}").\n` +
-        'This seed WRITES data (posts/tags/media) and is meant for the local Postgres.\n\n' +
-        '  1. pnpm db:start\n' +
-        '  2. set DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo in .env.local\n\n' +
-        `If you REALLY mean to seed a remote database, re-run with:\n  ${OVERRIDE_FLAG}=true pnpm db:seed:posts`,
-    )
-  }
-
-  console.log(`[seed:posts] OK — using local database host "${host}".`)
 }
 
 // ---------------------------------------------------------------------------
@@ -450,7 +414,12 @@ async function ensureCoverMedia(payload, { slug, coverUrl, alt }) {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  assertLocalDatabase()
+  assertLocalDatabase(
+    'seed:posts',
+    'This seed WRITES data (posts/tags/media) and is meant for the local Postgres.\n' +
+      '  1. pnpm db:start\n' +
+      '  2. set DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo in .env.local',
+  )
 
   const payload = await getPayload({ config })
   const editorConfig = await editorConfigFactory.default({ config: payload.config })

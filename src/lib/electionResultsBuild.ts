@@ -1,0 +1,98 @@
+import type {
+  CandidateVoteRow,
+  ElectionCandidateRow,
+  ElectionOffice,
+  TseDetalheApuracaoRow,
+} from '@/lib/electionResults'
+import { ELECTION_OFFICES, ELECTION_YEAR_2022, UnknownMunicipalityError } from '@/lib/electionResults'
+import {
+  applyStateVoteTotals,
+  dedupeCandidates,
+  parseCandidateVoteRow,
+  parseConsultaCandRow,
+  parseDetalheApuracaoRow,
+  type TseCsvRow,
+} from '@/lib/electionResultsParse'
+
+const ALL_OFFICES = new Set<ElectionOffice>(ELECTION_OFFICES)
+const STATE_OFFICES = new Set<ElectionOffice>([
+  'governador',
+  'deputado_federal',
+  'deputado_estadual',
+])
+const PRESIDENT_OFFICE = new Set<ElectionOffice>(['presidente'])
+
+export type BuiltElectionResults = {
+  votes: CandidateVoteRow[]
+  tallies: TseDetalheApuracaoRow[]
+  candidates: ElectionCandidateRow[]
+  unknownMunicipalities: string[]
+}
+
+const collectParsed = <T extends { year: number }>(
+  rows: readonly TseCsvRow[],
+  year: number,
+  unknownMunicipalities: Set<string>,
+  parseRow: (row: TseCsvRow) => T | null,
+): T[] => {
+  const out: T[] = []
+  for (const row of rows) {
+    try {
+      const parsed = parseRow(row)
+      if (parsed && parsed.year === year) out.push(parsed)
+    } catch (error) {
+      if (error instanceof UnknownMunicipalityError) {
+        unknownMunicipalities.add(error.tseName)
+        continue
+      }
+      throw error
+    }
+  }
+  return out
+}
+
+/**
+ * Build typed election rows from already-parsed TSE CSV tables.
+ * Safe for fixtures and for the full seed (no I/O).
+ */
+export const buildElectionResultsFromCsvRows = (args: {
+  voteRows: readonly TseCsvRow[]
+  detalheRows: readonly TseCsvRow[]
+  candBaRows: readonly TseCsvRow[]
+  candBrRows: readonly TseCsvRow[]
+  year?: number
+}): BuiltElectionResults => {
+  const year = args.year ?? ELECTION_YEAR_2022
+  const unknownMunicipalities = new Set<string>()
+
+  const votes = collectParsed(args.voteRows, year, unknownMunicipalities, (row) =>
+    parseCandidateVoteRow(row, { stateFilter: 'BA', offices: ALL_OFFICES }),
+  )
+  const tallies = collectParsed(args.detalheRows, year, unknownMunicipalities, (row) =>
+    parseDetalheApuracaoRow(row, { stateFilter: 'BA', offices: ALL_OFFICES }),
+  )
+
+  const candidatesRaw: ElectionCandidateRow[] = []
+  for (const row of args.candBaRows) {
+    const parsed = parseConsultaCandRow(row, {
+      stateFilter: 'BA',
+      offices: STATE_OFFICES,
+    })
+    if (parsed && parsed.year === year) candidatesRaw.push(parsed)
+  }
+  for (const row of args.candBrRows) {
+    const parsed = parseConsultaCandRow(row, {
+      stateFilter: 'BR',
+      offices: PRESIDENT_OFFICE,
+      forceState: 'BA',
+    })
+    if (parsed && parsed.year === year) candidatesRaw.push(parsed)
+  }
+
+  return {
+    votes,
+    tallies,
+    candidates: applyStateVoteTotals(dedupeCandidates(candidatesRaw), votes),
+    unknownMunicipalities: [...unknownMunicipalities].sort(),
+  }
+}

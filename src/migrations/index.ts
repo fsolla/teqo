@@ -4,6 +4,7 @@ import * as migration_20260715_181058_add_post_and_tag from './20260715_181058_a
 import * as migration_20260715_215834_rename_tag_visible_to_hidden from './20260715_215834_rename_tag_visible_to_hidden';
 import * as migration_20260716_010420_add_campaign_user from './20260716_010420_add_campaign_user';
 import * as migration_20260718_010733_consolidate_campaign_schema from './20260718_010733_consolidate_campaign_schema';
+import * as migration_20260718_195854_add_election_results from './20260718_195854_add_election_results';
 
 export const migrations = [
   {
@@ -36,4 +37,10 @@ export const migrations = [
     down: migration_20260718_010733_consolidate_campaign_schema.down,
     name: '20260718_010733_consolidate_campaign_schema',
   },
-];
+  {
+    up: migration_20260718_195854_add_election_results.up,
+    down: migration_20260718_195854_add_election_results.down,
+    name: '20260718_195854_add_election_results',
+  },
+]
+

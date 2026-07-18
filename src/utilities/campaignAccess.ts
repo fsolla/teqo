@@ -296,6 +296,13 @@ export const canManageNucleusLifecycle: FieldAccess = async ({ req }) => {
 
 export const canSetDerivedNucleusField: FieldAccess = ({ req }) => isPayloadAdmin(req.user)
 
+/** Public TSE election data: any authenticated campaign or admin user may read. */
+export const canReadElectionData: Access = ({ req }) =>
+  isPayloadAdmin(req.user) || isCampaignUser(req.user)
+
+/** Election reference data is mutated only by Payload admins (or CLI with overrideAccess). */
+export const canMutateElectionData: Access = ({ req }) => isPayloadAdmin(req.user)
+
 type DynamicFind = (args: {
   collection: string
   depth: number
