@@ -390,9 +390,19 @@ export const canManageNucleusLifecycle: FieldAccess = async ({ req }) => {
 
 export const canSetDerivedNucleusField: FieldAccess = ({ req }) => isPayloadAdmin(req.user)
 
+export type ElectionDataReader = CampaignUser | User
+
+export const canReadElectionDataAsUser = (user: CampaignActor): user is ElectionDataReader =>
+  isPayloadAdmin(user) || isCampaignUser(user)
+
+export function assertCanReadElectionData(user: CampaignActor): asserts user is ElectionDataReader {
+  if (!canReadElectionDataAsUser(user)) {
+    throw new Error('Leitura de dados eleitorais negada.')
+  }
+}
+
 /** Public TSE election data: any authenticated campaign or admin user may read. */
-export const canReadElectionData: Access = ({ req }) =>
-  isPayloadAdmin(req.user) || isCampaignUser(req.user)
+export const canReadElectionData: Access = ({ req }) => canReadElectionDataAsUser(req.user)
 
 /** Election reference data is mutated only by Payload admins (or CLI with overrideAccess). */
 export const canMutateElectionData: Access = ({ req }) => isPayloadAdmin(req.user)

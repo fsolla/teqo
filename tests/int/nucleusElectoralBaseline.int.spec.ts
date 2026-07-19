@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { getPayload, type Payload } from 'payload'
 
 import config from '@/payload.config'
@@ -16,6 +16,33 @@ import {
 } from '@/utilities/electionResultsImport'
 import { loadTseFixtureResults, TSE_FIXTURE_EXPECTED } from '../helpers/tseFixtures'
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
+
+const whereContainsFieldEquals = (node: unknown, field: string, value: unknown): boolean => {
+  if (!node || typeof node !== 'object') return false
+  if (Array.isArray(node)) return node.some((item) => whereContainsFieldEquals(item, field, value))
+
+  const record = node as Record<string, unknown>
+  const fieldValue = record[field]
+  if (
+    fieldValue &&
+    typeof fieldValue === 'object' &&
+    'equals' in fieldValue &&
+    (fieldValue as { equals: unknown }).equals === value
+  ) {
+    return true
+  }
+
+  return Object.values(record).some((child) => whereContainsFieldEquals(child, field, value))
+}
+
+const whereContainsField = (node: unknown, field: string): boolean => {
+  if (!node || typeof node !== 'object') return false
+  if (Array.isArray(node)) return node.some((item) => whereContainsField(item, field))
+
+  const record = node as Record<string, unknown>
+  if (field in record) return true
+  return Object.values(record).some((child) => whereContainsField(child, field))
+}
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -89,6 +116,44 @@ describe('nucleus electoral baseline (A4)', () => {
     expect(computeGapVs2022(baseline, 1500).status).toBe('below')
     expect(computeGapVs2022(baseline, 3000).status).toBe('above')
     expect(BASELINE_TICKET_2022.candidate.candidateNumber).toBe(1313)
+  })
+
+  it('does not fetch all federal T1 vote rows via Local API for the detail baseline', async () => {
+    const fixtures = campaignFixtures()
+    const user = await fixtures.createCampaignUser('geral', {
+      name: fixtures.value('Baseline aggregate geral'),
+      email: `${fixtures.value('baseline-aggregate-geral')}@example.com`,
+      password: fixtures.value('password'),
+    })
+
+    const findSpy = vi.spyOn(payload, 'find')
+
+    await getNucleusElectoralBaseline(payload, user, {
+      cities: ['Salvador'],
+      regions: ['Metropolitano de Salvador'],
+      tseZones: [1, 2],
+    })
+
+    const voteFindCalls = findSpy.mock.calls.filter(
+      (call) =>
+        typeof call[0] === 'object' &&
+        call[0] !== null &&
+        (call[0] as { collection?: string }).collection === 'electionCandidateVote',
+    )
+
+    expect(voteFindCalls.length).toBeGreaterThan(0)
+
+    for (const call of voteFindCalls) {
+      const where = (call[0] as { where?: unknown }).where
+      const queriesFederalTurn1 =
+        whereContainsFieldEquals(where, 'office', 'deputado_federal') &&
+        whereContainsFieldEquals(where, 'turn', '1')
+      if (queriesFederalTurn1) {
+        expect(whereContainsField(where, 'candidateNumber')).toBe(true)
+      }
+    }
+
+    findSpy.mockRestore()
   })
 
   it('returns null without geography and loads baseline on the overview tab', async () => {

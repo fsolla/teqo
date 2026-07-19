@@ -7,11 +7,15 @@ import { tseZonesForCity } from '@/lib/bahiaTseZones'
 import { BASELINE_TICKET_2022 } from '@/lib/electionResults'
 import { computeConversionRate, computeVoteTrend } from '@/lib/electionInsights'
 import {
+  aggregateFederalCandidateTotals,
   aggregateNucleusElectoralBaseline,
   resolveNucleusElectionGeography,
   type ElectionTallyAggregateRow,
   type ElectionVoteAggregateRow,
 } from '@/utilities/nucleusElectoralBaseline'
+
+const ticketOfficeVotes = (votes: readonly ElectionVoteAggregateRow[]) =>
+  votes.filter((row) => row.office === 'presidente' || row.office === 'governador')
 
 describe('resolveNucleusElectionGeography', () => {
   it('intersects nucleus tseZones with official city zones', () => {
@@ -27,7 +31,7 @@ describe('resolveNucleusElectionGeography', () => {
     })
 
     expect(geography).not.toBeNull()
-    expect(geography?.cities).toEqual(['Salvador'])
+    expect([...geography!.zonesByCity.keys()]).toEqual(['Salvador'])
     expect(geography?.zonesByCity.get('Salvador')).toEqual([firstZone])
     expect(geography?.cityZonePairs).toEqual([{ cityName: 'Salvador', zoneNumber: firstZone }])
     expect(geography?.zonesByCity.get('Salvador')).not.toContain(secondZone)
@@ -53,7 +57,9 @@ describe('resolveNucleusElectionGeography', () => {
     })
 
     expect(geography).not.toBeNull()
-    expect(geography?.cities).toEqual([...cities].sort((a, b) => a.localeCompare(b, 'pt-BR')))
+    expect([...geography!.zonesByCity.keys()].sort((a, b) => a.localeCompare(b, 'pt-BR'))).toEqual(
+      [...cities].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+    )
     expect(geography?.zonesByCity.get('Bom Jesus da Lapa')).toEqual([
       ...tseZonesForCity('Bom Jesus da Lapa'),
     ])
@@ -177,10 +183,17 @@ describe('aggregateNucleusElectoralBaseline', () => {
   ]
 
   it('sums the candidate, ticket leaders, electorate, winner, rank, and series for the geography', () => {
-    const baseline = aggregateNucleusElectoralBaseline(geography, votes, tallies, {
+    const federalTotals = aggregateFederalCandidateTotals(votes, geography)
+    const baseline = aggregateNucleusElectoralBaseline(
+      geography,
+      federalTotals,
+      ticketOfficeVotes(votes),
+      tallies,
+      {
       y2014: 1000,
       y2018: 1500,
-    })
+      },
+    )
 
     expect(baseline.candidate).toEqual({ votes: 2100, rank: 1 })
     expect(baseline.president).toEqual({ votes: 8000, turn: 2 })
@@ -208,10 +221,16 @@ describe('aggregateNucleusElectoralBaseline', () => {
       regions: [],
       tseZones: [2],
     })!
-    const baseline = aggregateNucleusElectoralBaseline(zone1Only, votes, tallies, {
+    const baseline = aggregateNucleusElectoralBaseline(
+      zone1Only,
+      aggregateFederalCandidateTotals(votes, zone1Only),
+      ticketOfficeVotes(votes),
+      tallies,
+      {
       y2014: 0,
       y2018: 0,
-    })
+      },
+    )
 
     expect(baseline.candidate).toEqual({ votes: 900, rank: 2 })
     expect(baseline.winnerFederal).toEqual({
@@ -222,10 +241,16 @@ describe('aggregateNucleusElectoralBaseline', () => {
   })
 
   it('supports conversion rate from electorate aptos and confirmed estimate', () => {
-    const baseline = aggregateNucleusElectoralBaseline(geography, votes, tallies, {
+    const baseline = aggregateNucleusElectoralBaseline(
+      geography,
+      aggregateFederalCandidateTotals(votes, geography),
+      ticketOfficeVotes(votes),
+      tallies,
+      {
       y2014: 0,
       y2018: 0,
-    })
+      },
+    )
 
     expect(
       computeConversionRate({

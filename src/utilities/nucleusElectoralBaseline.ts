@@ -23,8 +23,12 @@ import {
   type VoteTrendSeries,
   type VoteTrendStatus,
 } from '@/lib/electionInsights'
-import type { CampaignUser, User } from '@/payload-types'
+import { type ElectionDataReader } from '@/utilities/campaignAccess'
 import { normalizeTerritoryTextArray } from '@/utilities/campaignTerritoryValidation'
+import {
+  loadFederalCandidateTotalsAggregated,
+  type FederalCandidateTotal,
+} from '@/utilities/federalCandidateTotalsAggregate'
 import type { NucleusElectoralBaselineViewModel } from '@/utilities/nucleusViewModels'
 import { sortedUniqueZoneNumbers } from '@/utilities/tseZone'
 
@@ -49,7 +53,6 @@ export const toNucleusElectionGeographyInput = (nucleus: {
 })
 
 export type NucleusElectionGeography = {
-  cities: string[]
   zonesByCity: Map<string, number[]>
   cityZonePairs: Array<{ cityName: string; zoneNumber: number }>
 }
@@ -76,8 +79,6 @@ export type ElectionTallyAggregateRow = {
   votosNulo: number
   abstencoes: number
 }
-
-type ElectionReader = CampaignUser | User
 
 const cityZoneKey = (cityName: string, zoneNumber: number): string =>
   `${cityName}::${zoneNumber}`
@@ -135,7 +136,7 @@ export const resolveNucleusElectionGeography = (
 
   if (cityZonePairs.length === 0) return null
 
-  return { cities: [...zonesByCity.keys()], zonesByCity, cityZonePairs }
+  return { zonesByCity, cityZonePairs }
 }
 
 const matchesGeography = (
@@ -176,14 +177,12 @@ const decisiveTicketVotes = (
   return null
 }
 
-const aggregateFederalCandidateTotals = (
+/** In-memory reference aggregate for unit tests; production uses drizzle GROUP BY. */
+export const aggregateFederalCandidateTotals = (
   votes: readonly ElectionVoteAggregateRow[],
   geography: NucleusElectionGeography,
-): Array<{ candidateNumber: number; name: string; party: string; votes: number }> => {
-  const byCandidate = new Map<
-    number,
-    { candidateNumber: number; name: string; party: string; votes: number }
-  >()
+): FederalCandidateTotal[] => {
+  const byCandidate = new Map<number, FederalCandidateTotal>()
 
   for (const row of votes) {
     if (row.office !== CANDIDATE_OFFICE || row.turn !== '1') continue
@@ -250,11 +249,12 @@ const sumElectorateForGeography = (
 
 export const aggregateNucleusElectoralBaseline = (
   geography: NucleusElectionGeography,
-  votes: readonly ElectionVoteAggregateRow[],
+  federalTotals: readonly FederalCandidateTotal[],
+  ticketVotes: readonly ElectionVoteAggregateRow[],
   tallies: readonly ElectionTallyAggregateRow[],
   historicalVotes: Pick<VoteTrendSeries, 'y2014' | 'y2018'>,
 ): NucleusElectoralBaselineViewModel => {
-  const federalTotals = aggregateFederalCandidateTotals(votes, geography)
+  // `federalTotals` must be sorted by votes desc (SQL aggregate or aggregateFederalCandidateTotals).
   const candidateIndex = federalTotals.findIndex(
     (candidate) => candidate.candidateNumber === BASELINE_TICKET_2022.candidate.candidateNumber,
   )
@@ -268,13 +268,13 @@ export const aggregateNucleusElectoralBaseline = (
       rank: candidateIndex >= 0 ? candidateIndex + 1 : null,
     },
     president: decisiveTicketVotes(
-      votes,
+      ticketVotes,
       geography,
       'presidente',
       BASELINE_TICKET_2022.president.candidateNumber,
     ),
     governor: decisiveTicketVotes(
-      votes,
+      ticketVotes,
       geography,
       'governador',
       BASELINE_TICKET_2022.governor.candidateNumber,
@@ -305,17 +305,14 @@ const geographyWhere = (geography: NucleusElectionGeography): Where => ({
   ),
 })
 
-/** Votes for the detail baseline card (federal ranking + president/governor tickets). */
-const detailVoteWhere = (geography: NucleusElectionGeography): Where => ({
+/** President/governor ticket votes for the detail baseline card (lean Local API path). */
+const ticketOfficeVoteWhere = (geography: NucleusElectionGeography): Where => ({
   and: [
     ...ba2022Scope(),
     { voteType: { equals: 'nominal' } },
     geographyWhere(geography),
     {
       or: [
-        {
-          and: [{ office: { equals: CANDIDATE_OFFICE } }, { turn: { equals: '1' } }],
-        },
         {
           and: [
             { office: { equals: 'presidente' } },
@@ -333,14 +330,14 @@ const detailVoteWhere = (geography: NucleusElectionGeography): Where => ({
   ],
 })
 
-const loadElectionVotes = async (
+const loadTicketOfficeVotes = async (
   payload: Pick<Payload, 'find'>,
-  user: ElectionReader,
+  user: ElectionDataReader,
   geography: NucleusElectionGeography,
 ): Promise<ElectionVoteAggregateRow[]> => {
   const result = await payload.find({
     collection: 'electionCandidateVote',
-    where: detailVoteWhere(geography),
+    where: ticketOfficeVoteWhere(geography),
     depth: 0,
     pagination: false,
     select: {
@@ -371,7 +368,7 @@ const loadElectionVotes = async (
 
 const loadElectionTallies = async (
   payload: Pick<Payload, 'find'>,
-  user: ElectionReader,
+  user: ElectionDataReader,
   geography: NucleusElectionGeography,
 ): Promise<ElectionTallyAggregateRow[]> => {
   const result = await payload.find({
@@ -442,7 +439,6 @@ const buildUnionGeography = (
   }
 
   return {
-    cities: uniqueSortedCities(zonesByCity.keys()),
     zonesByCity,
     cityZonePairs: [...unionPairs.values()],
   }
@@ -461,7 +457,7 @@ const sumCandidateVotesForGeography = (
 /** Candidate-only votes indexed by year then city×zone (E2 lean loader). */
 const loadCandidateSeriesByGeography = async (
   payload: Pick<Payload, 'find'>,
-  user: ElectionReader,
+  user: ElectionDataReader,
   geography: NucleusElectionGeography,
   years: readonly number[] = [...HISTORICAL_SERIES_YEARS],
 ): Promise<Map<number, Map<string, number>>> => {
@@ -522,15 +518,16 @@ const sumCandidateSeriesForGeography = (
 }
 
 export const getNucleusElectoralBaseline = async (
-  payload: Pick<Payload, 'find'>,
-  user: ElectionReader,
+  payload: Pick<Payload, 'find' | 'db'>,
+  user: ElectionDataReader,
   nucleus: NucleusElectionGeographyInput,
 ): Promise<NucleusElectoralBaselineViewModel | null> => {
   const geography = resolveNucleusElectionGeography(nucleus)
   if (!geography) return null
 
-  const [votes, tallies, seriesByYear] = await Promise.all([
-    loadElectionVotes(payload, user, geography),
+  const [federalTotals, ticketVotes, tallies, seriesByYear] = await Promise.all([
+    loadFederalCandidateTotalsAggregated(payload, user, geography),
+    loadTicketOfficeVotes(payload, user, geography),
     loadElectionTallies(payload, user, geography),
     loadCandidateSeriesByGeography(payload, user, geography, HISTORICAL_PRIOR_SERIES_YEARS),
   ])
@@ -540,7 +537,13 @@ export const getNucleusElectoralBaseline = async (
     seriesByYear,
     HISTORICAL_PRIOR_SERIES_YEARS,
   )
-  return aggregateNucleusElectoralBaseline(geography, votes, tallies, historicalVotes)
+  return aggregateNucleusElectoralBaseline(
+    geography,
+    federalTotals,
+    ticketVotes,
+    tallies,
+    historicalVotes,
+  )
 }
 
 export type NucleusBaseline2022OverviewInput = NucleusElectionGeographyInput & {
@@ -571,7 +574,7 @@ export type NucleusListElectionOverview = {
  */
 export const loadNucleusListElectionOverview = async (
   payload: Pick<Payload, 'find'>,
-  user: ElectionReader,
+  user: ElectionDataReader,
   nuclei: readonly NucleusBaseline2022OverviewInput[],
 ): Promise<NucleusListElectionOverview> => {
   const geographies = nuclei.map((nucleus) => resolveNucleusElectionGeography(nucleus))
