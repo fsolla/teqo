@@ -906,7 +906,7 @@ export const loadNucleusListElectionOverview = async (
       presidentVotes,
       governorVotes,
     })
-    if (isComparableTicketLeverage(leverage.status)) {
+    if (leverage.status === 'comparable' && leverage.ticketVotes !== null) {
       leverageRows.push({ estimate, ticketVotes: leverage.ticketVotes })
     }
   }
