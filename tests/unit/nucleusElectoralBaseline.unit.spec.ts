@@ -182,6 +182,37 @@ describe('aggregateNucleusElectoralBaseline', () => {
     },
   ]
 
+  const majoritarianTallies: ElectionTallyAggregateRow[] = [
+    {
+      office: 'presidente',
+      turn: '2',
+      cityName: 'Salvador',
+      zoneNumber: 1,
+      aptos: 0,
+      votosValidos: 0,
+      votosBranco: 0,
+      votosNulo: 0,
+      abstencoes: 0,
+      winnerCandidateName: 'LULA',
+      winnerParty: 'PT',
+      winnerVotes: 8000,
+    },
+    {
+      office: 'governador',
+      turn: '2',
+      cityName: 'Salvador',
+      zoneNumber: 1,
+      aptos: 0,
+      votosValidos: 0,
+      votosBranco: 0,
+      votosNulo: 0,
+      abstencoes: 0,
+      winnerCandidateName: 'JERÔNIMO',
+      winnerParty: 'PT',
+      winnerVotes: 6000,
+    },
+  ]
+
   it('sums the candidate, ticket leaders, electorate, winner, rank, and series for the geography', () => {
     const federalTotals = aggregateFederalCandidateTotals(votes, geography)
     const baseline = aggregateNucleusElectoralBaseline(
@@ -190,9 +221,10 @@ describe('aggregateNucleusElectoralBaseline', () => {
       ticketOfficeVotes(votes),
       tallies,
       {
-      y2014: 1000,
-      y2018: 1500,
+        y2014: 1000,
+        y2018: 1500,
       },
+      majoritarianTallies,
     )
 
     expect(baseline.candidate).toEqual({ votes: 2100, rank: 1 })
@@ -211,6 +243,18 @@ describe('aggregateNucleusElectoralBaseline', () => {
       votes: 2100,
       party: 'PT',
     })
+    expect(baseline.winnerPresident).toEqual({
+      name: 'LULA',
+      party: 'PT',
+      votes: 8000,
+    })
+    expect(baseline.winnerGovernor).toEqual({
+      name: 'JERÔNIMO',
+      party: 'PT',
+      votes: 6000,
+    })
+    expect(baseline.federalVotesByParty).toEqual({ PT: 2100, PL: 1900 })
+    expect(baseline.ticketFlip.status).toBe('opportunity')
     expect(baseline.series).toEqual({ y2014: 1000, y2018: 1500, y2022: 2100 })
     expect(computeVoteTrend(baseline.series).status).toBe('increase')
   })
@@ -227,9 +271,10 @@ describe('aggregateNucleusElectoralBaseline', () => {
       ticketOfficeVotes(votes),
       tallies,
       {
-      y2014: 0,
-      y2018: 0,
+        y2014: 0,
+        y2018: 0,
       },
+      majoritarianTallies,
     )
 
     expect(baseline.candidate).toEqual({ votes: 900, rank: 2 })
@@ -247,9 +292,10 @@ describe('aggregateNucleusElectoralBaseline', () => {
       ticketOfficeVotes(votes),
       tallies,
       {
-      y2014: 0,
-      y2018: 0,
+        y2014: 0,
+        y2018: 0,
       },
+      majoritarianTallies,
     )
 
     expect(

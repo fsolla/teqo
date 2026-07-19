@@ -71,7 +71,7 @@ type RawOverviewUpdate = {
 }
 
 export const loadNucleusListOverviewData = async (
-  payload: Pick<Payload, 'find'>,
+  payload: Pick<Payload, 'find' | 'db'>,
   user: CampaignUser,
   state: NucleusListState,
   now = new Date(),
@@ -176,6 +176,8 @@ export const loadNucleusListOverviewData = async (
     baseline2022: listElectionOverview.baseline2022,
     trend: listElectionOverview.trend,
     conversion: listElectionOverview.conversion,
+    leverage: listElectionOverview.leverage,
+    flipOpportunity: listElectionOverview.flipOpportunity,
     choropleth,
   })
 }

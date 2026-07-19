@@ -1,4 +1,5 @@
 import type { NucleusPriority } from '@/lib/schemas/nucleus'
+import type { TicketFlipOverviewAggregate, TicketLeverageOverviewAggregate } from '@/lib/electionInsights'
 import type { CampaignUser, NucleusUpdate } from '@/payload-types'
 import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
 import type { NucleusBaseline2022OverviewAggregate, NucleusConversionOverviewAggregate, NucleusTrendOverviewAggregate } from '@/utilities/nucleusElectoralBaseline'
@@ -55,6 +56,10 @@ export type NucleusListOverviewViewModel = {
   trend: NucleusTrendOverviewAggregate | null
   /** Null when no comparable nucleus has aptos + confirmed estimate. */
   conversion: NucleusConversionOverviewAggregate | null
+  /** Null when no comparable nucleus has ticket votes + confirmed estimate. */
+  leverage: TicketLeverageOverviewAggregate | null
+  /** Null when no nucleus in the filtered set has resolvable TSE geography. */
+  flipOpportunity: TicketFlipOverviewAggregate | null
   recentUpdates: NucleusListOverviewUpdateRecord[]
   upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
   choropleth: NucleusChoroplethBundle
@@ -71,6 +76,8 @@ export const buildNucleusListOverviewViewModel = ({
   baseline2022 = null,
   trend = null,
   conversion = null,
+  leverage = null,
+  flipOpportunity = null,
   choropleth,
 }: {
   nuclei: NucleusListOverviewNucleusRecord[]
@@ -80,6 +87,8 @@ export const buildNucleusListOverviewViewModel = ({
   baseline2022?: NucleusBaseline2022OverviewAggregate | null
   trend?: NucleusTrendOverviewAggregate | null
   conversion?: NucleusConversionOverviewAggregate | null
+  leverage?: TicketLeverageOverviewAggregate | null
+  flipOpportunity?: TicketFlipOverviewAggregate | null
   choropleth: NucleusChoroplethBundle
 }): NucleusListOverviewViewModel => {
   const totalFiltered = nuclei.length
@@ -116,6 +125,8 @@ export const buildNucleusListOverviewViewModel = ({
     highPriorityCount,
     trend,
     conversion,
+    leverage,
+    flipOpportunity,
     recentUpdates,
     upcomingActionPlans,
     choropleth,

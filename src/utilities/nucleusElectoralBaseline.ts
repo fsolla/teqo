@@ -14,12 +14,20 @@ import {
 } from '@/lib/electionResults'
 import {
   aggregateConversionBand,
+  aggregateTicketFlipOverview,
+  aggregateTicketLeverageOverview,
   aggregateVoteTrend,
   computeConversionRate,
   computeGapVs2022,
+  computeTicketFlipOpportunity,
+  computeTicketLeverage,
+  isComparableTicketLeverage,
   type ConversionBandDistribution,
   type ConversionRateBand,
   isComparableConversionBand,
+  type TicketFlipOpportunityResult,
+  type TicketLeverageOverviewAggregate,
+  type TicketFlipOverviewAggregate,
   type VoteTrendSeries,
   type VoteTrendStatus,
 } from '@/lib/electionInsights'
@@ -78,6 +86,9 @@ export type ElectionTallyAggregateRow = {
   votosBranco: number
   votosNulo: number
   abstencoes: number
+  winnerCandidateName?: string | null
+  winnerParty?: string | null
+  winnerVotes?: number | null
 }
 
 const cityZoneKey = (cityName: string, zoneNumber: number): string =>
@@ -207,6 +218,147 @@ export const aggregateFederalCandidateTotals = (
   })
 }
 
+const aggregateFederalVotesByParty = (
+  federalTotals: ReadonlyArray<{ party: string; votes: number }>,
+): Record<string, number> => {
+  const byParty: Record<string, number> = {}
+  for (const { party, votes } of federalTotals) {
+    if (!party || votes <= 0) continue
+    byParty[party] = (byParty[party] ?? 0) + votes
+  }
+  return byParty
+}
+
+const federalRaceSnapshot = (
+  federalTotals: ReadonlyArray<{ name: string; party: string; votes: number }>,
+) => {
+  const winner = federalTotals[0] ?? null
+  return {
+    winnerFederal: winner
+      ? { name: winner.name, votes: winner.votes, party: winner.party }
+      : null,
+    federalVotesByParty: aggregateFederalVotesByParty(federalTotals),
+  }
+}
+
+const majoritarianTicketVoteTotals = (
+  votes: readonly ElectionVoteAggregateRow[],
+  geography: NucleusElectionGeography,
+): { presidentVotes: number | null; governorVotes: number | null } => ({
+  presidentVotes:
+    decisiveTicketVotes(
+      votes,
+      geography,
+      'presidente',
+      BASELINE_TICKET_2022.president.candidateNumber,
+    )?.votes ?? null,
+  governorVotes:
+    decisiveTicketVotes(
+      votes,
+      geography,
+      'governador',
+      BASELINE_TICKET_2022.governor.candidateNumber,
+    )?.votes ?? null,
+})
+
+export type MajoritarianWinnerAggregate =
+  | { name: string; party: string; votes: number }
+  | 'ambiguous'
+  | null
+
+export const aggregateMajoritarianWinner = (
+  tallies: readonly ElectionTallyAggregateRow[],
+  geography: NucleusElectionGeography,
+  office: 'presidente' | 'governador',
+): MajoritarianWinnerAggregate => {
+  const rows = tallies.filter(
+    (row) =>
+      row.office === office &&
+      matchesGeography(row, geography) &&
+      row.winnerCandidateName &&
+      row.winnerParty &&
+      row.winnerVotes != null &&
+      row.winnerVotes > 0,
+  )
+
+  if (rows.length === 0) return null
+
+  const hasTurn2 = rows.some((row) => row.turn === '2')
+  const decisiveTurn: ElectionTurn = hasTurn2 ? '2' : '1'
+  const decisiveRows = rows.filter((row) => row.turn === decisiveTurn)
+
+  const byCandidate = new Map<string, { name: string; party: string; votes: number }>()
+  for (const row of decisiveRows) {
+    const name = row.winnerCandidateName!
+    const party = row.winnerParty!
+    const key = `${name}::${party}`
+    const votes = row.winnerVotes ?? 0
+    const existing = byCandidate.get(key)
+    if (existing) {
+      existing.votes += votes
+      continue
+    }
+    byCandidate.set(key, { name, party, votes })
+  }
+
+  const sorted = [...byCandidate.values()].sort((left, right) => {
+    if (right.votes !== left.votes) return right.votes - left.votes
+    return left.name.localeCompare(right.name, 'pt-BR')
+  })
+
+  if (sorted.length === 0) return null
+  if (sorted.length > 1 && sorted[0]!.votes === sorted[1]!.votes) return 'ambiguous'
+  return sorted[0]!
+}
+
+const majoritarianWinnerOrNull = (
+  aggregate: MajoritarianWinnerAggregate,
+): { name: string; party: string; votes: number } | null =>
+  aggregate === 'ambiguous' || aggregate === null ? null : aggregate
+
+const resolveMajoritarianWinners = (
+  majoritarianTallies: readonly ElectionTallyAggregateRow[],
+  geography: NucleusElectionGeography,
+): { president: MajoritarianWinnerAggregate; governor: MajoritarianWinnerAggregate } => ({
+  president: aggregateMajoritarianWinner(majoritarianTallies, geography, 'presidente'),
+  governor: aggregateMajoritarianWinner(majoritarianTallies, geography, 'governador'),
+})
+
+const AMBIGUOUS_FLIP_RESULT: TicketFlipOpportunityResult = {
+  status: 'ambiguous',
+  trigger: null,
+  majoritarianAlignment: null,
+  rightShare: null,
+  rightVotes: 0,
+  totalFederalVotes: 0,
+  message: 'Empate nos vencedores majoritários nesta geografia',
+  supportLine: null,
+}
+
+const computeTicketFlipForGeography = (
+  federalTotals: readonly FederalCandidateTotal[],
+  majoritarianTallies: readonly ElectionTallyAggregateRow[],
+  geography: NucleusElectionGeography,
+): TicketFlipOpportunityResult => {
+  const { president: presidentAgg, governor: governorAgg } = resolveMajoritarianWinners(
+    majoritarianTallies,
+    geography,
+  )
+
+  if (presidentAgg === 'ambiguous' || governorAgg === 'ambiguous') {
+    return AMBIGUOUS_FLIP_RESULT
+  }
+
+  const federalRace = federalRaceSnapshot(federalTotals)
+
+  return computeTicketFlipOpportunity({
+    winnerPresident: presidentAgg,
+    winnerGovernor: governorAgg,
+    winnerFederal: federalRace.winnerFederal,
+    federalVotesByParty: federalRace.federalVotesByParty,
+  })
+}
+
 const aggregateElectorate = (
   tallies: readonly ElectionTallyAggregateRow[],
   geography: NucleusElectionGeography,
@@ -253,14 +405,28 @@ export const aggregateNucleusElectoralBaseline = (
   ticketVotes: readonly ElectionVoteAggregateRow[],
   tallies: readonly ElectionTallyAggregateRow[],
   historicalVotes: Pick<VoteTrendSeries, 'y2014' | 'y2018'>,
+  majoritarianTallies: readonly ElectionTallyAggregateRow[] = [],
 ): NucleusElectoralBaselineViewModel => {
   // `federalTotals` must be sorted by votes desc (SQL aggregate or aggregateFederalCandidateTotals).
   const candidateIndex = federalTotals.findIndex(
     (candidate) => candidate.candidateNumber === BASELINE_TICKET_2022.candidate.candidateNumber,
   )
   const candidateRow = federalTotals[candidateIndex]
-  const winner = federalTotals[0] ?? null
   const candidateVotes = candidateRow?.votes ?? 0
+  const federalRace = federalRaceSnapshot(federalTotals)
+  const { president: presidentWinner, governor: governorWinner } = resolveMajoritarianWinners(
+    majoritarianTallies,
+    geography,
+  )
+  const ticketFlip =
+    presidentWinner === 'ambiguous' || governorWinner === 'ambiguous'
+      ? AMBIGUOUS_FLIP_RESULT
+      : computeTicketFlipOpportunity({
+          winnerPresident: presidentWinner,
+          winnerGovernor: governorWinner,
+          winnerFederal: federalRace.winnerFederal,
+          federalVotesByParty: federalRace.federalVotesByParty,
+        })
 
   return {
     candidate: {
@@ -280,9 +446,11 @@ export const aggregateNucleusElectoralBaseline = (
       BASELINE_TICKET_2022.governor.candidateNumber,
     ),
     electorate: aggregateElectorate(tallies, geography),
-    winnerFederal: winner
-      ? { name: winner.name, votes: winner.votes, party: winner.party }
-      : null,
+    winnerFederal: federalRace.winnerFederal,
+    winnerPresident: majoritarianWinnerOrNull(presidentWinner),
+    winnerGovernor: majoritarianWinnerOrNull(governorWinner),
+    federalVotesByParty: federalRace.federalVotesByParty,
+    ticketFlip,
     series: {
       y2014: historicalVotes.y2014,
       y2018: historicalVotes.y2018,
@@ -411,7 +579,60 @@ const loadElectionTallies = async (
   }))
 }
 
-/** Union city×zone pairs across multiple nucleus geographies (list overview). */
+const loadMajoritarianElectionTallies = async (
+  payload: Pick<Payload, 'find'>,
+  user: ElectionDataReader,
+  geography: NucleusElectionGeography,
+): Promise<ElectionTallyAggregateRow[]> => {
+  const result = await payload.find({
+    collection: 'electionTally',
+    where: {
+      and: [
+        ...ba2022Scope(),
+        geographyWhere(geography),
+        {
+          or: [
+            {
+              and: [{ office: { equals: 'presidente' } }, { turn: { in: ['1', '2'] } }],
+            },
+            {
+              and: [{ office: { equals: 'governador' } }, { turn: { in: ['1', '2'] } }],
+            },
+          ],
+        },
+      ],
+    },
+    depth: 0,
+    pagination: false,
+    select: {
+      office: true,
+      turn: true,
+      cityName: true,
+      zoneNumber: true,
+      winnerCandidateName: true,
+      winnerParty: true,
+      winnerVotes: true,
+    },
+    user,
+    overrideAccess: false,
+  })
+
+  return result.docs.map((doc) => ({
+    office: doc.office,
+    turn: doc.turn,
+    cityName: doc.cityName,
+    zoneNumber: doc.zoneNumber,
+    aptos: 0,
+    votosValidos: 0,
+    votosBranco: 0,
+    votosNulo: 0,
+    abstencoes: 0,
+    winnerCandidateName: doc.winnerCandidateName,
+    winnerParty: doc.winnerParty,
+    winnerVotes: doc.winnerVotes,
+  }))
+}
+
 const buildUnionGeography = (
   geographies: ReadonlyArray<NucleusElectionGeography | null>,
   indexes: readonly number[],
@@ -525,10 +746,11 @@ export const getNucleusElectoralBaseline = async (
   const geography = resolveNucleusElectionGeography(nucleus)
   if (!geography) return null
 
-  const [federalTotals, ticketVotes, tallies, seriesByYear] = await Promise.all([
+  const [federalTotals, ticketVotes, tallies, majoritarianTallies, seriesByYear] = await Promise.all([
     loadFederalCandidateTotalsAggregated(payload, user, geography),
     loadTicketOfficeVotes(payload, user, geography),
     loadElectionTallies(payload, user, geography),
+    loadMajoritarianElectionTallies(payload, user, geography),
     loadCandidateSeriesByGeography(payload, user, geography, HISTORICAL_PRIOR_SERIES_YEARS),
   ])
 
@@ -543,6 +765,7 @@ export const getNucleusElectoralBaseline = async (
     ticketVotes,
     tallies,
     historicalVotes,
+    majoritarianTallies,
   )
 }
 
@@ -567,13 +790,15 @@ export type NucleusListElectionOverview = {
   baseline2022: NucleusBaseline2022OverviewAggregate | null
   trend: NucleusTrendOverviewAggregate | null
   conversion: NucleusConversionOverviewAggregate | null
+  leverage: TicketLeverageOverviewAggregate | null
+  flipOpportunity: TicketFlipOverviewAggregate | null
 }
 
 /**
  * Gap vs 2022 and vote-trend distribution over a filtered nucleus set (one union query).
  */
 export const loadNucleusListElectionOverview = async (
-  payload: Pick<Payload, 'find'>,
+  payload: Pick<Payload, 'find' | 'db'>,
   user: ElectionDataReader,
   nuclei: readonly NucleusBaseline2022OverviewInput[],
 ): Promise<NucleusListElectionOverview> => {
@@ -583,7 +808,7 @@ export const loadNucleusListElectionOverview = async (
   )
 
   if (withGeographyIndexes.length === 0) {
-    return { baseline2022: null, trend: null, conversion: null }
+    return { baseline2022: null, trend: null, conversion: null, leverage: null, flipOpportunity: null }
   }
 
   const comparableIndexes: number[] = []
@@ -594,10 +819,14 @@ export const loadNucleusListElectionOverview = async (
 
   const unionGeography = buildUnionGeography(geographies, withGeographyIndexes)
   if (!unionGeography) {
-    return { baseline2022: null, trend: null, conversion: null }
+    return { baseline2022: null, trend: null, conversion: null, leverage: null, flipOpportunity: null }
   }
 
-  const seriesByYear = await loadCandidateSeriesByGeography(payload, user, unionGeography)
+  const [seriesByYear, ticketVotes, majoritarianTallies] = await Promise.all([
+    loadCandidateSeriesByGeography(payload, user, unionGeography),
+    loadTicketOfficeVotes(payload, user, unionGeography),
+    loadMajoritarianElectionTallies(payload, user, unionGeography),
+  ])
   const votes2022 = seriesByYear.get(ELECTION_YEAR_2022) ?? new Map<string, number>()
 
   const trend = aggregateVoteTrend(
@@ -607,11 +836,22 @@ export const loadNucleusListElectionOverview = async (
     }),
   )
 
+  const flipResults = await Promise.all(
+    withGeographyIndexes.map(async (index) => {
+      const geography = geographies[index]!
+      const federalTotals = await loadFederalCandidateTotalsAggregated(payload, user, geography)
+      return computeTicketFlipForGeography(federalTotals, majoritarianTallies, geography)
+    }),
+  )
+  const flipOpportunity = aggregateTicketFlipOverview(flipResults)
+
   if (comparableIndexes.length === 0) {
     return {
       baseline2022: { gapTotal: null, above: 0, below: 0 },
       trend,
       conversion: null,
+      leverage: null,
+      flipOpportunity,
     }
   }
 
@@ -631,6 +871,7 @@ export const loadNucleusListElectionOverview = async (
   let conversionEstimateSum = 0
   let conversionAptosSum = 0
   const conversionBands: ConversionRateBand[] = []
+  const leverageRows: Array<{ estimate: number; ticketVotes: number }> = []
 
   for (const index of comparableIndexes) {
     const geography = geographies[index]
@@ -658,6 +899,16 @@ export const loadNucleusListElectionOverview = async (
       conversionAptosSum += electorate.aptos
       conversionBands.push(conversion.band)
     }
+
+    const { presidentVotes, governorVotes } = majoritarianTicketVoteTotals(ticketVotes, geography)
+    const leverage = computeTicketLeverage({
+      confirmedVoteEstimate: estimate,
+      presidentVotes,
+      governorVotes,
+    })
+    if (isComparableTicketLeverage(leverage.status)) {
+      leverageRows.push({ estimate, ticketVotes: leverage.ticketVotes })
+    }
   }
 
   const conversion: NucleusConversionOverviewAggregate | null =
@@ -676,6 +927,8 @@ export const loadNucleusListElectionOverview = async (
     },
     trend,
     conversion,
+    leverage: aggregateTicketLeverageOverview(leverageRows),
+    flipOpportunity,
   }
 }
 

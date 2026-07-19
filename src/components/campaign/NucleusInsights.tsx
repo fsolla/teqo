@@ -1,5 +1,7 @@
 import {
   CheckCircle2Icon,
+  Link2Icon,
+  MegaphoneIcon,
   MinusIcon,
   PercentIcon,
   TrendingDownIcon,
@@ -11,11 +13,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import {
   computeConversionRate,
   computeGapVs2022,
+  computeTicketLeverage,
   computeVoteTrend,
   conversionRateAlertVariant,
   formatElectionNumber,
   formatVoteTrendSeries,
   isComparableConversionBand,
+  isComparableTicketLeverage,
+  ticketLeverageAlertVariant,
   voteTrendAlertVariant,
 } from '@/lib/electionInsights'
 import { cn } from '@/lib/utils'
@@ -56,12 +61,26 @@ export const NucleusInsights = ({
         ? TriangleAlertIcon
         : PercentIcon
 
+  const leverage = computeTicketLeverage({
+    confirmedVoteEstimate,
+    presidentVotes: baseline?.president?.votes ?? null,
+    governorVotes: baseline?.governor?.votes ?? null,
+  })
+  const LeverageIcon =
+    leverage.status === 'comparable' && (leverage.headlinePercent ?? 0) >= 100
+      ? CheckCircle2Icon
+      : Link2Icon
+
+  const flip = baseline?.ticketFlip ?? null
+
   let supportLine: string | null = null
   if ((gap.status === 'above' || gap.status === 'below') && baseline && confirmedVoteEstimate !== null) {
     supportLine = `Estimativa atual (${formatElectionNumber(confirmedVoteEstimate)}) · resultado 2022 (${formatElectionNumber(baseline.candidate.votes)})`
   }
 
   const showConversion = isComparableConversionBand(conversion.band)
+  const showLeverage = isComparableTicketLeverage(leverage.status)
+  const showFlip = flip?.status === 'opportunity'
 
   return (
     <section aria-labelledby="nucleus-insights-heading" className="flex flex-col gap-3">
@@ -92,6 +111,33 @@ export const NucleusInsights = ({
           {conversion.supportLine ? (
             <AlertDescription>{conversion.supportLine}</AlertDescription>
           ) : null}
+        </Alert>
+      ) : null}
+
+      {showLeverage ? (
+        <Alert
+          data-insight="ticket-leverage"
+          variant={ticketLeverageAlertVariant(leverage)}
+          className={cn(
+            'rounded-xl px-3.5 py-3',
+            (leverage.headlinePercent ?? 0) >= 100 && confirmedInsightAlertClass,
+          )}
+        >
+          <LeverageIcon aria-hidden="true" />
+          <AlertTitle className="font-bold">{leverage.message}</AlertTitle>
+          {leverage.supportLine ? <AlertDescription>{leverage.supportLine}</AlertDescription> : null}
+        </Alert>
+      ) : null}
+
+      {showFlip ? (
+        <Alert
+          data-insight="ticket-flip"
+          variant="pending"
+          className="rounded-xl px-3.5 py-3"
+        >
+          <MegaphoneIcon aria-hidden="true" />
+          <AlertTitle className="font-bold">{flip.message}</AlertTitle>
+          {flip.supportLine ? <AlertDescription>{flip.supportLine}</AlertDescription> : null}
         </Alert>
       ) : null}
 

@@ -1,7 +1,7 @@
 # Escala e DRY pós-A4 (baseline TSE no produto)
 
-Status: Fase 1 implementada (Fases 2–4 pendentes; merge pendente)
-Atualizado em: 2026-07-19 (Fase 4 lista+coroplético registrada via `capture-review-debts` pós-B3)
+Status: Fase 1 implementada (Fases 2–5 pendentes; merge pendente)
+Atualizado em: 2026-07-19 (Fase 5 lista flip/leverage + extensão F3 gap registradas via `capture-review-debts` pós-A5 `/simplify`)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, item A7)
 Responsável: —
 
@@ -15,21 +15,26 @@ Os revisores (performance / reuse / quality) marcaram como **importantes e maior
 2. **Filtro geográfico por `cityName` (texto), não por `cityCode` TSE.** O índice natural das collections de eleição é `(year, office, turn, cityCode, zoneNumber)`; filtrar por nome impede o plano ótimo e complica OR grandes na união do overview (já mitigado no simplify, mas o detalhe/TI ainda sofre).
 3. **DRY de UI do Gap "acima".** `NucleusInsights` usa `Alert variant="pending"` para abaixo/neutro, mas o estado "acima" aplica classes ad-hoc com tokens `--estimate-confirmed*`. O slice **A5-1 conversão** reutiliza o mesmo `confirmedInsightAlertClass` para o alerta de taxa de conversão (reduto/consolidado) — interim até a Fase 3. A barra do candidato no card também reimplementa `role="progressbar"` em vez de reusar `Progress` (`NucleusListOverview`).
 4. **Query duplicada de votos 2022 na lista de núcleos com coroplético B3.** `nucleusListOverviewPageData.ts` chama em paralelo `loadNucleusListElectionOverview` (union → `loadCandidateSeriesByGeography` multi-ano) e `loadNucleusChoroplethBundle` → `loadBaseline2022VotesByCityNames` (segunda passagem `loadCandidateSeriesByGeography` só 2022 sobre geografia sobreposta). O simplify B3 unificou resolve interno do choropleth, mas não compartilha o resultado da série 2022 já obtida no loader de gap/tendência/conversão.
+5. **N+1 de agregação federal no flip da lista (A5 Fase 2).** `loadNucleusListElectionOverview` chama `loadFederalCandidateTotalsAggregated` **uma vez por núcleo** com geografia resolvida para `computeTicketFlipForGeography`, enquanto série/ticket/majoritarian já vêm numa união. Com dezenas de núcleos filtrados, `Promise.all` paraleliza latência mas não reduz carga no Postgres — mesmo anti-padrão que A7 F1 resolveu no **detalhe**.
+6. **Re-scan in-memory de linhas union por núcleo (leverage A5).** No loop `comparableIndexes`, `majoritarianTicketVoteTotals` filtra todo `ticketVotes` (union) por geografia a cada iteração; o flip por núcleo re-filtra `majoritarianTallies` union. Aceitável em filtros pequenos; escala com TI inteira.
 
 **Já resolvido no simplify pós-F1 / `capture-review-debts` (não reabrir):** remoção de `cities` derivado em `NucleusElectionGeography` (só `zonesByCity` + `cityZonePairs`); `assertCanReadElectionData` com `asserts` e entrada `CampaignUser | User | null | undefined`; testes reais de `loadFederalCandidateTotalsAggregated` (mock drizzle) em `federalCandidateTotalsAggregate.unit.spec.ts`; int spy estrutural (`whereContainsField*`) em vez de `JSON.stringify(where)`; inline do SQL builder federal; comentário em `aggregateFederalCandidateTotals` como oracle in-memory para unit tests.
 
-**Explicitamente fora (revisores pediram skip no simplify ou descartados no triage):** map JSX de linhas Lula/Jerônimo, dropar `candidate.rank` / `electorate.aptos` / `ratio` do tipo público só por higiene (só fariam sentido se a F1 deixar de calcular rank), cast `as unknown as RawOverviewNucleus` da B1 (não é débito novo do A4), parity test drizzle vs `aggregateFederalCandidateTotals` (int + unit cobrem comportamento), typed drizzle rows/zod no `drizzleResultRows` (padrão plataforma C6/C8), `requirePostgresDrizzle` em `supporterListOverviewAggregate.ts` (fora do escopo A7 — DRY de ~6 linhas; ver C10 quando o plano existir), micro-opt `aggregateElectorate`/`matchesGeography` com `Set` (impacto negligível), `BahiaMap` `setStyle` incremental → **B6** ([escala-dry-pos-b3.md](escala-dry-pos-b3.md)), factory geometrias mun/TI → **B5 F3** ([escala-dry-pos-b2.md](escala-dry-pos-b2.md)).
+**Já resolvido no simplify pós-A5 alavancagem (não reabrir):** `ticketFlip` pré-computado no VM (`aggregateNucleusElectoralBaseline`) e consumido em `NucleusInsights` (paridade detail/overview em empates majoritários); `resolveMajoritarianWinners` compartilhado; winners/federalRace reutilizados sem segunda passagem no detalhe; `Promise.all` série+ticket+majoritarian no overview (remove waterfall); loop flip sem `null` filter; guard redundante `leverage.ticketVotes`; testes gap com `GapVs2022Baseline`; assert `ticketFlip` no unit de baseline.
+
+**Explicitamente fora (revisores pediram skip no simplify ou descartados no triage):** map JSX de linhas Lula/Jerônimo, dropar `candidate.rank` / `electorate.aptos` / `ratio` do tipo público só por higiene (só fariam sentido se a F1 deixar de calcular rank), cast `as unknown as RawOverviewNucleus` da B1 (não é débito novo do A4), parity test drizzle vs `aggregateFederalCandidateTotals` (int + unit cobrem comportamento), typed drizzle rows/zod no `drizzleResultRows` (padrão plataforma C6/C8), `requirePostgresDrizzle` em `supporterListOverviewAggregate.ts` (fora do escopo A7 — DRY de ~6 linhas; ver C10 quando o plano existir), micro-opt `aggregateElectorate`/`matchesGeography` com `Set` (impacto negligível), `BahiaMap` `setStyle` incremental → **B6** ([escala-dry-pos-b3.md](escala-dry-pos-b3.md)), factory geometrias mun/TI → **B5 F3** ([escala-dry-pos-b2.md](escala-dry-pos-b2.md)); **pós-A5:** `buildUnionGeography` 2× (micro-opt), mover testes leverage/flip para `electionInsights.unit.spec.ts`, unions discriminadas `TicketLeverage`/`TicketFlip`, estreitar campos VM/result flip, `ticketFlipAlertVariant`/`formatPercent` export, `MajoritarianTallyRow` tipo separado, maps de ícones em `NucleusInsights`, wrapper `NucleusInsightAlert` além da F3 (E7 adia DRY do stack até mais insights).
 
 ## Objetivos
 
 - Abrir a aba Visão geral de um núcleo com TI/multi-município permanece barato: o loader de baseline não transferir o conjunto completo de candidatos federais da geografia.
 - Filtros de geografia eleitoral preferem `cityCode` TSE quando o mapa nome→código existir, sem mudar a UX (continua resolvendo a partir de `cities` / `regions` do núcleo).
 - Gap "acima" usa a mesma família de variantes do Alert que o âmbar (`pending`); a barra do candidato reusa `Progress`.
+- Lista com flip A5 não escala com N round-trips drizzle de federal por núcleo; Fase 5 batch na união antes de particionar por geografia.
 - Guardrails: preferir **sem migration** nas Fases 1 e 3; Fase 2 pode ser só tabela estática (como `bahiaMunicipalityCodes` / seed TSE) — se precisar de índice novo no Postgres, migration dedicada e cortável. Sem Consent (dado público TSE). Access continua `overrideAccess: false` + `canReadElectionData`.
 
 ## Decisões travadas
 
-- **Um item A7, quatro fases ordenadas.** Mesmo racional do B5/C7/C8/E7: um ID de roadmap, PRs por fase. Ordem: agregação do detalhe (custo real) → `cityCode` (escala BA-wide) → DRY de Alert/Progress (barato, UI) → fetch único 2022 lista+coroplético (B3).
+- **Um item A7, cinco fases ordenadas.** Mesmo racional do B5/C7/C8/E7: um ID de roadmap, PRs por fase. Ordem: agregação do detalhe (custo real) → `cityCode` (escala BA-wide) → DRY de Alert/Progress + helpers gap (barato, UI) → fetch único 2022 lista+coroplético (B3) → batch federal + indexação union na lista (A5 flip/leverage).
 - **Dependência dura de A4.** Só faz sentido com o loader/UI já no produto; não reabre o escopo do Gap vs 2022 nem do card Baseline.
 - **Fase 1 não remove o "mais votado aqui" da UI.** O produto do A4 inclui `winnerFederal`; a otimização agrega no SQL/drizzle (ou limita o payload), não corta a feature. Se produto decidir que rank/winner saem do card, a F1 encolhe para "só o candidato da chapa + tallies".
 - **Cortável se a geografia real dos núcleos permanecer pequena** (1–2 municípios tipados). Vira não-cortável de qualidade quando A5/B3 passarem a martelar o mesmo helper em TI inteiro.
@@ -48,13 +53,15 @@ Os revisores (performance / reuse / quality) marcaram como **importantes e maior
 ```mermaid
 flowchart TD
     A4["A4 Baseline no produto ✓"] --> F1
-    F1["Fase 1 — Agregar federal no detalhe<br/>(GROUP BY / payload estreito)"]
+    F1["Fase 1 — Agregar federal no detalhe<br/>(GROUP BY / payload estreito) ✓"]
     F1 --> F2["Fase 2 — Geografia por cityCode TSE"]
-    F1 --> F3["Fase 3 — Alert confirmed + Progress"]
+    F1 --> F3["Fase 3 — Alert confirmed + Progress<br/>+ gapVs2022 helpers"]
     F1 --> F4["Fase 4 — Fetch 2022 único<br/>lista overview + coroplético"]
-    F1 -.mesmo loader.-> A5["A5 Insights"]
+    F1 --> F5["Fase 5 — Batch federal lista<br/>+ index union (A5 flip/leverage)"]
+    F1 -.mesmo loader.-> A5["A5 Insights ✓"]
     F1 -.métricas.-> B3["B3 Leaflet coroplético"]
     F4 -.evita 2ª query.-> B3
+    F5 -.evita N queries flip.-> A5
 ```
 
 ### Fase 1 — Agregação do ranking federal no detalhe ✓ (2026-07-19)
@@ -71,10 +78,11 @@ flowchart TD
 - Overview union e detalhe compartilham o mesmo helper.
 - Sem mudança de UX; fallback fail-closed se o município do núcleo não mapear (mesmo espírito de `canonicalizeMunicipalityName`).
 
-### Fase 3 — Alert `confirmed` + `Progress` no card
+### Fase 3 — Alert `confirmed` + `Progress` + helpers Gap vs 2022
 
 - `src/components/ui/Alert.tsx`: adicionar variant `confirmed` espelhando `pending` com tokens `--estimate-confirmed` / foreground.
-- `NucleusInsights`: trocar o `cn(...)` ad-hoc e `confirmedInsightAlertClass` (Gap "acima" **e** conversão reduto/consolidado desde A5-1) por `variant={… ? 'confirmed' : 'pending'}` (ou `default` só se neutro — manter pending para noBaseline/noEstimate).
+- `NucleusInsights`: trocar o `cn(...)` ad-hoc e `confirmedInsightAlertClass` (Gap "acima" **e** conversão reduto/consolidado desde A5-1 **e** leverage ≥100% / tendência increase) por `variant={… ? 'confirmed' : 'pending'}` (ou `default` só se neutro — manter pending para noBaseline/noEstimate).
+- `src/lib/electionInsights.ts`: `gapVs2022AlertVariant(status)` e `supportLine` em `computeGapVs2022` (ou `gapVs2022SupportLine`) — simetria com `conversionRateAlertVariant` / `ticketLeverageAlertVariant`; remove ternários e string montada no componente.
 - `NucleusElectoralBaseline`: substituir a barra custom por `Progress` (já usado no overview), preservando `aria-label`.
 
 ### Fase 4 — Fetch único de votos 2022 (lista overview + coroplético B3)
@@ -85,7 +93,16 @@ flowchart TD
 - Testes: int ou unit garantindo que overview com coroplético não chama `loadCandidateSeriesByGeography` duas vezes para 2022 (spy estrutural como Fase 1 federal).
 - **Verificar:** paridade numérica do coroplético `baseline2022Votes` antes/depois.
 
-**Migration:** nenhuma nas Fases 1, 3 e 4. Fase 2 preferencialmente só artefato estático versionado; índice Postgres extra só se o EXPLAIN ainda doer após `cityCode` (aí `pnpm migrate:create` cortável).
+### Fase 5 — Batch federal na lista + indexação union (A5 flip/leverage)
+
+- Uma query drizzle na **união** do conjunto filtrado: `GROUP BY city_name, zone_number, candidate_number` (ou `city_code` após F2), materializando mapa `cityZoneKey → federalTotals[]` reutilizável por núcleo — mesmo espírito da F1 no detalhe, estendido ao path `loadNucleusListElectionOverview`.
+- Substituir o `Promise.all` de N× `loadFederalCandidateTotalsAggregated` no flip por slice in-memory por geografia de cada núcleo.
+- Pré-indexar `ticketVotes` e `majoritarianTallies` union por `cityZoneKey` (ou fingerprint de geografia) antes do loop `comparableIndexes`; `majoritarianTicketVoteTotals` / `resolveMajoritarianWinners` leem do índice em O(pares do núcleo) em vez de re-filtrar todas as linhas union.
+- Helper compartilhado `sumElectorateFromTallies` unificando `aggregateElectorate` e `sumElectorateForGeography` (overview vs detalhe).
+- Testes: int spy garantindo **uma** execução drizzle federal na lista com N núcleos (espelhar guard da F1); unit de particionamento por geografia; paridade numérica flip/leverage antes/depois.
+- **Cortável** se filtros típicos permanecerem em poucos núcleos (≤10); **não cortável** quando TI-wide ou dezenas+ núcleos forem rotina.
+
+**Migration:** nenhuma nas Fases 1, 3, 4 e 5. Fase 2 preferencialmente só artefato estático versionado; índice Postgres extra só se o EXPLAIN ainda doer após `cityCode` (aí `pnpm migrate:create` cortável).
 
 ## Dependências
 
@@ -113,6 +130,7 @@ flowchart TD
 - `src/utilities/campaignAccess.ts` — `assertCanReadElectionData` / `ElectionDataReader` (gate ACL do path drizzle)
 - `src/utilities/drizzleBulk.ts` — `requirePostgresDrizzle` (read-only aggregates)
 - `docs/plans/insight-taxa-conversao.md` — A5-1 usa `confirmedInsightAlertClass` até F3
+- `docs/plans/insight-alavancagem-chapa.md` — A5 flip/leverage (motiva F5)
 - `src/lib/electionInsights.ts` / `src/components/campaign/NucleusInsights.tsx` — Gap + conversão UI
 - `src/components/campaign/NucleusElectoralBaseline.tsx` — barra do candidato
 - `src/components/ui/Alert.tsx` — variant `pending` a espelhar

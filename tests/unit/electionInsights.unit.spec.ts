@@ -12,16 +12,11 @@ import {
   CONVERSION_OPPORTUNITY_MAX,
   CONVERSION_REDUTO_MIN,
   isComparableConversionBand,
+  type GapVs2022Baseline,
 } from '@/lib/electionInsights'
-import type { NucleusElectoralBaselineViewModel } from '@/utilities/nucleusViewModels'
 
-const baseline = (candidateVotes: number): NucleusElectoralBaselineViewModel => ({
-  candidate: { votes: candidateVotes, rank: candidateVotes > 0 ? 1 : null },
-  president: null,
-  governor: null,
-  electorate: { aptos: 0, validos: 0, brancos: 0, nulos: 0, abstencoes: 0 },
-  winnerFederal: null,
-  series: { y2014: 0, y2018: 0, y2022: candidateVotes },
+const baseline = (candidateVotes: number): GapVs2022Baseline => ({
+  candidate: { votes: candidateVotes },
 })
 
 describe('computeGapVs2022', () => {

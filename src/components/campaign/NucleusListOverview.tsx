@@ -7,7 +7,7 @@ import { campaignPrioritySurfaceClassName } from '@/components/campaign/Campaign
 import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/Progress'
-import { formatElectionNumber } from '@/lib/electionInsights'
+import { formatElectionNumber, formatMajoritarianTicketBaseLabel } from '@/lib/electionInsights'
 import { actionPlanKindLabels } from '@/lib/schemas/actionPlan'
 import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 import { formatRelativeAge } from '@/utilities/formatRelativeAge'
@@ -137,6 +137,41 @@ export const NucleusListOverview = ({
               <span className="font-medium text-estimate-pending-foreground">
                 {formatElectionNumber(view.conversion.distribution.oportunidade)} oportunidade
               </span>
+            </p>
+          ) : null}
+          {view.leverage ? (
+            <p className="text-sm text-muted-foreground">
+              Alavancagem da chapa:{' '}
+              <span className="font-medium tabular-nums text-foreground">
+                {view.leverage.weightedPercent}%
+              </span>{' '}
+              da base {formatMajoritarianTicketBaseLabel()}
+              {view.leverage.unconvertedCount > 0 ? (
+                <>
+                  {' · '}
+                  <span className="font-medium text-estimate-pending-foreground">
+                    {formatElectionNumber(view.leverage.unconvertedCount)} com base não convertida
+                  </span>
+                </>
+              ) : null}
+            </p>
+          ) : null}
+          {view.flipOpportunity && view.flipOpportunity.count > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Oportunidade de completar a chapa:{' '}
+              <span className="font-medium text-estimate-pending-foreground">
+                {formatElectionNumber(view.flipOpportunity.count)}{' '}
+                {view.flipOpportunity.count === 1 ? 'núcleo' : 'núcleos'}
+              </span>
+              {view.flipOpportunity.bothAlignedCount > 0 ? (
+                <>
+                  {' · '}
+                  <span className="font-medium text-foreground">
+                    {formatElectionNumber(view.flipOpportunity.bothAlignedCount)} com majoritários
+                    alinhados
+                  </span>
+                </>
+              ) : null}
             </p>
           ) : null}
         </CardContent>

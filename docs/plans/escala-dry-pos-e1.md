@@ -1,7 +1,7 @@
 # Escala e DRY pós-E1+E3 (metas, prioridade, estratégia manual)
 
 Status: registrado no roadmap (fases pendentes)
-Atualizado em: 2026-07-19
+Atualizado em: 2026-07-19 (`capture-review-debts` pós-A5: labels conversão/tendência no overview → F3)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E, item E6)
 Responsável: —
 
@@ -74,6 +74,7 @@ flowchart TD
 - `src/lib/electionInsights.ts`: `formatNullableElectionNumber(value, empty = '—')`.
 - Substituir `Intl.NumberFormat` local em `NucleusCard`, `NucleusList`, `NucleusListOverview`, `CampaignDashboard`.
 - `src/utilities/voteGoals.ts`: `voteGoalScenarioLabels` (`good`/`regular`/`minimum` → Bom/Regular/Mínimo); usar em `NucleusForm`, `NucleusVoteGoals`, `NucleusListOverview`.
+- `electionInsights.ts`: `conversionBandLabel` (`reduto`/`consolidado`/`oportunidade`) e reuso de `voteTrendStatusLabel` nas linhas de overview eleitoral em `NucleusListOverview` (substituir strings hardcoded "reduto", "aumento", etc. — absorvido do triage pós-A5).
 - Extrair `campaignPercentage` (ex. `src/utilities/campaignMath.ts`) usado por overview e dashboard.
 - Opcional: `NucleusPriorityBadge` se os três call sites incomodarem no próximo touch.
 

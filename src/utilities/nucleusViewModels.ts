@@ -1,6 +1,6 @@
 import type { NucleusPriority } from '@/lib/schemas/nucleus'
 import type { CampaignUser, ElectoralNucleus } from '@/payload-types'
-import type { VoteTrendSeries } from '@/lib/electionInsights'
+import type { TicketFlipOpportunityResult, VoteTrendSeries } from '@/lib/electionInsights'
 import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 import { toVoteGoalsViewModel, type VoteGoalsViewModel } from '@/utilities/voteGoals'
 
@@ -238,6 +238,10 @@ export type NucleusElectoralBaselineViewModel = {
     abstencoes: number
   }
   winnerFederal: { name: string; votes: number; party: string } | null
+  winnerPresident: { name: string; party: string; votes: number } | null
+  winnerGovernor: { name: string; party: string; votes: number } | null
+  federalVotesByParty: Record<string, number>
+  ticketFlip: TicketFlipOpportunityResult
   series: VoteTrendSeries
 }
 

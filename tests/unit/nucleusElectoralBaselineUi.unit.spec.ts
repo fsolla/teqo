@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { NucleusElectoralBaseline } from '@/components/campaign/NucleusElectoralBaseline'
 import { NucleusInsights } from '@/components/campaign/NucleusInsights'
+import { computeTicketFlipOpportunity } from '@/lib/electionInsights'
 import type { NucleusElectoralBaselineViewModel } from '@/utilities/nucleusViewModels'
 
 const baseline: NucleusElectoralBaselineViewModel = {
@@ -18,6 +19,15 @@ const baseline: NucleusElectoralBaselineViewModel = {
     abstencoes: 680,
   },
   winnerFederal: { name: 'Dep. Fulano de Tal', votes: 2100, party: 'PP' },
+  winnerPresident: { name: 'LULA', party: 'PT', votes: 8000 },
+  winnerGovernor: { name: 'JERÔNIMO', party: 'PT', votes: 6000 },
+  federalVotesByParty: { PT: 850, PP: 2100 },
+  ticketFlip: computeTicketFlipOpportunity({
+    winnerPresident: { name: 'LULA', party: 'PT', votes: 8000 },
+    winnerGovernor: { name: 'JERÔNIMO', party: 'PT', votes: 6000 },
+    winnerFederal: { name: 'Dep. Fulano de Tal', votes: 2100, party: 'PP' },
+    federalVotesByParty: { PT: 850, PP: 2100 },
+  }),
   series: { y2014: 700, y2018: 800, y2022: 850 },
 }
 
@@ -76,5 +86,19 @@ describe('NucleusInsights', () => {
     )
     expect(html).toContain('data-insight="vote-trend"')
     expect(html).toContain('Tendência:')
+  })
+
+  it('renders ticket leverage and flip opportunity insights', () => {
+    const html = renderToStaticMarkup(
+      createElement(NucleusInsights, {
+        baseline,
+        confirmedVoteEstimate: 500,
+      }),
+    )
+    expect(html).toContain('data-insight="ticket-leverage"')
+    expect(html).toContain('Alavancagem da chapa:')
+    expect(html).toContain('data-insight="ticket-flip"')
+    expect(html).toContain('completar a chapa')
+    expect(html).not.toMatch(/direita/i)
   })
 })

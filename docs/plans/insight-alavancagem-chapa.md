@@ -1,7 +1,7 @@
 # Insight: alavancagem da chapa (conversão + oportunidade de virada)
 
-Status: rascunho
-Atualizado em: 2026-07-19
+Status: entregue (2026-07-19)
+Atualizado em: 2026-07-19 (revisão auditoria: loader `loadNucleusListElectionOverview`; stack já tem Gap + conversão A5-1 + tendência E2; A7 F1 no detalhe ✓; **débito N+1 flip na lista → A7 F5** via `capture-review-debts` pós-`/simplify`)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, item A5 — um dos cinco insights derivados do baseline)
 Responsável: —
 
@@ -26,7 +26,7 @@ Solla (PT) apoia a chapa majoritária de esquerda (Lula presidente, Jerônimo go
 - ranking federal agregável por candidato (hoje materializado no loader; A7 F1 deve agregar no SQL);
 - em `electionTally`, por município×zona×cargo×turno: `winnerCandidateName` / `winnerParty` / `winnerVotes` (ainda **não** no view model do núcleo).
 
-Hoje o único insight ligado à chapa no produto é o Gap vs 2022 (candidato). Faltam dois sinais de alavancagem da majoritária:
+O stack `NucleusInsights` já expõe Gap vs 2022 (A4), taxa de conversão (A5-1) e tendência histórica (E2). Faltam dois sinais de alavancagem da majoritária:
 
 1. **Conversão da base** — quanto da base Lula/Jerônimo a estimativa confirmada já captura.
 2. **Oportunidade de virada** _(produto 2026-07-19)_ — território onde o eleitorado já escolheu (ou favorece) o time majoritário de esquerda, mas o voto **proporcional federal** ainda foi para a direita — seja porque o **mais votado** federal é de direita, seja porque a **soma dos votos de partidos de direita** é alta em relação ao total válido. Em ambos os casos o discurso de **completar a chapa / eleger o time** é operacionalmente útil.
@@ -103,7 +103,8 @@ Componentes:
 - **`electionPartySpectrum.ts`** (`src/lib/electionPartySpectrum.ts`): `partySpectrum(party) → 'esquerda' | 'centro' | 'direita' | null` a partir das médias 2022 de Bolognesi et al. (Tabela 1 + Dataverse); aliases TSE; teste de cobertura dos `SG_PARTIDO` do seed BA 2022.
 - **`computeTicketLeverage`** (`src/lib/electionInsights.ts`): Fase 1 — `{ lulaLeverage, jeronimoLeverage, lulaGap, jeronimoGap, status }`.
 - **`computeTicketFlipOpportunity`** (`src/lib/electionInsights.ts`): entrada `{ winnerPresident, winnerGovernor, winnerFederal, federalVotesByParty }` → `{ status, trigger, majoritarianAlignment, rightShare, rightVotes, totalFederalVotes, president, governor, federal, message }`. Pré-condição: `majoritarianAlignment ∈ {president, governor, both}`. Gatilho A: `winnerFederal` → `direita`. Gatilho B: `rightShare >= RIGHT_SHARE_THRESHOLD`. `status`: `opportunity | noOpportunity | ambiguous | unknownSpectrum | incomplete`.
-- **Loader** (`nucleusElectoralBaseline.ts` + view model): `winnerPresident` / `winnerGovernor` a partir de tallies; `federalVotesByParty` alinhado a A7 F1.
+- **Loader** (`nucleusElectoralBaseline.ts` + view model): `winnerPresident` / `winnerGovernor` a partir de tallies; `federalVotesByParty` derivado dos nominais federais agregados in-memory (A7 F1 reduz I/O depois, não bloqueia).
+- **Overview:** `loadNucleusListElectionOverview` (substitui o antigo `loadNucleusBaseline2022Overview`) ganha agregados `leverage` e `flipOpportunity`.
 - **UI:** `NucleusInsights.tsx` — Alert Fase 1; Alert Fase 2 só em `opportunity`, copy travado acima (sem a palavra “direita”). Overview: contagem + opcional subset `both`.
 - **Testes:** unit — só pres. esq. / só gov. esq. / both / vencedor direita / share 40% com vencedor esquerda / share 10% sem oportunidade / nenhum majoritário esq. / partido desconhecido / empate; int do agregador multi-zona.
 - **Migration:** nenhuma. Sem Consent.
@@ -127,7 +128,7 @@ Componentes:
 
 - `docs/roadmap.md` — A5 Insights; grafo A4 → A5; Janela 3 ordem 19
 - [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md) — A3/A4
-- [escala-dry-pos-a4.md](escala-dry-pos-a4.md) — A7 F1 (agregação federal)
+- [escala-dry-pos-a4.md](escala-dry-pos-a4.md) — A7 F1 (detalhe) ✓; F5 (batch flip/leverage na lista)
 - [insight-dobradinha-2026.md](insight-dobradinha-2026.md) — taxonomia futura
 - Bolognesi, Codato, Ribeiro & Silva (2025/2026), Opinião Pública e31120 — [SciELO](https://www.scielo.br/j/op/a/hv8GBg9hfCCZLwcWktfYhtC/?lang=pt); Dataverse `doi:10.7910/DVN/MFIXKW`
 - Bolognesi, Ribeiro & Codato (2023), Dados 66(2) — onda 2018 / metodologia
