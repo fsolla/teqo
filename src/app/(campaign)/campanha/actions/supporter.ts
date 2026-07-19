@@ -23,53 +23,21 @@ import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { normalizeBrazilianPhone } from '@/utilities/phone'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
+import {
+  isSupporterImportOkRow,
+  type SupporterImportPreviewResult,
+  type SupporterImportPreviewRow,
+  type SupporterImportPreviewRowBase,
+} from '@/utilities/supporterImport'
+
+export type {
+  SupporterImportOkRow,
+  SupporterImportPreviewResult,
+  SupporterImportPreviewRow,
+  SupporterImportRowStatus,
+} from '@/utilities/supporterImport'
 
 const MAX_IMPORT_ROWS = 5000
-
-export type SupporterImportRowStatus =
-  | 'ok'
-  | 'duplicado_pelo_telefone'
-  | 'telefone_invalido'
-  | 'municipio_nao_reconhecido'
-  | 'nome_invalido'
-  | 'intencao_invalida'
-
-type SupporterImportPreviewRowBase = {
-  line: number
-  nome: string
-  telefone: string
-  municipio: string
-  intencao: string
-}
-
-export type SupporterImportOkRow = SupporterImportPreviewRowBase & {
-  status: 'ok'
-  normalizedPhone: string
-  canonicalCity?: string
-  voteIntention?: SupporterVoteIntention
-}
-
-export type SupporterImportPreviewRow =
-  | SupporterImportOkRow
-  | (SupporterImportPreviewRowBase & {
-      status: Exclude<SupporterImportRowStatus, 'ok'>
-      normalizedPhone?: string
-      canonicalCity?: string
-      voteIntention?: SupporterVoteIntention
-    })
-
-export const isSupporterImportOkRow = (
-  row: SupporterImportPreviewRow,
-): row is SupporterImportOkRow => row.status === 'ok'
-
-export type SupporterImportPreviewResult = {
-  rows: SupporterImportPreviewRow[]
-  counts: {
-    ok: number
-    duplicate: number
-    error: number
-  }
-}
 
 const getFreshStaffActor = async (
   payload: Payload,
@@ -267,8 +235,11 @@ const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, i
   }
 }
 
-export const createSupporterRecord = (payload: Payload, actor: CampaignUser, input: unknown) =>
-  createValidatedSupporter(payload, actor, input)
+export const createSupporterRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: unknown,
+) => createValidatedSupporter(payload, actor, input)
 
 export const createSupporter = async (input: unknown) => {
   const { payload, actor } = await getCampaignActionContext()

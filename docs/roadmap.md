@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-18 (MVP + Ciclo 2 deployados; A2 entregue; C2 engenharia pronta; C3 Planos de Ação implementado; C6/C7 registrados — escala/DRY pós-C2 e pós-C3)
+Atualizado em: 2026-07-18 (MVP + Ciclo 2 deployados; A2 entregue; C2 engenharia pronta e mesclada em `main`; C3 Planos de Ação implementado e mesclado em `main`; C6/C7 registrados — escala/DRY pós-C2 e pós-C3)
 
 Registro canônico no repositório dos planos futuros e débitos conhecidos. Status operacional do ciclo atual de Núcleos fica em [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc); este arquivo lista o que ainda é futuro ou bloqueador, **em ordem de execução**, com dependências e paralelismo explícitos.
 
@@ -29,7 +29,7 @@ Registro canônico no repositório dos planos futuros e débitos conhecidos. Sta
 
 ## Onda 0 — Caminho crítico para `/campanha` em produção
 
-O MVP de Núcleos está **entregue e deployado** (ondas 1–8 + refactors; 2026-07-18), junto com A1 (território multi-município/bairro), A3 (baseline TSE 2022 — modelo + import), B1 (overview da lista), C1 (compartilhar página) e D1 (PWA). As migrations (`20260718_010733_consolidate_campaign_schema`, `20260718_190559_territorio_multi_municipio_bairro`, `20260718_195854_add_election_results`) aplicam automaticamente no `pnpm build` da Vercel. O que ainda separa a vertical de uso operacional com dados reais é jurídico + smoke pós-deploy:
+O MVP de Núcleos está **entregue e deployado** (ondas 1–8 + refactors; 2026-07-18), junto com A1 (território multi-município/bairro), A2 (zonas TSE + sugestões cruzadas — sem migration), A3 (baseline TSE 2022 — modelo + import), B1 (overview da lista), C1 (compartilhar página), C3 (planos de ação / agenda) e D1 (PWA). C2 (cadastro nominal de apoiadores) tem a engenharia pronta e mesclada em `main`, mas segue bloqueada em produção pelo lote jurídico (Consent keys). As migrations (`20260718_010733_consolidate_campaign_schema`, `20260718_190559_territorio_multi_municipio_bairro`, `20260718_195854_add_election_results`, `20260718_222656_add_supporter`, `20260718_222832_add_action_plan`) aplicam automaticamente no `pnpm build` da Vercel. O que ainda separa a vertical de uso operacional com dados reais é jurídico + smoke pós-deploy:
 
 1. **Lote jurídico único de LGPD/Consent** _(externo — assessoria jurídica eleitoral; é o caminho crítico da vertical inteira)_. Uma única rodada cobrindo:
    - Base do art. 11 da LGPD + texto versionado de `Consent.key = 'lideranca-autopreenchimento'` (bloqueador do MVP de Núcleos; o app falha fechado sem a chave).
@@ -59,6 +59,11 @@ MVP de território + reporte implementado e enviado (ondas 1–8 + refactors de 
 ### Ciclo 2+ — A2 entregue e mesclado em `main` (2026-07-18)
 
 - **A2 Zonas TSE + sugestões cruzadas** — cadastro estático `bahiaTseZones` (TSE 2024 `detalhe_votacao_munzona` BA, 417 municípios), motor puro `territorySuggestions` (inclui `outsideZones`), coordenador `NucleusTerritoryAndZonesFields` com chips `{rótulo} +` opt-in (município/TI → ZEs; irmãos do TI e cidades da ZE → Municípios), `TseZoneInput` controlado. Sem migration, sem igualdade forçada no save. [Plano](plans/zonas-por-municipio.md).
+
+### Ciclo 2+ — C2 e C3 mesclados em `main` (2026-07-18)
+
+- **C2 Cadastro nominal de apoiadores** — collection `supporter` (join `Contact`↔campanha, núcleo opcional), migration `20260718_222656_add_supporter` com `UNIQUE NULLS NOT DISTINCT (contact_id, nucleus_id)`, consent por chaves estáveis `apoiador-cadastro` / `apoiador-intencao-voto` via `campaignConsent.ts` genérico (`getConsentByKey` / `requireConsentByKey`, falha fechada), actions (create / intenção de voto / import CSV só `geral` / `removeSupporterData`), UI `/campanha/apoiadores` (lista+KPIs, ficha, wizard de import, kit mínimo `wa.me`). Telefone obrigatório no v1; `lideranca` sem acesso à área. Engenharia pronta e mesclada — produção com dados reais espera deploy (build Vercel aplica a migration) + Consent keys + aprovação jurídica (Onda 0). [Plano](plans/cadastro-nominal-apoiadores.md).
+- **C3 Eventos / agenda de mobilização** — collection `actionPlan` + vertical `/campanha/planos` (lista com tabs Próximos/Todos/Realizados/Rascunhos, detalhe com tabs Visão geral/Tarefas/Atualizações, forms novo/editar), blocos "Próximos eventos" no overview de núcleos e no dashboard; `startAt` opcional só em rascunho (obrigatório ao sair de `rascunho`); access por `coordinators`/`leadership` (escopo `lideranca` só toggle `tasks.done` + append `updates`); transações via `withPayloadTransaction`; migration `20260718_222832_add_action_plan`. Sem `Consent` (dado interno de staff). [Plano](plans/eventos-agenda-mobilizacao.md).
 
 ### Referências de design (UX Pilot, 2026-07-18)
 
@@ -111,7 +116,7 @@ flowchart TD
 
     subgraph TrilhaC["Trilha C — operação de campo"]
         C1["C1 Compartilhar página ✓"]
-        C2["C2 Cadastro nominal de apoiadores"]
+        C2["C2 Cadastro nominal de apoiadores ✓"]
         C6["C6 Escala e DRY pós-C2<br/>(import/listas/forms)"]
         C3["C3 Eventos / agenda de mobilização ✓"]
         C7["C7 Escala e DRY pós-C3<br/>(território/contato/leituras)"]
@@ -150,7 +155,7 @@ flowchart TD
     JUR -.chave de push.-> D2
 ```
 
-Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, C2 (engenharia — produção espera o jurídico), além dos fill-ins (visitados recentemente, listas globais, reset de senha, higiene PascalCase). **Entregues em 2026-07-18** (✓ no grafo): A1, A2, A3, B1, C1, C3 e D1 — ver "Ciclo 2" acima e C3 abaixo. Destravados por eles: A4 (A2/A3 + B1 prontos), C4 (A1 + C3 prontos), C6 (após merge de C2), C7 (após C3; suave: C6 F2) e D2 push (D1 pronto; falta a chave jurídica).
+Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, além dos fill-ins (visitados recentemente, listas globais, reset de senha, higiene PascalCase). **Entregues e mesclados em `main` em 2026-07-18** (✓ no grafo): A1, A2, A3, B1, C1, C2, C3 e D1 — ver "Ciclo 2" e "Ciclo 2+" acima. C2 segue com produção bloqueada pelo lote jurídico (Onda 0: Consent keys `apoiador-cadastro` / `apoiador-intencao-voto` + aprovação). Destravados por eles: A4 (A2/A3 + B1 prontos), C4 (A1 + C3 prontos), C6 (merge de C2 ✓), C7 (após C3; suave: C6 F2) e D2 push (D1 pronto; falta a chave jurídica).
 
 ### Sequência de execução por janela do calendário
 
@@ -167,13 +172,13 @@ Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, C2 (enge
 
 **Janela 2 — 05/08 → 16/08 (pré-propaganda): base nominal + inteligência + agenda prontas para o arranque.**
 
-| Ordem | Item                                                                                                             | Plano                                            | Depende de                       | Paralelizável com |
-| ----- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------- | ----------------- |
-| 7     | C2 Cadastro nominal de apoiadores _(engenharia pronta 2026-07-18 — merge/deploy + Consent keys ainda pendentes)_ | [detalhes](plans/cadastro-nominal-apoiadores.md) | produção: lote jurídico (Onda 0) | A4, C3, C6, C7   |
-| 8     | C6 Escala e DRY pós-C2 (import em massa, KPI, shells compartilhados com núcleos)                                 | [detalhes](plans/escala-dry-pos-c2.md)           | C2 (merge)                       | A4, C3, C7       |
-| 9     | A4 Baseline no produto + insight Gap vs 2022                                                                     | [detalhes](plans/baseline-eleitoral-tse.md)      | A3 + B1 (suave: A2)              | C2, C3, C6, C7   |
-| 10    | C3 Eventos / agenda de mobilização (`actionPlan`) **(implementado 2026-07-18)**                                  | [detalhes](plans/eventos-agenda-mobilizacao.md)  | A1                               | C2, A4, C6, C7   |
-| 11    | C7 Escala e DRY pós-C3 (território/contato compostos, leituras por aba, RMW/índice)                              | [detalhes](plans/escala-dry-pos-c3.md)           | C3 (suave: C6 F2)                | A4, C6           |
+| Ordem | Item                                                                                                                            | Plano                                            | Depende de                       | Paralelizável com |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------- | ----------------- |
+| 7     | C2 Cadastro nominal de apoiadores _(engenharia pronta e mesclada em `main` 2026-07-18 — deploy + Consent keys ainda pendentes)_ | [detalhes](plans/cadastro-nominal-apoiadores.md) | produção: lote jurídico (Onda 0) | A4, C3, C6, C7    |
+| 8     | C6 Escala e DRY pós-C2 (import em massa, KPI, shells compartilhados com núcleos)                                                | [detalhes](plans/escala-dry-pos-c2.md)           | C2 (merge)                       | A4, C3, C7        |
+| 9     | A4 Baseline no produto + insight Gap vs 2022                                                                                    | [detalhes](plans/baseline-eleitoral-tse.md)      | A3 + B1 (suave: A2)              | C2, C3, C6, C7    |
+| 10    | C3 Eventos / agenda de mobilização (`actionPlan`) **(implementado e mesclado em `main` 2026-07-18)**                            | [detalhes](plans/eventos-agenda-mobilizacao.md)  | A1                               | C2, A4, C6, C7    |
+| 11    | C7 Escala e DRY pós-C3 (território/contato compostos, leituras por aba, RMW/índice)                                             | [detalhes](plans/escala-dry-pos-c3.md)           | C3 (suave: C6 F2)                | A4, C6            |
 
 **Janela 3 — 16/08 → set (campanha de rua): inteligência ampliada, visualização e engajamento.**
 

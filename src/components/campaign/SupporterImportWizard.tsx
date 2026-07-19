@@ -8,10 +8,7 @@ import { toast } from 'sonner'
 
 import {
   confirmSupporterImport,
-  isSupporterImportOkRow,
   previewSupporterImport,
-  type SupporterImportPreviewResult,
-  type SupporterImportPreviewRow,
 } from '@/app/(campaign)/campanha/actions/supporter'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
@@ -31,6 +28,11 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import { cn } from '@/lib/utils'
+import {
+  isSupporterImportOkRow,
+  type SupporterImportPreviewResult,
+  type SupporterImportPreviewRow,
+} from '@/utilities/supporterImport'
 import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
 
 const importStatusLabels: Record<SupporterImportPreviewRow['status'], string> = {

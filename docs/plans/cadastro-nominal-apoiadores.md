@@ -1,6 +1,6 @@
 # Cadastro nominal de apoiadores em massa
 
-Status: engenharia pronta (pendente merge/deploy + lote jurídico)
+Status: engenharia pronta e mesclada em `main` (pendente deploy + lote jurídico)
 Atualizado em: 2026-07-18
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
