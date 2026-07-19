@@ -14,7 +14,7 @@ export type SupporterImportOkRow = {
   intencao?: SupporterVoteIntention
 }
 
-export type SupporterImportBatch = {
+export type StagedSupporterImportBatch = {
   actorID: number
   expiresAt: number
   okRows: SupporterImportOkRow[]
@@ -27,7 +27,7 @@ const IMPORT_TOKEN_TTL_MS = 10 * 60 * 1000
 export const storeSupporterImportBatch = async (
   payload: Payload,
   batchId: string,
-  batch: SupporterImportBatch,
+  batch: StagedSupporterImportBatch,
   req?: PayloadTransactionRequest,
 ): Promise<void> => {
   await payload.create({
@@ -49,7 +49,7 @@ export const loadSupporterImportBatch = async (
   batchId: string,
   expectedActorID: number,
   req?: PayloadTransactionRequest,
-): Promise<SupporterImportBatch> => {
+): Promise<StagedSupporterImportBatch> => {
   const result = await payload.find({
     collection: BATCH_COLLECTION,
     where: { batchId: { equals: batchId } },
@@ -60,21 +60,15 @@ export const loadSupporterImportBatch = async (
     req,
   })
   const doc = result.docs[0] as
-    | { id: number; actor: unknown; expiresAt?: string; rows?: unknown }
+    | { id: number; actor: number; expiresAt: string; rows: unknown }
     | undefined
   if (!doc) throw new Error('Lote de importação não encontrado ou expirado.')
 
-  const actorID =
-    typeof doc.actor === 'number'
-      ? doc.actor
-      : typeof doc.actor === 'object' && doc.actor !== null && 'id' in doc.actor
-        ? (doc.actor as { id: number }).id
-        : null
-  if (actorID !== expectedActorID) {
+  if (doc.actor !== expectedActorID) {
     throw new Error('Lote de importação inválido.')
   }
 
-  const expiresAtMs = doc.expiresAt ? Date.parse(doc.expiresAt) : NaN
+  const expiresAtMs = Date.parse(doc.expiresAt)
   if (!Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now()) {
     throw new Error('Lote de importação expirado.')
   }
@@ -114,14 +108,6 @@ export const deleteSupporterImportBatch = async (
   })
 }
 
-const base64url = (buffer: Buffer): string =>
-  buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-
-const base64urlToBuffer = (value: string): Buffer => {
-  const padded = value.replace(/-/g, '+').replace(/_/g, '/')
-  return Buffer.from(padded, 'base64')
-}
-
 const getSecret = (): string => {
   const secret = process.env.PAYLOAD_SECRET
   if (!secret) throw new Error('PAYLOAD_SECRET não configurado para o token de importação.')
@@ -140,7 +126,7 @@ export type SignedImportToken = {
 export const issueSupporterImportToken = (actorID: number): SignedImportToken => {
   const batchId = randomUUID()
   const expiresAt = Date.now() + IMPORT_TOKEN_TTL_MS
-  const sig = base64url(signature(batchId, actorID, expiresAt))
+  const sig = signature(batchId, actorID, expiresAt).toString('base64url')
   return { token: `${batchId}.${expiresAt}.${sig}`, batchId, expiresAt }
 }
 
@@ -156,7 +142,7 @@ export const verifySupporterImportToken = (
     throw new Error('Token de importação expirado.')
   }
   const expected = signature(batchId, actorID, expiresAt)
-  const provided = base64urlToBuffer(sig)
+  const provided = Buffer.from(sig, 'base64url')
   if (expected.length !== provided.length || !timingSafeEqual(expected, provided)) {
     throw new Error('Token de importação inválido.')
   }

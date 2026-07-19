@@ -46,9 +46,7 @@ const resolveAccessConstraint = async (
     overrideAccess: true,
   })
 
-  const ids = result.docs
-    .map((doc) => (typeof doc.id === 'number' ? doc.id : Number(doc.id)))
-    .filter((id) => Number.isSafeInteger(id))
+  const ids = result.docs.map((doc) => doc.id)
 
   return { kind: 'nucleusSet', ids }
 }

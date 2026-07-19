@@ -29,6 +29,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import { cn } from '@/lib/utils'
 import {
+  isPreviewErrorRow,
   type SupporterImportPreviewResult,
   type SupporterImportPreviewRow,
 } from '@/utilities/supporterImport'
@@ -44,9 +45,6 @@ const importStatusLabels: Record<SupporterImportPreviewRow['status'], string> = 
 }
 
 const steps = ['Upload', 'Conferir prévia', 'Confirmação'] as const
-
-const isPreviewErrorRow = (row: SupporterImportPreviewRow): boolean =>
-  row.status !== 'ok' && row.status !== 'duplicado_pelo_telefone'
 
 const downloadErrorReport = (errorReportCsv: string) => {
   const blob = new Blob([errorReportCsv], { type: 'text/csv;charset=utf-8' })
@@ -196,7 +194,7 @@ export const SupporterImportWizard = () => {
               type="button"
               variant="outline"
               className="min-h-11"
-              onClick={() => preview && downloadErrorReport(preview.errorReportCsv)}
+              onClick={() => downloadErrorReport(preview.errorReportCsv)}
             >
               Baixar relatório de erros
             </Button>

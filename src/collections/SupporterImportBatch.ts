@@ -1,6 +1,6 @@
-import type { Access, CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 
-import { getFreshCampaignUser, isCampaignGeneral, isPayloadAdmin } from '@/utilities/campaignAccess'
+import { canManageCampaignUsers } from '@/utilities/campaignAccess'
 
 /**
  * Short-lived server-side staging for the supporter CSV import wizard (roadmap
@@ -10,16 +10,11 @@ import { getFreshCampaignUser, isCampaignGeneral, isPayloadAdmin } from '@/utili
  * Action boundary twice.
  *
  * The collection is hidden from the admin nav and restricted to `geral` /
- * Payload-admin; the import actions interact with it via the Local API with
- * `overrideAccess: true`. Rows hold transient supporter PII and must be
- * purged on consume or after `expiresAt` (lazy cleanup + sweep).
+ * Payload-admin (same policy as `campaignUser` management); the import actions
+ * interact with it via the Local API with `overrideAccess: true`. Rows hold
+ * transient supporter PII and must be purged on consume or after `expiresAt`
+ * (lazy cleanup + sweep).
  */
-const canAccessImportBatch: Access = async ({ req }) => {
-  if (isPayloadAdmin(req.user)) return true
-  const fresh = await getFreshCampaignUser(req)
-  return isCampaignGeneral(fresh)
-}
-
 export const SupporterImportBatch: CollectionConfig = {
   slug: 'supporterImportBatch',
   labels: {
@@ -33,10 +28,10 @@ export const SupporterImportBatch: CollectionConfig = {
     defaultColumns: ['batchId', 'actor', 'expiresAt'],
   },
   access: {
-    create: canAccessImportBatch,
-    read: canAccessImportBatch,
-    update: canAccessImportBatch,
-    delete: canAccessImportBatch,
+    create: canManageCampaignUsers,
+    read: canManageCampaignUsers,
+    update: canManageCampaignUsers,
+    delete: canManageCampaignUsers,
   },
   fields: [
     {

@@ -6,6 +6,7 @@ import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 import type { ConsentDescriptor } from '@/utilities/campaignConsent'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { getPostgresTransactionDatabase } from '@/utilities/postgresTransactionLocks'
+import { relationshipId } from '@/utilities/relationship'
 
 export type SupporterImportBulkRow = {
   telefone: string
@@ -45,7 +46,7 @@ const INSERT_CHUNK_SIZE = 500
 
 const chunk = <T>(rows: readonly T[], size: number): T[][] => {
   const out: T[][] = []
-  for (let i = 0; i < rows.length; i += size) out.push(rows.slice(i, i + size) as T[])
+  for (let i = 0; i < rows.length; i += size) out.push(rows.slice(i, i + size))
   return out
 }
 
@@ -187,30 +188,21 @@ export const bulkInsertSupporterImport = async (args: {
   }
 
   const contactIDs = [...new Set(contactIdByPhone.values())]
-  const existingSupporters =
-    contactIDs.length > 0
-      ? await payload.find({
-          collection: 'supporter',
-          where: {
-            and: [{ contact: { in: contactIDs } }, { nucleus: { exists: false } }],
-          },
-          depth: 0,
-          limit: contactIDs.length,
-          pagination: false,
-          select: { contact: true },
-          overrideAccess: true,
-          req,
-        })
-      : null
+  const existingSupporters = await payload.find({
+    collection: 'supporter',
+    where: {
+      and: [{ contact: { in: contactIDs } }, { nucleus: { exists: false } }],
+    },
+    depth: 0,
+    limit: contactIDs.length,
+    pagination: false,
+    select: { contact: true },
+    overrideAccess: true,
+    req,
+  })
   const supporterContactIDs = new Set(
-    (existingSupporters?.docs ?? [])
-      .map((doc) =>
-        typeof doc.contact === 'number'
-          ? doc.contact
-          : typeof doc.contact === 'object' && doc.contact !== null
-            ? doc.contact.id
-            : null,
-      )
+    existingSupporters.docs
+      .map((doc) => relationshipId(doc.contact))
       .filter((id): id is number => id !== null),
   )
 
@@ -236,7 +228,6 @@ export const bulkInsertSupporterImport = async (args: {
 
   let created = 0
   for (const batch of chunk(candidateEntries, INSERT_CHUNK_SIZE)) {
-    if (batch.length === 0) continue
     const result = await tx
       .insert(supporterTable)
       .values(
@@ -249,7 +240,9 @@ export const bulkInsertSupporterImport = async (args: {
         }),
       )
       .onConflictDoNothing()
-    created += Number(result.rowCount ?? batch.length)
+    // rowCount reflects inserted rows only (conflicts are skipped). Fall back to 0
+    // rather than batch.length so a null rowCount never silently over-counts.
+    created += Number(result.rowCount ?? 0)
   }
 
   return { created, skipped, errors }

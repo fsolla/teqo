@@ -22,7 +22,7 @@ const enforceUniqueContactPhone: CollectionBeforeChangeHook = async ({
   // honored inside an active transaction — without one the xact-level advisory
   // lock cannot be held, so we run the full check regardless of the caller's claim.
   if (req.context?.skipContactPhoneInvariant === true) {
-    if (req.transactionID === undefined || req.transactionID === null) {
+    if (req.transactionID == null) {
       throw new APIError(
         'skipContactPhoneInvariant exige uma transação ativa com os locks de telefone já adquiridos.',
         500,

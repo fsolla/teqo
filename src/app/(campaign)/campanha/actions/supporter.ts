@@ -32,6 +32,7 @@ import {
   verifySupporterImportToken,
 } from '@/utilities/supporterImportToken'
 import {
+  isPreviewErrorRow,
   isSupporterImportOkRow,
   type SupporterImportPreviewResult,
   type SupporterImportPreviewRow,
@@ -50,18 +51,6 @@ const MAX_IMPORT_ROWS = 5000
 /** On-screen preview is capped; the full ok set is staged server-side (Phase 5). */
 const SUPPORTER_IMPORT_SAMPLE_SIZE = 100
 
-const isPreviewErrorRow = (row: SupporterImportPreviewRow): boolean =>
-  row.status !== 'ok' && row.status !== 'duplicado_pelo_telefone'
-
-const importStatusCsvValue: Record<SupporterImportPreviewRow['status'], string> = {
-  ok: 'ok',
-  duplicado_pelo_telefone: 'duplicado_pelo_telefone',
-  telefone_invalido: 'telefone_invalido',
-  municipio_nao_reconhecido: 'municipio_nao_reconhecido',
-  nome_invalido: 'nome_invalido',
-  intencao_invalida: 'intencao_invalida',
-}
-
 const escapeCsvCell = (value: string): string => `"${value.replace(/"/g, '""')}"`
 
 const buildSupporterImportErrorReportCsv = (rows: SupporterImportPreviewRow[]): string => {
@@ -70,7 +59,7 @@ const buildSupporterImportErrorReportCsv = (rows: SupporterImportPreviewRow[]): 
     .filter(isPreviewErrorRow)
     .map(
       (row) =>
-        `${row.line},${escapeCsvCell(row.nome)},${escapeCsvCell(row.telefone)},${escapeCsvCell(row.municipio)},${escapeCsvCell(row.intencao)},${importStatusCsvValue[row.status]}`,
+        `${row.line},${escapeCsvCell(row.nome)},${escapeCsvCell(row.telefone)},${escapeCsvCell(row.municipio)},${escapeCsvCell(row.intencao)},${row.status}`,
     )
     .join('\n')
   return header + body
@@ -600,12 +589,7 @@ export const confirmSupporterImportRecord = async (
         payload,
         req,
         actorID: currentActor.id,
-        rows: batch.okRows.map((row) => ({
-          telefone: row.telefone,
-          nome: row.nome,
-          municipio: row.municipio,
-          intencao: row.intencao,
-        })),
+        rows: batch.okRows,
         registrationConsent,
         voteIntentionConsent,
         consentNote,

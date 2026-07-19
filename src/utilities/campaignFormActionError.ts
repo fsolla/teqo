@@ -30,10 +30,7 @@ export const mapCampaignFormActionError = <Values>(
   if (error instanceof ZodError) {
     return { fieldErrors: validationFieldErrors(error), values, revision }
   }
-  if (
-    error instanceof Error &&
-    safeMessages.includes(error.message as (typeof safeMessages)[number])
-  ) {
+  if (error instanceof Error && safeMessages.includes(error.message)) {
     return { message: error.message, values, revision }
   }
   return { message: genericMessage, values, revision }

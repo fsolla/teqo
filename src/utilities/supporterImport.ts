@@ -49,3 +49,6 @@ export type SupporterImportPreviewResult = {
 export const isSupporterImportOkRow = (
   row: SupporterImportPreviewRow,
 ): row is SupporterImportOkRow => row.status === 'ok'
+
+export const isPreviewErrorRow = (row: SupporterImportPreviewRow): boolean =>
+  row.status !== 'ok' && row.status !== 'duplicado_pelo_telefone'
