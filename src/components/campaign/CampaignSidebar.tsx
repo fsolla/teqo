@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/Sidebar'
 import type { CampaignUser } from '@/payload-types'
 import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
+import { clearRecentVisits } from '@/utilities/recentVisits'
 
 export type CampaignSidebarUser = {
   name: string
@@ -42,6 +43,7 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
 
   const handleLogout = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    clearRecentVisits()
     await clearCampaignPwaCaches()
     await logoutCampaign()
   }

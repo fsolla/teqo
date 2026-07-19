@@ -14,6 +14,8 @@ import { campaignNav, getCampaignNav, isCampaignNavActive } from '@/components/c
 import {
   buildNucleusListHref,
   buildNucleusListWhere,
+  buildNucleusListVisitHref,
+  buildNucleusListVisitLabel,
   getCampaignScopeLabel,
   parseNucleusListParams,
 } from '@/utilities/nucleusUi'
@@ -302,6 +304,40 @@ describe('campaign nucleus UI contracts', () => {
         3,
       ),
     ).toBe('/campanha/nucleos?q=Chapada&region=Chapada+Diamantina&page=3')
+  })
+
+  it('builds recent-visit labels only when list filters are active', () => {
+    expect(buildNucleusListVisitLabel({ page: 1 })).toBeNull()
+    expect(buildNucleusListVisitLabel({ page: 3 })).toBeNull()
+    expect(
+      buildNucleusListVisitLabel({
+        page: 1,
+        region: 'Chapada Diamantina',
+        city: 'Seabra',
+        coverage: 'sem_coordenador',
+      }),
+    ).toBe('Núcleos · Chapada Diamantina · Seabra · Sem coordenador')
+    expect(buildNucleusListVisitLabel({ page: 1, q: 'solla' })).toBe('Núcleos · Busca "solla"')
+
+    const label = buildNucleusListVisitLabel({
+      page: 1,
+      region: 'Recôncavo',
+      city: 'Cruz das Almas',
+      q: 'associação comunitária quilombola do recôncavo baiano',
+    })
+    expect(label).not.toBeNull()
+    expect(label!.length).toBeLessThanOrEqual(80)
+    expect(label!.endsWith('…')).toBe(true)
+  })
+
+  it('builds recent-visit href without page so filtered pages dedupe', () => {
+    expect(
+      buildNucleusListVisitHref({
+        page: 3,
+        region: 'Chapada Diamantina',
+        q: 'Chapada',
+      }),
+    ).toBe('/campanha/nucleos?q=Chapada&region=Chapada+Diamantina')
   })
 
   it('parses the progressive-enhancement create form into domain input', () => {

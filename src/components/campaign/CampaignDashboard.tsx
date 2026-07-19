@@ -10,6 +10,7 @@ import Link from 'next/link'
 
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { NucleusCard } from '@/components/campaign/NucleusCard'
+import { RecentlyVisited } from '@/components/campaign/RecentlyVisited'
 import { SupportStatusBadge } from '@/components/campaign/SupportStatusBadge'
 import { TseZoneBadge } from '@/components/campaign/TseZoneBadge'
 import { Badge } from '@/components/ui/Badge'
@@ -160,7 +161,7 @@ const UpcomingActionPlansCard = ({ plans }: { plans: ActionPlanUpcomingPreviewRe
   </Card>
 )
 
-const GeneralDashboard = ({ view }: { view: GeneralDashboardViewModel }) => (
+const GeneralDashboard = ({ view, now }: { view: GeneralDashboardViewModel; now: Date }) => (
   <div className="mr-auto flex w-full max-w-screen-2xl flex-col gap-6">
     <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex flex-col gap-2">
@@ -177,6 +178,8 @@ const GeneralDashboard = ({ view }: { view: GeneralDashboardViewModel }) => (
         </Link>
       </Button>
     </header>
+
+    <RecentlyVisited now={now} />
 
     <section aria-labelledby="campaign-kpis">
       <h2 id="campaign-kpis" className="sr-only">
@@ -263,6 +266,8 @@ const CoordinatorDashboard = ({
       <p className="text-muted-foreground">O que precisa de atenção nos seus núcleos?</p>
     </header>
 
+    <RecentlyVisited now={now} />
+
     <UpcomingActionPlansCard plans={view.upcomingActionPlans} />
 
     {view.cards.length ? (
@@ -313,8 +318,10 @@ const CoordinatorDashboard = ({
 
 const LeadershipDashboard = ({
   view,
+  now,
 }: {
   view: Extract<ScopedDashboardViewModel, { role: 'lideranca' }>
+  now: Date
 }) => (
   <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
     <header className="flex flex-col gap-2">
@@ -324,6 +331,8 @@ const LeadershipDashboard = ({
         Envie seu reporte e acompanhe a estimativa confirmada.
       </p>
     </header>
+
+    <RecentlyVisited now={now} />
 
     <UpcomingActionPlansCard plans={view.upcomingActionPlans} />
 
@@ -413,7 +422,7 @@ export const CampaignDashboard = ({
   view: GeneralDashboardViewModel | ScopedDashboardViewModel
   now: Date
 }) => {
-  if (view.role === 'geral') return <GeneralDashboard view={view} />
+  if (view.role === 'geral') return <GeneralDashboard view={view} now={now} />
   if (view.role === 'coordenador') return <CoordinatorDashboard view={view} now={now} />
-  return <LeadershipDashboard view={view} />
+  return <LeadershipDashboard view={view} now={now} />
 }

@@ -14,6 +14,8 @@ import { territoryForCity } from '@/lib/bahiaTerritories'
 import { cn } from '@/lib/utils'
 import {
   buildNucleusListSearchParams,
+  nucleusListCoverageLabels,
+  nucleusListEstimateLabels,
   type NucleusListState,
 } from '@/utilities/nucleusUi'
 import {
@@ -108,8 +110,12 @@ const FilterFields = ({
         className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
       >
         <NativeSelectOption value="">Todas</NativeSelectOption>
-        <NativeSelectOption value="com_coordenador">Com coordenador</NativeSelectOption>
-        <NativeSelectOption value="sem_coordenador">Sem coordenador</NativeSelectOption>
+        <NativeSelectOption value="com_coordenador">
+          {nucleusListCoverageLabels.com_coordenador}
+        </NativeSelectOption>
+        <NativeSelectOption value="sem_coordenador">
+          {nucleusListCoverageLabels.sem_coordenador}
+        </NativeSelectOption>
       </NativeSelect>
     </Field>
     <Field>
@@ -122,8 +128,12 @@ const FilterFields = ({
         className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
       >
         <NativeSelectOption value="">Todas</NativeSelectOption>
-        <NativeSelectOption value="confirmada">Confirmada</NativeSelectOption>
-        <NativeSelectOption value="sem_confirmacao">Sem confirmação</NativeSelectOption>
+        <NativeSelectOption value="confirmada">
+          {nucleusListEstimateLabels.confirmada}
+        </NativeSelectOption>
+        <NativeSelectOption value="sem_confirmacao">
+          {nucleusListEstimateLabels.sem_confirmacao}
+        </NativeSelectOption>
       </NativeSelect>
     </Field>
   </form>

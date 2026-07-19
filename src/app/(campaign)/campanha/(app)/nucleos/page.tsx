@@ -10,6 +10,7 @@ import { CampaignListPagination } from '@/components/campaign/CampaignListPagina
 import { NucleusFilters } from '@/components/campaign/NucleusFilters'
 import { NucleusList } from '@/components/campaign/NucleusList'
 import { NucleusListOverview } from '@/components/campaign/NucleusListOverview'
+import { RecentVisitTracker } from '@/components/campaign/RecentVisitTracker'
 import { Button } from '@/components/ui/button'
 import {
   Empty,
@@ -25,6 +26,8 @@ import { loadNucleusListPageData } from '@/utilities/nucleusPageData'
 import {
   buildNucleusFiltersKey,
   buildNucleusListHref,
+  buildNucleusListVisitHref,
+  buildNucleusListVisitLabel,
   getCampaignScopeLabel,
   resolveNucleusListUrl,
 } from '@/utilities/nucleusUi'
@@ -52,6 +55,7 @@ export default async function NucleiPage({ searchParams }: NucleiPageProps) {
 
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
+  const listVisitLabel = buildNucleusListVisitLabel(state)
 
   return (
     <div className="mr-auto flex w-full max-w-screen-2xl flex-col gap-6">
@@ -115,6 +119,15 @@ export default async function NucleiPage({ searchParams }: NucleiPageProps) {
           </EmptyContent>
         </Empty>
       )}
+      {listVisitLabel ? (
+        <RecentVisitTracker
+          entry={{
+            href: buildNucleusListVisitHref(state),
+            label: listVisitLabel,
+            kind: 'nucleusList',
+          }}
+        />
+      ) : null}
     </div>
   )
 }
