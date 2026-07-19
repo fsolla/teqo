@@ -44,7 +44,9 @@
     "test:all": "pnpm run test && pnpm run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server --import=tsx/esm\" playwright test --config=playwright.config.ts",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
-    "test:unit": "cross-env NODE_OPTIONS=--no-deprecation DATABASE_URL=postgresql://invalid:invalid@127.0.0.1:1/unit_tests_must_not_connect vitest run --config ./vitest.unit.config.mts"
+    "test:unit": "cross-env NODE_OPTIONS=--no-deprecation DATABASE_URL=postgresql://invalid:invalid@127.0.0.1:1/unit_tests_must_not_connect vitest run --config ./vitest.unit.config.mts",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -107,6 +109,7 @@
     "eslint-config-next": "15.4.11",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-check-file": "^3.3.1",
+    "husky": "^9.1.7",
     "jsdom": "28.0.0",
     "postcss": "^8.5.6",
     "prettier": "^3.4.2",

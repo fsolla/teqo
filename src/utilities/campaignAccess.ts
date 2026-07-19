@@ -90,7 +90,8 @@ const canSelfOrStaffUpdateCampaignUser = async (
 export const canUpdateCampaignUser: Access = async ({ req, id }) =>
   canSelfOrStaffUpdateCampaignUser(req, id)
 
-export const canUpdateCampaignUserAvatar: FieldAccess = (args) => canUpdateCampaignUser(args)
+export const canUpdateCampaignUserAvatar: FieldAccess = async ({ req, id }) =>
+  canSelfOrStaffUpdateCampaignUser(req, id)
 
 export const canCreateElectoralNucleus: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
@@ -520,8 +521,7 @@ export const canReadCampaignUserPhone: FieldAccess = async ({ doc, id, req }) =>
   const cacheKey = `${CAMPAIGN_USER_PHONE_ACCESS_CONTEXT_KEY}:${currentUser.id}:${targetUserID}`
   if (typeof context[cacheKey] === 'boolean') return context[cacheKey]
 
-  let targetRole =
-    typeof doc === 'object' && doc !== null && 'role' in doc ? doc.role : undefined
+  let targetRole = typeof doc === 'object' && doc !== null && 'role' in doc ? doc.role : undefined
   if (targetRole === undefined) {
     try {
       const target = await req.payload.findByID({

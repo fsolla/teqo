@@ -7,14 +7,22 @@ import {
   ONDA0_PROVISIONAL_BANNER,
 } from '@/lib/onda0ConsentTexts'
 
+const firstParagraphText = (body: { root: { children: unknown[] } }): string | undefined => {
+  const paragraph = body.root.children[0]
+  if (!paragraph || typeof paragraph !== 'object' || !('children' in paragraph)) return undefined
+  const children = paragraph.children
+  if (!Array.isArray(children)) return undefined
+  const textNode = children[0]
+  if (!textNode || typeof textNode !== 'object' || !('text' in textNode)) return undefined
+  return typeof textNode.text === 'string' ? textNode.text : undefined
+}
+
 describe('onda0ConsentTexts', () => {
   it('includes the provisional banner in every consent and privacy body', () => {
     for (const { text } of ONDA0_CONSENT_ENTRIES) {
-      expect(text.root.children[0]?.children[0]).toMatchObject({ text: ONDA0_PROVISIONAL_BANNER })
+      expect(firstParagraphText(text)).toBe(ONDA0_PROVISIONAL_BANNER)
     }
-    expect(ONDA0_PRIVACY_POLICY_BODY.root.children[0]?.children[0]).toMatchObject({
-      text: ONDA0_PROVISIONAL_BANNER,
-    })
+    expect(firstParagraphText(ONDA0_PRIVACY_POLICY_BODY)).toBe(ONDA0_PROVISIONAL_BANNER)
   })
 
   it('defines all four stable keys', () => {

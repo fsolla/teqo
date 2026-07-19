@@ -1,11 +1,13 @@
 ---
 name: implement-roadmap-item
-description: Recebe o código (ex. A4, C2, D2) ou a descrição de um item do docs/roadmap.md do Teqo, revisa o estado do item no roadmap, analisa-o criticamente contra o estado atual do repositório, revisa o plano detalhado linkado em docs/plans/ e produz um plano de implementação acionável. Usar quando o usuário pedir para implementar, planejar ou revisar um item do roadmap — "vamos fazer o A4", "planeja a implementação de", "revisa o plano do item X", "o que falta para o C2" — ou fornecer um ID de trilha do roadmap.
+description: Recebe o código (ex. A4, C2, D2) ou a descrição de um item do docs/roadmap.md do Teqo, revisa o estado do item no roadmap, analisa-o criticamente contra o estado atual do repositório, revisa o plano detalhado linkado em docs/plans/, produz um plano de implementação acionável e — quando o usuário pede para implementar — executa o desenvolvimento com /impeccable nas superfícies de UI. Usar quando o usuário pedir para implementar, planejar ou revisar um item do roadmap — "vamos fazer o A4", "planeja a implementação de", "revisa o plano do item X", "o que falta para o C2", "implementa o C5" — ou fornecer um ID de trilha do roadmap.
 ---
 
 # Revisar item do roadmap e criar plano de implementação
 
-Esta skill transforma um item do `docs/roadmap.md` em um plano de implementação confiável. O ponto central: **o plano em `docs/plans/` foi escrito no passado e o repositório andou desde então** — a skill existe para auditar o plano contra o código real antes de qualquer implementação, não para reescrevê-lo cegamente nem para segui-lo cegamente.
+Esta skill transforma um item do `docs/roadmap.md` em um plano de implementação confiável e, quando autorizado, em entrega. O ponto central: **o plano em `docs/plans/` foi escrito no passado e o repositório andou desde então** — a skill existe para auditar o plano contra o código real antes de qualquer implementação, não para reescrevê-lo cegamente nem para segui-lo cegamente.
+
+Superfícies de UI deste item passam pelo fluxo **`/impeccable`** (skill anexada ou em `~/.claude/skills/impeccable`): shape → craft → critique → polish, alinhado a `PRODUCT.md` / `DESIGN.md` e aos design-refs do roadmap. Itens só de schema/server/utilitário **não** inventam UI via Impeccable — veja Passo 8.
 
 ## Checklist do fluxo
 
@@ -15,9 +17,20 @@ Esta skill transforma um item do `docs/roadmap.md` em um plano de implementaçã
 - [ ] 3. Ler o plano detalhado linkado + fontes satélites
 - [ ] 4. Auditar o plano contra o repositório, afirmação por afirmação
 - [ ] 5. Fechar as questões em aberto com evidência ou recomendação
-- [ ] 6. Escrever o plano de implementação em fases verificáveis
+- [ ] 6. Escrever o plano de implementação em fases verificáveis (incl. fases Impeccable se houver UI)
 - [ ] 7. Atualizar docs/plans/ e roadmap se a auditoria achou divergência
+- [ ] 8. Classificar superfície UI e preparar gate Impeccable
+- [ ] 9. Parar e obter confirmação do plano (a menos que o usuário já tenha pedido implementação explícita)
+- [ ] 10. Executar fases: schema/server → UI via /impeccable → verificação AGENTS.md + Aikido
 ```
+
+**Escopo por pedido do usuário:**
+
+| Pedido típico                      | Até onde ir                                   |
+| ---------------------------------- | --------------------------------------------- |
+| "revisa / planeja o item X"        | Passos 1–8 + resumo; **não** implementa       |
+| "vamos fazer / implementa o X"     | Passos 1–10 (confirmação compacta no Passo 9) |
+| "continua / segue a implementação" | Retoma no Passo 10 a partir da fase pendente  |
 
 ## Passo 1 — Localizar o item e capturar seu estado
 
@@ -61,8 +74,9 @@ Leia, nesta ordem:
 1. **`docs/plans/<slug>.md`** linkado no item — inteiro. Anote a data de "Atualizado em" e o "Status": a distância entre essa data e o presente calibra o quanto desconfiar no Passo 4.
 2. **`.cursor/rules/projects/nucleos-eleitorais.mdc`** (ou o notebook do projeto correspondente) — decisões e status posteriores ao plano costumam estar aqui.
 3. **Design ref** (se a tabela do roadmap apontar uma): o `.html`/`.png` em `docs/design-refs/latest/`. A estrutura/UX vale; a paleta NÃO — usar tokens do tema `data-theme='campaign'` (`src/app/(frontend)/styles.css`) e componentes shadcn de `src/components/ui`.
-4. **AGENTS.md** — seções relevantes ao domínio do item (Campaign auth, Posts & Tags, migrations, convenções de naming).
-5. **Planos vizinhos** citados nas seções "Dependências" e "Não escopo" — para saber onde o escopo deste item termina e o dos outros começa.
+4. **`PRODUCT.md` + `DESIGN.md`** (raiz do repo) — registro (`product`/`brand`), princípios e tokens já commitados. São âncoras do `/impeccable`; leia-os antes de qualquer fase de UI.
+5. **AGENTS.md** — seções relevantes ao domínio do item (Campaign auth, Posts & Tags, migrations, convenções de naming).
+6. **Planos vizinhos** citados nas seções "Dependências" e "Não escopo" — para saber onde o escopo deste item termina e o dos outros começa.
 
 Item sem plano detalhado (ex.: só design, como C5; ou fill-in "sem plano detalhado ainda"): primeiro crie o plano seguindo a skill `roadmap-item` (template em `.cursor/skills/roadmap-item/plan-template.md`), depois continue esta skill a partir do Passo 4.
 
@@ -97,6 +111,7 @@ O deliverable é um plano de execução em **fases pequenas e verificáveis**, e
 - **O que muda**: arquivos concretos (caminho real, criar vs editar), com uma linha do porquê.
 - **Migration** (se houver mudança de schema): nome proposto para `pnpm migrate:create <nome>`, o que adiciona, se tem backfill. Seguir a skill `payload-migrations`; `push` é `false` sempre.
 - **Como verificar a fase**: teste, tela, ou query específica — fase sem critério de verificação não é fase.
+- **Fase de UI**: marque explicitamente `Impeccable: shape|craft|critique|polish` (ver Passo 8). Não misture schema e layout na mesma fase.
 
 Guardrails que TODO plano de implementação deste repo inclui (cheque um a um contra o item):
 
@@ -107,7 +122,7 @@ Guardrails que TODO plano de implementação deste repo inclui (cheque um a um c
 - Identificadores em inglês; strings visíveis em pt-BR; valores de slug/enum em português são dados, não se traduzem.
 - Verificação final = checklist do AGENTS.md: `pnpm generate:types`, `generate:importmap` (se componentes), `tsc --noEmit`, `lint`, `test`, `test:e2e`, `build` contra o banco local, scan Aikido dos arquivos editados.
 
-Termine o plano com: dependências assumidas (e o que foi verificado no Passo 2), decisões assumidas _(validar com produto)_, e o que fica explicitamente de fora (com o plano/item para onde vai).
+Termine o plano com: dependências assumidas (e o que foi verificado no Passo 2), decisões assumidas _(validar com produto)_, classificação Impeccable do Passo 8, e o que fica explicitamente de fora (com o plano/item para onde vai).
 
 ## Passo 7 — Atualizar a documentação se houve divergência
 
@@ -117,6 +132,68 @@ Se o Passo 4 achou itens **defasados** ou **conflitantes**:
 - Se a divergência tocar dependências/janela/escopo do item, atualize também o `docs/roadmap.md` nos pontos de consistência (grafo, tabela de janela, "Atualizado em") — a consistência tripla tabela = grafo = seção "Dependências" do plano é obrigatória (ver Passo 6–7 da skill `roadmap-item`).
 - Divergência pequena e puramente factual (caminho renomeado): corrija direto. Divergência de decisão de produto: corrija adotando a fonte mais recente e destaque a mudança no resumo ao usuário.
 
+## Passo 8 — Classificar superfície UI e gate Impeccable
+
+Antes de implementar (e já no plano do Passo 6), classifique o item:
+
+| Classe                       | Critério                                                                 | Impeccable?                                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| **A — Só backend**           | Migration, seed, utility, access, aggregate SQL; zero rota/componente UI | Não — pule Passo 10b                                                                                 |
+| **B — UI encaixada**         | Edita tela/componente existente sob o tema `campaign` / site público     | Sim — craft compacto + critique/polish no alvo                                                       |
+| **C — UI nova / ambígua**    | Rota nova, fluxo multi-tela, ou sem design-ref claro                     | Sim — shape obrigatório, depois craft                                                                |
+| **D — Design-ref já existe** | Par em `docs/design-refs/latest/` (tabela do roadmap)                    | Sim — shape **compacto** (estrutura do ref + tokens `campaign`); não redesenhar a paleta do HTML/PNG |
+
+**Regras Teqo (não negociáveis no fluxo Impeccable):**
+
+1. Carregue a skill `/impeccable` (Setup: `context.mjs` com `--target` na rota/componente concreto; register `product` → `reference/product.md` para `/campanha` e ferramentas; `reference/brand.md` só se o item for superfície de marketing do site público).
+2. **Paleta:** tokens `data-theme='campaign'` / site existente. A paleta do UX Pilot (vermelho escuro / navy / dourado) é **anti-referência de cor** — só UX/estrutura do `.html`/`.png`.
+3. **Componentes:** reusar `src/components/ui` (shadcn) e `src/components/campaign/*`; não introduzir segundo design system.
+4. **Gates do craft:** se shape for obrigatório (classe C, ou B/D sem brief confirmado), apresente o brief e **pare** até o usuário confirmar — não comprima shape → código numa única resposta.
+5. **Pós-UI:** após a fase de UI funcional, rode `/impeccable critique <alvo>` (path sob `src/app/(campaign)/...` ou frontend). Trate P0/P1 como bloqueadores de merge; depois `/impeccable polish <alvo>` no mesmo escopo. Snapshot em `.impeccable/critique/` é artefato útil — não substitua o checklist AGENTS.md.
+6. **Itens classe A:** declare no resumo "Impeccable: N/A (sem superfície UI)" e siga só engenharia + Aikido.
+
+No plano de implementação, cada fase de UI deve citar o comando Impeccable e o **alvo** (path ou rota), por exemplo:
+
+```text
+Fase 3 — UI lista GOTV
+  Impeccable: shape (compacto; ref Dia-D-GOTV) → craft → critique → polish
+  Alvo: src/app/(campaign)/campanha/(app)/apoiadores/...
+```
+
+## Passo 9 — Confirmação antes de implementar
+
+Se o pedido foi só planejamento/revisão → entregue o resumo final (abaixo) e **pare**.
+
+Se o pedido foi implementar ("vamos fazer", "implementa", "entrega o X"):
+
+- Apresente o plano em fases + classificação Impeccable (A/B/C/D) em forma compacta.
+- Peça confirmação **uma vez** (ou "segue" implícito se o usuário já listou as fases a executar). Não reabra o Passo 5 inteiro.
+- Só então avance ao Passo 10.
+
+## Passo 10 — Executar a implementação
+
+Ordem fixa. Não pule a verificação final.
+
+### 10a — Schema e server (sem Impeccable)
+
+Execute as fases de migration, collections, utilities, server actions e testes de domínio. Siga `payload-migrations` quando houver schema. Commits só se o usuário pedir.
+
+### 10b — UI via `/impeccable` (classes B/C/D)
+
+1. **Setup Impeccable** (obrigatório no início da primeira fase de UI desta sessão): rode o `context.mjs` da skill impeccable com `--target <path da superfície>`; leia `PRODUCT.md` / `DESIGN.md` se o script os imprimir; leia o register reference (`product` ou `brand`).
+2. **Shape** (obrigatório em C; compacto em D; em B só se a direção visual ainda for ambígua): siga `reference/shape.md`. Design-ref do roadmap + princípios do PRODUCT.md respondem a maior parte — não repita entrevista longa. Pare para confirmação do brief.
+3. **Craft**: siga `reference/craft.md` — implementar no código real do Next.js/Payload, não num sandbox paralelo. Respeite o pipeline do repo (`pnpm` scripts). Anuncie se o harness não tem geração nativa de imagem e siga com o brief + design-ref.
+4. **Critique** no alvo entregue: `reference/critique.md`. Persista snapshot; feche P0/P1 antes de declarar a fase de UI pronta.
+5. **Polish**: `reference/polish.md` alinhado ao design system existente (`DESIGN.md`, tokens `campaign`, padrões de lista/detalhe/form já no `/campanha`).
+
+Se o item misturar backend + UI, intercale: complete o mínimo de server necessário para a tela funcionar, craft a UI, volte a server se o critique revelar gap de dados — não adie o Impeccable para "no final depois de tudo".
+
+### 10c — Verificação de engenharia
+
+Checklist AGENTS.md completo contra banco **local**; scan Aikido nos arquivos first-party editados (skills `xometry-aikido-scan` / `aikido-scan`). Atualize `docs/plans/<slug>.md` / roadmap se o item passou a "entregue" **somente quando o usuário pedir** o fechamento de status (ou quando o pedido original era entregar o item end-to-end e a verificação passou).
+
 ## Resumo final ao usuário
 
-Feche reportando, nesta ordem: (1) item e estado no roadmap (janela, dependências, bloqueios); (2) veredito da auditoria — o que confirmou, o que estava defasado, o que conflitava; (3) o plano de implementação em fases; (4) decisões assumidas que merecem validação de produto.
+**Após planejamento (Passos 1–8):** (1) item e estado no roadmap (janela, dependências, bloqueios); (2) veredito da auditoria — o que confirmou, o que estava defasado, o que conflitava; (3) o plano de implementação em fases, com fases Impeccable marcadas; (4) classificação A/B/C/D e decisões assumidas que merecem validação de produto.
+
+**Após implementação (Passo 10):** o que entrou em cada fase, resultado do critique/polish (score/P0–P1 se houver), checklist AGENTS.md + Aikido, e o que ficou de fora.
