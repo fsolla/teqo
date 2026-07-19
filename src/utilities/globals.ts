@@ -19,16 +19,20 @@ export async function getGlobal<Slug extends Global>(slug: Slug, depth?: number)
 
 const getTag = (slug: string) => `global_${slug}`
 
-const cachedGlobalFactories = new Map<string, ReturnType<typeof unstable_cache>>()
+type CachedGlobalFactory<Slug extends Global = Global> = () => Promise<Config['globals'][Slug]>
+
+const cachedGlobalFactories = new Map<string, CachedGlobalFactory>()
 
 export const getCachedGlobal = <Slug extends Global>(slug: Slug, depth?: number) => {
   const tag = getTag(slug)
   const cacheKey = `${tag}:${depth ?? 0}`
-  let factory = cachedGlobalFactories.get(cacheKey)
-  if (!factory) {
-    factory = unstable_cache(async () => getGlobal(slug, depth), [cacheKey], { tags: [tag] })
-    cachedGlobalFactories.set(cacheKey, factory)
-  }
+  const existing = cachedGlobalFactories.get(cacheKey) as CachedGlobalFactory<Slug> | undefined
+  if (existing) return existing
+
+  const factory = unstable_cache(async () => getGlobal(slug, depth), [cacheKey], {
+    tags: [tag],
+  }) as CachedGlobalFactory<Slug>
+  cachedGlobalFactories.set(cacheKey, factory as CachedGlobalFactory)
   return factory
 }
 

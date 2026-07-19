@@ -52,12 +52,14 @@ const nucleusOptionsSelect = {
   slug: true,
 } as const
 
+type NucleusOptionDoc = Pick<ElectoralNucleus, 'id' | 'name' | 'slug'>
+
 export const loadAccessibleNucleusOptions = async (
   payload: Pick<Payload, 'find'>,
   user: CampaignUser,
   coordinatorNucleusIds?: number[],
 ): Promise<SupporterNucleusOption[]> => {
-  let result: { docs: ElectoralNucleus[] }
+  let result: { docs: NucleusOptionDoc[] }
 
   if (user.role === 'coordenador' && coordinatorNucleusIds !== undefined) {
     if (coordinatorNucleusIds.length === 0) return []
@@ -86,10 +88,11 @@ export const loadAccessibleNucleusOptions = async (
     })
   }
 
-  return result.docs.map((nucleus) => {
-    const doc = nucleus as ElectoralNucleus
-    return { id: doc.id, name: doc.name, slug: doc.slug }
-  })
+  return result.docs.map((nucleus) => ({
+    id: nucleus.id,
+    name: nucleus.name,
+    slug: nucleus.slug,
+  }))
 }
 
 export const loadSupporterListPageData = async (
