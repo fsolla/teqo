@@ -25,7 +25,7 @@ Responsável: —
 
 ## Questões em aberto
 
-- **Taxonomia de alinhamento político**: como classificar partidos/coligações em tiers (aliado / aliado histórico / neutro / adversário) relativos à chapa PT/Solla. Recomendação: mapeamento estático versionado em `src/lib/electionAlliances.ts` (partido→tier), derivado das federações/coligações oficiais de 2022 (FE Brasil da Esperança, Pela Bahia Pelo Brasil) e revalidado para 2026. Decisão de produto por tiers.
+- **Taxonomia de alinhamento político**: como classificar partidos/coligações em tiers (aliado / aliado histórico / neutro / adversário) relativos à chapa PT/Solla. Recomendação: mapeamento estático versionado em `src/lib/electionAlliances.ts` (partido→tier), derivado das federações/coligações oficiais de 2022 (FE Brasil da Esperança, Pela Bahia Pelo Brasil) e revalidado para 2026. Preferir **estender** o espectro `esquerda|direita|centro` de `electionPartySpectrum.ts` (Fase 2 de [insight-alavancagem-chapa.md](insight-alavancagem-chapa.md)) em vez de um segundo mapa de partidos. Decisão de produto por tiers.
 - **Fórmula do score**: como combinar alinhamento (ordinal) com força eleitoral (votos). Recomendação: score = `wAlign * tierWeight + wVotes * normalizedVotes`, com pesos `wAlign`/`wVotes` a definir com produto.
 - Considerar só candidatos do mesmo cargo (dep. federal + estadual) ou também majoritários? Recomendação: só proporcionais (federal/estadual) para dobradinha com Solla.
 - `lideranca` vê? Recomendação: sim, mas sem expor o tier de adversário (mostrar só aliados/neutros).
