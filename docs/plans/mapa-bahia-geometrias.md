@@ -2,7 +2,7 @@
 
 Status: Fase 1 entregue (B2); Fase 2 (B3 Leaflet) pendente
 Atualizado em: 2026-07-18
-Item do roadmap: [docs/roadmap.md](../roadmap.md) — B2 (Fase 1) / B3 (Fase 2) / B4 (camada de zonas)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) — B2 (Fase 1) / B3 (Fase 2) / B4 (camada de zonas); lazy load e DRY de scripts → [B5](escala-dry-pos-b2.md)
 Responsável: —
 
 ## Contexto
@@ -58,6 +58,7 @@ Hierarquia TSE: município → (1+) zona → (muitas) seção; a relação munic
 ## Leaflet na campanha (B3 — pendente)
 
 - Dependência: `leaflet` (+ `topojson-client` já instalado na Fase 1). `react-leaflet` é opcional; preferir wrapper cliente fino com `leaflet` direto e `dynamic(() => import(...), { ssr: false })` para evitar SSR.
+- **Lazy load (B5 F1):** não importar `bahiaGeometries` de forma eager no path default de `/campanha`. Preferir split município/TI + `import()` dinâmico no mount do mapa — ver [escala-dry-pos-b2.md](escala-dry-pos-b2.md). Se B3 aplicar isso no mesmo PR, fecha B5 Fase 1.
 - **Base tiles:** OpenStreetMap raster (ou CartoDB Positron) com atribuição obrigatória; ou fundo neutro sem tiles (só coroplético) como opção mais leve. Decidir na implementação; default OSM.
 - **Componentes novos (todos `src/components/campaign/`, PascalCase):**
   - `BahiaMap.tsx` — cliente, recebe `geometry` (TopoJSON) + `values: Record<string, number>` (chave→métrica) + `mode: 'municipality' | 'territory'` + `colorScale`; renderiza coroplético Leaflet.
@@ -69,9 +70,9 @@ Hierarquia TSE: município → (1+) zona → (muitas) seção; a relação munic
 ## Phasing
 
 - **Fase 1 — Fundação de geometrias (B2) ✓ entregue 2026-07-18:** `bahiaMunicipalityCodes.ts` + fixture + teste; `*.topo.json` de municípios e territórios; script `pnpm build:geometries`; helpers em `bahiaGeometries.ts`.
-- **Fase 2 — Leaflet nas superfícies (B3):** `BahiaMap` + `NucleusOverviewMap` + `NucleusDetailMap` + `DashboardMap`, com agregados existentes.
+- **Fase 2 — Leaflet nas superfícies (B3):** `BahiaMap` + `NucleusOverviewMap` + `NucleusDetailMap` + `DashboardMap`, com agregados existentes. Preferir fechar [B5 F1](escala-dry-pos-b2.md) (lazy geometrias) no mesmo PR.
 
-**Sequenciamento:** a Fase 1 é independente e paralelizável. A Fase 2 rende mais depois de B1 ✓ (overview) e ganha valor com A4 (baseline no produto). Nenhum dos dois bloqueia B3 — o mapa funciona só com estimativa/nº de núcleos.
+**Sequenciamento:** a Fase 1 é independente e paralelizável. A Fase 2 rende mais depois de B1 ✓ (overview) e ganha valor com A4 (baseline no produto). Nenhum dos dois bloqueia B3 — o mapa funciona só com estimativa/nº de núcleos. B5 F1 é dependência suave de qualidade de bundle.
 
 ## Ciclo seguinte — Zonas TSE como camada (B4)
 
@@ -93,10 +94,12 @@ Após A2 ✓ + B3. Polígono por dissolução dos municípios membros (abordagem
 
 - Reusa `bahiaIdentityTerritoryRecords`/`bahiaMunicipalities` (`src/lib/bahiaTerritories.ts`), `canonicalizeMunicipalityName` (`src/lib/electionResults.ts`), `CitiesByState.BA` (`src/lib/cities`), `campaignDashboardPageData` / `nucleusViewModels` / `nucleusListOverviewPageData` (agregados para B3), e o padrão de fixture/teste de `bahiaTerritories`.
 - **Camada de Zonas (B4)** depende de A2 (`docs/plans/zonas-por-municipio.md`) + B3.
+- **Lazy load / DRY CLI (B5):** débitos do `/simplify` pós-B2 — [escala-dry-pos-b2.md](escala-dry-pos-b2.md). F1 preferencialmente com B3; F2 (`ensureCachedDownload`) independente.
 
 ## Revisões
 
 - **2026-07-18 (auditoria pré-B2 + entrega Fase 1):** territórios por dissolução IBGE (não shapefile IDE Bahia); extensão `*.topo.json`; reuso de `canonicalizeMunicipalityName`; núcleo usa `cities[]` (A1); script sem guard de banco; referências de linha do roadmap antigas removidas; Fase 1 implementada e marcada entregue.
+- **2026-07-18 (B5 registrado):** follow-ups do `/simplify` que não entraram no cleanup (lazy geometrias + cache CLI compartilhado) viraram item B5; B3 deve preferir F1.
 
 ## Referências
 
