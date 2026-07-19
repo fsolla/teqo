@@ -6,7 +6,7 @@ import type { Payload } from 'payload'
 import type { CampaignUser } from '@/payload-types'
 import { getCoordinatorNucleusIds, isCampaignGeneral } from '@/utilities/campaignAccess'
 import { drizzleResultRows } from '@/utilities/drizzleBulk'
-import { toAggregateSqlConditions } from '@/utilities/supporterListFilters'
+import { toAggregateSqlConditions } from '@/utilities/supporterListSqlFilters'
 import type { SupporterListState } from '@/utilities/supporterUi'
 import type { SupporterListOverviewViewModel } from '@/utilities/supporterViewModels'
 
