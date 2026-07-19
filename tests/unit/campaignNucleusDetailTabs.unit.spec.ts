@@ -9,6 +9,7 @@ const loaders = vi.hoisted(() => ({
   getNucleusPrimaryContactPageData: vi.fn(),
   getNucleusUpdatesPreviewData: vi.fn(),
   getNucleusUpdatesPageData: vi.fn(),
+  getNucleusElectoralBaseline: vi.fn(),
 }))
 
 vi.mock('@/utilities/campaignInvitePageData', () => ({
@@ -24,6 +25,10 @@ vi.mock('@/utilities/primaryContactPageData', () => ({
 vi.mock('@/utilities/nucleusUpdatePageData', () => ({
   getNucleusUpdatesPreviewData: loaders.getNucleusUpdatesPreviewData,
   getNucleusUpdatesPageData: loaders.getNucleusUpdatesPageData,
+}))
+vi.mock('@/utilities/nucleusElectoralBaseline', () => ({
+  getNucleusElectoralBaseline: loaders.getNucleusElectoralBaseline,
+  toNucleusElectionGeographyInput: () => ({ cities: [], regions: [], tseZones: [] }),
 }))
 
 import { NucleusTabNav } from '@/components/campaign/NucleusTabNav'
@@ -62,6 +67,7 @@ describe('campaign nucleus URL-driven detail tabs', () => {
     })
     loaders.getNucleusPrimaryContactPageData.mockResolvedValue({ current: null, options: [] })
     loaders.getNucleusUpdatesPreviewData.mockResolvedValue([])
+    loaders.getNucleusElectoralBaseline.mockResolvedValue(null)
     loaders.getNucleusUpdatesPageData.mockResolvedValue({
       updates: [],
       page: 1,
@@ -183,6 +189,7 @@ describe('campaign nucleus URL-driven detail tabs', () => {
 
     expect(loaders.getNucleusUpdatesPreviewData).toHaveBeenCalledOnce()
     expect(loaders.getNucleusPrimaryContactPageData).toHaveBeenCalledOnce()
+    expect(loaders.getNucleusElectoralBaseline).toHaveBeenCalledOnce()
     expect(loaders.getNucleusLeadershipPageData).not.toHaveBeenCalled()
     expect(loaders.getCampaignInviteConsentState).not.toHaveBeenCalled()
     expect(loaders.getNucleusUpdatesPageData).not.toHaveBeenCalled()
@@ -190,6 +197,7 @@ describe('campaign nucleus URL-driven detail tabs', () => {
       tab: 'overview',
       primaryContactPageData: { current: null, options: [] },
       updatePreview: [],
+      baseline: null,
     })
     expect(JSON.stringify(result)).not.toContain('leaderships')
     expect(JSON.stringify(result)).not.toContain('"updates"')

@@ -1,5 +1,6 @@
 import type { CampaignUser, NucleusUpdate } from '@/payload-types'
 import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
+import type { NucleusBaseline2022OverviewAggregate } from '@/utilities/nucleusElectoralBaseline'
 
 export const nucleusListOverviewPreviewLimit = 3
 
@@ -8,9 +9,14 @@ export type NucleusListOverviewNucleusRecord = {
   slug: string
   name: string
   coordinators: Array<number | { id: number }>
+  cities: string[]
+  regions: string[]
+  tseZones: number[]
   confirmedVoteEstimate: number | null
   proposedVoteEstimate: number | null
 }
+
+export type NucleusListOverviewBaseline2022 = NucleusBaseline2022OverviewAggregate
 
 export type NucleusListOverviewUpdateRecord = {
   id: number
@@ -34,6 +40,8 @@ export type NucleusListOverviewViewModel = {
     coordinatedCount: number
     percent: number
   }
+  /** Null when no nucleus in the filtered set has resolvable TSE geography. */
+  baseline2022: NucleusListOverviewBaseline2022 | null
   recentUpdates: NucleusListOverviewUpdateRecord[]
   upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
 }
@@ -46,11 +54,13 @@ export const buildNucleusListOverviewViewModel = ({
   recentUpdates,
   role,
   upcomingActionPlans,
+  baseline2022 = null,
 }: {
   nuclei: NucleusListOverviewNucleusRecord[]
   recentUpdates: NucleusListOverviewUpdateRecord[]
   role: CampaignUser['role']
   upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
+  baseline2022?: NucleusListOverviewBaseline2022 | null
 }): NucleusListOverviewViewModel => {
   const totalFiltered = nuclei.length
   const confirmedCount = nuclei.filter(
@@ -80,6 +90,7 @@ export const buildNucleusListOverviewViewModel = ({
       coordinatedCount,
       percent: percentage(coordinatedCount, totalFiltered),
     },
+    baseline2022,
     recentUpdates,
     upcomingActionPlans,
   }

@@ -86,6 +86,37 @@ export const NucleusListOverview = ({
           </p>
         </CardContent>
       </Card>
+
+      {view.baseline2022 ? (
+        <Card>
+          <CardHeader>
+            <CardDescription>Baseline 2022</CardDescription>
+            <CardTitle className="text-3xl tabular-nums">
+              {view.baseline2022.gapTotal === null
+                ? '—'
+                : `${view.baseline2022.gapTotal >= 0 ? '+' : ''}${numberFormatter.format(view.baseline2022.gapTotal)}`}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            <p className="text-sm text-muted-foreground">
+              {view.baseline2022.gapTotal === null
+                ? 'Sem estimativas comparáveis ao patamar de 2022'
+                : view.baseline2022.gapTotal >= 0
+                  ? 'votos acima do patamar'
+                  : 'votos abaixo do patamar'}
+            </p>
+            <p className="text-sm">
+              <span className="font-semibold text-[color:var(--estimate-confirmed-foreground)]">
+                {numberFormatter.format(view.baseline2022.above)} acima
+              </span>
+              {' · '}
+              <span className="font-semibold text-[color:var(--estimate-pending-foreground)]">
+                {numberFormatter.format(view.baseline2022.below)} abaixo
+              </span>
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
 
     <Card>
@@ -157,7 +188,5 @@ export const NucleusListOverview = ({
         )}
       </CardContent>
     </Card>
-
-    {/* Extension points for future roadmap domains (Demandas): plug new cards here when those collections exist. */}
   </section>
 )

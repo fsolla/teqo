@@ -9,6 +9,10 @@ import {
 import { parseLeadershipFilterState, parseLeadershipPanelState } from '@/utilities/leadershipUi'
 import { getNucleusCoordinatorAssignmentPageData } from '@/utilities/nucleusCoordinatorAssignmentPageData'
 import {
+  getNucleusElectoralBaseline,
+  toNucleusElectionGeographyInput,
+} from '@/utilities/nucleusElectoralBaseline'
+import {
   getNucleusDetailPageData,
   resolveAccessibleNucleusContext,
 } from '@/utilities/nucleusPageData'
@@ -49,11 +53,12 @@ export const loadNucleusActiveTabPageData = async (
   searchParams: NucleusDetailSearchParams,
 ) => {
   if (activeTab === 'overview') {
-    const [primaryContactPageData, updatePreview] = await Promise.all([
+    const [primaryContactPageData, updatePreview, baseline] = await Promise.all([
       getNucleusPrimaryContactPageData(payload, user, context),
       getNucleusUpdatesPreviewData(payload, user, context),
+      getNucleusElectoralBaseline(payload, user, toNucleusElectionGeographyInput(context.document)),
     ])
-    return { tab: activeTab, primaryContactPageData, updatePreview } as const
+    return { tab: activeTab, primaryContactPageData, updatePreview, baseline } as const
   }
 
   if (activeTab === 'leaderships') {

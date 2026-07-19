@@ -11,6 +11,8 @@ import {
 import { createNucleusUpdateFormAction } from '@/app/(campaign)/campanha/(app)/nucleos/[slug]/nucleusUpdateFormActions'
 import { searchPrimaryContactOptionsFormAction } from '@/app/(campaign)/campanha/(app)/nucleos/[slug]/primaryContactSearchActions'
 import { LeadershipNetwork } from '@/components/campaign/LeadershipNetwork'
+import { NucleusElectoralBaseline } from '@/components/campaign/NucleusElectoralBaseline'
+import { NucleusInsights } from '@/components/campaign/NucleusInsights'
 import { NucleusIntelligenceDialogShell } from '@/components/campaign/NucleusIntelligenceDialogShell'
 import { NucleusUpdateFeed } from '@/components/campaign/NucleusUpdateFeed'
 import { NucleusUpdateFormShell } from '@/components/campaign/NucleusUpdateFormShell'
@@ -31,6 +33,7 @@ import type { AccessibleNucleusContext } from '@/utilities/nucleusPageData'
 import { formatNucleusTerritoryLabel } from '@/utilities/nucleusUi'
 import type {
   NucleusDetailViewModel,
+  NucleusElectoralBaselineViewModel,
   NucleusTabsViewModel,
   StaffNucleusTabsViewModel,
 } from '@/utilities/nucleusViewModels'
@@ -45,14 +48,18 @@ import {
 import { buildWhatsAppUrl } from '@/utilities/phone'
 
 const OverviewContent = ({
+  baseline,
   canEditIntelligence,
+  confirmedVoteEstimate,
   context,
   nucleus,
   primaryContact,
   searchParams,
   updatePreview,
 }: {
+  baseline: NucleusElectoralBaselineViewModel | null
   canEditIntelligence: boolean
+  confirmedVoteEstimate: number | null
   context: AccessibleNucleusContext
   nucleus: NucleusTabsViewModel
   primaryContact: { id: number; name: string; phone: string } | null
@@ -196,6 +203,11 @@ const OverviewContent = ({
         </CardContent>
       </Card>
     )}
+
+    <div className="mt-4 flex flex-col gap-4">
+      <NucleusElectoralBaseline baseline={baseline} />
+      <NucleusInsights baseline={baseline} confirmedVoteEstimate={confirmedVoteEstimate} />
+    </div>
 
     <Card className="mt-4">
       <CardHeader>
@@ -349,7 +361,9 @@ export const NucleusActiveTab = async ({
   if (data.tab === 'overview') {
     return (
       <OverviewContent
+        baseline={data.baseline}
         canEditIntelligence={user.role !== 'lideranca'}
+        confirmedVoteEstimate={view.confirmedVoteEstimate}
         context={context}
         nucleus={view.tabs}
         primaryContact={data.primaryContactPageData.current}

@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { getPayload, type Payload } from 'payload'
 
 import config from '@/payload.config'
-import { SOLLA_CANDIDATE_NUMBER } from '@/lib/electionResults'
+import { BASELINE_TICKET_2022 } from '@/lib/electionResults'
 import {
   buildImportBundles,
   importElectionBundles,
@@ -72,7 +72,7 @@ describe('election results import', () => {
       .filter(
         (doc) =>
           doc.office === 'deputado_federal' &&
-          Number(doc.candidateNumber) === SOLLA_CANDIDATE_NUMBER,
+          Number(doc.candidateNumber) === BASELINE_TICKET_2022.candidate.candidateNumber,
       )
       .reduce((sum, doc) => sum + Number(doc.votes), 0)
     expect(sollaVotes).toBe(TSE_FIXTURE_EXPECTED.sollaVotesTotal)

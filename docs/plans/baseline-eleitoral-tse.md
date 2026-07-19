@@ -1,6 +1,6 @@
 # Baseline eleitoral TSE 2022
 
-Status: Fase 1 (A3) implementada — modelo + import
+Status: Fases 1–4 implementadas (A3 modelo+import; A4 detalhe + overview + Gap vs 2022)
 Atualizado em: 2026-07-18
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (A3/A4 Baseline TSE 2022)
 Responsável: —
@@ -53,9 +53,9 @@ Candidatos de interesse (destaques na UI): **Solla = dep. federal BA, PT, nº 13
 ## Questões em aberto
 
 - ~~Mapeamento `CD_MUNICIPIO` (TSE) → nome canônico~~ — resolvido na Fase 1 via `canonicalizeMunicipalityName` + `cityCode` persistido.
-- Limiares de classificação territorial (defesa/ataque/indecisa/perdida) — definir com produto.
-- Mostrar 1º e 2º turno para presidente/governador, ou só o decisivo? Recomendação: ambos, com destaque ao decisivo.
-- `lideranca` vê ranking/competidor? Recomendação: sim, é dado público e útil ao engajamento.
+- Limiares de classificação territorial (defesa/ataque/indecisa/perdida) — definir com produto (A5).
+- ~~Mostrar 1º e 2º turno para presidente/governador, ou só o decisivo?~~ — A4 assume o **turno decisivo** (2º se houver votos; senão 1º) para Lula/Jerônimo; federal usa 1º. _(assumido — validar com produto)_
+- ~~`lideranca` vê ranking/competidor?~~ — A4 mostra o bloco baseline + Gap vs 2022 para `geral`/`coordenador`/`lideranca` (dado público + estimativa já visível). Ranking detalhado / inteligência competitiva fica em A5. _(assumido — validar com produto)_
 - `identityKey` por nome de urna + naturalidade + partido pode gerar colisões (homônimos) ou falsos negativos (mudança de partido). Mitigação: revisão manual admin do match 2022→2026 antes de fixar `runningAgain2026=sim|nao`, com `desconhecido` como padrão.
 
 > Nota: limiares de classificação territorial, taxonomia de alinhamento político (para dobradinha) e limiares de conversão ficam nos planos separados dos respectivos insights no roadmap.
@@ -93,16 +93,16 @@ flowchart LR
     PerCity["para cada cidade C:<br/>zones = nucleus.tseZones ∩ tseZonesForCity(C)"]
     Query["electionTally + electionCandidateVote<br/>where city=C, zone in zones, office, turn"]
     Sum["soma votos por candidato/tipo"]
-    Baseline["NucleusElectoralBaseline<br/>solla/lula/jeronimo/validos/brancos/nulos/winner/rank"]
+    Baseline["NucleusElectoralBaseline<br/>candidate/president/governor/validos/brancos/nulos/winner/rank"]
     Nuc --> Cities --> PerCity --> Query --> Sum --> Baseline
 ```
 
 ### Fases
 
 1. **Modelo + import** — **feito (A3, 2026-07-18).** Collections `electionTally` / `electionCandidateVote` / `electionCandidate`, migration `20260718_195854_add_election_results`, `pnpm db:seed:tse`, helpers em `src/lib/electionResults*.ts` + `electionCandidateIdentity.ts`, import drizzle em `src/utilities/electionResultsImport.ts`, testes unit/int com fixtures em `tests/fixtures/tse/`. Seed local BA 2022: **211.014** votos nominais, **2.700** apurações, **1.654** candidatos (6 escopos office×turn).
-2. **Detalhe do núcleo** — bloco "Baseline eleitoral 2022" na aba overview; view model `NucleusElectoralBaselineViewModel` em `src/utilities/nucleusViewModels.ts`; componente `src/components/campaign/NucleusElectoralBaseline.tsx`.
-3. **Overview da lista** — estende `overview-lista-nucleos.md`: somar baselines sobre o conjunto filtrado (`buildNucleusListWhere`); novo bloco no `NucleusListOverview`.
-4. **Insights automáticos (Gap vs 2022)** — implementa somente o insight "Gap vs 2022" (ver seção "Insights automáticos" abaixo). `src/components/campaign/NucleusInsights.tsx` + `src/lib/electionInsights.ts`. Os demais insights viram itens separados no roadmap com planos próprios.
+2. **Detalhe do núcleo** — **feito (A4, 2026-07-18).** Bloco "Baseline eleitoral 2022" na aba overview; view model `NucleusElectoralBaselineViewModel` em `src/utilities/nucleusViewModels.ts`; agregação em `src/utilities/nucleusElectoralBaseline.ts`; componente `src/components/campaign/NucleusElectoralBaseline.tsx`.
+3. **Overview da lista** — **feito (A4, 2026-07-18).** Soma baselines sobre o conjunto filtrado (`buildNucleusListWhere` + `loadNucleusBaseline2022Overview`); card "Baseline 2022" no `NucleusListOverview`.
+4. **Insights automáticos (Gap vs 2022)** — **feito (A4, 2026-07-18).** `src/components/campaign/NucleusInsights.tsx` + `src/lib/electionInsights.ts` (`computeGapVs2022`). Os demais insights ficam nos planos `insight-*.md` (A5).
 5. **Prontidão 2026** — `identityKey` já em 2022; `scripts/reconcile-running-again.mjs` marca `runningAgain2026` quando 2026 publicar; UI sinaliza quem volta a concorrer. (O insight de dobradinha, que depende deste, é plano separado no roadmap.)
 
 ## Insights automáticos
@@ -125,7 +125,7 @@ Cada insight é uma **derivação de leitura** (sem escrita, sem `Consent`, sem 
   - núcleo sem geografia → "Sem baseline TSE (informe território/município)".
 - **Output no overview da lista:** sobre o conjunto filtrado: `gapTotal = Σ confirmedVoteEstimate − Σ sollaVotes2022`, `nucleiAbove2022` (contagem com `gap ≥ 0`), `nucleiBelow2022` (contagem com `gap < 0`). Renderizado no bloco "Baseline 2022" do `NucleusListOverview`.
 - **Componente:** `src/components/campaign/NucleusInsights.tsx` (server; começa só com este insight; arquitetura extensível para os demais).
-- **Helper:** `src/lib/electionInsights.ts` exportando `computeGapVs2022(baseline, confirmedVoteEstimate)` → `{ gap, ratio, status: 'above'|'below'|'noBaseline'|'noEstimate'|'noSolla2022' }`.
+- **Helper:** `src/lib/electionInsights.ts` exportando `computeGapVs2022(baseline, confirmedVoteEstimate)` → `{ gap, ratio, status: 'above'|'below'|'noBaseline'|'noEstimate'|'noCandidateVotes' }` (chapa/candidato configurados em `BASELINE_TICKET_2022`, `src/lib/electionResults.ts`, para reuso em eleições futuras).
 - **Visibilidade:** `geral`/`coordenador`/`lideranca` (dado público + estimativa já visível ao papel).
 - **Teste int:** cenários com gap negativo, positivo, `sollaVotes2022=0`, `confirmedVoteEstimate=null` e sem geografia.
 
@@ -175,9 +175,13 @@ Cada insight é uma **derivação de leitura** (sem escrita, sem `Consent`, sem 
 - Criar: `src/collections/ElectionTally.ts`, `ElectionCandidateVote.ts`, `ElectionCandidate.ts`; `src/lib/electionResults.ts`, `electionResultsParse.ts`, `electionResultsBuild.ts`, `electionResultsCsv.ts`, `electionResultsZip.ts`, `electionCandidateIdentity.ts`; `src/utilities/electionResultsImport.ts`; `scripts/seed-tse-results.mjs`; migration `20260718_195854_add_election_results`; fixtures `tests/fixtures/tse/*`; testes unit/int.
 - Alterar: `src/payload.config.ts`, `src/utilities/campaignAccess.ts` (`canReadElectionData` / `canMutateElectionData`), `package.json` (`db:seed:tse`), `scripts/seed-loader.mjs` (stub `server-only`), `.gitignore` (`/data/tse/`).
 
-**Fases 2–5 (A4+) — ainda a criar:**
+**Fases 2–4 (A4) — feitos (2026-07-18):**
 
-- `src/lib/electionInsights.ts`, `src/utilities/nucleusElectoralBaseline.ts`, `src/components/campaign/NucleusElectoralBaseline.tsx`, `NucleusInsights.tsx`, `scripts/reconcile-running-again.mjs`; alterar páginas do núcleo / overview.
+- `src/lib/electionInsights.ts`, `src/utilities/nucleusElectoralBaseline.ts`, `src/components/campaign/NucleusElectoralBaseline.tsx`, `NucleusInsights.tsx`; overview estendido em `nucleusListOverviewPageData.ts` / `NucleusListOverview.tsx`; overview tab em `nucleusDetailPageData.ts` / `NucleusActiveTab.tsx`.
+
+**Fase 5 (A4+/A6) — ainda a criar:**
+
+- `scripts/reconcile-running-again.mjs` quando o TSE publicar 2026.
 
 ## Dependências
 

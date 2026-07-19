@@ -196,6 +196,25 @@ export type LeadershipNucleusDetailViewModel = NucleusDetailBaseViewModel & {
 
 export type NucleusDetailViewModel = StaffNucleusDetailViewModel | LeadershipNucleusDetailViewModel
 
+/**
+ * Aggregated TSE 2022 baseline for a nucleus geography (A4). Non-null implies geography resolved.
+ * Keys are ticket roles (see BASELINE_TICKET_2022), not candidate names, so the
+ * same shape carries over to future elections.
+ */
+export type NucleusElectoralBaselineViewModel = {
+  candidate: { votes: number; rank: number | null }
+  president: { votes: number; turn: 1 | 2 } | null
+  governor: { votes: number; turn: 1 | 2 } | null
+  electorate: {
+    aptos: number
+    validos: number
+    brancos: number
+    nulos: number
+    abstencoes: number
+  }
+  winnerFederal: { name: string; votes: number; party: string } | null
+}
+
 const relationshipName = (relationship: number | CampaignUser | null | undefined): string | null =>
   isPopulatedRelationship<CampaignUser>(relationship) ? relationship.name : null
 

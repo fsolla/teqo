@@ -6,14 +6,12 @@ import { bahiaMunicipalities } from '@/lib/bahiaTerritories'
 import { computeIdentityKey, normalizeIdentityPart } from '@/lib/electionCandidateIdentity'
 import {
   assertAllCanonicalMunicipalitiesResolvable,
+  BASELINE_TICKET_2022,
   canonicalizeMunicipalityName,
   computeWinnersByScope,
-  JERONIMO_CANDIDATE_NUMBER,
-  LULA_CANDIDATE_NUMBER,
   mergeTallyWithWinners,
   normalizeMunicipalityKey,
   parseElectedStatus,
-  SOLLA_CANDIDATE_NUMBER,
   UnknownMunicipalityError,
   winnerKey,
 } from '@/lib/electionResults'
@@ -108,7 +106,7 @@ describe('electionResults fixture parse + winners', () => {
     const sollaVotes = built.votes
       .filter(
         (row) =>
-          row.office === 'deputado_federal' && row.candidateNumber === SOLLA_CANDIDATE_NUMBER,
+          row.office === 'deputado_federal' && row.candidateNumber === BASELINE_TICKET_2022.candidate.candidateNumber,
       )
       .reduce((sum, row) => sum + row.votes, 0)
     expect(sollaVotes).toBe(TSE_FIXTURE_EXPECTED.sollaVotesTotal)
@@ -116,18 +114,18 @@ describe('electionResults fixture parse + winners', () => {
 
   it('marks Solla, Lula and Jerônimo as elected', () => {
     const solla = built.candidates.find(
-      (c) => c.office === 'deputado_federal' && c.candidateNumber === SOLLA_CANDIDATE_NUMBER,
+      (c) => c.office === 'deputado_federal' && c.candidateNumber === BASELINE_TICKET_2022.candidate.candidateNumber,
     )
     const lula = built.candidates.find(
       (c) =>
         c.office === 'presidente' &&
-        c.candidateNumber === LULA_CANDIDATE_NUMBER &&
+        c.candidateNumber === BASELINE_TICKET_2022.president.candidateNumber &&
         c.turn === '2',
     )
     const jeronimo = built.candidates.find(
       (c) =>
         c.office === 'governador' &&
-        c.candidateNumber === JERONIMO_CANDIDATE_NUMBER &&
+        c.candidateNumber === BASELINE_TICKET_2022.governor.candidateNumber &&
         c.turn === '2',
     )
 

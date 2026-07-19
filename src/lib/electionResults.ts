@@ -46,10 +46,22 @@ export const ELECTION_RUNNING_AGAIN_OPTIONS = [
 export const ELECTION_RUNNING_AGAIN = ELECTION_RUNNING_AGAIN_OPTIONS.map((o) => o.value)
 export type ElectionRunningAgain = (typeof ELECTION_RUNNING_AGAIN)[number]
 
-/** Solla — dep. federal BA, PT, nº 1313 (eleito em 2022). */
-export const SOLLA_CANDIDATE_NUMBER = 1313
-export const LULA_CANDIDATE_NUMBER = 13
-export const JERONIMO_CANDIDATE_NUMBER = 13
+/**
+ * Campaign ticket for the electoral baseline, keyed by role.
+ * Swap this block (and the election year) for a future cycle — aggregation/UI stay put.
+ * 2022: Jorge Solla (dep. federal BA nº 1313) / Lula (pres. nº 13) / Jerônimo (gov. nº 13).
+ */
+export const BASELINE_TICKET_2022 = {
+  candidate: {
+    candidateNumber: 1313,
+    office: 'deputado_federal',
+    name: 'Jorge Solla',
+    party: 'PT',
+    officeLabel: 'Dep. Federal',
+  },
+  president: { candidateNumber: 13, name: 'Lula', party: 'PT' },
+  governor: { candidateNumber: 13, name: 'Jerônimo Rodrigues', party: 'PT' },
+} as const
 
 /** TSE CD_CARGO → office enum used in collections. */
 export const TSE_CARGO_TO_OFFICE: Readonly<Record<string, ElectionOffice>> = {

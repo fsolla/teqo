@@ -3,6 +3,10 @@ import type { Payload } from 'payload'
 import type { CampaignUser, NucleusUpdate } from '@/payload-types'
 import { loadUpcomingActionPlansPreview } from '@/utilities/actionPlanUpcomingPreview'
 import {
+  loadNucleusBaseline2022Overview,
+  toNucleusElectionGeographyInput,
+} from '@/utilities/nucleusElectoralBaseline'
+import {
   buildNucleusListOverviewViewModel,
   nucleusListOverviewPreviewLimit,
   type NucleusListOverviewNucleusRecord,
@@ -16,6 +20,9 @@ const overviewStaffNucleusSelect = {
   slug: true,
   name: true,
   coordinators: true,
+  cities: true,
+  regions: true,
+  tseZones: { zoneNumber: true },
   confirmedVoteEstimate: true,
   proposedVoteEstimate: true,
 } as const
@@ -24,6 +31,9 @@ const overviewLeadershipNucleusSelect = {
   slug: true,
   name: true,
   coordinators: true,
+  cities: true,
+  regions: true,
+  tseZones: { zoneNumber: true },
   confirmedVoteEstimate: true,
 } as const
 
@@ -39,6 +49,9 @@ type RawOverviewNucleus = {
   slug: string
   name: string
   coordinators?: Array<number | { id: number }>
+  cities?: string[] | null
+  regions?: string[] | null
+  tseZones?: Array<{ zoneNumber: number }> | null
   confirmedVoteEstimate?: number | null
   proposedVoteEstimate?: number | null
 }
@@ -79,27 +92,34 @@ export const loadNucleusListOverviewData = async (
   const rawNuclei = nucleusResult.docs as unknown as RawOverviewNucleus[]
   if (rawNuclei.length === 0) return null
 
-  const nuclei: NucleusListOverviewNucleusRecord[] = rawNuclei.map((nucleus) => ({
-    id: nucleus.id,
-    slug: nucleus.slug,
-    name: nucleus.name,
-    coordinators: nucleus.coordinators ?? [],
-    confirmedVoteEstimate: nucleus.confirmedVoteEstimate ?? null,
-    proposedVoteEstimate: nucleus.proposedVoteEstimate ?? null,
-  }))
+  const nuclei: NucleusListOverviewNucleusRecord[] = rawNuclei.map((nucleus) => {
+    const geography = toNucleusElectionGeographyInput(nucleus)
+    return {
+      id: nucleus.id,
+      slug: nucleus.slug,
+      name: nucleus.name,
+      coordinators: nucleus.coordinators ?? [],
+      ...geography,
+      confirmedVoteEstimate: nucleus.confirmedVoteEstimate ?? null,
+      proposedVoteEstimate: nucleus.proposedVoteEstimate ?? null,
+    }
+  })
 
   const nucleiById = new Map(nuclei.map((nucleus) => [nucleus.id, nucleus]))
-  const updateResult = await payload.find({
-    collection: 'nucleusUpdate',
-    where: { nucleus: { in: nuclei.map(({ id }) => id) } },
-    depth: 0,
-    limit: nucleusListOverviewPreviewLimit,
-    page: 1,
-    sort: '-createdAt',
-    select: overviewUpdateSelect,
-    user,
-    overrideAccess: false,
-  })
+  const [updateResult, baseline2022] = await Promise.all([
+    payload.find({
+      collection: 'nucleusUpdate',
+      where: { nucleus: { in: nuclei.map(({ id }) => id) } },
+      depth: 0,
+      limit: nucleusListOverviewPreviewLimit,
+      page: 1,
+      sort: '-createdAt',
+      select: overviewUpdateSelect,
+      user,
+      overrideAccess: false,
+    }),
+    loadNucleusBaseline2022Overview(payload, user, nuclei),
+  ])
 
   const updates = updateResult.docs as unknown as RawOverviewUpdate[]
   const authorIds = [...new Set(updates.map(({ author }) => requireRelationshipId(author)))]
@@ -144,5 +164,6 @@ export const loadNucleusListOverviewData = async (
     recentUpdates,
     role: user.role,
     upcomingActionPlans,
+    baseline2022,
   })
 }

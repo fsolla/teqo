@@ -234,7 +234,7 @@ test.describe('Campaign nucleus journeys', () => {
       `${campaign.baseURL}/campanha/nucleos?q=${encodeURIComponent(nucleusName)}&page=3`,
     )
     await page.waitForLoadState('networkidle')
-    await page.getByLabel('Cobertura').selectOption('sem_coordenador')
+    await page.getByLabel('Cobertura', { exact: true }).selectOption('sem_coordenador')
     await expect
       .poll(() => new URL(page.url()).searchParams.get('coverage'), { timeout: 45_000 })
       .toBe('sem_coordenador')
@@ -245,7 +245,7 @@ test.describe('Campaign nucleus journeys', () => {
     await page.goto(`${campaign.baseURL}/campanha/nucleos/${nucleus.slug}`)
     await page.goBack()
     await expect(page).toHaveURL(filteredURL)
-    await expect(page.getByLabel('Cobertura')).toHaveValue('sem_coordenador')
+    await expect(page.getByLabel('Cobertura', { exact: true })).toHaveValue('sem_coordenador')
     await page.goForward()
     await expect(page).toHaveURL(
       `${campaign.baseURL}/campanha/nucleos/${nucleus.slug}?tab=overview`,
@@ -315,5 +315,46 @@ test.describe('Campaign nucleus journeys', () => {
       if (width >= 768) expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth)
       else expect(geometry.scrollWidth).toBeGreaterThan(geometry.clientWidth)
     }
+  })
+
+  test('renders Baseline eleitoral 2022 and Gap insight on the overview tab', async ({
+    campaign,
+    page,
+  }) => {
+    test.slow()
+    const email = `${campaign.fixtures.value('baseline')}@example.com`
+    const password = campaign.fixtures.value('BaselinePassword')
+    const nucleus = await campaign.transaction(async (payload, req) => {
+      await payload.create({
+        collection: 'campaignUser',
+        data: {
+          name: campaign.fixtures.value('Coordenação baseline'),
+          email,
+          password,
+          role: 'geral',
+        },
+        depth: 0,
+        req,
+      })
+      return payload.create({
+        collection: 'electoralNucleus',
+        data: {
+          name: campaign.fixtures.value('Núcleo baseline'),
+          cities: ['Salvador'],
+          organizationKind: 'territorial',
+        } as never,
+        depth: 0,
+        req,
+      })
+    })
+
+    await campaign.login(page, email, password)
+    await page.goto(`${campaign.baseURL}/campanha/nucleos/${nucleus.slug}?tab=overview`)
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Baseline eleitoral 2022')).toBeVisible({ timeout: 20_000 })
+    await expect(page.locator('[data-insight="gap-vs-2022"]')).toBeVisible()
+    await page.goto(`${campaign.baseURL}/campanha/nucleos`)
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Baseline 2022')).toBeVisible({ timeout: 20_000 })
   })
 })

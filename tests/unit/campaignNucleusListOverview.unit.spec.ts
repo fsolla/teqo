@@ -10,11 +10,17 @@ const now = new Date('2026-07-18T15:00:00.000Z')
 const nucleus = ({
   id,
   coordinators = [],
+  cities = ['Salvador'],
+  regions = ['Metropolitano de Salvador'],
+  tseZones = [1],
   confirmedVoteEstimate = null,
   proposedVoteEstimate = null,
 }: {
   id: number
   coordinators?: number[]
+  cities?: string[]
+  regions?: string[]
+  tseZones?: number[]
   confirmedVoteEstimate?: number | null
   proposedVoteEstimate?: number | null
 }) => ({
@@ -22,6 +28,9 @@ const nucleus = ({
   slug: `nucleo-${id}`,
   name: `Núcleo ${id}`,
   coordinators,
+  cities,
+  regions,
+  tseZones,
   confirmedVoteEstimate,
   proposedVoteEstimate,
 })
@@ -126,5 +135,36 @@ describe('NucleusListOverview', () => {
 
     expect(html).toContain('2 sugestões pendentes')
     expect(html).toContain('Nenhuma atualização recente')
+  })
+
+  it('renders the Baseline 2022 card when aggregate data is present', () => {
+    const view = buildNucleusListOverviewViewModel({
+      role: 'geral',
+      nuclei: [nucleus({ id: 1, confirmedVoteEstimate: 1200 })],
+      recentUpdates: [],
+      upcomingActionPlans: [],
+      baseline2022: { gapTotal: 2140, above: 8, below: 6 },
+    })
+
+    const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))
+
+    expect(html).toContain('Baseline 2022')
+    expect(html).toContain('+2.140')
+    expect(html).toContain('8 acima')
+    expect(html).toContain('6 abaixo')
+  })
+
+  it('hides the Baseline 2022 card when aggregate is null', () => {
+    const view = buildNucleusListOverviewViewModel({
+      role: 'lideranca',
+      nuclei: [nucleus({ id: 1, cities: [], regions: [], tseZones: [] })],
+      recentUpdates: [],
+      upcomingActionPlans: [],
+      baseline2022: null,
+    })
+
+    const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))
+
+    expect(html).not.toContain('Baseline 2022')
   })
 })
