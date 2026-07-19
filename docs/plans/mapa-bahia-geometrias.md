@@ -48,12 +48,12 @@ Hierarquia TSE: município → (1+) zona → (muitas) seção; a relação munic
 - **Join por chave estável:**
   - Municípios: o núcleo guarda `cities[]` (array de nomes, desde A1). Tabela `src/lib/bahiaMunicipalityCodes.ts` (nome canônico → código IBGE de 7 dígitos) + fixture `tests/fixtures/bahia-municipality-codes.official.json` + teste `tests/int/bahiaMunicipalityCodes.int.spec.ts`. Reconciliação IBGE→canônico via `canonicalizeMunicipalityName` (`src/lib/electionResults.ts`).
   - Territórios: join por `code` (01–27) já presente em `bahiaIdentityTerritoryRecords`; sem tabela extra.
-- **Helpers:** `src/lib/bahiaGeometries.ts` — `getMunicipalityFeature(codarea)`, `getTerritoryFeature(code)`, topologias tipadas (framework-free para B3).
-- **Proveniência e versionamento:** cada artefato com cabeçalho/documentação de proveniência (URL, SHA-256 do download de origem), no estilo de `bahiaTerritories.ts` / `bahiaTseZones.ts`.
+- **Helpers:** `src/lib/bahiaGeometries.ts` — `getMunicipalityFeature(codarea)`, `getTerritoryFeature(code)`, arrays `bahiaMunicipalityFeatures` / `bahiaTerritoryFeatures`, topologias tipadas (`bahiaMunicipalitiesTopology` / `bahiaIdentityTerritoriesTopology`; objects `municipalities` / `territories`). Framework-free para B3. Lookups de código: `codeForMunicipality` / `municipalityForCode` em `bahiaMunicipalityCodes.ts`.
+- **Proveniência e versionamento:** cabeçalho em `bahiaMunicipalityCodes.ts` + script (URL + SHA-256 dos downloads IBGE), no estilo de `bahiaTerritories.ts` / `bahiaTseZones.ts`.
 
 ## Script de geração (one-off, re-executável)
 
-- `scripts/build-bahia-geometries.mjs` (`pnpm build:geometries`): baixa IBGE Malhas + Localidades, reconcilia nomes, constrói topologia com `topojson-server` + `topojson-simplify` + `quantize`, dissolve territórios com `topojson-client` `merge`, emite os `*.topo.json`, `bahiaMunicipalityCodes.ts` e o fixture. Cache em `data/geometries/` (gitignored). **Não toca banco** — sem `assertLocalDatabase`. Não roda em build/dev — só quando se atualiza a versão de origem.
+- `scripts/build-bahia-geometries.mjs` (`pnpm build:geometries`): baixa IBGE Malhas + Localidades (via `downloadToBuffer` de `electionResultsZip.ts`), reconcilia nomes com `canonicalizeMunicipalityName` (só `UnknownMunicipalityError`), constrói topologia com `topojson-server` + `topojson-simplify` (`SIMPLIFY_QUANTILE = 0.35`) + `quantize` (`1e4`), dissolve territórios com `topojson-client` `merge`, emite os `*.topo.json`, `bahiaMunicipalityCodes.ts` e o fixture. Cache em `data/geometries/` (gitignored; `GEOMETRIES_CACHE_DIR`). **Não toca banco** — sem `assertLocalDatabase`. Não roda em build/dev — só quando se atualiza a versão de origem.
 
 ## Leaflet na campanha (B3 — pendente)
 
@@ -73,6 +73,21 @@ Hierarquia TSE: município → (1+) zona → (muitas) seção; a relação munic
 - **Fase 2 — Leaflet nas superfícies (B3):** `BahiaMap` + `NucleusOverviewMap` + `NucleusDetailMap` + `DashboardMap`, com agregados existentes. Preferir fechar [B5 F1](escala-dry-pos-b2.md) (lazy geometrias) no mesmo PR.
 
 **Sequenciamento:** a Fase 1 é independente e paralelizável. A Fase 2 rende mais depois de B1 ✓ (overview) e ganha valor com A4 (baseline no produto). Nenhum dos dois bloqueia B3 — o mapa funciona só com estimativa/nº de núcleos. B5 F1 é dependência suave de qualidade de bundle.
+
+## Entrega as-built (B2, 2026-07-18)
+
+| Artefato | Caminho | Notas |
+| -------- | ------- | ----- |
+| TopoJSON municípios | `src/lib/geometries/bahia-municipalities.topo.json` | ~132 KB; 417 features; object `municipalities` |
+| TopoJSON TIs | `src/lib/geometries/bahia-identity-territories.topo.json` | ~15 KB; 27 features; object `territories` (dissolução IBGE) |
+| Tabela nome→`codarea` | `src/lib/bahiaMunicipalityCodes.ts` | + `codeForMunicipality` / `municipalityForCode` |
+| Helpers runtime | `src/lib/bahiaGeometries.ts` | `topojson-client` `feature()` + Maps no load do módulo |
+| Fixture oficial | `tests/fixtures/bahia-municipality-codes.official.json` | evidence SHA + bijeção |
+| Testes int | `tests/int/bahiaMunicipalityCodes.int.spec.ts`, `tests/int/bahiaGeometries.int.spec.ts` | cobertura 417/27, teto de bytes, nomes de objects via módulo |
+| Script | `scripts/build-bahia-geometries.mjs` | `pnpm build:geometries`; deps: `topojson-client` (runtime), `topojson-server` / `topojson-simplify` (dev) |
+| Cache | `data/geometries/` | gitignored |
+
+**Cleanup `/simplify` já aplicado no PR da Fase 1:** reuso de `downloadToBuffer`; catch só de `UnknownMunicipalityError`; remoção de dead code de codegen (`stableStringifyTopo` enganoso, tipo `BahiaMunicipalityCode` não usado). **Não aplicado (→ B5):** lazy load split mun/TI; helper CLI compartilhado `ensureCachedDownload`.
 
 ## Ciclo seguinte — Zonas TSE como camada (B4)
 
@@ -103,10 +118,14 @@ Após A2 ✓ + B3. Polígono por dissolução dos municípios membros (abordagem
 
 ## Referências
 
-- `docs/roadmap.md` (B2 / B3 / B4 na trilha B)
+- `docs/roadmap.md` (B2 / B3 / B4 / B5 na trilha B)
+- `docs/plans/escala-dry-pos-b2.md` (follow-ups pós-`/simplify`)
+- AGENTS.md — seção "Campaign map geometries (B2)"
 - `src/lib/bahiaTerritories.ts` + `tests/fixtures/bahia-identity-territories.official.json` + `tests/int/bahiaTerritories.int.spec.ts` (padrão a espelhar)
 - `src/lib/bahiaMunicipalityCodes.ts`, `src/lib/bahiaGeometries.ts`, `src/lib/geometries/*.topo.json`
+- `src/lib/electionResults.ts` (`canonicalizeMunicipalityName`), `src/lib/electionResultsZip.ts` (`downloadToBuffer`)
 - `scripts/build-bahia-geometries.mjs`
+- `tests/int/bahiaMunicipalityCodes.int.spec.ts`, `tests/int/bahiaGeometries.int.spec.ts`
 - `src/collections/ElectoralNucleus.ts`, `src/utilities/campaignDashboardPageData.ts`, `src/utilities/nucleusViewModels.ts`, `src/utilities/nucleusListOverviewPageData.ts` (agregados a reusar no B3)
 - `docs/plans/zonas-por-municipio.md` (dependência da camada de Zonas)
 - `docs/plans/baseline-eleitoral-tse.md` (baseline por zona, consumidor do mapa)

@@ -1,6 +1,6 @@
 # Escala e DRY pós-B2 (geometrias + scripts CLI)
 
-Status: rascunho
+Status: registrado no roadmap (fases pendentes)
 Atualizado em: 2026-07-18
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B5)
 Responsável: —
