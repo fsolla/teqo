@@ -1,7 +1,7 @@
 # Baseline eleitoral TSE 2022
 
-Status: Fases 1–4 implementadas (A3 modelo+import; A4 detalhe + overview + Gap vs 2022)
-Atualizado em: 2026-07-18
+Status: Fases 1–4 implementadas e mescladas em `main` (A3 modelo+import; A4 detalhe + overview + Gap vs 2022 + simplify). Follow-up de escala/DRY: [A7](escala-dry-pos-a4.md).
+Atualizado em: 2026-07-19
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (A3/A4 Baseline TSE 2022)
 Responsável: —
 
@@ -175,9 +175,11 @@ Cada insight é uma **derivação de leitura** (sem escrita, sem `Consent`, sem 
 - Criar: `src/collections/ElectionTally.ts`, `ElectionCandidateVote.ts`, `ElectionCandidate.ts`; `src/lib/electionResults.ts`, `electionResultsParse.ts`, `electionResultsBuild.ts`, `electionResultsCsv.ts`, `electionResultsZip.ts`, `electionCandidateIdentity.ts`; `src/utilities/electionResultsImport.ts`; `scripts/seed-tse-results.mjs`; migration `20260718_195854_add_election_results`; fixtures `tests/fixtures/tse/*`; testes unit/int.
 - Alterar: `src/payload.config.ts`, `src/utilities/campaignAccess.ts` (`canReadElectionData` / `canMutateElectionData`), `package.json` (`db:seed:tse`), `scripts/seed-loader.mjs` (stub `server-only`), `.gitignore` (`/data/tse/`).
 
-**Fases 2–4 (A4) — feitos (2026-07-18):**
+**Fases 2–4 (A4) — feitos e mesclados em `main` (2026-07-18):**
 
 - `src/lib/electionInsights.ts`, `src/utilities/nucleusElectoralBaseline.ts`, `src/components/campaign/NucleusElectoralBaseline.tsx`, `NucleusInsights.tsx`; overview estendido em `nucleusListOverviewPageData.ts` / `NucleusListOverview.tsx`; overview tab em `nucleusDetailPageData.ts` / `NucleusActiveTab.tsx`.
+- Chapa tipada em `BASELINE_TICKET_2022` (`candidate` / `president` / `governor` — identificadores de papel, não nomes próprios).
+- Pós-`/simplify`: débitos de escala/DRY maiores que cleanup registrados em [escala-dry-pos-a4.md](escala-dry-pos-a4.md) (item A7).
 
 **Fase 5 (A4+/A6) — ainda a criar:**
 

@@ -7,7 +7,7 @@ Responsável: —
 
 ## Contexto
 
-O A4 ([baseline-eleitoral-tse.md](baseline-eleitoral-tse.md) Fases 2–4) entregou o baseline TSE 2022 no detalhe do núcleo e no overview da lista: `getNucleusElectoralBaseline` / `loadNucleusBaseline2022Overview`, `computeGapVs2022`, UI `NucleusElectoralBaseline` + `NucleusInsights`, card "Baseline 2022". Três passagens `/simplify` (2026-07-18) já limparam o que cabia em cleanup: papéis genéricos (`BASELINE_TICKET_2022`), `geographyWhere` por cidade com `zoneNumber in […]`, overview só consulta núcleos com estimativa confirmada, helpers compartilhados (`toNucleusElectionGeographyInput`, `formatElectionNumber`, `NO_ELECTION_BASELINE_MESSAGE`).
+O A4 ([baseline-eleitoral-tse.md](baseline-eleitoral-tse.md) Fases 2–4) entregou o baseline TSE 2022 no detalhe do núcleo e no overview da lista — **implementado e mesclado em `main` (2026-07-18):** `getNucleusElectoralBaseline` / `loadNucleusBaseline2022Overview`, `computeGapVs2022`, UI `NucleusElectoralBaseline` + `NucleusInsights`, card "Baseline 2022". Três passagens `/simplify` no mesmo PR já limparam o que cabia em cleanup: papéis genéricos (`BASELINE_TICKET_2022`), `geographyWhere` por cidade com `zoneNumber in […]`, overview só consulta núcleos com estimativa confirmada, helpers compartilhados (`toNucleusElectionGeographyInput`, `formatElectionNumber`, `NO_ELECTION_BASELINE_MESSAGE`).
 
 Os revisores (performance / reuse / quality) marcaram como **importantes e maiores que simplify** os follow-ups abaixo. Sem registro, o A5 (insights) e o coroplético do B3 herdariam o mesmo custo de I/O no path do detalhe.
 
