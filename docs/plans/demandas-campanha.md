@@ -2,7 +2,7 @@
 
 Status: rascunho
 Atualizado em: 2026-07-17
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (C4 — Próximos / Janela 3)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos", linha 55)
 Responsável: —
 
 ## Contexto
@@ -123,7 +123,7 @@ Componentes:
 
 ## Referências
 
-- `docs/roadmap.md` (Próximos — ver ID do item)
+- `docs/roadmap.md` (linha 55)
 - `docs/plans/overview-lista-nucleos.md` — bloco "Demandas" já desenhado
 - `docs/plans/eventos-agenda-mobilizacao.md` — entidade `actionPlan` (relação opcional)
 - `src/collections/ElectoralNucleus.ts` — padrão de collection, hooks de slug/território, campos derivados

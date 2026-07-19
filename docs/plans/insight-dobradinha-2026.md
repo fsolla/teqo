@@ -2,7 +2,7 @@
 
 Status: rascunho
 Atualizado em: 2026-07-17
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (A6 — Próximos / Janela 4)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
 ## Contexto

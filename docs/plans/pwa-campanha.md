@@ -2,7 +2,7 @@
 
 Status: **implementado** (2026-07-18)
 Atualizado em: 2026-07-18
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (D1 — Já entregue)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha D → D1)
 Responsável: —
 
 ## Como foi implementado (2026-07-18)
@@ -46,7 +46,7 @@ A decisão de produto (2026-07-17) é deliberadamente restritiva: **só `/campan
 
 ## Decisões travadas
 
-- **Escopo restrito a `/campanha`.** `scope` e `start_url` apontam para `/campanha/`; o service worker tem `scope: '/campanha/'`. Site público e `/admin` não são instaláveis e não têm SW. (Decisão de produto 2026-07-17; roadmap (Fora de escopo / Próximos).)
+- **Escopo restrito a `/campanha`.** `scope` e `start_url` apontam para `/campanha/`; o service worker tem `scope: '/campanha/'`. Site público e `/admin` não são instaláveis e não têm SW. (Decisão de produto 2026-07-17; roadmap linha 81.)
 - **Um único service worker para a vertical**, compartilhado com o push de notificações — não criar um segundo SW só para push.
 - **Auth continua via cookie `campaign-token`** (httpOnly, `path: '/campanha'`). O SW roda same-origin e envia cookies automaticamente nos `fetch`; nenhum token extra é exposto ao SW.
 - **Offline é best-effort, não garantido.** O app continua server-renderizado com auth; o SW faz cache de runtime (stale-while-revalidate) das respostas já vistas e um precache mínimo do shell. Não há sincronização em segundo plano de escritas neste ciclo (write-back offline fica fora de escopo).
@@ -144,14 +144,14 @@ Recomendação de instalação do `/campanha` como PWA, exibida no início da se
 
 ## Não escopo
 
-- PWA do site público `(frontend)` ou do `/admin` (decisão de produto; roadmap (Fora de escopo / Próximos)).
+- PWA do site público `(frontend)` ou do `/admin` (decisão de produto; roadmap linha 81).
 - Write-back offline de atualizações/estimativas — escritas continuam exigindo rede e transação Payload.
 - Push web em si — fica em [plans/notifications.md](./notifications.md); aqui só o placeholder do handler.
 - Sincronização em segundo plano (Background Sync API).
 
 ## Referências
 
-- `docs/roadmap.md` (Próximos — ver ID do item)
+- `docs/roadmap.md` (linhas 58, 62, 81)
 - `docs/plans/notifications.md` — push depende deste plano
 - `AGENTS.md` — Campaign auth, naming conventions, transações
 - `.cursor/rules/projects/nucleos-eleitorais.mdc`

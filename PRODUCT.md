@@ -22,7 +22,7 @@ Two surfaces, one product.
 
 **Public site:** own the relationship with the base first (engagement channel the campaign controls); project the mandate’s official voice and credibility second.
 
-**Success near-term:** `/campanha` is the daily ops tool with real nuclei, people, and estimates in use, and the public site is the owned citizen channel — both live, not one or the other. **Operational hold:** real leadership/supporter PII waits on final Onda 0 counsel texts ([`docs/roadmap.md`](docs/roadmap.md)).
+**Success near-term:** `/campanha` is the daily ops tool with real nuclei, people, and estimates in use, and the public site is the owned citizen channel — both live, not one or the other.
 
 ## Positioning
 

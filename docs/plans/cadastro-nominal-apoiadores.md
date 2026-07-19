@@ -2,7 +2,7 @@
 
 Status: engenharia pronta e mesclada em `main` (pendente deploy + lote jurídico)
 Atualizado em: 2026-07-18
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (C2 — Já entregue eng.; dados reais ↔ Onda 0)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
 ## Referência visual (UX Pilot)

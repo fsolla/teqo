@@ -2,7 +2,7 @@
 
 Status: implementado e mesclado em `main`
 Atualizado em: 2026-07-18
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (C3 — Já entregue)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Janela 2, ordem 9 — C3)
 Responsável: —
 
 ## Referência visual (UX Pilot)

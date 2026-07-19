@@ -2,7 +2,7 @@
 
 Status: implementado
 Atualizado em: 2026-07-19
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins — Visitados ✓; VR+ aberto)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
 ## Contexto
@@ -29,7 +29,7 @@ A `window.history` **não expõe** a lista de entradas (URLs) da stack por motiv
 
 ## Decisões travadas
 
-- **Sem modelo no servidor.** Nenhuma collection, nenhum campo em `campaignUser`, nenhuma migration, nenhuma server action de escrita, nenhum `Consent`. Todo o estado vive em `localStorage` no dispositivo do usuário. (Decisão de produto 2026-07-17; roadmap (Fill-ins / Próximos).)
+- **Sem modelo no servidor.** Nenhuma collection, nenhum campo em `campaignUser`, nenhuma migration, nenhuma server action de escrita, nenhum `Consent`. Todo o estado vive em `localStorage` no dispositivo do usuário. (Decisão de produto 2026-07-17; roadmap "Campanha → Próximos ciclos".)
 - **`localStorage`, não `sessionStorage`.** A intenção é "voltar aonde eu estava" entre sessões; `sessionStorage` morre ao fechar a aba. `localStorage` persiste por origem+dispositivo até limpeza. Chave estável: `teqo:campaign:recent-visits`.
 - **Por dispositivo, sem sync.** O histórico é local ao navegador. Não há sincronização entre dispositivos do mesmo usuário (isso exigiria modelo no servidor — fora de escopo). Aceito como trade-off do "sem modelo".
 - **Registro client-side derivado da navegação real.** Como `window.history` não enumera entradas, um componente cliente invisível (`RecentVisitTracker`) registra cada visita "interessante" no `localStorage`. A entrada é produzida no servidor (label) e gravada no cliente (storage) — sem round-trip de escrita.

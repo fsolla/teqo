@@ -2,7 +2,7 @@
 
 Status: **implementado** (2026-07-18)
 Atualizado em: 2026-07-18
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (A1 — Já entregue)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A → A1)
 Responsável: —
 
 ## Referência visual (UX Pilot)

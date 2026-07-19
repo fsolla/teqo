@@ -2,7 +2,7 @@
 
 Status: rascunho
 Atualizado em: 2026-07-17
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (A5 — Próximos / Janela 3)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
 ## Referência visual (UX Pilot)
