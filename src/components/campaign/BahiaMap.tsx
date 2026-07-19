@@ -1,6 +1,7 @@
 'use client'
 
 import L from 'leaflet'
+import type { Feature } from 'geojson'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import 'leaflet/dist/leaflet.css'
@@ -111,7 +112,7 @@ export const BahiaMap = ({
         )
 
         const layer = L.geoJSON([...geometryModule.features], {
-          style: (feature) => {
+          style: (feature?: Feature) => {
             const properties = feature?.properties as Record<string, string> | undefined
             const key = featureKey(properties, keyProperty)
             const metric = key ? (values[key] ?? 0) : 0
