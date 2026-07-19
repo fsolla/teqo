@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/Progress'
 import { Toggle } from '@/components/ui/Toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import { buildGeneralDashboardViewModel } from '@/utilities/campaignDashboardViewModels'
+import { emptyNucleusChoroplethBundle } from '@/utilities/nucleusChoroplethTypes'
 
 describe('campaign visual foundation', () => {
   it('exposes the current progress value to assistive technology', () => {
@@ -110,6 +111,7 @@ describe('campaign visual foundation', () => {
       0,
       new Date('2026-07-18T12:00:00-03:00'),
       [],
+      emptyNucleusChoroplethBundle(),
     )
 
     expect(view.supportCounts).toEqual({

@@ -6,6 +6,7 @@ import {
   loadNucleusListElectionOverview,
   toNucleusElectionGeographyInput,
 } from '@/utilities/nucleusElectoralBaseline'
+import { loadNucleusChoroplethBundle } from '@/utilities/nucleusChoroplethPageData'
 import {
   buildNucleusListOverviewViewModel,
   nucleusListOverviewPreviewLimit,
@@ -113,7 +114,7 @@ export const loadNucleusListOverviewData = async (
   })
 
   const nucleiById = new Map(nuclei.map((nucleus) => [nucleus.id, nucleus]))
-  const [updateResult, listElectionOverview] = await Promise.all([
+  const [updateResult, listElectionOverview, choropleth] = await Promise.all([
     payload.find({
       collection: 'nucleusUpdate',
       where: { nucleus: { in: nuclei.map(({ id }) => id) } },
@@ -126,6 +127,7 @@ export const loadNucleusListOverviewData = async (
       overrideAccess: false,
     }),
     loadNucleusListElectionOverview(payload, user, nuclei),
+    loadNucleusChoroplethBundle(payload, user, nuclei),
   ])
 
   const updates = updateResult.docs as unknown as RawOverviewUpdate[]
@@ -174,5 +176,6 @@ export const loadNucleusListOverviewData = async (
     baseline2022: listElectionOverview.baseline2022,
     trend: listElectionOverview.trend,
     conversion: listElectionOverview.conversion,
+    choropleth,
   })
 }

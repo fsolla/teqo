@@ -678,3 +678,34 @@ export const loadNucleusListElectionOverview = async (
     conversion,
   }
 }
+
+/** Solla 2022 federal T1 votes indexed by canonical city name (choropleth B3). */
+export const loadBaseline2022VotesByCityNames = async (
+  payload: Pick<Payload, 'find'>,
+  user: ElectionDataReader,
+  cityNames: readonly string[],
+): Promise<Map<string, number>> => {
+  const geography = resolveNucleusElectionGeography({
+    cities: [...cityNames],
+    regions: [],
+    tseZones: [],
+  })
+  if (!geography) return new Map()
+
+  const seriesByYear = await loadCandidateSeriesByGeography(payload, user, geography, [
+    ELECTION_YEAR_2022,
+  ])
+  const votes2022 = seriesByYear.get(ELECTION_YEAR_2022) ?? new Map<string, number>()
+  const byCity = new Map<string, number>()
+
+  for (const city of geography.zonesByCity.keys()) {
+    const zones = geography.zonesByCity.get(city) ?? []
+    const total = zones.reduce(
+      (sum, zoneNumber) => sum + (votes2022.get(cityZoneKey(city, zoneNumber)) ?? 0),
+      0,
+    )
+    if (total > 0) byCity.set(city, total)
+  }
+
+  return byCity
+}

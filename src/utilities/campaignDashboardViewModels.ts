@@ -2,6 +2,7 @@ import type { CampaignUser, ElectoralNucleus } from '@/payload-types'
 import type { NucleusPriority } from '@/lib/schemas/nucleus'
 import type { SupportStatus } from '@/lib/schemas/leadership'
 import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
+import type { NucleusChoroplethBundle } from '@/utilities/nucleusChoroplethTypes'
 import { formatNucleusTerritoryLabel } from '@/utilities/nucleusUi'
 import { sumVoteGoals, type VoteGoalsViewModel } from '@/utilities/voteGoals'
 
@@ -62,6 +63,7 @@ export type GeneralDashboardViewModel = {
     withoutRecentUpdate: DashboardQueueItem[]
     pendingEstimate: DashboardQueueItem[]
   }
+  choropleth: NucleusChoroplethBundle
   upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
 }
 
@@ -178,6 +180,7 @@ export const buildGeneralDashboardViewModel = (
   updatesThisWeek: number,
   now: Date,
   upcomingActionPlans: ActionPlanUpcomingPreviewRecord[],
+  choropleth: NucleusChoroplethBundle,
 ): GeneralDashboardViewModel => {
   const coordinatedCount = nuclei.filter(({ coordinators }) => coordinators.length > 0).length
   const confirmedCount = nuclei.filter(
@@ -213,6 +216,7 @@ export const buildGeneralDashboardViewModel = (
         )
         .map(toQueueItem),
     },
+    choropleth,
     upcomingActionPlans,
   }
 }

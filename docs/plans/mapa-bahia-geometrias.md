@@ -1,7 +1,7 @@
 # Mapa da Bahia na campanha — geometrias estáticas + Leaflet
 
-Status: Fase 1 entregue (B2); Fase 2 (B3 Leaflet) pendente
-Atualizado em: 2026-07-18
+Status: Fase 1 entregue (B2); Fase 2 (B3 Leaflet) em implementação
+Atualizado em: 2026-07-19
 Item do roadmap: [docs/roadmap.md](../roadmap.md) — B2 (Fase 1) / B3 (Fase 2) / B4 (camada de zonas); lazy load e DRY de scripts → [B5](escala-dry-pos-b2.md)
 Responsável: —
 
@@ -19,7 +19,10 @@ O `electoralNucleus` indexa território por texto (`regions`/`cities`/`neighborh
 - **Extensão `*.topo.json`** (não `.topojson`) para import JSON nativo no Next/TS sem config extra.
 - **`/mapa` dedicada do design-ux permanece adiada.** v1 (B3) incorpora o mapa em superfícies já existentes: overview da lista de núcleos, detalhe do núcleo e dashboard `/campanha`.
 - **Zona segue como granularidade eleitoral de referência** do núcleo — não mapear núcleo a seções (ver "Granularidade seção vs. zona").
-- **Sem migration, sem collection, sem Consent, sem server action nova.** Só dado estático + componentes cliente + agregações já existentes.
+- **Sem migration, sem collection, sem Consent, sem server action nova.** Só dado estático + componentes cliente + agregações por chave (`codarea` / código TI) via `nucleusChoropleth.ts`.
+- **Alocação multi-município (B3):** estimativa confirmada dividida igualmente entre `cities[]`; contagem de núcleos +1 por cidade coberta; baseline 2022 por voto TSE por cidade (sem split, sem dupla contagem na união do conjunto filtrado).
+- **Métricas v1 do coroplético:** nº de núcleos, estimativa confirmada, votos Solla 2022 (quando seed A3 existir). Tendência E2 e prioridade E1 ficam fora desta entrega.
+- **Tiles:** OpenStreetMap raster com atribuição; altura ~280–360px; tokens `data-theme='campaign'`.
 
 ## Por que estático e não PostGIS
 
@@ -55,7 +58,7 @@ Hierarquia TSE: município → (1+) zona → (muitas) seção; a relação munic
 
 - `scripts/build-bahia-geometries.mjs` (`pnpm build:geometries`): baixa IBGE Malhas + Localidades (via `downloadToBuffer` de `electionResultsZip.ts`), reconcilia nomes com `canonicalizeMunicipalityName` (só `UnknownMunicipalityError`), constrói topologia com `topojson-server` + `topojson-simplify` (`SIMPLIFY_QUANTILE = 0.35`) + `quantize` (`1e4`), dissolve territórios com `topojson-client` `merge`, emite os `*.topo.json`, `bahiaMunicipalityCodes.ts` e o fixture. Cache em `data/geometries/` (gitignored; `GEOMETRIES_CACHE_DIR`). **Não toca banco** — sem `assertLocalDatabase`. Não roda em build/dev — só quando se atualiza a versão de origem.
 
-## Leaflet na campanha (B3 — pendente)
+## Leaflet na campanha (B3 — em implementação)
 
 - Dependência: `leaflet` (+ `topojson-client` já instalado na Fase 1). `react-leaflet` é opcional; preferir wrapper cliente fino com `leaflet` direto e `dynamic(() => import(...), { ssr: false })` para evitar SSR.
 - **Lazy load (B5 F1):** não importar `bahiaGeometries` de forma eager no path default de `/campanha`. Preferir split município/TI + `import()` dinâmico no mount do mapa — ver [escala-dry-pos-b2.md](escala-dry-pos-b2.md). Se B3 aplicar isso no mesmo PR, fecha B5 Fase 1.
@@ -65,14 +68,15 @@ Hierarquia TSE: município → (1+) zona → (muitas) seção; a relação munic
   - `NucleusOverviewMap.tsx` — mapa no overview de `/campanha/nucleos`, escopado pelos mesmos filtros da lista, com toggle município/território e escolha da métrica (estimativa confirmada, nº de núcleos, baseline 2022 Solla quando disponível).
   - `NucleusDetailMap.tsx` — mapa pequeno no detalhe do núcleo destacando seus municípios/território (+ marcadores ponto das zonas TSE, quando a camada de zonas existir).
   - `DashboardMap.tsx` — coroplético por território no dashboard `/campanha`.
-- **Agregação:** servidor continua a fonte. Reusar `campaignDashboardPageData` / `nucleusViewModels` / `nucleusListOverviewPageData` e expor agregados por `codarea`/`code` de território; o cliente junta com a geometria. Sem query espacial.
+- **Agregação:** servidor continua a fonte. `nucleusChoropleth.ts` expõe `buildNucleusChoroplethBundle` (métricas por `codarea` e código TI); `loadNucleusListOverviewData` e `getCampaignDashboardPageData` (geral) anexam o bundle ao view model. O cliente junta com a geometria lazy-loaded. Sem query espacial.
+- **Soft deps entregues (2026-07-19):** A4 baseline no produto, E1 metas/prioridade, E2 tendência — o coroplético v1 usa baseline 2022; tendência/prioridade ficam para ciclo seguinte.
 
 ## Phasing
 
 - **Fase 1 — Fundação de geometrias (B2) ✓ entregue 2026-07-18:** `bahiaMunicipalityCodes.ts` + fixture + teste; `*.topo.json` de municípios e territórios; script `pnpm build:geometries`; helpers em `bahiaGeometries.ts`.
-- **Fase 2 — Leaflet nas superfícies (B3):** `BahiaMap` + `NucleusOverviewMap` + `NucleusDetailMap` + `DashboardMap`, com agregados existentes. Preferir fechar [B5 F1](escala-dry-pos-b2.md) (lazy geometrias) no mesmo PR.
+- **Fase 2 — Leaflet nas superfícies (B3):** `BahiaMap` + `NucleusOverviewMap` + `NucleusDetailMap` + `DashboardMap`, com `nucleusChoropleth`. Fecha [B5 F1](escala-dry-pos-b2.md) (lazy geometrias) no mesmo PR.
 
-**Sequenciamento:** a Fase 1 é independente e paralelizável. A Fase 2 rende mais depois de B1 ✓ (overview) e ganha valor com A4 (baseline no produto). Nenhum dos dois bloqueia B3 — o mapa funciona só com estimativa/nº de núcleos. B5 F1 é dependência suave de qualidade de bundle.
+**Sequenciamento:** a Fase 1 é independente e paralelizável. A Fase 2 rende mais depois de B1 ✓ (overview); A4 ✓, E1 ✓ e E2 ✓ já ampliam as métricas disponíveis. B5 F1 fecha no mesmo PR que B3.
 
 ## Entrega as-built (B2, 2026-07-18)
 
@@ -115,6 +119,7 @@ Após A2 ✓ + B3. Polígono por dissolução dos municípios membros (abordagem
 
 - **2026-07-18 (auditoria pré-B2 + entrega Fase 1):** territórios por dissolução IBGE (não shapefile IDE Bahia); extensão `*.topo.json`; reuso de `canonicalizeMunicipalityName`; núcleo usa `cities[]` (A1); script sem guard de banco; referências de linha do roadmap antigas removidas; Fase 1 implementada e marcada entregue.
 - **2026-07-18 (B5 registrado):** follow-ups do `/simplify` que não entraram no cleanup (lazy geometrias + cache CLI compartilhado) viraram item B5; B3 deve preferir F1.
+- **2026-07-19 (auditoria pré-B3):** overview/dashboard não tinham `Record<codarea|code, number>` — corrigido com `nucleusChoropleth.ts`; soft deps A4/E1/E2 marcadas entregues; alocação multi-município e métricas v1 documentadas; B5 F1 no mesmo PR.
 
 ## Referências
 

@@ -6,6 +6,7 @@ import type { Payload } from 'payload'
 import { createNucleusUpdateFormAction } from '@/app/(campaign)/campanha/(app)/nucleos/[slug]/nucleusUpdateFormActions'
 import { searchPrimaryContactOptionsFormAction } from '@/app/(campaign)/campanha/(app)/nucleos/[slug]/primaryContactSearchActions'
 import { LeadershipNetwork } from '@/components/campaign/LeadershipNetwork'
+import { NucleusDetailMapDynamic } from '@/components/campaign/NucleusDetailMapDynamic'
 import { NucleusElectoralBaseline } from '@/components/campaign/NucleusElectoralBaseline'
 import { NucleusInsights } from '@/components/campaign/NucleusInsights'
 import { NucleusIntelligenceDialogShell } from '@/components/campaign/NucleusIntelligenceDialogShell'
@@ -43,6 +44,7 @@ import type {
   StaffNucleusTabsViewModel,
 } from '@/utilities/nucleusViewModels'
 import { buildWhatsAppUrl } from '@/utilities/phone'
+import { buildNucleusDetailMapHighlight } from '@/utilities/nucleusChoropleth'
 
 const OverviewContent = ({
   baseline,
@@ -66,7 +68,16 @@ const OverviewContent = ({
   searchParams: NucleusDetailSearchParams
   updatePreview: NucleusUpdateViewModel[]
   voteGoals: NucleusDetailViewModel['voteGoals']
-}) => (
+}) => {
+  const mapHighlight = buildNucleusDetailMapHighlight({
+    cities: nucleus.cities,
+    regions: nucleus.regions,
+    tseZones: nucleus.tseZones,
+  })
+  const hasMapFootprint =
+    mapHighlight.codareas.length > 0 || mapHighlight.territoryCodes.length > 0
+
+  return (
   <>
     {nucleus.kind === 'staff' ? (
       <>
@@ -229,6 +240,13 @@ const OverviewContent = ({
     )}
 
     <div className="mt-4 flex flex-col gap-4">
+      {hasMapFootprint ? (
+        <NucleusDetailMapDynamic
+          codareas={mapHighlight.codareas}
+          territoryCodes={mapHighlight.territoryCodes}
+          territoryLabel={formatNucleusTerritoryLabel(nucleus)}
+        />
+      ) : null}
       <NucleusVoteGoals
         voteGoals={voteGoals}
         confirmedVoteEstimate={confirmedVoteEstimate}
@@ -281,7 +299,8 @@ const OverviewContent = ({
       </CardContent>
     </Card>
   </>
-)
+  )
+}
 
 const TerritoryContent = ({ nucleus }: { nucleus: NucleusTabsViewModel }) => (
   <div className="grid gap-4 lg:grid-cols-2">

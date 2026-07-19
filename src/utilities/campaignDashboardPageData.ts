@@ -3,6 +3,7 @@ import type { Payload } from 'payload'
 import { isSupportStatus } from '@/lib/schemas/leadership'
 import type { CampaignUser } from '@/payload-types'
 import { loadUpcomingActionPlansPreview } from '@/utilities/actionPlanUpcomingPreview'
+import { loadNucleusChoroplethBundle } from '@/utilities/nucleusChoroplethPageData'
 import {
   buildGeneralDashboardViewModel,
   buildScopedDashboardViewModel,
@@ -11,6 +12,7 @@ import {
 } from '@/utilities/campaignDashboardViewModels'
 import { getBahiaWeekRange } from '@/utilities/campaignTime'
 import { loadCoordinatorSummaries } from '@/utilities/nucleusCoordinatorOptions'
+import { toNucleusElectionGeographyInput } from '@/utilities/nucleusElectoralBaseline'
 import { nucleusVoteGoalsSelect } from '@/utilities/nucleusViewModels'
 import { requireRelationshipId } from '@/utilities/relationship'
 import { toVoteGoalsViewModel } from '@/utilities/voteGoals'
@@ -168,6 +170,17 @@ export const getCampaignDashboardPageData = async (
   ])
 
   const rawNuclei = nucleusResult.docs as unknown as RawDashboardNucleus[]
+  const choroplethPromise =
+    user.role === 'geral'
+      ? loadNucleusChoroplethBundle(
+          payload,
+          user,
+          rawNuclei.map((nucleus) => ({
+            ...toNucleusElectionGeographyInput(nucleus),
+            confirmedVoteEstimate: nucleus.confirmedVoteEstimate ?? null,
+          })),
+        )
+      : undefined
   const coordinatorIds = [
     ...new Set(
       rawNuclei.flatMap((nucleus) =>
@@ -207,12 +220,14 @@ export const getCampaignDashboardPageData = async (
   )
 
   if (user.role === 'geral') {
+    const choropleth = await choroplethPromise!
     return buildGeneralDashboardViewModel(
       nuclei,
       leaderships,
       updateResult.totalDocs,
       now,
       upcomingActionPlans,
+      choropleth,
     )
   }
 

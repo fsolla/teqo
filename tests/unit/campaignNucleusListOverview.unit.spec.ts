@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { NucleusListOverview } from '@/components/campaign/NucleusListOverview'
+import { emptyNucleusChoroplethBundle } from '@/utilities/nucleusChoroplethTypes'
 import { buildNucleusListOverviewViewModel } from '@/utilities/nucleusListOverviewViewModels'
 
 const now = new Date('2026-07-18T15:00:00.000Z')
@@ -41,6 +42,8 @@ const nucleus = ({
   priority,
 })
 
+const emptyChoropleth = emptyNucleusChoroplethBundle()
+
 describe('buildNucleusListOverviewViewModel', () => {
   it('aggregates confirmed estimates, coverage, and pending suggestions for staff', () => {
     const view = buildNucleusListOverviewViewModel({
@@ -58,6 +61,7 @@ describe('buildNucleusListOverviewViewModel', () => {
       ],
       recentUpdates: [],
       upcomingActionPlans: [],
+      choropleth: emptyChoropleth,
     })
 
     expect(view.totalFiltered).toBe(4)
@@ -85,6 +89,7 @@ describe('buildNucleusListOverviewViewModel', () => {
       ],
       recentUpdates: [],
       upcomingActionPlans: [],
+      choropleth: emptyChoropleth,
     })
 
     expect(view.estimate).not.toHaveProperty('pendingSuggestionsCount')
@@ -109,6 +114,7 @@ describe('buildNucleusListOverviewViewModel', () => {
       ],
       recentUpdates: [],
       upcomingActionPlans: [],
+      choropleth: emptyChoropleth,
     })
 
     expect(view.voteGoals).toEqual({ good: 1200, regular: 950, minimum: 600 })
@@ -135,6 +141,7 @@ describe('NucleusListOverview', () => {
         },
       ],
       upcomingActionPlans: [],
+      choropleth: emptyChoropleth,
     })
 
     const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))
@@ -162,6 +169,7 @@ describe('NucleusListOverview', () => {
       ],
       recentUpdates: [],
       upcomingActionPlans: [],
+      choropleth: emptyChoropleth,
     })
 
     const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))
@@ -177,6 +185,7 @@ describe('NucleusListOverview', () => {
       recentUpdates: [],
       upcomingActionPlans: [],
       baseline2022: { gapTotal: 2140, above: 8, below: 6 },
+      choropleth: emptyChoropleth,
     })
 
     const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))
@@ -196,6 +205,7 @@ describe('NucleusListOverview', () => {
       recentUpdates: [],
       upcomingActionPlans: [],
       baseline2022: null,
+      choropleth: emptyChoropleth,
     })
 
     const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))
@@ -210,6 +220,7 @@ describe('NucleusListOverview', () => {
       recentUpdates: [],
       upcomingActionPlans: [],
       trend: { decline: 3, stable: 5, increase: 2, noBaseline: 1 },
+      choropleth: emptyChoropleth,
     })
 
     const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))

@@ -1,7 +1,7 @@
 # Escala e DRY pós-A4 (baseline TSE no produto)
 
-Status: Fase 1 implementada (Fases 2–3 pendentes; merge pendente)
-Atualizado em: 2026-07-19 (Fase 1 + `capture-review-debts` pós-`/simplify` — cleanup F1 absorvido; F2 ganha quebra de ciclo de módulo)
+Status: Fase 1 implementada (Fases 2–4 pendentes; merge pendente)
+Atualizado em: 2026-07-19 (Fase 4 lista+coroplético registrada via `capture-review-debts` pós-B3)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, item A7)
 Responsável: —
 
@@ -14,10 +14,11 @@ Os revisores (performance / reuse / quality) marcaram como **importantes e maior
 1. **Detalhe puxa todas as linhas nominais de dep. federal (1º turno) na geografia.** ~~`detailVoteWhere` + `loadElectionVotes`~~ **Resolvido na Fase 1 (2026-07-19):** `loadFederalCandidateTotalsAggregated` (`src/utilities/federalCandidateTotalsAggregate.ts`) agrega via drizzle `SUM(votes) GROUP BY candidate_number`; o detalhe usa Local API só para presidente/governador da chapa (`loadTicketOfficeVotes`). A série histórica E2 (`loadCandidateSeriesByGeography`) já era magra por `candidateNumber`.
 2. **Filtro geográfico por `cityName` (texto), não por `cityCode` TSE.** O índice natural das collections de eleição é `(year, office, turn, cityCode, zoneNumber)`; filtrar por nome impede o plano ótimo e complica OR grandes na união do overview (já mitigado no simplify, mas o detalhe/TI ainda sofre).
 3. **DRY de UI do Gap "acima".** `NucleusInsights` usa `Alert variant="pending"` para abaixo/neutro, mas o estado "acima" aplica classes ad-hoc com tokens `--estimate-confirmed*`. O slice **A5-1 conversão** reutiliza o mesmo `confirmedInsightAlertClass` para o alerta de taxa de conversão (reduto/consolidado) — interim até a Fase 3. A barra do candidato no card também reimplementa `role="progressbar"` em vez de reusar `Progress` (`NucleusListOverview`).
+4. **Query duplicada de votos 2022 na lista de núcleos com coroplético B3.** `nucleusListOverviewPageData.ts` chama em paralelo `loadNucleusListElectionOverview` (union → `loadCandidateSeriesByGeography` multi-ano) e `loadNucleusChoroplethBundle` → `loadBaseline2022VotesByCityNames` (segunda passagem `loadCandidateSeriesByGeography` só 2022 sobre geografia sobreposta). O simplify B3 unificou resolve interno do choropleth, mas não compartilha o resultado da série 2022 já obtida no loader de gap/tendência/conversão.
 
 **Já resolvido no simplify pós-F1 / `capture-review-debts` (não reabrir):** remoção de `cities` derivado em `NucleusElectionGeography` (só `zonesByCity` + `cityZonePairs`); `assertCanReadElectionData` com `asserts` e entrada `CampaignUser | User | null | undefined`; testes reais de `loadFederalCandidateTotalsAggregated` (mock drizzle) em `federalCandidateTotalsAggregate.unit.spec.ts`; int spy estrutural (`whereContainsField*`) em vez de `JSON.stringify(where)`; inline do SQL builder federal; comentário em `aggregateFederalCandidateTotals` como oracle in-memory para unit tests.
 
-**Explicitamente fora (revisores pediram skip no simplify ou descartados no triage):** map JSX de linhas Lula/Jerônimo, dropar `candidate.rank` / `electorate.aptos` / `ratio` do tipo público só por higiene (só fariam sentido se a F1 deixar de calcular rank), cast `as unknown as RawOverviewNucleus` da B1 (não é débito novo do A4), parity test drizzle vs `aggregateFederalCandidateTotals` (int + unit cobrem comportamento), typed drizzle rows/zod no `drizzleResultRows` (padrão plataforma C6/C8), `requirePostgresDrizzle` em `supporterListOverviewAggregate.ts` (fora do escopo A7 — DRY de ~6 linhas; ver C10 quando o plano existir), micro-opt `aggregateElectorate`/`matchesGeography` com `Set` (impacto negligível).
+**Explicitamente fora (revisores pediram skip no simplify ou descartados no triage):** map JSX de linhas Lula/Jerônimo, dropar `candidate.rank` / `electorate.aptos` / `ratio` do tipo público só por higiene (só fariam sentido se a F1 deixar de calcular rank), cast `as unknown as RawOverviewNucleus` da B1 (não é débito novo do A4), parity test drizzle vs `aggregateFederalCandidateTotals` (int + unit cobrem comportamento), typed drizzle rows/zod no `drizzleResultRows` (padrão plataforma C6/C8), `requirePostgresDrizzle` em `supporterListOverviewAggregate.ts` (fora do escopo A7 — DRY de ~6 linhas; ver C10 quando o plano existir), micro-opt `aggregateElectorate`/`matchesGeography` com `Set` (impacto negligível), `BahiaMap` `setStyle` incremental → **B6** ([escala-dry-pos-b3.md](escala-dry-pos-b3.md)), factory geometrias mun/TI → **B5 F3** ([escala-dry-pos-b2.md](escala-dry-pos-b2.md)).
 
 ## Objetivos
 
@@ -28,7 +29,7 @@ Os revisores (performance / reuse / quality) marcaram como **importantes e maior
 
 ## Decisões travadas
 
-- **Um item A7, três fases ordenadas.** Mesmo racional do B5/C7/C8: um ID de roadmap, PRs por fase. Ordem: agregação do detalhe (custo real) → `cityCode` (escala BA-wide) → DRY de Alert/Progress (barato, UI).
+- **Um item A7, quatro fases ordenadas.** Mesmo racional do B5/C7/C8/E7: um ID de roadmap, PRs por fase. Ordem: agregação do detalhe (custo real) → `cityCode` (escala BA-wide) → DRY de Alert/Progress (barato, UI) → fetch único 2022 lista+coroplético (B3).
 - **Dependência dura de A4.** Só faz sentido com o loader/UI já no produto; não reabre o escopo do Gap vs 2022 nem do card Baseline.
 - **Fase 1 não remove o "mais votado aqui" da UI.** O produto do A4 inclui `winnerFederal`; a otimização agrega no SQL/drizzle (ou limita o payload), não corta a feature. Se produto decidir que rank/winner saem do card, a F1 encolhe para "só o candidato da chapa + tallies".
 - **Cortável se a geografia real dos núcleos permanecer pequena** (1–2 municípios tipados). Vira não-cortável de qualidade quando A5/B3 passarem a martelar o mesmo helper em TI inteiro.
@@ -50,8 +51,10 @@ flowchart TD
     F1["Fase 1 — Agregar federal no detalhe<br/>(GROUP BY / payload estreito)"]
     F1 --> F2["Fase 2 — Geografia por cityCode TSE"]
     F1 --> F3["Fase 3 — Alert confirmed + Progress"]
+    F1 --> F4["Fase 4 — Fetch 2022 único<br/>lista overview + coroplético"]
     F1 -.mesmo loader.-> A5["A5 Insights"]
     F1 -.métricas.-> B3["B3 Leaflet coroplético"]
+    F4 -.evita 2ª query.-> B3
 ```
 
 ### Fase 1 — Agregação do ranking federal no detalhe ✓ (2026-07-19)
@@ -74,7 +77,15 @@ flowchart TD
 - `NucleusInsights`: trocar o `cn(...)` ad-hoc e `confirmedInsightAlertClass` (Gap "acima" **e** conversão reduto/consolidado desde A5-1) por `variant={… ? 'confirmed' : 'pending'}` (ou `default` só se neutro — manter pending para noBaseline/noEstimate).
 - `NucleusElectoralBaseline`: substituir a barra custom por `Progress` (já usado no overview), preservando `aria-label`.
 
-**Migration:** nenhuma nas Fases 1 e 3. Fase 2 preferencialmente só artefato estático versionado; índice Postgres extra só se o EXPLAIN ainda doer após `cityCode` (aí `pnpm migrate:create` cortável).
+### Fase 4 — Fetch único de votos 2022 (lista overview + coroplético B3)
+
+- `loadNucleusListElectionOverview` já obtém `votes2022` via `loadCandidateSeriesByGeography` na união do conjunto filtrado — expor helper ou retorno auxiliar com `Map<cityName, votes>` (ou reutilizar `sumCandidateVotesForGeography` por cidade) sem segunda query.
+- `loadNucleusChoroplethBundle` / `nucleusListOverviewPageData.ts`: aceitar `baselineVotesByCity` pré-carregado do overview (ou função `loadNucleusListOverviewElectionAndChoropleth` que faz uma passagem de série + monta gap/trend/conversão + bundle).
+- Manter `loadBaseline2022VotesByCityNames` para call sites isolados (dashboard geral, detalhe) até um follow-up opcional.
+- Testes: int ou unit garantindo que overview com coroplético não chama `loadCandidateSeriesByGeography` duas vezes para 2022 (spy estrutural como Fase 1 federal).
+- **Verificar:** paridade numérica do coroplético `baseline2022Votes` antes/depois.
+
+**Migration:** nenhuma nas Fases 1, 3 e 4. Fase 2 preferencialmente só artefato estático versionado; índice Postgres extra só se o EXPLAIN ainda doer após `cityCode` (aí `pnpm migrate:create` cortável).
 
 ## Dependências
 
@@ -86,7 +97,8 @@ flowchart TD
 
 - Novos insights de produto → **A5** (planos `insight-*.md`).
 - Dobradinha 2026 → **A6**.
-- Lazy load de geometrias / cache CLI → **B5**.
+- Lazy load de geometrias / cache CLI / factory mun-TI → **B5** (F1 ✓, F2–F3 pendentes).
+- `BahiaMap` `setStyle` incremental → **B6** ([escala-dry-pos-b3.md](escala-dry-pos-b3.md)).
 - Escala de apoiadores / agenda → **C6/C7/C8**.
 - Remover rank/winner da UI por decisão de produto sem agregação — fora; se produto cortar, fechar F1 como "só chapa + tallies".
 - Tipagem genérica dos `select` Payload do overview B1.
@@ -105,4 +117,6 @@ flowchart TD
 - `src/components/campaign/NucleusElectoralBaseline.tsx` — barra do candidato
 - `src/components/ui/Alert.tsx` — variant `pending` a espelhar
 - `src/components/ui/Progress.tsx` — reuso no card
+- `src/utilities/nucleusListOverviewPageData.ts` — `Promise.all` overview + choropleth
+- `src/utilities/nucleusChoroplethPageData.ts` — `loadBaseline2022VotesByCityNames`
 - AGENTS.md — Election baseline data; Local API `overrideAccess: false`; naming inglês

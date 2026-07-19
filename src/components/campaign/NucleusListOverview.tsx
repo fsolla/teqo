@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { CampaignDataFreshness } from '@/components/campaign/CampaignDataFreshness'
+import { NucleusOverviewMapDynamic } from '@/components/campaign/NucleusOverviewMapDynamic'
 import { CampaignMetricStrip, type CampaignMetric } from '@/components/campaign/CampaignMetricStrip'
 import { campaignPrioritySurfaceClassName } from '@/components/campaign/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
@@ -140,6 +141,8 @@ export const NucleusListOverview = ({
           ) : null}
         </CardContent>
       </Card>
+
+      <NucleusOverviewMapDynamic choropleth={view.choropleth} />
 
       <div className="flex flex-col gap-2">
         <h3 className="text-sm font-medium text-muted-foreground">Demais indicadores</h3>

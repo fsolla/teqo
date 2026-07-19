@@ -2,6 +2,7 @@ import type { NucleusPriority } from '@/lib/schemas/nucleus'
 import type { CampaignUser, NucleusUpdate } from '@/payload-types'
 import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
 import type { NucleusBaseline2022OverviewAggregate, NucleusConversionOverviewAggregate, NucleusTrendOverviewAggregate } from '@/utilities/nucleusElectoralBaseline'
+import type { NucleusChoroplethBundle } from '@/utilities/nucleusChoroplethTypes'
 import {
   aggregateVoteGoals,
   type VoteGoalsSumViewModel,
@@ -56,6 +57,7 @@ export type NucleusListOverviewViewModel = {
   conversion: NucleusConversionOverviewAggregate | null
   recentUpdates: NucleusListOverviewUpdateRecord[]
   upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
+  choropleth: NucleusChoroplethBundle
 }
 
 const percentage = (part: number, total: number): number =>
@@ -69,6 +71,7 @@ export const buildNucleusListOverviewViewModel = ({
   baseline2022 = null,
   trend = null,
   conversion = null,
+  choropleth,
 }: {
   nuclei: NucleusListOverviewNucleusRecord[]
   recentUpdates: NucleusListOverviewUpdateRecord[]
@@ -77,6 +80,7 @@ export const buildNucleusListOverviewViewModel = ({
   baseline2022?: NucleusBaseline2022OverviewAggregate | null
   trend?: NucleusTrendOverviewAggregate | null
   conversion?: NucleusConversionOverviewAggregate | null
+  choropleth: NucleusChoroplethBundle
 }): NucleusListOverviewViewModel => {
   const totalFiltered = nuclei.length
   const confirmedCount = nuclei.filter(
@@ -114,5 +118,6 @@ export const buildNucleusListOverviewViewModel = ({
     conversion,
     recentUpdates,
     upcomingActionPlans,
+    choropleth,
   }
 }

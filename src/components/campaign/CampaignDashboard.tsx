@@ -9,6 +9,7 @@ import {
 import Link from 'next/link'
 
 import { CampaignDataFreshness } from '@/components/campaign/CampaignDataFreshness'
+import { DashboardMapDynamic } from '@/components/campaign/DashboardMapDynamic'
 import { CampaignMetricStrip } from '@/components/campaign/CampaignMetricStrip'
 import {
   CampaignPageShell,
@@ -257,6 +258,8 @@ const GeneralDashboard = ({ view, now }: { view: GeneralDashboardViewModel; now:
         ))}
       </div>
     </section>
+
+    <DashboardMapDynamic choropleth={view.choropleth} />
 
     <UpcomingActionPlansCard plans={view.upcomingActionPlans} />
   </CampaignPageShell>

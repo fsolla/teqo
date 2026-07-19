@@ -1,7 +1,7 @@
 # Escala e DRY pós-B2 (geometrias + scripts CLI)
 
-Status: registrado no roadmap (fases pendentes)
-Atualizado em: 2026-07-18
+Status: Fase 1 entregue com B3 (2026-07-19); Fases 2–3 pendentes
+Atualizado em: 2026-07-19 (Fase 3 factory geometrias registrada via `capture-review-debts` pós-B3)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B5)
 Responsável: —
 
@@ -11,6 +11,7 @@ O B2 ([mapa-bahia-geometrias.md](mapa-bahia-geometrias.md) Fase 1) entregou a fu
 
 1. **Carregamento eager de geometrias no cliente.** `src/lib/bahiaGeometries.ts` importa os dois TopoJSON, roda `topojson-client` `feature()` em 417+27 polígonos e monta índices no load do módulo — custo de bundle/memória antes de qualquer superfície Leaflet (B3).
 2. **Cache de download duplicado nos CLIs.** `ensureCachedJson` em `scripts/build-bahia-geometries.mjs` é estruturalmente o mesmo que `ensureCachedZip` em `scripts/seed-tse-results.mjs` (mkdir → hit → `downloadToBuffer` → SHA-256 → write), só muda extensão/parse.
+3. **Factory duplicada mun/TI pós-B3 F1.** `bahiaMunicipalityGeometries.ts` e `bahiaTerritoryGeometries.ts` repetem o mesmo pipeline `topojson.feature` → array → `Map` por chave → export do módulo indexado — só mudam topology object, propriedade de chave (`codarea` vs `code`) e getter.
 
 Este plano é o registro canônico desses follow-ups. Sem ele, o B3 pode embarcar o mapa com payload desnecessário no path default, e o próximo script de dado aberto volta a clonar o cache.
 
@@ -24,9 +25,9 @@ Este plano é o registro canônico desses follow-ups. Sem ele, o B3 pode embarca
 
 ## Decisões travadas
 
-- **Um item B5, duas fases ordenadas.** Mesmo racional do C6/C7: um ID de roadmap, PRs por fase. Ordem: lazy load (impacta B3) → helper de cache CLI (barato, sem UI).
+- **Um item B5, três fases ordenadas.** Mesmo racional do C6/C7/A7: um ID de roadmap, PRs por fase. Ordem: lazy load (impacta B3) → helper de cache CLI (barato, sem UI) → factory geometrias mun/TI (DRY pós-split B3).
 - **Dependência dura de B2.** Este item só faz sentido com os `*.topo.json` e `bahiaGeometries` já commitados; não reabre o escopo de geração/simplificação das malhas.
-- **Fase 1 preferencialmente junto com B3.** Se o implementador de B3 aplicar o carregamento lazy no mesmo PR das superfícies Leaflet, a Fase 1 deste plano fecha ali (marcar B5 F1 ✓ e seguir só a F2). Se B3 embarcar import estático por pressa, a F1 permanece como débito explícito.
+- **2026-07-19 (Fase 1 entregue com B3):** lazy load split mun/TI via `loadMunicipalityGeometryModule` / `loadTerritoryGeometryModule`; map islands `dynamic(..., { ssr: false })`.
 - **Cortável se o mapa permanecer fora do caminho crítico.** B3 já é corte seguro no roadmap; B5 F2 (cache CLI) é ainda mais cortável — a duplicação atual é ~20 linhas. F1 só é “não cortável” no sentido de qualidade do B3 (bundle), não de calendário eleitoral.
 - **Não extrair helpers de sort pt-BR nem de evidence SHA nos testes.** Decisão dos revisores do simplify (2026-07-18): indirection sem ganho.
 - **i18n e naming** (AGENTS.md): identificadores em inglês (`loadMunicipalityFeatures`, `loadTerritoryFeatures`, `ensureCachedDownload`), strings visíveis em pt-BR só se algum log de CLI for user-facing (hoje são logs de build).
@@ -44,6 +45,7 @@ flowchart TD
     B2["B2 geometrias ✓"] --> F1
     F1["Fase 1 — Lazy geometrias<br/>split mun/TI + dynamic import"]
     F1 --> F2["Fase 2 — ensureCachedDownload<br/>CLI compartilhado"]
+    F1 --> F3["Fase 3 — buildGeometryModuleFromTopology<br/>(mun/TI DRY)"]
     F1 -.preferencialmente.-> B3["B3 Leaflet"]
     B2 --> B3
 ```
@@ -63,7 +65,14 @@ flowchart TD
 - Continuar usando `downloadToBuffer` (`src/lib/electionResultsZip.ts`).
 - Migrar `scripts/build-bahia-geometries.mjs` e `scripts/seed-tse-results.mjs`; sem mudança de comportamento nem de pastas `data/geometries/` / `data/tse/`.
 
-**Migration:** nenhuma. Sem collection, sem Consent, sem server action de produto.
+### Fase 3 — Factory compartilhada mun/TI
+
+- Extrair `buildGeometryModuleFromTopology<TProps, TKey>({ topology, objectName, keyProperty, getFeature })` em `src/lib/bahiaGeometryModuleFactory.ts` (ou ao lado de `bahiaGeometriesTypes.ts`).
+- `bahiaMunicipalityGeometries.ts` / `bahiaTerritoryGeometries.ts` ficam como thin wrappers: import JSON + chamada à factory com `codarea` / `code`.
+- Testes int existentes (`bahiaGeometries.int.spec.ts`) permanecem verdes — sem mudança de API pública dos loaders async.
+- **Não** fundir os dois JSON num único bundle (mantém split lazy B5 F1).
+
+**Migration:** nenhuma nas três fases. Sem collection, sem Consent, sem server action de produto.
 
 ## Dependências
 
@@ -76,6 +85,8 @@ flowchart TD
 - Implementação Leaflet / componentes de mapa → **B3** ([mapa-bahia-geometrias.md](mapa-bahia-geometrias.md) Fase 2).
 - Camada de zonas TSE no mapa → **B4**.
 - Helper genérico de `localeCompare('pt-BR')` ou de evidence SHA nos testes int — rejeitado no simplify.
+- `BahiaMap` `setStyle` incremental → **B6** ([escala-dry-pos-b3.md](escala-dry-pos-b3.md)).
+- Query duplicada lista+coroplético 2022 → **A7 F4** ([escala-dry-pos-a4.md](escala-dry-pos-a4.md)).
 - Mudança de qualidade/simplificação das malhas IBGE ou re-download obrigatório — só se a F2 tocar proveniência (não deve).
 
 ## Referências
@@ -83,7 +94,9 @@ flowchart TD
 - `docs/roadmap.md` (Trilha B, item B5; B2/B3)
 - `docs/plans/mapa-bahia-geometrias.md` — plano pai; B3 deve preferir a F1 deste item
 - `docs/plans/escala-dry-pos-c2.md` / `escala-dry-pos-c3.md` — precedente de registro pós-`/simplify`
-- `src/lib/bahiaGeometries.ts` — eager `feature()` + índices
+- `src/lib/bahiaGeometries.ts` — lazy loaders async
+- `src/lib/bahiaMunicipalityGeometries.ts` / `bahiaTerritoryGeometries.ts` — near-duplicate pós-F1
+- `src/lib/bahiaGeometriesTypes.ts` — tipos `*GeometryModule`
 - `scripts/build-bahia-geometries.mjs` — `ensureCachedJson`
 - `scripts/seed-tse-results.mjs` — `ensureCachedZip`
 - `src/lib/electionResultsZip.ts` — `downloadToBuffer`
