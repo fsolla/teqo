@@ -2,7 +2,12 @@ import type { NucleusPriority } from '@/lib/schemas/nucleus'
 import type { TicketFlipOverviewAggregate, TicketLeverageOverviewAggregate } from '@/lib/electionInsights'
 import type { CampaignUser, NucleusUpdate } from '@/payload-types'
 import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
-import type { NucleusBaseline2022OverviewAggregate, NucleusConversionOverviewAggregate, NucleusTrendOverviewAggregate } from '@/utilities/nucleusElectoralBaseline'
+import type {
+  NucleusBaseline2022OverviewAggregate,
+  NucleusClassificationOverviewAggregate,
+  NucleusConversionOverviewAggregate,
+  NucleusTrendOverviewAggregate,
+} from '@/utilities/nucleusElectoralBaseline'
 import type { NucleusChoroplethBundle } from '@/utilities/nucleusChoroplethTypes'
 import {
   aggregateVoteGoals,
@@ -60,6 +65,8 @@ export type NucleusListOverviewViewModel = {
   leverage: TicketLeverageOverviewAggregate | null
   /** Null when no nucleus in the filtered set has resolvable TSE geography. */
   flipOpportunity: TicketFlipOverviewAggregate | null
+  /** Null when no nucleus in the filtered set has resolvable geography with valid votes. */
+  classification: NucleusClassificationOverviewAggregate | null
   recentUpdates: NucleusListOverviewUpdateRecord[]
   upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
   choropleth: NucleusChoroplethBundle
@@ -78,6 +85,7 @@ export const buildNucleusListOverviewViewModel = ({
   conversion = null,
   leverage = null,
   flipOpportunity = null,
+  classification = null,
   choropleth,
 }: {
   nuclei: NucleusListOverviewNucleusRecord[]
@@ -89,6 +97,7 @@ export const buildNucleusListOverviewViewModel = ({
   conversion?: NucleusConversionOverviewAggregate | null
   leverage?: TicketLeverageOverviewAggregate | null
   flipOpportunity?: TicketFlipOverviewAggregate | null
+  classification?: NucleusClassificationOverviewAggregate | null
   choropleth: NucleusChoroplethBundle
 }): NucleusListOverviewViewModel => {
   const totalFiltered = nuclei.length
@@ -127,6 +136,7 @@ export const buildNucleusListOverviewViewModel = ({
     conversion,
     leverage,
     flipOpportunity,
+    classification,
     recentUpdates,
     upcomingActionPlans,
     choropleth,

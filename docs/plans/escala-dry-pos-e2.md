@@ -1,7 +1,7 @@
 # Escala e DRY pós-E2 (série TSE 2014/2018 + tendência)
 
 Status: Fase 2 entregue (2026-07-19); extensão F2 pós-A5 pendente; Fases 1, 3 e 4 pendentes
-Atualizado em: 2026-07-19 (extensão int leverage/flip registrada via `capture-review-debts` pós-A5 `/simplify`)
+Atualizado em: 2026-07-19 (extensão int leverage/flip/**classification** registrada via `capture-review-debts` pós-A5 `/simplify` + pós-A5-2)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E, item E7)
 Responsável: —
 
@@ -25,12 +25,14 @@ Os revisores (performance / reuse / quality) marcaram como **importantes e maior
 
 **Pendente pós-A5 (`capture-review-debts`):** int de `leverage`/`flipOpportunity` no loader combinado; spy estrutural de que `loadFederalCandidateTotalsAggregated` não é chamado N vezes na lista (documenta débito até A7 F5 fechar o batch).
 
+**Pendente pós-A5-2 (`capture-review-debts`):** int de `classification.distribution` no mesmo `loadNucleusListElectionOverview` (fixture com `validos` > 0 e bandas comparáveis; assert `classification: null` quando só `semBaseline`).
+
 **Explicitamente fora (revisores pediram skip no simplify, capture-review-debts ou já têm item):** ranking federal completo no detalhe e filtro por `cityCode` → **A7**; query duplicada lista+overview e re-resolve de geografia no baseline do overview → **E6**; DRY de `formatElectionNumber` nos cards não-tendência do overview → **E6 F3**; remover a query TSE do overview quando não há estimativas comparáveis (o card de tendência exige distribuição mesmo sem gap — comportamento intencional de produto); chip de faixa no Alert de conversão (produto adia); DRY do stack de 3 `Alert`s em `NucleusInsights` até mais insights A5; **imports sequenciais 2014/2018/2022** em `seedMultiYearFederalCandidateFixture` (fixture pequena; paralelizar só se CI atrasar); **documentação de isolamento** entre suites int que apagam `election*` na mesma DB (mitigado por `teqo_test` por worker).
 
 ## Objetivos
 
 - Abrir a aba Visão geral de um núcleo calcula a tendência **uma vez** e não repete a série histórica em dois blocos adjacentes.
-- `loadNucleusListElectionOverview` tem pelo menos um teste int com fixture TSE que cobre gap agregado + distribuição de tendência + agregado de conversão (`weightedRate`, `distribution` reduto/consolidado/oportunidade) no mesmo path; **extensão pós-A5:** agregados `leverage` / `flipOpportunity` + spy de query count federal (guardrail contra regressão N+1 até A7 F5).
+- `loadNucleusListElectionOverview` tem pelo menos um teste int com fixture TSE que cobre gap agregado + distribuição de tendência + agregado de conversão (`weightedRate`, `distribution` reduto/consolidado/oportunidade) no mesmo path; **extensão pós-A5:** agregados `leverage` / `flipOpportunity` + spy de query count federal (guardrail contra regressão N+1 até A7 F5); **extensão pós-A5-2:** agregado `classification.distribution` (defesa/indecisa/ataque/perdida) + caso `classification: null` sem válidos.
 - Tipos de distribuição de tendência têm uma única fonte (`VoteTrendDistribution`); loaders e VMs importam de `electionInsights.ts`.
 - Helpers compartilhados para wipe/seed de dados eleitorais nos int tests (sem triplicar `deleteAllElectionData`).
 - Guardrails: sem migration, sem Consent (dado público TSE). Access continua `overrideAccess: false`. Identificadores em inglês; strings visíveis em pt-BR.
@@ -76,11 +78,12 @@ flowchart TD
 - `tests/helpers/tseFixtures.ts` — `seedMultiYearFederalCandidateFixture`, `TSE_FIXTURE_ZONE_EXPECTED`.
 - `tests/int/nucleusListElectionOverview.int.spec.ts` — gap+trend+conversão, tendência sem estimate, geografia vazia, conversão ponderada e aptos sem votos 2022 do candidato.
 
-#### Extensão Fase 2 (pós-A5 — pendente)
+#### Extensão Fase 2 (pós-A5 / pós-A5-2 — pendente)
 
 - Estender fixture TSE com votos de chapa majoritária + federal proporcional por partido suficientes para `leverage` comparável e `flipOpportunity` com `status: 'opportunity'`.
 - Asserts em `loadNucleusListElectionOverview`: `leverage.weightedPercent` / `unconvertedCount` e `flipOpportunity.count` / `bothAlignedCount`.
 - Spy estrutural: com N núcleos no filtro, `loadFederalCandidateTotalsAggregated` (ou execute drizzle federal) **não** deve ser invocado N vezes — falha documenta regressão até A7 F5; após F5, o spy valida uma única batch query.
+- **Pós-A5-2:** asserts de `classification.distribution` sobre o conjunto filtrado com geografia; caso negativo com tallies sem `votosValidos` → `classification: null` e overview sem linha `Classificação:`.
 
 ### Fase 3 — Tipos e API
 

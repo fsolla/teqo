@@ -14,20 +14,24 @@ import {
 } from '@/lib/electionResults'
 import {
   aggregateConversionBand,
+  aggregateTerritorialClass,
   aggregateTicketFlipOverview,
   aggregateTicketLeverageOverview,
   aggregateVoteTrend,
   computeConversionRate,
   computeGapVs2022,
+  computeTerritorialClass,
   computeTicketFlipOpportunity,
   computeTicketLeverage,
-  isComparableTicketLeverage,
+  isComparableConversionBand,
+  isComparableTerritorialClass,
   type ConversionBandDistribution,
   type ConversionRateBand,
-  isComparableConversionBand,
+  type TerritorialClassificationBand,
+  type TerritorialClassificationDistribution,
   type TicketFlipOpportunityResult,
-  type TicketLeverageOverviewAggregate,
   type TicketFlipOverviewAggregate,
+  type TicketLeverageOverviewAggregate,
   type VoteTrendSeries,
   type VoteTrendStatus,
 } from '@/lib/electionInsights'
@@ -382,21 +386,23 @@ const aggregateElectorate = (
   return { aptos, validos, brancos, nulos, abstencoes }
 }
 
-const sumElectorateForGeography = (
+const sumFederalTallyForGeography = (
   talliesByCityZone: ReadonlyMap<string, ElectionTallyAggregateRow>,
   geography: NucleusElectionGeography,
-): Pick<NucleusElectoralBaselineViewModel['electorate'], 'aptos' | 'abstencoes'> => {
+): Pick<NucleusElectoralBaselineViewModel['electorate'], 'aptos' | 'abstencoes' | 'validos'> => {
   let aptos = 0
   let abstencoes = 0
+  let validos = 0
 
   for (const { cityName, zoneNumber } of geography.cityZonePairs) {
     const row = talliesByCityZone.get(cityZoneKey(cityName, zoneNumber))
     if (!row) continue
     aptos += row.aptos
     abstencoes += row.abstencoes
+    validos += row.votosValidos
   }
 
-  return { aptos, abstencoes }
+  return { aptos, abstencoes, validos }
 }
 
 export const aggregateNucleusElectoralBaseline = (
@@ -786,12 +792,17 @@ export type NucleusConversionOverviewAggregate = {
   distribution: ConversionBandDistribution
 }
 
+export type NucleusClassificationOverviewAggregate = {
+  distribution: TerritorialClassificationDistribution
+}
+
 export type NucleusListElectionOverview = {
   baseline2022: NucleusBaseline2022OverviewAggregate | null
   trend: NucleusTrendOverviewAggregate | null
   conversion: NucleusConversionOverviewAggregate | null
   leverage: TicketLeverageOverviewAggregate | null
   flipOpportunity: TicketFlipOverviewAggregate | null
+  classification: NucleusClassificationOverviewAggregate | null
 }
 
 /**
@@ -808,7 +819,14 @@ export const loadNucleusListElectionOverview = async (
   )
 
   if (withGeographyIndexes.length === 0) {
-    return { baseline2022: null, trend: null, conversion: null, leverage: null, flipOpportunity: null }
+    return {
+      baseline2022: null,
+      trend: null,
+      conversion: null,
+      leverage: null,
+      flipOpportunity: null,
+      classification: null,
+    }
   }
 
   const comparableIndexes: number[] = []
@@ -819,15 +837,26 @@ export const loadNucleusListElectionOverview = async (
 
   const unionGeography = buildUnionGeography(geographies, withGeographyIndexes)
   if (!unionGeography) {
-    return { baseline2022: null, trend: null, conversion: null, leverage: null, flipOpportunity: null }
+    return {
+      baseline2022: null,
+      trend: null,
+      conversion: null,
+      leverage: null,
+      flipOpportunity: null,
+      classification: null,
+    }
   }
 
-  const [seriesByYear, ticketVotes, majoritarianTallies] = await Promise.all([
+  const [seriesByYear, ticketVotes, majoritarianTallies, classificationTallies] = await Promise.all([
     loadCandidateSeriesByGeography(payload, user, unionGeography),
     loadTicketOfficeVotes(payload, user, unionGeography),
     loadMajoritarianElectionTallies(payload, user, unionGeography),
+    loadElectionTallies(payload, user, unionGeography),
   ])
   const votes2022 = seriesByYear.get(ELECTION_YEAR_2022) ?? new Map<string, number>()
+  const classificationTalliesByCityZone = new Map(
+    classificationTallies.map((row) => [cityZoneKey(row.cityName, row.zoneNumber), row]),
+  )
 
   const trend = aggregateVoteTrend(
     withGeographyIndexes.flatMap((index) => {
@@ -835,6 +864,24 @@ export const loadNucleusListElectionOverview = async (
       return geography ? [sumCandidateSeriesForGeography(geography, seriesByYear)] : []
     }),
   )
+
+  const classificationBands: TerritorialClassificationBand[] = []
+  for (const index of withGeographyIndexes) {
+    const geography = geographies[index]!
+    const { validos } = sumFederalTallyForGeography(classificationTalliesByCityZone, geography)
+    const territorial = computeTerritorialClass({
+      sollaVotes: sumCandidateVotesForGeography(geography, votes2022),
+      federalValidVotes: validos,
+    })
+    if (isComparableTerritorialClass(territorial.band)) {
+      classificationBands.push(territorial.band)
+    }
+  }
+
+  const classification: NucleusClassificationOverviewAggregate | null =
+    classificationBands.length > 0
+      ? { distribution: aggregateTerritorialClass(classificationBands) }
+      : null
 
   const flipResults = await Promise.all(
     withGeographyIndexes.map(async (index) => {
@@ -852,16 +899,9 @@ export const loadNucleusListElectionOverview = async (
       conversion: null,
       leverage: null,
       flipOpportunity,
+      classification,
     }
   }
-
-  const conversionUnion = buildUnionGeography(geographies, comparableIndexes)
-  const tallies = conversionUnion
-    ? await loadElectionTallies(payload, user, conversionUnion)
-    : []
-  const talliesByCityZone = new Map(
-    tallies.map((row) => [cityZoneKey(row.cityName, row.zoneNumber), row]),
-  )
 
   let estimateSum = 0
   let candidateVotesSum = 0
@@ -888,15 +928,18 @@ export const loadNucleusListElectionOverview = async (
       comparableCount += 1
     }
 
-    const electorate = sumElectorateForGeography(talliesByCityZone, geography)
+    const { aptos, abstencoes } = sumFederalTallyForGeography(
+      classificationTalliesByCityZone,
+      geography,
+    )
     const conversion = computeConversionRate({
-      aptos: electorate.aptos,
-      abstencoes: electorate.abstencoes,
+      aptos,
+      abstencoes,
       confirmedVoteEstimate: estimate,
     })
     if (isComparableConversionBand(conversion.band)) {
       conversionEstimateSum += estimate
-      conversionAptosSum += electorate.aptos
+      conversionAptosSum += aptos
       conversionBands.push(conversion.band)
     }
 
@@ -929,6 +972,7 @@ export const loadNucleusListElectionOverview = async (
     conversion,
     leverage: aggregateTicketLeverageOverview(leverageRows),
     flipOpportunity,
+    classification,
   }
 }
 

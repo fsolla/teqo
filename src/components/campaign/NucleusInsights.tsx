@@ -1,33 +1,54 @@
+import type { LucideIcon } from 'lucide-react'
 import {
   CheckCircle2Icon,
   Link2Icon,
   MegaphoneIcon,
   MinusIcon,
   PercentIcon,
+  ShieldIcon,
   TrendingDownIcon,
   TrendingUpIcon,
   TriangleAlertIcon,
 } from 'lucide-react'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
+import { Badge } from '@/components/ui/Badge'
 import {
   computeConversionRate,
   computeGapVs2022,
+  computeTerritorialClass,
   computeTicketLeverage,
   computeVoteTrend,
   conversionRateAlertVariant,
   formatElectionNumber,
   formatVoteTrendSeries,
   isComparableConversionBand,
+  isComparableTerritorialClass,
   isComparableTicketLeverage,
+  territorialClassAlertVariant,
+  territorialClassBadgeVariant,
+  territorialClassLabel,
   ticketLeverageAlertVariant,
   voteTrendAlertVariant,
+  type ComparableTerritorialClass,
 } from '@/lib/electionInsights'
 import { cn } from '@/lib/utils'
 import type { NucleusElectoralBaselineViewModel } from '@/utilities/nucleusViewModels'
 
 const confirmedInsightAlertClass =
   'border-[color:var(--estimate-confirmed)] bg-[color:var(--estimate-confirmed)] text-[color:var(--estimate-confirmed-foreground)] *:data-[slot=alert-description]:text-[color:var(--estimate-confirmed-foreground)]'
+
+const TERRITORIAL_CLASS_ICON: Record<ComparableTerritorialClass, LucideIcon> = {
+  defesa: ShieldIcon,
+  ataque: TriangleAlertIcon,
+  indecisa: MinusIcon,
+  perdida: TrendingDownIcon,
+}
+
+const TerritorialClassIcon = ({ band }: { band: ComparableTerritorialClass }) => {
+  const Icon = TERRITORIAL_CLASS_ICON[band]
+  return <Icon aria-hidden="true" />
+}
 
 export const NucleusInsights = ({
   baseline,
@@ -72,6 +93,11 @@ export const NucleusInsights = ({
       : Link2Icon
 
   const flip = baseline?.ticketFlip ?? null
+
+  const territorial = computeTerritorialClass({
+    sollaVotes: baseline?.candidate.votes ?? 0,
+    federalValidVotes: baseline?.electorate.validos ?? null,
+  })
 
   let supportLine: string | null = null
   if ((gap.status === 'above' || gap.status === 'below') && baseline && confirmedVoteEstimate !== null) {
@@ -138,6 +164,32 @@ export const NucleusInsights = ({
           <MegaphoneIcon aria-hidden="true" />
           <AlertTitle className="font-bold">{flip.message}</AlertTitle>
           {flip.supportLine ? <AlertDescription>{flip.supportLine}</AlertDescription> : null}
+        </Alert>
+      ) : null}
+
+      {isComparableTerritorialClass(territorial.band) ? (
+        <Alert
+          data-insight="territorial-class"
+          variant={territorialClassAlertVariant(territorial.band)}
+          className={cn(
+            'rounded-xl px-3.5 py-3',
+            territorial.band === 'defesa' && confirmedInsightAlertClass,
+          )}
+        >
+          <TerritorialClassIcon band={territorial.band} />
+          <AlertTitle className="flex items-start justify-between gap-2 font-bold">
+            <span>{territorial.title}</span>
+            <Badge
+              className="shrink-0"
+              variant={territorialClassBadgeVariant(territorial.band)}
+            >
+              {territorialClassLabel(territorial.band)}
+            </Badge>
+          </AlertTitle>
+          <AlertDescription>{territorial.priorityLine}</AlertDescription>
+          {territorial.supportLine ? (
+            <AlertDescription>{territorial.supportLine}</AlertDescription>
+          ) : null}
         </Alert>
       ) : null}
 

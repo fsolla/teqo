@@ -88,7 +88,7 @@ describe('NucleusInsights', () => {
     expect(html).toContain('Tendência:')
   })
 
-  it('renders ticket leverage and flip opportunity insights', () => {
+  it('renders ticket leverage, flip opportunity, and territorial classification insights', () => {
     const html = renderToStaticMarkup(
       createElement(NucleusInsights, {
         baseline,
@@ -100,5 +100,10 @@ describe('NucleusInsights', () => {
     expect(html).toContain('data-insight="ticket-flip"')
     expect(html).toContain('completar a chapa')
     expect(html).not.toMatch(/direita/i)
+    expect(html).toContain('data-insight="territorial-class"')
+    expect(html).toContain('Território indeciso')
+    expect(html).toContain('Pulverizado — prioridade: consolidar')
+    expect(html).toContain('Indecisa')
+    expect(html).toContain('34% dos votos válidos federais em 2022')
   })
 })

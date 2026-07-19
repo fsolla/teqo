@@ -16,6 +16,15 @@ export const CONVERSION_REDUTO_MIN = 0.4
 /** Share of federal nominal votes outside the chapa field → flip opportunity (A5 Fase 2). */
 export const RIGHT_SHARE_THRESHOLD = 0.25
 
+/** At or above this share of valid federal votes → defesa (literature reference, A5-2). */
+export const TERRITORIAL_DEFESA_MIN = 0.35
+
+/** At or above this share → indecisa (between defesa and ataque). */
+export const TERRITORIAL_INDECISA_MIN = 0.2
+
+/** At or above this share → ataque; below → perdida. */
+export const TERRITORIAL_ATAQUE_MIN = 0.1
+
 export type VoteTrendStatus = 'decline' | 'stable' | 'increase' | 'noBaseline'
 
 export type VoteTrendSeries = {
@@ -72,6 +81,35 @@ export type ConversionBandDistribution = {
   oportunidade: number
 }
 
+export type TerritorialClassificationBand =
+  | 'defesa'
+  | 'ataque'
+  | 'indecisa'
+  | 'perdida'
+  | 'semBaseline'
+
+export type ComparableTerritorialClass = Exclude<TerritorialClassificationBand, 'semBaseline'>
+
+export type TerritorialClassificationInput = {
+  sollaVotes: number
+  federalValidVotes: number | null
+}
+
+export type TerritorialClassificationResult = {
+  percentValid: number | null
+  band: TerritorialClassificationBand
+  title: string
+  priorityLine: string
+  supportLine: string | null
+}
+
+export type TerritorialClassificationDistribution = {
+  defesa: number
+  ataque: number
+  indecisa: number
+  perdida: number
+}
+
 /** Minimal baseline shape for Gap vs 2022 (full detail VM is assignable). */
 export type GapVs2022Baseline = {
   candidate: { votes: number }
@@ -121,6 +159,84 @@ export const isComparableConversionBand = (
   band: ConversionRateBand,
 ): band is 'reduto' | 'consolidado' | 'oportunidade' =>
   band === 'reduto' || band === 'consolidado' || band === 'oportunidade'
+
+const emptyTerritorialClassificationDistribution =
+  (): TerritorialClassificationDistribution => ({
+    defesa: 0,
+    ataque: 0,
+    indecisa: 0,
+    perdida: 0,
+  })
+
+export const aggregateTerritorialClass = (
+  bands: readonly TerritorialClassificationBand[],
+): TerritorialClassificationDistribution => {
+  const distribution = emptyTerritorialClassificationDistribution()
+  for (const band of bands) {
+    if (isComparableTerritorialClass(band)) {
+      distribution[band] += 1
+    }
+  }
+  return distribution
+}
+
+export const isComparableTerritorialClass = (
+  band: TerritorialClassificationBand,
+): band is ComparableTerritorialClass =>
+  band === 'defesa' || band === 'ataque' || band === 'indecisa' || band === 'perdida'
+
+const TERRITORIAL_CLASS_UI = {
+  defesa: {
+    label: 'Defesa',
+    badgeVariant: 'estimate-confirmed',
+    alertVariant: 'default',
+    title: 'Território de defesa',
+    priorityLine: 'Base sólida — prioridade: manter engajamento',
+  },
+  indecisa: {
+    label: 'Indecisa',
+    badgeVariant: 'estimate-pending',
+    alertVariant: 'pending',
+    title: 'Território indeciso',
+    priorityLine: 'Pulverizado — prioridade: consolidar',
+  },
+  ataque: {
+    label: 'Ataque',
+    badgeVariant: 'destructive',
+    alertVariant: 'destructive',
+    title: 'Território de ataque',
+    priorityLine: 'Desfavorável relevante — prioridade: virar/reduzir margem',
+  },
+  perdida: {
+    label: 'Perdida',
+    badgeVariant: 'secondary',
+    alertVariant: 'default',
+    title: 'Território perdido',
+    priorityLine: 'Baixa base histórica — prioridade: minimizar perda',
+  },
+} as const satisfies Record<
+  ComparableTerritorialClass,
+  {
+    label: string
+    badgeVariant: 'estimate-confirmed' | 'estimate-pending' | 'destructive' | 'secondary'
+    alertVariant: 'default' | 'pending' | 'destructive'
+    title: string
+    priorityLine: string
+  }
+>
+
+export const territorialClassLabel = (band: TerritorialClassificationBand): string =>
+  isComparableTerritorialClass(band) ? TERRITORIAL_CLASS_UI[band].label : 'Sem baseline'
+
+export const territorialClassBadgeVariant = (
+  band: TerritorialClassificationBand,
+): (typeof TERRITORIAL_CLASS_UI)[ComparableTerritorialClass]['badgeVariant'] =>
+  isComparableTerritorialClass(band) ? TERRITORIAL_CLASS_UI[band].badgeVariant : 'secondary'
+
+export const territorialClassAlertVariant = (
+  band: TerritorialClassificationBand,
+): (typeof TERRITORIAL_CLASS_UI)[ComparableTerritorialClass]['alertVariant'] =>
+  isComparableTerritorialClass(band) ? TERRITORIAL_CLASS_UI[band].alertVariant : 'default'
 
 export const conversionRateAlertVariant = (band: ConversionRateBand): 'default' | 'pending' =>
   band === 'oportunidade' ? 'pending' : 'default'
@@ -666,3 +782,45 @@ export const ticketLeverageAlertVariant = (
   isComparableTicketLeverage(leverage.status) && (leverage.headlinePercent ?? 0) < 100
     ? 'pending'
     : 'default'
+
+export const computeTerritorialClass = ({
+  sollaVotes,
+  federalValidVotes,
+}: TerritorialClassificationInput): TerritorialClassificationResult => {
+  if (federalValidVotes === null || federalValidVotes <= 0) {
+    return {
+      percentValid: null,
+      band: 'semBaseline',
+      title: 'Classificação territorial',
+      priorityLine:
+        federalValidVotes === null
+          ? NO_ELECTION_BASELINE_MESSAGE
+          : 'Sem votos válidos no baseline para esta geografia',
+      supportLine: null,
+    }
+  }
+
+  const percentValid = sollaVotes / federalValidVotes
+  const percent = Math.round(percentValid * 100)
+
+  let band: ComparableTerritorialClass
+  if (percentValid >= TERRITORIAL_DEFESA_MIN) {
+    band = 'defesa'
+  } else if (percentValid >= TERRITORIAL_INDECISA_MIN) {
+    band = 'indecisa'
+  } else if (percentValid >= TERRITORIAL_ATAQUE_MIN) {
+    band = 'ataque'
+  } else {
+    band = 'perdida'
+  }
+
+  const { title, priorityLine } = TERRITORIAL_CLASS_UI[band]
+
+  return {
+    percentValid,
+    band,
+    title,
+    priorityLine,
+    supportLine: `${percent}% dos votos válidos federais em 2022 (${formatElectionNumber(sollaVotes)} / ${formatElectionNumber(federalValidVotes)})`,
+  }
+}

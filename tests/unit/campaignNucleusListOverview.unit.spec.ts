@@ -231,4 +231,23 @@ describe('NucleusListOverview', () => {
     expect(html).toContain('3 queda')
     expect(html).not.toContain('Com série histórica')
   })
+
+  it('renders the territorial classification distribution when aggregate data is present', () => {
+    const view = buildNucleusListOverviewViewModel({
+      role: 'geral',
+      nuclei: [nucleus({ id: 1 })],
+      recentUpdates: [],
+      upcomingActionPlans: [],
+      classification: { distribution: { defesa: 4, indecisa: 2, ataque: 1, perdida: 3 } },
+      choropleth: emptyChoropleth,
+    })
+
+    const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))
+
+    expect(html).toContain('Classificação:')
+    expect(html).toContain('4 defesa')
+    expect(html).toContain('2 indecisa')
+    expect(html).toContain('1 ataque')
+    expect(html).toContain('3 perdida')
+  })
 })

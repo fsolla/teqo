@@ -174,6 +174,26 @@ export const NucleusListOverview = ({
               ) : null}
             </p>
           ) : null}
+          {view.classification ? (
+            <p className="text-sm text-muted-foreground">
+              Classificação:{' '}
+              <span className="font-medium text-estimate-confirmed-foreground">
+                {formatElectionNumber(view.classification.distribution.defesa)} defesa
+              </span>
+              {' · '}
+              <span className="font-medium text-estimate-pending-foreground">
+                {formatElectionNumber(view.classification.distribution.indecisa)} indecisa
+              </span>
+              {' · '}
+              <span className="font-medium text-destructive">
+                {formatElectionNumber(view.classification.distribution.ataque)} ataque
+              </span>
+              {' · '}
+              <span className="font-medium text-muted-foreground">
+                {formatElectionNumber(view.classification.distribution.perdida)} perdida
+              </span>
+            </p>
+          ) : null}
         </CardContent>
       </Card>
 

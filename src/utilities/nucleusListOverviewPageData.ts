@@ -178,6 +178,7 @@ export const loadNucleusListOverviewData = async (
     conversion: listElectionOverview.conversion,
     leverage: listElectionOverview.leverage,
     flipOpportunity: listElectionOverview.flipOpportunity,
+    classification: listElectionOverview.classification,
     choropleth,
   })
 }

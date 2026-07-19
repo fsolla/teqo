@@ -4,15 +4,20 @@ import { describe, expect, it } from 'vitest'
 
 import {
   aggregateConversionBand,
+  aggregateTerritorialClass,
   aggregateVoteTrend,
   comparableTrendCount,
   computeConversionRate,
   computeGapVs2022,
+  computeTerritorialClass,
   computeVoteTrend,
   CONVERSION_OPPORTUNITY_MAX,
   CONVERSION_REDUTO_MIN,
   isComparableConversionBand,
   type GapVs2022Baseline,
+  TERRITORIAL_ATAQUE_MIN,
+  TERRITORIAL_DEFESA_MIN,
+  TERRITORIAL_INDECISA_MIN,
 } from '@/lib/electionInsights'
 
 const baseline = (candidateVotes: number): GapVs2022Baseline => ({
@@ -186,5 +191,91 @@ describe('isComparableConversionBand', () => {
   it('accepts the three comparable bands', () => {
     expect(isComparableConversionBand('reduto')).toBe(true)
     expect(isComparableConversionBand('semEstimativa')).toBe(false)
+  })
+})
+
+describe('computeTerritorialClass', () => {
+  it('classifies defesa at 35% of valid votes', () => {
+    const validos = 2490
+    expect(
+      computeTerritorialClass({
+        sollaVotes: Math.ceil(validos * TERRITORIAL_DEFESA_MIN),
+        federalValidVotes: validos,
+      }),
+    ).toMatchObject({
+      band: 'defesa',
+      title: 'Território de defesa',
+    })
+  })
+
+  it('classifies indecisa at 20% of valid votes', () => {
+    expect(
+      computeTerritorialClass({
+        sollaVotes: Math.floor(2490 * TERRITORIAL_INDECISA_MIN),
+        federalValidVotes: 2490,
+      }),
+    ).toMatchObject({
+      band: 'indecisa',
+      title: 'Território indeciso',
+    })
+  })
+
+  it('classifies ataque at 10% of valid votes', () => {
+    expect(
+      computeTerritorialClass({
+        sollaVotes: Math.floor(2490 * TERRITORIAL_ATAQUE_MIN),
+        federalValidVotes: 2490,
+      }),
+    ).toMatchObject({
+      band: 'ataque',
+      title: 'Território de ataque',
+    })
+  })
+
+  it('classifies perdida below 10%', () => {
+    expect(
+      computeTerritorialClass({
+        sollaVotes: Math.floor(2490 * (TERRITORIAL_ATAQUE_MIN - 0.001)),
+        federalValidVotes: 2490,
+      }),
+    ).toMatchObject({
+      band: 'perdida',
+      title: 'Território perdido',
+    })
+  })
+
+  it('reports semBaseline when validos is zero', () => {
+    expect(computeTerritorialClass({ sollaVotes: 100, federalValidVotes: 0 })).toMatchObject({
+      band: 'semBaseline',
+      percentValid: null,
+    })
+  })
+
+  it('reports semBaseline when validos is null', () => {
+    expect(computeTerritorialClass({ sollaVotes: 100, federalValidVotes: null })).toMatchObject({
+      band: 'semBaseline',
+    })
+  })
+})
+
+describe('aggregateTerritorialClass', () => {
+  it('counts comparable territorial bands only', () => {
+    expect(
+      aggregateTerritorialClass(['defesa', 'ataque', 'indecisa', 'perdida', 'semBaseline']),
+    ).toEqual({
+      defesa: 1,
+      ataque: 1,
+      indecisa: 1,
+      perdida: 1,
+    })
+  })
+
+  it('returns all zeros when every band is semBaseline', () => {
+    expect(aggregateTerritorialClass(['semBaseline', 'semBaseline'])).toEqual({
+      defesa: 0,
+      ataque: 0,
+      indecisa: 0,
+      perdida: 0,
+    })
   })
 })
