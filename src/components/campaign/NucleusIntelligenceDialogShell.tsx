@@ -31,7 +31,7 @@ export const NucleusIntelligenceDialogShell = ({
   nucleusId: number
   intelligence: Pick<
     StaffNucleusTabsViewModel,
-    'strengths' | 'risks' | 'voterProfiles' | 'ticketAlliance'
+    'strengths' | 'risks' | 'voterProfiles' | 'ticketAlliance' | 'dobradinhaNotes' | 'nextSteps'
   >
   primaryContact: PrimaryContactOption | null
   searchPrimaryContacts: (query: string) => Promise<NucleusPrimaryContactPageData>

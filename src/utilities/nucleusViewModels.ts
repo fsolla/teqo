@@ -1,8 +1,19 @@
+import type { NucleusPriority } from '@/lib/schemas/nucleus'
 import type { CampaignUser, ElectoralNucleus } from '@/payload-types'
 import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
+import { toVoteGoalsViewModel, type VoteGoalsViewModel } from '@/utilities/voteGoals'
 
 const asStringArray = (value: string[] | null | undefined): string[] =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+
+export const nucleusVoteGoalsSelect = {
+  voteGoals: {
+    good: true,
+    regular: true,
+    minimum: true,
+  },
+  priority: true,
+} as const
 
 export const nucleusFormSelect = {
   name: true,
@@ -17,6 +28,7 @@ export const nucleusFormSelect = {
   sectorKind: true,
   tseZones: true,
   ticketAlliance: true,
+  ...nucleusVoteGoalsSelect,
 } as const
 
 export const nucleusListSelect = {
@@ -32,6 +44,7 @@ export const nucleusListSelect = {
   tseZones: true,
   confirmedVoteEstimate: true,
   proposedVoteEstimate: true,
+  priority: true,
   lastUpdateAt: true,
 } as const
 
@@ -49,6 +62,7 @@ export type NucleusListViewModel = {
   tseZones: number[]
   confirmedVoteEstimate: number | null
   proposedVoteEstimate: number | null
+  priority: NucleusPriority
   lastUpdateAt: string | null
 }
 
@@ -88,6 +102,9 @@ export const nucleusStaffDetailSelect = {
   proposedVoteEstimateBy: true,
   proposedVoteEstimateVersion: true,
   primaryContact: true,
+  dobradinhaNotes: true,
+  nextSteps: true,
+  ...nucleusVoteGoalsSelect,
 } as const
 
 export const nucleusLeadershipDetailSelect = {
@@ -102,6 +119,7 @@ export const nucleusLeadershipDetailSelect = {
   organizationLabel: true,
   tseZones: { zoneNumber: true },
   confirmedVoteEstimate: true,
+  ...nucleusVoteGoalsSelect,
 } as const
 
 export type NucleusFormViewModel = {
@@ -123,6 +141,8 @@ export type NucleusFormViewModel = {
     isCampaignPartner: boolean
     notes: string | null
   } | null
+  voteGoals: VoteGoalsViewModel
+  priority: NucleusPriority
 }
 
 export type StaffNucleusTabsViewModel = {
@@ -149,6 +169,8 @@ export type StaffNucleusTabsViewModel = {
     isCampaignPartner: boolean
     notes: string | null
   } | null
+  dobradinhaNotes: string | null
+  nextSteps: string | null
 }
 
 export type LeadershipNucleusTabsViewModel = {
@@ -175,6 +197,8 @@ type NucleusDetailBaseViewModel = {
   organizationLabel: string | null
   tseZones: number[]
   confirmedVoteEstimate: number | null
+  voteGoals: VoteGoalsViewModel
+  priority: NucleusPriority
 }
 
 export type StaffNucleusDetailViewModel = NucleusDetailBaseViewModel & {
@@ -237,6 +261,7 @@ export const toNucleusListViewModel = (nucleus: ElectoralNucleus): NucleusListVi
   tseZones: nucleus.tseZones?.map(({ zoneNumber }) => zoneNumber) ?? [],
   confirmedVoteEstimate: nucleus.confirmedVoteEstimate ?? null,
   proposedVoteEstimate: nucleus.proposedVoteEstimate ?? null,
+  priority: nucleus.priority ?? 'normal',
   lastUpdateAt: nucleus.lastUpdateAt ?? null,
 })
 
@@ -261,6 +286,8 @@ export const toNucleusFormViewModel = (nucleus: ElectoralNucleus): NucleusFormVi
         notes: nucleus.ticketAlliance.notes ?? null,
       }
     : null,
+  voteGoals: toVoteGoalsViewModel(nucleus.voteGoals),
+  priority: nucleus.priority ?? 'normal',
 })
 
 const toNucleusDetailBaseViewModel = (nucleus: ElectoralNucleus): NucleusDetailBaseViewModel => ({
@@ -276,6 +303,8 @@ const toNucleusDetailBaseViewModel = (nucleus: ElectoralNucleus): NucleusDetailB
   organizationLabel: nucleus.organizationLabel ?? null,
   tseZones: nucleus.tseZones?.map(({ zoneNumber }) => zoneNumber) ?? [],
   confirmedVoteEstimate: nucleus.confirmedVoteEstimate ?? null,
+  voteGoals: toVoteGoalsViewModel(nucleus.voteGoals),
+  priority: nucleus.priority ?? 'normal',
 })
 
 const toStaffNucleusDetailViewModel = (nucleus: ElectoralNucleus): StaffNucleusDetailViewModel => ({
@@ -344,6 +373,8 @@ export const toStaffNucleusTabsViewModel = (
         notes: nucleus.ticketAlliance.notes ?? null,
       }
     : null,
+  dobradinhaNotes: nucleus.dobradinhaNotes ?? null,
+  nextSteps: nucleus.nextSteps ?? null,
 })
 
 export const toLeadershipNucleusTabsViewModel = (

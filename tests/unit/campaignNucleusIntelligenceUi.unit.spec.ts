@@ -143,6 +143,8 @@ describe('campaign nucleus intelligence UI', () => {
             isCampaignPartner: true,
             notes: 'Agenda conjunta',
           },
+          dobradinhaNotes: null,
+          nextSteps: null,
         },
         primaryContact: { id: 8, name: 'Maria', phone: '71999990000' },
         searchPrimaryContacts: async () => ({
@@ -226,6 +228,8 @@ describe('campaign nucleus intelligence UI', () => {
     formData.set('office', 'Deputada estadual')
     formData.set('isCampaignPartner', 'on')
     formData.set('allianceNotes', 'Agenda conjunta')
+    formData.set('dobradinhaNotes', 'Negociação em curso')
+    formData.set('nextSteps', 'Visitar prefeito')
     formData.set('confirmedVoteEstimate', '999999')
     formData.set('confirmedVoteEstimateBy', '999')
 
@@ -241,6 +245,8 @@ describe('campaign nucleus intelligence UI', () => {
         isCampaignPartner: true,
         notes: 'Agenda conjunta',
       },
+      dobradinhaNotes: 'Negociação em curso',
+      nextSteps: 'Visitar prefeito',
     })
   })
 
@@ -341,6 +347,8 @@ describe('campaign nucleus intelligence UI', () => {
           isCampaignPartner: true,
           notes: 'Agenda sigilosa',
         },
+        voteGoals: { good: 100, regular: 80, minimum: 50 },
+        priority: 'alta',
         confirmedVoteEstimate: 1200,
         confirmedVoteEstimateAt: '2026-07-16T12:00:00.000Z',
         confirmedVoteEstimateBy: {
@@ -384,6 +392,8 @@ describe('campaign nucleus intelligence UI', () => {
       organizationLabel: 'Organização local',
       tseZones: [58],
       confirmedVoteEstimate: 1200,
+      voteGoals: { good: 100, regular: 80, minimum: 50 },
+      priority: 'alta',
       tabs: {
         kind: 'leadership',
         regions: ['Chapada Diamantina'],
@@ -398,6 +408,8 @@ describe('campaign nucleus intelligence UI', () => {
       'risks',
       'voterProfiles',
       'ticketAlliance',
+      'dobradinhaNotes',
+      'nextSteps',
       'territoryNotes',
       'latitude',
       'longitude',

@@ -1,7 +1,9 @@
 import type { CampaignUser, ElectoralNucleus } from '@/payload-types'
+import type { NucleusPriority } from '@/lib/schemas/nucleus'
 import type { SupportStatus } from '@/lib/schemas/leadership'
 import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
 import { formatNucleusTerritoryLabel } from '@/utilities/nucleusUi'
+import { sumVoteGoals, type VoteGoalsViewModel } from '@/utilities/voteGoals'
 
 export type CoordinatorSummary = {
   id: number
@@ -23,6 +25,8 @@ export type DashboardNucleusRecord = {
   tseZones: number[]
   confirmedVoteEstimate: number | null
   proposedVoteEstimate: number | null
+  voteGoals: VoteGoalsViewModel
+  priority: NucleusPriority
   lastUpdateAt: string | null
 }
 
@@ -49,6 +53,7 @@ export type GeneralDashboardViewModel = {
     coordinatorCoveragePercent: number
     confirmedVoteEstimateTotal: number
     confirmedEstimatePercent: number
+    regularVoteGoalTotal: number
     updatesThisWeek: number
   }
   supportCounts: Record<SupportStatus, number>
@@ -190,6 +195,7 @@ export const buildGeneralDashboardViewModel = (
         0,
       ),
       confirmedEstimatePercent: percentage(confirmedCount, nuclei.length),
+      regularVoteGoalTotal: sumVoteGoals(nuclei).regular,
       updatesThisWeek,
     },
     supportCounts,

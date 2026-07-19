@@ -16,6 +16,7 @@ import {
   buildNucleusListSearchParams,
   nucleusListCoverageLabels,
   nucleusListEstimateLabels,
+  nucleusPriorityFilterLabel,
   type NucleusListState,
 } from '@/utilities/nucleusUi'
 import {
@@ -30,6 +31,7 @@ type FilterValues = {
   tseZone: string
   coverage: string
   estimate: string
+  priority: string
 }
 
 const valuesFromState = (state: NucleusListState): FilterValues => ({
@@ -39,9 +41,10 @@ const valuesFromState = (state: NucleusListState): FilterValues => ({
   tseZone: state.tseZone ? String(state.tseZone) : '',
   coverage: state.coverage ?? '',
   estimate: state.estimate ?? '',
+  priority: state.priority ?? '',
 })
 
-const filterNames = ['region', 'city', 'tseZone', 'coverage', 'estimate'] as const
+const filterNames = ['region', 'city', 'tseZone', 'coverage', 'estimate', 'priority'] as const
 
 type FilterFieldsProps = {
   values: FilterValues
@@ -61,7 +64,7 @@ const FilterFields = ({
   <form
     autoComplete="off"
     onSubmit={(event) => event.preventDefault()}
-    className="grid gap-4 lg:grid-cols-5"
+    className="grid gap-4 lg:grid-cols-3 xl:grid-cols-6"
   >
     <Field>
       <FieldLabel htmlFor="nucleus-lookup-a">Território de identidade</FieldLabel>
@@ -136,6 +139,19 @@ const FilterFields = ({
         </NativeSelectOption>
       </NativeSelect>
     </Field>
+    <Field>
+      <FieldLabel htmlFor="nucleus-priority">Prioridade</FieldLabel>
+      <NativeSelect
+        id="nucleus-priority"
+        name="priority"
+        value={values.priority}
+        onChange={(event) => updateFilter('priority', event.target.value)}
+        className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
+      >
+        <NativeSelectOption value="">Todas</NativeSelectOption>
+        <NativeSelectOption value="alta">{nucleusPriorityFilterLabel}</NativeSelectOption>
+      </NativeSelect>
+    </Field>
   </form>
 )
 
@@ -160,6 +176,7 @@ export const NucleusFilters = ({ state }: { state: NucleusListState }) => {
       tseZone: nextValues.tseZone ? Number(nextValues.tseZone) : undefined,
       coverage: nextValues.coverage as NucleusListState['coverage'],
       estimate: nextValues.estimate as NucleusListState['estimate'],
+      priority: nextValues.priority as NucleusListState['priority'],
     })
     const query = params.toString()
     startTransition(() => {

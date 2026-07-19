@@ -81,6 +81,7 @@ describe('campaign nucleus automatic filters', () => {
     expect(screen.getAllByLabelText('Nº da ZE')).toHaveLength(1)
     expect(screen.getAllByLabelText('Cobertura')).toHaveLength(1)
     expect(screen.getAllByLabelText('Estimativa')).toHaveLength(1)
+    expect(screen.getAllByLabelText('Prioridade')).toHaveLength(1)
     const lookups = [
       screen.getByLabelText('Território de identidade'),
       screen.getByLabelText('Município'),
@@ -315,6 +316,7 @@ describe('campaign nucleus server filter parsing', () => {
       'tseZone',
       'coverage',
       'estimate',
+      'priority',
       'page',
     ])
     expect(

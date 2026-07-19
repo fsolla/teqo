@@ -3,9 +3,10 @@ import type { Where } from 'payload'
 import {
   bahiaIdentityTerritories,
   bahiaMunicipalities,
-  type BahiaIdentityTerritory,
   territoryForCity,
+  type BahiaIdentityTerritory,
 } from '@/lib/bahiaTerritories'
+import type { NucleusPriority } from '@/lib/schemas/nucleus'
 import type { CampaignUser, ElectoralNucleus } from '@/payload-types'
 import {
   buildListHref,
@@ -41,6 +42,19 @@ export const sectorKindLabels: Record<NonNullable<ElectoralNucleus['sectorKind']
   outro: 'Outro',
 }
 
+export const nucleusPriorityLabels: Record<NucleusPriority, string> = {
+  alta: 'Prioritário',
+  normal: 'Normal',
+}
+
+export const nucleusPriorityFilterLabel = 'Prioritários'
+
+export const nucleusDobradinhaNotesLabel = 'Dobradinhas (notas)'
+export const nucleusDobradinhaNotesDescription =
+  'Quem dobra no território hoje e o estado da negociação. Distinto do bloco estruturado “Dobrada”.'
+export const nucleusNextStepsLabel = 'Encaminhamentos'
+export const nucleusNextStepsDescription = 'Próximos passos operacionais para o núcleo.'
+
 export const formatNucleusTerritoryLabel = ({
   neighborhoods = [],
   locality,
@@ -69,6 +83,7 @@ export type NucleusListState = {
   tseZone?: number
   coverage?: 'com_coordenador' | 'sem_coordenador'
   estimate?: 'confirmada' | 'sem_confirmacao'
+  priority?: 'alta'
 }
 
 type RawSearchParams = CampaignListRawSearchParams
@@ -80,6 +95,7 @@ export const nucleusListParamNames = [
   'tseZone',
   'coverage',
   'estimate',
+  'priority',
   'page',
 ] as const
 
@@ -116,6 +132,7 @@ export const parseNucleusListParams = (params: RawSearchParams): NucleusListStat
   const rawTseZone = strictDecimalInteger(firstValue(params.tseZone))
   const rawCoverage = firstValue(params.coverage)
   const rawEstimate = firstValue(params.estimate)
+  const rawPriority = firstValue(params.priority)
 
   return {
     page: rawPage ?? 1,
@@ -129,6 +146,7 @@ export const parseNucleusListParams = (params: RawSearchParams): NucleusListStat
     ...(rawEstimate === 'confirmada' || rawEstimate === 'sem_confirmacao'
       ? { estimate: rawEstimate }
       : {}),
+    ...(rawPriority === 'alta' ? { priority: 'alta' } : {}),
   }
 }
 
@@ -158,6 +176,9 @@ export const buildNucleusListWhere = (state: NucleusListState): Where => {
       confirmedVoteEstimate: { exists: state.estimate === 'confirmada' },
     })
   }
+  if (state.priority) {
+    filters.push({ priority: { equals: state.priority } })
+  }
 
   return { and: filters }
 }
@@ -174,6 +195,7 @@ export const buildNucleusListSearchParams = (
     tseZone: state.tseZone === undefined ? undefined : String(state.tseZone),
     coverage: state.coverage,
     estimate: state.estimate,
+    priority: state.priority,
   })
   const params = new URLSearchParams()
 
@@ -183,6 +205,7 @@ export const buildNucleusListSearchParams = (
   if (canonicalState.tseZone) params.set('tseZone', String(canonicalState.tseZone))
   if (canonicalState.coverage) params.set('coverage', canonicalState.coverage)
   if (canonicalState.estimate) params.set('estimate', canonicalState.estimate)
+  if (canonicalState.priority) params.set('priority', canonicalState.priority)
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
 
   return params

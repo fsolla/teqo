@@ -10,6 +10,11 @@ import {
   trimmedNullableText,
   trimmedOptionalText,
 } from '@/lib/schemas/primitives'
+import {
+  getVoteGoalsOrderViolation,
+  VOTE_GOALS_ORDER_ERROR_MESSAGE,
+  type VoteGoalsFields,
+} from '@/utilities/voteGoals'
 
 export const organizationKinds = [
   'territorial',
@@ -32,6 +37,12 @@ export const sectorKinds = [
   'cultura',
   'outro',
 ] as const
+
+export const nucleusPriorities = ['alta', 'normal'] as const
+
+export type NucleusPriority = (typeof nucleusPriorities)[number]
+
+export type VoteGoalsInput = VoteGoalsFields
 
 export const MAX_NUCLEUS_REGIONS = 27
 export const MAX_NUCLEUS_CITIES = 27
@@ -111,6 +122,29 @@ const ticketAllianceSchema = z.object({
   notes: trimmedOptionalText(1000),
 })
 
+const voteGoalValueSchema = z.number().int().min(0).nullable().optional()
+
+const voteGoalsSchema = z.object({
+  good: voteGoalValueSchema,
+  regular: voteGoalValueSchema,
+  minimum: voteGoalValueSchema,
+})
+
+const validateVoteGoalsOrder = (
+  voteGoals: VoteGoalsInput | null | undefined,
+  context: z.RefinementCtx,
+  path: (string | number)[],
+) => {
+  const violation = getVoteGoalsOrderViolation(voteGoals)
+  if (!violation) return
+
+  context.addIssue({
+    code: 'custom',
+    message: VOTE_GOALS_ORDER_ERROR_MESSAGE,
+    path: [...path, violation],
+  })
+}
+
 const nucleusFieldsSchema = z.object({
   name: z.string().trim().min(2).max(160),
   regions: regionsArraySchema.optional(),
@@ -127,6 +161,10 @@ const nucleusFieldsSchema = z.object({
   strengths: z.array(insightSchema).optional(),
   risks: z.array(insightSchema).optional(),
   ticketAlliance: ticketAllianceSchema.optional(),
+  dobradinhaNotes: trimmedOptionalText(4000),
+  nextSteps: trimmedOptionalText(4000),
+  voteGoals: voteGoalsSchema.optional(),
+  priority: z.enum(nucleusPriorities).optional(),
 })
 
 type TerritoryValidationInput = {
@@ -212,11 +250,16 @@ export const nucleusCreateSchema = nucleusFieldsSchema
     coordinators: z.array(positiveRelationshipId).optional(),
     organizationKind: z.enum(organizationKinds).default('territorial'),
   })
-  .superRefine((data, context) => validateTerritoryAndZones(data, context, 'create'))
+  .superRefine((data, context) => {
+    validateTerritoryAndZones(data, context, 'create')
+    validateVoteGoalsOrder(data.voteGoals, context, ['voteGoals'])
+  })
   .transform((data) => {
     const cities = data.cities ?? []
     const regions =
-      cities.length > 0 ? territoriesForCities(cities) : (data.regions ?? []).filter(isBahiaIdentityTerritory)
+      cities.length > 0
+        ? territoriesForCities(cities)
+        : (data.regions ?? []).filter(isBahiaIdentityTerritory)
     const neighborhoods = cities.length === 1 ? (data.neighborhoods ?? []) : []
     return {
       ...data,
@@ -238,6 +281,8 @@ export const nucleusUpdateSchema = nucleusFieldsSchema
     organizationLabel: trimmedNullableText(160),
     sectorKind: z.enum(sectorKinds).nullable().optional(),
     primaryContact: positiveRelationshipId.nullable().optional(),
+    voteGoals: voteGoalsSchema.nullable().optional(),
+    priority: z.enum(nucleusPriorities).nullable().optional(),
     ticketAlliance: z
       .object({
         partnerName: trimmedNullableText(120),
@@ -247,7 +292,12 @@ export const nucleusUpdateSchema = nucleusFieldsSchema
       })
       .optional(),
   })
-  .superRefine((data, context) => validateTerritoryAndZones(data, context, 'patch'))
+  .superRefine((data, context) => {
+    validateTerritoryAndZones(data, context, 'patch')
+    if (data.voteGoals !== undefined) {
+      validateVoteGoalsOrder(data.voteGoals, context, ['voteGoals'])
+    }
+  })
   .transform((data) => {
     const cities = data.cities === undefined ? undefined : (data.cities ?? [])
     const neighborhoods =

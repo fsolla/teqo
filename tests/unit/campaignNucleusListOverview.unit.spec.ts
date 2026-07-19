@@ -15,6 +15,8 @@ const nucleus = ({
   tseZones = [1],
   confirmedVoteEstimate = null,
   proposedVoteEstimate = null,
+  voteGoals = { good: null, regular: null, minimum: null },
+  priority = 'normal' as const,
 }: {
   id: number
   coordinators?: number[]
@@ -23,6 +25,8 @@ const nucleus = ({
   tseZones?: number[]
   confirmedVoteEstimate?: number | null
   proposedVoteEstimate?: number | null
+  voteGoals?: { good: number | null; regular: number | null; minimum: number | null }
+  priority?: 'alta' | 'normal'
 }) => ({
   id,
   slug: `nucleo-${id}`,
@@ -33,6 +37,8 @@ const nucleus = ({
   tseZones,
   confirmedVoteEstimate,
   proposedVoteEstimate,
+  voteGoals,
+  priority,
 })
 
 describe('buildNucleusListOverviewViewModel', () => {
@@ -66,6 +72,8 @@ describe('buildNucleusListOverviewViewModel', () => {
       coordinatedCount: 2,
       percent: 50,
     })
+    expect(view.voteGoals).toEqual({ good: 0, regular: 0, minimum: 0 })
+    expect(view.highPriorityCount).toBe(0)
   })
 
   it('omits pending suggestions for lideranca', () => {
@@ -82,6 +90,29 @@ describe('buildNucleusListOverviewViewModel', () => {
     expect(view.estimate).not.toHaveProperty('pendingSuggestionsCount')
     expect(view.estimate.confirmedTotal).toBe(800)
     expect(view.estimate.confirmedPercent).toBe(50)
+  })
+
+  it('aggregates vote goals and prioritários in the filtered set', () => {
+    const view = buildNucleusListOverviewViewModel({
+      role: 'geral',
+      nuclei: [
+        nucleus({
+          id: 1,
+          voteGoals: { good: 1000, regular: 800, minimum: 500 },
+          priority: 'alta',
+        }),
+        nucleus({
+          id: 2,
+          voteGoals: { good: 200, regular: 150, minimum: 100 },
+          priority: 'normal',
+        }),
+      ],
+      recentUpdates: [],
+      upcomingActionPlans: [],
+    })
+
+    expect(view.voteGoals).toEqual({ good: 1200, regular: 950, minimum: 600 })
+    expect(view.highPriorityCount).toBe(1)
   })
 })
 
@@ -112,6 +143,7 @@ describe('NucleusListOverview', () => {
     expect(html).toContain('1.200')
     expect(html).toContain('50% com estimativa confirmada')
     expect(html).toContain('1 de 2 com coordenador')
+    expect(html).toContain('Metas 2026')
     expect(html).toContain('Últimas atualizações')
     expect(html).toContain('Maria')
     expect(html).toContain('Semanal')

@@ -50,6 +50,8 @@ const intelligenceProps = {
     risks: [],
     voterProfiles: [],
     ticketAlliance: null,
+    dobradinhaNotes: null,
+    nextSteps: null,
   },
   primaryContact: null,
   searchPrimaryContacts: async () => ({ current: null, options: [] }),

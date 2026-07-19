@@ -2,6 +2,7 @@ import 'server-only'
 
 import {
   organizationKinds,
+  nucleusPriorities,
   sectorKinds,
   type NucleusCreateInput,
   type NucleusUpdateInput,
@@ -9,6 +10,7 @@ import {
 import {
   checkboxFormValue,
   optionalFormText,
+  optionalIntegerFormValue,
   repeatedRelationshipFormValues,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
@@ -17,6 +19,34 @@ import {
   validateCampaignTerritoryFormData,
 } from '@/utilities/campaignTerritoryFormData'
 import { parseTseZoneNumbers } from '@/utilities/tseZone'
+
+const parseNullableVoteGoal = (formData: FormData, field: string): number | null | undefined => {
+  if (!formData.has(field)) return undefined
+  const value = optionalFormText(formData, field)
+  if (!value) return null
+  return optionalIntegerFormValue(formData, field, { minimum: 0 })
+}
+
+const parseVoteGoalsAndPriority = (formData: FormData) => {
+  const hasVoteGoals = ['voteGoalsGood', 'voteGoalsRegular', 'voteGoalsMinimum'].some((field) =>
+    formData.has(field),
+  )
+  const priorityRaw = formData.has('priority') ? optionalFormText(formData, 'priority') : undefined
+  const priority = nucleusPriorities.find((value) => value === priorityRaw)
+
+  return {
+    ...(hasVoteGoals
+      ? {
+          voteGoals: {
+            good: parseNullableVoteGoal(formData, 'voteGoalsGood'),
+            regular: parseNullableVoteGoal(formData, 'voteGoalsRegular'),
+            minimum: parseNullableVoteGoal(formData, 'voteGoalsMinimum'),
+          },
+        }
+      : {}),
+    ...(priority ? { priority } : {}),
+  }
+}
 
 const parseZoneNumbers = (value: string | undefined): Array<{ zoneNumber: number }> | undefined =>
   value ? parseTseZoneNumbers(value).map((zoneNumber) => ({ zoneNumber })) : undefined
@@ -52,6 +82,7 @@ export const parseNucleusCreateFormData = (formData: FormData): NucleusCreateInp
 
   return {
     ...shared,
+    ...parseVoteGoalsAndPriority(formData),
     coordinators: coordinatorIds.length ? coordinatorIds : undefined,
   }
 }
@@ -63,6 +94,7 @@ export const parseNucleusUpdateFormData = (formData: FormData): NucleusUpdateInp
 
   return {
     ...shared,
+    ...parseVoteGoalsAndPriority(formData),
     id: requiredRelationshipFormValue(formData, 'id'),
     regions: shared.regions,
     cities: shared.cities,

@@ -407,6 +407,20 @@ export interface ElectoralNucleus {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Quem dobra no território hoje e o estado da negociação. Distinto do bloco estruturado “Dobrada”.
+   */
+  dobradinhaNotes?: string | null;
+  /**
+   * Próximos passos operacionais para o núcleo.
+   */
+  nextSteps?: string | null;
+  voteGoals?: {
+    good?: number | null;
+    regular?: number | null;
+    minimum?: number | null;
+  };
+  priority?: ('alta' | 'normal') | null;
   confirmedVoteEstimate?: number | null;
   confirmedVoteEstimateAt?: string | null;
   confirmedVoteEstimateBy?: (number | null) | CampaignUser;
@@ -1155,6 +1169,16 @@ export interface ElectoralNucleusSelect<T extends boolean = true> {
         text?: T;
         id?: T;
       };
+  dobradinhaNotes?: T;
+  nextSteps?: T;
+  voteGoals?:
+    | T
+    | {
+        good?: T;
+        regular?: T;
+        minimum?: T;
+      };
+  priority?: T;
   confirmedVoteEstimate?: T;
   confirmedVoteEstimateAt?: T;
   confirmedVoteEstimateBy?: T;

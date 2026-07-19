@@ -1,7 +1,7 @@
 'use client'
 
-import { useActionState } from 'react'
 import Link from 'next/link'
+import { useActionState } from 'react'
 
 import { NucleusTerritoryAndZonesFields } from '@/components/campaign/NucleusTerritoryAndZonesFields'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
@@ -21,9 +21,13 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import type { NucleusCoordinatorOption } from '@/utilities/nucleusCoordinatorOptions'
 import { fieldError } from '@/utilities/campaignFormFields'
-import { organizationKindLabels, sectorKindLabels } from '@/utilities/nucleusUi'
+import type { NucleusCoordinatorOption } from '@/utilities/nucleusCoordinatorOptions'
+import {
+  nucleusPriorityLabels,
+  organizationKindLabels,
+  sectorKindLabels,
+} from '@/utilities/nucleusUi'
 import type { NucleusFormViewModel } from '@/utilities/nucleusViewModels'
 
 export type NucleusFormState = {
@@ -210,6 +214,83 @@ export const NucleusFormFields = ({
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Metas 2026</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field data-invalid={Boolean(errorFor('voteGoals.good'))}>
+                <FieldLabel htmlFor="voteGoalsGood">Bom</FieldLabel>
+                <Input
+                  id="voteGoalsGood"
+                  name="voteGoalsGood"
+                  type="number"
+                  min={0}
+                  step={1}
+                  inputMode="numeric"
+                  defaultValue={nucleus?.voteGoals?.good ?? ''}
+                  className="min-h-11"
+                  aria-invalid={Boolean(errorFor('voteGoals.good'))}
+                />
+              </Field>
+              <Field data-invalid={Boolean(errorFor('voteGoals.regular'))}>
+                <FieldLabel htmlFor="voteGoalsRegular">Regular</FieldLabel>
+                <Input
+                  id="voteGoalsRegular"
+                  name="voteGoalsRegular"
+                  type="number"
+                  min={0}
+                  step={1}
+                  inputMode="numeric"
+                  defaultValue={nucleus?.voteGoals?.regular ?? ''}
+                  className="min-h-11"
+                  aria-invalid={Boolean(errorFor('voteGoals.regular'))}
+                />
+              </Field>
+              <Field data-invalid={Boolean(errorFor('voteGoals.minimum'))}>
+                <FieldLabel htmlFor="voteGoalsMinimum">Mínimo</FieldLabel>
+                <Input
+                  id="voteGoalsMinimum"
+                  name="voteGoalsMinimum"
+                  type="number"
+                  min={0}
+                  step={1}
+                  inputMode="numeric"
+                  defaultValue={nucleus?.voteGoals?.minimum ?? ''}
+                  className="min-h-11"
+                  aria-invalid={Boolean(errorFor('voteGoals.minimum'))}
+                />
+              </Field>
+            </div>
+            {['voteGoals.good', 'voteGoals.regular', 'voteGoals.minimum'].map((field) =>
+              errorFor(field) ? (
+                <FieldError key={field} id={`${field}-error`}>
+                  {errorFor(field)}
+                </FieldError>
+              ) : null,
+            )}
+            <FieldDescription>
+              Quando informadas, as metas devem seguir a ordem Bom ≥ Regular ≥ Mínimo.
+            </FieldDescription>
+            <SelectField
+              id="priority"
+              label="Prioridade"
+              name="priority"
+              defaultValue={nucleus?.priority ?? 'normal'}
+              error={errorFor('priority')}
+            >
+              {Object.entries(nucleusPriorityLabels).map(([value, label]) => (
+                <NativeSelectOption key={value} value={value}>
+                  {label}
+                </NativeSelectOption>
+              ))}
+            </SelectField>
+          </FieldGroup>
+        </CardContent>
+      </Card>
+
       {!nucleus ? (
         <Card>
           <CardHeader>
@@ -229,10 +310,7 @@ export const NucleusFormFields = ({
                   {coordinators.map((coordinator) => (
                     <FieldLabel key={coordinator.id}>
                       <Field orientation="horizontal" className="min-h-11 rounded-lg border p-3">
-                        <Checkbox
-                          name="coordinators"
-                          value={String(coordinator.id)}
-                        />
+                        <Checkbox name="coordinators" value={String(coordinator.id)} />
                         <span>
                           {coordinator.name}
                           {coordinator.isCurrent ? ' (você)' : ''}

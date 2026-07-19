@@ -963,6 +963,36 @@ describe('electoral nucleus domain', () => {
     expect(clearedLocality.locality).toBeNull()
   })
 
+  it('persists vote goals, priority, and E3 strategy fields', async () => {
+    const general = await campaignFixtures().createCampaignUser('geral')
+
+    const nucleus = await createElectoralNucleus(payload, general, {
+      ...validNucleusInput,
+      name: campaignFixtures().value('Núcleo com metas'),
+      coordinators: [general.id],
+      voteGoals: { good: 1000, regular: 800, minimum: 500 },
+      priority: 'alta',
+      dobradinhaNotes: 'Notas de dobradinha',
+      nextSteps: 'Próximos encaminhamentos',
+    })
+
+    expect(nucleus.voteGoals).toMatchObject({
+      good: 1000,
+      regular: 800,
+      minimum: 500,
+    })
+    expect(nucleus.priority).toBe('alta')
+    expect(nucleus.dobradinhaNotes).toBe('Notas de dobradinha')
+    expect(nucleus.nextSteps).toBe('Próximos encaminhamentos')
+
+    await expect(
+      updateElectoralNucleus(payload, general, {
+        id: nucleus.id,
+        voteGoals: { good: 500, regular: 800, minimum: 500 },
+      }),
+    ).rejects.toThrow()
+  })
+
   it('drops lock-document dependencies before the nucleus table on rollback', () => {
     const migration = readFileSync(
       new URL(

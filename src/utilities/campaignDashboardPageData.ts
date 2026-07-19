@@ -1,19 +1,21 @@
 import type { Payload } from 'payload'
 
-import type { CampaignUser } from '@/payload-types'
 import { isSupportStatus } from '@/lib/schemas/leadership'
+import type { CampaignUser } from '@/payload-types'
 import { loadUpcomingActionPlansPreview } from '@/utilities/actionPlanUpcomingPreview'
-import { getBahiaWeekRange } from '@/utilities/campaignTime'
-import { loadCoordinatorSummaries } from '@/utilities/nucleusCoordinatorOptions'
 import {
   buildGeneralDashboardViewModel,
   buildScopedDashboardViewModel,
   type DashboardLeadershipRecord,
   type DashboardNucleusRecord,
 } from '@/utilities/campaignDashboardViewModels'
+import { getBahiaWeekRange } from '@/utilities/campaignTime'
+import { loadCoordinatorSummaries } from '@/utilities/nucleusCoordinatorOptions'
+import { nucleusVoteGoalsSelect } from '@/utilities/nucleusViewModels'
 import { requireRelationshipId } from '@/utilities/relationship'
+import { toVoteGoalsViewModel } from '@/utilities/voteGoals'
 
-const dashboardStaffNucleusSelect = {
+const dashboardNucleusSelectBase = {
   name: true,
   slug: true,
   regions: true,
@@ -28,6 +30,13 @@ const dashboardStaffNucleusSelect = {
   proposedVoteEstimate: true,
   lastUpdateAt: true,
 } as const
+
+const dashboardGeralNucleusSelect = {
+  ...dashboardNucleusSelectBase,
+  voteGoals: nucleusVoteGoalsSelect.voteGoals,
+} as const
+
+const dashboardCoordinatorNucleusSelect = dashboardNucleusSelectBase
 
 const dashboardLeadershipNucleusSelect = {
   name: true,
@@ -62,6 +71,12 @@ type RawDashboardNucleus = {
   tseZones?: Array<{ zoneNumber: number }>
   confirmedVoteEstimate?: number | null
   proposedVoteEstimate?: number | null
+  voteGoals?: {
+    good?: number | null
+    regular?: number | null
+    minimum?: number | null
+  } | null
+  priority?: DashboardNucleusRecord['priority'] | null
   lastUpdateAt?: string | null
 }
 
@@ -94,6 +109,8 @@ const toDashboardNucleusRecord = (
   tseZones: nucleus.tseZones?.map(({ zoneNumber }) => zoneNumber) ?? [],
   confirmedVoteEstimate: nucleus.confirmedVoteEstimate ?? null,
   proposedVoteEstimate: nucleus.proposedVoteEstimate ?? null,
+  voteGoals: toVoteGoalsViewModel(nucleus.voteGoals),
+  priority: nucleus.priority ?? 'normal',
   lastUpdateAt: nucleus.lastUpdateAt ?? null,
 })
 
@@ -111,7 +128,11 @@ export const getCampaignDashboardPageData = async (
       pagination: false,
       sort: 'name',
       select:
-        user.role === 'lideranca' ? dashboardLeadershipNucleusSelect : dashboardStaffNucleusSelect,
+        user.role === 'lideranca'
+          ? dashboardLeadershipNucleusSelect
+          : user.role === 'geral'
+            ? dashboardGeralNucleusSelect
+            : dashboardCoordinatorNucleusSelect,
       user,
       overrideAccess: false,
     }),
@@ -167,23 +188,23 @@ export const getCampaignDashboardPageData = async (
   const nuclei = rawNuclei.map((nucleus) =>
     toDashboardNucleusRecord(nucleus, coordinatorIdentities),
   )
-  const leaderships = (
-    leadershipResult.docs as unknown as RawDashboardLeadership[]
-  ).flatMap((leadership): DashboardLeadershipRecord[] => {
-    // Payload omits fields denied by field-level read access. A missing status is
-    // therefore an intentionally incomplete projection, not a domain value.
-    if (leadership.supportStatus === undefined) return []
-    if (!isSupportStatus(leadership.supportStatus)) {
-      throw new Error('Dashboard leadership support status invariant violated.')
-    }
+  const leaderships = (leadershipResult.docs as unknown as RawDashboardLeadership[]).flatMap(
+    (leadership): DashboardLeadershipRecord[] => {
+      // Payload omits fields denied by field-level read access. A missing status is
+      // therefore an intentionally incomplete projection, not a domain value.
+      if (leadership.supportStatus === undefined) return []
+      if (!isSupportStatus(leadership.supportStatus)) {
+        throw new Error('Dashboard leadership support status invariant violated.')
+      }
 
-    return [
-      {
-        nucleusId: requireRelationshipId(leadership.nucleus),
-        supportStatus: leadership.supportStatus,
-      },
-    ]
-  })
+      return [
+        {
+          nucleusId: requireRelationshipId(leadership.nucleus),
+          supportStatus: leadership.supportStatus,
+        },
+      ]
+    },
+  )
 
   if (user.role === 'geral') {
     return buildGeneralDashboardViewModel(

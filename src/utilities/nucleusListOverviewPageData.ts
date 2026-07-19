@@ -14,9 +14,11 @@ import {
   type NucleusListOverviewViewModel,
 } from '@/utilities/nucleusListOverviewViewModels'
 import { buildNucleusListWhere, type NucleusListState } from '@/utilities/nucleusUi'
+import { nucleusVoteGoalsSelect } from '@/utilities/nucleusViewModels'
 import { requireRelationshipId } from '@/utilities/relationship'
+import { toVoteGoalsViewModel } from '@/utilities/voteGoals'
 
-const overviewStaffNucleusSelect = {
+const overviewNucleusSelectBase = {
   slug: true,
   name: true,
   coordinators: true,
@@ -24,18 +26,15 @@ const overviewStaffNucleusSelect = {
   regions: true,
   tseZones: { zoneNumber: true },
   confirmedVoteEstimate: true,
+  ...nucleusVoteGoalsSelect,
+} as const
+
+const overviewStaffNucleusSelect = {
+  ...overviewNucleusSelectBase,
   proposedVoteEstimate: true,
 } as const
 
-const overviewLeadershipNucleusSelect = {
-  slug: true,
-  name: true,
-  coordinators: true,
-  cities: true,
-  regions: true,
-  tseZones: { zoneNumber: true },
-  confirmedVoteEstimate: true,
-} as const
+const overviewLeadershipNucleusSelect = overviewNucleusSelectBase
 
 const overviewUpdateSelect = {
   author: true,
@@ -54,6 +53,12 @@ type RawOverviewNucleus = {
   tseZones?: Array<{ zoneNumber: number }> | null
   confirmedVoteEstimate?: number | null
   proposedVoteEstimate?: number | null
+  voteGoals?: {
+    good?: number | null
+    regular?: number | null
+    minimum?: number | null
+  } | null
+  priority?: NucleusListOverviewNucleusRecord['priority'] | null
 }
 
 type RawOverviewUpdate = {
@@ -102,6 +107,8 @@ export const loadNucleusListOverviewData = async (
       ...geography,
       confirmedVoteEstimate: nucleus.confirmedVoteEstimate ?? null,
       proposedVoteEstimate: nucleus.proposedVoteEstimate ?? null,
+      voteGoals: toVoteGoalsViewModel(nucleus.voteGoals),
+      priority: nucleus.priority ?? 'normal',
     }
   })
 

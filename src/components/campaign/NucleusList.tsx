@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
-import { formatNucleusTerritoryLabel, organizationKindLabels } from '@/utilities/nucleusUi'
+import { formatNucleusTerritoryLabel, nucleusPriorityLabels, organizationKindLabels } from '@/utilities/nucleusUi'
 import type { NucleusListViewModel } from '@/utilities/nucleusViewModels'
 
 export type NucleusListProps = {
@@ -68,6 +68,7 @@ export const NucleusList = ({ nuclei }: NucleusListProps) => (
           tseZones={nucleus.tseZones}
           confirmedVoteEstimate={nucleus.confirmedVoteEstimate}
           hasPendingEstimate={nucleus.proposedVoteEstimate != null}
+          isHighPriority={nucleus.priority === 'alta'}
           lastUpdateLabel={
             nucleus.lastUpdateAt
               ? `Atualizada em ${new Intl.DateTimeFormat('pt-BR').format(new Date(nucleus.lastUpdateAt))}`
@@ -102,12 +103,17 @@ export const NucleusList = ({ nuclei }: NucleusListProps) => (
             return (
               <TableRow key={nucleus.id}>
                 <TableCell className="max-w-52 whitespace-normal">
-                  <Link
-                    href={`/campanha/nucleos/${nucleus.slug}`}
-                    className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {nucleus.name}
-                  </Link>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/campanha/nucleos/${nucleus.slug}`}
+                      className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      {nucleus.name}
+                    </Link>
+                    {nucleus.priority === 'alta' ? (
+                      <Badge variant="destructive">{nucleusPriorityLabels.alta}</Badge>
+                    ) : null}
+                  </div>
                 </TableCell>
                 <TableCell className="max-w-56 whitespace-normal">
                   <span className="font-medium">{getOrganization(nucleus)}</span>

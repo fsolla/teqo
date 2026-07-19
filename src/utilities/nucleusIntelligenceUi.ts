@@ -11,6 +11,7 @@ export const parseNucleusIntelligenceFormData = (formData: FormData): NucleusUpd
   const hasTicketAlliance = ['partnerName', 'office', 'isCampaignPartner', 'allianceNotes'].some(
     (field) => formData.has(field),
   )
+  const hasStrategyNotes = ['dobradinhaNotes', 'nextSteps'].some((field) => formData.has(field))
 
   return nucleusUpdateSchema.parse({
     id: requiredRelationshipFormValue(formData, 'nucleus'),
@@ -18,6 +19,12 @@ export const parseNucleusIntelligenceFormData = (formData: FormData): NucleusUpd
     risks: boundedJsonFormValue(formData, 'risks', 100_000),
     voterProfiles: boundedJsonFormValue(formData, 'voterProfiles', 100_000),
     primaryContact: nullableRelationshipFormValue(formData, 'primaryContact'),
+    ...(hasStrategyNotes
+      ? {
+          dobradinhaNotes: nullableFormText(formData, 'dobradinhaNotes'),
+          nextSteps: nullableFormText(formData, 'nextSteps'),
+        }
+      : {}),
     ticketAlliance: hasTicketAlliance
       ? {
           partnerName: nullableFormText(formData, 'partnerName'),

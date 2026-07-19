@@ -23,8 +23,61 @@ import { eligibleNucleusCoordinatorWhere } from '@/utilities/nucleusCoordinatorO
 import { acquirePrimaryContactInvariantLocks } from '@/utilities/primaryContactInvariantLock'
 import { relationshipId } from '@/utilities/relationship'
 import { slugify } from '@/utilities/slug'
+import {
+  getVoteGoalsOrderViolation,
+  VOTE_GOALS_ORDER_ERROR_MESSAGE,
+  type VoteGoalsFields,
+} from '@/utilities/voteGoals'
 
 const trimmedText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+
+const voteGoalNumber = (value: unknown): number | null | undefined => {
+  if (value === null || value === undefined || value === '') return null
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new APIError('Cada meta de votos deve ser um número inteiro não negativo.', 400)
+  }
+  return Math.trunc(value)
+}
+
+const validateVoteGoals: CollectionBeforeValidateHook = ({ data, originalDoc, operation }) => {
+  if (!data) return data
+
+  const mergedGoals =
+    data.voteGoals !== undefined
+      ? { ...(originalDoc?.voteGoals ?? {}), ...(data.voteGoals as object) }
+      : operation === 'update'
+        ? originalDoc?.voteGoals
+        : undefined
+
+  if (!mergedGoals || typeof mergedGoals !== 'object') return data
+
+  const good = voteGoalNumber((mergedGoals as VoteGoalsFields).good)
+  const regular = voteGoalNumber((mergedGoals as VoteGoalsFields).regular)
+  const minimum = voteGoalNumber((mergedGoals as VoteGoalsFields).minimum)
+
+  if (getVoteGoalsOrderViolation({ good, regular, minimum })) {
+    throw new APIError(VOTE_GOALS_ORDER_ERROR_MESSAGE, 400)
+  }
+
+  if (data.voteGoals && typeof data.voteGoals === 'object') {
+    data.voteGoals = {
+      good:
+        (data.voteGoals as { good?: unknown }).good === undefined
+          ? (originalDoc?.voteGoals?.good ?? null)
+          : good,
+      regular:
+        (data.voteGoals as { regular?: unknown }).regular === undefined
+          ? (originalDoc?.voteGoals?.regular ?? null)
+          : regular,
+      minimum:
+        (data.voteGoals as { minimum?: unknown }).minimum === undefined
+          ? (originalDoc?.voteGoals?.minimum ?? null)
+          : minimum,
+    }
+  }
+
+  return data
+}
 
 const validateNucleusTerritoryAndZones: CollectionBeforeValidateHook = (args) => {
   const validateTerritory = createCampaignTerritoryValidationHook({ entityLabel: 'núcleo' })
@@ -113,6 +166,7 @@ export const ElectoralNucleus: CollectionConfig = {
       setCanonicalNucleusSlug,
       validateNucleusTerritoryAndZones,
       validateNucleusCoordinators,
+      validateVoteGoals,
     ],
     beforeChange: [
       ({ data, operation, req }) => {
@@ -413,6 +467,61 @@ export const ElectoralNucleus: CollectionConfig = {
           required: true,
           maxLength: 1000,
         },
+      ],
+    },
+    {
+      name: 'dobradinhaNotes',
+      type: 'textarea',
+      label: 'Dobradinhas (notas)',
+      maxLength: 4000,
+      admin: {
+        description:
+          'Quem dobra no território hoje e o estado da negociação. Distinto do bloco estruturado “Dobrada”.',
+      },
+    },
+    {
+      name: 'nextSteps',
+      type: 'textarea',
+      label: 'Encaminhamentos',
+      maxLength: 4000,
+      admin: {
+        description: 'Próximos passos operacionais para o núcleo.',
+      },
+    },
+    {
+      name: 'voteGoals',
+      type: 'group',
+      label: 'Metas de votos 2026',
+      fields: [
+        {
+          name: 'good',
+          type: 'number',
+          label: 'Bom',
+          min: 0,
+        },
+        {
+          name: 'regular',
+          type: 'number',
+          label: 'Regular',
+          min: 0,
+        },
+        {
+          name: 'minimum',
+          type: 'number',
+          label: 'Mínimo',
+          min: 0,
+        },
+      ],
+    },
+    {
+      name: 'priority',
+      type: 'select',
+      label: 'Prioridade',
+      defaultValue: 'normal',
+      index: true,
+      options: [
+        { label: 'Alta', value: 'alta' },
+        { label: 'Normal', value: 'normal' },
       ],
     },
     {

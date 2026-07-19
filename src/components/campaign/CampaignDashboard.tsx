@@ -185,12 +185,16 @@ const GeneralDashboard = ({ view, now }: { view: GeneralDashboardViewModel; now:
       <h2 id="campaign-kpis" className="sr-only">
         Indicadores da campanha
       </h2>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <KpiCard label="Núcleos ativos" value={numberFormatter.format(view.kpis.activeNuclei)} />
         <KpiCard
           label="% com coordenador"
           value={`${view.kpis.coordinatorCoveragePercent}%`}
           progress={view.kpis.coordinatorCoveragePercent}
+        />
+        <KpiCard
+          label="Meta regular (soma)"
+          value={`${numberFormatter.format(view.kpis.regularVoteGoalTotal)} votos`}
         />
         <KpiCard
           label="Estimativas confirmadas"

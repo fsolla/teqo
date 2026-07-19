@@ -1,7 +1,7 @@
 # Mapa de projeção de votos por município (equiparar e superar as planilhas 2026)
 
 Status: rascunho
-Atualizado em: 2026-07-19
+Atualizado em: 2026-07-19 (revisão access E1/E3 — metas/prioridade/E3 sem `canSetDerivedNucleusField`; escrita via `canUpdateElectoralNucleus` + selects/VMs)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E — itens E1–E5, "Ciclo 3")
 Responsável: —
 
@@ -56,7 +56,7 @@ flowchart LR
 
 ### E1 — Metas em cenários + prioridade no Núcleo (migration)
 
-- **`electoralNucleus`** (`src/collections/ElectoralNucleus.ts`): grupo `voteGoals` (`good`/`regular`/`minimum`, numbers opcionais, validação `good ≥ regular ≥ minimum`) e `priority` (select `alta|normal`, default `normal`, indexado). Escrita staff — `geral` ou coordenador designado, mesma regra da estimativa confirmada (`canSetDerivedNucleusField`/padrões em `src/utilities/campaignAccess.ts`); leitura para os três papéis.
+- **`electoralNucleus`** (`src/collections/ElectoralNucleus.ts`): grupo `voteGoals` (`good`/`regular`/`minimum`, numbers opcionais, validação `good ≥ regular ≥ minimum`) e `priority` (select `alta|normal`, default `normal`, indexado). Escrita staff via `canUpdateElectoralNucleus` (`geral` ou coordenador designado no núcleo) — **sem** `canSetDerivedNucleusField` (esse helper é só Payload-admin, usado nas estimativas derivadas). Leitura para os três papéis; E3 (`dobradinhaNotes`/`nextSteps`) staff-only via select/VM como `strengths`/`risks`.
 - **UI:** card "Metas 2026" na aba Visão geral (3 cenários + `Progress` da estimativa confirmada vs. meta regular, ao lado de `NucleusElectoralBaseline`); filtro `priority` na lista (padrão dos filtros existentes em `src/utilities/nucleusUi.ts` / `buildNucleusListWhere`); bloco no overview B1 (`src/components/campaign/NucleusListOverview.tsx`): soma das metas por cenário no conjunto filtrado + contagem de prioritários; dashboard: soma estadual das metas (equivalente à "META: 71.000").
 - **Migration:** `pnpm migrate:create add_nucleus_goals_strategy` (uma migration só para E1+E3), `pnpm generate:types` (skill `payload-migrations`).
 

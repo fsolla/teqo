@@ -1,6 +1,6 @@
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createElement, useState } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { archiveNucleusFormAction } from '@/app/(campaign)/campanha/(app)/nucleos/formActions'
@@ -11,6 +11,7 @@ import { NucleusList } from '@/components/campaign/NucleusList'
 import { NucleusTerritoryAndZonesFields } from '@/components/campaign/NucleusTerritoryAndZonesFields'
 import { TseZoneInput } from '@/components/campaign/TseZoneInput'
 import { campaignNav, getCampaignNav, isCampaignNavActive } from '@/components/campaign/nav'
+import { parseNucleusCreateFormData, parseNucleusUpdateFormData } from '@/utilities/nucleusFormData'
 import {
   buildNucleusListHref,
   buildNucleusListWhere,
@@ -19,10 +20,6 @@ import {
   getCampaignScopeLabel,
   parseNucleusListParams,
 } from '@/utilities/nucleusUi'
-import {
-  parseNucleusCreateFormData,
-  parseNucleusUpdateFormData,
-} from '@/utilities/nucleusFormData'
 import { nucleusStaffDetailSelect, toNucleusDetailViewModel } from '@/utilities/nucleusViewModels'
 import { parseTseZoneNumbers } from '@/utilities/tseZone'
 import { matchesAtWordStart } from '@/utilities/wordStartFilter'
@@ -137,9 +134,7 @@ describe('campaign nucleus UI contracts', () => {
     expect(region.id).not.toBe(city.id)
     expect(container.querySelectorAll('input[type="hidden"][name="cities"]')).toHaveLength(0)
     expect(container.querySelectorAll('input[type="hidden"][name="regions"]')).toHaveLength(0)
-    expect(container.querySelectorAll('input[type="hidden"][name="neighborhoods"]')).toHaveLength(
-      0,
-    )
+    expect(container.querySelectorAll('input[type="hidden"][name="neighborhoods"]')).toHaveLength(0)
     expect(region.getAttribute('aria-describedby')).toBe('nucleus-lookup-a-error')
     expect(city.getAttribute('aria-describedby')).toBe('nucleus-lookup-b-error')
     expect(screen.getByText('Território inválido.').id).toBe('nucleus-lookup-a-error')
@@ -167,9 +162,7 @@ describe('campaign nucleus UI contracts', () => {
     fireEvent.change(region, { target: { value: 'Território inventado' } })
     fireEvent.blur(region)
     expect(region.value).toBe('')
-    expect(
-      screen.getByText('Selecione um território de identidade válido da Bahia.'),
-    ).toBeTruthy()
+    expect(screen.getByText('Selecione um território de identidade válido da Bahia.')).toBeTruthy()
 
     fireEvent.change(city, { target: { value: 'Município inventado' } })
     fireEvent.blur(city)
@@ -239,7 +232,9 @@ describe('campaign nucleus UI contracts', () => {
   })
 
   it('removes a city chip and re-derives the territory from the remaining cities', async () => {
-    render(createElement(NucleusTerritoryAndZonesFields, { values: { cities: ['Seabra', 'Salvador'] } }))
+    render(
+      createElement(NucleusTerritoryAndZonesFields, { values: { cities: ['Seabra', 'Salvador'] } }),
+    )
     expect(screen.getByText('Chapada Diamantina')).toBeTruthy()
     expect(screen.getByText('Metropolitano de Salvador')).toBeTruthy()
 
@@ -579,6 +574,7 @@ describe('campaign nucleus UI contracts', () => {
             confirmedVoteEstimate: 1200,
             proposedVoteEstimate: null,
             lastUpdateAt: null,
+            priority: 'normal',
           },
         ],
       }),
@@ -611,9 +607,7 @@ describe('campaign nucleus UI contracts', () => {
   })
 
   it('shows no available coordinator only for an empty eligible list', () => {
-    const emptyHtml = renderToStaticMarkup(
-      createElement(NucleusFormFields, { coordinators: [] }),
-    )
+    const emptyHtml = renderToStaticMarkup(createElement(NucleusFormFields, { coordinators: [] }))
     const eligibleHtml = renderToStaticMarkup(
       createElement(NucleusFormFields, {
         coordinators: [{ id: 1, name: 'Coordenação Geral', isCurrent: true }] as never,
@@ -642,6 +636,8 @@ describe('campaign nucleus UI contracts', () => {
           sectorKind: null,
           tseZones: [],
           ticketAlliance: null,
+          voteGoals: { good: null, regular: null, minimum: null },
+          priority: 'normal',
         },
       }),
     )
@@ -674,5 +670,4 @@ describe('campaign nucleus UI contracts', () => {
     expect(html).toContain('id="name-error"')
     expect(html).toContain('aria-describedby="tseZones-error"')
   })
-
 })

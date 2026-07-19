@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card'
 import { TseZoneBadge } from '@/components/campaign/TseZoneBadge'
 import { cn } from '@/lib/utils'
+import { nucleusPriorityLabels } from '@/utilities/nucleusUi'
 
 const voteFormatter = new Intl.NumberFormat('pt-BR')
 
@@ -21,6 +22,7 @@ export type NucleusCardProps = {
   tseZones?: number[]
   confirmedVoteEstimate?: number | null
   hasPendingEstimate?: boolean
+  isHighPriority?: boolean
   lastUpdateLabel?: string
   isUpdateOverdue?: boolean
   leadershipCounts?: {
@@ -39,6 +41,7 @@ export const NucleusCard = ({
   tseZones = [],
   confirmedVoteEstimate,
   hasPendingEstimate = false,
+  isHighPriority = false,
   lastUpdateLabel,
   isUpdateOverdue = false,
   leadershipCounts,
@@ -47,7 +50,10 @@ export const NucleusCard = ({
 }: NucleusCardProps) => (
   <Card className={className}>
     <CardHeader>
-      <CardTitle>{name}</CardTitle>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <CardTitle>{name}</CardTitle>
+        {isHighPriority ? <Badge variant="destructive">{nucleusPriorityLabels.alta}</Badge> : null}
+      </div>
       <CardDescription>{[organization, territory].filter(Boolean).join(' · ')}</CardDescription>
       {tseZones.length > 0 ? (
         <div className="flex flex-wrap gap-1">

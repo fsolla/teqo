@@ -1,12 +1,7 @@
-import type { Payload } from 'payload'
+import { AlertTriangleIcon, CheckCircle2Icon, MessageCircleIcon, PhoneIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import {
-  AlertTriangleIcon,
-  CheckCircle2Icon,
-  MessageCircleIcon,
-  PhoneIcon,
-} from 'lucide-react'
+import type { Payload } from 'payload'
 
 import { createNucleusUpdateFormAction } from '@/app/(campaign)/campanha/(app)/nucleos/[slug]/nucleusUpdateFormActions'
 import { searchPrimaryContactOptionsFormAction } from '@/app/(campaign)/campanha/(app)/nucleos/[slug]/primaryContactSearchActions'
@@ -16,6 +11,7 @@ import { NucleusInsights } from '@/components/campaign/NucleusInsights'
 import { NucleusIntelligenceDialogShell } from '@/components/campaign/NucleusIntelligenceDialogShell'
 import { NucleusUpdateFeed } from '@/components/campaign/NucleusUpdateFeed'
 import { NucleusUpdateFormShell } from '@/components/campaign/NucleusUpdateFormShell'
+import { NucleusVoteGoals } from '@/components/campaign/NucleusVoteGoals'
 import { TseZoneBadge } from '@/components/campaign/TseZoneBadge'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -23,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/Empty'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { CampaignUser } from '@/payload-types'
+import { buildLeadershipPanelHref, parseLeadershipFilterState } from '@/utilities/leadershipUi'
 import { loadNucleusActiveTabPageData } from '@/utilities/nucleusDetailPageData'
 import {
   buildNucleusDetailTabHref,
@@ -30,21 +27,21 @@ import {
   type NucleusDetailTab,
 } from '@/utilities/nucleusDetailTabUi'
 import type { AccessibleNucleusContext } from '@/utilities/nucleusPageData'
-import { formatNucleusTerritoryLabel } from '@/utilities/nucleusUi'
+import {
+  formatNucleusTerritoryLabel,
+  nucleusDobradinhaNotesLabel,
+  nucleusNextStepsLabel,
+} from '@/utilities/nucleusUi'
+import {
+  parseNucleusUpdateListState,
+  type NucleusUpdateViewModel,
+} from '@/utilities/nucleusUpdateUi'
 import type {
   NucleusDetailViewModel,
   NucleusElectoralBaselineViewModel,
   NucleusTabsViewModel,
   StaffNucleusTabsViewModel,
 } from '@/utilities/nucleusViewModels'
-import {
-  buildLeadershipPanelHref,
-  parseLeadershipFilterState,
-} from '@/utilities/leadershipUi'
-import {
-  parseNucleusUpdateListState,
-  type NucleusUpdateViewModel,
-} from '@/utilities/nucleusUpdateUi'
 import { buildWhatsAppUrl } from '@/utilities/phone'
 
 const OverviewContent = ({
@@ -53,18 +50,22 @@ const OverviewContent = ({
   confirmedVoteEstimate,
   context,
   nucleus,
+  priority,
   primaryContact,
   searchParams,
   updatePreview,
+  voteGoals,
 }: {
   baseline: NucleusElectoralBaselineViewModel | null
   canEditIntelligence: boolean
   confirmedVoteEstimate: number | null
   context: AccessibleNucleusContext
   nucleus: NucleusTabsViewModel
+  priority: NucleusDetailViewModel['priority']
   primaryContact: { id: number; name: string; phone: string } | null
   searchParams: NucleusDetailSearchParams
   updatePreview: NucleusUpdateViewModel[]
+  voteGoals: NucleusDetailViewModel['voteGoals']
 }) => (
   <>
     {nucleus.kind === 'staff' ? (
@@ -78,6 +79,8 @@ const OverviewContent = ({
                 risks: nucleus.risks,
                 voterProfiles: nucleus.voterProfiles,
                 ticketAlliance: nucleus.ticketAlliance,
+                dobradinhaNotes: nucleus.dobradinhaNotes,
+                nextSteps: nucleus.nextSteps,
               }}
               primaryContact={primaryContact}
               searchPrimaryContacts={searchPrimaryContactOptionsFormAction.bind(null, context.slug)}
@@ -129,9 +132,7 @@ const OverviewContent = ({
                 <div className="flex flex-wrap items-center gap-2">
                   <strong>{nucleus.ticketAlliance.partnerName}</strong>
                   {nucleus.ticketAlliance.office ? (
-                    <span className="text-muted-foreground">
-                      · {nucleus.ticketAlliance.office}
-                    </span>
+                    <span className="text-muted-foreground">· {nucleus.ticketAlliance.office}</span>
                   ) : null}
                   <Badge
                     variant={
@@ -189,6 +190,31 @@ const OverviewContent = ({
             </CardContent>
           </Card>
         </div>
+
+        {nucleus.dobradinhaNotes || nucleus.nextSteps ? (
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            {nucleus.dobradinhaNotes ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{nucleusDobradinhaNotesLabel}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="whitespace-pre-wrap text-sm">{nucleus.dobradinhaNotes}</p>
+                </CardContent>
+              </Card>
+            ) : null}
+            {nucleus.nextSteps ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{nucleusNextStepsLabel}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="whitespace-pre-wrap text-sm">{nucleus.nextSteps}</p>
+                </CardContent>
+              </Card>
+            ) : null}
+          </div>
+        ) : null}
       </>
     ) : (
       <Card>
@@ -197,14 +223,17 @@ const OverviewContent = ({
           <CardDescription>Informações básicas do território em que você atua</CardDescription>
         </CardHeader>
         <CardContent>
-          <p>
-            {formatNucleusTerritoryLabel(nucleus)}
-          </p>
+          <p>{formatNucleusTerritoryLabel(nucleus)}</p>
         </CardContent>
       </Card>
     )}
 
     <div className="mt-4 flex flex-col gap-4">
+      <NucleusVoteGoals
+        voteGoals={voteGoals}
+        confirmedVoteEstimate={confirmedVoteEstimate}
+        priority={priority}
+      />
       <NucleusElectoralBaseline baseline={baseline} />
       <NucleusInsights baseline={baseline} confirmedVoteEstimate={confirmedVoteEstimate} />
     </div>
@@ -262,9 +291,7 @@ const TerritoryContent = ({ nucleus }: { nucleus: NucleusTabsViewModel }) => (
         <CardDescription>Bahia</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
-        <p>
-          {formatNucleusTerritoryLabel(nucleus)}
-        </p>
+        <p>{formatNucleusTerritoryLabel(nucleus)}</p>
         {nucleus.kind === 'staff' && nucleus.territoryNotes ? (
           <p className="text-muted-foreground">{nucleus.territoryNotes}</p>
         ) : null}
@@ -350,13 +377,7 @@ export const NucleusActiveTab = async ({
   user: CampaignUser
   view: NucleusDetailViewModel
 }) => {
-  const data = await loadNucleusActiveTabPageData(
-    payload,
-    user,
-    context,
-    activeTab,
-    searchParams,
-  )
+  const data = await loadNucleusActiveTabPageData(payload, user, context, activeTab, searchParams)
 
   if (data.tab === 'overview') {
     return (
@@ -366,9 +387,11 @@ export const NucleusActiveTab = async ({
         confirmedVoteEstimate={view.confirmedVoteEstimate}
         context={context}
         nucleus={view.tabs}
+        priority={view.priority}
         primaryContact={data.primaryContactPageData.current}
         searchParams={searchParams}
         updatePreview={data.updatePreview}
+        voteGoals={view.voteGoals}
       />
     )
   }

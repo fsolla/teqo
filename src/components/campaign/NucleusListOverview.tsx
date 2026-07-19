@@ -87,6 +87,28 @@ export const NucleusListOverview = ({
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardDescription>Metas 2026</CardDescription>
+          <CardTitle className="text-3xl tabular-nums">
+            {numberFormatter.format(view.voteGoals.regular)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2">
+          <p className="text-sm text-muted-foreground">
+            Soma do cenário regular no conjunto filtrado
+          </p>
+          <p className="text-sm">
+            Bom: {numberFormatter.format(view.voteGoals.good)} · Mínimo:{' '}
+            {numberFormatter.format(view.voteGoals.minimum)}
+          </p>
+          <p className="text-sm font-medium">
+            {numberFormatter.format(view.highPriorityCount)}{' '}
+            {view.highPriorityCount === 1 ? 'núcleo prioritário' : 'núcleos prioritários'}
+          </p>
+        </CardContent>
+      </Card>
+
       {view.baseline2022 ? (
         <Card>
           <CardHeader>

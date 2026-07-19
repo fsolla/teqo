@@ -44,7 +44,7 @@ export const updateElectoralNucleus = async (
       return payload.update({
         collection: 'electoralNucleus',
         id,
-        data,
+        data: data as never,
         depth: 0,
         user: currentActor,
         overrideAccess: false,

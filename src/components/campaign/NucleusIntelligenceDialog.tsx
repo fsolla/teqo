@@ -1,18 +1,18 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
 import { PlusIcon, Trash2Icon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
   updateNucleusIntelligenceFormAction,
   type NucleusIntelligenceFormState,
 } from '@/app/(campaign)/campanha/(app)/nucleos/[slug]/nucleusIntelligenceFormActions'
+import { PrimaryContactCombobox } from '@/components/campaign/PrimaryContactCombobox'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
-import { PrimaryContactCombobox } from '@/components/campaign/PrimaryContactCombobox'
 import {
   DialogContent,
   DialogDescription,
@@ -32,12 +32,18 @@ import {
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
+import { fieldError } from '@/utilities/campaignFormFields'
+import {
+  nucleusDobradinhaNotesDescription,
+  nucleusDobradinhaNotesLabel,
+  nucleusNextStepsDescription,
+  nucleusNextStepsLabel,
+} from '@/utilities/nucleusUi'
+import type { StaffNucleusTabsViewModel } from '@/utilities/nucleusViewModels'
 import type {
   NucleusPrimaryContactPageData,
   PrimaryContactOption,
 } from '@/utilities/primaryContactPageData'
-import type { StaffNucleusTabsViewModel } from '@/utilities/nucleusViewModels'
-import { fieldError } from '@/utilities/campaignFormFields'
 
 type EditableProfile = StaffNucleusTabsViewModel['voterProfiles'][number]
 
@@ -46,7 +52,7 @@ type NucleusIntelligenceDialogProps = {
   nucleusId: number
   intelligence: Pick<
     StaffNucleusTabsViewModel,
-    'strengths' | 'risks' | 'voterProfiles' | 'ticketAlliance'
+    'strengths' | 'risks' | 'voterProfiles' | 'ticketAlliance' | 'dobradinhaNotes' | 'nextSteps'
   >
   primaryContact: PrimaryContactOption | null
   searchPrimaryContacts: (query: string) => Promise<NucleusPrimaryContactPageData>
@@ -355,6 +361,40 @@ export const NucleusIntelligenceDialog = ({
               <PlusIcon data-icon="inline-start" aria-hidden="true" />
               Adicionar perfil
             </Button>
+          </FieldSet>
+
+          <FieldSet>
+            <FieldLegend>{nucleusDobradinhaNotesLabel}</FieldLegend>
+            <FieldDescription>{nucleusDobradinhaNotesDescription}</FieldDescription>
+            <Field>
+              <FieldLabel htmlFor="dobradinha-notes" className="sr-only">
+                {nucleusDobradinhaNotesLabel}
+              </FieldLabel>
+              <Textarea
+                id="dobradinha-notes"
+                name="dobradinhaNotes"
+                maxLength={4000}
+                className="min-h-24"
+                defaultValue={intelligence.dobradinhaNotes ?? ''}
+              />
+            </Field>
+          </FieldSet>
+
+          <FieldSet>
+            <FieldLegend>{nucleusNextStepsLabel}</FieldLegend>
+            <FieldDescription>{nucleusNextStepsDescription}</FieldDescription>
+            <Field>
+              <FieldLabel htmlFor="next-steps" className="sr-only">
+                {nucleusNextStepsLabel}
+              </FieldLabel>
+              <Textarea
+                id="next-steps"
+                name="nextSteps"
+                maxLength={4000}
+                className="min-h-24"
+                defaultValue={intelligence.nextSteps ?? ''}
+              />
+            </Field>
           </FieldSet>
 
           <FieldSet>
