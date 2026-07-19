@@ -29,6 +29,7 @@ import { Tag } from './collections/Tag'
 import { Users } from './collections/Users'
 import { HomePage } from './globals/HomePage'
 import { Metadata } from './globals/Metadata'
+import { PrivacyPolicy } from './globals/PrivacyPolicy'
 import { SiteSettings } from './globals/SiteSettings'
 
 const filename = fileURLToPath(import.meta.url)
@@ -67,7 +68,7 @@ export default buildConfig({
     Post,
     Tag,
   ],
-  globals: [SiteSettings, HomePage, Metadata],
+  globals: [SiteSettings, HomePage, Metadata, PrivacyPolicy],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

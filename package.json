@@ -27,6 +27,7 @@
     "db:pull": "node scripts/db-pull.mjs",
     "db:seed:posts": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-posts.mjs",
     "db:seed:tse": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-tse-results.mjs",
+    "db:seed:consent": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-consent.mjs",
     "build:geometries": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-geometries.mjs",
     "dev": "node scripts/guard-dev-db.mjs && cross-env NODE_OPTIONS=--no-deprecation next dev",
     "devsafe": "rm -rf .next && node scripts/guard-dev-db.mjs && cross-env NODE_OPTIONS=--no-deprecation next dev",

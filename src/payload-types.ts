@@ -130,11 +130,13 @@ export interface Config {
     'site-settings': SiteSetting;
     home: Home;
     metadata: Metadatum;
+    'privacy-policy': PrivacyPolicy;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     home: HomeSelect<false> | HomeSelect<true>;
     metadata: MetadataSelect<false> | MetadataSelect<true>;
+    'privacy-policy': PrivacyPolicySelect<false> | PrivacyPolicySelect<true>;
   };
   locale: null;
   widgets: {
@@ -1608,6 +1610,36 @@ export interface Metadatum {
   createdAt?: string | null;
 }
 /**
+ * Aviso de Privacidade institucional exibido em /privacidade. Publicar somente após revisão jurídica.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "privacy-policy".
+ */
+export interface PrivacyPolicy {
+  id: number;
+  /**
+   * Quando desmarcado, a rota pública /privacidade retorna 404.
+   */
+  published?: boolean | null;
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
@@ -1664,6 +1696,17 @@ export interface MetadataSelect<T extends boolean = true> {
         description?: T;
       };
   image?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "privacy-policy_select".
+ */
+export interface PrivacyPolicySelect<T extends boolean = true> {
+  published?: T;
+  body?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

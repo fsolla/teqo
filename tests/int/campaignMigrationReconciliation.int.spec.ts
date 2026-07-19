@@ -2,8 +2,8 @@
 
 import { createRequire } from 'node:module'
 
-import { drizzle } from '@payloadcms/db-postgres/drizzle/node-postgres'
 import { sql } from '@payloadcms/db-postgres'
+import { drizzle } from '@payloadcms/db-postgres/drizzle/node-postgres'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { migrations } from '@/migrations'
@@ -162,7 +162,14 @@ describe('campaign migration existing-schema reconciliation', () => {
     const original = migrations.find(
       (migration) => migration.name === '20260716_010420_add_campaign_user',
     )
-    if (!consolidated || !original) throw new Error('Campaign migrations are not registered.')
+    const onda0Seed = migrations.find(
+      (migration) => migration.name === '20260719_054707_seed_onda0_consent_and_privacy',
+    )
+    if (!consolidated || !original || !onda0Seed) {
+      throw new Error('Campaign migrations are not registered.')
+    }
+
+    await onda0Seed.down({ db: database } as never)
 
     await consolidated.down({ db: database } as never)
     await original.down({ db: database } as never)
