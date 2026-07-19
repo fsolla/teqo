@@ -1,19 +1,17 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { ZodError } from 'zod'
 
 import {
   confirmVoteEstimate,
   suggestVoteEstimate,
 } from '@/app/(campaign)/campanha/actions/voteEstimate'
 import {
-  FormDataBoundaryError,
   optionalFormText,
   requiredIntegerFormValue,
   requiredRelationshipFormValue,
-  validationFieldErrors,
 } from '@/lib/formData'
+import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
 
 export type VoteEstimateFormState = {
   status?: 'success'
@@ -21,24 +19,19 @@ export type VoteEstimateFormState = {
   fieldErrors?: Record<string, string[]>
 }
 
-const errorState = (error: unknown): VoteEstimateFormState => {
-  if (error instanceof FormDataBoundaryError) {
-    return { fieldErrors: { [error.field]: [error.message] } }
-  }
-  if (error instanceof ZodError) return { fieldErrors: validationFieldErrors(error) }
-  if (
-    error instanceof Error &&
-    [
-      'A liderança precisa de vínculo engajado com este núcleo.',
-      'Somente a coordenação pode confirmar estimativas.',
-      'A sugestão foi alterada. Atualize a página antes de confirmar.',
-      'Informe uma justificativa para ajustar a estimativa.',
-    ].includes(error.message)
-  ) {
-    return { message: error.message }
-  }
-  return { message: 'Não foi possível salvar a estimativa. Tente novamente.' }
-}
+const safeMessages = [
+  'A liderança precisa de vínculo engajado com este núcleo.',
+  'Somente a coordenação pode confirmar estimativas.',
+  'A sugestão foi alterada. Atualize a página antes de confirmar.',
+  'Informe uma justificativa para ajustar a estimativa.',
+] as const
+
+const errorState = (error: unknown): VoteEstimateFormState =>
+  mapCampaignFormActionError({
+    error,
+    safeMessages,
+    genericMessage: 'Não foi possível salvar a estimativa. Tente novamente.',
+  })
 
 export const suggestVoteEstimateFormAction = async (
   _state: VoteEstimateFormState,

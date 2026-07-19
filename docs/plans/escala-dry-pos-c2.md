@@ -155,7 +155,7 @@ Todas as cinco fases foram implementadas e validadas localmente (`tsc --noEmit`,
 - **Bulk insert deve rodar na txn Payload existente, não numa txn drizzle nova.** O seed TSE (`electionResultsImport.ts`) abre `dbAdapter.drizzle.transaction(...)` própria; para C4 isso quebraria a atomicidade com os locks advisory. Usado `getPostgresTransactionDatabase(payload, req)` para pegar a sessão drizzle vinculada à txn Payload.
 - **`skipContactPhoneInvariant` é fail-closed por txn, não por introspecção de lock.** Não há maneira barata de perguntar ao PG "seguro o lock X?"; o proxy usado é `req.transactionID` ativo (o lock `pg_advisory_xact_lock` é xact-level e só existe dentro de uma txn). Sem txn + flag setado → throw 500.
 - **`supporter.beforeChange` (coexistência com liderança) é no-op para import sem núcleo.** O hook só dispara quando `contactID` e `nucleusID` estão presentes; import cria supporters sem núcleo, então o bypass via drizzle insert é seguro. `createdBy` é setado explicitamente no row bulk.
-- **Escopo do mapper de form errors:** `ActionPlanPagination` e os forms de planos também consomem `campaignListUrl`/`CampaignListPagination`, mas o mapper de form actions de planos ficou para C7 (escopo de copy/mensagens diferente).
+- **Escopo do mapper de form errors:** `ActionPlanPagination` e os forms de planos também consomem `campaignListUrl`/`CampaignListPagination`. O mapper de form actions de planos (`planos/formActions.ts`, `planos/[slug]/updateFormActions.ts`) ficou de fora do escopo original do C7 (copy/mensagens diferentes) mas foi consolidado pelo C8 (`escala-dry-pos-c6.md`), junto com os demais `formActions` restantes — C7 Fase 3 manteve apenas os helpers de FormData/URL de território do `actionPlan`.
 
 ## Simplify (2026-07-19)
 

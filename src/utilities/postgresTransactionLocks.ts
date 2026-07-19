@@ -48,9 +48,12 @@ export const acquireTextAdvisoryLocks = async (
   if (sortedKeys.length === 0) return
 
   const database = await getPostgresTransactionDatabase(payload, req)
-  for (const key of sortedKeys) {
-    await database.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`,
-    )
-  }
+  // Batch every key into a single round trip: unnest() preserves array order for a
+  // plain function scan, and pg_advisory_xact_lock is volatile (never parallelized),
+  // so locks are still acquired sequentially in sorted order — same deadlock-avoidance
+  // guarantee as the previous per-key loop, at 1 round trip instead of N.
+  const keyFragments = sortedKeys.map((key) => sql`${key}`)
+  await database.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtextextended(k, 0)) FROM unnest(ARRAY[${sql.join(keyFragments, sql`, `)}]::text[]) AS k`,
+  )
 }

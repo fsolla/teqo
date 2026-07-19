@@ -3,15 +3,11 @@
 import config from '@payload-config'
 import { getPayload } from 'payload'
 import { revalidatePath } from 'next/cache'
-import { ZodError } from 'zod'
 
 import { assignNucleusCoordinators } from '@/app/(campaign)/campanha/actions/coordinatorAssignment'
-import {
-  FormDataBoundaryError,
-  repeatedRelationshipFormValues,
-  validationFieldErrors,
-} from '@/lib/formData'
+import { repeatedRelationshipFormValues } from '@/lib/formData'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
 import { getEligibleNucleusCoordinatorOptions } from '@/utilities/nucleusCoordinatorOptions'
 
 export type CoordinatorAssignmentFormState = {
@@ -25,23 +21,19 @@ export type CoordinatorAssignmentOptionsResult = {
   options: Array<{ id: number; name: string; isCurrent: boolean }>
 }
 
-const knownMessages = new Set([
+const knownMessages = [
   'Somente a coordenação geral pode alterar coordenadores.',
   'Núcleo não encontrado ou sem acesso.',
   'A coordenação deste núcleo foi alterada. Atualize a página e tente novamente.',
   'Uma ou mais pessoas selecionadas não são mais elegíveis para coordenação.',
-])
+] as const
 
-const errorState = (error: unknown): CoordinatorAssignmentFormState => {
-  if (error instanceof FormDataBoundaryError) {
-    return { fieldErrors: { [error.field]: [error.message] } }
-  }
-  if (error instanceof ZodError) return { fieldErrors: validationFieldErrors(error) }
-  if (error instanceof Error && knownMessages.has(error.message)) {
-    return { message: error.message }
-  }
-  return { message: 'Não foi possível salvar a coordenação. Atualize a página e tente novamente.' }
-}
+const errorState = (error: unknown): CoordinatorAssignmentFormState =>
+  mapCampaignFormActionError({
+    error,
+    safeMessages: knownMessages,
+    genericMessage: 'Não foi possível salvar a coordenação. Atualize a página e tente novamente.',
+  })
 
 export const assignNucleusCoordinatorsFormAction = async (
   slug: string,

@@ -4,7 +4,8 @@ import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
 import type { CampaignUser } from '@/payload-types'
-import { isCampaignGeneral } from '@/utilities/campaignAccess'
+import { getCoordinatorNucleusIds, isCampaignGeneral } from '@/utilities/campaignAccess'
+import { drizzleResultRows } from '@/utilities/drizzleBulk'
 import { normalizeBrazilianPhone } from '@/utilities/phone'
 import type { SupporterListState } from '@/utilities/supporterUi'
 import type { SupporterListOverviewViewModel } from '@/utilities/supporterViewModels'
@@ -18,36 +19,16 @@ type PostgresDb = {
   execute: (query: ReturnType<typeof sql>) => Promise<unknown>
 }
 
-const resultRows = (result: unknown): Array<Record<string, unknown>> => {
-  if (Array.isArray(result)) return result as Array<Record<string, unknown>>
-  if (
-    typeof result === 'object' &&
-    result !== null &&
-    'rows' in result &&
-    Array.isArray((result as { rows: unknown }).rows)
-  ) {
-    return (result as { rows: Array<Record<string, unknown>> }).rows
-  }
-  return []
-}
-
 const resolveAccessConstraint = async (
   payload: Pick<Payload, 'find'>,
   user: CampaignUser,
+  coordinatorNucleusIds?: number[],
 ): Promise<AccessConstraint> => {
   if (isCampaignGeneral(user)) return { kind: 'all' }
   if (user.role !== 'coordenador') return { kind: 'none' }
 
-  const result = await payload.find({
-    collection: 'electoralNucleus',
-    where: { coordinators: { contains: user.id } },
-    depth: 0,
-    pagination: false,
-    overrideAccess: true,
-  })
-
-  const ids = result.docs.map((doc) => doc.id)
-
+  const ids =
+    coordinatorNucleusIds ?? (await getCoordinatorNucleusIds(payload, user.id))
   return { kind: 'nucleusSet', ids }
 }
 
@@ -106,22 +87,35 @@ const buildAggregateSql = (
     ? sql`FROM "supporter" LEFT JOIN "contact" ON "contact"."id" = "supporter"."contact_id"`
     : sql`FROM "supporter"`
 
+  // `total` is NOT selected here — the caller already computed it from the
+  // list query's `totalDocs` (same filters, same access scope), so the
+  // aggregate only needs to run the two FILTER counts.
   return sql`
     SELECT
-      COUNT(*) AS "total",
       COUNT(*) FILTER (WHERE "supporter"."vote_intention" IN ('certo', 'tende_a_certo')) AS "certo_and_tende",
       COUNT(*) FILTER (WHERE "supporter"."vote_intention" = 'indeciso') AS "indeciso"
     ${fromClause}${whereClause}
   `
 }
 
+/**
+ * Computes the supporter overview KPIs (vote-intention breakdown) for the
+ * caller's already-resolved list `total` (from `result.totalDocs`, computed
+ * with the same filters and access scope). Skips the aggregate query entirely
+ * when `total` is 0, since the panel is hidden in that case anyway.
+ */
 export const computeSupporterListOverviewAggregate = async (
   payload: Payload,
   user: CampaignUser,
   state: SupporterListState,
+  total: number,
+  coordinatorNucleusIds?: number[],
 ): Promise<SupporterListOverviewViewModel | null> => {
-  const access = await resolveAccessConstraint(payload, user)
+  if (!Number.isSafeInteger(total) || total <= 0) return null
+
+  const access = await resolveAccessConstraint(payload, user, coordinatorNucleusIds)
   if (access.kind === 'none') return null
+  if (access.kind === 'nucleusSet' && access.ids.length === 0) return null
 
   if (payload.db.name !== 'postgres') {
     throw new Error('O overview de apoiadores exige o adaptador PostgreSQL.')
@@ -133,11 +127,8 @@ export const computeSupporterListOverviewAggregate = async (
   }
 
   const result = await drizzle.execute(buildAggregateSql(state, access))
-  const row = resultRows(result)[0]
+  const row = drizzleResultRows(result)[0]
   if (!row) return null
-
-  const total = Number(row.total)
-  if (!Number.isSafeInteger(total) || total === 0) return null
 
   return {
     total,

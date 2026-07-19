@@ -106,8 +106,10 @@ export const loadSupporterListOverviewData = async (
   payload: Payload,
   user: CampaignUser,
   state: SupporterListState,
+  total: number,
+  coordinatorNucleusIds?: number[],
 ): Promise<SupporterListOverviewViewModel | null> =>
-  computeSupporterListOverviewAggregate(payload, user, state)
+  computeSupporterListOverviewAggregate(payload, user, state, total, coordinatorNucleusIds)
 
 export const loadSupporterDetailPageData = async (
   payload: Pick<Payload, 'find'>,

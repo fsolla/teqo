@@ -3,7 +3,6 @@
 import config from '@payload-config'
 import { getPayload } from 'payload'
 import { redirect } from 'next/navigation'
-import { ZodError } from 'zod'
 
 import {
   archiveNucleus,
@@ -11,29 +10,20 @@ import {
   updateNucleus,
 } from '@/app/(campaign)/campanha/actions/nucleus'
 import type { NucleusFormState } from '@/components/campaign/NucleusForm'
-import {
-  FormDataBoundaryError,
-  optionalFormText,
-  requiredRelationshipFormValue,
-  validationFieldErrors,
-} from '@/lib/formData'
+import { optionalFormText, requiredRelationshipFormValue } from '@/lib/formData'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
 import {
   parseNucleusCreateFormData,
   parseNucleusUpdateFormData,
 } from '@/utilities/nucleusFormData'
 import { slugify } from '@/utilities/slug'
 
-const getActionError = (error: unknown): NucleusFormState => {
-  if (error instanceof FormDataBoundaryError) {
-    return { fieldErrors: { [error.field]: [error.message] } }
-  }
-  if (error instanceof ZodError) {
-    return { fieldErrors: validationFieldErrors(error) }
-  }
-
-  return { message: 'Não foi possível concluir a ação. Atualize a página e tente novamente.' }
-}
+const getActionError = (error: unknown): NucleusFormState =>
+  mapCampaignFormActionError({
+    error,
+    genericMessage: 'Não foi possível concluir a ação. Atualize a página e tente novamente.',
+  })
 
 const existingNucleusState = async (formData: FormData): Promise<NucleusFormState | null> => {
   const name = optionalFormText(formData, 'name')

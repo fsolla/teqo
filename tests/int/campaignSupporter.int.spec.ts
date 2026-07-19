@@ -395,11 +395,20 @@ describe('campaign supporter domain', () => {
       })
     }
 
-    const overview = await loadSupporterListOverviewData(payload, geral, { page: 1 })
+    const overview = await loadSupporterListOverviewData(
+      payload,
+      geral,
+      { page: 1 },
+      intentions.length,
+    )
     expect(overview).not.toBeNull()
     expect(overview!.total).toBe(intentions.length)
     expect(overview!.certoAndTende).toBe(3)
     expect(overview!.indeciso).toBe(2)
+
+    // `total` is the caller's contract: a 0 total skips the aggregate query
+    // entirely and hides the panel, even if rows technically exist.
+    expect(await loadSupporterListOverviewData(payload, geral, { page: 1 }, 0)).toBeNull()
   })
 
   it('scopes the overview aggregate to accessible nuclei for coordenador and applies filters', async () => {
@@ -432,16 +441,18 @@ describe('campaign supporter domain', () => {
     await makeSupporter(assigned.id, null, 'Feira de Santana')
     await makeSupporter(other.id, 'certo') // outside scope — must not be counted
 
-    const overview = await loadSupporterListOverviewData(payload, coordenador, { page: 1 })
+    const overview = await loadSupporterListOverviewData(payload, coordenador, { page: 1 }, 3)
     expect(overview).not.toBeNull()
     expect(overview!.total).toBe(3)
     expect(overview!.certoAndTende).toBe(1)
     expect(overview!.indeciso).toBe(1)
 
-    const filtered = await loadSupporterListOverviewData(payload, coordenador, {
-      page: 1,
-      city: 'Feira de Santana',
-    })
+    const filtered = await loadSupporterListOverviewData(
+      payload,
+      coordenador,
+      { page: 1, city: 'Feira de Santana' },
+      1,
+    )
     expect(filtered).not.toBeNull()
     expect(filtered!.total).toBe(1)
   })

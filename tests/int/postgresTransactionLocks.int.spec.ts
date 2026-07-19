@@ -20,6 +20,22 @@ import {
 
 let payload: Payload
 
+/**
+ * Recursively flattens a drizzle-orm `SQL` object's `queryChunks` down to the
+ * raw string bind params (skipping the `StringChunk` text fragments), so the
+ * mocked test below can assert which keys were sent in a single round trip.
+ */
+const collectLockParams = (query: unknown): string[] => {
+  const chunks = (query as { queryChunks?: unknown[] }).queryChunks ?? []
+  return chunks.flatMap((chunk): string[] => {
+    if (typeof chunk === 'string') return [chunk]
+    if (chunk && typeof chunk === 'object' && 'queryChunks' in chunk) {
+      return collectLockParams(chunk)
+    }
+    return []
+  })
+}
+
 const beginTransaction = async (): Promise<{
   req: { transactionID: number | string }
   transaction: PostgresTransactionDatabase
@@ -76,12 +92,10 @@ describe('PostgreSQL transaction advisory locks', () => {
       'domain:1',
       'domain:1',
     ])
-    expect(sessionDatabase.execute).toHaveBeenCalledTimes(2)
-    expect(
-      sessionDatabase.execute.mock.calls.map(
-        ([query]) => (query as { queryChunks: unknown[] }).queryChunks[1],
-      ),
-    ).toEqual(['domain:1', 'domain:2'])
+    // Batched: all (deduplicated, sorted) keys go out in exactly one round trip.
+    expect(sessionDatabase.execute).toHaveBeenCalledTimes(1)
+    const [[query]] = sessionDatabase.execute.mock.calls
+    expect(collectLockParams(query)).toEqual(['domain:1', 'domain:2'])
     expect(unrelatedDatabase.execute).not.toHaveBeenCalled()
 
     await expect(getPostgresTransactionDatabase(fixture as never, {})).rejects.toThrow(

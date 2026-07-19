@@ -11,7 +11,7 @@ export type CampaignFormErrorState<Values> = {
 
 export type MapCampaignFormActionErrorOptions<Values> = {
   error: unknown
-  safeMessages: readonly string[]
+  safeMessages?: readonly string[]
   genericMessage: string
   values?: Values
   revision?: number
@@ -21,7 +21,14 @@ export type MapCampaignFormActionErrorOptions<Values> = {
 export const mapCampaignFormActionError = <Values>(
   options: MapCampaignFormActionErrorOptions<Values>,
 ): CampaignFormErrorState<Values> => {
-  const { error, safeMessages, genericMessage, values, revision, resolveBoundaryMessage } = options
+  const {
+    error,
+    safeMessages = [],
+    genericMessage,
+    values,
+    revision,
+    resolveBoundaryMessage,
+  } = options
 
   if (error instanceof FormDataBoundaryError) {
     const message = resolveBoundaryMessage ? resolveBoundaryMessage(error) : error.message

@@ -1,7 +1,6 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { ZodError } from 'zod'
 
 import {
   redeemCampaignInviteAutofill,
@@ -10,12 +9,11 @@ import {
 import { campaignInviteAutofillSchema, campaignInviteLoginSchema } from '@/lib/schemas/invite'
 import {
   checkboxFormValue,
-  FormDataBoundaryError,
   nullableFormText,
   requiredFormSecret,
   requiredFormText,
-  validationFieldErrors,
 } from '@/lib/formData'
+import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
 
 export type CampaignInviteFormState = {
   status?: 'success'
@@ -37,17 +35,12 @@ const profileFromForm = (formData: FormData) => ({
   sectorNotes: nullableFormText(formData, 'sectorNotes'),
 })
 
-const inviteFormError = (error: unknown): CampaignInviteFormState => {
-  if (error instanceof FormDataBoundaryError) {
-    return { fieldErrors: { [error.field]: [error.message] } }
-  }
-  if (error instanceof ZodError) {
-    return { fieldErrors: validationFieldErrors(error) }
-  }
-  return {
-    message: 'Este convite não está disponível. Peça um novo convite à pessoa que falou com você.',
-  }
-}
+const inviteFormError = (error: unknown): CampaignInviteFormState =>
+  mapCampaignFormActionError({
+    error,
+    genericMessage:
+      'Este convite não está disponível. Peça um novo convite à pessoa que falou com você.',
+  })
 
 export const redeemCampaignInviteAutofillFormAction = async (
   token: string,

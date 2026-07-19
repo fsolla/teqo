@@ -1,5 +1,5 @@
 import type { CampaignUser, User } from '@/payload-types'
-import type { Access, FieldAccess, PayloadRequest, Where } from 'payload'
+import type { Access, FieldAccess, Payload, PayloadRequest, Where } from 'payload'
 
 import { relationshipId } from '@/utilities/relationship'
 
@@ -15,6 +15,17 @@ const CAMPAIGN_USER_PHONE_ACCESS_CONTEXT_KEY = 'campaignUserPhoneAccess'
 
 type LeadershipID = number
 type AccessibleLeadershipIDs = LeadershipID[] | null
+
+type DynamicFind = (args: {
+  collection: string
+  depth: number
+  limit: number
+  overrideAccess: true
+  pagination: false
+  req?: PayloadRequest
+  select: Record<string, true>
+  where: Record<string, unknown>
+}) => Promise<{ docs: Array<Record<string, unknown>> }>
 
 export const isPayloadAdmin = (user: CampaignActor): user is User => user?.collection === 'users'
 
@@ -69,6 +80,34 @@ export const canCreateElectoralNucleus: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   return isCampaignGeneral(await getFreshCampaignUser(req))
+}
+
+/**
+ * Nucleus IDs where `coordinatorID` is an assigned coordinator, without
+ * requiring a `PayloadRequest`. This is the canonical implementation of the
+ * "coordinators contains user.id" lookup: `getAccessibleNucleusIds` uses it
+ * for its (request-scoped, context-cached) coordinator branch, and read-only
+ * call sites without a `PayloadRequest` (e.g. the supporter overview
+ * aggregate) call it directly instead of re-implementing the query.
+ */
+export const getCoordinatorNucleusIds = async (
+  payload: Pick<Payload, 'find'>,
+  coordinatorID: number,
+  req?: PayloadRequest,
+): Promise<number[]> => {
+  const find = payload.find.bind(payload) as unknown as DynamicFind
+  const result = await find({
+    collection: 'electoralNucleus',
+    where: { coordinators: { contains: coordinatorID } },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { id: true },
+    overrideAccess: true,
+    ...(req ? { req } : {}),
+  })
+
+  return result.docs.map((doc) => relationshipId(doc.id)).filter((id): id is number => id !== null)
 }
 
 export const canReadElectoralNucleus: Access = async ({ req }) => {
@@ -394,17 +433,6 @@ export const canManageActionPlanCoordinators: FieldAccess = async ({ req }) => {
   return isCampaignGeneral(await getFreshCampaignUser(req))
 }
 
-type DynamicFind = (args: {
-  collection: string
-  depth: number
-  limit: number
-  overrideAccess: true
-  pagination: false
-  req: PayloadRequest
-  select: Record<string, true>
-  where: Record<string, unknown>
-}) => Promise<{ docs: Array<Record<string, unknown>> }>
-
 /**
  * Returns null for unrestricted general coordination, otherwise the nucleus
  * IDs currently assigned to the authenticated campaign user.
@@ -432,22 +460,7 @@ export const getAccessibleNucleusIds = async (
   let ids: NucleusID[] = []
 
   if (currentUser.role === 'coordenador' && collections.electoralNucleus) {
-    const result = await find({
-      collection: 'electoralNucleus',
-      depth: 0,
-      limit: 0,
-      overrideAccess: true,
-      pagination: false,
-      req,
-      select: { id: true },
-      where: {
-        coordinators: {
-          contains: currentUser.id,
-        },
-      },
-    })
-
-    ids = result.docs.map((doc) => relationshipId(doc.id)).filter((id): id is number => id !== null)
+    ids = await getCoordinatorNucleusIds(req.payload, currentUser.id, req)
   }
 
   if (currentUser.role === 'lideranca' && collections.leadership) {

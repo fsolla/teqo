@@ -11,13 +11,11 @@ import type {
 } from '@/lib/electionResults'
 import { computeWinnersByScope, mergeTallyWithWinners } from '@/lib/electionResults'
 import { groupByScope } from '@/lib/electionResultsParse'
+import { chunk, getDrizzleTables, INSERT_CHUNK_SIZE, requireTable } from '@/utilities/drizzleBulk'
 
 const VOTE_TABLE = 'election_candidate_vote'
 const TALLY_TABLE = 'election_tally'
 const CANDIDATE_TABLE = 'election_candidate'
-
-/** ~15 columns × 500 ≈ 7500 bind params — well under PG 65535. */
-const INSERT_CHUNK_SIZE = 500
 
 export type ElectionImportScope = {
   year: number
@@ -53,25 +51,10 @@ type DrizzleTx = {
   }
 }
 
-type PayloadDb = {
+type PayloadDbDrizzle = {
   drizzle: {
     transaction: <T>(fn: (tx: DrizzleTx) => Promise<T>) => Promise<T>
   }
-  tables: Record<string, Record<string, unknown>>
-}
-
-const chunk = <T>(rows: T[], size: number): T[][] => {
-  const out: T[][] = []
-  for (let i = 0; i < rows.length; i += size) out.push(rows.slice(i, i + size))
-  return out
-}
-
-const getDb = (payload: Payload): PayloadDb => payload.db as unknown as PayloadDb
-
-const requireTable = (db: PayloadDb, name: string) => {
-  const table = db.tables[name]
-  if (!table) throw new Error(`Tabela drizzle ausente: ${name}. Rode as migrations.`)
-  return table
 }
 
 const scopeWhere = (table: Record<string, unknown>, scope: ElectionImportScope) =>
@@ -107,10 +90,11 @@ export const importElectionScope = async (
   payload: Payload,
   bundle: ElectionImportBundle,
 ): Promise<ElectionImportCounts> => {
-  const dbAdapter = getDb(payload)
-  const voteTable = requireTable(dbAdapter, VOTE_TABLE)
-  const tallyTable = requireTable(dbAdapter, TALLY_TABLE)
-  const candidateTable = requireTable(dbAdapter, CANDIDATE_TABLE)
+  const tables = getDrizzleTables(payload)
+  const voteTable = requireTable(tables, VOTE_TABLE)
+  const tallyTable = requireTable(tables, TALLY_TABLE)
+  const candidateTable = requireTable(tables, CANDIDATE_TABLE)
+  const dbAdapter = payload.db as unknown as PayloadDbDrizzle
 
   const winners = computeWinnersByScope(bundle.votes)
   const talliesWithWinners = mergeTallyWithWinners(bundle.tallies, winners)

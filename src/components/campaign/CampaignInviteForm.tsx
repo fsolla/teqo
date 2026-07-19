@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
+import { fieldError, errorProps } from '@/utilities/campaignFormFields'
 import { leadershipGenderLabels, leadershipSectorLabels } from '@/utilities/leadershipUi'
 
 type CampaignInviteProfile = {
@@ -40,9 +41,6 @@ const genderOptions = Object.entries(leadershipGenderLabels) as Array<
 const sectorOptions = Object.entries(leadershipSectorLabels) as Array<
   [NonNullable<CampaignInviteProfile['sector']>, string]
 >
-
-const firstError = (state: CampaignInviteFormState, field: string) =>
-  state.fieldErrors?.[field]?.[0]
 
 const CampaignInviteFeedback = ({ state }: { state: CampaignInviteFormState }) => {
   if (!state.message || state.status === 'success') return null
@@ -109,9 +107,17 @@ const ProfileFields = ({
   state: CampaignInviteFormState
 }) => {
   const { profile } = preview
+  const inviteField = (field: string) => errorProps(state.fieldErrors, field, 'campaign-invite')
+  const name = inviteField('name')
+  const phone = inviteField('phone')
+  const email = inviteField('email')
+  const gender = inviteField('gender')
+  const sector = inviteField('sector')
+  const sectorNotes = inviteField('sectorNotes')
+
   return (
     <FieldGroup>
-      <Field data-invalid={Boolean(firstError(state, 'name'))}>
+      <Field data-invalid={name.invalid}>
         <FieldLabel htmlFor="campaign-invite-name">Nome *</FieldLabel>
         <Input
           id="campaign-invite-name"
@@ -120,15 +126,13 @@ const ProfileFields = ({
           autoComplete="name"
           required
           maxLength={120}
-          aria-invalid={Boolean(firstError(state, 'name'))}
-          aria-describedby={firstError(state, 'name') ? 'campaign-invite-name-error' : undefined}
+          aria-invalid={name.invalid}
+          aria-describedby={name.describedBy}
         />
-        {firstError(state, 'name') ? (
-          <FieldError id="campaign-invite-name-error">{firstError(state, 'name')}</FieldError>
-        ) : null}
+        {name.error ? <FieldError id={name.describedBy}>{name.error}</FieldError> : null}
       </Field>
 
-      <Field data-invalid={Boolean(firstError(state, 'phone'))}>
+      <Field data-invalid={phone.invalid}>
         <FieldLabel htmlFor="campaign-invite-phone">Celular (WhatsApp) *</FieldLabel>
         <Input
           id="campaign-invite-phone"
@@ -138,15 +142,13 @@ const ProfileFields = ({
           defaultValue={profile.phone}
           autoComplete="tel"
           required
-          aria-invalid={Boolean(firstError(state, 'phone'))}
-          aria-describedby={firstError(state, 'phone') ? 'campaign-invite-phone-error' : undefined}
+          aria-invalid={phone.invalid}
+          aria-describedby={phone.describedBy}
         />
-        {firstError(state, 'phone') ? (
-          <FieldError id="campaign-invite-phone-error">{firstError(state, 'phone')}</FieldError>
-        ) : null}
+        {phone.error ? <FieldError id={phone.describedBy}>{phone.error}</FieldError> : null}
       </Field>
 
-      <Field data-invalid={Boolean(firstError(state, 'email'))}>
+      <Field data-invalid={email.invalid}>
         <FieldLabel htmlFor="campaign-invite-email">E-mail (opcional)</FieldLabel>
         <Input
           id="campaign-invite-email"
@@ -154,26 +156,22 @@ const ProfileFields = ({
           type="email"
           defaultValue={profile.email ?? ''}
           autoComplete="email"
-          aria-invalid={Boolean(firstError(state, 'email'))}
-          aria-describedby={firstError(state, 'email') ? 'campaign-invite-email-error' : undefined}
+          aria-invalid={email.invalid}
+          aria-describedby={email.describedBy}
         />
-        {firstError(state, 'email') ? (
-          <FieldError id="campaign-invite-email-error">{firstError(state, 'email')}</FieldError>
-        ) : null}
+        {email.error ? <FieldError id={email.describedBy}>{email.error}</FieldError> : null}
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field data-invalid={Boolean(firstError(state, 'gender'))}>
+        <Field data-invalid={gender.invalid}>
           <FieldLabel htmlFor="campaign-invite-gender">Gênero</FieldLabel>
           <NativeSelect
             id="campaign-invite-gender"
             name="gender"
             className="w-full"
             defaultValue={profile.gender ?? ''}
-            aria-invalid={Boolean(firstError(state, 'gender'))}
-            aria-describedby={
-              firstError(state, 'gender') ? 'campaign-invite-gender-error' : undefined
-            }
+            aria-invalid={gender.invalid}
+            aria-describedby={gender.describedBy}
           >
             <NativeSelectOption value="">Não informar</NativeSelectOption>
             {genderOptions.map(([value, label]) => (
@@ -182,22 +180,18 @@ const ProfileFields = ({
               </NativeSelectOption>
             ))}
           </NativeSelect>
-          {firstError(state, 'gender') ? (
-            <FieldError id="campaign-invite-gender-error">{firstError(state, 'gender')}</FieldError>
-          ) : null}
+          {gender.error ? <FieldError id={gender.describedBy}>{gender.error}</FieldError> : null}
         </Field>
 
-        <Field data-invalid={Boolean(firstError(state, 'sector'))}>
+        <Field data-invalid={sector.invalid}>
           <FieldLabel htmlFor="campaign-invite-sector">Setor</FieldLabel>
           <NativeSelect
             id="campaign-invite-sector"
             name="sector"
             className="w-full"
             defaultValue={profile.sector ?? ''}
-            aria-invalid={Boolean(firstError(state, 'sector'))}
-            aria-describedby={
-              firstError(state, 'sector') ? 'campaign-invite-sector-error' : undefined
-            }
+            aria-invalid={sector.invalid}
+            aria-describedby={sector.describedBy}
           >
             <NativeSelectOption value="">Não informar</NativeSelectOption>
             {sectorOptions.map(([value, label]) => (
@@ -206,13 +200,11 @@ const ProfileFields = ({
               </NativeSelectOption>
             ))}
           </NativeSelect>
-          {firstError(state, 'sector') ? (
-            <FieldError id="campaign-invite-sector-error">{firstError(state, 'sector')}</FieldError>
-          ) : null}
+          {sector.error ? <FieldError id={sector.describedBy}>{sector.error}</FieldError> : null}
         </Field>
       </div>
 
-      <Field data-invalid={Boolean(firstError(state, 'sectorNotes'))}>
+      <Field data-invalid={sectorNotes.invalid}>
         <FieldLabel htmlFor="campaign-invite-sector-notes">
           Como você atua nesse setor? (opcional)
         </FieldLabel>
@@ -221,15 +213,11 @@ const ProfileFields = ({
           name="sectorNotes"
           defaultValue={profile.sectorNotes ?? ''}
           maxLength={1000}
-          aria-invalid={Boolean(firstError(state, 'sectorNotes'))}
-          aria-describedby={
-            firstError(state, 'sectorNotes') ? 'campaign-invite-sector-notes-error' : undefined
-          }
+          aria-invalid={sectorNotes.invalid}
+          aria-describedby={sectorNotes.describedBy}
         />
-        {firstError(state, 'sectorNotes') ? (
-          <FieldError id="campaign-invite-sector-notes-error">
-            {firstError(state, 'sectorNotes')}
-          </FieldError>
+        {sectorNotes.error ? (
+          <FieldError id={sectorNotes.describedBy}>{sectorNotes.error}</FieldError>
         ) : null}
       </Field>
     </FieldGroup>
@@ -250,9 +238,9 @@ export const CampaignInviteForm = ({
   requiresConsent: boolean
 }) => {
   const [state, formAction, pending] = useActionState(action, {})
-  const consentError = firstError(state, 'consentAccepted')
-  const passwordError = firstError(state, 'password')
-  const confirmationError = firstError(state, 'passwordConfirmation')
+  const consentError = fieldError(state.fieldErrors, 'consentAccepted')
+  const passwordError = fieldError(state.fieldErrors, 'password')
+  const confirmationError = fieldError(state.fieldErrors, 'passwordConfirmation')
 
   if (state.status === 'success') {
     return (

@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
+import { fieldError } from '@/utilities/campaignFormFields'
 
 export type NucleusUpdateFormAction = (
   state: NucleusUpdateFormState,
@@ -37,11 +38,6 @@ const kinds = [
   { value: 'urgente', label: 'Urgente' },
   { value: 'nota', label: 'Nota' },
 ] as const
-
-const fieldError = (
-  fieldErrors: Record<string, string[]> | undefined,
-  field: string,
-): string | undefined => fieldErrors?.[field]?.[0]
 
 export const NucleusUpdateForm = ({
   nucleusId,
@@ -59,6 +55,7 @@ export const NucleusUpdateForm = ({
   const [kind, setKind] = useState<(typeof kinds)[number]['value']>('semanal')
   const [state, formAction, pending] = useActionState(action, {})
   const isWeekly = kind === 'semanal'
+  const bodyError = fieldError(state.fieldErrors, 'body')
 
   useEffect(() => {
     if (state.status !== 'success') return
@@ -170,7 +167,7 @@ export const NucleusUpdateForm = ({
               </div>
             </>
           ) : (
-            <Field data-invalid={Boolean(fieldError(state.fieldErrors, 'body'))}>
+            <Field data-invalid={Boolean(bodyError)}>
               <FieldLabel htmlFor="update-body">Texto da atualização *</FieldLabel>
               <Textarea
                 id="update-body"
@@ -178,16 +175,10 @@ export const NucleusUpdateForm = ({
                 required
                 maxLength={5000}
                 className="min-h-32"
-                aria-invalid={Boolean(fieldError(state.fieldErrors, 'body'))}
-                aria-describedby={
-                  fieldError(state.fieldErrors, 'body') ? 'update-body-error' : undefined
-                }
+                aria-invalid={Boolean(bodyError)}
+                aria-describedby={bodyError ? 'update-body-error' : undefined}
               />
-              {fieldError(state.fieldErrors, 'body') ? (
-                <FieldError id="update-body-error">
-                  {fieldError(state.fieldErrors, 'body')}
-                </FieldError>
-              ) : null}
+              {bodyError ? <FieldError id="update-body-error">{bodyError}</FieldError> : null}
             </Field>
           )}
         </FieldGroup>

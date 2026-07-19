@@ -1,6 +1,6 @@
 # Escala e DRY pós-C6 (apoiadores / import / listas)
 
-Status: rascunho
+Status: implementado (pendente merge em `main`)
 Atualizado em: 2026-07-19
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha C, item C8)
 Responsável: —
@@ -118,3 +118,17 @@ flowchart TD
 - `src/utilities/campaignAccess.ts` — `getAccessibleNucleusIds`
 - `src/utilities/campaignFormActionError.ts` / `campaignFormFields.ts` — helpers adotados por 2 forms
 - AGENTS.md — `overrideAccess: false`, transações, locks advisory xact-level, naming
+
+## Simplify (2026-07-19)
+
+Duas passagens `/simplify` sobre o diff do C8 (pré- e pós-rebase em `main` com C7) aplicaram limpezas pontuais sem mudar comportamento: `safeMessages` opcional em `mapCampaignFormActionError`, `drizzleResultRows` reutilizado em `campaignInviteRepository`, chunk de `IN` nas leituras drizzle do bulk import, `select: { id: true }` via `DynamicFind` em `getCoordinatorNucleusIds`, prefetch de núcleos do coordenador para o overview, `errorProps` no `CampaignInviteForm`/`NucleusUpdateForm`, e hoisting de erros de campo. Validado com `tsc --noEmit`, `pnpm lint`, `pnpm test:int`, `pnpm build` e scan Aikido.
+
+Os débitos que os revisores marcaram como importantes e maiores que cleanup foram registrados como item **C9** — [escala-dry-pos-c8.md](escala-dry-pos-c8.md):
+
+1. **Filtros duplicados** — `buildSupporterListWhere` (Payload) vs `buildAggregateSql` (SQL cru); risco de drift entre KPIs e lista.
+2. **`contactSearchQuery` não wireado no aggregate** — overview ainda dispara `ILIKE` para `q` de 1 caractere apesar do `pg_trgm` e do guard de C7.
+3. **Lookup de núcleos do coordenador repetido** — até 3× por navegação em `/campanha/apoiadores` (list access + options + overview prefetch).
+4. **`apoiadores/[id]/formActions.ts` fora do mapper** — contrato `message` vs `fieldErrors` exige desenho antes de migrar.
+5. **Componentes de form com `fieldError` local** — `NucleusForm`, `ActionPlanForm`, `NucleusTerritoryFields`, `VoteEstimateDialog`, etc.
+
+**Explicitamente fora (tradeoffs aceitos no C8):** waterfall lista→overview (precisa de `totalDocs`); unificar lista+aggregate numa query; widen de `PostgresTransactionDatabase`.

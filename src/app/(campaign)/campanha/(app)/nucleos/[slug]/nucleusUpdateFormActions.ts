@@ -3,12 +3,11 @@
 import config from '@payload-config'
 import { getPayload, type Payload } from 'payload'
 import { revalidatePath } from 'next/cache'
-import { ZodError } from 'zod'
 
 import { createNucleusUpdateRecord } from '@/app/(campaign)/campanha/actions/nucleusUpdate'
 import type { CampaignUser } from '@/payload-types'
-import { FormDataBoundaryError, validationFieldErrors } from '@/lib/formData'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
 import { parseNucleusUpdateFormData } from '@/utilities/nucleusUpdateUi'
 import { requireRelationshipId } from '@/utilities/relationship'
 
@@ -32,15 +31,10 @@ export const createNucleusUpdateFormRecordAction = async (
       nucleusId: requireRelationshipId(created.nucleus),
     }
   } catch (error) {
-    if (error instanceof FormDataBoundaryError) {
-      return { fieldErrors: { [error.field]: [error.message] } }
-    }
-    if (error instanceof ZodError) {
-      return { fieldErrors: validationFieldErrors(error) }
-    }
-    return {
-      message: 'Não foi possível enviar a atualização. Verifique seu acesso e tente novamente.',
-    }
+    return mapCampaignFormActionError({
+      error,
+      genericMessage: 'Não foi possível enviar a atualização. Verifique seu acesso e tente novamente.',
+    })
   }
 }
 

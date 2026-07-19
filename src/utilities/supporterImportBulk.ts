@@ -1,12 +1,20 @@
 import 'server-only'
 
+import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 import type { ConsentDescriptor } from '@/utilities/campaignConsent'
+import {
+  assertDrizzleColumns,
+  chunk,
+  drizzleResultRows,
+  getDrizzleTables,
+  INSERT_CHUNK_SIZE,
+  requireTable,
+} from '@/utilities/drizzleBulk'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { getPostgresTransactionDatabase } from '@/utilities/postgresTransactionLocks'
-import { relationshipId } from '@/utilities/relationship'
 
 export type SupporterImportBulkRow = {
   telefone: string
@@ -24,40 +32,40 @@ export type SupporterImportBulkResult = {
 type DrizzleInsertResult = { rowCount?: number | null }
 
 type DrizzleTx = {
+  execute: (query: ReturnType<typeof sql>) => Promise<unknown>
   insert: (table: unknown) => {
     values: (rows: Record<string, unknown>[]) => {
       onConflictDoNothing: () => Promise<DrizzleInsertResult>
+      returning: () => Promise<Array<Record<string, unknown>>>
     }
   }
-}
-
-type DrizzleTables = Record<string, Record<string, unknown>>
-
-type PayloadDb = {
-  drizzle: unknown
-  tables: DrizzleTables
 }
 
 const CONTACT_TABLE = 'contact'
 const SUPPORTER_TABLE = 'supporter'
 
-/** ~16 columns × 500 ≈ 8000 bind params — well under PG 65535. */
-const INSERT_CHUNK_SIZE = 500
-
-const chunk = <T>(rows: readonly T[], size: number): T[][] => {
-  const out: T[][] = []
-  for (let i = 0; i < rows.length; i += size) out.push(rows.slice(i, i + size))
-  return out
-}
-
-const getTables = (payload: Payload): DrizzleTables =>
-  (payload.db as unknown as PayloadDb).tables
-
-const requireTable = (tables: DrizzleTables, name: string) => {
-  const table = tables[name]
-  if (!table) throw new Error(`Tabela drizzle ausente: ${name}. Rode as migrations.`)
-  return table
-}
+/**
+ * Columns the bulk supporter insert writes (drizzle JS-level names, which omit
+ * the `Id` suffix Payload relationship fields get at the physical-column level).
+ * Asserted against the live table scaffold on every import — see `assertDrizzleColumns`.
+ */
+const SUPPORTER_COLUMNS = [
+  'contact',
+  'nucleus',
+  'voteIntention',
+  'consent',
+  'consentContentHash',
+  'consentedAt',
+  'voteIntentionConsent',
+  'voteIntentionConsentContentHash',
+  'voteIntentionConsentedAt',
+  'source',
+  'consentNote',
+  'notes',
+  'createdBy',
+  'createdAt',
+  'updatedAt',
+] as const
 
 const buildContactRows = (
   rows: SupporterImportBulkRow[],
@@ -109,6 +117,18 @@ const buildSupporterRows = (
     updatedAt: args.now,
   }))
 
+const asPhoneKeyedRow = (row: Record<string, unknown>): { id: number; phone: string } | null => {
+  const { id, phone } = row
+  return typeof id === 'number' && typeof phone === 'string' ? { id, phone } : null
+}
+
+const asContactID = (row: Record<string, unknown>): number | null => {
+  const value = row.contact_id
+  if (typeof value === 'number') return value
+  const parsed = Number(value)
+  return Number.isSafeInteger(parsed) ? parsed : null
+}
+
 /**
  * Bulk-insert contacts and nucleus-less supporters for a CSV import inside the
  * caller's Payload transaction. Phone advisory locks MUST already be held for
@@ -118,6 +138,10 @@ const buildSupporterRows = (
  * which is safe because the locks guarantee uniqueness within the txn). The
  * supporter insert uses `ON CONFLICT DO NOTHING` on the unique
  * `(contact_id, nucleus_id)` index as a last-resort guard against races.
+ *
+ * All reads (existing contacts, existing supporters) and the ID recovery for
+ * newly inserted contacts run as raw SQL / `.returning()` on the same drizzle
+ * transaction session — no `payload.find` round trips through the Local API.
  */
 export const bulkInsertSupporterImport = async (args: {
   payload: Payload
@@ -133,28 +157,32 @@ export const bulkInsertSupporterImport = async (args: {
     return { created: 0, skipped: 0, errors: [] }
   }
 
-  const tables = getTables(payload)
+  const tables = getDrizzleTables(payload)
   const contactTable = requireTable(tables, CONTACT_TABLE)
   const supporterTable = requireTable(tables, SUPPORTER_TABLE)
+  assertDrizzleColumns(supporterTable, SUPPORTER_TABLE, SUPPORTER_COLUMNS)
+
   const database = await getPostgresTransactionDatabase(payload, req)
   const tx = database as unknown as DrizzleTx
   const now = new Date().toISOString()
 
   const phones = [...new Set(rows.map((row) => row.telefone))]
 
-  const existingContacts = await payload.find({
-    collection: 'contact',
-    where: { phone: { in: phones } },
-    depth: 0,
-    limit: phones.length,
-    pagination: false,
-    select: { phone: true },
-    overrideAccess: true,
-    req,
-  })
-  const contactIdByPhone = new Map(
-    existingContacts.docs.map((doc) => [doc.phone, doc.id] as const),
-  )
+  const contactIdByPhone = new Map<string, number>()
+  for (const phoneBatch of chunk(phones, INSERT_CHUNK_SIZE)) {
+    const existingContactRows = drizzleResultRows(
+      await tx.execute(
+        sql`SELECT "id", "phone" FROM "contact" WHERE "phone" IN (${sql.join(
+          phoneBatch.map((phone) => sql`${phone}`),
+          sql`, `,
+        )})`,
+      ),
+    )
+    for (const row of existingContactRows) {
+      const parsed = asPhoneKeyedRow(row)
+      if (parsed) contactIdByPhone.set(parsed.phone, parsed.id)
+    }
+  }
 
   // New contacts to create, deduped by phone (preview already dedupes, but this
   // is defensive against a stale confirm payload).
@@ -168,43 +196,32 @@ export const bulkInsertSupporterImport = async (args: {
   if (newContactByPhone.size > 0) {
     const newRows = [...newContactByPhone.values()]
     for (const batch of chunk(newRows, INSERT_CHUNK_SIZE)) {
-      await tx.insert(contactTable).values(buildContactRows(batch, now))
-    }
-
-    const newPhones = [...newContactByPhone.keys()]
-    const createdContacts = await payload.find({
-      collection: 'contact',
-      where: { phone: { in: newPhones } },
-      depth: 0,
-      limit: newPhones.length,
-      pagination: false,
-      select: { phone: true },
-      overrideAccess: true,
-      req,
-    })
-    for (const doc of createdContacts.docs) {
-      contactIdByPhone.set(doc.phone, doc.id)
+      const created = await tx.insert(contactTable).values(buildContactRows(batch, now)).returning()
+      for (const row of created) {
+        const inserted = asPhoneKeyedRow(row)
+        if (inserted) contactIdByPhone.set(inserted.phone, inserted.id)
+      }
     }
   }
 
   const contactIDs = [...new Set(contactIdByPhone.values())]
-  const existingSupporters = await payload.find({
-    collection: 'supporter',
-    where: {
-      and: [{ contact: { in: contactIDs } }, { nucleus: { exists: false } }],
-    },
-    depth: 0,
-    limit: contactIDs.length,
-    pagination: false,
-    select: { contact: true },
-    overrideAccess: true,
-    req,
-  })
-  const supporterContactIDs = new Set(
-    existingSupporters.docs
-      .map((doc) => relationshipId(doc.contact))
-      .filter((id): id is number => id !== null),
-  )
+  const supporterContactIDs = new Set<number>()
+  if (contactIDs.length > 0) {
+    for (const idBatch of chunk(contactIDs, INSERT_CHUNK_SIZE)) {
+      const existingSupporterRows = drizzleResultRows(
+        await tx.execute(
+          sql`SELECT "contact_id" FROM "supporter" WHERE "contact_id" IN (${sql.join(
+            idBatch.map((id) => sql`${id}`),
+            sql`, `,
+          )}) AND "nucleus_id" IS NULL`,
+        ),
+      )
+      for (const row of existingSupporterRows) {
+        const contactID = asContactID(row)
+        if (contactID !== null) supporterContactIDs.add(contactID)
+      }
+    }
+  }
 
   const candidateEntries: Array<{ row: SupporterImportBulkRow; contactID: number }> = []
   const errors: Array<{ telefone: string; message: string }> = []

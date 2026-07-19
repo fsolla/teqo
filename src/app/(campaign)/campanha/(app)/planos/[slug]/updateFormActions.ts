@@ -1,21 +1,25 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { ZodError } from 'zod'
 
 import { appendActionPlanUpdate } from '@/app/(campaign)/campanha/actions/actionPlan'
-import {
-  FormDataBoundaryError,
-  requiredFormText,
-  requiredRelationshipFormValue,
-  validationFieldErrors,
-} from '@/lib/formData'
+import { requiredFormText, requiredRelationshipFormValue } from '@/lib/formData'
+import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
 
 export type ActionPlanUpdateFormState = {
   status?: 'success'
   message?: string
   fieldErrors?: Record<string, string[]>
 }
+
+// The specific validation/transaction messages `appendActionPlanUpdate` throws —
+// safe to surface verbatim. Anything else (e.g. an unexpected Payload API error)
+// now falls back to the generic message instead of leaking its raw text.
+const safeMessages = [
+  'Informe o texto da atualização.',
+  'Atualização muito longa. Reduza o texto e tente novamente.',
+  'Não foi possível registrar a atualização do plano.',
+] as const
 
 export const createActionPlanUpdateFormAction = async (
   _state: ActionPlanUpdateFormState,
@@ -28,17 +32,10 @@ export const createActionPlanUpdateFormAction = async (
     revalidatePath('/campanha/planos/[slug]', 'page')
     return { status: 'success', message: 'Atualização registrada com sucesso.' }
   } catch (error) {
-    if (error instanceof FormDataBoundaryError) {
-      return { fieldErrors: { [error.field]: [error.message] } }
-    }
-    if (error instanceof ZodError) {
-      return { fieldErrors: validationFieldErrors(error) }
-    }
-    return {
-      message:
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível enviar a atualização. Verifique seu acesso e tente novamente.',
-    }
+    return mapCampaignFormActionError({
+      error,
+      safeMessages,
+      genericMessage: 'Não foi possível enviar a atualização. Verifique seu acesso e tente novamente.',
+    })
   }
 }

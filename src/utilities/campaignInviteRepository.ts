@@ -10,21 +10,9 @@ import {
   acquireTextAdvisoryLocks,
   getPostgresTransactionDatabase,
 } from '@/utilities/postgresTransactionLocks'
+import { drizzleResultRows } from '@/utilities/drizzleBulk'
 
 export const INVALID_CAMPAIGN_INVITE_MESSAGE = 'Convite inválido ou expirado.'
-
-const resultRows = (result: unknown): Array<Record<string, unknown>> => {
-  if (Array.isArray(result)) return result as Array<Record<string, unknown>>
-  if (
-    typeof result === 'object' &&
-    result !== null &&
-    'rows' in result &&
-    Array.isArray(result.rows)
-  ) {
-    return result.rows as Array<Record<string, unknown>>
-  }
-  return []
-}
 
 export const requireCampaignInvitePostgres = (payload: Pick<Payload, 'db'>): void => {
   if (payload.db.name !== 'postgres') {
@@ -93,7 +81,7 @@ export const consumeCampaignInvite = async (
       AND "expires_at" > now()
     RETURNING "leadership_id"
   `)
-  const leadershipID = resultRows(result)[0]?.leadership_id
+  const leadershipID = drizzleResultRows(result)[0]?.leadership_id
   if (typeof leadershipID !== 'number') throw new Error(INVALID_CAMPAIGN_INVITE_MESSAGE)
   return leadershipID
 }
@@ -131,7 +119,7 @@ export const findSameContactAccountIDs = async (
       AND "user_id" IS NOT NULL
     LIMIT 2
   `)
-  return resultRows(result)
+  return drizzleResultRows(result)
     .map((row) => row.user_id)
     .filter((value): value is number => typeof value === 'number')
 }
