@@ -45,6 +45,9 @@ next-env.d.ts
 # TSE open-data zip cache (pnpm db:seed:tse)
 /data/tse/
 
+# IBGE geometry download cache (pnpm build:geometries)
+/data/geometries/
+
 # Playwright
 node_modules/
 /test-results/

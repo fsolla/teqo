@@ -1,21 +1,23 @@
 # Mapa da Bahia na campanha — geometrias estáticas + Leaflet
 
-Status: rascunho
-Atualizado em: 2026-07-17
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
+Status: Fase 1 entregue (B2); Fase 2 (B3 Leaflet) pendente
+Atualizado em: 2026-07-18
+Item do roadmap: [docs/roadmap.md](../roadmap.md) — B2 (Fase 1) / B3 (Fase 2) / B4 (camada de zonas)
 Responsável: —
 
 ## Contexto
 
-O roadmap (linha 52) prevê "Mapa / PostGIS: Leaflet, geometria/point, imagem Docker PostGIS; âncora `/mapa` do design-ux adiada". Este plano destrincha esse item para a vertical `/campanha`: preparar o webapp para representar o mapa da Bahia (municípios + Territórios de Identidade) e usar esse mapa para visualizar agregados da campanha de forma mais clara.
+O roadmap (trilha B) prevê o mapa da Bahia na vertical `/campanha`: preparar geometrias estáticas (municípios + Territórios de Identidade) e usá-las para visualizar agregados da campanha. A âncora `/mapa` do design-ux permanece adiada.
 
-Hoje o `electoralNucleus` (`src/collections/ElectoralNucleus.ts`) indexa território por texto (`region`/`city`/`neighborhood`/`tseZones`) e as agregações saem de queries Payload por essas chaves (`src/utilities/campaignDashboardPageData.ts`, `src/utilities/nucleusViewModels.ts`). Não há nenhuma geometria. A decisão de produto (2026-07-17) é adotar **geometrias estáticas versionadas no repo** (mesmo padrão de `src/lib/bahiaTerritories.ts`), sem PostGIS, e integrar Leaflet nas superfícies já existentes — a âncora `/mapa` do design-ux permanece adiada.
+O `electoralNucleus` indexa território por texto (`regions`/`cities`/`neighborhoods`/`tseZones` — arrays `hasMany` desde A1) e as agregações saem de queries Payload por essas chaves. Não há query espacial. A decisão de produto (2026-07-17) é adotar **geometrias estáticas versionadas no repo** (mesmo padrão de `src/lib/bahiaTerritories.ts`), sem PostGIS, e integrar Leaflet nas superfícies já existentes.
 
 ## Decisões travadas (confirmadas com o usuário)
 
 - **GeoJSON/TopoJSON estático versionado no repo**, sem PostGIS. Mesmo padrão de `src/lib/bahiaTerritories.ts` (dado versionado com proveniência + fixture + teste int).
-- **v1 cobre municípios (IBGE) + Territórios de Identidade (IDE Bahia).** Zonas TSE como camada ficam para um ciclo seguinte (dependem de `zonas-por-municipio`).
-- **`/mapa` dedicada do design-ux permanece adiada.** v1 incorpora o mapa em superfícies já existentes: overview da lista de núcleos, detalhe do núcleo e dashboard `/campanha`.
+- **v1 cobre municípios (IBGE) + Territórios de Identidade.** Zonas TSE como camada ficam para B4 (dependem de A2 ✓ + B3).
+- **Territórios de Identidade por dissolução IBGE** (decisão 2026-07-18): polígonos dos TIs saem de `topojson.merge` dos municípios IBGE conforme a composição oficial em `bahiaIdentityTerritoryRecords` — não do shapefile IDE Bahia. A IDE Bahia fica como referência de validação na proveniência. Garante coerência mapa ↔ composição do app e antecipa a abordagem A do B4.
+- **Extensão `*.topo.json`** (não `.topojson`) para import JSON nativo no Next/TS sem config extra.
+- **`/mapa` dedicada do design-ux permanece adiada.** v1 (B3) incorpora o mapa em superfícies já existentes: overview da lista de núcleos, detalhe do núcleo e dashboard `/campanha`.
 - **Zona segue como granularidade eleitoral de referência** do núcleo — não mapear núcleo a seções (ver "Granularidade seção vs. zona").
 - **Sem migration, sem collection, sem Consent, sem server action nova.** Só dado estático + componentes cliente + agregações já existentes.
 
@@ -25,13 +27,13 @@ O `electoralNucleus` já indexa território por texto e as agregações saem de 
 
 ## Fontes oficiais (pesquisa)
 
-- **Municípios (BA):** IBGE Malha Municipal 2024. GeoJSON/TopoJSON via API `https://servicodados.ibge.gov.br/api/v3/malhas/estados/29?formato=application/vnd.geo+json&intrarregiao=municipio` (resolução 1–2 ideal para web; `codarea` = código IBGE de 7 dígitos). Shapefile em `geoftp.ibge.gov.br/.../municipio_2024/UFs/BA/`. CRS SIRGAS 2000 (EPSG:4674) ≈ WGS84 para web (diferença sub-metro, irrelevante em escala municipal).
-- **Territórios de Identidade:** IDE Bahia / SEI publica polígono vetorial oficial 1:100.000 (2019, EPSG:4674): `https://metadados.ide.ba.gov.br/geonetwork/srv/api/records/90b140bf-17df-496f-b048-5783fdf02864` (Shapefile + KML). Configuração vigente desde 2016 (a mesma de `bahiaTerritories.ts`). Não precisamos dissolver.
-- **Zonas TSE:** o TSE **não** publica polígonos — só o cadastro tabular "Eleitorado por município e zona" (composição município→zona) e os endereços de locais de votação/seções. Polígonos só por construção derivada (aproximação; padrão da literatura). Fica fora da v1.
+- **Municípios (BA):** IBGE Malhas API v3 (`qualidade=intermediaria`) + Localidades API v1 para `id`/`nome`. `codarea` = código IBGE de 7 dígitos. CRS SIRGAS 2000 (EPSG:4674) ≈ WGS84 para web.
+- **Territórios de Identidade:** composição oficial em `bahiaTerritories.ts` (SECULT/SEPLAN); polígonos = dissolução dos municípios IBGE. IDE Bahia / SEI (referência de validação): `https://metadados.ide.ba.gov.br/geonetwork/srv/api/records/90b140bf-17df-496f-b048-5783fdf02864`.
+- **Zonas TSE:** o TSE **não** publica polígonos — só o cadastro tabular. Polígonos só por construção derivada. Fica fora da v1 (B4).
 
 ## Granularidade seção vs. zona
 
-Hierarquia TSE: município → (1+) zona → (muitas) seção; a relação município↔zona é muitos-para-muitos (uma cidade pode ter várias zonas; uma zona pode cobrir vários municípios pequenos). Decisão (2026-07-17): **manter zona como granularidade eleitoral de referência** do núcleo, não seções, porque:
+Hierarquia TSE: município → (1+) zona → (muitas) seção; a relação município↔zona é muitos-para-muitos. Decisão (2026-07-17): **manter zona como granularidade eleitoral de referência** do núcleo, não seções, porque:
 
 1. O núcleo é unidade operacional da campanha, não eleitoral — o coordenador pensa em bairro/município/território.
 2. O cruzamento com a baseline TSE 2022 (`baseline-eleitoral-tse`) é por zona.
@@ -40,64 +42,71 @@ Hierarquia TSE: município → (1+) zona → (muitas) seção; a relação munic
 
 ## Modelagem de dados
 
-- **Arquivos de geometria** (TopoJSON, menor que GeoJSON) commitados no repo:
-  - `src/lib/geometries/bahia-municipalities.topojson` — uma Feature por município, `properties: { codarea, name }`.
-  - `src/lib/geometries/bahia-identity-territories.topojson` — uma Feature por território, `properties: { code, name }` (`code` = "01".."27", já existe em `bahiaIdentityTerritoryRecords`).
+- **Arquivos de geometria** (TopoJSON) commitados no repo:
+  - `src/lib/geometries/bahia-municipalities.topo.json` — uma Feature por município, `properties: { codarea, name }` (name = canônico do app).
+  - `src/lib/geometries/bahia-identity-territories.topo.json` — uma Feature por território, `properties: { code, name }` (`code` = "01".."27").
 - **Join por chave estável:**
-  - Municípios: o núcleo guarda `city` (nome). Precisamos de `name → codarea`. Criar `src/lib/bahiaMunicipalityCodes.ts` (record nome→código IBGE de 7 dígitos) com proveniência + fixture `tests/fixtures/bahia-municipality-codes.official.json` + teste `tests/int/bahiaMunicipalityCodes.int.spec.ts` (espelha `bahiaTerritories`). Necessário porque nomes IBGE ≠ nomes SECULT canônicos (acentos, "Dias D'Ávila", etc.) — a tabela reconcilia.
+  - Municípios: o núcleo guarda `cities[]` (array de nomes, desde A1). Tabela `src/lib/bahiaMunicipalityCodes.ts` (nome canônico → código IBGE de 7 dígitos) + fixture `tests/fixtures/bahia-municipality-codes.official.json` + teste `tests/int/bahiaMunicipalityCodes.int.spec.ts`. Reconciliação IBGE→canônico via `canonicalizeMunicipalityName` (`src/lib/electionResults.ts`).
   - Territórios: join por `code` (01–27) já presente em `bahiaIdentityTerritoryRecords`; sem tabela extra.
-- **Proveniência e versionamento:** cada arquivo `.topojson` e cada tabela estática com cabeçalho/documentação de proveniência (URL, versão/ano, SHA-256 do download de origem), no estilo de `bahiaTerritories.ts`.
+- **Helpers:** `src/lib/bahiaGeometries.ts` — `getMunicipalityFeature(codarea)`, `getTerritoryFeature(code)`, topologias tipadas (framework-free para B3).
+- **Proveniência e versionamento:** cada artefato com cabeçalho/documentação de proveniência (URL, SHA-256 do download de origem), no estilo de `bahiaTerritories.ts` / `bahiaTseZones.ts`.
 
 ## Script de geração (one-off, re-executável)
 
-- `scripts/build-bahia-geometries.mjs`: baixa IBGE (API) + IDE Bahia (shapefile), converte/simplifica com `topojson-server` + `topojson-simplify` (ou `@turf/simplify`), emite os `.topojson` e a tabela `bahiaMunicipalityCodes.ts`. Não roda em build/dev — só quando se atualiza a versão de origem. Mesmo guard de não-produção dos outros scripts (não toca prod).
+- `scripts/build-bahia-geometries.mjs` (`pnpm build:geometries`): baixa IBGE Malhas + Localidades, reconcilia nomes, constrói topologia com `topojson-server` + `topojson-simplify` + `quantize`, dissolve territórios com `topojson-client` `merge`, emite os `*.topo.json`, `bahiaMunicipalityCodes.ts` e o fixture. Cache em `data/geometries/` (gitignored). **Não toca banco** — sem `assertLocalDatabase`. Não roda em build/dev — só quando se atualiza a versão de origem.
 
-## Leaflet na campanha
+## Leaflet na campanha (B3 — pendente)
 
-- Dependência: `leaflet` + `topojson-client` (cliente). `react-leaflet` é opcional; preferir wrapper cliente fino com `leaflet` direto e `dynamic(() => import(...), { ssr: false })` para evitar SSR.
+- Dependência: `leaflet` (+ `topojson-client` já instalado na Fase 1). `react-leaflet` é opcional; preferir wrapper cliente fino com `leaflet` direto e `dynamic(() => import(...), { ssr: false })` para evitar SSR.
 - **Base tiles:** OpenStreetMap raster (ou CartoDB Positron) com atribuição obrigatória; ou fundo neutro sem tiles (só coroplético) como opção mais leve. Decidir na implementação; default OSM.
 - **Componentes novos (todos `src/components/campaign/`, PascalCase):**
   - `BahiaMap.tsx` — cliente, recebe `geometry` (TopoJSON) + `values: Record<string, number>` (chave→métrica) + `mode: 'municipality' | 'territory'` + `colorScale`; renderiza coroplético Leaflet.
   - `NucleusOverviewMap.tsx` — mapa no overview de `/campanha/nucleos`, escopado pelos mesmos filtros da lista, com toggle município/território e escolha da métrica (estimativa confirmada, nº de núcleos, baseline 2022 Solla quando disponível).
   - `NucleusDetailMap.tsx` — mapa pequeno no detalhe do núcleo destacando seus municípios/território (+ marcadores ponto das zonas TSE, quando a camada de zonas existir).
   - `DashboardMap.tsx` — coroplético por território no dashboard `/campanha`.
-- **Agregação:** servidor continua a fonte. Reusar `campaignDashboardPageData` / `nucleusViewModels` e expor agregados por `codarea`/`code` de território; o cliente junta com a geometria. Sem query espacial.
+- **Agregação:** servidor continua a fonte. Reusar `campaignDashboardPageData` / `nucleusViewModels` / `nucleusListOverviewPageData` e expor agregados por `codarea`/`code` de território; o cliente junta com a geometria. Sem query espacial.
 
 ## Phasing
 
-- **Fase 1 — Fundação de geometrias:** `bahiaMunicipalityCodes.ts` + fixture + teste; `.topojson` de municípios e territórios; script de geração; helpers `getMunicipalityFeature(codarea)`, `getTerritoryFeature(code)`.
-- **Fase 2 — Leaflet nas superfícies:** `BahiaMap` + `NucleusOverviewMap` + `NucleusDetailMap` + `DashboardMap`, com agregados existentes.
+- **Fase 1 — Fundação de geometrias (B2) ✓ entregue 2026-07-18:** `bahiaMunicipalityCodes.ts` + fixture + teste; `*.topo.json` de municípios e territórios; script `pnpm build:geometries`; helpers em `bahiaGeometries.ts`.
+- **Fase 2 — Leaflet nas superfícies (B3):** `BahiaMap` + `NucleusOverviewMap` + `NucleusDetailMap` + `DashboardMap`, com agregados existentes.
 
-**Sequenciamento (2026-07-17):** a Fase 1 é independente e paralelizável a qualquer momento. A Fase 2 rende mais **depois** de [overview-lista-nucleos.md](overview-lista-nucleos.md) (o `NucleusOverviewMap` é um bloco daquele painel) e ganha muito valor com [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md) implementado (coroplético de baseline 2022 e da classificação territorial é onde o mapa vira instrumento de decisão, não só visual). Nenhum dos dois é bloqueante — o mapa funciona só com estimativa/nº de núcleos — mas a ordem recomendada no roadmap coloca overview e baseline antes.
+**Sequenciamento:** a Fase 1 é independente e paralelizável. A Fase 2 rende mais depois de B1 ✓ (overview) e ganha valor com A4 (baseline no produto). Nenhum dos dois bloqueia B3 — o mapa funciona só com estimativa/nº de núcleos.
 
-## Ciclo seguinte — Zonas TSE como camada
+## Ciclo seguinte — Zonas TSE como camada (B4)
 
-Após `zonas-por-municipio`. Polígono por dissolução dos municípios membros (abordagem A, default) ou por geocodificação dos endereços das seções → casco convexo/côncavo (abordagem B, questão em aberto). Ponto representativo por centroide da zona. Item separado no roadmap.
+Após A2 ✓ + B3. Polígono por dissolução dos municípios membros (abordagem A, default — já validada na Fase 1 para TIs) ou por geocodificação dos endereços das seções → casco (abordagem B, questão em aberto). Ponto representativo por centroide da zona.
 
-- **(A) Dissolução dos municípios membros:** o TSE publica quais municípios compõem cada zona; como a v1 já terá os polígonos municipais (IBGE), basta dissolver os municípios de cada zona. Limpo, alinhado às divisas oficiais, sem geocodificação, sem serviço externo. Mais fiel porque usa a composição oficial.
-- **(B) Geocodificar endereços das seções/locais de votação → casco:** pegar os locais de votação de cada zona, geocodificar (OSM Nominatim com rate-limit, IBGE logradouros, ou geocoder pago) e gerar o polígono. Independente do mapeamento município→zona, mas: milhares de endereços para geocodificar em batch offline, locais de votação se concentram em centros urbanos (casco irregular, áreas rurais cobertas mal), e pode divergir da composição oficial do TSE.
+- **(A) Dissolução dos municípios membros:** o TSE publica quais municípios compõem cada zona (`bahiaTseZones`); com os polígonos municipais IBGE, basta dissolver. Limpo, alinhado às divisas oficiais.
+- **(B) Geocodificar endereços das seções/locais de votação → casco:** milhares de endereços, casco irregular em áreas rurais, pode divergir da composição oficial.
 
 ## Não escopo
 
 - PostGIS (adiado; só se surgir query espacial real).
 - `/mapa` dedicada do design-ux (adiada).
-- Camada de Zonas TSE — polígono ou ponto (ciclo seguinte; depende de `zonas-por-municipio`).
+- Camada de Zonas TSE — polígono ou ponto (B4; depende de A2 ✓ + B3).
 - Mapear núcleo a seções eleitorais (zona segue como referência).
 - Geocodificação de endereços de apoiadores.
 - Outros estados (todo núcleo é BA).
 
 ## Dependências
 
-- Reusa `bahiaIdentityTerritoryRecords`/`bahiaMunicipalities` (`src/lib/bahiaTerritories.ts`), `CitiesByState.BA` (`src/lib/cities`), `campaignDashboardPageData` / `nucleusViewModels` (agregados existentes), e o padrão de fixture/teste de `bahiaTerritories`.
-- **Camada de Zonas** depende de `docs/plans/zonas-por-municipio.md`.
+- Reusa `bahiaIdentityTerritoryRecords`/`bahiaMunicipalities` (`src/lib/bahiaTerritories.ts`), `canonicalizeMunicipalityName` (`src/lib/electionResults.ts`), `CitiesByState.BA` (`src/lib/cities`), `campaignDashboardPageData` / `nucleusViewModels` / `nucleusListOverviewPageData` (agregados para B3), e o padrão de fixture/teste de `bahiaTerritories`.
+- **Camada de Zonas (B4)** depende de A2 (`docs/plans/zonas-por-municipio.md`) + B3.
+
+## Revisões
+
+- **2026-07-18 (auditoria pré-B2 + entrega Fase 1):** territórios por dissolução IBGE (não shapefile IDE Bahia); extensão `*.topo.json`; reuso de `canonicalizeMunicipalityName`; núcleo usa `cities[]` (A1); script sem guard de banco; referências de linha do roadmap antigas removidas; Fase 1 implementada e marcada entregue.
 
 ## Referências
 
-- `docs/roadmap.md` (item "Mapa / PostGIS", linha 52; "Import do cadastro oficial de zonas TSE", linha 59)
+- `docs/roadmap.md` (B2 / B3 / B4 na trilha B)
 - `src/lib/bahiaTerritories.ts` + `tests/fixtures/bahia-identity-territories.official.json` + `tests/int/bahiaTerritories.int.spec.ts` (padrão a espelhar)
-- `src/collections/ElectoralNucleus.ts`, `src/utilities/campaignDashboardPageData.ts`, `src/utilities/nucleusViewModels.ts` (agregados a reusar)
+- `src/lib/bahiaMunicipalityCodes.ts`, `src/lib/bahiaGeometries.ts`, `src/lib/geometries/*.topo.json`
+- `scripts/build-bahia-geometries.mjs`
+- `src/collections/ElectoralNucleus.ts`, `src/utilities/campaignDashboardPageData.ts`, `src/utilities/nucleusViewModels.ts`, `src/utilities/nucleusListOverviewPageData.ts` (agregados a reusar no B3)
 - `docs/plans/zonas-por-municipio.md` (dependência da camada de Zonas)
 - `docs/plans/baseline-eleitoral-tse.md` (baseline por zona, consumidor do mapa)
 - AGENTS.md (naming, "Bahia implícita", padrão de dado estático versionado)
 - IBGE — API de Malhas: https://servicodados.ibge.gov.br/api/docs/malhas
-- IDE Bahia / SEI — Territórios de Identidade 1:100.000: https://metadados.ide.ba.gov.br/geonetwork/srv/api/records/90b140bf-17df-496f-b048-5783fdf02864
+- IDE Bahia / SEI — Territórios de Identidade 1:100.000 (referência): https://metadados.ide.ba.gov.br/geonetwork/srv/api/records/90b140bf-17df-496f-b048-5783fdf02864

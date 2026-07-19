@@ -1,0 +1,1689 @@
+{
+  "provenance": {
+    "description": "Test-only evidence for the Bahia municipality name→IBGE-code table. Rows are the canonical application spellings paired with IBGE 7-digit codes from the Localidades API; mesh SHA-256 documents the Malhas download used to build the committed TopoJSON.",
+    "localidadesSource": {
+      "url": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/29/municipios",
+      "downloadSha256": "ee2524f732a80d234f129b2e26a90f9bc080a52844a01e5359e789c613d7ee4f"
+    },
+    "malhasSource": {
+      "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/29?formato=application/vnd.geo+json&intrarregiao=municipio&qualidade=intermediaria",
+      "quality": "intermediaria",
+      "downloadSha256": "909017a4f91e7950cea123d2601a53b64c70acdb2b256548be25ca9e703cc572"
+    },
+    "territoryComposition": "Identity-territory polygons are dissolved from IBGE municipality meshes using bahiaIdentityTerritoryRecords (SECULT/SEPLAN composition). IDE Bahia / SEI territory polygons are a validation reference only.",
+    "accessed": "2026-07-19",
+    "normalization": "IBGE Localidades nomes were reconciled to canonical application spellings via canonicalizeMunicipalityName (Araçás→Araças, Iuiu→Iuiú, Muquém do São Francisco→Muquém de São Francisco, Santa Terezinha→Santa Teresinha). The evidence SHA-256 covers every canonical municipality→codarea assignment."
+  },
+  "municipalityCount": 417,
+  "assignments": [
+    {
+      "municipality": "Abaíra",
+      "code": "2900108"
+    },
+    {
+      "municipality": "Abaré",
+      "code": "2900207"
+    },
+    {
+      "municipality": "Acajutiba",
+      "code": "2900306"
+    },
+    {
+      "municipality": "Adustina",
+      "code": "2900355"
+    },
+    {
+      "municipality": "Água Fria",
+      "code": "2900405"
+    },
+    {
+      "municipality": "Aiquara",
+      "code": "2900603"
+    },
+    {
+      "municipality": "Alagoinhas",
+      "code": "2900702"
+    },
+    {
+      "municipality": "Alcobaça",
+      "code": "2900801"
+    },
+    {
+      "municipality": "Almadina",
+      "code": "2900900"
+    },
+    {
+      "municipality": "Amargosa",
+      "code": "2901007"
+    },
+    {
+      "municipality": "Amélia Rodrigues",
+      "code": "2901106"
+    },
+    {
+      "municipality": "América Dourada",
+      "code": "2901155"
+    },
+    {
+      "municipality": "Anagé",
+      "code": "2901205"
+    },
+    {
+      "municipality": "Andaraí",
+      "code": "2901304"
+    },
+    {
+      "municipality": "Andorinha",
+      "code": "2901353"
+    },
+    {
+      "municipality": "Angical",
+      "code": "2901403"
+    },
+    {
+      "municipality": "Anguera",
+      "code": "2901502"
+    },
+    {
+      "municipality": "Antas",
+      "code": "2901601"
+    },
+    {
+      "municipality": "Antônio Cardoso",
+      "code": "2901700"
+    },
+    {
+      "municipality": "Antônio Gonçalves",
+      "code": "2901809"
+    },
+    {
+      "municipality": "Aporá",
+      "code": "2901908"
+    },
+    {
+      "municipality": "Apuarema",
+      "code": "2901957"
+    },
+    {
+      "municipality": "Araças",
+      "code": "2902054"
+    },
+    {
+      "municipality": "Aracatu",
+      "code": "2902005"
+    },
+    {
+      "municipality": "Araci",
+      "code": "2902104"
+    },
+    {
+      "municipality": "Aramari",
+      "code": "2902203"
+    },
+    {
+      "municipality": "Arataca",
+      "code": "2902252"
+    },
+    {
+      "municipality": "Aratuípe",
+      "code": "2902302"
+    },
+    {
+      "municipality": "Aurelino Leal",
+      "code": "2902401"
+    },
+    {
+      "municipality": "Baianópolis",
+      "code": "2902500"
+    },
+    {
+      "municipality": "Baixa Grande",
+      "code": "2902609"
+    },
+    {
+      "municipality": "Banzaê",
+      "code": "2902658"
+    },
+    {
+      "municipality": "Barra",
+      "code": "2902708"
+    },
+    {
+      "municipality": "Barra da Estiva",
+      "code": "2902807"
+    },
+    {
+      "municipality": "Barra do Choça",
+      "code": "2902906"
+    },
+    {
+      "municipality": "Barra do Mendes",
+      "code": "2903003"
+    },
+    {
+      "municipality": "Barra do Rocha",
+      "code": "2903102"
+    },
+    {
+      "municipality": "Barreiras",
+      "code": "2903201"
+    },
+    {
+      "municipality": "Barro Alto",
+      "code": "2903235"
+    },
+    {
+      "municipality": "Barro Preto",
+      "code": "2903300"
+    },
+    {
+      "municipality": "Barrocas",
+      "code": "2903276"
+    },
+    {
+      "municipality": "Belmonte",
+      "code": "2903409"
+    },
+    {
+      "municipality": "Belo Campo",
+      "code": "2903508"
+    },
+    {
+      "municipality": "Biritinga",
+      "code": "2903607"
+    },
+    {
+      "municipality": "Boa Nova",
+      "code": "2903706"
+    },
+    {
+      "municipality": "Boa Vista do Tupim",
+      "code": "2903805"
+    },
+    {
+      "municipality": "Bom Jesus da Lapa",
+      "code": "2903904"
+    },
+    {
+      "municipality": "Bom Jesus da Serra",
+      "code": "2903953"
+    },
+    {
+      "municipality": "Boninal",
+      "code": "2904001"
+    },
+    {
+      "municipality": "Bonito",
+      "code": "2904050"
+    },
+    {
+      "municipality": "Boquira",
+      "code": "2904100"
+    },
+    {
+      "municipality": "Botuporã",
+      "code": "2904209"
+    },
+    {
+      "municipality": "Brejões",
+      "code": "2904308"
+    },
+    {
+      "municipality": "Brejolândia",
+      "code": "2904407"
+    },
+    {
+      "municipality": "Brotas de Macaúbas",
+      "code": "2904506"
+    },
+    {
+      "municipality": "Brumado",
+      "code": "2904605"
+    },
+    {
+      "municipality": "Buerarema",
+      "code": "2904704"
+    },
+    {
+      "municipality": "Buritirama",
+      "code": "2904753"
+    },
+    {
+      "municipality": "Caatiba",
+      "code": "2904803"
+    },
+    {
+      "municipality": "Cabaceiras do Paraguaçu",
+      "code": "2904852"
+    },
+    {
+      "municipality": "Cachoeira",
+      "code": "2904902"
+    },
+    {
+      "municipality": "Caculé",
+      "code": "2905008"
+    },
+    {
+      "municipality": "Caém",
+      "code": "2905107"
+    },
+    {
+      "municipality": "Caetanos",
+      "code": "2905156"
+    },
+    {
+      "municipality": "Caetité",
+      "code": "2905206"
+    },
+    {
+      "municipality": "Cafarnaum",
+      "code": "2905305"
+    },
+    {
+      "municipality": "Cairu",
+      "code": "2905404"
+    },
+    {
+      "municipality": "Caldeirão Grande",
+      "code": "2905503"
+    },
+    {
+      "municipality": "Camacan",
+      "code": "2905602"
+    },
+    {
+      "municipality": "Camaçari",
+      "code": "2905701"
+    },
+    {
+      "municipality": "Camamu",
+      "code": "2905800"
+    },
+    {
+      "municipality": "Campo Alegre de Lourdes",
+      "code": "2905909"
+    },
+    {
+      "municipality": "Campo Formoso",
+      "code": "2906006"
+    },
+    {
+      "municipality": "Canápolis",
+      "code": "2906105"
+    },
+    {
+      "municipality": "Canarana",
+      "code": "2906204"
+    },
+    {
+      "municipality": "Canavieiras",
+      "code": "2906303"
+    },
+    {
+      "municipality": "Candeal",
+      "code": "2906402"
+    },
+    {
+      "municipality": "Candeias",
+      "code": "2906501"
+    },
+    {
+      "municipality": "Candiba",
+      "code": "2906600"
+    },
+    {
+      "municipality": "Cândido Sales",
+      "code": "2906709"
+    },
+    {
+      "municipality": "Cansanção",
+      "code": "2906808"
+    },
+    {
+      "municipality": "Canudos",
+      "code": "2906824"
+    },
+    {
+      "municipality": "Capela do Alto Alegre",
+      "code": "2906857"
+    },
+    {
+      "municipality": "Capim Grosso",
+      "code": "2906873"
+    },
+    {
+      "municipality": "Caraíbas",
+      "code": "2906899"
+    },
+    {
+      "municipality": "Caravelas",
+      "code": "2906907"
+    },
+    {
+      "municipality": "Cardeal da Silva",
+      "code": "2907004"
+    },
+    {
+      "municipality": "Carinhanha",
+      "code": "2907103"
+    },
+    {
+      "municipality": "Casa Nova",
+      "code": "2907202"
+    },
+    {
+      "municipality": "Castro Alves",
+      "code": "2907301"
+    },
+    {
+      "municipality": "Catolândia",
+      "code": "2907400"
+    },
+    {
+      "municipality": "Catu",
+      "code": "2907509"
+    },
+    {
+      "municipality": "Caturama",
+      "code": "2907558"
+    },
+    {
+      "municipality": "Central",
+      "code": "2907608"
+    },
+    {
+      "municipality": "Chorrochó",
+      "code": "2907707"
+    },
+    {
+      "municipality": "Cícero Dantas",
+      "code": "2907806"
+    },
+    {
+      "municipality": "Cipó",
+      "code": "2907905"
+    },
+    {
+      "municipality": "Coaraci",
+      "code": "2908002"
+    },
+    {
+      "municipality": "Cocos",
+      "code": "2908101"
+    },
+    {
+      "municipality": "Conceição da Feira",
+      "code": "2908200"
+    },
+    {
+      "municipality": "Conceição do Almeida",
+      "code": "2908309"
+    },
+    {
+      "municipality": "Conceição do Coité",
+      "code": "2908408"
+    },
+    {
+      "municipality": "Conceição do Jacuípe",
+      "code": "2908507"
+    },
+    {
+      "municipality": "Conde",
+      "code": "2908606"
+    },
+    {
+      "municipality": "Condeúba",
+      "code": "2908705"
+    },
+    {
+      "municipality": "Contendas do Sincorá",
+      "code": "2908804"
+    },
+    {
+      "municipality": "Coração de Maria",
+      "code": "2908903"
+    },
+    {
+      "municipality": "Cordeiros",
+      "code": "2909000"
+    },
+    {
+      "municipality": "Coribe",
+      "code": "2909109"
+    },
+    {
+      "municipality": "Coronel João Sá",
+      "code": "2909208"
+    },
+    {
+      "municipality": "Correntina",
+      "code": "2909307"
+    },
+    {
+      "municipality": "Cotegipe",
+      "code": "2909406"
+    },
+    {
+      "municipality": "Cravolândia",
+      "code": "2909505"
+    },
+    {
+      "municipality": "Crisópolis",
+      "code": "2909604"
+    },
+    {
+      "municipality": "Cristópolis",
+      "code": "2909703"
+    },
+    {
+      "municipality": "Cruz das Almas",
+      "code": "2909802"
+    },
+    {
+      "municipality": "Curaçá",
+      "code": "2909901"
+    },
+    {
+      "municipality": "Dário Meira",
+      "code": "2910008"
+    },
+    {
+      "municipality": "Dias d'Ávila",
+      "code": "2910057"
+    },
+    {
+      "municipality": "Dom Basílio",
+      "code": "2910107"
+    },
+    {
+      "municipality": "Dom Macedo Costa",
+      "code": "2910206"
+    },
+    {
+      "municipality": "Elísio Medrado",
+      "code": "2910305"
+    },
+    {
+      "municipality": "Encruzilhada",
+      "code": "2910404"
+    },
+    {
+      "municipality": "Entre Rios",
+      "code": "2910503"
+    },
+    {
+      "municipality": "Érico Cardoso",
+      "code": "2900504"
+    },
+    {
+      "municipality": "Esplanada",
+      "code": "2910602"
+    },
+    {
+      "municipality": "Euclides da Cunha",
+      "code": "2910701"
+    },
+    {
+      "municipality": "Eunápolis",
+      "code": "2910727"
+    },
+    {
+      "municipality": "Fátima",
+      "code": "2910750"
+    },
+    {
+      "municipality": "Feira da Mata",
+      "code": "2910776"
+    },
+    {
+      "municipality": "Feira de Santana",
+      "code": "2910800"
+    },
+    {
+      "municipality": "Filadélfia",
+      "code": "2910859"
+    },
+    {
+      "municipality": "Firmino Alves",
+      "code": "2910909"
+    },
+    {
+      "municipality": "Floresta Azul",
+      "code": "2911006"
+    },
+    {
+      "municipality": "Formosa do Rio Preto",
+      "code": "2911105"
+    },
+    {
+      "municipality": "Gandu",
+      "code": "2911204"
+    },
+    {
+      "municipality": "Gavião",
+      "code": "2911253"
+    },
+    {
+      "municipality": "Gentio do Ouro",
+      "code": "2911303"
+    },
+    {
+      "municipality": "Glória",
+      "code": "2911402"
+    },
+    {
+      "municipality": "Gongogi",
+      "code": "2911501"
+    },
+    {
+      "municipality": "Governador Mangabeira",
+      "code": "2911600"
+    },
+    {
+      "municipality": "Guajeru",
+      "code": "2911659"
+    },
+    {
+      "municipality": "Guanambi",
+      "code": "2911709"
+    },
+    {
+      "municipality": "Guaratinga",
+      "code": "2911808"
+    },
+    {
+      "municipality": "Heliópolis",
+      "code": "2911857"
+    },
+    {
+      "municipality": "Iaçu",
+      "code": "2911907"
+    },
+    {
+      "municipality": "Ibiassucê",
+      "code": "2912004"
+    },
+    {
+      "municipality": "Ibicaraí",
+      "code": "2912103"
+    },
+    {
+      "municipality": "Ibicoara",
+      "code": "2912202"
+    },
+    {
+      "municipality": "Ibicuí",
+      "code": "2912301"
+    },
+    {
+      "municipality": "Ibipeba",
+      "code": "2912400"
+    },
+    {
+      "municipality": "Ibipitanga",
+      "code": "2912509"
+    },
+    {
+      "municipality": "Ibiquera",
+      "code": "2912608"
+    },
+    {
+      "municipality": "Ibirapitanga",
+      "code": "2912707"
+    },
+    {
+      "municipality": "Ibirapuã",
+      "code": "2912806"
+    },
+    {
+      "municipality": "Ibirataia",
+      "code": "2912905"
+    },
+    {
+      "municipality": "Ibitiara",
+      "code": "2913002"
+    },
+    {
+      "municipality": "Ibititá",
+      "code": "2913101"
+    },
+    {
+      "municipality": "Ibotirama",
+      "code": "2913200"
+    },
+    {
+      "municipality": "Ichu",
+      "code": "2913309"
+    },
+    {
+      "municipality": "Igaporã",
+      "code": "2913408"
+    },
+    {
+      "municipality": "Igrapiúna",
+      "code": "2913457"
+    },
+    {
+      "municipality": "Iguaí",
+      "code": "2913507"
+    },
+    {
+      "municipality": "Ilhéus",
+      "code": "2913606"
+    },
+    {
+      "municipality": "Inhambupe",
+      "code": "2913705"
+    },
+    {
+      "municipality": "Ipecaetá",
+      "code": "2913804"
+    },
+    {
+      "municipality": "Ipiaú",
+      "code": "2913903"
+    },
+    {
+      "municipality": "Ipirá",
+      "code": "2914000"
+    },
+    {
+      "municipality": "Ipupiara",
+      "code": "2914109"
+    },
+    {
+      "municipality": "Irajuba",
+      "code": "2914208"
+    },
+    {
+      "municipality": "Iramaia",
+      "code": "2914307"
+    },
+    {
+      "municipality": "Iraquara",
+      "code": "2914406"
+    },
+    {
+      "municipality": "Irará",
+      "code": "2914505"
+    },
+    {
+      "municipality": "Irecê",
+      "code": "2914604"
+    },
+    {
+      "municipality": "Itabela",
+      "code": "2914653"
+    },
+    {
+      "municipality": "Itaberaba",
+      "code": "2914703"
+    },
+    {
+      "municipality": "Itabuna",
+      "code": "2914802"
+    },
+    {
+      "municipality": "Itacaré",
+      "code": "2914901"
+    },
+    {
+      "municipality": "Itaeté",
+      "code": "2915007"
+    },
+    {
+      "municipality": "Itagi",
+      "code": "2915106"
+    },
+    {
+      "municipality": "Itagibá",
+      "code": "2915205"
+    },
+    {
+      "municipality": "Itagimirim",
+      "code": "2915304"
+    },
+    {
+      "municipality": "Itaguaçu da Bahia",
+      "code": "2915353"
+    },
+    {
+      "municipality": "Itaju do Colônia",
+      "code": "2915403"
+    },
+    {
+      "municipality": "Itajuípe",
+      "code": "2915502"
+    },
+    {
+      "municipality": "Itamaraju",
+      "code": "2915601"
+    },
+    {
+      "municipality": "Itamari",
+      "code": "2915700"
+    },
+    {
+      "municipality": "Itambé",
+      "code": "2915809"
+    },
+    {
+      "municipality": "Itanagra",
+      "code": "2915908"
+    },
+    {
+      "municipality": "Itanhém",
+      "code": "2916005"
+    },
+    {
+      "municipality": "Itaparica",
+      "code": "2916104"
+    },
+    {
+      "municipality": "Itapé",
+      "code": "2916203"
+    },
+    {
+      "municipality": "Itapebi",
+      "code": "2916302"
+    },
+    {
+      "municipality": "Itapetinga",
+      "code": "2916401"
+    },
+    {
+      "municipality": "Itapicuru",
+      "code": "2916500"
+    },
+    {
+      "municipality": "Itapitanga",
+      "code": "2916609"
+    },
+    {
+      "municipality": "Itaquara",
+      "code": "2916708"
+    },
+    {
+      "municipality": "Itarantim",
+      "code": "2916807"
+    },
+    {
+      "municipality": "Itatim",
+      "code": "2916856"
+    },
+    {
+      "municipality": "Itiruçu",
+      "code": "2916906"
+    },
+    {
+      "municipality": "Itiúba",
+      "code": "2917003"
+    },
+    {
+      "municipality": "Itororó",
+      "code": "2917102"
+    },
+    {
+      "municipality": "Ituaçu",
+      "code": "2917201"
+    },
+    {
+      "municipality": "Ituberá",
+      "code": "2917300"
+    },
+    {
+      "municipality": "Iuiú",
+      "code": "2917334"
+    },
+    {
+      "municipality": "Jaborandi",
+      "code": "2917359"
+    },
+    {
+      "municipality": "Jacaraci",
+      "code": "2917409"
+    },
+    {
+      "municipality": "Jacobina",
+      "code": "2917508"
+    },
+    {
+      "municipality": "Jaguaquara",
+      "code": "2917607"
+    },
+    {
+      "municipality": "Jaguarari",
+      "code": "2917706"
+    },
+    {
+      "municipality": "Jaguaripe",
+      "code": "2917805"
+    },
+    {
+      "municipality": "Jandaíra",
+      "code": "2917904"
+    },
+    {
+      "municipality": "Jequié",
+      "code": "2918001"
+    },
+    {
+      "municipality": "Jeremoabo",
+      "code": "2918100"
+    },
+    {
+      "municipality": "Jiquiriçá",
+      "code": "2918209"
+    },
+    {
+      "municipality": "Jitaúna",
+      "code": "2918308"
+    },
+    {
+      "municipality": "João Dourado",
+      "code": "2918357"
+    },
+    {
+      "municipality": "Juazeiro",
+      "code": "2918407"
+    },
+    {
+      "municipality": "Jucuruçu",
+      "code": "2918456"
+    },
+    {
+      "municipality": "Jussara",
+      "code": "2918506"
+    },
+    {
+      "municipality": "Jussari",
+      "code": "2918555"
+    },
+    {
+      "municipality": "Jussiape",
+      "code": "2918605"
+    },
+    {
+      "municipality": "Lafaiete Coutinho",
+      "code": "2918704"
+    },
+    {
+      "municipality": "Lagoa Real",
+      "code": "2918753"
+    },
+    {
+      "municipality": "Laje",
+      "code": "2918803"
+    },
+    {
+      "municipality": "Lajedão",
+      "code": "2918902"
+    },
+    {
+      "municipality": "Lajedinho",
+      "code": "2919009"
+    },
+    {
+      "municipality": "Lajedo do Tabocal",
+      "code": "2919058"
+    },
+    {
+      "municipality": "Lamarão",
+      "code": "2919108"
+    },
+    {
+      "municipality": "Lapão",
+      "code": "2919157"
+    },
+    {
+      "municipality": "Lauro de Freitas",
+      "code": "2919207"
+    },
+    {
+      "municipality": "Lençóis",
+      "code": "2919306"
+    },
+    {
+      "municipality": "Licínio de Almeida",
+      "code": "2919405"
+    },
+    {
+      "municipality": "Livramento de Nossa Senhora",
+      "code": "2919504"
+    },
+    {
+      "municipality": "Luís Eduardo Magalhães",
+      "code": "2919553"
+    },
+    {
+      "municipality": "Macajuba",
+      "code": "2919603"
+    },
+    {
+      "municipality": "Macarani",
+      "code": "2919702"
+    },
+    {
+      "municipality": "Macaúbas",
+      "code": "2919801"
+    },
+    {
+      "municipality": "Macururé",
+      "code": "2919900"
+    },
+    {
+      "municipality": "Madre de Deus",
+      "code": "2919926"
+    },
+    {
+      "municipality": "Maetinga",
+      "code": "2919959"
+    },
+    {
+      "municipality": "Maiquinique",
+      "code": "2920007"
+    },
+    {
+      "municipality": "Mairi",
+      "code": "2920106"
+    },
+    {
+      "municipality": "Malhada",
+      "code": "2920205"
+    },
+    {
+      "municipality": "Malhada de Pedras",
+      "code": "2920304"
+    },
+    {
+      "municipality": "Manoel Vitorino",
+      "code": "2920403"
+    },
+    {
+      "municipality": "Mansidão",
+      "code": "2920452"
+    },
+    {
+      "municipality": "Maracás",
+      "code": "2920502"
+    },
+    {
+      "municipality": "Maragogipe",
+      "code": "2920601"
+    },
+    {
+      "municipality": "Maraú",
+      "code": "2920700"
+    },
+    {
+      "municipality": "Marcionílio Souza",
+      "code": "2920809"
+    },
+    {
+      "municipality": "Mascote",
+      "code": "2920908"
+    },
+    {
+      "municipality": "Mata de São João",
+      "code": "2921005"
+    },
+    {
+      "municipality": "Matina",
+      "code": "2921054"
+    },
+    {
+      "municipality": "Medeiros Neto",
+      "code": "2921104"
+    },
+    {
+      "municipality": "Miguel Calmon",
+      "code": "2921203"
+    },
+    {
+      "municipality": "Milagres",
+      "code": "2921302"
+    },
+    {
+      "municipality": "Mirangaba",
+      "code": "2921401"
+    },
+    {
+      "municipality": "Mirante",
+      "code": "2921450"
+    },
+    {
+      "municipality": "Monte Santo",
+      "code": "2921500"
+    },
+    {
+      "municipality": "Morpará",
+      "code": "2921609"
+    },
+    {
+      "municipality": "Morro do Chapéu",
+      "code": "2921708"
+    },
+    {
+      "municipality": "Mortugaba",
+      "code": "2921807"
+    },
+    {
+      "municipality": "Mucugê",
+      "code": "2921906"
+    },
+    {
+      "municipality": "Mucuri",
+      "code": "2922003"
+    },
+    {
+      "municipality": "Mulungu do Morro",
+      "code": "2922052"
+    },
+    {
+      "municipality": "Mundo Novo",
+      "code": "2922102"
+    },
+    {
+      "municipality": "Muniz Ferreira",
+      "code": "2922201"
+    },
+    {
+      "municipality": "Muquém de São Francisco",
+      "code": "2922250"
+    },
+    {
+      "municipality": "Muritiba",
+      "code": "2922300"
+    },
+    {
+      "municipality": "Mutuípe",
+      "code": "2922409"
+    },
+    {
+      "municipality": "Nazaré",
+      "code": "2922508"
+    },
+    {
+      "municipality": "Nilo Peçanha",
+      "code": "2922607"
+    },
+    {
+      "municipality": "Nordestina",
+      "code": "2922656"
+    },
+    {
+      "municipality": "Nova Canaã",
+      "code": "2922706"
+    },
+    {
+      "municipality": "Nova Fátima",
+      "code": "2922730"
+    },
+    {
+      "municipality": "Nova Ibiá",
+      "code": "2922755"
+    },
+    {
+      "municipality": "Nova Itarana",
+      "code": "2922805"
+    },
+    {
+      "municipality": "Nova Redenção",
+      "code": "2922854"
+    },
+    {
+      "municipality": "Nova Soure",
+      "code": "2922904"
+    },
+    {
+      "municipality": "Nova Viçosa",
+      "code": "2923001"
+    },
+    {
+      "municipality": "Novo Horizonte",
+      "code": "2923035"
+    },
+    {
+      "municipality": "Novo Triunfo",
+      "code": "2923050"
+    },
+    {
+      "municipality": "Olindina",
+      "code": "2923100"
+    },
+    {
+      "municipality": "Oliveira dos Brejinhos",
+      "code": "2923209"
+    },
+    {
+      "municipality": "Ouriçangas",
+      "code": "2923308"
+    },
+    {
+      "municipality": "Ourolândia",
+      "code": "2923357"
+    },
+    {
+      "municipality": "Palmas de Monte Alto",
+      "code": "2923407"
+    },
+    {
+      "municipality": "Palmeiras",
+      "code": "2923506"
+    },
+    {
+      "municipality": "Paramirim",
+      "code": "2923605"
+    },
+    {
+      "municipality": "Paratinga",
+      "code": "2923704"
+    },
+    {
+      "municipality": "Paripiranga",
+      "code": "2923803"
+    },
+    {
+      "municipality": "Pau Brasil",
+      "code": "2923902"
+    },
+    {
+      "municipality": "Paulo Afonso",
+      "code": "2924009"
+    },
+    {
+      "municipality": "Pé de Serra",
+      "code": "2924058"
+    },
+    {
+      "municipality": "Pedrão",
+      "code": "2924108"
+    },
+    {
+      "municipality": "Pedro Alexandre",
+      "code": "2924207"
+    },
+    {
+      "municipality": "Piatã",
+      "code": "2924306"
+    },
+    {
+      "municipality": "Pilão Arcado",
+      "code": "2924405"
+    },
+    {
+      "municipality": "Pindaí",
+      "code": "2924504"
+    },
+    {
+      "municipality": "Pindobaçu",
+      "code": "2924603"
+    },
+    {
+      "municipality": "Pintadas",
+      "code": "2924652"
+    },
+    {
+      "municipality": "Piraí do Norte",
+      "code": "2924678"
+    },
+    {
+      "municipality": "Piripá",
+      "code": "2924702"
+    },
+    {
+      "municipality": "Piritiba",
+      "code": "2924801"
+    },
+    {
+      "municipality": "Planaltino",
+      "code": "2924900"
+    },
+    {
+      "municipality": "Planalto",
+      "code": "2925006"
+    },
+    {
+      "municipality": "Poções",
+      "code": "2925105"
+    },
+    {
+      "municipality": "Pojuca",
+      "code": "2925204"
+    },
+    {
+      "municipality": "Ponto Novo",
+      "code": "2925253"
+    },
+    {
+      "municipality": "Porto Seguro",
+      "code": "2925303"
+    },
+    {
+      "municipality": "Potiraguá",
+      "code": "2925402"
+    },
+    {
+      "municipality": "Prado",
+      "code": "2925501"
+    },
+    {
+      "municipality": "Presidente Dutra",
+      "code": "2925600"
+    },
+    {
+      "municipality": "Presidente Jânio Quadros",
+      "code": "2925709"
+    },
+    {
+      "municipality": "Presidente Tancredo Neves",
+      "code": "2925758"
+    },
+    {
+      "municipality": "Queimadas",
+      "code": "2925808"
+    },
+    {
+      "municipality": "Quijingue",
+      "code": "2925907"
+    },
+    {
+      "municipality": "Quixabeira",
+      "code": "2925931"
+    },
+    {
+      "municipality": "Rafael Jambeiro",
+      "code": "2925956"
+    },
+    {
+      "municipality": "Remanso",
+      "code": "2926004"
+    },
+    {
+      "municipality": "Retirolândia",
+      "code": "2926103"
+    },
+    {
+      "municipality": "Riachão das Neves",
+      "code": "2926202"
+    },
+    {
+      "municipality": "Riachão do Jacuípe",
+      "code": "2926301"
+    },
+    {
+      "municipality": "Riacho de Santana",
+      "code": "2926400"
+    },
+    {
+      "municipality": "Ribeira do Amparo",
+      "code": "2926509"
+    },
+    {
+      "municipality": "Ribeira do Pombal",
+      "code": "2926608"
+    },
+    {
+      "municipality": "Ribeirão do Largo",
+      "code": "2926657"
+    },
+    {
+      "municipality": "Rio de Contas",
+      "code": "2926707"
+    },
+    {
+      "municipality": "Rio do Antônio",
+      "code": "2926806"
+    },
+    {
+      "municipality": "Rio do Pires",
+      "code": "2926905"
+    },
+    {
+      "municipality": "Rio Real",
+      "code": "2927002"
+    },
+    {
+      "municipality": "Rodelas",
+      "code": "2927101"
+    },
+    {
+      "municipality": "Ruy Barbosa",
+      "code": "2927200"
+    },
+    {
+      "municipality": "Salinas da Margarida",
+      "code": "2927309"
+    },
+    {
+      "municipality": "Salvador",
+      "code": "2927408"
+    },
+    {
+      "municipality": "Santa Bárbara",
+      "code": "2927507"
+    },
+    {
+      "municipality": "Santa Brígida",
+      "code": "2927606"
+    },
+    {
+      "municipality": "Santa Cruz Cabrália",
+      "code": "2927705"
+    },
+    {
+      "municipality": "Santa Cruz da Vitória",
+      "code": "2927804"
+    },
+    {
+      "municipality": "Santa Inês",
+      "code": "2927903"
+    },
+    {
+      "municipality": "Santa Luzia",
+      "code": "2928059"
+    },
+    {
+      "municipality": "Santa Maria da Vitória",
+      "code": "2928109"
+    },
+    {
+      "municipality": "Santa Rita de Cássia",
+      "code": "2928406"
+    },
+    {
+      "municipality": "Santa Teresinha",
+      "code": "2928505"
+    },
+    {
+      "municipality": "Santaluz",
+      "code": "2928000"
+    },
+    {
+      "municipality": "Santana",
+      "code": "2928208"
+    },
+    {
+      "municipality": "Santanópolis",
+      "code": "2928307"
+    },
+    {
+      "municipality": "Santo Amaro",
+      "code": "2928604"
+    },
+    {
+      "municipality": "Santo Antônio de Jesus",
+      "code": "2928703"
+    },
+    {
+      "municipality": "Santo Estêvão",
+      "code": "2928802"
+    },
+    {
+      "municipality": "São Desidério",
+      "code": "2928901"
+    },
+    {
+      "municipality": "São Domingos",
+      "code": "2928950"
+    },
+    {
+      "municipality": "São Felipe",
+      "code": "2929107"
+    },
+    {
+      "municipality": "São Félix",
+      "code": "2929008"
+    },
+    {
+      "municipality": "São Félix do Coribe",
+      "code": "2929057"
+    },
+    {
+      "municipality": "São Francisco do Conde",
+      "code": "2929206"
+    },
+    {
+      "municipality": "São Gabriel",
+      "code": "2929255"
+    },
+    {
+      "municipality": "São Gonçalo dos Campos",
+      "code": "2929305"
+    },
+    {
+      "municipality": "São José da Vitória",
+      "code": "2929354"
+    },
+    {
+      "municipality": "São José do Jacuípe",
+      "code": "2929370"
+    },
+    {
+      "municipality": "São Miguel das Matas",
+      "code": "2929404"
+    },
+    {
+      "municipality": "São Sebastião do Passé",
+      "code": "2929503"
+    },
+    {
+      "municipality": "Sapeaçu",
+      "code": "2929602"
+    },
+    {
+      "municipality": "Sátiro Dias",
+      "code": "2929701"
+    },
+    {
+      "municipality": "Saubara",
+      "code": "2929750"
+    },
+    {
+      "municipality": "Saúde",
+      "code": "2929800"
+    },
+    {
+      "municipality": "Seabra",
+      "code": "2929909"
+    },
+    {
+      "municipality": "Sebastião Laranjeiras",
+      "code": "2930006"
+    },
+    {
+      "municipality": "Senhor do Bonfim",
+      "code": "2930105"
+    },
+    {
+      "municipality": "Sento Sé",
+      "code": "2930204"
+    },
+    {
+      "municipality": "Serra do Ramalho",
+      "code": "2930154"
+    },
+    {
+      "municipality": "Serra Dourada",
+      "code": "2930303"
+    },
+    {
+      "municipality": "Serra Preta",
+      "code": "2930402"
+    },
+    {
+      "municipality": "Serrinha",
+      "code": "2930501"
+    },
+    {
+      "municipality": "Serrolândia",
+      "code": "2930600"
+    },
+    {
+      "municipality": "Simões Filho",
+      "code": "2930709"
+    },
+    {
+      "municipality": "Sítio do Mato",
+      "code": "2930758"
+    },
+    {
+      "municipality": "Sítio do Quinto",
+      "code": "2930766"
+    },
+    {
+      "municipality": "Sobradinho",
+      "code": "2930774"
+    },
+    {
+      "municipality": "Souto Soares",
+      "code": "2930808"
+    },
+    {
+      "municipality": "Tabocas do Brejo Velho",
+      "code": "2930907"
+    },
+    {
+      "municipality": "Tanhaçu",
+      "code": "2931004"
+    },
+    {
+      "municipality": "Tanque Novo",
+      "code": "2931053"
+    },
+    {
+      "municipality": "Tanquinho",
+      "code": "2931103"
+    },
+    {
+      "municipality": "Taperoá",
+      "code": "2931202"
+    },
+    {
+      "municipality": "Tapiramutá",
+      "code": "2931301"
+    },
+    {
+      "municipality": "Teixeira de Freitas",
+      "code": "2931350"
+    },
+    {
+      "municipality": "Teodoro Sampaio",
+      "code": "2931400"
+    },
+    {
+      "municipality": "Teofilândia",
+      "code": "2931509"
+    },
+    {
+      "municipality": "Teolândia",
+      "code": "2931608"
+    },
+    {
+      "municipality": "Terra Nova",
+      "code": "2931707"
+    },
+    {
+      "municipality": "Tremedal",
+      "code": "2931806"
+    },
+    {
+      "municipality": "Tucano",
+      "code": "2931905"
+    },
+    {
+      "municipality": "Uauá",
+      "code": "2932002"
+    },
+    {
+      "municipality": "Ubaíra",
+      "code": "2932101"
+    },
+    {
+      "municipality": "Ubaitaba",
+      "code": "2932200"
+    },
+    {
+      "municipality": "Ubatã",
+      "code": "2932309"
+    },
+    {
+      "municipality": "Uibaí",
+      "code": "2932408"
+    },
+    {
+      "municipality": "Umburanas",
+      "code": "2932457"
+    },
+    {
+      "municipality": "Una",
+      "code": "2932507"
+    },
+    {
+      "municipality": "Urandi",
+      "code": "2932606"
+    },
+    {
+      "municipality": "Uruçuca",
+      "code": "2932705"
+    },
+    {
+      "municipality": "Utinga",
+      "code": "2932804"
+    },
+    {
+      "municipality": "Valença",
+      "code": "2932903"
+    },
+    {
+      "municipality": "Valente",
+      "code": "2933000"
+    },
+    {
+      "municipality": "Várzea da Roça",
+      "code": "2933059"
+    },
+    {
+      "municipality": "Várzea do Poço",
+      "code": "2933109"
+    },
+    {
+      "municipality": "Várzea Nova",
+      "code": "2933158"
+    },
+    {
+      "municipality": "Varzedo",
+      "code": "2933174"
+    },
+    {
+      "municipality": "Vera Cruz",
+      "code": "2933208"
+    },
+    {
+      "municipality": "Vereda",
+      "code": "2933257"
+    },
+    {
+      "municipality": "Vitória da Conquista",
+      "code": "2933307"
+    },
+    {
+      "municipality": "Wagner",
+      "code": "2933406"
+    },
+    {
+      "municipality": "Wanderley",
+      "code": "2933455"
+    },
+    {
+      "municipality": "Wenceslau Guimarães",
+      "code": "2933505"
+    },
+    {
+      "municipality": "Xique-Xique",
+      "code": "2933604"
+    }
+  ],
+  "evidenceSha256": "9c13a0457130c7be42ecf3907ce811d9fe8fb877498b307bf6aa6527a4fa9601"
+}

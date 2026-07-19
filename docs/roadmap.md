@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-18 (MVP + Ciclo 2 deployados; A2 entregue; C2 engenharia pronta e mesclada em `main`; C3 Planos de Ação implementado e mesclado em `main`; C6/C7 registrados — escala/DRY pós-C2 e pós-C3)
+Atualizado em: 2026-07-18 (MVP + Ciclo 2 deployados; A2 entregue; C2 engenharia pronta e mesclada em `main`; C3 Planos de Ação implementado e mesclado em `main`; C6/C7 registrados — escala/DRY pós-C2 e pós-C3; B2 fundação de geometrias do mapa entregue)
 
 Registro canônico no repositório dos planos futuros e débitos conhecidos. Status operacional do ciclo atual de Núcleos fica em [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc); este arquivo lista o que ainda é futuro ou bloqueador, **em ordem de execução**, com dependências e paralelismo explícitos.
 
@@ -60,6 +60,10 @@ MVP de território + reporte implementado e enviado (ondas 1–8 + refactors de 
 
 - **A2 Zonas TSE + sugestões cruzadas** — cadastro estático `bahiaTseZones` (TSE 2024 `detalhe_votacao_munzona` BA, 417 municípios), motor puro `territorySuggestions` (inclui `outsideZones`), coordenador `NucleusTerritoryAndZonesFields` com chips `{rótulo} +` opt-in (município/TI → ZEs; irmãos do TI e cidades da ZE → Municípios), `TseZoneInput` controlado. Sem migration, sem igualdade forçada no save. [Plano](plans/zonas-por-municipio.md).
 
+### Ciclo 2+ — B2 fundação de geometrias do mapa (2026-07-18)
+
+- **B2 Mapa Fase 1 (geometrias)** — TopoJSON estático de municípios IBGE (`bahia-municipalities.topo.json`) + Territórios de Identidade por dissolução (`bahia-identity-territories.topo.json`), tabela `bahiaMunicipalityCodes` (nome canônico → `codarea`), helpers `bahiaGeometries` (`getMunicipalityFeature` / `getTerritoryFeature`), script re-executável `pnpm build:geometries`. Sem migration, sem UI (Leaflet = B3). [Plano](plans/mapa-bahia-geometrias.md).
+
 ### Ciclo 2+ — C2 e C3 mesclados em `main` (2026-07-18)
 
 - **C2 Cadastro nominal de apoiadores** — collection `supporter` (join `Contact`↔campanha, núcleo opcional), migration `20260718_222656_add_supporter` com `UNIQUE NULLS NOT DISTINCT (contact_id, nucleus_id)`, consent por chaves estáveis `apoiador-cadastro` / `apoiador-intencao-voto` via `campaignConsent.ts` genérico (`getConsentByKey` / `requireConsentByKey`, falha fechada), actions (create / intenção de voto / import CSV só `geral` / `removeSupporterData`), UI `/campanha/apoiadores` (lista+KPIs, ficha, wizard de import, kit mínimo `wa.me`). Telefone obrigatório no v1; `lideranca` sem acesso à área. Engenharia pronta e mesclada — produção com dados reais espera deploy (build Vercel aplica a migration) + Consent keys + aprovação jurídica (Onda 0). [Plano](plans/cadastro-nominal-apoiadores.md).
@@ -109,7 +113,7 @@ flowchart TD
 
     subgraph TrilhaB["Trilha B — superfícies de coordenação"]
         B1["B1 Overview da lista de núcleos ✓"]
-        B2["B2 Mapa Fase 1 (geometrias)"]
+        B2["B2 Mapa Fase 1 (geometrias) ✓"]
         B3["B3 Mapa Fase 2 (Leaflet nas superfícies)"]
         B4["B4 Camada de zonas TSE no mapa"]
     end
@@ -155,7 +159,7 @@ flowchart TD
     JUR -.chave de push.-> D2
 ```
 
-Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, além dos fill-ins (visitados recentemente, listas globais, reset de senha, higiene PascalCase). **Entregues e mesclados em `main` em 2026-07-18** (✓ no grafo): A1, A2, A3, B1, C1, C2, C3 e D1 — ver "Ciclo 2" e "Ciclo 2+" acima. C2 segue com produção bloqueada pelo lote jurídico (Onda 0: Consent keys `apoiador-cadastro` / `apoiador-intencao-voto` + aprovação). Destravados por eles: A4 (A2/A3 + B1 prontos), C4 (A1 + C3 prontos), C6 (merge de C2 ✓), C7 (após C3; suave: C6 F2) e D2 push (D1 pronto; falta a chave jurídica).
+Itens sem seta de entrada (**paralelizáveis a qualquer momento**): fill-ins (visitados recentemente, listas globais, reset de senha, higiene PascalCase). **Entregues e mesclados em `main` em 2026-07-18** (✓ no grafo): A1, A2, A3, B1, B2, C1, C2, C3 e D1 — ver "Ciclo 2" e "Ciclo 2+" acima. C2 segue com produção bloqueada pelo lote jurídico (Onda 0: Consent keys `apoiador-cadastro` / `apoiador-intencao-voto` + aprovação). Destravados por eles: A4 (A2/A3 + B1 prontos), B3 (B1 ✓ + B2 ✓; suave: A4 para coroplético), C4 (A1 + C3 prontos), C6 (merge de C2 ✓), C7 (após C3; suave: C6 F2) e D2 push (D1 pronto; falta a chave jurídica).
 
 ### Sequência de execução por janela do calendário
 
@@ -185,7 +189,7 @@ Itens sem seta de entrada (**paralelizáveis a qualquer momento**): B2, além do
 | Ordem | Item                                                                                                                       | Plano                                                                                                                                                                                                                                                                                 | Depende de                                                        | Paralelizável com |
 | ----- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------- |
 | 12    | A5 Insights derivados do baseline (5 itens, paralelizáveis entre si; conversão e classificação exigem limiares de produto) | [conversão](plans/insight-taxa-conversao.md) · [classificação](plans/insight-classificacao-territorial.md) · [alavancagem](plans/insight-alavancagem-chapa.md) · [mobilização](plans/insight-mobilizacao-brancos-nulos.md) · [competitiva](plans/insight-inteligencia-competitiva.md) | A4                                                                | B2/B3, C4, D1     |
-| 13    | B2 + B3 Mapa da Bahia (geometrias + Leaflet)                                                                               | [detalhes](plans/mapa-bahia-geometrias.md)                                                                                                                                                                                                                                            | B3 ← B1+B2 (suave: A4 para coroplético de baseline/classe)        | A5, C4, D1        |
+| 13    | B2 Mapa Fase 1 (geometrias) **(entregue 2026-07-18)** + B3 Leaflet nas superfícies                                          | [detalhes](plans/mapa-bahia-geometrias.md)                                                                                                                                                                                                                                            | B3 ← B1 ✓ + B2 ✓ (suave: A4 para coroplético de baseline/classe)  | A5, C4, D1        |
 | 14    | C4 Demandas                                                                                                                | [detalhes](plans/demandas-campanha.md)                                                                                                                                                                                                                                                | A1 (suave: C3 para a relação `actionPlan`)                        | A5, B3, D1        |
 | 15    | D1 PWA `/campanha` **(entregue antecipado em 2026-07-18)**                                                                 | [detalhes](plans/pwa-campanha.md)                                                                                                                                                                                                                                                     | —                                                                 | tudo              |
 | 16    | D2 Notificações (push + sino) — sino não depende do PWA; push sim                                                          | [detalhes](plans/notifications.md)                                                                                                                                                                                                                                                    | D1 ✓ (push) + chave `campanha-notificacoes-push` do lote jurídico | A5, B3, C4        |
