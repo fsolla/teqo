@@ -36,32 +36,45 @@ A Fase 2 foi **absorvida neste plano** (não virou item A5 paralelo): mesma supe
 ## Objetivos
 
 - **Fase 1 — conversão:** `ticketLeverage` = `confirmedVoteEstimate / lulaVotes` (e `/ jeronimoVotes`); % capturada, teto da chapa e gap no detalhe; no overview, `Σ estimate / Σ lulaVotes` sobre o filtro.
-- **Fase 2 — oportunidade de virada:** detectar, na geografia do núcleo (com majoritários de esquerda), **qualquer** dos gatilhos abaixo e exibir Alert com copy de completar a chapa; no overview, contagem de núcleos com oportunidade.
-  - **Gatilho A — vencedor federal de direita:** `winnerFederal.party` → espectro `direita`.
-  - **Gatilho B — participação da direita alta:** `rightShare = Σ votos federais (partido→direita) / Σ votos federais válidos nominais` ≥ limiar versionado — **mesmo se o mais votado não for de direita** (ex.: vencedor de centro/esquerda estreito, mas PL+PP+União+… somam 35%+).
-- Guardrails: **leitura derivada** — sem escrita, sem `Consent`, sem migration, sem collection nova; `overrideAccess: false`; falha fechada se faltar tally/voto ou partido fora do mapa (não inventar classificação).
+- **Fase 2 — oportunidade de virada:** detectar, na geografia do núcleo (com **≥1** majoritário de esquerda), **qualquer** dos gatilhos abaixo e exibir Alert; no overview, contagem (+ destaque quando os dois majoritários alinham).
+  - **Gatilho A — vencedor federal `direita`:** `winnerFederal.party` → espectro `direita`.
+  - **Gatilho B — participação `direita` alta:** `rightShare = Σ votos (partido→direita) / Σ nominais federais` ≥ limiar — **mesmo se o mais votado não for de direita**.
+- Guardrails: **leitura derivada** — sem escrita, sem `Consent`, sem migration; `overrideAccess: false`; falha fechada se faltar tally/voto ou partido fora do mapa.
 
 ## Decisões travadas
 
 - **Duas fases no mesmo insight A5, não item novo.** Fase 1 = métrica contínua; Fase 2 = flag com gatilhos A e/ou B. _(produto 2026-07-19)_
 - **Gatilho B é independente do vencedor.** Participação proporcional da direita basta; o vencedor de direita (A) é caso especial de B com share concentrado, mas A e B disparam o mesmo Alert com `trigger: 'winner' | 'share' | 'both'` para o copy citar o motivo certo. _(refino de produto 2026-07-19)_
-- **Espectro por partido, estático e versionado** — `SG_PARTIDO` → `esquerda | direita | centro | outro` em `src/lib/electionPartySpectrum.ts`. Fonte inicial: federações/coligações 2022. Sem ML. _(compartilhável com A6)_
-- **Share usa votos nominais federais agregados por partido**, não legenda isolada no v1 (legenda pode entrar depois se o seed expuser). Denominador = soma dos nominais na geografia (turno 1 dep. federal), alinhado ao ranking A4.
-- **Vencedores majoritários vêm de `electionTally.winner*`** (turno decisivo), agregados por geografia; federal A usa `winnerFederal`; federal B precisa da **soma por espectro** — preferir a mesma agregação que A7 F1 (`SUM(votes) GROUP BY party` ou por candidato→partido), não materializar todas as rows no React.
-- **Campanha é esquerda via ticket** — `BASELINE_TICKET_2022.*.party` (PT) no mapa; Fase 2 só faz sentido quando majoritários locais são esquerda (pré-condição) e o proporcional ainda “vaza” para a direita.
-- **Fase 2 opt-in na UI** — Alert só quando `status === 'opportunity'`; silêncio caso contrário.
-- **i18n/naming:** `computeTicketLeverage`, `computeTicketFlipOpportunity`, `partySpectrum`, `rightShare`, `winnerPresident`, `winnerGovernor`; strings em pt-BR.
+- **Pré-condição majoritária em graus.** Basta **um** de (pres. | gov.) com espectro `esquerda` para liberar a Fase 2 (`majoritarianAlignment: 'president' | 'governor' | 'both'`). Os **dois** alinhados é sinal mais forte (`both`) — copy e eventual priorização no overview podem destacar, mas um já dispara. _(produto 2026-07-19)_
+- **Espectro por partido = expert survey Bolognesi et al. (onda 2022).** Mapa estático `SG_PARTIDO` → `esquerda | centro | direita | null` em `src/lib/electionPartySpectrum.ts`, derivado da classificação categórica dos autores (escala 0–10):
+  - `esquerda` ← média ≤ 4,49 (extrema-esquerda + esquerda + centro-esquerda) — ex.: PSTU, PCO, PCB, PSOL, UP, PCdoB, PT (2,68), PSB, REDE, PDT, PV
+  - `centro` ← 4,5–5,5 _(vazio em 2022 — achado central do artigo)_
+  - `direita` ← média ≥ 5,51 (centro-direita + direita + extrema-direita) — numerador do gatilho B e teste do gatilho A (alinha com copy “fora do campo da chapa”; inclui MDB/PSDB/PSD e PL/NOVO/UNIÃO etc.)
+  - `null` ← sigla ausente da tabela
+  - **Fonte:** Bolognesi, Codato, Ribeiro & Silva — _O desaparecimento do centro ideológico no sistema partidário brasileiro: a classificação mais atualizada dos experts_, Opinião Pública, v. 31, e31120 ([SciELO](https://www.scielo.br/j/op/a/hv8GBg9hfCCZLwcWktfYhtC/?lang=pt)); survey ABCP/brasilianistas 2018 e 2022; dataset Harvard Dataverse `doi:10.7910/DVN/MFIXKW`. Antecessor: Bolognesi, Ribeiro & Codato, Dados 66(2), 2023.
+  - **Implementação:** versionar médias 2022 + aliases TSE (`UNIÃO`/`UNIAO`, `PCdoB`/`PC do B`, `PP`/`PROGRESSISTAS`/`PROGRE`, `REPUBLICANOS`/`REP`, `SOLIDARIEDADE`/`SDD`, `CIDADANIA`/`CDD`). Comentário no arquivo cita DOI + Tabela 1. Sem ML; atualizar só com nova onda do survey. Compartilhável com A6 (tiers podem usar a média contínua).
+- **Share (gatilho B) soma espectro `direita` (≥ 5,51).** Denominador = nominais federais; partidos `null` entram no denominador e **não** no numerador.
+- **Share usa votos nominais federais agregados por partido**, não legenda isolada no v1. Denominador = soma dos nominais na geografia (turno 1 dep. federal).
+- **Vencedores majoritários vêm de `electionTally.winner*`** (turno decisivo); federal A usa `winnerFederal`; federal B precisa da soma por espectro — alinhar com A7 F1.
+- **Campanha é esquerda via ticket** — `BASELINE_TICKET_2022.*.party` (PT; média 2,68 na onda 2022).
+- **Copy do Alert: operacional, sem a palavra “direita”.** Tom de coordenação de campo. Internamente o código usa os buckets do survey; a UI fala em **“fora do campo da chapa”** / **“completar a chapa”**. Exemplos travados:
+  - Gatilho A: _“Oportunidade de completar a chapa — o mais votado a dep. federal ficou fora do campo (Nome, PARTIDO).”_
+  - Gatilho B: _“Oportunidade de completar a chapa — X% do proporcional federal ficou fora do campo da chapa.”_
+  - Both: combina os dois numa linha + suporte.
+  - `majoritarianAlignment === 'both'`: prefixo opcional _“Majoritários alinhados. ”_; se só um: _“Presidente alinhado. ”_ / _“Governador alinhado. ”_
+  - Racional: “direita” é rótulo da escala acadêmica; na ferramenta o discurso útil é “eleger o time”. _(decisão 2026-07-19)_
+- **Fase 2 opt-in na UI** — Alert só quando `status === 'opportunity'`.
+- **i18n/naming:** `computeTicketLeverage`, `computeTicketFlipOpportunity`, `partySpectrum`, `rightShare`, `majoritarianAlignment`, `winnerPresident`, `winnerGovernor`; strings em pt-BR.
 
 ## Questões em aberto
 
 - **Limiar do gatilho B (`RIGHT_SHARE_THRESHOLD`)?** **Recomendação:** `0.25` (25% dos nominais federais) como constante versionada em `electionInsights.ts`; validar com produto (faixa plausível 20–35%). Abaixo do limiar e sem gatilho A → sem Alert.
 - **Turno decisivo dos majoritários?** **Recomendação:** 2º turno (pres./gov.); fallback para 1º se não houver tally de 2º.
 - **Geografia multi-zona com vencedores majoritários diferentes?** **Recomendação:** somar `winnerVotes` por candidato; empate → `ambiguous` (não dispara). Share federal (B) soma todas as zonas sem ambiguidade.
-- **Partido ausente do mapa?** **Recomendação:** votos com espectro `null` entram no denominador mas **não** no numerador da direita (fail-closed no share); se o vencedor federal tiver partido desconhecido → gatilho A não dispara.
-- **Exigir os dois majoritários esquerda?** **Recomendação:** **ambos**; validar com produto se quiserem OR.
-- **Quando A e B disparam juntos?** **Recomendação:** um único Alert com `trigger: 'both'` e copy que menciona o vencedor **e** o % da direita.
+- **Sigla TSE sem linha no survey (partido novo / fusão pós-2022, ex. PRD)?** **Recomendação:** `null` até nova onda ou regra explícita de herança (média dos partidos fundidos); documentar no arquivo.
+- **Quando A e B disparam juntos?** **Recomendação:** um único Alert com `trigger: 'both'`.
 - **`lideranca` vê?** **Recomendação:** sim (dado público).
-- **Overview:** **Recomendação:** contagem de núcleos com oportunidade; breakdown A vs B opcional no v1.
+- **Overview:** **Recomendação:** contagem de núcleos com oportunidade; destacar subset `majoritarianAlignment === 'both'` se couber sem ruído.
 
 ## Abordagem proposta
 
@@ -72,8 +85,8 @@ flowchart LR
     Spec["electionPartySpectrum.ts"]
     Est["confirmedVoteEstimate"]
     F1["computeTicketLeverage"]
-    F2["computeTicketFlipOpportunity<br/>pré-condição majoritária esq<br/>+ gatilho A winner dir<br/>+ gatilho B rightShare ≥ limiar"]
-    UI["NucleusInsights<br/>Alert F1 + Alert F2 condicional"]
+    F2["computeTicketFlipOpportunity<br/>≥1 majoritário esq (both=forte)<br/>+ A winner dir + B rightShare"]
+    UI["NucleusInsights<br/>Alert F1 + Alert F2 (copy sem 'direita')"]
     Overview["NucleusListOverview<br/>Σ leverage + contagem flip"]
     Tally --> F2
     FedAgg --> F2
@@ -87,12 +100,12 @@ flowchart LR
 
 Componentes:
 
-- **`electionPartySpectrum.ts`** (`src/lib/electionPartySpectrum.ts`): `partySpectrum(party) → 'esquerda' | 'direita' | 'centro' | 'outro' | null`; teste de cobertura dos `SG_PARTIDO` do seed BA 2022.
+- **`electionPartySpectrum.ts`** (`src/lib/electionPartySpectrum.ts`): `partySpectrum(party) → 'esquerda' | 'centro' | 'direita' | null` a partir das médias 2022 de Bolognesi et al. (Tabela 1 + Dataverse); aliases TSE; teste de cobertura dos `SG_PARTIDO` do seed BA 2022.
 - **`computeTicketLeverage`** (`src/lib/electionInsights.ts`): Fase 1 — `{ lulaLeverage, jeronimoLeverage, lulaGap, jeronimoGap, status }`.
-- **`computeTicketFlipOpportunity`** (`src/lib/electionInsights.ts`): entrada `{ winnerPresident, winnerGovernor, winnerFederal, federalVotesByParty: Record<string, number> | Array<{ party, votes }> }` → `{ status, trigger, rightShare, rightVotes, totalFederalVotes, president, governor, federal, message }`. Pré-condição: ambos majoritários `esquerda`. Gatilho A: espectro do `winnerFederal` = `direita`. Gatilho B: `rightShare >= RIGHT_SHARE_THRESHOLD`. `status`: `opportunity | noOpportunity | ambiguous | unknownSpectrum | incomplete`.
-- **Loader** (`nucleusElectoralBaseline.ts` + view model): `winnerPresident` / `winnerGovernor` a partir de tallies; para B, expor `federalVotesByParty` (ou `rightShare` já computado no server) junto da agregação federal — **alinhar com A7 F1** (`GROUP BY` candidato/partido, sem rows zonais no cliente).
-- **UI:** `NucleusInsights.tsx` — Alert Fase 1; Alert Fase 2 só em `opportunity` (copy distingue winner vs share vs both). Overview: contagem no `NucleusListOverview`.
-- **Testes:** unit — vencedor direita / vencedor esquerda com share 40% / share 10% sem oportunidade / majoritário direita (pré-condição falha) / partido desconhecido / empate majoritário; int do agregador multi-zona.
+- **`computeTicketFlipOpportunity`** (`src/lib/electionInsights.ts`): entrada `{ winnerPresident, winnerGovernor, winnerFederal, federalVotesByParty }` → `{ status, trigger, majoritarianAlignment, rightShare, rightVotes, totalFederalVotes, president, governor, federal, message }`. Pré-condição: `majoritarianAlignment ∈ {president, governor, both}`. Gatilho A: `winnerFederal` → `direita`. Gatilho B: `rightShare >= RIGHT_SHARE_THRESHOLD`. `status`: `opportunity | noOpportunity | ambiguous | unknownSpectrum | incomplete`.
+- **Loader** (`nucleusElectoralBaseline.ts` + view model): `winnerPresident` / `winnerGovernor` a partir de tallies; `federalVotesByParty` alinhado a A7 F1.
+- **UI:** `NucleusInsights.tsx` — Alert Fase 1; Alert Fase 2 só em `opportunity`, copy travado acima (sem a palavra “direita”). Overview: contagem + opcional subset `both`.
+- **Testes:** unit — só pres. esq. / só gov. esq. / both / vencedor direita / share 40% com vencedor esquerda / share 10% sem oportunidade / nenhum majoritário esq. / partido desconhecido / empate; int do agregador multi-zona.
 - **Migration:** nenhuma. Sem Consent.
 
 ## Dependências
@@ -116,6 +129,8 @@ Componentes:
 - [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md) — A3/A4
 - [escala-dry-pos-a4.md](escala-dry-pos-a4.md) — A7 F1 (agregação federal)
 - [insight-dobradinha-2026.md](insight-dobradinha-2026.md) — taxonomia futura
+- Bolognesi, Codato, Ribeiro & Silva (2025/2026), Opinião Pública e31120 — [SciELO](https://www.scielo.br/j/op/a/hv8GBg9hfCCZLwcWktfYhtC/?lang=pt); Dataverse `doi:10.7910/DVN/MFIXKW`
+- Bolognesi, Ribeiro & Codato (2023), Dados 66(2) — onda 2018 / metodologia
 - `src/lib/electionInsights.ts` — padrão `computeGapVs2022`
 - `src/lib/electionResults.ts` — `BASELINE_TICKET_2022`
 - `src/utilities/nucleusElectoralBaseline.ts` — loader + `winnerFederal`
