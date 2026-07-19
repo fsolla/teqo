@@ -1,12 +1,6 @@
 import 'server-only'
 
 import {
-  bahiaIdentityTerritories,
-  type BahiaIdentityTerritory,
-  isBahiaMunicipality,
-  territoriesForCities,
-} from '@/lib/bahiaTerritories'
-import {
   actionPlanKinds,
   actionPlanStatuses,
   type ActionPlanCreateInput,
@@ -17,11 +11,14 @@ import {
   FormDataBoundaryError,
   nullableRelationshipFormValue,
   optionalFormText,
-  repeatedFormTexts,
   repeatedRelationshipFormValues,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
 import { parseBahiaDateTimeInput } from '@/utilities/campaignTime'
+import {
+  parseCampaignTerritoryFields,
+  validateCampaignTerritoryFormData,
+} from '@/utilities/campaignTerritoryFormData'
 
 type ParsedActionPlanTask = {
   title: string
@@ -83,12 +80,7 @@ const parseTasksFormData = (formData: FormData): ParsedActionPlanTask[] => {
 }
 
 const parseSharedActionPlanFormData = (formData: FormData) => {
-  const cities = repeatedFormTexts(formData, 'cities')
-  const regions =
-    cities.length > 0
-      ? territoriesForCities(cities)
-      : (repeatedFormTexts(formData, 'regions') as BahiaIdentityTerritory[])
-  const neighborhoods = cities.length === 1 ? repeatedFormTexts(formData, 'neighborhoods') : []
+  const territory = parseCampaignTerritoryFields(formData)
   const responsible = nullableRelationshipFormValue(formData, 'responsible')
   const leadership = nullableRelationshipFormValue(formData, 'leadership')
 
@@ -100,60 +92,16 @@ const parseSharedActionPlanFormData = (formData: FormData) => {
     startAt: parseDateTimeFormField(formData, 'startAt'),
     endAt: parseDateTimeFormField(formData, 'endAt'),
     deadline: parseDateTimeFormField(formData, 'deadline'),
-    regions,
-    cities,
-    neighborhoods,
-    locality: optionalFormText(formData, 'locality'),
-    territoryNotes: optionalFormText(formData, 'territoryNotes'),
+    ...territory,
     responsible,
     leadership,
     tasks: parseTasksFormData(formData),
   }
 }
 
-const validateTerritoryFormData = (
-  territory: {
-    regions: string[]
-    cities: string[]
-    neighborhoods: string[]
-    locality?: string
-  },
-  { requireGeography }: { requireGeography: boolean },
-) => {
-  for (const region of territory.regions) {
-    if (!bahiaIdentityTerritories.includes(region as never)) {
-      throw new FormDataBoundaryError('regions', 'Território de identidade inválido.')
-    }
-  }
-  for (const city of territory.cities) {
-    if (!isBahiaMunicipality(city)) {
-      throw new FormDataBoundaryError('cities', 'Município inválido.')
-    }
-  }
-  if (territory.neighborhoods.length > 0 && territory.cities.length !== 1) {
-    throw new FormDataBoundaryError(
-      'neighborhoods',
-      territory.cities.length === 0
-        ? 'Informe o município antes do bairro.'
-        : 'Bairros só podem ser informados quando há exatamente um município.',
-    )
-  }
-  if (
-    requireGeography &&
-    territory.regions.length === 0 &&
-    territory.cities.length === 0 &&
-    !territory.locality
-  ) {
-    throw new FormDataBoundaryError(
-      'cities',
-      'Informe o território de identidade, município ou localidade do plano.',
-    )
-  }
-}
-
 export const parseActionPlanCreateFormData = (formData: FormData): ActionPlanCreateInput => {
   const shared = parseSharedActionPlanFormData(formData)
-  validateTerritoryFormData(shared, { requireGeography: false })
+  validateCampaignTerritoryFormData(shared, { entityLabel: 'plano', requireGeography: false })
   const coordinatorIds = repeatedRelationshipFormValues(formData, 'coordinators')
 
   return {
@@ -167,7 +115,7 @@ export const parseActionPlanCreateFormData = (formData: FormData): ActionPlanCre
 
 export const parseActionPlanUpdateFormData = (formData: FormData): ActionPlanUpdateInput => {
   const shared = parseSharedActionPlanFormData(formData)
-  validateTerritoryFormData(shared, { requireGeography: true })
+  validateCampaignTerritoryFormData(shared, { entityLabel: 'plano', requireGeography: true })
   const coordinatorIds = repeatedRelationshipFormValues(formData, 'coordinators')
   // Checkboxes only submit when checked, so a hidden marker distinguishes
   // "coordinators section rendered but all unchecked" from "not editable" (coordenador view).

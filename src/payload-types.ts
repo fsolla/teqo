@@ -561,6 +561,8 @@ export interface ActionPlan {
         id?: string | null;
       }[]
     | null;
+  taskTotal?: number | null;
+  taskDoneCount?: number | null;
   updates?:
     | {
         body: string;
@@ -1273,6 +1275,8 @@ export interface ActionPlanSelect<T extends boolean = true> {
         doneAt?: T;
         id?: T;
       };
+  taskTotal?: T;
+  taskDoneCount?: T;
   updates?:
     | T
     | {

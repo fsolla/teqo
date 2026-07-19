@@ -11,6 +11,7 @@ import {
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 
 const MAX_ACTION_PLAN_UPDATE_BODY_LENGTH = 4000
 
@@ -91,10 +92,12 @@ export const toggleActionPlanTaskRecord = async (
     payload,
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
+      await acquireTextAdvisoryLocks(payload, req, [`action-plan:${planId}`])
       const plan = await payload.findByID({
         collection: 'actionPlan',
         id: planId,
         depth: 0,
+        select: { tasks: true },
         user: currentActor,
         overrideAccess: false,
         req,
@@ -135,10 +138,12 @@ export const appendActionPlanUpdateRecord = async (
     payload,
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
+      await acquireTextAdvisoryLocks(payload, req, [`action-plan:${planId}`])
       const plan = await payload.findByID({
         collection: 'actionPlan',
         id: planId,
         depth: 0,
+        select: { updates: true },
         user: currentActor,
         overrideAccess: false,
         req,

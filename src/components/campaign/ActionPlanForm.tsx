@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 import { ContactCombobox, type ContactComboboxOption } from '@/components/campaign/ContactCombobox'
 import { ActionPlanTaskFields } from '@/components/campaign/ActionPlanTaskFields'
-import { NucleusTerritoryFields } from '@/components/campaign/NucleusTerritoryFields'
+import { CampaignTerritoryFields } from '@/components/campaign/NucleusTerritoryFields'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -238,7 +238,7 @@ export const ActionPlanFormFields = ({
         </CardHeader>
         <CardContent>
           <FieldGroup>
-            <NucleusTerritoryFields values={plan} fieldErrors={fieldErrors} />
+            <CampaignTerritoryFields values={plan} fieldErrors={fieldErrors} />
             <div className="grid gap-4 sm:grid-cols-2">
               <Field data-invalid={Boolean(errorFor('locality'))}>
                 <FieldLabel htmlFor="locality">Localidade</FieldLabel>

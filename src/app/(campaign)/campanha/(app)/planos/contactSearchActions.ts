@@ -3,6 +3,10 @@
 import config from '@payload-config'
 import { getPayload } from 'payload'
 
+import {
+  isContactSearchQueryReady,
+  normalizeContactSearchQuery,
+} from '@/lib/contactSearchQuery'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 
 export type ActionPlanContactOption = {
@@ -19,16 +23,16 @@ export const searchActionPlanContactOptions = async (
   const [payload, user] = await Promise.all([getPayload({ config }), getCampaignUser()])
   if (!user) throw new Error('Autenticação necessária.')
 
-  const trimmed = typeof query === 'string' ? query.trim().slice(0, 120) : ''
-  const digits = trimmed.replace(/\D/g, '')
+  const normalizedQuery = typeof query === 'string' ? query : ''
+  if (!isContactSearchQueryReady(normalizedQuery)) return []
+
+  const { trimmed, digits } = normalizeContactSearchQuery(normalizedQuery)
 
   const result = await payload.find({
     collection: 'contact',
-    where: trimmed
-      ? {
-          or: [{ name: { contains: trimmed } }, { phone: { contains: digits || trimmed } }],
-        }
-      : {},
+    where: {
+      or: [{ name: { contains: trimmed } }, { phone: { contains: digits || trimmed } }],
+    },
     depth: 0,
     limit: CONTACT_OPTION_LIMIT,
     page: 1,
