@@ -33,8 +33,6 @@ try {
 } catch (error) {
   console.error(`\n[seed:consent] ${error instanceof Error ? error.message : String(error)}\n`)
   process.exit(1)
-} finally {
-  if (typeof payload.db?.destroy === 'function') {
-    await payload.db.destroy()
-  }
 }
+
+process.exit(0)
