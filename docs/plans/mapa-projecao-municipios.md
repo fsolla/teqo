@@ -1,7 +1,7 @@
 # Mapa de projeção de votos por município (equiparar e superar as planilhas 2026)
 
-Status: rascunho (E2 implementado 2026-07-19)
-Atualizado em: 2026-07-19 (revisão access E1/E3 — metas/prioridade/E3 sem `canSetDerivedNucleusField`; escrita via `canUpdateElectoralNucleus` + selects/VMs)
+Status: E1, E2 e E3 implementados e mesclados em `main` (2026-07-19); E4 e E5 pendentes
+Atualizado em: 2026-07-19 (revisão entrega E1+E3 — marcar como entregues no roadmap; access E1/E3 sem `canSetDerivedNucleusField`; escrita via `canUpdateElectoralNucleus` + selects/VMs)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E — itens E1–E5, "Ciclo 3")
 Responsável: —
 
