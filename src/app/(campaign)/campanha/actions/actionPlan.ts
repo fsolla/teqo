@@ -116,6 +116,7 @@ export const toggleActionPlanTaskRecord = async (
         depth: 0,
         user: currentActor,
         overrideAccess: false,
+        context: { mutationKind: 'taskToggle' },
         req,
       })
     },
@@ -159,6 +160,7 @@ export const appendActionPlanUpdateRecord = async (
         depth: 0,
         user: currentActor,
         overrideAccess: false,
+        context: { mutationKind: 'appendUpdate' },
         req,
       })
     },

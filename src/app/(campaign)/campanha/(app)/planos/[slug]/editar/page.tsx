@@ -2,10 +2,12 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 import { notFound, redirect } from 'next/navigation'
 
-import { searchActionPlanContactOptions } from '@/app/(campaign)/campanha/(app)/planos/contactSearchActions'
+import {
+  searchActionPlanContactOptions,
+  searchActionPlanLeadershipOptionsAction,
+} from '@/app/(campaign)/campanha/(app)/planos/contactSearchActions'
 import { updateActionPlanFormAction } from '@/app/(campaign)/campanha/(app)/planos/formActions'
 import { ActionPlanForm } from '@/components/campaign/ActionPlanForm'
-import { getActionPlanLeadershipOptions } from '@/utilities/actionPlanLeadershipOptions'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
   ActionPlanNotFoundError,
@@ -28,13 +30,12 @@ export default async function EditActionPlanPage({ params }: EditActionPlanPageP
   if (user.role === 'lideranca') redirect('/campanha/planos')
   if (!slug) notFound()
 
-  const [view, coordinators, leadershipOptions] = await Promise.all([
+  const [view, coordinators] = await Promise.all([
     getActionPlanEditPageData(payload, user, slug).catch((error) => {
       if (error instanceof ActionPlanNotFoundError) notFound()
       throw error
     }),
     getEligibleNucleusCoordinatorOptions(payload, user),
-    getActionPlanLeadershipOptions(payload, user),
   ])
 
   return (
@@ -51,9 +52,9 @@ export default async function EditActionPlanPage({ params }: EditActionPlanPageP
         plan={view}
         coordinators={coordinators}
         canManageCoordinators={user.role === 'geral'}
-        leadershipOptions={leadershipOptions}
         submitLabel="Salvar alterações"
         searchContacts={searchActionPlanContactOptions}
+        searchLeaderships={searchActionPlanLeadershipOptionsAction}
       />
     </div>
   )

@@ -1,6 +1,6 @@
 # Escala e DRY pós-C3 (planos de ação)
 
-Status: em andamento (parcial 2026-07-19)
+Status: entregue (2026-07-19)
 Atualizado em: 2026-07-19
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha C, item C7)
 Responsável: —
@@ -19,24 +19,9 @@ O C3 ([eventos-agenda-mobilizacao.md](eventos-agenda-mobilizacao.md)) entregou a
 
 Este plano é o registro canônico desses follow-ups. Sem ele, a agenda funciona em volume baixo, mas o DRY com núcleos e o custo por plano crescem com o feed de atualizações e a lista de "Próximos".
 
-**Entregue parcialmente (2026-07-19):** primeira fatia do C7 + cleanup do `/simplify` do mesmo dia.
+**Entregue (2026-07-19):** Fases 1–5 completas — composição territorial (`useCampaignTerritoryFieldsState` + `CampaignTerritoryCoreFields`), shell `AsyncSearchCombobox` (Contact + Primary + liderança), helpers FormData/URL, leituras por aba + `taskProgress` no detalhe + typeahead de liderança, short-circuit de hooks em toggle/append. Feed O(n) / collection `actionPlanUpdate` permanece condicional (fora de escopo).
 
-- **Fase 3 (parcial):** `src/utilities/campaignTerritoryFormData.ts` (`parseCampaignTerritoryFields` / `validateCampaignTerritoryFormData`); `nucleusFormData.ts` e `actionPlanFormData.ts` passam a consumir o helper compartilhado. `actionPlanUi.ts` já consome `campaignListUrl` (C6 F2 — não era débito aberto).
-- **Fase 4 (parcial):** colunas derivadas `taskTotal` / `taskDoneCount` no `beforeChange` de `ActionPlan.ts`; migration `20260719_014906_action_plan_list_perf` (backfill + índice parcial `action_plan_upcoming_start_at_idx`); lista usa contadores em `actionPlanListSelect` / `toActionPlanListViewModel` (sem hidratar `tasks`).
-- **Fase 4 (parcial):** busca de contato com mínimo de 2 caracteres/dígitos — `src/lib/contactSearchQuery.ts` (client + server); `ContactCombobox.tsx` + `contactSearchActions.ts`.
-- **Fase 5 (parcial):** `toggleActionPlanTaskRecord` / `appendActionPlanUpdateRecord` adquirem `acquireTextAdvisoryLocks` (`action-plan:${planId}`) e `findByID` com `select` mínimo (`tasks` / `updates`).
-- **Fase 1 (parcial):** export principal renomeado para `CampaignTerritoryFields`; `ActionPlanForm.tsx` atualizado (alias `NucleusTerritoryFields` removido no simplify — sem importadores restantes).
-
-**Débitos importantes do `/simplify` 2026-07-19 que ficaram de fora** (registrados abaixo nas fases correspondentes):
-
-1. **Short-circuit de hooks no toggle/append** — `setCanonicalActionPlanSlug` e `createCampaignTerritoryValidationHook` ainda rodam em todo `payload.update`, mesmo quando o payload só toca `tasks` ou `updates`; amplifica custo do hot path (Fase 5).
-2. **Composição territorial** — `NucleusTerritoryAndZonesFields` ainda duplica ~300 linhas de `CampaignTerritoryFields` (Fase 1).
-3. **Shell assíncrono de contato** — `ContactCombobox` vs `PrimaryContactCombobox` sem `AsyncContactCombobox` compartilhado (Fase 2).
-4. **Leituras por aba + typeahead de liderança** — detalhe/form ainda carregam arrays completos; prefetch de lideranças não virou search lazy (Fase 4).
-5. **`taskProgress` no detalhe** — overview do plano ainda filtra `tasks` inline em vez de reutilizar o padrão da lista (Fase 4).
-6. **Validadores de território duplicados** — `validateCampaignTerritoryFormData` (FormData/`FormDataBoundaryError`) vs `createCampaignTerritoryValidationHook` (Payload/`APIError`); unificar exige refactor transversal (fora do escopo deste item — ver nota em "Não escopo").
-7. **Feed de updates O(n)** — append continua read-modify-write do array inteiro; collection `actionPlanUpdate` só se medir volume (Fase 5, condicional).
-8. **`pg_trgm` em busca de contato** — já registrado no C8 ([escala-dry-pos-c6.md](escala-dry-pos-c6.md) Fase 2); não duplicar aqui.
+**Primeira fatia (2026-07-19):** FormData território, contadores lista + migration `20260719_014906_action_plan_list_perf`, locks advisory, `contactSearchQuery`, rename `CampaignTerritoryFields`.
 
 ## Objetivos
 
@@ -83,40 +68,40 @@ flowchart TD
     C6["C6 F2 campaignListUrl"] -.suave.-> F3
 ```
 
-### Fase 1 — Território UI composto _(pendente)_
+### Fase 1 — Território UI composto _(entregue)_
 
 - Extrair o bloco regions/cities/neighborhoods/locality/notes (+ chips) para um core compartilhado (hoje duplicado em `NucleusTerritoryFields.tsx` ≈ `NucleusTerritoryAndZonesFields.tsx`).
 - **`NucleusTerritoryAndZonesFields`**: compõe o core + `TseZoneInput` + sugestões de ZE (`buildTerritorySuggestions` / `outsideZones`).
 - **`ActionPlanForm`**: continua importando só o core (sem ZE).
-- **Entregue:** rename `CampaignTerritoryFields` + consumo no form de plano.
+- **Entregue:** rename `CampaignTerritoryFields` + consumo no form de plano; core `useCampaignTerritoryFieldsState` + `CampaignTerritoryCoreFields`.
 
-### Fase 2 — Contact picker único _(pendente)_
+### Fase 2 — Contact picker único _(entregue)_
 
 - Shell assíncrono (debounce, `requestId`, CommandDialog, loading/erro) a partir de `ContactCombobox.tsx`.
 - **`PrimaryContactCombobox`**: adapta `{ current, options }` / search de inteligência de núcleo para o shell (sem segundo Dialog).
 - Estado controlado (`value` + `onChange`); eliminar espelho pai/filho que o simplify apontou.
-- **Entregue:** helper `contactSearchQuery` (mín. 2 chars) — não substitui o shell compartilhado.
+- **Entregue:** `AsyncSearchCombobox` + adaptadores; helper `contactSearchQuery` (mín. 2 chars).
 
-### Fase 3 — Helpers FormData / URL _(parcialmente entregue)_
+### Fase 3 — Helpers FormData / URL _(entregue)_
 
 - **`validateCampaignTerritoryFormData` / `parseCampaignTerritoryFields`**: ✅ extraído para `campaignTerritoryFormData.ts`; `nucleusFormData.ts` e `actionPlanFormData.ts` consomem.
 - **URL de lista:** ✅ `actionPlanUi.ts` já consome `campaignListUrl.ts` (C6 F2).
 - Opcional: `actionPlanDetailTabUi` parametrizado com o helper genérico de tabs do detalhe de núcleo (só se o PR já tocar URL).
 
-### Fase 4 — Leituras _(parcialmente entregue)_
+### Fase 4 — Leituras _(entregue)_
 
-- **`[slug]/page.tsx`**: selects por aba (overview sem arrays; tarefas sem `updates`; atualizações com `depth: 0` + batch de autores) — espelhar o padrão de loaders por aba do detalhe de núcleo. _(pendente)_
+- **`[slug]/page.tsx`**: selects por aba via `getActionPlanDetailSelect` + `getActionPlanDetailPageData` (overview sem arrays; tarefas com `depth: 1`; atualizações com `depth: 0` + batch de autores).
 - **Lista:** ✅ `taskDoneCount` / `taskTotal` + `actionPlanListSelect` sem `tasks`.
-- **`getActionPlanLeadershipOptions` → search:** lazy no open do campo; `limit` baixo; sem `depth: 1` em massa. _(pendente)_
+- **`getActionPlanLeadershipOptions` → search:** ✅ `searchActionPlanLeadershipOptions` + `AsyncSearchCombobox` no form.
 - **`ContactCombobox`:** ✅ não fetch com query &lt; 2 chars (`contactSearchQuery.ts`).
-- **Detalhe:** expor `taskProgress` no view model do detalhe e substituir filtro inline de `tasks` na overview. _(pendente — débito do simplify)_
+- **Detalhe:** ✅ `taskProgress` no view model da overview (contadores, não filtro inline de `tasks`).
 
-### Fase 5 — Escritas + índice _(parcialmente entregue)_
+### Fase 5 — Escritas + índice _(entregue; feed O(n) condicional)_
 
 - **`toggleActionPlanTaskRecord` / `appendActionPlanUpdateRecord`:** ✅ locks advisory + `select` mínimo no `findByID`.
-- **Short-circuit de hooks:** em `setCanonicalActionPlanSlug` e `validateActionPlanTerritory`, retornar cedo quando `data` só contém `tasks` ou `updates` (via `context` explícito nas actions). _(pendente — débito de performance do simplify)_
+- **Short-circuit de hooks:** ✅ `context.mutationKind: 'taskToggle' | 'appendUpdate'` nas actions; hooks `beforeValidate` retornam cedo.
 - **Migration** `action_plan_list_perf`: ✅ contadores + índice parcial `action_plan_upcoming_start_at_idx` (`20260719_014906_action_plan_list_perf`).
-- **Feed O(n):** monitorar tamanho de `updates`; só então collection `actionPlanUpdate` append-only. _(condicional)_
+- **Feed O(n):** monitorar tamanho de `updates`; só então collection `actionPlanUpdate` append-only. _(condicional — não implementado)_
 
 **Migration:** Fases 1–3 sem schema. Migration `20260719_014906_action_plan_list_perf` ✅ entregue (contadores + índice parcial). Sem Consent novo.
 
@@ -146,8 +131,8 @@ flowchart TD
 - Review `/simplify` 2026-07-19 — débitos registrados nas fases pendentes acima
 - `src/lib/contactSearchQuery.ts` — guard compartilhado client/server (entregue)
 - `src/migrations/20260719_014906_action_plan_list_perf.ts` — contadores + índice parcial (entregue)
-- `src/components/campaign/NucleusTerritoryFields.tsx` / `NucleusTerritoryAndZonesFields.tsx`
-- `src/components/campaign/ContactCombobox.tsx` / `PrimaryContactCombobox.tsx`
+- `src/components/campaign/AsyncSearchCombobox.tsx` — shell assíncrono compartilhado (entregue)
+- `src/components/campaign/useCampaignTerritoryFieldsState.ts` / `CampaignTerritoryCoreFields.tsx` — core territorial (entregue)
 - `src/utilities/actionPlanFormData.ts` / `nucleusFormData.ts` / `actionPlanUi.ts`
 - `src/utilities/actionPlanPageData.ts` / `actionPlanViewModels.ts` / `actionPlanLeadershipOptions.ts`
 - `src/app/(campaign)/campanha/actions/actionPlan.ts` — toggle/append RMW

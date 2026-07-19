@@ -34,6 +34,9 @@ import { slugify } from '@/utilities/slug'
 
 const trimmedText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
 
+const isActionPlanMutationShortcut = (context: Record<string, unknown> | undefined) =>
+  context?.mutationKind === 'taskToggle' || context?.mutationKind === 'appendUpdate'
+
 const ACTION_PLAN_KIND_OPTIONS = actionPlanKinds.map((value) => ({
   value,
   label: actionPlanKindLabels[value],
@@ -65,15 +68,22 @@ const actionPlanStaffFieldSnapshot = (doc: Record<string, unknown>) => ({
   leadership: relationshipId(doc.leadership),
 })
 
-const validateActionPlanTerritory = createCampaignTerritoryValidationHook({
+const validateActionPlanTerritoryCore = createCampaignTerritoryValidationHook({
   entityLabel: 'plano',
 })
+
+const validateActionPlanTerritory: CollectionBeforeValidateHook = (args) => {
+  if (isActionPlanMutationShortcut(args.context)) return args.data
+  return validateActionPlanTerritoryCore(args)
+}
 
 const setCanonicalActionPlanSlug: CollectionBeforeValidateHook = ({
   data,
   operation,
   originalDoc,
+  context,
 }) => {
+  if (isActionPlanMutationShortcut(context)) return data
   if (!data) return data
   const title = trimmedText(data.title ?? originalDoc?.title)
   const slug = slugify(title)
@@ -92,7 +102,9 @@ const validateActionPlanSchedule: CollectionBeforeValidateHook = ({
   data,
   operation,
   originalDoc,
+  context,
 }) => {
+  if (isActionPlanMutationShortcut(context)) return data
   if (!data) return data
 
   const nextData = operation === 'update' ? { ...originalDoc, ...data } : data
@@ -118,7 +130,8 @@ const validateActionPlanSchedule: CollectionBeforeValidateHook = ({
   return data
 }
 
-const validateActionPlanCoordinators: CollectionBeforeValidateHook = async ({ data, req }) => {
+const validateActionPlanCoordinators: CollectionBeforeValidateHook = async ({ data, req, context }) => {
+  if (isActionPlanMutationShortcut(context)) return data
   if (!data) return data
   if (data.coordinators === undefined) return data
 
@@ -201,16 +214,18 @@ const deriveActionPlanFields: CollectionBeforeChangeHook = ({ data, operation, o
   }
 
   if (operation === 'update' && req.user?.collection === 'campaignUser' && req.user.role === 'lideranca') {
-    const previous = (originalDoc ?? {}) as Record<string, unknown>
-    const merged = { ...previous, ...(data as Record<string, unknown>) }
-    if (
-      JSON.stringify(actionPlanStaffFieldSnapshot(previous)) !==
-      JSON.stringify(actionPlanStaffFieldSnapshot(merged))
-    ) {
-      throw new APIError(
-        'Lideranças só podem marcar tarefas e registrar atualizações no plano.',
-        403,
-      )
+    if (!isActionPlanMutationShortcut(req.context)) {
+      const previous = (originalDoc ?? {}) as Record<string, unknown>
+      const merged = { ...previous, ...(data as Record<string, unknown>) }
+      if (
+        JSON.stringify(actionPlanStaffFieldSnapshot(previous)) !==
+        JSON.stringify(actionPlanStaffFieldSnapshot(merged))
+      ) {
+        throw new APIError(
+          'Lideranças só podem marcar tarefas e registrar atualizações no plano.',
+          403,
+        )
+      }
     }
 
     if (Array.isArray(data.tasks) && Array.isArray(originalDoc?.tasks)) {

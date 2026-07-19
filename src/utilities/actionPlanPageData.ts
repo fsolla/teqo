@@ -1,11 +1,11 @@
 import type { Payload } from 'payload'
 
 import type { ActionPlan, CampaignUser } from '@/payload-types'
+import type { ActionPlanDetailTab } from '@/utilities/actionPlanDetailTabUi'
 import {
-  actionPlanDetailSelect,
   actionPlanFormSelect,
   actionPlanListSelect,
-  toActionPlanDetailViewModel,
+  getActionPlanDetailSelect,
   toActionPlanFormViewModel,
 } from '@/utilities/actionPlanViewModels'
 import {
@@ -52,16 +52,20 @@ export const loadActionPlanListPageData = async (
   return { result, state }
 }
 
+const getActionPlanDetailQueryDepth = (activeTab: ActionPlanDetailTab): number =>
+  activeTab === 'updates' ? 0 : 1
+
 const loadAccessibleActionPlanBySlug = async (
   payload: Pick<Payload, 'find'>,
   user: CampaignUser,
   planSlug: string,
-  select: typeof actionPlanDetailSelect | typeof actionPlanFormSelect,
+  select: ReturnType<typeof getActionPlanDetailSelect> | typeof actionPlanFormSelect,
+  depth: number,
 ): Promise<ActionPlan> => {
   const result = await payload.find({
     collection: 'actionPlan',
     where: { slug: { equals: planSlug } },
-    depth: 1,
+    depth,
     limit: 1,
     pagination: false,
     select,
@@ -77,12 +81,14 @@ export const resolveAccessibleActionPlanContext = async (
   payload: Pick<Payload, 'find'>,
   user: CampaignUser,
   planSlug: string,
+  activeTab: ActionPlanDetailTab = 'overview',
 ): Promise<AccessibleActionPlanContext> => {
   const document = await loadAccessibleActionPlanBySlug(
     payload,
     user,
     planSlug,
-    actionPlanDetailSelect,
+    getActionPlanDetailSelect(activeTab),
+    getActionPlanDetailQueryDepth(activeTab),
   )
 
   return {
@@ -92,14 +98,11 @@ export const resolveAccessibleActionPlanContext = async (
   }
 }
 
-export const getActionPlanDetailPageData = (context: AccessibleActionPlanContext) =>
-  toActionPlanDetailViewModel(context.document)
-
 export const getActionPlanEditPageData = async (
   payload: Payload,
   user: CampaignUser,
   planSlug: string,
 ) =>
   toActionPlanFormViewModel(
-    await loadAccessibleActionPlanBySlug(payload, user, planSlug, actionPlanFormSelect),
+    await loadAccessibleActionPlanBySlug(payload, user, planSlug, actionPlanFormSelect, 1),
   )

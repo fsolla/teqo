@@ -1,4 +1,5 @@
 import type { ActionPlan, CampaignUser, Contact } from '@/payload-types'
+import type { ActionPlanDetailTab } from '@/utilities/actionPlanDetailTabUi'
 import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 
 const asStringArray = (value: string[] | null | undefined): string[] =>
@@ -175,7 +176,7 @@ export const toActionPlanFormViewModel = (plan: ActionPlan): ActionPlanFormViewM
   })),
 })
 
-export const actionPlanDetailSelect = {
+export const actionPlanDetailContextSelect = {
   title: true,
   slug: true,
   kind: true,
@@ -191,12 +192,30 @@ export const actionPlanDetailSelect = {
   territoryNotes: true,
   coordinators: true,
   responsible: true,
-  tasks: true,
-  updates: true,
   createdBy: true,
   updatedAt: true,
   createdAt: true,
 } as const
+
+export const getActionPlanDetailSelect = (activeTab: ActionPlanDetailTab) => {
+  if (activeTab === 'overview') {
+    return {
+      ...actionPlanDetailContextSelect,
+      taskDoneCount: true,
+      taskTotal: true,
+    } as const
+  }
+  if (activeTab === 'tasks') {
+    return {
+      ...actionPlanDetailContextSelect,
+      tasks: true,
+    } as const
+  }
+  return {
+    ...actionPlanDetailContextSelect,
+    updates: true,
+  } as const
+}
 
 export type ActionPlanTaskViewModel = {
   id: string | null
@@ -234,6 +253,7 @@ export type ActionPlanDetailViewModel = {
   coordinators: Array<{ id: number; name: string }>
   responsibleId: number | null
   responsibleName: string | null
+  taskProgress: { done: number; total: number }
   tasks: ActionPlanTaskViewModel[]
   updates: ActionPlanUpdateViewModel[]
   createdByName: string | null
@@ -241,7 +261,38 @@ export type ActionPlanDetailViewModel = {
   createdAt: string
 }
 
-export const toActionPlanDetailViewModel = (plan: ActionPlan): ActionPlanDetailViewModel => ({
+const mapActionPlanTasks = (plan: ActionPlan): ActionPlanTaskViewModel[] =>
+  (plan.tasks ?? []).map((task) => ({
+    id: task.id ?? null,
+    title: task.title,
+    responsibleId: relationshipId(task.responsible),
+    responsibleName: relationshipName(task.responsible),
+    due: task.due ?? null,
+    done: Boolean(task.done),
+    doneAt: task.doneAt ?? null,
+  }))
+
+export const mapActionPlanUpdates = (
+  plan: ActionPlan,
+  authorNamesById: ReadonlyMap<number, string> = new Map(),
+): ActionPlanUpdateViewModel[] =>
+  (plan.updates ?? []).map((update) => {
+    const authorId = relationshipId(update.author)
+    const populatedName = relationshipName(update.author)
+    return {
+      id: update.id ?? null,
+      body: update.body,
+      authorName:
+        populatedName ?? (authorId ? (authorNamesById.get(authorId) ?? null) : null),
+      createdAt: update.createdAt ?? null,
+    }
+  })
+
+export const toActionPlanDetailViewModel = (
+  plan: ActionPlan,
+  activeTab: ActionPlanDetailTab = 'overview',
+  authorNamesById: ReadonlyMap<number, string> = new Map(),
+): ActionPlanDetailViewModel => ({
   id: plan.id,
   title: plan.title,
   slug: plan.slug,
@@ -265,21 +316,13 @@ export const toActionPlanDetailViewModel = (plan: ActionPlan): ActionPlanDetailV
       .map(({ id, name }) => ({ id, name })) ?? [],
   responsibleId: relationshipId(plan.responsible),
   responsibleName: relationshipName(plan.responsible),
-  tasks: (plan.tasks ?? []).map((task) => ({
-    id: task.id ?? null,
-    title: task.title,
-    responsibleId: relationshipId(task.responsible),
-    responsibleName: relationshipName(task.responsible),
-    due: task.due ?? null,
-    done: Boolean(task.done),
-    doneAt: task.doneAt ?? null,
-  })),
-  updates: (plan.updates ?? []).map((update) => ({
-    id: update.id ?? null,
-    body: update.body,
-    authorName: relationshipName(update.author),
-    createdAt: update.createdAt ?? null,
-  })),
+  taskProgress: {
+    done: plan.taskDoneCount ?? 0,
+    total: plan.taskTotal ?? 0,
+  },
+  tasks: activeTab === 'tasks' ? mapActionPlanTasks(plan) : [],
+  updates:
+    activeTab === 'updates' ? mapActionPlanUpdates(plan, authorNamesById) : [],
   createdByName: relationshipName(plan.createdBy),
   updatedAt: plan.updatedAt,
   createdAt: plan.createdAt,

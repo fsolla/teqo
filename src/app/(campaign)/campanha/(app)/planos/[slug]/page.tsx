@@ -20,9 +20,9 @@ import { actionPlanKindLabels } from '@/lib/schemas/actionPlan'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
   ActionPlanNotFoundError,
-  getActionPlanDetailPageData,
   resolveAccessibleActionPlanContext,
 } from '@/utilities/actionPlanPageData'
+import { getActionPlanDetailPageData } from '@/utilities/actionPlanDetailPageData'
 import {
   getActionPlanDetailTabRedirect,
   resolveActionPlanDetailTab,
@@ -49,11 +49,13 @@ export default async function ActionPlanDetailPage({
   if (!slug) notFound()
 
   const activeTab = resolveActionPlanDetailTab(query)
-  const context = await resolveAccessibleActionPlanContext(payload, user, slug).catch((error) => {
-    if (error instanceof ActionPlanNotFoundError) notFound()
-    throw error
-  })
-  const view = getActionPlanDetailPageData(context)
+  const context = await resolveAccessibleActionPlanContext(payload, user, slug, activeTab).catch(
+    (error) => {
+      if (error instanceof ActionPlanNotFoundError) notFound()
+      throw error
+    },
+  )
+  const view = await getActionPlanDetailPageData(payload, user, context, activeTab)
   const canonicalTabRedirect = getActionPlanDetailTabRedirect(view.slug, query)
   if (canonicalTabRedirect) redirect(canonicalTabRedirect)
 
@@ -159,8 +161,7 @@ export default async function ActionPlanDetailPage({
                 <p className="text-muted-foreground">Nenhum coordenador vinculado.</p>
               )}
               <p className="text-muted-foreground">
-                {view.tasks.filter((task) => task.done).length}/{view.tasks.length} tarefas
-                concluídas
+                {view.taskProgress.done}/{view.taskProgress.total} tarefas concluídas
               </p>
               {view.createdByName ? (
                 <p className="text-muted-foreground">Criado por {view.createdByName}</p>

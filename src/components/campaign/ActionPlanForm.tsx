@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react'
 import Link from 'next/link'
 
 import { ContactCombobox, type ContactComboboxOption } from '@/components/campaign/ContactCombobox'
+import { AsyncSearchCombobox } from '@/components/campaign/AsyncSearchCombobox'
 import { ActionPlanTaskFields } from '@/components/campaign/ActionPlanTaskFields'
 import { CampaignTerritoryFields } from '@/components/campaign/NucleusTerritoryFields'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
@@ -21,15 +22,16 @@ import {
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
+import { Spinner } from '@/components/ui/Spinner'
 import { actionPlanKindLabels, actionPlanStatusLabels } from '@/lib/schemas/actionPlan'
+import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 import type { ActionPlanLeadershipOption } from '@/utilities/actionPlanLeadershipOptions'
 import type { ActionPlanFormViewModel } from '@/utilities/actionPlanViewModels'
+import { fieldError } from '@/utilities/campaignFormFields'
 import { formatIsoAsBahiaDateTimeInput } from '@/utilities/campaignTime'
 import type { NucleusCoordinatorOption } from '@/utilities/nucleusCoordinatorOptions'
-import { fieldError } from '@/utilities/campaignFormFields'
 
 export type ActionPlanFormState = {
   message?: string
@@ -43,16 +45,14 @@ type ActionPlanFormAction = (
   formData: FormData,
 ) => Promise<ActionPlanFormState>
 
-export type { ActionPlanLeadershipOption }
-
 export type ActionPlanFormFieldsProps = {
   coordinators?: NucleusCoordinatorOption[]
   canManageCoordinators?: boolean
-  leadershipOptions?: ActionPlanLeadershipOption[]
   plan?: ActionPlanFormViewModel
   fieldErrors?: Record<string, string[]>
   submittedTitle?: string
   searchContacts: (query: string) => Promise<ContactComboboxOption[]>
+  searchLeaderships: (query: string) => Promise<ActionPlanLeadershipOption[]>
 }
 
 const editableStatuses = ['rascunho', 'planejado'] as const
@@ -60,11 +60,11 @@ const editableStatuses = ['rascunho', 'planejado'] as const
 export const ActionPlanFormFields = ({
   coordinators = [],
   canManageCoordinators = false,
-  leadershipOptions = [],
   plan,
   fieldErrors = {},
   submittedTitle,
   searchContacts,
+  searchLeaderships,
 }: ActionPlanFormFieldsProps) => {
   const errorFor = (name: string) => fieldError(fieldErrors, name)
   const statusIsEditable =
@@ -78,6 +78,9 @@ export const ActionPlanFormFields = ({
     plan?.responsible
       ? { id: plan.responsible.id, name: plan.responsible.name, phone: plan.responsible.phone }
       : null,
+  )
+  const [leadership, setLeadership] = useState<{ id: number; label: string } | null>(
+    plan?.leadership ? { id: plan.leadership.id, label: plan.leadership.label } : null,
   )
 
   return (
@@ -300,22 +303,21 @@ export const ActionPlanFormFields = ({
             </Field>
 
             <Field data-invalid={Boolean(errorFor('leadership'))}>
-              <FieldLabel htmlFor="leadership">Liderança vinculada</FieldLabel>
-              <NativeSelect
-                id="leadership"
+              <FieldLabel>Liderança vinculada</FieldLabel>
+              <AsyncSearchCombobox
                 name="leadership"
-                defaultValue={plan?.leadership?.id ? String(plan.leadership.id) : ''}
-                aria-invalid={Boolean(errorFor('leadership'))}
-                aria-describedby={errorFor('leadership') ? 'leadership-error' : undefined}
-                className="w-full **:data-[slot=native-select]:min-h-11"
-              >
-                <NativeSelectOption value="">Nenhuma</NativeSelectOption>
-                {leadershipOptions.map((option) => (
-                  <NativeSelectOption key={option.id} value={String(option.id)}>
-                    {option.label}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+                label="Liderança vinculada"
+                value={leadership}
+                onChange={setLeadership}
+                search={async (query) => {
+                  const results = await searchLeaderships(query)
+                  return results.map((option) => ({ id: option.id, label: option.label }))
+                }}
+                emptyOptionLabel="Nenhuma"
+                dialogDescription="Busque lideranças engajadas por nome ou celular."
+                isQueryReady={isContactSearchQueryReady}
+                queryTooShortMessage="Digite ao menos dois caracteres para buscar."
+              />
               <FieldDescription>
                 Quando vinculada, a liderança engajada vê o plano e pode marcar tarefas e registrar
                 atualizações.
@@ -389,10 +391,10 @@ export const ActionPlanForm = ({
   action,
   coordinators,
   canManageCoordinators = false,
-  leadershipOptions = [],
   plan,
   submitLabel,
   searchContacts,
+  searchLeaderships,
 }: ActionPlanFormFieldsProps & {
   action: ActionPlanFormAction
   submitLabel: string
@@ -416,11 +418,11 @@ export const ActionPlanForm = ({
       <ActionPlanFormFields
         coordinators={coordinators}
         canManageCoordinators={canManageCoordinators}
-        leadershipOptions={leadershipOptions}
         plan={plan}
         fieldErrors={state.fieldErrors}
         submittedTitle={state.submittedTitle}
         searchContacts={searchContacts}
+        searchLeaderships={searchLeaderships}
       />
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Button asChild variant="outline" className="min-h-11">

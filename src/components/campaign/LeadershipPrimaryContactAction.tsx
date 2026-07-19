@@ -81,6 +81,11 @@ export const LeadershipPrimaryContactAction = ({
     router.refresh()
   }, [router, state.message, state.status])
 
+  const displayState = state.status === 'success' ? {} : state
+  const nucleusError = fieldError(displayState.fieldErrors, 'nucleus')
+  const contactError = fieldError(displayState.fieldErrors, 'contact')
+  const hasError = Boolean(displayState.message || nucleusError || contactError)
+
   return (
     <form
       action={action}
@@ -89,7 +94,7 @@ export const LeadershipPrimaryContactAction = ({
       <PrimaryContactFormFields
         nucleusId={nucleusId}
         contactId={contactId}
-        state={state.status === 'success' ? {} : state}
+        state={displayState}
       />
       <Button type="submit" variant="outline" className="min-h-11 w-full" disabled={pending}>
         {pending ? (
