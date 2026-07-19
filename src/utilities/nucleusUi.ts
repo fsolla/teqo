@@ -211,6 +211,43 @@ export const resolveNucleusListUrl = (
     totalPages,
   })
 
+export const nucleusListCoverageLabels: Record<NonNullable<NucleusListState['coverage']>, string> = {
+  com_coordenador: 'Com coordenador',
+  sem_coordenador: 'Sem coordenador',
+}
+
+export const nucleusListEstimateLabels: Record<NonNullable<NucleusListState['estimate']>, string> = {
+  confirmada: 'Confirmada',
+  sem_confirmacao: 'Sem confirmação',
+}
+
+const nucleusListVisitEstimateLabels: Record<NonNullable<NucleusListState['estimate']>, string> = {
+  ...nucleusListEstimateLabels,
+  confirmada: 'Estimativa confirmada',
+}
+
+const MAX_NUCLEUS_LIST_VISIT_LABEL_LENGTH = 80
+
+export const buildNucleusListVisitLabel = (state: NucleusListState): string | null => {
+  const parts: string[] = []
+
+  if (state.region) parts.push(state.region)
+  if (state.city) parts.push(state.city)
+  if (state.tseZone) parts.push(`Zona ${state.tseZone}`)
+  if (state.coverage) parts.push(nucleusListCoverageLabels[state.coverage])
+  if (state.estimate) parts.push(nucleusListVisitEstimateLabels[state.estimate])
+  if (state.q) parts.push(`Busca "${state.q}"`)
+
+  if (!parts.length) return null
+
+  const label = `Núcleos · ${parts.join(' · ')}`
+  if (label.length <= MAX_NUCLEUS_LIST_VISIT_LABEL_LENGTH) return label
+  return `${label.slice(0, MAX_NUCLEUS_LIST_VISIT_LABEL_LENGTH - 1)}…`
+}
+
+export const buildNucleusListVisitHref = (state: NucleusListState): string =>
+  buildNucleusListHref(state, 1)
+
 export const getCampaignScopeLabel = (role: CampaignUser['role'], nucleusCount: number): string => {
   if (role === 'coordenador') {
     return `${nucleusCount} ${nucleusCount === 1 ? 'núcleo' : 'núcleos'} sob sua coordenação`

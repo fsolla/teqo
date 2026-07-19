@@ -17,6 +17,7 @@ import { CoordinatorAssignmentCard } from '@/components/campaign/CoordinatorAssi
 import { CoordinatorAssignmentDialog } from '@/components/campaign/CoordinatorAssignmentDialog'
 import { NucleusActiveTab, NucleusActiveTabLoading } from '@/components/campaign/NucleusActiveTab'
 import { NucleusTabNav } from '@/components/campaign/NucleusTabNav'
+import { RecentVisitTracker } from '@/components/campaign/RecentVisitTracker'
 import { ShareNucleusDialogShell } from '@/components/campaign/ShareNucleusDialogShell'
 import { TseZoneBadge } from '@/components/campaign/TseZoneBadge'
 import { VoteEstimateCard } from '@/components/campaign/VoteEstimateCard'
@@ -213,6 +214,13 @@ export default async function NucleusDetailPage({ params, searchParams }: Nucleu
           view={view}
         />
       </Suspense>
+      <RecentVisitTracker
+        entry={{
+          href: `/campanha/nucleos/${view.slug}`,
+          label: view.name,
+          kind: 'nucleus',
+        }}
+      />
     </div>
   )
 }

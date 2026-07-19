@@ -1,7 +1,7 @@
 # Visitados recentemente
 
-Status: rascunho
-Atualizado em: 2026-07-17
+Status: implementado
+Atualizado em: 2026-07-19
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 
@@ -43,14 +43,16 @@ A `window.history` **não expõe** a lista de entradas (URLs) da stack por motiv
 
 ## Questões em aberto
 
-- **Registrar listagem só com filtro ativo?** **Recomendação:** sim — a listagem sem filtro é o destino padrão do menu e não agrega. Definir com produto se faz sentido registrar também buscas (`q=`) isoladas.
-- **Valor exato do dwell.** Default proposto: 2000 ms. Muito curto registra estados intermediários; muito longo perde visitas rápidas legítimas (ex.: abrir um núcleo só para checar um dado). **Recomendação:** 2000 ms como ponto de partida, ajustar com uso. Definir com produto.
-- **Formato da label do filtro.** Ex.: `Núcleos · Região X`, `Núcleos · Cidade Y · Com estimativa pendente`, `Núcleos · Busca "solla"`. **Recomendação:** label composta curta a partir do `NucleusListState` (território + cobertura + busca), truncada. Definir os rótulos exatos com produto.
-- **Onde mais mostrar, além do dashboard?** **Recomendação:** só no dashboard `/campanha` neste ciclo (é o "Início", landing natural). Repetir no topo da listagem de núcleos é opcional e pode poluir — deixar para depois.
-- **Limpeza de entradas obsoletas.** Hoje best-effort (link existe, destino pode negar). **Recomendação:** não limpar reativamente neste ciclo; o usuário pode limpar manualmente via botão "Limpar" no painel. Se virar confusão, adicionar poda ao clicar em entrada que resulta em acesso negado.
-- **Dispositivo compartilhado.** `localStorage` é por origem; em dispositivo compartilhado, um usuário vê histórico de outro (mesma origem). Não há PII de terceiros, mas nomes de núcleo são internos da campanha. **Recomendação:** aceitar (mesma superfície de qualquer app web nesta origem); se produto exigir isolamento, limpar ao `logoutCampaign` (já é client-side e barato).
-- **Limpar ao deslogar?** **Recomendação:** sim — chamar `clearRecentVisits()` em `logoutCampaign` para não vazar histórico local na troca de usuário em dispositivo compartilhado. Confirmar com produto.
-- **PWA/offline.** O painel lê `localStorage`, então funciona offline (depende do item PWA do roadmap estar em pé para o modo offline; sem PWA, funciona online normalmente). Sem dependência dura neste plano.
+Resolvidas na implementação (2026-07-19):
+
+- **Registrar listagem só com filtro ativo?** Sim — `buildNucleusListVisitLabel` retorna `null` sem filtros; `q=` conta; só `page` não conta.
+- **Valor exato do dwell.** 2000 ms (`RECORD_DWELL_MS` em `recentVisits.ts`).
+- **Formato da label do filtro.** `Núcleos · {região} · {município} · Zona N · {cobertura} · {estimativa} · Busca "…"`, truncada em 80 caracteres.
+- **Onde mais mostrar, além do dashboard?** Só no dashboard `/campanha` (três variantes por role).
+- **Limpeza de entradas obsoletas.** Best-effort; botão "Limpar" no painel.
+- **Dispositivo compartilhado.** Aceito; histórico limpo no logout.
+- **Limpar ao deslogar?** Sim — `clearRecentVisits()` em `CampaignSidebar.handleLogout` (client-side, junto com `clearCampaignPwaCaches`).
+- **PWA/offline.** Painel lê `localStorage`; funciona offline quando o PWA estiver ativo.
 
 ## Abordagem proposta
 
@@ -100,7 +102,7 @@ Componentes:
 - **Integração no dashboard** (`src/app/(campaign)/campanha/(app)/page.tsx` + `CampaignDashboard.tsx`): renderizar `<RecentlyVisited />` como um painel (recomendação: no topo, antes dos agregados, como atalho de "voltar aonde estava"; confirmar com produto). Como é client-only, o servidor renderiza o placeholder vazio e o cliente preenche.
 - **Integração no detalhe do núcleo** (`src/app/(campaign)/campanha/(app)/nucleos/[slug]/page.tsx`): renderizar `<RecentVisitTracker entry={{ href: \`/campanha/nucleos/${slug}\`, label: nucleus.name, kind: 'nucleus' }} />` (invisível).
 - **Integração na listagem** (`src/app/(campaign)/campanha/(app)/nucleos/page.tsx`): computar `label = buildNucleusListVisitLabel(state)`; se `label` não for `null`, renderizar `<RecentVisitTracker entry={{ href: canonicalUrl.href, label, kind: 'nucleusList' }} />` (invisível).
-- **Logout** (`src/app/(campaign)/campanha/actions/auth.ts`): chamar `clearRecentVisits()` em `logoutCampaign` (se confirmado) — protege dispositivo compartilhado.
+- **Logout** ([`src/components/campaign/CampaignSidebar.tsx`](src/components/campaign/CampaignSidebar.tsx)): `clearRecentVisits()` em `handleLogout`, junto com `clearCampaignPwaCaches()` — protege dispositivo compartilhado.
 - **Sem migration, sem collection, sem server action de escrita.** Tudo é leitura no servidor + estado client-side.
 
 ## Dependências
@@ -116,12 +118,17 @@ Componentes:
 - Registro de telemetria/analytics — este é histórico de navegação local do usuário, não rastreamento para a campanha.
 - Substituir a navegação principal (sidebar/bottom nav) — o painel é atalho complementar.
 
+## Escala e DRY pós-MVP (VR+)
+
+Três passagens `/simplify` (2026-07-19) aplicaram cleanup pontual no MVP. Débitos **maiores que cleanup** — refresh confiável após bfcache/multi-tab, unificação de tempo relativo no dashboard, shell compartilhado de linha de lista (`QueueList` ↔ `RecentlyVisited`), hoisting do painel no wrapper do dashboard — foram registrados no plano de follow-up **[escala-dry-pos-visitados-recentemente.md](escala-dry-pos-visitados-recentemente.md)** (item **VR+** em [docs/roadmap.md](../roadmap.md), fill-ins).
+
 ## Referências
 
-- `docs/roadmap.md` (seção "Campanha → Próximos ciclos", item "Visitados recentemente")
+- `docs/roadmap.md` (fill-ins: Visitados recentemente ✓, VR+)
+- [escala-dry-pos-visitados-recentemente.md](escala-dry-pos-visitados-recentemente.md) — débitos pós-`/simplify`
 - `src/app/(campaign)/campanha/(app)/page.tsx` e `src/components/campaign/CampaignDashboard.tsx` — onde o painel entra
 - `src/app/(campaign)/campanha/(app)/nucleos/page.tsx` — listagem (registro de filtro)
 - `src/app/(campaign)/campanha/(app)/nucleos/[slug]/page.tsx` — detalhe (registro de núcleo)
 - `src/utilities/nucleusUi.ts` — `NucleusListState`, `resolveNucleusListUrl` (canonicalização do `href`/label)
-- `src/app/(campaign)/campanha/actions/auth.ts` — `logoutCampaign` (limpeza opcional)
+- `src/app/(campaign)/campanha/actions/auth.ts` — `logoutCampaign` (server action; limpeza do histórico fica no client)
 - AGENTS.md — Campaign auth, naming conventions (identificadores em inglês, strings em pt-BR)
