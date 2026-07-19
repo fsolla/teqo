@@ -1,6 +1,6 @@
 'use client'
 
-import { createCampaignClientDynamic } from '@/components/campaign/createCampaignClientDynamic'
+import { createCampaignClientDynamic } from '@/components/campaign/CreateCampaignClientDynamic'
 
 const NucleusDetailMap = createCampaignClientDynamic<{
   codareas: string[]

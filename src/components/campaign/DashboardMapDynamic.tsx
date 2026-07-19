@@ -1,6 +1,6 @@
 'use client'
 
-import { createCampaignClientDynamic } from '@/components/campaign/createCampaignClientDynamic'
+import { createCampaignClientDynamic } from '@/components/campaign/CreateCampaignClientDynamic'
 import type { NucleusChoroplethBundle } from '@/utilities/nucleusChoroplethTypes'
 
 const DashboardMap = createCampaignClientDynamic<{ choropleth: NucleusChoroplethBundle }>(
