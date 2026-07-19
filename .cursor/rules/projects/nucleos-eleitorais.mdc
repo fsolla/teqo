@@ -48,6 +48,7 @@ alwaysApply: false
 - **Em 2026-07-19, C9 Escala e DRY pós-C8 entregue:** `supporterListFilters.ts` (filtro unificado Payload↔SQL + `contactSearchQuery`), `loadSupportersPageData` (1× lookup de núcleos do coordenador), `apoiadores/[id]/formActions` no mapper compartilhado, `fieldError` nos 8 componentes de form restantes. Plano: [`docs/plans/escala-dry-pos-c8.md`](../../../docs/plans/escala-dry-pos-c8.md).
 - **Em 2026-07-19, C10 Escala e DRY pós-C9 registrado** (após `/simplify` do C9): dedup de access na lista (`req.context`), query única de núcleos do coordenador, `errorProps` nos forms grandes. Plano: [`docs/plans/escala-dry-pos-c9.md`](../../../docs/plans/escala-dry-pos-c9.md).
 - **Em 2026-07-19, C11 Escala e DRY pós-C7 registrado** (após `/simplify` do C7): feed O(n) condicional, loaders do detalhe + `loadCampaignUserNamesById`, selects por aba, hot paths mutação/form, utilities de busca/label. Plano: [`docs/plans/escala-dry-pos-c7.md`](../../../docs/plans/escala-dry-pos-c7.md).
+- **Em 2026-07-19, Field Desk polish (Impeccable) + débitos FD+/FD2:** quieter→polish em `/campanha` (critique 28→32); shells/strips/freshness/filas-first. Débitos `/simplify` → **FD+** ([`escala-dry-pos-field-desk.md`](../../../docs/plans/escala-dry-pos-field-desk.md)); débitos de UX/produto do critique não implementados → **FD2** ([`field-desk-ux-pos-critique.md`](../../../docs/plans/field-desk-ux-pos-critique.md)).
 
 ## Decisões
 

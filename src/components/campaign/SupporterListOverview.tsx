@@ -1,31 +1,39 @@
+import { CampaignDataFreshness } from '@/components/campaign/CampaignDataFreshness'
+import { CampaignMetricStrip } from '@/components/campaign/CampaignMetricStrip'
 import type { SupporterListOverviewViewModel } from '@/utilities/supporterViewModels'
 
 const numberFormatter = new Intl.NumberFormat('pt-BR')
 
 export const SupporterListOverview = ({
   view,
+  now,
 }: {
   view: SupporterListOverviewViewModel
+  now: Date
 }) => (
-  <section aria-labelledby="supporter-list-overview" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-    <h2 id="supporter-list-overview" className="sr-only">
-      Indicadores dos apoiadores filtrados
-    </h2>
-    <div className="rounded-[6px] border bg-card p-4 text-center">
-      <p className="text-2xl font-bold tabular-nums">{numberFormatter.format(view.total)}</p>
-      <p className="text-sm text-muted-foreground">Total</p>
+  <section aria-labelledby="supporter-list-overview" className="flex flex-col gap-2">
+    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+      <h2 id="supporter-list-overview" className="sr-only">
+        Indicadores dos apoiadores filtrados
+      </h2>
+      <CampaignDataFreshness asOf={now} />
     </div>
-    <div className="rounded-[6px] border bg-card p-4 text-center">
-      <p className="text-2xl font-bold tabular-nums text-estimate-confirmed-foreground">
-        {numberFormatter.format(view.certoAndTende)}
-      </p>
-      <p className="text-sm text-muted-foreground">Certo + Tende</p>
-    </div>
-    <div className="rounded-[6px] border bg-card p-4 text-center">
-      <p className="text-2xl font-bold tabular-nums text-estimate-pending-foreground">
-        {numberFormatter.format(view.indeciso)}
-      </p>
-      <p className="text-sm text-muted-foreground">Indecisos</p>
-    </div>
+    <CampaignMetricStrip
+      metrics={[
+        {
+          label: 'Total',
+          value: numberFormatter.format(view.total),
+        },
+        {
+          label: 'Certo + Tende',
+          value: numberFormatter.format(view.certoAndTende),
+          emphasize: true,
+        },
+        {
+          label: 'Indecisos',
+          value: numberFormatter.format(view.indeciso),
+        },
+      ]}
+    />
   </section>
 )

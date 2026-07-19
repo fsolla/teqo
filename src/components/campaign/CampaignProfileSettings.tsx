@@ -13,7 +13,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
-import type { CampaignUser } from '@/payload-types'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 import { campaignRoleLabels, type CampaignUserShellView } from '@/utilities/campaignUserProfile'
@@ -137,7 +136,12 @@ export const CampaignProfileSettings = ({
           <FormActionStatus state={removeAvatarState} />
           {user.avatarUrl ? (
             <form action={removeAvatarAction} className="mt-2">
-              <Button type="submit" variant="outline" className="min-h-11" disabled={removeAvatarPending}>
+              <Button
+                type="submit"
+                variant="outline"
+                className="min-h-11"
+                disabled={removeAvatarPending}
+              >
                 Remover foto
               </Button>
             </form>
@@ -151,7 +155,7 @@ export const CampaignProfileSettings = ({
           <CardDescription>
             {user.email
               ? 'Use sua senha atual para definir uma nova.'
-              : 'Se você esqueceu a senha, peça um novo convite de acesso ao coordenador.'}
+              : 'Se você esqueceu a senha e acessa só com celular, peça um novo convite de acesso ao coordenador.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -200,7 +204,9 @@ export const CampaignProfileSettings = ({
                 <FieldError>{fieldError(passwordState.fieldErrors, 'password')}</FieldError>
               ) : null}
               {fieldError(passwordState.fieldErrors, 'passwordConfirmation') ? (
-                <FieldError>{fieldError(passwordState.fieldErrors, 'passwordConfirmation')}</FieldError>
+                <FieldError>
+                  {fieldError(passwordState.fieldErrors, 'passwordConfirmation')}
+                </FieldError>
               ) : null}
               <Button type="submit" className="min-h-11" disabled={passwordPending}>
                 {passwordPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}

@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
+import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
+import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { NucleusFilters } from '@/components/campaign/NucleusFilters'
 import { NucleusList } from '@/components/campaign/NucleusList'
 import { NucleusListOverview } from '@/components/campaign/NucleusListOverview'
@@ -58,10 +59,10 @@ export default async function NucleiPage({ searchParams }: NucleiPageProps) {
   const listVisitLabel = buildNucleusListVisitLabel(state)
 
   return (
-    <div className="mr-auto flex w-full max-w-screen-2xl flex-col gap-6">
+    <CampaignPageShell>
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Núcleos Eleitorais</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Núcleos Eleitorais</h1>
           <p className="text-muted-foreground">
             Núcleo é a operação da campanha; Zona TSE é a circunscrição oficial.
           </p>
@@ -89,7 +90,7 @@ export default async function NucleiPage({ searchParams }: NucleiPageProps) {
               toNucleusListViewModel(nucleus as ElectoralNucleus),
             )}
           />
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-2">
             <p className="text-sm text-muted-foreground">
               {result.totalDocs}{' '}
               {result.totalDocs === 1 ? 'núcleo encontrado' : 'núcleos encontrados'}
@@ -128,6 +129,6 @@ export default async function NucleiPage({ searchParams }: NucleiPageProps) {
           }}
         />
       ) : null}
-    </div>
+    </CampaignPageShell>
   )
 }

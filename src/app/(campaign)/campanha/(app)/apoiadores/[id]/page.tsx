@@ -72,7 +72,7 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
         <CampaignScopeBadge>
           {isCampaignGeneral(user) ? 'Coordenação geral' : 'Coordenação de núcleo'}
         </CampaignScopeBadge>
-        <h1 className="text-2xl font-bold tracking-tight">{supporter.name}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{supporter.name}</h1>
         <p className="text-muted-foreground">
           {supporter.city ?? 'Município não informado'}
           {supporter.territory ? ` · ${supporter.territory}` : ''}

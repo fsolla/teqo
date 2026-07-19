@@ -29,7 +29,7 @@ export default async function NewSupporterPage() {
         <CampaignScopeBadge>
           {isCampaignGeneral(user) ? 'Coordenação geral' : 'Coordenação de núcleo'}
         </CampaignScopeBadge>
-        <h1 className="text-2xl font-bold tracking-tight">Novo apoiador</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Novo apoiador</h1>
         <p className="text-muted-foreground">
           Cadastre um apoiador com telefone obrigatório e consentimento LGPD.
         </p>

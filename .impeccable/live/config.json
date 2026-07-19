@@ -1,0 +1,9 @@
+{
+  "files": [
+    "src/app/(frontend)/layout.tsx",
+    "src/app/(campaign)/layout.tsx"
+  ],
+  "insertBefore": "</body>",
+  "commentSyntax": "jsx",
+  "cspChecked": true
+}

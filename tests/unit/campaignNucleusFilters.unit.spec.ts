@@ -1,5 +1,5 @@
-import { createElement } from 'react'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { createElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const replace = vi.fn()
@@ -105,29 +105,42 @@ describe('campaign nucleus automatic filters', () => {
     }
   })
 
-  it('uses a 44px semantic mobile disclosure button controlling the single filters tree', () => {
-    render(createElement(NucleusFilters, { state: initialState }))
+  it('keeps territory filters visible and discloses advanced filters behind Mais filtros', () => {
+    render(createElement(NucleusFilters, { state: { page: 1 } }))
 
-    const button = screen.getByRole('button', { name: 'Filtros' })
+    expect(screen.getByLabelText('Território de identidade')).toBeTruthy()
+    expect(screen.getByLabelText('Município')).toBeTruthy()
+    expect(screen.getByLabelText('Nº da ZE')).toBeTruthy()
+
+    const button = screen.getByRole('button', { name: 'Mais filtros' })
     const controlsID = button.getAttribute('aria-controls')
     const controls = controlsID ? document.getElementById(controlsID) : null
 
     expect(document.querySelector('details')).toBeNull()
     expect(button.className).toContain('min-h-11')
-    expect(button.className).toContain('lg:hidden')
     expect(button.getAttribute('aria-expanded')).toBe('false')
     expect(controls).not.toBeNull()
-    expect(controls?.className).toContain('hidden')
-    expect(controls?.className).toContain('lg:block')
+    expect(controls?.hasAttribute('hidden')).toBe(true)
+    expect(controls?.getAttribute('hidden')).not.toBeNull()
 
     fireEvent.click(button)
     expect(button.getAttribute('aria-expanded')).toBe('true')
-    expect(controls?.className).toContain('block')
+    expect(controls?.hasAttribute('hidden')).toBe(false)
+    expect(screen.getByLabelText('Cobertura')).toBeTruthy()
     expect(screen.getAllByLabelText('Território de identidade')).toHaveLength(1)
 
     fireEvent.click(button)
     expect(button.getAttribute('aria-expanded')).toBe('false')
-    expect(controls?.className).toContain('hidden')
+    expect(controls?.hasAttribute('hidden')).toBe(true)
+  })
+
+  it('opens advanced filters by default when coverage/estimate/priority are already in the URL', () => {
+    render(createElement(NucleusFilters, { state: initialState }))
+
+    expect(
+      screen.getByRole('button', { name: /Mais filtros \(2\)/ }).getAttribute('aria-expanded'),
+    ).toBe('true')
+    expect(screen.getByLabelText('Cobertura')).toBeTruthy()
   })
 
   it('applies selects and valid ZE immediately while preserving the other URL filters', async () => {
@@ -150,13 +163,13 @@ describe('campaign nucleus automatic filters', () => {
   it.each(['01', '5e1', '58.0', '+58', '-58', ' 58', '58 ', '1000'])(
     'rejects client ZE value %j without replacing the server query',
     (value) => {
-    render(createElement(NucleusFilters, { state: initialState }))
+      render(createElement(NucleusFilters, { state: initialState }))
 
-    const zone = screen.getByLabelText('Nº da ZE')
+      const zone = screen.getByLabelText('Nº da ZE')
       fireEvent.change(zone, { target: { value } })
 
-    expect(replace).not.toHaveBeenCalled()
-    expect(screen.getByText('Informe uma Zona Eleitoral de 1 a 999.')).toBeTruthy()
+      expect(replace).not.toHaveBeenCalled()
+      expect(screen.getByText('Informe uma Zona Eleitoral de 1 a 999.')).toBeTruthy()
     },
   )
 
@@ -198,12 +211,11 @@ describe('campaign nucleus automatic filters', () => {
       }),
     )
 
-    expect(
-      (screen.getByLabelText('Território de identidade') as HTMLInputElement).value,
-    ).toBe('Itaparica')
-    expect((screen.getByLabelText('Município') as HTMLInputElement).value).toBe(
-      'Paulo Afonso',
+    expect((screen.getByLabelText('Território de identidade') as HTMLInputElement).value).toBe(
+      'Itaparica',
     )
+    expect((screen.getByLabelText('Município') as HTMLInputElement).value).toBe('Paulo Afonso')
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }))
     expect((screen.getByLabelText('Cobertura') as HTMLSelectElement).value).toBe('')
     expect(
       (screen.getByLabelText('Buscar núcleo ou número da Zona TSE') as HTMLInputElement).value,
@@ -225,15 +237,15 @@ describe('campaign nucleus automatic filters', () => {
   it('removes non-canonical state before emitting a client update', async () => {
     render(createElement(NucleusFilters, { state: { page: 1 } }))
 
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }))
     fireEvent.change(screen.getByLabelText('Cobertura'), {
       target: { value: 'com_coordenador' },
     })
 
     await waitFor(() =>
-      expect(replace).toHaveBeenLastCalledWith(
-        '/campanha/nucleos?coverage=com_coordenador',
-        { scroll: false },
-      ),
+      expect(replace).toHaveBeenLastCalledWith('/campanha/nucleos?coverage=com_coordenador', {
+        scroll: false,
+      }),
     )
   })
 
@@ -387,9 +399,11 @@ describe('campaign nucleus server filter parsing', () => {
     const resolved = resolveNucleusListUrl(params)
 
     expect(resolved.redirectHref).toBeUndefined()
-    expect(resolveNucleusListUrl(Object.fromEntries(new URL(resolved.href, 'https://teqo.test').searchParams))).toEqual(
-      resolved,
-    )
+    expect(
+      resolveNucleusListUrl(
+        Object.fromEntries(new URL(resolved.href, 'https://teqo.test').searchParams),
+      ),
+    ).toEqual(resolved)
   })
 
   it('redirects valid parameters supplied out of canonical order', () => {
@@ -400,9 +414,7 @@ describe('campaign nucleus server filter parsing', () => {
         region: 'Chapada Diamantina',
         q: 'Chapada',
       }).redirectHref,
-    ).toBe(
-      '/campanha/nucleos?q=Chapada&region=Chapada+Diamantina&city=Seabra&page=2',
-    )
+    ).toBe('/campanha/nucleos?q=Chapada&region=Chapada+Diamantina&city=Seabra&page=2')
   })
 
   it('uses the same canonical resolver for out-of-range pagination', () => {
@@ -484,9 +496,7 @@ describe('campaign nucleus server filter parsing', () => {
         },
         2,
       ),
-    ).toBe(
-      '/campanha/nucleos?region=Chapada+Diamantina&city=Mucug%C3%AA&tseZone=50&page=2',
-    )
+    ).toBe('/campanha/nucleos?region=Chapada+Diamantina&city=Mucug%C3%AA&tseZone=50&page=2')
 
     expect(
       buildNucleusListHref(

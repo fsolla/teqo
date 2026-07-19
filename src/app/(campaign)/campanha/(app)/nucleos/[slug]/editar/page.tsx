@@ -34,7 +34,7 @@ export default async function EditNucleusPage({ params }: EditNucleusPageProps) 
             : 'Edição · Núcleo sob sua coordenação'}
         </CampaignScopeBadge>
         <p className="text-sm font-medium text-primary">Núcleos Eleitorais</p>
-        <h1 className="text-2xl font-bold tracking-tight">Editar {view.name}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Editar {view.name}</h1>
         <p className="text-muted-foreground">
           Atualize o território sem alterar o nome ou as estimativas confirmadas.
         </p>

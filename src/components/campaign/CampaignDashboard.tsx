@@ -8,6 +8,12 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 
+import { CampaignDataFreshness } from '@/components/campaign/CampaignDataFreshness'
+import { CampaignMetricStrip } from '@/components/campaign/CampaignMetricStrip'
+import {
+  CampaignPageShell,
+  campaignPrioritySurfaceClassName,
+} from '@/components/campaign/CampaignPageShell'
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { NucleusCard } from '@/components/campaign/NucleusCard'
 import { RecentlyVisited } from '@/components/campaign/RecentlyVisited'
@@ -28,29 +34,28 @@ import {
   EmptyContent,
   EmptyDescription,
   EmptyHeader,
+  EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { Progress } from '@/components/ui/Progress'
 import { actionPlanKindLabels } from '@/lib/schemas/actionPlan'
 import { leadershipSupportStatuses } from '@/lib/schemas/leadership'
 import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
-import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 import type {
   DashboardQueueItem,
   GeneralDashboardViewModel,
   ScopedDashboardViewModel,
 } from '@/utilities/campaignDashboardViewModels'
+import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
+import { formatRelativeAge } from '@/utilities/formatRelativeAge'
 import { buildLeadershipPanelHref } from '@/utilities/leadershipUi'
 import { getCampaignScopeLabel } from '@/utilities/nucleusUi'
 import { buildWhatsAppUrl } from '@/utilities/phone'
 
 const numberFormatter = new Intl.NumberFormat('pt-BR')
-const relativeFormatter = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' })
 
 const lastUpdateLabel = (value: string | null, now: Date): string => {
   if (!value) return 'Nenhuma atualização'
-  const days = Math.floor((new Date(value).getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
-  return `Última atualização ${relativeFormatter.format(days, 'day')}`
+  return `Última atualização ${formatRelativeAge(new Date(value).getTime(), now.getTime())}`
 }
 
 export const buildDashboardQueueItemHref = (
@@ -58,68 +63,52 @@ export const buildDashboardQueueItemHref = (
   openCoordinatorAssignment: boolean,
 ): string => `/campanha/nucleos/${slug}${openCoordinatorAssignment ? '?assignCoordinators=1' : ''}`
 
-const KpiCard = ({
-  label,
-  value,
-  progress,
-}: {
-  label: string
-  value: string
-  progress?: number
-}) => (
-  <Card>
-    <CardHeader>
-      <CardDescription>{label}</CardDescription>
-      <CardTitle className="text-2xl tabular-nums">{value}</CardTitle>
-    </CardHeader>
-    {progress !== undefined ? (
-      <CardContent>
-        <Progress value={progress} aria-label={`${label}: ${progress}%`} />
-      </CardContent>
-    ) : null}
-  </Card>
-)
-
-const QueueList = ({
+const QueueSection = ({
   title,
   items,
   empty,
+  priority = false,
   openCoordinatorAssignment = false,
 }: {
   title: string
   items: DashboardQueueItem[]
   empty: string
+  priority?: boolean
   openCoordinatorAssignment?: boolean
 }) => (
-  <Card>
-    <CardHeader className="flex-row items-center justify-between">
-      <CardTitle>{title}</CardTitle>
-      <Badge variant={items.length ? 'estimate-pending' : 'secondary'}>{items.length}</Badge>
-    </CardHeader>
-    <CardContent>
-      {items.length ? (
-        <ul className="flex flex-col gap-1">
-          {items.map((item) => (
-            <li key={item.id}>
-              <Button asChild variant="ghost" className="h-auto min-h-11 w-full justify-between">
-                <Link href={buildDashboardQueueItemHref(item.slug, openCoordinatorAssignment)}>
-                  <span className="min-w-0 text-left">
-                    <strong className="block truncate">{item.name}</strong>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {item.territory}
-                    </span>
+  <div className={priority ? 'rounded-lg bg-muted/40 p-2' : undefined}>
+    <div className="mb-2 flex items-center justify-between gap-2">
+      <h3
+        className={priority ? 'text-sm font-semibold' : 'text-sm font-medium text-muted-foreground'}
+      >
+        {priority ? `Prioridade · ${title}` : title}
+      </h3>
+      <Badge variant={items.length && priority ? 'estimate-pending' : 'secondary'}>
+        {items.length}
+      </Badge>
+    </div>
+    {items.length ? (
+      <ul className="flex flex-col gap-2">
+        {items.map((item) => (
+          <li key={item.id}>
+            <Button asChild variant="ghost" className="h-auto min-h-11 w-full justify-between">
+              <Link href={buildDashboardQueueItemHref(item.slug, openCoordinatorAssignment)}>
+                <span className="min-w-0 text-left">
+                  <strong className="block truncate font-medium">{item.name}</strong>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {item.territory}
                   </span>
-                  <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
-                </Link>
-              </Button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-muted-foreground">{empty}</p>
-      )}
-    </CardContent>
-  </Card>
+                </span>
+                <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
+              </Link>
+            </Button>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className="text-sm text-muted-foreground">{empty}</p>
+    )}
+  </div>
 )
 
 const UpcomingActionPlansCard = ({ plans }: { plans: ActionPlanUpcomingPreviewRecord[] }) => (
@@ -135,9 +124,12 @@ const UpcomingActionPlansCard = ({ plans }: { plans: ActionPlanUpcomingPreviewRe
     </CardHeader>
     <CardContent>
       {plans.length ? (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-2">
           {plans.map((plan) => (
-            <li key={plan.id} className="flex flex-col gap-1 border-b pb-3 last:border-b-0 last:pb-0">
+            <li
+              key={plan.id}
+              className="flex flex-col gap-1 border-b pb-2 last:border-b-0 last:pb-0"
+            >
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">{actionPlanKindLabels[plan.kind]}</Badge>
                 <span className="text-sm text-muted-foreground">
@@ -162,10 +154,10 @@ const UpcomingActionPlansCard = ({ plans }: { plans: ActionPlanUpcomingPreviewRe
 )
 
 const GeneralDashboard = ({ view, now }: { view: GeneralDashboardViewModel; now: Date }) => (
-  <div className="mr-auto flex w-full max-w-screen-2xl flex-col gap-6">
+  <CampaignPageShell>
     <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold tracking-tight">Visão geral da campanha</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Visão geral da campanha</h1>
         <p className="text-muted-foreground">Cobertura, mobilização e pendências dos núcleos.</p>
         <CampaignScopeBadge>
           {getCampaignScopeLabel('geral', view.kpis.activeNuclei)}
@@ -181,79 +173,93 @@ const GeneralDashboard = ({ view, now }: { view: GeneralDashboardViewModel; now:
 
     <RecentlyVisited now={now} />
 
-    <section aria-labelledby="campaign-kpis">
-      <h2 id="campaign-kpis" className="sr-only">
-        Indicadores da campanha
-      </h2>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-        <KpiCard label="Núcleos ativos" value={numberFormatter.format(view.kpis.activeNuclei)} />
-        <KpiCard
-          label="% com coordenador"
-          value={`${view.kpis.coordinatorCoveragePercent}%`}
-          progress={view.kpis.coordinatorCoveragePercent}
-        />
-        <KpiCard
-          label="Meta regular (soma)"
-          value={`${numberFormatter.format(view.kpis.regularVoteGoalTotal)} votos`}
-        />
-        <KpiCard
-          label="Estimativas confirmadas"
-          value={`${numberFormatter.format(view.kpis.confirmedVoteEstimateTotal)} votos`}
-        />
-        <KpiCard
-          label="% com estimativa confirmada"
-          value={`${view.kpis.confirmedEstimatePercent}%`}
-          progress={view.kpis.confirmedEstimatePercent}
-        />
-        <KpiCard
-          label="Atualizações esta semana"
-          value={numberFormatter.format(view.kpis.updatesThisWeek)}
-        />
-      </div>
+    <section aria-labelledby="action-queues" className="flex flex-col gap-2">
+      <Card className={campaignPrioritySurfaceClassName}>
+        <CardHeader>
+          <CardTitle id="action-queues">Filas de ação</CardTitle>
+          <CardDescription>
+            Trate a prioridade primeiro; as demais filas vêm em seguida.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <QueueSection
+            title="Sem coordenador"
+            items={view.queues.withoutCoordinator}
+            empty="Todos os núcleos ativos têm coordenação."
+            openCoordinatorAssignment
+            priority
+          />
+          <QueueSection
+            title="Sem atualização há mais de 7 dias"
+            items={view.queues.withoutRecentUpdate}
+            empty="Todos os núcleos estão com a cadência em dia."
+          />
+          <QueueSection
+            title="Estimativas pendentes"
+            items={view.queues.pendingEstimate}
+            empty="Nenhuma estimativa aguarda confirmação."
+          />
+        </CardContent>
+      </Card>
     </section>
 
-    <Card>
-      <CardHeader>
-        <CardTitle>Lideranças por status de apoio</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-wrap gap-3">
+    <section aria-labelledby="campaign-kpis" className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h2 id="campaign-kpis" className="text-sm font-medium text-muted-foreground">
+          Indicadores
+        </h2>
+        <CampaignDataFreshness asOf={now} />
+      </div>
+      <CampaignMetricStrip
+        metrics={[
+          {
+            label: 'Estimativas confirmadas',
+            value: `${numberFormatter.format(view.kpis.confirmedVoteEstimateTotal)} votos`,
+            emphasize: true,
+          },
+          {
+            label: '% com estimativa',
+            value: `${view.kpis.confirmedEstimatePercent}%`,
+            progress: view.kpis.confirmedEstimatePercent,
+          },
+          {
+            label: '% com coordenador',
+            value: `${view.kpis.coordinatorCoveragePercent}%`,
+            progress: view.kpis.coordinatorCoveragePercent,
+          },
+        ]}
+      />
+      <CampaignMetricStrip
+        metrics={[
+          {
+            label: 'Núcleos ativos',
+            value: numberFormatter.format(view.kpis.activeNuclei),
+          },
+          {
+            label: 'Meta regular (soma)',
+            value: `${numberFormatter.format(view.kpis.regularVoteGoalTotal)} votos`,
+          },
+          {
+            label: 'Atualizações esta semana',
+            value: numberFormatter.format(view.kpis.updatesThisWeek),
+          },
+        ]}
+      />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        <span className="font-medium text-muted-foreground">Lideranças</span>
         {leadershipSupportStatuses.map((status) => (
           <div key={status} className="flex items-center gap-2">
             <SupportStatusBadge status={status} />
-            <strong className="tabular-nums">
+            <span className="font-medium tabular-nums">
               {numberFormatter.format(view.supportCounts[status])}
-            </strong>
+            </span>
           </div>
         ))}
-      </CardContent>
-    </Card>
-
-    <section aria-labelledby="action-queues" className="flex flex-col gap-3">
-      <h2 id="action-queues" className="text-lg font-semibold">
-        Filas de ação
-      </h2>
-      <div className="grid gap-4 xl:grid-cols-3">
-        <QueueList
-          title="Sem coordenador"
-          items={view.queues.withoutCoordinator}
-          empty="Todos os núcleos ativos têm coordenação."
-          openCoordinatorAssignment
-        />
-        <QueueList
-          title="Sem atualização há mais de 7 dias"
-          items={view.queues.withoutRecentUpdate}
-          empty="Todos os núcleos estão com a cadência em dia."
-        />
-        <QueueList
-          title="Estimativas pendentes"
-          items={view.queues.pendingEstimate}
-          empty="Nenhuma estimativa aguarda confirmação."
-        />
       </div>
     </section>
 
     <UpcomingActionPlansCard plans={view.upcomingActionPlans} />
-  </div>
+  </CampaignPageShell>
 )
 
 const CoordinatorDashboard = ({
@@ -263,10 +269,10 @@ const CoordinatorDashboard = ({
   view: Extract<ScopedDashboardViewModel, { role: 'coordenador' }>
   now: Date
 }) => (
-  <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+  <CampaignPageShell>
     <header className="flex flex-col gap-2">
       <CampaignScopeBadge>{getCampaignScopeLabel(view.role, view.cards.length)}</CampaignScopeBadge>
-      <h1 className="text-2xl font-bold tracking-tight">Sua região</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Sua região</h1>
       <p className="text-muted-foreground">O que precisa de atenção nos seus núcleos?</p>
     </header>
 
@@ -310,14 +316,18 @@ const CoordinatorDashboard = ({
     ) : (
       <Empty className="border">
         <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <AlertTriangleIcon aria-hidden="true" />
+          </EmptyMedia>
           <EmptyTitle>Nenhum núcleo sob sua coordenação</EmptyTitle>
           <EmptyDescription>
-            A coordenação geral ainda não atribuiu um núcleo a você.
+            A coordenação geral ainda não atribuiu um núcleo a você. Peça que te incluam como
+            coordenador no núcleo — aí a região aparece aqui.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
     )}
-  </div>
+  </CampaignPageShell>
 )
 
 const LeadershipDashboard = ({
@@ -327,10 +337,10 @@ const LeadershipDashboard = ({
   view: Extract<ScopedDashboardViewModel, { role: 'lideranca' }>
   now: Date
 }) => (
-  <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+  <CampaignPageShell>
     <header className="flex flex-col gap-2">
       <CampaignScopeBadge>{getCampaignScopeLabel(view.role, view.cards.length)}</CampaignScopeBadge>
-      <h1 className="text-2xl font-bold tracking-tight">Meus núcleos</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Meus núcleos</h1>
       <p className="text-muted-foreground">
         Envie seu reporte e acompanhe a estimativa confirmada.
       </p>
@@ -350,19 +360,28 @@ const LeadershipDashboard = ({
                 {[card.organization, card.territory].filter(Boolean).join(' · ')}
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-3">
+            <CardContent className="flex flex-col gap-4">
               <div className="flex flex-wrap gap-1">
                 {card.tseZones.map((zoneNumber) => (
                   <TseZoneBadge key={zoneNumber} zoneNumber={zoneNumber} />
                 ))}
               </div>
-              <p>
-                <strong>
-                  {card.confirmedVoteEstimate === null
-                    ? 'Sem estimativa confirmada'
-                    : `${numberFormatter.format(card.confirmedVoteEstimate)} votos`}
-                </strong>
+              <p
+                className={
+                  card.confirmedVoteEstimate === null
+                    ? 'text-sm text-muted-foreground'
+                    : 'text-base font-medium tabular-nums'
+                }
+              >
+                {card.confirmedVoteEstimate === null
+                  ? 'Sem estimativa confirmada'
+                  : `${numberFormatter.format(card.confirmedVoteEstimate)} votos`}
               </p>
+              {card.confirmedVoteEstimate === null ? (
+                <p className="text-xs text-muted-foreground">
+                  Sugira na página do núcleo; a coordenação confirma o número.
+                </p>
+              ) : null}
               <div className="flex flex-col gap-2">
                 <p className="text-sm text-muted-foreground">Coordenação</p>
                 {card.coordinators.length ? (
@@ -406,17 +425,27 @@ const LeadershipDashboard = ({
     ) : (
       <Empty className="border">
         <EmptyHeader>
-          <EmptyTitle>Nenhum núcleo disponível</EmptyTitle>
+          <EmptyMedia variant="icon">
+            <AlertTriangleIcon aria-hidden="true" />
+          </EmptyMedia>
+          <EmptyTitle>Ainda sem núcleo por aqui</EmptyTitle>
           <EmptyDescription>
-            Seu acesso depende de um vínculo engajado com o núcleo.
+            Seu acesso a um núcleo só aparece depois que a coordenação te cadastra como liderança e
+            marca o apoio como engajado (participando de verdade). Peça isso ao coordenador — o
+            mesmo caminho de quem entra só com o celular.
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <AlertTriangleIcon aria-hidden="true" />
+          <Button asChild variant="outline" className="min-h-11">
+            <Link href="/campanha/perfil">Ver meu perfil</Link>
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            No perfil você confere seus dados de acesso enquanto a coordenação libera o núcleo.
+          </p>
         </EmptyContent>
       </Empty>
     )}
-  </div>
+  </CampaignPageShell>
 )
 
 export const CampaignDashboard = ({

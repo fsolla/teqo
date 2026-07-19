@@ -94,7 +94,7 @@ export default async function NucleusDetailPage({ params, searchParams }: Nucleu
               <h1
                 id={nucleusDetailFocusFallbackId}
                 tabIndex={-1}
-                className="text-2xl font-bold tracking-tight focus-visible:outline-none"
+                className="text-2xl font-semibold tracking-tight focus-visible:outline-none"
               >
                 {view.name}
               </h1>

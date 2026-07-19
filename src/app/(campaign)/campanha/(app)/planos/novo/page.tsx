@@ -23,7 +23,7 @@ export default async function NewActionPlanPage() {
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       <header className="flex flex-col gap-2">
         <p className="text-sm font-medium text-primary">Planos de ação</p>
-        <h1 className="text-2xl font-bold tracking-tight">Novo plano</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Novo plano</h1>
         <p className="text-muted-foreground">
           Defina a ação, quando e onde ela acontece e quem responde por ela.
         </p>

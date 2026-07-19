@@ -76,23 +76,23 @@ export const NucleusElectoralBaseline = ({
       </CardHeader>
       <CardContent className="p-0">
         <div className="divide-y">
-          <div className="border-l-4 border-primary bg-primary/5 px-4 py-3.5">
+          <div className="bg-muted/50 px-4 py-3.5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold">{ticket.candidate.name}</p>
-                <p className="text-xs font-semibold text-primary">
+                <p className="text-sm font-semibold">{ticket.candidate.name}</p>
+                <p className="text-xs text-muted-foreground">
                   {ticket.candidate.party} · {ticket.candidate.officeLabel}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-extrabold tabular-nums text-primary">
+                <p className="text-lg font-semibold tabular-nums text-foreground">
                   {formatElectionNumber(baseline.candidate.votes)}
                 </p>
                 <p className="text-xs text-muted-foreground">votos · 2022</p>
               </div>
             </div>
             <div
-              className="mt-2 h-1.5 overflow-hidden rounded-full bg-primary/20"
+              className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"
               role="progressbar"
               aria-valuenow={candidateBar}
               aria-valuemin={0}
@@ -107,9 +107,7 @@ export const NucleusElectoralBaseline = ({
           </div>
 
           <div className="px-4 py-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Série histórica
-            </p>
+            <p className="mb-2 text-xs font-medium text-muted-foreground">Série histórica</p>
             <p className="text-sm tabular-nums">{formatVoteTrendSeriesCompact(baseline.series)}</p>
             {trend.status !== 'noBaseline' ? (
               <p className="mt-1 text-xs text-muted-foreground">{trend.message}</p>
@@ -147,9 +145,7 @@ export const NucleusElectoralBaseline = ({
           ) : null}
 
           <div className="bg-muted/40 px-4 py-3">
-            <p className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Eleitorado 2022
-            </p>
+            <p className="mb-2.5 text-xs font-medium text-muted-foreground">Eleitorado 2022</p>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-muted-foreground">Votos válidos</span>
@@ -183,7 +179,7 @@ export const NucleusElectoralBaseline = ({
               <div className="flex items-start gap-2">
                 <TrophyIcon
                   aria-hidden="true"
-                  className="mt-0.5 size-4 shrink-0 text-[color:var(--estimate-pending-foreground)]"
+                  className="mt-0.5 size-4 shrink-0 text-estimate-pending-foreground"
                 />
                 <div>
                   <p className="text-xs text-muted-foreground">Mais votado aqui em 2022</p>

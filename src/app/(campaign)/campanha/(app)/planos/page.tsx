@@ -7,6 +7,7 @@ import { getPayload } from 'payload'
 import { ActionPlanFilters } from '@/components/campaign/ActionPlanFilters'
 import { ActionPlanList } from '@/components/campaign/ActionPlanList'
 import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
+import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
 import { Button } from '@/components/ui/button'
 import {
   Empty,
@@ -17,10 +18,14 @@ import {
   EmptyTitle,
 } from '@/components/ui/Empty'
 import type { ActionPlan } from '@/payload-types'
-import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadActionPlanListPageData } from '@/utilities/actionPlanPageData'
-import { buildActionPlanFiltersKey, buildActionPlanListHref, resolveActionPlanListUrl } from '@/utilities/actionPlanUi'
+import {
+  buildActionPlanFiltersKey,
+  buildActionPlanListHref,
+  resolveActionPlanListUrl,
+} from '@/utilities/actionPlanUi'
 import { toActionPlanListViewModel } from '@/utilities/actionPlanViewModels'
+import { getCampaignUser } from '@/utilities/campaignAuth'
 
 type ActionPlanListPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -42,10 +47,10 @@ export default async function ActionPlanListPage({ searchParams }: ActionPlanLis
   const canCreate = user.role === 'geral' || user.role === 'coordenador'
 
   return (
-    <div className="mr-auto flex w-full max-w-screen-2xl flex-col gap-6">
+    <CampaignPageShell>
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Planos de ação</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Planos de ação</h1>
           <p className="text-muted-foreground">
             Organize caminhadas, comícios, panfletagens e demais ações de campanha.
           </p>
@@ -69,7 +74,8 @@ export default async function ActionPlanListPage({ searchParams }: ActionPlanLis
           />
           <div className="flex flex-col items-center gap-3">
             <p className="text-sm text-muted-foreground">
-              {result.totalDocs} {result.totalDocs === 1 ? 'plano encontrado' : 'planos encontrados'}
+              {result.totalDocs}{' '}
+              {result.totalDocs === 1 ? 'plano encontrado' : 'planos encontrados'}
             </p>
             <CampaignListPagination
               page={state.page}
@@ -96,6 +102,6 @@ export default async function ActionPlanListPage({ searchParams }: ActionPlanLis
           </EmptyContent>
         </Empty>
       )}
-    </div>
+    </CampaignPageShell>
   )
 }

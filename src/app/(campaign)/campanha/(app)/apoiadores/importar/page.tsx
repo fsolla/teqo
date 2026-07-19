@@ -20,7 +20,7 @@ export default async function ImportSupportersPage() {
           <Link href="/campanha/apoiadores">← Voltar para apoiadores</Link>
         </Button>
         <CampaignScopeBadge>Importação · Coordenação geral</CampaignScopeBadge>
-        <h1 className="text-2xl font-bold tracking-tight">Importar apoiadores via CSV</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Importar apoiadores via CSV</h1>
         <p className="text-muted-foreground">
           Envie uma planilha, confira a prévia e confirme a importação em lote.
         </p>

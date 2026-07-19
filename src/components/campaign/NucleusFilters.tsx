@@ -1,8 +1,8 @@
 'use client'
 
-import { type FormEvent, useRef, useState, useTransition } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
 import { ChevronDownIcon, FilterIcon, XIcon } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useRef, useState, useTransition, type FormEvent } from 'react'
 
 import { CampaignSearchInput } from '@/components/campaign/CampaignSearchInput'
 import { StrictCombobox } from '@/components/campaign/StrictCombobox'
@@ -44,9 +44,14 @@ const valuesFromState = (state: NucleusListState): FilterValues => ({
   priority: state.priority ?? '',
 })
 
-const filterNames = ['region', 'city', 'tseZone', 'coverage', 'estimate', 'priority'] as const
+const primaryFilterNames = ['region', 'city', 'tseZone'] as const
+const advancedFilterNames = ['coverage', 'estimate', 'priority'] as const
+const filterNames = [...primaryFilterNames, ...advancedFilterNames] as const
 
-type FilterFieldsProps = {
+const countActive = (values: FilterValues, names: readonly (keyof FilterValues)[]) =>
+  names.filter((name) => Boolean(values[name])).length
+
+type SharedFilterHandlers = {
   values: FilterValues
   zoneError?: string
   updateFilter: (name: (typeof filterNames)[number], value: string) => void
@@ -54,17 +59,17 @@ type FilterFieldsProps = {
   updateCity: (city: string) => void
 }
 
-const FilterFields = ({
+const PrimaryFilterFields = ({
   values,
   zoneError,
   updateFilter,
   updateTerritory,
   updateCity,
-}: FilterFieldsProps) => (
+}: SharedFilterHandlers) => (
   <form
     autoComplete="off"
     onSubmit={(event) => event.preventDefault()}
-    className="grid gap-4 lg:grid-cols-3 xl:grid-cols-6"
+    className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
   >
     <Field>
       <FieldLabel htmlFor="nucleus-lookup-a">Território de identidade</FieldLabel>
@@ -84,7 +89,7 @@ const FilterFields = ({
         onValueChange={updateCity}
       />
     </Field>
-    <Field data-invalid={Boolean(zoneError)}>
+    <Field data-invalid={Boolean(zoneError)} className="sm:col-span-2 lg:col-span-1">
       <FieldLabel htmlFor="nucleus-tseZone">Nº da ZE</FieldLabel>
       <Input
         id="nucleus-tseZone"
@@ -99,10 +104,20 @@ const FilterFields = ({
         aria-describedby={zoneError ? 'nucleus-tseZone-error' : undefined}
         className="min-h-11 rounded-[6px]"
       />
-      {zoneError ? (
-        <FieldError id="nucleus-tseZone-error">{zoneError}</FieldError>
-      ) : null}
+      {zoneError ? <FieldError id="nucleus-tseZone-error">{zoneError}</FieldError> : null}
     </Field>
+  </form>
+)
+
+const AdvancedFilterFields = ({
+  values,
+  updateFilter,
+}: Pick<SharedFilterHandlers, 'values' | 'updateFilter'>) => (
+  <form
+    autoComplete="off"
+    onSubmit={(event) => event.preventDefault()}
+    className="grid gap-4 sm:grid-cols-3"
+  >
     <Field>
       <FieldLabel htmlFor="nucleus-coverage">Cobertura</FieldLabel>
       <NativeSelect
@@ -162,7 +177,9 @@ export const NucleusFilters = ({ state }: { state: NucleusListState }) => {
   const valuesRef = useRef(initialValues)
   const [values, setValues] = useState(initialValues)
   const [zoneError, setZoneError] = useState<string>()
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const [advancedOpen, setAdvancedOpen] = useState(
+    () => countActive(initialValues, advancedFilterNames) > 0,
+  )
   const [isPending, startTransition] = useTransition()
 
   const replaceValues = (nextValues: FilterValues) => {
@@ -206,7 +223,8 @@ export const NucleusFilters = ({ state }: { state: NucleusListState }) => {
 
   const updateTerritory = (region: string) => {
     const current = valuesRef.current
-    const city = current.city && region && territoryForCity(current.city) !== region ? '' : current.city
+    const city =
+      current.city && region && territoryForCity(current.city) !== region ? '' : current.city
     replaceValues({ ...current, region, city })
   }
 
@@ -217,7 +235,9 @@ export const NucleusFilters = ({ state }: { state: NucleusListState }) => {
   }
 
   const clearFilters = () => {
-    const cleared = Object.fromEntries(filterNames.map((name) => [name, ''])) as Partial<FilterValues>
+    const cleared = Object.fromEntries(
+      filterNames.map((name) => [name, '']),
+    ) as Partial<FilterValues>
     setZoneError(undefined)
     replaceValues({ ...valuesRef.current, ...cleared })
   }
@@ -228,83 +248,85 @@ export const NucleusFilters = ({ state }: { state: NucleusListState }) => {
   }
 
   const hasFilters = filterNames.some((name) => Boolean(values[name]))
+  const activeAdvancedCount = countActive(values, advancedFilterNames)
+  const advancedToggleLabel =
+    activeAdvancedCount > 0 ? `Mais filtros (${activeAdvancedCount})` : 'Mais filtros'
+
+  const handlers: SharedFilterHandlers = {
+    values,
+    zoneError,
+    updateFilter,
+    updateTerritory,
+    updateCity,
+  }
+
   return (
     <div
-      className="flex flex-col gap-3 transition-opacity data-[pending=true]:opacity-70"
+      className="flex flex-col gap-4 transition-opacity data-[pending=true]:opacity-70"
       data-pending={isPending}
       aria-busy={isPending}
     >
       <p className="sr-only" aria-live="polite">
         {isPending ? 'Atualizando resultados…' : ''}
       </p>
-      <div>
-        <form onSubmit={submitSearch} className="flex gap-2">
-          <CampaignSearchInput
-            id="nucleus-search"
-            label="Buscar núcleo ou número da Zona TSE"
-            name="q"
-            value={values.q}
-            onChange={(event) => {
-              const nextValues = { ...valuesRef.current, q: event.target.value }
-              valuesRef.current = nextValues
-              setValues(nextValues)
-            }}
-            placeholder="Buscar núcleo ou nº de zona"
-            enterKeyHint="search"
-          />
-          <Button type="submit" className="min-h-11 rounded-[6px]" disabled={isPending}>
-            Buscar
-          </Button>
-        </form>
-      </div>
 
-      <div className="rounded-[6px] border bg-card">
-        <Button
-          type="button"
-          variant="ghost"
-          className="min-h-11 w-full justify-start rounded-[6px] px-3 lg:hidden"
-          aria-expanded={mobileFiltersOpen}
-          aria-controls="nucleus-filter-controls"
-          onClick={() => setMobileFiltersOpen((open) => !open)}
-        >
-          <FilterIcon data-icon="inline-start" aria-hidden="true" />
-          <span>Filtros</span>
-          <ChevronDownIcon
-            data-icon="inline-end"
-            className="ml-auto transition-transform group-aria-expanded/button:rotate-180"
-            aria-hidden="true"
-          />
+      <form onSubmit={submitSearch} className="flex gap-2">
+        <CampaignSearchInput
+          id="nucleus-search"
+          label="Buscar núcleo ou número da Zona TSE"
+          name="q"
+          value={values.q}
+          onChange={(event) => {
+            const nextValues = { ...valuesRef.current, q: event.target.value }
+            valuesRef.current = nextValues
+            setValues(nextValues)
+          }}
+          placeholder="Buscar núcleo ou nº de zona"
+          enterKeyHint="search"
+        />
+        <Button type="submit" className="min-h-11 rounded-[6px]" disabled={isPending}>
+          Buscar
         </Button>
-        <div
-          id="nucleus-filter-controls"
-          className={cn(
-            mobileFiltersOpen ? 'block' : 'hidden',
-            'border-t p-4 lg:block lg:border-t-0',
-          )}
-        >
-          <p className="mb-4 text-sm text-muted-foreground lg:hidden">
-            Cada escolha atualiza os resultados e fica na URL para compartilhamento.
-          </p>
-          <FilterFields
-            values={values}
-            zoneError={zoneError}
-            updateFilter={updateFilter}
-            updateTerritory={updateTerritory}
-            updateCity={updateCity}
-          />
+      </form>
+
+      <div className="flex flex-col gap-4 rounded-[6px] border bg-card p-4">
+        <PrimaryFilterFields {...handlers} />
+
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11 rounded-[6px] px-3"
+            aria-expanded={advancedOpen}
+            aria-controls="nucleus-advanced-filters"
+            onClick={() => setAdvancedOpen((open) => !open)}
+          >
+            <FilterIcon data-icon="inline-start" aria-hidden="true" />
+            <span>{advancedToggleLabel}</span>
+            <ChevronDownIcon
+              data-icon="inline-end"
+              className={cn('ml-1 transition-transform', advancedOpen && 'rotate-180')}
+              aria-hidden="true"
+            />
+          </Button>
           {hasFilters ? (
-            <div className="mt-4 flex justify-end">
-              <Button
-                type="button"
-                variant="ghost"
-                className="min-h-11 rounded-[6px]"
-                onClick={clearFilters}
-              >
-                <XIcon data-icon="inline-start" aria-hidden="true" />
-                Limpar filtros
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-h-11 rounded-[6px]"
+              onClick={clearFilters}
+            >
+              <XIcon data-icon="inline-start" aria-hidden="true" />
+              Limpar filtros
+            </Button>
           ) : null}
+        </div>
+
+        <div id="nucleus-advanced-filters" hidden={!advancedOpen}>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Cobertura, estimativa e prioridade. Cada escolha atualiza os resultados e fica na URL.
+          </p>
+          <AdvancedFilterFields values={values} updateFilter={updateFilter} />
         </div>
       </div>
     </div>

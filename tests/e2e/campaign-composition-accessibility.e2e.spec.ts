@@ -1,5 +1,5 @@
 /* eslint-disable check-file/filename-naming-convention */
-import { test, expect } from './fixtures/campaignE2EFixtures'
+import { expect, test } from './fixtures/campaignE2EFixtures'
 
 test.describe('Campaign composition and accessibility', () => {
   test.describe.configure({ mode: 'parallel' })
@@ -82,18 +82,26 @@ test.describe('Campaign composition and accessibility', () => {
     await campaign.login(page, email, password)
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto(`${campaign.baseURL}/campanha/nucleos`)
-    const toggle = page.getByRole('button', { name: 'Filtros' })
-    const controls = page.locator('#nucleus-filter-controls')
+
+    await expect(page.getByLabel('Território de identidade')).toBeVisible()
+    await expect(page.getByLabel('Município')).toBeVisible()
+
+    const toggle = page.getByRole('button', { name: 'Mais filtros' })
+    const controls = page.locator('#nucleus-advanced-filters')
     await expect(controls).toBeHidden()
     await toggle.click()
     await expect(controls).toBeVisible()
+    await expect(page.getByLabel('Cobertura')).toBeVisible()
     await expect(page.getByLabel('Território de identidade')).toHaveCount(1)
     await toggle.click()
     await expect(controls).toBeHidden()
 
     await page.setViewportSize({ width: 1440, height: 900 })
-    await expect(toggle).toBeHidden()
-    await expect(controls).toBeVisible()
     await expect(page.getByLabel('Território de identidade')).toBeVisible()
+    await expect(toggle).toBeVisible()
+    await expect(controls).toBeHidden()
+    await toggle.click()
+    await expect(controls).toBeVisible()
+    await expect(page.getByLabel('Cobertura')).toBeVisible()
   })
 })

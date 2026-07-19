@@ -34,7 +34,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
         </header>
         <div
           data-slot="campaign-content-scroll"
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-24 md:p-6"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-24 md:p-6 md:pb-6"
         >
           {children}
         </div>

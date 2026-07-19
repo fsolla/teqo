@@ -1,10 +1,11 @@
-import Link from 'next/link'
 import { ChevronLeftIcon, ChevronRightIcon, MessageSquareTextIcon } from 'lucide-react'
+import Link from 'next/link'
 
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/Empty'
+import { formatRelativeAge } from '@/utilities/formatRelativeAge'
 import type { NucleusUpdatesPageData } from '@/utilities/nucleusUpdatePageData'
 import {
   buildNucleusUpdateHref,
@@ -27,13 +28,6 @@ const updateFilters: Array<{ label: string; state: NucleusUpdateListState }> = [
   })),
 ]
 
-const relativeDate = (value: string, now: string): string => {
-  const elapsedDays = Math.round(
-    (new Date(value).getTime() - new Date(now).getTime()) / (24 * 60 * 60 * 1000),
-  )
-  return new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' }).format(elapsedDays, 'day')
-}
-
 const UpdateCard = ({ update, now }: { update: NucleusUpdateViewModel; now: string }) => (
   <article>
     <Card>
@@ -43,7 +37,7 @@ const UpdateCard = ({ update, now }: { update: NucleusUpdateViewModel; now: stri
             {nucleusUpdateKindLabels[update.kind]}
           </Badge>
           <span className="text-sm text-muted-foreground">
-            {relativeDate(update.createdAt, now)}
+            {formatRelativeAge(new Date(update.createdAt).getTime(), new Date(now).getTime())}
           </span>
         </div>
         <CardTitle className="text-base">{update.authorName}</CardTitle>

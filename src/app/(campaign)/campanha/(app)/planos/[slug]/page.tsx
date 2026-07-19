@@ -69,7 +69,7 @@ export default async function ActionPlanDetailPage({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex min-w-0 flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">{view.title}</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">{view.title}</h1>
               <ActionPlanStatusBadge status={view.status} />
             </div>
             <div className="flex flex-wrap items-center gap-2 text-muted-foreground">

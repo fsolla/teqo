@@ -21,7 +21,7 @@ export default async function NewNucleusPage() {
       <header className="flex flex-col gap-2">
         <CampaignScopeBadge>Criação · Coordenação geral</CampaignScopeBadge>
         <p className="text-sm font-medium text-primary">Núcleos Eleitorais</p>
-        <h1 className="text-2xl font-bold tracking-tight">Novo núcleo</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Novo núcleo</h1>
         <p className="text-muted-foreground">
           Defina a operação, o território obrigatório e quem responde por ele.
         </p>

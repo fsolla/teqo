@@ -1,10 +1,11 @@
+import config from '@payload-config'
 import { FileUpIcon, PlusIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
+import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { SupporterFilters } from '@/components/campaign/SupporterFilters'
 import { SupporterList } from '@/components/campaign/SupporterList'
@@ -21,13 +22,13 @@ import {
 import { isCampaignGeneral } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadSupportersPageData } from '@/utilities/supporterPageData'
-import { toSupporterListItemViewModel } from '@/utilities/supporterViewModels'
 import {
   buildSupporterFiltersKey,
   buildSupporterListHref,
   canAccessSupporterArea,
   getSupporterScopeLabel,
 } from '@/utilities/supporterUi'
+import { toSupporterListItemViewModel } from '@/utilities/supporterViewModels'
 
 type SupportersPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -40,6 +41,7 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
   if (!canAccessSupporterArea(user.role)) redirect('/campanha')
 
   const rawSearchParams = await searchParams
+  const now = new Date()
   const { result, state, redirectHref, nucleusOptions, overview } = await loadSupportersPageData(
     payload,
     user,
@@ -48,10 +50,10 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
   if (redirectHref) redirect(redirectHref)
 
   return (
-    <div className="mr-auto flex w-full max-w-screen-2xl flex-col gap-6">
+    <CampaignPageShell>
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Apoiadores</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Apoiadores</h1>
           <p className="text-muted-foreground">
             Base nominal de apoio com intenção de voto e vínculo opcional a núcleos.
           </p>
@@ -87,7 +89,7 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
 
       {result.docs.length ? (
         <>
-          {overview ? <SupporterListOverview view={overview} /> : null}
+          {overview ? <SupporterListOverview view={overview} now={now} /> : null}
           <SupporterList
             supporters={result.docs.map((supporter) => toSupporterListItemViewModel(supporter))}
           />
@@ -121,6 +123,6 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
           </EmptyContent>
         </Empty>
       )}
-    </div>
+    </CampaignPageShell>
   )
 }

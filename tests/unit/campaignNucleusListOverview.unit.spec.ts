@@ -140,10 +140,11 @@ describe('NucleusListOverview', () => {
     const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))
 
     expect(html).toContain('Mostrando agregados de')
+    expect(html).toContain('Atualizado agora')
     expect(html).toContain('1.200')
     expect(html).toContain('50% com estimativa confirmada')
     expect(html).toContain('1 de 2 com coordenador')
-    expect(html).toContain('Metas 2026')
+    expect(html).toContain('Meta regular 2026')
     expect(html).toContain('Últimas atualizações')
     expect(html).toContain('Maria')
     expect(html).toContain('Semanal')
@@ -184,6 +185,8 @@ describe('NucleusListOverview', () => {
     expect(html).toContain('+2.140')
     expect(html).toContain('8 acima')
     expect(html).toContain('6 abaixo')
+    expect(html).toContain('+2.140 gap')
+    expect(html).not.toContain('Gap vs 2022')
   })
 
   it('hides the Baseline 2022 card when aggregate is null', () => {
@@ -211,9 +214,10 @@ describe('NucleusListOverview', () => {
 
     const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))
 
-    expect(html).toContain('Tendência histórica')
+    expect(html).toContain('Tendência:')
     expect(html).toContain('2 aumento')
     expect(html).toContain('5 mantém')
     expect(html).toContain('3 queda')
+    expect(html).not.toContain('Com série histórica')
   })
 })
