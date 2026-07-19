@@ -79,17 +79,7 @@ export const supporterImportConfirmSchema = z.object({
     error: 'É necessário atestar o consentimento dos apoiadores importados.',
   }),
   consentNote: trimmedNullableText(2000),
-  rows: z
-    .array(
-      z.object({
-        nome: z.string().trim().min(2).max(120),
-        telefone: brazilianMobile,
-        municipio: optionalBahiaCity,
-        intencao: z.enum(supporterVoteIntentions).optional(),
-      }),
-    )
-    .min(1)
-    .max(5000),
+  importToken: z.string().min(1, { error: 'Token de importação ausente.' }),
 })
 
 export const supporterRemoveSchema = z.object({

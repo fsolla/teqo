@@ -33,14 +33,22 @@ export type SupporterImportPreviewRow =
     })
 
 export type SupporterImportPreviewResult = {
-  rows: SupporterImportPreviewRow[]
   counts: {
     ok: number
     duplicate: number
     error: number
   }
+  /** First N rows for the on-screen preview table (the full set stays server-side). */
+  sampleRows: SupporterImportPreviewRow[]
+  /** Precomputed CSV of every error row, for the "Baixar relatório de erros" button. */
+  errorReportCsv: string
+  /** HMAC-signed token that `confirmSupporterImport` exchanges for the staged batch. */
+  importToken: string
 }
 
 export const isSupporterImportOkRow = (
   row: SupporterImportPreviewRow,
 ): row is SupporterImportOkRow => row.status === 'ok'
+
+export const isPreviewErrorRow = (row: SupporterImportPreviewRow): boolean =>
+  row.status !== 'ok' && row.status !== 'duplicado_pelo_telefone'

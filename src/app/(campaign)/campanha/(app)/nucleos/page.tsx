@@ -6,10 +6,10 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
+import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
 import { NucleusFilters } from '@/components/campaign/NucleusFilters'
 import { NucleusList } from '@/components/campaign/NucleusList'
 import { NucleusListOverview } from '@/components/campaign/NucleusListOverview'
-import { NucleusPagination } from '@/components/campaign/NucleusPagination'
 import { Button } from '@/components/ui/button'
 import {
   Empty,
@@ -24,6 +24,7 @@ import { loadNucleusListOverviewData } from '@/utilities/nucleusListOverviewPage
 import { loadNucleusListPageData } from '@/utilities/nucleusPageData'
 import {
   buildNucleusFiltersKey,
+  buildNucleusListHref,
   getCampaignScopeLabel,
   resolveNucleusListUrl,
 } from '@/utilities/nucleusUi'
@@ -89,7 +90,11 @@ export default async function NucleiPage({ searchParams }: NucleiPageProps) {
               {result.totalDocs}{' '}
               {result.totalDocs === 1 ? 'núcleo encontrado' : 'núcleos encontrados'}
             </p>
-            <NucleusPagination state={state} totalPages={result.totalPages} />
+            <CampaignListPagination
+              page={state.page}
+              totalPages={result.totalPages}
+              hrefForPage={(page) => buildNucleusListHref(state, page)}
+            />
           </div>
         </>
       ) : (

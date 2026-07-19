@@ -7,6 +7,14 @@ import {
   territoryForCity,
 } from '@/lib/bahiaTerritories'
 import type { CampaignUser, ElectoralNucleus } from '@/payload-types'
+import {
+  buildListHref,
+  firstValue,
+  normalizedText,
+  resolveListUrl,
+  strictDecimalInteger,
+  type RawSearchParams as CampaignListRawSearchParams,
+} from '@/utilities/campaignListUrl'
 import { normalizeSearchPhrase } from '@/utilities/wordStartFilter'
 
 export const nucleusPageSize = 25
@@ -63,7 +71,7 @@ export type NucleusListState = {
   estimate?: 'confirmada' | 'sem_confirmacao'
 }
 
-type RawSearchParams = Record<string, string | string[] | undefined>
+type RawSearchParams = CampaignListRawSearchParams
 
 export const nucleusListParamNames = [
   'q',
@@ -76,21 +84,6 @@ export const nucleusListParamNames = [
 ] as const
 
 const nucleusListParamNameSet = new Set<string>(nucleusListParamNames)
-
-const firstValue = (value: string | string[] | undefined): string | undefined =>
-  Array.isArray(value) ? value[0] : value
-
-const normalizedText = (value: FormDataEntryValue | string | undefined): string | undefined => {
-  if (typeof value !== 'string') return undefined
-  const normalized = value.trim()
-  return normalized || undefined
-}
-
-const strictDecimalInteger = (value: string | undefined): number | undefined => {
-  if (!value || !/^[1-9]\d*$/.test(value)) return undefined
-  const number = Number(value)
-  return Number.isSafeInteger(number) ? number : undefined
-}
 
 const canonicalTerritoryBySearchValue = new Map(
   bahiaIdentityTerritories.map((territory) => [normalizeSearchPhrase(territory), territory]),
@@ -198,31 +191,8 @@ export const buildNucleusListSearchParams = (
 export const buildNucleusFiltersKey = (state: NucleusListState): string =>
   buildNucleusListSearchParams(state).toString()
 
-export const buildNucleusListHref = (state: NucleusListState, page: number): string => {
-  const params = buildNucleusListSearchParams(state, page)
-  const query = params.toString()
-  return query ? `/campanha/nucleos?${query}` : '/campanha/nucleos'
-}
-
-const inspectRawNucleusListParams = (
-  params: RawSearchParams,
-): { hasUnsupportedParams: boolean; query: string } => {
-  const serialized = new URLSearchParams()
-  let hasUnsupportedParams = false
-
-  for (const [name, value] of Object.entries(params)) {
-    if (!nucleusListParamNameSet.has(name)) {
-      hasUnsupportedParams = true
-      continue
-    }
-    if (value === undefined) continue
-    for (const item of Array.isArray(value) ? value : [value]) {
-      serialized.append(name, item)
-    }
-  }
-
-  return { hasUnsupportedParams, query: serialized.toString() }
-}
+export const buildNucleusListHref = (state: NucleusListState, page: number): string =>
+  buildListHref(state, buildNucleusListSearchParams, '/campanha/nucleos', page)
 
 export const resolveNucleusListUrl = (
   params: RawSearchParams,
@@ -231,25 +201,15 @@ export const resolveNucleusListUrl = (
   state: NucleusListState
   href: string
   redirectHref?: string
-} => {
-  const parsedState = parseNucleusListParams(params)
-  const page =
-    totalPages !== undefined && totalPages > 0 && parsedState.page > totalPages
-      ? totalPages
-      : parsedState.page
-  const state = page === parsedState.page ? parsedState : { ...parsedState, page }
-  const canonicalParams = buildNucleusListSearchParams(state)
-  const canonicalQuery = canonicalParams.toString()
-  const href = canonicalQuery ? `/campanha/nucleos?${canonicalQuery}` : '/campanha/nucleos'
-  const raw = inspectRawNucleusListParams(params)
-  const needsRedirect = raw.hasUnsupportedParams || raw.query !== canonicalQuery
-
-  return {
-    state,
-    href,
-    ...(needsRedirect ? { redirectHref: href } : {}),
-  }
-}
+} =>
+  resolveListUrl({
+    params,
+    paramNameSet: nucleusListParamNameSet,
+    parse: parseNucleusListParams,
+    buildSearchParams: buildNucleusListSearchParams,
+    basePath: '/campanha/nucleos',
+    totalPages,
+  })
 
 export const getCampaignScopeLabel = (role: CampaignUser['role'], nucleusCount: number): string => {
   if (role === 'coordenador') {

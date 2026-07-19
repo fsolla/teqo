@@ -4,11 +4,11 @@ import { redirect } from 'next/navigation'
 import config from '@payload-config'
 import { getPayload } from 'payload'
 
+import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { SupporterFilters } from '@/components/campaign/SupporterFilters'
 import { SupporterList } from '@/components/campaign/SupporterList'
 import { SupporterListOverview } from '@/components/campaign/SupporterListOverview'
-import { SupporterPagination } from '@/components/campaign/SupporterPagination'
 import { Button } from '@/components/ui/button'
 import {
   Empty,
@@ -28,6 +28,7 @@ import {
 import { toSupporterListItemViewModel } from '@/utilities/supporterViewModels'
 import {
   buildSupporterFiltersKey,
+  buildSupporterListHref,
   canAccessSupporterArea,
   getSupporterScopeLabel,
   resolveSupporterListUrl,
@@ -101,7 +102,11 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
               {result.totalDocs}{' '}
               {result.totalDocs === 1 ? 'apoiador encontrado' : 'apoiadores encontrados'}
             </p>
-            <SupporterPagination state={state} totalPages={result.totalPages} />
+            <CampaignListPagination
+              page={state.page}
+              totalPages={result.totalPages}
+              hrefForPage={(page) => buildSupporterListHref(state, page)}
+            />
           </div>
         </>
       ) : (

@@ -74,6 +74,7 @@ export interface Config {
     electoralNucleus: ElectoralNucleus;
     leadership: Leadership;
     supporter: Supporter;
+    supporterImportBatch: SupporterImportBatch;
     nucleusUpdate: NucleusUpdate;
     actionPlan: ActionPlan;
     electionTally: ElectionTally;
@@ -101,6 +102,7 @@ export interface Config {
     electoralNucleus: ElectoralNucleusSelect<false> | ElectoralNucleusSelect<true>;
     leadership: LeadershipSelect<false> | LeadershipSelect<true>;
     supporter: SupporterSelect<false> | SupporterSelect<true>;
+    supporterImportBatch: SupporterImportBatchSelect<false> | SupporterImportBatchSelect<true>;
     nucleusUpdate: NucleusUpdateSelect<false> | NucleusUpdateSelect<true>;
     actionPlan: ActionPlanSelect<false> | ActionPlanSelect<true>;
     electionTally: ElectionTallySelect<false> | ElectionTallySelect<true>;
@@ -472,6 +474,27 @@ export interface Supporter {
   consentNote?: string | null;
   notes?: string | null;
   createdBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "supporterImportBatch".
+ */
+export interface SupporterImportBatch {
+  id: number;
+  batchId: string;
+  actor: number | CampaignUser;
+  expiresAt: string;
+  rows:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -910,6 +933,10 @@ export interface PayloadLockedDocument {
         value: number | Supporter;
       } | null)
     | ({
+        relationTo: 'supporterImportBatch';
+        value: number | SupporterImportBatch;
+      } | null)
+    | ({
         relationTo: 'nucleusUpdate';
         value: number | NucleusUpdate;
       } | null)
@@ -1183,6 +1210,18 @@ export interface SupporterSelect<T extends boolean = true> {
   consentNote?: T;
   notes?: T;
   createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "supporterImportBatch_select".
+ */
+export interface SupporterImportBatchSelect<T extends boolean = true> {
+  batchId?: T;
+  actor?: T;
+  expiresAt?: T;
+  rows?: T;
   updatedAt?: T;
   createdAt?: T;
 }

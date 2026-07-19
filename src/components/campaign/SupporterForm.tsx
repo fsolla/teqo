@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import type { SupporterFormState } from '@/app/(campaign)/campanha/(app)/apoiadores/novo/formActions'
 import { FormattedInput } from '@/components/FormattedInput'
+import { StrictCombobox } from '@/components/campaign/StrictCombobox'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -22,28 +23,21 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
+import { fieldError, errorProps as buildErrorProps } from '@/utilities/campaignFormFields'
 import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/utilities/phone'
 import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
 import type { SupporterNucleusOption } from '@/utilities/supporterViewModels'
+import { municipalityComboboxOptions } from '@/utilities/territoryComboboxOptions'
 
 export type SupporterFormAction = (
   state: SupporterFormState,
   formData: FormData,
 ) => Promise<SupporterFormState>
 
-const fieldError = (
+const errorProps = (
   fieldErrors: Record<string, string[]> | undefined,
   field: string,
-): string | undefined => fieldErrors?.[field]?.[0]
-
-const errorProps = (fieldErrors: Record<string, string[]> | undefined, field: string) => {
-  const error = fieldError(fieldErrors, field)
-  return {
-    error,
-    invalid: Boolean(error),
-    describedBy: error ? `supporter-${field}-error` : undefined,
-  }
-}
+) => buildErrorProps(fieldErrors, field, 'supporter')
 
 const ConsentBlock = ({
   id,
@@ -115,6 +109,7 @@ export const SupporterForm = ({
   const [voteIntention, setVoteIntention] = useState<SupporterVoteIntention | ''>(
     (state.values?.voteIntention as SupporterVoteIntention | undefined) ?? '',
   )
+  const [city, setCity] = useState<string>((state.values?.city as string | undefined) ?? '')
   const values = state.values
 
   useEffect(() => {
@@ -204,13 +199,13 @@ export const SupporterForm = ({
 
         <Field data-invalid={cityField.invalid}>
           <FieldLabel htmlFor="supporter-city">Município</FieldLabel>
-          <Input
+          <input type="hidden" name="city" value={city} />
+          <StrictCombobox
             id="supporter-city"
-            name="city"
-            defaultValue={values?.city}
-            aria-invalid={cityField.invalid}
-            aria-describedby={cityField.describedBy}
-            className="min-h-11 rounded-[6px]"
+            options={municipalityComboboxOptions()}
+            value={city}
+            onValueChange={setCity}
+            error={cityField.error}
           />
           {cityField.error ? (
             <FieldError id="supporter-city-error">{cityField.error}</FieldError>

@@ -5,6 +5,7 @@ import {
   getSupporterRegistrationConsent,
   getSupporterVoteIntentionConsent,
 } from '@/utilities/campaignConsent'
+import { computeSupporterListOverviewAggregate } from '@/utilities/supporterListOverviewAggregate'
 import {
   buildSupporterListWhere,
   resolveSupporterListUrl,
@@ -102,45 +103,11 @@ export const loadSupporterListPageData = async (
 }
 
 export const loadSupporterListOverviewData = async (
-  payload: Pick<Payload, 'count'>,
+  payload: Payload,
   user: CampaignUser,
   state: SupporterListState,
-): Promise<SupporterListOverviewViewModel | null> => {
-  const where = buildSupporterListWhere(state)
-
-  const [total, certoAndTende, indeciso] = await Promise.all([
-    payload.count({
-      collection: 'supporter',
-      where,
-      user,
-      overrideAccess: false,
-    }),
-    payload.count({
-      collection: 'supporter',
-      where: {
-        and: [where, { voteIntention: { in: ['certo', 'tende_a_certo'] } }],
-      },
-      user,
-      overrideAccess: false,
-    }),
-    payload.count({
-      collection: 'supporter',
-      where: {
-        and: [where, { voteIntention: { equals: 'indeciso' } }],
-      },
-      user,
-      overrideAccess: false,
-    }),
-  ])
-
-  if (total.totalDocs === 0) return null
-
-  return {
-    total: total.totalDocs,
-    certoAndTende: certoAndTende.totalDocs,
-    indeciso: indeciso.totalDocs,
-  }
-}
+): Promise<SupporterListOverviewViewModel | null> =>
+  computeSupporterListOverviewAggregate(payload, user, state)
 
 export const loadSupporterDetailPageData = async (
   payload: Pick<Payload, 'find'>,

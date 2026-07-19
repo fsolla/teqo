@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { ZodError } from 'zod'
 
 import {
   createLeadership,
@@ -14,8 +13,8 @@ import {
   nullableFormText,
   optionalFormText,
   requiredRelationshipFormValue,
-  validationFieldErrors,
 } from '@/lib/formData'
+import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
 
 export type LeadershipFormState = {
   status?: 'success'
@@ -46,35 +45,26 @@ const safeActionMessages = [
   'Somente a coordenação pode gerenciar lideranças.',
 ] as const
 
+const resolveLeadershipBoundaryMessage = (error: FormDataBoundaryError): string =>
+  error.field === 'contact'
+    ? 'Não foi possível identificar a liderança. Atualize a página e tente novamente.'
+    : error.field === 'id' || error.field === 'nucleus'
+      ? 'Não foi possível identificar o registro. Atualize a página e tente novamente.'
+      : error.message
+
 const getLeadershipFormError = (
   error: unknown,
   values?: LeadershipFormValues,
   revision?: number,
-): LeadershipFormState => {
-  if (error instanceof FormDataBoundaryError) {
-    const message =
-      error.field === 'contact'
-        ? 'Não foi possível identificar a liderança. Atualize a página e tente novamente.'
-        : error.field === 'id' || error.field === 'nucleus'
-          ? 'Não foi possível identificar o registro. Atualize a página e tente novamente.'
-          : error.message
-    return { fieldErrors: { [error.field]: [message] }, values, revision }
-  }
-  if (error instanceof ZodError) {
-    return { fieldErrors: validationFieldErrors(error), values, revision }
-  }
-  if (
-    error instanceof Error &&
-    safeActionMessages.includes(error.message as (typeof safeActionMessages)[number])
-  ) {
-    return { message: error.message, values, revision }
-  }
-  return {
-    message: 'Não foi possível salvar a liderança. Verifique os dados e tente novamente.',
+): LeadershipFormState =>
+  mapCampaignFormActionError({
+    error,
+    safeMessages: safeActionMessages,
+    genericMessage: 'Não foi possível salvar a liderança. Verifique os dados e tente novamente.',
     values,
     revision,
-  }
-}
+    resolveBoundaryMessage: resolveLeadershipBoundaryMessage,
+  })
 
 export const createLeadershipFormAction = async (
   state: LeadershipFormState,

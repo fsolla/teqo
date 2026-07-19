@@ -17,6 +17,20 @@ const enforceUniqueContactPhone: CollectionBeforeChangeHook = async ({
   originalDoc,
   req,
 }) => {
+  // Opt-out for callers that have already acquired the phone advisory locks in the
+  // SAME Payload transaction (e.g. bulk import). Fail closed: the flag is only
+  // honored inside an active transaction — without one the xact-level advisory
+  // lock cannot be held, so we run the full check regardless of the caller's claim.
+  if (req.context?.skipContactPhoneInvariant === true) {
+    if (req.transactionID == null) {
+      throw new APIError(
+        'skipContactPhoneInvariant exige uma transação ativa com os locks de telefone já adquiridos.',
+        500,
+      )
+    }
+    return data
+  }
+
   const phone = String(data.phone ?? originalDoc?.phone ?? '')
   const oldPhone =
     operation === 'update' && typeof originalDoc?.phone === 'string'

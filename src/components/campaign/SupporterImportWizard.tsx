@@ -29,7 +29,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import { cn } from '@/lib/utils'
 import {
-  isSupporterImportOkRow,
+  isPreviewErrorRow,
   type SupporterImportPreviewResult,
   type SupporterImportPreviewRow,
 } from '@/utilities/supporterImport'
@@ -46,19 +46,8 @@ const importStatusLabels: Record<SupporterImportPreviewRow['status'], string> = 
 
 const steps = ['Upload', 'Conferir prévia', 'Confirmação'] as const
 
-const isPreviewErrorRow = (row: SupporterImportPreviewRow): boolean =>
-  row.status !== 'ok' && row.status !== 'duplicado_pelo_telefone'
-
-const downloadErrorReport = (rows: SupporterImportPreviewRow[]) => {
-  const errorRows = rows.filter(isPreviewErrorRow)
-  const header = 'linha,nome,telefone,municipio,intencao,status\n'
-  const body = errorRows
-    .map(
-      (row) =>
-        `${row.line},"${row.nome.replace(/"/g, '""')}","${row.telefone}","${row.municipio}","${row.intencao}",${row.status}`,
-    )
-    .join('\n')
-  const blob = new Blob([header + body], { type: 'text/csv;charset=utf-8' })
+const downloadErrorReport = (errorReportCsv: string) => {
+  const blob = new Blob([errorReportCsv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
@@ -99,24 +88,19 @@ export const SupporterImportWizard = () => {
   }
 
   const visibleRows =
-    preview?.rows.filter((row) => (previewFilter === 'errors' ? isPreviewErrorRow(row) : true)) ??
-    []
+    preview?.sampleRows.filter((row) =>
+      previewFilter === 'errors' ? isPreviewErrorRow(row) : true,
+    ) ?? []
 
   const confirmImport = () => {
     if (!preview) return
     setError(undefined)
     startTransition(async () => {
       try {
-        const rows = preview.rows.filter(isSupporterImportOkRow).map((row) => ({
-          nome: row.nome,
-          telefone: row.normalizedPhone,
-          municipio: row.canonicalCity,
-          intencao: row.voteIntention,
-        }))
         const result = await confirmSupporterImport({
           operatorAttested: true,
           consentNote: consentNote.trim() || undefined,
-          rows,
+          importToken: preview.importToken,
         })
         setConfirmResult({ created: result.created, skipped: result.skipped })
         setStep(2)
@@ -210,7 +194,7 @@ export const SupporterImportWizard = () => {
               type="button"
               variant="outline"
               className="min-h-11"
-              onClick={() => downloadErrorReport(preview.rows)}
+              onClick={() => downloadErrorReport(preview.errorReportCsv)}
             >
               Baixar relatório de erros
             </Button>

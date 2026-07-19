@@ -1,7 +1,7 @@
 # Escala e DRY pós-C2 (apoiadores + listas)
 
-Status: rascunho
-Atualizado em: 2026-07-18
+Status: implementado (Fases 1–5)
+Atualizado em: 2026-07-19
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha C, item C6)
 Responsável: —
 
@@ -121,3 +121,38 @@ flowchart TD
 - `src/collections/Contact.ts` — `enforceUniqueContactPhone`
 - `scripts/seed-tse-results.mjs` — bulk drizzle em txn
 - AGENTS.md — `overrideAccess: false`, transações, Contact + locks, naming
+
+## Implementação (2026-07-19)
+
+Todas as cinco fases foram implementadas e validadas localmente (`tsc --noEmit`, `pnpm lint`, `pnpm test:int`, `pnpm test:unit`) contra `teqo_test`. Sem regressões nas rotas de núcleos/apoiadores/planos já entregues.
+
+### Fase 1 — UX alinhada
+- `SupporterForm` agora usa `StrictCombobox` + `municipalityComboboxOptions()` no município (validação continua em `optionalBahiaCity`).
+- `RemoveSupporterDataButton` trocou `window.confirm` por `AlertDialog` no padrão de `ArchiveNucleusDialog.tsx`.
+
+### Fase 2 — DRY com núcleos / leadership
+- `src/utilities/campaignListUrl.ts` (novo): `firstValue`, `normalizedText`, `strictDecimalInteger`, `inspectRawListParams`, `resolveListUrl`, `buildListHref`. `nucleusUi.ts`, `supporterUi.ts` e `actionPlanUi.ts` delegam para ele (domínio permanece nos módulos de domínio).
+- `src/components/campaign/CampaignListPagination.tsx` (novo) + `getPaginationPages`: substitui `NucleusPagination`, `SupporterPagination` e `ActionPlanPagination` (os três foram removidos). Listagens de núcleos/apoiadores/planos e o teste unitário `campaignNucleusUi` apontam para o novo componente.
+- `src/utilities/campaignFormFields.ts` (novo): `fieldError` / `errorProps` compartilhados por `SupporterForm` e `LeadershipForm` (cada form liga um `errorProps` local ao seu prefixo de id).
+- `src/utilities/campaignFormActionError.ts` (novo): `mapCampaignFormActionError` consolida FormDataBoundaryError → Zod → safelist → genérico. `apoiadores/novo/formActions.ts`, `apoiadores/[id]/formActions.ts` e `nucleos/[slug]/leadershipFormActions.ts` usam o mapper.
+
+### Fase 3 — KPI da lista
+- `src/utilities/supporterListOverviewAggregate.ts` (novo): `computeSupporterListOverviewAggregate` faz um único `SELECT COUNT(*) FILTER (...)` via drizzle na sessão da txn Payload, espelhando `buildSupporterListWhere` + a constraint de acesso (`nucleus_id IN (...)` para coordenador, sem constraint para geral, `none` para liderança). `loadSupporterListOverviewData` passou de 3× `payload.count` para um round-trip. Testes int cobrem geral, coordenador (escopo + filtro de cidade) e base vazia.
+
+### Fase 4 — Import em escala
+- `src/utilities/supporterImportBulk.ts` (novo): `bulkInsertSupporterImport` insere contacts e supporters via `payload.db.drizzle` na sessão da txn Payload (`getPostgresTransactionDatabase`), em chunks de 500, com `ON CONFLICT DO NOTHING` no índice unique `(contact_id, nucleus_id)`. Substitui até 10k `payload.create` por poucos inserts bulk.
+- `src/collections/Contact.ts`: `enforceUniqueContactPhone` honra `context.skipContactPhoneInvariant` **fail-closed** — só respeita quando `req.transactionID` está ativo (sem txn, os locks xact-level não podem estar segurados → throw). `upsertContactByPhone` passa o context (o caller já segurou os locks), eliminando o re-lock/re-check redundante do path single-create.
+
+### Fase 5 — Preview sem round-trip
+- `src/collections/SupporterImportBatch.ts` (novo, admin hidden, acesso `geral`/admin) + migration `20260719_011015_add_supporter_import_batch`: staging efêmero do conjunto `ok` no servidor.
+- `src/utilities/supporterImportToken.ts` (novo): token HMAC-SHA256(`${batchId}.${actorID}.${expiresAt}`, PAYLOAD_SECRET) com `timingSafeEqual` e TTL 10 min. `previewSupporterImportText` agora retorna `{ counts, sampleRows (100), errorReportCsv, importToken }` e estageia o conjunto `ok` em `supporterImportBatch`. `confirmSupporterImportRecord` aceita `importToken` (schema trocou `rows` por `importToken`), verifica HMAC + ator + expiração, consome o lote (single-use, delete após commit) e alimenta o bulk insert. O wizard parou de guardar/reenviar as rows.
+- Testes int: fluxo preview→confirm; token tampered (assinatura alterada) rejeitado; token de outro ator rejeitado; reuso de token consumido rejeitado.
+
+## Achados da auditoria (decisões de implementação)
+
+- **Nomes de coluna drizzle para relationships NÃO levam sufixo `Id`.** Em `payload.db.tables.supporter`, as colunas de relationship são `contact`, `nucleus`, `consent`, `voteIntentionConsent`, `createdBy` — não `contactId`, etc. O insert bulk inicial usou `contactId`/`createdById` e o drizzle silenciou essas chaves (gerou `default` → violação NOT NULL). Corrigido para os nomes sem sufixo. Lição para C7 e futuros inserts bulk: inspecionar `Object.keys(payload.db.tables.<slug>)` antes de montar as rows.
+- **`payload-preferences` não serve de staging genérico.** Tem campo `user` (relationship users/campaignUser) obrigatório e validado em `beforeChange`, e semântica de preferência por usuário. Tentar usá-lo para o lote de importação falhou com `ValidationError: User`. Decidido pela tabela dedicada `supporterImportBatch` (migration), como o plano já previa como fallback. Não há Redis novo no v1 do C6.
+- **Bulk insert deve rodar na txn Payload existente, não numa txn drizzle nova.** O seed TSE (`electionResultsImport.ts`) abre `dbAdapter.drizzle.transaction(...)` própria; para C4 isso quebraria a atomicidade com os locks advisory. Usado `getPostgresTransactionDatabase(payload, req)` para pegar a sessão drizzle vinculada à txn Payload.
+- **`skipContactPhoneInvariant` é fail-closed por txn, não por introspecção de lock.** Não há maneira barata de perguntar ao PG "seguro o lock X?"; o proxy usado é `req.transactionID` ativo (o lock `pg_advisory_xact_lock` é xact-level e só existe dentro de uma txn). Sem txn + flag setado → throw 500.
+- **`supporter.beforeChange` (coexistência com liderança) é no-op para import sem núcleo.** O hook só dispara quando `contactID` e `nucleusID` estão presentes; import cria supporters sem núcleo, então o bypass via drizzle insert é seguro. `createdBy` é setado explicitamente no row bulk.
+- **Escopo do mapper de form errors:** `ActionPlanPagination` e os forms de planos também consomem `campaignListUrl`/`CampaignListPagination`, mas o mapper de form actions de planos ficou para C7 (escopo de copy/mensagens diferente).
