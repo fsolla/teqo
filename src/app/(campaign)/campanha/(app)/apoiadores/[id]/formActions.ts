@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { ZodError } from 'zod'
 
 import {
   removeSupporterData,
@@ -10,12 +9,14 @@ import {
 } from '@/app/(campaign)/campanha/actions/supporter'
 import {
   checkboxFormValue,
-  FormDataBoundaryError,
   requiredRelationshipFormValue,
-  validationFieldErrors,
 } from '@/lib/formData'
 import { supporterRemoveSchema, supporterVoteIntentionSchema } from '@/lib/schemas/supporter'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
+import {
+  mapCampaignFormActionError,
+  type CampaignFormErrorState,
+} from '@/utilities/campaignFormActionError'
 
 export type SupporterVoteIntentionFormState = {
   status?: 'success'
@@ -32,6 +33,19 @@ const safeVoteIntentionMessages = [
   'Consentimento de intenção de voto ainda não configurado.',
   'Somente a coordenação pode gerenciar apoiadores.',
 ] as const
+
+const toMessageOnlyState = (
+  mapped: CampaignFormErrorState<unknown>,
+): { message?: string } => {
+  if (mapped.message) return { message: mapped.message }
+  if (!mapped.fieldErrors) return {}
+
+  const firstFieldMessage = Object.values(mapped.fieldErrors)
+    .flat()
+    .find((message) => message.length > 0)
+
+  return firstFieldMessage ? { message: firstFieldMessage } : {}
+}
 
 export const setSupporterVoteIntentionFormAction = async (
   _state: SupporterVoteIntentionFormState,
@@ -54,20 +68,13 @@ export const setSupporterVoteIntentionFormAction = async (
       voteIntention: supporter.voteIntention ?? undefined,
     }
   } catch (error) {
-    if (error instanceof FormDataBoundaryError) {
-      return { message: error.message }
-    }
-    if (error instanceof ZodError) {
-      const fieldErrors = validationFieldErrors(error)
-      return { message: fieldErrors.voteIntention?.[0] ?? fieldErrors.form?.[0] }
-    }
-    if (
-      error instanceof Error &&
-      safeVoteIntentionMessages.includes(error.message as (typeof safeVoteIntentionMessages)[number])
-    ) {
-      return { message: error.message }
-    }
-    return { message: 'Não foi possível salvar a intenção de voto.' }
+    return toMessageOnlyState(
+      mapCampaignFormActionError({
+        error,
+        safeMessages: safeVoteIntentionMessages,
+        genericMessage: 'Não foi possível salvar a intenção de voto.',
+      }),
+    )
   }
 }
 
@@ -84,6 +91,11 @@ export const removeSupporterDataFormAction = async (
     redirect('/campanha/apoiadores')
   } catch (error) {
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') throw error
-    return { message: 'Não foi possível remover os dados do apoiador.' }
+    return toMessageOnlyState(
+      mapCampaignFormActionError({
+        error,
+        genericMessage: 'Não foi possível remover os dados do apoiador.',
+      }),
+    )
   }
 }

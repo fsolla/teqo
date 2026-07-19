@@ -18,13 +18,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { isCampaignGeneral, getCoordinatorNucleusIds } from '@/utilities/campaignAccess'
+import { isCampaignGeneral } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import {
-  loadAccessibleNucleusOptions,
-  loadSupporterListOverviewData,
-  loadSupporterListPageData,
-} from '@/utilities/supporterPageData'
+import { loadSupportersPageData } from '@/utilities/supporterPageData'
 import { toSupporterListItemViewModel } from '@/utilities/supporterViewModels'
 import {
   buildSupporterFiltersKey,
@@ -44,23 +40,12 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
   if (!canAccessSupporterArea(user.role)) redirect('/campanha')
 
   const rawSearchParams = await searchParams
-  const [{ result, state, redirectHref }, nucleusOptions, coordinatorNucleusIds] =
-    await Promise.all([
-      loadSupporterListPageData(payload, user, rawSearchParams),
-      loadAccessibleNucleusOptions(payload, user),
-      user.role === 'coordenador'
-        ? getCoordinatorNucleusIds(payload, user.id)
-        : Promise.resolve(undefined),
-    ])
-  if (redirectHref) redirect(redirectHref)
-
-  const overview = await loadSupporterListOverviewData(
+  const { result, state, redirectHref, nucleusOptions, overview } = await loadSupportersPageData(
     payload,
     user,
-    state,
-    result.totalDocs,
-    coordinatorNucleusIds,
+    rawSearchParams,
   )
+  if (redirectHref) redirect(redirectHref)
 
   return (
     <div className="mr-auto flex w-full max-w-screen-2xl flex-col gap-6">

@@ -1,6 +1,7 @@
 import type { Payload } from 'payload'
 
 import type { CampaignUser, Consent, ElectoralNucleus, Supporter } from '@/payload-types'
+import { getCoordinatorNucleusIds } from '@/utilities/campaignAccess'
 import {
   getSupporterRegistrationConsent,
   getSupporterVoteIntentionConsent,
@@ -54,17 +55,36 @@ const nucleusOptionsSelect = {
 export const loadAccessibleNucleusOptions = async (
   payload: Pick<Payload, 'find'>,
   user: CampaignUser,
+  coordinatorNucleusIds?: number[],
 ): Promise<SupporterNucleusOption[]> => {
-  const result = await payload.find({
-    collection: 'electoralNucleus',
-    where: { status: { equals: 'ativo' } },
-    depth: 0,
-    pagination: false,
-    sort: 'name',
-    select: nucleusOptionsSelect,
-    user,
-    overrideAccess: false,
-  })
+  let result: { docs: ElectoralNucleus[] }
+
+  if (user.role === 'coordenador' && coordinatorNucleusIds !== undefined) {
+    if (coordinatorNucleusIds.length === 0) return []
+
+    result = await payload.find({
+      collection: 'electoralNucleus',
+      where: {
+        and: [{ status: { equals: 'ativo' } }, { id: { in: coordinatorNucleusIds } }],
+      },
+      depth: 0,
+      pagination: false,
+      sort: 'name',
+      select: nucleusOptionsSelect,
+      overrideAccess: true,
+    })
+  } else {
+    result = await payload.find({
+      collection: 'electoralNucleus',
+      where: { status: { equals: 'ativo' } },
+      depth: 0,
+      pagination: false,
+      sort: 'name',
+      select: nucleusOptionsSelect,
+      user,
+      overrideAccess: false,
+    })
+  }
 
   return result.docs.map((nucleus) => {
     const doc = nucleus as ElectoralNucleus
@@ -110,6 +130,51 @@ export const loadSupporterListOverviewData = async (
   coordinatorNucleusIds?: number[],
 ): Promise<SupporterListOverviewViewModel | null> =>
   computeSupporterListOverviewAggregate(payload, user, state, total, coordinatorNucleusIds)
+
+export type SupportersPageData = {
+  result: Awaited<ReturnType<typeof loadSupporterListPageData>>['result']
+  state: SupporterListState
+  redirectHref?: string
+  nucleusOptions: SupporterNucleusOption[]
+  overview: SupporterListOverviewViewModel | null
+  coordinatorNucleusIds?: number[]
+}
+
+export const loadSupportersPageData = async (
+  payload: Payload,
+  user: CampaignUser,
+  searchParams: Promise<SupporterListSearchParams> | SupporterListSearchParams,
+): Promise<SupportersPageData> => {
+  const coordinatorPromise =
+    user.role === 'coordenador'
+      ? getCoordinatorNucleusIds(payload, user.id)
+      : Promise.resolve(undefined)
+
+  const [{ result, state, redirectHref }, coordinatorNucleusIds] = await Promise.all([
+    loadSupporterListPageData(payload, user, searchParams),
+    coordinatorPromise,
+  ])
+
+  const [nucleusOptions, overview] = await Promise.all([
+    loadAccessibleNucleusOptions(payload, user, coordinatorNucleusIds),
+    loadSupporterListOverviewData(
+      payload,
+      user,
+      state,
+      result.totalDocs,
+      coordinatorNucleusIds,
+    ),
+  ])
+
+  return {
+    result,
+    state,
+    redirectHref,
+    nucleusOptions,
+    overview,
+    coordinatorNucleusIds,
+  }
+}
 
 export const loadSupporterDetailPageData = async (
   payload: Pick<Payload, 'find'>,

@@ -22,6 +22,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import type { NucleusCoordinatorOption } from '@/utilities/nucleusCoordinatorOptions'
+import { fieldError } from '@/utilities/campaignFormFields'
 import { organizationKindLabels, sectorKindLabels } from '@/utilities/nucleusUi'
 import type { NucleusFormViewModel } from '@/utilities/nucleusViewModels'
 
@@ -81,7 +82,7 @@ export const NucleusFormFields = ({
   fieldErrors = {},
   submittedName,
 }: NucleusFormFieldsProps) => {
-  const errorFor = (name: string) => fieldErrors[name]?.[0]
+  const errorFor = (name: string) => fieldError(fieldErrors, name)
 
   return (
     <FieldGroup>

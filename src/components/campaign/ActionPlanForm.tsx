@@ -29,6 +29,7 @@ import type { ActionPlanLeadershipOption } from '@/utilities/actionPlanLeadershi
 import type { ActionPlanFormViewModel } from '@/utilities/actionPlanViewModels'
 import { formatIsoAsBahiaDateTimeInput } from '@/utilities/campaignTime'
 import type { NucleusCoordinatorOption } from '@/utilities/nucleusCoordinatorOptions'
+import { fieldError } from '@/utilities/campaignFormFields'
 
 export type ActionPlanFormState = {
   message?: string
@@ -65,7 +66,7 @@ export const ActionPlanFormFields = ({
   submittedTitle,
   searchContacts,
 }: ActionPlanFormFieldsProps) => {
-  const errorFor = (name: string) => fieldErrors[name]?.[0]
+  const errorFor = (name: string) => fieldError(fieldErrors, name)
   const statusIsEditable =
     !plan || editableStatuses.includes(plan.status as (typeof editableStatuses)[number])
   const [status, setStatus] = useState<(typeof editableStatuses)[number]>(

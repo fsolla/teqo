@@ -37,6 +37,7 @@ import type {
   PrimaryContactOption,
 } from '@/utilities/primaryContactPageData'
 import type { StaffNucleusTabsViewModel } from '@/utilities/nucleusViewModels'
+import { fieldError } from '@/utilities/campaignFormFields'
 
 type EditableProfile = StaffNucleusTabsViewModel['voterProfiles'][number]
 
@@ -119,6 +120,8 @@ export const NucleusIntelligenceDialog = ({
   useEffect(() => {
     onPendingChange?.(pending)
   }, [onPendingChange, pending])
+
+  const primaryContactError = fieldError(state.fieldErrors, 'primaryContact')
 
   const updateProfile = (index: number, field: keyof EditableProfile, value: string) => {
     setProfiles((current) =>
@@ -403,9 +406,7 @@ export const NucleusIntelligenceDialog = ({
               search={searchPrimaryContacts}
             />
             <FieldDescription>Apenas lideranças engajadas podem ser escolhidas.</FieldDescription>
-            {state.fieldErrors?.primaryContact?.[0] ? (
-              <FieldError>{state.fieldErrors.primaryContact[0]}</FieldError>
-            ) : null}
+            {primaryContactError ? <FieldError>{primaryContactError}</FieldError> : null}
           </Field>
         </FieldGroup>
 

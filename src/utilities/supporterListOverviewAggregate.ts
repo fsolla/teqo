@@ -6,7 +6,7 @@ import type { Payload } from 'payload'
 import type { CampaignUser } from '@/payload-types'
 import { getCoordinatorNucleusIds, isCampaignGeneral } from '@/utilities/campaignAccess'
 import { drizzleResultRows } from '@/utilities/drizzleBulk'
-import { normalizeBrazilianPhone } from '@/utilities/phone'
+import { toAggregateSqlConditions } from '@/utilities/supporterListFilters'
 import type { SupporterListState } from '@/utilities/supporterUi'
 import type { SupporterListOverviewViewModel } from '@/utilities/supporterViewModels'
 
@@ -36,8 +36,8 @@ const buildAggregateSql = (
   state: SupporterListState,
   access: AccessConstraint,
 ): ReturnType<typeof sql> => {
-  const conditions: ReturnType<typeof sql>[] = []
-  const needsContactJoin = Boolean(state.q || state.city)
+  const { conditions: filterConditions, needsContactJoin } = toAggregateSqlConditions(state)
+  const conditions = [...filterConditions]
 
   if (access.kind === 'nucleusSet') {
     if (access.ids.length === 0) {
@@ -51,33 +51,6 @@ const buildAggregateSql = (
         )})`,
       )
     }
-  }
-
-  if (state.voteIntention) {
-    conditions.push(sql`"supporter"."vote_intention" = ${state.voteIntention}`)
-  }
-
-  if (state.nucleus) {
-    conditions.push(sql`"supporter"."nucleus_id" = ${state.nucleus}`)
-  }
-
-  if (state.city) {
-    conditions.push(sql`"contact"."city" = ${state.city}`)
-  }
-
-  if (state.q) {
-    const searchTerms: ReturnType<typeof sql>[] = [
-      sql`"contact"."name" ILIKE ${`%${state.q}%`}`,
-      sql`"contact"."city" ILIKE ${`%${state.q}%`}`,
-    ]
-    const normalizedPhone = normalizeBrazilianPhone(state.q)
-    if (normalizedPhone) {
-      searchTerms.push(sql`"contact"."phone" = ${normalizedPhone}`)
-    } else if (/\d/.test(state.q)) {
-      const digits = state.q.replace(/\D/g, '')
-      if (digits) searchTerms.push(sql`"contact"."phone" ILIKE ${`%${digits}%`}`)
-    }
-    conditions.push(sql`(${sql.join(searchTerms, sql` OR `)})`)
   }
 
   const whereClause =

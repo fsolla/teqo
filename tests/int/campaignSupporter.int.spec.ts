@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { beforeAll, describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { getPayload, type Payload } from 'payload'
 
 import {
@@ -16,7 +16,8 @@ import {
   SUPPORTER_REGISTRATION_CONSENT_KEY,
   SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
 } from '@/utilities/campaignConsent'
-import { loadSupporterListOverviewData } from '@/utilities/supporterPageData'
+import { loadSupporterListOverviewData, loadSupportersPageData } from '@/utilities/supporterPageData'
+import { buildSupporterListWhere } from '@/utilities/supporterUi'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -383,8 +384,9 @@ describe('campaign supporter domain', () => {
       { voteIntention: 'outro' },
       { voteIntention: null },
     ]
+    const searchTag = fixtures.value('OverviewKpi')
     for (const { voteIntention } of intentions) {
-      const contact = await fixtures.createContact()
+      const contact = await fixtures.createContact({ name: searchTag })
       await fixtures.createSupporter({
         contact: contact.id,
         consent: registration.id,
@@ -395,11 +397,20 @@ describe('campaign supporter domain', () => {
       })
     }
 
+    const list = await payload.find({
+      collection: 'supporter',
+      where: buildSupporterListWhere({ page: 1, q: searchTag }),
+      depth: 0,
+      pagination: false,
+      user: geral,
+      overrideAccess: false,
+    })
+
     const overview = await loadSupporterListOverviewData(
       payload,
       geral,
-      { page: 1 },
-      intentions.length,
+      { page: 1, q: searchTag },
+      list.totalDocs,
     )
     expect(overview).not.toBeNull()
     expect(overview!.total).toBe(intentions.length)
@@ -455,5 +466,118 @@ describe('campaign supporter domain', () => {
     )
     expect(filtered).not.toBeNull()
     expect(filtered!.total).toBe(1)
+  })
+
+  it('ignores single-character search queries in list and overview filters', async () => {
+    const fixtures = campaignFixtures()
+    const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
+    const geral = await fixtures.createCampaignUser('geral')
+
+    const uniqueName = fixtures.value('ApoiadorUnico')
+    const contact = await fixtures.createContact({ name: uniqueName })
+    await fixtures.createSupporter({
+      contact: contact.id,
+      consent: registration.id,
+      consentContentHash: 'hash',
+      consentedAt: new Date().toISOString(),
+      createdBy: geral.id,
+    })
+
+    const shortQuery = uniqueName.slice(0, 1)
+    const listWhere = buildSupporterListWhere({ page: 1, q: shortQuery })
+    const list = await payload.find({
+      collection: 'supporter',
+      where: listWhere,
+      depth: 0,
+      pagination: false,
+      user: geral,
+      overrideAccess: false,
+    })
+
+    expect(list.totalDocs).toBeGreaterThanOrEqual(1)
+
+    const overview = await loadSupporterListOverviewData(
+      payload,
+      geral,
+      { page: 1, q: shortQuery },
+      list.totalDocs,
+    )
+    expect(overview).not.toBeNull()
+    expect(overview!.total).toBe(list.totalDocs)
+  })
+
+  it('keeps list and overview totals aligned for multi-character search', async () => {
+    const fixtures = campaignFixtures()
+    const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
+    const geral = await fixtures.createCampaignUser('geral')
+
+    const uniqueName = fixtures.value('ApoiadorBusca')
+    const contact = await fixtures.createContact({ name: uniqueName })
+    await fixtures.createSupporter({
+      contact: contact.id,
+      consent: registration.id,
+      consentContentHash: 'hash',
+      consentedAt: new Date().toISOString(),
+      createdBy: geral.id,
+    })
+
+    const q = uniqueName.slice(0, 8)
+    const list = await payload.find({
+      collection: 'supporter',
+      where: buildSupporterListWhere({ page: 1, q }),
+      depth: 0,
+      pagination: false,
+      user: geral,
+      overrideAccess: false,
+    })
+
+    expect(list.totalDocs).toBeGreaterThanOrEqual(1)
+
+    const overview = await loadSupporterListOverviewData(
+      payload,
+      geral,
+      { page: 1, q },
+      list.totalDocs,
+    )
+    expect(overview).not.toBeNull()
+    expect(overview!.total).toBe(list.totalDocs)
+    expect(overview!.certoAndTende + overview!.indeciso).toBeLessThanOrEqual(list.totalDocs)
+  })
+
+  it('loads supporters page data with a single coordinator nucleus lookup', async () => {
+    const fixtures = campaignFixtures()
+    await ensureSupporterConsents(fixtures)
+    const coordenador = await fixtures.createCampaignUser('coordenador')
+    const assigned = await fixtures.createNucleus({ coordinators: [coordenador.id] })
+    const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
+
+    const contact = await fixtures.createContact()
+    await fixtures.createSupporter({
+      contact: contact.id,
+      nucleus: assigned.id,
+      consent: registration.id,
+      consentContentHash: 'hash',
+      consentedAt: new Date().toISOString(),
+      createdBy: coordenador.id,
+    })
+
+    const campaignAccess = await import('@/utilities/campaignAccess')
+    const originalGetCoordinatorNucleusIds = campaignAccess.getCoordinatorNucleusIds
+    let lookupCount = 0
+    const spy = vi.spyOn(campaignAccess, 'getCoordinatorNucleusIds')
+    spy.mockImplementation(async (...args) => {
+      lookupCount += 1
+      return originalGetCoordinatorNucleusIds(...args)
+    })
+
+    try {
+      const pageData = await loadSupportersPageData(payload, coordenador, {})
+      expect(lookupCount).toBe(1)
+      expect(pageData.coordinatorNucleusIds).toContain(assigned.id)
+      expect(pageData.nucleusOptions.some((option) => option.id === assigned.id)).toBe(true)
+      expect(pageData.result.totalDocs).toBeGreaterThanOrEqual(1)
+    } finally {
+      spy.mockRestore()
+    }
   })
 })

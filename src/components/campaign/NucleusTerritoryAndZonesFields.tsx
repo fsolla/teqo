@@ -22,6 +22,7 @@ import {
   territoryComboboxOptions,
 } from '@/utilities/territoryComboboxOptions'
 import { sortedUniqueZoneNumbers } from '@/utilities/tseZone'
+import { fieldError } from '@/utilities/campaignFormFields'
 
 type TerritoryAndZonesValues = {
   regions?: string[] | null
@@ -71,7 +72,7 @@ export const NucleusTerritoryAndZonesFields = ({
   const [cityError, setCityError] = useState<string>()
   const [neighborhoodError, setNeighborhoodError] = useState<string>()
 
-  const errorFor = (name: string) => fieldErrors[name]?.[0]
+  const errorFor = (name: string) => fieldError(fieldErrors, name)
   const derivedRegions = useMemo(() => territoriesForCities(cities), [cities])
   const displayRegions = cities.length > 0 ? derivedRegions : regions
   const regionsAreDerived = cities.length > 0

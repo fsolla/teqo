@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import type { CampaignUser } from '@/payload-types'
+import { fieldError } from '@/utilities/campaignFormFields'
 
 type VoteEstimateDialogProps = {
   nucleusId: number
@@ -80,8 +81,8 @@ export const VoteEstimateActionDialog = ({
   const successfulCloseRef = useRef(false)
   const requiresNote =
     isEdit || (isReview && proposedEstimate != null && Number(estimate) !== proposedEstimate)
-  const estimateError = state.fieldErrors?.estimate?.[0]
-  const noteError = state.fieldErrors?.confirmationNote?.[0]
+  const estimateError = fieldError(state.fieldErrors, 'estimate')
+  const noteError = fieldError(state.fieldErrors, 'confirmationNote')
   const fieldIdSuffix = mode
 
   useEffect(() => {

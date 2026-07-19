@@ -12,6 +12,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
+import { fieldError } from '@/utilities/campaignFormFields'
 
 export const PrimaryContactFormFields = ({
   nucleusId,
@@ -22,8 +23,8 @@ export const PrimaryContactFormFields = ({
   contactId: number
   state: LeadershipFormState
 }) => {
-  const nucleusError = state.fieldErrors?.nucleus?.[0]
-  const contactError = state.fieldErrors?.contact?.[0]
+  const nucleusError = fieldError(state.fieldErrors, 'nucleus')
+  const contactError = fieldError(state.fieldErrors, 'contact')
   const hasError = Boolean(state.message || nucleusError || contactError)
 
   return (
@@ -83,11 +84,7 @@ export const LeadershipPrimaryContactAction = ({
   return (
     <form
       action={action}
-      aria-describedby={
-        state.message || state.fieldErrors?.nucleus || state.fieldErrors?.contact
-          ? 'primary-contact-form-error'
-          : undefined
-      }
+      aria-describedby={hasError ? 'primary-contact-form-error' : undefined}
     >
       <PrimaryContactFormFields
         nucleusId={nucleusId}

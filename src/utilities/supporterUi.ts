@@ -14,7 +14,7 @@ import {
   strictDecimalInteger,
   type RawSearchParams as CampaignListRawSearchParams,
 } from '@/utilities/campaignListUrl'
-import { normalizeBrazilianPhone } from '@/utilities/phone'
+import { toPayloadWhere } from '@/utilities/supporterListFilters'
 
 export const supporterPageSize = 25
 
@@ -63,35 +63,7 @@ export const parseSupporterListParams = (params: RawSearchParams): SupporterList
   }
 }
 
-export const buildSupporterListWhere = (state: SupporterListState): Where => {
-  const filters: Where[] = []
-
-  if (state.q) {
-    const searchFilters: Where[] = [
-      { 'contact.name': { contains: state.q } },
-      { 'contact.city': { contains: state.q } },
-    ]
-    const normalizedPhone = normalizeBrazilianPhone(state.q)
-    if (normalizedPhone) {
-      searchFilters.push({ 'contact.phone': { equals: normalizedPhone } })
-    } else if (/\d/.test(state.q)) {
-      searchFilters.push({ 'contact.phone': { contains: state.q.replace(/\D/g, '') } })
-    }
-    filters.push({ or: searchFilters })
-  }
-
-  if (state.voteIntention) {
-    filters.push({ voteIntention: { equals: state.voteIntention } })
-  }
-  if (state.city) {
-    filters.push({ 'contact.city': { equals: state.city } })
-  }
-  if (state.nucleus) {
-    filters.push({ nucleus: { equals: state.nucleus } })
-  }
-
-  return filters.length ? { and: filters } : {}
-}
+export const buildSupporterListWhere = (state: SupporterListState): Where => toPayloadWhere(state)
 
 export const buildSupporterListSearchParams = (
   state: SupporterListState,

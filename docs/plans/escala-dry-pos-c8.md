@@ -1,6 +1,6 @@
 # Escala e DRY pós-C8 (apoiadores / filtros / forms)
 
-Status: registrado no roadmap (fases pendentes)
+Status: implementado (Fases 1–4, 2026-07-19)
 Atualizado em: 2026-07-19
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha C, item C9)
 Responsável: —
@@ -38,46 +38,44 @@ Os revisores (quality / reuse / performance) marcaram como **importantes e maior
 
 ## Questões em aberto
 
-- **Filtro unificado: AST neutro vs helper de termos de busca?** **Recomendação:** extrair pelo menos `buildSupporterSearchTerms(q)` compartilhado (telefone, dígitos, ILIKE) na Fase 1; AST completo Payload↔SQL só se a Fase 1 ainda duplicar branches de `voteIntention`/`nucleus`.
-- **Memo de núcleos: `React.cache(getCoordinatorNucleusIds)` vs `loadSupportersPageData`?** **Recomendação:** loader único `loadSupportersPageData` que retorna `{ list, overviewInputs, nucleusOptions, coordinatorNucleusIds }` — mais explícito que cache implícito e testável em int.
-- **Migrar componentes de form fora do diff do C8?** **Recomendação:** sim na Fase 4 — são o mesmo débito DRY da vertical; escopo mecânico (`fieldError` / `errorProps`), sem mudar copy.
+- **Filtro unificado: AST neutro vs helper de termos de busca?** **Resolvido (2026-07-19):** módulo `supporterListFilters.ts` com `buildSupporterSearchTerms` + adaptadores `toPayloadWhere` / `toAggregateSqlConditions` — sem AST completo; access SQL permanece no aggregate.
+- **Memo de núcleos: `React.cache(getCoordinatorNucleusIds)` vs `loadSupportersPageData`?** **Resolvido (2026-07-19):** loader único `loadSupportersPageData` retorna `{ result, state, redirectHref, nucleusOptions, overview, coordinatorNucleusIds }`; `loadAccessibleNucleusOptions` aceita `coordinatorNucleusIds` pré-resolvidos para coordenador.
+- **Migrar componentes de form fora do diff do C8?** **Resolvido (2026-07-19):** Fase 4 migrou os 8 componentes listados para `fieldError` de `campaignFormFields.ts`.
 
 ## Abordagem proposta
 
 ```mermaid
 flowchart TD
     C8["C8 apoiadores ✓"] --> F1
-    F1["Fase 1 — Filtro unificado<br/>supporterUi + aggregate SQL"]
-    F1 --> F2["Fase 2 — contactSearchQuery + loader página<br/>1× núcleos coordenador"]
-    F2 --> F3["Fase 3 — formActions detalhe apoiador<br/>contrato message preservado"]
+    F1["Fase 1 — Filtro unificado<br/>supporterListFilters"]
+    F1 --> F2["Fase 2 — contactSearchQuery + loader página<br/>loadSupportersPageData"]
+    F2 --> F3["Fase 3 — formActions detalhe apoiador<br/>message-only mapper"]
     F3 --> F4["Fase 4 — fieldError nos componentes restantes"]
 
     C7["C7 contactSearchQuery ✓"] -.-> F2
 ```
 
-### Fase 1 — Núcleo de filtros de apoiadores
+### Fase 1 — Núcleo de filtros de apoiadores ✓
 
-- Extrair condições compartilhadas de `buildSupporterListWhere` e `buildAggregateSql` para `src/utilities/supporterListFilters.ts` (ou equivalente): `q`, telefone, `voteIntention`, `city`, `nucleus`, mais adaptadores `toPayloadWhere(state)` / `toAggregateSqlConditions(state, access)`.
-- Testes int: mesmo `SupporterListState` produz o mesmo conjunto filtrado na lista e no overview (fixture com `q`, cidade, núcleo, intenção).
-- Critério: mudança futura de filtro exige editar um só lugar.
+- `src/utilities/supporterListFilters.ts`: `buildSupporterSearchTerms`, `toPayloadWhere`, `toAggregateSqlConditions`.
+- `buildSupporterListWhere` e `buildAggregateSql` delegam ao módulo compartilhado.
+- Testes: `tests/int/supporterListFilters.int.spec.ts` + paridade lista/overview em `campaignSupporter.int.spec.ts`.
 
-### Fase 2 — `contactSearchQuery` + loader da página
+### Fase 2 — `contactSearchQuery` + loader da página ✓
 
-- Em `buildAggregateSql` (e `buildSupporterListWhere` se ainda aceitar `q` curto): ignorar `q` quando `!isContactSearchQueryReady(q)` — alinhado a `ContactCombobox` / C7.
-- Criar `loadSupportersPageData` em `supporterPageData.ts`: uma chamada a `getCoordinatorNucleusIds` para `coordenador`, repassar IDs para list constraints (se viável) + overview + evitar prefetch duplicado na `page.tsx`.
-- Avaliar `React.cache` só como otimização secundária se o loader único não bastar.
+- Filtros ignoram `q` quando `!isContactSearchQueryReady(q)`.
+- `loadSupportersPageData` em `supporterPageData.ts`; `apoiadores/page.tsx` usa loader único.
+- Int: 1× `getCoordinatorNucleusIds` por render de coordenador.
 
-### Fase 3 — `apoiadores/[id]/formActions.ts`
+### Fase 3 — `apoiadores/[id]/formActions.ts` ✓
 
-- Migrar `setSupporterVoteIntentionFormAction` / `removeSupporterDataFormAction` para `mapCampaignFormActionError` com `resolveBoundaryMessage` ou branches que mantêm `message` (não `fieldErrors`) onde `SupporterDetail` espera banner global.
-- Espelhar padrão de `apoiadores/novo/formActions.ts` (`getSupporterFormError`) onde aplicável.
+- `mapCampaignFormActionError` + `toMessageOnlyState` preservando contrato `message` da UI.
 
-### Fase 4 — Componentes de form restantes
+### Fase 4 — Componentes de form restantes ✓
 
-- Substituir `errorFor` / `state.fieldErrors?.x?.[0]` por `fieldError` ou `errorProps` de `campaignFormFields.ts` em: `NucleusForm`, `ActionPlanForm`, `NucleusTerritoryFields`, `NucleusTerritoryAndZonesFields`, `VoteEstimateDialog`, `ActionPlanUpdateForm`, `LeadershipPrimaryContactAction`, `NucleusIntelligenceDialog` (lista do simplify 2026-07-19).
-- Opcional baixa prioridade: `planos/formActions` regex de unique → pre-check de título como em `nucleos/formActions` (`existingActionPlanState`).
+- `fieldError` em: `NucleusForm`, `ActionPlanForm`, `NucleusTerritoryFields`, `NucleusTerritoryAndZonesFields`, `VoteEstimateDialog`, `ActionPlanUpdateForm`, `LeadershipPrimaryContactAction`, `NucleusIntelligenceDialog`.
 
-**Migration:** nenhuma prevista. Sem Consent novo.
+**Migration:** nenhuma. Sem Consent novo.
 
 ## Dependências
 
@@ -99,10 +97,28 @@ flowchart TD
 - [escala-dry-pos-c6.md](escala-dry-pos-c6.md) — C8 entregue; precedente do formato
 - [escala-dry-pos-c3.md](escala-dry-pos-c3.md) — `contactSearchQuery` (C7)
 - [escala-dry-pos-c2.md](escala-dry-pos-c2.md) — cadastro nominal C2/C6
+- `src/utilities/supporterListFilters.ts` — núcleo de filtros unificado
 - `src/utilities/supporterUi.ts` — `buildSupporterListWhere`
-- `src/utilities/supporterListOverviewAggregate.ts` — `buildAggregateSql`, `resolveAccessConstraint`
-- `src/app/(campaign)/campanha/(app)/apoiadores/page.tsx` — prefetch / waterfall overview
+- `src/utilities/supporterListOverviewAggregate.ts` — aggregate SQL + `resolveAccessConstraint`
+- `src/app/(campaign)/campanha/(app)/apoiadores/page.tsx` — `loadSupportersPageData`
 - `src/lib/contactSearchQuery.ts` — `isContactSearchQueryReady`
-- `src/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions.ts` — ladder legado
+- `src/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions.ts` — mapper compartilhado
 - `src/utilities/campaignFormFields.ts` — `fieldError`, `errorProps`
 - AGENTS.md — `Contact`, `overrideAccess: false`, naming inglês
+
+## Revisão (2026-07-19)
+
+Implementação das Fases 1–4 conforme plano de implementação C9: `supporterListFilters.ts`, `loadSupportersPageData`, `contactSearchQuery` nos filtros, `formActions` do detalhe no mapper, `fieldError` nos 8 componentes restantes. Testes unit + int adicionados. Roadmap atualizado (C8 mesclado, C9 entregue).
+
+## Simplify (2026-07-19)
+
+Passagem `/simplify` sobre o diff do C9 aplicou limpezas pontuais: `normalizeContactSearchQuery` em `buildSupporterSearchTerms`, paralelismo no loader, spy de teste corrigido, KPI aggregate isolado por `searchTag`, `aria-describedby` com `hasError` no `LeadershipPrimaryContactAction`. Validado com testes int + scan Aikido.
+
+Os débitos que os revisores marcaram como importantes e maiores que cleanup foram registrados como item **C10** — [escala-dry-pos-c9.md](escala-dry-pos-c9.md):
+
+1. **Lista ainda re-dispara access** — `payload.find` com `overrideAccess: false` chama `getAccessibleNucleusIds` → segunda ida a `getCoordinatorNucleusIds` na mesma renderização.
+2. **Dois round-trips de `electoralNucleus`** — `getCoordinatorNucleusIds` (só IDs) + `loadAccessibleNucleusOptions` (name/slug) no mesmo escopo.
+3. **`errorProps` não migrado** — forms grandes ainda repetem wiring manual de `aria-*` apesar de `fieldError`.
+4. **Prefetch não estende à página de criação** — `loadSupporterCreatePageData` pode repetir o padrão.
+
+**Explicitamente fora (tradeoffs aceitos no C9/simplify):** AST neutro único Payload↔SQL; waterfall lista→overview; unificar lista+aggregate; remover alias `errorFor`; hoist de `toMessageOnlyState`.

@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
+import { fieldError } from '@/utilities/campaignFormFields'
 
 export const ActionPlanUpdateForm = ({ planId }: { planId: number }) => {
   const router = useRouter()
@@ -24,7 +25,7 @@ export const ActionPlanUpdateForm = ({ planId }: { planId: number }) => {
     router.refresh()
   }, [router, state.message, state.status])
 
-  const bodyError = state.fieldErrors?.body?.[0]
+  const bodyError = fieldError(state.fieldErrors, 'body')
 
   return (
     <Card>
