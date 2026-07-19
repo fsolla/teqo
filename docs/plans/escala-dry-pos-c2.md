@@ -1,6 +1,6 @@
 # Escala e DRY pós-C2 (apoiadores + listas)
 
-Status: implementado (Fases 1–5)
+Status: implementado e mesclado em `main` (2026-07-19)
 Atualizado em: 2026-07-19
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha C, item C6)
 Responsável: —
@@ -156,3 +156,7 @@ Todas as cinco fases foram implementadas e validadas localmente (`tsc --noEmit`,
 - **`skipContactPhoneInvariant` é fail-closed por txn, não por introspecção de lock.** Não há maneira barata de perguntar ao PG "seguro o lock X?"; o proxy usado é `req.transactionID` ativo (o lock `pg_advisory_xact_lock` é xact-level e só existe dentro de uma txn). Sem txn + flag setado → throw 500.
 - **`supporter.beforeChange` (coexistência com liderança) é no-op para import sem núcleo.** O hook só dispara quando `contactID` e `nucleusID` estão presentes; import cria supporters sem núcleo, então o bypass via drizzle insert é seguro. `createdBy` é setado explicitamente no row bulk.
 - **Escopo do mapper de form errors:** `ActionPlanPagination` e os forms de planos também consomem `campaignListUrl`/`CampaignListPagination`, mas o mapper de form actions de planos ficou para C7 (escopo de copy/mensagens diferente).
+
+## Simplify (2026-07-19)
+
+Passagem `/simplify` sobre o commit do C6 aplicou limpezas pontuais (-94/+48 linhas) sem mudar comportamento: remoção de identity maps e re-maps (`importStatusCsvValue`, re-mapeamento de `batch.okRows`), colapso de branches mortos (`typeof doc.actor === 'object'`), reuso de helpers existentes (`relationshipId`, `canManageCampaignUsers`), `base64url` nativo do Node no token HMAC, simplificação do mapeamento `doc.id` no aggregate, remoção de guarda redundante no wizard, e `req.transactionID == null`. Correção de bug latente: `created += Number(result.rowCount ?? batch.length)` → `?? 0` (over-count em conflito). Renomeado tipo local `StagedSupporterImportBatch` para não colidir com o tipo Payload gerado. Validado com `tsc --noEmit`, `pnpm lint`, `pnpm test:int`, `pnpm test:unit` e scan Aikido. Os débitos de escala/DRY que os revisores marcaram como importantes e maiores que cleanup (locks bulk em 1 round-trip, `.returning()`, leituras drizzle diretas, `pg_trgm`, helper `drizzleBulk.ts` compartilhado, assertion de colunas, migração dos `formActions` restantes) foram registrados como item **C8** — [escala-dry-pos-c6.md](escala-dry-pos-c6.md).
