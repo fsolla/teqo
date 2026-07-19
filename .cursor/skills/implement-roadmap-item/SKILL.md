@@ -78,7 +78,7 @@ Leia, nesta ordem:
 5. **AGENTS.md** — seções relevantes ao domínio do item (Campaign auth, Posts & Tags, migrations, convenções de naming).
 6. **Planos vizinhos** citados nas seções "Dependências" e "Não escopo" — para saber onde o escopo deste item termina e o dos outros começa.
 
-Item sem plano detalhado (ex.: só design, como C5; ou fill-in "sem plano detalhado ainda"): primeiro crie o plano seguindo a skill `roadmap-item` (template em `.cursor/skills/roadmap-item/plan-template.md`), depois continue esta skill a partir do Passo 4.
+Item sem plano detalhado (ex.: só design, como C5; ou fill-in "sem plano detalhado ainda"): primeiro crie o plano seguindo a skill `roadmap-item` (template em `.cursor/skills/roadmap-item/plan-template.md` — inclui classificação Impeccable A–D e brief compacto se B/C/D), depois continue esta skill a partir do Passo 4. Se o plano já trouxer classe + brief, reutilize no Passo 8 em vez de reclassificar do zero; só reabra se o código/roadmap mostrar que a classe mudou.
 
 ## Passo 4 — Auditar o plano contra o repositório
 
@@ -197,3 +197,5 @@ Checklist AGENTS.md completo contra banco **local**; scan Aikido nos arquivos fi
 **Após planejamento (Passos 1–8):** (1) item e estado no roadmap (janela, dependências, bloqueios); (2) veredito da auditoria — o que confirmou, o que estava defasado, o que conflitava; (3) o plano de implementação em fases, com fases Impeccable marcadas; (4) classificação A/B/C/D e decisões assumidas que merecem validação de produto.
 
 **Após implementação (Passo 10):** o que entrou em cada fase, resultado do critique/polish (score/P0–P1 se houver), checklist AGENTS.md + Aikido, e o que ficou de fora.
+
+Se `/simplify` ou `/impeccable critique` deixaram follow-ups **maiores que o cleanup da sessão**, ofereça a skill `capture-review-debts` (triage → confirmação → `roadmap-item`) em vez de registrar débitos ad hoc ou abandoná-los no chat.

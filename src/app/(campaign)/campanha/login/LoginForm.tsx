@@ -1,42 +1,69 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 
-import { loginCampaignFormAction } from '@/app/(campaign)/campanha/actions/auth'
+import { loginCampaignFormAction, type LoginResult } from '@/app/(campaign)/campanha/actions/auth'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
+import {
+  CAMPAIGN_LEADERSHIP_LOGIN_RECOVERY_HINT,
+  campaignAuthHeadingClassName,
+} from '@/lib/campaignAuthCopy'
+
+const LOGIN_ERROR_ID = 'login-credentials-error'
+
+const identifierInputMode = (value: string): 'tel' | 'email' | 'text' => {
+  const trimmed = value.trim()
+  if (!trimmed) return 'text'
+  if (trimmed.includes('@')) return 'email'
+  const digits = trimmed.replace(/\D/g, '')
+  if (digits.length >= 2 && !/[a-zA-Z]/.test(trimmed)) return 'tel'
+  return 'text'
+}
 
 export const LoginForm = () => {
-  const [state, formAction, pending] = useActionState(loginCampaignFormAction, {})
+  const [state, formAction, pending] = useActionState(
+    loginCampaignFormAction,
+    {} satisfies LoginResult,
+  )
+  const [identifier, setIdentifier] = useState('')
+  const hasAuthError = Boolean(state.error)
 
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Acessar painel</CardTitle>
-        <CardDescription>Entre com seu e-mail ou celular para continuar.</CardDescription>
+        <h1 className={campaignAuthHeadingClassName}>Entrar na campanha</h1>
+        <CardDescription>Use o e-mail da equipe ou o celular da liderança.</CardDescription>
+        <p className="text-sm text-muted-foreground text-pretty">
+          Primeiro acesso? Peça um convite no WhatsApp ao coordenador do seu núcleo.
+        </p>
       </CardHeader>
       <CardContent>
         <form action={formAction}>
           <FieldGroup>
-            <Field>
+            <Field data-invalid={hasAuthError || undefined}>
               <FieldLabel htmlFor="identifier">E-mail ou celular</FieldLabel>
               <Input
                 id="identifier"
                 name="identifier"
                 type="text"
-                inputMode="email"
+                inputMode={identifierInputMode(identifier)}
                 autoComplete="username"
                 enterKeyHint="next"
-                placeholder="voce@exemplo.com ou (71) 99999-1234"
+                placeholder="(71) 99999-1234 ou voce@exemplo.com"
                 required
                 className="min-h-11"
+                value={identifier}
+                onChange={(event) => setIdentifier(event.target.value)}
+                aria-invalid={hasAuthError || undefined}
+                aria-describedby={hasAuthError ? LOGIN_ERROR_ID : undefined}
               />
             </Field>
-            <Field>
+            <Field data-invalid={hasAuthError || undefined}>
               <FieldLabel htmlFor="current-password">Senha</FieldLabel>
               <Input
                 id="current-password"
@@ -46,19 +73,26 @@ export const LoginForm = () => {
                 enterKeyHint="done"
                 required
                 className="min-h-11"
+                aria-invalid={hasAuthError || undefined}
+                aria-describedby={hasAuthError ? LOGIN_ERROR_ID : undefined}
               />
             </Field>
-            <p className="text-sm">
+            <div className="flex flex-col gap-2 text-sm">
               <Link
                 href="/campanha/esqueci-senha"
                 className="text-primary underline-offset-4 hover:underline"
               >
                 Esqueceu a senha?
               </Link>
-            </p>
+              {hasAuthError ? (
+                <p className="text-muted-foreground text-pretty">
+                  {CAMPAIGN_LEADERSHIP_LOGIN_RECOVERY_HINT}
+                </p>
+              ) : null}
+            </div>
             <Field>
-              {state.error ? <FieldError>{state.error}</FieldError> : null}
-              <Button type="submit" className="min-h-11" disabled={pending}>
+              {state.error ? <FieldError id={LOGIN_ERROR_ID}>{state.error}</FieldError> : null}
+              <Button type="submit" className="min-h-11 w-full" disabled={pending}>
                 {pending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
                 <span aria-live="polite">{pending ? 'Entrando...' : 'Entrar'}</span>
               </Button>

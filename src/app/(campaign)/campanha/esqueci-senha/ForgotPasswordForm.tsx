@@ -5,10 +5,14 @@ import { useActionState } from 'react'
 
 import { requestCampaignPasswordResetFormAction } from '@/app/(campaign)/campanha/actions/password'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
+import {
+  CAMPAIGN_LEADERSHIP_PHONE_ACCESS_HINT,
+  campaignAuthHeadingClassName,
+} from '@/lib/campaignAuthCopy'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 
@@ -21,10 +25,9 @@ export const ForgotPasswordForm = () => {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Esqueceu a senha?</CardTitle>
+        <h1 className={campaignAuthHeadingClassName}>Esqueceu a senha?</h1>
         <CardDescription>
-          Informe o e-mail cadastrado na sua conta. Se você acessa só com celular, peça um novo
-          convite ao coordenador.
+          Informe o e-mail cadastrado na sua conta. {CAMPAIGN_LEADERSHIP_PHONE_ACCESS_HINT}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -56,7 +59,10 @@ export const ForgotPasswordForm = () => {
                 <span aria-live="polite">{pending ? 'Enviando...' : 'Enviar link'}</span>
               </Button>
               <p className="text-center text-sm">
-                <Link href="/campanha/login" className="text-primary underline-offset-4 hover:underline">
+                <Link
+                  href="/campanha/login"
+                  className="text-primary underline-offset-4 hover:underline"
+                >
                   Voltar ao login
                 </Link>
               </p>

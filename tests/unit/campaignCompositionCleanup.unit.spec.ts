@@ -1,9 +1,9 @@
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, extname, resolve } from 'node:path'
 import { act, createElement } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -97,14 +97,55 @@ describe('campaign login composition', () => {
     const password = screen.getByLabelText('Senha')
     const submit = screen.getByRole('button', { name: 'Entrar' })
 
+    expect(screen.getByRole('heading', { level: 1, name: 'Entrar na campanha' })).toBeTruthy()
     expect(identifier.getAttribute('name')).toBe('identifier')
     expect(identifier.hasAttribute('required')).toBe(true)
     expect(identifier.getAttribute('autocomplete')).toBe('username')
-    expect(identifier.getAttribute('inputmode')).toBe('email')
+    expect(identifier.getAttribute('inputmode')).toBe('text')
     expect(password.getAttribute('name')).toBe('password')
     expect(password.hasAttribute('required')).toBe(true)
     expect(password.getAttribute('autocomplete')).toBe('current-password')
     expect(submit.getAttribute('type')).toBe('submit')
+    expect(submit.className).toContain('w-full')
+  })
+
+  it('switches identifier inputMode toward phone or email as the user types', () => {
+    render(createElement(LoginForm))
+    const identifier = screen.getByLabelText('E-mail ou celular')
+
+    fireEvent.change(identifier, { target: { value: '(71) 9' } })
+    expect(identifier.getAttribute('inputmode')).toBe('tel')
+
+    fireEvent.change(identifier, { target: { value: 'staff@' } })
+    expect(identifier.getAttribute('inputmode')).toBe('email')
+  })
+
+  it('links auth errors to both credential fields and shows leadership recovery copy', async () => {
+    mocks.loginAction.mockResolvedValue({ error: 'E-mail, celular ou senha inválidos.' })
+    render(createElement(LoginForm))
+
+    fireEvent.change(screen.getByLabelText('E-mail ou celular'), {
+      target: { value: '71' },
+    })
+    fireEvent.change(screen.getByLabelText('Senha'), {
+      target: { value: 'wrong' },
+    })
+    fireEvent.submit(screen.getByRole('button', { name: 'Entrar' }).closest('form')!)
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.id).toBe('login-credentials-error')
+    expect(alert.textContent).toContain('E-mail, celular ou senha inválidos.')
+    expect(screen.getByLabelText('E-mail ou celular').getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByLabelText('Senha').getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByLabelText('E-mail ou celular').getAttribute('aria-describedby')).toBe(
+      'login-credentials-error',
+    )
+    expect(screen.getByLabelText('Senha').getAttribute('aria-describedby')).toBe(
+      'login-credentials-error',
+    )
+    expect(
+      screen.getByText(/Conta só com celular\? Peça um novo convite ao coordenador/),
+    ).toBeTruthy()
   })
 
   it('shows the pending spinner and announces an action error', async () => {
@@ -166,9 +207,9 @@ describe('campaign client module boundaries', () => {
   it('keeps the TSE input on the browser-safe parser boundary', () => {
     const source = readFileSync(resolve(sourceRoot, 'components/campaign/TseZoneInput.tsx'), 'utf8')
 
-    expect(source).toContain("@/utilities/tseZone")
-    expect(source).not.toContain("@/lib/formData")
-    expect(source).not.toContain("@/utilities/nucleusUi")
+    expect(source).toContain('@/utilities/tseZone')
+    expect(source).not.toContain('@/lib/formData')
+    expect(source).not.toContain('@/utilities/nucleusUi')
   })
 })
 
@@ -215,4 +256,3 @@ describe('static table composition', () => {
     consoleError.mockRestore()
   })
 })
-

@@ -5,10 +5,11 @@ import { useActionState } from 'react'
 
 import { resetCampaignPasswordFormAction } from '@/app/(campaign)/campanha/actions/password'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
+import { campaignAuthHeadingClassName } from '@/lib/campaignAuthCopy'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 
@@ -21,7 +22,7 @@ export const ResetPasswordForm = ({ token }: { token: string }) => {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Redefinir senha</CardTitle>
+        <h1 className={campaignAuthHeadingClassName}>Redefinir senha</h1>
         <CardDescription>Escolha uma nova senha com pelo menos 8 caracteres.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -63,7 +64,10 @@ export const ResetPasswordForm = ({ token }: { token: string }) => {
               <span aria-live="polite">{pending ? 'Salvando...' : 'Salvar nova senha'}</span>
             </Button>
             <p className="text-center text-sm">
-              <Link href="/campanha/login" className="text-primary underline-offset-4 hover:underline">
+              <Link
+                href="/campanha/login"
+                className="text-primary underline-offset-4 hover:underline"
+              >
                 Voltar ao login
               </Link>
             </p>

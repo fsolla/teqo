@@ -7,16 +7,21 @@ description: Adiciona uma ideia, tarefa ou funcionalidade ao docs/roadmap.md do 
 
 Esta skill transforma uma ideia solta em: (1) um item posicionado corretamente no `docs/roadmap.md` e (2) um arquivo de plano em `docs/plans/<slug>.md` linkado a partir do item. O roadmap é o registro canônico **em ordem de execução, com dependências e paralelismo explícitos** — um item mal posicionado é pior que um item ausente.
 
+**Divisão com `/impeccable`, `implement-roadmap-item` e `compile-roadmap`:** aqui se **classifica** a superfície UI e se **semeia** âncoras de design no plano (`PRODUCT.md` / `DESIGN.md` / design-refs / brief compacto). **Não** se implementa UI nem se roda craft/critique/polish — isso pertence a `implement-roadmap-item` (Passos 8–10). Rodar Impeccable completo neste fluxo atrasa o registro e duplica trabalho. Se o `docs/roadmap.md` estiver inchado com ciclos já entregues, rode `compile-roadmap` **antes** de posicionar um item novo — senão o grafo/janelas ficam inconsistentes.
+
+**Entrada desde reviews:** débitos de `/simplify` / `/impeccable` triageados por `capture-review-debts` chegam aqui já mesclados em lotes — não re-expanda um lote em um item por achado micro.
+
 ## Checklist do fluxo
 
 ```
 - [ ] 1. Ler docs/roadmap.md inteiro (nunca editar sem ler a versão atual)
 - [ ] 2. Classificar a ideia e checar duplicidade/absorção
 - [ ] 3. Explorar o código relevante para fundamentar o plano
-- [ ] 4. Decidir posicionamento: seção, ID, dependências, janela, paralelismo
-- [ ] 5. Criar docs/plans/<slug>.md a partir do template
-- [ ] 6. Editar o roadmap em TODOS os pontos de consistência
-- [ ] 7. Verificar links, mermaid e consistência cruzada
+- [ ] 4. Classificar superfície UI (A–D) e semear Impeccable no plano se B/C/D
+- [ ] 5. Decidir posicionamento: seção, ID, dependências, janela, paralelismo
+- [ ] 6. Criar docs/plans/<slug>.md a partir do template
+- [ ] 7. Editar o roadmap em TODOS os pontos de consistência
+- [ ] 8. Verificar links, mermaid e consistência cruzada
 ```
 
 ## Passo 1 — Ler o roadmap atual
@@ -59,7 +64,43 @@ Um plano competente cita arquivos, utilities e padrões **reais** — não abstr
 - Se toca pessoa → é join com `Contact`, nunca cadastro paralelo. Se toca opt-in/PII → `Consent` por chave estável, falhando fechado.
 - Precedente análogo: encontre o plano existente em `docs/plans/` mais parecido e espelhe o nível de detalhe dele.
 
-## Passo 4 — Decidir o posicionamento
+## Passo 4 — Classificar superfície UI e semear Impeccable
+
+Classifique o item **antes** de travar a abordagem do plano. Use a mesma tabela que `implement-roadmap-item` (Passo 8) — divergência aqui vira plano que a implementação precisa reescrever.
+
+| Classe                       | Critério                                                                 | Neste fluxo (`roadmap-item`)                                                                |
+| ---------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| **A — Só backend**           | Migration, seed, utility, access, aggregate SQL; zero rota/componente UI | Declare `Impeccable: N/A` no plano; **não** leia DESIGN.md só por formalidade               |
+| **B — UI encaixada**         | Edita tela/componente existente sob o tema `campaign` / site público     | Semear âncoras + decisões de UX no plano; shape completo fica para a implementação          |
+| **C — UI nova / ambígua**    | Rota nova, fluxo multi-tela, ou sem design-ref claro                     | Semear âncoras + **brief compacto** (ver abaixo); marcar shape obrigatório na implementação |
+| **D — Design-ref já existe** | Par em `docs/design-refs/latest/` (tabela do roadmap ou pasta)           | Linkar ref no plano; estrutura vale, paleta NÃO; shape compacto na implementação            |
+
+**Se A:** pule o restante deste passo e vá ao Passo 5.
+
+**Se B, C ou D — âncoras obrigatórias (ler, não reinventar):**
+
+1. `PRODUCT.md` + `DESIGN.md` na raiz (register `product` → Field Desk / Signal Red para `/campanha`; `brand` só se for marketing do site público).
+2. Design-ref em `docs/design-refs/latest/` se existir (grep na tabela "Referências de design" do roadmap).
+3. Critique recente em `.impeccable/critique/` só se o item **nasce** de um débito de critique (precedente: FD2 / `field-desk-ux-pos-critique.md`) — cite o snapshot; não rode critique novo aqui.
+4. Componentes/shells já no produto (`CampaignPageShell`, `CampaignMetricStrip`, shadcn em `src/components/ui`) — o plano deve reusar, não propor segundo design system.
+
+**Brief compacto (obrigatório em C; opcional em B se a direção ainda for ambígua):**
+
+Não rode a entrevista longa de `/impeccable shape` nem craft. No plano (seção "Design (Impeccable)" do template), registre em ≤½ página:
+
+- Persona / estado de espírito na tela (Alex, Casey, Lia — ou quem o PRODUCT.md nomear).
+- Um job principal da superfície (uma frase).
+- Estratégia de cor desta superfície: Restrained (default de produto) salvo exceção justificada.
+- Anti-goals (ex.: não hero-metric SaaS; não segundo sistema de cards).
+- Na implementação: `Impeccable: shape → craft → critique → polish` (C) ou `craft compacto → critique → polish` (B/D).
+
+**Proibido neste passo:**
+
+- `/impeccable craft`, `critique`, `polish`, `live` — pertencem a `implement-roadmap-item`.
+- Entrevista shape de várias rodadas que bloqueia o registro no roadmap. Se C estiver **demasiado** ambíguo para até um brief compacto, pergunte **2–3** perguntas ao usuário (assert-then-confirm), registre as respostas como decisões travadas, e siga — não abra um ciclo Impeccable completo.
+- Inventar paleta ou tipografia novas quando `DESIGN.md` / tokens `data-theme='campaign'` já existem.
+
+## Passo 5 — Decidir o posicionamento
 
 Responda explicitamente, nesta ordem:
 
@@ -73,7 +114,7 @@ Responda explicitamente, nesta ordem:
 
 Se a priorização depender de decisão de produto que você não tem como inferir, posicione com a sua melhor recomendação e marque o item como _(proposto — validar com produto)_, como foi feito com C5.
 
-## Passo 5 — Criar o plano em `docs/plans/`
+## Passo 6 — Criar o plano em `docs/plans/`
 
 - **Slug**: kebab-case em português, descritivo, curto (padrão existente: `cadastro-nominal-apoiadores.md`, `zonas-por-municipio.md`). Idioma do conteúdo: pt-BR; identificadores de código citados: inglês.
 - **Estrutura**: siga [plan-template.md](plan-template.md) à risca — mesmas seções, mesma ordem. Leia o template antes de escrever.
@@ -83,9 +124,10 @@ Se a priorização depender de decisão de produto que você não tem como infer
   - "Abordagem proposta" tem diagrama mermaid + lista de componentes com caminhos de arquivo reais e assinaturas concretas.
   - "Não escopo" é explícito e cita para qual outro plano/item cada exclusão vai.
   - "Referências" lista os arquivos-fonte reais que o implementador vai abrir.
-- Se existir design em `docs/design-refs/latest/`, inclua a seção "Referência visual (UX Pilot)" com o aviso padrão de paleta (a estrutura vale, a paleta não — usar tokens do tema `data-theme='campaign'`).
+  - Classe Impeccable **A/B/C/D** aparece no plano (cabeçalho ou seção Design); se B/C/D, a seção "Design (Impeccable)" está preenchida.
+- Se existir design em `docs/design-refs/latest/`, inclua a subseção de referência visual (UX Pilot) com o aviso padrão de paleta (a estrutura vale, a paleta não — usar tokens do tema `data-theme='campaign'`).
 
-## Passo 6 — Editar o roadmap (todos os pontos de consistência)
+## Passo 7 — Editar o roadmap (todos os pontos de consistência)
 
 Um item novo de trilha toca **até 7 lugares** no roadmap. Pule apenas os que não se aplicam:
 
@@ -99,12 +141,13 @@ Um item novo de trilha toca **até 7 lugares** no roadmap. Pule apenas os que n�
 
 Para itens fora das trilhas (site público, admin, fill-in, bloqueador, fora de escopo): edite só a lista/tabela da seção correspondente + `Atualizado em`, mantendo o padrão da seção — bullets com _(fonte)_ em itálico no final, ou linha de tabela com Status e Fonte.
 
-## Passo 7 — Verificação final
+## Passo 8 — Verificação final
 
 - Todos os links relativos resolvem (`plans/<slug>.md` a partir de `docs/`, `../roadmap.md` a partir de `docs/plans/`).
 - O mermaid continua válido (nomes de nó únicos, subgraphs fechadas — renderize mentalmente ou cole num validador se a edição foi grande).
 - Consistência tripla: o que a **tabela de janela** diz em "Depende de" = setas do **grafo** = seção "Dependências" do **plano**. Divergência aqui é o bug mais comum.
 - O plano referencia o roadmap (`Item do roadmap:` no cabeçalho) e o roadmap referencia o plano (link na tabela).
 - Não inventou ID duplicado nem quebrou a numeração de "Ordem".
+- Classe Impeccable do Passo 4 está no plano; se B/C/D, há âncoras (`PRODUCT.md`/`DESIGN.md` e/ou design-ref) citadas — não só "fazer uma tela bonita".
 
-Ao final, resuma para o usuário: ID atribuído, janela, dependências assumidas, e as decisões de posicionamento que merecem validação de produto.
+Ao final, resuma para o usuário: ID atribuído, janela, dependências assumidas, **classe Impeccable (A–D)**, e as decisões de posicionamento que merecem validação de produto.
