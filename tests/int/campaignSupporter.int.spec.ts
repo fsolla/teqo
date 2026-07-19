@@ -16,6 +16,7 @@ import {
   SUPPORTER_REGISTRATION_CONSENT_KEY,
   SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
 } from '@/utilities/campaignConsent'
+import { loadSupporterListOverviewData } from '@/utilities/supporterPageData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -251,21 +252,22 @@ describe('campaign supporter domain', () => {
     expect(preview.counts.ok).toBe(1)
     expect(preview.counts.duplicate).toBe(1)
     expect(preview.counts.error).toBeGreaterThanOrEqual(2)
-
-    const okRows = preview.rows
-      .filter((row) => row.status === 'ok')
-      .map((row) => ({
-        nome: row.nome,
-        telefone: row.normalizedPhone!,
-        municipio: row.canonicalCity,
-        intencao: row.voteIntention,
-      }))
+    expect(preview.importToken).toBeTruthy()
+    expect(preview.sampleRows.length).toBeGreaterThan(0)
 
     const result = await confirmSupporterImportRecord(payload, geral, {
       operatorAttested: true,
-      rows: okRows,
+      importToken: preview.importToken,
     })
     expect(result.created).toBe(1)
+
+    // Single-use token: a second confirm with the same token must fail.
+    await expect(
+      confirmSupporterImportRecord(payload, geral, {
+        operatorAttested: true,
+        importToken: preview.importToken,
+      }),
+    ).rejects.toThrow(/não encontrado|expirado|inválido/)
 
     const contact = await payload.find({
       collection: 'contact',
@@ -286,6 +288,57 @@ describe('campaign supporter domain', () => {
     })
     expect(created.totalDocs).toBe(1)
     fixtures.own('supporter', created.docs[0]!.id)
+  })
+
+  it('rejects a tampered import token and a token issued to another actor', async () => {
+    const fixtures = campaignFixtures()
+    await ensureSupporterConsents(fixtures)
+    const geral = await fixtures.createCampaignUser('geral')
+    const otherGeral = await fixtures.createCampaignUser('geral')
+    const phoneOk = fixtures.phone()
+    const csv = `nome,telefone,municipio,intencao\nAna Silva,${phoneOk},Salvador,certo`
+
+    const preview = await previewSupporterImportText(payload, geral, csv)
+    expect(preview.counts.ok).toBe(1)
+
+    const [batchId, expiresAt, sig] = preview.importToken.split('.')
+    const tampered = `${batchId}.${expiresAt}.${sig.slice(0, -2)}xx`
+    await expect(
+      confirmSupporterImportRecord(payload, geral, {
+        operatorAttested: true,
+        importToken: tampered,
+      }),
+    ).rejects.toThrow(/inválido|expirado/)
+
+    // Token bound to a different actor cannot be redeemed by `geral`.
+    await expect(
+      confirmSupporterImportRecord(payload, otherGeral, {
+        operatorAttested: true,
+        importToken: preview.importToken,
+      }),
+    ).rejects.toThrow(/não encontrado|inválido|expirado/)
+
+    // Cleanup: consume the still-valid token so it does not leak into other tests.
+    await confirmSupporterImportRecord(payload, geral, {
+      operatorAttested: true,
+      importToken: preview.importToken,
+    })
+    const contact = await payload.find({
+      collection: 'contact',
+      where: { phone: { equals: phoneOk } },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    })
+    fixtures.own('contact', contact.docs[0]!.id)
+    const created = await payload.find({
+      collection: 'supporter',
+      where: { contact: { equals: contact.docs[0]!.id } },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    })
+    if (created.docs[0]) fixtures.own('supporter', created.docs[0].id)
   })
 
   it('removes supporter and anonymizes contact when no other joins remain', async () => {
@@ -314,5 +367,82 @@ describe('campaign supporter domain', () => {
     })
     expect(contact.name).toBe('Titular removido')
     expect(contact.phone).not.toBe(phone)
+  })
+
+  it('aggregates supporter overview KPIs in a single SQL query for geral', async () => {
+    const fixtures = campaignFixtures()
+    const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
+    const geral = await fixtures.createCampaignUser('geral')
+
+    const intentions: Array<{ voteIntention: 'certo' | 'tende_a_certo' | 'indeciso' | 'outro' | null }> = [
+      { voteIntention: 'certo' },
+      { voteIntention: 'certo' },
+      { voteIntention: 'tende_a_certo' },
+      { voteIntention: 'indeciso' },
+      { voteIntention: 'indeciso' },
+      { voteIntention: 'outro' },
+      { voteIntention: null },
+    ]
+    for (const { voteIntention } of intentions) {
+      const contact = await fixtures.createContact()
+      await fixtures.createSupporter({
+        contact: contact.id,
+        consent: registration.id,
+        consentContentHash: 'hash',
+        consentedAt: new Date().toISOString(),
+        createdBy: geral.id,
+        ...(voteIntention ? { voteIntention } : {}),
+      })
+    }
+
+    const overview = await loadSupporterListOverviewData(payload, geral, { page: 1 })
+    expect(overview).not.toBeNull()
+    expect(overview!.total).toBe(intentions.length)
+    expect(overview!.certoAndTende).toBe(3)
+    expect(overview!.indeciso).toBe(2)
+  })
+
+  it('scopes the overview aggregate to accessible nuclei for coordenador and applies filters', async () => {
+    const fixtures = campaignFixtures()
+    const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
+    const coordenador = await fixtures.createCampaignUser('coordenador')
+    const assigned = await fixtures.createNucleus({ coordinators: [coordenador.id] })
+    const other = await fixtures.createNucleus()
+
+    const makeSupporter = async (
+      nucleusId: number | undefined,
+      voteIntention: 'certo' | 'indeciso' | null,
+      city = 'Salvador',
+      name = fixtures.value('Apoiador'),
+    ) => {
+      const contact = await fixtures.createContact({ city, name })
+      await fixtures.createSupporter({
+        contact: contact.id,
+        consent: registration.id,
+        consentContentHash: 'hash',
+        consentedAt: new Date().toISOString(),
+        createdBy: coordenador.id,
+        ...(nucleusId ? { nucleus: nucleusId } : {}),
+        ...(voteIntention ? { voteIntention } : {}),
+      })
+    }
+
+    await makeSupporter(assigned.id, 'certo')
+    await makeSupporter(assigned.id, 'indeciso')
+    await makeSupporter(assigned.id, null, 'Feira de Santana')
+    await makeSupporter(other.id, 'certo') // outside scope — must not be counted
+
+    const overview = await loadSupporterListOverviewData(payload, coordenador, { page: 1 })
+    expect(overview).not.toBeNull()
+    expect(overview!.total).toBe(3)
+    expect(overview!.certoAndTende).toBe(1)
+    expect(overview!.indeciso).toBe(1)
+
+    const filtered = await loadSupporterListOverviewData(payload, coordenador, {
+      page: 1,
+      city: 'Feira de Santana',
+    })
+    expect(filtered).not.toBeNull()
+    expect(filtered!.total).toBe(1)
   })
 })

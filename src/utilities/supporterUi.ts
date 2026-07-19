@@ -6,6 +6,14 @@ import {
   type SupporterVoteIntention,
 } from '@/lib/schemas/supporter'
 import type { CampaignUser, Supporter } from '@/payload-types'
+import {
+  buildListHref,
+  firstValue,
+  normalizedText,
+  resolveListUrl,
+  strictDecimalInteger,
+  type RawSearchParams as CampaignListRawSearchParams,
+} from '@/utilities/campaignListUrl'
 import { normalizeBrazilianPhone } from '@/utilities/phone'
 
 export const supporterPageSize = 25
@@ -32,26 +40,11 @@ export type SupporterListState = {
   nucleus?: number
 }
 
-type RawSearchParams = Record<string, string | string[] | undefined>
+type RawSearchParams = CampaignListRawSearchParams
 
 export const supporterListParamNames = ['q', 'voteIntention', 'city', 'nucleus', 'page'] as const
 
 const supporterListParamNameSet = new Set<string>(supporterListParamNames)
-
-const firstValue = (value: string | string[] | undefined): string | undefined =>
-  Array.isArray(value) ? value[0] : value
-
-const normalizedText = (value: FormDataEntryValue | string | undefined): string | undefined => {
-  if (typeof value !== 'string') return undefined
-  const normalized = value.trim()
-  return normalized || undefined
-}
-
-const strictDecimalInteger = (value: string | undefined): number | undefined => {
-  if (!value || !/^[1-9]\d*$/.test(value)) return undefined
-  const number = Number(value)
-  return Number.isSafeInteger(number) ? number : undefined
-}
 
 export const parseSupporterListParams = (params: RawSearchParams): SupporterListState => {
   const rawPage = strictDecimalInteger(firstValue(params.page))
@@ -125,31 +118,8 @@ export const buildSupporterListSearchParams = (
 export const buildSupporterFiltersKey = (state: SupporterListState): string =>
   buildSupporterListSearchParams(state).toString()
 
-export const buildSupporterListHref = (state: SupporterListState, page: number): string => {
-  const params = buildSupporterListSearchParams(state, page)
-  const query = params.toString()
-  return query ? `/campanha/apoiadores?${query}` : '/campanha/apoiadores'
-}
-
-const inspectRawSupporterListParams = (
-  params: RawSearchParams,
-): { hasUnsupportedParams: boolean; query: string } => {
-  const serialized = new URLSearchParams()
-  let hasUnsupportedParams = false
-
-  for (const [name, value] of Object.entries(params)) {
-    if (!supporterListParamNameSet.has(name)) {
-      hasUnsupportedParams = true
-      continue
-    }
-    if (value === undefined) continue
-    for (const item of Array.isArray(value) ? value : [value]) {
-      serialized.append(name, item)
-    }
-  }
-
-  return { hasUnsupportedParams, query: serialized.toString() }
-}
+export const buildSupporterListHref = (state: SupporterListState, page: number): string =>
+  buildListHref(state, buildSupporterListSearchParams, '/campanha/apoiadores', page)
 
 export const resolveSupporterListUrl = (
   params: RawSearchParams,
@@ -158,25 +128,15 @@ export const resolveSupporterListUrl = (
   state: SupporterListState
   href: string
   redirectHref?: string
-} => {
-  const parsedState = parseSupporterListParams(params)
-  const page =
-    totalPages !== undefined && totalPages > 0 && parsedState.page > totalPages
-      ? totalPages
-      : parsedState.page
-  const state = page === parsedState.page ? parsedState : { ...parsedState, page }
-  const canonicalParams = buildSupporterListSearchParams(state)
-  const canonicalQuery = canonicalParams.toString()
-  const href = canonicalQuery ? `/campanha/apoiadores?${canonicalQuery}` : '/campanha/apoiadores'
-  const raw = inspectRawSupporterListParams(params)
-  const needsRedirect = raw.hasUnsupportedParams || raw.query !== canonicalQuery
-
-  return {
-    state,
-    href,
-    ...(needsRedirect ? { redirectHref: href } : {}),
-  }
-}
+} =>
+  resolveListUrl({
+    params,
+    paramNameSet: supporterListParamNameSet,
+    parse: parseSupporterListParams,
+    buildSearchParams: buildSupporterListSearchParams,
+    basePath: '/campanha/apoiadores',
+    totalPages,
+  })
 
 export const getSupporterScopeLabel = (total: number): string =>
   `${total} ${total === 1 ? 'apoiador nos seus núcleos' : 'apoiadores nos seus núcleos'}`

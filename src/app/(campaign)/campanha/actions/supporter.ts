@@ -23,6 +23,14 @@ import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { normalizeBrazilianPhone } from '@/utilities/phone'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
+import { bulkInsertSupporterImport } from '@/utilities/supporterImportBulk'
+import {
+  issueSupporterImportToken,
+  loadSupporterImportBatch,
+  deleteSupporterImportBatch,
+  storeSupporterImportBatch,
+  verifySupporterImportToken,
+} from '@/utilities/supporterImportToken'
 import {
   isSupporterImportOkRow,
   type SupporterImportPreviewResult,
@@ -38,6 +46,35 @@ export type {
 } from '@/utilities/supporterImport'
 
 const MAX_IMPORT_ROWS = 5000
+
+/** On-screen preview is capped; the full ok set is staged server-side (Phase 5). */
+const SUPPORTER_IMPORT_SAMPLE_SIZE = 100
+
+const isPreviewErrorRow = (row: SupporterImportPreviewRow): boolean =>
+  row.status !== 'ok' && row.status !== 'duplicado_pelo_telefone'
+
+const importStatusCsvValue: Record<SupporterImportPreviewRow['status'], string> = {
+  ok: 'ok',
+  duplicado_pelo_telefone: 'duplicado_pelo_telefone',
+  telefone_invalido: 'telefone_invalido',
+  municipio_nao_reconhecido: 'municipio_nao_reconhecido',
+  nome_invalido: 'nome_invalido',
+  intencao_invalida: 'intencao_invalida',
+}
+
+const escapeCsvCell = (value: string): string => `"${value.replace(/"/g, '""')}"`
+
+const buildSupporterImportErrorReportCsv = (rows: SupporterImportPreviewRow[]): string => {
+  const header = 'linha,nome,telefone,municipio,intencao,status\n'
+  const body = rows
+    .filter(isPreviewErrorRow)
+    .map(
+      (row) =>
+        `${row.line},${escapeCsvCell(row.nome)},${escapeCsvCell(row.telefone)},${escapeCsvCell(row.municipio)},${escapeCsvCell(row.intencao)},${importStatusCsvValue[row.status]}`,
+    )
+    .join('\n')
+  return header + body
+}
 
 const getFreshStaffActor = async (
   payload: Payload,
@@ -149,6 +186,10 @@ const upsertContactByPhone = async ({
     },
     depth: 0,
     overrideAccess: true,
+    // Callers of upsertContactByPhone have already acquired the phone advisory
+    // lock in the same transaction, so the Contact phone-invariant hook can
+    // skip its redundant lock+availability check.
+    context: { skipContactPhoneInvariant: true },
     req,
   })
 
@@ -333,7 +374,7 @@ export const previewSupporterImportText = async (
   actor: CampaignUser,
   csvText: string,
 ): Promise<SupporterImportPreviewResult> => {
-  await getFreshGeneralActor(payload, actor)
+  const currentActor = await getFreshGeneralActor(payload, actor)
   await requireSupporterRegistrationConsent(payload)
   await requireSupporterVoteIntentionConsent(payload)
 
@@ -490,7 +531,31 @@ export const previewSupporterImportText = async (
       .length,
   }
 
-  return { rows, counts }
+  const okRows = rows.filter(isSupporterImportOkRow).map((row) => ({
+    nome: row.nome,
+    telefone: row.normalizedPhone,
+    municipio: row.canonicalCity,
+    intencao: row.voteIntention,
+  }))
+
+  const errorReportCsv = buildSupporterImportErrorReportCsv(rows)
+  const sampleRows = rows.slice(0, SUPPORTER_IMPORT_SAMPLE_SIZE)
+
+  // Stage the full ok set server-side keyed by an HMAC-signed token so the wizard
+  // never has to hold/re-send thousands of rows across the Server Action boundary.
+  const issued = issueSupporterImportToken(currentActor.id)
+  await storeSupporterImportBatch(payload, issued.batchId, {
+    actorID: currentActor.id,
+    expiresAt: issued.expiresAt,
+    okRows,
+  })
+
+  return {
+    counts,
+    sampleRows,
+    errorReportCsv,
+    importToken: issued.token,
+  }
 }
 
 export const previewSupporterImport = async (csvText: string) => {
@@ -505,6 +570,14 @@ export const confirmSupporterImportRecord = async (
 ) => {
   const data = supporterImportConfirmSchema.parse(input)
 
+  // Verify the HMAC token and load the staged batch BEFORE opening the write
+  // transaction, so an invalid/expired token is rejected without holding locks.
+  const verified = verifySupporterImportToken(data.importToken, actor.id)
+  const batch = await loadSupporterImportBatch(payload, verified.batchId, actor.id)
+  if (batch.okRows.length === 0) {
+    throw new Error('O lote de importação não contém apoiadores válidos.')
+  }
+
   return withPayloadTransaction(
     payload,
     async ({ req }) => {
@@ -516,111 +589,31 @@ export const confirmSupporterImportRecord = async (
         throw new Error('O bloqueio de deduplicação exige o adaptador PostgreSQL.')
       }
 
-      const phones = [...new Set(data.rows.map((row) => row.telefone))]
+      const phones = [...new Set(batch.okRows.map((row) => row.telefone))]
       await acquireContactPhoneLocks(payload, req, phones)
 
-      const existingContacts = await payload.find({
-        collection: 'contact',
-        where: { phone: { in: phones } },
-        depth: 0,
-        limit: phones.length,
-        pagination: false,
-        select: { phone: true },
-        overrideAccess: true,
-        req,
-      })
-      const contactIdByPhone = new Map(
-        existingContacts.docs.map((doc) => [doc.phone, doc.id] as const),
-      )
-
-      for (const row of data.rows) {
-        if (contactIdByPhone.has(row.telefone)) continue
-        const { contactID } = await upsertContactByPhone({
-          payload,
-          req,
-          phone: row.telefone,
-          name: row.nome,
-          city: row.municipio,
-        })
-        contactIdByPhone.set(row.telefone, contactID)
-      }
-
-      const contactIDs = [...new Set(contactIdByPhone.values())]
-      const existingSupporters = await payload.find({
-        collection: 'supporter',
-        where: {
-          and: [{ contact: { in: contactIDs } }, { nucleus: { exists: false } }],
-        },
-        depth: 0,
-        limit: contactIDs.length,
-        pagination: false,
-        select: { contact: true },
-        overrideAccess: true,
-        req,
-      })
-      const supporterContactIDs = new Set(
-        existingSupporters.docs
-          .map((doc) => relationshipId(doc.contact))
-          .filter((id): id is number => id !== null),
-      )
-
-      let created = 0
-      let skipped = 0
-      const errors: Array<{ telefone: string; message: string }> = []
       const consentNote =
         data.consentNote ??
         'Importação CSV com atestado do operador sobre consentimento dos titulares.'
-      const consentedAt = new Date().toISOString()
 
-      for (const row of data.rows) {
-        const contactID = contactIdByPhone.get(row.telefone)
-        if (!contactID) {
-          skipped += 1
-          errors.push({ telefone: row.telefone, message: 'Contato não encontrado após upsert.' })
-          continue
-        }
+      const result = await bulkInsertSupporterImport({
+        payload,
+        req,
+        actorID: currentActor.id,
+        rows: batch.okRows.map((row) => ({
+          telefone: row.telefone,
+          nome: row.nome,
+          municipio: row.municipio,
+          intencao: row.intencao,
+        })),
+        registrationConsent,
+        voteIntentionConsent,
+        consentNote,
+      })
 
-        if (supporterContactIDs.has(contactID)) {
-          skipped += 1
-          continue
-        }
-
-        try {
-          await payload.create({
-            collection: 'supporter',
-            data: {
-              contact: contactID,
-              source: 'import_csv',
-              voteIntention: row.intencao,
-              consent: registrationConsent.id,
-              consentContentHash: registrationConsent.contentHash,
-              consentedAt,
-              consentNote,
-              ...(row.intencao
-                ? {
-                    voteIntentionConsent: voteIntentionConsent.id,
-                    voteIntentionConsentContentHash: voteIntentionConsent.contentHash,
-                    voteIntentionConsentedAt: consentedAt,
-                  }
-                : {}),
-              createdBy: currentActor.id,
-            },
-            depth: 0,
-            overrideAccess: true,
-            req,
-          })
-          supporterContactIDs.add(contactID)
-          created += 1
-        } catch (error) {
-          skipped += 1
-          errors.push({
-            telefone: row.telefone,
-            message: error instanceof Error ? error.message : 'Erro ao importar linha.',
-          })
-        }
-      }
-
-      return { created, skipped, errors }
+      // Single-use token: drop the staged batch once the import commits.
+      await deleteSupporterImportBatch(payload, verified.batchId, req)
+      return result
     },
     { beginFailureMessage: 'Não foi possível iniciar a transação de importação de apoiadores.' },
   )

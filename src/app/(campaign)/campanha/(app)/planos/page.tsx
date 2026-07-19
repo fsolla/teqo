@@ -6,7 +6,7 @@ import { getPayload } from 'payload'
 
 import { ActionPlanFilters } from '@/components/campaign/ActionPlanFilters'
 import { ActionPlanList } from '@/components/campaign/ActionPlanList'
-import { ActionPlanPagination } from '@/components/campaign/ActionPlanPagination'
+import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
 import { Button } from '@/components/ui/button'
 import {
   Empty,
@@ -19,7 +19,7 @@ import {
 import type { ActionPlan } from '@/payload-types'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadActionPlanListPageData } from '@/utilities/actionPlanPageData'
-import { buildActionPlanFiltersKey, resolveActionPlanListUrl } from '@/utilities/actionPlanUi'
+import { buildActionPlanFiltersKey, buildActionPlanListHref, resolveActionPlanListUrl } from '@/utilities/actionPlanUi'
 import { toActionPlanListViewModel } from '@/utilities/actionPlanViewModels'
 
 type ActionPlanListPageProps = {
@@ -71,7 +71,11 @@ export default async function ActionPlanListPage({ searchParams }: ActionPlanLis
             <p className="text-sm text-muted-foreground">
               {result.totalDocs} {result.totalDocs === 1 ? 'plano encontrado' : 'planos encontrados'}
             </p>
-            <ActionPlanPagination state={state} totalPages={result.totalPages} />
+            <CampaignListPagination
+              page={state.page}
+              totalPages={result.totalPages}
+              hrefForPage={(page) => buildActionPlanListHref(state, page)}
+            />
           </div>
         </>
       ) : (

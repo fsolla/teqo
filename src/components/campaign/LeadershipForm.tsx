@@ -27,6 +27,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import { leadershipGenderLabels, leadershipSectorLabels } from '@/utilities/leadershipUi'
 import type { LeadershipEditViewModel } from '@/utilities/leadershipViewModels'
+import { fieldError, errorProps as buildErrorProps } from '@/utilities/campaignFormFields'
 import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/utilities/phone'
 
 export type LeadershipFormAction = (
@@ -49,19 +50,10 @@ const supportStatusOptions = [
   { value: 'negativo', label: 'Negativo' },
 ] as const
 
-const fieldError = (
+const errorProps = (
   fieldErrors: Record<string, string[]> | undefined,
   field: string,
-): string | undefined => fieldErrors?.[field]?.[0]
-
-const errorProps = (fieldErrors: Record<string, string[]> | undefined, field: string) => {
-  const error = fieldError(fieldErrors, field)
-  return {
-    error,
-    invalid: Boolean(error),
-    describedBy: error ? `leadership-${field}-error` : undefined,
-  }
-}
+) => buildErrorProps(fieldErrors, field, 'leadership')
 
 export const LeadershipFormFeedback = ({
   message,

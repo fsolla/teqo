@@ -7,6 +7,14 @@ import {
   territoryForCity,
 } from '@/lib/bahiaTerritories'
 import { actionPlanKinds, actionPlanStatuses } from '@/lib/schemas/actionPlan'
+import {
+  buildListHref,
+  firstValue,
+  normalizedText,
+  resolveListUrl,
+  strictDecimalInteger,
+  type RawSearchParams as CampaignListRawSearchParams,
+} from '@/utilities/campaignListUrl'
 import { normalizeSearchPhrase } from '@/utilities/wordStartFilter'
 
 export const actionPlanPageSize = 25
@@ -33,26 +41,11 @@ export type ActionPlanListState = {
   city?: string
 }
 
-type RawSearchParams = Record<string, string | string[] | undefined>
+type RawSearchParams = CampaignListRawSearchParams
 
 export const actionPlanListParamNames = ['tab', 'kind', 'status', 'region', 'city', 'page'] as const
 
 const actionPlanListParamNameSet = new Set<string>(actionPlanListParamNames)
-
-const firstValue = (value: string | string[] | undefined): string | undefined =>
-  Array.isArray(value) ? value[0] : value
-
-const normalizedText = (value: string | undefined): string | undefined => {
-  if (typeof value !== 'string') return undefined
-  const normalized = value.trim()
-  return normalized || undefined
-}
-
-const strictDecimalInteger = (value: string | undefined): number | undefined => {
-  if (!value || !/^[1-9]\d*$/.test(value)) return undefined
-  const number = Number(value)
-  return Number.isSafeInteger(number) ? number : undefined
-}
 
 const canonicalTerritoryBySearchValue = new Map(
   bahiaIdentityTerritories.map((territory) => [normalizeSearchPhrase(territory), territory]),
@@ -155,31 +148,8 @@ export const buildActionPlanListSearchParams = (
 export const buildActionPlanFiltersKey = (state: ActionPlanListState): string =>
   buildActionPlanListSearchParams(state).toString()
 
-export const buildActionPlanListHref = (state: ActionPlanListState, page: number): string => {
-  const params = buildActionPlanListSearchParams(state, page)
-  const query = params.toString()
-  return query ? `/campanha/planos?${query}` : '/campanha/planos'
-}
-
-const inspectRawActionPlanListParams = (
-  params: RawSearchParams,
-): { hasUnsupportedParams: boolean; query: string } => {
-  const serialized = new URLSearchParams()
-  let hasUnsupportedParams = false
-
-  for (const [name, value] of Object.entries(params)) {
-    if (!actionPlanListParamNameSet.has(name)) {
-      hasUnsupportedParams = true
-      continue
-    }
-    if (value === undefined) continue
-    for (const item of Array.isArray(value) ? value : [value]) {
-      serialized.append(name, item)
-    }
-  }
-
-  return { hasUnsupportedParams, query: serialized.toString() }
-}
+export const buildActionPlanListHref = (state: ActionPlanListState, page: number): string =>
+  buildListHref(state, buildActionPlanListSearchParams, '/campanha/planos', page)
 
 export const resolveActionPlanListUrl = (
   params: RawSearchParams,
@@ -188,22 +158,12 @@ export const resolveActionPlanListUrl = (
   state: ActionPlanListState
   href: string
   redirectHref?: string
-} => {
-  const parsedState = parseActionPlanListParams(params)
-  const page =
-    totalPages !== undefined && totalPages > 0 && parsedState.page > totalPages
-      ? totalPages
-      : parsedState.page
-  const state = page === parsedState.page ? parsedState : { ...parsedState, page }
-  const canonicalParams = buildActionPlanListSearchParams(state)
-  const canonicalQuery = canonicalParams.toString()
-  const href = canonicalQuery ? `/campanha/planos?${canonicalQuery}` : '/campanha/planos'
-  const raw = inspectRawActionPlanListParams(params)
-  const needsRedirect = raw.hasUnsupportedParams || raw.query !== canonicalQuery
-
-  return {
-    state,
-    href,
-    ...(needsRedirect ? { redirectHref: href } : {}),
-  }
-}
+} =>
+  resolveListUrl({
+    params,
+    paramNameSet: actionPlanListParamNameSet,
+    parse: parseActionPlanListParams,
+    buildSearchParams: buildActionPlanListSearchParams,
+    basePath: '/campanha/planos',
+    totalPages,
+  })

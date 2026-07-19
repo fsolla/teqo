@@ -1,17 +1,15 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { ZodError } from 'zod'
 
 import { createSupporter } from '@/app/(campaign)/campanha/actions/supporter'
 import {
   checkboxFormValue,
-  FormDataBoundaryError,
   nullableRelationshipFormValue,
   optionalFormText,
-  validationFieldErrors,
 } from '@/lib/formData'
 import { supporterCreateSchema } from '@/lib/schemas/supporter'
+import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
 import { sanitizeBrazilianPhoneInput } from '@/utilities/phone'
 
 export type SupporterFormState = {
@@ -45,25 +43,14 @@ const getSupporterFormError = (
   error: unknown,
   values?: SupporterFormValues,
   revision?: number,
-): SupporterFormState => {
-  if (error instanceof FormDataBoundaryError) {
-    return { fieldErrors: { [error.field]: [error.message] }, values, revision }
-  }
-  if (error instanceof ZodError) {
-    return { fieldErrors: validationFieldErrors(error), values, revision }
-  }
-  if (
-    error instanceof Error &&
-    safeActionMessages.includes(error.message as (typeof safeActionMessages)[number])
-  ) {
-    return { message: error.message, values, revision }
-  }
-  return {
-    message: 'Não foi possível cadastrar o apoiador. Verifique os dados e tente novamente.',
+): SupporterFormState =>
+  mapCampaignFormActionError({
+    error,
+    safeMessages: safeActionMessages,
+    genericMessage: 'Não foi possível cadastrar o apoiador. Verifique os dados e tente novamente.',
     values,
     revision,
-  }
-}
+  })
 
 export const createSupporterFormAction = async (
   state: SupporterFormState,

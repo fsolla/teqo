@@ -24,6 +24,7 @@ import { Post } from './collections/Post'
 import { Signature } from './collections/Signature'
 import { Subscription } from './collections/Subscription'
 import { Supporter } from './collections/Supporter'
+import { SupporterImportBatch } from './collections/SupporterImportBatch'
 import { Tag } from './collections/Tag'
 import { Users } from './collections/Users'
 import { HomePage } from './globals/HomePage'
@@ -51,6 +52,7 @@ export default buildConfig({
     ElectoralNucleus,
     Leadership,
     Supporter,
+    SupporterImportBatch,
     NucleusUpdate,
     ActionPlan,
     ElectionTally,

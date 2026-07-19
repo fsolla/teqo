@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-18 (MVP + Ciclo 2 deployados; A2 entregue; C2 engenharia pronta e mesclada em `main`; C3 Planos de Ação implementado e mesclado em `main`; C6/C7 registrados — escala/DRY pós-C2 e pós-C3; B2 fundação de geometrias do mapa entregue; B5 registrado — escala/DRY pós-B2 do `/simplify`)
+Atualizado em: 2026-07-19 (MVP + Ciclo 2 deployados; A2 entregue; C2 engenharia pronta e mesclada em `main`; C3 Planos de Ação implementado e mesclado em `main`; C6 Escala e DRY pós-C2 implementado (Fases 1–5) — aguarda deploy; C7 registrado — escala/DRY pós-C3; B2 fundação de geometrias do mapa entregue; B5 registrado — escala/DRY pós-B2 do `/simplify`)
 
 Registro canônico no repositório dos planos futuros e débitos conhecidos. Status operacional do ciclo atual de Núcleos fica em [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc); este arquivo lista o que ainda é futuro ou bloqueador, **em ordem de execução**, com dependências e paralelismo explícitos.
 
@@ -184,7 +184,7 @@ Itens sem seta de entrada (**paralelizáveis a qualquer momento**): fill-ins (vi
 | Ordem | Item                                                                                                                            | Plano                                            | Depende de                       | Paralelizável com |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------- | ----------------- |
 | 7     | C2 Cadastro nominal de apoiadores _(engenharia pronta e mesclada em `main` 2026-07-18 — deploy + Consent keys ainda pendentes)_ | [detalhes](plans/cadastro-nominal-apoiadores.md) | produção: lote jurídico (Onda 0) | A4, C3, C6, C7    |
-| 8     | C6 Escala e DRY pós-C2 (import em massa, KPI, shells compartilhados com núcleos)                                                | [detalhes](plans/escala-dry-pos-c2.md)           | C2 (merge)                       | A4, C3, C7        |
+| 8     | C6 Escala e DRY pós-C2 (import em massa, KPI, shells compartilhados com núcleos) **(implementado 2026-07-19 — Fases 1–5; aguarda deploy)** | [detalhes](plans/escala-dry-pos-c2.md)           | C2 (merge)                       | A4, C3, C7        |
 | 9     | A4 Baseline no produto + insight Gap vs 2022                                                                                    | [detalhes](plans/baseline-eleitoral-tse.md)      | A3 + B1 (suave: A2)              | C2, C3, C6, C7    |
 | 10    | C3 Eventos / agenda de mobilização (`actionPlan`) **(implementado e mesclado em `main` 2026-07-18)**                            | [detalhes](plans/eventos-agenda-mobilizacao.md)  | A1                               | C2, A4, C6, C7    |
 | 11    | C7 Escala e DRY pós-C3 (território/contato compostos, leituras por aba, RMW/índice)                                             | [detalhes](plans/escala-dry-pos-c3.md)           | C3 (suave: C6 F2)                | A4, C6            |

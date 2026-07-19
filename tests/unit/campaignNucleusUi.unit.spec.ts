@@ -5,9 +5,9 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { archiveNucleusFormAction } from '@/app/(campaign)/campanha/(app)/nucleos/formActions'
 import { ArchiveNucleusDialog } from '@/components/campaign/ArchiveNucleusDialog'
+import { getPaginationPages } from '@/components/campaign/CampaignListPagination'
 import { NucleusFormFields } from '@/components/campaign/NucleusForm'
 import { NucleusList } from '@/components/campaign/NucleusList'
-import { getNucleusPaginationPages } from '@/components/campaign/NucleusPagination'
 import { NucleusTerritoryAndZonesFields } from '@/components/campaign/NucleusTerritoryAndZonesFields'
 import { TseZoneInput } from '@/components/campaign/TseZoneInput'
 import { campaignNav, getCampaignNav, isCampaignNavActive } from '@/components/campaign/nav'
@@ -498,9 +498,9 @@ describe('campaign nucleus UI contracts', () => {
   })
 
   it('keeps pagination boundaries compact and valid', () => {
-    expect(getNucleusPaginationPages(1, 10)).toEqual([1, 2, 10])
-    expect(getNucleusPaginationPages(10, 10)).toEqual([1, 9, 10])
-    expect(getNucleusPaginationPages(5, 10)).toEqual([1, 4, 5, 6, 10])
+    expect(getPaginationPages(1, 10)).toEqual([1, 2, 10])
+    expect(getPaginationPages(10, 10)).toEqual([1, 9, 10])
+    expect(getPaginationPages(5, 10)).toEqual([1, 4, 5, 6, 10])
   })
 
   it('returns a recoverable archive error for an invalid identifier', async () => {

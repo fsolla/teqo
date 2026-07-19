@@ -45,19 +45,25 @@ describe('supporter schemas', () => {
     ).toBe(true)
   })
 
-  it('requires operator attestation for import confirm', () => {
+  it('requires operator attestation and a token for import confirm', () => {
     expect(
       supporterImportConfirmSchema.safeParse({
-        rows: [{ nome: 'Ana Silva', telefone: '71988887777' }],
+        importToken: 'token',
+      }).success,
+    ).toBe(false)
+
+    expect(
+      supporterImportConfirmSchema.safeParse({
+        operatorAttested: true,
       }).success,
     ).toBe(false)
 
     expect(
       supporterImportConfirmSchema.parse({
         operatorAttested: true,
-        rows: [{ nome: 'Ana Silva', telefone: '71988887777', intencao: 'certo' }],
-      }).rows[0]?.telefone,
-    ).toBe('71988887777')
+        importToken: 'batch.123.sig',
+      }).importToken,
+    ).toBe('batch.123.sig')
   })
 
   it('requires vote intention consent acceptance', () => {

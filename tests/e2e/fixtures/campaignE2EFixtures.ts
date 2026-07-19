@@ -21,11 +21,13 @@ type OwnedCollection =
   | 'nucleusUpdate'
   | 'campaignInvite'
   | 'consent'
+  | 'supporter'
 
 const deletionOrder: OwnedCollection[] = [
   'campaignInvite',
   'nucleusUpdate',
   'leadership',
+  'supporter',
   'electoralNucleus',
   'contact',
   'campaignUser',
@@ -173,6 +175,21 @@ class CampaignE2EOwnership {
         pagination: false,
       })
       for (const update of updates.docs) this.own('nucleusUpdate', update.id)
+    }
+    if (contactIDs.length || nucleusIDs.length || userIDs.length) {
+      const supporters = await this.rootPayload.find({
+        collection: 'supporter',
+        where: {
+          or: [
+            ...(contactIDs.length ? [{ contact: { in: contactIDs } }] : []),
+            ...(nucleusIDs.length ? [{ nucleus: { in: nucleusIDs } }] : []),
+            ...(userIDs.length ? [{ createdBy: { in: userIDs } }] : []),
+          ],
+        },
+        depth: 0,
+        pagination: false,
+      })
+      for (const supporter of supporters.docs) this.own('supporter', supporter.id)
     }
   }
 
