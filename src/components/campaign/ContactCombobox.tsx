@@ -13,6 +13,7 @@ import {
   CommandList,
 } from '@/components/ui/Command'
 import { Spinner } from '@/components/ui/Spinner'
+import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 
 export type ContactComboboxOption = {
   id: number
@@ -50,12 +51,18 @@ export const ContactCombobox = ({
 
   useEffect(() => {
     if (!open) return
+    if (!isContactSearchQueryReady(query)) {
+      setOptions([])
+      setLoading(false)
+      setFailed(false)
+      return
+    }
 
     const currentRequestId = ++requestId.current
     const timeout = window.setTimeout(() => {
       setLoading(true)
       setFailed(false)
-      void search(query)
+      void search(query.trim())
         .then((nextOptions) => {
           if (requestId.current !== currentRequestId) return
           setOptions(nextOptions)
@@ -150,7 +157,9 @@ export const ContactCombobox = ({
                   </CommandGroup>
                 ) : (
                   <p className="py-6 text-center text-sm text-muted-foreground">
-                    Nenhum contato encontrado.
+                    {!isContactSearchQueryReady(query)
+                      ? 'Digite ao menos dois caracteres para buscar.'
+                      : 'Nenhum contato encontrado.'}
                   </p>
                 )}
               </>

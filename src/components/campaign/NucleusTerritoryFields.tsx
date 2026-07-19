@@ -54,7 +54,7 @@ const ChipList = ({
  * `NucleusTerritoryAndZonesFields` for the nucleus variant that also manages
  * TSE zones.
  */
-export const NucleusTerritoryFields = ({
+export const CampaignTerritoryFields = ({
   values,
   fieldErrors = {},
 }: {

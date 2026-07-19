@@ -164,9 +164,11 @@ const deriveActionPlanFields: CollectionBeforeChangeHook = ({ data, operation, o
 
   if (Array.isArray(data.tasks)) {
     const previousTasks = Array.isArray(originalDoc?.tasks) ? originalDoc.tasks : []
+    let taskDoneCount = 0
     data.tasks = data.tasks.map((task: Record<string, unknown>, index: number) => {
       const previous = previousTasks[index] as Record<string, unknown> | undefined
       const done = Boolean(task.done)
+      if (done) taskDoneCount += 1
       const previousDone = Boolean(previous?.done)
       let doneAt = task.doneAt ?? previous?.doneAt ?? null
       if (done && !previousDone) {
@@ -176,6 +178,8 @@ const deriveActionPlanFields: CollectionBeforeChangeHook = ({ data, operation, o
       }
       return { ...task, done, doneAt }
     })
+    data.taskTotal = data.tasks.length
+    data.taskDoneCount = taskDoneCount
   }
 
   if (Array.isArray(data.updates)) {
@@ -471,6 +475,34 @@ export const ActionPlan: CollectionConfig = {
           },
         },
       ],
+    },
+    {
+      name: 'taskTotal',
+      type: 'number',
+      label: 'Total de tarefas',
+      defaultValue: 0,
+      min: 0,
+      admin: {
+        readOnly: true,
+      },
+      access: {
+        create: canSetActionPlanSystemField,
+        update: canSetActionPlanSystemField,
+      },
+    },
+    {
+      name: 'taskDoneCount',
+      type: 'number',
+      label: 'Tarefas concluídas',
+      defaultValue: 0,
+      min: 0,
+      admin: {
+        readOnly: true,
+      },
+      access: {
+        create: canSetActionPlanSystemField,
+        update: canSetActionPlanSystemField,
+      },
     },
     {
       name: 'updates',

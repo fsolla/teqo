@@ -36,7 +36,8 @@ export const actionPlanListSelect = {
   neighborhoods: true,
   locality: true,
   responsible: true,
-  tasks: { done: true },
+  taskDoneCount: true,
+  taskTotal: true,
 } as const
 
 export type ActionPlanListViewModel = {
@@ -60,8 +61,6 @@ const relationshipName = (
 
 export const toActionPlanListViewModel = (plan: ActionPlan): ActionPlanListViewModel => {
   const cities = asStringArray(plan.cities)
-  const tasks = plan.tasks ?? []
-
   return {
     id: plan.id,
     title: plan.title,
@@ -74,8 +73,8 @@ export const toActionPlanListViewModel = (plan: ActionPlan): ActionPlanListViewM
     city: cities[0] ?? null,
     responsibleName: relationshipName(plan.responsible),
     taskProgress: {
-      done: tasks.filter((task) => Boolean(task.done)).length,
-      total: tasks.length,
+      done: plan.taskDoneCount ?? 0,
+      total: plan.taskTotal ?? 0,
     },
   }
 }

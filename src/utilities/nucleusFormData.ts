@@ -1,12 +1,6 @@
 import 'server-only'
 
 import {
-  bahiaIdentityTerritories,
-  type BahiaIdentityTerritory,
-  isBahiaMunicipality,
-  territoriesForCities,
-} from '@/lib/bahiaTerritories'
-import {
   organizationKinds,
   sectorKinds,
   type NucleusCreateInput,
@@ -14,12 +8,14 @@ import {
 } from '@/lib/schemas/nucleus'
 import {
   checkboxFormValue,
-  FormDataBoundaryError,
   optionalFormText,
-  repeatedFormTexts,
   repeatedRelationshipFormValues,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
+import {
+  parseCampaignTerritoryFields,
+  validateCampaignTerritoryFormData,
+} from '@/utilities/campaignTerritoryFormData'
 import { parseTseZoneNumbers } from '@/utilities/tseZone'
 
 const parseZoneNumbers = (value: string | undefined): Array<{ zoneNumber: number }> | undefined =>
@@ -28,21 +24,12 @@ const parseZoneNumbers = (value: string | undefined): Array<{ zoneNumber: number
 const parseSharedNucleusFormData = (formData: FormData) => {
   const organizationKind = optionalFormText(formData, 'organizationKind')
   const sectorKind = optionalFormText(formData, 'sectorKind')
-  const cities = repeatedFormTexts(formData, 'cities')
-  const regions =
-    cities.length > 0
-      ? territoriesForCities(cities)
-      : (repeatedFormTexts(formData, 'regions') as BahiaIdentityTerritory[])
-  const neighborhoods = cities.length === 1 ? repeatedFormTexts(formData, 'neighborhoods') : []
+  const territory = parseCampaignTerritoryFields(formData)
   const partnerName = optionalFormText(formData, 'partnerName')
 
   return {
     name: optionalFormText(formData, 'name') ?? '',
-    regions,
-    cities,
-    neighborhoods,
-    locality: optionalFormText(formData, 'locality'),
-    territoryNotes: optionalFormText(formData, 'territoryNotes'),
+    ...territory,
     organizationKind: organizationKind as (typeof organizationKinds)[number],
     organizationLabel: optionalFormText(formData, 'organizationLabel'),
     sectorKind: sectorKind ? (sectorKind as (typeof sectorKinds)[number]) : undefined,
@@ -58,49 +45,9 @@ const parseSharedNucleusFormData = (formData: FormData) => {
   }
 }
 
-const validateTerritoryFormData = (
-  territory: {
-    regions: string[]
-    cities: string[]
-    neighborhoods: string[]
-    locality?: string
-  },
-  { requireGeography }: { requireGeography: boolean },
-) => {
-  for (const region of territory.regions) {
-    if (!bahiaIdentityTerritories.includes(region as never)) {
-      throw new FormDataBoundaryError('regions', 'Território de identidade inválido.')
-    }
-  }
-  for (const city of territory.cities) {
-    if (!isBahiaMunicipality(city)) {
-      throw new FormDataBoundaryError('cities', 'Município inválido.')
-    }
-  }
-  if (territory.neighborhoods.length > 0 && territory.cities.length !== 1) {
-    throw new FormDataBoundaryError(
-      'neighborhoods',
-      territory.cities.length === 0
-        ? 'Informe o município antes do bairro.'
-        : 'Bairros só podem ser informados quando há exatamente um município.',
-    )
-  }
-  if (
-    requireGeography &&
-    territory.regions.length === 0 &&
-    territory.cities.length === 0 &&
-    !territory.locality
-  ) {
-    throw new FormDataBoundaryError(
-      'cities',
-      'Informe o território de identidade, município ou localidade do núcleo.',
-    )
-  }
-}
-
 export const parseNucleusCreateFormData = (formData: FormData): NucleusCreateInput => {
   const shared = parseSharedNucleusFormData(formData)
-  validateTerritoryFormData(shared, { requireGeography: false })
+  validateCampaignTerritoryFormData(shared, { entityLabel: 'núcleo', requireGeography: false })
   const coordinatorIds = repeatedRelationshipFormValues(formData, 'coordinators')
 
   return {
@@ -111,7 +58,7 @@ export const parseNucleusCreateFormData = (formData: FormData): NucleusCreateInp
 
 export const parseNucleusUpdateFormData = (formData: FormData): NucleusUpdateInput => {
   const shared = parseSharedNucleusFormData(formData)
-  validateTerritoryFormData(shared, { requireGeography: true })
+  validateCampaignTerritoryFormData(shared, { entityLabel: 'núcleo', requireGeography: true })
   const partnerName = optionalFormText(formData, 'partnerName')
 
   return {

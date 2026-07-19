@@ -9,6 +9,7 @@ import * as migration_20260718_195854_add_election_results from './20260718_1958
 import * as migration_20260718_222656_add_supporter from './20260718_222656_add_supporter';
 import * as migration_20260718_222832_add_action_plan from './20260718_222832_add_action_plan';
 import * as migration_20260719_011015_add_supporter_import_batch from './20260719_011015_add_supporter_import_batch';
+import * as migration_20260719_014906_action_plan_list_perf from './20260719_014906_action_plan_list_perf';
 
 export const migrations = [
   {
@@ -64,6 +65,11 @@ export const migrations = [
   {
     up: migration_20260719_011015_add_supporter_import_batch.up,
     down: migration_20260719_011015_add_supporter_import_batch.down,
-    name: '20260719_011015_add_supporter_import_batch'
+    name: '20260719_011015_add_supporter_import_batch',
+  },
+  {
+    up: migration_20260719_014906_action_plan_list_perf.up,
+    down: migration_20260719_014906_action_plan_list_perf.down,
+    name: '20260719_014906_action_plan_list_perf'
   },
 ];

@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-19 (MVP + Ciclo 2 deployados; A2 entregue; C2 engenharia pronta e mesclada em `main`; C3 Planos de Ação implementado e mesclado em `main`; C6 Escala e DRY pós-C2 implementado e mesclado em `main` (Fases 1–5 + simplify); C7 registrado — escala/DRY pós-C3; C8 registrado — escala/DRY pós-C6 do `/simplify`; B2 fundação de geometrias do mapa entregue; B5 registrado — escala/DRY pós-B2 do `/simplify`)
+Atualizado em: 2026-07-19 (MVP + Ciclo 2 deployados; A2 entregue; C2 engenharia pronta e mesclada em `main`; C3 Planos de Ação implementado e mesclado em `main`; C6 Escala e DRY pós-C2 implementado e mesclado em `main` (Fases 1–5 + simplify); C7 parcial 2026-07-19 (FormData território, contadores lista, locks, contactSearchQuery) — débitos pós-simplify registrados no plano; C8 registrado — escala/DRY pós-C6 do `/simplify`; B2 fundação de geometrias do mapa entregue; B5 registrado — escala/DRY pós-B2 do `/simplify`)
 
 Registro canônico no repositório dos planos futuros e débitos conhecidos. Status operacional do ciclo atual de Núcleos fica em [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc); este arquivo lista o que ainda é futuro ou bloqueador, **em ordem de execução**, com dependências e paralelismo explícitos.
 
@@ -69,6 +69,7 @@ MVP de território + reporte implementado e enviado (ondas 1–8 + refactors de 
 
 - **C2 Cadastro nominal de apoiadores** — collection `supporter` (join `Contact`↔campanha, núcleo opcional), migration `20260718_222656_add_supporter` com `UNIQUE NULLS NOT DISTINCT (contact_id, nucleus_id)`, consent por chaves estáveis `apoiador-cadastro` / `apoiador-intencao-voto` via `campaignConsent.ts` genérico (`getConsentByKey` / `requireConsentByKey`, falha fechada), actions (create / intenção de voto / import CSV só `geral` / `removeSupporterData`), UI `/campanha/apoiadores` (lista+KPIs, ficha, wizard de import, kit mínimo `wa.me`). Telefone obrigatório no v1; `lideranca` sem acesso à área. Engenharia pronta e mesclada — produção com dados reais espera deploy (build Vercel aplica a migration) + Consent keys + aprovação jurídica (Onda 0). [Plano](plans/cadastro-nominal-apoiadores.md).
 - **C3 Eventos / agenda de mobilização** — collection `actionPlan` + vertical `/campanha/planos` (lista com tabs Próximos/Todos/Realizados/Rascunhos, detalhe com tabs Visão geral/Tarefas/Atualizações, forms novo/editar), blocos "Próximos eventos" no overview de núcleos e no dashboard; `startAt` opcional só em rascunho (obrigatório ao sair de `rascunho`); access por `coordinators`/`leadership` (escopo `lideranca` só toggle `tasks.done` + append `updates`); transações via `withPayloadTransaction`; migration `20260718_222832_add_action_plan`. Sem `Consent` (dado interno de staff). [Plano](plans/eventos-agenda-mobilizacao.md).
+- **C7 Escala e DRY pós-C3 — parcial (2026-07-19)** — primeira fatia: `campaignTerritoryFormData`, contadores `taskTotal`/`taskDoneCount` + migration `20260719_014906_action_plan_list_perf`, locks advisory + `select` mínimo em toggle/append, `contactSearchQuery` (mín. 2 chars), rename `CampaignTerritoryFields`. Débitos do `/simplify` 2026-07-19 (composição territorial, shell de contato, leituras por aba, short-circuit de hooks, `taskProgress` no detalhe) registrados no plano — Fases 1–2 e restante de 4–5 pendentes. [Plano](plans/escala-dry-pos-c3.md).
 
 ### Referências de design (UX Pilot, 2026-07-18)
 
@@ -127,7 +128,7 @@ flowchart TD
         C2["C2 Cadastro nominal de apoiadores ✓"]
         C6["C6 Escala e DRY pós-C2<br/>(import/listas/forms)"]
         C3["C3 Eventos / agenda de mobilização ✓"]
-        C7["C7 Escala e DRY pós-C3<br/>(território/contato/leituras)"]
+        C7["C7 Escala e DRY pós-C3<br/>(parcial: contadores/locks/FormData)"]
         C8["C8 Escala e DRY pós-C6<br/>(locks bulk / leituras / forms DRY)"]
         C4["C4 Demandas"]
         C5["C5 Operação dia D / GOTV<br/>(proposto, a validar)"]
@@ -190,7 +191,7 @@ Itens sem seta de entrada (**paralelizáveis a qualquer momento**): fill-ins (vi
 | 8     | C6 Escala e DRY pós-C2 (import em massa, KPI, shells compartilhados com núcleos) **(implementado e mesclado em `main` 2026-07-19 — Fases 1–5 + simplify)** | [detalhes](plans/escala-dry-pos-c2.md)           | C2 (merge)                       | A4, C3, C7, C8   |
 | 9     | A4 Baseline no produto + insight Gap vs 2022                                                                                    | [detalhes](plans/baseline-eleitoral-tse.md)      | A3 + B1 (suave: A2)              | C2, C3, C6, C7, C8 |
 | 10    | C3 Eventos / agenda de mobilização (`actionPlan`) **(implementado e mesclado em `main` 2026-07-18)**                            | [detalhes](plans/eventos-agenda-mobilizacao.md)  | A1                               | C2, A4, C6, C7, C8 |
-| 11    | C7 Escala e DRY pós-C3 (território/contato compostos, leituras por aba, RMW/índice)                                             | [detalhes](plans/escala-dry-pos-c3.md)           | C3 (suave: C6 F2)                | A4, C6, C8        |
+| 11    | C7 Escala e DRY pós-C3 _(parcial 2026-07-19: FormData território, contadores lista, locks, `contactSearchQuery`; pendente: composição territorial, shell de contato, leituras por aba, short-circuit de hooks)_ | [detalhes](plans/escala-dry-pos-c3.md)           | C3 (suave: C6 F2)                | A4, C6, C8        |
 | 12    | C8 Escala e DRY pós-C6 (locks bulk em 1 RT, leituras/`pg_trgm`, helpers drizzle, forms DRY) _(cortável se a base nominal permanecer pequena)_ | [detalhes](plans/escala-dry-pos-c6.md)           | C6 (merge)                       | A4, C3, C7        |
 
 **Janela 3 — 16/08 → set (campanha de rua): inteligência ampliada, visualização e engajamento.**
@@ -220,7 +221,7 @@ Itens sem seta de entrada (**paralelizáveis a qualquer momento**): fill-ins (vi
 - **Reset de senha self-service + foto de perfil** (UX adiada do ciclo 1). _(plano MVP)_
 - **Higiene de código:** varredura PascalCase dos componentes legados. _(notebook Núcleos)_
 
-**Cortes seguros se o prazo apertar** (nesta ordem): B4 camada de zonas, B5 F2 (cache CLI — duplicação pequena), B3 mapa Leaflet (preferir levar B5 F1 lazy load junto se B3 entrar), C4 demandas, D2 push (mantendo o sino), C6 fases 3–5 (import bulk / preview token / KPI — só se a base nominal permanecer pequena), C7 fases 4–5 (leituras/RMW/índice — só se a agenda permanecer pequena), C8 (escala/DRY pós-C6 — só se a base nominal permanecer pequena; Fases 3–4 DRY podem entrar isoladas), fill-ins (D1 PWA já entregue, saiu da lista de cortes). Preferir manter C6 fases 1–2, C7 fases 1–2 e C8 fases 3–4 (DRY de helpers/forms) se houver folga. **Não cortáveis:** Onda 0 (jurídico/Consent), C2 cadastro de apoiadores, C3 eventos/agenda, A4 baseline + gap — são respectivamente o risco legal, a base de dados, a operação da propaganda e o instrumento de alocação de esforço.
+**Cortes seguros se o prazo apertar** (nesta ordem): B4 camada de zonas, B5 F2 (cache CLI — duplicação pequena), B3 mapa Leaflet (preferir levar B5 F1 lazy load junto se B3 entrar), C4 demandas, D2 push (mantendo o sino), C6 fases 3–5 (import bulk / preview token / KPI — só se a base nominal permanecer pequena), C7 fases 4–5 restantes (leituras por aba / short-circuit de hooks / feed O(n) — só se a agenda permanecer pequena; contadores + locks já entregues), C8 (escala/DRY pós-C6 — só se a base nominal permanecer pequena; Fases 3–4 DRY podem entrar isoladas), fill-ins (D1 PWA já entregue, saiu da lista de cortes). Preferir manter C6 fases 1–2, C7 fases 1–2 e C8 fases 3–4 (DRY de helpers/forms) se houver folga. **Não cortáveis:** Onda 0 (jurídico/Consent), C2 cadastro de apoiadores, C3 eventos/agenda, A4 baseline + gap — são respectivamente o risco legal, a base de dados, a operação da propaganda e o instrumento de alocação de esforço.
 
 ### Itens consolidados/removidos nesta revisão (2026-07-17)
 
