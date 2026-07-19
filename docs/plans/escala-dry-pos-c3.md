@@ -129,6 +129,7 @@ flowchart TD
 - [escala-dry-pos-c2.md](escala-dry-pos-c2.md) — precedente C6 + `campaignListUrl`
 - Review `/simplify` 2026-07-18 (quality / reuse / performance) — origem das fases
 - Review `/simplify` 2026-07-19 — débitos registrados nas fases pendentes acima
+- Review `/simplify` 2026-07-19 (pós-entrega C7) — débitos maiores → **C11** / [escala-dry-pos-c7.md](escala-dry-pos-c7.md)
 - `src/lib/contactSearchQuery.ts` — guard compartilhado client/server (entregue)
 - `src/migrations/20260719_014906_action_plan_list_perf.ts` — contadores + índice parcial (entregue)
 - `src/components/campaign/AsyncSearchCombobox.tsx` — shell assíncrono compartilhado (entregue)
@@ -138,3 +139,7 @@ flowchart TD
 - `src/app/(campaign)/campanha/actions/actionPlan.ts` — toggle/append RMW
 - `src/migrations/20260718_222832_add_action_plan.ts` — índices atuais `status` / `start_at` separados
 - AGENTS.md — `overrideAccess: false`, transações, naming, território Bahia
+
+## Simplify (2026-07-19)
+
+Passagens `/simplify` sobre o diff do C7 (incl. pós-rebase com C8–C9/Onda 0) aplicaram limpezas pontuais (`fieldError`, `LeadershipCombobox`, `searchRef`, depth overview, exports mortos, skip `buildTerritorySuggestions` com override). Débitos maiores registrados no item **C11** do roadmap — [escala-dry-pos-c7.md](escala-dry-pos-c7.md).

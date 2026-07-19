@@ -4,7 +4,7 @@ import { useActionState, useState } from 'react'
 import Link from 'next/link'
 
 import { ContactCombobox, type ContactComboboxOption } from '@/components/campaign/ContactCombobox'
-import { AsyncSearchCombobox } from '@/components/campaign/AsyncSearchCombobox'
+import { LeadershipCombobox } from '@/components/campaign/LeadershipCombobox'
 import { ActionPlanTaskFields } from '@/components/campaign/ActionPlanTaskFields'
 import { CampaignTerritoryFields } from '@/components/campaign/NucleusTerritoryFields'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
@@ -26,7 +26,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import { Spinner } from '@/components/ui/Spinner'
 import { actionPlanKindLabels, actionPlanStatusLabels } from '@/lib/schemas/actionPlan'
-import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 import type { ActionPlanLeadershipOption } from '@/utilities/actionPlanLeadershipOptions'
 import type { ActionPlanFormViewModel } from '@/utilities/actionPlanViewModels'
 import { fieldError } from '@/utilities/campaignFormFields'
@@ -79,7 +78,7 @@ export const ActionPlanFormFields = ({
       ? { id: plan.responsible.id, name: plan.responsible.name, phone: plan.responsible.phone }
       : null,
   )
-  const [leadership, setLeadership] = useState<{ id: number; label: string } | null>(
+  const [leadership, setLeadership] = useState<ActionPlanLeadershipOption | null>(
     plan?.leadership ? { id: plan.leadership.id, label: plan.leadership.label } : null,
   )
 
@@ -304,19 +303,12 @@ export const ActionPlanFormFields = ({
 
             <Field data-invalid={Boolean(errorFor('leadership'))}>
               <FieldLabel>Liderança vinculada</FieldLabel>
-              <AsyncSearchCombobox
+              <LeadershipCombobox
                 name="leadership"
                 label="Liderança vinculada"
                 value={leadership}
                 onChange={setLeadership}
-                search={async (query) => {
-                  const results = await searchLeaderships(query)
-                  return results.map((option) => ({ id: option.id, label: option.label }))
-                }}
-                emptyOptionLabel="Nenhuma"
-                dialogDescription="Busque lideranças engajadas por nome ou celular."
-                isQueryReady={isContactSearchQueryReady}
-                queryTooShortMessage="Digite ao menos dois caracteres para buscar."
+                search={searchLeaderships}
               />
               <FieldDescription>
                 Quando vinculada, a liderança engajada vê o plano e pode marcar tarefas e registrar

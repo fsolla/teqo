@@ -272,7 +272,7 @@ const mapActionPlanTasks = (plan: ActionPlan): ActionPlanTaskViewModel[] =>
     doneAt: task.doneAt ?? null,
   }))
 
-export const mapActionPlanUpdates = (
+const mapActionPlanUpdates = (
   plan: ActionPlan,
   authorNamesById: ReadonlyMap<number, string> = new Map(),
 ): ActionPlanUpdateViewModel[] =>

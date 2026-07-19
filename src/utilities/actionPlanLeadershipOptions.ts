@@ -52,7 +52,6 @@ export const searchActionPlanLeadershipOptions = async (
     },
     depth: 1,
     limit: LEADERSHIP_SEARCH_LIMIT,
-    sort: 'id',
     select: {
       contact: true,
       supportStatus: true,

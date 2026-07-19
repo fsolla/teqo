@@ -9,7 +9,10 @@ import {
   normalizeContactSearchQuery,
 } from '@/lib/contactSearchQuery'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { searchActionPlanLeadershipOptions } from '@/utilities/actionPlanLeadershipOptions'
+import {
+  searchActionPlanLeadershipOptions,
+  type ActionPlanLeadershipOption,
+} from '@/utilities/actionPlanLeadershipOptions'
 
 const CONTACT_OPTION_LIMIT = 20
 
@@ -43,7 +46,7 @@ export const searchActionPlanContactOptions = async (
 
 export const searchActionPlanLeadershipOptionsAction = async (
   query: string,
-): Promise<Array<{ id: number; label: string }>> => {
+): Promise<ActionPlanLeadershipOption[]> => {
   const [payload, user] = await Promise.all([getPayload({ config }), getCampaignUser()])
   if (!user) throw new Error('Autenticação necessária.')
 

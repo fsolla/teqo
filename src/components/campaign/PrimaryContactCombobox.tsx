@@ -1,7 +1,5 @@
 'use client'
 
-import { useRef } from 'react'
-
 import { AsyncSearchCombobox } from '@/components/campaign/AsyncSearchCombobox'
 import type {
   NucleusPrimaryContactPageData,
@@ -22,9 +20,6 @@ export const PrimaryContactCombobox = ({
   current,
   search,
 }: PrimaryContactComboboxProps) => {
-  const contactsById = useRef(new Map<number, PrimaryContactOption>())
-  if (current) contactsById.current.set(current.id, current)
-
   return (
     <AsyncSearchCombobox
       name={name}
@@ -34,8 +29,6 @@ export const PrimaryContactCombobox = ({
       dialogDescription="Busque entre as lideranças engajadas deste núcleo."
       search={async (query) => {
         const result = await search(query)
-        if (result.current) contactsById.current.set(result.current.id, result.current)
-        for (const contact of result.options) contactsById.current.set(contact.id, contact)
         const limit = result.current ? 99 : 100
         return result.options.slice(0, limit).map((contact) => ({
           id: contact.id,
