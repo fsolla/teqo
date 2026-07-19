@@ -1,15 +1,15 @@
 'use client'
 
-import Link from 'next/link'
 import { useActionState } from 'react'
 
 import { resetCampaignPasswordFormAction } from '@/app/(campaign)/campanha/actions/password'
+import { CampaignAuthBackToLoginLink } from '@/components/campaign/CampaignAuthBackToLoginLink'
+import { CampaignAuthCardHeader } from '@/components/campaign/CampaignAuthCardHeader'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
-import { campaignAuthHeadingClassName } from '@/lib/campaignAuthCopy'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 
@@ -18,13 +18,15 @@ export const ResetPasswordForm = ({ token }: { token: string }) => {
     resetCampaignPasswordFormAction.bind(null, token),
     {} satisfies CampaignFormActionState,
   )
+  const passwordError = fieldError(state.fieldErrors, 'password')
+  const passwordConfirmationError = fieldError(state.fieldErrors, 'passwordConfirmation')
 
   return (
     <Card>
-      <CardHeader className="text-center">
-        <h1 className={campaignAuthHeadingClassName}>Redefinir senha</h1>
-        <CardDescription>Escolha uma nova senha com pelo menos 8 caracteres.</CardDescription>
-      </CardHeader>
+      <CampaignAuthCardHeader
+        title="Redefinir senha"
+        description="Escolha uma nova senha com pelo menos 8 caracteres."
+      />
       <CardContent>
         <form action={formAction}>
           <FieldGroup>
@@ -53,24 +55,15 @@ export const ResetPasswordForm = ({ token }: { token: string }) => {
               />
             </Field>
             {state.message ? <FieldError>{state.message}</FieldError> : null}
-            {fieldError(state.fieldErrors, 'password') ? (
-              <FieldError>{fieldError(state.fieldErrors, 'password')}</FieldError>
-            ) : null}
-            {fieldError(state.fieldErrors, 'passwordConfirmation') ? (
-              <FieldError>{fieldError(state.fieldErrors, 'passwordConfirmation')}</FieldError>
+            {passwordError ? <FieldError>{passwordError}</FieldError> : null}
+            {passwordConfirmationError ? (
+              <FieldError>{passwordConfirmationError}</FieldError>
             ) : null}
             <Button type="submit" className="min-h-11 w-full" disabled={pending}>
               {pending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
               <span aria-live="polite">{pending ? 'Salvando...' : 'Salvar nova senha'}</span>
             </Button>
-            <p className="text-center text-sm">
-              <Link
-                href="/campanha/login"
-                className="text-primary underline-offset-4 hover:underline"
-              >
-                Voltar ao login
-              </Link>
-            </p>
+            <CampaignAuthBackToLoginLink />
           </FieldGroup>
         </form>
       </CardContent>

@@ -4,15 +4,20 @@ import Link from 'next/link'
 import { useActionState, useState } from 'react'
 
 import { loginCampaignFormAction, type LoginResult } from '@/app/(campaign)/campanha/actions/auth'
+import { CampaignAuthCardHeader } from '@/components/campaign/CampaignAuthCardHeader'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import {
+  CAMPAIGN_FIRST_ACCESS_HINT,
   CAMPAIGN_LEADERSHIP_LOGIN_RECOVERY_HINT,
-  campaignAuthHeadingClassName,
+  CAMPAIGN_LOGIN_SUBTITLE,
+  campaignAuthMutedTextClassName,
+  campaignAuthTextLinkClassName,
 } from '@/lib/campaignAuthCopy'
+import { cn } from '@/lib/utils'
 
 const LOGIN_ERROR_ID = 'login-credentials-error'
 
@@ -35,13 +40,7 @@ export const LoginForm = () => {
 
   return (
     <Card>
-      <CardHeader className="text-center">
-        <h1 className={campaignAuthHeadingClassName}>Entrar na campanha</h1>
-        <CardDescription>Use o e-mail da equipe ou o celular da liderança.</CardDescription>
-        <p className="text-sm text-muted-foreground text-pretty">
-          Primeiro acesso? Peça um convite no WhatsApp ao coordenador do seu núcleo.
-        </p>
-      </CardHeader>
+      <CampaignAuthCardHeader title="Entrar na campanha" description={CAMPAIGN_LOGIN_SUBTITLE} />
       <CardContent>
         <form action={formAction}>
           <FieldGroup>
@@ -78,16 +77,13 @@ export const LoginForm = () => {
               />
             </Field>
             <div className="flex flex-col gap-2 text-sm">
-              <Link
-                href="/campanha/esqueci-senha"
-                className="text-primary underline-offset-4 hover:underline"
-              >
+              <Link href="/campanha/esqueci-senha" className={campaignAuthTextLinkClassName}>
                 Esqueceu a senha?
               </Link>
               {hasAuthError ? (
-                <p className="text-muted-foreground text-pretty">
+                <div className={campaignAuthMutedTextClassName}>
                   {CAMPAIGN_LEADERSHIP_LOGIN_RECOVERY_HINT}
-                </p>
+                </div>
               ) : null}
             </div>
             <Field>
@@ -97,6 +93,19 @@ export const LoginForm = () => {
                 <span aria-live="polite">{pending ? 'Entrando...' : 'Entrar'}</span>
               </Button>
             </Field>
+            <details className="text-center text-sm">
+              <summary
+                className={cn(
+                  'cursor-pointer underline-offset-4 marker:content-none hover:underline [&::-webkit-details-marker]:hidden',
+                  'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                Primeiro acesso?
+              </summary>
+              <div className={cn(campaignAuthMutedTextClassName, 'mt-2')}>
+                {CAMPAIGN_FIRST_ACCESS_HINT}
+              </div>
+            </details>
           </FieldGroup>
         </form>
       </CardContent>

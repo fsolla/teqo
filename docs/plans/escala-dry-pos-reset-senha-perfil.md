@@ -1,7 +1,7 @@
 # Escala e DRY pós-reset de senha + foto de perfil
 
 Status: registrado no roadmap (fases pendentes)
-Atualizado em: 2026-07-19 (Fase 3 parcial entregue em `main` @ `246ca85`; absorção `capture-review-debts`)
+Atualizado em: 2026-07-19 (Fase 3 parcial: polish `/campanha/login` + simplify; absorção `capture-review-debts` 2026-07-19)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (RS+, fill-in de engenharia pós-MVP)
 Responsável: —
 
@@ -11,13 +11,15 @@ O fill-in **Reset de senha self-service + foto de perfil** ([reset-senha-foto-pe
 
 **Já resolvido no simplify (não reabrir):** `CampaignFormActionState` compartilhado; constantes de copy (`CAMPAIGN_PASSWORD_RESET_*`, `CAMPAIGN_LEADERSHIP_FORGOT_PASSWORD_MESSAGE`, `CAMPAIGN_SESSION_EXPIRED_MESSAGE`); `campaignUserShellView` / `CampaignUserShellView`; `canUpdateCampaignUserAvatar` delegando para `canUpdateCampaignUser`; `fieldError` nos forms; `FormActionStatus` no perfil; remoção de wrappers `passwordFormError`/`profileFormError`; exports internos de `resetCampaignPassword`/`changeCampaignPassword`; teste int renomeado para login com senha errada.
 
-**Já resolvido na Fase 3 parcial (merge `main` 2026-07-19, `246ca85` — não reabrir):** `CampaignAuthPageShell` em `login` / `esqueci-senha` / `redefinir-senha` (incl. card de token inválido); `campaignAuthHeadingClassName` + copy compartilhada (`CAMPAIGN_LEADERSHIP_LOGIN_RECOVERY_HINT`, `CAMPAIGN_LEADERSHIP_PHONE_ACCESS_HINT`); login com `inputMode` dinâmico tel/email, `aria-invalid`/`aria-describedby` nos dois campos, copy de primeiro acesso, `w-full` no submit — fecha P1–P3 do critique Impeccable `/campanha/login` da sessão.
+**Já resolvido na Fase 3 parcial (merge `main` 2026-07-19, `246ca85` — não reabrir):** `CampaignAuthPageShell` em `login` / `esqueci-senha` / `redefinir-senha` (incl. card de token inválido); `campaignAuthHeadingClassName` + copy compartilhada (`CAMPAIGN_LEADERSHIP_LOGIN_RECOVERY_HINT`, `CAMPAIGN_LEADERSHIP_PHONE_ACCESS_HINT`); login com `inputMode` dinâmico tel/email, `aria-invalid`/`aria-describedby` nos dois campos, `w-full` no submit.
+
+**Já resolvido no polish + `/simplify` de `/campanha/login` (2026-07-19 — não reabrir):** critique Impeccable P1–P3 fechados (alinhamento título/subtítulo `!text-center`, ritmo `gap-2` + `leading-snug`, `CampaignLogo` no shell, `<details>` para primeiro acesso); `CampaignAuthCardHeader`, `CampaignAuthBackToLoginLink`; tokens `campaignAuthDescriptionClassName`, `campaignAuthMutedTextClassName`, `campaignAuthTextLinkClassName`; `CAMPAIGN_LOGIN_SUBTITLE` (conta individual); `fieldError` sem dupla chamada em forgot/reset. Snapshot: [`.impeccable/critique/2026-07-19T21-47-04Z__src-app-campaign-campanha-login.md`](../../.impeccable/critique/2026-07-19T21-47-04Z__src-app-campaign-campanha-login.md).
 
 ## Objetivos
 
 - Auth hot path sem join de `media` em rotas que não exibem avatar (núcleos, apoiadores, planos, etc.).
 - Upload de avatar sem segurar transação Postgres aberta durante I/O de blob/sharp.
-- Shell compartilhado das páginas públicas de auth (`login`, `esqueci-senha`, `redefinir-senha`) — **parcial ✓** (`CampaignAuthPageShell` + headings/copy; ver Fase 3).
+- Shell compartilhado das páginas públicas de auth (`login`, `esqueci-senha`, `redefinir-senha`) — **parcial ✓** (shell + card header + logo + critique login fechados; pendem password fields + login state — Fase 3).
 - Um único módulo de validação/campos de senha reutilizado por convite, reset e perfil.
 - Login alinhado ao shape `CampaignFormActionState` + `mapCampaignFormActionError` das demais actions de campanha.
 - Guardrails: sem novo `Consent`; sem SMS/WhatsApp para token; comportamento de produto 1C inalterado salvo bugs encontrados.
@@ -44,7 +46,7 @@ flowchart TD
     RS["Reset senha + perfil MVP ✓"] --> F1
     F1["Fase 1 — Auth read perf<br/>depth 0 + getCampaignUserWithAvatar<br/>sessão leve em rotas públicas"]
     F1 --> F2["Fase 2 — Avatar write perf<br/>blob fora da TX + revalidate estreito"]
-    F2 --> F3["Fase 3 — DRY auth UI/senha<br/>shell ✓ parcial · password fields + login state"]
+    F2 --> F3["Fase 3 — DRY auth UI/senha<br/>shell/card ✓ parcial · password fields + login state"]
     F3 --> F4["Fase 4 — DRY copy/role + actions<br/>campaignRoleOptions + getCampaignActionContext"]
     F4 --> F5["Fase 5 — Opcional<br/>avatar intent único + int change password"]
 ```
@@ -64,7 +66,7 @@ flowchart TD
 
 ### Fase 3 — DRY UI e senha
 
-**Entregue parcialmente (2026-07-19):** `CampaignAuthPageShell` + headings/copy unificados nas três rotas públicas e no card de token inválido; polish de login do critique Impeccable (ver Contexto).
+**Entregue parcialmente (2026-07-19):** `CampaignAuthPageShell`, `CampaignAuthCardHeader`, `CampaignAuthBackToLoginLink`, tokens de copy/classes em `campaignAuthCopy.ts`, `CampaignLogo` no shell, polish Impeccable `/campanha/login` (ver Contexto).
 
 **Pendente nesta fase:**
 
@@ -74,6 +76,7 @@ flowchart TD
 
 ### Fase 4 — DRY copy, role e action context
 
+- Consolidar strings de liderança/convite (`CAMPAIGN_LEADERSHIP_*`, `CAMPAIGN_FIRST_ACCESS_HINT`, `CAMPAIGN_LOGIN_SUBTITLE` + mensagem server em `campaignPasswordReset.ts`) numa fonte única com variantes por contexto.
 - **`campaignRoleLabels`** ↔ opções do campo `role` em `CampaignUser.ts` (fonte única `campaignRoleOptions`).
 - Propagar para **`NucleusUpdateFeed.tsx`** e outros `roleLabels` locais quando esses arquivos forem tocados.
 - **`password.ts` / `profile.ts`:** adotar `getCampaignActionContext()` (`src/utilities/campaignActionContext.ts`) como `supporter.ts` / `actionPlan.ts`.
@@ -98,13 +101,21 @@ flowchart TD
 - RBAC em `users` (admin Payload) → [roadmap](../roadmap.md) Admin Payload.
 - Unificar **todo** o ciclo 1 de auth (convite + login + admin) num único mega-refactor — RS+ cobre só o fill-in entregue e vizinhos diretos.
 
+## Explicitamente fora (critique/simplify desta sessão — não reabrir)
+
+- Split-screen login com publicações ou painel motivacional (decisão produto 2026-07-19; critique recomendou não).
+- Link de saída para o site público na tela de login (heurística 3, score 2).
+- Placeholder longo dual-format no identificador; submit helper global (`Spinner` + `aria-live`); constantes de rota auth; `flat-type-hierarchy` do detector runtime no body.
+- Comentário em `styles.css` para auth — workaround com tokens/componentes já suficiente.
+
 ## Referências
 
 - [reset-senha-foto-perfil.md](reset-senha-foto-perfil.md) — MVP entregue
 - [escala-dry-pos-visitados-recentemente.md](escala-dry-pos-visitados-recentemente.md) — precedente RS+/VR+
 - `src/utilities/campaignAuth.ts`, `src/app/(campaign)/campanha/actions/password.ts`, `profile.ts`
 - `src/components/campaign/CampaignProfileSettings.tsx`, `CampaignSidebar.tsx`, `CampaignUserAvatar.tsx`
-- `src/components/campaign/CampaignAuthPageShell.tsx` — shell entregue; ver Fase 3 pendente
+- `src/components/campaign/CampaignAuthPageShell.tsx`, `CampaignAuthCardHeader.tsx`, `CampaignAuthBackToLoginLink.tsx`
+- `src/lib/campaignAuthCopy.ts`
 - `src/app/(campaign)/campanha/login/`, `esqueci-senha/`, `redefinir-senha/`
 - `src/lib/schemas/campaignPassword.ts`, `src/lib/schemas/invite.ts`
 - `src/collections/CampaignUser.ts`

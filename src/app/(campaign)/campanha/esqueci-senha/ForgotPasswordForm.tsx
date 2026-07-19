@@ -1,17 +1,18 @@
 'use client'
 
-import Link from 'next/link'
 import { useActionState } from 'react'
 
 import { requestCampaignPasswordResetFormAction } from '@/app/(campaign)/campanha/actions/password'
+import { CampaignAuthBackToLoginLink } from '@/components/campaign/CampaignAuthBackToLoginLink'
+import { CampaignAuthCardHeader } from '@/components/campaign/CampaignAuthCardHeader'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import {
   CAMPAIGN_LEADERSHIP_PHONE_ACCESS_HINT,
-  campaignAuthHeadingClassName,
+  campaignAuthMutedTextClassName,
 } from '@/lib/campaignAuthCopy'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
@@ -21,20 +22,21 @@ export const ForgotPasswordForm = () => {
     requestCampaignPasswordResetFormAction,
     {} satisfies CampaignFormActionState,
   )
+  const emailError = fieldError(state.fieldErrors, 'email')
 
   return (
     <Card>
-      <CardHeader className="text-center">
-        <h1 className={campaignAuthHeadingClassName}>Esqueceu a senha?</h1>
-        <CardDescription>
-          Informe o e-mail cadastrado na sua conta. {CAMPAIGN_LEADERSHIP_PHONE_ACCESS_HINT}
-        </CardDescription>
-      </CardHeader>
+      <CampaignAuthCardHeader
+        title="Esqueceu a senha?"
+        description={
+          <>Informe o e-mail cadastrado na sua conta. {CAMPAIGN_LEADERSHIP_PHONE_ACCESS_HINT}</>
+        }
+      />
       <CardContent>
         {state.status === 'success' && state.message ? (
-          <p className="text-sm text-muted-foreground" role="status">
+          <div className={campaignAuthMutedTextClassName} role="status">
             {state.message}
-          </p>
+          </div>
         ) : (
           <form action={formAction}>
             <FieldGroup>
@@ -51,21 +53,12 @@ export const ForgotPasswordForm = () => {
                 />
               </Field>
               {state.message ? <FieldError>{state.message}</FieldError> : null}
-              {fieldError(state.fieldErrors, 'email') ? (
-                <FieldError>{fieldError(state.fieldErrors, 'email')}</FieldError>
-              ) : null}
+              {emailError ? <FieldError>{emailError}</FieldError> : null}
               <Button type="submit" className="min-h-11 w-full" disabled={pending}>
                 {pending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
                 <span aria-live="polite">{pending ? 'Enviando...' : 'Enviar link'}</span>
               </Button>
-              <p className="text-center text-sm">
-                <Link
-                  href="/campanha/login"
-                  className="text-primary underline-offset-4 hover:underline"
-                >
-                  Voltar ao login
-                </Link>
-              </p>
+              <CampaignAuthBackToLoginLink />
             </FieldGroup>
           </form>
         )}

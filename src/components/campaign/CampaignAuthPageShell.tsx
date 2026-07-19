@@ -1,6 +1,6 @@
-import { Megaphone } from 'lucide-react'
 import type { ComponentProps, ReactNode } from 'react'
 
+import { CampaignLogo } from '@/components/campaign/campaign-logo'
 import { cn } from '@/lib/utils'
 
 type CampaignAuthPageShellProps = {
@@ -21,12 +21,7 @@ export const CampaignAuthPageShell = ({
     {...props}
   >
     <div className="flex w-full max-w-sm flex-col gap-6">
-      <div className="flex items-center gap-2 self-center font-semibold">
-        <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Megaphone className="size-4" aria-hidden="true" />
-        </div>
-        Campanha
-      </div>
+      <CampaignLogo className="mx-auto w-40 max-w-full bg-primary" />
       {children}
     </div>
   </main>
