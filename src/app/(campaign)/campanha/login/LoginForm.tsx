@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useActionState } from 'react'
 
 import { loginCampaignFormAction } from '@/app/(campaign)/campanha/actions/auth'
@@ -47,6 +48,14 @@ export const LoginForm = () => {
                 className="min-h-11"
               />
             </Field>
+            <p className="text-sm">
+              <Link
+                href="/campanha/esqueci-senha"
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                Esqueceu a senha?
+              </Link>
+            </p>
             <Field>
               {state.error ? <FieldError>{state.error}</FieldError> : null}
               <Button type="submit" className="min-h-11" disabled={pending}>

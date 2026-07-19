@@ -7,6 +7,7 @@ import { InstallPwaToast } from '@/components/campaign/InstallPwaToast'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/Sidebar'
 import { Toaster } from '@/components/ui/Toaster'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { campaignUserShellView } from '@/utilities/campaignUserProfile'
 
 export default async function CampaignAppLayout({ children }: { children: React.ReactNode }) {
   const user = await getCampaignUser()
@@ -17,7 +18,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
 
   return (
     <SidebarProvider className="h-svh min-h-0 overflow-hidden">
-      <CampaignSidebar user={{ name: user.name, email: user.email, role: user.role }} />
+      <CampaignSidebar user={campaignUserShellView(user)} />
       <SidebarInset className="h-svh min-h-0 overflow-hidden">
         <header className="flex min-h-14 shrink-0 items-center gap-3 bg-primary px-4 text-primary-foreground md:hidden">
           <SidebarTrigger

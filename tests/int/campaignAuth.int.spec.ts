@@ -155,7 +155,7 @@ describe('campaign authentication foundation', () => {
     expect(findByID).toHaveBeenCalledWith({
       collection: 'campaignUser',
       id: staleJwtUser.id,
-      depth: 0,
+      depth: 1,
     })
     expect(result?.email).toBe('')
     expect(result?.role).toBe('coordenador')

@@ -28,7 +28,7 @@ export const authenticateCampaignToken = async (
     const currentUser = await payload.findByID({
       collection: 'campaignUser',
       id: user.id,
-      depth: 0,
+      depth: 1,
     })
 
     return {
@@ -68,4 +68,13 @@ export const setCampaignAuthCookie = async (
     path: CAMPAIGN_COOKIE_PATH,
     maxAge: tokenExpiration,
   })
+}
+
+export const campaignLoginCredentials = (
+  user: { email?: string | null; username?: string | null },
+  password: string,
+): { email: string; password: string } | { username: string; password: string } | null => {
+  if (user.email) return { email: user.email, password }
+  if (user.username) return { username: user.username, password }
+  return null
 }

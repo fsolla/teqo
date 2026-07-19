@@ -6,6 +6,7 @@ import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+import { resendAdapter } from '@payloadcms/email-resend'
 import { pt } from 'payload/i18n/pt'
 import { ActionPlan } from './collections/ActionPlan'
 import { CampaignInvite } from './collections/CampaignInvite'
@@ -34,6 +35,11 @@ import { SiteSettings } from './globals/SiteSettings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+const campaignEmailFromAddress =
+  process.env.CAMPAIGN_EMAIL_FROM?.trim() || 'campanha@jorgesolla.com.br'
+const campaignEmailFromName =
+  process.env.CAMPAIGN_EMAIL_FROM_NAME?.trim() || 'Campanha Jorge Solla'
 
 export default buildConfig({
   admin: {
@@ -85,6 +91,11 @@ export default buildConfig({
     push: false,
   }),
   sharp,
+  email: resendAdapter({
+    defaultFromAddress: campaignEmailFromAddress,
+    defaultFromName: campaignEmailFromName,
+    apiKey: process.env.RESEND_API_KEY || '',
+  }),
   plugins: [
     vercelBlobStorage({
       collections: {

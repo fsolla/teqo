@@ -9,6 +9,12 @@ export type CampaignFormErrorState<Values> = {
   revision?: number
 }
 
+export type CampaignFormActionState = CampaignFormErrorState<undefined> & {
+  status?: 'success'
+}
+
+export const CAMPAIGN_SESSION_EXPIRED_MESSAGE = 'Sessão expirada. Entre novamente.'
+
 export type MapCampaignFormActionErrorOptions<Values> = {
   error: unknown
   safeMessages?: readonly string[]

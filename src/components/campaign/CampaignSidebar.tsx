@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { logoutCampaign } from '@/app/(campaign)/campanha/actions/auth'
 import { CampaignLogo } from '@/components/campaign/campaign-logo'
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
+import { CampaignUserAvatar } from '@/components/campaign/CampaignUserAvatar'
 import { getCampaignNav, isCampaignNavActive } from '@/components/campaign/nav'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,21 +22,12 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/Sidebar'
-import type { CampaignUser } from '@/payload-types'
+import type { CampaignUserShellView } from '@/utilities/campaignUserProfile'
+import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 import { clearRecentVisits } from '@/utilities/recentVisits'
 
-export type CampaignSidebarUser = {
-  name: string
-  email?: string | null
-  role: CampaignUser['role']
-}
-
-const roleLabels: Record<CampaignUser['role'], string> = {
-  geral: 'Coordenação geral',
-  coordenador: 'Coordenador',
-  lideranca: 'Liderança',
-}
+export type CampaignSidebarUser = CampaignUserShellView
 
 export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
   const pathname = usePathname()
@@ -61,7 +53,7 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
 
       <SidebarContent>
         <SidebarGroup>
-          <CampaignScopeBadge className="mb-3 w-fit">{roleLabels[user.role]}</CampaignScopeBadge>
+          <CampaignScopeBadge className="mb-3 w-fit">{campaignRoleLabels[user.role]}</CampaignScopeBadge>
           <SidebarGroupContent>
             <SidebarMenu>
               {getCampaignNav(user.role).map((item) => (
@@ -85,14 +77,17 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        <div className="flex min-w-0 flex-col gap-0.5 leading-none">
-          <span className="truncate text-sm font-medium text-sidebar-foreground">{user.name}</span>
-          <span className="truncate text-xs text-muted-foreground">{roleLabels[user.role]}</span>
-          {user.email ? (
-            <span className="truncate text-xs text-muted-foreground">{user.email}</span>
-          ) : null}
-        </div>
-        <form action={logoutCampaign} onSubmit={handleLogout}>
+        <Link
+          href="/campanha/perfil"
+          className="flex min-w-0 items-center gap-3 rounded-md px-1 py-2 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+        >
+          <CampaignUserAvatar name={user.name} avatarUrl={user.avatarUrl} size="sm" />
+          <div className="flex min-w-0 flex-col gap-0.5 leading-none">
+            <span className="truncate text-sm font-medium text-sidebar-foreground">{user.name}</span>
+            <span className="truncate text-xs text-muted-foreground">Meu perfil</span>
+          </div>
+        </Link>
+        <form onSubmit={handleLogout}>
           <Button
             type="submit"
             variant="outline"

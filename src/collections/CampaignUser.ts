@@ -6,8 +6,11 @@ import {
   canReadCampaignUserIdentity,
   canReadCampaignUserPhone,
   canReadCampaignUsers,
+  canUpdateCampaignUser,
+  canUpdateCampaignUserAvatar,
   canUpdateCampaignUserPhone,
 } from '@/utilities/campaignAccess'
+import { buildCampaignPasswordResetUrl } from '@/utilities/campaignPasswordReset'
 import { normalizeBrazilianPhone } from '@/utilities/phone'
 import {
   APIError,
@@ -75,6 +78,25 @@ const preventAssignedCoordinatorDowngrade: CollectionBeforeChangeHook<CampaignUs
   return data
 }
 
+const preventSelfServicePrivilegedFields: CollectionBeforeChangeHook<CampaignUserDocument> = async ({
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  if (operation !== 'update' || !originalDoc || req.user?.collection !== 'campaignUser') {
+    return data
+  }
+
+  if (String(req.user.id) !== String(originalDoc.id)) return data
+
+  for (const field of ['role', 'name', 'email', 'username', 'phone'] as const) {
+    if (field in data) delete data[field]
+  }
+
+  return data
+}
+
 export const CampaignUser: CollectionConfig = {
   slug: 'campaignUser',
   labels: {
@@ -91,15 +113,42 @@ export const CampaignUser: CollectionConfig = {
       requireEmail: false,
       requireUsername: false,
     },
+    forgotPassword: {
+      generateEmailSubject: () => 'Redefinir sua senha — Campanha Jorge Solla',
+      generateEmailHTML: (args) => {
+        const token = args?.token
+        const user = args?.user
+        if (!token) {
+          throw new Error('Password reset token is required to generate email HTML.')
+        }
+        const resetPasswordURL = buildCampaignPasswordResetUrl(token)
+        const greeting = user?.email ? `Olá, ${user.email}` : 'Olá'
+
+        return `
+          <!doctype html>
+          <html lang="pt-BR">
+            <body style="font-family: sans-serif; line-height: 1.5; color: #111827;">
+              <p>${greeting}</p>
+              <p>Recebemos um pedido para redefinir a senha da sua conta na ferramenta de campanha.</p>
+              <p>
+                <a href="${resetPasswordURL}">Redefinir senha</a>
+              </p>
+              <p>Se você não solicitou esta alteração, ignore este e-mail.</p>
+              <p style="font-size: 12px; color: #6b7280;">${resetPasswordURL}</p>
+            </body>
+          </html>
+        `
+      },
+    },
   },
   access: {
     create: canManageCampaignUsers,
     read: canReadCampaignUsers,
-    update: canManageCampaignUsers,
+    update: canUpdateCampaignUser,
     delete: canManageCampaignUsers,
   },
   hooks: {
-    beforeChange: [preventAssignedCoordinatorDowngrade],
+    beforeChange: [preventAssignedCoordinatorDowngrade, preventSelfServicePrivilegedFields],
     afterRead: [removePrivateAuthFields],
   },
   fields: [
@@ -108,6 +157,16 @@ export const CampaignUser: CollectionConfig = {
       type: 'text',
       label: 'Nome',
       required: true,
+    },
+    {
+      name: 'avatar',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Foto de perfil',
+      access: {
+        read: () => true,
+        update: canUpdateCampaignUserAvatar,
+      },
     },
     {
       name: 'role',
@@ -133,6 +192,7 @@ export const CampaignUser: CollectionConfig = {
       index: true,
       access: {
         read: canReadCampaignUserIdentity,
+        update: canManageCampaignUserRole,
       },
     },
     {
@@ -168,6 +228,7 @@ export const CampaignUser: CollectionConfig = {
       index: true,
       access: {
         read: canReadCampaignUserIdentity,
+        update: canManageCampaignUserRole,
       },
       hooks: {
         beforeValidate: [

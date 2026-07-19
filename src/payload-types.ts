@@ -234,6 +234,7 @@ export interface User {
 export interface CampaignUser {
   id: number;
   name: string;
+  avatar?: (number | null) | Media;
   role: 'geral' | 'coordenador' | 'lideranca';
   phone?: string | null;
   updatedAt: string;
@@ -255,6 +256,28 @@ export interface CampaignUser {
     | null;
   password?: string | null;
   collection: 'campaignUser';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  /**
+   * Descrição da imagem para acessibilidade.
+   */
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -678,28 +701,6 @@ export interface ElectionCandidate {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  /**
-   * Descrição da imagem para acessibilidade.
-   */
-  alt: string;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "petition".
  */
 export interface Petition {
@@ -1086,6 +1087,7 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface CampaignUserSelect<T extends boolean = true> {
   name?: T;
+  avatar?: T;
   role?: T;
   phone?: T;
   updatedAt?: T;

@@ -50,6 +50,7 @@
     "@base-ui/react": "^1.6.0",
     "@hookform/resolvers": "^5.2.2",
     "@payloadcms/db-postgres": "3.82.0",
+    "@payloadcms/email-resend": "3.82.0",
     "@payloadcms/live-preview-react": "3.82.0",
     "@payloadcms/next": "3.82.0",
     "@payloadcms/richtext-lexical": "3.82.0",

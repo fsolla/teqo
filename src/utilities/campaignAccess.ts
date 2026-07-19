@@ -76,6 +76,22 @@ export const canReadCampaignUserIdentity: FieldAccess = ({ req, id }) => {
   return id !== undefined && String(id) === String(req.user.id)
 }
 
+const canSelfOrStaffUpdateCampaignUser = async (
+  req: PayloadRequest,
+  id: string | number | undefined,
+): Promise<boolean> => {
+  if (isPayloadAdmin(req.user)) return true
+  if (isCampaignGeneral(await getFreshCampaignUser(req))) return true
+  if (!isCampaignUser(req.user) || id === undefined) return false
+
+  return String(id) === String(req.user.id)
+}
+
+export const canUpdateCampaignUser: Access = async ({ req, id }) =>
+  canSelfOrStaffUpdateCampaignUser(req, id)
+
+export const canUpdateCampaignUserAvatar: FieldAccess = (args) => canUpdateCampaignUser(args)
+
 export const canCreateElectoralNucleus: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 

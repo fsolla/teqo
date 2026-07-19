@@ -14,6 +14,7 @@ import * as migration_20260719_020000_add_contact_trgm_index from './20260719_02
 import * as migration_20260719_054522_add_nucleus_goals_strategy from './20260719_054522_add_nucleus_goals_strategy'
 import * as migration_20260719_054706_add_privacy_policy_global from './20260719_054706_add_privacy_policy_global'
 import * as migration_20260719_054707_seed_onda0_consent_and_privacy from './20260719_054707_seed_onda0_consent_and_privacy'
+import * as migration_20260719_061302_add_campaign_user_avatar from './20260719_061302_add_campaign_user_avatar'
 
 export const migrations = [
   {
@@ -95,5 +96,10 @@ export const migrations = [
     up: migration_20260719_054707_seed_onda0_consent_and_privacy.up,
     down: migration_20260719_054707_seed_onda0_consent_and_privacy.down,
     name: '20260719_054707_seed_onda0_consent_and_privacy',
+  },
+  {
+    up: migration_20260719_061302_add_campaign_user_avatar.up,
+    down: migration_20260719_061302_add_campaign_user_avatar.down,
+    name: '20260719_061302_add_campaign_user_avatar',
   },
 ]
