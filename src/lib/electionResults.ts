@@ -1,6 +1,20 @@
 import { bahiaMunicipalities } from '@/lib/bahiaTerritories'
 
+export const ELECTION_YEAR_2014 = 2014 as const
+export const ELECTION_YEAR_2018 = 2018 as const
 export const ELECTION_YEAR_2022 = 2022 as const
+
+/** Years loaded for prior-cycle comparison before 2022 (detail baseline query). */
+export const HISTORICAL_PRIOR_SERIES_YEARS = [
+  ELECTION_YEAR_2014,
+  ELECTION_YEAR_2018,
+] as const
+
+/** Years shown in the federal candidate vote series (E2). */
+export const HISTORICAL_SERIES_YEARS = [
+  ...HISTORICAL_PRIOR_SERIES_YEARS,
+  ELECTION_YEAR_2022,
+] as const
 
 export const ELECTION_OFFICE_OPTIONS = [
   { label: 'Presidente', value: 'presidente' },
@@ -11,6 +25,8 @@ export const ELECTION_OFFICE_OPTIONS = [
 
 export const ELECTION_OFFICES = ELECTION_OFFICE_OPTIONS.map((o) => o.value)
 export type ElectionOffice = (typeof ELECTION_OFFICES)[number]
+
+export const FEDERAL_DEPUTY_OFFICE = 'deputado_federal' as const satisfies ElectionOffice
 
 export const ELECTION_TURN_OPTIONS = [
   { label: '1º turno', value: '1' },

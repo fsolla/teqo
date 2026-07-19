@@ -1,7 +1,7 @@
 import type { NucleusPriority } from '@/lib/schemas/nucleus'
 import type { CampaignUser, NucleusUpdate } from '@/payload-types'
 import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
-import type { NucleusBaseline2022OverviewAggregate } from '@/utilities/nucleusElectoralBaseline'
+import type { NucleusBaseline2022OverviewAggregate, NucleusTrendOverviewAggregate } from '@/utilities/nucleusElectoralBaseline'
 import {
   aggregateVoteGoals,
   type VoteGoalsSumViewModel,
@@ -23,8 +23,6 @@ export type NucleusListOverviewNucleusRecord = {
   voteGoals: VoteGoalsViewModel
   priority: NucleusPriority
 }
-
-export type NucleusListOverviewBaseline2022 = NucleusBaseline2022OverviewAggregate
 
 export type NucleusListOverviewUpdateRecord = {
   id: number
@@ -49,9 +47,11 @@ export type NucleusListOverviewViewModel = {
     percent: number
   }
   /** Null when no nucleus in the filtered set has resolvable TSE geography. */
-  baseline2022: NucleusListOverviewBaseline2022 | null
+  baseline2022: NucleusBaseline2022OverviewAggregate | null
   voteGoals: VoteGoalsSumViewModel
   highPriorityCount: number
+  /** Null when no nucleus in the filtered set has resolvable TSE geography. */
+  trend: NucleusTrendOverviewAggregate | null
   recentUpdates: NucleusListOverviewUpdateRecord[]
   upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
 }
@@ -65,12 +65,14 @@ export const buildNucleusListOverviewViewModel = ({
   role,
   upcomingActionPlans,
   baseline2022 = null,
+  trend = null,
 }: {
   nuclei: NucleusListOverviewNucleusRecord[]
   recentUpdates: NucleusListOverviewUpdateRecord[]
   role: CampaignUser['role']
   upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
-  baseline2022?: NucleusListOverviewBaseline2022 | null
+  baseline2022?: NucleusBaseline2022OverviewAggregate | null
+  trend?: NucleusTrendOverviewAggregate | null
 }): NucleusListOverviewViewModel => {
   const totalFiltered = nuclei.length
   const confirmedCount = nuclei.filter(
@@ -104,6 +106,7 @@ export const buildNucleusListOverviewViewModel = ({
     baseline2022,
     voteGoals,
     highPriorityCount,
+    trend,
     recentUpdates,
     upcomingActionPlans,
   }

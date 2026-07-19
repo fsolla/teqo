@@ -4,7 +4,12 @@ import type {
   ElectionOffice,
   TseDetalheApuracaoRow,
 } from '@/lib/electionResults'
-import { ELECTION_OFFICES, ELECTION_YEAR_2022, UnknownMunicipalityError } from '@/lib/electionResults'
+import {
+  ELECTION_OFFICES,
+  ELECTION_YEAR_2022,
+  FEDERAL_DEPUTY_OFFICE,
+  UnknownMunicipalityError,
+} from '@/lib/electionResults'
 import {
   applyStateVoteTotals,
   dedupeCandidates,
@@ -15,6 +20,7 @@ import {
 } from '@/lib/electionResultsParse'
 
 const ALL_OFFICES = new Set<ElectionOffice>(ELECTION_OFFICES)
+export const FEDERAL_ONLY_OFFICES = new Set<ElectionOffice>([FEDERAL_DEPUTY_OFFICE])
 const STATE_OFFICES = new Set<ElectionOffice>([
   'governador',
   'deputado_federal',
@@ -57,36 +63,49 @@ const collectParsed = <T extends { year: number }>(
  */
 export const buildElectionResultsFromCsvRows = (args: {
   voteRows: readonly TseCsvRow[]
-  detalheRows: readonly TseCsvRow[]
+  tallyRows: readonly TseCsvRow[]
   candBaRows: readonly TseCsvRow[]
   candBrRows: readonly TseCsvRow[]
   year?: number
+  offices?: ReadonlySet<ElectionOffice>
 }): BuiltElectionResults => {
   const year = args.year ?? ELECTION_YEAR_2022
+  const offices = args.offices ?? ALL_OFFICES
+  const includePresident = offices.has('presidente')
+  const includeStateTicket =
+    offices.has('governador') ||
+    offices.has('deputado_federal') ||
+    offices.has('deputado_estadual')
   const unknownMunicipalities = new Set<string>()
 
   const votes = collectParsed(args.voteRows, year, unknownMunicipalities, (row) =>
-    parseCandidateVoteRow(row, { stateFilter: 'BA', offices: ALL_OFFICES }),
+    parseCandidateVoteRow(row, { stateFilter: 'BA', offices }),
   )
-  const tallies = collectParsed(args.detalheRows, year, unknownMunicipalities, (row) =>
-    parseDetalheApuracaoRow(row, { stateFilter: 'BA', offices: ALL_OFFICES }),
+  const tallies = collectParsed(args.tallyRows, year, unknownMunicipalities, (row) =>
+    parseDetalheApuracaoRow(row, { stateFilter: 'BA', offices }),
   )
 
   const candidatesRaw: ElectionCandidateRow[] = []
-  for (const row of args.candBaRows) {
-    const parsed = parseConsultaCandRow(row, {
-      stateFilter: 'BA',
-      offices: STATE_OFFICES,
-    })
-    if (parsed && parsed.year === year) candidatesRaw.push(parsed)
+  if (includeStateTicket) {
+    for (const row of args.candBaRows) {
+      const parsed = parseConsultaCandRow(row, {
+        stateFilter: 'BA',
+        offices: STATE_OFFICES,
+      })
+      if (parsed && parsed.year === year && offices.has(parsed.office)) {
+        candidatesRaw.push(parsed)
+      }
+    }
   }
-  for (const row of args.candBrRows) {
-    const parsed = parseConsultaCandRow(row, {
-      stateFilter: 'BR',
-      offices: PRESIDENT_OFFICE,
-      forceState: 'BA',
-    })
-    if (parsed && parsed.year === year) candidatesRaw.push(parsed)
+  if (includePresident) {
+    for (const row of args.candBrRows) {
+      const parsed = parseConsultaCandRow(row, {
+        stateFilter: 'BR',
+        offices: PRESIDENT_OFFICE,
+        forceState: 'BA',
+      })
+      if (parsed && parsed.year === year) candidatesRaw.push(parsed)
+    }
   }
 
   return {

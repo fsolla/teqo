@@ -4,10 +4,19 @@ import { citiesForTerritory, isBahiaIdentityTerritory } from '@/lib/bahiaTerrito
 import { tseZonesForCity } from '@/lib/bahiaTseZones'
 import {
   BASELINE_TICKET_2022,
+  ELECTION_YEAR_2014,
+  ELECTION_YEAR_2018,
   ELECTION_YEAR_2022,
+  HISTORICAL_PRIOR_SERIES_YEARS,
+  HISTORICAL_SERIES_YEARS,
   type ElectionOffice,
   type ElectionTurn,
 } from '@/lib/electionResults'
+import {
+  aggregateVoteTrend,
+  type VoteTrendSeries,
+  type VoteTrendStatus,
+} from '@/lib/electionInsights'
 import type { CampaignUser, User } from '@/payload-types'
 import { normalizeTerritoryTextArray } from '@/utilities/campaignTerritoryValidation'
 import type { NucleusElectoralBaselineViewModel } from '@/utilities/nucleusViewModels'
@@ -220,6 +229,7 @@ export const aggregateNucleusElectoralBaseline = (
   geography: NucleusElectionGeography,
   votes: readonly ElectionVoteAggregateRow[],
   tallies: readonly ElectionTallyAggregateRow[],
+  historicalVotes: Pick<VoteTrendSeries, 'y2014' | 'y2018'>,
 ): NucleusElectoralBaselineViewModel => {
   const federalTotals = aggregateFederalCandidateTotals(votes, geography)
   const candidateIndex = federalTotals.findIndex(
@@ -227,10 +237,11 @@ export const aggregateNucleusElectoralBaseline = (
   )
   const candidateRow = federalTotals[candidateIndex]
   const winner = federalTotals[0] ?? null
+  const candidateVotes = candidateRow?.votes ?? 0
 
   return {
     candidate: {
-      votes: candidateRow?.votes ?? 0,
+      votes: candidateVotes,
       rank: candidateIndex >= 0 ? candidateIndex + 1 : null,
     },
     president: decisiveTicketVotes(
@@ -249,6 +260,11 @@ export const aggregateNucleusElectoralBaseline = (
     winnerFederal: winner
       ? { name: winner.name, votes: winner.votes, party: winner.party }
       : null,
+    series: {
+      y2014: historicalVotes.y2014,
+      y2018: historicalVotes.y2018,
+      y2022: candidateVotes,
+    },
   }
 }
 
@@ -375,106 +391,15 @@ const loadElectionTallies = async (
   }))
 }
 
-/** Overview Gap: campaign candidate 1º-turno votes indexed by city×zone. */
-const loadCandidateVotesByCityZone = async (
-  payload: Pick<Payload, 'find'>,
-  user: ElectionReader,
-  geography: NucleusElectionGeography,
-): Promise<Map<string, number>> => {
-  const result = await payload.find({
-    collection: 'electionCandidateVote',
-    where: {
-      and: [
-        ...ba2022Scope(),
-        { voteType: { equals: 'nominal' } },
-        { office: { equals: CANDIDATE_OFFICE } },
-        { turn: { equals: '1' } },
-        { candidateNumber: { equals: BASELINE_TICKET_2022.candidate.candidateNumber } },
-        geographyWhere(geography),
-      ],
-    },
-    depth: 0,
-    pagination: false,
-    select: {
-      cityName: true,
-      zoneNumber: true,
-      votes: true,
-    },
-    user,
-    overrideAccess: false,
-  })
-
-  const byCityZone = new Map<string, number>()
-  for (const doc of result.docs) {
-    const key = cityZoneKey(doc.cityName, doc.zoneNumber)
-    byCityZone.set(key, (byCityZone.get(key) ?? 0) + doc.votes)
-  }
-  return byCityZone
-}
-
-const sumCandidateVotesForGeography = (
-  geography: NucleusElectionGeography,
-  candidateVotesByCityZone: ReadonlyMap<string, number>,
-): number =>
-  geography.cityZonePairs.reduce(
-    (sum, { cityName, zoneNumber }) =>
-      sum + (candidateVotesByCityZone.get(cityZoneKey(cityName, zoneNumber)) ?? 0),
-    0,
-  )
-
-export const getNucleusElectoralBaseline = async (
-  payload: Pick<Payload, 'find'>,
-  user: ElectionReader,
-  nucleus: NucleusElectionGeographyInput,
-): Promise<NucleusElectoralBaselineViewModel | null> => {
-  const geography = resolveNucleusElectionGeography(nucleus)
-  if (!geography) return null
-
-  const [votes, tallies] = await Promise.all([
-    loadElectionVotes(payload, user, geography),
-    loadElectionTallies(payload, user, geography),
-  ])
-
-  return aggregateNucleusElectoralBaseline(geography, votes, tallies)
-}
-
-export type NucleusBaseline2022OverviewInput = NucleusElectionGeographyInput & {
-  confirmedVoteEstimate: number | null
-}
-
-export type NucleusBaseline2022OverviewAggregate = {
-  gapTotal: number | null
-  above: number
-  below: number
-}
-
-/**
- * Aggregate Gap vs 2022 over a filtered nucleus set.
- * One candidate-only vote query for the union geography, then O(pairs) sums per nucleus.
- */
-export const loadNucleusBaseline2022Overview = async (
-  payload: Pick<Payload, 'find'>,
-  user: ElectionReader,
-  nuclei: readonly NucleusBaseline2022OverviewInput[],
-): Promise<NucleusBaseline2022OverviewAggregate | null> => {
-  const geographies = nuclei.map((nucleus) => resolveNucleusElectionGeography(nucleus))
-  const comparableIndexes: number[] = []
-
-  for (let index = 0; index < nuclei.length; index += 1) {
-    if (!geographies[index]) continue
-    if (nuclei[index]?.confirmedVoteEstimate == null) continue
-    comparableIndexes.push(index)
-  }
-
-  // Geography exists but nothing to compare — keep the "—" card without a TSE query.
-  if (comparableIndexes.length === 0) {
-    return geographies.some(Boolean) ? { gapTotal: null, above: 0, below: 0 } : null
-  }
-
+/** Union city×zone pairs across multiple nucleus geographies (list overview). */
+const buildUnionGeography = (
+  geographies: ReadonlyArray<NucleusElectionGeography | null>,
+  indexes: readonly number[],
+): NucleusElectionGeography | null => {
   const unionPairs = new Map<string, { cityName: string; zoneNumber: number }>()
   const zonesByCity = new Map<string, number[]>()
 
-  for (const index of comparableIndexes) {
+  for (const index of indexes) {
     const geography = geographies[index]
     if (!geography) continue
     for (const pair of geography.cityZonePairs) {
@@ -487,17 +412,175 @@ export const loadNucleusBaseline2022Overview = async (
     }
   }
 
+  if (unionPairs.size === 0) return null
+
   for (const [cityName, zones] of zonesByCity) {
     zonesByCity.set(cityName, sortedUniqueZoneNumbers(zones))
   }
 
-  const unionGeography: NucleusElectionGeography = {
+  return {
     cities: uniqueSortedCities(zonesByCity.keys()),
     zonesByCity,
     cityZonePairs: [...unionPairs.values()],
   }
+}
 
-  const candidateVotesByCityZone = await loadCandidateVotesByCityZone(payload, user, unionGeography)
+const sumCandidateVotesForGeography = (
+  geography: NucleusElectionGeography,
+  candidateVotesByCityZone: ReadonlyMap<string, number>,
+): number =>
+  geography.cityZonePairs.reduce(
+    (sum, { cityName, zoneNumber }) =>
+      sum + (candidateVotesByCityZone.get(cityZoneKey(cityName, zoneNumber)) ?? 0),
+    0,
+  )
+
+/** Candidate-only votes indexed by year then city×zone (E2 lean loader). */
+const loadCandidateSeriesByGeography = async (
+  payload: Pick<Payload, 'find'>,
+  user: ElectionReader,
+  geography: NucleusElectionGeography,
+  years: readonly number[] = [...HISTORICAL_SERIES_YEARS],
+): Promise<Map<number, Map<string, number>>> => {
+  const result = await payload.find({
+    collection: 'electionCandidateVote',
+    where: {
+      and: [
+        { year: { in: [...years] } },
+        { state: { equals: 'BA' } },
+        { voteType: { equals: 'nominal' } },
+        { office: { equals: CANDIDATE_OFFICE } },
+        { turn: { equals: '1' } },
+        { candidateNumber: { equals: BASELINE_TICKET_2022.candidate.candidateNumber } },
+        geographyWhere(geography),
+      ],
+    },
+    depth: 0,
+    pagination: false,
+    select: {
+      year: true,
+      cityName: true,
+      zoneNumber: true,
+      votes: true,
+    },
+    user,
+    overrideAccess: false,
+  })
+
+  const byYear = new Map<number, Map<string, number>>()
+  for (const doc of result.docs) {
+    const year = Number(doc.year)
+    const key = cityZoneKey(doc.cityName, doc.zoneNumber)
+    const yearMap = byYear.get(year) ?? new Map<string, number>()
+    yearMap.set(key, (yearMap.get(key) ?? 0) + doc.votes)
+    byYear.set(year, yearMap)
+  }
+  return byYear
+}
+
+const sumCandidateSeriesForGeography = (
+  geography: NucleusElectionGeography,
+  seriesByYear: ReadonlyMap<number, ReadonlyMap<string, number>>,
+  years: readonly number[] = [...HISTORICAL_SERIES_YEARS],
+): VoteTrendSeries => {
+  const totalsByYear = new Map<number, number>()
+  for (const year of years) {
+    const cityZoneVotes = seriesByYear.get(year)
+    totalsByYear.set(
+      year,
+      cityZoneVotes ? sumCandidateVotesForGeography(geography, cityZoneVotes) : 0,
+    )
+  }
+  return {
+    y2014: totalsByYear.get(ELECTION_YEAR_2014) ?? 0,
+    y2018: totalsByYear.get(ELECTION_YEAR_2018) ?? 0,
+    y2022: totalsByYear.get(ELECTION_YEAR_2022) ?? 0,
+  }
+}
+
+export const getNucleusElectoralBaseline = async (
+  payload: Pick<Payload, 'find'>,
+  user: ElectionReader,
+  nucleus: NucleusElectionGeographyInput,
+): Promise<NucleusElectoralBaselineViewModel | null> => {
+  const geography = resolveNucleusElectionGeography(nucleus)
+  if (!geography) return null
+
+  const [votes, tallies, seriesByYear] = await Promise.all([
+    loadElectionVotes(payload, user, geography),
+    loadElectionTallies(payload, user, geography),
+    loadCandidateSeriesByGeography(payload, user, geography, HISTORICAL_PRIOR_SERIES_YEARS),
+  ])
+
+  const historicalVotes = sumCandidateSeriesForGeography(
+    geography,
+    seriesByYear,
+    HISTORICAL_PRIOR_SERIES_YEARS,
+  )
+  return aggregateNucleusElectoralBaseline(geography, votes, tallies, historicalVotes)
+}
+
+export type NucleusBaseline2022OverviewInput = NucleusElectionGeographyInput & {
+  confirmedVoteEstimate: number | null
+}
+
+export type NucleusBaseline2022OverviewAggregate = {
+  gapTotal: number | null
+  above: number
+  below: number
+}
+
+export type NucleusTrendOverviewAggregate = Record<VoteTrendStatus, number>
+
+export type NucleusListElectionOverview = {
+  baseline2022: NucleusBaseline2022OverviewAggregate | null
+  trend: NucleusTrendOverviewAggregate | null
+}
+
+/**
+ * Gap vs 2022 and vote-trend distribution over a filtered nucleus set (one union query).
+ */
+export const loadNucleusListElectionOverview = async (
+  payload: Pick<Payload, 'find'>,
+  user: ElectionReader,
+  nuclei: readonly NucleusBaseline2022OverviewInput[],
+): Promise<NucleusListElectionOverview> => {
+  const geographies = nuclei.map((nucleus) => resolveNucleusElectionGeography(nucleus))
+  const withGeographyIndexes = geographies.flatMap((geography, index) =>
+    geography ? [index] : [],
+  )
+
+  if (withGeographyIndexes.length === 0) {
+    return { baseline2022: null, trend: null }
+  }
+
+  const comparableIndexes: number[] = []
+  for (const index of withGeographyIndexes) {
+    if (nuclei[index]?.confirmedVoteEstimate == null) continue
+    comparableIndexes.push(index)
+  }
+
+  const unionGeography = buildUnionGeography(geographies, withGeographyIndexes)
+  if (!unionGeography) {
+    return { baseline2022: null, trend: null }
+  }
+
+  const seriesByYear = await loadCandidateSeriesByGeography(payload, user, unionGeography)
+  const votes2022 = seriesByYear.get(ELECTION_YEAR_2022) ?? new Map<string, number>()
+
+  const trend = aggregateVoteTrend(
+    withGeographyIndexes.flatMap((index) => {
+      const geography = geographies[index]
+      return geography ? [sumCandidateSeriesForGeography(geography, seriesByYear)] : []
+    }),
+  )
+
+  if (comparableIndexes.length === 0) {
+    return {
+      baseline2022: { gapTotal: null, above: 0, below: 0 },
+      trend,
+    }
+  }
 
   let estimateSum = 0
   let candidateVotesSum = 0
@@ -510,7 +593,7 @@ export const loadNucleusBaseline2022Overview = async (
     const estimate = nuclei[index]?.confirmedVoteEstimate
     if (!geography || estimate == null) continue
 
-    const candidateVotes = sumCandidateVotesForGeography(geography, candidateVotesByCityZone)
+    const candidateVotes = sumCandidateVotesForGeography(geography, votes2022)
     if (candidateVotes <= 0) continue
 
     if (estimate >= candidateVotes) above += 1
@@ -521,8 +604,11 @@ export const loadNucleusBaseline2022Overview = async (
   }
 
   return {
-    gapTotal: comparableCount > 0 ? estimateSum - candidateVotesSum : null,
-    above,
-    below,
+    baseline2022: {
+      gapTotal: comparableCount > 0 ? estimateSum - candidateVotesSum : null,
+      above,
+      below,
+    },
+    trend,
   }
 }

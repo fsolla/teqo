@@ -1,7 +1,15 @@
-import { ChartColumnIcon, TrophyIcon } from 'lucide-react'
+import { ChartColumnIcon, TrendingDownIcon, TrendingUpIcon, TrophyIcon } from 'lucide-react'
 
+import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatElectionNumber, NO_ELECTION_BASELINE_MESSAGE } from '@/lib/electionInsights'
+import {
+  computeVoteTrend,
+  formatElectionNumber,
+  formatVoteTrendSeriesCompact,
+  NO_ELECTION_BASELINE_MESSAGE,
+  voteTrendBadgeVariant,
+  voteTrendStatusLabel,
+} from '@/lib/electionInsights'
 import { BASELINE_TICKET_2022 } from '@/lib/electionResults'
 import type { NucleusElectoralBaselineViewModel } from '@/utilities/nucleusViewModels'
 
@@ -41,6 +49,7 @@ export const NucleusElectoralBaseline = ({
     1,
   )
   const candidateBar = barPercent(baseline.candidate.votes, scale)
+  const trend = computeVoteTrend(baseline.series)
 
   return (
     <Card className="overflow-hidden">
@@ -50,7 +59,19 @@ export const NucleusElectoralBaseline = ({
             <ChartColumnIcon aria-hidden="true" className="size-4 text-primary" />
             Baseline eleitoral 2022
           </CardTitle>
-          <CardDescription>Deputado Federal · Bahia</CardDescription>
+          <div className="flex flex-wrap items-center gap-2">
+            {trend.status !== 'noBaseline' ? (
+              <Badge variant={voteTrendBadgeVariant(trend.status)}>
+                {trend.status === 'increase' ? (
+                  <TrendingUpIcon aria-hidden="true" className="size-3" />
+                ) : trend.status === 'decline' ? (
+                  <TrendingDownIcon aria-hidden="true" className="size-3" />
+                ) : null}
+                {voteTrendStatusLabel(trend.status)}
+              </Badge>
+            ) : null}
+            <CardDescription>Deputado Federal · Bahia</CardDescription>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">
@@ -83,6 +104,16 @@ export const NucleusElectoralBaseline = ({
                 style={{ width: `${candidateBar}%` }}
               />
             </div>
+          </div>
+
+          <div className="px-4 py-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Série histórica
+            </p>
+            <p className="text-sm tabular-nums">{formatVoteTrendSeriesCompact(baseline.series)}</p>
+            {trend.status !== 'noBaseline' ? (
+              <p className="mt-1 text-xs text-muted-foreground">{trend.message}</p>
+            ) : null}
           </div>
 
           {baseline.president ? (

@@ -15,7 +15,8 @@ import {
   UnknownMunicipalityError,
   winnerKey,
 } from '@/lib/electionResults'
-import { loadTseFixtureResults, TSE_FIXTURE_EXPECTED } from '../helpers/tseFixtures'
+import { loadTseFixtureResults, loadTseFixtureResultsForYear, TSE_FIXTURE_EXPECTED } from '../helpers/tseFixtures'
+import { FEDERAL_ONLY_OFFICES } from '@/lib/electionResultsBuild'
 
 describe('electionResults municipality mapping', () => {
   it('resolves every canonical Bahia municipality through itself', () => {
@@ -155,5 +156,14 @@ describe('electionResults fixture parse + winners', () => {
       (t) => t.office === 'deputado_federal' && t.zoneNumber === 1 && t.cityCode === '38490',
     )
     expect(federalZ1?.winnerCandidateName).toBe('JORGE SOLLA')
+  })
+
+  it('filters to federal deputy only when offices are restricted (E2 historical seed)', () => {
+    const built = loadTseFixtureResultsForYear(2018, FEDERAL_ONLY_OFFICES)
+
+    expect(built.votes.every((row) => row.office === 'deputado_federal')).toBe(true)
+    expect(built.tallies.every((row) => row.office === 'deputado_federal')).toBe(true)
+    expect(built.candidates.every((row) => row.office === 'deputado_federal')).toBe(true)
+    expect(built.votes.every((row) => row.year === 2018)).toBe(true)
   })
 })

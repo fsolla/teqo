@@ -18,6 +18,7 @@ const baseline: NucleusElectoralBaselineViewModel = {
     abstencoes: 680,
   },
   winnerFederal: { name: 'Dep. Fulano de Tal', votes: 2100, party: 'PP' },
+  series: { y2014: 700, y2018: 800, y2022: 850 },
 }
 
 describe('NucleusElectoralBaseline', () => {
@@ -38,6 +39,8 @@ describe('NucleusElectoralBaseline', () => {
     expect(html).toContain('2.490')
     expect(html).toContain('Mais votado aqui em 2022')
     expect(html).toContain('Dep. Fulano de Tal (PP)')
+    expect(html).toContain('Série histórica')
+    expect(html).toContain('2014: 700')
   })
 })
 
@@ -62,5 +65,16 @@ describe('NucleusInsights', () => {
       }),
     )
     expect(html).toContain('Já superamos 2022 em 12%')
+  })
+
+  it('renders the vote-trend insight when the series is comparable', () => {
+    const html = renderToStaticMarkup(
+      createElement(NucleusInsights, {
+        baseline,
+        confirmedVoteEstimate: 500,
+      }),
+    )
+    expect(html).toContain('data-insight="vote-trend"')
+    expect(html).toContain('Tendência:')
   })
 })

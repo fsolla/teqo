@@ -1,6 +1,6 @@
 # Mapa de projeção de votos por município (equiparar e superar as planilhas 2026)
 
-Status: rascunho
+Status: rascunho (E2 implementado 2026-07-19)
 Atualizado em: 2026-07-19 (revisão access E1/E3 — metas/prioridade/E3 sem `canSetDerivedNucleusField`; escrita via `canUpdateElectoralNucleus` + selects/VMs)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E — itens E1–E5, "Ciclo 3")
 Responsável: —
@@ -30,7 +30,7 @@ A vertical `/campanha` já cobre ou supera parte disso: baseline TSE 2022 por ge
 
 ## Questões em aberto
 
-- **Banda de estabilidade da tendência?** Queda/Mantém/Aumento precisa de limiar. **Recomendação:** ±10% entre eleições consecutivas, constante versionada em `electionInsights.ts`; validar com produto.
+- **Banda de estabilidade da tendência?** **Resolvido (2026-07-19):** ±10% (`VOTE_TREND_STABLE_BAND = 0.1` em `electionInsights.ts`); par preferido 2018→2022.
 - **E4 cria núcleo para todo município com dado estratégico (≈193) ou só para os ~50 prioritários?** **Recomendação:** default = municípios com qualquer preenchimento estratégico (metas, dobradinha, encaminhamento), flag `--priority-only` para restringir. Definir com produto antes de rodar em produção.
 - **Meta estadual (71.000) fica onde?** **Recomendação:** derivada — soma das metas dos núcleos no dashboard; sem campo global novo. Se produto quiser meta editável independente da soma, vira campo em global de campanha (fase posterior).
 
@@ -62,10 +62,11 @@ flowchart LR
 
 ### E2 — Série histórica TSE 2014/2018 + tendência automática
 
-- **Seed:** estender `scripts/seed-tse-results.mjs` para parametrizar o ano (2014/2018; URLs `*_YYYY.zip` das mesmas famílias TSE, SHA-256 no header). Escopo v1: **só `deputado_federal`, turno 1, BA** (limita volume; a tendência só precisa disso). Verificar na implementação se o TSE republicou 2014 no formato CSV com header — o parser (`src/lib/electionResultsParse.ts`) assume colunas nomeadas. Número do candidato configurável por ano (1313 nos três pleitos). Idempotência por `(year, office, turn)` e collections A3 com `year` na unique key já existem — **sem migration**.
-- **Insight:** `computeVoteTrend(votes2014, votes2018, votes2022)` → `queda|mantem|aumento|semBaseline` em `src/lib/electionInsights.ts`, limiares como constantes versionadas.
-- **UI:** série 2014→2018→2022 no card `NucleusElectoralBaseline` (`src/components/campaign/NucleusElectoralBaseline.tsx`); badge de tendência no detalhe + linha no `NucleusInsights` (mesma família de Alert do Gap vs 2022); no overview da lista, distribuição Queda/Mantém/Aumento do conjunto filtrado (espelha a aba RESUMO da planilha).
-- **Custo de I/O:** estender `getNucleusElectoralBaseline` (`src/utilities/nucleusElectoralBaseline.ts`) para aceitar ano multiplica as leituras já sinalizadas em [A7](escala-dry-pos-a4.md) — preferir levar A7 F1 (agregar federal no detalhe) junto ou antes.
+- **Seed:** `scripts/seed-tse-results.mjs` parametrizado por `--year=2014|2018|2022` (URLs `*_YYYY.zip` das mesmas famílias TSE; SHA-256 logado, pins opcionais em `EXPECTED_SHA256`). Escopo v1 histórico: **só `deputado_federal`, turno 1, BA**. Parser em `electionResultsCsv.ts` + build em `electionResultsBuild.ts` (`offices` opcional via `federalOnlyElectionOffices()`). Número do candidato: `CANDIDATE_NUMBER_BY_YEAR` (1313 nos três pleitos). Idempotência por `(year, office, turn)` — **sem migration**.
+- **Insight:** `computeVoteTrend` + `VOTE_TREND_STABLE_BAND = 0.1` (±10%) em `src/lib/electionInsights.ts` → `queda|mantem|aumento|semBaseline`; par preferido 2018→2022.
+- **Loader:** `loadCandidateSeriesByGeography` (query candidate-only multi-ano, espelha overview Gap) em `nucleusElectoralBaseline.ts`; `loadNucleusTrendOverview` para distribuição na lista.
+- **UI:** série 2014→2018→2022 + badge no `NucleusElectoralBaseline`; Alert `vote-trend` no `NucleusInsights`; card "Tendência histórica" no `NucleusListOverview`.
+- **Custo de I/O:** série usa query estreita (não multiplica o path caro do ranking federal — A7 F1 permanece backlog separado). Passagem `/simplify` no branch; débitos maiores → [escala-dry-pos-e2.md](escala-dry-pos-e2.md) (E7).
 
 ### E3 — Inteligência estratégica manual: dobradinhas + encaminhamentos
 
@@ -107,8 +108,9 @@ flowchart LR
 - `docs/sheets/Mapa_projecao_votos_Solla_2026.xlsx` e `docs/sheets/Mapa projeção de votos Solla 2026.xlsx` — planilhas-fonte (estrutura, abas RESUMO/PRIORITÁRIAS/SALVADOR)
 - `src/collections/ElectoralNucleus.ts` — campos, hooks e access do núcleo (E1/E3)
 - `src/lib/electionInsights.ts` + `src/utilities/nucleusElectoralBaseline.ts` — padrão de insight derivado e agregação do baseline (E2)
-- `scripts/seed-tse-results.mjs` + `src/lib/electionResultsParse.ts` — seed TSE a parametrizar por ano (E2)
+- `scripts/seed-tse-results.mjs` + `src/lib/electionResultsBuild.ts` + `src/lib/electionResultsCsv.ts` — seed TSE parametrizado por ano (E2)
 - `src/components/campaign/NucleusElectoralBaseline.tsx`, `NucleusListOverview.tsx`, `NucleusIntelligenceDialog.tsx` — superfícies de UI a estender
 - `src/lib/bahiaMunicipalityCodes.ts` (`canonicalizeMunicipalityName`) — reconciliação de nomes no import (E4)
 - [escala-dry-pos-a4.md](escala-dry-pos-a4.md) — A7 F1, custo de I/O do loader do baseline
+- [escala-dry-pos-e2.md](escala-dry-pos-e2.md) — E7, débitos pós-`/simplify` do E2
 - AGENTS.md — Campaign auth, pessoa = `Contact` + junção, `overrideAccess: false`, migrations com `push: false`, naming

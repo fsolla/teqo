@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { citiesForTerritory } from '@/lib/bahiaTerritories'
 import { tseZonesForCity } from '@/lib/bahiaTseZones'
 import { BASELINE_TICKET_2022 } from '@/lib/electionResults'
+import { computeVoteTrend } from '@/lib/electionInsights'
 import {
   aggregateNucleusElectoralBaseline,
   resolveNucleusElectionGeography,
@@ -175,8 +176,11 @@ describe('aggregateNucleusElectoralBaseline', () => {
     },
   ]
 
-  it('sums the candidate, ticket leaders, electorate, winner, and rank for the geography', () => {
-    const baseline = aggregateNucleusElectoralBaseline(geography, votes, tallies)
+  it('sums the candidate, ticket leaders, electorate, winner, rank, and series for the geography', () => {
+    const baseline = aggregateNucleusElectoralBaseline(geography, votes, tallies, {
+      y2014: 1000,
+      y2018: 1500,
+    })
 
     expect(baseline.candidate).toEqual({ votes: 2100, rank: 1 })
     expect(baseline.president).toEqual({ votes: 8000, turn: 2 })
@@ -194,6 +198,8 @@ describe('aggregateNucleusElectoralBaseline', () => {
       votes: 2100,
       party: 'PT',
     })
+    expect(baseline.series).toEqual({ y2014: 1000, y2018: 1500, y2022: 2100 })
+    expect(computeVoteTrend(baseline.series).status).toBe('increase')
   })
 
   it('ranks the candidate below the local federal winner when applicable', () => {
@@ -202,7 +208,10 @@ describe('aggregateNucleusElectoralBaseline', () => {
       regions: [],
       tseZones: [2],
     })!
-    const baseline = aggregateNucleusElectoralBaseline(zone1Only, votes, tallies)
+    const baseline = aggregateNucleusElectoralBaseline(zone1Only, votes, tallies, {
+      y2014: 0,
+      y2018: 0,
+    })
 
     expect(baseline.candidate).toEqual({ votes: 900, rank: 2 })
     expect(baseline.winnerFederal).toEqual({
