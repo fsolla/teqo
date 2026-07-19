@@ -125,7 +125,7 @@ Componentes:
 
 ## Referências
 
-- `docs/roadmap.md` — A5 Insights; grafo A4 → A5; Janela 3 ordem 19
+- `docs/roadmap.md` — A5 Insights; grafo A4 → A5; Janela 3 — A5
 - [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md) — A3/A4
 - [escala-dry-pos-a4.md](escala-dry-pos-a4.md) — A7 F1 (agregação federal)
 - [insight-dobradinha-2026.md](insight-dobradinha-2026.md) — taxonomia futura

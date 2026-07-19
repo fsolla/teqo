@@ -48,7 +48,7 @@ Importante: compartilhar **não concede acesso**. O link aponta para `/campanha/
 
 - **Escopo: só o detalhe do núcleo.** O botão vive no header de `src/app/(campaign)/campanha/(app)/nucleos/[slug]/page.tsx`. A listagem de núcleos (`NucleusCard`) fica fora deste ciclo (ver "Não escopo").
 - **Compartilhar não é convite.** Não cria `campaignInvite`, não gera token, não expira, não revoga. Reusa o padrão `wa.me` apenas como canal (mesma decisão do notebook: "Convidar pelo WhatsApp" cria convite; aqui não).
-- **Sem WhatsApp Business API.** Mesma justificativa do roadmap linha 57: o remetente envia pelo seu próprio WhatsApp, abrindo `wa.me` em nova aba com `noopener,noreferrer` (igual ao `LeadershipInviteDialog`).
+- **Sem WhatsApp Business API.** Mesma justificativa do roadmap (Fora de escopo / Próximos): o remetente envia pelo seu próprio WhatsApp, abrindo `wa.me` em nova aba com `noopener,noreferrer` (igual ao `LeadershipInviteDialog`).
 - **Sem server action.** A URL `wa.me` é montada no cliente a partir do telefone do destinatário (já carregado no server) + mensagem com remetente/nome do núcleo/link. Nenhuma escrita, nenhuma transação, nenhum `req`.
 - **Access control por `overrideAccess: false`.** Os telefones dos destinatários vêm de queries com `user` + `overrideAccess: false`, então o field access existente (`canReadCampaignUserPhone`, `canReadContacts`) filtra naturalmente quem pode ver qual telefone. O plano não inventa regra nova.
 - **Link compartilhado = URL canônica do núcleo.** `${NEXT_PUBLIC_SITE_URL}/campanha/nucleos/${slug}` — reusa `getCampaignInviteBaseURL()` de `src/utilities/campaignInvite.ts` para derivar a origem (mesmo guard de produção/localhost).
@@ -113,13 +113,13 @@ Componentes:
 
 - Compartilhar a partir da listagem de núcleos (`NucleusCard` actions) — só o detalhe neste ciclo.
 - Compartilhar outras páginas da campanha (dashboard, lideranças) — o padrão é extensível, mas fica para depois.
-- WhatsApp Business API (item separado, roadmap linha 57).
+- WhatsApp Business API (item separado, roadmap (Fora de escopo / Próximos)).
 - Criar convite/acesso — compartilhar não concede nada; o destinatário já precisa ter acesso.
 - Compartilhar por canal que não WhatsApp (e-mail, SMS, push) — só `wa.me` + copiar link.
 
 ## Referências
 
-- `docs/roadmap.md` (linha 51)
+- `docs/roadmap.md` (Próximos — ver ID do item)
 - `src/app/(campaign)/campanha/(app)/nucleos/[slug]/page.tsx` — header onde o botão entra
 - `src/utilities/phone.ts` — `buildWhatsAppUrl` (`wa.me`, normalização 11 dígitos)
 - `src/utilities/campaignInvite.ts` — `buildCampaignInviteWhatsAppLink` (referência de texto), `getCampaignInviteBaseURL`

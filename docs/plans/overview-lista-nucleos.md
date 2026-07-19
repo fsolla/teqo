@@ -2,7 +2,7 @@
 
 Status: **implementado** (2026-07-18)
 Atualizado em: 2026-07-18
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B → B1)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (B1 — Já entregue)
 Responsável: —
 
 ## Como foi implementado (2026-07-18)
@@ -47,7 +47,7 @@ A decisão de produto (2026-07-17) é adicionar um **painel de overview acima da
 
 ## Decisões travadas
 
-- **Mesmos filtros da página.** O overview é computado a partir do mesmo `NucleusListState` já parseado em `loadNucleusListPageData` (`parseNucleusListParams` + `buildNucleusListWhere`). Não existe filtro "do overview" separado do filtro "da lista". (Decisão de produto 2026-07-17; roadmap linha 50.)
+- **Mesmos filtros da página.** O overview é computado a partir do mesmo `NucleusListState` já parseado em `loadNucleusListPageData` (`parseNucleusListParams` + `buildNucleusListWhere`). Não existe filtro "do overview" separado do filtro "da lista". (Decisão de produto 2026-07-17; roadmap (Fora de escopo / Próximos).)
 - **Agregados sobre o conjunto inteiro filtrado, não só a página atual.** A lista é paginada em 25, mas o overview precisa de totais — logo exige uma query adicional com `pagination: false` selecionando só os campos de agregação. Mesmo padrão já usado por `getCampaignDashboardPageData` (que carrega todos os núcleos ativos com `pagination: false`).
 - **Sem collection/migration/server action.** Tudo é leitura no server component. Nenhuma escrita, nenhuma transação, nenhum `Consent`.
 - **Access control por `overrideAccess: false`.** O overview herda naturalmente o escopo de papel: `geral` vê tudo, `coordenador` vê só os seus núcleos, `lideranca` vê só os núcleos com liderança engajada — exatamente como a lista já faz. Para "Últimas atualizações", `canReadNucleusUpdate` já restringe `lideranca` ao próprio autor; o preview de `lideranca` mostra só os próprios reportes nos núcleos filtrados. O plano não inventa regra nova.
@@ -122,13 +122,13 @@ Componentes:
 - Criar as collections Eventos ou Demandas — domínios separados no roadmap.
 - Alterar os filtros existentes ou a paginação da lista — o overview é aditivo e reage ao estado já existente.
 - Substituir o dashboard `/campanha` — o dashboard continua o recorte global (todos os ativos, sem filtros de lista); o overview é o recorte filtrado da lista.
-- Estimativa estatística/previsão de votos (roadmap linha 60) — aqui só somamos `confirmedVoteEstimate`.
+- Estimativa estatística/previsão de votos (roadmap (Fora de escopo / Próximos)) — aqui só somamos `confirmedVoteEstimate`.
 - Novo access control ou novo `Consent` — herda o que existe.
 - Compartilhar núcleo a partir da lista (`NucleusCard` actions) — escopo do plano `compartilhar-pagina.md` (só o detalhe neste ciclo).
 
 ## Referências
 
-- `docs/roadmap.md` (linha 50, e linhas 54–55 para Eventos/Demandas)
+- `docs/roadmap.md` (Próximos — ver ID do item)
 - `src/app/(campaign)/campanha/(app)/nucleos/page.tsx` — página onde o overview entra
 - `src/utilities/nucleusPageData.ts` — `loadNucleusListPageData` (mesma `state`)
 - `src/utilities/nucleusUi.ts` — `NucleusListState`, `parseNucleusListParams`, `buildNucleusListWhere`

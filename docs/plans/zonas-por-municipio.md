@@ -2,7 +2,7 @@
 
 Status: entregue
 Atualizado em: 2026-07-18
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A → A2)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (A2 — Já entregue)
 Responsável: —
 
 Revisões:
@@ -138,7 +138,7 @@ Componentes (as-built):
 
 ## Referências
 
-- `docs/roadmap.md` (Trilha A → A2; Janela 1 ordem 3)
+- `docs/roadmap.md` (A2 — Já entregue)
 - `src/components/campaign/NucleusForm.tsx`, `NucleusTerritoryAndZonesFields.tsx`, `TerritorySuggestionChips.tsx`, `TseZoneInput.tsx`
 - `src/lib/bahiaTseZones.ts`, `src/lib/territorySuggestions.ts`
 - `src/lib/bahiaTerritories.ts`, `tests/fixtures/bahia-identity-territories.official.json`, `tests/int/bahiaTerritories.int.spec.ts` — padrão espelhado

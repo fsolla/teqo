@@ -16,10 +16,11 @@ The goal is to help political teams build direct, durable relationships with the
 
 Initial delivery focuses on Jorge Solla's public website, editorial CMS, and the internal `/campanha` tool:
 
-- Public-facing content and updates (news/`post` + `tag` live)
-- Institutional pages and biography (still pending a `Pages` collection)
-- Internal campaign operations: electoral nuclei, leaderships, estimates, updates, WhatsApp invites
+- Public-facing news (`post` / `tag` live); institutional `Pages` and editable home copy still pending
+- `/privacidade` live (provisional Onda 0 text — final counsel copy pending)
+- Internal `/campanha`: nuclei, leaderships, estimates, updates, WhatsApp invites, supporters (eng. ready; real PII ↔ Onda 0), action plans, TSE baseline + goals/trend, PWA
 - Editorial operations through Payload CMS
+- Backlog / calendar windows: [`docs/roadmap.md`](docs/roadmap.md)
 
 ### Phase 2: White-Label Platform
 

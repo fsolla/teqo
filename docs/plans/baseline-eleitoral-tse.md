@@ -2,7 +2,7 @@
 
 Status: Fases 1–4 implementadas e mescladas em `main` (A3 modelo+import; A4 detalhe + overview + Gap vs 2022 + simplify). Follow-up de escala/DRY: [A7](escala-dry-pos-a4.md).
 Atualizado em: 2026-07-19
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (A3/A4 Baseline TSE 2022)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (A3/A4 — Já entregue; débitos A7)
 Responsável: —
 
 ## Referência visual (UX Pilot)
@@ -195,13 +195,13 @@ Cada insight é uma **derivação de leitura** (sem escrita, sem `Consent`, sem 
 - Dados por seção eleitoral (grain escolhido: município+zona).
 - Outras eleições além de 2022 (extensível via `year`; 2026 entra reusando o mesmo modelo quando o TSE publicar).
 - Outros estados além da BA (todo núcleo é baiano; `state` fica `BA`).
-- Previsão estatística de votos (roadmap linha 62) — aqui só baseline histórico + comparação com estimativa manual.
-- Mapa/PostGIS (roadmap linha 52) — separado.
+- Previsão estatística de votos (roadmap (Fora de escopo / Próximos)) — aqui só baseline histórico + comparação com estimativa manual.
+- Mapa/PostGIS (roadmap (Fora de escopo / Próximos)) — separado.
 - Substitui o plano `zonas-por-municipio.md` — ele continua válido como melhoria de qualidade do input (dependência suave, ver "Dependências").
 
 ## Referências
 
-- `docs/roadmap.md` (seção "Campanha → Próximos ciclos")
+- `docs/roadmap.md` (Próximos / Já entregue)
 - `docs/plans/zonas-por-municipio.md` — dependência suave (`tseZonesForCity` como fonte preferida de zonas por cidade; `citiesForTerritory` já existe em `bahiaTerritories.ts`)
 - `docs/plans/overview-lista-nucleos.md` — Fase 3 estende este plano
 - `src/collections/ElectoralNucleus.ts` — `city`, `region`, `tseZones`

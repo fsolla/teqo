@@ -2,7 +2,7 @@
 
 Status: implementado (engenharia)
 Atualizado em: 2026-07-19
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Onda 0 — Caminho crítico para `/campanha` em produção)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Onda 0 — caminho crítico para dados reais)
 Responsável: —
 
 ## Contexto

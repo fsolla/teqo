@@ -2,7 +2,7 @@
 
 Status: rascunho
 Atualizado em: 2026-07-17
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (D2 — Próximos / Janela 3)
 Responsável: —
 
 ## Referência visual (UX Pilot)
@@ -24,7 +24,7 @@ Coordenadores e lideranças precisam ser avisados de eventos da campanha (convit
 - **Push web** via Push API + Service Worker + VAPID (entrega em segundo plano, inclusive com o app fechado).
 - **Sino de notificações in-app** dentro do `/campanha` (central de avisos lidos/não lidos).
 
-Notificações por WhatsApp Business API ficam **fora** deste plano — já existem como item separado no roadmap (linha 57), exigem Meta + templates e serão reavaliadas quando o volume justificar.
+Notificações por WhatsApp Business API ficam **fora** deste plano — vedadas para campanhas (Meta + Res. TSE 23.610 art. 33; roadmap Fora de escopo); push + sino cobrem a necessidade.
 
 ## Objetivos
 
@@ -84,6 +84,6 @@ Componentes:
 
 ## Referências
 
-- `docs/roadmap.md` (linhas 57, 60, 61)
+- `docs/roadmap.md` (Próximos — ver ID do item)
 - `AGENTS.md` — Campaign auth, Campaign nuclei MVP, transações, `Consent` por chave
 - `.cursor/rules/projects/nucleos-eleitorais.mdc`

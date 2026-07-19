@@ -2,7 +2,7 @@
 
 Status: implementado
 Atualizado em: 2026-07-19
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins — UX adiada do ciclo 1)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins — Reset senha/perfil ✓; RS+ aberto)
 Responsável: —
 
 ## Contexto

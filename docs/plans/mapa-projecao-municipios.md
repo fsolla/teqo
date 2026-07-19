@@ -2,7 +2,7 @@
 
 Status: E1, E2 e E3 implementados e mesclados em `main` (2026-07-19); E4 e E5 pendentes
 Atualizado em: 2026-07-19 (revisão entrega E1+E3 — marcar como entregues no roadmap; access E1/E3 sem `canSetDerivedNucleusField`; escrita via `canUpdateElectoralNucleus` + selects/VMs)
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E — itens E1–E5, "Ciclo 3")
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E — E1–E3 ✓; E4–E7 abertos)
 Responsável: —
 
 ## Contexto
@@ -104,7 +104,7 @@ flowchart LR
 
 ## Referências
 
-- `docs/roadmap.md` — Trilha E / Ciclo 3, janelas 2–3
+- `docs/roadmap.md` — Trilha E — Próximos / janelas 2–3
 - `docs/sheets/Mapa_projecao_votos_Solla_2026.xlsx` e `docs/sheets/Mapa projeção de votos Solla 2026.xlsx` — planilhas-fonte (estrutura, abas RESUMO/PRIORITÁRIAS/SALVADOR)
 - `src/collections/ElectoralNucleus.ts` — campos, hooks e access do núcleo (E1/E3)
 - `src/lib/electionInsights.ts` + `src/utilities/nucleusElectoralBaseline.ts` — padrão de insight derivado e agregação do baseline (E2)
