@@ -1,9 +1,11 @@
 # Insight: taxa de conversão por núcleo
 
-Status: rascunho
-Atualizado em: 2026-07-17
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
+Status: entregue (slice A5-1, 2026-07-19)
+Atualizado em: 2026-07-19
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Janela 3, A5 — primeiro dos cinco insights)
 Responsável: —
+
+**Revisão 2026-07-19:** implementado como Alert no stack `NucleusInsights.tsx` (sem `NucleusConversionRate.tsx` separado); overview via `loadNucleusListElectionOverview` + linha em `NucleusListOverview`. Limiares 15%/40% versionados em `electionInsights.ts` _(assumido — validar com produto)_.
 
 ## Referência visual (UX Pilot)
 
@@ -23,48 +25,47 @@ Com o baseline TSE 2022 importado (ver [baseline-eleitoral-tse.md](baseline-elei
 
 - **Leitura derivada** — sem escrita, sem `Consent`, sem migration. Reusa as collections e helpers do plano baseline.
 - **Mesma agregação geográfica** do baseline (cidades∩zonas, via `getNucleusElectoralBaseline`).
-- **Limiares versionados** em `src/lib/electionInsights.ts` como constantes (decisão de produto por limiar).
+- **Limiares versionados** em `src/lib/electionInsights.ts` como constantes (`CONVERSION_OPPORTUNITY_MAX = 0.15`, `CONVERSION_REDUTO_MIN = 0.40`).
+- **Principal = aptos**; linha de apoio inclui % do comparecimento (`aptos − abstencoes`) quando positivo.
+- **`lideranca` vê** o insight (mesmo stack da Visão geral).
+- **UI:** `Alert` em `NucleusInsights.tsx` (`data-insight="conversion-rate"`), não componente separado.
 - **i18n/naming** seguem o AGENTS.md.
 
 ## Questões em aberto
 
-- Limiares exatos das faixas (15% / 40% são referência da literatura, não decisão travada) — definir com produto.
-- Mostrar conversão contra `aptos` ou contra `comparecimento` (eleitores que efetivamente votaram)? Recomendação: ambos, com `aptos` como principal.
-- `lideranca` vê este insight? Recomendação: sim.
+- Limiares exatos das faixas — **assumidos 15%/40%** até validação de produto.
+- Chip de banda (reduto/consolidado/oportunidade) no título do Alert — adiado (critique Impeccable).
 
-## Abordagem proposta
+## Abordagem (as-built)
 
 ```mermaid
 flowchart LR
-    Base["getNucleusElectoralBaseline<br/>aptos agregados"]
+    Base["getNucleusElectoralBaseline<br/>electorate.aptos"]
     Est["electoralNucleus.confirmedVoteEstimate"]
-    Calc["computeConversionRate(aptos, estimate)<br/>rate + faixa"]
-    Detail["Detalhe: badge + faixa<br/>'X% do eleitorado apto'"]
-    Overview["Overview: média + distribuição<br/>por faixa sobre o filtro"]
+    Calc["computeConversionRate(...)"]
+    Detail["NucleusInsights Alert"]
+    Overview["loadNucleusListElectionOverview<br/>+ NucleusListOverview"]
     Base --> Calc
     Est --> Calc
     Calc --> Detail
     Calc --> Overview
 ```
 
-- **Helper** `src/lib/electionInsights.ts`: `computeConversionRate(aptos, confirmedVoteEstimate)` → `{ rate, band: 'reduto'|'consolidado'|'oportunidade'|'semEstimativa'|'semBaseline' }`.
-- **Componente** `src/components/campaign/NucleusConversionRate.tsx` (server). No overview, bloco agregado no `NucleusListOverview`.
-- **Teste int** cenários: `aptos=0`, `confirmedVoteEstimate=null`, faixas limítrofes.
-
-## Arquivos a criar/alterar
-
-- Criar: `src/components/campaign/NucleusConversionRate.tsx`.
-- Alterar: `src/lib/electionInsights.ts` (nova função), `src/app/(campaign)/campanha/(app)/nucleos/[slug]/page.tsx` + `nucleusDetailPageData.ts` (detalhe), overview da lista.
+- **Helper** [`src/lib/electionInsights.ts`](../../src/lib/electionInsights.ts): `computeConversionRate`, `aggregateConversionBand`, `conversionRateAlertVariant`.
+- **Detalhe** [`src/components/campaign/NucleusInsights.tsx`](../../src/components/campaign/NucleusInsights.tsx).
+- **Overview** [`src/utilities/nucleusElectoralBaseline.ts`](../../src/utilities/nucleusElectoralBaseline.ts) (`NucleusConversionOverviewAggregate`) + [`NucleusListOverview.tsx`](../../src/components/campaign/NucleusListOverview.tsx).
+- **Testes** unitários em `tests/unit/electionInsights.unit.spec.ts` e integração electorate+conversão em `tests/unit/nucleusElectoralBaseline.unit.spec.ts`.
 
 ## Dependências
 
 - [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md) (fornece `electionTally` + `getNucleusElectoralBaseline`) — **única dependência dura**.
-- [zonas-por-municipio.md](zonas-por-municipio.md) — dependência suave herdada do baseline (melhora a qualidade de `tseZones`; a agregação funciona sem ele — ver revisão 2026-07-17 no plano baseline).
+- [zonas-por-municipio.md](zonas-por-municipio.md) — dependência suave herdada do baseline.
 
 ## Não escopo
 
 - Previsão estatística de votos (roadmap separado).
 - Cruzamento com pesquisa de intenção de voto (domínio inexistente).
+- Demais insights A5 (classificação, alavancagem, mobilização, competitiva).
 
 ## Referências
 

@@ -6,6 +6,12 @@ export const NO_ELECTION_BASELINE_MESSAGE =
 /** ±10% band between consecutive elections → stable (product default, E2). */
 export const VOTE_TREND_STABLE_BAND = 0.1
 
+/** Below this share of aptos → growth opportunity (literature reference, A5). */
+export const CONVERSION_OPPORTUNITY_MAX = 0.15
+
+/** At or above this share of aptos → stronghold (literature reference, A5). */
+export const CONVERSION_REDUTO_MIN = 0.4
+
 export type VoteTrendStatus = 'decline' | 'stable' | 'increase' | 'noBaseline'
 
 export type VoteTrendSeries = {
@@ -34,6 +40,34 @@ export type GapVs2022Result = {
   message: string
 }
 
+export type ConversionRateBand =
+  | 'reduto'
+  | 'consolidado'
+  | 'oportunidade'
+  | 'semEstimativa'
+  | 'semBaseline'
+  | 'semAptos'
+
+export type ConversionRateInput = {
+  aptos: number | null
+  abstencoes: number | null
+  confirmedVoteEstimate: number | null
+}
+
+export type ConversionRateResult = {
+  rate: number | null
+  rateTurnout: number | null
+  band: ConversionRateBand
+  message: string
+  supportLine: string | null
+}
+
+export type ConversionBandDistribution = {
+  reduto: number
+  consolidado: number
+  oportunidade: number
+}
+
 /** Minimal baseline shape for Gap vs 2022 (full detail VM is assignable). */
 export type GapVs2022Baseline = {
   candidate: { votes: number }
@@ -60,6 +94,32 @@ export const emptyVoteTrendDistribution = (): VoteTrendDistribution => ({
 
 export const comparableTrendCount = (trend: VoteTrendDistribution): number =>
   trend.increase + trend.stable + trend.decline
+
+export const emptyConversionBandDistribution = (): ConversionBandDistribution => ({
+  reduto: 0,
+  consolidado: 0,
+  oportunidade: 0,
+})
+
+export const aggregateConversionBand = (
+  bands: readonly ConversionRateBand[],
+): ConversionBandDistribution => {
+  const distribution = emptyConversionBandDistribution()
+  for (const band of bands) {
+    if (isComparableConversionBand(band)) {
+      distribution[band] += 1
+    }
+  }
+  return distribution
+}
+
+export const isComparableConversionBand = (
+  band: ConversionRateBand,
+): band is 'reduto' | 'consolidado' | 'oportunidade' =>
+  band === 'reduto' || band === 'consolidado' || band === 'oportunidade'
+
+export const conversionRateAlertVariant = (band: ConversionRateBand): 'default' | 'pending' =>
+  band === 'oportunidade' ? 'pending' : 'default'
 
 type TrendPair = { fromVotes: number; toVotes: number; fromYear: number; toYear: number }
 
@@ -204,5 +264,74 @@ export const computeGapVs2022 = (
     ratio,
     status: 'above',
     message: `Já superamos 2022 em ${percentAbove}%`,
+  }
+}
+
+/**
+ * Compare a confirmed vote estimate against the electorate size (aptos) in the
+ * same geography. Optional turnout line uses aptos − abstencoes.
+ */
+export const computeConversionRate = ({
+  aptos,
+  abstencoes,
+  confirmedVoteEstimate,
+}: ConversionRateInput): ConversionRateResult => {
+  if (aptos === null) {
+    return {
+      rate: null,
+      rateTurnout: null,
+      band: 'semBaseline',
+      message: NO_ELECTION_BASELINE_MESSAGE,
+      supportLine: null,
+    }
+  }
+
+  if (confirmedVoteEstimate === null) {
+    return {
+      rate: null,
+      rateTurnout: null,
+      band: 'semEstimativa',
+      message: 'Sem estimativa confirmada para calcular a conversão',
+      supportLine: null,
+    }
+  }
+
+  if (aptos <= 0) {
+    return {
+      rate: null,
+      rateTurnout: null,
+      band: 'semAptos',
+      message: 'Sem eleitores aptos no baseline para esta geografia',
+      supportLine: null,
+    }
+  }
+
+  const rate = confirmedVoteEstimate / aptos
+  const percent = Math.round(rate * 100)
+
+  let band: ConversionRateBand
+  if (rate < CONVERSION_OPPORTUNITY_MAX) {
+    band = 'oportunidade'
+  } else if (rate >= CONVERSION_REDUTO_MIN) {
+    band = 'reduto'
+  } else {
+    band = 'consolidado'
+  }
+
+  const abst = abstencoes ?? 0
+  const comparecimento = aptos - abst
+  const rateTurnout = comparecimento > 0 ? confirmedVoteEstimate / comparecimento : null
+
+  let supportLine = `${formatElectionNumber(confirmedVoteEstimate)} votos / ${formatElectionNumber(aptos)} eleitores aptos`
+  if (rateTurnout !== null) {
+    supportLine += ` · ${Math.round(rateTurnout * 100)}% do comparecimento`
+  }
+
+  return {
+    rate,
+    rateTurnout,
+    band,
+    message: `Taxa de conversão: ${percent}% do eleitorado apto`,
+    supportLine,
   }
 }

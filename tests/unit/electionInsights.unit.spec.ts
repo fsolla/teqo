@@ -2,7 +2,17 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { aggregateVoteTrend, comparableTrendCount, computeGapVs2022, computeVoteTrend } from '@/lib/electionInsights'
+import {
+  aggregateConversionBand,
+  aggregateVoteTrend,
+  comparableTrendCount,
+  computeConversionRate,
+  computeGapVs2022,
+  computeVoteTrend,
+  CONVERSION_OPPORTUNITY_MAX,
+  CONVERSION_REDUTO_MIN,
+  isComparableConversionBand,
+} from '@/lib/electionInsights'
 import type { NucleusElectoralBaselineViewModel } from '@/utilities/nucleusViewModels'
 
 const baseline = (candidateVotes: number): NucleusElectoralBaselineViewModel => ({
@@ -115,5 +125,71 @@ describe('comparableTrendCount', () => {
     expect(
       comparableTrendCount({ increase: 2, stable: 1, decline: 3, noBaseline: 4 }),
     ).toBe(6)
+  })
+})
+
+describe('computeConversionRate', () => {
+  it('classifies oportunidade below 15%', () => {
+    const aptos = 10_000
+    const estimate = Math.floor(aptos * (CONVERSION_OPPORTUNITY_MAX - 0.001))
+    expect(computeConversionRate({ aptos, abstencoes: 0, confirmedVoteEstimate: estimate })).toMatchObject({
+      band: 'oportunidade',
+      message: `Taxa de conversão: ${Math.round((estimate / aptos) * 100)}% do eleitorado apto`,
+    })
+  })
+
+  it('classifies consolidado at 15%', () => {
+    const aptos = 10_000
+    const estimate = aptos * CONVERSION_OPPORTUNITY_MAX
+    expect(computeConversionRate({ aptos, abstencoes: 0, confirmedVoteEstimate: estimate }).band).toBe(
+      'consolidado',
+    )
+  })
+
+  it('classifies reduto at 40%', () => {
+    const aptos = 10_000
+    const estimate = aptos * CONVERSION_REDUTO_MIN
+    expect(computeConversionRate({ aptos, abstencoes: 0, confirmedVoteEstimate: estimate }).band).toBe(
+      'reduto',
+    )
+  })
+
+  it('reports semAptos when aptos is zero', () => {
+    expect(computeConversionRate({ aptos: 0, abstencoes: 0, confirmedVoteEstimate: 100 })).toMatchObject({
+      band: 'semAptos',
+      rate: null,
+    })
+  })
+
+  it('reports semEstimativa when estimate is null', () => {
+    expect(computeConversionRate({ aptos: 4700, abstencoes: 680, confirmedVoteEstimate: null })).toMatchObject({
+      band: 'semEstimativa',
+      rate: null,
+    })
+  })
+
+  it('includes turnout percent in support line when comparecimento is positive', () => {
+    expect(
+      computeConversionRate({ aptos: 4700, abstencoes: 680, confirmedVoteEstimate: 850 }).supportLine,
+    ).toBe('850 votos / 4.700 eleitores aptos · 21% do comparecimento')
+  })
+})
+
+describe('aggregateConversionBand', () => {
+  it('counts comparable bands only', () => {
+    expect(
+      aggregateConversionBand(['reduto', 'consolidado', 'oportunidade', 'semEstimativa', 'semAptos']),
+    ).toEqual({
+      reduto: 1,
+      consolidado: 1,
+      oportunidade: 1,
+    })
+  })
+})
+
+describe('isComparableConversionBand', () => {
+  it('accepts the three comparable bands', () => {
+    expect(isComparableConversionBand('reduto')).toBe(true)
+    expect(isComparableConversionBand('semEstimativa')).toBe(false)
   })
 })

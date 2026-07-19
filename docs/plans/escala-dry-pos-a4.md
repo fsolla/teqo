@@ -1,7 +1,7 @@
 # Escala e DRY pós-A4 (baseline TSE no produto)
 
 Status: registrado no roadmap (fases pendentes)
-Atualizado em: 2026-07-19
+Atualizado em: 2026-07-19 (nota A5-1 em Fase 3 / `capture-review-debts`)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, item A7)
 Responsável: —
 
@@ -13,7 +13,7 @@ Os revisores (performance / reuse / quality) marcaram como **importantes e maior
 
 1. **Detalhe puxa todas as linhas nominais de dep. federal (1º turno) na geografia.** `detailVoteWhere` + `loadElectionVotes` em `src/utilities/nucleusElectoralBaseline.ts` buscam o ranking local inteiro para `winnerFederal` e `candidate.rank`. Em núcleo multi-município / TI inteiro isso pode ser milhares de rows por abertura da aba Visão geral (`pagination: false`).
 2. **Filtro geográfico por `cityName` (texto), não por `cityCode` TSE.** O índice natural das collections de eleição é `(year, office, turn, cityCode, zoneNumber)`; filtrar por nome impede o plano ótimo e complica OR grandes na união do overview (já mitigado no simplify, mas o detalhe/TI ainda sofre).
-3. **DRY de UI do Gap "acima".** `NucleusInsights` usa `Alert variant="pending"` para abaixo/neutro, mas o estado "acima" aplica classes ad-hoc com tokens `--estimate-confirmed*`. O `Alert` já tem o precedente `pending` espelhando o Badge; falta a variante simétrica. A barra do candidato no card também reimplementa `role="progressbar"` em vez de reusar `Progress` (`NucleusListOverview`).
+3. **DRY de UI do Gap "acima".** `NucleusInsights` usa `Alert variant="pending"` para abaixo/neutro, mas o estado "acima" aplica classes ad-hoc com tokens `--estimate-confirmed*`. O slice **A5-1 conversão** reutiliza o mesmo `confirmedInsightAlertClass` para o alerta de taxa de conversão (reduto/consolidado) — interim até a Fase 3. A barra do candidato no card também reimplementa `role="progressbar"` em vez de reusar `Progress` (`NucleusListOverview`).
 
 **Explicitamente fora (revisores pediram skip no simplify):** map JSX de linhas Lula/Jerônimo, dropar `candidate.rank` / `electorate.aptos` / `ratio` do tipo público só por higiene (só fariam sentido se a F1 deixar de calcular rank), e o cast `as unknown as RawOverviewNucleus` da B1 (não é débito novo do A4).
 
@@ -70,7 +70,7 @@ flowchart TD
 ### Fase 3 — Alert `confirmed` + `Progress` no card
 
 - `src/components/ui/Alert.tsx`: adicionar variant `confirmed` espelhando `pending` com tokens `--estimate-confirmed` / foreground.
-- `NucleusInsights`: trocar o `cn(...)` ad-hoc por `variant={gap.status === 'above' ? 'confirmed' : 'pending'}` (ou `default` só se neutro — manter pending para noBaseline/noEstimate).
+- `NucleusInsights`: trocar o `cn(...)` ad-hoc e `confirmedInsightAlertClass` (Gap "acima" **e** conversão reduto/consolidado desde A5-1) por `variant={… ? 'confirmed' : 'pending'}` (ou `default` só se neutro — manter pending para noBaseline/noEstimate).
 - `NucleusElectoralBaseline`: substituir a barra custom por `Progress` (já usado no overview), preservando `aria-label`.
 
 **Migration:** nenhuma nas Fases 1 e 3. Fase 2 preferencialmente só artefato estático versionado; índice Postgres extra só se o EXPLAIN ainda doer após `cityCode` (aí `pnpm migrate:create` cortável).
@@ -96,7 +96,8 @@ flowchart TD
 - `docs/plans/baseline-eleitoral-tse.md` — plano pai do A3/A4
 - `docs/plans/escala-dry-pos-b2.md` / `escala-dry-pos-c3.md` / `escala-dry-pos-c6.md` — precedente pós-`/simplify`
 - `src/utilities/nucleusElectoralBaseline.ts` — `detailVoteWhere`, `loadElectionVotes`, `aggregateFederalCandidateTotals`
-- `src/lib/electionInsights.ts` / `src/components/campaign/NucleusInsights.tsx` — Gap UI
+- `docs/plans/insight-taxa-conversao.md` — A5-1 usa `confirmedInsightAlertClass` até F3
+- `src/lib/electionInsights.ts` / `src/components/campaign/NucleusInsights.tsx` — Gap + conversão UI
 - `src/components/campaign/NucleusElectoralBaseline.tsx` — barra do candidato
 - `src/components/ui/Alert.tsx` — variant `pending` a espelhar
 - `src/components/ui/Progress.tsx` — reuso no card

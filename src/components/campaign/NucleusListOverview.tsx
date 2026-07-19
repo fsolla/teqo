@@ -13,8 +13,6 @@ import { formatRelativeAge } from '@/utilities/formatRelativeAge'
 import type { NucleusListOverviewViewModel } from '@/utilities/nucleusListOverviewViewModels'
 import { nucleusUpdateKindLabels } from '@/utilities/nucleusUpdateUi'
 
-const numberFormatter = new Intl.NumberFormat('pt-BR')
-
 export const NucleusListOverview = ({
   view,
   now,
@@ -30,7 +28,7 @@ export const NucleusListOverview = ({
     },
     {
       label: 'Meta regular 2026',
-      value: numberFormatter.format(view.voteGoals.regular),
+      value: formatElectionNumber(view.voteGoals.regular),
     },
   ]
 
@@ -43,7 +41,7 @@ export const NucleusListOverview = ({
         <p className="text-sm text-muted-foreground">
           Mostrando agregados de{' '}
           <strong className="font-medium text-foreground tabular-nums">
-            {numberFormatter.format(view.totalFiltered)}
+            {formatElectionNumber(view.totalFiltered)}
           </strong>{' '}
           {view.totalFiltered === 1 ? 'núcleo filtrado' : 'núcleos filtrados'}
         </p>
@@ -54,7 +52,7 @@ export const NucleusListOverview = ({
         <CardHeader>
           <CardDescription>Estimativa de votos (prioridade)</CardDescription>
           <CardTitle className="text-3xl font-semibold tabular-nums tracking-tight">
-            {numberFormatter.format(view.estimate.confirmedTotal)}
+            {formatElectionNumber(view.estimate.confirmedTotal)}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -62,8 +60,8 @@ export const NucleusListOverview = ({
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span>{view.estimate.confirmedPercent}% com estimativa confirmada</span>
               <span className="text-muted-foreground">
-                {numberFormatter.format(view.estimate.confirmedCount)} confirmadas ·{' '}
-                {numberFormatter.format(view.estimate.unconfirmedCount)} pendentes
+                {formatElectionNumber(view.estimate.confirmedCount)} confirmadas ·{' '}
+                {formatElectionNumber(view.estimate.unconfirmedCount)} pendentes
               </span>
             </div>
             <Progress
@@ -73,33 +71,33 @@ export const NucleusListOverview = ({
           </div>
           {view.estimate.pendingSuggestionsCount ? (
             <Badge variant="estimate-pending" className="w-fit">
-              {numberFormatter.format(view.estimate.pendingSuggestionsCount)}{' '}
+              {formatElectionNumber(view.estimate.pendingSuggestionsCount)}{' '}
               {view.estimate.pendingSuggestionsCount === 1
                 ? 'sugestão pendente'
                 : 'sugestões pendentes'}
             </Badge>
           ) : null}
           <p className="text-sm text-muted-foreground">
-            {numberFormatter.format(view.coverage.coordinatedCount)} de{' '}
-            {numberFormatter.format(view.totalFiltered)} com coordenador
+            {formatElectionNumber(view.coverage.coordinatedCount)} de{' '}
+            {formatElectionNumber(view.totalFiltered)} com coordenador
             {view.highPriorityCount > 0
-              ? ` · ${numberFormatter.format(view.highPriorityCount)} prioritários`
+              ? ` · ${formatElectionNumber(view.highPriorityCount)} prioritários`
               : ''}
           </p>
           {view.baseline2022 && view.baseline2022.gapTotal !== null ? (
             <p className="text-sm text-muted-foreground">
               Baseline 2022:{' '}
               <span className="font-medium text-estimate-confirmed-foreground">
-                {numberFormatter.format(view.baseline2022.above)} acima
+                {formatElectionNumber(view.baseline2022.above)} acima
               </span>
               {' · '}
               <span className="font-medium text-estimate-pending-foreground">
-                {numberFormatter.format(view.baseline2022.below)} abaixo
+                {formatElectionNumber(view.baseline2022.below)} abaixo
               </span>
               {' · '}
               <span className="tabular-nums">
                 {view.baseline2022.gapTotal >= 0 ? '+' : ''}
-                {numberFormatter.format(view.baseline2022.gapTotal)} gap
+                {formatElectionNumber(view.baseline2022.gapTotal)} gap
               </span>
             </p>
           ) : null}
@@ -116,6 +114,27 @@ export const NucleusListOverview = ({
               {' · '}
               <span className="font-medium text-estimate-pending-foreground">
                 {formatElectionNumber(view.trend.decline)} queda
+              </span>
+            </p>
+          ) : null}
+          {view.conversion ? (
+            <p className="text-sm text-muted-foreground">
+              Conversão:{' '}
+              <span className="font-medium tabular-nums text-foreground">
+                {view.conversion.weightedRate}%
+              </span>{' '}
+              do eleitorado apto
+              {' · '}
+              <span className="font-medium text-estimate-confirmed-foreground">
+                {formatElectionNumber(view.conversion.distribution.reduto)} reduto
+              </span>
+              {' · '}
+              <span className="font-medium text-foreground">
+                {formatElectionNumber(view.conversion.distribution.consolidado)} consolidado
+              </span>
+              {' · '}
+              <span className="font-medium text-estimate-pending-foreground">
+                {formatElectionNumber(view.conversion.distribution.oportunidade)} oportunidade
               </span>
             </p>
           ) : null}

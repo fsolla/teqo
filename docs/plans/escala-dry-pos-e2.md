@@ -1,29 +1,31 @@
 # Escala e DRY pós-E2 (série TSE 2014/2018 + tendência)
 
 Status: registrado no roadmap (fases pendentes)
-Atualizado em: 2026-07-19
+Atualizado em: 2026-07-19 (Fase 2 estendida pós-A5-1 / `capture-review-debts`)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E, item E7)
 Responsável: —
 
 ## Contexto
 
-O E2 ([mapa-projecao-municipios.md](mapa-projecao-municipios.md)) entrega seed `pnpm db:seed:tse -- --year=2014|2018|2022` (federal T1 BA nos anos históricos), `computeVoteTrend` ±10% (`increase|stable|decline|noBaseline`), série no card `NucleusElectoralBaseline`, alerta em `NucleusInsights` e card "Tendência histórica" no overview B1 — loader unificado `loadNucleusListElectionOverview` (gap + tendência numa query union) em `nucleusElectoralBaseline.ts`.
+O E2 ([mapa-projecao-municipios.md](mapa-projecao-municipios.md)) entrega seed `pnpm db:seed:tse -- --year=2014|2018|2022` (federal T1 BA nos anos históricos), `computeVoteTrend` ±10% (`increase|stable|decline|noBaseline`), série no card `NucleusElectoralBaseline`, alerta em `NucleusInsights` e card "Tendência histórica" no overview B1 — loader unificado `loadNucleusListElectionOverview` (gap + tendência numa query union) em `nucleusElectoralBaseline.ts`. O slice **A5-1 taxa de conversão** ([insight-taxa-conversao.md](insight-taxa-conversao.md), 2026-07-19) estende o mesmo loader com agregado `conversion` (`weightedRate` + `distribution` por faixa) e fetch condicional de `electionTally` — ver Fase 2.
 
 Duas passagens `/simplify` no mesmo branch já limparam o que cabia em cleanup: `HISTORICAL_PRIOR_SERIES_YEARS`, `HISTORICAL_SERIES_YEARS`, `buildUnionGeography`, `aggregateVoteTrend` / `comparableTrendCount`, `formatVoteTrendSeries` / `formatVoteTrendSeriesCompact`, `voteTrendAlertVariant`, merge de labels, `FEDERAL_DEPUTY_OFFICE` no build, remoção de `seriesFromYearTotals` e alias `NucleusListOverviewBaseline2022`.
 
 Os revisores (performance / reuse / quality) marcaram como **importantes e maiores que simplify** os follow-ups abaixo. Débitos que **já têm dono em outro item** ficam fora deste plano (ver Não escopo).
 
 1. **Tendência calculada e exibida duas vezes na aba Visão geral do núcleo.** `NucleusActiveTab.tsx` renderiza `NucleusElectoralBaseline` e `NucleusInsights` em sequência; cada um chama `computeVoteTrend(baseline.series)` e ambos mostram a série 2014→2018→2022 (badge + mensagem no card; alerta + mensagem + série no insights). Duplicação de trabalho no cliente e de informação para o usuário.
-2. **Sem testes de integração do loader combinado.** `loadNucleusListElectionOverview` substitui loaders separados de gap e tendência; só há cobertura unitária de `computeVoteTrend` / `aggregateVoteTrend` e unit do overview VM — não há int que exercite a união geográfica, o caso "só tendência sem estimativas comparáveis" e o agregado gap+trend num único fetch.
+2. **Sem testes de integração do loader combinado.** `loadNucleusListElectionOverview` substitui loaders separados de gap e tendência; só há cobertura unitária de `computeVoteTrend` / `aggregateVoteTrend`, `computeConversionRate` / `aggregateConversionBand` e unit pontual de electorate→conversão — não há int que exercite a união geográfica, o caso "só tendência sem estimativas comparáveis", o agregado gap+trend **e** conversão ponderada (`Σestimate / Σaptos` + distribuição por faixa) num único fetch.
 3. **Tipos de distribuição duplicados.** `NucleusTrendOverviewAggregate` em `nucleusElectoralBaseline.ts` é `Record<VoteTrendStatus, number>` enquanto `electionInsights.ts` já expõe `VoteTrendDistribution` + `emptyVoteTrendDistribution` — mesmo shape, dois nomes.
 4. **`VoteTrendResult.ratio` exposto na API pública** mas usado sobretudo em asserts de teste; o produto só consome `status` + `message` na UI.
 
-**Explicitamente fora (revisores pediram skip no simplify ou já têm item):** ranking federal completo no detalhe e filtro por `cityCode` → **A7**; query duplicada lista+overview e re-resolve de geografia no baseline do overview → **E6**; DRY de `formatElectionNumber` nos cards não-tendência do overview → **E6 F3**; remover a query TSE do overview quando não há estimativas comparáveis (o card de tendência exige distribuição mesmo sem gap — comportamento intencional de produto).
+**Já resolvido no simplify A5-1 / capture-review-debts (não reabrir):** tallies só quando há núcleos comparáveis; union de tallies restrita a `comparableIndexes`; `sumElectorateForGeography` indexado por `cityZoneKey` (mesmo padrão de `votes2022`); conversão desacoplada do gate `candidateVotes > 0`; gap no overview via `computeGapVs2022`; `isComparableConversionBand` / `formatElectionNumber` DRY no overview.
+
+**Explicitamente fora (revisores pediram skip no simplify ou já têm item):** ranking federal completo no detalhe e filtro por `cityCode` → **A7**; query duplicada lista+overview e re-resolve de geografia no baseline do overview → **E6**; DRY de `formatElectionNumber` nos cards não-tendência do overview → **E6 F3**; remover a query TSE do overview quando não há estimativas comparáveis (o card de tendência exige distribuição mesmo sem gap — comportamento intencional de produto); chip de faixa no Alert de conversão (produto adia); DRY do stack de 3 `Alert`s em `NucleusInsights` até mais insights A5.
 
 ## Objetivos
 
 - Abrir a aba Visão geral de um núcleo calcula a tendência **uma vez** e não repete a série histórica em dois blocos adjacentes.
-- `loadNucleusListElectionOverview` tem pelo menos um teste int com fixture TSE que cobre gap agregado + distribuição de tendência no mesmo path.
+- `loadNucleusListElectionOverview` tem pelo menos um teste int com fixture TSE que cobre gap agregado + distribuição de tendência + agregado de conversão (`weightedRate`, `distribution` reduto/consolidado/oportunidade) no mesmo path.
 - Tipos de distribuição de tendência têm uma única fonte (`VoteTrendDistribution`); loaders e VMs importam de `electionInsights.ts`.
 - Guardrails: sem migration, sem Consent (dado público TSE). Access continua `overrideAccess: false`. Identificadores em inglês; strings visíveis em pt-BR.
 
@@ -64,7 +66,7 @@ flowchart TD
 ### Fase 2 — Testes int do loader combinado
 
 - Novo ou estendido `tests/int/nucleusListElectionOverview.int.spec.ts` (ou seção em spec existente de election baseline).
-- Cenários mínimos: (a) dois núcleos com geografia + estimativas → `gapTotal` e contagem `above`/`below`; (b) núcleos com geografia mas sem estimativa confirmada → `gapTotal: null` e `trend` populado; (c) núcleo sem território resolvível → `baseline2022: null`, `trend: null`.
+- Cenários mínimos: (a) dois núcleos com geografia + estimativas → `gapTotal` e contagem `above`/`below`; (b) núcleos com geografia mas sem estimativa confirmada → `gapTotal: null`, `trend` populado e `conversion: null`; (c) núcleo sem território resolvível → `baseline2022: null`, `trend: null`, `conversion: null`; (d) dois núcleos comparáveis com `electionTally` na union → `conversion.weightedRate` = `Σestimate / Σaptos` e `conversion.distribution` coerente com `computeConversionRate` por núcleo (inclui território novo com aptos + estimativa e sem votos 2022 do candidato).
 - Usar `getPayload` + DB de teste (`teqo_test`); seed fixture TSE via helper, não Neon.
 
 ### Fase 3 — Tipos e API
@@ -97,7 +99,8 @@ flowchart TD
 - `docs/plans/escala-dry-pos-a4.md` / `escala-dry-pos-e1.md` — débitos adjacentes (A7 / E6)
 - `src/components/campaign/NucleusActiveTab.tsx` — render duplo baseline + insights
 - `src/components/campaign/NucleusElectoralBaseline.tsx` / `NucleusInsights.tsx`
-- `src/lib/electionInsights.ts` — `computeVoteTrend`, `VoteTrendDistribution`, `aggregateVoteTrend`
+- `docs/plans/insight-taxa-conversao.md` — slice A5-1 (conversão no loader/overview)
+- `src/lib/electionInsights.ts` — `computeVoteTrend`, `computeConversionRate`, `aggregateConversionBand`, `VoteTrendDistribution`, `aggregateVoteTrend`
 - `src/utilities/nucleusElectoralBaseline.ts` — `loadNucleusListElectionOverview`, `getNucleusElectoralBaseline`
 - `src/utilities/nucleusListOverviewPageData.ts`
 - `tests/unit/electionInsights.unit.spec.ts` / `tests/unit/nucleusElectoralBaselineUi.unit.spec.ts`

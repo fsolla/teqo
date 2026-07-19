@@ -173,5 +173,6 @@ export const loadNucleusListOverviewData = async (
     upcomingActionPlans,
     baseline2022: listElectionOverview.baseline2022,
     trend: listElectionOverview.trend,
+    conversion: listElectionOverview.conversion,
   })
 }

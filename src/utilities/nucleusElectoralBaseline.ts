@@ -13,7 +13,13 @@ import {
   type ElectionTurn,
 } from '@/lib/electionResults'
 import {
+  aggregateConversionBand,
   aggregateVoteTrend,
+  computeConversionRate,
+  computeGapVs2022,
+  type ConversionBandDistribution,
+  type ConversionRateBand,
+  isComparableConversionBand,
   type VoteTrendSeries,
   type VoteTrendStatus,
 } from '@/lib/electionInsights'
@@ -223,6 +229,23 @@ const aggregateElectorate = (
   }
 
   return { aptos, validos, brancos, nulos, abstencoes }
+}
+
+const sumElectorateForGeography = (
+  talliesByCityZone: ReadonlyMap<string, ElectionTallyAggregateRow>,
+  geography: NucleusElectionGeography,
+): Pick<NucleusElectoralBaselineViewModel['electorate'], 'aptos' | 'abstencoes'> => {
+  let aptos = 0
+  let abstencoes = 0
+
+  for (const { cityName, zoneNumber } of geography.cityZonePairs) {
+    const row = talliesByCityZone.get(cityZoneKey(cityName, zoneNumber))
+    if (!row) continue
+    aptos += row.aptos
+    abstencoes += row.abstencoes
+  }
+
+  return { aptos, abstencoes }
 }
 
 export const aggregateNucleusElectoralBaseline = (
@@ -532,9 +555,15 @@ export type NucleusBaseline2022OverviewAggregate = {
 
 export type NucleusTrendOverviewAggregate = Record<VoteTrendStatus, number>
 
+export type NucleusConversionOverviewAggregate = {
+  weightedRate: number
+  distribution: ConversionBandDistribution
+}
+
 export type NucleusListElectionOverview = {
   baseline2022: NucleusBaseline2022OverviewAggregate | null
   trend: NucleusTrendOverviewAggregate | null
+  conversion: NucleusConversionOverviewAggregate | null
 }
 
 /**
@@ -551,7 +580,7 @@ export const loadNucleusListElectionOverview = async (
   )
 
   if (withGeographyIndexes.length === 0) {
-    return { baseline2022: null, trend: null }
+    return { baseline2022: null, trend: null, conversion: null }
   }
 
   const comparableIndexes: number[] = []
@@ -562,7 +591,7 @@ export const loadNucleusListElectionOverview = async (
 
   const unionGeography = buildUnionGeography(geographies, withGeographyIndexes)
   if (!unionGeography) {
-    return { baseline2022: null, trend: null }
+    return { baseline2022: null, trend: null, conversion: null }
   }
 
   const seriesByYear = await loadCandidateSeriesByGeography(payload, user, unionGeography)
@@ -579,14 +608,26 @@ export const loadNucleusListElectionOverview = async (
     return {
       baseline2022: { gapTotal: null, above: 0, below: 0 },
       trend,
+      conversion: null,
     }
   }
+
+  const conversionUnion = buildUnionGeography(geographies, comparableIndexes)
+  const tallies = conversionUnion
+    ? await loadElectionTallies(payload, user, conversionUnion)
+    : []
+  const talliesByCityZone = new Map(
+    tallies.map((row) => [cityZoneKey(row.cityName, row.zoneNumber), row]),
+  )
 
   let estimateSum = 0
   let candidateVotesSum = 0
   let comparableCount = 0
   let above = 0
   let below = 0
+  let conversionEstimateSum = 0
+  let conversionAptosSum = 0
+  const conversionBands: ConversionRateBand[] = []
 
   for (const index of comparableIndexes) {
     const geography = geographies[index]
@@ -594,14 +635,35 @@ export const loadNucleusListElectionOverview = async (
     if (!geography || estimate == null) continue
 
     const candidateVotes = sumCandidateVotesForGeography(geography, votes2022)
-    if (candidateVotes <= 0) continue
+    if (candidateVotes > 0) {
+      const gap = computeGapVs2022({ candidate: { votes: candidateVotes } }, estimate)
+      if (gap.status === 'above') above += 1
+      else if (gap.status === 'below') below += 1
+      estimateSum += estimate
+      candidateVotesSum += candidateVotes
+      comparableCount += 1
+    }
 
-    if (estimate >= candidateVotes) above += 1
-    else below += 1
-    estimateSum += estimate
-    candidateVotesSum += candidateVotes
-    comparableCount += 1
+    const electorate = sumElectorateForGeography(talliesByCityZone, geography)
+    const conversion = computeConversionRate({
+      aptos: electorate.aptos,
+      abstencoes: electorate.abstencoes,
+      confirmedVoteEstimate: estimate,
+    })
+    if (isComparableConversionBand(conversion.band)) {
+      conversionEstimateSum += estimate
+      conversionAptosSum += electorate.aptos
+      conversionBands.push(conversion.band)
+    }
   }
+
+  const conversion: NucleusConversionOverviewAggregate | null =
+    conversionAptosSum > 0
+      ? {
+          weightedRate: Math.round((conversionEstimateSum / conversionAptosSum) * 100),
+          distribution: aggregateConversionBand(conversionBands),
+        }
+      : null
 
   return {
     baseline2022: {
@@ -610,5 +672,6 @@ export const loadNucleusListElectionOverview = async (
       below,
     },
     trend,
+    conversion,
   }
 }

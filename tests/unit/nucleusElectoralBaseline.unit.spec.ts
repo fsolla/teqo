@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { citiesForTerritory } from '@/lib/bahiaTerritories'
 import { tseZonesForCity } from '@/lib/bahiaTseZones'
 import { BASELINE_TICKET_2022 } from '@/lib/electionResults'
-import { computeVoteTrend } from '@/lib/electionInsights'
+import { computeConversionRate, computeVoteTrend } from '@/lib/electionInsights'
 import {
   aggregateNucleusElectoralBaseline,
   resolveNucleusElectionGeography,
@@ -218,6 +218,25 @@ describe('aggregateNucleusElectoralBaseline', () => {
       name: 'RIVAL FEDERAL',
       votes: 1100,
       party: 'PL',
+    })
+  })
+
+  it('supports conversion rate from electorate aptos and confirmed estimate', () => {
+    const baseline = aggregateNucleusElectoralBaseline(geography, votes, tallies, {
+      y2014: 0,
+      y2018: 0,
+    })
+
+    expect(
+      computeConversionRate({
+        aptos: baseline.electorate.aptos,
+        abstencoes: baseline.electorate.abstencoes,
+        confirmedVoteEstimate: 850,
+      }),
+    ).toMatchObject({
+      band: 'oportunidade',
+      message: 'Taxa de conversão: 4% do eleitorado apto',
+      supportLine: '850 votos / 19.000 eleitores aptos · 6% do comparecimento',
     })
   })
 })

@@ -1,7 +1,7 @@
 import type { NucleusPriority } from '@/lib/schemas/nucleus'
 import type { CampaignUser, NucleusUpdate } from '@/payload-types'
 import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
-import type { NucleusBaseline2022OverviewAggregate, NucleusTrendOverviewAggregate } from '@/utilities/nucleusElectoralBaseline'
+import type { NucleusBaseline2022OverviewAggregate, NucleusConversionOverviewAggregate, NucleusTrendOverviewAggregate } from '@/utilities/nucleusElectoralBaseline'
 import {
   aggregateVoteGoals,
   type VoteGoalsSumViewModel,
@@ -52,6 +52,8 @@ export type NucleusListOverviewViewModel = {
   highPriorityCount: number
   /** Null when no nucleus in the filtered set has resolvable TSE geography. */
   trend: NucleusTrendOverviewAggregate | null
+  /** Null when no comparable nucleus has aptos + confirmed estimate. */
+  conversion: NucleusConversionOverviewAggregate | null
   recentUpdates: NucleusListOverviewUpdateRecord[]
   upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
 }
@@ -66,6 +68,7 @@ export const buildNucleusListOverviewViewModel = ({
   upcomingActionPlans,
   baseline2022 = null,
   trend = null,
+  conversion = null,
 }: {
   nuclei: NucleusListOverviewNucleusRecord[]
   recentUpdates: NucleusListOverviewUpdateRecord[]
@@ -73,6 +76,7 @@ export const buildNucleusListOverviewViewModel = ({
   upcomingActionPlans: ActionPlanUpcomingPreviewRecord[]
   baseline2022?: NucleusBaseline2022OverviewAggregate | null
   trend?: NucleusTrendOverviewAggregate | null
+  conversion?: NucleusConversionOverviewAggregate | null
 }): NucleusListOverviewViewModel => {
   const totalFiltered = nuclei.length
   const confirmedCount = nuclei.filter(
@@ -107,6 +111,7 @@ export const buildNucleusListOverviewViewModel = ({
     voteGoals,
     highPriorityCount,
     trend,
+    conversion,
     recentUpdates,
     upcomingActionPlans,
   }
