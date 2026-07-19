@@ -199,4 +199,21 @@ describe('NucleusListOverview', () => {
 
     expect(html).not.toContain('Baseline 2022')
   })
+
+  it('renders the trend distribution card when aggregate data is present', () => {
+    const view = buildNucleusListOverviewViewModel({
+      role: 'geral',
+      nuclei: [nucleus({ id: 1 })],
+      recentUpdates: [],
+      upcomingActionPlans: [],
+      trend: { decline: 3, stable: 5, increase: 2, noBaseline: 1 },
+    })
+
+    const html = renderToStaticMarkup(createElement(NucleusListOverview, { view, now }))
+
+    expect(html).toContain('Tendência histórica')
+    expect(html).toContain('2 aumento')
+    expect(html).toContain('5 mantém')
+    expect(html).toContain('3 queda')
+  })
 })

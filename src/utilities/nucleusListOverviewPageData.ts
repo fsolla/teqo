@@ -3,7 +3,7 @@ import type { Payload } from 'payload'
 import type { CampaignUser, NucleusUpdate } from '@/payload-types'
 import { loadUpcomingActionPlansPreview } from '@/utilities/actionPlanUpcomingPreview'
 import {
-  loadNucleusBaseline2022Overview,
+  loadNucleusListElectionOverview,
   toNucleusElectionGeographyInput,
 } from '@/utilities/nucleusElectoralBaseline'
 import {
@@ -113,7 +113,7 @@ export const loadNucleusListOverviewData = async (
   })
 
   const nucleiById = new Map(nuclei.map((nucleus) => [nucleus.id, nucleus]))
-  const [updateResult, baseline2022] = await Promise.all([
+  const [updateResult, listElectionOverview] = await Promise.all([
     payload.find({
       collection: 'nucleusUpdate',
       where: { nucleus: { in: nuclei.map(({ id }) => id) } },
@@ -125,7 +125,7 @@ export const loadNucleusListOverviewData = async (
       user,
       overrideAccess: false,
     }),
-    loadNucleusBaseline2022Overview(payload, user, nuclei),
+    loadNucleusListElectionOverview(payload, user, nuclei),
   ])
 
   const updates = updateResult.docs as unknown as RawOverviewUpdate[]
@@ -171,6 +171,7 @@ export const loadNucleusListOverviewData = async (
     recentUpdates,
     role: user.role,
     upcomingActionPlans,
-    baseline2022,
+    baseline2022: listElectionOverview.baseline2022,
+    trend: listElectionOverview.trend,
   })
 }

@@ -9,7 +9,8 @@ import {
   buildImportBundles,
   importElectionBundles,
 } from '@/utilities/electionResultsImport'
-import { loadTseFixtureResults, TSE_FIXTURE_EXPECTED } from '../helpers/tseFixtures'
+import { loadTseFixtureResults, loadTseFixtureResultsForYear, TSE_FIXTURE_EXPECTED } from '../helpers/tseFixtures'
+import { FEDERAL_ONLY_OFFICES } from '@/lib/electionResultsBuild'
 
 let payload: Payload
 
@@ -124,6 +125,44 @@ describe('election results import', () => {
     expect(lula?.elected).toBe(true)
     expect(jeronimo?.elected).toBe(true)
     expect(lula?.identityKey).toBeTruthy()
+  })
+
+  it('imports a historical year without removing the 2022 scope', async () => {
+    const built2018 = loadTseFixtureResultsForYear(2018, FEDERAL_ONLY_OFFICES)
+    await importElectionBundles(payload, buildImportBundles(built2018))
+
+    const votes2022 = await payload.find({
+      collection: 'electionCandidateVote',
+      where: { year: { equals: 2022 } },
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      overrideAccess: true,
+    })
+    const votes2018 = await payload.find({
+      collection: 'electionCandidateVote',
+      where: {
+        and: [{ year: { equals: 2018 } }, { office: { equals: 'deputado_federal' } }],
+      },
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      overrideAccess: true,
+    })
+    const president2018 = await payload.find({
+      collection: 'electionCandidateVote',
+      where: {
+        and: [{ year: { equals: 2018 } }, { office: { equals: 'presidente' } }],
+      },
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      overrideAccess: true,
+    })
+
+    expect(votes2022.totalDocs).toBe(TSE_FIXTURE_EXPECTED.voteRowCount)
+    expect(votes2018.totalDocs).toBeGreaterThan(0)
+    expect(president2018.totalDocs).toBe(0)
   })
 
   it('allows campaignUser read and denies campaignUser mutation', async () => {

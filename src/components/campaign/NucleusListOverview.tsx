@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/Progress'
+import { comparableTrendCount, formatElectionNumber } from '@/lib/electionInsights'
 import { actionPlanKindLabels } from '@/lib/schemas/actionPlan'
 import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 import type { NucleusListOverviewViewModel } from '@/utilities/nucleusListOverviewViewModels'
@@ -136,6 +137,40 @@ export const NucleusListOverview = ({
                 {numberFormatter.format(view.baseline2022.below)} abaixo
               </span>
             </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {view.trend ? (
+        <Card>
+          <CardHeader>
+            <CardDescription>Tendência histórica</CardDescription>
+            <CardTitle className="text-3xl tabular-nums">
+              {formatElectionNumber(comparableTrendCount(view.trend))}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            <p className="text-sm text-muted-foreground">
+              Núcleos com série comparável (2014/2018/2022)
+            </p>
+            <p className="text-sm">
+              <span className="font-semibold text-[color:var(--estimate-confirmed-foreground)]">
+                {formatElectionNumber(view.trend.increase)} aumento
+              </span>
+              {' · '}
+              <span className="font-semibold text-foreground">
+                {formatElectionNumber(view.trend.stable)} mantém
+              </span>
+              {' · '}
+              <span className="font-semibold text-[color:var(--estimate-pending-foreground)]">
+                {formatElectionNumber(view.trend.decline)} queda
+              </span>
+            </p>
+            {view.trend.noBaseline > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                {formatElectionNumber(view.trend.noBaseline)} sem série suficiente
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}
