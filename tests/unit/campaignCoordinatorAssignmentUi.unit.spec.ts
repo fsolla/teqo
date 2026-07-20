@@ -1,10 +1,10 @@
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { buildDashboardQueueItemHref } from '@/components/campaign/CampaignDashboard'
+import { buildDashboardQueueItemHref } from '@/components/campaign/ActionQueuesCard'
 import { CoordinatorAssignmentCard } from '@/components/campaign/CoordinatorAssignmentCard'
 import { CoordinatorAssignmentDialog } from '@/components/campaign/CoordinatorAssignmentDialog'
 

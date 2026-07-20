@@ -1,11 +1,16 @@
+/** Light muted rose → campaign primary #c51414 */
+export const choroplethGradientStart = { r: 254, g: 226, b: 226 } as const
+export const choroplethGradientEnd = { r: 197, g: 20, b: 20 } as const
+
+export const choroplethGradientCss = `linear-gradient(to right, rgb(${choroplethGradientStart.r} ${choroplethGradientStart.g} ${choroplethGradientStart.b}), rgb(${choroplethGradientEnd.r} ${choroplethGradientEnd.g} ${choroplethGradientEnd.b}))`
+
 /** Sequential fill for campaign choropleth maps (primary red scale). */
 export const choroplethFillColor = (value: number, max: number): string => {
   if (value <= 0 || max <= 0) return '#f4f4f5'
 
   const ratio = Math.min(1, value / max)
-  // Light muted rose → campaign primary #c51414
-  const start = { r: 254, g: 226, b: 226 }
-  const end = { r: 197, g: 20, b: 20 }
+  const start = choroplethGradientStart
+  const end = choroplethGradientEnd
   const r = Math.round(start.r + (end.r - start.r) * ratio)
   const g = Math.round(start.g + (end.g - start.g) * ratio)
   const b = Math.round(start.b + (end.b - start.b) * ratio)

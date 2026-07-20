@@ -9,6 +9,8 @@ Esta skill transforma um item do `docs/roadmap.md` em um plano de implementaçã
 
 Superfícies de UI deste item passam pelo fluxo **`/impeccable`** (skill anexada ou em `~/.claude/skills/impeccable`): shape → craft → critique → polish, alinhado a `PRODUCT.md` / `DESIGN.md` e aos design-refs do roadmap. Itens só de schema/server/utilitário **não** inventam UI via Impeccable — veja Passo 8.
 
+**Qualidade de decisão:** ao auditar e fatiar, aplique [decision-quality.md](../roadmap-item/decision-quality.md) — caro vs barato, Opções+Recomendação+rejeitadas, appetite do plano, rabbit holes, depth/classitis, tracer bullet cedo. Sem jornada de `design-code-architecture`.
+
 ## Checklist do fluxo
 
 ```
@@ -89,29 +91,44 @@ Este é o passo que separa uma revisão competente de um "li o plano, parece bom
 - **Premissas de schema** batem com `src/payload-types.ts` e com as migrations em `src/migrations/`? (Ex.: plano escrito quando `cities` era escalar, hoje é array.)
 - **Decisões travadas** foram supersedidas? Confronte com a seção "Itens consolidados/removidos" do roadmap, a nota do "Atualizado em" (linha 3 do roadmap) e o notebook do projeto. Precedente real: A2 foi redesenhado de auto-preenchimento forçado para chips opt-in — um plano antigo descreveria o comportamento errado.
 - **Já existe implementação parcial?** Grep pelos identificadores que o plano propõe (nomes de collection, componente, action, rota). Se parte já existe, o plano de implementação parte dela, não do zero.
-- **Não escopo ainda é válido?** Itens delegados a outros planos podem já ter sido entregues lá (o que muda o que este item pode assumir como disponível).
+- **Não escopo / rabbit holes ainda válidos?** Itens delegados a outros planos podem já ter sido entregues; rabbit holes omitidos ou estourando appetite contam como defasagem de desenho.
 
-Classifique cada achado em três baldes e reporte-os ao usuário:
+Classifique cada achado e reporte-os ao usuário:
 
 1. **Confirmado** — plano bate com o código; segue como está.
 2. **Defasado** — fato objetivo mudou (caminho, assinatura, schema); corrija no plano (Passo 7) e ajuste a abordagem.
 3. **Conflitante** — decisão de produto/arquitetura diverge (plano diz X, roadmap/notebook posterior diz Y). Adote a fonte mais recente, registre a substituição, e sinalize ao usuário se a divergência for material.
+4. **Awaiting-evidence** — afirmação não verificável ainda (ex. métrica de prod, texto jurídico ausente); não invente — registre e prossiga com default explícito.
+
+**Auditoria de desenho** (além de path/schema) — marque como _defasado_ ou _conflitante_ de design se o plano:
+
+- inventa **cerimônia de boundary** (layers/adapters) sem volatilidade real;
+- propõe **classitis** (pass-through raso) em vez de reusar módulo profundo existente;
+- omite **Appetite** / **Rabbit holes** ou estoura o appetite sem corte;
+- trata como cortável algo **caro de reverter** (access, Consent, unicidade).
 
 ## Passo 5 — Fechar as questões em aberto
 
 Para cada item de "Questões em aberto" do plano:
 
 - **Resolvível por evidência** (o código, o roadmap ou o notebook já responderam) → resolva e registre a resposta com fonte.
-- **Decisão de produto pendente** → carregue a **Recomendação** do plano para o plano de implementação como decisão default, marcada _(assumido — validar com produto)_. Nunca deixe pergunta sem posição, e nunca bloqueie o plano inteiro numa pergunta que tem default razoável.
+- **Decisão de produto pendente** → force o formato **Opções | Recomendação | Alternativas rejeitadas** ([decision-quality.md](../roadmap-item/decision-quality.md)); carregue a Recomendação como default no plano de implementação, marcada _(assumido — validar com produto)_. Nunca deixe pergunta sem posição, e nunca bloqueie o plano inteiro numa pergunta que tem default razoável.
 
 ## Passo 6 — Escrever o plano de implementação
 
-O deliverable é um plano de execução em **fases pequenas e verificáveis**, em ordem de dependência (schema → server → UI → polish é o padrão usual aqui). Para cada fase:
+O deliverable é um plano de execução em **fases pequenas e verificáveis**, em ordem de dependência (schema → server → UI → polish é o padrão usual aqui). Respeite o **Appetite** do plano em `docs/plans/` (ou declare um se estiver ausente): a soma das fases deve caber; se não couber, corte rabbit holes — não estique.
+
+Para cada fase:
 
 - **O que muda**: arquivos concretos (caminho real, criar vs editar), com uma linha do porquê.
+- **Quota do appetite**: quanto desta fase consome (ex. `~0,5 dia` / `só server`).
 - **Migration** (se houver mudança de schema): nome proposto para `pnpm migrate:create <nome>`, o que adiciona, se tem backfill. Seguir a skill `payload-migrations`; `push` é `false` sempre.
 - **Como verificar a fase**: teste, tela, ou query específica — fase sem critério de verificação não é fase.
 - **Fase de UI**: marque explicitamente `Impeccable: shape|craft|critique|polish` (ver Passo 8). Não misture schema e layout na mesma fase.
+
+**Tracer bullet:** se o item for grande, a primeira fatia vertical real (schema mínimo → uma action → uma superfície UI) vem cedo — prova o wiring antes de polish paralelo ou fases cosméticas.
+
+**Depth:** novas utilities/componentes só se esconderem complexidade; preferir estender `campaign*` / shells existentes a criar wrappers rasos.
 
 Guardrails que TODO plano de implementação deste repo inclui (cheque um a um contra o item):
 
@@ -122,7 +139,7 @@ Guardrails que TODO plano de implementação deste repo inclui (cheque um a um c
 - Identificadores em inglês; strings visíveis em pt-BR; valores de slug/enum em português são dados, não se traduzem.
 - Verificação final = checklist do AGENTS.md: `pnpm generate:types`, `generate:importmap` (se componentes), `tsc --noEmit`, `lint`, `test`, `test:e2e`, `build` contra o banco local, scan Aikido dos arquivos editados.
 
-Termine o plano com: dependências assumidas (e o que foi verificado no Passo 2), decisões assumidas _(validar com produto)_, classificação Impeccable do Passo 8, e o que fica explicitamente de fora (com o plano/item para onde vai).
+Termine o plano com: dependências assumidas (e o que foi verificado no Passo 2), decisões assumidas _(validar com produto)_ no formato Opções+Recomendação+rejeitadas, classificação Impeccable do Passo 8, rabbit holes / adiados com gatilho, self-score ≥4/5, e o que fica explicitamente de fora (com o plano/item para onde vai).
 
 ## Passo 7 — Atualizar a documentação se houve divergência
 
@@ -194,7 +211,7 @@ Checklist AGENTS.md completo contra banco **local**; scan Aikido nos arquivos fi
 
 ## Resumo final ao usuário
 
-**Após planejamento (Passos 1–8):** (1) item e estado no roadmap (janela, dependências, bloqueios); (2) veredito da auditoria — o que confirmou, o que estava defasado, o que conflitava; (3) o plano de implementação em fases, com fases Impeccable marcadas; (4) classificação A/B/C/D e decisões assumidas que merecem validação de produto.
+**Após planejamento (Passos 1–8):** (1) item e estado no roadmap (janela, appetite, dependências, bloqueios); (2) veredito da auditoria — confirmado / defasado / conflitante / awaiting-evidence, incl. achados de desenho; (3) o plano de implementação em fases (quota de appetite + tracer bullet), com fases Impeccable marcadas; (4) classificação A/B/C/D, `Qualidade de decisão: N/5`, e decisões assumidas que merecem validação de produto.
 
 **Após implementação (Passo 10):** o que entrou em cada fase, resultado do critique/polish (score/P0–P1 se houver), checklist AGENTS.md + Aikido, e o que ficou de fora.
 

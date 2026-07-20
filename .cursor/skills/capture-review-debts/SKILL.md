@@ -11,6 +11,8 @@ Após um ciclo de entrega, `/simplify` e `/impeccable` deixam achados **maiores 
 
 Precedente canônico: um plano `escala-dry-pos-*` (engenharia pós-simplify) e/ou um plano UX pós-critique (ex.: FD+ vs FD2) — tipos **separados**, fases internas mescladas.
 
+**Qualidade de decisão:** [decision-quality.md](../roadmap-item/decision-quality.md) — caro vs barato, defer+gatilho, depth/YAGNI. Score sozinho não basta: classifique o **tipo de decisão** na triage. Sem tour de fases.
+
 ## Checklist
 
 ```
@@ -66,20 +68,34 @@ Para cada candidato restante, atribua **importância** (1–5) com estes âncora
 | 2     | Higiene/naming, polish cosmético, P3 critique                                               |
 | 1     | Preferência de estilo, rename de pureza, micro-otimização sem evidência                     |
 
+**Bump caro de reverter:** access/LGPD/schema/unicidade/hot path → piso de score **4–5**, mesmo que o simplify tenha rotulado como “nice cleanup”.
+
+**Tipo de decisão** (obrigatório — uma coluna na triage):
+
+| Tipo               | Exemplos                                  | Destino típico                                                                                                           |
+| ------------------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **expensive_lock** | access, Consent, uniqueness, write skew   | registrar / absorver (nunca descartar por score baixo artificial)                                                        |
+| **cheap_polish**   | copy, motion, rename, P3                  | descartar ou já_resolvido                                                                                                |
+| **defer_trigger**  | DRY &lt;3 call sites, abstração prematura | **não registrar** como epic — anotar gatilho (`quando 3º bulk path`, `quando B3`) no plano-pai ou em Explicitamente fora |
+
 **Destino** (escolha exatamente um):
 
-| Destino          | Critério                                                                                                                       |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **registrar**    | Score ≥3 **e** não coberto; cabe num plano próprio ou lote mesclado                                                            |
-| **absorver**     | Score ≥3 mas é fase natural de um plano/`escala-dry-pos-*`/UX já existente                                                     |
-| **descartar**    | Score ≤2 **ou** rename de pureza **ou** "nice to have" sem dono de produto **ou** revisores do simplify pediram skip explícito |
-| **já_resolvido** | Feito no cleanup da sessão                                                                                                     |
+| Destino          | Critério                                                                                                              |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **registrar**    | Score ≥3 **e** não coberto **e** tipo ≠ defer_trigger puro; cabe num plano próprio ou lote mesclado                   |
+| **absorver**     | Score ≥3 mas é fase natural de um plano/`escala-dry-pos-*`/UX já existente                                            |
+| **descartar**    | Score ≤2 **ou** rename de pureza **ou** "nice to have" sem dono **ou** skip explícito do simplify **ou** cheap_polish |
+| **defer**        | Tipo defer_trigger: não cria ID novo; registra gatilho no plano-pai / Explicitamente fora                             |
+| **já_resolvido** | Feito no cleanup da sessão                                                                                            |
+
+Preferir **defer+gatilho** a **registrar** para DRY prematuro — alinha a YAGNI / deep modules e aos precedentes `escala-dry-pos-*`.
 
 **Separação de tipos (não misturar num único plano):**
 
 - **Engenharia / escala / DRY** → família `escala-dry-pos-<slug>.md`, IDs tipo `A7`, `C11`, `FD+`, `RS+`, `O0+` (fill-in ou próximo ID da trilha).
 - **UX / produto pós-critique** → plano tipo `*-ux-pos-critique.md` ou fases num FD2 existente (`Impeccable: B|C|D` no `roadmap-item`).
 - Nunca fundir N+1 SQL com "glossário de engajado" no mesmo item (precedente FD+ ≠ FD2).
+- Nunca fundir **expensive_lock** com **cheap_polish** no mesmo lote sem fases ordenadas (lock primeiro).
 
 **Impeccable no registro:** ao chamar `roadmap-item`, a classificação A–D dele vale — débitos só-backend são **A**; UX pós-critique são **B** (encaixe) ou **C** se fluxo novo.
 
@@ -88,7 +104,8 @@ Para cada candidato restante, atribua **importância** (1–5) com estes âncora
 Dentro do **mesmo tipo** (engenharia **ou** UX):
 
 - Mesclar se compartilham **superfície** (mesma rota/loader/shell) **ou** **pai** (mesmo item do roadmap que acabou de ser entregue).
-- Um plano, várias **fases** ordenadas por ROI (perf/access antes de DRY cosmético; P2 produto antes de P3 motion).
+- Um plano, várias **fases** ordenadas por ROI (expensive_lock / perf/access antes de DRY cosmético; P2 produto antes de P3 motion).
+- Declarar **appetite** do lote (ex. `~1 dia eng fill-in`) para o `roadmap-item` não virar epic sem teto.
 - Não mesclar across pais não relacionados (débito do C3 com débito do reset de senha → dois itens).
 - Se sobrar um único achado score ≥3, ainda assim um plano curto é melhor que linha órfã no roadmap sem plano.
 
@@ -99,14 +116,15 @@ Alvo de merge: **1 plano engenharia + no máximo 1 plano UX** por sessão de ent
 Mostre ao usuário **antes** de editar docs:
 
 ```markdown
-| ID  | Resumo        | Origem           | Score | Destino        | Lote mesclado   |
-| --- | ------------- | ---------------- | ----- | -------------- | --------------- |
-| S1  | …             | simplify/perf    | 4     | registrar      | Escala pós-X F1 |
-| I2  | …             | critique P2      | 3     | absorver → FD2 | —               |
-| S3  | rename pureza | simplify/quality | 2     | descartar      | —               |
+| ID  | Resumo        | Origem           | Score | Tipo decisão    | Destino        | Lote mesclado    |
+| --- | ------------- | ---------------- | ----- | --------------- | -------------- | ---------------- |
+| S1  | …             | simplify/perf    | 4     | expensive_lock  | registrar      | Escala pós-X F1  |
+| S2  | shared helper | simplify/reuse   | 3     | defer_trigger   | defer          | gatilho: 3º path |
+| I2  | …             | critique P2      | 3     | cheap_polish→P2 | absorver → FD2 | —                |
+| S3  | rename pureza | simplify/quality | 2     | cheap_polish    | descartar      | —                |
 ```
 
-Inclua baldes **já_resolvido** e **descartar** com uma linha de racional cada (transparência > silêncio).
+Inclua baldes **já_resolvido**, **descartar** e **defer** com uma linha de racional/gatilho cada (transparência > silêncio).
 
 **Pare e confirme.** Só avance ao Passo 6 com aprovação explícita (ou ajuste pedido). Sem confirmação = não toca `docs/roadmap.md` / `docs/plans/`.
 
@@ -114,13 +132,14 @@ Inclua baldes **já_resolvido** e **descartar** com uma linha de racional cada (
 
 Para cada lote com destino **registrar** ou **absorver**:
 
-1. Invoque **`roadmap-item`** com o escopo do lote (não um item por achado micro).
+1. Invoque **`roadmap-item`** com o escopo do lote (não um item por achado micro). Inclua **appetite** e **rabbit holes** do lote.
 2. Se **absorver**: peça à skill para editar o plano existente (nova fase/seção), não criar ID paralelo — mesmo precedente "Gap vs 2022".
-3. Se **registrar**: slug `escala-dry-pos-<pai>` ou `<surface>-ux-pos-critique`; posicione como fill-in (paralelo) salvo dependência dura de trilha.
-4. No plano, seções obrigatórias além do template:
+3. Se **registrar**: slug `escala-dry-pos-<pai>` ou `<surface>-ux-pos-critique`; posicione como fill-in (paralelo) salvo dependência dura de trilha. Appetite curto obrigatório — débito sem teto vira epic.
+4. Se **defer**: não chame `roadmap-item` só por isso; anote o gatilho no plano-pai (Adiado com gatilho / Explicitamente fora) ou na mensagem de triage confirmada.
+5. No plano, seções obrigatórias além do template:
    - **Já resolvido no simplify/critique (não reabrir)**
-   - **Explicitamente fora** (skips dos revisores + descartes deste triage)
-5. Classe Impeccable A–D conforme `roadmap-item` Passo 4.
+   - **Explicitamente fora** (skips dos revisores + descartes + defers com gatilho deste triage)
+6. Classe Impeccable A–D conforme `roadmap-item` Passo 4; self-score de decisão ≥4/5 antes de gravar.
 
 Não implemente as fases aqui. Apontar `implement-roadmap-item` só se o usuário pedir em seguida.
 
@@ -132,12 +151,14 @@ Não implemente as fases aqui. Apontar `implement-roadmap-item` só se o usuári
 | "Edito o roadmap na mão, é só um bullet" | Sempre `roadmap-item` (grafo, janela, plano, cortes)                  |
 | "Rename PascalCase / pureza merece ID"   | Score ≤2 → descartar, a menos que desbloqueie reuso real já pedido    |
 | "Junto DRY e UX num FD+"                 | Quebra o precedente FD+/FD2; tipos separados                          |
+| "DRY com 1 call site vira escala-dry"    | defer_trigger + gatilho; não registrar epic YAGNI                     |
 | "Não li o plano existente"               | Grep primeiro; absorver > duplicar                                    |
 | "Registro sem perguntar"                 | Passo 5 é gate; docs de produto não são scratchpad                    |
+| "Corto access/LGPD do lote por tempo"    | expensive_lock nunca é cortável por appetite                          |
 
 ## Resumo ao usuário
 
-1. Contagem: colhidos / já_resolvidos / descartados / absorvidos / a registrar
-2. Tabela de triage (final pós-confirmação)
-3. IDs/slugs criados ou planos estendidos (links)
-4. O que ficou de fora de propósito (e por quê)
+1. Contagem: colhidos / já_resolvidos / descartados / deferidos / absorvidos / a registrar
+2. Tabela de triage (final pós-confirmação), com coluna tipo de decisão
+3. IDs/slugs criados ou planos estendidos (links) + appetite dos lotes
+4. O que ficou de fora de propósito (e por quê / gatilho)

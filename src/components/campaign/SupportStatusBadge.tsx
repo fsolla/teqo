@@ -7,20 +7,30 @@ const statusPresentation = {
   engajado: {
     label: 'Engajado',
     variant: 'support-engaged',
+    summary: 'Participa ativamente do núcleo e tem acesso à campanha.',
   },
   a_abordar: {
     label: 'A abordar',
     variant: 'support-to-approach',
+    summary: 'Cadastrado, mas o engajamento ainda não foi confirmado.',
   },
   em_disputa: {
     label: 'Em disputa',
     variant: 'support-disputed',
+    summary: 'Apoio contestado, incerto ou em negociação.',
   },
   negativo: {
     label: 'Negativo',
     variant: 'support-negative',
+    summary: 'Declarou não apoiar ou recusou o contato.',
   },
 } as const
+
+export const supportStatusLabel = (status: SupportStatus): string =>
+  statusPresentation[status].label
+
+export const supportStatusSummary = (status: SupportStatus): string =>
+  statusPresentation[status].summary
 
 export const SupportStatusBadge = ({ status }: { status: SupportStatus }) => {
   const presentation = statusPresentation[status]

@@ -2,6 +2,8 @@
 
 Estrutura extraída dos planos existentes (`overview-lista-nucleos.md`, `visitados-recentemente.md`, etc.). Manter as seções nesta ordem; omitir "Design (Impeccable)" apenas na classe **A** (só backend); omitir a subseção "Referência visual (UX Pilot)" quando não houver design-ref.
 
+Filtros de decisão (caro vs barato, appetite, rabbit holes, depth): [decision-quality.md](decision-quality.md).
+
 ````markdown
 # <Título do item em pt-BR>
 
@@ -9,6 +11,7 @@ Status: rascunho
 Atualizado em: <YYYY-MM-DD>
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (<seção e/ou ID, ex.: "Trilha C, item C6">)
 Impeccable: <A | B | C | D> — <uma linha: N/A sem UI | encaixe em tela X | UI nova em rota Y | ref Nome.png>
+Appetite: <ex.: ~1–2 dias eng; migration + 1 action + encaixe em lista existente>
 Responsável: —
 
 ## Design (Impeccable)
@@ -54,14 +57,18 @@ de produto que originou o item, com data. Responde "por que isso existe".>
 
 ## Decisões travadas
 
-- **<Decisão em negrito>.** <Racional e fonte com data (decisão de produto YYYY-MM-DD,
-  AGENTS.md, roadmap...). Decisão sem "por quê" não é decisão travada.>
+<!-- Só decisões caras de reverter. Formato: decisão + por quê + fonte/data + alternativas rejeitadas.
+     Ver decision-quality.md. Decisão silenciosa ou sem alternativas rejeitadas é defeito. -->
+
+- **<Decisão em negrito>.** <Racional e fonte com data.> **Rejeitado:** <alternativa A porque …; B porque …>.
 - **i18n e naming** seguem o AGENTS.md: identificadores em inglês (<listar os principais
   nomes propostos>), strings visíveis em pt-BR.
 
 ## Questões em aberto
 
-- **<Pergunta>?** <Contexto curto.> **Recomendação:** <posição concreta>. <"Definir com
+<!-- Formato: Opções + Recomendação. Nunca pergunta sem posição. -->
+
+- **<Pergunta>?** **Opções:** A | B | C. **Recomendação:** <posição concreta e por quê>. <"Definir com
   produto" quando aplicável — mas nunca pergunta sem recomendação.>
 
 ## Abordagem proposta
@@ -72,6 +79,8 @@ flowchart LR
 \```
 
 Componentes:
+
+<!-- Depth check: reusar módulos profundos existentes; não criar pass-through raso. -->
 
 - **`<NomeDoComponente/função>`** (em `src/<caminho real>`): <responsabilidade, assinatura,
   o que reusa. Queries Payload com `user` levam `overrideAccess: false`; escrita
@@ -89,6 +98,18 @@ Componentes:
 
 - <Cada exclusão explícita, citando o plano/item do roadmap para onde ela vai.>
 
+## Rabbit holes
+
+<!-- Armadilhas de escopo se tocadas "de passagem" — distinto de Não escopo. -->
+
+- **<Risco>.** Se alguém “só completar”: <explosão>. **Mitigação neste item:** <corte / boundary / defer+gatilho>.
+
+## Adiado com gatilho
+
+<!-- Opcional. Barato demais para o appetite agora, mas com evidência que reabre. -->
+
+- **<O quê>.** Revisitar quando: <evidência concreta — ex. 3º call site, QPS, item B3 entregue>.
+
 ## Referências
 
 - `docs/roadmap.md` (<seção/linhas>)
@@ -103,3 +124,4 @@ Notas:
 - Nível de detalhe alvo: ~100–130 linhas, como os planos existentes. Menos que isso costuma significar que o Passo 3 (exploração do código) foi pulado.
 - Classe **A**: omita a seção "Design (Impeccable)" e use no cabeçalho `Impeccable: A — N/A (sem superfície UI)`.
 - Não rode `/impeccable craft|critique|polish` ao criar o plano — só classifique e semeie; a skill `implement-roadmap-item` executa o ciclo.
+- Self-score de qualidade de decisão (0–5) antes de gravar: ver [decision-quality.md](decision-quality.md). Se Rabbit holes ou Adiado com gatilho estiverem vazios de propósito, escreva `Nenhum neste item.` — não omita a seção.

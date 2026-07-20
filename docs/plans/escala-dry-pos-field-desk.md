@@ -1,7 +1,7 @@
 # Escala e DRY pós-Field Desk
 
 Status: registrado no roadmap (fases pendentes)
-Atualizado em: 2026-07-19
+Atualizado em: 2026-07-20
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (FD+, fill-in de engenharia pós-polish Impeccable `/campanha`)
 Responsável: —
 
@@ -12,6 +12,10 @@ Em 2026-07-19 a vertical `/campanha` passou por um ciclo Impeccable (critique 28
 A passagem `/simplify` (2026-07-19) aplicou cleanup pontual (freshness sem ramo relativo morto, strip sem métricas duplicadas do card de prioridade, `hidden` único nos filtros avançados, wrappers de data inlined, Badge simplificado). Os revisores (quality / reuse / performance) deixaram débitos **maiores que cleanup** — registrados aqui.
 
 **Já resolvido no simplify (não reabrir):** `formatCampaignDataFreshness` morto removido; `CampaignDataFreshness` só `asOf` + “Atualizado agora”; overview sem Gap/série no strip (ficam no card); MetricStrip sem `bg-card` interno em células quietas; `hidden={!advancedOpen}` sem `className` duplicado; `relativeDate*` inlined em overview/feed; comments de shell/strip.
+
+**Já resolvido no ciclo dashboard (2026-07-19/20 — parcial; não reabrir):** `formatElectionNumber` no dashboard `geral` (`CampaignDashboard`, `LeadershipStatusCard`) em vez de `Intl.NumberFormat` local — overlap parcial com objetivo “datas/números canônicos”; **VR+ F2** (`formatRelativeAge` variants) e **FD+ F4** (listagens) permanecem pendentes.
+
+**Adiado com gatilho (triage capture-review-debts 2026-07-20):** fundir dois `CampaignMetricStrip` do dashboard em grid 2×3 — só quando houver terceira strip no home ou na Fase 3 VoteGoals→MetricStrip.
 
 **Overlap com VR+:** VR+ Fase 2 ainda cita migrar `lastUpdateLabel` / feed — o feed já usa `formatRelativeAge`; o restante de VR+ F2 (variante floor-dias no dashboard) permanece em [escala-dry-pos-visitados-recentemente.md](escala-dry-pos-visitados-recentemente.md), não aqui.
 

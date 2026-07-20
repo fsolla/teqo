@@ -1,7 +1,7 @@
 # Escala e DRY pós-visitados recentemente
 
 Status: registrado no roadmap (fases pendentes)
-Atualizado em: 2026-07-19
+Atualizado em: 2026-07-20
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (VR+, fill-in de engenharia pós-MVP)
 Responsável: —
 
@@ -10,6 +10,8 @@ Responsável: —
 O fill-in **Visitados recentemente** ([visitados-recentemente.md](visitados-recentemente.md)) entregou o MVP client-side: `recentVisits.ts` + `RecentVisitTracker` + `RecentlyVisited` no dashboard `/campanha`, integração em detalhe/listagem de núcleos, `buildNucleusListVisitLabel` / `buildNucleusListVisitHref`, labels de cobertura/estimativa compartilhados com `NucleusFilters`, e limpeza no logout (`CampaignSidebar`). Três passagens `/simplify` (2026-07-19) aplicaram cleanup pontual; os revisores (quality / performance / reuse) deixaram débitos **maiores que cleanup** — registrados aqui.
 
 **Já resolvido no simplify (não reabrir):** `formatRelativeAge` extraído para `src/utilities/formatRelativeAge.ts` (evita puxar `campaignTime.ts` no client); prop `now` do servidor; remoção de `RECENT_VISITS_CHANGED_EVENT` (morto — painel e tracker não coexistem na mesma rota); `nucleusListCoverageLabels` / `nucleusListEstimateLabels` compartilhados; `buildNucleusListVisitHref` sem `page` (dedup de paginação); `listVisitHref` lazy no branch com filtro.
+
+**Já resolvido no ciclo dashboard (2026-07-19/20 — parcial vs F3/F4; não reabrir):** extração de **`RecentlyVisitedCard`** (`compact`/`labeled`, `onVisitCountChange`, hidratação SSR); **`RecentlyVisited`** compõe `RecentlyVisitedCard` + `UpcomingActionPlansCard`; **`GeneralDashboardTopRow`** hoista recentes no top-row `geral` (3:2:1). **F1 (`pageshow`/`storage`) continua pendente** — listeners ainda não registrados em `RecentlyVisitedCard`.
 
 ## Objetivos
 
@@ -31,7 +33,7 @@ O fill-in **Visitados recentemente** ([visitados-recentemente.md](visitados-rece
 
 - **`pageshow` + `storage` vs reintroduzir evento custom?** O evento foi removido porque tracker e painel não montam juntos; bfcache e multi-tab são os casos reais restantes. **Recomendação:** `pageshow` (`event.persisted`) + `window.addEventListener('storage', …)` filtrando `STORAGE_KEY` — sem event bus custom.
 - **Unificar `floor` (dias) vs `round` (minutos/horas)?** `lastUpdateLabel` usa dias inteiros; `formatRelativeAge` arredonda minutos/horas/dias. **Recomendação:** exportar variantes explícitas em `formatRelativeAge.ts` (`formatRelativeAgeDays`, `formatRelativeAge`) em vez de forçar um único comportamento.
-- **Extrair row shell agora?** Só dois consumidores (`QueueList`, `RecentlyVisited`) com diferenças (ícone leading vs `ArrowRight`, prefixo "Última atualização"). **Recomendação:** extrair quando um terceiro painel de atalhos aparecer, ou na Fase 3 se o drift visual incomodar produto.
+- **Extrair row shell agora?** Só dois consumidores (`ActionQueuesCard`/`QueueSection`, `RecentlyVisitedCard`) com diferenças (ícone leading vs `ArrowRight`, prefixo "Última atualização"). **`RecentlyVisitedCard` já extrai o painel de visitas.** **Recomendação:** extrair `CampaignLinkListRow` quando um terceiro painel de atalhos aparecer, ou na Fase 3 se o drift visual incomodar produto (defer no triage 2026-07-20).
 - **`next/dynamic` no painel?** **Recomendação:** só se Lighthouse mostrar o chunk como relevante no `/campanha`; o painel já retorna `null` quando vazio.
 
 ## Abordagem proposta
@@ -47,7 +49,7 @@ flowchart TD
 
 ### Fase 1 — Refresh confiável do painel
 
-- **`RecentlyVisited`** (`src/components/campaign/RecentlyVisited.tsx`): no `useEffect` de mount, registrar `pageshow` (refresh quando `event.persisted`) e `storage` (quando `e.key === STORAGE_KEY` ou `e.key === null` para `clear()`).
+- **`RecentlyVisitedCard`** (`src/components/campaign/RecentlyVisitedCard.tsx`): no `useEffect` de mount, registrar `pageshow` (refresh quando `event.persisted`) e `storage` (quando `e.key === STORAGE_KEY` ou `e.key === null` para `clear()`).
 - Opcional: extrair `useRecentVisits()` (`useState` + listeners + `listRecentVisits`) se Fase 1 crescer — hoje um hook de ~15 linhas é suficiente.
 
 ### Fase 2 — DRY de tempo relativo no dashboard
@@ -60,12 +62,14 @@ flowchart TD
 ### Fase 3 — DRY de linha de lista
 
 - Extrair **`CampaignLinkListRow`** (ex. `src/components/campaign/CampaignLinkListRow.tsx`): props `href`, `title`, `subtitle?`, `leadingIcon?`, `trailingIcon?` (`ArrowRightIcon` default para filas).
-- Refatorar **`QueueList`** em `CampaignDashboard.tsx` e **`RecentlyVisited`** para usar o componente; alinhar classes (`truncate` no subtítulo, `min-h-11`).
+- Refatorar **`QueueSection`** em `ActionQueuesCard.tsx` e **`RecentlyVisitedCard`** para usar o componente; alinhar classes (`truncate` no subtítulo, `min-h-11`).
+- **Defer (triage 2026-07-20):** só quando 3º painel de atalhos ou drift visual incomodar produto.
 
 ### Fase 4 — Shell do dashboard por role
 
-- Introduzir wrapper **`CampaignDashboardShell`** com prop `maxWidthClass` (`max-w-screen-2xl` / `max-w-5xl` / `max-w-4xl`) renderizando header slot + **`<RecentlyVisited now={now} />`** + children.
-- `GeneralDashboard` / `CoordinatorDashboard` / `LeadershipDashboard` passam a compor o shell em vez de repetir o painel.
+- Introduzir wrapper **`CampaignDashboardShell`** com prop `maxWidthClass` (`max-w-screen-2xl` / `max-w-5xl` / `max-w-4xl`) renderizando header slot + painel recentes + children.
+- `CoordinatorDashboard` / `LeadershipDashboard` passam a compor o shell em vez de repetir o painel.
+- **`GeneralDashboardTopRow` já cobre o layout `geral`** (top-row 3:2:1) — F4 foca coordenador/liderança; **defer** até produto pedir paridade.
 
 ### Fase 5 — Micro-perf (opcional, cortável)
 
@@ -92,8 +96,10 @@ flowchart TD
 - [visitados-recentemente.md](visitados-recentemente.md) — MVP entregue
 - [escala-dry-pos-onda0.md](escala-dry-pos-onda0.md) — precedente de registro pós-`/simplify`
 - `src/utilities/recentVisits.ts`, `src/utilities/formatRelativeAge.ts`
-- `src/components/campaign/RecentlyVisited.tsx`, `RecentVisitTracker.tsx`
-- `src/components/campaign/CampaignDashboard.tsx` (`QueueList`, `lastUpdateLabel`)
+- `src/components/campaign/RecentlyVisited.tsx`, `RecentlyVisitedCard.tsx`, `RecentVisitTracker.tsx`
+- `src/components/campaign/GeneralDashboardTopRow.tsx`
+- `src/components/campaign/ActionQueuesCard.tsx` (`QueueSection`)
+- `src/components/campaign/CampaignDashboard.tsx` (`lastUpdateLabel`)
 - `src/components/campaign/NucleusListOverview.tsx`, `NucleusUpdateFeed.tsx`
 - `src/utilities/nucleusUi.ts` (`buildNucleusListVisitLabel`, `buildNucleusListVisitHref`)
 - `docs/roadmap.md` (fill-ins VR+)

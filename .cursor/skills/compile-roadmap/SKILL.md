@@ -28,14 +28,18 @@ Esta skill **reescreve** `docs/roadmap.md` para voltar a ser um documento de **p
 
 **Escopo padrão:** só `docs/roadmap.md`. Planos em `docs/plans/` **não** são movidos nem apagados. Só atualize/arquive planos se o usuário pedir explicitamente.
 
+**Qualidade de decisão (não é tour):** ao comprimir, aplique o filtro de [decision-quality.md](../roadmap-item/decision-quality.md) em escala de documento — enxuga **prosa**, não apaga locks caros nem gatilhos de defer. Inspired-product: Próximos em **problema/resultado**, não feature factory; compile **não** roda discovery nem reescreve o roadmap como OKRs.
+
+Compile **não** reordena estratégia nem inventa datas de ship para IDs abertos. Âncoras TSE ficam (restrição externa real).
+
 ## Checklist
 
 ```
 - [ ] 1. Ler fontes canônicas (roadmap + notebook + gaps)
-- [ ] 2. Inventariar entregues vs abertos (com evidência)
+- [ ] 2. Inventariar entregues vs abertos (com evidência + tipo de decisão)
 - [ ] 3. Mostrar inventário + proposta de corte ao usuário e pedir confirmação
-- [ ] 4. Reescrever docs/roadmap.md no template limpo
-- [ ] 5. Verificar links, mermaid, IDs e consistência cruzada
+- [ ] 4. Reescrever docs/roadmap.md no template limpo (outcome em Próximos; gatilhos intactos)
+- [ ] 5. Verificar links, mermaid, IDs, locks/gatilhos e self-score (≥4/5)
 - [ ] 6. Entregar diff resumido + o que foi cortado
 ```
 
@@ -47,7 +51,7 @@ Leia **nesta ordem** (não edite antes de inventariar):
 2. **`.cursor/rules/projects/nucleos-eleitorais.mdc`** (ou notebook do projeto ativo) — status operacional que pode estar à frente do roadmap.
 3. **`AGENTS.md`** — só as seções Known Gaps / Recently resolved / checklist de campanha (para alinhar bloqueadores e não contradizer decisões travadas).
 4. **Data de hoje** (contexto da sessão) vs âncoras do calendário — define a janela vigente no cabeçalho limpo.
-5. **Planos** — só sob demanda: abra `docs/plans/<slug>.md` se o status no roadmap estiver ambíguo (ex.: "implementado" vs "registrado" vs "em branch"). Não leia todos os planos de uma vez.
+5. **Planos** — só sob demanda: abra `docs/plans/<slug>.md` se o status no roadmap estiver ambíguo (ex.: "implementado" vs "registrado" vs "em branch") **ou** se precisar do **Appetite** / **Adiado com gatilho** / outcome do item aberto. Não leia todos os planos de uma vez.
 
 Fontes **fora do repo** (`plano-arquitetura-campanha-2026.md`, Cowork) só se o inventário precisar resolver um conflito; cite e não invente.
 
@@ -68,24 +72,38 @@ Sinais de **ainda aberto** (manter em destaque):
 - Fill-ins sem ✓
 - Itens do site/admin/white-label ainda listados como próximos
 
-Para cada ID, uma linha:
+Para cada ID, uma linha (coluna **Tipo** obrigatória — guia keep/compress/drop):
 
-| ID  | Estado                         | Evidência (1 frase) | Plano linkado | Ação no compile          |
-| --- | ------------------------------ | ------------------- | ------------- | ------------------------ |
-| A4  | entregue                       | mesclado 2026-07-18 | baseline-…    | comprimir em Já entregue |
-| E4  | aberto                         | janela 3            | mapa-proj…    | manter em Próximos       |
-| C2  | entregue eng. / bloqueio prod. | Onda 0 Consent      | cadastro-…    | 1 linha em Já + Onda 0   |
+| ID  | Estado                         | Tipo           | Evidência (1 frase) | Plano linkado  | Ação no compile          |
+| --- | ------------------------------ | -------------- | ------------------- | -------------- | ------------------------ |
+| A4  | entregue                       | —              | mesclado 2026-07-18 | baseline-…     | comprimir em Já entregue |
+| E4  | aberto                         | delivery_open  | janela 3            | mapa-proj…     | manter em Próximos       |
+| C2  | entregue eng. / bloqueio prod. | expensive_lock | Onda 0 Consent      | cadastro-…     | 1 linha em Já + Onda 0   |
+| C8  | aberto                         | defer_trigger  | gatilho: 3º bulk    | escala-dry-…   | manter + **gatilho**     |
+| C5  | proposto                       | assumption     | validar c/ produto  | (ou sem plano) | Próximos + **A validar** |
+
+**Tipos** (alinhados a `capture-review-debts` / `decision-quality.md`):
+
+| Tipo               | Significado                                                          | No compile                                           |
+| ------------------ | -------------------------------------------------------------------- | ---------------------------------------------------- |
+| **expensive_lock** | Consent, access, unicidade, path crítico eleitoral, hold de produção | Nunca “cortar por densidade”; Onda 0 / não cortáveis |
+| **delivery_open**  | Feature/débito pronto para entrega engenharia                        | Próximos com meia frase de **problema/resultado**    |
+| **defer_trigger**  | Adiado com evidência de revisitação (DRY prematuro, etc.)            | Manter gatilho visível; não virar “depois” vago      |
+| **assumption**     | _(proposto — validar)_, sem plano, sem evidence de discovery         | Faixa **A validar**; não inventar data de ship       |
 
 **Não invente status.** Se roadmap e notebook divergirem, prefira o notebook + grep rápido no código só para desempate; reporte a divergência ao usuário.
+
+**Checagem feature-factory (Inspired, 30s):** se a maioria dos abertos for só nome de feature sem problema/resultado, e vários forem `assumption`, anote no Passo 3 — o rewrite deve corrigir a prosa dos bullets, **não** expandir o escopo nem rodar discovery.
 
 ## Passo 3 — Confirmar antes de escrever
 
 Mostre ao usuário (conciso):
 
-1. Contagem: N entregues a comprimir / M abertos a manter / K bloqueios operacionais.
-2. O que **sai** do corpo detalhado (seções Ciclo 1/2/2+ verbosas, linhas de janela já ✓, design-refs só de itens feitos, prosa de migration IDs já aplicados).
-3. O que **fica** (calendário, princípios, Onda 0 pendente, grafo dos abertos, janelas só com pendentes, fill-ins abertos, cortes ainda relevantes, bloqueadores, fora de escopo).
-4. Pergunta: "Posso reescrever `docs/roadmap.md` assim?"
+1. Contagem: N entregues a comprimir / M abertos a manter / K bloqueios operacionais / A assumptions / D defers com gatilho.
+2. O que **sai** do corpo detalhado (seções Ciclo 1/2/2+ verbosas, linhas de janela já ✓, design-refs só de itens feitos, prosa de migration IDs já aplicados, solution-spec de itens ✓).
+3. O que **fica** (calendário, princípios/**locks caros**, Onda 0 pendente, grafo dos abertos, janelas só com pendentes, fill-ins abertos, cortes reescritos por tipo, bloqueadores, fora de escopo, faixa A validar se houver).
+4. Anti-corte explícito: nenhum `expensive_lock` será movido para Cortes seguros só para enxugar.
+5. Pergunta: "Posso reescrever `docs/roadmap.md` assim?"
 
 **Pare aqui até confirmação**, salvo se o usuário já tiver dito explicitamente "compila/limpa agora" neste turno.
 
@@ -97,8 +115,9 @@ Substitua o arquivo inteiro (não faça um diff cirúrgico em 40 lugares — o r
 
 - IDs estáveis (`A5`, `C10`, `E4`, `O0+`, …)
 - Links para planos ainda relevantes
-- Datas de âncora do calendário TSE
-- Decisões travadas e Fora de escopo (podem enxugar prosa, não o sentido)
+- Datas de âncora do calendário TSE (restrição externa — **não** inventar datas de ship para IDs abertos)
+- Decisões travadas **caras** e Fora de escopo (podem enxugar prosa, não o sentido)
+- Gatilhos de `defer_trigger` / “Adiado com gatilho” dos planos abertos
 - Tabela de bloqueadores atualizada
 
 Use **este esqueleto** (adicione/remova subseções só se o inventário exigir):
@@ -118,13 +137,15 @@ resumo abaixo + planos em [`docs/plans/`](plans/) + notebook
 
 ## Princípios e decisões travadas
 
-[bullets curtos; sem repetir AGENTS inteiro]
+[bullets curtos = locks caros de reverter + políticas vigentes;
+sem repetir AGENTS inteiro; sem prosa de implementação]
 
 ## Onda 0 — caminho crítico para dados reais
 
 [só o que AINDA falta: lote jurídico, smoke, onboarding, holds.
 Não recontar migrations/features já em main — 1 frase "engenharia de
-núcleos/C2/C3/… já em produção de código".]
+núcleos/C2/C3/… já em produção de código".
+expensive_lock: nunca omitir hold de Consent / LGPD ainda aberto.]
 
 ## Já entregue (resumo)
 
@@ -138,20 +159,29 @@ implementation notes. Exemplo de densidade alvo:
 - **Fill-ins** — visitados, reset senha/perfil, … (só os ✓)
 
 Linkar o plano **só** se ainda for referência útil; não listar migration IDs
-nem fases `/simplify` no resumo.
+nem fases `/simplify` no resumo. Já entregue = output comprimido (ok).
 
 ## Próximos — Campanha (`/campanha`)
 
 ### Por trilha (só abertos)
 
-- **A** — A5, A6, A7, A8, …
-- **B** — B3, B4, B5, …
-- **C** — C4, C5, C10, C11, …
-- **D** — D2, …
-- **E** — E4, E5, E6, E7, …
-- **Débitos / fill-ins abertos** — O0+, VR+, RS+, FD+, FD2, …
+- **A** — …
+- **B** — …
+- **C** — …
+- **D** — …
+- **E** — …
+- **Débitos / fill-ins abertos** — …
 
-Cada bullet: `ID — nome` + meia frase + link do plano. Sem changelog.
+Cada bullet: `ID — nome` + **meia frase de problema/resultado** (Inspired:
+outcome > output) + link do plano. Sem changelog, sem solution-spec.
+Se `defer_trigger`: incluir `· gatilho: <evidência>`.
+Se `assumption`: marcar _(validar)_ — não inventar data.
+
+### A validar (assumptions)
+
+[Opcional — só se o inventário tiver `assumption`. Lista curta: ID + o que
+falta validar. Impede que `suggest-next` trate como delivery pronto.
+Não rodar discovery aqui — só surfacing.]
 
 ### Referências de design (só itens abertos com ref)
 
@@ -172,18 +202,28 @@ se o usuário pedir continuidade — default = renumerar limpo).
 
 Colunas: Ordem | Item | Plano | Depende de | Paralelizável com.
 
+Não adicionar coluna de “deadline de feature” inventada — só âncoras TSE
+no cabeçalho/calendário.
+
 ### Fill-ins abertos
 
-Só itens sem ✓. Uma linha cada + link.
+Só itens sem ✓. Uma linha cada + link. Preferir problema/resultado.
+`defer_trigger`: gatilho na mesma linha.
 
 ### Cortes seguros / não cortáveis
 
 Reescrever a lista para citar **apenas IDs ainda abertos**. Remover
 conselhos sobre fases já mescladas (ex.: "preferir C6 fases 1–2" se C6 ✓).
 
+- **Não cortáveis** = `expensive_lock` + path crítico eleitoral / Onda 0 /
+  base nominal / agenda se forem política vigente. Enxugar **nunca** move
+  lock caro para Cortes seguros.
+- **Cortes seguros** = `delivery_open` barato / polish / assumption sem
+  evidence — com racional de uma linha. Não cortar o caro “para caber”.
+
 ## Bloqueadores atuais
 
-[tabela atualizada; remover resolvidos]
+[tabela atualizada; remover resolvidos; holds operacionais explícitos]
 
 ## Site público / Admin / White-label / Fora de escopo / Fontes
 
@@ -198,24 +238,46 @@ conselhos sobre fases já mescladas (ex.: "preferir C6 fases 1–2" se C6 ✓).
 | Linha "Atualizado em" enciclopédica                                        | 1 linha: data + janela + foco          |
 | Migration IDs / nomes de fases `/simplify` no corpo                        | Links para planos abertos              |
 | Design-refs de itens ✓                                                     | Design-refs de abertos                 |
+| Solution-spec / prosa de feature nos Próximos                              | Meia frase problema/resultado          |
+| Gatilho perdido (“depois”, “backlog”)                                      | `gatilho: <evidência>` intacto         |
 | "Itens consolidados/removidos" antigo (salvo se ainda explicar um ID vivo) | Fora de escopo atual                   |
 | Prosa duplicada AGENTS/notebook                                            | Ponteiros para AGENTS/notebook         |
 | Janelas cheias de "(entregue …)"                                           | Só pendentes na janela vigente+futuras |
+| Locks caros “para enxugar”                                                 | Onda 0 / não cortáveis / princípios    |
 
-**Densidade alvo:** o arquivo compilado deve caber com folga na leitura de uma sessão de priorização — tipicamente **bem menor** que a versão diário. Se após o rewrite ainda parecer um changelog, corte mais o "Já entregue".
+**Densidade alvo:** o arquivo compilado deve caber com folga na leitura de uma sessão de priorização — tipicamente **bem menor** que a versão diário. Se após o rewrite ainda parecer um changelog, corte mais o "Já entregue" — **não** corte Onda 0 nem gatilhos.
+
+**Smell Inspired (corrigir na prosa, não no escopo):**
+
+| Se…                                         | Então…                                      |
+| ------------------------------------------- | ------------------------------------------- |
+| Próximos = só nomes de feature              | Reescrever bullets como problema/resultado  |
+| Vários `assumption` misturados com delivery | Separar faixa **A validar**                 |
+| Linguagem de compromisso com data inventada | Remover data; manter só âncora TSE / janela |
 
 ## Passo 5 — Verificar
 
 Antes de declarar pronto:
 
-- [ ] Todo ID **aberto** do inventário aparece em Próximos **ou** Bloqueadores **ou** Fill-ins
+- [ ] Todo ID **aberto** do inventário aparece em Próximos **ou** Bloqueadores **ou** Fill-ins **ou** A validar
 - [ ] Nenhum ID entregue reaparece como tarefa a fazer (exceto bloqueio operacional explícito, ex. "C2 dados reais")
 - [ ] Links `plans/…` dos itens abertos resolvem (grep / existência do arquivo)
 - [ ] Mermaid parseia (sem nós órfãos óbvios; setas só entre IDs que existem no diagrama)
 - [ ] Âncoras de calendário e "não cortáveis" ainda cobrem Onda 0 / base nominal / agenda se forem política vigente
+- [ ] Nenhum `expensive_lock` foi movido para Cortes seguros ou omitido da Onda 0 por densidade
+- [ ] Nenhum `defer_trigger` perdeu o **gatilho** (não virou “depois” vago)
+- [ ] Bullets de Próximos legíveis como problema/resultado (não solution-spec)
 - [ ] Skills irmãs continuam válidas: `suggest-next-roadmap-items` e `roadmap-item` devem conseguir operar no arquivo limpo
 
-Se achar item **aberto sem plano**, não invente o plano — liste no resumo final e ofereça `roadmap-item`.
+**Self-score (0–5, ≥4 para declarar pronto)** — 1 ponto cada:
+
+1. Ainda é documento de **próximos**, não diário de entregas?
+2. Locks caros (Onda 0 / não cortáveis / princípios) intactos?
+3. Gatilhos de defer preservados?
+4. Próximos em outcome/problema (não feature factory)?
+5. Assumptions separados ou marcados _(validar)_?
+
+Se &lt;4 → corrigir o arquivo antes do Passo 6. Se achar item **aberto sem plano**, não invente o plano — liste no resumo final e ofereça `roadmap-item`.
 
 ## Passo 6 — Entregar
 
@@ -228,6 +290,9 @@ Resposta ao usuário:
 - Comprimidos: N itens → seção Já entregue
 - Em foco: M abertos (janela vigente: …)
 - Bloqueios operacionais: …
+- Assumptions / a validar: …
+- Defers com gatilho preservados: …
+- Qualidade de compile: N/5
 
 ## Principais cortes
 
@@ -245,6 +310,9 @@ Rodar `suggest-next-roadmap-items` na versão limpa?
 - Inventar IDs / reabrir itens "Fora de escopo"
 - Expandir o roadmap com ideias novas (use `roadmap-item`)
 - Deixar a linha "Atualizado em" como parágrafo de changelog de novo
+- Cortar `expensive_lock` / Onda 0 holds “para caber”
+- Apagar gatilhos de defer ou inventar deadlines de feature
+- Rodar discovery / opportunity assessment / reescrever o roadmap como OKRs (Inspired fica na **prosa** dos Próximos e na faixa A validar)
 
 ## Exemplo de compressão
 
@@ -252,6 +320,11 @@ Rodar `suggest-next-roadmap-items` na versão limpa?
 
 > **C6 Escala e DRY pós-C2 — implementado e mesclado em `main` (2026-07-19)** — import bulk drizzle, token HMAC + `supporterImportBatch`, KPI aggregate, shells… Duas passagens `/simplify`; débitos maiores → C8.
 
-**Depois (resumo):**
+**Depois (resumo Já entregue):**
 
 > **Operação / escala** — C2–C3 + C6–C9 em `main` (C2 prod. ↔ Onda 0). Débitos abertos: C10, C11.
+
+**Próximos (forma boa vs feature factory):**
+
+- Ruim: `C10 — shared drizzleBulk helper`
+- Bom: `C10 — um só caminho bulk para imports sem N+1 · gatilho: 3º call site · [plano](…)`

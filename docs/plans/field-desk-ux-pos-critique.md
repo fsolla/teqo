@@ -1,15 +1,15 @@
 # UX Field Desk pós-critique
 
 Status: registrado no roadmap (fases pendentes)
-Atualizado em: 2026-07-19
+Atualizado em: 2026-07-20
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (FD2, fill-in de design/produto pós-critique Impeccable `/campanha`)
 Responsável: —
 
 ## Contexto
 
-O re-critique de `/campanha` (2026-07-19, dual-agent) subiu o score de **28 → 32/40** após o ciclo quieter → polish. Os P1 do baseline (parede de filtros, grade de KPI cards, side-tab) estão fechados. Permanecem débitos de **design/produto** (não só DRY) que o time não implementou naquele ciclo — registrados aqui para não se perderem no chat.
+O re-critique de `/campanha` (2026-07-19, dual-agent) subiu o score de **28 → 32/40** após o ciclo quieter → polish. Em **2026-07-19/20**, um segundo ciclo (layout dashboard `geral`, `/simplify`, re-critique) manteve **32/40** e fechou os P1 visuais do dashboard isolado (27→32 no eixo home). Os P1 do baseline anterior (parede de filtros, grade de KPI cards, side-tab) já estavam fechados. Permanecem débitos de **design/produto** registrados nas fases abaixo.
 
-Fonte: [`.impeccable/critique/2026-07-19T11-03-23Z__src-app-campaign-campanha.md`](../../.impeccable/critique/2026-07-19T11-03-23Z__src-app-campaign-campanha.md) e síntese em sessão (heurísticas 7=2 flexibilidade, 10=2 ajuda).
+Fontes: [`.impeccable/critique/2026-07-19T11-03-23Z__src-app-campaign-campanha.md`](../../.impeccable/critique/2026-07-19T11-03-23Z__src-app-campaign-campanha.md), [`.impeccable/critique/2026-07-20T00-01-43Z__src-app-campaign-campanha.md`](../../.impeccable/critique/2026-07-20T00-01-43Z__src-app-campaign-campanha.md) e triage `capture-review-debts` (2026-07-20).
 
 ## Objetivos
 
@@ -18,6 +18,20 @@ Fonte: [`.impeccable/critique/2026-07-19T11-03-23Z__src-app-campaign-campanha.md
 - Outline do dashboard `geral` não pula de `h1` para `h3` (detector `skipped-heading`; Sam/a11y).
 - Empty do coordenador sem núcleos espelha o padrão de liderança (CTA + próximo passo).
 - Guardrails: sem migration obrigatória na v1 da triagem (reusa designação de coordenador existente); sem Consent novo; touch `min-h-11` preservado.
+
+## Já resolvido nesta sessão (dashboard + simplify, 2026-07-19/20 — não reabrir)
+
+Registrado via `capture-review-debts` após layout dashboard + `/simplify` + re-critique Impeccable.
+
+- **`GeneralDashboardTopRow`** — grid desktop 3:2:1 (Filas | Próximos eventos | Recentes); reflow 4:2 quando sem visitas.
+- **`ActionQueuesCard`** — subseções vazias omitidas; estado único “Tudo em dia” (`CheckCircle2Icon` + `Empty`).
+- **`ChoroplethLegend`** — barra rose→vermelho com rótulos 0/máx (`formatElectionNumber`).
+- **`LeadershipStatusCard`** — título, descrição, CTA “Ver núcleos”, grid com ênfase em `engajado`, empty dedicado.
+- **`RecentlyVisitedCard`** — dedup com `RecentlyVisited`; `aria-label` no limpar; `list-none`; modo `compact`/`labeled`.
+- **`CampaignPageShell`** — `mx-auto` (centro em ultra-wide).
+- **`formatElectionNumber`** no dashboard (`CampaignDashboard`, `LeadershipStatusCard`) em vez de `Intl` local.
+- **`buildDashboardQueueItemHref`** — import direto de `ActionQueuesCard` (sem re-export em `CampaignDashboard`).
+- Props `empty` mortas removidas de `QueueSection`; `useCallback` estável em `onVisitCountChange`; hidratação SSR do painel recentes (`useEffect` + `useState([])`).
 
 ## Decisões travadas
 
@@ -48,9 +62,10 @@ flowchart TD
 
 ### Fase 1 — Triagem em lote (P2)
 
-- Em **`CampaignDashboard`** / `QueueSection` com `openCoordinatorAssignment`: modo multi-select (checkbox por linha) + barra “Atribuir coordenador (N)”.
+- Em **`ActionQueuesCard`** / `QueueSection` com `openCoordinatorAssignment`: modo multi-select (checkbox por linha) + barra “Atribuir coordenador (N)”.
 - Server action (ou extensão da existente de assign) recebe `nucleusSlugs[]` + `coordinatorIds[]`; access `geral`; `overrideAccess: false`; txn se multi-write.
 - Reusa padrões de `CoordinatorAssignment` / shell lazy do detalhe do núcleo — extrair só o necessário para não puxar o editor completo N vezes no client.
+- **Opcional (critique h1=3):** exibir idade relativa na linha da fila (“sem atualização há X dias”) quando o item vier de `withoutRecentUpdate` — só metadado de leitura; não bloqueia bulk.
 
 ### Fase 2 — Glossário inline (P2)
 
@@ -63,10 +78,12 @@ flowchart TD
 - Em **`CampaignDashboard`** (`GeneralDashboard`): promover “Filas de ação” a `h2` visível (hoje só `CardTitle` em `div`); manter títulos de cada fila como `h3`.
 - Verificar ordem DOM: h1 → h2 Filas → h3s → h2 Indicadores.
 
-### Fase 4 — Empty coordenador (P3)
+### Fase 4 — Empty coordenador + polish P3 (P3)
 
 - Espelhar **`LeadershipDashboard` empty**: `EmptyMedia` + CTA (`Ver meu perfil` e/ou texto “peça à coordenação geral…”).
-- Suavizar ícone do empty de liderança (AlertTriangle → ícone não-alarme).
+- Suavizar ícone do empty de liderança (`AlertTriangle` → `UsersIcon` / `InboxIcon`).
+- **`RecentlyVisitedCard` `compact`:** mostrar `formatRelativeAge` visível (`text-xs text-muted-foreground`, truncado) — hoje só `sr-only` (critique Alex).
+- **`UpcomingActionPlansCard`:** empty com componente `Empty` (hoje `<p>` solto) + link opcional “Criar plano” para `geral`.
 
 ### Fase 5 — Motion do Sidebar (P3, cortável)
 
@@ -87,11 +104,24 @@ flowchart TD
 - Quiet da barra vermelha mobile (field-mode documentado).
 - Bulk nas filas secundárias do dashboard.
 - Push/offline ambient cue no shell (Casey) — candidato a D1/D2 follow-up, não este plano.
+- Mapa clicável para filtrar núcleos (pergunta de produto; read-only em v1).
+- `max-w-screen-2xl` / margem ultra-wide — cap intencional do Field Desk.
+- Cadeia de wrappers do mapa / `CardHeader` no mapa — polish cosmético descartado no triage.
+- Top-row 3:2:1 no dashboard coordenador — **adiado** até produto pedir paridade com `geral`.
+
+## Explicitamente fora (triage capture-review-debts 2026-07-20)
+
+- **VR+ F1** (`pageshow`/`storage` em recentes) — permanece em [escala-dry-pos-visitados-recentemente.md](escala-dry-pos-visitados-recentemente.md).
+- **VR+ F3** (`CampaignLinkListRow`) — defer: gatilho 3º painel de atalhos ou drift visual.
+- **VR+ F4** (shell por role) — defer: `GeneralDashboardTopRow` cobre `geral`; coord/liderança pendem.
+- **FD+** merge de dois `CampaignMetricStrip` em grid 2×3 — defer: gatilho terceira strip ou refactor VoteGoals F3.
+- Re-export cleanup `SupportStatus`; reuse `NucleusListOverview` → `UpcomingActionPlansCard` — pureza/DRY descartados.
 
 ## Referências
 
 - [`.impeccable/critique/2026-07-19T11-03-23Z__src-app-campaign-campanha.md`](../../.impeccable/critique/2026-07-19T11-03-23Z__src-app-campaign-campanha.md)
+- [`.impeccable/critique/2026-07-20T00-01-43Z__src-app-campaign-campanha.md`](../../.impeccable/critique/2026-07-20T00-01-43Z__src-app-campaign-campanha.md)
 - `docs/roadmap.md` (Fill-ins FD2)
 - `PRODUCT.md` / `DESIGN.md` — Field Desk, Signal Red, personas Alex/Casey/Lia
-- `src/components/campaign/CampaignDashboard.tsx`, `SupportStatusBadge.tsx`, shells de assign de coordenador
+- `src/components/campaign/ActionQueuesCard.tsx`, `GeneralDashboardTopRow.tsx`, `RecentlyVisitedCard.tsx`, `LeadershipStatusCard.tsx`, `ChoroplethLegend.tsx`, `CampaignDashboard.tsx`, `SupportStatusBadge.tsx`, shells de assign de coordenador
 - AGENTS.md — campaign auth, `overrideAccess: false`, naming

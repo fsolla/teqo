@@ -3,10 +3,10 @@
 import { useMemo, useState } from 'react'
 
 import { BahiaMap, type BahiaMapMode } from '@/components/campaign/BahiaMap'
+import { ChoroplethLegend } from '@/components/campaign/ChoroplethLegend'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { choroplethMaxValue } from '@/lib/choroplethColorScale'
-import { formatElectionNumber } from '@/lib/electionInsights'
 import {
   choroplethMetricLabels,
   type ChoroplethMetric,
@@ -72,9 +72,7 @@ const ChoroplethMapControls = ({
         </Field>
       </div>
       {hasData ? (
-        <p className="text-xs text-muted-foreground">
-          Escala: 0 → {formatElectionNumber(max)} ({choroplethMetricLabels[metric].toLowerCase()})
-        </p>
+        <ChoroplethLegend max={max} metricLabel={choroplethMetricLabels[metric]} />
       ) : (
         <p className="text-sm text-muted-foreground">
           Sem dados para esta métrica no conjunto atual.

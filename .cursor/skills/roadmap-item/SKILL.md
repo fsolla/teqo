@@ -11,6 +11,8 @@ Esta skill transforma uma ideia solta em: (1) um item posicionado corretamente n
 
 **Entrada desde reviews:** débitos de `/simplify` / `/impeccable` triageados por `capture-review-debts` chegam aqui já mesclados em lotes — não re-expanda um lote em um item por achado micro.
 
+**Qualidade de decisão (não é tour):** aplique [decision-quality.md](decision-quality.md) em silêncio — filtro caro vs barato, Opções+Recomendação+rejeitadas, appetite, rabbit holes, depth check, self-score ≥4 antes de gravar. Não abra fases de `design-code-architecture`; só o sistema de decisão.
+
 ## Checklist do fluxo
 
 ```
@@ -18,10 +20,10 @@ Esta skill transforma uma ideia solta em: (1) um item posicionado corretamente n
 - [ ] 2. Classificar a ideia e checar duplicidade/absorção
 - [ ] 3. Explorar o código relevante para fundamentar o plano
 - [ ] 4. Classificar superfície UI (A–D) e semear Impeccable no plano se B/C/D
-- [ ] 5. Decidir posicionamento: seção, ID, dependências, janela, paralelismo
-- [ ] 6. Criar docs/plans/<slug>.md a partir do template
+- [ ] 5. Decidir posicionamento: seção, ID, dependências, janela, paralelismo, appetite
+- [ ] 6. Criar docs/plans/<slug>.md a partir do template (incl. rabbit holes / adiados)
 - [ ] 7. Editar o roadmap em TODOS os pontos de consistência
-- [ ] 8. Verificar links, mermaid e consistência cruzada
+- [ ] 8. Verificar links, mermaid, consistência cruzada e self-score de decisão (≥4/5)
 ```
 
 ## Passo 1 — Ler o roadmap atual
@@ -59,8 +61,8 @@ Determine o que a ideia é:
 Um plano competente cita arquivos, utilities e padrões **reais** — não abstrações. Antes de escrever, localize no código:
 
 - Onde a feature se pluga (páginas em `src/app/(campaign)/...`, `src/app/(frontend)/...`).
-- O que já existe para reusar (`src/utilities/*`, `src/components/campaign/*`, `src/components/ui/*`, `src/lib/*`).
-- Se exige collection nova ou campo novo → então exige migration (`pnpm migrate:create`) e grupo `admin.group` correto.
+- O que já existe para reusar (`src/utilities/*`, `src/components/campaign/*`, `src/components/ui/*`, `src/lib/*`) — **depth check**: preferir módulo profundo existente a wrapper novo.
+- Se exige collection nova ou campo novo → então exige migration (`pnpm migrate:create`) e grupo `admin.group` correto (caro de reverter → Decisão travada com alternativas rejeitadas).
 - Se toca pessoa → é join com `Contact`, nunca cadastro paralelo. Se toca opt-in/PII → `Consent` por chave estável, falhando fechado.
 - Precedente análogo: encontre o plano existente em `docs/plans/` mais parecido e espelhe o nível de detalhe dele.
 
@@ -102,30 +104,34 @@ Não rode a entrevista longa de `/impeccable shape` nem craft. No plano (seção
 
 ## Passo 5 — Decidir o posicionamento
 
-Responda explicitamente, nesta ordem:
+Responda explicitamente, nesta ordem. Para cada escolha não óbvia use **Opções | Recomendação | Alternativas rejeitadas** ([decision-quality.md](decision-quality.md)) — decisão silenciosa é defeito.
 
-1. **Dependências duras**: sem quais itens este não funciona? (ex.: precisa de `cities[]` → depende de A1). Dependências **suaves** melhoram mas não bloqueiam — marque como tracejadas.
-2. **Dependentes**: quais itens existentes passam a depender dele? Atualize-os também.
-3. **Paralelismo**: sem seta de entrada = paralelizável a qualquer momento → entra na lista de paralelizáveis abaixo do grafo.
-4. **Janela**: a mais cedo possível dado (a) as dependências e (b) a âncora de calendário que o item serve. Item que serve a propaganda de rua precisa estar pronto antes de 16/08; nada de migration arriscada depois de ~20/09 (congelamento).
-5. **Prioridade dentro da janela**: caminho crítico (jurídico/Onda 0) > base de dados > operação de campo > inteligência > engajamento/plataforma. Quick wins de campo podem furar fila se forem baratos e paralelizáveis.
-6. **Cortável?** Decida se entra na lista de "Cortes seguros" (e em que posição) ou na lista de "não cortáveis" — todo item de trilha precisa estar em uma das duas, com racional.
-7. **Bloqueador externo?** Se depende de jurídico/LGPD (novo texto de `Consent`), o texto entra no **lote jurídico da Onda 0** — nunca criar rodada jurídica separada (decisão travada: fatiar multiplica lead time).
+1. **Filtro caro vs barato**: o que neste item é caro de reverter (schema, access, Consent, URL, fronteira de trilha)? Só isso vira Decisões travadas. O resto → Não escopo, fill-in, ou Adiado com gatilho.
+2. **Dependências duras**: sem quais itens este não funciona? (ex.: precisa de `cities[]` → depende de A1). Dependências **suaves** melhoram mas não bloqueiam — marque como tracejadas.
+3. **Dependentes**: quais itens existentes passam a depender dele? Atualize-os também.
+4. **Paralelismo**: sem seta de entrada = paralelizável a qualquer momento → entra na lista de paralelizáveis abaixo do grafo.
+5. **Janela**: a mais cedo possível dado (a) as dependências e (b) a âncora de calendário que o item serve. Item que serve a propaganda de rua precisa estar pronto antes de 16/08; nada de migration arriscada depois de ~20/09 (congelamento).
+6. **Appetite**: quanto o slice vale (ex. `~1–2 dias eng`)? Janela ≠ appetite. Se a solução proposta estoura o appetite, corte rabbit holes — não inflar o item.
+7. **Prioridade dentro da janela**: caminho crítico (jurídico/Onda 0) > base de dados > operação de campo > inteligência > engajamento/plataforma. Quick wins de campo podem furar fila se forem baratos e paralelizáveis.
+8. **Cortável?** Decida se entra na lista de "Cortes seguros" (e em que posição) ou na lista de "não cortáveis" — todo item de trilha precisa estar em uma das duas, com racional. **Nunca** classificar como cortável uma decisão cara de reverter só para “caber no tempo”.
+9. **Bloqueador externo?** Se depende de jurídico/LGPD (novo texto de `Consent`), o texto entra no **lote jurídico da Onda 0** — nunca criar rodada jurídica separada (decisão travada: fatiar multiplica lead time).
 
-Se a priorização depender de decisão de produto que você não tem como inferir, posicione com a sua melhor recomendação e marque o item como _(proposto — validar com produto)_, como foi feito com C5.
+Se a priorização depender de decisão de produto que você não tem como inferir, posicione com a sua melhor recomendação (Opções+Recomendação explícitos) e marque o item como _(proposto — validar com produto)_, como foi feito com C5.
 
 ## Passo 6 — Criar o plano em `docs/plans/`
 
 - **Slug**: kebab-case em português, descritivo, curto (padrão existente: `cadastro-nominal-apoiadores.md`, `zonas-por-municipio.md`). Idioma do conteúdo: pt-BR; identificadores de código citados: inglês.
-- **Estrutura**: siga [plan-template.md](plan-template.md) à risca — mesmas seções, mesma ordem. Leia o template antes de escrever.
+- **Estrutura**: siga [plan-template.md](plan-template.md) à risca — mesmas seções, mesma ordem (incl. **Appetite**, **Rabbit holes**, **Adiado com gatilho**). Leia o template antes de escrever.
 - **Qualidade mínima** (o que separa um plano útil de um genérico):
-  - "Decisões travadas" registra decisões com data e fonte, não desejos. Cada uma deve ser defensável ("por quê" incluído).
-  - "Questões em aberto" sempre traz **Recomendação** para cada questão — nunca deixar pergunta sem posição.
-  - "Abordagem proposta" tem diagrama mermaid + lista de componentes com caminhos de arquivo reais e assinaturas concretas.
-  - "Não escopo" é explícito e cita para qual outro plano/item cada exclusão vai.
+  - Cabeçalho traz **Appetite** alinhado ao Passo 5.
+  - "Decisões travadas" = só o caro de reverter: data, fonte, **por quê** e **alternativas rejeitadas**. Desejo sem rejeitadas não é decisão.
+  - "Questões em aberto" = **Opções + Recomendação** — nunca pergunta sem posição.
+  - "Abordagem proposta" tem mermaid + componentes com caminhos reais; **depth check**: reusar shells/helpers profundos (`CampaignPageShell`, `campaignAccess`, …); não propor pass-through raso.
+  - "Não escopo" cita destino (outro plano/ID); "Rabbit holes" nomeia explosões se tocadas de passagem; "Adiado com gatilho" usa evidência concreta de revisitação (ou `Nenhum neste item.`).
   - "Referências" lista os arquivos-fonte reais que o implementador vai abrir.
   - Classe Impeccable **A/B/C/D** aparece no plano (cabeçalho ou seção Design); se B/C/D, a seção "Design (Impeccable)" está preenchida.
 - Se existir design em `docs/design-refs/latest/`, inclua a subseção de referência visual (UX Pilot) com o aviso padrão de paleta (a estrutura vale, a paleta não — usar tokens do tema `data-theme='campaign'`).
+- **Self-score** ([decision-quality.md](decision-quality.md)): ≥4/5 antes de gravar; se &lt;4, corrija o plano — não peça tour ao usuário.
 
 ## Passo 7 — Editar o roadmap (todos os pontos de consistência)
 
@@ -149,5 +155,6 @@ Para itens fora das trilhas (site público, admin, fill-in, bloqueador, fora de 
 - O plano referencia o roadmap (`Item do roadmap:` no cabeçalho) e o roadmap referencia o plano (link na tabela).
 - Não inventou ID duplicado nem quebrou a numeração de "Ordem".
 - Classe Impeccable do Passo 4 está no plano; se B/C/D, há âncoras (`PRODUCT.md`/`DESIGN.md` e/ou design-ref) citadas — não só "fazer uma tela bonita".
+- Appetite + Rabbit holes presentes; Decisões travadas caras têm alternativas rejeitadas; self-score ≥4/5.
 
-Ao final, resuma para o usuário: ID atribuído, janela, dependências assumidas, **classe Impeccable (A–D)**, e as decisões de posicionamento que merecem validação de produto.
+Ao final, resuma para o usuário: ID atribuído, janela, **appetite**, dependências assumidas, **classe Impeccable (A–D)**, `Qualidade de decisão: N/5`, e as decisões de posicionamento que merecem validação de produto.
