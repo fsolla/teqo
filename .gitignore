@@ -47,6 +47,8 @@ next-env.d.ts
 
 # IBGE geometry download cache (pnpm build:geometries)
 /data/geometries/
+# IBGE demographics download cache (pnpm build:demographics)
+/data/demographics/
 
 # Playwright
 node_modules/

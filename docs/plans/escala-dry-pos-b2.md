@@ -1,7 +1,7 @@
 # Escala e DRY pós-B2 (geometrias + scripts CLI)
 
 Status: Fase 1 entregue com B3 (2026-07-19); Fases 2–3 pendentes
-Atualizado em: 2026-07-20 (nota cruzada `capture-review-debts` pós-A7 F2: `build-bahia-tse-city-codes.mjs` reforça gatilho F2)
+Atualizado em: 2026-07-20 (`capture-review-debts` pós-A8: `build-bahia-demographics.mjs` reforça gatilho F2 como 4º call site)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B5)
 Responsável: —
 
@@ -10,7 +10,7 @@ Responsável: —
 O B2 ([mapa-bahia-geometrias.md](mapa-bahia-geometrias.md) Fase 1) entregou a fundação estática do mapa: `*.topo.json` de municípios e Territórios de Identidade, `bahiaMunicipalityCodes`, helpers em `bahiaGeometries.ts`, script `pnpm build:geometries`. A passagem `/simplify` de 2026-07-18 limpou dead code e churns baratos no script/codegen, mas **deixou de fora** dois follow-ups que os revisores (performance / reuse) marcaram como importantes e maiores que cleanup pontual:
 
 1. **Carregamento eager de geometrias no cliente.** `src/lib/bahiaGeometries.ts` importa os dois TopoJSON, roda `topojson-client` `feature()` em 417+27 polígonos e monta índices no load do módulo — custo de bundle/memória antes de qualquer superfície Leaflet (B3).
-2. **Cache de download duplicado nos CLIs.** `ensureCachedJson` em `scripts/build-bahia-geometries.mjs` é estruturalmente o mesmo que `ensureCachedZip` em `scripts/seed-tse-results.mjs` (mkdir → hit → `downloadToBuffer` → SHA-256 → write), só muda extensão/parse. **Pós-A7 F2:** `scripts/build-bahia-tse-city-codes.mjs` (`pnpm build:tse-city-codes`) clona o mesmo padrão `ensureCachedZip` — terceiro call site, reforça prioridade da Fase 2 deste plano sem novo ID.
+2. **Cache de download duplicado nos CLIs.** `ensureCachedJson` em `scripts/build-bahia-geometries.mjs` é estruturalmente o mesmo que `ensureCachedZip` em `scripts/seed-tse-results.mjs` (mkdir → hit → `downloadToBuffer` → SHA-256 → write), só muda extensão/parse. **Pós-A7 F2:** `scripts/build-bahia-tse-city-codes.mjs` (`pnpm build:tse-city-codes`) clona o mesmo padrão `ensureCachedZip` — terceiro call site. **Pós-A8 (`capture-review-debts` 2026-07-20):** `scripts/build-bahia-demographics.mjs` (`pnpm build:demographics`) clona `ensureCachedJson` — quarto call site; reforça prioridade da Fase 2 sem novo ID de roadmap.
 3. **Factory duplicada mun/TI pós-B3 F1.** `bahiaMunicipalityGeometries.ts` e `bahiaTerritoryGeometries.ts` repetem o mesmo pipeline `topojson.feature` → array → `Map` por chave → export do módulo indexado — só mudam topology object, propriedade de chave (`codarea` vs `code`) e getter.
 
 Este plano é o registro canônico desses follow-ups. Sem ele, o B3 pode embarcar o mapa com payload desnecessário no path default, e o próximo script de dado aberto volta a clonar o cache.
@@ -63,7 +63,7 @@ flowchart TD
 - Extrair `ensureCachedDownload({ cacheDir, key, url, ext?, logPrefix })` a partir de `ensureCachedJson` / `ensureCachedZip`.
 - Retorno: `{ url, buffer, hash }` (parse JSON/ZIP fica no caller — `build-bahia-geometries` já faz `JSON.parse`; seed TSE usa `readZipEntry`).
 - Continuar usando `downloadToBuffer` (`src/lib/electionResultsZip.ts`).
-- Migrar `scripts/build-bahia-geometries.mjs`, `scripts/seed-tse-results.mjs` e `scripts/build-bahia-tse-city-codes.mjs`; sem mudança de comportamento nem de pastas `data/geometries/` / `data/tse/`.
+- Migrar `scripts/build-bahia-geometries.mjs`, `scripts/seed-tse-results.mjs`, `scripts/build-bahia-tse-city-codes.mjs` e `scripts/build-bahia-demographics.mjs`; sem mudança de comportamento nem de pastas `data/geometries/` / `data/tse/` / `data/demographics/`.
 
 ### Fase 3 — Factory compartilhada mun/TI
 
@@ -98,6 +98,7 @@ flowchart TD
 - `src/lib/bahiaMunicipalityGeometries.ts` / `bahiaTerritoryGeometries.ts` — near-duplicate pós-F1
 - `src/lib/bahiaGeometriesTypes.ts` — tipos `*GeometryModule`
 - `scripts/build-bahia-geometries.mjs` — `ensureCachedJson`
+- `scripts/build-bahia-demographics.mjs` — `ensureCachedJson` (4º call site; A8)
 - `scripts/seed-tse-results.mjs` — `ensureCachedZip`
 - `src/lib/electionResultsZip.ts` — `downloadToBuffer`
 - AGENTS.md — naming inglês; Bahia implícita; dado estático versionado

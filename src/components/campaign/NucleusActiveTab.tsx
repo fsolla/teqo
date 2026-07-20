@@ -41,7 +41,6 @@ import type {
   NucleusDetailViewModel,
   NucleusElectoralBaselineViewModel,
   NucleusTabsViewModel,
-  StaffNucleusTabsViewModel,
 } from '@/utilities/nucleusViewModels'
 import { buildWhatsAppUrl } from '@/utilities/phone'
 import { buildNucleusDetailMapHighlight } from '@/utilities/nucleusChoropleth'
@@ -345,35 +344,6 @@ const TerritoryContent = ({ nucleus }: { nucleus: NucleusTabsViewModel }) => (
   </div>
 )
 
-const ElectorateContent = ({ nucleus }: { nucleus: StaffNucleusTabsViewModel }) =>
-  nucleus.voterProfiles.length ? (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {nucleus.voterProfiles.map((profile) => (
-        <Card key={profile.label}>
-          <CardHeader>
-            <CardTitle>{profile.label}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2 text-sm">
-            {profile.ageRange ? <p>Faixa etária: {profile.ageRange}</p> : null}
-            {profile.incomeBand ? <p>Renda: {profile.incomeBand}</p> : null}
-            {profile.occupation ? <p>Ocupação: {profile.occupation}</p> : null}
-            {profile.localTraits ? <p>{profile.localTraits}</p> : null}
-            {profile.notes ? <p className="text-muted-foreground">{profile.notes}</p> : null}
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  ) : (
-    <Empty className="border">
-      <EmptyHeader>
-        <EmptyTitle>Nenhum perfil do eleitorado cadastrado</EmptyTitle>
-        <EmptyDescription>
-          Perfis e inteligência eleitoral serão trabalhados na próxima etapa.
-        </EmptyDescription>
-      </EmptyHeader>
-    </Empty>
-  )
-
 export const NucleusActiveTabLoading = () => (
   <div aria-label="Carregando seção" className="grid gap-4 lg:grid-cols-2">
     <Skeleton className="h-40" />
@@ -418,7 +388,14 @@ export const NucleusActiveTab = async ({
   if (data.tab === 'territory') return <TerritoryContent nucleus={view.tabs} />
   if (data.tab === 'electorate') {
     if (view.tabs.kind !== 'staff') redirect(`/campanha/nucleos/${view.slug}?tab=overview`)
-    return <ElectorateContent nucleus={view.tabs} />
+    const { NucleusElectorateTab } = await import('@/components/campaign/NucleusElectorateTab')
+    return (
+      <NucleusElectorateTab
+        canEditIntelligence={user.role !== 'lideranca'}
+        nucleus={view.tabs}
+        nucleusId={view.id}
+      />
+    )
   }
 
   if (data.tab === 'leaderships') {

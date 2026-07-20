@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-19 (A5 mobilização ✓ em `main`; A5 aberto: só inteligência competitiva)
+Atualizado em: 2026-07-20 (A8+ fill-in pós-`/simplify`; A8 em implementação)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -49,6 +49,7 @@ Engenharia de núcleos / C2 / C3 / baseline / PWA / Trilha E parcial já em `mai
 - **A** — A6 dobradinha 2026 automática quando o TSE publicar candidaturas · gatilho externo: pós-15/08 · [plano](plans/insight-dobradinha-2026.md)
 - **A** — A7 F2–F5: `cityCode` TSE, Alert/Progress DRY, fetch 2022 único lista+mapa, batch flip na lista · gatilho F4: pós-B3 ✓; F5: pós-A5 · [plano](plans/escala-dry-pos-a4.md)
 - **A** — A8 perfil médio do eleitorado (IBGE) na aba Eleitorado sem sobrescrever manuais · [plano](plans/perfil-eleitorado-ibge.md)
+- **A** — A8+ escala pós-A8: lazy demographics, cobertura parcial, size budget · gatilho: merge A8 · [plano](plans/escala-dry-pos-a8.md)
 - **B** — B4 camada de zonas TSE no mapa coroplético · [mapa](plans/mapa-bahia-geometrias.md)
 - **B** — B5 F2–F3: cache CLI compartilhado + factory mun/TI · [plano](plans/escala-dry-pos-b2.md)
 - **B** — B6 `BahiaMap` setStyle incremental ao trocar métrica · gatilho: troca frequente no overview · [plano](plans/escala-dry-pos-b3.md)
@@ -96,6 +97,7 @@ flowchart TD
         A7["A7 F2–F5 escala pós-A4"]
         A6["A6 Dobradinha 2026"]
         A8["A8 Perfis IBGE"]
+        A8DRY["A8+ escala pós-A8"]
     end
 
     subgraph TrilhaB["Trilha B"]
@@ -131,6 +133,7 @@ flowchart TD
     A4 --> A5open
     A5done -.mesmo loader.-> A7
     A4 --> A6
+    A8 -.após merge.-> A8DRY
     TSE2026["TSE candidaturas 2026<br/>(após 15/08)"] --> A6
     B3 --> B6
     B3 --> B4
@@ -188,6 +191,7 @@ flowchart TD
 ### Fill-ins abertos
 
 - **O0+** — revalidate globals, módulo de chaves Consent, testes SQL, DRY Lexical/layout · [plano](plans/escala-dry-pos-onda0.md)
+- **A8+** — lazy `bahiaMunicipalityDemographics`, cobertura parcial explícita, size budget int · gatilho: A8 ✓ · [plano](plans/escala-dry-pos-a8.md)
 - **VR+** — refresh bfcache/storage do painel recentes + DRY de lista · gatilho F1: painel stale · [plano](plans/escala-dry-pos-visitados-recentemente.md)
 - **RS+** — auth read leve + shells/campos de senha compartilhados · gatilho F1: `/campanha` lento sob carga · [plano](plans/escala-dry-pos-reset-senha-perfil.md)
 - **FD+** — shell size / heading / strips Field Desk · gatilho strips: 3ª strip no home ou Fase 3 VoteGoals · [plano](plans/escala-dry-pos-field-desk.md)
@@ -207,7 +211,7 @@ Plano histórico: [mapa-projecao-municipios.md](plans/mapa-projecao-municipios.m
 
 **Não cortáveis:** Onda 0 (jurídico/Consent), C2 dados reais, C3 agenda (já ✓), A4 baseline (já ✓), E1+E3 paridade mínima com a planilha (já ✓) — risco legal, base nominal, operação e instrumento de alocação.
 
-**Cortes seguros** (se o prazo apertar): E5; B4; B6; B5 F2–F3; A8; E7 F1/F3/F4; E6 F2–F4 (preferir F1 se lista lenta); A7 F2–F5 (F4 vale mais com mapa na lista; F5 se filtros ≤10 núcleos); A5 competitiva; C4; D2 push (manter sino); C10/C11 se base/agenda pequenas; O0+/VR+/RS+/FD+ fases cosméticas; FD2 Fase 5 motion; fill-ins.
+**Cortes seguros** (se o prazo apertar): E5; B4; B6; B5 F2–F3; A8; **A8+**; E7 F1/F3/F4; E6 F2–F4 (preferir F1 se lista lenta); A7 F2–F5 (F4 vale mais com mapa na lista; F5 se filtros ≤10 núcleos); A5 competitiva; C4; D2 push (manter sino); C10/C11 se base/agenda pequenas; O0+/VR+/RS+/FD+ fases cosméticas; FD2 Fase 5 motion; fill-ins.
 
 ## Bloqueadores atuais
 

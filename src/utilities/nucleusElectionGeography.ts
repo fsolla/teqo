@@ -1,14 +1,13 @@
 import type { Where } from 'payload'
 
 import { tseCityCodeForMunicipality } from '@/lib/bahiaTseCityCodes'
-import { citiesForTerritory, isBahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import { tseZonesForCity } from '@/lib/bahiaTseZones'
 import { normalizeTerritoryTextArray } from '@/utilities/campaignTerritoryValidation'
+import { resolveNucleusTerritoryCities } from '@/utilities/nucleusTerritoryCities'
+import type { NucleusTerritoryCitiesInput } from '@/utilities/nucleusTerritoryCities'
 import { sortedUniqueZoneNumbers } from '@/utilities/tseZone'
 
-export type NucleusElectionGeographyInput = {
-  cities: string[]
-  regions: string[]
+export type NucleusElectionGeographyInput = NucleusTerritoryCitiesInput & {
   tseZones: number[]
 }
 
@@ -35,9 +34,6 @@ export type NucleusElectionGeography = {
   cityZonePairs: NucleusCityZonePair[]
 }
 
-const uniqueSortedCities = (values: Iterable<string>): string[] =>
-  [...new Set(values)].sort((left, right) => left.localeCompare(right, 'pt-BR'))
-
 /**
  * Resolve the effective city×zone geography for a nucleus baseline query.
  * Returns null when the nucleus has no usable territory (no cities and no regions),
@@ -51,16 +47,7 @@ const uniqueSortedCities = (values: Iterable<string>): string[] =>
 export const resolveNucleusElectionGeography = (
   nucleus: NucleusElectionGeographyInput,
 ): NucleusElectionGeography | null => {
-  const citiesFromNucleus = uniqueSortedCities(nucleus.cities.filter((city) => city.length > 0))
-  const cities =
-    citiesFromNucleus.length > 0
-      ? citiesFromNucleus
-      : uniqueSortedCities(
-          nucleus.regions.flatMap((region) =>
-            isBahiaIdentityTerritory(region) ? citiesForTerritory(region) : [],
-          ),
-        )
-
+  const cities = resolveNucleusTerritoryCities(nucleus)
   if (cities.length === 0) return null
 
   const requestedZones = sortedUniqueZoneNumbers(

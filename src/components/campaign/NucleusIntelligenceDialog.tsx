@@ -33,6 +33,7 @@ import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { fieldError } from '@/utilities/campaignFormFields'
+import { normalizedVoterProfilesForWrite } from '@/utilities/nucleusIntelligenceUi'
 import {
   nucleusDobradinhaNotesDescription,
   nucleusDobradinhaNotesLabel,
@@ -71,18 +72,6 @@ const emptyProfile = (): EditableProfile => ({
 
 const normalizedInsights = (values: string[]) =>
   values.map((text) => ({ text: text.trim() })).filter(({ text }) => Boolean(text))
-
-const normalizedProfiles = (profiles: EditableProfile[]) =>
-  profiles
-    .map((profile) => ({
-      label: profile.label.trim(),
-      ageRange: profile.ageRange?.trim() || undefined,
-      incomeBand: profile.incomeBand?.trim() || undefined,
-      occupation: profile.occupation?.trim() || undefined,
-      localTraits: profile.localTraits?.trim() || undefined,
-      notes: profile.notes?.trim() || undefined,
-    }))
-    .filter(({ label }) => Boolean(label))
 
 const FormFeedback = ({ state }: { state: NucleusIntelligenceFormState }) => {
   if (!state.message || state.status === 'success') return null
@@ -166,7 +155,7 @@ export const NucleusIntelligenceDialog = ({
         <input
           type="hidden"
           name="voterProfiles"
-          value={JSON.stringify(normalizedProfiles(profiles))}
+          value={JSON.stringify(normalizedVoterProfilesForWrite(profiles))}
         />
         <FormFeedback state={state} />
 

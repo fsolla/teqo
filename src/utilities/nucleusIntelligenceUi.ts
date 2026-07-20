@@ -7,6 +7,49 @@ import {
   requiredRelationshipFormValue,
 } from '@/lib/formData'
 
+export type VoterProfileWriteInput = {
+  label: string
+  ageRange?: string | null
+  incomeBand?: string | null
+  occupation?: string | null
+  localTraits?: string | null
+  notes?: string | null
+}
+
+export type VoterProfileWriteShape = {
+  label: string
+  ageRange?: string
+  incomeBand?: string
+  occupation?: string
+  localTraits?: string
+  notes?: string
+}
+
+export const voterProfileNullsToUndefined = (
+  profile: VoterProfileWriteInput,
+): VoterProfileWriteShape => ({
+  label: profile.label,
+  ageRange: profile.ageRange ?? undefined,
+  incomeBand: profile.incomeBand ?? undefined,
+  occupation: profile.occupation ?? undefined,
+  localTraits: profile.localTraits ?? undefined,
+  notes: profile.notes ?? undefined,
+})
+
+export const normalizedVoterProfilesForWrite = (
+  profiles: VoterProfileWriteInput[],
+): VoterProfileWriteShape[] =>
+  profiles
+    .map((profile) => ({
+      label: profile.label.trim(),
+      ageRange: profile.ageRange?.trim() || undefined,
+      incomeBand: profile.incomeBand?.trim() || undefined,
+      occupation: profile.occupation?.trim() || undefined,
+      localTraits: profile.localTraits?.trim() || undefined,
+      notes: profile.notes?.trim() || undefined,
+    }))
+    .filter(({ label }) => Boolean(label))
+
 export const parseNucleusIntelligenceFormData = (formData: FormData): NucleusUpdateInput => {
   const hasTicketAlliance = ['partnerName', 'office', 'isCampaignPartner', 'allianceNotes'].some(
     (field) => formData.has(field),
