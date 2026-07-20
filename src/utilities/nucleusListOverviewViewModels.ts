@@ -1,5 +1,5 @@
 import type { NucleusPriority } from '@/lib/schemas/nucleus'
-import type { TicketFlipOverviewAggregate, TicketLeverageOverviewAggregate } from '@/lib/electionInsights'
+import type { TicketFlipOverviewAggregate, TicketLeverageOverviewAggregate, MobilizationOverviewAggregate } from '@/lib/electionInsights'
 import type { CampaignUser, NucleusUpdate } from '@/payload-types'
 import type { ActionPlanUpcomingPreviewRecord } from '@/utilities/actionPlanUpcomingPreview'
 import type {
@@ -61,6 +61,8 @@ export type NucleusListOverviewViewModel = {
   trend: NucleusTrendOverviewAggregate | null
   /** Null when no comparable nucleus has aptos + confirmed estimate. */
   conversion: NucleusConversionOverviewAggregate | null
+  /** Null when the filtered set has no mobilization potential in baseline tallies. */
+  mobilization: MobilizationOverviewAggregate | null
   /** Null when no comparable nucleus has ticket votes + confirmed estimate. */
   leverage: TicketLeverageOverviewAggregate | null
   /** Null when no nucleus in the filtered set has resolvable TSE geography. */
@@ -83,6 +85,7 @@ export const buildNucleusListOverviewViewModel = ({
   baseline2022 = null,
   trend = null,
   conversion = null,
+  mobilization = null,
   leverage = null,
   flipOpportunity = null,
   classification = null,
@@ -95,6 +98,7 @@ export const buildNucleusListOverviewViewModel = ({
   baseline2022?: NucleusBaseline2022OverviewAggregate | null
   trend?: NucleusTrendOverviewAggregate | null
   conversion?: NucleusConversionOverviewAggregate | null
+  mobilization?: MobilizationOverviewAggregate | null
   leverage?: TicketLeverageOverviewAggregate | null
   flipOpportunity?: TicketFlipOverviewAggregate | null
   classification?: NucleusClassificationOverviewAggregate | null
@@ -134,6 +138,7 @@ export const buildNucleusListOverviewViewModel = ({
     highPriorityCount,
     trend,
     conversion,
+    mobilization,
     leverage,
     flipOpportunity,
     classification,

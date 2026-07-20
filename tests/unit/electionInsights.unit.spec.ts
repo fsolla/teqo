@@ -4,16 +4,19 @@ import { describe, expect, it } from 'vitest'
 
 import {
   aggregateConversionBand,
+  aggregateMobilizationOverview,
   aggregateTerritorialClass,
   aggregateVoteTrend,
   comparableTrendCount,
   computeConversionRate,
   computeGapVs2022,
+  computeMobilizationOpportunity,
   computeTerritorialClass,
   computeVoteTrend,
   CONVERSION_OPPORTUNITY_MAX,
   CONVERSION_REDUTO_MIN,
   isComparableConversionBand,
+  isComparableMobilization,
   type GapVs2022Baseline,
   TERRITORIAL_ATAQUE_MIN,
   TERRITORIAL_DEFESA_MIN,
@@ -191,6 +194,88 @@ describe('isComparableConversionBand', () => {
   it('accepts the three comparable bands', () => {
     expect(isComparableConversionBand('reduto')).toBe(true)
     expect(isComparableConversionBand('semEstimativa')).toBe(false)
+  })
+})
+
+describe('computeMobilizationOpportunity', () => {
+  it('matches the design-ref subtotals and total', () => {
+    expect(
+      computeMobilizationOpportunity({
+        abstencoes: 680,
+        brancos: 100,
+        nulos: 42,
+        aptos: 4700,
+      }),
+    ).toMatchObject({
+      absolute: 822,
+      brancosNulos: 142,
+      abstencoes: 680,
+      status: 'opportunity',
+      message: 'Oportunidade de mobilização',
+      supportLine:
+        '142 brancos/nulos + 680 abstenções = 822 votos possíveis · 17% do eleitorado apto',
+    })
+  })
+
+  it('reports semAptos when aptos is zero', () => {
+    expect(
+      computeMobilizationOpportunity({ abstencoes: 10, brancos: 5, nulos: 2, aptos: 0 }),
+    ).toMatchObject({
+      status: 'semAptos',
+      absolute: 0,
+    })
+  })
+
+  it('reports zero when all components are absent', () => {
+    expect(
+      computeMobilizationOpportunity({ abstencoes: 0, brancos: 0, nulos: 0, aptos: 1000 }),
+    ).toMatchObject({
+      status: 'zero',
+      absolute: 0,
+    })
+  })
+
+  it('reports semBaseline when aptos is null', () => {
+    expect(
+      computeMobilizationOpportunity({ abstencoes: 10, brancos: 5, nulos: 2, aptos: null }),
+    ).toMatchObject({
+      status: 'semBaseline',
+      absolute: 0,
+    })
+  })
+})
+
+describe('isComparableMobilization', () => {
+  it('accepts only opportunity', () => {
+    expect(isComparableMobilization('opportunity')).toBe(true)
+    expect(isComparableMobilization('zero')).toBe(false)
+  })
+})
+
+describe('aggregateMobilizationOverview', () => {
+  it('maps comparable opportunity to overview fields', () => {
+    expect(
+      aggregateMobilizationOverview({
+        abstencoes: 680,
+        brancos: 100,
+        nulos: 42,
+        aptos: 4700,
+      }),
+    ).toEqual({
+      absoluteTotal: 822,
+      relativePercent: 17,
+      brancosNulosTotal: 142,
+      abstencoesTotal: 680,
+    })
+  })
+
+  it('returns null when there is no mobilization potential', () => {
+    expect(
+      aggregateMobilizationOverview({ abstencoes: 0, brancos: 0, nulos: 0, aptos: 1000 }),
+    ).toBeNull()
+    expect(
+      aggregateMobilizationOverview({ abstencoes: 10, brancos: 5, nulos: 2, aptos: null }),
+    ).toBeNull()
   })
 })
 

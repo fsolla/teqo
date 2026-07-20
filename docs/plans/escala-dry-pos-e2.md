@@ -1,13 +1,13 @@
 # Escala e DRY pós-E2 (série TSE 2014/2018 + tendência)
 
-Status: Fase 2 entregue (2026-07-19); extensão F2 pós-A5 pendente; Fases 1, 3 e 4 pendentes
-Atualizado em: 2026-07-19 (extensão int leverage/flip/**classification** registrada via `capture-review-debts` pós-A5 `/simplify` + pós-A5-2; **E4 import planilha cortado**)
+Status: Fase 2 entregue (2026-07-19); extensão F2 pós-A5 / pós-A5-2 / **pós-A5-mobilização** pendente; Fases 1, 3 e 4 pendentes
+Atualizado em: 2026-07-19 (extensão int **`mobilization`** absorvida via `capture-review-debts` pós-A5 mobilização; leverage/flip/classification já registrados; **E4 import planilha cortado**)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E, item E7)
 Responsável: —
 
 ## Contexto
 
-O E2 ([mapa-projecao-municipios.md](mapa-projecao-municipios.md)) entrega seed `pnpm db:seed:tse -- --year=2014|2018|2022` (federal T1 BA nos anos históricos), `computeVoteTrend` ±10% (`increase|stable|decline|noBaseline`), série no card `NucleusElectoralBaseline`, alerta em `NucleusInsights` e card "Tendência histórica" no overview B1 — loader unificado `loadNucleusListElectionOverview` (gap + tendência numa query union) em `nucleusElectoralBaseline.ts`. O slice **A5-1 taxa de conversão** ([insight-taxa-conversao.md](insight-taxa-conversao.md), 2026-07-19) estende o mesmo loader com agregado `conversion` (`weightedRate` + `distribution` por faixa) e fetch condicional de `electionTally` — ver Fase 2.
+O E2 ([mapa-projecao-municipios.md](mapa-projecao-municipios.md)) entrega seed `pnpm db:seed:tse -- --year=2014|2018|2022` (federal T1 BA nos anos históricos), `computeVoteTrend` ±10% (`increase|stable|decline|noBaseline`), série no card `NucleusElectoralBaseline`, alerta em `NucleusInsights` e card "Tendência histórica" no overview B1 — loader unificado `loadNucleusListElectionOverview` (gap + tendência numa query union) em `nucleusElectoralBaseline.ts`. O slice **A5-1 taxa de conversão** ([insight-taxa-conversao.md](insight-taxa-conversao.md), 2026-07-19) estende o mesmo loader com agregado `conversion` (`weightedRate` + `distribution` por faixa) e fetch condicional de `electionTally` — ver Fase 2. O slice **A5 mobilização** ([insight-mobilizacao-brancos-nulos.md](insight-mobilizacao-brancos-nulos.md), 2026-07-19) acrescenta `mobilization` (`absoluteTotal`, `relativePercent`, subtotais) via `aggregateMobilizationOverview` — int pendente nesta extensão F2.
 
 Duas passagens `/simplify` no mesmo branch já limparam o que cabia em cleanup: `HISTORICAL_PRIOR_SERIES_YEARS`, `HISTORICAL_SERIES_YEARS`, `buildUnionGeography`, `aggregateVoteTrend` / `comparableTrendCount`, `formatVoteTrendSeries` / `formatVoteTrendSeriesCompact`, `voteTrendAlertVariant`, merge de labels, `FEDERAL_DEPUTY_OFFICE` no build, remoção de `seriesFromYearTotals` e alias `NucleusListOverviewBaseline2022`.
 
@@ -27,12 +27,16 @@ Os revisores (performance / reuse / quality) marcaram como **importantes e maior
 
 **Pendente pós-A5-2 (`capture-review-debts`):** int de `classification.distribution` no mesmo `loadNucleusListElectionOverview` (fixture com `validos` > 0 e bandas comparáveis; assert `classification: null` quando só `semBaseline`).
 
-**Explicitamente fora (revisores pediram skip no simplify, capture-review-debts ou já têm item):** ranking federal completo no detalhe e filtro por `cityCode` → **A7**; query duplicada lista+overview e re-resolve de geografia no baseline do overview → **E6**; DRY de `formatElectionNumber` nos cards não-tendência do overview → **E6 F3**; remover a query TSE do overview quando não há estimativas comparáveis (o card de tendência exige distribuição mesmo sem gap — comportamento intencional de produto); chip de faixa no Alert de conversão (produto adia); DRY do stack de 3 `Alert`s em `NucleusInsights` até mais insights A5; **imports sequenciais 2014/2018/2022** em `seedMultiYearFederalCandidateFixture` (fixture pequena; paralelizar só se CI atrasar); **documentação de isolamento** entre suites int que apagam `election*` na mesma DB (mitigado por `teqo_test` por worker).
+**Pendente pós-A5-mobilização (`capture-review-debts`, ~0,25 dia eng):** int de `mobilization` no mesmo loader — asserts de `absoluteTotal`, `relativePercent`, `brancosNulosTotal`, `abstençõesTotal` sobre o conjunto filtrado (fixture Salvador Z1+Z2 já traz `QT_ABSTENCOES` / brancos / nulos no `detalhe_votacao_munzona_fixture.csv`); caso negativo `mobilization: null` quando geografia vazia (já assertado no int existente) ou potencial zero/`semAptos`.
+
+**Já resolvido no simplify pós-A5 mobilização (não reabrir):** loops de classificação + mobilização unificados; `mobilizationInput` acumulador único; `federalTallyByIndex` elimina segunda `sumFederalTallyForGeography` no loop de conversão; `aggregateMobilizationOverview` + unit tests; `formatPercent` hoisted; remoção de `mobilizationAlertVariant` (variant `pending` inline).
+
+**Explicitamente fora (revisores pediram skip no simplify, capture-review-debts ou já têm item):** ranking federal completo no detalhe e filtro por `cityCode` → **A7**; query duplicada lista+overview e re-resolve de geografia no baseline do overview → **E6**; DRY de `formatElectionNumber` nos cards não-tendência do overview → **E6 F3**; remover a query TSE do overview quando não há estimativas comparáveis (o card de tendência exige distribuição mesmo sem gap — comportamento intencional de produto); chip de faixa no Alert de conversão (produto adia); DRY do stack de 3 `Alert`s em `NucleusInsights` até mais insights A5; **ranking/sort da lista por mobilização** → gatilho em [insight-mobilizacao-brancos-nulos.md](insight-mobilizacao-brancos-nulos.md) (produto pedir sort); helpers cosméticos `mobilizationUnavailable` / guard `supportLine` / remover `isComparableMobilization` (paridade com conversão/leverage); **imports sequenciais 2014/2018/2022** em `seedMultiYearFederalCandidateFixture` (fixture pequena; paralelizar só se CI atrasar); **documentação de isolamento** entre suites int que apagam `election*` na mesma DB (mitigado por `teqo_test` por worker).
 
 ## Objetivos
 
 - Abrir a aba Visão geral de um núcleo calcula a tendência **uma vez** e não repete a série histórica em dois blocos adjacentes.
-- `loadNucleusListElectionOverview` tem pelo menos um teste int com fixture TSE que cobre gap agregado + distribuição de tendência + agregado de conversão (`weightedRate`, `distribution` reduto/consolidado/oportunidade) no mesmo path; **extensão pós-A5:** agregados `leverage` / `flipOpportunity` + spy de query count federal (guardrail contra regressão N+1 até A7 F5); **extensão pós-A5-2:** agregado `classification.distribution` (defesa/indecisa/ataque/perdida) + caso `classification: null` sem válidos.
+- `loadNucleusListElectionOverview` tem pelo menos um teste int com fixture TSE que cobre gap agregado + distribuição de tendência + agregado de conversão (`weightedRate`, `distribution` reduto/consolidado/oportunidade) no mesmo path; **extensão pós-A5:** agregados `leverage` / `flipOpportunity` + spy de query count federal (guardrail contra regressão N+1 até A7 F5); **extensão pós-A5-2:** agregado `classification.distribution` (defesa/indecisa/ataque/perdida) + caso `classification: null` sem válidos; **extensão pós-A5-mobilização:** agregado `mobilization` (Σ brancos/nulos/abstenções + `%` ponderado) espelhando `aggregateMobilizationOverview`.
 - Tipos de distribuição de tendência têm uma única fonte (`VoteTrendDistribution`); loaders e VMs importam de `electionInsights.ts`.
 - Helpers compartilhados para wipe/seed de dados eleitorais nos int tests (sem triplicar `deleteAllElectionData`).
 - Guardrails: sem migration, sem Consent (dado público TSE). Access continua `overrideAccess: false`. Identificadores em inglês; strings visíveis em pt-BR.
@@ -78,12 +82,15 @@ flowchart TD
 - `tests/helpers/tseFixtures.ts` — `seedMultiYearFederalCandidateFixture`, `TSE_FIXTURE_ZONE_EXPECTED`.
 - `tests/int/nucleusListElectionOverview.int.spec.ts` — gap+trend+conversão, tendência sem estimate, geografia vazia, conversão ponderada e aptos sem votos 2022 do candidato.
 
-#### Extensão Fase 2 (pós-A5 / pós-A5-2 — pendente)
+#### Extensão Fase 2 (pós-A5 / pós-A5-2 / pós-A5-mobilização — pendente)
+
+**Appetite do lote F2 ext.:** ~0,75–1 dia eng (leverage/flip spy + classification + mobilization int; sem UI).
 
 - Estender fixture TSE com votos de chapa majoritária + federal proporcional por partido suficientes para `leverage` comparável e `flipOpportunity` com `status: 'opportunity'`.
 - Asserts em `loadNucleusListElectionOverview`: `leverage.weightedPercent` / `unconvertedCount` e `flipOpportunity.count` / `bothAlignedCount`.
 - Spy estrutural: com N núcleos no filtro, `loadFederalCandidateTotalsAggregated` (ou execute drizzle federal) **não** deve ser invocado N vezes — falha documenta regressão até A7 F5; após F5, o spy valida uma única batch query.
 - **Pós-A5-2:** asserts de `classification.distribution` sobre o conjunto filtrado com geografia; caso negativo com tallies sem `votosValidos` → `classification: null` e overview sem linha `Classificação:`.
+- **Pós-A5-mobilização:** em `tests/int/nucleusListElectionOverview.int.spec.ts`, assert `result.mobilization` para `[salvadorZ1, salvadorZ2]` com totais derivados de `TSE_FIXTURE_ZONE_EXPECTED` + brancos/nulos do fixture (`detalhe_votacao_munzona_fixture.csv` cargo federal T1); espelhar `aggregateMobilizationOverview` (não duplicar fórmula inline). Caso `aptos: 0` ou geografia vazia → `mobilization: null` (vazio já coberto).
 
 ### Fase 3 — Tipos e API
 
@@ -123,7 +130,8 @@ flowchart TD
 - `src/components/campaign/NucleusActiveTab.tsx` — render duplo baseline + insights
 - `src/components/campaign/NucleusElectoralBaseline.tsx` / `NucleusInsights.tsx`
 - `docs/plans/insight-taxa-conversao.md` — slice A5-1 (conversão no loader/overview)
-- `src/lib/electionInsights.ts` — `computeVoteTrend`, `computeConversionRate`, `aggregateConversionBand`, `VoteTrendDistribution`, `aggregateVoteTrend`
+- `docs/plans/insight-mobilizacao-brancos-nulos.md` — slice A5 mobilização (loader/overview; ranking adiado)
+- `src/lib/electionInsights.ts` — `computeVoteTrend`, `computeConversionRate`, `aggregateConversionBand`, `VoteTrendDistribution`, `aggregateVoteTrend`, `computeMobilizationOpportunity`, `aggregateMobilizationOverview`
 - `src/utilities/nucleusElectoralBaseline.ts` — `loadNucleusListElectionOverview`, `getNucleusElectoralBaseline`
 - `src/utilities/nucleusListOverviewPageData.ts`
 - `tests/unit/electionInsights.unit.spec.ts` / `tests/unit/nucleusElectoralBaselineUi.unit.spec.ts`

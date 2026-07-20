@@ -134,6 +134,7 @@ describe('loadNucleusListElectionOverview (E7 F2)', () => {
       baseline2022: null,
       trend: null,
       conversion: null,
+      mobilization: null,
       leverage: null,
       flipOpportunity: null,
       classification: null,

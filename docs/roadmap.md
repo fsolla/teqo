@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-19 (E4 import planilha cortado — preenchimento manual via E1+E3; janela 1 vigente; foco: Onda 0 + ativação com dados reais)
+Atualizado em: 2026-07-19 (E7 F2 ext. absorve int `mobilization` pós-A5 mobilização via capture-review-debts; E4 import planilha cortado)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -57,7 +57,7 @@ Engenharia de núcleos / C2 / C3 / baseline / PWA / Trilha E parcial já em `mai
 - **C** — C11 feed/loaders de planos sem O(n) no detalhe · gatilho: agenda com uso real / volume medido · [plano](plans/escala-dry-pos-c7.md)
 - **D** — D2 push + sino in-app · soft: chave `campanha-notificacoes-push` (Onda 0) · [plano](plans/notifications.md)
 - **E** — E6 aggregate metas/prioridade + DRY geo/UI na lista · gatilho: muitos núcleos / lista lenta · [plano](plans/escala-dry-pos-e1.md)
-- **E** — E7 F1/F3/F4 + extensões F2 pós-A5 (trend VM único, tipos, helpers de teste) · [plano](plans/escala-dry-pos-e2.md)
+- **E** — E7 F1/F3/F4 + extensões F2 pós-A5 (leverage/flip/classification/**mobilization** int, trend VM único, tipos, helpers) · [plano](plans/escala-dry-pos-e2.md)
 - **Débitos / fill-ins** — O0+, VR+, RS+, FD+, FD2, listas globais, higiene PascalCase (ver abaixo)
 
 ### A validar (assumptions)

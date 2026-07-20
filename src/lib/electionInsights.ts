@@ -81,6 +81,29 @@ export type ConversionBandDistribution = {
   oportunidade: number
 }
 
+export type MobilizationOpportunityStatus =
+  | 'opportunity'
+  | 'zero'
+  | 'semBaseline'
+  | 'semAptos'
+
+export type MobilizationOpportunityInput = {
+  abstencoes: number | null
+  brancos: number | null
+  nulos: number | null
+  aptos: number | null
+}
+
+export type MobilizationOpportunityResult = {
+  absolute: number
+  relative: number | null
+  abstencoes: number
+  brancosNulos: number
+  status: MobilizationOpportunityStatus
+  message: string
+  supportLine: string | null
+}
+
 export type TerritorialClassificationBand =
   | 'defesa'
   | 'ataque'
@@ -118,6 +141,8 @@ export type GapVs2022Baseline = {
 const numberFormatter = new Intl.NumberFormat('pt-BR')
 
 export const formatElectionNumber = (value: number): string => numberFormatter.format(value)
+
+const formatPercent = (ratio: number): number => Math.round(ratio * 100)
 
 export const formatVoteTrendSeries = (series: VoteTrendSeries): string =>
   `${formatElectionNumber(series.y2014)} (2014) → ${formatElectionNumber(series.y2018)} (2018) → ${formatElectionNumber(series.y2022)} (2022)`
@@ -240,6 +265,10 @@ export const territorialClassAlertVariant = (
 
 export const conversionRateAlertVariant = (band: ConversionRateBand): 'default' | 'pending' =>
   band === 'oportunidade' ? 'pending' : 'default'
+
+export const isComparableMobilization = (
+  status: MobilizationOpportunityStatus,
+): status is 'opportunity' => status === 'opportunity'
 
 type TrendPair = { fromVotes: number; toVotes: number; fromYear: number; toYear: number }
 
@@ -456,6 +485,67 @@ export const computeConversionRate = ({
   }
 }
 
+/**
+ * Sum abstentions + blank + null votes as mobilization potential (excludes anulados).
+ */
+export const computeMobilizationOpportunity = ({
+  abstencoes,
+  brancos,
+  nulos,
+  aptos,
+}: MobilizationOpportunityInput): MobilizationOpportunityResult => {
+  if (aptos === null) {
+    return {
+      absolute: 0,
+      relative: null,
+      abstencoes: 0,
+      brancosNulos: 0,
+      status: 'semBaseline',
+      message: NO_ELECTION_BASELINE_MESSAGE,
+      supportLine: null,
+    }
+  }
+
+  if (aptos <= 0) {
+    return {
+      absolute: 0,
+      relative: null,
+      abstencoes: 0,
+      brancosNulos: 0,
+      status: 'semAptos',
+      message: 'Sem eleitores aptos no baseline para esta geografia',
+      supportLine: null,
+    }
+  }
+
+  const abstencoesTotal = abstencoes ?? 0
+  const brancosNulos = (brancos ?? 0) + (nulos ?? 0)
+  const absolute = abstencoesTotal + brancosNulos
+  const relative = absolute / aptos
+
+  if (absolute <= 0) {
+    return {
+      absolute: 0,
+      relative: 0,
+      abstencoes: abstencoesTotal,
+      brancosNulos,
+      status: 'zero',
+      message: 'Sem potencial de mobilização no baseline 2022',
+      supportLine: 'Sem brancos, nulos ou abstenções no baseline 2022',
+    }
+  }
+
+  return {
+    absolute,
+    relative,
+    abstencoes: abstencoesTotal,
+    brancosNulos,
+    status: 'opportunity',
+    message: 'Oportunidade de mobilização',
+    supportLine: `${formatElectionNumber(brancosNulos)} brancos/nulos + ${formatElectionNumber(abstencoesTotal)} abstenções = ${formatElectionNumber(absolute)} votos possíveis · ${formatPercent(relative)}% do eleitorado apto`,
+  }
+}
+
 export type TicketLeverageStatus =
   | 'comparable'
   | 'noEstimate'
@@ -522,7 +612,12 @@ export type TicketFlipOverviewAggregate = {
   bothAlignedCount: number
 }
 
-const formatPercent = (ratio: number): number => Math.round(ratio * 100)
+export type MobilizationOverviewAggregate = {
+  absoluteTotal: number
+  relativePercent: number
+  brancosNulosTotal: number
+  abstencoesTotal: number
+}
 
 /** User-facing label for the configured majoritarian ticket base (cycle-specific names). */
 export const formatMajoritarianTicketBaseLabel = (): string =>
@@ -774,6 +869,20 @@ export const aggregateTicketFlipOverview = (
   }
 
   return { count, bothAlignedCount }
+}
+
+export const aggregateMobilizationOverview = (
+  input: MobilizationOpportunityInput,
+): MobilizationOverviewAggregate | null => {
+  const result = computeMobilizationOpportunity(input)
+  if (!isComparableMobilization(result.status)) return null
+
+  return {
+    absoluteTotal: result.absolute,
+    relativePercent: formatPercent(result.relative ?? 0),
+    brancosNulosTotal: result.brancosNulos,
+    abstencoesTotal: result.abstencoes,
+  }
 }
 
 export const ticketLeverageAlertVariant = (

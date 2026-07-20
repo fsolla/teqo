@@ -18,6 +18,7 @@ import {
   aggregateTicketFlipOverview,
   aggregateTicketLeverageOverview,
   aggregateVoteTrend,
+  aggregateMobilizationOverview,
   computeConversionRate,
   computeGapVs2022,
   computeTerritorialClass,
@@ -25,6 +26,8 @@ import {
   computeTicketLeverage,
   isComparableConversionBand,
   isComparableTerritorialClass,
+  type MobilizationOverviewAggregate,
+  type MobilizationOpportunityInput,
   type ConversionBandDistribution,
   type ConversionRateBand,
   type TerritorialClassificationBand,
@@ -389,10 +392,15 @@ const aggregateElectorate = (
 const sumFederalTallyForGeography = (
   talliesByCityZone: ReadonlyMap<string, ElectionTallyAggregateRow>,
   geography: NucleusElectionGeography,
-): Pick<NucleusElectoralBaselineViewModel['electorate'], 'aptos' | 'abstencoes' | 'validos'> => {
+): Pick<
+  NucleusElectoralBaselineViewModel['electorate'],
+  'aptos' | 'abstencoes' | 'validos' | 'brancos' | 'nulos'
+> => {
   let aptos = 0
   let abstencoes = 0
   let validos = 0
+  let brancos = 0
+  let nulos = 0
 
   for (const { cityName, zoneNumber } of geography.cityZonePairs) {
     const row = talliesByCityZone.get(cityZoneKey(cityName, zoneNumber))
@@ -400,9 +408,11 @@ const sumFederalTallyForGeography = (
     aptos += row.aptos
     abstencoes += row.abstencoes
     validos += row.votosValidos
+    brancos += row.votosBranco
+    nulos += row.votosNulo
   }
 
-  return { aptos, abstencoes, validos }
+  return { aptos, abstencoes, validos, brancos, nulos }
 }
 
 export const aggregateNucleusElectoralBaseline = (
@@ -800,6 +810,7 @@ export type NucleusListElectionOverview = {
   baseline2022: NucleusBaseline2022OverviewAggregate | null
   trend: NucleusTrendOverviewAggregate | null
   conversion: NucleusConversionOverviewAggregate | null
+  mobilization: MobilizationOverviewAggregate | null
   leverage: TicketLeverageOverviewAggregate | null
   flipOpportunity: TicketFlipOverviewAggregate | null
   classification: NucleusClassificationOverviewAggregate | null
@@ -823,6 +834,7 @@ export const loadNucleusListElectionOverview = async (
       baseline2022: null,
       trend: null,
       conversion: null,
+      mobilization: null,
       leverage: null,
       flipOpportunity: null,
       classification: null,
@@ -841,6 +853,7 @@ export const loadNucleusListElectionOverview = async (
       baseline2022: null,
       trend: null,
       conversion: null,
+      mobilization: null,
       leverage: null,
       flipOpportunity: null,
       classification: null,
@@ -866,12 +879,29 @@ export const loadNucleusListElectionOverview = async (
   )
 
   const classificationBands: TerritorialClassificationBand[] = []
+  const federalTallyByIndex = new Map<
+    number,
+    ReturnType<typeof sumFederalTallyForGeography>
+  >()
+  const mobilizationInput: MobilizationOpportunityInput = {
+    aptos: 0,
+    abstencoes: 0,
+    brancos: 0,
+    nulos: 0,
+  }
+
   for (const index of withGeographyIndexes) {
     const geography = geographies[index]!
-    const { validos } = sumFederalTallyForGeography(classificationTalliesByCityZone, geography)
+    const tallies = sumFederalTallyForGeography(classificationTalliesByCityZone, geography)
+    federalTallyByIndex.set(index, tallies)
+    mobilizationInput.aptos = (mobilizationInput.aptos ?? 0) + tallies.aptos
+    mobilizationInput.abstencoes = (mobilizationInput.abstencoes ?? 0) + tallies.abstencoes
+    mobilizationInput.brancos = (mobilizationInput.brancos ?? 0) + tallies.brancos
+    mobilizationInput.nulos = (mobilizationInput.nulos ?? 0) + tallies.nulos
+
     const territorial = computeTerritorialClass({
       sollaVotes: sumCandidateVotesForGeography(geography, votes2022),
-      federalValidVotes: validos,
+      federalValidVotes: tallies.validos,
     })
     if (isComparableTerritorialClass(territorial.band)) {
       classificationBands.push(territorial.band)
@@ -882,6 +912,8 @@ export const loadNucleusListElectionOverview = async (
     classificationBands.length > 0
       ? { distribution: aggregateTerritorialClass(classificationBands) }
       : null
+
+  const mobilization = aggregateMobilizationOverview(mobilizationInput)
 
   const flipResults = await Promise.all(
     withGeographyIndexes.map(async (index) => {
@@ -897,6 +929,7 @@ export const loadNucleusListElectionOverview = async (
       baseline2022: { gapTotal: null, above: 0, below: 0 },
       trend,
       conversion: null,
+      mobilization,
       leverage: null,
       flipOpportunity,
       classification,
@@ -928,10 +961,10 @@ export const loadNucleusListElectionOverview = async (
       comparableCount += 1
     }
 
-    const { aptos, abstencoes } = sumFederalTallyForGeography(
-      classificationTalliesByCityZone,
-      geography,
-    )
+    const tallies = federalTallyByIndex.get(index)
+    if (!tallies) continue
+
+    const { aptos, abstencoes } = tallies
     const conversion = computeConversionRate({
       aptos,
       abstencoes,
@@ -970,6 +1003,7 @@ export const loadNucleusListElectionOverview = async (
     },
     trend,
     conversion,
+    mobilization,
     leverage: aggregateTicketLeverageOverview(leverageRows),
     flipOpportunity,
     classification,

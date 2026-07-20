@@ -176,6 +176,7 @@ export const loadNucleusListOverviewData = async (
     baseline2022: listElectionOverview.baseline2022,
     trend: listElectionOverview.trend,
     conversion: listElectionOverview.conversion,
+    mobilization: listElectionOverview.mobilization,
     leverage: listElectionOverview.leverage,
     flipOpportunity: listElectionOverview.flipOpportunity,
     classification: listElectionOverview.classification,

@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/Badge'
 import {
   computeConversionRate,
   computeGapVs2022,
+  computeMobilizationOpportunity,
   computeTerritorialClass,
   computeTicketLeverage,
   computeVoteTrend,
@@ -23,6 +24,7 @@ import {
   formatElectionNumber,
   formatVoteTrendSeries,
   isComparableConversionBand,
+  isComparableMobilization,
   isComparableTerritorialClass,
   isComparableTicketLeverage,
   territorialClassAlertVariant,
@@ -70,9 +72,11 @@ export const NucleusInsights = ({
           ? MinusIcon
           : TriangleAlertIcon
 
+  const electorate = baseline?.electorate
+
   const conversion = computeConversionRate({
-    aptos: baseline?.electorate.aptos ?? null,
-    abstencoes: baseline?.electorate.abstencoes ?? null,
+    aptos: electorate?.aptos ?? null,
+    abstencoes: electorate?.abstencoes ?? null,
     confirmedVoteEstimate,
   })
   const ConversionIcon =
@@ -81,6 +85,13 @@ export const NucleusInsights = ({
       : conversion.band === 'oportunidade'
         ? TriangleAlertIcon
         : PercentIcon
+
+  const mobilization = computeMobilizationOpportunity({
+    abstencoes: electorate?.abstencoes ?? null,
+    brancos: electorate?.brancos ?? null,
+    nulos: electorate?.nulos ?? null,
+    aptos: electorate?.aptos ?? null,
+  })
 
   const leverage = computeTicketLeverage({
     confirmedVoteEstimate,
@@ -96,7 +107,7 @@ export const NucleusInsights = ({
 
   const territorial = computeTerritorialClass({
     sollaVotes: baseline?.candidate.votes ?? 0,
-    federalValidVotes: baseline?.electorate.validos ?? null,
+    federalValidVotes: electorate?.validos ?? null,
   })
 
   let supportLine: string | null = null
@@ -105,6 +116,7 @@ export const NucleusInsights = ({
   }
 
   const showConversion = isComparableConversionBand(conversion.band)
+  const showMobilization = isComparableMobilization(mobilization.status)
   const showLeverage = isComparableTicketLeverage(leverage.status)
   const showFlip = flip?.status === 'opportunity'
 
@@ -137,6 +149,14 @@ export const NucleusInsights = ({
           {conversion.supportLine ? (
             <AlertDescription>{conversion.supportLine}</AlertDescription>
           ) : null}
+        </Alert>
+      ) : null}
+
+      {showMobilization ? (
+        <Alert data-insight="mobilization" variant="pending" className="rounded-xl px-3.5 py-3">
+          <MegaphoneIcon aria-hidden="true" />
+          <AlertTitle className="font-bold">{mobilization.message}</AlertTitle>
+          <AlertDescription>{mobilization.supportLine}</AlertDescription>
         </Alert>
       ) : null}
 

@@ -139,6 +139,27 @@ export const NucleusListOverview = ({
               </span>
             </p>
           ) : null}
+          {view.mobilization ? (
+            <p className="text-sm text-muted-foreground">
+              Mobilização:{' '}
+              <span className="font-medium tabular-nums text-foreground">
+                {formatElectionNumber(view.mobilization.absoluteTotal)} votos possíveis
+              </span>
+              {' · '}
+              <span className="font-medium tabular-nums text-foreground">
+                {view.mobilization.relativePercent}%
+              </span>{' '}
+              do eleitorado apto
+              {' · '}
+              <span className="font-medium text-estimate-pending-foreground">
+                {formatElectionNumber(view.mobilization.brancosNulosTotal)} brancos/nulos
+              </span>
+              {' · '}
+              <span className="font-medium text-foreground">
+                {formatElectionNumber(view.mobilization.abstencoesTotal)} abstenções
+              </span>
+            </p>
+          ) : null}
           {view.leverage ? (
             <p className="text-sm text-muted-foreground">
               Alavancagem da chapa:{' '}
