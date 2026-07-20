@@ -1,7 +1,7 @@
 # Escala e DRY pós-E2 (série TSE 2014/2018 + tendência)
 
 Status: Fase 2 entregue (2026-07-19); extensão F2 pós-A5 pendente; Fases 1, 3 e 4 pendentes
-Atualizado em: 2026-07-19 (extensão int leverage/flip/**classification** registrada via `capture-review-debts` pós-A5 `/simplify` + pós-A5-2)
+Atualizado em: 2026-07-19 (extensão int leverage/flip/**classification** registrada via `capture-review-debts` pós-A5 `/simplify` + pós-A5-2; **E4 import planilha cortado**)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E, item E7)
 Responsável: —
 

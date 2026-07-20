@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-19 (janela 1 vigente; foco: Onda 0 + ativação com dados reais; último compile)
+Atualizado em: 2026-07-19 (E4 import planilha cortado — preenchimento manual via E1+E3; janela 1 vigente; foco: Onda 0 + ativação com dados reais)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -38,7 +38,7 @@ Engenharia de núcleos / C2 / C3 / baseline / PWA / Trilha E parcial já em `mai
 - **Núcleos MVP + Ciclo 2** — auth/`campaignUser`, território A1/A2, baseline A3/A4, overview B1, share C1, PWA D1, geometrias B2, Leaflet B3.
 - **Operação** — C2 (eng. pronta; prod. ↔ Onda 0), C3 agenda, C6–C9 escala apoiadores/planos.
 - **Trilha A (parcial)** — A5 conversão + classificação territorial + alavancagem/virada; A7 F1 agregação federal no detalhe.
-- **Trilha E (parcial)** — E1 metas/prioridade + E3 estratégia manual; E2 série TSE 2014/2018 + tendência; E7 F2 int loader.
+- **Trilha E (parcial)** — E1 metas/prioridade + E3 estratégia manual; E2 série TSE 2014/2018 + tendência; E7 F2 int loader; **E4 import planilha cortado** (decisão de produto: dados via UI manual, sem `pnpm db:seed:mapa`).
 - **Fill-ins** — visitados recentemente, reset senha + perfil, Field Desk polish (Impeccable); B5 F1 lazy geometrias (com B3).
 
 ## Próximos — Campanha (`/campanha`)
@@ -56,8 +56,7 @@ Engenharia de núcleos / C2 / C3 / baseline / PWA / Trilha E parcial já em `mai
 - **C** — C10 lista de apoiadores sem N+1 de access / forms com `errorProps` · gatilho: base nominal crescendo · [plano](plans/escala-dry-pos-c9.md)
 - **C** — C11 feed/loaders de planos sem O(n) no detalhe · gatilho: agenda com uso real / volume medido · [plano](plans/escala-dry-pos-c7.md)
 - **D** — D2 push + sino in-app · soft: chave `campanha-notificacoes-push` (Onda 0) · [plano](plans/notifications.md)
-- **E** — E4 import único da planilha de projeção sem criar `Contact`/`leadership` · [plano](plans/mapa-projecao-municipios.md)
-- **E** — E6 aggregate metas/prioridade + DRY geo/UI na lista · gatilho: muitos núcleos / antes de E4 se lista lenta · [plano](plans/escala-dry-pos-e1.md)
+- **E** — E6 aggregate metas/prioridade + DRY geo/UI na lista · gatilho: muitos núcleos / lista lenta · [plano](plans/escala-dry-pos-e1.md)
 - **E** — E7 F1/F3/F4 + extensões F2 pós-A5 (trend VM único, tipos, helpers de teste) · [plano](plans/escala-dry-pos-e2.md)
 - **Débitos / fill-ins** — O0+, VR+, RS+, FD+, FD2, listas globais, higiene PascalCase (ver abaixo)
 
@@ -78,7 +77,6 @@ Engenharia de núcleos / C2 / C3 / baseline / PWA / Trilha E parcial já em `mai
 | C4 Demandas                  | — (encomendar)                 | [demandas-campanha.md](plans/demandas-campanha.md)                    |
 | C5 GOTV _(validar)_          | `Dia-D-GOTV`                   | sem plano ainda                                                       |
 | D2 Notificações              | `Notificacoes-PWA`             | [notifications.md](plans/notifications.md)                            |
-| E4 Import planilha           | — (reusa Baseline / Overview)  | [mapa-projecao-municipios.md](plans/mapa-projecao-municipios.md)    |
 
 Paleta dos PNGs UX Pilot é legado — implementação usa tokens `data-theme='campaign'`.
 
@@ -126,7 +124,6 @@ flowchart TD
         E2["E2 Tendência ✓"]
         E6["E6 Escala pós-E1"]
         E7["E7 Escala pós-E2"]
-        E4["E4 Import planilha"]
         E5["E5 Salvador bairro _(validar)_"]
     end
 
@@ -147,11 +144,8 @@ flowchart TD
     D1 --> D2
     JUR -.chave push.-> D2
     E1 --> E6
-    E1 --> E4
     E2 --> E7
     E2 -.dataset.-> E5
-    E6 -.perf.-> E4
-    E7 -.int loader.-> E4
 ```
 
 ### Sequência por janela (só pendentes)
@@ -169,14 +163,13 @@ flowchart TD
 
 | Ordem | Item                                      | Plano                                              | Depende de              | Paralelizável com   |
 | ----- | ----------------------------------------- | -------------------------------------------------- | ----------------------- | ------------------- |
-| 5     | E4 import planilha                        | [mapa-projecao-municipios.md](plans/mapa-projecao-municipios.md) | E1+E3 ✓ (suave: E6/E7) | A5 resto, A7, A8 |
-| 6     | A5 mobilização + competitiva              | planos A5 acima                                    | A4 ✓                    | A7, A8, E4, C4, D2  |
-| 7     | A7 F2–F5                                  | [escala-dry-pos-a4.md](plans/escala-dry-pos-a4.md) | A4 ✓                    | A5, A8, E4, C4      |
-| 8     | A8 perfis IBGE                            | [perfil-eleitorado-ibge.md](plans/perfil-eleitorado-ibge.md) | A1 ✓              | A5, A7, E4          |
-| 9     | E7 F1/F3/F4                               | [escala-dry-pos-e2.md](plans/escala-dry-pos-e2.md) | E2 ✓                    | E6, A7, E4          |
-| 10    | C4 Demandas                               | [demandas-campanha.md](plans/demandas-campanha.md) | A1 ✓ (suave: C3)        | A5, A7, E4, D2      |
-| 11    | D2 Notificações                           | [notifications.md](plans/notifications.md)         | D1 ✓ + chave push       | A5, A7, E4, C4      |
-| 12    | B5 F2–F3 / B6                             | [B5](plans/escala-dry-pos-b2.md) · [B6](plans/escala-dry-pos-b3.md) | B2 ✓ / B3 ✓ | A7, E4 |
+| 5     | A5 mobilização + competitiva              | planos A5 acima                                    | A4 ✓                    | A7, A8, C4, D2      |
+| 6     | A7 F2–F5                                  | [escala-dry-pos-a4.md](plans/escala-dry-pos-a4.md) | A4 ✓                    | A5, A8, C4          |
+| 7     | A8 perfis IBGE                            | [perfil-eleitorado-ibge.md](plans/perfil-eleitorado-ibge.md) | A1 ✓              | A5, A7              |
+| 8     | E7 F1/F3/F4                               | [escala-dry-pos-e2.md](plans/escala-dry-pos-e2.md) | E2 ✓                    | E6, A7              |
+| 9     | C4 Demandas                               | [demandas-campanha.md](plans/demandas-campanha.md) | A1 ✓ (suave: C3)        | A5, A7, D2          |
+| 10    | D2 Notificações                           | [notifications.md](plans/notifications.md)         | D1 ✓ + chave push       | A5, A7, C4          |
+| 11    | B5 F2–F3 / B6                             | [B5](plans/escala-dry-pos-b2.md) · [B6](plans/escala-dry-pos-b3.md) | B2 ✓ / B3 ✓ | A7 |
 
 **Janela 3 — 16/08 → set**
 
@@ -202,11 +195,19 @@ flowchart TD
 - **Listas globais** _(validar)_ — lideranças / atualizações / territórios no nível raiz
 - **Higiene PascalCase** — varredura de componentes legados
 
+### Itens cortados
+
+| Item | Cortado em | Motivo | Alternativa |
+| ---- | ---------- | ------ | ----------- |
+| **E4** import único da planilha (`pnpm db:seed:mapa`) | 2026-07-19 | Decisão de produto: não importar automaticamente da planilha de exemplo; preferência por recolocar dados manualmente | Preencher metas, prioridade, dobradinhas e encaminhamentos via UI E1+E3 em `/campanha/nucleos` |
+
+Plano histórico: [mapa-projecao-municipios.md](plans/mapa-projecao-municipios.md) (seção E4 marcada como cortada).
+
 ### Cortes seguros / não cortáveis
 
 **Não cortáveis:** Onda 0 (jurídico/Consent), C2 dados reais, C3 agenda (já ✓), A4 baseline (já ✓), E1+E3 paridade mínima com a planilha (já ✓) — risco legal, base nominal, operação e instrumento de alocação.
 
-**Cortes seguros** (se o prazo apertar): E5; B4; B6; B5 F2–F3; E4 (preencher E1/E3 à mão); A8; E7 F1/F3/F4; E6 F2–F4 (preferir F1 se lista lenta); A7 F2–F5 (F4 vale mais com mapa na lista; F5 se filtros ≤10 núcleos); A5 restante (mobilização/competitiva); C4; D2 push (manter sino); C10/C11 se base/agenda pequenas; O0+/VR+/RS+/FD+ fases cosméticas; FD2 Fase 5 motion; fill-ins.
+**Cortes seguros** (se o prazo apertar): E5; B4; B6; B5 F2–F3; A8; E7 F1/F3/F4; E6 F2–F4 (preferir F1 se lista lenta); A7 F2–F5 (F4 vale mais com mapa na lista; F5 se filtros ≤10 núcleos); A5 restante (mobilização/competitiva); C4; D2 push (manter sino); C10/C11 se base/agenda pequenas; O0+/VR+/RS+/FD+ fases cosméticas; FD2 Fase 5 motion; fill-ins.
 
 ## Bloqueadores atuais
 

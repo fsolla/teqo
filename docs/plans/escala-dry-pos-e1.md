@@ -1,7 +1,7 @@
 # Escala e DRY pós-E1+E3 (metas, prioridade, estratégia manual)
 
 Status: registrado no roadmap (fases pendentes)
-Atualizado em: 2026-07-19 (`capture-review-debts` pós-A5: labels conversão/tendência no overview → F3)
+Atualizado em: 2026-07-19 (`capture-review-debts` pós-A5: labels conversão/tendência no overview → F3; **E4 import planilha cortado** — gatilho E6 F1 permanece volume manual de núcleos / lista lenta)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E, item E6)
 Responsável: —
 
@@ -11,7 +11,7 @@ O E1+E3 ([mapa-projecao-municipios.md](mapa-projecao-municipios.md)) entrega `vo
 
 Duas passagens `/simplify` no mesmo branch já limparam o que cabia em cleanup: select fragment único, remoção de `voteGoals` do `nucleusListSelect` (lista só usa `priority`), remoção de `priority` do select do dashboard geral, `aggregateVoteGoals` em um passe no overview VM, labels E3 em `nucleusUi.ts` (client-safe), `step={1}` nos inputs de meta, testes esparsos de ordem.
 
-Os revisores (performance / reuse / quality) marcaram como **importantes e maiores que simplify** os follow-ups abaixo. Sem registro, E2/E4 e B3 (coroplético com metas) herdam o mesmo custo de I/O na lista de núcleos.
+Os revisores (performance / reuse / quality) marcaram como **importantes e maiores que simplify** os follow-ups abaixo. Sem registro, E2 e B3 (coroplético com metas) herdam o mesmo custo de I/O na lista de núcleos. _(E4 import planilha cortado 2026-07-19.)_
 
 1. **Query duplicada na página `/campanha/nucleos`.** `page.tsx` chama em paralelo `loadNucleusListPageData` (paginado, `depth: 1`) e `loadNucleusListOverviewData` (`pagination: false`, conjunto filtrado inteiro). Overview precisa do agregado; a lista precisa da página — mas hoje são **dois round-trips** sobre linhas sobrepostas. Em filtros amplos, o fetch unpaginado do overview domina.
 2. **Geografia resolvida duas vezes para baseline no overview.** `nucleusListOverviewPageData.ts` mapeia com `toNucleusElectionGeographyInput`; `loadNucleusBaseline2022Overview` chama `resolveNucleusElectionGeography` de novo por núcleo (mais pesado: `tseZonesForCity`, interseções).

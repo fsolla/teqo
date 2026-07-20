@@ -1,7 +1,7 @@
 # Mapa de projeção de votos por município (equiparar e superar as planilhas 2026)
 
-Status: E1, E2 e E3 implementados e mesclados em `main` (2026-07-19); E4 e E5 pendentes
-Atualizado em: 2026-07-19 (revisão entrega E1+E3 — marcar como entregues no roadmap; access E1/E3 sem `canSetDerivedNucleusField`; escrita via `canUpdateElectoralNucleus` + selects/VMs)
+Status: E1, E2 e E3 implementados e mesclados em `main` (2026-07-19); **E4 cortado** (2026-07-19 — preenchimento manual via E1+E3); E5 pendente
+Atualizado em: 2026-07-19 (revisão entrega E1+E3 — marcar como entregues no roadmap; access E1/E3 sem `canSetDerivedNucleusField`; escrita via `canUpdateElectoralNucleus` + selects/VMs; **E4 cortado** — decisão de produto: sem `pnpm db:seed:mapa`, dados via UI manual)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E — itens E1–E5, "Ciclo 3")
 Responsável: —
 
@@ -16,7 +16,7 @@ A vertical `/campanha` já cobre ou supera parte disso: baseline TSE 2022 por ge
 - Metas de votos em três cenários e flag de prioridade por núcleo, com escrita staff e leitura pelos três papéis (E1).
 - Série histórica TSE 2014/2018/2022 (deputado federal, turno 1, BA) com classificação automática de tendência por núcleo (E2) — dado público, sem `Consent`.
 - Campos manuais staff-only de dobradinhas e encaminhamentos na inteligência do núcleo (E3), excluídos dos view models de `lideranca`.
-- Import único e idempotente da planilha rica para núcleos (E4), **sem criar `Contact`/`leadership`** (sem telefone nem consent — bloqueador LGPD da Onda 0 se aplica).
+- ~~Import único e idempotente da planilha rica para núcleos (E4)~~ — **cortado 2026-07-19** (preenchimento manual via UI E1+E3; ver [roadmap](../roadmap.md) § Itens cortados).
 - Registrar Salvador por bairro como item futuro (E5), sem implementar.
 - Migrations somente em E1+E3 (campos novos em `electoralNucleus`); E2 e E4 não alteram schema.
 
@@ -31,7 +31,7 @@ A vertical `/campanha` já cobre ou supera parte disso: baseline TSE 2022 por ge
 ## Questões em aberto
 
 - **Banda de estabilidade da tendência?** **Resolvido (2026-07-19):** ±10% (`VOTE_TREND_STABLE_BAND = 0.1` em `electionInsights.ts`); par preferido 2018→2022.
-- **E4 cria núcleo para todo município com dado estratégico (≈193) ou só para os ~50 prioritários?** **Recomendação:** default = municípios com qualquer preenchimento estratégico (metas, dobradinha, encaminhamento), flag `--priority-only` para restringir. Definir com produto antes de rodar em produção.
+- **E4 cria núcleo para todo município com dado estratégico (≈193) ou só para os ~50 prioritários?** **Cortado (2026-07-19)** — item E4 não será implementado; dados estratégicos entram manualmente via E1+E3.
 - **Meta estadual (71.000) fica onde?** **Recomendação:** derivada — soma das metas dos núcleos no dashboard; sem campo global novo. Se produto quiser meta editável independente da soma, vira campo em global de campanha (fase posterior).
 
 ## Abordagem proposta
@@ -42,17 +42,15 @@ flowchart LR
         E1["E1 Metas em cenários + prioridade<br/>(migration)"]
         E2["E2 Série TSE 2014/2018<br/>+ tendência derivada"]
         E3["E3 Dobradinhas + encaminhamentos<br/>manuais (staff-only)"]
-        E4["E4 Import único da planilha<br/>(pnpm db:seed:mapa)"]
         E5["E5 Salvador por bairro<br/>(registrado; futuro)"]
     end
     A3["A3/A4 baseline TSE 2022 ✓"] --> E2
-    E1 --> E4
-    E3 --> E4
-    E2 -.tendência no import.-> E4
     E1 -.metas no coroplético.-> B3["B3 Mapa Leaflet"]
     E2 -.classe por cor.-> B3
     E2 -.dataset votacao_secao.-> E5
 ```
+
+> **E4 (import único `pnpm db:seed:mapa`) — cortado 2026-07-19.** Decisão de produto: preencher metas, prioridade, dobradinhas e encaminhamentos manualmente na UI (E1+E3). O desenho original (script CLI idempotente, sem `Contact`/`leadership`) permanece documentado abaixo como referência histórica.
 
 ### E1 — Metas em cenários + prioridade no Núcleo (migration)
 
@@ -75,7 +73,11 @@ flowchart LR
 - Não conflita com A6 (dobradinha automática pós-TSE-2026) nem C4 (Demandas estruturadas): E3 é a versão manual imediata; os planos futuros complementam sem substituição forçada.
 - Migration compartilhada com E1 (acima).
 
-### E4 — Import único da planilha (`pnpm db:seed:mapa`)
+### E4 — Import único da planilha (`pnpm db:seed:mapa`) — **CORTADO**
+
+**Status:** cortado em 2026-07-19. Motivo: decisão de produto — preferência por recolocar dados manualmente na UI em vez de bootstrap via planilha. Alternativa: criar/editar núcleos e preencher `voteGoals`, `priority`, `dobradinhaNotes` e `nextSteps` via E1+E3 em `/campanha/nucleos`.
+
+Desenho original (não implementar):
 
 - Script `scripts/seed-mapa-projecao.mjs` que lê `docs/sheets/Mapa_projecao_votos_Solla_2026.xlsx` (a rica) e cria/atualiza núcleos por município via Local API em transação: `voteGoals` (parse "Bom: X | Regular: Y | Mínimo: Z"), `priority` (`alta` quando flagado ou presente na aba PRIORITÁRIAS), `dobradinhaNotes`, `nextSteps` (encaminhamentos + observações). Município → nome canônico via `canonicalizeMunicipalityName` (`src/lib/bahiaMunicipalityCodes.ts`); região derivada no servidor (A1).
 - Nomes de assessores/lideranças da planilha entram como texto nos campos staff-only — **nunca criam `Contact`/`leadership`** (decisão travada acima).
@@ -88,7 +90,7 @@ flowchart LR
 ## Dependências
 
 - **E2 ← A3/A4** (entregues): collections `electionTally`/`electionCandidateVote`/`electionCandidate`, seed `db:seed:tse`, `getNucleusElectoralBaseline`, `computeGapVs2022`.
-- **E4 ← E1 + E3** (duras): os campos precisam existir antes do import. **E4 ← E2** (suave): tendência já visível ao revisar o import.
+- ~~**E4 ← E1 + E3** (duras)~~ — E4 cortado; E1+E3 atendem operação manual.
 - **E1/E3** não dependem de nada novo — paralelizáveis com o restante da Janela 2.
 - Suaves para B3 (mapa Leaflet): metas e classe de tendência como métricas do coroplético.
 - Reusa: `withPayloadTransaction`, locks advisory, padrões de filtro/overview B1, skill `payload-migrations`.
