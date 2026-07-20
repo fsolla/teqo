@@ -30,6 +30,13 @@ const payload = await getPayload({ config })
 try {
   await provisionOnda0ConsentAndPrivacy(payload)
   console.log('[seed:consent] OK — provisional Consent keys and privacy-policy global updated.')
+  console.log(
+    '[seed:consent] Bust deployed /privacidade cache (CLI cannot revalidate the server runtime):',
+  )
+  console.log(
+    '  curl -X POST "$NEXT_PUBLIC_SITE_URL/api/revalidate?tag=global_privacy-policy" \\\n' +
+      '    -H "x-revalidate-secret: $REVALIDATE_SECRET"',
+  )
 } catch (error) {
   console.error(`\n[seed:consent] ${error instanceof Error ? error.message : String(error)}\n`)
   process.exit(1)

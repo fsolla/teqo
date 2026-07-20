@@ -69,16 +69,22 @@ The public news/publications system is backed by two collections (both in the `P
 
 Admin edits made through the deployed app self-revalidate via the `afterChange` hooks above. But any write that does **not** go through the deployed Payload runtime — direct SQL, `pnpm db:seed:posts`, a DB restore / `db:pull` — will **not** bust production's frozen `posts` cache. (Even when such a write triggers the hook, its `revalidateTag('posts')` runs in that CLI/local process and cannot touch the deployed server's cache.) The pages keep serving stale content until the tag is busted.
 
-Bust it with the secured endpoint (`src/app/(frontend)/api/revalidate/route.ts`), which calls `revalidatePostsListing()`:
+Bust it with the secured endpoint (`src/app/(frontend)/api/revalidate/route.ts`):
 
 ```bash
+# News (`posts` tag — default)
 curl -X POST "https://<prod-domain>/api/revalidate" \
+  -H "x-revalidate-secret: $REVALIDATE_SECRET"
+
+# Privacy policy global after Onda 0 migration/seed (`global_privacy-policy`)
+curl -X POST "https://<prod-domain>/api/revalidate?tag=global_privacy-policy" \
   -H "x-revalidate-secret: $REVALIDATE_SECRET"
 ```
 
 - **Auth:** send the secret via `x-revalidate-secret` or `Authorization: Bearer <secret>`; it is compared to `REVALIDATE_SECRET` with a constant-time check.
 - `REVALIDATE_SECRET` must be set in the Vercel **production** env (and in your local env if you want to test the endpoint). It is documented in `.env.example`.
-- **Responses:** `200 { revalidated: true, tag: 'posts' }` on success; `401` if the secret is missing/wrong; `500` if `REVALIDATE_SECRET` is not configured on the server.
+- **Tag:** optional `?tag=` query or JSON body `{ "tag": "..." }` (query wins). Allowlist: `posts` (default), `global_privacy-policy`. Unknown tag → `400`.
+- **Responses:** `200 { revalidated: true, tag: '...' }` on success; `401` if the secret is missing/wrong; `500` if `REVALIDATE_SECRET` is not configured on the server.
 - This POST is the required last step of the post-seed / direct-DB-change runbook.
 
 ## Campaign auth (`/campanha`)

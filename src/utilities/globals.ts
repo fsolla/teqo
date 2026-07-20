@@ -17,14 +17,14 @@ export async function getGlobal<Slug extends Global>(slug: Slug, depth?: number)
   return global
 }
 
-const getTag = (slug: string) => `global_${slug}`
+export const getGlobalCacheTag = (slug: string) => `global_${slug}`
 
 type CachedGlobalFactory<Slug extends Global = Global> = () => Promise<Config['globals'][Slug]>
 
 const cachedGlobalFactories = new Map<string, CachedGlobalFactory>()
 
 export const getCachedGlobal = <Slug extends Global>(slug: Slug, depth?: number) => {
-  const tag = getTag(slug)
+  const tag = getGlobalCacheTag(slug)
   const cacheKey = `${tag}:${depth ?? 0}`
   const existing = cachedGlobalFactories.get(cacheKey) as CachedGlobalFactory<Slug> | undefined
   if (existing) return existing
@@ -36,4 +36,5 @@ export const getCachedGlobal = <Slug extends Global>(slug: Slug, depth?: number)
   return factory
 }
 
-export const revalidateGlobal = <Slug extends Global>(slug: Slug) => revalidateTag(getTag(slug))
+export const revalidateGlobal = <Slug extends Global>(slug: Slug) =>
+  revalidateTag(getGlobalCacheTag(slug))

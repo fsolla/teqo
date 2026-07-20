@@ -55,10 +55,14 @@ Useful scripts: `pnpm db:start` / `pnpm db:stop` (local Postgres), `pnpm db:pull
 
 ### Content & cache revalidation
 
-Public news pages (`/[type]`, `/[type]/[category]`, articles, and the home news list) are cached under a shared `posts` tag. Editing a post or tag in the deployed admin self-revalidates via `afterChange` hooks. Any write that bypasses the deployed runtime — a direct-DB seed (`pnpm db:seed:posts`), SQL, or a restore — does **not** bust production's cache, so afterwards call the secured endpoint:
+Public news pages (`/[type]`, `/[type]/[category]`, articles, and the home news list) are cached under a shared `posts` tag. Editing a post or tag in the deployed admin self-revalidates via `afterChange` hooks. Any write that bypasses the deployed runtime — a direct-DB seed (`pnpm db:seed:posts`), SQL, Onda 0 migrations, or a restore — does **not** bust production's cache, so afterwards call the secured endpoint:
 
 ```
+# News (default tag: posts)
 curl -X POST "https://<prod-domain>/api/revalidate" -H "x-revalidate-secret: $REVALIDATE_SECRET"
+
+# Privacy policy after Onda 0 provision (tag: global_privacy-policy)
+curl -X POST "https://<prod-domain>/api/revalidate?tag=global_privacy-policy" -H "x-revalidate-secret: $REVALIDATE_SECRET"
 ```
 
 `REVALIDATE_SECRET` must be set in the Vercel production env (see `.env.example`). See the "Posts & Tags" section of `AGENTS.md` for the full model.

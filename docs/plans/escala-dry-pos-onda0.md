@@ -1,6 +1,6 @@
 # Escala e DRY pós-Onda 0 (Consent / privacidade / cache)
 
-Status: registrado no roadmap (fases pendentes)
+Status: Fase 1 entregue; fases 2–5 pendentes
 Atualizado em: 2026-07-19
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Onda 0+, fill-in de engenharia pós-MVP)
 Responsável: —
@@ -39,8 +39,8 @@ Os três revisores do `/simplify` (quality / performance / reuse) deixaram débi
 
 ## Questões em aberto
 
-- **Revalidate automático no fim da migration vs endpoint manual?** **Recomendação:** endpoint primeiro (paridade com `posts` seed); hook pós-migrate no build só se o time esquecer o passo em produção — documentar curl no [onda-0.md](onda-0.md).
-- **Unificar seed CLI no caminho SQL?** **Recomendação:** manter Payload no CLI (valida hooks/admin) mas chamar `revalidateGlobal('privacy-policy')` ao final; migration continua SQL-only.
+- **Revalidate automático no fim da migration vs endpoint manual?** **Resolvido (F1):** endpoint allowlisted + curl no runbook; migration continua SQL-only.
+- **Unificar seed CLI no caminho SQL?** **Recomendação:** manter Payload no CLI (valida hooks/admin); bust via curl documentado — `revalidateGlobal` no CLI é no-op (`seed-loader`).
 - **Extrair `LexicalProse` agora ou com `Pages`?** **Recomendação:** adiar Fase 4 até o primeiro consumidor além de `/privacidade` + artigo — evitar abstração de uma página.
 
 ## Abordagem proposta
@@ -55,12 +55,12 @@ flowchart TD
     F3 --> F5["Fase 5 — Footer link condicional"]
 ```
 
-### Fase 1 — Cache de globals pós-migration/seed
+### Fase 1 — Cache de globals pós-migration/seed ✓
 
-- Estender `src/app/(frontend)/api/revalidate/route.ts`: aceitar `tag` query/body (`global_privacy-policy`, lista allowlist) ou segundo secret header; manter default `posts` para compatibilidade.
-- Após `provisionOnda0ConsentAndPrivacy` em `scripts/seed-consent.mjs`, chamar `revalidateGlobal('privacy-policy')` via Local API helper ou fetch local ao endpoint (mesmo padrão documentado para post-seed).
-- Atualizar checklist em [onda-0.md](onda-0.md) § Smoke: `curl` pós-deploy quando migration de dados rodar sem edit admin.
-- Opcional: helper `revalidatePublicGlobals()` em `src/utilities/globals.ts` com tags conhecidas (`privacy-policy`, futuro `metadata`).
+- `POST /api/revalidate` aceita `?tag=` ou body JSON `{ "tag": "..." }` com allowlist `posts` (default) e `global_privacy-policy`; query vence sobre body.
+- `scripts/seed-consent.mjs` loga curl pós-sucesso (CLI não invalida cache do runtime deployado — `seed-loader` stubba `next/cache`).
+- Checklist em [onda-0.md](onda-0.md) § Smoke produção: curl `global_privacy-policy` após migrate/seed sem edit admin.
+- `getGlobalCacheTag` exportado de `src/utilities/globals.ts`; resolver testável em `src/utilities/revalidateRequest.ts`.
 
 ### Fase 2 — Chaves Consent únicas
 
@@ -115,3 +115,7 @@ flowchart TD
 - `src/utilities/campaignConsent.ts` / `campaignInvite.ts` — chaves runtime
 - `tests/int/onda0Provision.int.spec.ts` / `campaignMigrationReconciliation.int.spec.ts`
 - AGENTS.md — Consent por chave estável, `revalidateGlobal`, naming
+
+## Revisões
+
+- **2026-07-19:** Fase 1 entregue — endpoint allowlisted (`posts`, `global_privacy-policy`), `getGlobalCacheTag` exportado, curl no runbook Onda 0 e lembrete no `seed:consent`.

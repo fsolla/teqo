@@ -72,9 +72,16 @@ Refusa host não-local sem `ALLOW_REMOTE_DB=true` (mesma família de guard que `
 
 **Produção (pós-deploy):**
 
-1. Confirmar env: `NEXT_PUBLIC_SITE_URL` HTTPS, `PAYLOAD_SECRET`, `DATABASE_URL`, `BLOB_*`.
+1. Confirmar env: `NEXT_PUBLIC_SITE_URL` HTTPS, `PAYLOAD_SECRET`, `DATABASE_URL`, `BLOB_*`, `REVALIDATE_SECRET`.
 2. Migrations aplicadas no build.
-3. Smoke com **dados fictícios**; não importar CSV real nem convidar titulares reais.
+3. Bustar cache de `/privacidade` (migration SQL não dispara `afterChange` no runtime deployado):
+
+```bash
+curl -X POST "https://<prod-domain>/api/revalidate?tag=global_privacy-policy" \
+  -H "x-revalidate-secret: $REVALIDATE_SECRET"
+```
+
+4. Smoke com **dados fictícios**; não importar CSV real nem convidar titulares reais.
 
 ## Onboarding staff (sem PII de campo)
 
