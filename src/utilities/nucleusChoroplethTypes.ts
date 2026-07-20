@@ -1,4 +1,4 @@
-import type { NucleusElectionGeographyInput } from '@/utilities/nucleusElectoralBaseline'
+import type { NucleusElectionGeographyInput } from '@/utilities/nucleusElectionGeography'
 
 export type ChoroplethMetric = 'nucleusCount' | 'confirmedEstimate' | 'baseline2022Votes'
 

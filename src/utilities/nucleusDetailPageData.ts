@@ -8,10 +8,8 @@ import {
 } from '@/utilities/leadershipPageData'
 import { parseLeadershipFilterState, parseLeadershipPanelState } from '@/utilities/leadershipUi'
 import { getNucleusCoordinatorAssignmentPageData } from '@/utilities/nucleusCoordinatorAssignmentPageData'
-import {
-  getNucleusElectoralBaseline,
-  toNucleusElectionGeographyInput,
-} from '@/utilities/nucleusElectoralBaseline'
+import { getNucleusElectoralBaseline } from '@/utilities/nucleusElectoralBaseline'
+import { toNucleusElectionGeographyInput } from '@/utilities/nucleusElectionGeography'
 import {
   getNucleusDetailPageData,
   resolveAccessibleNucleusContext,

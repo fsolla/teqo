@@ -7,7 +7,7 @@ import type { CampaignUser, User } from '@/payload-types'
 import { assertCanReadElectionData } from '@/utilities/campaignAccess'
 import { loadFederalCandidateTotalsAggregated } from '@/utilities/federalCandidateTotalsAggregate'
 import * as drizzleBulk from '@/utilities/drizzleBulk'
-import { resolveNucleusElectionGeography } from '@/utilities/nucleusElectoralBaseline'
+import { resolveNucleusElectionGeography } from '@/utilities/nucleusElectionGeography'
 
 describe('assertCanReadElectionData', () => {
   it('allows payload admins and campaign users to read election data', () => {
@@ -79,6 +79,9 @@ describe('loadFederalCandidateTotalsAggregated', () => {
       { candidateNumber: 1234, name: 'OUTRO', party: 'PL', votes: 900 },
     ])
     expect(execute).toHaveBeenCalledOnce()
+    const sqlPayload = JSON.stringify(execute.mock.calls[0]?.[0])
+    expect(sqlPayload).toContain('city_code')
+    expect(sqlPayload).not.toContain('city_name')
     vi.restoreAllMocks()
   })
 })

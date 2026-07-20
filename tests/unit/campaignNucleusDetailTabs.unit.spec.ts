@@ -28,7 +28,6 @@ vi.mock('@/utilities/nucleusUpdatePageData', () => ({
 }))
 vi.mock('@/utilities/nucleusElectoralBaseline', () => ({
   getNucleusElectoralBaseline: loaders.getNucleusElectoralBaseline,
-  toNucleusElectionGeographyInput: () => ({ cities: [], regions: [], tseZones: [] }),
 }))
 
 import { NucleusTabNav } from '@/components/campaign/NucleusTabNav'

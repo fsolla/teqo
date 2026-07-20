@@ -1,7 +1,7 @@
 # Escala e DRY pós-A4 (baseline TSE no produto)
 
-Status: Fase 1 implementada (Fases 2–5 pendentes; merge pendente)
-Atualizado em: 2026-07-19 (Fase 5 lista flip/leverage + extensão F3 gap registradas via `capture-review-debts` pós-A5 `/simplify`; **pós-A5-2 classificação territorial** — absorções no mesmo plano via `capture-review-debts`)
+Status: Fases 1–2 implementadas (Fases 3–5 pendentes; merge pendente)
+Atualizado em: 2026-07-20 (`capture-review-debts` pós-A7 F2 `/simplify`: débitos absorvidos no plano; gatilhos defer no Explicitamente fora)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, item A7)
 Responsável: —
 
@@ -12,7 +12,7 @@ O A4 ([baseline-eleitoral-tse.md](baseline-eleitoral-tse.md) Fases 2–4) entreg
 Os revisores (performance / reuse / quality) marcaram como **importantes e maiores que simplify** os follow-ups abaixo. Sem registro, o A5 (insights) e o coroplético do B3 herdariam o mesmo custo de I/O no path do detalhe.
 
 1. **Detalhe puxa todas as linhas nominais de dep. federal (1º turno) na geografia.** ~~`detailVoteWhere` + `loadElectionVotes`~~ **Resolvido na Fase 1 (2026-07-19):** `loadFederalCandidateTotalsAggregated` (`src/utilities/federalCandidateTotalsAggregate.ts`) agrega via drizzle `SUM(votes) GROUP BY candidate_number`; o detalhe usa Local API só para presidente/governador da chapa (`loadTicketOfficeVotes`). A série histórica E2 (`loadCandidateSeriesByGeography`) já era magra por `candidateNumber`.
-2. **Filtro geográfico por `cityName` (texto), não por `cityCode` TSE.** O índice natural das collections de eleição é `(year, office, turn, cityCode, zoneNumber)`; filtrar por nome impede o plano ótimo e complica OR grandes na união do overview (já mitigado no simplify, mas o detalhe/TI ainda sofre).
+2. **Filtro geográfico por `cityName` (texto), não por `cityCode` TSE.** ~~O índice natural das collections de eleição é `(year, office, turn, cityCode, zoneNumber)`; filtrar por nome impedia o plano ótimo e complicava OR grandes na união do overview.~~ **Resolvido na Fase 2 (2026-07-20):** mapa estático `bahiaTseCityCodes.ts` + `nucleusElectionGeography.ts`; `geographyWhere` e drizzle federal usam `cityCode` + `zoneNumber in […]`.
 3. **DRY de UI do Gap "acima".** `NucleusInsights` usa `Alert variant="pending"` para abaixo/neutro, mas o estado "acima" aplica classes ad-hoc com tokens `--estimate-confirmed*`. O slice **A5-1 conversão** reutiliza o mesmo `confirmedInsightAlertClass` para o alerta de taxa de conversão (reduto/consolidado) — interim até a Fase 3. A barra do candidato no card também reimplementa `role="progressbar"` em vez de reusar `Progress` (`NucleusListOverview`).
 4. **Query duplicada de votos 2022 na lista de núcleos com coroplético B3.** `nucleusListOverviewPageData.ts` chama em paralelo `loadNucleusListElectionOverview` (union → `loadCandidateSeriesByGeography` multi-ano) e `loadNucleusChoroplethBundle` → `loadBaseline2022VotesByCityNames` (segunda passagem `loadCandidateSeriesByGeography` só 2022 sobre geografia sobreposta). O simplify B3 unificou resolve interno do choropleth, mas não compartilha o resultado da série 2022 já obtida no loader de gap/tendência/conversão.
 5. **N+1 de agregação federal no flip da lista (A5 Fase 2).** `loadNucleusListElectionOverview` chama `loadFederalCandidateTotalsAggregated` **uma vez por núcleo** com geografia resolvida para `computeTicketFlipForGeography`, enquanto série/ticket/majoritarian já vêm numa união. Com dezenas de núcleos filtrados, `Promise.all` paraleliza latência mas não reduz carga no Postgres — mesmo anti-padrão que A7 F1 resolveu no **detalhe**.
@@ -24,7 +24,9 @@ Os revisores (performance / reuse / quality) marcaram como **importantes e maior
 
 **Já resolvido no simplify pós-A5-2 classificação territorial (não reabrir):** `sumFederalTallyForGeography` único (substitui `sumElectorateForGeography` + helper paralelo); reuso de `classificationTalliesByCityZone` no loop de conversão (elimina 2º `loadElectionTallies` em `conversionUnion`); loop de classificação in-memory antes do `await` do flip N+1; push só de bandas comparáveis (`isComparableTerritorialClass`) — evita linha overview `0 defesa · …`; `TERRITORIAL_CLASS_UI` canônico + accessors finos; `TerritorialClassIcon` no detalhe.
 
-**Explicitamente fora (revisores pediram skip no simplify ou descartados no triage):** map JSX de linhas Lula/Jerônimo, dropar `candidate.rank` / `electorate.aptos` / `ratio` do tipo público só por higiene (só fariam sentido se a F1 deixar de calcular rank), cast `as unknown as RawOverviewNucleus` da B1 (não é débito novo do A4), parity test drizzle vs `aggregateFederalCandidateTotals` (int + unit cobrem comportamento), typed drizzle rows/zod no `drizzleResultRows` (padrão plataforma C6/C8), `requirePostgresDrizzle` em `supporterListOverviewAggregate.ts` (fora do escopo A7 — DRY de ~6 linhas; ver C10 quando o plano existir), micro-opt `aggregateElectorate`/`matchesGeography` com `Set` (impacto negligível), `BahiaMap` `setStyle` incremental → **B6** ([escala-dry-pos-b3.md](escala-dry-pos-b3.md)), factory geometrias mun/TI → **B5 F3** ([escala-dry-pos-b2.md](escala-dry-pos-b2.md)); **pós-A5:** `buildUnionGeography` 2× (micro-opt), mover testes leverage/flip para `electionInsights.unit.spec.ts`, unions discriminadas `TicketLeverage`/`TicketFlip`, estreitar campos VM/result flip, `ticketFlipAlertVariant`/`formatPercent` export, `MajoritarianTallyRow` tipo separado, maps de ícones em `NucleusInsights`, wrapper `NucleusInsightAlert` além da F3 (E7 adia DRY do stack até mais insights); **pós-A5-2:** agregador genérico conversion+territorial, achatar `NucleusClassificationOverviewAggregate`, `percentValid` só em testes, merge CPU dos loops `sumCandidateVotesForGeography` trend+classificação, 4ª query `loadElectionTallies` no union (custo intencional A5-2), `territorialClassLabel` na linha do overview (conversão também hardcoded), componente compartilhado de linha de distribuição → **E6 F3**.
+**Já resolvido no simplify pós-F2 `cityCode` (não reabrir):** `matchesGeography` permanece helper privado em `nucleusElectoralBaseline.ts` (não exportado de `nucleusElectionGeography`); consumers de geografia importam direto de `nucleusElectionGeography` (`nucleusChoropleth*`, `nucleusDetailPageData`, `nucleusListOverviewPageData`, `campaignDashboardPageData`, specs); re-exports mortos removidos do barrel baseline; testes de `resolveNucleusElectionGeography` em `tests/unit/nucleusElectionGeography.unit.spec.ts`; int spy federal T1 + tally `cityCode` fundidos num único teste (`tseCityCodeForMunicipality('Salvador')` em vez de código hardcoded); mock obsoleto `toNucleusElectionGeographyInput` removido de `campaignNucleusDetailTabs.unit.spec.ts`.
+
+**Explicitamente fora (revisores pediram skip no simplify ou descartados no triage):** map JSX de linhas Lula/Jerônimo, dropar `candidate.rank` / `electorate.aptos` / `ratio` do tipo público só por higiene (só fariam sentido se a F1 deixar de calcular rank), cast `as unknown as RawOverviewNucleus` da B1 (não é débito novo do A4), parity test drizzle vs `aggregateFederalCandidateTotals` (int + unit cobrem comportamento), typed drizzle rows/zod no `drizzleResultRows` (padrão plataforma C6/C8), `requirePostgresDrizzle` em `supporterListOverviewAggregate.ts` (fora do escopo A7 — DRY de ~6 linhas; ver C10 quando o plano existir), micro-opt `aggregateElectorate`/`matchesGeography` com `Set` (impacto negligível), **cache `zonesByCityCode` no objeto `NucleusElectionGeography`** (defer: só se hot path comprovado ou ≥3 recomputações por request), **mover `buildUnionGeography` para `nucleusElectionGeography`** (defer: 3º call site de union geography ou refactor A7 F5), `BahiaMap` `setStyle` incremental → **B6** ([escala-dry-pos-b3.md](escala-dry-pos-b3.md)), factory geometrias mun/TI → **B5 F3** ([escala-dry-pos-b2.md](escala-dry-pos-b2.md)); **pós-A5:** `buildUnionGeography` 2× (micro-opt), mover testes leverage/flip para `electionInsights.unit.spec.ts`, unions discriminadas `TicketLeverage`/`TicketFlip`, estreitar campos VM/result flip, `ticketFlipAlertVariant`/`formatPercent` export, `MajoritarianTallyRow` tipo separado, maps de ícones em `NucleusInsights`, wrapper `NucleusInsightAlert` além da F3 (E7 adia DRY do stack até mais insights); **pós-A5-2:** agregador genérico conversion+territorial, achatar `NucleusClassificationOverviewAggregate`, `percentValid` só em testes, merge CPU dos loops `sumCandidateVotesForGeography` trend+classificação, 4ª query `loadElectionTallies` no union (custo intencional A5-2), `territorialClassLabel` na linha do overview (conversão também hardcoded), componente compartilhado de linha de distribuição → **E6 F3**; **pós-F2:** assertions redundantes no int `bahiaTseCityCodes` (padrão intencional espelhando fixture IBGE); falhas pré-existentes `campaignNucleusIntelligenceUi.unit.spec.ts` (fora do escopo A7 F2).
 
 ## Objetivos
 
@@ -56,7 +58,7 @@ Os revisores (performance / reuse / quality) marcaram como **importantes e maior
 flowchart TD
     A4["A4 Baseline no produto ✓"] --> F1
     F1["Fase 1 — Agregar federal no detalhe<br/>(GROUP BY / payload estreito) ✓"]
-    F1 --> F2["Fase 2 — Geografia por cityCode TSE"]
+    F1 --> F2["Fase 2 — Geografia por cityCode TSE ✓"]
     F1 --> F3["Fase 3 — Alert confirmed + Progress<br/>+ gapVs2022 helpers"]
     F1 --> F4["Fase 4 — Fetch 2022 único<br/>lista overview + coroplético"]
     F1 --> F5["Fase 5 — Batch federal lista<br/>+ index union (A5 flip/leverage)"]
@@ -72,13 +74,12 @@ flowchart TD
 - `src/utilities/nucleusElectoralBaseline.ts`: `loadTicketOfficeVotes` (Local API magro) + `aggregateNucleusElectoralBaseline` recebe `federalTotals` já agregados; `getNucleusElectoralBaseline` widened para `Pick<Payload, 'find' | 'db'>`.
 - Testes: unit `federalCandidateTotalsAggregate.unit.spec.ts`; int spy em `payload.find` garante que queries federal T1 no Local API sempre filtram `candidateNumber`.
 
-### Fase 2 — Filtro por `cityCode` TSE
+### Fase 2 — Filtro por `cityCode` TSE ✓ (2026-07-20)
 
-- Extrair tipos/helpers de geografia para `src/utilities/nucleusElectionGeography.ts` (quebra o ciclo `federalCandidateTotalsAggregate` ↔ `nucleusElectoralBaseline`; hoje o aggregate importa `NucleusElectionGeography` do baseline).
-- Gerar/commitar mapa canônico `cityName` → `cityCode` (BA 2022) a partir dos dados já importados.
-- `resolveNucleusElectionGeography` (ou camada ao lado) passa a expor `cityZonePairs` com código; `geographyWhere` e `buildFederalCandidateTotalsSql` usam `cityCode: { equals|in }` + `zoneNumber: { in }` (unifica Payload `Where` e SQL cru).
-- Overview union e detalhe compartilham o mesmo helper.
-- Sem mudança de UX; fallback fail-closed se o município do núcleo não mapear (mesmo espírito de `canonicalizeMunicipalityName`).
+- `src/lib/bahiaTseCityCodes.ts` + `pnpm build:tse-city-codes` (TSE 2022 `detalhe_votacao_munzona` BA).
+- `src/utilities/nucleusElectionGeography.ts`: tipos/helpers extraídos; `cityZonePairs` com `cityCode`; `geographyWhere` + `zonesByCityCode`.
+- `federalCandidateTotalsAggregate.ts`: SQL em `city_code`.
+- Fail-closed quando município não mapeia; sem migration.
 
 ### Fase 3 — Alert `confirmed` + `Progress` + helpers Gap vs 2022
 

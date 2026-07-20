@@ -12,7 +12,7 @@ import {
 } from '@/utilities/campaignDashboardViewModels'
 import { getBahiaWeekRange } from '@/utilities/campaignTime'
 import { loadCoordinatorSummaries } from '@/utilities/nucleusCoordinatorOptions'
-import { toNucleusElectionGeographyInput } from '@/utilities/nucleusElectoralBaseline'
+import { toNucleusElectionGeographyInput } from '@/utilities/nucleusElectionGeography'
 import { nucleusVoteGoalsSelect } from '@/utilities/nucleusViewModels'
 import { requireRelationshipId } from '@/utilities/relationship'
 import { toVoteGoalsViewModel } from '@/utilities/voteGoals'

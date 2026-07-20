@@ -9,7 +9,10 @@ import {
   type ElectionDataReader,
 } from '@/utilities/campaignAccess'
 import { drizzleResultRows, requirePostgresDrizzle } from '@/utilities/drizzleBulk'
-import type { NucleusElectionGeography } from '@/utilities/nucleusElectoralBaseline'
+import {
+  type NucleusElectionGeography,
+  zonesByCityCode,
+} from '@/utilities/nucleusElectionGeography'
 
 export type FederalCandidateTotal = {
   candidateNumber: number
@@ -25,8 +28,8 @@ export const loadFederalCandidateTotalsAggregated = async (
 ): Promise<FederalCandidateTotal[]> => {
   assertCanReadElectionData(user)
 
-  const cityClauses = [...geography.zonesByCity.entries()].map(([cityName, zones]) =>
-    sql`("election_candidate_vote"."city_name" = ${cityName} AND "election_candidate_vote"."zone_number" IN (${sql.join(
+  const cityClauses = [...zonesByCityCode(geography).entries()].map(([cityCode, zones]) =>
+    sql`("election_candidate_vote"."city_code" = ${cityCode} AND "election_candidate_vote"."zone_number" IN (${sql.join(
       zones.map((zone) => sql`${zone}`),
       sql`, `,
     )}))`,

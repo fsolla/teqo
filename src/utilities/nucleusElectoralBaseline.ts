@@ -1,7 +1,5 @@
 import type { Payload, Where } from 'payload'
 
-import { citiesForTerritory, isBahiaIdentityTerritory } from '@/lib/bahiaTerritories'
-import { tseZonesForCity } from '@/lib/bahiaTseZones'
 import {
   BASELINE_TICKET_2022,
   ELECTION_YEAR_2014,
@@ -39,38 +37,19 @@ import {
   type VoteTrendStatus,
 } from '@/lib/electionInsights'
 import { type ElectionDataReader } from '@/utilities/campaignAccess'
-import { normalizeTerritoryTextArray } from '@/utilities/campaignTerritoryValidation'
 import {
   loadFederalCandidateTotalsAggregated,
   type FederalCandidateTotal,
 } from '@/utilities/federalCandidateTotalsAggregate'
+import {
+  geographyWhere,
+  type NucleusCityZonePair,
+  type NucleusElectionGeography,
+  type NucleusElectionGeographyInput,
+  resolveNucleusElectionGeography,
+} from '@/utilities/nucleusElectionGeography'
 import type { NucleusElectoralBaselineViewModel } from '@/utilities/nucleusViewModels'
 import { sortedUniqueZoneNumbers } from '@/utilities/tseZone'
-
-const CANDIDATE_OFFICE = BASELINE_TICKET_2022.candidate.office
-
-export type NucleusElectionGeographyInput = {
-  cities: string[]
-  regions: string[]
-  tseZones: number[]
-}
-
-export const toNucleusElectionGeographyInput = (nucleus: {
-  cities?: string[] | null
-  regions?: string[] | null
-  tseZones?: Array<number | { zoneNumber: number }> | null
-}): NucleusElectionGeographyInput => ({
-  cities: normalizeTerritoryTextArray(nucleus.cities),
-  regions: normalizeTerritoryTextArray(nucleus.regions),
-  tseZones: (nucleus.tseZones ?? []).map((zone) =>
-    typeof zone === 'number' ? zone : zone.zoneNumber,
-  ),
-})
-
-export type NucleusElectionGeography = {
-  zonesByCity: Map<string, number[]>
-  cityZonePairs: Array<{ cityName: string; zoneNumber: number }>
-}
 
 export type ElectionVoteAggregateRow = {
   office: ElectionOffice
@@ -101,62 +80,6 @@ export type ElectionTallyAggregateRow = {
 const cityZoneKey = (cityName: string, zoneNumber: number): string =>
   `${cityName}::${zoneNumber}`
 
-const uniqueSortedCities = (values: Iterable<string>): string[] =>
-  [...new Set(values)].sort((left, right) => left.localeCompare(right, 'pt-BR'))
-
-/**
- * Resolve the effective city×zone geography for a nucleus baseline query.
- * Returns null when the nucleus has no usable territory (no cities and no regions).
- *
- * Zone rules per city:
- * - nucleus.tseZones empty → all official zones of the city (`tseZonesForCity`)
- * - nucleus.tseZones non-empty → intersection with the city's official zones;
- *   if the intersection is empty (typed zones outside the city), fall back to all city zones
- */
-export const resolveNucleusElectionGeography = (
-  nucleus: NucleusElectionGeographyInput,
-): NucleusElectionGeography | null => {
-  const citiesFromNucleus = uniqueSortedCities(nucleus.cities.filter((city) => city.length > 0))
-  const cities =
-    citiesFromNucleus.length > 0
-      ? citiesFromNucleus
-      : uniqueSortedCities(
-          nucleus.regions.flatMap((region) =>
-            isBahiaIdentityTerritory(region) ? citiesForTerritory(region) : [],
-          ),
-        )
-
-  if (cities.length === 0) return null
-
-  const requestedZones = sortedUniqueZoneNumbers(
-    nucleus.tseZones.filter((zone) => Number.isInteger(zone) && zone >= 1 && zone <= 999),
-  )
-
-  const zonesByCity = new Map<string, number[]>()
-  const cityZonePairs: Array<{ cityName: string; zoneNumber: number }> = []
-
-  for (const city of cities) {
-    const cityZones = [...tseZonesForCity(city)]
-    let effectiveZones = cityZones
-    if (requestedZones.length > 0) {
-      const cityZoneSet = new Set(cityZones)
-      const intersection = requestedZones.filter((zone) => cityZoneSet.has(zone))
-      if (intersection.length > 0) effectiveZones = intersection
-    }
-
-    if (effectiveZones.length === 0) continue
-
-    zonesByCity.set(city, effectiveZones)
-    for (const zoneNumber of effectiveZones) {
-      cityZonePairs.push({ cityName: city, zoneNumber })
-    }
-  }
-
-  if (cityZonePairs.length === 0) return null
-
-  return { zonesByCity, cityZonePairs }
-}
-
 const matchesGeography = (
   row: { cityName: string; zoneNumber: number },
   geography: NucleusElectionGeography,
@@ -164,6 +87,8 @@ const matchesGeography = (
   const zones = geography.zonesByCity.get(row.cityName)
   return Boolean(zones?.includes(row.zoneNumber))
 }
+
+const CANDIDATE_OFFICE = BASELINE_TICKET_2022.candidate.office
 
 const sumCandidateVotes = (
   votes: readonly ElectionVoteAggregateRow[],
@@ -480,15 +405,6 @@ const ba2022Scope = (): Where[] => [
   { state: { equals: 'BA' } },
 ]
 
-/** One clause per city with `zoneNumber in […]` — avoids an OR per city×zone pair. */
-const geographyWhere = (geography: NucleusElectionGeography): Where => ({
-  or: [...geography.zonesByCity.entries()].map(
-    ([cityName, zones]): Where => ({
-      and: [{ cityName: { equals: cityName } }, { zoneNumber: { in: zones } }],
-    }),
-  ),
-})
-
 /** President/governor ticket votes for the detail baseline card (lean Local API path). */
 const ticketOfficeVoteWhere = (geography: NucleusElectionGeography): Where => ({
   and: [
@@ -653,7 +569,7 @@ const buildUnionGeography = (
   geographies: ReadonlyArray<NucleusElectionGeography | null>,
   indexes: readonly number[],
 ): NucleusElectionGeography | null => {
-  const unionPairs = new Map<string, { cityName: string; zoneNumber: number }>()
+  const unionPairs = new Map<string, NucleusCityZonePair>()
   const zonesByCity = new Map<string, number[]>()
 
   for (const index of indexes) {

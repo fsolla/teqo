@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { getPayload, type Payload } from 'payload'
 
 import config from '@/payload.config'
+import { tseCityCodeForMunicipality } from '@/lib/bahiaTseCityCodes'
 import { BASELINE_TICKET_2022 } from '@/lib/electionResults'
 import { computeGapVs2022 } from '@/lib/electionInsights'
 import { loadNucleusActiveTabPageData } from '@/utilities/nucleusDetailPageData'
@@ -143,14 +144,32 @@ describe('nucleus electoral baseline (A4)', () => {
 
     expect(voteFindCalls.length).toBeGreaterThan(0)
 
+    const salvadorCityCode = tseCityCodeForMunicipality('Salvador')
+    expect(salvadorCityCode).toBeTruthy()
+
     for (const call of voteFindCalls) {
       const where = (call[0] as { where?: unknown }).where
+      expect(whereContainsField(where, 'cityCode')).toBe(true)
       const queriesFederalTurn1 =
         whereContainsFieldEquals(where, 'office', 'deputado_federal') &&
         whereContainsFieldEquals(where, 'turn', '1')
       if (queriesFederalTurn1) {
         expect(whereContainsField(where, 'candidateNumber')).toBe(true)
       }
+    }
+
+    const tallyFindCalls = findSpy.mock.calls.filter(
+      (call) =>
+        typeof call[0] === 'object' &&
+        call[0] !== null &&
+        (call[0] as { collection?: string }).collection === 'electionTally',
+    )
+
+    expect(tallyFindCalls.length).toBeGreaterThan(0)
+    for (const call of tallyFindCalls) {
+      const where = (call[0] as { where?: unknown }).where
+      expect(whereContainsField(where, 'cityCode')).toBe(true)
+      expect(whereContainsFieldEquals(where, 'cityCode', salvadorCityCode)).toBe(true)
     }
 
     findSpy.mockRestore()

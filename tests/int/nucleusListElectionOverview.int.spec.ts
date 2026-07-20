@@ -174,7 +174,7 @@ describe('loadNucleusListElectionOverview (E7 F2)', () => {
         office: 'deputado_federal',
         turn: '1',
         state: 'BA',
-        cityCode: '2905701',
+        cityCode: '34134',
         cityName: 'Camaçari',
         zoneNumber: 170,
         aptos: 8000,

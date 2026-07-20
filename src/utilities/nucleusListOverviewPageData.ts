@@ -2,10 +2,8 @@ import type { Payload } from 'payload'
 
 import type { CampaignUser, NucleusUpdate } from '@/payload-types'
 import { loadUpcomingActionPlansPreview } from '@/utilities/actionPlanUpcomingPreview'
-import {
-  loadNucleusListElectionOverview,
-  toNucleusElectionGeographyInput,
-} from '@/utilities/nucleusElectoralBaseline'
+import { loadNucleusListElectionOverview } from '@/utilities/nucleusElectoralBaseline'
+import { toNucleusElectionGeographyInput } from '@/utilities/nucleusElectionGeography'
 import { loadNucleusChoroplethBundle } from '@/utilities/nucleusChoroplethPageData'
 import {
   buildNucleusListOverviewViewModel,

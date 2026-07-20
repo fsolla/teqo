@@ -5,7 +5,7 @@ import {
   territoryForCity,
   territoriesForCities,
 } from '@/lib/bahiaTerritories'
-import { resolveNucleusElectionGeography, type NucleusElectionGeographyInput } from '@/utilities/nucleusElectoralBaseline'
+import { resolveNucleusElectionGeography, type NucleusElectionGeographyInput } from '@/utilities/nucleusElectionGeography'
 import {
   emptyNucleusChoroplethBundle,
   type ChoroplethMetric,
