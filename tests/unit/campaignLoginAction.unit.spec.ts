@@ -123,4 +123,20 @@ describe('loginCampaign credential mapping', () => {
       error: 'E-mail, celular ou senha inválidos.',
     })
   })
+
+  it('returns a distinct message when Payload locks the account', async () => {
+    const locked = new Error('This user is locked due to having too many failed login attempts.')
+    locked.name = 'LockedAuth'
+    mocks.login.mockRejectedValueOnce(locked)
+
+    await expect(
+      loginCampaign({
+        identifier: 'staff@example.com',
+        password: 'any-password',
+      }),
+    ).resolves.toEqual({
+      error:
+        'Conta temporariamente bloqueada após várias tentativas. Aguarde alguns minutos e tente de novo.',
+    })
+  })
 })

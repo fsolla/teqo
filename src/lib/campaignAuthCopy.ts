@@ -11,6 +11,12 @@ export const CAMPAIGN_FIRST_ACCESS_HINT =
 
 export const CAMPAIGN_LOGIN_SUBTITLE = 'Use o e-mail ou o celular cadastrado na sua conta.'
 
+/** Shown when Payload locks the account after maxLoginAttempts (default: 5 / 10 min). */
+export const CAMPAIGN_ACCOUNT_LOCKED_MESSAGE =
+  'Conta temporariamente bloqueada após várias tentativas. Aguarde alguns minutos e tente de novo.'
+
+export const CAMPAIGN_LOGIN_INVALID_CREDENTIALS_MESSAGE = 'E-mail, celular ou senha inválidos.'
+
 /**
  * Card titles on public campaign auth screens (login / forgot / reset).
  * `!text-center` beats `[data-theme='campaign'] h1 { text-align: left }` (app shell).

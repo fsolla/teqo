@@ -5,6 +5,10 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import {
+  CAMPAIGN_ACCOUNT_LOCKED_MESSAGE,
+  CAMPAIGN_LOGIN_INVALID_CREDENTIALS_MESSAGE,
+} from '@/lib/campaignAuthCopy'
 import { requiredFormSecret, requiredFormText } from '@/lib/formData'
 import { campaignLoginSchema, type CampaignLoginInput } from '@/lib/schemas/campaign-login'
 import {
@@ -14,6 +18,12 @@ import {
 } from '@/utilities/campaignAuth'
 
 export type LoginResult = { error?: string }
+
+const isLockedAuthError = (error: unknown): boolean =>
+  typeof error === 'object' &&
+  error !== null &&
+  'name' in error &&
+  (error as { name: unknown }).name === 'LockedAuth'
 
 export const loginCampaign = async (input: CampaignLoginInput): Promise<LoginResult> => {
   const parsed = campaignLoginSchema.safeParse(input)
@@ -38,12 +48,15 @@ export const loginCampaign = async (input: CampaignLoginInput): Promise<LoginRes
     })
 
     token = result.token
-  } catch {
-    return { error: 'E-mail, celular ou senha inválidos.' }
+  } catch (error) {
+    if (isLockedAuthError(error)) {
+      return { error: CAMPAIGN_ACCOUNT_LOCKED_MESSAGE }
+    }
+    return { error: CAMPAIGN_LOGIN_INVALID_CREDENTIALS_MESSAGE }
   }
 
   if (!token) {
-    return { error: 'E-mail, celular ou senha inválidos.' }
+    return { error: CAMPAIGN_LOGIN_INVALID_CREDENTIALS_MESSAGE }
   }
 
   await setCampaignAuthCookie(token, payload)
