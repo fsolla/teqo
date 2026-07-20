@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-19 (E7 F2 ext. absorve int `mobilization` pós-A5 mobilização via capture-review-debts; E4 import planilha cortado)
+Atualizado em: 2026-07-19 (A5 mobilização ✓ em `main`; A5 aberto: só inteligência competitiva)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -37,7 +37,7 @@ Engenharia de núcleos / C2 / C3 / baseline / PWA / Trilha E parcial já em `mai
 
 - **Núcleos MVP + Ciclo 2** — auth/`campaignUser`, território A1/A2, baseline A3/A4, overview B1, share C1, PWA D1, geometrias B2, Leaflet B3.
 - **Operação** — C2 (eng. pronta; prod. ↔ Onda 0), C3 agenda, C6–C9 escala apoiadores/planos.
-- **Trilha A (parcial)** — A5 conversão + classificação territorial + alavancagem/virada; A7 F1 agregação federal no detalhe.
+- **Trilha A (parcial)** — A5 conversão + classificação territorial + alavancagem/virada + mobilização (brancos/nulos); A7 F1 agregação federal no detalhe.
 - **Trilha E (parcial)** — E1 metas/prioridade + E3 estratégia manual; E2 série TSE 2014/2018 + tendência; E7 F2 int loader; **E4 import planilha cortado** (decisão de produto: dados via UI manual, sem `pnpm db:seed:mapa`).
 - **Fill-ins** — visitados recentemente, reset senha + perfil, Field Desk polish (Impeccable); B5 F1 lazy geometrias (com B3).
 
@@ -45,7 +45,7 @@ Engenharia de núcleos / C2 / C3 / baseline / PWA / Trilha E parcial já em `mai
 
 ### Por trilha (só abertos)
 
-- **A** — A5 restante: mobilização (brancos/nulos) e inteligência competitiva ainda sem insight no produto · [mobilização](plans/insight-mobilizacao-brancos-nulos.md) · [competitiva](plans/insight-inteligencia-competitiva.md)
+- **A** — A5 restante: inteligência competitiva ainda sem insight no produto · [competitiva](plans/insight-inteligencia-competitiva.md)
 - **A** — A6 dobradinha 2026 automática quando o TSE publicar candidaturas · gatilho externo: pós-15/08 · [plano](plans/insight-dobradinha-2026.md)
 - **A** — A7 F2–F5: `cityCode` TSE, Alert/Progress DRY, fetch 2022 único lista+mapa, batch flip na lista · gatilho F4: pós-B3 ✓; F5: pós-A5 · [plano](plans/escala-dry-pos-a4.md)
 - **A** — A8 perfil médio do eleitorado (IBGE) na aba Eleitorado sem sobrescrever manuais · [plano](plans/perfil-eleitorado-ibge.md)
@@ -71,7 +71,7 @@ Engenharia de núcleos / C2 / C3 / baseline / PWA / Trilha E parcial já em `mai
 
 | Item                         | Design                         | Plano                                                                 |
 | ---------------------------- | ------------------------------ | --------------------------------------------------------------------- |
-| A5 Insights (restantes)      | `Baseline-Eleitoral-2022`      | [mobilização](plans/insight-mobilizacao-brancos-nulos.md) · [competitiva](plans/insight-inteligencia-competitiva.md) |
+| A5 competitiva               | `Baseline-Eleitoral-2022`      | [competitiva](plans/insight-inteligencia-competitiva.md) |
 | A6 Dobradinha 2026           | — (encomendar)                 | [insight-dobradinha-2026.md](plans/insight-dobradinha-2026.md)        |
 | A8 Perfis eleitorado IBGE    | — (reusa aba Eleitorado)       | [perfil-eleitorado-ibge.md](plans/perfil-eleitorado-ibge.md)          |
 | C4 Demandas                  | — (encomendar)                 | [demandas-campanha.md](plans/demandas-campanha.md)                    |
@@ -91,8 +91,8 @@ flowchart TD
 
     subgraph TrilhaA["Trilha A"]
         A4["A4 Baseline + Gap ✓"]
-        A5done["A5 conversão/classif./alavancagem ✓"]
-        A5open["A5 mobilização + competitiva"]
+        A5done["A5 conversão/classif./alavancagem/mobilização ✓"]
+        A5open["A5 competitiva"]
         A7["A7 F2–F5 escala pós-A4"]
         A6["A6 Dobradinha 2026"]
         A8["A8 Perfis IBGE"]
@@ -163,7 +163,7 @@ flowchart TD
 
 | Ordem | Item                                      | Plano                                              | Depende de              | Paralelizável com   |
 | ----- | ----------------------------------------- | -------------------------------------------------- | ----------------------- | ------------------- |
-| 5     | A5 mobilização + competitiva              | planos A5 acima                                    | A4 ✓                    | A7, A8, C4, D2      |
+| 5     | A5 inteligência competitiva               | [competitiva](plans/insight-inteligencia-competitiva.md) | A4 ✓                    | A7, A8, C4, D2      |
 | 6     | A7 F2–F5                                  | [escala-dry-pos-a4.md](plans/escala-dry-pos-a4.md) | A4 ✓                    | A5, A8, C4          |
 | 7     | A8 perfis IBGE                            | [perfil-eleitorado-ibge.md](plans/perfil-eleitorado-ibge.md) | A1 ✓              | A5, A7              |
 | 8     | E7 F1/F3/F4                               | [escala-dry-pos-e2.md](plans/escala-dry-pos-e2.md) | E2 ✓                    | E6, A7              |
@@ -207,7 +207,7 @@ Plano histórico: [mapa-projecao-municipios.md](plans/mapa-projecao-municipios.m
 
 **Não cortáveis:** Onda 0 (jurídico/Consent), C2 dados reais, C3 agenda (já ✓), A4 baseline (já ✓), E1+E3 paridade mínima com a planilha (já ✓) — risco legal, base nominal, operação e instrumento de alocação.
 
-**Cortes seguros** (se o prazo apertar): E5; B4; B6; B5 F2–F3; A8; E7 F1/F3/F4; E6 F2–F4 (preferir F1 se lista lenta); A7 F2–F5 (F4 vale mais com mapa na lista; F5 se filtros ≤10 núcleos); A5 restante (mobilização/competitiva); C4; D2 push (manter sino); C10/C11 se base/agenda pequenas; O0+/VR+/RS+/FD+ fases cosméticas; FD2 Fase 5 motion; fill-ins.
+**Cortes seguros** (se o prazo apertar): E5; B4; B6; B5 F2–F3; A8; E7 F1/F3/F4; E6 F2–F4 (preferir F1 se lista lenta); A7 F2–F5 (F4 vale mais com mapa na lista; F5 se filtros ≤10 núcleos); A5 competitiva; C4; D2 push (manter sino); C10/C11 se base/agenda pequenas; O0+/VR+/RS+/FD+ fases cosméticas; FD2 Fase 5 motion; fill-ins.
 
 ## Bloqueadores atuais
 
