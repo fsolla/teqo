@@ -70,6 +70,8 @@ type BahiaMapProps = {
   values: ChoroplethValues
   /** 'diverging': positive = campaign red, negative = blue, zero = white. */
   fillMode?: BahiaMapFillMode
+  /** When set, overrides auto max from `values` (e.g. fixed 1 for 0–100% shares). */
+  scaleMax?: number
   highlightKeys?: string[]
   selectedKey?: string | null
   onFeatureSelect?: (info: BahiaMapFeatureInfo | null) => void
@@ -129,6 +131,7 @@ export const BahiaMap = ({
   mode,
   values,
   fillMode = 'sequential',
+  scaleMax,
   highlightKeys = [],
   selectedKey = null,
   onFeatureSelect,
@@ -213,7 +216,8 @@ export const BahiaMap = ({
         layerRef.current?.remove()
 
         const max =
-          fillMode === 'diverging' ? choroplethMaxAbsValue(values) : choroplethMaxValue(values)
+          scaleMax ??
+          (fillMode === 'diverging' ? choroplethMaxAbsValue(values) : choroplethMaxValue(values))
         const keyProperty: FeatureKeyProperty = mode === 'municipality' ? 'codarea' : 'code'
         const highlightSet = new Set(
           highlightKey.length > 0 ? highlightKey.split(',').filter(Boolean) : [],
@@ -342,7 +346,7 @@ export const BahiaMap = ({
       layerRef.current = null
       styleContextRef.current = null
     }
-  }, [fillMode, highlightKey, mode, values])
+  }, [fillMode, highlightKey, mode, scaleMax, values])
 
   useEffect(() => {
     const context = styleContextRef.current

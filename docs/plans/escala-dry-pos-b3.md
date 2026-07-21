@@ -1,7 +1,7 @@
 # Escala e DRY pós-B3 (Leaflet / coroplético)
 
 Status: registrado no roadmap (fases pendentes)
-Atualizado em: 2026-07-21 (`capture-review-debts` pós-B10 `/simplify`: hover/select absorvido em Fase 1)
+Atualizado em: 2026-07-21 (`capture-review-debts` pós-B11 `/simplify`: troca `scaleMode` absorvida em Fase 1; pós-B10: hover/select)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B6)
 Impeccable: A — N/A (sem superfície UI nova; otimização do renderer Leaflet existente)
 Appetite: ~1–1,5 dia eng (Fase 1 única: métrica/ano + hover/select incremental; PR único)
@@ -11,9 +11,9 @@ Responsável: —
 
 O B3 ([mapa-bahia-geometrias.md](mapa-bahia-geometrias.md) Fase 2) entrega `BahiaMap` + embeds (`NucleusOverviewMap`, `NucleusDetailMap`, `DashboardMap`), agregação servidor em `nucleusChoropleth.ts` / `nucleusChoroplethPageData.ts`, e lazy load de geometrias (B5 F1 ✓). Duas passagens `/simplify` no mesmo branch já limparam o que cabia em cleanup: `createCampaignClientDynamic`, `resolveChoroplethNuclei` / single-pass bundle, remoção de `geographyForCityNames` duplicado, `toNucleusElectionGeographyInput` no dashboard, highlight O(k) via `getMunicipalityFeature` / `getTerritoryFeature`, `NucleusDetailMap` `useMemo`, alinhamento de tipos com `NucleusElectionGeographyInput`.
 
-Os revisores (performance) marcaram como **importante e maior que simplify** os follow-ups abaixo. Sem registro, cada troca de métrica no coroplético (overview/dashboard) refaz decode + `L.geoJSON` completo em 417 ou 27 polígonos; e, desde **B10** ([hover-mapa-pracas.md](hover-mapa-pracas.md)), cada hover/select no mapa de Praças chama `applyLayerStyles` com `eachLayer` em ~417 municípios.
+Os revisores (performance) marcaram como **importante e maior que simplify** os follow-ups abaixo. Sem registro, cada troca de métrica no coroplético (overview/dashboard) refaz decode + `L.geoJSON` completo em 417 ou 27 polígonos; e, desde **B10** ([hover-mapa-pracas.md](hover-mapa-pracas.md)), cada hover/select no mapa de Praças chama `applyLayerStyles` com `eachLayer` em ~417 municípios. Desde **B11** ([escala-percentual-mapa-pracas.md](escala-percentual-mapa-pracas.md)), trocar `scaleMode` (`absolute` ↔ `% dos válidos`) também altera `displayValues` e dispara o mesmo rebuild — mesmo com `scaleMax` corrigindo legenda vs fill.
 
-1. **`BahiaMap` rebuild completo do layer GeoJSON** quando só `values` (métrica) ou `highlightKeys` mudam. O effect em `BahiaMap.tsx` depende de `[highlightKey, mode, values]` e, a cada mudança, remove o layer, recria `L.geoJSON` com todas as features e reaplica estilos — mesmo que `mode` e o módulo de geometria já estejam carregados. O caminho correto para troca de métrica é `layer.setStyle(...)` (e `fitBounds` só quando o highlight muda).
+1. **`BahiaMap` rebuild completo do layer GeoJSON** quando só `values` (métrica/escala), `scaleMax` ou `highlightKeys` mudam. O effect em `BahiaMap.tsx` depende de `[highlightKey, mode, scaleMax, values]` e, a cada mudança, remove o layer, recria `L.geoJSON` com todas as features e reaplica estilos — mesmo que `mode` e o módulo de geometria já estejam carregados. O caminho correto para troca de métrica/escala é `layer.setStyle(...)` (e `fitBounds` só quando o highlight muda).
 
 2. **Hover/select no mapa de Praças (B10) ainda faz full-scan de estilo.** `mouseover` / `selectedKey` disparam `refreshLayerStyles` → `applyLayerStyles` → `eachLayer` + `setStyle` em todos os polígonos. O simplify pós-B10 já deduplica hover repetido e evita double-refresh quando hover “possui” o estilo, mas o hot path continua O(n) por movimento do cursor. O caminho correto é restyle **incremental** (2-path: anterior + atual, ou `Map<featureKey, PathLayer>`) — mesma refatoração estrutural da Fase 1.
 
@@ -23,7 +23,7 @@ Os revisores (performance) marcaram como **importante e maior que simplify** os 
 
 ## Objetivos
 
-- Trocar métrica (núcleos / estimativa / baseline 2022) ou modo município/TI no coroplético **não** recria o layer GeoJSON inteiro — apenas atualiza `fillColor` / borda via `setStyle` quando a geometria já está montada.
+- Trocar métrica (núcleos / estimativa / baseline 2022), **escala** (`absolute` ↔ `% dos válidos` no mapa de Praças pós-B11) ou modo município/TI no coroplético **não** recria o layer GeoJSON inteiro — apenas atualiza `fillColor` / borda via `setStyle` quando a geometria já está montada.
 - Hover/select no mapa de Praças (B10) restyla só o polígono anterior + o ativo — não `eachLayer` em ~417 paths por `mouseover`.
 - `fitBounds` roda só quando `highlightKeys` ou `mode` mudam, não a cada alteração de `values`.
 - Guardrails: sem migration, sem collection, sem Consent, sem server action. Client-only; manter acessibilidade (`role="img"`, `aria-busy`, `aria-label`, `aria-live` do readout B10 inalterado).
@@ -36,6 +36,7 @@ Os revisores (performance) marcaram como **importante e maior que simplify** os 
 - **Factory mun/TI** near-duplicate → **B5 Fase 3** em [escala-dry-pos-b2.md](escala-dry-pos-b2.md).
 - **Cortável** se o mapa for raramente usado ou se troca de métrica permanecer aceitável em campo; vira não-cortável quando coordenadores alternarem métricas com frequência no overview filtrado **ou** hover denso no mapa de Praças (B10 entregue).
 - **Dependência suave de B10.** Hover/select já existe em `PlazaMapPanel` + `BahiaMap`; Fase 1 unifica o caminho de estilo incremental — não reabre escopo de navegação/readout do B10.
+- **Dependência suave de B11.** Seletor `scaleMode` em `PlazaMapPanel` já altera `displayValues`/`scaleMax`; Fase 1 deve cobrir essa troca sem rebuild — não reabre escopo de % válidos nem `validVotesByYear`.
 - **i18n e naming** (AGENTS.md): identificadores em inglês; strings visíveis em pt-BR inalteradas.
 
 ## Questões em aberto
@@ -51,6 +52,7 @@ flowchart TD
     B3["B3 Leaflet + coroplético"] --> F1
     B5F1["B5 F1 lazy geometrias ✓"] --> F1
     B10["B10 Hover/tap Praças ✓"] --> F1
+    B11["B11 Escala % válidos ✓"] --> F1
     F1["Fase 1 — BahiaMap setStyle<br/>(split effects + hover incremental)"]
     F1 -.não bloqueia.-> B4["B4 Zonas TSE no mapa"]
 ```
@@ -74,6 +76,7 @@ flowchart TD
 - **Suave:** B3 Mapa Fase 2 (Leaflet) — implementado no branch; merge pendente.
 - **Suave:** B5 F1 lazy geometrias — entregue com B3.
 - **Suave:** B10 hover/tap no mapa de Praças — entregue 2026-07-21; Fase 1 consolida o hot path de estilo sem alterar navegação/readout.
+- **Suave:** B11 escala % válidos — entregue 2026-07-21; troca `scaleMode` é mais um gatilho de rebuild a eliminar via `setStyle`.
 - Reusa: `choroplethFillColor` / `choroplethMaxValue` (`src/lib/choroplethColorScale.ts`), loaders `loadMunicipalityGeometryModule` / `loadTerritoryGeometryModule`, tipos `ChoroplethValues`, `emphasizeFeature` / `getFeatureStyle` (B10).
 
 ## Não escopo

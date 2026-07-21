@@ -4,17 +4,26 @@ import type { BahiaMapFeatureInfo } from '@/components/campaign/BahiaMap'
 import { Button } from '@/components/ui/button'
 import { formatElectionNumber } from '@/lib/electionInsights'
 import type { PlazaMapNavigation } from '@/utilities/plazaMapNavigation'
+import type { PlazaMapScaleMode } from '@/utilities/plazaMapData'
 
 type MapFeatureReadoutProps = {
   feature: BahiaMapFeatureInfo | null
   metricValue: number | undefined
+  rawMetricValue: number | undefined
   metricLabel: string
+  scaleMode: PlazaMapScaleMode
   comparisonActive: boolean
   navigation: PlazaMapNavigation | null
 }
 
+const percentFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'percent',
+  maximumFractionDigits: 1,
+})
+
 const formatMetricValue = (
   value: number | undefined,
+  scaleMode: PlazaMapScaleMode,
   comparisonActive: boolean,
 ): string => {
   if (value === undefined) return 'Sem dados'
@@ -22,13 +31,16 @@ const formatMetricValue = (
     const prefix = value > 0 ? '+' : ''
     return `${prefix}${formatElectionNumber(value)}`
   }
+  if (scaleMode === 'percentValid') return percentFormatter.format(value)
   return formatElectionNumber(value)
 }
 
 export const MapFeatureReadout = ({
   feature,
   metricValue,
+  rawMetricValue,
   metricLabel,
+  scaleMode,
   comparisonActive,
   navigation,
 }: MapFeatureReadoutProps) => {
@@ -40,7 +52,13 @@ export const MapFeatureReadout = ({
     )
   }
 
-  const formattedValue = formatMetricValue(metricValue, comparisonActive)
+  const formattedValue = formatMetricValue(metricValue, scaleMode, comparisonActive)
+  const showPercentSecondary =
+    !comparisonActive &&
+    scaleMode === 'percentValid' &&
+    metricValue !== undefined &&
+    rawMetricValue !== undefined &&
+    rawMetricValue > 0
 
   return (
     <div
@@ -52,13 +70,21 @@ export const MapFeatureReadout = ({
         <p className="text-sm text-muted-foreground">
           <span className="sr-only">{metricLabel}: </span>
           <span className="tabular-nums">{formattedValue}</span>
-          {!comparisonActive && metricValue !== undefined ? (
+          {!comparisonActive && metricValue !== undefined && scaleMode === 'absolute' ? (
             <span className="text-muted-foreground"> {metricLabel}</span>
+          ) : null}
+          {!comparisonActive && metricValue !== undefined && scaleMode === 'percentValid' ? (
+            <span className="text-muted-foreground"> dos válidos</span>
           ) : null}
           {comparisonActive && metricValue !== undefined ? (
             <span className="text-muted-foreground"> (diferença)</span>
           ) : null}
         </p>
+        {showPercentSecondary ? (
+          <p className="text-xs text-muted-foreground tabular-nums">
+            {formatElectionNumber(rawMetricValue)} votos
+          </p>
+        ) : null}
         {navigation?.kind === 'zones' ? (
           <p className="text-xs text-muted-foreground">
             Toque de novo no mapa ou role até as Praças por zona abaixo.

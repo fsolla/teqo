@@ -12,14 +12,18 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import {
   choroplethMaxAbsValue,
   choroplethMaxValue,
+  computeValidVoteShares,
   divergingGradientCss,
 } from '@/lib/choroplethColorScale'
 import { formatElectionNumber } from '@/lib/electionInsights'
 import type { FederalCandidateOption } from '@/utilities/electionCandidateOptions'
 import {
+  PLAZA_MAP_SCALE_MODES,
   PLAZA_MAP_YEARS,
+  plazaMapScaleModeLabels,
   plazaMapYearLabels,
   type PlazaMapBundle,
+  type PlazaMapScaleMode,
   type PlazaMapYear,
 } from '@/utilities/plazaMapData'
 import { resolvePlazaMapNavigation } from '@/utilities/plazaMapNavigation'
@@ -39,22 +43,53 @@ export const PlazaMapPanel = ({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [year, setYear] = useState<PlazaMapYear>(defaultYear)
+  const [scaleMode, setScaleMode] = useState<PlazaMapScaleMode>('percentValid')
   const [selectedFeature, setSelectedFeature] = useState<BahiaMapFeatureInfo | null>(null)
   const selectedKeyRef = useRef<string | null>(null)
 
   const comparison = bundle.comparison
   const comparisonActive = comparison !== null && year !== 2026
+  const percentScaleActive = !comparisonActive && scaleMode === 'percentValid'
 
-  const values = useMemo(() => {
+  const rawValues = useMemo(() => {
     if (comparisonActive && comparison) {
       return comparison.diffByYear[String(year)] ?? {}
     }
     return bundle.valuesByYear[String(year)] ?? {}
   }, [bundle, comparison, comparisonActive, year])
 
-  const max = comparisonActive ? choroplethMaxAbsValue(values) : choroplethMaxValue(values)
-  const metricLabel =
-    year === 2026 ? 'votos estimados 2026' : `votos de ${bundle.candidateName} em ${year}`
+  const validVotesForYear = bundle.validVotesByYear[String(year)] ?? {}
+
+  const displayValues = useMemo(() => {
+    if (percentScaleActive) {
+      return computeValidVoteShares(rawValues, validVotesForYear)
+    }
+    return rawValues
+  }, [percentScaleActive, rawValues, validVotesForYear])
+
+  const displayMax = useMemo(
+    () =>
+      comparisonActive
+        ? choroplethMaxAbsValue(displayValues)
+        : percentScaleActive
+          ? 1
+          : choroplethMaxValue(displayValues),
+    [comparisonActive, displayValues, percentScaleActive],
+  )
+
+  const metricLabel = useMemo(() => {
+    if (comparisonActive) {
+      return `diferença de votos em ${year}`
+    }
+    if (percentScaleActive) {
+      if (year === 2026) {
+        return 'participação nos válidos 2022 (estimativas 2026)'
+      }
+      return `participação nos válidos (${year})`
+    }
+    if (year === 2026) return 'votos estimados 2026'
+    return `votos de ${bundle.candidateName} em ${year}`
+  }, [bundle.candidateName, comparisonActive, percentScaleActive, year])
 
   const setCompare = (candidateNumber: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -89,7 +124,12 @@ export const PlazaMapPanel = ({
   )
 
   const selectedMetricValue =
-    selectedFeature && selectedFeature.key in values ? values[selectedFeature.key] : undefined
+    selectedFeature && selectedFeature.key in displayValues
+      ? displayValues[selectedFeature.key]
+      : undefined
+
+  const selectedRawMetricValue =
+    selectedFeature && selectedFeature.key in rawValues ? rawValues[selectedFeature.key] : undefined
 
   const selectedNavigation = useMemo(
     () =>
@@ -112,10 +152,12 @@ export const PlazaMapPanel = ({
           <p className="text-sm text-muted-foreground">
             {comparisonActive && comparison
               ? `Comparação ${bundle.candidateName} × ${comparison.candidateName} em ${year}.`
-              : `Cor pela votação de ${bundle.candidateName} — em 2026, pelas estimativas da campanha.`}
+              : percentScaleActive
+                ? `Cor pela participação nos votos válidos — em 2026, estimativas sobre válidos de 2022.`
+                : `Cor pela votação de ${bundle.candidateName} — em 2026, pelas estimativas da campanha.`}
           </p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Field className="w-full sm:w-44">
             <FieldLabel htmlFor="plaza-map-year">Ano</FieldLabel>
             <NativeSelect
@@ -131,6 +173,23 @@ export const PlazaMapPanel = ({
               ))}
             </NativeSelect>
           </Field>
+          {!comparisonActive ? (
+            <Field className="w-full sm:w-44">
+              <FieldLabel htmlFor="plaza-map-scale">Escala</FieldLabel>
+              <NativeSelect
+                id="plaza-map-scale"
+                value={scaleMode}
+                onChange={(event) => setScaleMode(event.target.value as PlazaMapScaleMode)}
+                className="min-h-11 w-full"
+              >
+                {PLAZA_MAP_SCALE_MODES.map((mode) => (
+                  <NativeSelectOption key={mode} value={mode}>
+                    {plazaMapScaleModeLabels[mode]}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
+          ) : null}
           <Field className="w-full sm:w-72">
             <FieldLabel htmlFor="plaza-map-compare">Comparar com</FieldLabel>
             <NativeSelect
@@ -170,11 +229,15 @@ export const PlazaMapPanel = ({
           </div>
           <p className="text-xs text-muted-foreground">
             Vermelho: {bundle.candidateName} na frente · Branco: empate · Azul:{' '}
-            {comparison.candidateName} na frente.
+            {comparison.candidateName} na frente. Comparação usa diferença absoluta.
           </p>
         </div>
-      ) : max > 0 ? (
-        <ChoroplethLegend max={max} metricLabel={metricLabel} />
+      ) : displayMax > 0 ? (
+        <ChoroplethLegend
+          max={displayMax}
+          metricLabel={metricLabel}
+          formatMax={percentScaleActive ? () => '100%' : undefined}
+        />
       ) : (
         <p className="text-sm text-muted-foreground">Sem dados para este ano no seu escopo.</p>
       )}
@@ -188,7 +251,8 @@ export const PlazaMapPanel = ({
 
       <BahiaMap
         mode="municipality"
-        values={values}
+        values={displayValues}
+        scaleMax={displayMax > 0 ? displayMax : undefined}
         fillMode={comparisonActive ? 'diverging' : 'sequential'}
         selectedKey={selectedFeature?.key ?? null}
         onFeatureSelect={handleFeatureSelect}
@@ -203,7 +267,9 @@ export const PlazaMapPanel = ({
       <MapFeatureReadout
         feature={selectedFeature}
         metricValue={selectedMetricValue}
+        rawMetricValue={selectedRawMetricValue}
         metricLabel={metricLabel}
+        scaleMode={comparisonActive ? 'absolute' : scaleMode}
         comparisonActive={comparisonActive}
         navigation={selectedNavigation}
       />

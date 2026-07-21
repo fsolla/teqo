@@ -1,7 +1,7 @@
 # Escala percentual no Mapa das Praças (0–100% dos válidos)
 
-Status: rascunho
-Atualizado em: 2026-07-21
+Status: entregue 2026-07-21
+Atualizado em: 2026-07-21 (implementação B11 + `capture-review-debts` pós-`/simplify`)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B11)
 Impeccable: B — encaixe em `PlazaMapPanel` / `BahiaMap` / `ChoroplethLegend` (sem rota nova)
 Appetite: ~0,5–1 dia eng; tally por ano no bundle + seletor de escala + legenda 0–100%
@@ -27,6 +27,10 @@ O **Mapa das Praças** (`PlazaMapPanel` em `/campanha/pracas`) pinta municípios
 Os votos nominais já vêm de `loadCandidateVotesByCityZone` + `sumVotesForGeography` em `plazaMapData.ts`. O denominador pedido — **votos válidos** (sem nulos, brancos nem abstenções) — já existe em `electionTally.votosValidos` (seed TSE; usado no detalhe via `plazaElectoralBaseline` / `PlazaBaselineCard`). Pedido de produto (2026-07-21): opção de escala **percentual na Praça**, domínio fixo **0% → 100%**.
 
 Não cobre: filtro URL (**B7**), hover (**B10**), `setStyle` incremental (**B6**), polígonos-zona (**B8**).
+
+**Já resolvido no simplify/critique (não reabrir):** bug legenda 0–100% vs mapa normalizado pelo max local (`scaleMax` em `BahiaMap`); lookup 2026→2022 redundante no panel (bundle já aliasa `validVotesByYear['2026']`); `PLAZA_MAP_SCALE_MODES`; `displayMax` memoizado; `Promise.all` nos loads TSE por ano (+ compare) em `loadPlazaMapBundle`; guard `valid > 0` em `computeValidVoteShares`; polish leve de copy/controle (sem critique P0–P3 formal).
+
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B11):** `formatValidVoteShare` compartilhado com `PlazaBaselineCard` (gatilho: 3ª superfície com % válidos); loader genérico `loadTallyByCityZone` (gatilho: 3ª variante de tally); primitivo `validVoteShare` em `electionInsights` (gatilho: 3º call site); `maxLabel` em vez de `formatMax` na legenda; mover `computeValidVoteShares` de módulo; int test de agregação share além de keys 2026→2022 (gatilho: próximo toque em `plazaMapData`); cache cross-request de tally (gatilho: profiling TTFB); rebuild GeoJSON ao trocar `scaleMode` → **B6** [escala-dry-pos-b3.md](escala-dry-pos-b3.md).
 
 ## Objetivos
 

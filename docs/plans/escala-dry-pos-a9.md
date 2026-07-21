@@ -1,7 +1,7 @@
 # Escala e DRY pós-A9 (loader da lista de Praças)
 
 Status: registrado no roadmap (Fase 1 pendente; **B7 entregue 2026-07-21** — prioridade sobe)
-Atualizado em: 2026-07-21 (`capture-review-debts` pós-B7 + pós-B9 `/simplify`)
+Atualizado em: 2026-07-21 (`capture-review-debts` pós-B11 `/simplify`: `Promise.all` TSE em `loadPlazaMapBundle` resolvido; pós-B7 + pós-B9)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, fill-in **A9+** pós-A9)
 Impeccable: A — N/A (sem superfície UI; otimização de loader)
 Appetite: ~1–1,5 dia eng (F1 loader + F2 revalidate pós-B9; PR único ou dois commits)
@@ -21,11 +21,11 @@ O revisor de **performance** marcou como **maior que simplify** o follow-up abai
 
 3. **Revalidação full-page após edição inline (B9).** Cada save em `listFormActions.ts` chama `revalidatePath('/campanha/pracas', 'page')` (+ detalhe), o que reroda overview unpaginado, mapa e lista — custo amplificado quando o coordenador edita várias células seguidas (pós-B9).
 
-**Já resolvido no simplify/critique (não reabrir):** parsing duplo do form `expectedVotes`; `hasStaffVoteData` derivado de `staffVoteTotal > 0`; `rollupPlazaStaffVotes` + `sumStaffPledgeEffectiveTotal`; `StaffPlazaVotesDisplay`; assinatura estreita de `resolvePlazaStaffVoteTotal`; testes unit do rollup. **Pós-B7 simplify:** `PlazaListSearchParams` exportado de `plazaUi.ts`; parse único no map loader (`loadScopedPlazas` recebe `PlazaListState`).
+**Já resolvido no simplify/critique (não reabrir):** parsing duplo do form `expectedVotes`; `hasStaffVoteData` derivado de `staffVoteTotal > 0`; `rollupPlazaStaffVotes` + `sumStaffPledgeEffectiveTotal`; `StaffPlazaVotesDisplay`; assinatura estreita de `resolvePlazaStaffVoteTotal`; testes unit do rollup. **Pós-B7 simplify:** `PlazaListSearchParams` exportado de `plazaUi.ts`; parse único no map loader (`loadScopedPlazas` recebe `PlazaListState`). **Pós-B11 simplify:** `Promise.all` nos loads TSE por ano em `loadPlazaMapBundle` (votes + válidos em paralelo; branch `?compare=` também paraleliza os 3 `loadCandidateVotesByCityZone`) — micro-opt que estava fora do escopo A9+; resolvido no cleanup B11, não reabrir aqui.
 
 **Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-A9):** semântica lista (só `expectedVotes` manual) vs mapa/overview (fallback) — decisão de produto A9; merge de forms Estratégia + Votos no `/editar`; grid cosmético do `PlazaStrategyCard`; `loadPlazaPledges` em abas distintas do detalhe (uma aba por request); débitos adiados/não escopo do plano A9 (nota/autor, chip auto-sugerir, histórico, filtro `?expectedVotes=`); critique Impeccable formal por superfície → **R6**.
 
-**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B7):** `Promise.all` nos loads TSE por ano em `plazaMapData` (micro-opt pré-existente; gatilho abaixo); testes int extras em `plazaMapData` (`region`/`leader`/`compare`) — cobertura opcional no próximo toque no loader; split do teste advisor por `kind` (legibilidade).
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B7):** testes int extras em `plazaMapData` (`region`/`leader`/`compare`) — cobertura opcional no próximo toque no loader; split do teste advisor por `kind` (legibilidade).
 
 **Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B9):** ~75 hooks `useActionState` por página (3 controles × 25 linhas × 2 views) — gatilho: reclamação de perf ou **R6**; merge `listFormActions` ↔ `/editar` → **C8 F4**; hook popover compartilhado / layout responsivo único / lazy advisor options → gatilhos no plano B9.
 
@@ -108,7 +108,6 @@ flowchart TD
 
 - **SQL aggregate espelhando `buildPlazaListWhere`.** Revisitar quando profiling mostrar `aggregatePledgesByPlaza` dominando TTFB com filtros amplos + mapa sempre montado.
 - **Compartilhar bundle com dashboard geral.** Revisitar se o dashboard passar a carregar mapa+lista na mesma rota.
-- **Loads TSE sequenciais por ano em `loadPlazaMapBundle`.** Revisitar com `Promise.all` só se profiling com `?compare=` mostrar latência dominante (pré-existente; fora do escopo A9+).
 
 ## Referências
 

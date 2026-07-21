@@ -209,6 +209,38 @@ export const sumVotesForGeography = (
   return total
 }
 
+/** cityCode:zone → votosValidos map for one year (federal T1 tally). */
+export const loadValidVotesByCityZone = async (
+  payload: Payload,
+  user: ElectionReader,
+  { year }: { year: number },
+): Promise<Map<string, number>> => {
+  assertCanReadElectionData(user)
+
+  const result = await payload.find({
+    collection: 'electionTally',
+    where: {
+      and: [
+        { year: { equals: year } },
+        { office: { equals: FEDERAL_DEPUTY_OFFICE } },
+        { turn: { equals: '1' } },
+      ],
+    },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { cityCode: true, zoneNumber: true, votosValidos: true },
+    overrideAccess: true,
+  })
+
+  const validVotes = new Map<string, number>()
+  for (const row of result.docs) {
+    const key = `${row.cityCode}:${row.zoneNumber}`
+    validVotes.set(key, (validVotes.get(key) ?? 0) + (row.votosValidos ?? 0))
+  }
+  return validVotes
+}
+
 /** cityCode:zone → votes map for one candidate/year (plaza-level slicing). */
 export const loadCandidateVotesByCityZone = async (
   payload: Payload,

@@ -47,3 +47,18 @@ export const choroplethMaxAbsValue = (values: Record<string, number>): number =>
   const entries = Object.values(values).map((value) => Math.abs(value))
   return entries.length > 0 ? Math.max(...entries) : 0
 }
+
+/** Share of valid votes per geography (0–1). Omits entries with no valid denominator or zero votes. */
+export const computeValidVoteShares = (
+  votes: Record<string, number>,
+  validVotes: Record<string, number>,
+): Record<string, number> => {
+  const shares: Record<string, number> = {}
+  for (const [code, voteCount] of Object.entries(votes)) {
+    const valid = validVotes[code]
+    if (valid > 0 && voteCount > 0) {
+      shares[code] = voteCount / valid
+    }
+  }
+  return shares
+}

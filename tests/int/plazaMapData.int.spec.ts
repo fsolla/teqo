@@ -72,4 +72,16 @@ describe('loadPlazaMapBundle — list URL filters', () => {
         : await loadPlazaMapBundle(payload, advisor, { kind: 'zona' })
     expect(excluded).toBeNull()
   })
+
+  it('includes validVotesByYear for TSE years and reuses 2022 for 2026', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+
+    const bundle = await loadPlazaMapBundle(payload, coordinator, {})
+
+    expect(bundle).not.toBeNull()
+    expect(bundle!.validVotesByYear['2014']).toBeDefined()
+    expect(bundle!.validVotesByYear['2018']).toBeDefined()
+    expect(bundle!.validVotesByYear['2022']).toBeDefined()
+    expect(bundle!.validVotesByYear['2026']).toBe(bundle!.validVotesByYear['2022'])
+  })
 })

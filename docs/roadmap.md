@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-21 (fill-in filtros-auto entregue em código; B9 + B10 entregues; débitos B9 → A9+/C8 F4; débitos B10 → B6)
+Atualizado em: 2026-07-21 (fill-in filtros-auto + B11 entregues em código; B9 + B10 entregues; débitos B9 → A9+/C8 F4; débitos B10/B11 scale toggle → B6)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -73,23 +73,24 @@ flowchart TD
     R2 -.-> B7["B7 Mapa filtrado ✓"]
     R2 -.-> B8["B8 Polígonos Praças-zona<br/>(SSA/CMS)"]
     R2 -.-> B10["B10 Hover/tap mapa ✓"]
-    R2 -.-> B11["B11 Escala % válidos<br/>no mapa"]
+    R2 -.-> B11["B11 Escala % válidos<br/>no mapa ✓"]
     A9 -.métrica 2026.-> B10
     A9 -.numerador 2026.-> B11
     B10 -.hover densos.-> B6["B6 setStyle incremental"]
+    B11 -.troca escala.-> B6
     JUR -.chave push.-> D2
     C2prod --> C5["C5 GOTV (validar)"]
 ```
 
-Paralelizáveis agora: **B11**, fill-ins da lista (A9+, …). ~~**A9** / **B9** / **B7** / **B10** / **filtros-auto**~~ entregues 2026-07-21. **B6** absorve o hot path de hover pós-B10 (Janela 3 / gatilho de densidade).
+Paralelizáveis agora: fill-ins da lista (A9+, …). ~~**A9** / **B9** / **B7** / **B10** / **B11** / **filtros-auto**~~ entregues 2026-07-21. **B6** absorve hot path de hover pós-B10 e troca de escala pós-B11 (Janela 3 / gatilho de densidade).
 
 ### Sequência por janela
 
-**Janela 1 — agora → 05/08 (convenções):** ~~R0 → R1 → R2~~ entregues; ~~**A9** estimativa de votos~~ / ~~**B9** edição rápida na lista~~ / ~~**B7** mapa filtrado~~ / ~~**B10** hover+click-nav~~ / ~~**filtros-auto** lista de Praças~~ entregues; **deploy da remodelagem** (revisar SQL destrutivo da migração antes do build) + smoke em produção; **B11** escala % dos válidos; R6 critique/polish; Onda 0 jurídica em paralelo.
+**Janela 1 — agora → 05/08 (convenções):** ~~R0 → R1 → R2~~ entregues; ~~**A9** estimativa de votos~~ / ~~**B9** edição rápida na lista~~ / ~~**B7** mapa filtrado~~ / ~~**B10** hover+click-nav~~ / ~~**B11** escala % dos válidos~~ / ~~**filtros-auto** lista de Praças~~ entregues; **deploy da remodelagem** (revisar SQL destrutivo da migração antes do build) + smoke em produção; R6 critique/polish; Onda 0 jurídica em paralelo.
 
 **Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; D2 se sobrar folga.
 
-**Janela 3 — 16/08 → set:** A6 dobradinha (pós-TSE 15/08), B6 `setStyle` incremental (troca de ano/métrica **e** hover denso no mapa de Praças pós-B10), **B8** polígonos das Praças-zona Salvador/Camaçari (F1 catálogo de bairros shipável antes; F2 dissolve), débitos sobreviventes (abaixo).
+**Janela 3 — 16/08 → set:** A6 dobradinha (pós-TSE 15/08), B6 `setStyle` incremental (troca de ano/métrica/escala **e** hover denso no mapa de Praças pós-B10/B11), **B8** polígonos das Praças-zona Salvador/Camaçari (F1 catálogo de bairros shipável antes; F2 dissolve), débitos sobreviventes (abaixo).
 
 **Janela 4 — set → 04/10:** C5 GOTV _(validar)_, congelamento ~20/09 (só bugfix/dados).
 
@@ -97,7 +98,7 @@ Paralelizáveis agora: **B11**, fill-ins da lista (A9+, …). ~~**A9** / **B9** 
 
 **Não cortáveis:** Onda 0 (jurídico/Consent); R1–R2 (sem eles a vertical não reflete a operação real); C2 dados reais; assimetria declarado×estimado (relação de campo); ~~**A9**~~ (total esperado da Praça — entregue 2026-07-21).
 
-**Cortes seguros** (se o prazo apertar, nesta ordem): R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; B6; **B11** (mapa continua em escala absoluta); **B8** (F2 polígonos; manter F1 bairros na Praça se já entregue — mapa continua agregado no município); débitos/fill-ins. ~~**B9** / **B10**~~ (entregues — não cortar).
+**Cortes seguros** (se o prazo apertar, nesta ordem): R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; B6; **B8** (F2 polígonos; manter F1 bairros na Praça se já entregue — mapa continua agregado no município); débitos/fill-ins. ~~**B9** / **B10** / **B11**~~ (entregues — não cortar).
 
 ## Já entregue (resumo)
 
@@ -108,6 +109,7 @@ Paralelizáveis agora: **B11**, fill-ins da lista (A9+, …). ~~**A9** / **B9** 
 - **B7 (2026-07-21)** — **Mapa das Praças filtrado pela lista** (`buildPlazaListWhere` em `loadPlazaMapBundle`; `rawSearchParams` na página; empty → omitir painel; int `plazaMapData.int.spec.ts`) — [plano](plans/mapa-pracas-filtrado.md).
 - **B9 (2026-07-21)** — **Edição rápida na lista de Praças** (Assessores / Tendência / `expectedVotes` via Popovers em `PlazaList*Control`; `listFormActions`; sem migration) — [plano](plans/edicao-rapida-lista-pracas.md). Débitos `/simplify`: **A9+** F2 (revalidate) + **C8** F4 (DRY formActions).
 - **B10 (2026-07-21)** — **Hover/tap no Mapa das Praças** (destaque + `MapFeatureReadout`; desktop click navega; mobile 2º tap; SSA/CMS N>1 → `zoneBreakdown`; `plazasByIbgeCode` / `resolvePlazaMapNavigation`) — [plano](plans/hover-mapa-pracas.md). Débito perf hover O(n) → **B6** [escala-dry-pos-b3.md](plans/escala-dry-pos-b3.md).
+- **B11 (2026-07-21)** — **Escala % dos válidos no Mapa das Praças** (`validVotesByYear` no bundle; seletor `Total (votos)` / `% dos válidos`; domínio fixo 0–100%; 2026 usa válidos 2022; compare desliga %; readout em %) — [plano](plans/escala-percentual-mapa-pracas.md). Débito perf troca `scaleMode` → **B6** [escala-dry-pos-b3.md](plans/escala-dry-pos-b3.md).
 - **Fill-in filtros-auto (2026-07-21)** — **Filtros auto-aplicados na lista de Praças** (`PlazaFilters`: debounce 1s no `q`, Enter imediato, selects imediatos, remove Buscar; `useTransition` + pending a11y; `shouldUpdatePlazaSearchUrl` + no-op via `buildPlazaFiltersKey`; sem migration) — [plano](plans/filtros-auto-pracas.md). Débitos pós-`/simplify`: sync back/forward `search`↔`state.q` e shell pending compartilhado — gatilhos no plano.
 
 ## Supersedidos pela remodelagem (2026-07-20)
@@ -130,9 +132,8 @@ Paralelizáveis agora: **B11**, fill-ins da lista (A9+, …). ~~**A9** / **B9** 
 
 - **A6** dobradinha 2026 automática quando o TSE publicar candidaturas · gatilho externo: pós-15/08 · reenquadrar para Praça · [plano](plans/insight-dobradinha-2026.md)
 - **B5 F2–F3** cache CLI compartilhado + factory mun/TI (scripts continuam) · [plano](plans/escala-dry-pos-b2.md)
-- **B6** `BahiaMap` setStyle incremental (métrica/ano + hover/select pós-B10 ✓) · gatilho: troca frequente de ano/métrica ou hover denso no mapa de Praças · appetite ~1–1,5 dia · [plano](plans/escala-dry-pos-b3.md)
+- **B6** `BahiaMap` setStyle incremental (métrica/ano/escala pós-B11 + hover/select pós-B10 ✓) · gatilho: troca frequente de ano/métrica/escala ou hover denso no mapa de Praças · appetite ~1–1,5 dia · [plano](plans/escala-dry-pos-b3.md)
 - **B8** Polígonos das Praças-zona (Salvador ZE 1–19 / Camaçari ZE 170–171): F1 catálogo zona→bairros + UI na Praça; F2 dissolve IBGE/malha → TopoJSON no mapa · Janela 3 · cortável (F2) · [plano](plans/poligonos-pracas-zona.md)
-- **B11** Escala de cor por **% dos votos válidos** da Praça (0–100%, não pelo total da maior Praça) · depende de R2 (entregue) · suave: A9 ✓ (numerador 2026) · paralelizável agora · appetite ~0,5–1 dia · [plano](plans/escala-percentual-mapa-pracas.md)
 - **C5** operação dia D / GOTV _(validar com produto)_ · design [`Dia-D-GOTV`](design-refs/latest/Dia-D-GOTV.png) · depende de C2 dados reais
 - **D2** push + sino in-app · soft: chave `campanha-notificacoes-push` (Onda 0) · [plano](plans/notifications.md)
 - **R6** critique/polish visual da vertical remodelada (ciclo /impeccable completo por superfície; smoke visual coordenador feito em 2026-07-21) · gatilho: antes de 16/08 · (opcional: mover filtros acima do mapa)

@@ -9,6 +9,7 @@ import {
 } from '@/utilities/plazaElectionGeography'
 import {
   loadCandidateVotesByCityZone,
+  loadValidVotesByCityZone,
   sumVotesForGeography,
 } from '@/utilities/plazaElectoralBaseline'
 import { buildPlazasByIbgeCode, type PlazasByIbgeCode } from '@/utilities/plazaMapNavigation'
@@ -28,6 +29,15 @@ export type { PlazasByIbgeCode, PlazaMapSlugEntry } from '@/utilities/plazaMapNa
 
 export const PLAZA_MAP_YEARS = [...HISTORICAL_SERIES_YEARS, 2026] as const
 export type PlazaMapYear = (typeof PLAZA_MAP_YEARS)[number]
+
+export type PlazaMapScaleMode = 'absolute' | 'percentValid'
+
+export const PLAZA_MAP_SCALE_MODES = ['percentValid', 'absolute'] as const satisfies readonly PlazaMapScaleMode[]
+
+export const plazaMapScaleModeLabels: Record<PlazaMapScaleMode, string> = {
+  absolute: 'Total (votos)',
+  percentValid: '% dos válidos',
+}
 
 export const plazaMapYearLabels: Record<PlazaMapYear, string> = {
   2014: '2014 (TSE)',
@@ -52,6 +62,8 @@ export type PlazaMapComparison = {
 export type PlazaMapBundle = {
   /** year (as string) → codarea → value. 2026 = expectedVotes ?? pledge effective total. */
   valuesByYear: Record<string, Record<string, number>>
+  /** year (as string) → codarea → votosValidos (federal T1). 2026 reuses 2022. */
+  validVotesByYear: Record<string, Record<string, number>>
   /** IBGE codarea → accessible plaza slugs for map click navigation. */
   plazasByIbgeCode: PlazasByIbgeCode
   /** Zone plazas in scope (Salvador/Camaçari) with per-year values. */
@@ -121,19 +133,32 @@ export const loadPlazaMapBundle = async (
   if (plazas.length === 0) return null
 
   const valuesByYear: Record<string, Record<string, number>> = {}
+  const validVotesByYear: Record<string, Record<string, number>> = {}
   const zoneVotesBySlug = new Map<string, Record<string, number>>()
   const sollaVotesByYear = new Map<number, Map<string, number>>()
 
-  for (const year of HISTORICAL_SERIES_YEARS) {
-    const votesByCityZone = await loadCandidateVotesByCityZone(payload, user, {
-      year,
-      candidateNumber: BASELINE_TICKET_2022.candidate.candidateNumber,
-    })
+  const yearLoads = await Promise.all(
+    HISTORICAL_SERIES_YEARS.map(async (year) => {
+      const [votesByCityZone, validByCityZone] = await Promise.all([
+        loadCandidateVotesByCityZone(payload, user, {
+          year,
+          candidateNumber: BASELINE_TICKET_2022.candidate.candidateNumber,
+        }),
+        loadValidVotesByCityZone(payload, user, { year }),
+      ])
+      return { year, votesByCityZone, validByCityZone }
+    }),
+  )
+
+  for (const { year, votesByCityZone, validByCityZone } of yearLoads) {
     sollaVotesByYear.set(year, votesByCityZone)
     const values: Record<string, number> = {}
+    const validValues: Record<string, number> = {}
     for (const plaza of plazas) {
       const votes = sumVotesForGeography(votesByCityZone, plaza.geography)
       values[plaza.ibgeCode] = (values[plaza.ibgeCode] ?? 0) + votes
+      const valid = sumVotesForGeography(validByCityZone, plaza.geography)
+      validValues[plaza.ibgeCode] = (validValues[plaza.ibgeCode] ?? 0) + valid
       if (plaza.kind === 'zona') {
         const bySlug = zoneVotesBySlug.get(plaza.slug) ?? {}
         bySlug[String(year)] = votes
@@ -141,7 +166,9 @@ export const loadPlazaMapBundle = async (
       }
     }
     valuesByYear[String(year)] = values
+    validVotesByYear[String(year)] = validValues
   }
+  validVotesByYear['2026'] = validVotesByYear['2022'] ?? {}
 
   const pledgeAggregates = await aggregatePledgesByPlaza(
     payload,
@@ -191,11 +218,16 @@ export const loadPlazaMapBundle = async (
 
     if (candidate) {
       const diffByYear: Record<string, Record<string, number>> = {}
-      for (const year of HISTORICAL_SERIES_YEARS) {
-        const otherVotes = await loadCandidateVotesByCityZone(payload, user, {
-          year,
-          candidateNumber: state.compare,
-        })
+      const otherVotesByYear = await Promise.all(
+        HISTORICAL_SERIES_YEARS.map((year) =>
+          loadCandidateVotesByCityZone(payload, user, {
+            year,
+            candidateNumber: state.compare!,
+          }),
+        ),
+      )
+      for (const [index, year] of HISTORICAL_SERIES_YEARS.entries()) {
+        const otherVotes = otherVotesByYear[index]!
         const sollaVotes = sollaVotesByYear.get(year) ?? new Map<string, number>()
         const values: Record<string, number> = {}
         for (const plaza of plazas) {
@@ -216,6 +248,7 @@ export const loadPlazaMapBundle = async (
 
   return {
     valuesByYear,
+    validVotesByYear,
     plazasByIbgeCode: buildPlazasByIbgeCode(plazas),
     zoneBreakdown,
     candidateName: BASELINE_TICKET_2022.candidate.name,
