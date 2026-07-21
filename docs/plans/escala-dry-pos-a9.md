@@ -1,7 +1,7 @@
 # Escala e DRY pós-A9 (loader da lista de Praças)
 
-Status: registrado no roadmap (Fase 1 pendente)
-Atualizado em: 2026-07-21 (`capture-review-debts` pós-A9 + `/simplify`)
+Status: registrado no roadmap (Fase 1 pendente; **B7 entregue 2026-07-21** — prioridade sobe)
+Atualizado em: 2026-07-21 (`capture-review-debts` pós-B7 + `/simplify`)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, fill-in **A9+** pós-A9)
 Impeccable: A — N/A (sem superfície UI; otimização de loader)
 Appetite: ~0,5–1 dia eng (1 fase; PR único)
@@ -15,11 +15,15 @@ Uma passagem `/simplify` pós-entrega já limpou o que cabia em cleanup: form `o
 
 O revisor de **performance** marcou como **maior que simplify** o follow-up abaixo. Sem registro, cada abertura de `/campanha/pracas` (staff) dispara **três** agregações de pledges sobre conjuntos sobrepostos.
 
-1. **Query triplicada de pledges na página `/campanha/pracas`.** `page.tsx` chama em paralelo `loadPlazaListPageData` (pledges da página atual), `loadPlazaListOverviewData` (pledges de **todo** o conjunto filtrado) e `loadPlazaMapBundle` (pledges de **todas** as Praças do escopo do mapa). Cada loader invoca `aggregatePledgesByPlaza` de forma independente — padrão análogo ao E6 F1 em núcleos ([escala-dry-pos-e1.md](escala-dry-pos-e1.md)), mas na vertical Praças pós-remodelagem.
+1. **Query triplicada de pledges na página `/campanha/pracas`.** `page.tsx` chama em paralelo `loadPlazaListPageData` (pledges da página atual), `loadPlazaListOverviewData` (pledges de **todo** o conjunto filtrado) e `loadPlazaMapBundle` (pledges do conjunto filtrado do mapa — desde **B7** o escopo segue `buildPlazaListWhere`, não mais todas as Praças acessíveis). Cada loader ainda invoca `aggregatePledgesByPlaza` de forma independente.
 
-**Já resolvido no simplify/critique (não reabrir):** parsing duplo do form `expectedVotes`; `hasStaffVoteData` derivado de `staffVoteTotal > 0`; `rollupPlazaStaffVotes` + `sumStaffPledgeEffectiveTotal`; `StaffPlazaVotesDisplay`; assinatura estreita de `resolvePlazaStaffVoteTotal`; testes unit do rollup.
+2. **Dois `find` de Praças no mesmo filtro (overview + mapa).** Ambos usam `buildPlazaListWhere` com `pagination: false` e `select` distinto — duplicação de round-trip por request quando o mapa está visível (staff, conjunto não vazio).
 
-**Explicitamente fora (triage `capture-review-debts` 2026-07-21):** semântica lista (só `expectedVotes` manual) vs mapa/overview (fallback) — decisão de produto A9; merge de forms Estratégia + Votos no `/editar`; grid cosmético do `PlazaStrategyCard`; `loadPlazaPledges` em abas distintas do detalhe (uma aba por request); débitos adiados/não escopo do plano A9 (nota/autor, chip auto-sugerir, histórico, filtro `?expectedVotes=`); critique Impeccable formal por superfície → **R6**.
+**Já resolvido no simplify/critique (não reabrir):** parsing duplo do form `expectedVotes`; `hasStaffVoteData` derivado de `staffVoteTotal > 0`; `rollupPlazaStaffVotes` + `sumStaffPledgeEffectiveTotal`; `StaffPlazaVotesDisplay`; assinatura estreita de `resolvePlazaStaffVoteTotal`; testes unit do rollup. **Pós-B7 simplify:** `PlazaListSearchParams` exportado de `plazaUi.ts`; parse único no map loader (`loadScopedPlazas` recebe `PlazaListState`).
+
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-A9):** semântica lista (só `expectedVotes` manual) vs mapa/overview (fallback) — decisão de produto A9; merge de forms Estratégia + Votos no `/editar`; grid cosmético do `PlazaStrategyCard`; `loadPlazaPledges` em abas distintas do detalhe (uma aba por request); débitos adiados/não escopo do plano A9 (nota/autor, chip auto-sugerir, histórico, filtro `?expectedVotes=`); critique Impeccable formal por superfície → **R6**.
+
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B7):** `Promise.all` nos loads TSE por ano em `plazaMapData` (micro-opt pré-existente; gatilho abaixo); testes int extras em `plazaMapData` (`region`/`leader`/`compare`) — cobertura opcional no próximo toque no loader; split do teste advisor por `kind` (legibilidade).
 
 ## Objetivos
 
@@ -33,7 +37,7 @@ O revisor de **performance** marcou como **maior que simplify** o follow-up abai
 - **Um fill-in A9+, uma fase (F1).** Mesmo racional de A7/C6/A8+: um slug de plano, PR único. **Rejeitado:** item de roadmap separado `A10` — follow-up pós-entrega, não feature nova.
 - **Dependência dura de A9.** Só faz sentido com `expectedVotes`, `rollupPlazaStaffVotes` e os três loaders já no produto; não reabre escopo de schema ou UI de edição.
 - **F1 não remove overview nem mapa.** Otimiza como os dados chegam; paridade com a plano A9 permanece. **Rejeitado:** unificar lista+overview num único `find` unpaginado sem validar regressão de paginação/`depth`.
-- **Cortável** se a lista com mapa permanecer aceitável em campo com dezenas de assessores; vira não-cortável quando B7 (filtro) + mapa sempre visível multiplicarem o conjunto filtrado (436 Praças para coordenador).
+- **Cortável** se a lista com mapa permanecer aceitável em campo com dezenas de assessores; **menos cortável desde B7 entregue** (mapa filtrado + sempre visível para staff amplifica o custo do triplo agregado quando o filtro é amplo).
 - **i18n e naming** (AGENTS.md): identificadores em inglês (`loadPlazaListPageBundle`, `PlazaListPledgeAggregates`); strings visíveis inalteradas em pt-BR.
 
 ## Questões em aberto
@@ -50,7 +54,7 @@ flowchart TD
     F1 --> List["PlazaList página"]
     F1 --> Overview["PlazaListOverview KPIs"]
     F1 --> Map["PlazaMapBundle 2026"]
-    B7["B7 mapa filtrado"] -.mesmo bundle.-> F1
+    B7["B7 mapa filtrado ✓"] -.mesmo bundle.-> F1
 ```
 
 ### Fase 1 — Loader compartilhado da lista de Praças
@@ -68,7 +72,7 @@ flowchart TD
 ## Dependências
 
 - **Dura:** A9 [estimativa-votos-praca.md](estimativa-votos-praca.md) — campo, agregadores e superfícies (merge em `main`).
-- **Suave:** B7 [mapa-pracas-filtrado.md](mapa-pracas-filtrado.md) — mesmo URL de filtro; F1 facilita B7 ao centralizar o where.
+- **Suave:** B7 [mapa-pracas-filtrado.md](mapa-pracas-filtrado.md) — entregue 2026-07-21; mesmo URL de filtro; F1 deduplica pledges e pode compartilhar parse/`find` onde os escopos coincidem.
 - Reusa: `aggregatePledgesByPlaza`, `rollupPlazaStaffVotes`, `resolvePlazaStaffVoteTotal`, precedente E6 F1 em [escala-dry-pos-e1.md](escala-dry-pos-e1.md).
 
 ## Não escopo
@@ -88,6 +92,7 @@ flowchart TD
 
 - **SQL aggregate espelhando `buildPlazaListWhere`.** Revisitar quando profiling mostrar `aggregatePledgesByPlaza` dominando TTFB com filtros amplos + mapa sempre montado.
 - **Compartilhar bundle com dashboard geral.** Revisitar se o dashboard passar a carregar mapa+lista na mesma rota.
+- **Loads TSE sequenciais por ano em `loadPlazaMapBundle`.** Revisitar com `Promise.all` só se profiling com `?compare=` mostrar latência dominante (pré-existente; fora do escopo A9+).
 
 ## Referências
 

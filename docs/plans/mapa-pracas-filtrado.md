@@ -1,11 +1,13 @@
 # Mapa das Praças filtrado pela lista
 
-Status: rascunho
+Status: entregue
 Atualizado em: 2026-07-21
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B7)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B7 — entregue 2026-07-21)
 Impeccable: B — encaixe em `/campanha/pracas` (`PlazaMapPanel` + loader; sem rota nova)
 Appetite: ~0,5 dia eng; wire `buildPlazaListWhere` no loader do mapa + teste + empty state
 Responsável: —
+
+_Revisão 2026-07-21 (pós-implementação + `/simplify`): `loadPlazaMapBundle` aceita `rawSearchParams`; `loadScopedPlazas` usa `buildPlazaListWhere(state)`; tipo `PlazaListSearchParams` exportado de `plazaUi.ts`; testes em `tests/int/plazaMapData.int.spec.ts`. Cleanup simplify: parse único no map loader (`PlazaListState` passado a `loadScopedPlazas`). Débito de perf triplicado → **A9+**._
 
 ## Design (Impeccable)
 
@@ -22,12 +24,9 @@ Brief compacto:
 
 ## Contexto
 
-Em `/campanha/pracas` a lista e o overview já aplicam `buildPlazaListWhere(state)` a partir da URL (`q`, `region`, `kind`, `coverage`, `priority`, `trend`). O mapa, porém, carrega **todas** as Praças acessíveis ao papel:
+Em `/campanha/pracas` a lista e o overview já aplicavam `buildPlazaListWhere(state)` a partir da URL (`q`, `region`, `kind`, `coverage`, `priority`, `trend`). O mapa carregava **todas** as Praças acessíveis ao papel (`where: {}` em `loadScopedPlazas`). Pedido de produto (2026-07-21): o Mapa das Praças deve usar o mesmo filtro da lista abaixo.
 
-- `src/app/(campaign)/campanha/(app)/pracas/page.tsx` chama `loadPlazaMapBundle(payload, user, canonicalUrl.state.compare)` **sem** o estado de filtro.
-- `loadScopedPlazas` em `src/utilities/plazaMapData.ts` usa `where: {}` (só access via `overrideAccess: false`).
-
-Isso quebra o contrato mental que a era Núcleos já tinha documentado: o mapa do overview era “escopado pelos mesmos filtros da lista” ([mapa-bahia-geometrias.md](mapa-bahia-geometrias.md)). Na remodelagem Praças (R2) o mapa nasceu com escopo de **access** (assessor vê só as suas), mas não com escopo de **filtro de UI**. Pedido de produto (2026-07-21): o Mapa das Praças deve usar o mesmo filtro da lista abaixo.
+**Entregue 2026-07-21:** `loadPlazaMapBundle(payload, user, rawSearchParams)` em `page.tsx`; `loadScopedPlazas` com `buildPlazaListWhere`; conjunto vazio → `null` (painel omitido); `compare` só modo comparativo.
 
 ## Objetivos
 
@@ -63,8 +62,8 @@ flowchart LR
 
 Componentes:
 
-- **`loadScopedPlazas` / `loadPlazaMapBundle`** (`src/utilities/plazaMapData.ts`): aceitar `PlazaListState` (ou `Where` já montado). Passar `where: buildPlazaListWhere(state)` no `payload.find` (manter `user` + `overrideAccess: false`). Se zero docs → `null`. `compareCandidateNumber` permanece argumento separado (ou lido de `state.compare`).
-- **`pracas/page.tsx`**: passar o mesmo `state`/`rawSearchParams` usado pela lista ao loader do mapa (ex.: `loadPlazaMapBundle(payload, user, canonicalUrl.state)`), não só `compare`.
+- **`loadScopedPlazas` / `loadPlazaMapBundle`** (`src/utilities/plazaMapData.ts`): `searchParams` → `parsePlazaListParams` → `buildPlazaListWhere(state)` no `payload.find` (`user` + `overrideAccess: false`). `loadScopedPlazas` recebe `PlazaListState` (parse único no bundle). Zero docs → `null`. `compare` de `state.compare`.
+- **`pracas/page.tsx`**: `loadPlazaMapBundle(payload, user, rawSearchParams)` — paridade com lista/overview.
 - **Depth check:** não criar `plazaMapFilters.ts` pass-through; não duplicar clauses de `q`/`region`/… — só reusar `buildPlazaListWhere` de `plazaUi.ts`.
 - **Teste:** int (ou unit com Payload mock) garantindo que com `region` (ou `kind`) o bundle só contém `ibgeCode`s das Praças filtradas; e que conjunto vazio → `null`. Precedente de access já comentado no loader (assessor).
 - **Migration:** Sem migration, sem collection, sem server action.
@@ -98,8 +97,9 @@ Componentes:
 
 - `docs/roadmap.md` (Trilha B, item B7; Remodelagem R2)
 - `src/app/(campaign)/campanha/(app)/pracas/page.tsx` — composição mapa + filtros + lista
-- `src/utilities/plazaMapData.ts` — `loadScopedPlazas` / `loadPlazaMapBundle` (hoje `where: {}`)
-- `src/utilities/plazaUi.ts` — `buildPlazaListWhere`, `PlazaListState`
+- `src/utilities/plazaMapData.ts` — `loadScopedPlazas` / `loadPlazaMapBundle`
+- `src/utilities/plazaUi.ts` — `buildPlazaListWhere`, `PlazaListState`, `PlazaListSearchParams`
+- `tests/int/plazaMapData.int.spec.ts` — contrato filtro + access
 - `src/utilities/plazaPageData.ts` — precedente overview filtrado (`pagination: false`)
 - `docs/plans/mapa-bahia-geometrias.md` — contrato histórico “mapa escopado pelos mesmos filtros”
 - `docs/plans/remodelagem-pracas.md` — mapa v1 / access do assessor

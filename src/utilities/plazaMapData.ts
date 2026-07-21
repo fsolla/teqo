@@ -12,6 +12,12 @@ import {
   sumVotesForGeography,
 } from '@/utilities/plazaElectoralBaseline'
 import {
+  buildPlazaListWhere,
+  parsePlazaListParams,
+  type PlazaListSearchParams,
+  type PlazaListState,
+} from '@/utilities/plazaUi'
+import {
   aggregatePledgesByPlaza,
   emptyPlazaPledgeAggregate,
   resolvePlazaStaffVoteTotal,
@@ -59,14 +65,18 @@ type ScopedPlaza = {
   geography: PlazaElectionGeography
 }
 
-const loadScopedPlazas = async (payload: Payload, user: CampaignUser): Promise<ScopedPlaza[]> => {
+const loadScopedPlazas = async (
+  payload: Payload,
+  user: CampaignUser,
+  state: PlazaListState,
+): Promise<ScopedPlaza[]> => {
   const result = await payload.find({
     collection: 'plaza',
     depth: 0,
     limit: 0,
     pagination: false,
     select: { slug: true, name: true, kind: true, ibgeCode: true, expectedVotes: true },
-    where: {},
+    where: buildPlazaListWhere(state),
     user,
     overrideAccess: false,
   })
@@ -89,20 +99,20 @@ const loadScopedPlazas = async (payload: Payload, user: CampaignUser): Promise<S
 }
 
 /**
- * Map data for the Praças overview: every accessible plaza contributes its
- * geography's votes (or 2026 pledge estimates) to its municipality polygon.
- * An advisor therefore sees only their plazas' share shaded on the map. When
- * `compareCandidateNumber` is set, TSE years also carry a red↔white↔blue
- * diff (Solla − other candidate).
+ * Map data for the Praças overview: plazas matching the list URL filters (and
+ * role access) contribute their geography's votes (or 2026 pledge estimates)
+ * to municipality polygons. When `state.compare` is set, TSE years also carry
+ * a red↔white↔blue diff (Solla − other candidate).
  */
 export const loadPlazaMapBundle = async (
   payload: Payload,
   user: CampaignUser,
-  compareCandidateNumber?: number,
+  searchParams: PlazaListSearchParams,
 ): Promise<PlazaMapBundle | null> => {
   if (user.role === 'leader') return null
 
-  const plazas = await loadScopedPlazas(payload, user)
+  const state = parsePlazaListParams(searchParams)
+  const plazas = await loadScopedPlazas(payload, user, state)
   if (plazas.length === 0) return null
 
   const valuesByYear: Record<string, Record<string, number>> = {}
@@ -155,12 +165,12 @@ export const loadPlazaMapBundle = async (
     .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
 
   let comparison: PlazaMapComparison | null = null
-  if (compareCandidateNumber) {
+  if (state.compare) {
     const candidates = await payload.find({
       collection: 'electionCandidate',
       where: {
         and: [
-          { candidateNumber: { equals: compareCandidateNumber } },
+          { candidateNumber: { equals: state.compare } },
           { office: { equals: 'deputado_federal' } },
           { turn: { equals: '1' } },
         ],
@@ -179,7 +189,7 @@ export const loadPlazaMapBundle = async (
       for (const year of HISTORICAL_SERIES_YEARS) {
         const otherVotes = await loadCandidateVotesByCityZone(payload, user, {
           year,
-          candidateNumber: compareCandidateNumber,
+          candidateNumber: state.compare,
         })
         const sollaVotes = sollaVotesByYear.get(year) ?? new Map<string, number>()
         const values: Record<string, number> = {}
@@ -192,7 +202,7 @@ export const loadPlazaMapBundle = async (
       }
 
       comparison = {
-        candidateNumber: compareCandidateNumber,
+        candidateNumber: state.compare,
         candidateName: `${candidate.urnaName}${candidate.party ? ` (${candidate.party})` : ''}`,
         diffByYear,
       }

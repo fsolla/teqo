@@ -3,7 +3,7 @@ import type { Payload } from 'payload'
 import { getPlazaCatalogEntry } from '@/lib/plazaCatalog'
 import type { CampaignUser, Plaza } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { buildPlazaListWhere, parsePlazaListParams, plazaPageSize } from '@/utilities/plazaUi'
+import { buildPlazaListWhere, parsePlazaListParams, plazaPageSize, type PlazaListSearchParams } from '@/utilities/plazaUi'
 import {
   plazaListSelect,
   toPlazaDetailViewModel,
@@ -16,8 +16,6 @@ import {
   aggregatePledgesByPlaza,
   rollupPlazaStaffVotes,
 } from '@/utilities/votePledgeData'
-
-type PlazaListSearchParams = Record<string, string | string[] | undefined>
 
 export class PlazaNotFoundError extends Error {
   override name = 'PlazaNotFoundError'

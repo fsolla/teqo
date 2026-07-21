@@ -44,7 +44,7 @@ export type PlazaListState = {
   compare?: number
 }
 
-type RawSearchParams = CampaignListRawSearchParams
+export type PlazaListSearchParams = CampaignListRawSearchParams
 
 export const plazaListParamNames = [
   'q',
@@ -63,7 +63,7 @@ const canonicalTerritoryBySearchValue = new Map(
   bahiaIdentityTerritories.map((territory) => [normalizeSearchPhrase(territory), territory]),
 )
 
-export const parsePlazaListParams = (params: RawSearchParams): PlazaListState => {
+export const parsePlazaListParams = (params: PlazaListSearchParams): PlazaListState => {
   const rawPage = strictDecimalInteger(firstValue(params.page))
   const q = normalizedText(firstValue(params.q))
   const rawRegion = normalizedText(firstValue(params.region))
@@ -153,7 +153,7 @@ export const buildPlazaListHref = (state: PlazaListState, page: number): string 
   buildListHref(state, buildPlazaListSearchParams, '/campanha/pracas', page)
 
 export const resolvePlazaListUrl = (
-  params: RawSearchParams,
+  params: PlazaListSearchParams,
   totalPages?: number,
 ): {
   state: PlazaListState

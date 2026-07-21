@@ -53,7 +53,7 @@ export default async function PlazasPage({ searchParams }: PlazasPageProps) {
   const [listData, overview, mapBundle] = await Promise.all([
     loadPlazaListPageData(payload, user, rawSearchParams),
     loadPlazaListOverviewData(payload, user, rawSearchParams),
-    loadPlazaMapBundle(payload, user, canonicalUrl.state.compare),
+    loadPlazaMapBundle(payload, user, rawSearchParams),
   ])
   const candidateOptions = mapBundle ? await loadFederalCandidateOptions(payload, user) : []
   const resolvedUrl = resolvePlazaListUrl(rawSearchParams, listData.totalPages)
