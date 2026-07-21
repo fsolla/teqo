@@ -11,6 +11,7 @@ import {
   loadCandidateVotesByCityZone,
   sumVotesForGeography,
 } from '@/utilities/plazaElectoralBaseline'
+import { buildPlazasByIbgeCode, type PlazasByIbgeCode } from '@/utilities/plazaMapNavigation'
 import {
   buildPlazaListWhere,
   parsePlazaListParams,
@@ -22,6 +23,8 @@ import {
   emptyPlazaPledgeAggregate,
   resolvePlazaStaffVoteTotal,
 } from '@/utilities/votePledgeData'
+
+export type { PlazasByIbgeCode, PlazaMapSlugEntry } from '@/utilities/plazaMapNavigation'
 
 export const PLAZA_MAP_YEARS = [...HISTORICAL_SERIES_YEARS, 2026] as const
 export type PlazaMapYear = (typeof PLAZA_MAP_YEARS)[number]
@@ -49,6 +52,8 @@ export type PlazaMapComparison = {
 export type PlazaMapBundle = {
   /** year (as string) → codarea → value. 2026 = expectedVotes ?? pledge effective total. */
   valuesByYear: Record<string, Record<string, number>>
+  /** IBGE codarea → accessible plaza slugs for map click navigation. */
+  plazasByIbgeCode: PlazasByIbgeCode
   /** Zone plazas in scope (Salvador/Camaçari) with per-year values. */
   zoneBreakdown: PlazaZoneBreakdownRow[]
   candidateName: string
@@ -211,6 +216,7 @@ export const loadPlazaMapBundle = async (
 
   return {
     valuesByYear,
+    plazasByIbgeCode: buildPlazasByIbgeCode(plazas),
     zoneBreakdown,
     candidateName: BASELINE_TICKET_2022.candidate.name,
     comparison,

@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-21 (B7 entregue; A9+ loader + revalidate pós-B9; débitos B9 `/simplify` → C8 F4 + A9+; Pixel Meta)
+Atualizado em: 2026-07-21 (débitos B10 `/simplify` → B6 hover incremental em `escala-dry-pos-b3.md`)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -88,7 +88,7 @@ Paralelizáveis sem seta dura de entrada (além das tracejadas a partir de R2): 
 
 **Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; D2 se sobrar folga.
 
-**Janela 3 — 16/08 → set:** A6 dobradinha (pós-TSE 15/08), B6 `setStyle` incremental (mapa com troca de ano/métrica frequente), **B8** polígonos das Praças-zona Salvador/Camaçari (F1 catálogo de bairros shipável antes; F2 dissolve), débitos sobreviventes (abaixo).
+**Janela 3 — 16/08 → set:** A6 dobradinha (pós-TSE 15/08), B6 `setStyle` incremental (troca de ano/métrica **e** hover denso no mapa de Praças pós-B10), **B8** polígonos das Praças-zona Salvador/Camaçari (F1 catálogo de bairros shipável antes; F2 dissolve), débitos sobreviventes (abaixo).
 
 **Janela 4 — set → 04/10:** C5 GOTV _(validar)_, congelamento ~20/09 (só bugfix/dados).
 
@@ -126,7 +126,7 @@ Paralelizáveis sem seta dura de entrada (além das tracejadas a partir de R2): 
 
 - **A6** dobradinha 2026 automática quando o TSE publicar candidaturas · gatilho externo: pós-15/08 · reenquadrar para Praça · [plano](plans/insight-dobradinha-2026.md)
 - **B5 F2–F3** cache CLI compartilhado + factory mun/TI (scripts continuam) · [plano](plans/escala-dry-pos-b2.md)
-- **B6** `BahiaMap` setStyle incremental ao trocar métrica/ano · gatilho: troca frequente no mapa de Praças · [plano](plans/escala-dry-pos-b3.md)
+- **B6** `BahiaMap` setStyle incremental (métrica/ano + hover/select pós-B10) · gatilho: troca frequente de ano/métrica ou hover denso no mapa de Praças · appetite ~1–1,5 dia · [plano](plans/escala-dry-pos-b3.md)
 - **B8** Polígonos das Praças-zona (Salvador ZE 1–19 / Camaçari ZE 170–171): F1 catálogo zona→bairros + UI na Praça; F2 dissolve IBGE/malha → TopoJSON no mapa · Janela 3 · cortável (F2) · [plano](plans/poligonos-pracas-zona.md)
 - **B9** Edição rápida na lista de Praças (Assessores, Tendência, **Votos estimados = `expectedVotes`**) · depende de A9 ✓ · appetite ~1–1,5 dia · [plano](plans/edicao-rapida-lista-pracas.md)
 - **B10** Hover/tap no Mapa das Praças: destaque + votos; desktop click navega; mobile 2º tap na selecionada navega · depende de R2 · suave: A9 ✓/B6/B8 · paralelizável agora · appetite ~0,5–1 dia · [plano](plans/hover-mapa-pracas.md)

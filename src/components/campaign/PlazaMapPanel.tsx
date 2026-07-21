@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
-import { BahiaMap } from '@/components/campaign/BahiaMap'
+import { BahiaMap, type BahiaMapFeatureInfo } from '@/components/campaign/BahiaMap'
 import { ChoroplethLegend } from '@/components/campaign/ChoroplethLegend'
+import { MapFeatureReadout } from '@/components/campaign/MapFeatureReadout'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import {
@@ -13,6 +14,7 @@ import {
   choroplethMaxValue,
   divergingGradientCss,
 } from '@/lib/choroplethColorScale'
+import { formatElectionNumber } from '@/lib/electionInsights'
 import type { FederalCandidateOption } from '@/utilities/electionCandidateOptions'
 import {
   PLAZA_MAP_YEARS,
@@ -20,8 +22,7 @@ import {
   type PlazaMapBundle,
   type PlazaMapYear,
 } from '@/utilities/plazaMapData'
-
-const voteFormatter = new Intl.NumberFormat('pt-BR')
+import { resolvePlazaMapNavigation } from '@/utilities/plazaMapNavigation'
 
 type PlazaMapPanelProps = {
   bundle: PlazaMapBundle
@@ -38,6 +39,8 @@ export const PlazaMapPanel = ({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [year, setYear] = useState<PlazaMapYear>(defaultYear)
+  const [selectedFeature, setSelectedFeature] = useState<BahiaMapFeatureInfo | null>(null)
+  const selectedKeyRef = useRef<string | null>(null)
 
   const comparison = bundle.comparison
   const comparisonActive = comparison !== null && year !== 2026
@@ -59,6 +62,42 @@ export const PlazaMapPanel = ({
     else params.delete('compare')
     router.replace(`${pathname}${params.size ? `?${params.toString()}` : ''}`, { scroll: false })
   }
+
+  const handleFeatureSelect = useCallback((info: BahiaMapFeatureInfo | null) => {
+    selectedKeyRef.current = info?.key ?? null
+    setSelectedFeature(info)
+  }, [])
+
+  const handleFeatureActivate = useCallback(
+    (key: string) => {
+      if (selectedKeyRef.current !== key) return
+
+      const navigation = resolvePlazaMapNavigation(key, bundle.plazasByIbgeCode)
+      if (navigation.kind === 'navigate') {
+        router.push(`/campanha/pracas/${navigation.slug}`)
+        return
+      }
+
+      if (navigation.kind === 'zones') {
+        document.getElementById('plaza-zone-breakdown')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        })
+      }
+    },
+    [bundle.plazasByIbgeCode, router],
+  )
+
+  const selectedMetricValue =
+    selectedFeature && selectedFeature.key in values ? values[selectedFeature.key] : undefined
+
+  const selectedNavigation = useMemo(
+    () =>
+      selectedFeature
+        ? resolvePlazaMapNavigation(selectedFeature.key, bundle.plazasByIbgeCode)
+        : null,
+    [bundle.plazasByIbgeCode, selectedFeature],
+  )
 
   return (
     <section
@@ -151,6 +190,9 @@ export const PlazaMapPanel = ({
         mode="municipality"
         values={values}
         fillMode={comparisonActive ? 'diverging' : 'sequential'}
+        selectedKey={selectedFeature?.key ?? null}
+        onFeatureSelect={handleFeatureSelect}
+        onFeatureActivate={handleFeatureActivate}
         ariaLabel={
           comparisonActive && comparison
             ? `Mapa comparativo entre ${bundle.candidateName} e ${comparison.candidateName} por município`
@@ -158,8 +200,16 @@ export const PlazaMapPanel = ({
         }
       />
 
+      <MapFeatureReadout
+        feature={selectedFeature}
+        metricValue={selectedMetricValue}
+        metricLabel={metricLabel}
+        comparisonActive={comparisonActive}
+        navigation={selectedNavigation}
+      />
+
       {bundle.zoneBreakdown.length > 0 && !comparisonActive ? (
-        <div className="flex flex-col gap-2">
+        <div id="plaza-zone-breakdown" className="flex flex-col gap-2">
           <h3 className="text-sm font-medium">Praças por zona eleitoral</h3>
           <p className="text-sm text-muted-foreground">
             Zonas não têm polígono oficial — Salvador e Camaçari aparecem agregadas no mapa e
@@ -178,7 +228,7 @@ export const PlazaMapPanel = ({
                   {zone.name}
                 </Link>
                 <span className="text-sm tabular-nums text-muted-foreground">
-                  {voteFormatter.format(zone.votesByYear[String(year)] ?? 0)}
+                  {formatElectionNumber(zone.votesByYear[String(year)] ?? 0)}
                 </span>
               </li>
             ))}
