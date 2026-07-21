@@ -119,6 +119,7 @@ describe('campaign visual foundation', () => {
         advisorIDs: [advisor.id],
         priority: 'alta',
         lastUpdateAt: null,
+        expectedVotes: 1500,
         pledges: {
           declaredTotal: 1200,
           effectiveTotal: 1200,
@@ -138,6 +139,7 @@ describe('campaign visual foundation', () => {
         advisorIDs: [],
         priority: 'normal',
         lastUpdateAt: null,
+        expectedVotes: null,
         pledges: { ...emptyPlazaPledgeAggregate },
       },
     ]
@@ -153,8 +155,8 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('Seabra')
     expect(html).toContain('Chapada Diamantina')
     expect(html).toContain('href="/campanha/pracas/seabra"')
-    expect(html).toContain('1.200')
-    expect(html).toContain('declaração sem estimativa')
+    expect(html).toContain('1.500')
+    expect(html).toContain('Nas lideranças: 1.200')
     expect(html).toContain('Prioritária')
     expect(html).toContain('Coberta')
     expect(html).toContain('Sem assessor')
@@ -176,6 +178,7 @@ describe('campaign visual foundation', () => {
             advisorIDs: [],
             priority: 'alta',
             lastUpdateAt: null,
+            expectedVotes: null,
             pledges: { ...emptyPlazaPledgeAggregate },
           },
         ],

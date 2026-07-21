@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { StaffPlazaVotesDisplay } from '@/components/campaign/StaffPlazaVotesDisplay'
 import { plazaPriorityLabels, politicalTrendLabels } from '@/utilities/plazaUi'
 import type { PlazaDetailViewModel } from '@/utilities/plazaViewModels'
 
@@ -19,10 +20,12 @@ export const PlazaStrategyCard = ({
   strategy,
   plazaSlug,
   canEdit,
+  leadershipVoteTotal,
 }: {
   strategy: NonNullable<PlazaDetailViewModel['strategy']>
   plazaSlug: string
   canEdit: boolean
+  leadershipVoteTotal: number
 }) => {
   const goals = strategy.voteGoals
   const trend = strategy.politicalTrend
@@ -62,7 +65,16 @@ export const PlazaStrategyCard = ({
         ) : null}
       </div>
 
-      <dl className="grid gap-3 sm:grid-cols-3">
+      <dl className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-lg bg-muted/40 px-3 py-2 sm:col-span-2">
+          <dt className="text-xs font-medium text-muted-foreground">Votos estimados</dt>
+          <dd>
+            <StaffPlazaVotesDisplay
+              expectedVotes={strategy.expectedVotes}
+              leadershipEffectiveTotal={leadershipVoteTotal}
+            />
+          </dd>
+        </div>
         {(
           [
             ['Meta Bom', goals.good],

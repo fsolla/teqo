@@ -4,9 +4,11 @@ import type { Payload } from 'payload'
 
 import {
   plazaAdvisorsAssignmentSchema,
+  plazaExpectedVotesSchema,
   plazaPoliticalTrendSchema,
   plazaStrategyUpdateSchema,
   type PlazaAdvisorsAssignmentInput,
+  type PlazaExpectedVotesInput,
   type PlazaPoliticalTrendInput,
   type PlazaStrategyUpdateInput,
 } from '@/lib/schemas/plaza'
@@ -82,6 +84,30 @@ export const setPlazaPoliticalTrendRecord = async (
 export const setPlazaPoliticalTrend = async (input: PlazaPoliticalTrendInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return setPlazaPoliticalTrendRecord(payload, actor, input)
+}
+
+/** Staff-only total expected votes for the plaza (distinct from pledge aggregates). */
+export const setPlazaExpectedVotesRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: PlazaExpectedVotesInput,
+) => {
+  const { plaza, expectedVotes } = plazaExpectedVotesSchema.parse(input)
+  const currentActor = await getFreshStaffActor(payload, actor)
+
+  return payload.update({
+    collection: 'plaza',
+    id: plaza,
+    data: { expectedVotes },
+    depth: 0,
+    user: currentActor,
+    overrideAccess: false,
+  })
+}
+
+export const setPlazaExpectedVotes = async (input: PlazaExpectedVotesInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return setPlazaExpectedVotesRecord(payload, actor, input)
 }
 
 /** Advisor assignment is coordinator-only; the collection hook validates eligibility. */

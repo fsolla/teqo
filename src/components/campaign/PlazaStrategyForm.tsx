@@ -23,6 +23,7 @@ type PlazaStrategyFormProps = {
   plazaID: number
   strategy: NonNullable<PlazaDetailViewModel['strategy']>
   strategyFormAction: FormAction
+  expectedVotesFormAction: FormAction
   trendFormAction: FormAction
 }
 
@@ -86,9 +87,14 @@ export const PlazaStrategyForm = ({
   plazaID,
   strategy,
   strategyFormAction,
+  expectedVotesFormAction,
   trendFormAction,
 }: PlazaStrategyFormProps) => {
   const [strategyState, submitStrategy, strategyPending] = useActionState(strategyFormAction, {})
+  const [expectedVotesState, submitExpectedVotes, expectedVotesPending] = useActionState(
+    expectedVotesFormAction,
+    {},
+  )
   const [trendState, submitTrend, trendPending] = useActionState(trendFormAction, {})
 
   return (
@@ -168,6 +174,49 @@ export const PlazaStrategyForm = ({
         <Button type="submit" disabled={strategyPending} className="min-h-11 self-start">
           {strategyPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
           Salvar estratégia
+        </Button>
+      </form>
+
+      <form
+        action={submitExpectedVotes}
+        aria-labelledby="plaza-expected-votes-title"
+        className="flex flex-col gap-4 rounded-xl border p-4"
+      >
+        <div className="flex flex-col gap-1">
+          <h2 id="plaza-expected-votes-title" className="text-base font-medium">
+            Votos estimados
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Total esperado da Praça — distinto das metas de cenário e da soma das lideranças. Deixe
+            em branco para remover.
+          </p>
+        </div>
+        <input type="hidden" name="plazaId" value={plazaID} />
+        <Field>
+          <FieldLabel htmlFor="plaza-expected-votes">Total da Praça</FieldLabel>
+          <Input
+            id="plaza-expected-votes"
+            name="expectedVotes"
+            type="number"
+            min={0}
+            inputMode="numeric"
+            defaultValue={strategy.expectedVotes ?? undefined}
+            className="min-h-11 sm:max-w-xs"
+          />
+        </Field>
+        {expectedVotesState.message && expectedVotesState.status !== 'success' ? (
+          <Alert variant="destructive">
+            <AlertDescription>{expectedVotesState.message}</AlertDescription>
+          </Alert>
+        ) : null}
+        {expectedVotesState.status === 'success' ? (
+          <Alert>
+            <AlertDescription>{expectedVotesState.message}</AlertDescription>
+          </Alert>
+        ) : null}
+        <Button type="submit" disabled={expectedVotesPending} className="min-h-11 self-start">
+          {expectedVotesPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
+          Salvar votos estimados
         </Button>
       </form>
 

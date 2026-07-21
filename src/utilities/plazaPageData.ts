@@ -12,7 +12,10 @@ import {
   type PlazaListViewModel,
 } from '@/utilities/plazaViewModels'
 import { relationshipId } from '@/utilities/relationship'
-import { aggregatePledgesByPlaza } from '@/utilities/votePledgeData'
+import {
+  aggregatePledgesByPlaza,
+  rollupPlazaStaffVotes,
+} from '@/utilities/votePledgeData'
 
 type PlazaListSearchParams = Record<string, string | string[] | undefined>
 
@@ -74,7 +77,7 @@ export const loadPlazaListPageData = async (
 
 export type PlazaListOverviewData = {
   plazaCount: number
-  effectiveVotesTotal: number
+  staffVoteTotal: number
   declaredVotesTotal: number
   pledgeCount: number
   missingEstimateCount: number
@@ -97,7 +100,7 @@ export const loadPlazaListOverviewData = async (
     limit: 0,
     pagination: false,
     where: buildPlazaListWhere(state),
-    select: { advisors: true, priority: true },
+    select: { advisors: true, priority: true, expectedVotes: true },
     user,
     overrideAccess: false,
   })
@@ -105,21 +108,16 @@ export const loadPlazaListOverviewData = async (
 
   const plazaIDs = result.docs.map((plaza) => plaza.id)
   const pledgeAggregates = await aggregatePledgesByPlaza(payload, plazaIDs)
-
-  let effectiveVotesTotal = 0
-  let declaredVotesTotal = 0
-  let pledgeCount = 0
-  let missingEstimateCount = 0
-  for (const aggregate of pledgeAggregates.values()) {
-    effectiveVotesTotal += aggregate.effectiveTotal
-    declaredVotesTotal += aggregate.declaredTotal
-    pledgeCount += aggregate.pledgeCount
-    missingEstimateCount += aggregate.missingEstimateCount
-  }
+  const {
+    staffVoteTotal,
+    declaredVotesTotal,
+    pledgeCount,
+    missingEstimateCount,
+  } = rollupPlazaStaffVotes(result.docs, pledgeAggregates)
 
   return {
     plazaCount: result.docs.length,
-    effectiveVotesTotal,
+    staffVoteTotal,
     declaredVotesTotal,
     pledgeCount,
     missingEstimateCount,

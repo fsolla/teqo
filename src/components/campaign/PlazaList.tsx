@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Avatar, AvatarFallback } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { StaffPlazaVotesDisplay } from '@/components/campaign/StaffPlazaVotesDisplay'
 import {
   Table,
   TableBody,
@@ -19,7 +20,6 @@ import {
 } from '@/utilities/plazaUi'
 import type { PlazaAdvisorSummary, PlazaListViewModel } from '@/utilities/plazaViewModels'
 
-const voteFormatter = new Intl.NumberFormat('pt-BR')
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
 const getInitials = (name: string): string =>
@@ -82,10 +82,12 @@ export const PlazaList = ({ plazas, advisorNamesById, isStaffView }: PlazaListPr
                 <dl className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <dt className="text-muted-foreground">Votos estimados</dt>
-                    <dd className="font-medium tabular-nums">
-                      {plaza.pledges.pledgeCount
-                        ? voteFormatter.format(plaza.pledges.effectiveTotal)
-                        : '—'}
+                    <dd>
+                      <StaffPlazaVotesDisplay
+                        expectedVotes={plaza.expectedVotes}
+                        leadershipEffectiveTotal={plaza.pledges.effectiveTotal}
+                        valueClassName="font-medium tabular-nums"
+                      />
                     </dd>
                   </div>
                   <div>
@@ -151,19 +153,11 @@ export const PlazaList = ({ plazas, advisorNamesById, isStaffView }: PlazaListPr
                         <AdvisorAvatars names={names} />
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium tabular-nums">
-                          {plaza.pledges.pledgeCount
-                            ? voteFormatter.format(plaza.pledges.effectiveTotal)
-                            : '—'}
-                        </span>
-                        {plaza.pledges.missingEstimateCount > 0 ? (
-                          <Badge variant="estimate-pending" className="mt-1 block w-fit">
-                            {plaza.pledges.missingEstimateCount}{' '}
-                            {plaza.pledges.missingEstimateCount === 1
-                              ? 'declaração sem estimativa'
-                              : 'declarações sem estimativa'}
-                          </Badge>
-                        ) : null}
+                        <StaffPlazaVotesDisplay
+                          expectedVotes={plaza.expectedVotes}
+                          leadershipEffectiveTotal={plaza.pledges.effectiveTotal}
+                          valueClassName="font-medium tabular-nums"
+                        />
                       </TableCell>
                       <TableCell>
                         {plaza.lastUpdateAt

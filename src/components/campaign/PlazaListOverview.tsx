@@ -13,7 +13,7 @@ export const PlazaListOverview = ({ view }: { view: PlazaListOverviewData }) => 
       metrics={[
         {
           label: 'Votos estimados no conjunto',
-          value: view.pledgeCount ? voteFormatter.format(view.effectiveVotesTotal) : '—',
+          value: view.staffVoteTotal > 0 ? voteFormatter.format(view.staffVoteTotal) : '—',
           emphasize: true,
         },
         {

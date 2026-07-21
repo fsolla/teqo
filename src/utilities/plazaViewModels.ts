@@ -18,6 +18,7 @@ export const plazaListSelect = {
   advisors: true,
   priority: true,
   lastUpdateAt: true,
+  expectedVotes: true,
 } as const
 
 export type PlazaListViewModel = {
@@ -32,6 +33,7 @@ export type PlazaListViewModel = {
   advisorIDs: number[]
   priority: 'alta' | 'normal'
   lastUpdateAt: string | null
+  expectedVotes: number | null
   pledges: PlazaPledgeAggregate
 }
 
@@ -50,6 +52,7 @@ export const toPlazaListViewModel = (
   advisorIDs: (plaza.advisors ?? []).map(relationshipId).filter((id): id is number => id !== null),
   priority: plaza.priority === 'alta' ? 'alta' : 'normal',
   lastUpdateAt: plaza.lastUpdateAt ?? null,
+  expectedVotes: plaza.expectedVotes ?? null,
   pledges: pledges ?? { ...emptyPlazaPledgeAggregate },
 })
 
@@ -82,6 +85,7 @@ export type PlazaDetailViewModel = {
   /** Staff-only block — null for the leader view model. */
   strategy: {
     priority: 'alta' | 'normal'
+    expectedVotes: number | null
     voteGoals: VoteGoalsViewModel
     politicalTrend: PlazaPoliticalTrendViewModel
     strengths: string[]
@@ -114,6 +118,7 @@ export const toPlazaDetailViewModel = (
       ? null
       : {
           priority: plaza.priority === 'alta' ? 'alta' : 'normal',
+          expectedVotes: plaza.expectedVotes ?? null,
           voteGoals: toVoteGoalsViewModel(plaza.voteGoals),
           politicalTrend: {
             status: plaza.politicalTrend?.status ?? null,

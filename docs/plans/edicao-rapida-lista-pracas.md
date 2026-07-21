@@ -1,6 +1,6 @@
 # Edição rápida na lista de Praças
 
-Status: rascunho
+Status: rascunho (A9 entregue — pronto para implementar)
 Atualizado em: 2026-07-21
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B9)
 Impeccable: B — encaixe em `PlazaList` / cards mobile em `/campanha/pracas` (sem rota nova)

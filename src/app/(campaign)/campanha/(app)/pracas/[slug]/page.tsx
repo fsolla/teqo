@@ -36,7 +36,7 @@ import {
 import { formatPlazaGeographyLabel, plazaKindLabels } from '@/utilities/plazaUi'
 import { loadPlazaUpdatesFeed, parsePlazaUpdateFeedParams } from '@/utilities/plazaUpdatePageData'
 import { loadAdvisorSummaries } from '@/utilities/plazaViewModels'
-import { loadLeaderPledges, loadPlazaPledges } from '@/utilities/votePledgeData'
+import { loadLeaderPledges, loadPlazaPledges, sumStaffPledgeEffectiveTotal } from '@/utilities/votePledgeData'
 import { declareVotesFormAction, estimateVotesFormAction } from './pledgeFormActions'
 import { createPlazaUpdateFormAction } from './updateFormActions'
 
@@ -155,9 +155,15 @@ const OverviewTab = async ({
 }) => {
   if (isStaffView && view.strategy) {
     const pledges = await loadPlazaPledges(payload, user, view.id)
+    const leadershipVoteTotal = sumStaffPledgeEffectiveTotal(pledges)
     return (
       <div className="flex flex-col gap-6">
-        <PlazaStrategyCard strategy={view.strategy} plazaSlug={view.slug} canEdit />
+        <PlazaStrategyCard
+          strategy={view.strategy}
+          plazaSlug={view.slug}
+          canEdit
+          leadershipVoteTotal={leadershipVoteTotal}
+        />
         <PlazaPledgesPanel pledges={pledges} estimateFormAction={estimateVotesFormAction} />
       </div>
     )

@@ -6,6 +6,7 @@ import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
 import {
   aggregatePledgesByPlaza,
   loadLeaderPledges,
+  rollupPlazaStaffVotes,
   type LeaderPledgeRow,
 } from '@/utilities/votePledgeData'
 
@@ -15,7 +16,7 @@ export type StaffDashboardView = {
   plazaCount: number
   withAdvisorCount: number
   highPriorityCount: number
-  effectiveVotesTotal: number
+  staffVoteTotal: number
   declaredVotesTotal: number
   pledgeCount: number
   missingEstimateCount: number
@@ -76,7 +77,7 @@ const buildStaffDashboard = async (
     depth: 0,
     limit: 0,
     pagination: false,
-    select: { name: true, slug: true, advisors: true, priority: true },
+    select: { name: true, slug: true, advisors: true, priority: true, expectedVotes: true },
     where: {},
     user,
     overrideAccess: false,
@@ -85,16 +86,12 @@ const buildStaffDashboard = async (
   const plazaById = new Map(plazas.docs.map((plaza) => [plaza.id, plaza]))
 
   const pledgeAggregates = await aggregatePledgesByPlaza(payload, plazaIDs)
-  let effectiveVotesTotal = 0
-  let declaredVotesTotal = 0
-  let pledgeCount = 0
-  let missingEstimateCount = 0
-  for (const aggregate of pledgeAggregates.values()) {
-    effectiveVotesTotal += aggregate.effectiveTotal
-    declaredVotesTotal += aggregate.declaredTotal
-    pledgeCount += aggregate.pledgeCount
-    missingEstimateCount += aggregate.missingEstimateCount
-  }
+  const {
+    staffVoteTotal,
+    declaredVotesTotal,
+    pledgeCount,
+    missingEstimateCount,
+  } = rollupPlazaStaffVotes(plazas.docs, pledgeAggregates)
 
   const missingEstimatePledges = plazaIDs.length
     ? await payload.find({
@@ -149,7 +146,7 @@ const buildStaffDashboard = async (
     plazaCount: plazas.docs.length,
     withAdvisorCount: plazas.docs.filter((plaza) => (plaza.advisors ?? []).length > 0).length,
     highPriorityCount: plazas.docs.filter((plaza) => plaza.priority === 'alta').length,
-    effectiveVotesTotal,
+    staffVoteTotal,
     declaredVotesTotal,
     pledgeCount,
     missingEstimateCount,

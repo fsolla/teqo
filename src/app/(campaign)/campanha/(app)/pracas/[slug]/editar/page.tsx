@@ -18,6 +18,7 @@ import {
 import { getEligibleAdvisorOptions } from '@/utilities/plazaViewModels'
 import {
   assignPlazaAdvisorsFormAction,
+  setPlazaExpectedVotesFormAction,
   setPlazaPoliticalTrendFormAction,
   updatePlazaStrategyFormAction,
 } from './formActions'
@@ -58,7 +59,7 @@ export default async function PlazaEditPage({ params }: PlazaEditPageProps) {
         <h1 className="text-2xl font-semibold tracking-tight">Editar {view.name}</h1>
         <p className="text-muted-foreground">
           A geografia da Praça é pré-definida e não pode ser alterada. Aqui você edita metas,
-          inteligência e tendência política.
+          votos estimados, inteligência e tendência política.
         </p>
       </header>
 
@@ -75,6 +76,7 @@ export default async function PlazaEditPage({ params }: PlazaEditPageProps) {
         plazaID={view.id}
         strategy={view.strategy}
         strategyFormAction={updatePlazaStrategyFormAction}
+        expectedVotesFormAction={setPlazaExpectedVotesFormAction}
         trendFormAction={setPlazaPoliticalTrendFormAction}
       />
     </CampaignPageShell>

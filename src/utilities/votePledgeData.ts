@@ -23,6 +23,42 @@ export const emptyPlazaPledgeAggregate: PlazaPledgeAggregate = {
   missingEstimateCount: 0,
 }
 
+/** Staff-facing plaza total: manual expected votes override pledge aggregate when set. */
+export const resolvePlazaStaffVoteTotal = (
+  expectedVotes: number | null | undefined,
+  pledgeEffectiveTotal: number,
+): number => expectedVotes ?? pledgeEffectiveTotal
+
+export const sumStaffPledgeEffectiveTotal = (
+  rows: ReadonlyArray<{ declaredVotes: number; estimatedVotes: number | null }>,
+): number =>
+  rows.reduce((sum, row) => sum + (row.estimatedVotes ?? row.declaredVotes), 0)
+
+export type PlazaStaffVoteRollup = {
+  staffVoteTotal: number
+  declaredVotesTotal: number
+  pledgeCount: number
+  missingEstimateCount: number
+}
+
+export const rollupPlazaStaffVotes = (
+  plazas: ReadonlyArray<{ id: number; expectedVotes?: number | null }>,
+  pledgeAggregates: Map<number, PlazaPledgeAggregate>,
+): PlazaStaffVoteRollup => {
+  let staffVoteTotal = 0
+  let declaredVotesTotal = 0
+  let pledgeCount = 0
+  let missingEstimateCount = 0
+  for (const plaza of plazas) {
+    const aggregate = pledgeAggregates.get(plaza.id) ?? emptyPlazaPledgeAggregate
+    staffVoteTotal += resolvePlazaStaffVoteTotal(plaza.expectedVotes, aggregate.effectiveTotal)
+    declaredVotesTotal += aggregate.declaredTotal
+    pledgeCount += aggregate.pledgeCount
+    missingEstimateCount += aggregate.missingEstimateCount
+  }
+  return { staffVoteTotal, declaredVotesTotal, pledgeCount, missingEstimateCount }
+}
+
 /**
  * Staff-only aggregate over an already access-checked plaza id set.
  * Intentional admin bypass: callers pass plaza ids the actor may read.

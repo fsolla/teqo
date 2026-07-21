@@ -11,7 +11,11 @@ import {
   loadCandidateVotesByCityZone,
   sumVotesForGeography,
 } from '@/utilities/plazaElectoralBaseline'
-import { aggregatePledgesByPlaza } from '@/utilities/votePledgeData'
+import {
+  aggregatePledgesByPlaza,
+  emptyPlazaPledgeAggregate,
+  resolvePlazaStaffVoteTotal,
+} from '@/utilities/votePledgeData'
 
 export const PLAZA_MAP_YEARS = [...HISTORICAL_SERIES_YEARS, 2026] as const
 export type PlazaMapYear = (typeof PLAZA_MAP_YEARS)[number]
@@ -37,7 +41,7 @@ export type PlazaMapComparison = {
 }
 
 export type PlazaMapBundle = {
-  /** year (as string) → codarea → value. 2026 = estimated ?? declared pledges. */
+  /** year (as string) → codarea → value. 2026 = expectedVotes ?? pledge effective total. */
   valuesByYear: Record<string, Record<string, number>>
   /** Zone plazas in scope (Salvador/Camaçari) with per-year values. */
   zoneBreakdown: PlazaZoneBreakdownRow[]
@@ -51,6 +55,7 @@ type ScopedPlaza = {
   name: string
   kind: 'municipio' | 'zona'
   ibgeCode: string
+  expectedVotes: number | null
   geography: PlazaElectionGeography
 }
 
@@ -60,7 +65,7 @@ const loadScopedPlazas = async (payload: Payload, user: CampaignUser): Promise<S
     depth: 0,
     limit: 0,
     pagination: false,
-    select: { slug: true, name: true, kind: true, ibgeCode: true },
+    select: { slug: true, name: true, kind: true, ibgeCode: true, expectedVotes: true },
     where: {},
     user,
     overrideAccess: false,
@@ -76,6 +81,7 @@ const loadScopedPlazas = async (payload: Payload, user: CampaignUser): Promise<S
         name: plaza.name,
         kind: plaza.kind,
         ibgeCode: plaza.ibgeCode,
+        expectedVotes: plaza.expectedVotes ?? null,
         geography: plazaElectionGeography(entry),
       },
     ]
@@ -128,8 +134,8 @@ export const loadPlazaMapBundle = async (
   )
   const pledgeValues: Record<string, number> = {}
   for (const plaza of plazas) {
-    const aggregate = pledgeAggregates.get(plaza.id)
-    const votes = aggregate?.effectiveTotal ?? 0
+    const aggregate = pledgeAggregates.get(plaza.id) ?? emptyPlazaPledgeAggregate
+    const votes = resolvePlazaStaffVoteTotal(plaza.expectedVotes, aggregate.effectiveTotal)
     if (votes > 0) pledgeValues[plaza.ibgeCode] = (pledgeValues[plaza.ibgeCode] ?? 0) + votes
     if (plaza.kind === 'zona') {
       const bySlug = zoneVotesBySlug.get(plaza.slug) ?? {}

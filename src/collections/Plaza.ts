@@ -325,6 +325,21 @@ export const Plaza: CollectionConfig = {
       ],
     },
     {
+      name: 'expectedVotes',
+      type: 'number',
+      label: 'Votos estimados',
+      min: 0,
+      access: {
+        read: canReadCampaignStaffField,
+        create: canManageCampaignStaffField,
+        update: canManageCampaignStaffField,
+      },
+      admin: {
+        description:
+          'Total esperado da Praça — distinto das metas de cenário e da soma das lideranças.',
+      },
+    },
+    {
       name: 'politicalTrend',
       type: 'group',
       label: 'Tendência política',

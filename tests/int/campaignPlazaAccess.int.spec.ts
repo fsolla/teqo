@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import {
   assignPlazaAdvisorsRecord,
+  setPlazaExpectedVotesRecord,
   setPlazaPoliticalTrendRecord,
   updatePlazaStrategyRecord,
 } from '@/app/(campaign)/campanha/actions/plaza'
@@ -150,6 +151,10 @@ describe('plaza catalog seed and per-role access', () => {
       status: 'desfavoravel',
       note: 'Prefeito rompeu com a chapa.',
     })
+    await setPlazaExpectedVotesRecord(payload, coordinator, {
+      plaza: plaza.id,
+      expectedVotes: 1200,
+    })
     fixtures.touchPlaza(plaza.id)
 
     const leaderRead = await payload.findByID({
@@ -163,6 +168,7 @@ describe('plaza catalog seed and per-role access', () => {
     expect(doc.name).toBe(plaza.name)
     expect(doc.priority ?? null).toBeNull()
     expect(doc.voteGoals ?? null).toBeNull()
+    expect(doc.expectedVotes ?? null).toBeNull()
     expect(doc.politicalTrend ?? null).toBeNull()
     // Read-denied arrays come back empty — the staff content must not leak.
     expect(doc.strengths ?? []).toEqual([])
@@ -176,6 +182,7 @@ describe('plaza catalog seed and per-role access', () => {
       overrideAccess: false,
     })
     expect(staffRead.priority).toBe('alta')
+    expect(staffRead.expectedVotes).toBe(1200)
     expect(staffRead.politicalTrend?.status).toBe('desfavoravel')
     expect(staffRead.politicalTrend?.recordedBy).toBeTruthy()
     expect(staffRead.politicalTrend?.recordedAt).toBeTruthy()
@@ -235,5 +242,42 @@ describe('plaza catalog seed and per-role access', () => {
       advisor,
     )
     expect(scope).toEqual([plaza.id])
+  })
+
+  it('lets staff set expectedVotes with role and plaza scope enforced', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const administered = await fixtures.getPlaza()
+    const outside = await fixtures.getPlaza()
+    await fixtures.assignPlazaAdvisors(administered.id, [advisor.id])
+
+    const updated = await setPlazaExpectedVotesRecord(payload, coordinator, {
+      plaza: administered.id,
+      expectedVotes: 2500,
+    })
+    expect(updated.expectedVotes).toBe(2500)
+    fixtures.touchPlaza(administered.id)
+
+    const advisorUpdated = await setPlazaExpectedVotesRecord(payload, advisor, {
+      plaza: administered.id,
+      expectedVotes: 3000,
+    })
+    expect(advisorUpdated.expectedVotes).toBe(3000)
+    fixtures.touchPlaza(administered.id)
+
+    await expect(
+      setPlazaExpectedVotesRecord(payload, advisor, {
+        plaza: outside.id,
+        expectedVotes: 100,
+      }),
+    ).rejects.toThrow()
+
+    const cleared = await setPlazaExpectedVotesRecord(payload, coordinator, {
+      plaza: administered.id,
+      expectedVotes: null,
+    })
+    expect(cleared.expectedVotes).toBeNull()
+    fixtures.touchPlaza(administered.id)
   })
 })

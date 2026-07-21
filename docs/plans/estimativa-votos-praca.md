@@ -1,6 +1,6 @@
 # Estimativa de votos da Praça (total esperado)
 
-Status: rascunho
+Status: entregue 2026-07-21 (branch; deploy pendente com remodelagem)
 Atualizado em: 2026-07-21
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, item A9)
 Impeccable: B — campo + migration + action + encaixe em `/editar` / detalhe / lista (leitura); edição inline na lista = B9
@@ -109,9 +109,16 @@ Componentes:
 - **Aviso vs `voteGoals.minimum`.** Revisitar após primeiras semanas com totais preenchidos.
 - **Auto-sugerir `expectedVotes` a partir dos pledges (opt-in chip).** Revisitar se muitos totais ≈ soma das lideranças.
 
+## Pós-entrega (`/simplify`)
+
+Débitos **maiores que cleanup** da sessão de entrega → fill-in **A9+** [escala-dry-pos-a9.md](escala-dry-pos-a9.md) (loader compartilhado da lista — deduplicar `aggregatePledgesByPlaza` na página `/campanha/pracas`).
+
+**Já resolvido no simplify (não reabrir):** form `expectedVotes`; `rollupPlazaStaffVotes` / `sumStaffPledgeEffectiveTotal`; `StaffPlazaVotesDisplay`; remoção de `hasStaffVoteData`; testes unit do rollup.
+
 ## Referências
 
 - `docs/roadmap.md` (Trilha A / A9 → B9)
+- `docs/plans/escala-dry-pos-a9.md` — fill-in A9+ (loader lista)
 - `src/collections/Plaza.ts` — `voteGoals`, access staff
 - `src/utilities/votePledgeData.ts` — `effectiveTotal`
 - `src/utilities/plazaMapData.ts` — métrica 2026

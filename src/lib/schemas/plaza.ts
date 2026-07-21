@@ -37,6 +37,12 @@ export const plazaAdvisorsAssignmentSchema = z.object({
     .transform((ids) => [...new Set(ids)]),
 })
 
+export const plazaExpectedVotesSchema = z.object({
+  plaza: positiveRelationshipId,
+  expectedVotes: z.number().int().min(0).max(1_000_000).nullable(),
+})
+
 export type PlazaStrategyUpdateInput = z.input<typeof plazaStrategyUpdateSchema>
 export type PlazaPoliticalTrendInput = z.input<typeof plazaPoliticalTrendSchema>
 export type PlazaAdvisorsAssignmentInput = z.input<typeof plazaAdvisorsAssignmentSchema>
+export type PlazaExpectedVotesInput = z.input<typeof plazaExpectedVotesSchema>

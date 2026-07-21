@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import {
   assignPlazaAdvisors,
+  setPlazaExpectedVotes,
   setPlazaPoliticalTrend,
   updatePlazaStrategy,
 } from '@/app/(campaign)/campanha/actions/plaza'
@@ -53,6 +54,32 @@ export const updatePlazaStrategyFormAction = async (
       ],
       genericMessage:
         'Não foi possível salvar a estratégia. Verifique seu acesso e tente novamente.',
+    })
+  }
+}
+
+export const setPlazaExpectedVotesFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> => {
+  try {
+    const plaza = requiredRelationshipFormValue(formData, 'plazaId')
+    const expectedVotes =
+      optionalIntegerFormValue(formData, 'expectedVotes', {
+        minimum: 0,
+        maximum: 1_000_000,
+      }) ?? null
+
+    await setPlazaExpectedVotes({ plaza, expectedVotes })
+    revalidatePath('/campanha/pracas', 'page')
+    revalidatePath('/campanha/pracas/[slug]', 'page')
+    return { status: 'success', message: 'Votos estimados atualizados.' }
+  } catch (error) {
+    return mapCampaignFormActionError({
+      error,
+      safeMessages: ['Somente a coordenação e a assessoria podem editar a Praça.'],
+      genericMessage:
+        'Não foi possível salvar os votos estimados. Verifique seu acesso e tente novamente.',
     })
   }
 }

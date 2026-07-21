@@ -406,6 +406,10 @@ export interface Plaza {
     minimum?: number | null;
   };
   /**
+   * Total esperado da Praça — distinto das metas de cenário e da soma das lideranças.
+   */
+  expectedVotes?: number | null;
+  /**
    * Leitura de conjuntura registrada pela coordenação (alianças, prefeitos, disputas locais) — não é série numérica.
    */
   politicalTrend?: {
@@ -1234,6 +1238,7 @@ export interface PlazaSelect<T extends boolean = true> {
         regular?: T;
         minimum?: T;
       };
+  expectedVotes?: T;
   politicalTrend?:
     | T
     | {

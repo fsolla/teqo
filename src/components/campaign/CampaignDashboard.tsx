@@ -84,7 +84,7 @@ export const CampaignDashboard = ({
           metrics={[
             {
               label: 'Votos estimados',
-              value: view.pledgeCount ? voteFormatter.format(view.effectiveVotesTotal) : '—',
+              value: view.staffVoteTotal > 0 ? voteFormatter.format(view.staffVoteTotal) : '—',
               emphasize: true,
             },
             {
