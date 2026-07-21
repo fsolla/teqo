@@ -32,6 +32,12 @@ export const politicalTrendLabels: Record<PoliticalTrendStatus, string> = {
   desfavoravel: 'Desfavorável',
 }
 
+export const politicalTrendBadgeVariant = {
+  favoravel: 'estimate-confirmed',
+  neutra: 'secondary',
+  desfavoravel: 'destructive',
+} as const
+
 export type PlazaListState = {
   page: number
   q?: string

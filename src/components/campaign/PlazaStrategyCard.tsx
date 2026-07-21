@@ -4,17 +4,11 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { StaffPlazaVotesDisplay } from '@/components/campaign/StaffPlazaVotesDisplay'
-import { plazaPriorityLabels, politicalTrendLabels } from '@/utilities/plazaUi'
+import { plazaPriorityLabels, politicalTrendBadgeVariant, politicalTrendLabels } from '@/utilities/plazaUi'
 import type { PlazaDetailViewModel } from '@/utilities/plazaViewModels'
 
 const voteFormatter = new Intl.NumberFormat('pt-BR')
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
-
-const trendVariant = {
-  favoravel: 'estimate-confirmed',
-  neutra: 'secondary',
-  desfavoravel: 'destructive',
-} as const
 
 export const PlazaStrategyCard = ({
   strategy,
@@ -47,7 +41,7 @@ export const PlazaStrategyCard = ({
               <Badge variant="secondary">Prioridade normal</Badge>
             )}
             {trend.status ? (
-              <Badge variant={trendVariant[trend.status]}>
+              <Badge variant={politicalTrendBadgeVariant[trend.status]}>
                 Tendência {politicalTrendLabels[trend.status].toLowerCase()}
               </Badge>
             ) : (

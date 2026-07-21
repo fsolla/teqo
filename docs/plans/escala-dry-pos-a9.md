@@ -1,10 +1,10 @@
 # Escala e DRY pós-A9 (loader da lista de Praças)
 
 Status: registrado no roadmap (Fase 1 pendente; **B7 entregue 2026-07-21** — prioridade sobe)
-Atualizado em: 2026-07-21 (`capture-review-debts` pós-B7 + `/simplify`)
+Atualizado em: 2026-07-21 (`capture-review-debts` pós-B7 + pós-B9 `/simplify`)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, fill-in **A9+** pós-A9)
 Impeccable: A — N/A (sem superfície UI; otimização de loader)
-Appetite: ~0,5–1 dia eng (1 fase; PR único)
+Appetite: ~1–1,5 dia eng (F1 loader + F2 revalidate pós-B9; PR único ou dois commits)
 Responsável: —
 
 ## Contexto
@@ -19,16 +19,21 @@ O revisor de **performance** marcou como **maior que simplify** o follow-up abai
 
 2. **Dois `find` de Praças no mesmo filtro (overview + mapa).** Ambos usam `buildPlazaListWhere` com `pagination: false` e `select` distinto — duplicação de round-trip por request quando o mapa está visível (staff, conjunto não vazio).
 
+3. **Revalidação full-page após edição inline (B9).** Cada save em `listFormActions.ts` chama `revalidatePath('/campanha/pracas', 'page')` (+ detalhe), o que reroda overview unpaginado, mapa e lista — custo amplificado quando o coordenador edita várias células seguidas (pós-B9).
+
 **Já resolvido no simplify/critique (não reabrir):** parsing duplo do form `expectedVotes`; `hasStaffVoteData` derivado de `staffVoteTotal > 0`; `rollupPlazaStaffVotes` + `sumStaffPledgeEffectiveTotal`; `StaffPlazaVotesDisplay`; assinatura estreita de `resolvePlazaStaffVoteTotal`; testes unit do rollup. **Pós-B7 simplify:** `PlazaListSearchParams` exportado de `plazaUi.ts`; parse único no map loader (`loadScopedPlazas` recebe `PlazaListState`).
 
 **Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-A9):** semântica lista (só `expectedVotes` manual) vs mapa/overview (fallback) — decisão de produto A9; merge de forms Estratégia + Votos no `/editar`; grid cosmético do `PlazaStrategyCard`; `loadPlazaPledges` em abas distintas do detalhe (uma aba por request); débitos adiados/não escopo do plano A9 (nota/autor, chip auto-sugerir, histórico, filtro `?expectedVotes=`); critique Impeccable formal por superfície → **R6**.
 
 **Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B7):** `Promise.all` nos loads TSE por ano em `plazaMapData` (micro-opt pré-existente; gatilho abaixo); testes int extras em `plazaMapData` (`region`/`leader`/`compare`) — cobertura opcional no próximo toque no loader; split do teste advisor por `kind` (legibilidade).
 
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B9):** ~75 hooks `useActionState` por página (3 controles × 25 linhas × 2 views) — gatilho: reclamação de perf ou **R6**; merge `listFormActions` ↔ `/editar` → **C8 F4**; hook popover compartilhado / layout responsivo único / lazy advisor options → gatilhos no plano B9.
+
 ## Objetivos
 
 - Abrir `/campanha/pracas` com filtro amplo não executa **três** `aggregatePledgesByPlaza` independentes quando um mapa de agregados compartilhado basta.
 - Overview, mapa 2026 e coluna da página reutilizam o mesmo `Map<plazaId, PlazaPledgeAggregate>` (e, onde os filtros coincidirem, o mesmo `find` de Praças).
+- Saves inline da lista (B9) não disparam rerender full-page desnecessário quando um refresh parcial (segmento de lista, tag de cache, ou `revalidatePath` estreito) preserva paridade de KPIs/mapa.
 - Paridade funcional: KPIs, métrica 2026 e sublinha “Nas lideranças” permanecem idênticos ao comportamento pós-A9.
 - Guardrails: sem migration, sem collection, sem Consent, sem server action nova; access inalterado (`overrideAccess: false` nos reads de Praça; agregado de pledges continua admin-bypass intencional com ids já access-checked).
 
@@ -50,11 +55,14 @@ O revisor de **performance** marcou como **maior que simplify** o follow-up abai
 ```mermaid
 flowchart TD
     A9["A9 expectedVotes ✓"] --> F1
+    B9["B9 edição inline lista"] --> F2
     F1["Fase 1 — loadPlazaListPageBundle<br/>1× aggregatePledgesByPlaza"]
+    F2["Fase 2 — revalidate escopado<br/>pós-save inline"]
     F1 --> List["PlazaList página"]
     F1 --> Overview["PlazaListOverview KPIs"]
     F1 --> Map["PlazaMapBundle 2026"]
     B7["B7 mapa filtrado ✓"] -.mesmo bundle.-> F1
+    F2 -.menos rerender.-> List
 ```
 
 ### Fase 1 — Loader compartilhado da lista de Praças
@@ -67,19 +75,27 @@ flowchart TD
 - Atualizar `src/app/(campaign)/campanha/(app)/pracas/page.tsx` para consumir o bundle.
 - Testes: int ou unit do bundle — paridade de `staffVoteTotal` e métrica 2026 antes/depois; advisor scope inalterado.
 
+### Fase 2 — Revalidação escopada pós-B9
+
+- Avaliar `revalidatePath` estreito (só segmento necessário) ou tag de cache dedicada à lista vs full-page `revalidatePath('/campanha/pracas', 'page')` em `listFormActions.ts`.
+- Critério de aceite: após N saves inline seguidos, overview/mapa/lista permanecem corretos sem rerodar loaders caros quando o dado alterado não afeta KPI agregado (ex.: tendência não muda métrica 2026 — validar caso a caso).
+- Coordenar com **C8 F4** se extrair `revalidatePlazaListPaths` compartilhado entre lista e `/editar`.
+- Testes: int leve ou e2e smoke de save inline + paridade visual de KPIs (manual ok se appetite apertar).
+
 **Migration:** nenhuma.
 
 ## Dependências
 
 - **Dura:** A9 [estimativa-votos-praca.md](estimativa-votos-praca.md) — campo, agregadores e superfícies (merge em `main`).
 - **Suave:** B7 [mapa-pracas-filtrado.md](mapa-pracas-filtrado.md) — entregue 2026-07-21; mesmo URL de filtro; F1 deduplica pledges e pode compartilhar parse/`find` onde os escopos coincidem.
+- **Suave:** B9 [edicao-rapida-lista-pracas.md](edicao-rapida-lista-pracas.md) — F2 só faz sentido com saves inline na lista; não reabre escopo de UI B9.
 - Reusa: `aggregatePledgesByPlaza`, `rollupPlazaStaffVotes`, `resolvePlazaStaffVoteTotal`, precedente E6 F1 em [escala-dry-pos-e1.md](escala-dry-pos-e1.md).
 
 ## Não escopo
 
 - SQL aggregate de pledges (`COUNT(*) FILTER`) — volume ainda baixo; reavaliar no 3º hot path ou com evidência de latency.
 - Unificar `loadPlazaPledges` entre abas Overview/Lideranças no detalhe — defer (uma aba por request).
-- Edição inline na lista → **B9** ([edicao-rapida-lista-pracas.md](edicao-rapida-lista-pracas.md)).
+- Implementar os controles inline da lista → **B9** (entregue em código; polish Impeccable → **R6**).
 - Merge de forms no `/editar` — fora do triage.
 - Impeccable critique das superfícies A9 → **R6**.
 
@@ -100,6 +116,7 @@ flowchart TD
 - `docs/plans/estimativa-votos-praca.md` — plano pai A9
 - `docs/plans/escala-dry-pos-e1.md` — precedente E6 F1 (lista+overview núcleos)
 - `src/app/(campaign)/campanha/(app)/pracas/page.tsx` — `Promise.all` dos três loaders
+- `src/app/(campaign)/campanha/(app)/pracas/listFormActions.ts` — `revalidatePlazaListPaths` pós-B9
 - `src/utilities/plazaPageData.ts` — `loadPlazaListPageData`, `loadPlazaListOverviewData`
 - `src/utilities/plazaMapData.ts` — `loadPlazaMapBundle`, métrica 2026
 - `src/utilities/votePledgeData.ts` — `aggregatePledgesByPlaza`, `rollupPlazaStaffVotes`

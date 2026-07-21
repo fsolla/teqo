@@ -280,4 +280,26 @@ describe('plaza catalog seed and per-role access', () => {
     expect(cleared.expectedVotes).toBeNull()
     fixtures.touchPlaza(administered.id)
   })
+
+  it('lets staff set and clear political trend status', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const plaza = await fixtures.getPlaza()
+
+    const updated = await setPlazaPoliticalTrendRecord(payload, coordinator, {
+      plaza: plaza.id,
+      status: 'favoravel',
+      note: null,
+    })
+    expect(updated.politicalTrend?.status).toBe('favoravel')
+    fixtures.touchPlaza(plaza.id)
+
+    const cleared = await setPlazaPoliticalTrendRecord(payload, coordinator, {
+      plaza: plaza.id,
+      status: null,
+      note: null,
+    })
+    expect(cleared.politicalTrend?.status).toBeNull()
+    fixtures.touchPlaza(plaza.id)
+  })
 })

@@ -1,10 +1,12 @@
 import { CircleAlertIcon, CircleCheckIcon } from 'lucide-react'
 import Link from 'next/link'
 
-import { Avatar, AvatarFallback } from '@/components/ui/Avatar'
+import { PlazaListAdvisorsControl } from '@/components/campaign/PlazaListAdvisorsControl'
+import { PlazaAdvisorAvatarStack } from '@/components/campaign/PlazaAdvisorAvatarStack'
+import { PlazaListExpectedVotesControl } from '@/components/campaign/PlazaListExpectedVotesControl'
+import { PlazaListTrendControl } from '@/components/campaign/PlazaListTrendControl'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { StaffPlazaVotesDisplay } from '@/components/campaign/StaffPlazaVotesDisplay'
 import {
   Table,
   TableBody,
@@ -13,52 +15,54 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
+import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
   formatPlazaGeographyLabel,
   plazaKindLabels,
   plazaPriorityLabels,
 } from '@/utilities/plazaUi'
-import type { PlazaAdvisorSummary, PlazaListViewModel } from '@/utilities/plazaViewModels'
+import type {
+  EligibleAdvisorOption,
+  PlazaAdvisorSummary,
+  PlazaListViewModel,
+} from '@/utilities/plazaViewModels'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
-const getInitials = (name: string): string =>
-  name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-
-const AdvisorAvatars = ({ names }: { names: string[] }) => {
-  if (!names.length) return <span className="text-muted-foreground">Sem assessor</span>
-
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex -space-x-2">
-        {names.slice(0, 3).map((name) => (
-          <Avatar key={name} className="size-8 border-2 border-background">
-            <AvatarFallback>{getInitials(name)}</AvatarFallback>
-          </Avatar>
-        ))}
-      </div>
-      <span className="sr-only">{names.join(', ')}</span>
-    </div>
-  )
-}
+type ListFormAction = (
+  state: CampaignFormActionState,
+  formData: FormData,
+) => Promise<CampaignFormActionState>
 
 export type PlazaListProps = {
   plazas: PlazaListViewModel[]
   advisorNamesById: ReadonlyMap<number, PlazaAdvisorSummary>
   isStaffView: boolean
+  isCoordinator: boolean
+  advisorOptions: EligibleAdvisorOption[]
+  expectedVotesFormAction: ListFormAction
+  trendFormAction: ListFormAction
+  advisorsFormAction: ListFormAction
 }
 
-export const PlazaList = ({ plazas, advisorNamesById, isStaffView }: PlazaListProps) => {
-  const advisorNames = (plaza: PlazaListViewModel): string[] =>
+export const PlazaList = ({
+  plazas,
+  advisorNamesById,
+  isStaffView,
+  isCoordinator,
+  advisorOptions,
+  expectedVotesFormAction,
+  trendFormAction,
+  advisorsFormAction,
+}: PlazaListProps) => {
+  const advisorEntries = (plaza: PlazaListViewModel) =>
     plaza.advisorIDs.flatMap((id) => {
       const advisor = advisorNamesById.get(id)
-      return advisor ? [advisor.name] : []
+      return advisor ? [{ id: advisor.id, name: advisor.name }] : []
     })
+
+  const advisorNames = (plaza: PlazaListViewModel): string[] =>
+    advisorEntries(plaza).map((advisor) => advisor.name)
 
   return (
     <>
@@ -83,16 +87,42 @@ export const PlazaList = ({ plazas, advisorNamesById, isStaffView }: PlazaListPr
                   <div>
                     <dt className="text-muted-foreground">Votos estimados</dt>
                     <dd>
-                      <StaffPlazaVotesDisplay
+                      <PlazaListExpectedVotesControl
+                        plazaID={plaza.id}
                         expectedVotes={plaza.expectedVotes}
                         leadershipEffectiveTotal={plaza.pledges.effectiveTotal}
-                        valueClassName="font-medium tabular-nums"
+                        formAction={expectedVotesFormAction}
                       />
                     </dd>
                   </div>
                   <div>
+                    <dt className="text-muted-foreground">Tendência</dt>
+                    <dd>
+                      <PlazaListTrendControl
+                        plazaID={plaza.id}
+                        status={plaza.politicalTrendStatus}
+                        trendNote={plaza.politicalTrendNote}
+                        formAction={trendFormAction}
+                      />
+                    </dd>
+                  </div>
+                  <div className="col-span-2">
                     <dt className="text-muted-foreground">Assessoria</dt>
-                    <dd>{names.length ? names.join(', ') : 'Sem assessor'}</dd>
+                    <dd>
+                      {isCoordinator ? (
+                        <PlazaListAdvisorsControl
+                          plazaID={plaza.id}
+                          currentAdvisorIDs={plaza.advisorIDs}
+                          advisorNamesById={advisorNamesById}
+                          options={advisorOptions}
+                          formAction={advisorsFormAction}
+                        />
+                      ) : names.length ? (
+                        names.join(', ')
+                      ) : (
+                        'Sem assessor'
+                      )}
+                    </dd>
                   </div>
                 </dl>
               ) : null}
@@ -114,6 +144,7 @@ export const PlazaList = ({ plazas, advisorNamesById, isStaffView }: PlazaListPr
               {isStaffView ? (
                 <>
                   <TableHead>Assessores</TableHead>
+                  <TableHead>Tendência</TableHead>
                   <TableHead>Votos estimados</TableHead>
                   <TableHead>Última atualização</TableHead>
                   <TableHead>Cobertura</TableHead>
@@ -150,13 +181,32 @@ export const PlazaList = ({ plazas, advisorNamesById, isStaffView }: PlazaListPr
                   {isStaffView ? (
                     <>
                       <TableCell>
-                        <AdvisorAvatars names={names} />
+                        {isCoordinator ? (
+                          <PlazaListAdvisorsControl
+                            plazaID={plaza.id}
+                            currentAdvisorIDs={plaza.advisorIDs}
+                            advisorNamesById={advisorNamesById}
+                            options={advisorOptions}
+                            formAction={advisorsFormAction}
+                          />
+                        ) : (
+                          <PlazaAdvisorAvatarStack advisors={advisorEntries(plaza)} />
+                        )}
                       </TableCell>
                       <TableCell>
-                        <StaffPlazaVotesDisplay
+                        <PlazaListTrendControl
+                          plazaID={plaza.id}
+                          status={plaza.politicalTrendStatus}
+                          trendNote={plaza.politicalTrendNote}
+                          formAction={trendFormAction}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <PlazaListExpectedVotesControl
+                          plazaID={plaza.id}
                           expectedVotes={plaza.expectedVotes}
                           leadershipEffectiveTotal={plaza.pledges.effectiveTotal}
-                          valueClassName="font-medium tabular-nums"
+                          formAction={expectedVotesFormAction}
                         />
                       </TableCell>
                       <TableCell>

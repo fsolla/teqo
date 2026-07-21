@@ -102,6 +102,19 @@ Componentes:
 - **Nota de tendência no popover.** Feedback de uso.
 - **Bulk assign de assessor a N Praças.** Volume real na fila “Sem assessor”.
 - **Atalho “ajustar lideranças” a partir da cobertura.** Se assessores pedirem sem abrir a Praça.
+- **Hook/shell popover compartilhado (`usePlazaListPopoverForm`).** Gatilho: 4º inline editor na campanha.
+- **`PlazaAdvisorCheckboxList` extraído de `PlazaAdvisorsForm`.** Gatilho: 3º uso ou refactor do form `/editar`.
+- **Layout responsivo único (uma árvore React vs mobile+desktop duplicados).** Gatilho: page size >25 ou profiling de hydration.
+- **~75 hooks `useActionState` por página.** Gatilho: reclamação de perf ou **R6**.
+- **E2E save inline na lista.** Gatilho: smoke pós-merge B9.
+
+## Simplify (2026-07-21)
+
+Limpezas aplicadas no cleanup da sessão (não reabrir): `politicalTrend.note` via hidden field (sem `findByID` extra); `politicalTrendBadgeVariant` em `plazaUi.ts`; `PlazaAdvisorAvatarStack`; tipos `PoliticalTrendStatus`; `max={1_000_000}` no input; higiene de testes.
+
+Débitos absorvidos noutros planos: twin `listFormActions` ↔ `/editar` → **C8 F4** ([escala-dry-pos-c6.md](escala-dry-pos-c6.md)); `revalidatePath` full-page pós-save → **A9+ F2** ([escala-dry-pos-a9.md](escala-dry-pos-a9.md)).
+
+**Explicitamente fora (triage):** lazy-load `getEligibleAdvisorOptions`; `PopoverAnchor` não usado; helper `parsePoliticalTrendStatus`; unit tests dos `PlazaList*Control`.
 
 ## Referências
 

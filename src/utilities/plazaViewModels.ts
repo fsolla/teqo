@@ -1,6 +1,7 @@
 import type { Payload } from 'payload'
 
 import type { CampaignUser, Plaza } from '@/payload-types'
+import type { PoliticalTrendStatus } from '@/utilities/plazaUi'
 import { eligibleCampaignStaffWhere } from '@/utilities/campaignAccess'
 import { relationshipId } from '@/utilities/relationship'
 import { toVoteGoalsViewModel, type VoteGoalsViewModel } from '@/utilities/voteGoals'
@@ -19,7 +20,18 @@ export const plazaListSelect = {
   priority: true,
   lastUpdateAt: true,
   expectedVotes: true,
+  politicalTrend: {
+    status: true,
+    note: true,
+  },
 } as const
+
+export type PlazaPoliticalTrendViewModel = {
+  status: PoliticalTrendStatus | null
+  note: string | null
+  recordedByName: string | null
+  recordedAt: string | null
+}
 
 export type PlazaListViewModel = {
   id: number
@@ -34,6 +46,8 @@ export type PlazaListViewModel = {
   priority: 'alta' | 'normal'
   lastUpdateAt: string | null
   expectedVotes: number | null
+  politicalTrendStatus: PoliticalTrendStatus | null
+  politicalTrendNote: string | null
   pledges: PlazaPledgeAggregate
 }
 
@@ -53,15 +67,10 @@ export const toPlazaListViewModel = (
   priority: plaza.priority === 'alta' ? 'alta' : 'normal',
   lastUpdateAt: plaza.lastUpdateAt ?? null,
   expectedVotes: plaza.expectedVotes ?? null,
+  politicalTrendStatus: plaza.politicalTrend?.status ?? null,
+  politicalTrendNote: plaza.politicalTrend?.note ?? null,
   pledges: pledges ?? { ...emptyPlazaPledgeAggregate },
 })
-
-export type PlazaPoliticalTrendViewModel = {
-  status: 'favoravel' | 'neutra' | 'desfavoravel' | null
-  note: string | null
-  recordedByName: string | null
-  recordedAt: string | null
-}
 
 export type PlazaAdvisorSummary = {
   id: number

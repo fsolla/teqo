@@ -21,7 +21,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
+import { isCampaignCoordinator, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'
 import { loadPlazaMapBundle } from '@/utilities/plazaMapData'
@@ -34,7 +34,12 @@ import {
   getCampaignScopeLabel,
   resolvePlazaListUrl,
 } from '@/utilities/plazaUi'
-import { loadAdvisorSummaries } from '@/utilities/plazaViewModels'
+import { loadAdvisorSummaries, getEligibleAdvisorOptions } from '@/utilities/plazaViewModels'
+import {
+  assignPlazaAdvisorsListFormAction,
+  setPlazaExpectedVotesListFormAction,
+  setPlazaPoliticalTrendListFormAction,
+} from './listFormActions'
 
 type PlazasPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -49,6 +54,7 @@ export default async function PlazasPage({ searchParams }: PlazasPageProps) {
 
   if (!user) return null
   const isStaffView = isCampaignStaff(user)
+  const isCoordinator = isCampaignCoordinator(user)
 
   const [listData, overview, mapBundle] = await Promise.all([
     loadPlazaListPageData(payload, user, rawSearchParams),
@@ -64,6 +70,8 @@ export default async function PlazasPage({ searchParams }: PlazasPageProps) {
   const advisorIDs = [...new Set(listData.plazas.flatMap((plaza) => plaza.advisorIDs))]
   const advisorSummaries = isStaffView ? await loadAdvisorSummaries(payload, user, advisorIDs) : []
   const advisorNamesById = new Map(advisorSummaries.map((advisor) => [advisor.id, advisor]))
+  const advisorOptions =
+    isCoordinator ? await getEligibleAdvisorOptions(payload, user) : []
 
   return (
     <CampaignPageShell>
@@ -95,6 +103,11 @@ export default async function PlazasPage({ searchParams }: PlazasPageProps) {
             plazas={listData.plazas}
             advisorNamesById={advisorNamesById}
             isStaffView={isStaffView}
+            isCoordinator={isCoordinator}
+            advisorOptions={advisorOptions}
+            expectedVotesFormAction={setPlazaExpectedVotesListFormAction}
+            trendFormAction={setPlazaPoliticalTrendListFormAction}
+            advisorsFormAction={assignPlazaAdvisorsListFormAction}
           />
           <div className="flex flex-col items-center gap-2">
             <p className="text-sm text-muted-foreground">

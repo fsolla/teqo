@@ -1,7 +1,7 @@
 # Escala e DRY pós-C6 (apoiadores / import / listas)
 
 Status: implementado (pendente merge em `main`)
-Atualizado em: 2026-07-19
+Atualizado em: 2026-07-21 (`capture-review-debts` pós-B9 `/simplify`)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha C, item C8)
 Responsável: —
 
@@ -77,16 +77,15 @@ flowchart TD
 
 ### Fase 4 — DRY de forms
 
-- Migrar os `formActions.ts` restantes para `mapCampaignFormActionError` + `campaignFormFields` (hoje o ladder `FormDataBoundaryError` → `ZodError` → `validationFieldErrors` → safe-message está inlined em ~6 arquivos):
-  - `src/app/(campaign)/campanha/(app)/nucleos/formActions.ts`
-  - `src/app/(campaign)/campanha/(app)/nucleos/[slug]/voteEstimateFormActions.ts`
-  - `src/app/(campaign)/campanha/(app)/nucleos/[slug]/nucleusIntelligenceFormActions.ts`
-  - `src/app/(campaign)/campanha/(app)/nucleos/[slug]/nucleusUpdateFormActions.ts`
-  - `src/app/(campaign)/campanha/(app)/nucleos/[slug]/coordinatorAssignmentFormActions.ts`
+- Migrar os `formActions.ts` restantes para `mapCampaignFormActionError` + `campaignFormFields` (hoje o ladder `FormDataBoundaryError` → `ZodError` → `validationFieldErrors` → safe-message está inlined em vários arquivos):
+  - `src/app/(campaign)/campanha/(app)/pracas/listFormActions.ts` + `pracas/[slug]/editar/formActions.ts` — **twin paths pós-B9** (mesmo parsing `formData`, mesmas actions de domínio, `revalidatePlazaListPaths` duplicado vs `revalidatePath` por action no `/editar`; extrair helper compartilhado de revalidate + wrappers finos por superfície)
+  - `src/app/(campaign)/campanha/(app)/pracas/[slug]/updateFormActions.ts`, `pledgeFormActions.ts` (se ainda não no mapper)
   - `src/app/(campaign)/campanha/convite/[token]/formActions.ts`
   - `src/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions.ts`
-  - `src/app/(campaign)/campanha/(app)/planos/formActions.ts` e `planos/[slug]/updateFormActions.ts`
-- Migrar `fieldError`/`firstError` local em `src/components/campaign/NucleusUpdateForm.tsx` e `CampaignInviteForm.tsx` para importar de `campaignFormFields.ts`.
+  - `src/app/(campaign)/campanha/(app)/planos/formActions.ts` e `planos/[slug]/updateFormActions.ts`, `resultFormActions.ts`, `lifecycleFormActions.ts`
+  - Demais `formActions` de `/campanha` (lideranças, demandas, organizações, apoiadores/novo) conforme grep no PR
+- Migrar `fieldError`/`firstError` local em forms legados (ex.: `CampaignInviteForm.tsx`) para importar de `campaignFormFields.ts`.
+- **Nota pós-remodel:** paths `nucleos/*` foram superseded; não reabrir.
 
 **Migration:** Fases 1, 3, 4 sem schema. Fase 2: `pnpm migrate:create add_contact_trgm_index` (extensão + 2 GIN indexes). Sem Consent novo.
 
@@ -132,3 +131,9 @@ Os débitos que os revisores marcaram como importantes e maiores que cleanup for
 5. **Componentes de form com `fieldError` local** — `NucleusForm`, `ActionPlanForm`, `NucleusTerritoryFields`, `VoteEstimateDialog`, etc.
 
 **Explicitamente fora (tradeoffs aceitos no C8):** waterfall lista→overview (precisa de `totalDocs`); unificar lista+aggregate numa query; widen de `PostgresTransactionDatabase`.
+
+## Simplify (2026-07-21 pós-B9)
+
+`/simplify` da entrega **B9** ([edicao-rapida-lista-pracas.md](edicao-rapida-lista-pracas.md)) marcou como **maior que cleanup** o twin `listFormActions.ts` ↔ `editar/formActions.ts` — absorvido na **Fase 4** acima. B9 já adota `mapCampaignFormActionError`; o débito é DRY de parsing/revalidate entre lista e `/editar`, não introdução do mapper.
+
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B9):** hook `usePlazaListPopoverForm` (gatilho: 4º inline editor); `PlazaAdvisorCheckboxList` (gatilho: 3º uso ou refactor do form `/editar`); layout responsivo único mobile+desktop na lista (gatilho: page size >25 ou profiling de hydration); lazy-load de `getEligibleAdvisorOptions` (staff set pequeno); `PopoverAnchor` export não usado (scaffold shadcn); helper `parsePoliticalTrendStatus`; unit tests dos `PlazaList*Control` (int access cobre domínio); E2E save inline (gatilho: smoke pós-merge B9).

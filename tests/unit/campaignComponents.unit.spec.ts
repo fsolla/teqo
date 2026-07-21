@@ -12,7 +12,21 @@ import { Progress } from '@/components/ui/Progress'
 import { Toggle } from '@/components/ui/Toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import type { PlazaAdvisorSummary, PlazaListViewModel } from '@/utilities/plazaViewModels'
+import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { emptyPlazaPledgeAggregate } from '@/utilities/votePledgeData'
+
+const noopListFormAction = async (
+  _state: CampaignFormActionState,
+  _formData: FormData,
+): Promise<CampaignFormActionState> => ({})
+
+const plazaListDefaultProps = {
+  isCoordinator: false,
+  advisorOptions: [],
+  expectedVotesFormAction: noopListFormAction,
+  trendFormAction: noopListFormAction,
+  advisorsFormAction: noopListFormAction,
+}
 
 describe('campaign visual foundation', () => {
   it('exposes the current progress value to assistive technology', () => {
@@ -120,6 +134,8 @@ describe('campaign visual foundation', () => {
         priority: 'alta',
         lastUpdateAt: null,
         expectedVotes: 1500,
+        politicalTrendStatus: 'favoravel',
+        politicalTrendNote: null,
         pledges: {
           declaredTotal: 1200,
           effectiveTotal: 1200,
@@ -140,6 +156,8 @@ describe('campaign visual foundation', () => {
         priority: 'normal',
         lastUpdateAt: null,
         expectedVotes: null,
+        politicalTrendStatus: null,
+        politicalTrendNote: null,
         pledges: { ...emptyPlazaPledgeAggregate },
       },
     ]
@@ -149,6 +167,7 @@ describe('campaign visual foundation', () => {
         plazas,
         advisorNamesById: new Map([[advisor.id, advisor]]),
         isStaffView: true,
+        ...plazaListDefaultProps,
       }),
     )
 
@@ -160,6 +179,7 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('Prioritária')
     expect(html).toContain('Coberta')
     expect(html).toContain('Sem assessor')
+    expect(html).toContain('Tendência')
   })
 
   it('hides staff-only pledge and coverage columns from the leader view', () => {
@@ -179,11 +199,14 @@ describe('campaign visual foundation', () => {
             priority: 'alta',
             lastUpdateAt: null,
             expectedVotes: null,
+            politicalTrendStatus: null,
+            politicalTrendNote: null,
             pledges: { ...emptyPlazaPledgeAggregate },
           },
         ],
         advisorNamesById: new Map<number, PlazaAdvisorSummary>(),
         isStaffView: false,
+        ...plazaListDefaultProps,
       }),
     )
 
