@@ -1,7 +1,7 @@
 # Mapa das Praças filtrado pela lista
 
 Status: entregue
-Atualizado em: 2026-07-21
+Atualizado em: 2026-07-21 (gatilho fitBounds → B12)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B7 — entregue 2026-07-21)
 Impeccable: B — encaixe em `/campanha/pracas` (`PlazaMapPanel` + loader; sem rota nova)
 Appetite: ~0,5 dia eng; wire `buildPlazaListWhere` no loader do mapa + teste + empty state
@@ -46,7 +46,7 @@ Em `/campanha/pracas` a lista e o overview já aplicavam `buildPlazaListWhere(st
 ## Questões em aberto
 
 - **Mover `PlazaFilters` para cima do mapa?** **Opções:** A) neste item | B) R6 | C) deixar. **Recomendação:** B/C — fora do appetite; o filtro já é URL-driven e o mapa reage no refresh RSC. Marcar como polish visual em R6 se a coordenação reclamar da ordem.
-- **Highlight / fitBounds só nos municípios do filtro?** **Opções:** A) só coroplético nos valores filtrados (polígonos restantes cinza) | B) além disso `fitBounds` no footprint filtrado. **Recomendação:** A neste item (já é o comportamento natural quando `values` só tem as chaves filtradas); B como polish se o Assessor filtrar uma TI e a Bahia inteira continuar no viewport — gatilho abaixo.
+- **Highlight / fitBounds só nos municípios do filtro?** **Opções:** A) só coroplético nos valores filtrados (polígonos restantes cinza) | B) além disso `fitBounds` no footprint filtrado. **Recomendação (B7):** A. **B promovido a B12** ([aproximar-mapa-pracas.md](aproximar-mapa-pracas.md)) quando o gatilho disparou (2026-07-21).
 
 ## Abordagem proposta
 
@@ -85,12 +85,12 @@ Componentes:
 ## Rabbit holes
 
 - **Filtro no cliente após carregar Bahia inteira.** Se alguém “só esconder no Leaflet”: vaza números no Flight e o Assessor ainda baixa dados fora do filtro. **Mitigação:** where no servidor.
-- **FitBounds / zoom automático por filtro.** Explode em edge cases (TI pequena vs Salvador multi-zona). **Mitigação:** defer com gatilho.
+- **FitBounds / zoom automático por filtro.** Explode em edge cases (TI pequena vs Salvador multi-zona). **Mitigação:** defer com gatilho — **promovido a B12** ([aproximar-mapa-pracas.md](aproximar-mapa-pracas.md)) em 2026-07-21 quando o gatilho disparou.
 - **Unificar list+overview+map num único fetch.** DRY prematuro (&lt;3 call sites já compartilham o where). **Mitigação:** só compartilhar o `Where`; fetch único só se profiling pós-B7 mostrar triplo load caro.
 
 ## Adiado com gatilho
 
-- **`fitBounds` ao footprint filtrado.** Revisitar quando coordenação filtrar TI/região e reportar que a Bahia inteira no viewport atrapalha a leitura.
+- ~~**`fitBounds` ao footprint filtrado.**~~ Gatilho disparado 2026-07-21 → **B12** ([aproximar-mapa-pracas.md](aproximar-mapa-pracas.md)).
 - **Mover filtros acima do mapa.** Revisitar no ciclo R6 se critique/smoke apontar ordem confusa.
 
 ## Referências
