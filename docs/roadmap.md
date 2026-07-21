@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-21 (B9 + B10 entregues; débitos B9 → A9+/C8 F4; débitos B10 → B6)
+Atualizado em: 2026-07-21 (fill-in filtros-auto entregue em código; B9 + B10 entregues; débitos B9 → A9+/C8 F4; débitos B10 → B6)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -81,11 +81,11 @@ flowchart TD
     C2prod --> C5["C5 GOTV (validar)"]
 ```
 
-Paralelizáveis agora: **B11**, fill-ins da lista (filtros-auto, A9+, …). ~~**A9** / **B9** / **B7** / **B10**~~ entregues 2026-07-21. **B6** absorve o hot path de hover pós-B10 (Janela 3 / gatilho de densidade).
+Paralelizáveis agora: **B11**, fill-ins da lista (A9+, …). ~~**A9** / **B9** / **B7** / **B10** / **filtros-auto**~~ entregues 2026-07-21. **B6** absorve o hot path de hover pós-B10 (Janela 3 / gatilho de densidade).
 
 ### Sequência por janela
 
-**Janela 1 — agora → 05/08 (convenções):** ~~R0 → R1 → R2~~ entregues; ~~**A9** estimativa de votos~~ / ~~**B9** edição rápida na lista~~ / ~~**B7** mapa filtrado~~ / ~~**B10** hover+click-nav~~ entregues; **deploy da remodelagem** (revisar SQL destrutivo da migração antes do build) + smoke em produção; **B11** escala % dos válidos; R6 critique/polish; Onda 0 jurídica em paralelo.
+**Janela 1 — agora → 05/08 (convenções):** ~~R0 → R1 → R2~~ entregues; ~~**A9** estimativa de votos~~ / ~~**B9** edição rápida na lista~~ / ~~**B7** mapa filtrado~~ / ~~**B10** hover+click-nav~~ / ~~**filtros-auto** lista de Praças~~ entregues; **deploy da remodelagem** (revisar SQL destrutivo da migração antes do build) + smoke em produção; **B11** escala % dos válidos; R6 critique/polish; Onda 0 jurídica em paralelo.
 
 **Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; D2 se sobrar folga.
 
@@ -108,6 +108,7 @@ Paralelizáveis agora: **B11**, fill-ins da lista (filtros-auto, A9+, …). ~~**
 - **B7 (2026-07-21)** — **Mapa das Praças filtrado pela lista** (`buildPlazaListWhere` em `loadPlazaMapBundle`; `rawSearchParams` na página; empty → omitir painel; int `plazaMapData.int.spec.ts`) — [plano](plans/mapa-pracas-filtrado.md).
 - **B9 (2026-07-21)** — **Edição rápida na lista de Praças** (Assessores / Tendência / `expectedVotes` via Popovers em `PlazaList*Control`; `listFormActions`; sem migration) — [plano](plans/edicao-rapida-lista-pracas.md). Débitos `/simplify`: **A9+** F2 (revalidate) + **C8** F4 (DRY formActions).
 - **B10 (2026-07-21)** — **Hover/tap no Mapa das Praças** (destaque + `MapFeatureReadout`; desktop click navega; mobile 2º tap; SSA/CMS N>1 → `zoneBreakdown`; `plazasByIbgeCode` / `resolvePlazaMapNavigation`) — [plano](plans/hover-mapa-pracas.md). Débito perf hover O(n) → **B6** [escala-dry-pos-b3.md](plans/escala-dry-pos-b3.md).
+- **Fill-in filtros-auto (2026-07-21)** — **Filtros auto-aplicados na lista de Praças** (`PlazaFilters`: debounce 1s no `q`, Enter imediato, selects imediatos, remove Buscar; `useTransition` + pending a11y; `shouldUpdatePlazaSearchUrl` + no-op via `buildPlazaFiltersKey`; sem migration) — [plano](plans/filtros-auto-pracas.md). Débitos pós-`/simplify`: sync back/forward `search`↔`state.q` e shell pending compartilhado — gatilhos no plano.
 
 ## Supersedidos pela remodelagem (2026-07-20)
 
@@ -135,7 +136,7 @@ Paralelizáveis agora: **B11**, fill-ins da lista (filtros-auto, A9+, …). ~~**
 - **C5** operação dia D / GOTV _(validar com produto)_ · design [`Dia-D-GOTV`](design-refs/latest/Dia-D-GOTV.png) · depende de C2 dados reais
 - **D2** push + sino in-app · soft: chave `campanha-notificacoes-push` (Onda 0) · [plano](plans/notifications.md)
 - **R6** critique/polish visual da vertical remodelada (ciclo /impeccable completo por superfície; smoke visual coordenador feito em 2026-07-21) · gatilho: antes de 16/08 · (opcional: mover filtros acima do mapa)
-- **Fill-ins:** filtros auto na lista de Praças (debounce 1s no `q`, selects já imediatos; remove Buscar) · [plano](plans/filtros-auto-pracas.md) · **A9+** loader compartilhado lista/mapa + revalidate escopada pós-B9 ([plano](plans/escala-dry-pos-a9.md)) · **C8** F4 DRY `listFormActions`↔`/editar` ([plano](plans/escala-dry-pos-c6.md)) · O0+ ([plano](plans/escala-dry-pos-onda0.md)) · RS+ auth read leve + shells de senha ([plano](plans/escala-dry-pos-reset-senha-perfil.md)) · higiene PascalCase
+- **Fill-ins:** **A9+** loader compartilhado lista/mapa + revalidate escopada pós-B9 ([plano](plans/escala-dry-pos-a9.md)) · **C8** F4 DRY `listFormActions`↔`/editar` ([plano](plans/escala-dry-pos-c6.md)) · O0+ ([plano](plans/escala-dry-pos-onda0.md)) · RS+ auth read leve + shells de senha ([plano](plans/escala-dry-pos-reset-senha-perfil.md)) · higiene PascalCase
 
 ## Bloqueadores atuais
 

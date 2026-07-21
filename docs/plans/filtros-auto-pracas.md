@@ -1,11 +1,13 @@
 # Filtros auto-aplicados na lista de Praças
 
-Status: rascunho
+Status: entregue em código (2026-07-21; deploy pendente com remodelagem)
 Atualizado em: 2026-07-21
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins)
 Impeccable: B — encaixe em `PlazaFilters` (`/campanha/pracas`); sem rota nova
 Appetite: ~0,5 dia eng; só client em `PlazaFilters` (+ pending a11y); sem migration
 Responsável: —
+
+_Revisão 2026-07-21 (pós-implementação + `/simplify` + capture-review-debts): debounce 1s + Enter imediato + pending UI; `commitNavigation` com `buildPlazaFiltersKey` no-op; `shouldUpdatePlazaSearchUrl` em `plazaUi.ts`; testes `tests/unit/plazaUi.unit.spec.ts`. Débitos S1–S2 registrados em Adiado (não reabrir no simplify)._
 
 ## Design (Impeccable)
 
@@ -78,7 +80,7 @@ Componentes:
 ## Dependências
 
 - **Dura:** nenhuma de outro plano (R2 já entregue).
-- **Suave:** B7 ([mapa-pracas-filtrado.md](mapa-pracas-filtrado.md)) — debounce aumenta frequência de troca de filtro; mapa filtrado fica mais útil, mas este item funciona com o mapa ainda “all accessible”.
+- **Suave:** B7 ([mapa-pracas-filtrado.md](mapa-pracas-filtrado.md)) ✓ entregue — cada replace de filtro também refresca o mapa filtrado.
 - Reusa: `plazaUi.ts` (`buildPlazaListHref`, `PlazaListState`), padrão pending de `ActionPlanFilters.tsx`, dwell do `RecentVisitTracker` (já re-arma o timer a cada `href` — debounce 1s + dwell ~2s evita visitar intermediários).
 
 ## Não escopo
@@ -94,8 +96,18 @@ Componentes:
 - **Debounce via lib (`use-debounce` etc.).** Dependência nova por 10 linhas. **Mitigação:** `setTimeout` + cleanup.
 - **Otimistic list client-side.** Duplicaria `buildPlazaListWhere` no browser. **Mitigação:** URL + RSC como hoje.
 
+## Já resolvido no simplify/critique (não reabrir)
+
+- Alias `plazaSearchParamFromInput` removido; `normalizedText` + `shouldUpdatePlazaSearchUrl` em `plazaUi.ts`.
+- No-op de navegação via `buildPlazaFiltersKey` (não dois `buildPlazaListHref`).
+- `hasActiveFilters` inclui texto local de busca (Limpar visível antes do debounce).
+- `clearDebounce` duplicado no `onSubmit` removido.
+- Impeccable `detect.mjs` no alvo: 0 findings (sem critique formal nesta sessão).
+
 ## Adiado com gatilho
 
+- **Sync `search` local ↔ `state.q` no back/forward do browser.** `key={buildPlazaFiltersKey(state)}` remonta na maioria dos casos; edge case: campo pode mostrar texto stale após voltar/avançar. **Gatilho:** QA ou R6 reportar desync em `/campanha/pracas`.
+- **Shell compartilhado de pending UI** (`data-pending` + `aria-busy` + `aria-live` "Atualizando resultados…"). Hoje só `ActionPlanFilters` + `PlazaFilters` (`SupporterFilters` ainda sem pending). **Gatilho:** 3ª lista de campanha com o mesmo padrão pending, ou R6/critique citar duplicação em ≥2 superfícies.
 - **Mesmo padrão em `SupporterFilters` (e outras listas com Buscar).** Revisitar quando produto pedir ou quando R6/critique citar “Buscar” como atrito repetido em ≥2 listas.
 - **Extrair `useDebouncedSearchParam`.** Revisitar no 3º call site idêntico (Praças + apoiadores + 1).
 

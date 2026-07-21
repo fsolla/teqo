@@ -158,6 +158,11 @@ export const buildPlazaFiltersKey = (state: PlazaListState): string =>
 export const buildPlazaListHref = (state: PlazaListState, page: number): string =>
   buildListHref(state, buildPlazaListSearchParams, '/campanha/pracas', page)
 
+export const shouldUpdatePlazaSearchUrl = (
+  input: string,
+  currentQ: string | undefined,
+): boolean => normalizedText(input) !== currentQ
+
 export const resolvePlazaListUrl = (
   params: PlazaListSearchParams,
   totalPages?: number,

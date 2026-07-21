@@ -1,20 +1,25 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 
 import { CampaignSearchInput } from '@/components/campaign/CampaignSearchInput'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { bahiaIdentityTerritories } from '@/lib/bahiaTerritories'
+import { normalizedText } from '@/utilities/campaignListUrl'
 import {
+  buildPlazaFiltersKey,
   buildPlazaListHref,
   plazaKindLabels,
   plazaListCoverageLabels,
   politicalTrendLabels,
+  shouldUpdatePlazaSearchUrl,
   type PlazaListState,
 } from '@/utilities/plazaUi'
+
+const SEARCH_DEBOUNCE_MS = 1000
 
 type PlazaFiltersProps = {
   state: PlazaListState
@@ -24,31 +29,83 @@ type PlazaFiltersProps = {
 export const PlazaFilters = ({ state, showStaffFilters }: PlazaFiltersProps) => {
   const router = useRouter()
   const [search, setSearch] = useState(state.q ?? '')
+  const [isPending, startTransition] = useTransition()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const navigate = (next: PlazaListState) => {
-    router.replace(buildPlazaListHref({ ...next, page: 1 }, 1), { scroll: false })
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    },
+    [],
+  )
+
+  const clearDebounce = () => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = null
+    }
+  }
+
+  const commitNavigation = (patch: Partial<PlazaListState>) => {
+    clearDebounce()
+    const merged: PlazaListState = {
+      ...state,
+      ...patch,
+      page: 1,
+      q: normalizedText(patch.q !== undefined ? patch.q : search),
+    }
+    if (buildPlazaFiltersKey(merged) === buildPlazaFiltersKey({ ...state, page: 1 })) return
+
+    startTransition(() => {
+      router.replace(buildPlazaListHref(merged, 1), { scroll: false })
+    })
+  }
+
+  const scheduleSearchNavigation = (value: string) => {
+    clearDebounce()
+    if (!shouldUpdatePlazaSearchUrl(value, state.q)) return
+
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null
+      commitNavigation({ q: value })
+    }, SEARCH_DEBOUNCE_MS)
   }
 
   const hasActiveFilters = Boolean(
-    state.q || state.region || state.kind || state.coverage || state.priority || state.trend,
+    state.q ||
+      normalizedText(search) ||
+      state.region ||
+      state.kind ||
+      state.coverage ||
+      state.priority ||
+      state.trend,
   )
 
   return (
     <form
       role="search"
-      className="flex flex-col gap-3"
+      className="flex flex-col gap-3 transition-opacity data-[pending=true]:opacity-70"
+      data-pending={isPending}
+      aria-busy={isPending}
       onSubmit={(event) => {
         event.preventDefault()
-        navigate({ ...state, q: search.trim() || undefined })
+        commitNavigation({ q: search })
       }}
     >
+      <p className="sr-only" aria-live="polite">
+        {isPending ? 'Atualizando resultados…' : ''}
+      </p>
       <div className="flex flex-col gap-3 md:flex-row md:items-end">
         <CampaignSearchInput
           id="plaza-search"
           label="Buscar Praça"
           placeholder="Buscar por município ou zona…"
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => {
+            const value = event.target.value
+            setSearch(value)
+            scheduleSearchNavigation(value)
+          }}
         />
         <Field className="md:w-56">
           <FieldLabel htmlFor="plaza-filter-region">Território de identidade</FieldLabel>
@@ -56,8 +113,7 @@ export const PlazaFilters = ({ state, showStaffFilters }: PlazaFiltersProps) => 
             id="plaza-filter-region"
             value={state.region ?? ''}
             onChange={(event) =>
-              navigate({
-                ...state,
+              commitNavigation({
                 region: (event.target.value || undefined) as PlazaListState['region'],
               })
             }
@@ -77,8 +133,7 @@ export const PlazaFilters = ({ state, showStaffFilters }: PlazaFiltersProps) => 
             id="plaza-filter-kind"
             value={state.kind ?? ''}
             onChange={(event) =>
-              navigate({
-                ...state,
+              commitNavigation({
                 kind: (event.target.value || undefined) as PlazaListState['kind'],
               })
             }
@@ -100,8 +155,7 @@ export const PlazaFilters = ({ state, showStaffFilters }: PlazaFiltersProps) => 
                 id="plaza-filter-coverage"
                 value={state.coverage ?? ''}
                 onChange={(event) =>
-                  navigate({
-                    ...state,
+                  commitNavigation({
                     coverage: (event.target.value || undefined) as PlazaListState['coverage'],
                   })
                 }
@@ -125,8 +179,7 @@ export const PlazaFilters = ({ state, showStaffFilters }: PlazaFiltersProps) => 
                 id="plaza-filter-trend"
                 value={state.trend ?? ''}
                 onChange={(event) =>
-                  navigate({
-                    ...state,
+                  commitNavigation({
                     trend: (event.target.value || undefined) as PlazaListState['trend'],
                   })
                 }
@@ -148,8 +201,7 @@ export const PlazaFilters = ({ state, showStaffFilters }: PlazaFiltersProps) => 
                 id="plaza-filter-priority"
                 value={state.priority ?? ''}
                 onChange={(event) =>
-                  navigate({
-                    ...state,
+                  commitNavigation({
                     priority: event.target.value === 'alta' ? 'alta' : undefined,
                   })
                 }
@@ -161,24 +213,24 @@ export const PlazaFilters = ({ state, showStaffFilters }: PlazaFiltersProps) => 
             </Field>
           </>
         ) : null}
-        <div className="flex gap-2">
-          <Button type="submit" variant="secondary" className="min-h-11">
-            Buscar
-          </Button>
-          {hasActiveFilters ? (
+        {hasActiveFilters ? (
+          <div className="flex shrink-0 gap-2 md:self-end">
             <Button
               type="button"
               variant="ghost"
               className="min-h-11"
               onClick={() => {
+                clearDebounce()
                 setSearch('')
-                router.replace('/campanha/pracas', { scroll: false })
+                startTransition(() => {
+                  router.replace('/campanha/pracas', { scroll: false })
+                })
               }}
             >
               Limpar
             </Button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
     </form>
   )
