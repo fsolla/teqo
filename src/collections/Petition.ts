@@ -1,3 +1,4 @@
+import { normalizeFacebookPixelId } from '@/lib/facebookPixel'
 import { revalidateDocumentById } from '@/utilities/documents'
 import type { CollectionConfig } from 'payload'
 
@@ -26,6 +27,14 @@ export const Petition: CollectionConfig<typeof slug> = {
     read: () => true,
   },
   hooks: {
+    beforeChange: [
+      ({ data }) => {
+        if (data?.tracking?.facebookPixelId != null) {
+          data.tracking.facebookPixelId = normalizeFacebookPixelId(data.tracking.facebookPixelId)
+        }
+        return data
+      },
+    ],
     afterChange: [
       ({ doc, previousDoc, operation }) => {
         // Admin create view creates the initial draft during render.
@@ -89,6 +98,29 @@ export const Petition: CollectionConfig<typeof slug> = {
           label: 'Consentimento',
           relationTo: 'consent',
           required: true,
+        },
+      ],
+    },
+    {
+      name: 'tracking',
+      type: 'group',
+      label: 'Rastreamento / Ads',
+      fields: [
+        {
+          name: 'facebookPixelId',
+          type: 'text',
+          label: 'ID do Pixel do Meta (Facebook)',
+          admin: {
+            description:
+              'Cole somente o ID numérico do Events Manager (ex.: 123456789012345), não o snippet HTML completo.',
+          },
+          validate: (value: string | null | undefined) => {
+            if (!value) return true
+            if (!normalizeFacebookPixelId(String(value))) {
+              return 'Informe somente o ID numérico do Pixel (5 a 20 dígitos), sem HTML ou script.'
+            }
+            return true
+          },
         },
       ],
     },

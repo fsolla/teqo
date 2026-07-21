@@ -1,6 +1,8 @@
 import { PetitionForm } from '@/components/PetitionForm'
+import { MetaPixel } from '@/components/MetaPixel'
 import { SignatureCounter } from '@/components/SignatureCounter'
 import { getSignatureCount } from '@/app/(frontend)/actions/getSignatureCount'
+import { normalizeFacebookPixelId } from '@/lib/facebookPixel'
 import { getCachedDocumentById, getDocuments } from '@/utilities/documents'
 import { getCachedGlobal } from '@/utilities/globals'
 import { extractFirstImageFromLexical } from '@/utilities/extractFirstImageFromLexical'
@@ -164,12 +166,14 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       : ''
 
   const signatureCount = await getSignatureCount(petition.id)
+  const facebookPixelId = normalizeFacebookPixelId(petition.tracking?.facebookPixelId)
 
   return (
     <main
       data-theme="petition"
       className="h-screen w-screen overflow-y-auto bg-background text-foreground"
     >
+      {facebookPixelId ? <MetaPixel pixelId={facebookPixelId} /> : null}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -215,7 +219,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         className="mx-auto w-full max-w-3xl px-4 py-14 sm:px-6 lg:px-8 lg:py-16"
       >
         <article
-          className="space-y-6 text-lg leading-8 text-foreground/90 [&_a]:font-medium [&_a]:text-primary [&_a]:underline-offset-4 [&_a:hover]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-4 [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:border-none [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-primary [&_h3]:text-xl [&_h3]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_p]:text-lg [&_strong]:font-semibold [&_strong]:text-foreground"
+          className="space-y-6 text-lg leading-8 text-foreground/90 [&_a]:font-medium [&_a]:text-primary [&_a]:underline-offset-4 [&_a:hover]:underline [&_blockquote]:border-l [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:border-none [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-primary [&_h3]:text-xl [&_h3]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_p]:text-lg [&_strong]:font-semibold [&_strong]:text-foreground"
           dangerouslySetInnerHTML={{ __html: convertLexicalToHTML({ data: petition.body }) }}
         />
       </section>
@@ -241,7 +245,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             />
           </div>
           <div className="rounded-xl border border-border bg-card p-5 text-card-foreground shadow-[0_24px_60px_rgb(122_25_18/0.12)] sm:p-7">
-            <PetitionForm id="formulario" petition={petition} consentHTML={consentHTML} />
+            <PetitionForm
+              id="formulario"
+              petition={petition}
+              consentHTML={consentHTML}
+              facebookPixelId={facebookPixelId ?? undefined}
+            />
           </div>
         </div>
       </section>

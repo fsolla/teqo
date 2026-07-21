@@ -15,6 +15,7 @@ import { useState, useTransition } from 'react'
 import { Textarea } from './ui/textarea'
 import { Button } from './ui/button'
 import { petitionFormSchema, type PetitionFormInput } from '@/lib/schemas/petition-form'
+import { trackMetaLead } from '@/lib/facebookPixel'
 import { submitPetitionSignature } from '@/app/(frontend)/actions/submitPetitionSignature'
 import { NameInput } from './NameInput'
 import { EmailInput } from './EmailInput'
@@ -32,9 +33,10 @@ interface PetitionFormProps {
   id: string
   petition: Petition
   consentHTML: string
+  facebookPixelId?: string
 }
 
-export const PetitionForm = ({ id, petition, consentHTML }: PetitionFormProps) => {
+export const PetitionForm = ({ id, petition, consentHTML, facebookPixelId }: PetitionFormProps) => {
   const methods = useForm<PetitionFormInput>({
     resolver: zodResolver(petitionFormSchema),
     defaultValues: {
@@ -63,6 +65,9 @@ export const PetitionForm = ({ id, petition, consentHTML }: PetitionFormProps) =
           petitionId: petition.id,
           consentId,
         })
+        if (facebookPixelId) {
+          trackMetaLead(facebookPixelId, petition.title, crypto.randomUUID())
+        }
         methods.reset()
         setSignatureNumber(result.signatureNumber)
         const detail: SignatureCreatedDetail = {

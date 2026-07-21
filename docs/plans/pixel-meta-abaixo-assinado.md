@@ -1,11 +1,13 @@
 # Pixel do Meta (Facebook) nos abaixo-assinados
 
-Status: rascunho
+Status: entregue 2026-07-21
 Atualizado em: 2026-07-21
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Site público)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Site público — entregue)
 Impeccable: B — encaixe no admin `Petition` + script na página `/abaixo-assinado/[id]` e no sucesso do `PetitionForm`
 Appetite: ~0,5–1 dia eng; migration + 1 campo admin + componente de script + disparo `Lead` no sucesso
 Responsável: —
+
+_Revisão 2026-07-21: implementação + `/simplify` + `capture-review-debts` — status entregue; unicidade travada; gatilho S10 (fila/retry de `Lead`) em Adiado; débitos de triage registrados em Explicitamente fora._
 
 ## Design (Impeccable)
 
@@ -22,9 +24,9 @@ Brief compacto:
 
 ## Contexto
 
-A página pública `/abaixo-assinado/[id]` (`src/app/(frontend)/abaixo-assinado/[id]/page.tsx`) renderiza o documento `petition` e o formulário cliente `PetitionForm` (`src/components/PetitionForm.tsx`). Assinatura bem-sucedida chama `submitPetitionSignature` e abre `PetitionSuccessDialog` — hoje **sem** telemetria de ads.
+A página pública `/abaixo-assinado/[id]` renderiza o documento `petition` e o formulário cliente `PetitionForm`. Assinatura bem-sucedida chama `submitPetitionSignature` e abre `PetitionSuccessDialog`. Com Pixel configurado: `MetaPixel` dispara `PageView` no load; `trackMetaLead` dispara `Lead` após assinatura ok.
 
-A collection `Petition` (`src/collections/Petition.ts`, grupo admin `Abaixo-assinados`) tem `title`/`subtitle`/`body`/`enabled` e o grupo `form` (título, subtítulo, `consent`). Não há campo de tracking.
+A collection `Petition` (`src/collections/Petition.ts`) expõe o grupo `tracking.facebookPixelId` (admin “Rastreamento / Ads”) além do grupo `form`.
 
 O time de marketing digital pediu (2026-07-21) um campo no formulário do abaixo-assinado no Payload para “adicionar o snippet do Pixel do Facebook” e acompanhar assinaturas no Events Manager / otimizar campanhas.
 
@@ -52,17 +54,14 @@ Fontes: [Meta Pixel Get Started](https://developers.facebook.com/docs/meta-pixel
 - **Pixel por petição (campo no documento `petition`), não global do site.** Campanhas de ads costumam ser por abaixo-assinado/URL; evita Pixel único vazar PageViews de notícias/home. **Rejeitado:** só env `NEXT_PUBLIC_FACEBOOK_PIXEL_ID` site-wide; Global `SiteSettings` único (pode ser fill-in futuro se marketing unificar Dataset).
 - **v1 = browser Pixel only, com os dois eventos:** `PageView` no load da página da petição **e** `Lead` no sucesso do form (confirmado com produto 2026-07-21). Padrão Meta: retargeting de visitantes + conversão de assinatura. Transparência de cookies/Meta fica no polish de `/privacidade` (dependência suave). **Rejeitado nesta fatia:** só `Lead` sem `PageView`; Conversions API; Advanced Matching com e-mail/telefone no browser/servidor; eventos `CompleteRegistration`/`Contact` além de `Lead`; cookie banner / CMP.
 - **`Lead` só após `submitPetitionSignature` ok** (mesmo caminho que abre o diálogo de sucesso). **Rejeitado:** `Lead` no `onSubmit` antes da resposta; `Lead` no page load; thank-you page dedicada (não existe hoje — o sucesso é modal same-page).
+- **Mesmo Dataset em N petições permitido.** O mesmo `facebookPixelId` pode aparecer em várias petições; `content_name` no `Lead` carrega o título da petição para diferenciar no Events Manager. **Rejeitado:** uniqueness forçada no admin.
 - **i18n e naming** seguem o AGENTS.md: identificadores em inglês (`facebookPixelId`, `MetaPixel`, `trackMetaLead`); labels admin e copy em pt-BR (“ID do Pixel do Meta (Facebook)”).
-
-## Questões em aberto
-
-- **Um Pixel por petição vs. mesmo Dataset em várias petições?** **Opções:** A) permitir o mesmo ID em N petições (só conteúdo do `Lead` diferencia) | B) forçar uniqueness. **Recomendação:** A — Dataset único da campanha é o caso comum; `content_name` carrega `petition.id` / título.
 
 ## Abordagem proposta
 
 ```mermaid
 flowchart LR
-  Admin["Payload admin<br/>petition.facebookPixelId"]
+  Admin["Payload admin<br/>tracking.facebookPixelId"]
   Page["abaixo-assinado/[id]<br/>Server Component"]
   Pixel["MetaPixel client<br/>next/script + fbq init/PageView"]
   Form["PetitionForm"]
@@ -86,8 +85,16 @@ Componentes:
 - **`trackMetaLead`** (mesmo módulo lib/utilities ou export do componente): `fbq('track', 'Lead', { content_name }, { eventID? })` se `window.fbq` existir; no-op seguro se Pixel não carregou / adblock.
 - **`PetitionForm`**: após sucesso de `submitPetitionSignature`, chamar `trackMetaLead` com `content_name` = título ou id da petição (e `eventID` = UUID gerado no cliente **só se** quisermos preparar CAPI depois — nesta fatia opcional; preferir gerar UUID e passar já, custo zero, facilita fatia futura).
 - **Página** `abaixo-assinado/[id]/page.tsx`: passar `petition.facebookPixelId` para `<MetaPixel />` quando presente; incluir o campo no `select`/cache se a leitura de documento filtrar campos (hoje `getCachedDocumentById` carrega o doc — confirmar após `generate:types`).
-- **Migration**: `pnpm migrate:create add_petition_facebook_pixel_id` — coluna nullable em `petition` (+ drafts/versions se Payload espelhar). Sem backfill.
-- **Testes:** unit no validador de ID; int opcional na collection validate se o repo já testa Petition; E2E não obrigatório (terceiro externo) — smoke manual com [Meta Pixel Helper](https://developers.facebook.com/docs/meta-pixel/support/pixel-helper).
+- **Migration** `20260721_133531_add_petition_facebook_pixel_id` — colunas `tracking_facebook_pixel_id` / `version_tracking_facebook_pixel_id`; sem backfill.
+- **Testes:** `tests/unit/facebookPixel.unit.spec.ts` (validador + `trackMetaLead`); smoke manual com [Meta Pixel Helper](https://developers.facebook.com/docs/meta-pixel/support/pixel-helper).
+
+## Já resolvido no simplify/critique (não reabrir)
+
+- Normalização única na página (`normalizeFacebookPixelId`) + prop `facebookPixelId` para `PetitionForm` (sem re-normalizar no form).
+- `validate` admin e `beforeChange` em `Petition` reutilizam `normalizeFacebookPixelId`.
+- Validação duplicada removida de `MetaPixel` (prop pré-validada).
+- Tipos one-off removidos (`TrackMetaLeadInput`, `MetaPixelProps`); `trackMetaLead` com assinatura posicional.
+- Blockquote da página da petição suavizado (Impeccable side-tab); `impeccable detect` limpo na superfície.
 
 ## Dependências
 
@@ -113,9 +120,18 @@ Componentes:
 
 ## Adiado com gatilho
 
+- **Fila/retry de `Lead` quando `window.fbq` ainda não carregou** (race submit rápido vs. `afterInteractive`). Revisitar quando smoke com [Meta Pixel Helper](https://developers.facebook.com/docs/meta-pixel/support/pixel-helper) mostrar conversão `Lead` ausente após assinatura bem-sucedida em produção.
 - **Conversions API + dedup com `event_id` compartilhado.** Revisitar quando: marketing reportar perda material de atribuição (iOS/adblock) **ou** Event Match Quality &lt; 6 no Dataset em uso com volume real de ads.
 - **Pixel / Dataset global em `SiteSettings`.** Revisitar quando: o mesmo ID for colado em ≥3 petições e o admin reclamar de repetição.
 - **Cookie banner / CMP.** Revisitar quando: jurídico exigir bloqueio pré-consent de cookies de ads (não só transparência).
+
+## Explicitamente fora (triage capture-review-debts 2026-07-21)
+
+- **Re-validação em `trackMetaLead`** — defesa em profundidade intencional (custo zero).
+- **Flatten `tracking` → campo top-level** — grupo reservado para futuros campos de ads.
+- **`eslint` `@next/next/no-img-element` no `<noscript>` 1×1** — padrão Meta; `next/image` inadequado.
+- **Int test de `Petition.validate`** — opcional no appetite original; sem evidência de regressão.
+- **Mencionar cookies/Meta em `/privacidade`** — absorvido no item existente do roadmap (Site público / O0+); não duplicar plano.
 
 ## Referências
 

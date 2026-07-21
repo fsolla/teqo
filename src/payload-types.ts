@@ -799,6 +799,12 @@ export interface Petition {
     subtitle?: string | null;
     consent: number | Consent;
   };
+  tracking?: {
+    /**
+     * Cole somente o ID numérico do Events Manager (ex.: 123456789012345), não o snippet HTML completo.
+     */
+    facebookPixelId?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -1542,6 +1548,11 @@ export interface PetitionSelect<T extends boolean = true> {
         title?: T;
         subtitle?: T;
         consent?: T;
+      };
+  tracking?:
+    | T
+    | {
+        facebookPixelId?: T;
       };
   updatedAt?: T;
   createdAt?: T;

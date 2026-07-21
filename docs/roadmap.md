@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-21 (B10 click-nav; B11 escala % mapa; A9→B9; B8; Fill-in filtros; B7; Pixel Meta)
+Atualizado em: 2026-07-21 (Pixel Meta entregue; B10 click-nav; B11 escala % mapa; A9→B9; B8; Fill-in filtros; B7)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -81,7 +81,7 @@ flowchart TD
     C2prod --> C5["C5 GOTV (validar)"]
 ```
 
-Paralelizáveis sem seta dura de entrada (além das tracejadas a partir de R2): **B7**, **B10**, **B11**, fill-ins da lista, Pixel Meta (site público). **A9** bloqueia **B9** (seta dura).
+Paralelizáveis sem seta dura de entrada (além das tracejadas a partir de R2): **B7**, **B10**, **B11**, fill-ins da lista. **A9** bloqueia **B9** (seta dura).
 
 ### Sequência por janela
 
@@ -97,12 +97,13 @@ Paralelizáveis sem seta dura de entrada (além das tracejadas a partir de R2): 
 
 **Não cortáveis:** Onda 0 (jurídico/Consent); R1–R2 (sem eles a vertical não reflete a operação real); C2 dados reais; assimetria declarado×estimado (relação de campo); **A9** (sem total esperado da Praça, lista/mapa mentem onde não há liderança — schema do modelo operacional).
 
-**Cortes seguros** (se o prazo apertar, nesta ordem): R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; B6; B7 (mapa ainda mostra escopo de access sem filtro de UI); **B11** (mapa continua em escala absoluta); **B10** (mapa legível sem hover); **B9** (com A9, edição do total fica só no `/editar`); **B8** (F2 polígonos; manter F1 bairros na Praça se já entregue — mapa continua agregado no município); Pixel Meta nos abaixo-assinados (ads do site público; vertical `/campanha` independente); débitos/fill-ins.
+**Cortes seguros** (se o prazo apertar, nesta ordem): R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; B6; B7 (mapa ainda mostra escopo de access sem filtro de UI); **B11** (mapa continua em escala absoluta); **B10** (mapa legível sem hover); **B9** (com A9, edição do total fica só no `/editar`); **B8** (F2 polígonos; manter F1 bairros na Praça se já entregue — mapa continua agregado no município); débitos/fill-ins.
 
 ## Já entregue (resumo)
 
 - **Era Núcleos (2026-07-15 → 2026-07-20)** — MVP + Ciclo 2 (auth `campaignUser`, território A1/A2, baseline TSE A3/A4, overview B1, share C1, PWA D1, geometrias B2, Leaflet B3), C2 apoiadores (eng.), C3 agenda, C6–C11 escala, E1+E3 metas/estratégia, E2 série TSE 2014/2018/2022, A5 conversão/classificação/alavancagem/mobilização, A7 F1–F2, A8 perfis IBGE, fill-ins (reset senha/perfil, visitados recentes, Field Desk polish). Infra e padrões (locks, transações, consent por chave, shells, mapa, dados eleitorais) **são reaproveitados pela remodelagem**; as superfícies e o modelo de Núcleo são substituídos.
 - **Plataforma** — local Postgres + guards, migrations baselined, posts/tags do site público com cache `posts`, Onda 0 textos provisórios + `/privacidade`.
+- **Site público (2026-07-21)** — **Pixel do Meta nos abaixo-assinados** (`tracking.facebookPixelId` no admin `petition`, `PageView`/`Lead` na página pública via `MetaPixel` + `trackMetaLead`; migration `20260721_133531_add_petition_facebook_pixel_id`) — [plano](plans/pixel-meta-abaixo-assinado.md).
 
 ## Supersedidos pela remodelagem (2026-07-20)
 
@@ -148,12 +149,11 @@ Paralelizáveis sem seta dura de entrada (além das tracejadas a partir de R2): 
 
 ## Site público
 
-**Já entregue:** `post`/`tag`, listagens/artigos, seed, cache `posts`; `/privacidade` (texto provisório Onda 0).
+**Já entregue:** `post`/`tag`, listagens/artigos, seed, cache `posts`; `/privacidade` (texto provisório Onda 0); **Pixel do Meta nos abaixo-assinados** ([plano](plans/pixel-meta-abaixo-assinado.md)).
 
 **Próximos:**
 
-- **Pixel do Meta (Facebook) nos abaixo-assinados** — campo `facebookPixelId` no admin `petition` + `PageView`/`Lead` na página pública (não colar snippet HTML) · appetite ~0,5–1 dia · paralelizável · [plano](plans/pixel-meta-abaixo-assinado.md)
-- Textos finais de privacidade + polish O0+ (revalidate globals, DRY Lexical) — mencionar cookies/Meta quando o Pixel estiver em uso _(suave com o item acima)_
+- Textos finais de privacidade + polish O0+ (revalidate globals, DRY Lexical) — mencionar cookies/Meta com Pixel em uso _(suave; ver roadmap Site público)_
 - `Pages` institucionais (bio, mandato, propostas) + hero/copy editáveis
 - Agenda/multimídia via links oficiais; CTA Doar → QueroApoiar
 - Migrar Consent dos fluxos públicos para chave estável
