@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-21 (B6 entregue em código; B12 registrado — aproximar mapa ao filtro; A9+/B7/B9–B11/filtros-auto entregues; débitos B9 → C8 F4)
+Atualizado em: 2026-07-21 (B6 + B8 F1 entregues em código; débitos B8 F1 pós-/simplify absorvidos no plano F2 prep; B12 registrado — aproximar mapa ao filtro; A9+/B7/B9–B11/filtros-auto entregues; débitos B9 → C8 F4)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -114,6 +114,7 @@ Paralelizáveis agora: **B12** (viewport do mapa; B7 já entregue), fill-ins da 
 - **B10 (2026-07-21)** — **Hover/tap no Mapa das Praças** (destaque + `MapFeatureReadout`; desktop click navega; mobile 2º tap; SSA/CMS N>1 → `zoneBreakdown`; `plazasByIbgeCode` / `resolvePlazaMapNavigation`) — [plano](plans/hover-mapa-pracas.md).
 - **B11 (2026-07-21)** — **Escala % dos válidos no Mapa das Praças** (`validVotesByYear` no bundle; seletor `Total (votos)` / `% dos válidos`; domínio fixo 0–100%; 2026 usa válidos 2022; compare desliga %; readout em %) — [plano](plans/escala-percentual-mapa-pracas.md).
 - **B6 (2026-07-21)** — **`BahiaMap` setStyle incremental** (layer GeoJSON estável entre troca de ano/métrica/escala; `pathByKeyRef` + restyle O(2) no hover/select; `fitBounds` só em `mode`/`highlightKeys`; helpers em `bahiaMapStyle.ts`) — [plano](plans/escala-dry-pos-b3.md).
+- **B8 F1 (2026-07-21)** — **Catálogo bairros das Praças-zona** (`plazaZoneNeighborhoods`: Salvador TRE-BA RA 02/2017 + Camaçari curado; fixture+int; card **Bairros desta Praça** no overview de Praças `kind=zona`; sem migration) — [plano](plans/poligonos-pracas-zona.md). **F2 pendente** (F2 prep catálogo ~½ dia + TopoJSON + mapa). Débitos pós-`/simplify`: hidratação via `plazaCatalog`, canônico JSON→TS, teste ordem slugs → F2 prep no plano (S6 CSS compartilhado adiado até F2/R6).
 - **Fill-in filtros-auto (2026-07-21)** — **Filtros auto-aplicados na lista de Praças** (`PlazaFilters`: debounce 1s no `q`, Enter imediato, selects imediatos, remove Buscar; `useTransition` + pending a11y; `shouldUpdatePlazaSearchUrl` + no-op via `buildPlazaFiltersKey`; sem migration) — [plano](plans/filtros-auto-pracas.md). Débitos pós-`/simplify`: sync back/forward `search`↔`state.q` e shell pending compartilhado — gatilhos no plano.
 
 ## Supersedidos pela remodelagem (2026-07-20)
@@ -136,7 +137,7 @@ Paralelizáveis agora: **B12** (viewport do mapa; B7 já entregue), fill-ins da 
 
 - **A6** dobradinha 2026 automática quando o TSE publicar candidaturas · gatilho externo: pós-15/08 · reenquadrar para Praça · [plano](plans/insight-dobradinha-2026.md)
 - **B5 F2–F3** cache CLI compartilhado + factory mun/TI (scripts continuam) · [plano](plans/escala-dry-pos-b2.md)
-- **B8** Polígonos das Praças-zona (Salvador ZE 1–19 / Camaçari ZE 170–171): F1 catálogo zona→bairros + UI na Praça; F2 dissolve IBGE/malha → TopoJSON no mapa · Janela 3 · cortável (F2) · [plano](plans/poligonos-pracas-zona.md)
+- **B8** Polígonos das Praças-zona (Salvador ZE 1–19 / Camaçari ZE 170–171): ~~F1 catálogo zona→bairros + UI na Praça~~ (entregue 2026-07-21); F2 prep catálogo (~½ dia) + dissolve IBGE/malha → TopoJSON no mapa · Janela 3 · cortável (F2) · [plano](plans/poligonos-pracas-zona.md)
 - **B12** Aproximar o Mapa das Praças ao footprint filtrado (`fitToKeys` no `BahiaMap`; sem re-zoom em Ano/Escala) · Janela 1 · cortável · gatilho do B7 · [plano](plans/aproximar-mapa-pracas.md)
 - **C5** operação dia D / GOTV _(validar com produto)_ · design [`Dia-D-GOTV`](design-refs/latest/Dia-D-GOTV.png) · depende de C2 dados reais
 - **D2** push + sino in-app · soft: chave `campanha-notificacoes-push` (Onda 0) · [plano](plans/notifications.md)

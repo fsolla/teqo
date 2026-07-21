@@ -12,6 +12,7 @@ import { PlazaCandidateComparisonTable } from '@/components/campaign/PlazaCandid
 import { PlazaLeadershipsPanel } from '@/components/campaign/PlazaLeadershipsPanel'
 import { PlazaPledgesPanel } from '@/components/campaign/PlazaPledgesPanel'
 import { PlazaStrategyCard } from '@/components/campaign/PlazaStrategyCard'
+import { PlazaZoneNeighborhoodsCard } from '@/components/campaign/PlazaZoneNeighborhoodsCard'
 import { PlazaTabNav } from '@/components/campaign/PlazaTabNav'
 import { PlazaUpdateFeed } from '@/components/campaign/PlazaUpdateFeed'
 import { PlazaUpdateForm } from '@/components/campaign/PlazaUpdateForm'
@@ -153,11 +154,15 @@ const OverviewTab = async ({
   isStaffView: boolean
   payloadUser: PayloadUser
 }) => {
+  const zoneNeighborhoodsCard =
+    view.kind === 'zona' ? <PlazaZoneNeighborhoodsCard plazaSlug={view.slug} /> : null
+
   if (isStaffView && view.strategy) {
     const pledges = await loadPlazaPledges(payload, user, view.id)
     const leadershipVoteTotal = sumStaffPledgeEffectiveTotal(pledges)
     return (
       <div className="flex flex-col gap-6">
+        {zoneNeighborhoodsCard}
         <PlazaStrategyCard
           strategy={view.strategy}
           plazaSlug={view.slug}
@@ -173,19 +178,22 @@ const OverviewTab = async ({
   const ownPledge = leaderPledges.find((pledge) => pledge.plazaID === view.id) ?? null
 
   return (
-    <section className="flex flex-col gap-4 rounded-xl border p-4">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-base font-medium">Seus votos nesta Praça</h2>
-        <p className="text-sm text-muted-foreground">
-          Informe quantos votos você está trazendo. Você pode atualizar o número quando quiser.
-        </p>
-      </div>
-      <DeclareVotesForm
-        plazaID={view.id}
-        currentDeclaredVotes={ownPledge?.declaredVotes ?? null}
-        formAction={declareVotesFormAction}
-      />
-    </section>
+    <div className="flex flex-col gap-6">
+      {zoneNeighborhoodsCard}
+      <section className="flex flex-col gap-4 rounded-xl border p-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-base font-medium">Seus votos nesta Praça</h2>
+          <p className="text-sm text-muted-foreground">
+            Informe quantos votos você está trazendo. Você pode atualizar o número quando quiser.
+          </p>
+        </div>
+        <DeclareVotesForm
+          plazaID={view.id}
+          currentDeclaredVotes={ownPledge?.declaredVotes ?? null}
+          formAction={declareVotesFormAction}
+        />
+      </section>
+    </div>
   )
 }
 

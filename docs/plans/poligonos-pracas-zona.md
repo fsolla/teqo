@@ -1,7 +1,9 @@
 # Polígonos das Praças-zona (Salvador / Camaçari)
 
-Status: rascunho
+Status: F1 entregue em código (2026-07-21); F2 pendente
 Atualizado em: 2026-07-21
+Revisão 2026-07-21: F1 implementada — `plazaZoneNeighborhoods.ts`, fixture+int, `PlazaZoneNeighborhoodsCard` no overview da Praça-zona; mapa inalterado (F2).
+Revisão 2026-07-21 (pós-`/simplify` + capture-review-debts): débitos S1–S3 absorvidos como **F2 prep** (~½ dia, dentro do appetite F2); S4–S10 em Explicitamente fora / Adiado; JR1–JR7 em Já resolvido (não reabrir no simplify).
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B8)
 Impeccable: B — encaixe em `/campanha/pracas/[slug]` (lista de bairros) + `PlazaMapPanel`/`BahiaMap` (polígonos); sem rota nova
 Appetite: ~2,5–3,5 dias eng; F1 catálogo+UI (~1 dia) shipável sozinha; F2 dissolve+TopoJSON+mapa (~1,5–2,5 dias)
@@ -76,7 +78,7 @@ flowchart TD
 
 Componentes:
 
-- **`src/lib/plazaZoneNeighborhoods.ts`** — mapa estático `{ city: 'Salvador'|'Camaçari', zoneNumber, neighborhoods: string[] }` indexado por `plazaSlug` (via `plazaCatalog`); helpers `neighborhoodsForPlazaSlug(slug)`; cabeçalho de proveniência (URL + data da resolução / lista de locais). Fixture `tests/fixtures/plaza-zone-neighborhoods.official.json` + int (19+2 zonas, sem bairro órfão duplicado entre ZE do mesmo município quando a fonte for exclusiva).
+- **`src/lib/plazaZoneNeighborhoods.ts`** — mapa estático `{ city: 'Salvador'|'Camaçari', zoneNumber, neighborhoods: string[] }` indexado por `plazaSlug`; helper `plazaZoneNeighborhoodEntryForSlug(slug)` + `plazaZoneNeighborhoodSourceLabel(source)`; cabeçalho de proveniência (URL + data da resolução / lista de locais). Fixture `tests/fixtures/plaza-zone-neighborhoods.official.json` + int (19+2 zonas, sem bairro órfão duplicado entre ZE do mesmo município quando a fonte for exclusiva). **F2 prep:** refatorar para autorar só `{ plazaSlug, source, neighborhoods[] }` e hidratar `city`/`zoneNumber` de `getPlazaCatalogEntry` (ver seção abaixo).
 - **UI detalhe** (`pracas/[slug]/page.tsx` overview): se `view.kind === 'zona'`, card/lista “Bairros desta Praça” a partir do helper (sem Payload). Copy: fonte TRE / aproximação Camaçari.
 - **`scripts/build-plaza-zone-geometries.mjs`** (`pnpm build:plaza-zone-geometries`): baixa/cache malha de bairros (padrão `downloadToBuffer` / cache `data/geometries/`), filtra município, dissolve por zona via catálogo reconciliado (`topojson` merge como TIs), emite `src/lib/geometries/bahia-plaza-zones.topo.json`; reporta bairros sem match.
 - **`src/lib/bahiaGeometries.ts`** (ou módulo irmão profundo, sem pass-through): `getPlazaZoneFeature(slug)` + tipo da topologia; lazy com o mapa (alinhar B5 F1 se ainda aberto).
@@ -86,10 +88,17 @@ Componentes:
 
 ### Fases
 
-| Fase | Entrega                                          | Appetite      |
-| ---- | ------------------------------------------------ | ------------- |
-| F1   | Catálogo + testes + bloco na Praça               | ~1 dia        |
-| F2   | Spike cobertura malha → script → TopoJSON → mapa | ~1,5–2,5 dias |
+| Fase     | Entrega                                                                 | Appetite      |
+| -------- | ----------------------------------------------------------------------- | ------------- |
+| F1       | Catálogo + testes + bloco na Praça                                      | ~1 dia        |
+| F2 prep  | Hidratação via `plazaCatalog` + canônico JSON→TS + teste ordem de slugs | ~½ dia        |
+| F2       | Spike cobertura malha → script → TopoJSON → mapa                        | ~1,5–2,5 dias |
+
+**F2 prep** (débitos pós-`/simplify`, capture-review-debts 2026-07-21 — não item paralelo no roadmap):
+
+1. **S1 — Hidratar identidade do catálogo:** autorar entradas como `{ plazaSlug, source, neighborhoods[] }`; derivar `city` e `zoneNumber` de `getPlazaCatalogEntry(slug)` em `entry()` ou no read path (padrão `plazaElectionGeographyForSlug`). Reduz ~42 campos duplicados e risco de drift antes do dissolve.
+2. **S2 — Fonte única TS ↔ fixture:** o script `build-plaza-zone-geometries.mjs` (ou gerador irmão) emite `plazaZoneNeighborhoods.ts` a partir de `plaza-zone-neighborhoods.official.json` (ou o inverso com JSON como canônico de evidência). Elimina ~300 linhas espelhadas; `evidenceSha256` permanece no fixture.
+3. **S3 — Ordem de slugs:** int leve `plazaZoneNeighborhoods.map(e => e.plazaSlug)` vs slugs `kind === 'zona'` de `plazaCatalog` (alinha ao snapshot SHA de `plazaCatalog.int.spec.ts`).
 
 ## Dependências
 
@@ -112,8 +121,29 @@ Componentes:
 - **Desenhar 19 polígonos Salvador à mão no QGIS sem catálogo.** Irrepetível e sem teste. **Mitigação:** F1 obrigatória; manual só para gaps Camaçari/ unmatched.
 - **Tratar polígono derivado como limite oficial TSE.** Risco jurídico/comunicação. **Mitigação:** copy “aproximação a partir de bairros / locais de votação; não é limite oficial”.
 
+## Já resolvido no simplify/critique (não reabrir)
+
+- **JR1** — `PlazaZoneNeighborhoodsCard`: um lookup `plazaZoneNeighborhoodEntryForSlug` (sem duplo hit no `entryBySlug`).
+- **JR2** — export `neighborhoodsForPlazaSlug` removido (wrapper redundante).
+- **JR3** — guard do card: `!entry?.neighborhoods.length`.
+- **JR4** — `assertPlazaZoneNeighborhoodCatalogIntegrity` só no módulo (não exportado).
+- **JR5** — testes redundantes de sort e checksum duplicado removidos do int spec.
+- **JR6** — cobertura usa `zonePlazas.length` em vez de `21` fixo.
+- **JR7** — comentário no spec: sem teste de exclusividade Camaçari (fonte curada/aproximada).
+- Impeccable compacto na F1: sem snapshot `.impeccable/critique/` nem P0–P3 abertos nesta superfície; polish visual amplo → **R6**.
+
+## Explicitamente fora (skips `/simplify` + descartes do triage)
+
+- **S4 — Remover assert de integridade no import.** Fail-fast no import é aceitável aqui; int spec já cobre slugs zona. Não mover só para spec sem motivo de perf.
+- **S5 — Incluir `source` no SHA-256 canônico.** `deepEqual` fixture↔código já detecta mudança de `source`; refresh de `evidenceSha256` seria churn sem ganho.
+- **S7 — `PlazaZoneNeighborhoodCity` vs `ZONE_PLAZA_CITIES`.** Absorvido por S1 se F2 prep rodar; não tipo paralelo isolado.
+- **S8 — Proveniência em 3 camadas** (header TS, fixture `provenance`, `plazaZoneNeighborhoodSourceLabel`). Padrão aceitável para catálogo com copy UI distinta por `source`.
+- **S9 — Double gate** `view.kind === 'zona'` na página + card `null`. Defesa em profundidade; não simplificar só por DRY.
+- **S10 — `key={neighborhood}` no card.** Seguro com exclusividade Salvador testada; prefixar slug só se QA reportar colisão intra-zona.
+
 ## Adiado com gatilho
 
+- **S6 — CSS compartilhado lista zona** (`PlazaMapPanel` zone breakdown ↔ `PlazaZoneNeighborhoodsCard`). **Gatilho:** F2 alterar `PlazaMapPanel`/`BahiaMap` ou R6 citar duplicação visual em ≥2 superfícies de zona.
 - **Malha GeoSalvador em vez de IBGE.** Revisitar quando: spike F2 mostrar unmatched críticos em Salvador (>10% bairros TRE sem polígono).
 - **Refino fino de Camaçari (povoados).** Revisitar quando: coordenação de campo reportar confusão operacional entre ZE 170/171 no mapa.
 - **Camada ZE estadual (B4 antigo).** Revisitar quando: produto pedir mapa de ZE fora de SSA/CMS (improvável neste ciclo).
