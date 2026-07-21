@@ -9,9 +9,8 @@ import { ChoroplethLegend } from '@/components/campaign/ChoroplethLegend'
 import { MapFeatureReadout } from '@/components/campaign/MapFeatureReadout'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import { computeChoroplethMax } from '@/lib/bahiaMapStyle'
 import {
-  choroplethMaxAbsValue,
-  choroplethMaxValue,
   computeValidVoteShares,
   divergingGradientCss,
 } from '@/lib/choroplethColorScale'
@@ -67,15 +66,14 @@ export const PlazaMapPanel = ({
     return rawValues
   }, [percentScaleActive, rawValues, validVotesForYear])
 
-  const displayMax = useMemo(
-    () =>
-      comparisonActive
-        ? choroplethMaxAbsValue(displayValues)
-        : percentScaleActive
-          ? 1
-          : choroplethMaxValue(displayValues),
-    [comparisonActive, displayValues, percentScaleActive],
-  )
+  const displayMax = useMemo(() => {
+    const fillMode = comparisonActive ? 'diverging' : 'sequential'
+    return computeChoroplethMax(
+      displayValues,
+      fillMode,
+      percentScaleActive ? 1 : undefined,
+    )
+  }, [comparisonActive, displayValues, percentScaleActive])
 
   const metricLabel = useMemo(() => {
     if (comparisonActive) {

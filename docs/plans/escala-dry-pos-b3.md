@@ -1,7 +1,7 @@
 # Escala e DRY pós-B3 (Leaflet / coroplético)
 
-Status: registrado no roadmap (fases pendentes)
-Atualizado em: 2026-07-21 (`capture-review-debts` pós-B11 `/simplify`: troca `scaleMode` absorvida em Fase 1; pós-B10: hover/select)
+Status: entregue em código (2026-07-21)
+Atualizado em: 2026-07-21 (B6 implementado + triage `capture-review-debts` pós-`/simplify`: gatilhos absorvidos; sem item novo no roadmap)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B6)
 Impeccable: A — N/A (sem superfície UI nova; otimização do renderer Leaflet existente)
 Appetite: ~1–1,5 dia eng (Fase 1 única: métrica/ano + hover/select incremental; PR único)
@@ -17,9 +17,9 @@ Os revisores (performance) marcaram como **importante e maior que simplify** os 
 
 2. **Hover/select no mapa de Praças (B10) ainda faz full-scan de estilo.** `mouseover` / `selectedKey` disparam `refreshLayerStyles` → `applyLayerStyles` → `eachLayer` + `setStyle` em todos os polígonos. O simplify pós-B10 já deduplica hover repetido e evita double-refresh quando hover “possui” o estilo, mas o hot path continua O(n) por movimento do cursor. O caminho correto é restyle **incremental** (2-path: anterior + atual, ou `Map<featureKey, PathLayer>`) — mesma refatoração estrutural da Fase 1.
 
-**Já resolvido no simplify/critique (não reabrir):** B5 F1 lazy split mun/TI + `dynamic(..., { ssr: false })`; `createCampaignClientDynamic`; choropleth single-resolve (`resolveChoroplethNuclei`); DRY `geographyForCityNames` → `resolveNucleusElectionGeography`; dashboard `toNucleusElectionGeographyInput`; `ChoroplethMapPanel` passa `max`; detail map `useMemo`; highlight bounds O(k); type alignment `NucleusChoroplethNucleus`. **Pós-B10 simplify:** dedup de hover (`styleContextRef.hoveredKey` único); merge dos effects de callback-ref; `emphasizeFeature` compartilhado; skip de refresh quando hover inalterado ou hover possui estilo; `formatElectionNumber` na zone breakdown de `PlazaMapPanel`; `useMemo` de `selectedNavigation`.
+**Já resolvido no simplify/critique (não reabrir):** B5 F1 lazy split mun/TI + `dynamic(..., { ssr: false })`; `createCampaignClientDynamic`; choropleth single-resolve (`resolveChoroplethNuclei`); DRY `geographyForCityNames` → `resolveNucleusElectionGeography`; dashboard `toNucleusElectionGeographyInput`; `ChoroplethMapPanel` passa `max`; detail map `useMemo`; highlight bounds O(k); type alignment `NucleusChoroplethNucleus`. **Pós-B10 simplify:** dedup de hover (`styleContextRef.hoveredKey` único); merge dos effects de callback-ref; `emphasizeFeature` compartilhado; skip de refresh quando hover inalterado ou hover possui estilo; `formatElectionNumber` na zone breakdown de `PlazaMapPanel`; `useMemo` de `selectedNavigation`. **B6 entrega:** split effects (`[mode]` mount vs `[values, fillMode, scaleMax, highlightKey, mode]` restyle); `pathByKeyRef` + hover/select 2-path; `fitBounds` só em `mode`/`highlightKey`; helpers puros em `src/lib/bahiaMapStyle.ts` + `tests/unit/bahiaMapStyle.unit.spec.ts`; `PlazaMapPanel.displayMax` via `computeChoroplethMax`. **Pós-B6 `/simplify`:** remoção de `keyProperty` morto em `LayerStyleContext`; DRY `keyPropertyForMode` / `featureKeyFromProperties`; fix selectedKey após `mouseout` com hover; `syncMountStyleContext()`; remoção de `mode` não usado em `buildLayerStyleContext`.
 
-**Explicitamente fora (revisores pediram skip ou triage descartou):** colapsar shells finos `DashboardMap` / `NucleusOverviewMap`; `CAMPAIGN_BRAND_PRIMARY` para `#c51414`; `codeForIdentityTerritory` em `bahiaTerritories.ts`; `catch` vazio no `BahiaMap` (logging opcional); flake int `campaignNucleusListOverview` (`totalFiltered` — isolamento de DB pré-existente); métricas E1/E2 no coroplético v1 (decisão de produto B3); critique Impeccable formal nas três superfícies (polish leve sem P0–P3). **Triage `capture-review-debts` 2026-07-21 pós-B10:** extrair `DivergingChoroplethLegend` (1 consumer — polish opcional em **R6**); helper `scrollIntoView` (1 call site em `#plaza-zone-breakdown`); throttle/defer do `setState` do readout no hover (trade-off produto; sem evidência de perf); mudar contrato activate/select para remover `selectedKeyRef` (intencional para 2º tap mobile — gatilho: 3º consumidor do mapa precisar API diferente); migração campanha-wide `Intl` → `formatElectionNumber` (B10 zone list já corrigida; gatilho: **E6** F4 em núcleos ou 3ª superfície Praça com formatter local).
+**Explicitamente fora (revisores pediram skip ou triage descartou):** colapsar shells finos `DashboardMap` / `NucleusOverviewMap`; `CAMPAIGN_BRAND_PRIMARY` para `#c51414`; `codeForIdentityTerritory` em `bahiaTerritories.ts`; `catch` vazio no `BahiaMap` (logging opcional); flake int `campaignNucleusListOverview` (`totalFiltered` — isolamento de DB pré-existente); métricas E1/E2 no coroplético v1 (decisão de produto B3); critique Impeccable formal nas três superfícies (polish leve sem P0–P3). **Triage `capture-review-debts` 2026-07-21 pós-B10:** extrair `DivergingChoroplethLegend` (1 consumer — polish opcional em **R6**); helper `scrollIntoView` (1 call site em `#plaza-zone-breakdown`); throttle/defer do `setState` do readout no hover (trade-off produto; sem evidência de perf); mudar contrato activate/select para remover `selectedKeyRef` (intencional para 2º tap mobile — gatilho: 3º consumidor do mapa precisar API diferente); migração campanha-wide `Intl` → `formatElectionNumber` (B10 zone list já corrigida; gatilho: **E6** F4 em núcleos ou 3ª superfície Praça com formatter local). **Triage `capture-review-debts` 2026-07-21 pós-B6:** `useReducer` para contexto de estilo (1 call site — YAGNI); refactor `highlightKeys` string↔`Set` sem ganho medido; brand tokens / `DivergingChoroplethLegend` → **R6** (inalterado).
 
 ## Objetivos
 
@@ -89,13 +89,16 @@ flowchart TD
 
 ## Rabbit holes
 
-- **Refatorar todos os embeds de uma vez.** `NucleusOverviewMap`, `DashboardMap` e `PlazaMapPanel` compartilham `BahiaMap` — mudança de API de estilo pode quebrar highlight programático. **Mitigação:** Fase 1 valida nos três embeds + mapa de Praças com hover; não introduzir `react-leaflet`.
+- **Refatorar todos os embeds de uma vez.** Pós-remodelagem só `PlazaMapPanel` consome `BahiaMap` — validar troca de ano/escala/compare + hover denso. **Mitigação:** um renderer, índice de layers compartilhado; `territory` mode mantido na API.
 - **Separar componente só para Praças.** Duplicar `BahiaMap` para otimizar hover fragmenta o coroplético. **Mitigação:** um renderer, índice de layers compartilhado.
 
 ## Adiado com gatilho
 
 - **Contrato activate/select sem `selectedKeyRef`.** Revisitar quando um 3º consumidor do mapa precisar semântica diferente de 2º tap mobile (hoje intencional em B10).
 - **`formatElectionNumber` campanha-wide.** Revisitar via **E6** F4 (núcleos) ou quando uma 3ª superfície Praça reintroduzir `Intl.NumberFormat` local.
+- **Remover `restyleAllPaths()` pós-mount assíncrono.** Hoje necessário para race entre mount do GeoJSON e props iniciais; revisitar se Leaflet expuser callback estável pós-`addData` ou se profiling mostrar custo irrelevante.
+- **Restyle incremental só em mudança de `highlightKey` (sem `restyleAllPaths`).** Revisitar quando highlight programático (ex. deep-link futuro) gerar jank medido em DevTools.
+- **Cache de bounds em `fitMapToHighlights`.** Revisitar com **B12** (viewport) ou se `fitBounds` repetido aparecer no profiling após filtro URL estável.
 
 ## Referências
 
@@ -104,8 +107,8 @@ flowchart TD
 - `docs/plans/escala-dry-pos-b2.md` — B5 F1/F3
 - `docs/plans/escala-dry-pos-a4.md` — A7 F4 (query duplicada)
 - `src/components/campaign/BahiaMap.tsx` — effect que rebuilda layer; `applyLayerStyles` / hover B10
-- `src/components/campaign/PlazaMapPanel.tsx` — consumidor B10 com `selectedKey` + readout
-- `src/components/campaign/ChoroplethMapPanel.tsx` — troca de métrica
+- `src/components/campaign/PlazaMapPanel.tsx` — consumidor B10/B11 com `selectedKey` + readout
+- `src/components/campaign/ChoroplethLegend.tsx` — legenda do mapa de Praças
 - `docs/plans/hover-mapa-pracas.md` — plano pai B10 (navegação fora de escopo B6)
 - `src/lib/bahiaGeometries.ts` — lazy loaders
 - AGENTS.md — naming inglês; B3 sem migration

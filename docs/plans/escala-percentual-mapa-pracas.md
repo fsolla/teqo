@@ -26,11 +26,11 @@ O **Mapa das Praças** (`PlazaMapPanel` em `/campanha/pracas`) pinta municípios
 
 Os votos nominais já vêm de `loadCandidateVotesByCityZone` + `sumVotesForGeography` em `plazaMapData.ts`. O denominador pedido — **votos válidos** (sem nulos, brancos nem abstenções) — já existe em `electionTally.votosValidos` (seed TSE; usado no detalhe via `plazaElectoralBaseline` / `PlazaBaselineCard`). Pedido de produto (2026-07-21): opção de escala **percentual na Praça**, domínio fixo **0% → 100%**.
 
-Não cobre: filtro URL (**B7**), hover (**B10**), `setStyle` incremental (**B6**), polígonos-zona (**B8**).
+Não cobre: filtro URL (**B7**), hover (**B10**), polígonos-zona (**B8**). ~~`setStyle` incremental~~ → **B6 ✓**.
 
 **Já resolvido no simplify/critique (não reabrir):** bug legenda 0–100% vs mapa normalizado pelo max local (`scaleMax` em `BahiaMap`); lookup 2026→2022 redundante no panel (bundle já aliasa `validVotesByYear['2026']`); `PLAZA_MAP_SCALE_MODES`; `displayMax` memoizado; `Promise.all` nos loads TSE por ano (+ compare) em `loadPlazaMapBundle`; guard `valid > 0` em `computeValidVoteShares`; polish leve de copy/controle (sem critique P0–P3 formal).
 
-**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B11):** `formatValidVoteShare` compartilhado com `PlazaBaselineCard` (gatilho: 3ª superfície com % válidos); loader genérico `loadTallyByCityZone` (gatilho: 3ª variante de tally); primitivo `validVoteShare` em `electionInsights` (gatilho: 3º call site); `maxLabel` em vez de `formatMax` na legenda; mover `computeValidVoteShares` de módulo; int test de agregação share além de keys 2026→2022 (gatilho: próximo toque em `plazaMapData`); cache cross-request de tally (gatilho: profiling TTFB); rebuild GeoJSON ao trocar `scaleMode` → **B6** [escala-dry-pos-b3.md](escala-dry-pos-b3.md).
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B11):** `formatValidVoteShare` compartilhado com `PlazaBaselineCard` (gatilho: 3ª superfície com % válidos); loader genérico `loadTallyByCityZone` (gatilho: 3ª variante de tally); primitivo `validVoteShare` em `electionInsights` (gatilho: 3º call site); `maxLabel` em vez de `formatMax` na legenda; mover `computeValidVoteShares` de módulo; int test de agregação share além de keys 2026→2022 (gatilho: próximo toque em `plazaMapData`); cache cross-request de tally (gatilho: profiling TTFB); ~~rebuild GeoJSON ao trocar `scaleMode`~~ → **B6 ✓** [escala-dry-pos-b3.md](escala-dry-pos-b3.md).
 
 ## Objetivos
 
@@ -90,7 +90,7 @@ Componentes:
 - Hover com readout → **B10** ([hover-mapa-pracas.md](hover-mapa-pracas.md)); quando ambos existirem, o readout em modo % deve mostrar % (não só votos) — coordenar na implementação do que estiver segundo.
 - Diff percentual no modo Comparar → adiado (rabbit hole abaixo).
 - Polígonos Praças-zona → **B8**.
-- `setStyle` incremental → **B6**.
+- ~~`setStyle` incremental~~ → **B6 ✓**.
 - Alterar classificação territorial A5 / limiares — já entregue; só compartilha a noção de `% dos válidos`.
 
 ## Rabbit holes

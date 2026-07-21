@@ -13,14 +13,18 @@ import {
   type TerritoryGeometryModule,
 } from '@/lib/bahiaGeometries'
 import {
-  choroplethFillColor,
-  choroplethMaxAbsValue,
-  choroplethMaxValue,
-  divergingFillColor,
-} from '@/lib/choroplethColorScale'
+  buildHighlightSet,
+  buildLayerStyleContext,
+  featureKeyFromProperties,
+  keyPropertyForMode,
+  resolvePathStyle,
+  type BahiaMapFillMode,
+  type ChoroplethValues,
+  type LayerStyleContext,
+} from '@/lib/bahiaMapStyle'
 import { cn } from '@/lib/utils'
 
-export type ChoroplethValues = Record<string, number>
+export type { BahiaMapFillMode, ChoroplethValues }
 
 const BAHIA_BOUNDS: L.LatLngBoundsExpression = [
   [-18.5, -46.8],
@@ -29,41 +33,10 @@ const BAHIA_BOUNDS: L.LatLngBoundsExpression = [
 
 export type BahiaMapMode = 'municipality' | 'territory'
 
-type FeatureKeyProperty = 'codarea' | 'code'
-
-const featureKey = (
-  properties: Record<string, string> | undefined,
-  keyProperty: FeatureKeyProperty,
-): string | undefined => properties?.[keyProperty]
-
-export type BahiaMapFillMode = 'sequential' | 'diverging'
-
 export type BahiaMapFeatureInfo = {
   key: string
   name: string
 }
-
-type FeatureStyleInput = {
-  metric: number
-  highlighted: boolean
-  fillMode: BahiaMapFillMode
-  max: number
-}
-
-const getFeatureStyle = ({
-  metric,
-  highlighted,
-  fillMode,
-  max,
-}: FeatureStyleInput): L.PathOptions => ({
-  weight: highlighted ? 2.5 : 1,
-  color: highlighted ? '#c51414' : '#a8a29e',
-  fillColor:
-    fillMode === 'diverging'
-      ? divergingFillColor(metric, max)
-      : choroplethFillColor(metric, max),
-  fillOpacity: highlighted ? 0.92 : metric !== 0 ? 0.78 : 0.35,
-})
 
 type BahiaMapProps = {
   mode: BahiaMapMode
@@ -81,51 +54,41 @@ type BahiaMapProps = {
   ariaLabel: string
 }
 
-type LayerStyleContext = {
-  values: ChoroplethValues
-  fillMode: BahiaMapFillMode
-  max: number
-  keyProperty: FeatureKeyProperty
-  highlightSet: Set<string>
-  selectedKey: string | null
-  hoveredKey: string | null
-}
-
-const resolveLayerKey = (
-  layer: L.Layer,
-  keyProperty: FeatureKeyProperty,
-): string | undefined => {
-  if (!(layer instanceof L.Path)) return undefined
-  const feature = (layer as L.Path & { feature?: Feature }).feature
-  const properties = feature?.properties as Record<string, string> | undefined
-  return featureKey(properties, keyProperty)
-}
-
-const applyLayerStyles = (layer: L.GeoJSON, context: LayerStyleContext) => {
-  const activeKey = context.hoveredKey ?? context.selectedKey
-
-  layer.eachLayer((featureLayer) => {
-    if (!(featureLayer instanceof L.Path)) return
-
-    const key = resolveLayerKey(featureLayer, context.keyProperty)
-    const metric = key ? (context.values[key] ?? 0) : 0
-    const highlighted = key
-      ? context.highlightSet.has(key) || key === activeKey
-      : false
-
-    featureLayer.setStyle(
-      getFeatureStyle({
-        metric,
-        highlighted,
-        fillMode: context.fillMode,
-        max: context.max,
-      }),
-    )
-  })
-}
-
 const getPointerType = (event: L.LeafletMouseEvent, fallback = 'mouse') =>
   event.originalEvent instanceof PointerEvent ? event.originalEvent.pointerType : fallback
+
+const fitMapToHighlights = (
+  map: L.Map,
+  mode: BahiaMapMode,
+  highlightSet: Set<string>,
+  geometryModule: MunicipalityGeometryModule | TerritoryGeometryModule,
+) => {
+  if (highlightSet.size === 0) {
+    map.fitBounds(BAHIA_BOUNDS, { padding: [16, 16] })
+    return
+  }
+
+  const highlightedFeatures =
+    mode === 'municipality'
+      ? [...highlightSet].flatMap((key) => {
+          const feature = (geometryModule as MunicipalityGeometryModule).getMunicipalityFeature(key)
+          return feature ? [feature] : []
+        })
+      : [...highlightSet].flatMap((key) => {
+          const feature = (geometryModule as TerritoryGeometryModule).getTerritoryFeature(key)
+          return feature ? [feature] : []
+        })
+
+  if (highlightedFeatures.length === 0) {
+    map.fitBounds(BAHIA_BOUNDS, { padding: [16, 16] })
+    return
+  }
+
+  const highlightBounds = L.geoJSON(highlightedFeatures).getBounds()
+  if (highlightBounds.isValid()) {
+    map.fitBounds(highlightBounds, { padding: [24, 24], maxZoom: 10 })
+  }
+}
 
 export const BahiaMap = ({
   mode,
@@ -143,23 +106,74 @@ export const BahiaMap = ({
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layerRef = useRef<L.GeoJSON | null>(null)
+  const geometryModuleRef = useRef<MunicipalityGeometryModule | TerritoryGeometryModule | null>(null)
+  const pathByKeyRef = useRef<Map<string, L.Path>>(new Map())
   const styleContextRef = useRef<LayerStyleContext | null>(null)
+  const geometryReadyRef = useRef(false)
   const touchPinnedRef = useRef(false)
   const onFeatureSelectRef = useRef(onFeatureSelect)
   const onFeatureActivateRef = useRef(onFeatureActivate)
+  const stylePropsRef = useRef({
+    values,
+    fillMode,
+    scaleMax,
+    highlightKey: '',
+    selectedKey,
+  })
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const highlightKey = useMemo(() => highlightKeys.slice().sort().join(','), [highlightKeys])
+
+  stylePropsRef.current = {
+    values,
+    fillMode,
+    scaleMax,
+    highlightKey,
+    selectedKey,
+  }
 
   useEffect(() => {
     onFeatureSelectRef.current = onFeatureSelect
     onFeatureActivateRef.current = onFeatureActivate
   }, [onFeatureActivate, onFeatureSelect])
 
-  const refreshLayerStyles = () => {
-    const layer = layerRef.current
+  const restyleFeature = (key: string) => {
     const context = styleContextRef.current
-    if (!layer || !context) return
-    applyLayerStyles(layer, context)
+    const path = pathByKeyRef.current.get(key)
+    if (!context || !path) return
+    path.setStyle(resolvePathStyle(context, key))
+  }
+
+  const restyleAllPaths = () => {
+    const context = styleContextRef.current
+    if (!context) return
+
+    for (const [key, path] of pathByKeyRef.current) {
+      path.setStyle(resolvePathStyle(context, key))
+    }
+  }
+
+  const setHoveredKey = (nextKey: string | null, bringToFrontLayer?: L.Path) => {
+    const context = styleContextRef.current
+    if (!context) return
+
+    const previousKey = context.hoveredKey
+    if (previousKey === nextKey) return
+
+    if (previousKey) {
+      restyleFeature(previousKey)
+    }
+
+    context.hoveredKey = nextKey
+
+    if (nextKey) {
+      restyleFeature(nextKey)
+      ;(bringToFrontLayer ?? pathByKeyRef.current.get(nextKey))?.bringToFront()
+      return
+    }
+
+    if (context.selectedKey && context.selectedKey !== previousKey) {
+      restyleFeature(context.selectedKey)
+    }
   }
 
   useEffect(() => {
@@ -193,7 +207,10 @@ export const BahiaMap = ({
       map.remove()
       mapRef.current = null
       layerRef.current = null
+      geometryModuleRef.current = null
+      pathByKeyRef.current = new Map()
       styleContextRef.current = null
+      geometryReadyRef.current = false
     }
   }, [])
 
@@ -203,6 +220,7 @@ export const BahiaMap = ({
 
     let cancelled = false
     setStatus('loading')
+    geometryReadyRef.current = false
 
     const renderLayer = async () => {
       try {
@@ -214,60 +232,37 @@ export const BahiaMap = ({
         if (cancelled) return
 
         layerRef.current?.remove()
+        pathByKeyRef.current = new Map()
 
-        const max =
-          scaleMax ??
-          (fillMode === 'diverging' ? choroplethMaxAbsValue(values) : choroplethMaxValue(values))
-        const keyProperty: FeatureKeyProperty = mode === 'municipality' ? 'codarea' : 'code'
-        const highlightSet = new Set(
-          highlightKey.length > 0 ? highlightKey.split(',').filter(Boolean) : [],
-        )
+        geometryModuleRef.current = geometryModule
 
-        const styleContext: LayerStyleContext = {
-          values,
-          fillMode,
-          max,
-          keyProperty,
-          highlightSet,
-          selectedKey,
-          hoveredKey: null,
+        const keyProperty = keyPropertyForMode(mode)
+        const syncMountStyleContext = () => {
+          styleContextRef.current = buildLayerStyleContext({
+            ...stylePropsRef.current,
+            hoveredKey: null,
+          })
         }
-        styleContextRef.current = styleContext
 
-        const emphasizeFeature = (featureLayer: L.Path, nextKey: string) => {
-          const context = styleContextRef.current
-          if (!context) return
-
-          const alreadyEmphasized = context.hoveredKey === nextKey
-          context.hoveredKey = nextKey
-          if (!alreadyEmphasized) {
-            refreshLayerStyles()
-            featureLayer.bringToFront()
-          }
-        }
+        syncMountStyleContext()
+        const mountContext = styleContextRef.current!
 
         const layer = L.geoJSON([...geometryModule.features], {
           style: (feature?: Feature) => {
             const properties = feature?.properties as Record<string, string> | undefined
-            const key = featureKey(properties, keyProperty)
-            const metric = key ? (values[key] ?? 0) : 0
-            const highlighted = key ? highlightSet.has(key) || key === selectedKey : false
-
-            return getFeatureStyle({
-              metric,
-              highlighted,
-              fillMode,
-              max,
-            })
+            const key = featureKeyFromProperties(properties, keyProperty)
+            const context = styleContextRef.current ?? mountContext
+            return resolvePathStyle(context, key ?? '')
           },
           onEachFeature: (feature, featureLayer) => {
             if (!(featureLayer instanceof L.Path)) return
 
             const properties = feature.properties as Record<string, string> | undefined
-            const key = featureKey(properties, keyProperty)
+            const key = featureKeyFromProperties(properties, keyProperty)
             if (!key) return
 
             const name = properties?.name ?? key
+            pathByKeyRef.current.set(key, featureLayer)
 
             featureLayer.on('mouseover', (event) => {
               const pointerType = getPointerType(event)
@@ -279,23 +274,20 @@ export const BahiaMap = ({
 
               if (styleContextRef.current?.hoveredKey === key) return
 
-              emphasizeFeature(featureLayer, key)
+              setHoveredKey(key, featureLayer)
               onFeatureSelectRef.current?.({ key, name })
             })
 
             featureLayer.on('mouseout', () => {
               if (touchPinnedRef.current) return
-              if (styleContextRef.current) {
-                styleContextRef.current.hoveredKey = null
-              }
-              refreshLayerStyles()
+              setHoveredKey(null)
               onFeatureSelectRef.current?.(null)
             })
 
             featureLayer.on('click', (event) => {
               touchPinnedRef.current = getPointerType(event, 'mouse') === 'touch'
 
-              emphasizeFeature(featureLayer, key)
+              setHoveredKey(key, featureLayer)
               onFeatureActivateRef.current?.(key)
               onFeatureSelectRef.current?.({ key, name })
             })
@@ -304,34 +296,19 @@ export const BahiaMap = ({
 
         layer.addTo(map)
         layerRef.current = layer
-
         map.invalidateSize()
 
-        if (highlightSet.size > 0) {
-          const highlightedFeatures =
-            mode === 'municipality'
-              ? [...highlightSet].flatMap((key) => {
-                  const feature = (
-                    geometryModule as MunicipalityGeometryModule
-                  ).getMunicipalityFeature(key)
-                  return feature ? [feature] : []
-                })
-              : [...highlightSet].flatMap((key) => {
-                  const feature = (geometryModule as TerritoryGeometryModule).getTerritoryFeature(
-                    key,
-                  )
-                  return feature ? [feature] : []
-                })
-          if (highlightedFeatures.length > 0) {
-            const highlightBounds = L.geoJSON(highlightedFeatures).getBounds()
-            if (highlightBounds.isValid()) {
-              map.fitBounds(highlightBounds, { padding: [24, 24], maxZoom: 10 })
-            }
-          }
-        } else {
-          map.fitBounds(BAHIA_BOUNDS, { padding: [16, 16] })
-        }
+        syncMountStyleContext()
+        restyleAllPaths()
 
+        fitMapToHighlights(
+          map,
+          mode,
+          styleContextRef.current!.highlightSet,
+          geometryModule,
+        )
+
+        geometryReadyRef.current = true
         setStatus('ready')
       } catch {
         if (!cancelled) setStatus('error')
@@ -344,17 +321,61 @@ export const BahiaMap = ({
       cancelled = true
       layerRef.current?.remove()
       layerRef.current = null
-      styleContextRef.current = null
+      pathByKeyRef.current = new Map()
+      geometryModuleRef.current = null
+      geometryReadyRef.current = false
     }
-  }, [fillMode, highlightKey, mode, scaleMax, values])
+    // Geometry layer rebuilds only when `mode` changes; metric/hover updates use separate effects.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional [mode]-only mount
+  }, [mode])
+
+  useEffect(() => {
+    if (!geometryReadyRef.current) return
+
+    const map = mapRef.current
+    const geometryModule = geometryModuleRef.current
+    if (!map || !geometryModule || !layerRef.current) return
+
+    fitMapToHighlights(map, mode, buildHighlightSet(highlightKey), geometryModule)
+  }, [highlightKey, mode])
+
+  useEffect(() => {
+    const previousContext = styleContextRef.current
+    const context = buildLayerStyleContext({
+      values,
+      fillMode,
+      scaleMax,
+      highlightKey,
+      selectedKey,
+      hoveredKey: previousContext?.hoveredKey ?? null,
+    })
+    styleContextRef.current = context
+
+    if (pathByKeyRef.current.size === 0) return
+    restyleAllPaths()
+    // `selectedKey` changes use the dedicated 2-path effect below (not full O(n) restyle).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedKey excluded on purpose
+  }, [values, fillMode, scaleMax, highlightKey, mode])
 
   useEffect(() => {
     const context = styleContextRef.current
-    if (!context || context.selectedKey === selectedKey) return
+    if (!context || pathByKeyRef.current.size === 0) {
+      if (context) context.selectedKey = selectedKey
+      return
+    }
+    if (context.selectedKey === selectedKey) return
 
+    const previousSelected = context.selectedKey
     context.selectedKey = selectedKey
+
     if (context.hoveredKey) return
-    refreshLayerStyles()
+
+    if (previousSelected) {
+      restyleFeature(previousSelected)
+    }
+    if (selectedKey) {
+      restyleFeature(selectedKey)
+    }
   }, [selectedKey])
 
   return (

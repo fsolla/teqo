@@ -1,13 +1,13 @@
 # Hover no Mapa das Praças (destaque + total de votos + navegação)
 
 Status: entregue 2026-07-21 (branch; deploy pendente com remodelagem)
-Atualizado em: 2026-07-21 (navegação: desktop click / mobile 2º tap; débitos perf → B6)
+Atualizado em: 2026-07-21 (navegação: desktop click / mobile 2º tap; B6 ✓ setStyle incremental)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B10 — entregue 2026-07-21)
 Impeccable: B — encaixe em `PlazaMapPanel` / `BahiaMap` (sem rota nova)
 Appetite: ~0,5–1 dia eng; handlers Leaflet + faixa + mapa ibge→slug + teste/checklist
 Responsável: —
 
-_Revisão 2026-07-21 (pós-implementação + `/simplify`): `BahiaMap` com `onFeatureSelect` / `onFeatureActivate`; `MapFeatureReadout`; `plazasByIbgeCode` + `resolvePlazaMapNavigation`; SSA/CMS N>1 → scroll `#plaza-zone-breakdown`. Cleanup: dedup hover, merge effects, `emphasizeFeature`. Débito hot path O(n) `eachLayer` → **B6** ([escala-dry-pos-b3.md](escala-dry-pos-b3.md))._
+_Revisão 2026-07-21 (pós-implementação + `/simplify`): `BahiaMap` com `onFeatureSelect` / `onFeatureActivate`; `MapFeatureReadout`; `plazasByIbgeCode` + `resolvePlazaMapNavigation`; SSA/CMS N>1 → scroll `#plaza-zone-breakdown`. Cleanup: dedup hover, merge effects, `emphasizeFeature`. Débito hot path O(n) `eachLayer` → **B6 ✓** ([escala-dry-pos-b3.md](escala-dry-pos-b3.md))._
 
 ## Design (Impeccable)
 
@@ -28,7 +28,7 @@ O **Mapa das Praças** (`PlazaMapPanel` em `/campanha/pracas`) já pinta municí
 
 Pedido de produto (2026-07-21): hover destaca + mostra votos; **click navega**. Em mobile (sem hover): **primeiro toque seleciona** (mesmo readout); **segundo toque na já selecionada** navega.
 
-Não cobre: filtro URL (**B7**), `setStyle` incremental ao trocar ano (**B6**), polígonos por zona (**B8**).
+Não cobre: filtro URL (**B7**), polígonos por zona (**B8**). ~~`setStyle` incremental ao trocar ano~~ → **B6 ✓**.
 
 ## Objetivos
 
@@ -78,13 +78,13 @@ Componentes:
 ## Dependências
 
 - **Dura:** R2 (mapa Praças) — entregue.
-- **Suave:** A9 (métrica 2026); B6 (`setStyle`); B7 (filtro → `plazasByIbgeCode` só do conjunto filtrado); B8 (aí o 2º tap em SSA/CMS pode passar a ir à Praça-zona).
+- **Suave:** A9 (métrica 2026); ~~B6 (`setStyle`)~~ entregue; B7 (filtro → `plazasByIbgeCode` só do conjunto filtrado); B8 (aí o 2º tap em SSA/CMS pode passar a ir à Praça-zona).
 - Reusa: `PlazaMapPanel`, `BahiaMap`, `plazaMapData`, formatters existentes.
 
 ## Não escopo
 
 - Filtrar mapa pela URL da lista → **B7** ([mapa-pracas-filtrado.md](mapa-pracas-filtrado.md)).
-- Rebuild/perf do layer ao trocar ano → **B6** ([escala-dry-pos-b3.md](escala-dry-pos-b3.md)).
+- ~~Rebuild/perf do layer ao trocar ano~~ → **B6 ✓** ([escala-dry-pos-b3.md](escala-dry-pos-b3.md)).
 - Polígonos / hover por Praça-zona SSA/CMS → **B8** ([poligonos-pracas-zona.md](poligonos-pracas-zona.md)).
 - Redesenho do painel / mover filtros → **R6**.
 
