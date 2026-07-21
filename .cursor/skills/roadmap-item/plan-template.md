@@ -27,6 +27,7 @@ Brief compacto (obrigatório em C; se B ambíguo):
 - **Persona / contexto:** <quem, onde, estado de espírito>
 - **Job principal:** <uma frase>
 - **Estratégia de cor:** Restrained (default) | <exceção justificada>
+- **Edit where you see** (só `/campanha` staff, UI B/C/D): <sim — affordance no contexto + actions existentes | não — só leitura / `/editar` justificado> — princípio 3 de `PRODUCT.md`; rabbit hole: spreadsheet mode
 - **Anti-goals:** <o que esta superfície não deve ser>
 
 ### Referência visual (UX Pilot)

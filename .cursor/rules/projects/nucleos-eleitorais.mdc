@@ -64,6 +64,7 @@ alwaysApply: false
 
 ## Decisões
 
+- Em 2026-07-21, **decisão de produto (Field Desk):** em `/campanha`, superfícies staff de visualização que mostram dados mutáveis devem oferecer edição no contexto quando o access permitir (“edit where you see”) — princípio 3 de [`PRODUCT.md`](../../../PRODUCT.md); regra Cursor [`.cursor/rules/campanha-edit-where-you-see.mdc`](../campanha-edit-where-you-see.mdc). Precedente: **B9** ([`edicao-rapida-lista-pracas.md`](../../../docs/plans/edicao-rapida-lista-pracas.md) — `PlazaList*Control` + `plazaStaffFormActions`). **Rejeitado:** lista/detalhe só-leitura com toda mutação em `/editar`; data-grid / planilha full-row; service genérico de “quick edit”. `/editar` e Sheets longos ficam para formulários multi-campo, campos raros e fluxos com nota/confirmação. Liderança continua no escopo já definido (sem campos staff-only).
 - Núcleo Eleitoral é a unidade operacional; Zona TSE é uma referência oficial adicional.
 - Todo núcleo exige geografia; natureza organizativa e setor são dimensões complementares.
 - Exclusão no app é substituída por arquivamento.
