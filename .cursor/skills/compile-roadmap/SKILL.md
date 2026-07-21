@@ -24,7 +24,10 @@ Esta skill **reescreve** `docs/roadmap.md` para voltar a ser um documento de **p
 | `suggest-next-roadmap-items` | Escolher candidatos entre o que o roadmap já lista    |
 | `roadmap-item`               | Registrar ideia nova / criar plano                    |
 | `implement-roadmap-item`     | Auditar plano + implementar o ID escolhido            |
+| `rebase-on-main`             | Após simplify: fetch + rebase em main + conflitos     |
 | `capture-review-debts`       | Triagear débitos de `/simplify` / critique            |
+| `ship-to-main`               | Commit + push + merge main + apagar worktree          |
+| `close-delivery`             | Orquestra rebase + debts (auto-confirm) + ship        |
 
 **Escopo padrão:** só `docs/roadmap.md`. Planos em `docs/plans/` **não** são movidos nem apagados. Só atualize/arquive planos se o usuário pedir explicitamente.
 

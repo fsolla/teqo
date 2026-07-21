@@ -247,3 +247,5 @@ Não declare a implementação completa sem 10d.
 **Após implementação (Passo 10):** o que entrou em cada fase, resultado do critique/polish (score/P0–P1 se houver), checklist AGENTS.md + Aikido, superfícies de doc atualizadas no 10d, e o que ficou de fora.
 
 Se `/simplify` ou `/impeccable critique` deixaram follow-ups **maiores que o cleanup da sessão**, ofereça a skill `capture-review-debts` (triage → confirmação → `roadmap-item`) em vez de registrar débitos ad hoc ou abandoná-los no chat.
+
+**Fluxo de fechamento em worktree:** após simplify/impeccable → `rebase-on-main` → `capture-review-debts` → `ship-to-main` (atalho único: `close-delivery`).

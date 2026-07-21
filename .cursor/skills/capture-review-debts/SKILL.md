@@ -143,6 +143,8 @@ Para cada lote com destino **registrar** ou **absorver**:
 
 Não implemente as fases aqui. Apontar `implement-roadmap-item` só se o usuário pedir em seguida.
 
+**Próximo no fluxo de entrega:** após a triage confirmada (ou no-op sem débitos), o passo natural é `ship-to-main` (commit all → push → merge main → apagar worktree). Para fechar rebase + debts + ship numa tacada (com auto-confirm desta triage), use `close-delivery`.
+
 ## Anti-padrões (baseline)
 
 | Desculpa                                 | Realidade                                                             |

@@ -21,7 +21,10 @@ Esta skill **só recomenda** — não implementa, não edita o roadmap e não cr
 | `suggest-next-roadmap-items` | **Escolher candidatos** entre o que o roadmap já lista |
 | `roadmap-item`               | Registrar ideia nova / criar plano                     |
 | `implement-roadmap-item`     | Auditar plano + implementar o ID escolhido             |
+| `rebase-on-main`             | Após simplify: fetch + rebase em main + conflitos      |
 | `capture-review-debts`       | Triagear débitos de `/simplify` / critique             |
+| `ship-to-main`               | Commit + push + merge main + apagar worktree           |
+| `close-delivery`             | Orquestra rebase + debts (auto-confirm) + ship         |
 
 ## Checklist
 
