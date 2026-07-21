@@ -12,6 +12,7 @@ import type { EligibleAdvisorOption } from '@/utilities/plazaViewModels'
 
 type PlazaAdvisorsFormProps = {
   plazaID: number
+  plazaSlug: string
   currentAdvisorIDs: number[]
   options: EligibleAdvisorOption[]
   formAction: (
@@ -23,6 +24,7 @@ type PlazaAdvisorsFormProps = {
 /** Coordinator-only: assign the advisors responsible for this plaza. */
 export const PlazaAdvisorsForm = ({
   plazaID,
+  plazaSlug,
   currentAdvisorIDs,
   options,
   formAction,
@@ -39,6 +41,7 @@ export const PlazaAdvisorsForm = ({
         </p>
       </div>
       <input type="hidden" name="plazaId" value={plazaID} />
+      <input type="hidden" name="plazaSlug" value={plazaSlug} />
       <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto">
         {options.map((option) => (
           <li key={option.id}>

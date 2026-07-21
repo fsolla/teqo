@@ -89,6 +89,7 @@ export const PlazaList = ({
                     <dd>
                       <PlazaListExpectedVotesControl
                         plazaID={plaza.id}
+                        plazaSlug={plaza.slug}
                         expectedVotes={plaza.expectedVotes}
                         leadershipEffectiveTotal={plaza.pledges.effectiveTotal}
                         formAction={expectedVotesFormAction}
@@ -100,6 +101,7 @@ export const PlazaList = ({
                     <dd>
                       <PlazaListTrendControl
                         plazaID={plaza.id}
+                        plazaSlug={plaza.slug}
                         status={plaza.politicalTrendStatus}
                         trendNote={plaza.politicalTrendNote}
                         formAction={trendFormAction}
@@ -112,6 +114,7 @@ export const PlazaList = ({
                       {isCoordinator ? (
                         <PlazaListAdvisorsControl
                           plazaID={plaza.id}
+                          plazaSlug={plaza.slug}
                           currentAdvisorIDs={plaza.advisorIDs}
                           advisorNamesById={advisorNamesById}
                           options={advisorOptions}
@@ -184,6 +187,7 @@ export const PlazaList = ({
                         {isCoordinator ? (
                           <PlazaListAdvisorsControl
                             plazaID={plaza.id}
+                            plazaSlug={plaza.slug}
                             currentAdvisorIDs={plaza.advisorIDs}
                             advisorNamesById={advisorNamesById}
                             options={advisorOptions}
@@ -196,6 +200,7 @@ export const PlazaList = ({
                       <TableCell>
                         <PlazaListTrendControl
                           plazaID={plaza.id}
+                          plazaSlug={plaza.slug}
                           status={plaza.politicalTrendStatus}
                           trendNote={plaza.politicalTrendNote}
                           formAction={trendFormAction}
@@ -204,6 +209,7 @@ export const PlazaList = ({
                       <TableCell>
                         <PlazaListExpectedVotesControl
                           plazaID={plaza.id}
+                          plazaSlug={plaza.slug}
                           expectedVotes={plaza.expectedVotes}
                           leadershipEffectiveTotal={plaza.pledges.effectiveTotal}
                           formAction={expectedVotesFormAction}

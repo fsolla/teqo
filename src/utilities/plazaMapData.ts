@@ -23,6 +23,7 @@ import {
   aggregatePledgesByPlaza,
   emptyPlazaPledgeAggregate,
   resolvePlazaStaffVoteTotal,
+  type PlazaPledgeAggregate,
 } from '@/utilities/votePledgeData'
 
 export type { PlazasByIbgeCode, PlazaMapSlugEntry } from '@/utilities/plazaMapNavigation'
@@ -72,7 +73,7 @@ export type PlazaMapBundle = {
   comparison: PlazaMapComparison | null
 }
 
-type ScopedPlaza = {
+export type ScopedPlaza = {
   id: number
   slug: string
   name: string
@@ -81,6 +82,32 @@ type ScopedPlaza = {
   expectedVotes: number | null
   geography: PlazaElectionGeography
 }
+
+type ScopedPlazaDoc = {
+  id: number
+  slug: string
+  name: string
+  kind: 'municipio' | 'zona'
+  ibgeCode: string
+  expectedVotes?: number | null
+}
+
+export const scopePlazasFromDocs = (docs: ReadonlyArray<ScopedPlazaDoc>): ScopedPlaza[] =>
+  docs.flatMap((plaza) => {
+    const entry = getPlazaCatalogEntry(plaza.slug)
+    if (!entry) return []
+    return [
+      {
+        id: plaza.id,
+        slug: plaza.slug,
+        name: plaza.name,
+        kind: plaza.kind,
+        ibgeCode: plaza.ibgeCode,
+        expectedVotes: plaza.expectedVotes ?? null,
+        geography: plazaElectionGeography(entry),
+      },
+    ]
+  })
 
 const loadScopedPlazas = async (
   payload: Payload,
@@ -98,38 +125,16 @@ const loadScopedPlazas = async (
     overrideAccess: false,
   })
 
-  return result.docs.flatMap((plaza) => {
-    const entry = getPlazaCatalogEntry(plaza.slug)
-    if (!entry) return []
-    return [
-      {
-        id: plaza.id,
-        slug: plaza.slug,
-        name: plaza.name,
-        kind: plaza.kind,
-        ibgeCode: plaza.ibgeCode,
-        expectedVotes: plaza.expectedVotes ?? null,
-        geography: plazaElectionGeography(entry),
-      },
-    ]
-  })
+  return scopePlazasFromDocs(result.docs)
 }
 
-/**
- * Map data for the Praças overview: plazas matching the list URL filters (and
- * role access) contribute their geography's votes (or 2026 pledge estimates)
- * to municipality polygons. When `state.compare` is set, TSE years also carry
- * a red↔white↔blue diff (Solla − other candidate).
- */
-export const loadPlazaMapBundle = async (
+export const buildPlazaMapBundleFromPlazas = async (
   payload: Payload,
   user: CampaignUser,
-  searchParams: PlazaListSearchParams,
+  state: PlazaListState,
+  plazas: ScopedPlaza[],
+  pledgeAggregates: Map<number, PlazaPledgeAggregate>,
 ): Promise<PlazaMapBundle | null> => {
-  if (user.role === 'leader') return null
-
-  const state = parsePlazaListParams(searchParams)
-  const plazas = await loadScopedPlazas(payload, user, state)
   if (plazas.length === 0) return null
 
   const valuesByYear: Record<string, Record<string, number>> = {}
@@ -170,10 +175,6 @@ export const loadPlazaMapBundle = async (
   }
   validVotesByYear['2026'] = validVotesByYear['2022'] ?? {}
 
-  const pledgeAggregates = await aggregatePledgesByPlaza(
-    payload,
-    plazas.map((plaza) => plaza.id),
-  )
   const pledgeValues: Record<string, number> = {}
   for (const plaza of plazas) {
     const aggregate = pledgeAggregates.get(plaza.id) ?? emptyPlazaPledgeAggregate
@@ -197,12 +198,13 @@ export const loadPlazaMapBundle = async (
     .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
 
   let comparison: PlazaMapComparison | null = null
-  if (state.compare) {
+  const compareCandidate = state.compare
+  if (compareCandidate) {
     const candidates = await payload.find({
       collection: 'electionCandidate',
       where: {
         and: [
-          { candidateNumber: { equals: state.compare } },
+          { candidateNumber: { equals: compareCandidate } },
           { office: { equals: 'deputado_federal' } },
           { turn: { equals: '1' } },
         ],
@@ -218,28 +220,25 @@ export const loadPlazaMapBundle = async (
 
     if (candidate) {
       const diffByYear: Record<string, Record<string, number>> = {}
-      const otherVotesByYear = await Promise.all(
-        HISTORICAL_SERIES_YEARS.map((year) =>
-          loadCandidateVotesByCityZone(payload, user, {
+      await Promise.all(
+        HISTORICAL_SERIES_YEARS.map(async (year) => {
+          const otherVotes = await loadCandidateVotesByCityZone(payload, user, {
             year,
-            candidateNumber: state.compare!,
-          }),
-        ),
+            candidateNumber: compareCandidate,
+          })
+          const sollaVotes = sollaVotesByYear.get(year) ?? new Map<string, number>()
+          const values: Record<string, number> = {}
+          for (const plaza of plazas) {
+            const solla = sumVotesForGeography(sollaVotes, plaza.geography)
+            const other = sumVotesForGeography(otherVotes, plaza.geography)
+            values[plaza.ibgeCode] = (values[plaza.ibgeCode] ?? 0) + (solla - other)
+          }
+          diffByYear[String(year)] = values
+        }),
       )
-      for (const [index, year] of HISTORICAL_SERIES_YEARS.entries()) {
-        const otherVotes = otherVotesByYear[index]!
-        const sollaVotes = sollaVotesByYear.get(year) ?? new Map<string, number>()
-        const values: Record<string, number> = {}
-        for (const plaza of plazas) {
-          const solla = sumVotesForGeography(sollaVotes, plaza.geography)
-          const other = sumVotesForGeography(otherVotes, plaza.geography)
-          values[plaza.ibgeCode] = (values[plaza.ibgeCode] ?? 0) + (solla - other)
-        }
-        diffByYear[String(year)] = values
-      }
 
       comparison = {
-        candidateNumber: state.compare,
+        candidateNumber: compareCandidate,
         candidateName: `${candidate.urnaName}${candidate.party ? ` (${candidate.party})` : ''}`,
         diffByYear,
       }
@@ -254,4 +253,29 @@ export const loadPlazaMapBundle = async (
     candidateName: BASELINE_TICKET_2022.candidate.name,
     comparison,
   }
+}
+
+/**
+ * Map data for the Praças overview: plazas matching the list URL filters (and
+ * role access) contribute their geography's votes (or 2026 pledge estimates)
+ * to municipality polygons. When `state.compare` is set, TSE years also carry
+ * a red↔white↔blue diff (Solla − other candidate).
+ */
+export const loadPlazaMapBundle = async (
+  payload: Payload,
+  user: CampaignUser,
+  searchParams: PlazaListSearchParams,
+): Promise<PlazaMapBundle | null> => {
+  if (user.role === 'leader') return null
+
+  const state = parsePlazaListParams(searchParams)
+  const plazas = await loadScopedPlazas(payload, user, state)
+  if (plazas.length === 0) return null
+
+  const pledgeAggregates = await aggregatePledgesByPlaza(
+    payload,
+    plazas.map((plaza) => plaza.id),
+  )
+
+  return buildPlazaMapBundleFromPlazas(payload, user, state, plazas, pledgeAggregates)
 }

@@ -16,6 +16,7 @@ import type { PlazaPoliticalTrendViewModel } from '@/utilities/plazaViewModels'
 
 type PlazaListTrendControlProps = {
   plazaID: number
+  plazaSlug: string
   status: PlazaPoliticalTrendViewModel['status']
   trendNote: string | null
   formAction: (
@@ -26,6 +27,7 @@ type PlazaListTrendControlProps = {
 
 export const PlazaListTrendControl = ({
   plazaID,
+  plazaSlug,
   status,
   trendNote,
   formAction,
@@ -57,6 +59,7 @@ export const PlazaListTrendControl = ({
       <PopoverContent align="start" className="w-72">
         <form action={submitAction} className="flex flex-col gap-3">
           <input type="hidden" name="plazaId" value={plazaID} />
+          <input type="hidden" name="plazaSlug" value={plazaSlug} />
           <input type="hidden" name="trendNote" value={trendNote ?? ''} />
           <Field>
             <FieldLabel htmlFor={`plaza-list-trend-${plazaID}`}>Tendência</FieldLabel>

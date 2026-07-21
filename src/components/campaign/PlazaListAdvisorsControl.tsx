@@ -15,6 +15,7 @@ import type { EligibleAdvisorOption, PlazaAdvisorSummary } from '@/utilities/pla
 
 type PlazaListAdvisorsControlProps = {
   plazaID: number
+  plazaSlug: string
   currentAdvisorIDs: number[]
   advisorNamesById: ReadonlyMap<number, PlazaAdvisorSummary>
   options: EligibleAdvisorOption[]
@@ -26,6 +27,7 @@ type PlazaListAdvisorsControlProps = {
 
 export const PlazaListAdvisorsControl = ({
   plazaID,
+  plazaSlug,
   currentAdvisorIDs,
   advisorNamesById,
   options,
@@ -64,6 +66,7 @@ export const PlazaListAdvisorsControl = ({
       <PopoverContent align="start" className="w-80">
         <form action={submitAction} className="flex flex-col gap-3">
           <input type="hidden" name="plazaId" value={plazaID} />
+          <input type="hidden" name="plazaSlug" value={plazaSlug} />
           <p className="text-sm text-muted-foreground">
             O assessor vê e gerencia somente as Praças que administra.
           </p>

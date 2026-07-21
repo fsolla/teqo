@@ -29,6 +29,15 @@ export const plazaPoliticalTrendSchema = z.object({
   note: trimmedNullableText(2000),
 })
 
+export const parsePoliticalTrendStatusFormValue = (
+  raw: string | undefined,
+): PoliticalTrendStatusValue | null => {
+  if (!raw) return null
+  return politicalTrendStatuses.includes(raw as PoliticalTrendStatusValue)
+    ? (raw as PoliticalTrendStatusValue)
+    : null
+}
+
 export const plazaAdvisorsAssignmentSchema = z.object({
   plaza: positiveRelationshipId,
   advisors: z

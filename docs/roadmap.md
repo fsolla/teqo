@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-21 (fill-in filtros-auto + B11 entregues em código; B9 + B10 entregues; débitos B9 → A9+/C8 F4; débitos B10/B11 scale toggle → B6)
+Atualizado em: 2026-07-21 (A9+ entregue em código; fill-in filtros-auto + B11 entregues; B9 + B10 entregues; débitos B9 → C8 F4; débitos B10/B11 scale toggle → B6)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -69,7 +69,8 @@ flowchart TD
     R4 -.baseline por Praça.-> A6
     R2 --> D2["D2 Push + sino"]
     R2 --> A9["A9 Estimativa votos ✓"]
-    A9 --> B9["B9 Edição rápida lista ✓"]
+    A9 --> A9plus["A9+ Loader lista ✓"]
+    A9plus --> B9["B9 Edição rápida lista ✓"]
     R2 -.-> B7["B7 Mapa filtrado ✓"]
     R2 -.-> B8["B8 Polígonos Praças-zona<br/>(SSA/CMS)"]
     R2 -.-> B10["B10 Hover/tap mapa ✓"]
@@ -82,7 +83,7 @@ flowchart TD
     C2prod --> C5["C5 GOTV (validar)"]
 ```
 
-Paralelizáveis agora: fill-ins da lista (A9+, …). ~~**A9** / **B9** / **B7** / **B10** / **B11** / **filtros-auto**~~ entregues 2026-07-21. **B6** absorve hot path de hover pós-B10 e troca de escala pós-B11 (Janela 3 / gatilho de densidade).
+Paralelizáveis agora: fill-ins da lista (**C8** F4, …). ~~**A9** / **A9+** / **B9** / **B7** / **B10** / **B11** / **filtros-auto**~~ entregues 2026-07-21. **B6** absorve hot path de hover pós-B10 e troca de escala pós-B11 (Janela 3 / gatilho de densidade).
 
 ### Sequência por janela
 
@@ -105,9 +106,10 @@ Paralelizáveis agora: fill-ins da lista (A9+, …). ~~**A9** / **B9** / **B7** 
 - **Era Núcleos (2026-07-15 → 2026-07-20)** — MVP + Ciclo 2 (auth `campaignUser`, território A1/A2, baseline TSE A3/A4, overview B1, share C1, PWA D1, geometrias B2, Leaflet B3), C2 apoiadores (eng.), C3 agenda, C6–C11 escala, E1+E3 metas/estratégia, E2 série TSE 2014/2018/2022, A5 conversão/classificação/alavancagem/mobilização, A7 F1–F2, A8 perfis IBGE, fill-ins (reset senha/perfil, visitados recentes, Field Desk polish). Infra e padrões (locks, transações, consent por chave, shells, mapa, dados eleitorais) **são reaproveitados pela remodelagem**; as superfícies e o modelo de Núcleo são substituídos.
 - **Plataforma** — local Postgres + guards, migrations baselined, posts/tags do site público com cache `posts`, Onda 0 textos provisórios + `/privacidade`.
 - **Site público (2026-07-21)** — **Pixel do Meta nos abaixo-assinados** (`tracking.facebookPixelId` no admin `petition`, `PageView`/`Lead` na página pública via `MetaPixel` + `trackMetaLead`; migration `20260721_133531_add_petition_facebook_pixel_id`) — [plano](plans/pixel-meta-abaixo-assinado.md).
-- **A9 (2026-07-21)** — **Estimativa de votos da Praça** (`plaza.expectedVotes` staff-only; fallback `expectedVotes ?? effectiveTotal` em mapa 2026/overview/dashboard; UI `/editar` + leitura lista/detalhe; migration `20260721_133444_add_plaza_expected_votes`) — [plano](plans/estimativa-votos-praca.md). Fill-in pós-`/simplify`: **A9+** [escala-dry-pos-a9.md](plans/escala-dry-pos-a9.md) (loader compartilhado + revalidate escopada pós-B9).
+- **A9 (2026-07-21)** — **Estimativa de votos da Praça** (`plaza.expectedVotes` staff-only; fallback `expectedVotes ?? effectiveTotal` em mapa 2026/overview/dashboard; UI `/editar` + leitura lista/detalhe; migration `20260721_133444_add_plaza_expected_votes`) — [plano](plans/estimativa-votos-praca.md).
+- **A9+ (2026-07-21)** — **Loader compartilhado da lista de Praças** (`loadPlazaListPageBundle`: 1× `aggregatePledgesByPlaza` + `buildPlazaMapBundleFromPlazas`; `plazaRevalidation.ts` + `plazaSlug` para revalidate estreita no detalhe; int `plazaPageData.int.spec.ts`; sem migration) — [plano](plans/escala-dry-pos-a9.md). Débito restante pós-`/simplify`: twin completo `listFormActions` ↔ `/editar` → **C8** F4.
 - **B7 (2026-07-21)** — **Mapa das Praças filtrado pela lista** (`buildPlazaListWhere` em `loadPlazaMapBundle`; `rawSearchParams` na página; empty → omitir painel; int `plazaMapData.int.spec.ts`) — [plano](plans/mapa-pracas-filtrado.md).
-- **B9 (2026-07-21)** — **Edição rápida na lista de Praças** (Assessores / Tendência / `expectedVotes` via Popovers em `PlazaList*Control`; `listFormActions`; sem migration) — [plano](plans/edicao-rapida-lista-pracas.md). Débitos `/simplify`: **A9+** F2 (revalidate) + **C8** F4 (DRY formActions).
+- **B9 (2026-07-21)** — **Edição rápida na lista de Praças** (Assessores / Tendência / `expectedVotes` via Popovers em `PlazaList*Control`; `listFormActions`; sem migration) — [plano](plans/edicao-rapida-lista-pracas.md). Débitos `/simplify`: **C8** F4 (DRY formActions; prep revalidate/parsing feito no A9+).
 - **B10 (2026-07-21)** — **Hover/tap no Mapa das Praças** (destaque + `MapFeatureReadout`; desktop click navega; mobile 2º tap; SSA/CMS N>1 → `zoneBreakdown`; `plazasByIbgeCode` / `resolvePlazaMapNavigation`) — [plano](plans/hover-mapa-pracas.md). Débito perf hover O(n) → **B6** [escala-dry-pos-b3.md](plans/escala-dry-pos-b3.md).
 - **B11 (2026-07-21)** — **Escala % dos válidos no Mapa das Praças** (`validVotesByYear` no bundle; seletor `Total (votos)` / `% dos válidos`; domínio fixo 0–100%; 2026 usa válidos 2022; compare desliga %; readout em %) — [plano](plans/escala-percentual-mapa-pracas.md). Débito perf troca `scaleMode` → **B6** [escala-dry-pos-b3.md](plans/escala-dry-pos-b3.md).
 - **Fill-in filtros-auto (2026-07-21)** — **Filtros auto-aplicados na lista de Praças** (`PlazaFilters`: debounce 1s no `q`, Enter imediato, selects imediatos, remove Buscar; `useTransition` + pending a11y; `shouldUpdatePlazaSearchUrl` + no-op via `buildPlazaFiltersKey`; sem migration) — [plano](plans/filtros-auto-pracas.md). Débitos pós-`/simplify`: sync back/forward `search`↔`state.q` e shell pending compartilhado — gatilhos no plano.
@@ -137,7 +139,7 @@ Paralelizáveis agora: fill-ins da lista (A9+, …). ~~**A9** / **B9** / **B7** 
 - **C5** operação dia D / GOTV _(validar com produto)_ · design [`Dia-D-GOTV`](design-refs/latest/Dia-D-GOTV.png) · depende de C2 dados reais
 - **D2** push + sino in-app · soft: chave `campanha-notificacoes-push` (Onda 0) · [plano](plans/notifications.md)
 - **R6** critique/polish visual da vertical remodelada (ciclo /impeccable completo por superfície; smoke visual coordenador feito em 2026-07-21) · gatilho: antes de 16/08 · (opcional: mover filtros acima do mapa)
-- **Fill-ins:** **A9+** loader compartilhado lista/mapa + revalidate escopada pós-B9 ([plano](plans/escala-dry-pos-a9.md)) · **C8** F4 DRY `listFormActions`↔`/editar` ([plano](plans/escala-dry-pos-c6.md)) · O0+ ([plano](plans/escala-dry-pos-onda0.md)) · RS+ auth read leve + shells de senha ([plano](plans/escala-dry-pos-reset-senha-perfil.md)) · higiene PascalCase
+- **Fill-ins:** **C8** F4 DRY `listFormActions`↔`/editar` ([plano](plans/escala-dry-pos-c6.md)) · O0+ ([plano](plans/escala-dry-pos-onda0.md)) · RS+ auth read leve + shells de senha ([plano](plans/escala-dry-pos-reset-senha-perfil.md)) · higiene PascalCase
 
 ## Bloqueadores atuais
 

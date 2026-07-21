@@ -21,6 +21,7 @@ type FormAction = (
 
 type PlazaStrategyFormProps = {
   plazaID: number
+  plazaSlug: string
   strategy: NonNullable<PlazaDetailViewModel['strategy']>
   strategyFormAction: FormAction
   expectedVotesFormAction: FormAction
@@ -85,6 +86,7 @@ const ListEditor = ({
 
 export const PlazaStrategyForm = ({
   plazaID,
+  plazaSlug,
   strategy,
   strategyFormAction,
   expectedVotesFormAction,
@@ -102,6 +104,7 @@ export const PlazaStrategyForm = ({
       <form action={submitStrategy} className="flex flex-col gap-4 rounded-xl border p-4">
         <h2 className="text-base font-medium">Metas e inteligência</h2>
         <input type="hidden" name="plazaId" value={plazaID} />
+        <input type="hidden" name="plazaSlug" value={plazaSlug} />
         <Field>
           <FieldLabel htmlFor="plaza-priority">Prioridade</FieldLabel>
           <NativeSelect
@@ -192,6 +195,7 @@ export const PlazaStrategyForm = ({
           </p>
         </div>
         <input type="hidden" name="plazaId" value={plazaID} />
+        <input type="hidden" name="plazaSlug" value={plazaSlug} />
         <Field>
           <FieldLabel htmlFor="plaza-expected-votes">Total da Praça</FieldLabel>
           <Input
@@ -229,6 +233,7 @@ export const PlazaStrategyForm = ({
           </p>
         </div>
         <input type="hidden" name="plazaId" value={plazaID} />
+        <input type="hidden" name="plazaSlug" value={plazaSlug} />
         <Field>
           <FieldLabel htmlFor="plaza-trend-status">Tendência</FieldLabel>
           <NativeSelect

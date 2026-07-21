@@ -24,8 +24,7 @@ import {
 import { isCampaignCoordinator, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'
-import { loadPlazaMapBundle } from '@/utilities/plazaMapData'
-import { loadPlazaListOverviewData, loadPlazaListPageData } from '@/utilities/plazaPageData'
+import { loadPlazaListPageBundle } from '@/utilities/plazaPageData'
 import {
   buildPlazaFiltersKey,
   buildPlazaListHref,
@@ -56,18 +55,18 @@ export default async function PlazasPage({ searchParams }: PlazasPageProps) {
   const isStaffView = isCampaignStaff(user)
   const isCoordinator = isCampaignCoordinator(user)
 
-  const [listData, overview, mapBundle] = await Promise.all([
-    loadPlazaListPageData(payload, user, rawSearchParams),
-    loadPlazaListOverviewData(payload, user, rawSearchParams),
-    loadPlazaMapBundle(payload, user, rawSearchParams),
-  ])
-  const candidateOptions = mapBundle ? await loadFederalCandidateOptions(payload, user) : []
-  const resolvedUrl = resolvePlazaListUrl(rawSearchParams, listData.totalPages)
+  const pageBundle = await loadPlazaListPageBundle(payload, user, rawSearchParams)
+  const candidateOptions = pageBundle.mapBundle
+    ? await loadFederalCandidateOptions(payload, user)
+    : []
+  const { plazas: listPlazas, totalDocs, totalPages, scopeTotal, overview, mapBundle } =
+    pageBundle
+  const resolvedUrl = resolvePlazaListUrl(rawSearchParams, totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
   const listVisitLabel = buildPlazaListVisitLabel(state)
 
-  const advisorIDs = [...new Set(listData.plazas.flatMap((plaza) => plaza.advisorIDs))]
+  const advisorIDs = [...new Set(listPlazas.flatMap((plaza) => plaza.advisorIDs))]
   const advisorSummaries = isStaffView ? await loadAdvisorSummaries(payload, user, advisorIDs) : []
   const advisorNamesById = new Map(advisorSummaries.map((advisor) => [advisor.id, advisor]))
   const advisorOptions =
@@ -82,7 +81,7 @@ export default async function PlazasPage({ searchParams }: PlazasPageProps) {
           cada.
         </p>
         <CampaignScopeBadge>
-          {getCampaignScopeLabel(user.role, listData.scopeTotal)}
+          {getCampaignScopeLabel(user.role, scopeTotal)}
         </CampaignScopeBadge>
       </header>
 
@@ -96,11 +95,11 @@ export default async function PlazasPage({ searchParams }: PlazasPageProps) {
         showStaffFilters={isStaffView}
       />
 
-      {listData.plazas.length ? (
+      {listPlazas.length ? (
         <>
           {overview ? <PlazaListOverview view={overview} /> : null}
           <PlazaList
-            plazas={listData.plazas}
+            plazas={listPlazas}
             advisorNamesById={advisorNamesById}
             isStaffView={isStaffView}
             isCoordinator={isCoordinator}
@@ -111,12 +110,12 @@ export default async function PlazasPage({ searchParams }: PlazasPageProps) {
           />
           <div className="flex flex-col items-center gap-2">
             <p className="text-sm text-muted-foreground">
-              {listData.totalDocs}{' '}
-              {listData.totalDocs === 1 ? 'Praça encontrada' : 'Praças encontradas'}
+              {totalDocs}{' '}
+              {totalDocs === 1 ? 'Praça encontrada' : 'Praças encontradas'}
             </p>
             <CampaignListPagination
               page={state.page}
-              totalPages={listData.totalPages}
+              totalPages={totalPages}
               hrefForPage={(page) => buildPlazaListHref(state, page)}
             />
           </div>

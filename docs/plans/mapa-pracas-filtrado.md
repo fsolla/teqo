@@ -7,7 +7,7 @@ Impeccable: B — encaixe em `/campanha/pracas` (`PlazaMapPanel` + loader; sem r
 Appetite: ~0,5 dia eng; wire `buildPlazaListWhere` no loader do mapa + teste + empty state
 Responsável: —
 
-_Revisão 2026-07-21 (pós-implementação + `/simplify`): `loadPlazaMapBundle` aceita `rawSearchParams`; `loadScopedPlazas` usa `buildPlazaListWhere(state)`; tipo `PlazaListSearchParams` exportado de `plazaUi.ts`; testes em `tests/int/plazaMapData.int.spec.ts`. Cleanup simplify: parse único no map loader (`PlazaListState` passado a `loadScopedPlazas`). Débito de perf triplicado → **A9+**._
+_Revisão 2026-07-21 (pós-implementação + `/simplify`): `loadPlazaMapBundle` aceita `rawSearchParams`; `loadScopedPlazas` usa `buildPlazaListWhere(state)`; tipo `PlazaListSearchParams` exportado de `plazaUi.ts`; testes em `tests/int/plazaMapData.int.spec.ts`. Cleanup simplify: parse único no map loader (`PlazaListState` passado a `loadScopedPlazas`). Débito de perf triplicado → **A9+ entregue** (`buildPlazaMapBundleFromPlazas` recebe agregados do bundle da lista)._
 
 ## Design (Impeccable)
 

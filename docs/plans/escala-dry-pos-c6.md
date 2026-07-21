@@ -78,7 +78,7 @@ flowchart TD
 ### Fase 4 — DRY de forms
 
 - Migrar os `formActions.ts` restantes para `mapCampaignFormActionError` + `campaignFormFields` (hoje o ladder `FormDataBoundaryError` → `ZodError` → `validationFieldErrors` → safe-message está inlined em vários arquivos):
-  - `src/app/(campaign)/campanha/(app)/pracas/listFormActions.ts` + `pracas/[slug]/editar/formActions.ts` — **twin paths pós-B9** (mesmo parsing `formData`, mesmas actions de domínio, `revalidatePlazaListPaths` duplicado vs `revalidatePath` por action no `/editar`; extrair helper compartilhado de revalidate + wrappers finos por superfície)
+  - `src/app/(campaign)/campanha/(app)/pracas/listFormActions.ts` + `pracas/[slug]/editar/formActions.ts` — **twin paths pós-B9** (mesmo parsing `formData`, mesmas actions de domínio). **Prep A9+ (2026-07-21):** `revalidatePlazaListPaths` (`plazaRevalidation.ts`), `optionalPlazaSlugFromForm`, `parsePoliticalTrendStatusFormValue` — feitos; **falta** merge dos wrappers de server action (4 actions × 2 superfícies).
   - `src/app/(campaign)/campanha/(app)/pracas/[slug]/updateFormActions.ts`, `pledgeFormActions.ts` (se ainda não no mapper)
   - `src/app/(campaign)/campanha/convite/[token]/formActions.ts`
   - `src/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions.ts`
@@ -136,4 +136,8 @@ Os débitos que os revisores marcaram como importantes e maiores que cleanup for
 
 `/simplify` da entrega **B9** ([edicao-rapida-lista-pracas.md](edicao-rapida-lista-pracas.md)) marcou como **maior que cleanup** o twin `listFormActions.ts` ↔ `editar/formActions.ts` — absorvido na **Fase 4** acima. B9 já adota `mapCampaignFormActionError`; o débito é DRY de parsing/revalidate entre lista e `/editar`, não introdução do mapper.
 
-**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B9):** hook `usePlazaListPopoverForm` (gatilho: 4º inline editor); `PlazaAdvisorCheckboxList` (gatilho: 3º uso ou refactor do form `/editar`); layout responsivo único mobile+desktop na lista (gatilho: page size >25 ou profiling de hydration); lazy-load de `getEligibleAdvisorOptions` (staff set pequeno); `PopoverAnchor` export não usado (scaffold shadcn); helper `parsePoliticalTrendStatus`; unit tests dos `PlazaList*Control` (int access cobre domínio); E2E save inline (gatilho: smoke pós-merge B9).
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B9):** hook `usePlazaListPopoverForm` (gatilho: 4º inline editor); `PlazaAdvisorCheckboxList` (gatilho: 3º uso ou refactor do form `/editar`); layout responsivo único mobile+desktop na lista (gatilho: page size >25 ou profiling de hydration); lazy-load de `getEligibleAdvisorOptions` (staff set pequeno); `PopoverAnchor` export não usado (scaffold shadcn); ~~helper `parsePoliticalTrendStatus`~~ → entregue como `parsePoliticalTrendStatusFormValue` no prep A9+; unit tests dos `PlazaList*Control` (int access cobre domínio); E2E save inline (gatilho: smoke pós-merge B9).
+
+## Simplify (2026-07-21 pós-A9+)
+
+Triage `capture-review-debts` após `/simplify` do fill-in A9+: prep da **Fase 4** nos twins de Praças — `plazaRevalidation.ts`, `optionalPlazaSlugFromForm`, `parsePoliticalTrendStatusFormValue` (lista + `/editar`). Débito restante na Fase 4: unificar os wrappers de server action duplicados; não reabrir revalidate/parsing.

@@ -3,7 +3,17 @@ import type { Payload } from 'payload'
 import { getPlazaCatalogEntry } from '@/lib/plazaCatalog'
 import type { CampaignUser, Plaza } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { buildPlazaListWhere, parsePlazaListParams, plazaPageSize, type PlazaListSearchParams } from '@/utilities/plazaUi'
+import {
+  buildPlazaMapBundleFromPlazas,
+  scopePlazasFromDocs,
+  type PlazaMapBundle,
+} from '@/utilities/plazaMapData'
+import {
+  buildPlazaListWhere,
+  parsePlazaListParams,
+  plazaPageSize,
+  type PlazaListSearchParams,
+} from '@/utilities/plazaUi'
 import {
   plazaListSelect,
   toPlazaDetailViewModel,
@@ -15,7 +25,19 @@ import { relationshipId } from '@/utilities/relationship'
 import {
   aggregatePledgesByPlaza,
   rollupPlazaStaffVotes,
+  type PlazaPledgeAggregate,
 } from '@/utilities/votePledgeData'
+
+const plazaListFilteredSelect = {
+  id: true,
+  slug: true,
+  name: true,
+  kind: true,
+  ibgeCode: true,
+  expectedVotes: true,
+  advisors: true,
+  priority: true,
+} as const
 
 export class PlazaNotFoundError extends Error {
   override name = 'PlazaNotFoundError'
@@ -25,25 +47,40 @@ export class PlazaNotFoundError extends Error {
   }
 }
 
-export const loadPlazaListPageData = async (
-  payload: Payload,
-  user: CampaignUser,
-  searchParams: PlazaListSearchParams,
-): Promise<{
+export type PlazaListOverviewData = {
+  plazaCount: number
+  staffVoteTotal: number
+  pledgeCount: number
+  missingEstimateCount: number
+  withAdvisorCount: number
+}
+
+export type PlazaListPageBundle = {
   plazas: PlazaListViewModel[]
   totalDocs: number
   totalPages: number
   scopeTotal: number
-}> => {
+  overview: PlazaListOverviewData | null
+  mapBundle: PlazaMapBundle | null
+}
+
+export const loadPlazaListPageBundle = async (
+  payload: Payload,
+  user: CampaignUser,
+  searchParams: PlazaListSearchParams,
+): Promise<PlazaListPageBundle> => {
   const state = parsePlazaListParams(searchParams)
-  const [result, scope] = await Promise.all([
+  const where = buildPlazaListWhere(state)
+  const isStaff = isCampaignStaff(user)
+
+  const [paginatedResult, scopeCount, filteredResult] = await Promise.all([
     payload.find({
       collection: 'plaza',
       depth: 0,
       limit: plazaPageSize,
       page: state.page,
       sort: 'name',
-      where: buildPlazaListWhere(state),
+      where,
       select: plazaListSelect,
       user,
       overrideAccess: false,
@@ -54,73 +91,69 @@ export const loadPlazaListPageData = async (
       user,
       overrideAccess: false,
     }),
+    isStaff
+      ? payload.find({
+          collection: 'plaza',
+          depth: 0,
+          limit: 0,
+          pagination: false,
+          where,
+          select: plazaListFilteredSelect,
+          user,
+          overrideAccess: false,
+        })
+      : Promise.resolve(null),
   ])
 
-  const pledgeAggregates = isCampaignStaff(user)
-    ? await aggregatePledgesByPlaza(
-        payload,
-        result.docs.map((plaza) => plaza.id),
+  let overview: PlazaListOverviewData | null = null
+  let mapBundle: PlazaMapBundle | null = null
+  let pledgeAggregates = new Map<number, PlazaPledgeAggregate>()
+
+  if (filteredResult && filteredResult.docs.length > 0) {
+    pledgeAggregates = await aggregatePledgesByPlaza(
+      payload,
+      filteredResult.docs.map((plaza) => plaza.id),
+    )
+
+    if (isStaff) {
+      const { staffVoteTotal, pledgeCount, missingEstimateCount } = rollupPlazaStaffVotes(
+        filteredResult.docs,
+        pledgeAggregates,
       )
-    : new Map()
+      overview = {
+        plazaCount: filteredResult.docs.length,
+        staffVoteTotal,
+        pledgeCount,
+        missingEstimateCount,
+        withAdvisorCount: filteredResult.docs.filter((plaza) => (plaza.advisors ?? []).length > 0)
+          .length,
+      }
+    }
 
-  return {
-    plazas: result.docs.map((plaza) =>
-      toPlazaListViewModel(plaza as Plaza, pledgeAggregates.get(plaza.id)),
-    ),
-    totalDocs: result.totalDocs,
-    totalPages: result.totalPages,
-    scopeTotal: scope.totalDocs,
+    const scopedPlazas = scopePlazasFromDocs(filteredResult.docs)
+    if (scopedPlazas.length > 0) {
+      mapBundle = await buildPlazaMapBundleFromPlazas(
+        payload,
+        user,
+        state,
+        scopedPlazas,
+        pledgeAggregates,
+      )
+    }
   }
-}
-
-export type PlazaListOverviewData = {
-  plazaCount: number
-  staffVoteTotal: number
-  declaredVotesTotal: number
-  pledgeCount: number
-  missingEstimateCount: number
-  withAdvisorCount: number
-  highPriorityCount: number
-}
-
-/** Staff aggregate over the ENTIRE filtered set (not just the current page). */
-export const loadPlazaListOverviewData = async (
-  payload: Payload,
-  user: CampaignUser,
-  searchParams: PlazaListSearchParams,
-): Promise<PlazaListOverviewData | null> => {
-  if (!isCampaignStaff(user)) return null
-
-  const state = parsePlazaListParams(searchParams)
-  const result = await payload.find({
-    collection: 'plaza',
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    where: buildPlazaListWhere(state),
-    select: { advisors: true, priority: true, expectedVotes: true },
-    user,
-    overrideAccess: false,
-  })
-  if (result.docs.length === 0) return null
-
-  const plazaIDs = result.docs.map((plaza) => plaza.id)
-  const pledgeAggregates = await aggregatePledgesByPlaza(payload, plazaIDs)
-  const {
-    staffVoteTotal,
-    declaredVotesTotal,
-    pledgeCount,
-    missingEstimateCount,
-  } = rollupPlazaStaffVotes(result.docs, pledgeAggregates)
 
   return {
-    plazaCount: result.docs.length,
-    staffVoteTotal,
-    declaredVotesTotal,
-    pledgeCount,
-    missingEstimateCount,
-    withAdvisorCount: result.docs.filter((plaza) => (plaza.advisors ?? []).length > 0).length,
-    highPriorityCount: result.docs.filter((plaza) => plaza.priority === 'alta').length,
+    plazas: paginatedResult.docs.map((plaza) =>
+      toPlazaListViewModel(
+        plaza as Plaza,
+        isStaff ? pledgeAggregates.get(plaza.id) : undefined,
+      ),
+    ),
+    totalDocs: paginatedResult.totalDocs,
+    totalPages: paginatedResult.totalPages,
+    scopeTotal: scopeCount.totalDocs,
+    overview,
+    mapBundle,
   }
 }
 

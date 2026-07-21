@@ -14,6 +14,7 @@ import type { CampaignFormActionState } from '@/utilities/campaignFormActionErro
 
 type PlazaListExpectedVotesControlProps = {
   plazaID: number
+  plazaSlug: string
   expectedVotes: number | null
   leadershipEffectiveTotal: number
   formAction: (
@@ -24,6 +25,7 @@ type PlazaListExpectedVotesControlProps = {
 
 export const PlazaListExpectedVotesControl = ({
   plazaID,
+  plazaSlug,
   expectedVotes,
   leadershipEffectiveTotal,
   formAction,
@@ -55,6 +57,7 @@ export const PlazaListExpectedVotesControl = ({
       <PopoverContent align="start" className="w-72">
         <form action={submitAction} className="flex flex-col gap-3">
           <input type="hidden" name="plazaId" value={plazaID} />
+          <input type="hidden" name="plazaSlug" value={plazaSlug} />
           <Field>
             <FieldLabel htmlFor={`plaza-list-expected-votes-${plazaID}`}>Total da Praça</FieldLabel>
             <Input

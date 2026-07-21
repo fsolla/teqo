@@ -111,14 +111,14 @@ Componentes:
 
 ## Pós-entrega (`/simplify`)
 
-Débitos **maiores que cleanup** da sessão de entrega → fill-in **A9+** [escala-dry-pos-a9.md](escala-dry-pos-a9.md) (loader compartilhado da lista — deduplicar `aggregatePledgesByPlaza` na página `/campanha/pracas`).
+Fill-in **A9+** entregue 2026-07-21 — [escala-dry-pos-a9.md](escala-dry-pos-a9.md) (`loadPlazaListPageBundle`, 1× `aggregatePledgesByPlaza`, `plazaRevalidation.ts`). Débito restante: twin `listFormActions` ↔ `/editar` → **C8** F4.
 
 **Já resolvido no simplify (não reabrir):** form `expectedVotes`; `rollupPlazaStaffVotes` / `sumStaffPledgeEffectiveTotal`; `StaffPlazaVotesDisplay`; remoção de `hasStaffVoteData`; testes unit do rollup.
 
 ## Referências
 
 - `docs/roadmap.md` (Trilha A / A9 → B9)
-- `docs/plans/escala-dry-pos-a9.md` — fill-in A9+ (loader lista)
+- `docs/plans/escala-dry-pos-a9.md` — A9+ entregue (loader lista + revalidate escopada)
 - `src/collections/Plaza.ts` — `voteGoals`, access staff
 - `src/utilities/votePledgeData.ts` — `effectiveTotal`
 - `src/utilities/plazaMapData.ts` — métrica 2026

@@ -1,7 +1,7 @@
 # Escala e DRY pós-A9 (loader da lista de Praças)
 
-Status: registrado no roadmap (Fase 1 pendente; **B7 entregue 2026-07-21** — prioridade sobe)
-Atualizado em: 2026-07-21 (`capture-review-debts` pós-B11 `/simplify`: `Promise.all` TSE em `loadPlazaMapBundle` resolvido; pós-B7 + pós-B9)
+Status: entregue 2026-07-21 (F1+F2; aguardando merge/deploy com remodelagem)
+Atualizado em: 2026-07-21 (implementação + `/simplify` + rebase em `main` com B11; `capture-review-debts` pós-implementação)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, fill-in **A9+** pós-A9)
 Impeccable: A — N/A (sem superfície UI; otimização de loader)
 Appetite: ~1–1,5 dia eng (F1 loader + F2 revalidate pós-B9; PR único ou dois commits)
@@ -13,13 +13,23 @@ O A9 ([estimativa-votos-praca.md](estimativa-votos-praca.md)) entrega `plaza.exp
 
 Uma passagem `/simplify` pós-entrega já limpou o que cabia em cleanup: form `optionalIntegerFormValue` único; remoção de `hasStaffVoteData`; `StaffPlazaVotesDisplay` compartilhado; JSDoc da métrica 2026; testes unit do rollup.
 
-O revisor de **performance** marcou como **maior que simplify** o follow-up abaixo. Sem registro, cada abertura de `/campanha/pracas` (staff) dispara **três** agregações de pledges sobre conjuntos sobrepostos.
+O revisor de **performance** marcou como **maior que simplify** os três problemas abaixo (contexto pré-A9+). **Resolvidos na entrega F1+F2:**
 
-1. **Query triplicada de pledges na página `/campanha/pracas`.** `page.tsx` chama em paralelo `loadPlazaListPageData` (pledges da página atual), `loadPlazaListOverviewData` (pledges de **todo** o conjunto filtrado) e `loadPlazaMapBundle` (pledges do conjunto filtrado do mapa — desde **B7** o escopo segue `buildPlazaListWhere`, não mais todas as Praças acessíveis). Cada loader ainda invoca `aggregatePledgesByPlaza` de forma independente.
+1. ~~**Query triplicada de pledges**~~ — `loadPlazaListPageBundle` chama `aggregatePledgesByPlaza` uma vez; overview, mapa e coluna da página reutilizam o mesmo `Map`.
+2. **Dois `find` de Praças no mesmo filtro** — mantido de propósito (paginado + conjunto filtrado inteiro); ver “Questões em aberto”.
+3. ~~**Revalidação full-page sem escopo no detalhe**~~ — `revalidatePlazaListPaths({ slug })` via hidden `plazaSlug`; lista ainda revalida full-page (filtros `?trend=` + KPIs).
 
-2. **Dois `find` de Praças no mesmo filtro (overview + mapa).** Ambos usam `buildPlazaListWhere` com `pagination: false` e `select` distinto — duplicação de round-trip por request quando o mapa está visível (staff, conjunto não vazio).
+## Como entregue (2026-07-21)
 
-3. **Revalidação full-page após edição inline (B9).** Cada save em `listFormActions.ts` chama `revalidatePath('/campanha/pracas', 'page')` (+ detalhe), o que reroda overview unpaginado, mapa e lista — custo amplificado quando o coordenador edita várias células seguidas (pós-B9).
+**F1 — Loader:** `loadPlazaListPageBundle` em `plazaPageData.ts`; `buildPlazaMapBundleFromPlazas` + `scopePlazasFromDocs` em `plazaMapData.ts`; `page.tsx` com uma única chamada; removidos `loadPlazaListPageData` / `loadPlazaListOverviewData` do export público.
+
+**F2 — Revalidate:** `plazaRevalidation.ts` (`revalidatePlazaListPaths` com validação de slug); hidden `plazaSlug` em `PlazaList*Control`, `PlazaStrategyForm`, `PlazaAdvisorsForm`; `listFormActions` + `editar/formActions` atualizados.
+
+**Helpers compartilhados (prep C8 F4):** `optionalPlazaSlugFromForm`, `parsePoliticalTrendStatusFormValue`.
+
+**Testes:** `tests/int/plazaPageData.int.spec.ts` (4 casos: vazio, rollup, advisor+filtro, leader sem mapa/overview).
+
+**Validação:** `tsc --noEmit`; int `plazaPageData` + `plazaMapData` verdes; Aikido 0 findings nos arquivos editados.
 
 **Já resolvido no simplify/critique (não reabrir):** parsing duplo do form `expectedVotes`; `hasStaffVoteData` derivado de `staffVoteTotal > 0`; `rollupPlazaStaffVotes` + `sumStaffPledgeEffectiveTotal`; `StaffPlazaVotesDisplay`; assinatura estreita de `resolvePlazaStaffVoteTotal`; testes unit do rollup. **Pós-B7 simplify:** `PlazaListSearchParams` exportado de `plazaUi.ts`; parse único no map loader (`loadScopedPlazas` recebe `PlazaListState`). **Pós-B11 simplify:** `Promise.all` nos loads TSE por ano em `loadPlazaMapBundle` (votes + válidos em paralelo; branch `?compare=` também paraleliza os 3 `loadCandidateVotesByCityZone`) — micro-opt que estava fora do escopo A9+; resolvido no cleanup B11, não reabrir aqui.
 
@@ -28,6 +38,16 @@ O revisor de **performance** marcou como **maior que simplify** o follow-up abai
 **Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B7):** testes int extras em `plazaMapData` (`region`/`leader`/`compare`) — cobertura opcional no próximo toque no loader; split do teste advisor por `kind` (legibilidade).
 
 **Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B9):** ~75 hooks `useActionState` por página (3 controles × 25 linhas × 2 views) — gatilho: reclamação de perf ou **R6**; merge `listFormActions` ↔ `/editar` → **C8 F4**; hook popover compartilhado / layout responsivo único / lazy advisor options → gatilhos no plano B9.
+
+## Simplify pós-implementação (2026-07-21)
+
+Passagem `/simplify` sobre o diff A9+ (F1+F2) após rebase em `main` com B11.
+
+**Já resolvido (não reabrir):** `optionalPlazaSlugFromForm` (`formData.ts`); `parsePoliticalTrendStatusFormValue` (`schemas/plaza.ts`); colapso `needsFilteredSet` → `isCampaignStaff`; remoção de `declaredVotesTotal` / `highPriorityCount` mortos em `PlazaListOverviewData`; validação de slug em `revalidatePlazaListPaths`; `compareCandidate` no branch `?compare=` de `buildPlazaMapBundleFromPlazas`; int `plazaPageData` sem re-query redundante de pledges.
+
+**F2 como entregue:** `plazaRevalidation.ts` + hidden `plazaSlug` nos forms; lista e `/editar` chamam `revalidatePlazaListPaths({ slug })` — revalida o detalhe de forma estreita quando o slug está presente; a lista continua com `revalidatePath` full-page (paridade com filtros `?trend=` e KPIs). **Rejeitado neste fill-in:** cache por tag / matriz `scope` por tipo de save.
+
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-implementação A9+):** `scope: 'detail'` só em save de tendência (a lista precisa refletir filtro `?trend=`); cache/revalidate por tag (rabbit hole); mover `plazaListFilteredSelect` → `plazaViewModels` (gatilho: 3º consumidor); paralelizar pledge aggregate + loads TSE no mesmo tick do bundle (gatilho: profiling TTFB); unificar os dois `find` de Praças (decisão travada em “Questões em aberto”); twin completo `listFormActions` ↔ `/editar` → **C8 F4** (prep parcial — ver [escala-dry-pos-c6.md](escala-dry-pos-c6.md) Fase 4).
 
 ## Objetivos
 
@@ -39,7 +59,7 @@ O revisor de **performance** marcou como **maior que simplify** o follow-up abai
 
 ## Decisões travadas
 
-- **Um fill-in A9+, uma fase (F1).** Mesmo racional de A7/C6/A8+: um slug de plano, PR único. **Rejeitado:** item de roadmap separado `A10` — follow-up pós-entrega, não feature nova.
+- **Um fill-in A9+, duas fases ordenadas (F1 loader + F2 revalidate).** Mesmo racional de A7/C6/A8+: um slug de plano, PR único. **Rejeitado:** item de roadmap separado `A10` — follow-up pós-entrega, não feature nova.
 - **Dependência dura de A9.** Só faz sentido com `expectedVotes`, `rollupPlazaStaffVotes` e os três loaders já no produto; não reabre escopo de schema ou UI de edição.
 - **F1 não remove overview nem mapa.** Otimiza como os dados chegam; paridade com a plano A9 permanece. **Rejeitado:** unificar lista+overview num único `find` unpaginado sem validar regressão de paginação/`depth`.
 - **Cortável** se a lista com mapa permanecer aceitável em campo com dezenas de assessores; **menos cortável desde B7 entregue** (mapa filtrado + sempre visível para staff amplifica o custo do triplo agregado quando o filtro é amplo).
@@ -47,7 +67,7 @@ O revisor de **performance** marcou como **maior que simplify** o follow-up abai
 
 ## Questões em aberto
 
-- **Bundle único vs compartilhar só o mapa de pledges?** **Opções:** (A) `loadPlazaListPageBundle` retorna `{ list, overview, mapInputs, pledgeAggregates }`; (B) só deduplicar `aggregatePledgesByPlaza` num helper `loadPlazaPledgeAggregatesForListPage` consumido pelos três loaders. **Recomendação:** (A) se os três `find` de Praças puderem compartilhar escopo sem duplicar lógica de filtro; senão (B) como primeiro passo — ganho imediato no hot path de pledges.
+- **Bundle único vs compartilhar só o mapa de pledges?** **Resolvido (2026-07-21):** opção (A) — `loadPlazaListPageBundle` com um `find` unpaginado filtrado + um `aggregatePledgesByPlaza`; `buildPlazaMapBundleFromPlazas` recebe agregados pré-computados.
 - **Overview unpaginado vs página paginada?** **Recomendação:** manter dois `find` de Praças (conjunto filtrado inteiro vs página) — o gargalo registrado é o **terceiro** agregado de pledges, não a paginação em si; unificar `find` só se profiling mostrar custo dominante em Praças, não em pledges.
 
 ## Abordagem proposta
@@ -108,15 +128,20 @@ flowchart TD
 
 - **SQL aggregate espelhando `buildPlazaListWhere`.** Revisitar quando profiling mostrar `aggregatePledgesByPlaza` dominando TTFB com filtros amplos + mapa sempre montado.
 - **Compartilhar bundle com dashboard geral.** Revisitar se o dashboard passar a carregar mapa+lista na mesma rota.
+- **Paralelizar pledge aggregate + loads TSE históricos no bundle.** Revisitar se profiling mostrar TTFB dominado pelo mapa com filtro amplo (anos TSE já paralelizam dentro de `buildPlazaMapBundleFromPlazas` desde B11/A9+ simplify).
+- **Cache/revalidate por tag ou `scope` por tipo de save.** Revisitar se N saves inline seguidos na lista mostrarem custo de rerender inaceitável em campo.
 
 ## Referências
 
-- `docs/roadmap.md` (Trilha A, A9 entregue + fill-in A9+)
+- `docs/roadmap.md` (Trilha A, A9+ entregue 2026-07-21)
 - `docs/plans/estimativa-votos-praca.md` — plano pai A9
 - `docs/plans/escala-dry-pos-e1.md` — precedente E6 F1 (lista+overview núcleos)
-- `src/app/(campaign)/campanha/(app)/pracas/page.tsx` — `Promise.all` dos três loaders
-- `src/app/(campaign)/campanha/(app)/pracas/listFormActions.ts` — `revalidatePlazaListPaths` pós-B9
-- `src/utilities/plazaPageData.ts` — `loadPlazaListPageData`, `loadPlazaListOverviewData`
+- `src/app/(campaign)/campanha/(app)/pracas/page.tsx` — consome `loadPlazaListPageBundle`
+- `src/app/(campaign)/campanha/(app)/pracas/listFormActions.ts` — `revalidatePlazaListPaths` com `plazaSlug`
+- `src/utilities/plazaPageData.ts` — `loadPlazaListPageBundle`
+- `src/utilities/plazaMapData.ts` — `buildPlazaMapBundleFromPlazas`, `scopePlazasFromDocs`
+- `src/utilities/plazaRevalidation.ts` — helper compartilhado (prep C8 F4)
+- `tests/int/plazaPageData.int.spec.ts` — paridade overview/mapa/escopo
 - `src/utilities/plazaMapData.ts` — `loadPlazaMapBundle`, métrica 2026
 - `src/utilities/votePledgeData.ts` — `aggregatePledgesByPlaza`, `rollupPlazaStaffVotes`
 - AGENTS.md — naming EN/pt-BR; access staff; sem PII

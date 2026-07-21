@@ -114,7 +114,7 @@ Componentes:
 
 Limpezas aplicadas no cleanup da sessão (não reabrir): `politicalTrend.note` via hidden field (sem `findByID` extra); `politicalTrendBadgeVariant` em `plazaUi.ts`; `PlazaAdvisorAvatarStack`; tipos `PoliticalTrendStatus`; `max={1_000_000}` no input; higiene de testes.
 
-Débitos absorvidos noutros planos: twin `listFormActions` ↔ `/editar` → **C8 F4** ([escala-dry-pos-c6.md](escala-dry-pos-c6.md)); `revalidatePath` full-page pós-save → **A9+ F2** ([escala-dry-pos-a9.md](escala-dry-pos-a9.md)).
+Débitos absorvidos noutros planos: twin `listFormActions` ↔ `/editar` → **C8 F4** ([escala-dry-pos-c6.md](escala-dry-pos-c6.md)). ~~`revalidatePath` full-page pós-save~~ → **A9+ F2 entregue** ([escala-dry-pos-a9.md](escala-dry-pos-a9.md): `plazaRevalidation.ts` + `plazaSlug`).
 
 **Explicitamente fora (triage):** lazy-load `getEligibleAdvisorOptions`; `PopoverAnchor` não usado; helper `parsePoliticalTrendStatus`; unit tests dos `PlazaList*Control`.
 

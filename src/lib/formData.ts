@@ -43,6 +43,10 @@ export const optionalFormText = (formData: FormData, field: string): string | un
   return entry.value.trim() || undefined
 }
 
+/** Hidden `plazaSlug` on list/detail plaza forms for scoped revalidation. */
+export const optionalPlazaSlugFromForm = (formData: FormData): string | undefined =>
+  optionalFormText(formData, 'plazaSlug')
+
 export const nullableFormText = (formData: FormData, field: string): string | null | undefined => {
   const entry = formEntry(formData, field)
   if (!entry.present) return undefined

@@ -1,7 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-
 import {
   assignPlazaAdvisors,
   setPlazaExpectedVotes,
@@ -11,19 +9,16 @@ import {
   nullableFormText,
   optionalFormText,
   optionalIntegerFormValue,
+  optionalPlazaSlugFromForm,
   repeatedRelationshipFormValues,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
-import { politicalTrendStatuses, type PoliticalTrendStatusValue } from '@/lib/schemas/plaza'
+import { parsePoliticalTrendStatusFormValue } from '@/lib/schemas/plaza'
 import {
   mapCampaignFormActionError,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
-
-const revalidatePlazaListPaths = () => {
-  revalidatePath('/campanha/pracas', 'page')
-  revalidatePath('/campanha/pracas/[slug]', 'page')
-}
+import { revalidatePlazaListPaths } from '@/utilities/plazaRevalidation'
 
 export const setPlazaExpectedVotesListFormAction = async (
   _state: CampaignFormActionState,
@@ -38,7 +33,7 @@ export const setPlazaExpectedVotesListFormAction = async (
       }) ?? null
 
     await setPlazaExpectedVotes({ plaza, expectedVotes })
-    revalidatePlazaListPaths()
+    revalidatePlazaListPaths({ slug: optionalPlazaSlugFromForm(formData) })
     return { status: 'success', message: 'Votos estimados atualizados.' }
   } catch (error) {
     return mapCampaignFormActionError({
@@ -56,17 +51,14 @@ export const setPlazaPoliticalTrendListFormAction = async (
 ): Promise<CampaignFormActionState> => {
   try {
     const plaza = requiredRelationshipFormValue(formData, 'plazaId')
-    const rawStatus = optionalFormText(formData, 'trendStatus')
-    const status = politicalTrendStatuses.includes(rawStatus as PoliticalTrendStatusValue)
-      ? (rawStatus as PoliticalTrendStatusValue)
-      : null
+    const status = parsePoliticalTrendStatusFormValue(optionalFormText(formData, 'trendStatus'))
 
     await setPlazaPoliticalTrend({
       plaza,
       status,
       note: nullableFormText(formData, 'trendNote'),
     })
-    revalidatePlazaListPaths()
+    revalidatePlazaListPaths({ slug: optionalPlazaSlugFromForm(formData) })
     return { status: 'success', message: 'Tendência política registrada.' }
   } catch (error) {
     return mapCampaignFormActionError({
@@ -87,7 +79,7 @@ export const assignPlazaAdvisorsListFormAction = async (
     const advisors = repeatedRelationshipFormValues(formData, 'advisors')
 
     await assignPlazaAdvisors({ plaza, advisors })
-    revalidatePlazaListPaths()
+    revalidatePlazaListPaths({ slug: optionalPlazaSlugFromForm(formData) })
     return { status: 'success', message: 'Assessores atualizados.' }
   } catch (error) {
     return mapCampaignFormActionError({

@@ -66,6 +66,7 @@ export default async function PlazaEditPage({ params }: PlazaEditPageProps) {
       {user.role === 'coordinator' ? (
         <PlazaAdvisorsForm
           plazaID={view.id}
+          plazaSlug={view.slug}
           currentAdvisorIDs={view.advisorIDs}
           options={advisorOptions}
           formAction={assignPlazaAdvisorsFormAction}
@@ -74,6 +75,7 @@ export default async function PlazaEditPage({ params }: PlazaEditPageProps) {
 
       <PlazaStrategyForm
         plazaID={view.id}
+        plazaSlug={view.slug}
         strategy={view.strategy}
         strategyFormAction={updatePlazaStrategyFormAction}
         expectedVotesFormAction={setPlazaExpectedVotesFormAction}
