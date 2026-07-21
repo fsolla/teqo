@@ -6,25 +6,17 @@ import { getPayload, type Payload } from 'payload'
 
 import {
   createLeadershipRecord,
-  listNucleusLeaderships,
+  listPlazaLeaderships,
   updateLeadershipInternalRecord,
 } from '@/app/(campaign)/campanha/actions/leadership'
-import { updateElectoralNucleus } from '@/app/(campaign)/campanha/actions/nucleus'
 import { Contact } from '@/collections/Contact'
 import { Leadership } from '@/collections/Leadership'
 import { contactSchema } from '@/lib/schemas/contact'
 import { leadershipCreateSchema, leadershipInternalUpdateSchema } from '@/lib/schemas/leadership'
 import config from '@/payload.config'
 import {
-  getNucleusLeadershipPageData,
-  getSelectedNucleusLeadershipPageData,
-} from '@/utilities/leadershipPageData'
-import { resolveAccessibleNucleusContext } from '@/utilities/nucleusPageData'
-import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
-import {
   getTestTransactionBackendPID,
   waitForAdvisoryLockWaiter,
-  withInviteConsent,
 } from '../helpers/testDatabaseLease'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
@@ -36,6 +28,10 @@ const campaignFixtures = installCampaignFixtures({
     payload = nextPayload
   },
 })
+
+const DUPLICATE_LEADERSHIP_MESSAGE =
+  'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novas Praças.'
+const OUT_OF_SCOPE_PLAZA_MESSAGE = 'Você só pode vincular lideranças às Praças que assessora.'
 
 describe('campaign leadership domain', () => {
   beforeAll(async () => {
@@ -63,7 +59,7 @@ describe('campaign leadership domain', () => {
 
   it('normalizes leadership phone input and excludes protected audit fields', () => {
     const parsed = leadershipCreateSchema.parse({
-      nucleus: 1,
+      plazas: [1, 1, 2],
       name: 'Maria da Silva',
       phone: '+55 (71) 99999-0000',
       supportStatus: 'engajado',
@@ -73,21 +69,15 @@ describe('campaign leadership domain', () => {
     } as never)
 
     expect(parsed.phone).toBe('71999990000')
+    expect(parsed.plazas).toEqual([1, 2])
     expect(Object.hasOwn(parsed, 'createdBy')).toBe(false)
     expect(Object.hasOwn(parsed, 'user')).toBe(false)
     expect(Object.hasOwn(parsed, 'consent')).toBe(false)
-    expect(() =>
-      leadershipInternalUpdateSchema.parse({
-        id: 1,
-        contact: 999,
-        nucleus: 999,
-        createdBy: 999,
-      } as never),
-    ).not.toThrow()
+    expect(() => leadershipCreateSchema.parse({ plazas: [], name: 'Sem Praça', phone: '71999990000' })).toThrow()
     const update = leadershipInternalUpdateSchema.parse({
       id: 1,
       contact: 999,
-      nucleus: 999,
+      user: 999,
       createdBy: 999,
     } as never)
     expect(update).toEqual({ id: 1 })
@@ -110,25 +100,23 @@ describe('campaign leadership domain', () => {
     expect(leadershipInternalUpdateSchema.parse({ id: 1 })).toEqual({ id: 1 })
   })
 
-  it('declares the unique contact and nucleus compound index', () => {
-    expect(Leadership.indexes).toEqual(
+  it('declares contact as a unique field so each person has one leadership record', () => {
+    expect(Leadership.fields).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          fields: ['contact', 'nucleus'],
-          unique: true,
-        }),
+        expect.objectContaining({ name: 'contact', unique: true, required: true }),
+        expect.objectContaining({ name: 'plazas', hasMany: true, required: true }),
       ]),
     )
   })
 
-  it('creates a Contact once and reuses it by normalized phone', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const firstNucleus = await campaignFixtures().createNucleus()
-    const secondNucleus = await campaignFixtures().createNucleus()
+  it('creates a Contact with the plaza city and rejects a second leadership for the same person', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const firstPlaza = await campaignFixtures().getPlaza()
+    const secondPlaza = await campaignFixtures().getPlaza()
     const phone = campaignFixtures().phone()
 
-    const first = await createLeadershipRecord(payload, general, {
-      nucleus: firstNucleus.id,
+    const first = await createLeadershipRecord(payload, coordinator, {
+      plazas: [firstPlaza.id],
       name: 'Maria de Jesus',
       phone: `+55 ${phone}`,
       email: '',
@@ -136,16 +124,9 @@ describe('campaign leadership domain', () => {
       sector: 'comunitario',
       supportStatus: 'engajado',
     })
-    const second = await createLeadershipRecord(payload, general, {
-      nucleus: secondNucleus.id,
-      name: 'Nome que não sobrescreve contato existente',
-      phone,
-      supportStatus: 'a_abordar',
-    })
 
-    expect(first.contact).toBe(second.contact)
-    expect(first.createdBy).toBe(general.id)
-    expect(second.createdBy).toBe(general.id)
+    expect(first.createdBy).toBe(coordinator.id)
+    expect(first.contactReused).toBe(false)
 
     const contacts = await payload.find({
       collection: 'contact',
@@ -157,12 +138,42 @@ describe('campaign leadership domain', () => {
     expect(contacts.docs[0]?.name).toBe('Maria de Jesus')
     expect(contacts.docs[0]?.email).toBeNull()
     expect(contacts.docs[0]?.gender).toBe('feminino')
+    expect(contacts.docs[0]?.city).toBe(firstPlaza.city)
+
+    await expect(
+      createLeadershipRecord(payload, coordinator, {
+        plazas: [secondPlaza.id],
+        name: 'Nome que não sobrescreve contato existente',
+        phone,
+        supportStatus: 'a_abordar',
+      }),
+    ).rejects.toThrow(DUPLICATE_LEADERSHIP_MESSAGE)
   })
 
-  it('serializes concurrent phone dedupe and links both nuclei to one Contact', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const firstNucleus = await campaignFixtures().createNucleus()
-    const secondNucleus = await campaignFixtures().createNucleus()
+  it('reuses an existing Contact by normalized phone without overwriting it', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const plaza = await campaignFixtures().getPlaza()
+    const phone = campaignFixtures().phone()
+    const contact = await campaignFixtures().createContact({ name: 'Contato Existente', phone })
+
+    const created = await createLeadershipRecord(payload, coordinator, {
+      plazas: [plaza.id],
+      name: 'Nome que não sobrescreve contato existente',
+      phone: `+55 ${phone}`,
+      supportStatus: 'engajado',
+    })
+
+    expect(created.contactReused).toBe(true)
+    expect(created.contact).toBe(contact.id)
+
+    const persisted = await payload.findByID({ collection: 'contact', id: contact.id, depth: 0 })
+    expect(persisted.name).toBe('Contato Existente')
+  })
+
+  it('serializes concurrent same-phone creates so only one leadership survives', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const firstPlaza = await campaignFixtures().getPlaza()
+    const secondPlaza = await campaignFixtures().getPlaza()
     const phone = campaignFixtures().phone()
     const originalFind = payload.find.bind(payload)
     let contactReads = 0
@@ -190,8 +201,8 @@ describe('campaign leadership domain', () => {
       return result as never
     })
 
-    const first = createLeadershipRecord(payload, general, {
-      nucleus: firstNucleus.id,
+    const first = createLeadershipRecord(payload, coordinator, {
+      plazas: [firstPlaza.id],
       name: 'Contato Concorrente',
       phone,
       supportStatus: 'engajado',
@@ -211,8 +222,8 @@ describe('campaign leadership domain', () => {
       resolveWaiterPID(await getTestTransactionBackendPID(payload, transactionID))
       return transactionID
     })
-    const second = createLeadershipRecord(payload, general, {
-      nucleus: secondNucleus.id,
+    const second = createLeadershipRecord(payload, coordinator, {
+      plazas: [secondPlaza.id],
       name: 'Contato Concorrente Duplicado',
       phone: `+55 ${phone}`,
       supportStatus: 'a_abordar',
@@ -241,35 +252,33 @@ describe('campaign leadership domain', () => {
       beginSpy.mockRestore()
       findSpy.mockRestore()
     }
-    const fulfilled = await Promise.all([first, second])
+    const [firstResult, secondResult] = await Promise.allSettled([first, second])
 
-    const [contacts, leaderships] = await Promise.all([
-      payload.find({
-        collection: 'contact',
-        where: { phone: { equals: phone } },
-        pagination: false,
-        depth: 0,
-      }),
-      payload.find({
-        collection: 'leadership',
-        where: {
-          nucleus: { in: [firstNucleus.id, secondNucleus.id] },
-        },
-        pagination: false,
-        depth: 0,
-      }),
-    ])
+    expect(firstResult.status).toBe('fulfilled')
+    expect(secondResult.status).toBe('rejected')
+    if (secondResult.status === 'rejected') {
+      expect(String(secondResult.reason)).toContain(DUPLICATE_LEADERSHIP_MESSAGE)
+    }
 
+    const contacts = await payload.find({
+      collection: 'contact',
+      where: { phone: { equals: phone } },
+      pagination: false,
+      depth: 0,
+    })
     expect(contacts.docs).toHaveLength(1)
-    expect(leaderships.docs).toHaveLength(2)
-    expect(fulfilled).toHaveLength(2)
-    expect(fulfilled.every(({ contact }) => contact === contacts.docs[0]?.id)).toBe(true)
-    expect(fulfilled.map(({ contactReused }) => contactReused).sort()).toEqual([false, true])
+    const leaderships = await payload.find({
+      collection: 'leadership',
+      where: { contact: { equals: contacts.docs[0]!.id } },
+      pagination: false,
+      depth: 0,
+    })
+    expect(leaderships.docs).toHaveLength(1)
   })
 
   it('rejects a duplicate Contact write before leadership dedupe can become ambiguous', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const nucleus = await campaignFixtures().createNucleus()
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const plaza = await campaignFixtures().getPlaza()
     const phone = campaignFixtures().phone()
 
     await payload.create({
@@ -285,8 +294,8 @@ describe('campaign leadership domain', () => {
     ).rejects.toThrow('Já existe outro contato com este celular')
 
     await expect(
-      createLeadershipRecord(payload, general, {
-        nucleus: nucleus.id,
+      createLeadershipRecord(payload, coordinator, {
+        plazas: [plaza.id],
         name: 'Contato Reutilizado',
         phone,
         supportStatus: 'engajado',
@@ -294,25 +303,15 @@ describe('campaign leadership domain', () => {
     ).resolves.toMatchObject({ contactReused: true })
   })
 
-  it('enforces unique contact and nucleus relationships at the database', async () => {
-    const contact = await payload.create({
-      collection: 'contact',
-      data: {
-        name: 'Contato Único',
-        phone: campaignFixtures().phone(),
-        state: 'BA',
-        city: 'Salvador',
-      },
-    })
-    const nucleus = await campaignFixtures().createNucleus()
+  it('enforces the unique contact relationship at the database', async () => {
+    const contact = await campaignFixtures().createContact({ name: 'Contato Único' })
+    const firstPlaza = await campaignFixtures().getPlaza()
+    const secondPlaza = await campaignFixtures().getPlaza()
 
-    await payload.create({
-      collection: 'leadership',
-      data: {
-        contact: contact.id,
-        nucleus: nucleus.id,
-        supportStatus: 'engajado',
-      },
+    await campaignFixtures().createLeadership({
+      contact: contact.id,
+      plazas: [firstPlaza.id],
+      supportStatus: 'engajado',
     })
 
     await expect(
@@ -320,40 +319,42 @@ describe('campaign leadership domain', () => {
         collection: 'leadership',
         data: {
           contact: contact.id,
-          nucleus: nucleus.id,
+          plazas: [secondPlaza.id],
           supportStatus: 'a_abordar',
         },
       }),
     ).rejects.toThrow()
   })
 
-  it('limits coordinator management and listing to assigned nuclei', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const coordinator = await campaignFixtures().createCampaignUser('coordenador')
-    const otherCoordinator = await campaignFixtures().createCampaignUser('coordenador')
-    const assigned = await campaignFixtures().createNucleus({ coordinators: [coordinator.id] })
-    const other = await campaignFixtures().createNucleus({ coordinators: [otherCoordinator.id] })
+  it('limits advisor management and listing to administered plazas', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const advisor = await campaignFixtures().createCampaignUser('advisor')
+    const otherAdvisor = await campaignFixtures().createCampaignUser('advisor')
+    const assigned = await campaignFixtures().getPlaza()
+    const other = await campaignFixtures().getPlaza()
+    await campaignFixtures().assignPlazaAdvisors(assigned, [advisor])
+    await campaignFixtures().assignPlazaAdvisors(other, [otherAdvisor])
 
-    const ownLeadership = await createLeadershipRecord(payload, coordinator, {
-      nucleus: assigned.id,
-      name: 'Liderança do Núcleo',
+    const ownLeadership = await createLeadershipRecord(payload, advisor, {
+      plazas: [assigned.id],
+      name: 'Liderança da Praça',
       phone: campaignFixtures().phone(),
       supportStatus: 'engajado',
       notes: 'Avaliação interna',
     })
-    await createLeadershipRecord(payload, general, {
-      nucleus: other.id,
+    await createLeadershipRecord(payload, coordinator, {
+      plazas: [other.id],
       name: 'Liderança Alheia',
       phone: campaignFixtures().phone(),
       supportStatus: 'engajado',
     })
 
-    const visible = await listNucleusLeaderships(payload, coordinator, assigned.id)
+    const visible = await listPlazaLeaderships(payload, advisor, assigned.id)
     expect(visible.docs.map(({ id }) => id)).toContain(ownLeadership.id)
 
     const visibleContacts = await payload.find({
       collection: 'contact',
-      user: coordinator,
+      user: advisor,
       overrideAccess: false,
       depth: 0,
       pagination: false,
@@ -361,106 +362,97 @@ describe('campaign leadership domain', () => {
     expect(visibleContacts.docs.map(({ id }) => id)).toContain(ownLeadership.contact)
     expect(visibleContacts.docs.map(({ name }) => name)).not.toContain('Liderança Alheia')
 
-    await expect(listNucleusLeaderships(payload, coordinator, other.id)).rejects.toThrow()
+    const foreign = await listPlazaLeaderships(payload, advisor, other.id)
+    expect(foreign.docs).toHaveLength(0)
+
     await expect(
-      createLeadershipRecord(payload, coordinator, {
-        nucleus: other.id,
+      createLeadershipRecord(payload, advisor, {
+        plazas: [other.id],
         name: 'Cadastro Fora do Escopo',
         phone: campaignFixtures().phone(),
         supportStatus: 'engajado',
       }),
-    ).rejects.toThrow()
+    ).rejects.toThrow(OUT_OF_SCOPE_PLAZA_MESSAGE)
   })
 
-  it('enforces scoped action success and denial for create, update, and primary contact', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const coordinator = await campaignFixtures().createCampaignUser('coordenador')
-    const otherCoordinator = await campaignFixtures().createCampaignUser('coordenador')
-    const assigned = await campaignFixtures().createNucleus({ coordinators: [coordinator.id] })
-    const other = await campaignFixtures().createNucleus({ coordinators: [otherCoordinator.id] })
+  it('enforces scoped action success and denial for create and internal update', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const advisor = await campaignFixtures().createCampaignUser('advisor')
+    const assigned = await campaignFixtures().getPlaza()
+    const other = await campaignFixtures().getPlaza()
+    await campaignFixtures().assignPlazaAdvisors(assigned, [advisor])
 
-    const own = await createLeadershipRecord(payload, coordinator, {
-      nucleus: assigned.id,
+    const own = await createLeadershipRecord(payload, advisor, {
+      plazas: [assigned.id],
       name: 'Ação Permitida',
       phone: campaignFixtures().phone(),
       supportStatus: 'engajado',
     })
-    await expect(
-      createLeadershipRecord(payload, coordinator, {
-        nucleus: other.id,
-        name: 'Ação Negada',
-        phone: campaignFixtures().phone(),
-        supportStatus: 'engajado',
-      }),
-    ).rejects.toThrow()
 
     await expect(
-      updateLeadershipInternalRecord(payload, coordinator, {
+      updateLeadershipInternalRecord(payload, advisor, {
         id: own.id,
         notes: 'Atualização permitida',
       }),
     ).resolves.toMatchObject({ notes: 'Atualização permitida' })
 
-    const otherLeadership = await createLeadershipRecord(payload, general, {
-      nucleus: other.id,
+    await expect(
+      updateLeadershipInternalRecord(payload, advisor, {
+        id: own.id,
+        plazas: [assigned.id, other.id],
+      }),
+    ).rejects.toThrow(OUT_OF_SCOPE_PLAZA_MESSAGE)
+
+    const otherLeadership = await createLeadershipRecord(payload, coordinator, {
+      plazas: [other.id],
       name: 'Outra Liderança',
       phone: campaignFixtures().phone(),
       supportStatus: 'engajado',
     })
     await expect(
-      updateLeadershipInternalRecord(payload, coordinator, {
+      updateLeadershipInternalRecord(payload, advisor, {
         id: otherLeadership.id,
         notes: 'Atualização negada',
       }),
     ).rejects.toThrow()
-
-    await expect(
-      updateElectoralNucleus(payload, coordinator, {
-        id: assigned.id,
-        primaryContact: own.contact as number,
-      }),
-    ).resolves.toMatchObject({ primaryContact: own.contact })
-    await expect(
-      updateElectoralNucleus(payload, coordinator, {
-        id: other.id,
-        primaryContact: otherLeadership.contact as number,
-      }),
-    ).rejects.toThrow()
   })
 
-  it('denies direct coordinator creation in an out-of-scope nucleus', async () => {
-    const coordinator = await campaignFixtures().createCampaignUser('coordenador')
-    const otherCoordinator = await campaignFixtures().createCampaignUser('coordenador')
-    const otherNucleus = await campaignFixtures().createNucleus({
-      coordinators: [otherCoordinator.id],
-    })
-    const contact = await payload.create({
-      collection: 'contact',
-      data: {
-        name: 'Contato Fora do Escopo',
+  it('denies leadership creation to leader accounts', async () => {
+    const leader = await campaignFixtures().createCampaignUser('leader')
+    const plaza = await campaignFixtures().getPlaza()
+
+    await expect(
+      createLeadershipRecord(payload, leader, {
+        plazas: [plaza.id],
+        name: 'Criação por liderança',
         phone: campaignFixtures().phone(),
-        state: 'BA',
-        city: 'Salvador',
-      },
-    })
+        supportStatus: 'engajado',
+      }),
+    ).rejects.toThrow('Somente a coordenação e a assessoria podem gerenciar lideranças.')
+  })
+
+  it('denies direct advisor creation linked to an out-of-scope plaza', async () => {
+    const advisor = await campaignFixtures().createCampaignUser('advisor')
+    const otherPlaza = await campaignFixtures().getPlaza()
+    const contact = await campaignFixtures().createContact()
 
     await expect(
       payload.create({
         collection: 'leadership',
         data: {
           contact: contact.id,
-          nucleus: otherNucleus.id,
+          plazas: [otherPlaza.id],
           supportStatus: 'engajado',
         },
-        user: coordinator,
+        user: advisor,
         overrideAccess: false,
       }),
     ).rejects.toThrow()
   })
 
   it('rolls back a newly created contact when leadership creation fails', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const nucleus = await campaignFixtures().createNucleus()
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const plaza = await campaignFixtures().getPlaza()
     const phone = campaignFixtures().phone()
     const originalCreate = payload.create.bind(payload)
     const createSpy = vi.spyOn(payload, 'create').mockImplementation(async (args) => {
@@ -471,8 +463,8 @@ describe('campaign leadership domain', () => {
     })
 
     await expect(
-      createLeadershipRecord(payload, general, {
-        nucleus: nucleus.id,
+      createLeadershipRecord(payload, coordinator, {
+        plazas: [plaza.id],
         name: 'Contato que Deve Reverter',
         phone,
         supportStatus: 'engajado',
@@ -489,7 +481,7 @@ describe('campaign leadership domain', () => {
       }),
       payload.find({
         collection: 'leadership',
-        where: { nucleus: { equals: nucleus.id } },
+        where: { plazas: { in: [plaza.id] } },
         depth: 0,
         pagination: false,
       }),
@@ -498,54 +490,32 @@ describe('campaign leadership domain', () => {
     expect(leaderships.totalDocs).toBe(0)
   })
 
-  it('lets engaged leadership read only its own scoped records without internal fields', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const leadershipUser = await campaignFixtures().createCampaignUser('lideranca')
-    const nucleus = await campaignFixtures().createNucleus()
-    const otherNucleus = await campaignFixtures().createNucleus()
-    const ownContact = await payload.create({
-      collection: 'contact',
-      data: {
-        name: 'Contato Próprio',
-        phone: campaignFixtures().phone(),
-        state: 'BA',
-        city: 'Salvador',
-      },
+  it('lets an engaged leader read only their own record without internal fields', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const leaderAccount = await campaignFixtures().createCampaignUser('leader')
+    const plaza = await campaignFixtures().getPlaza()
+    const otherPlaza = await campaignFixtures().getPlaza()
+    const ownContact = await campaignFixtures().createContact({ name: 'Contato Próprio' })
+    const otherContact = await campaignFixtures().createContact({ name: 'Contato Alheio' })
+    const own = await campaignFixtures().createLeadership({
+      contact: ownContact.id,
+      plazas: [plaza.id],
+      user: leaderAccount.id,
+      supportStatus: 'engajado',
+      notes: 'Não pode aparecer',
+      createdBy: coordinator.id,
     })
-    const otherContact = await payload.create({
-      collection: 'contact',
-      data: {
-        name: 'Contato Alheio',
-        phone: campaignFixtures().phone(),
-        state: 'BA',
-        city: 'Salvador',
-      },
-    })
-    const own = await payload.create({
-      collection: 'leadership',
-      data: {
-        contact: ownContact.id,
-        nucleus: nucleus.id,
-        user: leadershipUser.id,
-        supportStatus: 'engajado',
-        notes: 'Não pode aparecer',
-        createdBy: general.id,
-      },
-    })
-    await payload.create({
-      collection: 'leadership',
-      data: {
-        contact: otherContact.id,
-        nucleus: otherNucleus.id,
-        supportStatus: 'engajado',
-        notes: 'Alheia',
-        createdBy: general.id,
-      },
+    await campaignFixtures().createLeadership({
+      contact: otherContact.id,
+      plazas: [otherPlaza.id],
+      supportStatus: 'engajado',
+      notes: 'Alheia',
+      createdBy: coordinator.id,
     })
 
     const visibleLinks = await payload.find({
       collection: 'leadership',
-      user: leadershipUser,
+      user: leaderAccount,
       overrideAccess: false,
       depth: 0,
       pagination: false,
@@ -559,7 +529,7 @@ describe('campaign leadership domain', () => {
 
     const visibleContacts = await payload.find({
       collection: 'contact',
-      user: leadershipUser,
+      user: leaderAccount,
       overrideAccess: false,
       depth: 0,
       pagination: false,
@@ -567,171 +537,64 @@ describe('campaign leadership domain', () => {
     expect(visibleContacts.docs.map(({ id }) => id)).toEqual([ownContact.id])
   })
 
-  it('keeps internal evaluation out of the liderança page payload', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const leadershipUser = await campaignFixtures().createCampaignUser('lideranca')
-    const nucleus = await campaignFixtures().createNucleus()
-    const contact = await payload.create({
-      collection: 'contact',
-      data: {
-        name: 'Ficha Segura',
-        phone: campaignFixtures().phone(),
-        state: 'BA',
-        city: 'Salvador',
-      },
-    })
-    await payload.create({
-      collection: 'leadership',
-      data: {
-        contact: contact.id,
-        nucleus: nucleus.id,
-        user: leadershipUser.id,
-        supportStatus: 'engajado',
-        notes: 'Avaliação interna que não pode sair do servidor',
-        consentNote: 'Registro interno que não pode sair do servidor',
-        createdBy: general.id,
-      },
-    })
-
-    const context = await resolveAccessibleNucleusContext(payload, leadershipUser, nucleus.slug)
-    const pageData = await withInviteConsent(payload, () =>
-      getNucleusLeadershipPageData(payload, leadershipUser, context),
-    )
-    const serialized = JSON.stringify(pageData)
-
-    expect(serialized).toContain('Ficha Segura')
-    expect(serialized).not.toContain('supportStatus')
-    expect(serialized).not.toContain('Avaliação interna')
-    expect(serialized).not.toContain('Registro interno')
-  })
-
-  it('resolves only one selected staff DTO inside the accessible nucleus context', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const leadershipUser = await campaignFixtures().createCampaignUser('lideranca')
-    const nucleus = await campaignFixtures().createNucleus()
-    const foreignNucleus = await campaignFixtures().createNucleus()
-    const contact = await payload.create({
-      collection: 'contact',
-      data: {
-        name: 'Seleção Escopada',
-        phone: campaignFixtures().phone(),
-        state: 'BA',
-        city: 'Salvador',
-      },
-    })
-    const selected = await payload.create({
-      collection: 'leadership',
-      data: {
-        contact: contact.id,
-        nucleus: nucleus.id,
-        supportStatus: 'engajado',
-        notes: 'Avaliação selecionada',
-        createdBy: general.id,
-      },
-    })
-    const context = await resolveAccessibleNucleusContext(payload, general, nucleus.slug)
-    const foreignContext = await resolveAccessibleNucleusContext(
-      payload,
-      general,
-      foreignNucleus.slug,
-    )
-
-    const result = await withInviteConsent(payload, () =>
-      getSelectedNucleusLeadershipPageData(payload, general, context, selected.id),
-    )
-    const serialized = JSON.stringify(result)
-
-    expect(result).toMatchObject({
-      id: selected.id,
-      contactId: contact.id,
-      name: 'Seleção Escopada',
+  it('revokes leader plaza and contact access immediately when no longer engaged', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const leaderAccount = await campaignFixtures().createCampaignUser('leader')
+    const plaza = await campaignFixtures().getPlaza()
+    const contact = await campaignFixtures().createContact({ name: 'Contato Revogado' })
+    const link = await campaignFixtures().createLeadership({
+      contact: contact.id,
+      plazas: [plaza.id],
+      user: leaderAccount.id,
       supportStatus: 'engajado',
-      notes: 'Avaliação selecionada',
-    })
-    expect(serialized.match(/Seleção Escopada/g)).toHaveLength(1)
-    await expect(
-      getSelectedNucleusLeadershipPageData(payload, general, foreignContext, selected.id),
-    ).resolves.toBeNull()
-    await expect(
-      getSelectedNucleusLeadershipPageData(payload, leadershipUser, context, selected.id),
-    ).resolves.toBeNull()
-  })
-
-  it('revokes leadership nucleus and contact access immediately when no longer engaged', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const leadershipUser = await campaignFixtures().createCampaignUser('lideranca')
-    const nucleus = await campaignFixtures().createNucleus()
-    const contact = await payload.create({
-      collection: 'contact',
-      data: {
-        name: 'Contato Revogado',
-        phone: campaignFixtures().phone(),
-        state: 'BA',
-        city: 'Salvador',
-      },
-    })
-    const link = await payload.create({
-      collection: 'leadership',
-      data: {
-        contact: contact.id,
-        nucleus: nucleus.id,
-        user: leadershipUser.id,
-        supportStatus: 'engajado',
-        createdBy: general.id,
-      },
+      createdBy: coordinator.id,
     })
 
     const before = await payload.find({
-      collection: 'electoralNucleus',
-      user: leadershipUser,
+      collection: 'plaza',
+      user: leaderAccount,
       overrideAccess: false,
       depth: 0,
+      pagination: false,
     })
-    expect(before.docs.map(({ id }) => id)).toContain(nucleus.id)
+    expect(before.docs.map(({ id }) => id)).toContain(plaza.id)
 
-    await updateLeadershipInternalRecord(payload, general, {
+    await updateLeadershipInternalRecord(payload, coordinator, {
       id: link.id,
       supportStatus: 'em_disputa',
     })
 
-    const afterNuclei = await payload.find({
-      collection: 'electoralNucleus',
-      user: leadershipUser,
+    const afterPlazas = await payload.find({
+      collection: 'plaza',
+      user: leaderAccount,
       overrideAccess: false,
       depth: 0,
+      pagination: false,
     })
     const afterContacts = await payload.find({
       collection: 'contact',
-      user: leadershipUser,
+      user: leaderAccount,
       overrideAccess: false,
       depth: 0,
+      pagination: false,
     })
-    expect(afterNuclei.docs.map(({ id }) => id)).not.toContain(nucleus.id)
+    expect(afterPlazas.docs.map(({ id }) => id)).not.toContain(plaza.id)
     expect(afterContacts.docs.map(({ id }) => id)).not.toContain(contact.id)
   })
 
-  it('denies leadership users from updating internal fields', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const leadershipUser = await campaignFixtures().createCampaignUser('lideranca')
-    const nucleus = await campaignFixtures().createNucleus()
-    const contact = await payload.create({
-      collection: 'contact',
-      data: {
-        name: 'Liderança sem Escrita Interna',
-        phone: campaignFixtures().phone(),
-        state: 'BA',
-        city: 'Salvador',
-      },
+  it('denies leader accounts from updating internal fields', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const leaderAccount = await campaignFixtures().createCampaignUser('leader')
+    const plaza = await campaignFixtures().getPlaza()
+    const contact = await campaignFixtures().createContact({
+      name: 'Liderança sem Escrita Interna',
     })
-    const link = await payload.create({
-      collection: 'leadership',
-      data: {
-        contact: contact.id,
-        nucleus: nucleus.id,
-        user: leadershipUser.id,
-        supportStatus: 'engajado',
-        createdBy: general.id,
-      },
+    const link = await campaignFixtures().createLeadership({
+      contact: contact.id,
+      plazas: [plaza.id],
+      user: leaderAccount.id,
+      supportStatus: 'engajado',
+      createdBy: coordinator.id,
     })
 
     await expect(
@@ -742,7 +605,7 @@ describe('campaign leadership domain', () => {
           supportStatus: 'negativo',
           notes: 'Tentativa de alterar avaliação interna',
         },
-        user: leadershipUser,
+        user: leaderAccount,
         overrideAccess: false,
       }),
     ).rejects.toThrow()
@@ -756,139 +619,11 @@ describe('campaign leadership domain', () => {
     expect(unchanged.notes).toBeNull()
   })
 
-  it('blocks a non-engaged status while the leadership is the primary contact', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const nucleus = await campaignFixtures().createNucleus()
-    const created = await createLeadershipRecord(payload, general, {
-      nucleus: nucleus.id,
-      name: 'Contato Principal',
-      phone: campaignFixtures().phone(),
-      supportStatus: 'engajado',
-    })
-
-    await payload.update({
-      collection: 'electoralNucleus',
-      id: nucleus.id,
-      data: { primaryContact: created.contact as number },
-    })
-
-    await expect(
-      updateLeadershipInternalRecord(payload, general, {
-        id: created.id,
-        supportStatus: 'negativo',
-      }),
-    ).rejects.toThrow('contato principal')
-  })
-
-  it('blocks choosing a non-engaged leadership as primary contact', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const nucleus = await campaignFixtures().createNucleus()
-    const created = await createLeadershipRecord(payload, general, {
-      nucleus: nucleus.id,
-      name: 'Contato Ainda Não Engajado',
-      phone: campaignFixtures().phone(),
-      supportStatus: 'a_abordar',
-    })
-
-    await expect(
-      payload.update({
-        collection: 'electoralNucleus',
-        id: nucleus.id,
-        data: { primaryContact: created.contact as number },
-      }),
-    ).rejects.toThrow('engajada')
-  })
-
-  it('serializes concurrent primary selection and leadership disengagement', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const nucleus = await campaignFixtures().createNucleus()
-    const created = await createLeadershipRecord(payload, general, {
-      nucleus: nucleus.id,
-      name: 'Contato Principal Concorrente',
-      phone: campaignFixtures().phone(),
-      supportStatus: 'engajado',
-    })
-
-    await Promise.allSettled([
-      payload.update({
-        collection: 'electoralNucleus',
-        id: nucleus.id,
-        data: { primaryContact: created.contact as number },
-      }),
-      payload.update({
-        collection: 'leadership',
-        id: created.id,
-        data: { supportStatus: 'negativo' },
-      }),
-    ])
-
-    const [persistedNucleus, persistedLeadership] = await Promise.all([
-      payload.findByID({ collection: 'electoralNucleus', id: nucleus.id, depth: 0 }),
-      payload.findByID({ collection: 'leadership', id: created.id, depth: 0 }),
-    ])
-    expect(
-      persistedNucleus.primaryContact === created.contact &&
-        persistedLeadership.supportStatus !== 'engajado',
-    ).toBe(false)
-  })
-
-  it('waits on the exact primary-contact namespace before validating the relationship', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const nucleus = await campaignFixtures().createNucleus()
-    const created = await createLeadershipRecord(payload, general, {
-      nucleus: nucleus.id,
-      name: 'Contato Principal Bloqueado',
-      phone: campaignFixtures().phone(),
-      supportStatus: 'engajado',
-    })
-    const holderID = await payload.db.beginTransaction()
-    if (holderID === null) throw new Error('Expected a PostgreSQL transaction.')
-    await acquireTextAdvisoryLocks(payload, { transactionID: holderID }, [
-      `primary-contact:${nucleus.id}`,
-    ])
-
-    const originalBegin = payload.db.beginTransaction.bind(payload.db)
-    let resolveWaiterPID!: (pid: number) => void
-    const waiterPID = new Promise<number>((resolve) => {
-      resolveWaiterPID = resolve
-    })
-    const beginSpy = vi.spyOn(payload.db, 'beginTransaction').mockImplementation(async () => {
-      const transactionID = await originalBegin()
-      if (transactionID === null) throw new Error('Expected primary-contact transaction.')
-      resolveWaiterPID(await getTestTransactionBackendPID(payload, transactionID))
-      return transactionID
-    })
-    const pending = payload.update({
-      collection: 'electoralNucleus',
-      id: nucleus.id,
-      data: { primaryContact: created.contact as number },
-      depth: 0,
-    })
-
-    try {
-      const expectedPID = await waiterPID
-      await expect(
-        waitForAdvisoryLockWaiter(payload, {
-          key: `primary-contact:${nucleus.id}`,
-          mode: 'ExclusiveLock',
-          waiterPID: expectedPID,
-        }),
-      ).resolves.toMatchObject({ granted: false, pid: expectedPID })
-      await payload.db.rollbackTransaction(holderID)
-      await expect(pending).resolves.toMatchObject({ primaryContact: created.contact })
-    } catch (error) {
-      await payload.db.rollbackTransaction(holderID).catch(() => undefined)
-      throw error
-    } finally {
-      beginSpy.mockRestore()
-    }
-  })
-
   it('denies anonymous Contact listing and campaign hard deletes', async () => {
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const nucleus = await campaignFixtures().createNucleus()
-    const created = await createLeadershipRecord(payload, general, {
-      nucleus: nucleus.id,
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const plaza = await campaignFixtures().getPlaza()
+    const created = await createLeadershipRecord(payload, coordinator, {
+      plazas: [plaza.id],
       name: 'Registro Permanente',
       phone: campaignFixtures().phone(),
       supportStatus: 'a_abordar',
@@ -906,7 +641,7 @@ describe('campaign leadership domain', () => {
       payload.delete({
         collection: 'leadership',
         id: created.id,
-        user: general,
+        user: coordinator,
         overrideAccess: false,
       }),
     ).rejects.toThrow()
@@ -914,7 +649,7 @@ describe('campaign leadership domain', () => {
       payload.delete({
         collection: 'contact',
         id: created.contact as number,
-        user: general,
+        user: coordinator,
         overrideAccess: false,
       }),
     ).rejects.toThrow()

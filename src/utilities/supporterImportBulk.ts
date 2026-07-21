@@ -51,7 +51,7 @@ const SUPPORTER_TABLE = 'supporter'
  */
 const SUPPORTER_COLUMNS = [
   'contact',
-  'nucleus',
+  'plaza',
   'voteIntention',
   'consent',
   'consentContentHash',
@@ -99,7 +99,7 @@ const buildSupporterRows = (
   entries.map(({ row, contactID }) => ({
     // Drizzle column names for Payload relationship fields omit the `Id` suffix.
     contact: contactID,
-    nucleus: null,
+    plaza: null,
     voteIntention: row.intencao ?? null,
     consent: args.registrationConsent.id,
     consentContentHash: args.registrationConsent.contentHash,
@@ -130,14 +130,14 @@ const asContactID = (row: Record<string, unknown>): number | null => {
 }
 
 /**
- * Bulk-insert contacts and nucleus-less supporters for a CSV import inside the
+ * Bulk-insert contacts and plaza-less supporters for a CSV import inside the
  * caller's Payload transaction. Phone advisory locks MUST already be held for
  * every phone in `rows` (the caller acquires them before invoking this helper).
  *
  * Contacts are inserted via drizzle (bypassing the Contact phone-invariant hook,
  * which is safe because the locks guarantee uniqueness within the txn). The
  * supporter insert uses `ON CONFLICT DO NOTHING` on the unique
- * `(contact_id, nucleus_id)` index as a last-resort guard against races.
+ * `(contact_id, plaza_id)` index as a last-resort guard against races.
  *
  * All reads (existing contacts, existing supporters) and the ID recovery for
  * newly inserted contacts run as raw SQL / `.returning()` on the same drizzle
@@ -213,7 +213,7 @@ export const bulkInsertSupporterImport = async (args: {
           sql`SELECT "contact_id" FROM "supporter" WHERE "contact_id" IN (${sql.join(
             idBatch.map((id) => sql`${id}`),
             sql`, `,
-          )}) AND "nucleus_id" IS NULL`,
+          )}) AND "plaza_id" IS NULL`,
         ),
       )
       for (const row of existingSupporterRows) {

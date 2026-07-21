@@ -112,6 +112,7 @@
     ".next/e2e-43384/types/**/*.ts",
     ".next/e2e-44522/types/**/*.ts",
     ".next/e2e-44774/types/**/*.ts",
+    ".next/e2e-44960/types/**/*.ts",
     ".next/e2e-46155/types/**/*.ts",
     ".next/e2e-46497/types/**/*.ts",
     ".next/e2e-46609/types/**/*.ts",
@@ -182,6 +183,7 @@
     ".next/e2e-84504/types/**/*.ts",
     ".next/e2e-84574/types/**/*.ts",
     ".next/e2e-85918/types/**/*.ts",
+    ".next/e2e-8611/types/**/*.ts",
     ".next/e2e-86120/types/**/*.ts",
     ".next/e2e-86502/types/**/*.ts",
     ".next/e2e-87073/types/**/*.ts",
@@ -222,7 +224,7 @@
     ".next/e2e/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next/e2e-44960/types/**/*.ts"
+    ".next/e2e-12203/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

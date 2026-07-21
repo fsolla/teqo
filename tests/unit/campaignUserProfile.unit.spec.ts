@@ -19,12 +19,12 @@ describe('campaignUserProfile helpers', () => {
     expect(
       campaignUserShellView({
         name: 'Maria',
-        role: 'geral',
+        role: 'coordinator',
         avatar: { id: 1, url: 'https://example.com/a.jpg' } as never,
       }),
     ).toEqual({
       name: 'Maria',
-      role: 'geral',
+      role: 'coordinator',
       avatarUrl: 'https://example.com/a.jpg',
     })
     expect(mediaDocumentUrl(42)).toBeNull()

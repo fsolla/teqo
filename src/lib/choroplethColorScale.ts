@@ -21,3 +21,29 @@ export const choroplethMaxValue = (values: Record<string, number>): number => {
   const entries = Object.values(values).filter((value) => value > 0)
   return entries.length > 0 ? Math.max(...entries) : 0
 }
+
+/**
+ * Diverging comparison scale (product decision 2026-07-20): campaign red where
+ * Solla leads, white at the tie, blue where the compared candidate leads.
+ */
+export const divergingBlueEnd = { r: 30, g: 64, b: 175 } as const
+
+const white = { r: 255, g: 255, b: 255 } as const
+
+export const divergingFillColor = (diff: number, maxAbs: number): string => {
+  if (maxAbs <= 0 || diff === 0) return `rgb(${white.r}, ${white.g}, ${white.b})`
+
+  const ratio = Math.min(1, Math.abs(diff) / maxAbs)
+  const end = diff > 0 ? choroplethGradientEnd : divergingBlueEnd
+  const r = Math.round(white.r + (end.r - white.r) * ratio)
+  const g = Math.round(white.g + (end.g - white.g) * ratio)
+  const b = Math.round(white.b + (end.b - white.b) * ratio)
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+export const divergingGradientCss = `linear-gradient(to right, rgb(${divergingBlueEnd.r} ${divergingBlueEnd.g} ${divergingBlueEnd.b}), rgb(255 255 255), rgb(${choroplethGradientEnd.r} ${choroplethGradientEnd.g} ${choroplethGradientEnd.b}))`
+
+export const choroplethMaxAbsValue = (values: Record<string, number>): number => {
+  const entries = Object.values(values).map((value) => Math.abs(value))
+  return entries.length > 0 ? Math.max(...entries) : 0
+}

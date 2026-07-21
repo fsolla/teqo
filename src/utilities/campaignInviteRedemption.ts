@@ -263,7 +263,7 @@ export const redeemCampaignInviteLoginRecord = async (
           })
         : await payload.create({
             collection: 'campaignUser',
-            data: { ...accountData, role: 'lideranca' },
+            data: { ...accountData, role: 'leader' },
             depth: 0,
             overrideAccess: true,
             req,

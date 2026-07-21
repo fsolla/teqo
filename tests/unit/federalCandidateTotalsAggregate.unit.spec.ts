@@ -7,7 +7,7 @@ import type { CampaignUser, User } from '@/payload-types'
 import { assertCanReadElectionData } from '@/utilities/campaignAccess'
 import { loadFederalCandidateTotalsAggregated } from '@/utilities/federalCandidateTotalsAggregate'
 import * as drizzleBulk from '@/utilities/drizzleBulk'
-import { resolveNucleusElectionGeography } from '@/utilities/nucleusElectionGeography'
+import type { PlazaElectionGeography } from '@/utilities/plazaElectionGeography'
 
 describe('assertCanReadElectionData', () => {
   it('allows payload admins and campaign users to read election data', () => {
@@ -22,8 +22,8 @@ describe('assertCanReadElectionData', () => {
       assertCanReadElectionData({
         collection: 'campaignUser',
         id: 1,
-        role: 'lideranca',
-      } as CampaignUser),
+        role: 'leader',
+      } as unknown as CampaignUser),
     ).not.toThrow()
   })
 
@@ -39,11 +39,10 @@ describe('assertCanReadElectionData', () => {
 
 describe('loadFederalCandidateTotalsAggregated', () => {
   it('maps drizzle aggregate rows and scopes geography in SQL', async () => {
-    const geography = resolveNucleusElectionGeography({
-      cities: ['Salvador'],
-      regions: [],
-      tseZones: [1, 2],
-    })!
+    const geography: PlazaElectionGeography = {
+      cityCode: '38490',
+      zones: [1, 2],
+    }
 
     const execute = vi.fn().mockResolvedValue({
       rows: [
@@ -69,8 +68,8 @@ describe('loadFederalCandidateTotalsAggregated', () => {
       {
         collection: 'campaignUser',
         id: 1,
-        role: 'geral',
-      } as CampaignUser,
+        role: 'coordinator',
+      } as unknown as CampaignUser,
       geography,
     )
 

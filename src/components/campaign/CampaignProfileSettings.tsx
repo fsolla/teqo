@@ -16,7 +16,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 import { campaignRoleLabels, type CampaignUserShellView } from '@/utilities/campaignUserProfile'
-import { formatLeadershipPhone } from '@/utilities/leadershipUi'
+import { formatBrazilianPhoneDisplay } from '@/utilities/phone'
 
 type CampaignProfileSettingsProps = {
   user: CampaignUserShellView & {
@@ -98,7 +98,7 @@ export const CampaignProfileSettings = ({
             {user.username ? (
               <div>
                 <dt className="text-muted-foreground">Celular de acesso</dt>
-                <dd>{formatLeadershipPhone(user.username)}</dd>
+                <dd>{formatBrazilianPhoneDisplay(user.username)}</dd>
               </div>
             ) : null}
           </dl>

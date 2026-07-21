@@ -51,8 +51,8 @@ export const toPayloadWhere = (state: SupporterListState): Where => {
   if (state.city) {
     filters.push({ 'contact.city': { equals: state.city } })
   }
-  if (state.nucleus) {
-    filters.push({ nucleus: { equals: state.nucleus } })
+  if (state.plaza) {
+    filters.push({ plaza: { equals: state.plaza } })
   }
 
   return filters.length ? { and: filters } : {}

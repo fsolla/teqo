@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import type { SupporterFormState } from '@/app/(campaign)/campanha/(app)/apoiadores/novo/formActions'
 import { FormattedInput } from '@/components/FormattedInput'
+import type { RelationOption } from '@/components/campaign/RelationMultiSelect'
 import { StrictCombobox } from '@/components/campaign/StrictCombobox'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
@@ -26,7 +27,6 @@ import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 import { fieldError, errorProps as buildErrorProps } from '@/utilities/campaignFormFields'
 import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/utilities/phone'
 import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
-import type { SupporterNucleusOption } from '@/utilities/supporterViewModels'
 import { municipalityComboboxOptions } from '@/utilities/territoryComboboxOptions'
 
 export type SupporterFormAction = (
@@ -93,16 +93,16 @@ const ConsentBlock = ({
 
 export const SupporterForm = ({
   action,
-  nucleusOptions,
+  plazaOptions,
   registrationConsentConfigured,
   voteIntentionConsentConfigured,
-  requireNucleus,
+  requirePlaza,
 }: {
   action: SupporterFormAction
-  nucleusOptions: SupporterNucleusOption[]
+  plazaOptions: RelationOption[]
   registrationConsentConfigured: boolean
   voteIntentionConsentConfigured: boolean
-  requireNucleus: boolean
+  requirePlaza: boolean
 }) => {
   const router = useRouter()
   const [state, formAction, pending] = useActionState(action, {})
@@ -124,7 +124,7 @@ export const SupporterForm = ({
   const phoneField = errorProps(state.fieldErrors, 'phone')
   const emailField = errorProps(state.fieldErrors, 'email')
   const cityField = errorProps(state.fieldErrors, 'city')
-  const nucleusField = errorProps(state.fieldErrors, 'nucleus')
+  const plazaField = errorProps(state.fieldErrors, 'plaza')
   const voteIntentionField = errorProps(state.fieldErrors, 'voteIntention')
 
   return (
@@ -212,24 +212,24 @@ export const SupporterForm = ({
           ) : null}
         </Field>
 
-        <Field data-invalid={nucleusField.invalid}>
-          <FieldLabel htmlFor="supporter-nucleus">Núcleo{requireNucleus ? ' *' : ''}</FieldLabel>
+        <Field data-invalid={plazaField.invalid}>
+          <FieldLabel htmlFor="supporter-plaza">Praça{requirePlaza ? ' *' : ''}</FieldLabel>
           <NativeSelect
-            id="supporter-nucleus"
-            name="nucleus"
-            required={requireNucleus}
-            defaultValue={values?.nucleus ?? ''}
+            id="supporter-plaza"
+            name="plaza"
+            required={requirePlaza}
+            defaultValue={values?.plaza ?? ''}
             className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
           >
-            {!requireNucleus ? <NativeSelectOption value="">Sem núcleo</NativeSelectOption> : null}
-            {nucleusOptions.map((nucleus) => (
-              <NativeSelectOption key={nucleus.id} value={String(nucleus.id)}>
-                {nucleus.name}
+            {!requirePlaza ? <NativeSelectOption value="">Sem Praça</NativeSelectOption> : null}
+            {plazaOptions.map((plaza) => (
+              <NativeSelectOption key={plaza.id} value={String(plaza.id)}>
+                {plaza.name}
               </NativeSelectOption>
             ))}
           </NativeSelect>
-          {nucleusField.error ? (
-            <FieldError id="supporter-nucleus-error">{nucleusField.error}</FieldError>
+          {plazaField.error ? (
+            <FieldError id="supporter-plaza-error">{plazaField.error}</FieldError>
           ) : null}
         </Field>
 

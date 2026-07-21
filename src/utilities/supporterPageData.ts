@@ -1,11 +1,13 @@
 import type { Payload } from 'payload'
 
-import type { CampaignUser, Consent, ElectoralNucleus, Supporter } from '@/payload-types'
-import { getCoordinatorNucleusIds } from '@/utilities/campaignAccess'
+import type { RelationOption } from '@/components/campaign/RelationMultiSelect'
+import type { CampaignUser, Consent, Supporter } from '@/payload-types'
+import { getAdvisorPlazaIds } from '@/utilities/campaignAccess'
 import {
   getSupporterRegistrationConsent,
   getSupporterVoteIntentionConsent,
 } from '@/utilities/campaignConsent'
+import { loadPlazaOptions } from '@/utilities/campaignRelationOptions'
 import { computeSupporterListOverviewAggregate } from '@/utilities/supporterListOverviewAggregate'
 import {
   buildSupporterListWhere,
@@ -17,7 +19,6 @@ import {
   toSupporterDetailViewModel,
   type SupporterDetailViewModel,
   type SupporterListOverviewViewModel,
-  type SupporterNucleusOption,
 } from '@/utilities/supporterViewModels'
 
 type SupporterListSearchParams = Record<string, string | string[] | undefined>
@@ -33,7 +34,7 @@ export class SupporterNotFoundError extends Error {
 const supporterListSelect = {
   voteIntention: true,
   contact: true,
-  nucleus: true,
+  plaza: true,
 } as const
 
 const supporterDetailSelect = {
@@ -43,57 +44,9 @@ const supporterDetailSelect = {
   voteIntentionConsentedAt: true,
   createdAt: true,
   contact: true,
-  nucleus: true,
+  plaza: true,
   createdBy: true,
 } as const
-
-const nucleusOptionsSelect = {
-  name: true,
-  slug: true,
-} as const
-
-type NucleusOptionDoc = Pick<ElectoralNucleus, 'id' | 'name' | 'slug'>
-
-export const loadAccessibleNucleusOptions = async (
-  payload: Pick<Payload, 'find'>,
-  user: CampaignUser,
-  coordinatorNucleusIds?: number[],
-): Promise<SupporterNucleusOption[]> => {
-  let result: { docs: NucleusOptionDoc[] }
-
-  if (user.role === 'coordenador' && coordinatorNucleusIds !== undefined) {
-    if (coordinatorNucleusIds.length === 0) return []
-
-    result = await payload.find({
-      collection: 'electoralNucleus',
-      where: {
-        and: [{ status: { equals: 'ativo' } }, { id: { in: coordinatorNucleusIds } }],
-      },
-      depth: 0,
-      pagination: false,
-      sort: 'name',
-      select: nucleusOptionsSelect,
-      overrideAccess: true,
-    })
-  } else {
-    result = await payload.find({
-      collection: 'electoralNucleus',
-      where: { status: { equals: 'ativo' } },
-      depth: 0,
-      pagination: false,
-      sort: 'name',
-      select: nucleusOptionsSelect,
-      user,
-      overrideAccess: false,
-    })
-  }
-
-  return result.docs.map((nucleus) => ({
-    id: nucleus.id,
-    name: nucleus.name,
-    slug: nucleus.slug,
-  }))
-}
 
 export const loadSupporterListPageData = async (
   payload: Pick<Payload, 'find' | 'count'>,
@@ -130,17 +83,17 @@ export const loadSupporterListOverviewData = async (
   user: CampaignUser,
   state: SupporterListState,
   total: number,
-  coordinatorNucleusIds?: number[],
+  advisorPlazaIds?: number[],
 ): Promise<SupporterListOverviewViewModel | null> =>
-  computeSupporterListOverviewAggregate(payload, user, state, total, coordinatorNucleusIds)
+  computeSupporterListOverviewAggregate(payload, user, state, total, advisorPlazaIds)
 
 export type SupportersPageData = {
   result: Awaited<ReturnType<typeof loadSupporterListPageData>>['result']
   state: SupporterListState
   redirectHref?: string
-  nucleusOptions: SupporterNucleusOption[]
+  plazaOptions: RelationOption[]
   overview: SupporterListOverviewViewModel | null
-  coordinatorNucleusIds?: number[]
+  advisorPlazaIds?: number[]
 }
 
 export const loadSupportersPageData = async (
@@ -148,34 +101,26 @@ export const loadSupportersPageData = async (
   user: CampaignUser,
   searchParams: Promise<SupporterListSearchParams> | SupporterListSearchParams,
 ): Promise<SupportersPageData> => {
-  const coordinatorPromise =
-    user.role === 'coordenador'
-      ? getCoordinatorNucleusIds(payload, user.id)
-      : Promise.resolve(undefined)
+  const advisorPromise =
+    user.role === 'advisor' ? getAdvisorPlazaIds(payload, user.id) : Promise.resolve(undefined)
 
-  const [{ result, state, redirectHref }, coordinatorNucleusIds] = await Promise.all([
+  const [{ result, state, redirectHref }, advisorPlazaIds] = await Promise.all([
     loadSupporterListPageData(payload, user, searchParams),
-    coordinatorPromise,
+    advisorPromise,
   ])
 
-  const [nucleusOptions, overview] = await Promise.all([
-    loadAccessibleNucleusOptions(payload, user, coordinatorNucleusIds),
-    loadSupporterListOverviewData(
-      payload,
-      user,
-      state,
-      result.totalDocs,
-      coordinatorNucleusIds,
-    ),
+  const [plazaOptions, overview] = await Promise.all([
+    loadPlazaOptions(payload, user),
+    loadSupporterListOverviewData(payload, user, state, result.totalDocs, advisorPlazaIds),
   ])
 
   return {
     result,
     state,
     redirectHref,
-    nucleusOptions,
+    plazaOptions,
     overview,
-    coordinatorNucleusIds,
+    advisorPlazaIds,
   }
 }
 
@@ -201,27 +146,27 @@ export const loadSupporterDetailPageData = async (
 }
 
 export type SupporterCreatePageData = {
-  nucleusOptions: SupporterNucleusOption[]
+  plazaOptions: RelationOption[]
   registrationConsentConfigured: boolean
   voteIntentionConsentConfigured: boolean
-  requireNucleus: boolean
+  requirePlaza: boolean
 }
 
 export const loadSupporterCreatePageData = async (
   payload: Payload,
   user: CampaignUser,
 ): Promise<SupporterCreatePageData> => {
-  const [nucleusOptions, registrationConsent, voteIntentionConsent] = await Promise.all([
-    loadAccessibleNucleusOptions(payload, user),
+  const [plazaOptions, registrationConsent, voteIntentionConsent] = await Promise.all([
+    loadPlazaOptions(payload, user),
     getSupporterRegistrationConsent(payload),
     getSupporterVoteIntentionConsent(payload),
   ])
 
   return {
-    nucleusOptions,
+    plazaOptions,
     registrationConsentConfigured: Boolean(registrationConsent),
     voteIntentionConsentConfigured: Boolean(voteIntentionConsent),
-    requireNucleus: user.role === 'coordenador',
+    requirePlaza: user.role === 'advisor',
   }
 }
 

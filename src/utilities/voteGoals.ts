@@ -63,7 +63,7 @@ export const voteGoalProgressPercent = (
 }
 
 export const aggregateVoteGoals = (
-  nuclei: Array<{
+  entries: Array<{
     voteGoals: VoteGoalsViewModel
     priority?: 'alta' | 'normal' | null
   }>,
@@ -71,23 +71,23 @@ export const aggregateVoteGoals = (
   const totals: VoteGoalsSumViewModel = { good: 0, regular: 0, minimum: 0 }
   let highPriorityCount = 0
 
-  for (const nucleus of nuclei) {
-    totals.good += nucleus.voteGoals.good ?? 0
-    totals.regular += nucleus.voteGoals.regular ?? 0
-    totals.minimum += nucleus.voteGoals.minimum ?? 0
-    if (nucleus.priority === 'alta') highPriorityCount += 1
+  for (const entry of entries) {
+    totals.good += entry.voteGoals.good ?? 0
+    totals.regular += entry.voteGoals.regular ?? 0
+    totals.minimum += entry.voteGoals.minimum ?? 0
+    if (entry.priority === 'alta') highPriorityCount += 1
   }
 
   return { ...totals, highPriorityCount }
 }
 
 export const sumVoteGoals = (
-  nuclei: Array<{ voteGoals: VoteGoalsViewModel }>,
+  entries: Array<{ voteGoals: VoteGoalsViewModel }>,
 ): VoteGoalsSumViewModel => {
-  const { good, regular, minimum } = aggregateVoteGoals(nuclei)
+  const { good, regular, minimum } = aggregateVoteGoals(entries)
   return { good, regular, minimum }
 }
 
-export const countHighPriorityNuclei = (
-  nuclei: Array<{ priority: 'alta' | 'normal' | null }>,
-): number => nuclei.reduce((count, { priority }) => count + (priority === 'alta' ? 1 : 0), 0)
+export const countHighPriorityEntries = (
+  entries: Array<{ priority: 'alta' | 'normal' | null }>,
+): number => entries.reduce((count, { priority }) => count + (priority === 'alta' ? 1 : 0), 0)

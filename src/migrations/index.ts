@@ -1,20 +1,21 @@
-import * as migration_20260715_163458_initial from './20260715_163458_initial'
-import * as migration_20260715_163500_consent_text_to_jsonb from './20260715_163500_consent_text_to_jsonb'
-import * as migration_20260715_181058_add_post_and_tag from './20260715_181058_add_post_and_tag'
-import * as migration_20260715_215834_rename_tag_visible_to_hidden from './20260715_215834_rename_tag_visible_to_hidden'
-import * as migration_20260716_010420_add_campaign_user from './20260716_010420_add_campaign_user'
-import * as migration_20260718_010733_consolidate_campaign_schema from './20260718_010733_consolidate_campaign_schema'
-import * as migration_20260718_190559_territorio_multi_municipio_bairro from './20260718_190559_territorio_multi_municipio_bairro'
-import * as migration_20260718_195854_add_election_results from './20260718_195854_add_election_results'
-import * as migration_20260718_222656_add_supporter from './20260718_222656_add_supporter'
-import * as migration_20260718_222832_add_action_plan from './20260718_222832_add_action_plan'
-import * as migration_20260719_011015_add_supporter_import_batch from './20260719_011015_add_supporter_import_batch'
-import * as migration_20260719_014906_action_plan_list_perf from './20260719_014906_action_plan_list_perf'
-import * as migration_20260719_020000_add_contact_trgm_index from './20260719_020000_add_contact_trgm_index'
-import * as migration_20260719_054522_add_nucleus_goals_strategy from './20260719_054522_add_nucleus_goals_strategy'
-import * as migration_20260719_054706_add_privacy_policy_global from './20260719_054706_add_privacy_policy_global'
-import * as migration_20260719_054707_seed_onda0_consent_and_privacy from './20260719_054707_seed_onda0_consent_and_privacy'
-import * as migration_20260719_061302_add_campaign_user_avatar from './20260719_061302_add_campaign_user_avatar'
+import * as migration_20260715_163458_initial from './20260715_163458_initial';
+import * as migration_20260715_163500_consent_text_to_jsonb from './20260715_163500_consent_text_to_jsonb';
+import * as migration_20260715_181058_add_post_and_tag from './20260715_181058_add_post_and_tag';
+import * as migration_20260715_215834_rename_tag_visible_to_hidden from './20260715_215834_rename_tag_visible_to_hidden';
+import * as migration_20260716_010420_add_campaign_user from './20260716_010420_add_campaign_user';
+import * as migration_20260718_010733_consolidate_campaign_schema from './20260718_010733_consolidate_campaign_schema';
+import * as migration_20260718_190559_territorio_multi_municipio_bairro from './20260718_190559_territorio_multi_municipio_bairro';
+import * as migration_20260718_195854_add_election_results from './20260718_195854_add_election_results';
+import * as migration_20260718_222656_add_supporter from './20260718_222656_add_supporter';
+import * as migration_20260718_222832_add_action_plan from './20260718_222832_add_action_plan';
+import * as migration_20260719_011015_add_supporter_import_batch from './20260719_011015_add_supporter_import_batch';
+import * as migration_20260719_014906_action_plan_list_perf from './20260719_014906_action_plan_list_perf';
+import * as migration_20260719_020000_add_contact_trgm_index from './20260719_020000_add_contact_trgm_index';
+import * as migration_20260719_054522_add_nucleus_goals_strategy from './20260719_054522_add_nucleus_goals_strategy';
+import * as migration_20260719_054706_add_privacy_policy_global from './20260719_054706_add_privacy_policy_global';
+import * as migration_20260719_054707_seed_onda0_consent_and_privacy from './20260719_054707_seed_onda0_consent_and_privacy';
+import * as migration_20260719_061302_add_campaign_user_avatar from './20260719_061302_add_campaign_user_avatar';
+import * as migration_20260721_020109_remodel_plazas from './20260721_020109_remodel_plazas';
 
 export const migrations = [
   {
@@ -102,4 +103,9 @@ export const migrations = [
     down: migration_20260719_061302_add_campaign_user_avatar.down,
     name: '20260719_061302_add_campaign_user_avatar',
   },
-]
+  {
+    up: migration_20260721_020109_remodel_plazas.up,
+    down: migration_20260721_020109_remodel_plazas.down,
+    name: '20260721_020109_remodel_plazas'
+  },
+];

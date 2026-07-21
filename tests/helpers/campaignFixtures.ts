@@ -1,30 +1,42 @@
 import { createHash, randomUUID } from 'node:crypto'
 
 import { sql } from '@payloadcms/db-postgres'
-import type { Payload, RequiredDataFromCollectionSlug, Where } from 'payload'
+import type { Payload, Where } from 'payload'
 import { afterEach, beforeEach } from 'vitest'
 
+import { plazaCatalog } from '@/lib/plazaCatalog'
 import type {
+  CampaignDemand,
   CampaignInvite,
   CampaignUser,
   Consent,
   Contact,
-  ElectoralNucleus,
   Leadership,
-  NucleusUpdate,
+  Organization,
+  Plaza,
+  PlazaUpdate,
   Supporter,
   User,
+  VotePledge,
 } from '@/payload-types'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+
+/**
+ * Campaign fixtures for the Praça model. Plazas are SEEDED reference rows
+ * (436, created by migration): tests never create or delete them — fixtures
+ * hand out seeded plazas and reset the operational fields they touched.
+ */
 
 type CampaignCollection =
   | 'users'
   | 'campaignInvite'
-  | 'nucleusUpdate'
+  | 'plazaUpdate'
+  | 'votePledge'
+  | 'campaignDemand'
   | 'actionPlan'
   | 'leadership'
   | 'supporter'
-  | 'electoralNucleus'
+  | 'organization'
   | 'contact'
   | 'campaignUser'
   | 'consent'
@@ -39,12 +51,12 @@ type ConsentInput = Partial<Pick<Consent, 'key' | 'text'>>
 type ContactInput = Partial<
   Pick<Contact, 'name' | 'email' | 'phone' | 'gender' | 'state' | 'city' | 'postalCode'>
 >
-type NucleusInput = Partial<RequiredDataFromCollectionSlug<'electoralNucleus'>>
 type LeadershipInput = Partial<
   Pick<
     Leadership,
     | 'contact'
-    | 'nucleus'
+    | 'plazas'
+    | 'organizations'
     | 'sector'
     | 'sectorNotes'
     | 'supportStatus'
@@ -57,14 +69,26 @@ type LeadershipInput = Partial<
     | 'createdBy'
   >
 > &
-  Pick<Leadership, 'contact' | 'nucleus'>
-type NucleusUpdateInput = Partial<
+  Pick<Leadership, 'contact'> & { plazas: Array<number | { id: number }> }
+type PlazaUpdateInput = Partial<
   Pick<
-    NucleusUpdate,
+    PlazaUpdate,
     'kind' | 'worked' | 'failed' | 'needs' | 'activeVolunteers' | 'newSupports' | 'body'
   >
 > &
-  Pick<NucleusUpdate, 'nucleus' | 'author'>
+  Pick<PlazaUpdate, 'plaza' | 'author'>
+type VotePledgeInput = Partial<
+  Pick<VotePledge, 'declaredVotes' | 'estimatedVotes' | 'estimateNote'>
+> &
+  Pick<VotePledge, 'leadership' | 'plaza'>
+type OrganizationInput = Partial<Pick<Organization, 'name' | 'slug' | 'kind' | 'notes' | 'plazas'>>
+type CampaignDemandInput = Partial<
+  Pick<
+    CampaignDemand,
+    'title' | 'slug' | 'kind' | 'description' | 'status' | 'leadership' | 'createdBy'
+  >
+> &
+  Pick<CampaignDemand, 'plaza'>
 type CampaignInviteInput = Partial<
   Pick<CampaignInvite, 'tokenHash' | 'kind' | 'expiresAt' | 'usedAt' | 'revokedAt'>
 > &
@@ -76,11 +100,13 @@ let builderCounter = 0
 const emptyOwnedIDs = (): OwnedIDs => ({
   users: new Set(),
   campaignInvite: new Set(),
-  nucleusUpdate: new Set(),
+  plazaUpdate: new Set(),
+  votePledge: new Set(),
+  campaignDemand: new Set(),
   actionPlan: new Set(),
   leadership: new Set(),
   supporter: new Set(),
-  electoralNucleus: new Set(),
+  organization: new Set(),
   contact: new Set(),
   campaignUser: new Set(),
   consent: new Set(),
@@ -126,14 +152,120 @@ const bulkErrors = (result: unknown): unknown[] => {
 const combineErrors = (primary: unknown, cleanup: unknown): AggregateError =>
   new AggregateError([primary, cleanup], 'Campaign fixture callback and cleanup both failed.')
 
+/**
+ * Cross-process plaza allocator: seeded plazas are shared reference rows, so
+ * concurrently running spec files must never operate on the same plaza. A
+ * Postgres sequence hands out globally unique catalog indexes.
+ */
+const PLAZA_ALLOCATION_SEQUENCE = 'campaign_fixture_plaza_alloc'
+let allocationSequenceReady: Promise<void> | undefined
+
+const nextAllocatedPlazaIndex = async (payload: Payload, catalogSize: number): Promise<number> => {
+  allocationSequenceReady ??= payload.db.drizzle
+    .execute(sql.raw(`CREATE SEQUENCE IF NOT EXISTS "${PLAZA_ALLOCATION_SEQUENCE}"`))
+    .then(() => undefined)
+    .catch((error: unknown) => {
+      // IF NOT EXISTS still races across parallel workers (pg_class unique
+      // violation, SQLSTATE 23505) — the sequence exists, which is all we need.
+      if ((error as { code?: string }).code === '23505') return undefined
+      throw error
+    })
+  await allocationSequenceReady
+  const result = await payload.db.drizzle.execute(
+    sql.raw(`SELECT nextval('"${PLAZA_ALLOCATION_SEQUENCE}"') AS "value"`),
+  )
+  const value = Number((result.rows[0] as { value: string | number }).value)
+  return value % catalogSize
+}
+
+/**
+ * Delete campaign rows attached to a freshly claimed plaza. The allocator
+ * guarantees no OTHER live test owns this plaza, so anything found here is
+ * residue from an aborted previous run that would poison count assertions.
+ */
+const purgePlazaResidue = async (payload: Payload, plazaID: number): Promise<void> => {
+  const [pledges, updates, demands, leaderships, supporters, plans] = await Promise.all([
+    payload.find({
+      collection: 'votePledge',
+      where: { plaza: { equals: plazaID } },
+      depth: 0,
+      pagination: false,
+      select: {},
+    }),
+    payload.find({
+      collection: 'plazaUpdate',
+      where: { plaza: { equals: plazaID } },
+      depth: 0,
+      pagination: false,
+      select: {},
+    }),
+    payload.find({
+      collection: 'campaignDemand',
+      where: { plaza: { equals: plazaID } },
+      depth: 0,
+      pagination: false,
+      select: {},
+    }),
+    payload.find({
+      collection: 'leadership',
+      where: { plazas: { in: [plazaID] } },
+      depth: 0,
+      pagination: false,
+      select: {},
+    }),
+    payload.find({
+      collection: 'supporter',
+      where: { plaza: { equals: plazaID } },
+      depth: 0,
+      pagination: false,
+      select: {},
+    }),
+    payload.find({
+      collection: 'actionPlan',
+      where: { plaza: { equals: plazaID } },
+      depth: 0,
+      pagination: false,
+      select: {},
+    }),
+  ])
+
+  const deletions: Array<{
+    collection:
+      | 'votePledge'
+      | 'plazaUpdate'
+      | 'campaignDemand'
+      | 'leadership'
+      | 'supporter'
+      | 'actionPlan'
+    ids: number[]
+  }> = [
+    { collection: 'votePledge', ids: pledges.docs.map((doc) => doc.id) },
+    { collection: 'plazaUpdate', ids: updates.docs.map((doc) => doc.id) },
+    { collection: 'campaignDemand', ids: demands.docs.map((doc) => doc.id) },
+    { collection: 'actionPlan', ids: plans.docs.map((doc) => doc.id) },
+    { collection: 'leadership', ids: leaderships.docs.map((doc) => doc.id) },
+    { collection: 'supporter', ids: supporters.docs.map((doc) => doc.id) },
+  ]
+  for (const { collection, ids } of deletions) {
+    if (ids.length === 0) continue
+    await payload.delete({
+      collection,
+      where: { id: { in: ids } },
+      depth: 0,
+    })
+  }
+}
+
 export class CampaignFixtures {
   readonly payload: Payload
   readonly runID: string
 
   private cleaned = false
   private counter = 0
+  private plazaCursor = 0
   private readonly markers = new Set<string>()
   private readonly owned = emptyOwnedIDs()
+  private readonly touchedPlazas = new Set<number>()
   private readonly ownedLockedDocuments = new Set<number>()
   private readonly ownedPreferences = new Set<number>()
 
@@ -232,6 +364,43 @@ export class CampaignFixtures {
     )
   }
 
+  /**
+   * A seeded plaza for this test — globally unique across concurrently running
+   * spec files (Postgres sequence), so parallel tests never share one. Rows
+   * left behind by a previously crashed run are purged on claim (allocation
+   * uniqueness makes this safe: nothing live can reference this plaza).
+   */
+  async getPlaza(slug?: string): Promise<Plaza> {
+    let requestedSlug = slug
+    if (!requestedSlug) {
+      const index = await nextAllocatedPlazaIndex(this.rootPayload, plazaCatalog.length)
+      requestedSlug = plazaCatalog[index]!.slug
+      this.plazaCursor += 1
+    }
+
+    const result = await this.rootPayload.find({
+      collection: 'plaza',
+      where: { slug: { equals: requestedSlug } },
+      depth: 0,
+      limit: 1,
+      pagination: false,
+    })
+    const plaza = result.docs[0]
+    if (!plaza) {
+      throw new Error(
+        `Seeded plaza "${requestedSlug}" not found — run migrations on the test database.`,
+      )
+    }
+    if (!slug) await purgePlazaResidue(this.rootPayload, plaza.id)
+    this.touchedPlazas.add(plaza.id)
+    return plaza
+  }
+
+  /** Mark a plaza mutated by the test so cleanup resets its operational fields. */
+  touchPlaza(value: number | { id: number }): void {
+    this.touchedPlazas.add(relationshipID(value))
+  }
+
   private async discoverMarkedRoots(): Promise<void> {
     const roots = await Promise.all([
       this.rootPayload.find({
@@ -266,7 +435,7 @@ export class CampaignFixtures {
         pagination: false,
       }),
       this.rootPayload.find({
-        collection: 'electoralNucleus',
+        collection: 'organization',
         where: {
           or: [{ name: { contains: this.runID } }, { slug: { contains: this.runID } }],
         },
@@ -275,6 +444,14 @@ export class CampaignFixtures {
       }),
       this.rootPayload.find({
         collection: 'actionPlan',
+        where: {
+          or: [{ title: { contains: this.runID } }, { slug: { contains: this.runID } }],
+        },
+        depth: 0,
+        pagination: false,
+      }),
+      this.rootPayload.find({
+        collection: 'campaignDemand',
         where: {
           or: [{ title: { contains: this.runID } }, { slug: { contains: this.runID } }],
         },
@@ -292,13 +469,14 @@ export class CampaignFixtures {
     for (const user of roots[0].docs) this.own('users', user)
     for (const user of roots[1].docs) this.own('campaignUser', user)
     for (const contact of roots[2].docs) this.own('contact', contact)
-    for (const nucleus of roots[3].docs) this.own('electoralNucleus', nucleus)
+    for (const organization of roots[3].docs) this.own('organization', organization)
     for (const plan of roots[4].docs) this.own('actionPlan', plan)
-    for (const consent of roots[5].docs) this.own('consent', consent)
+    for (const demand of roots[5].docs) this.own('campaignDemand', demand)
+    for (const consent of roots[6].docs) this.own('consent', consent)
   }
 
   async createCampaignUser(
-    role: CampaignUser['role'] = 'lideranca',
+    role: CampaignUser['role'] = 'leader',
     input: CampaignUserInput = {},
   ): Promise<CampaignUser> {
     const user = await this.rootPayload.create({
@@ -361,23 +539,19 @@ export class CampaignFixtures {
     return contact
   }
 
-  async createNucleus(input: NucleusInput = {}): Promise<ElectoralNucleus> {
-    const name = input.name ?? this.value('Núcleo')
-    const data: RequiredDataFromCollectionSlug<'electoralNucleus'> = {
-      ...input,
-      name,
-      slug: input.slug ?? this.value('nucleo'),
-      status: input.status ?? 'ativo',
-      cities: input.cities === undefined ? ['Salvador'] : input.cities,
-      organizationKind: input.organizationKind ?? 'territorial',
-    }
-    const nucleus = await this.rootPayload.create({
-      collection: 'electoralNucleus',
-      data,
+  /** Assign advisors to a seeded plaza (tracked for reset on cleanup). */
+  async assignPlazaAdvisors(
+    plaza: number | { id: number },
+    advisors: Array<number | { id: number }>,
+  ): Promise<Plaza> {
+    const plazaID = relationshipID(plaza)
+    this.touchedPlazas.add(plazaID)
+    return this.rootPayload.update({
+      collection: 'plaza',
+      id: plazaID,
+      data: { advisors: advisors.map(relationshipID) },
       depth: 0,
     })
-    this.own('electoralNucleus', nucleus)
-    return nucleus
   }
 
   async createLeadership(input: LeadershipInput): Promise<Leadership> {
@@ -387,7 +561,10 @@ export class CampaignFixtures {
         supportStatus: 'engajado',
         ...input,
         contact: relationshipID(input.contact),
-        nucleus: relationshipID(input.nucleus),
+        plazas: input.plazas.map(relationshipID),
+        ...(input.organizations
+          ? { organizations: input.organizations.map((value) => relationshipID(value as never)) }
+          : {}),
         ...(input.user ? { user: relationshipID(input.user) } : {}),
         ...(input.createdBy ? { createdBy: relationshipID(input.createdBy) } : {}),
         ...(input.consent ? { consent: relationshipID(input.consent) } : {}),
@@ -395,7 +572,61 @@ export class CampaignFixtures {
       depth: 0,
     })
     this.own('leadership', leadership)
+    for (const plaza of input.plazas) this.touchedPlazas.add(relationshipID(plaza))
     return leadership
+  }
+
+  async createVotePledge(input: VotePledgeInput): Promise<VotePledge> {
+    const pledge = await this.rootPayload.create({
+      collection: 'votePledge',
+      data: {
+        declaredVotes: 100,
+        ...input,
+        leadership: relationshipID(input.leadership),
+        plaza: relationshipID(input.plaza),
+      },
+      depth: 0,
+    })
+    this.own('votePledge', pledge)
+    this.touchedPlazas.add(relationshipID(input.plaza))
+    return pledge
+  }
+
+  async createOrganization(input: OrganizationInput = {}): Promise<Organization> {
+    const name = input.name ?? this.value('Organização')
+    const organization = await this.rootPayload.create({
+      collection: 'organization',
+      data: {
+        kind: 'sindicato',
+        ...input,
+        name,
+        slug: input.slug ?? this.value('organizacao'),
+      },
+      depth: 0,
+    })
+    this.own('organization', organization)
+    return organization
+  }
+
+  async createCampaignDemand(input: CampaignDemandInput): Promise<CampaignDemand> {
+    const title = input.title ?? this.value('Demanda')
+    const demand = await this.rootPayload.create({
+      collection: 'campaignDemand',
+      data: {
+        kind: 'material',
+        status: 'aberta',
+        ...input,
+        title,
+        slug: input.slug ?? this.value('demanda'),
+        plaza: relationshipID(input.plaza),
+        ...(input.leadership ? { leadership: relationshipID(input.leadership) } : {}),
+        ...(input.createdBy ? { createdBy: relationshipID(input.createdBy) } : {}),
+      },
+      depth: 0,
+    })
+    this.own('campaignDemand', demand)
+    this.touchedPlazas.add(relationshipID(input.plaza))
+    return demand
   }
 
   async createSupporter(
@@ -403,7 +634,7 @@ export class CampaignFixtures {
       Pick<
         Supporter,
         | 'contact'
-        | 'nucleus'
+        | 'plaza'
         | 'voteIntention'
         | 'source'
         | 'consent'
@@ -422,7 +653,7 @@ export class CampaignFixtures {
         source: 'manual',
         ...input,
         contact: relationshipID(input.contact),
-        ...(input.nucleus ? { nucleus: relationshipID(input.nucleus) } : {}),
+        ...(input.plaza ? { plaza: relationshipID(input.plaza) } : {}),
         ...(input.createdBy ? { createdBy: relationshipID(input.createdBy) } : {}),
         ...(input.consent ? { consent: relationshipID(input.consent) } : {}),
       },
@@ -432,19 +663,20 @@ export class CampaignFixtures {
     return supporter
   }
 
-  async createNucleusUpdate(input: NucleusUpdateInput): Promise<NucleusUpdate> {
+  async createPlazaUpdate(input: PlazaUpdateInput): Promise<PlazaUpdate> {
     const update = await this.rootPayload.create({
-      collection: 'nucleusUpdate',
+      collection: 'plazaUpdate',
       data: {
         kind: 'nota',
         body: this.value('Atualização'),
         ...input,
-        nucleus: relationshipID(input.nucleus),
+        plaza: relationshipID(input.plaza),
         author: relationshipID(input.author),
       },
       depth: 0,
     })
-    this.own('nucleusUpdate', update)
+    this.own('plazaUpdate', update)
+    this.touchedPlazas.add(relationshipID(input.plaza))
     return update
   }
 
@@ -467,11 +699,10 @@ export class CampaignFixtures {
 
   private async discoverDependents(): Promise<void> {
     await this.discoverMarkedRoots()
-    const nucleusIDs = [...this.owned.electoralNucleus]
     const userIDs = [...this.owned.campaignUser]
     const leadershipConditions: Where[] = []
-    if (nucleusIDs.length > 0) leadershipConditions.push({ nucleus: { in: nucleusIDs } })
     if (userIDs.length > 0) leadershipConditions.push({ createdBy: { in: userIDs } })
+    if (userIDs.length > 0) leadershipConditions.push({ user: { in: userIDs } })
     if (this.owned.leadership.size > 0) {
       leadershipConditions.push({ id: { in: [...this.owned.leadership] } })
     }
@@ -526,44 +757,60 @@ export class CampaignFixtures {
 
     const leadershipIDs = [...this.owned.leadership]
     if (leadershipIDs.length > 0) {
-      const invites = await this.rootPayload.find({
-        collection: 'campaignInvite',
-        where: { leadership: { in: leadershipIDs } },
-        depth: 0,
-        pagination: false,
-      })
+      const [invites, pledges, demands] = await Promise.all([
+        this.rootPayload.find({
+          collection: 'campaignInvite',
+          where: { leadership: { in: leadershipIDs } },
+          depth: 0,
+          pagination: false,
+        }),
+        this.rootPayload.find({
+          collection: 'votePledge',
+          where: { leadership: { in: leadershipIDs } },
+          depth: 0,
+          pagination: false,
+        }),
+        this.rootPayload.find({
+          collection: 'campaignDemand',
+          where: { leadership: { in: leadershipIDs } },
+          depth: 0,
+          pagination: false,
+        }),
+      ])
       for (const invite of invites.docs) this.own('campaignInvite', invite)
+      for (const pledge of pledges.docs) this.own('votePledge', pledge)
+      for (const demand of demands.docs) this.own('campaignDemand', demand)
     }
 
-    if (nucleusIDs.length > 0) {
+    if (userIDs.length > 0) {
       const updates = await this.rootPayload.find({
-        collection: 'nucleusUpdate',
-        where: { nucleus: { in: nucleusIDs } },
+        collection: 'plazaUpdate',
+        where: { author: { in: userIDs } },
         depth: 0,
         pagination: false,
       })
-      for (const update of updates.docs) this.own('nucleusUpdate', update)
+      for (const update of updates.docs) {
+        this.own('plazaUpdate', update)
+        this.touchedPlazas.add(relationshipID(update.plaza))
+      }
     }
 
     const contactIDs = [...this.owned.contact]
-    if (contactIDs.length > 0 || nucleusIDs.length > 0) {
+    if (contactIDs.length > 0 || this.owned.supporter.size > 0) {
       const supporterConditions: Where[] = []
       if (contactIDs.length > 0) supporterConditions.push({ contact: { in: contactIDs } })
-      if (nucleusIDs.length > 0) supporterConditions.push({ nucleus: { in: nucleusIDs } })
       if (this.owned.supporter.size > 0) {
         supporterConditions.push({ id: { in: [...this.owned.supporter] } })
       }
-      if (supporterConditions.length > 0) {
-        const supporters = await this.rootPayload.find({
-          collection: 'supporter',
-          where: { or: supporterConditions },
-          depth: 0,
-          pagination: false,
-        })
-        for (const supporter of supporters.docs) {
-          this.own('supporter', supporter)
-          this.own('contact', relationshipID(supporter.contact))
-        }
+      const supporters = await this.rootPayload.find({
+        collection: 'supporter',
+        where: { or: supporterConditions },
+        depth: 0,
+        pagination: false,
+      })
+      for (const supporter of supporters.docs) {
+        this.own('supporter', supporter)
+        this.own('contact', relationshipID(supporter.contact))
       }
     }
 
@@ -571,12 +818,14 @@ export class CampaignFixtures {
       ['action_plan_id', this.owned.actionPlan],
       ['campaign_invite_id', this.owned.campaignInvite],
       ['campaign_user_id', this.owned.campaignUser],
+      ['campaign_demand_id', this.owned.campaignDemand],
       ['consent_id', this.owned.consent],
       ['contact_id', this.owned.contact],
-      ['electoral_nucleus_id', this.owned.electoralNucleus],
+      ['organization_id', this.owned.organization],
       ['leadership_id', this.owned.leadership],
       ['supporter_id', this.owned.supporter],
-      ['nucleus_update_id', this.owned.nucleusUpdate],
+      ['plaza_update_id', this.owned.plazaUpdate],
+      ['vote_pledge_id', this.owned.votePledge],
       ['users_id', this.owned.users],
     ]
       .filter((entry): entry is [string, Set<number>] => (entry[1] as Set<number>).size > 0)
@@ -629,17 +878,42 @@ export class CampaignFixtures {
     }
   }
 
+  /** Seeded plazas are never deleted — touched ones get their fields reset. */
+  private async resetTouchedPlazas(req: { transactionID: number | string }): Promise<void> {
+    for (const plazaID of this.touchedPlazas) {
+      await this.rootPayload.update({
+        collection: 'plaza',
+        id: plazaID,
+        data: {
+          advisors: [],
+          priority: 'normal',
+          voteGoals: { good: null, regular: null, minimum: null },
+          politicalTrend: { status: null, note: null, recordedBy: null, recordedAt: null },
+          strengths: [],
+          risks: [],
+          dobradinhaNotes: null,
+          nextSteps: null,
+          lastUpdateAt: null,
+        },
+        depth: 0,
+        req: req as never,
+      })
+    }
+  }
+
   async cleanup(): Promise<void> {
     if (this.cleaned) return
     await this.discoverDependents()
     await withPayloadTransaction(this.rootPayload, async ({ req }) => {
       for (const collection of [
         'campaignInvite',
-        'nucleusUpdate',
+        'votePledge',
+        'campaignDemand',
+        'plazaUpdate',
         'actionPlan',
         'leadership',
         'supporter',
-        'electoralNucleus',
+        'organization',
         'contact',
         'campaignUser',
         'consent',
@@ -647,6 +921,7 @@ export class CampaignFixtures {
       ] as const) {
         await this.deleteOwned(collection, req)
       }
+      await this.resetTouchedPlazas(req)
       if (this.ownedPreferences.size > 0) {
         const transaction = this.rootPayload.db.sessions?.[String(req.transactionID)]?.db as
           | { execute: (query: ReturnType<typeof sql.raw>) => Promise<unknown> }

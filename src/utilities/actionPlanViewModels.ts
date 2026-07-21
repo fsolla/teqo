@@ -1,40 +1,38 @@
-import type { ActionPlan, CampaignUser, Contact } from '@/payload-types'
+import type { ActionPlan, CampaignUser, Contact, Organization, Plaza } from '@/payload-types'
 import type { ActionPlanDetailTab } from '@/utilities/actionPlanDetailTabUi'
 import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 
-const asStringArray = (value: string[] | null | undefined): string[] =>
-  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+export type ActionPlanPlazaSummary = {
+  id: number
+  name: string
+  slug: string
+}
 
-export const formatActionPlanTerritoryLabel = ({
-  neighborhoods = [],
+export const actionPlanPlazaSummary = (
+  plaza: ActionPlan['plaza'] | null | undefined,
+): ActionPlanPlazaSummary | null =>
+  isPopulatedRelationship<Plaza>(plaza)
+    ? { id: plaza.id, name: plaza.name, slug: plaza.slug }
+    : null
+
+/** Short "where" line, e.g. "Praça de Itabuna · Feira do Malhado". */
+export const formatActionPlanLocationLabel = ({
+  plazaName,
   locality,
-  cities = [],
-  regions = [],
 }: {
-  neighborhoods?: string[] | null
+  plazaName: string | null
   locality?: string | null
-  cities?: string[] | null
-  regions?: string[] | null
-}): string =>
-  [
-    (neighborhoods ?? []).join(', '),
-    locality,
-    (cities ?? []).join(', '),
-    (regions ?? []).join(', '),
-  ]
-    .filter(Boolean)
-    .join(' · ')
+}): string => [plazaName, locality].filter(Boolean).join(' · ')
 
 export const actionPlanListSelect = {
   title: true,
   slug: true,
   kind: true,
   status: true,
+  deputyPresent: true,
   startAt: true,
   endAt: true,
-  regions: true,
-  cities: true,
-  neighborhoods: true,
+  plaza: true,
   locality: true,
   responsible: true,
   taskDoneCount: true,
@@ -47,10 +45,12 @@ export type ActionPlanListViewModel = {
   slug: string
   kind: ActionPlan['kind']
   status: ActionPlan['status']
+  deputyPresent: boolean
   startAt: string | null
   endAt: string | null
-  territoryLabel: string
-  city: string | null
+  plazaName: string | null
+  locality: string | null
+  locationLabel: string
   responsibleName: string | null
   taskProgress: { done: number; total: number }
 }
@@ -61,17 +61,19 @@ const relationshipName = (
   isPopulatedRelationship<Contact | CampaignUser>(relationship) ? relationship.name : null
 
 export const toActionPlanListViewModel = (plan: ActionPlan): ActionPlanListViewModel => {
-  const cities = asStringArray(plan.cities)
+  const plazaName = actionPlanPlazaSummary(plan.plaza)?.name ?? null
   return {
     id: plan.id,
     title: plan.title,
     slug: plan.slug,
     kind: plan.kind,
     status: plan.status,
+    deputyPresent: Boolean(plan.deputyPresent),
     startAt: plan.startAt ?? null,
     endAt: plan.endAt ?? null,
-    territoryLabel: formatActionPlanTerritoryLabel(plan),
-    city: cities[0] ?? null,
+    plazaName,
+    locality: plan.locality ?? null,
+    locationLabel: formatActionPlanLocationLabel({ plazaName, locality: plan.locality }),
     responsibleName: relationshipName(plan.responsible),
     taskProgress: {
       done: plan.taskDoneCount ?? 0,
@@ -86,15 +88,14 @@ export const actionPlanFormSelect = {
   kind: true,
   status: true,
   description: true,
+  deputyPresent: true,
   startAt: true,
   endAt: true,
   deadline: true,
-  regions: true,
-  cities: true,
-  neighborhoods: true,
+  plaza: true,
   locality: true,
-  territoryNotes: true,
-  coordinators: true,
+  organizations: true,
+  advisors: true,
   responsible: true,
   leadership: true,
   tasks: true,
@@ -115,19 +116,23 @@ export type ActionPlanFormViewModel = {
   kind: ActionPlan['kind']
   status: ActionPlan['status']
   description: string | null
+  deputyPresent: boolean
   startAt: string | null
   endAt: string | null
   deadline: string | null
-  regions: string[]
-  cities: string[]
-  neighborhoods: string[]
+  plazaId: number | null
   locality: string | null
-  territoryNotes: string | null
-  coordinators: Array<{ id: number; name: string }>
+  organizationIDs: number[]
+  advisorIDs: number[]
   responsible: { id: number; name: string; phone: string } | null
   leadership: { id: number; label: string } | null
   tasks: ActionPlanFormTaskViewModel[]
 }
+
+const relationshipIds = (value: unknown): number[] =>
+  (Array.isArray(value) ? value : [])
+    .map(relationshipId)
+    .filter((id): id is number => id !== null)
 
 export const toActionPlanFormViewModel = (plan: ActionPlan): ActionPlanFormViewModel => ({
   id: plan.id,
@@ -136,20 +141,14 @@ export const toActionPlanFormViewModel = (plan: ActionPlan): ActionPlanFormViewM
   kind: plan.kind,
   status: plan.status,
   description: plan.description ?? null,
+  deputyPresent: Boolean(plan.deputyPresent),
   startAt: plan.startAt ?? null,
   endAt: plan.endAt ?? null,
   deadline: plan.deadline ?? null,
-  regions: asStringArray(plan.regions),
-  cities: asStringArray(plan.cities),
-  neighborhoods: asStringArray(plan.neighborhoods),
+  plazaId: relationshipId(plan.plaza),
   locality: plan.locality ?? null,
-  territoryNotes: plan.territoryNotes ?? null,
-  coordinators:
-    plan.coordinators
-      ?.filter((coordinator): coordinator is CampaignUser =>
-        isPopulatedRelationship<CampaignUser>(coordinator),
-      )
-      .map(({ id, name }) => ({ id, name })) ?? [],
+  organizationIDs: relationshipIds(plan.organizations),
+  advisorIDs: relationshipIds(plan.advisors),
   responsible: isPopulatedRelationship<Contact>(plan.responsible)
     ? { id: plan.responsible.id, name: plan.responsible.name, phone: plan.responsible.phone }
     : null,
@@ -182,15 +181,14 @@ export const actionPlanDetailContextSelect = {
   kind: true,
   status: true,
   description: true,
+  deputyPresent: true,
   startAt: true,
   endAt: true,
   deadline: true,
-  regions: true,
-  cities: true,
-  neighborhoods: true,
+  plaza: true,
   locality: true,
-  territoryNotes: true,
-  coordinators: true,
+  organizations: true,
+  advisors: true,
   responsible: true,
   createdBy: true,
   updatedAt: true,
@@ -203,6 +201,9 @@ export const getActionPlanDetailSelect = (activeTab: ActionPlanDetailTab) => {
       ...actionPlanDetailContextSelect,
       taskDoneCount: true,
       taskTotal: true,
+      resultSummary: true,
+      resultRecordedBy: true,
+      resultRecordedAt: true,
     } as const
   }
   if (activeTab === 'tasks') {
@@ -234,6 +235,12 @@ export type ActionPlanUpdateViewModel = {
   createdAt: string | null
 }
 
+export type ActionPlanResultViewModel = {
+  summary: string
+  recordedByName: string | null
+  recordedAt: string | null
+}
+
 export type ActionPlanDetailViewModel = {
   id: number
   title: string
@@ -241,21 +248,21 @@ export type ActionPlanDetailViewModel = {
   kind: ActionPlan['kind']
   status: ActionPlan['status']
   description: string | null
+  deputyPresent: boolean
   startAt: string | null
   endAt: string | null
   deadline: string | null
-  regions: string[]
-  cities: string[]
-  neighborhoods: string[]
+  plaza: ActionPlanPlazaSummary | null
   locality: string | null
-  territoryNotes: string | null
-  territoryLabel: string
-  coordinators: Array<{ id: number; name: string }>
+  locationLabel: string
+  organizations: Array<{ id: number; name: string }>
+  advisors: Array<{ id: number; name: string }>
   responsibleId: number | null
   responsibleName: string | null
   taskProgress: { done: number; total: number }
   tasks: ActionPlanTaskViewModel[]
   updates: ActionPlanUpdateViewModel[]
+  result: ActionPlanResultViewModel | null
   createdByName: string | null
   updatedAt: string
   createdAt: string
@@ -288,42 +295,64 @@ const mapActionPlanUpdates = (
     }
   })
 
+const mapActionPlanResult = (plan: ActionPlan): ActionPlanResultViewModel | null => {
+  const summary = plan.resultSummary?.trim()
+  if (!summary) return null
+  return {
+    summary,
+    recordedByName: relationshipName(plan.resultRecordedBy),
+    recordedAt: plan.resultRecordedAt ?? null,
+  }
+}
+
 export const toActionPlanDetailViewModel = (
   plan: ActionPlan,
   activeTab: ActionPlanDetailTab = 'overview',
   authorNamesById: ReadonlyMap<number, string> = new Map(),
-): ActionPlanDetailViewModel => ({
-  id: plan.id,
-  title: plan.title,
-  slug: plan.slug,
-  kind: plan.kind,
-  status: plan.status,
-  description: plan.description ?? null,
-  startAt: plan.startAt ?? null,
-  endAt: plan.endAt ?? null,
-  deadline: plan.deadline ?? null,
-  regions: asStringArray(plan.regions),
-  cities: asStringArray(plan.cities),
-  neighborhoods: asStringArray(plan.neighborhoods),
-  locality: plan.locality ?? null,
-  territoryNotes: plan.territoryNotes ?? null,
-  territoryLabel: formatActionPlanTerritoryLabel(plan),
-  coordinators:
-    plan.coordinators
-      ?.filter((coordinator): coordinator is CampaignUser =>
-        isPopulatedRelationship<CampaignUser>(coordinator),
-      )
-      .map(({ id, name }) => ({ id, name })) ?? [],
-  responsibleId: relationshipId(plan.responsible),
-  responsibleName: relationshipName(plan.responsible),
-  taskProgress: {
-    done: plan.taskDoneCount ?? 0,
-    total: plan.taskTotal ?? 0,
-  },
-  tasks: activeTab === 'tasks' ? mapActionPlanTasks(plan) : [],
-  updates:
-    activeTab === 'updates' ? mapActionPlanUpdates(plan, authorNamesById) : [],
-  createdByName: relationshipName(plan.createdBy),
-  updatedAt: plan.updatedAt,
-  createdAt: plan.createdAt,
-})
+  plazaSummary: ActionPlanPlazaSummary | null = null,
+): ActionPlanDetailViewModel => {
+  const plaza = plazaSummary ?? actionPlanPlazaSummary(plan.plaza)
+  return {
+    id: plan.id,
+    title: plan.title,
+    slug: plan.slug,
+    kind: plan.kind,
+    status: plan.status,
+    description: plan.description ?? null,
+    deputyPresent: Boolean(plan.deputyPresent),
+    startAt: plan.startAt ?? null,
+    endAt: plan.endAt ?? null,
+    deadline: plan.deadline ?? null,
+    plaza,
+    locality: plan.locality ?? null,
+    locationLabel: formatActionPlanLocationLabel({
+      plazaName: plaza?.name ?? null,
+      locality: plan.locality,
+    }),
+    organizations:
+      plan.organizations
+        ?.filter((organization): organization is Organization =>
+          isPopulatedRelationship<Organization>(organization),
+        )
+        .map(({ id, name }) => ({ id, name })) ?? [],
+    advisors:
+      plan.advisors
+        ?.filter((advisor): advisor is CampaignUser =>
+          isPopulatedRelationship<CampaignUser>(advisor),
+        )
+        .map(({ id, name }) => ({ id, name })) ?? [],
+    responsibleId: relationshipId(plan.responsible),
+    responsibleName: relationshipName(plan.responsible),
+    taskProgress: {
+      done: plan.taskDoneCount ?? 0,
+      total: plan.taskTotal ?? 0,
+    },
+    tasks: activeTab === 'tasks' ? mapActionPlanTasks(plan) : [],
+    updates:
+      activeTab === 'updates' ? mapActionPlanUpdates(plan, authorNamesById) : [],
+    result: mapActionPlanResult(plan),
+    createdByName: relationshipName(plan.createdBy),
+    updatedAt: plan.updatedAt,
+    createdAt: plan.createdAt,
+  }
+}

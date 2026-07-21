@@ -7,7 +7,7 @@ import { createSupporterFormAction } from '@/app/(campaign)/campanha/(app)/apoia
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { SupporterForm } from '@/components/campaign/SupporterForm'
 import { Button } from '@/components/ui/button'
-import { isCampaignGeneral } from '@/utilities/campaignAccess'
+import { isCampaignCoordinator } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadSupporterCreatePageData } from '@/utilities/supporterPageData'
 import { canAccessSupporterArea } from '@/utilities/supporterUi'
@@ -27,7 +27,7 @@ export default async function NewSupporterPage() {
           <Link href="/campanha/apoiadores">← Voltar para apoiadores</Link>
         </Button>
         <CampaignScopeBadge>
-          {isCampaignGeneral(user) ? 'Coordenação geral' : 'Coordenação de núcleo'}
+          {isCampaignCoordinator(user) ? 'Coordenador Geral' : 'Assessor'}
         </CampaignScopeBadge>
         <h1 className="text-2xl font-semibold tracking-tight">Novo apoiador</h1>
         <p className="text-muted-foreground">
@@ -37,10 +37,10 @@ export default async function NewSupporterPage() {
 
       <SupporterForm
         action={createSupporterFormAction}
-        nucleusOptions={pageData.nucleusOptions}
+        plazaOptions={pageData.plazaOptions}
         registrationConsentConfigured={pageData.registrationConsentConfigured}
         voteIntentionConsentConfigured={pageData.voteIntentionConsentConfigured}
-        requireNucleus={pageData.requireNucleus}
+        requirePlaza={pageData.requirePlaza}
       />
     </div>
   )

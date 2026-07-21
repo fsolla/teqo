@@ -25,7 +25,9 @@ import {
   resolveActionPlanListUrl,
 } from '@/utilities/actionPlanUi'
 import { toActionPlanListViewModel } from '@/utilities/actionPlanViewModels'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { loadPlazaOptions } from '@/utilities/campaignRelationOptions'
 
 type ActionPlanListPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -40,11 +42,14 @@ export default async function ActionPlanListPage({ searchParams }: ActionPlanLis
   if (!user) return null
 
   const now = new Date()
-  const { result, state } = await loadActionPlanListPageData(payload, user, rawSearchParams, now)
+  const [{ result, state }, plazaOptions] = await Promise.all([
+    loadActionPlanListPageData(payload, user, rawSearchParams, now),
+    loadPlazaOptions(payload, user),
+  ])
   const resolvedUrl = resolveActionPlanListUrl(rawSearchParams, result.totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
 
-  const canCreate = user.role === 'geral' || user.role === 'coordenador'
+  const canCreate = isCampaignStaff(user)
 
   return (
     <CampaignPageShell>
@@ -65,7 +70,11 @@ export default async function ActionPlanListPage({ searchParams }: ActionPlanLis
         ) : null}
       </header>
 
-      <ActionPlanFilters key={buildActionPlanFiltersKey(state)} state={state} />
+      <ActionPlanFilters
+        key={buildActionPlanFiltersKey(state)}
+        state={state}
+        plazaOptions={plazaOptions}
+      />
 
       {result.docs.length ? (
         <>

@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { getPayload, type Payload } from 'payload'
 
 import {
@@ -85,7 +85,7 @@ describe('campaign supporter domain', () => {
 
   it('fails closed when supporter registration consent is missing', async () => {
     const fixtures = campaignFixtures()
-    const geral = await fixtures.createCampaignUser('geral')
+    const coordinator = await fixtures.createCampaignUser('coordinator')
 
     const existing = await payload.find({
       collection: 'consent',
@@ -98,7 +98,7 @@ describe('campaign supporter domain', () => {
     }
 
     await expect(
-      createSupporterRecord(payload, geral, {
+      createSupporterRecord(payload, coordinator, {
         name: fixtures.value('Apoiador'),
         phone: fixtures.phone(),
         consentAccepted: true,
@@ -109,11 +109,11 @@ describe('campaign supporter domain', () => {
   it('creates a supporter with contact upsert and blocks leadership coexistence', async () => {
     const fixtures = campaignFixtures()
     await ensureSupporterConsents(fixtures)
-    const geral = await fixtures.createCampaignUser('geral')
-    const nucleus = await fixtures.createNucleus()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const plaza = await fixtures.getPlaza()
     const phone = fixtures.phone()
 
-    const created = await createSupporterRecord(payload, geral, {
+    const created = await createSupporterRecord(payload, coordinator, {
       name: fixtures.value('Apoiador'),
       phone,
       city: 'Salvador',
@@ -128,50 +128,49 @@ describe('campaign supporter domain', () => {
     const contact = await fixtures.createContact()
     await fixtures.createLeadership({
       contact: contact.id,
-      nucleus: nucleus.id,
-      createdBy: geral.id,
+      plazas: [plaza.id],
+      createdBy: coordinator.id,
     })
 
     await expect(
-      createSupporterRecord(payload, geral, {
+      createSupporterRecord(payload, coordinator, {
         name: contact.name,
         phone: contact.phone,
-        nucleus: nucleus.id,
+        plaza: plaza.id,
         consentAccepted: true,
       }),
-    ).rejects.toThrow(/já é liderança neste núcleo/)
+    ).rejects.toThrow(/já é liderança nesta Praça/)
   })
 
-  it('scopes coordinator create to accessible nuclei and blocks nucleus-less create', async () => {
+  it('scopes advisor create to administered plazas and blocks plaza-less create', async () => {
     const fixtures = campaignFixtures()
     await ensureSupporterConsents(fixtures)
-    const coordenador = await fixtures.createCampaignUser('coordenador')
-    const nucleus = await fixtures.createNucleus({
-      coordinators: [coordenador.id],
-    })
-    const otherNucleus = await fixtures.createNucleus()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const plaza = await fixtures.getPlaza()
+    const otherPlaza = await fixtures.getPlaza()
+    await fixtures.assignPlazaAdvisors(plaza, [advisor])
 
     await expect(
-      createSupporterRecord(payload, coordenador, {
+      createSupporterRecord(payload, advisor, {
         name: fixtures.value('Apoiador'),
         phone: fixtures.phone(),
         consentAccepted: true,
       }),
-    ).rejects.toThrow(/sem núcleo/)
+    ).rejects.toThrow(/sem Praça/)
 
     await expect(
-      createSupporterRecord(payload, coordenador, {
+      createSupporterRecord(payload, advisor, {
         name: fixtures.value('Apoiador'),
         phone: fixtures.phone(),
-        nucleus: otherNucleus.id,
+        plaza: otherPlaza.id,
         consentAccepted: true,
       }),
     ).rejects.toThrow()
 
-    const created = await createSupporterRecord(payload, coordenador, {
+    const created = await createSupporterRecord(payload, advisor, {
       name: fixtures.value('Apoiador'),
       phone: fixtures.phone(),
-      nucleus: nucleus.id,
+      plaza: plaza.id,
       consentAccepted: true,
     })
     fixtures.own('supporter', created.id)
@@ -182,14 +181,14 @@ describe('campaign supporter domain', () => {
   it('requires highlighted vote-intention consent before setting intention', async () => {
     const fixtures = campaignFixtures()
     const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
-    const geral = await fixtures.createCampaignUser('geral')
+    const coordinator = await fixtures.createCampaignUser('coordinator')
     const contact = await fixtures.createContact()
     const supporter = await fixtures.createSupporter({
       contact: contact.id,
       consent: registration.id,
       consentContentHash: 'hash',
       consentedAt: new Date().toISOString(),
-      createdBy: geral.id,
+      createdBy: coordinator.id,
     })
 
     const existingVoteConsent = await payload.find({
@@ -206,7 +205,7 @@ describe('campaign supporter domain', () => {
     }
 
     await expect(
-      setSupporterVoteIntentionRecord(payload, geral, {
+      setSupporterVoteIntentionRecord(payload, coordinator, {
         id: supporter.id,
         voteIntention: 'certo',
         voteIntentionConsentAccepted: true,
@@ -215,7 +214,7 @@ describe('campaign supporter domain', () => {
 
     await ensureConsentByKey(fixtures, SUPPORTER_VOTE_INTENTION_CONSENT_KEY)
 
-    const updated = await setSupporterVoteIntentionRecord(payload, geral, {
+    const updated = await setSupporterVoteIntentionRecord(payload, coordinator, {
       id: supporter.id,
       voteIntention: 'certo',
       voteIntentionConsentAccepted: true,
@@ -224,17 +223,17 @@ describe('campaign supporter domain', () => {
     expect(updated.voteIntentionConsentedAt).toBeTruthy()
   })
 
-  it('previews and confirms CSV import for geral only', async () => {
+  it('previews and confirms CSV import for the coordinator only', async () => {
     const fixtures = campaignFixtures()
     await ensureSupporterConsents(fixtures)
-    const geral = await fixtures.createCampaignUser('geral')
-    const coordenador = await fixtures.createCampaignUser('coordenador')
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const advisor = await fixtures.createCampaignUser('advisor')
     const phoneOk = fixtures.phone()
     const phoneDup = fixtures.phone()
     const existing = await fixtures.createContact({ phone: phoneDup })
     await fixtures.createSupporter({
       contact: existing.id,
-      createdBy: geral.id,
+      createdBy: coordinator.id,
     })
 
     const csv = [
@@ -245,18 +244,18 @@ describe('campaign supporter domain', () => {
       'Diego Souza,71988887777,Cidade Inventada,certo',
     ].join('\n')
 
-    await expect(previewSupporterImportText(payload, coordenador, csv)).rejects.toThrow(
-      /coordenação geral/,
+    await expect(previewSupporterImportText(payload, advisor, csv)).rejects.toThrow(
+      /Coordenador Geral/,
     )
 
-    const preview = await previewSupporterImportText(payload, geral, csv)
+    const preview = await previewSupporterImportText(payload, coordinator, csv)
     expect(preview.counts.ok).toBe(1)
     expect(preview.counts.duplicate).toBe(1)
     expect(preview.counts.error).toBeGreaterThanOrEqual(2)
     expect(preview.importToken).toBeTruthy()
     expect(preview.sampleRows.length).toBeGreaterThan(0)
 
-    const result = await confirmSupporterImportRecord(payload, geral, {
+    const result = await confirmSupporterImportRecord(payload, coordinator, {
       operatorAttested: true,
       importToken: preview.importToken,
     })
@@ -264,7 +263,7 @@ describe('campaign supporter domain', () => {
 
     // Single-use token: a second confirm with the same token must fail.
     await expect(
-      confirmSupporterImportRecord(payload, geral, {
+      confirmSupporterImportRecord(payload, coordinator, {
         operatorAttested: true,
         importToken: preview.importToken,
       }),
@@ -294,33 +293,33 @@ describe('campaign supporter domain', () => {
   it('rejects a tampered import token and a token issued to another actor', async () => {
     const fixtures = campaignFixtures()
     await ensureSupporterConsents(fixtures)
-    const geral = await fixtures.createCampaignUser('geral')
-    const otherGeral = await fixtures.createCampaignUser('geral')
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const otherCoordinator = await fixtures.createCampaignUser('coordinator')
     const phoneOk = fixtures.phone()
     const csv = `nome,telefone,municipio,intencao\nAna Silva,${phoneOk},Salvador,certo`
 
-    const preview = await previewSupporterImportText(payload, geral, csv)
+    const preview = await previewSupporterImportText(payload, coordinator, csv)
     expect(preview.counts.ok).toBe(1)
 
     const [batchId, expiresAt, sig] = preview.importToken.split('.')
     const tampered = `${batchId}.${expiresAt}.${sig.slice(0, -2)}xx`
     await expect(
-      confirmSupporterImportRecord(payload, geral, {
+      confirmSupporterImportRecord(payload, coordinator, {
         operatorAttested: true,
         importToken: tampered,
       }),
     ).rejects.toThrow(/inválido|expirado/)
 
-    // Token bound to a different actor cannot be redeemed by `geral`.
+    // Token bound to a different actor cannot be redeemed by another coordinator.
     await expect(
-      confirmSupporterImportRecord(payload, otherGeral, {
+      confirmSupporterImportRecord(payload, otherCoordinator, {
         operatorAttested: true,
         importToken: preview.importToken,
       }),
     ).rejects.toThrow(/não encontrado|inválido|expirado/)
 
     // Cleanup: consume the still-valid token so it does not leak into other tests.
-    await confirmSupporterImportRecord(payload, geral, {
+    await confirmSupporterImportRecord(payload, coordinator, {
       operatorAttested: true,
       importToken: preview.importToken,
     })
@@ -345,9 +344,9 @@ describe('campaign supporter domain', () => {
   it('removes supporter and anonymizes contact when no other joins remain', async () => {
     const fixtures = campaignFixtures()
     await ensureSupporterConsents(fixtures)
-    const geral = await fixtures.createCampaignUser('geral')
+    const coordinator = await fixtures.createCampaignUser('coordinator')
     const phone = fixtures.phone()
-    const created = await createSupporterRecord(payload, geral, {
+    const created = await createSupporterRecord(payload, coordinator, {
       name: fixtures.value('Apoiador'),
       phone,
       consentAccepted: true,
@@ -357,7 +356,7 @@ describe('campaign supporter domain', () => {
     fixtures.own('supporter', created.id)
     fixtures.own('contact', contactID)
 
-    const removed = await removeSupporterDataRecord(payload, geral, { id: created.id })
+    const removed = await removeSupporterDataRecord(payload, coordinator, { id: created.id })
     expect(removed.removed).toBe(true)
     expect(removed.contactAnonymized).toBe(true)
 
@@ -370,10 +369,10 @@ describe('campaign supporter domain', () => {
     expect(contact.phone).not.toBe(phone)
   })
 
-  it('aggregates supporter overview KPIs in a single SQL query for geral', async () => {
+  it('aggregates supporter overview KPIs in a single SQL query for the coordinator', async () => {
     const fixtures = campaignFixtures()
     const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
-    const geral = await fixtures.createCampaignUser('geral')
+    const coordinator = await fixtures.createCampaignUser('coordinator')
 
     const intentions: Array<{ voteIntention: 'certo' | 'tende_a_certo' | 'indeciso' | 'outro' | null }> = [
       { voteIntention: 'certo' },
@@ -392,7 +391,7 @@ describe('campaign supporter domain', () => {
         consent: registration.id,
         consentContentHash: 'hash',
         consentedAt: new Date().toISOString(),
-        createdBy: geral.id,
+        createdBy: coordinator.id,
         ...(voteIntention ? { voteIntention } : {}),
       })
     }
@@ -402,13 +401,13 @@ describe('campaign supporter domain', () => {
       where: buildSupporterListWhere({ page: 1, q: searchTag }),
       depth: 0,
       pagination: false,
-      user: geral,
+      user: coordinator,
       overrideAccess: false,
     })
 
     const overview = await loadSupporterListOverviewData(
       payload,
-      geral,
+      coordinator,
       { page: 1, q: searchTag },
       list.totalDocs,
     )
@@ -419,18 +418,19 @@ describe('campaign supporter domain', () => {
 
     // `total` is the caller's contract: a 0 total skips the aggregate query
     // entirely and hides the panel, even if rows technically exist.
-    expect(await loadSupporterListOverviewData(payload, geral, { page: 1 }, 0)).toBeNull()
+    expect(await loadSupporterListOverviewData(payload, coordinator, { page: 1 }, 0)).toBeNull()
   })
 
-  it('scopes the overview aggregate to accessible nuclei for coordenador and applies filters', async () => {
+  it('scopes the overview aggregate to administered plazas for an advisor and applies filters', async () => {
     const fixtures = campaignFixtures()
     const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
-    const coordenador = await fixtures.createCampaignUser('coordenador')
-    const assigned = await fixtures.createNucleus({ coordinators: [coordenador.id] })
-    const other = await fixtures.createNucleus()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const assigned = await fixtures.getPlaza()
+    const other = await fixtures.getPlaza()
+    await fixtures.assignPlazaAdvisors(assigned, [advisor])
 
     const makeSupporter = async (
-      nucleusId: number | undefined,
+      plazaId: number | undefined,
       voteIntention: 'certo' | 'indeciso' | null,
       city = 'Salvador',
       name = fixtures.value('Apoiador'),
@@ -441,8 +441,8 @@ describe('campaign supporter domain', () => {
         consent: registration.id,
         consentContentHash: 'hash',
         consentedAt: new Date().toISOString(),
-        createdBy: coordenador.id,
-        ...(nucleusId ? { nucleus: nucleusId } : {}),
+        createdBy: advisor.id,
+        ...(plazaId ? { plaza: plazaId } : {}),
         ...(voteIntention ? { voteIntention } : {}),
       })
     }
@@ -452,7 +452,7 @@ describe('campaign supporter domain', () => {
     await makeSupporter(assigned.id, null, 'Feira de Santana')
     await makeSupporter(other.id, 'certo') // outside scope — must not be counted
 
-    const overview = await loadSupporterListOverviewData(payload, coordenador, { page: 1 }, 3)
+    const overview = await loadSupporterListOverviewData(payload, advisor, { page: 1 }, 3)
     expect(overview).not.toBeNull()
     expect(overview!.total).toBe(3)
     expect(overview!.certoAndTende).toBe(1)
@@ -460,7 +460,7 @@ describe('campaign supporter domain', () => {
 
     const filtered = await loadSupporterListOverviewData(
       payload,
-      coordenador,
+      advisor,
       { page: 1, city: 'Feira de Santana' },
       1,
     )
@@ -471,7 +471,7 @@ describe('campaign supporter domain', () => {
   it('ignores single-character search queries in list and overview filters', async () => {
     const fixtures = campaignFixtures()
     const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
-    const geral = await fixtures.createCampaignUser('geral')
+    const coordinator = await fixtures.createCampaignUser('coordinator')
 
     const uniqueName = fixtures.value('ApoiadorUnico')
     const contact = await fixtures.createContact({ name: uniqueName })
@@ -480,7 +480,7 @@ describe('campaign supporter domain', () => {
       consent: registration.id,
       consentContentHash: 'hash',
       consentedAt: new Date().toISOString(),
-      createdBy: geral.id,
+      createdBy: coordinator.id,
     })
 
     const shortQuery = uniqueName.slice(0, 1)
@@ -490,7 +490,7 @@ describe('campaign supporter domain', () => {
       where: listWhere,
       depth: 0,
       pagination: false,
-      user: geral,
+      user: coordinator,
       overrideAccess: false,
     })
 
@@ -498,7 +498,7 @@ describe('campaign supporter domain', () => {
 
     const overview = await loadSupporterListOverviewData(
       payload,
-      geral,
+      coordinator,
       { page: 1, q: shortQuery },
       list.totalDocs,
     )
@@ -509,7 +509,7 @@ describe('campaign supporter domain', () => {
   it('keeps list and overview totals aligned for multi-character search', async () => {
     const fixtures = campaignFixtures()
     const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
-    const geral = await fixtures.createCampaignUser('geral')
+    const coordinator = await fixtures.createCampaignUser('coordinator')
 
     const uniqueName = fixtures.value('ApoiadorBusca')
     const contact = await fixtures.createContact({ name: uniqueName })
@@ -518,7 +518,7 @@ describe('campaign supporter domain', () => {
       consent: registration.id,
       consentContentHash: 'hash',
       consentedAt: new Date().toISOString(),
-      createdBy: geral.id,
+      createdBy: coordinator.id,
     })
 
     const q = uniqueName.slice(0, 8)
@@ -527,7 +527,7 @@ describe('campaign supporter domain', () => {
       where: buildSupporterListWhere({ page: 1, q }),
       depth: 0,
       pagination: false,
-      user: geral,
+      user: coordinator,
       overrideAccess: false,
     })
 
@@ -535,7 +535,7 @@ describe('campaign supporter domain', () => {
 
     const overview = await loadSupporterListOverviewData(
       payload,
-      geral,
+      coordinator,
       { page: 1, q },
       list.totalDocs,
     )
@@ -544,40 +544,28 @@ describe('campaign supporter domain', () => {
     expect(overview!.certoAndTende + overview!.indeciso).toBeLessThanOrEqual(list.totalDocs)
   })
 
-  it('loads supporters page data with a single coordinator nucleus lookup', async () => {
+  it('loads supporters page data scoped to the administered plazas of an advisor', async () => {
     const fixtures = campaignFixtures()
     await ensureSupporterConsents(fixtures)
-    const coordenador = await fixtures.createCampaignUser('coordenador')
-    const assigned = await fixtures.createNucleus({ coordinators: [coordenador.id] })
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const assigned = await fixtures.getPlaza()
+    await fixtures.assignPlazaAdvisors(assigned, [advisor])
     const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
 
     const contact = await fixtures.createContact()
     await fixtures.createSupporter({
       contact: contact.id,
-      nucleus: assigned.id,
+      plaza: assigned.id,
       consent: registration.id,
       consentContentHash: 'hash',
       consentedAt: new Date().toISOString(),
-      createdBy: coordenador.id,
+      createdBy: advisor.id,
     })
 
-    const campaignAccess = await import('@/utilities/campaignAccess')
-    const originalGetCoordinatorNucleusIds = campaignAccess.getCoordinatorNucleusIds
-    let lookupCount = 0
-    const spy = vi.spyOn(campaignAccess, 'getCoordinatorNucleusIds')
-    spy.mockImplementation(async (...args) => {
-      lookupCount += 1
-      return originalGetCoordinatorNucleusIds(...args)
-    })
-
-    try {
-      const pageData = await loadSupportersPageData(payload, coordenador, {})
-      expect(lookupCount).toBe(1)
-      expect(pageData.coordinatorNucleusIds).toContain(assigned.id)
-      expect(pageData.nucleusOptions.some((option) => option.id === assigned.id)).toBe(true)
-      expect(pageData.result.totalDocs).toBeGreaterThanOrEqual(1)
-    } finally {
-      spy.mockRestore()
-    }
+    const pageData = await loadSupportersPageData(payload, advisor, {})
+    expect(pageData.advisorPlazaIds).toContain(assigned.id)
+    expect(pageData.plazaOptions.map((option) => option.id)).toEqual([assigned.id])
+    expect(pageData.result.totalDocs).toBeGreaterThanOrEqual(1)
+    expect(pageData.overview).not.toBeNull()
   })
 })

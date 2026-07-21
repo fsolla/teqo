@@ -8,11 +8,11 @@ import {
   type LeadershipInternalUpdateInput,
 } from '@/lib/schemas/leadership'
 import type { CampaignUser, Contact } from '@/payload-types'
+import { getAdvisorPlazaIds } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { requireRelationshipId } from '@/utilities/relationship'
 
 const getFreshStaffActor = async (
   payload: Payload,
@@ -21,38 +21,38 @@ const getFreshStaffActor = async (
 ): Promise<CampaignUser> => {
   const currentActor = await reloadCampaignActor(payload, actor, req)
 
-  if (currentActor.role !== 'geral' && currentActor.role !== 'coordenador') {
-    throw new Error('Somente a coordenação pode gerenciar lideranças.')
+  if (currentActor.role !== 'coordinator' && currentActor.role !== 'advisor') {
+    throw new Error('Somente a coordenação e a assessoria podem gerenciar lideranças.')
   }
 
   return currentActor
 }
 
-const assertNucleusManagement = async (
+/** Advisors may only link leaderships to plazas they administer. */
+const assertPlazasWithinScope = async (
   payload: Payload,
   actor: CampaignUser,
-  nucleusID: number,
+  plazaIDs: number[],
   req?: PayloadTransactionRequest,
-) =>
-  payload.findByID({
-    collection: 'electoralNucleus',
-    id: nucleusID,
-    depth: 0,
-    user: actor,
-    overrideAccess: false,
-    req,
-  })
+) => {
+  if (actor.role !== 'advisor') return
+
+  const administered = new Set(await getAdvisorPlazaIds(payload, actor.id, req))
+  const outside = plazaIDs.filter((id) => !administered.has(id))
+  if (outside.length > 0) {
+    throw new Error('Você só pode vincular lideranças às Praças que assessora.')
+  }
+}
 
 const isUniqueLeadershipConflict = (error: unknown): boolean => {
   const message = error instanceof Error ? error.message : String(error)
-  if (/leadership.*contact.*nucleus|leadership_contact_nucleus|duplicate key/i.test(message)) {
+  if (/leadership_contact|duplicate key/i.test(message)) {
     return true
   }
 
   if (!(error instanceof Error) || error.name !== 'ValidationError') return false
 
-  const details = JSON.stringify(error)
-  return /contact(?:_id)?/i.test(details) && /nucleus(?:_id)?/i.test(details)
+  return /contact(?:_id)?/i.test(JSON.stringify(error))
 }
 
 type LeadershipCreateData = ReturnType<typeof leadershipCreateSchema.parse>
@@ -67,7 +67,7 @@ const createValidatedLeadershipRecord = async (
       payload,
       async ({ req }) => {
         const currentActor = await getFreshStaffActor(payload, actor, req)
-        const nucleus = await assertNucleusManagement(payload, currentActor, data.nucleus, req)
+        await assertPlazasWithinScope(payload, currentActor, data.plazas, req)
         if (payload.db.name !== 'postgres') {
           throw new Error('O bloqueio de deduplicação exige o adaptador PostgreSQL.')
         }
@@ -94,8 +94,18 @@ const createValidatedLeadershipRecord = async (
         const contactReused = Boolean(contactID)
 
         if (!contactID) {
-          const cities = Array.isArray(nucleus.cities) ? nucleus.cities : []
-          const city = cities.length === 1 ? cities[0] : (nucleus.locality ?? null)
+          let city: string | null = null
+          if (data.plazas.length === 1) {
+            const plaza = await payload.findByID({
+              collection: 'plaza',
+              id: data.plazas[0]!,
+              depth: 0,
+              select: { city: true },
+              overrideAccess: true,
+              req,
+            })
+            city = plaza.city
+          }
           const contact = await payload.create({
             collection: 'contact',
             data: {
@@ -117,7 +127,8 @@ const createValidatedLeadershipRecord = async (
           collection: 'leadership',
           data: {
             contact: contactID,
-            nucleus: data.nucleus,
+            plazas: data.plazas,
+            organizations: data.organizations ?? [],
             sector: data.sector,
             sectorNotes: data.sectorNotes,
             supportStatus: data.supportStatus,
@@ -135,7 +146,9 @@ const createValidatedLeadershipRecord = async (
     )
   } catch (error) {
     if (isUniqueLeadershipConflict(error)) {
-      throw new Error('Esta pessoa já está cadastrada como liderança neste núcleo.')
+      throw new Error(
+        'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novas Praças.',
+      )
     }
 
     throw error
@@ -153,37 +166,46 @@ export const updateLeadershipInternalRecord = async (
   actor: CampaignUser,
   input: LeadershipInternalUpdateInput,
 ) => {
-  const { id, ...data } = leadershipInternalUpdateSchema.parse(input)
+  const { id, plazas, organizations, ...data } = leadershipInternalUpdateSchema.parse(input)
   const currentActor = await getFreshStaffActor(payload, actor)
+
+  // Row access verifies the current record is in the actor's scope.
   const current = await payload.findByID({
     collection: 'leadership',
     id,
     depth: 0,
-    overrideAccess: true,
+    user: currentActor,
+    overrideAccess: false,
   })
-  await assertNucleusManagement(payload, currentActor, requireRelationshipId(current.nucleus))
+
+  if (plazas !== undefined) {
+    await assertPlazasWithinScope(payload, currentActor, plazas)
+  }
 
   return payload.update({
     collection: 'leadership',
-    id,
-    data,
+    id: current.id,
+    data: {
+      ...data,
+      ...(plazas === undefined ? {} : { plazas }),
+      ...(organizations === undefined ? {} : { organizations: organizations ?? [] }),
+    },
     depth: 0,
     user: currentActor,
     overrideAccess: false,
   })
 }
 
-export const listNucleusLeaderships = async (
+export const listPlazaLeaderships = async (
   payload: Payload,
   actor: CampaignUser,
-  nucleusID: number,
+  plazaID: number,
 ) => {
   const currentActor = await getFreshStaffActor(payload, actor)
-  await assertNucleusManagement(payload, currentActor, nucleusID)
 
   return payload.find({
     collection: 'leadership',
-    where: { nucleus: { equals: nucleusID } },
+    where: { plazas: { in: [plazaID] } },
     depth: 1,
     sort: 'createdAt',
     user: currentActor,

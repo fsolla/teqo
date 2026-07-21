@@ -41,7 +41,7 @@ describe('campaign invite module boundaries', () => {
 
     expect(redemption).toContain('resolveInviteConsent')
     expect(redemption).toContain('assertContactPhoneAvailable')
-    expect(redemption).toContain("role: 'lideranca'")
+    expect(redemption).toContain("role: 'leader'")
     expect(redemption).not.toContain('@payloadcms/db-postgres')
   })
 

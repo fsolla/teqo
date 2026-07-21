@@ -37,12 +37,12 @@ export type SupporterListState = {
   q?: string
   voteIntention?: SupporterVoteIntention
   city?: string
-  nucleus?: number
+  plaza?: number
 }
 
 type RawSearchParams = CampaignListRawSearchParams
 
-export const supporterListParamNames = ['q', 'voteIntention', 'city', 'nucleus', 'page'] as const
+export const supporterListParamNames = ['q', 'voteIntention', 'city', 'plaza', 'page'] as const
 
 const supporterListParamNameSet = new Set<string>(supporterListParamNames)
 
@@ -52,14 +52,14 @@ export const parseSupporterListParams = (params: RawSearchParams): SupporterList
   const city = resolveBahiaMunicipality(firstValue(params.city)) ?? undefined
   const rawVoteIntention = firstValue(params.voteIntention)
   const voteIntention = isSupporterVoteIntention(rawVoteIntention) ? rawVoteIntention : undefined
-  const nucleus = strictDecimalInteger(firstValue(params.nucleus))
+  const plaza = strictDecimalInteger(firstValue(params.plaza))
 
   return {
     page: rawPage ?? 1,
     ...(q ? { q } : {}),
     ...(voteIntention ? { voteIntention } : {}),
     ...(city ? { city } : {}),
-    ...(nucleus ? { nucleus } : {}),
+    ...(plaza ? { plaza } : {}),
   }
 }
 
@@ -74,14 +74,14 @@ export const buildSupporterListSearchParams = (
     q: state.q,
     voteIntention: state.voteIntention,
     city: state.city,
-    nucleus: state.nucleus === undefined ? undefined : String(state.nucleus),
+    plaza: state.plaza === undefined ? undefined : String(state.plaza),
   })
   const params = new URLSearchParams()
 
   if (canonicalState.q) params.set('q', canonicalState.q)
   if (canonicalState.voteIntention) params.set('voteIntention', canonicalState.voteIntention)
   if (canonicalState.city) params.set('city', canonicalState.city)
-  if (canonicalState.nucleus) params.set('nucleus', String(canonicalState.nucleus))
+  if (canonicalState.plaza) params.set('plaza', String(canonicalState.plaza))
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
 
   return params
@@ -111,7 +111,7 @@ export const resolveSupporterListUrl = (
   })
 
 export const getSupporterScopeLabel = (total: number): string =>
-  `${total} ${total === 1 ? 'apoiador nos seus núcleos' : 'apoiadores nos seus núcleos'}`
+  `${total} ${total === 1 ? 'apoiador nas suas Praças' : 'apoiadores nas suas Praças'}`
 
 export const canAccessSupporterArea = (role: CampaignUser['role']): boolean =>
-  role === 'geral' || role === 'coordenador'
+  role === 'coordinator' || role === 'advisor'

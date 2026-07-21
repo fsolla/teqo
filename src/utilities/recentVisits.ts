@@ -2,7 +2,7 @@ export const STORAGE_KEY = 'teqo:campaign:recent-visits'
 export const MAX_ENTRIES = 8
 export const RECORD_DWELL_MS = 2000
 
-export type RecentVisitKind = 'nucleus' | 'nucleusList'
+export type RecentVisitKind = 'plaza' | 'plazaList'
 
 export type RecentVisitEntry = {
   href: string
@@ -19,7 +19,7 @@ const isRecentVisitEntry = (value: unknown): value is RecentVisitEntry => {
     entry.href.length > 0 &&
     typeof entry.label === 'string' &&
     entry.label.length > 0 &&
-    (entry.kind === 'nucleus' || entry.kind === 'nucleusList') &&
+    (entry.kind === 'plaza' || entry.kind === 'plazaList') &&
     typeof entry.visitedAt === 'number' &&
     Number.isFinite(entry.visitedAt)
   )

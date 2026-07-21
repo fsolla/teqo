@@ -72,34 +72,34 @@ const getFreshStaffActor = async (
 ): Promise<CampaignUser> => {
   const currentActor = await reloadCampaignActor(payload, actor, req)
 
-  if (currentActor.role !== 'geral' && currentActor.role !== 'coordenador') {
-    throw new Error('Somente a coordenação pode gerenciar apoiadores.')
+  if (currentActor.role !== 'coordinator' && currentActor.role !== 'advisor') {
+    throw new Error('Somente a coordenação e a assessoria podem gerenciar apoiadores.')
   }
 
   return currentActor
 }
 
-const getFreshGeneralActor = async (
+const getFreshCoordinatorActor = async (
   payload: Payload,
   actor: CampaignUser,
   req?: PayloadTransactionRequest,
 ): Promise<CampaignUser> => {
   const currentActor = await reloadCampaignActor(payload, actor, req)
-  if (currentActor.role !== 'geral') {
-    throw new Error('Somente a coordenação geral pode importar apoiadores.')
+  if (currentActor.role !== 'coordinator') {
+    throw new Error('Somente o Coordenador Geral pode importar apoiadores.')
   }
   return currentActor
 }
 
-const assertNucleusManagement = async (
+const assertPlazaManagement = async (
   payload: Payload,
   actor: CampaignUser,
-  nucleusID: number,
+  plazaID: number,
   req?: PayloadTransactionRequest,
 ) =>
   payload.findByID({
-    collection: 'electoralNucleus',
-    id: nucleusID,
+    collection: 'plaza',
+    id: plazaID,
     depth: 0,
     user: actor,
     overrideAccess: false,
@@ -123,7 +123,7 @@ const assertCanManageSupporter = async (
 
 const isUniqueSupporterConflict = (error: unknown): boolean => {
   const message = error instanceof Error ? error.message : String(error)
-  return /supporter.*contact.*nucleus|supporter_contact_nucleus|nulls_not_distinct|duplicate key/i.test(
+  return /supporter.*contact.*plaza|supporter_contact_plaza|nulls_not_distinct|duplicate key/i.test(
     message,
   )
 }
@@ -194,10 +194,10 @@ const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, i
       async ({ req }) => {
         const currentActor = await getFreshStaffActor(payload, actor, req)
 
-        if (data.nucleus) {
-          await assertNucleusManagement(payload, currentActor, data.nucleus, req)
-        } else if (currentActor.role !== 'geral') {
-          throw new Error('Somente a coordenação geral pode cadastrar apoiadores sem núcleo.')
+        if (data.plaza) {
+          await assertPlazaManagement(payload, currentActor, data.plaza, req)
+        } else if (currentActor.role !== 'coordinator') {
+          throw new Error('Somente o Coordenador Geral pode cadastrar apoiadores sem Praça.')
         }
 
         const registrationConsent = await requireSupporterRegistrationConsent(
@@ -233,7 +233,7 @@ const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, i
           collection: 'supporter',
           data: {
             contact: contactID,
-            nucleus: data.nucleus,
+            plaza: data.plaza,
             voteIntention: data.voteIntention,
             source: 'manual',
             consent: registrationConsent.id,
@@ -259,7 +259,7 @@ const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, i
     )
   } catch (error) {
     if (isUniqueSupporterConflict(error)) {
-      throw new Error('Esta pessoa já está cadastrada como apoiador neste núcleo.')
+      throw new Error('Esta pessoa já está cadastrada como apoiador nesta Praça.')
     }
     throw error
   }
@@ -363,7 +363,7 @@ export const previewSupporterImportText = async (
   actor: CampaignUser,
   csvText: string,
 ): Promise<SupporterImportPreviewResult> => {
-  const currentActor = await getFreshGeneralActor(payload, actor)
+  const currentActor = await getFreshCoordinatorActor(payload, actor)
   await requireSupporterRegistrationConsent(payload)
   await requireSupporterVoteIntentionConsent(payload)
 
@@ -466,7 +466,7 @@ export const previewSupporterImportText = async (
     })
   }
 
-  // Duplicate against an existing supporter without nucleus (Contact reuse alone is OK).
+  // Duplicate against an existing supporter without plaza (Contact reuse alone is OK).
   const candidatePhones = [
     ...new Set(rows.filter(isSupporterImportOkRow).map((row) => row.normalizedPhone)),
   ]
@@ -488,7 +488,7 @@ export const previewSupporterImportText = async (
       const existingSupporters = await payload.find({
         collection: 'supporter',
         where: {
-          and: [{ contact: { in: contactIDs } }, { nucleus: { exists: false } }],
+          and: [{ contact: { in: contactIDs } }, { plaza: { exists: false } }],
         },
         depth: 0,
         limit: contactIDs.length,
@@ -570,7 +570,7 @@ export const confirmSupporterImportRecord = async (
   return withPayloadTransaction(
     payload,
     async ({ req }) => {
-      const currentActor = await getFreshGeneralActor(payload, actor, req)
+      const currentActor = await getFreshCoordinatorActor(payload, actor, req)
       const registrationConsent = await requireSupporterRegistrationConsent(payload, req)
       const voteIntentionConsent = await requireSupporterVoteIntentionConsent(payload, req)
 

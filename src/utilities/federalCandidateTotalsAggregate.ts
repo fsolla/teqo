@@ -4,15 +4,9 @@ import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
 import { BASELINE_TICKET_2022, ELECTION_YEAR_2022 } from '@/lib/electionResults'
-import {
-  assertCanReadElectionData,
-  type ElectionDataReader,
-} from '@/utilities/campaignAccess'
+import { assertCanReadElectionData, type ElectionDataReader } from '@/utilities/campaignAccess'
 import { drizzleResultRows, requirePostgresDrizzle } from '@/utilities/drizzleBulk'
-import {
-  type NucleusElectionGeography,
-  zonesByCityCode,
-} from '@/utilities/nucleusElectionGeography'
+import { type PlazaElectionGeography, zonesByCityCode } from '@/utilities/plazaElectionGeography'
 
 export type FederalCandidateTotal = {
   candidateNumber: number
@@ -24,15 +18,16 @@ export type FederalCandidateTotal = {
 export const loadFederalCandidateTotalsAggregated = async (
   payload: Pick<Payload, 'db'>,
   user: ElectionDataReader,
-  geography: NucleusElectionGeography,
+  geography: PlazaElectionGeography,
 ): Promise<FederalCandidateTotal[]> => {
   assertCanReadElectionData(user)
 
-  const cityClauses = [...zonesByCityCode(geography).entries()].map(([cityCode, zones]) =>
-    sql`("election_candidate_vote"."city_code" = ${cityCode} AND "election_candidate_vote"."zone_number" IN (${sql.join(
-      zones.map((zone) => sql`${zone}`),
-      sql`, `,
-    )}))`,
+  const cityClauses = [...zonesByCityCode(geography).entries()].map(
+    ([cityCode, zones]) =>
+      sql`("election_candidate_vote"."city_code" = ${cityCode} AND "election_candidate_vote"."zone_number" IN (${sql.join(
+        zones.map((zone) => sql`${zone}`),
+        sql`, `,
+      )}))`,
   )
 
   const drizzle = requirePostgresDrizzle(payload, 'agregação federal')

@@ -12,13 +12,13 @@ web
 
 Two surfaces, one product.
 
-**`/campanha` (primary for design defaults):** campaign coordination (`geral`, `coordenador`) and leaderships (`lideranca`) as first-class peers — staff need depth for territory, people, estimates, and agenda; leaderships need a simpler, phone-first path into their nucleus. Used in the field and on the go, often under time pressure through the 2026 calendar.
+**`/campanha` (primary for design defaults):** campaign coordination (`coordinator` "Coordenador Geral", `advisor` "Assessor") and leaderships (`leader` "Liderança") as first-class peers — staff need depth for Praças (predefined territories: municipality, or TSE zone in Salvador/Camaçari), people, declared-vs-estimated votes, and agenda; leaderships need a simpler, phone-first path into their Praças. Advisors see only the Praças they administer. Used in the field and on the go, often under time pressure through the 2026 calendar.
 
 **Public site:** citizens and the base in Bahia first (news, petitions, donate, stay close to the mandate); institutional visitors second (press, partners, official voice).
 
 ## Product Purpose
 
-**`/campanha`:** field operations and electoral intelligence as one job — nuclei, people, estimates, agenda, and share kits, plus a live picture of territory and vote gap so the team can prioritize action. Nuclei, people, and estimates live here as the system of record, even when outreach uses pragmatic channels.
+**`/campanha`:** field operations and electoral intelligence as one job — Praças, people, vote pledges, organizations, demands, agenda, and share kits, plus a live picture of territory (map scaled by votes, year-over-year candidate comparison) so the team can prioritize action. Praças, people, and pledges live here as the system of record, even when outreach uses pragmatic channels.
 
 **Public site:** own the relationship with the base first (engagement channel the campaign controls); project the mandate’s official voice and credibility second.
 

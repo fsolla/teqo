@@ -8,16 +8,23 @@ import {
 } from '@/app/(campaign)/campanha/(app)/planos/contactSearchActions'
 import { createActionPlanFormAction } from '@/app/(campaign)/campanha/(app)/planos/formActions'
 import { ActionPlanForm } from '@/components/campaign/ActionPlanForm'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { getEligibleNucleusCoordinatorOptions } from '@/utilities/nucleusCoordinatorOptions'
+import { loadOrganizationOptions, loadPlazaOptions } from '@/utilities/campaignRelationOptions'
+import { getEligibleAdvisorOptions } from '@/utilities/plazaViewModels'
 
 export default async function NewActionPlanPage() {
   const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
 
   if (!user) redirect('/campanha/login')
-  if (user.role !== 'geral' && user.role !== 'coordenador') redirect('/campanha/planos')
+  if (!isCampaignStaff(user)) redirect('/campanha/planos')
 
-  const coordinators = await getEligibleNucleusCoordinatorOptions(payload, user)
+  const canManageAdvisors = user.role === 'coordinator'
+  const [plazaOptions, organizationOptions, advisorOptions] = await Promise.all([
+    loadPlazaOptions(payload, user),
+    loadOrganizationOptions(payload, user),
+    canManageAdvisors ? getEligibleAdvisorOptions(payload, user) : Promise.resolve([]),
+  ])
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
@@ -30,8 +37,10 @@ export default async function NewActionPlanPage() {
       </header>
       <ActionPlanForm
         action={createActionPlanFormAction}
-        coordinators={coordinators}
-        canManageCoordinators={user.role === 'geral'}
+        plazaOptions={plazaOptions}
+        organizationOptions={organizationOptions}
+        advisorOptions={advisorOptions}
+        canManageAdvisors={canManageAdvisors}
         submitLabel="Criar plano"
         searchContacts={searchActionPlanContactOptions}
         searchLeaderships={searchActionPlanLeadershipOptionsAction}

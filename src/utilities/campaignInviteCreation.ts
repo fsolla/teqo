@@ -31,7 +31,7 @@ const getFreshInviteCreator = async (
   req: PayloadTransactionRequest,
 ): Promise<CampaignUser> => {
   const currentActor = await reloadCampaignActor(payload, actor, req)
-  if (currentActor.role !== 'geral' && currentActor.role !== 'coordenador') {
+  if (currentActor.role !== 'coordinator' && currentActor.role !== 'advisor') {
     throw new Error('Somente a coordenação pode criar convites.')
   }
   return currentActor

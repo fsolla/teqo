@@ -26,15 +26,15 @@ export type SupporterFormValues = {
   phone?: string
   email?: string
   city?: string
-  nucleus?: string
+  plaza?: string
   voteIntention?: string
 }
 
 const safeActionMessages = [
-  'Esta pessoa já está cadastrada como apoiador neste núcleo.',
+  'Esta pessoa já está cadastrada como apoiador nesta Praça.',
   'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.',
-  'Somente a coordenação pode gerenciar apoiadores.',
-  'Somente a coordenação geral pode cadastrar apoiadores sem núcleo.',
+  'Somente a coordenação e a assessoria podem gerenciar apoiadores.',
+  'Somente o Coordenador Geral pode cadastrar apoiadores sem Praça.',
   'Consentimento de cadastro de apoiador ainda não configurado.',
   'Consentimento de intenção de voto ainda não configurado.',
 ] as const
@@ -65,20 +65,20 @@ export const createSupporterFormAction = async (
       phone: optionalFormText(formData, 'phone'),
       email: optionalFormText(formData, 'email'),
       city: optionalFormText(formData, 'city'),
-      nucleus: optionalFormText(formData, 'nucleus'),
+      plaza: optionalFormText(formData, 'plaza'),
       voteIntention: optionalFormText(formData, 'voteIntention'),
     }
 
     const phone = sanitizeBrazilianPhoneInput(values.phone ?? '')
     const voteIntention = values.voteIntention?.trim() || undefined
 
-    const nucleus = nullableRelationshipFormValue(formData, 'nucleus')
+    const plaza = nullableRelationshipFormValue(formData, 'plaza')
     const input = supporterCreateSchema.parse({
       name: values.name ?? '',
       phone,
       email: values.email,
       city: values.city,
-      ...(nucleus ? { nucleus } : {}),
+      ...(plaza ? { plaza } : {}),
       ...(voteIntention ? { voteIntention } : {}),
       consentAccepted: checkboxFormValue(formData, 'consentAccepted') ? true : undefined,
       voteIntentionConsentAccepted: voteIntention

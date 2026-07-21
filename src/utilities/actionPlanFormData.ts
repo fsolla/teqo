@@ -8,6 +8,7 @@ import {
 } from '@/lib/schemas/actionPlan'
 import {
   boundedJsonFormValue,
+  checkboxFormValue,
   FormDataBoundaryError,
   nullableRelationshipFormValue,
   optionalFormText,
@@ -15,10 +16,6 @@ import {
   requiredRelationshipFormValue,
 } from '@/lib/formData'
 import { parseBahiaDateTimeInput } from '@/utilities/campaignTime'
-import {
-  parseCampaignTerritoryFields,
-  validateCampaignTerritoryFormData,
-} from '@/utilities/campaignTerritoryFormData'
 
 type ParsedActionPlanTask = {
   title: string
@@ -80,7 +77,6 @@ const parseTasksFormData = (formData: FormData): ParsedActionPlanTask[] => {
 }
 
 const parseSharedActionPlanFormData = (formData: FormData) => {
-  const territory = parseCampaignTerritoryFields(formData)
   const responsible = nullableRelationshipFormValue(formData, 'responsible')
   const leadership = nullableRelationshipFormValue(formData, 'leadership')
 
@@ -89,10 +85,13 @@ const parseSharedActionPlanFormData = (formData: FormData) => {
     kind: optionalFormText(formData, 'kind') as (typeof actionPlanKinds)[number],
     status: optionalFormText(formData, 'status') as (typeof actionPlanStatuses)[number] | undefined,
     description: optionalFormText(formData, 'description'),
+    deputyPresent: checkboxFormValue(formData, 'deputyPresent'),
     startAt: parseDateTimeFormField(formData, 'startAt'),
     endAt: parseDateTimeFormField(formData, 'endAt'),
     deadline: parseDateTimeFormField(formData, 'deadline'),
-    ...territory,
+    plaza: requiredRelationshipFormValue(formData, 'plaza'),
+    locality: optionalFormText(formData, 'locality'),
+    organizations: repeatedRelationshipFormValues(formData, 'organizations'),
     responsible,
     leadership,
     tasks: parseTasksFormData(formData),
@@ -101,41 +100,37 @@ const parseSharedActionPlanFormData = (formData: FormData) => {
 
 export const parseActionPlanCreateFormData = (formData: FormData): ActionPlanCreateInput => {
   const shared = parseSharedActionPlanFormData(formData)
-  validateCampaignTerritoryFormData(shared, { entityLabel: 'plano', requireGeography: false })
-  const coordinatorIds = repeatedRelationshipFormValues(formData, 'coordinators')
+  const advisorIds = repeatedRelationshipFormValues(formData, 'advisors')
 
   return {
     ...shared,
     status: (shared.status ?? 'rascunho') as ActionPlanCreateInput['status'],
     responsible: shared.responsible ?? undefined,
     leadership: shared.leadership ?? undefined,
-    coordinators: coordinatorIds.length ? coordinatorIds : undefined,
+    organizations: shared.organizations.length ? shared.organizations : undefined,
+    advisors: advisorIds.length ? advisorIds : undefined,
   }
 }
 
 export const parseActionPlanUpdateFormData = (formData: FormData): ActionPlanUpdateInput => {
   const shared = parseSharedActionPlanFormData(formData)
-  validateCampaignTerritoryFormData(shared, { entityLabel: 'plano', requireGeography: true })
-  const coordinatorIds = repeatedRelationshipFormValues(formData, 'coordinators')
+  const advisorIds = repeatedRelationshipFormValues(formData, 'advisors')
   // Checkboxes only submit when checked, so a hidden marker distinguishes
-  // "coordinators section rendered but all unchecked" from "not editable" (coordenador view).
-  const hasCoordinators = formData.has('coordinatorsSubmitted')
+  // "advisors section rendered but all unchecked" from "not editable" (advisor view).
+  const hasAdvisors = formData.has('advisorsSubmitted')
 
   return {
     ...shared,
     id: requiredRelationshipFormValue(formData, 'id'),
     status: shared.status as ActionPlanUpdateInput['status'],
-    regions: shared.regions,
-    cities: shared.cities,
-    neighborhoods: shared.neighborhoods,
     locality: shared.locality ?? null,
-    territoryNotes: shared.territoryNotes ?? null,
     description: shared.description ?? null,
     startAt: shared.startAt ?? null,
     endAt: shared.endAt ?? null,
     deadline: shared.deadline ?? null,
     responsible: shared.responsible,
     leadership: shared.leadership,
-    coordinators: hasCoordinators ? coordinatorIds : undefined,
+    organizations: shared.organizations,
+    advisors: hasAdvisors ? advisorIds : undefined,
   }
 }

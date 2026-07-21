@@ -1,8 +1,8 @@
 import type { CampaignUser as CampaignUserDocument } from '@/payload-types'
 import {
   canCreateCampaignUserPhone,
-  canManageCampaignUsers,
   canManageCampaignUserRole,
+  canManageCampaignUsers,
   canReadCampaignUserIdentity,
   canReadCampaignUserPhone,
   canReadCampaignUsers,
@@ -41,7 +41,7 @@ const removePrivateAuthFields: CollectionAfterReadHook<CampaignUserDocument> = a
   return doc
 }
 
-const preventAssignedCoordinatorDowngrade: CollectionBeforeChangeHook<CampaignUserDocument> = async ({
+const preventAssignedAdvisorDowngrade: CollectionBeforeChangeHook<CampaignUserDocument> = async ({
   data,
   operation,
   originalDoc,
@@ -50,27 +50,27 @@ const preventAssignedCoordinatorDowngrade: CollectionBeforeChangeHook<CampaignUs
   if (
     operation !== 'update' ||
     !originalDoc ||
-    data.role !== 'lideranca' ||
-    originalDoc.role === 'lideranca'
+    data.role !== 'leader' ||
+    originalDoc.role === 'leader'
   ) {
     return data
   }
 
-  const assignedNucleus = await req.payload.find({
-    collection: 'electoralNucleus',
+  const assignedPlaza = await req.payload.find({
+    collection: 'plaza',
     where: {
-      coordinators: { contains: originalDoc.id },
+      advisors: { contains: originalDoc.id },
     },
     depth: 0,
     limit: 1,
-    select: { name: true, status: true },
+    select: { name: true },
     overrideAccess: true,
     req,
   })
 
-  if (assignedNucleus.totalDocs > 0) {
+  if (assignedPlaza.totalDocs > 0) {
     throw new APIError(
-      'Remova ou substitua este usuário da coordenação de todos os núcleos antes de alterar o papel para liderança.',
+      'Remova ou substitua este usuário da assessoria de todas as Praças antes de alterar o papel para liderança.',
       409,
     )
   }
@@ -78,12 +78,9 @@ const preventAssignedCoordinatorDowngrade: CollectionBeforeChangeHook<CampaignUs
   return data
 }
 
-const preventSelfServicePrivilegedFields: CollectionBeforeChangeHook<CampaignUserDocument> = async ({
-  data,
-  operation,
-  originalDoc,
-  req,
-}) => {
+const preventSelfServicePrivilegedFields: CollectionBeforeChangeHook<
+  CampaignUserDocument
+> = async ({ data, operation, originalDoc, req }) => {
   if (operation !== 'update' || !originalDoc || req.user?.collection !== 'campaignUser') {
     return data
   }
@@ -148,7 +145,7 @@ export const CampaignUser: CollectionConfig = {
     delete: canManageCampaignUsers,
   },
   hooks: {
-    beforeChange: [preventAssignedCoordinatorDowngrade, preventSelfServicePrivilegedFields],
+    beforeChange: [preventAssignedAdvisorDowngrade, preventSelfServicePrivilegedFields],
     afterRead: [removePrivateAuthFields],
   },
   fields: [
@@ -173,12 +170,12 @@ export const CampaignUser: CollectionConfig = {
       type: 'select',
       label: 'Papel',
       required: true,
-      defaultValue: 'lideranca',
+      defaultValue: 'leader',
       saveToJWT: true,
       options: [
-        { label: 'Coordenação geral', value: 'geral' },
-        { label: 'Coordenador', value: 'coordenador' },
-        { label: 'Liderança', value: 'lideranca' },
+        { label: 'Coordenador Geral', value: 'coordinator' },
+        { label: 'Assessor', value: 'advisor' },
+        { label: 'Liderança', value: 'leader' },
       ],
       access: {
         update: canManageCampaignUserRole,

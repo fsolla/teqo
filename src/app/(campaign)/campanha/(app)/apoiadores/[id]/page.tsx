@@ -13,7 +13,7 @@ import { VoteIntentionControl } from '@/components/campaign/VoteIntentionControl
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { isCampaignGeneral } from '@/utilities/campaignAccess'
+import { isCampaignCoordinator } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
   loadSupporterDetailConsentData,
@@ -70,7 +70,7 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
           </Link>
         </Button>
         <CampaignScopeBadge>
-          {isCampaignGeneral(user) ? 'Coordenação geral' : 'Coordenação de núcleo'}
+          {isCampaignCoordinator(user) ? 'Coordenador Geral' : 'Assessor'}
         </CampaignScopeBadge>
         <h1 className="text-2xl font-semibold tracking-tight">{supporter.name}</h1>
         <p className="text-muted-foreground">
@@ -109,18 +109,18 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
           <p className="tabular-nums">{supporter.phoneDisplay || '—'}</p>
           {supporter.email ? <p>{supporter.email}</p> : null}
           <p>
-            {supporter.nucleusName ? (
+            {supporter.plazaName ? (
               <>
-                Núcleo:{' '}
+                Praça:{' '}
                 <Link
-                  href={`/campanha/nucleos/${supporter.nucleusSlug}`}
+                  href={`/campanha/pracas/${supporter.plazaSlug}`}
                   className="font-medium text-primary underline-offset-4 hover:underline"
                 >
-                  {supporter.nucleusName}
+                  {supporter.plazaName}
                 </Link>
               </>
             ) : (
-              <span className="text-muted-foreground">Sem núcleo vinculado</span>
+              <span className="text-muted-foreground">Sem Praça vinculada</span>
             )}
           </p>
         </CardContent>

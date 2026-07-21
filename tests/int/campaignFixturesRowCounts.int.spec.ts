@@ -20,27 +20,35 @@ const { Pool } = require('pg') as {
 
 const adminUrl = 'postgresql://teqo:teqo@localhost:5432/postgres'
 
-// This is the exact 15-table campaign fixture surface measured before Phase 4B.
-// Electoral nuclei currently persist four array fields and one coordinators
-// relationship table. There is no previousSlugs field/table: nucleus names and
-// canonical slugs are immutable by design.
+// The campaign fixture surface after the Praça remodel. Plazas are seeded
+// reference rows: `plaza` itself never changes count, while `plaza_rels`
+// (advisors) and the strategy array tables must return to their baseline
+// after cleanup resets every touched plaza.
 const campaignFixtureTables = [
   'campaign_user',
   'campaign_user_sessions',
   'consent',
   'contact',
-  'electoral_nucleus',
-  'electoral_nucleus_rels',
-  'electoral_nucleus_tse_zones',
-  'electoral_nucleus_voter_profiles',
-  'electoral_nucleus_strengths',
-  'electoral_nucleus_risks',
+  'plaza',
+  'plaza_rels',
+  'plaza_strengths',
+  'plaza_risks',
+  'organization',
+  'organization_rels',
   'leadership',
+  'leadership_rels',
+  'vote_pledge',
+  'campaign_demand',
+  'campaign_demand_status_history',
+  'plaza_update',
+  'supporter',
   'campaign_invite',
-  'nucleus_update',
   'payload_locked_documents',
   'payload_locked_documents_rels',
 ] as const
+
+/** Seeded reference tables: their counts must never grow, only stay equal. */
+const seededTables = new Set<CampaignFixtureTable>(['plaza'])
 
 type CampaignFixtureTable = (typeof campaignFixtureTables)[number]
 type CampaignFixtureTableCounts = Record<CampaignFixtureTable, number>
@@ -83,6 +91,10 @@ const expectEveryTableToGrow = (
   during: CampaignFixtureTableCounts,
 ): void => {
   for (const table of campaignFixtureTables) {
+    if (seededTables.has(table)) {
+      expect(during[table], `${table} is seeded and must not change count`).toBe(before[table])
+      continue
+    }
     expect(during[table], `${table} should contain a representative fixture row`).toBeGreaterThan(
       before[table],
     )
@@ -137,33 +149,38 @@ describe('campaign fixture PostgreSQL row-count invariant', () => {
     let during: CampaignFixtureTableCounts | undefined
 
     await withCampaignFixtures(payload, async (fixtures) => {
-      const general = await fixtures.createCampaignUser('geral')
+      const coordinator = await fixtures.createCampaignUser('coordinator')
+      const advisor = await fixtures.createCampaignUser('advisor')
       const consent = await fixtures.createConsent()
       const contact = await fixtures.createContact()
-      const nucleus = await fixtures.createNucleus({
-        coordinators: [general.id],
-        tseZones: [{ zoneNumber: 1, label: fixtures.value('Zona') }],
-        voterProfiles: [
-          {
-            label: fixtures.value('Perfil'),
-            ageRange: '25–44',
-            incomeBand: 'Até 3 salários mínimos',
-            occupation: 'Trabalhadores de serviços',
-            localTraits: 'Atuação comunitária',
-            notes: 'Perfil representativo',
-          },
-        ],
-        strengths: [{ text: fixtures.value('Força') }],
-        risks: [{ text: fixtures.value('Risco') }],
+      const supporterContact = await fixtures.createContact()
+      const plaza = await fixtures.getPlaza()
+
+      await fixtures.assignPlazaAdvisors(plaza, [advisor])
+      await payload.update({
+        collection: 'plaza',
+        id: plaza.id,
+        data: {
+          priority: 'alta',
+          strengths: [{ text: fixtures.value('Força') }],
+          risks: [{ text: fixtures.value('Risco') }],
+        },
+        depth: 0,
       })
+
+      const organization = await fixtures.createOrganization({ plazas: [plaza.id] })
       const leadership = await fixtures.createLeadership({
         contact,
-        nucleus,
+        plazas: [plaza.id],
+        organizations: [organization.id],
         consent,
-        createdBy: general,
+        createdBy: coordinator,
       })
-      await fixtures.createNucleusUpdate({ nucleus, author: general })
-      await fixtures.createInvite({ leadership, createdBy: general })
+      await fixtures.createVotePledge({ leadership, plaza })
+      await fixtures.createCampaignDemand({ plaza, leadership, createdBy: coordinator })
+      await fixtures.createPlazaUpdate({ plaza, author: coordinator })
+      await fixtures.createSupporter({ contact: supporterContact, plaza, createdBy: coordinator })
+      await fixtures.createInvite({ leadership, createdBy: coordinator })
       await payload.db.drizzle.execute(sql`
         INSERT INTO "campaign_user_sessions" (
           "_order",
@@ -174,7 +191,7 @@ describe('campaign fixture PostgreSQL row-count invariant', () => {
         )
         VALUES (
           1,
-          ${general.id},
+          ${coordinator.id},
           ${fixtures.value('campaign-session')},
           now(),
           now() + interval '1 hour'
@@ -190,9 +207,9 @@ describe('campaign fixture PostgreSQL row-count invariant', () => {
         INSERT INTO "payload_locked_documents_rels" (
           "parent_id",
           "path",
-          "electoral_nucleus_id"
+          "leadership_id"
         )
-        VALUES (${lockedDocumentID}, 'relationTo', ${nucleus.id})
+        VALUES (${lockedDocumentID}, 'relationTo', ${leadership.id})
       `)
       during = await readCampaignFixtureTableCounts()
     })
@@ -207,7 +224,7 @@ describe('campaign fixture PostgreSQL row-count invariant', () => {
 
     await expect(
       withCampaignFixtures(payload, async (fixtures) => {
-        const user = await fixtures.createCampaignUser('geral')
+        const user = await fixtures.createCampaignUser('coordinator')
         await payload.db.drizzle.execute(sql`
           INSERT INTO "campaign_user_sessions" (
             "_order",
@@ -234,7 +251,7 @@ describe('campaign fixture PostgreSQL row-count invariant', () => {
         await fixtures.createContact()
         await fixtures.createLeadership({
           contact: 999_999_999,
-          nucleus: 999_999_999,
+          plazas: [999_999_999],
         })
       }),
     ).rejects.toThrow()

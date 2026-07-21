@@ -11,8 +11,8 @@ describe('campaign action context', () => {
   })
 
   it('reloads the actor role with the transaction req', async () => {
-    const staleActor = { id: 9, role: 'geral' } as CampaignUser
-    const currentActor = { ...staleActor, role: 'lideranca' } as CampaignUser
+    const staleActor = { id: 9, role: 'coordinator' } as CampaignUser
+    const currentActor = { ...staleActor, role: 'leader' } as CampaignUser
     const findByID = vi.fn().mockResolvedValue(currentActor)
     const req = { transactionID: 21 }
 

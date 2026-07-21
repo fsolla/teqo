@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google'
 import React from 'react'
 
 import { RegisterServiceWorker } from '@/components/campaign/RegisterServiceWorker'
-import { VoteEstimateFocusProvider } from '@/components/campaign/VoteEstimateFocusProvider'
 import { CAMPAIGN_PWA_MANIFEST_PATH, CAMPAIGN_PWA_THEME_COLOR } from '@/utilities/campaignPwa'
 
 import '../(frontend)/styles.css'
@@ -40,7 +39,7 @@ export default function CampanhaRootLayout({ children }: { children: React.React
       style={{ colorScheme: 'light' }}
     >
       <body className="bg-background bg-none text-foreground antialiased">
-        <VoteEstimateFocusProvider>{children}</VoteEstimateFocusProvider>
+        {children}
         <RegisterServiceWorker />
       </body>
     </html>

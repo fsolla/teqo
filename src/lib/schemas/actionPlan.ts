@@ -1,17 +1,6 @@
 import { z } from 'zod'
 
 import {
-  isBahiaIdentityTerritory,
-  isBahiaMunicipality,
-  territoriesForCities,
-} from '@/lib/bahiaTerritories'
-import {
-  dedupeTrimmedStrings,
-  MAX_NUCLEUS_CITIES,
-  MAX_NUCLEUS_NEIGHBORHOODS,
-  MAX_NUCLEUS_REGIONS,
-} from '@/lib/schemas/nucleus'
-import {
   positiveRelationshipId,
   trimmedNullableText,
   trimmedOptionalText,
@@ -65,42 +54,7 @@ export const actionPlanStatusLabels: Record<(typeof actionPlanStatuses)[number],
   cancelado: 'Cancelado',
 }
 
-const regionsArraySchema = z
-  .array(z.string())
-  .max(MAX_NUCLEUS_REGIONS)
-  .transform(dedupeTrimmedStrings)
-  .superRefine((regions, context) => {
-    for (const [index, region] of regions.entries()) {
-      if (!isBahiaIdentityTerritory(region)) {
-        context.addIssue({
-          code: 'custom',
-          message: 'Selecione um território de identidade válido da Bahia.',
-          path: [index],
-        })
-      }
-    }
-  })
-
-const citiesArraySchema = z
-  .array(z.string())
-  .max(MAX_NUCLEUS_CITIES)
-  .transform(dedupeTrimmedStrings)
-  .superRefine((cities, context) => {
-    for (const [index, city] of cities.entries()) {
-      if (city.length > 120 || !isBahiaMunicipality(city)) {
-        context.addIssue({
-          code: 'custom',
-          message: 'Selecione um município válido da Bahia.',
-          path: [index],
-        })
-      }
-    }
-  })
-
-const neighborhoodsArraySchema = z
-  .array(z.string().max(160))
-  .max(MAX_NUCLEUS_NEIGHBORHOODS)
-  .transform(dedupeTrimmedStrings)
+export const MAX_ACTION_PLAN_ORGANIZATIONS = 20
 
 const taskSchema = z.object({
   title: z.string().trim().min(1).max(200),
@@ -114,63 +68,18 @@ const actionPlanFieldsSchema = z.object({
   kind: z.enum(actionPlanKinds),
   status: z.enum(actionPlanStatuses).optional(),
   description: trimmedOptionalText(4000),
+  deputyPresent: z.boolean().optional(),
   startAt: z.string().datetime().optional().nullable(),
   endAt: z.string().datetime().optional().nullable(),
   deadline: z.string().datetime().optional().nullable(),
-  regions: regionsArraySchema.optional(),
-  cities: citiesArraySchema.optional(),
-  neighborhoods: neighborhoodsArraySchema.optional(),
+  plaza: positiveRelationshipId,
   locality: trimmedOptionalText(160),
-  territoryNotes: trimmedOptionalText(2000),
-  coordinators: z.array(positiveRelationshipId).optional(),
+  organizations: z.array(positiveRelationshipId).max(MAX_ACTION_PLAN_ORGANIZATIONS).optional(),
+  advisors: z.array(positiveRelationshipId).optional(),
   responsible: positiveRelationshipId.optional(),
   leadership: positiveRelationshipId.optional(),
   tasks: z.array(taskSchema).optional(),
 })
-
-type TerritoryValidationInput = {
-  regions?: string[] | null
-  cities?: string[] | null
-  neighborhoods?: string[] | null
-  locality?: string | null
-}
-
-const validateTerritory = (
-  data: TerritoryValidationInput,
-  context: z.RefinementCtx,
-  mode: 'create' | 'patch',
-) => {
-  const regions = data.regions ?? []
-  const cities = data.cities ?? []
-  const neighborhoods = data.neighborhoods ?? []
-  const locality = data.locality ?? undefined
-
-  const geographyWasFullyProvided =
-    data.regions !== undefined && data.cities !== undefined && data.locality !== undefined
-  if (
-    regions.length === 0 &&
-    cities.length === 0 &&
-    !locality &&
-    (mode === 'create' || geographyWasFullyProvided)
-  ) {
-    context.addIssue({
-      code: 'custom',
-      message: 'Informe o território de identidade, município ou localidade do plano.',
-      path: ['cities'],
-    })
-  }
-
-  if (neighborhoods.length > 0 && cities.length !== 1) {
-    context.addIssue({
-      code: 'custom',
-      message:
-        cities.length === 0
-          ? 'Informe o município antes do bairro.'
-          : 'Bairros só podem ser informados quando há exatamente um município.',
-      path: ['neighborhoods'],
-    })
-  }
-}
 
 const validateSchedule = (
   data: {
@@ -208,36 +117,20 @@ export const actionPlanCreateSchema = actionPlanFieldsSchema
     status: z.enum(['rascunho', 'planejado']).default('rascunho'),
   })
   .superRefine((data, context) => {
-    validateTerritory(data, context, 'create')
     validateSchedule(data, context, 'create')
   })
-  .transform((data) => {
-    const cities = data.cities ?? []
-    const regions =
-      cities.length > 0
-        ? territoriesForCities(cities)
-        : (data.regions ?? []).filter(isBahiaIdentityTerritory)
-    const neighborhoods = cities.length === 1 ? (data.neighborhoods ?? []) : []
-    return {
-      ...data,
-      regions,
-      cities,
-      neighborhoods,
-      startAt: data.startAt ?? null,
-      endAt: data.endAt ?? null,
-      deadline: data.deadline ?? null,
-    }
-  })
+  .transform((data) => ({
+    ...data,
+    startAt: data.startAt ?? null,
+    endAt: data.endAt ?? null,
+    deadline: data.deadline ?? null,
+  }))
 
 export const actionPlanUpdateSchema = actionPlanFieldsSchema
   .partial()
   .extend({
     id: positiveRelationshipId,
-    regions: regionsArraySchema.nullable().optional(),
-    cities: citiesArraySchema.nullable().optional(),
-    neighborhoods: neighborhoodsArraySchema.nullable().optional(),
     locality: trimmedNullableText(160),
-    territoryNotes: trimmedNullableText(2000),
     description: trimmedNullableText(4000),
     startAt: z.string().datetime().nullable().optional(),
     endAt: z.string().datetime().nullable().optional(),
@@ -247,34 +140,7 @@ export const actionPlanUpdateSchema = actionPlanFieldsSchema
     status: z.enum(actionPlanStatuses).optional(),
   })
   .superRefine((data, context) => {
-    validateTerritory(data, context, 'patch')
     validateSchedule(data, context, 'patch')
-  })
-  .transform((data) => {
-    const cities = data.cities === undefined ? undefined : (data.cities ?? [])
-    const neighborhoods =
-      data.neighborhoods === undefined
-        ? undefined
-        : cities !== undefined && cities.length !== 1
-          ? []
-          : (data.neighborhoods ?? [])
-    const regions =
-      cities === undefined
-        ? data.regions === undefined
-          ? undefined
-          : (data.regions ?? []).filter(isBahiaIdentityTerritory)
-        : cities.length > 0
-          ? territoriesForCities(cities)
-          : data.regions === undefined
-            ? []
-            : (data.regions ?? []).filter(isBahiaIdentityTerritory)
-
-    return {
-      ...data,
-      ...(regions !== undefined ? { regions } : {}),
-      ...(cities !== undefined ? { cities } : {}),
-      ...(neighborhoods !== undefined ? { neighborhoods } : {}),
-    }
   })
 
 export type ActionPlanCreateInput = z.input<typeof actionPlanCreateSchema>

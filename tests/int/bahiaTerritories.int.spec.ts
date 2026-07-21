@@ -13,7 +13,6 @@ import {
   territoryForCity,
   validateBahiaTerritoryPair,
 } from '@/lib/bahiaTerritories'
-import { nucleusCreateSchema, nucleusUpdateSchema } from '@/lib/schemas/nucleus'
 
 type OfficialEvidence = {
   territories: Array<{ code: string; name: string; municipalityCount: number }>
@@ -90,21 +89,5 @@ describe('Bahia identity territory mapping', () => {
     expect(isBahiaMunicipality('Município inexistente')).toBe(false)
     expect(validateBahiaTerritoryPair('Metropolitano de Salvador', 'Salvador')).toBe(true)
     expect(validateBahiaTerritoryPair('Chapada Diamantina', 'Salvador')).toBe(false)
-  })
-
-  it('derives the region from cities, overriding a mismatched manually provided region', () => {
-    const withMismatchedRegion = {
-      name: 'Núcleo com território derivado',
-      regions: ['Chapada Diamantina'],
-      cities: ['Salvador'],
-      organizationKind: 'territorial',
-    } as const
-
-    expect(nucleusCreateSchema.parse(withMismatchedRegion).regions).toEqual([
-      'Metropolitano de Salvador',
-    ])
-    expect(
-      nucleusUpdateSchema.parse({ id: 1, ...withMismatchedRegion }).regions,
-    ).toEqual(['Metropolitano de Salvador'])
   })
 })

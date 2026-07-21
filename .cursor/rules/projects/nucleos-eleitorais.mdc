@@ -3,10 +3,11 @@ description: Estado do projeto Núcleos Eleitorais
 alwaysApply: false
 ---
 
-# Núcleos Eleitorais
+# Núcleos Eleitorais → Praças
 
 ## Status
 
+- **REMODELAGEM ENTREGUE EM CÓDIGO (2026-07-21; deploy pendente — migração `20260721_020109_remodel_plazas` é destrutiva para a vertical campanha, revisar SQL antes do build de produção). Suítes verdes: unit 187, int 306 (incl. assimetria declarado×estimado, access por papel, workflow de demandas), e2e 9. Critique/polish visual fino registrado como R6 no roadmap.** Feedback da coordenação invalidou o modelo de núcleo abstrato. Decisões travadas: 436 Praças pré-definidas (415 municípios + 19 zonas de Salvador + 2 de Camaçari; zonas compartilhadas cortadas na divisa municipal); código `plaza`; roles renomeados para `coordinator`/`advisor`/`leader` (labels "Coordenador Geral"/"Assessor"/"Liderança"); assessor vê só as Praças que administra; liderança = 1 registro por pessoa com N Praças e N organizações; votos por liderança×Praça (`declaredVotes` visível à liderança, `estimatedVotes` staff-only); demandas com workflow assessor→coordenador geral + comprovantes staff-only; tendência política manual (staff); comparativo multi-candidato/multi-ano por Praça; mapa divergente vermelho↔branco↔azul. Reset dos dados de campanha em produção (site público intocado). Plano-mestre: [`docs/plans/remodelagem-pracas.md`](../../../docs/plans/remodelagem-pracas.md). As entradas abaixo descrevem a era Núcleos — padrões de infra (locks, transações, consent por chave, shells, mapa, dados eleitorais) continuam válidos; superfícies e modelo de Núcleo foram substituídos.
 - **MVP Ciclo 1 entregue e enviado em `main` (2026-07-18):** ondas 1–8 (auth/RBAC, domínio+UI de Núcleo/Liderança/Inteligência/Atualizações/Convites, dashboard, hardening) + refactors de composição Next.js, primitivos compartilhados, locks PostgreSQL, fixtures E2E e migration consolidada `20260718_010733_consolidate_campaign_schema`.
 - **Ciclo 2 entregue, mesclado e deployado (2026-07-18):** A1 território multi-município/bairro, A3 baseline TSE 2022 (modelo + import), B1 overview da lista, C1 compartilhar página e D1 PWA — detalhes no item datado abaixo.
 - **A2 entregue e mesclado em `main` (2026-07-18):** cadastro estático município↔ZE (`bahiaTseZones`, TSE 2024) + chips opt-in no formulário (`NucleusTerritoryAndZonesFields` / `territorySuggestions`); sem migration. Plano: [`docs/plans/zonas-por-municipio.md`](../../../docs/plans/zonas-por-municipio.md).

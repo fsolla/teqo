@@ -3,13 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import { getCampaignNav, isCampaignNavActive } from '@/components/campaign/nav'
+import { getCampaignBottomNav, isCampaignNavActive } from '@/components/campaign/nav'
 import { cn } from '@/lib/utils'
 import type { CampaignUser } from '@/payload-types'
 
 export const CampaignBottomNav = ({ role }: { role: CampaignUser['role'] }) => {
   const pathname = usePathname()
-  const navItems = getCampaignNav(role)
+  const navItems = getCampaignBottomNav(role)
 
   return (
     <nav

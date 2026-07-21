@@ -189,7 +189,7 @@ const withBlockedInviteAction = async <Result>({
 // Builds the owned Contact → Leadership graph required by invite scenarios.
 const createInviteLeadershipGraph = async (
   actor: CampaignUser,
-  nucleus: number,
+  plaza: number,
   supportStatus: 'engajado' | 'a_abordar' = 'engajado',
 ) => {
   const contact = await campaignFixtures().createContact({
@@ -198,7 +198,7 @@ const createInviteLeadershipGraph = async (
   })
   const leadership = await campaignFixtures().createLeadership({
     contact,
-    nucleus,
+    plazas: [plaza],
     supportStatus,
     notes: 'Nota interna protegida',
     createdBy: actor,
@@ -228,8 +228,8 @@ const createInviteThroughAction = async (
 // Retained as a scenario builder: recovery tests need the same linked
 // Contact → Leadership → CampaignUser → login-invite graph every time.
 const createLinkedLoginInvite = async (actor: CampaignUser) => {
-  const nucleus = await campaignFixtures().createNucleus()
-  const { contact, leadership } = await createInviteLeadershipGraph(actor, nucleus.id)
+  const plaza = await campaignFixtures().getPlaza()
+  const { contact, leadership } = await createInviteLeadershipGraph(actor, plaza.id)
   const account = await payload.create({
     collection: 'campaignUser',
     data: {
@@ -237,7 +237,7 @@ const createLinkedLoginInvite = async (actor: CampaignUser) => {
       username: contact.phone,
       phone: contact.phone,
       password: campaignFixtures().value('senha-anterior'),
-      role: 'lideranca',
+      role: 'leader',
     },
     depth: 0,
   })
@@ -591,7 +591,7 @@ describe('campaign invite domain', () => {
       leadership: 999,
       supportStatus: 'engajado',
       notes: 'forged',
-      nucleus: 999,
+      plazas: [999],
       user: 999,
       consent: 999,
     })
@@ -618,12 +618,12 @@ describe('campaign invite domain', () => {
         collection: 'consent',
         where: { key: { equals: 'lideranca-autopreenchimento' } },
       })
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const { leadership } = await createInviteLeadershipGraph(general, nucleus.id)
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const { leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
 
       await expect(
-        createInviteThroughAction(general, {
+        createInviteThroughAction(coordinator, {
           leadership: leadership.id,
           kind: 'autopreenchimento',
         }),
@@ -632,13 +632,14 @@ describe('campaign invite domain', () => {
   )
 
   itWithInviteConsent(
-    'limits creation and reads to geral or the assigned coordinator scope',
+    'limits creation and reads to the coordinator or the assigned advisor scope',
     async () => {
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const assigned = await campaignFixtures().createCampaignUser('coordenador')
-      const outsider = await campaignFixtures().createCampaignUser('coordenador')
-      const nucleus = await campaignFixtures().createNucleus({ coordinators: [assigned.id] })
-      const { leadership } = await createInviteLeadershipGraph(general, nucleus.id)
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const assigned = await campaignFixtures().createCampaignUser('advisor')
+      const outsider = await campaignFixtures().createCampaignUser('advisor')
+      const plaza = await campaignFixtures().getPlaza()
+      await campaignFixtures().assignPlazaAdvisors(plaza, [assigned])
+      const { leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
 
       await expect(
         createInviteThroughAction(outsider, {
@@ -677,18 +678,35 @@ describe('campaign invite domain', () => {
   )
 
   itWithInviteConsent(
+    'denies invite creation to leader accounts with the coordination-only message',
+    async () => {
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const leaderAccount = await campaignFixtures().createCampaignUser('leader')
+      const plaza = await campaignFixtures().getPlaza()
+      const { leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+
+      await expect(
+        createInviteThroughAction(leaderAccount, {
+          leadership: leadership.id,
+          kind: 'autopreenchimento',
+        }),
+      ).rejects.toThrow('Somente a coordenação pode criar convites.')
+    },
+  )
+
+  itWithInviteConsent(
     'revokes the prior active invite and rejects expired or revoked tokens',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const { leadership } = await createInviteLeadershipGraph(general, nucleus.id)
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const { leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
 
-      const first = await createInviteThroughAction(general, {
+      const first = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
       })
-      const second = await createInviteThroughAction(general, {
+      const second = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
       })
@@ -728,14 +746,14 @@ describe('campaign invite domain', () => {
     'waits on the exact invite-creation key before revoking or creating an invite',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const { leadership } = await createInviteLeadershipGraph(general, nucleus.id)
-      const first = await createInviteThroughAction(general, {
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const { leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const first = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
       })
-      authState.user = general
+      authState.user = coordinator
       const key = `invite-creation:${leadership.id}:autopreenchimento`
 
       await expect(
@@ -784,8 +802,8 @@ describe('campaign invite domain', () => {
     'waits on the exact invite-redemption-contact key before login redemption mutates data',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const fixture = await createLinkedLoginInvite(general)
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const fixture = await createLinkedLoginInvite(coordinator)
       const key = `invite-redemption-contact:${fixture.contact.id}`
       const originalAccountName = fixture.account.name
       const originalContactName = fixture.contact.name
@@ -820,8 +838,8 @@ describe('campaign invite domain', () => {
     'waits on the exact account-username key before login redemption mutates data',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const fixture = await createLinkedLoginInvite(general)
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const fixture = await createLinkedLoginInvite(coordinator)
       const key = `account-username:${fixture.contact.phone}`
 
       await expect(
@@ -858,8 +876,8 @@ describe('campaign invite domain', () => {
     'orders all login redemption keys before waiting on the exact invite-redemption-user key',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const fixture = await createLinkedLoginInvite(general)
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const fixture = await createLinkedLoginInvite(coordinator)
       const usernameKey = `account-username:${fixture.contact.phone}`
       const contactPhoneKey = `contact-phone:${fixture.contact.phone}`
       const userKey = `invite-redemption-user:${fixture.account.id}`
@@ -902,10 +920,10 @@ describe('campaign invite domain', () => {
     'consumes an autofill invite once under concurrent redemption and writes only the whitelist',
     async (consent) => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const { contact, leadership } = await createInviteLeadershipGraph(general, nucleus.id)
-      const invite = await createInviteThroughAction(general, {
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const invite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
       })
@@ -920,7 +938,7 @@ describe('campaign invite domain', () => {
         consentAccepted: true as const,
         supportStatus: 'negativo',
         notes: 'tentativa de sobrescrita',
-        nucleus: 999,
+        plazas: [999],
         user: 999,
       }
 
@@ -952,7 +970,7 @@ describe('campaign invite domain', () => {
         sectorNotes: 'Associação local',
         supportStatus: 'engajado',
         notes: 'Nota interna protegida',
-        nucleus: nucleus.id,
+        plazas: [plaza.id],
         consent: consent.id,
       })
       expect(updatedLeadership.user).toBeNull()
@@ -963,10 +981,10 @@ describe('campaign invite domain', () => {
     'waits on the exact contact-phone namespace before an invite changes a phone',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const { contact, leadership } = await createInviteLeadershipGraph(general, nucleus.id)
-      const invite = await createInviteThroughAction(general, {
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const invite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
       })
@@ -1023,11 +1041,11 @@ describe('campaign invite domain', () => {
     'rejects duplicate phone takeover, rolls back consumption, and permits a safe retry',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const target = await createInviteLeadershipGraph(general, nucleus.id)
-      const owner = await createInviteLeadershipGraph(general, nucleus.id)
-      const invite = await createInviteThroughAction(general, {
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const target = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const owner = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const invite = await createInviteThroughAction(coordinator, {
         leadership: target.leadership.id,
         kind: 'autopreenchimento',
       })
@@ -1058,16 +1076,16 @@ describe('campaign invite domain', () => {
     'serializes concurrent phone changes to one target and preserves the rejected invite',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const firstNucleus = await campaignFixtures().createNucleus()
-      const secondNucleus = await campaignFixtures().createNucleus()
-      const first = await createInviteLeadershipGraph(general, firstNucleus.id)
-      const second = await createInviteLeadershipGraph(general, secondNucleus.id)
-      const firstInvite = await createInviteThroughAction(general, {
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const firstPlaza = await campaignFixtures().getPlaza()
+      const secondPlaza = await campaignFixtures().getPlaza()
+      const first = await createInviteLeadershipGraph(coordinator, firstPlaza.id)
+      const second = await createInviteLeadershipGraph(coordinator, secondPlaza.id)
+      const firstInvite = await createInviteThroughAction(coordinator, {
         leadership: first.leadership.id,
         kind: 'autopreenchimento',
       })
-      const secondInvite = await createInviteThroughAction(general, {
+      const secondInvite = await createInviteThroughAction(coordinator, {
         leadership: second.leadership.id,
         kind: 'autopreenchimento',
       })
@@ -1113,15 +1131,15 @@ describe('campaign invite domain', () => {
     'orders old and new phone locks so opposite invite swaps finish without deadlock',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const first = await createInviteLeadershipGraph(general, nucleus.id)
-      const second = await createInviteLeadershipGraph(general, nucleus.id)
-      const firstInvite = await createInviteThroughAction(general, {
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const first = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const second = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const firstInvite = await createInviteThroughAction(coordinator, {
         leadership: first.leadership.id,
         kind: 'autopreenchimento',
       })
-      const secondInvite = await createInviteThroughAction(general, {
+      const secondInvite = await createInviteThroughAction(coordinator, {
         leadership: second.leadership.id,
         kind: 'autopreenchimento',
       })
@@ -1148,9 +1166,9 @@ describe('campaign invite domain', () => {
     'persists explicit optional-field clears and leaves absent fields unchanged',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const cleared = await createInviteLeadershipGraph(general, nucleus.id)
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const cleared = await createInviteLeadershipGraph(coordinator, plaza.id)
       await payload.update({
         collection: 'contact',
         id: cleared.contact.id,
@@ -1161,7 +1179,7 @@ describe('campaign invite domain', () => {
         id: cleared.leadership.id,
         data: { sector: 'comunitario', sectorNotes: 'Antes' },
       })
-      const clearInvite = await createInviteThroughAction(general, {
+      const clearInvite = await createInviteThroughAction(coordinator, {
         leadership: cleared.leadership.id,
         kind: 'autopreenchimento',
       })
@@ -1184,7 +1202,7 @@ describe('campaign invite domain', () => {
         payload.findByID({ collection: 'leadership', id: cleared.leadership.id, depth: 0 }),
       ).resolves.toMatchObject({ sector: null, sectorNotes: null })
 
-      const unchanged = await createInviteLeadershipGraph(general, nucleus.id)
+      const unchanged = await createInviteLeadershipGraph(coordinator, plaza.id)
       await payload.update({
         collection: 'contact',
         id: unchanged.contact.id,
@@ -1195,7 +1213,7 @@ describe('campaign invite domain', () => {
         id: unchanged.leadership.id,
         data: { sector: 'sindical', sectorNotes: 'Mantido' },
       })
-      const unchangedInvite = await createInviteThroughAction(general, {
+      const unchangedInvite = await createInviteThroughAction(coordinator, {
         leadership: unchanged.leadership.id,
         kind: 'autopreenchimento',
       })
@@ -1220,45 +1238,34 @@ describe('campaign invite domain', () => {
     'allows login only for engaged leadership and reuses accounts for recovery without reducing role',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const engaged = await createInviteLeadershipGraph(general, nucleus.id, 'engajado')
-      const inactive = await createInviteLeadershipGraph(general, nucleus.id, 'a_abordar')
-      const otherNucleus = await campaignFixtures().createNucleus()
-      const samePersonOtherNucleus = await payload.create({
-        collection: 'leadership',
-        data: {
-          contact: engaged.contact.id,
-          nucleus: otherNucleus.id,
-          supportStatus: 'engajado',
-          createdBy: general.id,
-        },
-        depth: 0,
-      })
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const engaged = await createInviteLeadershipGraph(coordinator, plaza.id, 'engajado')
+      const inactive = await createInviteLeadershipGraph(coordinator, plaza.id, 'a_abordar')
 
       await expect(
-        createInviteThroughAction(general, {
+        createInviteThroughAction(coordinator, {
           leadership: inactive.leadership.id,
           kind: 'login',
         }),
       ).rejects.toThrow('engajada')
 
-      const existingGeneral = await payload.create({
+      const existingCoordinator = await payload.create({
         collection: 'campaignUser',
         data: {
           name: 'Conta existente',
           username: engaged.contact.phone,
           password: 'senha-antiga',
-          role: 'geral',
+          role: 'coordinator',
         },
       })
       await payload.update({
         collection: 'leadership',
         id: engaged.leadership.id,
-        data: { user: existingGeneral.id },
+        data: { user: existingCoordinator.id },
         depth: 0,
       })
-      const invite = await createInviteThroughAction(general, {
+      const invite = await createInviteThroughAction(coordinator, {
         leadership: engaged.leadership.id,
         kind: 'login',
       })
@@ -1273,7 +1280,7 @@ describe('campaign invite domain', () => {
 
       const reused = await payload.findByID({
         collection: 'campaignUser',
-        id: existingGeneral.id,
+        id: existingCoordinator.id,
         depth: 0,
       })
       const linked = await payload.findByID({
@@ -1286,16 +1293,10 @@ describe('campaign invite domain', () => {
         id: inactive.leadership.id,
         depth: 0,
       })
-      const otherPersisted = await payload.findByID({
-        collection: 'leadership',
-        id: samePersonOtherNucleus.id,
-        depth: 0,
-      })
-      expect(reused.role).toBe('geral')
+      expect(reused.role).toBe('coordinator')
       expect(reused.phone).toBe(engaged.contact.phone)
-      expect(linked.user).toBe(existingGeneral.id)
+      expect(linked.user).toBe(existingCoordinator.id)
       expect(inactivePersisted.user).toBeNull()
-      expect(otherPersisted.user).toBeNull()
       await expect(
         payload.login({
           collection: 'campaignUser',
@@ -1312,82 +1313,13 @@ describe('campaign invite domain', () => {
   )
 
   itWithInviteConsent(
-    'reuses only a same-Contact linked account after an autofill phone change',
-    async () => {
-      const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const firstNucleus = await campaignFixtures().createNucleus()
-      const secondNucleus = await campaignFixtures().createNucleus()
-      const first = await createInviteLeadershipGraph(general, firstNucleus.id)
-      const second = await payload.create({
-        collection: 'leadership',
-        data: {
-          contact: first.contact.id,
-          nucleus: secondNucleus.id,
-          supportStatus: 'engajado',
-          createdBy: general.id,
-        },
-        depth: 0,
-      })
-      const oldPhone = first.contact.phone
-      const newPhone = campaignFixtures().phone()
-      const account = await payload.create({
-        collection: 'campaignUser',
-        data: {
-          name: first.contact.name,
-          username: oldPhone,
-          phone: oldPhone,
-          password: 'senha-antiga-mesmo-contato',
-          role: 'lideranca',
-        },
-      })
-      await payload.update({
-        collection: 'leadership',
-        id: first.leadership.id,
-        data: { user: account.id },
-      })
-      await payload.update({
-        collection: 'contact',
-        id: first.contact.id,
-        data: { phone: newPhone },
-      })
-      const invite = await createInviteThroughAction(general, {
-        leadership: second.id,
-        kind: 'login',
-      })
-
-      await actions.redeemCampaignInviteLogin({
-        token: invite.token,
-        name: first.contact.name,
-        phone: newPhone,
-        password: 'senha-nova-mesmo-contato',
-        consentAccepted: true,
-      })
-
-      const [updatedAccount, updatedSecond, accounts] = await Promise.all([
-        payload.findByID({ collection: 'campaignUser', id: account.id, depth: 0 }),
-        payload.findByID({ collection: 'leadership', id: second.id, depth: 0 }),
-        payload.find({
-          collection: 'campaignUser',
-          where: { username: { in: [oldPhone, newPhone] } },
-          depth: 0,
-          pagination: false,
-        }),
-      ])
-      expect(updatedAccount).toMatchObject({ username: newPhone, phone: newPhone })
-      expect(updatedSecond.user).toBe(account.id)
-      expect(accounts.docs).toHaveLength(1)
-    },
-  )
-
-  itWithInviteConsent(
     'requires missing consent for login and rolls back consumption on rejection',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const { contact, leadership } = await createInviteLeadershipGraph(general, nucleus.id)
-      const invite = await createInviteThroughAction(general, {
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const invite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'login',
       })
@@ -1436,16 +1368,16 @@ describe('campaign invite domain', () => {
           },
         },
       })
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const { contact, leadership } = await createInviteLeadershipGraph(general, nucleus.id)
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
       const account = await payload.create({
         collection: 'campaignUser',
         data: {
           name: contact.name,
           username: contact.phone,
           password: 'senha-anterior-segura',
-          role: 'lideranca',
+          role: 'leader',
         },
       })
       await payload.update({
@@ -1453,7 +1385,7 @@ describe('campaign invite domain', () => {
         id: leadership.id,
         data: { consent: oldConsent.id, user: account.id },
       })
-      const invite = await createInviteThroughAction(general, {
+      const invite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'login',
       })
@@ -1491,10 +1423,10 @@ describe('campaign invite domain', () => {
     async (consent) => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const { getCampaignInvitePageData } = await import('@/utilities/campaignInvitePageData')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const { contact, leadership } = await createInviteLeadershipGraph(general, nucleus.id)
-      const firstInvite = await createInviteThroughAction(general, {
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const firstInvite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
       })
@@ -1541,7 +1473,7 @@ describe('campaign invite domain', () => {
           },
         } as never,
       })
-      const secondInvite = await createInviteThroughAction(general, {
+      const secondInvite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
       })
@@ -1580,19 +1512,19 @@ describe('campaign invite domain', () => {
     'rejects takeover of an unlinked elevated account with the submitted phone',
     async () => {
       const records = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const { contact, leadership } = await createInviteLeadershipGraph(general, nucleus.id)
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
       const victim = await payload.create({
         collection: 'campaignUser',
         data: {
           name: 'Coordenação vítima',
           username: contact.phone,
           password: 'senha-original-segura',
-          role: 'geral',
+          role: 'coordinator',
         },
       })
-      const invite = await createInviteThroughAction(general, {
+      const invite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'login',
       })
@@ -1617,24 +1549,24 @@ describe('campaign invite domain', () => {
           collection: 'campaignUser',
           data: { username: contact.phone, password: 'senha-original-segura' },
         }),
-      ).resolves.toMatchObject({ user: { id: victim.id, role: 'geral' } })
+      ).resolves.toMatchObject({ user: { id: victim.id, role: 'coordinator' } })
     },
   )
 
   itWithInviteConsent('rejects lateral takeover of another leadership account', async () => {
     const records = await import('@/app/(campaign)/campanha/actions/invite')
-    const general = await campaignFixtures().createCampaignUser('geral')
-    const targetNucleus = await campaignFixtures().createNucleus()
-    const otherNucleus = await campaignFixtures().createNucleus()
-    const target = await createInviteLeadershipGraph(general, targetNucleus.id)
-    const other = await createInviteLeadershipGraph(general, otherNucleus.id)
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const targetPlaza = await campaignFixtures().getPlaza()
+    const otherPlaza = await campaignFixtures().getPlaza()
+    const target = await createInviteLeadershipGraph(coordinator, targetPlaza.id)
+    const other = await createInviteLeadershipGraph(coordinator, otherPlaza.id)
     const lateralAccount = await payload.create({
       collection: 'campaignUser',
       data: {
         name: 'Outra liderança',
         username: target.contact.phone,
         password: 'senha-lateral-original',
-        role: 'lideranca',
+        role: 'leader',
       },
     })
     await payload.update({
@@ -1642,7 +1574,7 @@ describe('campaign invite domain', () => {
       id: other.leadership.id,
       data: { user: lateralAccount.id },
     })
-    const invite = await createInviteThroughAction(general, {
+    const invite = await createInviteThroughAction(coordinator, {
       leadership: target.leadership.id,
       kind: 'login',
     })
@@ -1668,10 +1600,10 @@ describe('campaign invite domain', () => {
     'requires the configured consent key even when the leadership already has consent',
     async (consent) => {
       const records = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const { contact, leadership } = await createInviteLeadershipGraph(general, nucleus.id)
-      const invite = await createInviteThroughAction(general, {
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const invite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
       })
@@ -1720,16 +1652,16 @@ describe('campaign invite domain', () => {
     'rolls back linked-account recovery when the configured consent key is missing',
     async (consent) => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const nucleus = await campaignFixtures().createNucleus()
-      const { contact, leadership } = await createInviteLeadershipGraph(general, nucleus.id)
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const plaza = await campaignFixtures().getPlaza()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
       const account = await payload.create({
         collection: 'campaignUser',
         data: {
           name: contact.name,
           username: contact.phone,
           password: 'senha-original-consentimento',
-          role: 'lideranca',
+          role: 'leader',
         },
       })
       await payload.update({
@@ -1737,7 +1669,7 @@ describe('campaign invite domain', () => {
         id: leadership.id,
         data: { consent: consent.id, user: account.id },
       })
-      const invite = await createInviteThroughAction(general, {
+      const invite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'login',
       })
@@ -1774,19 +1706,19 @@ describe('campaign invite domain', () => {
   )
 
   itWithInviteConsent(
-    'serializes concurrent new-account creation for the same username',
+    'serializes concurrent new-account creation for the same username and creates leader accounts',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      const firstNucleus = await campaignFixtures().createNucleus()
-      const secondNucleus = await campaignFixtures().createNucleus()
-      const first = await createInviteLeadershipGraph(general, firstNucleus.id)
-      const second = await createInviteLeadershipGraph(general, secondNucleus.id)
-      const firstInvite = await createInviteThroughAction(general, {
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const firstPlaza = await campaignFixtures().getPlaza()
+      const secondPlaza = await campaignFixtures().getPlaza()
+      const first = await createInviteLeadershipGraph(coordinator, firstPlaza.id)
+      const second = await createInviteLeadershipGraph(coordinator, secondPlaza.id)
+      const firstInvite = await createInviteThroughAction(coordinator, {
         leadership: first.leadership.id,
         kind: 'login',
       })
-      const secondInvite = await createInviteThroughAction(general, {
+      const secondInvite = await createInviteThroughAction(coordinator, {
         leadership: second.leadership.id,
         kind: 'login',
       })
@@ -1816,6 +1748,7 @@ describe('campaign invite domain', () => {
         depth: 0,
       })
       expect(accounts.totalDocs).toBe(1)
+      expect(accounts.docs[0]!.role).toBe('leader')
     },
   )
 
@@ -1823,10 +1756,10 @@ describe('campaign invite domain', () => {
     'returns only minimal serializable DTOs from public server actions',
     async (consent) => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
-      const general = await campaignFixtures().createCampaignUser('geral')
-      authState.user = general
-      const nucleus = await campaignFixtures().createNucleus()
-      const autofillTarget = await createInviteLeadershipGraph(general, nucleus.id)
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      authState.user = coordinator
+      const plaza = await campaignFixtures().getPlaza()
+      const autofillTarget = await createInviteLeadershipGraph(coordinator, plaza.id)
       const created = await actions.createCampaignInvite({
         leadership: autofillTarget.leadership.id,
         kind: 'autopreenchimento',
@@ -1844,7 +1777,7 @@ describe('campaign invite domain', () => {
         }),
       ).resolves.toEqual({ ok: true })
 
-      const loginTarget = await createInviteLeadershipGraph(general, nucleus.id)
+      const loginTarget = await createInviteLeadershipGraph(coordinator, plaza.id)
       await payload.update({
         collection: 'leadership',
         id: loginTarget.leadership.id,

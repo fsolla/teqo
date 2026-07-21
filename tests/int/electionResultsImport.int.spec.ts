@@ -172,7 +172,7 @@ describe('election results import', () => {
       collection: 'campaignUser',
       data: {
         name: 'Election Access Tester',
-        role: 'geral',
+        role: 'coordinator',
         email: `election-access-${Date.now()}@example.com`,
         password: 'Password123!',
       },

@@ -35,8 +35,23 @@ export type SupportStatus = (typeof leadershipSupportStatuses)[number]
 export const isSupportStatus = (value: unknown): value is SupportStatus =>
   typeof value === 'string' && leadershipSupportStatuses.some((status) => status === value)
 
+export const MAX_LEADERSHIP_PLAZAS = 30
+export const MAX_LEADERSHIP_ORGANIZATIONS = 20
+
+const plazasArraySchema = z
+  .array(positiveRelationshipId)
+  .min(1, 'Vincule a liderança a pelo menos uma Praça.')
+  .max(MAX_LEADERSHIP_PLAZAS)
+  .transform((ids) => [...new Set(ids)])
+
+const organizationsArraySchema = z
+  .array(positiveRelationshipId)
+  .max(MAX_LEADERSHIP_ORGANIZATIONS)
+  .transform((ids) => [...new Set(ids)])
+
 export const leadershipCreateSchema = z.object({
-  nucleus: positiveRelationshipId,
+  plazas: plazasArraySchema,
+  organizations: organizationsArraySchema.optional(),
   name: z.string().trim().min(2).max(120),
   phone: brazilianMobile,
   email: optionalPersistedEmail,
@@ -50,6 +65,8 @@ export const leadershipCreateSchema = z.object({
 
 export const leadershipInternalUpdateSchema = z.object({
   id: positiveRelationshipId,
+  plazas: plazasArraySchema.optional(),
+  organizations: organizationsArraySchema.nullable().optional(),
   sector: z.enum(leadershipSectors).nullable().optional(),
   sectorNotes: trimmedNullableText(1000),
   supportStatus: z.enum(leadershipSupportStatuses).optional(),

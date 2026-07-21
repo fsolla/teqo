@@ -5,16 +5,14 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
-import { LeadershipRow } from '@/components/campaign/LeadershipRow'
-import { NucleusCard } from '@/components/campaign/NucleusCard'
+import { PlazaList } from '@/components/campaign/PlazaList'
 import { SupportStatusBadge } from '@/components/campaign/SupportStatusBadge'
 import { TseZoneBadge } from '@/components/campaign/TseZoneBadge'
-import { VoteEstimateCard } from '@/components/campaign/VoteEstimateCard'
 import { Progress } from '@/components/ui/Progress'
 import { Toggle } from '@/components/ui/Toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
-import { buildGeneralDashboardViewModel } from '@/utilities/campaignDashboardViewModels'
-import { emptyNucleusChoroplethBundle } from '@/utilities/nucleusChoroplethTypes'
+import type { PlazaAdvisorSummary, PlazaListViewModel } from '@/utilities/plazaViewModels'
+import { emptyPlazaPledgeAggregate } from '@/utilities/votePledgeData'
 
 describe('campaign visual foundation', () => {
   it('exposes the current progress value to assistive technology', () => {
@@ -50,10 +48,10 @@ describe('campaign visual foundation', () => {
 
   it('renders campaign scope with a visible, accessible label', () => {
     const html = renderToStaticMarkup(
-      createElement(CampaignScopeBadge, null, '3 núcleos sob sua coordenação'),
+      createElement(CampaignScopeBadge, null, '3 Praças sob sua assessoria'),
     )
 
-    expect(html).toContain('3 núcleos sob sua coordenação')
+    expect(html).toContain('3 Praças sob sua assessoria')
     expect(html).toContain('data-scope="campaign"')
   })
 
@@ -99,29 +97,6 @@ describe('campaign visual foundation', () => {
     expect(html).toContain(`data-support-status="${status}"`)
   })
 
-  it('aggregates every typed dashboard support status exhaustively', () => {
-    const view = buildGeneralDashboardViewModel(
-      [],
-      [
-        { nucleusId: 31, supportStatus: 'engajado' },
-        { nucleusId: 31, supportStatus: 'a_abordar' },
-        { nucleusId: 31, supportStatus: 'em_disputa' },
-        { nucleusId: 31, supportStatus: 'negativo' },
-      ],
-      0,
-      new Date('2026-07-18T12:00:00-03:00'),
-      [],
-      emptyNucleusChoroplethBundle(),
-    )
-
-    expect(view.supportCounts).toEqual({
-      engajado: 1,
-      a_abordar: 1,
-      em_disputa: 1,
-      negativo: 1,
-    })
-  })
-
   it('qualifies TSE zones instead of showing an ambiguous number', () => {
     const html = renderToStaticMarkup(createElement(TseZoneBadge, { zoneNumber: 12 }))
 
@@ -129,78 +104,89 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('aria-label="Zona Eleitoral TSE 12"')
   })
 
-  it('keeps the confirmed estimate primary and a proposal secondary', () => {
+  it('renders plaza rows with geography, pledges, and advisor coverage for staff', () => {
+    const advisor: PlazaAdvisorSummary = { id: 7, name: 'Ana Bastos', phone: null }
+    const plazas: PlazaListViewModel[] = [
+      {
+        id: 1,
+        name: 'Seabra',
+        slug: 'seabra',
+        kind: 'municipio',
+        city: 'Seabra',
+        region: 'Chapada Diamantina',
+        ibgeCode: '2929800',
+        zoneNumber: null,
+        advisorIDs: [advisor.id],
+        priority: 'alta',
+        lastUpdateAt: null,
+        pledges: {
+          declaredTotal: 1200,
+          effectiveTotal: 1200,
+          pledgeCount: 2,
+          missingEstimateCount: 1,
+        },
+      },
+      {
+        id: 2,
+        name: 'Salvador — ZE 3',
+        slug: 'salvador-ze-3',
+        kind: 'zona',
+        city: 'Salvador',
+        region: 'Metropolitano de Salvador',
+        ibgeCode: '2927408',
+        zoneNumber: 3,
+        advisorIDs: [],
+        priority: 'normal',
+        lastUpdateAt: null,
+        pledges: { ...emptyPlazaPledgeAggregate },
+      },
+    ]
+
     const html = renderToStaticMarkup(
-      createElement(VoteEstimateCard, {
-        confirmedEstimate: 1200,
-        confirmedBy: 'João S.',
-        confirmedAt: '12/07',
-        proposedEstimate: 1450,
-        proposedBy: 'Maria A.',
+      createElement(PlazaList, {
+        plazas,
+        advisorNamesById: new Map([[advisor.id, advisor]]),
+        isStaffView: true,
       }),
     )
 
-    expect(html).toContain('1.200 votos')
-    expect(html).toContain('Confirmada')
-    expect(html).toContain('Sugestão pendente')
-    expect(html).toContain('1.450 votos')
-    expect(html.indexOf('1.200 votos')).toBeLessThan(html.indexOf('1.450 votos'))
-    expect(html).toContain('data-slot="alert"')
-    expect(html).not.toContain('text-3xl')
+    expect(html).toContain('Seabra')
+    expect(html).toContain('Chapada Diamantina')
+    expect(html).toContain('href="/campanha/pracas/seabra"')
+    expect(html).toContain('1.200')
+    expect(html).toContain('declaração sem estimativa')
+    expect(html).toContain('Prioritária')
+    expect(html).toContain('Coberta')
+    expect(html).toContain('Sem assessor')
   })
 
-  it('renders nucleus territory, TSE zones, cadence, and leadership summary', () => {
+  it('hides staff-only pledge and coverage columns from the leader view', () => {
     const html = renderToStaticMarkup(
-      createElement(NucleusCard, {
-        name: 'Quilombo Rio das Rãs',
-        territory: 'Comunidade · Bom Jesus da Lapa',
-        tseZones: [12],
-        confirmedVoteEstimate: 1200,
-        hasPendingEstimate: true,
-        lastUpdateLabel: 'Última atualização há 10 dias',
-        isUpdateOverdue: true,
-        leadershipCounts: { engaged: 5, toApproach: 3, disputed: 1 },
+      createElement(PlazaList, {
+        plazas: [
+          {
+            id: 1,
+            name: 'Seabra',
+            slug: 'seabra',
+            kind: 'municipio',
+            city: 'Seabra',
+            region: 'Chapada Diamantina',
+            ibgeCode: '2929800',
+            zoneNumber: null,
+            advisorIDs: [],
+            priority: 'alta',
+            lastUpdateAt: null,
+            pledges: { ...emptyPlazaPledgeAggregate },
+          },
+        ],
+        advisorNamesById: new Map<number, PlazaAdvisorSummary>(),
+        isStaffView: false,
       }),
     )
 
-    expect(html).toContain('Quilombo Rio das Rãs')
-    expect(html).toContain('Comunidade · Bom Jesus da Lapa')
-    expect(html).toContain('ZE 12')
-    expect(html).toContain('1.200 votos')
-    expect(html).toContain('Sugestão pendente')
-    expect(html).toContain('5 engajadas')
-    expect(html).toContain('Atualização atrasada')
-  })
-
-  it('makes missing TSE coverage visible as incomplete data', () => {
-    const html = renderToStaticMarkup(
-      createElement(NucleusCard, {
-        name: 'Núcleo em mapeamento',
-        territory: 'Região · Bahia',
-        tseZones: [],
-      }),
-    )
-
-    expect(html).toContain('Sem Zona TSE')
-  })
-
-  it('renders leadership identity with avatar fallback and support status', () => {
-    const html = renderToStaticMarkup(
-      createElement(LeadershipRow, {
-        name: 'Maria Aparecida',
-        phone: '71 97654-3210',
-        sector: 'Religioso',
-        supportStatus: 'engajado',
-        href: '/campanha/nucleos/centro?tab=leaderships&leadership=31',
-        rowId: 'leadership-row-31',
-      }),
-    )
-
-    expect(html).toContain('MA')
-    expect(html).toContain('Maria Aparecida')
-    expect(html).toContain('71 97654-3210')
-    expect(html).toContain('Religioso')
-    expect(html).toContain('Engajado')
-    expect(html).toContain('href="/campanha/nucleos/centro?tab=leaderships')
+    expect(html).toContain('Seabra')
+    expect(html).not.toContain('Votos estimados')
+    expect(html).not.toContain('Cobertura')
+    expect(html).not.toContain('Prioritária')
   })
 })

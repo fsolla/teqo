@@ -5,7 +5,6 @@ import type {
 } from 'payload'
 import { APIError } from 'payload'
 
-import { isBahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import {
   actionPlanKindLabels,
   actionPlanKinds,
@@ -13,22 +12,16 @@ import {
   actionPlanStatuses,
 } from '@/lib/schemas/actionPlan'
 import {
-  MAX_NUCLEUS_CITIES,
-  MAX_NUCLEUS_NEIGHBORHOODS,
-  MAX_NUCLEUS_REGIONS,
-} from '@/lib/schemas/nucleus'
-import {
   canCreateActionPlan,
-  canCreateActionPlanCoordinators,
+  canCreateActionPlanAdvisors,
   canDeleteActionPlan,
-  canManageActionPlanCoordinators,
+  canManageActionPlanAdvisors,
   canReadActionPlan,
   canSetActionPlanStatus,
   canSetActionPlanSystemField,
   canUpdateActionPlan,
+  eligibleCampaignStaffWhere,
 } from '@/utilities/campaignAccess'
-import { createCampaignTerritoryValidationHook } from '@/utilities/campaignTerritoryValidation'
-import { eligibleNucleusCoordinatorWhere } from '@/utilities/nucleusCoordinatorOptions'
 import { relationshipId } from '@/utilities/relationship'
 import { slugify } from '@/utilities/slug'
 
@@ -47,6 +40,9 @@ const ACTION_PLAN_STATUS_OPTIONS = actionPlanStatuses.map((value) => ({
   label: actionPlanStatusLabels[value],
 }))
 
+const relationshipIds = (value: unknown): number[] =>
+  (Array.isArray(value) ? value : []).map(relationshipId).filter((id): id is number => id !== null)
+
 const actionPlanStaffFieldSnapshot = (doc: Record<string, unknown>) => ({
   title: trimmedText(doc.title),
   slug: doc.slug ?? null,
@@ -56,26 +52,16 @@ const actionPlanStaffFieldSnapshot = (doc: Record<string, unknown>) => ({
   startAt: doc.startAt ?? null,
   endAt: doc.endAt ?? null,
   deadline: doc.deadline ?? null,
-  regions: Array.isArray(doc.regions) ? doc.regions.map(String) : [],
-  cities: Array.isArray(doc.cities) ? doc.cities.map(String) : [],
-  neighborhoods: Array.isArray(doc.neighborhoods) ? doc.neighborhoods.map(String) : [],
+  plaza: relationshipId(doc.plaza),
   locality: trimmedText(doc.locality),
-  territoryNotes: trimmedText(doc.territoryNotes),
-  coordinators: (Array.isArray(doc.coordinators) ? doc.coordinators : [])
-    .map(relationshipId)
-    .filter((id): id is number => id !== null),
+  deputyPresent: Boolean(doc.deputyPresent),
+  organizations: relationshipIds(doc.organizations),
+  advisors: relationshipIds(doc.advisors),
   responsible: relationshipId(doc.responsible),
   leadership: relationshipId(doc.leadership),
+  resultSummary: trimmedText(doc.resultSummary),
+  resultMedia: relationshipIds(doc.resultMedia),
 })
-
-const validateActionPlanTerritoryCore = createCampaignTerritoryValidationHook({
-  entityLabel: 'plano',
-})
-
-const validateActionPlanTerritory: CollectionBeforeValidateHook = (args) => {
-  if (isActionPlanMutationShortcut(args.context)) return args.data
-  return validateActionPlanTerritoryCore(args)
-}
 
 const setCanonicalActionPlanSlug: CollectionBeforeValidateHook = ({
   data,
@@ -113,10 +99,7 @@ const validateActionPlanSchedule: CollectionBeforeValidateHook = ({
   const endAt = nextData.endAt ?? null
 
   if (status !== 'rascunho' && !startAt) {
-    throw new APIError(
-      'Informe a data e horário de início ao planejar ou confirmar o plano.',
-      400,
-    )
+    throw new APIError('Informe a data e horário de início ao planejar ou confirmar o plano.', 400)
   }
 
   if (startAt && endAt) {
@@ -130,48 +113,48 @@ const validateActionPlanSchedule: CollectionBeforeValidateHook = ({
   return data
 }
 
-const validateActionPlanCoordinators: CollectionBeforeValidateHook = async ({ data, req, context }) => {
+const validateActionPlanAdvisors: CollectionBeforeValidateHook = async ({ data, req, context }) => {
   if (isActionPlanMutationShortcut(context)) return data
   if (!data) return data
-  if (data.coordinators === undefined) return data
+  if (data.advisors === undefined) return data
 
-  const coordinatorValues = data.coordinators
-  const coordinatorIDs = Array.isArray(coordinatorValues)
-    ? [...new Set(coordinatorValues.map(relationshipId).filter((id): id is number => id !== null))]
-    : []
+  const advisorIDs = [...new Set(relationshipIds(data.advisors))]
+  if (advisorIDs.length === 0) return data
 
-  if (coordinatorIDs.length === 0) return data
-
-  const eligibleCoordinators = await req.payload.find({
+  const eligibleAdvisors = await req.payload.find({
     collection: 'campaignUser',
     depth: 0,
     pagination: false,
     where: {
-      and: [{ id: { in: coordinatorIDs } }, eligibleNucleusCoordinatorWhere],
+      and: [{ id: { in: advisorIDs } }, eligibleCampaignStaffWhere],
     },
     select: { name: true },
     overrideAccess: true,
     req,
   })
 
-  if (eligibleCoordinators.docs.length !== coordinatorIDs.length) {
-    throw new APIError('Cada responsável deve ter papel de coordenação geral ou coordenador.', 400)
+  if (eligibleAdvisors.docs.length !== advisorIDs.length) {
+    throw new APIError('Cada responsável deve ter papel de Coordenador Geral ou Assessor.', 400)
   }
 
   return data
 }
 
-const deriveActionPlanFields: CollectionBeforeChangeHook = ({ data, operation, originalDoc, req }) => {
+const deriveActionPlanFields: CollectionBeforeChangeHook = ({
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
   if (!data) return data
 
   if (operation === 'create' && req.user?.collection === 'campaignUser') {
     data.createdBy = req.user.id
     if (
-      req.user.role === 'coordenador' &&
-      (data.coordinators === undefined ||
-        (Array.isArray(data.coordinators) && data.coordinators.length === 0))
+      req.user.role === 'advisor' &&
+      (data.advisors === undefined || (Array.isArray(data.advisors) && data.advisors.length === 0))
     ) {
-      data.coordinators = [req.user.id]
+      data.advisors = [req.user.id]
     }
   }
 
@@ -204,16 +187,29 @@ const deriveActionPlanFields: CollectionBeforeChangeHook = ({ data, operation, o
       }
       return {
         body: trimmedText(update.body),
-        author:
-          req.user?.collection === 'campaignUser'
-            ? req.user.id
-            : (update.author ?? null),
+        author: req.user?.collection === 'campaignUser' ? req.user.id : (update.author ?? null),
         createdAt: new Date().toISOString(),
       }
     })
   }
 
-  if (operation === 'update' && req.user?.collection === 'campaignUser' && req.user.role === 'lideranca') {
+  const resultChanged =
+    (data.resultSummary !== undefined &&
+      trimmedText(data.resultSummary) !== trimmedText(originalDoc?.resultSummary)) ||
+    (data.resultMedia !== undefined &&
+      JSON.stringify(relationshipIds(data.resultMedia)) !==
+        JSON.stringify(relationshipIds(originalDoc?.resultMedia)))
+
+  if (resultChanged) {
+    data.resultRecordedAt = new Date().toISOString()
+    if (req.user?.collection === 'campaignUser') data.resultRecordedBy = req.user.id
+  }
+
+  if (
+    operation === 'update' &&
+    req.user?.collection === 'campaignUser' &&
+    req.user.role === 'leader'
+  ) {
     if (!isActionPlanMutationShortcut(req.context)) {
       const previous = (originalDoc ?? {}) as Record<string, unknown>
       const merged = { ...previous, ...(data as Record<string, unknown>) }
@@ -241,10 +237,7 @@ const deriveActionPlanFields: CollectionBeforeChangeHook = ({ data, operation, o
           relationshipId(taskRecord.responsible) !== relationshipId(previousTask.responsible) ||
           (taskRecord.due ?? null) !== (previousTask.due ?? null)
         ) {
-          throw new APIError(
-            'Lideranças só podem marcar tarefas como concluídas.',
-            403,
-          )
+          throw new APIError('Lideranças só podem marcar tarefas como concluídas.', 403)
         }
       }
     } else if (Array.isArray(data.tasks) && !Array.isArray(originalDoc?.tasks)) {
@@ -264,7 +257,7 @@ export const ActionPlan: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'title',
-    defaultColumns: ['title', 'kind', 'status', 'startAt', 'updatedAt'],
+    defaultColumns: ['title', 'kind', 'status', 'plaza', 'startAt', 'updatedAt'],
   },
   access: {
     create: canCreateActionPlan,
@@ -275,9 +268,8 @@ export const ActionPlan: CollectionConfig = {
   hooks: {
     beforeValidate: [
       setCanonicalActionPlanSlug,
-      validateActionPlanTerritory,
       validateActionPlanSchedule,
-      validateActionPlanCoordinators,
+      validateActionPlanAdvisors,
     ],
     beforeChange: [deriveActionPlanFields],
   },
@@ -334,6 +326,16 @@ export const ActionPlan: CollectionConfig = {
       maxLength: 4000,
     },
     {
+      name: 'deputyPresent',
+      type: 'checkbox',
+      label: 'Deputado presente',
+      defaultValue: false,
+      index: true,
+      admin: {
+        description: 'Marque quando o deputado Jorge Solla estiver presente na ação.',
+      },
+    },
+    {
       name: 'startAt',
       type: 'date',
       label: 'Início',
@@ -365,65 +367,39 @@ export const ActionPlan: CollectionConfig = {
       },
     },
     {
-      name: 'regions',
-      type: 'text',
-      label: 'Territórios de identidade',
-      hasMany: true,
+      name: 'plaza',
+      type: 'relationship',
+      relationTo: 'plaza',
+      label: 'Praça',
+      required: true,
       index: true,
-      maxRows: MAX_NUCLEUS_REGIONS,
-      validate: (value: unknown) => {
-        if (value === null || value === undefined) return true
-        if (!Array.isArray(value)) {
-          return 'Selecione um território de identidade válido da Bahia.'
-        }
-        return value.every(
-          (item) => typeof item === 'string' && isBahiaIdentityTerritory(item.trim()),
-        )
-          ? true
-          : 'Selecione um território de identidade válido da Bahia.'
-      },
-    },
-    {
-      name: 'cities',
-      type: 'text',
-      label: 'Municípios',
-      hasMany: true,
-      maxLength: 120,
-      index: true,
-      maxRows: MAX_NUCLEUS_CITIES,
-    },
-    {
-      name: 'neighborhoods',
-      type: 'text',
-      label: 'Bairros',
-      hasMany: true,
-      maxLength: 160,
-      maxRows: MAX_NUCLEUS_NEIGHBORHOODS,
     },
     {
       name: 'locality',
       type: 'text',
-      label: 'Localidade',
+      label: 'Local (bairro, endereço ou referência)',
       maxLength: 160,
     },
     {
-      name: 'territoryNotes',
-      type: 'textarea',
-      label: 'Observações do território',
-      maxLength: 2000,
+      name: 'organizations',
+      type: 'relationship',
+      relationTo: 'organization',
+      label: 'Organizações apoiadoras',
+      hasMany: true,
+      index: true,
     },
     {
-      name: 'coordinators',
+      name: 'advisors',
       type: 'relationship',
       relationTo: 'campaignUser',
-      label: 'Coordenadores',
+      label: 'Assessores responsáveis',
       hasMany: true,
       index: true,
       access: {
-        create: canCreateActionPlanCoordinators,
-        update: canManageActionPlanCoordinators,
+        create: canCreateActionPlanAdvisors,
+        update: canManageActionPlanAdvisors,
       },
-      filterOptions: eligibleNucleusCoordinatorWhere,
+      filterOptions: eligibleCampaignStaffWhere,
     },
     {
       name: 'responsible',
@@ -561,6 +537,56 @@ export const ActionPlan: CollectionConfig = {
           },
         },
       ],
+    },
+    {
+      name: 'resultSummary',
+      type: 'textarea',
+      label: 'Resultado da ação',
+      maxLength: 6000,
+      access: {
+        create: canSetActionPlanStatus,
+        update: canSetActionPlanStatus,
+      },
+      admin: {
+        description:
+          'O que aconteceu, público, aprendizados. Vira base para futuras atividades na mesma Praça.',
+      },
+    },
+    {
+      name: 'resultMedia',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Fotos e vídeos do resultado',
+      hasMany: true,
+      access: {
+        create: canSetActionPlanStatus,
+        update: canSetActionPlanStatus,
+      },
+    },
+    {
+      name: 'resultRecordedBy',
+      type: 'relationship',
+      relationTo: 'campaignUser',
+      label: 'Resultado registrado por',
+      admin: {
+        readOnly: true,
+      },
+      access: {
+        create: canSetActionPlanSystemField,
+        update: canSetActionPlanSystemField,
+      },
+    },
+    {
+      name: 'resultRecordedAt',
+      type: 'date',
+      label: 'Resultado registrado em',
+      admin: {
+        readOnly: true,
+      },
+      access: {
+        create: canSetActionPlanSystemField,
+        update: canSetActionPlanSystemField,
+      },
     },
     {
       name: 'createdBy',

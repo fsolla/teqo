@@ -3,10 +3,13 @@
 import { useActionState, useState } from 'react'
 import Link from 'next/link'
 
+import { AsyncSearchCombobox } from '@/components/campaign/AsyncSearchCombobox'
 import { ContactCombobox, type ContactComboboxOption } from '@/components/campaign/ContactCombobox'
-import { LeadershipCombobox } from '@/components/campaign/LeadershipCombobox'
 import { ActionPlanTaskFields } from '@/components/campaign/ActionPlanTaskFields'
-import { CampaignTerritoryFields } from '@/components/campaign/NucleusTerritoryFields'
+import {
+  RelationMultiSelect,
+  type RelationOption,
+} from '@/components/campaign/RelationMultiSelect'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,12 +28,13 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import { Spinner } from '@/components/ui/Spinner'
+import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 import { actionPlanKindLabels, actionPlanStatusLabels } from '@/lib/schemas/actionPlan'
 import type { ActionPlanLeadershipOption } from '@/utilities/actionPlanLeadershipOptions'
 import type { ActionPlanFormViewModel } from '@/utilities/actionPlanViewModels'
 import { fieldError } from '@/utilities/campaignFormFields'
 import { formatIsoAsBahiaDateTimeInput } from '@/utilities/campaignTime'
-import type { NucleusCoordinatorOption } from '@/utilities/nucleusCoordinatorOptions'
+import type { EligibleAdvisorOption } from '@/utilities/plazaViewModels'
 
 export type ActionPlanFormState = {
   message?: string
@@ -45,8 +49,10 @@ type ActionPlanFormAction = (
 ) => Promise<ActionPlanFormState>
 
 export type ActionPlanFormFieldsProps = {
-  coordinators?: NucleusCoordinatorOption[]
-  canManageCoordinators?: boolean
+  plazaOptions: RelationOption[]
+  organizationOptions: RelationOption[]
+  advisorOptions?: EligibleAdvisorOption[]
+  canManageAdvisors?: boolean
   plan?: ActionPlanFormViewModel
   fieldErrors?: Record<string, string[]>
   submittedTitle?: string
@@ -57,8 +63,10 @@ export type ActionPlanFormFieldsProps = {
 const editableStatuses = ['rascunho', 'planejado'] as const
 
 export const ActionPlanFormFields = ({
-  coordinators = [],
-  canManageCoordinators = false,
+  plazaOptions,
+  organizationOptions,
+  advisorOptions = [],
+  canManageAdvisors = false,
   plan,
   fieldErrors = {},
   submittedTitle,
@@ -175,6 +183,12 @@ export const ActionPlanFormFields = ({
                 <FieldError id="description-error">{errorFor('description')}</FieldError>
               ) : null}
             </Field>
+            <FieldLabel>
+              <Field orientation="horizontal" className="min-h-11 rounded-lg border p-3">
+                <Checkbox name="deputyPresent" defaultChecked={plan?.deputyPresent ?? false} />
+                <span>Deputado presente</span>
+              </Field>
+            </FieldLabel>
           </FieldGroup>
         </CardContent>
       </Card>
@@ -237,44 +251,43 @@ export const ActionPlanFormFields = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Território</CardTitle>
+          <CardTitle>Onde</CardTitle>
         </CardHeader>
         <CardContent>
           <FieldGroup>
-            <CampaignTerritoryFields values={plan} fieldErrors={fieldErrors} />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field data-invalid={Boolean(errorFor('locality'))}>
-                <FieldLabel htmlFor="locality">Localidade</FieldLabel>
-                <Input
-                  id="locality"
-                  name="locality"
-                  defaultValue={plan?.locality ?? ''}
-                  maxLength={160}
-                  className="min-h-11"
-                  aria-invalid={Boolean(errorFor('locality'))}
-                  aria-describedby={errorFor('locality') ? 'locality-error' : undefined}
-                />
-                {errorFor('locality') ? (
-                  <FieldError id="locality-error">{errorFor('locality')}</FieldError>
-                ) : null}
-              </Field>
-            </div>
-            <FieldDescription>
-              Obrigatório: informe ao menos território de identidade, município ou localidade.
-            </FieldDescription>
-            <Field data-invalid={Boolean(errorFor('territoryNotes'))}>
-              <FieldLabel htmlFor="territoryNotes">Observações do território</FieldLabel>
-              <Textarea
-                id="territoryNotes"
-                name="territoryNotes"
-                defaultValue={plan?.territoryNotes ?? ''}
-                maxLength={2000}
-                className="min-h-24"
-                aria-invalid={Boolean(errorFor('territoryNotes'))}
-                aria-describedby={errorFor('territoryNotes') ? 'territoryNotes-error' : undefined}
+            <Field data-invalid={Boolean(errorFor('plaza'))}>
+              <FieldLabel htmlFor="plaza">Praça *</FieldLabel>
+              <NativeSelect
+                id="plaza"
+                name="plaza"
+                defaultValue={plan?.plazaId ? String(plan.plazaId) : ''}
+                required
+                aria-invalid={Boolean(errorFor('plaza'))}
+                aria-describedby={errorFor('plaza') ? 'plaza-error' : undefined}
+                className="w-full **:data-[slot=native-select]:min-h-11"
+              >
+                <NativeSelectOption value="">Selecione a Praça</NativeSelectOption>
+                {plazaOptions.map((option) => (
+                  <NativeSelectOption key={option.id} value={String(option.id)}>
+                    {option.name}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+              {errorFor('plaza') ? <FieldError id="plaza-error">{errorFor('plaza')}</FieldError> : null}
+            </Field>
+            <Field data-invalid={Boolean(errorFor('locality'))}>
+              <FieldLabel htmlFor="locality">Local (bairro, endereço ou referência)</FieldLabel>
+              <Input
+                id="locality"
+                name="locality"
+                defaultValue={plan?.locality ?? ''}
+                maxLength={160}
+                className="min-h-11"
+                aria-invalid={Boolean(errorFor('locality'))}
+                aria-describedby={errorFor('locality') ? 'locality-error' : undefined}
               />
-              {errorFor('territoryNotes') ? (
-                <FieldError id="territoryNotes-error">{errorFor('territoryNotes')}</FieldError>
+              {errorFor('locality') ? (
+                <FieldError id="locality-error">{errorFor('locality')}</FieldError>
               ) : null}
             </Field>
           </FieldGroup>
@@ -283,7 +296,7 @@ export const ActionPlanFormFields = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Pessoas</CardTitle>
+          <CardTitle>Pessoas e organizações</CardTitle>
         </CardHeader>
         <CardContent>
           <FieldGroup>
@@ -303,12 +316,16 @@ export const ActionPlanFormFields = ({
 
             <Field data-invalid={Boolean(errorFor('leadership'))}>
               <FieldLabel>Liderança vinculada</FieldLabel>
-              <LeadershipCombobox
+              <AsyncSearchCombobox
                 name="leadership"
                 label="Liderança vinculada"
                 value={leadership}
-                onChange={setLeadership}
+                emptyOptionLabel="Nenhuma"
+                dialogDescription="Busque lideranças engajadas por nome ou celular."
+                isQueryReady={isContactSearchQueryReady}
+                queryTooShortMessage="Digite ao menos dois caracteres para buscar."
                 search={searchLeaderships}
+                onChange={setLeadership}
               />
               <FieldDescription>
                 Quando vinculada, a liderança engajada vê o plano e pode marcar tarefas e registrar
@@ -319,43 +336,50 @@ export const ActionPlanFormFields = ({
               ) : null}
             </Field>
 
-            {canManageCoordinators ? (
+            <RelationMultiSelect
+              name="organizations"
+              label="Organizações apoiadoras"
+              options={organizationOptions}
+              initialSelectedIDs={plan?.organizationIDs ?? []}
+              error={errorFor('organizations')}
+              placeholder="Adicionar organização…"
+            />
+
+            {canManageAdvisors ? (
               <FieldSet
-                aria-invalid={Boolean(errorFor('coordinators'))}
-                aria-describedby={errorFor('coordinators') ? 'coordinators-error' : undefined}
+                aria-invalid={Boolean(errorFor('advisors'))}
+                aria-describedby={errorFor('advisors') ? 'advisors-error' : undefined}
               >
-                <FieldLegend>Coordenadores responsáveis</FieldLegend>
+                <FieldLegend>Assessores responsáveis</FieldLegend>
                 <FieldDescription>
-                  Coordenadores selecionados podem editar este plano e gerenciar suas tarefas.
+                  Assessores selecionados podem editar este plano e gerenciar suas tarefas.
                 </FieldDescription>
-                <input type="hidden" name="coordinatorsSubmitted" value="1" />
-                {coordinators.length ? (
+                <input type="hidden" name="advisorsSubmitted" value="1" />
+                {advisorOptions.length ? (
                   <div data-slot="checkbox-group" className="grid gap-2 sm:grid-cols-2">
-                    {coordinators.map((coordinator) => (
-                      <FieldLabel key={coordinator.id}>
+                    {advisorOptions.map((advisor) => (
+                      <FieldLabel key={advisor.id}>
                         <Field orientation="horizontal" className="min-h-11 rounded-lg border p-3">
                           <Checkbox
-                            name="coordinators"
-                            value={String(coordinator.id)}
+                            name="advisors"
+                            value={String(advisor.id)}
                             defaultChecked={
-                              plan
-                                ? plan.coordinators.some(({ id }) => id === coordinator.id)
-                                : coordinator.isCurrent
+                              plan ? plan.advisorIDs.includes(advisor.id) : advisor.isCurrent
                             }
                           />
                           <span>
-                            {coordinator.name}
-                            {coordinator.isCurrent ? ' (você)' : ''}
+                            {advisor.name}
+                            {advisor.isCurrent ? ' (você)' : ''}
                           </span>
                         </Field>
                       </FieldLabel>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Nenhum coordenador disponível.</p>
+                  <p className="text-sm text-muted-foreground">Nenhum assessor disponível.</p>
                 )}
-                {errorFor('coordinators') ? (
-                  <FieldError id="coordinators-error">{errorFor('coordinators')}</FieldError>
+                {errorFor('advisors') ? (
+                  <FieldError id="advisors-error">{errorFor('advisors')}</FieldError>
                 ) : null}
               </FieldSet>
             ) : null}
@@ -381,8 +405,10 @@ export const ActionPlanFormFields = ({
 
 export const ActionPlanForm = ({
   action,
-  coordinators,
-  canManageCoordinators = false,
+  plazaOptions,
+  organizationOptions,
+  advisorOptions,
+  canManageAdvisors = false,
   plan,
   submitLabel,
   searchContacts,
@@ -408,8 +434,10 @@ export const ActionPlanForm = ({
         </Button>
       ) : null}
       <ActionPlanFormFields
-        coordinators={coordinators}
-        canManageCoordinators={canManageCoordinators}
+        plazaOptions={plazaOptions}
+        organizationOptions={organizationOptions}
+        advisorOptions={advisorOptions}
+        canManageAdvisors={canManageAdvisors}
         plan={plan}
         fieldErrors={state.fieldErrors}
         submittedTitle={state.submittedTitle}

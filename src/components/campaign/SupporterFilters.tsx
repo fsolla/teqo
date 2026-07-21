@@ -5,12 +5,12 @@ import { usePathname, useRouter } from 'next/navigation'
 import { ChevronDownIcon, FilterIcon, XIcon } from 'lucide-react'
 
 import { CampaignSearchInput } from '@/components/campaign/CampaignSearchInput'
+import type { RelationOption } from '@/components/campaign/RelationMultiSelect'
 import { StrictCombobox } from '@/components/campaign/StrictCombobox'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { cn } from '@/lib/utils'
-import type { SupporterNucleusOption } from '@/utilities/supporterViewModels'
 import {
   buildSupporterListSearchParams,
   supporterVoteIntentionLabels,
@@ -22,28 +22,28 @@ type FilterValues = {
   q: string
   voteIntention: string
   city: string
-  nucleus: string
+  plaza: string
 }
 
 const valuesFromState = (state: SupporterListState): FilterValues => ({
   q: state.q ?? '',
   voteIntention: state.voteIntention ?? '',
   city: state.city ?? '',
-  nucleus: state.nucleus ? String(state.nucleus) : '',
+  plaza: state.plaza ? String(state.plaza) : '',
 })
 
-const filterNames = ['voteIntention', 'city', 'nucleus'] as const
+const filterNames = ['voteIntention', 'city', 'plaza'] as const
 
 type FilterFieldsProps = {
   values: FilterValues
-  nucleusOptions: SupporterNucleusOption[]
+  plazaOptions: RelationOption[]
   updateFilter: (name: (typeof filterNames)[number], value: string) => void
   updateCity: (city: string) => void
 }
 
 const FilterFields = ({
   values,
-  nucleusOptions,
+  plazaOptions,
   updateFilter,
   updateCity,
 }: FilterFieldsProps) => (
@@ -79,18 +79,18 @@ const FilterFields = ({
       />
     </Field>
     <Field>
-      <FieldLabel htmlFor="supporter-nucleus">Núcleo</FieldLabel>
+      <FieldLabel htmlFor="supporter-plaza">Praça</FieldLabel>
       <NativeSelect
-        id="supporter-nucleus"
-        name="nucleus"
-        value={values.nucleus}
-        onChange={(event) => updateFilter('nucleus', event.target.value)}
+        id="supporter-plaza"
+        name="plaza"
+        value={values.plaza}
+        onChange={(event) => updateFilter('plaza', event.target.value)}
         className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
       >
-        <NativeSelectOption value="">Todos</NativeSelectOption>
-        {nucleusOptions.map((nucleus) => (
-          <NativeSelectOption key={nucleus.id} value={String(nucleus.id)}>
-            {nucleus.name}
+        <NativeSelectOption value="">Todas</NativeSelectOption>
+        {plazaOptions.map((plaza) => (
+          <NativeSelectOption key={plaza.id} value={String(plaza.id)}>
+            {plaza.name}
           </NativeSelectOption>
         ))}
       </NativeSelect>
@@ -100,10 +100,10 @@ const FilterFields = ({
 
 export const SupporterFilters = ({
   state,
-  nucleusOptions,
+  plazaOptions,
 }: {
   state: SupporterListState
-  nucleusOptions: SupporterNucleusOption[]
+  plazaOptions: RelationOption[]
 }) => {
   const router = useRouter()
   const pathname = usePathname()
@@ -121,7 +121,7 @@ export const SupporterFilters = ({
       q: nextValues.q,
       voteIntention: nextValues.voteIntention as SupporterListState['voteIntention'],
       city: nextValues.city,
-      nucleus: nextValues.nucleus ? Number(nextValues.nucleus) : undefined,
+      plaza: nextValues.plaza ? Number(nextValues.plaza) : undefined,
     })
     const query = params.toString()
     startTransition(() => {
@@ -205,7 +205,7 @@ export const SupporterFilters = ({
         >
           <FilterFields
             values={values}
-            nucleusOptions={nucleusOptions}
+            plazaOptions={plazaOptions}
             updateFilter={updateFilter}
             updateCity={updateCity}
           />

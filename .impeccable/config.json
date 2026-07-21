@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-color",
+        "value": "#111827",
+        "files": [
+          "src/collections/CampaignUser.ts"
+        ],
+        "createdAt": "2026-07-21T01:54:11.928Z",
+        "reason": "Pre-existing inline hex in the password-reset EMAIL HTML template; transactional email cannot use CSS tokens"
+      }
+    ]
+  }
+}

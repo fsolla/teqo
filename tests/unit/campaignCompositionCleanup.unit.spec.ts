@@ -204,13 +204,6 @@ describe('campaign client module boundaries', () => {
     }
   })
 
-  it('keeps the TSE input on the browser-safe parser boundary', () => {
-    const source = readFileSync(resolve(sourceRoot, 'components/campaign/TseZoneInput.tsx'), 'utf8')
-
-    expect(source).toContain('@/utilities/tseZone')
-    expect(source).not.toContain('@/lib/formData')
-    expect(source).not.toContain('@/utilities/nucleusUi')
-  })
 })
 
 describe('static table composition', () => {
@@ -225,7 +218,7 @@ describe('static table composition', () => {
     createElement(
       TableBody,
       null,
-      createElement(TableRow, null, createElement(TableCell, null, 'Núcleo Centro')),
+      createElement(TableRow, null, createElement(TableCell, null, 'Praça Centro')),
     ),
   )
 
@@ -249,7 +242,7 @@ describe('static table composition', () => {
     })
 
     expect(container.querySelector('table')).not.toBeNull()
-    expect(container.textContent).toContain('Núcleo Centro')
+    expect(container.textContent).toContain('Praça Centro')
     expect(consoleError).not.toHaveBeenCalled()
 
     await act(async () => root?.unmount())

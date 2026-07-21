@@ -1,20 +1,26 @@
 'use client'
 
-import L from 'leaflet'
 import type { Feature } from 'geojson'
+import L from 'leaflet'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import 'leaflet/dist/leaflet.css'
 
-import { choroplethFillColor, choroplethMaxValue } from '@/lib/choroplethColorScale'
 import {
   loadMunicipalityGeometryModule,
   loadTerritoryGeometryModule,
   type MunicipalityGeometryModule,
   type TerritoryGeometryModule,
 } from '@/lib/bahiaGeometries'
+import {
+  choroplethFillColor,
+  choroplethMaxAbsValue,
+  choroplethMaxValue,
+  divergingFillColor,
+} from '@/lib/choroplethColorScale'
 import { cn } from '@/lib/utils'
-import type { ChoroplethValues } from '@/utilities/nucleusChoroplethTypes'
+
+export type ChoroplethValues = Record<string, number>
 
 const BAHIA_BOUNDS: L.LatLngBoundsExpression = [
   [-18.5, -46.8],
@@ -30,9 +36,13 @@ const featureKey = (
   keyProperty: FeatureKeyProperty,
 ): string | undefined => properties?.[keyProperty]
 
+export type BahiaMapFillMode = 'sequential' | 'diverging'
+
 type BahiaMapProps = {
   mode: BahiaMapMode
   values: ChoroplethValues
+  /** 'diverging': positive = campaign red, negative = blue, zero = white. */
+  fillMode?: BahiaMapFillMode
   highlightKeys?: string[]
   className?: string
   heightClassName?: string
@@ -42,6 +52,7 @@ type BahiaMapProps = {
 export const BahiaMap = ({
   mode,
   values,
+  fillMode = 'sequential',
   highlightKeys = [],
   className,
   heightClassName = 'h-[320px]',
@@ -105,7 +116,8 @@ export const BahiaMap = ({
 
         layerRef.current?.remove()
 
-        const max = choroplethMaxValue(values)
+        const max =
+          fillMode === 'diverging' ? choroplethMaxAbsValue(values) : choroplethMaxValue(values)
         const keyProperty: FeatureKeyProperty = mode === 'municipality' ? 'codarea' : 'code'
         const highlightSet = new Set(
           highlightKey.length > 0 ? highlightKey.split(',').filter(Boolean) : [],
@@ -121,8 +133,11 @@ export const BahiaMap = ({
             return {
               weight: highlighted ? 2.5 : 1,
               color: highlighted ? '#c51414' : '#a8a29e',
-              fillColor: choroplethFillColor(metric, max),
-              fillOpacity: highlighted ? 0.92 : metric > 0 ? 0.78 : 0.35,
+              fillColor:
+                fillMode === 'diverging'
+                  ? divergingFillColor(metric, max)
+                  : choroplethFillColor(metric, max),
+              fillOpacity: highlighted ? 0.92 : metric !== 0 ? 0.78 : 0.35,
             }
           },
         })
@@ -136,13 +151,15 @@ export const BahiaMap = ({
           const highlightedFeatures =
             mode === 'municipality'
               ? [...highlightSet].flatMap((key) => {
-                  const feature = (geometryModule as MunicipalityGeometryModule).getMunicipalityFeature(
-                    key,
-                  )
+                  const feature = (
+                    geometryModule as MunicipalityGeometryModule
+                  ).getMunicipalityFeature(key)
                   return feature ? [feature] : []
                 })
               : [...highlightSet].flatMap((key) => {
-                  const feature = (geometryModule as TerritoryGeometryModule).getTerritoryFeature(key)
+                  const feature = (geometryModule as TerritoryGeometryModule).getTerritoryFeature(
+                    key,
+                  )
                   return feature ? [feature] : []
                 })
           if (highlightedFeatures.length > 0) {
@@ -168,7 +185,7 @@ export const BahiaMap = ({
       layerRef.current?.remove()
       layerRef.current = null
     }
-  }, [highlightKey, mode, values])
+  }, [fillMode, highlightKey, mode, values])
 
   return (
     <div className={cn('relative w-full', className)}>
@@ -182,9 +199,7 @@ export const BahiaMap = ({
           heightClassName,
         )}
       />
-      {status === 'loading' ? (
-        <p className="sr-only">Carregando mapa…</p>
-      ) : null}
+      {status === 'loading' ? <p className="sr-only">Carregando mapa…</p> : null}
       {status === 'error' ? (
         <p className="absolute inset-0 flex items-center justify-center bg-background/80 px-4 text-center text-sm text-muted-foreground">
           Não foi possível carregar o mapa. Tente recarregar a página.

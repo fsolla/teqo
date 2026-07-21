@@ -5,10 +5,11 @@ import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
-import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { resendAdapter } from '@payloadcms/email-resend'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { pt } from 'payload/i18n/pt'
 import { ActionPlan } from './collections/ActionPlan'
+import { CampaignDemand } from './collections/CampaignDemand'
 import { CampaignInvite } from './collections/CampaignInvite'
 import { CampaignUser } from './collections/CampaignUser'
 import { Consent } from './collections/Consent'
@@ -16,11 +17,12 @@ import { Contact } from './collections/Contact'
 import { ElectionCandidate } from './collections/ElectionCandidate'
 import { ElectionCandidateVote } from './collections/ElectionCandidateVote'
 import { ElectionTally } from './collections/ElectionTally'
-import { ElectoralNucleus } from './collections/ElectoralNucleus'
 import { Leadership } from './collections/Leadership'
 import { Media } from './collections/Media'
-import { NucleusUpdate } from './collections/NucleusUpdate'
+import { Organization } from './collections/Organization'
 import { Petition } from './collections/Petition'
+import { Plaza } from './collections/Plaza'
+import { PlazaUpdate } from './collections/PlazaUpdate'
 import { Post } from './collections/Post'
 import { Signature } from './collections/Signature'
 import { Subscription } from './collections/Subscription'
@@ -28,6 +30,7 @@ import { Supporter } from './collections/Supporter'
 import { SupporterImportBatch } from './collections/SupporterImportBatch'
 import { Tag } from './collections/Tag'
 import { Users } from './collections/Users'
+import { VotePledge } from './collections/VotePledge'
 import { HomePage } from './globals/HomePage'
 import { Metadata } from './globals/Metadata'
 import { PrivacyPolicy } from './globals/PrivacyPolicy'
@@ -38,8 +41,7 @@ const dirname = path.dirname(filename)
 
 const campaignEmailFromAddress =
   process.env.CAMPAIGN_EMAIL_FROM?.trim() || 'campanha@jorgesolla.com.br'
-const campaignEmailFromName =
-  process.env.CAMPAIGN_EMAIL_FROM_NAME?.trim() || 'Campanha Jorge Solla'
+const campaignEmailFromName = process.env.CAMPAIGN_EMAIL_FROM_NAME?.trim() || 'Campanha Jorge Solla'
 
 export default buildConfig({
   admin: {
@@ -56,11 +58,14 @@ export default buildConfig({
     Users,
     CampaignUser,
     CampaignInvite,
-    ElectoralNucleus,
+    Plaza,
     Leadership,
+    Organization,
+    VotePledge,
+    CampaignDemand,
     Supporter,
     SupporterImportBatch,
-    NucleusUpdate,
+    PlazaUpdate,
     ActionPlan,
     ElectionTally,
     ElectionCandidateVote,

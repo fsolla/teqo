@@ -1,17 +1,41 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
 import {
   canCreateLeadership,
   canDeleteLeadership,
+  canManageCampaignStaffField,
   canManageLeadership,
-  canManageLeadershipInternal,
+  canReadCampaignStaffField,
   canReadLeadership,
-  canReadLeadershipInternal,
   canSetAdministrativeLeadershipField,
 } from '@/utilities/campaignAccess'
-import { acquirePrimaryContactInvariantLocks } from '@/utilities/primaryContactInvariantLock'
 import { relationshipId } from '@/utilities/relationship'
+
+const MAX_LEADERSHIP_PLAZAS = 30
+
+const requireAtLeastOnePlaza: CollectionBeforeValidateHook = ({ data, operation, originalDoc }) => {
+  if (!data) return data
+
+  const plazas =
+    data.plazas !== undefined
+      ? data.plazas
+      : operation === 'update'
+        ? originalDoc?.plazas
+        : undefined
+  const plazaIDs = (Array.isArray(plazas) ? plazas : [])
+    .map(relationshipId)
+    .filter((id): id is number => id !== null)
+
+  if (plazaIDs.length === 0) {
+    throw new APIError('Vincule a liderança a pelo menos uma Praça.', 400)
+  }
+  if (new Set(plazaIDs).size !== plazaIDs.length) {
+    throw new APIError('Cada Praça deve aparecer apenas uma vez.', 400)
+  }
+
+  return data
+}
 
 export const Leadership: CollectionConfig = {
   slug: 'leadership',
@@ -22,7 +46,7 @@ export const Leadership: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'contact',
-    defaultColumns: ['contact', 'nucleus', 'sector', 'supportStatus', 'updatedAt'],
+    defaultColumns: ['contact', 'plazas', 'sector', 'supportStatus', 'updatedAt'],
   },
   access: {
     create: canCreateLeadership,
@@ -30,53 +54,12 @@ export const Leadership: CollectionConfig = {
     update: canManageLeadership,
     delete: canDeleteLeadership,
   },
-  indexes: [
-    {
-      fields: ['contact', 'nucleus'],
-      unique: true,
-    },
-  ],
   hooks: {
+    beforeValidate: [requireAtLeastOnePlaza],
     beforeChange: [
-      async ({ data, operation, originalDoc, req }) => {
+      ({ data, operation, req }) => {
         if (operation === 'create' && req.user?.collection === 'campaignUser') {
           data.createdBy = req.user.id
-        }
-
-        if (operation !== 'update') return data
-        const previousContact = relationshipId(originalDoc?.contact)
-        const previousNucleus = relationshipId(originalDoc?.nucleus)
-        const nextContact = relationshipId(data.contact ?? originalDoc?.contact)
-        const nextNucleus = relationshipId(data.nucleus ?? originalDoc?.nucleus)
-        const nextStatus = data.supportStatus ?? originalDoc?.supportStatus
-        if (!previousContact || !previousNucleus || !nextContact || !nextNucleus) return data
-
-        await acquirePrimaryContactInvariantLocks(req, [previousNucleus, nextNucleus])
-        const remainsEligible =
-          nextStatus === 'engajado' &&
-          nextContact === previousContact &&
-          nextNucleus === previousNucleus
-        if (remainsEligible) return data
-
-        const primaryContactUse = await req.payload.find({
-          collection: 'electoralNucleus',
-          where: {
-            and: [
-              { id: { equals: previousNucleus } },
-              { primaryContact: { equals: previousContact } },
-            ],
-          },
-          depth: 0,
-          limit: 1,
-          overrideAccess: true,
-          req,
-        })
-
-        if (primaryContactUse.totalDocs > 0) {
-          throw new APIError(
-            'Escolha outro contato principal antes de alterar o status desta liderança.',
-            409,
-          )
         }
 
         return data
@@ -90,21 +73,29 @@ export const Leadership: CollectionConfig = {
       relationTo: 'contact',
       label: 'Contato',
       required: true,
+      unique: true,
       index: true,
       access: {
         update: canSetAdministrativeLeadershipField,
       },
     },
     {
-      name: 'nucleus',
+      name: 'plazas',
       type: 'relationship',
-      relationTo: 'electoralNucleus',
-      label: 'Núcleo eleitoral',
+      relationTo: 'plaza',
+      label: 'Praças',
       required: true,
+      hasMany: true,
       index: true,
-      access: {
-        update: canSetAdministrativeLeadershipField,
-      },
+      maxRows: MAX_LEADERSHIP_PLAZAS,
+    },
+    {
+      name: 'organizations',
+      type: 'relationship',
+      relationTo: 'organization',
+      label: 'Organizações',
+      hasMany: true,
+      index: true,
     },
     {
       name: 'sector',
@@ -138,9 +129,9 @@ export const Leadership: CollectionConfig = {
       defaultValue: 'a_abordar',
       index: true,
       access: {
-        create: canManageLeadershipInternal,
-        read: canReadLeadershipInternal,
-        update: canManageLeadershipInternal,
+        create: canManageCampaignStaffField,
+        read: canReadCampaignStaffField,
+        update: canManageCampaignStaffField,
       },
       options: [
         { label: 'Engajado', value: 'engajado' },
@@ -200,9 +191,9 @@ export const Leadership: CollectionConfig = {
       label: 'Observações internas',
       maxLength: 3000,
       access: {
-        create: canManageLeadershipInternal,
-        read: canReadLeadershipInternal,
-        update: canManageLeadershipInternal,
+        create: canManageCampaignStaffField,
+        read: canReadCampaignStaffField,
+        update: canManageCampaignStaffField,
       },
     },
     {
@@ -211,9 +202,9 @@ export const Leadership: CollectionConfig = {
       label: 'Registro de consentimento externo',
       maxLength: 2000,
       access: {
-        create: canManageLeadershipInternal,
-        read: canReadLeadershipInternal,
-        update: canManageLeadershipInternal,
+        create: canManageCampaignStaffField,
+        read: canReadCampaignStaffField,
+        update: canManageCampaignStaffField,
       },
     },
     {
@@ -227,7 +218,7 @@ export const Leadership: CollectionConfig = {
       },
       access: {
         create: canSetAdministrativeLeadershipField,
-        read: canReadLeadershipInternal,
+        read: canReadCampaignStaffField,
         update: canSetAdministrativeLeadershipField,
       },
     },

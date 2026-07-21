@@ -10,10 +10,12 @@ import {
 } from '@/lib/schemas/actionPlan'
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 
 const MAX_ACTION_PLAN_UPDATE_BODY_LENGTH = 4000
+const MAX_ACTION_PLAN_RESULT_SUMMARY_LENGTH = 6000
 
 export const createActionPlanRecord = async (
   payload: Payload,
@@ -168,6 +170,46 @@ export const appendActionPlanUpdateRecord = async (
   )
 }
 
+export const registerActionPlanResult = async (
+  payload: Payload,
+  actor: CampaignUser,
+  planId: number,
+  resultSummary: string,
+  mediaIDs: number[],
+) => {
+  const trimmedSummary = resultSummary.trim()
+  if (!trimmedSummary) throw new Error('Informe o resultado da ação.')
+  if (trimmedSummary.length > MAX_ACTION_PLAN_RESULT_SUMMARY_LENGTH) {
+    throw new Error('Resultado muito longo. Reduza o texto e tente novamente.')
+  }
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await reloadCampaignActor(payload, actor, req)
+      if (!isCampaignStaff(currentActor)) {
+        throw new Error('Apenas a equipe da campanha pode registrar o resultado do plano.')
+      }
+
+      return payload.update({
+        collection: 'actionPlan',
+        id: planId,
+        data: {
+          resultSummary: trimmedSummary,
+          // Media upload is a follow-up; an empty list must not wipe media
+          // attached elsewhere (e.g. via the Payload admin).
+          ...(mediaIDs.length > 0 ? { resultMedia: mediaIDs } : {}),
+        },
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+    },
+    { beginFailureMessage: 'Não foi possível registrar o resultado do plano.' },
+  )
+}
+
 export const createActionPlan = async (input: ActionPlanCreateInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return createActionPlanRecord(payload, actor, input)
@@ -196,4 +238,13 @@ export const toggleActionPlanTask = async (planId: number, taskId: string, done:
 export const appendActionPlanUpdate = async (planId: number, body: string) => {
   const { payload, actor } = await getCampaignActionContext()
   return appendActionPlanUpdateRecord(payload, actor, planId, body)
+}
+
+export const registerActionPlanResultAction = async (
+  planId: number,
+  resultSummary: string,
+  mediaIDs: number[] = [],
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return registerActionPlanResult(payload, actor, planId, resultSummary, mediaIDs)
 }

@@ -117,19 +117,11 @@ const createPublicInviteScenario = async (
       name: 'Coordenação de teste',
       email: `${campaignFixtures().value('invite-ui')}@example.com`,
       password: campaignFixtures().value('password'),
-      role: 'geral',
+      role: 'coordinator',
     },
     depth: 0,
   })
-  const nucleus = await payload.create({
-    collection: 'electoralNucleus',
-    data: {
-      name: campaignFixtures().value('Núcleo convite UI'),
-      cities: ['Salvador'],
-      organizationKind: 'territorial',
-    } as never,
-    depth: 0,
-  })
+  const plaza = await campaignFixtures().getPlaza()
   const contact = await payload.create({
     collection: 'contact',
     data: {
@@ -146,7 +138,7 @@ const createPublicInviteScenario = async (
     collection: 'leadership',
     data: {
       contact: contact.id,
-      nucleus: nucleus.id,
+      plazas: [plaza.id],
       sector: 'comunitario',
       sectorNotes: 'Associação do bairro',
       supportStatus: 'engajado',
@@ -237,7 +229,7 @@ describe('campaign invite UI contracts', () => {
         consentData: expect.objectContaining({ root: expect.any(Object) }),
       })
       expect(serialized).not.toMatch(
-        /supportStatus|Avaliação interna|Registro interno|tokenHash|leadershipId|nucleus|user/,
+        /supportStatus|Avaliação interna|Registro interno|tokenHash|leadershipId|plaza|user/,
       )
     },
   )
@@ -357,7 +349,7 @@ describe('campaign invite UI contracts', () => {
       expect(html).not.toContain('name="notes"')
       expect(html).not.toContain('name="consentNote"')
       expect(html).not.toContain('tokenHash')
-      expect(html).not.toContain('name="nucleus"')
+      expect(html).not.toContain('name="plazas"')
     },
   )
 

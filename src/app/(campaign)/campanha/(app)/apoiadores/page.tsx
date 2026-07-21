@@ -19,7 +19,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { isCampaignGeneral } from '@/utilities/campaignAccess'
+import { isCampaignCoordinator } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadSupportersPageData } from '@/utilities/supporterPageData'
 import {
@@ -42,7 +42,7 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
 
   const rawSearchParams = await searchParams
   const now = new Date()
-  const { result, state, redirectHref, nucleusOptions, overview } = await loadSupportersPageData(
+  const { result, state, redirectHref, plazaOptions, overview } = await loadSupportersPageData(
     payload,
     user,
     rawSearchParams,
@@ -55,16 +55,16 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">Apoiadores</h1>
           <p className="text-muted-foreground">
-            Base nominal de apoio com intenção de voto e vínculo opcional a núcleos.
+            Base nominal de apoio com intenção de voto e vínculo opcional a Praças.
           </p>
           <CampaignScopeBadge>
-            {isCampaignGeneral(user)
-              ? 'Coordenação geral · todos os apoiadores'
+            {isCampaignCoordinator(user)
+              ? 'Coordenador Geral · todos os apoiadores'
               : getSupporterScopeLabel(result.totalDocs)}
           </CampaignScopeBadge>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          {isCampaignGeneral(user) ? (
+          {isCampaignCoordinator(user) ? (
             <Button asChild variant="outline" className="min-h-11">
               <Link href="/campanha/apoiadores/importar">
                 <FileUpIcon data-icon="inline-start" aria-hidden="true" />
@@ -84,7 +84,7 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
       <SupporterFilters
         key={buildSupporterFiltersKey(state)}
         state={state}
-        nucleusOptions={nucleusOptions}
+        plazaOptions={plazaOptions}
       />
 
       {result.docs.length ? (

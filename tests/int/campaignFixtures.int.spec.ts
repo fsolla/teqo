@@ -31,7 +31,16 @@ const fixtureConsentText: Consent['text'] = {
 }
 
 const exists = async (
-  collection: 'users' | 'campaignUser' | 'contact' | 'electoralNucleus' | 'consent',
+  collection:
+    | 'users'
+    | 'campaignUser'
+    | 'contact'
+    | 'consent'
+    | 'leadership'
+    | 'votePledge'
+    | 'campaignDemand'
+    | 'organization'
+    | 'plazaUpdate',
   id: number,
 ): Promise<boolean> => {
   const result = await payload.find({
@@ -53,10 +62,10 @@ describe('campaign integration fixtures', () => {
 
     await expect(
       withCampaignFixtures(payload, async (fixtures) => {
-        createdID = (await fixtures.createCampaignUser('geral')).id
+        createdID = (await fixtures.createCampaignUser('coordinator')).id
         await fixtures.createLeadership({
           contact: 999_999_999,
-          nucleus: 999_999_999,
+          plazas: [999_999_999],
         })
       }),
     ).rejects.toThrow()
@@ -91,6 +100,77 @@ describe('campaign integration fixtures', () => {
 
     expect(await exists('users', adminID)).toBe(false)
     expect(await exists('consent', consentID)).toBe(false)
+  })
+
+  it('cleans the full plaza-scoped graph and resets touched plaza fields', async () => {
+    let leadershipID = 0
+    let pledgeID = 0
+    let demandID = 0
+    let organizationID = 0
+    let updateID = 0
+    let plazaID = 0
+
+    await withCampaignFixtures(payload, async (fixtures) => {
+      const coordinator = await fixtures.createCampaignUser('coordinator')
+      const advisor = await fixtures.createCampaignUser('advisor')
+      const contact = await fixtures.createContact()
+      const plaza = await fixtures.getPlaza()
+      plazaID = plaza.id
+
+      await fixtures.assignPlazaAdvisors(plaza, [advisor])
+      await payload.update({
+        collection: 'plaza',
+        id: plaza.id,
+        data: {
+          priority: 'alta',
+          voteGoals: { good: 100, regular: 50, minimum: 10 },
+          strengths: [{ text: fixtures.value('Força') }],
+          risks: [{ text: fixtures.value('Risco') }],
+          nextSteps: fixtures.value('Encaminhamento'),
+        },
+        depth: 0,
+      })
+
+      const organization = await fixtures.createOrganization({ plazas: [plaza.id] })
+      const leadership = await fixtures.createLeadership({
+        contact,
+        plazas: [plaza.id],
+        organizations: [organization.id],
+        createdBy: coordinator,
+      })
+      const pledge = await fixtures.createVotePledge({
+        leadership,
+        plaza,
+        declaredVotes: 120,
+      })
+      const demand = await fixtures.createCampaignDemand({
+        plaza,
+        leadership,
+        createdBy: coordinator,
+      })
+      const update = await fixtures.createPlazaUpdate({ plaza, author: coordinator })
+
+      leadershipID = leadership.id
+      pledgeID = pledge.id
+      demandID = demand.id
+      organizationID = organization.id
+      updateID = update.id
+    })
+
+    expect(await exists('leadership', leadershipID)).toBe(false)
+    expect(await exists('votePledge', pledgeID)).toBe(false)
+    expect(await exists('campaignDemand', demandID)).toBe(false)
+    expect(await exists('organization', organizationID)).toBe(false)
+    expect(await exists('plazaUpdate', updateID)).toBe(false)
+
+    const plaza = await payload.findByID({ collection: 'plaza', id: plazaID, depth: 0 })
+    expect(plaza.advisors ?? []).toEqual([])
+    expect(plaza.priority).toBe('normal')
+    expect(plaza.voteGoals).toMatchObject({ good: null, regular: null, minimum: null })
+    expect(plaza.strengths ?? []).toEqual([])
+    expect(plaza.risks ?? []).toEqual([])
+    expect(plaza.nextSteps ?? null).toBeNull()
+    expect(plaza.lastUpdateAt ?? null).toBeNull()
   })
 
   it('tracks admin users and ordinary consents created through the fixture payload', async () => {
@@ -183,17 +263,24 @@ describe('campaign integration fixtures', () => {
     })
   })
 
-  it('preserves unrelated sentinel rows', async () => {
-    const sentinel = await payload.create({
+  // Fixed sentinel phones can survive an aborted previous run — reuse them.
+  const findOrCreateSentinelContact = async (name: string, phone: string) => {
+    const existing = await payload.find({
       collection: 'contact',
-      data: {
-        name: 'Sentinela não pertencente',
-        phone: '71900000001',
-        state: 'BA',
-        city: 'Salvador',
-      },
+      where: { phone: { equals: phone } },
+      depth: 0,
+      limit: 1,
+    })
+    if (existing.docs[0]) return existing.docs[0]
+    return payload.create({
+      collection: 'contact',
+      data: { name, phone, state: 'BA', city: 'Salvador' },
       depth: 0,
     })
+  }
+
+  it('preserves unrelated sentinel rows', async () => {
+    const sentinel = await findOrCreateSentinelContact('Sentinela não pertencente', '71900000001')
 
     try {
       await withCampaignFixtures(payload, async (fixtures) => {
@@ -206,25 +293,25 @@ describe('campaign integration fixtures', () => {
   })
 
   it('preserves a pre-existing contact reused by an owned leadership', async () => {
-    const sentinel = await payload.create({
-      collection: 'contact',
-      data: {
-        name: 'Contato existente reutilizado',
-        phone: '71900000002',
-        state: 'BA',
-        city: 'Salvador',
-      },
+    const sentinel = await findOrCreateSentinelContact(
+      'Contato existente reutilizado',
+      '71900000002',
+    )
+    // Leftover leadership from an aborted run would violate the unique contact.
+    await payload.delete({
+      collection: 'leadership',
+      where: { contact: { equals: sentinel.id } },
       depth: 0,
     })
 
     try {
       await withCampaignFixtures(payload, async (fixtures) => {
-        const general = await fixtures.createCampaignUser('geral')
-        const nucleus = await fixtures.createNucleus()
+        const coordinator = await fixtures.createCampaignUser('coordinator')
+        const plaza = await fixtures.getPlaza()
         await fixtures.createLeadership({
           contact: sentinel,
-          nucleus,
-          createdBy: general,
+          plazas: [plaza.id],
+          createdBy: coordinator,
         })
       })
       expect(await exists('contact', sentinel.id)).toBe(true)
@@ -265,15 +352,18 @@ describe('campaign integration fixtures', () => {
     }
   })
 
-  it('isolates two builders running in parallel', async () => {
+  it('hands out distinct seeded plazas to isolated parallel builders', async () => {
     const first = createCampaignFixtures(payload)
     const second = createCampaignFixtures(payload)
-    const [firstContact, secondContact] = await Promise.all([
+    const [firstPlaza, secondPlaza, firstContact, secondContact] = await Promise.all([
+      first.getPlaza(),
+      second.getPlaza(),
       first.createContact(),
       second.createContact(),
     ])
 
     expect(first.runID).not.toBe(second.runID)
+    expect(firstPlaza.id).not.toBe(secondPlaza.id)
     await first.cleanup()
     expect(await exists('contact', firstContact.id)).toBe(false)
     expect(await exists('contact', secondContact.id)).toBe(true)
@@ -283,11 +373,14 @@ describe('campaign integration fixtures', () => {
 
   it('makes cleanup idempotent and leaves zero owned rows', async () => {
     const fixtures = createCampaignFixtures(payload)
-    await fixtures.createCampaignUser('geral')
-    await fixtures.createNucleus()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const plaza = await fixtures.getPlaza()
+    await fixtures.assignPlazaAdvisors(plaza, [coordinator])
     await fixtures.cleanup()
     await fixtures.cleanup()
 
     await expect(fixtures.expectNoOwnedRows()).resolves.toBeUndefined()
+    const persistedPlaza = await payload.findByID({ collection: 'plaza', id: plaza.id, depth: 0 })
+    expect(persistedPlaza.advisors ?? []).toEqual([])
   })
 })

@@ -53,19 +53,19 @@ describe('supporterListFilters', () => {
     })
   })
 
-  it('applies vote intention, city, and nucleus filters in both adapters', () => {
+  it('applies vote intention, city, and plaza filters in both adapters', () => {
     const state = {
       page: 1,
       voteIntention: 'indeciso' as const,
       city: 'Salvador',
-      nucleus: 42,
+      plaza: 42,
     }
 
     expect(toPayloadWhere(state)).toEqual({
       and: [
         { voteIntention: { equals: 'indeciso' } },
         { 'contact.city': { equals: 'Salvador' } },
-        { nucleus: { equals: 42 } },
+        { plaza: { equals: 42 } },
       ],
     })
 

@@ -8,12 +8,14 @@ import {
 } from '@/app/(campaign)/campanha/(app)/planos/contactSearchActions'
 import { updateActionPlanFormAction } from '@/app/(campaign)/campanha/(app)/planos/formActions'
 import { ActionPlanForm } from '@/components/campaign/ActionPlanForm'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
   ActionPlanNotFoundError,
   getActionPlanEditPageData,
 } from '@/utilities/actionPlanPageData'
-import { getEligibleNucleusCoordinatorOptions } from '@/utilities/nucleusCoordinatorOptions'
+import { loadOrganizationOptions, loadPlazaOptions } from '@/utilities/campaignRelationOptions'
+import { getEligibleAdvisorOptions } from '@/utilities/plazaViewModels'
 
 type EditActionPlanPageProps = {
   params: Promise<{ slug: string }>
@@ -27,15 +29,18 @@ export default async function EditActionPlanPage({ params }: EditActionPlanPageP
   ])
 
   if (!user) redirect('/campanha/login')
-  if (user.role === 'lideranca') redirect('/campanha/planos')
+  if (!isCampaignStaff(user)) redirect('/campanha/planos')
   if (!slug) notFound()
 
-  const [view, coordinators] = await Promise.all([
+  const canManageAdvisors = user.role === 'coordinator'
+  const [view, plazaOptions, organizationOptions, advisorOptions] = await Promise.all([
     getActionPlanEditPageData(payload, user, slug).catch((error) => {
       if (error instanceof ActionPlanNotFoundError) notFound()
       throw error
     }),
-    getEligibleNucleusCoordinatorOptions(payload, user),
+    loadPlazaOptions(payload, user),
+    loadOrganizationOptions(payload, user),
+    canManageAdvisors ? getEligibleAdvisorOptions(payload, user) : Promise.resolve([]),
   ])
 
   return (
@@ -50,8 +55,10 @@ export default async function EditActionPlanPage({ params }: EditActionPlanPageP
       <ActionPlanForm
         action={updateActionPlanFormAction}
         plan={view}
-        coordinators={coordinators}
-        canManageCoordinators={user.role === 'geral'}
+        plazaOptions={plazaOptions}
+        organizationOptions={organizationOptions}
+        advisorOptions={advisorOptions}
+        canManageAdvisors={canManageAdvisors}
         submitLabel="Salvar alterações"
         searchContacts={searchActionPlanContactOptions}
         searchLeaderships={searchActionPlanLeadershipOptionsAction}

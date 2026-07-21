@@ -4,9 +4,9 @@ import { APIError } from 'payload'
 import {
   canCreateSupporter,
   canDeleteSupporter,
-  canManageLeadershipInternal,
+  canManageCampaignStaffField,
   canManageSupporter,
-  canReadLeadershipInternal,
+  canReadCampaignStaffField,
   canReadSupporter,
   canSetAdministrativeLeadershipField,
 } from '@/utilities/campaignAccess'
@@ -21,7 +21,7 @@ export const Supporter: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'contact',
-    defaultColumns: ['contact', 'nucleus', 'voteIntention', 'source', 'updatedAt'],
+    defaultColumns: ['contact', 'plaza', 'voteIntention', 'source', 'updatedAt'],
   },
   access: {
     create: canCreateSupporter,
@@ -37,13 +37,13 @@ export const Supporter: CollectionConfig = {
         }
 
         const contactID = relationshipId(data.contact ?? originalDoc?.contact)
-        const nucleusID = relationshipId(data.nucleus ?? originalDoc?.nucleus)
-        if (!contactID || !nucleusID) return data
+        const plazaID = relationshipId(data.plaza ?? originalDoc?.plaza)
+        if (!contactID || !plazaID) return data
 
         const existingLeadership = await req.payload.find({
           collection: 'leadership',
           where: {
-            and: [{ contact: { equals: contactID } }, { nucleus: { equals: nucleusID } }],
+            and: [{ contact: { equals: contactID } }, { plazas: { in: [plazaID] } }],
           },
           depth: 0,
           limit: 1,
@@ -54,7 +54,7 @@ export const Supporter: CollectionConfig = {
 
         if (existingLeadership.totalDocs > 0) {
           throw new APIError(
-            'Este contato já é liderança neste núcleo e não pode ser cadastrado como apoiador.',
+            'Este contato já é liderança nesta Praça e não pode ser cadastrado como apoiador.',
             409,
           )
         }
@@ -76,13 +76,13 @@ export const Supporter: CollectionConfig = {
       },
     },
     {
-      name: 'nucleus',
+      name: 'plaza',
       type: 'relationship',
-      relationTo: 'electoralNucleus',
-      label: 'Núcleo eleitoral',
+      relationTo: 'plaza',
+      label: 'Praça',
       index: true,
       access: {
-        update: canManageLeadershipInternal,
+        update: canManageCampaignStaffField,
       },
     },
     {
@@ -91,9 +91,9 @@ export const Supporter: CollectionConfig = {
       label: 'Intenção de voto',
       index: true,
       access: {
-        create: canManageLeadershipInternal,
-        read: canReadLeadershipInternal,
-        update: canManageLeadershipInternal,
+        create: canManageCampaignStaffField,
+        read: canReadCampaignStaffField,
+        update: canManageCampaignStaffField,
       },
       options: [
         { label: 'Certo', value: 'certo' },
@@ -193,9 +193,9 @@ export const Supporter: CollectionConfig = {
       label: 'Registro de consentimento externo',
       maxLength: 2000,
       access: {
-        create: canManageLeadershipInternal,
-        read: canReadLeadershipInternal,
-        update: canManageLeadershipInternal,
+        create: canManageCampaignStaffField,
+        read: canReadCampaignStaffField,
+        update: canManageCampaignStaffField,
       },
     },
     {
@@ -204,9 +204,9 @@ export const Supporter: CollectionConfig = {
       label: 'Observações internas',
       maxLength: 3000,
       access: {
-        create: canManageLeadershipInternal,
-        read: canReadLeadershipInternal,
-        update: canManageLeadershipInternal,
+        create: canManageCampaignStaffField,
+        read: canReadCampaignStaffField,
+        update: canManageCampaignStaffField,
       },
     },
     {
@@ -220,7 +220,7 @@ export const Supporter: CollectionConfig = {
       },
       access: {
         create: canSetAdministrativeLeadershipField,
-        read: canReadLeadershipInternal,
+        read: canReadCampaignStaffField,
         update: canSetAdministrativeLeadershipField,
       },
     },

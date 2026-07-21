@@ -5,19 +5,18 @@ import { readFileSync } from 'node:fs'
 import type { Payload, PayloadRequest } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { assignNucleusCoordinatorsRecord } from '@/app/(campaign)/campanha/actions/coordinatorAssignment'
+import { assignPlazaAdvisorsRecord } from '@/app/(campaign)/campanha/actions/plaza'
 import config from '@/payload.config'
 import type { CampaignUser } from '@/payload-types'
 import { CampaignUser as CampaignUserCollection } from '@/collections/CampaignUser'
 import { campaignLoginSchema } from '@/lib/schemas/campaign-login'
-import { getAccessibleNucleusIds, isCampaignGeneral } from '@/utilities/campaignAccess'
+import { getAccessiblePlazaIds, isCampaignCoordinator } from '@/utilities/campaignAccess'
 import { authenticateCampaignToken } from '@/utilities/campaignAuth'
 import {
   buildWhatsAppUrl,
   normalizeBrazilianPhone,
   sanitizeBrazilianPhoneInput,
 } from '@/utilities/phone'
-import { slugify } from '@/utilities/slug'
 import { getPayload } from 'payload'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
@@ -49,7 +48,7 @@ describe('campaign authentication foundation', () => {
     })
   })
 
-  it('defaults newly created campaign users to liderança', async () => {
+  it('defaults newly created campaign users to leader', async () => {
     const username = campaignFixtures().phone()
     const user = await payload.create({
       collection: 'campaignUser',
@@ -60,7 +59,7 @@ describe('campaign authentication foundation', () => {
       } as never,
     })
 
-    expect(user.role).toBe('lideranca')
+    expect(user.role).toBe('leader')
   })
 
   it('authenticates staff by email and leadership by normalized phone', async () => {
@@ -74,7 +73,7 @@ describe('campaign authentication foundation', () => {
         name: 'Coordenação',
         email,
         password,
-        role: 'geral',
+        role: 'coordinator',
       },
     })
     await payload.create({
@@ -83,7 +82,7 @@ describe('campaign authentication foundation', () => {
         name: 'Liderança',
         username: phone,
         password,
-        role: 'lideranca',
+        role: 'leader',
       },
     })
 
@@ -111,7 +110,7 @@ describe('campaign authentication foundation', () => {
         name: 'Senha com espaços',
         email,
         password,
-        role: 'geral',
+        role: 'coordinator',
       },
     })
 
@@ -138,11 +137,11 @@ describe('campaign authentication foundation', () => {
     const staleJwtUser = {
       id: 42,
       collection: 'campaignUser',
-      role: 'geral',
+      role: 'coordinator',
     } as CampaignUser
     const currentUser = {
       ...staleJwtUser,
-      role: 'coordenador',
+      role: 'advisor',
     } as CampaignUser
     const auth = vi.fn().mockResolvedValue({ user: staleJwtUser })
     const findByID = vi.fn().mockResolvedValue(currentUser)
@@ -158,26 +157,26 @@ describe('campaign authentication foundation', () => {
       depth: 1,
     })
     expect(result?.email).toBe('')
-    expect(result?.role).toBe('coordenador')
-    expect(isCampaignGeneral(result)).toBe(false)
+    expect(result?.role).toBe('advisor')
+    expect(isCampaignCoordinator(result)).toBe(false)
   })
 
-  it('denies management when a stale JWT still says geral after downgrade', async () => {
-    const staleGeneral = await payload.create({
+  it('denies management when a stale JWT still says coordinator after downgrade', async () => {
+    const staleCoordinator = await payload.create({
       collection: 'campaignUser',
       data: {
         name: 'Coordenação rebaixada',
         email: `${campaignFixtures().value('downgraded')}@example.com`,
         password: campaignFixtures().value('password'),
-        role: 'geral',
+        role: 'coordinator',
       },
     })
 
     await payload.update({
       collection: 'campaignUser',
-      id: staleGeneral.id,
+      id: staleCoordinator.id,
       data: {
-        role: 'coordenador',
+        role: 'advisor',
       },
     })
 
@@ -188,15 +187,15 @@ describe('campaign authentication foundation', () => {
           name: 'Criação indevida',
           email: `${campaignFixtures().value('denied')}@example.com`,
           password: campaignFixtures().value('password'),
-          role: 'geral',
+          role: 'coordinator',
         },
-        user: staleGeneral,
+        user: staleCoordinator,
         overrideAccess: false,
       }),
     ).rejects.toThrow()
   })
 
-  it.each(['geral', 'coordenador', 'lideranca'] as const)(
+  it.each(['coordinator', 'advisor', 'leader'] as const)(
     'hides identity and private auth fields from another %s user',
     async (role) => {
       const viewer = await payload.create({
@@ -214,7 +213,7 @@ describe('campaign authentication foundation', () => {
           name: 'Outra liderança',
           username: campaignFixtures().phone(),
           password: campaignFixtures().value('password'),
-          role: 'lideranca',
+          role: 'leader',
         },
       })
 
@@ -246,7 +245,7 @@ describe('campaign authentication foundation', () => {
         name: 'Liderança titular',
         username,
         password: campaignFixtures().value('password'),
-        role: 'lideranca',
+        role: 'leader',
       },
     })
 
@@ -286,18 +285,18 @@ describe('campaign authentication foundation', () => {
   })
 
   it.each([
-    { actorKind: 'admin', targetRole: 'coordenador', nucleusStatus: 'ativo' },
-    { actorKind: 'general', targetRole: 'geral', nucleusStatus: 'arquivado' },
+    { actorKind: 'admin', targetRole: 'advisor' },
+    { actorKind: 'coordinator', targetRole: 'coordinator' },
   ] as const)(
-    'blocks an assigned $targetRole downgrade from a Payload $actorKind even for an $nucleusStatus nucleus',
-    async ({ actorKind, targetRole, nucleusStatus }) => {
-      const general = await payload.create({
+    'blocks an assigned $targetRole downgrade from a Payload $actorKind while advisor of a plaza',
+    async ({ actorKind, targetRole }) => {
+      const coordinator = await payload.create({
         collection: 'campaignUser',
         data: {
           name: 'Coordenação responsável',
-          email: `${campaignFixtures().value('general')}@example.com`,
+          email: `${campaignFixtures().value('coordinator')}@example.com`,
           password: campaignFixtures().value('password'),
-          role: 'geral',
+          role: 'coordinator',
         },
       })
       const admin =
@@ -316,62 +315,50 @@ describe('campaign authentication foundation', () => {
           role: targetRole,
         },
       })
-      const nucleusName = campaignFixtures().value('Núcleo com responsável')
-      const nucleus = await payload.create({
-        collection: 'electoralNucleus',
-        data: {
-          name: nucleusName,
-          slug: slugify(nucleusName),
-          status: nucleusStatus,
-          coordinators: [target.id],
-          cities: ['Salvador'],
-          organizationKind: 'territorial',
-        },
-        depth: 0,
-      })
-      const actor = admin ?? general
+      const plaza = await campaignFixtures().getPlaza()
+      await campaignFixtures().assignPlazaAdvisors(plaza, [target])
+      const actor = admin ?? coordinator
 
       await expect(
         payload.update({
           collection: 'campaignUser',
           id: target.id,
-          data: { role: 'lideranca' },
+          data: { role: 'leader' },
           user: actor,
           overrideAccess: false,
         }),
       ).rejects.toThrow(
-        'Remova ou substitua este usuário da coordenação de todos os núcleos antes de alterar o papel para liderança.',
+        'Remova ou substitua este usuário da assessoria de todas as Praças antes de alterar o papel para liderança.',
       )
 
       if (admin) {
         await payload.update({
-          collection: 'electoralNucleus',
-          id: nucleus.id,
-          data: { coordinators: [] },
+          collection: 'plaza',
+          id: plaza.id,
+          data: { advisors: [] },
           user: admin,
           overrideAccess: false,
           depth: 0,
         })
       } else {
-        await assignNucleusCoordinatorsRecord(payload, general, {
-          slug: nucleus.slug,
-          coordinatorIds: [],
-          expectedUpdatedAt: nucleus.updatedAt,
+        await assignPlazaAdvisorsRecord(payload, coordinator, {
+          plaza: plaza.id,
+          advisors: [],
         })
       }
       const downgraded = await payload.update({
         collection: 'campaignUser',
         id: target.id,
-        data: { role: 'lideranca' },
+        data: { role: 'leader' },
         user: actor,
         overrideAccess: false,
       })
 
-      expect(downgraded.role).toBe('lideranca')
+      expect(downgraded.role).toBe('leader')
     },
   )
 
-  it.each(['coordenador', 'lideranca'] as const)(
+  it.each(['advisor', 'leader'] as const)(
     'denies campaignUser CRUD management to an ordinary %s',
     async (role) => {
       const actor = await payload.create({
@@ -389,7 +376,7 @@ describe('campaign authentication foundation', () => {
           name: 'Alvo',
           email: `${campaignFixtures().value('target')}@example.com`,
           password: campaignFixtures().value('password'),
-          role: 'lideranca',
+          role: 'leader',
         },
       })
 
@@ -438,95 +425,72 @@ describe('campaign authentication foundation', () => {
     expect(migration).toContain('RAISE EXCEPTION')
   })
 
-  it('returns only nuclei assigned to a coordinator', async () => {
-    const find = vi.fn().mockResolvedValue({
-      docs: [{ id: 7 }],
-    })
-    const req = {
-      context: {},
-      payload: {
-        collections: {
-          electoralNucleus: {},
-        },
-        find,
-      },
-    } as unknown as PayloadRequest
-    const user = {
-      id: 11,
-      collection: 'campaignUser',
-      role: 'coordenador',
-    } as CampaignUser
+  it('returns only plazas administered by an advisor', async () => {
+    const advisor = await campaignFixtures().createCampaignUser('advisor')
+    const assignedPlaza = await campaignFixtures().getPlaza()
+    const otherPlaza = await campaignFixtures().getPlaza()
+    await campaignFixtures().assignPlazaAdvisors(assignedPlaza, [advisor])
 
-    const ids = await getAccessibleNucleusIds(req, user)
+    const req = { context: {}, payload } as unknown as PayloadRequest
 
-    expect(ids).toEqual([7])
-    expect(ids).not.toContain(8)
-    expect(find).toHaveBeenCalledWith(
-      expect.objectContaining({
-        collection: 'electoralNucleus',
-        overrideAccess: true,
-        req,
-        where: {
-          coordinators: {
-            contains: user.id,
-          },
-        },
-      }),
-    )
+    const ids = await getAccessiblePlazaIds(req, advisor)
+
+    expect(ids).toEqual([assignedPlaza.id])
+    expect(ids).not.toContain(otherPlaza.id)
   })
 
-  it('uses the current role when resolving accessible nuclei', async () => {
+  it('uses the current role when resolving accessible plazas', async () => {
     const find = vi.fn().mockResolvedValue({
       docs: [{ id: 7 }],
     })
-    const staleGeneral = {
+    const staleCoordinator = {
       id: 11,
       collection: 'campaignUser',
-      role: 'geral',
+      role: 'coordinator',
     } as CampaignUser
-    const currentCoordinator = {
-      ...staleGeneral,
-      role: 'coordenador',
+    const currentAdvisor = {
+      ...staleCoordinator,
+      role: 'advisor',
     } as CampaignUser
     const req = {
       context: {},
       payload: {
         collections: {
-          electoralNucleus: {},
+          plaza: {},
         },
         find,
-        findByID: vi.fn().mockResolvedValue(currentCoordinator),
+        findByID: vi.fn().mockResolvedValue(currentAdvisor),
       },
-      user: staleGeneral,
+      user: staleCoordinator,
     } as unknown as PayloadRequest
 
-    const ids = await getAccessibleNucleusIds(req)
+    const ids = await getAccessiblePlazaIds(req)
 
     expect(ids).toEqual([7])
     expect(req.payload.findByID).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'campaignUser',
-        id: staleGeneral.id,
+        id: staleCoordinator.id,
         overrideAccess: true,
         req,
       }),
     )
     expect(find).toHaveBeenCalledWith(
       expect.objectContaining({
-        collection: 'electoralNucleus',
+        collection: 'plaza',
         req,
         where: {
-          coordinators: {
-            contains: staleGeneral.id,
+          advisors: {
+            contains: staleCoordinator.id,
           },
         },
       }),
     )
   })
 
-  it('returns only engaged nuclei for a leadership user and propagates req', async () => {
+  it('returns only engaged plazas for a leader and propagates req', async () => {
     const find = vi.fn().mockResolvedValue({
-      docs: [{ nucleus: 7 }],
+      docs: [{ id: 3, plazas: [7], organizations: [] }],
     })
     const req = {
       context: {},
@@ -540,10 +504,10 @@ describe('campaign authentication foundation', () => {
     const user = {
       id: 12,
       collection: 'campaignUser',
-      role: 'lideranca',
+      role: 'leader',
     } as CampaignUser
 
-    const ids = await getAccessibleNucleusIds(req, user)
+    const ids = await getAccessiblePlazaIds(req, user)
 
     expect(ids).toEqual([7])
     expect(find).toHaveBeenCalledWith(

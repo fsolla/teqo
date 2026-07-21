@@ -25,17 +25,14 @@ const campaignFixtures = installCampaignFixtures({
   },
 })
 
-const validPlanInput = {
-  get title() {
-    return campaignFixtures().value('Caminhada Centro')
-  },
+const validPlanInput = (plazaId: number) => ({
+  title: campaignFixtures().value('Caminhada Centro'),
   kind: 'caminhada' as const,
   status: 'planejado' as const,
   startAt: new Date(Date.now() + 86_400_000).toISOString(),
-  regions: ['Metropolitano de Salvador'],
-  cities: ['Salvador'],
+  plaza: plazaId,
   locality: 'Centro',
-}
+})
 
 describe('action plan domain', () => {
   beforeAll(async () => {
@@ -45,7 +42,7 @@ describe('action plan domain', () => {
   it('requires startAt outside rascunho and allows drafts without it', () => {
     expect(
       actionPlanCreateSchema.safeParse({
-        ...validPlanInput,
+        ...validPlanInput(1),
         status: 'rascunho',
         startAt: undefined,
       }).success,
@@ -53,7 +50,7 @@ describe('action plan domain', () => {
 
     expect(
       actionPlanCreateSchema.safeParse({
-        ...validPlanInput,
+        ...validPlanInput(1),
         status: 'planejado',
         startAt: undefined,
       }).success,
@@ -68,9 +65,9 @@ describe('action plan domain', () => {
     ).toBe(false)
   })
 
-  it('requires territory geography on create', () => {
+  it('requires a plaza on create', () => {
     const result = actionPlanCreateSchema.safeParse({
-      title: validPlanInput.title,
+      title: campaignFixtures().value('Plano sem Praça'),
       kind: 'caminhada',
       status: 'rascunho',
     })
@@ -79,135 +76,202 @@ describe('action plan domain', () => {
 
   it('scopes create/read/update by campaign role', async () => {
     const fixtures = campaignFixtures()
-    const geral = await fixtures.createCampaignUser('geral')
-    const coordinator = await fixtures.createCampaignUser('coordenador')
-    const otherCoordinator = await fixtures.createCampaignUser('coordenador')
-    const leadershipUser = await fixtures.createCampaignUser('lideranca')
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const otherAdvisor = await fixtures.createCampaignUser('advisor')
+    const leaderAccount = await fixtures.createCampaignUser('leader')
     const contact = await fixtures.createContact()
-    const nucleus = await fixtures.createNucleus({
-      coordinators: [coordinator.id],
-    })
+    const plaza = await fixtures.getPlaza()
+    await fixtures.assignPlazaAdvisors(plaza, [advisor])
     const leadership = await fixtures.createLeadership({
       contact: contact.id,
-      nucleus: nucleus.id,
-      user: leadershipUser.id,
+      plazas: [plaza.id],
+      user: leaderAccount.id,
       supportStatus: 'engajado',
     })
 
-    const createAsGeral = await canCreateActionPlan({
-      req: { user: geral, payload, context: {} } as never,
-    })
     const createAsCoordinator = await canCreateActionPlan({
       req: { user: coordinator, payload, context: {} } as never,
     })
-    const createAsLeadership = await canCreateActionPlan({
-      req: { user: leadershipUser, payload, context: {} } as never,
+    const createAsAdvisor = await canCreateActionPlan({
+      req: { user: advisor, payload, context: {} } as never,
     })
-    expect(createAsGeral).toBe(true)
+    const createAsLeader = await canCreateActionPlan({
+      req: { user: leaderAccount, payload, context: {} } as never,
+    })
     expect(createAsCoordinator).toBe(true)
-    expect(createAsLeadership).toBe(false)
+    expect(createAsAdvisor).toBe(true)
+    expect(createAsLeader).toBe(false)
 
     const plan = await payload.create({
       collection: 'actionPlan',
       data: {
-        ...validPlanInput,
-        coordinators: [coordinator.id],
+        ...validPlanInput(plaza.id),
+        advisors: [advisor.id],
         leadership: leadership.id,
         responsible: contact.id,
-        createdBy: geral.id,
+        createdBy: coordinator.id,
       } as never,
       overrideAccess: true,
     })
     fixtures.own('actionPlan', plan.id)
 
-    const geralRead = await canReadActionPlan({
-      req: { user: geral, payload, context: {} } as never,
-    })
-    expect(geralRead).toBe(true)
-
     const coordinatorRead = await canReadActionPlan({
       req: { user: coordinator, payload, context: {} } as never,
     })
-    expect(coordinatorRead).toEqual({
-      coordinators: { contains: coordinator.id },
+    expect(coordinatorRead).toBe(true)
+
+    const advisorRead = await canReadActionPlan({
+      req: { user: advisor, payload, context: {} } as never,
+    })
+    expect(advisorRead).toEqual({
+      or: [
+        { advisors: { contains: advisor.id } },
+        { plaza: { in: [plaza.id] } },
+      ],
     })
 
-    const otherCoordinatorRead = await canReadActionPlan({
-      req: { user: otherCoordinator, payload, context: {} } as never,
+    const otherAdvisorRead = await canReadActionPlan({
+      req: { user: otherAdvisor, payload, context: {} } as never,
     })
-    expect(otherCoordinatorRead).toEqual({
-      coordinators: { contains: otherCoordinator.id },
+    expect(otherAdvisorRead).toEqual({
+      or: [
+        { advisors: { contains: otherAdvisor.id } },
+        { plaza: { in: [] } },
+      ],
     })
 
-    const leadershipRead = await canReadActionPlan({
-      req: { user: leadershipUser, payload, context: {} } as never,
+    const leaderRead = await canReadActionPlan({
+      req: { user: leaderAccount, payload, context: {} } as never,
     })
-    expect(leadershipRead).toEqual({
+    expect(leaderRead).toEqual({
       leadership: { in: [leadership.id] },
     })
 
     const leadershipIds = await getAccessibleLeadershipIds(
-      { user: leadershipUser, payload, context: {} } as never,
-      leadershipUser,
+      { user: leaderAccount, payload, context: {} } as never,
+      leaderAccount,
     )
     expect(leadershipIds).toEqual([leadership.id])
 
-    const coordinatorUpdate = await canUpdateActionPlan({
-      req: { user: coordinator, payload, context: {} } as never,
+    const advisorUpdate = await canUpdateActionPlan({
+      req: { user: advisor, payload, context: {} } as never,
     })
-    expect(coordinatorUpdate).toEqual({
-      coordinators: { contains: coordinator.id },
+    expect(advisorUpdate).toEqual({
+      or: [
+        { advisors: { contains: advisor.id } },
+        { plaza: { in: [plaza.id] } },
+      ],
     })
 
-    const visibleToCoordinator = await payload.find({
+    const visibleToAdvisor = await payload.find({
       collection: 'actionPlan',
       where: { id: { equals: plan.id } },
-      user: coordinator,
+      user: advisor,
       overrideAccess: false,
       depth: 0,
     })
-    expect(visibleToCoordinator.totalDocs).toBe(1)
+    expect(visibleToAdvisor.totalDocs).toBe(1)
 
     const hiddenFromOther = await payload.find({
       collection: 'actionPlan',
       where: { id: { equals: plan.id } },
-      user: otherCoordinator,
+      user: otherAdvisor,
       overrideAccess: false,
       depth: 0,
     })
     expect(hiddenFromOther.totalDocs).toBe(0)
 
-    const visibleToLeadership = await payload.find({
+    const visibleToLeader = await payload.find({
       collection: 'actionPlan',
       where: { id: { equals: plan.id } },
-      user: leadershipUser,
+      user: leaderAccount,
       overrideAccess: false,
       depth: 0,
     })
-    expect(visibleToLeadership.totalDocs).toBe(1)
+    expect(visibleToLeader.totalDocs).toBe(1)
   })
 
-  it('lets leadership toggle task done but rejects title edits', async () => {
+  it('auto-includes the creating advisor in advisors', async () => {
     const fixtures = campaignFixtures()
-    const coordinator = await fixtures.createCampaignUser('coordenador')
-    const leadershipUser = await fixtures.createCampaignUser('lideranca')
-    const contact = await fixtures.createContact()
-    const nucleus = await fixtures.createNucleus({
-      coordinators: [coordinator.id],
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const plaza = await fixtures.getPlaza()
+    await fixtures.assignPlazaAdvisors(plaza, [advisor])
+
+    const plan = await payload.create({
+      collection: 'actionPlan',
+      data: {
+        ...validPlanInput(plaza.id),
+        title: fixtures.value('Plano do assessor'),
+      } as never,
+      user: advisor,
+      overrideAccess: false,
     })
+    fixtures.own('actionPlan', plan.id)
+
+    const advisorIds = (plan.advisors ?? []).map((value) =>
+      typeof value === 'number' ? value : value.id,
+    )
+    expect(advisorIds).toEqual([advisor.id])
+    expect(
+      typeof plan.createdBy === 'number' ? plan.createdBy : plan.createdBy?.id,
+    ).toBe(advisor.id)
+  })
+
+  it('enforces schedule validation in the collection hook', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const plaza = await fixtures.getPlaza()
+
+    await expect(
+      payload.create({
+        collection: 'actionPlan',
+        data: {
+          ...validPlanInput(plaza.id),
+          title: fixtures.value('Plano sem data'),
+          startAt: null,
+          createdBy: coordinator.id,
+        } as never,
+        overrideAccess: true,
+      }),
+    ).rejects.toThrow('Informe a data e horário de início ao planejar ou confirmar o plano.')
+
+    const start = new Date(Date.now() + 86_400_000)
+    await expect(
+      payload.create({
+        collection: 'actionPlan',
+        data: {
+          ...validPlanInput(plaza.id),
+          title: fixtures.value('Plano com término invertido'),
+          startAt: start.toISOString(),
+          endAt: new Date(start.getTime() - 3_600_000).toISOString(),
+          createdBy: coordinator.id,
+        } as never,
+        overrideAccess: true,
+      }),
+    ).rejects.toThrow('O horário de término deve ser posterior ao de início.')
+  })
+
+  it('lets a leader toggle task done but rejects title edits', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const leaderAccount = await fixtures.createCampaignUser('leader')
+    const contact = await fixtures.createContact()
+    const plaza = await fixtures.getPlaza()
+    await fixtures.assignPlazaAdvisors(plaza, [advisor])
     const leadership = await fixtures.createLeadership({
       contact: contact.id,
-      nucleus: nucleus.id,
-      user: leadershipUser.id,
+      plazas: [plaza.id],
+      user: leaderAccount.id,
       supportStatus: 'engajado',
     })
 
     const plan = await payload.create({
       collection: 'actionPlan',
       data: {
-        ...validPlanInput,
+        ...validPlanInput(plaza.id),
         title: fixtures.value('Plano Tarefas'),
-        coordinators: [coordinator.id],
+        advisors: [advisor.id],
         leadership: leadership.id,
         tasks: [{ title: 'Levar faixas', done: false }],
       } as never,
@@ -221,7 +285,7 @@ describe('action plan domain', () => {
       data: {
         tasks: [{ title: 'Levar faixas', done: true }],
       } as never,
-      user: leadershipUser,
+      user: leaderAccount,
       overrideAccess: false,
     })
     expect(toggled.tasks?.[0]?.done).toBe(true)
@@ -234,7 +298,7 @@ describe('action plan domain', () => {
         data: {
           title: 'Título alterado pela liderança',
         } as never,
-        user: leadershipUser,
+        user: leaderAccount,
         overrideAccess: false,
       }),
     ).rejects.toThrow(/só podem marcar tarefas|não pode ser alterado|Lideranças/i)

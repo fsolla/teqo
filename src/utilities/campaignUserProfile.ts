@@ -7,9 +7,9 @@ export const CAMPAIGN_AVATAR_MAX_SIZE_MESSAGE = 'A imagem deve ter no máximo 2 
 export const CAMPAIGN_AVATAR_EMPTY_FILE_MESSAGE = 'O arquivo enviado está vazio.'
 
 export const campaignRoleLabels: Record<CampaignUser['role'], string> = {
-  geral: 'Coordenação geral',
-  coordenador: 'Coordenador',
-  lideranca: 'Liderança',
+  coordinator: 'Coordenador Geral',
+  advisor: 'Assessor',
+  leader: 'Liderança',
 }
 
 export type CampaignUserShellView = {

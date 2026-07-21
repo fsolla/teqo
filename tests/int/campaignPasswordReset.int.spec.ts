@@ -32,7 +32,7 @@ describe('campaign password reset and change', () => {
         name: 'Reset target',
         email,
         password,
-        role: 'geral',
+        role: 'coordinator',
       },
     })
 
@@ -73,7 +73,7 @@ describe('campaign password reset and change', () => {
         name: 'Change password target',
         email,
         password,
-        role: 'geral',
+        role: 'coordinator',
       },
     })
 

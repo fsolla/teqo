@@ -8,10 +8,8 @@ import { actionPlanKindLabels } from '@/lib/schemas/actionPlan'
 import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 import type { ActionPlanListViewModel } from '@/utilities/actionPlanViewModels'
 
-const formatWhen = (plan: ActionPlanListViewModel): string => {
-  if (!plan.startAt) return 'Data a definir'
-  return plan.city ? `${formatBahiaDateTimeLabel(plan.startAt)} · ${plan.city}` : formatBahiaDateTimeLabel(plan.startAt)
-}
+const formatWhen = (plan: ActionPlanListViewModel): string =>
+  plan.startAt ? formatBahiaDateTimeLabel(plan.startAt) : 'Data a definir'
 
 export const ActionPlanCard = ({ plan }: { plan: ActionPlanListViewModel }) => (
   <Card>
@@ -19,6 +17,7 @@ export const ActionPlanCard = ({ plan }: { plan: ActionPlanListViewModel }) => (
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{actionPlanKindLabels[plan.kind]}</Badge>
         <ActionPlanStatusBadge status={plan.status} />
+        {plan.deputyPresent ? <Badge>Deputado presente</Badge> : null}
       </div>
       <CardTitle>
         <Link
@@ -34,10 +33,10 @@ export const ActionPlanCard = ({ plan }: { plan: ActionPlanListViewModel }) => (
         <CalendarIcon aria-hidden="true" className="size-4 shrink-0" />
         <span>{formatWhen(plan)}</span>
       </div>
-      {plan.territoryLabel ? (
+      {plan.locationLabel ? (
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <MapPinIcon aria-hidden="true" className="size-4 shrink-0" />
-          <Badge variant="outline">{plan.territoryLabel}</Badge>
+          <Badge variant="outline">{plan.locationLabel}</Badge>
         </div>
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-sm">

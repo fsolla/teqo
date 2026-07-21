@@ -40,7 +40,7 @@ export const UpcomingActionPlansCard = ({
                 <Badge variant="secondary">{actionPlanKindLabels[plan.kind]}</Badge>
                 <span className="text-sm text-muted-foreground">
                   {formatBahiaDateTimeLabel(plan.startAt)}
-                  {plan.city ? ` · ${plan.city}` : ''}
+                  {plan.plazaName ? ` · ${plan.plazaName}` : ''}
                 </span>
               </div>
               <Link

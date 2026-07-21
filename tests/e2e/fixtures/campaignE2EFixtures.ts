@@ -4,41 +4,53 @@ import { sql } from '@payloadcms/db-postgres'
 import type { Page } from '@playwright/test'
 import { getPayload, type CollectionSlug, type Payload, type PayloadRequest } from 'payload'
 
+import { plazaCatalog } from '../../../src/lib/plazaCatalog.js'
 import config from '../../../src/payload.config.js'
 import { withPayloadTransaction } from '../../../src/utilities/payloadTransaction.js'
 import { assertTestDatabase } from '../../helpers/assertTestDatabase.js'
 import { withInviteConsent } from '../../helpers/testDatabaseLease.js'
-import { expect, test as base } from './e2eTest.js'
+import { test as base, expect } from './e2eTest.js'
 
 const defaultBaseURL = 'http://localhost:3000'
 type TransactionRequest = Pick<PayloadRequest, 'transactionID'>
 type OwnedCollection =
   | 'users'
   | 'campaignUser'
-  | 'electoralNucleus'
+  | 'organization'
   | 'contact'
   | 'leadership'
-  | 'nucleusUpdate'
+  | 'votePledge'
+  | 'campaignDemand'
+  | 'plazaUpdate'
   | 'campaignInvite'
   | 'consent'
   | 'supporter'
 
 const deletionOrder: OwnedCollection[] = [
   'campaignInvite',
-  'nucleusUpdate',
+  'votePledge',
+  'campaignDemand',
+  'plazaUpdate',
   'leadership',
   'supporter',
-  'electoralNucleus',
+  'organization',
   'contact',
   'campaignUser',
   'consent',
   'users',
 ]
 
+/**
+ * Plazas are SEEDED reference rows (436 from the static catalog): E2E tests
+ * never create/delete them. `claimPlaza` hands out a globally unique seeded
+ * plaza per call (Postgres sequence — safe across parallel workers) and
+ * cleanup resets the operational fields the test may have touched.
+ */
 class CampaignE2EOwnership {
   readonly payload: Payload
   readonly runID = randomUUID()
   private counter = 0
+  private readonly touchedPlazas = new Set<number>()
   private readonly owned = new Map<OwnedCollection, Set<number>>(
     deletionOrder.map((collection) => [collection, new Set<number>()]),
   )
@@ -73,6 +85,35 @@ class CampaignE2EOwnership {
     return `719${suffix}`
   }
 
+  async claimPlaza(): Promise<{ id: number; name: string; slug: string }> {
+    await this.rootPayload.db.drizzle
+      .execute(sql.raw(`CREATE SEQUENCE IF NOT EXISTS "campaign_fixture_plaza_alloc"`))
+      .catch((error: unknown) => {
+        if ((error as { code?: string }).code === '23505') return
+        throw error
+      })
+    const result = await this.rootPayload.db.drizzle.execute(
+      sql.raw(`SELECT nextval('"campaign_fixture_plaza_alloc"') AS "value"`),
+    )
+    const index = Number((result.rows[0] as { value: string | number }).value) % plazaCatalog.length
+    const slug = plazaCatalog[index]!.slug
+    const found = await this.rootPayload.find({
+      collection: 'plaza',
+      where: { slug: { equals: slug } },
+      depth: 0,
+      limit: 1,
+      pagination: false,
+    })
+    const plaza = found.docs[0]
+    if (!plaza) throw new Error(`Seeded plaza "${slug}" not found — run migrations first.`)
+    this.touchedPlazas.add(plaza.id)
+    return { id: plaza.id, name: plaza.name, slug: plaza.slug }
+  }
+
+  touchPlaza(id: number): void {
+    this.touchedPlazas.add(id)
+  }
+
   private isOwnedCollection(collection: CollectionSlug): collection is OwnedCollection {
     return this.owned.has(collection as OwnedCollection)
   }
@@ -86,7 +127,7 @@ class CampaignE2EOwnership {
   }
 
   private async discoverOwnedRows(): Promise<void> {
-    const [users, campaignUsers, contacts, nuclei, consents] = await Promise.all([
+    const [users, campaignUsers, contacts, organizations, consents] = await Promise.all([
       this.rootPayload.find({
         collection: 'users',
         where: { email: { contains: this.runID } },
@@ -114,7 +155,7 @@ class CampaignE2EOwnership {
         pagination: false,
       }),
       this.rootPayload.find({
-        collection: 'electoralNucleus',
+        collection: 'organization',
         where: {
           or: [{ name: { contains: this.runID } }, { slug: { contains: this.runID } }],
         },
@@ -131,11 +172,10 @@ class CampaignE2EOwnership {
     for (const user of users.docs) this.own('users', user.id)
     for (const user of campaignUsers.docs) this.own('campaignUser', user.id)
     for (const contact of contacts.docs) this.own('contact', contact.id)
-    for (const nucleus of nuclei.docs) this.own('electoralNucleus', nucleus.id)
+    for (const organization of organizations.docs) this.own('organization', organization.id)
     for (const consent of consents.docs) this.own('consent', consent.id)
 
     const userIDs = this.ids('campaignUser')
-    const nucleusIDs = this.ids('electoralNucleus')
     const contactIDs = this.ids('contact')
     const leaderships = await this.rootPayload.find({
       collection: 'leadership',
@@ -143,7 +183,6 @@ class CampaignE2EOwnership {
         or: [
           ...(userIDs.length ? [{ createdBy: { in: userIDs } }] : []),
           ...(userIDs.length ? [{ user: { in: userIDs } }] : []),
-          ...(nucleusIDs.length ? [{ nucleus: { in: nucleusIDs } }] : []),
           ...(contactIDs.length ? [{ contact: { in: contactIDs } }] : []),
         ],
       },
@@ -154,35 +193,54 @@ class CampaignE2EOwnership {
 
     const leadershipIDs = this.ids('leadership')
     if (leadershipIDs.length) {
-      const invites = await this.rootPayload.find({
-        collection: 'campaignInvite',
-        where: { leadership: { in: leadershipIDs } },
-        depth: 0,
-        pagination: false,
-      })
+      const [invites, pledges, demands] = await Promise.all([
+        this.rootPayload.find({
+          collection: 'campaignInvite',
+          where: { leadership: { in: leadershipIDs } },
+          depth: 0,
+          pagination: false,
+        }),
+        this.rootPayload.find({
+          collection: 'votePledge',
+          where: { leadership: { in: leadershipIDs } },
+          depth: 0,
+          pagination: false,
+        }),
+        this.rootPayload.find({
+          collection: 'campaignDemand',
+          where: { leadership: { in: leadershipIDs } },
+          depth: 0,
+          pagination: false,
+        }),
+      ])
       for (const invite of invites.docs) this.own('campaignInvite', invite.id)
+      for (const pledge of pledges.docs) this.own('votePledge', pledge.id)
+      for (const demand of demands.docs) this.own('campaignDemand', demand.id)
     }
-    if (nucleusIDs.length || userIDs.length) {
-      const updates = await this.rootPayload.find({
-        collection: 'nucleusUpdate',
-        where: {
-          or: [
-            ...(nucleusIDs.length ? [{ nucleus: { in: nucleusIDs } }] : []),
-            ...(userIDs.length ? [{ author: { in: userIDs } }] : []),
-          ],
-        },
-        depth: 0,
-        pagination: false,
-      })
-      for (const update of updates.docs) this.own('nucleusUpdate', update.id)
+    if (userIDs.length) {
+      const [updates, demands] = await Promise.all([
+        this.rootPayload.find({
+          collection: 'plazaUpdate',
+          where: { author: { in: userIDs } },
+          depth: 0,
+          pagination: false,
+        }),
+        this.rootPayload.find({
+          collection: 'campaignDemand',
+          where: { createdBy: { in: userIDs } },
+          depth: 0,
+          pagination: false,
+        }),
+      ])
+      for (const update of updates.docs) this.own('plazaUpdate', update.id)
+      for (const demand of demands.docs) this.own('campaignDemand', demand.id)
     }
-    if (contactIDs.length || nucleusIDs.length || userIDs.length) {
+    if (contactIDs.length || userIDs.length) {
       const supporters = await this.rootPayload.find({
         collection: 'supporter',
         where: {
           or: [
             ...(contactIDs.length ? [{ contact: { in: contactIDs } }] : []),
-            ...(nucleusIDs.length ? [{ nucleus: { in: nucleusIDs } }] : []),
             ...(userIDs.length ? [{ createdBy: { in: userIDs } }] : []),
           ],
         },
@@ -227,6 +285,25 @@ class CampaignE2EOwnership {
           throw new AggregateError(result.errors, `Failed to clean owned ${collection} rows.`)
         }
       }
+      for (const plazaID of this.touchedPlazas) {
+        await this.rootPayload.update({
+          collection: 'plaza',
+          id: plazaID,
+          data: {
+            advisors: [],
+            priority: 'normal',
+            voteGoals: { good: null, regular: null, minimum: null },
+            politicalTrend: { status: null, note: null, recordedBy: null, recordedAt: null },
+            strengths: [],
+            risks: [],
+            dobradinhaNotes: null,
+            nextSteps: null,
+            lastUpdateAt: null,
+          },
+          depth: 0,
+          req,
+        })
+      }
     })
   }
 
@@ -260,39 +337,12 @@ type CampaignE2ETestFixtures = {
   campaign: CampaignE2EFixture
 }
 
-const removeSentinel = async (payload: Payload, sentinelID: number): Promise<void> => {
-  await withPayloadTransaction(payload, async ({ req }) => {
-    const result = await payload.delete({
-      collection: 'electoralNucleus',
-      where: { id: { equals: sentinelID } },
-      depth: 0,
-      req,
-    })
-    if (result.errors.length) {
-      throw new AggregateError(result.errors, 'Failed to remove the E2E ownership sentinel.')
-    }
-  })
-}
-
 export const test = base.extend<CampaignE2ETestFixtures>({
   campaign: async ({}, runFixture) => {
     assertTestDatabase(process.env.DATABASE_URL)
     const payload = await getPayload({ config })
     const fixtures = new CampaignE2EOwnership(payload)
     const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL
-    const sentinelName = `Sentinela E2E não relacionada ${randomUUID()}`
-    const sentinel = await withPayloadTransaction(payload, ({ req }) =>
-      payload.create({
-        collection: 'electoralNucleus',
-        data: {
-          name: sentinelName,
-          cities: ['Salvador'],
-          organizationKind: 'territorial',
-        } as never,
-        depth: 0,
-        req,
-      }),
-    )
 
     let testFailure: unknown
     try {
@@ -321,25 +371,8 @@ export const test = base.extend<CampaignE2ETestFixtures>({
         assertTestDatabase(process.env.DATABASE_URL)
         await fixtures.cleanup()
         await fixtures.expectNoOwnedRows()
-        const preserved = await payload.findByID({
-          collection: 'electoralNucleus',
-          id: sentinel.id,
-          depth: 0,
-        })
-        expect(preserved.name).toBe(sentinelName)
       } catch (error) {
         cleanupFailure = error
-      }
-      try {
-        await removeSentinel(payload, sentinel.id)
-      } catch (error) {
-        cleanupFailure =
-          cleanupFailure === undefined
-            ? error
-            : new AggregateError(
-                [cleanupFailure, error],
-                'Campaign E2E cleanup and sentinel removal both failed.',
-              )
       }
       if (cleanupFailure !== undefined) {
         if (testFailure !== undefined) {

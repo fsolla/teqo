@@ -1,21 +1,13 @@
 import type { Where } from 'payload'
 
-import {
-  bahiaIdentityTerritories,
-  bahiaMunicipalities,
-  type BahiaIdentityTerritory,
-  territoryForCity,
-} from '@/lib/bahiaTerritories'
 import { actionPlanKinds, actionPlanStatuses } from '@/lib/schemas/actionPlan'
 import {
   buildListHref,
   firstValue,
-  normalizedText,
   resolveListUrl,
   strictDecimalInteger,
   type RawSearchParams as CampaignListRawSearchParams,
 } from '@/utilities/campaignListUrl'
-import { normalizeSearchPhrase } from '@/utilities/wordStartFilter'
 
 export const actionPlanPageSize = 25
 
@@ -37,31 +29,14 @@ export type ActionPlanListState = {
   tab: ActionPlanTab
   kind?: ActionPlanKind
   status?: ActionPlanStatus
-  region?: BahiaIdentityTerritory
-  city?: string
+  plaza?: number
 }
 
 type RawSearchParams = CampaignListRawSearchParams
 
-export const actionPlanListParamNames = ['tab', 'kind', 'status', 'region', 'city', 'page'] as const
+export const actionPlanListParamNames = ['tab', 'kind', 'status', 'plaza', 'page'] as const
 
 const actionPlanListParamNameSet = new Set<string>(actionPlanListParamNames)
-
-const canonicalTerritoryBySearchValue = new Map(
-  bahiaIdentityTerritories.map((territory) => [normalizeSearchPhrase(territory), territory]),
-)
-
-const canonicalMunicipalityBySearchValue = new Map(
-  bahiaMunicipalities.map((city) => [normalizeSearchPhrase(city), city]),
-)
-
-const canonicalOfficialValue = <Value extends string>(
-  value: string | undefined,
-  canonicalValues: ReadonlyMap<string, Value>,
-): Value | undefined => {
-  const normalized = normalizedText(value)
-  return normalized ? canonicalValues.get(normalizeSearchPhrase(normalized)) : undefined
-}
 
 const isActionPlanTab = (value: string | undefined): value is ActionPlanTab =>
   actionPlanTabs.includes(value as ActionPlanTab)
@@ -80,23 +55,14 @@ export const parseActionPlanListParams = (params: RawSearchParams): ActionPlanLi
   const kind = isActionPlanKind(rawKind) ? rawKind : undefined
   const rawStatus = tab === 'todos' ? firstValue(params.status) : undefined
   const status = isActionPlanStatus(rawStatus) ? rawStatus : undefined
-  const region = canonicalOfficialValue(firstValue(params.region), canonicalTerritoryBySearchValue)
-  const canonicalCity = canonicalOfficialValue(
-    firstValue(params.city),
-    canonicalMunicipalityBySearchValue,
-  )
-  const city =
-    canonicalCity && (!region || territoryForCity(canonicalCity) === region)
-      ? canonicalCity
-      : undefined
+  const plaza = strictDecimalInteger(firstValue(params.plaza))
 
   return {
     page: rawPage ?? 1,
     tab,
     ...(kind ? { kind } : {}),
     ...(status ? { status } : {}),
-    ...(region ? { region } : {}),
-    ...(city ? { city } : {}),
+    ...(plaza ? { plaza } : {}),
   }
 }
 
@@ -104,8 +70,7 @@ export const buildActionPlanListWhere = (state: ActionPlanListState, now: Date):
   const filters: Where[] = []
 
   if (state.kind) filters.push({ kind: { equals: state.kind } })
-  if (state.region) filters.push({ regions: { equals: state.region } })
-  if (state.city) filters.push({ cities: { equals: state.city } })
+  if (state.plaza) filters.push({ plaza: { equals: state.plaza } })
 
   if (state.tab === 'proximos') {
     filters.push({ status: { in: ['planejado', 'confirmado'] } })
@@ -130,16 +95,14 @@ export const buildActionPlanListSearchParams = (
     tab: state.tab,
     kind: state.kind,
     status: state.status,
-    region: state.region,
-    city: state.city,
+    plaza: state.plaza === undefined ? undefined : String(state.plaza),
   })
   const params = new URLSearchParams()
 
   if (canonicalState.tab !== 'proximos') params.set('tab', canonicalState.tab)
   if (canonicalState.kind) params.set('kind', canonicalState.kind)
   if (canonicalState.status) params.set('status', canonicalState.status)
-  if (canonicalState.region) params.set('region', canonicalState.region)
-  if (canonicalState.city) params.set('city', canonicalState.city)
+  if (canonicalState.plaza) params.set('plaza', String(canonicalState.plaza))
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
 
   return params

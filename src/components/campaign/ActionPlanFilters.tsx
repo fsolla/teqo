@@ -5,13 +5,12 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { ChevronDownIcon, FilterIcon, XIcon } from 'lucide-react'
 
-import { StrictCombobox } from '@/components/campaign/StrictCombobox'
+import type { RelationOption } from '@/components/campaign/RelationMultiSelect'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { cn } from '@/lib/utils'
 import { actionPlanKindLabels, actionPlanStatusLabels } from '@/lib/schemas/actionPlan'
-import { territoryForCity } from '@/lib/bahiaTerritories'
 import {
   actionPlanTabLabels,
   actionPlanTabs,
@@ -19,24 +18,23 @@ import {
   type ActionPlanListState,
   type ActionPlanTab,
 } from '@/utilities/actionPlanUi'
-import {
-  municipalityComboboxOptions,
-  territoryComboboxOptions,
-} from '@/utilities/territoryComboboxOptions'
 
 type FilterValues = {
   kind: string
   status: string
-  region: string
-  city: string
+  plaza: string
 }
 
 const valuesFromState = (state: ActionPlanListState): FilterValues => ({
   kind: state.kind ?? '',
   status: state.status ?? '',
-  region: state.region ?? '',
-  city: state.city ?? '',
+  plaza: state.plaza ? String(state.plaza) : '',
 })
+
+const plazaIdFromValue = (value: string): number | undefined => {
+  const id = Number(value)
+  return Number.isInteger(id) && id > 0 ? id : undefined
+}
 
 const buildTabHref = (state: ActionPlanListState, tab: ActionPlanTab): string => {
   const params = buildActionPlanListSearchParams({
@@ -44,8 +42,7 @@ const buildTabHref = (state: ActionPlanListState, tab: ActionPlanTab): string =>
     tab,
     kind: state.kind,
     status: tab === 'todos' ? state.status : undefined,
-    region: state.region,
-    city: state.city,
+    plaza: state.plaza,
   })
   const query = params.toString()
   return query ? `/campanha/planos?${query}` : '/campanha/planos'
@@ -71,7 +68,13 @@ const ActionPlanTabSwitch = ({ state }: { state: ActionPlanListState }) => (
   </nav>
 )
 
-export const ActionPlanFilters = ({ state }: { state: ActionPlanListState }) => {
+export const ActionPlanFilters = ({
+  state,
+  plazaOptions,
+}: {
+  state: ActionPlanListState
+  plazaOptions: RelationOption[]
+}) => {
   const router = useRouter()
   const pathname = usePathname()
   const initialValues = valuesFromState(state)
@@ -88,8 +91,7 @@ export const ActionPlanFilters = ({ state }: { state: ActionPlanListState }) => 
       tab: state.tab,
       kind: nextValues.kind as ActionPlanListState['kind'],
       status: nextValues.status as ActionPlanListState['status'],
-      region: nextValues.region as ActionPlanListState['region'],
-      city: nextValues.city,
+      plaza: plazaIdFromValue(nextValues.plaza),
     })
     const query = params.toString()
     startTransition(() => {
@@ -99,21 +101,9 @@ export const ActionPlanFilters = ({ state }: { state: ActionPlanListState }) => 
 
   const updateKind = (kind: string) => replaceValues({ ...valuesRef.current, kind })
   const updateStatus = (status: string) => replaceValues({ ...valuesRef.current, status })
+  const updatePlaza = (plaza: string) => replaceValues({ ...valuesRef.current, plaza })
 
-  const updateTerritory = (region: string) => {
-    const current = valuesRef.current
-    const city = current.city && region && territoryForCity(current.city) !== region ? '' : current.city
-    replaceValues({ ...current, region, city })
-  }
-
-  const updateCity = (city: string) => {
-    const current = valuesRef.current
-    const region = territoryForCity(city) ?? current.region
-    replaceValues({ ...current, city, region })
-  }
-
-  const clearFilters = () =>
-    replaceValues({ kind: '', status: '', region: '', city: '' })
+  const clearFilters = () => replaceValues({ kind: '', status: '', plaza: '' })
 
   const hasFilters = Object.values(values).some(Boolean)
 
@@ -152,7 +142,7 @@ export const ActionPlanFilters = ({ state }: { state: ActionPlanListState }) => 
             <div
               className={cn(
                 'grid gap-4',
-                state.tab === 'todos' ? 'lg:grid-cols-4' : 'lg:grid-cols-3',
+                state.tab === 'todos' ? 'lg:grid-cols-3' : 'lg:grid-cols-2',
               )}
             >
               <Field>
@@ -190,22 +180,20 @@ export const ActionPlanFilters = ({ state }: { state: ActionPlanListState }) => 
                 </Field>
               ) : null}
               <Field>
-                <FieldLabel htmlFor="action-plan-lookup-a">Território de identidade</FieldLabel>
-                <StrictCombobox
-                  id="action-plan-lookup-a"
-                  options={territoryComboboxOptions}
-                  value={values.region}
-                  onValueChange={updateTerritory}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="action-plan-lookup-b">Município</FieldLabel>
-                <StrictCombobox
-                  id="action-plan-lookup-b"
-                  options={municipalityComboboxOptions(values.region)}
-                  value={values.city}
-                  onValueChange={updateCity}
-                />
+                <FieldLabel htmlFor="action-plan-plaza">Praça</FieldLabel>
+                <NativeSelect
+                  id="action-plan-plaza"
+                  value={values.plaza}
+                  onChange={(event) => updatePlaza(event.target.value)}
+                  className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
+                >
+                  <NativeSelectOption value="">Todas as Praças</NativeSelectOption>
+                  {plazaOptions.map((option) => (
+                    <NativeSelectOption key={option.id} value={String(option.id)}>
+                      {option.name}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
               </Field>
             </div>
             {hasFilters ? (

@@ -34,6 +34,10 @@ export const normalizeBrazilianPhone = (value: string): string | null => {
   return digits
 }
 
+/** Display formatting for a normalized 11-digit mobile: (71) 99999-9999. */
+export const formatBrazilianPhoneDisplay = (phone: string): string =>
+  phone.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3')
+
 export const buildWhatsAppUrl = (phone: string, message?: string): string => {
   const normalizedPhone = normalizeBrazilianPhone(phone)
 

@@ -7,7 +7,7 @@ export const CAMPAIGN_LEADERSHIP_LOGIN_RECOVERY_HINT =
   'Conta só com celular? Peça um novo convite ao coordenador — a recuperação por e-mail não funciona sem e-mail cadastrado.'
 
 export const CAMPAIGN_FIRST_ACCESS_HINT =
-  'Peça um convite no WhatsApp ao coordenador do seu núcleo.'
+  'Peça um convite no WhatsApp ao assessor da sua Praça.'
 
 export const CAMPAIGN_LOGIN_SUBTITLE = 'Use o e-mail ou o celular cadastrado na sua conta.'
 

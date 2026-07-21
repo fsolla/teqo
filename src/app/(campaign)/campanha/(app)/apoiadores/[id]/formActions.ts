@@ -31,7 +31,7 @@ export type SupporterRemoveFormState = {
 
 const safeVoteIntentionMessages = [
   'Consentimento de intenção de voto ainda não configurado.',
-  'Somente a coordenação pode gerenciar apoiadores.',
+  'Somente a coordenação e a assessoria podem gerenciar apoiadores.',
 ] as const
 
 const toMessageOnlyState = (

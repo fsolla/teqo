@@ -49,7 +49,7 @@ export const supporterCreateSchema = z
     phone: brazilianMobile,
     email: optionalPersistedEmail,
     city: optionalBahiaCity,
-    nucleus: positiveRelationshipId.optional(),
+    plaza: positiveRelationshipId.optional(),
     voteIntention: z.enum(supporterVoteIntentions).optional(),
     consentAccepted: z.literal(true, {
       error: 'É necessário aceitar o consentimento de cadastro.',

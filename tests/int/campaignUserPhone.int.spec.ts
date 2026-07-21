@@ -17,9 +17,9 @@ let payload: Payload
 // Builds the engaged Contact → Leadership link that grants contextual phone access.
 const createEngagedPhoneAccessGraph = async (
   fixtures: CampaignFixtures,
-  general: CampaignUser,
+  coordinator: CampaignUser,
   leader: CampaignUser,
-  nucleus: number,
+  plaza: number,
 ) => {
   const contact = await fixtures.createContact({
     name: fixtures.value('Contato telefone'),
@@ -27,10 +27,10 @@ const createEngagedPhoneAccessGraph = async (
   })
   return fixtures.createLeadership({
     contact,
-    nucleus,
+    plazas: [plaza],
     user: leader,
     supportStatus: 'engajado',
-    createdBy: general,
+    createdBy: coordinator,
   })
 }
 
@@ -50,7 +50,7 @@ describe('campaign user contact phone', () => {
 
   it('normalizes the optional non-auth contact phone', async () => {
     await withCampaignFixtures(payload, async (fixtures) => {
-      const user = await fixtures.createCampaignUser('coordenador', {
+      const user = await fixtures.createCampaignUser('advisor', {
         phone: '+55 (71) 99999-1234',
       })
 
@@ -65,38 +65,40 @@ describe('campaign user contact phone', () => {
     })
   })
 
-  it('lets an engaged leadership read only coordinators from accessible nuclei', async () => {
+  it('lets an engaged leader read only advisors from accessible plazas', async () => {
     await withCampaignFixtures(payload, async (fixtures) => {
-      const general = await fixtures.createCampaignUser('geral')
-      const coordinatorPhone = fixtures.phone()
+      const coordinator = await fixtures.createCampaignUser('coordinator')
+      const advisorPhone = fixtures.phone()
       const foreignPhone = fixtures.phone()
-      const coordinator = await fixtures.createCampaignUser('coordenador', {
-        phone: coordinatorPhone,
+      const advisor = await fixtures.createCampaignUser('advisor', {
+        phone: advisorPhone,
       })
-      const foreignCoordinator = await fixtures.createCampaignUser('coordenador', {
+      const foreignAdvisor = await fixtures.createCampaignUser('advisor', {
         phone: foreignPhone,
       })
-      const leader = await fixtures.createCampaignUser('lideranca', {
+      const leader = await fixtures.createCampaignUser('leader', {
         phone: fixtures.phone(),
       })
-      const foreignLeader = await fixtures.createCampaignUser('lideranca', {
+      const foreignLeader = await fixtures.createCampaignUser('leader', {
         phone: fixtures.phone(),
       })
-      const nucleus = await fixtures.createNucleus({ coordinators: [coordinator.id] })
-      await fixtures.createNucleus({ coordinators: [foreignCoordinator.id] })
-      await createEngagedPhoneAccessGraph(fixtures, general, leader, nucleus.id)
+      const plaza = await fixtures.getPlaza()
+      const foreignPlaza = await fixtures.getPlaza()
+      await fixtures.assignPlazaAdvisors(plaza, [advisor])
+      await fixtures.assignPlazaAdvisors(foreignPlaza, [foreignAdvisor])
+      await createEngagedPhoneAccessGraph(fixtures, coordinator, leader, plaza.id)
 
-      const visibleCoordinator = await payload.findByID({
+      const visibleAdvisor = await payload.findByID({
         collection: 'campaignUser',
-        id: coordinator.id,
+        id: advisor.id,
         depth: 0,
         select: { name: true, phone: true },
         user: leader,
         overrideAccess: false,
       })
-      const hiddenForeignCoordinator = await payload.findByID({
+      const hiddenForeignAdvisor = await payload.findByID({
         collection: 'campaignUser',
-        id: foreignCoordinator.id,
+        id: foreignAdvisor.id,
         depth: 0,
         select: { name: true, phone: true },
         user: leader,
@@ -104,39 +106,76 @@ describe('campaign user contact phone', () => {
       })
       const hiddenFromUnlinkedLeader = await payload.findByID({
         collection: 'campaignUser',
-        id: coordinator.id,
+        id: advisor.id,
         depth: 0,
         select: { name: true, phone: true },
         user: foreignLeader,
         overrideAccess: false,
       })
 
-      expect(visibleCoordinator.phone).toBe(coordinatorPhone)
-      expect(hiddenForeignCoordinator.phone).toBeUndefined()
+      expect(visibleAdvisor.phone).toBe(advisorPhone)
+      expect(hiddenForeignAdvisor.phone).toBeUndefined()
       expect(hiddenFromUnlinkedLeader.phone).toBeUndefined()
+    })
+  })
+
+  it('lets an advisor read a colleague advisor of a shared plaza only', async () => {
+    await withCampaignFixtures(payload, async (fixtures) => {
+      const colleaguePhone = fixtures.phone()
+      const foreignPhone = fixtures.phone()
+      const viewer = await fixtures.createCampaignUser('advisor', { phone: fixtures.phone() })
+      const colleague = await fixtures.createCampaignUser('advisor', { phone: colleaguePhone })
+      const foreignAdvisor = await fixtures.createCampaignUser('advisor', {
+        phone: foreignPhone,
+      })
+      const shared = await fixtures.getPlaza()
+      const foreignPlaza = await fixtures.getPlaza()
+      await fixtures.assignPlazaAdvisors(shared, [viewer, colleague])
+      await fixtures.assignPlazaAdvisors(foreignPlaza, [foreignAdvisor])
+
+      const visibleColleague = await payload.findByID({
+        collection: 'campaignUser',
+        id: colleague.id,
+        depth: 0,
+        select: { name: true, phone: true },
+        user: viewer,
+        overrideAccess: false,
+      })
+      const hiddenForeign = await payload.findByID({
+        collection: 'campaignUser',
+        id: foreignAdvisor.id,
+        depth: 0,
+        select: { name: true, phone: true },
+        user: viewer,
+        overrideAccess: false,
+      })
+
+      expect(visibleColleague.phone).toBe(colleaguePhone)
+      expect(hiddenForeign.phone).toBeUndefined()
     })
   })
 
   it('does not leak foreign phones through direct list API reads', async () => {
     await withCampaignFixtures(payload, async (fixtures) => {
-      const general = await fixtures.createCampaignUser('geral')
-      const coordinatorPhone = fixtures.phone()
+      const coordinator = await fixtures.createCampaignUser('coordinator')
+      const advisorPhone = fixtures.phone()
       const foreignPhone = fixtures.phone()
-      const coordinator = await fixtures.createCampaignUser('coordenador', {
-        phone: coordinatorPhone,
+      const advisor = await fixtures.createCampaignUser('advisor', {
+        phone: advisorPhone,
       })
-      const foreignCoordinator = await fixtures.createCampaignUser('coordenador', {
+      const foreignAdvisor = await fixtures.createCampaignUser('advisor', {
         phone: foreignPhone,
       })
-      const leader = await fixtures.createCampaignUser('lideranca', {
+      const leader = await fixtures.createCampaignUser('leader', {
         phone: fixtures.phone(),
       })
-      const nucleus = await fixtures.createNucleus({ coordinators: [coordinator.id] })
-      await createEngagedPhoneAccessGraph(fixtures, general, leader, nucleus.id)
+      const plaza = await fixtures.getPlaza()
+      await fixtures.assignPlazaAdvisors(plaza, [advisor])
+      await createEngagedPhoneAccessGraph(fixtures, coordinator, leader, plaza.id)
 
       const result = await payload.find({
         collection: 'campaignUser',
-        where: { id: { in: [coordinator.id, foreignCoordinator.id] } },
+        where: { id: { in: [advisor.id, foreignAdvisor.id] } },
         depth: 0,
         pagination: false,
         select: { name: true, phone: true },
@@ -145,23 +184,23 @@ describe('campaign user contact phone', () => {
       })
       const byId = new Map(result.docs.map((doc) => [doc.id, doc]))
 
-      expect(byId.get(coordinator.id)?.phone).toBe(coordinatorPhone)
-      expect(byId.get(foreignCoordinator.id)?.phone).toBeUndefined()
+      expect(byId.get(advisor.id)?.phone).toBe(advisorPhone)
+      expect(byId.get(foreignAdvisor.id)?.phone).toBeUndefined()
       expect(JSON.stringify(result.docs)).not.toContain(foreignPhone)
     })
   })
 
-  it('allows the record owner, geral, and Payload admin to read contact phone', async () => {
+  it('allows the record owner, coordinator, and Payload admin to read contact phone', async () => {
     await withCampaignFixtures(payload, async (fixtures) => {
       const phone = fixtures.phone()
-      const owner = await fixtures.createCampaignUser('lideranca', { phone })
-      const general = await fixtures.createCampaignUser('geral')
+      const owner = await fixtures.createCampaignUser('leader', { phone })
+      const coordinator = await fixtures.createCampaignUser('coordinator')
       const admin = await fixtures.createAdminUser({
         email: `${fixtures.value('phone-admin')}@example.com`,
         password: fixtures.value('password'),
       })
 
-      for (const viewer of [owner, general, admin]) {
+      for (const viewer of [owner, coordinator, admin]) {
         const visible = await payload.findByID({
           collection: 'campaignUser',
           id: owner.id,
@@ -175,39 +214,42 @@ describe('campaign user contact phone', () => {
     })
   })
 
-  it('lets coordenador and lideranca read contact phones of geral users', async () => {
+  it('lets advisor and leader read contact phones of coordinator users', async () => {
     await withCampaignFixtures(payload, async (fixtures) => {
-      const generalPhone = fixtures.phone()
-      const general = await fixtures.createCampaignUser('geral', { phone: generalPhone })
-      const coordinator = await fixtures.createCampaignUser('coordenador', {
+      const coordinatorPhone = fixtures.phone()
+      const coordinator = await fixtures.createCampaignUser('coordinator', {
+        phone: coordinatorPhone,
+      })
+      const advisor = await fixtures.createCampaignUser('advisor', {
         phone: fixtures.phone(),
       })
-      const leader = await fixtures.createCampaignUser('lideranca', {
+      const leader = await fixtures.createCampaignUser('leader', {
         phone: fixtures.phone(),
       })
-      const nucleus = await fixtures.createNucleus({ coordinators: [coordinator.id] })
-      await createEngagedPhoneAccessGraph(fixtures, general, leader, nucleus.id)
+      const plaza = await fixtures.getPlaza()
+      await fixtures.assignPlazaAdvisors(plaza, [advisor])
+      await createEngagedPhoneAccessGraph(fixtures, coordinator, leader, plaza.id)
 
-      for (const viewer of [coordinator, leader]) {
+      for (const viewer of [advisor, leader]) {
         const visible = await payload.findByID({
           collection: 'campaignUser',
-          id: general.id,
+          id: coordinator.id,
           depth: 0,
           select: { name: true, phone: true },
           user: viewer,
           overrideAccess: false,
         })
-        expect(visible.phone).toBe(generalPhone)
+        expect(visible.phone).toBe(coordinatorPhone)
       }
     })
   })
 
-  it('allows owner and geral field updates but protects create from ordinary users', async () => {
+  it('allows owner and coordinator field updates but protects create from ordinary users', async () => {
     await withCampaignFixtures(payload, async (fixtures) => {
-      const owner = await fixtures.createCampaignUser('lideranca', {
+      const owner = await fixtures.createCampaignUser('leader', {
         phone: fixtures.phone(),
       })
-      const general = await fixtures.createCampaignUser('geral')
+      const coordinator = await fixtures.createCampaignUser('coordinator')
       const field = phoneField()
       if (field.type !== 'text') throw new Error('Campo phone deve ser text.')
       const ownerReq = {
@@ -215,20 +257,20 @@ describe('campaign user contact phone', () => {
         payload,
         user: owner,
       } as unknown as PayloadRequest
-      const generalReq = {
+      const coordinatorReq = {
         context: {},
         payload,
-        user: general,
+        user: coordinator,
       } as unknown as PayloadRequest
 
       await expect(field.access?.update?.({ id: owner.id, req: ownerReq } as never)).resolves.toBe(
         true,
       )
-      await expect(field.access?.update?.({ id: owner.id, req: generalReq } as never)).resolves.toBe(
-        true,
-      )
+      await expect(
+        field.access?.update?.({ id: owner.id, req: coordinatorReq } as never),
+      ).resolves.toBe(true)
       await expect(field.access?.create?.({ req: ownerReq } as never)).resolves.toBe(false)
-      await expect(field.access?.create?.({ req: generalReq } as never)).resolves.toBe(true)
+      await expect(field.access?.create?.({ req: coordinatorReq } as never)).resolves.toBe(true)
     })
   })
 })

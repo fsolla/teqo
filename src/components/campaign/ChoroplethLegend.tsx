@@ -21,7 +21,7 @@ export const ChoroplethLegend = ({ max, metricLabel }: ChoroplethLegendProps) =>
       </span>
     </div>
     <p className="text-xs text-muted-foreground">
-      Escala: intensidade da cor indica {metricLabel.toLowerCase()} no território.
+      Escala: intensidade da cor indica {metricLabel} no território.
     </p>
   </div>
 )
