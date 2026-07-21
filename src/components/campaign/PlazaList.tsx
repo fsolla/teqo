@@ -29,7 +29,7 @@ import type {
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
-type ListFormAction = (
+type PlazaStaffFormAction = (
   state: CampaignFormActionState,
   formData: FormData,
 ) => Promise<CampaignFormActionState>
@@ -40,9 +40,9 @@ export type PlazaListProps = {
   isStaffView: boolean
   isCoordinator: boolean
   advisorOptions: EligibleAdvisorOption[]
-  expectedVotesFormAction: ListFormAction
-  trendFormAction: ListFormAction
-  advisorsFormAction: ListFormAction
+  expectedVotesFormAction: PlazaStaffFormAction
+  trendFormAction: PlazaStaffFormAction
+  advisorsFormAction: PlazaStaffFormAction
 }
 
 export const PlazaList = ({

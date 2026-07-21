@@ -35,10 +35,10 @@ import {
 } from '@/utilities/plazaUi'
 import { loadAdvisorSummaries, getEligibleAdvisorOptions } from '@/utilities/plazaViewModels'
 import {
-  assignPlazaAdvisorsListFormAction,
-  setPlazaExpectedVotesListFormAction,
-  setPlazaPoliticalTrendListFormAction,
-} from './listFormActions'
+  assignPlazaAdvisorsFormAction,
+  setPlazaExpectedVotesFormAction,
+  setPlazaPoliticalTrendFormAction,
+} from './plazaStaffFormActions'
 
 type PlazasPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -104,9 +104,9 @@ export default async function PlazasPage({ searchParams }: PlazasPageProps) {
             isStaffView={isStaffView}
             isCoordinator={isCoordinator}
             advisorOptions={advisorOptions}
-            expectedVotesFormAction={setPlazaExpectedVotesListFormAction}
-            trendFormAction={setPlazaPoliticalTrendListFormAction}
-            advisorsFormAction={assignPlazaAdvisorsListFormAction}
+            expectedVotesFormAction={setPlazaExpectedVotesFormAction}
+            trendFormAction={setPlazaPoliticalTrendFormAction}
+            advisorsFormAction={assignPlazaAdvisorsFormAction}
           />
           <div className="flex flex-col items-center gap-2">
             <p className="text-sm text-muted-foreground">

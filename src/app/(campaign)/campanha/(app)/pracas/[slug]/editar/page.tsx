@@ -20,8 +20,8 @@ import {
   assignPlazaAdvisorsFormAction,
   setPlazaExpectedVotesFormAction,
   setPlazaPoliticalTrendFormAction,
-  updatePlazaStrategyFormAction,
-} from './formActions'
+} from '../../plazaStaffFormActions'
+import { updatePlazaStrategyFormAction } from './formActions'
 
 type PlazaEditPageProps = {
   params: Promise<{ slug: string }>

@@ -111,7 +111,7 @@ Componentes:
 
 ## Pós-entrega (`/simplify`)
 
-Fill-in **A9+** entregue 2026-07-21 — [escala-dry-pos-a9.md](escala-dry-pos-a9.md) (`loadPlazaListPageBundle`, 1× `aggregatePledgesByPlaza`, `plazaRevalidation.ts`). Débito restante: twin `listFormActions` ↔ `/editar` → **C8** F4.
+Fill-in **A9+** entregue 2026-07-21 — [escala-dry-pos-a9.md](escala-dry-pos-a9.md) (`loadPlazaListPageBundle`, 1× `aggregatePledgesByPlaza`, `plazaRevalidation.ts`). Fill-in **C8 F4** entregue 2026-07-21 — [escala-dry-pos-c6.md](escala-dry-pos-c6.md) (`plazaStaffFormActions.ts`).
 
 **Já resolvido no simplify (não reabrir):** form `expectedVotes`; `rollupPlazaStaffVotes` / `sumStaffPledgeEffectiveTotal`; `StaffPlazaVotesDisplay`; remoção de `hasStaffVoteData`; testes unit do rollup.
 

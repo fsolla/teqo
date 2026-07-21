@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-21 (B6 + B8 F1 entregues em código; débitos B8 F1 pós-/simplify absorvidos no plano F2 prep; B12 registrado — aproximar mapa ao filtro; A9+/B7/B9–B11/filtros-auto entregues; débitos B9 → C8 F4)
+Atualizado em: 2026-07-21 (B6 + B8 F1 + fill-in **C8** F4 entregues; B12 registrado; A9+/B7/B9–B11/filtros-auto entregues)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -84,7 +84,7 @@ flowchart TD
     C2prod --> C5["C5 GOTV (validar)"]
 ```
 
-Paralelizáveis agora: **B12** (viewport do mapa; B7 já entregue), fill-ins da lista (**C8** F4, …). ~~**A9** / **A9+** / **B9** / **B7** / **B10** / **B11** / **B6** / **filtros-auto**~~ entregues 2026-07-21.
+Paralelizáveis agora: **B12** (viewport do mapa; B7 já entregue), fill-ins (O0+, RS+, …). ~~**A9** / **A9+** / **B9** / **B7** / **B10** / **B11** / **B6** / **filtros-auto** / **C8** F4~~ entregues 2026-07-21.
 
 ### Sequência por janela
 
@@ -108,14 +108,15 @@ Paralelizáveis agora: **B12** (viewport do mapa; B7 já entregue), fill-ins da 
 - **Plataforma** — local Postgres + guards, migrations baselined, posts/tags do site público com cache `posts`, Onda 0 textos provisórios + `/privacidade`.
 - **Site público (2026-07-21)** — **Pixel do Meta nos abaixo-assinados** (`tracking.facebookPixelId` no admin `petition`, `PageView`/`Lead` na página pública via `MetaPixel` + `trackMetaLead`; migration `20260721_133531_add_petition_facebook_pixel_id`) — [plano](plans/pixel-meta-abaixo-assinado.md).
 - **A9 (2026-07-21)** — **Estimativa de votos da Praça** (`plaza.expectedVotes` staff-only; fallback `expectedVotes ?? effectiveTotal` em mapa 2026/overview/dashboard; UI `/editar` + leitura lista/detalhe; migration `20260721_133444_add_plaza_expected_votes`) — [plano](plans/estimativa-votos-praca.md).
-- **A9+ (2026-07-21)** — **Loader compartilhado da lista de Praças** (`loadPlazaListPageBundle`: 1× `aggregatePledgesByPlaza` + `buildPlazaMapBundleFromPlazas`; `plazaRevalidation.ts` + `plazaSlug` para revalidate estreita no detalhe; int `plazaPageData.int.spec.ts`; sem migration) — [plano](plans/escala-dry-pos-a9.md). Débito restante pós-`/simplify`: twin completo `listFormActions` ↔ `/editar` → **C8** F4.
+- **A9+ (2026-07-21)** — **Loader compartilhado da lista de Praças** (`loadPlazaListPageBundle`: 1× `aggregatePledgesByPlaza` + `buildPlazaMapBundleFromPlazas`; `plazaRevalidation.ts` + `plazaSlug` para revalidate estreita no detalhe; int `plazaPageData.int.spec.ts`; sem migration) — [plano](plans/escala-dry-pos-a9.md).
 - **B7 (2026-07-21)** — **Mapa das Praças filtrado pela lista** (`buildPlazaListWhere` em `loadPlazaMapBundle`; `rawSearchParams` na página; empty → omitir painel; int `plazaMapData.int.spec.ts`) — [plano](plans/mapa-pracas-filtrado.md).
-- **B9 (2026-07-21)** — **Edição rápida na lista de Praças** (Assessores / Tendência / `expectedVotes` via Popovers em `PlazaList*Control`; `listFormActions`; sem migration) — [plano](plans/edicao-rapida-lista-pracas.md). Débitos `/simplify`: **C8** F4 (DRY formActions; prep revalidate/parsing feito no A9+).
+- **B9 (2026-07-21)** — **Edição rápida na lista de Praças** (Assessores / Tendência / `expectedVotes` via Popovers em `PlazaList*Control`; `plazaStaffFormActions`; sem migration) — [plano](plans/edicao-rapida-lista-pracas.md).
 - **B10 (2026-07-21)** — **Hover/tap no Mapa das Praças** (destaque + `MapFeatureReadout`; desktop click navega; mobile 2º tap; SSA/CMS N>1 → `zoneBreakdown`; `plazasByIbgeCode` / `resolvePlazaMapNavigation`) — [plano](plans/hover-mapa-pracas.md).
 - **B11 (2026-07-21)** — **Escala % dos válidos no Mapa das Praças** (`validVotesByYear` no bundle; seletor `Total (votos)` / `% dos válidos`; domínio fixo 0–100%; 2026 usa válidos 2022; compare desliga %; readout em %) — [plano](plans/escala-percentual-mapa-pracas.md).
 - **B6 (2026-07-21)** — **`BahiaMap` setStyle incremental** (layer GeoJSON estável entre troca de ano/métrica/escala; `pathByKeyRef` + restyle O(2) no hover/select; `fitBounds` só em `mode`/`highlightKeys`; helpers em `bahiaMapStyle.ts`) — [plano](plans/escala-dry-pos-b3.md).
 - **B8 F1 (2026-07-21)** — **Catálogo bairros das Praças-zona** (`plazaZoneNeighborhoods`: Salvador TRE-BA RA 02/2017 + Camaçari curado; fixture+int; card **Bairros desta Praça** no overview de Praças `kind=zona`; sem migration) — [plano](plans/poligonos-pracas-zona.md). **F2 pendente** (F2 prep catálogo ~½ dia + TopoJSON + mapa). Débitos pós-`/simplify`: hidratação via `plazaCatalog`, canônico JSON→TS, teste ordem slugs → F2 prep no plano (S6 CSS compartilhado adiado até F2/R6).
 - **Fill-in filtros-auto (2026-07-21)** — **Filtros auto-aplicados na lista de Praças** (`PlazaFilters`: debounce 1s no `q`, Enter imediato, selects imediatos, remove Buscar; `useTransition` + pending a11y; `shouldUpdatePlazaSearchUrl` + no-op via `buildPlazaFiltersKey`; sem migration) — [plano](plans/filtros-auto-pracas.md). Débitos pós-`/simplify`: sync back/forward `search`↔`state.q` e shell pending compartilhado — gatilhos no plano.
+- **Fill-in C8 F4 (2026-07-21)** — **DRY plaza staff form actions** (`plazaStaffFormActions.ts`: votos estimados, tendência e assessores compartilhados entre lista e `/editar`; `editar/formActions.ts` mantém só `updatePlazaStrategy`; sem migration) — [plano](plans/escala-dry-pos-c6.md).
 
 ## Supersedidos pela remodelagem (2026-07-20)
 
@@ -142,7 +143,7 @@ Paralelizáveis agora: **B12** (viewport do mapa; B7 já entregue), fill-ins da 
 - **C5** operação dia D / GOTV _(validar com produto)_ · design [`Dia-D-GOTV`](design-refs/latest/Dia-D-GOTV.png) · depende de C2 dados reais
 - **D2** push + sino in-app · soft: chave `campanha-notificacoes-push` (Onda 0) · [plano](plans/notifications.md)
 - **R6** critique/polish visual da vertical remodelada (ciclo /impeccable completo por superfície; smoke visual coordenador feito em 2026-07-21) · gatilho: antes de 16/08 · (opcional: mover filtros acima do mapa)
-- **Fill-ins:** **C8** F4 DRY `listFormActions`↔`/editar` ([plano](plans/escala-dry-pos-c6.md)) · O0+ ([plano](plans/escala-dry-pos-onda0.md)) · RS+ auth read leve + shells de senha ([plano](plans/escala-dry-pos-reset-senha-perfil.md)) · higiene PascalCase
+- **Fill-ins:** O0+ ([plano](plans/escala-dry-pos-onda0.md)) · RS+ auth read leve + shells de senha ([plano](plans/escala-dry-pos-reset-senha-perfil.md)) · higiene PascalCase
 
 ## Bloqueadores atuais
 

@@ -20,7 +20,11 @@ import {
 } from '@/utilities/campaignFormActionError'
 import { revalidatePlazaListPaths } from '@/utilities/plazaRevalidation'
 
-export const setPlazaExpectedVotesListFormAction = async (
+export const plazaStaffEditSafeMessages = [
+  'Somente a coordenação e a assessoria podem editar a Praça.',
+] as const
+
+export const setPlazaExpectedVotesFormAction = async (
   _state: CampaignFormActionState,
   formData: FormData,
 ): Promise<CampaignFormActionState> => {
@@ -38,14 +42,14 @@ export const setPlazaExpectedVotesListFormAction = async (
   } catch (error) {
     return mapCampaignFormActionError({
       error,
-      safeMessages: ['Somente a coordenação e a assessoria podem editar a Praça.'],
+      safeMessages: plazaStaffEditSafeMessages,
       genericMessage:
         'Não foi possível salvar os votos estimados. Verifique seu acesso e tente novamente.',
     })
   }
 }
 
-export const setPlazaPoliticalTrendListFormAction = async (
+export const setPlazaPoliticalTrendFormAction = async (
   _state: CampaignFormActionState,
   formData: FormData,
 ): Promise<CampaignFormActionState> => {
@@ -63,14 +67,14 @@ export const setPlazaPoliticalTrendListFormAction = async (
   } catch (error) {
     return mapCampaignFormActionError({
       error,
-      safeMessages: ['Somente a coordenação e a assessoria podem editar a Praça.'],
+      safeMessages: plazaStaffEditSafeMessages,
       genericMessage:
         'Não foi possível registrar a tendência. Verifique seu acesso e tente novamente.',
     })
   }
 }
 
-export const assignPlazaAdvisorsListFormAction = async (
+export const assignPlazaAdvisorsFormAction = async (
   _state: CampaignFormActionState,
   formData: FormData,
 ): Promise<CampaignFormActionState> => {

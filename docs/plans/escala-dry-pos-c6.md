@@ -78,7 +78,7 @@ flowchart TD
 ### Fase 4 — DRY de forms
 
 - Migrar os `formActions.ts` restantes para `mapCampaignFormActionError` + `campaignFormFields` (hoje o ladder `FormDataBoundaryError` → `ZodError` → `validationFieldErrors` → safe-message está inlined em vários arquivos):
-  - `src/app/(campaign)/campanha/(app)/pracas/listFormActions.ts` + `pracas/[slug]/editar/formActions.ts` — **twin paths pós-B9** (mesmo parsing `formData`, mesmas actions de domínio). **Prep A9+ (2026-07-21):** `revalidatePlazaListPaths` (`plazaRevalidation.ts`), `optionalPlazaSlugFromForm`, `parsePoliticalTrendStatusFormValue` — feitos; **falta** merge dos wrappers de server action (4 actions × 2 superfícies).
+  - ~~`src/app/(campaign)/campanha/(app)/pracas/listFormActions.ts` + `pracas/[slug]/editar/formActions.ts`~~ — **entregue 2026-07-21 (C8 F4):** `plazaStaffFormActions.ts` (3 actions compartilhadas); `editar/formActions.ts` mantém só `updatePlazaStrategyFormAction`; lista e `/editar` importam o módulo compartilhado diretamente (Next.js não permite re-export em `'use server'`).
   - `src/app/(campaign)/campanha/(app)/pracas/[slug]/updateFormActions.ts`, `pledgeFormActions.ts` (se ainda não no mapper)
   - `src/app/(campaign)/campanha/convite/[token]/formActions.ts`
   - `src/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions.ts`
@@ -134,10 +134,24 @@ Os débitos que os revisores marcaram como importantes e maiores que cleanup for
 
 ## Simplify (2026-07-21 pós-B9)
 
-`/simplify` da entrega **B9** ([edicao-rapida-lista-pracas.md](edicao-rapida-lista-pracas.md)) marcou como **maior que cleanup** o twin `listFormActions.ts` ↔ `editar/formActions.ts` — absorvido na **Fase 4** acima. B9 já adota `mapCampaignFormActionError`; o débito é DRY de parsing/revalidate entre lista e `/editar`, não introdução do mapper.
+~~`/simplify` da entrega **B9** marcou como **maior que cleanup** o twin `listFormActions.ts` ↔ `editar/formActions.ts`~~ — **entregue 2026-07-21 (C8 F4):** `plazaStaffFormActions.ts` unifica os 3 wrappers compartilhados; `editar/formActions.ts` mantém só `updatePlazaStrategyFormAction`.
 
 **Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B9):** hook `usePlazaListPopoverForm` (gatilho: 4º inline editor); `PlazaAdvisorCheckboxList` (gatilho: 3º uso ou refactor do form `/editar`); layout responsivo único mobile+desktop na lista (gatilho: page size >25 ou profiling de hydration); lazy-load de `getEligibleAdvisorOptions` (staff set pequeno); `PopoverAnchor` export não usado (scaffold shadcn); ~~helper `parsePoliticalTrendStatus`~~ → entregue como `parsePoliticalTrendStatusFormValue` no prep A9+; unit tests dos `PlazaList*Control` (int access cobre domínio); E2E save inline (gatilho: smoke pós-merge B9).
 
 ## Simplify (2026-07-21 pós-A9+)
 
-Triage `capture-review-debts` após `/simplify` do fill-in A9+: prep da **Fase 4** nos twins de Praças — `plazaRevalidation.ts`, `optionalPlazaSlugFromForm`, `parsePoliticalTrendStatusFormValue` (lista + `/editar`). Débito restante na Fase 4: unificar os wrappers de server action duplicados; não reabrir revalidate/parsing.
+~~Débito restante na Fase 4: unificar os wrappers de server action duplicados~~ — **entregue 2026-07-21 (C8 F4):** ver seção Simplify pós-B9.
+
+## Simplify (2026-07-21 pós-C8 F4)
+
+Passagem `/simplify` + `capture-review-debts` após fill-in **C8 F4** (plaza twin DRY).
+
+**Já resolvido (não reabrir):** `plazaStaffFormActions.ts`; `plazaStaffEditSafeMessages`; tipo `PlazaStaffFormAction` em `PlazaList.tsx`; import direto em `editar/page.tsx` (Next.js não permite re-export em `'use server'`); hygiene de refs em planos-pai A9/B9/estimativa.
+
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-C8 F4):**
+
+- **Runner genérico `runCampaignFormAction`** — gatilho: 5+ wrappers idênticos ou 4º cluster de forms na mesma superfície (hoje ~18 arquivos com try/catch inline).
+- **`revalidatePlazaListPaths` com `scope` por tipo de save** — gatilho: N saves inline + profiling de rerender inaceitável (ver [escala-dry-pos-a9.md](escala-dry-pos-a9.md) Adiado com gatilho).
+- **`pledgeFormActions` / `updateFormActions` → `revalidatePlazaListPaths`** — gatilho: forms ganham `plazaSlug` ou unificação de revalidate no detalhe da Praça (permanecem em Fase 4 remanescente abaixo).
+- **`reloadCampaignActor` por submit em `actions/plaza.ts`** — gatilho: profiling mostra latência dominante em saves staff inline.
+- **Fundir `updatePlazaStrategyFormAction` em `plazaStaffFormActions.ts`** — parse/`safeMessages` distintos; superfície só `/editar`.

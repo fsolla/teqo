@@ -7,7 +7,7 @@ Impeccable: B — encaixe em `PlazaList` / cards mobile em `/campanha/pracas` (s
 Appetite: ~1–1,5 dia eng; 3 affordances na linha + reuso de actions (A9 + plaza); sem migration própria
 Responsável: —
 
-_Revisão 2026-07-21 (pós-implementação + `/simplify`): `PlazaList*Control` + `listFormActions`; coluna Tendência; `PlazaAdvisorAvatarStack`. Débitos → **A9+** F2 / **C8** F4 (ver seção Simplify abaixo)._
+_Revisão 2026-07-21 (pós-implementação + `/simplify`): `PlazaList*Control` + `plazaStaffFormActions`; coluna Tendência; `PlazaAdvisorAvatarStack`. Débitos pós-B9 absorvidos em **A9+** F2 / **C8** F4 (entregues)._
 
 ## Design (Impeccable)
 
@@ -114,7 +114,7 @@ Componentes:
 
 Limpezas aplicadas no cleanup da sessão (não reabrir): `politicalTrend.note` via hidden field (sem `findByID` extra); `politicalTrendBadgeVariant` em `plazaUi.ts`; `PlazaAdvisorAvatarStack`; tipos `PoliticalTrendStatus`; `max={1_000_000}` no input; higiene de testes.
 
-Débitos absorvidos noutros planos: twin `listFormActions` ↔ `/editar` → **C8 F4** ([escala-dry-pos-c6.md](escala-dry-pos-c6.md)). ~~`revalidatePath` full-page pós-save~~ → **A9+ F2 entregue** ([escala-dry-pos-a9.md](escala-dry-pos-a9.md): `plazaRevalidation.ts` + `plazaSlug`).
+Débitos absorvidos noutros planos: ~~twin `listFormActions` ↔ `/editar`~~ → **C8 F4 entregue** ([escala-dry-pos-c6.md](escala-dry-pos-c6.md): `plazaStaffFormActions.ts`). ~~`revalidatePath` full-page pós-save~~ → **A9+ F2 entregue** ([escala-dry-pos-a9.md](escala-dry-pos-a9.md): `plazaRevalidation.ts` + `plazaSlug`).
 
 **Explicitamente fora (triage):** lazy-load `getEligibleAdvisorOptions`; `PopoverAnchor` não usado; helper `parsePoliticalTrendStatus`; unit tests dos `PlazaList*Control`.
 

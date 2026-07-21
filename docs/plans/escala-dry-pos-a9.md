@@ -23,7 +23,7 @@ O revisor de **performance** marcou como **maior que simplify** os três problem
 
 **F1 — Loader:** `loadPlazaListPageBundle` em `plazaPageData.ts`; `buildPlazaMapBundleFromPlazas` + `scopePlazasFromDocs` em `plazaMapData.ts`; `page.tsx` com uma única chamada; removidos `loadPlazaListPageData` / `loadPlazaListOverviewData` do export público.
 
-**F2 — Revalidate:** `plazaRevalidation.ts` (`revalidatePlazaListPaths` com validação de slug); hidden `plazaSlug` em `PlazaList*Control`, `PlazaStrategyForm`, `PlazaAdvisorsForm`; `listFormActions` + `editar/formActions` atualizados.
+**F2 — Revalidate:** `plazaRevalidation.ts` (`revalidatePlazaListPaths` com validação de slug); hidden `plazaSlug` em `PlazaList*Control`, `PlazaStrategyForm`, `PlazaAdvisorsForm`; `plazaStaffFormActions` + `editar/formActions` (via **C8 F4**).
 
 **Helpers compartilhados (prep C8 F4):** `optionalPlazaSlugFromForm`, `parsePoliticalTrendStatusFormValue`.
 
@@ -37,7 +37,7 @@ O revisor de **performance** marcou como **maior que simplify** os três problem
 
 **Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B7):** testes int extras em `plazaMapData` (`region`/`leader`/`compare`) — cobertura opcional no próximo toque no loader; split do teste advisor por `kind` (legibilidade).
 
-**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B9):** ~75 hooks `useActionState` por página (3 controles × 25 linhas × 2 views) — gatilho: reclamação de perf ou **R6**; merge `listFormActions` ↔ `/editar` → **C8 F4**; hook popover compartilhado / layout responsivo único / lazy advisor options → gatilhos no plano B9.
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B9):** ~75 hooks `useActionState` por página (3 controles × 25 linhas × 2 views) — gatilho: reclamação de perf ou **R6**; ~~merge `listFormActions` ↔ `/editar` → **C8 F4**~~ (entregue 2026-07-21); hook popover compartilhado / layout responsivo único / lazy advisor options → gatilhos no plano B9.
 
 ## Simplify pós-implementação (2026-07-21)
 
@@ -47,7 +47,7 @@ Passagem `/simplify` sobre o diff A9+ (F1+F2) após rebase em `main` com B11.
 
 **F2 como entregue:** `plazaRevalidation.ts` + hidden `plazaSlug` nos forms; lista e `/editar` chamam `revalidatePlazaListPaths({ slug })` — revalida o detalhe de forma estreita quando o slug está presente; a lista continua com `revalidatePath` full-page (paridade com filtros `?trend=` e KPIs). **Rejeitado neste fill-in:** cache por tag / matriz `scope` por tipo de save.
 
-**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-implementação A9+):** `scope: 'detail'` só em save de tendência (a lista precisa refletir filtro `?trend=`); cache/revalidate por tag (rabbit hole); mover `plazaListFilteredSelect` → `plazaViewModels` (gatilho: 3º consumidor); paralelizar pledge aggregate + loads TSE no mesmo tick do bundle (gatilho: profiling TTFB); unificar os dois `find` de Praças (decisão travada em “Questões em aberto”); twin completo `listFormActions` ↔ `/editar` → **C8 F4** (prep parcial — ver [escala-dry-pos-c6.md](escala-dry-pos-c6.md) Fase 4).
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-implementação A9+):** `scope: 'detail'` só em save de tendência (a lista precisa refletir filtro `?trend=`); cache/revalidate por tag (rabbit hole); mover `plazaListFilteredSelect` → `plazaViewModels` (gatilho: 3º consumidor); paralelizar pledge aggregate + loads TSE no mesmo tick do bundle (gatilho: profiling TTFB); unificar os dois `find` de Praças (decisão travada em “Questões em aberto”); ~~twin completo `listFormActions` ↔ `/editar` → **C8 F4**~~ (entregue 2026-07-21 — ver [escala-dry-pos-c6.md](escala-dry-pos-c6.md) Fase 4).
 
 ## Objetivos
 
@@ -97,9 +97,9 @@ flowchart TD
 
 ### Fase 2 — Revalidação escopada pós-B9
 
-- Avaliar `revalidatePath` estreito (só segmento necessário) ou tag de cache dedicada à lista vs full-page `revalidatePath('/campanha/pracas', 'page')` em `listFormActions.ts`.
+- Avaliar `revalidatePath` estreito (só segmento necessário) ou tag de cache dedicada à lista vs full-page `revalidatePath('/campanha/pracas', 'page')` em `plazaStaffFormActions.ts` — gatilho: N saves inline + profiling de rerender inaceitável (ver Adiado com gatilho).
 - Critério de aceite: após N saves inline seguidos, overview/mapa/lista permanecem corretos sem rerodar loaders caros quando o dado alterado não afeta KPI agregado (ex.: tendência não muda métrica 2026 — validar caso a caso).
-- Coordenar com **C8 F4** se extrair `revalidatePlazaListPaths` compartilhado entre lista e `/editar`.
+- ~~Coordenar com **C8 F4** se extrair `revalidatePlazaListPaths` compartilhado entre lista e `/editar`.~~ Entregue 2026-07-21.
 - Testes: int leve ou e2e smoke de save inline + paridade visual de KPIs (manual ok se appetite apertar).
 
 **Migration:** nenhuma.
@@ -137,10 +137,10 @@ flowchart TD
 - `docs/plans/estimativa-votos-praca.md` — plano pai A9
 - `docs/plans/escala-dry-pos-e1.md` — precedente E6 F1 (lista+overview núcleos)
 - `src/app/(campaign)/campanha/(app)/pracas/page.tsx` — consome `loadPlazaListPageBundle`
-- `src/app/(campaign)/campanha/(app)/pracas/listFormActions.ts` — `revalidatePlazaListPaths` com `plazaSlug`
+- `src/app/(campaign)/campanha/(app)/pracas/plazaStaffFormActions.ts` — `revalidatePlazaListPaths` com `plazaSlug`
 - `src/utilities/plazaPageData.ts` — `loadPlazaListPageBundle`
 - `src/utilities/plazaMapData.ts` — `buildPlazaMapBundleFromPlazas`, `scopePlazasFromDocs`
-- `src/utilities/plazaRevalidation.ts` — helper compartilhado (prep C8 F4)
+- `src/utilities/plazaRevalidation.ts` — helper compartilhado (C8 F4)
 - `tests/int/plazaPageData.int.spec.ts` — paridade overview/mapa/escopo
 - `src/utilities/plazaMapData.ts` — `loadPlazaMapBundle`, métrica 2026
 - `src/utilities/votePledgeData.ts` — `aggregatePledgesByPlaza`, `rollupPlazaStaffVotes`
