@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-20 (Remodelagem Praças R0–R5 registrada como caminho crítico; itens núcleo-cêntricos supersedidos/reenquadrados)
+Atualizado em: 2026-07-21 (B10 click-nav; B11 escala % mapa; A9→B9; B8; Fill-in filtros; B7; Pixel Meta)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -68,25 +68,36 @@ flowchart TD
     TSE2026["TSE candidaturas 2026<br/>(após 15/08)"] --> A6["A6 Dobradinha 2026<br/>(reenquadrada p/ Praça)"]
     R4 -.baseline por Praça.-> A6
     R2 --> D2["D2 Push + sino"]
+    R2 --> A9["A9 Estimativa votos da Praça"]
+    A9 --> B9["B9 Edição rápida lista Praças"]
+    R2 -.-> B7["B7 Mapa filtrado pela lista"]
+    R2 -.-> B8["B8 Polígonos Praças-zona<br/>(SSA/CMS)"]
+    R2 -.-> B10["B10 Hover/tap mapa<br/>(destaque + nav)"]
+    R2 -.-> B11["B11 Escala % válidos<br/>no mapa"]
+    A9 -.métrica 2026.-> B7
+    A9 -.métrica 2026.-> B10
+    A9 -.numerador 2026.-> B11
     JUR -.chave push.-> D2
     C2prod --> C5["C5 GOTV (validar)"]
 ```
 
+Paralelizáveis sem seta dura de entrada (além das tracejadas a partir de R2): **B7**, **B10**, **B11**, fill-ins da lista, Pixel Meta (site público). **A9** bloqueia **B9** (seta dura).
+
 ### Sequência por janela
 
-**Janela 1 — agora → 05/08 (convenções):** ~~R0 → R1 → R2~~ entregues; **deploy da remodelagem** (revisar SQL destrutivo da migração antes do build) + smoke em produção; R6 critique/polish; Onda 0 jurídica em paralelo.
+**Janela 1 — agora → 05/08 (convenções):** ~~R0 → R1 → R2~~ entregues; **deploy da remodelagem** (revisar SQL destrutivo da migração antes do build) + smoke em produção; **A9** estimativa de votos da Praça → **B9** edição rápida na lista (Assessores / Tendência / total esperado); **B7** mapa filtrado, **B10** hover+click-nav e **B11** escala % dos válidos em paralelo; R6 critique/polish; Onda 0 jurídica em paralelo.
 
 **Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; D2 se sobrar folga.
 
-**Janela 3 — 16/08 → set:** A6 dobradinha (pós-TSE 15/08), B6 `setStyle` incremental (mapa com troca de ano/métrica frequente), débitos sobreviventes (abaixo).
+**Janela 3 — 16/08 → set:** A6 dobradinha (pós-TSE 15/08), B6 `setStyle` incremental (mapa com troca de ano/métrica frequente), **B8** polígonos das Praças-zona Salvador/Camaçari (F1 catálogo de bairros shipável antes; F2 dissolve), débitos sobreviventes (abaixo).
 
 **Janela 4 — set → 04/10:** C5 GOTV _(validar)_, congelamento ~20/09 (só bugfix/dados).
 
 ### Cortes seguros / não cortáveis
 
-**Não cortáveis:** Onda 0 (jurídico/Consent); R1–R2 (sem eles a vertical não reflete a operação real); C2 dados reais; assimetria declarado×estimado (relação de campo).
+**Não cortáveis:** Onda 0 (jurídico/Consent); R1–R2 (sem eles a vertical não reflete a operação real); C2 dados reais; assimetria declarado×estimado (relação de campo); **A9** (sem total esperado da Praça, lista/mapa mentem onde não há liderança — schema do modelo operacional).
 
-**Cortes seguros** (se o prazo apertar, nesta ordem): R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; B6; débitos/fill-ins.
+**Cortes seguros** (se o prazo apertar, nesta ordem): R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; B6; B7 (mapa ainda mostra escopo de access sem filtro de UI); **B11** (mapa continua em escala absoluta); **B10** (mapa legível sem hover); **B9** (com A9, edição do total fica só no `/editar`); **B8** (F2 polígonos; manter F1 bairros na Praça se já entregue — mapa continua agregado no município); Pixel Meta nos abaixo-assinados (ads do site público; vertical `/campanha` independente); débitos/fill-ins.
 
 ## Já entregue (resumo)
 
@@ -95,29 +106,35 @@ flowchart TD
 
 ## Supersedidos pela remodelagem (2026-07-20)
 
-| Item antigo                              | Destino                                                                                                                      |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| A5 competitiva (parte aberta)            | Absorvido por **R4** (comparativo multi-candidato por Praça é a versão pedida pela coordenação)                              |
-| A7 F3–F5 (escala pós-A4)                 | Morre com os loaders de núcleo; fetch único lista+mapa vira requisito nativo do mapa de Praças (R2)                          |
-| A8+ (escala pós-A8)                      | Reavaliar pós-R2 se o Eleitorado IBGE for portado ao detalhe da Praça                                                        |
-| B4 zonas TSE no mapa                     | Rabbit hole documentado no plano-mestre (agregação municipal + painel por zona; polígono de zona só com decisão explícita)   |
-| C4 demandas                              | Absorvido por **R3** (agora nascem da liderança, com workflow assessor→coordenador geral e comprovantes staff-only)          |
-| C10 / C11 (escala apoiadores/planos)     | Reavaliar pós-R2/R3 nas superfícies adaptadas; gatilhos originais (base nominal crescendo / volume medido) continuam valendo |
-| E5 Salvador por bairro                   | Praças-zona de Salvador cobrem a granularidade; bairro só com pedido real pós-eleição                                        |
-| E6 (escala pós-E1) / E7 (escala pós-E2)  | Overview de núcleos e trend VM morrem; débitos int reavaliar pós-R4                                                          |
-| FD+ / FD2 (Field Desk pós-critique)      | Superfícies redesenhadas em R2; princípios (glossário inline, filas, bulk) entram no critique de R5                          |
-| VR+ (visitados recentemente)             | Painel portado para Praças em R2; débito de refresh mantém gatilho original                                                  |
-| Listas globais (lideranças/atualizações) | CRM de liderança já nasce global em R2 (liderança é 1 registro por pessoa)                                                   |
+| Item antigo                              | Destino                                                                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| A5 competitiva (parte aberta)            | Absorvido por **R4** (comparativo multi-candidato por Praça é a versão pedida pela coordenação)                                |
+| A7 F3–F5 (escala pós-A4)                 | Morre com os loaders de núcleo; fetch único lista+mapa vira requisito nativo do mapa de Praças (R2)                            |
+| A8+ (escala pós-A8)                      | Reavaliar pós-R2 se o Eleitorado IBGE for portado ao detalhe da Praça                                                          |
+| B4 zonas TSE no mapa                     | Rabbit hole documentado no plano-mestre; **B8** reabre só Praças-zona SSA/CMS (dissolve por bairro — não o B4 multi-município) |
+| C4 demandas                              | Absorvido por **R3** (agora nascem da liderança, com workflow assessor→coordenador geral e comprovantes staff-only)            |
+| C10 / C11 (escala apoiadores/planos)     | Reavaliar pós-R2/R3 nas superfícies adaptadas; gatilhos originais (base nominal crescendo / volume medido) continuam valendo   |
+| E5 Salvador por bairro                   | Praças-zona de Salvador cobrem a granularidade; bairro só com pedido real pós-eleição                                          |
+| E6 (escala pós-E1) / E7 (escala pós-E2)  | Overview de núcleos e trend VM morrem; débitos int reavaliar pós-R4                                                            |
+| FD+ / FD2 (Field Desk pós-critique)      | Superfícies redesenhadas em R2; princípios (glossário inline, filas, bulk) entram no critique de R5                            |
+| VR+ (visitados recentemente)             | Painel portado para Praças em R2; débito de refresh mantém gatilho original                                                    |
+| Listas globais (lideranças/atualizações) | CRM de liderança já nasce global em R2 (liderança é 1 registro por pessoa)                                                     |
 
 ## Próximos — sobreviventes e pós-remodelagem
 
 - **A6** dobradinha 2026 automática quando o TSE publicar candidaturas · gatilho externo: pós-15/08 · reenquadrar para Praça · [plano](plans/insight-dobradinha-2026.md)
+- **A9** Estimativa de votos da Praça (`expectedVotes` — total esperado staff-only, distinto da soma de pledges e de `voteGoals`) · depende de R2 · bloqueia B9 · appetite ~1–1,5 dia · [plano](plans/estimativa-votos-praca.md)
 - **B5 F2–F3** cache CLI compartilhado + factory mun/TI (scripts continuam) · [plano](plans/escala-dry-pos-b2.md)
 - **B6** `BahiaMap` setStyle incremental ao trocar métrica/ano · gatilho: troca frequente no mapa de Praças · [plano](plans/escala-dry-pos-b3.md)
+- **B7** Mapa das Praças filtrado pela mesma URL da lista (`buildPlazaListWhere`) · depende de R2 (entregue) · suave: A9 (métrica 2026) · paralelizável agora · [plano](plans/mapa-pracas-filtrado.md)
+- **B8** Polígonos das Praças-zona (Salvador ZE 1–19 / Camaçari ZE 170–171): F1 catálogo zona→bairros + UI na Praça; F2 dissolve IBGE/malha → TopoJSON no mapa · Janela 3 · cortável (F2) · [plano](plans/poligonos-pracas-zona.md)
+- **B9** Edição rápida na lista de Praças (Assessores, Tendência, **Votos estimados = `expectedVotes`**) · **depende de A9** · appetite ~1–1,5 dia · [plano](plans/edicao-rapida-lista-pracas.md)
+- **B10** Hover/tap no Mapa das Praças: destaque + votos; desktop click navega; mobile 2º tap na selecionada navega · depende de R2 · suave: A9/B6/B7/B8 · paralelizável agora · appetite ~0,5–1 dia · [plano](plans/hover-mapa-pracas.md)
+- **B11** Escala de cor por **% dos votos válidos** da Praça (0–100%, não pelo total da maior Praça) · depende de R2 (entregue) · suave: A9 (numerador 2026) · paralelizável agora · appetite ~0,5–1 dia · [plano](plans/escala-percentual-mapa-pracas.md)
 - **C5** operação dia D / GOTV _(validar com produto)_ · design [`Dia-D-GOTV`](design-refs/latest/Dia-D-GOTV.png) · depende de C2 dados reais
 - **D2** push + sino in-app · soft: chave `campanha-notificacoes-push` (Onda 0) · [plano](plans/notifications.md)
-- **R6** critique/polish visual da vertical remodelada (ciclo /impeccable completo por superfície; smoke visual coordenador feito em 2026-07-21) · gatilho: antes de 16/08
-- **Fill-ins:** O0+ ([plano](plans/escala-dry-pos-onda0.md)) · RS+ auth read leve + shells de senha ([plano](plans/escala-dry-pos-reset-senha-perfil.md)) · higiene PascalCase
+- **R6** critique/polish visual da vertical remodelada (ciclo /impeccable completo por superfície; smoke visual coordenador feito em 2026-07-21) · gatilho: antes de 16/08 · (opcional: mover filtros acima do mapa — ver B7)
+- **Fill-ins:** filtros auto na lista de Praças (debounce 1s no `q`, selects já imediatos; remove Buscar) · [plano](plans/filtros-auto-pracas.md) · O0+ ([plano](plans/escala-dry-pos-onda0.md)) · RS+ auth read leve + shells de senha ([plano](plans/escala-dry-pos-reset-senha-perfil.md)) · higiene PascalCase
 
 ## Bloqueadores atuais
 
@@ -135,7 +152,8 @@ flowchart TD
 
 **Próximos:**
 
-- Textos finais de privacidade + polish O0+ (revalidate globals, DRY Lexical)
+- **Pixel do Meta (Facebook) nos abaixo-assinados** — campo `facebookPixelId` no admin `petition` + `PageView`/`Lead` na página pública (não colar snippet HTML) · appetite ~0,5–1 dia · paralelizável · [plano](plans/pixel-meta-abaixo-assinado.md)
+- Textos finais de privacidade + polish O0+ (revalidate globals, DRY Lexical) — mencionar cookies/Meta quando o Pixel estiver em uso _(suave com o item acima)_
 - `Pages` institucionais (bio, mandato, propostas) + hero/copy editáveis
 - Agenda/multimídia via links oficiais; CTA Doar → QueroApoiar
 - Migrar Consent dos fluxos públicos para chave estável
@@ -152,7 +170,7 @@ flowchart TD
 ## Fora de escopo (por enquanto)
 
 - Serviço Rust separado; self-host/Coolify enquanto Vercel atender; doações in-app
-- Polígonos por zona eleitoral (geocodificação de seções); Praça = seção eleitoral
+- Geocodificação de seções eleitorais / Praça = seção (polígonos **aproximados** das 21 Praças-zona SSA/CMS = **B8**, sem seções)
 - PWA do site/`/admin`; PostGIS sem query espacial real
 - WhatsApp Business API / disparo em massa; previsão estatística de votos neste ciclo
 - Import automático de planilhas de projeção (decisão E4 mantida: dados estratégicos via UI)
