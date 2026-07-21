@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-item
-description: Recebe o código (ex. A4, C2, D2) ou a descrição de um item do docs/roadmap.md do Teqo, revisa o estado do item no roadmap, analisa-o criticamente contra o estado atual do repositório, revisa o plano detalhado linkado em docs/plans/, produz um plano de implementação acionável e — quando o usuário pede para implementar — executa o desenvolvimento com /impeccable nas superfícies de UI. Usar quando o usuário pedir para implementar, planejar ou revisar um item do roadmap — "vamos fazer o A4", "planeja a implementação de", "revisa o plano do item X", "o que falta para o C2", "implementa o C5" — ou fornecer um ID de trilha do roadmap.
+description: Recebe o código (ex. A4, C2, D2) ou a descrição de um item do docs/roadmap.md do Teqo, revisa o estado do item no roadmap, analisa-o criticamente contra o estado atual do repositório, revisa o plano detalhado linkado em docs/plans/, produz um plano de implementação acionável (sempre com última fase de documentação da sessão) e — quando o usuário pede para implementar — executa o desenvolvimento com /impeccable nas superfícies de UI e atualiza notebook/plano/roadmap no fim. Usar quando o usuário pedir para implementar, planejar ou revisar um item do roadmap — "vamos fazer o A4", "planeja a implementação de", "revisa o plano do item X", "o que falta para o C2", "implementa o C5" — ou fornecer um ID de trilha do roadmap.
 ---
 
 # Revisar item do roadmap e criar plano de implementação
@@ -19,11 +19,11 @@ Superfícies de UI deste item passam pelo fluxo **`/impeccable`** (skill anexada
 - [ ] 3. Ler o plano detalhado linkado + fontes satélites
 - [ ] 4. Auditar o plano contra o repositório, afirmação por afirmação
 - [ ] 5. Fechar as questões em aberto com evidência ou recomendação
-- [ ] 6. Escrever o plano de implementação em fases verificáveis (incl. fases Impeccable se houver UI)
+- [ ] 6. Escrever o plano de implementação em fases verificáveis (incl. fases Impeccable se houver UI; última fase = documentação da sessão)
 - [ ] 7. Atualizar docs/plans/ e roadmap se a auditoria achou divergência
 - [ ] 8. Classificar superfície UI e preparar gate Impeccable
 - [ ] 9. Parar e obter confirmação do plano (a menos que o usuário já tenha pedido implementação explícita)
-- [ ] 10. Executar fases: schema/server → UI via /impeccable → verificação AGENTS.md + Aikido
+- [ ] 10. Executar fases: schema/server → UI via /impeccable → verificação AGENTS.md + Aikido → documentação da sessão
 ```
 
 **Escopo por pedido do usuário:**
@@ -116,7 +116,7 @@ Para cada item de "Questões em aberto" do plano:
 
 ## Passo 6 — Escrever o plano de implementação
 
-O deliverable é um plano de execução em **fases pequenas e verificáveis**, em ordem de dependência (schema → server → UI → polish é o padrão usual aqui). Respeite o **Appetite** do plano em `docs/plans/` (ou declare um se estiver ausente): a soma das fases deve caber; se não couber, corte rabbit holes — não estique.
+O deliverable é um plano de execução em **fases pequenas e verificáveis**, em ordem de dependência (schema → server → UI → polish → **documentação da sessão**). Respeite o **Appetite** do plano em `docs/plans/` (ou declare um se estiver ausente): a soma das fases de engenharia deve caber; se não couber, corte rabbit holes — não estique. A fase final de documentação é obrigatória e **não** compete com o appetite de engenharia (quota típica 15–30 min à parte).
 
 Para cada fase:
 
@@ -138,12 +138,30 @@ Guardrails que TODO plano de implementação deste repo inclui (cheque um a um c
 - Collection nova → `admin.group` consistente + hook de revalidação se backing de página pública.
 - Identificadores em inglês; strings visíveis em pt-BR; valores de slug/enum em português são dados, não se traduzem.
 - Verificação final = checklist do AGENTS.md: `pnpm generate:types`, `generate:importmap` (se componentes), `tsc --noEmit`, `lint`, `test`, `test:e2e`, `build` contra o banco local, scan Aikido dos arquivos editados.
+- **Última fase obrigatória — Documentação da sessão:** todo plano gerado termina com uma fase explícita de atualizar a documentação do projeto com o que a sessão fez (não opcional; não misturar com schema/UI). Ver bloco abaixo.
 
-Termine o plano com: dependências assumidas (e o que foi verificado no Passo 2), decisões assumidas _(validar com produto)_ no formato Opções+Recomendação+rejeitadas, classificação Impeccable do Passo 8, rabbit holes / adiados com gatilho, self-score ≥4/5, e o que fica explicitamente de fora (com o plano/item para onde vai).
+### Fase final obrigatória — Documentação da sessão
+
+Sempre inclua como **última fase** do plano (após verificação AGENTS.md + Aikido). Quota típica: `~15–30 min` / fora do appetite de engenharia se o appetite já estiver cheio — a fase existe mesmo assim.
+
+**O que muda** (só o que a sessão realmente tocou; não reescreva histórico):
+
+| Superfície                                                            | Quando atualizar                                       | O quê                                                                                                                                     |
+| --------------------------------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `.cursor/rules/projects/<projeto>.mdc` (ex. `nucleos-eleitorais.mdc`) | Sempre que houve implementação ou decisão material     | Bullet de **Status** no topo: o que entrou, data, link do plano, débitos/follow-ups com gatilho; **Decisões** só se algo novo foi travado |
+| `docs/plans/<slug>.md`                                                | Sempre                                                 | "Atualizado em", Status (ex. entregue / parcial), linha de revisão (o quê + por quê + data); rabbit holes adiados se surgiram             |
+| `docs/roadmap.md`                                                     | Item passou a entregue (ou mudou janela/deps)          | Marca `✓` + "(entregue YYYY-MM-DD)" no grafo e na tabela; "Atualizado em"; consistência tripla tabela = grafo = Dependências do plano     |
+| `AGENTS.md`                                                           | Mudança de convenção/modelo que outros agents precisam | Seção "Recently resolved" ou domínio afetado — só se o as-built diverge do que AGENTS descreve                                            |
+
+**Como verificar a fase:** diff das docs cita o ID do item, a data de hoje, e o que ficou de fora / próximo gatilho; notebook e plano não contradizem o roadmap.
+
+**Pedidos só de planejamento (Passos 1–8):** a fase entra no plano gerado como item futuro; **não** execute a documentação de entrega até haver trabalho real na sessão (exceto correções do Passo 7 por divergência de auditoria).
+
+Termine o plano com: dependências assumidas (e o que foi verificado no Passo 2), decisões assumidas _(validar com produto)_ no formato Opções+Recomendação+rejeitadas, classificação Impeccable do Passo 8, rabbit holes / adiados com gatilho, self-score ≥4/5, o que fica explicitamente de fora (com o plano/item para onde vai), e a **fase final de documentação da sessão** (checklist das superfícies acima).
 
 ## Passo 7 — Atualizar a documentação se houve divergência
 
-Se o Passo 4 achou itens **defasados** ou **conflitantes**:
+Se o Passo 4 achou itens **defasados** ou **conflitantes** (correção **durante o planejamento**, distinta da fase final pós-implementação no Passo 10d):
 
 - Atualize `docs/plans/<slug>.md`: corrija as seções afetadas, atualize "Atualizado em" e registre a revisão em uma linha (o quê + por quê + data), no padrão das revisões existentes.
 - Se a divergência tocar dependências/janela/escopo do item, atualize também o `docs/roadmap.md` nos pontos de consistência (grafo, tabela de janela, "Atualizado em") — a consistência tripla tabela = grafo = seção "Dependências" do plano é obrigatória (ver Passo 6–7 da skill `roadmap-item`).
@@ -207,12 +225,25 @@ Se o item misturar backend + UI, intercale: complete o mínimo de server necess�
 
 ### 10c — Verificação de engenharia
 
-Checklist AGENTS.md completo contra banco **local**; scan Aikido nos arquivos first-party editados (skills `xometry-aikido-scan` / `aikido-scan`). Atualize `docs/plans/<slug>.md` / roadmap se o item passou a "entregue" **somente quando o usuário pedir** o fechamento de status (ou quando o pedido original era entregar o item end-to-end e a verificação passou).
+Checklist AGENTS.md completo contra banco **local**; scan Aikido nos arquivos first-party editados (skills `xometry-aikido-scan` / `aikido-scan`).
+
+### 10d — Documentação da sessão (sempre por último)
+
+Execute a **última fase** do plano (bloco "Fase final obrigatória — Documentação da sessão" do Passo 6). Ordem: notebook do projeto → `docs/plans/<slug>.md` → `docs/roadmap.md` (se entregue ou deps/janela mudaram) → `AGENTS.md` só se a convenção/as-built mudou.
+
+Regras:
+
+- Documente o que **esta sessão** fez (código, decisões, débitos com gatilho) — não invente status de deploy ou merge sem evidência.
+- Se o pedido era entregar o item end-to-end e a verificação passou, marque o item como entregue no plano + roadmap + notebook na mesma passada.
+- Se a sessão ficou parcial (só algumas fases), registre Status parcial + o que falta; não marque `✓` no roadmap.
+- Commits das docs só se o usuário pedir commit (mesmo critério do resto).
+
+Não declare a implementação completa sem 10d.
 
 ## Resumo final ao usuário
 
-**Após planejamento (Passos 1–8):** (1) item e estado no roadmap (janela, appetite, dependências, bloqueios); (2) veredito da auditoria — confirmado / defasado / conflitante / awaiting-evidence, incl. achados de desenho; (3) o plano de implementação em fases (quota de appetite + tracer bullet), com fases Impeccable marcadas; (4) classificação A/B/C/D, `Qualidade de decisão: N/5`, e decisões assumidas que merecem validação de produto.
+**Após planejamento (Passos 1–8):** (1) item e estado no roadmap (janela, appetite, dependências, bloqueios); (2) veredito da auditoria — confirmado / defasado / conflitante / awaiting-evidence, incl. achados de desenho; (3) o plano de implementação em fases (quota de appetite + tracer bullet), com fases Impeccable marcadas e **última fase = documentação da sessão**; (4) classificação A/B/C/D, `Qualidade de decisão: N/5`, e decisões assumidas que merecem validação de produto.
 
-**Após implementação (Passo 10):** o que entrou em cada fase, resultado do critique/polish (score/P0–P1 se houver), checklist AGENTS.md + Aikido, e o que ficou de fora.
+**Após implementação (Passo 10):** o que entrou em cada fase, resultado do critique/polish (score/P0–P1 se houver), checklist AGENTS.md + Aikido, superfícies de doc atualizadas no 10d, e o que ficou de fora.
 
 Se `/simplify` ou `/impeccable critique` deixaram follow-ups **maiores que o cleanup da sessão**, ofereça a skill `capture-review-debts` (triage → confirmação → `roadmap-item`) em vez de registrar débitos ad hoc ou abandoná-los no chat.
