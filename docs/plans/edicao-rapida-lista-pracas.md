@@ -1,11 +1,13 @@
 # Edição rápida na lista de Praças
 
-Status: rascunho (A9 entregue — pronto para implementar)
+Status: entregue 2026-07-21 (branch; deploy pendente com remodelagem)
 Atualizado em: 2026-07-21
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B9)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B9 — entregue 2026-07-21)
 Impeccable: B — encaixe em `PlazaList` / cards mobile em `/campanha/pracas` (sem rota nova)
 Appetite: ~1–1,5 dia eng; 3 affordances na linha + reuso de actions (A9 + plaza); sem migration própria
 Responsável: —
+
+_Revisão 2026-07-21 (pós-implementação + `/simplify`): `PlazaList*Control` + `listFormActions`; coluna Tendência; `PlazaAdvisorAvatarStack`. Débitos → **A9+** F2 / **C8** F4 (ver seção Simplify abaixo)._
 
 ## Design (Impeccable)
 

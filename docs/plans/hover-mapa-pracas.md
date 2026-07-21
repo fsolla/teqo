@@ -1,11 +1,13 @@
 # Hover no Mapa das Praças (destaque + total de votos + navegação)
 
-Status: rascunho
-Atualizado em: 2026-07-21 (navegação: desktop click / mobile 2º tap)
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B10)
+Status: entregue 2026-07-21 (branch; deploy pendente com remodelagem)
+Atualizado em: 2026-07-21 (navegação: desktop click / mobile 2º tap; débitos perf → B6)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B10 — entregue 2026-07-21)
 Impeccable: B — encaixe em `PlazaMapPanel` / `BahiaMap` (sem rota nova)
 Appetite: ~0,5–1 dia eng; handlers Leaflet + faixa + mapa ibge→slug + teste/checklist
 Responsável: —
+
+_Revisão 2026-07-21 (pós-implementação + `/simplify`): `BahiaMap` com `onFeatureSelect` / `onFeatureActivate`; `MapFeatureReadout`; `plazasByIbgeCode` + `resolvePlazaMapNavigation`; SSA/CMS N>1 → scroll `#plaza-zone-breakdown`. Cleanup: dedup hover, merge effects, `emphasizeFeature`. Débito hot path O(n) `eachLayer` → **B6** ([escala-dry-pos-b3.md](escala-dry-pos-b3.md))._
 
 ## Design (Impeccable)
 
@@ -100,10 +102,10 @@ Componentes:
 
 ## Referências
 
-- `docs/roadmap.md` (Trilha B, item B10)
-- `src/components/campaign/BahiaMap.tsx` — GeoJSON sem `onEachFeature` hoje
-- `src/components/campaign/PlazaMapPanel.tsx` — ano / compare / `values` / `zoneBreakdown`
-- `src/utilities/plazaMapData.ts` — bundle (`valuesByYear` por `ibgeCode`)
+- `docs/roadmap.md` (Trilha B, item B10 — entregue)
+- `src/components/campaign/BahiaMap.tsx` — `onFeatureSelect` / `onFeatureActivate` / highlight
+- `src/components/campaign/PlazaMapPanel.tsx` — selected + readout + nav
+- `src/utilities/plazaMapData.ts` / `plazaMapNavigation.ts` — `plazasByIbgeCode`
 - `docs/plans/mapa-pracas-filtrado.md` — B7
 - `docs/plans/escala-dry-pos-b3.md` — B6
 - `docs/plans/poligonos-pracas-zona.md` — B8
