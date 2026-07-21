@@ -75,6 +75,11 @@ export const PlazaMapPanel = ({
     )
   }, [comparisonActive, displayValues, percentScaleActive])
 
+  const scopedKeys = useMemo(
+    () => Object.keys(bundle.plazasByIbgeCode),
+    [bundle.plazasByIbgeCode],
+  )
+
   const metricLabel = useMemo(() => {
     if (comparisonActive) {
       return `diferença de votos em ${year}`
@@ -252,6 +257,8 @@ export const PlazaMapPanel = ({
         values={displayValues}
         scaleMax={displayMax > 0 ? displayMax : undefined}
         fillMode={comparisonActive ? 'diverging' : 'sequential'}
+        fitToKeys={scopedKeys}
+        interactiveKeys={scopedKeys}
         selectedKey={selectedFeature?.key ?? null}
         onFeatureSelect={handleFeatureSelect}
         onFeatureActivate={handleFeatureActivate}

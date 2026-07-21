@@ -51,6 +51,8 @@ Backlog consolidado (bloqueadores, site, campanha, white-label): [`docs/roadmap.
 
 **Recently resolved (2026-07-21):** **B11** Escala % dos válidos no Mapa das Praças — `validVotesByYear` in `PlazaMapBundle`, `scaleMode` selector (`absolute` | `percentValid`, default %), `computeValidVoteShares`, readout em % com votos absolutos secundários; `/simplify` fix `scaleMax` (legenda 0–100% alinhada ao fill). Plano: `docs/plans/escala-percentual-mapa-pracas.md`.
 
+**Recently resolved (2026-07-21):** **B12** Aproximar mapa ao footprint filtrado + correção hover — `fitToKeys` / `interactiveKeys` em `BahiaMap` (`plazasByIbgeCode`); `canonicalMapKeysKey`; hover stroke-only; clear síncrono no mouseout; fit só quando footprint muda. Plano: `docs/plans/aproximar-mapa-pracas.md`.
+
 ## Posts & Tags (news / publications)
 
 The public news/publications system is backed by two collections (both in the `Publicações` admin group) plus the helpers in `src/utilities/posts.ts`.
