@@ -40,25 +40,21 @@ const expectInvalid = async (filePath: string, code: string, ruleId: string) => 
 }
 
 describe('ESLint conventions', () => {
-  it(
-    'enforces PascalCase component and camelCase utility/test filenames',
-    async () => {
-      await expectValid('src/components/FutureCard.tsx', 'export const FutureCard = () => <div />')
-      await expectInvalid(
-        'src/components/future-card.tsx',
-        'export const FutureCard = () => <div />',
-        'check-file/filename-naming-convention',
-      )
-      await expectValid('src/utilities/futureValue.ts', 'export const futureValue = 1')
-      await expectValid('tests/int/futureValue.int.spec.ts', 'export const futureValue = 1')
-      await expectInvalid(
-        'tests/int/future-value.int.spec.ts',
-        'export const futureValue = 1',
-        'check-file/filename-naming-convention',
-      )
-    },
-    15_000,
-  )
+  it('enforces PascalCase component and camelCase utility/test filenames', async () => {
+    await expectValid('src/components/FutureCard.tsx', 'export const FutureCard = () => <div />')
+    await expectInvalid(
+      'src/components/future-card.tsx',
+      'export const FutureCard = () => <div />',
+      'check-file/filename-naming-convention',
+    )
+    await expectValid('src/utilities/futureValue.ts', 'export const futureValue = 1')
+    await expectValid('tests/int/futureValue.int.spec.ts', 'export const futureValue = 1')
+    await expectInvalid(
+      'tests/int/future-value.int.spec.ts',
+      'export const futureValue = 1',
+      'check-file/filename-naming-convention',
+    )
+  }, 15_000)
 
   it('requires uppercase component arrows to use const', async () => {
     await expectInvalid(
@@ -73,9 +69,9 @@ describe('ESLint conventions', () => {
     const result = await lint('src/components/FutureCard.tsx', code)
     const output = await lintWithFix('src/components/FutureCard.tsx', code)
 
-    expect(result.errors.some((error) => error.ruleId === 'local/component-arrow-conventions')).toBe(
-      true,
-    )
+    expect(
+      result.errors.some((error) => error.ruleId === 'local/component-arrow-conventions'),
+    ).toBe(true)
     expect(output).toContain('export const FutureCard = () => (<div />)')
 
     await expectValid(
@@ -89,9 +85,9 @@ describe('ESLint conventions', () => {
     const result = await lint('src/components/FutureCard.tsx', code)
     const output = (await lintWithFix('src/components/FutureCard.tsx', code)) ?? code
 
-    expect(result.errors.some((error) => error.ruleId === 'local/component-arrow-conventions')).toBe(
-      true,
-    )
+    expect(
+      result.errors.some((error) => error.ruleId === 'local/component-arrow-conventions'),
+    ).toBe(true)
     expect(output).toContain('keep this rationale')
   })
 
@@ -137,11 +133,7 @@ describe('ESLint conventions', () => {
     ]
 
     for (const code of invalidExamples) {
-      await expectInvalid(
-        'src/app/future/page.tsx',
-        code,
-        'local/framework-default-export',
-      )
+      await expectInvalid('src/app/future/page.tsx', code, 'local/framework-default-export')
     }
   })
 
@@ -173,6 +165,35 @@ describe('ESLint conventions', () => {
     await expectValid(
       'src/utilities/futureConfig.ts',
       'const futureConfig = { enabled: true }; export default futureConfig',
+    )
+  })
+
+  it('rejects non-async exports from top-level use server modules', async () => {
+    await expectInvalid(
+      'src/app/(campaign)/campanha/actions/futureAction.ts',
+      `'use server'\n\nexport const safeMessages = ['x'] as const\n`,
+      'local/use-server-async-exports',
+    )
+    await expectInvalid(
+      'src/app/(campaign)/campanha/actions/futureAction.ts',
+      `'use server'\n\nexport function syncAction() { return 1 }\n`,
+      'local/use-server-async-exports',
+    )
+    await expectInvalid(
+      'src/app/(campaign)/campanha/actions/futureAction.ts',
+      `'use server'\n\nexport { helper } from './futureHelper'\n`,
+      'local/use-server-async-exports',
+    )
+  })
+
+  it('allows async function and type-only exports from use server modules', async () => {
+    await expectValid(
+      'src/app/(campaign)/campanha/actions/futureAction.ts',
+      `'use server'\n\nexport type Result = { ok: true }\nexport const save = async () => ({ ok: true as const })\nexport async function load() { return 1 }\n`,
+    )
+    await expectValid(
+      'src/app/(campaign)/campanha/(app)/pracas/plazaStaffEditMessages.ts',
+      `export const plazaStaffEditSafeMessages = ['x'] as const\n`,
     )
   })
 })

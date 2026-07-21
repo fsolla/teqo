@@ -14,7 +14,7 @@ import {
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
 import { revalidatePlazaListPaths } from '@/utilities/plazaRevalidation'
-import { plazaStaffEditSafeMessages } from '../../plazaStaffFormActions'
+import { plazaStaffEditSafeMessages } from '../../plazaStaffEditMessages'
 
 export const updatePlazaStrategyFormAction = async (
   _state: CampaignFormActionState,

@@ -20,9 +20,7 @@ import {
 } from '@/utilities/campaignFormActionError'
 import { revalidatePlazaListPaths } from '@/utilities/plazaRevalidation'
 
-export const plazaStaffEditSafeMessages = [
-  'Somente a coordenação e a assessoria podem editar a Praça.',
-] as const
+import { plazaStaffEditSafeMessages } from './plazaStaffEditMessages'
 
 export const setPlazaExpectedVotesFormAction = async (
   _state: CampaignFormActionState,

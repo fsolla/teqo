@@ -1,9 +1,9 @@
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
 import { FlatCompat } from '@eslint/eslintrc'
-import { globalIgnores } from 'eslint/config'
 import prettier from 'eslint-config-prettier/flat'
 import checkFile from 'eslint-plugin-check-file'
+import { globalIgnores } from 'eslint/config'
+import { dirname } from 'path'
+import { fileURLToPath } from 'url'
 import { localRules } from './eslint-local-rules.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -129,6 +129,16 @@ const eslintConfig = [
           ignoreMiddleExtensions: true,
         },
       ],
+    },
+  },
+  {
+    // Catch Next.js invalid-use-server-value before `next build` (Vercel).
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: {
+      local: localRules,
+    },
+    rules: {
+      'local/use-server-async-exports': 'error',
     },
   },
   prettier,
