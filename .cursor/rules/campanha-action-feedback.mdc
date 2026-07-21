@@ -1,0 +1,28 @@
+---
+description: Immediate action feedback, pending UI, and optimistic controls (campanha + public)
+globs: src/app/(campaign)/**/*,src/components/campaign/**/*,src/app/(frontend)/**/*,src/components/**/*
+alwaysApply: false
+---
+
+# Feel the action
+
+Canonical principle: `PRODUCT.md` § Design Principles — **Feel the action**. Precedents: `ActionPlanFilters` / `PlazaFilters` / `SupporterFilters` (`useTransition` + `data-pending` + `aria-busy` + live region); form submits with `useActionState` pending + `Spinner`.
+
+When adding or changing an interactive control that triggers navigation, revalidation, or a server action:
+
+1. **Immediate feedback on the trigger (<~100ms).** The control must change state at once — selected value, pressed/disabled, spinner on the button — so the user knows the tap registered. Do not leave a select bound only to stale server props while RSC is still loading.
+2. **Optimistic on the control; honest on the result.** Keep local/optimistic state for filter selects, toggles, and draft input. Keep the server (URL + RSC / action result) as source of truth for lists, maps, KPIs, and persisted fields — show pending on _that_ region until refresh completes; roll back the control if the action fails.
+3. **Pending pattern.** Prefer `useTransition` (URL/`router`) or `useActionState`/`pending` (mutations). Set `aria-busy` and a polite live region (e.g. “Atualizando resultados…”, “Salvando…”). Dim or skeleton the changing region (`data-pending`); do not rely on `sr-only` alone when the wait is multi-second.
+4. **Classify before coding.** (a) URL filter/nav → local control value + transition pending on results. (b) Form mutation → disable submit + spinner/label. (c) Lazy/heavy open → keep trigger mounted; loading/error states on the shell (existing campaign lazy-dialog pattern).
+5. **Does not override Edit where you see.** In-context edit still revalidates; this rule forbids silent waits and stale-looking controls, not server refresh. Anti-goal shared with that principle: inventing list/aggregate data client-side and skipping refresh.
+
+## Anti-goals
+
+- Control stuck on the previous value until navigation finishes (classic filter-select bug)
+- Full-page spinner as the only pending signal
+- Fake/indeterminate progress that implies completion percentage
+- Pending with no `aria-busy` / live region on multi-second waits
+
+## Plan / Impeccable brief
+
+For UI items: answer explicitly — _does every action on this surface feel immediate on the control, with honest pending on the result?_ Cite this principle; name rabbit hole “optimistic list without refresh” when scoping.
