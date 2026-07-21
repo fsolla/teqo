@@ -1,11 +1,13 @@
 # Aproximar o Mapa das Praças à região filtrada
 
-Status: rascunho
+Status: entregue 2026-07-21 (branch; deploy pendente com remodelagem)
 Atualizado em: 2026-07-21
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B12)
 Impeccable: B — encaixe em `PlazaMapPanel` / `BahiaMap` (sem rota nova)
 Appetite: ~0,5 dia eng; `fitToKeys` no Leaflet + chaves estáveis do bundle + teste/checklist
 Responsável: —
+
+_Revisão 2026-07-21 (implementação): escopo ampliado com correção de três bugs de hover reportados em campo — (1) ênfase agressiva (fillOpacity + stroke grosso), (2) hover em municípios fora do filtro B7, (3) ênfase sticky no mouseout (`setHoveredKey` restyleava antes de limpar `hoveredKey` + `selectedKey` espelhava hover). Solução: `interactiveKeys` compartilhando chaves com `fitToKeys` (`plazasByIbgeCode`); hover stroke-only (fill inalterado, weight 2); clear síncrono de `hoveredKey`/`selectedKey` no mouseout desktop; touch pinned inalterado._
 
 ## Design (Impeccable)
 
@@ -63,8 +65,8 @@ flowchart LR
 
 Componentes:
 
-- **`BahiaMap`** (`src/components/campaign/BahiaMap.tsx`): nova prop opcional `fitToKeys?: string[]` (default `[]`). Efeito (ou ramo) que, quando a chave canônica de `fitToKeys` muda: resolve features via `getMunicipalityFeature` / `getTerritoryFeature` (mesmo path de `highlightKeys`), `fitBounds` com padding/`maxZoom` atuais; se vazio → `BAHIA_BOUNDS`. **Não** alterar o estilo das layers. Depth check: não criar `BahiaMapViewport.ts` pass-through; reusar o bloco já existente de highlight bounds.
-- **`PlazaMapPanel`** (`src/components/campaign/PlazaMapPanel.tsx`): `fitToKeys={Object.keys(bundle.plazasByIbgeCode)}` (memo estável se útil). Não passar as mesmas chaves em `highlightKeys`.
+- **`BahiaMap`** (`src/components/campaign/BahiaMap.tsx`): props `fitToKeys?: string[]` e `interactiveKeys?: string[]` (default `[]` = fit Bahia / tudo interativo). Efeito quando `canonicalMapKeysKey(fitToKeys)` muda → `fitMapToHighlights` (sem alterar estilo). `interactiveKeys` com gate em handlers + `interactive: false` nos paths fora do set. Hover stroke-only + clear síncrono no mouseout. Reusa `fitMapToHighlights` e `canonicalMapKeysKey` em `bahiaMapStyle.ts`.
+- **`PlazaMapPanel`** (`src/components/campaign/PlazaMapPanel.tsx`): memo `scopedKeys = Object.keys(bundle.plazasByIbgeCode)` → `fitToKeys` + `interactiveKeys`. Não passar as mesmas chaves em `highlightKeys`.
 - **Teste:** unit do helper de chave canônica / “quando fitKey muda”; checklist manual: filtrar TI → aproxima; limpar filtros → Bahia; trocar Ano/Escala → viewport estável; assessor com poucas Praças → aproxima sem filtro URL.
 - **Migration:** Sem migration, sem collection, sem server action.
 
@@ -93,6 +95,7 @@ Componentes:
 
 - **Controle “Ver Bahia toda”.** Revisitar se, após B12, usuários pedirem reset sem limpar filtros.
 - **Threshold N→`BAHIA_BOUNDS`.** Revisitar se fit em ~400 `codarea` causar jank perceptível.
+- **Restyle diff só nos paths cujo `interactive` mudou.** Revisitar se troca frequente de filtro causar jank no O(n) `restyleAllPaths` (hoje full pass quando `interactiveKey` muda).
 - **`flyTo` / `animate: true`.** Revisitar se critique pedir transição; default Leaflet `fitBounds` basta no v1.
 
 ## Referências

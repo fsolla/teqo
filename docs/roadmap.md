@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-21 (B6 + B8 F1 + fill-in **C8** F4 entregues; B12 registrado; A9+/B7/B9–B11/filtros-auto entregues)
+Atualizado em: 2026-07-21 (B12 entregue; B6 + B8 F1 + fill-in **C8** F4 entregues; A9+/B7/B9–B11/filtros-auto entregues)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -72,7 +72,7 @@ flowchart TD
     A9 --> A9plus["A9+ Loader lista ✓"]
     A9plus --> B9["B9 Edição rápida lista ✓"]
     R2 -.-> B7["B7 Mapa filtrado ✓"]
-    B7 --> B12["B12 Aproximar mapa<br/>ao filtro"]
+    B7 --> B12["B12 Aproximar mapa<br/>ao filtro ✓"]
     R2 -.-> B8["B8 Polígonos Praças-zona<br/>(SSA/CMS)"]
     R2 -.-> B10["B10 Hover/tap mapa ✓"]
     R2 -.-> B11["B11 Escala % válidos<br/>no mapa ✓"]
@@ -84,11 +84,11 @@ flowchart TD
     C2prod --> C5["C5 GOTV (validar)"]
 ```
 
-Paralelizáveis agora: **B12** (viewport do mapa; B7 já entregue), fill-ins (O0+, RS+, …). ~~**A9** / **A9+** / **B9** / **B7** / **B10** / **B11** / **B6** / **filtros-auto** / **C8** F4~~ entregues 2026-07-21.
+Paralelizáveis agora: fill-ins (O0+, RS+, …). ~~**A9** / **A9+** / **B9** / **B7** / **B10** / **B11** / **B6** / **B12** / **filtros-auto** / **C8** F4~~ entregues 2026-07-21.
 
 ### Sequência por janela
 
-**Janela 1 — agora → 05/08 (convenções):** ~~R0 → R1 → R2~~ entregues; ~~**A9** estimativa de votos~~ / ~~**B9** edição rápida na lista~~ / ~~**B7** mapa filtrado~~ / ~~**B10** hover+click-nav~~ / ~~**B11** escala % dos válidos~~ / ~~**filtros-auto** lista de Praças~~ entregues; **B12** aproximar mapa ao footprint filtrado (quick win, ~0,5 dia); **deploy da remodelagem** (revisar SQL destrutivo da migração antes do build) + smoke em produção; R6 critique/polish; Onda 0 jurídica em paralelo.
+**Janela 1 — agora → 05/08 (convenções):** ~~R0 → R1 → R2~~ entregues; ~~**A9** estimativa de votos~~ / ~~**B9** edição rápida na lista~~ / ~~**B7** mapa filtrado~~ / ~~**B10** hover+click-nav~~ / ~~**B11** escala % dos válidos~~ / ~~**B12** aproximar mapa ao footprint filtrado~~ / ~~**filtros-auto** lista de Praças~~ entregues; **deploy da remodelagem** (revisar SQL destrutivo da migração antes do build) + smoke em produção; R6 critique/polish; Onda 0 jurídica em paralelo.
 
 **Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; D2 se sobrar folga.
 
@@ -100,7 +100,7 @@ Paralelizáveis agora: **B12** (viewport do mapa; B7 já entregue), fill-ins (O0
 
 **Não cortáveis:** Onda 0 (jurídico/Consent); R1–R2 (sem eles a vertical não reflete a operação real); C2 dados reais; assimetria declarado×estimado (relação de campo); ~~**A9**~~ (total esperado da Praça — entregue 2026-07-21).
 
-**Cortes seguros** (se o prazo apertar, nesta ordem): R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; **B8** (F2 polígonos; manter F1 bairros na Praça se já entregue — mapa continua agregado no município); **B12** (mapa continua usável com pan/zoom manual); débitos/fill-ins. ~~**B9** / **B10** / **B11** / **B6**~~ (entregues — não cortar).
+**Cortes seguros** (se o prazo apertar, nesta ordem): R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; **B8** (F2 polígonos; manter F1 bairros na Praça se já entregue — mapa continua agregado no município); débitos/fill-ins. ~~**B9** / **B10** / **B11** / **B6** / **B12**~~ (entregues — não cortar).
 
 ## Já entregue (resumo)
 
@@ -113,6 +113,7 @@ Paralelizáveis agora: **B12** (viewport do mapa; B7 já entregue), fill-ins (O0
 - **B9 (2026-07-21)** — **Edição rápida na lista de Praças** (Assessores / Tendência / `expectedVotes` via Popovers em `PlazaList*Control`; `plazaStaffFormActions`; sem migration) — [plano](plans/edicao-rapida-lista-pracas.md).
 - **B10 (2026-07-21)** — **Hover/tap no Mapa das Praças** (destaque + `MapFeatureReadout`; desktop click navega; mobile 2º tap; SSA/CMS N>1 → `zoneBreakdown`; `plazasByIbgeCode` / `resolvePlazaMapNavigation`) — [plano](plans/hover-mapa-pracas.md).
 - **B11 (2026-07-21)** — **Escala % dos válidos no Mapa das Praças** (`validVotesByYear` no bundle; seletor `Total (votos)` / `% dos válidos`; domínio fixo 0–100%; 2026 usa válidos 2022; compare desliga %; readout em %) — [plano](plans/escala-percentual-mapa-pracas.md).
+- **B12 (2026-07-21)** — **Aproximar mapa ao footprint filtrado + correção hover** (`fitToKeys` + `interactiveKeys` em `BahiaMap` a partir de `plazasByIbgeCode`; `canonicalMapKeysKey`; hover stroke-only sem alterar fill; clear síncrono no mouseout; fit só quando footprint muda — sem re-zoom em Ano/Escala) — [plano](plans/aproximar-mapa-pracas.md).
 - **B6 (2026-07-21)** — **`BahiaMap` setStyle incremental** (layer GeoJSON estável entre troca de ano/métrica/escala; `pathByKeyRef` + restyle O(2) no hover/select; `fitBounds` só em `mode`/`highlightKeys`; helpers em `bahiaMapStyle.ts`) — [plano](plans/escala-dry-pos-b3.md).
 - **B8 F1 (2026-07-21)** — **Catálogo bairros das Praças-zona** (`plazaZoneNeighborhoods`: Salvador TRE-BA RA 02/2017 + Camaçari curado; fixture+int; card **Bairros desta Praça** no overview de Praças `kind=zona`; sem migration) — [plano](plans/poligonos-pracas-zona.md). **F2 pendente** (F2 prep catálogo ~½ dia + TopoJSON + mapa). Débitos pós-`/simplify`: hidratação via `plazaCatalog`, canônico JSON→TS, teste ordem slugs → F2 prep no plano (S6 CSS compartilhado adiado até F2/R6).
 - **Fill-in filtros-auto (2026-07-21)** — **Filtros auto-aplicados na lista de Praças** (`PlazaFilters`: debounce 1s no `q`, Enter imediato, selects imediatos, remove Buscar; `useTransition` + pending a11y; `shouldUpdatePlazaSearchUrl` + no-op via `buildPlazaFiltersKey`; sem migration) — [plano](plans/filtros-auto-pracas.md). Débitos pós-`/simplify`: sync back/forward `search`↔`state.q` e shell pending compartilhado — gatilhos no plano.
@@ -139,7 +140,6 @@ Paralelizáveis agora: **B12** (viewport do mapa; B7 já entregue), fill-ins (O0
 - **A6** dobradinha 2026 automática quando o TSE publicar candidaturas · gatilho externo: pós-15/08 · reenquadrar para Praça · [plano](plans/insight-dobradinha-2026.md)
 - **B5 F2–F3** cache CLI compartilhado + factory mun/TI (scripts continuam) · [plano](plans/escala-dry-pos-b2.md)
 - **B8** Polígonos das Praças-zona (Salvador ZE 1–19 / Camaçari ZE 170–171): ~~F1 catálogo zona→bairros + UI na Praça~~ (entregue 2026-07-21); F2 prep catálogo (~½ dia) + dissolve IBGE/malha → TopoJSON no mapa · Janela 3 · cortável (F2) · [plano](plans/poligonos-pracas-zona.md)
-- **B12** Aproximar o Mapa das Praças ao footprint filtrado (`fitToKeys` no `BahiaMap`; sem re-zoom em Ano/Escala) · Janela 1 · cortável · gatilho do B7 · [plano](plans/aproximar-mapa-pracas.md)
 - **C5** operação dia D / GOTV _(validar com produto)_ · design [`Dia-D-GOTV`](design-refs/latest/Dia-D-GOTV.png) · depende de C2 dados reais
 - **D2** push + sino in-app · soft: chave `campanha-notificacoes-push` (Onda 0) · [plano](plans/notifications.md)
 - **R6** critique/polish visual da vertical remodelada (ciclo /impeccable completo por superfície; smoke visual coordenador feito em 2026-07-21) · gatilho: antes de 16/08 · (opcional: mover filtros acima do mapa)

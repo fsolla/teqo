@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildLayerStyleContext,
+  canonicalMapKeysKey,
   computeChoroplethMax,
   resolvePathStyle,
 } from '@/lib/bahiaMapStyle'
@@ -28,6 +29,17 @@ describe('bahiaMapStyle', () => {
     })
   })
 
+  describe('canonicalMapKeysKey', () => {
+    it('sorts keys for stable identity', () => {
+      expect(canonicalMapKeysKey(['2927408', '2905701'])).toBe('2905701,2927408')
+      expect(canonicalMapKeysKey(['2905701', '2927408'])).toBe('2905701,2927408')
+    })
+
+    it('returns empty string for empty input', () => {
+      expect(canonicalMapKeysKey([])).toBe('')
+    })
+  })
+
   describe('resolvePathStyle', () => {
     it('highlights hovered feature over selected', () => {
       const context = {
@@ -36,7 +48,7 @@ describe('bahiaMapStyle', () => {
         hoveredKey: '2927408',
       }
 
-      expect(resolvePathStyle(context, '2927408').weight).toBe(2.5)
+      expect(resolvePathStyle(context, '2927408').weight).toBe(2)
       expect(resolvePathStyle(context, '2905701').weight).toBe(1)
     })
 
@@ -47,7 +59,7 @@ describe('bahiaMapStyle', () => {
         hoveredKey: null,
       }
 
-      expect(resolvePathStyle(context, '2905701').weight).toBe(2.5)
+      expect(resolvePathStyle(context, '2905701').weight).toBe(2)
     })
 
     it('reveals selected highlight after hover clears on a different feature', () => {
@@ -58,7 +70,7 @@ describe('bahiaMapStyle', () => {
       }
 
       expect(resolvePathStyle(context, '2927408').weight).toBe(1)
-      expect(resolvePathStyle(context, '2905701').weight).toBe(2.5)
+      expect(resolvePathStyle(context, '2905701').weight).toBe(2)
     })
 
     it('highlights keys in highlightSet', () => {
@@ -67,7 +79,18 @@ describe('bahiaMapStyle', () => {
         highlightSet: new Set(['2927408']),
       }
 
-      expect(resolvePathStyle(context, '2927408').weight).toBe(2.5)
+      expect(resolvePathStyle(context, '2927408').weight).toBe(2)
+    })
+
+    it('keeps fillOpacity when highlighted', () => {
+      const base = resolvePathStyle(baseContext, '2927408')
+      const highlighted = resolvePathStyle(
+        { ...baseContext, hoveredKey: '2927408' },
+        '2927408',
+      )
+
+      expect(highlighted.fillOpacity).toBe(base.fillOpacity)
+      expect(highlighted.color).toBe('#c51414')
     })
 
     it('uses diverging fill for negative metrics', () => {

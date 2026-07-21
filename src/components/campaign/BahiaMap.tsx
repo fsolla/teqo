@@ -15,6 +15,7 @@ import {
 import {
   buildHighlightSet,
   buildLayerStyleContext,
+  canonicalMapKeysKey,
   featureKeyFromProperties,
   keyPropertyForMode,
   resolvePathStyle,
@@ -46,6 +47,10 @@ type BahiaMapProps = {
   /** When set, overrides auto max from `values` (e.g. fixed 1 for 0–100% shares). */
   scaleMax?: number
   highlightKeys?: string[]
+  /** Fit viewport to these keys without highlighting them. */
+  fitToKeys?: string[]
+  /** When non-empty, only these keys receive hover/click. */
+  interactiveKeys?: string[]
   selectedKey?: string | null
   onFeatureSelect?: (info: BahiaMapFeatureInfo | null) => void
   onFeatureActivate?: (key: string) => void
@@ -96,6 +101,8 @@ export const BahiaMap = ({
   fillMode = 'sequential',
   scaleMax,
   highlightKeys = [],
+  fitToKeys = [],
+  interactiveKeys = [],
   selectedKey = null,
   onFeatureSelect,
   onFeatureActivate,
@@ -113,6 +120,8 @@ export const BahiaMap = ({
   const touchPinnedRef = useRef(false)
   const onFeatureSelectRef = useRef(onFeatureSelect)
   const onFeatureActivateRef = useRef(onFeatureActivate)
+  const interactiveSetRef = useRef<Set<string> | null>(null)
+  const lastFittedViewportKeyRef = useRef<string | null>(null)
   const stylePropsRef = useRef({
     values,
     fillMode,
@@ -121,7 +130,16 @@ export const BahiaMap = ({
     selectedKey,
   })
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
-  const highlightKey = useMemo(() => highlightKeys.slice().sort().join(','), [highlightKeys])
+  const highlightKey = useMemo(() => canonicalMapKeysKey(highlightKeys), [highlightKeys])
+  const fitKey = useMemo(() => canonicalMapKeysKey(fitToKeys), [fitToKeys])
+  const interactiveKey = useMemo(() => canonicalMapKeysKey(interactiveKeys), [interactiveKeys])
+  const viewportKey = useMemo(() => fitKey || highlightKey, [fitKey, highlightKey])
+  const interactiveSet = useMemo(
+    () => (interactiveKey ? buildHighlightSet(interactiveKey) : null),
+    [interactiveKey],
+  )
+
+  interactiveSetRef.current = interactiveSet
 
   stylePropsRef.current = {
     values,
@@ -136,11 +154,21 @@ export const BahiaMap = ({
     onFeatureActivateRef.current = onFeatureActivate
   }, [onFeatureActivate, onFeatureSelect])
 
+  const isKeyInteractive = (key: string) => {
+    const set = interactiveSetRef.current
+    return set === null || set.has(key)
+  }
+
+  const resolvePathStyleForFeature = (context: LayerStyleContext, key: string) => ({
+    ...resolvePathStyle(context, key),
+    interactive: isKeyInteractive(key),
+  })
+
   const restyleFeature = (key: string) => {
     const context = styleContextRef.current
     const path = pathByKeyRef.current.get(key)
     if (!context || !path) return
-    path.setStyle(resolvePathStyle(context, key))
+    path.setStyle(resolvePathStyleForFeature(context, key))
   }
 
   const restyleAllPaths = () => {
@@ -148,22 +176,30 @@ export const BahiaMap = ({
     if (!context) return
 
     for (const [key, path] of pathByKeyRef.current) {
-      path.setStyle(resolvePathStyle(context, key))
+      path.setStyle(resolvePathStyleForFeature(context, key))
     }
   }
 
-  const setHoveredKey = (nextKey: string | null, bringToFrontLayer?: L.Path) => {
+  const setHoveredKey = (
+    nextKey: string | null,
+    bringToFrontLayer?: L.Path,
+    clearSelection = false,
+  ) => {
     const context = styleContextRef.current
     if (!context) return
 
     const previousKey = context.hoveredKey
     if (previousKey === nextKey) return
 
+    context.hoveredKey = nextKey
+
+    if (clearSelection && previousKey && context.selectedKey === previousKey) {
+      context.selectedKey = null
+    }
+
     if (previousKey) {
       restyleFeature(previousKey)
     }
-
-    context.hoveredKey = nextKey
 
     if (nextKey) {
       restyleFeature(nextKey)
@@ -221,6 +257,7 @@ export const BahiaMap = ({
     let cancelled = false
     setStatus('loading')
     geometryReadyRef.current = false
+    lastFittedViewportKeyRef.current = null
 
     const renderLayer = async () => {
       try {
@@ -252,7 +289,7 @@ export const BahiaMap = ({
             const properties = feature?.properties as Record<string, string> | undefined
             const key = featureKeyFromProperties(properties, keyProperty)
             const context = styleContextRef.current ?? mountContext
-            return resolvePathStyle(context, key ?? '')
+            return resolvePathStyleForFeature(context, key ?? '')
           },
           onEachFeature: (feature, featureLayer) => {
             if (!(featureLayer instanceof L.Path)) return
@@ -265,6 +302,8 @@ export const BahiaMap = ({
             pathByKeyRef.current.set(key, featureLayer)
 
             featureLayer.on('mouseover', (event) => {
+              if (!isKeyInteractive(key)) return
+
               const pointerType = getPointerType(event)
               if (pointerType === 'mouse') {
                 touchPinnedRef.current = false
@@ -280,11 +319,15 @@ export const BahiaMap = ({
 
             featureLayer.on('mouseout', () => {
               if (touchPinnedRef.current) return
-              setHoveredKey(null)
+              if (!isKeyInteractive(key)) return
+
+              setHoveredKey(null, undefined, true)
               onFeatureSelectRef.current?.(null)
             })
 
             featureLayer.on('click', (event) => {
+              if (!isKeyInteractive(key)) return
+
               touchPinnedRef.current = getPointerType(event, 'mouse') === 'touch'
 
               setHoveredKey(key, featureLayer)
@@ -301,12 +344,9 @@ export const BahiaMap = ({
         syncMountStyleContext()
         restyleAllPaths()
 
-        fitMapToHighlights(
-          map,
-          mode,
-          styleContextRef.current!.highlightSet,
-          geometryModule,
-        )
+        const fitIdentity = `${mode}:${viewportKey}`
+        fitMapToHighlights(map, mode, buildHighlightSet(viewportKey), geometryModule)
+        lastFittedViewportKeyRef.current = fitIdentity
 
         geometryReadyRef.current = true
         setStatus('ready')
@@ -332,12 +372,21 @@ export const BahiaMap = ({
   useEffect(() => {
     if (!geometryReadyRef.current) return
 
+    const fitIdentity = `${mode}:${viewportKey}`
+    if (lastFittedViewportKeyRef.current === fitIdentity) return
+
     const map = mapRef.current
     const geometryModule = geometryModuleRef.current
     if (!map || !geometryModule || !layerRef.current) return
 
-    fitMapToHighlights(map, mode, buildHighlightSet(highlightKey), geometryModule)
-  }, [highlightKey, mode])
+    fitMapToHighlights(map, mode, buildHighlightSet(viewportKey), geometryModule)
+    lastFittedViewportKeyRef.current = fitIdentity
+  }, [viewportKey, mode])
+
+  useEffect(() => {
+    if (!interactiveKey || pathByKeyRef.current.size === 0) return
+    restyleAllPaths()
+  }, [interactiveKey])
 
   useEffect(() => {
     const previousContext = styleContextRef.current

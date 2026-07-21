@@ -35,13 +35,13 @@ export const getFeatureStyle = ({
   fillMode,
   max,
 }: FeatureStyleInput): PathOptions => ({
-  weight: highlighted ? 2.5 : 1,
+  weight: highlighted ? 2 : 1,
   color: highlighted ? '#c51414' : '#a8a29e',
   fillColor:
     fillMode === 'diverging'
       ? divergingFillColor(metric, max)
       : choroplethFillColor(metric, max),
-  fillOpacity: highlighted ? 0.92 : metric !== 0 ? 0.78 : 0.35,
+  fillOpacity: metric !== 0 ? 0.78 : 0.35,
 })
 
 export const computeChoroplethMax = (
@@ -54,6 +54,9 @@ export const computeChoroplethMax = (
 
 export const buildHighlightSet = (highlightKey: string): Set<string> =>
   new Set(highlightKey.length > 0 ? highlightKey.split(',').filter(Boolean) : [])
+
+export const canonicalMapKeysKey = (keys: string[]): string =>
+  keys.length > 0 ? [...keys].sort().join(',') : ''
 
 export const keyPropertyForMode = (mode: 'municipality' | 'territory'): FeatureKeyProperty =>
   mode === 'municipality' ? 'codarea' : 'code'
