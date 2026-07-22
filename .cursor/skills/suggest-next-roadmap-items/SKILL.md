@@ -41,7 +41,7 @@ Esta skill **só recomenda** — não implementa, não edita o roadmap e não cr
 
 Leia **nesta ordem** (não pule o roadmap):
 
-1. **`docs/roadmap.md` inteiro** — âncoras do calendário, Onda 0, grafo mermaid, tabelas por janela, Fill-ins, Cortes seguros / não cortáveis, Bloqueadores, Fora de escopo.
+1. **`docs/roadmap.md` inteiro** — âncoras do calendário, Onda 0, grafo mermaid, tabelas por janela, **tabela do programa "Inteligência de campanha"** (E8–E15/B13/C12 — tem colunas próprias Plano/Classe/Appetite/Janela/Depende de), Fill-ins, Cortes seguros / não cortáveis, Bloqueadores, Fora de escopo.
 2. **`.cursor/rules/projects/nucleos-eleitorais.mdc`** (ou notebook do projeto ativo) — status operacional posterior à linha "Atualizado em" do roadmap.
 3. **Data de hoje** (contexto da sessão) vs âncoras do calendário eleitoral — define a janela vigente (1–4).
 4. **Contexto da conversa** — se o usuário já pediu foco (ex.: "só mapa", "só DRY", "nada de fill-in"), aplique como filtro explícito.
@@ -64,17 +64,21 @@ Exclua do pool:
 
 Inclua Fill-ins e débitos `escala-dry-pos-*` / `*+` — eles competem na shortlist, mas com peso menor que features de caminho crítico (Passo 4).
 
+Inclua também os itens da tabela de programa (hoje: "Inteligência de campanha") — são itens de trilha normais para fins de pool; a coluna "Depende de" deles é a fonte de dependências duras, e o embasamento de valor (OMTM, anti-metas) está sumarizado no notebook e em `docs/research/` — **não** releia o relatório de discovery para ranquear.
+
 ## Passo 3 — Filtrar por prontidão
 
 Para cada aberto, classifique:
 
-| Estado                | Critério                                                                      | Ação na shortlist                                            |
-| --------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| **Pronto**            | Todas as dependências **duras** (setas `-->` / coluna "Depende de") entregues | Candidato normal                                             |
-| **Quase**             | Só falta dependência **suave** (`-.->`)                                       | Candidato; note o que degrada se seguir sem a suave          |
-| **Bloqueado duro**    | Dependência dura aberta                                                       | Fora da shortlist; cite o predecessor a fazer antes          |
-| **Bloqueado externo** | Jurídico (Onda 0), TSE após 15/08, validação de produto                       | Fora da shortlist de código; mencione em "Bloqueios"         |
-| **Cortável agora**    | Está em "Cortes seguros" **e** o prazo da janela aperta                       | Só sugerir se for quick win barato ou se o usuário pedir DRY |
+| Estado                | Critério                                                                                       | Ação na shortlist                                            |
+| --------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| **Pronto**            | Todas as dependências **duras** (setas `-->` / coluna "Depende de") entregues                  | Candidato normal                                             |
+| **Quase**             | Só falta dependência **suave** (`-.->`)                                                        | Candidato; note o que degrada se seguir sem a suave          |
+| **Bloqueado duro**    | Dependência dura aberta                                                                        | Fora da shortlist; cite o predecessor a fazer antes          |
+| **Bloqueado externo** | Jurídico (Onda 0), TSE após 15/08, resultado TSE 2026 (E15, pós-eleição), validação de produto | Fora da shortlist de código; mencione em "Bloqueios"         |
+| **Cortável agora**    | Está em "Cortes seguros" **e** o prazo da janela aperta                                        | Só sugerir se for quick win barato ou se o usuário pedir DRY |
+
+Dependência "deploy remodelagem" (ou outro ato operacional com código já pronto) conta como **Quase**, não bloqueado duro: a engenharia pode começar em local; só a ativação em produção espera o deploy — note isso na shortlist.
 
 Confirme no notebook/código só quando o roadmap e o notebook **divergirem** (ex.: roadmap sem ✓ mas notebook diz entregue). Não faça auditoria profunda de código aqui — isso é `implement-roadmap-item`.
 
@@ -82,19 +86,19 @@ Confirme no notebook/código só quando o roadmap e o notebook **divergirem** (e
 
 Atribua a cada **Pronto** / **Quase** uma nota 1–5 (soma ponderada mental; não precisa ser fórmula rígida). Âncoras Teqo:
 
-| Peso  | Critério                      | Preferir                                                                                                                                                                                                                                                  |
-| ----- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Alto  | **Calendário**                | Serve a janela vigente (hoje → próxima âncora). Janela 1–2: produção, base nominal, agenda, fundação de dados. Janela 3: inteligência, mapa, engajamento. Janela 4: só o que falta p/ dia D + estabilização; nada de migration arriscada perto de ~20/09. |
-| Alto  | **Caminho crítico**           | Onda 0 / não cortáveis > operação de campo > inteligência > plataforma/engajamento > fill-in DRY                                                                                                                                                          |
-| Médio | **Paralelismo / desbloqueio** | Item que desbloqueia vários outros (ex.: A7 antes de A5/B3/E\*) ou fecha um lote (E4 após E1–E3)                                                                                                                                                          |
-| Médio | **Prontidão do plano**        | Tem `docs/plans/<slug>.md` acionável > só design-ref > sem plano (C5)                                                                                                                                                                                     |
-| Médio | **Custo vs valor**            | Quick win de campo / insight barato pode furar fila; cadeia `escala-dry-pos-*` só se a superfície já dói (volume, lista lenta) ou se for Fase 1 de alto ROI citada em "Cortes seguros"                                                                    |
-| Baixo | **Risco**                     | Migration + Consent novo = mais caro; item só utility/seed = mais barato                                                                                                                                                                                  |
+| Peso  | Critério                      | Preferir                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ----- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Alto  | **Calendário**                | Serve a janela vigente (hoje → próxima âncora). Janela 1–2: produção, base nominal, agenda, fundação de dados. Janela 3: inteligência, mapa, engajamento. Janela 4: só o que falta p/ dia D + estabilização; nada de migration arriscada perto de ~20/09.                                                                                                                                                              |
+| Alto  | **Caminho crítico**           | Onda 0 / não cortáveis > operação de campo > inteligência > plataforma/engajamento > fill-in DRY. **Atenção:** o núcleo do programa de inteligência (E8/E9/C12) está em "não cortáveis" — conta como caminho crítico, não como "inteligência" genérica; e **C12 é perecível** (cada semana de campanha sem registro é história irrecuperável para o backtest E15 — o atraso dele tem custo que não se recupera depois) |
+| Médio | **Paralelismo / desbloqueio** | Item que desbloqueia vários outros (ex.: A7 antes de A5/B3/E\*) ou fecha um lote (E4 após E1–E3)                                                                                                                                                                                                                                                                                                                       |
+| Médio | **Prontidão do plano**        | Tem `docs/plans/<slug>.md` acionável > só design-ref > sem plano (C5)                                                                                                                                                                                                                                                                                                                                                  |
+| Médio | **Custo vs valor**            | Quick win de campo / insight barato pode furar fila; cadeia `escala-dry-pos-*` só se a superfície já dói (volume, lista lenta) ou se for Fase 1 de alto ROI citada em "Cortes seguros"                                                                                                                                                                                                                                 |
+| Baixo | **Risco**                     | Migration + Consent novo = mais caro; item só utility/seed = mais barato                                                                                                                                                                                                                                                                                                                                               |
 
 **Regras de desempate (travadas):**
 
-1. Não sugerir como #1 um fill-in DRY se houver feature **Pronta** da janela vigente que desbloqueie operação (ex.: E4, A5 fatia, B3, A8, C4).
-2. Preferir **uma fatia** de A5 (um insight) a "fazer A5 inteiro" — diga qual sub-plano.
+1. Não sugerir como #1 um fill-in DRY se houver feature **Pronta** da janela vigente que desbloqueie operação (ex. atuais: E8, C12, E9; B8 F2; D2).
+2. Preferir **uma fatia** de um programa (um ID: E8, C12, …) a "fazer o programa de inteligência inteiro" — diga qual plano (`docs/plans/<slug>.md`), e respeite a ordem do grafo (E8 antes de E9/E10/E12; C12 antes de E11/E14/E15).
 3. Se várias cadeias DRY competem (C10, C11, E6, E7, A7, B5, O0+, …), escolha no máximo **1–2** na shortlist, priorizando as Fases que o próprio roadmap marca como "mais valiosas" em Cortes seguros.
 4. Itens _(proposto — validar com produto)_ (ex.: C5) só entram se o usuário pedir exploração de produto; senão liste em "Depois / validar".
 5. Trabalho externo (lote jurídico) **nunca** substitui um candidato de engenharia — reporte em seção própria.
@@ -103,7 +107,7 @@ Atribua a cada **Pronto** / **Quase** uma nota 1–5 (soma ponderada mental; nã
 
 Pegue os **3–5** melhores do Passo 4. Para cada um:
 
-1. Abra o plano linkado (`docs/plans/...`) — leia cabeçalho, Status, Dependências, Não escopo, e o tamanho das fases (1 parágrafo basta).
+1. Abra o plano linkado (`docs/plans/...`) — leia cabeçalho, Status, Dependências, Não escopo, e o tamanho das fases (1 parágrafo basta). Para itens do programa de inteligência, a tabela do programa já traz classe Impeccable/appetite/depende-de — só abra o plano do candidato final.
 2. Se houver design-ref na tabela do roadmap, cite o nome do par em `docs/design-refs/latest/` (não precisa abrir o HTML).
 3. Classifique superficialmente Impeccable A/B/C/D (mesma tabela de `implement-roadmap-item`) — uma letra + meia frase.
 
