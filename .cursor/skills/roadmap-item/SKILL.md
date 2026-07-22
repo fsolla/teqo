@@ -13,6 +13,8 @@ Esta skill transforma uma ideia solta em: (1) um item posicionado corretamente n
 
 **Qualidade de decisão (não é tour):** aplique [decision-quality.md](decision-quality.md) em silêncio — filtro caro vs barato, Opções+Recomendação+rejeitadas, appetite, rabbit holes, depth check, self-score ≥4 antes de gravar. Não abra fases de `design-code-architecture`; só o sistema de decisão.
 
+**Dados → decisão → apresentação:** se o item produz, agrega ou exibe números/séries/mapas/KPIs, aplique [data-presentation.md](data-presentation.md) em silêncio **antes** de travar a Abordagem — as três perguntas (vou apresentar dados? quais decisões? qual forma mais pobre que auxilia?). Se não há superfície de dados, `Dados: N/A` no plano. Não abra tour de `visualization-choice-reporting`; use só o filtro + tabela de famílias nesse arquivo (e `docs/research/` quando for inteligência territorial).
+
 ## Checklist do fluxo
 
 ```
@@ -20,8 +22,9 @@ Esta skill transforma uma ideia solta em: (1) um item posicionado corretamente n
 - [ ] 2. Classificar a ideia e checar duplicidade/absorção
 - [ ] 3. Explorar o código relevante para fundamentar o plano
 - [ ] 4. Classificar superfície UI (A–D) e semear Impeccable no plano se B/C/D
+- [ ] 4b. Dados → decisão → apresentação (ou Dados: N/A) — ver data-presentation.md
 - [ ] 5. Decidir posicionamento: seção, ID, dependências, janela, paralelismo, appetite
-- [ ] 6. Criar docs/plans/<slug>.md a partir do template (incl. rabbit holes / adiados)
+- [ ] 6. Criar docs/plans/<slug>.md a partir do template (incl. rabbit holes / adiados / dados)
 - [ ] 7. Editar o roadmap em TODOS os pontos de consistência
 - [ ] 8. Verificar links, mermaid, consistência cruzada e self-score de decisão (≥4/5)
 ```
@@ -94,13 +97,25 @@ Não rode a entrevista longa de `/impeccable shape` nem craft. No plano (seção
 - Um job principal da superfície (uma frase).
 - Estratégia de cor desta superfície: Restrained (default de produto) salvo exceção justificada.
 - Anti-goals (ex.: não hero-metric SaaS; não segundo sistema de cards).
-- Na implementação: `Impeccable: shape → craft → critique → polish` (C) ou `craft compacto → critique → polish` (B/D).
+- Na implementação: `Impeccable: shape → craft → critique → polish` (C) ou `craft compacto → critique → polish` (B/D). `harden`/`optimize` só sob gatilho do `implement-roadmap-item` (Passo 8) — não no pipeline fixo.
 
 **Proibido neste passo:**
 
 - `/impeccable craft`, `critique`, `polish`, `live` — pertencem a `implement-roadmap-item`.
 - Entrevista shape de várias rodadas que bloqueia o registro no roadmap. Se C estiver **demasiado** ambíguo para até um brief compacto, pergunte **2–3** perguntas ao usuário (assert-then-confirm), registre as respostas como decisões travadas, e siga — não abra um ciclo Impeccable completo.
 - Inventar paleta ou tipografia novas quando `DESIGN.md` / tokens `data-theme='campaign'` já existem.
+
+## Passo 4b — Dados → decisão → apresentação
+
+Antes de posicionar e escrever a Abordagem, rode o filtro de [data-presentation.md](data-presentation.md):
+
+1. **Vou apresentar dados?** Não → `Dados: N/A` no plano e vá ao Passo 5. Sim (neste item ou só como aggregate para outra superfície) → continue.
+2. **Quais decisões** (ator + escolha) estes dados desbloqueiam? Sem decisão nomeável → corte vaidade ou rebaixe a contexto secundário.
+3. **Como apresentar** na escada de pobreza (número → tabela/lista → série → mapa → chart → dashboard)? Escolha + rejeitadas. Preferir reuso (`CampaignMetricStrip`, lista ranqueada, `BahiaMap`) a lib/chart novos.
+
+Se o item for inteligência/mapa/metas/fila: leia o trecho relevante de `docs/research/` (playbook dado→decisão) **antes** de inventar métrica ou escala — anti-goals de `PRODUCT.md` §5 valem como Decisões travadas quando a métrica for canônica.
+
+Registre no plano na seção **Dados → decisão → apresentação** do template. Self-check do arquivo de dados (≥3/5) além do self-score de decisão.
 
 ## Passo 5 — Decidir o posicionamento
 
@@ -130,8 +145,9 @@ Se a priorização depender de decisão de produto que você não tem como infer
   - "Não escopo" cita destino (outro plano/ID); "Rabbit holes" nomeia explosões se tocadas de passagem; "Adiado com gatilho" usa evidência concreta de revisitação (ou `Nenhum neste item.`).
   - "Referências" lista os arquivos-fonte reais que o implementador vai abrir.
   - Classe Impeccable **A/B/C/D** aparece no plano (cabeçalho ou seção Design); se B/C/D, a seção "Design (Impeccable)" está preenchida.
+  - Seção **Dados → decisão → apresentação** preenchida ou `Dados: N/A` ([data-presentation.md](data-presentation.md)); se há dados, decisões nomeáveis + forma com rejeitadas.
 - Se existir design em `docs/design-refs/latest/`, inclua a subseção de referência visual (UX Pilot) com o aviso padrão de paleta (a estrutura vale, a paleta não — usar tokens do tema `data-theme='campaign'`).
-- **Self-score** ([decision-quality.md](decision-quality.md)): ≥4/5 antes de gravar; se &lt;4, corrija o plano — não peça tour ao usuário.
+- **Self-score** ([decision-quality.md](decision-quality.md)): ≥4/5 antes de gravar; se &lt;4, corrija o plano — não peça tour ao usuário. Se Dados ≠ N/A, self-check de [data-presentation.md](data-presentation.md) ≥3/5.
 
 ## Passo 7 — Editar o roadmap (todos os pontos de consistência)
 
@@ -155,6 +171,7 @@ Para itens fora das trilhas (site público, admin, fill-in, bloqueador, fora de 
 - O plano referencia o roadmap (`Item do roadmap:` no cabeçalho) e o roadmap referencia o plano (link na tabela).
 - Não inventou ID duplicado nem quebrou a numeração de "Ordem".
 - Classe Impeccable do Passo 4 está no plano; se B/C/D, há âncoras (`PRODUCT.md`/`DESIGN.md` e/ou design-ref) citadas — não só "fazer uma tela bonita".
+- Dados: seção preenchida ou `N/A`; se há dados, forma de apresentação alinhada à decisão (não chart por default).
 - Appetite + Rabbit holes presentes; Decisões travadas caras têm alternativas rejeitadas; self-score ≥4/5.
 
-Ao final, resuma para o usuário: ID atribuído, janela, **appetite**, dependências assumidas, **classe Impeccable (A–D)**, `Qualidade de decisão: N/5`, e as decisões de posicionamento que merecem validação de produto.
+Ao final, resuma para o usuário: ID atribuído, janela, **appetite**, dependências assumidas, **classe Impeccable (A–D)**, `Dados: N/A | <forma escolhida>`, `Qualidade de decisão: N/5`, e as decisões de posicionamento que merecem validação de produto.

@@ -13,6 +13,8 @@ Teqo is the digital platform for deputado federal Jorge Solla (PT-BA): public si
 - Hosting stays on Vercel for now. No self-host/Coolify migration in progress.
 - Donations are NOT handled in this app — they run through QueroApoiar (`apoiar.me/jorgesolla`, TSE-homologated). The site only needs a "Doar" link/CTA out to that URL.
 
+- **Embasamento de produto/domínio:** `docs/research/` guarda o compêndio de literatura (campanha de DF na Bahia, geografia do voto, cartografia eleitoral) e o relatório de discovery aprovado (2026-07-21) com o playbook dado→decisão. Para métricas, análises territoriais, mapa e priorização em `/campanha`, consulte-o antes de inventar — o kernel: a disputa de DF é conta de quociente fragmentada; leitura útil é relativa e local (captura, LQ, quantis, cobertura de meta por pledges), nunca % estadual absoluto.
+
 **Real conventions already established in this codebase (follow these, not just the generic patterns below):**
 
 - `Contact` is the normalized "person" record (name, email, phone, state/city via `src/lib/cities.ts`, CEP). Don't create a parallel "person" collection for new features (e.g. líderanças/apoiadores) — add a join collection that relates to `Contact`, the same way `Signature` and `Subscription` do.
@@ -52,6 +54,8 @@ Backlog consolidado (bloqueadores, site, campanha, white-label): [`docs/roadmap.
 **Recently resolved (2026-07-21):** **B11** Escala % dos válidos no Mapa das Praças — `validVotesByYear` in `PlazaMapBundle`, `scaleMode` selector (`absolute` | `percentValid`, default %), `computeValidVoteShares`, readout em % com votos absolutos secundários; `/simplify` fix `scaleMax` (legenda 0–100% alinhada ao fill). Plano: `docs/plans/escala-percentual-mapa-pracas.md`.
 
 **Recently resolved (2026-07-21):** **B12** Aproximar mapa ao footprint filtrado + correção hover — `fitToKeys` / `interactiveKeys` em `BahiaMap` (`plazasByIbgeCode`); `canonicalMapKeysKey`; hover stroke-only; clear síncrono no mouseout; fit só quando footprint muda. Plano: `docs/plans/aproximar-mapa-pracas.md`.
+
+**Recently resolved (2026-07-21):** **Discovery "Inteligência de campanha"** — ciclo literatura→persona→entrevista sintética aprovado. Embasamento canônico de produto/domínio em **`docs/research/`** (compêndio de ~67 fontes sobre campanha de DF na Bahia; relatório com kernel, playbook de 25 padrões dado→decisão, anti-goals): agentes devem consultá-lo antes de propor métricas/análises territoriais novas. Programa registrado no roadmap: **E8–E15 + B13 + C12** (plano-mestre `docs/plans/inteligencia-campanha.md`) — conta da cadeira (metas derivadas sobre válidos projetados), fila de alocação, registro-fundação (versions em `votePledge`, sinais tipados, `allocationDecision`), classificação relativa (substitui limiares 35/20/10 p/ DF), escala relativa no mapa (quantis/LQ/rank + símbolo proporcional), níveis N0–N4 staff-only, motor de sugestões com humano no loop, camada TI (salvaguardas MAUP), planejador de giros, backtest pós-eleição. Anti-metas travadas: % estadual absoluto como KPI, contagem bruta de cadastros, cartograma, "caça ao alienado", sugestão automática sem decisão humana.
 
 ## Posts & Tags (news / publications)
 

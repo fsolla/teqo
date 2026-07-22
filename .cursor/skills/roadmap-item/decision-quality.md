@@ -77,6 +77,7 @@ Quando o tipo de decisão bater, aplicar o princípio — **não** abrir fases d
 | Escopo de v1 do item                                  | 37signals: build less, YAGNI, cortar abstração especulativa; **nunca** cortar o caro de reverter |
 | Depth / leakage na abordagem                          | software-design-philosophy: deep modules, um lugar por conhecimento                              |
 | Outbound / lista / import                             | Timeouts, paginação, fail-closed (já em AGENTS.md) — nomear como decisão se o item toca          |
+| KPI / mapa / série / ranking na UI                    | [data-presentation.md](data-presentation.md): dado → decisão nomeável → forma mais pobre         |
 
 ## Self-score (gate de 30s)
 

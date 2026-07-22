@@ -45,6 +45,12 @@ next-env.d.ts
 # TSE open-data zip cache (pnpm db:seed:tse)
 /data/tse/
 
+# Research source deposits (paywalled books/papers obtained legally) — keep only README/NOTES
+/docs/research/sources/**
+!/docs/research/sources/**/
+!/docs/research/sources/README.md
+!/docs/research/sources/**/NOTES.md
+
 # IBGE geometry download cache (pnpm build:geometries)
 /data/geometries/
 # IBGE demographics download cache (pnpm build:demographics)

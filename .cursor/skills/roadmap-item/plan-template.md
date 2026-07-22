@@ -1,8 +1,9 @@
 # Template de plano (`docs/plans/<slug>.md`)
 
-Estrutura extraída dos planos existentes (`overview-lista-nucleos.md`, `visitados-recentemente.md`, etc.). Manter as seções nesta ordem; omitir "Design (Impeccable)" apenas na classe **A** (só backend); omitir a subseção "Referência visual (UX Pilot)" quando não houver design-ref.
+Estrutura extraída dos planos existentes (`overview-lista-nucleos.md`, `visitados-recentemente.md`, etc.). Manter as seções nesta ordem; omitir "Design (Impeccable)" apenas na classe **A** (só backend); **sempre** incluir "Dados → decisão → apresentação" (`N/A` se não houver superfície de dados); omitir a subseção "Referência visual (UX Pilot)" quando não houver design-ref.
 
 Filtros de decisão (caro vs barato, appetite, rabbit holes, depth): [decision-quality.md](decision-quality.md).
+Filtro de dados (apresentar? decisão? forma?): [data-presentation.md](data-presentation.md) — obrigatório se houver KPI/mapa/série/ranking; senão `Dados: N/A`.
 
 ````markdown
 # <Título do item em pt-BR>
@@ -20,7 +21,7 @@ Responsável: —
 
 Âncoras: `PRODUCT.md` / `DESIGN.md` (register <product|brand>) · tema `data-theme='campaign'` (ou tokens do site público).
 
-Na implementação (`implement-roadmap-item`): <shape → craft → critique → polish | craft compacto → critique → polish | shape compacto (ref) → craft → …>.
+Na implementação (`implement-roadmap-item`): <shape → craft → critique → polish | craft compacto → critique → polish | shape compacto (ref) → craft → …>. Declarar `harden`/`optimize` só se o Passo 8 do implement acionar gatilho (não pipeline fixo).
 
 Brief compacto (obrigatório em C; se B ambíguo):
 
@@ -45,6 +46,16 @@ Como usar:
 - **Ajustar cores e código:** o HTML/PNG usa a paleta antiga (vermelho escuro `#8E0E23`, navy `#1B2B4B`, dourado `#C8874B`) e Tailwind via CDN. Implementar com os componentes shadcn existentes (`src/components/ui`) e os tokens do tema `data-theme='campaign'` (`src/app/(frontend)/styles.css`): fundo branco, primário `#C51414`, superfícies neutras claras.
 
 <!-- Se o item nasce de critique: cite `.impeccable/critique/<snapshot>.md` aqui; não rode critique novo neste fluxo. -->
+
+## Dados → decisão → apresentação
+
+<!-- Obrigatório em todo plano (também na classe A). Sem métrica/mapa/série/ranking nesta entrega: uma linha "Dados: N/A — <por quê>". Caso contrário as três perguntas. Ver data-presentation.md. -->
+
+- **Vou apresentar dados?** <Não (N/A) | Sim, só aggregate para &lt;consumidor&gt; | Sim, superfície neste item>
+- **Decisões desbloqueadas:** <ator + escolha; uma por bullet. Sem decisão nomeável → corte vaidade.>
+- **Forma escolhida:** <degrau da escada: número+contexto | tabela/lista | série | mapa | chart | …> — **por quê.** **Rejeitado:** <chart/mapa/KPI alternativos e por quê>.
+- **Profile (se Sim):** tipo / granularidade / tamanho típico / absoluto vs relativo.
+- **Anti-goals de dado:** <ex.: sem % estadual absoluto; sem gauge SaaS — ou "N/A">.
 
 ## Contexto
 
@@ -124,5 +135,6 @@ Notas:
 - No bloco mermaid acima, remover as barras invertidas dos fences internos (`\``` → ` ``` `).
 - Nível de detalhe alvo: ~100–130 linhas, como os planos existentes. Menos que isso costuma significar que o Passo 3 (exploração do código) foi pulado.
 - Classe **A**: omita a seção "Design (Impeccable)" e use no cabeçalho `Impeccable: A — N/A (sem superfície UI)`.
+- Seção **Dados → decisão → apresentação** é sempre presente (preenchida ou `Dados: N/A`); não omita.
 - Não rode `/impeccable craft|critique|polish` ao criar o plano — só classifique e semeie; a skill `implement-roadmap-item` executa o ciclo.
-- Self-score de qualidade de decisão (0–5) antes de gravar: ver [decision-quality.md](decision-quality.md). Se Rabbit holes ou Adiado com gatilho estiverem vazios de propósito, escreva `Nenhum neste item.` — não omita a seção.
+- Self-score de qualidade de decisão (0–5) antes de gravar: ver [decision-quality.md](decision-quality.md). Se Dados ≠ N/A, self-check em [data-presentation.md](data-presentation.md) (≥3/5). Se Rabbit holes ou Adiado com gatilho estiverem vazios de propósito, escreva `Nenhum neste item.` — não omita a seção.
