@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-23 (Admin Payload: export CSV de assinaturas e contatos entregue — [plano](plans/exportar-csv-assinaturas.md))
+Atualizado em: 2026-07-23 (D3–D5: canal WhatsApp **pessoal** por staff + QR — [plano-mestre](plans/whatsapp-interno-campanha.md); A10 cenários — [plano](plans/cenarios-estimativa-votos.md); export CSV admin entregue)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -21,13 +21,13 @@ Registro canônico dos **próximos** planos e débitos. Histórico de entregas: 
 - Um único app Next.js: site `(frontend)`, admin `(payload)`, `/campanha` `(campaign)`. Sem Rust separado. Vercel por enquanto.
 - Doações só via CTA QueroApoiar (`apoiar.me/jorgesolla`). Pessoa = `Contact` + joins — nunca cadastro paralelo.
 - **Praça = unidade operacional pré-definida** (2026-07-20): município, exceto Salvador (19 Praças-zona) e Camaçari (2 Praças-zona); zonas compartilhadas cortadas na divisa municipal. Ninguém cria/edita geografia no app. Substitui o Núcleo Eleitoral — plano [remodelagem-pracas.md](plans/remodelagem-pracas.md).
-- Roles: `coordinator` ("Coordenador Geral"), `advisor` ("Assessor"), `leader` ("Liderança"); assessor vê só as Praças que administra. Sem disparo em massa (Res. TSE 23.610 art. 33 / Meta).
+- Roles: `coordinator` ("Coordenador Geral"), `advisor` ("Assessor"), `leader` ("Liderança"); assessor vê só as Praças que administra. Sem disparo em massa (Res. TSE 23.610 art. 33 / Meta). Comunicação **1:1 interna** staff↔lideranças via bridge WhatsApp não oficial = programa **D3–D5** (não é Business API nem blast).
 
 ## Onda 0 — caminho crítico para dados reais
 
 Textos provisórios de Consent + `/privacidade` auto-provisionados ([onda-0.md](plans/onda-0.md)); **hold de PII real** até o lote jurídico final. Inalterada pela remodelagem (mesmas chaves `Consent`).
 
-1. **Lote jurídico único** _(externo)_ — textos finais (substituem provisórios) + base LGPD art. 11: `lideranca-autopreenchimento`, `apoiador-cadastro`, `apoiador-intencao-voto`, `campanha-notificacoes-push`, Aviso de Privacidade, avaliação RIPD.
+1. **Lote jurídico único** _(externo)_ — textos finais (substituem provisórios) + base LGPD art. 11: `lideranca-autopreenchimento`, `apoiador-cadastro`, `apoiador-intencao-voto`, `campanha-notificacoes-push`, **`campanha-whatsapp-canal`** (D3 — armazenamento/processamento do canal interno staff↔lideranças; se o lote já tiver fechado sem esta chave, entra no próximo passe com a assessoria — não abrir rodada jurídica só por ela), Aviso de Privacidade, avaliação RIPD.
 2. **Smoke pós-deploy** — `NEXT_PUBLIC_SITE_URL` HTTPS, login `/campanha`, Praça de teste; checklist no AGENTS.md.
 3. **Ativação com dados reais** assim que (1) liberar — lideranças/apoiadores reais e import em massa.
 4. **Onboarding do time** — usuários `coordinator`/`advisor`, primeiras Praças assumidas, treino de campo.
@@ -51,18 +51,18 @@ Feedback da coordenação (2026-07-20) invalidou o modelo de Núcleo: a campanha
 
 O discovery literatura→persona→entrevista ([relatório aprovado](research/relatorio-entrevista-persona-campanha.md); compêndio com ~67 fontes em [docs/research/](research/)) fixou o kernel: a disputa de DF é conta de quociente fragmentada; o gargalo é converter lealdade de campo em voto nominal praça a praça via rede; % estadual absoluto é anti-métrica. O produto deve entregar **inteligência, não planilha chique**: metas derivadas, leitura relativa, fila de decisão priorizada, sugestões dado→decisão com humano no loop, registro ex-ante auditável. Plano-mestre: [inteligencia-campanha.md](plans/inteligencia-campanha.md) (incl. gaps de dados G1–G10 e desenho canônico da fila).
 
-| ID  | Fatia                              | Plano                                                   | Entrega essencial                                                                                                                                        | Classe | Appetite | Janela    | Depende de                         |
-| --- | ---------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------- | --------- | ---------------------------------- |
-| E8  | Conta da cadeira                   | [detalhes](plans/conta-da-cadeira.md)                   | Global `campaignGoals`; potencial por praça (válidos projetados, captura do campo, roll-off, headroom); decomposição meta→praça; cobertura Σpledges÷meta | B      | ~2d      | 2         | deploy remodelagem                 |
-| E9  | Fila de alocação                   | [detalhes](plans/fila-de-alocacao.md)                   | Lista de decisão (7 colunas), ordenação por déficit descoberto + risco por frescor, "coluna da vergonha"                                                 | B      | ~1,5d    | 2         | E8                                 |
-| C12 | Registro-fundação                  | [detalhes](plans/registro-fundacao.md)                  | Versions em `votePledge`; sinais tipados no `plazaUpdate`; `actionPlan.origin`+custo; collection `allocationDecision`                                    | B      | ~2d      | 2         | deploy remodelagem (paralelo a E8) |
-| E10 | Classificação territorial relativa | [detalhes](plans/classificacao-territorial-relativa.md) | Âncoras relativas (LQ / share da cadeira marginal), multi-eixo; substitui 35/20/10 para DF                                                               | B      | ~1d      | 3         | E8                                 |
-| B13 | Escala relativa no mapa            | [detalhes](plans/escala-relativa-mapa.md)               | Quantis do candidato (default) + LQ + rank; símbolo proporcional por votos em jogo; % válidos mantido                                                    | B      | ~2d      | 3         | E8, E10                            |
-| E14 | Níveis de envolvimento N0–N4       | [detalhes](plans/niveis-de-envolvimento.md)             | `engagementLevel` com histerese e sinais de reversão; staff-only (vocabulário duplo)                                                                     | B      | ~1d      | 3         | C12                                |
-| E11 | Motor de sugestões v1              | [detalhes](plans/motor-de-sugestoes.md)                 | 8 padrões (P1/P2/P3/P5/P6/P7/K-A/K-B), menu com estatuto, aceitar/descartar → `allocationDecision`, triagem 1–5                                          | C      | ~3d      | 3         | E8, E9, E10, C12                   |
-| E12 | Camada TI                          | [detalhes](plans/camada-territorios-identidade.md)      | Rollups com salvaguardas MAUP, benchmark intra-TI (gatilhos T no motor = fase 2 de E11)                                                                  | B      | ~1,5d    | 3         | E8                                 |
-| E13 | Planejador de presença/giros       | [detalhes](plans/planejador-de-giros.md)                | Elegibilidade (5 condições ✓/—), fases construção/consolidação/ativação, compositor de giro, visita pedida×justificada                                   | C      | ~1,5d    | 3         | E8, C12                            |
-| E15 | Backtest pós-eleição               | [detalhes](plans/backtest-pos-eleicao.md)               | Pledge (trajetória) vs. resultado por zona; calibração de limiares                                                                                       | A      | ~1d      | pós-04/10 | C12, TSE 2026                      |
+| ID  | Fatia                              | Plano                                                   | Entrega essencial                                                                                                                                                                  | Classe | Appetite | Janela    | Depende de                                     |
+| --- | ---------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------- | --------- | ---------------------------------------------- |
+| E8  | Conta da cadeira                   | [detalhes](plans/conta-da-cadeira.md)                   | Global `campaignGoals`; potencial por praça (válidos projetados, captura do campo, roll-off, headroom); decomposição meta→praça; cobertura Σpledges÷meta (cenário default = média) | B      | ~2d      | 2         | **A10**, deploy remodelagem                    |
+| E9  | Fila de alocação                   | [detalhes](plans/fila-de-alocacao.md)                   | Lista de decisão (7 colunas), ordenação por déficit descoberto + risco por frescor, "coluna da vergonha"                                                                           | B      | ~1,5d    | 2         | E8                                             |
+| C12 | Registro-fundação                  | [detalhes](plans/registro-fundacao.md)                  | Versions em `votePledge`; sinais tipados no `plazaUpdate`; `actionPlan.origin`+custo; collection `allocationDecision`                                                              | B      | ~2d      | 2         | deploy remodelagem (paralelo a E8; suave: A10) |
+| E10 | Classificação territorial relativa | [detalhes](plans/classificacao-territorial-relativa.md) | Âncoras relativas (LQ / share da cadeira marginal), multi-eixo; substitui 35/20/10 para DF                                                                                         | B      | ~1d      | 3         | E8                                             |
+| B13 | Escala relativa no mapa            | [detalhes](plans/escala-relativa-mapa.md)               | Quantis do candidato (default) + LQ + rank; símbolo proporcional por votos em jogo; % válidos mantido                                                                              | B      | ~2d      | 3         | E8, E10                                        |
+| E14 | Níveis de envolvimento N0–N4       | [detalhes](plans/niveis-de-envolvimento.md)             | `engagementLevel` com histerese e sinais de reversão; staff-only (vocabulário duplo)                                                                                               | B      | ~1d      | 3         | C12                                            |
+| E11 | Motor de sugestões v1              | [detalhes](plans/motor-de-sugestoes.md)                 | 8 padrões (P1/P2/P3/P5/P6/P7/K-A/K-B), menu com estatuto, aceitar/descartar → `allocationDecision`, triagem 1–5                                                                    | C      | ~3d      | 3         | E8, E9, E10, C12                               |
+| E12 | Camada TI                          | [detalhes](plans/camada-territorios-identidade.md)      | Rollups com salvaguardas MAUP, benchmark intra-TI (gatilhos T no motor = fase 2 de E11)                                                                                            | B      | ~1,5d    | 3         | E8                                             |
+| E13 | Planejador de presença/giros       | [detalhes](plans/planejador-de-giros.md)                | Elegibilidade (5 condições ✓/—), fases construção/consolidação/ativação, compositor de giro, visita pedida×justificada                                                             | C      | ~1,5d    | 3         | E8, C12                                        |
+| E15 | Backtest pós-eleição               | [detalhes](plans/backtest-pos-eleicao.md)               | Pledge (trajetória) vs. resultado por zona; calibração de limiares                                                                                                                 | A      | ~1d      | pós-04/10 | C12, TSE 2026                                  |
 
 ```mermaid
 flowchart TD
@@ -88,6 +88,8 @@ flowchart TD
     R2 --> A9["A9 Estimativa votos ✓"]
     A9 --> A9plus["A9+ Loader lista ✓"]
     A9plus --> B9["B9 Edição rápida lista ✓"]
+    A9 --> A10["A10 Cenários estimativa<br/>pessimista/média/otimista"]
+    R2 --> A10
     R2 -.-> B7["B7 Mapa filtrado ✓"]
     B7 --> B12["B12 Aproximar mapa<br/>ao filtro ✓"]
     R2 -.-> B8["B8 Polígonos Praças-zona<br/>(SSA/CMS)"]
@@ -95,10 +97,17 @@ flowchart TD
     R2 -.-> B11["B11 Escala % válidos<br/>no mapa ✓"]
     A9 -.métrica 2026.-> B10
     A9 -.numerador 2026.-> B11
+    A10 -.métrica 2026 por cenário.-> B10
     B10 -.hover densos.-> B6["B6 setStyle incremental ✓"]
     B11 -.troca escala.-> B6
     JUR -.chave push.-> D2
     C2prod --> C5["C5 GOTV (validar)"]
+    R2 --> D3["D3 WA canal<br/>fundação"]
+    JUR -.chave WA canal.-> D3
+    D3 --> D4["D4 WA envio 1:1"]
+    D3 --> D5["D5 WA → rascunhos"]
+    D4 -.thread.-> D5
+    C2prod -.telefones reais.-> D3
 
     subgraph Intel["Inteligência de campanha — discovery 2026-07-21"]
         E8i["E8 Conta da cadeira"]
@@ -114,7 +123,9 @@ flowchart TD
     end
 
     R4 --> E8i
+    A10 --> E8i
     R5 --> C12i
+    A10 -.versions no group.-> C12i
     E8i --> E9i --> E11i
     C12i --> E11i
     C12i --> E14i
@@ -131,23 +142,23 @@ flowchart TD
     E11i -.decisões acumuladas.-> E15i
 ```
 
-Paralelizáveis agora: fill-ins (O0+, RS+, …). ~~**A9** / **A9+** / **B9** / **B7** / **B10** / **B11** / **B6** / **B12** / **filtros-auto** / **C8** F4~~ entregues 2026-07-21.
+Paralelizáveis agora: **A10** (pós-A9; paraleliza com C12 / smoke pós-deploy), fill-ins (O0+, RS+, …). **D3** (baixa/média prioridade; após remodelagem em prod + folga — não bloqueia E8/E9). ~~**A9** / **A9+** / **B9** / **B7** / **B10** / **B11** / **B6** / **B12** / **filtros-auto** / **C8** F4~~ entregues 2026-07-21.
 
 ### Sequência por janela
 
-**Janela 1 — agora → 05/08 (convenções):** ~~R0 → R1 → R2~~ entregues; ~~**A9** estimativa de votos~~ / ~~**B9** edição rápida na lista~~ / ~~**B7** mapa filtrado~~ / ~~**B10** hover+click-nav~~ / ~~**B11** escala % dos válidos~~ / ~~**B12** aproximar mapa ao footprint filtrado~~ / ~~**filtros-auto** lista de Praças~~ entregues; **deploy da remodelagem** (revisar SQL destrutivo da migração antes do build) + smoke em produção; R6 critique/polish; Onda 0 jurídica em paralelo.
+**Janela 1 — agora → 05/08 (convenções):** ~~R0 → R1 → R2~~ entregues; ~~**A9** estimativa de votos~~ / ~~**B9** edição rápida na lista~~ / ~~**B7** mapa filtrado~~ / ~~**B10** hover+click-nav~~ / ~~**B11** escala % dos válidos~~ / ~~**B12** aproximar mapa ao footprint filtrado~~ / ~~**filtros-auto** lista de Praças~~ entregues; **deploy da remodelagem** (revisar SQL destrutivo da migração antes do build) + smoke em produção; **A10** cenários pessimista/média/otimista (pode puxar para cá pós-deploy — desbloqueia E8); R6 critique/polish; Onda 0 jurídica em paralelo.
 
-**Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; **E8** conta da cadeira → **E9** fila de alocação, com **C12** registro-fundação em paralelo (migrations cedo, longe do congelamento); D2 se sobrar folga.
+**Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; **A10** (se não fechou na Janela 1) → **E8** conta da cadeira → **E9** fila de alocação, com **C12** registro-fundação em paralelo (migrations cedo, longe do congelamento); D2 se sobrar folga.
 
-**Janela 3 — 16/08 → set:** A6 dobradinha (pós-TSE 15/08), **E10** classificação relativa → **B13** escala relativa no mapa, **E14** níveis N0–N4, **E11** motor de sugestões v1, **E12** camada TI, **E13** planejador de giros; **B8** polígonos das Praças-zona Salvador/Camaçari (F1 catálogo de bairros shipável antes; F2 dissolve), débitos sobreviventes (abaixo).
+**Janela 3 — 16/08 → set:** A6 dobradinha (pós-TSE 15/08), **E10** classificação relativa → **B13** escala relativa no mapa, **E14** níveis N0–N4, **E11** motor de sugestões v1, **E12** camada TI, **E13** planejador de giros; **B8** polígonos das Praças-zona Salvador/Camaçari (F1 catálogo de bairros shipável antes; F2 dissolve), débitos sobreviventes (abaixo). Se houver folga **e** Little Hire ainda vazar para o ZAP: começar **D3** (fundação do canal) — não compete com E8/E9 na Janela 2.
 
-**Janela 4 — set → 04/10:** C5 GOTV _(validar)_, congelamento ~20/09 (só bugfix/dados). **E15** backtest pós-eleição (após 04/10).
+**Janela 4 — set → 04/10:** C5 GOTV _(validar)_, congelamento ~20/09 (só bugfix/dados). **D4** envio 1:1 e **D5** inbox→rascunhos só se D3 estiver estável **antes** do congelamento (senão Adiar pós-04/10). **E15** backtest pós-eleição (após 04/10).
 
 ### Cortes seguros / não cortáveis
 
-**Não cortáveis:** Onda 0 (jurídico/Consent); R1–R2 (sem eles a vertical não reflete a operação real); C2 dados reais; assimetria declarado×estimado (relação de campo); ~~**A9**~~ (total esperado da Praça — entregue 2026-07-21); **E8**+**E9**+**C12** (a conta da cadeira, a fila e o registro ex-ante são o mínimo de "inteligência, não planilha" — e C12 é irrecuperável se não registrar durante a campanha).
+**Não cortáveis:** Onda 0 (jurídico/Consent); R1–R2 (sem eles a vertical não reflete a operação real); C2 dados reais; assimetria declarado×estimado (relação de campo); ~~**A9**~~ (total esperado da Praça — entregue 2026-07-21); **A10** (faixa pessimista/média/otimista — semântica operacional pedida pela coordenação; E8 consome); **E8**+**E9**+**C12** (a conta da cadeira, a fila e o registro ex-ante são o mínimo de "inteligência, não planilha" — e C12 é irrecuperável se não registrar durante a campanha).
 
-**Cortes seguros** (se o prazo apertar, nesta ordem): **E13** planejador de giros (agenda segue manual com J-A/J-B como guia); **E12** camada TI (rollup manual por lista); **E15** (pós-eleição por definição — cortar = perder o aprendizado 2030); **E11** motor v1 (manter fila E9 sem sugestões); **B13** símbolo proporcional (manter quantis/LQ como escala); **E14** (manter `priority` alta/normal); R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; **B8** (F2 polígonos; manter F1 bairros na Praça se já entregue — mapa continua agregado no município); débitos/fill-ins. ~~**B9** / **B10** / **B11** / **B6** / **B12**~~ / ~~**export CSV de assinaturas/contatos**~~ (entregues — não cortar).
+**Cortes seguros** (se o prazo apertar, nesta ordem): **D5** inbox→rascunhos (manter registro manual + `wa.me`); **D4** envio bridge (manter `wa.me`); **D3** fundação do canal (atalho `wa.me` continua); **E13** planejador de giros (agenda segue manual com J-A/J-B como guia); **E12** camada TI (rollup manual por lista); **E15** (pós-eleição por definição — cortar = perder o aprendizado 2030); **E11** motor v1 (manter fila E9 sem sugestões); **B13** símbolo proporcional (manter quantis/LQ como escala); **E14** (manter `priority` alta/normal); R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; **B8** (F2 polígonos; manter F1 bairros na Praça se já entregue — mapa continua agregado no município); débitos/fill-ins. ~~**B9** / **B10** / **B11** / **B6** / **B12**~~ / ~~**export CSV de assinaturas/contatos**~~ (entregues — não cortar).
 
 ## Já entregue (resumo)
 
@@ -185,12 +196,17 @@ Paralelizáveis agora: fill-ins (O0+, RS+, …). ~~**A9** / **A9+** / **B9** / *
 
 ## Próximos — sobreviventes e pós-remodelagem
 
-- **Programa Inteligência de campanha** (E8–E15, B13, C12) · fatias, gaps de dados e fila canônica no [plano-mestre](plans/inteligencia-campanha.md) · embasamento: [docs/research/](research/) (relatório aprovado 2026-07-21)
+- **A10** Cenários de estimativa (pessimista / média / otimista) em pledge + total da Praça + lista/mapa · liderança declara um · desbloqueia E8 · Janela 1–2 · não cortável · [plano](plans/cenarios-estimativa-votos.md)
+- **Programa Inteligência de campanha** (E8–E15, B13, C12) · fatias, gaps de dados e fila canônica no [plano-mestre](plans/inteligencia-campanha.md) · embasamento: [docs/research/](research/) (relatório aprovado 2026-07-21) · **E8 depende de A10**
 - **A6** dobradinha 2026 automática quando o TSE publicar candidaturas · gatilho externo: pós-15/08 · reenquadrar para Praça · alimenta **E13** · [plano](plans/insight-dobradinha-2026.md)
 - **B5 F2–F3** cache CLI compartilhado + factory mun/TI (scripts continuam) · [plano](plans/escala-dry-pos-b2.md)
 - **B8** Polígonos das Praças-zona (Salvador ZE 1–19 / Camaçari ZE 170–171): ~~F1 catálogo zona→bairros + UI na Praça~~ (entregue 2026-07-21); F2 prep catálogo (~½ dia) + dissolve IBGE/malha → TopoJSON no mapa · Janela 3 · cortável (F2) · [plano](plans/poligonos-pracas-zona.md)
 - **C5** operação dia D / GOTV _(validar com produto)_ · design [`Dia-D-GOTV`](design-refs/latest/Dia-D-GOTV.png) · depende de C2 dados reais
 - **D2** push + sino in-app · soft: chave `campanha-notificacoes-push` (Onda 0) · [plano](plans/notifications.md)
+- **Programa WhatsApp interno (D3–D5)** · baixa/média prioridade · 1:1 staff↔lideranças via bridge **não oficial** · **número pessoal** de cada assessor/CG (QR no app, parece chat pessoal) · não Business API / não massa / não chip institucional · fecha Little Hire · plano-mestre [whatsapp-interno-campanha.md](plans/whatsapp-interno-campanha.md)
+  - **D3** fundação multi-sessão (QR por `campaignUser` + log + Consent `campanha-whatsapp-canal`) · [plano](plans/whatsapp-canal-fundacao.md)
+  - **D4** envio 1:1 pela sessão do ator · depende de D3 · [plano](plans/whatsapp-envio-liderancas.md)
+  - **D5** inbox da própria sessão → rascunhos (`plazaUpdate`/demanda) com humano no loop · depende de D3 · [plano](plans/whatsapp-sugestao-atualizacoes.md)
 - **R6** critique/polish visual da vertical remodelada (ciclo /impeccable completo por superfície; smoke visual coordenador feito em 2026-07-21) · gatilho: antes de 16/08 · (opcional: mover filtros acima do mapa)
 - **Fill-ins:** O0+ ([plano](plans/escala-dry-pos-onda0.md)) · RS+ auth read leve + shells de senha ([plano](plans/escala-dry-pos-reset-senha-perfil.md)) · higiene PascalCase
 
@@ -229,7 +245,8 @@ Paralelizáveis agora: fill-ins (O0+, RS+, …). ~~**A9** / **A9+** / **B9** / *
 - Serviço Rust separado; self-host/Coolify enquanto Vercel atender; doações in-app
 - Geocodificação de seções eleitorais / Praça = seção (polígonos **aproximados** das 21 Praças-zona SSA/CMS = **B8**, sem seções)
 - PWA do site/`/admin`; PostGIS sem query espacial real
-- WhatsApp Business API / disparo em massa; previsão estatística de votos neste ciclo
+- WhatsApp Business API / disparo em massa / blast a apoiadores ou eleitores (Res. TSE 23.610 art. 33; Meta veda WABA político). **Exceto** o programa **D3–D5**: bridge não oficial **1:1 interno** staff↔lideranças já no CRM (ver [whatsapp-interno-campanha.md](plans/whatsapp-interno-campanha.md)) — risco ToS/operacional explícito nos planos; não é substituto de WABA
+- Previsão estatística de votos neste ciclo
 - Import automático de planilhas de projeção (decisão E4 mantida: dados estratégicos via UI)
 
 ## Fontes

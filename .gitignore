@@ -56,6 +56,9 @@ next-env.d.ts
 # IBGE demographics download cache (pnpm build:demographics)
 /data/demographics/
 
+# Transcription intermediates (source audio lives under docs/)
+output/**/*.wav
+
 # Playwright
 node_modules/
 /test-results/

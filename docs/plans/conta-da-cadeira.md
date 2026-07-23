@@ -1,8 +1,8 @@
 # E8 — Conta da cadeira (metas derivadas, potencial por praça, cobertura)
 
 Status: rascunho
-Atualizado em: 2026-07-21
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Inteligência de campanha", E8; plano-mestre [inteligencia-campanha.md](inteligencia-campanha.md))
+Atualizado em: 2026-07-21 _(deps: A10 registrado 2026-07-23)_
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Inteligência de campanha", E8; plano-mestre [inteligencia-campanha.md](inteligencia-campanha.md); **depende de A10**)
 Impeccable: B — cobertura/metas encaixadas no dashboard, na lista de Praças e no detalhe (sem rota nova)
 Appetite: ~2 dias eng; migration pequena (global `campaignGoals`) + utilities derivadas + encaixes de UI
 Responsável: —
@@ -27,7 +27,7 @@ O relatório de discovery ([§5.1](../research/relatorio-entrevista-persona-camp
 
 - Global `campaignGoals` (admin group `Campanha`, staff-only): meta estadual de votos, margem, ano-base, nota.
 - Utilities derivadas por praça (sem persistir o derivado): válidos projetados do cargo (série 2014/2018/2022), teto do campo (majoritário 1º turno), taxa de captura, share intracampo (via `campoParties.ts`), roll-off DF×majoritária, potencial e meta sugerida (decomposição proporcional ao potencial).
-- Cobertura: Σ (`estimatedVotes ?? declaredVotes`) ÷ meta por praça e agregada; delta semanal (exige C12 para série; até lá, delta vs. snapshot em memória do último load é aceitável mostrar como "—").
+- Cobertura: Σ (estimativa do cenário ativo — default **média/`central`** via A10 — `?? declaredVotes`) ÷ meta por praça e agregada; delta semanal (exige C12 para série; até lá, delta vs. snapshot em memória do último load é aceitável mostrar como "—").
 - Encaixes: linha de cobertura no dashboard (`campaignDashboardData.ts`), colunas meta/cobertura na lista (`PlazaList`/`PlazaListOverview`), card no detalhe da Praça.
 - Access: tudo staff-only (`coordinator`/`advisor`); `leader` não vê metas — mesmo padrão de `voteGoals`.
 - Sanity check por TI: Σ metas das praças do TI vs. participação histórica do TI no voto (aviso, não bloqueio).
@@ -67,15 +67,15 @@ Componentes:
 
 - **`src/lib/campoParties.ts`**: mapa ano→partidos do campo (2014/2018/2022/2026), com fixture de teste.
 - **`src/utilities/plazaPotential.ts`**: deriva por praça (reusa `plazaElectionGeography.ts` para células cidade×zona e `plazaElectoralBaseline.ts` para a série); expõe `projectedValidVotes`, `fieldCeiling`, `captureRate`, `intraFieldShare`, `rollOff`, `suggestedGoal`.
-- **`src/utilities/goalCoverage.ts`**: cobertura por praça/agregado consumindo `aggregatePledgesByPlaza` (regra `estimatedVotes ?? declaredVotes` de `votePledgeData.ts`) + `voteGoals`/meta sugerida; sanity por TI via `bahiaTerritories.ts`.
+- **`src/utilities/goalCoverage.ts`**: cobertura por praça/agregado consumindo `aggregatePledgesByPlaza` (regra por cenário de [A10](cenarios-estimativa-votos.md) / `votePledgeData.ts`, default `central`) + `voteGoals`/meta sugerida; sanity por TI via `bahiaTerritories.ts`.
 - **Global `CampaignGoals`** (`src/globals/CampaignGoals.ts`): campos `stateGoal`, `margin`, `baseYear`, `note`; access staff-read/coordinator-write; hook `revalidateGlobal`.
 - **UI:** linha nova em `CampaignMetricStrip` do dashboard; coluna/ordenar por cobertura em `PlazaList` (reusa padrão B9 para editar meta via `plazaStaffFormActions`); card "Conta da cadeira" no detalhe.
 - **Migration**: `pnpm migrate:create add_campaign_goals_global` (tabela do global). Sem mudança em collections.
 
 ## Dependências
 
-- Dura: deploy da remodelagem (schema `plaza`/`votePledge` em produção). Suave: C12 (delta semanal real da cobertura usa trajetória de pledges; até lá, sem histórico).
-- Reusa: `plazaElectoralBaseline.ts`, `plazaElectionGeography.ts`, `votePledgeData.ts`, `plazaPageData.ts` (`loadPlazaListPageBundle`), `campaignDashboardData.ts`, `plazaStaffFormActions.ts`, `campaignAccess.ts`.
+- Dura: **A10** (cenários pessimista/média/otimista — [plano](cenarios-estimativa-votos.md)); deploy da remodelagem (schema `plaza`/`votePledge` em produção). Suave: C12 (delta semanal real da cobertura usa trajetória de pledges; até lá, sem histórico).
+- Reusa: `plazaElectoralBaseline.ts`, `plazaElectionGeography.ts`, `votePledgeData.ts` (agregação por cenário pós-A10), `plazaPageData.ts` (`loadPlazaListPageBundle`), `campaignDashboardData.ts`, `plazaStaffFormActions.ts`, `campaignAccess.ts`.
 
 ## Não escopo
 

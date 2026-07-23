@@ -16,40 +16,44 @@
 
 ## Phase Status
 
-| Phase | Skill                    | Status                                                                                                    | Artifact                              | Date       |
-| ----- | ------------------------ | --------------------------------------------------------------------------------------------------------- | ------------------------------------- | ---------- |
-| 1     | jobs-to-be-done          | done                                                                                                      | CUSTOMER.md                           | 2026-07-19 |
-| 2     | ux-heuristics            | deferred: após primeiros testes de quarta (~2026-07-22) — auditoria expert sem usuários seria especulação | DESIGN.md, EXPERIMENTS.md             | 2026-07-19 |
-| 3     | design-everyday-things   | pending                                                                                                   | DESIGN.md, EXPERIMENTS.md             |            |
-| 4     | refactoring-ui           | pending                                                                                                   | DESIGN.md, EXPERIMENTS.md             |            |
-| 5     | microinteractions        | pending                                                                                                   | DESIGN.md, EXPERIMENTS.md             |            |
-| 6     | made-to-stick            | pending                                                                                                   | POSITIONING.md, EXPERIMENTS.md        |            |
-| 7     | influence-psychology     | skipped: sem paywall/upgrade/trial in-app                                                                 | —                                     | 2026-07-19 |
-| 8     | high-perf-browser        | pending                                                                                                   | DESIGN.md, EXPERIMENTS.md             |            |
-| 9     | steve-jobs-design-review | pending                                                                                                   | PRODUCT.md, DESIGN.md, EXPERIMENTS.md |            |
-| opt   | continuous-discovery     | done (cadência + roteiro; evidência chega ~2026-07-22)                                                    | CUSTOMER.md                           | 2026-07-19 |
-| opt   | improve-retention        | deferred: após Fase 1 + primeiros testes — risco é Little Hire                                            | PRODUCT.md                            |            |
+| Phase | Skill                    | Status                                                                                                                   | Artifact                              | Date       |
+| ----- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- | ---------- |
+| 1     | jobs-to-be-done          | done                                                                                                                     | CUSTOMER.md                           | 2026-07-19 |
+| 2     | ux-heuristics            | pending — destravada 2026-07-23 (evidência da sessão âncora em CUSTOMER.md; Bloco B de uso observado ainda sem registro) | DESIGN.md, EXPERIMENTS.md             | 2026-07-23 |
+| 3     | design-everyday-things   | pending                                                                                                                  | DESIGN.md, EXPERIMENTS.md             |            |
+| 4     | refactoring-ui           | pending                                                                                                                  | DESIGN.md, EXPERIMENTS.md             |            |
+| 5     | microinteractions        | pending                                                                                                                  | DESIGN.md, EXPERIMENTS.md             |            |
+| 6     | made-to-stick            | pending                                                                                                                  | POSITIONING.md, EXPERIMENTS.md        |            |
+| 7     | influence-psychology     | skipped: sem paywall/upgrade/trial in-app                                                                                | —                                     | 2026-07-19 |
+| 8     | high-perf-browser        | pending                                                                                                                  | DESIGN.md, EXPERIMENTS.md             |            |
+| 9     | steve-jobs-design-review | pending                                                                                                                  | PRODUCT.md, DESIGN.md, EXPERIMENTS.md |            |
+| opt   | continuous-discovery     | done (cadência + roteiro; evidência chega ~2026-07-22)                                                                   | CUSTOMER.md                           | 2026-07-19 |
+| opt   | improve-retention        | deferred: após Fase 1 + primeiros testes — risco é Little Hire                                                           | PRODUCT.md                            |            |
 
 Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<reason\> · skipped: \<reason\>
 
 ## Key Decisions
 
-| Date       | Phase  | Decision                                    | Rationale                                                                                   |
-| ---------- | ------ | ------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| 2026-07-19 | Intake | Escopo = `/campanha` (não site público)     | Job e atrito são de operação de campanha                                                    |
-| 2026-07-19 | Intake | Fase 7 skipped                              | Sem superfícies de upsell in-app                                                            |
-| 2026-07-19 | Intake | continuous-discovery opcional recomendada   | Evidência = nenhuma; testes humanos esta semana                                             |
-| 2026-07-19 | Intake | improve-retention deferred pós-Fase 1       | Sintoma clássico de abandono por dados defasados; método completo depois do job + evidência |
-| 2026-07-19 | Intake | Plano de fases confirmado                   | Inclui `docs/roadmap.md` como registro vivo de ideias/pendências                            |
-| 2026-07-19 | Intake | Roadmap = backlog de build                  | Findings deste journey → EXPERIMENTS + itens/planos no roadmap quando forem para build      |
-| 2026-07-19 | 1      | Job = campanha dep. federal pela Bahia      | Abrangência estadual; cargo federal                                                         |
-| 2026-07-19 | 1      | Pior dimensão = emocional                   | Confiança no quadro atualizado; risco de ansiedade com dados mortos                         |
-| 2026-07-19 | 1      | Leak = Little Hire                          | Big Hire coberto por onboarding presencial + seed de dados iniciais                         |
-| 2026-07-19 | 2      | Fase 2 deferred                             | Esperar testes com coordenador geral + assistente (~quarta) antes da auditoria heurística   |
-| 2026-07-19 | opt CD | Outcome = Little Hire até 16/08             | Sinal: ≥1 update espontâneo em 7 dias pós-quarta                                            |
-| 2026-07-19 | opt CD | Quarta = Mom Test 25 + observe 25           | História do passado + primeira sessão sem pitch                                             |
-| 2026-07-19 | opt CD | Cadência presencial semanal + remoto ad hoc | Coordenador geral disponível remotamente quando necessário                                  |
-| 2026-07-19 | opt CD | Sala = product + onboarding lead + CG       | CG é participante; interviewers = product + onboarding                                      |
+| Date       | Phase  | Decision                                     | Rationale                                                                                                                                                |
+| ---------- | ------ | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-19 | Intake | Escopo = `/campanha` (não site público)      | Job e atrito são de operação de campanha                                                                                                                 |
+| 2026-07-19 | Intake | Fase 7 skipped                               | Sem superfícies de upsell in-app                                                                                                                         |
+| 2026-07-19 | Intake | continuous-discovery opcional recomendada    | Evidência = nenhuma; testes humanos esta semana                                                                                                          |
+| 2026-07-19 | Intake | improve-retention deferred pós-Fase 1        | Sintoma clássico de abandono por dados defasados; método completo depois do job + evidência                                                              |
+| 2026-07-19 | Intake | Plano de fases confirmado                    | Inclui `docs/roadmap.md` como registro vivo de ideias/pendências                                                                                         |
+| 2026-07-19 | Intake | Roadmap = backlog de build                   | Findings deste journey → EXPERIMENTS + itens/planos no roadmap quando forem para build                                                                   |
+| 2026-07-19 | 1      | Job = campanha dep. federal pela Bahia       | Abrangência estadual; cargo federal                                                                                                                      |
+| 2026-07-19 | 1      | Pior dimensão = emocional                    | Confiança no quadro atualizado; risco de ansiedade com dados mortos                                                                                      |
+| 2026-07-19 | 1      | Leak = Little Hire                           | Big Hire coberto por onboarding presencial + seed de dados iniciais                                                                                      |
+| 2026-07-19 | 2      | Fase 2 deferred                              | Esperar testes com coordenador geral + assistente (~quarta) antes da auditoria heurística                                                                |
+| 2026-07-19 | opt CD | Outcome = Little Hire até 16/08              | Sinal: ≥1 update espontâneo em 7 dias pós-quarta                                                                                                         |
+| 2026-07-19 | opt CD | Quarta = Mom Test 25 + observe 25            | História do passado + primeira sessão sem pitch                                                                                                          |
+| 2026-07-19 | opt CD | Cadência presencial semanal + remoto ad hoc  | Coordenador geral disponível remotamente quando necessário                                                                                               |
+| 2026-07-19 | opt CD | Sala = product + onboarding lead + CG        | CG é participante; interviewers = product + onboarding                                                                                                   |
+| 2026-07-23 | opt CD | Sessão âncora realizada e processada         | Mom Test 7/7 no Bloco A; evidência em CUSTOMER.md (Interview Evidence + Snapshot); Bloco B perdido no áudio — usabilidade (O2/O3/O4) segue sem evidência |
+| 2026-07-23 | opt CD | OST: O1/O5 confirmadas; O6–O8 novas          | Dossiê pré-agenda, registro datado de deltas de voto, ilhas de comunicação — histórias reais (Cairu, Amélia Rodrigues, Santa Inês, Salvador 10×)         |
+| 2026-07-23 | opt CD | Âncora de prioridade = % do voto do deputado | Derruba % do eleitorado local como critério da mesa; calibra E8/E10/B13 no roadmap                                                                       |
+| 2026-07-23 | 2      | Fase 2 destravada (pending)                  | Evidência real disponível; auditoria heurística deve mirar os fluxos do delta-do-dia e da fila de prioridade                                             |
 
 ## Next Actions
 
@@ -57,8 +61,10 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 - [x] Fase 1 → `docs/CUSTOMER.md` (2026-07-19)
 - [x] Fase 2 deferred até evidência de quarta
 - [x] continuous-discovery → cadência + OST + roteiro em `CUSTOMER.md` (2026-07-19)
-- [ ] Rodar sessão de quarta (Mom Test + observe) → preencher Interview Evidence + Snapshot
-- [ ] Medir sinal Little Hire: ≥1 update espontâneo em 7 dias (sem cobrar)
-- [ ] Retomar Fase 2 (ux-heuristics) após quarta, com achados reais
-- [ ] Cruzar findings com `docs/roadmap.md` (FD2, onboarding, Onda 0…)
+- [x] Rodar sessão âncora (Mom Test) → Interview Evidence + Snapshot preenchidos (2026-07-23; transcrição diarizada em `output/transcribe/general-coordinator-interview-20260723/`)
+- [ ] Resgatar Bloco B (uso observado) das notas dos entrevistadores — o áudio dessa parte se perdeu; sem ele O2/O3/O4 seguem sem evidência
+- [ ] Cobrar o compromisso: planilha/tabela de prioridades prometida pelo coordenador geral ("Eu te passo em uma tabela")
+- [ ] Medir sinal Little Hire: ≥1 update espontâneo até 2026-07-30 (sem cobrar)
+- [ ] Rodar Fase 2 (ux-heuristics) sobre os fluxos que a entrevista apontou: registrar o delta do dia (O7), fila/prioridade (E9), dossiê da Praça (O6)
+- [ ] Cruzar findings com `docs/roadmap.md`: entrevista reforça C12 (registro-fundação, não cortável), E9 ("coluna da vergonha" = Salvador 10×), A10 (piso 150k + faixas) e calibra E8/E10/B13 (âncora = % do voto do deputado); registrar gap de dados novo no plano-mestre de inteligência: emendas parlamentares por município (O6)
 - [ ] Não shipar polish visual (Fase 4) sem finding de Fases 1–3
