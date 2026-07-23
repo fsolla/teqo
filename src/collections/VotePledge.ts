@@ -11,14 +11,48 @@ import {
   canUpdateVotePledge,
 } from '@/utilities/campaignAccess'
 import { relationshipId } from '@/utilities/relationship'
+import {
+  type VoteEstimateScenarioFields,
+  getVoteEstimateOrderViolation,
+  VOTE_ESTIMATE_ORDER_ERROR_MESSAGE,
+} from '@/utilities/voteEstimate'
+import {
+  voteEstimateScenarioGroupAccess,
+  voteEstimateScenarioGroupFields,
+} from '@/utilities/voteEstimateScenarioFields'
 
 /**
  * Vote pledge per leadership × plaza. The leader DECLARES how many votes they
  * are bringing (`declaredVotes` — the only number they ever see); staff record
- * their own ESTIMATE of the real value (`estimatedVotes`), which is never
- * serialized to the leader (field access denies read). Plaza aggregates use
- * `estimatedVotes ?? declaredVotes` on staff surfaces only.
+ * their own ESTIMATE of the real value (`estimatedVotes` pessimistic/central/
+ * optimistic), which is never serialized to the leader (field access denies
+ * read). Plaza aggregates use `estimated[S] ?? declared` on staff surfaces only.
  */
+
+const normalizeEstimateGroup = (
+  value: VoteEstimateScenarioFields | number | null | undefined,
+): VoteEstimateScenarioFields | null | undefined => {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  if (typeof value === 'number') {
+    return { central: value, pessimistic: null, optimistic: null }
+  }
+  return value
+}
+
+const estimateGroupChanged = (
+  next: VoteEstimateScenarioFields | null | undefined,
+  previous: VoteEstimateScenarioFields | null | undefined,
+): boolean => {
+  if (next === undefined) return false
+  const normalizedNext = normalizeEstimateGroup(next) ?? {}
+  const normalizedPrevious = normalizeEstimateGroup(previous) ?? {}
+  return (
+    normalizedNext.pessimistic !== normalizedPrevious.pessimistic ||
+    normalizedNext.central !== normalizedPrevious.central ||
+    normalizedNext.optimistic !== normalizedPrevious.optimistic
+  )
+}
 
 const validatePledgeIntegrity: CollectionBeforeChangeHook = async ({
   data,
@@ -70,7 +104,10 @@ const deriveVotePledgeAudit: CollectionBeforeChangeHook = ({ data, originalDoc, 
   }
 
   const estimateChanged =
-    (data.estimatedVotes !== undefined && data.estimatedVotes !== originalDoc?.estimatedVotes) ||
+    estimateGroupChanged(
+      data.estimatedVotes as VoteEstimateScenarioFields | undefined,
+      originalDoc?.estimatedVotes as VoteEstimateScenarioFields | null | undefined,
+    ) ||
     (data.estimateNote !== undefined && data.estimateNote !== originalDoc?.estimateNote)
 
   if (estimateChanged) {
@@ -78,6 +115,16 @@ const deriveVotePledgeAudit: CollectionBeforeChangeHook = ({ data, originalDoc, 
     if (actorID) data.estimatedBy = actorID
   }
 
+  return data
+}
+
+const validateEstimateOrder: CollectionBeforeChangeHook = ({ data }) => {
+  const violation = getVoteEstimateOrderViolation(
+    data.estimatedVotes as VoteEstimateScenarioFields | null | undefined,
+  )
+  if (violation) {
+    throw new APIError(VOTE_ESTIMATE_ORDER_ERROR_MESSAGE, 400)
+  }
   return data
 }
 
@@ -90,7 +137,7 @@ export const VotePledge: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'id',
-    defaultColumns: ['leadership', 'plaza', 'declaredVotes', 'estimatedVotes', 'updatedAt'],
+    defaultColumns: ['leadership', 'plaza', 'declaredVotes', 'estimatedVotes.central', 'updatedAt'],
   },
   access: {
     create: canCreateVotePledge,
@@ -105,7 +152,7 @@ export const VotePledge: CollectionConfig = {
     },
   ],
   hooks: {
-    beforeChange: [validatePledgeIntegrity, deriveVotePledgeAudit],
+    beforeChange: [validatePledgeIntegrity, validateEstimateOrder, deriveVotePledgeAudit],
   },
   fields: [
     {
@@ -159,18 +206,14 @@ export const VotePledge: CollectionConfig = {
     },
     {
       name: 'estimatedVotes',
-      type: 'number',
+      type: 'group',
       label: 'Votos estimados pelo assessor',
-      min: 0,
-      index: true,
       admin: {
-        description: 'Estimativa interna do valor real. A liderança nunca vê este número.',
+        description:
+          'Faixa interna pessimista / média / otimista. A liderança nunca vê estes números.',
       },
-      access: {
-        create: canManageCampaignStaffField,
-        read: canReadCampaignStaffField,
-        update: canManageCampaignStaffField,
-      },
+      access: voteEstimateScenarioGroupAccess,
+      fields: voteEstimateScenarioGroupFields(),
     },
     {
       name: 'estimateNote',

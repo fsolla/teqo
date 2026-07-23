@@ -7,13 +7,15 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { BahiaMap, type BahiaMapFeatureInfo } from '@/components/campaign/BahiaMap'
 import { ChoroplethLegend } from '@/components/campaign/ChoroplethLegend'
 import { MapFeatureReadout } from '@/components/campaign/MapFeatureReadout'
+import { usePlazaEstimateScenarioOptional } from '@/components/campaign/PlazaEstimateScenarioContext'
+import {
+  VOTE_ESTIMATE_SCENARIO_MAP_HINT,
+  VoteEstimateScenarioField,
+} from '@/components/campaign/VoteEstimateScenarioField'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { computeChoroplethMax } from '@/lib/bahiaMapStyle'
-import {
-  computeValidVoteShares,
-  divergingGradientCss,
-} from '@/lib/choroplethColorScale'
+import { computeValidVoteShares, divergingGradientCss } from '@/lib/choroplethColorScale'
 import { formatElectionNumber } from '@/lib/electionInsights'
 import type { FederalCandidateOption } from '@/utilities/electionCandidateOptions'
 import {
@@ -26,6 +28,11 @@ import {
   type PlazaMapYear,
 } from '@/utilities/plazaMapData'
 import { resolvePlazaMapNavigation } from '@/utilities/plazaMapNavigation'
+import {
+  DEFAULT_VOTE_ESTIMATE_SCENARIO,
+  voteEstimateScenarioLabels,
+  type VoteEstimateScenario,
+} from '@/utilities/voteEstimate'
 
 type PlazaMapPanelProps = {
   bundle: PlazaMapBundle
@@ -43,6 +50,12 @@ export const PlazaMapPanel = ({
   const searchParams = useSearchParams()
   const [year, setYear] = useState<PlazaMapYear>(defaultYear)
   const [scaleMode, setScaleMode] = useState<PlazaMapScaleMode>('percentValid')
+  const scenarioContext = usePlazaEstimateScenarioOptional()
+  const [localEstimateScenario, setLocalEstimateScenario] = useState<VoteEstimateScenario>(
+    DEFAULT_VOTE_ESTIMATE_SCENARIO,
+  )
+  const estimateScenario = scenarioContext?.scenario ?? localEstimateScenario
+  const setEstimateScenario = scenarioContext?.setScenario ?? setLocalEstimateScenario
   const [selectedFeature, setSelectedFeature] = useState<BahiaMapFeatureInfo | null>(null)
   const selectedKeyRef = useRef<string | null>(null)
 
@@ -54,8 +67,11 @@ export const PlazaMapPanel = ({
     if (comparisonActive && comparison) {
       return comparison.diffByYear[String(year)] ?? {}
     }
+    if (year === 2026) {
+      return bundle.values2026ByScenario[estimateScenario] ?? {}
+    }
     return bundle.valuesByYear[String(year)] ?? {}
-  }, [bundle, comparison, comparisonActive, year])
+  }, [bundle, comparison, comparisonActive, estimateScenario, year])
 
   const validVotesForYear = bundle.validVotesByYear[String(year)] ?? {}
 
@@ -68,17 +84,10 @@ export const PlazaMapPanel = ({
 
   const displayMax = useMemo(() => {
     const fillMode = comparisonActive ? 'diverging' : 'sequential'
-    return computeChoroplethMax(
-      displayValues,
-      fillMode,
-      percentScaleActive ? 1 : undefined,
-    )
+    return computeChoroplethMax(displayValues, fillMode, percentScaleActive ? 1 : undefined)
   }, [comparisonActive, displayValues, percentScaleActive])
 
-  const scopedKeys = useMemo(
-    () => Object.keys(bundle.plazasByIbgeCode),
-    [bundle.plazasByIbgeCode],
-  )
+  const scopedKeys = useMemo(() => Object.keys(bundle.plazasByIbgeCode), [bundle.plazasByIbgeCode])
 
   const metricLabel = useMemo(() => {
     if (comparisonActive) {
@@ -90,9 +99,10 @@ export const PlazaMapPanel = ({
       }
       return `participação nos válidos (${year})`
     }
-    if (year === 2026) return 'votos estimados 2026'
+    if (year === 2026)
+      return `votos estimados 2026 (${voteEstimateScenarioLabels[estimateScenario].toLowerCase()})`
     return `votos de ${bundle.candidateName} em ${year}`
-  }, [bundle.candidateName, comparisonActive, percentScaleActive, year])
+  }, [bundle.candidateName, comparisonActive, estimateScenario, percentScaleActive, year])
 
   const setCompare = (candidateNumber: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -192,6 +202,14 @@ export const PlazaMapPanel = ({
                 ))}
               </NativeSelect>
             </Field>
+          ) : null}
+          {year === 2026 && !comparisonActive ? (
+            <VoteEstimateScenarioField
+              id="plaza-map-estimate-scenario"
+              value={estimateScenario}
+              onChange={setEstimateScenario}
+              hint={VOTE_ESTIMATE_SCENARIO_MAP_HINT}
+            />
           ) : null}
           <Field className="w-full sm:w-72">
             <FieldLabel htmlFor="plaza-map-compare">Comparar com</FieldLabel>
@@ -299,7 +317,11 @@ export const PlazaMapPanel = ({
                   {zone.name}
                 </Link>
                 <span className="text-sm tabular-nums text-muted-foreground">
-                  {formatElectionNumber(zone.votesByYear[String(year)] ?? 0)}
+                  {formatElectionNumber(
+                    year === 2026
+                      ? (zone.votes2026ByScenario[estimateScenario] ?? 0)
+                      : (zone.votesByYear[String(year)] ?? 0),
+                  )}
                 </span>
               </li>
             ))}

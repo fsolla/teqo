@@ -3,6 +3,7 @@ import type { Payload } from 'payload'
 import type { CampaignUser, VotePledge } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
+import type { VoteEstimateScenario } from '@/utilities/voteEstimate'
 import {
   aggregatePledgesByPlaza,
   loadLeaderPledges,
@@ -16,7 +17,7 @@ export type StaffDashboardView = {
   plazaCount: number
   withAdvisorCount: number
   highPriorityCount: number
-  staffVoteTotal: number
+  staffVoteTotalByScenario: Record<VoteEstimateScenario, number>
   declaredVotesTotal: number
   pledgeCount: number
   missingEstimateCount: number
@@ -86,18 +87,19 @@ const buildStaffDashboard = async (
   const plazaById = new Map(plazas.docs.map((plaza) => [plaza.id, plaza]))
 
   const pledgeAggregates = await aggregatePledgesByPlaza(payload, plazaIDs)
-  const {
-    staffVoteTotal,
-    declaredVotesTotal,
-    pledgeCount,
-    missingEstimateCount,
-  } = rollupPlazaStaffVotes(plazas.docs, pledgeAggregates)
+  const rollup = rollupPlazaStaffVotes(plazas.docs, pledgeAggregates)
+  const { staffVoteTotalByScenario, declaredVotesTotal, pledgeCount, missingEstimateCount } = rollup
 
   const missingEstimatePledges = plazaIDs.length
     ? await payload.find({
         collection: 'votePledge',
         where: {
-          and: [{ plaza: { in: plazaIDs } }, { estimatedVotes: { exists: false } }],
+          and: [
+            { plaza: { in: plazaIDs } },
+            { 'estimatedVotes.pessimistic': { equals: null } },
+            { 'estimatedVotes.central': { equals: null } },
+            { 'estimatedVotes.optimistic': { equals: null } },
+          ],
         },
         depth: 0,
         limit: 5,
@@ -146,7 +148,7 @@ const buildStaffDashboard = async (
     plazaCount: plazas.docs.length,
     withAdvisorCount: plazas.docs.filter((plaza) => (plaza.advisors ?? []).length > 0).length,
     highPriorityCount: plazas.docs.filter((plaza) => plaza.priority === 'alta').length,
-    staffVoteTotal,
+    staffVoteTotalByScenario: { ...staffVoteTotalByScenario },
     declaredVotesTotal,
     pledgeCount,
     missingEstimateCount,

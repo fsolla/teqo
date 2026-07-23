@@ -6,9 +6,9 @@ import { declareVotes, estimateVotes } from '@/app/(campaign)/campanha/actions/v
 import {
   nullableFormText,
   nullableRelationshipFormValue,
-  optionalIntegerFormValue,
   requiredIntegerFormValue,
   requiredRelationshipFormValue,
+  voteEstimateScenarioFromForm,
 } from '@/lib/formData'
 import {
   mapCampaignFormActionError,
@@ -52,15 +52,12 @@ export const estimateVotesFormAction = async (
 ): Promise<CampaignFormActionState> => {
   try {
     const pledge = requiredRelationshipFormValue(formData, 'pledgeId')
-    const estimatedVotes = optionalIntegerFormValue(formData, 'estimatedVotes', {
-      minimum: 0,
-      maximum: 1_000_000,
-    })
+    const estimatedVotes = voteEstimateScenarioFromForm(formData, 'estimatedVotes')
     const estimateNote = nullableFormText(formData, 'estimateNote')
 
     await estimateVotes({
       pledge,
-      estimatedVotes: estimatedVotes ?? null,
+      estimatedVotes,
       estimateNote,
     })
     revalidatePath('/campanha/pracas/[slug]', 'page')

@@ -1,92 +1,207 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { useEffect, useRef, useState } from 'react'
 
+import type { PlazaListExpectedVotesResponse } from '@/app/(campaign)/campanha/(app)/pracas/expected-votes/types'
+import { usePlazaEstimateScenarioOptional } from '@/components/campaign/PlazaEstimateScenarioContext'
+import { StaffPlazaVotesDisplay } from '@/components/campaign/StaffPlazaVotesDisplay'
+import { VoteEstimateScenarioInputs } from '@/components/campaign/VoteEstimateScenarioInputs'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
-import { Button } from '@/components/ui/button'
-import { Field, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import { Spinner } from '@/components/ui/Spinner'
-import { StaffPlazaVotesDisplay } from '@/components/campaign/StaffPlazaVotesDisplay'
-import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
+import { cn } from '@/lib/utils'
+import {
+  DEFAULT_VOTE_ESTIMATE_SCENARIO,
+  voteEstimatesEqual,
+  type VoteEstimateScenarioViewModel,
+} from '@/utilities/voteEstimate'
+import type { PlazaPledgeCoverageView } from '@/utilities/votePledgeData'
+
+const AUTOSAVE_MS = 600
+const EXPECTED_VOTES_ENDPOINT = '/campanha/pracas/expected-votes'
+const SAVE_ERROR_MESSAGE = 'Não foi possível salvar os votos estimados. Tente novamente.'
 
 type PlazaListExpectedVotesControlProps = {
   plazaID: number
-  plazaSlug: string
-  expectedVotes: number | null
-  leadershipEffectiveTotal: number
-  formAction: (
-    state: CampaignFormActionState,
-    formData: FormData,
-  ) => Promise<CampaignFormActionState>
+  expectedVotes: VoteEstimateScenarioViewModel
+  pledgeCoverage: PlazaPledgeCoverageView | null
 }
 
 export const PlazaListExpectedVotesControl = ({
   plazaID,
-  plazaSlug,
   expectedVotes,
-  leadershipEffectiveTotal,
-  formAction,
+  pledgeCoverage,
 }: PlazaListExpectedVotesControlProps) => {
+  const scenarioContext = usePlazaEstimateScenarioOptional()
+  const activeScenario = scenarioContext?.scenario ?? DEFAULT_VOTE_ESTIMATE_SCENARIO
   const [open, setOpen] = useState(false)
-  const [state, submitAction, isPending] = useActionState(formAction, {})
+  const [displayVotes, setDisplayVotes] = useState(expectedVotes)
+  const [draft, setDraft] = useState(expectedVotes)
+  const [isDirty, setIsDirty] = useState(false)
+  const [isPending, setIsPending] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const abortRef = useRef<AbortController | null>(null)
+  const committedVotesRef = useRef(expectedVotes)
+  const lastPropsVotesRef = useRef(expectedVotes)
+  const saveGenerationRef = useRef(0)
 
+  // Adopt server props only when they change from outside (navigation / RSC refresh).
   useEffect(() => {
-    if (state.status !== 'success') return
-    toast.success(state.message)
-    setOpen(false)
-  }, [state.message, state.status])
+    if (voteEstimatesEqual(expectedVotes, lastPropsVotesRef.current)) return
+    lastPropsVotesRef.current = expectedVotes
+    committedVotesRef.current = expectedVotes
+    setDisplayVotes(expectedVotes)
+    setDraft(expectedVotes)
+    setIsDirty(false)
+  }, [expectedVotes])
+
+  useEffect(
+    () => () => {
+      clearTimeout(saveTimeoutRef.current)
+      abortRef.current?.abort()
+    },
+    [],
+  )
+
+  const saveDraft = async (values: VoteEstimateScenarioViewModel) => {
+    if (voteEstimatesEqual(values, committedVotesRef.current)) return
+
+    const generation = ++saveGenerationRef.current
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    setIsPending(true)
+    setErrorMessage(null)
+
+    try {
+      const response = await fetch(EXPECTED_VOTES_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        credentials: 'same-origin',
+        signal: controller.signal,
+        body: JSON.stringify({ plazaId: plazaID, expectedVotes: values }),
+      })
+
+      const payload = (await response.json()) as PlazaListExpectedVotesResponse
+
+      if (generation !== saveGenerationRef.current) return
+
+      if (!response.ok || payload.status !== 'success') {
+        setDisplayVotes(committedVotesRef.current)
+        setDraft(committedVotesRef.current)
+        setErrorMessage(payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE)
+        return
+      }
+
+      committedVotesRef.current = payload.savedExpectedVotes
+      setDisplayVotes(payload.savedExpectedVotes)
+      setDraft(payload.savedExpectedVotes)
+      setIsDirty(false)
+    } catch {
+      if (controller.signal.aborted || generation !== saveGenerationRef.current) return
+      setDisplayVotes(committedVotesRef.current)
+      setDraft(committedVotesRef.current)
+      setErrorMessage(SAVE_ERROR_MESSAGE)
+    } finally {
+      if (generation === saveGenerationRef.current) {
+        setIsPending(false)
+      }
+    }
+  }
+
+  const scheduleSave = (values: VoteEstimateScenarioViewModel) => {
+    clearTimeout(saveTimeoutRef.current)
+    saveTimeoutRef.current = setTimeout(() => {
+      void saveDraft(values)
+    }, AUTOSAVE_MS)
+  }
+
+  const handleValuesChange = (values: VoteEstimateScenarioViewModel) => {
+    setIsDirty(true)
+    setDraft(values)
+    setDisplayVotes(values)
+    scheduleSave(values)
+  }
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setIsDirty(false)
+      setErrorMessage(null)
+      setDraft(displayVotes)
+    } else if (open) {
+      clearTimeout(saveTimeoutRef.current)
+      if (!voteEstimatesEqual(draft, committedVotesRef.current)) {
+        void saveDraft(draft)
+      }
+      setIsDirty(false)
+    }
+    setOpen(nextOpen)
+  }
+
+  const statusMessage = errorMessage
+    ? errorMessage
+    : isPending
+      ? 'Salvando votos estimados.'
+      : isDirty
+        ? 'Alterações serão salvas automaticamente.'
+        : ''
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="min-h-11 rounded-md px-1 text-left hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          className={cn(
+            'group relative flex min-h-11 w-full items-center justify-center rounded-md px-1 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            open ? 'bg-muted/60' : undefined,
+          )}
           aria-label="Editar votos estimados"
         >
           <StaffPlazaVotesDisplay
-            expectedVotes={expectedVotes}
-            leadershipEffectiveTotal={leadershipEffectiveTotal}
+            expectedVotes={displayVotes}
+            pledgeCoverage={pledgeCoverage}
+            activeScenario={activeScenario}
+            layout="compact"
+            align="center"
+            suppressHoverPreview={open}
             valueClassName="font-medium tabular-nums"
           />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-72">
-        <form action={submitAction} className="flex flex-col gap-3">
-          <input type="hidden" name="plazaId" value={plazaID} />
-          <input type="hidden" name="plazaSlug" value={plazaSlug} />
-          <Field>
-            <FieldLabel htmlFor={`plaza-list-expected-votes-${plazaID}`}>Total da Praça</FieldLabel>
-            <Input
-              id={`plaza-list-expected-votes-${plazaID}`}
-              name="expectedVotes"
-              type="number"
-              min={0}
-              max={1_000_000}
-              inputMode="numeric"
-              defaultValue={expectedVotes ?? undefined}
-              className="min-h-11"
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault()
-                  event.currentTarget.form?.requestSubmit()
-                }
-              }}
+      <PopoverContent
+        align="center"
+        sideOffset={8}
+        className="w-[15.5rem] p-3"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
+        <div className="relative flex flex-col gap-2.5">
+          {isPending ? (
+            <Spinner
+              className="absolute top-0 right-0 size-3.5 text-muted-foreground"
+              aria-label="Salvando votos estimados"
             />
-          </Field>
-          {state.message && state.status !== 'success' ? (
-            <Alert variant="destructive">
-              <AlertDescription>{state.message}</AlertDescription>
+          ) : null}
+          <VoteEstimateScenarioInputs
+            fieldPrefix="expectedVotes"
+            values={draft}
+            idPrefix={`plaza-list-expected-votes-${plazaID}`}
+            variant="compact"
+            autoFocusScenario="central"
+            onValuesChange={handleValuesChange}
+          />
+          {errorMessage ? (
+            <Alert variant="destructive" className="py-2">
+              <AlertDescription className="text-xs">{errorMessage}</AlertDescription>
             </Alert>
           ) : null}
-          <Button type="submit" disabled={isPending} className="min-h-11 w-full">
-            {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
-            Salvar
-          </Button>
-        </form>
+          <p className="sr-only" aria-live="polite">
+            {statusMessage}
+          </p>
+        </div>
       </PopoverContent>
     </Popover>
   )

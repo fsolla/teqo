@@ -7,5 +7,10 @@ import { assertTestDatabase } from './tests/helpers/assertTestDatabase'
 
 loadEnv({ path: '.env.test', override: true })
 
+// Optional local override when the default Docker port is occupied (e.g. mapped to 5433).
+if (process.env.TEQO_TEST_DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.TEQO_TEST_DATABASE_URL
+}
+
 // Fail closed: refuse to run the (destructive) suite against a non-test database.
 assertTestDatabase(process.env.DATABASE_URL)

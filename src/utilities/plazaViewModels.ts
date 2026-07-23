@@ -1,12 +1,16 @@
 import type { Payload } from 'payload'
 
 import type { CampaignUser, Plaza } from '@/payload-types'
-import type { PoliticalTrendStatus } from '@/utilities/plazaUi'
 import { eligibleCampaignStaffWhere } from '@/utilities/campaignAccess'
+import type { PoliticalTrendStatus } from '@/utilities/plazaUi'
 import { relationshipId } from '@/utilities/relationship'
+import {
+  toVoteEstimateScenarioViewModel,
+  type VoteEstimateScenarioViewModel,
+} from '@/utilities/voteEstimate'
 import { toVoteGoalsViewModel, type VoteGoalsViewModel } from '@/utilities/voteGoals'
 import type { PlazaPledgeAggregate } from '@/utilities/votePledgeData'
-import { emptyPlazaPledgeAggregate } from '@/utilities/votePledgeData'
+import { createEmptyPlazaPledgeAggregate } from '@/utilities/votePledgeData'
 
 export const plazaListSelect = {
   name: true,
@@ -45,7 +49,7 @@ export type PlazaListViewModel = {
   advisorIDs: number[]
   priority: 'alta' | 'normal'
   lastUpdateAt: string | null
-  expectedVotes: number | null
+  expectedVotes: VoteEstimateScenarioViewModel
   politicalTrendStatus: PoliticalTrendStatus | null
   politicalTrendNote: string | null
   pledges: PlazaPledgeAggregate
@@ -66,10 +70,10 @@ export const toPlazaListViewModel = (
   advisorIDs: (plaza.advisors ?? []).map(relationshipId).filter((id): id is number => id !== null),
   priority: plaza.priority === 'alta' ? 'alta' : 'normal',
   lastUpdateAt: plaza.lastUpdateAt ?? null,
-  expectedVotes: plaza.expectedVotes ?? null,
+  expectedVotes: toVoteEstimateScenarioViewModel(plaza.expectedVotes),
   politicalTrendStatus: plaza.politicalTrend?.status ?? null,
   politicalTrendNote: plaza.politicalTrend?.note ?? null,
-  pledges: pledges ?? { ...emptyPlazaPledgeAggregate },
+  pledges: pledges ?? createEmptyPlazaPledgeAggregate(),
 })
 
 export type PlazaAdvisorSummary = {
@@ -94,7 +98,7 @@ export type PlazaDetailViewModel = {
   /** Staff-only block — null for the leader view model. */
   strategy: {
     priority: 'alta' | 'normal'
-    expectedVotes: number | null
+    expectedVotes: VoteEstimateScenarioViewModel
     voteGoals: VoteGoalsViewModel
     politicalTrend: PlazaPoliticalTrendViewModel
     strengths: string[]
@@ -127,7 +131,7 @@ export const toPlazaDetailViewModel = (
       ? null
       : {
           priority: plaza.priority === 'alta' ? 'alta' : 'normal',
-          expectedVotes: plaza.expectedVotes ?? null,
+          expectedVotes: toVoteEstimateScenarioViewModel(plaza.expectedVotes),
           voteGoals: toVoteGoalsViewModel(plaza.voteGoals),
           politicalTrend: {
             status: plaza.politicalTrend?.status ?? null,

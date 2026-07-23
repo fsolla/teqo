@@ -81,10 +81,10 @@ describe('vote pledges (declared by the leader, estimated by staff)', () => {
 
     const estimated = await estimateVotesRecord(payload, advisor, {
       pledge: pledge.id,
-      estimatedVotes: 120,
+      estimatedVotes: { pessimistic: null, central: 120, optimistic: null },
       estimateNote: 'Base histórica indica menos da metade.',
     })
-    expect(estimated.estimatedVotes).toBe(120)
+    expect(estimated.estimatedVotes?.central).toBe(120)
     expect(estimated.estimatedBy).toBeTruthy()
 
     // Leader read path (access enforced): estimated fields must be stripped.
@@ -121,7 +121,7 @@ describe('vote pledges (declared by the leader, estimated by staff)', () => {
     await payload.update({
       collection: 'votePledge',
       id: pledge.id,
-      data: { estimatedVotes: 9_999 } as never,
+      data: { estimatedVotes: { central: 9_999 } } as never,
       depth: 0,
       user: account,
       overrideAccess: false,
@@ -133,7 +133,9 @@ describe('vote pledges (declared by the leader, estimated by staff)', () => {
       depth: 0,
       overrideAccess: true,
     })
-    expect(raw.estimatedVotes ?? null).toBeNull()
+    expect(raw.estimatedVotes?.central ?? null).toBeNull()
+    expect(raw.estimatedVotes?.pessimistic ?? null).toBeNull()
+    expect(raw.estimatedVotes?.optimistic ?? null).toBeNull()
   })
 
   it('scopes an advisor to pledges of administered plazas only', async () => {
@@ -149,7 +151,7 @@ describe('vote pledges (declared by the leader, estimated by staff)', () => {
     await expect(
       estimateVotesRecord(payload, outsideAdvisor, {
         pledge: pledge.id,
-        estimatedVotes: 10,
+        estimatedVotes: { pessimistic: null, central: 10, optimistic: null },
         estimateNote: null,
       }),
     ).rejects.toThrow()
@@ -177,7 +179,7 @@ describe('vote pledges (declared by the leader, estimated by staff)', () => {
     fixtures.own('votePledge', firstPledge.id)
     await estimateVotesRecord(payload, advisor, {
       pledge: firstPledge.id,
-      estimatedVotes: 80,
+      estimatedVotes: { pessimistic: null, central: 80, optimistic: null },
       estimateNote: null,
     })
 
@@ -197,7 +199,7 @@ describe('vote pledges (declared by the leader, estimated by staff)', () => {
     const aggregate = aggregates.get(plaza.id)
     expect(aggregate?.pledgeCount).toBe(2)
     expect(aggregate?.declaredTotal).toBe(240)
-    expect(aggregate?.effectiveTotal).toBe(120)
+    expect(aggregate?.effectiveByScenario.central).toBe(120)
     expect(aggregate?.missingEstimateCount).toBe(1)
     expect(secondPledge.declaredVotes).toBe(40)
   })

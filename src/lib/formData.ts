@@ -2,6 +2,8 @@ import 'server-only'
 
 import { z, type ZodError } from 'zod'
 
+import type { VoteEstimateScenarioFields } from '@/utilities/voteEstimate'
+
 export class FormDataBoundaryError extends Error {
   field: string
 
@@ -91,6 +93,38 @@ export const optionalIntegerFormValue = (
   if (!entry.present || !entry.value.trim()) return undefined
   return requiredIntegerFormValue(formData, field, options)
 }
+
+const optionalNullableIntegerFormValue = (
+  formData: FormData,
+  field: string,
+  options?: { minimum?: number; maximum?: number },
+): number | null | undefined => {
+  const entry = formEntry(formData, field)
+  if (!entry.present) return undefined
+  if (!entry.value.trim()) return null
+  return requiredIntegerFormValue(formData, field, options)
+}
+
+export const voteEstimateScenarioFromForm = (
+  formData: FormData,
+  prefix: 'estimatedVotes' | 'expectedVotes',
+): VoteEstimateScenarioFields => ({
+  pessimistic:
+    optionalNullableIntegerFormValue(formData, `${prefix}Pessimistic`, {
+      minimum: 0,
+      maximum: 1_000_000,
+    }) ?? null,
+  central:
+    optionalNullableIntegerFormValue(formData, `${prefix}Central`, {
+      minimum: 0,
+      maximum: 1_000_000,
+    }) ?? null,
+  optimistic:
+    optionalNullableIntegerFormValue(formData, `${prefix}Optimistic`, {
+      minimum: 0,
+      maximum: 1_000_000,
+    }) ?? null,
+})
 
 export const requiredRelationshipFormValue = (formData: FormData, field: string): number => {
   const entry = formEntry(formData, field)

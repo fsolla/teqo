@@ -2,62 +2,148 @@ import type { Payload, PayloadRequest } from 'payload'
 
 import type { CampaignUser, VotePledge } from '@/payload-types'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
+import {
+  DEFAULT_VOTE_ESTIMATE_SCENARIO,
+  effectivePledgeVotesForScenario,
+  resolvePlazaStaffVoteTotalForScenario,
+  toVoteEstimateScenarioViewModel,
+  VOTE_ESTIMATE_SCENARIOS,
+  type VoteEstimateScenario,
+  type VoteEstimateScenarioFields,
+  type VoteEstimateScenarioViewModel,
+} from '@/utilities/voteEstimate'
 
 /**
  * Pledge aggregation helpers. "Effective" votes on staff surfaces are
- * `estimatedVotes ?? declaredVotes`; leader-facing surfaces must NEVER receive
- * estimated values or effective totals derived from them.
+ * `estimated[S] ?? declaredVotes` per scenario; leader-facing surfaces must
+ * NEVER receive estimated values or effective totals derived from them.
  */
+
+export type { VoteEstimateScenario, VoteEstimateScenarioViewModel }
+
+const emptyEffectiveByScenario = (): Record<VoteEstimateScenario, number> => ({
+  pessimistic: 0,
+  central: 0,
+  optimistic: 0,
+})
 
 export type PlazaPledgeAggregate = {
   declaredTotal: number
-  effectiveTotal: number
+  effectiveByScenario: Record<VoteEstimateScenario, number>
   pledgeCount: number
   missingEstimateCount: number
 }
 
-export const emptyPlazaPledgeAggregate: PlazaPledgeAggregate = {
+export const createEmptyPlazaPledgeAggregate = (): PlazaPledgeAggregate => ({
   declaredTotal: 0,
-  effectiveTotal: 0,
+  effectiveByScenario: emptyEffectiveByScenario(),
   pledgeCount: 0,
   missingEstimateCount: 0,
+})
+
+/** Read-only zero aggregate. Never mutate — use createEmptyPlazaPledgeAggregate() when writing. */
+export const emptyPlazaPledgeAggregate: Readonly<PlazaPledgeAggregate> =
+  createEmptyPlazaPledgeAggregate()
+
+export type PlazaPledgeCoverageView = {
+  pledgeCount: number
+  missingEstimateCount: number
+  declaredTotal: number
+  effectiveTotal: number
+}
+
+export const toPlazaPledgeCoverageView = (
+  aggregate: PlazaPledgeAggregate,
+  scenario: VoteEstimateScenario = DEFAULT_VOTE_ESTIMATE_SCENARIO,
+): PlazaPledgeCoverageView | null => {
+  if (aggregate.pledgeCount === 0) return null
+  return {
+    pledgeCount: aggregate.pledgeCount,
+    missingEstimateCount: aggregate.missingEstimateCount,
+    declaredTotal: aggregate.declaredTotal,
+    effectiveTotal: aggregate.effectiveByScenario[scenario],
+  }
 }
 
 /** Staff-facing plaza total: manual expected votes override pledge aggregate when set. */
 export const resolvePlazaStaffVoteTotal = (
-  expectedVotes: number | null | undefined,
+  expectedVotes: VoteEstimateScenarioFields | null | undefined,
   pledgeEffectiveTotal: number,
-): number => expectedVotes ?? pledgeEffectiveTotal
+  scenario: VoteEstimateScenario = DEFAULT_VOTE_ESTIMATE_SCENARIO,
+): number => resolvePlazaStaffVoteTotalForScenario(expectedVotes, pledgeEffectiveTotal, scenario)
 
-export const sumStaffPledgeEffectiveTotal = (
-  rows: ReadonlyArray<{ declaredVotes: number; estimatedVotes: number | null }>,
-): number =>
-  rows.reduce((sum, row) => sum + (row.estimatedVotes ?? row.declaredVotes), 0)
+export const aggregatePlazaPledgesFromRows = (
+  rows: ReadonlyArray<{
+    declaredVotes: number
+    estimatedVotes?: VoteEstimateScenarioFields | null
+  }>,
+): PlazaPledgeAggregate => {
+  const aggregate = createEmptyPlazaPledgeAggregate()
+
+  for (const row of rows) {
+    const declared = row.declaredVotes ?? 0
+    aggregate.declaredTotal += declared
+    for (const scenario of VOTE_ESTIMATE_SCENARIOS) {
+      aggregate.effectiveByScenario[scenario] += effectivePledgeVotesForScenario(
+        declared,
+        row.estimatedVotes,
+        scenario,
+      )
+    }
+    aggregate.pledgeCount += 1
+    if (!pledgeHasAnyEstimate(row.estimatedVotes)) aggregate.missingEstimateCount += 1
+  }
+
+  return aggregate
+}
 
 export type PlazaStaffVoteRollup = {
   staffVoteTotal: number
+  staffVoteTotalByScenario: Record<VoteEstimateScenario, number>
   declaredVotesTotal: number
   pledgeCount: number
   missingEstimateCount: number
 }
 
 export const rollupPlazaStaffVotes = (
-  plazas: ReadonlyArray<{ id: number; expectedVotes?: number | null }>,
+  plazas: ReadonlyArray<{ id: number; expectedVotes?: VoteEstimateScenarioFields | null }>,
   pledgeAggregates: Map<number, PlazaPledgeAggregate>,
+  scenario: VoteEstimateScenario = DEFAULT_VOTE_ESTIMATE_SCENARIO,
 ): PlazaStaffVoteRollup => {
   let staffVoteTotal = 0
+  const staffVoteTotalByScenario = emptyEffectiveByScenario()
   let declaredVotesTotal = 0
   let pledgeCount = 0
   let missingEstimateCount = 0
   for (const plaza of plazas) {
     const aggregate = pledgeAggregates.get(plaza.id) ?? emptyPlazaPledgeAggregate
-    staffVoteTotal += resolvePlazaStaffVoteTotal(plaza.expectedVotes, aggregate.effectiveTotal)
+    for (const key of VOTE_ESTIMATE_SCENARIOS) {
+      staffVoteTotalByScenario[key] += resolvePlazaStaffVoteTotal(
+        plaza.expectedVotes,
+        aggregate.effectiveByScenario[key],
+        key,
+      )
+    }
+    staffVoteTotal += resolvePlazaStaffVoteTotal(
+      plaza.expectedVotes,
+      aggregate.effectiveByScenario[scenario],
+      scenario,
+    )
     declaredVotesTotal += aggregate.declaredTotal
     pledgeCount += aggregate.pledgeCount
     missingEstimateCount += aggregate.missingEstimateCount
   }
-  return { staffVoteTotal, declaredVotesTotal, pledgeCount, missingEstimateCount }
+  return {
+    staffVoteTotal,
+    staffVoteTotalByScenario,
+    declaredVotesTotal,
+    pledgeCount,
+    missingEstimateCount,
+  }
 }
+
+const pledgeHasAnyEstimate = (estimated: VoteEstimateScenarioFields | null | undefined): boolean =>
+  estimated?.pessimistic != null || estimated?.central != null || estimated?.optimistic != null
 
 /**
  * Staff-only aggregate over an already access-checked plaza id set.
@@ -77,7 +163,15 @@ export const aggregatePledgesByPlaza = async (
     depth: 0,
     limit: 0,
     pagination: false,
-    select: { plaza: true, declaredVotes: true, estimatedVotes: true },
+    select: {
+      plaza: true,
+      declaredVotes: true,
+      estimatedVotes: {
+        pessimistic: true,
+        central: true,
+        optimistic: true,
+      },
+    },
     overrideAccess: true,
     ...(req ? { req } : {}),
   })
@@ -86,12 +180,18 @@ export const aggregatePledgesByPlaza = async (
     const plazaID = relationshipId((doc as VotePledge).plaza)
     if (plazaID === null) continue
     const declared = (doc as VotePledge).declaredVotes ?? 0
-    const estimated = (doc as VotePledge).estimatedVotes ?? null
-    const current = aggregates.get(plazaID) ?? { ...emptyPlazaPledgeAggregate }
+    const estimated = (doc as VotePledge).estimatedVotes
+    const current = aggregates.get(plazaID) ?? createEmptyPlazaPledgeAggregate()
     current.declaredTotal += declared
-    current.effectiveTotal += estimated ?? declared
+    for (const scenario of VOTE_ESTIMATE_SCENARIOS) {
+      current.effectiveByScenario[scenario] += effectivePledgeVotesForScenario(
+        declared,
+        estimated,
+        scenario,
+      )
+    }
     current.pledgeCount += 1
-    if (estimated === null) current.missingEstimateCount += 1
+    if (!pledgeHasAnyEstimate(estimated)) current.missingEstimateCount += 1
     aggregates.set(plazaID, current)
   }
 
@@ -104,7 +204,7 @@ export type StaffPledgeRow = {
   contactName: string
   declaredVotes: number
   declaredAt: string | null
-  estimatedVotes: number | null
+  estimatedVotes: VoteEstimateScenarioViewModel
   estimateNote: string | null
   estimatedAt: string | null
 }
@@ -130,8 +230,6 @@ export const loadPlazaPledges = async (
   const leadershipIDs = [
     ...new Set(pledges.docs.map((pledge) => requireRelationshipId(pledge.leadership))),
   ]
-  // Intentional admin bypass: row access was already applied to the pledges;
-  // this resolves display names without N+1 field-access checks.
   const leaderships = await payload.find({
     collection: 'leadership',
     where: { id: { in: leadershipIDs } },
@@ -157,7 +255,7 @@ export const loadPlazaPledges = async (
     contactName: nameByLeadership.get(requireRelationshipId(pledge.leadership)) ?? 'Contato',
     declaredVotes: pledge.declaredVotes,
     declaredAt: pledge.declaredAt ?? null,
-    estimatedVotes: pledge.estimatedVotes ?? null,
+    estimatedVotes: toVoteEstimateScenarioViewModel(pledge.estimatedVotes),
     estimateNote: pledge.estimateNote ?? null,
     estimatedAt: pledge.estimatedAt ?? null,
   }))
@@ -183,11 +281,11 @@ export const loadLeaderPledges = async (
 ): Promise<LeaderPledgeRow[]> => {
   const pledges = await payload.find({
     collection: 'votePledge',
+    where: {},
     depth: 0,
     limit: 0,
     pagination: false,
     sort: 'plaza',
-    where: {},
     user,
     overrideAccess: false,
   })

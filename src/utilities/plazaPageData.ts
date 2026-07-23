@@ -22,6 +22,7 @@ import {
   type PlazaListViewModel,
 } from '@/utilities/plazaViewModels'
 import { relationshipId } from '@/utilities/relationship'
+import { type VoteEstimateScenario } from '@/utilities/voteEstimate'
 import {
   aggregatePledgesByPlaza,
   rollupPlazaStaffVotes,
@@ -49,7 +50,7 @@ export class PlazaNotFoundError extends Error {
 
 export type PlazaListOverviewData = {
   plazaCount: number
-  staffVoteTotal: number
+  staffVoteTotalByScenario: Record<VoteEstimateScenario, number>
   pledgeCount: number
   missingEstimateCount: number
   withAdvisorCount: number
@@ -116,15 +117,12 @@ export const loadPlazaListPageBundle = async (
     )
 
     if (isStaff) {
-      const { staffVoteTotal, pledgeCount, missingEstimateCount } = rollupPlazaStaffVotes(
-        filteredResult.docs,
-        pledgeAggregates,
-      )
+      const rollup = rollupPlazaStaffVotes(filteredResult.docs, pledgeAggregates)
       overview = {
         plazaCount: filteredResult.docs.length,
-        staffVoteTotal,
-        pledgeCount,
-        missingEstimateCount,
+        staffVoteTotalByScenario: { ...rollup.staffVoteTotalByScenario },
+        pledgeCount: rollup.pledgeCount,
+        missingEstimateCount: rollup.missingEstimateCount,
         withAdvisorCount: filteredResult.docs.filter((plaza) => (plaza.advisors ?? []).length > 0)
           .length,
       }
@@ -144,10 +142,7 @@ export const loadPlazaListPageBundle = async (
 
   return {
     plazas: paginatedResult.docs.map((plaza) =>
-      toPlazaListViewModel(
-        plaza as Plaza,
-        isStaff ? pledgeAggregates.get(plaza.id) : undefined,
-      ),
+      toPlazaListViewModel(plaza as Plaza, isStaff ? pledgeAggregates.get(plaza.id) : undefined),
     ),
     totalDocs: paginatedResult.totalDocs,
     totalPages: paginatedResult.totalPages,

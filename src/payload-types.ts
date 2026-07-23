@@ -412,9 +412,13 @@ export interface Plaza {
     minimum?: number | null;
   };
   /**
-   * Total esperado da Praça — distinto das metas de cenário e da soma das lideranças.
+   * Total esperado da Praça por cenário — distinto das metas de planejamento e da soma das lideranças.
    */
-  expectedVotes?: number | null;
+  expectedVotes?: {
+    pessimistic?: number | null;
+    central?: number | null;
+    optimistic?: number | null;
+  };
   /**
    * Leitura de conjuntura registrada pela coordenação (alianças, prefeitos, disputas locais) — não é série numérica.
    */
@@ -508,9 +512,13 @@ export interface VotePledge {
   declaredAt?: string | null;
   declaredBy?: (number | null) | CampaignUser;
   /**
-   * Estimativa interna do valor real. A liderança nunca vê este número.
+   * Faixa interna pessimista / média / otimista. A liderança nunca vê estes números.
    */
-  estimatedVotes?: number | null;
+  estimatedVotes?: {
+    pessimistic?: number | null;
+    central?: number | null;
+    optimistic?: number | null;
+  };
   estimateNote?: string | null;
   estimatedBy?: (number | null) | CampaignUser;
   estimatedAt?: string | null;
@@ -1318,7 +1326,13 @@ export interface PlazaSelect<T extends boolean = true> {
         regular?: T;
         minimum?: T;
       };
-  expectedVotes?: T;
+  expectedVotes?:
+    | T
+    | {
+        pessimistic?: T;
+        central?: T;
+        optimistic?: T;
+      };
   politicalTrend?:
     | T
     | {
@@ -1390,7 +1404,13 @@ export interface VotePledgeSelect<T extends boolean = true> {
   declaredVotes?: T;
   declaredAt?: T;
   declaredBy?: T;
-  estimatedVotes?: T;
+  estimatedVotes?:
+    | T
+    | {
+        pessimistic?: T;
+        central?: T;
+        optimistic?: T;
+      };
   estimateNote?: T;
   estimatedBy?: T;
   estimatedAt?: T;

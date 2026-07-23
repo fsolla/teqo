@@ -20,20 +20,28 @@ import {
   type PlazaListState,
 } from '@/utilities/plazaUi'
 import {
+  DEFAULT_VOTE_ESTIMATE_SCENARIO,
+  VOTE_ESTIMATE_SCENARIOS,
+  type VoteEstimateScenario,
+} from '@/utilities/voteEstimate'
+import {
   aggregatePledgesByPlaza,
   emptyPlazaPledgeAggregate,
   resolvePlazaStaffVoteTotal,
   type PlazaPledgeAggregate,
 } from '@/utilities/votePledgeData'
 
-export type { PlazasByIbgeCode, PlazaMapSlugEntry } from '@/utilities/plazaMapNavigation'
+export type { PlazaMapSlugEntry, PlazasByIbgeCode } from '@/utilities/plazaMapNavigation'
 
 export const PLAZA_MAP_YEARS = [...HISTORICAL_SERIES_YEARS, 2026] as const
 export type PlazaMapYear = (typeof PLAZA_MAP_YEARS)[number]
 
 export type PlazaMapScaleMode = 'absolute' | 'percentValid'
 
-export const PLAZA_MAP_SCALE_MODES = ['percentValid', 'absolute'] as const satisfies readonly PlazaMapScaleMode[]
+export const PLAZA_MAP_SCALE_MODES = [
+  'percentValid',
+  'absolute',
+] as const satisfies readonly PlazaMapScaleMode[]
 
 export const plazaMapScaleModeLabels: Record<PlazaMapScaleMode, string> = {
   absolute: 'Total (votos)',
@@ -51,6 +59,7 @@ export type PlazaZoneBreakdownRow = {
   slug: string
   name: string
   votesByYear: Record<string, number>
+  votes2026ByScenario: Record<VoteEstimateScenario, number>
 }
 
 export type PlazaMapComparison = {
@@ -61,8 +70,10 @@ export type PlazaMapComparison = {
 }
 
 export type PlazaMapBundle = {
-  /** year (as string) → codarea → value. 2026 = expectedVotes ?? pledge effective total. */
+  /** year (as string) → codarea → value. 2026 = cenário médio (central). */
   valuesByYear: Record<string, Record<string, number>>
+  /** 2026 totals per estimate scenario (codarea → votes). */
+  values2026ByScenario: Record<VoteEstimateScenario, Record<string, number>>
   /** year (as string) → codarea → votosValidos (federal T1). 2026 reuses 2022. */
   validVotesByYear: Record<string, Record<string, number>>
   /** IBGE codarea → accessible plaza slugs for map click navigation. */
@@ -79,7 +90,11 @@ export type ScopedPlaza = {
   name: string
   kind: 'municipio' | 'zona'
   ibgeCode: string
-  expectedVotes: number | null
+  expectedVotes?: {
+    pessimistic?: number | null
+    central?: number | null
+    optimistic?: number | null
+  } | null
   geography: PlazaElectionGeography
 }
 
@@ -89,7 +104,11 @@ type ScopedPlazaDoc = {
   name: string
   kind: 'municipio' | 'zona'
   ibgeCode: string
-  expectedVotes?: number | null
+  expectedVotes?: {
+    pessimistic?: number | null
+    central?: number | null
+    optimistic?: number | null
+  } | null
 }
 
 export const scopePlazasFromDocs = (docs: ReadonlyArray<ScopedPlazaDoc>): ScopedPlaza[] =>
@@ -175,18 +194,41 @@ export const buildPlazaMapBundleFromPlazas = async (
   }
   validVotesByYear['2026'] = validVotesByYear['2022'] ?? {}
 
-  const pledgeValues: Record<string, number> = {}
+  const pledgeValuesByScenario = Object.fromEntries(
+    VOTE_ESTIMATE_SCENARIOS.map((scenario) => [scenario, {} as Record<string, number>]),
+  ) as Record<VoteEstimateScenario, Record<string, number>>
+  const zoneVotes2026BySlug = new Map<string, Record<VoteEstimateScenario, number>>()
+  const emptyZoneScenarioVotes = (): Record<VoteEstimateScenario, number> => ({
+    pessimistic: 0,
+    central: 0,
+    optimistic: 0,
+  })
+
   for (const plaza of plazas) {
     const aggregate = pledgeAggregates.get(plaza.id) ?? emptyPlazaPledgeAggregate
-    const votes = resolvePlazaStaffVoteTotal(plaza.expectedVotes, aggregate.effectiveTotal)
-    if (votes > 0) pledgeValues[plaza.ibgeCode] = (pledgeValues[plaza.ibgeCode] ?? 0) + votes
-    if (plaza.kind === 'zona') {
-      const bySlug = zoneVotesBySlug.get(plaza.slug) ?? {}
-      bySlug['2026'] = votes
-      zoneVotesBySlug.set(plaza.slug, bySlug)
+    for (const scenario of VOTE_ESTIMATE_SCENARIOS) {
+      const votes = resolvePlazaStaffVoteTotal(
+        plaza.expectedVotes,
+        aggregate.effectiveByScenario[scenario],
+        scenario,
+      )
+      if (votes > 0) {
+        pledgeValuesByScenario[scenario][plaza.ibgeCode] =
+          (pledgeValuesByScenario[scenario][plaza.ibgeCode] ?? 0) + votes
+      }
+      if (plaza.kind === 'zona') {
+        const byScenario = zoneVotes2026BySlug.get(plaza.slug) ?? emptyZoneScenarioVotes()
+        byScenario[scenario] = votes
+        zoneVotes2026BySlug.set(plaza.slug, byScenario)
+        if (scenario === DEFAULT_VOTE_ESTIMATE_SCENARIO) {
+          const bySlug = zoneVotesBySlug.get(plaza.slug) ?? {}
+          bySlug['2026'] = votes
+          zoneVotesBySlug.set(plaza.slug, bySlug)
+        }
+      }
     }
   }
-  valuesByYear['2026'] = pledgeValues
+  valuesByYear['2026'] = pledgeValuesByScenario[DEFAULT_VOTE_ESTIMATE_SCENARIO]
 
   const zoneBreakdown = plazas
     .filter((plaza) => plaza.kind === 'zona')
@@ -194,6 +236,7 @@ export const buildPlazaMapBundleFromPlazas = async (
       slug: plaza.slug,
       name: plaza.name,
       votesByYear: zoneVotesBySlug.get(plaza.slug) ?? {},
+      votes2026ByScenario: zoneVotes2026BySlug.get(plaza.slug) ?? emptyZoneScenarioVotes(),
     }))
     .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
 
@@ -247,6 +290,7 @@ export const buildPlazaMapBundleFromPlazas = async (
 
   return {
     valuesByYear,
+    values2026ByScenario: pledgeValuesByScenario,
     validVotesByYear,
     plazasByIbgeCode: buildPlazasByIbgeCode(plazas),
     zoneBreakdown,

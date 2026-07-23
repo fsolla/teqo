@@ -11,9 +11,10 @@ import { TseZoneBadge } from '@/components/campaign/TseZoneBadge'
 import { Progress } from '@/components/ui/Progress'
 import { Toggle } from '@/components/ui/Toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
-import type { PlazaAdvisorSummary, PlazaListViewModel } from '@/utilities/plazaViewModels'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import { emptyPlazaPledgeAggregate } from '@/utilities/votePledgeData'
+import type { PlazaAdvisorSummary, PlazaListViewModel } from '@/utilities/plazaViewModels'
+import { toVoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
+import { createEmptyPlazaPledgeAggregate } from '@/utilities/votePledgeData'
 
 const noopListFormAction = async (
   _state: CampaignFormActionState,
@@ -23,7 +24,6 @@ const noopListFormAction = async (
 const plazaListDefaultProps = {
   isCoordinator: false,
   advisorOptions: [],
-  expectedVotesFormAction: noopListFormAction,
   trendFormAction: noopListFormAction,
   advisorsFormAction: noopListFormAction,
 }
@@ -133,12 +133,12 @@ describe('campaign visual foundation', () => {
         advisorIDs: [advisor.id],
         priority: 'alta',
         lastUpdateAt: null,
-        expectedVotes: 1500,
+        expectedVotes: { pessimistic: null, central: 1500, optimistic: null },
         politicalTrendStatus: 'favoravel',
         politicalTrendNote: null,
         pledges: {
           declaredTotal: 1200,
-          effectiveTotal: 1200,
+          effectiveByScenario: { pessimistic: 1200, central: 1200, optimistic: 1200 },
           pledgeCount: 2,
           missingEstimateCount: 1,
         },
@@ -155,10 +155,10 @@ describe('campaign visual foundation', () => {
         advisorIDs: [],
         priority: 'normal',
         lastUpdateAt: null,
-        expectedVotes: null,
+        expectedVotes: toVoteEstimateScenarioViewModel(null),
         politicalTrendStatus: null,
         politicalTrendNote: null,
-        pledges: { ...emptyPlazaPledgeAggregate },
+        pledges: createEmptyPlazaPledgeAggregate(),
       },
     ]
 
@@ -175,11 +175,49 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('Chapada Diamantina')
     expect(html).toContain('href="/campanha/pracas/seabra"')
     expect(html).toContain('1.500')
-    expect(html).toContain('Nas lideranças: 1.200')
+    expect(html).toContain('Cenários de estimativa')
     expect(html).toContain('Prioritária')
     expect(html).toContain('Coberta')
     expect(html).toContain('Sem assessor')
     expect(html).toContain('Tendência')
+  })
+
+  it('hides leadership coverage subline when pledges only have declared votes', () => {
+    const html = renderToStaticMarkup(
+      createElement(PlazaList, {
+        plazas: [
+          {
+            id: 3,
+            name: 'Itaberaba',
+            slug: 'itaberaba',
+            kind: 'municipio',
+            city: 'Itaberaba',
+            region: 'Centro Norte',
+            ibgeCode: '2914703',
+            zoneNumber: null,
+            advisorIDs: [],
+            priority: 'normal',
+            lastUpdateAt: null,
+            expectedVotes: toVoteEstimateScenarioViewModel(null),
+            politicalTrendStatus: null,
+            politicalTrendNote: null,
+            pledges: {
+              declaredTotal: 800,
+              effectiveByScenario: { pessimistic: 800, central: 800, optimistic: 800 },
+              pledgeCount: 1,
+              missingEstimateCount: 1,
+            },
+          },
+        ],
+        advisorNamesById: new Map<number, PlazaAdvisorSummary>(),
+        isStaffView: true,
+        ...plazaListDefaultProps,
+      }),
+    )
+
+    expect(html).toContain('Itaberaba')
+    expect(html).not.toContain('>Nas lideranças')
+    expect(html).not.toContain('Declarado nas lideranças')
   })
 
   it('hides staff-only pledge and coverage columns from the leader view', () => {
@@ -198,10 +236,10 @@ describe('campaign visual foundation', () => {
             advisorIDs: [],
             priority: 'alta',
             lastUpdateAt: null,
-            expectedVotes: null,
+            expectedVotes: toVoteEstimateScenarioViewModel(null),
             politicalTrendStatus: null,
             politicalTrendNote: null,
-            pledges: { ...emptyPlazaPledgeAggregate },
+            pledges: createEmptyPlazaPledgeAggregate(),
           },
         ],
         advisorNamesById: new Map<number, PlazaAdvisorSummary>(),

@@ -19,6 +19,15 @@ import {
 } from '@/utilities/campaignAccess'
 import { relationshipId } from '@/utilities/relationship'
 import {
+  getVoteEstimateOrderViolation,
+  VOTE_ESTIMATE_ORDER_ERROR_MESSAGE,
+  type VoteEstimateScenarioFields,
+} from '@/utilities/voteEstimate'
+import {
+  voteEstimateScenarioGroupAccess,
+  voteEstimateScenarioGroupFields,
+} from '@/utilities/voteEstimateScenarioFields'
+import {
   getVoteGoalsOrderViolation,
   VOTE_GOALS_ORDER_ERROR_MESSAGE,
   type VoteGoalsFields,
@@ -66,6 +75,46 @@ const validateVoteGoals: CollectionBeforeValidateHook = ({ data, originalDoc, op
         (data.voteGoals as { minimum?: unknown }).minimum === undefined
           ? (originalDoc?.voteGoals?.minimum ?? null)
           : minimum,
+    }
+  }
+
+  return data
+}
+
+const validateExpectedVotes: CollectionBeforeValidateHook = ({ data, originalDoc, operation }) => {
+  if (!data) return data
+
+  const mergedExpected =
+    data.expectedVotes !== undefined
+      ? { ...(originalDoc?.expectedVotes ?? {}), ...(data.expectedVotes as object) }
+      : operation === 'update'
+        ? originalDoc?.expectedVotes
+        : undefined
+
+  if (!mergedExpected || typeof mergedExpected !== 'object') return data
+
+  const pessimistic = voteGoalNumber((mergedExpected as VoteEstimateScenarioFields).pessimistic)
+  const central = voteGoalNumber((mergedExpected as VoteEstimateScenarioFields).central)
+  const optimistic = voteGoalNumber((mergedExpected as VoteEstimateScenarioFields).optimistic)
+
+  if (getVoteEstimateOrderViolation({ pessimistic, central, optimistic })) {
+    throw new APIError(VOTE_ESTIMATE_ORDER_ERROR_MESSAGE, 400)
+  }
+
+  if (data.expectedVotes && typeof data.expectedVotes === 'object') {
+    data.expectedVotes = {
+      pessimistic:
+        (data.expectedVotes as { pessimistic?: unknown }).pessimistic === undefined
+          ? (originalDoc?.expectedVotes?.pessimistic ?? null)
+          : pessimistic,
+      central:
+        (data.expectedVotes as { central?: unknown }).central === undefined
+          ? (originalDoc?.expectedVotes?.central ?? null)
+          : central,
+      optimistic:
+        (data.expectedVotes as { optimistic?: unknown }).optimistic === undefined
+          ? (originalDoc?.expectedVotes?.optimistic ?? null)
+          : optimistic,
     }
   }
 
@@ -142,7 +191,7 @@ export const Plaza: CollectionConfig = {
     delete: canDeletePlaza,
   },
   hooks: {
-    beforeValidate: [validatePlazaAdvisors, validateVoteGoals],
+    beforeValidate: [validatePlazaAdvisors, validateVoteGoals, validateExpectedVotes],
     beforeChange: [derivePoliticalTrendAudit],
   },
   fields: [
@@ -326,18 +375,14 @@ export const Plaza: CollectionConfig = {
     },
     {
       name: 'expectedVotes',
-      type: 'number',
+      type: 'group',
       label: 'Votos estimados',
-      min: 0,
-      access: {
-        read: canReadCampaignStaffField,
-        create: canManageCampaignStaffField,
-        update: canManageCampaignStaffField,
-      },
+      access: voteEstimateScenarioGroupAccess,
       admin: {
         description:
-          'Total esperado da Praça — distinto das metas de cenário e da soma das lideranças.',
+          'Total esperado da Praça por cenário — distinto das metas de planejamento e da soma das lideranças.',
       },
+      fields: voteEstimateScenarioGroupFields(),
     },
     {
       name: 'politicalTrend',

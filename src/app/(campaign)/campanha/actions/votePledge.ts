@@ -13,6 +13,10 @@ import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campa
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
+import {
+  normalizeVoteEstimateOnSave,
+  toVoteEstimateScenarioViewModel,
+} from '@/utilities/voteEstimate'
 
 const OWN_ENGAGED_LEADERSHIP_REQUIRED = 'Somente lideranças engajadas podem declarar votos.'
 const PLAZA_NOT_LINKED = 'A liderança precisa estar vinculada à Praça para declarar votos nela.'
@@ -125,7 +129,12 @@ export const estimateVotesRecord = async (
   actor: CampaignUser,
   input: EstimateVotesInput,
 ) => {
-  const data = estimateVotesSchema.parse(input)
+  const data = estimateVotesSchema.parse({
+    ...input,
+    estimatedVotes: normalizeVoteEstimateOnSave(
+      toVoteEstimateScenarioViewModel(input.estimatedVotes),
+    ),
+  })
 
   return withPayloadTransaction(
     payload,

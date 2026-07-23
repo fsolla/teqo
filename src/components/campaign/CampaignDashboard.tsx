@@ -9,9 +9,13 @@ import {
 import { RecentlyVisitedCard } from '@/components/campaign/RecentlyVisitedCard'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { formatElectionNumber } from '@/lib/electionInsights'
 import type { CampaignDashboardView } from '@/utilities/campaignDashboardData'
+import {
+  formatVoteEstimateEndpointsLabel,
+  voteEstimateScenarioLabels,
+} from '@/utilities/voteEstimate'
 
-const voteFormatter = new Intl.NumberFormat('pt-BR')
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
   timeStyle: 'short',
@@ -45,7 +49,7 @@ export const CampaignDashboard = ({
                 <p className="text-sm text-muted-foreground">
                   {plaza.declaredVotes == null
                     ? 'Você ainda não declarou votos nesta Praça.'
-                    : `Você declarou ${voteFormatter.format(plaza.declaredVotes)} votos.`}
+                    : `Você declarou ${formatElectionNumber(plaza.declaredVotes)} votos.`}
                 </p>
                 <Button asChild variant="outline" className="min-h-11 self-start">
                   <Link href={`/campanha/pracas/${plaza.slug}`}>
@@ -83,8 +87,9 @@ export const CampaignDashboard = ({
         <CampaignMetricStrip
           metrics={[
             {
-              label: 'Votos estimados',
-              value: view.staffVoteTotal > 0 ? voteFormatter.format(view.staffVoteTotal) : '—',
+              label: `${voteEstimateScenarioLabels.central} nas Praças`,
+              value: formatElectionNumber(view.staffVoteTotalByScenario.central),
+              detail: formatVoteEstimateEndpointsLabel(view.staffVoteTotalByScenario) ?? undefined,
               emphasize: true,
             },
             {
@@ -97,7 +102,7 @@ export const CampaignDashboard = ({
             },
             {
               label: 'Declarações sem estimativa',
-              value: voteFormatter.format(view.missingEstimateCount),
+              value: formatElectionNumber(view.missingEstimateCount),
             },
           ]}
         />
@@ -121,7 +126,7 @@ export const CampaignDashboard = ({
                   <div className="flex min-w-0 flex-col">
                     <span className="truncate font-medium">{item.contactName}</span>
                     <span className="truncate text-sm text-muted-foreground">
-                      {item.plazaName} · declarou {voteFormatter.format(item.declaredVotes)} votos
+                      {item.plazaName} · declarou {formatElectionNumber(item.declaredVotes)} votos
                     </span>
                   </div>
                   <Button asChild variant="ghost" className="min-h-11 shrink-0">

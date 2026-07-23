@@ -1,6 +1,29 @@
 import { z } from 'zod'
 
 import { positiveRelationshipId, trimmedNullableText } from '@/lib/schemas/primitives'
+import {
+  getVoteEstimateOrderViolation,
+  VOTE_ESTIMATE_ORDER_ERROR_MESSAGE,
+} from '@/utilities/voteEstimate'
+
+const optionalEstimate = z.number().int().min(0).max(1_000_000).nullable().optional()
+
+export const voteEstimateScenarioFieldsSchema = z
+  .object({
+    pessimistic: optionalEstimate,
+    central: optionalEstimate,
+    optimistic: optionalEstimate,
+  })
+  .superRefine((value, ctx) => {
+    const violation = getVoteEstimateOrderViolation(value)
+    if (violation) {
+      ctx.addIssue({
+        code: 'custom',
+        message: VOTE_ESTIMATE_ORDER_ERROR_MESSAGE,
+        path: [violation],
+      })
+    }
+  })
 
 /** A leader (or staff on their behalf) declares votes for one linked plaza. */
 export const declareVotesSchema = z.object({
@@ -13,7 +36,7 @@ export const declareVotesSchema = z.object({
 /** Staff record their internal estimate for one pledge. */
 export const estimateVotesSchema = z.object({
   pledge: positiveRelationshipId,
-  estimatedVotes: z.number().int().min(0).max(1_000_000).nullable(),
+  estimatedVotes: voteEstimateScenarioFieldsSchema,
   estimateNote: trimmedNullableText(1000),
 })
 

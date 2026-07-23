@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { positiveRelationshipId, trimmedNullableText } from '@/lib/schemas/primitives'
+import { voteEstimateScenarioFieldsSchema } from '@/lib/schemas/votePledge'
 
 export const politicalTrendStatuses = ['favoravel', 'neutra', 'desfavoravel'] as const
 export type PoliticalTrendStatusValue = (typeof politicalTrendStatuses)[number]
@@ -48,7 +49,7 @@ export const plazaAdvisorsAssignmentSchema = z.object({
 
 export const plazaExpectedVotesSchema = z.object({
   plaza: positiveRelationshipId,
-  expectedVotes: z.number().int().min(0).max(1_000_000).nullable(),
+  expectedVotes: voteEstimateScenarioFieldsSchema,
 })
 
 export type PlazaStrategyUpdateInput = z.input<typeof plazaStrategyUpdateSchema>

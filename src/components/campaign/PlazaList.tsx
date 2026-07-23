@@ -1,8 +1,8 @@
 import { CircleAlertIcon, CircleCheckIcon } from 'lucide-react'
 import Link from 'next/link'
 
-import { PlazaListAdvisorsControl } from '@/components/campaign/PlazaListAdvisorsControl'
 import { PlazaAdvisorAvatarStack } from '@/components/campaign/PlazaAdvisorAvatarStack'
+import { PlazaListAdvisorsControl } from '@/components/campaign/PlazaListAdvisorsControl'
 import { PlazaListExpectedVotesControl } from '@/components/campaign/PlazaListExpectedVotesControl'
 import { PlazaListTrendControl } from '@/components/campaign/PlazaListTrendControl'
 import { Badge } from '@/components/ui/Badge'
@@ -26,6 +26,7 @@ import type {
   PlazaAdvisorSummary,
   PlazaListViewModel,
 } from '@/utilities/plazaViewModels'
+import { toPlazaPledgeCoverageView } from '@/utilities/votePledgeData'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
@@ -40,7 +41,6 @@ export type PlazaListProps = {
   isStaffView: boolean
   isCoordinator: boolean
   advisorOptions: EligibleAdvisorOption[]
-  expectedVotesFormAction: PlazaStaffFormAction
   trendFormAction: PlazaStaffFormAction
   advisorsFormAction: PlazaStaffFormAction
 }
@@ -51,7 +51,6 @@ export const PlazaList = ({
   isStaffView,
   isCoordinator,
   advisorOptions,
-  expectedVotesFormAction,
   trendFormAction,
   advisorsFormAction,
 }: PlazaListProps) => {
@@ -86,13 +85,11 @@ export const PlazaList = ({
                 <dl className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <dt className="text-muted-foreground">Votos estimados</dt>
-                    <dd>
+                    <dd className="flex justify-center">
                       <PlazaListExpectedVotesControl
                         plazaID={plaza.id}
-                        plazaSlug={plaza.slug}
                         expectedVotes={plaza.expectedVotes}
-                        leadershipEffectiveTotal={plaza.pledges.effectiveTotal}
-                        formAction={expectedVotesFormAction}
+                        pledgeCoverage={toPlazaPledgeCoverageView(plaza.pledges)}
                       />
                     </dd>
                   </div>
@@ -148,7 +145,7 @@ export const PlazaList = ({
                 <>
                   <TableHead>Assessores</TableHead>
                   <TableHead>Tendência</TableHead>
-                  <TableHead>Votos estimados</TableHead>
+                  <TableHead className="text-center">Votos estimados</TableHead>
                   <TableHead>Última atualização</TableHead>
                   <TableHead>Cobertura</TableHead>
                 </>
@@ -206,14 +203,14 @@ export const PlazaList = ({
                           formAction={trendFormAction}
                         />
                       </TableCell>
-                      <TableCell>
-                        <PlazaListExpectedVotesControl
-                          plazaID={plaza.id}
-                          plazaSlug={plaza.slug}
-                          expectedVotes={plaza.expectedVotes}
-                          leadershipEffectiveTotal={plaza.pledges.effectiveTotal}
-                          formAction={expectedVotesFormAction}
-                        />
+                      <TableCell className="relative overflow-visible align-middle text-center">
+                        <div className="flex min-h-11 items-center justify-center">
+                          <PlazaListExpectedVotesControl
+                            plazaID={plaza.id}
+                            expectedVotes={plaza.expectedVotes}
+                            pledgeCoverage={toPlazaPledgeCoverageView(plaza.pledges)}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell>
                         {plaza.lastUpdateAt

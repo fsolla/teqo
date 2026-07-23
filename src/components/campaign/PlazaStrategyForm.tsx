@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react'
 
+import { VoteEstimateScenarioInputs } from '@/components/campaign/VoteEstimateScenarioInputs'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -196,18 +197,11 @@ export const PlazaStrategyForm = ({
         </div>
         <input type="hidden" name="plazaId" value={plazaID} />
         <input type="hidden" name="plazaSlug" value={plazaSlug} />
-        <Field>
-          <FieldLabel htmlFor="plaza-expected-votes">Total da Praça</FieldLabel>
-          <Input
-            id="plaza-expected-votes"
-            name="expectedVotes"
-            type="number"
-            min={0}
-            inputMode="numeric"
-            defaultValue={strategy.expectedVotes ?? undefined}
-            className="min-h-11 sm:max-w-xs"
-          />
-        </Field>
+        <VoteEstimateScenarioInputs
+          fieldPrefix="expectedVotes"
+          values={strategy.expectedVotes}
+          idPrefix="plaza-expected-votes"
+        />
         {expectedVotesState.message && expectedVotesState.status !== 'success' ? (
           <Alert variant="destructive">
             <AlertDescription>{expectedVotesState.message}</AlertDescription>

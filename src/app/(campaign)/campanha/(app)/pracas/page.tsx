@@ -7,6 +7,7 @@ import { getPayload } from 'payload'
 import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
 import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
+import { PlazaEstimateScenarioProvider } from '@/components/campaign/PlazaEstimateScenarioContext'
 import { PlazaFilters } from '@/components/campaign/PlazaFilters'
 import { PlazaList } from '@/components/campaign/PlazaList'
 import { PlazaListOverview } from '@/components/campaign/PlazaListOverview'
@@ -33,10 +34,9 @@ import {
   getCampaignScopeLabel,
   resolvePlazaListUrl,
 } from '@/utilities/plazaUi'
-import { loadAdvisorSummaries, getEligibleAdvisorOptions } from '@/utilities/plazaViewModels'
+import { getEligibleAdvisorOptions, loadAdvisorSummaries } from '@/utilities/plazaViewModels'
 import {
   assignPlazaAdvisorsFormAction,
-  setPlazaExpectedVotesFormAction,
   setPlazaPoliticalTrendFormAction,
 } from './plazaStaffFormActions'
 
@@ -59,8 +59,7 @@ export default async function PlazasPage({ searchParams }: PlazasPageProps) {
   const candidateOptions = pageBundle.mapBundle
     ? await loadFederalCandidateOptions(payload, user)
     : []
-  const { plazas: listPlazas, totalDocs, totalPages, scopeTotal, overview, mapBundle } =
-    pageBundle
+  const { plazas: listPlazas, totalDocs, totalPages, scopeTotal, overview, mapBundle } = pageBundle
   const resolvedUrl = resolvePlazaListUrl(rawSearchParams, totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
@@ -69,8 +68,68 @@ export default async function PlazasPage({ searchParams }: PlazasPageProps) {
   const advisorIDs = [...new Set(listPlazas.flatMap((plaza) => plaza.advisorIDs))]
   const advisorSummaries = isStaffView ? await loadAdvisorSummaries(payload, user, advisorIDs) : []
   const advisorNamesById = new Map(advisorSummaries.map((advisor) => [advisor.id, advisor]))
-  const advisorOptions =
-    isCoordinator ? await getEligibleAdvisorOptions(payload, user) : []
+  const advisorOptions = isCoordinator ? await getEligibleAdvisorOptions(payload, user) : []
+
+  const filters = (
+    <PlazaFilters key={buildPlazaFiltersKey(state)} state={state} showStaffFilters={isStaffView} />
+  )
+
+  const listBody = listPlazas.length ? (
+    <>
+      {isStaffView && overview ? <PlazaListOverview view={overview} /> : null}
+      <PlazaList
+        plazas={listPlazas}
+        advisorNamesById={advisorNamesById}
+        isStaffView={isStaffView}
+        isCoordinator={isCoordinator}
+        advisorOptions={advisorOptions}
+        trendFormAction={setPlazaPoliticalTrendFormAction}
+        advisorsFormAction={assignPlazaAdvisorsFormAction}
+      />
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-sm text-muted-foreground">
+          {totalDocs} {totalDocs === 1 ? 'Praça encontrada' : 'Praças encontradas'}
+        </p>
+        <CampaignListPagination
+          page={state.page}
+          totalPages={totalPages}
+          hrefForPage={(page) => buildPlazaListHref(state, page)}
+        />
+      </div>
+    </>
+  ) : (
+    <Empty className="min-h-72 border">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <SearchXIcon aria-hidden="true" />
+        </EmptyMedia>
+        <EmptyTitle>Nenhuma Praça encontrada</EmptyTitle>
+        <EmptyDescription>
+          Ajuste a busca ou os filtros. Você só vê Praças dentro do seu escopo.
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button asChild variant="outline" className="min-h-11">
+          <Link href="/campanha/pracas">Limpar busca e filtros</Link>
+        </Button>
+      </EmptyContent>
+    </Empty>
+  )
+
+  const main = isStaffView ? (
+    <PlazaEstimateScenarioProvider>
+      {mapBundle ? (
+        <PlazaMapPanelDynamic bundle={mapBundle} candidateOptions={candidateOptions} />
+      ) : null}
+      {filters}
+      {listBody}
+    </PlazaEstimateScenarioProvider>
+  ) : (
+    <>
+      {filters}
+      {listBody}
+    </>
+  )
 
   return (
     <CampaignPageShell>
@@ -80,64 +139,10 @@ export default async function PlazasPage({ searchParams }: PlazasPageProps) {
           As 436 Praças da campanha: um município cada — em Salvador e Camaçari, uma zona eleitoral
           cada.
         </p>
-        <CampaignScopeBadge>
-          {getCampaignScopeLabel(user.role, scopeTotal)}
-        </CampaignScopeBadge>
+        <CampaignScopeBadge>{getCampaignScopeLabel(user.role, scopeTotal)}</CampaignScopeBadge>
       </header>
 
-      {mapBundle ? (
-        <PlazaMapPanelDynamic bundle={mapBundle} candidateOptions={candidateOptions} />
-      ) : null}
-
-      <PlazaFilters
-        key={buildPlazaFiltersKey(state)}
-        state={state}
-        showStaffFilters={isStaffView}
-      />
-
-      {listPlazas.length ? (
-        <>
-          {overview ? <PlazaListOverview view={overview} /> : null}
-          <PlazaList
-            plazas={listPlazas}
-            advisorNamesById={advisorNamesById}
-            isStaffView={isStaffView}
-            isCoordinator={isCoordinator}
-            advisorOptions={advisorOptions}
-            expectedVotesFormAction={setPlazaExpectedVotesFormAction}
-            trendFormAction={setPlazaPoliticalTrendFormAction}
-            advisorsFormAction={assignPlazaAdvisorsFormAction}
-          />
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-sm text-muted-foreground">
-              {totalDocs}{' '}
-              {totalDocs === 1 ? 'Praça encontrada' : 'Praças encontradas'}
-            </p>
-            <CampaignListPagination
-              page={state.page}
-              totalPages={totalPages}
-              hrefForPage={(page) => buildPlazaListHref(state, page)}
-            />
-          </div>
-        </>
-      ) : (
-        <Empty className="min-h-72 border">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <SearchXIcon aria-hidden="true" />
-            </EmptyMedia>
-            <EmptyTitle>Nenhuma Praça encontrada</EmptyTitle>
-            <EmptyDescription>
-              Ajuste a busca ou os filtros. Você só vê Praças dentro do seu escopo.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button asChild variant="outline" className="min-h-11">
-              <Link href="/campanha/pracas">Limpar busca e filtros</Link>
-            </Button>
-          </EmptyContent>
-        </Empty>
-      )}
+      {main}
       {listVisitLabel ? (
         <RecentVisitTracker
           entry={{

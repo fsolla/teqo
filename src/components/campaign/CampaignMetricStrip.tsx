@@ -1,11 +1,15 @@
+import type { ReactNode } from 'react'
+
 import { Progress } from '@/components/ui/Progress'
 import { cn } from '@/lib/utils'
 
 export type CampaignMetric = {
   label: string
   value: string
+  detail?: ReactNode
   emphasize?: boolean
   progress?: number
+  valueAriaLabel?: string
 }
 
 export const CampaignMetricStrip = ({
@@ -37,9 +41,17 @@ export const CampaignMetricStrip = ({
               ? 'text-2xl font-semibold text-foreground'
               : 'text-lg font-medium text-foreground',
           )}
+          aria-label={metric.valueAriaLabel}
         >
           {metric.value}
         </dd>
+        {metric.detail ? (
+          typeof metric.detail === 'string' ? (
+            <p className="text-xs text-muted-foreground tabular-nums">{metric.detail}</p>
+          ) : (
+            <div className="min-w-0">{metric.detail}</div>
+          )
+        ) : null}
         {metric.progress !== undefined ? (
           <Progress
             value={metric.progress}

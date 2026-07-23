@@ -1,7 +1,7 @@
 # Cenários de estimativa de votos (pessimista / média / otimista)
 
-Status: rascunho
-Atualizado em: 2026-07-23
+Status: entregue (2026-07-23)
+Atualizado em: 2026-07-23 _(entrega A10 + polish overview/Cenário; capture-review-debts: no-op roadmap, gatilho flash)_
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, item A10)
 Impeccable: B — encaixe em forms/lista/mapa/dashboard já existentes (sem rota nova)
 Appetite: ~2 dias eng; migration (pledge + praça) + helpers de agregação + seletor de cenário nas superfícies staff
@@ -56,15 +56,15 @@ E8 (conta da cadeira) ainda não começou e planeja Σ `estimatedVotes ?? declar
 - **Backfill na migration: escalar antigo → `central`; pessimista/otimista null.** Preserva o significado do número único já lançado. **Rejeitado:** copiar o mesmo valor nos três (inventa certeza); zerar tudo (apaga trabalho de campo).
 - **Ordem quando os três estão preenchidos: pessimista ≤ central ≤ otimista** (mesmo espírito de `voteGoals` / `voteGoals.ts`). **Rejeitado:** sem invariante (quebra leitura da faixa); forçar os três sempre preenchidos na v1 (fria adoção).
 - **Fallback por cenário:** `effective[S] = estimated[S] ?? declared`; total Praça `resolve[S] = expected[S] ?? Σ effective[S]`. Cenário ausente no pledge cai no declarado **daquele** pledge; Praça sem `expected[S]` usa só a soma daquele cenário. **Rejeitado:** “se falta pessimista, usar média” (mistura cenários); um único fallback compartilhado entre S.
-- **Default de leitura = `central` (média); seletor de cenário no mapa e na lista/overview** (URL ou estado local no padrão Ano/Escala). **Rejeitado:** default otimista (infla a conta); três mapas lado a lado; só tooltip com faixa sem trocar o fill.
+- **Default de leitura = `central` (média); seletor de cenário no mapa (e lista/overview se couber) em estado local**, no mesmo padrão de Ano/Escala do `PlazaMapPanel`. **Rejeitado:** default otimista (infla a conta); três mapas lado a lado; só tooltip com faixa sem trocar o fill; `?estimate=` na v1 (Ano/Escala não usam URL — só `compare` usa).
 - **Access:** inalterado — `canRead/ManageCampaignStaffField` nos grupos; leader redacted. **Rejeitado:** só coordinator escreve otimista.
 - **i18n e naming:** `pessimistic` / `central` / `optimistic`, `VoteEstimateScenario`, `resolvePlazaStaffVoteTotalForScenario`, `aggregatePledgesByPlaza` passa a expor totais por cenário; strings “Pessimista” / “Média” / “Otimista”.
 
 ## Questões em aberto
 
-- **Seletor de cenário na URL (`?estimate=central`) ou só estado local no cliente?** **Opções:** A) query param (shareable, SSR) | B) estado local | C) cookie. **Recomendação:** A no mapa/lista (espelha `year`/`scale` e sobrevive a refresh RSC); default omitido = central. _(assumido — validar com produto)_
-- **Partial fill: salvar só média?** **Opções:** A) sim, nullable independente | B) exigir os três. **Recomendação:** A — ordem só quando ≥2 preenchidos e comparáveis; UI sugere preencher a faixa.
-- **KPI do dashboard mostra um número ou a faixa?** **Opções:** A) só média + link | B) `pessimista–otimista` tipográfico | C) três KPIs. **Recomendação:** B (número médio + faixa secundária); C estoura density.
+- **Seletor de cenário na URL (`?estimate=central`) ou só estado local no cliente?** **Opções:** A) query param (shareable, SSR) | B) estado local | C) cookie. **Recomendação:** **B** no mapa (e lista/overview se houver seletor) — `PlazaMapPanel` já guarda **Ano** e **Escala** em `useState` local; só `compare` vai na URL. Espelhar esse padrão evita RSC round-trip e inconsistência com os outros seletores. Default = `central` sem persistência. _(assumido — validar com produto; A só se share de cenário virar pedido explícito)_ **Rejeitado nesta revisão:** A “porque espelha year/scale” — afirmação defasada (year/scale não são URL).
+- **Partial fill: salvar só média?** **Opções:** A) sim, nullable independente | B) exigir os três. **Recomendação:** A — ordem só quando ≥2 preenchidos e comparáveis; UI sugere preencher a faixa. _(fechado)_
+- **KPI do dashboard mostra um número ou a faixa?** **Opções:** A) só média + link | B) `pessimista–otimista` tipográfico | C) três KPIs. **Recomendação:** B (número médio + faixa secundária); C estoura density. _(fechado)_
 
 ## Abordagem proposta
 
@@ -76,7 +76,7 @@ flowchart LR
   plaza --> resolve["resolvePlazaStaffVoteTotalForScenario"]
   agg --> resolve
   resolve --> list["PlazaList + overview"]
-  resolve --> map["PlazaMapPanel + ?estimate="]
+  resolve --> map["PlazaMapPanel + estado local"]
   resolve --> dash["dashboard / E8"]
   forms["PledgeEstimateForm + Plaza*Votes"] --> pledge
   forms --> plaza
@@ -85,13 +85,13 @@ flowchart LR
 
 Componentes:
 
-- **`VotePledge` / `Plaza`** (`src/collections/VotePledge.ts`, `Plaza.ts`): substituir scalars por groups com três `number` min 0; access staff nos groups; hook de audit `estimatedAt`/`estimatedBy` quando qualquer subcampo muda; validação de ordem (reusar padrão de `voteGoals.ts` → `voteEstimate.ts`).
-- **Migration** `pnpm migrate:create add_vote_estimate_scenarios`: criar colunas do group; `UPDATE … SET central = estimated_votes` (e idem `expected_votes`); dropar scalars; sem Consent.
-- **`src/lib/schemas/votePledge.ts` / `plaza.ts`:** schemas Zod dos três; action `setVotePledgeEstimate` / `setPlazaExpectedVotes` passam a aceitar o trio (nullable).
-- **`src/utilities/votePledgeData.ts`:** `PlazaPledgeAggregate` ganha `effectiveByScenario` + `declaredTotal`; `resolvePlazaStaffVoteTotal` vira variante por cenário; `rollupPlazaStaffVotes` default `central`. Depth: **não** criar `VoteEstimateService` — estender o módulo profundo existente.
-- **`plazaMapData.ts` + `PlazaMapPanel`:** bundle 2026 indexado por cenário (ou recompute client-side a partir de três maps); seletor “Cenário” ao lado de Ano/Escala; readout mostra valor do cenário + faixa se completa.
-- **UI:** `PledgeEstimateForm` três inputs; `PlazaStrategyForm` / `PlazaListExpectedVotesControl` trio (Popover pode empilhar 3 campos); `StaffPlazaVotesDisplay` / `PlazaPledgesPanel` / `PlazaList` leem cenário ativo + faixa; `DeclareVotesForm` intacto.
-- **Testes:** int assimetria (leader não vê nenhum dos três); unit ordem + fallback por cenário; int migration backfill → central; mapa/lista usam default central.
+- **`VotePledge` / `Plaza`** (`src/collections/VotePledge.ts`, `Plaza.ts`): substituir scalars por groups com três `number` min 0; access staff nos groups; hook de audit `estimatedAt`/`estimatedBy` quando qualquer subcampo muda; validação de ordem (reusar padrão de `src/utilities/voteGoals.ts` → helper fino `voteEstimate.ts` em `src/utilities/` ou `src/lib/` — só se ≥2 call sites).
+- **Migration** `pnpm migrate:create add_vote_estimate_scenarios`: criar colunas do group (`estimated_votes_pessimistic|central|optimistic`, idem `expected_votes_*` no padrão de `vote_goals_*`); `UPDATE … SET …_central = estimated_votes` (e idem `expected_votes`); dropar scalars + índice antigo em `estimated_votes`; sem Consent.
+- **`src/lib/schemas/votePledge.ts` / `plaza.ts`:** schemas Zod dos três; actions existentes `estimateVotes` / `setPlazaExpectedVotes` (+ form actions em `plazaStaffFormActions` / `pledgeFormActions`) passam a aceitar o trio (nullable).
+- **`src/utilities/votePledgeData.ts`:** `PlazaPledgeAggregate` ganha `effectiveByScenario` + `declaredTotal`; `resolvePlazaStaffVoteTotal` / `rollupPlazaStaffVotes` com cenário (default `central`). Depth: **não** criar `VoteEstimateService` — estender o módulo profundo existente.
+- **`plazaMapData.ts` + `PlazaMapPanel`:** bundle 2026 com valores por cenário (três maps no bundle — leitura local no seletor); seletor “Cenário” ao lado de Ano/Escala (**estado local**, como Ano/Escala); readout mostra valor do cenário + faixa se completa.
+- **UI:** `PledgeEstimateForm` três inputs; `PlazaStrategyForm` / `PlazaListExpectedVotesControl` trio (Popover pode empilhar 3 campos); `StaffPlazaVotesDisplay` / `PlazaPledgesPanel` / `PlazaList` leem cenário ativo (default central) + faixa; `DeclareVotesForm` intacto.
+- **Testes:** int assimetria (leader não vê nenhum dos três) em `campaignVotePledge.int.spec.ts`; unit ordem + fallback por cenário; int/unit backfill semântico → central; mapa/lista usam default central.
 - **Depth check:** reusar `plazaStaffFormActions`, `campaignAccess`, shells B9; espelhar invariante de `voteGoals.ts` em helper fino compartilhado só se ≥2 call sites.
 
 ## Dependências
@@ -108,6 +108,18 @@ Componentes:
 - Alterar `voteGoals` ou fundir labels; previsão estatística; import CSV de faixas.
 - Expor estimativas à liderança; auto-preencher faixa a partir do declarado.
 
+## Já resolvido no simplify/critique (não reabrir)
+
+- Overview: label por cenário ativo (`Média nas Praças filtradas`), endpoints `Pessimista · Otimista`, `VoteEstimateScenarioStrip`, `sem estimativa` sob o hero; sync via `PlazaEstimateScenarioProvider`.
+- Cenário: seletor no overview; no mapa só com Ano=2026; disclaimer inline → `CampaignInfoHint` (`?` Popover); flash + `aria-live` no overview ao trocar.
+- Cleanup `/simplify`: dropar `staffVoteRange` / `staffVoteTotal` mortos nos DTOs overview/dashboard; `formatElectionNumber`; context sem `useCallback` extra.
+
+## Explicitamente fora (capture-review-debts 2026-07-23)
+
+- Simplify amplo do restante A10 (forms/pledges/migration) sem dor concreta — sem `escala-dry-pos-a10`.
+- Trocar `CampaignInfoHint` por `FieldDescription` — affordance errado (hint dismissível vs ajuda estática).
+- Remover `rollup.staffVoteTotal` — ainda usado por testes/API do rollup.
+
 ## Rabbit holes
 
 - **Fundir com Bom/Regular/Mínimo.** Se alguém “aproveitar o group que já existe”: apaga meta×estimativa. **Mitigação:** labels e identificadores distintos; teste que `voteGoals` não é lido pelo resolver de estimativa.
@@ -120,16 +132,19 @@ Componentes:
 - **Nota por cenário** (hoje uma `estimateNote`). Revisitar se assessores pedirem justificar só o pessimista vs. o otimista.
 - **Aviso soft vs `voteGoals.minimum` no cenário pessimista.** Revisitar após E8 com totais preenchidos (mesmo gatilho de A9).
 - **Delta semanal por cenário.** Revisitar com C12 (versions no group).
+- **Abstração compartilhada de flash/pending client-side** (hoje local em `PlazaListOverview`). Revisitar quando houver o **2º** flash client-side em `/campanha` (não URL/`useTransition`).
 
 ## Referências
 
+- Critiques: [overview](../../.impeccable/critique/2026-07-23T21-29-20Z__src-components-campaign-plazalistoverview-tsx.md), [Cenário](../../.impeccable/critique/2026-07-23T21-52-39Z__src-components-campaign-plazamappanel-tsx-cenario.md)
 - `docs/roadmap.md` (Trilha A / A10 → E8)
 - `docs/plans/estimativa-votos-praca.md` — A9 (scalar a evoluir)
 - `docs/plans/remodelagem-pracas.md` — assimetria declared×estimated
 - `docs/plans/conta-da-cadeira.md` — consumidor E8 (atualizar dep)
 - `src/collections/VotePledge.ts`, `src/collections/Plaza.ts`
-- `src/utilities/votePledgeData.ts`, `src/utilities/plazaMapData.ts`, `src/lib/voteGoals.ts`
+- `src/utilities/votePledgeData.ts`, `src/utilities/plazaMapData.ts`, `src/utilities/voteGoals.ts`
 - `src/components/campaign/PledgeEstimateForm.tsx`, `PlazaListExpectedVotesControl.tsx`, `PlazaMapPanel.tsx`, `DeclareVotesForm.tsx`
 - AGENTS.md — staff-only estimates, naming, migrations, overrideAccess
 - `PRODUCT.md` / `DESIGN.md` — Field Desk; princípio 5 (métricas locais)
-- Feedback coordenação geral 2026-07-23 (áudio em `docs/general-coordinator-interview/`)
+- Feedback coordenação geral 2026-07-23 (áudio em `docs/general-coordinator-interview/` / `CUSTOMER.md` Interview Snapshot)
+- Revisão auditoria 2026-07-23: path `voteGoals` corrigido; seletor de cenário → estado local (Ano/Escala não são URL); actions reais = `estimateVotes` / `setPlazaExpectedVotes`.

@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-23 (D3–D5: canal WhatsApp **pessoal** por staff + QR — [plano-mestre](plans/whatsapp-interno-campanha.md); A10 cenários — [plano](plans/cenarios-estimativa-votos.md); export CSV admin entregue)
+Atualizado em: 2026-07-23 (A10 cenários entregue — [plano](plans/cenarios-estimativa-votos.md); D3–D5 WhatsApp; export CSV admin entregue)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -53,7 +53,7 @@ O discovery literatura→persona→entrevista ([relatório aprovado](research/re
 
 | ID  | Fatia                              | Plano                                                   | Entrega essencial                                                                                                                                                                  | Classe | Appetite | Janela    | Depende de                                     |
 | --- | ---------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------- | --------- | ---------------------------------------------- |
-| E8  | Conta da cadeira                   | [detalhes](plans/conta-da-cadeira.md)                   | Global `campaignGoals`; potencial por praça (válidos projetados, captura do campo, roll-off, headroom); decomposição meta→praça; cobertura Σpledges÷meta (cenário default = média) | B      | ~2d      | 2         | **A10**, deploy remodelagem                    |
+| E8  | Conta da cadeira                   | [detalhes](plans/conta-da-cadeira.md)                   | Global `campaignGoals`; potencial por praça (válidos projetados, captura do campo, roll-off, headroom); decomposição meta→praça; cobertura Σpledges÷meta (cenário default = média) | B      | ~2d      | 2         | deploy remodelagem                             |
 | E9  | Fila de alocação                   | [detalhes](plans/fila-de-alocacao.md)                   | Lista de decisão (7 colunas), ordenação por déficit descoberto + risco por frescor, "coluna da vergonha"                                                                           | B      | ~1,5d    | 2         | E8                                             |
 | C12 | Registro-fundação                  | [detalhes](plans/registro-fundacao.md)                  | Versions em `votePledge`; sinais tipados no `plazaUpdate`; `actionPlan.origin`+custo; collection `allocationDecision`                                                              | B      | ~2d      | 2         | deploy remodelagem (paralelo a E8; suave: A10) |
 | E10 | Classificação territorial relativa | [detalhes](plans/classificacao-territorial-relativa.md) | Âncoras relativas (LQ / share da cadeira marginal), multi-eixo; substitui 35/20/10 para DF                                                                                         | B      | ~1d      | 3         | E8                                             |
@@ -88,7 +88,7 @@ flowchart TD
     R2 --> A9["A9 Estimativa votos ✓"]
     A9 --> A9plus["A9+ Loader lista ✓"]
     A9plus --> B9["B9 Edição rápida lista ✓"]
-    A9 --> A10["A10 Cenários estimativa<br/>pessimista/média/otimista"]
+    A9 --> A10["A10 Cenários estimativa ✓"]
     R2 --> A10
     R2 -.-> B7["B7 Mapa filtrado ✓"]
     B7 --> B12["B12 Aproximar mapa<br/>ao filtro ✓"]
@@ -142,13 +142,13 @@ flowchart TD
     E11i -.decisões acumuladas.-> E15i
 ```
 
-Paralelizáveis agora: **A10** (pós-A9; paraleliza com C12 / smoke pós-deploy), fill-ins (O0+, RS+, …). **D3** (baixa/média prioridade; após remodelagem em prod + folga — não bloqueia E8/E9). ~~**A9** / **A9+** / **B9** / **B7** / **B10** / **B11** / **B6** / **B12** / **filtros-auto** / **C8** F4~~ entregues 2026-07-21.
+Paralelizáveis agora: **E8** (pós-A10), fill-ins (O0+, RS+, …). **D3** (baixa/média prioridade; após remodelagem em prod + folga — não bloqueia E8/E9). ~~**A9** / **A9+** / **A10** / **B9** / **B7** / **B10** / **B11** / **B6** / **B12** / **filtros-auto** / **C8** F4~~ entregues 2026-07-21–23.
 
 ### Sequência por janela
 
-**Janela 1 — agora → 05/08 (convenções):** ~~R0 → R1 → R2~~ entregues; ~~**A9** estimativa de votos~~ / ~~**B9** edição rápida na lista~~ / ~~**B7** mapa filtrado~~ / ~~**B10** hover+click-nav~~ / ~~**B11** escala % dos válidos~~ / ~~**B12** aproximar mapa ao footprint filtrado~~ / ~~**filtros-auto** lista de Praças~~ entregues; **deploy da remodelagem** (revisar SQL destrutivo da migração antes do build) + smoke em produção; **A10** cenários pessimista/média/otimista (pode puxar para cá pós-deploy — desbloqueia E8); R6 critique/polish; Onda 0 jurídica em paralelo.
+**Janela 1 — agora → 05/08 (convenções):** ~~R0 → R1 → R2~~ entregues; ~~**A9** estimativa de votos~~ / ~~**A10** cenários pessimista/média/otimista~~ / ~~**B9** edição rápida na lista~~ / ~~**B7** mapa filtrado~~ / ~~**B10** hover+click-nav~~ / ~~**B11** escala % dos válidos~~ / ~~**B12** aproximar mapa ao footprint filtrado~~ / ~~**filtros-auto** lista de Praças~~ entregues; **deploy da remodelagem** (revisar SQL destrutivo da migração antes do build) + smoke em produção; R6 critique/polish; Onda 0 jurídica em paralelo.
 
-**Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; **A10** (se não fechou na Janela 1) → **E8** conta da cadeira → **E9** fila de alocação, com **C12** registro-fundação em paralelo (migrations cedo, longe do congelamento); D2 se sobrar folga.
+**Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; **E8** conta da cadeira → **E9** fila de alocação, com **C12** registro-fundação em paralelo (migrations cedo, longe do congelamento); D2 se sobrar folga.
 
 **Janela 3 — 16/08 → set:** A6 dobradinha (pós-TSE 15/08), **E10** classificação relativa → **B13** escala relativa no mapa, **E14** níveis N0–N4, **E11** motor de sugestões v1, **E12** camada TI, **E13** planejador de giros; **B8** polígonos das Praças-zona Salvador/Camaçari (F1 catálogo de bairros shipável antes; F2 dissolve), débitos sobreviventes (abaixo). Se houver folga **e** Little Hire ainda vazar para o ZAP: começar **D3** (fundação do canal) — não compete com E8/E9 na Janela 2.
 
@@ -156,7 +156,7 @@ Paralelizáveis agora: **A10** (pós-A9; paraleliza com C12 / smoke pós-deploy)
 
 ### Cortes seguros / não cortáveis
 
-**Não cortáveis:** Onda 0 (jurídico/Consent); R1–R2 (sem eles a vertical não reflete a operação real); C2 dados reais; assimetria declarado×estimado (relação de campo); ~~**A9**~~ (total esperado da Praça — entregue 2026-07-21); **A10** (faixa pessimista/média/otimista — semântica operacional pedida pela coordenação; E8 consome); **E8**+**E9**+**C12** (a conta da cadeira, a fila e o registro ex-ante são o mínimo de "inteligência, não planilha" — e C12 é irrecuperável se não registrar durante a campanha).
+**Não cortáveis:** Onda 0 (jurídico/Consent); R1–R2 (sem eles a vertical não reflete a operação real); C2 dados reais; assimetria declarado×estimado (relação de campo); ~~**A9**~~ (total esperado da Praça — entregue 2026-07-21); ~~**A10**~~ (faixa pessimista/média/otimista — entregue 2026-07-23); **E8**+**E9**+**C12** (a conta da cadeira, a fila e o registro ex-ante são o mínimo de "inteligência, não planilha" — e C12 é irrecuperável se não registrar durante a campanha).
 
 **Cortes seguros** (se o prazo apertar, nesta ordem): **D5** inbox→rascunhos (manter registro manual + `wa.me`); **D4** envio bridge (manter `wa.me`); **D3** fundação do canal (atalho `wa.me` continua); **E13** planejador de giros (agenda segue manual com J-A/J-B como guia); **E12** camada TI (rollup manual por lista); **E15** (pós-eleição por definição — cortar = perder o aprendizado 2030); **E11** motor v1 (manter fila E9 sem sugestões); **B13** símbolo proporcional (manter quantis/LQ como escala); **E14** (manter `priority` alta/normal); R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; **B8** (F2 polígonos; manter F1 bairros na Praça se já entregue — mapa continua agregado no município); débitos/fill-ins. ~~**B9** / **B10** / **B11** / **B6** / **B12**~~ / ~~**export CSV de assinaturas/contatos**~~ (entregues — não cortar).
 
@@ -196,8 +196,7 @@ Paralelizáveis agora: **A10** (pós-A9; paraleliza com C12 / smoke pós-deploy)
 
 ## Próximos — sobreviventes e pós-remodelagem
 
-- **A10** Cenários de estimativa (pessimista / média / otimista) em pledge + total da Praça + lista/mapa · liderança declara um · desbloqueia E8 · Janela 1–2 · não cortável · [plano](plans/cenarios-estimativa-votos.md)
-- **Programa Inteligência de campanha** (E8–E15, B13, C12) · fatias, gaps de dados e fila canônica no [plano-mestre](plans/inteligencia-campanha.md) · embasamento: [docs/research/](research/) (relatório aprovado 2026-07-21) · **E8 depende de A10**
+- **Programa Inteligência de campanha** (E8–E15, B13, C12) · fatias, gaps de dados e fila canônica no [plano-mestre](plans/inteligencia-campanha.md) · embasamento: [docs/research/](research/) (relatório aprovado 2026-07-21) · **E8** desbloqueado por A10 ✓
 - **A6** dobradinha 2026 automática quando o TSE publicar candidaturas · gatilho externo: pós-15/08 · reenquadrar para Praça · alimenta **E13** · [plano](plans/insight-dobradinha-2026.md)
 - **B5 F2–F3** cache CLI compartilhado + factory mun/TI (scripts continuam) · [plano](plans/escala-dry-pos-b2.md)
 - **B8** Polígonos das Praças-zona (Salvador ZE 1–19 / Camaçari ZE 170–171): ~~F1 catálogo zona→bairros + UI na Praça~~ (entregue 2026-07-21); F2 prep catálogo (~½ dia) + dissolve IBGE/malha → TopoJSON no mapa · Janela 3 · cortável (F2) · [plano](plans/poligonos-pracas-zona.md)

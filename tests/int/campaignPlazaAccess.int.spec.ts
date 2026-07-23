@@ -153,7 +153,7 @@ describe('plaza catalog seed and per-role access', () => {
     })
     await setPlazaExpectedVotesRecord(payload, coordinator, {
       plaza: plaza.id,
-      expectedVotes: 1200,
+      expectedVotes: { pessimistic: null, central: 1200, optimistic: null },
     })
     fixtures.touchPlaza(plaza.id)
 
@@ -182,7 +182,7 @@ describe('plaza catalog seed and per-role access', () => {
       overrideAccess: false,
     })
     expect(staffRead.priority).toBe('alta')
-    expect(staffRead.expectedVotes).toBe(1200)
+    expect(staffRead.expectedVotes?.central).toBe(1200)
     expect(staffRead.politicalTrend?.status).toBe('desfavoravel')
     expect(staffRead.politicalTrend?.recordedBy).toBeTruthy()
     expect(staffRead.politicalTrend?.recordedAt).toBeTruthy()
@@ -254,30 +254,30 @@ describe('plaza catalog seed and per-role access', () => {
 
     const updated = await setPlazaExpectedVotesRecord(payload, coordinator, {
       plaza: administered.id,
-      expectedVotes: 2500,
+      expectedVotes: { pessimistic: null, central: 2500, optimistic: null },
     })
-    expect(updated.expectedVotes).toBe(2500)
+    expect(updated.expectedVotes?.central).toBe(2500)
     fixtures.touchPlaza(administered.id)
 
     const advisorUpdated = await setPlazaExpectedVotesRecord(payload, advisor, {
       plaza: administered.id,
-      expectedVotes: 3000,
+      expectedVotes: { pessimistic: null, central: 3000, optimistic: null },
     })
-    expect(advisorUpdated.expectedVotes).toBe(3000)
+    expect(advisorUpdated.expectedVotes?.central).toBe(3000)
     fixtures.touchPlaza(administered.id)
 
     await expect(
       setPlazaExpectedVotesRecord(payload, advisor, {
         plaza: outside.id,
-        expectedVotes: 100,
+        expectedVotes: { pessimistic: null, central: 100, optimistic: null },
       }),
     ).rejects.toThrow()
 
     const cleared = await setPlazaExpectedVotesRecord(payload, coordinator, {
       plaza: administered.id,
-      expectedVotes: null,
+      expectedVotes: { pessimistic: null, central: null, optimistic: null },
     })
-    expect(cleared.expectedVotes).toBeNull()
+    expect(cleared.expectedVotes?.central ?? null).toBeNull()
     fixtures.touchPlaza(administered.id)
   })
 

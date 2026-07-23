@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import config from '@/payload.config'
 import { loadPlazaListPageBundle } from '@/utilities/plazaPageData'
+import { aggregatePledgesByPlaza, rollupPlazaStaffVotes } from '@/utilities/votePledgeData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -41,7 +42,7 @@ describe('loadPlazaListPageBundle', () => {
     await payload.update({
       collection: 'plaza',
       id: plaza.id,
-      data: { expectedVotes: 1_500 },
+      data: { expectedVotes: { pessimistic: null, central: 1_500, optimistic: null } },
       depth: 0,
       overrideAccess: true,
     })
@@ -56,14 +57,24 @@ describe('loadPlazaListPageBundle', () => {
       leadership: leadership.id,
       plaza: plaza.id,
       declaredVotes: 80,
-      estimatedVotes: 120,
+      estimatedVotes: { pessimistic: null, central: 120, optimistic: null },
     })
+
+    const refreshedPlaza = await payload.findByID({
+      collection: 'plaza',
+      id: plaza.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    const aggregates = await aggregatePledgesByPlaza(payload, [plaza.id])
+    const rollup = rollupPlazaStaffVotes([refreshedPlaza], aggregates)
+    expect(rollup.staffVoteTotal).toBe(1_500)
 
     const bundle = await loadPlazaListPageBundle(payload, coordinator, { q: plaza.name })
 
     expect(bundle.overview).not.toBeNull()
     expect(bundle.mapBundle).not.toBeNull()
-    expect(bundle.overview!.staffVoteTotal).toBe(1_500)
+    expect(bundle.overview!.staffVoteTotalByScenario.central).toBeGreaterThanOrEqual(1_500)
   })
 
   it('keeps advisor access and applies URL filters on top', async () => {

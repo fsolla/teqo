@@ -1,11 +1,16 @@
 import { PencilIcon } from 'lucide-react'
 import Link from 'next/link'
 
+import { StaffPlazaVotesDisplay } from '@/components/campaign/StaffPlazaVotesDisplay'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { StaffPlazaVotesDisplay } from '@/components/campaign/StaffPlazaVotesDisplay'
-import { plazaPriorityLabels, politicalTrendBadgeVariant, politicalTrendLabels } from '@/utilities/plazaUi'
+import {
+  plazaPriorityLabels,
+  politicalTrendBadgeVariant,
+  politicalTrendLabels,
+} from '@/utilities/plazaUi'
 import type { PlazaDetailViewModel } from '@/utilities/plazaViewModels'
+import type { PlazaPledgeCoverageView } from '@/utilities/votePledgeData'
 
 const voteFormatter = new Intl.NumberFormat('pt-BR')
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
@@ -14,12 +19,12 @@ export const PlazaStrategyCard = ({
   strategy,
   plazaSlug,
   canEdit,
-  leadershipVoteTotal,
+  pledgeCoverage,
 }: {
   strategy: NonNullable<PlazaDetailViewModel['strategy']>
   plazaSlug: string
   canEdit: boolean
-  leadershipVoteTotal: number
+  pledgeCoverage: PlazaPledgeCoverageView | null
 }) => {
   const goals = strategy.voteGoals
   const trend = strategy.politicalTrend
@@ -65,7 +70,7 @@ export const PlazaStrategyCard = ({
           <dd>
             <StaffPlazaVotesDisplay
               expectedVotes={strategy.expectedVotes}
-              leadershipEffectiveTotal={leadershipVoteTotal}
+              pledgeCoverage={pledgeCoverage}
             />
           </dd>
         </div>

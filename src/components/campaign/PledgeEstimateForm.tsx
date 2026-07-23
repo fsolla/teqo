@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 
+import { VoteEstimateScenarioInputs } from '@/components/campaign/VoteEstimateScenarioInputs'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -9,16 +10,20 @@ import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
+import type { VoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
 
 type PledgeEstimateFormProps = {
   pledgeID: number
-  currentEstimatedVotes: number | null
+  currentEstimatedVotes: VoteEstimateScenarioViewModel
   currentEstimateNote: string | null
   formAction: (
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
 }
+
+const hasAnyEstimate = (estimates: VoteEstimateScenarioViewModel): boolean =>
+  estimates.pessimistic != null || estimates.central != null || estimates.optimistic != null
 
 /** Staff-only inline estimate. The leader never sees these fields. */
 export const PledgeEstimateForm = ({
@@ -30,43 +35,44 @@ export const PledgeEstimateForm = ({
   const [state, submitAction, isPending] = useActionState(formAction, {})
 
   return (
-    <form action={submitAction} className="flex flex-col gap-2">
+    <form action={submitAction} className="flex flex-col gap-3">
       <input type="hidden" name="pledgeId" value={pledgeID} />
-      <div className="flex flex-wrap items-end gap-2">
-        <Field>
-          <FieldLabel htmlFor={`pledge-estimate-${pledgeID}`} className="text-xs">
-            Estimativa do assessor
-          </FieldLabel>
-          <Input
-            id={`pledge-estimate-${pledgeID}`}
-            name="estimatedVotes"
-            type="number"
-            min={0}
-            max={1000000}
-            inputMode="numeric"
-            defaultValue={currentEstimatedVotes ?? undefined}
-            className="min-h-11 w-32"
-          />
-        </Field>
-        <Field className="min-w-40 flex-1">
-          <FieldLabel htmlFor={`pledge-note-${pledgeID}`} className="text-xs">
-            Justificativa
-          </FieldLabel>
-          <Input
-            id={`pledge-note-${pledgeID}`}
-            name="estimateNote"
-            maxLength={1000}
-            defaultValue={currentEstimateNote ?? undefined}
-            className="min-h-11"
-          />
-        </Field>
-        <Button type="submit" variant="secondary" disabled={isPending} className="min-h-11">
-          {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
-          Salvar
-        </Button>
-      </div>
-      {fieldError(state.fieldErrors, 'estimatedVotes') ? (
-        <FieldError>{fieldError(state.fieldErrors, 'estimatedVotes')}</FieldError>
+      <VoteEstimateScenarioInputs
+        fieldPrefix="estimatedVotes"
+        values={currentEstimatedVotes}
+        idPrefix={`pledge-estimate-${pledgeID}`}
+      />
+      <Field>
+        <FieldLabel htmlFor={`pledge-note-${pledgeID}`} className="text-xs">
+          Justificativa
+        </FieldLabel>
+        <Input
+          id={`pledge-note-${pledgeID}`}
+          name="estimateNote"
+          maxLength={1000}
+          defaultValue={currentEstimateNote ?? undefined}
+          className="min-h-11"
+        />
+      </Field>
+      <Button
+        type="submit"
+        variant="secondary"
+        disabled={isPending}
+        className="min-h-11 self-start"
+      >
+        {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
+        Salvar estimativa
+      </Button>
+      {fieldError(state.fieldErrors, 'estimatedVotes') ||
+      fieldError(state.fieldErrors, 'pessimistic') ||
+      fieldError(state.fieldErrors, 'central') ||
+      fieldError(state.fieldErrors, 'optimistic') ? (
+        <FieldError>
+          {fieldError(state.fieldErrors, 'estimatedVotes') ||
+            fieldError(state.fieldErrors, 'pessimistic') ||
+            fieldError(state.fieldErrors, 'central') ||
+            fieldError(state.fieldErrors, 'optimistic')}
+        </FieldError>
       ) : null}
       {state.message && state.status !== 'success' ? (
         <Alert variant="destructive">
@@ -76,3 +82,5 @@ export const PledgeEstimateForm = ({
     </form>
   )
 }
+
+export { hasAnyEstimate }

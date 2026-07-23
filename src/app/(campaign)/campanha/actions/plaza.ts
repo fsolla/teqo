@@ -17,6 +17,10 @@ import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campa
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
+import {
+  normalizeVoteEstimateOnSave,
+  toVoteEstimateScenarioViewModel,
+} from '@/utilities/voteEstimate'
 
 const getFreshStaffActor = async (
   payload: Payload,
@@ -92,7 +96,13 @@ export const setPlazaExpectedVotesRecord = async (
   actor: CampaignUser,
   input: PlazaExpectedVotesInput,
 ) => {
-  const { plaza, expectedVotes } = plazaExpectedVotesSchema.parse(input)
+  const normalizedExpectedVotes = normalizeVoteEstimateOnSave(
+    toVoteEstimateScenarioViewModel(input.expectedVotes),
+  )
+  const { plaza, expectedVotes } = plazaExpectedVotesSchema.parse({
+    plaza: input.plaza,
+    expectedVotes: normalizedExpectedVotes,
+  })
   const currentActor = await getFreshStaffActor(payload, actor)
 
   return payload.update({

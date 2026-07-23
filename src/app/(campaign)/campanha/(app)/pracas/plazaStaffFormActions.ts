@@ -8,10 +8,10 @@ import {
 import {
   nullableFormText,
   optionalFormText,
-  optionalIntegerFormValue,
   optionalPlazaSlugFromForm,
   repeatedRelationshipFormValues,
   requiredRelationshipFormValue,
+  voteEstimateScenarioFromForm,
 } from '@/lib/formData'
 import { parsePoliticalTrendStatusFormValue } from '@/lib/schemas/plaza'
 import {
@@ -28,11 +28,7 @@ export const setPlazaExpectedVotesFormAction = async (
 ): Promise<CampaignFormActionState> => {
   try {
     const plaza = requiredRelationshipFormValue(formData, 'plazaId')
-    const expectedVotes =
-      optionalIntegerFormValue(formData, 'expectedVotes', {
-        minimum: 0,
-        maximum: 1_000_000,
-      }) ?? null
+    const expectedVotes = voteEstimateScenarioFromForm(formData, 'expectedVotes')
 
     await setPlazaExpectedVotes({ plaza, expectedVotes })
     revalidatePlazaListPaths({ slug: optionalPlazaSlugFromForm(formData) })

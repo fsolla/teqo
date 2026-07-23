@@ -6,14 +6,14 @@ alwaysApply: false
 
 # Edit where you see (`/campanha`)
 
-Canonical principle: `PRODUCT.md` § Design Principles — **Edit where you see**. Precedente: B9 (`PlazaList*Control` + `plazaStaffFormActions`).
+Canonical principles: `PRODUCT.md` § Design Principles — **Edit where you see** + **Auto-save, no Save button**. Precedente: B9 (`PlazaList*Control` + `plazaStaffFormActions`).
 
 When adding or changing a **staff** (coordinator / advisor) view that displays mutable campaign data:
 
 1. **Default to in-context edit** if the role can update that field — list cell, detail card, queue row — not a dead readout that only links to `/editar`.
 2. **Reuse existing server actions** and the **same access** as the full form. Thin route wrappers OK; do not invent a generic quick-edit service (&lt;3 call sites → named controls).
-3. **UX pattern:** named Popover / select / short number input per affordance; touch `min-h-11`; save → server revalidate / RSC refresh. Prefer Enter + explicit save over accidental blur writes on mobile.
-4. **Keep `/editar` (or long Sheet)** for multi-field strategy forms, rare fields, and flows that need a note or confirmation.
+3. **UX pattern:** named Popover / select / short number input per affordance; touch `min-h-11`. **Auto-save** on select change, blur, or short debounce — no “Salvar” button on single-field / in-context edits. Show pending / saved / error on the control (Feel the action). Then server revalidate / RSC refresh.
+4. **Keep `/editar` (or long Sheet) + explicit submit** only for multi-field strategy forms, rare fields, and flows that need a note, confirmation, or legal consent.
 5. **Never** expose staff-only fields to `leader`. View models stay role-split.
 
 ## Anti-goals
@@ -22,7 +22,10 @@ When adding or changing a **staff** (coordinator / advisor) view that displays m
 - Always-mounted inputs on every list row
 - Generic `EditableCell` / contentEditable mass edit
 - Optimistic UI that skips server refresh when the list is source of truth
+- Save buttons on Popovers / quick-edit cells “just in case”
+- Silent auto-save with no status feedback
+- Saving on every keystroke for free-text without debounce
 
 ## Plan / Impeccable brief
 
-For UI items (B/C/D): answer explicitly — _does this surface need in-context edit?_ Cite this principle and B9 when yes; name rabbit hole “spreadsheet mode” when scoping.
+For UI items (B/C/D): answer explicitly — _does this surface need in-context edit?_ Cite these principles and B9 when yes; name rabbit hole “spreadsheet mode” when scoping. Prefer auto-save over an explicit Save button unless the write is multi-field / confirmatory / consent.
