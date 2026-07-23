@@ -1,3 +1,4 @@
+import { signatureContactToCSV, signaturePetitionToCSV } from '@/utilities/signatureExport'
 import { CollectionConfig } from 'payload'
 
 export const Signature: CollectionConfig = {
@@ -16,6 +17,11 @@ export const Signature: CollectionConfig = {
       label: 'Contato',
       required: true,
       relationTo: 'contact',
+      custom: {
+        'plugin-import-export': {
+          toCSV: signatureContactToCSV,
+        },
+      },
     },
     {
       type: 'relationship',
@@ -23,6 +29,11 @@ export const Signature: CollectionConfig = {
       label: 'Abaixo-assinado',
       required: true,
       relationTo: 'petition',
+      custom: {
+        'plugin-import-export': {
+          toCSV: signaturePetitionToCSV,
+        },
+      },
     },
     {
       type: 'relationship',
@@ -30,6 +41,11 @@ export const Signature: CollectionConfig = {
       label: 'Consentimento',
       required: true,
       relationTo: 'consent',
+      custom: {
+        'plugin-import-export': {
+          disabled: true,
+        },
+      },
     },
     {
       name: 'comment',

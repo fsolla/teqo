@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-21 (programa **Inteligência de campanha** E8–E15/B13/C12 registrado pós-discovery — [plano-mestre](plans/inteligencia-campanha.md), embasamento [docs/research/](research/); B12/B6/B8 F1/C8 F4/A9+/B7/B9–B11/filtros-auto entregues)
+Atualizado em: 2026-07-23 (Admin Payload: export CSV de assinaturas e contatos entregue — [plano](plans/exportar-csv-assinaturas.md))
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -147,7 +147,7 @@ Paralelizáveis agora: fill-ins (O0+, RS+, …). ~~**A9** / **A9+** / **B9** / *
 
 **Não cortáveis:** Onda 0 (jurídico/Consent); R1–R2 (sem eles a vertical não reflete a operação real); C2 dados reais; assimetria declarado×estimado (relação de campo); ~~**A9**~~ (total esperado da Praça — entregue 2026-07-21); **E8**+**E9**+**C12** (a conta da cadeira, a fila e o registro ex-ante são o mínimo de "inteligência, não planilha" — e C12 é irrecuperável se não registrar durante a campanha).
 
-**Cortes seguros** (se o prazo apertar, nesta ordem): **E13** planejador de giros (agenda segue manual com J-A/J-B como guia); **E12** camada TI (rollup manual por lista); **E15** (pós-eleição por definição — cortar = perder o aprendizado 2030); **E11** motor v1 (manter fila E9 sem sugestões); **B13** símbolo proporcional (manter quantis/LQ como escala); **E14** (manter `priority` alta/normal); R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; **B8** (F2 polígonos; manter F1 bairros na Praça se já entregue — mapa continua agregado no município); débitos/fill-ins. ~~**B9** / **B10** / **B11** / **B6** / **B12**~~ (entregues — não cortar).
+**Cortes seguros** (se o prazo apertar, nesta ordem): **E13** planejador de giros (agenda segue manual com J-A/J-B como guia); **E12** camada TI (rollup manual por lista); **E15** (pós-eleição por definição — cortar = perder o aprendizado 2030); **E11** motor v1 (manter fila E9 sem sugestões); **B13** símbolo proporcional (manter quantis/LQ como escala); **E14** (manter `priority` alta/normal); R4 mapa comparativo (manter tabela comparativa); painel de detalhe por zona no mapa; R3 organizações (manter demandas); resultado de plano com mídia (manter texto); Eleitorado/IBGE na Praça; D2 push (manter sino); A6; **B8** (F2 polígonos; manter F1 bairros na Praça se já entregue — mapa continua agregado no município); débitos/fill-ins. ~~**B9** / **B10** / **B11** / **B6** / **B12**~~ / ~~**export CSV de assinaturas/contatos**~~ (entregues — não cortar).
 
 ## Já entregue (resumo)
 
@@ -165,6 +165,7 @@ Paralelizáveis agora: fill-ins (O0+, RS+, …). ~~**A9** / **A9+** / **B9** / *
 - **B8 F1 (2026-07-21)** — **Catálogo bairros das Praças-zona** (`plazaZoneNeighborhoods`: Salvador TRE-BA RA 02/2017 + Camaçari curado; fixture+int; card **Bairros desta Praça** no overview de Praças `kind=zona`; sem migration) — [plano](plans/poligonos-pracas-zona.md). **F2 pendente** (F2 prep catálogo ~½ dia + TopoJSON + mapa). Débitos pós-`/simplify`: hidratação via `plazaCatalog`, canônico JSON→TS, teste ordem slugs → F2 prep no plano (S6 CSS compartilhado adiado até F2/R6).
 - **Fill-in filtros-auto (2026-07-21)** — **Filtros auto-aplicados na lista de Praças** (`PlazaFilters`: debounce 1s no `q`, Enter imediato, selects imediatos, remove Buscar; `useTransition` + pending a11y; `shouldUpdatePlazaSearchUrl` + no-op via `buildPlazaFiltersKey`; sem migration) — [plano](plans/filtros-auto-pracas.md). Débitos pós-`/simplify`: sync back/forward `search`↔`state.q` e shell pending compartilhado — gatilhos no plano.
 - **Fill-in C8 F4 (2026-07-21)** — **DRY plaza staff form actions** (`plazaStaffFormActions.ts`: votos estimados, tendência e assessores compartilhados entre lista e `/editar`; `editar/formActions.ts` mantém só `updatePlazaStrategy`; sem migration) — [plano](plans/escala-dry-pos-c6.md).
+- **Admin Payload (2026-07-23)** — **Export CSV de assinaturas e contatos** (`@payloadcms/plugin-import-export@3.82.0` em `signature` + `contact`; export CSV síncrono; flatten de `contact`/`petition` via `toCSV` em assinaturas; campos nativos em contatos; `consent` excluído; access `exports`/`imports` restrito a `users`; migration `20260723_025513_add_import_export_plugin`) — [plano](plans/exportar-csv-assinaturas.md).
 
 ## Supersedidos pela remodelagem (2026-07-20)
 

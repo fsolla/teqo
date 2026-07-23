@@ -18,6 +18,7 @@ import * as migration_20260719_061302_add_campaign_user_avatar from './20260719_
 import * as migration_20260721_020109_remodel_plazas from './20260721_020109_remodel_plazas';
 import * as migration_20260721_133444_add_plaza_expected_votes from './20260721_133444_add_plaza_expected_votes';
 import * as migration_20260721_133531_add_petition_facebook_pixel_id from './20260721_133531_add_petition_facebook_pixel_id';
+import * as migration_20260723_025513_add_import_export_plugin from './20260723_025513_add_import_export_plugin';
 
 export const migrations = [
   {
@@ -119,5 +120,10 @@ export const migrations = [
     up: migration_20260721_133531_add_petition_facebook_pixel_id.up,
     down: migration_20260721_133531_add_petition_facebook_pixel_id.down,
     name: '20260721_133531_add_petition_facebook_pixel_id',
+  },
+  {
+    up: migration_20260723_025513_add_import_export_plugin.up,
+    down: migration_20260723_025513_add_import_export_plugin.down,
+    name: '20260723_025513_add_import_export_plugin'
   },
 ];

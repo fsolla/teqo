@@ -1,11 +1,12 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
-import { buildConfig } from 'payload'
+import { buildConfig, type Access, type CollectionConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { resendAdapter } from '@payloadcms/email-resend'
+import { importExportPlugin } from '@payloadcms/plugin-import-export'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { pt } from 'payload/i18n/pt'
 import { ActionPlan } from './collections/ActionPlan'
@@ -35,6 +36,7 @@ import { HomePage } from './globals/HomePage'
 import { Metadata } from './globals/Metadata'
 import { PrivacyPolicy } from './globals/PrivacyPolicy'
 import { SiteSettings } from './globals/SiteSettings'
+import { isPayloadAdmin } from './utilities/campaignAccess'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -42,6 +44,29 @@ const dirname = path.dirname(filename)
 const campaignEmailFromAddress =
   process.env.CAMPAIGN_EMAIL_FROM?.trim() || 'campanha@jorgesolla.com.br'
 const campaignEmailFromName = process.env.CAMPAIGN_EMAIL_FROM_NAME?.trim() || 'Campanha Jorge Solla'
+
+const importExportAdminOnly: Access = ({ req }) => isPayloadAdmin(req.user)
+
+const withImportExportAdminAccess = ({ collection }: { collection: CollectionConfig }) => ({
+  ...collection,
+  access: {
+    ...collection.access,
+    read: importExportAdminOnly,
+    create: importExportAdminOnly,
+    update: importExportAdminOnly,
+    delete: importExportAdminOnly,
+  },
+})
+
+const adminCsvExportCollection = (slug: 'signature' | 'contact') => ({
+  slug,
+  import: false as const,
+  export: {
+    format: 'csv' as const,
+    disableJobsQueue: true,
+    disableSave: true,
+  },
+})
 
 export default buildConfig({
   admin: {
@@ -107,6 +132,11 @@ export default buildConfig({
         media: true,
       },
       token: process.env.BLOB_READ_WRITE_TOKEN,
+    }),
+    importExportPlugin({
+      collections: [adminCsvExportCollection('signature'), adminCsvExportCollection('contact')],
+      overrideExportCollection: withImportExportAdminAccess,
+      overrideImportCollection: withImportExportAdminAccess,
     }),
   ],
   i18n: {
