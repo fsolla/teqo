@@ -123,7 +123,9 @@ export const hasCompleteVoteEstimateRange = (estimates: VoteEstimateScenarioView
 export const normalizeVoteEstimateOnSave = (
   estimates: VoteEstimateScenarioViewModel,
 ): VoteEstimateScenarioViewModel => {
-  let { pessimistic, central, optimistic } = { ...estimates }
+  const pessimistic = estimates.pessimistic
+  let central = estimates.central
+  let optimistic = estimates.optimistic
 
   if (pessimistic != null && central != null && pessimistic > central) {
     central = pessimistic
