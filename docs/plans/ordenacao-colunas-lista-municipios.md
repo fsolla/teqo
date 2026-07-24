@@ -1,6 +1,6 @@
 # B15 — Ordenar lista de municípios pelo header da coluna
 
-Status: rascunho
+Status: entregue
 Atualizado em: 2026-07-24
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Demais itens abertos, B15; superfície de coordenação)
 Impeccable: B — encaixe em `MunicipalityList` / `MunicipalityFilters` em `/campanha/municipios`; sem rota nova
@@ -126,3 +126,28 @@ Componentes:
 - `src/utilities/municipalityUi.ts`, `municipalityPageData.ts`, `campaignListUrl.ts`, `municipalityViewModels.ts`
 - AGENTS.md — naming; Campaign auth / staff vs leader; engineering-standards (pending, zero warnings)
 - `PRODUCT.md` / `DESIGN.md` — Field Desk; Feel the action; anti SaaS-grid
+
+## Notas de implementação (2026-07-24)
+
+- **Fase 1 (contrato URL):** `MunicipalityListState` ganhou `sort`/`dir`; `municipalityListParamNames` inclui as novas chaves; `parseMunicipalityListParams` e `buildMunicipalityListSearchParams` validam e omitem defaults (`sort=name`, `dir=asc`); `buildMunicipalitySortHref` toggles a direção e reseta `page` para 1. Incluída `votos` na allowlist para desbloquear A11.
+- **Fase 2 (loader):** `loadMunicipalityListPageBundle` aplica Payload `sort` para `name`, `region`, `kind`, `lastUpdateAt` e `politicalTrend.status`; para `expectedVotes`, `coverage` e `votos` carrega o filtrado completo, ordena em memória com nulls-last e tie-break por `name`, depois fatia a página. `votos` usa fallback por `name` até A11 implementar o rank real. `overview`/`scopeTotal` permanecem independentes da ordenação da lista.
+- **Fase 3 (desktop):** `MunicipalitySortableHead` em `MunicipalityList.tsx` substitui os headers estáticos; usa `CampaignTransitionAnchor` para participar do pending compartilhado, expõe `aria-sort` e ícone de direção. A coluna `Assessores` permanece não sortável (editor B9). A prop `state` foi acrescentada a `MunicipalityListProps` e passada pela página.
+- **Fase 4 (mobile):** select compacto "Ordenar" em `MunicipalityFilters.tsx`, visível apenas abaixo de `md`, espelhando as mesmas keys/direções; cards seguem a mesma ordem da URL.
+- **Fase 5 (verificação):** `tsc --noEmit`, `pnpm lint`, `pnpm test`, `pnpm build` e Aikido passaram; knip não introduziu dead code novo. Ajuste em `tests/unit/campaignComponents.unit.spec.ts` para fornecer `state` e envolver `MunicipalityList` em `AppRouterContext` mock (necessário porque o sort header usa `useRouter`).
+- **Decisões em aberto resolvidas:** nulls são sempre colocados no fim (com tie-break por nome) para `expectedVotes` e `coverage`; header "Praça" não renomeado (R6); `SortableTableHead` compartilhado não extraído (apenas 1 call site).
+
+## Notas de `/simplify` (2026-07-24)
+
+Após a entrega, os subagentes [Simplify code quality review](ef351fb2-d3b3-45ff-ae9a-ef9e66479e7f), [Simplify performance review](3892a1e5-0e97-4d23-85d7-0b7d17237b27) e [Simplify reuse review](cf39ade5-d339-4f1a-9e6b-ef4b6ffd85a5) revisaram o escopo. Os ajustes aplicados no mesmo dia foram:
+
+- `src/utilities/municipalityPageData.ts`: os três comparadores (`sortByExpectedVotesCentral`, `sortByAdvisorCoverage`, `sortByNameFallback`) foram unificados em `sortByNullableValue` com tie-break por nome via `localeCompare('pt-BR')`; os dois ramos `payload.find` nativo/derivado foram unificados num único objeto de opções com `sort`/`limit`/`page` condicionais; `votos` passou a usar `payloadSortFieldByKey.votos = 'name'` para evitar full-scan desnecessário.
+- `src/utilities/municipalityUi.ts`: adicionados `formatMunicipalitySortOptionLabel`, `municipalityListSortOptions`, `serializeMunicipalitySortValue` e `parseMunicipalitySortValue`, centralizando as labels e a serialização `key|dir` do select mobile.
+- `src/components/campaign/MunicipalityFilters.tsx`: removeu `formatSortOptionLabel`/`sortOptions` locais e a type assertion `as [MunicipalityListSortKey, 'asc' | 'desc']`; passou a usar os helpers de `municipalityUi.ts` com parse validado.
+- `src/components/campaign/MunicipalityList.tsx`: `advisorEntries`/`advisorNames` saíram do corpo do componente para funções de nível superior (recebendo `advisorNamesById`); o ícone de chevron foi simplificado para uma única renderização de `ChevronDownIcon` com `-rotate-180` para ascendente; `MunicipalityList` voltou a implicit JSX return.
+- `tests/unit/campaignComponents.unit.spec.ts`: `mockAppRouter` passou a usar `stub<T>` em vez de `as unknown`.
+
+Itens avaliados mas não aplicados (fora de escopo do `/simplify`):
+
+- **Full-scan em sorts derivados:** `expectedVotes` e `coverage` ainda carregam todo o filtrado porque os campos não são diretamente sortáveis no Payload. Até 435 linhas é aceitável; se a tabela crescer ou o filtro se tornar muito permissivo, reabrir com índice/materialização.
+- **Passar `sort`/`dir` em vez de `state` para `MunicipalitySortableHead`:** manter `state` evita prop-drilling extra; se o componente for promovido/reutilizado, reavaliar.
+- **Generalizar `buildMunicipalitySortHref` para `campaignListUrl.ts`:** só existe um call site; extrair no segundo consumidor.

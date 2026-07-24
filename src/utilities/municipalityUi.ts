@@ -38,6 +38,32 @@ export const politicalTrendBadgeVariant = {
   desfavoravel: 'destructive',
 } as const
 
+export type MunicipalityListSortKey =
+  | 'name'
+  | 'region'
+  | 'kind'
+  | 'trend'
+  | 'expectedVotes'
+  | 'lastUpdateAt'
+  | 'coverage'
+  | 'votos'
+
+export type MunicipalityListSortDirection = 'asc' | 'desc'
+
+export const DEFAULT_MUNICIPALITY_LIST_SORT_KEY: MunicipalityListSortKey = 'name'
+export const DEFAULT_MUNICIPALITY_LIST_SORT_DIR: MunicipalityListSortDirection = 'asc'
+
+export const municipalityListSortLabels: Record<MunicipalityListSortKey, string> = {
+  name: 'Praça',
+  region: 'Território de identidade',
+  kind: 'Tipo',
+  trend: 'Tendência',
+  expectedVotes: 'Votos estimados',
+  lastUpdateAt: 'Última atualização',
+  coverage: 'Cobertura',
+  votos: 'Votos',
+}
+
 export type MunicipalityListState = {
   page: number
   q?: string
@@ -48,6 +74,8 @@ export type MunicipalityListState = {
   trend?: PoliticalTrendStatus
   /** Candidate number for the map comparison mode (does not filter the list). */
   compare?: number
+  sort?: MunicipalityListSortKey
+  dir?: MunicipalityListSortDirection
 }
 
 export type MunicipalityListSearchParams = CampaignListRawSearchParams
@@ -60,10 +88,25 @@ export const municipalityListParamNames = [
   'priority',
   'trend',
   'compare',
+  'sort',
+  'dir',
   'page',
 ] as const
 
 const municipalityListParamNameSet = new Set<string>(municipalityListParamNames)
+
+const municipalityListSortKeySet = new Set<MunicipalityListSortKey>([
+  'name',
+  'region',
+  'kind',
+  'trend',
+  'expectedVotes',
+  'lastUpdateAt',
+  'coverage',
+  'votos',
+])
+
+const municipalityListSortDirSet = new Set<MunicipalityListSortDirection>(['asc', 'desc'])
 
 const canonicalTerritoryBySearchValue = new Map(
   bahiaIdentityTerritories.map((territory) => [normalizeSearchPhrase(territory), territory]),
@@ -81,6 +124,10 @@ export const parseMunicipalityListParams = (params: MunicipalityListSearchParams
   const rawPriority = firstValue(params.priority)
   const rawTrend = firstValue(params.trend)
   const rawCompare = strictDecimalInteger(firstValue(params.compare))
+  const rawSort = firstValue(params.sort) as MunicipalityListSortKey | undefined
+  const sort = rawSort && municipalityListSortKeySet.has(rawSort) ? rawSort : undefined
+  const rawDir = firstValue(params.dir) as MunicipalityListSortDirection | undefined
+  const dir = rawDir && municipalityListSortDirSet.has(rawDir) ? rawDir : undefined
 
   return {
     page: rawPage ?? 1,
@@ -95,6 +142,8 @@ export const parseMunicipalityListParams = (params: MunicipalityListSearchParams
       ? { trend: rawTrend }
       : {}),
     ...(rawCompare && rawCompare <= 99999 ? { compare: rawCompare } : {}),
+    ...(sort ? { sort } : {}),
+    ...(dir ? { dir } : {}),
   }
 }
 
@@ -137,6 +186,8 @@ export const buildMunicipalityListSearchParams = (
     priority: state.priority,
     trend: state.trend,
     compare: state.compare === undefined ? undefined : String(state.compare),
+    sort: state.sort,
+    dir: state.dir,
   })
   const params = new URLSearchParams()
 
@@ -147,6 +198,12 @@ export const buildMunicipalityListSearchParams = (
   if (canonicalState.priority) params.set('priority', canonicalState.priority)
   if (canonicalState.trend) params.set('trend', canonicalState.trend)
   if (canonicalState.compare) params.set('compare', String(canonicalState.compare))
+  if (canonicalState.sort && canonicalState.sort !== DEFAULT_MUNICIPALITY_LIST_SORT_KEY) {
+    params.set('sort', canonicalState.sort)
+  }
+  if (canonicalState.dir && canonicalState.dir !== DEFAULT_MUNICIPALITY_LIST_SORT_DIR) {
+    params.set('dir', canonicalState.dir)
+  }
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
 
   return params
@@ -157,6 +214,71 @@ export const buildMunicipalityFiltersKey = (state: MunicipalityListState): strin
 
 export const buildMunicipalityListHref = (state: MunicipalityListState, page: number): string =>
   buildListHref(state, buildMunicipalityListSearchParams, '/campanha/municipios', page)
+
+const sortKeysWithDescDefault: MunicipalityListSortKey[] = [
+  'expectedVotes',
+  'lastUpdateAt',
+  'votos',
+]
+
+export const buildMunicipalitySortHref = (
+  state: MunicipalityListState,
+  nextKey: MunicipalityListSortKey,
+): string => {
+  const currentSort = state.sort ?? DEFAULT_MUNICIPALITY_LIST_SORT_KEY
+  const currentDir = state.dir ?? DEFAULT_MUNICIPALITY_LIST_SORT_DIR
+
+  let dir: MunicipalityListSortDirection
+  if (nextKey === currentSort) {
+    dir = currentDir === 'asc' ? 'desc' : 'asc'
+  } else {
+    dir = sortKeysWithDescDefault.includes(nextKey) ? 'desc' : 'asc'
+  }
+
+  const updatedState: MunicipalityListState = {
+    ...state,
+    sort: nextKey,
+    dir,
+    page: 1,
+  }
+
+  return buildMunicipalityListHref(updatedState, 1)
+}
+
+export const formatMunicipalitySortOptionLabel = (
+  key: MunicipalityListSortKey,
+  dir: MunicipalityListSortDirection,
+): string => {
+  const base = municipalityListSortLabels[key]
+  if (key === 'expectedVotes' || key === 'votos') {
+    return dir === 'asc' ? `${base} (menor → maior)` : `${base} (maior → menor)`
+  }
+  if (key === 'lastUpdateAt') {
+    return dir === 'asc' ? `${base} (mais antiga)` : `${base} (mais recente)`
+  }
+  return dir === 'asc' ? `${base} (A–Z)` : `${base} (Z–A)`
+}
+
+export const municipalityListSortOptions = (
+  Object.keys(municipalityListSortLabels) as MunicipalityListSortKey[]
+).flatMap((key) => [
+  { key, dir: 'asc' as const, label: formatMunicipalitySortOptionLabel(key, 'asc') },
+  { key, dir: 'desc' as const, label: formatMunicipalitySortOptionLabel(key, 'desc') },
+])
+
+export const serializeMunicipalitySortValue = (
+  key: MunicipalityListSortKey,
+  dir: MunicipalityListSortDirection,
+): string => `${key}|${dir}`
+
+export const parseMunicipalitySortValue = (
+  value: string,
+): { key: MunicipalityListSortKey; dir: MunicipalityListSortDirection } | null => {
+  const [rawKey, rawDir] = value.split('|')
+  if (!municipalityListSortKeySet.has(rawKey as MunicipalityListSortKey)) return null
+  if (!municipalityListSortDirSet.has(rawDir as MunicipalityListSortDirection)) return null
+  return { key: rawKey as MunicipalityListSortKey, dir: rawDir as MunicipalityListSortDirection }
+}
 
 export const shouldUpdateMunicipalitySearchUrl = (
   input: string,

@@ -101,6 +101,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
         advisorOptions={advisorOptions}
         trendFormAction={setMunicipalityPoliticalTrendFormAction}
         advisorsFormAction={assignMunicipalityAdvisorsFormAction}
+        state={state}
       />
       <div className="flex flex-col items-center gap-2">
         <p className="text-sm text-muted-foreground">

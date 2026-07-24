@@ -6,9 +6,13 @@ import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
 import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
 import {
   buildMunicipalityListWhere,
+  DEFAULT_MUNICIPALITY_LIST_SORT_DIR,
+  DEFAULT_MUNICIPALITY_LIST_SORT_KEY,
   municipalityPageSize,
   parseMunicipalityListParams,
   type MunicipalityListSearchParams,
+  type MunicipalityListSortDirection,
+  type MunicipalityListSortKey,
 } from '@/utilities/municipalityUi'
 import {
   municipalityListSelect,
@@ -49,6 +53,52 @@ export type MunicipalityListPageBundle = {
   overview: MunicipalityListOverviewData | null
 }
 
+const payloadSortFieldByKey: Partial<Record<MunicipalityListSortKey, string>> = {
+  name: 'name',
+  region: 'region',
+  kind: 'kind',
+  lastUpdateAt: 'lastUpdateAt',
+  trend: 'politicalTrend.status',
+  votos: 'name',
+}
+
+const municipalityNameCompare = (left: Municipality, right: Municipality): number =>
+  left.name.localeCompare(right.name, 'pt-BR')
+
+type MunicipalityValueAccessor = (municipality: Municipality) => number | null | undefined
+
+const sortByNullableValue = (
+  docs: Municipality[],
+  dir: MunicipalityListSortDirection,
+  getValue: MunicipalityValueAccessor,
+): Municipality[] => {
+  const direction = dir === 'asc' ? 1 : -1
+  return [...docs].sort((left, right) => {
+    const leftValue = getValue(left) ?? null
+    const rightValue = getValue(right) ?? null
+    if (leftValue === null && rightValue === null) return municipalityNameCompare(left, right)
+    if (leftValue === null) return 1
+    if (rightValue === null) return -1
+    if (leftValue === rightValue) return municipalityNameCompare(left, right)
+    return (leftValue - rightValue) * direction
+  })
+}
+
+const applyDerivedMunicipalitySort = (
+  docs: Municipality[],
+  sortKey: MunicipalityListSortKey,
+  dir: MunicipalityListSortDirection,
+): Municipality[] => {
+  switch (sortKey) {
+    case 'expectedVotes':
+      return sortByNullableValue(docs, dir, (municipality) => municipality.expectedVotes?.central)
+    case 'coverage':
+      return sortByNullableValue(docs, dir, (municipality) => municipality.advisors?.length)
+    default:
+      return docs
+  }
+}
+
 export const loadMunicipalityListPageBundle = async (
   payload: Payload,
   user: CampaignUser,
@@ -57,6 +107,8 @@ export const loadMunicipalityListPageBundle = async (
   const state = parseMunicipalityListParams(searchParams)
   const where = buildMunicipalityListWhere(state)
   const isStaff = isCampaignStaff(user)
+  const sortKey = state.sort ?? DEFAULT_MUNICIPALITY_LIST_SORT_KEY
+  const sortDir = state.dir ?? DEFAULT_MUNICIPALITY_LIST_SORT_DIR
 
   if (isCampaignLeader(user)) {
     return {
@@ -68,18 +120,30 @@ export const loadMunicipalityListPageBundle = async (
     }
   }
 
-  const [paginatedResult, scopeCount, staffScope] = await Promise.all([
-    payload.find({
-      collection: 'municipality',
-      depth: 0,
-      limit: municipalityPageSize,
-      page: state.page,
-      sort: 'name',
-      where,
-      select: municipalityListSelect,
-      user,
-      overrideAccess: false,
-    }),
+  const nativeSortField = payloadSortFieldByKey[sortKey]
+  const isNative = nativeSortField !== undefined
+
+  const listQuery = payload.find({
+    collection: 'municipality',
+    depth: 0,
+    where,
+    select: municipalityListSelect,
+    user,
+    overrideAccess: false,
+    ...(isNative
+      ? {
+          limit: municipalityPageSize,
+          page: state.page,
+          sort: `${sortDir === 'desc' ? '-' : ''}${nativeSortField}`,
+        }
+      : {
+          limit: 0,
+          pagination: false,
+        }),
+  })
+
+  const [listResult, scopeCount, staffScope] = await Promise.all([
+    listQuery,
     payload.count({
       collection: 'municipality',
       where: {},
@@ -107,15 +171,32 @@ export const loadMunicipalityListPageBundle = async (
     }
   }
 
+  let pageDocs: Municipality[]
+  let totalDocs: number
+  let totalPages: number
+
+  if (isNative) {
+    // Payload select narrows the inferred type; the selected fields cover the view model.
+    pageDocs = listResult.docs as Municipality[]
+    totalDocs = listResult.totalDocs
+    totalPages = listResult.totalPages
+  } else {
+    const allDocs = applyDerivedMunicipalitySort(listResult.docs as Municipality[], sortKey, sortDir)
+    totalDocs = allDocs.length
+    totalPages = Math.max(1, Math.ceil(totalDocs / municipalityPageSize))
+    const start = (state.page - 1) * municipalityPageSize
+    pageDocs = allDocs.slice(start, start + municipalityPageSize)
+  }
+
   return {
-    municipalities: paginatedResult.docs.map((municipality) =>
+    municipalities: pageDocs.map((municipality) =>
       toMunicipalityListViewModel(
-        municipality as Municipality,
+        municipality,
         isStaff ? pledgeAggregates.get(municipality.id) : undefined,
       ),
     ),
-    totalDocs: paginatedResult.totalDocs,
-    totalPages: paginatedResult.totalPages,
+    totalDocs,
+    totalPages,
     scopeTotal: scopeCount.totalDocs,
     overview,
   }
