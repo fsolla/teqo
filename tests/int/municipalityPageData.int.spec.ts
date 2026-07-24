@@ -78,6 +78,52 @@ describe('loadMunicipalityListPageBundle', () => {
 
     expect(bundle.overview).not.toBeNull()
     expect(bundle.overview!.staffVoteTotalByScenario.central).toBeGreaterThanOrEqual(1_500)
+    const row = bundle.municipalities.find((item) => item.slug === municipality.slug)
+    expect(row?.votePosition2022).not.toBeNull()
+    expect(row!.votePosition2022!.totalUnits).toBe(435)
+    expect(row!.votePosition2022!.rank).toBeGreaterThanOrEqual(1)
+  })
+
+  it('orders the filtered set by 2022 votes when sort=votos', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const first = await fixtures.getMunicipality()
+    const second = await fixtures.getMunicipality()
+    fixtures.touchMunicipality(first.id)
+    fixtures.touchMunicipality(second.id)
+
+    const marker = `a11-votos-${Date.now()}`
+    await payload.update({
+      collection: 'municipality',
+      id: first.id,
+      data: { name: `${marker}-alpha` },
+      depth: 0,
+      overrideAccess: true,
+    })
+    await payload.update({
+      collection: 'municipality',
+      id: second.id,
+      data: { name: `${marker}-beta` },
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: marker,
+      sort: 'votos',
+    })
+
+    expect(bundle.municipalities.length).toBeGreaterThanOrEqual(2)
+    const votes = bundle.municipalities.map((row) => row.votePosition2022?.votes ?? 0)
+    const nonZero = votes.filter((value) => value > 0)
+    for (let index = 1; index < nonZero.length; index += 1) {
+      expect(nonZero[index - 1]!).toBeGreaterThanOrEqual(nonZero[index]!)
+    }
+    // Zeros (if any) must trail the non-zero block.
+    const firstZero = votes.findIndex((value) => value === 0)
+    if (firstZero >= 0) {
+      expect(votes.slice(firstZero).every((value) => value === 0)).toBe(true)
+    }
   })
 
   it('keeps advisor access and applies URL filters on top', async () => {

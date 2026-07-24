@@ -96,7 +96,7 @@ Componentes:
 ## Dependências
 
 - Nenhuma dura de outro item aberto. Reusa `campaignListUrl.ts`, bundle A9+ (`loadMunicipalityScope` / lista), B9 (células editáveis coexistindo), pending do hardening.
-- **Suaves (consumidores):** **A11** adiciona key `votos` + coluna/leitura sobre este contrato (atualizar plano A11); **E9** depois adiciona `deficit` / risco-frescor na fila (pode ser outra superfície, mas o padrão de URL/header nasce aqui).
+**Suaves (consumidores):** **A11 ✓** já adicionou keys `name`|`votos` + coluna/leitura sobre este contrato (2026-07-24); **B15** amplia as keys restantes (`region`, `kind`, `trend`, `expectedVotes`, `lastUpdateAt`, `coverage`) e unifica headers. **E9** depois adiciona `deficit` / risco-frescor na fila.
 
 ## Não escopo
 

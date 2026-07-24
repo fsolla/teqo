@@ -13,13 +13,12 @@ import { normalizedText } from '@/utilities/campaignListUrl'
 import {
   buildMunicipalityFiltersKey,
   buildMunicipalityListHref,
-  DEFAULT_MUNICIPALITY_LIST_SORT_DIR,
-  DEFAULT_MUNICIPALITY_LIST_SORT_KEY,
   municipalityKindLabels,
   municipalityListCoverageLabels,
   municipalityListSortOptions,
   parseMunicipalitySortValue,
   politicalTrendLabels,
+  resolveMunicipalityListSort,
   serializeMunicipalitySortValue,
   shouldUpdateMunicipalitySearchUrl,
   type MunicipalityListState,
@@ -41,6 +40,7 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
   const isPending = sharedPending?.isPending ?? isLocalPending
   const startTransition = sharedPending?.startTransition ?? startLocalTransition
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { sort: activeSort, dir: activeDir } = resolveMunicipalityListSort(state)
 
   useEffect(
     () => () => {
@@ -109,7 +109,7 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
       <div className="flex flex-col gap-3 md:flex-row md:items-end">
         <CampaignSearchInput
           id="municipality-search"
-          label="Buscar Praça"
+          label="Buscar município"
           placeholder="Buscar por município ou zona…"
           value={search}
           onChange={(event) => {
@@ -231,10 +231,7 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
           <FieldLabel htmlFor="municipality-sort">Ordenar</FieldLabel>
           <NativeSelect
             id="municipality-sort"
-            value={serializeMunicipalitySortValue(
-              state.sort ?? DEFAULT_MUNICIPALITY_LIST_SORT_KEY,
-              state.dir ?? DEFAULT_MUNICIPALITY_LIST_SORT_DIR,
-            )}
+            value={serializeMunicipalitySortValue(activeSort, activeDir)}
             onChange={(event) => {
               const parsed = parseMunicipalitySortValue(event.target.value)
               if (parsed) commitNavigation({ sort: parsed.key, dir: parsed.dir })
@@ -261,7 +258,10 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
                 clearDebounce()
                 setSearch('')
                 startTransition(() => {
-                  router.replace('/campanha/municipios', { scroll: false })
+                  router.replace(
+                    buildMunicipalityListHref({ page: 1, sort: state.sort, dir: state.dir }, 1),
+                    { scroll: false },
+                  )
                 })
               }}
             >

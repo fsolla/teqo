@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import {
   createContext,
+  forwardRef,
   useContext,
   useTransition,
   type ComponentPropsWithoutRef,
@@ -40,16 +41,18 @@ export const CampaignListPendingBoundary = ({ children }: { children: ReactNode 
 export const useCampaignListPending = (): CampaignListPendingValue | null =>
   useContext(CampaignListPendingContext)
 
-/**
- * Anchor that navigates through the shared list transition (falling back to a
- * local one), so the results region dims instead of a dead full-page load.
- * Takes only serializable props — safe to render from server components.
- */
-export const CampaignTransitionAnchor = ({
-  href,
-  children,
-  ...anchorProps
-}: Omit<ComponentPropsWithoutRef<'a'>, 'href' | 'onClick'> & { href: string }) => {
+/** Dims while a shared list navigation is pending; safe to render from RSC. */
+export const CampaignTransitionAnchor = forwardRef<
+  HTMLAnchorElement,
+  Omit<ComponentPropsWithoutRef<'a'>, 'href' | 'onClick'> & {
+    href: string
+    replace?: boolean
+    scroll?: boolean
+  }
+>(function CampaignTransitionAnchor(
+  { href, children, replace = false, scroll = true, ...anchorProps },
+  ref,
+) {
   const router = useRouter()
   const shared = useContext(CampaignListPendingContext)
   const [, startLocalTransition] = useTransition()
@@ -57,6 +60,7 @@ export const CampaignTransitionAnchor = ({
 
   return (
     <a
+      ref={ref}
       href={href}
       {...anchorProps}
       onClick={(event) => {
@@ -72,14 +76,15 @@ export const CampaignTransitionAnchor = ({
         }
         event.preventDefault()
         startTransition(() => {
-          router.push(href)
+          if (replace) router.replace(href, { scroll })
+          else router.push(href, { scroll })
         })
       }}
     >
       {children}
     </a>
   )
-}
+})
 
 /** Wraps the server-rendered results; dims while a shared navigation is pending. */
 export const CampaignListResults = ({

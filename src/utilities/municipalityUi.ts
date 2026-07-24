@@ -1,6 +1,8 @@
 import type { Where } from 'payload'
 
 import { bahiaIdentityTerritories, type BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
+import { formatElectionNumber } from '@/lib/electionInsights'
+import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import {
   buildListHref,
@@ -50,18 +52,20 @@ export type MunicipalityListSortKey =
 
 export type MunicipalityListSortDirection = 'asc' | 'desc'
 
-export const DEFAULT_MUNICIPALITY_LIST_SORT_KEY: MunicipalityListSortKey = 'name'
-export const DEFAULT_MUNICIPALITY_LIST_SORT_DIR: MunicipalityListSortDirection = 'asc'
+/** Mesa lens: list opens by 2022 vote concentration (desc). */
+export const DEFAULT_MUNICIPALITY_LIST_SORT_KEY: MunicipalityListSortKey = 'votos'
+export const DEFAULT_MUNICIPALITY_LIST_SORT_DIR: MunicipalityListSortDirection = 'desc'
 
 export const municipalityListSortLabels: Record<MunicipalityListSortKey, string> = {
-  name: 'Praça',
+  name: 'Município',
   region: 'Território de identidade',
   kind: 'Tipo',
   trend: 'Tendência',
   expectedVotes: 'Votos estimados',
   lastUpdateAt: 'Última atualização',
   coverage: 'Cobertura',
-  votos: 'Votos',
+  /** Short header — definition lives on hover (`formatMunicipalityConcentrationHint`). */
+  votos: '2022',
 }
 
 export type MunicipalityListState = {
@@ -107,6 +111,43 @@ const municipalityListSortKeySet = new Set<MunicipalityListSortKey>([
 ])
 
 const municipalityListSortDirSet = new Set<MunicipalityListSortDirection>(['asc', 'desc'])
+
+const sortKeysWithDescDefault: MunicipalityListSortKey[] = [
+  'expectedVotes',
+  'lastUpdateAt',
+  'votos',
+]
+
+export const defaultMunicipalityListSortDir = (
+  key: MunicipalityListSortKey,
+): MunicipalityListSortDirection => (sortKeysWithDescDefault.includes(key) ? 'desc' : 'asc')
+
+export const resolveMunicipalityListSort = (
+  state: MunicipalityListState,
+): { sort: MunicipalityListSortKey; dir: MunicipalityListSortDirection } => {
+  const sort = state.sort ?? DEFAULT_MUNICIPALITY_LIST_SORT_KEY
+  const dir = state.dir ?? defaultMunicipalityListSortDir(sort)
+  return { sort, dir }
+}
+
+export const formatMunicipalityConcentrationHint = (
+  totalUnits: number = municipalityCatalog.length,
+): string =>
+  `Percentual da votação estadual do candidato neste município — não o % dos válidos locais. Colocação: posição no catálogo de ${formatElectionNumber(totalUnits)} unidades.`
+
+export const formatMunicipalityListSortSummary = (
+  sort: MunicipalityListSortKey,
+  dir: MunicipalityListSortDirection,
+): string => {
+  if (sort === 'votos') {
+    return dir === 'desc' ? 'Ordenado por 2022 ↓' : 'Ordenado por 2022 ↑'
+  }
+  if (sort === 'name') {
+    return dir === 'asc' ? 'Ordenado por nome (A–Z)' : 'Ordenado por nome (Z–A)'
+  }
+  const label = municipalityListSortLabels[sort]
+  return dir === 'desc' ? `Ordenado por ${label} ↓` : `Ordenado por ${label} ↑`
+}
 
 const canonicalTerritoryBySearchValue = new Map(
   bahiaIdentityTerritories.map((territory) => [normalizeSearchPhrase(territory), territory]),
@@ -190,6 +231,11 @@ export const buildMunicipalityListSearchParams = (
     dir: state.dir,
   })
   const params = new URLSearchParams()
+  const resolvedSort = canonicalState.sort ?? DEFAULT_MUNICIPALITY_LIST_SORT_KEY
+  const resolvedDir = canonicalState.dir ?? defaultMunicipalityListSortDir(resolvedSort)
+  const isListDefault =
+    resolvedSort === DEFAULT_MUNICIPALITY_LIST_SORT_KEY &&
+    resolvedDir === defaultMunicipalityListSortDir(DEFAULT_MUNICIPALITY_LIST_SORT_KEY)
 
   if (canonicalState.q) params.set('q', canonicalState.q)
   if (canonicalState.region) params.set('region', canonicalState.region)
@@ -198,11 +244,13 @@ export const buildMunicipalityListSearchParams = (
   if (canonicalState.priority) params.set('priority', canonicalState.priority)
   if (canonicalState.trend) params.set('trend', canonicalState.trend)
   if (canonicalState.compare) params.set('compare', String(canonicalState.compare))
-  if (canonicalState.sort && canonicalState.sort !== DEFAULT_MUNICIPALITY_LIST_SORT_KEY) {
-    params.set('sort', canonicalState.sort)
-  }
-  if (canonicalState.dir && canonicalState.dir !== DEFAULT_MUNICIPALITY_LIST_SORT_DIR) {
-    params.set('dir', canonicalState.dir)
+  // Omit the mesa default pair (votos+desc). Keep `sort` whenever the pair is
+  // non-default so `dir` is never orphaned (e.g. votos+asc → sort=votos&dir=asc).
+  if (!isListDefault) {
+    params.set('sort', resolvedSort)
+    if (resolvedDir !== defaultMunicipalityListSortDir(resolvedSort)) {
+      params.set('dir', resolvedDir)
+    }
   }
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
 
@@ -215,24 +263,18 @@ export const buildMunicipalityFiltersKey = (state: MunicipalityListState): strin
 export const buildMunicipalityListHref = (state: MunicipalityListState, page: number): string =>
   buildListHref(state, buildMunicipalityListSearchParams, '/campanha/municipios', page)
 
-const sortKeysWithDescDefault: MunicipalityListSortKey[] = [
-  'expectedVotes',
-  'lastUpdateAt',
-  'votos',
-]
-
 export const buildMunicipalitySortHref = (
   state: MunicipalityListState,
   nextKey: MunicipalityListSortKey,
 ): string => {
   const currentSort = state.sort ?? DEFAULT_MUNICIPALITY_LIST_SORT_KEY
-  const currentDir = state.dir ?? DEFAULT_MUNICIPALITY_LIST_SORT_DIR
+  const currentDir = state.dir ?? defaultMunicipalityListSortDir(currentSort)
 
   let dir: MunicipalityListSortDirection
   if (nextKey === currentSort) {
     dir = currentDir === 'asc' ? 'desc' : 'asc'
   } else {
-    dir = sortKeysWithDescDefault.includes(nextKey) ? 'desc' : 'asc'
+    dir = defaultMunicipalityListSortDir(nextKey)
   }
 
   const updatedState: MunicipalityListState = {
@@ -321,7 +363,7 @@ export const buildMunicipalityListVisitLabel = (state: MunicipalityListState): s
 
   if (!parts.length) return null
 
-  const label = `Praças · ${parts.join(' · ')}`
+  const label = `Municípios · ${parts.join(' · ')}`
   if (label.length <= MAX_MUNICIPALITY_LIST_VISIT_LABEL_LENGTH) return label
   return `${label.slice(0, MAX_MUNICIPALITY_LIST_VISIT_LABEL_LENGTH - 1)}…`
 }
@@ -331,12 +373,12 @@ export const buildMunicipalityListVisitHref = (state: MunicipalityListState): st
 
 export const getCampaignScopeLabel = (role: CampaignUser['role'], municipalityCount: number): string => {
   if (role === 'advisor') {
-    return `${municipalityCount} ${municipalityCount === 1 ? 'Praça sob sua assessoria' : 'Praças sob sua assessoria'}`
+    return `${municipalityCount} ${municipalityCount === 1 ? 'município sob sua assessoria' : 'municípios sob sua assessoria'}`
   }
   if (role === 'leader') {
-    return `${municipalityCount} ${municipalityCount === 1 ? 'Praça em que você atua' : 'Praças em que você atua'}`
+    return `${municipalityCount} ${municipalityCount === 1 ? 'município em que você atua' : 'municípios em que você atua'}`
   }
-  return `${municipalityCount} ${municipalityCount === 1 ? 'Praça' : 'Praças'}`
+  return `${municipalityCount} ${municipalityCount === 1 ? 'município' : 'municípios'}`
 }
 
 /** Short human description of a municipality's geography, e.g. "Chapada Diamantina · ZE 105". */

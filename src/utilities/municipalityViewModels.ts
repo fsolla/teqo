@@ -1,5 +1,6 @@
 import type { Payload } from 'payload'
 
+import type { MunicipalityVoteRankEntry } from '@/lib/municipalityVoteRank'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { eligibleCampaignStaffWhere } from '@/utilities/campaignAccess'
 import type { PoliticalTrendStatus } from '@/utilities/municipalityUi'
@@ -53,11 +54,13 @@ export type MunicipalityListViewModel = {
   politicalTrendStatus: PoliticalTrendStatus | null
   politicalTrendNote: string | null
   pledges: MunicipalityPledgeAggregate
+  votePosition2022: MunicipalityVoteRankEntry | null
 }
 
 export const toMunicipalityListViewModel = (
   municipality: Municipality,
-  pledges?: MunicipalityPledgeAggregate,
+  pledges: MunicipalityPledgeAggregate | undefined,
+  votePosition2022: MunicipalityListViewModel['votePosition2022'],
 ): MunicipalityListViewModel => ({
   id: municipality.id,
   name: municipality.name,
@@ -74,6 +77,7 @@ export const toMunicipalityListViewModel = (
   politicalTrendStatus: municipality.politicalTrend?.status ?? null,
   politicalTrendNote: municipality.politicalTrend?.note ?? null,
   pledges: pledges ?? createEmptyMunicipalityPledgeAggregate(),
+  votePosition2022,
 })
 
 export type MunicipalityAdvisorSummary = {
