@@ -18,6 +18,8 @@ Ledger of known engineering debt. Items large enough to be scheduled work become
 | Post listing cache holds all published posts, filters in memory | `src/utilities/posts.ts` | scale (fine at ~tens of posts) | low | M | P3 | open — watch corpus growth | |
 | Petition `generateStaticParams` uses uncached `getDocuments` without `select`/`depth: 0` | `src/utilities/documents.ts` consumers | over-fetch (build-time) | low | S | P2 | planned (Phase 2) | |
 | Compare mode (`?compare=`) still queries per candidate uncached cross-request | `src/utilities/municipalityMapData.ts` | perf | low | M | P3 | open — React `cache()` dedups in-request; add `unstable_cache` if profiling warrants | |
+| Map bundle serializes all years × scenarios (~100KB raw) | `municipalityMapContract.ts` consumers | payload size | low — gzip crushes repeating keys to ~15-25KB on the wire; instant year/scenario switching is a core analysis flow worth the bytes | M | P3 | deferred 2026-07-23 with rationale (revisit only if RSC payload profiling says otherwise) | |
+| Props→state `useEffect` mirrors in list controls/comboboxes | `MunicipalityListExpectedVotesControl`, `AsyncSearchCombobox`, `StrictCombobox` | pattern | none — reviewed 2026-07-23: guarded-equality sync is the correct "server echo vs local draft" reconciliation (A10 pattern), not derived state | — | — | closed (accepted as correct) | |
 
 ## Smell Inventory
 

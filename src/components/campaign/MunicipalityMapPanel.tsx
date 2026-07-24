@@ -56,8 +56,6 @@ export const MunicipalityMapPanel = ({
   )
   const estimateScenario = scenarioContext?.scenario ?? localEstimateScenario
   const setEstimateScenario = scenarioContext?.setScenario ?? setLocalEstimateScenario
-  const [selectedFeature, setSelectedFeature] = useState<BahiaMapFeatureInfo | null>(null)
-  const selectedKeyRef = useRef<string | null>(null)
 
   const comparison = bundle.comparison
   const comparisonActive = comparison !== null && year !== 2026
@@ -131,47 +129,6 @@ export const MunicipalityMapPanel = ({
       router.replace(`${pathname}${params.size ? `?${params.toString()}` : ''}`, { scroll: false })
     })
   }
-
-  const handleFeatureSelect = useCallback((info: BahiaMapFeatureInfo | null) => {
-    selectedKeyRef.current = info?.key ?? null
-    setSelectedFeature(info)
-  }, [])
-
-  const handleFeatureActivate = useCallback(
-    (key: string) => {
-      if (selectedKeyRef.current !== key) return
-
-      const navigation = resolveMunicipalityMapNavigation(key, bundle.municipalitiesByIbgeCode)
-      if (navigation.kind === 'navigate') {
-        router.push(`/campanha/municipios/${navigation.slug}`)
-        return
-      }
-
-      if (navigation.kind === 'zones') {
-        document.getElementById('municipality-zone-breakdown')?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-        })
-      }
-    },
-    [bundle.municipalitiesByIbgeCode, router],
-  )
-
-  const selectedMetricValue =
-    selectedFeature && selectedFeature.key in displayValues
-      ? displayValues[selectedFeature.key]
-      : undefined
-
-  const selectedRawMetricValue =
-    selectedFeature && selectedFeature.key in rawValues ? rawValues[selectedFeature.key] : undefined
-
-  const selectedNavigation = useMemo(
-    () =>
-      selectedFeature
-        ? resolveMunicipalityMapNavigation(selectedFeature.key, bundle.municipalitiesByIbgeCode)
-        : null,
-    [bundle.municipalitiesByIbgeCode, selectedFeature],
-  )
 
   return (
     <section
@@ -301,16 +258,15 @@ export const MunicipalityMapPanel = ({
           </p>
         ) : null}
 
-        <BahiaMap
-          mode="municipality"
-          values={displayValues}
-          scaleMax={displayMax > 0 ? displayMax : undefined}
-          fillMode={comparisonActive ? 'diverging' : 'sequential'}
-          fitToKeys={scopedKeys}
-          interactiveKeys={scopedKeys}
-          selectedKey={selectedFeature?.key ?? null}
-          onFeatureSelect={handleFeatureSelect}
-          onFeatureActivate={handleFeatureActivate}
+        <MunicipalityMapSelection
+          displayValues={displayValues}
+          rawValues={rawValues}
+          displayMax={displayMax}
+          scopedKeys={scopedKeys}
+          metricLabel={metricLabel}
+          scaleMode={comparisonActive ? 'absolute' : scaleMode}
+          comparisonActive={comparisonActive}
+          municipalitiesByIbgeCode={bundle.municipalitiesByIbgeCode}
           ariaLabel={
             comparisonActive && comparison
               ? `Mapa comparativo entre ${bundle.candidateName} e ${comparison.candidateName} por município`
@@ -318,16 +274,7 @@ export const MunicipalityMapPanel = ({
           }
         />
 
-        <MapFeatureReadout
-          feature={selectedFeature}
-          metricValue={selectedMetricValue}
-          rawMetricValue={selectedRawMetricValue}
-          metricLabel={metricLabel}
-          scaleMode={comparisonActive ? 'absolute' : scaleMode}
-          comparisonActive={comparisonActive}
-          navigation={selectedNavigation}
-        />
-
+        {/* zone breakdown below */}
         {bundle.zoneBreakdown.length > 0 && !comparisonActive ? (
           <div id="municipality-zone-breakdown" className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">Praças por zona eleitoral</h3>
@@ -361,5 +308,104 @@ export const MunicipalityMapPanel = ({
         ) : null}
       </div>
     </section>
+  )
+}
+
+/**
+ * Selection/hover live here so a mouseover re-renders only the map and the
+ * readout — not the whole panel (controls, legend, zone list). The Leaflet
+ * paint path itself stays ref-based inside BahiaMap (O(2) restyle).
+ */
+const MunicipalityMapSelection = ({
+  displayValues,
+  rawValues,
+  displayMax,
+  scopedKeys,
+  metricLabel,
+  scaleMode,
+  comparisonActive,
+  municipalitiesByIbgeCode,
+  ariaLabel,
+}: {
+  displayValues: Record<string, number>
+  rawValues: Record<string, number>
+  displayMax: number
+  scopedKeys: string[]
+  metricLabel: string
+  scaleMode: MunicipalityMapScaleMode
+  comparisonActive: boolean
+  municipalitiesByIbgeCode: MunicipalityMapBundle['municipalitiesByIbgeCode']
+  ariaLabel: string
+}) => {
+  const router = useRouter()
+  const [selectedFeature, setSelectedFeature] = useState<BahiaMapFeatureInfo | null>(null)
+  const selectedKeyRef = useRef<string | null>(null)
+
+  const handleFeatureSelect = useCallback((info: BahiaMapFeatureInfo | null) => {
+    selectedKeyRef.current = info?.key ?? null
+    setSelectedFeature(info)
+  }, [])
+
+  const handleFeatureActivate = useCallback(
+    (key: string) => {
+      if (selectedKeyRef.current !== key) return
+
+      const navigation = resolveMunicipalityMapNavigation(key, municipalitiesByIbgeCode)
+      if (navigation.kind === 'navigate') {
+        router.push(`/campanha/municipios/${navigation.slug}`)
+        return
+      }
+
+      if (navigation.kind === 'zones') {
+        document.getElementById('municipality-zone-breakdown')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        })
+      }
+    },
+    [municipalitiesByIbgeCode, router],
+  )
+
+  const selectedMetricValue =
+    selectedFeature && selectedFeature.key in displayValues
+      ? displayValues[selectedFeature.key]
+      : undefined
+
+  const selectedRawMetricValue =
+    selectedFeature && selectedFeature.key in rawValues ? rawValues[selectedFeature.key] : undefined
+
+  const selectedNavigation = useMemo(
+    () =>
+      selectedFeature
+        ? resolveMunicipalityMapNavigation(selectedFeature.key, municipalitiesByIbgeCode)
+        : null,
+    [municipalitiesByIbgeCode, selectedFeature],
+  )
+
+  return (
+    <>
+      <BahiaMap
+        mode="municipality"
+        values={displayValues}
+        scaleMax={displayMax > 0 ? displayMax : undefined}
+        fillMode={comparisonActive ? 'diverging' : 'sequential'}
+        fitToKeys={scopedKeys}
+        interactiveKeys={scopedKeys}
+        selectedKey={selectedFeature?.key ?? null}
+        onFeatureSelect={handleFeatureSelect}
+        onFeatureActivate={handleFeatureActivate}
+        ariaLabel={ariaLabel}
+      />
+
+      <MapFeatureReadout
+        feature={selectedFeature}
+        metricValue={selectedMetricValue}
+        rawMetricValue={selectedRawMetricValue}
+        metricLabel={metricLabel}
+        scaleMode={scaleMode}
+        comparisonActive={comparisonActive}
+        navigation={selectedNavigation}
+      />
+    </>
   )
 }
