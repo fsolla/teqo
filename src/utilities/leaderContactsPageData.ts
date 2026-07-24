@@ -2,8 +2,8 @@ import type { Payload } from 'payload'
 
 import type { RelationOption } from '@/components/campaign/RelationMultiSelect'
 import type { CampaignUser, Contact, Municipality } from '@/payload-types'
+import { getEngagedLeaderMunicipalityIds } from '@/utilities/campaignAccess'
 import { getSupporterRegistrationConsent } from '@/utilities/campaignConsent'
-import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 
 export type LeaderContactListItem = {
   id: number
@@ -42,12 +42,38 @@ const toLeaderContactListItem = (supporter: {
   }
 }
 
+/**
+ * Leaders cannot read the municipality collection (lockdown), so their
+ * registration scope comes from the engaged leadership's linked municipality
+ * IDs — the same scope `canCreateSupporter` enforces on the write path.
+ */
+const loadLeaderMunicipalityOptions = async (
+  payload: Payload,
+  user: CampaignUser,
+): Promise<RelationOption[]> => {
+  const ids = await getEngagedLeaderMunicipalityIds(payload, user.id)
+  if (ids.length === 0) return []
+
+  const result = await payload.find({
+    collection: 'municipality',
+    where: { id: { in: ids } },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    sort: 'name',
+    select: { name: true },
+    // Intentional bypass: scope already derived from the leader's own leadership.
+    overrideAccess: true,
+  })
+  return result.docs.map((municipality) => ({ id: municipality.id, name: municipality.name }))
+}
+
 export const loadLeaderContactsPageData = async (
   payload: Payload,
   user: CampaignUser,
 ): Promise<LeaderContactsPageView> => {
   const [municipalityOptions, registrationConsent, supporters] = await Promise.all([
-    loadMunicipalityOptions(payload, user),
+    loadLeaderMunicipalityOptions(payload, user),
     getSupporterRegistrationConsent(payload),
     payload.find({
       collection: 'supporter',

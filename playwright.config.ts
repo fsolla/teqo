@@ -9,6 +9,13 @@ import { assertTestDatabase } from './tests/helpers/assertTestDatabase'
  * `override: true` guarantees the test DB wins over anything in the shell.
  */
 loadEnv({ path: '.env.test', override: true })
+
+// Optional local override when the default Docker port is occupied (e.g. mapped
+// to 5433) — same escape hatch vitest.setup.ts documents.
+if (process.env.TEQO_TEST_DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.TEQO_TEST_DATABASE_URL
+}
+
 assertTestDatabase(process.env.DATABASE_URL)
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
 const webServerPort = new URL(baseURL).port || (baseURL.startsWith('https:') ? '443' : '80')
@@ -77,9 +84,12 @@ export default defineConfig({
     env: {
       DATABASE_URL: process.env.DATABASE_URL as string,
       PORT: webServerPort,
-      // A prior Playwright process can finish tearing down after the next starts.
-      // Per-process output prevents that cleanup from deleting the active server's files.
-      NEXT_DIST_DIR: `.next/e2e-${process.pid}`,
+      // Fixed dist dir: Next dev appends `<distDir>/types/**/*.ts` to
+      // tsconfig.json's include with an EXACT-string check, so per-process
+      // names polluted tsconfig with one entry per run. A prior Playwright
+      // process tearing down late can, rarely, delete files of the next run's
+      // server — if a boot flakes, rerun (dev-only trade-off).
+      NEXT_DIST_DIR: '.next/e2e',
       PAYLOAD_SECRET: process.env.PAYLOAD_SECRET ?? 'test-only-secret-not-used-in-production',
       NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? baseURL,
     },

@@ -16,6 +16,10 @@ export type VoteEstimateScenarioViewModel = {
   optimistic: number | null
 }
 
+/** True when at least one scenario has a recorded estimate. */
+export const hasAnyEstimate = (estimates: VoteEstimateScenarioViewModel): boolean =>
+  estimates.pessimistic != null || estimates.central != null || estimates.optimistic != null
+
 export const voteEstimateScenarioLabels: Record<VoteEstimateScenario, string> = {
   pessimistic: 'Pessimista',
   central: 'Média',

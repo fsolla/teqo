@@ -183,6 +183,9 @@ const eslintConfig = [
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // Playwright artifacts (generated on e2e failures/reports):
+    'playwright-report/**',
+    'test-results/**',
   ]),
 ]
 

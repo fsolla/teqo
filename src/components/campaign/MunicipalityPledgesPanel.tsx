@@ -1,4 +1,4 @@
-import { hasAnyEstimate, PledgeEstimateForm } from '@/components/campaign/PledgeEstimateForm'
+import { PledgeEstimateForm } from '@/components/campaign/PledgeEstimateForm'
 import { Badge } from '@/components/ui/Badge'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
@@ -7,6 +7,7 @@ import {
   getVoteEstimateForScenario,
 } from '@/utilities/voteEstimate'
 import { type StaffPledgeRow } from '@/utilities/votePledgeData'
+import { hasAnyEstimate } from '@/utilities/voteEstimate'
 
 const voteFormatter = new Intl.NumberFormat('pt-BR')
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
@@ -20,7 +21,10 @@ type MunicipalityPledgesPanelProps = {
 }
 
 /** Staff-only: declared vs estimated votes per leadership in this municipality. */
-export const MunicipalityPledgesPanel = ({ pledges, estimateFormAction }: MunicipalityPledgesPanelProps) => {
+export const MunicipalityPledgesPanel = ({
+  pledges,
+  estimateFormAction,
+}: MunicipalityPledgesPanelProps) => {
   const declaredTotal = pledges.reduce((total, pledge) => total + pledge.declaredVotes, 0)
   const effectiveTotal = pledges.reduce(
     (total, pledge) =>

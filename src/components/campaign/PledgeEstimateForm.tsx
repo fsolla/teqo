@@ -22,9 +22,6 @@ type PledgeEstimateFormProps = {
   ) => Promise<CampaignFormActionState>
 }
 
-const hasAnyEstimate = (estimates: VoteEstimateScenarioViewModel): boolean =>
-  estimates.pessimistic != null || estimates.central != null || estimates.optimistic != null
-
 /** Staff-only inline estimate. The leader never sees these fields. */
 export const PledgeEstimateForm = ({
   pledgeID,
@@ -82,5 +79,3 @@ export const PledgeEstimateForm = ({
     </form>
   )
 }
-
-export { hasAnyEstimate }

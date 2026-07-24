@@ -77,9 +77,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
           ariaLabel="Buscar liderança por nome"
           placeholder="Buscar por nome…"
           initialQuery={state.q ?? ''}
-          hrefForQuery={(query) =>
-            query ? `/campanha/liderancas?q=${encodeURIComponent(query)}` : '/campanha/liderancas'
-          }
+          basePath="/campanha/liderancas"
         />
 
         <CampaignListResults>

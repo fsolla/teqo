@@ -15,12 +15,13 @@ export const CampaignSearchForm = ({
   ariaLabel,
   placeholder,
   initialQuery,
-  hrefForQuery,
+  basePath,
 }: {
   ariaLabel: string
   placeholder: string
   initialQuery: string
-  hrefForQuery: (query: string) => string
+  /** List route; the query lands as `?q=` (serializable — no function props across the RSC boundary). */
+  basePath: string
 }) => {
   const router = useRouter()
   const shared = useCampaignListPending()
@@ -28,6 +29,9 @@ export const CampaignSearchForm = ({
   const isPending = shared?.isPending ?? isLocalPending
   const startTransition = shared?.startTransition ?? startLocalTransition
   const [query, setQuery] = useState(initialQuery)
+
+  const hrefForQuery = (value: string) =>
+    value ? `${basePath}?q=${encodeURIComponent(value)}` : basePath
 
   return (
     <form

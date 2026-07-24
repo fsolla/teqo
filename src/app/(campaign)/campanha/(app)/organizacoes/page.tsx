@@ -82,11 +82,7 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
           ariaLabel="Buscar organização por nome"
           placeholder="Buscar por nome…"
           initialQuery={state.q ?? ''}
-          hrefForQuery={(query) =>
-            query
-              ? `/campanha/organizacoes?q=${encodeURIComponent(query)}`
-              : '/campanha/organizacoes'
-          }
+          basePath="/campanha/organizacoes"
         />
 
         <CampaignListResults>

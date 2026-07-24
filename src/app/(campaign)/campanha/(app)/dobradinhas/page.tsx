@@ -79,9 +79,7 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
           ariaLabel="Buscar dobradinha por nome"
           placeholder="Buscar por nome…"
           initialQuery={state.q ?? ''}
-          hrefForQuery={(query) =>
-            query ? `/campanha/dobradinhas?q=${encodeURIComponent(query)}` : '/campanha/dobradinhas'
-          }
+          basePath="/campanha/dobradinhas"
         />
 
         <CampaignListResults>

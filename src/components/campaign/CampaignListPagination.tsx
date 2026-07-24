@@ -1,18 +1,14 @@
-'use client'
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 
-import { useRouter } from 'next/navigation'
-import { useTransition, type MouseEvent } from 'react'
-
-import { useCampaignListPending } from '@/components/campaign/CampaignListPending'
+import { CampaignTransitionAnchor } from '@/components/campaign/CampaignListPending'
+import { Button } from '@/components/ui/button'
 import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
   PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
 } from '@/components/ui/Pagination'
+import { cn } from '@/lib/utils'
 
 export const getPaginationPages = (page: number, totalPages: number): number[] => {
   const pages = new Set([1, totalPages, page - 1, page, page + 1])
@@ -21,6 +17,12 @@ export const getPaginationPages = (page: number, totalPages: number): number[] =
     .sort((a, b) => a - b)
 }
 
+/**
+ * Server component: `hrefForPage` never crosses the client boundary. The
+ * anchors themselves are `CampaignTransitionAnchor` client leaves so page
+ * changes ride the shared list transition (results dim) instead of a dead
+ * full-page load.
+ */
 export const CampaignListPagination = ({
   page,
   totalPages,
@@ -30,83 +32,83 @@ export const CampaignListPagination = ({
   totalPages: number
   hrefForPage: (page: number) => string
 }) => {
-  const router = useRouter()
-  const shared = useCampaignListPending()
-  const [isLocalPending, startLocalTransition] = useTransition()
-  const isPending = shared?.isPending ?? isLocalPending
-  const startTransition = shared?.startTransition ?? startLocalTransition
-
   if (totalPages <= 1) return null
 
   const visiblePages = getPaginationPages(page, totalPages)
 
-  /** Plain left-clicks navigate in a transition (pending UI); modified clicks keep link semantics. */
-  const interceptNavigation = (event: MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return
-    }
-    event.preventDefault()
-    startTransition(() => {
-      router.push(href)
-    })
-  }
-
   return (
-    <div
-      className="transition-opacity data-[pending=true]:opacity-70"
-      data-pending={isPending || undefined}
-      aria-busy={isPending}
-    >
-      <p className="sr-only" aria-live="polite">
-        {isPending ? 'Carregando página…' : ''}
-      </p>
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious
+    <Pagination>
+      <PaginationContent>
+        <PaginationItem>
+          <Button
+            asChild
+            variant="ghost"
+            size="default"
+            className={cn(
+              'min-h-11 min-w-11 pl-1.5!',
+              page <= 1 ? 'pointer-events-none opacity-50' : undefined,
+            )}
+          >
+            <CampaignTransitionAnchor
               href={hrefForPage(Math.max(1, page - 1))}
-              onClick={(event) => interceptNavigation(event, hrefForPage(Math.max(1, page - 1)))}
+              aria-label="Ir para a página anterior"
               aria-disabled={page <= 1}
-              className={page <= 1 ? 'pointer-events-none opacity-50' : undefined}
-            />
-          </PaginationItem>
-          {visiblePages.map((pageNumber, index) => {
-            const previousPage = visiblePages[index - 1]
-            const hasGap = previousPage !== undefined && pageNumber - previousPage > 1
+              data-slot="pagination-link"
+            >
+              <ChevronLeftIcon data-icon="inline-start" />
+              <span className="hidden sm:block">Anterior</span>
+            </CampaignTransitionAnchor>
+          </Button>
+        </PaginationItem>
+        {visiblePages.map((pageNumber, index) => {
+          const previousPage = visiblePages[index - 1]
+          const hasGap = previousPage !== undefined && pageNumber - previousPage > 1
+          const isActive = pageNumber === page
 
-            return (
-              <PaginationItem key={pageNumber} className="contents">
-                {hasGap ? <PaginationEllipsis /> : null}
-                <PaginationLink
+          return (
+            <PaginationItem key={pageNumber} className="contents">
+              {hasGap ? <PaginationEllipsis /> : null}
+              <Button
+                asChild
+                variant={isActive ? 'outline' : 'ghost'}
+                size="icon"
+                className="min-h-11 min-w-11"
+              >
+                <CampaignTransitionAnchor
                   href={hrefForPage(pageNumber)}
-                  onClick={(event) => interceptNavigation(event, hrefForPage(pageNumber))}
-                  isActive={pageNumber === page}
                   aria-label={`Ir para a página ${pageNumber}`}
+                  aria-current={isActive ? 'page' : undefined}
+                  data-slot="pagination-link"
+                  data-active={isActive}
                 >
                   {pageNumber}
-                </PaginationLink>
-              </PaginationItem>
-            )
-          })}
-          <PaginationItem>
-            <PaginationNext
+                </CampaignTransitionAnchor>
+              </Button>
+            </PaginationItem>
+          )
+        })}
+        <PaginationItem>
+          <Button
+            asChild
+            variant="ghost"
+            size="default"
+            className={cn(
+              'min-h-11 min-w-11 pr-1.5!',
+              page >= totalPages ? 'pointer-events-none opacity-50' : undefined,
+            )}
+          >
+            <CampaignTransitionAnchor
               href={hrefForPage(Math.min(totalPages, page + 1))}
-              onClick={(event) =>
-                interceptNavigation(event, hrefForPage(Math.min(totalPages, page + 1)))
-              }
+              aria-label="Ir para a próxima página"
               aria-disabled={page >= totalPages}
-              className={page >= totalPages ? 'pointer-events-none opacity-50' : undefined}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
-    </div>
+              data-slot="pagination-link"
+            >
+              <span className="hidden sm:block">Próxima</span>
+              <ChevronRightIcon data-icon="inline-end" />
+            </CampaignTransitionAnchor>
+          </Button>
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
   )
 }

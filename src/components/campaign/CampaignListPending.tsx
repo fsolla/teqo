@@ -1,9 +1,11 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import {
   createContext,
   useContext,
   useTransition,
+  type ComponentPropsWithoutRef,
   type ReactNode,
   type TransitionStartFunction,
 } from 'react'
@@ -37,6 +39,47 @@ export const CampaignListPendingBoundary = ({ children }: { children: ReactNode 
 /** Filter controls prefer the shared transition so the results dim with them. */
 export const useCampaignListPending = (): CampaignListPendingValue | null =>
   useContext(CampaignListPendingContext)
+
+/**
+ * Anchor that navigates through the shared list transition (falling back to a
+ * local one), so the results region dims instead of a dead full-page load.
+ * Takes only serializable props — safe to render from server components.
+ */
+export const CampaignTransitionAnchor = ({
+  href,
+  children,
+  ...anchorProps
+}: Omit<ComponentPropsWithoutRef<'a'>, 'href' | 'onClick'> & { href: string }) => {
+  const router = useRouter()
+  const shared = useContext(CampaignListPendingContext)
+  const [, startLocalTransition] = useTransition()
+  const startTransition = shared?.startTransition ?? startLocalTransition
+
+  return (
+    <a
+      href={href}
+      {...anchorProps}
+      onClick={(event) => {
+        if (
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        ) {
+          return
+        }
+        event.preventDefault()
+        startTransition(() => {
+          router.push(href)
+        })
+      }}
+    >
+      {children}
+    </a>
+  )
+}
 
 /** Wraps the server-rendered results; dims while a shared navigation is pending. */
 export const CampaignListResults = ({

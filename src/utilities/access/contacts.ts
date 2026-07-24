@@ -68,7 +68,16 @@ export const getAccessibleContactIds = async (
     }
   }
 
-  if (currentUser.role === 'advisor' && collections.supporter) {
+  // Advisors read contacts of supporters in their municipalities; leaders read
+  // contacts of the supporters they created — mirroring `canReadSupporter`.
+  const supporterWhere =
+    currentUser.role === 'advisor'
+      ? { municipality: { in: municipalityIDs ?? [] } }
+      : currentUser.role === 'leader'
+        ? { createdBy: { equals: currentUser.id } }
+        : null
+
+  if (supporterWhere && collections.supporter) {
     const supporterResult = await find({
       collection: 'supporter',
       depth: 0,
@@ -77,11 +86,7 @@ export const getAccessibleContactIds = async (
       pagination: false,
       req,
       select: { contact: true },
-      where: {
-        municipality: {
-          in: municipalityIDs ?? [],
-        },
-      },
+      where: supporterWhere,
     })
     for (const doc of supporterResult.docs) {
       const id = relationshipId(doc.contact)
