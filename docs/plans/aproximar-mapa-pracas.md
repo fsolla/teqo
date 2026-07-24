@@ -1,6 +1,8 @@
 # Aproximar o Mapa das Praças à região filtrada
 
-Status: entregue 2026-07-21 (branch; deploy pendente com remodelagem)
+> **Nota (2026-07-24):** entregue na era Praças e **em produção desde 2026-07-23**. A remodelagem M1 renomeou os identificadores `plaza*` → `municipality*` e as rotas `pracas/` → `municipios/`; os nomes neste plano são os da época. Nomes atuais: ver [remodelagem-municipios.md](remodelagem-municipios.md).
+
+Status: entregue 2026-07-21 (em produção desde 2026-07-23)
 Atualizado em: 2026-07-21
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B12)
 Impeccable: B — encaixe em `PlazaMapPanel` / `BahiaMap` (sem rota nova)

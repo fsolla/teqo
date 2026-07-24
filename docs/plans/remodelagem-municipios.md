@@ -1,7 +1,7 @@
 # Remodelagem Municípios — mudanças de rumo 2026-07-23
 
-Status: em execução
-Atualizado em: 2026-07-23
+Status: entregue (M1–M5 em 2026-07-23) e **deployado em produção em 2026-07-23** (builds Vercel aplicaram as migrações destrutivas `20260723_200000_remodel_municipalities` + `20260723_202000_reconcile_municipality_remodel`)
+Atualizado em: 2026-07-24
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Remodelagem Municípios", fases M1–M5)
 Impeccable: C — vertical `/campanha` com rename, lockdown de liderança, dobradinhas e mapa no Início
 Appetite: ~5–5,5 dias eng (M1–M5)

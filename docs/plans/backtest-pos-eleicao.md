@@ -1,7 +1,7 @@
 # E15 — Backtest pós-eleição (pledge vs. resultado; calibração de limiares)
 
 Status: rascunho
-Atualizado em: 2026-07-21
+Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios + hardening)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Inteligência de campanha", E15; plano-mestre [inteligencia-campanha.md](inteligencia-campanha.md))
 Impeccable: A — N/A (sem superfície UI de produto neste ciclo; saída é relatório/dado)
 Appetite: ~1 dia eng; janela pós-04/10 (sem pressa, sem migration própria)
@@ -15,11 +15,11 @@ Responsável: —
 
 - Import do resultado 2026 (extensão do seed TSE existente para `year=2026`, mesmo formato `electionTally`/`electionCandidateVote`).
 - **Análises do backtest** (script/utility, saída em markdown versionado em `docs/research/` como apêndice do ciclo):
-  1. Pledge → voto: por praça, trajetória de comprometido (fotos em 15/08, 15/09, véspera) vs. nominal realizado; fator de conversão global e por assessor/liderança-fonte (com o cuidado anti-punição de K-C/G4 — leitura agregada, não ranking individual público).
-  2. Limiares: quais cortes de LQ/captura teriam separado ex-ante as praças onde o candidato cresceu (calibra E10/E14 para 2030).
-  3. Decisões: `allocationDecision` aceitas/descartadas vs. desfecho da praça — o motor acertou onde? a leitura alternativa descartada era a certa?
+  1. Pledge → voto: por município, trajetória de comprometido (fotos em 15/08, 15/09, véspera) vs. nominal realizado; fator de conversão global e por assessor/liderança-fonte (com o cuidado anti-punição de K-C/G4 — leitura agregada, não ranking individual público).
+  2. Limiares: quais cortes de LQ/captura teriam separado ex-ante os municípios onde o candidato cresceu (calibra E10/E14 para 2030).
+  3. Decisões: `allocationDecision` aceitas/descartadas vs. desfecho do município — o motor acertou onde? a leitura alternativa descartada era a certa?
   4. Sinais: sinal registrado (invasão/esfriamento) previu queda? lead time médio.
-  5. Roll-off: praças I-A trabalhadas vs. não trabalhadas — o diferencial se moveu?
+  5. Roll-off: municípios I-A trabalhados vs. não trabalhados — o diferencial se moveu?
 - Tudo com o estatuto honesto: n=1 eleição, sem contrafactual — é calibração, não prova causal.
 
 ## Decisões travadas

@@ -45,7 +45,7 @@ Socket WhatsApp não roda em Vercel serverless → sidecar multi-sessão. Sem fu
 - Collections: `whatsappSession` (**1:1 com `campaignUser`**, unique) + `whatsappMessage` (log com `session` / `campaignUser`, direção, phones, texto, timestamps, match opcional `leadership`).
 - Consent **`campanha-whatsapp-canal`** (fail-closed) + aceite explícito no UI de pairing (risco ToS/conta pessoal). Texto no lote jurídico.
 - UI: status + QR + desconectar **só da própria sessão**; `leader` não pareia.
-- Guardrails: allowlist inbound = phones de lideranças engajadas no CRM (e, para advisor, preferir as das Praças acessíveis — pode afrouxar para “todas lideranças engajadas” se match for só por phone); rate limit por sessão; secrets em env.
+- Guardrails: allowlist inbound = phones de lideranças engajadas no CRM (e, para advisor, preferir as dos municípios acessíveis — pode afrouxar para “todas lideranças engajadas” se match for só por phone); rate limit por sessão; secrets em env.
 
 ## Decisões travadas
 
@@ -115,7 +115,7 @@ Componentes:
 
 - **Retention/expurgo do log.** Revisitar quando: volume ou pedido jurídico.
 - **Lista CG “quem conectou”.** Revisitar quando: onboarding do time travar sem visão de cobertura.
-- **Advisor-only allowlist por Praça no inbound.** Revisitar se falso positivo de match cruzado aparecer.
+- **Advisor-only allowlist por município no inbound.** Revisitar se falso positivo de match cruzado aparecer.
 
 ## Referências
 

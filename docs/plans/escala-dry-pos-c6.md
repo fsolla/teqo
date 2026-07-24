@@ -1,9 +1,11 @@
 # Escala e DRY pós-C6 (apoiadores / import / listas)
 
-Status: implementado (pendente merge em `main`)
-Atualizado em: 2026-07-21 (`capture-review-debts` pós-B9 `/simplify`)
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha C, item C8)
+Status: F4 (DRY de forms) **entregue** — twin praça 2026-07-21 + hardening 2026-07-23; F1–F2 abertos com gatilho (volume real de import/base nominal pós-Onda 0); F3 parcialmente absorvido
+Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios + hardening)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos, item C8)
 Responsável: —
+
+> **Revisão 2026-07-24:** a remodelagem M1 renomeou `plaza*`/`nucleus*` → `municipality*` (paths `pracas/` → `municipios/`), e o hardening 2026-07-23 (Fase 5) completou a **Fase 4**: os 4 ladders `*/nova` migraram para `runCampaignRedirectFormAction`, os demais `formActions` já usam `mapCampaignFormActionError` + `campaignFormFields` (única exceção: `planos/[slug]/lifecycleFormActions.ts`, que só retorna safe-messages fixas — sem ladder para migrar), e `CampaignInviteForm` já importa `fieldError`/`errorProps` de `campaignFormFields`. O split de access também entregou parte da F3: `getAdvisorMunicipalityIds` (`src/utilities/access/municipalities.ts`) é a variante sem `PayloadRequest`, com cache request-scoped por contexto, e `supporterListOverviewAggregate` recebe os IDs pré-carregados. Restam F1 (perf do import) e o restante de F2/F3 — verificar contra o código no PR.
 
 ## Contexto
 
@@ -18,11 +20,11 @@ Sem este item, a importação funciona em volume baixo, mas: (a) o gargalo de im
 - Leituras de existência (contacts/supporters existentes) no bulk usam drizzle direto na mesma txn, sem o scaffolding do Local API.
 - A página de lista de apoiadores não faz dois COUNTs filtrados por navegação; o `total` do overview vem do `totalDocs` da lista, ou o overview é cacheado por `(user, filterState)` com TTL curto.
 - Busca por `q` em nome/cidade usa índice `pg_trgm` GIN (ou restringe a prefix/telefone) — deixa de ser seq scan por página.
-- O lookup de núcleos acessíveis do coordenador é memoizado por request (lista + overview compartilham uma query).
+- ~~O lookup de municípios acessíveis é memoizado por request~~ — absorvido pelo cache por contexto de `getAccessibleMunicipalityIds` (hardening 2026-07-23); conferir compartilhamento lista+overview no PR.
 - `chunk` / `requireTable` / `INSERT_CHUNK_SIZE` / scaffold de tipos drizzle vivem num helper compartilhado, reusado por `supporterImportBulk.ts` e `electionResultsImport.ts` (import TSE).
 - O scaffold de tipos drizzle não apaga a tipagem de colunas: assertion runtime dos nomes de coluna em `payload.db.tables.supporter` ao init **ou** `PostgresTransactionDatabase` expõe um `insert` tipado.
-- `getAccessibleNucleusIds` ganha uma variante sem `PayloadRequest` (ou `supporterListOverviewAggregate` reusa a existente), eliminando o lookup duplicado de escopo coordenador.
-- Todos os `formActions.ts` de `/campanha` restantes migram para `mapCampaignFormActionError` + `campaignFormFields` (hoje duplicados em ~6 arquivos).
+- ~~Variante de `getAccessibleNucleusIds` sem `PayloadRequest`~~ — entregue como `getAdvisorMunicipalityIds` (`src/utilities/access/municipalities.ts`).
+- ~~Todos os `formActions.ts` restantes migram para os helpers compartilhados~~ — entregue (F4 completa; ver Fase 4).
 - Guardrails: `overrideAccess: false` com `user`; escritas multi-step continuam em `withPayloadTransaction`; locks advisory continuam xact-level; sem novo `Consent`; sem mudança de comportamento visível.
 
 ## Decisões travadas
@@ -32,7 +34,7 @@ Sem este item, a importação funciona em volume baixo, mas: (a) o gargalo de im
 - **Cortável se a base nominal permanecer pequena.** Fases 1–2 (perf de import/lista) só rendem com base real em volume; se a base ficar pequena até 16/08, adiar para Janela 3. Fases 3–4 (DRY) são baratas e reduzem drift — manter se houver folga.
 - **Sem migration de schema em Fases 1–3.** Fase 2 pode exigir uma migration pequena (`pg_trgm` GIN em `contact.name`/`contact.city`) — única migration do item.
 - **`postgresTransactionLocks.ts` é pré-existente e compartilhado** com o path single-create (`upsertContactByPhone`, `enforceUniqueContactPhone`). A Fase 1 troca o loop de locks por uma query única sem mudar o contrato `acquireContactPhoneLocks(payload, req, phones[])` — callers não mudam.
-- **i18n e naming** (AGENTS.md): identificadores em inglês (`acquireContactPhoneLocks` mantido, `drizzleBulk.ts`, `getAccessibleNucleusIds` variant, etc.), strings visíveis em pt-BR.
+- **i18n e naming** (AGENTS.md): identificadores em inglês (`acquireContactPhoneLocks` mantido, `drizzleBulk.ts`, `getAdvisorMunicipalityIds`, etc.), strings visíveis em pt-BR.
 
 ## Questões em aberto
 
@@ -47,8 +49,8 @@ Sem este item, a importação funciona em volume baixo, mas: (a) o gargalo de im
 flowchart TD
     F1["Fase 1 — Perf import<br/>locks em 1 RT · .returning · drizzle reads"]
     F2["Fase 2 — Perf lista<br/>1 COUNT · trgm · memo accessible nuclei"]
-    F3["Fase 3 — DRY helpers<br/>drizzleBulk · getAccessibleNucleusIds variant · DrizzleTx assertion"]
-    F4["Fase 4 — DRY forms<br/>migrar formActions restantes"]
+    F3["Fase 3 — DRY helpers<br/>drizzleBulk · getAdvisorMunicipalityIds ✓ · DrizzleTx assertion"]
+    F4["Fase 4 — DRY forms ✓<br/>(entregue 2026-07-21 + 2026-07-23)"]
 
     C6["C6 apoiadores ✓"] --> F1
     F1 --> F2
@@ -60,39 +62,36 @@ flowchart TD
 
 - **`acquireContactPhoneLocks`** (`src/utilities/contactPhoneInvariant.ts` / `postgresTransactionLocks.ts`): trocar o loop `for (const key of sortedKeys) await database.execute(...)` por uma query única `SELECT pg_advisory_xact_lock(hashtextextended(k, 0)) FROM unnest(ARRAY[...]) AS k` (ordenar para evitar deadlock). Contrato `acquireContactPhoneLocks(payload, req, phones[])` inalterado — callers (bulk, single-create, hook) não mudam.
 - **`bulkInsertSupporterImport`** (`src/utilities/supporterImportBulk.ts`): `tx.insert(contactTable).values(...).returning({ id: true, phone: true })` em vez do re-`payload.find` por chunk para recuperar IDs (elimina ~10 round-trips no cap de 5k). Widen o tipo `DrizzleTx` local para tipar `.returning()`.
-- Substituir os dois `payload.find` de existência (contacts por phone, supporters por contact_id) por `SELECT ... FROM contact WHERE phone = ANY($)` / `SELECT contact_id FROM supporter WHERE contact_id = ANY($) AND nucleus_id IS NULL` na mesma sessão drizzle da txn.
+- Substituir os dois `payload.find` de existência (contacts por phone, supporters por contact_id) por `SELECT ... FROM contact WHERE phone = ANY($)` / `SELECT contact_id FROM supporter WHERE contact_id = ANY($) AND municipality_id IS NULL` na mesma sessão drizzle da txn.
 
 ### Fase 2 — Perf de leitura da lista
 
 - **`loadSupporterListOverviewData`** (`src/utilities/supporterPageData.ts`): derivar `total` do `result.totalDocs` da lista (já computado por Payload); o overview roda só os dois `COUNT(*) FILTER` (certo+tende, indeciso). Elimina um COUNT filtrado completo por navegação.
-- **`computeSupporterListOverviewAggregate`** (`src/utilities/supporterListOverviewAggregate.ts`): memoizar o `resolveAccessConstraint` (lookup de núcleos acessíveis do coordenador) por request — lista e overview compartilham a mesma query `electoralNucleus`.
+- **`computeSupporterListOverviewAggregate`** (`src/utilities/supporterListOverviewAggregate.ts`): ~~memoizar o lookup de municípios acessíveis por request~~ — **largamente absorvido** (2026-07-23): `getAccessibleMunicipalityIds` tem cache request-scoped por contexto e o aggregate recebe `advisorMunicipalityIds` pré-carregados; conferir no PR se lista e overview compartilham de fato uma única query `municipality`.
 - **Migration** `add_contact_trgm_index`: `CREATE EXTENSION IF NOT EXISTS pg_trgm` + `CREATE INDEX ... USING gin (name gin_trgm_ops)` e `(city gin_trgm_ops)` em `contact`. Torna `ILIKE '%q%'` sargable. Única migration do item.
 - Avaliar restringir `q` a mínimo 2–3 chars no cliente (reduz seq scans inúteis) — opcional, sem migration.
 
 ### Fase 3 — DRY de helpers
 
 - **`src/utilities/drizzleBulk.ts`** (novo): extrair `chunk`, `requireTable`, `INSERT_CHUNK_SIZE`, e o scaffold de tipos `DrizzleTx`/`PayloadDb` de `supporterImportBulk.ts` e `electionResultsImport.ts` (hoje byte-idênticos). Importar de ambos.
-- **`getAccessibleNucleusIds`** (`src/utilities/campaignAccess.ts`): adicionar variante sem `PayloadRequest` (ou parametrizar a existente com cache opcional) para que `supporterListOverviewAggregate` reuse em vez de re-implementar o lookup `coordinators contains user.id`.
-- **Type safety do bulk:** assertion runtime em `supporterImportBulk.ts` que `Object.keys(payload.db.tables.supporter)` contém as colunas esperadas (`contact`, `nucleus`, `consent`, `createdBy`, …) no init do módulo — pega o bug `contactId` vs `contact` antes do runtime. (Widen de `PostgresTransactionDatabase` fica como follow-up de plataforma.)
+- ~~Variante de `getAccessibleNucleusIds` sem `PayloadRequest`~~ — **entregue** no split de access (hardening 2026-07-23): `getAdvisorMunicipalityIds` (`src/utilities/access/municipalities.ts`) é a implementação canônica do lookup `advisors contains user.id` sem `PayloadRequest`, reusada por `getAccessibleMunicipalityIds` (cache por contexto) e pelo aggregate.
+- **Type safety do bulk:** assertion runtime em `supporterImportBulk.ts` que `Object.keys(payload.db.tables.supporter)` contém as colunas esperadas (`contact`, `municipality`, `consent`, `createdBy`, …) no init do módulo — pega o bug `contactId` vs `contact` antes do runtime. (Widen de `PostgresTransactionDatabase` fica como follow-up de plataforma.)
 
-### Fase 4 — DRY de forms
+### Fase 4 — DRY de forms — **ENTREGUE** (2026-07-21 + hardening 2026-07-23)
 
-- Migrar os `formActions.ts` restantes para `mapCampaignFormActionError` + `campaignFormFields` (hoje o ladder `FormDataBoundaryError` → `ZodError` → `validationFieldErrors` → safe-message está inlined em vários arquivos):
-  - ~~`src/app/(campaign)/campanha/(app)/pracas/listFormActions.ts` + `pracas/[slug]/editar/formActions.ts`~~ — **entregue 2026-07-21 (C8 F4):** `plazaStaffFormActions.ts` (3 actions compartilhadas); `editar/formActions.ts` mantém só `updatePlazaStrategyFormAction`; lista e `/editar` importam o módulo compartilhado diretamente (Next.js não permite re-export em `'use server'`).
-  - `src/app/(campaign)/campanha/(app)/pracas/[slug]/updateFormActions.ts`, `pledgeFormActions.ts` (se ainda não no mapper)
-  - `src/app/(campaign)/campanha/convite/[token]/formActions.ts`
-  - `src/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions.ts`
-  - `src/app/(campaign)/campanha/(app)/planos/formActions.ts` e `planos/[slug]/updateFormActions.ts`, `resultFormActions.ts`, `lifecycleFormActions.ts`
-  - Demais `formActions` de `/campanha` (lideranças, demandas, organizações, apoiadores/novo) conforme grep no PR
-- Migrar `fieldError`/`firstError` local em forms legados (ex.: `CampaignInviteForm.tsx`) para importar de `campaignFormFields.ts`.
-- **Nota pós-remodel:** paths `nucleos/*` foram superseded; não reabrir.
+- ~~Migrar os `formActions.ts` restantes para `mapCampaignFormActionError` + `campaignFormFields`~~ — **completo**:
+  - Twin lista↔`/editar`: `municipalityStaffFormActions.ts` (entregue 2026-07-21 como `plazaStaffFormActions.ts` em `pracas/`; renomeado na M1); `editar/formActions.ts` mantém só `updateMunicipalityStrategyFormAction`.
+  - 4 ladders `*/nova` (demandas, dobradinhas, lideranças, organizações): migrados para `runCampaignRedirectFormAction` no hardening 2026-07-23 (Fase 5).
+  - Todos os demais `formActions` (`convite/[token]`, `apoiadores/*`, `planos/*`, `municipios/[slug]/*`, `demandas/[slug]`, `dobradinhas/[slug]`, `liderancas/[id]`, `organizacoes/[slug]`) já usam `mapCampaignFormActionError`; `planos/[slug]/lifecycleFormActions.ts` retorna só safe-messages fixas (sem ladder — nada a migrar).
+- ~~Migrar `fieldError`/`firstError` local em forms legados~~ — `CampaignInviteForm.tsx` já importa de `campaignFormFields.ts`.
+- **Nota pós-remodel:** paths `nucleos/*`/`pracas/*` foram superseded; não reabrir.
 
 **Migration:** Fases 1, 3, 4 sem schema. Fase 2: `pnpm migrate:create add_contact_trgm_index` (extensão + 2 GIN indexes). Sem Consent novo.
 
 ## Dependências
 
 - **Dura:** C6 Escala e DRY pós-C2 (código em `supporterImportBulk.ts` / `supporterListOverviewAggregate.ts` / `supporterPageData.ts` / `campaignFormActionError.ts`).
-- Reusa: `src/utilities/contactPhoneInvariant.ts`, `postgresTransactionLocks.ts`, `getPostgresTransactionDatabase`, `relationshipId`, `campaignAccess.ts` (`getAccessibleNucleusIds`, `canManageCampaignUsers`), `electionResultsImport.ts` (para `drizzleBulk.ts`), C6 plano [escala-dry-pos-c2.md](escala-dry-pos-c2.md).
+- Reusa: `src/utilities/contactPhoneInvariant.ts`, `postgresTransactionLocks.ts`, `getPostgresTransactionDatabase`, `relationshipId`, `src/utilities/access/municipalities.ts` (`getAccessibleMunicipalityIds`, `getAdvisorMunicipalityIds`), `electionResultsImport.ts` (para `drizzleBulk.ts`), C6 plano [escala-dry-pos-c2.md](escala-dry-pos-c2.md).
 
 ## Não escopo
 
@@ -114,7 +113,7 @@ flowchart TD
 - `src/utilities/supporterListOverviewAggregate.ts` — aggregate SQL + `resolveAccessConstraint`
 - `src/utilities/supporterPageData.ts` — `loadSupporterListOverviewData` (duplo COUNT)
 - `src/utilities/electionResultsImport.ts` — `chunk`/`requireTable`/`INSERT_CHUNK_SIZE` duplicados
-- `src/utilities/campaignAccess.ts` — `getAccessibleNucleusIds`
+- `src/utilities/access/municipalities.ts` — `getAccessibleMunicipalityIds` / `getAdvisorMunicipalityIds`
 - `src/utilities/campaignFormActionError.ts` / `campaignFormFields.ts` — helpers adotados por 2 forms
 - AGENTS.md — `overrideAccess: false`, transações, locks advisory xact-level, naming
 
@@ -134,9 +133,9 @@ Os débitos que os revisores marcaram como importantes e maiores que cleanup for
 
 ## Simplify (2026-07-21 pós-B9)
 
-~~`/simplify` da entrega **B9** marcou como **maior que cleanup** o twin `listFormActions.ts` ↔ `editar/formActions.ts`~~ — **entregue 2026-07-21 (C8 F4):** `plazaStaffFormActions.ts` unifica os 3 wrappers compartilhados; `editar/formActions.ts` mantém só `updatePlazaStrategyFormAction`.
+~~`/simplify` da entrega **B9** marcou como **maior que cleanup** o twin `listFormActions.ts` ↔ `editar/formActions.ts`~~ — **entregue 2026-07-21 (C8 F4):** `municipalityStaffFormActions.ts` (à época `plazaStaffFormActions.ts`) unifica os 3 wrappers compartilhados; `editar/formActions.ts` mantém só `updateMunicipalityStrategyFormAction`.
 
-**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B9):** hook `usePlazaListPopoverForm` (gatilho: 4º inline editor); `PlazaAdvisorCheckboxList` (gatilho: 3º uso ou refactor do form `/editar`); layout responsivo único mobile+desktop na lista (gatilho: page size >25 ou profiling de hydration); lazy-load de `getEligibleAdvisorOptions` (staff set pequeno); `PopoverAnchor` export não usado (scaffold shadcn); ~~helper `parsePoliticalTrendStatus`~~ → entregue como `parsePoliticalTrendStatusFormValue` no prep A9+; unit tests dos `PlazaList*Control` (int access cobre domínio); E2E save inline (gatilho: smoke pós-merge B9).
+**Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-B9):** hook `useMunicipalityListPopoverForm` (gatilho: 4º inline editor); `MunicipalityAdvisorCheckboxList` (gatilho: 3º uso ou refactor do form `/editar`); layout responsivo único mobile+desktop na lista (gatilho: page size >25 ou profiling de hydration); lazy-load de `getEligibleAdvisorOptions` (staff set pequeno); `PopoverAnchor` export não usado (scaffold shadcn); ~~helper `parsePoliticalTrendStatus`~~ → entregue como `parsePoliticalTrendStatusFormValue` no prep A9+; unit tests dos `MunicipalityList*Control` (int access cobre domínio); E2E save inline (gatilho: smoke pós-merge B9).
 
 ## Simplify (2026-07-21 pós-A9+)
 
@@ -144,14 +143,14 @@ Os débitos que os revisores marcaram como importantes e maiores que cleanup for
 
 ## Simplify (2026-07-21 pós-C8 F4)
 
-Passagem `/simplify` + `capture-review-debts` após fill-in **C8 F4** (plaza twin DRY).
+Passagem `/simplify` + `capture-review-debts` após fill-in **C8 F4** (twin praça→município DRY).
 
-**Já resolvido (não reabrir):** `plazaStaffFormActions.ts`; `plazaStaffEditSafeMessages`; tipo `PlazaStaffFormAction` em `PlazaList.tsx`; import direto em `editar/page.tsx` (Next.js não permite re-export em `'use server'`); hygiene de refs em planos-pai A9/B9/estimativa.
+**Já resolvido (não reabrir):** `municipalityStaffFormActions.ts (à época plazaStaffFormActions)`; `municipalityStaffEditSafeMessages (à época plazaStaffEditSafeMessages)`; tipo `MunicipalityStaffFormAction` em `MunicipalityList.tsx`; import direto em `editar/page.tsx` (Next.js não permite re-export em `'use server'`); hygiene de refs em planos-pai A9/B9/estimativa.
 
 **Explicitamente fora (triage `capture-review-debts` 2026-07-21 pós-C8 F4):**
 
 - **Runner genérico `runCampaignFormAction`** — gatilho: 5+ wrappers idênticos ou 4º cluster de forms na mesma superfície (hoje ~18 arquivos com try/catch inline).
-- **`revalidatePlazaListPaths` com `scope` por tipo de save** — gatilho: N saves inline + profiling de rerender inaceitável (ver [escala-dry-pos-a9.md](escala-dry-pos-a9.md) Adiado com gatilho).
-- **`pledgeFormActions` / `updateFormActions` → `revalidatePlazaListPaths`** — gatilho: forms ganham `plazaSlug` ou unificação de revalidate no detalhe da Praça (permanecem em Fase 4 remanescente abaixo).
-- **`reloadCampaignActor` por submit em `actions/plaza.ts`** — gatilho: profiling mostra latência dominante em saves staff inline.
-- **Fundir `updatePlazaStrategyFormAction` em `plazaStaffFormActions.ts`** — parse/`safeMessages` distintos; superfície só `/editar`.
+- **`revalidateMunicipalityListPaths` com `scope` por tipo de save** — gatilho: N saves inline + profiling de rerender inaceitável (ver [escala-dry-pos-a9.md](escala-dry-pos-a9.md) Adiado com gatilho).
+- **`pledgeFormActions` / `updateFormActions` → `revalidateMunicipalityListPaths`** — gatilho: forms ganham `municipalitySlug` ou unificação de revalidate no detalhe do município.
+- **`reloadCampaignActor` por submit em `actions/municipality.ts`** — gatilho: profiling mostra latência dominante em saves staff inline.
+- **Fundir `updateMunicipalityStrategyFormAction` em `municipalityStaffFormActions.ts`** — parse/`safeMessages` distintos; superfície só `/editar`.

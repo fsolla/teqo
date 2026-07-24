@@ -34,12 +34,12 @@ Com [D3](whatsapp-canal-fundacao.md), cada staff tem (ou não) a própria sessã
 - Action `sendLeadershipWhatsappMessage({ leadershipId, body })`: access OK → resolve phone → exige **`whatsappSession` do `req.user` em `connected`** + Consent → `enqueueSend(actorUserId, …)` → log outbound com `user` = ator.
 - UI compose: textarea + templates curtos editáveis; se sessão down → CTA “Conectar meu WhatsApp” (perfil D3) **e** fallback `wa.me` (“Abrir no seu WhatsApp”).
 - Rate limit por ator/hora e por destinatário; **hard reject** N>1 destinatários.
-- Guardrails: só `coordinator`/`advisor`; advisor só lideranças das Praças acessíveis; nunca `supporter`; nunca enviar usando sessão de terceiro.
+- Guardrails: só `coordinator`/`advisor`; advisor só lideranças dos municípios acessíveis; nunca `supporter`; nunca enviar usando sessão de terceiro.
 
 ## Decisões travadas
 
 - **Remetente = sessão do ator logado.** A liderança recebe do número pessoal pareado daquela pessoa. **Rejeitado:** “enviar como campanha”; CG disparar pelo chip de um assessor; escolher remetente na UI.
-- **Um destinatário por envio.** **Rejeitado:** lista/BCC; “todas as lideranças da Praça”.
+- **Um destinatário por envio.** **Rejeitado:** lista/BCC; “todas as lideranças do município”.
 - **Escopo = access da liderança.** **Rejeitado:** telefone livre digitado.
 - **`wa.me` = fallback + convites.** **Rejeitado:** migrar convites para o bridge nesta fatia.
 - **i18n/naming:** `sendLeadershipWhatsappMessage`, `LeadershipWhatsappCompose`; copy pt-BR (“Enviar pelo meu WhatsApp”).

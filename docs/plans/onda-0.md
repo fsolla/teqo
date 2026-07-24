@@ -65,7 +65,7 @@ Refusa host não-local sem `ALLOW_REMOTE_DB=true` (mesma família de guard que `
 **Local (PR):**
 
 1. `pnpm migrate` (ou `db:seed:consent` se iterando textos).
-2. Login `/campanha` → criar núcleo de teste.
+2. Login `/campanha` → abrir um município e registrar dado fictício de teste.
 3. Convite com Consent visível (contato fictício).
 4. Apoiador de teste (+ intenção de voto opcional).
 5. GET `/privacidade` com banner provisório.
@@ -86,7 +86,7 @@ curl -X POST "https://<prod-domain>/api/revalidate?tag=global_privacy-policy" \
 ## Onboarding staff (sem PII de campo)
 
 - Criar `campaignUser` `geral`/`coordenador` via `/admin`.
-- Estruturar núcleos de teste, agenda, baseline TSE.
+- Estruturar municípios de teste, agenda, baseline TSE.
 - Treinamento de campo com titulares reais **após** revisão jurídica.
 
 ## RIPD

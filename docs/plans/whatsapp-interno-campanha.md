@@ -26,8 +26,8 @@ Hoje o produto só usa WhatsApp como **atalho `wa.me`** (convites, share, kit de
 - Trazer o canal ZAP para _dentro_ do fluxo de poder do Field Desk sem virar o sistema de registro (princípio 1 de `PRODUCT.md`: atalho pragmático; verdade no Teqo).
 - Cada `coordinator`/`advisor` vincula **o próprio WhatsApp pessoal** e fala com lideranças **como se fosse o chip dele** — a liderança recebe no chat pessoal de sempre.
 - Fatiar em três entregas shipáveis (D3 → D4 → D5), cada uma com appetite próprio.
-- Humano no loop em qualquer escrita de domínio (`plazaUpdate`, demanda, pledge) — alinhado a E11/C12.
-- Fail-closed em Consent, access por papel/Praça, e auditoria mínima das mensagens processadas.
+- Humano no loop em qualquer escrita de domínio (`municipalityUpdate`, demanda, pledge) — alinhado a E11/C12.
+- Fail-closed em Consent, access por papel/município, e auditoria mínima das mensagens processadas.
 
 ## Fatias (ordem de execução)
 
@@ -52,7 +52,7 @@ flowchart TD
 - **Canal interno 1:1, framework não oficial permitido.** Destinatários = lideranças já no CRM; never blast a apoiadores/eleitores. **Rejeitado:** WhatsApp Business API; disparo em massa / listas (TSE art. 33); bot que responde sozinho a terceiros.
 - **Número pessoal por staff (`campaignUser`), não linha institucional.** Cada assessor/coordenador geral pareia o próprio WhatsApp; a liderança vê o remetente que já conhece. **Rejeitado:** chip único da campanha (quebra a relação pessoal — pedido explícito de produto 2026-07-23); um único CG enviando “em nome de” todos os assessores.
 - **Pareamento no app via QR (estilo WhatsApp Web).** Staff abre `/campanha`, inicia pareamento, escaneia com o celular; sessão fica no sidecar. **Rejeitado:** só `wa.me` forever; pedir senha/OTP inventado; forçar app nativo Meta.
-- **Teqo permanece system of record.** Mensagens são evidência/auditoria; commits de domínio só após ação humana (D5). **Rejeitado:** auto-criar `plazaUpdate`/`votePledge` sem aceite.
+- **Teqo permanece system of record.** Mensagens são evidência/auditoria; commits de domínio só após ação humana (D5). **Rejeitado:** auto-criar `municipalityUpdate`/`votePledge` sem aceite.
 - **Sidecar obrigatório (multi-sessão).** N sockets (um por staff vinculado); não vive em Vercel serverless. **Rejeitado:** “só mais uma API route” no Next.
 - **Não substitui D2 nem `wa.me`.** D2 = push in-app; `wa.me` = fallback se a sessão do ator estiver down. **Rejeitado:** remover convites `wa.me` neste programa.
 - **Risco ToS/ban é pessoal e explícito.** Consent + copy no pairing avisam que o vínculo usa cliente não oficial e pode afetar a conta WhatsApp da pessoa. **Rejeitado:** esconder o risco; usar conta do deputado/candidato como default.

@@ -13,13 +13,13 @@ Design: [`Notificacoes-PWA.png`](../design-refs/latest/Notificacoes-PWA.png) · 
 
 Como usar (parte deste plano — o sino):
 
-- **Adotar a estrutura:** sino no header com contagem; bottom sheet "Notificações" com "4 não lidas", ação "Marcar todas como lidas", itens com ícone por tipo de evento, título com o núcleo/entidade ("Estimativa aguardando confirmação — Núcleo Quilombo Rio das Rãs"), linha de detalhe (autor + ação), data relativa e ponto de não lida. Os quatro tipos exemplificados (estimativa aguardando confirmação, novo apoiador, novo reporte de campo, plano de ação precisa de atenção) são um bom ponto de partida para o enum `type` da collection `Notification` — dois deles dependem dos domínios C2/C3 existirem.
+- **Adotar a estrutura:** sino no header com contagem; bottom sheet "Notificações" com "4 não lidas", ação "Marcar todas como lidas", itens com ícone por tipo de evento, título com a entidade ("Estimativa aguardando confirmação — Quilombo Rio das Rãs"; no design-ref a entidade era um Núcleo — hoje é município/liderança), linha de detalhe (autor + ação), data relativa e ponto de não lida. Os quatro tipos exemplificados (estimativa aguardando confirmação, novo apoiador, novo reporte de campo, plano de ação precisa de atenção) são um bom ponto de partida para o enum `type` da collection `Notification` — dois deles dependem dos domínios C2/C3 existirem.
 - **Falta desenhar (não bloqueia):** a tela de opt-in de push com o checkbox de consentimento LGPD (`campanha-notificacoes-push`) e a nota de limitação do iOS — seguir o padrão do bloco "Consentimento LGPD" da [`Apoiador-Ficha.png`](../design-refs/latest/Apoiador-Ficha.png).
 - **Ajustar cores:** paleta antiga no HTML/PNG; implementar com tokens do tema `campaign` e componentes `Sheet`/`Drawer` existentes.
 
 ## Contexto
 
-Coordenadores e lideranças precisam ser avisados de eventos da campanha (convite aceito, novo `nucleusUpdate`, estimativa aguardando confirmação) sem depender só do canal de WhatsApp. Este plano cobre dois canais de notificação dentro da vertical `/campanha`:
+Coordenadores e lideranças precisam ser avisados de eventos da campanha (convite aceito, novo `municipalityUpdate`, estimativa aguardando confirmação) sem depender só do canal de WhatsApp. Este plano cobre dois canais de notificação dentro da vertical `/campanha`:
 
 - **Push web** via Push API + Service Worker + VAPID (entrega em segundo plano, inclusive com o app fechado).
 - **Sino de notificações in-app** dentro do `/campanha` (central de avisos lidos/não lidos).
@@ -43,15 +43,15 @@ Notificações por WhatsApp Business API ficam **fora** deste plano (Meta + Res.
 ## Questões em aberto
 
 - Unificar numa única collection `Notification` (log de eventos) que alimenta tanto o sino quanto o push, ou manter dois caminhos separados? **Recomendação:** unificar — um registro por evento, com canais de entrega como atributo.
-- Quais eventos disparam notificação, e qual canal cada evento usa (ex.: estimativa aguardando confirmação → push para `geral`/coordenador; novo update → sino para coordenador do núcleo).
-- Políticas de agrupamento/dedupe (ex.: `tag` do Push API por núcleo) e expurgo de notificações antigas.
+- Quais eventos disparam notificação, e qual canal cada evento usa (ex.: estimativa aguardando confirmação → push para coordenador/candidato; novo update → sino para o assessor do município).
+- Políticas de agrupamento/dedupe (ex.: `tag` do Push API por município) e expurgo de notificações antigas.
 - Onde guardar as VAPID keys (Vercel env) e política de rotação.
 
 ## Abordagem proposta
 
 ```mermaid
 flowchart LR
-    Hook["afterChange hook<br/>leadership / nucleusUpdate /<br/>campaignInvite / voteEstimate"]
+    Hook["afterChange hook<br/>leadership / municipalityUpdate /<br/>campaignInvite / voteEstimate"]
     Notif["Cria registro Notification<br/>(com req, dentro da transação)"]
     Bell["Sino in-app<br/>(lê Notification por campaignUser)"]
     Push["Push via Service Worker<br/>(VAPID)"]
@@ -69,7 +69,7 @@ flowchart LR
 
 Componentes:
 
-- **Collection `Notification`** (admin group `Campanha`): `recipient` (rel → `campaignUser`), `type` (enum de evento), `payload` (json/richtext leve), `readAt`, `nucleus` (rel opcional). Access por `recipient = req.user.id`.
+- **Collection `Notification`** (admin group `Campanha`): `recipient` (rel → `campaignUser`), `type` (enum de evento), `payload` (json/richtext leve), `readAt`, `municipality` (rel opcional). Access por `recipient = req.user.id`.
 - **Collection `PushSubscription`** (admin group `Campanha`): `user` (rel → `campaignUser`), `endpoint`, `keys.p256dh`, `keys.auth`, `expirationTime`. Várias subscriptions por usuário (vários dispositivos).
 - **Service Worker** `public/sw.js` com escopo `/campanha`, handler de `push` e `notificationclick` (abre a rota certa via `data.url`).
 - **Server action** de subscribe/unsubscribe + pedido de permissão, com opt-in gravando `Consent`.

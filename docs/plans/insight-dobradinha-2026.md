@@ -1,19 +1,21 @@
 # Insight: oportunidades de dobradinha 2026
 
-Status: rascunho
-Atualizado em: 2026-07-17
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
+Status: rascunho (gatilho externo: TSE publica candidaturas — pós-15/08)
+Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Próximos — Demais itens abertos, A6)
 Responsável: —
+
+> **Revisão 2026-07-24:** desde a M4, as dobradinhas OPERACIONAIS já existem no produto — entidade `stateDeputy` + `municipality.stateDeputies` / `leadership.stateDeputies` + vertical `/campanha/dobradinhas`. A6 vira a **camada de insight TSE** sobre esse registro: sugerir candidatos 2026 (por força local 2022 + alinhamento) para o staff registrar/priorizar como `stateDeputy` — não criar um segundo registro paralelo. Referências antigas a "núcleo" abaixo foram renomeadas para município.
 
 ## Contexto
 
-"Dobradinha" é a campanha conjunta entre dois candidatos que somam estrutura e votos num mesmo território. Sabendo, via baseline TSE 2022 + Fase 5 (ver [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md)), **quais candidatos de 2022 voltam a concorrer em 2026** (`runningAgain2026`), podemos sugerir oportunidades de dobradinha por núcleo/território — priorizando por (a) **alinhamento político** com a chapa PT/Solla e (b) **força eleitoral local** (votos recebidos ali em 2022). É o insight mais estratégico do conjunto e depende de dados de 2026, por isso é plano separado.
+"Dobradinha" é a campanha conjunta entre dois candidatos que somam estrutura e votos num mesmo território. Sabendo, via baseline TSE 2022 + Fase 5 (ver [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md)), **quais candidatos de 2022 voltam a concorrer em 2026** (`runningAgain2026`), podemos sugerir oportunidades de dobradinha por município/território — priorizando por (a) **alinhamento político** com a chapa PT/Solla e (b) **força eleitoral local** (votos recebidos ali em 2022). É o insight mais estratégico do conjunto e depende de dados de 2026, por isso é plano separado.
 
 ## Objetivos
 
-- Por núcleo, listar candidatos que concorrem de novo em 2026 (`runningAgain2026=sim`) com votos 2022 na geografia, partido/coligação e tier de alinhamento.
+- Por município, listar candidatos que concorrem de novo em 2026 (`runningAgain2026=sim`) com votos 2022 na geografia, partido/coligação e tier de alinhamento.
 - Ranquear por score combinando alinhamento (peso a definir) e força eleitoral local (votos 2022).
-- Exibir no detalhe do núcleo (aba overview) a lista ranqueada de potenciais parceiros de dobradinha; no overview, agregar top parceiros por território filtrado.
+- Exibir no detalhe do município (aba Visão geral) a lista ranqueada de potenciais parceiros de dobradinha; no overview, agregar top parceiros por território filtrado.
 - Habilitar só quando 2026 estiver carregado; enquanto não, mostrar "indisponível até a candidatura de 2026".
 
 ## Decisões travadas
@@ -48,14 +50,14 @@ flowchart LR
 ```
 
 - **Helper** `src/lib/electionAlliances.ts`: mapeamento partido→tier (versionado, com proveniência das coligações 2022/2026).
-- **Helper** `src/lib/electionInsights.ts`: `computeDobradinhaOpportunities(candidates2026, votes2022, alliances, nucleusGeography)` → `Array<{ candidate, party, coalition, tier, votes2022, score }>` ordenado por score.
-- **Componente** `src/components/campaign/DobradinhaOpportunities.tsx` (server). Overview: bloco agregado no `NucleusListOverview`.
+- **Helper** `src/lib/electionInsights.ts`: `computeDobradinhaOpportunities(candidates2026, votes2022, alliances, municipalityGeography)` → `Array<{ candidate, party, coalition, tier, votes2022, score }>` ordenado por score.
+- **Componente** `src/components/campaign/DobradinhaOpportunities.tsx` (server). Overview: bloco agregado no `MunicipalityListOverview`.
 - **Teste int** cenários: sem 2026 carregado (`desconhecido` → estado indisponível); só adversários; misto.
 
 ## Arquivos a criar/alterar
 
 - Criar: `src/lib/electionAlliances.ts`, `src/components/campaign/DobradinhaOpportunities.tsx`.
-- Alterar: `src/lib/electionInsights.ts` (nova função), `nucleos/[slug]/page.tsx` + `nucleusDetailPageData.ts`, overview da lista.
+- Alterar: `src/lib/electionInsights.ts` (nova função), `municipios/[slug]/page.tsx` + `municipalityPageData.ts`, overview da lista.
 
 ## Dependências
 
@@ -71,4 +73,4 @@ flowchart LR
 
 - [baseline-eleitoral-tse.md](baseline-eleitoral-tse.md) — baseline + Fase 5 (2026)
 - [insight-inteligencia-competitiva.md](insight-inteligencia-competitiva.md) — fornece o quadro competitivo base
-- AGENTS.md — naming, "Bahia implícita no Núcleo"
+- AGENTS.md — naming, modelo Municípios

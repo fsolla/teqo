@@ -1,13 +1,15 @@
-# Filtros auto-aplicados na lista de Praças
+# Filtros auto-aplicados na lista de municípios
 
-Status: entregue em código (2026-07-21; deploy pendente com remodelagem)
-Atualizado em: 2026-07-21
+Status: entregue (2026-07-21; em produção desde 2026-07-23)
+Atualizado em: 2026-07-24
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins)
-Impeccable: B — encaixe em `PlazaFilters` (`/campanha/pracas`); sem rota nova
-Appetite: ~0,5 dia eng; só client em `PlazaFilters` (+ pending a11y); sem migration
+Impeccable: B — encaixe em `MunicipalityFilters` (`/campanha/municipios`); sem rota nova
+Appetite: ~0,5 dia eng; só client em `MunicipalityFilters` (+ pending a11y); sem migration
 Responsável: —
 
-_Revisão 2026-07-21 (pós-implementação + `/simplify` + capture-review-debts): debounce 1s + Enter imediato + pending UI; `commitNavigation` com `buildPlazaFiltersKey` no-op; `shouldUpdatePlazaSearchUrl` em `plazaUi.ts`; testes `tests/unit/plazaUi.unit.spec.ts`. Débitos S1–S2 registrados em Adiado (não reabrir no simplify)._
+> **Revisão 2026-07-24 (remodelagem M1 + hardening):** identificadores renomeados `plaza*` → `municipality*` (`MunicipalityFilters`, `buildMunicipalityFiltersKey`, `shouldUpdateMunicipalitySearchUrl` em `municipalityUi.ts`, rota `/campanha/municipios`); nomes antigos abaixo são da época. O hardening 2026-07-23 entregou o **shell compartilhado de pending** (`CampaignListPendingBoundary` + `useCampaignListPending`), fechando um dos itens Adiados.
+
+_Revisão 2026-07-21 (pós-implementação + `/simplify` + capture-review-debts): debounce 1s + Enter imediato + pending UI; `commitNavigation` com no-op key; testes unit. Débitos S1–S2 registrados em Adiado (não reabrir no simplify)._
 
 ## Design (Impeccable)
 
@@ -106,18 +108,19 @@ Componentes:
 
 ## Adiado com gatilho
 
-- **Sync `search` local ↔ `state.q` no back/forward do browser.** `key={buildPlazaFiltersKey(state)}` remonta na maioria dos casos; edge case: campo pode mostrar texto stale após voltar/avançar. **Gatilho:** QA ou R6 reportar desync em `/campanha/pracas`.
-- **Shell compartilhado de pending UI** (`data-pending` + `aria-busy` + `aria-live` "Atualizando resultados…"). Hoje só `ActionPlanFilters` + `PlazaFilters` (`SupporterFilters` ainda sem pending). **Gatilho:** 3ª lista de campanha com o mesmo padrão pending, ou R6/critique citar duplicação em ≥2 superfícies.
-- **Mesmo padrão em `SupporterFilters` (e outras listas com Buscar).** Revisitar quando produto pedir ou quando R6/critique citar “Buscar” como atrito repetido em ≥2 listas.
-- **Extrair `useDebouncedSearchParam`.** Revisitar no 3º call site idêntico (Praças + apoiadores + 1).
+- **Sync `search` local ↔ `state.q` no back/forward do browser.** `key={buildMunicipalityFiltersKey(state)}` remonta na maioria dos casos; edge case: campo pode mostrar texto stale após voltar/avançar. **Gatilho:** QA ou R6 reportar desync em `/campanha/municipios`.
+- ~~**Shell compartilhado de pending UI**~~ — **entregue no hardening 2026-07-23:** `CampaignListPendingBoundary`/`useCampaignListPending` compartilhados por `MunicipalityFilters`, `ActionPlanFilters`, `SupporterFilters`, `CampaignSearchForm` e paginação (dim + `aria-busy`).
+- **Auto-aplicação com debounce nas demais listas com Buscar** (`SupporterFilters`, `CampaignSearchForm` de lideranças/organizações/dobradinhas — hoje têm pending compartilhado, mas o `q` ainda é submit-driven). Revisitar quando produto pedir ou quando R6/critique citar “Buscar” como atrito repetido em ≥2 listas.
+- **Extrair `useDebouncedSearchParam`.** Revisitar no 3º call site idêntico (municípios + apoiadores + 1).
 
 ## Referências
 
-- `docs/roadmap.md` (Fill-ins; B7 suave; R6)
-- `src/components/campaign/PlazaFilters.tsx` — alvo da mudança
+- `docs/roadmap.md` (Fill-ins; R6)
+- `src/components/campaign/MunicipalityFilters.tsx` — alvo da mudança
 - `src/components/campaign/ActionPlanFilters.tsx` — precedente auto-apply + pending
-- `src/components/campaign/SupporterFilters.tsx` — contraste (ainda tem Buscar no `q`)
-- `src/app/(campaign)/campanha/(app)/pracas/page.tsx` — `buildPlazaFiltersKey`
+- `src/components/campaign/SupporterFilters.tsx` / `CampaignSearchForm.tsx` — pending compartilhado; `q` ainda submit-driven
+- `src/components/campaign/CampaignListPending.tsx` — shell de pending do hardening
+- `src/app/(campaign)/campanha/(app)/municipios/page.tsx` — `buildMunicipalityFiltersKey`
 - `src/utilities/plazaUi.ts` — URL canônica
 - AGENTS.md — naming; superfície `(campaign)`
 - `PRODUCT.md` / `DESIGN.md` — Field Desk / clarity under pressure

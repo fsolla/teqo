@@ -51,7 +51,7 @@ Teqo then becomes a configurable base product for other politicians in Brazil:
 6. Start the dev server: `pnpm dev`
 7. Open: `http://localhost:3000`
 
-Useful scripts: `pnpm db:start` / `pnpm db:stop` (local Postgres), `pnpm db:pull` (refresh local content from prod), `pnpm db:seed:posts` (import news posts/tags fresh from the live jorgesolla.com.br site into the local db; idempotent by slug, refuses a non-local database), `pnpm db:seed:tse` (import TSE 2022 Bahia election results into the local db; idempotent per year/office/turn scope, refuses a non-local database).
+Useful scripts: `pnpm db:start` / `pnpm db:stop` (local Postgres), `pnpm db:pull` (refresh local content from prod), `pnpm db:seed:posts` (import news posts/tags fresh from the live jorgesolla.com.br site into the local db; idempotent by slug, refuses a non-local database), `pnpm db:seed:tse` (import TSE 2014/2018/2022 Bahia election results into the local db; idempotent per year/office/turn scope, refuses a non-local database), `pnpm build:election-aggregates` (regenerate the committed TSE aggregate artifact in `src/lib/electionAggregates/` from locally seeded data).
 
 ### Content & cache revalidation
 
@@ -93,6 +93,8 @@ Then run:
 - `pnpm test` — unit + integration
 - `pnpm test:e2e` — Playwright (requires the test DB schema and a free port)
 - `pnpm test:all` — unit + integration + E2E
+
+Quality gates (also enforced by CI on the GitHub mirror): `pnpm lint` (zero warnings — `--max-warnings=0`), `pnpm typecheck`, and `pnpm exec knip` (dead files/dependencies fail; delete what your change orphaned). Standards: `.cursor/rules/engineering-standards.mdc`.
 
 ## Tech Stack
 

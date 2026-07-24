@@ -1,12 +1,12 @@
 ---
 description: /campanha staff UIs — edit mutable data in context (not read-only by default)
-globs: src/app/(campaign)/**/*,src/components/campaign/**/*,src/utilities/campaign*/**,src/utilities/plaza*/**,src/utilities/votePledge*
+globs: src/app/(campaign)/**/*,src/components/campaign/**/*,src/utilities/campaign*/**,src/utilities/municipality*/**,src/utilities/votePledge*
 alwaysApply: false
 ---
 
 # Edit where you see (`/campanha`)
 
-Canonical principles: `PRODUCT.md` § Design Principles — **Edit where you see** + **Auto-save, no Save button**. Precedente: B9 (`PlazaList*Control` + `plazaStaffFormActions`).
+Canonical principles: `PRODUCT.md` § Design Principles — **Edit where you see** + **Auto-save, no Save button**. Precedente: B9 (`MunicipalityList*Control` + `municipalityStaffFormActions`).
 
 When adding or changing a **staff** (coordinator / advisor) view that displays mutable campaign data:
 

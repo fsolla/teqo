@@ -1,7 +1,9 @@
 # Remodelagem da /campanha: Núcleo Eleitoral → Praça
 
-Status: entregue (código; deploy pendente — revisar SQL destrutivo antes do build de produção)
-Atualizado em: 2026-07-21
+> **SUPERSEDIDO (2026-07-23):** o plano-mestre vigente é [remodelagem-municipios.md](remodelagem-municipios.md) — rename Praça→Município (435 entradas; Camaçari inteira), role `candidate`, lockdown da liderança, dobradinhas `stateDeputy`, mapa no Início. O deploy foi **realizado em produção em 2026-07-23** (cadeia destrutiva `20260721_020109` → `20260723_200000` + `20260723_202000` aplicada via build Vercel). Este arquivo permanece como registro histórico R0–R5; identificadores `plaza*`/436 abaixo são da época.
+
+Status: entregue e supersedido (R0–R5 em código 2026-07-21; modelo substituído pela remodelagem Municípios; em produção desde 2026-07-23)
+Atualizado em: 2026-07-24
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Remodelagem Praças", itens R0–R5)
 Impeccable: C — vertical `/campanha` remodelada (rotas novas `/campanha/pracas`, `/campanha/organizacoes`, `/campanha/demandas`; adaptação de planos/apoiadores/dashboard)
 Appetite: ~2,5–3 semanas eng (fases R0–R5), funcional antes de 16/08 (início da propaganda)

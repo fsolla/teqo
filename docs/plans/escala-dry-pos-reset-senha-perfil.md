@@ -17,7 +17,7 @@ O fill-in **Reset de senha self-service + foto de perfil** ([reset-senha-foto-pe
 
 ## Objetivos
 
-- Auth hot path sem join de `media` em rotas que não exibem avatar (núcleos, apoiadores, planos, etc.).
+- Auth hot path sem join de `media` em rotas que não exibem avatar (municípios, apoiadores, planos, etc.).
 - Upload de avatar sem segurar transação Postgres aberta durante I/O de blob/sharp.
 - Shell compartilhado das páginas públicas de auth (`login`, `esqueci-senha`, `redefinir-senha`) — **parcial ✓** (shell + card header + logo + critique login fechados; pendem password fields + login state — Fase 3).
 - Um único módulo de validação/campos de senha reutilizado por convite, reset e perfil.
@@ -78,7 +78,7 @@ flowchart TD
 
 - Consolidar strings de liderança/convite (`CAMPAIGN_LEADERSHIP_*`, `CAMPAIGN_FIRST_ACCESS_HINT`, `CAMPAIGN_LOGIN_SUBTITLE` + mensagem server em `campaignPasswordReset.ts`) numa fonte única com variantes por contexto.
 - **`campaignRoleLabels`** ↔ opções do campo `role` em `CampaignUser.ts` (fonte única `campaignRoleOptions`).
-- Propagar para **`NucleusUpdateFeed.tsx`** e outros `roleLabels` locais quando esses arquivos forem tocados.
+- Propagar para **`MunicipalityUpdateFeed.tsx`** (ex-`NucleusUpdateFeed`) e outros `roleLabels` locais quando esses arquivos forem tocados.
 - **`password.ts` / `profile.ts`:** adotar `getCampaignActionContext()` (`src/utilities/campaignActionContext.ts`) como `supporter.ts` / `actionPlan.ts`.
 
 ### Fase 5 — Opcional / cortável

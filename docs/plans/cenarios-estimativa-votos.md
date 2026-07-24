@@ -1,11 +1,13 @@
 # Cenários de estimativa de votos (pessimista / média / otimista)
 
-Status: entregue (2026-07-23)
-Atualizado em: 2026-07-23 _(entrega A10 + polish overview/Cenário; capture-review-debts: no-op roadmap, gatilho flash)_
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, item A10)
-Impeccable: B — encaixe em forms/lista/mapa/dashboard já existentes (sem rota nova)
-Appetite: ~2 dias eng; migration (pledge + praça) + helpers de agregação + seletor de cenário nas superfícies staff
-Responsável: —
+Status: entregue (2026-07-23; em produção desde 2026-07-23)
+Atualizado em: 2026-07-24 _(entrega A10 + polish overview/Cenário; capture-review-debts: no-op roadmap, gatilho flash)_
+
+> **Nota 2026-07-24:** identificadores `plaza*` citados abaixo foram renomeados para `municipality*` na remodelagem M1 (ex.: `PlazaListOverview` → `MunicipalityListOverview`, `PlazaMapPanel` → `MunicipalityMapPanel`, `PlazaList*Control` → `MunicipalityList*Control`); os nomes no corpo são os da época da entrega.
+> Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A, item A10)
+> Impeccable: B — encaixe em forms/lista/mapa/dashboard já existentes (sem rota nova)
+> Appetite: ~2 dias eng; migration (pledge + praça) + helpers de agregação + seletor de cenário nas superfícies staff
+> Responsável: —
 
 ## Design (Impeccable)
 
@@ -132,7 +134,7 @@ Componentes:
 - **Nota por cenário** (hoje uma `estimateNote`). Revisitar se assessores pedirem justificar só o pessimista vs. o otimista.
 - **Aviso soft vs `voteGoals.minimum` no cenário pessimista.** Revisitar após E8 com totais preenchidos (mesmo gatilho de A9).
 - **Delta semanal por cenário.** Revisitar com C12 (versions no group).
-- **Abstração compartilhada de flash/pending client-side** (hoje local em `PlazaListOverview`). Revisitar quando houver o **2º** flash client-side em `/campanha` (não URL/`useTransition`).
+- **Abstração compartilhada de flash/pending client-side** (hoje local em `MunicipalityListOverview`). Revisitar quando houver o **2º** flash client-side em `/campanha` (não URL/`useTransition` — o `CampaignListPendingBoundary` do hardening cobre pending de navegação, não este flash de eco do servidor).
 
 ## Referências
 

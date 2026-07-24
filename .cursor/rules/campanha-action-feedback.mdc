@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Feel the action
 
-Canonical principle: `PRODUCT.md` § Design Principles — **Feel the action**. Precedents: `ActionPlanFilters` / `PlazaFilters` / `SupporterFilters` (`useTransition` + `data-pending` + `aria-busy` + live region); form submits with `useActionState` pending + `Spinner`.
+Canonical principle: `PRODUCT.md` § Design Principles — **Feel the action**. Precedents: `ActionPlanFilters` / `MunicipalityFilters` / `SupporterFilters` (`useTransition` + `data-pending` + `aria-busy` + live region); shared list pending via `CampaignListPendingBoundary` + `useCampaignListPending` (`CampaignListPending.tsx`, hardening 2026-07-23); form submits with `useActionState` pending + `Spinner`.
 
 When adding or changing an interactive control that triggers navigation, revalidation, or a server action:
 
