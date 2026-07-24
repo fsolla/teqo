@@ -8,6 +8,7 @@ import {
 } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import { createActionPlanRecord } from '@/app/(campaign)/campanha/actions/actionPlan'
 import { actionPlanCreateSchema, actionPlanUpdateSchema } from '@/lib/schemas/actionPlan'
 import config from '@/payload.config'
 import {
@@ -16,6 +17,7 @@ import {
   canUpdateActionPlan,
   getAccessibleLeadershipIds,
 } from '@/utilities/campaignAccess'
+import { parseActionPlanCreateFormData } from '@/utilities/actionPlanFormData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 import { stub } from '../helpers/stub'
@@ -78,6 +80,144 @@ describe('action plan domain', () => {
       status: 'rascunho',
     })
     expect(result.success).toBe(false)
+  })
+
+  it('keeps the recorded origin of a new action plan', () => {
+    const parsed = actionPlanCreateSchema.parse({
+      ...validPlanInput(1),
+      origin: 'pedido_broker',
+    })
+
+    expect(parsed.origin).toBe('pedido_broker')
+  })
+
+  it('parses the origin selected in the action plan form', () => {
+    const formData = new FormData()
+    formData.set('title', 'Caminhada no centro')
+    formData.set('kind', 'caminhada')
+    formData.set('status', 'rascunho')
+    formData.set('municipality', '1')
+    formData.set('origin', 'obrigacao_politica')
+    formData.set('tasksJson', '[]')
+
+    expect(parseActionPlanCreateFormData(formData).origin).toBe('obrigacao_politica')
+  })
+
+  it('parses several demand drafts from the action plan form', () => {
+    const formData = new FormData()
+    formData.set('title', 'Caminhada no centro')
+    formData.set('kind', 'caminhada')
+    formData.set('status', 'rascunho')
+    formData.set('municipality', '1')
+    formData.set('tasksJson', '[]')
+    formData.set(
+      'demandsJson',
+      JSON.stringify([
+        { title: 'Panfletos', kind: 'material' },
+        { title: 'Van', kind: 'transporte', description: 'Levar a equipe.' },
+      ]),
+    )
+
+    expect(parseActionPlanCreateFormData(formData).demands).toEqual([
+      { title: 'Panfletos', kind: 'material' },
+      { title: 'Van', kind: 'transporte', description: 'Levar a equipe.' },
+    ])
+  })
+
+  it('creates several demands with the action plan in one workflow', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+
+    const plan = await createActionPlanRecord(
+      payload,
+      coordinator,
+      {
+        ...validPlanInput(municipality.id),
+        title: fixtures.value('Plano com demandas'),
+        origin: 'dado',
+      },
+      [
+        { title: fixtures.value('Panfletos'), kind: 'material' },
+        {
+          title: fixtures.value('Van para equipe'),
+          kind: 'transporte',
+          description: 'Transporte para o dia da atividade.',
+        },
+      ],
+    )
+    fixtures.own('actionPlan', plan.id)
+
+    const demands = await payload.find({
+      collection: 'campaignDemand',
+      where: { actionPlan: { equals: plan.id } },
+      depth: 0,
+      pagination: false,
+      overrideAccess: true,
+    })
+    demands.docs.forEach((demand) => fixtures.own('campaignDemand', demand.id))
+
+    expect(demands.docs).toHaveLength(2)
+    expect(demands.docs.map((demand) => demand.title)).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Panfletos'),
+        expect.stringContaining('Van para equipe'),
+      ]),
+    )
+    expect(
+      demands.docs.every((demand) => {
+        const demandMunicipality =
+          typeof demand.municipality === 'number' ? demand.municipality : demand.municipality.id
+        return demandMunicipality === municipality.id
+      }),
+    ).toBe(true)
+  })
+
+  it('rolls back the plan and every nested demand when one demand conflicts', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const duplicateTitle = fixtures.value('Demanda já existente')
+    await fixtures.createCampaignDemand({
+      title: duplicateTitle,
+      municipality: municipality.id,
+      createdBy: coordinator.id,
+    })
+    const planTitle = fixtures.value('Plano que deve reverter')
+
+    await expect(
+      createActionPlanRecord(
+        payload,
+        coordinator,
+        {
+          ...validPlanInput(municipality.id),
+          title: planTitle,
+        },
+        [
+          { title: fixtures.value('Primeira demanda temporária'), kind: 'material' },
+          { title: duplicateTitle, kind: 'transporte' },
+        ],
+      ),
+    ).rejects.toThrow()
+
+    const [plans, nestedDemands] = await Promise.all([
+      payload.find({
+        collection: 'actionPlan',
+        where: { title: { equals: planTitle } },
+        depth: 0,
+        pagination: false,
+        overrideAccess: true,
+      }),
+      payload.find({
+        collection: 'campaignDemand',
+        where: { title: { contains: 'Primeira demanda temporária' } },
+        depth: 0,
+        pagination: false,
+        overrideAccess: true,
+      }),
+    ])
+    expect(plans.docs).toHaveLength(0)
+    expect(nestedDemands.docs).toHaveLength(0)
   })
 
   it('scopes create/read/update by campaign role', async () => {

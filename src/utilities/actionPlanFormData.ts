@@ -1,8 +1,12 @@
 import 'server-only'
 
 import {
+  actionPlanDemandDraftsSchema,
   actionPlanKinds,
+  actionPlanOrigins,
   actionPlanStatuses,
+  MAX_ACTION_PLAN_DEMAND_DRAFTS,
+  type ActionPlanDemandDraft,
   type ActionPlanCreateInput,
   type ActionPlanUpdateInput,
 } from '@/lib/schemas/actionPlan'
@@ -49,10 +53,7 @@ const parseTasksFormData = (formData: FormData): ParsedActionPlanTask[] => {
       throw new FormDataBoundaryError('tasksJson', `Informe o título da tarefa ${index + 1}.`)
     }
     if (title.length > 200) {
-      throw new FormDataBoundaryError(
-        'tasksJson',
-        `O título da tarefa ${index + 1} é muito longo.`,
-      )
+      throw new FormDataBoundaryError('tasksJson', `O título da tarefa ${index + 1} é muito longo.`)
     }
     const responsible =
       typeof record.responsible === 'number' &&
@@ -76,6 +77,25 @@ const parseTasksFormData = (formData: FormData): ParsedActionPlanTask[] => {
   })
 }
 
+const parseDemandDraftsFormData = (formData: FormData): ActionPlanDemandDraft[] => {
+  const raw = boundedJsonFormValue(formData, 'demandsJson', 80_000)
+  if (raw === undefined) return []
+  const parsed = actionPlanDemandDraftsSchema.safeParse(raw)
+  if (parsed.success) return parsed.data
+
+  const demandIndex = parsed.error.issues[0]?.path[0]
+  if (typeof demandIndex === 'number') {
+    throw new FormDataBoundaryError('demandsJson', `Demanda ${demandIndex + 1} inválida.`)
+  }
+  if (!Array.isArray(raw) || raw.length > MAX_ACTION_PLAN_DEMAND_DRAFTS) {
+    throw new FormDataBoundaryError(
+      'demandsJson',
+      `Informe no máximo ${MAX_ACTION_PLAN_DEMAND_DRAFTS} demandas válidas.`,
+    )
+  }
+  throw new FormDataBoundaryError('demandsJson', 'Lista de demandas inválida.')
+}
+
 const parseSharedActionPlanFormData = (formData: FormData) => {
   const responsible = nullableRelationshipFormValue(formData, 'responsible')
   const leadership = nullableRelationshipFormValue(formData, 'leadership')
@@ -83,6 +103,7 @@ const parseSharedActionPlanFormData = (formData: FormData) => {
   return {
     title: optionalFormText(formData, 'title') ?? '',
     kind: optionalFormText(formData, 'kind') as (typeof actionPlanKinds)[number],
+    origin: optionalFormText(formData, 'origin') as (typeof actionPlanOrigins)[number] | undefined,
     status: optionalFormText(formData, 'status') as (typeof actionPlanStatuses)[number] | undefined,
     description: optionalFormText(formData, 'description'),
     deputyPresent: checkboxFormValue(formData, 'deputyPresent'),
@@ -95,10 +116,17 @@ const parseSharedActionPlanFormData = (formData: FormData) => {
     responsible,
     leadership,
     tasks: parseTasksFormData(formData),
+    demands: parseDemandDraftsFormData(formData),
   }
 }
 
-export const parseActionPlanCreateFormData = (formData: FormData): ActionPlanCreateInput => {
+export type ParsedActionPlanCreateFormData = ActionPlanCreateInput & {
+  demands: ActionPlanDemandDraft[]
+}
+
+export const parseActionPlanCreateFormData = (
+  formData: FormData,
+): ParsedActionPlanCreateFormData => {
   const shared = parseSharedActionPlanFormData(formData)
   const advisorIds = repeatedRelationshipFormValues(formData, 'advisors')
 
@@ -112,7 +140,13 @@ export const parseActionPlanCreateFormData = (formData: FormData): ActionPlanCre
   }
 }
 
-export const parseActionPlanUpdateFormData = (formData: FormData): ActionPlanUpdateInput => {
+export type ParsedActionPlanUpdateFormData = ActionPlanUpdateInput & {
+  demands: ActionPlanDemandDraft[]
+}
+
+export const parseActionPlanUpdateFormData = (
+  formData: FormData,
+): ParsedActionPlanUpdateFormData => {
   const shared = parseSharedActionPlanFormData(formData)
   const advisorIds = repeatedRelationshipFormValues(formData, 'advisors')
   // Checkboxes only submit when checked, so a hidden marker distinguishes

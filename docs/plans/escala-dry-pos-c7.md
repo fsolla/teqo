@@ -1,8 +1,10 @@
 # Escala e DRY pós-C7 (planos de ação / agenda)
 
 Status: registrado no roadmap (fases pendentes)
-Atualizado em: 2026-07-19
+Atualizado em: 2026-07-24 (extensão pós-C12 absorvida)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha C, item C11)
+Appetite da extensão pós-C12: ~0,5–1 dia eng, sem migration
+Impeccable: B — ajustes encaixados nos forms/detalhe existentes
 Responsável: —
 
 ## Contexto
@@ -22,6 +24,8 @@ Duas passagens `/simplify` (pré- e pós-rebase com `main`/C8–C9) marcaram com
 9. **Lista de coordenadores sem paginação no form.** `getEligibleNucleusCoordinatorOptions` com `pagination: false` em novo/editar — O(staff) por page view (aceitável no MVP, débito se o time crescer).
 10. **`mutationKind` sem tipo compartilhado.** Magic strings `'taskToggle' | 'appendUpdate'` em actions e `ActionPlan.ts` — risco de drift.
 11. **DRY menor:** `searchContactComboboxOptions` ainda inline em `contactSearchActions.ts` (liderança já em `utilities/`); label de liderança duplicada entre `actionPlanLeadershipOptions` e `toActionPlanFormViewModel`; `firstValue` local em `actionPlanDetailTabUi.ts` (já existe em `campaignListUrl.ts`); loader combinado da lista `/campanha/planos` (precedente: `loadSupportersPageData` no C9).
+12. **Opções de plano sem limite na nova demanda (C12).** `loadActionPlanOptions` usa `pagination: false` e serializa todos os planos acessíveis no `DemandForm`; custo de RSC/hidratação/DOM cresce com a agenda.
+13. **Demandas vinculadas sem paginação no detalhe do plano (C12).** A visão geral carrega e renderiza todas as demandas para somar custo e listar vínculos; aceitável no volume atual, mas sem teto.
 
 **Explicitamente fora (revisores pediram skip no simplify / já coberto em outro item):**
 
@@ -31,12 +35,16 @@ Duas passagens `/simplify` (pré- e pós-rebase com `main`/C8–C9) marcaram com
 - **Renomear `NucleusTerritoryFields.tsx` → `CampaignTerritoryFields.tsx`** — fricção de descoberta; fill-in, não bloqueia escala.
 - **View-model dedup form ↔ detalhe** — refactor grande; só se surgir terceiro consumidor.
 - **Testes E2E da vertical** — fora do escopo deste item de escala/DRY.
+- **Serialização de `demandsJson` a cada tecla** — máximo de 20 drafts torna o custo limitado; reavaliar somente se houver input lag medido.
+- **Bulk de demandas criadas com o plano** — manter Local API sequencial para preservar hooks/access/slug; reavaliar se p95 da transação passar de 500 ms.
+- **Helper compartilhado create/update para drafts** — só extrair quando surgir o 3º call site; dois loops curtos não justificam uma abstração.
 
 ## Objetivos
 
 - Agenda (`/campanha/planos`) permanece responsiva com dezenas de atualizações e tarefas por plano — medir antes de migration; feed append-only só se o volume justificar.
 - Detalhe e edição seguem o mesmo padrão de loaders que núcleos (orquestrador + tab data).
 - Hot paths de mutação (toggle tarefa, append update) minimizam bytes lidos/escritos sem quebrar locks transacionais nem RBAC.
+- Seletores/listas do vínculo plano↔demanda permanecem limitados em payload e DOM quando a agenda crescer.
 - Guardrails: `overrideAccess: false` com `user`; sem novo `Consent`; migrations só na Fase 1 condicional (`actionPlanUpdate`).
 
 ## Decisões travadas
@@ -47,6 +55,7 @@ Duas passagens `/simplify` (pré- e pós-rebase com `main`/C8–C9) marcaram com
 - **Fase 1 condicional respeita congelamento ~20/09** — se entrar perto da reta final, adiar para pós-eleição; Fases 2–4 não exigem migration.
 - **Cortável** se a agenda permanecer pequena (poucos planos, feeds curtos). Fase 1 é a mais cortável (e a única com migration). Fases 2–3 são as mais valiosas se houver uso real da agenda antes de 16/08.
 - **i18n e naming** (AGENTS.md): identificadores em inglês (`loadActionPlanDetailPageData`, `loadCampaignUserNamesById`, `ACTION_PLAN_MUTATION_KIND`), strings visíveis em pt-BR inalteradas.
+- **Fase 6 pós-C12 é condicional e sem schema.** Opções: manter listas integrais | picker remoto + paginação | data-grid. **Recomendação:** picker remoto filtrado por município e lista paginada/limitada no card, só quando houver volume real; **rejeitado:** data-grid ou bulk SQL que contorne hooks.
 
 ## Questões em aberto
 
@@ -67,6 +76,7 @@ flowchart TD
   C7 --> F1
   F1 -.condicional volume.-> F5["Fase 5 — Loader lista planos"]
   F3 -.opcional.-> F5
+  C12["C12 Registro-fundação ✓"] --> F6["Fase 6 — Plano ↔ demandas<br/>picker + paginação condicional"]
 ```
 
 ### Fase 1 — Escala do feed de atualizações _(condicional)_
@@ -100,11 +110,30 @@ flowchart TD
 - `loadActionPlansPageData` combinando canonical URL + list (precedente `loadSupportersPageData`).
 - Entra só se a lista ganhar filtros/overview pesados; cortável.
 
+### Fase 6 (condicional) — Escala do vínculo plano ↔ demandas
+
+- Trocar `loadActionPlanOptions(... pagination: false)` por picker server-backed após o município ser escolhido; consulta seleciona somente `id`, `title` e `municipality`.
+- Paginar ou limitar o card “Demandas vinculadas” no detalhe do plano, preservando a soma de custo em aggregate separado e link para a lista filtrada.
+- Gatilhos: ≥100 planos acessíveis a um ator, ≥50 demandas num plano, payload RSC >100 KB ou latência p95 >500 ms.
+- Sem migration; reusar `AsyncSearchCombobox`, access existente e o shell de paginação. Não criar segundo sistema de picker/lista.
+
+## Já resolvido no simplify/critique (não reabrir)
+
+- Snapshot JSON da migration C12 gerado e verificado sem schema drift.
+- Schema dos drafts derivado de `campaignDemandCreateSchema`; opções de sinal derivadas dos enums canônicos.
+- Casts/estado/nullabilidade redundantes removidos; query params e access reutilizam helpers/política existentes.
+- Município do plano cacheado em `req.context` durante creates aninhados, removendo leituras repetidas na mesma transação.
+
+## Dados → decisão → apresentação
+
+Dados: N/A — esta extensão reduz payload, I/O e DOM; não cria métrica nem nova apresentação analítica.
+
 **Migration:** somente Fase 1b (condicional). Demais fases sem schema.
 
 ## Dependências
 
-- **Dura:** C7 Escala e DRY pós-C3 — entregue (merge em `main` pendente do PR atual).
+- **Dura:** C7 Escala e DRY pós-C3 — entregue.
+- **Dura da Fase 6:** C12 Registro-fundação — entregue em código.
 - **Suave:** C8 `pg_trgm` em `contact` — já em `main`; acelera typeahead se Fase 4 adotar o padrão.
 - **Suave:** C10 `errorProps` — paralelo; não bloqueia C11 (escopos distintos).
 - Reuso: `src/utilities/actionPlanPageData.ts`, `actionPlanDetailPageData.ts`, `actionPlanViewModels.ts`, `src/app/(campaign)/campanha/actions/actionPlan.ts`, `src/collections/ActionPlan.ts`, padrão `loadNucleusDetailPageData`, `campaignListUrl.ts`, `contactSearchQuery.ts`.

@@ -10,6 +10,7 @@ import { importExportPlugin } from '@payloadcms/plugin-import-export'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { pt } from 'payload/i18n/pt'
 import { ActionPlan } from './collections/ActionPlan'
+import { AllocationDecision } from './collections/AllocationDecision'
 import { CampaignDemand } from './collections/CampaignDemand'
 import { CampaignInvite } from './collections/CampaignInvite'
 import { CampaignUser } from './collections/CampaignUser'
@@ -89,6 +90,7 @@ export default buildConfig({
     Organization,
     StateDeputy,
     VotePledge,
+    AllocationDecision,
     CampaignDemand,
     Supporter,
     SupporterImportBatch,

@@ -4,7 +4,9 @@ import type { Payload } from 'payload'
 
 import {
   actionPlanCreateSchema,
+  actionPlanDemandDraftsSchema,
   actionPlanUpdateSchema,
+  type ActionPlanDemandDraft,
   type ActionPlanCreateInput,
   type ActionPlanUpdateInput,
 } from '@/lib/schemas/actionPlan'
@@ -22,31 +24,60 @@ export const createActionPlanRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: ActionPlanCreateInput,
+  demandDrafts: ActionPlanDemandDraft[] = [],
 ) => {
   const data = actionPlanCreateSchema.parse(input)
+  const demands = actionPlanDemandDraftsSchema.parse(demandDrafts)
 
-  return payload.create({
-    collection: 'actionPlan',
-    data: hookFilledCreateData<'actionPlan'>(data),
-    depth: 0,
-    user: actor,
-    overrideAccess: false,
-  })
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await reloadCampaignActor(payload, actor, req)
+      const plan = await payload.create({
+        collection: 'actionPlan',
+        data: hookFilledCreateData<'actionPlan'>(data),
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      for (const demand of demands) {
+        await payload.create({
+          collection: 'campaignDemand',
+          data: hookFilledCreateData<'campaignDemand'>({
+            ...demand,
+            municipality: data.municipality,
+            actionPlan: plan.id,
+          }),
+          depth: 0,
+          user: currentActor,
+          overrideAccess: false,
+          req,
+        })
+      }
+
+      return plan
+    },
+    { beginFailureMessage: 'Não foi possível iniciar a criação do plano.' },
+  )
 }
 
 export const updateActionPlanRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: ActionPlanUpdateInput,
+  demandDrafts: ActionPlanDemandDraft[] = [],
 ) => {
   const { id, ...data } = actionPlanUpdateSchema.parse(input)
+  const demands = actionPlanDemandDraftsSchema.parse(demandDrafts)
 
   return withPayloadTransaction(
     payload,
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
 
-      return payload.update({
+      const plan = await payload.update({
         collection: 'actionPlan',
         id,
         data,
@@ -55,6 +86,25 @@ export const updateActionPlanRecord = async (
         overrideAccess: false,
         req,
       })
+
+      const municipality =
+        typeof plan.municipality === 'number' ? plan.municipality : plan.municipality.id
+      for (const demand of demands) {
+        await payload.create({
+          collection: 'campaignDemand',
+          data: hookFilledCreateData<'campaignDemand'>({
+            ...demand,
+            municipality,
+            actionPlan: plan.id,
+          }),
+          depth: 0,
+          user: currentActor,
+          overrideAccess: false,
+          req,
+        })
+      }
+
+      return plan
     },
     { beginFailureMessage: 'Não foi possível iniciar a atualização do plano.' },
   )
@@ -211,14 +261,20 @@ export const registerActionPlanResult = async (
   )
 }
 
-export const createActionPlan = async (input: ActionPlanCreateInput) => {
+export const createActionPlan = async (
+  input: ActionPlanCreateInput,
+  demandDrafts: ActionPlanDemandDraft[] = [],
+) => {
   const { payload, actor } = await getCampaignActionContext()
-  return createActionPlanRecord(payload, actor, input)
+  return createActionPlanRecord(payload, actor, input, demandDrafts)
 }
 
-export const updateActionPlan = async (input: ActionPlanUpdateInput) => {
+export const updateActionPlan = async (
+  input: ActionPlanUpdateInput,
+  demandDrafts: ActionPlanDemandDraft[] = [],
+) => {
   const { payload, actor } = await getCampaignActionContext()
-  return updateActionPlanRecord(payload, actor, input)
+  return updateActionPlanRecord(payload, actor, input, demandDrafts)
 }
 
 export const cancelActionPlan = async (id: number) => {

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { campaignDemandCreateSchema } from '@/lib/schemas/campaignDemandInput'
 import {
   positiveRelationshipId,
   trimmedNullableText,
@@ -30,6 +31,15 @@ export const actionPlanStatuses = [
   'cancelado',
 ] as const
 
+export const actionPlanOrigins = ['dado', 'pedido_broker', 'obrigacao_politica'] as const
+export type ActionPlanOrigin = (typeof actionPlanOrigins)[number]
+
+export const actionPlanOriginLabels: Record<ActionPlanOrigin, string> = {
+  dado: 'Baseado em dado',
+  pedido_broker: 'Pedido de broker',
+  obrigacao_politica: 'Obrigação política',
+}
+
 export const actionPlanKindLabels: Record<(typeof actionPlanKinds)[number], string> = {
   caminhada: 'Caminhada',
   comicio: 'Comício',
@@ -55,6 +65,19 @@ export const actionPlanStatusLabels: Record<(typeof actionPlanStatuses)[number],
 }
 
 export const MAX_ACTION_PLAN_ORGANIZATIONS = 20
+export const MAX_ACTION_PLAN_DEMAND_DRAFTS = 20
+
+export const actionPlanDemandDraftSchema = campaignDemandCreateSchema.pick({
+  title: true,
+  kind: true,
+  description: true,
+})
+
+export const actionPlanDemandDraftsSchema = z
+  .array(actionPlanDemandDraftSchema)
+  .max(MAX_ACTION_PLAN_DEMAND_DRAFTS)
+
+export type ActionPlanDemandDraft = z.input<typeof actionPlanDemandDraftSchema>
 
 const taskSchema = z.object({
   title: z.string().trim().min(1).max(200),
@@ -79,6 +102,7 @@ const actionPlanFieldsSchema = z.object({
   responsible: positiveRelationshipId.optional(),
   leadership: positiveRelationshipId.optional(),
   tasks: z.array(taskSchema).optional(),
+  origin: z.enum(actionPlanOrigins).optional(),
 })
 
 const validateSchedule = (

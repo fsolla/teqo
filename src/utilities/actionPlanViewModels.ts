@@ -1,4 +1,5 @@
 import type { ActionPlan, CampaignUser, Contact, Organization, Municipality } from '@/payload-types'
+import type { ActionPlanOrigin } from '@/lib/schemas/actionPlan'
 import type { ActionPlanDetailTab } from '@/utilities/actionPlanDetailTabUi'
 import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 
@@ -86,6 +87,7 @@ export const actionPlanFormSelect = {
   title: true,
   slug: true,
   kind: true,
+  origin: true,
   status: true,
   description: true,
   deputyPresent: true,
@@ -114,6 +116,7 @@ export type ActionPlanFormViewModel = {
   title: string
   slug: string
   kind: ActionPlan['kind']
+  origin: ActionPlanOrigin
   status: ActionPlan['status']
   description: string | null
   deputyPresent: boolean
@@ -130,15 +133,14 @@ export type ActionPlanFormViewModel = {
 }
 
 const relationshipIds = (value: unknown): number[] =>
-  (Array.isArray(value) ? value : [])
-    .map(relationshipId)
-    .filter((id): id is number => id !== null)
+  (Array.isArray(value) ? value : []).map(relationshipId).filter((id): id is number => id !== null)
 
 export const toActionPlanFormViewModel = (plan: ActionPlan): ActionPlanFormViewModel => ({
   id: plan.id,
   title: plan.title,
   slug: plan.slug,
   kind: plan.kind,
+  origin: plan.origin ?? 'dado',
   status: plan.status,
   description: plan.description ?? null,
   deputyPresent: Boolean(plan.deputyPresent),
@@ -187,6 +189,7 @@ export const actionPlanDetailContextSelect = {
   title: true,
   slug: true,
   kind: true,
+  origin: true,
   status: true,
   description: true,
   deputyPresent: true,
@@ -254,6 +257,7 @@ export type ActionPlanDetailViewModel = {
   title: string
   slug: string
   kind: ActionPlan['kind']
+  origin: ActionPlanOrigin
   status: ActionPlan['status']
   description: string | null
   deputyPresent: boolean
@@ -297,8 +301,7 @@ const mapActionPlanUpdates = (
     return {
       id: update.id ?? null,
       body: update.body,
-      authorName:
-        populatedName ?? (authorId ? (authorNamesById.get(authorId) ?? null) : null),
+      authorName: populatedName ?? (authorId ? (authorNamesById.get(authorId) ?? null) : null),
       createdAt: update.createdAt ?? null,
     }
   })
@@ -325,6 +328,7 @@ export const toActionPlanDetailViewModel = (
     title: plan.title,
     slug: plan.slug,
     kind: plan.kind,
+    origin: plan.origin ?? 'dado',
     status: plan.status,
     description: plan.description ?? null,
     deputyPresent: Boolean(plan.deputyPresent),
@@ -356,8 +360,7 @@ export const toActionPlanDetailViewModel = (
       total: plan.taskTotal ?? 0,
     },
     tasks: activeTab === 'tasks' ? mapActionPlanTasks(plan) : [],
-    updates:
-      activeTab === 'updates' ? mapActionPlanUpdates(plan, authorNamesById) : [],
+    updates: activeTab === 'updates' ? mapActionPlanUpdates(plan, authorNamesById) : [],
     result: mapActionPlanResult(plan),
     createdByName: relationshipName(plan.createdBy),
     updatedAt: plan.updatedAt,

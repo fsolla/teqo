@@ -1,6 +1,6 @@
 import type { Payload } from 'payload'
 
-import type { ActionPlan, CampaignUser } from '@/payload-types'
+import type { ActionPlan, CampaignDemand, CampaignUser } from '@/payload-types'
 import type { ActionPlanDetailTab } from '@/utilities/actionPlanDetailTabUi'
 import {
   actionPlanMunicipalitySummary,
@@ -10,6 +10,15 @@ import {
 } from '@/utilities/actionPlanViewModels'
 import { relationshipId } from '@/utilities/relationship'
 import type { AccessibleActionPlanContext } from '@/utilities/actionPlanPageData'
+
+type ActionPlanDemandSummary = {
+  id: number
+  title: string
+  slug: string
+  kind: CampaignDemand['kind']
+  status: CampaignDemand['status']
+  cost: number | null
+}
 
 const loadActionPlanUpdateAuthorNames = async (
   payload: Pick<Payload, 'find'>,
@@ -59,7 +68,9 @@ const loadActionPlanMunicipalitySummaryById = async (
     overrideAccess: true,
   })
   const municipality = result.docs[0]
-  return municipality ? { id: municipality.id, name: municipality.name, slug: municipality.slug } : null
+  return municipality
+    ? { id: municipality.id, name: municipality.name, slug: municipality.slug }
+    : null
 }
 
 export const getActionPlanDetailPageData = async (
@@ -67,16 +78,57 @@ export const getActionPlanDetailPageData = async (
   user: CampaignUser,
   context: AccessibleActionPlanContext,
   activeTab: ActionPlanDetailTab,
-): Promise<ActionPlanDetailViewModel> => {
+): Promise<
+  ActionPlanDetailViewModel & {
+    demands: ActionPlanDemandSummary[]
+    demandCostTotal: number
+  }
+> => {
   const municipalityId = relationshipId(context.document.municipality)
-  const municipalitySummary =
-    actionPlanMunicipalitySummary(context.document.municipality) ??
-    (municipalityId ? await loadActionPlanMunicipalitySummaryById(payload, municipalityId) : null)
-
-  const authorNames =
+  const populatedMunicipalitySummary =
+    actionPlanMunicipalitySummary(context.document.municipality) ?? null
+  const municipalitySummaryPromise = populatedMunicipalitySummary
+    ? Promise.resolve(populatedMunicipalitySummary)
+    : municipalityId
+      ? loadActionPlanMunicipalitySummaryById(payload, municipalityId)
+      : Promise.resolve(null)
+  const authorNamesPromise =
     activeTab === 'updates' && context.document.updates?.length
-      ? await loadActionPlanUpdateAuthorNames(payload, user, context.document.updates)
-      : new Map<number, string>()
+      ? loadActionPlanUpdateAuthorNames(payload, user, context.document.updates)
+      : Promise.resolve(new Map<number, string>())
+  const demandSummariesPromise: Promise<ActionPlanDemandSummary[]> =
+    activeTab === 'overview'
+      ? payload
+          .find({
+            collection: 'campaignDemand',
+            where: { actionPlan: { equals: context.id } },
+            depth: 0,
+            pagination: false,
+            sort: 'createdAt',
+            select: { title: true, slug: true, kind: true, status: true, cost: true },
+            user,
+            overrideAccess: false,
+          })
+          .then(({ docs }) =>
+            docs.map((demand) => ({
+              id: demand.id,
+              title: demand.title,
+              slug: demand.slug,
+              kind: demand.kind,
+              status: demand.status,
+              cost: demand.cost ?? null,
+            })),
+          )
+      : Promise.resolve([])
+  const [municipalitySummary, authorNames, demands] = await Promise.all([
+    municipalitySummaryPromise,
+    authorNamesPromise,
+    demandSummariesPromise,
+  ])
 
-  return toActionPlanDetailViewModel(context.document, activeTab, authorNames, municipalitySummary)
+  return {
+    ...toActionPlanDetailViewModel(context.document, activeTab, authorNames, municipalitySummary),
+    demands,
+    demandCostTotal: demands.reduce((total, demand) => total + (demand.cost ?? 0), 0),
+  }
 }

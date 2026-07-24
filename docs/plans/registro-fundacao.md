@@ -1,7 +1,7 @@
 # C12 — Registro-fundação (trajetória, sinais tipados, origem de visita, decisões ex-ante)
 
-Status: rascunho
-Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios + hardening)
+Status: entregue em código
+Atualizado em: 2026-07-24 (implementação, migration, testes e simplify concluídos)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Inteligência de campanha", C12; plano-mestre [inteligencia-campanha.md](inteligencia-campanha.md))
 Impeccable: B — sem rota nova; campos novos em forms existentes (`municipalityUpdate`, `actionPlan`) + collection admin-hidden
 Appetite: ~2 dias eng; 1 migration consolidada
@@ -27,7 +27,7 @@ FU4 do relatório: backtest compara o que se sabia antes com o que aconteceu dep
 
 - **G1 — trajetória de pledge:** `versions: true` (sem drafts) em `votePledge`; leitura da série por município/liderança para o delta semanal (E8) e o backtest (E15).
 - **G2 — sinais tipados:** `municipalityUpdate.kind` ganha `sinal`; campos condicionais `signalType` (`invasao | esfriamento | visita_adversario | proposta_broker | outro`), `signalSource` (texto curto), `triangulated` (checkbox staff-only). Continua imutável e mantendo `municipality.lastUpdateAt`.
-- **G3 — origem/custo de plano:** `actionPlan.origin` (`dado | pedido_broker | obrigacao_politica`, default `dado`, staff-only) + `resourceCost` (number, staff-only, opcional).
+- **G3 — origem/custo de plano:** `actionPlan.origin` (`dado | pedido_broker | obrigacao_politica`, default `dado`, staff-only) + custo derivado de `campaignDemand.cost` nas demandas vinculadas ao plano. A relação opcional `campaignDemand.actionPlan` já existe e só aceita o mesmo município.
 - **G4 — decisões ex-ante:** collection `allocationDecision` (admin group `Campanha`, `admin.hidden` como `supporterImportBatch`): `municipality`, `patternId` (texto — P1…K-C ou `manual`), `suggestion` (texto), `decision` (`aceita | descartada | adiada`), `alternativeReading` (obrigatório ao descartar), `snapshot` (json — classificação/números no momento), `decidedBy` (derivado), `note`. Imutável após criação.
 - Access: tudo staff; `leader` não lê sinais staff-only (`triangulated`), não lê `allocationDecision`, não lê `origin`/`resourceCost` — mesmo padrão `canReadCampaignStaffField`.
 - Garantia transversal: nenhuma action nova sobrescreve histórico; escritas multi-collection com `withPayloadTransaction` + `req`.
@@ -38,7 +38,7 @@ FU4 do relatório: backtest compara o que se sabia antes com o que aconteceu dep
 - **Histórico via Payload `versions`, não collection de snapshots.** Menos código, admin de graça, migration gerada. **Rejeitado:** `pledgeSnapshot` própria (duplica access/hooks); campo `history` json (não consultável, cresce sem índice).
 - **Decisão registrada é collection própria e imutável** — é o dado que o backtest paga caro para ter; mudanças de nível N0–N4 (E14) também gravam aqui, um mecanismo só. **Rejeitado:** log em `municipalityUpdate` (semântica de feed de campo, autoria de liderança possível — decisão é de coordenação); campo no `municipality` (sobrescreve).
 - **Sinal nasce no form existente de atualização** (custo de digitação mínimo; "o campo dita, a sede registra" continua possível por quem tiver acesso). **Rejeitado:** collection nova de sinais (segundo feed; FU1 pede agregação, não outra caixa).
-- **i18n e naming:** `signalType`, `signalSource`, `triangulated`, `origin`, `resourceCost`, `allocationDecision`, `patternId`, `alternativeReading`; enums como valores de dado em pt (`invasao`, `pedido_broker`, `aceita`) por paridade com enums existentes (`semanal`, `alta`); labels pt-BR.
+- **i18n e naming:** `signalType`, `signalSource`, `triangulated`, `origin`, `allocationDecision`, `patternId`, `alternativeReading`; enums como valores de dado em pt (`invasao`, `pedido_broker`, `aceita`) por paridade com enums existentes (`semanal`, `alta`); labels pt-BR.
 
 ## Questões em aberto
 
@@ -51,7 +51,7 @@ FU4 do relatório: backtest compara o que se sabia antes com o que aconteceu dep
 flowchart LR
     Pledge["votePledge + versions"]
     Update["municipalityUpdate kind=sinal<br/>(signalType/source/triangulated)"]
-    Plan["actionPlan origin/resourceCost"]
+    Plan["actionPlan origin + demandas/custo"]
     Dec["allocationDecision<br/>(imutável, staff)"]
     Series["leitores de série<br/>(E8 delta · E11 gatilhos · E15 backtest)"]
     Pledge --> Series
@@ -63,17 +63,23 @@ flowchart LR
 Componentes:
 
 - **`src/collections/VotePledge.ts`**: `versions: true`; sem mudança de campos.
-- **`src/collections/MunicipalityUpdate.ts`**: opção `sinal` no kind + 3 campos condicionais (`admin.condition` como os campos de `semanal`); access staff no `triangulated`.
-- **`src/collections/ActionPlan.ts`**: `origin` + `resourceCost` com `canReadCampaignStaffField`.
+- **`src/collections/MunicipalityUpdate.ts`**: opção `sinal` no kind + `body` curto, `signalType`, `signalSource` e `triangulated` condicional; access staff no `triangulated`.
+- **`src/collections/ActionPlan.ts`**: `origin` com `canReadCampaignStaffField`; custo é lido das `campaignDemand` vinculadas, sem duplicar valor no plano.
 - **`src/collections/AllocationDecision.ts`** (nova): imutável (update/delete admin-only), `createdBy` derivado no hook (padrão `Supporter.createdBy`).
-- **`src/utilities/pledgeHistory.ts`**: leitura da série de versions por município (consumida por E8/E15).
-- **Actions:** `recordAllocationDecision` em `src/app/(campaign)/campanha/actions/` (usada por E11; utilizável manualmente antes disso), com `withPayloadTransaction`.
+- **Leituras e actions downstream:** E8/E15 definem o leitor de versions conforme seu contrato; E11 define a action de criar `allocationDecision` junto ao fluxo de sugestão. C12 entrega as estruturas e seus invariantes, sem abstrações sem consumidor.
 - **Migration**: `pnpm migrate:create add_intel_foundation` — tabelas de versions do `votePledge`, campos novos, collection `allocationDecision`.
 
 ## Dependências
 
 - Dura: nenhuma pendente — deploy da remodelagem aplicado em produção (2026-07-23). Nenhuma de outro plano do programa (é a fundação; E8 usa se existir).
 - Reusa: `withPayloadTransaction` (`payloadTransaction.ts`), `campaignAccess.ts`, padrão `createdBy` de `Supporter.ts`, `municipalityUpdatePageData.ts` (feed).
+
+## Dados → decisão → apresentação
+
+- **Dados:** sinais de rede, causalidade da visita e custo de demandas ligadas ao plano.
+- **Decisão:** registrar um fato de campo datado, distinguir visita justificada de pedido político e julgar o recurso já comprometido com cada plano.
+- **Forma:** formulário curto e feed cronológico com badges de tipo/fonte/triangulação; lista de demandas e soma em R$ no detalhe do plano. Sem KPI, gráfico ou mapa nesta fatia.
+- **Anti-goals:** segundo feed, formulário de inteligência longo, dashboard de custos ou métrica estadual absoluta.
 
 ## Não escopo
 
@@ -89,6 +95,11 @@ Componentes:
 
 - **Versions em `municipality` (histórico de estratégia).** Gatilho: E15 precisar de foto além do `allocationDecision.snapshot` em caso real.
 - **Import de sinais via WhatsApp/copy-paste estruturado.** Gatilho: volume real de sinais >20/semana com reclamação de digitação.
+
+## Revisões
+
+- **2026-07-24:** G3 passa a reutilizar `campaignDemand.actionPlan` + `campaignDemand.cost`, já existentes; removido `resourceCost` duplicado no plano. Leitores de versions e action de decisão seguem para E8/E15 e E11, respectivamente.
+- **2026-07-24:** implementação concluída com migration consolidada `20260724_180000_add_campaign_foundation_records`, testes de integração e jornada E2E; débitos de escala plano↔demandas absorvidos em C11.
 
 ## Referências
 

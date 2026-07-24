@@ -1,11 +1,11 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 
 import type { RelationOption } from '@/components/campaign/RelationMultiSelect'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
@@ -13,17 +13,36 @@ import { Textarea } from '@/components/ui/textarea'
 import { campaignDemandKindLabels, campaignDemandKinds } from '@/lib/schemas/campaignDemand'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
+import type { ActionPlanRelationOption } from '@/utilities/campaignRelationOptions'
 
 type DemandFormProps = {
   municipalityOptions: RelationOption[]
+  actionPlanOptions: ActionPlanRelationOption[]
+  initialMunicipalityId?: number
+  initialActionPlanId?: number
   formAction: (
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
 }
 
-export const DemandForm = ({ municipalityOptions, formAction }: DemandFormProps) => {
+export const DemandForm = ({
+  municipalityOptions,
+  actionPlanOptions,
+  initialMunicipalityId,
+  initialActionPlanId,
+  formAction,
+}: DemandFormProps) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
+  const [municipalityId, setMunicipalityId] = useState(
+    initialMunicipalityId ? String(initialMunicipalityId) : '',
+  )
+  const [actionPlanId, setActionPlanId] = useState(
+    initialActionPlanId ? String(initialActionPlanId) : '',
+  )
+  const visibleActionPlans = municipalityId
+    ? actionPlanOptions.filter((plan) => String(plan.municipalityId) === municipalityId)
+    : actionPlanOptions
 
   return (
     <form action={submitAction} className="flex max-w-2xl flex-col gap-4">
@@ -63,7 +82,17 @@ export const DemandForm = ({ municipalityOptions, formAction }: DemandFormProps)
             id="demand-municipality"
             name="municipalityId"
             required
-            defaultValue=""
+            value={municipalityId}
+            onChange={(event) => {
+              const nextMunicipalityId = event.target.value
+              setMunicipalityId(nextMunicipalityId)
+              const selectedPlan = actionPlanOptions.find(
+                (plan) => String(plan.id) === actionPlanId,
+              )
+              if (selectedPlan && String(selectedPlan.municipalityId) !== nextMunicipalityId) {
+                setActionPlanId('')
+              }
+            }}
             className="min-h-11 w-full"
           >
             <NativeSelectOption value="" disabled>
@@ -80,6 +109,34 @@ export const DemandForm = ({ municipalityOptions, formAction }: DemandFormProps)
           ) : null}
         </Field>
       </div>
+      <Field>
+        <FieldLabel htmlFor="demand-action-plan">Plano de ação relacionado</FieldLabel>
+        <NativeSelect
+          id="demand-action-plan"
+          name="actionPlanId"
+          value={actionPlanId}
+          onChange={(event) => {
+            const nextPlanId = event.target.value
+            setActionPlanId(nextPlanId)
+            const selectedPlan = actionPlanOptions.find((plan) => String(plan.id) === nextPlanId)
+            if (selectedPlan) setMunicipalityId(String(selectedPlan.municipalityId))
+          }}
+          className="min-h-11 w-full"
+        >
+          <NativeSelectOption value="">Nenhum plano</NativeSelectOption>
+          {visibleActionPlans.map((option) => (
+            <NativeSelectOption key={option.id} value={String(option.id)}>
+              {option.name}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+        <FieldDescription>
+          Opcional. Ao escolher um plano, o município correspondente é preenchido automaticamente.
+        </FieldDescription>
+        {fieldError(state.fieldErrors, 'actionPlan') ? (
+          <FieldError>{fieldError(state.fieldErrors, 'actionPlan')}</FieldError>
+        ) : null}
+      </Field>
       <Field>
         <FieldLabel htmlFor="demand-description">Detalhe a necessidade</FieldLabel>
         <Textarea id="demand-description" name="description" rows={4} maxLength={4000} />

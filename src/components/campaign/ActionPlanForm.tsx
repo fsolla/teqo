@@ -4,12 +4,10 @@ import { useActionState, useState } from 'react'
 import Link from 'next/link'
 
 import { AsyncSearchCombobox } from '@/components/campaign/AsyncSearchCombobox'
+import { ActionPlanDemandFields } from '@/components/campaign/ActionPlanDemandFields'
 import { ContactCombobox, type ContactComboboxOption } from '@/components/campaign/ContactCombobox'
 import { ActionPlanTaskFields } from '@/components/campaign/ActionPlanTaskFields'
-import {
-  RelationMultiSelect,
-  type RelationOption,
-} from '@/components/campaign/RelationMultiSelect'
+import { RelationMultiSelect, type RelationOption } from '@/components/campaign/RelationMultiSelect'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -29,7 +27,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import { Spinner } from '@/components/ui/Spinner'
 import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
-import { actionPlanKindLabels, actionPlanStatusLabels } from '@/lib/schemas/actionPlan'
+import {
+  actionPlanKindLabels,
+  actionPlanOriginLabels,
+  actionPlanStatusLabels,
+} from '@/lib/schemas/actionPlan'
 import type { ActionPlanLeadershipOption } from '@/utilities/actionPlanLeadershipOptions'
 import type { ActionPlanFormViewModel } from '@/utilities/actionPlanViewModels'
 import { fieldError } from '@/utilities/campaignFormFields'
@@ -118,7 +120,9 @@ export const ActionPlanFormFields = ({
                 aria-invalid={Boolean(errorFor('title'))}
                 aria-describedby={errorFor('title') ? 'title-error' : undefined}
               />
-              {errorFor('title') ? <FieldError id="title-error">{errorFor('title')}</FieldError> : null}
+              {errorFor('title') ? (
+                <FieldError id="title-error">{errorFor('title')}</FieldError>
+              ) : null}
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field data-invalid={Boolean(errorFor('kind'))}>
@@ -139,7 +143,9 @@ export const ActionPlanFormFields = ({
                     </NativeSelectOption>
                   ))}
                 </NativeSelect>
-                {errorFor('kind') ? <FieldError id="kind-error">{errorFor('kind')}</FieldError> : null}
+                {errorFor('kind') ? (
+                  <FieldError id="kind-error">{errorFor('kind')}</FieldError>
+                ) : null}
               </Field>
               <Field>
                 <FieldLegend>Status *</FieldLegend>
@@ -162,12 +168,33 @@ export const ActionPlanFormFields = ({
                   </>
                 ) : (
                   <FieldDescription>
-                    Status atual: {actionPlanStatusLabels[plan?.status ?? ''] ?? plan?.status}. Use as
-                    ações do detalhe para marcar como realizado ou cancelado.
+                    Status atual: {actionPlanStatusLabels[plan?.status ?? ''] ?? plan?.status}. Use
+                    as ações do detalhe para marcar como realizado ou cancelado.
                   </FieldDescription>
                 )}
               </Field>
             </div>
+            <Field data-invalid={Boolean(errorFor('origin'))}>
+              <FieldLabel htmlFor="origin">Origem da ação</FieldLabel>
+              <NativeSelect
+                id="origin"
+                name="origin"
+                defaultValue={plan?.origin ?? 'dado'}
+                className="w-full **:data-[slot=native-select]:min-h-11 sm:max-w-sm"
+                aria-invalid={Boolean(errorFor('origin'))}
+              >
+                {Object.entries(actionPlanOriginLabels).map(([value, label]) => (
+                  <NativeSelectOption key={value} value={value}>
+                    {label}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+              <FieldDescription>
+                Registra se o plano nasceu da análise de dados, de um pedido de articulação ou de um
+                compromisso político.
+              </FieldDescription>
+              {errorFor('origin') ? <FieldError>{errorFor('origin')}</FieldError> : null}
+            </Field>
             <Field data-invalid={Boolean(errorFor('description'))}>
               <FieldLabel htmlFor="description">Descrição</FieldLabel>
               <Textarea
@@ -200,9 +227,7 @@ export const ActionPlanFormFields = ({
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-3">
             <Field data-invalid={Boolean(errorFor('startAt'))}>
-              <FieldLabel htmlFor="startAt">
-                Início {status !== 'rascunho' ? '*' : null}
-              </FieldLabel>
+              <FieldLabel htmlFor="startAt">Início {status !== 'rascunho' ? '*' : null}</FieldLabel>
               <Input
                 id="startAt"
                 name="startAt"
@@ -228,7 +253,9 @@ export const ActionPlanFormFields = ({
                 aria-invalid={Boolean(errorFor('endAt'))}
                 aria-describedby={errorFor('endAt') ? 'endAt-error' : undefined}
               />
-              {errorFor('endAt') ? <FieldError id="endAt-error">{errorFor('endAt')}</FieldError> : null}
+              {errorFor('endAt') ? (
+                <FieldError id="endAt-error">{errorFor('endAt')}</FieldError>
+              ) : null}
             </Field>
             <Field data-invalid={Boolean(errorFor('deadline'))}>
               <FieldLabel htmlFor="deadline">Prazo de conclusão</FieldLabel>
@@ -273,7 +300,9 @@ export const ActionPlanFormFields = ({
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
-              {errorFor('municipality') ? <FieldError id="municipality-error">{errorFor('municipality')}</FieldError> : null}
+              {errorFor('municipality') ? (
+                <FieldError id="municipality-error">{errorFor('municipality')}</FieldError>
+              ) : null}
             </Field>
             <Field data-invalid={Boolean(errorFor('locality'))}>
               <FieldLabel htmlFor="locality">Local (bairro, endereço ou referência)</FieldLabel>
@@ -397,6 +426,15 @@ export const ActionPlanFormFields = ({
             searchContacts={searchContacts}
             error={errorFor('tasksJson')}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Demandas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ActionPlanDemandFields error={errorFor('demandsJson')} />
         </CardContent>
       </Card>
     </FieldGroup>

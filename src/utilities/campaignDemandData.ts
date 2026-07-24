@@ -2,9 +2,9 @@ import type { Payload } from 'payload'
 
 import type { CampaignDemandKind, CampaignDemandStatus } from '@/lib/schemas/campaignDemand'
 import { campaignDemandKinds, campaignDemandStatuses } from '@/lib/schemas/campaignDemand'
-import type { CampaignDemand, CampaignUser } from '@/payload-types'
+import type { ActionPlan, CampaignDemand, CampaignUser } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { relationshipId } from '@/utilities/relationship'
+import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 
 export const demandPageSize = 25
 
@@ -94,7 +94,10 @@ const resolveMunicipalityAndRequesterNames = async (
 
   return {
     municipalityBy: new Map(
-      municipalities.docs.map((municipality) => [municipality.id, { name: municipality.name, slug: municipality.slug }]),
+      municipalities.docs.map((municipality) => [
+        municipality.id,
+        { name: municipality.name, slug: municipality.slug },
+      ]),
     ),
     requesterBy: new Map(
       leaderships.docs.map((leadership) => {
@@ -193,6 +196,7 @@ export type DemandDetailViewModel = DemandRowViewModel & {
     createdAt: string | null
   }>
   canLeaderEdit: boolean
+  actionPlan: { title: string; slug: string } | null
 }
 
 export const loadDemandDetail = async (
@@ -212,7 +216,9 @@ export const loadDemandDetail = async (
   const demand = result.docs[0] as CampaignDemand | undefined
   if (!demand) return null
 
-  const { municipalityBy, requesterBy } = await resolveMunicipalityAndRequesterNames(payload, [demand])
+  const { municipalityBy, requesterBy } = await resolveMunicipalityAndRequesterNames(payload, [
+    demand,
+  ])
   const row = toDemandRow(demand, municipalityBy, requesterBy)
 
   const authorIDs = [
@@ -263,5 +269,8 @@ export const loadDemandDetail = async (
         }))
       : [],
     canLeaderEdit: user.role === 'leader' && demand.status === 'aberta',
+    actionPlan: isPopulatedRelationship<ActionPlan>(demand.actionPlan)
+      ? { title: demand.actionPlan.title, slug: demand.actionPlan.slug }
+      : null,
   }
 }

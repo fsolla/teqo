@@ -1,5 +1,8 @@
 import { Badge } from '@/components/ui/Badge'
-import { municipalityUpdateKindLabels } from '@/lib/schemas/municipalityUpdate'
+import {
+  municipalitySignalTypeLabels,
+  municipalityUpdateKindLabels,
+} from '@/lib/schemas/municipalityUpdate'
 import type { MunicipalityUpdateViewModel } from '@/utilities/municipalityUpdatePageData'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
@@ -13,6 +16,7 @@ const kindVariant = {
   semanal: 'secondary',
   urgente: 'destructive',
   nota: 'outline',
+  sinal: 'default',
 } as const
 
 export const MunicipalityUpdateFeed = ({ updates }: { updates: MunicipalityUpdateViewModel[] }) => {
@@ -53,6 +57,13 @@ export const MunicipalityUpdateFeed = ({ updates }: { updates: MunicipalityUpdat
           ) : (
             <p className="whitespace-pre-wrap text-sm text-muted-foreground">{update.body}</p>
           )}
+          {update.kind === 'sinal' ? (
+            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+              {update.signalType ? <Badge variant="outline">{municipalitySignalTypeLabels[update.signalType]}</Badge> : null}
+              {update.signalSource ? <span>Fonte: {update.signalSource}</span> : null}
+              {update.triangulated ? <span>Triangulado</span> : null}
+            </div>
+          ) : null}
           {update.activeVolunteers != null || update.newSupports != null ? (
             <p className="text-sm text-muted-foreground">
               {update.activeVolunteers != null

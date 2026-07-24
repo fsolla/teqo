@@ -99,6 +99,23 @@ describe('campaign municipality update domain', () => {
         body: '   ',
       }).success,
     ).toBe(false)
+    expect(
+      municipalityUpdateCreateSchema.safeParse({
+        municipality: 1,
+        kind: 'sinal',
+        body: 'Ex-prefeito retirou o apoio na feira.',
+        signalType: 'esfriamento',
+        signalSource: 'Assessora local',
+      }).success,
+    ).toBe(true)
+    expect(
+      municipalityUpdateCreateSchema.safeParse({
+        municipality: 1,
+        kind: 'sinal',
+        body: 'Visita adversária confirmada.',
+        signalSource: 'Equipe local',
+      }).success,
+    ).toBe(false)
   })
 
   it('strips forged author and timestamps from input', () => {
