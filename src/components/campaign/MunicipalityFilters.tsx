@@ -13,9 +13,14 @@ import { normalizedText } from '@/utilities/campaignListUrl'
 import {
   buildMunicipalityFiltersKey,
   buildMunicipalityListHref,
+  DEFAULT_MUNICIPALITY_LIST_SORT_DIR,
+  DEFAULT_MUNICIPALITY_LIST_SORT_KEY,
   municipalityKindLabels,
   municipalityListCoverageLabels,
+  municipalityListSortOptions,
+  parseMunicipalitySortValue,
   politicalTrendLabels,
+  serializeMunicipalitySortValue,
   shouldUpdateMunicipalitySearchUrl,
   type MunicipalityListState,
 } from '@/utilities/municipalityUi'
@@ -222,6 +227,30 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
             </Field>
           </>
         ) : null}
+        <Field className="md:hidden">
+          <FieldLabel htmlFor="municipality-sort">Ordenar</FieldLabel>
+          <NativeSelect
+            id="municipality-sort"
+            value={serializeMunicipalitySortValue(
+              state.sort ?? DEFAULT_MUNICIPALITY_LIST_SORT_KEY,
+              state.dir ?? DEFAULT_MUNICIPALITY_LIST_SORT_DIR,
+            )}
+            onChange={(event) => {
+              const parsed = parseMunicipalitySortValue(event.target.value)
+              if (parsed) commitNavigation({ sort: parsed.key, dir: parsed.dir })
+            }}
+            className="min-h-11 w-full"
+          >
+            {municipalityListSortOptions.map(({ key, dir, label }) => (
+              <NativeSelectOption
+                key={serializeMunicipalitySortValue(key, dir)}
+                value={serializeMunicipalitySortValue(key, dir)}
+              >
+                {label}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </Field>
         {hasActiveFilters ? (
           <div className="flex shrink-0 gap-2 md:self-end">
             <Button

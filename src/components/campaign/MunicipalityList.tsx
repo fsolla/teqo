@@ -1,6 +1,8 @@
-import { CircleAlertIcon, CircleCheckIcon } from 'lucide-react'
+import { ChevronDownIcon, CircleAlertIcon, CircleCheckIcon } from 'lucide-react'
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 
+import { CampaignTransitionAnchor } from '@/components/campaign/CampaignListPending'
 import { MunicipalityAdvisorAvatarStack } from '@/components/campaign/MunicipalityAdvisorAvatarStack'
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/MunicipalityListAdvisorsControl'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/MunicipalityListExpectedVotesControl'
@@ -15,11 +17,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
+import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
+  buildMunicipalitySortHref,
+  DEFAULT_MUNICIPALITY_LIST_SORT_DIR,
+  DEFAULT_MUNICIPALITY_LIST_SORT_KEY,
   formatMunicipalityGeographyLabel,
   municipalityKindLabels,
+  municipalityListSortLabels,
   municipalityPriorityLabels,
+  type MunicipalityListSortKey,
+  type MunicipalityListState,
 } from '@/utilities/municipalityUi'
 import type {
   EligibleAdvisorOption,
@@ -43,7 +52,65 @@ export type MunicipalityListProps = {
   advisorOptions: EligibleAdvisorOption[]
   trendFormAction: MunicipalityStaffFormAction
   advisorsFormAction: MunicipalityStaffFormAction
+  state: MunicipalityListState
 }
+
+type MunicipalitySortableHeadProps = {
+  state: MunicipalityListState
+  sortKey: MunicipalityListSortKey
+  children: ReactNode
+  className?: string
+  align?: 'left' | 'center'
+}
+
+const MunicipalitySortableHead = ({
+  state,
+  sortKey,
+  children,
+  className,
+  align = 'left',
+}: MunicipalitySortableHeadProps) => {
+  const active = (state.sort ?? DEFAULT_MUNICIPALITY_LIST_SORT_KEY) === sortKey
+  const dir = active ? state.dir ?? DEFAULT_MUNICIPALITY_LIST_SORT_DIR : undefined
+  const isAscending = dir === 'asc'
+
+  return (
+    <TableHead
+      className={cn(align === 'center' && 'text-center', className)}
+      aria-sort={active ? (isAscending ? 'ascending' : 'descending') : 'none'}
+    >
+      <CampaignTransitionAnchor
+        href={buildMunicipalitySortHref(state, sortKey)}
+        className="inline-flex items-center gap-1"
+        aria-label={`Ordenar por ${municipalityListSortLabels[sortKey]}`}
+      >
+        {children}
+        <ChevronDownIcon
+          aria-hidden="true"
+          className={cn(
+            'h-4 w-4 transition-transform',
+            active ? 'text-foreground' : 'text-muted-foreground/50',
+            active && isAscending && '-rotate-180',
+          )}
+        />
+      </CampaignTransitionAnchor>
+    </TableHead>
+  )
+}
+
+const advisorEntries = (
+  municipality: MunicipalityListViewModel,
+  advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>,
+) =>
+  municipality.advisorIDs.flatMap((id) => {
+    const advisor = advisorNamesById.get(id)
+    return advisor ? [{ id: advisor.id, name: advisor.name }] : []
+  })
+
+const advisorNames = (
+  municipality: MunicipalityListViewModel,
+  advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>,
+): string[] => advisorEntries(municipality, advisorNamesById).map((advisor) => advisor.name)
 
 export const MunicipalityList = ({
   municipalities,
@@ -53,21 +120,12 @@ export const MunicipalityList = ({
   advisorOptions,
   trendFormAction,
   advisorsFormAction,
-}: MunicipalityListProps) => {
-  const advisorEntries = (municipality: MunicipalityListViewModel) =>
-    municipality.advisorIDs.flatMap((id) => {
-      const advisor = advisorNamesById.get(id)
-      return advisor ? [{ id: advisor.id, name: advisor.name }] : []
-    })
-
-  const advisorNames = (municipality: MunicipalityListViewModel): string[] =>
-    advisorEntries(municipality).map((advisor) => advisor.name)
-
-  return (
-    <>
-      <div data-view="mobile-cards" className="flex flex-col gap-4 md:hidden">
+  state,
+}: MunicipalityListProps) => (
+  <>
+    <div data-view="mobile-cards" className="flex flex-col gap-4 md:hidden">
         {municipalities.map((municipality) => {
-          const names = advisorNames(municipality)
+          const names = advisorNames(municipality, advisorNamesById)
           return (
             <article key={municipality.id} className="flex flex-col gap-3 rounded-xl border p-4">
               <div className="flex items-start justify-between gap-2">
@@ -138,19 +196,35 @@ export const MunicipalityList = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Praça</TableHead>
-              <TableHead>Território de identidade</TableHead>
-              <TableHead>Tipo</TableHead>
+              <MunicipalitySortableHead state={state} sortKey="name">
+                Praça
+              </MunicipalitySortableHead>
+              <MunicipalitySortableHead state={state} sortKey="region">
+                Território de identidade
+              </MunicipalitySortableHead>
+              <MunicipalitySortableHead state={state} sortKey="kind">
+                Tipo
+              </MunicipalitySortableHead>
               {isStaffView ? (
                 <>
                   <TableHead>Assessores</TableHead>
-                  <TableHead>Tendência</TableHead>
-                  <TableHead className="text-center">Votos estimados</TableHead>
-                  <TableHead>Última atualização</TableHead>
-                  <TableHead>Cobertura</TableHead>
+                  <MunicipalitySortableHead state={state} sortKey="trend">
+                    Tendência
+                  </MunicipalitySortableHead>
+                  <MunicipalitySortableHead state={state} sortKey="expectedVotes" align="center">
+                    Votos estimados
+                  </MunicipalitySortableHead>
+                  <MunicipalitySortableHead state={state} sortKey="lastUpdateAt">
+                    Última atualização
+                  </MunicipalitySortableHead>
+                  <MunicipalitySortableHead state={state} sortKey="coverage">
+                    Cobertura
+                  </MunicipalitySortableHead>
                 </>
               ) : (
-                <TableHead>Última atualização</TableHead>
+                <MunicipalitySortableHead state={state} sortKey="lastUpdateAt">
+                  Última atualização
+                </MunicipalitySortableHead>
               )}
             </TableRow>
           </TableHeader>
@@ -190,7 +264,9 @@ export const MunicipalityList = ({
                             formAction={advisorsFormAction}
                           />
                         ) : (
-                          <MunicipalityAdvisorAvatarStack advisors={advisorEntries(municipality)} />
+                          <MunicipalityAdvisorAvatarStack
+                            advisors={advisorEntries(municipality, advisorNamesById)}
+                          />
                         )}
                       </TableCell>
                       <TableCell>
@@ -242,4 +318,3 @@ export const MunicipalityList = ({
       </div>
     </>
   )
-}

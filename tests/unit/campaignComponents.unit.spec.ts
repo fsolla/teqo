@@ -4,6 +4,8 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
+import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime'
+
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { MunicipalityList } from '@/components/campaign/MunicipalityList'
 import { SupportStatusBadge } from '@/components/campaign/SupportStatusBadge'
@@ -12,6 +14,7 @@ import { Progress } from '@/components/ui/Progress'
 import { Toggle } from '@/components/ui/Toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
+import { stub } from '../helpers/stub'
 import type { MunicipalityAdvisorSummary, MunicipalityListViewModel } from '@/utilities/municipalityViewModels'
 import { toVoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
 import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
@@ -26,7 +29,20 @@ const municipalityListDefaultProps = {
   advisorOptions: [],
   trendFormAction: noopListFormAction,
   advisorsFormAction: noopListFormAction,
+  state: { page: 1 },
 }
+
+const mockAppRouter = stub<Parameters<typeof AppRouterContext.Provider>[0]['value']>({
+  push: () => {},
+  replace: () => {},
+  refresh: () => {},
+  forward: () => {},
+  back: () => {},
+  prefetch: () => Promise.resolve(),
+})
+
+const renderWithAppRouter = (element: React.ReactElement) =>
+  renderToStaticMarkup(createElement(AppRouterContext.Provider, { value: mockAppRouter }, element))
 
 describe('campaign visual foundation', () => {
   it('exposes the current progress value to assistive technology', () => {
@@ -162,7 +178,7 @@ describe('campaign visual foundation', () => {
       },
     ]
 
-    const html = renderToStaticMarkup(
+    const html = renderWithAppRouter(
       createElement(MunicipalityList, {
         municipalities,
         advisorNamesById: new Map([[advisor.id, advisor]]),
@@ -183,7 +199,7 @@ describe('campaign visual foundation', () => {
   })
 
   it('hides leadership coverage subline when pledges only have declared votes', () => {
-    const html = renderToStaticMarkup(
+    const html = renderWithAppRouter(
       createElement(MunicipalityList, {
         municipalities: [
           {
@@ -221,7 +237,7 @@ describe('campaign visual foundation', () => {
   })
 
   it('hides staff-only pledge and coverage columns from the leader view', () => {
-    const html = renderToStaticMarkup(
+    const html = renderWithAppRouter(
       createElement(MunicipalityList, {
         municipalities: [
           {
