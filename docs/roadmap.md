@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-24 (B15 ordenação por coluna na lista; fill-in Cenário junto aos filtros — [plano](plans/cenario-junto-filtros-municipios.md); E4R ✓; E17 ✓ tabela TI no Início; B14; janela 1: smoke, A11, B15, R6, E8)
+Atualizado em: 2026-07-24 (fill-in ícone+tooltip de prioridade na lista — [plano](plans/icone-prioridade-lista-municipios.md); B15; fill-in Cenário junto aos filtros; E4R ✓; E17 ✓; B14; janela 1: smoke, A11, B15, R6, E8)
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
 ## Âncoras do calendário eleitoral 2026 (Res. TSE 23.760/2026)
@@ -87,6 +87,7 @@ O discovery literatura→persona→entrevista ([relatório aprovado](research/re
 
 ### Fill-ins abertos
 
+- **Ícone de prioridade na lista** em `/campanha/municipios` — trocar Badge “Prioritária” por ícone Flag + tooltip “Município prioritário” (hover) na coluna do nome · ~0,25d · Impeccable B · [plano](plans/icone-prioridade-lista-municipios.md)
 - **Cenário junto aos filtros** em `/campanha/municipios` — mover `VoteEstimateScenarioField` para a fileira de `MunicipalityFilters`; overview só consome o contexto · ~0,25–0,5d · Impeccable B · [plano](plans/cenario-junto-filtros-municipios.md)
 - **O0+** escala/DRY pós-Onda 0 · [plano](plans/escala-dry-pos-onda0.md)
 - **RS+** auth read leve + shells de senha · [plano](plans/escala-dry-pos-reset-senha-perfil.md)
@@ -159,7 +160,7 @@ flowchart TD
     B8F2 -.ZE Salvador.-> B14n
 ```
 
-Paralelizáveis agora: **B15** (sort por coluna na lista; barato, desbloqueia UX de A11), **A11** (semana de onboarding; E4R ✓ seedou o quadro; A11 soft-dep B15), **E8** (A10 ✓ e remodelagem em produção), **C12** (paralelo a E8), **E16** (compõe o existente), **B14** (atalho geo no Início; soft B8 F2 só para ZE Salvador), fill-ins (Cenário junto aos filtros, O0+, RS+). **D3** só após smoke + folga e só se o fluxo sede-digita (C12) não absorver os deltas do ZAP (não compete com E8/E9).
+Paralelizáveis agora: **B15** (sort por coluna na lista; barato, desbloqueia UX de A11), **A11** (semana de onboarding; E4R ✓ seedou o quadro; A11 soft-dep B15), **E8** (A10 ✓ e remodelagem em produção), **C12** (paralelo a E8), **E16** (compõe o existente), **B14** (atalho geo no Início; soft B8 F2 só para ZE Salvador), fill-ins (ícone de prioridade na lista, Cenário junto aos filtros, O0+, RS+). **D3** só após smoke + folga e só se o fluxo sede-digita (C12) não absorver os deltas do ZAP (não compete com E8/E9).
 
 ### Sequência por janela (só pendentes)
 
