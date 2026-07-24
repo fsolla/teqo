@@ -11,7 +11,7 @@ import type { CampaignFormActionState } from '@/utilities/campaignFormActionErro
 import { fieldError } from '@/utilities/campaignFormFields'
 
 type DeclareVotesFormProps = {
-  plazaID: number
+  municipalityID: number
   /** Present when staff declare on behalf of a leadership. */
   leadershipID?: number
   currentDeclaredVotes: number | null
@@ -22,7 +22,7 @@ type DeclareVotesFormProps = {
 }
 
 export const DeclareVotesForm = ({
-  plazaID,
+  municipalityID,
   leadershipID,
   currentDeclaredVotes,
   formAction,
@@ -31,17 +31,19 @@ export const DeclareVotesForm = ({
 
   return (
     <form action={submitAction} className="flex flex-col gap-3">
-      <input type="hidden" name="plazaId" value={plazaID} />
+      <input type="hidden" name="municipalityId" value={municipalityID} />
       {leadershipID !== undefined ? (
         <input type="hidden" name="leadershipId" value={leadershipID} />
       ) : null}
       <Field>
-        <FieldLabel htmlFor={`declare-votes-${plazaID}-${leadershipID ?? 'own'}`}>
-          Quantos votos você está trazendo nesta Praça?
+        <FieldLabel htmlFor={`declare-votes-${municipalityID}-${leadershipID ?? 'own'}`}>
+          {leadershipID !== undefined
+            ? 'Quantos votos a liderança traz neste município?'
+            : 'Quantos votos você está trazendo neste município?'}
         </FieldLabel>
         <div className="flex gap-2">
           <Input
-            id={`declare-votes-${plazaID}-${leadershipID ?? 'own'}`}
+            id={`declare-votes-${municipalityID}-${leadershipID ?? 'own'}`}
             name="declaredVotes"
             type="number"
             min={0}

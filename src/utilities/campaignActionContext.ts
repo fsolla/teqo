@@ -4,6 +4,7 @@ import config from '@payload-config'
 import { getPayload, type Payload } from 'payload'
 
 import type { CampaignUser } from '@/payload-types'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 
@@ -36,6 +37,37 @@ export const reloadCampaignActor = (
     overrideAccess: true,
     req,
   })
+
+/**
+ * Reloads the actor's fresh role and asserts they are campaign staff
+ * (coordinator, advisor, or candidate — matching collection-level access via
+ * `isCampaignStaff`). Throws `errorMessage` otherwise.
+ */
+export const reloadStaffActor = async (
+  payload: CampaignActorPayload,
+  actor: CampaignUser,
+  errorMessage: string,
+  req?: PayloadTransactionRequest,
+): Promise<CampaignUser> => {
+  const currentActor = await reloadCampaignActor(payload, actor, req)
+  if (!isCampaignStaff(currentActor)) throw new Error(errorMessage)
+  return currentActor
+}
+
+/**
+ * Reloads the actor's fresh role and asserts they are the coordinator.
+ * Throws `errorMessage` otherwise.
+ */
+export const reloadCoordinatorActor = async (
+  payload: CampaignActorPayload,
+  actor: CampaignUser,
+  errorMessage: string,
+  req?: PayloadTransactionRequest,
+): Promise<CampaignUser> => {
+  const currentActor = await reloadCampaignActor(payload, actor, req)
+  if (currentActor.role !== 'coordinator') throw new Error(errorMessage)
+  return currentActor
+}
 
 export const getCampaignActionContext = async (): Promise<CampaignActionContext> => {
   const [payload, actor] = await Promise.all([getPayload({ config }), requireCampaignUser()])

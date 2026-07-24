@@ -40,7 +40,7 @@ const exists = async (
     | 'votePledge'
     | 'campaignDemand'
     | 'organization'
-    | 'plazaUpdate',
+    | 'municipalityUpdate',
   id: number,
 ): Promise<boolean> => {
   const result = await payload.find({
@@ -65,7 +65,7 @@ describe('campaign integration fixtures', () => {
         createdID = (await fixtures.createCampaignUser('coordinator')).id
         await fixtures.createLeadership({
           contact: 999_999_999,
-          plazas: [999_999_999],
+          municipalities: [999_999_999],
         })
       }),
     ).rejects.toThrow()
@@ -102,25 +102,25 @@ describe('campaign integration fixtures', () => {
     expect(await exists('consent', consentID)).toBe(false)
   })
 
-  it('cleans the full plaza-scoped graph and resets touched plaza fields', async () => {
+  it('cleans the full municipality-scoped graph and resets touched municipality fields', async () => {
     let leadershipID = 0
     let pledgeID = 0
     let demandID = 0
     let organizationID = 0
     let updateID = 0
-    let plazaID = 0
+    let municipalityID = 0
 
     await withCampaignFixtures(payload, async (fixtures) => {
       const coordinator = await fixtures.createCampaignUser('coordinator')
       const advisor = await fixtures.createCampaignUser('advisor')
       const contact = await fixtures.createContact()
-      const plaza = await fixtures.getPlaza()
-      plazaID = plaza.id
+      const municipality = await fixtures.getMunicipality()
+      municipalityID = municipality.id
 
-      await fixtures.assignPlazaAdvisors(plaza, [advisor])
+      await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
       await payload.update({
-        collection: 'plaza',
-        id: plaza.id,
+        collection: 'municipality',
+        id: municipality.id,
         data: {
           priority: 'alta',
           voteGoals: { good: 100, regular: 50, minimum: 10 },
@@ -131,24 +131,24 @@ describe('campaign integration fixtures', () => {
         depth: 0,
       })
 
-      const organization = await fixtures.createOrganization({ plazas: [plaza.id] })
+      const organization = await fixtures.createOrganization({ municipalities: [municipality.id] })
       const leadership = await fixtures.createLeadership({
         contact,
-        plazas: [plaza.id],
+        municipalities: [municipality.id],
         organizations: [organization.id],
         createdBy: coordinator,
       })
       const pledge = await fixtures.createVotePledge({
         leadership,
-        plaza,
+        municipality,
         declaredVotes: 120,
       })
       const demand = await fixtures.createCampaignDemand({
-        plaza,
+        municipality,
         leadership,
         createdBy: coordinator,
       })
-      const update = await fixtures.createPlazaUpdate({ plaza, author: coordinator })
+      const update = await fixtures.createMunicipalityUpdate({ municipality, author: coordinator })
 
       leadershipID = leadership.id
       pledgeID = pledge.id
@@ -161,16 +161,16 @@ describe('campaign integration fixtures', () => {
     expect(await exists('votePledge', pledgeID)).toBe(false)
     expect(await exists('campaignDemand', demandID)).toBe(false)
     expect(await exists('organization', organizationID)).toBe(false)
-    expect(await exists('plazaUpdate', updateID)).toBe(false)
+    expect(await exists('municipalityUpdate', updateID)).toBe(false)
 
-    const plaza = await payload.findByID({ collection: 'plaza', id: plazaID, depth: 0 })
-    expect(plaza.advisors ?? []).toEqual([])
-    expect(plaza.priority).toBe('normal')
-    expect(plaza.voteGoals).toMatchObject({ good: null, regular: null, minimum: null })
-    expect(plaza.strengths ?? []).toEqual([])
-    expect(plaza.risks ?? []).toEqual([])
-    expect(plaza.nextSteps ?? null).toBeNull()
-    expect(plaza.lastUpdateAt ?? null).toBeNull()
+    const municipality = await payload.findByID({ collection: 'municipality', id: municipalityID, depth: 0 })
+    expect(municipality.advisors ?? []).toEqual([])
+    expect(municipality.priority).toBe('normal')
+    expect(municipality.voteGoals).toMatchObject({ good: null, regular: null, minimum: null })
+    expect(municipality.strengths ?? []).toEqual([])
+    expect(municipality.risks ?? []).toEqual([])
+    expect(municipality.nextSteps ?? null).toBeNull()
+    expect(municipality.lastUpdateAt ?? null).toBeNull()
   })
 
   it('tracks admin users and ordinary consents created through the fixture payload', async () => {
@@ -307,10 +307,10 @@ describe('campaign integration fixtures', () => {
     try {
       await withCampaignFixtures(payload, async (fixtures) => {
         const coordinator = await fixtures.createCampaignUser('coordinator')
-        const plaza = await fixtures.getPlaza()
+        const municipality = await fixtures.getMunicipality()
         await fixtures.createLeadership({
           contact: sentinel,
-          plazas: [plaza.id],
+          municipalities: [municipality.id],
           createdBy: coordinator,
         })
       })
@@ -352,18 +352,18 @@ describe('campaign integration fixtures', () => {
     }
   })
 
-  it('hands out distinct seeded plazas to isolated parallel builders', async () => {
+  it('hands out distinct seeded municipalities to isolated parallel builders', async () => {
     const first = createCampaignFixtures(payload)
     const second = createCampaignFixtures(payload)
-    const [firstPlaza, secondPlaza, firstContact, secondContact] = await Promise.all([
-      first.getPlaza(),
-      second.getPlaza(),
+    const [firstMunicipality, secondMunicipality, firstContact, secondContact] = await Promise.all([
+      first.getMunicipality(),
+      second.getMunicipality(),
       first.createContact(),
       second.createContact(),
     ])
 
     expect(first.runID).not.toBe(second.runID)
-    expect(firstPlaza.id).not.toBe(secondPlaza.id)
+    expect(firstMunicipality.id).not.toBe(secondMunicipality.id)
     await first.cleanup()
     expect(await exists('contact', firstContact.id)).toBe(false)
     expect(await exists('contact', secondContact.id)).toBe(true)
@@ -374,13 +374,13 @@ describe('campaign integration fixtures', () => {
   it('makes cleanup idempotent and leaves zero owned rows', async () => {
     const fixtures = createCampaignFixtures(payload)
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const plaza = await fixtures.getPlaza()
-    await fixtures.assignPlazaAdvisors(plaza, [coordinator])
+    const municipality = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(municipality, [coordinator])
     await fixtures.cleanup()
     await fixtures.cleanup()
 
     await expect(fixtures.expectNoOwnedRows()).resolves.toBeUndefined()
-    const persistedPlaza = await payload.findByID({ collection: 'plaza', id: plaza.id, depth: 0 })
-    expect(persistedPlaza.advisors ?? []).toEqual([])
+    const persistedMunicipality = await payload.findByID({ collection: 'municipality', id: municipality.id, depth: 0 })
+    expect(persistedMunicipality.advisors ?? []).toEqual([])
   })
 })

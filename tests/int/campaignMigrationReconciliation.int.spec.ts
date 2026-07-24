@@ -17,7 +17,9 @@ const { Pool } = require('pg') as {
   }
 }
 
-const adminUrl = 'postgresql://teqo:teqo@localhost:5432/postgres'
+const testDatabaseUrl =
+  process.env.DATABASE_URL ?? 'postgresql://teqo:teqo@localhost:5432/teqo_test'
+const adminUrl = testDatabaseUrl.replace(/\/[^/]+$/, '/postgres')
 const consolidatedName = '20260718_010733_consolidate_campaign_schema'
 let databaseSequence = 0
 let databaseName = ''
@@ -73,7 +75,7 @@ beforeEach(async () => {
   await adminPool.end()
 
   databasePool = new Pool({
-    connectionString: `postgresql://teqo:teqo@localhost:5432/${databaseName}`,
+    connectionString: testDatabaseUrl.replace(/\/[^/]+$/, `/${databaseName}`),
   })
   database = drizzle(databasePool as never)
 
@@ -156,9 +158,9 @@ describe('campaign migration existing-schema reconciliation', () => {
     120_000,
   )
 
-  // NOTE: the pre-remodel "empty path" rollback test (plazaRemodel.down →
-  // consolidated.down → original.down) is intentionally absent: the plaza
-  // remodel down is currently broken — `DROP TABLE "plaza" CASCADE` already
+  // NOTE: the pre-remodel "empty path" rollback test (municipalityRemodel.down →
+  // consolidated.down → original.down) is intentionally absent: the municipality
+  // remodel down is currently broken — `DROP TABLE "municipality" CASCADE` already
   // cascades the supporter/action_plan/locked-documents FKs that the script
   // then tries to DROP CONSTRAINT explicitly, so the rollback always aborts.
   // Restore that coverage once the migration down uses IF EXISTS (or drops

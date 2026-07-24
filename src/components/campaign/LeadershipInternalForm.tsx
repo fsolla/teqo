@@ -36,19 +36,21 @@ const supportStatusLabels: Record<(typeof leadershipSupportStatuses)[number], st
 
 type LeadershipInternalFormProps = {
   leadership: LeadershipDetailViewModel
-  plazaOptions: RelationOption[]
+  municipalityOptions: RelationOption[]
   organizationOptions: RelationOption[]
+  stateDeputyOptions: RelationOption[]
   formAction: (
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
 }
 
-/** Staff-only internal evaluation + links (plazas, organizations). */
+/** Staff-only internal evaluation + links (municipalities, organizations). */
 export const LeadershipInternalForm = ({
   leadership,
-  plazaOptions,
+  municipalityOptions,
   organizationOptions,
+  stateDeputyOptions,
   formAction,
 }: LeadershipInternalFormProps) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
@@ -58,11 +60,11 @@ export const LeadershipInternalForm = ({
       <input type="hidden" name="leadershipId" value={leadership.id} />
 
       <RelationMultiSelect
-        name="plazas"
+        name="municipalities"
         label="Praças em que atua"
-        options={plazaOptions}
-        initialSelectedIDs={leadership.plazaIDs}
-        error={fieldError(state.fieldErrors, 'plazas')}
+        options={municipalityOptions}
+        initialSelectedIDs={leadership.municipalityIDs}
+        error={fieldError(state.fieldErrors, 'municipalities')}
         placeholder="Adicionar Praça…"
       />
 
@@ -73,6 +75,15 @@ export const LeadershipInternalForm = ({
         initialSelectedIDs={leadership.organizationIDs}
         error={fieldError(state.fieldErrors, 'organizations')}
         placeholder="Adicionar organização…"
+      />
+
+      <RelationMultiSelect
+        name="stateDeputies"
+        label="Dobradinhas"
+        options={stateDeputyOptions}
+        initialSelectedIDs={leadership.stateDeputyIDs}
+        error={fieldError(state.fieldErrors, 'stateDeputies')}
+        placeholder="Adicionar dobradinha…"
       />
 
       <div className="grid gap-4 sm:grid-cols-2">

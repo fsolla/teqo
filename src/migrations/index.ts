@@ -20,6 +20,9 @@ import * as migration_20260721_133444_add_plaza_expected_votes from './20260721_
 import * as migration_20260721_133531_add_petition_facebook_pixel_id from './20260721_133531_add_petition_facebook_pixel_id'
 import * as migration_20260723_025513_add_import_export_plugin from './20260723_025513_add_import_export_plugin'
 import * as migration_20260723_124200_add_vote_estimate_scenarios from './20260723_124200_add_vote_estimate_scenarios'
+import * as migration_20260723_200000_remodel_municipalities from './20260723_200000_remodel_municipalities'
+import * as migration_20260723_201000_add_state_deputy from './20260723_201000_add_state_deputy'
+import * as migration_20260723_202000_reconcile_municipality_remodel from './20260723_202000_reconcile_municipality_remodel'
 
 export const migrations = [
   {
@@ -131,5 +134,20 @@ export const migrations = [
     up: migration_20260723_124200_add_vote_estimate_scenarios.up,
     down: migration_20260723_124200_add_vote_estimate_scenarios.down,
     name: '20260723_124200_add_vote_estimate_scenarios',
+  },
+  {
+    up: migration_20260723_200000_remodel_municipalities.up,
+    down: migration_20260723_200000_remodel_municipalities.down,
+    name: '20260723_200000_remodel_municipalities',
+  },
+  {
+    up: migration_20260723_201000_add_state_deputy.up,
+    down: migration_20260723_201000_add_state_deputy.down,
+    name: '20260723_201000_add_state_deputy',
+  },
+  {
+    up: migration_20260723_202000_reconcile_municipality_remodel.up,
+    down: migration_20260723_202000_reconcile_municipality_remodel.down,
+    name: '20260723_202000_reconcile_municipality_remodel',
   },
 ]

@@ -23,7 +23,7 @@ export const createOrganizationFormAction = async (
         ? (rawKind as OrganizationKind)
         : 'outro',
       notes: optionalFormText(formData, 'notes'),
-      plazas: repeatedRelationshipFormValues(formData, 'plazas'),
+      municipalities: repeatedRelationshipFormValues(formData, 'municipalities'),
     })
     createdSlug = organization.slug
   } catch (error) {

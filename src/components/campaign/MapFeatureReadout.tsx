@@ -3,17 +3,17 @@ import Link from 'next/link'
 import type { BahiaMapFeatureInfo } from '@/components/campaign/BahiaMap'
 import { Button } from '@/components/ui/button'
 import { formatElectionNumber } from '@/lib/electionInsights'
-import type { PlazaMapNavigation } from '@/utilities/plazaMapNavigation'
-import type { PlazaMapScaleMode } from '@/utilities/plazaMapData'
+import type { MunicipalityMapNavigation } from '@/utilities/municipalityMapNavigation'
+import type { MunicipalityMapScaleMode } from '@/utilities/municipalityMapData'
 
 type MapFeatureReadoutProps = {
   feature: BahiaMapFeatureInfo | null
   metricValue: number | undefined
   rawMetricValue: number | undefined
   metricLabel: string
-  scaleMode: PlazaMapScaleMode
+  scaleMode: MunicipalityMapScaleMode
   comparisonActive: boolean
-  navigation: PlazaMapNavigation | null
+  navigation: MunicipalityMapNavigation | null
 }
 
 const percentFormatter = new Intl.NumberFormat('pt-BR', {
@@ -23,7 +23,7 @@ const percentFormatter = new Intl.NumberFormat('pt-BR', {
 
 const formatMetricValue = (
   value: number | undefined,
-  scaleMode: PlazaMapScaleMode,
+  scaleMode: MunicipalityMapScaleMode,
   comparisonActive: boolean,
 ): string => {
   if (value === undefined) return 'Sem dados'
@@ -94,7 +94,7 @@ export const MapFeatureReadout = ({
 
       {navigation?.kind === 'navigate' ? (
         <Button asChild className="min-h-11 shrink-0">
-          <Link href={`/campanha/pracas/${navigation.slug}`}>Abrir Praça</Link>
+          <Link href={`/campanha/municipios/${navigation.slug}`}>Abrir Praça</Link>
         </Button>
       ) : null}
     </div>

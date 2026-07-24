@@ -16,7 +16,7 @@ import {
 } from '@/utilities/campaignFormActionError'
 
 const safeMessages = [
-  'Você só pode vincular lideranças às Praças que assessora.',
+  'Você só pode vincular lideranças aos municípios que assessora.',
   'Somente a coordenação e a assessoria podem gerenciar lideranças.',
 ] as const
 
@@ -30,8 +30,9 @@ export const updateLeadershipInternalFormAction = async (
 
     await updateLeadershipInternal({
       id: requiredRelationshipFormValue(formData, 'leadershipId'),
-      plazas: repeatedRelationshipFormValues(formData, 'plazas'),
+      municipalities: repeatedRelationshipFormValues(formData, 'municipalities'),
       organizations: repeatedRelationshipFormValues(formData, 'organizations'),
+      stateDeputies: repeatedRelationshipFormValues(formData, 'stateDeputies'),
       sector: leadershipSectors.includes(sector as (typeof leadershipSectors)[number])
         ? (sector as (typeof leadershipSectors)[number])
         : null,

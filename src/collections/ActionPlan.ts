@@ -52,7 +52,7 @@ const actionPlanStaffFieldSnapshot = (doc: Record<string, unknown>) => ({
   startAt: doc.startAt ?? null,
   endAt: doc.endAt ?? null,
   deadline: doc.deadline ?? null,
-  plaza: relationshipId(doc.plaza),
+  municipality: relationshipId(doc.municipality),
   locality: trimmedText(doc.locality),
   deputyPresent: Boolean(doc.deputyPresent),
   organizations: relationshipIds(doc.organizations),
@@ -257,7 +257,7 @@ export const ActionPlan: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'title',
-    defaultColumns: ['title', 'kind', 'status', 'plaza', 'startAt', 'updatedAt'],
+    defaultColumns: ['title', 'kind', 'status', 'municipality', 'startAt', 'updatedAt'],
   },
   access: {
     create: canCreateActionPlan,
@@ -367,9 +367,9 @@ export const ActionPlan: CollectionConfig = {
       },
     },
     {
-      name: 'plaza',
+      name: 'municipality',
       type: 'relationship',
-      relationTo: 'plaza',
+      relationTo: 'municipality',
       label: 'Praça',
       required: true,
       index: true,

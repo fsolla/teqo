@@ -72,7 +72,7 @@ const actionPlanFieldsSchema = z.object({
   startAt: z.string().datetime().optional().nullable(),
   endAt: z.string().datetime().optional().nullable(),
   deadline: z.string().datetime().optional().nullable(),
-  plaza: positiveRelationshipId,
+  municipality: positiveRelationshipId,
   locality: trimmedOptionalText(160),
   organizations: z.array(positiveRelationshipId).max(MAX_ACTION_PLAN_ORGANIZATIONS).optional(),
   advisors: z.array(positiveRelationshipId).optional(),

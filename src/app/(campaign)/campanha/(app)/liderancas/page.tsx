@@ -109,7 +109,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
                       {row.supportStatus ? <SupportStatusBadge status={row.supportStatus} /> : '—'}
                     </TableCell>
                     <TableCell className="max-w-64 whitespace-normal text-muted-foreground">
-                      {row.plazaNames.join(', ') || '—'}
+                      {row.municipalityNames.join(', ') || '—'}
                     </TableCell>
                     <TableCell className="max-w-56 whitespace-normal text-muted-foreground">
                       {row.organizationNames.join(', ') || '—'}

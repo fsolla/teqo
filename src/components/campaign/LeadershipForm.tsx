@@ -35,9 +35,10 @@ const supportStatusLabels: Record<(typeof leadershipSupportStatuses)[number], st
 }
 
 type LeadershipFormProps = {
-  plazaOptions: RelationOption[]
+  municipalityOptions: RelationOption[]
   organizationOptions: RelationOption[]
-  initialPlazaIDs: number[]
+  stateDeputyOptions: RelationOption[]
+  initialMunicipalityIDs: number[]
   formAction: (
     state: CampaignFormActionState,
     formData: FormData,
@@ -45,9 +46,10 @@ type LeadershipFormProps = {
 }
 
 export const LeadershipForm = ({
-  plazaOptions,
+  municipalityOptions,
   organizationOptions,
-  initialPlazaIDs,
+  stateDeputyOptions,
+  initialMunicipalityIDs,
   formAction,
 }: LeadershipFormProps) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
@@ -93,11 +95,11 @@ export const LeadershipForm = ({
       </div>
 
       <RelationMultiSelect
-        name="plazas"
+        name="municipalities"
         label="Praças em que atua"
-        options={plazaOptions}
-        initialSelectedIDs={initialPlazaIDs}
-        error={fieldError(state.fieldErrors, 'plazas')}
+        options={municipalityOptions}
+        initialSelectedIDs={initialMunicipalityIDs}
+        error={fieldError(state.fieldErrors, 'municipalities')}
         placeholder="Adicionar Praça…"
       />
 
@@ -107,6 +109,14 @@ export const LeadershipForm = ({
         options={organizationOptions}
         error={fieldError(state.fieldErrors, 'organizations')}
         placeholder="Adicionar organização…"
+      />
+
+      <RelationMultiSelect
+        name="stateDeputies"
+        label="Dobradinhas"
+        options={stateDeputyOptions}
+        error={fieldError(state.fieldErrors, 'stateDeputies')}
+        placeholder="Adicionar dobradinha…"
       />
 
       <div className="grid gap-4 sm:grid-cols-2">

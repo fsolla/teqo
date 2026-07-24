@@ -6,7 +6,7 @@ import type { Payload } from 'payload'
 import { BASELINE_TICKET_2022, ELECTION_YEAR_2022 } from '@/lib/electionResults'
 import { assertCanReadElectionData, type ElectionDataReader } from '@/utilities/campaignAccess'
 import { drizzleResultRows, requirePostgresDrizzle } from '@/utilities/drizzleBulk'
-import { type PlazaElectionGeography, zonesByCityCode } from '@/utilities/plazaElectionGeography'
+import { type MunicipalityElectionGeography, zonesByCityCode } from '@/utilities/municipalityElectionGeography'
 
 export type FederalCandidateTotal = {
   candidateNumber: number
@@ -18,7 +18,7 @@ export type FederalCandidateTotal = {
 export const loadFederalCandidateTotalsAggregated = async (
   payload: Pick<Payload, 'db'>,
   user: ElectionDataReader,
-  geography: PlazaElectionGeography,
+  geography: MunicipalityElectionGeography,
 ): Promise<FederalCandidateTotal[]> => {
   assertCanReadElectionData(user)
 

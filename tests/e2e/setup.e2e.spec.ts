@@ -6,8 +6,8 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
   test.slow()
   for (const path of [
     '/campanha/login',
-    '/campanha/pracas',
-    '/campanha/pracas/e2e-prewarm',
+    '/campanha/municipios',
+    '/campanha/municipios/e2e-prewarm',
     '/campanha/demandas',
     '/campanha/convite/e2e-prewarm',
     '/',

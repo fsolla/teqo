@@ -37,8 +37,9 @@ export const isSupportStatus = (value: unknown): value is SupportStatus =>
 
 export const MAX_LEADERSHIP_PLAZAS = 30
 export const MAX_LEADERSHIP_ORGANIZATIONS = 20
+export const MAX_LEADERSHIP_STATE_DEPUTIES = 20
 
-const plazasArraySchema = z
+const municipalitiesArraySchema = z
   .array(positiveRelationshipId)
   .min(1, 'Vincule a liderança a pelo menos uma Praça.')
   .max(MAX_LEADERSHIP_PLAZAS)
@@ -49,9 +50,15 @@ const organizationsArraySchema = z
   .max(MAX_LEADERSHIP_ORGANIZATIONS)
   .transform((ids) => [...new Set(ids)])
 
+const stateDeputiesArraySchema = z
+  .array(positiveRelationshipId)
+  .max(MAX_LEADERSHIP_STATE_DEPUTIES)
+  .transform((ids) => [...new Set(ids)])
+
 export const leadershipCreateSchema = z.object({
-  plazas: plazasArraySchema,
+  municipalities: municipalitiesArraySchema,
   organizations: organizationsArraySchema.optional(),
+  stateDeputies: stateDeputiesArraySchema.optional(),
   name: z.string().trim().min(2).max(120),
   phone: brazilianMobile,
   email: optionalPersistedEmail,
@@ -65,8 +72,9 @@ export const leadershipCreateSchema = z.object({
 
 export const leadershipInternalUpdateSchema = z.object({
   id: positiveRelationshipId,
-  plazas: plazasArraySchema.optional(),
+  municipalities: municipalitiesArraySchema.optional(),
   organizations: organizationsArraySchema.nullable().optional(),
+  stateDeputies: stateDeputiesArraySchema.nullable().optional(),
   sector: z.enum(leadershipSectors).nullable().optional(),
   sectorNotes: trimmedNullableText(1000),
   supportStatus: z.enum(leadershipSupportStatuses).optional(),

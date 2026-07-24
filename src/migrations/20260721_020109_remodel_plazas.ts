@@ -1,6 +1,6 @@
 import { MigrateDownArgs, MigrateUpArgs, sql } from '@payloadcms/db-postgres'
 
-import { plazaCatalog } from '../lib/plazaCatalog'
+import { plazaCatalog20260721 as plazaCatalog } from './data/plazaCatalog20260721'
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   // Praça remodel is a deliberate RESET of the campaign vertical (product

@@ -138,7 +138,7 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
                       </Link>
                     </TableCell>
                     <TableCell>{campaignDemandKindLabels[row.kind]}</TableCell>
-                    <TableCell className="text-muted-foreground">{row.plazaName}</TableCell>
+                    <TableCell className="text-muted-foreground">{row.municipalityName}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {row.requesterName ?? '—'}
                     </TableCell>

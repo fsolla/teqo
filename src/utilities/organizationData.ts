@@ -12,7 +12,7 @@ export type OrganizationRowViewModel = {
   name: string
   slug: string
   kind: OrganizationKind
-  plazaNames: string[]
+  municipalityNames: string[]
   leadershipCount: number
 }
 
@@ -39,10 +39,10 @@ export const parseOrganizationListParams = (
   }
 }
 
-const plazaNamesByIds = async (payload: Payload, ids: number[]): Promise<Map<number, string>> => {
+const municipalityNamesByIds = async (payload: Payload, ids: number[]): Promise<Map<number, string>> => {
   if (ids.length === 0) return new Map()
   const result = await payload.find({
-    collection: 'plaza',
+    collection: 'municipality',
     where: { id: { in: ids } },
     depth: 0,
     limit: 0,
@@ -50,7 +50,7 @@ const plazaNamesByIds = async (payload: Payload, ids: number[]): Promise<Map<num
     select: { name: true },
     overrideAccess: true,
   })
-  return new Map(result.docs.map((plaza) => [plaza.id, plaza.name]))
+  return new Map(result.docs.map((municipality) => [municipality.id, municipality.name]))
 }
 
 export const loadOrganizationListPageData = async (
@@ -74,14 +74,14 @@ export const loadOrganizationListPageData = async (
     overrideAccess: false,
   })
 
-  const plazaIDs = new Set<number>()
+  const municipalityIDs = new Set<number>()
   for (const doc of result.docs) {
-    for (const plaza of doc.plazas ?? []) {
-      const id = relationshipId(plaza)
-      if (id !== null) plazaIDs.add(id)
+    for (const municipality of doc.municipalities ?? []) {
+      const id = relationshipId(municipality)
+      if (id !== null) municipalityIDs.add(id)
     }
   }
-  const plazaNames = await plazaNamesByIds(payload, [...plazaIDs])
+  const municipalityNames = await municipalityNamesByIds(payload, [...municipalityIDs])
 
   const organizationIDs = result.docs.map((doc) => doc.id)
   const leadershipCounts = new Map<number, number>()
@@ -112,10 +112,10 @@ export const loadOrganizationListPageData = async (
       name: doc.name,
       slug: doc.slug,
       kind: doc.kind as OrganizationKind,
-      plazaNames: (doc.plazas ?? [])
+      municipalityNames: (doc.municipalities ?? [])
         .map(relationshipId)
         .filter((id): id is number => id !== null)
-        .map((id) => plazaNames.get(id) ?? 'Praça'),
+        .map((id) => municipalityNames.get(id) ?? 'Praça'),
       leadershipCount: leadershipCounts.get(doc.id) ?? 0,
     })),
     totalDocs: result.totalDocs,
@@ -129,8 +129,8 @@ export type OrganizationDetailViewModel = {
   slug: string
   kind: OrganizationKind
   notes: string | null
-  plazaIDs: number[]
-  plazaNames: string[]
+  municipalityIDs: number[]
+  municipalityNames: string[]
   leaderships: Array<{ id: number; name: string }>
   actionPlans: Array<{
     id: number
@@ -159,10 +159,10 @@ export const loadOrganizationDetail = async (
   const organization = result.docs[0] as Organization | undefined
   if (!organization) return null
 
-  const plazaIDs = (organization.plazas ?? [])
+  const municipalityIDs = (organization.municipalities ?? [])
     .map(relationshipId)
     .filter((id): id is number => id !== null)
-  const plazaNames = await plazaNamesByIds(payload, plazaIDs)
+  const municipalityNames = await municipalityNamesByIds(payload, municipalityIDs)
 
   const [leaderships, actionPlans] = await Promise.all([
     payload.find({
@@ -199,8 +199,8 @@ export const loadOrganizationDetail = async (
     slug: organization.slug,
     kind: organization.kind as OrganizationKind,
     notes: organization.notes ?? null,
-    plazaIDs,
-    plazaNames: plazaIDs.map((id) => plazaNames.get(id) ?? 'Praça'),
+    municipalityIDs,
+    municipalityNames: municipalityIDs.map((id) => municipalityNames.get(id) ?? 'Praça'),
     leaderships: leaderships.docs.map((leadership) => {
       const contact = leadership.contact
       return {

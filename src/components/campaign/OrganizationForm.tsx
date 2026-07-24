@@ -15,7 +15,7 @@ import type { CampaignFormActionState } from '@/utilities/campaignFormActionErro
 import { fieldError } from '@/utilities/campaignFormFields'
 
 type OrganizationFormProps = {
-  plazaOptions: RelationOption[]
+  municipalityOptions: RelationOption[]
   formAction: (
     state: CampaignFormActionState,
     formData: FormData,
@@ -24,13 +24,13 @@ type OrganizationFormProps = {
     id: number
     kind: string
     notes: string | null
-    plazaIDs: number[]
+    municipalityIDs: number[]
   }
   initialName?: string
 }
 
 export const OrganizationForm = ({
-  plazaOptions,
+  municipalityOptions,
   formAction,
   initial,
   initialName,
@@ -79,11 +79,11 @@ export const OrganizationForm = ({
       </Field>
 
       <RelationMultiSelect
-        name="plazas"
+        name="municipalities"
         label="Praças de atuação"
-        options={plazaOptions}
-        initialSelectedIDs={initial?.plazaIDs ?? []}
-        error={fieldError(state.fieldErrors, 'plazas')}
+        options={municipalityOptions}
+        initialSelectedIDs={initial?.municipalityIDs ?? []}
+        error={fieldError(state.fieldErrors, 'municipalities')}
         placeholder="Adicionar Praça…"
       />
 

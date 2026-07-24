@@ -14,8 +14,8 @@ import {
   ActionPlanNotFoundError,
   getActionPlanEditPageData,
 } from '@/utilities/actionPlanPageData'
-import { loadOrganizationOptions, loadPlazaOptions } from '@/utilities/campaignRelationOptions'
-import { getEligibleAdvisorOptions } from '@/utilities/plazaViewModels'
+import { loadOrganizationOptions, loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import { getEligibleAdvisorOptions } from '@/utilities/municipalityViewModels'
 
 type EditActionPlanPageProps = {
   params: Promise<{ slug: string }>
@@ -33,12 +33,12 @@ export default async function EditActionPlanPage({ params }: EditActionPlanPageP
   if (!slug) notFound()
 
   const canManageAdvisors = user.role === 'coordinator'
-  const [view, plazaOptions, organizationOptions, advisorOptions] = await Promise.all([
+  const [view, municipalityOptions, organizationOptions, advisorOptions] = await Promise.all([
     getActionPlanEditPageData(payload, user, slug).catch((error) => {
       if (error instanceof ActionPlanNotFoundError) notFound()
       throw error
     }),
-    loadPlazaOptions(payload, user),
+    loadMunicipalityOptions(payload, user),
     loadOrganizationOptions(payload, user),
     canManageAdvisors ? getEligibleAdvisorOptions(payload, user) : Promise.resolve([]),
   ])
@@ -55,7 +55,7 @@ export default async function EditActionPlanPage({ params }: EditActionPlanPageP
       <ActionPlanForm
         action={updateActionPlanFormAction}
         plan={view}
-        plazaOptions={plazaOptions}
+        municipalityOptions={municipalityOptions}
         organizationOptions={organizationOptions}
         advisorOptions={advisorOptions}
         canManageAdvisors={canManageAdvisors}

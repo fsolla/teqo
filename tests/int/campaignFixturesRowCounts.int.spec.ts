@@ -2,10 +2,10 @@
 
 import { createRequire } from 'node:module'
 
-import { drizzle } from '@payloadcms/db-postgres/drizzle/node-postgres'
 import { sql } from '@payloadcms/db-postgres'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { drizzle } from '@payloadcms/db-postgres/drizzle/node-postgres'
 import { getPayload, type Payload } from 'payload'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { migrations } from '@/migrations'
 import { withCampaignFixtures } from '../helpers/campaignFixtures'
@@ -18,21 +18,23 @@ const { Pool } = require('pg') as {
   }
 }
 
-const adminUrl = 'postgresql://teqo:teqo@localhost:5432/postgres'
+const testDatabaseUrl =
+  process.env.DATABASE_URL ?? 'postgresql://teqo:teqo@localhost:5432/teqo_test'
+const adminUrl = testDatabaseUrl.replace(/\/[^/]+$/, '/postgres')
 
-// The campaign fixture surface after the Praça remodel. Plazas are seeded
-// reference rows: `plaza` itself never changes count, while `plaza_rels`
+// The campaign fixture surface after the Município remodel. Municipalities are seeded
+// reference rows: `municipality` itself never changes count, while `municipality_rels`
 // (advisors) and the strategy array tables must return to their baseline
-// after cleanup resets every touched plaza.
+// after cleanup resets every touched municipality.
 const campaignFixtureTables = [
   'campaign_user',
   'campaign_user_sessions',
   'consent',
   'contact',
-  'plaza',
-  'plaza_rels',
-  'plaza_strengths',
-  'plaza_risks',
+  'municipality',
+  'municipality_rels',
+  'municipality_strengths',
+  'municipality_risks',
   'organization',
   'organization_rels',
   'leadership',
@@ -40,7 +42,7 @@ const campaignFixtureTables = [
   'vote_pledge',
   'campaign_demand',
   'campaign_demand_status_history',
-  'plaza_update',
+  'municipality_update',
   'supporter',
   'campaign_invite',
   'payload_locked_documents',
@@ -48,7 +50,7 @@ const campaignFixtureTables = [
 ] as const
 
 /** Seeded reference tables: their counts must never grow, only stay equal. */
-const seededTables = new Set<CampaignFixtureTable>(['plaza'])
+const seededTables = new Set<CampaignFixtureTable>(['municipality'])
 
 type CampaignFixtureTable = (typeof campaignFixtureTables)[number]
 type CampaignFixtureTableCounts = Record<CampaignFixtureTable, number>
@@ -104,7 +106,7 @@ const expectEveryTableToGrow = (
 beforeAll(async () => {
   originalDatabaseUrl = process.env.DATABASE_URL
   databaseName = `teqo_campaign_fixture_counts_${process.pid}_test`
-  databaseUrl = `postgresql://teqo:teqo@localhost:5432/${databaseName}`
+  databaseUrl = testDatabaseUrl.replace(/\/[^/]+$/, `/${databaseName}`)
   const adminPool = new Pool({ connectionString: adminUrl })
   await adminPool.query(`DROP DATABASE IF EXISTS ${quoteIdentifier(databaseName)} WITH (FORCE)`)
   await adminPool.query(`CREATE DATABASE ${quoteIdentifier(databaseName)}`)
@@ -154,12 +156,12 @@ describe('campaign fixture PostgreSQL row-count invariant', () => {
       const consent = await fixtures.createConsent()
       const contact = await fixtures.createContact()
       const supporterContact = await fixtures.createContact()
-      const plaza = await fixtures.getPlaza()
+      const municipality = await fixtures.getMunicipality()
 
-      await fixtures.assignPlazaAdvisors(plaza, [advisor])
+      await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
       await payload.update({
-        collection: 'plaza',
-        id: plaza.id,
+        collection: 'municipality',
+        id: municipality.id,
         data: {
           priority: 'alta',
           strengths: [{ text: fixtures.value('Força') }],
@@ -168,18 +170,22 @@ describe('campaign fixture PostgreSQL row-count invariant', () => {
         depth: 0,
       })
 
-      const organization = await fixtures.createOrganization({ plazas: [plaza.id] })
+      const organization = await fixtures.createOrganization({ municipalities: [municipality.id] })
       const leadership = await fixtures.createLeadership({
         contact,
-        plazas: [plaza.id],
+        municipalities: [municipality.id],
         organizations: [organization.id],
         consent,
         createdBy: coordinator,
       })
-      await fixtures.createVotePledge({ leadership, plaza })
-      await fixtures.createCampaignDemand({ plaza, leadership, createdBy: coordinator })
-      await fixtures.createPlazaUpdate({ plaza, author: coordinator })
-      await fixtures.createSupporter({ contact: supporterContact, plaza, createdBy: coordinator })
+      await fixtures.createVotePledge({ leadership, municipality })
+      await fixtures.createCampaignDemand({ municipality, leadership, createdBy: coordinator })
+      await fixtures.createMunicipalityUpdate({ municipality, author: coordinator })
+      await fixtures.createSupporter({
+        contact: supporterContact,
+        municipality,
+        createdBy: coordinator,
+      })
       await fixtures.createInvite({ leadership, createdBy: coordinator })
       await payload.db.drizzle.execute(sql`
         INSERT INTO "campaign_user_sessions" (
@@ -251,7 +257,7 @@ describe('campaign fixture PostgreSQL row-count invariant', () => {
         await fixtures.createContact()
         await fixtures.createLeadership({
           contact: 999_999_999,
-          plazas: [999_999_999],
+          municipalities: [999_999_999],
         })
       }),
     ).rejects.toThrow()

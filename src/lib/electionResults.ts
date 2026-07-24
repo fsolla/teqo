@@ -170,7 +170,7 @@ const municipalityResolveCache = new Map<string, string>()
 
 /**
  * Map TSE NM_MUNICIPIO (usually ALL CAPS) to the canonical Bahia municipality name
- * used by bahiaTerritories / plaza.city. Fails closed on unknown names.
+ * used by bahiaTerritories / municipality.city. Fails closed on unknown names.
  */
 export const canonicalizeMunicipalityName = (tseMunicipalityName: string): string => {
   const cached = municipalityResolveCache.get(tseMunicipalityName)

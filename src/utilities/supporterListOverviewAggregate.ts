@@ -4,7 +4,7 @@ import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
 import type { CampaignUser } from '@/payload-types'
-import { getAdvisorPlazaIds, isCampaignCoordinator } from '@/utilities/campaignAccess'
+import { getAdvisorMunicipalityIds, isCampaignCoordinator } from '@/utilities/campaignAccess'
 import { drizzleResultRows } from '@/utilities/drizzleBulk'
 import { toAggregateSqlConditions } from '@/utilities/supporterListSqlFilters'
 import type { SupporterListState } from '@/utilities/supporterUi'
@@ -13,7 +13,7 @@ import type { SupporterListOverviewViewModel } from '@/utilities/supporterViewMo
 type AccessConstraint =
   | { kind: 'all' }
   | { kind: 'none' }
-  | { kind: 'plazaSet'; ids: number[] }
+  | { kind: 'municipalitySet'; ids: number[] }
 
 type PostgresDb = {
   execute: (query: ReturnType<typeof sql>) => Promise<unknown>
@@ -22,13 +22,13 @@ type PostgresDb = {
 const resolveAccessConstraint = async (
   payload: Pick<Payload, 'find'>,
   user: CampaignUser,
-  advisorPlazaIds?: number[],
+  advisorMunicipalityIds?: number[],
 ): Promise<AccessConstraint> => {
   if (isCampaignCoordinator(user)) return { kind: 'all' }
   if (user.role !== 'advisor') return { kind: 'none' }
 
-  const ids = advisorPlazaIds ?? (await getAdvisorPlazaIds(payload, user.id))
-  return { kind: 'plazaSet', ids }
+  const ids = advisorMunicipalityIds ?? (await getAdvisorMunicipalityIds(payload, user.id))
+  return { kind: 'municipalitySet', ids }
 }
 
 const buildAggregateSql = (
@@ -38,13 +38,13 @@ const buildAggregateSql = (
   const { conditions: filterConditions, needsContactJoin } = toAggregateSqlConditions(state)
   const conditions = [...filterConditions]
 
-  if (access.kind === 'plazaSet') {
+  if (access.kind === 'municipalitySet') {
     if (access.ids.length === 0) {
-      // No accessible plazas → no rows. Keep a trivially-false condition.
+      // No accessible municipalities → no rows. Keep a trivially-false condition.
       conditions.push(sql`FALSE`)
     } else {
       conditions.push(
-        sql`"supporter"."plaza_id" IN (${sql.join(
+        sql`"supporter"."municipality_id" IN (${sql.join(
           access.ids.map((id) => sql`${id}`),
           sql`, `,
         )})`,
@@ -81,13 +81,13 @@ export const computeSupporterListOverviewAggregate = async (
   user: CampaignUser,
   state: SupporterListState,
   total: number,
-  advisorPlazaIds?: number[],
+  advisorMunicipalityIds?: number[],
 ): Promise<SupporterListOverviewViewModel | null> => {
   if (!Number.isSafeInteger(total) || total <= 0) return null
 
-  const access = await resolveAccessConstraint(payload, user, advisorPlazaIds)
+  const access = await resolveAccessConstraint(payload, user, advisorMunicipalityIds)
   if (access.kind === 'none') return null
-  if (access.kind === 'plazaSet' && access.ids.length === 0) return null
+  if (access.kind === 'municipalitySet' && access.ids.length === 0) return null
 
   if (payload.db.name !== 'postgres') {
     throw new Error('O overview de apoiadores exige o adaptador PostgreSQL.')

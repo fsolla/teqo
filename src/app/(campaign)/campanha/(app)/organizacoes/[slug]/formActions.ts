@@ -27,7 +27,7 @@ export const updateOrganizationFormAction = async (
         ? (rawKind as OrganizationKind)
         : undefined,
       notes: nullableFormText(formData, 'notes'),
-      plazas: repeatedRelationshipFormValues(formData, 'plazas'),
+      municipalities: repeatedRelationshipFormValues(formData, 'municipalities'),
     })
     revalidatePath('/campanha/organizacoes/[slug]', 'page')
     return { status: 'success', message: 'Organização atualizada.' }

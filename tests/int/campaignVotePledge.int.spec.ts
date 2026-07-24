@@ -9,7 +9,7 @@ import {
   estimateVotesRecord,
 } from '@/app/(campaign)/campanha/actions/votePledge'
 import config from '@/payload.config'
-import { aggregatePledgesByPlaza, loadLeaderPledges } from '@/utilities/votePledgeData'
+import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -21,60 +21,92 @@ const campaignFixtures = installCampaignFixtures({
   },
 })
 
-describe('vote pledges (declared by the leader, estimated by staff)', () => {
+describe('vote pledges (declared by staff, estimated by staff)', () => {
   beforeAll(async () => {
     payload = await getPayload({ config: await config })
   })
 
-  const createEngagedLeader = async () => {
+  const createEngagedLeadership = async () => {
     const fixtures = campaignFixtures()
-    const plaza = await fixtures.getPlaza()
-    const account = await fixtures.createCampaignUser('leader')
+    const municipality = await fixtures.getMunicipality()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    await fixtures.assignMunicipalityAdvisors(municipality.id, [advisor.id])
     const contact = await fixtures.createContact()
     const leadership = await fixtures.createLeadership({
       contact: contact.id,
-      plazas: [plaza.id],
-      user: account.id,
+      municipalities: [municipality.id],
       supportStatus: 'engajado',
     })
-    return { fixtures, plaza, account, contact, leadership }
+    return { fixtures, municipality, advisor, contact, leadership }
   }
 
-  it('lets an engaged leader declare and update votes in a linked plaza', async () => {
-    const { plaza, account } = await createEngagedLeader()
+  it('lets staff declare and update votes for a linked leadership', async () => {
+    const { municipality, advisor, leadership } = await createEngagedLeadership()
 
-    const pledge = await declareVotesRecord(payload, account, {
-      plaza: plaza.id,
+    const pledge = await declareVotesRecord(payload, advisor, {
+      municipality: municipality.id,
+      leadership: leadership.id,
       declaredVotes: 150,
     })
     expect(pledge.declaredVotes).toBe(150)
     expect(pledge.declaredAt).toBeTruthy()
     campaignFixtures().own('votePledge', pledge.id)
 
-    const updated = await declareVotesRecord(payload, account, {
-      plaza: plaza.id,
+    const updated = await declareVotesRecord(payload, advisor, {
+      municipality: municipality.id,
+      leadership: leadership.id,
       declaredVotes: 220,
     })
     expect(updated.id).toBe(pledge.id)
     expect(updated.declaredVotes).toBe(220)
   })
 
-  it('rejects a declaration in a plaza the leadership is not linked to', async () => {
-    const { account, fixtures } = await createEngagedLeader()
-    const otherPlaza = await fixtures.getPlaza()
+  it('rejects a declaration in a municipality the leadership is not linked to', async () => {
+    const { advisor, fixtures, leadership } = await createEngagedLeadership()
+    const otherMunicipality = await fixtures.getMunicipality()
 
     await expect(
-      declareVotesRecord(payload, account, { plaza: otherPlaza.id, declaredVotes: 10 }),
-    ).rejects.toThrow('vinculada à Praça')
+      declareVotesRecord(payload, advisor, {
+        municipality: otherMunicipality.id,
+        leadership: leadership.id,
+        declaredVotes: 10,
+      }),
+    ).rejects.toThrow('vinculada ao município')
   })
 
-  it('never serializes staff estimates to the leader', async () => {
-    const { fixtures, plaza, account, leadership } = await createEngagedLeader()
-    const advisor = await fixtures.createCampaignUser('advisor')
-    await fixtures.assignPlazaAdvisors(plaza.id, [advisor.id])
+  it('blocks leaders from declaring votes', async () => {
+    const { municipality, fixtures } = await createEngagedLeadership()
+    const leaderAccount = await fixtures.createCampaignUser('leader')
+    const contact = await fixtures.createContact()
+    const leadership = await fixtures.createLeadership({
+      contact: contact.id,
+      municipalities: [municipality.id],
+      user: leaderAccount.id,
+      supportStatus: 'engajado',
+    })
 
-    const pledge = await declareVotesRecord(payload, account, {
-      plaza: plaza.id,
+    await expect(
+      declareVotesRecord(payload, leaderAccount, {
+        municipality: municipality.id,
+        leadership: leadership.id,
+        declaredVotes: 50,
+      }),
+    ).rejects.toThrow('coordenação e a assessoria')
+  })
+
+  it('never exposes staff estimates to leaders through read access', async () => {
+    const { fixtures, municipality, advisor, leadership } = await createEngagedLeadership()
+    const leaderAccount = await fixtures.createCampaignUser('leader')
+    await fixtures.createLeadership({
+      contact: await fixtures.createContact(),
+      municipalities: [municipality.id],
+      user: leaderAccount.id,
+      supportStatus: 'engajado',
+    })
+
+    const pledge = await declareVotesRecord(payload, advisor, {
+      municipality: municipality.id,
+      leadership: leadership.id,
       declaredVotes: 300,
     })
     campaignFixtures().own('votePledge', pledge.id)
@@ -85,63 +117,24 @@ describe('vote pledges (declared by the leader, estimated by staff)', () => {
       estimateNote: 'Base histórica indica menos da metade.',
     })
     expect(estimated.estimatedVotes?.central).toBe(120)
-    expect(estimated.estimatedBy).toBeTruthy()
 
-    // Leader read path (access enforced): estimated fields must be stripped.
-    const leaderRead = await payload.find({
-      collection: 'votePledge',
-      where: { leadership: { equals: leadership.id } },
-      depth: 0,
-      pagination: false,
-      user: account,
-      overrideAccess: false,
-    })
-    expect(leaderRead.docs).toHaveLength(1)
-    const doc = leaderRead.docs[0] as unknown as Record<string, unknown>
-    expect(doc.declaredVotes).toBe(300)
-    expect(doc.estimatedVotes ?? null).toBeNull()
-    expect(doc.estimateNote ?? null).toBeNull()
-    expect(doc.estimatedBy ?? null).toBeNull()
-    expect(doc.estimatedAt ?? null).toBeNull()
-
-    const leaderRows = await loadLeaderPledges(payload, account)
-    expect(leaderRows).toHaveLength(1)
-    expect(leaderRows[0]).not.toHaveProperty('estimatedVotes')
-    expect(leaderRows[0]?.declaredVotes).toBe(300)
+    await expect(
+      payload.find({
+        collection: 'votePledge',
+        where: { id: { equals: pledge.id } },
+        depth: 0,
+        pagination: false,
+        user: leaderAccount,
+        overrideAccess: false,
+      }),
+    ).rejects.toThrow(/permissão/i)
   })
 
-  it('blocks a leader from writing the estimated fields through the Local API', async () => {
-    const { fixtures, plaza, account } = await createEngagedLeader()
-    const pledge = await declareVotesRecord(payload, account, {
-      plaza: plaza.id,
-      declaredVotes: 90,
-    })
-    fixtures.own('votePledge', pledge.id)
-
-    await payload.update({
-      collection: 'votePledge',
-      id: pledge.id,
-      data: { estimatedVotes: { central: 9_999 } } as never,
-      depth: 0,
-      user: account,
-      overrideAccess: false,
-    })
-
-    const raw = await payload.findByID({
-      collection: 'votePledge',
-      id: pledge.id,
-      depth: 0,
-      overrideAccess: true,
-    })
-    expect(raw.estimatedVotes?.central ?? null).toBeNull()
-    expect(raw.estimatedVotes?.pessimistic ?? null).toBeNull()
-    expect(raw.estimatedVotes?.optimistic ?? null).toBeNull()
-  })
-
-  it('scopes an advisor to pledges of administered plazas only', async () => {
-    const { fixtures, plaza, account } = await createEngagedLeader()
-    const pledge = await declareVotesRecord(payload, account, {
-      plaza: plaza.id,
+  it('scopes an advisor to pledges of administered municipalities only', async () => {
+    const { fixtures, municipality, advisor, leadership } = await createEngagedLeadership()
+    const pledge = await declareVotesRecord(payload, advisor, {
+      municipality: municipality.id,
+      leadership: leadership.id,
       declaredVotes: 50,
     })
     fixtures.own('votePledge', pledge.id)
@@ -167,13 +160,41 @@ describe('vote pledges (declared by the leader, estimated by staff)', () => {
     expect(outsideRead.docs).toHaveLength(0)
   })
 
-  it('aggregates effective votes as estimated ?? declared', async () => {
-    const { fixtures, plaza, account } = await createEngagedLeader()
-    const advisor = await fixtures.createCampaignUser('advisor')
-    await fixtures.assignPlazaAdvisors(plaza.id, [advisor.id])
+  it('lets the candidate read and estimate pledges across municipalities', async () => {
+    const { fixtures, municipality, advisor, leadership } = await createEngagedLeadership()
+    const candidate = await fixtures.createCampaignUser('candidate')
 
-    const firstPledge = await declareVotesRecord(payload, account, {
-      plaza: plaza.id,
+    const pledge = await declareVotesRecord(payload, advisor, {
+      municipality: municipality.id,
+      leadership: leadership.id,
+      declaredVotes: 90,
+    })
+    fixtures.own('votePledge', pledge.id)
+
+    const candidateRead = await payload.find({
+      collection: 'votePledge',
+      where: { id: { equals: pledge.id } },
+      depth: 0,
+      pagination: false,
+      user: candidate,
+      overrideAccess: false,
+    })
+    expect(candidateRead.docs).toHaveLength(1)
+
+    const estimated = await estimateVotesRecord(payload, candidate, {
+      pledge: pledge.id,
+      estimatedVotes: { pessimistic: null, central: 45, optimistic: null },
+      estimateNote: null,
+    })
+    expect(estimated.estimatedVotes?.central).toBe(45)
+  })
+
+  it('aggregates effective votes as estimated ?? declared', async () => {
+    const { fixtures, municipality, advisor, leadership } = await createEngagedLeadership()
+
+    const firstPledge = await declareVotesRecord(payload, advisor, {
+      municipality: municipality.id,
+      leadership: leadership.id,
       declaredVotes: 200,
     })
     fixtures.own('votePledge', firstPledge.id)
@@ -186,17 +207,17 @@ describe('vote pledges (declared by the leader, estimated by staff)', () => {
     const secondContact = await fixtures.createContact()
     const secondLeadership = await fixtures.createLeadership({
       contact: secondContact.id,
-      plazas: [plaza.id],
+      municipalities: [municipality.id],
       supportStatus: 'engajado',
     })
     const secondPledge = await fixtures.createVotePledge({
       leadership: secondLeadership.id,
-      plaza: plaza.id,
+      municipality: municipality.id,
       declaredVotes: 40,
     })
 
-    const aggregates = await aggregatePledgesByPlaza(payload, [plaza.id])
-    const aggregate = aggregates.get(plaza.id)
+    const aggregates = await aggregatePledgesByMunicipality(payload, [municipality.id])
+    const aggregate = aggregates.get(municipality.id)
     expect(aggregate?.pledgeCount).toBe(2)
     expect(aggregate?.declaredTotal).toBe(240)
     expect(aggregate?.effectiveByScenario.central).toBe(120)

@@ -121,7 +121,7 @@ const createPublicInviteScenario = async (
     },
     depth: 0,
   })
-  const plaza = await campaignFixtures().getPlaza()
+  const municipality = await campaignFixtures().getMunicipality()
   const contact = await payload.create({
     collection: 'contact',
     data: {
@@ -138,7 +138,7 @@ const createPublicInviteScenario = async (
     collection: 'leadership',
     data: {
       contact: contact.id,
-      plazas: [plaza.id],
+      municipalities: [municipality.id],
       sector: 'comunitario',
       sectorNotes: 'Associação do bairro',
       supportStatus: 'engajado',
@@ -229,7 +229,7 @@ describe('campaign invite UI contracts', () => {
         consentData: expect.objectContaining({ root: expect.any(Object) }),
       })
       expect(serialized).not.toMatch(
-        /supportStatus|Avaliação interna|Registro interno|tokenHash|leadershipId|plaza|user/,
+        /supportStatus|Avaliação interna|Registro interno|tokenHash|leadershipId|municipality|user/,
       )
     },
   )
@@ -349,7 +349,7 @@ describe('campaign invite UI contracts', () => {
       expect(html).not.toContain('name="notes"')
       expect(html).not.toContain('name="consentNote"')
       expect(html).not.toContain('tokenHash')
-      expect(html).not.toContain('name="plazas"')
+      expect(html).not.toContain('name="municipalities"')
     },
   )
 

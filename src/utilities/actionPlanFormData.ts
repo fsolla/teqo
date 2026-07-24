@@ -89,7 +89,7 @@ const parseSharedActionPlanFormData = (formData: FormData) => {
     startAt: parseDateTimeFormField(formData, 'startAt'),
     endAt: parseDateTimeFormField(formData, 'endAt'),
     deadline: parseDateTimeFormField(formData, 'deadline'),
-    plaza: requiredRelationshipFormValue(formData, 'plaza'),
+    municipality: requiredRelationshipFormValue(formData, 'municipality'),
     locality: optionalFormText(formData, 'locality'),
     organizations: repeatedRelationshipFormValues(formData, 'organizations'),
     responsible,

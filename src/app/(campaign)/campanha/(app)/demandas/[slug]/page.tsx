@@ -75,10 +75,10 @@ export default async function DemandDetailPage({ params }: DemandDetailPageProps
         <p className="text-muted-foreground">
           {campaignDemandKindLabels[demand.kind]} ·{' '}
           <Link
-            href={`/campanha/pracas/${demand.plazaSlug}`}
+            href={`/campanha/municipios/${demand.municipalitySlug}`}
             className="text-primary underline-offset-4 hover:underline"
           >
-            {demand.plazaName}
+            {demand.municipalityName}
           </Link>
           {demand.requesterName ? ` · Solicitada por ${demand.requesterName}` : ''} · Aberta em{' '}
           {dateTimeFormatter.format(new Date(demand.createdAt))}

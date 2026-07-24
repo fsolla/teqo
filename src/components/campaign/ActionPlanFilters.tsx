@@ -22,16 +22,16 @@ import {
 type FilterValues = {
   kind: string
   status: string
-  plaza: string
+  municipality: string
 }
 
 const valuesFromState = (state: ActionPlanListState): FilterValues => ({
   kind: state.kind ?? '',
   status: state.status ?? '',
-  plaza: state.plaza ? String(state.plaza) : '',
+  municipality: state.municipality ? String(state.municipality) : '',
 })
 
-const plazaIdFromValue = (value: string): number | undefined => {
+const municipalityIdFromValue = (value: string): number | undefined => {
   const id = Number(value)
   return Number.isInteger(id) && id > 0 ? id : undefined
 }
@@ -42,7 +42,7 @@ const buildTabHref = (state: ActionPlanListState, tab: ActionPlanTab): string =>
     tab,
     kind: state.kind,
     status: tab === 'todos' ? state.status : undefined,
-    plaza: state.plaza,
+    municipality: state.municipality,
   })
   const query = params.toString()
   return query ? `/campanha/planos?${query}` : '/campanha/planos'
@@ -70,10 +70,10 @@ const ActionPlanTabSwitch = ({ state }: { state: ActionPlanListState }) => (
 
 export const ActionPlanFilters = ({
   state,
-  plazaOptions,
+  municipalityOptions,
 }: {
   state: ActionPlanListState
-  plazaOptions: RelationOption[]
+  municipalityOptions: RelationOption[]
 }) => {
   const router = useRouter()
   const pathname = usePathname()
@@ -91,7 +91,7 @@ export const ActionPlanFilters = ({
       tab: state.tab,
       kind: nextValues.kind as ActionPlanListState['kind'],
       status: nextValues.status as ActionPlanListState['status'],
-      plaza: plazaIdFromValue(nextValues.plaza),
+      municipality: municipalityIdFromValue(nextValues.municipality),
     })
     const query = params.toString()
     startTransition(() => {
@@ -101,9 +101,9 @@ export const ActionPlanFilters = ({
 
   const updateKind = (kind: string) => replaceValues({ ...valuesRef.current, kind })
   const updateStatus = (status: string) => replaceValues({ ...valuesRef.current, status })
-  const updatePlaza = (plaza: string) => replaceValues({ ...valuesRef.current, plaza })
+  const updateMunicipality = (municipality: string) => replaceValues({ ...valuesRef.current, municipality })
 
-  const clearFilters = () => replaceValues({ kind: '', status: '', plaza: '' })
+  const clearFilters = () => replaceValues({ kind: '', status: '', municipality: '' })
 
   const hasFilters = Object.values(values).some(Boolean)
 
@@ -180,15 +180,15 @@ export const ActionPlanFilters = ({
                 </Field>
               ) : null}
               <Field>
-                <FieldLabel htmlFor="action-plan-plaza">Praça</FieldLabel>
+                <FieldLabel htmlFor="action-plan-municipality">Praça</FieldLabel>
                 <NativeSelect
-                  id="action-plan-plaza"
-                  value={values.plaza}
-                  onChange={(event) => updatePlaza(event.target.value)}
+                  id="action-plan-municipality"
+                  value={values.municipality}
+                  onChange={(event) => updateMunicipality(event.target.value)}
                   className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
                 >
                   <NativeSelectOption value="">Todas as Praças</NativeSelectOption>
-                  {plazaOptions.map((option) => (
+                  {municipalityOptions.map((option) => (
                     <NativeSelectOption key={option.id} value={String(option.id)}>
                       {option.name}
                     </NativeSelectOption>

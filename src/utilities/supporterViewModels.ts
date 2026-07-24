@@ -1,6 +1,6 @@
 import { territoryForCity } from '@/lib/bahiaTerritories'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
-import type { CampaignUser, Contact, Plaza, Supporter } from '@/payload-types'
+import type { CampaignUser, Contact, Municipality, Supporter } from '@/payload-types'
 import { formatBrazilianPhoneInput } from '@/utilities/phone'
 import { isPopulatedRelationship } from '@/utilities/relationship'
 import { supporterSourceLabels } from '@/utilities/supporterUi'
@@ -10,8 +10,8 @@ export type SupporterListItemViewModel = {
   name: string
   phone: string
   city: string | null
-  plazaName: string | null
-  plazaSlug: string | null
+  municipalityName: string | null
+  municipalitySlug: string | null
   voteIntention: SupporterVoteIntention | null
 }
 
@@ -29,8 +29,8 @@ export type SupporterDetailViewModel = {
   email: string | null
   city: string | null
   territory: string | null
-  plazaName: string | null
-  plazaSlug: string | null
+  municipalityName: string | null
+  municipalitySlug: string | null
   voteIntention: SupporterVoteIntention | null
   sourceLabel: string
   consentedAt: string | null
@@ -42,29 +42,29 @@ export type SupporterDetailViewModel = {
 const contactFromSupporter = (supporter: { contact: Supporter['contact'] }): Contact | null =>
   isPopulatedRelationship<Contact>(supporter.contact) ? supporter.contact : null
 
-const plazaFromSupporter = (supporter: { plaza?: Supporter['plaza'] }): Plaza | null =>
-  isPopulatedRelationship<Plaza>(supporter.plaza) ? supporter.plaza : null
+const municipalityFromSupporter = (supporter: { municipality?: Supporter['municipality'] }): Municipality | null =>
+  isPopulatedRelationship<Municipality>(supporter.municipality) ? supporter.municipality : null
 
 export const toSupporterListItemViewModel = (
-  supporter: Pick<Supporter, 'id' | 'voteIntention' | 'contact' | 'plaza'>,
+  supporter: Pick<Supporter, 'id' | 'voteIntention' | 'contact' | 'municipality'>,
 ): SupporterListItemViewModel => {
   const contact = contactFromSupporter(supporter)
-  const plaza = plazaFromSupporter(supporter)
+  const municipality = municipalityFromSupporter(supporter)
 
   return {
     id: supporter.id,
     name: contact?.name ?? 'Contato sem nome',
     phone: contact?.phone ?? '',
     city: contact?.city ?? null,
-    plazaName: plaza?.name ?? null,
-    plazaSlug: plaza?.slug ?? null,
+    municipalityName: municipality?.name ?? null,
+    municipalitySlug: municipality?.slug ?? null,
     voteIntention: supporter.voteIntention ?? null,
   }
 }
 
 export const toSupporterDetailViewModel = (supporter: Supporter): SupporterDetailViewModel => {
   const contact = contactFromSupporter(supporter)
-  const plaza = plazaFromSupporter(supporter)
+  const municipality = municipalityFromSupporter(supporter)
   const creator = isPopulatedRelationship<CampaignUser>(supporter.createdBy)
     ? supporter.createdBy
     : null
@@ -79,8 +79,8 @@ export const toSupporterDetailViewModel = (supporter: Supporter): SupporterDetai
     email: contact?.email ?? null,
     city,
     territory: city ? (territoryForCity(city) ?? null) : null,
-    plazaName: plaza?.name ?? null,
-    plazaSlug: plaza?.slug ?? null,
+    municipalityName: municipality?.name ?? null,
+    municipalitySlug: municipality?.slug ?? null,
     voteIntention: supporter.voteIntention ?? null,
     sourceLabel: supporterSourceLabels[supporter.source],
     consentedAt: supporter.consentedAt ?? null,

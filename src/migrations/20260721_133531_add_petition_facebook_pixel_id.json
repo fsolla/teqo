@@ -773,8 +773,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.plaza_strengths": {
-      "name": "plaza_strengths",
+    "public.municipality_strengths": {
+      "name": "municipality_strengths",
       "schema": "",
       "columns": {
         "_order": {
@@ -803,8 +803,8 @@
         }
       },
       "indexes": {
-        "plaza_strengths_order_idx": {
-          "name": "plaza_strengths_order_idx",
+        "municipality_strengths_order_idx": {
+          "name": "municipality_strengths_order_idx",
           "columns": [
             {
               "expression": "_order",
@@ -818,8 +818,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_strengths_parent_id_idx": {
-          "name": "plaza_strengths_parent_id_idx",
+        "municipality_strengths_parent_id_idx": {
+          "name": "municipality_strengths_parent_id_idx",
           "columns": [
             {
               "expression": "_parent_id",
@@ -835,10 +835,10 @@
         }
       },
       "foreignKeys": {
-        "plaza_strengths_parent_id_fk": {
-          "name": "plaza_strengths_parent_id_fk",
-          "tableFrom": "plaza_strengths",
-          "tableTo": "plaza",
+        "municipality_strengths_parent_id_fk": {
+          "name": "municipality_strengths_parent_id_fk",
+          "tableFrom": "municipality_strengths",
+          "tableTo": "municipality",
           "columnsFrom": [
             "_parent_id"
           ],
@@ -855,8 +855,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.plaza_risks": {
-      "name": "plaza_risks",
+    "public.municipality_risks": {
+      "name": "municipality_risks",
       "schema": "",
       "columns": {
         "_order": {
@@ -885,8 +885,8 @@
         }
       },
       "indexes": {
-        "plaza_risks_order_idx": {
-          "name": "plaza_risks_order_idx",
+        "municipality_risks_order_idx": {
+          "name": "municipality_risks_order_idx",
           "columns": [
             {
               "expression": "_order",
@@ -900,8 +900,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_risks_parent_id_idx": {
-          "name": "plaza_risks_parent_id_idx",
+        "municipality_risks_parent_id_idx": {
+          "name": "municipality_risks_parent_id_idx",
           "columns": [
             {
               "expression": "_parent_id",
@@ -917,10 +917,10 @@
         }
       },
       "foreignKeys": {
-        "plaza_risks_parent_id_fk": {
-          "name": "plaza_risks_parent_id_fk",
-          "tableFrom": "plaza_risks",
-          "tableTo": "plaza",
+        "municipality_risks_parent_id_fk": {
+          "name": "municipality_risks_parent_id_fk",
+          "tableFrom": "municipality_risks",
+          "tableTo": "municipality",
           "columnsFrom": [
             "_parent_id"
           ],
@@ -937,8 +937,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.plaza": {
-      "name": "plaza",
+    "public.municipality": {
+      "name": "municipality",
       "schema": "",
       "columns": {
         "id": {
@@ -961,7 +961,7 @@
         },
         "kind": {
           "name": "kind",
-          "type": "enum_plaza_kind",
+          "type": "enum_municipality_kind",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -998,7 +998,7 @@
         },
         "priority": {
           "name": "priority",
-          "type": "enum_plaza_priority",
+          "type": "enum_municipality_priority",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false,
@@ -1024,7 +1024,7 @@
         },
         "political_trend_status": {
           "name": "political_trend_status",
-          "type": "enum_plaza_political_trend_status",
+          "type": "enum_municipality_political_trend_status",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
@@ -1081,8 +1081,8 @@
         }
       },
       "indexes": {
-        "plaza_name_idx": {
-          "name": "plaza_name_idx",
+        "municipality_name_idx": {
+          "name": "municipality_name_idx",
           "columns": [
             {
               "expression": "name",
@@ -1096,8 +1096,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_slug_idx": {
-          "name": "plaza_slug_idx",
+        "municipality_slug_idx": {
+          "name": "municipality_slug_idx",
           "columns": [
             {
               "expression": "slug",
@@ -1111,8 +1111,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_kind_idx": {
-          "name": "plaza_kind_idx",
+        "municipality_kind_idx": {
+          "name": "municipality_kind_idx",
           "columns": [
             {
               "expression": "kind",
@@ -1126,8 +1126,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_city_idx": {
-          "name": "plaza_city_idx",
+        "municipality_city_idx": {
+          "name": "municipality_city_idx",
           "columns": [
             {
               "expression": "city",
@@ -1141,8 +1141,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_region_idx": {
-          "name": "plaza_region_idx",
+        "municipality_region_idx": {
+          "name": "municipality_region_idx",
           "columns": [
             {
               "expression": "region",
@@ -1156,8 +1156,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_ibge_code_idx": {
-          "name": "plaza_ibge_code_idx",
+        "municipality_ibge_code_idx": {
+          "name": "municipality_ibge_code_idx",
           "columns": [
             {
               "expression": "ibge_code",
@@ -1171,8 +1171,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_tse_city_code_idx": {
-          "name": "plaza_tse_city_code_idx",
+        "municipality_tse_city_code_idx": {
+          "name": "municipality_tse_city_code_idx",
           "columns": [
             {
               "expression": "tse_city_code",
@@ -1186,8 +1186,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_zone_number_idx": {
-          "name": "plaza_zone_number_idx",
+        "municipality_zone_number_idx": {
+          "name": "municipality_zone_number_idx",
           "columns": [
             {
               "expression": "zone_number",
@@ -1201,8 +1201,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_priority_idx": {
-          "name": "plaza_priority_idx",
+        "municipality_priority_idx": {
+          "name": "municipality_priority_idx",
           "columns": [
             {
               "expression": "priority",
@@ -1216,8 +1216,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_political_trend_political_trend_recorded_by_idx": {
-          "name": "plaza_political_trend_political_trend_recorded_by_idx",
+        "municipality_political_trend_political_trend_recorded_by_idx": {
+          "name": "municipality_political_trend_political_trend_recorded_by_idx",
           "columns": [
             {
               "expression": "political_trend_recorded_by_id",
@@ -1231,8 +1231,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_last_update_at_idx": {
-          "name": "plaza_last_update_at_idx",
+        "municipality_last_update_at_idx": {
+          "name": "municipality_last_update_at_idx",
           "columns": [
             {
               "expression": "last_update_at",
@@ -1246,8 +1246,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_updated_at_idx": {
-          "name": "plaza_updated_at_idx",
+        "municipality_updated_at_idx": {
+          "name": "municipality_updated_at_idx",
           "columns": [
             {
               "expression": "updated_at",
@@ -1261,8 +1261,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_created_at_idx": {
-          "name": "plaza_created_at_idx",
+        "municipality_created_at_idx": {
+          "name": "municipality_created_at_idx",
           "columns": [
             {
               "expression": "created_at",
@@ -1278,9 +1278,9 @@
         }
       },
       "foreignKeys": {
-        "plaza_political_trend_recorded_by_id_campaign_user_id_fk": {
-          "name": "plaza_political_trend_recorded_by_id_campaign_user_id_fk",
-          "tableFrom": "plaza",
+        "municipality_political_trend_recorded_by_id_campaign_user_id_fk": {
+          "name": "municipality_political_trend_recorded_by_id_campaign_user_id_fk",
+          "tableFrom": "municipality",
           "tableTo": "campaign_user",
           "columnsFrom": [
             "political_trend_recorded_by_id"
@@ -1298,8 +1298,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.plaza_rels": {
-      "name": "plaza_rels",
+    "public.municipality_rels": {
+      "name": "municipality_rels",
       "schema": "",
       "columns": {
         "id": {
@@ -1334,8 +1334,8 @@
         }
       },
       "indexes": {
-        "plaza_rels_order_idx": {
-          "name": "plaza_rels_order_idx",
+        "municipality_rels_order_idx": {
+          "name": "municipality_rels_order_idx",
           "columns": [
             {
               "expression": "order",
@@ -1349,8 +1349,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_rels_parent_idx": {
-          "name": "plaza_rels_parent_idx",
+        "municipality_rels_parent_idx": {
+          "name": "municipality_rels_parent_idx",
           "columns": [
             {
               "expression": "parent_id",
@@ -1364,8 +1364,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_rels_path_idx": {
-          "name": "plaza_rels_path_idx",
+        "municipality_rels_path_idx": {
+          "name": "municipality_rels_path_idx",
           "columns": [
             {
               "expression": "path",
@@ -1379,8 +1379,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_rels_campaign_user_id_idx": {
-          "name": "plaza_rels_campaign_user_id_idx",
+        "municipality_rels_campaign_user_id_idx": {
+          "name": "municipality_rels_campaign_user_id_idx",
           "columns": [
             {
               "expression": "campaign_user_id",
@@ -1396,10 +1396,10 @@
         }
       },
       "foreignKeys": {
-        "plaza_rels_parent_fk": {
-          "name": "plaza_rels_parent_fk",
-          "tableFrom": "plaza_rels",
-          "tableTo": "plaza",
+        "municipality_rels_parent_fk": {
+          "name": "municipality_rels_parent_fk",
+          "tableFrom": "municipality_rels",
+          "tableTo": "municipality",
           "columnsFrom": [
             "parent_id"
           ],
@@ -1409,9 +1409,9 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "plaza_rels_campaign_user_fk": {
-          "name": "plaza_rels_campaign_user_fk",
-          "tableFrom": "plaza_rels",
+        "municipality_rels_campaign_user_fk": {
+          "name": "municipality_rels_campaign_user_fk",
+          "tableFrom": "municipality_rels",
           "tableTo": "campaign_user",
           "columnsFrom": [
             "campaign_user_id"
@@ -1733,8 +1733,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "plaza_id": {
-          "name": "plaza_id",
+        "municipality_id": {
+          "name": "municipality_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -1792,11 +1792,11 @@
           "method": "btree",
           "with": {}
         },
-        "leadership_rels_plaza_id_idx": {
-          "name": "leadership_rels_plaza_id_idx",
+        "leadership_rels_municipality_id_idx": {
+          "name": "leadership_rels_municipality_id_idx",
           "columns": [
             {
-              "expression": "plaza_id",
+              "expression": "municipality_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1837,12 +1837,12 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "leadership_rels_plaza_fk": {
-          "name": "leadership_rels_plaza_fk",
+        "leadership_rels_municipality_fk": {
+          "name": "leadership_rels_municipality_fk",
           "tableFrom": "leadership_rels",
-          "tableTo": "plaza",
+          "tableTo": "municipality",
           "columnsFrom": [
-            "plaza_id"
+            "municipality_id"
           ],
           "columnsTo": [
             "id"
@@ -2067,8 +2067,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "plaza_id": {
-          "name": "plaza_id",
+        "municipality_id": {
+          "name": "municipality_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -2120,11 +2120,11 @@
           "method": "btree",
           "with": {}
         },
-        "organization_rels_plaza_id_idx": {
-          "name": "organization_rels_plaza_id_idx",
+        "organization_rels_municipality_id_idx": {
+          "name": "organization_rels_municipality_id_idx",
           "columns": [
             {
-              "expression": "plaza_id",
+              "expression": "municipality_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2150,12 +2150,12 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "organization_rels_plaza_fk": {
-          "name": "organization_rels_plaza_fk",
+        "organization_rels_municipality_fk": {
+          "name": "organization_rels_municipality_fk",
           "tableFrom": "organization_rels",
-          "tableTo": "plaza",
+          "tableTo": "municipality",
           "columnsFrom": [
-            "plaza_id"
+            "municipality_id"
           ],
           "columnsTo": [
             "id"
@@ -2186,8 +2186,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "plaza_id": {
-          "name": "plaza_id",
+        "municipality_id": {
+          "name": "municipality_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -2265,11 +2265,11 @@
           "method": "btree",
           "with": {}
         },
-        "vote_pledge_plaza_idx": {
-          "name": "vote_pledge_plaza_idx",
+        "vote_pledge_municipality_idx": {
+          "name": "vote_pledge_municipality_idx",
           "columns": [
             {
-              "expression": "plaza_id",
+              "expression": "municipality_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2370,8 +2370,8 @@
           "method": "btree",
           "with": {}
         },
-        "leadership_plaza_idx": {
-          "name": "leadership_plaza_idx",
+        "leadership_municipality_idx": {
+          "name": "leadership_municipality_idx",
           "columns": [
             {
               "expression": "leadership_id",
@@ -2380,7 +2380,7 @@
               "nulls": "last"
             },
             {
-              "expression": "plaza_id",
+              "expression": "municipality_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2406,12 +2406,12 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "vote_pledge_plaza_id_plaza_id_fk": {
-          "name": "vote_pledge_plaza_id_plaza_id_fk",
+        "vote_pledge_municipality_id_municipality_id_fk": {
+          "name": "vote_pledge_municipality_id_municipality_id_fk",
           "tableFrom": "vote_pledge",
-          "tableTo": "plaza",
+          "tableTo": "municipality",
           "columnsFrom": [
-            "plaza_id"
+            "municipality_id"
           ],
           "columnsTo": [
             "id"
@@ -2616,8 +2616,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "plaza_id": {
-          "name": "plaza_id",
+        "municipality_id": {
+          "name": "municipality_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -2733,11 +2733,11 @@
           "method": "btree",
           "with": {}
         },
-        "campaign_demand_plaza_idx": {
-          "name": "campaign_demand_plaza_idx",
+        "campaign_demand_municipality_idx": {
+          "name": "campaign_demand_municipality_idx",
           "columns": [
             {
-              "expression": "plaza_id",
+              "expression": "municipality_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2855,12 +2855,12 @@
         }
       },
       "foreignKeys": {
-        "campaign_demand_plaza_id_plaza_id_fk": {
-          "name": "campaign_demand_plaza_id_plaza_id_fk",
+        "campaign_demand_municipality_id_municipality_id_fk": {
+          "name": "campaign_demand_municipality_id_municipality_id_fk",
           "tableFrom": "campaign_demand",
-          "tableTo": "plaza",
+          "tableTo": "municipality",
           "columnsFrom": [
-            "plaza_id"
+            "municipality_id"
           ],
           "columnsTo": [
             "id"
@@ -3074,8 +3074,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "plaza_id": {
-          "name": "plaza_id",
+        "municipality_id": {
+          "name": "municipality_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -3180,11 +3180,11 @@
           "method": "btree",
           "with": {}
         },
-        "supporter_plaza_idx": {
-          "name": "supporter_plaza_idx",
+        "supporter_municipality_idx": {
+          "name": "supporter_municipality_idx",
           "columns": [
             {
-              "expression": "plaza_id",
+              "expression": "municipality_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -3315,12 +3315,12 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "supporter_plaza_id_plaza_id_fk": {
-          "name": "supporter_plaza_id_plaza_id_fk",
+        "supporter_municipality_id_municipality_id_fk": {
+          "name": "supporter_municipality_id_municipality_id_fk",
           "tableFrom": "supporter",
-          "tableTo": "plaza",
+          "tableTo": "municipality",
           "columnsFrom": [
-            "plaza_id"
+            "municipality_id"
           ],
           "columnsTo": [
             "id"
@@ -3521,8 +3521,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.plaza_update": {
-      "name": "plaza_update",
+    "public.municipality_update": {
+      "name": "municipality_update",
       "schema": "",
       "columns": {
         "id": {
@@ -3531,8 +3531,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "plaza_id": {
-          "name": "plaza_id",
+        "municipality_id": {
+          "name": "municipality_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -3545,7 +3545,7 @@
         },
         "kind": {
           "name": "kind",
-          "type": "enum_plaza_update_kind",
+          "type": "enum_municipality_update_kind",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
@@ -3603,11 +3603,11 @@
         }
       },
       "indexes": {
-        "plaza_update_plaza_idx": {
-          "name": "plaza_update_plaza_idx",
+        "municipality_update_municipality_idx": {
+          "name": "municipality_update_municipality_idx",
           "columns": [
             {
-              "expression": "plaza_id",
+              "expression": "municipality_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -3618,8 +3618,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_update_author_idx": {
-          "name": "plaza_update_author_idx",
+        "municipality_update_author_idx": {
+          "name": "municipality_update_author_idx",
           "columns": [
             {
               "expression": "author_id",
@@ -3633,8 +3633,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_update_kind_idx": {
-          "name": "plaza_update_kind_idx",
+        "municipality_update_kind_idx": {
+          "name": "municipality_update_kind_idx",
           "columns": [
             {
               "expression": "kind",
@@ -3648,8 +3648,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_update_updated_at_idx": {
-          "name": "plaza_update_updated_at_idx",
+        "municipality_update_updated_at_idx": {
+          "name": "municipality_update_updated_at_idx",
           "columns": [
             {
               "expression": "updated_at",
@@ -3663,8 +3663,8 @@
           "method": "btree",
           "with": {}
         },
-        "plaza_update_created_at_idx": {
-          "name": "plaza_update_created_at_idx",
+        "municipality_update_created_at_idx": {
+          "name": "municipality_update_created_at_idx",
           "columns": [
             {
               "expression": "created_at",
@@ -3680,12 +3680,12 @@
         }
       },
       "foreignKeys": {
-        "plaza_update_plaza_id_plaza_id_fk": {
-          "name": "plaza_update_plaza_id_plaza_id_fk",
-          "tableFrom": "plaza_update",
-          "tableTo": "plaza",
+        "municipality_update_municipality_id_municipality_id_fk": {
+          "name": "municipality_update_municipality_id_municipality_id_fk",
+          "tableFrom": "municipality_update",
+          "tableTo": "municipality",
           "columnsFrom": [
-            "plaza_id"
+            "municipality_id"
           ],
           "columnsTo": [
             "id"
@@ -3693,9 +3693,9 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "plaza_update_author_id_campaign_user_id_fk": {
-          "name": "plaza_update_author_id_campaign_user_id_fk",
-          "tableFrom": "plaza_update",
+        "municipality_update_author_id_campaign_user_id_fk": {
+          "name": "municipality_update_author_id_campaign_user_id_fk",
+          "tableFrom": "municipality_update",
           "tableTo": "campaign_user",
           "columnsFrom": [
             "author_id"
@@ -4038,8 +4038,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "plaza_id": {
-          "name": "plaza_id",
+        "municipality_id": {
+          "name": "municipality_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -4206,11 +4206,11 @@
           "method": "btree",
           "with": {}
         },
-        "action_plan_plaza_idx": {
-          "name": "action_plan_plaza_idx",
+        "action_plan_municipality_idx": {
+          "name": "action_plan_municipality_idx",
           "columns": [
             {
-              "expression": "plaza_id",
+              "expression": "municipality_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -4313,12 +4313,12 @@
         }
       },
       "foreignKeys": {
-        "action_plan_plaza_id_plaza_id_fk": {
-          "name": "action_plan_plaza_id_plaza_id_fk",
+        "action_plan_municipality_id_municipality_id_fk": {
+          "name": "action_plan_municipality_id_municipality_id_fk",
           "tableFrom": "action_plan",
-          "tableTo": "plaza",
+          "tableTo": "municipality",
           "columnsFrom": [
-            "plaza_id"
+            "municipality_id"
           ],
           "columnsTo": [
             "id"
@@ -8069,8 +8069,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "plaza_id": {
-          "name": "plaza_id",
+        "municipality_id": {
+          "name": "municipality_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -8111,8 +8111,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "plaza_update_id": {
-          "name": "plaza_update_id",
+        "municipality_update_id": {
+          "name": "municipality_update_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -8281,11 +8281,11 @@
           "method": "btree",
           "with": {}
         },
-        "payload_locked_documents_rels_plaza_id_idx": {
-          "name": "payload_locked_documents_rels_plaza_id_idx",
+        "payload_locked_documents_rels_municipality_id_idx": {
+          "name": "payload_locked_documents_rels_municipality_id_idx",
           "columns": [
             {
-              "expression": "plaza_id",
+              "expression": "municipality_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -8386,11 +8386,11 @@
           "method": "btree",
           "with": {}
         },
-        "payload_locked_documents_rels_plaza_update_id_idx": {
-          "name": "payload_locked_documents_rels_plaza_update_id_idx",
+        "payload_locked_documents_rels_municipality_update_id_idx": {
+          "name": "payload_locked_documents_rels_municipality_update_id_idx",
           "columns": [
             {
-              "expression": "plaza_update_id",
+              "expression": "municipality_update_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -8635,12 +8635,12 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "payload_locked_documents_rels_plaza_fk": {
-          "name": "payload_locked_documents_rels_plaza_fk",
+        "payload_locked_documents_rels_municipality_fk": {
+          "name": "payload_locked_documents_rels_municipality_fk",
           "tableFrom": "payload_locked_documents_rels",
-          "tableTo": "plaza",
+          "tableTo": "municipality",
           "columnsFrom": [
-            "plaza_id"
+            "municipality_id"
           ],
           "columnsTo": [
             "id"
@@ -8726,12 +8726,12 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "payload_locked_documents_rels_plaza_update_fk": {
-          "name": "payload_locked_documents_rels_plaza_update_fk",
+        "payload_locked_documents_rels_municipality_update_fk": {
+          "name": "payload_locked_documents_rels_municipality_update_fk",
           "tableFrom": "payload_locked_documents_rels",
-          "tableTo": "plaza_update",
+          "tableTo": "municipality_update",
           "columnsFrom": [
-            "plaza_update_id"
+            "municipality_update_id"
           ],
           "columnsTo": [
             "id"
@@ -9971,24 +9971,24 @@
         "autopreenchimento"
       ]
     },
-    "public.enum_plaza_kind": {
-      "name": "enum_plaza_kind",
+    "public.enum_municipality_kind": {
+      "name": "enum_municipality_kind",
       "schema": "public",
       "values": [
         "municipio",
         "zona"
       ]
     },
-    "public.enum_plaza_priority": {
-      "name": "enum_plaza_priority",
+    "public.enum_municipality_priority": {
+      "name": "enum_municipality_priority",
       "schema": "public",
       "values": [
         "alta",
         "normal"
       ]
     },
-    "public.enum_plaza_political_trend_status": {
-      "name": "enum_plaza_political_trend_status",
+    "public.enum_municipality_political_trend_status": {
+      "name": "enum_municipality_political_trend_status",
       "schema": "public",
       "values": [
         "favoravel",
@@ -10091,8 +10091,8 @@
         "evento"
       ]
     },
-    "public.enum_plaza_update_kind": {
-      "name": "enum_plaza_update_kind",
+    "public.enum_municipality_update_kind": {
+      "name": "enum_municipality_update_kind",
       "schema": "public",
       "values": [
         "semanal",

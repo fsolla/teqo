@@ -73,7 +73,7 @@ export const RecentlyVisitedCard = ({
       <CardContent className={cn('flex-1', compact ? 'px-4 pt-0' : undefined)}>
         <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
           {entries.map((entry) => {
-            const Icon = entry.kind === 'plaza' ? Building2Icon : FilterIcon
+            const Icon = entry.kind === 'municipality' ? Building2Icon : FilterIcon
             return (
               <li key={entry.href}>
                 <Button

@@ -10,7 +10,7 @@ const upcomingActionPlanSelect = {
   slug: true,
   kind: true,
   startAt: true,
-  plaza: true,
+  municipality: true,
 } as const
 
 export type ActionPlanUpcomingPreviewRecord = {
@@ -19,30 +19,30 @@ export type ActionPlanUpcomingPreviewRecord = {
   title: string
   kind: ActionPlan['kind']
   startAt: string
-  plazaName: string | null
+  municipalityName: string | null
 }
 
 export type ActionPlanUpcomingPreviewFilters = {
-  plaza?: number
+  municipality?: number
 }
 
-const loadPlazaNamesById = async (
+const loadMunicipalityNamesById = async (
   payload: Pick<Payload, 'find'>,
-  plazaIds: number[],
+  municipalityIds: number[],
 ): Promise<Map<number, string>> => {
-  if (plazaIds.length === 0) return new Map()
+  if (municipalityIds.length === 0) return new Map()
 
   // Display-name lookup: row access on the plans already gated visibility.
   const result = await payload.find({
-    collection: 'plaza',
-    where: { id: { in: plazaIds } },
+    collection: 'municipality',
+    where: { id: { in: municipalityIds } },
     depth: 0,
     pagination: false,
     select: { name: true },
     overrideAccess: true,
   })
 
-  return new Map(result.docs.map((plaza) => [plaza.id, plaza.name]))
+  return new Map(result.docs.map((municipality) => [municipality.id, municipality.name]))
 }
 
 export const loadUpcomingActionPlansPreview = async (
@@ -59,8 +59,8 @@ export const loadUpcomingActionPlansPreview = async (
     { status: { in: ['planejado', 'confirmado'] } },
     { startAt: { greater_than_equal: now.toISOString() } },
   ]
-  if (options.filters?.plaza) {
-    filters.push({ plaza: { equals: options.filters.plaza } })
+  if (options.filters?.municipality) {
+    filters.push({ municipality: { equals: options.filters.municipality } })
   }
 
   const result = await payload.find({
@@ -75,24 +75,24 @@ export const loadUpcomingActionPlansPreview = async (
     overrideAccess: false,
   })
 
-  const plazaIds = [
+  const municipalityIds = [
     ...new Set(
       result.docs
-        .map((plan) => relationshipId(plan.plaza))
+        .map((plan) => relationshipId(plan.municipality))
         .filter((id): id is number => id !== null),
     ),
   ]
-  const plazaNamesById = await loadPlazaNamesById(payload, plazaIds)
+  const municipalityNamesById = await loadMunicipalityNamesById(payload, municipalityIds)
 
   return result.docs.map((plan) => {
-    const plazaId = relationshipId(plan.plaza)
+    const municipalityId = relationshipId(plan.municipality)
     return {
       id: plan.id,
       slug: plan.slug,
       title: plan.title,
       kind: plan.kind,
       startAt: plan.startAt as string,
-      plazaName: plazaId ? (plazaNamesById.get(plazaId) ?? null) : null,
+      municipalityName: municipalityId ? (municipalityNamesById.get(municipalityId) ?? null) : null,
     }
   })
 }

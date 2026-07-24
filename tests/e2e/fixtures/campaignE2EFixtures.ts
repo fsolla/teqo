@@ -4,7 +4,7 @@ import { sql } from '@payloadcms/db-postgres'
 import type { Page } from '@playwright/test'
 import { getPayload, type CollectionSlug, type Payload, type PayloadRequest } from 'payload'
 
-import { plazaCatalog } from '../../../src/lib/plazaCatalog.js'
+import { municipalityCatalog } from '../../../src/lib/municipalityCatalog.js'
 import config from '../../../src/payload.config.js'
 import { withPayloadTransaction } from '../../../src/utilities/payloadTransaction.js'
 import { assertTestDatabase } from '../../helpers/assertTestDatabase.js'
@@ -21,7 +21,7 @@ type OwnedCollection =
   | 'leadership'
   | 'votePledge'
   | 'campaignDemand'
-  | 'plazaUpdate'
+  | 'municipalityUpdate'
   | 'campaignInvite'
   | 'consent'
   | 'supporter'
@@ -30,7 +30,7 @@ const deletionOrder: OwnedCollection[] = [
   'campaignInvite',
   'votePledge',
   'campaignDemand',
-  'plazaUpdate',
+  'municipalityUpdate',
   'leadership',
   'supporter',
   'organization',
@@ -41,16 +41,16 @@ const deletionOrder: OwnedCollection[] = [
 ]
 
 /**
- * Plazas are SEEDED reference rows (436 from the static catalog): E2E tests
- * never create/delete them. `claimPlaza` hands out a globally unique seeded
- * plaza per call (Postgres sequence — safe across parallel workers) and
+ * Municipalities are SEEDED reference rows (435 from the static catalog): E2E tests
+ * never create/delete them. `claimMunicipality` hands out a globally unique seeded
+ * municipality per call (Postgres sequence — safe across parallel workers) and
  * cleanup resets the operational fields the test may have touched.
  */
 class CampaignE2EOwnership {
   readonly payload: Payload
   readonly runID = randomUUID()
   private counter = 0
-  private readonly touchedPlazas = new Set<number>()
+  private readonly touchedMunicipalities = new Set<number>()
   private readonly owned = new Map<OwnedCollection, Set<number>>(
     deletionOrder.map((collection) => [collection, new Set<number>()]),
   )
@@ -85,33 +85,35 @@ class CampaignE2EOwnership {
     return `719${suffix}`
   }
 
-  async claimPlaza(): Promise<{ id: number; name: string; slug: string }> {
+  async claimMunicipality(): Promise<{ id: number; name: string; slug: string }> {
     await this.rootPayload.db.drizzle
-      .execute(sql.raw(`CREATE SEQUENCE IF NOT EXISTS "campaign_fixture_plaza_alloc"`))
+      .execute(sql.raw(`CREATE SEQUENCE IF NOT EXISTS "campaign_fixture_municipality_alloc"`))
       .catch((error: unknown) => {
         if ((error as { code?: string }).code === '23505') return
         throw error
       })
     const result = await this.rootPayload.db.drizzle.execute(
-      sql.raw(`SELECT nextval('"campaign_fixture_plaza_alloc"') AS "value"`),
+      sql.raw(`SELECT nextval('"campaign_fixture_municipality_alloc"') AS "value"`),
     )
-    const index = Number((result.rows[0] as { value: string | number }).value) % plazaCatalog.length
-    const slug = plazaCatalog[index]!.slug
+    const index =
+      Number((result.rows[0] as { value: string | number }).value) % municipalityCatalog.length
+    const slug = municipalityCatalog[index]!.slug
     const found = await this.rootPayload.find({
-      collection: 'plaza',
+      collection: 'municipality',
       where: { slug: { equals: slug } },
       depth: 0,
       limit: 1,
       pagination: false,
     })
-    const plaza = found.docs[0]
-    if (!plaza) throw new Error(`Seeded plaza "${slug}" not found — run migrations first.`)
-    this.touchedPlazas.add(plaza.id)
-    return { id: plaza.id, name: plaza.name, slug: plaza.slug }
+    const municipality = found.docs[0]
+    if (!municipality)
+      throw new Error(`Seeded municipality "${slug}" not found — run migrations first.`)
+    this.touchedMunicipalities.add(municipality.id)
+    return { id: municipality.id, name: municipality.name, slug: municipality.slug }
   }
 
-  touchPlaza(id: number): void {
-    this.touchedPlazas.add(id)
+  touchMunicipality(id: number): void {
+    this.touchedMunicipalities.add(id)
   }
 
   private isOwnedCollection(collection: CollectionSlug): collection is OwnedCollection {
@@ -220,7 +222,7 @@ class CampaignE2EOwnership {
     if (userIDs.length) {
       const [updates, demands] = await Promise.all([
         this.rootPayload.find({
-          collection: 'plazaUpdate',
+          collection: 'municipalityUpdate',
           where: { author: { in: userIDs } },
           depth: 0,
           pagination: false,
@@ -232,7 +234,7 @@ class CampaignE2EOwnership {
           pagination: false,
         }),
       ])
-      for (const update of updates.docs) this.own('plazaUpdate', update.id)
+      for (const update of updates.docs) this.own('municipalityUpdate', update.id)
       for (const demand of demands.docs) this.own('campaignDemand', demand.id)
     }
     if (contactIDs.length || userIDs.length) {
@@ -285,10 +287,10 @@ class CampaignE2EOwnership {
           throw new AggregateError(result.errors, `Failed to clean owned ${collection} rows.`)
         }
       }
-      for (const plazaID of this.touchedPlazas) {
+      for (const municipalityID of this.touchedMunicipalities) {
         await this.rootPayload.update({
-          collection: 'plaza',
-          id: plazaID,
+          collection: 'municipality',
+          id: municipalityID,
           data: {
             advisors: [],
             priority: 'normal',

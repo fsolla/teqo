@@ -109,14 +109,14 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
           <p className="tabular-nums">{supporter.phoneDisplay || '—'}</p>
           {supporter.email ? <p>{supporter.email}</p> : null}
           <p>
-            {supporter.plazaName ? (
+            {supporter.municipalityName ? (
               <>
                 Praça:{' '}
                 <Link
-                  href={`/campanha/pracas/${supporter.plazaSlug}`}
+                  href={`/campanha/municipios/${supporter.municipalitySlug}`}
                   className="font-medium text-primary underline-offset-4 hover:underline"
                 >
-                  {supporter.plazaName}
+                  {supporter.municipalityName}
                 </Link>
               </>
             ) : (

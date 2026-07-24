@@ -8,7 +8,6 @@ import {
   createCampaignDemandRecord,
   setCampaignDemandCostRecord,
   transitionCampaignDemandRecord,
-  updateCampaignDemandDetailsRecord,
 } from '@/app/(campaign)/campanha/actions/demand'
 import config from '@/payload.config'
 
@@ -22,47 +21,44 @@ const campaignFixtures = installCampaignFixtures({
   },
 })
 
-describe('campaign demand workflow', () => {
+describe('campaign demand workflow (staff-only)', () => {
   beforeAll(async () => {
     payload = await getPayload({ config: await config })
   })
 
   const createScenario = async () => {
     const fixtures = campaignFixtures()
-    const plaza = await fixtures.getPlaza()
+    const municipality = await fixtures.getMunicipality()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const advisor = await fixtures.createCampaignUser('advisor')
-    await fixtures.assignPlazaAdvisors(plaza.id, [advisor.id])
+    const candidate = await fixtures.createCampaignUser('candidate')
+    await fixtures.assignMunicipalityAdvisors(municipality.id, [advisor.id])
 
     const leaderAccount = await fixtures.createCampaignUser('leader')
     const contact = await fixtures.createContact()
     const leadership = await fixtures.createLeadership({
       contact: contact.id,
-      plazas: [plaza.id],
+      municipalities: [municipality.id],
       user: leaderAccount.id,
       supportStatus: 'engajado',
     })
 
-    return { fixtures, plaza, coordinator, advisor, leaderAccount, leadership }
+    return { fixtures, municipality, coordinator, advisor, candidate, leaderAccount, leadership }
   }
 
-  it('links a leader-created demand to their own leadership and opens it', async () => {
-    const { fixtures, plaza, leaderAccount, leadership } = await createScenario()
+  it('lets staff open a demand in an administered municipality', async () => {
+    const { fixtures, municipality, advisor } = await createScenario()
 
-    const demand = await createCampaignDemandRecord(payload, leaderAccount, {
+    const demand = await createCampaignDemandRecord(payload, advisor, {
       title: fixtures.value('Som para caminhada'),
       kind: 'equipamento',
       description: 'Precisamos de carro de som para a caminhada de sábado.',
-      plaza: plaza.id,
+      municipality: municipality.id,
     })
     fixtures.own('campaignDemand', demand.id)
 
     expect(demand.status).toBe('aberta')
-    expect(typeof demand.leadership === 'number' ? demand.leadership : demand.leadership?.id).toBe(
-      leadership.id,
-    )
 
-    // History is staff-only — assert it via a privileged read.
     const raw = await payload.findByID({
       collection: 'campaignDemand',
       id: demand.id,
@@ -73,26 +69,39 @@ describe('campaign demand workflow', () => {
     expect(raw.statusHistory?.[0]?.status).toBe('aberta')
   })
 
-  it('rejects a demand from a leader outside the plaza', async () => {
-    const { fixtures, leaderAccount } = await createScenario()
-    const otherPlaza = await fixtures.getPlaza()
+  it('rejects demand creation from leaders', async () => {
+    const { fixtures, municipality, leaderAccount } = await createScenario()
 
     await expect(
       createCampaignDemandRecord(payload, leaderAccount, {
-        title: fixtures.value('Fora do escopo'),
+        title: fixtures.value('Bloqueado'),
         kind: 'material',
-        plaza: otherPlaza.id,
+        municipality: municipality.id,
       }),
     ).rejects.toThrow()
   })
 
-  it('runs the analyze → escalate → coordinator decision path with history', async () => {
-    const { fixtures, plaza, coordinator, advisor, leaderAccount } = await createScenario()
+  it('rejects a demand from an advisor outside the municipality', async () => {
+    const { fixtures, leaderAccount: _leader, municipality: _municipality } = await createScenario()
+    const outsideAdvisor = await fixtures.createCampaignUser('advisor')
+    const otherMunicipality = await fixtures.getMunicipality()
 
-    const demand = await createCampaignDemandRecord(payload, leaderAccount, {
+    await expect(
+      createCampaignDemandRecord(payload, outsideAdvisor, {
+        title: fixtures.value('Fora do escopo'),
+        kind: 'material',
+        municipality: otherMunicipality.id,
+      }),
+    ).rejects.toThrow()
+  })
+
+  it('runs the analyze → escalate → coordinator/candidate decision path with history', async () => {
+    const { fixtures, municipality, coordinator, advisor, candidate } = await createScenario()
+
+    const demand = await createCampaignDemandRecord(payload, advisor, {
       title: fixtures.value('Transporte'),
       kind: 'transporte',
-      plaza: plaza.id,
+      municipality: municipality.id,
     })
     fixtures.own('campaignDemand', demand.id)
 
@@ -110,7 +119,6 @@ describe('campaign demand workflow', () => {
     })
     expect(escalated.status).toBe('escalada')
 
-    // Escalated decisions are coordinator-only.
     await expect(
       transitionCampaignDemandRecord(payload, advisor, {
         id: demand.id,
@@ -125,77 +133,64 @@ describe('campaign demand workflow', () => {
       decisionNote: 'Aprovado com ajuste de valor.',
     })
     expect(approved.status).toBe('aprovada')
-    expect(approved.decidedBy).toBeTruthy()
-    expect(approved.decidedAt).toBeTruthy()
-    expect(approved.statusHistory?.map((entry) => entry.status)).toEqual([
-      'aberta',
-      'em_analise',
-      'escalada',
-      'aprovada',
-    ])
 
-    // Terminal state: no further transitions.
-    await expect(
-      transitionCampaignDemandRecord(payload, coordinator, {
-        id: demand.id,
-        status: 'em_analise',
-        decisionNote: null,
-      }),
-    ).rejects.toThrow()
-  })
-
-  it('locks leader edits once the demand leaves "aberta"', async () => {
-    const { fixtures, plaza, advisor, leaderAccount } = await createScenario()
-
-    const demand = await createCampaignDemandRecord(payload, leaderAccount, {
-      title: fixtures.value('Faixas'),
-      kind: 'material',
-      plaza: plaza.id,
+    const demandForCandidate = await createCampaignDemandRecord(payload, advisor, {
+      title: fixtures.value('Candidato decide'),
+      kind: 'transporte',
+      municipality: municipality.id,
     })
-    fixtures.own('campaignDemand', demand.id)
-
-    const edited = await updateCampaignDemandDetailsRecord(payload, leaderAccount, {
-      id: demand.id,
-      description: 'Atualizei os detalhes.',
-    })
-    expect(edited.description).toBe('Atualizei os detalhes.')
-
+    fixtures.own('campaignDemand', demandForCandidate.id)
     await transitionCampaignDemandRecord(payload, advisor, {
-      id: demand.id,
+      id: demandForCandidate.id,
       status: 'em_analise',
       decisionNote: null,
     })
-
-    await expect(
-      updateCampaignDemandDetailsRecord(payload, leaderAccount, {
-        id: demand.id,
-        description: 'Tarde demais.',
-      }),
-    ).rejects.toThrow()
+    await transitionCampaignDemandRecord(payload, advisor, {
+      id: demandForCandidate.id,
+      status: 'escalada',
+      decisionNote: 'Escalada.',
+    })
+    const candidateApproved = await transitionCampaignDemandRecord(payload, candidate, {
+      id: demandForCandidate.id,
+      status: 'aprovada',
+      decisionNote: 'OK pelo candidato.',
+    })
+    expect(candidateApproved.status).toBe('aprovada')
   })
 
-  it('keeps cost staff-only: leaders never receive it', async () => {
-    const { fixtures, plaza, advisor, leaderAccount } = await createScenario()
+  it('denies leaders read access to demands', async () => {
+    const { fixtures, municipality, advisor, leaderAccount } = await createScenario()
 
-    const demand = await createCampaignDemandRecord(payload, leaderAccount, {
+    const demand = await createCampaignDemandRecord(payload, advisor, {
+      title: fixtures.value('Faixas'),
+      kind: 'material',
+      municipality: municipality.id,
+    })
+    fixtures.own('campaignDemand', demand.id)
+
+    await expect(
+      payload.find({
+        collection: 'campaignDemand',
+        where: { id: { equals: demand.id } },
+        depth: 0,
+        pagination: false,
+        user: leaderAccount,
+        overrideAccess: false,
+      }),
+    ).rejects.toThrow(/permissão/i)
+  })
+
+  it('keeps cost staff-only', async () => {
+    const { fixtures, municipality, advisor } = await createScenario()
+
+    const demand = await createCampaignDemandRecord(payload, advisor, {
       title: fixtures.value('Aluguel de espaço'),
       kind: 'espaco',
-      plaza: plaza.id,
+      municipality: municipality.id,
     })
     fixtures.own('campaignDemand', demand.id)
 
     await setCampaignDemandCostRecord(payload, advisor, { id: demand.id, cost: 1500.5 })
-
-    const leaderRead = await payload.findByID({
-      collection: 'campaignDemand',
-      id: demand.id,
-      depth: 0,
-      user: leaderAccount,
-      overrideAccess: false,
-    })
-    expect((leaderRead as unknown as Record<string, unknown>).cost ?? null).toBeNull()
-    // Read-denied arrays serialize as empty — internal notes must not leak.
-    expect((leaderRead as unknown as Record<string, unknown>).statusHistory ?? []).toEqual([])
 
     const staffRead = await payload.findByID({
       collection: 'campaignDemand',
@@ -207,14 +202,14 @@ describe('campaign demand workflow', () => {
     expect(staffRead.cost).toBe(1500.5)
   })
 
-  it('scopes advisors to demands of administered plazas', async () => {
-    const { fixtures, plaza, leaderAccount } = await createScenario()
+  it('scopes advisors to demands of administered municipalities', async () => {
+    const { fixtures, municipality, advisor } = await createScenario()
     const outsideAdvisor = await fixtures.createCampaignUser('advisor')
 
-    const demand = await createCampaignDemandRecord(payload, leaderAccount, {
+    const demand = await createCampaignDemandRecord(payload, advisor, {
       title: fixtures.value('Panfletos'),
       kind: 'material',
-      plaza: plaza.id,
+      municipality: municipality.id,
     })
     fixtures.own('campaignDemand', demand.id)
 

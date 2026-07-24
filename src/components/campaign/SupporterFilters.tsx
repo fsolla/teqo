@@ -22,28 +22,28 @@ type FilterValues = {
   q: string
   voteIntention: string
   city: string
-  plaza: string
+  municipality: string
 }
 
 const valuesFromState = (state: SupporterListState): FilterValues => ({
   q: state.q ?? '',
   voteIntention: state.voteIntention ?? '',
   city: state.city ?? '',
-  plaza: state.plaza ? String(state.plaza) : '',
+  municipality: state.municipality ? String(state.municipality) : '',
 })
 
-const filterNames = ['voteIntention', 'city', 'plaza'] as const
+const filterNames = ['voteIntention', 'city', 'municipality'] as const
 
 type FilterFieldsProps = {
   values: FilterValues
-  plazaOptions: RelationOption[]
+  municipalityOptions: RelationOption[]
   updateFilter: (name: (typeof filterNames)[number], value: string) => void
   updateCity: (city: string) => void
 }
 
 const FilterFields = ({
   values,
-  plazaOptions,
+  municipalityOptions,
   updateFilter,
   updateCity,
 }: FilterFieldsProps) => (
@@ -79,18 +79,18 @@ const FilterFields = ({
       />
     </Field>
     <Field>
-      <FieldLabel htmlFor="supporter-plaza">Praça</FieldLabel>
+      <FieldLabel htmlFor="supporter-municipality">Praça</FieldLabel>
       <NativeSelect
-        id="supporter-plaza"
-        name="plaza"
-        value={values.plaza}
-        onChange={(event) => updateFilter('plaza', event.target.value)}
+        id="supporter-municipality"
+        name="municipality"
+        value={values.municipality}
+        onChange={(event) => updateFilter('municipality', event.target.value)}
         className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
       >
         <NativeSelectOption value="">Todas</NativeSelectOption>
-        {plazaOptions.map((plaza) => (
-          <NativeSelectOption key={plaza.id} value={String(plaza.id)}>
-            {plaza.name}
+        {municipalityOptions.map((municipality) => (
+          <NativeSelectOption key={municipality.id} value={String(municipality.id)}>
+            {municipality.name}
           </NativeSelectOption>
         ))}
       </NativeSelect>
@@ -100,10 +100,10 @@ const FilterFields = ({
 
 export const SupporterFilters = ({
   state,
-  plazaOptions,
+  municipalityOptions,
 }: {
   state: SupporterListState
-  plazaOptions: RelationOption[]
+  municipalityOptions: RelationOption[]
 }) => {
   const router = useRouter()
   const pathname = usePathname()
@@ -121,7 +121,7 @@ export const SupporterFilters = ({
       q: nextValues.q,
       voteIntention: nextValues.voteIntention as SupporterListState['voteIntention'],
       city: nextValues.city,
-      plaza: nextValues.plaza ? Number(nextValues.plaza) : undefined,
+      municipality: nextValues.municipality ? Number(nextValues.municipality) : undefined,
     })
     const query = params.toString()
     startTransition(() => {
@@ -205,7 +205,7 @@ export const SupporterFilters = ({
         >
           <FilterFields
             values={values}
-            plazaOptions={plazaOptions}
+            municipalityOptions={municipalityOptions}
             updateFilter={updateFilter}
             updateCity={updateCity}
           />

@@ -113,7 +113,7 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
                       <Badge variant="secondary">{organizationKindLabels[row.kind]}</Badge>
                     </TableCell>
                     <TableCell className="max-w-64 whitespace-normal text-muted-foreground">
-                      {row.plazaNames.join(', ') || '—'}
+                      {row.municipalityNames.join(', ') || '—'}
                     </TableCell>
                     <TableCell className="tabular-nums">{row.leadershipCount}</TableCell>
                   </TableRow>

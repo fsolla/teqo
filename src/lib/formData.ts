@@ -45,9 +45,9 @@ export const optionalFormText = (formData: FormData, field: string): string | un
   return entry.value.trim() || undefined
 }
 
-/** Hidden `plazaSlug` on list/detail plaza forms for scoped revalidation. */
-export const optionalPlazaSlugFromForm = (formData: FormData): string | undefined =>
-  optionalFormText(formData, 'plazaSlug')
+/** Hidden `municipalitySlug` on list/detail municipality forms for scoped revalidation. */
+export const optionalMunicipalitySlugFromForm = (formData: FormData): string | undefined =>
+  optionalFormText(formData, 'municipalitySlug')
 
 export const nullableFormText = (formData: FormData, field: string): string | null | undefined => {
   const entry = formEntry(formData, field)

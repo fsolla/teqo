@@ -14,8 +14,8 @@ export type DemandRowViewModel = {
   slug: string
   kind: CampaignDemandKind
   status: CampaignDemandStatus
-  plazaName: string
-  plazaSlug: string
+  municipalityName: string
+  municipalitySlug: string
   requesterName: string | null
   createdAt: string
 }
@@ -45,17 +45,17 @@ export const parseDemandListParams = (
   }
 }
 
-const resolvePlazaAndRequesterNames = async (
+const resolveMunicipalityAndRequesterNames = async (
   payload: Payload,
   demands: CampaignDemand[],
 ): Promise<{
-  plazaBy: Map<number, { name: string; slug: string }>
+  municipalityBy: Map<number, { name: string; slug: string }>
   requesterBy: Map<number, string>
 }> => {
-  const plazaIDs = [
+  const municipalityIDs = [
     ...new Set(
       demands
-        .map((demand) => relationshipId(demand.plaza))
+        .map((demand) => relationshipId(demand.municipality))
         .filter((id): id is number => id !== null),
     ),
   ]
@@ -67,11 +67,11 @@ const resolvePlazaAndRequesterNames = async (
     ),
   ]
 
-  const [plazas, leaderships] = await Promise.all([
-    plazaIDs.length
+  const [municipalities, leaderships] = await Promise.all([
+    municipalityIDs.length
       ? payload.find({
-          collection: 'plaza',
-          where: { id: { in: plazaIDs } },
+          collection: 'municipality',
+          where: { id: { in: municipalityIDs } },
           depth: 0,
           limit: 0,
           pagination: false,
@@ -93,8 +93,8 @@ const resolvePlazaAndRequesterNames = async (
   ])
 
   return {
-    plazaBy: new Map(
-      plazas.docs.map((plaza) => [plaza.id, { name: plaza.name, slug: plaza.slug }]),
+    municipalityBy: new Map(
+      municipalities.docs.map((municipality) => [municipality.id, { name: municipality.name, slug: municipality.slug }]),
     ),
     requesterBy: new Map(
       leaderships.docs.map((leadership) => {
@@ -112,10 +112,10 @@ const resolvePlazaAndRequesterNames = async (
 
 const toDemandRow = (
   demand: CampaignDemand,
-  plazaBy: Map<number, { name: string; slug: string }>,
+  municipalityBy: Map<number, { name: string; slug: string }>,
   requesterBy: Map<number, string>,
 ): DemandRowViewModel => {
-  const plaza = plazaBy.get(relationshipId(demand.plaza) ?? -1)
+  const municipality = municipalityBy.get(relationshipId(demand.municipality) ?? -1)
   const leadershipID = relationshipId(demand.leadership)
   return {
     id: demand.id,
@@ -123,8 +123,8 @@ const toDemandRow = (
     slug: demand.slug,
     kind: demand.kind as CampaignDemandKind,
     status: demand.status as CampaignDemandStatus,
-    plazaName: plaza?.name ?? 'Praça',
-    plazaSlug: plaza?.slug ?? '',
+    municipalityName: municipality?.name ?? 'Praça',
+    municipalitySlug: municipality?.slug ?? '',
     requesterName: leadershipID ? (requesterBy.get(leadershipID) ?? null) : null,
     createdAt: demand.createdAt,
   }
@@ -164,14 +164,14 @@ export const loadDemandListPageData = async (
     }),
   ])
 
-  const { plazaBy, requesterBy } = await resolvePlazaAndRequesterNames(
+  const { municipalityBy, requesterBy } = await resolveMunicipalityAndRequesterNames(
     payload,
     result.docs as CampaignDemand[],
   )
 
   return {
     rows: (result.docs as CampaignDemand[]).map((demand) =>
-      toDemandRow(demand, plazaBy, requesterBy),
+      toDemandRow(demand, municipalityBy, requesterBy),
     ),
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
@@ -212,8 +212,8 @@ export const loadDemandDetail = async (
   const demand = result.docs[0] as CampaignDemand | undefined
   if (!demand) return null
 
-  const { plazaBy, requesterBy } = await resolvePlazaAndRequesterNames(payload, [demand])
-  const row = toDemandRow(demand, plazaBy, requesterBy)
+  const { municipalityBy, requesterBy } = await resolveMunicipalityAndRequesterNames(payload, [demand])
+  const row = toDemandRow(demand, municipalityBy, requesterBy)
 
   const authorIDs = [
     ...new Set(

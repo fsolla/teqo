@@ -5,12 +5,12 @@ import { readFileSync } from 'node:fs'
 import type { Payload, PayloadRequest } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { assignPlazaAdvisorsRecord } from '@/app/(campaign)/campanha/actions/plaza'
-import config from '@/payload.config'
-import type { CampaignUser } from '@/payload-types'
+import { assignMunicipalityAdvisorsRecord } from '@/app/(campaign)/campanha/actions/municipality'
 import { CampaignUser as CampaignUserCollection } from '@/collections/CampaignUser'
 import { campaignLoginSchema } from '@/lib/schemas/campaign-login'
-import { getAccessiblePlazaIds, isCampaignCoordinator } from '@/utilities/campaignAccess'
+import type { CampaignUser } from '@/payload-types'
+import config from '@/payload.config'
+import { getAccessibleMunicipalityIds, isCampaignCoordinator } from '@/utilities/campaignAccess'
 import { authenticateCampaignToken } from '@/utilities/campaignAuth'
 import {
   buildWhatsAppUrl,
@@ -288,7 +288,7 @@ describe('campaign authentication foundation', () => {
     { actorKind: 'admin', targetRole: 'advisor' },
     { actorKind: 'coordinator', targetRole: 'coordinator' },
   ] as const)(
-    'blocks an assigned $targetRole downgrade from a Payload $actorKind while advisor of a plaza',
+    'blocks an assigned $targetRole downgrade from a Payload $actorKind while advisor of a municipality',
     async ({ actorKind, targetRole }) => {
       const coordinator = await payload.create({
         collection: 'campaignUser',
@@ -315,8 +315,8 @@ describe('campaign authentication foundation', () => {
           role: targetRole,
         },
       })
-      const plaza = await campaignFixtures().getPlaza()
-      await campaignFixtures().assignPlazaAdvisors(plaza, [target])
+      const municipality = await campaignFixtures().getMunicipality()
+      await campaignFixtures().assignMunicipalityAdvisors(municipality, [target])
       const actor = admin ?? coordinator
 
       await expect(
@@ -328,21 +328,21 @@ describe('campaign authentication foundation', () => {
           overrideAccess: false,
         }),
       ).rejects.toThrow(
-        'Remova ou substitua este usuário da assessoria de todas as Praças antes de alterar o papel para liderança.',
+        'Remova ou substitua este usuário da assessoria de todos os municípios antes de alterar o papel para liderança.',
       )
 
       if (admin) {
         await payload.update({
-          collection: 'plaza',
-          id: plaza.id,
+          collection: 'municipality',
+          id: municipality.id,
           data: { advisors: [] },
           user: admin,
           overrideAccess: false,
           depth: 0,
         })
       } else {
-        await assignPlazaAdvisorsRecord(payload, coordinator, {
-          plaza: plaza.id,
+        await assignMunicipalityAdvisorsRecord(payload, coordinator, {
+          municipality: municipality.id,
           advisors: [],
         })
       }
@@ -425,21 +425,21 @@ describe('campaign authentication foundation', () => {
     expect(migration).toContain('RAISE EXCEPTION')
   })
 
-  it('returns only plazas administered by an advisor', async () => {
+  it('returns only municipalities administered by an advisor', async () => {
     const advisor = await campaignFixtures().createCampaignUser('advisor')
-    const assignedPlaza = await campaignFixtures().getPlaza()
-    const otherPlaza = await campaignFixtures().getPlaza()
-    await campaignFixtures().assignPlazaAdvisors(assignedPlaza, [advisor])
+    const assignedMunicipality = await campaignFixtures().getMunicipality()
+    const otherMunicipality = await campaignFixtures().getMunicipality()
+    await campaignFixtures().assignMunicipalityAdvisors(assignedMunicipality, [advisor])
 
     const req = { context: {}, payload } as unknown as PayloadRequest
 
-    const ids = await getAccessiblePlazaIds(req, advisor)
+    const ids = await getAccessibleMunicipalityIds(req, advisor)
 
-    expect(ids).toEqual([assignedPlaza.id])
-    expect(ids).not.toContain(otherPlaza.id)
+    expect(ids).toEqual([assignedMunicipality.id])
+    expect(ids).not.toContain(otherMunicipality.id)
   })
 
-  it('uses the current role when resolving accessible plazas', async () => {
+  it('uses the current role when resolving accessible municipalities', async () => {
     const find = vi.fn().mockResolvedValue({
       docs: [{ id: 7 }],
     })
@@ -456,7 +456,7 @@ describe('campaign authentication foundation', () => {
       context: {},
       payload: {
         collections: {
-          plaza: {},
+          municipality: {},
         },
         find,
         findByID: vi.fn().mockResolvedValue(currentAdvisor),
@@ -464,7 +464,7 @@ describe('campaign authentication foundation', () => {
       user: staleCoordinator,
     } as unknown as PayloadRequest
 
-    const ids = await getAccessiblePlazaIds(req)
+    const ids = await getAccessibleMunicipalityIds(req)
 
     expect(ids).toEqual([7])
     expect(req.payload.findByID).toHaveBeenCalledWith(
@@ -477,7 +477,7 @@ describe('campaign authentication foundation', () => {
     )
     expect(find).toHaveBeenCalledWith(
       expect.objectContaining({
-        collection: 'plaza',
+        collection: 'municipality',
         req,
         where: {
           advisors: {
@@ -488,9 +488,9 @@ describe('campaign authentication foundation', () => {
     )
   })
 
-  it('returns only engaged plazas for a leader and propagates req', async () => {
+  it('returns only engaged municipalities for a leader and propagates req', async () => {
     const find = vi.fn().mockResolvedValue({
-      docs: [{ id: 3, plazas: [7], organizations: [] }],
+      docs: [{ id: 3, municipalities: [7], organizations: [] }],
     })
     const req = {
       context: {},
@@ -507,7 +507,7 @@ describe('campaign authentication foundation', () => {
       role: 'leader',
     } as CampaignUser
 
-    const ids = await getAccessiblePlazaIds(req, user)
+    const ids = await getAccessibleMunicipalityIds(req, user)
 
     expect(ids).toEqual([7])
     expect(find).toHaveBeenCalledWith(

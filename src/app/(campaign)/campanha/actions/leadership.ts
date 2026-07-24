@@ -8,39 +8,37 @@ import {
   type LeadershipInternalUpdateInput,
 } from '@/lib/schemas/leadership'
 import type { CampaignUser, Contact } from '@/payload-types'
-import { getAdvisorPlazaIds } from '@/utilities/campaignAccess'
-import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
+import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
+import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
 import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 
-const getFreshStaffActor = async (
+const getFreshStaffActor = (
   payload: Payload,
   actor: CampaignUser,
   req?: PayloadTransactionRequest,
-): Promise<CampaignUser> => {
-  const currentActor = await reloadCampaignActor(payload, actor, req)
+): Promise<CampaignUser> =>
+  reloadStaffActor(
+    payload,
+    actor,
+    'Somente a coordenação e a assessoria podem gerenciar lideranças.',
+    req,
+  )
 
-  if (currentActor.role !== 'coordinator' && currentActor.role !== 'advisor') {
-    throw new Error('Somente a coordenação e a assessoria podem gerenciar lideranças.')
-  }
-
-  return currentActor
-}
-
-/** Advisors may only link leaderships to plazas they administer. */
-const assertPlazasWithinScope = async (
+/** Advisors may only link leaderships to municipalities they administer. */
+const assertMunicipalitiesWithinScope = async (
   payload: Payload,
   actor: CampaignUser,
-  plazaIDs: number[],
+  municipalityIDs: number[],
   req?: PayloadTransactionRequest,
 ) => {
   if (actor.role !== 'advisor') return
 
-  const administered = new Set(await getAdvisorPlazaIds(payload, actor.id, req))
-  const outside = plazaIDs.filter((id) => !administered.has(id))
+  const administered = new Set(await getAdvisorMunicipalityIds(payload, actor.id, req))
+  const outside = municipalityIDs.filter((id) => !administered.has(id))
   if (outside.length > 0) {
-    throw new Error('Você só pode vincular lideranças às Praças que assessora.')
+    throw new Error('Você só pode vincular lideranças aos municípios que assessora.')
   }
 }
 
@@ -67,7 +65,7 @@ const createValidatedLeadershipRecord = async (
       payload,
       async ({ req }) => {
         const currentActor = await getFreshStaffActor(payload, actor, req)
-        await assertPlazasWithinScope(payload, currentActor, data.plazas, req)
+        await assertMunicipalitiesWithinScope(payload, currentActor, data.municipalities, req)
         if (payload.db.name !== 'postgres') {
           throw new Error('O bloqueio de deduplicação exige o adaptador PostgreSQL.')
         }
@@ -95,16 +93,16 @@ const createValidatedLeadershipRecord = async (
 
         if (!contactID) {
           let city: string | null = null
-          if (data.plazas.length === 1) {
-            const plaza = await payload.findByID({
-              collection: 'plaza',
-              id: data.plazas[0]!,
+          if (data.municipalities.length === 1) {
+            const municipality = await payload.findByID({
+              collection: 'municipality',
+              id: data.municipalities[0]!,
               depth: 0,
               select: { city: true },
               overrideAccess: true,
               req,
             })
-            city = plaza.city
+            city = municipality.city
           }
           const contact = await payload.create({
             collection: 'contact',
@@ -127,8 +125,9 @@ const createValidatedLeadershipRecord = async (
           collection: 'leadership',
           data: {
             contact: contactID,
-            plazas: data.plazas,
+            municipalities: data.municipalities,
             organizations: data.organizations ?? [],
+            stateDeputies: data.stateDeputies ?? [],
             sector: data.sector,
             sectorNotes: data.sectorNotes,
             supportStatus: data.supportStatus,
@@ -147,7 +146,7 @@ const createValidatedLeadershipRecord = async (
   } catch (error) {
     if (isUniqueLeadershipConflict(error)) {
       throw new Error(
-        'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novas Praças.',
+        'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novos municípios.',
       )
     }
 
@@ -166,7 +165,8 @@ export const updateLeadershipInternalRecord = async (
   actor: CampaignUser,
   input: LeadershipInternalUpdateInput,
 ) => {
-  const { id, plazas, organizations, ...data } = leadershipInternalUpdateSchema.parse(input)
+  const { id, municipalities, organizations, stateDeputies, ...data } =
+    leadershipInternalUpdateSchema.parse(input)
   const currentActor = await getFreshStaffActor(payload, actor)
 
   // Row access verifies the current record is in the actor's scope.
@@ -178,8 +178,8 @@ export const updateLeadershipInternalRecord = async (
     overrideAccess: false,
   })
 
-  if (plazas !== undefined) {
-    await assertPlazasWithinScope(payload, currentActor, plazas)
+  if (municipalities !== undefined) {
+    await assertMunicipalitiesWithinScope(payload, currentActor, municipalities)
   }
 
   return payload.update({
@@ -187,8 +187,9 @@ export const updateLeadershipInternalRecord = async (
     id: current.id,
     data: {
       ...data,
-      ...(plazas === undefined ? {} : { plazas }),
+      ...(municipalities === undefined ? {} : { municipalities }),
       ...(organizations === undefined ? {} : { organizations: organizations ?? [] }),
+      ...(stateDeputies === undefined ? {} : { stateDeputies: stateDeputies ?? [] }),
     },
     depth: 0,
     user: currentActor,
@@ -196,16 +197,16 @@ export const updateLeadershipInternalRecord = async (
   })
 }
 
-export const listPlazaLeaderships = async (
+export const listMunicipalityLeaderships = async (
   payload: Payload,
   actor: CampaignUser,
-  plazaID: number,
+  municipalityID: number,
 ) => {
   const currentActor = await getFreshStaffActor(payload, actor)
 
   return payload.find({
     collection: 'leadership',
-    where: { plazas: { in: [plazaID] } },
+    where: { municipalities: { in: [municipalityID] } },
     depth: 1,
     sort: 'createdAt',
     user: currentActor,

@@ -1,7 +1,7 @@
 // @vitest-environment node
 
-import { beforeAll, describe, expect, it } from 'vitest'
 import { getPayload, type Payload } from 'payload'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 import {
   confirmSupporterImportRecord,
@@ -16,7 +16,10 @@ import {
   SUPPORTER_REGISTRATION_CONSENT_KEY,
   SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
 } from '@/utilities/campaignConsent'
-import { loadSupporterListOverviewData, loadSupportersPageData } from '@/utilities/supporterPageData'
+import {
+  loadSupporterListOverviewData,
+  loadSupportersPageData,
+} from '@/utilities/supporterPageData'
 import { buildSupporterListWhere } from '@/utilities/supporterUi'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
@@ -29,10 +32,7 @@ const campaignFixtures = installCampaignFixtures({
   },
 })
 
-const ensureConsentByKey = async (
-  fixtures: ReturnType<typeof campaignFixtures>,
-  key: string,
-) => {
+const ensureConsentByKey = async (fixtures: ReturnType<typeof campaignFixtures>, key: string) => {
   const existing = await payload.find({
     collection: 'consent',
     where: { key: { equals: key } },
@@ -110,7 +110,7 @@ describe('campaign supporter domain', () => {
     const fixtures = campaignFixtures()
     await ensureSupporterConsents(fixtures)
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const plaza = await fixtures.getPlaza()
+    const municipality = await fixtures.getMunicipality()
     const phone = fixtures.phone()
 
     const created = await createSupporterRecord(payload, coordinator, {
@@ -128,7 +128,7 @@ describe('campaign supporter domain', () => {
     const contact = await fixtures.createContact()
     await fixtures.createLeadership({
       contact: contact.id,
-      plazas: [plaza.id],
+      municipalities: [municipality.id],
       createdBy: coordinator.id,
     })
 
@@ -136,19 +136,19 @@ describe('campaign supporter domain', () => {
       createSupporterRecord(payload, coordinator, {
         name: contact.name,
         phone: contact.phone,
-        plaza: plaza.id,
+        municipality: municipality.id,
         consentAccepted: true,
       }),
-    ).rejects.toThrow(/já é liderança nesta Praça/)
+    ).rejects.toThrow(/já é liderança neste município/)
   })
 
-  it('scopes advisor create to administered plazas and blocks plaza-less create', async () => {
+  it('scopes advisor create to administered municipalities and blocks municipality-less create', async () => {
     const fixtures = campaignFixtures()
     await ensureSupporterConsents(fixtures)
     const advisor = await fixtures.createCampaignUser('advisor')
-    const plaza = await fixtures.getPlaza()
-    const otherPlaza = await fixtures.getPlaza()
-    await fixtures.assignPlazaAdvisors(plaza, [advisor])
+    const municipality = await fixtures.getMunicipality()
+    const otherMunicipality = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
 
     await expect(
       createSupporterRecord(payload, advisor, {
@@ -156,13 +156,13 @@ describe('campaign supporter domain', () => {
         phone: fixtures.phone(),
         consentAccepted: true,
       }),
-    ).rejects.toThrow(/sem Praça/)
+    ).rejects.toThrow(/sem município/)
 
     await expect(
       createSupporterRecord(payload, advisor, {
         name: fixtures.value('Apoiador'),
         phone: fixtures.phone(),
-        plaza: otherPlaza.id,
+        municipality: otherMunicipality.id,
         consentAccepted: true,
       }),
     ).rejects.toThrow()
@@ -170,7 +170,7 @@ describe('campaign supporter domain', () => {
     const created = await createSupporterRecord(payload, advisor, {
       name: fixtures.value('Apoiador'),
       phone: fixtures.phone(),
-      plaza: plaza.id,
+      municipality: municipality.id,
       consentAccepted: true,
     })
     fixtures.own('supporter', created.id)
@@ -351,8 +351,7 @@ describe('campaign supporter domain', () => {
       phone,
       consentAccepted: true,
     })
-    const contactID =
-      typeof created.contact === 'number' ? created.contact : created.contact.id
+    const contactID = typeof created.contact === 'number' ? created.contact : created.contact.id
     fixtures.own('supporter', created.id)
     fixtures.own('contact', contactID)
 
@@ -374,7 +373,9 @@ describe('campaign supporter domain', () => {
     const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
-    const intentions: Array<{ voteIntention: 'certo' | 'tende_a_certo' | 'indeciso' | 'outro' | null }> = [
+    const intentions: Array<{
+      voteIntention: 'certo' | 'tende_a_certo' | 'indeciso' | 'outro' | null
+    }> = [
       { voteIntention: 'certo' },
       { voteIntention: 'certo' },
       { voteIntention: 'tende_a_certo' },
@@ -421,16 +422,16 @@ describe('campaign supporter domain', () => {
     expect(await loadSupporterListOverviewData(payload, coordinator, { page: 1 }, 0)).toBeNull()
   })
 
-  it('scopes the overview aggregate to administered plazas for an advisor and applies filters', async () => {
+  it('scopes the overview aggregate to administered municipalities for an advisor and applies filters', async () => {
     const fixtures = campaignFixtures()
     const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
     const advisor = await fixtures.createCampaignUser('advisor')
-    const assigned = await fixtures.getPlaza()
-    const other = await fixtures.getPlaza()
-    await fixtures.assignPlazaAdvisors(assigned, [advisor])
+    const assigned = await fixtures.getMunicipality()
+    const other = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(assigned, [advisor])
 
     const makeSupporter = async (
-      plazaId: number | undefined,
+      municipalityId: number | undefined,
       voteIntention: 'certo' | 'indeciso' | null,
       city = 'Salvador',
       name = fixtures.value('Apoiador'),
@@ -442,7 +443,7 @@ describe('campaign supporter domain', () => {
         consentContentHash: 'hash',
         consentedAt: new Date().toISOString(),
         createdBy: advisor.id,
-        ...(plazaId ? { plaza: plazaId } : {}),
+        ...(municipalityId ? { municipality: municipalityId } : {}),
         ...(voteIntention ? { voteIntention } : {}),
       })
     }
@@ -544,18 +545,18 @@ describe('campaign supporter domain', () => {
     expect(overview!.certoAndTende + overview!.indeciso).toBeLessThanOrEqual(list.totalDocs)
   })
 
-  it('loads supporters page data scoped to the administered plazas of an advisor', async () => {
+  it('loads supporters page data scoped to the administered municipalities of an advisor', async () => {
     const fixtures = campaignFixtures()
     await ensureSupporterConsents(fixtures)
     const advisor = await fixtures.createCampaignUser('advisor')
-    const assigned = await fixtures.getPlaza()
-    await fixtures.assignPlazaAdvisors(assigned, [advisor])
+    const assigned = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(assigned, [advisor])
     const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
 
     const contact = await fixtures.createContact()
     await fixtures.createSupporter({
       contact: contact.id,
-      plaza: assigned.id,
+      municipality: assigned.id,
       consent: registration.id,
       consentContentHash: 'hash',
       consentedAt: new Date().toISOString(),
@@ -563,8 +564,8 @@ describe('campaign supporter domain', () => {
     })
 
     const pageData = await loadSupportersPageData(payload, advisor, {})
-    expect(pageData.advisorPlazaIds).toContain(assigned.id)
-    expect(pageData.plazaOptions.map((option) => option.id)).toEqual([assigned.id])
+    expect(pageData.advisorMunicipalityIds).toContain(assigned.id)
+    expect(pageData.municipalityOptions.map((option) => option.id)).toEqual([assigned.id])
     expect(pageData.result.totalDocs).toBeGreaterThanOrEqual(1)
     expect(pageData.overview).not.toBeNull()
   })

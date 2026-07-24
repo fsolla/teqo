@@ -15,14 +15,14 @@ import type { CampaignFormActionState } from '@/utilities/campaignFormActionErro
 import { fieldError } from '@/utilities/campaignFormFields'
 
 type DemandFormProps = {
-  plazaOptions: RelationOption[]
+  municipalityOptions: RelationOption[]
   formAction: (
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
 }
 
-export const DemandForm = ({ plazaOptions, formAction }: DemandFormProps) => {
+export const DemandForm = ({ municipalityOptions, formAction }: DemandFormProps) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
 
   return (
@@ -58,25 +58,25 @@ export const DemandForm = ({ plazaOptions, formAction }: DemandFormProps) => {
           </NativeSelect>
         </Field>
         <Field>
-          <FieldLabel htmlFor="demand-plaza">Praça</FieldLabel>
+          <FieldLabel htmlFor="demand-municipality">Município</FieldLabel>
           <NativeSelect
-            id="demand-plaza"
-            name="plazaId"
+            id="demand-municipality"
+            name="municipalityId"
             required
             defaultValue=""
             className="min-h-11 w-full"
           >
             <NativeSelectOption value="" disabled>
-              Selecione a Praça…
+              Selecione o município…
             </NativeSelectOption>
-            {plazaOptions.map((option) => (
+            {municipalityOptions.map((option) => (
               <NativeSelectOption key={option.id} value={String(option.id)}>
                 {option.name}
               </NativeSelectOption>
             ))}
           </NativeSelect>
-          {fieldError(state.fieldErrors, 'plaza') ? (
-            <FieldError>{fieldError(state.fieldErrors, 'plaza')}</FieldError>
+          {fieldError(state.fieldErrors, 'municipality') ? (
+            <FieldError>{fieldError(state.fieldErrors, 'municipality')}</FieldError>
           ) : null}
         </Field>
       </div>

@@ -1,12 +1,12 @@
 // @vitest-environment node
 
 import { readFileSync } from 'node:fs'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { getPayload, type Payload } from 'payload'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import {
   createLeadershipRecord,
-  listPlazaLeaderships,
+  listMunicipalityLeaderships,
   updateLeadershipInternalRecord,
 } from '@/app/(campaign)/campanha/actions/leadership'
 import { Contact } from '@/collections/Contact'
@@ -30,8 +30,8 @@ const campaignFixtures = installCampaignFixtures({
 })
 
 const DUPLICATE_LEADERSHIP_MESSAGE =
-  'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novas Praças.'
-const OUT_OF_SCOPE_PLAZA_MESSAGE = 'Você só pode vincular lideranças às Praças que assessora.'
+  'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novos municípios.'
+const OUT_OF_SCOPE_PLAZA_MESSAGE = 'Você só pode vincular lideranças aos municípios que assessora.'
 
 describe('campaign leadership domain', () => {
   beforeAll(async () => {
@@ -59,7 +59,7 @@ describe('campaign leadership domain', () => {
 
   it('normalizes leadership phone input and excludes protected audit fields', () => {
     const parsed = leadershipCreateSchema.parse({
-      plazas: [1, 1, 2],
+      municipalities: [1, 1, 2],
       name: 'Maria da Silva',
       phone: '+55 (71) 99999-0000',
       supportStatus: 'engajado',
@@ -69,11 +69,13 @@ describe('campaign leadership domain', () => {
     } as never)
 
     expect(parsed.phone).toBe('71999990000')
-    expect(parsed.plazas).toEqual([1, 2])
+    expect(parsed.municipalities).toEqual([1, 2])
     expect(Object.hasOwn(parsed, 'createdBy')).toBe(false)
     expect(Object.hasOwn(parsed, 'user')).toBe(false)
     expect(Object.hasOwn(parsed, 'consent')).toBe(false)
-    expect(() => leadershipCreateSchema.parse({ plazas: [], name: 'Sem Praça', phone: '71999990000' })).toThrow()
+    expect(() =>
+      leadershipCreateSchema.parse({ municipalities: [], name: 'Sem Praça', phone: '71999990000' }),
+    ).toThrow()
     const update = leadershipInternalUpdateSchema.parse({
       id: 1,
       contact: 999,
@@ -104,19 +106,19 @@ describe('campaign leadership domain', () => {
     expect(Leadership.fields).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'contact', unique: true, required: true }),
-        expect.objectContaining({ name: 'plazas', hasMany: true, required: true }),
+        expect.objectContaining({ name: 'municipalities', hasMany: true, required: true }),
       ]),
     )
   })
 
-  it('creates a Contact with the plaza city and rejects a second leadership for the same person', async () => {
+  it('creates a Contact with the municipality city and rejects a second leadership for the same person', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-    const firstPlaza = await campaignFixtures().getPlaza()
-    const secondPlaza = await campaignFixtures().getPlaza()
+    const firstMunicipality = await campaignFixtures().getMunicipality()
+    const secondMunicipality = await campaignFixtures().getMunicipality()
     const phone = campaignFixtures().phone()
 
     const first = await createLeadershipRecord(payload, coordinator, {
-      plazas: [firstPlaza.id],
+      municipalities: [firstMunicipality.id],
       name: 'Maria de Jesus',
       phone: `+55 ${phone}`,
       email: '',
@@ -138,11 +140,11 @@ describe('campaign leadership domain', () => {
     expect(contacts.docs[0]?.name).toBe('Maria de Jesus')
     expect(contacts.docs[0]?.email).toBeNull()
     expect(contacts.docs[0]?.gender).toBe('feminino')
-    expect(contacts.docs[0]?.city).toBe(firstPlaza.city)
+    expect(contacts.docs[0]?.city).toBe(firstMunicipality.city)
 
     await expect(
       createLeadershipRecord(payload, coordinator, {
-        plazas: [secondPlaza.id],
+        municipalities: [secondMunicipality.id],
         name: 'Nome que não sobrescreve contato existente',
         phone,
         supportStatus: 'a_abordar',
@@ -152,12 +154,12 @@ describe('campaign leadership domain', () => {
 
   it('reuses an existing Contact by normalized phone without overwriting it', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-    const plaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
     const phone = campaignFixtures().phone()
     const contact = await campaignFixtures().createContact({ name: 'Contato Existente', phone })
 
     const created = await createLeadershipRecord(payload, coordinator, {
-      plazas: [plaza.id],
+      municipalities: [municipality.id],
       name: 'Nome que não sobrescreve contato existente',
       phone: `+55 ${phone}`,
       supportStatus: 'engajado',
@@ -172,8 +174,8 @@ describe('campaign leadership domain', () => {
 
   it('serializes concurrent same-phone creates so only one leadership survives', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-    const firstPlaza = await campaignFixtures().getPlaza()
-    const secondPlaza = await campaignFixtures().getPlaza()
+    const firstMunicipality = await campaignFixtures().getMunicipality()
+    const secondMunicipality = await campaignFixtures().getMunicipality()
     const phone = campaignFixtures().phone()
     const originalFind = payload.find.bind(payload)
     let contactReads = 0
@@ -202,7 +204,7 @@ describe('campaign leadership domain', () => {
     })
 
     const first = createLeadershipRecord(payload, coordinator, {
-      plazas: [firstPlaza.id],
+      municipalities: [firstMunicipality.id],
       name: 'Contato Concorrente',
       phone,
       supportStatus: 'engajado',
@@ -223,7 +225,7 @@ describe('campaign leadership domain', () => {
       return transactionID
     })
     const second = createLeadershipRecord(payload, coordinator, {
-      plazas: [secondPlaza.id],
+      municipalities: [secondMunicipality.id],
       name: 'Contato Concorrente Duplicado',
       phone: `+55 ${phone}`,
       supportStatus: 'a_abordar',
@@ -278,7 +280,7 @@ describe('campaign leadership domain', () => {
 
   it('rejects a duplicate Contact write before leadership dedupe can become ambiguous', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-    const plaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
     const phone = campaignFixtures().phone()
 
     await payload.create({
@@ -295,7 +297,7 @@ describe('campaign leadership domain', () => {
 
     await expect(
       createLeadershipRecord(payload, coordinator, {
-        plazas: [plaza.id],
+        municipalities: [municipality.id],
         name: 'Contato Reutilizado',
         phone,
         supportStatus: 'engajado',
@@ -305,12 +307,12 @@ describe('campaign leadership domain', () => {
 
   it('enforces the unique contact relationship at the database', async () => {
     const contact = await campaignFixtures().createContact({ name: 'Contato Único' })
-    const firstPlaza = await campaignFixtures().getPlaza()
-    const secondPlaza = await campaignFixtures().getPlaza()
+    const firstMunicipality = await campaignFixtures().getMunicipality()
+    const secondMunicipality = await campaignFixtures().getMunicipality()
 
     await campaignFixtures().createLeadership({
       contact: contact.id,
-      plazas: [firstPlaza.id],
+      municipalities: [firstMunicipality.id],
       supportStatus: 'engajado',
     })
 
@@ -319,37 +321,37 @@ describe('campaign leadership domain', () => {
         collection: 'leadership',
         data: {
           contact: contact.id,
-          plazas: [secondPlaza.id],
+          municipalities: [secondMunicipality.id],
           supportStatus: 'a_abordar',
         },
       }),
     ).rejects.toThrow()
   })
 
-  it('limits advisor management and listing to administered plazas', async () => {
+  it('limits advisor management and listing to administered municipalities', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const advisor = await campaignFixtures().createCampaignUser('advisor')
     const otherAdvisor = await campaignFixtures().createCampaignUser('advisor')
-    const assigned = await campaignFixtures().getPlaza()
-    const other = await campaignFixtures().getPlaza()
-    await campaignFixtures().assignPlazaAdvisors(assigned, [advisor])
-    await campaignFixtures().assignPlazaAdvisors(other, [otherAdvisor])
+    const assigned = await campaignFixtures().getMunicipality()
+    const other = await campaignFixtures().getMunicipality()
+    await campaignFixtures().assignMunicipalityAdvisors(assigned, [advisor])
+    await campaignFixtures().assignMunicipalityAdvisors(other, [otherAdvisor])
 
     const ownLeadership = await createLeadershipRecord(payload, advisor, {
-      plazas: [assigned.id],
+      municipalities: [assigned.id],
       name: 'Liderança da Praça',
       phone: campaignFixtures().phone(),
       supportStatus: 'engajado',
       notes: 'Avaliação interna',
     })
     await createLeadershipRecord(payload, coordinator, {
-      plazas: [other.id],
+      municipalities: [other.id],
       name: 'Liderança Alheia',
       phone: campaignFixtures().phone(),
       supportStatus: 'engajado',
     })
 
-    const visible = await listPlazaLeaderships(payload, advisor, assigned.id)
+    const visible = await listMunicipalityLeaderships(payload, advisor, assigned.id)
     expect(visible.docs.map(({ id }) => id)).toContain(ownLeadership.id)
 
     const visibleContacts = await payload.find({
@@ -362,12 +364,12 @@ describe('campaign leadership domain', () => {
     expect(visibleContacts.docs.map(({ id }) => id)).toContain(ownLeadership.contact)
     expect(visibleContacts.docs.map(({ name }) => name)).not.toContain('Liderança Alheia')
 
-    const foreign = await listPlazaLeaderships(payload, advisor, other.id)
+    const foreign = await listMunicipalityLeaderships(payload, advisor, other.id)
     expect(foreign.docs).toHaveLength(0)
 
     await expect(
       createLeadershipRecord(payload, advisor, {
-        plazas: [other.id],
+        municipalities: [other.id],
         name: 'Cadastro Fora do Escopo',
         phone: campaignFixtures().phone(),
         supportStatus: 'engajado',
@@ -378,12 +380,12 @@ describe('campaign leadership domain', () => {
   it('enforces scoped action success and denial for create and internal update', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const advisor = await campaignFixtures().createCampaignUser('advisor')
-    const assigned = await campaignFixtures().getPlaza()
-    const other = await campaignFixtures().getPlaza()
-    await campaignFixtures().assignPlazaAdvisors(assigned, [advisor])
+    const assigned = await campaignFixtures().getMunicipality()
+    const other = await campaignFixtures().getMunicipality()
+    await campaignFixtures().assignMunicipalityAdvisors(assigned, [advisor])
 
     const own = await createLeadershipRecord(payload, advisor, {
-      plazas: [assigned.id],
+      municipalities: [assigned.id],
       name: 'Ação Permitida',
       phone: campaignFixtures().phone(),
       supportStatus: 'engajado',
@@ -399,12 +401,12 @@ describe('campaign leadership domain', () => {
     await expect(
       updateLeadershipInternalRecord(payload, advisor, {
         id: own.id,
-        plazas: [assigned.id, other.id],
+        municipalities: [assigned.id, other.id],
       }),
     ).rejects.toThrow(OUT_OF_SCOPE_PLAZA_MESSAGE)
 
     const otherLeadership = await createLeadershipRecord(payload, coordinator, {
-      plazas: [other.id],
+      municipalities: [other.id],
       name: 'Outra Liderança',
       phone: campaignFixtures().phone(),
       supportStatus: 'engajado',
@@ -419,11 +421,11 @@ describe('campaign leadership domain', () => {
 
   it('denies leadership creation to leader accounts', async () => {
     const leader = await campaignFixtures().createCampaignUser('leader')
-    const plaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
 
     await expect(
       createLeadershipRecord(payload, leader, {
-        plazas: [plaza.id],
+        municipalities: [municipality.id],
         name: 'Criação por liderança',
         phone: campaignFixtures().phone(),
         supportStatus: 'engajado',
@@ -431,9 +433,9 @@ describe('campaign leadership domain', () => {
     ).rejects.toThrow('Somente a coordenação e a assessoria podem gerenciar lideranças.')
   })
 
-  it('denies direct advisor creation linked to an out-of-scope plaza', async () => {
+  it('denies direct advisor creation linked to an out-of-scope municipality', async () => {
     const advisor = await campaignFixtures().createCampaignUser('advisor')
-    const otherPlaza = await campaignFixtures().getPlaza()
+    const otherMunicipality = await campaignFixtures().getMunicipality()
     const contact = await campaignFixtures().createContact()
 
     await expect(
@@ -441,7 +443,7 @@ describe('campaign leadership domain', () => {
         collection: 'leadership',
         data: {
           contact: contact.id,
-          plazas: [otherPlaza.id],
+          municipalities: [otherMunicipality.id],
           supportStatus: 'engajado',
         },
         user: advisor,
@@ -452,7 +454,7 @@ describe('campaign leadership domain', () => {
 
   it('rolls back a newly created contact when leadership creation fails', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-    const plaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
     const phone = campaignFixtures().phone()
     const originalCreate = payload.create.bind(payload)
     const createSpy = vi.spyOn(payload, 'create').mockImplementation(async (args) => {
@@ -464,7 +466,7 @@ describe('campaign leadership domain', () => {
 
     await expect(
       createLeadershipRecord(payload, coordinator, {
-        plazas: [plaza.id],
+        municipalities: [municipality.id],
         name: 'Contato que Deve Reverter',
         phone,
         supportStatus: 'engajado',
@@ -481,7 +483,7 @@ describe('campaign leadership domain', () => {
       }),
       payload.find({
         collection: 'leadership',
-        where: { plazas: { in: [plaza.id] } },
+        where: { municipalities: { in: [municipality.id] } },
         depth: 0,
         pagination: false,
       }),
@@ -490,87 +492,58 @@ describe('campaign leadership domain', () => {
     expect(leaderships.totalDocs).toBe(0)
   })
 
-  it('lets an engaged leader read only their own record without internal fields', async () => {
+  it('denies leaders read access to leadership records', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const leaderAccount = await campaignFixtures().createCampaignUser('leader')
-    const plaza = await campaignFixtures().getPlaza()
-    const otherPlaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
     const ownContact = await campaignFixtures().createContact({ name: 'Contato Próprio' })
-    const otherContact = await campaignFixtures().createContact({ name: 'Contato Alheio' })
-    const own = await campaignFixtures().createLeadership({
+    await campaignFixtures().createLeadership({
       contact: ownContact.id,
-      plazas: [plaza.id],
+      municipalities: [municipality.id],
       user: leaderAccount.id,
       supportStatus: 'engajado',
       notes: 'Não pode aparecer',
       createdBy: coordinator.id,
     })
-    await campaignFixtures().createLeadership({
-      contact: otherContact.id,
-      plazas: [otherPlaza.id],
-      supportStatus: 'engajado',
-      notes: 'Alheia',
-      createdBy: coordinator.id,
-    })
 
-    const visibleLinks = await payload.find({
-      collection: 'leadership',
-      user: leaderAccount,
-      overrideAccess: false,
-      depth: 0,
-      pagination: false,
-    })
-    expect(visibleLinks.docs).toHaveLength(1)
-    expect(visibleLinks.docs[0]?.id).toBe(own.id)
-    expect(Object.hasOwn(visibleLinks.docs[0]!, 'supportStatus')).toBe(false)
-    expect(Object.hasOwn(visibleLinks.docs[0]!, 'notes')).toBe(false)
-    expect(Object.hasOwn(visibleLinks.docs[0]!, 'consentNote')).toBe(false)
-    expect(Object.hasOwn(visibleLinks.docs[0]!, 'createdBy')).toBe(false)
-
-    const visibleContacts = await payload.find({
-      collection: 'contact',
-      user: leaderAccount,
-      overrideAccess: false,
-      depth: 0,
-      pagination: false,
-    })
-    expect(visibleContacts.docs.map(({ id }) => id)).toEqual([ownContact.id])
+    await expect(
+      payload.find({
+        collection: 'leadership',
+        user: leaderAccount,
+        overrideAccess: false,
+        depth: 0,
+        pagination: false,
+      }),
+    ).rejects.toThrow(/permissão/i)
   })
 
-  it('revokes leader plaza and contact access immediately when no longer engaged', async () => {
+  it('revokes leader contact access when the leadership is no longer engaged', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const leaderAccount = await campaignFixtures().createCampaignUser('leader')
-    const plaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
     const contact = await campaignFixtures().createContact({ name: 'Contato Revogado' })
     const link = await campaignFixtures().createLeadership({
       contact: contact.id,
-      plazas: [plaza.id],
+      municipalities: [municipality.id],
       user: leaderAccount.id,
       supportStatus: 'engajado',
       createdBy: coordinator.id,
     })
 
     const before = await payload.find({
-      collection: 'plaza',
+      collection: 'contact',
       user: leaderAccount,
       overrideAccess: false,
       depth: 0,
       pagination: false,
     })
-    expect(before.docs.map(({ id }) => id)).toContain(plaza.id)
+    expect(before.docs.map(({ id }) => id)).toContain(contact.id)
 
     await updateLeadershipInternalRecord(payload, coordinator, {
       id: link.id,
       supportStatus: 'em_disputa',
     })
 
-    const afterPlazas = await payload.find({
-      collection: 'plaza',
-      user: leaderAccount,
-      overrideAccess: false,
-      depth: 0,
-      pagination: false,
-    })
     const afterContacts = await payload.find({
       collection: 'contact',
       user: leaderAccount,
@@ -578,20 +551,19 @@ describe('campaign leadership domain', () => {
       depth: 0,
       pagination: false,
     })
-    expect(afterPlazas.docs.map(({ id }) => id)).not.toContain(plaza.id)
     expect(afterContacts.docs.map(({ id }) => id)).not.toContain(contact.id)
   })
 
   it('denies leader accounts from updating internal fields', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const leaderAccount = await campaignFixtures().createCampaignUser('leader')
-    const plaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
     const contact = await campaignFixtures().createContact({
       name: 'Liderança sem Escrita Interna',
     })
     const link = await campaignFixtures().createLeadership({
       contact: contact.id,
-      plazas: [plaza.id],
+      municipalities: [municipality.id],
       user: leaderAccount.id,
       supportStatus: 'engajado',
       createdBy: coordinator.id,
@@ -621,9 +593,9 @@ describe('campaign leadership domain', () => {
 
   it('denies anonymous Contact listing and campaign hard deletes', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-    const plaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
     const created = await createLeadershipRecord(payload, coordinator, {
-      plazas: [plaza.id],
+      municipalities: [municipality.id],
       name: 'Registro Permanente',
       phone: campaignFixtures().phone(),
       supportStatus: 'a_abordar',

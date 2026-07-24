@@ -5,6 +5,7 @@ import { isSupportStatus } from '@/lib/schemas/leadership'
 import type { CampaignUser, Leadership } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
+import { loadStateDeputySummaries, type StateDeputySummary } from '@/utilities/stateDeputyData'
 
 export const leadershipPageSize = 25
 
@@ -15,8 +16,9 @@ export type LeadershipRowViewModel = {
   phone: string | null
   supportStatus: SupportStatus | null
   sector: string | null
-  plazaNames: string[]
+  municipalityNames: string[]
   organizationNames: string[]
+  stateDeputyNames: string[]
   hasAppAccess: boolean
 }
 
@@ -35,7 +37,7 @@ const contactNameAndPhone = (
 
 const namesForIds = async (
   payload: Payload,
-  collection: 'plaza' | 'organization',
+  collection: 'municipality' | 'organization' | 'stateDeputy',
   ids: number[],
 ): Promise<Map<number, string>> => {
   if (ids.length === 0) return new Map()
@@ -57,22 +59,28 @@ const toLeadershipRows = async (
   payload: Payload,
   docs: Leadership[],
 ): Promise<LeadershipRowViewModel[]> => {
-  const plazaIDs = new Set<number>()
+  const municipalityIDs = new Set<number>()
   const organizationIDs = new Set<number>()
+  const stateDeputyIDs = new Set<number>()
   for (const doc of docs) {
-    for (const plaza of doc.plazas ?? []) {
-      const id = relationshipId(plaza)
-      if (id !== null) plazaIDs.add(id)
+    for (const municipality of doc.municipalities ?? []) {
+      const id = relationshipId(municipality)
+      if (id !== null) municipalityIDs.add(id)
     }
     for (const organization of doc.organizations ?? []) {
       const id = relationshipId(organization)
       if (id !== null) organizationIDs.add(id)
     }
+    for (const stateDeputy of doc.stateDeputies ?? []) {
+      const id = relationshipId(stateDeputy)
+      if (id !== null) stateDeputyIDs.add(id)
+    }
   }
 
-  const [plazaNames, organizationNames] = await Promise.all([
-    namesForIds(payload, 'plaza', [...plazaIDs]),
+  const [municipalityNames, organizationNames, stateDeputyNames] = await Promise.all([
+    namesForIds(payload, 'municipality', [...municipalityIDs]),
     namesForIds(payload, 'organization', [...organizationIDs]),
+    namesForIds(payload, 'stateDeputy', [...stateDeputyIDs]),
   ])
 
   return docs.map((doc) => {
@@ -84,27 +92,31 @@ const toLeadershipRows = async (
       phone: contact.phone,
       supportStatus: isSupportStatus(doc.supportStatus) ? doc.supportStatus : null,
       sector: doc.sector ?? null,
-      plazaNames: (doc.plazas ?? [])
+      municipalityNames: (doc.municipalities ?? [])
         .map(relationshipId)
         .filter((id): id is number => id !== null)
-        .map((id) => plazaNames.get(id) ?? 'Praça'),
+        .map((id) => municipalityNames.get(id) ?? 'Praça'),
       organizationNames: (doc.organizations ?? [])
         .map(relationshipId)
         .filter((id): id is number => id !== null)
         .map((id) => organizationNames.get(id) ?? 'Organização'),
+      stateDeputyNames: (doc.stateDeputies ?? [])
+        .map(relationshipId)
+        .filter((id): id is number => id !== null)
+        .map((id) => stateDeputyNames.get(id) ?? 'Dobradinha'),
       hasAppAccess: relationshipId(doc.user) !== null,
     }
   })
 }
 
-export const loadPlazaLeaderships = async (
+export const loadMunicipalityLeaderships = async (
   payload: Payload,
   user: CampaignUser,
-  plazaID: number,
+  municipalityID: number,
 ): Promise<LeadershipRowViewModel[]> => {
   const result = await payload.find({
     collection: 'leadership',
-    where: { plazas: { in: [plazaID] } },
+    where: { municipalities: { in: [municipalityID] } },
     depth: 1,
     limit: 0,
     pagination: false,
@@ -175,8 +187,10 @@ export const loadLeadershipListPageData = async (
 }
 
 export type LeadershipDetailViewModel = LeadershipRowViewModel & {
-  plazaIDs: number[]
+  municipalityIDs: number[]
   organizationIDs: number[]
+  stateDeputyIDs: number[]
+  stateDeputies: StateDeputySummary[]
   email: string | null
   sectorNotes: string | null
   notes: string | null
@@ -209,12 +223,19 @@ export const loadLeadershipDetail = async (
       ? ((contact as { email?: string | null }).email ?? null)
       : null
 
+  const stateDeputyIDs = (doc.stateDeputies ?? [])
+    .map(relationshipId)
+    .filter((id): id is number => id !== null)
+  const stateDeputies = await loadStateDeputySummaries(payload, stateDeputyIDs)
+
   return {
     ...row,
-    plazaIDs: (doc.plazas ?? []).map(relationshipId).filter((id): id is number => id !== null),
+    municipalityIDs: (doc.municipalities ?? []).map(relationshipId).filter((id): id is number => id !== null),
     organizationIDs: (doc.organizations ?? [])
       .map(relationshipId)
       .filter((id): id is number => id !== null),
+    stateDeputyIDs,
+    stateDeputies,
     email,
     sectorNotes: doc.sectorNotes ?? null,
     notes: doc.notes ?? null,

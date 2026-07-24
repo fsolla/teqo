@@ -9,15 +9,10 @@ import {
   type OrganizationUpdateInput,
 } from '@/lib/schemas/organization'
 import type { CampaignUser } from '@/payload-types'
-import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
+import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
 
-const assertStaffActor = async (payload: Payload, actor: CampaignUser): Promise<CampaignUser> => {
-  const currentActor = await reloadCampaignActor(payload, actor)
-  if (currentActor.role !== 'coordinator' && currentActor.role !== 'advisor') {
-    throw new Error('Somente a coordenação e a assessoria gerenciam organizações.')
-  }
-  return currentActor
-}
+const assertStaffActor = (payload: Payload, actor: CampaignUser): Promise<CampaignUser> =>
+  reloadStaffActor(payload, actor, 'Somente a coordenação e a assessoria gerenciam organizações.')
 
 const isUniqueOrganizationConflict = (error: unknown): boolean => {
   const message = error instanceof Error ? error.message : String(error)

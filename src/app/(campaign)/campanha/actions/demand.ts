@@ -13,7 +13,12 @@ import {
   type CampaignDemandTransitionInput,
 } from '@/lib/schemas/campaignDemandInput'
 import type { CampaignUser } from '@/payload-types'
-import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
+import {
+  getCampaignActionContext,
+  reloadCampaignActor,
+  reloadStaffActor,
+} from '@/utilities/campaignActionContext'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 
@@ -29,7 +34,7 @@ export const createCampaignDemandRecord = async (
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
 
-      // Access create rule validates plaza scope per role; the collection hook
+      // Access create rule validates municipality scope per role; the collection hook
       // links a leader's own leadership and enforces the initial status.
       return payload.create({
         collection: 'campaignDemand',
@@ -82,8 +87,8 @@ export const transitionCampaignDemandRecord = async (
     payload,
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
-      if (currentActor.role !== 'coordinator' && currentActor.role !== 'advisor') {
-        throw new Error('Somente a coordenação e a assessoria movem demandas.')
+      if (!isCampaignStaff(currentActor)) {
+        throw new Error('Somente a coordenação, a assessoria e o candidato movem demandas.')
       }
       await acquireTextAdvisoryLocks(payload, req, [`campaign-demand:${id}`])
 
@@ -117,8 +122,8 @@ export const setCampaignDemandCostRecord = async (
     payload,
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
-      if (currentActor.role !== 'coordinator' && currentActor.role !== 'advisor') {
-        throw new Error('Somente a coordenação e a assessoria registram custos.')
+      if (!isCampaignStaff(currentActor)) {
+        throw new Error('Somente a coordenação, a assessoria e o candidato registram custos.')
       }
       await acquireTextAdvisoryLocks(payload, req, [`campaign-demand:${id}`])
 
@@ -154,10 +159,12 @@ export const attachCampaignDemandReceiptRecord = async (
   return withPayloadTransaction(
     payload,
     async ({ req }) => {
-      const currentActor = await reloadCampaignActor(payload, actor, req)
-      if (currentActor.role !== 'coordinator' && currentActor.role !== 'advisor') {
-        throw new Error('Somente a coordenação e a assessoria anexam comprovantes.')
-      }
+      const currentActor = await reloadStaffActor(
+        payload,
+        actor,
+        'Somente a coordenação e a assessoria anexam comprovantes.',
+        req,
+      )
       await acquireTextAdvisoryLocks(payload, req, [`campaign-demand:${demandID}`])
 
       // Row access verifies the demand is in the actor's scope before writing.

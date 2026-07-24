@@ -93,16 +93,16 @@ const ConsentBlock = ({
 
 export const SupporterForm = ({
   action,
-  plazaOptions,
+  municipalityOptions,
   registrationConsentConfigured,
   voteIntentionConsentConfigured,
-  requirePlaza,
+  requireMunicipality,
 }: {
   action: SupporterFormAction
-  plazaOptions: RelationOption[]
+  municipalityOptions: RelationOption[]
   registrationConsentConfigured: boolean
   voteIntentionConsentConfigured: boolean
-  requirePlaza: boolean
+  requireMunicipality: boolean
 }) => {
   const router = useRouter()
   const [state, formAction, pending] = useActionState(action, {})
@@ -124,7 +124,7 @@ export const SupporterForm = ({
   const phoneField = errorProps(state.fieldErrors, 'phone')
   const emailField = errorProps(state.fieldErrors, 'email')
   const cityField = errorProps(state.fieldErrors, 'city')
-  const plazaField = errorProps(state.fieldErrors, 'plaza')
+  const municipalityField = errorProps(state.fieldErrors, 'municipality')
   const voteIntentionField = errorProps(state.fieldErrors, 'voteIntention')
 
   return (
@@ -212,24 +212,24 @@ export const SupporterForm = ({
           ) : null}
         </Field>
 
-        <Field data-invalid={plazaField.invalid}>
-          <FieldLabel htmlFor="supporter-plaza">Praça{requirePlaza ? ' *' : ''}</FieldLabel>
+        <Field data-invalid={municipalityField.invalid}>
+          <FieldLabel htmlFor="supporter-municipality">Praça{requireMunicipality ? ' *' : ''}</FieldLabel>
           <NativeSelect
-            id="supporter-plaza"
-            name="plaza"
-            required={requirePlaza}
-            defaultValue={values?.plaza ?? ''}
+            id="supporter-municipality"
+            name="municipality"
+            required={requireMunicipality}
+            defaultValue={values?.municipality ?? ''}
             className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
           >
-            {!requirePlaza ? <NativeSelectOption value="">Sem Praça</NativeSelectOption> : null}
-            {plazaOptions.map((plaza) => (
-              <NativeSelectOption key={plaza.id} value={String(plaza.id)}>
-                {plaza.name}
+            {!requireMunicipality ? <NativeSelectOption value="">Sem Praça</NativeSelectOption> : null}
+            {municipalityOptions.map((municipality) => (
+              <NativeSelectOption key={municipality.id} value={String(municipality.id)}>
+                {municipality.name}
               </NativeSelectOption>
             ))}
           </NativeSelect>
-          {plazaField.error ? (
-            <FieldError id="supporter-plaza-error">{plazaField.error}</FieldError>
+          {municipalityField.error ? (
+            <FieldError id="supporter-municipality-error">{municipalityField.error}</FieldError>
           ) : null}
         </Field>
 

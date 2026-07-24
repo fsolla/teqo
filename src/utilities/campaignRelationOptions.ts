@@ -3,13 +3,13 @@ import type { Payload } from 'payload'
 import type { RelationOption } from '@/components/campaign/RelationMultiSelect'
 import type { CampaignUser } from '@/payload-types'
 
-/** Plazas the actor may operate on (coordinator: all 436; advisor: administered). */
-export const loadPlazaOptions = async (
+/** Municipalities the actor may operate on (coordinator: all 436; advisor: administered). */
+export const loadMunicipalityOptions = async (
   payload: Payload,
   user: CampaignUser,
 ): Promise<RelationOption[]> => {
   const result = await payload.find({
-    collection: 'plaza',
+    collection: 'municipality',
     depth: 0,
     limit: 0,
     pagination: false,
@@ -19,7 +19,7 @@ export const loadPlazaOptions = async (
     user,
     overrideAccess: false,
   })
-  return result.docs.map((plaza) => ({ id: plaza.id, name: plaza.name }))
+  return result.docs.map((municipality) => ({ id: municipality.id, name: municipality.name }))
 }
 
 export const loadOrganizationOptions = async (
@@ -38,4 +38,25 @@ export const loadOrganizationOptions = async (
     overrideAccess: false,
   })
   return result.docs.map((organization) => ({ id: organization.id, name: organization.name }))
+}
+
+export const loadStateDeputyOptions = async (
+  payload: Payload,
+  user: CampaignUser,
+): Promise<RelationOption[]> => {
+  const result = await payload.find({
+    collection: 'stateDeputy',
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    sort: 'name',
+    select: { name: true, party: true },
+    where: {},
+    user,
+    overrideAccess: false,
+  })
+  return result.docs.map((stateDeputy) => ({
+    id: stateDeputy.id,
+    name: stateDeputy.party ? `${stateDeputy.name} (${stateDeputy.party})` : stateDeputy.name,
+  }))
 }

@@ -10,8 +10,8 @@ import { createActionPlanFormAction } from '@/app/(campaign)/campanha/(app)/plan
 import { ActionPlanForm } from '@/components/campaign/ActionPlanForm'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadOrganizationOptions, loadPlazaOptions } from '@/utilities/campaignRelationOptions'
-import { getEligibleAdvisorOptions } from '@/utilities/plazaViewModels'
+import { loadOrganizationOptions, loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import { getEligibleAdvisorOptions } from '@/utilities/municipalityViewModels'
 
 export default async function NewActionPlanPage() {
   const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
@@ -20,8 +20,8 @@ export default async function NewActionPlanPage() {
   if (!isCampaignStaff(user)) redirect('/campanha/planos')
 
   const canManageAdvisors = user.role === 'coordinator'
-  const [plazaOptions, organizationOptions, advisorOptions] = await Promise.all([
-    loadPlazaOptions(payload, user),
+  const [municipalityOptions, organizationOptions, advisorOptions] = await Promise.all([
+    loadMunicipalityOptions(payload, user),
     loadOrganizationOptions(payload, user),
     canManageAdvisors ? getEligibleAdvisorOptions(payload, user) : Promise.resolve([]),
   ])
@@ -37,7 +37,7 @@ export default async function NewActionPlanPage() {
       </header>
       <ActionPlanForm
         action={createActionPlanFormAction}
-        plazaOptions={plazaOptions}
+        municipalityOptions={municipalityOptions}
         organizationOptions={organizationOptions}
         advisorOptions={advisorOptions}
         canManageAdvisors={canManageAdvisors}

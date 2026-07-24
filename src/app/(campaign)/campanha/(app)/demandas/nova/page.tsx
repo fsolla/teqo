@@ -8,14 +8,14 @@ import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
 import { DemandForm } from '@/components/campaign/DemandForm'
 import { Button } from '@/components/ui/button'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadPlazaOptions } from '@/utilities/campaignRelationOptions'
+import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { createDemandFormAction } from './formActions'
 
 export default async function NewDemandPage() {
   const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
   if (!user) redirect('/campanha/login')
 
-  const plazaOptions = await loadPlazaOptions(payload, user)
+  const municipalityOptions = await loadMunicipalityOptions(payload, user)
 
   return (
     <CampaignPageShell>
@@ -33,7 +33,7 @@ export default async function NewDemandPage() {
         </p>
       </header>
 
-      <DemandForm plazaOptions={plazaOptions} formAction={createDemandFormAction} />
+      <DemandForm municipalityOptions={municipalityOptions} formAction={createDemandFormAction} />
     </CampaignPageShell>
   )
 }

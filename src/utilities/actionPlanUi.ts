@@ -29,12 +29,12 @@ export type ActionPlanListState = {
   tab: ActionPlanTab
   kind?: ActionPlanKind
   status?: ActionPlanStatus
-  plaza?: number
+  municipality?: number
 }
 
 type RawSearchParams = CampaignListRawSearchParams
 
-export const actionPlanListParamNames = ['tab', 'kind', 'status', 'plaza', 'page'] as const
+export const actionPlanListParamNames = ['tab', 'kind', 'status', 'municipality', 'page'] as const
 
 const actionPlanListParamNameSet = new Set<string>(actionPlanListParamNames)
 
@@ -55,14 +55,14 @@ export const parseActionPlanListParams = (params: RawSearchParams): ActionPlanLi
   const kind = isActionPlanKind(rawKind) ? rawKind : undefined
   const rawStatus = tab === 'todos' ? firstValue(params.status) : undefined
   const status = isActionPlanStatus(rawStatus) ? rawStatus : undefined
-  const plaza = strictDecimalInteger(firstValue(params.plaza))
+  const municipality = strictDecimalInteger(firstValue(params.municipality))
 
   return {
     page: rawPage ?? 1,
     tab,
     ...(kind ? { kind } : {}),
     ...(status ? { status } : {}),
-    ...(plaza ? { plaza } : {}),
+    ...(municipality ? { municipality } : {}),
   }
 }
 
@@ -70,7 +70,7 @@ export const buildActionPlanListWhere = (state: ActionPlanListState, now: Date):
   const filters: Where[] = []
 
   if (state.kind) filters.push({ kind: { equals: state.kind } })
-  if (state.plaza) filters.push({ plaza: { equals: state.plaza } })
+  if (state.municipality) filters.push({ municipality: { equals: state.municipality } })
 
   if (state.tab === 'proximos') {
     filters.push({ status: { in: ['planejado', 'confirmado'] } })
@@ -95,14 +95,14 @@ export const buildActionPlanListSearchParams = (
     tab: state.tab,
     kind: state.kind,
     status: state.status,
-    plaza: state.plaza === undefined ? undefined : String(state.plaza),
+    municipality: state.municipality === undefined ? undefined : String(state.municipality),
   })
   const params = new URLSearchParams()
 
   if (canonicalState.tab !== 'proximos') params.set('tab', canonicalState.tab)
   if (canonicalState.kind) params.set('kind', canonicalState.kind)
   if (canonicalState.status) params.set('status', canonicalState.status)
-  if (canonicalState.plaza) params.set('plaza', String(canonicalState.plaza))
+  if (canonicalState.municipality) params.set('municipality', String(canonicalState.municipality))
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
 
   return params

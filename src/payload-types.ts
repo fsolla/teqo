@@ -71,14 +71,15 @@ export interface Config {
     users: User;
     campaignUser: CampaignUser;
     campaignInvite: CampaignInvite;
-    plaza: Plaza;
+    municipality: Municipality;
     leadership: Leadership;
     organization: Organization;
+    stateDeputy: StateDeputy;
     votePledge: VotePledge;
     campaignDemand: CampaignDemand;
     supporter: Supporter;
     supporterImportBatch: SupporterImportBatch;
-    plazaUpdate: PlazaUpdate;
+    municipalityUpdate: MunicipalityUpdate;
     actionPlan: ActionPlan;
     electionTally: ElectionTally;
     electionCandidateVote: ElectionCandidateVote;
@@ -104,14 +105,15 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     campaignUser: CampaignUserSelect<false> | CampaignUserSelect<true>;
     campaignInvite: CampaignInviteSelect<false> | CampaignInviteSelect<true>;
-    plaza: PlazaSelect<false> | PlazaSelect<true>;
+    municipality: MunicipalitySelect<false> | MunicipalitySelect<true>;
     leadership: LeadershipSelect<false> | LeadershipSelect<true>;
     organization: OrganizationSelect<false> | OrganizationSelect<true>;
+    stateDeputy: StateDeputySelect<false> | StateDeputySelect<true>;
     votePledge: VotePledgeSelect<false> | VotePledgeSelect<true>;
     campaignDemand: CampaignDemandSelect<false> | CampaignDemandSelect<true>;
     supporter: SupporterSelect<false> | SupporterSelect<true>;
     supporterImportBatch: SupporterImportBatchSelect<false> | SupporterImportBatchSelect<true>;
-    plazaUpdate: PlazaUpdateSelect<false> | PlazaUpdateSelect<true>;
+    municipalityUpdate: MunicipalityUpdateSelect<false> | MunicipalityUpdateSelect<true>;
     actionPlan: ActionPlanSelect<false> | ActionPlanSelect<true>;
     electionTally: ElectionTallySelect<false> | ElectionTallySelect<true>;
     electionCandidateVote: ElectionCandidateVoteSelect<false> | ElectionCandidateVoteSelect<true>;
@@ -247,7 +249,7 @@ export interface CampaignUser {
   id: number;
   name: string;
   avatar?: (number | null) | Media;
-  role: 'coordinator' | 'advisor' | 'leader';
+  role: 'coordinator' | 'advisor' | 'candidate' | 'leader';
   phone?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -314,8 +316,9 @@ export interface CampaignInvite {
 export interface Leadership {
   id: number;
   contact: number | Contact;
-  plazas: (number | Plaza)[];
+  municipalities: (number | Municipality)[];
   organizations?: (number | Organization)[] | null;
+  stateDeputies?: (number | StateDeputy)[] | null;
   sector?:
     | (
         | 'religioso'
@@ -386,12 +389,12 @@ export interface Contact {
   createdAt: string;
 }
 /**
- * As 436 Praças são pré-definidas (município, ou zona eleitoral em Salvador e Camaçari) e criadas por migração. A geografia não é editável.
+ * Os 435 municípios operacionais são pré-definidos (município inteiro, ou zona eleitoral em Salvador) e criados por migração. A geografia não é editável.
  *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plaza".
+ * via the `definition` "municipality".
  */
-export interface Plaza {
+export interface Municipality {
   id: number;
   name: string;
   slug: string;
@@ -401,7 +404,7 @@ export interface Plaza {
   ibgeCode: string;
   tseCityCode: string;
   /**
-   * Preenchido apenas para Praças de zona (Salvador e Camaçari).
+   * Preenchido apenas para municípios de zona (Salvador).
    */
   zoneNumber?: number | null;
   advisors?: (number | CampaignUser)[] | null;
@@ -440,18 +443,35 @@ export interface Plaza {
         id?: string | null;
       }[]
     | null;
+  stateDeputies?: (number | StateDeputy)[] | null;
   /**
-   * Quem dobra na Praça hoje e o estado da negociação.
+   * Quem dobra no município hoje e o estado da negociação.
    */
   dobradinhaNotes?: string | null;
   /**
-   * Próximos passos operacionais para a Praça.
+   * Próximos passos operacionais para o município.
    */
   nextSteps?: string | null;
   /**
-   * Derivado automaticamente do feed de atualizações da Praça.
+   * Derivado automaticamente do feed de atualizações do município.
    */
   lastUpdateAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Deputados estaduais com quem a campanha dobra. Vincule a municípios e lideranças nas fichas correspondentes.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stateDeputy".
+ */
+export interface StateDeputy {
+  id: number;
+  name: string;
+  slug: string;
+  party?: string | null;
+  notes?: string | null;
+  createdBy?: (number | null) | CampaignUser;
   updatedAt: string;
   createdAt: string;
 }
@@ -466,7 +486,7 @@ export interface Organization {
   name: string;
   slug: string;
   kind: 'sindicato' | 'associacao' | 'religioso' | 'movimento' | 'categoria_profissional' | 'outro';
-  plazas?: (number | Plaza)[] | null;
+  municipalities?: (number | Municipality)[] | null;
   notes?: string | null;
   createdBy?: (number | null) | CampaignUser;
   updatedAt: string;
@@ -507,7 +527,7 @@ export interface Consent {
 export interface VotePledge {
   id: number;
   leadership: number | Leadership;
-  plaza: number | Plaza;
+  municipality: number | Municipality;
   declaredVotes: number;
   declaredAt?: string | null;
   declaredBy?: (number | null) | CampaignUser;
@@ -546,7 +566,7 @@ export interface CampaignDemand {
     | 'pessoal_apoio'
     | 'outro';
   description?: string | null;
-  plaza: number | Plaza;
+  municipality: number | Municipality;
   actionPlan?: (number | null) | ActionPlan;
   leadership?: (number | null) | Leadership;
   status: 'aberta' | 'em_analise' | 'escalada' | 'aprovada' | 'rejeitada';
@@ -605,7 +625,7 @@ export interface ActionPlan {
   startAt?: string | null;
   endAt?: string | null;
   deadline?: string | null;
-  plaza: number | Plaza;
+  municipality: number | Municipality;
   locality?: string | null;
   organizations?: (number | Organization)[] | null;
   advisors?: (number | CampaignUser)[] | null;
@@ -649,7 +669,7 @@ export interface ActionPlan {
 export interface Supporter {
   id: number;
   contact: number | Contact;
-  plaza?: (number | null) | Plaza;
+  municipality?: (number | null) | Municipality;
   voteIntention?: ('certo' | 'tende_a_certo' | 'indeciso' | 'outro') | null;
   consent?: (number | null) | Consent;
   consentContentHash?: string | null;
@@ -657,7 +677,7 @@ export interface Supporter {
   voteIntentionConsent?: (number | null) | Consent;
   voteIntentionConsentContentHash?: string | null;
   voteIntentionConsentedAt?: string | null;
-  source: 'import_csv' | 'manual' | 'convite' | 'evento';
+  source: 'import_csv' | 'manual' | 'lideranca' | 'convite' | 'evento';
   consentNote?: string | null;
   notes?: string | null;
   createdBy?: (number | null) | CampaignUser;
@@ -687,11 +707,11 @@ export interface SupporterImportBatch {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plazaUpdate".
+ * via the `definition` "municipalityUpdate".
  */
-export interface PlazaUpdate {
+export interface MunicipalityUpdate {
   id: number;
-  plaza: number | Plaza;
+  municipality: number | Municipality;
   author: number | CampaignUser;
   kind: 'semanal' | 'urgente' | 'nota';
   worked?: string | null;
@@ -1109,8 +1129,8 @@ export interface PayloadLockedDocument {
         value: number | CampaignInvite;
       } | null)
     | ({
-        relationTo: 'plaza';
-        value: number | Plaza;
+        relationTo: 'municipality';
+        value: number | Municipality;
       } | null)
     | ({
         relationTo: 'leadership';
@@ -1119,6 +1139,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'organization';
         value: number | Organization;
+      } | null)
+    | ({
+        relationTo: 'stateDeputy';
+        value: number | StateDeputy;
       } | null)
     | ({
         relationTo: 'votePledge';
@@ -1137,8 +1161,8 @@ export interface PayloadLockedDocument {
         value: number | SupporterImportBatch;
       } | null)
     | ({
-        relationTo: 'plazaUpdate';
-        value: number | PlazaUpdate;
+        relationTo: 'municipalityUpdate';
+        value: number | MunicipalityUpdate;
       } | null)
     | ({
         relationTo: 'actionPlan';
@@ -1306,9 +1330,9 @@ export interface CampaignInviteSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plaza_select".
+ * via the `definition` "municipality_select".
  */
-export interface PlazaSelect<T extends boolean = true> {
+export interface MunicipalitySelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   kind?: T;
@@ -1353,6 +1377,7 @@ export interface PlazaSelect<T extends boolean = true> {
         text?: T;
         id?: T;
       };
+  stateDeputies?: T;
   dobradinhaNotes?: T;
   nextSteps?: T;
   lastUpdateAt?: T;
@@ -1365,8 +1390,9 @@ export interface PlazaSelect<T extends boolean = true> {
  */
 export interface LeadershipSelect<T extends boolean = true> {
   contact?: T;
-  plazas?: T;
+  municipalities?: T;
   organizations?: T;
+  stateDeputies?: T;
   sector?: T;
   sectorNotes?: T;
   supportStatus?: T;
@@ -1388,7 +1414,20 @@ export interface OrganizationSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   kind?: T;
-  plazas?: T;
+  municipalities?: T;
+  notes?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stateDeputy_select".
+ */
+export interface StateDeputySelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  party?: T;
   notes?: T;
   createdBy?: T;
   updatedAt?: T;
@@ -1400,7 +1439,7 @@ export interface OrganizationSelect<T extends boolean = true> {
  */
 export interface VotePledgeSelect<T extends boolean = true> {
   leadership?: T;
-  plaza?: T;
+  municipality?: T;
   declaredVotes?: T;
   declaredAt?: T;
   declaredBy?: T;
@@ -1426,7 +1465,7 @@ export interface CampaignDemandSelect<T extends boolean = true> {
   slug?: T;
   kind?: T;
   description?: T;
-  plaza?: T;
+  municipality?: T;
   actionPlan?: T;
   leadership?: T;
   status?: T;
@@ -1454,7 +1493,7 @@ export interface CampaignDemandSelect<T extends boolean = true> {
  */
 export interface SupporterSelect<T extends boolean = true> {
   contact?: T;
-  plaza?: T;
+  municipality?: T;
   voteIntention?: T;
   consent?: T;
   consentContentHash?: T;
@@ -1483,10 +1522,10 @@ export interface SupporterImportBatchSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plazaUpdate_select".
+ * via the `definition` "municipalityUpdate_select".
  */
-export interface PlazaUpdateSelect<T extends boolean = true> {
-  plaza?: T;
+export interface MunicipalityUpdateSelect<T extends boolean = true> {
+  municipality?: T;
   author?: T;
   kind?: T;
   worked?: T;
@@ -1512,7 +1551,7 @@ export interface ActionPlanSelect<T extends boolean = true> {
   startAt?: T;
   endAt?: T;
   deadline?: T;
-  plaza?: T;
+  municipality?: T;
   locality?: T;
   organizations?: T;
   advisors?: T;
@@ -2052,14 +2091,15 @@ export interface TaskCreateCollectionExport {
       | 'users'
       | 'campaignUser'
       | 'campaignInvite'
-      | 'plaza'
+      | 'municipality'
       | 'leadership'
       | 'organization'
+      | 'stateDeputy'
       | 'votePledge'
       | 'campaignDemand'
       | 'supporter'
       | 'supporterImportBatch'
-      | 'plazaUpdate'
+      | 'municipalityUpdate'
       | 'actionPlan'
       | 'electionTally'
       | 'electionCandidateVote'

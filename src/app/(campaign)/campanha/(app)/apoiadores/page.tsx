@@ -42,7 +42,7 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
 
   const rawSearchParams = await searchParams
   const now = new Date()
-  const { result, state, redirectHref, plazaOptions, overview } = await loadSupportersPageData(
+  const { result, state, redirectHref, municipalityOptions, overview } = await loadSupportersPageData(
     payload,
     user,
     rawSearchParams,
@@ -84,7 +84,7 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
       <SupporterFilters
         key={buildSupporterFiltersKey(state)}
         state={state}
-        plazaOptions={plazaOptions}
+        municipalityOptions={municipalityOptions}
       />
 
       {result.docs.length ? (

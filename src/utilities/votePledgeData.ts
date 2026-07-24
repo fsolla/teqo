@@ -5,7 +5,7 @@ import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   effectivePledgeVotesForScenario,
-  resolvePlazaStaffVoteTotalForScenario,
+  resolveMunicipalityStaffVoteTotalForScenario,
   toVoteEstimateScenarioViewModel,
   VOTE_ESTIMATE_SCENARIOS,
   type VoteEstimateScenario,
@@ -27,35 +27,35 @@ const emptyEffectiveByScenario = (): Record<VoteEstimateScenario, number> => ({
   optimistic: 0,
 })
 
-export type PlazaPledgeAggregate = {
+export type MunicipalityPledgeAggregate = {
   declaredTotal: number
   effectiveByScenario: Record<VoteEstimateScenario, number>
   pledgeCount: number
   missingEstimateCount: number
 }
 
-export const createEmptyPlazaPledgeAggregate = (): PlazaPledgeAggregate => ({
+export const createEmptyMunicipalityPledgeAggregate = (): MunicipalityPledgeAggregate => ({
   declaredTotal: 0,
   effectiveByScenario: emptyEffectiveByScenario(),
   pledgeCount: 0,
   missingEstimateCount: 0,
 })
 
-/** Read-only zero aggregate. Never mutate — use createEmptyPlazaPledgeAggregate() when writing. */
-export const emptyPlazaPledgeAggregate: Readonly<PlazaPledgeAggregate> =
-  createEmptyPlazaPledgeAggregate()
+/** Read-only zero aggregate. Never mutate — use createEmptyMunicipalityPledgeAggregate() when writing. */
+export const emptyMunicipalityPledgeAggregate: Readonly<MunicipalityPledgeAggregate> =
+  createEmptyMunicipalityPledgeAggregate()
 
-export type PlazaPledgeCoverageView = {
+export type MunicipalityPledgeCoverageView = {
   pledgeCount: number
   missingEstimateCount: number
   declaredTotal: number
   effectiveTotal: number
 }
 
-export const toPlazaPledgeCoverageView = (
-  aggregate: PlazaPledgeAggregate,
+export const toMunicipalityPledgeCoverageView = (
+  aggregate: MunicipalityPledgeAggregate,
   scenario: VoteEstimateScenario = DEFAULT_VOTE_ESTIMATE_SCENARIO,
-): PlazaPledgeCoverageView | null => {
+): MunicipalityPledgeCoverageView | null => {
   if (aggregate.pledgeCount === 0) return null
   return {
     pledgeCount: aggregate.pledgeCount,
@@ -65,20 +65,21 @@ export const toPlazaPledgeCoverageView = (
   }
 }
 
-/** Staff-facing plaza total: manual expected votes override pledge aggregate when set. */
-export const resolvePlazaStaffVoteTotal = (
+/** Staff-facing municipality total: manual expected votes override pledge aggregate when set. */
+export const resolveMunicipalityStaffVoteTotal = (
   expectedVotes: VoteEstimateScenarioFields | null | undefined,
   pledgeEffectiveTotal: number,
   scenario: VoteEstimateScenario = DEFAULT_VOTE_ESTIMATE_SCENARIO,
-): number => resolvePlazaStaffVoteTotalForScenario(expectedVotes, pledgeEffectiveTotal, scenario)
+): number =>
+  resolveMunicipalityStaffVoteTotalForScenario(expectedVotes, pledgeEffectiveTotal, scenario)
 
-export const aggregatePlazaPledgesFromRows = (
+export const aggregateMunicipalityPledgesFromRows = (
   rows: ReadonlyArray<{
     declaredVotes: number
     estimatedVotes?: VoteEstimateScenarioFields | null
   }>,
-): PlazaPledgeAggregate => {
-  const aggregate = createEmptyPlazaPledgeAggregate()
+): MunicipalityPledgeAggregate => {
+  const aggregate = createEmptyMunicipalityPledgeAggregate()
 
   for (const row of rows) {
     const declared = row.declaredVotes ?? 0
@@ -97,7 +98,7 @@ export const aggregatePlazaPledgesFromRows = (
   return aggregate
 }
 
-export type PlazaStaffVoteRollup = {
+export type MunicipalityStaffVoteRollup = {
   staffVoteTotal: number
   staffVoteTotalByScenario: Record<VoteEstimateScenario, number>
   declaredVotesTotal: number
@@ -105,27 +106,27 @@ export type PlazaStaffVoteRollup = {
   missingEstimateCount: number
 }
 
-export const rollupPlazaStaffVotes = (
-  plazas: ReadonlyArray<{ id: number; expectedVotes?: VoteEstimateScenarioFields | null }>,
-  pledgeAggregates: Map<number, PlazaPledgeAggregate>,
+export const rollupMunicipalityStaffVotes = (
+  municipalities: ReadonlyArray<{ id: number; expectedVotes?: VoteEstimateScenarioFields | null }>,
+  pledgeAggregates: Map<number, MunicipalityPledgeAggregate>,
   scenario: VoteEstimateScenario = DEFAULT_VOTE_ESTIMATE_SCENARIO,
-): PlazaStaffVoteRollup => {
+): MunicipalityStaffVoteRollup => {
   let staffVoteTotal = 0
   const staffVoteTotalByScenario = emptyEffectiveByScenario()
   let declaredVotesTotal = 0
   let pledgeCount = 0
   let missingEstimateCount = 0
-  for (const plaza of plazas) {
-    const aggregate = pledgeAggregates.get(plaza.id) ?? emptyPlazaPledgeAggregate
+  for (const municipality of municipalities) {
+    const aggregate = pledgeAggregates.get(municipality.id) ?? emptyMunicipalityPledgeAggregate
     for (const key of VOTE_ESTIMATE_SCENARIOS) {
-      staffVoteTotalByScenario[key] += resolvePlazaStaffVoteTotal(
-        plaza.expectedVotes,
+      staffVoteTotalByScenario[key] += resolveMunicipalityStaffVoteTotal(
+        municipality.expectedVotes,
         aggregate.effectiveByScenario[key],
         key,
       )
     }
-    staffVoteTotal += resolvePlazaStaffVoteTotal(
-      plaza.expectedVotes,
+    staffVoteTotal += resolveMunicipalityStaffVoteTotal(
+      municipality.expectedVotes,
       aggregate.effectiveByScenario[scenario],
       scenario,
     )
@@ -146,25 +147,25 @@ const pledgeHasAnyEstimate = (estimated: VoteEstimateScenarioFields | null | und
   estimated?.pessimistic != null || estimated?.central != null || estimated?.optimistic != null
 
 /**
- * Staff-only aggregate over an already access-checked plaza id set.
- * Intentional admin bypass: callers pass plaza ids the actor may read.
+ * Staff-only aggregate over an already access-checked municipality id set.
+ * Intentional admin bypass: callers pass municipality ids the actor may read.
  */
-export const aggregatePledgesByPlaza = async (
+export const aggregatePledgesByMunicipality = async (
   payload: Pick<Payload, 'find'>,
-  plazaIDs: number[],
+  municipalityIDs: number[],
   req?: PayloadRequest,
-): Promise<Map<number, PlazaPledgeAggregate>> => {
-  const aggregates = new Map<number, PlazaPledgeAggregate>()
-  if (plazaIDs.length === 0) return aggregates
+): Promise<Map<number, MunicipalityPledgeAggregate>> => {
+  const aggregates = new Map<number, MunicipalityPledgeAggregate>()
+  if (municipalityIDs.length === 0) return aggregates
 
   const result = await payload.find({
     collection: 'votePledge',
-    where: { plaza: { in: plazaIDs } },
+    where: { municipality: { in: municipalityIDs } },
     depth: 0,
     limit: 0,
     pagination: false,
     select: {
-      plaza: true,
+      municipality: true,
       declaredVotes: true,
       estimatedVotes: {
         pessimistic: true,
@@ -177,11 +178,11 @@ export const aggregatePledgesByPlaza = async (
   })
 
   for (const doc of result.docs) {
-    const plazaID = relationshipId((doc as VotePledge).plaza)
-    if (plazaID === null) continue
+    const municipalityID = relationshipId((doc as VotePledge).municipality)
+    if (municipalityID === null) continue
     const declared = (doc as VotePledge).declaredVotes ?? 0
     const estimated = (doc as VotePledge).estimatedVotes
-    const current = aggregates.get(plazaID) ?? createEmptyPlazaPledgeAggregate()
+    const current = aggregates.get(municipalityID) ?? createEmptyMunicipalityPledgeAggregate()
     current.declaredTotal += declared
     for (const scenario of VOTE_ESTIMATE_SCENARIOS) {
       current.effectiveByScenario[scenario] += effectivePledgeVotesForScenario(
@@ -192,7 +193,7 @@ export const aggregatePledgesByPlaza = async (
     }
     current.pledgeCount += 1
     if (!pledgeHasAnyEstimate(estimated)) current.missingEstimateCount += 1
-    aggregates.set(plazaID, current)
+    aggregates.set(municipalityID, current)
   }
 
   return aggregates
@@ -209,15 +210,15 @@ export type StaffPledgeRow = {
   estimatedAt: string | null
 }
 
-/** Staff view of a plaza's pledges with leadership contact names. */
-export const loadPlazaPledges = async (
+/** Staff view of a municipality's pledges with leadership contact names. */
+export const loadMunicipalityPledges = async (
   payload: Payload,
   user: CampaignUser,
-  plazaID: number,
+  municipalityID: number,
 ): Promise<StaffPledgeRow[]> => {
   const pledges = await payload.find({
     collection: 'votePledge',
-    where: { plaza: { equals: plazaID } },
+    where: { municipality: { equals: municipalityID } },
     depth: 0,
     limit: 0,
     pagination: false,
@@ -259,60 +260,4 @@ export const loadPlazaPledges = async (
     estimateNote: pledge.estimateNote ?? null,
     estimatedAt: pledge.estimatedAt ?? null,
   }))
-}
-
-export type LeaderPledgeRow = {
-  id: number
-  plazaID: number
-  plazaName: string
-  plazaSlug: string
-  declaredVotes: number
-  declaredAt: string | null
-}
-
-/**
- * Leader view of their own pledges — declared values only. Estimated fields
- * are stripped by field access (overrideAccess: false) and deliberately never
- * mapped here.
- */
-export const loadLeaderPledges = async (
-  payload: Payload,
-  user: CampaignUser,
-): Promise<LeaderPledgeRow[]> => {
-  const pledges = await payload.find({
-    collection: 'votePledge',
-    where: {},
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    sort: 'plaza',
-    user,
-    overrideAccess: false,
-  })
-  if (pledges.docs.length === 0) return []
-
-  const plazaIDs = [...new Set(pledges.docs.map((pledge) => requireRelationshipId(pledge.plaza)))]
-  const plazas = await payload.find({
-    collection: 'plaza',
-    where: { id: { in: plazaIDs } },
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    select: { name: true, slug: true },
-    overrideAccess: true,
-  })
-  const plazaById = new Map(plazas.docs.map((plaza) => [plaza.id, plaza]))
-
-  return pledges.docs.map((pledge) => {
-    const plazaID = requireRelationshipId(pledge.plaza)
-    const plaza = plazaById.get(plazaID)
-    return {
-      id: pledge.id,
-      plazaID,
-      plazaName: plaza?.name ?? 'Praça',
-      plazaSlug: plaza?.slug ?? '',
-      declaredVotes: pledge.declaredVotes,
-      declaredAt: pledge.declaredAt ?? null,
-    }
-  })
 }

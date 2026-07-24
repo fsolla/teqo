@@ -1,20 +1,17 @@
 import type { Payload } from 'payload'
 
 import type { CampaignUser, VotePledge } from '@/payload-types'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
 import type { VoteEstimateScenario } from '@/utilities/voteEstimate'
 import {
-  aggregatePledgesByPlaza,
-  loadLeaderPledges,
-  rollupPlazaStaffVotes,
-  type LeaderPledgeRow,
+  aggregatePledgesByMunicipality,
+  rollupMunicipalityStaffVotes,
 } from '@/utilities/votePledgeData'
 
 export type StaffDashboardView = {
   kind: 'staff'
-  role: 'coordinator' | 'advisor'
-  plazaCount: number
+  role: 'coordinator' | 'advisor' | 'candidate'
+  municipalityCount: number
   withAdvisorCount: number
   highPriorityCount: number
   staffVoteTotalByScenario: Record<VoteEstimateScenario, number>
@@ -23,36 +20,24 @@ export type StaffDashboardView = {
   missingEstimateCount: number
   missingEstimates: Array<{
     pledgeID: number
-    plazaName: string
-    plazaSlug: string
+    municipalityName: string
+    municipalitySlug: string
     contactName: string
     declaredVotes: number
   }>
-  priorityPlazas: Array<{ name: string; slug: string }>
+  priorityMunicipalities: Array<{ name: string; slug: string }>
   recentUpdates: Array<{
     id: number
-    plazaName: string
-    plazaSlug: string
+    municipalityName: string
+    municipalitySlug: string
     authorName: string
     createdAt: string
   }>
 }
 
-export type LeaderDashboardView = {
-  kind: 'leader'
-  plazas: Array<{
-    id: number
-    name: string
-    slug: string
-    declaredVotes: number | null
-  }>
-}
-
-export type CampaignDashboardView = StaffDashboardView | LeaderDashboardView
-
 const resolveNames = async (
   payload: Payload,
-  collection: 'plaza' | 'campaignUser' | 'leadership',
+  collection: 'municipality' | 'campaignUser' | 'leadership',
   ids: number[],
   select: Record<string, true>,
 ) => {
@@ -69,12 +54,16 @@ const resolveNames = async (
   return new Map(result.docs.map((doc) => [doc.id, doc as unknown as Record<string, unknown>]))
 }
 
-const buildStaffDashboard = async (
+/**
+ * Staff dashboard data. Leaders never reach the dashboard — they are routed to
+ * the supporter contact tool before this is called (see `/campanha` page).
+ */
+export const getCampaignDashboardData = async (
   payload: Payload,
   user: CampaignUser,
 ): Promise<StaffDashboardView> => {
-  const plazas = await payload.find({
-    collection: 'plaza',
+  const municipalities = await payload.find({
+    collection: 'municipality',
     depth: 0,
     limit: 0,
     pagination: false,
@@ -83,56 +72,56 @@ const buildStaffDashboard = async (
     user,
     overrideAccess: false,
   })
-  const plazaIDs = plazas.docs.map((plaza) => plaza.id)
-  const plazaById = new Map(plazas.docs.map((plaza) => [plaza.id, plaza]))
+  const municipalityIDs = municipalities.docs.map((municipality) => municipality.id)
+  const municipalityById = new Map(
+    municipalities.docs.map((municipality) => [municipality.id, municipality]),
+  )
 
-  const pledgeAggregates = await aggregatePledgesByPlaza(payload, plazaIDs)
-  const rollup = rollupPlazaStaffVotes(plazas.docs, pledgeAggregates)
+  // Independent of each other — only depend on municipalityIDs.
+  const [pledgeAggregates, missingEstimatePledges, recentUpdatesResult] = await Promise.all([
+    aggregatePledgesByMunicipality(payload, municipalityIDs),
+    municipalityIDs.length
+      ? payload.find({
+          collection: 'votePledge',
+          where: {
+            and: [
+              { municipality: { in: municipalityIDs } },
+              { 'estimatedVotes.pessimistic': { equals: null } },
+              { 'estimatedVotes.central': { equals: null } },
+              { 'estimatedVotes.optimistic': { equals: null } },
+            ],
+          },
+          depth: 0,
+          limit: 5,
+          pagination: false,
+          sort: '-declaredVotes',
+          select: { municipality: true, leadership: true, declaredVotes: true },
+          overrideAccess: true,
+        })
+      : Promise.resolve({ docs: [] as VotePledge[] }),
+    municipalityIDs.length
+      ? payload.find({
+          collection: 'municipalityUpdate',
+          where: { municipality: { in: municipalityIDs } },
+          depth: 0,
+          limit: 3,
+          pagination: false,
+          sort: '-createdAt',
+          select: { municipality: true, author: true, createdAt: true },
+          user,
+          overrideAccess: false,
+        })
+      : Promise.resolve({ docs: [] }),
+  ])
+
+  const rollup = rollupMunicipalityStaffVotes(municipalities.docs, pledgeAggregates)
   const { staffVoteTotalByScenario, declaredVotesTotal, pledgeCount, missingEstimateCount } = rollup
-
-  const missingEstimatePledges = plazaIDs.length
-    ? await payload.find({
-        collection: 'votePledge',
-        where: {
-          and: [
-            { plaza: { in: plazaIDs } },
-            { 'estimatedVotes.pessimistic': { equals: null } },
-            { 'estimatedVotes.central': { equals: null } },
-            { 'estimatedVotes.optimistic': { equals: null } },
-          ],
-        },
-        depth: 0,
-        limit: 5,
-        pagination: false,
-        sort: '-declaredVotes',
-        select: { plaza: true, leadership: true, declaredVotes: true },
-        overrideAccess: true,
-      })
-    : { docs: [] as VotePledge[] }
 
   const leadershipIDs = [
     ...new Set(
       missingEstimatePledges.docs.map((pledge) => requireRelationshipId(pledge.leadership)),
     ),
   ]
-  const leadershipsById = await resolveNames(payload, 'leadership', leadershipIDs, {
-    contact: true,
-  })
-
-  const recentUpdatesResult = plazaIDs.length
-    ? await payload.find({
-        collection: 'plazaUpdate',
-        where: { plaza: { in: plazaIDs } },
-        depth: 0,
-        limit: 3,
-        pagination: false,
-        sort: '-createdAt',
-        select: { plaza: true, author: true, createdAt: true },
-        user,
-        overrideAccess: false,
-      })
-    : { docs: [] }
-
   const authorIDs = [
     ...new Set(
       recentUpdatesResult.docs
@@ -140,20 +129,29 @@ const buildStaffDashboard = async (
         .filter((id): id is number => id !== null),
     ),
   ]
-  const authorsById = await resolveNames(payload, 'campaignUser', authorIDs, { name: true })
+
+  const [leadershipsById, authorsById] = await Promise.all([
+    resolveNames(payload, 'leadership', leadershipIDs, { contact: true }),
+    resolveNames(payload, 'campaignUser', authorIDs, { name: true }),
+  ])
 
   return {
     kind: 'staff',
-    role: user.role === 'coordinator' ? 'coordinator' : 'advisor',
-    plazaCount: plazas.docs.length,
-    withAdvisorCount: plazas.docs.filter((plaza) => (plaza.advisors ?? []).length > 0).length,
-    highPriorityCount: plazas.docs.filter((plaza) => plaza.priority === 'alta').length,
+    role:
+      user.role === 'advisor' ? 'advisor' : user.role === 'candidate' ? 'candidate' : 'coordinator',
+    municipalityCount: municipalities.docs.length,
+    withAdvisorCount: municipalities.docs.filter(
+      (municipality) => (municipality.advisors ?? []).length > 0,
+    ).length,
+    highPriorityCount: municipalities.docs.filter(
+      (municipality) => municipality.priority === 'alta',
+    ).length,
     staffVoteTotalByScenario: { ...staffVoteTotalByScenario },
     declaredVotesTotal,
     pledgeCount,
     missingEstimateCount,
     missingEstimates: missingEstimatePledges.docs.map((pledge) => {
-      const plaza = plazaById.get(requireRelationshipId(pledge.plaza))
+      const municipality = municipalityById.get(requireRelationshipId(pledge.municipality))
       const leadership = leadershipsById.get(requireRelationshipId(pledge.leadership))
       const contact = leadership?.contact
       const contactName =
@@ -162,60 +160,26 @@ const buildStaffDashboard = async (
           : 'Contato'
       return {
         pledgeID: pledge.id,
-        plazaName: plaza?.name ?? 'Praça',
-        plazaSlug: plaza?.slug ?? '',
+        municipalityName: municipality?.name ?? 'Praça',
+        municipalitySlug: municipality?.slug ?? '',
         contactName,
         declaredVotes: pledge.declaredVotes,
       }
     }),
-    priorityPlazas: plazas.docs
-      .filter((plaza) => plaza.priority === 'alta')
+    priorityMunicipalities: municipalities.docs
+      .filter((municipality) => municipality.priority === 'alta')
       .slice(0, 6)
-      .map((plaza) => ({ name: plaza.name, slug: plaza.slug })),
+      .map((municipality) => ({ name: municipality.name, slug: municipality.slug })),
     recentUpdates: recentUpdatesResult.docs.map((update) => {
-      const plaza = plazaById.get(relationshipId(update.plaza) ?? -1)
+      const municipality = municipalityById.get(relationshipId(update.municipality) ?? -1)
       const author = authorsById.get(relationshipId(update.author) ?? -1)
       return {
         id: update.id,
-        plazaName: plaza?.name ?? 'Praça',
-        plazaSlug: plaza?.slug ?? '',
+        municipalityName: municipality?.name ?? 'Praça',
+        municipalitySlug: municipality?.slug ?? '',
         authorName: String(author?.name ?? 'Usuário'),
         createdAt: update.createdAt,
       }
     }),
   }
 }
-
-const buildLeaderDashboard = async (
-  payload: Payload,
-  user: CampaignUser,
-): Promise<LeaderDashboardView> => {
-  const plazas = await payload.find({
-    collection: 'plaza',
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    select: { name: true, slug: true },
-    where: {},
-    user,
-    overrideAccess: false,
-  })
-  const pledges: LeaderPledgeRow[] = await loadLeaderPledges(payload, user)
-  const pledgeByPlaza = new Map(pledges.map((pledge) => [pledge.plazaID, pledge]))
-
-  return {
-    kind: 'leader',
-    plazas: plazas.docs.map((plaza) => ({
-      id: plaza.id,
-      name: plaza.name,
-      slug: plaza.slug,
-      declaredVotes: pledgeByPlaza.get(plaza.id)?.declaredVotes ?? null,
-    })),
-  }
-}
-
-export const getCampaignDashboardData = async (
-  payload: Payload,
-  user: CampaignUser,
-): Promise<CampaignDashboardView> =>
-  isCampaignStaff(user) ? buildStaffDashboard(payload, user) : buildLeaderDashboard(payload, user)

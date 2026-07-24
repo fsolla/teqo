@@ -1,28 +1,28 @@
-import type { ActionPlan, CampaignUser, Contact, Organization, Plaza } from '@/payload-types'
+import type { ActionPlan, CampaignUser, Contact, Organization, Municipality } from '@/payload-types'
 import type { ActionPlanDetailTab } from '@/utilities/actionPlanDetailTabUi'
 import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 
-export type ActionPlanPlazaSummary = {
+export type ActionPlanMunicipalitySummary = {
   id: number
   name: string
   slug: string
 }
 
-export const actionPlanPlazaSummary = (
-  plaza: ActionPlan['plaza'] | null | undefined,
-): ActionPlanPlazaSummary | null =>
-  isPopulatedRelationship<Plaza>(plaza)
-    ? { id: plaza.id, name: plaza.name, slug: plaza.slug }
+export const actionPlanMunicipalitySummary = (
+  municipality: ActionPlan['municipality'] | null | undefined,
+): ActionPlanMunicipalitySummary | null =>
+  isPopulatedRelationship<Municipality>(municipality)
+    ? { id: municipality.id, name: municipality.name, slug: municipality.slug }
     : null
 
 /** Short "where" line, e.g. "Praça de Itabuna · Feira do Malhado". */
 export const formatActionPlanLocationLabel = ({
-  plazaName,
+  municipalityName,
   locality,
 }: {
-  plazaName: string | null
+  municipalityName: string | null
   locality?: string | null
-}): string => [plazaName, locality].filter(Boolean).join(' · ')
+}): string => [municipalityName, locality].filter(Boolean).join(' · ')
 
 export const actionPlanListSelect = {
   title: true,
@@ -32,7 +32,7 @@ export const actionPlanListSelect = {
   deputyPresent: true,
   startAt: true,
   endAt: true,
-  plaza: true,
+  municipality: true,
   locality: true,
   responsible: true,
   taskDoneCount: true,
@@ -48,7 +48,7 @@ export type ActionPlanListViewModel = {
   deputyPresent: boolean
   startAt: string | null
   endAt: string | null
-  plazaName: string | null
+  municipalityName: string | null
   locality: string | null
   locationLabel: string
   responsibleName: string | null
@@ -61,7 +61,7 @@ const relationshipName = (
   isPopulatedRelationship<Contact | CampaignUser>(relationship) ? relationship.name : null
 
 export const toActionPlanListViewModel = (plan: ActionPlan): ActionPlanListViewModel => {
-  const plazaName = actionPlanPlazaSummary(plan.plaza)?.name ?? null
+  const municipalityName = actionPlanMunicipalitySummary(plan.municipality)?.name ?? null
   return {
     id: plan.id,
     title: plan.title,
@@ -71,9 +71,9 @@ export const toActionPlanListViewModel = (plan: ActionPlan): ActionPlanListViewM
     deputyPresent: Boolean(plan.deputyPresent),
     startAt: plan.startAt ?? null,
     endAt: plan.endAt ?? null,
-    plazaName,
+    municipalityName,
     locality: plan.locality ?? null,
-    locationLabel: formatActionPlanLocationLabel({ plazaName, locality: plan.locality }),
+    locationLabel: formatActionPlanLocationLabel({ municipalityName, locality: plan.locality }),
     responsibleName: relationshipName(plan.responsible),
     taskProgress: {
       done: plan.taskDoneCount ?? 0,
@@ -92,7 +92,7 @@ export const actionPlanFormSelect = {
   startAt: true,
   endAt: true,
   deadline: true,
-  plaza: true,
+  municipality: true,
   locality: true,
   organizations: true,
   advisors: true,
@@ -120,7 +120,7 @@ export type ActionPlanFormViewModel = {
   startAt: string | null
   endAt: string | null
   deadline: string | null
-  plazaId: number | null
+  municipalityId: number | null
   locality: string | null
   organizationIDs: number[]
   advisorIDs: number[]
@@ -145,7 +145,7 @@ export const toActionPlanFormViewModel = (plan: ActionPlan): ActionPlanFormViewM
   startAt: plan.startAt ?? null,
   endAt: plan.endAt ?? null,
   deadline: plan.deadline ?? null,
-  plazaId: relationshipId(plan.plaza),
+  municipalityId: relationshipId(plan.municipality),
   locality: plan.locality ?? null,
   organizationIDs: relationshipIds(plan.organizations),
   advisorIDs: relationshipIds(plan.advisors),
@@ -185,7 +185,7 @@ export const actionPlanDetailContextSelect = {
   startAt: true,
   endAt: true,
   deadline: true,
-  plaza: true,
+  municipality: true,
   locality: true,
   organizations: true,
   advisors: true,
@@ -252,7 +252,7 @@ export type ActionPlanDetailViewModel = {
   startAt: string | null
   endAt: string | null
   deadline: string | null
-  plaza: ActionPlanPlazaSummary | null
+  municipality: ActionPlanMunicipalitySummary | null
   locality: string | null
   locationLabel: string
   organizations: Array<{ id: number; name: string }>
@@ -309,9 +309,9 @@ export const toActionPlanDetailViewModel = (
   plan: ActionPlan,
   activeTab: ActionPlanDetailTab = 'overview',
   authorNamesById: ReadonlyMap<number, string> = new Map(),
-  plazaSummary: ActionPlanPlazaSummary | null = null,
+  municipalitySummary: ActionPlanMunicipalitySummary | null = null,
 ): ActionPlanDetailViewModel => {
-  const plaza = plazaSummary ?? actionPlanPlazaSummary(plan.plaza)
+  const municipality = municipalitySummary ?? actionPlanMunicipalitySummary(plan.municipality)
   return {
     id: plan.id,
     title: plan.title,
@@ -323,10 +323,10 @@ export const toActionPlanDetailViewModel = (
     startAt: plan.startAt ?? null,
     endAt: plan.endAt ?? null,
     deadline: plan.deadline ?? null,
-    plaza,
+    municipality,
     locality: plan.locality ?? null,
     locationLabel: formatActionPlanLocationLabel({
-      plazaName: plaza?.name ?? null,
+      municipalityName: municipality?.name ?? null,
       locality: plan.locality,
     }),
     organizations:

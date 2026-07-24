@@ -49,7 +49,7 @@ export const supporterCreateSchema = z
     phone: brazilianMobile,
     email: optionalPersistedEmail,
     city: optionalBahiaCity,
-    plaza: positiveRelationshipId.optional(),
+    municipality: positiveRelationshipId.optional(),
     voteIntention: z.enum(supporterVoteIntentions).optional(),
     consentAccepted: z.literal(true, {
       error: 'É necessário aceitar o consentimento de cadastro.',
@@ -82,10 +82,21 @@ export const supporterImportConfirmSchema = z.object({
   importToken: z.string().min(1, { error: 'Token de importação ausente.' }),
 })
 
+export const leaderSupporterCreateSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  phone: brazilianMobile,
+  city: optionalBahiaCity,
+  municipality: positiveRelationshipId,
+  consentAccepted: z.literal(true, {
+    error: 'É necessário aceitar o consentimento de cadastro.',
+  }),
+})
+
 export const supporterRemoveSchema = z.object({
   id: positiveRelationshipId,
 })
 
 export type SupporterCreateInput = z.input<typeof supporterCreateSchema>
+export type LeaderSupporterCreateInput = z.input<typeof leaderSupporterCreateSchema>
 export type SupporterVoteIntentionInput = z.input<typeof supporterVoteIntentionSchema>
 export type SupporterImportConfirmInput = z.input<typeof supporterImportConfirmSchema>

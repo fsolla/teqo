@@ -7,12 +7,13 @@ import { getPayload } from 'payload'
 import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
 import { LeadershipInternalForm } from '@/components/campaign/LeadershipInternalForm'
 import { LeadershipInviteButtons } from '@/components/campaign/LeadershipInviteButtons'
+import { StateDeputyChips } from '@/components/campaign/StateDeputyChips'
 import { SupportStatusBadge } from '@/components/campaign/SupportStatusBadge'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadOrganizationOptions, loadPlazaOptions } from '@/utilities/campaignRelationOptions'
+import { loadOrganizationOptions, loadMunicipalityOptions, loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
 import { loadLeadershipDetail } from '@/utilities/leadershipData'
 import { updateLeadershipInternalFormAction } from './formActions'
 
@@ -31,9 +32,10 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
   const leadership = await loadLeadershipDetail(payload, user, Number(id))
   if (!leadership) notFound()
 
-  const [plazaOptions, organizationOptions] = await Promise.all([
-    loadPlazaOptions(payload, user),
+  const [municipalityOptions, organizationOptions, stateDeputyOptions] = await Promise.all([
+    loadMunicipalityOptions(payload, user),
     loadOrganizationOptions(payload, user),
+    loadStateDeputyOptions(payload, user),
   ])
 
   return (
@@ -58,6 +60,9 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
           {leadership.phone ? `Celular ${leadership.phone}` : 'Sem celular registrado'}
           {leadership.email ? ` · ${leadership.email}` : ''}
         </p>
+        {leadership.stateDeputies.length > 0 ? (
+          <StateDeputyChips deputies={leadership.stateDeputies} />
+        ) : null}
       </header>
 
       <section
@@ -84,8 +89,9 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
         </h2>
         <LeadershipInternalForm
           leadership={leadership}
-          plazaOptions={plazaOptions}
+          municipalityOptions={municipalityOptions}
           organizationOptions={organizationOptions}
+          stateDeputyOptions={stateDeputyOptions}
           formAction={updateLeadershipInternalFormAction}
         />
       </section>

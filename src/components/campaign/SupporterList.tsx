@@ -60,12 +60,12 @@ const SupporterCard = ({ supporter }: { supporter: SupporterListItemViewModel })
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <p className="text-sm">
-          {supporter.plazaName ? (
+          {supporter.municipalityName ? (
             <Link
-              href={`/campanha/pracas/${supporter.plazaSlug}`}
+              href={`/campanha/municipios/${supporter.municipalitySlug}`}
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
-              {supporter.plazaName}
+              {supporter.municipalityName}
             </Link>
           ) : (
             <span className="text-muted-foreground">Sem Praça vinculada</span>
@@ -122,12 +122,12 @@ export const SupporterList = ({ supporters }: SupporterListProps) => (
                 </TableCell>
                 <TableCell>{supporter.city ?? '—'}</TableCell>
                 <TableCell className="max-w-48 whitespace-normal">
-                  {supporter.plazaName ? (
+                  {supporter.municipalityName ? (
                     <Link
-                      href={`/campanha/pracas/${supporter.plazaSlug}`}
+                      href={`/campanha/municipios/${supporter.municipalitySlug}`}
                       className="text-primary underline-offset-4 hover:underline"
                     >
-                      {supporter.plazaName}
+                      {supporter.municipalityName}
                     </Link>
                   ) : (
                     <span className="text-muted-foreground">Sem Praça vinculada</span>

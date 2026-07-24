@@ -1,16 +1,13 @@
 // @vitest-environment node
 
-import { beforeAll, describe, expect, it } from 'vitest'
 import { getPayload, type Field, type Payload, type PayloadRequest } from 'payload'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 import { CampaignUser as CampaignUserCollection } from '@/collections/CampaignUser'
 import type { CampaignUser } from '@/payload-types'
 import config from '@/payload.config'
 
-import {
-  type CampaignFixtures,
-  withCampaignFixtures,
-} from '../helpers/campaignFixtures'
+import { withCampaignFixtures, type CampaignFixtures } from '../helpers/campaignFixtures'
 
 let payload: Payload
 
@@ -19,7 +16,7 @@ const createEngagedPhoneAccessGraph = async (
   fixtures: CampaignFixtures,
   coordinator: CampaignUser,
   leader: CampaignUser,
-  plaza: number,
+  municipality: number,
 ) => {
   const contact = await fixtures.createContact({
     name: fixtures.value('Contato telefone'),
@@ -27,7 +24,7 @@ const createEngagedPhoneAccessGraph = async (
   })
   return fixtures.createLeadership({
     contact,
-    plazas: [plaza],
+    municipalities: [municipality],
     user: leader,
     supportStatus: 'engajado',
     createdBy: coordinator,
@@ -65,61 +62,34 @@ describe('campaign user contact phone', () => {
     })
   })
 
-  it('lets an engaged leader read only advisors from accessible plazas', async () => {
+  it('denies leaders from reading advisor contact phones', async () => {
     await withCampaignFixtures(payload, async (fixtures) => {
       const coordinator = await fixtures.createCampaignUser('coordinator')
       const advisorPhone = fixtures.phone()
-      const foreignPhone = fixtures.phone()
       const advisor = await fixtures.createCampaignUser('advisor', {
         phone: advisorPhone,
-      })
-      const foreignAdvisor = await fixtures.createCampaignUser('advisor', {
-        phone: foreignPhone,
       })
       const leader = await fixtures.createCampaignUser('leader', {
         phone: fixtures.phone(),
       })
-      const foreignLeader = await fixtures.createCampaignUser('leader', {
-        phone: fixtures.phone(),
-      })
-      const plaza = await fixtures.getPlaza()
-      const foreignPlaza = await fixtures.getPlaza()
-      await fixtures.assignPlazaAdvisors(plaza, [advisor])
-      await fixtures.assignPlazaAdvisors(foreignPlaza, [foreignAdvisor])
-      await createEngagedPhoneAccessGraph(fixtures, coordinator, leader, plaza.id)
+      const municipality = await fixtures.getMunicipality()
+      await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
+      await createEngagedPhoneAccessGraph(fixtures, coordinator, leader, municipality.id)
 
-      const visibleAdvisor = await payload.findByID({
-        collection: 'campaignUser',
-        id: advisor.id,
-        depth: 0,
-        select: { name: true, phone: true },
-        user: leader,
-        overrideAccess: false,
-      })
-      const hiddenForeignAdvisor = await payload.findByID({
-        collection: 'campaignUser',
-        id: foreignAdvisor.id,
-        depth: 0,
-        select: { name: true, phone: true },
-        user: leader,
-        overrideAccess: false,
-      })
-      const hiddenFromUnlinkedLeader = await payload.findByID({
-        collection: 'campaignUser',
-        id: advisor.id,
-        depth: 0,
-        select: { name: true, phone: true },
-        user: foreignLeader,
-        overrideAccess: false,
-      })
-
-      expect(visibleAdvisor.phone).toBe(advisorPhone)
-      expect(hiddenForeignAdvisor.phone).toBeUndefined()
-      expect(hiddenFromUnlinkedLeader.phone).toBeUndefined()
+      await expect(
+        payload.findByID({
+          collection: 'campaignUser',
+          id: advisor.id,
+          depth: 0,
+          select: { name: true, phone: true },
+          user: leader,
+          overrideAccess: false,
+        }),
+      ).rejects.toThrow(/permissão/i)
     })
   })
 
-  it('lets an advisor read a colleague advisor of a shared plaza only', async () => {
+  it('lets an advisor read a colleague advisor of a shared municipality only', async () => {
     await withCampaignFixtures(payload, async (fixtures) => {
       const colleaguePhone = fixtures.phone()
       const foreignPhone = fixtures.phone()
@@ -128,10 +98,10 @@ describe('campaign user contact phone', () => {
       const foreignAdvisor = await fixtures.createCampaignUser('advisor', {
         phone: foreignPhone,
       })
-      const shared = await fixtures.getPlaza()
-      const foreignPlaza = await fixtures.getPlaza()
-      await fixtures.assignPlazaAdvisors(shared, [viewer, colleague])
-      await fixtures.assignPlazaAdvisors(foreignPlaza, [foreignAdvisor])
+      const shared = await fixtures.getMunicipality()
+      const foreignMunicipality = await fixtures.getMunicipality()
+      await fixtures.assignMunicipalityAdvisors(shared, [viewer, colleague])
+      await fixtures.assignMunicipalityAdvisors(foreignMunicipality, [foreignAdvisor])
 
       const visibleColleague = await payload.findByID({
         collection: 'campaignUser',
@@ -169,9 +139,9 @@ describe('campaign user contact phone', () => {
       const leader = await fixtures.createCampaignUser('leader', {
         phone: fixtures.phone(),
       })
-      const plaza = await fixtures.getPlaza()
-      await fixtures.assignPlazaAdvisors(plaza, [advisor])
-      await createEngagedPhoneAccessGraph(fixtures, coordinator, leader, plaza.id)
+      const municipality = await fixtures.getMunicipality()
+      await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
+      await createEngagedPhoneAccessGraph(fixtures, coordinator, leader, municipality.id)
 
       const result = await payload.find({
         collection: 'campaignUser',
@@ -214,7 +184,7 @@ describe('campaign user contact phone', () => {
     })
   })
 
-  it('lets advisor and leader read contact phones of coordinator users', async () => {
+  it('lets advisor read contact phones of coordinator users', async () => {
     await withCampaignFixtures(payload, async (fixtures) => {
       const coordinatorPhone = fixtures.phone()
       const coordinator = await fixtures.createCampaignUser('coordinator', {
@@ -223,24 +193,18 @@ describe('campaign user contact phone', () => {
       const advisor = await fixtures.createCampaignUser('advisor', {
         phone: fixtures.phone(),
       })
-      const leader = await fixtures.createCampaignUser('leader', {
-        phone: fixtures.phone(),
-      })
-      const plaza = await fixtures.getPlaza()
-      await fixtures.assignPlazaAdvisors(plaza, [advisor])
-      await createEngagedPhoneAccessGraph(fixtures, coordinator, leader, plaza.id)
+      const municipality = await fixtures.getMunicipality()
+      await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
 
-      for (const viewer of [advisor, leader]) {
-        const visible = await payload.findByID({
-          collection: 'campaignUser',
-          id: coordinator.id,
-          depth: 0,
-          select: { name: true, phone: true },
-          user: viewer,
-          overrideAccess: false,
-        })
-        expect(visible.phone).toBe(coordinatorPhone)
-      }
+      const visible = await payload.findByID({
+        collection: 'campaignUser',
+        id: coordinator.id,
+        depth: 0,
+        select: { name: true, phone: true },
+        user: advisor,
+        overrideAccess: false,
+      })
+      expect(visible.phone).toBe(coordinatorPhone)
     })
   })
 

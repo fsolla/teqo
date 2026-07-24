@@ -12,7 +12,11 @@ import {
   type SupporterVoteIntention,
 } from '@/lib/schemas/supporter'
 import type { CampaignUser, Contact } from '@/payload-types'
-import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
+import {
+  getCampaignActionContext,
+  reloadCoordinatorActor,
+  reloadStaffActor,
+} from '@/utilities/campaignActionContext'
 import {
   requireSupporterRegistrationConsent,
   requireSupporterVoteIntentionConsent,
@@ -23,14 +27,7 @@ import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { normalizeBrazilianPhone } from '@/utilities/phone'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
-import { bulkInsertSupporterImport } from '@/utilities/supporterImportBulk'
-import {
-  issueSupporterImportToken,
-  loadSupporterImportBatch,
-  deleteSupporterImportBatch,
-  storeSupporterImportBatch,
-  verifySupporterImportToken,
-} from '@/utilities/supporterImportToken'
+import { isUniqueSupporterConflict } from '@/utilities/supporterErrors'
 import {
   isPreviewErrorRow,
   isSupporterImportOkRow,
@@ -38,6 +35,14 @@ import {
   type SupporterImportPreviewRow,
   type SupporterImportPreviewRowBase,
 } from '@/utilities/supporterImport'
+import { bulkInsertSupporterImport } from '@/utilities/supporterImportBulk'
+import {
+  deleteSupporterImportBatch,
+  issueSupporterImportToken,
+  loadSupporterImportBatch,
+  storeSupporterImportBatch,
+  verifySupporterImportToken,
+} from '@/utilities/supporterImportToken'
 
 export type {
   SupporterImportOkRow,
@@ -65,41 +70,39 @@ const buildSupporterImportErrorReportCsv = (rows: SupporterImportPreviewRow[]): 
   return header + body
 }
 
-const getFreshStaffActor = async (
+const getFreshStaffActor = (
   payload: Payload,
   actor: CampaignUser,
   req?: PayloadTransactionRequest,
-): Promise<CampaignUser> => {
-  const currentActor = await reloadCampaignActor(payload, actor, req)
+): Promise<CampaignUser> =>
+  reloadStaffActor(
+    payload,
+    actor,
+    'Somente a coordenação e a assessoria podem gerenciar apoiadores.',
+    req,
+  )
 
-  if (currentActor.role !== 'coordinator' && currentActor.role !== 'advisor') {
-    throw new Error('Somente a coordenação e a assessoria podem gerenciar apoiadores.')
-  }
-
-  return currentActor
-}
-
-const getFreshCoordinatorActor = async (
+const getFreshCoordinatorActor = (
   payload: Payload,
   actor: CampaignUser,
   req?: PayloadTransactionRequest,
-): Promise<CampaignUser> => {
-  const currentActor = await reloadCampaignActor(payload, actor, req)
-  if (currentActor.role !== 'coordinator') {
-    throw new Error('Somente o Coordenador Geral pode importar apoiadores.')
-  }
-  return currentActor
-}
+): Promise<CampaignUser> =>
+  reloadCoordinatorActor(
+    payload,
+    actor,
+    'Somente o Coordenador Geral pode importar apoiadores.',
+    req,
+  )
 
-const assertPlazaManagement = async (
+export const assertMunicipalityManagement = async (
   payload: Payload,
   actor: CampaignUser,
-  plazaID: number,
+  municipalityID: number,
   req?: PayloadTransactionRequest,
 ) =>
   payload.findByID({
-    collection: 'plaza',
-    id: plazaID,
+    collection: 'municipality',
+    id: municipalityID,
     depth: 0,
     user: actor,
     overrideAccess: false,
@@ -121,14 +124,7 @@ const assertCanManageSupporter = async (
     req,
   })
 
-const isUniqueSupporterConflict = (error: unknown): boolean => {
-  const message = error instanceof Error ? error.message : String(error)
-  return /supporter.*contact.*plaza|supporter_contact_plaza|nulls_not_distinct|duplicate key/i.test(
-    message,
-  )
-}
-
-const upsertContactByPhone = async ({
+export const upsertContactByPhone = async ({
   payload,
   req,
   phone,
@@ -194,8 +190,8 @@ const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, i
       async ({ req }) => {
         const currentActor = await getFreshStaffActor(payload, actor, req)
 
-        if (data.plaza) {
-          await assertPlazaManagement(payload, currentActor, data.plaza, req)
+        if (data.municipality) {
+          await assertMunicipalityManagement(payload, currentActor, data.municipality, req)
         } else if (currentActor.role !== 'coordinator') {
           throw new Error('Somente o Coordenador Geral pode cadastrar apoiadores sem Praça.')
         }
@@ -233,7 +229,7 @@ const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, i
           collection: 'supporter',
           data: {
             contact: contactID,
-            plaza: data.plaza,
+            municipality: data.municipality,
             voteIntention: data.voteIntention,
             source: 'manual',
             consent: registrationConsent.id,
@@ -466,7 +462,7 @@ export const previewSupporterImportText = async (
     })
   }
 
-  // Duplicate against an existing supporter without plaza (Contact reuse alone is OK).
+  // Duplicate against an existing supporter without municipality (Contact reuse alone is OK).
   const candidatePhones = [
     ...new Set(rows.filter(isSupporterImportOkRow).map((row) => row.normalizedPhone)),
   ]
@@ -488,7 +484,7 @@ export const previewSupporterImportText = async (
       const existingSupporters = await payload.find({
         collection: 'supporter',
         where: {
-          and: [{ contact: { in: contactIDs } }, { plaza: { exists: false } }],
+          and: [{ contact: { in: contactIDs } }, { municipality: { exists: false } }],
         },
         depth: 0,
         limit: contactIDs.length,

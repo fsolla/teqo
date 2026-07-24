@@ -10,9 +10,9 @@ import {
 } from '@/utilities/recentVisits'
 
 const sampleEntry = (overrides: Partial<RecentVisitEntry> = {}): RecentVisitEntry => ({
-  href: '/campanha/pracas/seabra',
+  href: '/campanha/municipios/seabra',
   label: 'Seabra',
-  kind: 'plaza',
+  kind: 'municipality',
   visitedAt: 1_700_000_000_000,
   ...overrides,
 })
@@ -26,7 +26,7 @@ describe('recentVisits storage', () => {
     expect(listRecentVisits()).toEqual([])
     localStorage.setItem(STORAGE_KEY, 'not-json')
     expect(listRecentVisits()).toEqual([])
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ href: '/campanha/pracas/x' }))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ href: '/campanha/municipios/x' }))
     expect(listRecentVisits()).toEqual([])
   })
 
@@ -34,26 +34,26 @@ describe('recentVisits storage', () => {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify([
-        sampleEntry({ kind: 'plaza' }),
-        sampleEntry({ href: '/campanha/pracas', kind: 'plazaList' }),
+        sampleEntry({ kind: 'municipality' }),
+        sampleEntry({ href: '/campanha/municipios', kind: 'municipalityList' }),
         { ...sampleEntry({ href: '/campanha/nucleos/antigo' }), kind: 'nucleus' },
       ]),
     )
 
     expect(listRecentVisits()).toEqual([
-      sampleEntry({ kind: 'plaza' }),
-      sampleEntry({ href: '/campanha/pracas', kind: 'plazaList' }),
+      sampleEntry({ kind: 'municipality' }),
+      sampleEntry({ href: '/campanha/municipios', kind: 'municipalityList' }),
     ])
   })
 
   it('deduplicates by href and keeps the newest visit at the top', () => {
-    recordRecentVisit(sampleEntry({ href: '/campanha/pracas/a', visitedAt: 10 }))
-    recordRecentVisit(sampleEntry({ href: '/campanha/pracas/b', visitedAt: 20 }))
-    recordRecentVisit(sampleEntry({ href: '/campanha/pracas/a', label: 'Atualizado', visitedAt: 30 }))
+    recordRecentVisit(sampleEntry({ href: '/campanha/municipios/a', visitedAt: 10 }))
+    recordRecentVisit(sampleEntry({ href: '/campanha/municipios/b', visitedAt: 20 }))
+    recordRecentVisit(sampleEntry({ href: '/campanha/municipios/a', label: 'Atualizado', visitedAt: 30 }))
 
     expect(listRecentVisits()).toEqual([
-      sampleEntry({ href: '/campanha/pracas/a', label: 'Atualizado', visitedAt: 30 }),
-      sampleEntry({ href: '/campanha/pracas/b', visitedAt: 20 }),
+      sampleEntry({ href: '/campanha/municipios/a', label: 'Atualizado', visitedAt: 30 }),
+      sampleEntry({ href: '/campanha/municipios/b', visitedAt: 20 }),
     ])
   })
 
@@ -61,7 +61,7 @@ describe('recentVisits storage', () => {
     for (let index = 0; index < MAX_ENTRIES + 2; index += 1) {
       recordRecentVisit(
         sampleEntry({
-          href: `/campanha/pracas/praca-${index}`,
+          href: `/campanha/municipios/praca-${index}`,
           label: `Praça ${index}`,
           visitedAt: index,
         }),
@@ -70,8 +70,8 @@ describe('recentVisits storage', () => {
 
     const visits = listRecentVisits()
     expect(visits).toHaveLength(MAX_ENTRIES)
-    expect(visits[0]?.href).toBe(`/campanha/pracas/praca-${MAX_ENTRIES + 1}`)
-    expect(visits.at(-1)?.href).toBe('/campanha/pracas/praca-2')
+    expect(visits[0]?.href).toBe(`/campanha/municipios/praca-${MAX_ENTRIES + 1}`)
+    expect(visits.at(-1)?.href).toBe('/campanha/municipios/praca-2')
   })
 
   it('clears stored visits', () => {

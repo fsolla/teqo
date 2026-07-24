@@ -27,7 +27,7 @@ import {
 import { toActionPlanListViewModel } from '@/utilities/actionPlanViewModels'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadPlazaOptions } from '@/utilities/campaignRelationOptions'
+import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 
 type ActionPlanListPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -42,9 +42,9 @@ export default async function ActionPlanListPage({ searchParams }: ActionPlanLis
   if (!user) return null
 
   const now = new Date()
-  const [{ result, state }, plazaOptions] = await Promise.all([
+  const [{ result, state }, municipalityOptions] = await Promise.all([
     loadActionPlanListPageData(payload, user, rawSearchParams, now),
-    loadPlazaOptions(payload, user),
+    loadMunicipalityOptions(payload, user),
   ])
   const resolvedUrl = resolveActionPlanListUrl(rawSearchParams, result.totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
@@ -73,7 +73,7 @@ export default async function ActionPlanListPage({ searchParams }: ActionPlanLis
       <ActionPlanFilters
         key={buildActionPlanFiltersKey(state)}
         state={state}
-        plazaOptions={plazaOptions}
+        municipalityOptions={municipalityOptions}
       />
 
       {result.docs.length ? (

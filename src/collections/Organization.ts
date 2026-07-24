@@ -104,10 +104,10 @@ export const Organization: CollectionConfig = {
       ],
     },
     {
-      name: 'plazas',
+      name: 'municipalities',
       type: 'relationship',
-      relationTo: 'plaza',
-      label: 'Praças de atuação',
+      relationTo: 'municipality',
+      label: 'Municípios de atuação',
       hasMany: true,
       index: true,
     },

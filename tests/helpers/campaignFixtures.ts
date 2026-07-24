@@ -4,7 +4,7 @@ import { sql } from '@payloadcms/db-postgres'
 import type { Payload, Where } from 'payload'
 import { afterEach, beforeEach } from 'vitest'
 
-import { plazaCatalog } from '@/lib/plazaCatalog'
+import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import type {
   CampaignDemand,
   CampaignInvite,
@@ -12,9 +12,9 @@ import type {
   Consent,
   Contact,
   Leadership,
+  Municipality,
+  MunicipalityUpdate,
   Organization,
-  Plaza,
-  PlazaUpdate,
   Supporter,
   User,
   VotePledge,
@@ -22,15 +22,15 @@ import type {
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 
 /**
- * Campaign fixtures for the Praça model. Plazas are SEEDED reference rows
- * (436, created by migration): tests never create or delete them — fixtures
- * hand out seeded plazas and reset the operational fields they touched.
+ * Campaign fixtures for the Município model. Municipalities are SEEDED reference rows
+ * (435, created by migration): tests never create or delete them — fixtures
+ * hand out seeded municipalities and reset the operational fields they touched.
  */
 
 type CampaignCollection =
   | 'users'
   | 'campaignInvite'
-  | 'plazaUpdate'
+  | 'municipalityUpdate'
   | 'votePledge'
   | 'campaignDemand'
   | 'actionPlan'
@@ -55,7 +55,7 @@ type LeadershipInput = Partial<
   Pick<
     Leadership,
     | 'contact'
-    | 'plazas'
+    | 'municipalities'
     | 'organizations'
     | 'sector'
     | 'sectorNotes'
@@ -69,26 +69,28 @@ type LeadershipInput = Partial<
     | 'createdBy'
   >
 > &
-  Pick<Leadership, 'contact'> & { plazas: Array<number | { id: number }> }
-type PlazaUpdateInput = Partial<
+  Pick<Leadership, 'contact'> & { municipalities: Array<number | { id: number }> }
+type MunicipalityUpdateInput = Partial<
   Pick<
-    PlazaUpdate,
+    MunicipalityUpdate,
     'kind' | 'worked' | 'failed' | 'needs' | 'activeVolunteers' | 'newSupports' | 'body'
   >
 > &
-  Pick<PlazaUpdate, 'plaza' | 'author'>
+  Pick<MunicipalityUpdate, 'municipality' | 'author'>
 type VotePledgeInput = Partial<
   Pick<VotePledge, 'declaredVotes' | 'estimatedVotes' | 'estimateNote'>
 > &
-  Pick<VotePledge, 'leadership' | 'plaza'>
-type OrganizationInput = Partial<Pick<Organization, 'name' | 'slug' | 'kind' | 'notes' | 'plazas'>>
+  Pick<VotePledge, 'leadership' | 'municipality'>
+type OrganizationInput = Partial<
+  Pick<Organization, 'name' | 'slug' | 'kind' | 'notes' | 'municipalities'>
+>
 type CampaignDemandInput = Partial<
   Pick<
     CampaignDemand,
     'title' | 'slug' | 'kind' | 'description' | 'status' | 'leadership' | 'createdBy'
   >
 > &
-  Pick<CampaignDemand, 'plaza'>
+  Pick<CampaignDemand, 'municipality'>
 type CampaignInviteInput = Partial<
   Pick<CampaignInvite, 'tokenHash' | 'kind' | 'expiresAt' | 'usedAt' | 'revokedAt'>
 > &
@@ -100,7 +102,7 @@ let builderCounter = 0
 const emptyOwnedIDs = (): OwnedIDs => ({
   users: new Set(),
   campaignInvite: new Set(),
-  plazaUpdate: new Set(),
+  municipalityUpdate: new Set(),
   votePledge: new Set(),
   campaignDemand: new Set(),
   actionPlan: new Set(),
@@ -153,14 +155,17 @@ const combineErrors = (primary: unknown, cleanup: unknown): AggregateError =>
   new AggregateError([primary, cleanup], 'Campaign fixture callback and cleanup both failed.')
 
 /**
- * Cross-process plaza allocator: seeded plazas are shared reference rows, so
- * concurrently running spec files must never operate on the same plaza. A
+ * Cross-process municipality allocator: seeded municipalities are shared reference rows, so
+ * concurrently running spec files must never operate on the same municipality. A
  * Postgres sequence hands out globally unique catalog indexes.
  */
-const PLAZA_ALLOCATION_SEQUENCE = 'campaign_fixture_plaza_alloc'
+const PLAZA_ALLOCATION_SEQUENCE = 'campaign_fixture_municipality_alloc'
 let allocationSequenceReady: Promise<void> | undefined
 
-const nextAllocatedPlazaIndex = async (payload: Payload, catalogSize: number): Promise<number> => {
+const nextAllocatedMunicipalityIndex = async (
+  payload: Payload,
+  catalogSize: number,
+): Promise<number> => {
   allocationSequenceReady ??= payload.db.drizzle
     .execute(sql.raw(`CREATE SEQUENCE IF NOT EXISTS "${PLAZA_ALLOCATION_SEQUENCE}"`))
     .then(() => undefined)
@@ -179,50 +184,53 @@ const nextAllocatedPlazaIndex = async (payload: Payload, catalogSize: number): P
 }
 
 /**
- * Delete campaign rows attached to a freshly claimed plaza. The allocator
- * guarantees no OTHER live test owns this plaza, so anything found here is
+ * Delete campaign rows attached to a freshly claimed municipality. The allocator
+ * guarantees no OTHER live test owns this municipality, so anything found here is
  * residue from an aborted previous run that would poison count assertions.
  */
-const purgePlazaResidue = async (payload: Payload, plazaID: number): Promise<void> => {
+const purgeMunicipalityResidue = async (
+  payload: Payload,
+  municipalityID: number,
+): Promise<void> => {
   const [pledges, updates, demands, leaderships, supporters, plans] = await Promise.all([
     payload.find({
       collection: 'votePledge',
-      where: { plaza: { equals: plazaID } },
+      where: { municipality: { equals: municipalityID } },
       depth: 0,
       pagination: false,
       select: {},
     }),
     payload.find({
-      collection: 'plazaUpdate',
-      where: { plaza: { equals: plazaID } },
+      collection: 'municipalityUpdate',
+      where: { municipality: { equals: municipalityID } },
       depth: 0,
       pagination: false,
       select: {},
     }),
     payload.find({
       collection: 'campaignDemand',
-      where: { plaza: { equals: plazaID } },
+      where: { municipality: { equals: municipalityID } },
       depth: 0,
       pagination: false,
       select: {},
     }),
     payload.find({
       collection: 'leadership',
-      where: { plazas: { in: [plazaID] } },
+      where: { municipalities: { in: [municipalityID] } },
       depth: 0,
       pagination: false,
       select: {},
     }),
     payload.find({
       collection: 'supporter',
-      where: { plaza: { equals: plazaID } },
+      where: { municipality: { equals: municipalityID } },
       depth: 0,
       pagination: false,
       select: {},
     }),
     payload.find({
       collection: 'actionPlan',
-      where: { plaza: { equals: plazaID } },
+      where: { municipality: { equals: municipalityID } },
       depth: 0,
       pagination: false,
       select: {},
@@ -232,7 +240,7 @@ const purgePlazaResidue = async (payload: Payload, plazaID: number): Promise<voi
   const deletions: Array<{
     collection:
       | 'votePledge'
-      | 'plazaUpdate'
+      | 'municipalityUpdate'
       | 'campaignDemand'
       | 'leadership'
       | 'supporter'
@@ -240,7 +248,7 @@ const purgePlazaResidue = async (payload: Payload, plazaID: number): Promise<voi
     ids: number[]
   }> = [
     { collection: 'votePledge', ids: pledges.docs.map((doc) => doc.id) },
-    { collection: 'plazaUpdate', ids: updates.docs.map((doc) => doc.id) },
+    { collection: 'municipalityUpdate', ids: updates.docs.map((doc) => doc.id) },
     { collection: 'campaignDemand', ids: demands.docs.map((doc) => doc.id) },
     { collection: 'actionPlan', ids: plans.docs.map((doc) => doc.id) },
     { collection: 'leadership', ids: leaderships.docs.map((doc) => doc.id) },
@@ -262,10 +270,10 @@ export class CampaignFixtures {
 
   private cleaned = false
   private counter = 0
-  private plazaCursor = 0
+  private municipalityCursor = 0
   private readonly markers = new Set<string>()
   private readonly owned = emptyOwnedIDs()
-  private readonly touchedPlazas = new Set<number>()
+  private readonly touchedMunicipalities = new Set<number>()
   private readonly ownedLockedDocuments = new Set<number>()
   private readonly ownedPreferences = new Set<number>()
 
@@ -365,40 +373,43 @@ export class CampaignFixtures {
   }
 
   /**
-   * A seeded plaza for this test — globally unique across concurrently running
+   * A seeded municipality for this test — globally unique across concurrently running
    * spec files (Postgres sequence), so parallel tests never share one. Rows
    * left behind by a previously crashed run are purged on claim (allocation
-   * uniqueness makes this safe: nothing live can reference this plaza).
+   * uniqueness makes this safe: nothing live can reference this municipality).
    */
-  async getPlaza(slug?: string): Promise<Plaza> {
+  async getMunicipality(slug?: string): Promise<Municipality> {
     let requestedSlug = slug
     if (!requestedSlug) {
-      const index = await nextAllocatedPlazaIndex(this.rootPayload, plazaCatalog.length)
-      requestedSlug = plazaCatalog[index]!.slug
-      this.plazaCursor += 1
+      const index = await nextAllocatedMunicipalityIndex(
+        this.rootPayload,
+        municipalityCatalog.length,
+      )
+      requestedSlug = municipalityCatalog[index]!.slug
+      this.municipalityCursor += 1
     }
 
     const result = await this.rootPayload.find({
-      collection: 'plaza',
+      collection: 'municipality',
       where: { slug: { equals: requestedSlug } },
       depth: 0,
       limit: 1,
       pagination: false,
     })
-    const plaza = result.docs[0]
-    if (!plaza) {
+    const municipality = result.docs[0]
+    if (!municipality) {
       throw new Error(
-        `Seeded plaza "${requestedSlug}" not found — run migrations on the test database.`,
+        `Seeded municipality "${requestedSlug}" not found — run migrations on the test database.`,
       )
     }
-    if (!slug) await purgePlazaResidue(this.rootPayload, plaza.id)
-    this.touchedPlazas.add(plaza.id)
-    return plaza
+    if (!slug) await purgeMunicipalityResidue(this.rootPayload, municipality.id)
+    this.touchedMunicipalities.add(municipality.id)
+    return municipality
   }
 
-  /** Mark a plaza mutated by the test so cleanup resets its operational fields. */
-  touchPlaza(value: number | { id: number }): void {
-    this.touchedPlazas.add(relationshipID(value))
+  /** Mark a municipality mutated by the test so cleanup resets its operational fields. */
+  touchMunicipality(value: number | { id: number }): void {
+    this.touchedMunicipalities.add(relationshipID(value))
   }
 
   private async discoverMarkedRoots(): Promise<void> {
@@ -539,16 +550,16 @@ export class CampaignFixtures {
     return contact
   }
 
-  /** Assign advisors to a seeded plaza (tracked for reset on cleanup). */
-  async assignPlazaAdvisors(
-    plaza: number | { id: number },
+  /** Assign advisors to a seeded municipality (tracked for reset on cleanup). */
+  async assignMunicipalityAdvisors(
+    municipality: number | { id: number },
     advisors: Array<number | { id: number }>,
-  ): Promise<Plaza> {
-    const plazaID = relationshipID(plaza)
-    this.touchedPlazas.add(plazaID)
+  ): Promise<Municipality> {
+    const municipalityID = relationshipID(municipality)
+    this.touchedMunicipalities.add(municipalityID)
     return this.rootPayload.update({
-      collection: 'plaza',
-      id: plazaID,
+      collection: 'municipality',
+      id: municipalityID,
       data: { advisors: advisors.map(relationshipID) },
       depth: 0,
     })
@@ -561,7 +572,7 @@ export class CampaignFixtures {
         supportStatus: 'engajado',
         ...input,
         contact: relationshipID(input.contact),
-        plazas: input.plazas.map(relationshipID),
+        municipalities: input.municipalities.map(relationshipID),
         ...(input.organizations
           ? { organizations: input.organizations.map((value) => relationshipID(value as never)) }
           : {}),
@@ -572,7 +583,8 @@ export class CampaignFixtures {
       depth: 0,
     })
     this.own('leadership', leadership)
-    for (const plaza of input.plazas) this.touchedPlazas.add(relationshipID(plaza))
+    for (const municipality of input.municipalities)
+      this.touchedMunicipalities.add(relationshipID(municipality))
     return leadership
   }
 
@@ -583,12 +595,12 @@ export class CampaignFixtures {
         declaredVotes: 100,
         ...input,
         leadership: relationshipID(input.leadership),
-        plaza: relationshipID(input.plaza),
+        municipality: relationshipID(input.municipality),
       },
       depth: 0,
     })
     this.own('votePledge', pledge)
-    this.touchedPlazas.add(relationshipID(input.plaza))
+    this.touchedMunicipalities.add(relationshipID(input.municipality))
     return pledge
   }
 
@@ -618,14 +630,14 @@ export class CampaignFixtures {
         ...input,
         title,
         slug: input.slug ?? this.value('demanda'),
-        plaza: relationshipID(input.plaza),
+        municipality: relationshipID(input.municipality),
         ...(input.leadership ? { leadership: relationshipID(input.leadership) } : {}),
         ...(input.createdBy ? { createdBy: relationshipID(input.createdBy) } : {}),
       },
       depth: 0,
     })
     this.own('campaignDemand', demand)
-    this.touchedPlazas.add(relationshipID(input.plaza))
+    this.touchedMunicipalities.add(relationshipID(input.municipality))
     return demand
   }
 
@@ -634,7 +646,7 @@ export class CampaignFixtures {
       Pick<
         Supporter,
         | 'contact'
-        | 'plaza'
+        | 'municipality'
         | 'voteIntention'
         | 'source'
         | 'consent'
@@ -653,7 +665,7 @@ export class CampaignFixtures {
         source: 'manual',
         ...input,
         contact: relationshipID(input.contact),
-        ...(input.plaza ? { plaza: relationshipID(input.plaza) } : {}),
+        ...(input.municipality ? { municipality: relationshipID(input.municipality) } : {}),
         ...(input.createdBy ? { createdBy: relationshipID(input.createdBy) } : {}),
         ...(input.consent ? { consent: relationshipID(input.consent) } : {}),
       },
@@ -663,20 +675,20 @@ export class CampaignFixtures {
     return supporter
   }
 
-  async createPlazaUpdate(input: PlazaUpdateInput): Promise<PlazaUpdate> {
+  async createMunicipalityUpdate(input: MunicipalityUpdateInput): Promise<MunicipalityUpdate> {
     const update = await this.rootPayload.create({
-      collection: 'plazaUpdate',
+      collection: 'municipalityUpdate',
       data: {
         kind: 'nota',
         body: this.value('Atualização'),
         ...input,
-        plaza: relationshipID(input.plaza),
+        municipality: relationshipID(input.municipality),
         author: relationshipID(input.author),
       },
       depth: 0,
     })
-    this.own('plazaUpdate', update)
-    this.touchedPlazas.add(relationshipID(input.plaza))
+    this.own('municipalityUpdate', update)
+    this.touchedMunicipalities.add(relationshipID(input.municipality))
     return update
   }
 
@@ -784,14 +796,14 @@ export class CampaignFixtures {
 
     if (userIDs.length > 0) {
       const updates = await this.rootPayload.find({
-        collection: 'plazaUpdate',
+        collection: 'municipalityUpdate',
         where: { author: { in: userIDs } },
         depth: 0,
         pagination: false,
       })
       for (const update of updates.docs) {
-        this.own('plazaUpdate', update)
-        this.touchedPlazas.add(relationshipID(update.plaza))
+        this.own('municipalityUpdate', update)
+        this.touchedMunicipalities.add(relationshipID(update.municipality))
       }
     }
 
@@ -824,7 +836,7 @@ export class CampaignFixtures {
       ['organization_id', this.owned.organization],
       ['leadership_id', this.owned.leadership],
       ['supporter_id', this.owned.supporter],
-      ['plaza_update_id', this.owned.plazaUpdate],
+      ['municipality_update_id', this.owned.municipalityUpdate],
       ['vote_pledge_id', this.owned.votePledge],
       ['users_id', this.owned.users],
     ]
@@ -878,12 +890,12 @@ export class CampaignFixtures {
     }
   }
 
-  /** Seeded plazas are never deleted — touched ones get their fields reset. */
-  private async resetTouchedPlazas(req: { transactionID: number | string }): Promise<void> {
-    for (const plazaID of this.touchedPlazas) {
+  /** Seeded municipalities are never deleted — touched ones get their fields reset. */
+  private async resetTouchedMunicipalities(req: { transactionID: number | string }): Promise<void> {
+    for (const municipalityID of this.touchedMunicipalities) {
       await this.rootPayload.update({
-        collection: 'plaza',
-        id: plazaID,
+        collection: 'municipality',
+        id: municipalityID,
         data: {
           advisors: [],
           priority: 'normal',
@@ -909,7 +921,7 @@ export class CampaignFixtures {
         'campaignInvite',
         'votePledge',
         'campaignDemand',
-        'plazaUpdate',
+        'municipalityUpdate',
         'actionPlan',
         'leadership',
         'supporter',
@@ -921,7 +933,7 @@ export class CampaignFixtures {
       ] as const) {
         await this.deleteOwned(collection, req)
       }
-      await this.resetTouchedPlazas(req)
+      await this.resetTouchedMunicipalities(req)
       if (this.ownedPreferences.size > 0) {
         const transaction = this.rootPayload.db.sessions?.[String(req.transactionID)]?.db as
           | { execute: (query: ReturnType<typeof sql.raw>) => Promise<unknown> }

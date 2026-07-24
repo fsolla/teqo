@@ -21,7 +21,7 @@ export const Supporter: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'contact',
-    defaultColumns: ['contact', 'plaza', 'voteIntention', 'source', 'updatedAt'],
+    defaultColumns: ['contact', 'municipality', 'voteIntention', 'source', 'updatedAt'],
   },
   access: {
     create: canCreateSupporter,
@@ -37,13 +37,13 @@ export const Supporter: CollectionConfig = {
         }
 
         const contactID = relationshipId(data.contact ?? originalDoc?.contact)
-        const plazaID = relationshipId(data.plaza ?? originalDoc?.plaza)
-        if (!contactID || !plazaID) return data
+        const municipalityID = relationshipId(data.municipality ?? originalDoc?.municipality)
+        if (!contactID || !municipalityID) return data
 
         const existingLeadership = await req.payload.find({
           collection: 'leadership',
           where: {
-            and: [{ contact: { equals: contactID } }, { plazas: { in: [plazaID] } }],
+            and: [{ contact: { equals: contactID } }, { municipalities: { in: [municipalityID] } }],
           },
           depth: 0,
           limit: 1,
@@ -54,7 +54,7 @@ export const Supporter: CollectionConfig = {
 
         if (existingLeadership.totalDocs > 0) {
           throw new APIError(
-            'Este contato já é liderança nesta Praça e não pode ser cadastrado como apoiador.',
+            'Este contato já é liderança neste município e não pode ser cadastrado como apoiador.',
             409,
           )
         }
@@ -76,9 +76,9 @@ export const Supporter: CollectionConfig = {
       },
     },
     {
-      name: 'plaza',
+      name: 'municipality',
       type: 'relationship',
-      relationTo: 'plaza',
+      relationTo: 'municipality',
       label: 'Praça',
       index: true,
       access: {
@@ -180,6 +180,7 @@ export const Supporter: CollectionConfig = {
       options: [
         { label: 'Importação CSV', value: 'import_csv' },
         { label: 'Cadastro manual', value: 'manual' },
+        { label: 'Liderança', value: 'lideranca' },
         { label: 'Convite', value: 'convite' },
         { label: 'Evento', value: 'evento' },
       ],

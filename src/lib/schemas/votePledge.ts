@@ -25,11 +25,10 @@ export const voteEstimateScenarioFieldsSchema = z
     }
   })
 
-/** A leader (or staff on their behalf) declares votes for one linked plaza. */
+/** Staff declare votes on behalf of a linked leadership in one municipality. */
 export const declareVotesSchema = z.object({
-  plaza: positiveRelationshipId,
-  /** Required for staff; ignored for leaders (own leadership is derived). */
-  leadership: positiveRelationshipId.optional(),
+  municipality: positiveRelationshipId,
+  leadership: positiveRelationshipId,
   declaredVotes: z.number().int().min(0).max(1_000_000),
 })
 

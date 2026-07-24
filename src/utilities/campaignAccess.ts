@@ -4,17 +4,18 @@ import type { Access, FieldAccess, Payload, PayloadRequest, Where } from 'payloa
 import { relationshipId } from '@/utilities/relationship'
 
 type CampaignActor = CampaignUser | User | null | undefined
-type PlazaID = number
-type AccessiblePlazaIDs = PlazaID[] | null
+type MunicipalityID = number
+type AccessibleMunicipalityIDs = MunicipalityID[] | null
 type ContactID = number
 type LeadershipID = number
 type AccessibleLeadershipIDs = LeadershipID[] | null
 
-const ACCESSIBLE_PLAZA_IDS_CONTEXT_KEY = 'campaignAccessiblePlazaIds'
+const ACCESSIBLE_PLAZA_IDS_CONTEXT_KEY = 'campaignAccessibleMunicipalityIds'
 const ACCESSIBLE_CONTACT_IDS_CONTEXT_KEY = 'campaignAccessibleContactIds'
 const ACCESSIBLE_LEADERSHIP_IDS_CONTEXT_KEY = 'campaignAccessibleLeadershipIds'
 const OWN_LEADERSHIP_CONTEXT_KEY = 'campaignOwnLeadership'
 const CAMPAIGN_USER_PHONE_ACCESS_CONTEXT_KEY = 'campaignUserPhoneAccess'
+const FRESH_CAMPAIGN_USER_CONTEXT_KEY = 'campaignFreshUser'
 
 /** Enough of a request for Local API calls inside an existing transaction. */
 export type CampaignTransactionRequest = PayloadRequest | { transactionID: number | string }
@@ -39,11 +40,23 @@ const isCampaignUser = (user: CampaignActor): user is CampaignUser =>
 export const isCampaignCoordinator = (user: CampaignActor): boolean =>
   isCampaignUser(user) && user.role === 'coordinator'
 
-/** Staff = coordinator or advisor ("Assessor"). Leaders are not staff. */
-export const isCampaignStaff = (user: CampaignActor): boolean =>
-  isCampaignUser(user) && (user.role === 'coordinator' || user.role === 'advisor')
+/** "Candidato" — full campaign visibility (superset of coordinator for reads). */
+export const isCampaignCandidate = (user: CampaignActor): boolean =>
+  isCampaignUser(user) && user.role === 'candidate'
 
-/** Eligible relationship targets for advisor assignments (plaza / action plan). */
+/** Coordinator or candidate — unrestricted scope (all municipalities, decisions). */
+export const isCampaignUnrestricted = (user: CampaignActor): boolean =>
+  isCampaignCoordinator(user) || isCampaignCandidate(user)
+
+export const isCampaignLeader = (user: CampaignActor): boolean =>
+  isCampaignUser(user) && user.role === 'leader'
+
+/** Staff = coordinator, advisor, or candidate. Leaders are not staff. */
+export const isCampaignStaff = (user: CampaignActor): boolean =>
+  isCampaignUser(user) &&
+  (user.role === 'coordinator' || user.role === 'advisor' || user.role === 'candidate')
+
+/** Eligible relationship targets for advisor assignments (municipality / action plan). */
 export const eligibleCampaignStaffWhere: Where = {
   or: [{ role: { equals: 'coordinator' } }, { role: { equals: 'advisor' } }],
 }
@@ -54,8 +67,13 @@ export const getFreshCampaignUser = async (
 ): Promise<CampaignUser | null> => {
   if (!isCampaignUser(user)) return null
 
+  const context = req.context as Record<string, unknown>
+  const cacheKey = `${FRESH_CAMPAIGN_USER_CONTEXT_KEY}:${user.id}`
+  if (cacheKey in context) return context[cacheKey] as CampaignUser | null
+
+  let fresh: CampaignUser | null = null
   try {
-    return await req.payload.findByID({
+    fresh = await req.payload.findByID({
       collection: 'campaignUser',
       id: user.id,
       depth: 0,
@@ -63,8 +81,11 @@ export const getFreshCampaignUser = async (
       req,
     })
   } catch {
-    return null
+    fresh = null
   }
+
+  context[cacheKey] = fresh
+  return fresh
 }
 
 // ---------------------------------------------------------------------------
@@ -74,13 +95,13 @@ export const getFreshCampaignUser = async (
 export const canManageCampaignUsers: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
-  return isCampaignCoordinator(await getFreshCampaignUser(req))
+  return isCampaignUnrestricted(await getFreshCampaignUser(req))
 }
 
 export const canManageCampaignUserRole: FieldAccess = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
-  return isCampaignCoordinator(await getFreshCampaignUser(req))
+  return isCampaignUnrestricted(await getFreshCampaignUser(req))
 }
 
 export const canReadCampaignUsers: Access = ({ req }) =>
@@ -126,23 +147,23 @@ export const canManageCampaignStaffField: FieldAccess = canReadCampaignStaffFiel
 export const canSetCampaignSystemField: FieldAccess = ({ req }) => isPayloadAdmin(req.user)
 
 // ---------------------------------------------------------------------------
-// Plazas (Praças)
+// Municipalities (Praças)
 // ---------------------------------------------------------------------------
 
 /**
- * Plaza IDs where `advisorID` is an assigned advisor, without requiring a
+ * Municipality IDs where `advisorID` is an assigned advisor, without requiring a
  * `PayloadRequest`. Canonical implementation of the "advisors contains
- * user.id" lookup; `getAccessiblePlazaIds` uses it for its (request-scoped,
+ * user.id" lookup; `getAccessibleMunicipalityIds` uses it for its (request-scoped,
  * context-cached) advisor branch.
  */
-export const getAdvisorPlazaIds = async (
+export const getAdvisorMunicipalityIds = async (
   payload: Pick<Payload, 'find'>,
   advisorID: number,
   req?: CampaignTransactionRequest,
 ): Promise<number[]> => {
   const find = payload.find.bind(payload) as unknown as DynamicFind
   const result = await find({
-    collection: 'plaza',
+    collection: 'municipality',
     where: { advisors: { contains: advisorID } },
     depth: 0,
     limit: 0,
@@ -155,7 +176,7 @@ export const getAdvisorPlazaIds = async (
   return result.docs.map((doc) => relationshipId(doc.id)).filter((id): id is number => id !== null)
 }
 
-type OwnLeadership = { id: number; plazaIDs: number[]; organizationIDs: number[] } | null
+type OwnLeadership = { id: number; municipalityIDs: number[]; organizationIDs: number[] } | null
 
 /**
  * The engaged leadership record linked to the authenticated leader account
@@ -185,7 +206,7 @@ export const getOwnEngagedLeadership = async (
       overrideAccess: true,
       pagination: false,
       req,
-      select: { plazas: true, organizations: true },
+      select: { municipalities: true, organizations: true },
       where: {
         and: [{ user: { equals: currentUser.id } }, { supportStatus: { equals: 'engajado' } }],
       },
@@ -197,7 +218,7 @@ export const getOwnEngagedLeadership = async (
       if (id !== null) {
         ownLeadership = {
           id,
-          plazaIDs: (Array.isArray(doc.plazas) ? doc.plazas : [])
+          municipalityIDs: (Array.isArray(doc.municipalities) ? doc.municipalities : [])
             .map(relationshipId)
             .filter((value): value is number => value !== null),
           organizationIDs: (Array.isArray(doc.organizations) ? doc.organizations : [])
@@ -213,19 +234,19 @@ export const getOwnEngagedLeadership = async (
 }
 
 /**
- * Returns null for the unrestricted coordinator, otherwise the plaza IDs the
- * authenticated campaign user can operate on: administered plazas for an
- * advisor, linked (engaged) plazas for a leader.
+ * Returns null for the unrestricted coordinator, otherwise the municipality IDs the
+ * authenticated campaign user can operate on: administered municipalities for an
+ * advisor, linked (engaged) municipalities for a leader.
  */
-export const getAccessiblePlazaIds = async (
+export const getAccessibleMunicipalityIds = async (
   req: PayloadRequest,
   user: CampaignActor = req.user,
-): Promise<AccessiblePlazaIDs> => {
+): Promise<AccessibleMunicipalityIDs> => {
   const currentUser =
     isCampaignUser(user) && user === req.user ? await getFreshCampaignUser(req, user) : user
 
   if (!isCampaignUser(currentUser)) return []
-  if (isCampaignCoordinator(currentUser)) return null
+  if (isCampaignUnrestricted(currentUser)) return null
 
   const context = req.context as Record<string, unknown>
   const cacheKey = `${ACCESSIBLE_PLAZA_IDS_CONTEXT_KEY}:${currentUser.id}:${currentUser.role}`
@@ -236,15 +257,15 @@ export const getAccessiblePlazaIds = async (
   }
 
   const collections = req.payload.collections as Record<string, unknown>
-  let ids: PlazaID[] = []
+  let ids: MunicipalityID[] = []
 
-  if (currentUser.role === 'advisor' && collections.plaza) {
-    ids = await getAdvisorPlazaIds(req.payload, currentUser.id, req)
+  if (currentUser.role === 'advisor' && collections.municipality) {
+    ids = await getAdvisorMunicipalityIds(req.payload, currentUser.id, req)
   }
 
   if (currentUser.role === 'leader') {
     const ownLeadership = await getOwnEngagedLeadership(req, currentUser)
-    ids = ownLeadership?.plazaIDs ?? []
+    ids = ownLeadership?.municipalityIDs ?? []
   }
 
   const uniqueIDs = [...new Set(ids)]
@@ -253,13 +274,16 @@ export const getAccessiblePlazaIds = async (
   return uniqueIDs
 }
 
-/** Plazas are seeded by migration; nobody creates or deletes them in the app. */
-export const canCreatePlaza: Access = ({ req }) => isPayloadAdmin(req.user)
+/** Municipalities are seeded by migration; nobody creates or deletes them in the app. */
+export const canCreateMunicipality: Access = ({ req }) => isPayloadAdmin(req.user)
 
-export const canReadPlaza: Access = async ({ req }) => {
+export const canReadMunicipality: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
-  const ids = await getAccessiblePlazaIds(req)
+  const currentUser = await getFreshCampaignUser(req)
+  if (isCampaignLeader(currentUser)) return false
+
+  const ids = await getAccessibleMunicipalityIds(req)
   if (ids === null) return true
 
   return {
@@ -269,11 +293,11 @@ export const canReadPlaza: Access = async ({ req }) => {
   }
 }
 
-export const canUpdatePlaza: Access = async ({ req }) => {
+export const canUpdateMunicipality: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
+  if (isCampaignUnrestricted(currentUser)) return true
   if (currentUser?.role !== 'advisor') return false
 
   return {
@@ -283,16 +307,16 @@ export const canUpdatePlaza: Access = async ({ req }) => {
   }
 }
 
-export const canDeletePlaza: Access = ({ req }) => isPayloadAdmin(req.user)
+export const canDeleteMunicipality: Access = ({ req }) => isPayloadAdmin(req.user)
 
 /** Advisor assignment is coordinator-only (server actions use overrideAccess). */
-export const canAssignPlazaAdvisors: FieldAccess = async ({ req }) => {
+export const canAssignMunicipalityAdvisors: FieldAccess = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   return isCampaignCoordinator(await getFreshCampaignUser(req))
 }
 
-export const canManagePlazaAdvisors: FieldAccess = ({ req }) => isPayloadAdmin(req.user)
+export const canManageMunicipalityAdvisors: FieldAccess = ({ req }) => isPayloadAdmin(req.user)
 
 // ---------------------------------------------------------------------------
 // Contacts
@@ -302,7 +326,7 @@ export const canReadContacts: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
+  if (isCampaignUnrestricted(currentUser)) return true
   if (!currentUser) return false
 
   const ids = await getAccessibleContactIds(req, currentUser)
@@ -323,28 +347,22 @@ export const canManageContacts: Access = ({ req }) => isPayloadAdmin(req.user)
 export const canSetAdministrativeLeadershipField: FieldAccess = ({ req }) =>
   isPayloadAdmin(req.user)
 
-const plazaIDsFromData = (value: unknown): number[] =>
+const municipalityIDsFromData = (value: unknown): number[] =>
   (Array.isArray(value) ? value : []).map(relationshipId).filter((id): id is number => id !== null)
 
 export const canReadLeadership: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
+  if (isCampaignLeader(currentUser)) return false
+  if (isCampaignUnrestricted(currentUser)) return true
   if (!currentUser) return false
 
-  if (currentUser.role === 'leader') {
-    const leadershipScope: Where = {
-      and: [{ user: { equals: currentUser.id } }, { supportStatus: { equals: 'engajado' } }],
-    }
-    return leadershipScope
-  }
-
-  const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
+  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
 
   return {
-    plazas: {
-      in: plazaIDs ?? [],
+    municipalities: {
+      in: municipalityIDs ?? [],
     },
   }
 }
@@ -353,30 +371,30 @@ export const canCreateLeadership: Access = async ({ data, req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
+  if (isCampaignUnrestricted(currentUser)) return true
   if (currentUser?.role !== 'advisor') return false
 
-  const requestedPlazaIDs = plazaIDsFromData(data?.plazas)
-  if (requestedPlazaIDs.length === 0) return false
+  const requestedMunicipalityIDs = municipalityIDsFromData(data?.municipalities)
+  if (requestedMunicipalityIDs.length === 0) return false
 
-  const accessiblePlazaIDs = await getAccessiblePlazaIds(req, currentUser)
-  if (accessiblePlazaIDs === null) return true
+  const accessibleMunicipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
+  if (accessibleMunicipalityIDs === null) return true
 
-  return requestedPlazaIDs.every((id) => accessiblePlazaIDs.includes(id))
+  return requestedMunicipalityIDs.every((id) => accessibleMunicipalityIDs.includes(id))
 }
 
 export const canManageLeadership: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
+  if (isCampaignUnrestricted(currentUser)) return true
   if (currentUser?.role !== 'advisor') return false
 
-  const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
+  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
 
   return {
-    plazas: {
-      in: plazaIDs ?? [],
+    municipalities: {
+      in: municipalityIDs ?? [],
     },
   }
 }
@@ -384,9 +402,9 @@ export const canManageLeadership: Access = async ({ req }) => {
 export const canDeleteLeadership: Access = ({ req }) => isPayloadAdmin(req.user)
 
 /**
- * Returns null for the unrestricted coordinator, otherwise the leadership IDs
+ * Returns null for unrestricted roles, otherwise the leadership IDs
  * in the actor's scope: own engaged record for a leader, leaderships linked to
- * administered plazas for an advisor.
+ * administered municipalities for an advisor.
  */
 export const getAccessibleLeadershipIds = async (
   req: PayloadRequest,
@@ -396,7 +414,7 @@ export const getAccessibleLeadershipIds = async (
     isCampaignUser(user) && user === req.user ? await getFreshCampaignUser(req, user) : user
 
   if (!isCampaignUser(currentUser)) return []
-  if (isCampaignCoordinator(currentUser)) return null
+  if (isCampaignUnrestricted(currentUser)) return null
 
   const context = req.context as Record<string, unknown>
   const cacheKey = `${ACCESSIBLE_LEADERSHIP_IDS_CONTEXT_KEY}:${currentUser.id}:${currentUser.role}`
@@ -411,12 +429,11 @@ export const getAccessibleLeadershipIds = async (
   let ids: LeadershipID[] = []
 
   if (currentUser.role === 'leader') {
-    const ownLeadership = await getOwnEngagedLeadership(req, currentUser)
-    ids = ownLeadership ? [ownLeadership.id] : []
+    ids = []
   }
 
   if (currentUser.role === 'advisor' && collections.leadership) {
-    const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
+    const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
     const result = await find({
       collection: 'leadership',
       depth: 0,
@@ -426,8 +443,8 @@ export const getAccessibleLeadershipIds = async (
       req,
       select: { id: true },
       where: {
-        plazas: {
-          in: plazaIDs ?? [],
+        municipalities: {
+          in: municipalityIDs ?? [],
         },
       },
     })
@@ -458,15 +475,15 @@ export const getAccessibleContactIds = async (
     return cached.filter((id): id is number => typeof id === 'number')
   }
 
-  const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
+  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
   const leadershipWhere =
     currentUser.role === 'leader'
       ? {
           and: [{ user: { equals: currentUser.id } }, { supportStatus: { equals: 'engajado' } }],
         }
       : {
-          plazas: {
-            in: plazaIDs ?? [],
+          municipalities: {
+            in: municipalityIDs ?? [],
           },
         }
 
@@ -501,8 +518,8 @@ export const getAccessibleContactIds = async (
       req,
       select: { contact: true },
       where: {
-        plaza: {
-          in: plazaIDs ?? [],
+        municipality: {
+          in: municipalityIDs ?? [],
         },
       },
     })
@@ -519,53 +536,41 @@ export const getAccessibleContactIds = async (
 }
 
 // ---------------------------------------------------------------------------
-// Vote pledges (declared by the leader, estimated by staff)
+// Vote pledges (declared by staff, estimated by staff)
 // ---------------------------------------------------------------------------
 
 export const canCreateVotePledge: Access = async ({ data, req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (!currentUser) return false
+  if (!currentUser || isCampaignLeader(currentUser)) return false
 
-  const plazaID = relationshipId(data?.plaza)
+  const municipalityID = relationshipId(data?.municipality)
   const leadershipID = relationshipId(data?.leadership)
-  if (!plazaID || !leadershipID) return false
+  if (!municipalityID || !leadershipID) return false
 
-  if (isCampaignCoordinator(currentUser)) return true
+  if (isCampaignUnrestricted(currentUser)) return true
 
   if (currentUser.role === 'advisor') {
-    const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
-    return plazaIDs?.includes(plazaID) ?? false
+    const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
+    return municipalityIDs?.includes(municipalityID) ?? false
   }
 
-  const ownLeadership = await getOwnEngagedLeadership(req, currentUser)
-  if (!ownLeadership) return false
-
-  return ownLeadership.id === leadershipID && ownLeadership.plazaIDs.includes(plazaID)
+  return false
 }
 
 export const canReadVotePledge: Access = async ({ req }): Promise<boolean | Where> => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
-  if (!currentUser) return false
+  if (isCampaignLeader(currentUser)) return false
+  if (isCampaignUnrestricted(currentUser)) return true
+  if (!currentUser || currentUser.role !== 'advisor') return false
 
-  if (currentUser.role === 'advisor') {
-    const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
-    return {
-      plaza: {
-        in: plazaIDs ?? [],
-      },
-    }
-  }
-
-  const ownLeadership = await getOwnEngagedLeadership(req, currentUser)
-
+  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
   return {
-    leadership: {
-      in: ownLeadership ? [ownLeadership.id] : [],
+    municipality: {
+      in: municipalityIDs ?? [],
     },
   }
 }
@@ -576,47 +581,42 @@ export const canUpdateVotePledge: Access = canReadVotePledge
 export const canDeleteVotePledge: Access = ({ req }) => isPayloadAdmin(req.user)
 
 // ---------------------------------------------------------------------------
-// Plaza updates (immutable field reports)
+// Municipality updates (immutable field reports)
 // ---------------------------------------------------------------------------
 
-export const canCreatePlazaUpdate: Access = async ({ data, req }) => {
+export const canCreateMunicipalityUpdate: Access = async ({ data, req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
-  if (!currentUser) return false
+  if (!currentUser || isCampaignLeader(currentUser)) return false
+  if (isCampaignUnrestricted(currentUser)) return true
 
-  const plazaID = relationshipId(data?.plaza)
-  if (!plazaID) return false
+  const municipalityID = relationshipId(data?.municipality)
+  if (!municipalityID) return false
 
-  const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
-  return plazaIDs?.includes(plazaID) ?? false
+  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
+  return municipalityIDs?.includes(municipalityID) ?? false
 }
 
-export const canReadPlazaUpdate: Access = async ({ req }) => {
+export const canReadMunicipalityUpdate: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
+  if (isCampaignLeader(currentUser)) return false
+  if (isCampaignUnrestricted(currentUser)) return true
   if (!currentUser) return false
 
-  const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
-  const plazaScope: Where = {
-    plaza: {
-      in: plazaIDs ?? [],
+  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
+  return {
+    municipality: {
+      in: municipalityIDs ?? [],
     },
   }
-
-  if (currentUser.role !== 'leader') return plazaScope
-
-  return {
-    and: [plazaScope, { author: { equals: currentUser.id } }],
-  }
 }
 
-export const canMutatePlazaUpdate: Access = ({ req }) => isPayloadAdmin(req.user)
+export const canMutateMunicipalityUpdate: Access = ({ req }) => isPayloadAdmin(req.user)
 
-export const canSetPlazaUpdateAuthor: FieldAccess = ({ req }) => isPayloadAdmin(req.user)
+export const canSetMunicipalityUpdateAuthor: FieldAccess = ({ req }) => isPayloadAdmin(req.user)
 
 // ---------------------------------------------------------------------------
 // Campaign invites
@@ -626,7 +626,7 @@ export const canCreateCampaignInvite: Access = async ({ data, req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
+  if (isCampaignUnrestricted(currentUser)) return true
   if (currentUser?.role !== 'advisor') return false
 
   const leadershipID = relationshipId(data?.leadership)
@@ -640,7 +640,7 @@ export const canReadCampaignInvite: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
+  if (isCampaignUnrestricted(currentUser)) return true
   if (currentUser?.role !== 'advisor') return false
 
   const accessibleLeadershipIDs = await getAccessibleLeadershipIds(req, currentUser)
@@ -664,30 +664,49 @@ export const canCreateSupporter: Access = async ({ data, req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
-  if (currentUser?.role !== 'advisor') return false
+  if (isCampaignUnrestricted(currentUser)) return true
 
-  const plazaID = relationshipId(data?.plaza)
-  if (!plazaID) return false
+  const municipalityID = relationshipId(data?.municipality)
+  if (!municipalityID) return false
 
-  const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
-  return plazaIDs?.includes(plazaID) ?? false
+  if (currentUser?.role === 'advisor') {
+    const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
+    return municipalityIDs?.includes(municipalityID) ?? false
+  }
+
+  if (isCampaignLeader(currentUser)) {
+    const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
+    return municipalityIDs?.includes(municipalityID) ?? false
+  }
+
+  return false
 }
 
-export const canReadSupporter: Access = async ({ req }) => {
+export const canReadSupporter: Access = async ({ req }): Promise<boolean | Where> => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
-  if (currentUser?.role !== 'advisor') return false
+  if (!currentUser) return false
+  if (isCampaignUnrestricted(currentUser)) return true
 
-  const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
-
-  return {
-    plaza: {
-      in: plazaIDs ?? [],
-    },
+  if (currentUser.role === 'advisor') {
+    const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
+    return {
+      municipality: {
+        in: municipalityIDs ?? [],
+      },
+    }
   }
+
+  if (isCampaignLeader(currentUser)) {
+    return {
+      createdBy: {
+        equals: currentUser.id,
+      },
+    }
+  }
+
+  return false
 }
 
 export const canManageSupporter: Access = canReadSupporter
@@ -708,16 +727,10 @@ export const canReadOrganization: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (!currentUser) return false
+  if (!currentUser || isCampaignLeader(currentUser)) return false
   if (isCampaignStaff(currentUser)) return true
 
-  const ownLeadership = await getOwnEngagedLeadership(req, currentUser)
-
-  return {
-    id: {
-      in: ownLeadership?.organizationIDs ?? [],
-    },
-  }
+  return false
 }
 
 export const canManageOrganization: Access = async ({ req }) => {
@@ -736,45 +749,36 @@ export const canCreateCampaignDemand: Access = async ({ data, req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (!currentUser) return false
-  if (isCampaignCoordinator(currentUser)) return true
+  if (!currentUser || isCampaignLeader(currentUser)) return false
+  if (isCampaignUnrestricted(currentUser)) return true
 
-  const plazaID = relationshipId(data?.plaza)
-  if (!plazaID) return false
+  const municipalityID = relationshipId(data?.municipality)
+  if (!municipalityID) return false
 
-  const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
-  return plazaIDs?.includes(plazaID) ?? false
+  if (currentUser.role !== 'advisor') return false
+
+  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
+  return municipalityIDs?.includes(municipalityID) ?? false
 }
 
 export const canReadCampaignDemand: Access = async ({ req }): Promise<boolean | Where> => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignCoordinator(currentUser)) return true
-  if (!currentUser) return false
+  if (isCampaignLeader(currentUser)) return false
+  if (isCampaignUnrestricted(currentUser)) return true
+  if (!currentUser || currentUser.role !== 'advisor') return false
 
-  if (currentUser.role === 'advisor') {
-    const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
-    return {
-      plaza: {
-        in: plazaIDs ?? [],
-      },
-    }
-  }
-
-  const ownLeadership = await getOwnEngagedLeadership(req, currentUser)
-
+  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
   return {
-    leadership: {
-      in: ownLeadership ? [ownLeadership.id] : [],
+    municipality: {
+      in: municipalityIDs ?? [],
     },
   }
 }
 
 /**
- * Same row scope as read: staff manage demands of their plazas; a leader may
- * edit only their own demand and only while it is still "aberta" (enforced in
- * the collection hook together with the staff-only field access).
+ * Staff manage demands in their municipalities; leaders have no demand access.
  */
 export const canUpdateCampaignDemand: Access = canReadCampaignDemand
 
@@ -797,10 +801,11 @@ export const canReadActionPlan: Access = async ({ req }): Promise<boolean | Wher
 
   const currentUser = await getFreshCampaignUser(req)
   if (!currentUser) return false
-  if (isCampaignCoordinator(currentUser)) return true
+  if (isCampaignLeader(currentUser)) return false
+  if (isCampaignUnrestricted(currentUser)) return true
 
   if (currentUser.role === 'advisor') {
-    const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
+    const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
     return {
       or: [
         {
@@ -809,20 +814,11 @@ export const canReadActionPlan: Access = async ({ req }): Promise<boolean | Wher
           },
         },
         {
-          plaza: {
-            in: plazaIDs ?? [],
+          municipality: {
+            in: municipalityIDs ?? [],
           },
         },
       ],
-    }
-  }
-
-  if (currentUser.role === 'leader') {
-    const leadershipIDs = await getAccessibleLeadershipIds(req, currentUser)
-    return {
-      leadership: {
-        in: leadershipIDs ?? [],
-      },
     }
   }
 
@@ -853,7 +849,7 @@ export const canManageActionPlanAdvisors: FieldAccess = async ({ req }) => {
 export type ElectionDataReader = CampaignUser | User
 
 export const canReadElectionDataAsUser = (user: CampaignActor): user is ElectionDataReader =>
-  isPayloadAdmin(user) || isCampaignUser(user)
+  isPayloadAdmin(user) || isCampaignStaff(user)
 
 export function assertCanReadElectionData(user: CampaignActor): asserts user is ElectionDataReader {
   if (!canReadElectionDataAsUser(user)) {
@@ -877,7 +873,8 @@ export const canReadCampaignUserPhone: FieldAccess = async ({ doc, id, req }) =>
   const currentUser = await getFreshCampaignUser(req)
   if (!currentUser) return false
   if (id !== undefined && String(id) === String(currentUser.id)) return true
-  if (isCampaignCoordinator(currentUser)) return true
+  if (isCampaignLeader(currentUser)) return false
+  if (isCampaignUnrestricted(currentUser)) return true
   if (id === undefined) return false
 
   const targetUserID = Number(id)
@@ -900,7 +897,7 @@ export const canReadCampaignUserPhone: FieldAccess = async ({ doc, id, req }) =>
       })
       targetRole = target.role
     } catch {
-      // Missing target only — fall through to the plaza-scope check.
+      // Missing target only — fall through to the municipality-scope check.
     }
   }
   if (targetRole === 'coordinator') {
@@ -908,15 +905,15 @@ export const canReadCampaignUserPhone: FieldAccess = async ({ doc, id, req }) =>
     return true
   }
 
-  const plazaIDs = await getAccessiblePlazaIds(req, currentUser)
-  if (!plazaIDs?.length) {
+  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
+  if (!municipalityIDs?.length) {
     context[cacheKey] = false
     return false
   }
 
   const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
   const result = await find({
-    collection: 'plaza',
+    collection: 'municipality',
     depth: 0,
     limit: 1,
     overrideAccess: true,
@@ -924,7 +921,7 @@ export const canReadCampaignUserPhone: FieldAccess = async ({ doc, id, req }) =>
     req,
     select: { id: true },
     where: {
-      and: [{ id: { in: plazaIDs } }, { advisors: { contains: targetUserID } }],
+      and: [{ id: { in: municipalityIDs } }, { advisors: { contains: targetUserID } }],
     },
   })
   const allowed = result.docs.length > 0
@@ -945,3 +942,23 @@ export const canUpdateCampaignUserPhone: FieldAccess = async ({ id, req }) => {
   if (id !== undefined && String(id) === String(currentUser.id)) return true
   return isCampaignCoordinator(currentUser)
 }
+
+// ---------------------------------------------------------------------------
+// State deputies (dobradinhas)
+// ---------------------------------------------------------------------------
+
+export const canCreateStateDeputy: Access = async ({ req }) => {
+  if (isPayloadAdmin(req.user)) return true
+
+  return isCampaignStaff(await getFreshCampaignUser(req))
+}
+
+export const canReadStateDeputy: Access = async ({ req }) => {
+  if (isPayloadAdmin(req.user)) return true
+
+  return isCampaignStaff(await getFreshCampaignUser(req))
+}
+
+export const canManageStateDeputy: Access = canReadStateDeputy
+
+export const canDeleteStateDeputy: Access = ({ req }) => isPayloadAdmin(req.user)

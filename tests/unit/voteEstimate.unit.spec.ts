@@ -5,12 +5,12 @@ import {
   formatVoteEstimateEndpointsLabel,
   getVoteEstimateOrderViolation,
   normalizeVoteEstimateOnSave,
-  resolvePlazaStaffVoteTotalForScenario,
+  resolveMunicipalityStaffVoteTotalForScenario,
 } from '@/utilities/voteEstimate'
 import {
-  createEmptyPlazaPledgeAggregate,
-  resolvePlazaStaffVoteTotal,
-  rollupPlazaStaffVotes,
+  createEmptyMunicipalityPledgeAggregate,
+  resolveMunicipalityStaffVoteTotal,
+  rollupMunicipalityStaffVotes,
 } from '@/utilities/votePledgeData'
 
 describe('getVoteEstimateOrderViolation', () => {
@@ -61,18 +61,18 @@ describe('effectivePledgeVotesForScenario', () => {
   })
 })
 
-describe('resolvePlazaStaffVoteTotal', () => {
+describe('resolveMunicipalityStaffVoteTotal', () => {
   it('falls back to pledge effective total when expected central is null', () => {
-    expect(resolvePlazaStaffVoteTotal(null, 420)).toBe(420)
+    expect(resolveMunicipalityStaffVoteTotal(null, 420)).toBe(420)
   })
 
   it('uses expected central when set', () => {
-    expect(resolvePlazaStaffVoteTotal({ central: 1500 }, 420)).toBe(1500)
+    expect(resolveMunicipalityStaffVoteTotal({ central: 1500 }, 420)).toBe(1500)
   })
 
   it('resolves per scenario independently', () => {
     expect(
-      resolvePlazaStaffVoteTotalForScenario(
+      resolveMunicipalityStaffVoteTotalForScenario(
         { pessimistic: 100, central: 200, optimistic: 300 },
         420,
         'optimistic',
@@ -81,13 +81,13 @@ describe('resolvePlazaStaffVoteTotal', () => {
   })
 })
 
-describe('rollupPlazaStaffVotes', () => {
-  it('sums per-plaza staff totals and pledge metadata', () => {
+describe('rollupMunicipalityStaffVotes', () => {
+  it('sums per-municipality staff totals and pledge metadata', () => {
     const aggregates = new Map([
       [
         1,
         {
-          ...createEmptyPlazaPledgeAggregate(),
+          ...createEmptyMunicipalityPledgeAggregate(),
           effectiveByScenario: { pessimistic: 80, central: 100, optimistic: 120 },
           declaredTotal: 80,
           pledgeCount: 2,
@@ -97,7 +97,7 @@ describe('rollupPlazaStaffVotes', () => {
       [
         2,
         {
-          ...createEmptyPlazaPledgeAggregate(),
+          ...createEmptyMunicipalityPledgeAggregate(),
           effectiveByScenario: { pessimistic: 40, central: 50, optimistic: 60 },
           declaredTotal: 50,
           pledgeCount: 1,
@@ -106,7 +106,7 @@ describe('rollupPlazaStaffVotes', () => {
       ],
     ])
     expect(
-      rollupPlazaStaffVotes(
+      rollupMunicipalityStaffVotes(
         [
           { id: 1, expectedVotes: null },
           { id: 2, expectedVotes: { central: 200 } },

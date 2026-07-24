@@ -9,6 +9,7 @@ import {
   type EstimateVotesInput,
 } from '@/lib/schemas/votePledge'
 import type { CampaignUser } from '@/payload-types'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
@@ -18,13 +19,13 @@ import {
   toVoteEstimateScenarioViewModel,
 } from '@/utilities/voteEstimate'
 
-const OWN_ENGAGED_LEADERSHIP_REQUIRED = 'Somente lideranças engajadas podem declarar votos.'
-const PLAZA_NOT_LINKED = 'A liderança precisa estar vinculada à Praça para declarar votos nela.'
+const STAFF_DECLARE_REQUIRED = 'Somente a coordenação e a assessoria registram votos declarados.'
+const MUNICIPALITY_NOT_LINKED =
+  'A liderança precisa estar vinculada ao município para registrar votos declarados nele.'
 
 /**
- * Declare (or update) the votes a leadership is bringing in one plaza.
- * A leader always declares for their own leadership; staff may declare on
- * behalf of any leadership in their scope.
+ * Declare (or update) the votes a leadership is bringing in one municipality.
+ * Staff-only — leaders no longer declare through the app.
  */
 export const declareVotesRecord = async (
   payload: Payload,
@@ -38,48 +39,49 @@ export const declareVotesRecord = async (
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
 
-      let leadershipID: number
-      if (currentActor.role === 'leader') {
-        const ownLeadership = await payload.find({
-          collection: 'leadership',
-          where: {
-            and: [{ user: { equals: currentActor.id } }, { supportStatus: { equals: 'engajado' } }],
-          },
-          depth: 0,
-          limit: 1,
-          pagination: false,
-          overrideAccess: true,
-          req,
-        })
-        const leadership = ownLeadership.docs[0]
-        if (!leadership) throw new Error(OWN_ENGAGED_LEADERSHIP_REQUIRED)
-        leadershipID = leadership.id
-
-        const linkedPlazaIDs = (leadership.plazas ?? [])
-          .map(relationshipId)
-          .filter((id): id is number => id !== null)
-        if (!linkedPlazaIDs.includes(data.plaza)) throw new Error(PLAZA_NOT_LINKED)
-      } else {
-        if (!data.leadership) throw new Error('Informe a liderança da declaração.')
-        leadershipID = data.leadership
-        // Row access on the plaza read verifies the staff scope (advisor only
-        // reaches administered plazas).
-        await payload.findByID({
-          collection: 'plaza',
-          id: data.plaza,
-          depth: 0,
-          user: currentActor,
-          overrideAccess: false,
-          req,
-        })
+      if (!isCampaignStaff(currentActor)) {
+        throw new Error(STAFF_DECLARE_REQUIRED)
       }
 
-      await acquireTextAdvisoryLocks(payload, req, [`vote-pledge:${leadershipID}:${data.plaza}`])
+      if (!data.leadership) throw new Error('Informe a liderança da declaração.')
+      const leadershipID = data.leadership
+
+      const leadership = await payload.findByID({
+        collection: 'leadership',
+        id: leadershipID,
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      const linkedMunicipalityIDs = (leadership.municipalities ?? [])
+        .map(relationshipId)
+        .filter((id): id is number => id !== null)
+      if (!linkedMunicipalityIDs.includes(data.municipality)) {
+        throw new Error(MUNICIPALITY_NOT_LINKED)
+      }
+
+      await payload.findByID({
+        collection: 'municipality',
+        id: data.municipality,
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      await acquireTextAdvisoryLocks(payload, req, [
+        `vote-pledge:${leadershipID}:${data.municipality}`,
+      ])
 
       const existing = await payload.find({
         collection: 'votePledge',
         where: {
-          and: [{ leadership: { equals: leadershipID } }, { plaza: { equals: data.plaza } }],
+          and: [
+            { leadership: { equals: leadershipID } },
+            { municipality: { equals: data.municipality } },
+          ],
         },
         depth: 0,
         limit: 1,
@@ -105,7 +107,7 @@ export const declareVotesRecord = async (
         collection: 'votePledge',
         data: {
           leadership: leadershipID,
-          plaza: data.plaza,
+          municipality: data.municipality,
           declaredVotes: data.declaredVotes,
         },
         depth: 0,
@@ -140,11 +142,11 @@ export const estimateVotesRecord = async (
     payload,
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
-      if (currentActor.role !== 'coordinator' && currentActor.role !== 'advisor') {
-        throw new Error('Somente a coordenação e a assessoria registram estimativas.')
+      if (!isCampaignStaff(currentActor)) {
+        throw new Error('Somente a coordenação, a assessoria e o candidato registram estimativas.')
       }
 
-      // Row access scopes the pledge to the actor (advisor: administered plazas).
+      // Row access scopes the pledge to the actor (advisor: administered municipalities).
       const pledge = await payload.findByID({
         collection: 'votePledge',
         id: data.pledge,
@@ -155,7 +157,7 @@ export const estimateVotesRecord = async (
       })
 
       await acquireTextAdvisoryLocks(payload, req, [
-        `vote-pledge:${requireRelationshipId(pledge.leadership)}:${requireRelationshipId(pledge.plaza)}`,
+        `vote-pledge:${requireRelationshipId(pledge.leadership)}:${requireRelationshipId(pledge.municipality)}`,
       ])
 
       return payload.update({

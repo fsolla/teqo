@@ -1,0 +1,5286 @@
+/**
+ * Frozen Praça catalog (436 entries) as of migration 20260721_020109_remodel_plazas.
+ * DO NOT import live plazaCatalog/municipalityCatalog here — historical migrations
+ * must stay semantically stable even if the live catalog changes.
+ */
+export type FrozenPlazaCatalogEntry = {
+  readonly slug: string
+  readonly name: string
+  readonly kind: 'municipio' | 'zona'
+  readonly city: string
+  readonly region: string
+  readonly ibgeCode: string
+  readonly tseCityCode: string
+  readonly zoneNumber?: number
+  readonly tseZones: readonly number[]
+}
+
+export const plazaCatalog20260721: readonly FrozenPlazaCatalogEntry[] = [
+  {
+    "slug": "abaira",
+    "name": "Abaíra",
+    "kind": "municipio",
+    "city": "Abaíra",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2900108",
+    "tseCityCode": "33014",
+    "tseZones": [
+      105
+    ]
+  },
+  {
+    "slug": "abare",
+    "name": "Abaré",
+    "kind": "municipio",
+    "city": "Abaré",
+    "region": "Itaparica",
+    "ibgeCode": "2900207",
+    "tseCityCode": "33030",
+    "tseZones": [
+      158
+    ]
+  },
+  {
+    "slug": "acajutiba",
+    "name": "Acajutiba",
+    "kind": "municipio",
+    "city": "Acajutiba",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2900306",
+    "tseCityCode": "33057",
+    "tseZones": [
+      21
+    ]
+  },
+  {
+    "slug": "adustina",
+    "name": "Adustina",
+    "kind": "municipio",
+    "city": "Adustina",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2900355",
+    "tseCityCode": "33065",
+    "tseZones": [
+      52
+    ]
+  },
+  {
+    "slug": "agua-fria",
+    "name": "Água Fria",
+    "kind": "municipio",
+    "city": "Água Fria",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2900405",
+    "tseCityCode": "33073",
+    "tseZones": [
+      74
+    ]
+  },
+  {
+    "slug": "aiquara",
+    "name": "Aiquara",
+    "kind": "municipio",
+    "city": "Aiquara",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2900603",
+    "tseCityCode": "33111",
+    "tseZones": [
+      147
+    ]
+  },
+  {
+    "slug": "alagoinhas",
+    "name": "Alagoinhas",
+    "kind": "municipio",
+    "city": "Alagoinhas",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2900702",
+    "tseCityCode": "33138",
+    "tseZones": [
+      163
+    ]
+  },
+  {
+    "slug": "alcobaca",
+    "name": "Alcobaça",
+    "kind": "municipio",
+    "city": "Alcobaça",
+    "region": "Extremo Sul",
+    "ibgeCode": "2900801",
+    "tseCityCode": "33154",
+    "tseZones": [
+      112
+    ]
+  },
+  {
+    "slug": "almadina",
+    "name": "Almadina",
+    "kind": "municipio",
+    "city": "Almadina",
+    "region": "Litoral Sul",
+    "ibgeCode": "2900900",
+    "tseCityCode": "33170",
+    "tseZones": [
+      135
+    ]
+  },
+  {
+    "slug": "amargosa",
+    "name": "Amargosa",
+    "kind": "municipio",
+    "city": "Amargosa",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2901007",
+    "tseCityCode": "33197",
+    "tseZones": [
+      36
+    ]
+  },
+  {
+    "slug": "amelia-rodrigues",
+    "name": "Amélia Rodrigues",
+    "kind": "municipio",
+    "city": "Amélia Rodrigues",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2901106",
+    "tseCityCode": "33219",
+    "tseZones": [
+      192
+    ]
+  },
+  {
+    "slug": "america-dourada",
+    "name": "América Dourada",
+    "kind": "municipio",
+    "city": "América Dourada",
+    "region": "Irecê",
+    "ibgeCode": "2901155",
+    "tseCityCode": "30716",
+    "tseZones": [
+      199
+    ]
+  },
+  {
+    "slug": "anage",
+    "name": "Anagé",
+    "kind": "municipio",
+    "city": "Anagé",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2901205",
+    "tseCityCode": "33235",
+    "tseZones": [
+      161
+    ]
+  },
+  {
+    "slug": "andarai",
+    "name": "Andaraí",
+    "kind": "municipio",
+    "city": "Andaraí",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2901304",
+    "tseCityCode": "33251",
+    "tseZones": [
+      119
+    ]
+  },
+  {
+    "slug": "andorinha",
+    "name": "Andorinha",
+    "kind": "municipio",
+    "city": "Andorinha",
+    "region": "Piemonte Norte do Itapicuru",
+    "ibgeCode": "2901353",
+    "tseCityCode": "33260",
+    "tseZones": [
+      45
+    ]
+  },
+  {
+    "slug": "angical",
+    "name": "Angical",
+    "kind": "municipio",
+    "city": "Angical",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2901403",
+    "tseCityCode": "33278",
+    "tseZones": [
+      126
+    ]
+  },
+  {
+    "slug": "anguera",
+    "name": "Anguera",
+    "kind": "municipio",
+    "city": "Anguera",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2901502",
+    "tseCityCode": "33294",
+    "tseZones": [
+      157
+    ]
+  },
+  {
+    "slug": "antas",
+    "name": "Antas",
+    "kind": "municipio",
+    "city": "Antas",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2901601",
+    "tseCityCode": "33316",
+    "tseZones": [
+      82
+    ]
+  },
+  {
+    "slug": "antonio-cardoso",
+    "name": "Antônio Cardoso",
+    "kind": "municipio",
+    "city": "Antônio Cardoso",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2901700",
+    "tseCityCode": "33332",
+    "tseZones": [
+      143
+    ]
+  },
+  {
+    "slug": "antonio-goncalves",
+    "name": "Antônio Gonçalves",
+    "kind": "municipio",
+    "city": "Antônio Gonçalves",
+    "region": "Piemonte Norte do Itapicuru",
+    "ibgeCode": "2901809",
+    "tseCityCode": "33359",
+    "tseZones": [
+      53
+    ]
+  },
+  {
+    "slug": "apora",
+    "name": "Aporá",
+    "kind": "municipio",
+    "city": "Aporá",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2901908",
+    "tseCityCode": "33375",
+    "tseZones": [
+      44
+    ]
+  },
+  {
+    "slug": "apuarema",
+    "name": "Apuarema",
+    "kind": "municipio",
+    "city": "Apuarema",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2901957",
+    "tseCityCode": "33405",
+    "tseZones": [
+      23
+    ]
+  },
+  {
+    "slug": "aracas",
+    "name": "Araças",
+    "kind": "municipio",
+    "city": "Araças",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2902054",
+    "tseCityCode": "33383",
+    "tseZones": [
+      200
+    ]
+  },
+  {
+    "slug": "aracatu",
+    "name": "Aracatu",
+    "kind": "municipio",
+    "city": "Aracatu",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2902005",
+    "tseCityCode": "33391",
+    "tseZones": [
+      90
+    ]
+  },
+  {
+    "slug": "araci",
+    "name": "Araci",
+    "kind": "municipio",
+    "city": "Araci",
+    "region": "Sisal",
+    "ibgeCode": "2902104",
+    "tseCityCode": "33413",
+    "tseZones": [
+      123
+    ]
+  },
+  {
+    "slug": "aramari",
+    "name": "Aramari",
+    "kind": "municipio",
+    "city": "Aramari",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2902203",
+    "tseCityCode": "33430",
+    "tseZones": [
+      163
+    ]
+  },
+  {
+    "slug": "arataca",
+    "name": "Arataca",
+    "kind": "municipio",
+    "city": "Arataca",
+    "region": "Litoral Sul",
+    "ibgeCode": "2902252",
+    "tseCityCode": "30732",
+    "tseZones": [
+      166
+    ]
+  },
+  {
+    "slug": "aratuipe",
+    "name": "Aratuípe",
+    "kind": "municipio",
+    "city": "Aratuípe",
+    "region": "Baixo Sul",
+    "ibgeCode": "2902302",
+    "tseCityCode": "33456",
+    "tseZones": [
+      30
+    ]
+  },
+  {
+    "slug": "aurelino-leal",
+    "name": "Aurelino Leal",
+    "kind": "municipio",
+    "city": "Aurelino Leal",
+    "region": "Litoral Sul",
+    "ibgeCode": "2902401",
+    "tseCityCode": "33472",
+    "tseZones": [
+      73
+    ]
+  },
+  {
+    "slug": "baianopolis",
+    "name": "Baianópolis",
+    "kind": "municipio",
+    "city": "Baianópolis",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2902500",
+    "tseCityCode": "33499",
+    "tseZones": [
+      126
+    ]
+  },
+  {
+    "slug": "baixa-grande",
+    "name": "Baixa Grande",
+    "kind": "municipio",
+    "city": "Baixa Grande",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2902609",
+    "tseCityCode": "33510",
+    "tseZones": [
+      86
+    ]
+  },
+  {
+    "slug": "banzae",
+    "name": "Banzaê",
+    "kind": "municipio",
+    "city": "Banzaê",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2902658",
+    "tseCityCode": "33529",
+    "tseZones": [
+      110
+    ]
+  },
+  {
+    "slug": "barra",
+    "name": "Barra",
+    "kind": "municipio",
+    "city": "Barra",
+    "region": "Velho Chico",
+    "ibgeCode": "2902708",
+    "tseCityCode": "33537",
+    "tseZones": [
+      77
+    ]
+  },
+  {
+    "slug": "barra-da-estiva",
+    "name": "Barra da Estiva",
+    "kind": "municipio",
+    "city": "Barra da Estiva",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2902807",
+    "tseCityCode": "33553",
+    "tseZones": [
+      169
+    ]
+  },
+  {
+    "slug": "barra-do-choca",
+    "name": "Barra do Choça",
+    "kind": "municipio",
+    "city": "Barra do Choça",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2902906",
+    "tseCityCode": "33570",
+    "tseZones": [
+      139
+    ]
+  },
+  {
+    "slug": "barra-do-mendes",
+    "name": "Barra do Mendes",
+    "kind": "municipio",
+    "city": "Barra do Mendes",
+    "region": "Irecê",
+    "ibgeCode": "2903003",
+    "tseCityCode": "33596",
+    "tseZones": [
+      176
+    ]
+  },
+  {
+    "slug": "barra-do-rocha",
+    "name": "Barra do Rocha",
+    "kind": "municipio",
+    "city": "Barra do Rocha",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2903102",
+    "tseCityCode": "33618",
+    "tseZones": [
+      134
+    ]
+  },
+  {
+    "slug": "barreiras",
+    "name": "Barreiras",
+    "kind": "municipio",
+    "city": "Barreiras",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2903201",
+    "tseCityCode": "33634",
+    "tseZones": [
+      70,
+      75
+    ]
+  },
+  {
+    "slug": "barro-alto",
+    "name": "Barro Alto",
+    "kind": "municipio",
+    "city": "Barro Alto",
+    "region": "Irecê",
+    "ibgeCode": "2903235",
+    "tseCityCode": "30759",
+    "tseZones": [
+      174
+    ]
+  },
+  {
+    "slug": "barro-preto",
+    "name": "Barro Preto",
+    "kind": "municipio",
+    "city": "Barro Preto",
+    "region": "Litoral Sul",
+    "ibgeCode": "2903300",
+    "tseCityCode": "33650",
+    "tseZones": [
+      136
+    ]
+  },
+  {
+    "slug": "barrocas",
+    "name": "Barrocas",
+    "kind": "municipio",
+    "city": "Barrocas",
+    "region": "Sisal",
+    "ibgeCode": "2903276",
+    "tseCityCode": "30775",
+    "tseZones": [
+      150
+    ]
+  },
+  {
+    "slug": "belmonte",
+    "name": "Belmonte",
+    "kind": "municipio",
+    "city": "Belmonte",
+    "region": "Costa do Descobrimento",
+    "ibgeCode": "2903409",
+    "tseCityCode": "33677",
+    "tseZones": [
+      34
+    ]
+  },
+  {
+    "slug": "belo-campo",
+    "name": "Belo Campo",
+    "kind": "municipio",
+    "city": "Belo Campo",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2903508",
+    "tseCityCode": "33693",
+    "tseZones": [
+      177
+    ]
+  },
+  {
+    "slug": "biritinga",
+    "name": "Biritinga",
+    "kind": "municipio",
+    "city": "Biritinga",
+    "region": "Sisal",
+    "ibgeCode": "2903607",
+    "tseCityCode": "33715",
+    "tseZones": [
+      150
+    ]
+  },
+  {
+    "slug": "boa-nova",
+    "name": "Boa Nova",
+    "kind": "municipio",
+    "city": "Boa Nova",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2903706",
+    "tseCityCode": "33731",
+    "tseZones": [
+      59
+    ]
+  },
+  {
+    "slug": "boa-vista-do-tupim",
+    "name": "Boa Vista do Tupim",
+    "kind": "municipio",
+    "city": "Boa Vista do Tupim",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2903805",
+    "tseCityCode": "33758",
+    "tseZones": [
+      42
+    ]
+  },
+  {
+    "slug": "bom-jesus-da-lapa",
+    "name": "Bom Jesus da Lapa",
+    "kind": "municipio",
+    "city": "Bom Jesus da Lapa",
+    "region": "Velho Chico",
+    "ibgeCode": "2903904",
+    "tseCityCode": "33774",
+    "tseZones": [
+      71
+    ]
+  },
+  {
+    "slug": "bom-jesus-da-serra",
+    "name": "Bom Jesus da Serra",
+    "kind": "municipio",
+    "city": "Bom Jesus da Serra",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2903953",
+    "tseCityCode": "33782",
+    "tseZones": [
+      59
+    ]
+  },
+  {
+    "slug": "boninal",
+    "name": "Boninal",
+    "kind": "municipio",
+    "city": "Boninal",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2904001",
+    "tseCityCode": "33790",
+    "tseZones": [
+      105
+    ]
+  },
+  {
+    "slug": "bonito",
+    "name": "Bonito",
+    "kind": "municipio",
+    "city": "Bonito",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2904050",
+    "tseCityCode": "33804",
+    "tseZones": [
+      69
+    ]
+  },
+  {
+    "slug": "boquira",
+    "name": "Boquira",
+    "kind": "municipio",
+    "city": "Boquira",
+    "region": "Bacia do Paramirim",
+    "ibgeCode": "2904100",
+    "tseCityCode": "33812",
+    "tseZones": [
+      65
+    ]
+  },
+  {
+    "slug": "botupora",
+    "name": "Botuporã",
+    "kind": "municipio",
+    "city": "Botuporã",
+    "region": "Bacia do Paramirim",
+    "ibgeCode": "2904209",
+    "tseCityCode": "33839",
+    "tseZones": [
+      168
+    ]
+  },
+  {
+    "slug": "brejoes",
+    "name": "Brejões",
+    "kind": "municipio",
+    "city": "Brejões",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2904308",
+    "tseCityCode": "33855",
+    "tseZones": [
+      36
+    ]
+  },
+  {
+    "slug": "brejolandia",
+    "name": "Brejolândia",
+    "kind": "municipio",
+    "city": "Brejolândia",
+    "region": "Bacia do Rio Corrente",
+    "ibgeCode": "2904407",
+    "tseCityCode": "33871",
+    "tseZones": [
+      190
+    ]
+  },
+  {
+    "slug": "brotas-de-macaubas",
+    "name": "Brotas de Macaúbas",
+    "kind": "municipio",
+    "city": "Brotas de Macaúbas",
+    "region": "Velho Chico",
+    "ibgeCode": "2904506",
+    "tseCityCode": "33898",
+    "tseZones": [
+      94
+    ]
+  },
+  {
+    "slug": "brumado",
+    "name": "Brumado",
+    "kind": "municipio",
+    "city": "Brumado",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2904605",
+    "tseCityCode": "33910",
+    "tseZones": [
+      90
+    ]
+  },
+  {
+    "slug": "buerarema",
+    "name": "Buerarema",
+    "kind": "municipio",
+    "city": "Buerarema",
+    "region": "Litoral Sul",
+    "ibgeCode": "2904704",
+    "tseCityCode": "33936",
+    "tseZones": [
+      166
+    ]
+  },
+  {
+    "slug": "buritirama",
+    "name": "Buritirama",
+    "kind": "municipio",
+    "city": "Buritirama",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2904753",
+    "tseCityCode": "30791",
+    "tseZones": [
+      77
+    ]
+  },
+  {
+    "slug": "caatiba",
+    "name": "Caatiba",
+    "kind": "municipio",
+    "city": "Caatiba",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2904803",
+    "tseCityCode": "33952",
+    "tseZones": [
+      201
+    ]
+  },
+  {
+    "slug": "cabaceiras-do-paraguacu",
+    "name": "Cabaceiras do Paraguaçu",
+    "kind": "municipio",
+    "city": "Cabaceiras do Paraguaçu",
+    "region": "Recôncavo",
+    "ibgeCode": "2904852",
+    "tseCityCode": "33960",
+    "tseZones": [
+      131
+    ]
+  },
+  {
+    "slug": "cachoeira",
+    "name": "Cachoeira",
+    "kind": "municipio",
+    "city": "Cachoeira",
+    "region": "Recôncavo",
+    "ibgeCode": "2904902",
+    "tseCityCode": "33979",
+    "tseZones": [
+      118
+    ]
+  },
+  {
+    "slug": "cacule",
+    "name": "Caculé",
+    "kind": "municipio",
+    "city": "Caculé",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2905008",
+    "tseCityCode": "33995",
+    "tseZones": [
+      93
+    ]
+  },
+  {
+    "slug": "caem",
+    "name": "Caém",
+    "kind": "municipio",
+    "city": "Caém",
+    "region": "Piemonte da Diamantina",
+    "ibgeCode": "2905107",
+    "tseCityCode": "34010",
+    "tseZones": [
+      167
+    ]
+  },
+  {
+    "slug": "caetanos",
+    "name": "Caetanos",
+    "kind": "municipio",
+    "city": "Caetanos",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2905156",
+    "tseCityCode": "34029",
+    "tseZones": [
+      58
+    ]
+  },
+  {
+    "slug": "caetite",
+    "name": "Caetité",
+    "kind": "municipio",
+    "city": "Caetité",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2905206",
+    "tseCityCode": "34037",
+    "tseZones": [
+      63
+    ]
+  },
+  {
+    "slug": "cafarnaum",
+    "name": "Cafarnaum",
+    "kind": "municipio",
+    "city": "Cafarnaum",
+    "region": "Irecê",
+    "ibgeCode": "2905305",
+    "tseCityCode": "34053",
+    "tseZones": [
+      55
+    ]
+  },
+  {
+    "slug": "cairu",
+    "name": "Cairu",
+    "kind": "municipio",
+    "city": "Cairu",
+    "region": "Baixo Sul",
+    "ibgeCode": "2905404",
+    "tseCityCode": "34070",
+    "tseZones": [
+      31
+    ]
+  },
+  {
+    "slug": "caldeirao-grande",
+    "name": "Caldeirão Grande",
+    "kind": "municipio",
+    "city": "Caldeirão Grande",
+    "region": "Piemonte Norte do Itapicuru",
+    "ibgeCode": "2905503",
+    "tseCityCode": "34096",
+    "tseZones": [
+      115
+    ]
+  },
+  {
+    "slug": "camacan",
+    "name": "Camacan",
+    "kind": "municipio",
+    "city": "Camacan",
+    "region": "Litoral Sul",
+    "ibgeCode": "2905602",
+    "tseCityCode": "34118",
+    "tseZones": [
+      133
+    ]
+  },
+  {
+    "slug": "camacari-ze-170",
+    "name": "Camaçari — ZE 170",
+    "kind": "zona",
+    "city": "Camaçari",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2905701",
+    "tseCityCode": "34134",
+    "zoneNumber": 170,
+    "tseZones": [
+      170
+    ]
+  },
+  {
+    "slug": "camacari-ze-171",
+    "name": "Camaçari — ZE 171",
+    "kind": "zona",
+    "city": "Camaçari",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2905701",
+    "tseCityCode": "34134",
+    "zoneNumber": 171,
+    "tseZones": [
+      171
+    ]
+  },
+  {
+    "slug": "camamu",
+    "name": "Camamu",
+    "kind": "municipio",
+    "city": "Camamu",
+    "region": "Baixo Sul",
+    "ibgeCode": "2905800",
+    "tseCityCode": "34150",
+    "tseZones": [
+      78
+    ]
+  },
+  {
+    "slug": "campo-alegre-de-lourdes",
+    "name": "Campo Alegre de Lourdes",
+    "kind": "municipio",
+    "city": "Campo Alegre de Lourdes",
+    "region": "Sertão do São Francisco",
+    "ibgeCode": "2905909",
+    "tseCityCode": "34177",
+    "tseZones": [
+      67
+    ]
+  },
+  {
+    "slug": "campo-formoso",
+    "name": "Campo Formoso",
+    "kind": "municipio",
+    "city": "Campo Formoso",
+    "region": "Piemonte Norte do Itapicuru",
+    "ibgeCode": "2906006",
+    "tseCityCode": "34193",
+    "tseZones": [
+      53
+    ]
+  },
+  {
+    "slug": "canapolis",
+    "name": "Canápolis",
+    "kind": "municipio",
+    "city": "Canápolis",
+    "region": "Bacia do Rio Corrente",
+    "ibgeCode": "2906105",
+    "tseCityCode": "34215",
+    "tseZones": [
+      99
+    ]
+  },
+  {
+    "slug": "canarana",
+    "name": "Canarana",
+    "kind": "municipio",
+    "city": "Canarana",
+    "region": "Irecê",
+    "ibgeCode": "2906204",
+    "tseCityCode": "34231",
+    "tseZones": [
+      174
+    ]
+  },
+  {
+    "slug": "canavieiras",
+    "name": "Canavieiras",
+    "kind": "municipio",
+    "city": "Canavieiras",
+    "region": "Litoral Sul",
+    "ibgeCode": "2906303",
+    "tseCityCode": "34258",
+    "tseZones": [
+      116
+    ]
+  },
+  {
+    "slug": "candeal",
+    "name": "Candeal",
+    "kind": "municipio",
+    "city": "Candeal",
+    "region": "Sisal",
+    "ibgeCode": "2906402",
+    "tseCityCode": "34274",
+    "tseZones": [
+      114
+    ]
+  },
+  {
+    "slug": "candeias",
+    "name": "Candeias",
+    "kind": "municipio",
+    "city": "Candeias",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2906501",
+    "tseCityCode": "34290",
+    "tseZones": [
+      127
+    ]
+  },
+  {
+    "slug": "candiba",
+    "name": "Candiba",
+    "kind": "municipio",
+    "city": "Candiba",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2906600",
+    "tseCityCode": "34312",
+    "tseZones": [
+      64
+    ]
+  },
+  {
+    "slug": "candido-sales",
+    "name": "Cândido Sales",
+    "kind": "municipio",
+    "city": "Cândido Sales",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2906709",
+    "tseCityCode": "34339",
+    "tseZones": [
+      40
+    ]
+  },
+  {
+    "slug": "cansancao",
+    "name": "Cansanção",
+    "kind": "municipio",
+    "city": "Cansanção",
+    "region": "Sisal",
+    "ibgeCode": "2906808",
+    "tseCityCode": "34355",
+    "tseZones": [
+      50
+    ]
+  },
+  {
+    "slug": "canudos",
+    "name": "Canudos",
+    "kind": "municipio",
+    "city": "Canudos",
+    "region": "Sertão do São Francisco",
+    "ibgeCode": "2906824",
+    "tseCityCode": "30856",
+    "tseZones": [
+      83
+    ]
+  },
+  {
+    "slug": "capela-do-alto-alegre",
+    "name": "Capela do Alto Alegre",
+    "kind": "municipio",
+    "city": "Capela do Alto Alegre",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2906857",
+    "tseCityCode": "30813",
+    "tseZones": [
+      196
+    ]
+  },
+  {
+    "slug": "capim-grosso",
+    "name": "Capim Grosso",
+    "kind": "municipio",
+    "city": "Capim Grosso",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2906873",
+    "tseCityCode": "30830",
+    "tseZones": [
+      191
+    ]
+  },
+  {
+    "slug": "caraibas",
+    "name": "Caraíbas",
+    "kind": "municipio",
+    "city": "Caraíbas",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2906899",
+    "tseCityCode": "34363",
+    "tseZones": [
+      161
+    ]
+  },
+  {
+    "slug": "caravelas",
+    "name": "Caravelas",
+    "kind": "municipio",
+    "city": "Caravelas",
+    "region": "Extremo Sul",
+    "ibgeCode": "2906907",
+    "tseCityCode": "34371",
+    "tseZones": [
+      112
+    ]
+  },
+  {
+    "slug": "cardeal-da-silva",
+    "name": "Cardeal da Silva",
+    "kind": "municipio",
+    "city": "Cardeal da Silva",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2907004",
+    "tseCityCode": "34398",
+    "tseZones": [
+      144
+    ]
+  },
+  {
+    "slug": "carinhanha",
+    "name": "Carinhanha",
+    "kind": "municipio",
+    "city": "Carinhanha",
+    "region": "Velho Chico",
+    "ibgeCode": "2907103",
+    "tseCityCode": "34410",
+    "tseZones": [
+      125
+    ]
+  },
+  {
+    "slug": "casa-nova",
+    "name": "Casa Nova",
+    "kind": "municipio",
+    "city": "Casa Nova",
+    "region": "Sertão do São Francisco",
+    "ibgeCode": "2907202",
+    "tseCityCode": "34436",
+    "tseZones": [
+      66
+    ]
+  },
+  {
+    "slug": "castro-alves",
+    "name": "Castro Alves",
+    "kind": "municipio",
+    "city": "Castro Alves",
+    "region": "Recôncavo",
+    "ibgeCode": "2907301",
+    "tseCityCode": "34452",
+    "tseZones": [
+      43
+    ]
+  },
+  {
+    "slug": "catolandia",
+    "name": "Catolândia",
+    "kind": "municipio",
+    "city": "Catolândia",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2907400",
+    "tseCityCode": "34479",
+    "tseZones": [
+      100
+    ]
+  },
+  {
+    "slug": "catu",
+    "name": "Catu",
+    "kind": "municipio",
+    "city": "Catu",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2907509",
+    "tseCityCode": "34495",
+    "tseZones": [
+      129
+    ]
+  },
+  {
+    "slug": "caturama",
+    "name": "Caturama",
+    "kind": "municipio",
+    "city": "Caturama",
+    "region": "Bacia do Paramirim",
+    "ibgeCode": "2907558",
+    "tseCityCode": "34509",
+    "tseZones": [
+      111
+    ]
+  },
+  {
+    "slug": "central",
+    "name": "Central",
+    "kind": "municipio",
+    "city": "Central",
+    "region": "Irecê",
+    "ibgeCode": "2907608",
+    "tseCityCode": "34517",
+    "tseZones": [
+      159
+    ]
+  },
+  {
+    "slug": "chorrocho",
+    "name": "Chorrochó",
+    "kind": "municipio",
+    "city": "Chorrochó",
+    "region": "Itaparica",
+    "ibgeCode": "2907707",
+    "tseCityCode": "34533",
+    "tseZones": [
+      158
+    ]
+  },
+  {
+    "slug": "cicero-dantas",
+    "name": "Cícero Dantas",
+    "kind": "municipio",
+    "city": "Cícero Dantas",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2907806",
+    "tseCityCode": "34550",
+    "tseZones": [
+      82
+    ]
+  },
+  {
+    "slug": "cipo",
+    "name": "Cipó",
+    "kind": "municipio",
+    "city": "Cipó",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2907905",
+    "tseCityCode": "34576",
+    "tseZones": [
+      79
+    ]
+  },
+  {
+    "slug": "coaraci",
+    "name": "Coaraci",
+    "kind": "municipio",
+    "city": "Coaraci",
+    "region": "Litoral Sul",
+    "ibgeCode": "2908002",
+    "tseCityCode": "34592",
+    "tseZones": [
+      135
+    ]
+  },
+  {
+    "slug": "cocos",
+    "name": "Cocos",
+    "kind": "municipio",
+    "city": "Cocos",
+    "region": "Bacia do Rio Corrente",
+    "ibgeCode": "2908101",
+    "tseCityCode": "34614",
+    "tseZones": [
+      61
+    ]
+  },
+  {
+    "slug": "conceicao-da-feira",
+    "name": "Conceição da Feira",
+    "kind": "municipio",
+    "city": "Conceição da Feira",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2908200",
+    "tseCityCode": "34630",
+    "tseZones": [
+      108
+    ]
+  },
+  {
+    "slug": "conceicao-do-almeida",
+    "name": "Conceição do Almeida",
+    "kind": "municipio",
+    "city": "Conceição do Almeida",
+    "region": "Recôncavo",
+    "ibgeCode": "2908309",
+    "tseCityCode": "34657",
+    "tseZones": [
+      184
+    ]
+  },
+  {
+    "slug": "conceicao-do-coite",
+    "name": "Conceição do Coité",
+    "kind": "municipio",
+    "city": "Conceição do Coité",
+    "region": "Sisal",
+    "ibgeCode": "2908408",
+    "tseCityCode": "34673",
+    "tseZones": [
+      132
+    ]
+  },
+  {
+    "slug": "conceicao-do-jacuipe",
+    "name": "Conceição do Jacuípe",
+    "kind": "municipio",
+    "city": "Conceição do Jacuípe",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2908507",
+    "tseCityCode": "34690",
+    "tseZones": [
+      192
+    ]
+  },
+  {
+    "slug": "conde",
+    "name": "Conde",
+    "kind": "municipio",
+    "city": "Conde",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2908606",
+    "tseCityCode": "34711",
+    "tseZones": [
+      21
+    ]
+  },
+  {
+    "slug": "condeuba",
+    "name": "Condeúba",
+    "kind": "municipio",
+    "city": "Condeúba",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2908705",
+    "tseCityCode": "34738",
+    "tseZones": [
+      60
+    ]
+  },
+  {
+    "slug": "contendas-do-sincora",
+    "name": "Contendas do Sincorá",
+    "kind": "municipio",
+    "city": "Contendas do Sincorá",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2908804",
+    "tseCityCode": "34754",
+    "tseZones": [
+      58
+    ]
+  },
+  {
+    "slug": "coracao-de-maria",
+    "name": "Coração de Maria",
+    "kind": "municipio",
+    "city": "Coração de Maria",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2908903",
+    "tseCityCode": "34770",
+    "tseZones": [
+      130
+    ]
+  },
+  {
+    "slug": "cordeiros",
+    "name": "Cordeiros",
+    "kind": "municipio",
+    "city": "Cordeiros",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2909000",
+    "tseCityCode": "34797",
+    "tseZones": [
+      60
+    ]
+  },
+  {
+    "slug": "coribe",
+    "name": "Coribe",
+    "kind": "municipio",
+    "city": "Coribe",
+    "region": "Bacia do Rio Corrente",
+    "ibgeCode": "2909109",
+    "tseCityCode": "34819",
+    "tseZones": [
+      61
+    ]
+  },
+  {
+    "slug": "coronel-joao-sa",
+    "name": "Coronel João Sá",
+    "kind": "municipio",
+    "city": "Coronel João Sá",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2909208",
+    "tseCityCode": "34835",
+    "tseZones": [
+      52
+    ]
+  },
+  {
+    "slug": "correntina",
+    "name": "Correntina",
+    "kind": "municipio",
+    "city": "Correntina",
+    "region": "Bacia do Rio Corrente",
+    "ibgeCode": "2909307",
+    "tseCityCode": "34851",
+    "tseZones": [
+      124
+    ]
+  },
+  {
+    "slug": "cotegipe",
+    "name": "Cotegipe",
+    "kind": "municipio",
+    "city": "Cotegipe",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2909406",
+    "tseCityCode": "34878",
+    "tseZones": [
+      98
+    ]
+  },
+  {
+    "slug": "cravolandia",
+    "name": "Cravolândia",
+    "kind": "municipio",
+    "city": "Cravolândia",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2909505",
+    "tseCityCode": "34894",
+    "tseZones": [
+      38
+    ]
+  },
+  {
+    "slug": "crisopolis",
+    "name": "Crisópolis",
+    "kind": "municipio",
+    "city": "Crisópolis",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2909604",
+    "tseCityCode": "34916",
+    "tseZones": [
+      81
+    ]
+  },
+  {
+    "slug": "cristopolis",
+    "name": "Cristópolis",
+    "kind": "municipio",
+    "city": "Cristópolis",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2909703",
+    "tseCityCode": "34932",
+    "tseZones": [
+      126
+    ]
+  },
+  {
+    "slug": "cruz-das-almas",
+    "name": "Cruz das Almas",
+    "kind": "municipio",
+    "city": "Cruz das Almas",
+    "region": "Recôncavo",
+    "ibgeCode": "2909802",
+    "tseCityCode": "34959",
+    "tseZones": [
+      142
+    ]
+  },
+  {
+    "slug": "curaca",
+    "name": "Curaçá",
+    "kind": "municipio",
+    "city": "Curaçá",
+    "region": "Sertão do São Francisco",
+    "ibgeCode": "2909901",
+    "tseCityCode": "34975",
+    "tseZones": [
+      85
+    ]
+  },
+  {
+    "slug": "dario-meira",
+    "name": "Dário Meira",
+    "kind": "municipio",
+    "city": "Dário Meira",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2910008",
+    "tseCityCode": "34991",
+    "tseZones": [
+      147
+    ]
+  },
+  {
+    "slug": "dias-d-avila",
+    "name": "Dias d'Ávila",
+    "kind": "municipio",
+    "city": "Dias d'Ávila",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2910057",
+    "tseCityCode": "30872",
+    "tseZones": [
+      186
+    ]
+  },
+  {
+    "slug": "dom-basilio",
+    "name": "Dom Basílio",
+    "kind": "municipio",
+    "city": "Dom Basílio",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2910107",
+    "tseCityCode": "35017",
+    "tseZones": [
+      101
+    ]
+  },
+  {
+    "slug": "dom-macedo-costa",
+    "name": "Dom Macedo Costa",
+    "kind": "municipio",
+    "city": "Dom Macedo Costa",
+    "region": "Recôncavo",
+    "ibgeCode": "2910206",
+    "tseCityCode": "35033",
+    "tseZones": [
+      202
+    ]
+  },
+  {
+    "slug": "elisio-medrado",
+    "name": "Elísio Medrado",
+    "kind": "municipio",
+    "city": "Elísio Medrado",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2910305",
+    "tseCityCode": "35050",
+    "tseZones": [
+      107
+    ]
+  },
+  {
+    "slug": "encruzilhada",
+    "name": "Encruzilhada",
+    "kind": "municipio",
+    "city": "Encruzilhada",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2910404",
+    "tseCityCode": "35076",
+    "tseZones": [
+      152
+    ]
+  },
+  {
+    "slug": "entre-rios",
+    "name": "Entre Rios",
+    "kind": "municipio",
+    "city": "Entre Rios",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2910503",
+    "tseCityCode": "35092",
+    "tseZones": [
+      144
+    ]
+  },
+  {
+    "slug": "erico-cardoso",
+    "name": "Érico Cardoso",
+    "kind": "municipio",
+    "city": "Érico Cardoso",
+    "region": "Bacia do Paramirim",
+    "ibgeCode": "2900504",
+    "tseCityCode": "33090",
+    "tseZones": [
+      111
+    ]
+  },
+  {
+    "slug": "esplanada",
+    "name": "Esplanada",
+    "kind": "municipio",
+    "city": "Esplanada",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2910602",
+    "tseCityCode": "35114",
+    "tseZones": [
+      21
+    ]
+  },
+  {
+    "slug": "euclides-da-cunha",
+    "name": "Euclides da Cunha",
+    "kind": "municipio",
+    "city": "Euclides da Cunha",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2910701",
+    "tseCityCode": "35130",
+    "tseZones": [
+      102
+    ]
+  },
+  {
+    "slug": "eunapolis",
+    "name": "Eunápolis",
+    "kind": "municipio",
+    "city": "Eunápolis",
+    "region": "Costa do Descobrimento",
+    "ibgeCode": "2910727",
+    "tseCityCode": "30058",
+    "tseZones": [
+      188,
+      203
+    ]
+  },
+  {
+    "slug": "fatima",
+    "name": "Fátima",
+    "kind": "municipio",
+    "city": "Fátima",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2910750",
+    "tseCityCode": "30899",
+    "tseZones": [
+      82
+    ]
+  },
+  {
+    "slug": "feira-da-mata",
+    "name": "Feira da Mata",
+    "kind": "municipio",
+    "city": "Feira da Mata",
+    "region": "Velho Chico",
+    "ibgeCode": "2910776",
+    "tseCityCode": "35149",
+    "tseZones": [
+      125
+    ]
+  },
+  {
+    "slug": "feira-de-santana",
+    "name": "Feira de Santana",
+    "kind": "municipio",
+    "city": "Feira de Santana",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2910800",
+    "tseCityCode": "35157",
+    "tseZones": [
+      154,
+      155,
+      156,
+      157
+    ]
+  },
+  {
+    "slug": "filadelfia",
+    "name": "Filadélfia",
+    "kind": "municipio",
+    "city": "Filadélfia",
+    "region": "Piemonte Norte do Itapicuru",
+    "ibgeCode": "2910859",
+    "tseCityCode": "30910",
+    "tseZones": [
+      149
+    ]
+  },
+  {
+    "slug": "firmino-alves",
+    "name": "Firmino Alves",
+    "kind": "municipio",
+    "city": "Firmino Alves",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2910909",
+    "tseCityCode": "35173",
+    "tseZones": [
+      137
+    ]
+  },
+  {
+    "slug": "floresta-azul",
+    "name": "Floresta Azul",
+    "kind": "municipio",
+    "city": "Floresta Azul",
+    "region": "Litoral Sul",
+    "ibgeCode": "2911006",
+    "tseCityCode": "35190",
+    "tseZones": [
+      29
+    ]
+  },
+  {
+    "slug": "formosa-do-rio-preto",
+    "name": "Formosa do Rio Preto",
+    "kind": "municipio",
+    "city": "Formosa do Rio Preto",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2911105",
+    "tseCityCode": "35211",
+    "tseZones": [
+      187
+    ]
+  },
+  {
+    "slug": "gandu",
+    "name": "Gandu",
+    "kind": "municipio",
+    "city": "Gandu",
+    "region": "Baixo Sul",
+    "ibgeCode": "2911204",
+    "tseCityCode": "35238",
+    "tseZones": [
+      151
+    ]
+  },
+  {
+    "slug": "gaviao",
+    "name": "Gavião",
+    "kind": "municipio",
+    "city": "Gavião",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2911253",
+    "tseCityCode": "30937",
+    "tseZones": [
+      191
+    ]
+  },
+  {
+    "slug": "gentio-do-ouro",
+    "name": "Gentio do Ouro",
+    "kind": "municipio",
+    "city": "Gentio do Ouro",
+    "region": "Irecê",
+    "ibgeCode": "2911303",
+    "tseCityCode": "35254",
+    "tseZones": [
+      68
+    ]
+  },
+  {
+    "slug": "gloria",
+    "name": "Glória",
+    "kind": "municipio",
+    "city": "Glória",
+    "region": "Itaparica",
+    "ibgeCode": "2911402",
+    "tseCityCode": "35270",
+    "tseZones": [
+      84
+    ]
+  },
+  {
+    "slug": "gongogi",
+    "name": "Gongogi",
+    "kind": "municipio",
+    "city": "Gongogi",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2911501",
+    "tseCityCode": "35297",
+    "tseZones": [
+      73
+    ]
+  },
+  {
+    "slug": "governador-mangabeira",
+    "name": "Governador Mangabeira",
+    "kind": "municipio",
+    "city": "Governador Mangabeira",
+    "region": "Recôncavo",
+    "ibgeCode": "2911600",
+    "tseCityCode": "35319",
+    "tseZones": [
+      131
+    ]
+  },
+  {
+    "slug": "guajeru",
+    "name": "Guajeru",
+    "kind": "municipio",
+    "city": "Guajeru",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2911659",
+    "tseCityCode": "30953",
+    "tseZones": [
+      93
+    ]
+  },
+  {
+    "slug": "guanambi",
+    "name": "Guanambi",
+    "kind": "municipio",
+    "city": "Guanambi",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2911709",
+    "tseCityCode": "35335",
+    "tseZones": [
+      64
+    ]
+  },
+  {
+    "slug": "guaratinga",
+    "name": "Guaratinga",
+    "kind": "municipio",
+    "city": "Guaratinga",
+    "region": "Costa do Descobrimento",
+    "ibgeCode": "2911808",
+    "tseCityCode": "35351",
+    "tseZones": [
+      189
+    ]
+  },
+  {
+    "slug": "heliopolis",
+    "name": "Heliópolis",
+    "kind": "municipio",
+    "city": "Heliópolis",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2911857",
+    "tseCityCode": "30970",
+    "tseZones": [
+      110
+    ]
+  },
+  {
+    "slug": "iacu",
+    "name": "Iaçu",
+    "kind": "municipio",
+    "city": "Iaçu",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2911907",
+    "tseCityCode": "35378",
+    "tseZones": [
+      193
+    ]
+  },
+  {
+    "slug": "ibiassuce",
+    "name": "Ibiassucê",
+    "kind": "municipio",
+    "city": "Ibiassucê",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2912004",
+    "tseCityCode": "35394",
+    "tseZones": [
+      93
+    ]
+  },
+  {
+    "slug": "ibicarai",
+    "name": "Ibicaraí",
+    "kind": "municipio",
+    "city": "Ibicaraí",
+    "region": "Litoral Sul",
+    "ibgeCode": "2912103",
+    "tseCityCode": "35416",
+    "tseZones": [
+      29
+    ]
+  },
+  {
+    "slug": "ibicoara",
+    "name": "Ibicoara",
+    "kind": "municipio",
+    "city": "Ibicoara",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2912202",
+    "tseCityCode": "35432",
+    "tseZones": [
+      169
+    ]
+  },
+  {
+    "slug": "ibicui",
+    "name": "Ibicuí",
+    "kind": "municipio",
+    "city": "Ibicuí",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2912301",
+    "tseCityCode": "35459",
+    "tseZones": [
+      146
+    ]
+  },
+  {
+    "slug": "ibipeba",
+    "name": "Ibipeba",
+    "kind": "municipio",
+    "city": "Ibipeba",
+    "region": "Irecê",
+    "ibgeCode": "2912400",
+    "tseCityCode": "35475",
+    "tseZones": [
+      176
+    ]
+  },
+  {
+    "slug": "ibipitanga",
+    "name": "Ibipitanga",
+    "kind": "municipio",
+    "city": "Ibipitanga",
+    "region": "Bacia do Paramirim",
+    "ibgeCode": "2912509",
+    "tseCityCode": "35513",
+    "tseZones": [
+      65
+    ]
+  },
+  {
+    "slug": "ibiquera",
+    "name": "Ibiquera",
+    "kind": "municipio",
+    "city": "Ibiquera",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2912608",
+    "tseCityCode": "35530",
+    "tseZones": [
+      42
+    ]
+  },
+  {
+    "slug": "ibirapitanga",
+    "name": "Ibirapitanga",
+    "kind": "municipio",
+    "city": "Ibirapitanga",
+    "region": "Baixo Sul",
+    "ibgeCode": "2912707",
+    "tseCityCode": "35556",
+    "tseZones": [
+      134
+    ]
+  },
+  {
+    "slug": "ibirapua",
+    "name": "Ibirapuã",
+    "kind": "municipio",
+    "city": "Ibirapuã",
+    "region": "Extremo Sul",
+    "ibgeCode": "2912806",
+    "tseCityCode": "35572",
+    "tseZones": [
+      153
+    ]
+  },
+  {
+    "slug": "ibirataia",
+    "name": "Ibirataia",
+    "kind": "municipio",
+    "city": "Ibirataia",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2912905",
+    "tseCityCode": "35599",
+    "tseZones": [
+      24
+    ]
+  },
+  {
+    "slug": "ibitiara",
+    "name": "Ibitiara",
+    "kind": "municipio",
+    "city": "Ibitiara",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2913002",
+    "tseCityCode": "35610",
+    "tseZones": [
+      88
+    ]
+  },
+  {
+    "slug": "ibitita",
+    "name": "Ibititá",
+    "kind": "municipio",
+    "city": "Ibititá",
+    "region": "Irecê",
+    "ibgeCode": "2913101",
+    "tseCityCode": "35637",
+    "tseZones": [
+      104
+    ]
+  },
+  {
+    "slug": "ibotirama",
+    "name": "Ibotirama",
+    "kind": "municipio",
+    "city": "Ibotirama",
+    "region": "Velho Chico",
+    "ibgeCode": "2913200",
+    "tseCityCode": "35653",
+    "tseZones": [
+      173
+    ]
+  },
+  {
+    "slug": "ichu",
+    "name": "Ichu",
+    "kind": "municipio",
+    "city": "Ichu",
+    "region": "Sisal",
+    "ibgeCode": "2913309",
+    "tseCityCode": "35670",
+    "tseZones": [
+      132
+    ]
+  },
+  {
+    "slug": "igapora",
+    "name": "Igaporã",
+    "kind": "municipio",
+    "city": "Igaporã",
+    "region": "Velho Chico",
+    "ibgeCode": "2913408",
+    "tseCityCode": "35696",
+    "tseZones": [
+      168
+    ]
+  },
+  {
+    "slug": "igrapiuna",
+    "name": "Igrapiúna",
+    "kind": "municipio",
+    "city": "Igrapiúna",
+    "region": "Baixo Sul",
+    "ibgeCode": "2913457",
+    "tseCityCode": "35700",
+    "tseZones": [
+      32
+    ]
+  },
+  {
+    "slug": "iguai",
+    "name": "Iguaí",
+    "kind": "municipio",
+    "city": "Iguaí",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2913507",
+    "tseCityCode": "35718",
+    "tseZones": [
+      146
+    ]
+  },
+  {
+    "slug": "ilheus",
+    "name": "Ilhéus",
+    "kind": "municipio",
+    "city": "Ilhéus",
+    "region": "Litoral Sul",
+    "ibgeCode": "2913606",
+    "tseCityCode": "35734",
+    "tseZones": [
+      25,
+      26
+    ]
+  },
+  {
+    "slug": "inhambupe",
+    "name": "Inhambupe",
+    "kind": "municipio",
+    "city": "Inhambupe",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2913705",
+    "tseCityCode": "35750",
+    "tseZones": [
+      44
+    ]
+  },
+  {
+    "slug": "ipecaeta",
+    "name": "Ipecaetá",
+    "kind": "municipio",
+    "city": "Ipecaetá",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2913804",
+    "tseCityCode": "35777",
+    "tseZones": [
+      143
+    ]
+  },
+  {
+    "slug": "ipiau",
+    "name": "Ipiaú",
+    "kind": "municipio",
+    "city": "Ipiaú",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2913903",
+    "tseCityCode": "35793",
+    "tseZones": [
+      24
+    ]
+  },
+  {
+    "slug": "ipira",
+    "name": "Ipirá",
+    "kind": "municipio",
+    "city": "Ipirá",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2914000",
+    "tseCityCode": "35815",
+    "tseZones": [
+      62
+    ]
+  },
+  {
+    "slug": "ipupiara",
+    "name": "Ipupiara",
+    "kind": "municipio",
+    "city": "Ipupiara",
+    "region": "Irecê",
+    "ibgeCode": "2914109",
+    "tseCityCode": "35831",
+    "tseZones": [
+      94
+    ]
+  },
+  {
+    "slug": "irajuba",
+    "name": "Irajuba",
+    "kind": "municipio",
+    "city": "Irajuba",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2914208",
+    "tseCityCode": "35858",
+    "tseZones": [
+      76
+    ]
+  },
+  {
+    "slug": "iramaia",
+    "name": "Iramaia",
+    "kind": "municipio",
+    "city": "Iramaia",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2914307",
+    "tseCityCode": "35874",
+    "tseZones": [
+      169
+    ]
+  },
+  {
+    "slug": "iraquara",
+    "name": "Iraquara",
+    "kind": "municipio",
+    "city": "Iraquara",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2914406",
+    "tseCityCode": "35890",
+    "tseZones": [
+      89
+    ]
+  },
+  {
+    "slug": "irara",
+    "name": "Irará",
+    "kind": "municipio",
+    "city": "Irará",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2914505",
+    "tseCityCode": "35912",
+    "tseZones": [
+      74
+    ]
+  },
+  {
+    "slug": "irece",
+    "name": "Irecê",
+    "kind": "municipio",
+    "city": "Irecê",
+    "region": "Irecê",
+    "ibgeCode": "2914604",
+    "tseCityCode": "35939",
+    "tseZones": [
+      95
+    ]
+  },
+  {
+    "slug": "itabela",
+    "name": "Itabela",
+    "kind": "municipio",
+    "city": "Itabela",
+    "region": "Costa do Descobrimento",
+    "ibgeCode": "2914653",
+    "tseCityCode": "35947",
+    "tseZones": [
+      189
+    ]
+  },
+  {
+    "slug": "itaberaba",
+    "name": "Itaberaba",
+    "kind": "municipio",
+    "city": "Itaberaba",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2914703",
+    "tseCityCode": "35955",
+    "tseZones": [
+      42
+    ]
+  },
+  {
+    "slug": "itabuna",
+    "name": "Itabuna",
+    "kind": "municipio",
+    "city": "Itabuna",
+    "region": "Litoral Sul",
+    "ibgeCode": "2914802",
+    "tseCityCode": "35971",
+    "tseZones": [
+      27,
+      28
+    ]
+  },
+  {
+    "slug": "itacare",
+    "name": "Itacaré",
+    "kind": "municipio",
+    "city": "Itacaré",
+    "region": "Litoral Sul",
+    "ibgeCode": "2914901",
+    "tseCityCode": "35998",
+    "tseZones": [
+      198
+    ]
+  },
+  {
+    "slug": "itaete",
+    "name": "Itaeté",
+    "kind": "municipio",
+    "city": "Itaeté",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2915007",
+    "tseCityCode": "36013",
+    "tseZones": [
+      119
+    ]
+  },
+  {
+    "slug": "itagi",
+    "name": "Itagi",
+    "kind": "municipio",
+    "city": "Itagi",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2915106",
+    "tseCityCode": "36030",
+    "tseZones": [
+      147
+    ]
+  },
+  {
+    "slug": "itagiba",
+    "name": "Itagibá",
+    "kind": "municipio",
+    "city": "Itagibá",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2915205",
+    "tseCityCode": "36056",
+    "tseZones": [
+      147
+    ]
+  },
+  {
+    "slug": "itagimirim",
+    "name": "Itagimirim",
+    "kind": "municipio",
+    "city": "Itagimirim",
+    "region": "Costa do Descobrimento",
+    "ibgeCode": "2915304",
+    "tseCityCode": "36072",
+    "tseZones": [
+      188
+    ]
+  },
+  {
+    "slug": "itaguacu-da-bahia",
+    "name": "Itaguaçu da Bahia",
+    "kind": "municipio",
+    "city": "Itaguaçu da Bahia",
+    "region": "Irecê",
+    "ibgeCode": "2915353",
+    "tseCityCode": "36080",
+    "tseZones": [
+      68
+    ]
+  },
+  {
+    "slug": "itaju-do-colonia",
+    "name": "Itaju do Colônia",
+    "kind": "municipio",
+    "city": "Itaju do Colônia",
+    "region": "Litoral Sul",
+    "ibgeCode": "2915403",
+    "tseCityCode": "36099",
+    "tseZones": [
+      137
+    ]
+  },
+  {
+    "slug": "itajuipe",
+    "name": "Itajuípe",
+    "kind": "municipio",
+    "city": "Itajuípe",
+    "region": "Litoral Sul",
+    "ibgeCode": "2915502",
+    "tseCityCode": "36110",
+    "tseZones": [
+      136
+    ]
+  },
+  {
+    "slug": "itamaraju",
+    "name": "Itamaraju",
+    "kind": "municipio",
+    "city": "Itamaraju",
+    "region": "Extremo Sul",
+    "ibgeCode": "2915601",
+    "tseCityCode": "36137",
+    "tseZones": [
+      172
+    ]
+  },
+  {
+    "slug": "itamari",
+    "name": "Itamari",
+    "kind": "municipio",
+    "city": "Itamari",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2915700",
+    "tseCityCode": "36153",
+    "tseZones": [
+      151
+    ]
+  },
+  {
+    "slug": "itambe",
+    "name": "Itambé",
+    "kind": "municipio",
+    "city": "Itambé",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2915809",
+    "tseCityCode": "36170",
+    "tseZones": [
+      201
+    ]
+  },
+  {
+    "slug": "itanagra",
+    "name": "Itanagra",
+    "kind": "municipio",
+    "city": "Itanagra",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2915908",
+    "tseCityCode": "36196",
+    "tseZones": [
+      185
+    ]
+  },
+  {
+    "slug": "itanhem",
+    "name": "Itanhém",
+    "kind": "municipio",
+    "city": "Itanhém",
+    "region": "Extremo Sul",
+    "ibgeCode": "2916005",
+    "tseCityCode": "36218",
+    "tseZones": [
+      148
+    ]
+  },
+  {
+    "slug": "itaparica",
+    "name": "Itaparica",
+    "kind": "municipio",
+    "city": "Itaparica",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2916104",
+    "tseCityCode": "36234",
+    "tseZones": [
+      141
+    ]
+  },
+  {
+    "slug": "itape",
+    "name": "Itapé",
+    "kind": "municipio",
+    "city": "Itapé",
+    "region": "Litoral Sul",
+    "ibgeCode": "2916203",
+    "tseCityCode": "36250",
+    "tseZones": [
+      27
+    ]
+  },
+  {
+    "slug": "itapebi",
+    "name": "Itapebi",
+    "kind": "municipio",
+    "city": "Itapebi",
+    "region": "Costa do Descobrimento",
+    "ibgeCode": "2916302",
+    "tseCityCode": "36277",
+    "tseZones": [
+      188
+    ]
+  },
+  {
+    "slug": "itapetinga",
+    "name": "Itapetinga",
+    "kind": "municipio",
+    "city": "Itapetinga",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2916401",
+    "tseCityCode": "36293",
+    "tseZones": [
+      140
+    ]
+  },
+  {
+    "slug": "itapicuru",
+    "name": "Itapicuru",
+    "kind": "municipio",
+    "city": "Itapicuru",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2916500",
+    "tseCityCode": "36315",
+    "tseZones": [
+      81
+    ]
+  },
+  {
+    "slug": "itapitanga",
+    "name": "Itapitanga",
+    "kind": "municipio",
+    "city": "Itapitanga",
+    "region": "Litoral Sul",
+    "ibgeCode": "2916609",
+    "tseCityCode": "36331",
+    "tseZones": [
+      135
+    ]
+  },
+  {
+    "slug": "itaquara",
+    "name": "Itaquara",
+    "kind": "municipio",
+    "city": "Itaquara",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2916708",
+    "tseCityCode": "36358",
+    "tseZones": [
+      76
+    ]
+  },
+  {
+    "slug": "itarantim",
+    "name": "Itarantim",
+    "kind": "municipio",
+    "city": "Itarantim",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2916807",
+    "tseCityCode": "36374",
+    "tseZones": [
+      138
+    ]
+  },
+  {
+    "slug": "itatim",
+    "name": "Itatim",
+    "kind": "municipio",
+    "city": "Itatim",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2916856",
+    "tseCityCode": "36382",
+    "tseZones": [
+      107
+    ]
+  },
+  {
+    "slug": "itirucu",
+    "name": "Itiruçu",
+    "kind": "municipio",
+    "city": "Itiruçu",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2916906",
+    "tseCityCode": "36390",
+    "tseZones": [
+      37
+    ]
+  },
+  {
+    "slug": "itiuba",
+    "name": "Itiúba",
+    "kind": "municipio",
+    "city": "Itiúba",
+    "region": "Sisal",
+    "ibgeCode": "2917003",
+    "tseCityCode": "36412",
+    "tseZones": [
+      149
+    ]
+  },
+  {
+    "slug": "itororo",
+    "name": "Itororó",
+    "kind": "municipio",
+    "city": "Itororó",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2917102",
+    "tseCityCode": "36439",
+    "tseZones": [
+      137
+    ]
+  },
+  {
+    "slug": "ituacu",
+    "name": "Ituaçu",
+    "kind": "municipio",
+    "city": "Ituaçu",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2917201",
+    "tseCityCode": "36455",
+    "tseZones": [
+      58
+    ]
+  },
+  {
+    "slug": "itubera",
+    "name": "Ituberá",
+    "kind": "municipio",
+    "city": "Ituberá",
+    "region": "Baixo Sul",
+    "ibgeCode": "2917300",
+    "tseCityCode": "36471",
+    "tseZones": [
+      32
+    ]
+  },
+  {
+    "slug": "iuiu",
+    "name": "Iuiú",
+    "kind": "municipio",
+    "city": "Iuiú",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2917334",
+    "tseCityCode": "30660",
+    "tseZones": [
+      175
+    ]
+  },
+  {
+    "slug": "jaborandi",
+    "name": "Jaborandi",
+    "kind": "municipio",
+    "city": "Jaborandi",
+    "region": "Bacia do Rio Corrente",
+    "ibgeCode": "2917359",
+    "tseCityCode": "30678",
+    "tseZones": [
+      61
+    ]
+  },
+  {
+    "slug": "jacaraci",
+    "name": "Jacaraci",
+    "kind": "municipio",
+    "city": "Jacaraci",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2917409",
+    "tseCityCode": "36498",
+    "tseZones": [
+      92
+    ]
+  },
+  {
+    "slug": "jacobina",
+    "name": "Jacobina",
+    "kind": "municipio",
+    "city": "Jacobina",
+    "region": "Piemonte da Diamantina",
+    "ibgeCode": "2917508",
+    "tseCityCode": "36510",
+    "tseZones": [
+      46
+    ]
+  },
+  {
+    "slug": "jaguaquara",
+    "name": "Jaguaquara",
+    "kind": "municipio",
+    "city": "Jaguaquara",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2917607",
+    "tseCityCode": "36536",
+    "tseZones": [
+      76
+    ]
+  },
+  {
+    "slug": "jaguarari",
+    "name": "Jaguarari",
+    "kind": "municipio",
+    "city": "Jaguarari",
+    "region": "Piemonte Norte do Itapicuru",
+    "ibgeCode": "2917706",
+    "tseCityCode": "36552",
+    "tseZones": [
+      179
+    ]
+  },
+  {
+    "slug": "jaguaripe",
+    "name": "Jaguaripe",
+    "kind": "municipio",
+    "city": "Jaguaripe",
+    "region": "Baixo Sul",
+    "ibgeCode": "2917805",
+    "tseCityCode": "36579",
+    "tseZones": [
+      30
+    ]
+  },
+  {
+    "slug": "jandaira",
+    "name": "Jandaíra",
+    "kind": "municipio",
+    "city": "Jandaíra",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2917904",
+    "tseCityCode": "36595",
+    "tseZones": [
+      49
+    ]
+  },
+  {
+    "slug": "jequie",
+    "name": "Jequié",
+    "kind": "municipio",
+    "city": "Jequié",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2918001",
+    "tseCityCode": "36617",
+    "tseZones": [
+      22,
+      23
+    ]
+  },
+  {
+    "slug": "jeremoabo",
+    "name": "Jeremoabo",
+    "kind": "municipio",
+    "city": "Jeremoabo",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2918100",
+    "tseCityCode": "36633",
+    "tseZones": [
+      51
+    ]
+  },
+  {
+    "slug": "jiquirica",
+    "name": "Jiquiriçá",
+    "kind": "municipio",
+    "city": "Jiquiriçá",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2918209",
+    "tseCityCode": "36650",
+    "tseZones": [
+      109
+    ]
+  },
+  {
+    "slug": "jitauna",
+    "name": "Jitaúna",
+    "kind": "municipio",
+    "city": "Jitaúna",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2918308",
+    "tseCityCode": "36676",
+    "tseZones": [
+      24
+    ]
+  },
+  {
+    "slug": "joao-dourado",
+    "name": "João Dourado",
+    "kind": "municipio",
+    "city": "João Dourado",
+    "region": "Irecê",
+    "ibgeCode": "2918357",
+    "tseCityCode": "30996",
+    "tseZones": [
+      199
+    ]
+  },
+  {
+    "slug": "juazeiro",
+    "name": "Juazeiro",
+    "kind": "municipio",
+    "city": "Juazeiro",
+    "region": "Sertão do São Francisco",
+    "ibgeCode": "2918407",
+    "tseCityCode": "36692",
+    "tseZones": [
+      47,
+      48
+    ]
+  },
+  {
+    "slug": "jucurucu",
+    "name": "Jucuruçu",
+    "kind": "municipio",
+    "city": "Jucuruçu",
+    "region": "Extremo Sul",
+    "ibgeCode": "2918456",
+    "tseCityCode": "36706",
+    "tseZones": [
+      172
+    ]
+  },
+  {
+    "slug": "jussara",
+    "name": "Jussara",
+    "kind": "municipio",
+    "city": "Jussara",
+    "region": "Irecê",
+    "ibgeCode": "2918506",
+    "tseCityCode": "36714",
+    "tseZones": [
+      159
+    ]
+  },
+  {
+    "slug": "jussari",
+    "name": "Jussari",
+    "kind": "municipio",
+    "city": "Jussari",
+    "region": "Litoral Sul",
+    "ibgeCode": "2918555",
+    "tseCityCode": "30694",
+    "tseZones": [
+      28
+    ]
+  },
+  {
+    "slug": "jussiape",
+    "name": "Jussiape",
+    "kind": "municipio",
+    "city": "Jussiape",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2918605",
+    "tseCityCode": "36730",
+    "tseZones": [
+      101
+    ]
+  },
+  {
+    "slug": "lafaiete-coutinho",
+    "name": "Lafaiete Coutinho",
+    "kind": "municipio",
+    "city": "Lafaiete Coutinho",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2918704",
+    "tseCityCode": "36757",
+    "tseZones": [
+      23
+    ]
+  },
+  {
+    "slug": "lagoa-real",
+    "name": "Lagoa Real",
+    "kind": "municipio",
+    "city": "Lagoa Real",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2918753",
+    "tseCityCode": "36765",
+    "tseZones": [
+      63
+    ]
+  },
+  {
+    "slug": "laje",
+    "name": "Laje",
+    "kind": "municipio",
+    "city": "Laje",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2918803",
+    "tseCityCode": "36773",
+    "tseZones": [
+      109
+    ]
+  },
+  {
+    "slug": "lajedao",
+    "name": "Lajedão",
+    "kind": "municipio",
+    "city": "Lajedão",
+    "region": "Extremo Sul",
+    "ibgeCode": "2918902",
+    "tseCityCode": "36790",
+    "tseZones": [
+      153
+    ]
+  },
+  {
+    "slug": "lajedinho",
+    "name": "Lajedinho",
+    "kind": "municipio",
+    "city": "Lajedinho",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2919009",
+    "tseCityCode": "36811",
+    "tseZones": [
+      87
+    ]
+  },
+  {
+    "slug": "lajedo-do-tabocal",
+    "name": "Lajedo do Tabocal",
+    "kind": "municipio",
+    "city": "Lajedo do Tabocal",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2919058",
+    "tseCityCode": "36820",
+    "tseZones": [
+      37
+    ]
+  },
+  {
+    "slug": "lamarao",
+    "name": "Lamarão",
+    "kind": "municipio",
+    "city": "Lamarão",
+    "region": "Sisal",
+    "ibgeCode": "2919108",
+    "tseCityCode": "36838",
+    "tseZones": [
+      160
+    ]
+  },
+  {
+    "slug": "lapao",
+    "name": "Lapão",
+    "kind": "municipio",
+    "city": "Lapão",
+    "region": "Irecê",
+    "ibgeCode": "2919157",
+    "tseCityCode": "39730",
+    "tseZones": [
+      104
+    ]
+  },
+  {
+    "slug": "lauro-de-freitas",
+    "name": "Lauro de Freitas",
+    "kind": "municipio",
+    "city": "Lauro de Freitas",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2919207",
+    "tseCityCode": "36854",
+    "tseZones": [
+      180
+    ]
+  },
+  {
+    "slug": "lencois",
+    "name": "Lençóis",
+    "kind": "municipio",
+    "city": "Lençóis",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2919306",
+    "tseCityCode": "36870",
+    "tseZones": [
+      89
+    ]
+  },
+  {
+    "slug": "licinio-de-almeida",
+    "name": "Licínio de Almeida",
+    "kind": "municipio",
+    "city": "Licínio de Almeida",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2919405",
+    "tseCityCode": "36897",
+    "tseZones": [
+      117
+    ]
+  },
+  {
+    "slug": "livramento-de-nossa-senhora",
+    "name": "Livramento de Nossa Senhora",
+    "kind": "municipio",
+    "city": "Livramento de Nossa Senhora",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2919504",
+    "tseCityCode": "36919",
+    "tseZones": [
+      101
+    ]
+  },
+  {
+    "slug": "luis-eduardo-magalhaes",
+    "name": "Luís Eduardo Magalhães",
+    "kind": "municipio",
+    "city": "Luís Eduardo Magalhães",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2919553",
+    "tseCityCode": "30007",
+    "tseZones": [
+      205
+    ]
+  },
+  {
+    "slug": "macajuba",
+    "name": "Macajuba",
+    "kind": "municipio",
+    "city": "Macajuba",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2919603",
+    "tseCityCode": "36935",
+    "tseZones": [
+      87
+    ]
+  },
+  {
+    "slug": "macarani",
+    "name": "Macarani",
+    "kind": "municipio",
+    "city": "Macarani",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2919702",
+    "tseCityCode": "36951",
+    "tseZones": [
+      91
+    ]
+  },
+  {
+    "slug": "macaubas",
+    "name": "Macaúbas",
+    "kind": "municipio",
+    "city": "Macaúbas",
+    "region": "Bacia do Paramirim",
+    "ibgeCode": "2919801",
+    "tseCityCode": "36978",
+    "tseZones": [
+      65
+    ]
+  },
+  {
+    "slug": "macurure",
+    "name": "Macururé",
+    "kind": "municipio",
+    "city": "Macururé",
+    "region": "Itaparica",
+    "ibgeCode": "2919900",
+    "tseCityCode": "36994",
+    "tseZones": [
+      158
+    ]
+  },
+  {
+    "slug": "madre-de-deus",
+    "name": "Madre de Deus",
+    "kind": "municipio",
+    "city": "Madre de Deus",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2919926",
+    "tseCityCode": "39748",
+    "tseZones": [
+      162
+    ]
+  },
+  {
+    "slug": "maetinga",
+    "name": "Maetinga",
+    "kind": "municipio",
+    "city": "Maetinga",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2919959",
+    "tseCityCode": "39756",
+    "tseZones": [
+      161
+    ]
+  },
+  {
+    "slug": "maiquinique",
+    "name": "Maiquinique",
+    "kind": "municipio",
+    "city": "Maiquinique",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2920007",
+    "tseCityCode": "37010",
+    "tseZones": [
+      91
+    ]
+  },
+  {
+    "slug": "mairi",
+    "name": "Mairi",
+    "kind": "municipio",
+    "city": "Mairi",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2920106",
+    "tseCityCode": "37036",
+    "tseZones": [
+      86
+    ]
+  },
+  {
+    "slug": "malhada",
+    "name": "Malhada",
+    "kind": "municipio",
+    "city": "Malhada",
+    "region": "Velho Chico",
+    "ibgeCode": "2920205",
+    "tseCityCode": "37052",
+    "tseZones": [
+      125
+    ]
+  },
+  {
+    "slug": "malhada-de-pedras",
+    "name": "Malhada de Pedras",
+    "kind": "municipio",
+    "city": "Malhada de Pedras",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2920304",
+    "tseCityCode": "37079",
+    "tseZones": [
+      90
+    ]
+  },
+  {
+    "slug": "manoel-vitorino",
+    "name": "Manoel Vitorino",
+    "kind": "municipio",
+    "city": "Manoel Vitorino",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2920403",
+    "tseCityCode": "37095",
+    "tseZones": [
+      22
+    ]
+  },
+  {
+    "slug": "mansidao",
+    "name": "Mansidão",
+    "kind": "municipio",
+    "city": "Mansidão",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2920452",
+    "tseCityCode": "39772",
+    "tseZones": [
+      97
+    ]
+  },
+  {
+    "slug": "maracas",
+    "name": "Maracás",
+    "kind": "municipio",
+    "city": "Maracás",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2920502",
+    "tseCityCode": "37117",
+    "tseZones": [
+      37
+    ]
+  },
+  {
+    "slug": "maragogipe",
+    "name": "Maragogipe",
+    "kind": "municipio",
+    "city": "Maragogipe",
+    "region": "Recôncavo",
+    "ibgeCode": "2920601",
+    "tseCityCode": "37133",
+    "tseZones": [
+      118
+    ]
+  },
+  {
+    "slug": "marau",
+    "name": "Maraú",
+    "kind": "municipio",
+    "city": "Maraú",
+    "region": "Litoral Sul",
+    "ibgeCode": "2920700",
+    "tseCityCode": "37150",
+    "tseZones": [
+      78
+    ]
+  },
+  {
+    "slug": "marcionilio-souza",
+    "name": "Marcionílio Souza",
+    "kind": "municipio",
+    "city": "Marcionílio Souza",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2920809",
+    "tseCityCode": "37176",
+    "tseZones": [
+      193
+    ]
+  },
+  {
+    "slug": "mascote",
+    "name": "Mascote",
+    "kind": "municipio",
+    "city": "Mascote",
+    "region": "Litoral Sul",
+    "ibgeCode": "2920908",
+    "tseCityCode": "37192",
+    "tseZones": [
+      133
+    ]
+  },
+  {
+    "slug": "mata-de-sao-joao",
+    "name": "Mata de São João",
+    "kind": "municipio",
+    "city": "Mata de São João",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2921005",
+    "tseCityCode": "37214",
+    "tseZones": [
+      185
+    ]
+  },
+  {
+    "slug": "matina",
+    "name": "Matina",
+    "kind": "municipio",
+    "city": "Matina",
+    "region": "Velho Chico",
+    "ibgeCode": "2921054",
+    "tseCityCode": "37222",
+    "tseZones": [
+      113
+    ]
+  },
+  {
+    "slug": "medeiros-neto",
+    "name": "Medeiros Neto",
+    "kind": "municipio",
+    "city": "Medeiros Neto",
+    "region": "Extremo Sul",
+    "ibgeCode": "2921104",
+    "tseCityCode": "37230",
+    "tseZones": [
+      153
+    ]
+  },
+  {
+    "slug": "miguel-calmon",
+    "name": "Miguel Calmon",
+    "kind": "municipio",
+    "city": "Miguel Calmon",
+    "region": "Piemonte da Diamantina",
+    "ibgeCode": "2921203",
+    "tseCityCode": "37257",
+    "tseZones": [
+      103
+    ]
+  },
+  {
+    "slug": "milagres",
+    "name": "Milagres",
+    "kind": "municipio",
+    "city": "Milagres",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2921302",
+    "tseCityCode": "37273",
+    "tseZones": [
+      193
+    ]
+  },
+  {
+    "slug": "mirangaba",
+    "name": "Mirangaba",
+    "kind": "municipio",
+    "city": "Mirangaba",
+    "region": "Piemonte da Diamantina",
+    "ibgeCode": "2921401",
+    "tseCityCode": "37290",
+    "tseZones": [
+      167
+    ]
+  },
+  {
+    "slug": "mirante",
+    "name": "Mirante",
+    "kind": "municipio",
+    "city": "Mirante",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2921450",
+    "tseCityCode": "37303",
+    "tseZones": [
+      59
+    ]
+  },
+  {
+    "slug": "monte-santo",
+    "name": "Monte Santo",
+    "kind": "municipio",
+    "city": "Monte Santo",
+    "region": "Sisal",
+    "ibgeCode": "2921500",
+    "tseCityCode": "37311",
+    "tseZones": [
+      50
+    ]
+  },
+  {
+    "slug": "morpara",
+    "name": "Morpará",
+    "kind": "municipio",
+    "city": "Morpará",
+    "region": "Velho Chico",
+    "ibgeCode": "2921609",
+    "tseCityCode": "37338",
+    "tseZones": [
+      173
+    ]
+  },
+  {
+    "slug": "morro-do-chapeu",
+    "name": "Morro do Chapéu",
+    "kind": "municipio",
+    "city": "Morro do Chapéu",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2921708",
+    "tseCityCode": "37354",
+    "tseZones": [
+      55
+    ]
+  },
+  {
+    "slug": "mortugaba",
+    "name": "Mortugaba",
+    "kind": "municipio",
+    "city": "Mortugaba",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2921807",
+    "tseCityCode": "37370",
+    "tseZones": [
+      92
+    ]
+  },
+  {
+    "slug": "mucuge",
+    "name": "Mucugê",
+    "kind": "municipio",
+    "city": "Mucugê",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2921906",
+    "tseCityCode": "37397",
+    "tseZones": [
+      119
+    ]
+  },
+  {
+    "slug": "mucuri",
+    "name": "Mucuri",
+    "kind": "municipio",
+    "city": "Mucuri",
+    "region": "Extremo Sul",
+    "ibgeCode": "2922003",
+    "tseCityCode": "37419",
+    "tseZones": [
+      35
+    ]
+  },
+  {
+    "slug": "mulungu-do-morro",
+    "name": "Mulungu do Morro",
+    "kind": "municipio",
+    "city": "Mulungu do Morro",
+    "region": "Irecê",
+    "ibgeCode": "2922052",
+    "tseCityCode": "37427",
+    "tseZones": [
+      55
+    ]
+  },
+  {
+    "slug": "mundo-novo",
+    "name": "Mundo Novo",
+    "kind": "municipio",
+    "city": "Mundo Novo",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2922102",
+    "tseCityCode": "37435",
+    "tseZones": [
+      54
+    ]
+  },
+  {
+    "slug": "muniz-ferreira",
+    "name": "Muniz Ferreira",
+    "kind": "municipio",
+    "city": "Muniz Ferreira",
+    "region": "Recôncavo",
+    "ibgeCode": "2922201",
+    "tseCityCode": "37451",
+    "tseZones": [
+      202
+    ]
+  },
+  {
+    "slug": "muquem-de-sao-francisco",
+    "name": "Muquém de São Francisco",
+    "kind": "municipio",
+    "city": "Muquém de São Francisco",
+    "region": "Velho Chico",
+    "ibgeCode": "2922250",
+    "tseCityCode": "37460",
+    "tseZones": [
+      98
+    ]
+  },
+  {
+    "slug": "muritiba",
+    "name": "Muritiba",
+    "kind": "municipio",
+    "city": "Muritiba",
+    "region": "Recôncavo",
+    "ibgeCode": "2922300",
+    "tseCityCode": "37478",
+    "tseZones": [
+      131
+    ]
+  },
+  {
+    "slug": "mutuipe",
+    "name": "Mutuípe",
+    "kind": "municipio",
+    "city": "Mutuípe",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2922409",
+    "tseCityCode": "37494",
+    "tseZones": [
+      109
+    ]
+  },
+  {
+    "slug": "nazare",
+    "name": "Nazaré",
+    "kind": "municipio",
+    "city": "Nazaré",
+    "region": "Recôncavo",
+    "ibgeCode": "2922508",
+    "tseCityCode": "37516",
+    "tseZones": [
+      30
+    ]
+  },
+  {
+    "slug": "nilo-pecanha",
+    "name": "Nilo Peçanha",
+    "kind": "municipio",
+    "city": "Nilo Peçanha",
+    "region": "Baixo Sul",
+    "ibgeCode": "2922607",
+    "tseCityCode": "37532",
+    "tseZones": [
+      32
+    ]
+  },
+  {
+    "slug": "nordestina",
+    "name": "Nordestina",
+    "kind": "municipio",
+    "city": "Nordestina",
+    "region": "Sisal",
+    "ibgeCode": "2922656",
+    "tseCityCode": "39799",
+    "tseZones": [
+      106
+    ]
+  },
+  {
+    "slug": "nova-canaa",
+    "name": "Nova Canaã",
+    "kind": "municipio",
+    "city": "Nova Canaã",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2922706",
+    "tseCityCode": "37559",
+    "tseZones": [
+      146
+    ]
+  },
+  {
+    "slug": "nova-fatima",
+    "name": "Nova Fátima",
+    "kind": "municipio",
+    "city": "Nova Fátima",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2922730",
+    "tseCityCode": "37567",
+    "tseZones": [
+      196
+    ]
+  },
+  {
+    "slug": "nova-ibia",
+    "name": "Nova Ibiá",
+    "kind": "municipio",
+    "city": "Nova Ibiá",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2922755",
+    "tseCityCode": "39969",
+    "tseZones": [
+      151
+    ]
+  },
+  {
+    "slug": "nova-itarana",
+    "name": "Nova Itarana",
+    "kind": "municipio",
+    "city": "Nova Itarana",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2922805",
+    "tseCityCode": "37575",
+    "tseZones": [
+      36
+    ]
+  },
+  {
+    "slug": "nova-redencao",
+    "name": "Nova Redenção",
+    "kind": "municipio",
+    "city": "Nova Redenção",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2922854",
+    "tseCityCode": "37583",
+    "tseZones": [
+      119
+    ]
+  },
+  {
+    "slug": "nova-soure",
+    "name": "Nova Soure",
+    "kind": "municipio",
+    "city": "Nova Soure",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2922904",
+    "tseCityCode": "37591",
+    "tseZones": [
+      79
+    ]
+  },
+  {
+    "slug": "nova-vicosa",
+    "name": "Nova Viçosa",
+    "kind": "municipio",
+    "city": "Nova Viçosa",
+    "region": "Extremo Sul",
+    "ibgeCode": "2923001",
+    "tseCityCode": "37613",
+    "tseZones": [
+      35
+    ]
+  },
+  {
+    "slug": "novo-horizonte",
+    "name": "Novo Horizonte",
+    "kind": "municipio",
+    "city": "Novo Horizonte",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2923035",
+    "tseCityCode": "39942",
+    "tseZones": [
+      88
+    ]
+  },
+  {
+    "slug": "novo-triunfo",
+    "name": "Novo Triunfo",
+    "kind": "municipio",
+    "city": "Novo Triunfo",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2923050",
+    "tseCityCode": "37621",
+    "tseZones": [
+      82
+    ]
+  },
+  {
+    "slug": "olindina",
+    "name": "Olindina",
+    "kind": "municipio",
+    "city": "Olindina",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2923100",
+    "tseCityCode": "37630",
+    "tseZones": [
+      81
+    ]
+  },
+  {
+    "slug": "oliveira-dos-brejinhos",
+    "name": "Oliveira dos Brejinhos",
+    "kind": "municipio",
+    "city": "Oliveira dos Brejinhos",
+    "region": "Velho Chico",
+    "ibgeCode": "2923209",
+    "tseCityCode": "37656",
+    "tseZones": [
+      94
+    ]
+  },
+  {
+    "slug": "ouricangas",
+    "name": "Ouriçangas",
+    "kind": "municipio",
+    "city": "Ouriçangas",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2923308",
+    "tseCityCode": "37672",
+    "tseZones": [
+      74
+    ]
+  },
+  {
+    "slug": "ourolandia",
+    "name": "Ourolândia",
+    "kind": "municipio",
+    "city": "Ourolândia",
+    "region": "Piemonte da Diamantina",
+    "ibgeCode": "2923357",
+    "tseCityCode": "37680",
+    "tseZones": [
+      167
+    ]
+  },
+  {
+    "slug": "palmas-de-monte-alto",
+    "name": "Palmas de Monte Alto",
+    "kind": "municipio",
+    "city": "Palmas de Monte Alto",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2923407",
+    "tseCityCode": "37699",
+    "tseZones": [
+      175
+    ]
+  },
+  {
+    "slug": "palmeiras",
+    "name": "Palmeiras",
+    "kind": "municipio",
+    "city": "Palmeiras",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2923506",
+    "tseCityCode": "37710",
+    "tseZones": [
+      89
+    ]
+  },
+  {
+    "slug": "paramirim",
+    "name": "Paramirim",
+    "kind": "municipio",
+    "city": "Paramirim",
+    "region": "Bacia do Paramirim",
+    "ibgeCode": "2923605",
+    "tseCityCode": "37737",
+    "tseZones": [
+      111
+    ]
+  },
+  {
+    "slug": "paratinga",
+    "name": "Paratinga",
+    "kind": "municipio",
+    "city": "Paratinga",
+    "region": "Velho Chico",
+    "ibgeCode": "2923704",
+    "tseCityCode": "37753",
+    "tseZones": [
+      173
+    ]
+  },
+  {
+    "slug": "paripiranga",
+    "name": "Paripiranga",
+    "kind": "municipio",
+    "city": "Paripiranga",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2923803",
+    "tseCityCode": "37770",
+    "tseZones": [
+      52
+    ]
+  },
+  {
+    "slug": "pau-brasil",
+    "name": "Pau Brasil",
+    "kind": "municipio",
+    "city": "Pau Brasil",
+    "region": "Litoral Sul",
+    "ibgeCode": "2923902",
+    "tseCityCode": "37796",
+    "tseZones": [
+      133
+    ]
+  },
+  {
+    "slug": "paulo-afonso",
+    "name": "Paulo Afonso",
+    "kind": "municipio",
+    "city": "Paulo Afonso",
+    "region": "Itaparica",
+    "ibgeCode": "2924009",
+    "tseCityCode": "37818",
+    "tseZones": [
+      84,
+      181
+    ]
+  },
+  {
+    "slug": "pe-de-serra",
+    "name": "Pé de Serra",
+    "kind": "municipio",
+    "city": "Pé de Serra",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2924058",
+    "tseCityCode": "39810",
+    "tseZones": [
+      114
+    ]
+  },
+  {
+    "slug": "pedrao",
+    "name": "Pedrão",
+    "kind": "municipio",
+    "city": "Pedrão",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2924108",
+    "tseCityCode": "37834",
+    "tseZones": [
+      130
+    ]
+  },
+  {
+    "slug": "pedro-alexandre",
+    "name": "Pedro Alexandre",
+    "kind": "municipio",
+    "city": "Pedro Alexandre",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2924207",
+    "tseCityCode": "37850",
+    "tseZones": [
+      51
+    ]
+  },
+  {
+    "slug": "piata",
+    "name": "Piatã",
+    "kind": "municipio",
+    "city": "Piatã",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2924306",
+    "tseCityCode": "37877",
+    "tseZones": [
+      105
+    ]
+  },
+  {
+    "slug": "pilao-arcado",
+    "name": "Pilão Arcado",
+    "kind": "municipio",
+    "city": "Pilão Arcado",
+    "region": "Sertão do São Francisco",
+    "ibgeCode": "2924405",
+    "tseCityCode": "37893",
+    "tseZones": [
+      195
+    ]
+  },
+  {
+    "slug": "pindai",
+    "name": "Pindaí",
+    "kind": "municipio",
+    "city": "Pindaí",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2924504",
+    "tseCityCode": "37915",
+    "tseZones": [
+      117
+    ]
+  },
+  {
+    "slug": "pindobacu",
+    "name": "Pindobaçu",
+    "kind": "municipio",
+    "city": "Pindobaçu",
+    "region": "Piemonte Norte do Itapicuru",
+    "ibgeCode": "2924603",
+    "tseCityCode": "37931",
+    "tseZones": [
+      115
+    ]
+  },
+  {
+    "slug": "pintadas",
+    "name": "Pintadas",
+    "kind": "municipio",
+    "city": "Pintadas",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2924652",
+    "tseCityCode": "39837",
+    "tseZones": [
+      62
+    ]
+  },
+  {
+    "slug": "pirai-do-norte",
+    "name": "Piraí do Norte",
+    "kind": "municipio",
+    "city": "Piraí do Norte",
+    "region": "Baixo Sul",
+    "ibgeCode": "2924678",
+    "tseCityCode": "37940",
+    "tseZones": [
+      151
+    ]
+  },
+  {
+    "slug": "piripa",
+    "name": "Piripá",
+    "kind": "municipio",
+    "city": "Piripá",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2924702",
+    "tseCityCode": "37958",
+    "tseZones": [
+      177
+    ]
+  },
+  {
+    "slug": "piritiba",
+    "name": "Piritiba",
+    "kind": "municipio",
+    "city": "Piritiba",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2924801",
+    "tseCityCode": "37974",
+    "tseZones": [
+      54
+    ]
+  },
+  {
+    "slug": "planaltino",
+    "name": "Planaltino",
+    "kind": "municipio",
+    "city": "Planaltino",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2924900",
+    "tseCityCode": "37990",
+    "tseZones": [
+      37
+    ]
+  },
+  {
+    "slug": "planalto",
+    "name": "Planalto",
+    "kind": "municipio",
+    "city": "Planalto",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2925006",
+    "tseCityCode": "38016",
+    "tseZones": [
+      139
+    ]
+  },
+  {
+    "slug": "pocoes",
+    "name": "Poções",
+    "kind": "municipio",
+    "city": "Poções",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2925105",
+    "tseCityCode": "38032",
+    "tseZones": [
+      59
+    ]
+  },
+  {
+    "slug": "pojuca",
+    "name": "Pojuca",
+    "kind": "municipio",
+    "city": "Pojuca",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2925204",
+    "tseCityCode": "38059",
+    "tseZones": [
+      200
+    ]
+  },
+  {
+    "slug": "ponto-novo",
+    "name": "Ponto Novo",
+    "kind": "municipio",
+    "city": "Ponto Novo",
+    "region": "Piemonte Norte do Itapicuru",
+    "ibgeCode": "2925253",
+    "tseCityCode": "38067",
+    "tseZones": [
+      149
+    ]
+  },
+  {
+    "slug": "porto-seguro",
+    "name": "Porto Seguro",
+    "kind": "municipio",
+    "city": "Porto Seguro",
+    "region": "Costa do Descobrimento",
+    "ibgeCode": "2925303",
+    "tseCityCode": "38075",
+    "tseZones": [
+      121,
+      122
+    ]
+  },
+  {
+    "slug": "potiragua",
+    "name": "Potiraguá",
+    "kind": "municipio",
+    "city": "Potiraguá",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2925402",
+    "tseCityCode": "38091",
+    "tseZones": [
+      138
+    ]
+  },
+  {
+    "slug": "prado",
+    "name": "Prado",
+    "kind": "municipio",
+    "city": "Prado",
+    "region": "Extremo Sul",
+    "ibgeCode": "2925501",
+    "tseCityCode": "38113",
+    "tseZones": [
+      112
+    ]
+  },
+  {
+    "slug": "presidente-dutra",
+    "name": "Presidente Dutra",
+    "kind": "municipio",
+    "city": "Presidente Dutra",
+    "region": "Irecê",
+    "ibgeCode": "2925600",
+    "tseCityCode": "38130",
+    "tseZones": [
+      95
+    ]
+  },
+  {
+    "slug": "presidente-janio-quadros",
+    "name": "Presidente Jânio Quadros",
+    "kind": "municipio",
+    "city": "Presidente Jânio Quadros",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2925709",
+    "tseCityCode": "38156",
+    "tseZones": [
+      60
+    ]
+  },
+  {
+    "slug": "presidente-tancredo-neves",
+    "name": "Presidente Tancredo Neves",
+    "kind": "municipio",
+    "city": "Presidente Tancredo Neves",
+    "region": "Baixo Sul",
+    "ibgeCode": "2925758",
+    "tseCityCode": "38164",
+    "tseZones": [
+      197
+    ]
+  },
+  {
+    "slug": "queimadas",
+    "name": "Queimadas",
+    "kind": "municipio",
+    "city": "Queimadas",
+    "region": "Sisal",
+    "ibgeCode": "2925808",
+    "tseCityCode": "38172",
+    "tseZones": [
+      106
+    ]
+  },
+  {
+    "slug": "quijingue",
+    "name": "Quijingue",
+    "kind": "municipio",
+    "city": "Quijingue",
+    "region": "Sisal",
+    "ibgeCode": "2925907",
+    "tseCityCode": "38199",
+    "tseZones": [
+      102
+    ]
+  },
+  {
+    "slug": "quixabeira",
+    "name": "Quixabeira",
+    "kind": "municipio",
+    "city": "Quixabeira",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2925931",
+    "tseCityCode": "39845",
+    "tseZones": [
+      191
+    ]
+  },
+  {
+    "slug": "rafael-jambeiro",
+    "name": "Rafael Jambeiro",
+    "kind": "municipio",
+    "city": "Rafael Jambeiro",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2925956",
+    "tseCityCode": "39853",
+    "tseZones": [
+      43
+    ]
+  },
+  {
+    "slug": "remanso",
+    "name": "Remanso",
+    "kind": "municipio",
+    "city": "Remanso",
+    "region": "Sertão do São Francisco",
+    "ibgeCode": "2926004",
+    "tseCityCode": "38210",
+    "tseZones": [
+      67
+    ]
+  },
+  {
+    "slug": "retirolandia",
+    "name": "Retirolândia",
+    "kind": "municipio",
+    "city": "Retirolândia",
+    "region": "Sisal",
+    "ibgeCode": "2926103",
+    "tseCityCode": "38237",
+    "tseZones": [
+      196
+    ]
+  },
+  {
+    "slug": "riachao-das-neves",
+    "name": "Riachão das Neves",
+    "kind": "municipio",
+    "city": "Riachão das Neves",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2926202",
+    "tseCityCode": "38253",
+    "tseZones": [
+      182
+    ]
+  },
+  {
+    "slug": "riachao-do-jacuipe",
+    "name": "Riachão do Jacuípe",
+    "kind": "municipio",
+    "city": "Riachão do Jacuípe",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2926301",
+    "tseCityCode": "38270",
+    "tseZones": [
+      114
+    ]
+  },
+  {
+    "slug": "riacho-de-santana",
+    "name": "Riacho de Santana",
+    "kind": "municipio",
+    "city": "Riacho de Santana",
+    "region": "Velho Chico",
+    "ibgeCode": "2926400",
+    "tseCityCode": "38296",
+    "tseZones": [
+      113
+    ]
+  },
+  {
+    "slug": "ribeira-do-amparo",
+    "name": "Ribeira do Amparo",
+    "kind": "municipio",
+    "city": "Ribeira do Amparo",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2926509",
+    "tseCityCode": "38318",
+    "tseZones": [
+      79
+    ]
+  },
+  {
+    "slug": "ribeira-do-pombal",
+    "name": "Ribeira do Pombal",
+    "kind": "municipio",
+    "city": "Ribeira do Pombal",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2926608",
+    "tseCityCode": "38334",
+    "tseZones": [
+      110
+    ]
+  },
+  {
+    "slug": "ribeirao-do-largo",
+    "name": "Ribeirão do Largo",
+    "kind": "municipio",
+    "city": "Ribeirão do Largo",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2926657",
+    "tseCityCode": "38342",
+    "tseZones": [
+      152
+    ]
+  },
+  {
+    "slug": "rio-de-contas",
+    "name": "Rio de Contas",
+    "kind": "municipio",
+    "city": "Rio de Contas",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2926707",
+    "tseCityCode": "38350",
+    "tseZones": [
+      101
+    ]
+  },
+  {
+    "slug": "rio-do-antonio",
+    "name": "Rio do Antônio",
+    "kind": "municipio",
+    "city": "Rio do Antônio",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2926806",
+    "tseCityCode": "38377",
+    "tseZones": [
+      93
+    ]
+  },
+  {
+    "slug": "rio-do-pires",
+    "name": "Rio do Pires",
+    "kind": "municipio",
+    "city": "Rio do Pires",
+    "region": "Bacia do Paramirim",
+    "ibgeCode": "2926905",
+    "tseCityCode": "38393",
+    "tseZones": [
+      111
+    ]
+  },
+  {
+    "slug": "rio-real",
+    "name": "Rio Real",
+    "kind": "municipio",
+    "city": "Rio Real",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2927002",
+    "tseCityCode": "38415",
+    "tseZones": [
+      49
+    ]
+  },
+  {
+    "slug": "rodelas",
+    "name": "Rodelas",
+    "kind": "municipio",
+    "city": "Rodelas",
+    "region": "Itaparica",
+    "ibgeCode": "2927101",
+    "tseCityCode": "38431",
+    "tseZones": [
+      158
+    ]
+  },
+  {
+    "slug": "ruy-barbosa",
+    "name": "Ruy Barbosa",
+    "kind": "municipio",
+    "city": "Ruy Barbosa",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2927200",
+    "tseCityCode": "38458",
+    "tseZones": [
+      87
+    ]
+  },
+  {
+    "slug": "salinas-da-margarida",
+    "name": "Salinas da Margarida",
+    "kind": "municipio",
+    "city": "Salinas da Margarida",
+    "region": "Recôncavo",
+    "ibgeCode": "2927309",
+    "tseCityCode": "38474",
+    "tseZones": [
+      30
+    ]
+  },
+  {
+    "slug": "salvador-ze-1",
+    "name": "Salvador — ZE 1",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 1,
+    "tseZones": [
+      1
+    ]
+  },
+  {
+    "slug": "salvador-ze-2",
+    "name": "Salvador — ZE 2",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 2,
+    "tseZones": [
+      2
+    ]
+  },
+  {
+    "slug": "salvador-ze-3",
+    "name": "Salvador — ZE 3",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 3,
+    "tseZones": [
+      3
+    ]
+  },
+  {
+    "slug": "salvador-ze-4",
+    "name": "Salvador — ZE 4",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 4,
+    "tseZones": [
+      4
+    ]
+  },
+  {
+    "slug": "salvador-ze-5",
+    "name": "Salvador — ZE 5",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 5,
+    "tseZones": [
+      5
+    ]
+  },
+  {
+    "slug": "salvador-ze-6",
+    "name": "Salvador — ZE 6",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 6,
+    "tseZones": [
+      6
+    ]
+  },
+  {
+    "slug": "salvador-ze-7",
+    "name": "Salvador — ZE 7",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 7,
+    "tseZones": [
+      7
+    ]
+  },
+  {
+    "slug": "salvador-ze-8",
+    "name": "Salvador — ZE 8",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 8,
+    "tseZones": [
+      8
+    ]
+  },
+  {
+    "slug": "salvador-ze-9",
+    "name": "Salvador — ZE 9",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 9,
+    "tseZones": [
+      9
+    ]
+  },
+  {
+    "slug": "salvador-ze-10",
+    "name": "Salvador — ZE 10",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 10,
+    "tseZones": [
+      10
+    ]
+  },
+  {
+    "slug": "salvador-ze-11",
+    "name": "Salvador — ZE 11",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 11,
+    "tseZones": [
+      11
+    ]
+  },
+  {
+    "slug": "salvador-ze-12",
+    "name": "Salvador — ZE 12",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 12,
+    "tseZones": [
+      12
+    ]
+  },
+  {
+    "slug": "salvador-ze-13",
+    "name": "Salvador — ZE 13",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 13,
+    "tseZones": [
+      13
+    ]
+  },
+  {
+    "slug": "salvador-ze-14",
+    "name": "Salvador — ZE 14",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 14,
+    "tseZones": [
+      14
+    ]
+  },
+  {
+    "slug": "salvador-ze-15",
+    "name": "Salvador — ZE 15",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 15,
+    "tseZones": [
+      15
+    ]
+  },
+  {
+    "slug": "salvador-ze-16",
+    "name": "Salvador — ZE 16",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 16,
+    "tseZones": [
+      16
+    ]
+  },
+  {
+    "slug": "salvador-ze-17",
+    "name": "Salvador — ZE 17",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 17,
+    "tseZones": [
+      17
+    ]
+  },
+  {
+    "slug": "salvador-ze-18",
+    "name": "Salvador — ZE 18",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 18,
+    "tseZones": [
+      18
+    ]
+  },
+  {
+    "slug": "salvador-ze-19",
+    "name": "Salvador — ZE 19",
+    "kind": "zona",
+    "city": "Salvador",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2927408",
+    "tseCityCode": "38490",
+    "zoneNumber": 19,
+    "tseZones": [
+      19
+    ]
+  },
+  {
+    "slug": "santa-barbara",
+    "name": "Santa Bárbara",
+    "kind": "municipio",
+    "city": "Santa Bárbara",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2927507",
+    "tseCityCode": "38512",
+    "tseZones": [
+      160
+    ]
+  },
+  {
+    "slug": "santa-brigida",
+    "name": "Santa Brígida",
+    "kind": "municipio",
+    "city": "Santa Brígida",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2927606",
+    "tseCityCode": "38539",
+    "tseZones": [
+      181
+    ]
+  },
+  {
+    "slug": "santa-cruz-cabralia",
+    "name": "Santa Cruz Cabrália",
+    "kind": "municipio",
+    "city": "Santa Cruz Cabrália",
+    "region": "Costa do Descobrimento",
+    "ibgeCode": "2927705",
+    "tseCityCode": "38555",
+    "tseZones": [
+      121
+    ]
+  },
+  {
+    "slug": "santa-cruz-da-vitoria",
+    "name": "Santa Cruz da Vitória",
+    "kind": "municipio",
+    "city": "Santa Cruz da Vitória",
+    "region": "Médio Sudoeste da Bahia",
+    "ibgeCode": "2927804",
+    "tseCityCode": "38571",
+    "tseZones": [
+      29
+    ]
+  },
+  {
+    "slug": "santa-ines",
+    "name": "Santa Inês",
+    "kind": "municipio",
+    "city": "Santa Inês",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2927903",
+    "tseCityCode": "38598",
+    "tseZones": [
+      38
+    ]
+  },
+  {
+    "slug": "santa-luzia",
+    "name": "Santa Luzia",
+    "kind": "municipio",
+    "city": "Santa Luzia",
+    "region": "Litoral Sul",
+    "ibgeCode": "2928059",
+    "tseCityCode": "39870",
+    "tseZones": [
+      133
+    ]
+  },
+  {
+    "slug": "santa-maria-da-vitoria",
+    "name": "Santa Maria da Vitória",
+    "kind": "municipio",
+    "city": "Santa Maria da Vitória",
+    "region": "Bacia do Rio Corrente",
+    "ibgeCode": "2928109",
+    "tseCityCode": "38636",
+    "tseZones": [
+      72
+    ]
+  },
+  {
+    "slug": "santa-rita-de-cassia",
+    "name": "Santa Rita de Cássia",
+    "kind": "municipio",
+    "city": "Santa Rita de Cássia",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2928406",
+    "tseCityCode": "35491",
+    "tseZones": [
+      97
+    ]
+  },
+  {
+    "slug": "santa-teresinha",
+    "name": "Santa Teresinha",
+    "kind": "municipio",
+    "city": "Santa Teresinha",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2928505",
+    "tseCityCode": "38695",
+    "tseZones": [
+      107
+    ]
+  },
+  {
+    "slug": "santaluz",
+    "name": "Santaluz",
+    "kind": "municipio",
+    "city": "Santaluz",
+    "region": "Sisal",
+    "ibgeCode": "2928000",
+    "tseCityCode": "38610",
+    "tseZones": [
+      145
+    ]
+  },
+  {
+    "slug": "santana",
+    "name": "Santana",
+    "kind": "municipio",
+    "city": "Santana",
+    "region": "Bacia do Rio Corrente",
+    "ibgeCode": "2928208",
+    "tseCityCode": "38652",
+    "tseZones": [
+      99
+    ]
+  },
+  {
+    "slug": "santanopolis",
+    "name": "Santanópolis",
+    "kind": "municipio",
+    "city": "Santanópolis",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2928307",
+    "tseCityCode": "38679",
+    "tseZones": [
+      74
+    ]
+  },
+  {
+    "slug": "santo-amaro",
+    "name": "Santo Amaro",
+    "kind": "municipio",
+    "city": "Santo Amaro",
+    "region": "Recôncavo",
+    "ibgeCode": "2928604",
+    "tseCityCode": "38717",
+    "tseZones": [
+      178
+    ]
+  },
+  {
+    "slug": "santo-antonio-de-jesus",
+    "name": "Santo Antônio de Jesus",
+    "kind": "municipio",
+    "city": "Santo Antônio de Jesus",
+    "region": "Recôncavo",
+    "ibgeCode": "2928703",
+    "tseCityCode": "38733",
+    "tseZones": [
+      56,
+      202
+    ]
+  },
+  {
+    "slug": "santo-estevao",
+    "name": "Santo Estêvão",
+    "kind": "municipio",
+    "city": "Santo Estêvão",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2928802",
+    "tseCityCode": "38750",
+    "tseZones": [
+      143
+    ]
+  },
+  {
+    "slug": "sao-desiderio",
+    "name": "São Desidério",
+    "kind": "municipio",
+    "city": "São Desidério",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2928901",
+    "tseCityCode": "38776",
+    "tseZones": [
+      100
+    ]
+  },
+  {
+    "slug": "sao-domingos",
+    "name": "São Domingos",
+    "kind": "municipio",
+    "city": "São Domingos",
+    "region": "Sisal",
+    "ibgeCode": "2928950",
+    "tseCityCode": "38806",
+    "tseZones": [
+      120
+    ]
+  },
+  {
+    "slug": "sao-felipe",
+    "name": "São Felipe",
+    "kind": "municipio",
+    "city": "São Felipe",
+    "region": "Recôncavo",
+    "ibgeCode": "2929107",
+    "tseCityCode": "38814",
+    "tseZones": [
+      184
+    ]
+  },
+  {
+    "slug": "sao-felix",
+    "name": "São Félix",
+    "kind": "municipio",
+    "city": "São Félix",
+    "region": "Recôncavo",
+    "ibgeCode": "2929008",
+    "tseCityCode": "38792",
+    "tseZones": [
+      118
+    ]
+  },
+  {
+    "slug": "sao-felix-do-coribe",
+    "name": "São Félix do Coribe",
+    "kind": "municipio",
+    "city": "São Félix do Coribe",
+    "region": "Bacia do Rio Corrente",
+    "ibgeCode": "2929057",
+    "tseCityCode": "38822",
+    "tseZones": [
+      72
+    ]
+  },
+  {
+    "slug": "sao-francisco-do-conde",
+    "name": "São Francisco do Conde",
+    "kind": "municipio",
+    "city": "São Francisco do Conde",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2929206",
+    "tseCityCode": "38830",
+    "tseZones": [
+      162
+    ]
+  },
+  {
+    "slug": "sao-gabriel",
+    "name": "São Gabriel",
+    "kind": "municipio",
+    "city": "São Gabriel",
+    "region": "Irecê",
+    "ibgeCode": "2929255",
+    "tseCityCode": "39896",
+    "tseZones": [
+      95
+    ]
+  },
+  {
+    "slug": "sao-goncalo-dos-campos",
+    "name": "São Gonçalo dos Campos",
+    "kind": "municipio",
+    "city": "São Gonçalo dos Campos",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2929305",
+    "tseCityCode": "38857",
+    "tseZones": [
+      108
+    ]
+  },
+  {
+    "slug": "sao-jose-da-vitoria",
+    "name": "São José da Vitória",
+    "kind": "municipio",
+    "city": "São José da Vitória",
+    "region": "Litoral Sul",
+    "ibgeCode": "2929354",
+    "tseCityCode": "39926",
+    "tseZones": [
+      166
+    ]
+  },
+  {
+    "slug": "sao-jose-do-jacuipe",
+    "name": "São José do Jacuípe",
+    "kind": "municipio",
+    "city": "São José do Jacuípe",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2929370",
+    "tseCityCode": "38865",
+    "tseZones": [
+      191
+    ]
+  },
+  {
+    "slug": "sao-miguel-das-matas",
+    "name": "São Miguel das Matas",
+    "kind": "municipio",
+    "city": "São Miguel das Matas",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2929404",
+    "tseCityCode": "38873",
+    "tseZones": [
+      36
+    ]
+  },
+  {
+    "slug": "sao-sebastiao-do-passe",
+    "name": "São Sebastião do Passé",
+    "kind": "municipio",
+    "city": "São Sebastião do Passé",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2929503",
+    "tseCityCode": "38890",
+    "tseZones": [
+      128
+    ]
+  },
+  {
+    "slug": "sapeacu",
+    "name": "Sapeaçu",
+    "kind": "municipio",
+    "city": "Sapeaçu",
+    "region": "Recôncavo",
+    "ibgeCode": "2929602",
+    "tseCityCode": "38911",
+    "tseZones": [
+      142
+    ]
+  },
+  {
+    "slug": "satiro-dias",
+    "name": "Sátiro Dias",
+    "kind": "municipio",
+    "city": "Sátiro Dias",
+    "region": "Litoral Norte e Agreste Baiano",
+    "ibgeCode": "2929701",
+    "tseCityCode": "38938",
+    "tseZones": [
+      44
+    ]
+  },
+  {
+    "slug": "saubara",
+    "name": "Saubara",
+    "kind": "municipio",
+    "city": "Saubara",
+    "region": "Recôncavo",
+    "ibgeCode": "2929750",
+    "tseCityCode": "38946",
+    "tseZones": [
+      178
+    ]
+  },
+  {
+    "slug": "saude",
+    "name": "Saúde",
+    "kind": "municipio",
+    "city": "Saúde",
+    "region": "Piemonte da Diamantina",
+    "ibgeCode": "2929800",
+    "tseCityCode": "38954",
+    "tseZones": [
+      115
+    ]
+  },
+  {
+    "slug": "seabra",
+    "name": "Seabra",
+    "kind": "municipio",
+    "city": "Seabra",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2929909",
+    "tseCityCode": "38970",
+    "tseZones": [
+      88
+    ]
+  },
+  {
+    "slug": "sebastiao-laranjeiras",
+    "name": "Sebastião Laranjeiras",
+    "kind": "municipio",
+    "city": "Sebastião Laranjeiras",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2930006",
+    "tseCityCode": "38997",
+    "tseZones": [
+      175
+    ]
+  },
+  {
+    "slug": "senhor-do-bonfim",
+    "name": "Senhor do Bonfim",
+    "kind": "municipio",
+    "city": "Senhor do Bonfim",
+    "region": "Piemonte Norte do Itapicuru",
+    "ibgeCode": "2930105",
+    "tseCityCode": "39012",
+    "tseZones": [
+      45
+    ]
+  },
+  {
+    "slug": "sento-se",
+    "name": "Sento Sé",
+    "kind": "municipio",
+    "city": "Sento Sé",
+    "region": "Sertão do São Francisco",
+    "ibgeCode": "2930204",
+    "tseCityCode": "39039",
+    "tseZones": [
+      96
+    ]
+  },
+  {
+    "slug": "serra-do-ramalho",
+    "name": "Serra do Ramalho",
+    "kind": "municipio",
+    "city": "Serra do Ramalho",
+    "region": "Velho Chico",
+    "ibgeCode": "2930154",
+    "tseCityCode": "39047",
+    "tseZones": [
+      71
+    ]
+  },
+  {
+    "slug": "serra-dourada",
+    "name": "Serra Dourada",
+    "kind": "municipio",
+    "city": "Serra Dourada",
+    "region": "Bacia do Rio Corrente",
+    "ibgeCode": "2930303",
+    "tseCityCode": "39055",
+    "tseZones": [
+      190
+    ]
+  },
+  {
+    "slug": "serra-preta",
+    "name": "Serra Preta",
+    "kind": "municipio",
+    "city": "Serra Preta",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2930402",
+    "tseCityCode": "39071",
+    "tseZones": [
+      155
+    ]
+  },
+  {
+    "slug": "serrinha",
+    "name": "Serrinha",
+    "kind": "municipio",
+    "city": "Serrinha",
+    "region": "Sisal",
+    "ibgeCode": "2930501",
+    "tseCityCode": "39098",
+    "tseZones": [
+      150
+    ]
+  },
+  {
+    "slug": "serrolandia",
+    "name": "Serrolândia",
+    "kind": "municipio",
+    "city": "Serrolândia",
+    "region": "Piemonte da Diamantina",
+    "ibgeCode": "2930600",
+    "tseCityCode": "39110",
+    "tseZones": [
+      46
+    ]
+  },
+  {
+    "slug": "simoes-filho",
+    "name": "Simões Filho",
+    "kind": "municipio",
+    "city": "Simões Filho",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2930709",
+    "tseCityCode": "39136",
+    "tseZones": [
+      33
+    ]
+  },
+  {
+    "slug": "sitio-do-mato",
+    "name": "Sítio do Mato",
+    "kind": "municipio",
+    "city": "Sítio do Mato",
+    "region": "Velho Chico",
+    "ibgeCode": "2930758",
+    "tseCityCode": "39144",
+    "tseZones": [
+      71
+    ]
+  },
+  {
+    "slug": "sitio-do-quinto",
+    "name": "Sítio do Quinto",
+    "kind": "municipio",
+    "city": "Sítio do Quinto",
+    "region": "Semiárido Nordeste II",
+    "ibgeCode": "2930766",
+    "tseCityCode": "39900",
+    "tseZones": [
+      51
+    ]
+  },
+  {
+    "slug": "sobradinho",
+    "name": "Sobradinho",
+    "kind": "municipio",
+    "city": "Sobradinho",
+    "region": "Sertão do São Francisco",
+    "ibgeCode": "2930774",
+    "tseCityCode": "39985",
+    "tseZones": [
+      66
+    ]
+  },
+  {
+    "slug": "souto-soares",
+    "name": "Souto Soares",
+    "kind": "municipio",
+    "city": "Souto Soares",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2930808",
+    "tseCityCode": "39152",
+    "tseZones": [
+      174
+    ]
+  },
+  {
+    "slug": "tabocas-do-brejo-velho",
+    "name": "Tabocas do Brejo Velho",
+    "kind": "municipio",
+    "city": "Tabocas do Brejo Velho",
+    "region": "Bacia do Rio Corrente",
+    "ibgeCode": "2930907",
+    "tseCityCode": "39179",
+    "tseZones": [
+      190
+    ]
+  },
+  {
+    "slug": "tanhacu",
+    "name": "Tanhaçu",
+    "kind": "municipio",
+    "city": "Tanhaçu",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2931004",
+    "tseCityCode": "39195",
+    "tseZones": [
+      58
+    ]
+  },
+  {
+    "slug": "tanque-novo",
+    "name": "Tanque Novo",
+    "kind": "municipio",
+    "city": "Tanque Novo",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2931053",
+    "tseCityCode": "39918",
+    "tseZones": [
+      168
+    ]
+  },
+  {
+    "slug": "tanquinho",
+    "name": "Tanquinho",
+    "kind": "municipio",
+    "city": "Tanquinho",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2931103",
+    "tseCityCode": "39217",
+    "tseZones": [
+      160
+    ]
+  },
+  {
+    "slug": "taperoa",
+    "name": "Taperoá",
+    "kind": "municipio",
+    "city": "Taperoá",
+    "region": "Baixo Sul",
+    "ibgeCode": "2931202",
+    "tseCityCode": "39233",
+    "tseZones": [
+      32
+    ]
+  },
+  {
+    "slug": "tapiramuta",
+    "name": "Tapiramutá",
+    "kind": "municipio",
+    "city": "Tapiramutá",
+    "region": "Piemonte do Paraguaçu",
+    "ibgeCode": "2931301",
+    "tseCityCode": "39250",
+    "tseZones": [
+      54
+    ]
+  },
+  {
+    "slug": "teixeira-de-freitas",
+    "name": "Teixeira de Freitas",
+    "kind": "municipio",
+    "city": "Teixeira de Freitas",
+    "region": "Extremo Sul",
+    "ibgeCode": "2931350",
+    "tseCityCode": "39934",
+    "tseZones": [
+      183
+    ]
+  },
+  {
+    "slug": "teodoro-sampaio",
+    "name": "Teodoro Sampaio",
+    "kind": "municipio",
+    "city": "Teodoro Sampaio",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2931400",
+    "tseCityCode": "39276",
+    "tseZones": [
+      130
+    ]
+  },
+  {
+    "slug": "teofilandia",
+    "name": "Teofilândia",
+    "kind": "municipio",
+    "city": "Teofilândia",
+    "region": "Sisal",
+    "ibgeCode": "2931509",
+    "tseCityCode": "39292",
+    "tseZones": [
+      123
+    ]
+  },
+  {
+    "slug": "teolandia",
+    "name": "Teolândia",
+    "kind": "municipio",
+    "city": "Teolândia",
+    "region": "Baixo Sul",
+    "ibgeCode": "2931608",
+    "tseCityCode": "39314",
+    "tseZones": [
+      197
+    ]
+  },
+  {
+    "slug": "terra-nova",
+    "name": "Terra Nova",
+    "kind": "municipio",
+    "city": "Terra Nova",
+    "region": "Portal do Sertão",
+    "ibgeCode": "2931707",
+    "tseCityCode": "39330",
+    "tseZones": [
+      128
+    ]
+  },
+  {
+    "slug": "tremedal",
+    "name": "Tremedal",
+    "kind": "municipio",
+    "city": "Tremedal",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2931806",
+    "tseCityCode": "39357",
+    "tseZones": [
+      177
+    ]
+  },
+  {
+    "slug": "tucano",
+    "name": "Tucano",
+    "kind": "municipio",
+    "city": "Tucano",
+    "region": "Sisal",
+    "ibgeCode": "2931905",
+    "tseCityCode": "39373",
+    "tseZones": [
+      80
+    ]
+  },
+  {
+    "slug": "uaua",
+    "name": "Uauá",
+    "kind": "municipio",
+    "city": "Uauá",
+    "region": "Sertão do São Francisco",
+    "ibgeCode": "2932002",
+    "tseCityCode": "39390",
+    "tseZones": [
+      83
+    ]
+  },
+  {
+    "slug": "ubaira",
+    "name": "Ubaíra",
+    "kind": "municipio",
+    "city": "Ubaíra",
+    "region": "Vale do Jiquiriçá",
+    "ibgeCode": "2932101",
+    "tseCityCode": "39411",
+    "tseZones": [
+      38
+    ]
+  },
+  {
+    "slug": "ubaitaba",
+    "name": "Ubaitaba",
+    "kind": "municipio",
+    "city": "Ubaitaba",
+    "region": "Litoral Sul",
+    "ibgeCode": "2932200",
+    "tseCityCode": "39438",
+    "tseZones": [
+      73
+    ]
+  },
+  {
+    "slug": "ubata",
+    "name": "Ubatã",
+    "kind": "municipio",
+    "city": "Ubatã",
+    "region": "Médio Rio de Contas",
+    "ibgeCode": "2932309",
+    "tseCityCode": "39454",
+    "tseZones": [
+      134
+    ]
+  },
+  {
+    "slug": "uibai",
+    "name": "Uibaí",
+    "kind": "municipio",
+    "city": "Uibaí",
+    "region": "Irecê",
+    "ibgeCode": "2932408",
+    "tseCityCode": "39470",
+    "tseZones": [
+      159
+    ]
+  },
+  {
+    "slug": "umburanas",
+    "name": "Umburanas",
+    "kind": "municipio",
+    "city": "Umburanas",
+    "region": "Piemonte da Diamantina",
+    "ibgeCode": "2932457",
+    "tseCityCode": "39489",
+    "tseZones": [
+      167
+    ]
+  },
+  {
+    "slug": "una",
+    "name": "Una",
+    "kind": "municipio",
+    "city": "Una",
+    "region": "Litoral Sul",
+    "ibgeCode": "2932507",
+    "tseCityCode": "39497",
+    "tseZones": [
+      116
+    ]
+  },
+  {
+    "slug": "urandi",
+    "name": "Urandi",
+    "kind": "municipio",
+    "city": "Urandi",
+    "region": "Sertão Produtivo",
+    "ibgeCode": "2932606",
+    "tseCityCode": "39519",
+    "tseZones": [
+      117
+    ]
+  },
+  {
+    "slug": "urucuca",
+    "name": "Uruçuca",
+    "kind": "municipio",
+    "city": "Uruçuca",
+    "region": "Litoral Sul",
+    "ibgeCode": "2932705",
+    "tseCityCode": "39535",
+    "tseZones": [
+      198
+    ]
+  },
+  {
+    "slug": "utinga",
+    "name": "Utinga",
+    "kind": "municipio",
+    "city": "Utinga",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2932804",
+    "tseCityCode": "39551",
+    "tseZones": [
+      69
+    ]
+  },
+  {
+    "slug": "valenca",
+    "name": "Valença",
+    "kind": "municipio",
+    "city": "Valença",
+    "region": "Baixo Sul",
+    "ibgeCode": "2932903",
+    "tseCityCode": "39578",
+    "tseZones": [
+      31
+    ]
+  },
+  {
+    "slug": "valente",
+    "name": "Valente",
+    "kind": "municipio",
+    "city": "Valente",
+    "region": "Sisal",
+    "ibgeCode": "2933000",
+    "tseCityCode": "39594",
+    "tseZones": [
+      120
+    ]
+  },
+  {
+    "slug": "varzea-da-roca",
+    "name": "Várzea da Roça",
+    "kind": "municipio",
+    "city": "Várzea da Roça",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2933059",
+    "tseCityCode": "39977",
+    "tseZones": [
+      86
+    ]
+  },
+  {
+    "slug": "varzea-do-poco",
+    "name": "Várzea do Poço",
+    "kind": "municipio",
+    "city": "Várzea do Poço",
+    "region": "Bacia do Jacuípe",
+    "ibgeCode": "2933109",
+    "tseCityCode": "39616",
+    "tseZones": [
+      103
+    ]
+  },
+  {
+    "slug": "varzea-nova",
+    "name": "Várzea Nova",
+    "kind": "municipio",
+    "city": "Várzea Nova",
+    "region": "Piemonte da Diamantina",
+    "ibgeCode": "2933158",
+    "tseCityCode": "39950",
+    "tseZones": [
+      55
+    ]
+  },
+  {
+    "slug": "varzedo",
+    "name": "Varzedo",
+    "kind": "municipio",
+    "city": "Varzedo",
+    "region": "Recôncavo",
+    "ibgeCode": "2933174",
+    "tseCityCode": "39624",
+    "tseZones": [
+      56
+    ]
+  },
+  {
+    "slug": "vera-cruz",
+    "name": "Vera Cruz",
+    "kind": "municipio",
+    "city": "Vera Cruz",
+    "region": "Metropolitano de Salvador",
+    "ibgeCode": "2933208",
+    "tseCityCode": "39632",
+    "tseZones": [
+      141
+    ]
+  },
+  {
+    "slug": "vereda",
+    "name": "Vereda",
+    "kind": "municipio",
+    "city": "Vereda",
+    "region": "Extremo Sul",
+    "ibgeCode": "2933257",
+    "tseCityCode": "39640",
+    "tseZones": [
+      148
+    ]
+  },
+  {
+    "slug": "vitoria-da-conquista",
+    "name": "Vitória da Conquista",
+    "kind": "municipio",
+    "city": "Vitória da Conquista",
+    "region": "Sudoeste Baiano",
+    "ibgeCode": "2933307",
+    "tseCityCode": "39659",
+    "tseZones": [
+      39,
+      40,
+      41
+    ]
+  },
+  {
+    "slug": "wagner",
+    "name": "Wagner",
+    "kind": "municipio",
+    "city": "Wagner",
+    "region": "Chapada Diamantina",
+    "ibgeCode": "2933406",
+    "tseCityCode": "39675",
+    "tseZones": [
+      69
+    ]
+  },
+  {
+    "slug": "wanderley",
+    "name": "Wanderley",
+    "kind": "municipio",
+    "city": "Wanderley",
+    "region": "Bacia do Rio Grande",
+    "ibgeCode": "2933455",
+    "tseCityCode": "39993",
+    "tseZones": [
+      98
+    ]
+  },
+  {
+    "slug": "wenceslau-guimaraes",
+    "name": "Wenceslau Guimarães",
+    "kind": "municipio",
+    "city": "Wenceslau Guimarães",
+    "region": "Baixo Sul",
+    "ibgeCode": "2933505",
+    "tseCityCode": "39691",
+    "tseZones": [
+      197
+    ]
+  },
+  {
+    "slug": "xique-xique",
+    "name": "Xique-Xique",
+    "kind": "municipio",
+    "city": "Xique-Xique",
+    "region": "Irecê",
+    "ibgeCode": "2933604",
+    "tseCityCode": "39713",
+    "tseZones": [
+      68
+    ]
+  }
+] as const satisfies readonly FrozenPlazaCatalogEntry[]

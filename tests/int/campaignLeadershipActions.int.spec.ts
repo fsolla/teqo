@@ -1,7 +1,7 @@
 // @vitest-environment node
 
-import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { getPayload, type Payload } from 'payload'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import type { CampaignUser } from '@/payload-types'
 
@@ -32,9 +32,10 @@ const campaignFixtures = installCampaignFixtures({
   },
 })
 
-const createFormData = (plazaIds: number[], name: string, phone: string) => {
+const createFormData = (municipalityIds: number[], name: string, phone: string) => {
   const formData = new FormData()
-  for (const plazaId of plazaIds) formData.append('plazas', String(plazaId))
+  for (const municipalityId of municipalityIds)
+    formData.append('municipalities', String(municipalityId))
   formData.set('name', name)
   formData.set('phone', phone)
   formData.set('supportStatus', 'engajado')
@@ -64,15 +65,15 @@ describe('campaign leadership exported form actions', () => {
 
   it('creates a leadership and redirects to its detail page in advisor scope', async () => {
     const advisor = await campaignFixtures().createCampaignUser('advisor')
-    const plaza = await campaignFixtures().getPlaza()
-    await campaignFixtures().assignPlazaAdvisors(plaza, [advisor])
+    const municipality = await campaignFixtures().getMunicipality()
+    await campaignFixtures().assignMunicipalityAdvisors(municipality, [advisor])
     authState.user = advisor
     const phone = campaignFixtures().phone()
 
     try {
       await createLeadershipFormAction(
         {},
-        createFormData([plaza.id], 'Liderança via Action', phone),
+        createFormData([municipality.id], 'Liderança via Action', phone),
       )
       throw new Error('Expected the form action to redirect on success.')
     } catch (error) {
@@ -99,10 +100,10 @@ describe('campaign leadership exported form actions', () => {
 
   it('creates a normalized contact through the form action', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-    const plaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
     const phone = campaignFixtures().phone()
     const formData = createFormData(
-      [plaza.id],
+      [municipality.id],
       'Francisco',
       `(71) ${phone.slice(2, 7)}-${phone.slice(7)}`,
     )
@@ -125,7 +126,10 @@ describe('campaign leadership exported form actions', () => {
     const leaderships = await payload.find({
       collection: 'leadership',
       where: {
-        and: [{ contact: { equals: contacts.docs[0]!.id } }, { plazas: { in: [plaza.id] } }],
+        and: [
+          { contact: { equals: contacts.docs[0]!.id } },
+          { municipalities: { in: [municipality.id] } },
+        ],
       },
       limit: 2,
       depth: 0,
@@ -136,10 +140,10 @@ describe('campaign leadership exported form actions', () => {
 
   it('applies server defaults when the form action receives only required fields', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-    const plaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
     const phone = campaignFixtures().phone()
     const formData = new FormData()
-    formData.append('plazas', String(plaza.id))
+    formData.append('municipalities', String(municipality.id))
     formData.set('name', 'Liderança mínima')
     formData.set('phone', phone)
     authState.user = coordinator
@@ -179,31 +183,31 @@ describe('campaign leadership exported form actions', () => {
 
   it('surfaces the duplicate-person message through the create form action', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-    const plaza = await campaignFixtures().getPlaza()
-    const otherPlaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
+    const otherMunicipality = await campaignFixtures().getMunicipality()
     const phone = campaignFixtures().phone()
     authState.user = coordinator
     await createLeadershipRecord(payload, coordinator, {
-      plazas: [plaza.id],
+      municipalities: [municipality.id],
       name: 'Pessoa já cadastrada',
       phone,
       supportStatus: 'engajado',
     })
 
     await expect(
-      createLeadershipFormAction({}, createFormData([otherPlaza.id], 'Duplicada', phone)),
+      createLeadershipFormAction({}, createFormData([otherMunicipality.id], 'Duplicada', phone)),
     ).resolves.toMatchObject({
       message:
-        'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novas Praças.',
+        'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novos municípios.',
     })
   })
 
   it('clears blank nullable fields and preserves absent fields through the update action', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-    const plaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
     authState.user = coordinator
     const created = await createLeadershipRecord(payload, coordinator, {
-      plazas: [plaza.id],
+      municipalities: [municipality.id],
       name: 'Liderança com campos internos',
       phone: campaignFixtures().phone(),
       sectorNotes: 'Setor preservado',
@@ -212,7 +216,7 @@ describe('campaign leadership exported form actions', () => {
     })
     const formData = new FormData()
     formData.set('leadershipId', String(created.id))
-    formData.append('plazas', String(plaza.id))
+    formData.append('municipalities', String(municipality.id))
     formData.set('notes', '   ')
     formData.set('consentNote', '')
 
@@ -233,12 +237,12 @@ describe('campaign leadership exported form actions', () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const advisor = await campaignFixtures().createCampaignUser('advisor')
     const otherAdvisor = await campaignFixtures().createCampaignUser('advisor')
-    const assigned = await campaignFixtures().getPlaza()
-    const other = await campaignFixtures().getPlaza()
-    await campaignFixtures().assignPlazaAdvisors(assigned, [advisor])
-    await campaignFixtures().assignPlazaAdvisors(other, [otherAdvisor])
+    const assigned = await campaignFixtures().getMunicipality()
+    const other = await campaignFixtures().getMunicipality()
+    await campaignFixtures().assignMunicipalityAdvisors(assigned, [advisor])
+    await campaignFixtures().assignMunicipalityAdvisors(other, [otherAdvisor])
     const otherLeadership = await createLeadershipRecord(payload, coordinator, {
-      plazas: [other.id],
+      municipalities: [other.id],
       name: 'Liderança fora do escopo',
       phone: campaignFixtures().phone(),
       supportStatus: 'engajado',
@@ -251,12 +255,12 @@ describe('campaign leadership exported form actions', () => {
         createFormData([other.id], 'Criação negada', campaignFixtures().phone()),
       ),
     ).resolves.toMatchObject({
-      message: 'Você só pode vincular lideranças às Praças que assessora.',
+      message: 'Você só pode vincular lideranças aos municípios que assessora.',
     })
 
     const updateData = new FormData()
     updateData.set('leadershipId', String(otherLeadership.id))
-    updateData.append('plazas', String(other.id))
+    updateData.append('municipalities', String(other.id))
     updateData.set('supportStatus', 'engajado')
     await expect(updateLeadershipInternalFormAction({}, updateData)).resolves.toMatchObject({
       message: expect.stringContaining('Não foi possível'),
@@ -266,9 +270,9 @@ describe('campaign leadership exported form actions', () => {
   it('returns denial states when a leader invokes staff actions', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const leaderAccount = await campaignFixtures().createCampaignUser('leader')
-    const plaza = await campaignFixtures().getPlaza()
+    const municipality = await campaignFixtures().getMunicipality()
     const existing = await createLeadershipRecord(payload, coordinator, {
-      plazas: [plaza.id],
+      municipalities: [municipality.id],
       name: 'Registro protegido',
       phone: campaignFixtures().phone(),
       supportStatus: 'engajado',
@@ -278,7 +282,7 @@ describe('campaign leadership exported form actions', () => {
     await expect(
       createLeadershipFormAction(
         {},
-        createFormData([plaza.id], 'Criação por liderança', campaignFixtures().phone()),
+        createFormData([municipality.id], 'Criação por liderança', campaignFixtures().phone()),
       ),
     ).resolves.toMatchObject({
       message: 'Somente a coordenação e a assessoria podem gerenciar lideranças.',
@@ -286,7 +290,7 @@ describe('campaign leadership exported form actions', () => {
 
     const updateData = new FormData()
     updateData.set('leadershipId', String(existing.id))
-    updateData.append('plazas', String(plaza.id))
+    updateData.append('municipalities', String(municipality.id))
     updateData.set('supportStatus', 'engajado')
     await expect(updateLeadershipInternalFormAction({}, updateData)).resolves.toMatchObject({
       message: 'Somente a coordenação e a assessoria podem gerenciar lideranças.',

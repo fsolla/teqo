@@ -9,7 +9,7 @@ import { OrganizationForm } from '@/components/campaign/OrganizationForm'
 import { Button } from '@/components/ui/button'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadPlazaOptions } from '@/utilities/campaignRelationOptions'
+import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { createOrganizationFormAction } from './formActions'
 
 export default async function NewOrganizationPage() {
@@ -17,7 +17,7 @@ export default async function NewOrganizationPage() {
   if (!user) redirect('/campanha/login')
   if (!isCampaignStaff(user)) redirect('/campanha')
 
-  const plazaOptions = await loadPlazaOptions(payload, user)
+  const municipalityOptions = await loadMunicipalityOptions(payload, user)
 
   return (
     <CampaignPageShell>
@@ -35,7 +35,7 @@ export default async function NewOrganizationPage() {
         </p>
       </header>
 
-      <OrganizationForm plazaOptions={plazaOptions} formAction={createOrganizationFormAction} />
+      <OrganizationForm municipalityOptions={municipalityOptions} formAction={createOrganizationFormAction} />
     </CampaignPageShell>
   )
 }

@@ -1,16 +1,16 @@
 // @vitest-environment node
 
-import { describe, expect, it, vi } from 'vitest'
 import type { Payload } from 'payload'
+import { describe, expect, it, vi } from 'vitest'
 
 import type { CampaignUser, User } from '@/payload-types'
 import { assertCanReadElectionData } from '@/utilities/campaignAccess'
-import { loadFederalCandidateTotalsAggregated } from '@/utilities/federalCandidateTotalsAggregate'
 import * as drizzleBulk from '@/utilities/drizzleBulk'
-import type { PlazaElectionGeography } from '@/utilities/plazaElectionGeography'
+import { loadFederalCandidateTotalsAggregated } from '@/utilities/federalCandidateTotalsAggregate'
+import type { MunicipalityElectionGeography } from '@/utilities/municipalityElectionGeography'
 
 describe('assertCanReadElectionData', () => {
-  it('allows payload admins and campaign users to read election data', () => {
+  it('allows payload admins and staff campaign users to read election data', () => {
     expect(() =>
       assertCanReadElectionData({
         collection: 'users',
@@ -22,9 +22,17 @@ describe('assertCanReadElectionData', () => {
       assertCanReadElectionData({
         collection: 'campaignUser',
         id: 1,
-        role: 'leader',
+        role: 'advisor',
       } as unknown as CampaignUser),
     ).not.toThrow()
+
+    expect(() =>
+      assertCanReadElectionData({
+        collection: 'campaignUser',
+        id: 1,
+        role: 'leader',
+      } as unknown as CampaignUser),
+    ).toThrow('Leitura de dados eleitorais negada.')
   })
 
   it('denies readers outside campaign/admin collections', () => {
@@ -39,7 +47,7 @@ describe('assertCanReadElectionData', () => {
 
 describe('loadFederalCandidateTotalsAggregated', () => {
   it('maps drizzle aggregate rows and scopes geography in SQL', async () => {
-    const geography: PlazaElectionGeography = {
+    const geography: MunicipalityElectionGeography = {
       cityCode: '38490',
       zones: [1, 2],
     }

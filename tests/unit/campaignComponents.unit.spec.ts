@@ -5,23 +5,23 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
-import { PlazaList } from '@/components/campaign/PlazaList'
+import { MunicipalityList } from '@/components/campaign/MunicipalityList'
 import { SupportStatusBadge } from '@/components/campaign/SupportStatusBadge'
 import { TseZoneBadge } from '@/components/campaign/TseZoneBadge'
 import { Progress } from '@/components/ui/Progress'
 import { Toggle } from '@/components/ui/Toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import type { PlazaAdvisorSummary, PlazaListViewModel } from '@/utilities/plazaViewModels'
+import type { MunicipalityAdvisorSummary, MunicipalityListViewModel } from '@/utilities/municipalityViewModels'
 import { toVoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
-import { createEmptyPlazaPledgeAggregate } from '@/utilities/votePledgeData'
+import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
 
 const noopListFormAction = async (
   _state: CampaignFormActionState,
   _formData: FormData,
 ): Promise<CampaignFormActionState> => ({})
 
-const plazaListDefaultProps = {
+const municipalityListDefaultProps = {
   isCoordinator: false,
   advisorOptions: [],
   trendFormAction: noopListFormAction,
@@ -118,9 +118,9 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('aria-label="Zona Eleitoral TSE 12"')
   })
 
-  it('renders plaza rows with geography, pledges, and advisor coverage for staff', () => {
-    const advisor: PlazaAdvisorSummary = { id: 7, name: 'Ana Bastos', phone: null }
-    const plazas: PlazaListViewModel[] = [
+  it('renders municipality rows with geography, pledges, and advisor coverage for staff', () => {
+    const advisor: MunicipalityAdvisorSummary = { id: 7, name: 'Ana Bastos', phone: null }
+    const municipalities: MunicipalityListViewModel[] = [
       {
         id: 1,
         name: 'Seabra',
@@ -158,22 +158,22 @@ describe('campaign visual foundation', () => {
         expectedVotes: toVoteEstimateScenarioViewModel(null),
         politicalTrendStatus: null,
         politicalTrendNote: null,
-        pledges: createEmptyPlazaPledgeAggregate(),
+        pledges: createEmptyMunicipalityPledgeAggregate(),
       },
     ]
 
     const html = renderToStaticMarkup(
-      createElement(PlazaList, {
-        plazas,
+      createElement(MunicipalityList, {
+        municipalities,
         advisorNamesById: new Map([[advisor.id, advisor]]),
         isStaffView: true,
-        ...plazaListDefaultProps,
+        ...municipalityListDefaultProps,
       }),
     )
 
     expect(html).toContain('Seabra')
     expect(html).toContain('Chapada Diamantina')
-    expect(html).toContain('href="/campanha/pracas/seabra"')
+    expect(html).toContain('href="/campanha/municipios/seabra"')
     expect(html).toContain('1.500')
     expect(html).toContain('Cenários de estimativa')
     expect(html).toContain('Prioritária')
@@ -184,8 +184,8 @@ describe('campaign visual foundation', () => {
 
   it('hides leadership coverage subline when pledges only have declared votes', () => {
     const html = renderToStaticMarkup(
-      createElement(PlazaList, {
-        plazas: [
+      createElement(MunicipalityList, {
+        municipalities: [
           {
             id: 3,
             name: 'Itaberaba',
@@ -209,9 +209,9 @@ describe('campaign visual foundation', () => {
             },
           },
         ],
-        advisorNamesById: new Map<number, PlazaAdvisorSummary>(),
+        advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
         isStaffView: true,
-        ...plazaListDefaultProps,
+        ...municipalityListDefaultProps,
       }),
     )
 
@@ -222,8 +222,8 @@ describe('campaign visual foundation', () => {
 
   it('hides staff-only pledge and coverage columns from the leader view', () => {
     const html = renderToStaticMarkup(
-      createElement(PlazaList, {
-        plazas: [
+      createElement(MunicipalityList, {
+        municipalities: [
           {
             id: 1,
             name: 'Seabra',
@@ -239,12 +239,12 @@ describe('campaign visual foundation', () => {
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             politicalTrendStatus: null,
             politicalTrendNote: null,
-            pledges: createEmptyPlazaPledgeAggregate(),
+            pledges: createEmptyMunicipalityPledgeAggregate(),
           },
         ],
-        advisorNamesById: new Map<number, PlazaAdvisorSummary>(),
+        advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
         isStaffView: false,
-        ...plazaListDefaultProps,
+        ...municipalityListDefaultProps,
       }),
     )
 

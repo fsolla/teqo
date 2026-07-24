@@ -192,8 +192,8 @@ describe('ESLint conventions', () => {
       `'use server'\n\nexport type Result = { ok: true }\nexport const save = async () => ({ ok: true as const })\nexport async function load() { return 1 }\n`,
     )
     await expectValid(
-      'src/app/(campaign)/campanha/(app)/pracas/plazaStaffEditMessages.ts',
-      `export const plazaStaffEditSafeMessages = ['x'] as const\n`,
+      'src/app/(campaign)/campanha/(app)/pracas/municipalityStaffEditMessages.ts',
+      `export const municipalityStaffEditSafeMessages = ['x'] as const\n`,
     )
   })
 })

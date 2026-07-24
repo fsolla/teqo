@@ -37,10 +37,10 @@ export default async function NewSupporterPage() {
 
       <SupporterForm
         action={createSupporterFormAction}
-        plazaOptions={pageData.plazaOptions}
+        municipalityOptions={pageData.municipalityOptions}
         registrationConsentConfigured={pageData.registrationConsentConfigured}
         voteIntentionConsentConfigured={pageData.voteIntentionConsentConfigured}
-        requirePlaza={pageData.requirePlaza}
+        requireMunicipality={pageData.requireMunicipality}
       />
     </div>
   )

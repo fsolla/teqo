@@ -3,10 +3,10 @@ import type { Payload } from 'payload'
 import type { ActionPlan, CampaignUser } from '@/payload-types'
 import type { ActionPlanDetailTab } from '@/utilities/actionPlanDetailTabUi'
 import {
-  actionPlanPlazaSummary,
+  actionPlanMunicipalitySummary,
   toActionPlanDetailViewModel,
   type ActionPlanDetailViewModel,
-  type ActionPlanPlazaSummary,
+  type ActionPlanMunicipalitySummary,
 } from '@/utilities/actionPlanViewModels'
 import { relationshipId } from '@/utilities/relationship'
 import type { AccessibleActionPlanContext } from '@/utilities/actionPlanPageData'
@@ -40,26 +40,26 @@ const loadActionPlanUpdateAuthorNames = async (
 }
 
 /**
- * Display-name lookup for a plan's plaza when the document was loaded at
+ * Display-name lookup for a plan's municipality when the document was loaded at
  * depth 0 (updates tab). The actor already passed row access on the plan
- * itself, so reading the plaza's name/slug privileged avoids a second
+ * itself, so reading the municipality's name/slug privileged avoids a second
  * per-role access round-trip (established display-name pattern).
  */
-const loadActionPlanPlazaSummaryById = async (
+const loadActionPlanMunicipalitySummaryById = async (
   payload: Pick<Payload, 'find'>,
-  plazaId: number,
-): Promise<ActionPlanPlazaSummary | null> => {
+  municipalityId: number,
+): Promise<ActionPlanMunicipalitySummary | null> => {
   const result = await payload.find({
-    collection: 'plaza',
-    where: { id: { equals: plazaId } },
+    collection: 'municipality',
+    where: { id: { equals: municipalityId } },
     depth: 0,
     limit: 1,
     pagination: false,
     select: { name: true, slug: true },
     overrideAccess: true,
   })
-  const plaza = result.docs[0]
-  return plaza ? { id: plaza.id, name: plaza.name, slug: plaza.slug } : null
+  const municipality = result.docs[0]
+  return municipality ? { id: municipality.id, name: municipality.name, slug: municipality.slug } : null
 }
 
 export const getActionPlanDetailPageData = async (
@@ -68,15 +68,15 @@ export const getActionPlanDetailPageData = async (
   context: AccessibleActionPlanContext,
   activeTab: ActionPlanDetailTab,
 ): Promise<ActionPlanDetailViewModel> => {
-  const plazaId = relationshipId(context.document.plaza)
-  const plazaSummary =
-    actionPlanPlazaSummary(context.document.plaza) ??
-    (plazaId ? await loadActionPlanPlazaSummaryById(payload, plazaId) : null)
+  const municipalityId = relationshipId(context.document.municipality)
+  const municipalitySummary =
+    actionPlanMunicipalitySummary(context.document.municipality) ??
+    (municipalityId ? await loadActionPlanMunicipalitySummaryById(payload, municipalityId) : null)
 
   const authorNames =
     activeTab === 'updates' && context.document.updates?.length
       ? await loadActionPlanUpdateAuthorNames(payload, user, context.document.updates)
       : new Map<number, string>()
 
-  return toActionPlanDetailViewModel(context.document, activeTab, authorNames, plazaSummary)
+  return toActionPlanDetailViewModel(context.document, activeTab, authorNames, municipalitySummary)
 }

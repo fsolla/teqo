@@ -38,7 +38,7 @@ describe('Contact phone normalization boundary', () => {
 
   it('normalizes once before leadership dedupe and skips canonical Contact input', async () => {
     const parsed = leadershipCreateSchema.parse({
-      plazas: [1],
+      municipalities: [1],
       name: 'Liderança normalizada',
       phone: '+55 (71) 99999-1234',
     })

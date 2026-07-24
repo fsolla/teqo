@@ -28,6 +28,7 @@ export const supporterVoteIntentionLabels: Record<SupporterVoteIntention, string
 export const supporterSourceLabels: Record<Supporter['source'], string> = {
   import_csv: 'Importação CSV',
   manual: 'Cadastro manual',
+  lideranca: 'Liderança',
   convite: 'Convite',
   evento: 'Evento',
 }
@@ -37,12 +38,18 @@ export type SupporterListState = {
   q?: string
   voteIntention?: SupporterVoteIntention
   city?: string
-  plaza?: number
+  municipality?: number
 }
 
 type RawSearchParams = CampaignListRawSearchParams
 
-export const supporterListParamNames = ['q', 'voteIntention', 'city', 'plaza', 'page'] as const
+export const supporterListParamNames = [
+  'q',
+  'voteIntention',
+  'city',
+  'municipality',
+  'page',
+] as const
 
 const supporterListParamNameSet = new Set<string>(supporterListParamNames)
 
@@ -52,14 +59,14 @@ export const parseSupporterListParams = (params: RawSearchParams): SupporterList
   const city = resolveBahiaMunicipality(firstValue(params.city)) ?? undefined
   const rawVoteIntention = firstValue(params.voteIntention)
   const voteIntention = isSupporterVoteIntention(rawVoteIntention) ? rawVoteIntention : undefined
-  const plaza = strictDecimalInteger(firstValue(params.plaza))
+  const municipality = strictDecimalInteger(firstValue(params.municipality))
 
   return {
     page: rawPage ?? 1,
     ...(q ? { q } : {}),
     ...(voteIntention ? { voteIntention } : {}),
     ...(city ? { city } : {}),
-    ...(plaza ? { plaza } : {}),
+    ...(municipality ? { municipality } : {}),
   }
 }
 
@@ -74,14 +81,14 @@ export const buildSupporterListSearchParams = (
     q: state.q,
     voteIntention: state.voteIntention,
     city: state.city,
-    plaza: state.plaza === undefined ? undefined : String(state.plaza),
+    municipality: state.municipality === undefined ? undefined : String(state.municipality),
   })
   const params = new URLSearchParams()
 
   if (canonicalState.q) params.set('q', canonicalState.q)
   if (canonicalState.voteIntention) params.set('voteIntention', canonicalState.voteIntention)
   if (canonicalState.city) params.set('city', canonicalState.city)
-  if (canonicalState.plaza) params.set('plaza', String(canonicalState.plaza))
+  if (canonicalState.municipality) params.set('municipality', String(canonicalState.municipality))
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
 
   return params

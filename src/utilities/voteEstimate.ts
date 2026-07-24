@@ -76,8 +76,8 @@ export const effectivePledgeVotesForScenario = (
   scenario: VoteEstimateScenario,
 ): number => getVoteEstimateForScenario(estimatedVotes, scenario) ?? declaredVotes
 
-/** Staff plaza total for one scenario: expected[S] ?? pledge aggregate for S. */
-export const resolvePlazaStaffVoteTotalForScenario = (
+/** Staff municipality total for one scenario: expected[S] ?? pledge aggregate for S. */
+export const resolveMunicipalityStaffVoteTotalForScenario = (
   expectedVotes: VoteEstimateScenarioFields | null | undefined,
   pledgeEffectiveTotal: number,
   scenario: VoteEstimateScenario = DEFAULT_VOTE_ESTIMATE_SCENARIO,

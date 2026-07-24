@@ -34,7 +34,7 @@ import type { ActionPlanLeadershipOption } from '@/utilities/actionPlanLeadershi
 import type { ActionPlanFormViewModel } from '@/utilities/actionPlanViewModels'
 import { fieldError } from '@/utilities/campaignFormFields'
 import { formatIsoAsBahiaDateTimeInput } from '@/utilities/campaignTime'
-import type { EligibleAdvisorOption } from '@/utilities/plazaViewModels'
+import type { EligibleAdvisorOption } from '@/utilities/municipalityViewModels'
 
 export type ActionPlanFormState = {
   message?: string
@@ -49,7 +49,7 @@ type ActionPlanFormAction = (
 ) => Promise<ActionPlanFormState>
 
 export type ActionPlanFormFieldsProps = {
-  plazaOptions: RelationOption[]
+  municipalityOptions: RelationOption[]
   organizationOptions: RelationOption[]
   advisorOptions?: EligibleAdvisorOption[]
   canManageAdvisors?: boolean
@@ -63,7 +63,7 @@ export type ActionPlanFormFieldsProps = {
 const editableStatuses = ['rascunho', 'planejado'] as const
 
 export const ActionPlanFormFields = ({
-  plazaOptions,
+  municipalityOptions,
   organizationOptions,
   advisorOptions = [],
   canManageAdvisors = false,
@@ -255,25 +255,25 @@ export const ActionPlanFormFields = ({
         </CardHeader>
         <CardContent>
           <FieldGroup>
-            <Field data-invalid={Boolean(errorFor('plaza'))}>
-              <FieldLabel htmlFor="plaza">Praça *</FieldLabel>
+            <Field data-invalid={Boolean(errorFor('municipality'))}>
+              <FieldLabel htmlFor="municipality">Praça *</FieldLabel>
               <NativeSelect
-                id="plaza"
-                name="plaza"
-                defaultValue={plan?.plazaId ? String(plan.plazaId) : ''}
+                id="municipality"
+                name="municipality"
+                defaultValue={plan?.municipalityId ? String(plan.municipalityId) : ''}
                 required
-                aria-invalid={Boolean(errorFor('plaza'))}
-                aria-describedby={errorFor('plaza') ? 'plaza-error' : undefined}
+                aria-invalid={Boolean(errorFor('municipality'))}
+                aria-describedby={errorFor('municipality') ? 'municipality-error' : undefined}
                 className="w-full **:data-[slot=native-select]:min-h-11"
               >
                 <NativeSelectOption value="">Selecione a Praça</NativeSelectOption>
-                {plazaOptions.map((option) => (
+                {municipalityOptions.map((option) => (
                   <NativeSelectOption key={option.id} value={String(option.id)}>
                     {option.name}
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
-              {errorFor('plaza') ? <FieldError id="plaza-error">{errorFor('plaza')}</FieldError> : null}
+              {errorFor('municipality') ? <FieldError id="municipality-error">{errorFor('municipality')}</FieldError> : null}
             </Field>
             <Field data-invalid={Boolean(errorFor('locality'))}>
               <FieldLabel htmlFor="locality">Local (bairro, endereço ou referência)</FieldLabel>
@@ -405,7 +405,7 @@ export const ActionPlanFormFields = ({
 
 export const ActionPlanForm = ({
   action,
-  plazaOptions,
+  municipalityOptions,
   organizationOptions,
   advisorOptions,
   canManageAdvisors = false,
@@ -434,7 +434,7 @@ export const ActionPlanForm = ({
         </Button>
       ) : null}
       <ActionPlanFormFields
-        plazaOptions={plazaOptions}
+        municipalityOptions={municipalityOptions}
         organizationOptions={organizationOptions}
         advisorOptions={advisorOptions}
         canManageAdvisors={canManageAdvisors}

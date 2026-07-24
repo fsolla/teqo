@@ -21,9 +21,8 @@ import {
   canReadCampaignStaffField,
   canSetCampaignSystemField,
   canUpdateCampaignDemand,
-  getOwnEngagedLeadership,
+  isCampaignUnrestricted,
 } from '@/utilities/campaignAccess'
-import { relationshipId } from '@/utilities/relationship'
 import { slugify } from '@/utilities/slug'
 
 const trimmedText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
@@ -54,11 +53,9 @@ const isDemandStatus = (value: unknown): value is CampaignDemandStatus =>
   typeof value === 'string' && (campaignDemandStatuses as readonly string[]).includes(value)
 
 /**
- * Workflow + authorship rules:
- * - a leader's demand is linked to their own leadership on create;
- * - a leader may edit only title/description/kind while the demand is "aberta";
+ * Workflow + authorship rules (staff-only creation):
  * - status moves follow campaignDemandTransitions; decisions on "escalada"
- *   demands are coordinator-only;
+ *   demands are coordinator/candidate-only;
  * - every status move appends a server-derived statusHistory entry.
  */
 const enforceDemandWorkflow: CollectionBeforeChangeHook = async ({
@@ -68,19 +65,9 @@ const enforceDemandWorkflow: CollectionBeforeChangeHook = async ({
   req,
 }) => {
   const actor = req.user?.collection === 'campaignUser' ? req.user : null
-  const isLeaderActor = actor?.role === 'leader'
 
   if (operation === 'create') {
     if (actor) data.createdBy = actor.id
-
-    if (isLeaderActor) {
-      const ownLeadership = await getOwnEngagedLeadership(req, actor)
-      if (!ownLeadership) {
-        throw new APIError('Somente lideranças engajadas podem abrir demandas.', 403)
-      }
-      data.leadership = ownLeadership.id
-      data.status = 'aberta'
-    }
 
     const initialStatus = isDemandStatus(data.status) ? data.status : 'aberta'
     data.status = initialStatus
@@ -101,25 +88,6 @@ const enforceDemandWorkflow: CollectionBeforeChangeHook = async ({
     : 'aberta'
   const rawNextStatus: unknown = data.status === undefined ? previousStatus : data.status
 
-  if (isLeaderActor) {
-    if (previousStatus !== 'aberta') {
-      throw new APIError('A demanda já está em análise e não pode mais ser editada.', 409)
-    }
-    if (data.status !== undefined && data.status !== previousStatus) {
-      throw new APIError('Lideranças não alteram o status da demanda.', 403)
-    }
-    const previousPlaza = relationshipId(originalDoc?.plaza)
-    if (data.plaza !== undefined && relationshipId(data.plaza) !== previousPlaza) {
-      throw new APIError('A Praça da demanda não pode ser alterada pela liderança.', 403)
-    }
-    if (
-      data.leadership !== undefined &&
-      relationshipId(data.leadership) !== relationshipId(originalDoc?.leadership)
-    ) {
-      throw new APIError('A liderança da demanda não pode ser alterada.', 403)
-    }
-  }
-
   if (!isDemandStatus(rawNextStatus)) {
     throw new APIError('Status de demanda inválido.', 400)
   }
@@ -138,9 +106,12 @@ const enforceDemandWorkflow: CollectionBeforeChangeHook = async ({
       previousStatus === 'escalada' &&
       (nextStatus === 'aprovada' || nextStatus === 'rejeitada') &&
       actor &&
-      actor.role !== 'coordinator'
+      !isCampaignUnrestricted(actor)
     ) {
-      throw new APIError('Demandas escaladas são decididas pelo Coordenador Geral.', 403)
+      throw new APIError(
+        'Demandas escaladas são decididas pelo Coordenador Geral ou Candidato.',
+        403,
+      )
     }
 
     const history = Array.isArray(originalDoc?.statusHistory) ? [...originalDoc.statusHistory] : []
@@ -173,7 +144,7 @@ export const CampaignDemand: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'title',
-    defaultColumns: ['title', 'kind', 'plaza', 'status', 'updatedAt'],
+    defaultColumns: ['title', 'kind', 'municipality', 'status', 'updatedAt'],
     description:
       'Necessidades operacionais da campanha. Custo e comprovantes são controle interno — não substituem a prestação de contas oficial (SPCE/TSE).',
   },
@@ -227,10 +198,10 @@ export const CampaignDemand: CollectionConfig = {
       maxLength: 4000,
     },
     {
-      name: 'plaza',
+      name: 'municipality',
       type: 'relationship',
-      relationTo: 'plaza',
-      label: 'Praça',
+      relationTo: 'municipality',
+      label: 'Município',
       required: true,
       index: true,
     },

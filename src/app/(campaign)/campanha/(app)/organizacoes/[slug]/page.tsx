@@ -12,7 +12,7 @@ import { actionPlanStatusLabels, actionPlanStatuses } from '@/lib/schemas/action
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadPlazaOptions } from '@/utilities/campaignRelationOptions'
+import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { loadOrganizationDetail } from '@/utilities/organizationData'
 import { updateOrganizationFormAction } from './formActions'
 
@@ -36,7 +36,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
   const organization = await loadOrganizationDetail(payload, user, slug)
   if (!organization) notFound()
 
-  const plazaOptions = await loadPlazaOptions(payload, user)
+  const municipalityOptions = await loadMunicipalityOptions(payload, user)
 
   return (
     <CampaignPageShell>
@@ -51,8 +51,8 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
           <h1 className="text-2xl font-semibold tracking-tight">{organization.name}</h1>
           <Badge variant="secondary">{organizationKindLabels[organization.kind]}</Badge>
         </div>
-        {organization.plazaNames.length ? (
-          <p className="text-muted-foreground">Atua em {organization.plazaNames.join(', ')}</p>
+        {organization.municipalityNames.length ? (
+          <p className="text-muted-foreground">Atua em {organization.municipalityNames.join(', ')}</p>
         ) : null}
         {organization.notes ? (
           <p className="whitespace-pre-wrap text-sm text-muted-foreground">{organization.notes}</p>
@@ -135,13 +135,13 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
           Editar organização
         </h2>
         <OrganizationForm
-          plazaOptions={plazaOptions}
+          municipalityOptions={municipalityOptions}
           formAction={updateOrganizationFormAction}
           initial={{
             id: organization.id,
             kind: organization.kind,
             notes: organization.notes,
-            plazaIDs: organization.plazaIDs,
+            municipalityIDs: organization.municipalityIDs,
           }}
         />
       </section>

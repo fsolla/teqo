@@ -4,11 +4,13 @@ import {
   HomeIcon,
   InboxIcon,
   MapPinIcon,
+  Users2Icon,
   UsersIcon,
   type LucideIcon,
 } from 'lucide-react'
 
 import type { CampaignUser } from '@/payload-types'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { canAccessSupporterArea } from '@/utilities/supporterUi'
 
 export type CampaignNavItem = {
@@ -19,8 +21,9 @@ export type CampaignNavItem = {
 
 const staffNav: CampaignNavItem[] = [
   { title: 'Início', href: '/campanha', icon: HomeIcon },
-  { title: 'Praças', href: '/campanha/pracas', icon: MapPinIcon },
+  { title: 'Municípios', href: '/campanha/municipios', icon: MapPinIcon },
   { title: 'Lideranças', href: '/campanha/liderancas', icon: HandshakeIcon },
+  { title: 'Dobradinhas', href: '/campanha/dobradinhas', icon: Users2Icon },
   { title: 'Planos', href: '/campanha/planos', icon: CalendarDaysIcon },
   { title: 'Demandas', href: '/campanha/demandas', icon: InboxIcon },
   { title: 'Apoiadores', href: '/campanha/apoiadores', icon: UsersIcon },
@@ -28,9 +31,7 @@ const staffNav: CampaignNavItem[] = [
 
 const leaderNav: CampaignNavItem[] = [
   { title: 'Início', href: '/campanha', icon: HomeIcon },
-  { title: 'Minhas Praças', href: '/campanha/pracas', icon: MapPinIcon },
-  { title: 'Planos', href: '/campanha/planos', icon: CalendarDaysIcon },
-  { title: 'Demandas', href: '/campanha/demandas', icon: InboxIcon },
+  { title: 'Meus contatos', href: '/campanha', icon: UsersIcon },
 ]
 
 export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] => {
@@ -42,11 +43,14 @@ export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] =>
 }
 
 /**
- * Compact set for the mobile bottom bar (max 5 items with a home slot);
- * organizações fica acessível pela sidebar e pelas fichas.
+ * Compact set for the mobile bottom bar (max 5 items with a home slot).
  */
-export const getCampaignBottomNav = (role: CampaignUser['role']): CampaignNavItem[] =>
-  getCampaignNav(role).filter((item) => item.href !== '/campanha/apoiadores')
+export const getCampaignBottomNav = (role: CampaignUser['role']): CampaignNavItem[] => {
+  const nav = getCampaignNav(role)
+  if (role === 'leader') return nav
+
+  return nav.filter((item) => item.href !== '/campanha/apoiadores').slice(0, 5)
+}
 
 /** Home matches only exactly; other items also match nested paths. */
 export const isCampaignNavActive = (pathname: string, href: string): boolean => {
@@ -55,3 +59,6 @@ export const isCampaignNavActive = (pathname: string, href: string): boolean => 
   }
   return pathname === href || pathname.startsWith(`${href}/`)
 }
+
+export const isCampaignStaffRole = (role: CampaignUser['role']): boolean =>
+  isCampaignStaff({ collection: 'campaignUser', role } as CampaignUser)

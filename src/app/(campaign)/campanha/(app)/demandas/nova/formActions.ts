@@ -23,13 +23,13 @@ export const createDemandFormAction = async (
         ? (rawKind as CampaignDemandKind)
         : 'outro',
       description: optionalFormText(formData, 'description'),
-      plaza: requiredRelationshipFormValue(formData, 'plazaId'),
+      municipality: requiredRelationshipFormValue(formData, 'municipalityId'),
     })
     createdSlug = demand.slug
   } catch (error) {
     return mapCampaignFormActionError({
       error,
-      safeMessages: ['Somente lideranças engajadas podem abrir demandas.'],
+      safeMessages: ['Somente a coordenação e a assessoria podem abrir demandas.'],
       genericMessage: 'Não foi possível abrir a demanda. Verifique os dados e tente novamente.',
     })
   }

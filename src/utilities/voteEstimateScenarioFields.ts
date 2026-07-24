@@ -3,7 +3,7 @@ import type { Field } from 'payload'
 import { canManageCampaignStaffField, canReadCampaignStaffField } from '@/utilities/campaignAccess'
 import { voteEstimateScenarioLabels } from '@/utilities/voteEstimate'
 
-/** Shared staff-only trio for pledge estimates and plaza expected totals. */
+/** Shared staff-only trio for pledge estimates and municipality expected totals. */
 export const voteEstimateScenarioGroupFields = (): Field[] => [
   {
     name: 'pessimistic',

@@ -9,6 +9,7 @@ export const CAMPAIGN_AVATAR_EMPTY_FILE_MESSAGE = 'O arquivo enviado está vazio
 export const campaignRoleLabels: Record<CampaignUser['role'], string> = {
   coordinator: 'Coordenador Geral',
   advisor: 'Assessor',
+  candidate: 'Candidato',
   leader: 'Liderança',
 }
 
@@ -26,18 +27,10 @@ export const campaignUserShellView = (
   avatarUrl: mediaDocumentUrl(user.avatar),
 })
 
-export const CAMPAIGN_AVATAR_MIME_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-])
+export const CAMPAIGN_AVATAR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 export const campaignUserInitials = (name: string): string => {
-  const parts = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
+  const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2)
 
   if (parts.length === 0) return '?'
 

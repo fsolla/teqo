@@ -1,0 +1,325 @@
+{
+  "provenance": {
+    "salvador": {
+      "description": "Circunscrição oficial por bairro das ZE 1–19, transcrita do Anexo I da Resolução Administrativa TRE-BA nº 2/2017.",
+      "url": "https://www.tre-ba.jus.br/legislacao/compilada/resolucao/2017/resolucao-administrativa-no-2-de-10-de-maio-de-2017",
+      "resolution": "RA 02/2017",
+      "accessed": "2026-07-21"
+    }
+  },
+  "zoneCount": 19,
+  "assignments": [
+    {
+      "municipalitySlug": "salvador-ze-1",
+      "city": "Salvador",
+      "zoneNumber": 1,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Alto das Pombas",
+        "Barra",
+        "Calabar",
+        "Canela",
+        "Centro",
+        "Centro Histórico",
+        "Garcia",
+        "Graça",
+        "Vitória"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-2",
+      "city": "Salvador",
+      "zoneNumber": 2,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Amaralina",
+        "Chapada do Rio Vermelho",
+        "Engenho Velho da Federação",
+        "Federação",
+        "Ondina",
+        "Rio Vermelho"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-3",
+      "city": "Salvador",
+      "zoneNumber": 3,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Baixa de Quintas",
+        "Cidade Nova",
+        "Fazenda Grande do Retiro",
+        "IAPI",
+        "Pau Miúdo",
+        "Pero Vaz",
+        "Santa Mônica"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-4",
+      "city": "Salvador",
+      "zoneNumber": 4,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Coutos",
+        "Fazenda Coutos",
+        "Ilha de Bom Jesus dos Passos",
+        "Ilha de Maré",
+        "Ilha dos Frades",
+        "Nova Constituinte",
+        "Paripe",
+        "Periperi (parte ao norte da Rua das Pedrinhas)",
+        "São Tomé"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-5",
+      "city": "Salvador",
+      "zoneNumber": 5,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Barreiras",
+        "Cabula",
+        "Engomadeira",
+        "Mata Escura",
+        "Resgate",
+        "Retiro",
+        "São Gonçalo"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-6",
+      "city": "Salvador",
+      "zoneNumber": 6,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Acupe",
+        "Boa Vista de Brotas",
+        "Brotas",
+        "Candeal",
+        "Engenho Velho de Brotas"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-7",
+      "city": "Salvador",
+      "zoneNumber": 7,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Barbalho",
+        "Barris",
+        "Comércio",
+        "Cosme de Farias",
+        "Luiz Anselmo",
+        "Macaúbas",
+        "Matatu",
+        "Nazaré",
+        "Santo Agostinho",
+        "Santo Antônio",
+        "Saúde",
+        "Tororó",
+        "Vila Laura"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-8",
+      "city": "Salvador",
+      "zoneNumber": 8,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Cajazeiras II",
+        "Cajazeiras IV",
+        "Cajazeiras V",
+        "Cajazeiras VI",
+        "Cajazeiras VII",
+        "Cajazeiras VIII",
+        "Campinas de Pirajá",
+        "Marechal Rondon",
+        "Moradas da Lagoa",
+        "Palestina",
+        "Pirajá",
+        "Valéria"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-9",
+      "city": "Salvador",
+      "zoneNumber": 9,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Boa Viagem",
+        "Bonfim",
+        "Jardim Cruzeiro",
+        "Mangueira",
+        "Massaranduba",
+        "Monte Serrat",
+        "Ribeira",
+        "Santa Luzia",
+        "Uruguai",
+        "Vila Ruy Barbosa"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-10",
+      "city": "Salvador",
+      "zoneNumber": 10,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Bairro da Paz",
+        "Boca do Rio",
+        "Costa Azul",
+        "Imbuí",
+        "Jardim Armação",
+        "Patamares",
+        "Piatã",
+        "Pituaçu",
+        "STIEP"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-11",
+      "city": "Salvador",
+      "zoneNumber": 11,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Águas Claras",
+        "Calabetão",
+        "Castelo Branco",
+        "Dom Avelar",
+        "Granjas Rurais Presidente Vargas",
+        "Jardim Cajazeiras",
+        "Jardim Santo Inácio",
+        "Pau da Lima",
+        "Porto Seco Pirajá",
+        "Sete de Abril",
+        "Vila Canária"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-12",
+      "city": "Salvador",
+      "zoneNumber": 12,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Aeroporto",
+        "Alto do Coqueirinho",
+        "Areia Branca",
+        "Itapuã",
+        "Itinga",
+        "Jardim das Margaridas",
+        "São Cristóvão",
+        "Stella Maris"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-13",
+      "city": "Salvador",
+      "zoneNumber": 13,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Caminho das Árvores",
+        "Itaigara",
+        "Nordeste de Amaralina",
+        "Pituba",
+        "Santa Cruz",
+        "Vale das Pedrinhas"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-14",
+      "city": "Salvador",
+      "zoneNumber": 14,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": ["Arenoso", "Novo Horizonte", "São Marcos", "Sussuarana", "Tancredo Neves"]
+    },
+    {
+      "municipalitySlug": "salvador-ze-15",
+      "city": "Salvador",
+      "zoneNumber": 15,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Arraial do Retiro",
+        "Boa Vista de São Caetano",
+        "Bom Juá",
+        "Capelinha",
+        "Lobato",
+        "São Caetano"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-16",
+      "city": "Salvador",
+      "zoneNumber": 16,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Cabula VI",
+        "Canabrava",
+        "Centro Administrativo da Bahia",
+        "Doron",
+        "Narandiba",
+        "Nova Sussuarana",
+        "Pernambués",
+        "Saboeiro",
+        "São Rafael",
+        "Saramandaia",
+        "Vale dos Lagos"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-17",
+      "city": "Salvador",
+      "zoneNumber": 17,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Alto da Terezinha",
+        "Alto do Cabrito",
+        "Itacaranha",
+        "Periperi (parte ao sul da Rua das Pedrinhas)",
+        "Plataforma",
+        "Praia Grande",
+        "Rio Sena",
+        "São João do Cabrito"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-18",
+      "city": "Salvador",
+      "zoneNumber": 18,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Caixa D'água",
+        "Calçada",
+        "Caminho de Areia",
+        "Curuzu",
+        "Lapinha",
+        "Liberdade",
+        "Mares",
+        "Roma"
+      ]
+    },
+    {
+      "municipalitySlug": "salvador-ze-19",
+      "city": "Salvador",
+      "zoneNumber": 19,
+      "source": "tre-ra-02-2017",
+      "neighborhoods": [
+        "Boca da Mata",
+        "Cajazeiras X",
+        "Cajazeiras XI",
+        "Cassange",
+        "Fazenda Grande I",
+        "Fazenda Grande II",
+        "Fazenda Grande III",
+        "Fazenda Grande IV",
+        "Jaguaripe I",
+        "Jardim Nova Esperança",
+        "Mussurunga",
+        "Nova Brasília",
+        "Nova Esperança",
+        "Novo Marotinho",
+        "Trobogy"
+      ]
+    }
+  ],
+  "evidenceSha256": "3f096fc0ac41eb92432d4b0a7c98e90454ab21fe919af3640fe24323422793ac"
+}

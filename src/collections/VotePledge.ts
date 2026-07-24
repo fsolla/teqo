@@ -22,11 +22,11 @@ import {
 } from '@/utilities/voteEstimateScenarioFields'
 
 /**
- * Vote pledge per leadership × plaza. The leader DECLARES how many votes they
+ * Vote pledge per leadership × municipality. The leader DECLARES how many votes they
  * are bringing (`declaredVotes` — the only number they ever see); staff record
  * their own ESTIMATE of the real value (`estimatedVotes` pessimistic/central/
  * optimistic), which is never serialized to the leader (field access denies
- * read). Plaza aggregates use `estimated[S] ?? declared` on staff surfaces only.
+ * read). Municipality aggregates use `estimated[S] ?? declared` on staff surfaces only.
  */
 
 const normalizeEstimateGroup = (
@@ -61,17 +61,17 @@ const validatePledgeIntegrity: CollectionBeforeChangeHook = async ({
   req,
 }) => {
   const leadershipID = relationshipId(data.leadership ?? originalDoc?.leadership)
-  const plazaID = relationshipId(data.plaza ?? originalDoc?.plaza)
-  if (!leadershipID || !plazaID) {
+  const municipalityID = relationshipId(data.municipality ?? originalDoc?.municipality)
+  if (!leadershipID || !municipalityID) {
     throw new APIError('Informe a liderança e a Praça do compromisso de votos.', 400)
   }
 
   if (operation === 'update') {
     const previousLeadership = relationshipId(originalDoc?.leadership)
-    const previousPlaza = relationshipId(originalDoc?.plaza)
+    const previousMunicipality = relationshipId(originalDoc?.municipality)
     if (
       (data.leadership !== undefined && leadershipID !== previousLeadership) ||
-      (data.plaza !== undefined && plazaID !== previousPlaza)
+      (data.municipality !== undefined && municipalityID !== previousMunicipality)
     ) {
       throw new APIError('A liderança e a Praça do compromisso não podem ser alteradas.', 409)
     }
@@ -84,11 +84,11 @@ const validatePledgeIntegrity: CollectionBeforeChangeHook = async ({
     overrideAccess: true,
     req,
   })
-  const linkedPlazaIDs = (Array.isArray(leadership.plazas) ? leadership.plazas : [])
+  const linkedMunicipalityIDs = (Array.isArray(leadership.municipalities) ? leadership.municipalities : [])
     .map(relationshipId)
     .filter((id): id is number => id !== null)
 
-  if (!linkedPlazaIDs.includes(plazaID)) {
+  if (!linkedMunicipalityIDs.includes(municipalityID)) {
     throw new APIError('A liderança precisa estar vinculada à Praça para declarar votos nela.', 409)
   }
 
@@ -137,7 +137,7 @@ export const VotePledge: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'id',
-    defaultColumns: ['leadership', 'plaza', 'declaredVotes', 'estimatedVotes.central', 'updatedAt'],
+    defaultColumns: ['leadership', 'municipality', 'declaredVotes', 'estimatedVotes.central', 'updatedAt'],
   },
   access: {
     create: canCreateVotePledge,
@@ -147,7 +147,7 @@ export const VotePledge: CollectionConfig = {
   },
   indexes: [
     {
-      fields: ['leadership', 'plaza'],
+      fields: ['leadership', 'municipality'],
       unique: true,
     },
   ],
@@ -164,9 +164,9 @@ export const VotePledge: CollectionConfig = {
       index: true,
     },
     {
-      name: 'plaza',
+      name: 'municipality',
       type: 'relationship',
-      relationTo: 'plaza',
+      relationTo: 'municipality',
       label: 'Praça',
       required: true,
       index: true,

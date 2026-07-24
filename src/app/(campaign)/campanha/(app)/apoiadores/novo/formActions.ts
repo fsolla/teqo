@@ -26,7 +26,7 @@ export type SupporterFormValues = {
   phone?: string
   email?: string
   city?: string
-  plaza?: string
+  municipality?: string
   voteIntention?: string
 }
 
@@ -65,20 +65,20 @@ export const createSupporterFormAction = async (
       phone: optionalFormText(formData, 'phone'),
       email: optionalFormText(formData, 'email'),
       city: optionalFormText(formData, 'city'),
-      plaza: optionalFormText(formData, 'plaza'),
+      municipality: optionalFormText(formData, 'municipality'),
       voteIntention: optionalFormText(formData, 'voteIntention'),
     }
 
     const phone = sanitizeBrazilianPhoneInput(values.phone ?? '')
     const voteIntention = values.voteIntention?.trim() || undefined
 
-    const plaza = nullableRelationshipFormValue(formData, 'plaza')
+    const municipality = nullableRelationshipFormValue(formData, 'municipality')
     const input = supporterCreateSchema.parse({
       name: values.name ?? '',
       phone,
       email: values.email,
       city: values.city,
-      ...(plaza ? { plaza } : {}),
+      ...(municipality ? { municipality } : {}),
       ...(voteIntention ? { voteIntention } : {}),
       consentAccepted: checkboxFormValue(formData, 'consentAccepted') ? true : undefined,
       voteIntentionConsentAccepted: voteIntention

@@ -9,7 +9,7 @@ import { LeadershipForm } from '@/components/campaign/LeadershipForm'
 import { Button } from '@/components/ui/button'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadOrganizationOptions, loadPlazaOptions } from '@/utilities/campaignRelationOptions'
+import { loadOrganizationOptions, loadMunicipalityOptions, loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
 import { createLeadershipFormAction } from './formActions'
 
 type NewLeadershipPageProps = {
@@ -22,19 +22,20 @@ export default async function NewLeadershipPage({ searchParams }: NewLeadershipP
   if (!user) redirect('/campanha/login')
   if (!isCampaignStaff(user)) redirect('/campanha')
 
-  const [plazaOptions, organizationOptions] = await Promise.all([
-    loadPlazaOptions(payload, user),
+  const [municipalityOptions, organizationOptions, stateDeputyOptions] = await Promise.all([
+    loadMunicipalityOptions(payload, user),
     loadOrganizationOptions(payload, user),
+    loadStateDeputyOptions(payload, user),
   ])
 
-  const rawInitialPlaza = Array.isArray(rawSearchParams.plaza)
-    ? rawSearchParams.plaza[0]
-    : rawSearchParams.plaza
-  const initialPlazaID =
-    rawInitialPlaza && /^[1-9]\d*$/.test(rawInitialPlaza) ? Number(rawInitialPlaza) : null
-  const initialPlazaIDs =
-    initialPlazaID && plazaOptions.some((option) => option.id === initialPlazaID)
-      ? [initialPlazaID]
+  const rawInitialMunicipality = Array.isArray(rawSearchParams.municipality)
+    ? rawSearchParams.municipality[0]
+    : rawSearchParams.municipality
+  const initialMunicipalityID =
+    rawInitialMunicipality && /^[1-9]\d*$/.test(rawInitialMunicipality) ? Number(rawInitialMunicipality) : null
+  const initialMunicipalityIDs =
+    initialMunicipalityID && municipalityOptions.some((option) => option.id === initialMunicipalityID)
+      ? [initialMunicipalityID]
       : []
 
   return (
@@ -54,9 +55,10 @@ export default async function NewLeadershipPage({ searchParams }: NewLeadershipP
       </header>
 
       <LeadershipForm
-        plazaOptions={plazaOptions}
+        municipalityOptions={municipalityOptions}
         organizationOptions={organizationOptions}
-        initialPlazaIDs={initialPlazaIDs}
+        stateDeputyOptions={stateDeputyOptions}
+        initialMunicipalityIDs={initialMunicipalityIDs}
         formAction={createLeadershipFormAction}
       />
     </CampaignPageShell>

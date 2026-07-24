@@ -11,8 +11,8 @@ import {
 } from '@/utilities/campaignFormActionError'
 
 const safeMessages = [
-  'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novas Praças.',
-  'Você só pode vincular lideranças às Praças que assessora.',
+  'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novos municípios.',
+  'Você só pode vincular lideranças aos municípios que assessora.',
   'Somente a coordenação e a assessoria podem gerenciar lideranças.',
   'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.',
 ] as const
@@ -30,8 +30,9 @@ export const createLeadershipFormAction = async (
       name: requiredFormText(formData, 'name'),
       phone: requiredFormText(formData, 'phone'),
       email: optionalFormText(formData, 'email'),
-      plazas: repeatedRelationshipFormValues(formData, 'plazas'),
+      municipalities: repeatedRelationshipFormValues(formData, 'municipalities'),
       organizations: repeatedRelationshipFormValues(formData, 'organizations'),
+      stateDeputies: repeatedRelationshipFormValues(formData, 'stateDeputies'),
       sector: leadershipSectors.includes(sector as (typeof leadershipSectors)[number])
         ? (sector as (typeof leadershipSectors)[number])
         : undefined,

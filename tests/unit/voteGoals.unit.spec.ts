@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { plazaStrategyUpdateSchema } from '@/lib/schemas/plaza'
+import { municipalityStrategyUpdateSchema } from '@/lib/schemas/municipality'
 import {
   aggregateVoteGoals,
   countHighPriorityEntries,
@@ -10,9 +10,9 @@ import {
 } from '@/utilities/voteGoals'
 
 describe('vote goals schema and aggregates', () => {
-  it('accepts vote goals and priority on the plaza strategy schema', () => {
-    const parsed = plazaStrategyUpdateSchema.parse({
-      plaza: 1,
+  it('accepts vote goals and priority on the municipality strategy schema', () => {
+    const parsed = municipalityStrategyUpdateSchema.parse({
+      municipality: 1,
       voteGoals: { good: 1000, regular: 800, minimum: 500 },
       priority: 'alta',
     })
@@ -21,8 +21,8 @@ describe('vote goals schema and aggregates', () => {
     expect(parsed.priority).toBe('alta')
   })
 
-  it('aggregates vote goals and counts high-priority plazas', () => {
-    const plazas = [
+  it('aggregates vote goals and counts high-priority municipalities', () => {
+    const municipalities = [
       {
         voteGoals: { good: 1000, regular: 800, minimum: 500 },
         priority: 'alta' as const,
@@ -33,14 +33,14 @@ describe('vote goals schema and aggregates', () => {
       },
     ]
 
-    expect(aggregateVoteGoals(plazas)).toEqual({
+    expect(aggregateVoteGoals(municipalities)).toEqual({
       good: 1200,
       regular: 950,
       minimum: 600,
       highPriorityCount: 1,
     })
-    expect(sumVoteGoals(plazas)).toEqual({ good: 1200, regular: 950, minimum: 600 })
-    expect(countHighPriorityEntries(plazas)).toBe(1)
+    expect(sumVoteGoals(municipalities)).toEqual({ good: 1200, regular: 950, minimum: 600 })
+    expect(countHighPriorityEntries(municipalities)).toBe(1)
     expect(voteGoalProgressPercent(400, 800)).toBe(50)
     expect(voteGoalProgressPercent(null, 800)).toBeNull()
   })

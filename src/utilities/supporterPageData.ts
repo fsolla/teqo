@@ -2,12 +2,12 @@ import type { Payload } from 'payload'
 
 import type { RelationOption } from '@/components/campaign/RelationMultiSelect'
 import type { CampaignUser, Consent, Supporter } from '@/payload-types'
-import { getAdvisorPlazaIds } from '@/utilities/campaignAccess'
+import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import {
   getSupporterRegistrationConsent,
   getSupporterVoteIntentionConsent,
 } from '@/utilities/campaignConsent'
-import { loadPlazaOptions } from '@/utilities/campaignRelationOptions'
+import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { computeSupporterListOverviewAggregate } from '@/utilities/supporterListOverviewAggregate'
 import {
   buildSupporterListWhere,
@@ -34,7 +34,7 @@ export class SupporterNotFoundError extends Error {
 const supporterListSelect = {
   voteIntention: true,
   contact: true,
-  plaza: true,
+  municipality: true,
 } as const
 
 const supporterDetailSelect = {
@@ -44,7 +44,7 @@ const supporterDetailSelect = {
   voteIntentionConsentedAt: true,
   createdAt: true,
   contact: true,
-  plaza: true,
+  municipality: true,
   createdBy: true,
 } as const
 
@@ -83,17 +83,17 @@ export const loadSupporterListOverviewData = async (
   user: CampaignUser,
   state: SupporterListState,
   total: number,
-  advisorPlazaIds?: number[],
+  advisorMunicipalityIds?: number[],
 ): Promise<SupporterListOverviewViewModel | null> =>
-  computeSupporterListOverviewAggregate(payload, user, state, total, advisorPlazaIds)
+  computeSupporterListOverviewAggregate(payload, user, state, total, advisorMunicipalityIds)
 
 export type SupportersPageData = {
   result: Awaited<ReturnType<typeof loadSupporterListPageData>>['result']
   state: SupporterListState
   redirectHref?: string
-  plazaOptions: RelationOption[]
+  municipalityOptions: RelationOption[]
   overview: SupporterListOverviewViewModel | null
-  advisorPlazaIds?: number[]
+  advisorMunicipalityIds?: number[]
 }
 
 export const loadSupportersPageData = async (
@@ -102,25 +102,25 @@ export const loadSupportersPageData = async (
   searchParams: Promise<SupporterListSearchParams> | SupporterListSearchParams,
 ): Promise<SupportersPageData> => {
   const advisorPromise =
-    user.role === 'advisor' ? getAdvisorPlazaIds(payload, user.id) : Promise.resolve(undefined)
+    user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : Promise.resolve(undefined)
 
-  const [{ result, state, redirectHref }, advisorPlazaIds] = await Promise.all([
+  const [{ result, state, redirectHref }, advisorMunicipalityIds] = await Promise.all([
     loadSupporterListPageData(payload, user, searchParams),
     advisorPromise,
   ])
 
-  const [plazaOptions, overview] = await Promise.all([
-    loadPlazaOptions(payload, user),
-    loadSupporterListOverviewData(payload, user, state, result.totalDocs, advisorPlazaIds),
+  const [municipalityOptions, overview] = await Promise.all([
+    loadMunicipalityOptions(payload, user),
+    loadSupporterListOverviewData(payload, user, state, result.totalDocs, advisorMunicipalityIds),
   ])
 
   return {
     result,
     state,
     redirectHref,
-    plazaOptions,
+    municipalityOptions,
     overview,
-    advisorPlazaIds,
+    advisorMunicipalityIds,
   }
 }
 
@@ -146,27 +146,27 @@ export const loadSupporterDetailPageData = async (
 }
 
 export type SupporterCreatePageData = {
-  plazaOptions: RelationOption[]
+  municipalityOptions: RelationOption[]
   registrationConsentConfigured: boolean
   voteIntentionConsentConfigured: boolean
-  requirePlaza: boolean
+  requireMunicipality: boolean
 }
 
 export const loadSupporterCreatePageData = async (
   payload: Payload,
   user: CampaignUser,
 ): Promise<SupporterCreatePageData> => {
-  const [plazaOptions, registrationConsent, voteIntentionConsent] = await Promise.all([
-    loadPlazaOptions(payload, user),
+  const [municipalityOptions, registrationConsent, voteIntentionConsent] = await Promise.all([
+    loadMunicipalityOptions(payload, user),
     getSupporterRegistrationConsent(payload),
     getSupporterVoteIntentionConsent(payload),
   ])
 
   return {
-    plazaOptions,
+    municipalityOptions,
     registrationConsentConfigured: Boolean(registrationConsent),
     voteIntentionConsentConfigured: Boolean(voteIntentionConsent),
-    requirePlaza: user.role === 'advisor',
+    requireMunicipality: user.role === 'advisor',
   }
 }
 

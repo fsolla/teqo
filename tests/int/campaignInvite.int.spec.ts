@@ -189,7 +189,7 @@ const withBlockedInviteAction = async <Result>({
 // Builds the owned Contact → Leadership graph required by invite scenarios.
 const createInviteLeadershipGraph = async (
   actor: CampaignUser,
-  plaza: number,
+  municipality: number,
   supportStatus: 'engajado' | 'a_abordar' = 'engajado',
 ) => {
   const contact = await campaignFixtures().createContact({
@@ -198,7 +198,7 @@ const createInviteLeadershipGraph = async (
   })
   const leadership = await campaignFixtures().createLeadership({
     contact,
-    plazas: [plaza],
+    municipalities: [municipality],
     supportStatus,
     notes: 'Nota interna protegida',
     createdBy: actor,
@@ -228,8 +228,8 @@ const createInviteThroughAction = async (
 // Retained as a scenario builder: recovery tests need the same linked
 // Contact → Leadership → CampaignUser → login-invite graph every time.
 const createLinkedLoginInvite = async (actor: CampaignUser) => {
-  const plaza = await campaignFixtures().getPlaza()
-  const { contact, leadership } = await createInviteLeadershipGraph(actor, plaza.id)
+  const municipality = await campaignFixtures().getMunicipality()
+  const { contact, leadership } = await createInviteLeadershipGraph(actor, municipality.id)
   const account = await payload.create({
     collection: 'campaignUser',
     data: {
@@ -591,7 +591,7 @@ describe('campaign invite domain', () => {
       leadership: 999,
       supportStatus: 'engajado',
       notes: 'forged',
-      plazas: [999],
+      municipalities: [999],
       user: 999,
       consent: 999,
     })
@@ -619,8 +619,8 @@ describe('campaign invite domain', () => {
         where: { key: { equals: 'lideranca-autopreenchimento' } },
       })
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const { leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const { leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
 
       await expect(
         createInviteThroughAction(coordinator, {
@@ -637,9 +637,9 @@ describe('campaign invite domain', () => {
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
       const assigned = await campaignFixtures().createCampaignUser('advisor')
       const outsider = await campaignFixtures().createCampaignUser('advisor')
-      const plaza = await campaignFixtures().getPlaza()
-      await campaignFixtures().assignPlazaAdvisors(plaza, [assigned])
-      const { leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      await campaignFixtures().assignMunicipalityAdvisors(municipality, [assigned])
+      const { leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
 
       await expect(
         createInviteThroughAction(outsider, {
@@ -682,8 +682,8 @@ describe('campaign invite domain', () => {
     async () => {
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
       const leaderAccount = await campaignFixtures().createCampaignUser('leader')
-      const plaza = await campaignFixtures().getPlaza()
-      const { leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const { leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
 
       await expect(
         createInviteThroughAction(leaderAccount, {
@@ -699,8 +699,8 @@ describe('campaign invite domain', () => {
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const { leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const { leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
 
       const first = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
@@ -747,8 +747,8 @@ describe('campaign invite domain', () => {
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const { leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const { leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
       const first = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
@@ -921,8 +921,8 @@ describe('campaign invite domain', () => {
     async (consent) => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
       const invite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
@@ -938,7 +938,7 @@ describe('campaign invite domain', () => {
         consentAccepted: true as const,
         supportStatus: 'negativo',
         notes: 'tentativa de sobrescrita',
-        plazas: [999],
+        municipalities: [999],
         user: 999,
       }
 
@@ -970,7 +970,7 @@ describe('campaign invite domain', () => {
         sectorNotes: 'Associação local',
         supportStatus: 'engajado',
         notes: 'Nota interna protegida',
-        plazas: [plaza.id],
+        municipalities: [municipality.id],
         consent: consent.id,
       })
       expect(updatedLeadership.user).toBeNull()
@@ -982,8 +982,8 @@ describe('campaign invite domain', () => {
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
       const invite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
@@ -1042,9 +1042,9 @@ describe('campaign invite domain', () => {
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const target = await createInviteLeadershipGraph(coordinator, plaza.id)
-      const owner = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const target = await createInviteLeadershipGraph(coordinator, municipality.id)
+      const owner = await createInviteLeadershipGraph(coordinator, municipality.id)
       const invite = await createInviteThroughAction(coordinator, {
         leadership: target.leadership.id,
         kind: 'autopreenchimento',
@@ -1077,10 +1077,10 @@ describe('campaign invite domain', () => {
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const firstPlaza = await campaignFixtures().getPlaza()
-      const secondPlaza = await campaignFixtures().getPlaza()
-      const first = await createInviteLeadershipGraph(coordinator, firstPlaza.id)
-      const second = await createInviteLeadershipGraph(coordinator, secondPlaza.id)
+      const firstMunicipality = await campaignFixtures().getMunicipality()
+      const secondMunicipality = await campaignFixtures().getMunicipality()
+      const first = await createInviteLeadershipGraph(coordinator, firstMunicipality.id)
+      const second = await createInviteLeadershipGraph(coordinator, secondMunicipality.id)
       const firstInvite = await createInviteThroughAction(coordinator, {
         leadership: first.leadership.id,
         kind: 'autopreenchimento',
@@ -1132,9 +1132,9 @@ describe('campaign invite domain', () => {
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const first = await createInviteLeadershipGraph(coordinator, plaza.id)
-      const second = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const first = await createInviteLeadershipGraph(coordinator, municipality.id)
+      const second = await createInviteLeadershipGraph(coordinator, municipality.id)
       const firstInvite = await createInviteThroughAction(coordinator, {
         leadership: first.leadership.id,
         kind: 'autopreenchimento',
@@ -1167,8 +1167,8 @@ describe('campaign invite domain', () => {
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const cleared = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const cleared = await createInviteLeadershipGraph(coordinator, municipality.id)
       await payload.update({
         collection: 'contact',
         id: cleared.contact.id,
@@ -1202,7 +1202,7 @@ describe('campaign invite domain', () => {
         payload.findByID({ collection: 'leadership', id: cleared.leadership.id, depth: 0 }),
       ).resolves.toMatchObject({ sector: null, sectorNotes: null })
 
-      const unchanged = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const unchanged = await createInviteLeadershipGraph(coordinator, municipality.id)
       await payload.update({
         collection: 'contact',
         id: unchanged.contact.id,
@@ -1239,9 +1239,9 @@ describe('campaign invite domain', () => {
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const engaged = await createInviteLeadershipGraph(coordinator, plaza.id, 'engajado')
-      const inactive = await createInviteLeadershipGraph(coordinator, plaza.id, 'a_abordar')
+      const municipality = await campaignFixtures().getMunicipality()
+      const engaged = await createInviteLeadershipGraph(coordinator, municipality.id, 'engajado')
+      const inactive = await createInviteLeadershipGraph(coordinator, municipality.id, 'a_abordar')
 
       await expect(
         createInviteThroughAction(coordinator, {
@@ -1317,8 +1317,8 @@ describe('campaign invite domain', () => {
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
       const invite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'login',
@@ -1369,8 +1369,8 @@ describe('campaign invite domain', () => {
         },
       })
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
       const account = await payload.create({
         collection: 'campaignUser',
         data: {
@@ -1424,8 +1424,8 @@ describe('campaign invite domain', () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const { getCampaignInvitePageData } = await import('@/utilities/campaignInvitePageData')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
       const firstInvite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
@@ -1513,8 +1513,8 @@ describe('campaign invite domain', () => {
     async () => {
       const records = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
       const victim = await payload.create({
         collection: 'campaignUser',
         data: {
@@ -1556,10 +1556,10 @@ describe('campaign invite domain', () => {
   itWithInviteConsent('rejects lateral takeover of another leadership account', async () => {
     const records = await import('@/app/(campaign)/campanha/actions/invite')
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-    const targetPlaza = await campaignFixtures().getPlaza()
-    const otherPlaza = await campaignFixtures().getPlaza()
-    const target = await createInviteLeadershipGraph(coordinator, targetPlaza.id)
-    const other = await createInviteLeadershipGraph(coordinator, otherPlaza.id)
+    const targetMunicipality = await campaignFixtures().getMunicipality()
+    const otherMunicipality = await campaignFixtures().getMunicipality()
+    const target = await createInviteLeadershipGraph(coordinator, targetMunicipality.id)
+    const other = await createInviteLeadershipGraph(coordinator, otherMunicipality.id)
     const lateralAccount = await payload.create({
       collection: 'campaignUser',
       data: {
@@ -1601,8 +1601,8 @@ describe('campaign invite domain', () => {
     async (consent) => {
       const records = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
       const invite = await createInviteThroughAction(coordinator, {
         leadership: leadership.id,
         kind: 'autopreenchimento',
@@ -1653,8 +1653,8 @@ describe('campaign invite domain', () => {
     async (consent) => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const plaza = await campaignFixtures().getPlaza()
-      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const { contact, leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)
       const account = await payload.create({
         collection: 'campaignUser',
         data: {
@@ -1710,10 +1710,10 @@ describe('campaign invite domain', () => {
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
-      const firstPlaza = await campaignFixtures().getPlaza()
-      const secondPlaza = await campaignFixtures().getPlaza()
-      const first = await createInviteLeadershipGraph(coordinator, firstPlaza.id)
-      const second = await createInviteLeadershipGraph(coordinator, secondPlaza.id)
+      const firstMunicipality = await campaignFixtures().getMunicipality()
+      const secondMunicipality = await campaignFixtures().getMunicipality()
+      const first = await createInviteLeadershipGraph(coordinator, firstMunicipality.id)
+      const second = await createInviteLeadershipGraph(coordinator, secondMunicipality.id)
       const firstInvite = await createInviteThroughAction(coordinator, {
         leadership: first.leadership.id,
         kind: 'login',
@@ -1758,8 +1758,8 @@ describe('campaign invite domain', () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
       authState.user = coordinator
-      const plaza = await campaignFixtures().getPlaza()
-      const autofillTarget = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const municipality = await campaignFixtures().getMunicipality()
+      const autofillTarget = await createInviteLeadershipGraph(coordinator, municipality.id)
       const created = await actions.createCampaignInvite({
         leadership: autofillTarget.leadership.id,
         kind: 'autopreenchimento',
@@ -1777,7 +1777,7 @@ describe('campaign invite domain', () => {
         }),
       ).resolves.toEqual({ ok: true })
 
-      const loginTarget = await createInviteLeadershipGraph(coordinator, plaza.id)
+      const loginTarget = await createInviteLeadershipGraph(coordinator, municipality.id)
       await payload.update({
         collection: 'leadership',
         id: loginTarget.leadership.id,

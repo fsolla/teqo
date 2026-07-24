@@ -56,8 +56,8 @@ const preventAssignedAdvisorDowngrade: CollectionBeforeChangeHook<CampaignUserDo
     return data
   }
 
-  const assignedPlaza = await req.payload.find({
-    collection: 'plaza',
+  const assignedMunicipality = await req.payload.find({
+    collection: 'municipality',
     where: {
       advisors: { contains: originalDoc.id },
     },
@@ -68,9 +68,9 @@ const preventAssignedAdvisorDowngrade: CollectionBeforeChangeHook<CampaignUserDo
     req,
   })
 
-  if (assignedPlaza.totalDocs > 0) {
+  if (assignedMunicipality.totalDocs > 0) {
     throw new APIError(
-      'Remova ou substitua este usuário da assessoria de todas as Praças antes de alterar o papel para liderança.',
+      'Remova ou substitua este usuário da assessoria de todos os municípios antes de alterar o papel para liderança.',
       409,
     )
   }
@@ -175,6 +175,7 @@ export const CampaignUser: CollectionConfig = {
       options: [
         { label: 'Coordenador Geral', value: 'coordinator' },
         { label: 'Assessor', value: 'advisor' },
+        { label: 'Candidato', value: 'candidate' },
         { label: 'Liderança', value: 'leader' },
       ],
       access: {

@@ -14,24 +14,28 @@ import { relationshipId } from '@/utilities/relationship'
 
 const MAX_LEADERSHIP_PLAZAS = 30
 
-const requireAtLeastOnePlaza: CollectionBeforeValidateHook = ({ data, operation, originalDoc }) => {
+const requireAtLeastOneMunicipality: CollectionBeforeValidateHook = ({
+  data,
+  operation,
+  originalDoc,
+}) => {
   if (!data) return data
 
-  const plazas =
-    data.plazas !== undefined
-      ? data.plazas
+  const municipalities =
+    data.municipalities !== undefined
+      ? data.municipalities
       : operation === 'update'
-        ? originalDoc?.plazas
+        ? originalDoc?.municipalities
         : undefined
-  const plazaIDs = (Array.isArray(plazas) ? plazas : [])
+  const municipalityIDs = (Array.isArray(municipalities) ? municipalities : [])
     .map(relationshipId)
     .filter((id): id is number => id !== null)
 
-  if (plazaIDs.length === 0) {
-    throw new APIError('Vincule a liderança a pelo menos uma Praça.', 400)
+  if (municipalityIDs.length === 0) {
+    throw new APIError('Vincule a liderança a pelo menos um município.', 400)
   }
-  if (new Set(plazaIDs).size !== plazaIDs.length) {
-    throw new APIError('Cada Praça deve aparecer apenas uma vez.', 400)
+  if (new Set(municipalityIDs).size !== municipalityIDs.length) {
+    throw new APIError('Cada município deve aparecer apenas uma vez.', 400)
   }
 
   return data
@@ -46,7 +50,7 @@ export const Leadership: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'contact',
-    defaultColumns: ['contact', 'plazas', 'sector', 'supportStatus', 'updatedAt'],
+    defaultColumns: ['contact', 'municipalities', 'sector', 'supportStatus', 'updatedAt'],
   },
   access: {
     create: canCreateLeadership,
@@ -55,7 +59,7 @@ export const Leadership: CollectionConfig = {
     delete: canDeleteLeadership,
   },
   hooks: {
-    beforeValidate: [requireAtLeastOnePlaza],
+    beforeValidate: [requireAtLeastOneMunicipality],
     beforeChange: [
       ({ data, operation, req }) => {
         if (operation === 'create' && req.user?.collection === 'campaignUser') {
@@ -80,10 +84,10 @@ export const Leadership: CollectionConfig = {
       },
     },
     {
-      name: 'plazas',
+      name: 'municipalities',
       type: 'relationship',
-      relationTo: 'plaza',
-      label: 'Praças',
+      relationTo: 'municipality',
+      label: 'Municípios',
       required: true,
       hasMany: true,
       index: true,
@@ -94,6 +98,14 @@ export const Leadership: CollectionConfig = {
       type: 'relationship',
       relationTo: 'organization',
       label: 'Organizações',
+      hasMany: true,
+      index: true,
+    },
+    {
+      name: 'stateDeputies',
+      type: 'relationship',
+      relationTo: 'stateDeputy',
+      label: 'Dobradinhas',
       hasMany: true,
       index: true,
     },

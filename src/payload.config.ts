@@ -20,12 +20,13 @@ import { ElectionCandidateVote } from './collections/ElectionCandidateVote'
 import { ElectionTally } from './collections/ElectionTally'
 import { Leadership } from './collections/Leadership'
 import { Media } from './collections/Media'
+import { Municipality } from './collections/Municipality'
+import { MunicipalityUpdate } from './collections/MunicipalityUpdate'
 import { Organization } from './collections/Organization'
 import { Petition } from './collections/Petition'
-import { Plaza } from './collections/Plaza'
-import { PlazaUpdate } from './collections/PlazaUpdate'
 import { Post } from './collections/Post'
 import { Signature } from './collections/Signature'
+import { StateDeputy } from './collections/StateDeputy'
 import { Subscription } from './collections/Subscription'
 import { Supporter } from './collections/Supporter'
 import { SupporterImportBatch } from './collections/SupporterImportBatch'
@@ -83,14 +84,15 @@ export default buildConfig({
     Users,
     CampaignUser,
     CampaignInvite,
-    Plaza,
+    Municipality,
     Leadership,
     Organization,
+    StateDeputy,
     VotePledge,
     CampaignDemand,
     Supporter,
     SupporterImportBatch,
-    PlazaUpdate,
+    MunicipalityUpdate,
     ActionPlan,
     ElectionTally,
     ElectionCandidateVote,

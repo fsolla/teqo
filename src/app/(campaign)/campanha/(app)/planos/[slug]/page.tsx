@@ -127,12 +127,12 @@ export default async function ActionPlanDetailPage({
                   <div>
                     <dt className="text-muted-foreground">Praça</dt>
                     <dd>
-                      {view.plaza ? (
+                      {view.municipality ? (
                         <Link
-                          href={`/campanha/pracas/${view.plaza.slug}`}
+                          href={`/campanha/municipios/${view.municipality.slug}`}
                           className="text-primary underline-offset-4 hover:underline"
                         >
-                          {view.plaza.name}
+                          {view.municipality.name}
                         </Link>
                       ) : (
                         '—'
