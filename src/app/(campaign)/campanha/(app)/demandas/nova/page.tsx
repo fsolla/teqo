@@ -7,6 +7,7 @@ import { getPayload } from 'payload'
 import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
 import { DemandForm } from '@/components/campaign/DemandForm'
 import { Button } from '@/components/ui/button'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { createDemandFormAction } from './formActions'
@@ -14,6 +15,7 @@ import { createDemandFormAction } from './formActions'
 export default async function NewDemandPage() {
   const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
   if (!user) redirect('/campanha/login')
+  if (!isCampaignStaff(user)) redirect('/campanha')
 
   const municipalityOptions = await loadMunicipalityOptions(payload, user)
 

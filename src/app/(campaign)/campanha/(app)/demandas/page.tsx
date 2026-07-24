@@ -30,6 +30,7 @@ import {
   campaignDemandStatuses,
   type CampaignDemandStatus,
 } from '@/lib/schemas/campaignDemand'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadDemandListPageData, parseDemandListParams } from '@/utilities/campaignDemandData'
 
@@ -54,6 +55,7 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
   const rawSearchParams = await searchParams
   const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
   if (!user) redirect('/campanha/login')
+  if (!isCampaignStaff(user)) redirect('/campanha')
 
   const state = parseDemandListParams(rawSearchParams)
   const { rows, totalDocs, totalPages, openCount } = await loadDemandListPageData(

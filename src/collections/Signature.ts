@@ -1,3 +1,4 @@
+import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { signatureContactToCSV, signaturePetitionToCSV } from '@/utilities/signatureExport'
 import { CollectionConfig } from 'payload'
 
@@ -9,6 +10,14 @@ export const Signature: CollectionConfig = {
   },
   admin: {
     group: 'Abaixo-assinados',
+  },
+  // Citizen PII. Public petition flows write via the Local API without a user
+  // (overrideAccess defaults to true), so admin-only access does not affect them.
+  access: {
+    create: payloadAdminOnly,
+    read: payloadAdminOnly,
+    update: payloadAdminOnly,
+    delete: payloadAdminOnly,
   },
   fields: [
     {

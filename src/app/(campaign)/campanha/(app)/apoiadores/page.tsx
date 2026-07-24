@@ -19,8 +19,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { isCampaignCoordinator } from '@/utilities/campaignAccess'
+import { isCampaignCoordinator, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { loadSupportersPageData } from '@/utilities/supporterPageData'
 import {
   buildSupporterFiltersKey,
@@ -58,8 +59,8 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
             Base nominal de apoio com intenção de voto e vínculo opcional a Praças.
           </p>
           <CampaignScopeBadge>
-            {isCampaignCoordinator(user)
-              ? 'Coordenador Geral · todos os apoiadores'
+            {isCampaignUnrestricted(user)
+              ? `${campaignRoleLabels[user.role]} · todos os apoiadores`
               : getSupporterScopeLabel(result.totalDocs)}
           </CampaignScopeBadge>
         </div>

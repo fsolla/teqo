@@ -1,4 +1,5 @@
 import { normalizeFacebookPixelId } from '@/lib/facebookPixel'
+import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { revalidateDocumentById } from '@/utilities/documents'
 import type { CollectionConfig } from 'payload'
 
@@ -25,6 +26,10 @@ export const Petition: CollectionConfig<typeof slug> = {
   },
   access: {
     read: () => true,
+    readVersions: payloadAdminOnly,
+    create: payloadAdminOnly,
+    update: payloadAdminOnly,
+    delete: payloadAdminOnly,
   },
   hooks: {
     beforeChange: [

@@ -40,6 +40,7 @@ export default async function ActionPlanListPage({ searchParams }: ActionPlanLis
 
   const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
   if (!user) return null
+  if (!isCampaignStaff(user)) redirect('/campanha')
 
   const now = new Date()
   const [{ result, state }, municipalityOptions] = await Promise.all([

@@ -48,6 +48,7 @@ export default async function ActionPlanDetailPage({
   ])
 
   if (!user) redirect('/campanha/login')
+  if (!isCampaignStaff(user)) redirect('/campanha')
   if (!slug) notFound()
 
   const activeTab = resolveActionPlanDetailTab(query)

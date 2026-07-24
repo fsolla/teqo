@@ -1,3 +1,4 @@
+import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import type { CollectionConfig } from 'payload'
 
 export const Media: CollectionConfig = {
@@ -9,8 +10,13 @@ export const Media: CollectionConfig = {
   admin: {
     group: 'Coleções',
   },
+  // Campaign flows (avatar, demand receipts) upload via server actions with an
+  // explicit overrideAccess: true after their own role checks.
   access: {
     read: () => true,
+    create: payloadAdminOnly,
+    update: payloadAdminOnly,
+    delete: payloadAdminOnly,
   },
   fields: [
     {

@@ -114,7 +114,17 @@ const emptyOwnedIDs = (): OwnedIDs => ({
   consent: new Set(),
 })
 
-const inviteConsentKey = 'lideranca-autopreenchimento'
+/**
+ * Consent rows shared across spec files (stable keys the app resolves at
+ * runtime). They are leased via `testDatabaseLease.ts`, never owned by a
+ * fixture instance — deleting them at cleanup would steal them from
+ * concurrently running spec files.
+ */
+const leasedConsentKeys = new Set([
+  'lideranca-autopreenchimento',
+  'apoiador-cadastro',
+  'apoiador-intencao-voto',
+])
 
 const defaultConsentText = (text: string): Consent['text'] => ({
   root: {
@@ -237,8 +247,24 @@ const purgeMunicipalityResidue = async (
     }),
   ])
 
+  // Residue invites reference residue leaderships (FK), so they must be
+  // found and deleted before the leaderships — otherwise the leadership
+  // delete aborts and the residue poisons every later claim of this municipality.
+  const leadershipIDs = leaderships.docs.map((doc) => doc.id)
+  const invites =
+    leadershipIDs.length > 0
+      ? await payload.find({
+          collection: 'campaignInvite',
+          where: { leadership: { in: leadershipIDs } },
+          depth: 0,
+          pagination: false,
+          select: {},
+        })
+      : { docs: [] }
+
   const deletions: Array<{
     collection:
+      | 'campaignInvite'
       | 'votePledge'
       | 'municipalityUpdate'
       | 'campaignDemand'
@@ -247,11 +273,12 @@ const purgeMunicipalityResidue = async (
       | 'actionPlan'
     ids: number[]
   }> = [
+    { collection: 'campaignInvite', ids: invites.docs.map((doc) => doc.id) },
     { collection: 'votePledge', ids: pledges.docs.map((doc) => doc.id) },
     { collection: 'municipalityUpdate', ids: updates.docs.map((doc) => doc.id) },
     { collection: 'campaignDemand', ids: demands.docs.map((doc) => doc.id) },
     { collection: 'actionPlan', ids: plans.docs.map((doc) => doc.id) },
-    { collection: 'leadership', ids: leaderships.docs.map((doc) => doc.id) },
+    { collection: 'leadership', ids: leadershipIDs },
     { collection: 'supporter', ids: supporters.docs.map((doc) => doc.id) },
   ]
   for (const { collection, ids } of deletions) {
@@ -283,13 +310,14 @@ export class CampaignFixtures {
     const trackedCreate = async (args: Parameters<Payload['create']>[0]) => {
       const document = await rootPayload.create(args as never)
       const collection = args.collection
-      const isLeasedInviteConsent =
+      const isLeasedConsent =
         collection === 'consent' &&
         typeof args.data === 'object' &&
         args.data !== null &&
         'key' in args.data &&
-        args.data.key === inviteConsentKey
-      if (collection in this.owned && typeof document.id === 'number' && !isLeasedInviteConsent) {
+        typeof args.data.key === 'string' &&
+        leasedConsentKeys.has(args.data.key)
+      if (collection in this.owned && typeof document.id === 'number' && !isLeasedConsent) {
         this.own(collection as CampaignCollection, document.id)
       }
       return document
@@ -519,6 +547,13 @@ export class CampaignFixtures {
     return user
   }
 
+  /**
+   * Creates an OWNED consent row (deleted at cleanup) — even for a leased
+   * shared key, since calling this helper is an explicit ownership request.
+   * For the shared stable keys, prefer `ensureLeasedConsent` /
+   * `withLeasedConsent` (testDatabaseLease.ts) so parallel spec files are not
+   * robbed of the row at cleanup.
+   */
   async createConsent(input: ConsentInput = {}): Promise<Consent> {
     const marker = this.value('consent')
     const consent = await this.rootPayload.create({

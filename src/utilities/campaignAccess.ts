@@ -33,6 +33,14 @@ type DynamicFind = (args: {
 
 export const isPayloadAdmin = (user: CampaignActor): user is User => user?.collection === 'users'
 
+/**
+ * Payload-admin-only collection access. Collections without explicit access fall
+ * back to Payload's "any authenticated user" default — which includes campaign
+ * users hitting `/api/*` with a `campaign-token` JWT — so every CMS/PII
+ * collection must set this (or something stricter) explicitly.
+ */
+export const payloadAdminOnly: Access = ({ req }) => isPayloadAdmin(req.user)
+
 const isCampaignUser = (user: CampaignActor): user is CampaignUser =>
   user?.collection === 'campaignUser'
 
@@ -174,6 +182,37 @@ export const getAdvisorMunicipalityIds = async (
   })
 
   return result.docs.map((doc) => relationshipId(doc.id)).filter((id): id is number => id !== null)
+}
+
+/**
+ * Municipality IDs linked to `userID`'s engaged leadership, without requiring a
+ * `PayloadRequest`. Transaction-safe counterpart of the leader branch in
+ * `getAccessibleMunicipalityIds`, for server actions running inside
+ * `withPayloadTransaction` (where only `{ transactionID }` is available).
+ */
+export const getEngagedLeaderMunicipalityIds = async (
+  payload: Pick<Payload, 'find'>,
+  userID: number,
+  req?: CampaignTransactionRequest,
+): Promise<number[]> => {
+  const find = payload.find.bind(payload) as unknown as DynamicFind
+  const result = await find({
+    collection: 'leadership',
+    where: {
+      and: [{ user: { equals: userID } }, { supportStatus: { equals: 'engajado' } }],
+    },
+    depth: 0,
+    limit: 1,
+    pagination: false,
+    select: { municipalities: true },
+    overrideAccess: true,
+    ...(req ? { req } : {}),
+  })
+
+  const doc = result.docs[0]
+  return (Array.isArray(doc?.municipalities) ? doc.municipalities : [])
+    .map(relationshipId)
+    .filter((id): id is number => id !== null)
 }
 
 type OwnLeadership = { id: number; municipalityIDs: number[]; organizationIDs: number[] } | null

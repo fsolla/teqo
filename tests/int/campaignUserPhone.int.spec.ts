@@ -62,7 +62,7 @@ describe('campaign user contact phone', () => {
     })
   })
 
-  it('denies leaders from reading advisor contact phones', async () => {
+  it('omits advisor contact phones from leader reads (lockdown)', async () => {
     await withCampaignFixtures(payload, async (fixtures) => {
       const coordinator = await fixtures.createCampaignUser('coordinator')
       const advisorPhone = fixtures.phone()
@@ -76,16 +76,19 @@ describe('campaign user contact phone', () => {
       await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
       await createEngagedPhoneAccessGraph(fixtures, coordinator, leader, municipality.id)
 
-      await expect(
-        payload.findByID({
-          collection: 'campaignUser',
-          id: advisor.id,
-          depth: 0,
-          select: { name: true, phone: true },
-          user: leader,
-          overrideAccess: false,
-        }),
-      ).rejects.toThrow(/permissão/i)
+      // Leaders are lockdown accounts: even for advisors of their own linked
+      // municipality, the phone field must be withheld.
+      const advisorRead = await payload.findByID({
+        collection: 'campaignUser',
+        id: advisor.id,
+        depth: 0,
+        select: { name: true, phone: true },
+        user: leader,
+        overrideAccess: false,
+      })
+
+      expect(advisorRead.phone).toBeUndefined()
+      expect(JSON.stringify(advisorRead)).not.toContain(advisorPhone)
     })
   })
 
@@ -154,8 +157,11 @@ describe('campaign user contact phone', () => {
       })
       const byId = new Map(result.docs.map((doc) => [doc.id, doc]))
 
-      expect(byId.get(advisor.id)?.phone).toBe(advisorPhone)
+      // Leaders are lockdown accounts: no staff phone is visible, linked
+      // municipality or not.
+      expect(byId.get(advisor.id)?.phone).toBeUndefined()
       expect(byId.get(foreignAdvisor.id)?.phone).toBeUndefined()
+      expect(JSON.stringify(result.docs)).not.toContain(advisorPhone)
       expect(JSON.stringify(result.docs)).not.toContain(foreignPhone)
     })
   })

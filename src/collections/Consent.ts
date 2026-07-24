@@ -1,3 +1,4 @@
+import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { CollectionConfig } from 'payload'
 
 export const Consent: CollectionConfig = {
@@ -9,6 +10,15 @@ export const Consent: CollectionConfig = {
   admin: {
     group: 'Contatos',
     useAsTitle: 'text',
+  },
+  // Versioned legal texts referenced by signatures/subscriptions/supporters.
+  // Server flows resolve them via the Local API without a user; only admins
+  // may create or alter them.
+  access: {
+    create: payloadAdminOnly,
+    read: payloadAdminOnly,
+    update: payloadAdminOnly,
+    delete: payloadAdminOnly,
   },
   fields: [
     {

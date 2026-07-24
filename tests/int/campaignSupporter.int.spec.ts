@@ -23,6 +23,12 @@ import {
 import { buildSupporterListWhere } from '@/utilities/supporterUi'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import {
+  ensureLeasedConsent,
+  SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
+  SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY,
+  withMissingInviteConsentFixture,
+} from '../helpers/testDatabaseLease'
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -32,24 +38,23 @@ const campaignFixtures = installCampaignFixtures({
   },
 })
 
-const ensureConsentByKey = async (fixtures: ReturnType<typeof campaignFixtures>, key: string) => {
-  const existing = await payload.find({
-    collection: 'consent',
-    where: { key: { equals: key } },
-    depth: 0,
-    limit: 1,
-    pagination: false,
-  })
-  if (existing.docs[0]) {
-    fixtures.own('consent', existing.docs[0].id)
-    return existing.docs[0]
-  }
-  return fixtures.createConsent({ key })
-}
+/**
+ * Shared consent rows (stable keys) are leased fixtures: ensured under an
+ * advisory-lock lease and never owned/deleted, so parallel spec files can rely
+ * on them (see `leasedConsentKeys` in campaignFixtures.ts).
+ */
+const ensureConsentByKey = (key: string, leaseKey: string) =>
+  ensureLeasedConsent(payload, { consentKey: key, leaseKey })
 
-const ensureSupporterConsents = async (fixtures: ReturnType<typeof campaignFixtures>) => {
-  const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
-  const voteIntention = await ensureConsentByKey(fixtures, SUPPORTER_VOTE_INTENTION_CONSENT_KEY)
+const ensureSupporterConsents = async () => {
+  const registration = await ensureConsentByKey(
+    SUPPORTER_REGISTRATION_CONSENT_KEY,
+    SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
+  )
+  const voteIntention = await ensureConsentByKey(
+    SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
+    SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY,
+  )
   return { registration, voteIntention }
 }
 
@@ -87,28 +92,27 @@ describe('campaign supporter domain', () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
-    const existing = await payload.find({
-      collection: 'consent',
-      where: { key: { equals: SUPPORTER_REGISTRATION_CONSENT_KEY } },
-      depth: 0,
-      limit: 1,
-    })
-    if (existing.docs[0]) {
-      await payload.delete({ collection: 'consent', id: existing.docs[0].id })
-    }
-
-    await expect(
-      createSupporterRecord(payload, coordinator, {
-        name: fixtures.value('Apoiador'),
-        phone: fixtures.phone(),
-        consentAccepted: true,
-      }),
-    ).rejects.toThrow(/Consentimento de cadastro de apoiador ainda não configurado/)
+    await withMissingInviteConsentFixture(
+      payload,
+      async () => {
+        await expect(
+          createSupporterRecord(payload, coordinator, {
+            name: fixtures.value('Apoiador'),
+            phone: fixtures.phone(),
+            consentAccepted: true,
+          }),
+        ).rejects.toThrow(/Consentimento de cadastro de apoiador ainda não configurado/)
+      },
+      {
+        consentKey: SUPPORTER_REGISTRATION_CONSENT_KEY,
+        leaseKey: SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
+      },
+    )
   })
 
   it('creates a supporter with contact upsert and blocks leadership coexistence', async () => {
     const fixtures = campaignFixtures()
-    await ensureSupporterConsents(fixtures)
+    await ensureSupporterConsents()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
     const phone = fixtures.phone()
@@ -144,7 +148,7 @@ describe('campaign supporter domain', () => {
 
   it('scopes advisor create to administered municipalities and blocks municipality-less create', async () => {
     const fixtures = campaignFixtures()
-    await ensureSupporterConsents(fixtures)
+    await ensureSupporterConsents()
     const advisor = await fixtures.createCampaignUser('advisor')
     const municipality = await fixtures.getMunicipality()
     const otherMunicipality = await fixtures.getMunicipality()
@@ -180,7 +184,10 @@ describe('campaign supporter domain', () => {
 
   it('requires highlighted vote-intention consent before setting intention', async () => {
     const fixtures = campaignFixtures()
-    const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
+    const registration = await ensureConsentByKey(
+      SUPPORTER_REGISTRATION_CONSENT_KEY,
+      SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
+    )
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const contact = await fixtures.createContact()
     const supporter = await fixtures.createSupporter({
@@ -212,7 +219,10 @@ describe('campaign supporter domain', () => {
       }),
     ).rejects.toThrow(/Consentimento de intenção de voto ainda não configurado/)
 
-    await ensureConsentByKey(fixtures, SUPPORTER_VOTE_INTENTION_CONSENT_KEY)
+    await ensureConsentByKey(
+      SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
+      SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY,
+    )
 
     const updated = await setSupporterVoteIntentionRecord(payload, coordinator, {
       id: supporter.id,
@@ -225,7 +235,7 @@ describe('campaign supporter domain', () => {
 
   it('previews and confirms CSV import for the coordinator only', async () => {
     const fixtures = campaignFixtures()
-    await ensureSupporterConsents(fixtures)
+    await ensureSupporterConsents()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const advisor = await fixtures.createCampaignUser('advisor')
     const phoneOk = fixtures.phone()
@@ -292,7 +302,7 @@ describe('campaign supporter domain', () => {
 
   it('rejects a tampered import token and a token issued to another actor', async () => {
     const fixtures = campaignFixtures()
-    await ensureSupporterConsents(fixtures)
+    await ensureSupporterConsents()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const otherCoordinator = await fixtures.createCampaignUser('coordinator')
     const phoneOk = fixtures.phone()
@@ -343,7 +353,7 @@ describe('campaign supporter domain', () => {
 
   it('removes supporter and anonymizes contact when no other joins remain', async () => {
     const fixtures = campaignFixtures()
-    await ensureSupporterConsents(fixtures)
+    await ensureSupporterConsents()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const phone = fixtures.phone()
     const created = await createSupporterRecord(payload, coordinator, {
@@ -370,7 +380,10 @@ describe('campaign supporter domain', () => {
 
   it('aggregates supporter overview KPIs in a single SQL query for the coordinator', async () => {
     const fixtures = campaignFixtures()
-    const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
+    const registration = await ensureConsentByKey(
+      SUPPORTER_REGISTRATION_CONSENT_KEY,
+      SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
+    )
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
     const intentions: Array<{
@@ -424,7 +437,10 @@ describe('campaign supporter domain', () => {
 
   it('scopes the overview aggregate to administered municipalities for an advisor and applies filters', async () => {
     const fixtures = campaignFixtures()
-    const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
+    const registration = await ensureConsentByKey(
+      SUPPORTER_REGISTRATION_CONSENT_KEY,
+      SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
+    )
     const advisor = await fixtures.createCampaignUser('advisor')
     const assigned = await fixtures.getMunicipality()
     const other = await fixtures.getMunicipality()
@@ -471,7 +487,10 @@ describe('campaign supporter domain', () => {
 
   it('ignores single-character search queries in list and overview filters', async () => {
     const fixtures = campaignFixtures()
-    const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
+    const registration = await ensureConsentByKey(
+      SUPPORTER_REGISTRATION_CONSENT_KEY,
+      SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
+    )
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
     const uniqueName = fixtures.value('ApoiadorUnico')
@@ -509,7 +528,10 @@ describe('campaign supporter domain', () => {
 
   it('keeps list and overview totals aligned for multi-character search', async () => {
     const fixtures = campaignFixtures()
-    const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
+    const registration = await ensureConsentByKey(
+      SUPPORTER_REGISTRATION_CONSENT_KEY,
+      SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
+    )
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
     const uniqueName = fixtures.value('ApoiadorBusca')
@@ -547,11 +569,14 @@ describe('campaign supporter domain', () => {
 
   it('loads supporters page data scoped to the administered municipalities of an advisor', async () => {
     const fixtures = campaignFixtures()
-    await ensureSupporterConsents(fixtures)
+    await ensureSupporterConsents()
     const advisor = await fixtures.createCampaignUser('advisor')
     const assigned = await fixtures.getMunicipality()
     await fixtures.assignMunicipalityAdvisors(assigned, [advisor])
-    const registration = await ensureConsentByKey(fixtures, SUPPORTER_REGISTRATION_CONSENT_KEY)
+    const registration = await ensureConsentByKey(
+      SUPPORTER_REGISTRATION_CONSENT_KEY,
+      SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
+    )
 
     const contact = await fixtures.createContact()
     await fixtures.createSupporter({

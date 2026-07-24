@@ -120,5 +120,6 @@ export const resolveSupporterListUrl = (
 export const getSupporterScopeLabel = (total: number): string =>
   `${total} ${total === 1 ? 'apoiador nas suas Praças' : 'apoiadores nas suas Praças'}`
 
+/** Staff roles with supporter-area access — matches collection-level supporter access. */
 export const canAccessSupporterArea = (role: CampaignUser['role']): boolean =>
-  role === 'coordinator' || role === 'advisor'
+  role === 'coordinator' || role === 'advisor' || role === 'candidate'

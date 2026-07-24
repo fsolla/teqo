@@ -193,7 +193,7 @@ const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, i
         if (data.municipality) {
           await assertMunicipalityManagement(payload, currentActor, data.municipality, req)
         } else if (currentActor.role !== 'coordinator') {
-          throw new Error('Somente o Coordenador Geral pode cadastrar apoiadores sem Praça.')
+          throw new Error('Somente o Coordenador Geral pode cadastrar apoiadores sem município.')
         }
 
         const registrationConsent = await requireSupporterRegistrationConsent(

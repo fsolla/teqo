@@ -34,7 +34,7 @@ const safeActionMessages = [
   'Esta pessoa já está cadastrada como apoiador nesta Praça.',
   'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.',
   'Somente a coordenação e a assessoria podem gerenciar apoiadores.',
-  'Somente o Coordenador Geral pode cadastrar apoiadores sem Praça.',
+  'Somente o Coordenador Geral pode cadastrar apoiadores sem município.',
   'Consentimento de cadastro de apoiador ainda não configurado.',
   'Consentimento de intenção de voto ainda não configurado.',
 ] as const
