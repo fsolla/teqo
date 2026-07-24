@@ -2,19 +2,16 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import {
-  campaignInviteCreateSchema,
-  type CampaignInviteCreateInput,
-} from '@/lib/schemas/invite'
+import { campaignInviteCreateSchema, type CampaignInviteCreateInput } from '@/lib/schemas/invite'
 import type { CampaignUser } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { reloadCampaignActor } from '@/utilities/campaignActionContext'
+import { requireLeadershipConsent } from '@/utilities/campaignConsent'
 import {
   buildCampaignInviteWhatsAppLink,
   campaignInviteExpiry,
   generateCampaignInviteToken,
 } from '@/utilities/campaignInvite'
-import { requireLeadershipConsent } from '@/utilities/campaignConsent'
 import {
   createCampaignInviteRecord,
   requireCampaignInvitePostgres,
