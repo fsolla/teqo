@@ -1,3 +1,5 @@
+import type { Payload } from 'payload'
+
 import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '../../src/utilities/campaignConsent.js'
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
@@ -8,7 +10,7 @@ import { expect, test } from './fixtures/campaignE2EFixtures.js'
  */
 
 const ensureSupporterRegistrationConsent = async (campaign: {
-  payload: { find: Function; create: Function }
+  payload: Pick<Payload, 'find' | 'create'>
 }) => {
   const existing = await campaign.payload.find({
     collection: 'consent',
@@ -29,7 +31,14 @@ const ensureSupporterRegistrationConsent = async (campaign: {
           children: [
             {
               type: 'paragraph',
-              children: [{ type: 'text', text: 'Consentimento de cadastro de apoiador (E2E).' }],
+              version: 1,
+              children: [
+                {
+                  type: 'text',
+                  version: 1,
+                  text: 'Consentimento de cadastro de apoiador (E2E).',
+                },
+              ],
             },
           ],
           direction: 'ltr',
