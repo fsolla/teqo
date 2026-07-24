@@ -10,15 +10,15 @@
 
 ## Phase Status
 
-| Phase | Content                                                                                                                      | Skill phases                           | Status      | Date       |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ----------- | ---------- |
-| 0     | Security lockdown: collection access defaults, leader route gates, broken leader-supporter create, candidate alignment       | — (P0 pre-work)                        | done        | 2026-07-23 |
-| 1     | Tooling gate: knip + dead code, CI, tsconfig, zero lint warnings, `as never` ban, docs artifacts                             | 1 (net) + 2 (readability) + 6 (habits) | done        | 2026-07-23 |
-| 2     | Caching: React `cache()` dedup, committed election-aggregate artifact, `unstable_cache`, select/depth trims                  | 8 (sizing)                             | done        | 2026-07-23 |
-| 3     | Loading feedback: task-toggle revalidation bug, map compare transition, result-region pending, Suspense streaming            | — (UX correctness)                     | done        | 2026-07-23 |
-| 4     | Client boundary/state: map hover isolation, provider narrowing, composition splits (bundle slimming deferred with rationale) | 4 (deep modules, UI)                   | done        | 2026-07-23 |
-| 5     | Structure: split campaignAccess + supporter actions, dedupe clones, utilities organization, finish rename                    | 3 (refactoring) + 4 (deep modules)     | in-progress | 2026-07-23 |
-| 6     | Documentation: engineering-standards rule, AGENTS.md drift fixes, debt registration                                          | 6 (habits)                             | in-progress | 2026-07-23 |
+| Phase | Content                                                                                                                      | Skill phases                           | Status | Date       |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ------ | ---------- |
+| 0     | Security lockdown: collection access defaults, leader route gates, broken leader-supporter create, candidate alignment       | — (P0 pre-work)                        | done   | 2026-07-23 |
+| 1     | Tooling gate: knip + dead code, CI, tsconfig, zero lint warnings, `as never` ban, docs artifacts                             | 1 (net) + 2 (readability) + 6 (habits) | done   | 2026-07-23 |
+| 2     | Caching: React `cache()` dedup, committed election-aggregate artifact, `unstable_cache`, select/depth trims                  | 8 (sizing)                             | done   | 2026-07-23 |
+| 3     | Loading feedback: task-toggle revalidation bug, map compare transition, result-region pending, Suspense streaming            | — (UX correctness)                     | done   | 2026-07-23 |
+| 4     | Client boundary/state: map hover isolation, provider narrowing, composition splits (bundle slimming deferred with rationale) | 4 (deep modules, UI)                   | done   | 2026-07-23 |
+| 5     | Structure: split campaignAccess + supporter actions, dedupe clones, utilities organization, finish rename                    | 3 (refactoring) + 4 (deep modules)     | done   | 2026-07-24 |
+| 6     | Documentation: engineering-standards rule, AGENTS.md drift fixes, debt registration                                          | 6 (habits)                             | done   | 2026-07-24 |
 
 Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<reason\> · skipped: \<reason\>
 
@@ -40,10 +40,12 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 
 ## Next Actions
 
-- [x] Phase 0 shipped (commit `fe0fb1c`)
-- [ ] Phase 1: finish tests `as never` conversion; full verify (lint/typecheck/test/build); commit
-- [ ] Phase 2 — caching
-- [ ] Phase 3 — loading feedback
-- [ ] Phase 4 — client boundary
-- [ ] Phase 5 — structure
-- [ ] Phase 6 — documentation; register leftovers in TECH-DEBT.md Debt Ledger
+- [x] Phase 0 shipped (`fe0fb1c`)
+- [x] Phase 1 — tooling gate (`1f73626`)
+- [x] Phase 2 — caching (`a9b111b`)
+- [x] Phase 3 — loading feedback (`3323275`)
+- [x] Phase 4 — client boundary (`c4ec15f`)
+- [x] Phase 5 — structure (`524ae57`)
+- [x] Phase 6 — documentation (`deca5c0`)
+- [x] E2E-driven fixes: leader home Forbidden, leader contact visibility, duplicate nav keys, RSC function-prop contracts, fixed e2e dist dir (`cb6c152`)
+- [ ] Remaining leftovers live in [TECH-DEBT.md](TECH-DEBT.md) Debt Ledger (drive knip `exports` warn→error, consent-window lease redesign, e2e local-latency flake, users roles migration)
