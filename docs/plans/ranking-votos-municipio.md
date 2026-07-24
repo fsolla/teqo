@@ -89,6 +89,15 @@ Componentes tocados: `src/lib/municipalityVoteRank.ts` (novo, puro + unit tests)
 
 - **Seletor de ano na ordenação da lista.** Gatilho: pedido da mesa por leitura de série na lista.
 - **Coluna de rank na fila do E9.** Entra junto com E9 (a fila referencia este helper).
+- **Hidratação única do sort derivado `votos` (evitar find filtrado + `loadMunicipalityScope` redundante).** Gatilho: lista lenta no recorte amplo ou 3º path derivado no loader; B15 já documenta full-scan de `expectedVotes`/`coverage` — tratar junto.
+
+## Já resolvido no simplify/critique (não reabrir)
+
+- Hover no header `2022` (sem `?` / CampaignInfoHint) · Limpar preserva sort · chevrons ativos/dormant · label curto `2022` (não "Concentração 2022").
+
+## Explicitamente fora
+
+- Extrair `nextMunicipalitySortDir` / fundir com `CampaignInfoHint` (Popover ≠ hover) · markup único mobile/desktop · rank em SQL (artefato em memória basta).
 
 ## Referências
 
