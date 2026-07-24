@@ -87,7 +87,7 @@ export const getCampaignInvitePageData = async (
       kind: invite.kind,
       profile: {
         name: contact.name,
-        phone: contact.phone,
+        phone: contact.phone ?? '',
         email: contact.email ?? null,
         gender: contact.gender ?? null,
         sector: leadership.sector ?? null,

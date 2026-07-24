@@ -104,7 +104,7 @@ export const actionPlanFormSelect = {
 export type ActionPlanFormTaskViewModel = {
   id: string | null
   title: string
-  responsible: { id: number; name: string; phone: string } | null
+  responsible: { id: number; name: string; phone: string | null } | null
   due: string | null
   done: boolean
 }
@@ -124,7 +124,7 @@ export type ActionPlanFormViewModel = {
   locality: string | null
   organizationIDs: number[]
   advisorIDs: number[]
-  responsible: { id: number; name: string; phone: string } | null
+  responsible: { id: number; name: string; phone: string | null } | null
   leadership: { id: number; label: string } | null
   tasks: ActionPlanFormTaskViewModel[]
 }
@@ -150,7 +150,11 @@ export const toActionPlanFormViewModel = (plan: ActionPlan): ActionPlanFormViewM
   organizationIDs: relationshipIds(plan.organizations),
   advisorIDs: relationshipIds(plan.advisors),
   responsible: isPopulatedRelationship<Contact>(plan.responsible)
-    ? { id: plan.responsible.id, name: plan.responsible.name, phone: plan.responsible.phone }
+    ? {
+        id: plan.responsible.id,
+        name: plan.responsible.name,
+        phone: plan.responsible.phone ?? null,
+      }
     : null,
   leadership: (() => {
     const leadershipId = relationshipId(plan.leadership)
@@ -168,7 +172,11 @@ export const toActionPlanFormViewModel = (plan: ActionPlan): ActionPlanFormViewM
     id: task.id ?? null,
     title: task.title,
     responsible: isPopulatedRelationship<Contact>(task.responsible)
-      ? { id: task.responsible.id, name: task.responsible.name, phone: task.responsible.phone }
+      ? {
+          id: task.responsible.id,
+          name: task.responsible.name,
+          phone: task.responsible.phone ?? null,
+        }
       : null,
     due: task.due ?? null,
     done: Boolean(task.done),

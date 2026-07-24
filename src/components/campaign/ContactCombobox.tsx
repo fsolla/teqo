@@ -8,7 +8,7 @@ import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 export type ContactComboboxOption = {
   id: number
   name: string
-  phone: string
+  phone: string | null
 }
 
 type ContactComboboxProps = {
@@ -21,7 +21,7 @@ type ContactComboboxProps = {
 }
 
 const contactLabel = (contact: ContactComboboxOption): string =>
-  `${contact.name} · ${contact.phone}`
+  contact.phone ? `${contact.name} · ${contact.phone}` : contact.name
 
 export const ContactCombobox = ({
   name,

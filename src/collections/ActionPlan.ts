@@ -134,7 +134,7 @@ const validateActionPlanAdvisors: CollectionBeforeValidateHook = async ({ data, 
   })
 
   if (eligibleAdvisors.docs.length !== advisorIDs.length) {
-    throw new APIError('Cada responsável deve ter papel de Coordenador Geral ou Assessor.', 400)
+    throw new APIError('Cada responsável deve ter papel de Coordenador Geral, Assessor ou Candidato.', 400)
   }
 
   return data

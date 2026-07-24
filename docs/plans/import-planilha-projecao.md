@@ -1,7 +1,7 @@
 # E4R — Import único da planilha de projeção (seed de estratégia, local e produção)
 
-Status: entregue em código (2026-07-24)
-Atualizado em: 2026-07-24 (alvo mudou para `expectedVotes` — "Metas" removidas do app; overwrite-always; SheetJS; seed local 189 estimativas / 50 alta)
+Status: entregue em código (2026-07-24; fase 2 — colunas de estratégia — no mesmo dia)
+Atualizado em: 2026-07-24 (fase 2: SITUAÇÃO/DOBRADINHAS/LIDERANÇAS/ASSESSOR/ENCAMINHAMENTOS/OBSERVAÇÃO + override PRIORITÁRIAS; antes: alvo mudou para `expectedVotes`, overwrite-always, SheetJS, seed local 189 estimativas / 50 alta)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (E4R)
 Impeccable: n/a — script/CLI sem superfície de UI (relatório em stdout)
 Appetite: ~1 dia eng (parser + mapeamento + dry-run + runbook de produção)
@@ -10,6 +10,17 @@ Responsável: —
 Revisão 2026-07-24 (a): idempotência mudou de “só campos vazios” para **sempre sobrescrever** nas linhas casadas — a planilha sobe de novo quando a mesa manda versão mais nova sobre DB já populado. Entrega: `pnpm db:seed:projecao`, parser em `src/lib/projectionSheetParse.ts`, script `scripts/import-projecao.mjs`. Seed local verificado: 189 municípios com estimativas parseáveis, 50 `priority=alta`, Salvador pulado, re-run delta=0.
 
 Revisão 2026-07-24 (b) — **alvo é `expectedVotes`, não `voteGoals`:** decisão de produto — "Meta Bom/Regular/Mínimo" duplicava o conceito de votos estimados; a campanha trabalha com UMA série por cenário. O grupo `municipality.voteGoals` foi **removido do app** (migration `20260724_133600_drop_municipality_vote_goals`, com backfill metas→estimativas onde estimativa estava vazia) e o seed passou a gravar `municipality.expectedVotes` com o mapeamento **Bom → otimista, Regular → média (`central`), Mínimo → pessimista**. A ordem é validada com `getVoteEstimateOrderViolation` (pessimista ≤ média ≤ otimista) e a UI exibe tudo no card "Votos estimados".
+
+Revisão 2026-07-24 (c) — **fase 2 entregue: colunas de estratégia** (decisão explícita do produto em 2026-07-24, antecipando o gatilho "lote jurídico" — nomes de atores políticos entram em produção com entidades name-only; regularizar trilha de consentimento com a assessoria depois). O mesmo `pnpm db:seed:projecao` agora também importa, com **PRIORITÁRIAS sobrepondo MAPA GERAL** em SITUAÇÃO/LIDERANÇAS/ASSESSOR quando a célula é não-vazia:
+
+- **SITUAÇÃO → `municipality.politicalTrend`**: QUEDA→`desfavoravel`, MANTÉM→`neutra`, AUMENTO→`favoravel` (`parseSituationCell`; "NÃO DEFINIDA" não toca o campo). `note` guarda proveniência ("Importado da planilha de projeção (jul/2026) — SITUAÇÃO: …").
+- **DOBRADINHAS → `stateDeputy` + `municipality.stateDeputies`** (união) e célula crua sempre em `dobradinhaNotes`. O nome do candidato ("Solla") em célula de dobradinha é descartado com relatório.
+- **LIDERANÇAS → `contact` (name-only, sem telefone) + `leadership`** — dedup estadual por slug do nome (uma pessoa, N municípios; merges listados no dry-run). `Contact.phone` virou **opcional** na collection (migration `20260724_175500_contact_phone_optional`; formulários/zod continuam exigindo) e os hooks de invariante de telefone pulam contatos sem phone.
+- **ASSESSOR RESPONSÁVEL → `campaignUser` + `municipality.advisors`** (união): "Edizio" → `coordinator`, "Solla"/"Jorge Solla" → `candidate` (o papel `candidate` passou a ser elegível em `eligibleCampaignStaffWhere` — decisão do produto), demais → `advisor`. Usuários novos nascem com email placeholder `<slug>@planilha.invalid` (TLD reservado, não roteável) + senha aleatória — não logam até um admin trocar as credenciais.
+- **ENCAMINHAMENTOS → `nextSteps`** (overwrite quando não-vazio); **OBSERVAÇÃO → `strengths`/`risks`** com classificação curada por slug (`OBSERVATION_TARGET_BY_SLUG`; 4 células hoje: Brejões→força; Camaçari/Inhambupe/Laje→risco), idempotente por texto exato.
+- **Parsing de nomes** (`splitNameCell`, puro, com testes): separadores `,`/`;`/`|`/barra/" e "/ponto-de-frase (honoríficos "Dr./Dra./Sr./Sra./Prof./Sec." protegidos); parentéticos extraídos; ruído descartado com relatório (traços, `?`, frases de ação "VER COM…/CONFIRMAR…/Construindo…", coletivos "pessoal do PT/grupo de ACS/Associação…", papéis sem nome "Prefeito/vereadores/Ex-vice…"). Aliases curados no script: staff `mariana→Marianna`, `joao→João Lúcio`, `caio→Caio Cesar`; dobradinha `galo→Marcelino Galo`, `angelo→Ângelo Almeida`, `fatima→Fátima Nunes`, `rowena→Rowenna`, `osni→Osny`. Nome canônico = variante mais longa (desempate: inicial maiúscula → frequência → acentos).
+- **Semântica**: relações são **união** (nunca removem vínculos feitos na UI); textos definidos na planilha sobrescrevem; célula vazia nunca limpa; re-run é idempotente (delta=0 verificado localmente). Salvador continua **pulado para todas as colunas** (decisão do usuário; estratégia por ZE entra via UI).
+- Seed local verificado: 416 casadas, 205 municípios com escrita, 26 usuários (24 assessores + Edizio coordinator + Jorge Solla candidate), 40 dobradinhas, 288 lideranças; re-run delta=0.
 
 ## Contexto
 
@@ -37,8 +48,8 @@ Divergências A×B no MAPA GERAL (9 linhas: Brejões, Catu, Iaçu, Ipiaú, Jagua
 
 ## Decisões travadas
 
-- **v1 importa apenas números/enums (`expectedVotes`, `priority`).** Colunas com nomes (LIDERANÇAS, ASSESSOR RESPONSÁVEL, DOBRADINHAS, ENCAMINHAMENTOS, OBSERVAÇÃO) ficam para fase 2, pós-lote jurídico — nome de ator político é dado pessoal que revela opinião política (LGPD art. 11); destino (CRM `leadership` × nota staff-only) se decide com a assessoria. **Rejeitado:** importar tudo com access staff-only (antecipa exatamente o risco que a Onda 0 segura); campo novo `networkNotes` (schema por dado que ainda não pode entrar).
-- **SITUAÇÃO e VOTOS não são importados.** Tendência é derivada do TSE (`computeVoteTrend` — decisão E2 mantida); votos históricos vêm de `electionTally`/artefato. A planilha só manda no que é julgamento humano: metas e prioridade. **Rejeitado:** persistir a SITUAÇÃO da planilha (duplicaria a derivação com dado defasado).
+- ~~**v1 importa apenas números/enums (`expectedVotes`, `priority`).**~~ **Superado pela revisão (c):** o produto decidiu importar as colunas com nomes em 2026-07-24, com entidades name-only e trilha de consentimento a regularizar com a assessoria. (Racional original: nome de ator político é dado pessoal que revela opinião política — LGPD art. 11.)
+- ~~**SITUAÇÃO e VOTOS não são importados.**~~ **Superado pela revisão (c) para SITUAÇÃO** (vira `politicalTrend`, o campo de julgamento humano da coordenação — a tendência derivada do TSE via `computeVoteTrend` segue intacta no card de baseline). VOTOS históricos continuam fora (vêm de `electionTally`/artefato).
 - **Salvador (linha única, metas 30k/27k/25k) é pulado com relatório explícito.** O catálogo tem 19 Municípios-zona e a planilha não distribui; inventar rateio viola "não estimar o que não tem dado" (falsa precisão). Metas de zona entram via UI pelo coordenador. **Rejeitado:** rateio proporcional ao voto por zona (número inventado com cara de número).
 - **Arquivo A é o canônico de estratégia; B é referência.** Mais recente nos 9 conflitos e corroborado pela entrevista (Jaguaquara). O script aceita `--file` para apontar planilha nova se chegar versão mais atual.
 - **`priority`: `alta` → `alta`; `Baixa`/vazio → `normal`.** Cross-check com a aba PRIORITÁRIAS (conjunto alfabético de 50, não ranking): prioritária sem `alta` no MAPA GERAL = warning no relatório.
@@ -79,7 +90,7 @@ flowchart LR
 
 ## Não escopo
 
-- Import recorrente/automático (fora de escopo do roadmap — atualização contínua via UI); colunas com nomes (fase 2 pós-lote jurídico); Salvador por zona/bairro (UI manual; drill de bairro segue como E5 futuro); criação de `leadership`/`Contact` a partir da planilha (CRM real só com Consent).
+- Import recorrente/automático (fora de escopo do roadmap — atualização contínua via UI); Salvador por zona/bairro (UI manual, inclusive para as colunas de estratégia; drill de bairro segue como E5 futuro). ~~Colunas com nomes / criação de `leadership`+`Contact`~~ entregues na revisão (c).
 
 ## Rabbit holes
 

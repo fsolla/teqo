@@ -1,13 +1,21 @@
 /**
- * E4R — Import único da planilha de projeção → municipality.expectedVotes + priority.
+ * E4R — Import da planilha de projeção → municipality (estimativas + colunas de estratégia).
  *
  * Provenance:
  * - Canonical strategy file: docs/sheets/Mapa projeção de votos Solla 2026.xlsx (MAPA GERAL)
  * - Reference (Salvador / A×B diff): docs/sheets/Mapa_projecao_votos_Solla_2026.xlsx
  * - Sheet scenarios map Bom → otimista, Regular → média (central), Mínimo → pessimista.
- * - Writes only numbers/enums (zero PII). Never creates Contact/leadership.
- * - Always overwrites expectedVotes + priority on matched rows (re-seed when the mesa
- *   sends a newer sheet over an already-populated DB). Does not touch lastUpdateAt.
+ * - Fase 1 (E4R): expectedVotes + priority (overwrite nas linhas casadas).
+ * - Fase 2 (2026-07-24): SITUAÇÃO → politicalTrend; DOBRADINHAS → stateDeputy + stateDeputies
+ *   (+ dobradinhaNotes com a célula crua); LIDERANÇAS → contact (sem telefone) + leadership;
+ *   ASSESSOR RESPONSÁVEL → campaignUser + municipality.advisors; ENCAMINHAMENTOS → nextSteps;
+ *   OBSERVAÇÃO → strengths/risks (classificação curada por slug). A aba PRIORITÁRIAS sobrepõe
+ *   SITUAÇÃO/LIDERANÇAS/ASSESSOR quando a célula é não-vazia. Entidades nascem name-only
+ *   (usuários sem email/username/credenciais; contatos sem telefone) — ajuste manual depois.
+ * - Relações (advisors, stateDeputies, municípios da liderança) são UNIÃO (nunca removem);
+ *   campos de texto definidos na planilha sobrescrevem; nada é limpo quando a célula é vazia.
+ * - Salvador (19 municípios-zona) é pulado para TODAS as colunas (relatório explícito).
+ * - Não toca lastUpdateAt.
  *
  * Safety: refuses non-local DATABASE_URL unless ALLOW_REMOTE_DB=true.
  *
@@ -25,6 +33,7 @@
  *   --reference <path>  Override reference workbook for A×B diff
  */
 
+import { randomBytes } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -58,7 +67,18 @@ const SALVADOR_CITY = 'Salvador'
  *   votes2022: number | null
  *   expectationRaw: string | null
  *   priorityRaw: string | null
+ *   situationRaw: string | null
+ *   dobradinhasRaw: string | null
+ *   leadershipsRaw: string | null
+ *   advisorsRaw: string | null
+ *   nextStepsRaw: string | null
+ *   observationRaw: string | null
  * }} ProjectionSheetRow
+ * @typedef {{
+ *   situationRaw: string | null
+ *   leadershipsRaw: string | null
+ *   advisorsRaw: string | null
+ * }} PrioritariaRow
  * @typedef {{ optimistic?: number | null, central?: number | null, pessimistic?: number | null } | null | undefined} DbExpectedVotes
  */
 
@@ -165,6 +185,12 @@ const readMapaGeralRows = (workbook, parseSheetNumber, normalizeKey) => {
   const votes2014Col = indexByLabel.get('VOTOS 2014')
   const votes2018Col = indexByLabel.get('VOTOS 2018')
   const votes2022Col = indexByLabel.get('VOTOS 2022')
+  const situationCol = indexByLabel.get('SITUAÇÃO')
+  const dobradinhasCol = indexByLabel.get('DOBRADINHAS')
+  const leadershipsCol = indexByLabel.get('LIDERANÇAS')
+  const advisorsCol = indexByLabel.get('ASSESSOR RESPONSÁVEL')
+  const nextStepsCol = indexByLabel.get('ENCAMINHAMENTOS')
+  const observationCol = indexByLabel.get('OBSERVAÇÃO')
 
   /** @type {Map<string, ProjectionSheetRow>} */
   const byKey = new Map()
@@ -186,6 +212,12 @@ const readMapaGeralRows = (workbook, parseSheetNumber, normalizeKey) => {
       votes2022: parseSheetNumber(row[votes2022Col]),
       expectationRaw: cellString(row[expectationCol]),
       priorityRaw: cellString(row[priorityCol]),
+      situationRaw: situationCol === undefined ? null : cellString(row[situationCol]),
+      dobradinhasRaw: dobradinhasCol === undefined ? null : cellString(row[dobradinhasCol]),
+      leadershipsRaw: leadershipsCol === undefined ? null : cellString(row[leadershipsCol]),
+      advisorsRaw: advisorsCol === undefined ? null : cellString(row[advisorsCol]),
+      nextStepsRaw: nextStepsCol === undefined ? null : cellString(row[nextStepsCol]),
+      observationRaw: observationCol === undefined ? null : cellString(row[observationCol]),
     })
   }
 
@@ -193,30 +225,40 @@ const readMapaGeralRows = (workbook, parseSheetNumber, normalizeKey) => {
 }
 
 /**
+ * PRIORITÁRIAS rows override MAPA GERAL for SITUAÇÃO/LIDERANÇAS/ASSESSOR when non-empty.
  * @param {import('xlsx').WorkBook} workbook
  * @param {(value: string) => string} normalizeKey
+ * @returns {Map<string, PrioritariaRow>}
  */
-const readPrioritariaNames = (workbook, normalizeKey) => {
+const readPrioritariaRows = (workbook, normalizeKey) => {
   const matrix = sheetMatrix(workbook, PRIORITARIAS)
   const { rowIndex, indexByLabel } = findHeaderIndex(matrix, ['MUNICÍPIO'])
   const municipalityCol = indexByLabel.get('MUNICÍPIO')
-  /** @type {Set<string>} */
-  const names = new Set()
+  const situationCol = indexByLabel.get('SITUAÇÃO')
+  const leadershipsCol = indexByLabel.get('LIDERANÇAS')
+  const advisorsCol = indexByLabel.get('ASSESSOR RESPONSÁVEL')
+
+  /** @type {Map<string, PrioritariaRow>} */
+  const byKey = new Map()
 
   for (let i = rowIndex + 1; i < matrix.length; i += 1) {
     const row = matrix[i]
     if (!Array.isArray(row)) continue
     const label = cellString(row[municipalityCol])
     if (!label || label.toUpperCase() === 'MUNICÍPIO') continue
-    names.add(normalizeKey(label))
+    byKey.set(normalizeKey(label), {
+      situationRaw: situationCol === undefined ? null : cellString(row[situationCol]),
+      leadershipsRaw: leadershipsCol === undefined ? null : cellString(row[leadershipsCol]),
+      advisorsRaw: advisorsCol === undefined ? null : cellString(row[advisorsCol]),
+    })
   }
 
-  return names
+  return byKey
 }
 
 assertLocalDatabase(
   'seed:projecao',
-  'This script overwrites municipality expectedVotes/priority from the projection sheet.',
+  'This script overwrites municipality strategy fields from the projection sheet.',
 )
 
 const options = parseArgs(process.argv.slice(2))
@@ -232,9 +274,8 @@ const { canonicalizeMunicipalityName, UnknownMunicipalityError, normalizeMunicip
 const { municipalityCatalogEntriesForCity } = await import('../src/lib/municipalityCatalog.ts')
 const { getMunicipalityFederalBaseline } = await import('../src/lib/bahiaElectionAggregates.ts')
 const { territoryForCity } = await import('../src/lib/bahiaTerritories.ts')
-const { parseExpectationCell, mapSheetPriority, parseSheetNumber } = await import(
-  '../src/lib/projectionSheetParse.ts'
-)
+const { parseExpectationCell, mapSheetPriority, parseSheetNumber, parseSituationCell, splitNameCell } =
+  await import('../src/lib/projectionSheetParse.ts')
 const {
   getVoteEstimateOrderViolation,
   toVoteEstimateScenarioViewModel,
@@ -243,15 +284,131 @@ const {
   hasAnyVoteEstimate,
 } = await import('../src/utilities/voteEstimate.ts')
 const { withPayloadTransaction } = await import('../src/utilities/payloadTransaction.ts')
+const { slugify } = await import('../src/utilities/slug.ts')
 
 /** @param {import('../src/utilities/voteEstimate.ts').VoteEstimateScenarioViewModel} estimates */
 const formatEstimates = (estimates) => {
   if (!hasAnyVoteEstimate(estimates)) return '(vazio)'
   return `${voteEstimateScenarioLabels.optimistic}:${estimates.optimistic ?? '—'} | ${voteEstimateScenarioLabels.central}:${estimates.central ?? '—'} | ${voteEstimateScenarioLabels.pessimistic}:${estimates.pessimistic ?? '—'}`
 }
+
+// ---------------------------------------------------------------------------
+// Curated name resolution (adjust here when the mesa sends corrections)
+// ---------------------------------------------------------------------------
+
+/** Sheet spelling variants → canonical staff slug ("Edizio" é o CG; "Solla" é o candidato). */
+const STAFF_SLUG_ALIASES = {
+  mariana: 'marianna',
+  joao: 'joao-lucio',
+  caio: 'caio-cesar',
+  solla: 'jorge-solla',
+}
+const COORDINATOR_SLUG = 'edizio'
+const CANDIDATE_SLUG = 'jorge-solla'
+const CANDIDATE_DISPLAY_NAME = 'Jorge Solla'
+
+/** Sheet spelling variants → canonical state-deputy slug. */
+const DEPUTY_SLUG_ALIASES = {
+  galo: 'marcelino-galo',
+  angelo: 'angelo-almeida',
+  fatima: 'fatima-nunes',
+  rowena: 'rowenna',
+  osni: 'osny',
+}
+
+/** The candidate himself shows up in DOBRADINHAS/LIDERANÇAS cells — never an entity there. */
+const CANDIDATE_NAME_SLUGS = new Set(['solla', 'sola', 'jorge-solla'])
+
+/**
+ * OBSERVAÇÃO → strengths ("Forças") or risks ("Riscos"), curated per municipality slug
+ * (only 4 filled cells in the current sheet; classify new ones here when they appear).
+ */
+const OBSERVATION_TARGET_BY_SLUG = {
+  brejoes: 'strengths', // "Prefeito se aproximou de Solla" — sinal positivo
+  camacari: 'risks', // "Resolver demanda de Mutakani" — pendência aberta
+  inhambupe: 'risks', // articulação com ex-prefeito ainda em construção
+  laje: 'risks', // diálogo a acompanhar
+}
+
+const trendNoteFor = (situationRaw) =>
+  `Importado da planilha de projeção (jul/2026) — SITUAÇÃO: ${situationRaw}`
+
+const staffSlugFor = (name) => {
+  const slug = slugify(name)
+  return STAFF_SLUG_ALIASES[slug] ?? slug
+}
+
+const deputySlugFor = (name) => {
+  const slug = slugify(name)
+  return DEPUTY_SLUG_ALIASES[slug] ?? slug
+}
+
+/**
+ * @typedef {{ variants: Map<string, number>, municipalityLabels: Set<string>, municipalityIds: Set<number>, cities: Set<string> }} RosterEntry
+ */
+
+/** @returns {RosterEntry} */
+const emptyRosterEntry = () => ({
+  variants: new Map(),
+  municipalityLabels: new Set(),
+  municipalityIds: new Set(),
+  cities: new Set(),
+})
+
+/**
+ * @param {Map<string, RosterEntry>} roster
+ * @param {string} slug
+ * @param {string} rawName
+ * @param {{ label: string, id: number, city: string }} municipality
+ */
+const addRosterEntry = (roster, slug, rawName, municipality) => {
+  let entry = roster.get(slug)
+  if (!entry) {
+    entry = emptyRosterEntry()
+    roster.set(slug, entry)
+  }
+  entry.variants.set(rawName, (entry.variants.get(rawName) ?? 0) + 1)
+  entry.municipalityLabels.add(municipality.label)
+  entry.municipalityIds.add(municipality.id)
+  entry.cities.add(municipality.city)
+}
+
+/**
+ * Longest variant wins (full names beat nicknames); ties break by capitalized first
+ * letter, then frequency, then accented spelling, then first-seen.
+ */
+const canonicalRosterName = (entry) => {
+  const score = (name, count) => [
+    name.length,
+    /^\p{Lu}/u.test(name) ? 1 : 0,
+    count,
+    (name.match(/[À-ÿ]/g) ?? []).length,
+  ]
+  const beats = (a, b) => {
+    for (let i = 0; i < a.length; i += 1) {
+      if (a[i] !== b[i]) return a[i] > b[i]
+    }
+    return false // full tie → keep the first-seen variant
+  }
+  let best = null
+  let bestScore = null
+  for (const [name, count] of entry.variants) {
+    const nameScore = score(name, count)
+    if (best === null || beats(nameScore, bestScore)) {
+      best = name
+      bestScore = nameScore
+    }
+  }
+  return best ?? ''
+}
+
+const formatVariants = (entry) =>
+  [...entry.variants.entries()].map(([name, count]) => `${name}×${count}`).join(', ')
+
 const canonicalBook = XLSX.readFile(options.file, { cellDates: false })
 const canonicalRows = readMapaGeralRows(canonicalBook, parseSheetNumber, normalizeMunicipalityKey)
-const prioritarias = readPrioritariaNames(canonicalBook, normalizeMunicipalityKey)
+const prioritariaRows = readPrioritariaRows(canonicalBook, normalizeMunicipalityKey)
+const prioritarias = new Set(prioritariaRows.keys())
 
 /** @type {Map<string, ProjectionSheetRow> | null} */
 let referenceRows = null
@@ -292,19 +449,21 @@ const municipalityDocs = await payload.find({
     kind: true,
     priority: true,
     expectedVotes: true,
+    advisors: true,
+    stateDeputies: true,
+    dobradinhaNotes: true,
+    nextSteps: true,
+    strengths: true,
+    risks: true,
+    politicalTrend: true,
   },
 })
 
-/** @type {Map<string, { id: number, slug: string, priority: string | null, expectedVotes: DbExpectedVotes }>} */
+/** @type {Map<string, (typeof municipalityDocs.docs)[number]>} */
 const docsBySlug = new Map()
 for (const doc of municipalityDocs.docs) {
   if (typeof doc.slug === 'string') {
-    docsBySlug.set(doc.slug, {
-      id: doc.id,
-      slug: doc.slug,
-      priority: doc.priority ?? null,
-      expectedVotes: doc.expectedVotes ?? null,
-    })
+    docsBySlug.set(doc.slug, doc)
   }
 }
 
@@ -314,6 +473,19 @@ const unmatched = []
 const parseErrors = []
 const warnings = []
 const axbDiffs = []
+/** @type {Array<{ label: string, column: string, segment: string }>} */
+const skippedSegments = []
+/** @type {Array<{ label: string, column: string, prior: string, geral: string }>} */
+const prioritariaOverrides = []
+
+/** @type {Map<string, RosterEntry>} */
+const staffRoster = new Map()
+/** @type {Map<string, RosterEntry>} */
+const deputyRoster = new Map()
+/** @type {Map<string, RosterEntry>} */
+const leadershipRoster = new Map()
+
+const normalizeCellComparison = (value) => value.replace(/\s+/g, ' ').trim().toLowerCase()
 
 for (const sheetRow of canonicalRows.values()) {
   let city
@@ -330,11 +502,23 @@ for (const sheetRow of canonicalRows.values()) {
     throw error
   }
 
+  const sheetKey = normalizeMunicipalityKey(sheetRow.municipalityLabel)
+  const prioritariaRow = prioritariaRows.get(sheetKey) ?? null
+
   if (city === SALVADOR_CITY) {
     skippedSalvador.push({
       label: sheetRow.municipalityLabel,
       expectationRaw: sheetRow.expectationRaw,
       priorityRaw: sheetRow.priorityRaw,
+      hasStrategy: Boolean(
+        sheetRow.situationRaw ||
+          sheetRow.dobradinhasRaw ||
+          sheetRow.leadershipsRaw ||
+          sheetRow.advisorsRaw ||
+          sheetRow.nextStepsRaw ||
+          sheetRow.observationRaw ||
+          prioritariaRow,
+      ),
     })
     continue
   }
@@ -360,29 +544,25 @@ for (const sheetRow of canonicalRows.values()) {
     continue
   }
 
-  const expectedVotes = parseExpectationCell(sheetRow.expectationRaw)
-  if (!expectedVotes) {
-    if (sheetRow.expectationRaw) {
-      parseErrors.push({
-        label: sheetRow.municipalityLabel,
-        slug: catalogEntry.slug,
-        raw: sheetRow.expectationRaw,
-      })
-    }
-    continue
+  // --- Estimativas (fase 1, comportamento preservado) -----------------------
+  let expectedVotes = parseExpectationCell(sheetRow.expectationRaw)
+  if (!expectedVotes && sheetRow.expectationRaw) {
+    parseErrors.push({
+      label: sheetRow.municipalityLabel,
+      slug: catalogEntry.slug,
+      raw: sheetRow.expectationRaw,
+    })
   }
-
-  if (getVoteEstimateOrderViolation(expectedVotes)) {
+  if (expectedVotes && getVoteEstimateOrderViolation(expectedVotes)) {
     parseErrors.push({
       label: sheetRow.municipalityLabel,
       slug: catalogEntry.slug,
       raw: `${sheetRow.expectationRaw} (ordem Otimista ≥ Média ≥ Pessimista inválida)`,
     })
-    continue
+    expectedVotes = null
   }
 
   const priority = mapSheetPriority(sheetRow.priorityRaw)
-  const sheetKey = normalizeMunicipalityKey(sheetRow.municipalityLabel)
 
   if (prioritarias.has(sheetKey) && priority !== 'alta') {
     warnings.push(
@@ -418,7 +598,7 @@ for (const sheetRow of canonicalRows.values()) {
     )
   }
 
-  if (referenceRows) {
+  if (expectedVotes && referenceRows) {
     const ref = referenceRows.get(sheetKey)
     if (ref) {
       const refEstimates = parseExpectationCell(ref.expectationRaw)
@@ -440,29 +620,423 @@ for (const sheetRow of canonicalRows.values()) {
     }
   }
 
-  matched.push({ doc, expectedVotes, priority })
+  // --- Estratégia (fase 2) ---------------------------------------------------
+  const resolveOverride = (column, priorRaw, geralRaw) => {
+    if (priorRaw != null && geralRaw != null) {
+      if (normalizeCellComparison(priorRaw) !== normalizeCellComparison(geralRaw)) {
+        prioritariaOverrides.push({
+          label: sheetRow.municipalityLabel,
+          column,
+          prior: priorRaw,
+          geral: geralRaw,
+        })
+      }
+    }
+    return priorRaw ?? geralRaw
+  }
+
+  const situationRaw = resolveOverride(
+    'SITUAÇÃO',
+    prioritariaRow?.situationRaw ?? null,
+    sheetRow.situationRaw,
+  )
+  const leadershipsRaw = resolveOverride(
+    'LIDERANÇAS',
+    prioritariaRow?.leadershipsRaw ?? null,
+    sheetRow.leadershipsRaw,
+  )
+  const advisorsRaw = resolveOverride(
+    'ASSESSOR RESPONSÁVEL',
+    prioritariaRow?.advisorsRaw ?? null,
+    sheetRow.advisorsRaw,
+  )
+
+  const trendStatus = parseSituationCell(situationRaw)
+
+  const municipalityRef = { label: sheetRow.municipalityLabel, id: doc.id, city }
+
+  const advisorsSplit = splitNameCell(advisorsRaw)
+  const advisorSlugs = []
+  for (const name of advisorsSplit.names) {
+    const slug = staffSlugFor(name)
+    if (!advisorSlugs.includes(slug)) advisorSlugs.push(slug)
+    addRosterEntry(staffRoster, slug, name, municipalityRef)
+  }
+  for (const segment of advisorsSplit.skipped) {
+    skippedSegments.push({ label: sheetRow.municipalityLabel, column: 'ASSESSOR', segment })
+  }
+
+  const deputiesSplit = splitNameCell(sheetRow.dobradinhasRaw)
+  const deputySlugs = []
+  for (const name of deputiesSplit.names) {
+    const slug = deputySlugFor(name)
+    if (CANDIDATE_NAME_SLUGS.has(slug)) {
+      skippedSegments.push({
+        label: sheetRow.municipalityLabel,
+        column: 'DOBRADINHAS',
+        segment: `${name} (candidato — não vira dobradinha)`,
+      })
+      continue
+    }
+    if (!deputySlugs.includes(slug)) deputySlugs.push(slug)
+    addRosterEntry(deputyRoster, slug, name, municipalityRef)
+  }
+  for (const segment of deputiesSplit.skipped) {
+    skippedSegments.push({ label: sheetRow.municipalityLabel, column: 'DOBRADINHAS', segment })
+  }
+
+  const leadershipsSplit = splitNameCell(leadershipsRaw)
+  for (const name of leadershipsSplit.names) {
+    const slug = slugify(name)
+    if (CANDIDATE_NAME_SLUGS.has(slug)) {
+      skippedSegments.push({
+        label: sheetRow.municipalityLabel,
+        column: 'LIDERANÇAS',
+        segment: `${name} (candidato — não vira liderança)`,
+      })
+      continue
+    }
+    addRosterEntry(leadershipRoster, slug, name, municipalityRef)
+  }
+  for (const segment of leadershipsSplit.skipped) {
+    skippedSegments.push({ label: sheetRow.municipalityLabel, column: 'LIDERANÇAS', segment })
+  }
+
+  const observationTarget = sheetRow.observationRaw
+    ? (OBSERVATION_TARGET_BY_SLUG[catalogEntry.slug] ?? null)
+    : null
+  if (sheetRow.observationRaw && !observationTarget) {
+    warnings.push(
+      `OBSERVAÇÃO sem classificação Forças/Riscos para ${sheetRow.municipalityLabel} (${catalogEntry.slug}) — adicione em OBSERVATION_TARGET_BY_SLUG: ${JSON.stringify(sheetRow.observationRaw)}`,
+    )
+  }
+
+  matched.push({
+    doc,
+    label: sheetRow.municipalityLabel,
+    expectedVotes,
+    priority,
+    trendStatus,
+    situationRaw,
+    advisorSlugs,
+    deputySlugs,
+    dobradinhasRaw: sheetRow.dobradinhasRaw,
+    nextStepsRaw: sheetRow.nextStepsRaw,
+    observationRaw: sheetRow.observationRaw,
+    observationTarget,
+  })
 }
+
+// ---------------------------------------------------------------------------
+// Entity plans (matched against the current database, created inside the tx)
+// ---------------------------------------------------------------------------
+
+const existingUsers = await payload.find({
+  collection: 'campaignUser',
+  depth: 0,
+  limit: 5000,
+  pagination: false,
+  overrideAccess: true,
+  select: { name: true, role: true },
+})
+
+const usersBySlug = new Map()
+for (const user of existingUsers.docs) {
+  const slug = slugify(String(user.name ?? ''))
+  if (!slug) continue
+  if (usersBySlug.has(slug)) {
+    warnings.push(
+      `Usuários duplicados com o nome "${user.name}" no banco — usando o id ${usersBySlug.get(slug).id} para o match.`,
+    )
+    continue
+  }
+  usersBySlug.set(slug, user)
+}
+const existingCoordinators = existingUsers.docs.filter((user) => user.role === 'coordinator')
+const existingCandidates = existingUsers.docs.filter((user) => user.role === 'candidate')
+
+const staffPlans = new Map()
+for (const [slug, entry] of staffRoster) {
+  const role =
+    slug === COORDINATOR_SLUG ? 'coordinator' : slug === CANDIDATE_SLUG ? 'candidate' : 'advisor'
+  const name = slug === CANDIDATE_SLUG ? CANDIDATE_DISPLAY_NAME : canonicalRosterName(entry)
+  let existing = usersBySlug.get(slug) ?? null
+  if (existing && existing.role === 'leader') {
+    warnings.push(
+      `Usuário existente "${existing.name}" (id ${existing.id}) tem papel Liderança — não pode ser assessor; será criado um novo usuário "${name}".`,
+    )
+    existing = null
+  }
+  if (!existing && role === 'coordinator' && existingCoordinators.length === 1) {
+    existing = existingCoordinators[0]
+  }
+  if (!existing && role === 'candidate' && existingCandidates.length === 1) {
+    existing = existingCandidates[0]
+  }
+  staffPlans.set(slug, {
+    slug,
+    name,
+    role,
+    existing,
+    userId: existing ? existing.id : null,
+    entry,
+  })
+}
+
+const existingDeputies = await payload.find({
+  collection: 'stateDeputy',
+  depth: 0,
+  limit: 5000,
+  pagination: false,
+  overrideAccess: true,
+  select: { name: true, slug: true },
+})
+const deputiesBySlug = new Map(existingDeputies.docs.map((deputy) => [deputy.slug, deputy]))
+
+const deputyPlans = new Map()
+for (const [slug, entry] of deputyRoster) {
+  const existing = deputiesBySlug.get(slug) ?? null
+  deputyPlans.set(slug, {
+    slug,
+    name: canonicalRosterName(entry),
+    existing,
+    deputyId: existing ? existing.id : null,
+    entry,
+  })
+}
+
+const existingLeaderships = await payload.find({
+  collection: 'leadership',
+  depth: 1,
+  limit: 5000,
+  pagination: false,
+  overrideAccess: true,
+  select: { contact: true, municipalities: true },
+})
+
+const relationId = (value) => (typeof value === 'object' && value !== null ? value.id : value)
+
+const leadershipsByContactSlug = new Map()
+for (const leadership of existingLeaderships.docs) {
+  const contact = leadership.contact
+  const contactName = typeof contact === 'object' && contact !== null ? contact.name : null
+  if (typeof contactName !== 'string') continue
+  const slug = slugify(contactName)
+  if (!slug || leadershipsByContactSlug.has(slug)) continue
+  leadershipsByContactSlug.set(slug, {
+    id: leadership.id,
+    contactName,
+    municipalityIds: (leadership.municipalities ?? []).map(relationId).filter((id) => id != null),
+  })
+}
+
+const leadershipPlans = new Map()
+for (const [slug, entry] of leadershipRoster) {
+  const existing = leadershipsByContactSlug.get(slug) ?? null
+  const municipalityIds = [...entry.municipalityIds]
+  const missingIds = existing
+    ? municipalityIds.filter((id) => !existing.municipalityIds.includes(id))
+    : municipalityIds
+  leadershipPlans.set(slug, {
+    slug,
+    name: canonicalRosterName(entry),
+    existing,
+    municipalityIds,
+    missingIds,
+    city: entry.cities.size === 1 ? [...entry.cities][0] : null,
+    entry,
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Municipality write plans (delta vs current DB state)
+// ---------------------------------------------------------------------------
+
+const uniqueUnion = (current, additions) => {
+  const merged = [...new Set([...current, ...additions])]
+  return merged.length === current.length ? null : merged
+}
+
+/** Builds the municipality update payload for a matched row (null = nothing to write). */
+const buildMunicipalityData = (row) => {
+  const data = {}
+
+  if (row.expectedVotes) {
+    const currentEstimates = toVoteEstimateScenarioViewModel(row.doc.expectedVotes)
+    const nextEstimates = toVoteEstimateScenarioViewModel(row.expectedVotes)
+    const currentPriority = row.doc.priority === 'alta' ? 'alta' : 'normal'
+    if (!voteEstimatesEqual(currentEstimates, nextEstimates) || currentPriority !== row.priority) {
+      data.expectedVotes = row.expectedVotes
+      data.priority = row.priority
+    }
+  }
+
+  if (row.trendStatus) {
+    const note = trendNoteFor(row.situationRaw)
+    const currentTrend = row.doc.politicalTrend ?? {}
+    if (currentTrend.status !== row.trendStatus || (currentTrend.note ?? '') !== note) {
+      data.politicalTrend = { status: row.trendStatus, note }
+    }
+  }
+
+  if (row.advisorSlugs.length > 0) {
+    const advisorIds = row.advisorSlugs
+      .map((slug) => staffPlans.get(slug)?.userId)
+      .filter((id) => id != null)
+    const merged = uniqueUnion(row.doc.advisors ?? [], advisorIds)
+    if (merged) data.advisors = merged
+  }
+
+  if (row.deputySlugs.length > 0) {
+    const deputyIds = row.deputySlugs
+      .map((slug) => deputyPlans.get(slug)?.deputyId)
+      .filter((id) => id != null)
+    const merged = uniqueUnion(row.doc.stateDeputies ?? [], deputyIds)
+    if (merged) data.stateDeputies = merged
+  }
+
+  if (row.dobradinhasRaw && row.dobradinhasRaw !== (row.doc.dobradinhaNotes ?? '')) {
+    data.dobradinhaNotes = row.dobradinhasRaw
+  }
+
+  if (row.nextStepsRaw && row.nextStepsRaw !== (row.doc.nextSteps ?? '')) {
+    data.nextSteps = row.nextStepsRaw
+  }
+
+  if (row.observationTarget && row.observationRaw) {
+    const current = row.doc[row.observationTarget] ?? []
+    const text = row.observationRaw.trim()
+    if (!current.some((item) => (item.text ?? '').trim() === text)) {
+      data[row.observationTarget] = [
+        ...current.map((item) => ({ id: item.id, text: item.text })),
+        { text },
+      ]
+    }
+  }
+
+  return Object.keys(data).length > 0 ? data : null
+}
+
+/**
+ * Pre-transaction dry-run delta: relationship ids for entities that will only exist after
+ * creation are unknown here, so "will add" is inferred from the plans instead.
+ */
+const planSummaryFor = (row) => {
+  const fields = []
+  const data = buildMunicipalityData(row)
+  if (data?.expectedVotes) fields.push('estimativas/prioridade')
+  if (data?.politicalTrend) fields.push('tendência')
+  const advisorCreates = row.advisorSlugs.some((slug) => staffPlans.get(slug)?.userId == null)
+  if (data?.advisors || advisorCreates) fields.push('assessores')
+  const deputyCreates = row.deputySlugs.some((slug) => deputyPlans.get(slug)?.deputyId == null)
+  if (data?.stateDeputies || deputyCreates) fields.push('dobradinhas')
+  if (data?.dobradinhaNotes) fields.push('dobradinhas (notas)')
+  if (data?.nextSteps) fields.push('encaminhamentos')
+  if (data?.strengths) fields.push('forças')
+  if (data?.risks) fields.push('riscos')
+  return fields
+}
+
+// ---------------------------------------------------------------------------
+// Report
+// ---------------------------------------------------------------------------
+
+const staffToCreate = [...staffPlans.values()].filter((plan) => plan.userId == null)
+const staffMatched = [...staffPlans.values()].filter((plan) => plan.userId != null)
+const deputiesToCreate = [...deputyPlans.values()].filter((plan) => plan.deputyId == null)
+const leadershipsToCreate = [...leadershipPlans.values()].filter((plan) => !plan.existing)
+const leadershipsToLink = [...leadershipPlans.values()].filter(
+  (plan) => plan.existing && plan.missingIds.length > 0,
+)
+
+const estimateRows = matched.filter((row) => row.expectedVotes)
+const trendRows = matched.filter((row) => row.trendStatus)
+const municipalityPlans = matched
+  .map((row) => ({ row, fields: planSummaryFor(row) }))
+  .filter((plan) => plan.fields.length > 0)
 
 console.log('\n=== E4R import projeção — relatório ===')
 console.log(`Arquivo canônico: ${options.file}`)
 if (referenceRows) console.log(`Arquivo referência: ${options.reference}`)
 console.log(
-  `Modo: ${options.dryRun ? 'DRY-RUN (sem escrita)' : 'ESCRITA (overwrite expectedVotes+priority)'}`,
+  `Modo: ${options.dryRun ? 'DRY-RUN (sem escrita)' : 'ESCRITA (estimativas + estratégia; união em relações)'}`,
 )
 console.log(`Linhas MAPA GERAL (com município): ${canonicalRows.size}`)
-console.log(`Casadas com EXPECTATIVA parseável: ${matched.length}`)
+console.log(`Casadas: ${matched.length} · com EXPECTATIVA parseável: ${estimateRows.length}`)
+console.log(`Com SITUAÇÃO definida: ${trendRows.length}`)
 console.log(`Salvador pulado: ${skippedSalvador.length}`)
 console.log(`Não casadas: ${unmatched.length}`)
 console.log(`EXPECTATIVA ilegível: ${parseErrors.length}`)
 console.log(`Avisos: ${warnings.length}`)
 console.log(`Divergências A×B: ${axbDiffs.length}`)
 console.log(`Prioritárias na aba: ${prioritarias.size}`)
+console.log(
+  `Assessores: ${staffPlans.size} (criar ${staffToCreate.length}, casados ${staffMatched.length})`,
+)
+console.log(
+  `Dobradinhas: ${deputyPlans.size} (criar ${deputiesToCreate.length}, casadas ${deputyPlans.size - deputiesToCreate.length})`,
+)
+console.log(
+  `Lideranças: ${leadershipPlans.size} (criar ${leadershipsToCreate.length}, vincular municípios em existentes ${leadershipsToLink.length})`,
+)
+console.log(`Segmentos descartados nas células de nomes: ${skippedSegments.length}`)
+console.log(`Overrides PRIORITÁRIAS ≠ MAPA GERAL: ${prioritariaOverrides.length}`)
+
+if (staffPlans.size > 0) {
+  console.log('\n— Assessores (coluna ASSESSOR RESPONSÁVEL) —')
+  for (const plan of [...staffPlans.values()].sort((a, b) => a.name.localeCompare(b.name))) {
+    const status = plan.existing
+      ? `casa com usuário existente #${plan.existing.id} (${plan.existing.name}, ${plan.existing.role})`
+      : `criar (papel ${plan.role}, sem credenciais)`
+    const variants = plan.entry.variants.size > 1 ? ` · variantes: ${formatVariants(plan.entry)}` : ''
+    console.log(`  ${plan.name}: ${status} · ${plan.entry.municipalityIds.size} município(s)${variants}`)
+  }
+}
+
+if (deputyPlans.size > 0) {
+  console.log('\n— Dobradinhas (deputados estaduais) —')
+  for (const plan of [...deputyPlans.values()].sort((a, b) => a.name.localeCompare(b.name))) {
+    const status = plan.existing ? `casa com dobradinha existente #${plan.existing.id}` : 'criar'
+    const variants = plan.entry.variants.size > 1 ? ` · variantes: ${formatVariants(plan.entry)}` : ''
+    console.log(`  ${plan.name}: ${status} · ${plan.entry.municipalityIds.size} município(s)${variants}`)
+  }
+}
+
+if (leadershipPlans.size > 0) {
+  console.log('\n— Lideranças (nome-only; contato sem telefone) —')
+  const multiMunicipality = [...leadershipPlans.values()].filter(
+    (plan) => plan.municipalityIds.length > 1,
+  )
+  console.log(
+    `  ${leadershipsToCreate.length} nova(s), ${leadershipsToLink.length} existente(s) ganham município(s); ${multiMunicipality.length} com mais de um município (merge por nome — revisar):`,
+  )
+  for (const plan of multiMunicipality.sort((a, b) => a.name.localeCompare(b.name))) {
+    console.log(`    ${plan.name}: ${[...plan.entry.municipalityLabels].join(', ')}`)
+  }
+}
+
+if (prioritariaOverrides.length > 0) {
+  console.log('\n— PRIORITÁRIAS sobrepõe MAPA GERAL (aplica-se a PRIORITÁRIAS) —')
+  for (const override of prioritariaOverrides) {
+    console.log(
+      `  ${override.label} · ${override.column}: ${JSON.stringify(override.prior)} (era ${JSON.stringify(override.geral)})`,
+    )
+  }
+}
+
+if (skippedSegments.length > 0) {
+  console.log('\n— Segmentos descartados (notas/coletivos/incertezas — permanecem só na planilha) —')
+  for (const skipped of skippedSegments.slice(0, 80)) {
+    console.log(`  [${skipped.label}] ${skipped.column}: ${JSON.stringify(skipped.segment)}`)
+  }
+  if (skippedSegments.length > 80) console.log(`  … +${skippedSegments.length - 80} mais`)
+}
 
 if (skippedSalvador.length > 0) {
-  console.log('\n— Salvador (pulado; estimativas por ZE via UI) —')
+  console.log('\n— Salvador (pulado; estimativas e estratégia por ZE via UI) —')
   for (const row of skippedSalvador) {
     console.log(
-      `  ${row.label}: ${row.expectationRaw ?? '(sem expectativa)'} · prioridade=${row.priorityRaw ?? '(vazia)'}`,
+      `  ${row.label}: ${row.expectationRaw ?? '(sem expectativa)'} · prioridade=${row.priorityRaw ?? '(vazia)'}${row.hasStrategy ? ' · colunas de estratégia ignoradas' : ''}`,
     )
   }
 }
@@ -476,7 +1050,7 @@ if (unmatched.length > 0) {
 }
 
 if (parseErrors.length > 0) {
-  console.log('\n— EXPECTATIVA não parseada (linha ignorada) —')
+  console.log('\n— EXPECTATIVA não parseada (estimativa ignorada; estratégia segue) —')
   for (const row of parseErrors.slice(0, 30)) {
     console.log(`  ${row.label} (${row.slug}): ${JSON.stringify(row.raw)}`)
   }
@@ -500,21 +1074,10 @@ if (warnings.length > 0) {
   if (warnings.length > 60) console.log(`  … +${warnings.length - 60} mais`)
 }
 
-const changing = matched.filter((row) => {
-  const currentEstimates = toVoteEstimateScenarioViewModel(row.doc.expectedVotes)
-  const nextEstimates = toVoteEstimateScenarioViewModel(row.expectedVotes)
-  const currentPriority = row.doc.priority === 'alta' ? 'alta' : 'normal'
-  return !voteEstimatesEqual(currentEstimates, nextEstimates) || currentPriority !== row.priority
-})
-
-console.log(`\nEscritas planejadas: ${matched.length} (delta vs DB: ${changing.length})`)
+console.log(`\nMunicípios com escrita planejada: ${municipalityPlans.length} de ${matched.length}`)
 console.log('Amostra (até 8):')
-for (const row of matched.slice(0, 8)) {
-  console.log(
-    `  ${row.doc.slug}: ${formatEstimates(toVoteEstimateScenarioViewModel(row.expectedVotes))} · priority=${row.priority} (DB era ${formatEstimates(
-      toVoteEstimateScenarioViewModel(row.doc.expectedVotes),
-    )}/${row.doc.priority ?? 'normal'})`,
-  )
+for (const plan of municipalityPlans.slice(0, 8)) {
+  console.log(`  ${plan.row.doc.slug}: ${plan.fields.join(', ')}`)
 }
 
 if (options.dryRun) {
@@ -523,23 +1086,108 @@ if (options.dryRun) {
 }
 
 try {
-  await withPayloadTransaction(payload, async ({ req }) => {
-    for (const row of matched) {
-      await payload.update({
-        collection: 'municipality',
-        id: row.doc.id,
+  const totals = await withPayloadTransaction(payload, async ({ req }) => {
+    let usersCreated = 0
+    for (const plan of staffPlans.values()) {
+      if (plan.userId != null) continue
+      const created = await payload.create({
+        collection: 'campaignUser',
         data: {
-          expectedVotes: row.expectedVotes,
-          priority: row.priority,
+          name: plan.name,
+          role: plan.role,
+          // Payload requires an email or username on auth creates. The reserved
+          // ".invalid" TLD guarantees the address never routes; the random password
+          // is never shared — an admin swaps in real credentials later.
+          email: `${plan.slug}@planilha.invalid`,
+          password: randomBytes(24).toString('base64url'),
         },
         depth: 0,
         overrideAccess: true,
         req,
       })
+      plan.userId = created.id
+      usersCreated += 1
     }
+
+    let deputiesCreated = 0
+    for (const plan of deputyPlans.values()) {
+      if (plan.deputyId != null) continue
+      const created = await payload.create({
+        collection: 'stateDeputy',
+        data: { name: plan.name },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+      plan.deputyId = created.id
+      deputiesCreated += 1
+    }
+
+    let leadershipsCreated = 0
+    let leadershipsLinked = 0
+    for (const plan of leadershipPlans.values()) {
+      if (plan.existing) {
+        if (plan.missingIds.length === 0) continue
+        await payload.update({
+          collection: 'leadership',
+          id: plan.existing.id,
+          data: {
+            municipalities: [...plan.existing.municipalityIds, ...plan.missingIds],
+          },
+          depth: 0,
+          overrideAccess: true,
+          req,
+        })
+        leadershipsLinked += 1
+        continue
+      }
+      const contact = await payload.create({
+        collection: 'contact',
+        data: {
+          name: plan.name,
+          state: 'BA',
+          city: plan.city,
+        },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+      await payload.create({
+        collection: 'leadership',
+        data: {
+          contact: contact.id,
+          municipalities: plan.municipalityIds,
+        },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+      leadershipsCreated += 1
+    }
+
+    let municipalitiesUpdated = 0
+    for (const row of matched) {
+      const data = buildMunicipalityData(row)
+      if (!data) continue
+      await payload.update({
+        collection: 'municipality',
+        id: row.doc.id,
+        data,
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+      municipalitiesUpdated += 1
+    }
+
+    return { usersCreated, deputiesCreated, leadershipsCreated, leadershipsLinked, municipalitiesUpdated }
   })
 
-  console.log(`\n[seed:projecao] OK — ${matched.length} município(s) atualizados (overwrite).\n`)
+  console.log(
+    `\n[seed:projecao] OK — ${totals.municipalitiesUpdated} município(s) atualizados; ` +
+      `${totals.usersCreated} usuário(s), ${totals.deputiesCreated} dobradinha(s), ` +
+      `${totals.leadershipsCreated} liderança(s) criados; ${totals.leadershipsLinked} liderança(s) existentes vinculadas.\n`,
+  )
   process.exit(0)
 } catch (error) {
   console.error(`\n[seed:projecao] ${error instanceof Error ? error.message : String(error)}\n`)

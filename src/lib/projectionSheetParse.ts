@@ -63,3 +63,110 @@ export const mapSheetPriority = (raw: string | null | undefined): ProjectionPrio
   if (raw == null) return 'normal'
   return raw.trim().toLowerCase() === 'alta' ? 'alta' : 'normal'
 }
+
+/** Municipality politicalTrend.status values derivable from the sheet SITUAÇÃO column. */
+export type ProjectionTrendStatus = 'favoravel' | 'neutra' | 'desfavoravel'
+
+const stripDiacritics = (value: string): string =>
+  value.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+/**
+ * SITUAÇÃO cell → politicalTrend.status.
+ * MAPA GERAL uses long emoji labels ("🔴  QUEDA DE VOTOS  —  Requer ação imediata");
+ * PRIORITÁRIAS uses bare labels ("QUEDA" | "MANTÉM" | "AUMENTO").
+ * "NÃO DEFINIDA", footers, and anything else → null (leave the municipality untouched).
+ */
+export const parseSituationCell = (
+  raw: string | null | undefined,
+): ProjectionTrendStatus | null => {
+  if (raw == null) return null
+  const normalized = stripDiacritics(raw).toUpperCase()
+  if (/\bQUEDA\b/.test(normalized)) return 'desfavoravel'
+  if (/\bMANTEM\b/.test(normalized)) return 'neutra'
+  if (/\bAUMENTO\b/.test(normalized)) return 'favoravel'
+  return null
+}
+
+export type NameCellSplit = {
+  /** Segments that look like an individual's name (may carry a descriptor, e.g. "Amilton do PT"). */
+  names: string[]
+  /** Segments dropped as notes/collectives/uncertainty — surfaced in the dry-run report. */
+  skipped: string[]
+}
+
+// Honorific abbreviations whose trailing period must not act as a sentence separator.
+const HONORIFIC_ABBREVIATION = /\b(dr|dra|sr|sra|prof|profa|sec)\./gi
+const HONORIFIC_PLACEHOLDER = '\u0000'
+
+/**
+ * Note/collective segment detectors, evaluated on the accent-stripped lowercase segment.
+ * A match means "this is not an individual's name" — the segment goes to `skipped`.
+ */
+const NOTE_SEGMENT_PATTERNS: RegExp[] = [
+  /^-+$/, // placeholder dash
+  /\?/, // uncertainty markers ("Alex?", "vice?", "?")
+  // Leading action verbs ("VER COM VILMA", "CONFIRMAR COM JÚLIO", "Construindo Julio", "com Goiano")
+  /^(ver|falar|confirmar|aguardar|articulando|construindo|resgatar|tratar|definir|cobrar|com)\b/,
+  /\b(ver|falar) com\b/, // embedded notes ("Amauri - VER COM VÉU")
+  /-\s*(ver|cobrar|definir|confirmar|aguardar|tratar)\b/, // "Diego Pita - COBRAR IONÁ"
+  /\bvai\b/, // "SOLLA VAI INFORMAR", "Solla vai ver"
+  /^a definir\b/, // "A definir"
+  /^candidato d/, // "candidato do Prefeito"
+  // Collectives / relationships / roles without an individual's name
+  /^(pessoal|pesoal|grupo|novo nucleo|associacao|sindicato|sindasesb|csol|presidente)\b/,
+  /^(pessoa|irma|sogro|moca|assessora?|vereadora?) de\b/,
+  /^estadual do\b/,
+  /^gerente d/,
+  /^indigenas?$/,
+  /^ex[- ]?(vice|prefeit)/,
+  /^([oa] )?(vereadora?|vereadores|prefeit[oa]|vice)$/,
+  /^sec\.? saude$/,
+]
+
+const isNoteSegment = (segment: string): boolean => {
+  const normalized = stripDiacritics(segment).toLowerCase()
+  return NOTE_SEGMENT_PATTERNS.some((pattern) => pattern.test(normalized))
+}
+
+/**
+ * Splits a DOBRADINHAS / LIDERANÇAS / ASSESSOR RESPONSÁVEL cell into individual names.
+ * Separators: comma, slash, semicolon, newline, " e ", and sentence periods (honorifics
+ * like "Dr. Paulo" are protected). Parentheticals are extracted into `skipped` before
+ * splitting; note-like segments (action phrases, collectives, "?"-marked) are skipped.
+ */
+export const splitNameCell = (raw: string | null | undefined): NameCellSplit => {
+  const names: string[] = []
+  const skipped: string[] = []
+  const cell = raw?.trim()
+  if (!cell) return { names, skipped }
+
+  const withoutParentheticals = cell.replace(/\([^)]*\)/g, (match) => {
+    skipped.push(match.trim())
+    return ' '
+  })
+
+  const protectedCell = withoutParentheticals.replace(
+    HONORIFIC_ABBREVIATION,
+    `$1${HONORIFIC_PLACEHOLDER}`,
+  )
+
+  const segments = protectedCell.split(/(?:[,/;|\n\r]|\s+e\s+|\.\s+|\.$)+/i)
+
+  for (const segment of segments) {
+    const cleaned = segment.replaceAll(HONORIFIC_PLACEHOLDER, '.').replace(/\s+/g, ' ').trim()
+    if (!cleaned) continue
+    if (isNoteSegment(cleaned)) {
+      skipped.push(cleaned)
+      continue
+    }
+    // Stray edge punctuation from sheet typos ("Júlio-"); internal descriptors survive.
+    const name = cleaned.replace(/^[-–—\s]+/, '').replace(/[-–—\s]+$/, '')
+    if (!name) {
+      skipped.push(cleaned)
+      continue
+    }
+    names.push(name)
+  }
+
+  return { names, skipped }
+}
