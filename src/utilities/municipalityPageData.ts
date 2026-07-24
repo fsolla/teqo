@@ -1,15 +1,20 @@
 import type { Payload } from 'payload'
 
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import {
+  compareMunicipalityVotesForSort,
+  computeVoteRankByYear,
+  DEFAULT_VOTE_RANK_YEAR,
+  type MunicipalityVoteRankEntry,
+} from '@/lib/municipalityVoteRank'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
 import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
 import {
   buildMunicipalityListWhere,
-  DEFAULT_MUNICIPALITY_LIST_SORT_DIR,
-  DEFAULT_MUNICIPALITY_LIST_SORT_KEY,
   municipalityPageSize,
   parseMunicipalityListParams,
+  resolveMunicipalityListSort,
   type MunicipalityListSearchParams,
   type MunicipalityListSortDirection,
   type MunicipalityListSortKey,
@@ -59,7 +64,6 @@ const payloadSortFieldByKey: Partial<Record<MunicipalityListSortKey, string>> = 
   kind: 'kind',
   lastUpdateAt: 'lastUpdateAt',
   trend: 'politicalTrend.status',
-  votos: 'name',
 }
 
 const municipalityNameCompare = (left: Municipality, right: Municipality): number =>
@@ -88,12 +92,23 @@ const applyDerivedMunicipalitySort = (
   docs: Municipality[],
   sortKey: MunicipalityListSortKey,
   dir: MunicipalityListSortDirection,
+  ranks: ReadonlyMap<string, MunicipalityVoteRankEntry>,
 ): Municipality[] => {
   switch (sortKey) {
     case 'expectedVotes':
       return sortByNullableValue(docs, dir, (municipality) => municipality.expectedVotes?.central)
     case 'coverage':
       return sortByNullableValue(docs, dir, (municipality) => municipality.advisors?.length)
+    case 'votos':
+      return [...docs].sort((left, right) => {
+        const byVotes = compareMunicipalityVotesForSort(
+          ranks.get(left.slug)?.votes ?? 0,
+          ranks.get(right.slug)?.votes ?? 0,
+          dir,
+        )
+        if (byVotes !== 0) return byVotes
+        return municipalityNameCompare(left, right)
+      })
     default:
       return docs
   }
@@ -107,8 +122,7 @@ export const loadMunicipalityListPageBundle = async (
   const state = parseMunicipalityListParams(searchParams)
   const where = buildMunicipalityListWhere(state)
   const isStaff = isCampaignStaff(user)
-  const sortKey = state.sort ?? DEFAULT_MUNICIPALITY_LIST_SORT_KEY
-  const sortDir = state.dir ?? DEFAULT_MUNICIPALITY_LIST_SORT_DIR
+  const { sort: sortKey, dir: sortDir } = resolveMunicipalityListSort(state)
 
   if (isCampaignLeader(user)) {
     return {
@@ -120,6 +134,7 @@ export const loadMunicipalityListPageBundle = async (
     }
   }
 
+  const ranks = computeVoteRankByYear(DEFAULT_VOTE_RANK_YEAR)
   const nativeSortField = payloadSortFieldByKey[sortKey]
   const isNative = nativeSortField !== undefined
 
@@ -181,7 +196,12 @@ export const loadMunicipalityListPageBundle = async (
     totalDocs = listResult.totalDocs
     totalPages = listResult.totalPages
   } else {
-    const allDocs = applyDerivedMunicipalitySort(listResult.docs as Municipality[], sortKey, sortDir)
+    const allDocs = applyDerivedMunicipalitySort(
+      listResult.docs as Municipality[],
+      sortKey,
+      sortDir,
+      ranks,
+    )
     totalDocs = allDocs.length
     totalPages = Math.max(1, Math.ceil(totalDocs / municipalityPageSize))
     const start = (state.page - 1) * municipalityPageSize
@@ -193,6 +213,7 @@ export const loadMunicipalityListPageBundle = async (
       toMunicipalityListViewModel(
         municipality,
         isStaff ? pledgeAggregates.get(municipality.id) : undefined,
+        ranks.get(municipality.slug) ?? null,
       ),
     ),
     totalDocs,

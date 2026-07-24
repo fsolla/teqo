@@ -1,33 +1,36 @@
-import { ChevronDownIcon, CircleAlertIcon, CircleCheckIcon } from 'lucide-react'
+import { CircleAlertIcon, CircleCheckIcon } from 'lucide-react'
 import Link from 'next/link'
-import type { ReactNode } from 'react'
 
-import { CampaignTransitionAnchor } from '@/components/campaign/CampaignListPending'
 import { MunicipalityAdvisorAvatarStack } from '@/components/campaign/MunicipalityAdvisorAvatarStack'
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/MunicipalityListAdvisorsControl'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/MunicipalityListExpectedVotesControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/MunicipalityListTrendControl'
+import { MunicipalitySortableHead } from '@/components/campaign/MunicipalitySortableHead'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
+import { formatElectionNumber } from '@/lib/electionInsights'
+import {
+  formatMunicipalityVoteRank,
+  formatMunicipalityVoteShare,
+} from '@/lib/municipalityVoteRank'
 import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
-  buildMunicipalitySortHref,
-  DEFAULT_MUNICIPALITY_LIST_SORT_DIR,
-  DEFAULT_MUNICIPALITY_LIST_SORT_KEY,
+  formatMunicipalityConcentrationHint,
   formatMunicipalityGeographyLabel,
+  formatMunicipalityListSortSummary,
   municipalityKindLabels,
-  municipalityListSortLabels,
   municipalityPriorityLabels,
-  type MunicipalityListSortKey,
+  resolveMunicipalityListSort,
   type MunicipalityListState,
 } from '@/utilities/municipalityUi'
 import type {
@@ -55,46 +58,29 @@ export type MunicipalityListProps = {
   state: MunicipalityListState
 }
 
-type MunicipalitySortableHeadProps = {
-  state: MunicipalityListState
-  sortKey: MunicipalityListSortKey
-  children: ReactNode
-  className?: string
-  align?: 'left' | 'center'
-}
-
-const MunicipalitySortableHead = ({
-  state,
-  sortKey,
-  children,
-  className,
-  align = 'left',
-}: MunicipalitySortableHeadProps) => {
-  const active = (state.sort ?? DEFAULT_MUNICIPALITY_LIST_SORT_KEY) === sortKey
-  const dir = active ? state.dir ?? DEFAULT_MUNICIPALITY_LIST_SORT_DIR : undefined
-  const isAscending = dir === 'asc'
+const VotePositionReadout = ({
+  position,
+  layout,
+}: {
+  position: NonNullable<MunicipalityListViewModel['votePosition2022']>
+  layout: 'table' | 'card'
+}) => {
+  const share = formatMunicipalityVoteShare(position.share)
+  const rank = formatMunicipalityVoteRank(position.rank)
+  const metaLine = `${formatElectionNumber(position.votes)} · ${rank}`
+  const ariaLabel = `${share} da votação estadual, ${formatElectionNumber(position.votes)} votos, ${rank} de ${formatElectionNumber(position.totalUnits)}`
 
   return (
-    <TableHead
-      className={cn(align === 'center' && 'text-center', className)}
-      aria-sort={active ? (isAscending ? 'ascending' : 'descending') : 'none'}
+    <div
+      className={cn(
+        'flex flex-col gap-0.5 tabular-nums',
+        layout === 'table' ? 'items-end text-right' : 'text-sm',
+      )}
+      aria-label={ariaLabel}
     >
-      <CampaignTransitionAnchor
-        href={buildMunicipalitySortHref(state, sortKey)}
-        className="inline-flex items-center gap-1"
-        aria-label={`Ordenar por ${municipalityListSortLabels[sortKey]}`}
-      >
-        {children}
-        <ChevronDownIcon
-          aria-hidden="true"
-          className={cn(
-            'h-4 w-4 transition-transform',
-            active ? 'text-foreground' : 'text-muted-foreground/50',
-            active && isAscending && '-rotate-180',
-          )}
-        />
-      </CampaignTransitionAnchor>
-    </TableHead>
+      <span className={cn('font-medium', layout === 'card' && 'text-foreground')}>{share}</span>
+      <span className="text-xs text-muted-foreground">{metaLine}</span>
+    </div>
   )
 }
 
@@ -121,11 +107,21 @@ export const MunicipalityList = ({
   trendFormAction,
   advisorsFormAction,
   state,
-}: MunicipalityListProps) => (
-  <>
-    <div data-view="mobile-cards" className="flex flex-col gap-4 md:hidden">
+}: MunicipalityListProps) => {
+  const { sort: activeSort, dir: activeDir } = resolveMunicipalityListSort(state)
+  const sortSummary = formatMunicipalityListSortSummary(activeSort, activeDir)
+  const concentrationHint = formatMunicipalityConcentrationHint()
+
+  return (
+    <>
+      <p className="text-sm text-muted-foreground" aria-live="polite">
+        {sortSummary}
+      </p>
+
+      <div data-view="mobile-cards" className="flex flex-col gap-4 md:hidden">
         {municipalities.map((municipality) => {
           const names = advisorNames(municipality, advisorNamesById)
+          const position = municipality.votePosition2022
           return (
             <article key={municipality.id} className="flex flex-col gap-3 rounded-xl border p-4">
               <div className="flex items-start justify-between gap-2">
@@ -134,6 +130,7 @@ export const MunicipalityList = ({
                   <p className="text-sm text-muted-foreground">
                     {formatMunicipalityGeographyLabel(municipality)}
                   </p>
+                  {position ? <VotePositionReadout position={position} layout="card" /> : null}
                 </div>
                 {municipality.priority === 'alta' && isStaffView ? (
                   <Badge variant="destructive">{municipalityPriorityLabels.alta}</Badge>
@@ -185,7 +182,7 @@ export const MunicipalityList = ({
                 </dl>
               ) : null}
               <Button asChild variant="outline" className="min-h-11 w-full">
-                <Link href={`/campanha/municipios/${municipality.slug}`}>Abrir Praça</Link>
+                <Link href={`/campanha/municipios/${municipality.slug}`}>Abrir município</Link>
               </Button>
             </article>
           )
@@ -194,10 +191,13 @@ export const MunicipalityList = ({
 
       <div data-view="desktop-table" className="hidden overflow-hidden rounded-xl border md:block">
         <Table>
+          <TableCaption className="sr-only">
+            {sortSummary}. Coluna 2022: {concentrationHint}
+          </TableCaption>
           <TableHeader>
             <TableRow>
               <MunicipalitySortableHead state={state} sortKey="name">
-                Praça
+                Município
               </MunicipalitySortableHead>
               <MunicipalitySortableHead state={state} sortKey="region">
                 Território de identidade
@@ -205,6 +205,12 @@ export const MunicipalityList = ({
               <MunicipalitySortableHead state={state} sortKey="kind">
                 Tipo
               </MunicipalitySortableHead>
+              <MunicipalitySortableHead
+                state={state}
+                sortKey="votos"
+                align="right"
+                tooltip={concentrationHint}
+              />
               {isStaffView ? (
                 <>
                   <TableHead>Assessores</TableHead>
@@ -251,6 +257,16 @@ export const MunicipalityList = ({
                     {municipality.region}
                   </TableCell>
                   <TableCell>{municipalityKindLabels[municipality.kind]}</TableCell>
+                  <TableCell className="text-right">
+                    {municipality.votePosition2022 ? (
+                      <VotePositionReadout
+                        position={municipality.votePosition2022}
+                        layout="table"
+                      />
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   {isStaffView ? (
                     <>
                       <TableCell>
@@ -318,3 +334,4 @@ export const MunicipalityList = ({
       </div>
     </>
   )
+}

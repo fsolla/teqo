@@ -1,11 +1,27 @@
 # A11 — Posição em votos do município (rank + % da própria votação) e ordenação por votação
 
-Status: rascunho
+Status: entregue 2026-07-24
 Atualizado em: 2026-07-24
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Demais itens abertos, A11; E9 absorve como coluna/ordenação da fila)
 Impeccable: B — encaixes em superfícies existentes (detalhe do município + lista), sem rota nova
 Appetite: ~0,5–1 dia eng; sem migration, sem collection, sem server action nova
 Responsável: —
+
+Revisões:
+- 2026-07-24 (entrega + polish pós-critique): helper `municipalityVoteRank`; baseline + coluna lista; default da lista = `votos` desc (omitido na URL); `?sort=name` para alfabético; share lidera a célula; rank no mobile; % dos válidos demoted. B15 amplia keys restantes.
+- 2026-07-24 (auditoria pre-implementação): B15 ainda ausente no código — esta entrega introduz `sort`/`dir` mínimo só para `name`|`votos` (fallback do plano); B15 amplia as demais keys depois. Seção Dados → decisão → apresentação preenchida. Questões em aberto fechadas: lista só 2022; sem delta de rank 2018→2022 na v1.
+
+## Dados → decisão → apresentação
+
+- **Vou apresentar dados?** Sim — superfície neste item (detalhe + lista).
+- **Decisões desbloqueadas:**
+  - Staff: “este município é que fatia/posição da nossa votação?”
+  - Staff: “abrir a lista na ordem da mesa (maior concentração da própria votação primeiro)”
+- **Forma escolhida:** **número + contexto** no detalhe (`12º de 435` · `3,1% da votação`); **tabela** na lista (coluna Votos 2022 + %, ordenável). **Rejeitado:** leaderboard gamificado; `% dos válidos` locais como âncora; chart.
+- **Profile:** numérico absoluto (votos) + share relativo da própria votação estadual; granularidade = município operacional (435); ano lista = 2022.
+- **Anti-goals:** sem % estadual absoluto como KPI; sem % do eleitorado local; sem medalhas/delta de rank na v1.
+
+Self-check dados: 5/5.
 
 ## Design (Impeccable)
 
@@ -26,7 +42,7 @@ A leitura "posição em votos absolutos + % da própria votação" é a **concen
 
 - **Detalhe do município:** no `MunicipalityBaselineCard` (ou card irmão compacto), por ano da série (default 2022): posição em votos absolutos (rank denso entre as 435 unidades do catálogo, ex.: "12º de 435") e **% da própria votação estadual** (votos no município ÷ Σ votos do candidato no ano, ex.: "3,1% da votação").
 - **Lista de municípios:** chave de ordenação nova `?sort=votos` (ano default 2022) no contrato URL de **B15** ([ordenacao-colunas-lista-municipios.md](ordenacao-colunas-lista-municipios.md) — `sort`/`dir` + header clicável); preservar filtros/paginação; coluna/linha secundária com votos 2022 + % da própria votação.
-- **Helper puro** `src/utilities/municipalityVoteRank.ts`: computa uma vez por request (rank map + shares por ano sobre `federalBaselineMunicipalitySlugs()`), testável em unit; consumido pelo detalhe, pela lista e depois por E9/E17.
+- **Helper puro** `src/lib/municipalityVoteRank.ts`: cache de módulo sobre o artefato imutável (rank map + shares por ano sobre `federalBaselineMunicipalitySlugs()`), testável em unit; consumido pelo detalhe, pela lista e depois por E9/E17.
 - Access: superfícies staff (coordinator/advisor/candidate); leader segue em lockdown (sem páginas de município) — nada muda.
 
 ## Decisões travadas
@@ -49,12 +65,12 @@ flowchart LR
     Artifact["bahiaElectionAggregates.ts<br/>(votesByYear por slug)"]
     Rank["municipalityVoteRank.ts<br/>(rank denso + share por ano)"]
     Card["MunicipalityBaselineCard<br/>(posição + % da votação)"]
-    List["MunicipalityList + sort=votos<br/>(contrato B15)"]
+    List["MunicipalityList + sort=votos<br/>(contrato sort mínimo)"]
     Artifact --> Rank --> Card
     Rank --> List
 ```
 
-Componentes tocados: `src/utilities/municipalityVoteRank.ts` (novo, puro + unit tests), `municipalityUi.ts` (nova key `votos` no allowlist B15), `MunicipalityList.tsx` (header `votos` + linha com votos/%), `MunicipalityBaselineCard.tsx` (posição/share por ano), `municipalityPageData.ts` (apply da key `votos` sobre o filtrado — mesmo path in-memory do B15). **Não** reinventar select "Ordenar por" no desktop se B15 já entregou header + select mobile.
+Componentes tocados: `src/lib/municipalityVoteRank.ts` (novo, puro + unit tests), `municipalityUi.ts` (keys `name`|`votos` no allowlist), `MunicipalityList.tsx` / `MunicipalitySortableHead` (header `votos` + linha com votos/%), `MunicipalityBaselineCard.tsx` (posição/share por ano), `municipalityPageData.ts` (apply da key `votos` sobre o filtrado). **B15** amplia as demais keys de coluna depois.
 
 ## Dependências
 
@@ -73,6 +89,15 @@ Componentes tocados: `src/utilities/municipalityVoteRank.ts` (novo, puro + unit 
 
 - **Seletor de ano na ordenação da lista.** Gatilho: pedido da mesa por leitura de série na lista.
 - **Coluna de rank na fila do E9.** Entra junto com E9 (a fila referencia este helper).
+- **Hidratação única do sort derivado `votos` (evitar find filtrado + `loadMunicipalityScope` redundante).** Gatilho: lista lenta no recorte amplo ou 3º path derivado no loader; B15 já documenta full-scan de `expectedVotes`/`coverage` — tratar junto.
+
+## Já resolvido no simplify/critique (não reabrir)
+
+- Hover no header `2022` (sem `?` / CampaignInfoHint) · Limpar preserva sort · chevrons ativos/dormant · label curto `2022` (não "Concentração 2022").
+
+## Explicitamente fora
+
+- Extrair `nextMunicipalitySortDir` / fundir com `CampaignInfoHint` (Popover ≠ hover) · markup único mobile/desktop · rank em SQL (artefato em memória basta).
 
 ## Referências
 

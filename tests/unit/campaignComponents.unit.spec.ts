@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
@@ -18,6 +18,13 @@ import { stub } from '../helpers/stub'
 import type { MunicipalityAdvisorSummary, MunicipalityListViewModel } from '@/utilities/municipalityViewModels'
 import { toVoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
 import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    replace: vi.fn(),
+    push: vi.fn(),
+  }),
+}))
 
 const noopListFormAction = async (
   _state: CampaignFormActionState,
@@ -78,10 +85,10 @@ describe('campaign visual foundation', () => {
 
   it('renders campaign scope with a visible, accessible label', () => {
     const html = renderToStaticMarkup(
-      createElement(CampaignScopeBadge, null, '3 Praças sob sua assessoria'),
+      createElement(CampaignScopeBadge, null, '3 municípios sob sua assessoria'),
     )
 
-    expect(html).toContain('3 Praças sob sua assessoria')
+    expect(html).toContain('3 municípios sob sua assessoria')
     expect(html).toContain('data-scope="campaign"')
   })
 
@@ -158,6 +165,12 @@ describe('campaign visual foundation', () => {
           pledgeCount: 2,
           missingEstimateCount: 1,
         },
+        votePosition2022: {
+          votes: 4200,
+          rank: 12,
+          share: 0.031,
+          totalUnits: 435,
+        },
       },
       {
         id: 2,
@@ -175,6 +188,7 @@ describe('campaign visual foundation', () => {
         politicalTrendStatus: null,
         politicalTrendNote: null,
         pledges: createEmptyMunicipalityPledgeAggregate(),
+        votePosition2022: null,
       },
     ]
 
@@ -223,6 +237,7 @@ describe('campaign visual foundation', () => {
               pledgeCount: 1,
               missingEstimateCount: 1,
             },
+            votePosition2022: null,
           },
         ],
         advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
@@ -256,6 +271,7 @@ describe('campaign visual foundation', () => {
             politicalTrendStatus: null,
             politicalTrendNote: null,
             pledges: createEmptyMunicipalityPledgeAggregate(),
+            votePosition2022: null,
           },
         ],
         advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),

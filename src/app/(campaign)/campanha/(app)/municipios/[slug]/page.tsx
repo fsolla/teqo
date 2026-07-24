@@ -238,7 +238,7 @@ const ElectionsTab = async ({
 
   return (
     <div className="flex flex-col gap-6">
-      <MunicipalityBaselineCard baseline={baseline} />
+      <MunicipalityBaselineCard baseline={baseline} municipalitySlug={slug} />
       <section
         aria-labelledby="municipality-comparison-title"
         className="flex flex-col gap-4 rounded-xl border p-4"

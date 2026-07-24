@@ -96,7 +96,7 @@ Componentes:
 ## Dependências
 
 - Nenhuma dura de outro item aberto. Reusa `campaignListUrl.ts`, bundle A9+ (`loadMunicipalityScope` / lista), B9 (células editáveis coexistindo), pending do hardening.
-- **Suaves (consumidores):** **A11** adiciona key `votos` + coluna/leitura sobre este contrato (atualizar plano A11); **E9** depois adiciona `deficit` / risco-frescor na fila (pode ser outra superfície, mas o padrão de URL/header nasce aqui).
+**Suaves (consumidores):** **A11 ✓** já adicionou keys `name`|`votos` + coluna/leitura sobre este contrato (2026-07-24); **B15** amplia as keys restantes (`region`, `kind`, `trend`, `expectedVotes`, `lastUpdateAt`, `coverage`) e unifica headers. **E9** depois adiciona `deficit` / risco-frescor na fila.
 
 ## Não escopo
 
@@ -130,7 +130,7 @@ Componentes:
 ## Notas de implementação (2026-07-24)
 
 - **Fase 1 (contrato URL):** `MunicipalityListState` ganhou `sort`/`dir`; `municipalityListParamNames` inclui as novas chaves; `parseMunicipalityListParams` e `buildMunicipalityListSearchParams` validam e omitem defaults (`sort=name`, `dir=asc`); `buildMunicipalitySortHref` toggles a direção e reseta `page` para 1. Incluída `votos` na allowlist para desbloquear A11.
-- **Fase 2 (loader):** `loadMunicipalityListPageBundle` aplica Payload `sort` para `name`, `region`, `kind`, `lastUpdateAt` e `politicalTrend.status`; para `expectedVotes`, `coverage` e `votos` carrega o filtrado completo, ordena em memória com nulls-last e tie-break por `name`, depois fatia a página. `votos` usa fallback por `name` até A11 implementar o rank real. `overview`/`scopeTotal` permanecem independentes da ordenação da lista.
+- **Fase 2 (loader):** `loadMunicipalityListPageBundle` aplica Payload `sort` para `name`, `region`, `kind`, `lastUpdateAt` e `politicalTrend.status`; para `expectedVotes`, `coverage` e `votos` carrega o filtrado completo, ordena em memória com nulls-last e tie-break por `name`, depois fatia a página. **A11 (2026-07-24):** `votos` passa a ordenar pelo rank/share real (`municipalityVoteRank` + `compareMunicipalityVotesForSort`), não mais stub por `name`.
 - **Fase 3 (desktop):** `MunicipalitySortableHead` em `MunicipalityList.tsx` substitui os headers estáticos; usa `CampaignTransitionAnchor` para participar do pending compartilhado, expõe `aria-sort` e ícone de direção. A coluna `Assessores` permanece não sortável (editor B9). A prop `state` foi acrescentada a `MunicipalityListProps` e passada pela página.
 - **Fase 4 (mobile):** select compacto "Ordenar" em `MunicipalityFilters.tsx`, visível apenas abaixo de `md`, espelhando as mesmas keys/direções; cards seguem a mesma ordem da URL.
 - **Fase 5 (verificação):** `tsc --noEmit`, `pnpm lint`, `pnpm test`, `pnpm build` e Aikido passaram; knip não introduziu dead code novo. Ajuste em `tests/unit/campaignComponents.unit.spec.ts` para fornecer `state` e envolver `MunicipalityList` em `AppRouterContext` mock (necessário porque o sort header usa `useRouter`).
