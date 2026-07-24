@@ -1,11 +1,17 @@
 # E17 — Tabela comparativa dos Territórios de Identidade no Início
 
-Status: rascunho (pedido direto do candidato — overview regional ao lado do mapa do Início)
+Status: entregue em código (2026-07-24)
 Atualizado em: 2026-07-24
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Demais itens abertos, E17; primeira fatia da camada TI — E12 estende)
 Impeccable: B — painel novo no dashboard staff existente (`/campanha`), sem rota nova
 Appetite: ~1 dia eng; sem migration, sem collection
 Responsável: —
+
+### Revisão 2026-07-24 (auditoria → implementação)
+- **A11 ausente confirmado:** `municipalityVoteRank.ts` não existe no repo → `% da própria votação` calculado localmente em `computeTerritoryRollup` (Σ TI ÷ Σ estadual 2022). A11 unifica o helper de share quando entrar.
+- **Access:** loader `loadTerritoryOverview` usa `overrideAccess: true` (a `canReadMunicipality` do advisor escopa por `advisors contains user.id`) — exposição é agregado TI-level (somas/contagens), nunca PII por município; advisor vê a tabela completa (leitura regional é contexto). Confirmado contra o plano.
+- **Split client/server:** o rollup puro ficou em `territoryOverview.ts` (client-safe, sem `server-only`) para a tabela client importar `sortTerritoryRows`/tipos; o loader server-only foi para `loadTerritoryOverview.ts`.
+- **Entrega:** `territoryOverview.unit.spec.ts` (10 testes), tsc/lint/knip/unit 266/int 345/build verde, Aikido 0 findings.
 
 ## Design (Impeccable)
 
