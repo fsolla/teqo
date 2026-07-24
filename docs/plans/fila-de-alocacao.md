@@ -25,8 +25,8 @@ O relatório definiu a "fila de trabalho" com 7 colunas ranqueadas (FU3): votos 
 
 ## Objetivos
 
-- Novas ordenações na URL (`?sort=deficit|risco-frescor|votos-em-jogo`) via `campaignListUrl.ts`, preservando filtros existentes.
-- Colunas derivadas na linha do município: déficit (meta − comprometido), cobertura %, votos em jogo (válidos projetados), LQ/captura, frescor (dias desde último pledge/sinal/atualização), badge "sem responsável".
+- Novas ordenações na URL (`?sort=deficit|risco-frescor|votos-em-jogo`) via `campaignListUrl.ts`, preservando filtros existentes — estende o `?sort=votos` que nasce em **A11** ([ranking-votos-municipio.md](ranking-votos-municipio.md)).
+- Colunas derivadas na linha do município: déficit (meta − comprometido), cobertura %, votos em jogo (válidos projetados), **% da própria votação** (rank/share via helper de A11 — a âncora de prioridade da mesa, sessão 2026-07-23), LQ/captura, frescor (dias desde último pledge/sinal/atualização), badge "sem responsável".
 - Visão do assessor: mesma fila filtrada às seus municípios (access já garante o escopo — `getAccessibleMunicipalityIds`).
 - Overview da lista ganha "coluna da vergonha": contagem de municípios priorizados sem responsável (link filtrado).
 - `leader` não vê a fila (colunas staff-only seguem o padrão de redaction dos view models `municipalityViewModels.ts`).
@@ -34,6 +34,7 @@ O relatório definiu a "fila de trabalho" com 7 colunas ranqueadas (FU3): votos 
 ## Decisões travadas
 
 - **A fila é a própria lista de municípios com ordenações/colunas novas — não uma rota nova.** Evita segundo sistema de listas e mantém filtros/URL/paginação existentes (C6 shells). **Rejeitado:** rota `/campanha/fila` dedicada (duplicaria filtros e navegação; a fila de _sugestões_ do E11 é outra superfície e outro item); tabela full-row editável (anti-goal PRODUCT.md).
+- **Default de ordenação para staff = `deficit` quando houver metas** (revisão 2026-07-24). A regra de adoção do discovery é "registro no fluxo de poder — a reunião de recurso começa pela lista"; fila opt-in atrás de um select esconde a inteligência. Sem metas (pré-E8/E4R), default continua nome. **Rejeitado:** fila opt-in permanente (contradiz E1/O-B do relatório); forçar o default também para ordenações de risco (essas seguem opt-in).
 - **Déficit usa meta efetiva = `voteGoals.regular ?? suggestedGoal`** (mesma regra de E8), e municípios N0/N1 (pós-E14) saem do topo por meta mínima — até E14, municípios sem meta ficam no fim, não no topo. **Rejeitado:** ordenar por déficit bruto sem tratamento (município perdido com meta lixo polui o topo — FU3).
 - **i18n e naming:** `municipalityQueueSort`, `deficit`, `freshnessDays`, `unassignedPriorityCount`; labels pt-BR ("Déficit", "Frescor", "Sem responsável").
 
@@ -61,7 +62,7 @@ Componentes:
 
 - **`src/utilities/municipalityQueue.ts`**: composição das linhas (déficit, cobertura, frescor, flags) sobre o bundle existente — uma passada, sem N+1; ordenações puras testáveis em unit.
 - **`MunicipalityList.tsx` / `MunicipalityListOverview.tsx`**: colunas/badges novas; select de ordenação em `MunicipalityFilters.tsx` (mesmo padrão auto-aplicado do fill-in filtros-auto).
-- **URL**: `campaignListUrl.ts` ganha `sort`; default continua o atual (nome) até o usuário escolher — a fila é opt-in via select "Ordenar por".
+- **URL**: `campaignListUrl.ts` ganha `sort` (nasce em A11 com `votos`); com metas presentes (E8/E4R), o default do staff passa a `deficit` (decisão travada acima); sem metas, default nome. Select "Ordenar por" continua para as demais ordenações.
 - **Sem migration, sem collection, sem server action nova** (edição em contexto reusa `municipalityStaffFormActions`).
 
 ## Dependências
@@ -84,7 +85,8 @@ Componentes:
 
 ## Referências
 
-- `docs/roadmap.md` (Inteligência de campanha, E9) · [plano-mestre](inteligencia-campanha.md) (fila canônica)
+- `docs/roadmap.md` (Inteligência de campanha, E9) · [plano-mestre](inteligencia-campanha.md) (fila canônica) · [ranking-votos-municipio.md](ranking-votos-municipio.md) (A11 — helper de rank/share e `?sort=votos`)
 - `docs/research/relatorio-entrevista-persona-campanha.md` FU3 (colunas e ordenações), §6.2 (triagem), D3 ("a alocação se decide na lista")
+- `docs/CUSTOMER.md` — "Salvador cobrado 10×" (coluna da vergonha), âncora % da própria votação (sessão 2026-07-23)
 - `src/utilities/municipalityPageData.ts`, `src/utilities/votePledgeData.ts`, `src/components/campaign/MunicipalityList.tsx`, `src/components/campaign/MunicipalityListOverview.tsx`, `src/components/campaign/MunicipalityFilters.tsx`, `src/utilities/campaignListUrl.ts`
 - AGENTS.md — access por papel, view models com redaction, URLs com chaves em inglês

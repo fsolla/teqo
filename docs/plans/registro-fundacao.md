@@ -31,6 +31,7 @@ FU4 do relatório: backtest compara o que se sabia antes com o que aconteceu dep
 - **G4 — decisões ex-ante:** collection `allocationDecision` (admin group `Campanha`, `admin.hidden` como `supporterImportBatch`): `municipality`, `patternId` (texto — P1…K-C ou `manual`), `suggestion` (texto), `decision` (`aceita | descartada | adiada`), `alternativeReading` (obrigatório ao descartar), `snapshot` (json — classificação/números no momento), `decidedBy` (derivado), `note`. Imutável após criação.
 - Access: tudo staff; `leader` não lê sinais staff-only (`triangulated`), não lê `allocationDecision`, não lê `origin`/`resourceCost` — mesmo padrão `canReadCampaignStaffField`.
 - Garantia transversal: nenhuma action nova sobrescreve histórico; escritas multi-collection com `withPayloadTransaction` + `req`.
+- **Aceite de campo (O7/O4 — [CUSTOMER.md](../CUSTOMER.md)):** registrar o delta do dia (ex.: "Cairu: ex-prefeito ligou, 1.000 → 300–500") em **≤30 segundos no celular**, a partir do detalhe/lista — o pledge atualizado vira versão (G1) e/ou sinal de 1 linha (G2). É o momento Orolândia da sessão de 2026-07-23: ele edita o mapa em viagem; se o registro custar mais que a edição da planilha, o dado continua morrendo no ZAP.
 
 ## Decisões travadas
 

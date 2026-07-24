@@ -23,7 +23,7 @@ Brief compacto:
 
 ## Contexto
 
-Relatório §6.7: visita tem efeito modesto e o canal é mobilização do núcleo — "a visita vale o que a rede local converte dela; agenda é multiplicador de estrutura". Elegibilidade = 5 condições (volume, headroom, rede de recepção, janela política, encaixe em giro); o calendário muda o produto (construção jul–ago / consolidação set / ativação última semana); há "não vá" explícitos e intermediários ("mande o coordenador/vídeo/dobradinha"); padrões J-A (município elegível maduro sem visita), J-B (pedida vs. justificada — `actionPlan.origin` de C12), J-C (composição do giro: âncora+satélites+semente, por contiguidade de TI). O `/campanha/planos` (C3) já tem eventos com município/advisors/status; falta a camada de decisão de agenda.
+Relatório §6.7: visita tem efeito modesto e o canal é mobilização do núcleo — "a visita vale o que a rede local converte dela; agenda é multiplicador de estrutura". Elegibilidade = 5 condições (volume, headroom, rede de recepção, janela política, encaixe em giro); o calendário muda o produto (construção jul–ago / consolidação set / ativação última semana); há "não vá" explícitos e intermediários ("mande o coordenador/vídeo/dobradinha"); padrões J-A (município elegível maduro sem visita), J-B (pedida vs. justificada — `actionPlan.origin` de C12), J-C (composição do giro: âncora+satélites+semente, por contiguidade de TI). O `/campanha/planos` (C3) já tem eventos com município/advisors/status; falta a camada de decisão de agenda. A sessão de campo de 2026-07-23 reforçou o item por dois lados: a restrição dominante nomeada é **"perna"/agenda** ("não posso marcar um compromisso que eu não possa cumprir" — o roadmap rebaixou E13 na fila de corte), e o pedido O6 de **dossiê pré-agenda** virou **E16** ([dossie-municipio.md](dossie-municipio.md)) — o compositor de giro linka o dossiê de cada município do giro como preparação da visita.
 
 ## Objetivos
 
@@ -69,7 +69,7 @@ Componentes:
 
 ## Dependências
 
-- Duras: **E8** (volume/headroom), **C12** (`origin`; `allocationDecision` para overrides). Suaves: **E12** (contiguidade/agrupamento TI — usa `bahiaTerritories.ts` direto se E12 não estiver pronto), **A6** dobradinha (janela política ganha dado real pós-15/08), E14 (níveis alimentam o "não vá").
+- Duras: **E8** (volume/headroom), **C12** (`origin`; `allocationDecision` para overrides). Suaves: **E16** dossiê ([dossie-municipio.md](dossie-municipio.md) — preparação da visita, link por município do giro), **E12** (contiguidade/agrupamento TI — usa `bahiaTerritories.ts` direto se E12 não estiver pronto), **A6** dobradinha (janela política ganha dado real pós-15/08), E14 (níveis alimentam o "não vá").
 - Reusa: `/campanha/planos` inteiro (C3), `actionPlan` actions, `bahiaTerritories.ts`.
 
 ## Não escopo

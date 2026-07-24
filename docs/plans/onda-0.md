@@ -85,8 +85,9 @@ curl -X POST "https://<prod-domain>/api/revalidate?tag=global_privacy-policy" \
 
 ## Onboarding staff (sem PII de campo)
 
-- Criar `campaignUser` `geral`/`coordenador` via `/admin`.
+- Criar `campaignUser` `coordinator`/`advisor` (e `candidate`) via `/admin`.
 - Estruturar municípios de teste, agenda, baseline TSE.
+- **Seed da planilha de prioridades via E4R** ([import-planilha-projecao.md](import-planilha-projecao.md)) — só estratégia sem PII (`voteGoals`/`priority`); colunas com nomes (lideranças/assessores/dobradinhas) ficam para depois do lote jurídico.
 - Treinamento de campo com titulares reais **após** revisão jurídica.
 
 ## RIPD

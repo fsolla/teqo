@@ -1,6 +1,6 @@
 # Mapa de projeção de votos por município (equiparar e superar as planilhas 2026)
 
-Status: E1, E2 e E3 implementados e mesclados em `main` (2026-07-19); **E4 cortado** (2026-07-19 — preenchimento manual via E1+E3); E5 pendente
+Status: E1, E2 e E3 implementados e mesclados em `main` (2026-07-19); **E4 cortado** (2026-07-19 — preenchimento manual via E1+E3) e **reaberto como E4R em 2026-07-24** (decisão de produto pós-sessão de campo, evidência O5 — seed único via script: [import-planilha-projecao.md](import-planilha-projecao.md)); E5 pendente
 Atualizado em: 2026-07-19 (revisão entrega E1+E3 — marcar como entregues no roadmap; access E1/E3 sem `canSetDerivedNucleusField`; escrita via `canUpdateElectoralNucleus` + selects/VMs; **E4 cortado** — decisão de produto: sem `pnpm db:seed:mapa`, dados via UI manual)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E — itens E1–E5, "Ciclo 3")
 Responsável: —

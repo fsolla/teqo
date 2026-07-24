@@ -1,7 +1,7 @@
 # E8 — Conta da cadeira (metas derivadas, potencial por município, cobertura)
 
 Status: rascunho
-Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios + hardening; **A10 entregue e remodelagem em produção — dependências duras satisfeitas**)
+Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios + hardening; **A10 entregue e remodelagem em produção — dependências duras satisfeitas**; meta inicial ancorada na sessão de campo de 2026-07-23; `voteGoals` seedados por E4R)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Inteligência de campanha", E8; plano-mestre [inteligencia-campanha.md](inteligencia-campanha.md); A10 ✓)
 Impeccable: B — cobertura/metas encaixadas no dashboard, na lista de municípios e no detalhe (sem rota nova)
 Appetite: ~2 dias eng; migration pequena (global `campaignGoals`) + utilities derivadas + encaixes de UI
@@ -21,7 +21,7 @@ Na implementação (`implement-roadmap-item`): craft compacto → critique → p
 
 ## Contexto
 
-O relatório de discovery ([§5.1](../research/relatorio-entrevista-persona-campanha.md)) fixou a OMTM da campanha até 16/08: **cobertura da meta por compromissos auditáveis** (Σ pledges ÷ meta, com delta semanal como número da reunião), decomposta por município. Hoje `municipality.voteGoals` (Bom/Regular/Mínimo) e `municipality.expectedVotes` existem (E1/A9), mas: não há meta estadual nem decomposição de cima para baixo; não há noção de potencial derivado (válidos projetados, captura do campo, roll-off); denominadores baseados em `aptos` inflariam municípios de abstenção estrutural (relatório §6.6/I-B); e não existe "campo" definido por ano para share intracampo. Os dados TSE necessários já estão em `electionTally` (válidos/brancos/nulos/comparecimento por cargo×ano×cidade×zona) e `electionCandidateVote`; desde o hardening 2026-07-23, a série de válidos federais T1 + votos Solla por município já existe pré-agregada no artefato commitado `src/lib/bahiaElectionAggregates.ts` — preferir o artefato para válidos projetados; teto do campo, share intracampo e roll-off continuam derivando das collections (envolver em `unstable_cache` com a tag `election-tse`, padrão dos loaders de eleições).
+O relatório de discovery ([§5.1](../research/relatorio-entrevista-persona-campanha.md)) fixou a OMTM da campanha até 16/08: **cobertura da meta por compromissos auditáveis** (Σ pledges ÷ meta, com delta semanal como número da reunião), decomposta por município. Hoje `municipality.voteGoals` (Bom/Regular/Mínimo) e `municipality.expectedVotes` existem (E1/A9), mas: não há meta estadual nem decomposição de cima para baixo; não há noção de potencial derivado (válidos projetados, captura do campo, roll-off); denominadores baseados em `aptos` inflariam municípios de abstenção estrutural (relatório §6.6/I-B); e não existe "campo" definido por ano para share intracampo. Com **E4R** ([import-planilha-projecao.md](import-planilha-projecao.md)), `voteGoals`/`priority` chegam seedados da planilha da coordenação (~240 municípios com metas em 3 cenários): a decomposição meta→município nasce **reconciliando** a sugestão derivada com as metas reais da mesa — a meta manual continua vencendo a sugerida, e divergências grandes viram aviso, não sobrescrita. Os dados TSE necessários já estão em `electionTally` (válidos/brancos/nulos/comparecimento por cargo×ano×cidade×zona) e `electionCandidateVote`; desde o hardening 2026-07-23, a série de válidos federais T1 + votos Solla por município já existe pré-agregada no artefato commitado `src/lib/bahiaElectionAggregates.ts` — preferir o artefato para válidos projetados; teto do campo, share intracampo e roll-off continuam derivando das collections (envolver em `unstable_cache` com a tag `election-tse`, padrão dos loaders de eleições).
 
 ## Objetivos
 
@@ -41,7 +41,7 @@ O relatório de discovery ([§5.1](../research/relatorio-entrevista-persona-camp
 
 ## Questões em aberto
 
-- **Meta estadual inicial?** Opções: QE cheio (~190–200 mil) | faixa da cadeira 2022 (~80–150 mil) + margem. **Recomendação:** faixa da cadeira + margem do coordenador — o QE cheio superestima (maioria das cadeiras sai bem abaixo). _(validar com produto)_
+- **Meta estadual inicial?** **Resolvido em campo (2026-07-23 — [CUSTOMER.md](../CUSTOMER.md)):** piso projetado do coordenador = **150 mil** (2022: 129 mil) — topo da faixa da cadeira. Valor inicial do global `campaignGoals` = 150 mil, editável (margem continua dele); o QE cheio segue rejeitado como default.
 - **Projeção de válidos: média simples da série ou tendência?** Opções: média 3 eleições | último ano | regressão simples. **Recomendação:** média ponderada (2022 peso 2) — barata, estável, sem cheiro de "previsão estatística" (fora de escopo).
 
 ## Abordagem proposta
