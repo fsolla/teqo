@@ -2,6 +2,11 @@ import type { Payload } from 'payload'
 
 import type { RelationOption } from '@/components/campaign/RelationMultiSelect'
 import type { CampaignUser } from '@/payload-types'
+import { relationshipId } from '@/utilities/relationship'
+
+export type ActionPlanRelationOption = RelationOption & {
+  municipalityId: number
+}
 
 /** Municipalities the actor may operate on (coordinator: all 436; advisor: administered). */
 export const loadMunicipalityOptions = async (
@@ -38,6 +43,28 @@ export const loadOrganizationOptions = async (
     overrideAccess: false,
   })
   return result.docs.map((organization) => ({ id: organization.id, name: organization.name }))
+}
+
+export const loadActionPlanOptions = async (
+  payload: Payload,
+  user: CampaignUser,
+): Promise<ActionPlanRelationOption[]> => {
+  const result = await payload.find({
+    collection: 'actionPlan',
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    sort: 'title',
+    select: { title: true, municipality: true },
+    where: {},
+    user,
+    overrideAccess: false,
+  })
+
+  return result.docs.flatMap((plan) => {
+    const municipalityId = relationshipId(plan.municipality)
+    return municipalityId ? [{ id: plan.id, name: plan.title, municipalityId }] : []
+  })
 }
 
 export const loadStateDeputyOptions = async (

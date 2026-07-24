@@ -16,6 +16,16 @@ import {
 import { slugify } from '@/utilities/slug'
 
 const getActionError = (error: unknown): ActionPlanFormState => {
+  if (
+    error instanceof Error &&
+    /campaign_demand.*(?:slug|title)|campaignDemand.*(?:slug|title)/i.test(error.message)
+  ) {
+    return {
+      fieldErrors: {
+        demandsJson: ['Já existe uma demanda com um dos títulos informados.'],
+      },
+    }
+  }
   // Checked before the shared mapper: a DB-level unique-violation message isn't
   // a `FormDataBoundaryError`/`ZodError`/known-safe string, so it needs its own
   // branch to surface as a field error instead of falling to the generic message.
@@ -62,7 +72,8 @@ export const createActionPlanFormAction = async (
   let planSlug: string
 
   try {
-    const plan = await createActionPlan(parseActionPlanCreateFormData(formData))
+    const { demands, ...planInput } = parseActionPlanCreateFormData(formData)
+    const plan = await createActionPlan(planInput, demands)
     planSlug = plan.slug
   } catch (error) {
     const existing = await existingActionPlanState(formData)
@@ -80,8 +91,8 @@ export const updateActionPlanFormAction = async (
   let planSlug: string
 
   try {
-    const input = parseActionPlanUpdateFormData(formData)
-    const plan = await updateActionPlan(input)
+    const { demands, ...planInput } = parseActionPlanUpdateFormData(formData)
+    const plan = await updateActionPlan(planInput, demands)
     planSlug = plan.slug
   } catch (error) {
     return getActionError(error)

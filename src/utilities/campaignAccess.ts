@@ -69,6 +69,12 @@ export {
 } from '@/utilities/access/votePledges'
 
 export {
+  canCreateAllocationDecision,
+  canMutateAllocationDecision,
+  canReadAllocationDecision,
+} from '@/utilities/access/allocationDecisions'
+
+export {
   canCreateMunicipalityUpdate,
   canMutateMunicipalityUpdate,
   canReadMunicipalityUpdate,

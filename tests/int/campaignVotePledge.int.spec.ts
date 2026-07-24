@@ -61,6 +61,35 @@ describe('vote pledges (declared by staff, estimated by staff)', () => {
     expect(updated.declaredVotes).toBe(220)
   })
 
+  it('preserves the vote pledge trajectory in native Payload versions', async () => {
+    const { municipality, advisor, leadership } = await createEngagedLeadership()
+    const pledge = await declareVotesRecord(payload, advisor, {
+      municipality: municipality.id,
+      leadership: leadership.id,
+      declaredVotes: 80,
+    })
+    campaignFixtures().own('votePledge', pledge.id)
+
+    await declareVotesRecord(payload, advisor, {
+      municipality: municipality.id,
+      leadership: leadership.id,
+      declaredVotes: 125,
+    })
+
+    const versions = await payload.findVersions({
+      collection: 'votePledge',
+      where: { parent: { equals: pledge.id } },
+      depth: 0,
+      pagination: false,
+      sort: 'createdAt',
+      overrideAccess: true,
+    })
+
+    expect(versions.docs.map((version) => version.version.declaredVotes)).toEqual(
+      expect.arrayContaining([80, 125]),
+    )
+  })
+
   it('rejects a declaration in a municipality the leadership is not linked to', async () => {
     const { advisor, fixtures, leadership } = await createEngagedLeadership()
     const otherMunicipality = await fixtures.getMunicipality()

@@ -23,6 +23,7 @@ import {
   canUpdateCampaignDemand,
   isCampaignUnrestricted,
 } from '@/utilities/campaignAccess'
+import { relationshipId } from '@/utilities/relationship'
 import { slugify } from '@/utilities/slug'
 
 const trimmedText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
@@ -135,6 +136,48 @@ const enforceDemandWorkflow: CollectionBeforeChangeHook = async ({
   return data
 }
 
+const validateDemandActionPlanMunicipality: CollectionBeforeValidateHook = async ({
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  if (!data) return data
+
+  const municipalityID = relationshipId(data.municipality ?? originalDoc?.municipality)
+  const actionPlanID = relationshipId(data.actionPlan ?? originalDoc?.actionPlan)
+  if (!actionPlanID) return data
+  if (!municipalityID) throw new APIError('Município da demanda inválido.', 400)
+  if (
+    operation === 'update' &&
+    municipalityID === relationshipId(originalDoc?.municipality) &&
+    actionPlanID === relationshipId(originalDoc?.actionPlan)
+  ) {
+    return data
+  }
+
+  const requestContext = req.context as Record<string, unknown>
+  const cacheKey = `campaignDemand:actionPlanMunicipality:${actionPlanID}`
+  let actionPlanMunicipalityID = requestContext[cacheKey]
+  if (typeof actionPlanMunicipalityID !== 'number') {
+    const actionPlan = await req.payload.findByID({
+      collection: 'actionPlan',
+      id: actionPlanID,
+      depth: 0,
+      select: { municipality: true },
+      overrideAccess: true,
+      req,
+    })
+    actionPlanMunicipalityID = relationshipId(actionPlan.municipality)
+    requestContext[cacheKey] = actionPlanMunicipalityID
+  }
+  if (actionPlanMunicipalityID !== municipalityID) {
+    throw new APIError('A demanda e o plano de ação devem pertencer ao mesmo município.', 409)
+  }
+
+  return data
+}
+
 export const CampaignDemand: CollectionConfig = {
   slug: 'campaignDemand',
   labels: {
@@ -155,7 +198,7 @@ export const CampaignDemand: CollectionConfig = {
     delete: canDeleteCampaignDemand,
   },
   hooks: {
-    beforeValidate: [setCanonicalDemandSlug],
+    beforeValidate: [setCanonicalDemandSlug, validateDemandActionPlanMunicipality],
     beforeChange: [enforceDemandWorkflow],
   },
   fields: [

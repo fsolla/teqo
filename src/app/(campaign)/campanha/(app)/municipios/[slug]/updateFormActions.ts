@@ -4,12 +4,18 @@ import { revalidatePath } from 'next/cache'
 
 import { createMunicipalityUpdate } from '@/app/(campaign)/campanha/actions/municipalityUpdate'
 import {
+  checkboxFormValue,
   optionalFormText,
   optionalIntegerFormValue,
   requiredFormText,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
-import { municipalityUpdateKinds, type MunicipalityUpdateKind } from '@/lib/schemas/municipalityUpdate'
+import {
+  municipalitySignalTypes,
+  municipalityUpdateKinds,
+  type MunicipalitySignalType,
+  type MunicipalityUpdateKind,
+} from '@/lib/schemas/municipalityUpdate'
 import {
   mapCampaignFormActionError,
   type CampaignFormActionState,
@@ -26,6 +32,11 @@ export const createMunicipalityUpdateFormAction = async (
       ? (rawKind as MunicipalityUpdateKind)
       : 'semanal'
 
+    const rawSignalType = optionalFormText(formData, 'signalType')
+    const signalType = municipalitySignalTypes.includes(rawSignalType as MunicipalitySignalType)
+      ? (rawSignalType as MunicipalitySignalType)
+      : undefined
+
     await createMunicipalityUpdate({
       municipality,
       kind,
@@ -35,6 +46,9 @@ export const createMunicipalityUpdateFormAction = async (
       body: optionalFormText(formData, 'body'),
       activeVolunteers: optionalIntegerFormValue(formData, 'activeVolunteers'),
       newSupports: optionalIntegerFormValue(formData, 'newSupports'),
+      signalType,
+      signalSource: optionalFormText(formData, 'signalSource'),
+      triangulated: checkboxFormValue(formData, 'triangulated'),
     })
     revalidatePath('/campanha/municipios/[slug]', 'page')
     return { status: 'success', message: 'Atualização registrada com sucesso.' }

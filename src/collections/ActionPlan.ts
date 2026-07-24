@@ -6,6 +6,8 @@ import type {
 import { APIError } from 'payload'
 
 import {
+  actionPlanOriginLabels,
+  actionPlanOrigins,
   actionPlanKindLabels,
   actionPlanKinds,
   actionPlanStatusLabels,
@@ -15,8 +17,10 @@ import {
   canCreateActionPlan,
   canCreateActionPlanAdvisors,
   canDeleteActionPlan,
+  canManageCampaignStaffField,
   canManageActionPlanAdvisors,
   canReadActionPlan,
+  canReadCampaignStaffField,
   canSetActionPlanStatus,
   canSetActionPlanSystemField,
   canUpdateActionPlan,
@@ -40,6 +44,11 @@ const ACTION_PLAN_STATUS_OPTIONS = actionPlanStatuses.map((value) => ({
   label: actionPlanStatusLabels[value],
 }))
 
+const ACTION_PLAN_ORIGIN_OPTIONS = actionPlanOrigins.map((value) => ({
+  value,
+  label: actionPlanOriginLabels[value],
+}))
+
 const relationshipIds = (value: unknown): number[] =>
   (Array.isArray(value) ? value : []).map(relationshipId).filter((id): id is number => id !== null)
 
@@ -61,6 +70,7 @@ const actionPlanStaffFieldSnapshot = (doc: Record<string, unknown>) => ({
   leadership: relationshipId(doc.leadership),
   resultSummary: trimmedText(doc.resultSummary),
   resultMedia: relationshipIds(doc.resultMedia),
+  origin: doc.origin ?? null,
 })
 
 const setCanonicalActionPlanSlug: CollectionBeforeValidateHook = ({
@@ -327,6 +337,18 @@ export const ActionPlan: CollectionConfig = {
       type: 'textarea',
       label: 'Descrição',
       maxLength: 4000,
+    },
+    {
+      name: 'origin',
+      type: 'select',
+      label: 'Origem da ação',
+      defaultValue: 'dado',
+      options: ACTION_PLAN_ORIGIN_OPTIONS,
+      access: {
+        create: canManageCampaignStaffField,
+        read: canReadCampaignStaffField,
+        update: canManageCampaignStaffField,
+      },
     },
     {
       name: 'deputyPresent',

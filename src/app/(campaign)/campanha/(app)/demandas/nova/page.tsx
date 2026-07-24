@@ -9,15 +9,34 @@ import { DemandForm } from '@/components/campaign/DemandForm'
 import { Button } from '@/components/ui/button'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import { firstValue, strictDecimalInteger } from '@/utilities/campaignListUrl'
+import { loadActionPlanOptions, loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { createDemandFormAction } from './formActions'
 
-export default async function NewDemandPage() {
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
+type NewDemandPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+export default async function NewDemandPage({ searchParams }: NewDemandPageProps) {
+  const [user, payload, query] = await Promise.all([
+    getCampaignUser(),
+    getPayload({ config }),
+    searchParams,
+  ])
   if (!user) redirect('/campanha/login')
   if (!isCampaignStaff(user)) redirect('/campanha')
 
-  const municipalityOptions = await loadMunicipalityOptions(payload, user)
+  const [municipalityOptions, actionPlanOptions] = await Promise.all([
+    loadMunicipalityOptions(payload, user),
+    loadActionPlanOptions(payload, user),
+  ])
+  const requestedActionPlan = actionPlanOptions.find(
+    (plan) => plan.id === strictDecimalInteger(firstValue(query.actionPlan)),
+  )
+  const requestedMunicipalityId = strictDecimalInteger(firstValue(query.municipality))
+  const initialMunicipalityId =
+    requestedActionPlan?.municipalityId ??
+    municipalityOptions.find((option) => option.id === requestedMunicipalityId)?.id
 
   return (
     <CampaignPageShell>
@@ -35,7 +54,13 @@ export default async function NewDemandPage() {
         </p>
       </header>
 
-      <DemandForm municipalityOptions={municipalityOptions} formAction={createDemandFormAction} />
+      <DemandForm
+        municipalityOptions={municipalityOptions}
+        actionPlanOptions={actionPlanOptions}
+        initialMunicipalityId={initialMunicipalityId}
+        initialActionPlanId={requestedActionPlan?.id}
+        formAction={createDemandFormAction}
+      />
     </CampaignPageShell>
   )
 }

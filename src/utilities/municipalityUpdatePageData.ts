@@ -1,6 +1,9 @@
 import type { Payload } from 'payload'
 
-import type { MunicipalityUpdateKind } from '@/lib/schemas/municipalityUpdate'
+import type {
+  MunicipalitySignalType,
+  MunicipalityUpdateKind,
+} from '@/lib/schemas/municipalityUpdate'
 import { municipalityUpdateKinds } from '@/lib/schemas/municipalityUpdate'
 import type { CampaignUser, MunicipalityUpdate } from '@/payload-types'
 import { relationshipId } from '@/utilities/relationship'
@@ -18,6 +21,9 @@ export type MunicipalityUpdateViewModel = {
   body: string | null
   activeVolunteers: number | null
   newSupports: number | null
+  signalType: MunicipalitySignalType | null
+  signalSource: string | null
+  triangulated: boolean
 }
 
 export type MunicipalityUpdateFeedState = {
@@ -104,6 +110,9 @@ export const loadMunicipalityUpdatesFeed = async (
         body: doc.body ?? null,
         activeVolunteers: doc.activeVolunteers ?? null,
         newSupports: doc.newSupports ?? null,
+        signalType: doc.signalType ?? null,
+        signalSource: doc.signalSource ?? null,
+        triangulated: Boolean(doc.triangulated),
       }
     }),
     totalDocs: result.totalDocs,
@@ -117,4 +126,7 @@ export const loadMunicipalityUpdatesPreview = async (
   user: CampaignUser,
   municipalityID: number,
 ): Promise<MunicipalityUpdateViewModel[]> =>
-  (await loadMunicipalityUpdatesFeed(payload, user, municipalityID, { page: 1 })).updates.slice(0, 3)
+  (await loadMunicipalityUpdatesFeed(payload, user, municipalityID, { page: 1 })).updates.slice(
+    0,
+    3,
+  )

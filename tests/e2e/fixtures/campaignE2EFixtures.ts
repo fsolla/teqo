@@ -21,7 +21,9 @@ type OwnedCollection =
   | 'leadership'
   | 'votePledge'
   | 'campaignDemand'
+  | 'allocationDecision'
   | 'municipalityUpdate'
+  | 'actionPlan'
   | 'campaignInvite'
   | 'consent'
   | 'supporter'
@@ -30,7 +32,9 @@ const deletionOrder: OwnedCollection[] = [
   'campaignInvite',
   'votePledge',
   'campaignDemand',
+  'allocationDecision',
   'municipalityUpdate',
+  'actionPlan',
   'leadership',
   'supporter',
   'organization',
@@ -129,52 +133,62 @@ class CampaignE2EOwnership {
   }
 
   private async discoverOwnedRows(): Promise<void> {
-    const [users, campaignUsers, contacts, organizations, consents] = await Promise.all([
-      this.rootPayload.find({
-        collection: 'users',
-        where: { email: { contains: this.runID } },
-        depth: 0,
-        pagination: false,
-      }),
-      this.rootPayload.find({
-        collection: 'campaignUser',
-        where: {
-          or: [
-            { name: { contains: this.runID } },
-            { email: { contains: this.runID } },
-            { username: { contains: this.runID } },
-          ],
-        },
-        depth: 0,
-        pagination: false,
-      }),
-      this.rootPayload.find({
-        collection: 'contact',
-        where: {
-          or: [{ name: { contains: this.runID } }, { email: { contains: this.runID } }],
-        },
-        depth: 0,
-        pagination: false,
-      }),
-      this.rootPayload.find({
-        collection: 'organization',
-        where: {
-          or: [{ name: { contains: this.runID } }, { slug: { contains: this.runID } }],
-        },
-        depth: 0,
-        pagination: false,
-      }),
-      this.rootPayload.find({
-        collection: 'consent',
-        where: { key: { contains: this.runID } },
-        depth: 0,
-        pagination: false,
-      }),
-    ])
+    const [users, campaignUsers, contacts, organizations, actionPlans, consents] =
+      await Promise.all([
+        this.rootPayload.find({
+          collection: 'users',
+          where: { email: { contains: this.runID } },
+          depth: 0,
+          pagination: false,
+        }),
+        this.rootPayload.find({
+          collection: 'campaignUser',
+          where: {
+            or: [
+              { name: { contains: this.runID } },
+              { email: { contains: this.runID } },
+              { username: { contains: this.runID } },
+            ],
+          },
+          depth: 0,
+          pagination: false,
+        }),
+        this.rootPayload.find({
+          collection: 'contact',
+          where: {
+            or: [{ name: { contains: this.runID } }, { email: { contains: this.runID } }],
+          },
+          depth: 0,
+          pagination: false,
+        }),
+        this.rootPayload.find({
+          collection: 'organization',
+          where: {
+            or: [{ name: { contains: this.runID } }, { slug: { contains: this.runID } }],
+          },
+          depth: 0,
+          pagination: false,
+        }),
+        this.rootPayload.find({
+          collection: 'actionPlan',
+          where: {
+            or: [{ title: { contains: this.runID } }, { slug: { contains: this.runID } }],
+          },
+          depth: 0,
+          pagination: false,
+        }),
+        this.rootPayload.find({
+          collection: 'consent',
+          where: { key: { contains: this.runID } },
+          depth: 0,
+          pagination: false,
+        }),
+      ])
     for (const user of users.docs) this.own('users', user.id)
     for (const user of campaignUsers.docs) this.own('campaignUser', user.id)
     for (const contact of contacts.docs) this.own('contact', contact.id)
     for (const organization of organizations.docs) this.own('organization', organization.id)
+    for (const actionPlan of actionPlans.docs) this.own('actionPlan', actionPlan.id)
     for (const consent of consents.docs) this.own('consent', consent.id)
 
     const userIDs = this.ids('campaignUser')

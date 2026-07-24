@@ -9,6 +9,7 @@ import {
   canReadVotePledge,
   canSetCampaignSystemField,
   canUpdateVotePledge,
+  payloadAdminOnly,
 } from '@/utilities/campaignAccess'
 import { relationshipId } from '@/utilities/relationship'
 import {
@@ -142,8 +143,12 @@ export const VotePledge: CollectionConfig = {
   access: {
     create: canCreateVotePledge,
     read: canReadVotePledge,
+    readVersions: payloadAdminOnly,
     update: canUpdateVotePledge,
     delete: canDeleteVotePledge,
+  },
+  versions: {
+    maxPerDoc: 0,
   },
   indexes: [
     {

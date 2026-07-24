@@ -79,6 +79,18 @@ export default async function DemandDetailPage({ params }: DemandDetailPageProps
           >
             {demand.municipalityName}
           </Link>
+          {demand.actionPlan ? (
+            <>
+              {' '}
+              · Plano:{' '}
+              <Link
+                href={`/campanha/planos/${demand.actionPlan.slug}`}
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                {demand.actionPlan.title}
+              </Link>
+            </>
+          ) : null}
           {demand.requesterName ? ` · Solicitada por ${demand.requesterName}` : ''} · Aberta em{' '}
           {dateTimeFormatter.format(new Date(demand.createdAt))}
         </p>

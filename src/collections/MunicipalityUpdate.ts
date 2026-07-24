@@ -10,8 +10,16 @@ import type {
 import { APIError } from 'payload'
 
 import {
+  municipalitySignalTypeLabels,
+  municipalitySignalTypes,
+  municipalityUpdateKindLabels,
+  municipalityUpdateKinds,
+} from '@/lib/schemas/municipalityUpdate'
+import {
   canCreateMunicipalityUpdate,
+  canManageCampaignStaffField,
   canMutateMunicipalityUpdate,
+  canReadCampaignStaffField,
   canReadMunicipalityUpdate,
   canSetMunicipalityUpdateAuthor,
 } from '@/utilities/campaignAccess'
@@ -19,6 +27,14 @@ import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 import { relationshipId } from '@/utilities/relationship'
 
 const DERIVED_MUNICIPALITY_UPDATE_CONTEXT = 'municipalityUpdateDerivedField'
+const MUNICIPALITY_UPDATE_KIND_OPTIONS = municipalityUpdateKinds.map((value) => ({
+  label: municipalityUpdateKindLabels[value],
+  value,
+}))
+const MUNICIPALITY_SIGNAL_TYPE_OPTIONS = municipalitySignalTypes.map((value) => ({
+  label: municipalitySignalTypeLabels[value],
+  value,
+}))
 
 const nonEmptyText = (value: unknown): boolean =>
   typeof value === 'string' && value.trim().length > 0
@@ -37,8 +53,20 @@ const validateMunicipalityUpdateKind: CollectionBeforeValidateHook = ({
     if (!nonEmptyText(nextData.worked)) throw new APIError('Informe o que funcionou.', 400)
     if (!nonEmptyText(nextData.failed)) throw new APIError('Informe o que não funcionou.', 400)
     if (!nonEmptyText(nextData.needs)) throw new APIError('Informe o que você precisa.', 400)
+  } else if (kind === 'sinal') {
+    if (!nonEmptyText(nextData.body)) throw new APIError('Informe o texto da atualização.', 400)
+    if (typeof nextData.signalType !== 'string') {
+      throw new APIError('Informe o tipo do sinal.', 400)
+    }
+    if (!nonEmptyText(nextData.signalSource)) throw new APIError('Informe a fonte do sinal.', 400)
   } else if (!nonEmptyText(nextData.body)) {
     throw new APIError('Informe o texto da atualização.', 400)
+  }
+
+  if (kind !== 'sinal') {
+    data.signalType = null
+    data.signalSource = null
+    data.triangulated = false
   }
 
   return data
@@ -56,7 +84,10 @@ const acquireMunicipalityUpdateLocks = (req: PayloadRequest, municipalityIDs: nu
     municipalityIDs.map((municipalityID) => `municipality-updates:${municipalityID}`),
   )
 
-const recomputeMunicipalityLastUpdateAt = async (req: PayloadRequest, municipalityIDs: number[]) => {
+const recomputeMunicipalityLastUpdateAt = async (
+  req: PayloadRequest,
+  municipalityIDs: number[],
+) => {
   for (const municipalityID of municipalityIDs) {
     const latest = await req.payload.find({
       collection: 'municipalityUpdate',
@@ -206,11 +237,7 @@ export const MunicipalityUpdate: CollectionConfig = {
       required: true,
       defaultValue: 'semanal',
       index: true,
-      options: [
-        { label: 'Semanal', value: 'semanal' },
-        { label: 'Urgente', value: 'urgente' },
-        { label: 'Nota', value: 'nota' },
-      ],
+      options: MUNICIPALITY_UPDATE_KIND_OPTIONS,
     },
     {
       name: 'worked',
@@ -258,6 +285,39 @@ export const MunicipalityUpdate: CollectionConfig = {
       maxLength: 5000,
       admin: {
         condition: (_, siblingData) => siblingData.kind !== 'semanal',
+      },
+    },
+    {
+      name: 'signalType',
+      type: 'select',
+      label: 'Tipo de sinal',
+      options: MUNICIPALITY_SIGNAL_TYPE_OPTIONS,
+      admin: {
+        condition: (_, siblingData) => siblingData.kind === 'sinal',
+      },
+    },
+    {
+      name: 'signalSource',
+      type: 'text',
+      label: 'Fonte do sinal',
+      maxLength: 160,
+      admin: {
+        condition: (_, siblingData) => siblingData.kind === 'sinal',
+      },
+    },
+    {
+      name: 'triangulated',
+      type: 'checkbox',
+      label: 'Triangulado',
+      defaultValue: false,
+      access: {
+        create: canManageCampaignStaffField,
+        read: canReadCampaignStaffField,
+        update: canManageCampaignStaffField,
+      },
+      admin: {
+        condition: (_, siblingData) => siblingData.kind === 'sinal',
+        description: 'Confirmado por mais de uma fonte de campo.',
       },
     },
   ],

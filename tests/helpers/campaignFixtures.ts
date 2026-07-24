@@ -33,6 +33,7 @@ type CampaignCollection =
   | 'municipalityUpdate'
   | 'votePledge'
   | 'campaignDemand'
+  | 'allocationDecision'
   | 'actionPlan'
   | 'leadership'
   | 'supporter'
@@ -105,6 +106,7 @@ const emptyOwnedIDs = (): OwnedIDs => ({
   municipalityUpdate: new Set(),
   votePledge: new Set(),
   campaignDemand: new Set(),
+  allocationDecision: new Set(),
   actionPlan: new Set(),
   leadership: new Set(),
   supporter: new Set(),
@@ -868,6 +870,7 @@ export class CampaignFixtures {
 
     const lockedDocumentConditions = [
       ['action_plan_id', this.owned.actionPlan],
+      ['allocation_decision_id', this.owned.allocationDecision],
       ['campaign_invite_id', this.owned.campaignInvite],
       ['campaign_user_id', this.owned.campaignUser],
       ['campaign_demand_id', this.owned.campaignDemand],
@@ -961,6 +964,7 @@ export class CampaignFixtures {
         'campaignInvite',
         'votePledge',
         'campaignDemand',
+        'allocationDecision',
         'municipalityUpdate',
         'actionPlan',
         'leadership',

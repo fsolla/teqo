@@ -1,7 +1,12 @@
 'use server'
 
 import { createCampaignDemand } from '@/app/(campaign)/campanha/actions/demand'
-import { optionalFormText, requiredFormText, requiredRelationshipFormValue } from '@/lib/formData'
+import {
+  nullableRelationshipFormValue,
+  optionalFormText,
+  requiredFormText,
+  requiredRelationshipFormValue,
+} from '@/lib/formData'
 import { campaignDemandKinds, type CampaignDemandKind } from '@/lib/schemas/campaignDemand'
 import {
   runCampaignRedirectFormAction,
@@ -22,6 +27,7 @@ export const createDemandFormAction = async (
           : 'outro',
         description: optionalFormText(formData, 'description'),
         municipality: requiredRelationshipFormValue(formData, 'municipalityId'),
+        actionPlan: nullableRelationshipFormValue(formData, 'actionPlanId') ?? undefined,
       })
     },
     redirectTo: (demand) => `/campanha/demandas/${demand.slug}`,

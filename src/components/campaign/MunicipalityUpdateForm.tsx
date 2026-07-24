@@ -4,12 +4,15 @@ import { useActionState, useState } from 'react'
 
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  municipalitySignalTypeLabels,
+  municipalitySignalTypeDescriptions,
+  municipalitySignalTypes,
   municipalityUpdateKindLabels,
   municipalityUpdateKinds,
   type MunicipalityUpdateKind,
@@ -25,7 +28,10 @@ type MunicipalityUpdateFormProps = {
   ) => Promise<CampaignFormActionState>
 }
 
-export const MunicipalityUpdateForm = ({ municipalityID, formAction }: MunicipalityUpdateFormProps) => {
+export const MunicipalityUpdateForm = ({
+  municipalityID,
+  formAction,
+}: MunicipalityUpdateFormProps) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
   const [kind, setKind] = useState<MunicipalityUpdateKind>('semanal')
 
@@ -98,13 +104,66 @@ export const MunicipalityUpdateForm = ({ municipalityID, formAction }: Municipal
           </div>
         </>
       ) : (
-        <Field>
-          <FieldLabel htmlFor="municipality-update-body">Texto</FieldLabel>
-          <Textarea id="municipality-update-body" name="body" rows={4} maxLength={5000} />
-          {fieldError(state.fieldErrors, 'body') ? (
-            <FieldError>{fieldError(state.fieldErrors, 'body')}</FieldError>
+        <>
+          <Field>
+            <FieldLabel htmlFor="municipality-update-body">Texto</FieldLabel>
+            <Textarea
+              id="municipality-update-body"
+              name="body"
+              rows={kind === 'sinal' ? 2 : 4}
+              maxLength={5000}
+            />
+            {fieldError(state.fieldErrors, 'body') ? (
+              <FieldError>{fieldError(state.fieldErrors, 'body')}</FieldError>
+            ) : null}
+          </Field>
+          {kind === 'sinal' ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="municipality-update-signal-type">Tipo do sinal</FieldLabel>
+                  <NativeSelect
+                    id="municipality-update-signal-type"
+                    name="signalType"
+                    defaultValue=""
+                    required
+                  >
+                    <NativeSelectOption value="">Selecione</NativeSelectOption>
+                    {municipalitySignalTypes.map((entry) => (
+                      <NativeSelectOption key={entry} value={entry}>
+                        {municipalitySignalTypeLabels[entry]}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                  <FieldDescription>Escolha o fato político observado:</FieldDescription>
+                  <ul className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    {municipalitySignalTypes.map((entry) => (
+                      <li key={entry}>
+                        <span className="font-medium text-foreground">
+                          {municipalitySignalTypeLabels[entry]}:
+                        </span>{' '}
+                        {municipalitySignalTypeDescriptions[entry]}
+                      </li>
+                    ))}
+                  </ul>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="municipality-update-signal-source">Fonte</FieldLabel>
+                  <Input
+                    id="municipality-update-signal-source"
+                    name="signalSource"
+                    maxLength={160}
+                    required
+                  />
+                </Field>
+              </div>
+              <label className="flex min-h-11 items-center gap-2 text-sm">
+                <input name="triangulated" type="checkbox" className="size-4" />
+                Triangulado — confirmado por mais de uma fonte independente
+              </label>
+            </>
           ) : null}
-        </Field>
+        </>
       )}
       {state.message && state.status !== 'success' ? (
         <Alert variant="destructive">

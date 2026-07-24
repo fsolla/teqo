@@ -76,6 +76,7 @@ export interface Config {
     organization: Organization;
     stateDeputy: StateDeputy;
     votePledge: VotePledge;
+    allocationDecision: AllocationDecision;
     campaignDemand: CampaignDemand;
     supporter: Supporter;
     supporterImportBatch: SupporterImportBatch;
@@ -110,6 +111,7 @@ export interface Config {
     organization: OrganizationSelect<false> | OrganizationSelect<true>;
     stateDeputy: StateDeputySelect<false> | StateDeputySelect<true>;
     votePledge: VotePledgeSelect<false> | VotePledgeSelect<true>;
+    allocationDecision: AllocationDecisionSelect<false> | AllocationDecisionSelect<true>;
     campaignDemand: CampaignDemandSelect<false> | CampaignDemandSelect<true>;
     supporter: SupporterSelect<false> | SupporterSelect<true>;
     supporterImportBatch: SupporterImportBatchSelect<false> | SupporterImportBatchSelect<true>;
@@ -541,6 +543,33 @@ export interface VotePledge {
   createdAt: string;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "allocationDecision".
+ */
+export interface AllocationDecision {
+  id: number;
+  municipality: number | Municipality;
+  patternId: string;
+  outcome: 'aceita' | 'descarta';
+  rationale: string;
+  alternativeReading?: string | null;
+  /**
+   * Somente os números e classificações usados no momento da decisão.
+   */
+  snapshot:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  decidedBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Necessidades operacionais da campanha. Custo e comprovantes são controle interno — não substituem a prestação de contas oficial (SPCE/TSE).
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -613,6 +642,7 @@ export interface ActionPlan {
     | 'outro';
   status: 'rascunho' | 'planejado' | 'confirmado' | 'realizado' | 'cancelado';
   description?: string | null;
+  origin?: ('dado' | 'pedido_broker' | 'obrigacao_politica') | null;
   /**
    * Marque quando o deputado Jorge Solla estiver presente na ação.
    */
@@ -708,13 +738,19 @@ export interface MunicipalityUpdate {
   id: number;
   municipality: number | Municipality;
   author: number | CampaignUser;
-  kind: 'semanal' | 'urgente' | 'nota';
+  kind: 'semanal' | 'urgente' | 'nota' | 'sinal';
   worked?: string | null;
   failed?: string | null;
   needs?: string | null;
   activeVolunteers?: number | null;
   newSupports?: number | null;
   body?: string | null;
+  signalType?: ('invasao' | 'esfriamento' | 'visita_adversario' | 'proposta_broker' | 'outro') | null;
+  signalSource?: string | null;
+  /**
+   * Confirmado por mais de uma fonte de campo.
+   */
+  triangulated?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1144,6 +1180,10 @@ export interface PayloadLockedDocument {
         value: number | VotePledge;
       } | null)
     | ({
+        relationTo: 'allocationDecision';
+        value: number | AllocationDecision;
+      } | null)
+    | ({
         relationTo: 'campaignDemand';
         value: number | CampaignDemand;
       } | null)
@@ -1446,6 +1486,21 @@ export interface VotePledgeSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "allocationDecision_select".
+ */
+export interface AllocationDecisionSelect<T extends boolean = true> {
+  municipality?: T;
+  patternId?: T;
+  outcome?: T;
+  rationale?: T;
+  alternativeReading?: T;
+  snapshot?: T;
+  decidedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "campaignDemand_select".
  */
 export interface CampaignDemandSelect<T extends boolean = true> {
@@ -1522,6 +1577,9 @@ export interface MunicipalityUpdateSelect<T extends boolean = true> {
   activeVolunteers?: T;
   newSupports?: T;
   body?: T;
+  signalType?: T;
+  signalSource?: T;
+  triangulated?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1535,6 +1593,7 @@ export interface ActionPlanSelect<T extends boolean = true> {
   kind?: T;
   status?: T;
   description?: T;
+  origin?: T;
   deputyPresent?: T;
   startAt?: T;
   endAt?: T;
@@ -2084,6 +2143,7 @@ export interface TaskCreateCollectionExport {
       | 'organization'
       | 'stateDeputy'
       | 'votePledge'
+      | 'allocationDecision'
       | 'campaignDemand'
       | 'supporter'
       | 'supporterImportBatch'

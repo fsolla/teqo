@@ -17,7 +17,8 @@ import { ActionPlanUpdateForm } from '@/components/campaign/ActionPlanUpdateForm
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { actionPlanKindLabels } from '@/lib/schemas/actionPlan'
+import { actionPlanKindLabels, actionPlanOriginLabels } from '@/lib/schemas/actionPlan'
+import { campaignDemandKindLabels, campaignDemandStatusLabels } from '@/lib/schemas/campaignDemand'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
@@ -35,6 +36,11 @@ type ActionPlanDetailPageProps = {
   params: Promise<{ slug: string }>
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
+
+const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+})
 
 export default async function ActionPlanDetailPage({
   params,
@@ -63,8 +69,7 @@ export default async function ActionPlanDetailPage({
   if (canonicalTabRedirect) redirect(canonicalTabRedirect)
 
   const isStaff = isCampaignStaff(user)
-  const canManageLifecycle =
-    isStaff && view.status !== 'realizado' && view.status !== 'cancelado'
+  const canManageLifecycle = isStaff && view.status !== 'realizado' && view.status !== 'cancelado'
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -160,6 +165,10 @@ export default async function ActionPlanDetailPage({
                     <dt className="text-muted-foreground">Responsável</dt>
                     <dd>{view.responsibleName ?? 'Não definido'}</dd>
                   </div>
+                  <div>
+                    <dt className="text-muted-foreground">Origem da ação</dt>
+                    <dd>{actionPlanOriginLabels[view.origin]}</dd>
+                  </div>
                 </dl>
               </CardContent>
             </Card>
@@ -204,6 +213,61 @@ export default async function ActionPlanDetailPage({
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader className="flex-row items-start justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                <CardTitle>Demandas vinculadas</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Custo estimado: {currencyFormatter.format(view.demandCostTotal)}
+                </p>
+              </div>
+              {view.municipality ? (
+                <Button asChild variant="outline" className="min-h-11 shrink-0">
+                  <Link
+                    href={`/campanha/demandas/nova?actionPlan=${view.id}&municipality=${view.municipality.id}`}
+                  >
+                    <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                    Adicionar demanda
+                  </Link>
+                </Button>
+              ) : null}
+            </CardHeader>
+            <CardContent>
+              {view.demands.length ? (
+                <ul role="list" className="divide-y">
+                  {view.demands.map((demand) => (
+                    <li
+                      key={demand.id}
+                      className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <Link
+                          href={`/campanha/demandas/${demand.slug}`}
+                          className="font-medium text-primary underline-offset-4 hover:underline"
+                        >
+                          {demand.title}
+                        </Link>
+                        <p className="text-sm text-muted-foreground">
+                          {campaignDemandKindLabels[demand.kind]} ·{' '}
+                          {campaignDemandStatusLabels[demand.status]}
+                        </p>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {demand.cost == null
+                          ? 'Custo não registrado'
+                          : currencyFormatter.format(demand.cost)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma demanda vinculada a este plano.
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
           {view.status === 'realizado' && isStaff ? (
             <ActionPlanResultForm

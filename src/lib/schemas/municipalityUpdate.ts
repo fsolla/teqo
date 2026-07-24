@@ -2,13 +2,39 @@ import { z } from 'zod'
 
 import { positiveRelationshipId, trimmedOptionalText } from '@/lib/schemas/primitives'
 
-export const municipalityUpdateKinds = ['semanal', 'urgente', 'nota'] as const
+export const municipalityUpdateKinds = ['semanal', 'urgente', 'nota', 'sinal'] as const
 export type MunicipalityUpdateKind = (typeof municipalityUpdateKinds)[number]
 
 export const municipalityUpdateKindLabels: Record<MunicipalityUpdateKind, string> = {
   semanal: 'Semanal',
   urgente: 'Urgente',
   nota: 'Nota',
+  sinal: 'Sinal',
+}
+
+export const municipalitySignalTypes = [
+  'invasao',
+  'esfriamento',
+  'visita_adversario',
+  'proposta_broker',
+  'outro',
+] as const
+export type MunicipalitySignalType = (typeof municipalitySignalTypes)[number]
+
+export const municipalitySignalTypeLabels: Record<MunicipalitySignalType, string> = {
+  invasao: 'Invasão',
+  esfriamento: 'Esfriamento',
+  visita_adversario: 'Visita adversária',
+  proposta_broker: 'Proposta a broker',
+  outro: 'Outro',
+}
+
+export const municipalitySignalTypeDescriptions: Record<MunicipalitySignalType, string> = {
+  invasao: 'Adversário ocupando ou ganhando espaço antes dominado pela campanha.',
+  esfriamento: 'Queda de mobilização, compromisso ou resposta dos aliados locais.',
+  visita_adversario: 'Agenda ou presença de adversário com possível impacto no município.',
+  proposta_broker: 'Pedido, oferta ou negociação feita por um intermediário político.',
+  outro: 'Fato político relevante que não se encaixa nos tipos anteriores.',
 }
 
 const optionalCount = z.number().int().min(0).max(1_000_000).optional()
@@ -23,6 +49,9 @@ export const municipalityUpdateCreateSchema = z
     body: trimmedOptionalText(5000),
     activeVolunteers: optionalCount,
     newSupports: optionalCount,
+    signalType: z.enum(municipalitySignalTypes).optional(),
+    signalSource: trimmedOptionalText(160),
+    triangulated: z.boolean().optional(),
   })
   .superRefine((data, context) => {
     if (data.kind === 'semanal') {
@@ -49,6 +78,22 @@ export const municipalityUpdateCreateSchema = z
         message: 'Informe o texto da atualização.',
         path: ['body'],
       })
+    }
+    if (data.kind === 'sinal') {
+      if (!data.signalType) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Informe o tipo do sinal.',
+          path: ['signalType'],
+        })
+      }
+      if (!data.signalSource) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Informe a fonte do sinal.',
+          path: ['signalSource'],
+        })
+      }
     }
   })
 
