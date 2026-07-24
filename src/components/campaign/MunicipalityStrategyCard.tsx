@@ -13,7 +13,6 @@ import {
 import type { MunicipalityDetailViewModel } from '@/utilities/municipalityViewModels'
 import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeData'
 
-const voteFormatter = new Intl.NumberFormat('pt-BR')
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
 export const MunicipalityStrategyCard = ({
@@ -27,7 +26,6 @@ export const MunicipalityStrategyCard = ({
   canEdit: boolean
   pledgeCoverage: MunicipalityPledgeCoverageView | null
 }) => {
-  const goals = strategy.voteGoals
   const trend = strategy.politicalTrend
 
   return (
@@ -38,7 +36,7 @@ export const MunicipalityStrategyCard = ({
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-col gap-1">
           <h2 id="municipality-strategy-title" className="text-base font-medium">
-            Estratégia da Praça
+            Estratégia do município
           </h2>
           <div className="flex flex-wrap items-center gap-2">
             {strategy.priority === 'alta' ? (
@@ -65,31 +63,13 @@ export const MunicipalityStrategyCard = ({
         ) : null}
       </div>
 
-      <dl className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg bg-muted/40 px-3 py-2 sm:col-span-2">
-          <dt className="text-xs font-medium text-muted-foreground">Votos estimados</dt>
-          <dd>
-            <StaffMunicipalityVotesDisplay
-              expectedVotes={strategy.expectedVotes}
-              pledgeCoverage={pledgeCoverage}
-            />
-          </dd>
-        </div>
-        {(
-          [
-            ['Meta Bom', goals.good],
-            ['Meta Regular', goals.regular],
-            ['Meta Mínimo', goals.minimum],
-          ] as const
-        ).map(([label, value]) => (
-          <div key={label} className="rounded-lg bg-muted/40 px-3 py-2">
-            <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-            <dd className="text-lg font-medium tabular-nums">
-              {value == null ? '—' : voteFormatter.format(value)}
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <div className="rounded-lg bg-muted/40 px-3 py-2">
+        <p className="text-xs font-medium text-muted-foreground">Votos estimados</p>
+        <StaffMunicipalityVotesDisplay
+          expectedVotes={strategy.expectedVotes}
+          pledgeCoverage={pledgeCoverage}
+        />
+      </div>
 
       {trend.status || trend.note ? (
         <div className="flex flex-col gap-1">

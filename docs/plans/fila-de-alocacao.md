@@ -35,7 +35,7 @@ O relatório definiu a "fila de trabalho" com 7 colunas ranqueadas (FU3): votos 
 
 - **A fila é a própria lista de municípios com ordenações/colunas novas — não uma rota nova.** Evita segundo sistema de listas e mantém filtros/URL/paginação existentes (C6 shells). **Rejeitado:** rota `/campanha/fila` dedicada (duplicaria filtros e navegação; a fila de _sugestões_ do E11 é outra superfície e outro item); tabela full-row editável (anti-goal PRODUCT.md).
 - **Default de ordenação para staff = `deficit` quando houver metas** (revisão 2026-07-24). A regra de adoção do discovery é "registro no fluxo de poder — a reunião de recurso começa pela lista"; fila opt-in atrás de um select esconde a inteligência. Sem metas (pré-E8/E4R), default continua nome. **Rejeitado:** fila opt-in permanente (contradiz E1/O-B do relatório); forçar o default também para ordenações de risco (essas seguem opt-in).
-- **Déficit usa meta efetiva = `voteGoals.regular ?? suggestedGoal`** (mesma regra de E8), e municípios N0/N1 (pós-E14) saem do topo por meta mínima — até E14, municípios sem meta ficam no fim, não no topo. **Rejeitado:** ordenar por déficit bruto sem tratamento (município perdido com meta lixo polui o topo — FU3).
+- **Déficit usa meta efetiva = `expectedVotes.central ?? suggestedGoal`** (mesma regra de E8; `voteGoals` foi removido em 2026-07-24), e municípios N0/N1 (pós-E14) saem do topo por meta mínima — até E14, municípios sem meta ficam no fim, não no topo. **Rejeitado:** ordenar por déficit bruto sem tratamento (município perdido com meta lixo polui o topo — FU3).
 - **i18n e naming:** `municipalityQueueSort`, `deficit`, `freshnessDays`, `unassignedPriorityCount`; labels pt-BR ("Déficit", "Frescor", "Sem responsável").
 
 ## Questões em aberto

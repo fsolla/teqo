@@ -106,7 +106,7 @@ export const MunicipalityStrategyForm = ({
   return (
     <div className="flex flex-col gap-8">
       <form action={submitStrategy} className="flex flex-col gap-4 rounded-xl border p-4">
-        <h2 className="text-base font-medium">Metas e inteligência</h2>
+        <h2 className="text-base font-medium">Estratégia e inteligência</h2>
         <input type="hidden" name="municipalityId" value={municipalityID} />
         <input type="hidden" name="municipalitySlug" value={municipalitySlug} />
         <Field>
@@ -121,28 +121,6 @@ export const MunicipalityStrategyForm = ({
             <NativeSelectOption value="alta">Prioritária</NativeSelectOption>
           </NativeSelect>
         </Field>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {(
-            [
-              ['goalGood', 'Meta Bom', strategy.voteGoals.good],
-              ['goalRegular', 'Meta Regular', strategy.voteGoals.regular],
-              ['goalMinimum', 'Meta Mínimo', strategy.voteGoals.minimum],
-            ] as const
-          ).map(([name, label, value]) => (
-            <Field key={name}>
-              <FieldLabel htmlFor={`municipality-${name}`}>{label}</FieldLabel>
-              <Input
-                id={`municipality-${name}`}
-                name={name}
-                type="number"
-                min={0}
-                inputMode="numeric"
-                defaultValue={value ?? undefined}
-                className="min-h-11"
-              />
-            </Field>
-          ))}
-        </div>
         {fieldError(strategyState.fieldErrors, 'form') ? (
           <FieldError>{fieldError(strategyState.fieldErrors, 'form')}</FieldError>
         ) : null}
@@ -202,8 +180,8 @@ export const MunicipalityStrategyForm = ({
             Votos estimados
           </h2>
           <p className="text-sm text-muted-foreground">
-            Total esperado da Praça — distinto das metas de cenário e da soma das lideranças. Deixe
-            em branco para remover.
+            Total esperado do município por cenário — distinto da soma das lideranças. Deixe em
+            branco para remover.
           </p>
         </div>
         <input type="hidden" name="municipalityId" value={municipalityID} />

@@ -1,11 +1,12 @@
 /**
- * E4R — Import único da planilha de projeção → municipality.voteGoals + priority.
+ * E4R — Import único da planilha de projeção → municipality.expectedVotes + priority.
  *
  * Provenance:
  * - Canonical strategy file: docs/sheets/Mapa projeção de votos Solla 2026.xlsx (MAPA GERAL)
  * - Reference (Salvador / A×B diff): docs/sheets/Mapa_projecao_votos_Solla_2026.xlsx
+ * - Sheet scenarios map Bom → otimista, Regular → média (central), Mínimo → pessimista.
  * - Writes only numbers/enums (zero PII). Never creates Contact/leadership.
- * - Always overwrites voteGoals + priority on matched rows (re-seed when the mesa
+ * - Always overwrites expectedVotes + priority on matched rows (re-seed when the mesa
  *   sends a newer sheet over an already-populated DB). Does not touch lastUpdateAt.
  *
  * Safety: refuses non-local DATABASE_URL unless ALLOW_REMOTE_DB=true.
@@ -48,7 +49,7 @@ const PRIORITARIAS = 'PRIORITÁRIAS'
 const SALVADOR_CITY = 'Salvador'
 
 /**
- * @typedef {{ good: number, regular: number, minimum: number }} ProjectionVoteGoals
+ * @typedef {{ optimistic: number, central: number, pessimistic: number }} ProjectionVoteEstimates
  * @typedef {{
  *   municipalityLabel: string
  *   regionLabel: string | null
@@ -58,7 +59,7 @@ const SALVADOR_CITY = 'Salvador'
  *   expectationRaw: string | null
  *   priorityRaw: string | null
  * }} ProjectionSheetRow
- * @typedef {{ good?: number | null, regular?: number | null, minimum?: number | null } | null | undefined} DbVoteGoals
+ * @typedef {{ optimistic?: number | null, central?: number | null, pessimistic?: number | null } | null | undefined} DbExpectedVotes
  */
 
 const parseArgs = (argv) => {
@@ -213,30 +214,9 @@ const readPrioritariaNames = (workbook, normalizeKey) => {
   return names
 }
 
-/** @param {DbVoteGoals} raw */
-const asCompleteGoals = (raw) => {
-  if (
-    raw &&
-    typeof raw.good === 'number' &&
-    typeof raw.regular === 'number' &&
-    typeof raw.minimum === 'number'
-  ) {
-    return { good: raw.good, regular: raw.regular, minimum: raw.minimum }
-  }
-  return null
-}
-
-/** @param {ProjectionVoteGoals | null} a @param {ProjectionVoteGoals | null} b */
-const goalsEqual = (a, b) =>
-  a != null && b != null && a.good === b.good && a.regular === b.regular && a.minimum === b.minimum
-
-/** @param {ProjectionVoteGoals | null} goals */
-const formatGoals = (goals) =>
-  goals ? `Bom:${goals.good} | Regular:${goals.regular} | Minimo:${goals.minimum}` : '(vazio)'
-
 assertLocalDatabase(
   'seed:projecao',
-  'This script overwrites municipality voteGoals/priority from the projection sheet.',
+  'This script overwrites municipality expectedVotes/priority from the projection sheet.',
 )
 
 const options = parseArgs(process.argv.slice(2))
@@ -255,9 +235,20 @@ const { territoryForCity } = await import('../src/lib/bahiaTerritories.ts')
 const { parseExpectationCell, mapSheetPriority, parseSheetNumber } = await import(
   '../src/lib/projectionSheetParse.ts'
 )
-const { getVoteGoalsOrderViolation } = await import('../src/utilities/voteGoals.ts')
+const {
+  getVoteEstimateOrderViolation,
+  toVoteEstimateScenarioViewModel,
+  voteEstimatesEqual,
+  voteEstimateScenarioLabels,
+  hasAnyVoteEstimate,
+} = await import('../src/utilities/voteEstimate.ts')
 const { withPayloadTransaction } = await import('../src/utilities/payloadTransaction.ts')
 
+/** @param {import('../src/utilities/voteEstimate.ts').VoteEstimateScenarioViewModel} estimates */
+const formatEstimates = (estimates) => {
+  if (!hasAnyVoteEstimate(estimates)) return '(vazio)'
+  return `${voteEstimateScenarioLabels.optimistic}:${estimates.optimistic ?? '—'} | ${voteEstimateScenarioLabels.central}:${estimates.central ?? '—'} | ${voteEstimateScenarioLabels.pessimistic}:${estimates.pessimistic ?? '—'}`
+}
 const canonicalBook = XLSX.readFile(options.file, { cellDates: false })
 const canonicalRows = readMapaGeralRows(canonicalBook, parseSheetNumber, normalizeMunicipalityKey)
 const prioritarias = readPrioritariaNames(canonicalBook, normalizeMunicipalityKey)
@@ -300,11 +291,11 @@ const municipalityDocs = await payload.find({
     city: true,
     kind: true,
     priority: true,
-    voteGoals: true,
+    expectedVotes: true,
   },
 })
 
-/** @type {Map<string, { id: number, slug: string, priority: string | null, voteGoals: DbVoteGoals }>} */
+/** @type {Map<string, { id: number, slug: string, priority: string | null, expectedVotes: DbExpectedVotes }>} */
 const docsBySlug = new Map()
 for (const doc of municipalityDocs.docs) {
   if (typeof doc.slug === 'string') {
@@ -312,7 +303,7 @@ for (const doc of municipalityDocs.docs) {
       id: doc.id,
       slug: doc.slug,
       priority: doc.priority ?? null,
-      voteGoals: doc.voteGoals ?? null,
+      expectedVotes: doc.expectedVotes ?? null,
     })
   }
 }
@@ -369,8 +360,8 @@ for (const sheetRow of canonicalRows.values()) {
     continue
   }
 
-  const voteGoals = parseExpectationCell(sheetRow.expectationRaw)
-  if (!voteGoals) {
+  const expectedVotes = parseExpectationCell(sheetRow.expectationRaw)
+  if (!expectedVotes) {
     if (sheetRow.expectationRaw) {
       parseErrors.push({
         label: sheetRow.municipalityLabel,
@@ -381,11 +372,11 @@ for (const sheetRow of canonicalRows.values()) {
     continue
   }
 
-  if (getVoteGoalsOrderViolation(voteGoals)) {
+  if (getVoteEstimateOrderViolation(expectedVotes)) {
     parseErrors.push({
       label: sheetRow.municipalityLabel,
       slug: catalogEntry.slug,
-      raw: `${sheetRow.expectationRaw} (ordem Bom ≥ Regular ≥ Mínimo inválida)`,
+      raw: `${sheetRow.expectationRaw} (ordem Otimista ≥ Média ≥ Pessimista inválida)`,
     })
     continue
   }
@@ -430,25 +421,34 @@ for (const sheetRow of canonicalRows.values()) {
   if (referenceRows) {
     const ref = referenceRows.get(sheetKey)
     if (ref) {
-      const refGoals = parseExpectationCell(ref.expectationRaw)
+      const refEstimates = parseExpectationCell(ref.expectationRaw)
       const refPriority = mapSheetPriority(ref.priorityRaw)
-      if (refGoals && (!goalsEqual(voteGoals, refGoals) || priority !== refPriority)) {
+      if (
+        refEstimates &&
+        (!voteEstimatesEqual(
+          toVoteEstimateScenarioViewModel(expectedVotes),
+          toVoteEstimateScenarioViewModel(refEstimates),
+        ) ||
+          priority !== refPriority)
+      ) {
         axbDiffs.push({
           label: sheetRow.municipalityLabel,
-          a: { voteGoals, priority },
-          b: { voteGoals: refGoals, priority: refPriority },
+          a: { expectedVotes, priority },
+          b: { expectedVotes: refEstimates, priority: refPriority },
         })
       }
     }
   }
 
-  matched.push({ doc, voteGoals, priority })
+  matched.push({ doc, expectedVotes, priority })
 }
 
 console.log('\n=== E4R import projeção — relatório ===')
 console.log(`Arquivo canônico: ${options.file}`)
 if (referenceRows) console.log(`Arquivo referência: ${options.reference}`)
-console.log(`Modo: ${options.dryRun ? 'DRY-RUN (sem escrita)' : 'ESCRITA (overwrite voteGoals+priority)'}`)
+console.log(
+  `Modo: ${options.dryRun ? 'DRY-RUN (sem escrita)' : 'ESCRITA (overwrite expectedVotes+priority)'}`,
+)
 console.log(`Linhas MAPA GERAL (com município): ${canonicalRows.size}`)
 console.log(`Casadas com EXPECTATIVA parseável: ${matched.length}`)
 console.log(`Salvador pulado: ${skippedSalvador.length}`)
@@ -459,7 +459,7 @@ console.log(`Divergências A×B: ${axbDiffs.length}`)
 console.log(`Prioritárias na aba: ${prioritarias.size}`)
 
 if (skippedSalvador.length > 0) {
-  console.log('\n— Salvador (pulado; metas por ZE via UI) —')
+  console.log('\n— Salvador (pulado; estimativas por ZE via UI) —')
   for (const row of skippedSalvador) {
     console.log(
       `  ${row.label}: ${row.expectationRaw ?? '(sem expectativa)'} · prioridade=${row.priorityRaw ?? '(vazia)'}`,
@@ -487,7 +487,7 @@ if (axbDiffs.length > 0) {
   console.log('\n— Divergências A (canônico) × B (referência) — importa-se A —')
   for (const diff of axbDiffs) {
     console.log(
-      `  ${diff.label}: A=${formatGoals(diff.a.voteGoals)}/${diff.a.priority} · B=${formatGoals(diff.b.voteGoals)}/${diff.b.priority}`,
+      `  ${diff.label}: A=${formatEstimates(toVoteEstimateScenarioViewModel(diff.a.expectedVotes))}/${diff.a.priority} · B=${formatEstimates(toVoteEstimateScenarioViewModel(diff.b.expectedVotes))}/${diff.b.priority}`,
     )
   }
 }
@@ -501,17 +501,18 @@ if (warnings.length > 0) {
 }
 
 const changing = matched.filter((row) => {
-  const currentGoals = asCompleteGoals(row.doc.voteGoals)
+  const currentEstimates = toVoteEstimateScenarioViewModel(row.doc.expectedVotes)
+  const nextEstimates = toVoteEstimateScenarioViewModel(row.expectedVotes)
   const currentPriority = row.doc.priority === 'alta' ? 'alta' : 'normal'
-  return !goalsEqual(currentGoals, row.voteGoals) || currentPriority !== row.priority
+  return !voteEstimatesEqual(currentEstimates, nextEstimates) || currentPriority !== row.priority
 })
 
 console.log(`\nEscritas planejadas: ${matched.length} (delta vs DB: ${changing.length})`)
 console.log('Amostra (até 8):')
 for (const row of matched.slice(0, 8)) {
   console.log(
-    `  ${row.doc.slug}: ${formatGoals(row.voteGoals)} · priority=${row.priority} (DB era ${formatGoals(
-      asCompleteGoals(row.doc.voteGoals),
+    `  ${row.doc.slug}: ${formatEstimates(toVoteEstimateScenarioViewModel(row.expectedVotes))} · priority=${row.priority} (DB era ${formatEstimates(
+      toVoteEstimateScenarioViewModel(row.doc.expectedVotes),
     )}/${row.doc.priority ?? 'normal'})`,
   )
 }
@@ -528,7 +529,7 @@ try {
         collection: 'municipality',
         id: row.doc.id,
         data: {
-          voteGoals: row.voteGoals,
+          expectedVotes: row.expectedVotes,
           priority: row.priority,
         },
         depth: 0,

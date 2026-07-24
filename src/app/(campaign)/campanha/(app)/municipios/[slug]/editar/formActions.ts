@@ -4,7 +4,6 @@ import { updateMunicipalityStrategy } from '@/app/(campaign)/campanha/actions/mu
 import {
   nullableFormText,
   optionalFormText,
-  optionalIntegerFormValue,
   optionalMunicipalitySlugFromForm,
   repeatedFormTexts,
   repeatedRelationshipFormValues,
@@ -28,11 +27,6 @@ export const updateMunicipalityStrategyFormAction = async (
     await updateMunicipalityStrategy({
       municipality,
       priority: priority === 'alta' ? 'alta' : 'normal',
-      voteGoals: {
-        good: optionalIntegerFormValue(formData, 'goalGood') ?? null,
-        regular: optionalIntegerFormValue(formData, 'goalRegular') ?? null,
-        minimum: optionalIntegerFormValue(formData, 'goalMinimum') ?? null,
-      },
       strengths: repeatedFormTexts(formData, 'strengths'),
       risks: repeatedFormTexts(formData, 'risks'),
       stateDeputies: repeatedRelationshipFormValues(formData, 'stateDeputies'),
@@ -44,10 +38,7 @@ export const updateMunicipalityStrategyFormAction = async (
   } catch (error) {
     return mapCampaignFormActionError({
       error,
-      safeMessages: [
-        'As metas devem seguir a ordem Bom ≥ Regular ≥ Mínimo quando informadas.',
-        ...municipalityStaffEditSafeMessages,
-      ],
+      safeMessages: municipalityStaffEditSafeMessages,
       genericMessage:
         'Não foi possível salvar a estratégia. Verifique seu acesso e tente novamente.',
     })

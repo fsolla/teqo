@@ -6,8 +6,6 @@ import { voteEstimateScenarioFieldsSchema } from '@/lib/schemas/votePledge'
 export const politicalTrendStatuses = ['favoravel', 'neutra', 'desfavoravel'] as const
 export type PoliticalTrendStatusValue = (typeof politicalTrendStatuses)[number]
 
-const optionalGoal = z.number().int().min(0).nullable().optional()
-
 const stateDeputiesArraySchema = z
   .array(positiveRelationshipId)
   .max(20)
@@ -16,13 +14,6 @@ const stateDeputiesArraySchema = z
 export const municipalityStrategyUpdateSchema = z.object({
   municipality: positiveRelationshipId,
   priority: z.enum(['alta', 'normal']).optional(),
-  voteGoals: z
-    .object({
-      good: optionalGoal,
-      regular: optionalGoal,
-      minimum: optionalGoal,
-    })
-    .optional(),
   strengths: z.array(z.string().trim().min(1).max(1000)).max(20).optional(),
   risks: z.array(z.string().trim().min(1).max(1000)).max(20).optional(),
   stateDeputies: stateDeputiesArraySchema.optional(),

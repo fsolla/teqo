@@ -1,13 +1,15 @@
 # E4R — Import único da planilha de projeção (seed de estratégia, local e produção)
 
 Status: entregue em código (2026-07-24)
-Atualizado em: 2026-07-24 (overwrite-always; SheetJS; seed local 189 metas / 50 alta)
+Atualizado em: 2026-07-24 (alvo mudou para `expectedVotes` — "Metas" removidas do app; overwrite-always; SheetJS; seed local 189 estimativas / 50 alta)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (E4R)
 Impeccable: n/a — script/CLI sem superfície de UI (relatório em stdout)
 Appetite: ~1 dia eng (parser + mapeamento + dry-run + runbook de produção)
 Responsável: —
 
-Revisão 2026-07-24: idempotência mudou de “só campos vazios” para **sempre sobrescrever** `voteGoals`/`priority` nas linhas casadas — a planilha sobe de novo quando a mesa manda versão mais nova sobre DB já populado. Entrega: `pnpm db:seed:projecao`, parser em `src/lib/projectionSheetParse.ts`, script `scripts/import-projecao.mjs`. Seed local verificado: 189 municípios com metas parseáveis, 50 `priority=alta`, Salvador pulado, re-run delta=0.
+Revisão 2026-07-24 (a): idempotência mudou de “só campos vazios” para **sempre sobrescrever** nas linhas casadas — a planilha sobe de novo quando a mesa manda versão mais nova sobre DB já populado. Entrega: `pnpm db:seed:projecao`, parser em `src/lib/projectionSheetParse.ts`, script `scripts/import-projecao.mjs`. Seed local verificado: 189 municípios com estimativas parseáveis, 50 `priority=alta`, Salvador pulado, re-run delta=0.
+
+Revisão 2026-07-24 (b) — **alvo é `expectedVotes`, não `voteGoals`:** decisão de produto — "Meta Bom/Regular/Mínimo" duplicava o conceito de votos estimados; a campanha trabalha com UMA série por cenário. O grupo `municipality.voteGoals` foi **removido do app** (migration `20260724_133600_drop_municipality_vote_goals`, com backfill metas→estimativas onde estimativa estava vazia) e o seed passou a gravar `municipality.expectedVotes` com o mapeamento **Bom → otimista, Regular → média (`central`), Mínimo → pessimista**. A ordem é validada com `getVoteEstimateOrderViolation` (pessimista ≤ média ≤ otimista) e a UI exibe tudo no card "Votos estimados".
 
 ## Contexto
 
@@ -26,22 +28,22 @@ Divergências A×B no MAPA GERAL (9 linhas: Brejões, Catu, Iaçu, Ipiaú, Jagua
 
 ## Objetivos
 
-- Script `scripts/import-projecao.mjs` que lê o xlsx canônico e escreve nos `municipality` do catálogo: `voteGoals.good/regular/minimum` (coluna EXPECTATIVA 2026) e `priority` (coluna PRIORIDADE) — **v1 só números/enums, zero PII**.
+- Script `scripts/import-projecao.mjs` que lê o xlsx canônico e escreve nos `municipality` do catálogo: `expectedVotes.optimistic/central/pessimistic` (coluna EXPECTATIVA 2026; Bom→otimista, Regular→média, Mínimo→pessimista) e `priority` (coluna PRIORIDADE) — **v1 só números/enums, zero PII**.
 - Parser tolerante aos 3 formatos observados de EXPECTATIVA: `Bom: 350 | Regular: 250 | Minimo: 150` (com/sem espaços), `Bom:350`, `800/500/400`; separador de milhar `10.000`.
 - Matching de nome via `canonicalizeMunicipalityName` + catálogo (`municipalityCatalog.ts`); sanity check duplo: VOTOS 2014/18/22 da planilha × `bahiaElectionAggregates` (valida o match), REGIÃO × `bahiaTerritories` (diverge = warning, não bloqueia).
 - `--dry-run` com relatório completo: linhas casadas/não casadas, campos que seriam escritos, 9 divergências A×B, Salvador pulado, totais.
-- **Sempre sobrescreve** `voteGoals` + `priority` em toda linha casada (a planilha é a fonte da estratégia naquele momento; re-run com arquivo novo ou `--file` substitui o que já estiver no banco). Não toca outros campos nem `lastUpdateAt`.
+- **Sempre sobrescreve** `expectedVotes` + `priority` em toda linha casada (a planilha é a fonte da estratégia naquele momento; re-run com arquivo novo ou `--file` substitui o que já estiver no banco). Não toca outros campos nem `lastUpdateAt`.
 - Runbook de produção documentado no próprio script (header) e neste plano.
 
 ## Decisões travadas
 
-- **v1 importa apenas números/enums (`voteGoals`, `priority`).** Colunas com nomes (LIDERANÇAS, ASSESSOR RESPONSÁVEL, DOBRADINHAS, ENCAMINHAMENTOS, OBSERVAÇÃO) ficam para fase 2, pós-lote jurídico — nome de ator político é dado pessoal que revela opinião política (LGPD art. 11); destino (CRM `leadership` × nota staff-only) se decide com a assessoria. **Rejeitado:** importar tudo com access staff-only (antecipa exatamente o risco que a Onda 0 segura); campo novo `networkNotes` (schema por dado que ainda não pode entrar).
+- **v1 importa apenas números/enums (`expectedVotes`, `priority`).** Colunas com nomes (LIDERANÇAS, ASSESSOR RESPONSÁVEL, DOBRADINHAS, ENCAMINHAMENTOS, OBSERVAÇÃO) ficam para fase 2, pós-lote jurídico — nome de ator político é dado pessoal que revela opinião política (LGPD art. 11); destino (CRM `leadership` × nota staff-only) se decide com a assessoria. **Rejeitado:** importar tudo com access staff-only (antecipa exatamente o risco que a Onda 0 segura); campo novo `networkNotes` (schema por dado que ainda não pode entrar).
 - **SITUAÇÃO e VOTOS não são importados.** Tendência é derivada do TSE (`computeVoteTrend` — decisão E2 mantida); votos históricos vêm de `electionTally`/artefato. A planilha só manda no que é julgamento humano: metas e prioridade. **Rejeitado:** persistir a SITUAÇÃO da planilha (duplicaria a derivação com dado defasado).
 - **Salvador (linha única, metas 30k/27k/25k) é pulado com relatório explícito.** O catálogo tem 19 Municípios-zona e a planilha não distribui; inventar rateio viola "não estimar o que não tem dado" (falsa precisão). Metas de zona entram via UI pelo coordenador. **Rejeitado:** rateio proporcional ao voto por zona (número inventado com cara de número).
 - **Arquivo A é o canônico de estratégia; B é referência.** Mais recente nos 9 conflitos e corroborado pela entrevista (Jaguaquara). O script aceita `--file` para apontar planilha nova se chegar versão mais atual.
 - **`priority`: `alta` → `alta`; `Baixa`/vazio → `normal`.** Cross-check com a aba PRIORITÁRIAS (conjunto alfabético de 50, não ranking): prioritária sem `alta` no MAPA GERAL = warning no relatório.
 - **Escrita via Payload Local API em transação única** (`withPayloadTransaction`), `overrideAccess: true` (processo CLI, mesmo padrão dos seeds); guarda de banco da família dos seeds (`assertLocalDatabase`; produção só com `ALLOW_REMOTE_DB=true`).
-- **Overwrite sempre na escrita:** cada linha casada do MAPA GERAL grava `voteGoals` + `priority` da planilha por cima do valor atual. **Rejeitado:** empty-only (quebraria o re-seed quando a mesa manda planilha atualizada). **Rejeitado:** merge por célula / “só se diferente” como gate — o dry-run já mostra o delta; a escrita é a declaração consciente após revisão.
+- **Overwrite sempre na escrita:** cada linha casada do MAPA GERAL grava `expectedVotes` + `priority` da planilha por cima do valor atual. **Rejeitado:** empty-only (quebraria o re-seed quando a mesa manda planilha atualizada). **Rejeitado:** merge por célula / “só se diferente” como gate — o dry-run já mostra o delta; a escrita é a declaração consciente após revisão.
 - **Não atualizar `lastUpdateAt`.** Seed/re-seed não é sinal de campo; frescor (E9/G8) não pode nascer inflado.
 - **Parser xlsx:** SheetJS CE (`xlsx`) como devDependency (knip entry `scripts/*.mjs`).
 - **i18n e naming:** identificadores em inglês (`importProjectionSheet`, `parseExpectationCell`, `--dry-run`/`--file`); relatório em pt-BR.
@@ -58,7 +60,7 @@ flowchart LR
     Parse["parseExpectationCell<br/>(3 formatos + milhar)"]
     Match["canonicalizeMunicipalityName<br/>+ municipalityCatalog"]
     Sanity["sanity: votos × artefato<br/>REGIÃO × bahiaTerritories"]
-    Write["Payload Local API<br/>(voteGoals, priority; overwrite)"]
+    Write["Payload Local API<br/>(expectedVotes, priority; overwrite)"]
     Report["relatório stdout<br/>(dry-run = só relatório)"]
     XLSX --> Parse --> Match --> Sanity --> Write --> Report
     Sanity -.warnings.-> Report
@@ -72,7 +74,7 @@ flowchart LR
 
 ## Dependências
 
-- Nenhuma dura (schema `municipality` em produção desde 2026-07-23; `voteGoals`/`priority` existem desde E1). Consome: `municipalityCatalog.ts`, `bahiaElectionAggregates.ts`, `bahiaTerritories.ts`, guard family dos seeds.
+- `expectedVotes` (grupo por cenário) existe desde A10; a migration `20260724_133600_drop_municipality_vote_goals` precisa estar aplicada (remove o grupo antigo). Consome: `municipalityCatalog.ts`, `bahiaElectionAggregates.ts`, `bahiaTerritories.ts`, guard family dos seeds.
 - Alimenta: **E8** (metas iniciais da decomposição), **A11/E17** (quadro com prioridade real), onboarding (Onda 0 §4).
 
 ## Não escopo

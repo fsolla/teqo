@@ -409,13 +409,8 @@ export interface Municipality {
   zoneNumber?: number | null;
   advisors?: (number | CampaignUser)[] | null;
   priority?: ('alta' | 'normal') | null;
-  voteGoals?: {
-    good?: number | null;
-    regular?: number | null;
-    minimum?: number | null;
-  };
   /**
-   * Total esperado da Praça por cenário — distinto das metas de planejamento e da soma das lideranças.
+   * Total esperado do município por cenário (pessimista/média/otimista) — distinto da soma das lideranças.
    */
   expectedVotes?: {
     pessimistic?: number | null;
@@ -1343,13 +1338,6 @@ export interface MunicipalitySelect<T extends boolean = true> {
   zoneNumber?: T;
   advisors?: T;
   priority?: T;
-  voteGoals?:
-    | T
-    | {
-        good?: T;
-        regular?: T;
-        minimum?: T;
-      };
   expectedVotes?:
     | T
     | {

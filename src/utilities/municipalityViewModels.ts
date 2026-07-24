@@ -9,7 +9,6 @@ import {
   toVoteEstimateScenarioViewModel,
   type VoteEstimateScenarioViewModel,
 } from '@/utilities/voteEstimate'
-import { toVoteGoalsViewModel, type VoteGoalsViewModel } from '@/utilities/voteGoals'
 import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
 import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
 
@@ -100,7 +99,6 @@ export type MunicipalityDetailViewModel = {
   strategy: {
     priority: 'alta' | 'normal'
     expectedVotes: VoteEstimateScenarioViewModel
-    voteGoals: VoteGoalsViewModel
     politicalTrend: MunicipalityPoliticalTrendViewModel
     strengths: string[]
     risks: string[]
@@ -136,7 +134,6 @@ export const toMunicipalityDetailViewModel = (
       : {
           priority: municipality.priority === 'alta' ? 'alta' : 'normal',
           expectedVotes: toVoteEstimateScenarioViewModel(municipality.expectedVotes),
-          voteGoals: toVoteGoalsViewModel(municipality.voteGoals),
           politicalTrend: {
             status: municipality.politicalTrend?.status ?? null,
             note: municipality.politicalTrend?.note ?? null,

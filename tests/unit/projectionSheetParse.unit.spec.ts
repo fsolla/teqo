@@ -21,63 +21,63 @@ describe('parseSheetNumber', () => {
 })
 
 describe('parseExpectationCell', () => {
-  it('parses labeled pipe format with and without spaces', () => {
+  it('maps Bom/Regular/Mínimo onto optimistic/central/pessimistic', () => {
     expect(parseExpectationCell('Bom:200 | Regular: 150 | Minimo: 100')).toEqual({
-      good: 200,
-      regular: 150,
-      minimum: 100,
+      optimistic: 200,
+      central: 150,
+      pessimistic: 100,
     })
     expect(parseExpectationCell('Bom: 300 | Regular: 200 | Minimo: 100')).toEqual({
-      good: 300,
-      regular: 200,
-      minimum: 100,
+      optimistic: 300,
+      central: 200,
+      pessimistic: 100,
     })
     expect(parseExpectationCell('Bom: 200| Regular: 150| Minimo: 100')).toEqual({
-      good: 200,
-      regular: 150,
-      minimum: 100,
+      optimistic: 200,
+      central: 150,
+      pessimistic: 100,
     })
   })
 
   it('parses thousand separators inside labeled cells', () => {
     expect(parseExpectationCell('Bom: 2.000 | Regular: 1.500 | Minimo: 1.000')).toEqual({
-      good: 2000,
-      regular: 1500,
-      minimum: 1000,
+      optimistic: 2000,
+      central: 1500,
+      pessimistic: 1000,
     })
     expect(parseExpectationCell('Bom: 10.000 | Regular: 8.000 | Minimo: 6.000')).toEqual({
-      good: 10000,
-      regular: 8000,
-      minimum: 6000,
+      optimistic: 10000,
+      central: 8000,
+      pessimistic: 6000,
     })
   })
 
   it('accepts Mínimo with accent', () => {
     expect(parseExpectationCell('Bom: 100 | Regular: 80 | Mínimo: 50')).toEqual({
-      good: 100,
-      regular: 80,
-      minimum: 50,
+      optimistic: 100,
+      central: 80,
+      pessimistic: 50,
     })
   })
 
   it('parses slash format', () => {
     expect(parseExpectationCell('800/500/400')).toEqual({
-      good: 800,
-      regular: 500,
-      minimum: 400,
+      optimistic: 800,
+      central: 500,
+      pessimistic: 400,
     })
     expect(parseExpectationCell('300 /200 /100')).toEqual({
-      good: 300,
-      regular: 200,
-      minimum: 100,
+      optimistic: 300,
+      central: 200,
+      pessimistic: 100,
     })
   })
 
   it('tolerates backslash separators from sheet export glitches', () => {
     expect(parseExpectationCell('Bom:300 \\Regular:150\\ mínimo: 50')).toEqual({
-      good: 300,
-      regular: 150,
-      minimum: 50,
+      optimistic: 300,
+      central: 150,
+      pessimistic: 50,
     })
   })
 

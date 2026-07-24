@@ -934,7 +934,7 @@ export class CampaignFixtures {
         data: {
           advisors: [],
           priority: 'normal',
-          voteGoals: { good: null, regular: null, minimum: null },
+          expectedVotes: { pessimistic: null, central: null, optimistic: null },
           politicalTrend: { status: null, note: null, recordedBy: null, recordedAt: null },
           strengths: [],
           risks: [],

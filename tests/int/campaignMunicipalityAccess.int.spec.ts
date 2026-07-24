@@ -168,7 +168,6 @@ describe('municipality catalog seed and per-role access', () => {
     await updateMunicipalityStrategyRecord(payload, coordinator, {
       municipality: municipality.id,
       priority: 'alta',
-      voteGoals: { good: 5000, regular: 3000, minimum: 1000 },
       strengths: ['Base sindical forte'],
       dobradinhaNotes: 'Negociação com deputado estadual em curso.',
     })
@@ -216,15 +215,17 @@ describe('municipality catalog seed and per-role access', () => {
 
     const updated = await updateMunicipalityStrategyRecord(payload, advisor, {
       municipality: administered.id,
-      voteGoals: { good: 800, regular: 500, minimum: 200 },
+      priority: 'alta',
+      nextSteps: 'Agendar reunião com a executiva municipal.',
     })
-    expect(updated.voteGoals?.regular).toBe(500)
+    expect(updated.priority).toBe('alta')
+    expect(updated.nextSteps).toBe('Agendar reunião com a executiva municipal.')
     fixtures.touchMunicipality(administered.id)
 
     await expect(
       updateMunicipalityStrategyRecord(payload, advisor, {
         municipality: outside.id,
-        voteGoals: { good: 10, regular: null, minimum: null },
+        priority: 'alta',
       }),
     ).rejects.toThrow()
   })

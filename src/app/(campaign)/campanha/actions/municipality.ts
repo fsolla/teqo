@@ -38,7 +38,7 @@ const getFreshStaffActor = (
     req,
   )
 
-/** Staff strategy fields: goals, priority, intel notes. Access enforced by row scope. */
+/** Staff strategy fields: priority and intel notes. Access enforced by row scope. */
 export const updateMunicipalityStrategyRecord = async (
   payload: Payload,
   actor: CampaignUser,

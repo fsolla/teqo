@@ -27,58 +27,13 @@ import {
   voteEstimateScenarioGroupAccess,
   voteEstimateScenarioGroupFields,
 } from '@/utilities/voteEstimateScenarioFields'
-import {
-  getVoteGoalsOrderViolation,
-  VOTE_GOALS_ORDER_ERROR_MESSAGE,
-  type VoteGoalsFields,
-} from '@/utilities/voteGoals'
 
-const voteGoalNumber = (value: unknown): number | null | undefined => {
+const voteEstimateNumber = (value: unknown): number | null | undefined => {
   if (value === null || value === undefined || value === '') return null
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    throw new APIError('Cada meta de votos deve ser um número inteiro não negativo.', 400)
+    throw new APIError('Cada estimativa de votos deve ser um número inteiro não negativo.', 400)
   }
   return Math.trunc(value)
-}
-
-const validateVoteGoals: CollectionBeforeValidateHook = ({ data, originalDoc, operation }) => {
-  if (!data) return data
-
-  const mergedGoals =
-    data.voteGoals !== undefined
-      ? { ...(originalDoc?.voteGoals ?? {}), ...(data.voteGoals as object) }
-      : operation === 'update'
-        ? originalDoc?.voteGoals
-        : undefined
-
-  if (!mergedGoals || typeof mergedGoals !== 'object') return data
-
-  const good = voteGoalNumber((mergedGoals as VoteGoalsFields).good)
-  const regular = voteGoalNumber((mergedGoals as VoteGoalsFields).regular)
-  const minimum = voteGoalNumber((mergedGoals as VoteGoalsFields).minimum)
-
-  if (getVoteGoalsOrderViolation({ good, regular, minimum })) {
-    throw new APIError(VOTE_GOALS_ORDER_ERROR_MESSAGE, 400)
-  }
-
-  if (data.voteGoals && typeof data.voteGoals === 'object') {
-    data.voteGoals = {
-      good:
-        (data.voteGoals as { good?: unknown }).good === undefined
-          ? (originalDoc?.voteGoals?.good ?? null)
-          : good,
-      regular:
-        (data.voteGoals as { regular?: unknown }).regular === undefined
-          ? (originalDoc?.voteGoals?.regular ?? null)
-          : regular,
-      minimum:
-        (data.voteGoals as { minimum?: unknown }).minimum === undefined
-          ? (originalDoc?.voteGoals?.minimum ?? null)
-          : minimum,
-    }
-  }
-
-  return data
 }
 
 const validateExpectedVotes: CollectionBeforeValidateHook = ({ data, originalDoc, operation }) => {
@@ -93,9 +48,9 @@ const validateExpectedVotes: CollectionBeforeValidateHook = ({ data, originalDoc
 
   if (!mergedExpected || typeof mergedExpected !== 'object') return data
 
-  const pessimistic = voteGoalNumber((mergedExpected as VoteEstimateScenarioFields).pessimistic)
-  const central = voteGoalNumber((mergedExpected as VoteEstimateScenarioFields).central)
-  const optimistic = voteGoalNumber((mergedExpected as VoteEstimateScenarioFields).optimistic)
+  const pessimistic = voteEstimateNumber((mergedExpected as VoteEstimateScenarioFields).pessimistic)
+  const central = voteEstimateNumber((mergedExpected as VoteEstimateScenarioFields).central)
+  const optimistic = voteEstimateNumber((mergedExpected as VoteEstimateScenarioFields).optimistic)
 
   if (getVoteEstimateOrderViolation({ pessimistic, central, optimistic })) {
     throw new APIError(VOTE_ESTIMATE_ORDER_ERROR_MESSAGE, 400)
@@ -191,7 +146,7 @@ export const Municipality: CollectionConfig = {
     delete: canDeleteMunicipality,
   },
   hooks: {
-    beforeValidate: [validateMunicipalityAdvisors, validateVoteGoals, validateExpectedVotes],
+    beforeValidate: [validateMunicipalityAdvisors, validateExpectedVotes],
     beforeChange: [derivePoliticalTrendAudit],
   },
   fields: [
@@ -345,42 +300,13 @@ export const Municipality: CollectionConfig = {
       ],
     },
     {
-      name: 'voteGoals',
-      type: 'group',
-      label: 'Metas de votos 2026',
-      access: {
-        read: canReadCampaignStaffField,
-        update: canManageCampaignStaffField,
-      },
-      fields: [
-        {
-          name: 'good',
-          type: 'number',
-          label: 'Bom',
-          min: 0,
-        },
-        {
-          name: 'regular',
-          type: 'number',
-          label: 'Regular',
-          min: 0,
-        },
-        {
-          name: 'minimum',
-          type: 'number',
-          label: 'Mínimo',
-          min: 0,
-        },
-      ],
-    },
-    {
       name: 'expectedVotes',
       type: 'group',
       label: 'Votos estimados',
       access: voteEstimateScenarioGroupAccess,
       admin: {
         description:
-          'Total esperado da Praça por cenário — distinto das metas de planejamento e da soma das lideranças.',
+          'Total esperado do município por cenário (pessimista/média/otimista) — distinto da soma das lideranças.',
       },
       fields: voteEstimateScenarioGroupFields(),
     },

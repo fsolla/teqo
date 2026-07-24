@@ -1,13 +1,17 @@
 /**
  * Pure parsers for the campaign projection spreadsheet (E4R).
- * Sheet cells → voteGoals / priority — no Payload, no I/O.
+ * Sheet cells → municipality expectedVotes / priority — no Payload, no I/O.
+ *
+ * Sheet vocabulary maps onto the estimate scenarios:
+ * Bom → optimistic, Regular → central (média), Mínimo → pessimistic.
  */
 
-export type ProjectionVoteGoals = {
-  good: number
-  regular: number
-  minimum: number
-}
+import type { VoteEstimateScenarioFields } from '@/utilities/voteEstimate'
+
+/** Parsed sheet triple — all three scenarios present (same keys as expectedVotes). */
+export type ProjectionVoteEstimates = Required<
+  Pick<VoteEstimateScenarioFields, 'pessimistic' | 'central' | 'optimistic'>
+>
 
 export type ProjectionPriority = 'alta' | 'normal'
 
@@ -38,31 +42,20 @@ const SLASH_EXPECTATION = /^([\d.]+)\s*\/\s*([\d.]+)\s*\/\s*([\d.]+)\s*$/
 
 export const parseExpectationCell = (
   raw: string | null | undefined,
-): ProjectionVoteGoals | null => {
+): ProjectionVoteEstimates | null => {
   if (raw == null) return null
 
   const trimmed = raw.trim().replace(/\s+/g, ' ')
   if (!trimmed) return null
 
-  const labeled = trimmed.match(LABELED_EXPECTATION)
-  if (labeled) {
-    const good = parseSheetNumber(labeled[1])
-    const regular = parseSheetNumber(labeled[2])
-    const minimum = parseSheetNumber(labeled[3])
-    if (good == null || regular == null || minimum == null) return null
-    return { good, regular, minimum }
-  }
+  const match = trimmed.match(LABELED_EXPECTATION) ?? trimmed.match(SLASH_EXPECTATION)
+  if (!match) return null
 
-  const slash = trimmed.match(SLASH_EXPECTATION)
-  if (slash) {
-    const good = parseSheetNumber(slash[1])
-    const regular = parseSheetNumber(slash[2])
-    const minimum = parseSheetNumber(slash[3])
-    if (good == null || regular == null || minimum == null) return null
-    return { good, regular, minimum }
-  }
-
-  return null
+  const optimistic = parseSheetNumber(match[1])
+  const central = parseSheetNumber(match[2])
+  const pessimistic = parseSheetNumber(match[3])
+  if (optimistic == null || central == null || pessimistic == null) return null
+  return { optimistic, central, pessimistic }
 }
 
 /** `alta` → alta; anything else (incl. Baixa / empty) → normal. */

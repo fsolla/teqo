@@ -123,7 +123,7 @@ describe('campaign integration fixtures', () => {
         id: municipality.id,
         data: {
           priority: 'alta',
-          voteGoals: { good: 100, regular: 50, minimum: 10 },
+          expectedVotes: { pessimistic: 10, central: 50, optimistic: 100 },
           strengths: [{ text: fixtures.value('Força') }],
           risks: [{ text: fixtures.value('Risco') }],
           nextSteps: fixtures.value('Encaminhamento'),
@@ -166,7 +166,11 @@ describe('campaign integration fixtures', () => {
     const municipality = await payload.findByID({ collection: 'municipality', id: municipalityID, depth: 0 })
     expect(municipality.advisors ?? []).toEqual([])
     expect(municipality.priority).toBe('normal')
-    expect(municipality.voteGoals).toMatchObject({ good: null, regular: null, minimum: null })
+    expect(municipality.expectedVotes).toMatchObject({
+      pessimistic: null,
+      central: null,
+      optimistic: null,
+    })
     expect(municipality.strengths ?? []).toEqual([])
     expect(municipality.risks ?? []).toEqual([])
     expect(municipality.nextSteps ?? null).toBeNull()

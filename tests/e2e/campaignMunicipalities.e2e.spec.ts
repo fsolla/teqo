@@ -93,11 +93,11 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.getByRole('button', { name: 'Salvar assessores' }).click()
     await expect(page.getByText('Assessores atualizados.')).toBeVisible()
 
-    await page.getByLabel('Meta Bom').fill('5000')
-    await page.getByLabel('Meta Regular').fill('3000')
-    await page.getByLabel('Meta Mínimo').fill('1000')
-    await page.getByRole('button', { name: 'Salvar estratégia' }).click()
-    await expect(page.getByText('Estratégia atualizada.')).toBeVisible()
+    await page.getByLabel('Pessimista').fill('1000')
+    await page.getByLabel('Média').fill('3000')
+    await page.getByLabel('Otimista').fill('5000')
+    await page.getByRole('button', { name: 'Salvar votos estimados' }).click()
+    await expect(page.getByText('Votos estimados atualizados.')).toBeVisible()
 
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
     await expect(page.getByText('5.000')).toBeVisible()
