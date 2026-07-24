@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-24 (janela 1 vigente — convenções até 05/08; foco: smoke pós-deploy, E4R→A11/E17 na semana de onboarding, R6, E8; sincronizado com a sessão de campo de 2026-07-23 — [CUSTOMER.md](CUSTOMER.md))
+Atualizado em: 2026-07-24 (B14 município mais próximo por geolocalização no Início; janela 1 vigente — convenções até 05/08; foco: smoke pós-deploy, E4R→A11/E17 na semana de onboarding, R6, E8)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -81,6 +81,7 @@ O discovery literatura→persona→entrevista ([relatório aprovado](research/re
   - **D4** envio 1:1 pela sessão do ator · depende de D3 · [plano](plans/whatsapp-envio-liderancas.md)
   - **D5** inbox da própria sessão → rascunhos (`municipalityUpdate`/demanda) com humano no loop · depende de D3 · [plano](plans/whatsapp-sugestao-atualizacoes.md)
 - **R6** critique/polish visual da vertical remodelada (ciclo /impeccable completo por superfície; smoke visual coordenador feito em 2026-07-21) · absorve os débitos de produto/UX remanescentes de FD2 ([field-desk-ux-pos-critique.md](plans/field-desk-ux-pos-critique.md)): glossário inline (O3 — hipótese ainda sem evidência), triagem em lote, empty states de coordenador · gatilho: antes de 16/08
+- **B14** município mais próximo (geolocalização → atalho no Início staff) · pede permissão **1× por sessão** se ainda não concedida; matching client-side sobre centroides IBGE; Salvador multi-zona → lista filtrada até B8 F2 · ~1d · Janela 1–2 · sem deps duras · cortável · [plano](plans/municipio-mais-proximo.md)
 
 ### Fill-ins abertos
 
@@ -111,6 +112,7 @@ flowchart TD
     D3 --> D5["D5 WA → rascunhos"]
     D4 -.thread.-> D5
     B8F2["B8 F2 Polígonos<br/>zonas de Salvador"]
+    B14n["B14 Município mais próximo"]
     E4R["E4R Import planilha<br/>(seed estratégia)"]
     A11n["A11 Posição em votos"]
     E17n["E17 Tabela TI no Início"]
@@ -149,13 +151,14 @@ flowchart TD
     A6 -.dobradinha.-> E13i
     C2prod -.dados reais.-> E11i
     E11i -.decisões acumuladas.-> E15i
+    B8F2 -.ZE Salvador.-> B14n
 ```
 
-Paralelizáveis agora: **E4R → A11/E17** (semana de onboarding, sem deps), **E8** (A10 ✓ e remodelagem em produção), **C12** (paralelo a E8), **E16** (compõe o existente), fill-ins (O0+, RS+). **D3** só após smoke + folga e só se o fluxo sede-digita (C12) não absorver os deltas do ZAP (não compete com E8/E9).
+Paralelizáveis agora: **E4R → A11/E17** (semana de onboarding, sem deps), **E8** (A10 ✓ e remodelagem em produção), **C12** (paralelo a E8), **E16** (compõe o existente), **B14** (atalho geo no Início; soft B8 F2 só para ZE Salvador), fill-ins (O0+, RS+). **D3** só após smoke + folga e só se o fluxo sede-digita (C12) não absorver os deltas do ZAP (não compete com E8/E9).
 
 ### Sequência por janela (só pendentes)
 
-**Janela 1 — agora → 05/08 (convenções):** smoke pós-deploy em produção + onboarding do time (Onda 0 §2/§4), com **E4R → A11/E17** na semana de onboarding (quadro seedado + a lente da mesa prontos quando o time logar); gate de adoção: sinal Little Hire — ≥1 update espontâneo até 30/07, cobrança da tabela dispensada (planilhas já em `docs/sheets/`) — acompanhamento em [IMPROVE-APP-PLAN.md](IMPROVE-APP-PLAN.md); **R6** critique/polish; **E8** pode começar em paralelo; Onda 0 jurídica em paralelo (externa).
+**Janela 1 — agora → 05/08 (convenções):** smoke pós-deploy em produção + onboarding do time (Onda 0 §2/§4), com **E4R → A11/E17** na semana de onboarding (quadro seedado + a lente da mesa prontos quando o time logar); gate de adoção: sinal Little Hire — ≥1 update espontâneo até 30/07, cobrança da tabela dispensada (planilhas já em `docs/sheets/`) — acompanhamento em [IMPROVE-APP-PLAN.md](IMPROVE-APP-PLAN.md); **R6** critique/polish; **E8** pode começar em paralelo; **B14** (atalho geo) se sobrar folga de campo no onboarding; Onda 0 jurídica em paralelo (externa).
 
 **Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; **E8** conta da cadeira → **E9** fila de alocação, com **C12** registro-fundação em paralelo (migrations cedo, longe do congelamento); **E16** dossiê do município (pedido O6 — compõe o existente, melhora com E8); D2 se sobrar folga.
 
@@ -167,7 +170,7 @@ Paralelizáveis agora: **E4R → A11/E17** (semana de onboarding, sem deps), **E
 
 **Não cortáveis:** Onda 0 (jurídico/Consent); **E4R** seed da planilha (Big Hire — o quadro nasce vazio sem ele); C2 dados reais; assimetria declarado×estimado (relação de campo); **E8**+**E9**+**C12** (a conta da cadeira, a fila e o registro ex-ante são o mínimo de "inteligência, não planilha" — e C12 é irrecuperável se não registrar durante a campanha).
 
-**Cortes seguros** (se o prazo apertar, nesta ordem): **D5** inbox→rascunhos (manter registro manual + `wa.me`); **D4** envio bridge (manter `wa.me`); **D3** fundação do canal (atalho `wa.me` continua); **E12** camada TI (rollup manual por lista; **E17** já dá a leitura regional básica no Início); **E13** planejador de giros (rebaixado na fila de corte em 2026-07-24: "perna"/agenda é a restrição dominante nomeada em campo — cortar só depois de E12; agenda segue manual com J-A/J-B como guia); **E15** backtest (pós-eleição por definição — cortar = perder o aprendizado 2030); **E11** motor v1 (manter fila E9 sem sugestões); **B13** símbolo proporcional (manter quantis/LQ como escala); **E14** níveis (manter `priority` alta/normal); **B8 F2** polígonos (mapa continua agregado no município; manter F1 bairros); **D2** push (adiar); **A6**; **A11**/**E17** (baratos e sem deps — cortar só em último caso); **E16** dossiê (último dos extras — pedido explícito de campo); débitos/fill-ins.
+**Cortes seguros** (se o prazo apertar, nesta ordem): **D5** inbox→rascunhos (manter registro manual + `wa.me`); **D4** envio bridge (manter `wa.me`); **D3** fundação do canal (atalho `wa.me` continua); **E12** camada TI (rollup manual por lista; **E17** já dá a leitura regional básica no Início); **E13** planejador de giros (rebaixado na fila de corte em 2026-07-24: "perna"/agenda é a restrição dominante nomeada em campo — cortar só depois de E12; agenda segue manual com J-A/J-B como guia); **E15** backtest (pós-eleição por definição — cortar = perder o aprendizado 2030); **E11** motor v1 (manter fila E9 sem sugestões); **B13** símbolo proporcional (manter quantis/LQ como escala); **E14** níveis (manter `priority` alta/normal); **B8 F2** polígonos (mapa continua agregado no município; manter F1 bairros); **D2** push (adiar); **A6**; **B14** município mais próximo (lista/busca e Recentes continuam); **A11**/**E17** (baratos e sem deps — cortar só em último caso); **E16** dossiê (último dos extras — pedido explícito de campo); débitos/fill-ins.
 
 ## Bloqueadores atuais
 
