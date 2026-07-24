@@ -145,12 +145,14 @@ export interface Config {
     home: Home;
     metadata: Metadatum;
     'privacy-policy': PrivacyPolicy;
+    campaignGoals: CampaignGoal;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     home: HomeSelect<false> | HomeSelect<true>;
     metadata: MetadataSelect<false> | MetadataSelect<true>;
     'privacy-policy': PrivacyPolicySelect<false> | PrivacyPolicySelect<true>;
+    campaignGoals: CampaignGoalsSelect<false> | CampaignGoalsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -2045,6 +2047,31 @@ export interface PrivacyPolicy {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaignGoals".
+ */
+export interface CampaignGoal {
+  id: number;
+  /**
+   * Piso decidido pela coordenação geral. A meta por município (E8) é decomposta proporcionalmente ao teto do campo projetado a partir deste valor.
+   */
+  stateGoal: number;
+  /**
+   * Margem de segurança sobre a meta estadual, para leitura da mesa (não altera a decomposição).
+   */
+  margin?: number | null;
+  /**
+   * Ano-base considerado pela coordenação ao fixar a meta estadual (contexto, não usado em cálculo).
+   */
+  baseYear?: number | null;
+  /**
+   * Contexto livre sobre a decisão da meta (ex.: data e instância que decidiu).
+   */
+  note?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -2111,6 +2138,19 @@ export interface MetadataSelect<T extends boolean = true> {
 export interface PrivacyPolicySelect<T extends boolean = true> {
   published?: T;
   body?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaignGoals_select".
+ */
+export interface CampaignGoalsSelect<T extends boolean = true> {
+  stateGoal?: T;
+  margin?: T;
+  baseYear?: T;
+  note?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

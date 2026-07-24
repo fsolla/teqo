@@ -14,6 +14,11 @@ import { Button } from '@/components/ui/button'
 import { formatElectionNumber } from '@/lib/electionInsights'
 import type { StaffDashboardView } from '@/utilities/campaignDashboardData'
 import {
+  formatGoalCoverageDeficitLabel,
+  formatGoalCoverageRatioLabel,
+  goalCoverageProgressPercent,
+} from '@/utilities/goalCoverage'
+import {
   formatVoteEstimateEndpointsLabel,
   voteEstimateScenarioLabels,
 } from '@/utilities/voteEstimate'
@@ -67,6 +72,12 @@ export const CampaignDashboard = ({
               view.municipalityCount > 0
                 ? Math.round((view.withAdvisorCount / view.municipalityCount) * 100)
                 : undefined,
+          },
+          {
+            label: 'Cobertura da meta',
+            value: formatGoalCoverageRatioLabel(view.goalCoverage),
+            detail: formatGoalCoverageDeficitLabel(view.goalCoverage),
+            progress: goalCoverageProgressPercent(view.goalCoverage),
           },
           {
             label: 'Declarações sem estimativa',

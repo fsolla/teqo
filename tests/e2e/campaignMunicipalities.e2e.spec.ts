@@ -100,7 +100,15 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(page.getByText('Votos estimados atualizados.')).toBeVisible()
 
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
-    await expect(page.getByText('5.000')).toBeVisible()
+    // "Conta da cadeira" (E8) shows the saved scenario values through
+    // `MunicipalityListExpectedVotesControl` — a compact edit-in-place
+    // control whose only always-visible digits are the active scenario
+    // (`central`, "3.000" here). The full pessimistic/central/optimistic
+    // trio only becomes plain page text via its screen-reader summary
+    // (visually a hover-only preview otherwise), so assert against that
+    // unique, unambiguous string rather than a bare "5.000" substring —
+    // that also matches the (opacity-0 but DOM-visible) hover-preview span.
+    await expect(page.getByText('Otimista: 5.000')).toBeVisible()
     await expect(page.getByText(`Assessoria: ${advisor.name}`)).toBeVisible()
   })
 

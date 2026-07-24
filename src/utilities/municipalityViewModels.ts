@@ -3,11 +3,13 @@ import type { Payload } from 'payload'
 import type { MunicipalityVoteRankEntry } from '@/lib/municipalityVoteRank'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { eligibleCampaignStaffWhere } from '@/utilities/campaignAccess'
+import { createEmptyGoalCoverageByScenario, type MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
 import type { PoliticalTrendStatus } from '@/utilities/municipalityUi'
 import { relationshipId } from '@/utilities/relationship'
 import type { StateDeputySummary } from '@/utilities/stateDeputyData'
 import {
   toVoteEstimateScenarioViewModel,
+  type VoteEstimateScenario,
   type VoteEstimateScenarioViewModel,
 } from '@/utilities/voteEstimate'
 import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
@@ -55,12 +57,15 @@ export type MunicipalityListViewModel = {
   politicalTrendNote: string | null
   pledges: MunicipalityPledgeAggregate
   votePosition2022: MunicipalityVoteRankEntry | null
+  /** E8 "conta da cadeira" — meta × comprometido por cenário; null fora da staff view. */
+  goalCoverageByScenario: Record<VoteEstimateScenario, MunicipalityGoalCoverage>
 }
 
 export const toMunicipalityListViewModel = (
   municipality: Municipality,
   pledges: MunicipalityPledgeAggregate | undefined,
   votePosition2022: MunicipalityListViewModel['votePosition2022'],
+  goalCoverageByScenario?: Record<VoteEstimateScenario, MunicipalityGoalCoverage>,
 ): MunicipalityListViewModel => ({
   id: municipality.id,
   name: municipality.name,
@@ -78,6 +83,7 @@ export const toMunicipalityListViewModel = (
   politicalTrendNote: municipality.politicalTrend?.note ?? null,
   pledges: pledges ?? createEmptyMunicipalityPledgeAggregate(),
   votePosition2022,
+  goalCoverageByScenario: goalCoverageByScenario ?? createEmptyGoalCoverageByScenario(),
 })
 
 export type MunicipalityAdvisorSummary = {

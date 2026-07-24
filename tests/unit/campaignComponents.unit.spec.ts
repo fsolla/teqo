@@ -14,10 +14,12 @@ import { Progress } from '@/components/ui/Progress'
 import { Toggle } from '@/components/ui/Toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import { stub } from '../helpers/stub'
+import { createEmptyGoalCoverageByScenario } from '@/utilities/goalCoverage'
 import type { MunicipalityAdvisorSummary, MunicipalityListViewModel } from '@/utilities/municipalityViewModels'
 import { toVoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
 import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
+
+import { stub } from '../helpers/stub'
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -171,6 +173,11 @@ describe('campaign visual foundation', () => {
           share: 0.031,
           totalUnits: 435,
         },
+        goalCoverageByScenario: {
+          pessimistic: { goal: 1500, committed: 1200, coverageRatio: 0.8, deficit: 300 },
+          central: { goal: 1500, committed: 1200, coverageRatio: 0.8, deficit: 300 },
+          optimistic: { goal: 1500, committed: 1200, coverageRatio: 0.8, deficit: 300 },
+        },
       },
       {
         id: 2,
@@ -189,6 +196,7 @@ describe('campaign visual foundation', () => {
         politicalTrendNote: null,
         pledges: createEmptyMunicipalityPledgeAggregate(),
         votePosition2022: null,
+        goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
       },
     ]
 
@@ -210,6 +218,9 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('Coberta')
     expect(html).toContain('Sem assessor')
     expect(html).toContain('Tendência')
+    expect(html).toContain('Cobertura da meta')
+    expect(html).toContain('80%')
+    expect(html).toContain('Faltam 300 votos para a meta')
   })
 
   it('hides leadership coverage subline when pledges only have declared votes', () => {
@@ -238,6 +249,7 @@ describe('campaign visual foundation', () => {
               missingEstimateCount: 1,
             },
             votePosition2022: null,
+            goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
           },
         ],
         advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
@@ -272,6 +284,7 @@ describe('campaign visual foundation', () => {
             politicalTrendNote: null,
             pledges: createEmptyMunicipalityPledgeAggregate(),
             votePosition2022: null,
+            goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
           },
         ],
         advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),

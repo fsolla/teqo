@@ -2,6 +2,8 @@ import type { Payload } from 'payload'
 
 import type { CampaignUser, VotePledge } from '@/payload-types'
 import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
+import type { MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
+import { loadMunicipalityGoalCoverageBundle } from '@/utilities/municipalityGoalAccount'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
 import type { VoteEstimateScenario } from '@/utilities/voteEstimate'
 import { rollupMunicipalityStaffVotes } from '@/utilities/votePledgeData'
@@ -16,6 +18,8 @@ export type StaffDashboardView = {
   declaredVotesTotal: number
   pledgeCount: number
   missingEstimateCount: number
+  /** E8 "conta da cadeira" — meta × comprometido, cenário central (dashboard não tem seletor de cenário). */
+  goalCoverage: MunicipalityGoalCoverage
   missingEstimates: Array<{
     pledgeID: number
     municipalityName: string
@@ -108,6 +112,13 @@ export const getCampaignDashboardData = async (
   const rollup = rollupMunicipalityStaffVotes(municipalities.docs, pledgeAggregates)
   const { staffVoteTotalByScenario, declaredVotesTotal, pledgeCount, missingEstimateCount } = rollup
 
+  const goalCoverageBundle = await loadMunicipalityGoalCoverageBundle(
+    payload,
+    user,
+    municipalities.docs,
+    pledgeAggregates,
+  )
+
   const leadershipIDs = [
     ...new Set(
       missingEstimatePledges.docs.map((pledge) => requireRelationshipId(pledge.leadership)),
@@ -141,6 +152,7 @@ export const getCampaignDashboardData = async (
     declaredVotesTotal,
     pledgeCount,
     missingEstimateCount,
+    goalCoverage: goalCoverageBundle.aggregateByScenario.central,
     missingEstimates: missingEstimatePledges.docs.map((pledge) => {
       const municipality = municipalityById.get(requireRelationshipId(pledge.municipality))
       const leadership = leadershipsById.get(requireRelationshipId(pledge.leadership))
