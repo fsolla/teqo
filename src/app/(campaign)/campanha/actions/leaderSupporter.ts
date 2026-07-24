@@ -3,14 +3,11 @@
 import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
-import {
-  assertMunicipalityManagement,
-  upsertContactByPhone,
-} from '@/app/(campaign)/campanha/actions/supporter'
+import { upsertContactByPhone } from '@/app/(campaign)/campanha/actions/supporter'
 import { checkboxFormValue, nullableRelationshipFormValue, optionalFormText } from '@/lib/formData'
 import { leaderSupporterCreateSchema } from '@/lib/schemas/supporter'
 import type { CampaignUser, Supporter } from '@/payload-types'
-import { isCampaignLeader } from '@/utilities/campaignAccess'
+import { getEngagedLeaderMunicipalityIds, isCampaignLeader } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import {
   requireConsentByKey,
@@ -38,11 +35,15 @@ export type LeaderSupporterFormValues = {
   municipality?: string
 }
 
+const MUNICIPALITY_OUT_OF_SCOPE_MESSAGE =
+  'Você só pode cadastrar contatos nos municípios da sua liderança.'
+
 const safeActionMessages = [
   'Esta pessoa já está cadastrada como apoiador neste município.',
   'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.',
   'Somente lideranças podem cadastrar contatos por aqui.',
   'Consentimento de cadastro de apoiador ainda não configurado.',
+  MUNICIPALITY_OUT_OF_SCOPE_MESSAGE,
 ] as const
 
 const getLeaderSupporterFormError = (
@@ -82,7 +83,18 @@ export const createLeaderSupporterRecord = async (
       payload,
       async ({ req }) => {
         const currentActor = await getFreshLeaderActor(payload, actor, req)
-        await assertMunicipalityManagement(payload, currentActor, data.municipality, req)
+
+        // Leaders cannot read the municipality collection, so scope is asserted
+        // against their own engaged leadership's municipalities (mirroring the
+        // leader branch of the collection-level `canCreateSupporter`).
+        const accessibleMunicipalityIDs = await getEngagedLeaderMunicipalityIds(
+          payload,
+          currentActor.id,
+          req,
+        )
+        if (!accessibleMunicipalityIDs.includes(data.municipality)) {
+          throw new Error(MUNICIPALITY_OUT_OF_SCOPE_MESSAGE)
+        }
 
         const registrationConsent = await requireConsentByKey(
           payload,

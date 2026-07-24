@@ -31,7 +31,7 @@ const campaignFixtures = installCampaignFixtures({
 
 const DUPLICATE_LEADERSHIP_MESSAGE =
   'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novos municípios.'
-const OUT_OF_SCOPE_PLAZA_MESSAGE = 'Você só pode vincular lideranças aos municípios que assessora.'
+const OUT_OF_SCOPE_MUNICIPALITY_MESSAGE = 'Você só pode vincular lideranças aos municípios que assessora.'
 
 describe('campaign leadership domain', () => {
   beforeAll(async () => {
@@ -66,7 +66,7 @@ describe('campaign leadership domain', () => {
       createdBy: 999,
       user: 999,
       consent: 999,
-    } as never)
+    })
 
     expect(parsed.phone).toBe('71999990000')
     expect(parsed.municipalities).toEqual([1, 2])
@@ -81,7 +81,7 @@ describe('campaign leadership domain', () => {
       contact: 999,
       user: 999,
       createdBy: 999,
-    } as never)
+    })
     expect(update).toEqual({ id: 1 })
   })
 
@@ -188,7 +188,7 @@ describe('campaign leadership domain', () => {
       markFirstRead = resolve
     })
     const findSpy = vi.spyOn(payload, 'find').mockImplementation(async (args) => {
-      const result = await originalFind(args as never)
+      const result = await originalFind(args)
       if (
         args.collection === 'contact' &&
         'where' in args &&
@@ -200,7 +200,7 @@ describe('campaign leadership domain', () => {
           await firstReadGate
         }
       }
-      return result as never
+      return result
     })
 
     const first = createLeadershipRecord(payload, coordinator, {
@@ -374,7 +374,7 @@ describe('campaign leadership domain', () => {
         phone: campaignFixtures().phone(),
         supportStatus: 'engajado',
       }),
-    ).rejects.toThrow(OUT_OF_SCOPE_PLAZA_MESSAGE)
+    ).rejects.toThrow(OUT_OF_SCOPE_MUNICIPALITY_MESSAGE)
   })
 
   it('enforces scoped action success and denial for create and internal update', async () => {
@@ -403,7 +403,7 @@ describe('campaign leadership domain', () => {
         id: own.id,
         municipalities: [assigned.id, other.id],
       }),
-    ).rejects.toThrow(OUT_OF_SCOPE_PLAZA_MESSAGE)
+    ).rejects.toThrow(OUT_OF_SCOPE_MUNICIPALITY_MESSAGE)
 
     const otherLeadership = await createLeadershipRecord(payload, coordinator, {
       municipalities: [other.id],
@@ -461,7 +461,7 @@ describe('campaign leadership domain', () => {
       if (args.collection === 'leadership') {
         throw new Error('falha forçada após contato')
       }
-      return originalCreate(args as never)
+      return originalCreate(args)
     })
 
     await expect(

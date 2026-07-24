@@ -6,6 +6,7 @@ import { municipalityUpdateCreateSchema, type MunicipalityUpdateCreateInput } fr
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+import { hookFilledCreateData } from '@/utilities/hookFilledData'
 
 export const createMunicipalityUpdateRecord = async (
   payload: Payload,
@@ -21,7 +22,7 @@ export const createMunicipalityUpdateRecord = async (
 
       return payload.create({
         collection: 'municipalityUpdate',
-        data: data as never,
+        data: hookFilledCreateData<'municipalityUpdate'>(data),
         depth: 0,
         user: currentActor,
         overrideAccess: false,

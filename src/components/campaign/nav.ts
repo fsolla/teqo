@@ -30,7 +30,8 @@ const staffNav: CampaignNavItem[] = [
 ]
 
 const leaderNav: CampaignNavItem[] = [
-  { title: 'Início', href: '/campanha', icon: HomeIcon },
+  // The leader home IS the contact tool — one entry, one href (duplicate
+  // hrefs previously produced duplicate React keys in the sidebar).
   { title: 'Meus contatos', href: '/campanha', icon: UsersIcon },
 ]
 

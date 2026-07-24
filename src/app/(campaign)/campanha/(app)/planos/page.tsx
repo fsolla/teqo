@@ -1,3 +1,7 @@
+import {
+  CampaignListPendingBoundary,
+  CampaignListResults,
+} from '@/components/campaign/CampaignListPending'
 import config from '@payload-config'
 import { PlusIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -40,6 +44,7 @@ export default async function ActionPlanListPage({ searchParams }: ActionPlanLis
 
   const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
   if (!user) return null
+  if (!isCampaignStaff(user)) redirect('/campanha')
 
   const now = new Date()
   const [{ result, state }, municipalityOptions] = await Promise.all([
@@ -70,47 +75,51 @@ export default async function ActionPlanListPage({ searchParams }: ActionPlanLis
         ) : null}
       </header>
 
-      <ActionPlanFilters
-        key={buildActionPlanFiltersKey(state)}
-        state={state}
-        municipalityOptions={municipalityOptions}
-      />
+      <CampaignListPendingBoundary>
+        <ActionPlanFilters
+          key={buildActionPlanFiltersKey(state)}
+          state={state}
+          municipalityOptions={municipalityOptions}
+        />
 
-      {result.docs.length ? (
-        <>
-          <ActionPlanList
-            plans={result.docs.map((plan) => toActionPlanListViewModel(plan as ActionPlan))}
-          />
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-sm text-muted-foreground">
-              {result.totalDocs}{' '}
-              {result.totalDocs === 1 ? 'plano encontrado' : 'planos encontrados'}
-            </p>
-            <CampaignListPagination
-              page={state.page}
-              totalPages={result.totalPages}
-              hrefForPage={(page) => buildActionPlanListHref(state, page)}
-            />
-          </div>
-        </>
-      ) : (
-        <Empty className="min-h-72 border">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <SearchXIcon aria-hidden="true" />
-            </EmptyMedia>
-            <EmptyTitle>Nenhum plano encontrado</EmptyTitle>
-            <EmptyDescription>
-              Ajuste os filtros ou a janela selecionada. Você só vê planos dentro do seu escopo.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button asChild variant="outline" className="min-h-11">
-              <Link href="/campanha/planos">Limpar filtros</Link>
-            </Button>
-          </EmptyContent>
-        </Empty>
-      )}
+        <CampaignListResults>
+          {result.docs.length ? (
+            <>
+              <ActionPlanList
+                plans={result.docs.map((plan) => toActionPlanListViewModel(plan as ActionPlan))}
+              />
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-sm text-muted-foreground">
+                  {result.totalDocs}{' '}
+                  {result.totalDocs === 1 ? 'plano encontrado' : 'planos encontrados'}
+                </p>
+                <CampaignListPagination
+                  page={state.page}
+                  totalPages={result.totalPages}
+                  hrefForPage={(page) => buildActionPlanListHref(state, page)}
+                />
+              </div>
+            </>
+          ) : (
+            <Empty className="min-h-72 border">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <SearchXIcon aria-hidden="true" />
+                </EmptyMedia>
+                <EmptyTitle>Nenhum plano encontrado</EmptyTitle>
+                <EmptyDescription>
+                  Ajuste os filtros ou a janela selecionada. Você só vê planos dentro do seu escopo.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button asChild variant="outline" className="min-h-11">
+                  <Link href="/campanha/planos">Limpar filtros</Link>
+                </Button>
+              </EmptyContent>
+            </Empty>
+          )}
+        </CampaignListResults>
+      </CampaignListPendingBoundary>
     </CampaignPageShell>
   )
 }

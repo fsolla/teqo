@@ -2,12 +2,15 @@
 
 import { describe, expect, it } from 'vitest'
 
+import type { Media } from '@/payload-types'
 import {
   assertCampaignAvatarFile,
   campaignUserInitials,
   campaignUserShellView,
   mediaDocumentUrl,
 } from '@/utilities/campaignUserProfile'
+
+import { stub } from '../helpers/stub'
 
 describe('campaignUserProfile helpers', () => {
   it('builds initials from the user name', () => {
@@ -20,7 +23,7 @@ describe('campaignUserProfile helpers', () => {
       campaignUserShellView({
         name: 'Maria',
         role: 'coordinator',
-        avatar: { id: 1, url: 'https://example.com/a.jpg' } as never,
+        avatar: stub<Media>({ id: 1, url: 'https://example.com/a.jpg' }),
       }),
     ).toEqual({
       name: 'Maria',

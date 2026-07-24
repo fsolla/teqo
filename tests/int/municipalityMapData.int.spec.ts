@@ -10,7 +10,7 @@ import { loadMunicipalityMapBundle } from '@/utilities/municipalityMapData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
-const ZONE_PLAZA_COUNT = municipalityCatalog.filter((entry) => entry.kind === 'zona').length
+const ZONE_MUNICIPALITY_COUNT = municipalityCatalog.filter((entry) => entry.kind === 'zona').length
 const ZONE_MUNICIPALITY_CODES = new Set(
   municipalityCatalog.filter((entry) => entry.kind === 'zona').map((entry) => entry.ibgeCode),
 )
@@ -34,7 +34,7 @@ describe('loadMunicipalityMapBundle — list URL filters', () => {
     const bundle = await loadMunicipalityMapBundle(payload, coordinator, { kind: 'zona' })
 
     expect(bundle).not.toBeNull()
-    expect(bundle!.zoneBreakdown).toHaveLength(ZONE_PLAZA_COUNT)
+    expect(bundle!.zoneBreakdown).toHaveLength(ZONE_MUNICIPALITY_COUNT)
 
     const ibgeCodes = Object.keys(bundle!.valuesByYear['2022'] ?? {})
     expect(ibgeCodes.length).toBeGreaterThan(0)

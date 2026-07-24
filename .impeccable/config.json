@@ -11,6 +11,15 @@
         ],
         "createdAt": "2026-07-21T01:54:11.928Z",
         "reason": "Pre-existing inline hex in the password-reset EMAIL HTML template; transactional email cannot use CSS tokens"
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "src/components/MetaPixel.tsx"
+        ],
+        "createdAt": "2026-07-23T22:40:00.000Z",
+        "reason": "Meta's documented noscript tracking pixel: a hidden 1x1 <img> whose src is a templated facebook.com/tr URL — not a rendered image"
       }
     ]
   }

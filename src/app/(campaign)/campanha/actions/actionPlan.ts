@@ -13,6 +13,7 @@ import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campa
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
+import { hookFilledCreateData } from '@/utilities/hookFilledData'
 
 const MAX_ACTION_PLAN_UPDATE_BODY_LENGTH = 4000
 const MAX_ACTION_PLAN_RESULT_SUMMARY_LENGTH = 6000
@@ -26,7 +27,7 @@ export const createActionPlanRecord = async (
 
   return payload.create({
     collection: 'actionPlan',
-    data: data as never,
+    data: hookFilledCreateData<'actionPlan'>(data),
     depth: 0,
     user: actor,
     overrideAccess: false,

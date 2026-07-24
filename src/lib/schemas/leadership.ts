@@ -35,14 +35,14 @@ export type SupportStatus = (typeof leadershipSupportStatuses)[number]
 export const isSupportStatus = (value: unknown): value is SupportStatus =>
   typeof value === 'string' && leadershipSupportStatuses.some((status) => status === value)
 
-export const MAX_LEADERSHIP_PLAZAS = 30
+export const MAX_LEADERSHIP_MUNICIPALITIES = 30
 export const MAX_LEADERSHIP_ORGANIZATIONS = 20
 export const MAX_LEADERSHIP_STATE_DEPUTIES = 20
 
 const municipalitiesArraySchema = z
   .array(positiveRelationshipId)
   .min(1, 'Vincule a liderança a pelo menos uma Praça.')
-  .max(MAX_LEADERSHIP_PLAZAS)
+  .max(MAX_LEADERSHIP_MUNICIPALITIES)
   .transform((ids) => [...new Set(ids)])
 
 const organizationsArraySchema = z

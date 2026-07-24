@@ -156,7 +156,6 @@ export const MunicipalityList = ({
           </TableHeader>
           <TableBody>
             {municipalities.map((municipality) => {
-              const names = advisorNames(municipality)
               const hasAdvisor = municipality.advisorIDs.length > 0
 
               return (

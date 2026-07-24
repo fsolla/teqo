@@ -1,5 +1,6 @@
 'use client'
 
+import { useCampaignListPending } from '@/components/campaign/CampaignListPending'
 import { type FormEvent, useRef, useState, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { ChevronDownIcon, FilterIcon, XIcon } from 'lucide-react'
@@ -111,7 +112,11 @@ export const SupporterFilters = ({
   const valuesRef = useRef(initialValues)
   const [values, setValues] = useState(initialValues)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
-  const [isPending, startTransition] = useTransition()
+  const sharedPending = useCampaignListPending()
+  const [isLocalPending, startLocalTransition] = useTransition()
+  // Prefer the page-level boundary so the results region dims together.
+  const isPending = sharedPending?.isPending ?? isLocalPending
+  const startTransition = sharedPending?.startTransition ?? startLocalTransition
 
   const replaceValues = (nextValues: FilterValues) => {
     valuesRef.current = nextValues
@@ -138,7 +143,9 @@ export const SupporterFilters = ({
   }
 
   const clearFilters = () => {
-    const cleared = Object.fromEntries(filterNames.map((name) => [name, ''])) as Partial<FilterValues>
+    const cleared = Object.fromEntries(
+      filterNames.map((name) => [name, '']),
+    ) as Partial<FilterValues>
     replaceValues({ ...valuesRef.current, ...cleared })
   }
 

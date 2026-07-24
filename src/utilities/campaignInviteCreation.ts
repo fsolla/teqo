@@ -7,6 +7,7 @@ import {
   type CampaignInviteCreateInput,
 } from '@/lib/schemas/invite'
 import type { CampaignUser } from '@/payload-types'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { reloadCampaignActor } from '@/utilities/campaignActionContext'
 import {
   buildCampaignInviteWhatsAppLink,
@@ -31,7 +32,9 @@ const getFreshInviteCreator = async (
   req: PayloadTransactionRequest,
 ): Promise<CampaignUser> => {
   const currentActor = await reloadCampaignActor(payload, actor, req)
-  if (currentActor.role !== 'coordinator' && currentActor.role !== 'advisor') {
+  // Staff only (coordinator, advisor, candidate) — matches the collection-level
+  // `canCreateCampaignInvite` scope; the leadership read below narrows advisors.
+  if (!isCampaignStaff(currentActor)) {
     throw new Error('Somente a coordenação pode criar convites.')
   }
   return currentActor

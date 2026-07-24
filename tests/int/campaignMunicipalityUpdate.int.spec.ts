@@ -1,6 +1,11 @@
 // @vitest-environment node
 
-import { getPayload, type Payload } from 'payload'
+import {
+  getPayload,
+  type Payload,
+  type PayloadRequest,
+  type RequiredDataFromCollectionSlug,
+} from 'payload'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { createMunicipalityUpdateRecord } from '@/app/(campaign)/campanha/actions/municipalityUpdate'
@@ -15,6 +20,10 @@ import {
 } from '../helpers/testDatabaseLease'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { stub } from '../helpers/stub'
+
+/** Create data with server-managed fields (e.g. `author`) intentionally omitted. */
+type MunicipalityUpdateCreateData = RequiredDataFromCollectionSlug<'municipalityUpdate'>
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -100,7 +109,7 @@ describe('campaign municipality update domain', () => {
       author: 999,
       createdAt: '2000-01-01T00:00:00.000Z',
       updatedAt: '2000-01-01T00:00:00.000Z',
-    } as never)
+    })
 
     expect(parsed).toEqual({
       municipality: 1,
@@ -116,11 +125,11 @@ describe('campaign municipality update domain', () => {
     await expect(
       payload.create({
         collection: 'municipalityUpdate',
-        data: {
+        data: stub<MunicipalityUpdateCreateData>({
           municipality: municipality.id,
           kind: 'semanal',
           worked: 'Somente uma resposta',
-        } as never,
+        }),
         user: coordinator,
         overrideAccess: false,
       }),
@@ -128,11 +137,11 @@ describe('campaign municipality update domain', () => {
     await expect(
       payload.create({
         collection: 'municipalityUpdate',
-        data: {
+        data: stub<MunicipalityUpdateCreateData>({
           municipality: municipality.id,
           kind: 'urgente',
           body: '   ',
-        } as never,
+        }),
         user: coordinator,
         overrideAccess: false,
       }),
@@ -146,7 +155,7 @@ describe('campaign municipality update domain', () => {
         ? await MunicipalityUpdate.access.update({
             id: 1,
             data: undefined,
-            req: { user: coordinator } as never,
+            req: stub<PayloadRequest>({ user: coordinator }),
           })
         : MunicipalityUpdate.access?.update
     const deleteAccess =
@@ -154,7 +163,7 @@ describe('campaign municipality update domain', () => {
         ? await MunicipalityUpdate.access.delete({
             id: 1,
             data: undefined,
-            req: { user: coordinator } as never,
+            req: stub<PayloadRequest>({ user: coordinator }),
           })
         : MunicipalityUpdate.access?.delete
 
@@ -170,16 +179,18 @@ describe('campaign municipality update domain', () => {
   it('lets the coordinator create and read every update', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const municipality = await campaignFixtures().getMunicipality()
-    const created = await createMunicipalityUpdateRecord(payload, coordinator, {
+    // Forged `author` goes through a widened variable: the schema must strip it.
+    const forgedInput = {
       municipality: municipality.id,
-      kind: 'semanal',
+      kind: 'semanal' as const,
       worked: 'Visitas concluídas',
       failed: 'Dois endereços fechados',
       needs: 'Mais panfletos',
       activeVolunteers: 7,
       newSupports: 12,
       author: 999,
-    } as never)
+    }
+    const created = await createMunicipalityUpdateRecord(payload, coordinator, forgedInput)
 
     expect(created.author).toBe(coordinator.id)
     const visible = await listMunicipalityUpdates(coordinator, municipality.id)
@@ -278,11 +289,11 @@ describe('campaign municipality update domain', () => {
     await expect(
       payload.create({
         collection: 'municipalityUpdate',
-        data: {
+        data: stub<MunicipalityUpdateCreateData>({
           municipality: municipality.id,
           kind: 'nota',
           body: 'Tentativa anônima',
-        } as never,
+        }),
         overrideAccess: false,
       }),
     ).rejects.toThrow()
@@ -537,7 +548,7 @@ describe('campaign municipality update domain', () => {
       ) {
         throw new Error('falha forçada no campo derivado')
       }
-      return originalUpdate(args as never) as never
+      return originalUpdate(args)
     })
 
     try {

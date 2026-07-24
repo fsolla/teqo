@@ -9,6 +9,19 @@ type Collection = keyof Config['collections']
 export const getDocuments = <Slug extends Collection>(collection: Slug, depth?: number) =>
   getPayload({ config: configPromise }).then((payload) => payload.find({ collection, depth }))
 
+/** Bare petition ids (no relationship population) — for `generateStaticParams`. */
+export const getPetitionIds = async (): Promise<string[]> => {
+  const payload = await getPayload({ config: configPromise })
+  const result = await payload.find({
+    collection: 'petition',
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: {},
+  })
+  return result.docs.map((doc) => String(doc.id))
+}
+
 export const getDocumentById = <Slug extends Collection>(
   collection: Slug,
   id: string | number,

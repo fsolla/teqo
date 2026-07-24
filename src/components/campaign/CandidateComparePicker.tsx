@@ -2,6 +2,7 @@
 
 import { XIcon } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useTransition } from 'react'
 
 import { Badge } from '@/components/ui/Badge'
 import { Field, FieldLabel } from '@/components/ui/field'
@@ -23,6 +24,7 @@ export const CandidateComparePicker = ({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
   const optionByNumber = new Map(options.map((option) => [option.candidateNumber, option]))
 
   const navigate = (numbers: number[]) => {
@@ -30,11 +32,20 @@ export const CandidateComparePicker = ({
     params.delete('compare')
     for (const number of numbers) params.append('compare', String(number))
     params.set('tab', 'elections')
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    })
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div
+      className="flex flex-col gap-2 transition-opacity data-[pending=true]:opacity-70"
+      data-pending={isPending || undefined}
+      aria-busy={isPending}
+    >
+      <p className="sr-only" aria-live="polite">
+        {isPending ? 'Atualizando comparativo…' : ''}
+      </p>
       <Field className="max-w-md">
         <FieldLabel htmlFor="candidate-compare-picker">Comparar com outros candidatos</FieldLabel>
         <NativeSelect

@@ -1,9 +1,13 @@
 import config from '@payload-config'
 import { redirect } from 'next/navigation'
-import { getPayload } from 'payload'
+import { getPayload, type Payload } from 'payload'
+import { Suspense } from 'react'
 
 import { CampaignDashboard } from '@/components/campaign/CampaignDashboard'
 import { LeaderContactsPanel } from '@/components/campaign/LeaderContactsPanel'
+import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/MunicipalityEstimateScenarioContext'
+import { MunicipalityMapPanelDynamic } from '@/components/campaign/MunicipalityMapPanelDynamic'
+import type { CampaignUser } from '@/payload-types'
 import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { getCampaignDashboardData } from '@/utilities/campaignDashboardData'
@@ -37,20 +41,50 @@ export default async function CampaignHomePage({ searchParams }: CampaignHomePag
   }
 
   const isStaff = isCampaignStaff(user)
-  const [view, mapBundle, candidateOptions] = await Promise.all([
-    getCampaignDashboardData(payload, user),
-    isStaff
-      ? loadMunicipalityMapBundle(payload, user, { compare: rawSearchParams.compare })
-      : Promise.resolve(null),
-    isStaff ? loadFederalCandidateOptions(payload, user) : Promise.resolve([]),
-  ])
+  const view = await getCampaignDashboardData(payload, user)
 
   return (
     <CampaignDashboard
       view={view}
       userName={user.name}
-      mapBundle={mapBundle}
-      candidateOptions={candidateOptions}
+      mapSlot={
+        isStaff ? (
+          // Streams after the KPI shell paints; the shared request-scoped
+          // municipality scope is reused (React cache), not reloaded.
+          <Suspense
+            fallback={
+              <div
+                aria-hidden="true"
+                className="h-[420px] w-full animate-pulse rounded-xl border bg-muted/40"
+              />
+            }
+          >
+            <DashboardMapSection payload={payload} user={user} compare={rawSearchParams.compare} />
+          </Suspense>
+        ) : null
+      }
     />
+  )
+}
+
+const DashboardMapSection = async ({
+  payload,
+  user,
+  compare,
+}: {
+  payload: Payload
+  user: CampaignUser
+  compare: string | string[] | undefined
+}) => {
+  const [mapBundle, candidateOptions] = await Promise.all([
+    loadMunicipalityMapBundle(payload, user, { compare }),
+    loadFederalCandidateOptions(user),
+  ])
+  if (!mapBundle) return null
+
+  return (
+    <MunicipalityEstimateScenarioProvider>
+      <MunicipalityMapPanelDynamic bundle={mapBundle} candidateOptions={candidateOptions} />
+    </MunicipalityEstimateScenarioProvider>
   )
 }

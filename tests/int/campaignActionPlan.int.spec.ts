@@ -1,6 +1,11 @@
 // @vitest-environment node
 
-import { getPayload, type Payload } from 'payload'
+import {
+  getPayload,
+  type Payload,
+  type PayloadRequest,
+  type RequiredDataFromCollectionSlug,
+} from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { actionPlanCreateSchema, actionPlanUpdateSchema } from '@/lib/schemas/actionPlan'
@@ -13,6 +18,10 @@ import {
 } from '@/utilities/campaignAccess'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { stub } from '../helpers/stub'
+
+/** Create data with server-derived fields (e.g. `slug`) intentionally omitted. */
+type ActionPlanCreateData = RequiredDataFromCollectionSlug<'actionPlan'>
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -88,13 +97,13 @@ describe('action plan domain', () => {
     })
 
     const createAsCoordinator = await canCreateActionPlan({
-      req: { user: coordinator, payload, context: {} } as never,
+      req: stub<PayloadRequest>({ user: coordinator, payload, context: {} }),
     })
     const createAsAdvisor = await canCreateActionPlan({
-      req: { user: advisor, payload, context: {} } as never,
+      req: stub<PayloadRequest>({ user: advisor, payload, context: {} }),
     })
     const createAsLeader = await canCreateActionPlan({
-      req: { user: leaderAccount, payload, context: {} } as never,
+      req: stub<PayloadRequest>({ user: leaderAccount, payload, context: {} }),
     })
     expect(createAsCoordinator).toBe(true)
     expect(createAsAdvisor).toBe(true)
@@ -102,49 +111,49 @@ describe('action plan domain', () => {
 
     const plan = await payload.create({
       collection: 'actionPlan',
-      data: {
+      data: stub<ActionPlanCreateData>({
         ...validPlanInput(municipality.id),
         advisors: [advisor.id],
         leadership: leadership.id,
         responsible: contact.id,
         createdBy: coordinator.id,
-      } as never,
+      }),
       overrideAccess: true,
     })
     fixtures.own('actionPlan', plan.id)
 
     const coordinatorRead = await canReadActionPlan({
-      req: { user: coordinator, payload, context: {} } as never,
+      req: stub<PayloadRequest>({ user: coordinator, payload, context: {} }),
     })
     expect(coordinatorRead).toBe(true)
 
     const advisorRead = await canReadActionPlan({
-      req: { user: advisor, payload, context: {} } as never,
+      req: stub<PayloadRequest>({ user: advisor, payload, context: {} }),
     })
     expect(advisorRead).toEqual({
       or: [{ advisors: { contains: advisor.id } }, { municipality: { in: [municipality.id] } }],
     })
 
     const otherAdvisorRead = await canReadActionPlan({
-      req: { user: otherAdvisor, payload, context: {} } as never,
+      req: stub<PayloadRequest>({ user: otherAdvisor, payload, context: {} }),
     })
     expect(otherAdvisorRead).toEqual({
       or: [{ advisors: { contains: otherAdvisor.id } }, { municipality: { in: [] } }],
     })
 
     const leaderRead = await canReadActionPlan({
-      req: { user: leaderAccount, payload, context: {} } as never,
+      req: stub<PayloadRequest>({ user: leaderAccount, payload, context: {} }),
     })
     expect(leaderRead).toBe(false)
 
     const leadershipIds = await getAccessibleLeadershipIds(
-      { user: leaderAccount, payload, context: {} } as never,
+      stub<PayloadRequest>({ user: leaderAccount, payload, context: {} }),
       leaderAccount,
     )
     expect(leadershipIds).toEqual([])
 
     const advisorUpdate = await canUpdateActionPlan({
-      req: { user: advisor, payload, context: {} } as never,
+      req: stub<PayloadRequest>({ user: advisor, payload, context: {} }),
     })
     expect(advisorUpdate).toEqual({
       or: [{ advisors: { contains: advisor.id } }, { municipality: { in: [municipality.id] } }],
@@ -187,10 +196,10 @@ describe('action plan domain', () => {
 
     const plan = await payload.create({
       collection: 'actionPlan',
-      data: {
+      data: stub<ActionPlanCreateData>({
         ...validPlanInput(municipality.id),
         title: fixtures.value('Plano do assessor'),
-      } as never,
+      }),
       user: advisor,
       overrideAccess: false,
     })
@@ -213,12 +222,12 @@ describe('action plan domain', () => {
     await expect(
       payload.create({
         collection: 'actionPlan',
-        data: {
+        data: stub<ActionPlanCreateData>({
           ...validPlanInput(municipality.id),
           title: fixtures.value('Plano sem data'),
           startAt: null,
           createdBy: coordinator.id,
-        } as never,
+        }),
         overrideAccess: true,
       }),
     ).rejects.toThrow('Informe a data e horário de início ao planejar ou confirmar o plano.')
@@ -227,13 +236,13 @@ describe('action plan domain', () => {
     await expect(
       payload.create({
         collection: 'actionPlan',
-        data: {
+        data: stub<ActionPlanCreateData>({
           ...validPlanInput(municipality.id),
           title: fixtures.value('Plano com término invertido'),
           startAt: start.toISOString(),
           endAt: new Date(start.getTime() - 3_600_000).toISOString(),
           createdBy: coordinator.id,
-        } as never,
+        }),
         overrideAccess: true,
       }),
     ).rejects.toThrow('O horário de término deve ser posterior ao de início.')
@@ -255,13 +264,13 @@ describe('action plan domain', () => {
 
     const plan = await payload.create({
       collection: 'actionPlan',
-      data: {
+      data: stub<ActionPlanCreateData>({
         ...validPlanInput(municipality.id),
         title: fixtures.value('Plano Tarefas'),
         advisors: [advisor.id],
         leadership: leadership.id,
         tasks: [{ title: 'Levar faixas', done: false }],
-      } as never,
+      }),
       overrideAccess: true,
     })
     fixtures.own('actionPlan', plan.id)
@@ -272,7 +281,7 @@ describe('action plan domain', () => {
         id: plan.id,
         data: {
           tasks: [{ title: 'Levar faixas', done: true }],
-        } as never,
+        },
         user: leaderAccount,
         overrideAccess: false,
       }),

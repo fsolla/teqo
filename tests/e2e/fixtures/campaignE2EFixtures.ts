@@ -60,7 +60,7 @@ class CampaignE2EOwnership {
       get: (_target, property) => {
         if (property === 'create') {
           return async (args: Parameters<Payload['create']>[0]) => {
-            const document = await rootPayload.create(args as never)
+            const document = await rootPayload.create(args)
             if (this.isOwnedCollection(args.collection) && typeof document.id === 'number') {
               this.own(args.collection, document.id)
             }

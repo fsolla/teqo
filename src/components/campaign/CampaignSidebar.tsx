@@ -1,6 +1,6 @@
 'use client'
 
-import type { FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -10,6 +10,7 @@ import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { CampaignUserAvatar } from '@/components/campaign/CampaignUserAvatar'
 import { getCampaignNav, isCampaignNavActive } from '@/components/campaign/nav'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/Spinner'
 import {
   Sidebar,
   SidebarContent,
@@ -32,11 +33,15 @@ export type CampaignSidebarUser = CampaignUserShellView
 export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
   const pathname = usePathname()
   const { isMobile, setOpenMobile } = useSidebar()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (isLoggingOut) return
+    setIsLoggingOut(true)
     clearRecentVisits()
     await clearCampaignPwaCaches()
+    // logoutCampaign redirects — no need to reset the pending flag on success.
     await logoutCampaign()
   }
 
@@ -53,7 +58,9 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
 
       <SidebarContent>
         <SidebarGroup>
-          <CampaignScopeBadge className="mb-3 w-fit">{campaignRoleLabels[user.role]}</CampaignScopeBadge>
+          <CampaignScopeBadge className="mb-3 w-fit">
+            {campaignRoleLabels[user.role]}
+          </CampaignScopeBadge>
           <SidebarGroupContent>
             <SidebarMenu>
               {getCampaignNav(user.role).map((item) => (
@@ -83,7 +90,9 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
         >
           <CampaignUserAvatar name={user.name} avatarUrl={user.avatarUrl} size="sm" />
           <div className="flex min-w-0 flex-col gap-0.5 leading-none">
-            <span className="truncate text-sm font-medium text-sidebar-foreground">{user.name}</span>
+            <span className="truncate text-sm font-medium text-sidebar-foreground">
+              {user.name}
+            </span>
             <span className="truncate text-xs text-muted-foreground">Meu perfil</span>
           </div>
         </Link>
@@ -92,9 +101,11 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
             type="submit"
             variant="outline"
             size="sm"
+            disabled={isLoggingOut}
             className="min-h-11 w-full border-sidebar-border bg-sidebar font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
-            Sair
+            {isLoggingOut ? <Spinner aria-hidden="true" /> : null}
+            {isLoggingOut ? 'Saindo…' : 'Sair'}
           </Button>
         </form>
       </SidebarFooter>

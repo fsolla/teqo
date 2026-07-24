@@ -13,7 +13,7 @@ import {
   campaignDemandStatusLabels,
   type CampaignDemandStatus,
 } from '@/lib/schemas/campaignDemand'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
+import { isCampaignStaff, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadDemandDetail } from '@/utilities/campaignDemandData'
 import {
@@ -51,11 +51,10 @@ export default async function DemandDetailPage({ params }: DemandDetailPageProps
   const { slug } = await params
   const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
   if (!user) redirect('/campanha/login')
+  if (!isCampaignStaff(user)) redirect('/campanha')
 
   const demand = await loadDemandDetail(payload, user, slug)
   if (!demand) notFound()
-
-  const isStaffView = isCampaignStaff(user)
 
   return (
     <CampaignPageShell>
@@ -105,82 +104,67 @@ export default async function DemandDetailPage({ params }: DemandDetailPageProps
         </section>
       ) : null}
 
-      {isStaffView ? (
-        <>
-          <DemandWorkflowCard
-            demandID={demand.id}
-            status={demand.status}
-            isCoordinator={user.role === 'coordinator'}
-            currentCost={demand.cost}
-            transitionFormAction={transitionDemandFormAction}
-            costFormAction={setDemandCostFormAction}
-            receiptFormAction={attachDemandReceiptFormAction}
-          />
+      <DemandWorkflowCard
+        demandID={demand.id}
+        status={demand.status}
+        canDecideEscalated={isCampaignUnrestricted(user)}
+        currentCost={demand.cost}
+        transitionFormAction={transitionDemandFormAction}
+        costFormAction={setDemandCostFormAction}
+        receiptFormAction={attachDemandReceiptFormAction}
+      />
 
-          <section
-            aria-labelledby="demand-internal-title"
-            className="flex flex-col gap-3 rounded-xl border p-4"
-          >
-            <h2 id="demand-internal-title" className="text-base font-medium">
-              Controle interno
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Custo:{' '}
-              {demand.cost != null ? currencyFormatter.format(demand.cost) : 'não registrado'}
-            </p>
-            {demand.receipts.length ? (
-              <ul className="flex flex-col gap-1">
-                {demand.receipts.map((receipt) => (
-                  <li key={receipt.id} className="flex items-center gap-2 text-sm">
-                    <PaperclipIcon className="size-4 text-muted-foreground" aria-hidden="true" />
-                    {receipt.url ? (
-                      <a
-                        href={receipt.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline-offset-4 hover:underline"
-                      >
-                        {receipt.filename ?? `Comprovante ${receipt.id}`}
-                      </a>
-                    ) : (
-                      <span>{receipt.filename ?? `Comprovante ${receipt.id}`}</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">Nenhum comprovante anexado.</p>
-            )}
-            {demand.statusHistory.length ? (
-              <div className="flex flex-col gap-1">
-                <h3 className="text-sm font-medium">Histórico</h3>
-                <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
-                  {demand.statusHistory.map((entry, index) => (
-                    <li key={`${entry.status}-${index}`}>
-                      {campaignDemandStatusLabels[entry.status]}
-                      {entry.authorName ? ` — ${entry.authorName}` : ''}
-                      {entry.createdAt
-                        ? ` · ${dateTimeFormatter.format(new Date(entry.createdAt))}`
-                        : ''}
-                      {entry.note ? ` · ${entry.note}` : ''}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </section>
-        </>
-      ) : (
-        <section aria-label="Acompanhamento" className="rounded-xl border px-4 py-6">
-          <p className="text-sm text-muted-foreground">
-            {demand.status === 'aberta'
-              ? 'Sua demanda foi registrada e aguarda análise da assessoria.'
-              : demand.status === 'em_analise' || demand.status === 'escalada'
-                ? 'Sua demanda está em análise pela coordenação.'
-                : 'Sua demanda foi decidida — veja a nota acima.'}
-          </p>
-        </section>
-      )}
+      <section
+        aria-labelledby="demand-internal-title"
+        className="flex flex-col gap-3 rounded-xl border p-4"
+      >
+        <h2 id="demand-internal-title" className="text-base font-medium">
+          Controle interno
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Custo: {demand.cost != null ? currencyFormatter.format(demand.cost) : 'não registrado'}
+        </p>
+        {demand.receipts.length ? (
+          <ul className="flex flex-col gap-1">
+            {demand.receipts.map((receipt) => (
+              <li key={receipt.id} className="flex items-center gap-2 text-sm">
+                <PaperclipIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+                {receipt.url ? (
+                  <a
+                    href={receipt.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline-offset-4 hover:underline"
+                  >
+                    {receipt.filename ?? `Comprovante ${receipt.id}`}
+                  </a>
+                ) : (
+                  <span>{receipt.filename ?? `Comprovante ${receipt.id}`}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">Nenhum comprovante anexado.</p>
+        )}
+        {demand.statusHistory.length ? (
+          <div className="flex flex-col gap-1">
+            <h3 className="text-sm font-medium">Histórico</h3>
+            <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
+              {demand.statusHistory.map((entry, index) => (
+                <li key={`${entry.status}-${index}`}>
+                  {campaignDemandStatusLabels[entry.status]}
+                  {entry.authorName ? ` — ${entry.authorName}` : ''}
+                  {entry.createdAt
+                    ? ` · ${dateTimeFormatter.format(new Date(entry.createdAt))}`
+                    : ''}
+                  {entry.note ? ` · ${entry.note}` : ''}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </section>
     </CampaignPageShell>
   )
 }

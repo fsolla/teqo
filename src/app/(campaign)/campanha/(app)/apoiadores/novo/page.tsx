@@ -7,7 +7,7 @@ import { createSupporterFormAction } from '@/app/(campaign)/campanha/(app)/apoia
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { SupporterForm } from '@/components/campaign/SupporterForm'
 import { Button } from '@/components/ui/button'
-import { isCampaignCoordinator } from '@/utilities/campaignAccess'
+import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadSupporterCreatePageData } from '@/utilities/supporterPageData'
 import { canAccessSupporterArea } from '@/utilities/supporterUi'
@@ -26,9 +26,7 @@ export default async function NewSupporterPage() {
         <Button asChild variant="ghost" className="w-fit px-0">
           <Link href="/campanha/apoiadores">← Voltar para apoiadores</Link>
         </Button>
-        <CampaignScopeBadge>
-          {isCampaignCoordinator(user) ? 'Coordenador Geral' : 'Assessor'}
-        </CampaignScopeBadge>
+        <CampaignScopeBadge>{campaignRoleLabels[user.role]}</CampaignScopeBadge>
         <h1 className="text-2xl font-semibold tracking-tight">Novo apoiador</h1>
         <p className="text-muted-foreground">
           Cadastre um apoiador com telefone obrigatório e consentimento LGPD.

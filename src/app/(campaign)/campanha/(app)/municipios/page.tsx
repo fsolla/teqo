@@ -1,3 +1,7 @@
+import {
+  CampaignListPendingBoundary,
+  CampaignListResults,
+} from '@/components/campaign/CampaignListPending'
 import config from '@payload-config'
 import { SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -128,16 +132,20 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
     </Empty>
   )
 
-  const main = isStaffView ? (
-    <MunicipalityEstimateScenarioProvider>
+  // Shared transition: the filters navigate, the results dim ("Feel the action").
+  // The estimate-scenario provider wraps ONLY the results — a scenario switch
+  // re-renders the overview/list cells, never the filter controls.
+  const main = (
+    <CampaignListPendingBoundary>
       {filters}
-      {listBody}
-    </MunicipalityEstimateScenarioProvider>
-  ) : (
-    <>
-      {filters}
-      {listBody}
-    </>
+      <CampaignListResults>
+        {isStaffView ? (
+          <MunicipalityEstimateScenarioProvider>{listBody}</MunicipalityEstimateScenarioProvider>
+        ) : (
+          listBody
+        )}
+      </CampaignListResults>
+    </CampaignListPendingBoundary>
   )
 
   return (

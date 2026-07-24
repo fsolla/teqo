@@ -24,7 +24,8 @@ type FormAction = (
 type DemandWorkflowCardProps = {
   demandID: number
   status: CampaignDemandStatus
-  isCoordinator: boolean
+  /** Coordinator or candidate — the roles allowed to decide escalated demands. */
+  canDecideEscalated: boolean
   currentCost: number | null
   transitionFormAction: FormAction
   costFormAction: FormAction
@@ -38,7 +39,7 @@ const transitionVariant = (target: CampaignDemandStatus) =>
 export const DemandWorkflowCard = ({
   demandID,
   status,
-  isCoordinator,
+  canDecideEscalated,
   currentCost,
   transitionFormAction,
   costFormAction,
@@ -53,7 +54,9 @@ export const DemandWorkflowCard = ({
 
   const availableTransitions = campaignDemandTransitions[status].filter(
     (target) =>
-      isCoordinator || status !== 'escalada' || (target !== 'aprovada' && target !== 'rejeitada'),
+      canDecideEscalated ||
+      status !== 'escalada' ||
+      (target !== 'aprovada' && target !== 'rejeitada'),
   )
 
   return (

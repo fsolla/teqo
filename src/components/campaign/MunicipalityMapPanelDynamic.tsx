@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 
 import type { FederalCandidateOption } from '@/utilities/electionCandidateOptions'
-import type { MunicipalityMapBundle } from '@/utilities/municipalityMapData'
+import type { MunicipalityMapBundle } from '@/utilities/municipalityMapContract'
 
 const MunicipalityMapPanelLazy = dynamic(
   () => import('@/components/campaign/MunicipalityMapPanel').then((module) => module.MunicipalityMapPanel),

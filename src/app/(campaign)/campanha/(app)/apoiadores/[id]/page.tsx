@@ -13,7 +13,7 @@ import { VoteIntentionControl } from '@/components/campaign/VoteIntentionControl
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { isCampaignCoordinator } from '@/utilities/campaignAccess'
+import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
   loadSupporterDetailConsentData,
@@ -69,9 +69,7 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
             Voltar para apoiadores
           </Link>
         </Button>
-        <CampaignScopeBadge>
-          {isCampaignCoordinator(user) ? 'Coordenador Geral' : 'Assessor'}
-        </CampaignScopeBadge>
+        <CampaignScopeBadge>{campaignRoleLabels[user.role]}</CampaignScopeBadge>
         <h1 className="text-2xl font-semibold tracking-tight">{supporter.name}</h1>
         <p className="text-muted-foreground">
           {supporter.city ?? 'Município não informado'}

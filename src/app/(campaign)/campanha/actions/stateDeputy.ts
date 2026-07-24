@@ -9,14 +9,14 @@ import {
   type StateDeputyUpdateInput,
 } from '@/lib/schemas/stateDeputy'
 import type { CampaignUser } from '@/payload-types'
-import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
+import { getCampaignActionContext } from '@/utilities/campaignActionContext'
+import { runStaffEntityMutation, type StaffEntityPolicy } from '@/utilities/campaignEntityActions'
+import { hookFilledCreateData } from '@/utilities/hookFilledData'
 
-const assertStaffActor = (payload: Payload, actor: CampaignUser): Promise<CampaignUser> =>
-  reloadStaffActor(payload, actor, 'Somente a coordenação e a assessoria gerenciam dobradinhas.')
-
-const isUniqueStateDeputyConflict = (error: unknown): boolean => {
-  const message = error instanceof Error ? error.message : String(error)
-  return /state_deputy_(name|slug)|duplicate key/i.test(message)
+const stateDeputyPolicy: StaffEntityPolicy = {
+  staffMessage: 'Somente a coordenação e a assessoria gerenciam dobradinhas.',
+  conflictPattern: /state_deputy_(name|slug)|duplicate key/i,
+  conflictMessage: 'Já existe uma dobradinha com este nome.',
 }
 
 export const createStateDeputyRecord = async (
@@ -25,22 +25,15 @@ export const createStateDeputyRecord = async (
   input: StateDeputyCreateInput,
 ) => {
   const data = stateDeputyCreateSchema.parse(input)
-  const currentActor = await assertStaffActor(payload, actor)
-
-  try {
-    return await payload.create({
+  return runStaffEntityMutation(payload, actor, stateDeputyPolicy, (currentActor) =>
+    payload.create({
       collection: 'stateDeputy',
-      data: data as never,
+      data: hookFilledCreateData<'stateDeputy'>(data),
       depth: 0,
       user: currentActor,
       overrideAccess: false,
-    })
-  } catch (error) {
-    if (isUniqueStateDeputyConflict(error)) {
-      throw new Error('Já existe uma dobradinha com este nome.')
-    }
-    throw error
-  }
+    }),
+  )
 }
 
 export const updateStateDeputyRecord = async (
@@ -49,16 +42,16 @@ export const updateStateDeputyRecord = async (
   input: StateDeputyUpdateInput,
 ) => {
   const { id, ...data } = stateDeputyUpdateSchema.parse(input)
-  const currentActor = await assertStaffActor(payload, actor)
-
-  return payload.update({
-    collection: 'stateDeputy',
-    id,
-    data,
-    depth: 0,
-    user: currentActor,
-    overrideAccess: false,
-  })
+  return runStaffEntityMutation(payload, actor, stateDeputyPolicy, (currentActor) =>
+    payload.update({
+      collection: 'stateDeputy',
+      id,
+      data,
+      depth: 0,
+      user: currentActor,
+      overrideAccess: false,
+    }),
+  )
 }
 
 export const createStateDeputy = async (input: StateDeputyCreateInput) => {

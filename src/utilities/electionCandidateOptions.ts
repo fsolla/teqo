@@ -1,4 +1,6 @@
-import type { Payload } from 'payload'
+import configPromise from '@payload-config'
+import { unstable_cache } from 'next/cache'
+import { getPayload } from 'payload'
 
 import {
   BASELINE_TICKET_2022,
@@ -7,6 +9,7 @@ import {
 } from '@/lib/electionResults'
 import type { CampaignUser, User } from '@/payload-types'
 import { assertCanReadElectionData } from '@/utilities/campaignAccess'
+import { ELECTION_TSE_CACHE_TAG } from '@/utilities/electionCache'
 
 export type FederalCandidateOption = {
   candidateNumber: number
@@ -15,17 +18,32 @@ export type FederalCandidateOption = {
   totalVotesState: number
 }
 
+/** Cross-request cached core — immutable 2022 registry, busted with `election-tse`. */
+const loadFederalCandidateOptionsCached = unstable_cache(
+  async (limit: number): Promise<FederalCandidateOption[]> => {
+    const payload = await getPayload({ config: configPromise })
+    return queryFederalCandidateOptions(limit, payload)
+  },
+  ['federal-candidate-options'],
+  { tags: [ELECTION_TSE_CACHE_TAG] },
+)
+
 /**
  * Federal-deputy candidates available for comparison (2022 registry ordered by
  * statewide votes). Solla himself is excluded — he is always the reference.
  */
-export const loadFederalCandidateOptions = async (
-  payload: Payload,
+export const loadFederalCandidateOptions = (
   user: CampaignUser | User,
   limit = 60,
 ): Promise<FederalCandidateOption[]> => {
   assertCanReadElectionData(user)
+  return loadFederalCandidateOptionsCached(limit)
+}
 
+const queryFederalCandidateOptions = async (
+  limit: number,
+  payload: Awaited<ReturnType<typeof getPayload>>,
+): Promise<FederalCandidateOption[]> => {
   const result = await payload.find({
     collection: 'electionCandidate',
     where: {

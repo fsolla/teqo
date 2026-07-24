@@ -1,3 +1,7 @@
+import {
+  CampaignListPendingBoundary,
+  CampaignListResults,
+} from '@/components/campaign/CampaignListPending'
 import config from '@payload-config'
 import { FileUpIcon, PlusIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -19,8 +23,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { isCampaignCoordinator } from '@/utilities/campaignAccess'
+import { isCampaignCoordinator, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { loadSupportersPageData } from '@/utilities/supporterPageData'
 import {
   buildSupporterFiltersKey,
@@ -42,12 +47,46 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
 
   const rawSearchParams = await searchParams
   const now = new Date()
-  const { result, state, redirectHref, municipalityOptions, overview } = await loadSupportersPageData(
-    payload,
-    user,
-    rawSearchParams,
-  )
+  const { result, state, redirectHref, municipalityOptions, overview } =
+    await loadSupportersPageData(payload, user, rawSearchParams)
   if (redirectHref) redirect(redirectHref)
+
+  const listBody = result.docs.length ? (
+    <>
+      {overview ? <SupporterListOverview view={overview} now={now} /> : null}
+      <SupporterList
+        supporters={result.docs.map((supporter) => toSupporterListItemViewModel(supporter))}
+      />
+      <div className="flex flex-col items-center gap-3">
+        <p className="text-sm text-muted-foreground">
+          {result.totalDocs}{' '}
+          {result.totalDocs === 1 ? 'apoiador encontrado' : 'apoiadores encontrados'}
+        </p>
+        <CampaignListPagination
+          page={state.page}
+          totalPages={result.totalPages}
+          hrefForPage={(page) => buildSupporterListHref(state, page)}
+        />
+      </div>
+    </>
+  ) : (
+    <Empty className="min-h-72 border">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <SearchXIcon aria-hidden="true" />
+        </EmptyMedia>
+        <EmptyTitle>Nenhum apoiador encontrado</EmptyTitle>
+        <EmptyDescription>
+          Ajuste a busca ou os filtros. Você só vê apoiadores dentro do seu escopo.
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button asChild variant="outline" className="min-h-11">
+          <Link href="/campanha/apoiadores">Limpar busca e filtros</Link>
+        </Button>
+      </EmptyContent>
+    </Empty>
+  )
 
   return (
     <CampaignPageShell>
@@ -58,8 +97,8 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
             Base nominal de apoio com intenção de voto e vínculo opcional a Praças.
           </p>
           <CampaignScopeBadge>
-            {isCampaignCoordinator(user)
-              ? 'Coordenador Geral · todos os apoiadores'
+            {isCampaignUnrestricted(user)
+              ? `${campaignRoleLabels[user.role]} · todos os apoiadores`
               : getSupporterScopeLabel(result.totalDocs)}
           </CampaignScopeBadge>
         </div>
@@ -81,48 +120,15 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
         </div>
       </header>
 
-      <SupporterFilters
-        key={buildSupporterFiltersKey(state)}
-        state={state}
-        municipalityOptions={municipalityOptions}
-      />
+      <CampaignListPendingBoundary>
+        <SupporterFilters
+          key={buildSupporterFiltersKey(state)}
+          state={state}
+          municipalityOptions={municipalityOptions}
+        />
 
-      {result.docs.length ? (
-        <>
-          {overview ? <SupporterListOverview view={overview} now={now} /> : null}
-          <SupporterList
-            supporters={result.docs.map((supporter) => toSupporterListItemViewModel(supporter))}
-          />
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-sm text-muted-foreground">
-              {result.totalDocs}{' '}
-              {result.totalDocs === 1 ? 'apoiador encontrado' : 'apoiadores encontrados'}
-            </p>
-            <CampaignListPagination
-              page={state.page}
-              totalPages={result.totalPages}
-              hrefForPage={(page) => buildSupporterListHref(state, page)}
-            />
-          </div>
-        </>
-      ) : (
-        <Empty className="min-h-72 border">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <SearchXIcon aria-hidden="true" />
-            </EmptyMedia>
-            <EmptyTitle>Nenhum apoiador encontrado</EmptyTitle>
-            <EmptyDescription>
-              Ajuste a busca ou os filtros. Você só vê apoiadores dentro do seu escopo.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button asChild variant="outline" className="min-h-11">
-              <Link href="/campanha/apoiadores">Limpar busca e filtros</Link>
-            </Button>
-          </EmptyContent>
-        </Empty>
-      )}
+        <CampaignListResults>{listBody}</CampaignListResults>
+      </CampaignListPendingBoundary>
     </CampaignPageShell>
   )
 }

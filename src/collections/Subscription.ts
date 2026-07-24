@@ -1,3 +1,4 @@
+import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { CollectionConfig } from 'payload'
 
 export const Subscription: CollectionConfig = {
@@ -8,6 +9,14 @@ export const Subscription: CollectionConfig = {
   },
   admin: {
     group: 'Contatos',
+  },
+  // Citizen PII. Public opt-in flows write via the Local API without a user
+  // (overrideAccess defaults to true), so admin-only access does not affect them.
+  access: {
+    create: payloadAdminOnly,
+    read: payloadAdminOnly,
+    update: payloadAdminOnly,
+    delete: payloadAdminOnly,
   },
   fields: [
     {

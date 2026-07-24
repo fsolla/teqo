@@ -114,7 +114,17 @@ const emptyOwnedIDs = (): OwnedIDs => ({
   consent: new Set(),
 })
 
-const inviteConsentKey = 'lideranca-autopreenchimento'
+/**
+ * Consent rows shared across spec files (stable keys the app resolves at
+ * runtime). They are leased via `testDatabaseLease.ts`, never owned by a
+ * fixture instance — deleting them at cleanup would steal them from
+ * concurrently running spec files.
+ */
+const leasedConsentKeys = new Set([
+  'lideranca-autopreenchimento',
+  'apoiador-cadastro',
+  'apoiador-intencao-voto',
+])
 
 const defaultConsentText = (text: string): Consent['text'] => ({
   root: {
@@ -159,7 +169,7 @@ const combineErrors = (primary: unknown, cleanup: unknown): AggregateError =>
  * concurrently running spec files must never operate on the same municipality. A
  * Postgres sequence hands out globally unique catalog indexes.
  */
-const PLAZA_ALLOCATION_SEQUENCE = 'campaign_fixture_municipality_alloc'
+const MUNICIPALITY_ALLOCATION_SEQUENCE = 'campaign_fixture_municipality_alloc'
 let allocationSequenceReady: Promise<void> | undefined
 
 const nextAllocatedMunicipalityIndex = async (
@@ -167,7 +177,7 @@ const nextAllocatedMunicipalityIndex = async (
   catalogSize: number,
 ): Promise<number> => {
   allocationSequenceReady ??= payload.db.drizzle
-    .execute(sql.raw(`CREATE SEQUENCE IF NOT EXISTS "${PLAZA_ALLOCATION_SEQUENCE}"`))
+    .execute(sql.raw(`CREATE SEQUENCE IF NOT EXISTS "${MUNICIPALITY_ALLOCATION_SEQUENCE}"`))
     .then(() => undefined)
     .catch((error: unknown) => {
       // IF NOT EXISTS still races across parallel workers (pg_class unique
@@ -177,7 +187,7 @@ const nextAllocatedMunicipalityIndex = async (
     })
   await allocationSequenceReady
   const result = await payload.db.drizzle.execute(
-    sql.raw(`SELECT nextval('"${PLAZA_ALLOCATION_SEQUENCE}"') AS "value"`),
+    sql.raw(`SELECT nextval('"${MUNICIPALITY_ALLOCATION_SEQUENCE}"') AS "value"`),
   )
   const value = Number((result.rows[0] as { value: string | number }).value)
   return value % catalogSize
@@ -237,8 +247,24 @@ const purgeMunicipalityResidue = async (
     }),
   ])
 
+  // Residue invites reference residue leaderships (FK), so they must be
+  // found and deleted before the leaderships — otherwise the leadership
+  // delete aborts and the residue poisons every later claim of this municipality.
+  const leadershipIDs = leaderships.docs.map((doc) => doc.id)
+  const invites =
+    leadershipIDs.length > 0
+      ? await payload.find({
+          collection: 'campaignInvite',
+          where: { leadership: { in: leadershipIDs } },
+          depth: 0,
+          pagination: false,
+          select: {},
+        })
+      : { docs: [] }
+
   const deletions: Array<{
     collection:
+      | 'campaignInvite'
       | 'votePledge'
       | 'municipalityUpdate'
       | 'campaignDemand'
@@ -247,11 +273,12 @@ const purgeMunicipalityResidue = async (
       | 'actionPlan'
     ids: number[]
   }> = [
+    { collection: 'campaignInvite', ids: invites.docs.map((doc) => doc.id) },
     { collection: 'votePledge', ids: pledges.docs.map((doc) => doc.id) },
     { collection: 'municipalityUpdate', ids: updates.docs.map((doc) => doc.id) },
     { collection: 'campaignDemand', ids: demands.docs.map((doc) => doc.id) },
     { collection: 'actionPlan', ids: plans.docs.map((doc) => doc.id) },
-    { collection: 'leadership', ids: leaderships.docs.map((doc) => doc.id) },
+    { collection: 'leadership', ids: leadershipIDs },
     { collection: 'supporter', ids: supporters.docs.map((doc) => doc.id) },
   ]
   for (const { collection, ids } of deletions) {
@@ -281,15 +308,16 @@ export class CampaignFixtures {
     builderCounter += 1
     this.runID = `${processRunID}-${builderCounter}`
     const trackedCreate = async (args: Parameters<Payload['create']>[0]) => {
-      const document = await rootPayload.create(args as never)
+      const document = await rootPayload.create(args)
       const collection = args.collection
-      const isLeasedInviteConsent =
+      const isLeasedConsent =
         collection === 'consent' &&
         typeof args.data === 'object' &&
         args.data !== null &&
         'key' in args.data &&
-        args.data.key === inviteConsentKey
-      if (collection in this.owned && typeof document.id === 'number' && !isLeasedInviteConsent) {
+        typeof args.data.key === 'string' &&
+        leasedConsentKeys.has(args.data.key)
+      if (collection in this.owned && typeof document.id === 'number' && !isLeasedConsent) {
         this.own(collection as CampaignCollection, document.id)
       }
       return document
@@ -519,6 +547,13 @@ export class CampaignFixtures {
     return user
   }
 
+  /**
+   * Creates an OWNED consent row (deleted at cleanup) — even for a leased
+   * shared key, since calling this helper is an explicit ownership request.
+   * For the shared stable keys, prefer `ensureLeasedConsent` /
+   * `withLeasedConsent` (testDatabaseLease.ts) so parallel spec files are not
+   * robbed of the row at cleanup.
+   */
   async createConsent(input: ConsentInput = {}): Promise<Consent> {
     const marker = this.value('consent')
     const consent = await this.rootPayload.create({
@@ -574,7 +609,7 @@ export class CampaignFixtures {
         contact: relationshipID(input.contact),
         municipalities: input.municipalities.map(relationshipID),
         ...(input.organizations
-          ? { organizations: input.organizations.map((value) => relationshipID(value as never)) }
+          ? { organizations: input.organizations.map((value) => relationshipID(value)) }
           : {}),
         ...(input.user ? { user: relationshipID(input.user) } : {}),
         ...(input.createdBy ? { createdBy: relationshipID(input.createdBy) } : {}),
@@ -882,7 +917,7 @@ export class CampaignFixtures {
       collection,
       where: { id: { in: ids } },
       depth: 0,
-      req: req as never,
+      req,
     })
     const errors = bulkErrors(result)
     if (errors.length > 0) {
@@ -908,7 +943,7 @@ export class CampaignFixtures {
           lastUpdateAt: null,
         },
         depth: 0,
-        req: req as never,
+        req,
       })
     }
   }

@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import type { Payload } from 'payload'
+import type { Payload, PayloadRequest } from 'payload'
 import { getPayload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
@@ -15,6 +15,7 @@ import config from '@/payload.config'
 import { getAccessibleMunicipalityIds } from '@/utilities/campaignAccess'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { stub } from '../helpers/stub'
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -117,7 +118,7 @@ describe('municipality catalog seed and per-role access', () => {
     })
 
     const visible = await getAccessibleMunicipalityIds(
-      { payload, user: account, context: {} } as never,
+      stub<PayloadRequest>({ payload, user: account, context: {} }),
       account,
     )
     expect(visible?.sort((a, b) => a - b)).toEqual(
@@ -145,7 +146,7 @@ describe('municipality catalog seed and per-role access', () => {
     })
 
     const scope = await getAccessibleMunicipalityIds(
-      { payload, user: account, context: {} } as never,
+      stub<PayloadRequest>({ payload, user: account, context: {} }),
       account,
     )
     expect(scope).toEqual([])
@@ -259,7 +260,7 @@ describe('municipality catalog seed and per-role access', () => {
     ).toEqual([advisor.id])
 
     const scope = await getAccessibleMunicipalityIds(
-      { payload, user: advisor, context: {} } as never,
+      stub<PayloadRequest>({ payload, user: advisor, context: {} }),
       advisor,
     )
     expect(scope).toEqual([municipality.id])

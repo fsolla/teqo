@@ -24,6 +24,7 @@ import {
   type LayerStyleContext,
 } from '@/lib/bahiaMapStyle'
 import { cn } from '@/lib/utils'
+import { Spinner } from '@/components/ui/Spinner'
 
 export type { BahiaMapFillMode, ChoroplethValues }
 
@@ -113,7 +114,9 @@ export const BahiaMap = ({
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layerRef = useRef<L.GeoJSON | null>(null)
-  const geometryModuleRef = useRef<MunicipalityGeometryModule | TerritoryGeometryModule | null>(null)
+  const geometryModuleRef = useRef<MunicipalityGeometryModule | TerritoryGeometryModule | null>(
+    null,
+  )
   const pathByKeyRef = useRef<Map<string, L.Path>>(new Map())
   const styleContextRef = useRef<LayerStyleContext | null>(null)
   const geometryReadyRef = useRef(false)
@@ -386,6 +389,9 @@ export const BahiaMap = ({
   useEffect(() => {
     if (!interactiveKey || pathByKeyRef.current.size === 0) return
     restyleAllPaths()
+    // Restyle helpers only read refs and are recreated per render — depending
+    // on them would re-run this effect on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- interactiveKey-only restyle
   }, [interactiveKey])
 
   useEffect(() => {
@@ -425,6 +431,9 @@ export const BahiaMap = ({
     if (selectedKey) {
       restyleFeature(selectedKey)
     }
+    // Restyle helpers only read refs and are recreated per render — depending
+    // on them would re-run this effect on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedKey-only O(2) restyle
   }, [selectedKey])
 
   return (
@@ -439,7 +448,14 @@ export const BahiaMap = ({
           heightClassName,
         )}
       />
-      {status === 'loading' ? <p className="sr-only">Carregando mapa…</p> : null}
+      {status === 'loading' ? (
+        <div className="absolute inset-0 flex items-center justify-center" role="status">
+          <span className="flex items-center gap-2 rounded-md bg-background/85 px-3 py-2 text-sm text-muted-foreground shadow-sm">
+            <Spinner aria-hidden="true" />
+            Carregando mapa…
+          </span>
+        </div>
+      ) : null}
       {status === 'error' ? (
         <p className="absolute inset-0 flex items-center justify-center bg-background/80 px-4 text-center text-sm text-muted-foreground">
           Não foi possível carregar o mapa. Tente recarregar a página.

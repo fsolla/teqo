@@ -19,7 +19,11 @@ vi.mock('@/utilities/phone', async (importOriginal) => {
 import { Contact } from '@/collections/Contact'
 import { leadershipCreateSchema } from '@/lib/schemas/leadership'
 
+import { stub } from '../helpers/stub'
+
 const contactPhoneHook = Contact.hooks?.beforeValidate?.[0]
+
+type ContactPhoneHookArgs = Parameters<NonNullable<typeof contactPhoneHook>>[0]
 
 const runContactPhoneHook = async (phone: string) => {
   if (typeof contactPhoneHook !== 'function') {
@@ -27,7 +31,7 @@ const runContactPhoneHook = async (phone: string) => {
   }
 
   const data = { phone }
-  await contactPhoneHook({ data } as never)
+  await contactPhoneHook(stub<ContactPhoneHookArgs>({ data }))
   return data.phone
 }
 
@@ -54,9 +58,7 @@ describe('Contact phone normalization boundary', () => {
   })
 
   it('rejects an invalid canonical-length direct API phone without re-normalizing it', async () => {
-    await expect(runContactPhoneHook('00000000000')).rejects.toThrow(
-      'Celular brasileiro inválido.',
-    )
+    await expect(runContactPhoneHook('00000000000')).rejects.toThrow('Celular brasileiro inválido.')
     expect(phoneMocks.normalizeBrazilianPhone).not.toHaveBeenCalled()
   })
 })

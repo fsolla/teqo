@@ -51,7 +51,15 @@ type ConsentSnapshot = {
 }
 
 export const CAMPAIGN_INVITE_CONSENT_LEASE_KEY = 'campaign-invite-consent'
+export const SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY = 'supporter-registration-consent'
+export const SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY = 'supporter-vote-intention-consent'
 const CAMPAIGN_INVITE_CONSENT_KEY = 'lideranca-autopreenchimento'
+
+/** A consent row shared across spec files, protected by an advisory-lock lease. */
+export type LeasedConsentFixture = {
+  consentKey: string
+  leaseKey: string
+}
 const fixtureConsentText: Consent['text'] = {
   root: {
     type: 'root',
@@ -88,11 +96,8 @@ const rowsFrom = <Row>(result: unknown): Row[] => {
 const combineErrors = (primary: unknown, cleanup: unknown, message: string): AggregateError =>
   new AggregateError([primary, cleanup], message)
 
-const addFailure = (
-  primary: unknown | undefined,
-  secondary: unknown,
-  message: string,
-): unknown => (primary === undefined ? secondary : combineErrors(primary, secondary, message))
+const addFailure = (primary: unknown | undefined, secondary: unknown, message: string): unknown =>
+  primary === undefined ? secondary : combineErrors(primary, secondary, message)
 
 const rollbackWithFault = async (
   lease: InternalTestDatabaseLease,
@@ -236,19 +241,14 @@ export const startTestDatabaseLeaseAcquisition = (
     resolveBackendPID = resolve
     rejectBackendPID = reject
   })
-  const acquisition = beginTestDatabaseLease(
-    payload,
-    leaseKey,
-    mode,
-    async ({ transactionID }) => {
-      try {
-        resolveBackendPID(await getTestTransactionBackendPID(payload, transactionID))
-      } catch (error) {
-        rejectBackendPID(error)
-        throw error
-      }
-    },
-  )
+  const acquisition = beginTestDatabaseLease(payload, leaseKey, mode, async ({ transactionID }) => {
+    try {
+      resolveBackendPID(await getTestTransactionBackendPID(payload, transactionID))
+    } catch (error) {
+      rejectBackendPID(error)
+      throw error
+    }
+  })
   return { acquisition, backendPID }
 }
 
@@ -302,9 +302,7 @@ export const waitForAdvisoryLockWaiter = async (
     const waiting = rowsFrom<WaitingAdvisoryLock>(result)[0]
     if (waiting) return waiting
   }
-  throw new Error(
-    `Timed out waiting for backend ${waiterPID} on the exact ${mode} advisory lock.`,
-  )
+  throw new Error(`Timed out waiting for backend ${waiterPID} on the exact ${mode} advisory lock.`)
 }
 
 export const acquireTestDatabaseLease = async (
@@ -373,11 +371,14 @@ export const withSharedTestDatabaseLease = async <Result>(
   }
 }
 
-export const ensureInviteConsent = async (payload: Payload): Promise<Consent> =>
-  withTestDatabaseLease(payload, CAMPAIGN_INVITE_CONSENT_LEASE_KEY, async () => {
+export const ensureLeasedConsent = async (
+  payload: Payload,
+  { consentKey, leaseKey }: LeasedConsentFixture,
+): Promise<Consent> =>
+  withTestDatabaseLease(payload, leaseKey, async () => {
     const existing = await payload.find({
       collection: 'consent',
-      where: { key: { equals: CAMPAIGN_INVITE_CONSENT_KEY } },
+      where: { key: { equals: consentKey } },
       limit: 1,
       depth: 0,
     })
@@ -386,27 +387,28 @@ export const ensureInviteConsent = async (payload: Payload): Promise<Consent> =>
     return payload.create({
       collection: 'consent',
       data: {
-        key: CAMPAIGN_INVITE_CONSENT_KEY,
+        key: consentKey,
         text: fixtureConsentText,
       },
       depth: 0,
     })
   })
 
-export const withInviteConsent = async <Result>(
+export const withLeasedConsent = async <Result>(
   payload: Payload,
+  { consentKey, leaseKey }: LeasedConsentFixture,
   operation: (consent: Consent) => Promise<Result>,
 ): Promise<Result> => {
   for (;;) {
-    await ensureInviteConsent(payload)
-    const lease = await beginTestDatabaseLease(payload, CAMPAIGN_INVITE_CONSENT_LEASE_KEY, 'shared')
+    await ensureLeasedConsent(payload, { consentKey, leaseKey })
+    const lease = await beginTestDatabaseLease(payload, leaseKey, 'shared')
     let failure: unknown
     let result: Result | undefined
     let retry = false
     try {
       const configured = await payload.find({
         collection: 'consent',
-        where: { key: { equals: CAMPAIGN_INVITE_CONSENT_KEY } },
+        where: { key: { equals: consentKey } },
         limit: 1,
         depth: 0,
       })
@@ -433,6 +435,22 @@ export const withInviteConsent = async <Result>(
   }
 }
 
+export const ensureInviteConsent = async (payload: Payload): Promise<Consent> =>
+  ensureLeasedConsent(payload, {
+    consentKey: CAMPAIGN_INVITE_CONSENT_KEY,
+    leaseKey: CAMPAIGN_INVITE_CONSENT_LEASE_KEY,
+  })
+
+export const withInviteConsent = async <Result>(
+  payload: Payload,
+  operation: (consent: Consent) => Promise<Result>,
+): Promise<Result> =>
+  withLeasedConsent(
+    payload,
+    { consentKey: CAMPAIGN_INVITE_CONSENT_KEY, leaseKey: CAMPAIGN_INVITE_CONSENT_LEASE_KEY },
+    operation,
+  )
+
 export const withMissingInviteConsentFixture = async <Result>(
   payload: Payload,
   operation: () => Promise<Result>,
@@ -453,9 +471,7 @@ export const withMissingInviteConsentFixture = async <Result>(
         LIMIT 1
       `),
     )[0]
-    await setupLease.transaction.execute(
-      sql`DELETE FROM "consent" WHERE "key" = ${consentKey}`,
-    )
+    await setupLease.transaction.execute(sql`DELETE FROM "consent" WHERE "key" = ${consentKey}`)
   } catch (error) {
     setupError = error
   }
@@ -509,9 +525,7 @@ export const withMissingInviteConsentFixture = async <Result>(
   }
   if (restoreLease) {
     try {
-      await restoreLease.transaction.execute(
-        sql`DELETE FROM "consent" WHERE "key" = ${consentKey}`,
-      )
+      await restoreLease.transaction.execute(sql`DELETE FROM "consent" WHERE "key" = ${consentKey}`)
       if (snapshot) {
         await restoreLease.transaction.execute(sql`
           INSERT INTO "consent" ("id", "key", "text", "updated_at", "created_at")

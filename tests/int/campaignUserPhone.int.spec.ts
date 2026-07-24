@@ -1,6 +1,12 @@
 // @vitest-environment node
 
-import { getPayload, type Field, type Payload, type PayloadRequest } from 'payload'
+import {
+  getPayload,
+  type Field,
+  type FieldAccess,
+  type Payload,
+  type PayloadRequest,
+} from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { CampaignUser as CampaignUserCollection } from '@/collections/CampaignUser'
@@ -8,6 +14,9 @@ import type { CampaignUser } from '@/payload-types'
 import config from '@/payload.config'
 
 import { withCampaignFixtures, type CampaignFixtures } from '../helpers/campaignFixtures'
+import { stub } from '../helpers/stub'
+
+type FieldAccessArgs = Parameters<FieldAccess>[0]
 
 let payload: Payload
 
@@ -62,7 +71,7 @@ describe('campaign user contact phone', () => {
     })
   })
 
-  it('denies leaders from reading advisor contact phones', async () => {
+  it('omits advisor contact phones from leader reads (lockdown)', async () => {
     await withCampaignFixtures(payload, async (fixtures) => {
       const coordinator = await fixtures.createCampaignUser('coordinator')
       const advisorPhone = fixtures.phone()
@@ -76,16 +85,19 @@ describe('campaign user contact phone', () => {
       await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
       await createEngagedPhoneAccessGraph(fixtures, coordinator, leader, municipality.id)
 
-      await expect(
-        payload.findByID({
-          collection: 'campaignUser',
-          id: advisor.id,
-          depth: 0,
-          select: { name: true, phone: true },
-          user: leader,
-          overrideAccess: false,
-        }),
-      ).rejects.toThrow(/permissão/i)
+      // Leaders are lockdown accounts: even for advisors of their own linked
+      // municipality, the phone field must be withheld.
+      const advisorRead = await payload.findByID({
+        collection: 'campaignUser',
+        id: advisor.id,
+        depth: 0,
+        select: { name: true, phone: true },
+        user: leader,
+        overrideAccess: false,
+      })
+
+      expect(advisorRead.phone).toBeUndefined()
+      expect(JSON.stringify(advisorRead)).not.toContain(advisorPhone)
     })
   })
 
@@ -154,8 +166,11 @@ describe('campaign user contact phone', () => {
       })
       const byId = new Map(result.docs.map((doc) => [doc.id, doc]))
 
-      expect(byId.get(advisor.id)?.phone).toBe(advisorPhone)
+      // Leaders are lockdown accounts: no staff phone is visible, linked
+      // municipality or not.
+      expect(byId.get(advisor.id)?.phone).toBeUndefined()
       expect(byId.get(foreignAdvisor.id)?.phone).toBeUndefined()
+      expect(JSON.stringify(result.docs)).not.toContain(advisorPhone)
       expect(JSON.stringify(result.docs)).not.toContain(foreignPhone)
     })
   })
@@ -227,14 +242,18 @@ describe('campaign user contact phone', () => {
         user: coordinator,
       } as unknown as PayloadRequest
 
-      await expect(field.access?.update?.({ id: owner.id, req: ownerReq } as never)).resolves.toBe(
-        true,
+      await expect(
+        field.access?.update?.(stub<FieldAccessArgs>({ id: owner.id, req: ownerReq })),
+      ).resolves.toBe(true)
+      await expect(
+        field.access?.update?.(stub<FieldAccessArgs>({ id: owner.id, req: coordinatorReq })),
+      ).resolves.toBe(true)
+      await expect(field.access?.create?.(stub<FieldAccessArgs>({ req: ownerReq }))).resolves.toBe(
+        false,
       )
       await expect(
-        field.access?.update?.({ id: owner.id, req: coordinatorReq } as never),
+        field.access?.create?.(stub<FieldAccessArgs>({ req: coordinatorReq })),
       ).resolves.toBe(true)
-      await expect(field.access?.create?.({ req: ownerReq } as never)).resolves.toBe(false)
-      await expect(field.access?.create?.({ req: coordinatorReq } as never)).resolves.toBe(true)
     })
   })
 })

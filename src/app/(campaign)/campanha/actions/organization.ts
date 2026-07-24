@@ -9,14 +9,14 @@ import {
   type OrganizationUpdateInput,
 } from '@/lib/schemas/organization'
 import type { CampaignUser } from '@/payload-types'
-import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
+import { getCampaignActionContext } from '@/utilities/campaignActionContext'
+import { runStaffEntityMutation, type StaffEntityPolicy } from '@/utilities/campaignEntityActions'
+import { hookFilledCreateData } from '@/utilities/hookFilledData'
 
-const assertStaffActor = (payload: Payload, actor: CampaignUser): Promise<CampaignUser> =>
-  reloadStaffActor(payload, actor, 'Somente a coordenação e a assessoria gerenciam organizações.')
-
-const isUniqueOrganizationConflict = (error: unknown): boolean => {
-  const message = error instanceof Error ? error.message : String(error)
-  return /organization_(name|slug)|duplicate key/i.test(message)
+const organizationPolicy: StaffEntityPolicy = {
+  staffMessage: 'Somente a coordenação e a assessoria gerenciam organizações.',
+  conflictPattern: /organization_(name|slug)|duplicate key/i,
+  conflictMessage: 'Já existe uma organização com este nome.',
 }
 
 export const createOrganizationRecord = async (
@@ -25,22 +25,15 @@ export const createOrganizationRecord = async (
   input: OrganizationCreateInput,
 ) => {
   const data = organizationCreateSchema.parse(input)
-  const currentActor = await assertStaffActor(payload, actor)
-
-  try {
-    return await payload.create({
+  return runStaffEntityMutation(payload, actor, organizationPolicy, (currentActor) =>
+    payload.create({
       collection: 'organization',
-      data: data as never,
+      data: hookFilledCreateData<'organization'>(data),
       depth: 0,
       user: currentActor,
       overrideAccess: false,
-    })
-  } catch (error) {
-    if (isUniqueOrganizationConflict(error)) {
-      throw new Error('Já existe uma organização com este nome.')
-    }
-    throw error
-  }
+    }),
+  )
 }
 
 export const updateOrganizationRecord = async (
@@ -49,16 +42,16 @@ export const updateOrganizationRecord = async (
   input: OrganizationUpdateInput,
 ) => {
   const { id, ...data } = organizationUpdateSchema.parse(input)
-  const currentActor = await assertStaffActor(payload, actor)
-
-  return payload.update({
-    collection: 'organization',
-    id,
-    data,
-    depth: 0,
-    user: currentActor,
-    overrideAccess: false,
-  })
+  return runStaffEntityMutation(payload, actor, organizationPolicy, (currentActor) =>
+    payload.update({
+      collection: 'organization',
+      id,
+      data,
+      depth: 0,
+      user: currentActor,
+      overrideAccess: false,
+    }),
+  )
 }
 
 export const createOrganization = async (input: OrganizationCreateInput) => {

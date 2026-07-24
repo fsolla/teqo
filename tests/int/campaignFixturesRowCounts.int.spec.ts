@@ -2,20 +2,19 @@
 
 import { createRequire } from 'node:module'
 
-import { sql } from '@payloadcms/db-postgres'
+import { sql, type MigrateUpArgs } from '@payloadcms/db-postgres'
 import { drizzle } from '@payloadcms/db-postgres/drizzle/node-postgres'
 import { getPayload, type Payload } from 'payload'
+import type { Pool as PgPool } from 'pg'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { migrations } from '@/migrations'
 import { withCampaignFixtures } from '../helpers/campaignFixtures'
+import { stub } from '../helpers/stub'
 
 const require = createRequire(import.meta.resolve('@payloadcms/db-postgres'))
 const { Pool } = require('pg') as {
-  Pool: new (options: { connectionString: string }) => {
-    end: () => Promise<void>
-    query: (statement: string) => Promise<unknown>
-  }
+  Pool: new (options: { connectionString: string }) => PgPool
 }
 
 const testDatabaseUrl =
@@ -113,9 +112,9 @@ beforeAll(async () => {
   await adminPool.end()
 
   const migrationPool = new Pool({ connectionString: databaseUrl })
-  const database = drizzle(migrationPool as never)
+  const database = drizzle<Record<string, unknown>>(migrationPool)
   for (const migration of migrations) {
-    await migration.up({ db: database } as never)
+    await migration.up(stub<MigrateUpArgs>({ db: database }))
   }
   await migrationPool.end()
 

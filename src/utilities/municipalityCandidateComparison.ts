@@ -1,4 +1,6 @@
-import type { Payload } from 'payload'
+import configPromise from '@payload-config'
+import { unstable_cache } from 'next/cache'
+import { getPayload, type Payload } from 'payload'
 
 import {
   BASELINE_TICKET_2022,
@@ -8,6 +10,7 @@ import {
 } from '@/lib/electionResults'
 import type { CampaignUser, User } from '@/payload-types'
 import { assertCanReadElectionData } from '@/utilities/campaignAccess'
+import { ELECTION_TSE_CACHE_TAG } from '@/utilities/electionCache'
 import {
   municipalityGeographyWhere,
   type MunicipalityElectionGeography,
@@ -28,8 +31,20 @@ export type CandidateComparisonRow = {
  * inside one municipality geography, across the TSE series years. This is the
  * coordination's core analysis tool ("com quem comparar nesta Praça?").
  */
-export const loadMunicipalityCandidateComparison = async (
-  payload: Payload,
+/** Cross-request cached core — immutable TSE series, busted with `election-tse`. */
+const loadMunicipalityCandidateComparisonCached = unstable_cache(
+  async (
+    geography: MunicipalityElectionGeography,
+    candidateNumbers: number[],
+  ): Promise<CandidateComparisonRow[]> => {
+    const payload = await getPayload({ config: configPromise })
+    return queryMunicipalityCandidateComparison(payload, geography, candidateNumbers)
+  },
+  ['municipality-candidate-comparison'],
+  { tags: [ELECTION_TSE_CACHE_TAG] },
+)
+
+export const loadMunicipalityCandidateComparison = (
   user: CampaignUser | User,
   geography: MunicipalityElectionGeography,
   compareCandidateNumbers: number[],
@@ -43,6 +58,14 @@ export const loadMunicipalityCandidateComparison = async (
       .slice(0, MAX_COMPARISON_CANDIDATES),
   ]
 
+  return loadMunicipalityCandidateComparisonCached(geography, candidateNumbers)
+}
+
+const queryMunicipalityCandidateComparison = async (
+  payload: Payload,
+  geography: MunicipalityElectionGeography,
+  candidateNumbers: number[],
+): Promise<CandidateComparisonRow[]> => {
   const [votes, registry] = await Promise.all([
     payload.find({
       collection: 'electionCandidateVote',

@@ -1,4 +1,4 @@
-import { and, eq } from '@payloadcms/db-postgres/drizzle'
+import { and, eq, type AnyColumn } from '@payloadcms/db-postgres/drizzle'
 import type { Payload } from 'payload'
 
 import type {
@@ -57,11 +57,21 @@ type PayloadDbDrizzle = {
   }
 }
 
+/** Payload's generated Drizzle tables type columns as `unknown` — narrow with a runtime check. */
+const scopeColumn = (
+  table: Record<string, unknown>,
+  name: 'year' | 'office' | 'turn',
+): AnyColumn => {
+  const column = table[name]
+  if (column == null) throw new Error(`Election table is missing the "${name}" column.`)
+  return column as AnyColumn
+}
+
 const scopeWhere = (table: Record<string, unknown>, scope: ElectionImportScope) =>
   and(
-    eq(table.year as never, scope.year),
-    eq(table.office as never, scope.office),
-    eq(table.turn as never, scope.turn),
+    eq(scopeColumn(table, 'year'), scope.year),
+    eq(scopeColumn(table, 'office'), scope.office),
+    eq(scopeColumn(table, 'turn'), scope.turn),
   )
 
 const deleteScope = async (

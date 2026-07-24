@@ -1,12 +1,10 @@
 import type { Payload } from 'payload'
 
 import type { CampaignUser, VotePledge } from '@/payload-types'
+import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
 import type { VoteEstimateScenario } from '@/utilities/voteEstimate'
-import {
-  aggregatePledgesByMunicipality,
-  rollupMunicipalityStaffVotes,
-} from '@/utilities/votePledgeData'
+import { rollupMunicipalityStaffVotes } from '@/utilities/votePledgeData'
 
 export type StaffDashboardView = {
   kind: 'staff'
@@ -62,24 +60,17 @@ export const getCampaignDashboardData = async (
   payload: Payload,
   user: CampaignUser,
 ): Promise<StaffDashboardView> => {
-  const municipalities = await payload.find({
-    collection: 'municipality',
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    select: { name: true, slug: true, advisors: true, priority: true, expectedVotes: true },
-    where: {},
-    user,
-    overrideAccess: false,
-  })
+  // Request-scoped shared load — the map bundle on the same page reuses it.
+  const scope = await loadMunicipalityScope(payload, user, {})
+  const municipalities = { docs: scope.municipalities }
+  const pledgeAggregates = scope.pledgeAggregates
   const municipalityIDs = municipalities.docs.map((municipality) => municipality.id)
   const municipalityById = new Map(
     municipalities.docs.map((municipality) => [municipality.id, municipality]),
   )
 
   // Independent of each other — only depend on municipalityIDs.
-  const [pledgeAggregates, missingEstimatePledges, recentUpdatesResult] = await Promise.all([
-    aggregatePledgesByMunicipality(payload, municipalityIDs),
+  const [missingEstimatePledges, recentUpdatesResult] = await Promise.all([
     municipalityIDs.length
       ? payload.find({
           collection: 'votePledge',
