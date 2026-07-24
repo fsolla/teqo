@@ -12,7 +12,7 @@ import {
 } from '@/utilities/campaignAccess'
 import { relationshipId } from '@/utilities/relationship'
 
-const MAX_LEADERSHIP_PLAZAS = 30
+const MAX_LEADERSHIP_MUNICIPALITIES = 30
 
 const requireAtLeastOneMunicipality: CollectionBeforeValidateHook = ({
   data,
@@ -91,7 +91,7 @@ export const Leadership: CollectionConfig = {
       required: true,
       hasMany: true,
       index: true,
-      maxRows: MAX_LEADERSHIP_PLAZAS,
+      maxRows: MAX_LEADERSHIP_MUNICIPALITIES,
     },
     {
       name: 'organizations',

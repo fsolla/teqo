@@ -1,6 +1,6 @@
 import { getCachedDocumentById } from '@/utilities/documents'
 import { getCachedGlobal } from '@/utilities/globals'
-import { RefreshRouteOnSave } from '@/utilities/RefreshRouteOnSave'
+import { RefreshRouteOnSave } from '@/components/RefreshRouteOnSave'
 import { Metadata } from 'next'
 import React from 'react'
 import './styles.css'

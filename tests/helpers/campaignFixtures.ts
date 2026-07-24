@@ -169,7 +169,7 @@ const combineErrors = (primary: unknown, cleanup: unknown): AggregateError =>
  * concurrently running spec files must never operate on the same municipality. A
  * Postgres sequence hands out globally unique catalog indexes.
  */
-const PLAZA_ALLOCATION_SEQUENCE = 'campaign_fixture_municipality_alloc'
+const MUNICIPALITY_ALLOCATION_SEQUENCE = 'campaign_fixture_municipality_alloc'
 let allocationSequenceReady: Promise<void> | undefined
 
 const nextAllocatedMunicipalityIndex = async (
@@ -177,7 +177,7 @@ const nextAllocatedMunicipalityIndex = async (
   catalogSize: number,
 ): Promise<number> => {
   allocationSequenceReady ??= payload.db.drizzle
-    .execute(sql.raw(`CREATE SEQUENCE IF NOT EXISTS "${PLAZA_ALLOCATION_SEQUENCE}"`))
+    .execute(sql.raw(`CREATE SEQUENCE IF NOT EXISTS "${MUNICIPALITY_ALLOCATION_SEQUENCE}"`))
     .then(() => undefined)
     .catch((error: unknown) => {
       // IF NOT EXISTS still races across parallel workers (pg_class unique
@@ -187,7 +187,7 @@ const nextAllocatedMunicipalityIndex = async (
     })
   await allocationSequenceReady
   const result = await payload.db.drizzle.execute(
-    sql.raw(`SELECT nextval('"${PLAZA_ALLOCATION_SEQUENCE}"') AS "value"`),
+    sql.raw(`SELECT nextval('"${MUNICIPALITY_ALLOCATION_SEQUENCE}"') AS "value"`),
   )
   const value = Number((result.rows[0] as { value: string | number }).value)
   return value % catalogSize

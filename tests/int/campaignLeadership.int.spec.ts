@@ -31,7 +31,7 @@ const campaignFixtures = installCampaignFixtures({
 
 const DUPLICATE_LEADERSHIP_MESSAGE =
   'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novos municípios.'
-const OUT_OF_SCOPE_PLAZA_MESSAGE = 'Você só pode vincular lideranças aos municípios que assessora.'
+const OUT_OF_SCOPE_MUNICIPALITY_MESSAGE = 'Você só pode vincular lideranças aos municípios que assessora.'
 
 describe('campaign leadership domain', () => {
   beforeAll(async () => {
@@ -374,7 +374,7 @@ describe('campaign leadership domain', () => {
         phone: campaignFixtures().phone(),
         supportStatus: 'engajado',
       }),
-    ).rejects.toThrow(OUT_OF_SCOPE_PLAZA_MESSAGE)
+    ).rejects.toThrow(OUT_OF_SCOPE_MUNICIPALITY_MESSAGE)
   })
 
   it('enforces scoped action success and denial for create and internal update', async () => {
@@ -403,7 +403,7 @@ describe('campaign leadership domain', () => {
         id: own.id,
         municipalities: [assigned.id, other.id],
       }),
-    ).rejects.toThrow(OUT_OF_SCOPE_PLAZA_MESSAGE)
+    ).rejects.toThrow(OUT_OF_SCOPE_MUNICIPALITY_MESSAGE)
 
     const otherLeadership = await createLeadershipRecord(payload, coordinator, {
       municipalities: [other.id],

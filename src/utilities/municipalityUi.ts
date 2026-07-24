@@ -185,7 +185,7 @@ export const municipalityListCoverageLabels: Record<NonNullable<MunicipalityList
   sem_assessor: 'Sem assessor',
 }
 
-const MAX_PLAZA_LIST_VISIT_LABEL_LENGTH = 80
+const MAX_MUNICIPALITY_LIST_VISIT_LABEL_LENGTH = 80
 
 export const buildMunicipalityListVisitLabel = (state: MunicipalityListState): string | null => {
   const parts: string[] = []
@@ -200,8 +200,8 @@ export const buildMunicipalityListVisitLabel = (state: MunicipalityListState): s
   if (!parts.length) return null
 
   const label = `Praças · ${parts.join(' · ')}`
-  if (label.length <= MAX_PLAZA_LIST_VISIT_LABEL_LENGTH) return label
-  return `${label.slice(0, MAX_PLAZA_LIST_VISIT_LABEL_LENGTH - 1)}…`
+  if (label.length <= MAX_MUNICIPALITY_LIST_VISIT_LABEL_LENGTH) return label
+  return `${label.slice(0, MAX_MUNICIPALITY_LIST_VISIT_LABEL_LENGTH - 1)}…`
 }
 
 export const buildMunicipalityListVisitHref = (state: MunicipalityListState): string =>

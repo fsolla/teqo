@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { ZodError } from 'zod'
 
 import { FormDataBoundaryError, validationFieldErrors } from '@/lib/formData'
@@ -47,4 +48,31 @@ export const mapCampaignFormActionError = <Values>(
     return { message: error.message, values, revision }
   }
   return { message: genericMessage, values, revision }
+}
+
+/**
+ * The shared create→redirect form-action ladder: run the mutation, map any
+ * failure through `mapCampaignFormActionError`, redirect on success. The
+ * redirect happens OUTSIDE the try so Next's control-flow error is never
+ * swallowed by the mapper.
+ */
+export const runCampaignRedirectFormAction = async <Result>({
+  execute,
+  redirectTo,
+  safeMessages,
+  genericMessage,
+}: {
+  execute: () => Promise<Result>
+  redirectTo: (result: Result) => string
+  safeMessages?: readonly string[]
+  genericMessage: string
+}): Promise<CampaignFormActionState> => {
+  let target: string
+  try {
+    target = redirectTo(await execute())
+  } catch (error) {
+    return mapCampaignFormActionError({ error, safeMessages, genericMessage })
+  }
+
+  redirect(target)
 }

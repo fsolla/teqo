@@ -1,0 +1,225 @@
+// ---------------------------------------------------------------------------
+// Municipalities (Praças)
+// ---------------------------------------------------------------------------
+
+import type { Access, FieldAccess, Payload, PayloadRequest } from 'payload'
+
+import type {
+  CampaignActor,
+  CampaignTransactionRequest,
+  DynamicFind,
+} from '@/utilities/access/shared'
+import {
+  getFreshCampaignUser,
+  isCampaignCoordinator,
+  isCampaignLeader,
+  isCampaignUnrestricted,
+  isCampaignUser,
+  isPayloadAdmin,
+} from '@/utilities/access/shared'
+import { relationshipId } from '@/utilities/relationship'
+
+type MunicipalityID = number
+type AccessibleMunicipalityIDs = MunicipalityID[] | null
+
+const ACCESSIBLE_MUNICIPALITY_IDS_CONTEXT_KEY = 'campaignAccessibleMunicipalityIds'
+const OWN_LEADERSHIP_CONTEXT_KEY = 'campaignOwnLeadership'
+
+/**
+ * Municipality IDs where `advisorID` is an assigned advisor, without requiring a
+ * `PayloadRequest`. Canonical implementation of the "advisors contains
+ * user.id" lookup; `getAccessibleMunicipalityIds` uses it for its (request-scoped,
+ * context-cached) advisor branch.
+ */
+export const getAdvisorMunicipalityIds = async (
+  payload: Pick<Payload, 'find'>,
+  advisorID: number,
+  req?: CampaignTransactionRequest,
+): Promise<number[]> => {
+  const find = payload.find.bind(payload) as unknown as DynamicFind
+  const result = await find({
+    collection: 'municipality',
+    where: { advisors: { contains: advisorID } },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { id: true },
+    overrideAccess: true,
+    ...(req ? { req } : {}),
+  })
+
+  return result.docs.map((doc) => relationshipId(doc.id)).filter((id): id is number => id !== null)
+}
+
+/**
+ * Municipality IDs linked to `userID`'s engaged leadership, without requiring a
+ * `PayloadRequest`. Transaction-safe counterpart of the leader branch in
+ * `getAccessibleMunicipalityIds`, for server actions running inside
+ * `withPayloadTransaction` (where only `{ transactionID }` is available).
+ */
+export const getEngagedLeaderMunicipalityIds = async (
+  payload: Pick<Payload, 'find'>,
+  userID: number,
+  req?: CampaignTransactionRequest,
+): Promise<number[]> => {
+  const find = payload.find.bind(payload) as unknown as DynamicFind
+  const result = await find({
+    collection: 'leadership',
+    where: {
+      and: [{ user: { equals: userID } }, { supportStatus: { equals: 'engajado' } }],
+    },
+    depth: 0,
+    limit: 1,
+    pagination: false,
+    select: { municipalities: true },
+    overrideAccess: true,
+    ...(req ? { req } : {}),
+  })
+
+  const doc = result.docs[0]
+  return (Array.isArray(doc?.municipalities) ? doc.municipalities : [])
+    .map(relationshipId)
+    .filter((id): id is number => id !== null)
+}
+
+type OwnLeadership = { id: number; municipalityIDs: number[]; organizationIDs: number[] } | null
+
+/**
+ * The engaged leadership record linked to the authenticated leader account
+ * (contact is unique per person, so there is at most one). Cached per request.
+ */
+export const getOwnEngagedLeadership = async (
+  req: PayloadRequest,
+  user: CampaignActor = req.user,
+): Promise<OwnLeadership> => {
+  const currentUser =
+    isCampaignUser(user) && user === req.user ? await getFreshCampaignUser(req, user) : user
+  if (!isCampaignUser(currentUser)) return null
+
+  const context = req.context as Record<string, unknown>
+  const cacheKey = `${OWN_LEADERSHIP_CONTEXT_KEY}:${currentUser.id}`
+  if (cacheKey in context) return context[cacheKey] as OwnLeadership
+
+  const collections = req.payload.collections as Record<string, unknown>
+  let ownLeadership: OwnLeadership = null
+
+  if (collections.leadership) {
+    const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
+    const result = await find({
+      collection: 'leadership',
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+      pagination: false,
+      req,
+      select: { municipalities: true, organizations: true },
+      where: {
+        and: [{ user: { equals: currentUser.id } }, { supportStatus: { equals: 'engajado' } }],
+      },
+    })
+
+    const doc = result.docs[0]
+    if (doc) {
+      const id = relationshipId(doc.id)
+      if (id !== null) {
+        ownLeadership = {
+          id,
+          municipalityIDs: (Array.isArray(doc.municipalities) ? doc.municipalities : [])
+            .map(relationshipId)
+            .filter((value): value is number => value !== null),
+          organizationIDs: (Array.isArray(doc.organizations) ? doc.organizations : [])
+            .map(relationshipId)
+            .filter((value): value is number => value !== null),
+        }
+      }
+    }
+  }
+
+  context[cacheKey] = ownLeadership
+  return ownLeadership
+}
+
+/**
+ * Returns null for the unrestricted coordinator, otherwise the municipality IDs the
+ * authenticated campaign user can operate on: administered municipalities for an
+ * advisor, linked (engaged) municipalities for a leader.
+ */
+export const getAccessibleMunicipalityIds = async (
+  req: PayloadRequest,
+  user: CampaignActor = req.user,
+): Promise<AccessibleMunicipalityIDs> => {
+  const currentUser =
+    isCampaignUser(user) && user === req.user ? await getFreshCampaignUser(req, user) : user
+
+  if (!isCampaignUser(currentUser)) return []
+  if (isCampaignUnrestricted(currentUser)) return null
+
+  const context = req.context as Record<string, unknown>
+  const cacheKey = `${ACCESSIBLE_MUNICIPALITY_IDS_CONTEXT_KEY}:${currentUser.id}:${currentUser.role}`
+  const cached = context[cacheKey]
+
+  if (Array.isArray(cached)) {
+    return cached.filter((id): id is number => typeof id === 'number')
+  }
+
+  const collections = req.payload.collections as Record<string, unknown>
+  let ids: MunicipalityID[] = []
+
+  if (currentUser.role === 'advisor' && collections.municipality) {
+    ids = await getAdvisorMunicipalityIds(req.payload, currentUser.id, req)
+  }
+
+  if (currentUser.role === 'leader') {
+    const ownLeadership = await getOwnEngagedLeadership(req, currentUser)
+    ids = ownLeadership?.municipalityIDs ?? []
+  }
+
+  const uniqueIDs = [...new Set(ids)]
+  context[cacheKey] = uniqueIDs
+
+  return uniqueIDs
+}
+
+/** Municipalities are seeded by migration; nobody creates or deletes them in the app. */
+export const canCreateMunicipality: Access = ({ req }) => isPayloadAdmin(req.user)
+
+export const canReadMunicipality: Access = async ({ req }) => {
+  if (isPayloadAdmin(req.user)) return true
+
+  const currentUser = await getFreshCampaignUser(req)
+  if (isCampaignLeader(currentUser)) return false
+
+  const ids = await getAccessibleMunicipalityIds(req)
+  if (ids === null) return true
+
+  return {
+    id: {
+      in: ids,
+    },
+  }
+}
+
+export const canUpdateMunicipality: Access = async ({ req }) => {
+  if (isPayloadAdmin(req.user)) return true
+
+  const currentUser = await getFreshCampaignUser(req)
+  if (isCampaignUnrestricted(currentUser)) return true
+  if (currentUser?.role !== 'advisor') return false
+
+  return {
+    advisors: {
+      contains: currentUser.id,
+    },
+  }
+}
+
+export const canDeleteMunicipality: Access = ({ req }) => isPayloadAdmin(req.user)
+
+/** Advisor assignment is coordinator-only (server actions use overrideAccess). */
+export const canAssignMunicipalityAdvisors: FieldAccess = async ({ req }) => {
+  if (isPayloadAdmin(req.user)) return true
+
+  return isCampaignCoordinator(await getFreshCampaignUser(req))
+}
+
+export const canManageMunicipalityAdvisors: FieldAccess = ({ req }) => isPayloadAdmin(req.user)

@@ -18,7 +18,7 @@ import {
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 import { relationshipId } from '@/utilities/relationship'
 
-const DERIVED_PLAZA_UPDATE_CONTEXT = 'municipalityUpdateDerivedField'
+const DERIVED_MUNICIPALITY_UPDATE_CONTEXT = 'municipalityUpdateDerivedField'
 
 const nonEmptyText = (value: unknown): boolean =>
   typeof value === 'string' && value.trim().length > 0
@@ -75,7 +75,7 @@ const recomputeMunicipalityLastUpdateAt = async (req: PayloadRequest, municipali
       depth: 0,
       overrideAccess: true,
       context: {
-        [DERIVED_PLAZA_UPDATE_CONTEXT]: true,
+        [DERIVED_MUNICIPALITY_UPDATE_CONTEXT]: true,
       },
       req,
     })
@@ -89,7 +89,7 @@ const lockMunicipalitiesBeforeChange: CollectionBeforeChangeHook = async ({
   originalDoc,
   req,
 }) => {
-  if (context[DERIVED_PLAZA_UPDATE_CONTEXT]) return data
+  if (context[DERIVED_MUNICIPALITY_UPDATE_CONTEXT]) return data
 
   if (operation === 'create' && req.user?.collection === 'campaignUser') {
     data.author = req.user.id
@@ -106,7 +106,7 @@ const lockMunicipalitiesBeforeChange: CollectionBeforeChangeHook = async ({
 }
 
 const lockMunicipalityBeforeDelete: CollectionBeforeDeleteHook = async ({ context, id, req }) => {
-  if (context[DERIVED_PLAZA_UPDATE_CONTEXT]) return
+  if (context[DERIVED_MUNICIPALITY_UPDATE_CONTEXT]) return
 
   const doc = await req.payload.findByID({
     collection: 'municipalityUpdate',
@@ -127,7 +127,7 @@ const recomputeChangedMunicipalities: CollectionAfterChangeHook = async ({
   previousDoc,
   req,
 }) => {
-  if (context[DERIVED_PLAZA_UPDATE_CONTEXT]) return doc
+  if (context[DERIVED_MUNICIPALITY_UPDATE_CONTEXT]) return doc
 
   const municipalityIDs = uniqueSortedMunicipalityIDs([
     relationshipId(previousDoc?.municipality),
@@ -141,7 +141,7 @@ const recomputeChangedMunicipalities: CollectionAfterChangeHook = async ({
 }
 
 const recomputeDeletedMunicipality: CollectionAfterDeleteHook = async ({ context, doc, req }) => {
-  if (context[DERIVED_PLAZA_UPDATE_CONTEXT]) return doc
+  if (context[DERIVED_MUNICIPALITY_UPDATE_CONTEXT]) return doc
 
   const municipalityIDs = uniqueSortedMunicipalityIDs([relationshipId(doc.municipality)])
   if (municipalityIDs.length === 0) throw new APIError('Praça da atualização inválida.', 500)
