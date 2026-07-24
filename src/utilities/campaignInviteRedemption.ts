@@ -132,7 +132,9 @@ export const redeemCampaignInviteAutofillRecord = async (
       await acquireCampaignInviteAccountLocks(
         payload,
         req,
-        contactPhoneLockKeys([originalContact.phone, data.phone]),
+        contactPhoneLockKeys(
+          [originalContact.phone, data.phone].filter((phone): phone is string => Boolean(phone)),
+        ),
       )
       await assertContactPhoneAvailable(
         payload,
@@ -208,7 +210,9 @@ export const redeemCampaignInviteLoginRecord = async (
       })
       let account = await findReusableLeadershipAccount(payload, req, leadership)
       await acquireCampaignInviteAccountLocks(payload, req, [
-        ...contactPhoneLockKeys([originalContact.phone, data.phone]),
+        ...contactPhoneLockKeys(
+          [originalContact.phone, data.phone].filter((phone): phone is string => Boolean(phone)),
+        ),
         ...(account?.username ? [`account-username:${account.username}`] : []),
         `account-username:${data.phone}`,
         ...(account ? [`invite-redemption-user:${account.id}`] : []),

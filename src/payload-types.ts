@@ -353,7 +353,7 @@ export interface Contact {
   id: number;
   name: string;
   email?: string | null;
-  phone: string;
+  phone?: string | null;
   gender?: ('feminino' | 'masculino' | 'outro' | 'nao_informado') | null;
   state:
     | 'AC'

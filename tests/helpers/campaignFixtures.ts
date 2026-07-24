@@ -569,7 +569,7 @@ export class CampaignFixtures {
     return consent
   }
 
-  async createContact(input: ContactInput = {}): Promise<Contact> {
+  async createContact(input: ContactInput = {}): Promise<Contact & { phone: string }> {
     const contact = await this.rootPayload.create({
       collection: 'contact',
       data: {
@@ -582,7 +582,12 @@ export class CampaignFixtures {
       depth: 0,
     })
     this.own('contact', contact)
-    return contact
+    // Contact.phone is optional at the collection level (name-only imports), but
+    // every fixture contact carries one — narrow so specs can rely on it.
+    if (typeof contact.phone !== 'string') {
+      throw new Error('Fixture contacts must always carry a phone.')
+    }
+    return { ...contact, phone: contact.phone }
   }
 
   /** Assign advisors to a seeded municipality (tracked for reset on cleanup). */

@@ -32,6 +32,8 @@ const enforceUniqueContactPhone: CollectionBeforeChangeHook = async ({
   }
 
   const phone = String(data.phone ?? originalDoc?.phone ?? '')
+  // Phone-less contacts (e.g. name-only leadership imports) have no uniqueness to enforce.
+  if (!phone) return data
   const oldPhone =
     operation === 'update' && typeof originalDoc?.phone === 'string'
       ? originalDoc.phone
@@ -71,6 +73,11 @@ export const Contact: CollectionConfig = {
     beforeValidate: [
       ({ data }) => {
         if (!data || data.phone === undefined) return data
+
+        if (data.phone === null || data.phone === '') {
+          data.phone = null
+          return data
+        }
 
         const input = String(data.phone)
         if (/^\d{11}$/.test(input)) {
@@ -112,7 +119,9 @@ export const Contact: CollectionConfig = {
       label: 'Celular',
       minLength: 11,
       maxLength: 11,
-      required: true,
+      // Optional at the collection level so name-only records (e.g. leaderships imported
+      // from the projection sheet) can exist; UI flows still require it via zod schemas.
+      required: false,
       index: true,
     },
     {

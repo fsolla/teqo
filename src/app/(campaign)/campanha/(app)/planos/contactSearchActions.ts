@@ -41,7 +41,7 @@ export const searchActionPlanContactOptions = async (
     overrideAccess: false,
   })
 
-  return result.docs.map(({ id, name, phone }) => ({ id, name, phone }))
+  return result.docs.map(({ id, name, phone }) => ({ id, name, phone: phone ?? null }))
 }
 
 export const searchActionPlanLeadershipOptionsAction = async (

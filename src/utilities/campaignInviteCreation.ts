@@ -82,6 +82,9 @@ export const createCampaignInviteForActor = async (
         overrideAccess: true,
         req,
       })
+      if (!contact.phone) {
+        throw new Error('Cadastre o celular da liderança antes de gerar o convite.')
+      }
       const inviteUrl = `${inviteBaseURL}/campanha/convite/${generated.token}`
       return {
         inviteUrl,

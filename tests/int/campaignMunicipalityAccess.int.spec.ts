@@ -251,13 +251,24 @@ describe('municipality catalog seed and per-role access', () => {
       }),
     ).rejects.toThrow()
 
+    // The candidate is eligible: the projection sheet lists him as responsible
+    // for some municipalities (decision 2026-07-24).
+    const candidate = await fixtures.createCampaignUser('candidate')
     const assigned = await assignMunicipalityAdvisorsRecord(payload, coordinator, {
       municipality: municipality.id,
-      advisors: [advisor.id],
+      advisors: [advisor.id, candidate.id],
     })
     fixtures.touchMunicipality(municipality.id)
     expect(
       assigned.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id)),
+    ).toEqual([advisor.id, candidate.id])
+
+    const advisorOnly = await assignMunicipalityAdvisorsRecord(payload, coordinator, {
+      municipality: municipality.id,
+      advisors: [advisor.id],
+    })
+    expect(
+      advisorOnly.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id)),
     ).toEqual([advisor.id])
 
     const scope = await getAccessibleMunicipalityIds(

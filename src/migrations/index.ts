@@ -24,6 +24,7 @@ import * as migration_20260723_200000_remodel_municipalities from './20260723_20
 import * as migration_20260723_201000_add_state_deputy from './20260723_201000_add_state_deputy'
 import * as migration_20260723_202000_reconcile_municipality_remodel from './20260723_202000_reconcile_municipality_remodel'
 import * as migration_20260724_133600_drop_municipality_vote_goals from './20260724_133600_drop_municipality_vote_goals'
+import * as migration_20260724_175500_contact_phone_optional from './20260724_175500_contact_phone_optional'
 
 export const migrations = [
   {
@@ -155,5 +156,10 @@ export const migrations = [
     up: migration_20260724_133600_drop_municipality_vote_goals.up,
     down: migration_20260724_133600_drop_municipality_vote_goals.down,
     name: '20260724_133600_drop_municipality_vote_goals',
+  },
+  {
+    up: migration_20260724_175500_contact_phone_optional.up,
+    down: migration_20260724_175500_contact_phone_optional.down,
+    name: '20260724_175500_contact_phone_optional',
   },
 ]

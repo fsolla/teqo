@@ -1127,7 +1127,7 @@ describe('campaign invite domain', () => {
       await expect(
         actions.redeemCampaignInviteAutofill({
           ...submissions[rejectedIndex]!,
-          phone: contacts[rejectedIndex]!.phone,
+          phone: contacts[rejectedIndex]!.phone!,
         }),
       ).resolves.toEqual({ ok: true })
     },

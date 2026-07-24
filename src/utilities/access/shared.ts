@@ -57,9 +57,17 @@ export const isCampaignStaff = (user: CampaignActor): boolean =>
   isCampaignUser(user) &&
   (user.role === 'coordinator' || user.role === 'advisor' || user.role === 'candidate')
 
-/** Eligible relationship targets for advisor assignments (municipality / action plan). */
+/**
+ * Eligible relationship targets for advisor assignments (municipality / action plan).
+ * The candidate is included: the projection sheet lists him as the responsible contact
+ * for some municipalities (decision 2026-07-24).
+ */
 export const eligibleCampaignStaffWhere: Where = {
-  or: [{ role: { equals: 'coordinator' } }, { role: { equals: 'advisor' } }],
+  or: [
+    { role: { equals: 'coordinator' } },
+    { role: { equals: 'advisor' } },
+    { role: { equals: 'candidate' } },
+  ],
 }
 
 export const getFreshCampaignUser = async (
