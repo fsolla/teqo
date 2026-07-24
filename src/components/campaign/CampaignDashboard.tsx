@@ -27,11 +27,14 @@ export const CampaignDashboard = ({
   view,
   userName,
   mapSlot = null,
+  territorySlot = null,
 }: {
   view: StaffDashboardView
   userName: string
   /** Server-streamed map section (composition keeps this component map-agnostic). */
   mapSlot?: ReactNode
+  /** Server-streamed Territórios de Identidade comparative table (E17). */
+  territorySlot?: ReactNode
 }) => (
   <CampaignPageShell>
     <header className="flex flex-col gap-1">
@@ -72,6 +75,8 @@ export const CampaignDashboard = ({
         ]}
       />
     </section>
+
+    {territorySlot}
 
     <div className="grid gap-6 lg:grid-cols-2">
       <section

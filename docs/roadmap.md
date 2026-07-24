@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-24 (B15 ordenação por coluna na lista; fill-in Cenário junto aos filtros — [plano](plans/cenario-junto-filtros-municipios.md); E4R ✓; B14; janela 1: smoke, A11/E17, B15, R6, E8)
+Atualizado em: 2026-07-24 (B15 ordenação por coluna na lista; fill-in Cenário junto aos filtros — [plano](plans/cenario-junto-filtros-municipios.md); E4R ✓; E17 ✓ tabela TI no Início; B14; janela 1: smoke, A11, B15, R6, E8)
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
 ## Âncoras do calendário eleitoral 2026 (Res. TSE 23.760/2026)
@@ -45,6 +45,7 @@ Textos provisórios de Consent + `/privacidade` auto-provisionados ([onda-0.md](
 - **Admin Payload (2026-07-23)** — export CSV de assinaturas e contatos ([plano](plans/exportar-csv-assinaturas.md)).
 - **Hardening de engenharia (2026-07-23, Fases 0–6)** — access lockdown (PII/CMS admin-only + gates de rota do leader), tooling gate (knip no CI, `--max-warnings=0`, ban `as never`), artefato TSE commitado + cache (`bahiaElectionAggregates`, `election-tse`, `loadMunicipalityScope`), pending honesto + Suspense streaming, state scoping, splits (`src/utilities/access/*`, `supporterImport.ts`, shells DRY). Tracker: [IMPROVE-CODE-QUALITY-PLAN.md](IMPROVE-CODE-QUALITY-PLAN.md) · ledger: [TECH-DEBT.md](TECH-DEBT.md) · mapa de testes: [TESTING.md](TESTING.md).
 - **E4R (2026-07-24)** — import único da planilha de projeção → `municipality.expectedVotes` (Bom→otimista, Regular→média, Mínimo→pessimista) + `priority` (`pnpm db:seed:projecao`, always-overwrite, dry-run + runbook; Salvador pulado; zero PII). No mesmo dia o grupo duplicado `voteGoals` ("Meta Bom/Regular/Mínimo") foi **removido do app** (migration `20260724_133600` com backfill metas→estimativas) — a única série por cenário é `expectedVotes`. Plano: [import-planilha-projecao.md](plans/import-planilha-projecao.md). Seed local verificado (189 estimativas / 50 alta); produção após smoke.
+- **E17 (2026-07-24)** — tabela comparativa dos 27 Territórios de Identidade no Início staff (`/campanha`): `territoryOverview.ts` (rollup puro client-safe: `computeTerritoryRollup` + `sortTerritoryRows`) + `loadTerritoryOverview.ts` (loader server-only, `overrideAccess: true`) + `TerritoryOverviewTable.tsx` (tabela densa, ordenação client-side default `% da própria votação desc`, Metropolitano decomposto em Salvador 19 zonas × Demais RMS, linha→`/campanha/municipios?region=<TI>`). Somas/razões apenas (salvaguarda MAUP); sem migration/collection. Primeira fatia de E12. Plano: [tabela-ti-inicio.md](plans/tabela-ti-inicio.md).
 
 ## Próximos — Campanha (`/campanha`)
 
@@ -70,7 +71,7 @@ O discovery literatura→persona→entrevista ([relatório aprovado](research/re
 
 - ~~**E4R** import único da planilha de projeção~~ — **entregue 2026-07-24** (`pnpm db:seed:projecao`; overwrite-always; [plano](plans/import-planilha-projecao.md))
 - **A11** posição em votos do município (rank absoluto + % da própria votação) + ordenação da lista por votação · a lente de prioridade atual da mesa (sessão 2026-07-23) · ~0,5–1d · Janela 1–2 · reusa contrato `sort`/`dir` de **B15**; E9 absorve como coluna/ordenação da fila · [plano](plans/ranking-votos-municipio.md)
-- **E17** tabela comparativa dos Territórios de Identidade no Início (pedido do candidato) · somas/razões apenas, Metropolitano decomposto (salvaguardas MAUP) · ~1d · Janela 1–2 · primeira fatia de E12 · [plano](plans/tabela-ti-inicio.md)
+- ~~**E17** tabela comparativa dos Territórios de Identidade no Início (pedido do candidato) · somas/razões apenas, Metropolitano decomposto (salvaguardas MAUP) · ~1d · Janela 1–2 · primeira fatia de E12 · [plano](plans/tabela-ti-inicio.md)~~ — **entregue 2026-07-24** (`territoryOverview.ts` + `loadTerritoryOverview.ts` + `TerritoryOverviewTable.tsx`; rollup puro client-safe, loader `overrideAccess: true`, Metropolitano decomposto, ordenação client-side; sem migration; A11 ausente → share local)
 - **A6** dobradinha 2026 automática quando o TSE publicar candidaturas · gatilho externo: pós-15/08 · camada de insight sobre o registro operacional `stateDeputy` (M4) · alimenta **E13** · [plano](plans/insight-dobradinha-2026.md)
 - **B5 F2–F3** cache CLI compartilhado + factory mun/TI (scripts continuam) · [plano](plans/escala-dry-pos-b2.md)
 - **B8 F2** polígonos dos Municípios-zona de Salvador (ZE 1–19; Camaçari saiu do escopo na M1 — município inteiro): F1 catálogo zona→bairros entregue (hoje Salvador-only); falta prep do catálogo (~½ dia) + dissolve IBGE/malha → TopoJSON no mapa · Janela 3 · cortável · [plano](plans/poligonos-pracas-zona.md)
@@ -118,7 +119,7 @@ flowchart TD
     B15n["B15 Ordenar lista<br/>por coluna"]
     E4R["E4R ✓ Import planilha<br/>(seed estratégia)"]
     A11n["A11 Posição em votos"]
-    E17n["E17 Tabela TI no Início"]
+    E17n["E17 ✓ Tabela TI no Início"]
 
     subgraph Intel["Inteligência de campanha"]
         E8i["E8 Conta da cadeira"]
@@ -158,11 +159,11 @@ flowchart TD
     B8F2 -.ZE Salvador.-> B14n
 ```
 
-Paralelizáveis agora: **B15** (sort por coluna na lista; barato, desbloqueia UX de A11), **A11/E17** (semana de onboarding; E4R ✓ seedou o quadro; A11 soft-dep B15), **E8** (A10 ✓ e remodelagem em produção), **C12** (paralelo a E8), **E16** (compõe o existente), **B14** (atalho geo no Início; soft B8 F2 só para ZE Salvador), fill-ins (Cenário junto aos filtros, O0+, RS+). **D3** só após smoke + folga e só se o fluxo sede-digita (C12) não absorver os deltas do ZAP (não compete com E8/E9).
+Paralelizáveis agora: **B15** (sort por coluna na lista; barato, desbloqueia UX de A11), **A11** (semana de onboarding; E4R ✓ seedou o quadro; A11 soft-dep B15), **E8** (A10 ✓ e remodelagem em produção), **C12** (paralelo a E8), **E16** (compõe o existente), **B14** (atalho geo no Início; soft B8 F2 só para ZE Salvador), fill-ins (Cenário junto aos filtros, O0+, RS+). **D3** só após smoke + folga e só se o fluxo sede-digita (C12) não absorver os deltas do ZAP (não compete com E8/E9).
 
 ### Sequência por janela (só pendentes)
 
-**Janela 1 — agora → 05/08 (convenções):** smoke pós-deploy em produção + onboarding do time (Onda 0 §2/§4); **E4R ✓** em código (aplicar `pnpm db:seed:projecao` em produção após smoke); **B15** (sort por coluna) + **A11/E17** na semana de onboarding; gate de adoção: sinal Little Hire — ≥1 update espontâneo até 30/07, cobrança da tabela dispensada (planilhas já em `docs/sheets/`) — acompanhamento em [IMPROVE-APP-PLAN.md](IMPROVE-APP-PLAN.md); **R6** critique/polish; **E8** pode começar em paralelo; **B14** (atalho geo) se sobrar folga de campo no onboarding; Onda 0 jurídica em paralelo (externa).
+**Janela 1 — agora → 05/08 (convenções):** smoke pós-deploy em produção + onboarding do time (Onda 0 §2/§4); **E4R ✓** em código (aplicar `pnpm db:seed:projecao` em produção após smoke); **E17 ✓** tabela TI no Início; **B15** (sort por coluna) + **A11** na semana de onboarding; gate de adoção: sinal Little Hire — ≥1 update espontâneo até 30/07, cobrança da tabela dispensada (planilhas já em `docs/sheets/`) — acompanhamento em [IMPROVE-APP-PLAN.md](IMPROVE-APP-PLAN.md); **R6** critique/polish; **E8** pode começar em paralelo; **B14** (atalho geo) se sobrar folga de campo no onboarding; Onda 0 jurídica em paralelo (externa).
 
 **Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; **E8** conta da cadeira → **E9** fila de alocação, com **C12** registro-fundação em paralelo (migrations cedo, longe do congelamento); **E16** dossiê do município (pedido O6 — compõe o existente, melhora com E8); D2 se sobrar folga.
 
