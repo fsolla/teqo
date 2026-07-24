@@ -1,0 +1,49 @@
+---
+description: Teqo engineering standards — dead-code hygiene, client-boundary composition, caching ladder, typed escape hatches, zero-warning gate. Read before and enforce after ANY code change.
+alwaysApply: true
+---
+
+# Engineering standards (Teqo)
+
+Established 2026-07-23 by the engineering-standards hardening (tracker: `docs/IMPROVE-CODE-QUALITY-PLAN.md`; ledger: `docs/TECH-DEBT.md`; safety net: `docs/TESTING.md`). These are gates, not suggestions — CI enforces most of them.
+
+## After every change (non-negotiable)
+
+1. **Dead code dies immediately.** After your edits, check what your change orphaned and delete it in the same delivery: run `pnpm exec knip` (files/dependencies are CI-blocking errors; unused exports are warnings being driven to zero). Never leave commented-out code, unused exports, superseded components, or one-shot scripts behind — git history is the archive.
+2. **Zero warnings.** `pnpm lint` runs with `--max-warnings=0`. Deliberate placeholders use a `_` prefix. Never silence a rule without an inline justification comment.
+3. **Full gate before handoff:** `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (unit + int, local DB only), `pnpm build`. CI (`.github/workflows/ci.yml`) runs the same on the GitHub mirror.
+
+## Type honesty
+
+- **`as never` is banned** (ESLint `no-restricted-syntax`). Use the typed escape hatches that keep property-level checking: `hookFilledCreateData<Slug>()` for create data whose remaining required fields are filled by collection hooks; tests use `stub<T>(partial)` (`tests/helpers/stub.ts`). Casting from `unknown` after a runtime check is acceptable; a justified `eslint-disable-next-line` is the last resort.
+- Prefer fixing the type over casting. When a generic can't be proven, restructure so the caller keeps concrete types (see `runStaffEntityMutation` — policy in the helper, typed mutation in the caller).
+
+## Client boundary (Next.js composition)
+
+- **Server-first.** Pages and data assembly are Server Components; `'use client'` only where there is interactivity (hooks, handlers, browser APIs). Static subtrees of an interactive area are passed as `children`/slots from the server (`LeaderContactsPanel` + `LeaderContactForm`, `CampaignDashboard.mapSlot` are the references).
+- **Client components must not import server data modules for values.** Types/constants shared with the client live in a client-safe contract module (`municipalityMapContract.ts` is the reference; `municipalityMapData.ts` is `server-only`). `import type` is always safe.
+- **State lives where it is used.** Hover/selection in the leaf that renders it (`MunicipalityMapSelection`); context providers wrap only their consumers (estimate-scenario provider wraps results, not filters). Do not lift state so high that siblings re-render.
+- Heavy view payloads: pass view models with `select`ed fields, never whole Payload docs.
+
+## Loading feedback (see also `campanha-action-feedback.mdc`)
+
+- Every navigation-triggering control participates in a transition; the RESULTS region dims (`CampaignListPendingBoundary`/`CampaignListResults`), not just the control. Optimistic UI must revalidate on success (`revalidatePath`) or it will lie by reverting.
+- Heavy server subtrees stream behind `<Suspense>` with a local skeleton; heavy route segments get their own `loading.tsx`.
+
+## Caching ladder (decide in this order)
+
+1. **React `cache()`** for per-request dedup of repeated reads in one RSC tree (`loadMunicipalityScope`, `getCampaignUser`).
+2. **`unstable_cache` + tag** for immutable/slow-changing cross-request data (election reads use tag `election-tse`; bust via `POST /api/revalidate?tag=...` — allowlist in `revalidateRequest.ts`). Auth checks stay OUTSIDE the cached core.
+3. **Committed artifact via re-runnable script** for truly immutable derived data (`pnpm build:election-aggregates` → `src/lib/electionAggregates/`, pinned to the catalog by a snapshot test). Never compute artifacts during `pnpm build` — deploys must not depend on DB content.
+4. Never long-cache live 2026 campaign data (pledges, expectedVotes) without a write-path invalidation.
+
+## Access control (see also `security-critical.mdc`)
+
+- **Every collection declares `access` explicitly.** Payload's default ("any authenticated user") is a bug here: campaign JWTs work against `/api/*`. Admin-only collections use `payloadAdminOnly`.
+- Access helpers live in `src/utilities/access/` per domain, re-exported through `campaignAccess.ts`. New collections get helpers there plus int tests proving the denied paths.
+
+## Module organization
+
+- `src/lib/` = pure logic and static data (client-safe unless marked). `src/utilities/` = Payload/Next-coupled server code (mark `server-only` when server-bound). React components never live in `utilities/`.
+- Follow the domain prefixes (`campaign*`, `municipality*`, `supporter*`, `actionPlan*`); the access domain has a real folder (`utilities/access/`).
+- Abstractions need 3+ call sites or a policy worth naming (`runCampaignRedirectFormAction`, `runStaffEntityMutation`); don't build generic services for 2 uses.

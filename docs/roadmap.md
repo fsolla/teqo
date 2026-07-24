@@ -246,8 +246,12 @@ Paralelizáveis agora: **E8** (pós-A10), fill-ins (O0+, RS+, …). **D3** (baix
 
 ## Admin Payload
 
-- `roles` em `users` + access real antes de ampliar `/admin`
+- `roles` em `users` + access real antes de ampliar `/admin` — access explícito por collection SHIPPED 2026-07-23 (hardening Fase 0); falta apenas o campo `roles` (migration)
 - Seed reproduzível de `Consent` por chave (não por ID)
+
+## Débitos de engenharia (hardening 2026-07-23)
+
+- Ledger vivo em [`TECH-DEBT.md`](TECH-DEBT.md) (tracker: [`IMPROVE-CODE-QUALITY-PLAN.md`](IMPROVE-CODE-QUALITY-PLAN.md)); itens maiores: dirigir `knip` unused-exports de warn→error após os splits, redesenho do lease da janela de consent ausente nos testes, e2e fino, CI só no mirror GitHub
 
 ## Plataforma white-label
 
