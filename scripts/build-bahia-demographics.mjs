@@ -130,7 +130,7 @@ const buildDemographicsByCode = ({ ageCategoryRows, femaleRows, medianRows }) =>
     current.medianAge = Number.isFinite(median) ? median : null
   }
 
-  for (const [code, record] of byCode.entries()) {
+  for (const record of byCode.values()) {
     record.population = Object.values(record.ageBands).reduce((sum, value) => sum + value, 0)
     record.sexShareFemale =
       record.population > 0 ? record.femalePopulation / record.population : 0

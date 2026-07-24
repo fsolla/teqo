@@ -386,6 +386,9 @@ export const BahiaMap = ({
   useEffect(() => {
     if (!interactiveKey || pathByKeyRef.current.size === 0) return
     restyleAllPaths()
+    // Restyle helpers only read refs and are recreated per render — depending
+    // on them would re-run this effect on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- interactiveKey-only restyle
   }, [interactiveKey])
 
   useEffect(() => {
@@ -425,6 +428,9 @@ export const BahiaMap = ({
     if (selectedKey) {
       restyleFeature(selectedKey)
     }
+    // Restyle helpers only read refs and are recreated per render — depending
+    // on them would re-run this effect on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedKey-only O(2) restyle
   }, [selectedKey])
 
   return (

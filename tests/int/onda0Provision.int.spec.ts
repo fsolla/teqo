@@ -10,6 +10,12 @@ import { provisionOnda0ConsentAndPrivacy } from '@/utilities/onda0Provision'
 
 import { assertTestDatabase } from '../helpers/assertTestDatabase'
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import {
+  CAMPAIGN_INVITE_CONSENT_LEASE_KEY,
+  SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
+  SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY,
+  withSharedTestDatabaseLease,
+} from '../helpers/testDatabaseLease'
 
 let payload: Payload
 
@@ -27,20 +33,29 @@ describe('Onda 0 provision (integration)', () => {
   })
 
   it('upserts consent keys and publishes privacy-policy idempotently', async () => {
-    await provisionOnda0ConsentAndPrivacy(payload)
-    await provisionOnda0ConsentAndPrivacy(payload)
+    // Shared leases on every stable consent key: parallel spec files exercise
+    // "consent missing" fail-closed paths by deleting these rows under an
+    // EXCLUSIVE lease — without the shared leases this test races that window.
+    await withSharedTestDatabaseLease(payload, CAMPAIGN_INVITE_CONSENT_LEASE_KEY, () =>
+      withSharedTestDatabaseLease(payload, SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY, () =>
+        withSharedTestDatabaseLease(payload, SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY, async () => {
+          await provisionOnda0ConsentAndPrivacy(payload)
+          await provisionOnda0ConsentAndPrivacy(payload)
 
-    for (const { key } of ONDA0_CONSENT_ENTRIES) {
-      const descriptor = await requireConsentByKey(payload, key)
-      expect(descriptor.key).toBe(key)
-      expect(descriptor.contentHash).toMatch(/^[a-f0-9]{64}$/)
-    }
+          for (const { key } of ONDA0_CONSENT_ENTRIES) {
+            const descriptor = await requireConsentByKey(payload, key)
+            expect(descriptor.key).toBe(key)
+            expect(descriptor.contentHash).toMatch(/^[a-f0-9]{64}$/)
+          }
 
-    const privacy = await payload.findGlobal({
-      slug: 'privacy-policy',
-      overrideAccess: true,
-    })
-    expect(privacy.published).toBe(true)
-    expect(privacy.body).toBeTruthy()
+          const privacy = await payload.findGlobal({
+            slug: 'privacy-policy',
+            overrideAccess: true,
+          })
+          expect(privacy.published).toBe(true)
+          expect(privacy.body).toBeTruthy()
+        }),
+      ),
+    )
   })
 })

@@ -1,6 +1,12 @@
 // @vitest-environment node
 
-import { getPayload, type Field, type Payload, type PayloadRequest } from 'payload'
+import {
+  getPayload,
+  type Field,
+  type FieldAccess,
+  type Payload,
+  type PayloadRequest,
+} from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { CampaignUser as CampaignUserCollection } from '@/collections/CampaignUser'
@@ -8,6 +14,9 @@ import type { CampaignUser } from '@/payload-types'
 import config from '@/payload.config'
 
 import { withCampaignFixtures, type CampaignFixtures } from '../helpers/campaignFixtures'
+import { stub } from '../helpers/stub'
+
+type FieldAccessArgs = Parameters<FieldAccess>[0]
 
 let payload: Payload
 
@@ -233,14 +242,18 @@ describe('campaign user contact phone', () => {
         user: coordinator,
       } as unknown as PayloadRequest
 
-      await expect(field.access?.update?.({ id: owner.id, req: ownerReq } as never)).resolves.toBe(
-        true,
+      await expect(
+        field.access?.update?.(stub<FieldAccessArgs>({ id: owner.id, req: ownerReq })),
+      ).resolves.toBe(true)
+      await expect(
+        field.access?.update?.(stub<FieldAccessArgs>({ id: owner.id, req: coordinatorReq })),
+      ).resolves.toBe(true)
+      await expect(field.access?.create?.(stub<FieldAccessArgs>({ req: ownerReq }))).resolves.toBe(
+        false,
       )
       await expect(
-        field.access?.update?.({ id: owner.id, req: coordinatorReq } as never),
+        field.access?.create?.(stub<FieldAccessArgs>({ req: coordinatorReq })),
       ).resolves.toBe(true)
-      await expect(field.access?.create?.({ req: ownerReq } as never)).resolves.toBe(false)
-      await expect(field.access?.create?.({ req: coordinatorReq } as never)).resolves.toBe(true)
     })
   })
 })

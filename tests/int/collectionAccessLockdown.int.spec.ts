@@ -1,13 +1,15 @@
 // @vitest-environment node
 
-import { getPayload, type Payload } from 'payload'
+import { getPayload, type Payload, type RequiredDataFromCollectionSlug } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { createLeaderSupporterRecord } from '@/app/(campaign)/campanha/actions/leaderSupporter'
 import config from '@/payload.config'
 import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '@/utilities/campaignConsent'
+import { relationshipId } from '@/utilities/relationship'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { stub } from '../helpers/stub'
 import {
   SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
   withLeasedConsent,
@@ -112,10 +114,11 @@ describe('CMS/PII collection access lockdown', () => {
       await expect(
         payload.create({
           collection,
-          data: {},
+          // Denied before validation: an empty payload stands in for required fields.
+          data: stub<RequiredDataFromCollectionSlug<typeof collection>>({}),
           user: coordinator,
           overrideAccess: false,
-        } as never),
+        }),
       ).rejects.toThrow(/permissão|not allowed/i)
     },
   )
@@ -159,8 +162,8 @@ describe('leader supporter creation scope', () => {
     fixtures.own('supporter', supporter.id)
 
     expect(supporter.source).toBe('lideranca')
-    expect(fixtures.id(supporter.createdBy as never)).toBe(leaderAccount.id)
-    expect(fixtures.id(supporter.municipality as never)).toBe(linked.id)
+    expect(relationshipId(supporter.createdBy)).toBe(leaderAccount.id)
+    expect(relationshipId(supporter.municipality)).toBe(linked.id)
   })
 
   it('rejects a supporter outside the leadership municipalities', async () => {

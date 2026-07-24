@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation'
 
 import { createStateDeputy } from '@/app/(campaign)/campanha/actions/stateDeputy'
-import { nullableFormText, optionalFormText, requiredFormText } from '@/lib/formData'
+import { optionalFormText, requiredFormText } from '@/lib/formData'
 import {
   mapCampaignFormActionError,
   type CampaignFormActionState,

@@ -1,8 +1,13 @@
 // @vitest-environment node
 
+import type { Payload } from 'payload'
 import { describe, expect, it, vi } from 'vitest'
 
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+
+import { stub } from '../helpers/stub'
+
+type DatabaseSession = NonNullable<Payload['db']['sessions']>[string]
 
 const createPayload = ({
   transactionID = 17,
@@ -27,15 +32,15 @@ const createPayload = ({
   return {
     database,
     payload: {
-      db: {
+      db: stub<Payload['db']>({
         beginTransaction,
         commitTransaction,
         rollbackTransaction,
         sessions:
           transactionID === null || !hasSession
             ? {}
-            : { [String(transactionID)]: { db: database } },
-      },
+            : { [String(transactionID)]: stub<DatabaseSession>({ db: database }) },
+      }),
     },
     beginTransaction,
     commitTransaction,
@@ -51,7 +56,7 @@ describe('withPayloadTransaction', () => {
       return { req }
     })
 
-    const result = await withPayloadTransaction(fixture.payload as never, callback)
+    const result = await withPayloadTransaction(fixture.payload, callback)
 
     expect(result.req).toBe(callback.mock.calls[0]![0].req)
     expect(fixture.commitTransaction).toHaveBeenCalledWith(17)
@@ -63,7 +68,7 @@ describe('withPayloadTransaction', () => {
     const callback = vi.fn()
 
     await expect(
-      withPayloadTransaction(fixture.payload as never, callback, {
+      withPayloadTransaction(fixture.payload, callback, {
         beginFailureMessage: 'falha específica',
       }),
     ).rejects.toThrow('falha específica')
@@ -78,7 +83,7 @@ describe('withPayloadTransaction', () => {
     const original = new Error('callback falhou')
 
     await expect(
-      withPayloadTransaction(fixture.payload as never, async () => {
+      withPayloadTransaction(fixture.payload, async () => {
         throw original
       }),
     ).rejects.toBe(original)
@@ -91,9 +96,9 @@ describe('withPayloadTransaction', () => {
     const original = new Error('commit falhou')
     const fixture = createPayload({ commitError: original })
 
-    await expect(
-      withPayloadTransaction(fixture.payload as never, async () => 'result'),
-    ).rejects.toBe(original)
+    await expect(withPayloadTransaction(fixture.payload, async () => 'result')).rejects.toBe(
+      original,
+    )
 
     expect(fixture.commitTransaction).toHaveBeenCalledWith(17)
     expect(fixture.rollbackTransaction).toHaveBeenCalledWith(17)
@@ -104,7 +109,7 @@ describe('withPayloadTransaction', () => {
     const rollback = new Error('rollback falhou')
     const fixture = createPayload({ rollbackError: rollback })
 
-    const failure = await withPayloadTransaction(fixture.payload as never, async () => {
+    const failure = await withPayloadTransaction(fixture.payload, async () => {
       throw original
     }).catch((error: unknown) => error)
 
@@ -118,10 +123,9 @@ describe('withPayloadTransaction', () => {
     const rollback = new Error('rollback falhou')
     const fixture = createPayload({ commitError: commit, rollbackError: rollback })
 
-    const failure = await withPayloadTransaction(
-      fixture.payload as never,
-      async () => 'result',
-    ).catch((error: unknown) => error)
+    const failure = await withPayloadTransaction(fixture.payload, async () => 'result').catch(
+      (error: unknown) => error,
+    )
 
     expect(failure).toBeInstanceOf(AggregateError)
     expect((failure as AggregateError).errors).toEqual([commit, rollback])

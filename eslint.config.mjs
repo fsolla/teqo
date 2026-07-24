@@ -141,6 +141,40 @@ const eslintConfig = [
       'local/use-server-async-exports': 'error',
     },
   },
+  {
+    // Underscore-prefixed bindings are deliberate placeholders (unused action
+    // state, ignored tuple slots); everything else unused is dead code.
+    files: ['**/*.{js,mjs,jsx,ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          args: 'all',
+          argsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
+      // `as never` silences every type check on the expression (worse than
+      // `any`). Fix the types instead; a justified eslint-disable comment is
+      // the only sanctioned escape hatch.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'TSAsExpression > TSNeverKeyword',
+          message:
+            'Do not cast with `as never` — it disables type checking entirely. Fix the types or use a narrowly-typed helper.',
+        },
+      ],
+    },
+  },
+  {
+    // Payload generates migration signatures with unused destructured args.
+    files: ['src/migrations/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['warn', { args: 'none' }],
+    },
+  },
   prettier,
   // Override default ignores of eslint-config-next.
   globalIgnores([

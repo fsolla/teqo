@@ -2,7 +2,7 @@
 
 import { readFileSync } from 'node:fs'
 
-import type { Payload, PayloadRequest } from 'payload'
+import type { Payload, PayloadRequest, RequiredDataFromCollectionSlug } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { assignMunicipalityAdvisorsRecord } from '@/app/(campaign)/campanha/actions/municipality'
@@ -20,6 +20,10 @@ import {
 import { getPayload } from 'payload'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { stub } from '../helpers/stub'
+
+/** Create data with `role` intentionally omitted so the collection default applies. */
+type CampaignUserCreateData = RequiredDataFromCollectionSlug<'campaignUser'>
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -52,11 +56,11 @@ describe('campaign authentication foundation', () => {
     const username = campaignFixtures().phone()
     const user = await payload.create({
       collection: 'campaignUser',
-      data: {
+      data: stub<CampaignUserCreateData>({
         name: 'Liderança padrão',
         username,
         password: campaignFixtures().value('password'),
-      } as never,
+      }),
     })
 
     expect(user.role).toBe('leader')
@@ -267,11 +271,11 @@ describe('campaign authentication foundation', () => {
     const username = campaignFixtures().phone()
     const target = await payload.create({
       collection: 'campaignUser',
-      data: {
+      data: stub<CampaignUserCreateData>({
         name: 'Liderança administrada',
         username,
         password: campaignFixtures().value('password'),
-      } as never,
+      }),
     })
 
     const visibleTarget = await payload.findByID({
@@ -383,11 +387,11 @@ describe('campaign authentication foundation', () => {
       await expect(
         payload.create({
           collection: 'campaignUser',
-          data: {
+          data: stub<CampaignUserCreateData>({
             name: 'Criação indevida',
             email: `${campaignFixtures().value('denied')}@example.com`,
             password: campaignFixtures().value('password'),
-          } as never,
+          }),
           user: actor,
           overrideAccess: false,
         }),

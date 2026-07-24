@@ -308,7 +308,7 @@ export class CampaignFixtures {
     builderCounter += 1
     this.runID = `${processRunID}-${builderCounter}`
     const trackedCreate = async (args: Parameters<Payload['create']>[0]) => {
-      const document = await rootPayload.create(args as never)
+      const document = await rootPayload.create(args)
       const collection = args.collection
       const isLeasedConsent =
         collection === 'consent' &&
@@ -609,7 +609,7 @@ export class CampaignFixtures {
         contact: relationshipID(input.contact),
         municipalities: input.municipalities.map(relationshipID),
         ...(input.organizations
-          ? { organizations: input.organizations.map((value) => relationshipID(value as never)) }
+          ? { organizations: input.organizations.map((value) => relationshipID(value)) }
           : {}),
         ...(input.user ? { user: relationshipID(input.user) } : {}),
         ...(input.createdBy ? { createdBy: relationshipID(input.createdBy) } : {}),
@@ -917,7 +917,7 @@ export class CampaignFixtures {
       collection,
       where: { id: { in: ids } },
       depth: 0,
-      req: req as never,
+      req,
     })
     const errors = bulkErrors(result)
     if (errors.length > 0) {
@@ -943,7 +943,7 @@ export class CampaignFixtures {
           lastUpdateAt: null,
         },
         depth: 0,
-        req: req as never,
+        req,
       })
     }
   }

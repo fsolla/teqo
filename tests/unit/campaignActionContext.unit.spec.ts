@@ -16,9 +16,7 @@ describe('campaign action context', () => {
     const findByID = vi.fn().mockResolvedValue(currentActor)
     const req = { transactionID: 21 }
 
-    await expect(reloadCampaignActor({ findByID } as never, staleActor, req)).resolves.toBe(
-      currentActor,
-    )
+    await expect(reloadCampaignActor({ findByID }, staleActor, req)).resolves.toBe(currentActor)
     expect(findByID).toHaveBeenCalledWith({
       collection: 'campaignUser',
       id: staleActor.id,

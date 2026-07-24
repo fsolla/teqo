@@ -2,29 +2,28 @@
 
 import { createRequire } from 'node:module'
 
-import { sql } from '@payloadcms/db-postgres'
+import { sql, type MigrateDownArgs, type MigrateUpArgs } from '@payloadcms/db-postgres'
 import { drizzle } from '@payloadcms/db-postgres/drizzle/node-postgres'
+import type { Pool as PgPool } from 'pg'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { migrations } from '@/migrations'
+import { stub } from '../helpers/stub'
 
 const require = createRequire(import.meta.resolve('@payloadcms/db-postgres'))
 const { Pool } = require('pg') as {
-  Pool: new (options: { connectionString: string }) => {
-    connect: () => Promise<{ query: (statement: string) => Promise<unknown>; release: () => void }>
-    end: () => Promise<void>
-    query: (statement: string) => Promise<{ rows: Array<Record<string, unknown>> }>
-  }
+  Pool: new (options: { connectionString: string }) => PgPool
 }
 
 const testDatabaseUrl =
   process.env.DATABASE_URL ?? 'postgresql://teqo:teqo@localhost:5432/teqo_test'
 const adminUrl = testDatabaseUrl.replace(/\/[^/]+$/, '/postgres')
 const consolidatedName = '20260718_010733_consolidate_campaign_schema'
+type MigrationDatabase = MigrateUpArgs['db']
 let databaseSequence = 0
 let databaseName = ''
 let databasePool: InstanceType<typeof Pool> | undefined
-let database: ReturnType<typeof drizzle> | undefined
+let database: MigrationDatabase | undefined
 
 const quoteIdentifier = (identifier: string): string => {
   if (!/^[a-z0-9_]+$/.test(identifier)) throw new Error(`Unsafe database identifier: ${identifier}`)
@@ -77,10 +76,10 @@ beforeEach(async () => {
   databasePool = new Pool({
     connectionString: testDatabaseUrl.replace(/\/[^/]+$/, `/${databaseName}`),
   })
-  database = drizzle(databasePool as never)
+  database = drizzle<Record<string, unknown>>(databasePool)
 
   for (const migration of migrations) {
-    await migration.up({ db: database } as never)
+    await migration.up(stub<MigrateUpArgs>({ db: database }))
   }
 })
 
@@ -139,7 +138,7 @@ describe('campaign migration existing-schema reconciliation', () => {
 
       await expect(
         database.transaction(async (transaction) => {
-          await consolidated.up({ db: transaction } as never)
+          await consolidated.up(stub<MigrateUpArgs>({ db: transaction }))
           await transaction.execute(sql`
             INSERT INTO "payload_migrations" ("name", "batch", "updated_at", "created_at")
             VALUES (${consolidatedName}, 999, now(), now())
@@ -176,7 +175,7 @@ describe('campaign migration existing-schema reconciliation', () => {
     `)
     const checksumBefore = await schemaChecksum()
 
-    await expect(consolidated.down({ db: database } as never)).rejects.toThrow(
+    await expect(consolidated.down(stub<MigrateDownArgs>({ db: database }))).rejects.toThrow(
       'Refusing to roll back consolidated campaign schema',
     )
 

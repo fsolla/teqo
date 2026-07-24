@@ -13,15 +13,19 @@ export const RecentVisitTracker = ({
 }: {
   entry: Omit<RecentVisitEntry, 'visitedAt'>
 }) => {
+  // Primitive dependencies: the effect must re-run on visit identity changes,
+  // not on parent re-renders handing down a fresh `entry` object.
+  const { href, label, kind } = entry
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      recordRecentVisit({ ...entry, visitedAt: Date.now() })
+      recordRecentVisit({ href, label, kind, visitedAt: Date.now() })
     }, RECORD_DWELL_MS)
 
     return () => {
       window.clearTimeout(timer)
     }
-  }, [entry.href, entry.label, entry.kind])
+  }, [href, label, kind])
 
   return null
 }

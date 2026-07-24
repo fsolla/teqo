@@ -21,6 +21,7 @@ import {
 } from '@/utilities/campaignActionContext'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
+import { hookFilledCreateData } from '@/utilities/hookFilledData'
 
 export const createCampaignDemandRecord = async (
   payload: Payload,
@@ -38,7 +39,7 @@ export const createCampaignDemandRecord = async (
       // links a leader's own leadership and enforces the initial status.
       return payload.create({
         collection: 'campaignDemand',
-        data: data as never,
+        data: hookFilledCreateData<'campaignDemand'>(data),
         depth: 0,
         user: currentActor,
         overrideAccess: false,

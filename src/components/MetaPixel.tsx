@@ -19,6 +19,8 @@ fbq('track', 'PageView');
       `}
     </Script>
     <noscript>
+      {/* Meta's noscript tracking pixel must be a plain 1×1 <img>. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         alt=""
         height="1"

@@ -1,4 +1,3 @@
-import config from '@payload-config'
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'

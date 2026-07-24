@@ -6,7 +6,6 @@ import { getPayload } from 'payload'
 
 import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
 import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
-import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import {
   Empty,

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/payload.config.ts",
+    "src/migrations/index.ts",
+    "src/app/(payload)/admin/importMap.js",
+    "scripts/*.mjs",
+    "eslint-local-rules.mjs"
+  ],
+  "project": ["src/**/*.{ts,tsx,js}", "scripts/**/*.mjs"],
+  "ignore": ["src/payload-types.ts", "src/migrations/**"],
+  "paths": {
+    "server-only": ["tests/helpers/serverOnly.ts"]
+  },
+  "ignoreBinaries": ["playwright"],
+  "ignoreDependencies": [
+    "tsx",
+    "sharp",
+    "tailwindcss-animate",
+    "tw-animate-css",
+    "shadcn",
+    "eslint-config-next",
+    "prettier"
+  ],
+  "rules": {
+    "exports": "warn",
+    "types": "warn",
+    "enumMembers": "warn",
+    "duplicates": "warn"
+  }
+}

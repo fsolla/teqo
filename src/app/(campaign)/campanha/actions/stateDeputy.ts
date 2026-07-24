@@ -10,6 +10,7 @@ import {
 } from '@/lib/schemas/stateDeputy'
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
+import { hookFilledCreateData } from '@/utilities/hookFilledData'
 
 const assertStaffActor = (payload: Payload, actor: CampaignUser): Promise<CampaignUser> =>
   reloadStaffActor(payload, actor, 'Somente a coordenação e a assessoria gerenciam dobradinhas.')
@@ -30,7 +31,7 @@ export const createStateDeputyRecord = async (
   try {
     return await payload.create({
       collection: 'stateDeputy',
-      data: data as never,
+      data: hookFilledCreateData<'stateDeputy'>(data),
       depth: 0,
       user: currentActor,
       overrideAccess: false,

@@ -17,6 +17,9 @@ import {
   getTestTransactionBackendPID,
   waitForAdvisoryLockWaiter,
 } from '../helpers/testDatabaseLease'
+import { stub } from '../helpers/stub'
+
+type DatabaseSession = NonNullable<Payload['db']['sessions']>[string]
 
 let payload: Payload
 
@@ -64,30 +67,28 @@ describe('PostgreSQL transaction advisory locks', () => {
       'contact-phone:71999990001',
       'contact-phone:71999990002',
     ])
-    expect(CONTACT_PHONE_CONFLICT_MESSAGE).toBe(
-      'Já existe outro contato com este celular.',
-    )
+    expect(CONTACT_PHONE_CONFLICT_MESSAGE).toBe('Já existe outro contato com este celular.')
   })
 
   it('uses only the exact Payload transaction session and fails closed without it', async () => {
     const sessionDatabase = { execute: vi.fn().mockResolvedValue(undefined) }
     const unrelatedDatabase = { execute: vi.fn().mockResolvedValue(undefined) }
     const fixture = {
-      db: {
+      db: stub<Payload['db']>({
         name: 'postgres',
         sessions: {
-          '41': { db: sessionDatabase },
-          '42': { db: unrelatedDatabase },
+          '41': stub<DatabaseSession>({ db: sessionDatabase }),
+          '42': stub<DatabaseSession>({ db: unrelatedDatabase }),
         },
-      },
+      }),
     }
 
     await expect(
-      getPostgresTransactionDatabase(fixture as never, {
+      getPostgresTransactionDatabase(fixture, {
         transactionID: Promise.resolve(41),
       }),
     ).resolves.toBe(sessionDatabase)
-    await acquireTextAdvisoryLocks(fixture as never, { transactionID: 41 }, [
+    await acquireTextAdvisoryLocks(fixture, { transactionID: 41 }, [
       'domain:2',
       'domain:1',
       'domain:1',
@@ -98,31 +99,28 @@ describe('PostgreSQL transaction advisory locks', () => {
     expect(collectLockParams(query)).toEqual(['domain:1', 'domain:2'])
     expect(unrelatedDatabase.execute).not.toHaveBeenCalled()
 
-    await expect(getPostgresTransactionDatabase(fixture as never, {})).rejects.toThrow(
+    await expect(getPostgresTransactionDatabase(fixture, {})).rejects.toThrow(
       'A transação PostgreSQL não está disponível.',
     )
-    await expect(
-      acquireTextAdvisoryLocks(fixture as never, {}, ['domain:1']),
-    ).rejects.toThrow('A transação PostgreSQL não está disponível.')
-    await expect(
-      getPostgresTransactionDatabase(fixture as never, { transactionID: 99 }),
-    ).rejects.toThrow('A sessão PostgreSQL da transação não está disponível.')
+    await expect(acquireTextAdvisoryLocks(fixture, {}, ['domain:1'])).rejects.toThrow(
+      'A transação PostgreSQL não está disponível.',
+    )
+    await expect(getPostgresTransactionDatabase(fixture, { transactionID: 99 })).rejects.toThrow(
+      'A sessão PostgreSQL da transação não está disponível.',
+    )
   })
 
   it('rejects invalid text keys before acquiring any lock', async () => {
     const database = { execute: vi.fn().mockResolvedValue(undefined) }
     const fixture = {
-      db: {
+      db: stub<Payload['db']>({
         name: 'postgres',
-        sessions: { '51': { db: database } },
-      },
+        sessions: { '51': stub<DatabaseSession>({ db: database }) },
+      }),
     }
 
     await expect(
-      acquireTextAdvisoryLocks(fixture as never, { transactionID: 51 }, [
-        'valid:key',
-        '   ',
-      ]),
+      acquireTextAdvisoryLocks(fixture, { transactionID: 51 }, ['valid:key', '   ']),
     ).rejects.toThrow('A chave do bloqueio PostgreSQL deve ser um texto não vazio.')
     expect(database.execute).not.toHaveBeenCalled()
   })
