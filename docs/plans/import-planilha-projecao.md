@@ -1,11 +1,13 @@
 # E4R — Import único da planilha de projeção (seed de estratégia, local e produção)
 
-Status: rascunho (aprovado como item em 2026-07-24 — reabre o corte E4 por decisão de produto)
-Atualizado em: 2026-07-24
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Demais itens abertos, E4R; Onda 0 §4 — seed do onboarding)
+Status: entregue em código (2026-07-24)
+Atualizado em: 2026-07-24 (overwrite-always; SheetJS; seed local 189 metas / 50 alta)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (E4R)
 Impeccable: n/a — script/CLI sem superfície de UI (relatório em stdout)
 Appetite: ~1 dia eng (parser + mapeamento + dry-run + runbook de produção)
 Responsável: —
+
+Revisão 2026-07-24: idempotência mudou de “só campos vazios” para **sempre sobrescrever** `voteGoals`/`priority` nas linhas casadas — a planilha sobe de novo quando a mesa manda versão mais nova sobre DB já populado. Entrega: `pnpm db:seed:projecao`, parser em `src/lib/projectionSheetParse.ts`, script `scripts/import-projecao.mjs`. Seed local verificado: 189 municípios com metas parseáveis, 50 `priority=alta`, Salvador pulado, re-run delta=0.
 
 ## Contexto
 
@@ -28,7 +30,7 @@ Divergências A×B no MAPA GERAL (9 linhas: Brejões, Catu, Iaçu, Ipiaú, Jagua
 - Parser tolerante aos 3 formatos observados de EXPECTATIVA: `Bom: 350 | Regular: 250 | Minimo: 150` (com/sem espaços), `Bom:350`, `800/500/400`; separador de milhar `10.000`.
 - Matching de nome via `canonicalizeMunicipalityName` + catálogo (`municipalityCatalog.ts`); sanity check duplo: VOTOS 2014/18/22 da planilha × `bahiaElectionAggregates` (valida o match), REGIÃO × `bahiaTerritories` (diverge = warning, não bloqueia).
 - `--dry-run` com relatório completo: linhas casadas/não casadas, campos que seriam escritos, 9 divergências A×B, Salvador pulado, totais.
-- Idempotente: por default escreve **só campos vazios** (`voteGoals` sem valor, `priority` ausente); `--overwrite` para re-runs conscientes.
+- **Sempre sobrescreve** `voteGoals` + `priority` em toda linha casada (a planilha é a fonte da estratégia naquele momento; re-run com arquivo novo ou `--file` substitui o que já estiver no banco). Não toca outros campos nem `lastUpdateAt`.
 - Runbook de produção documentado no próprio script (header) e neste plano.
 
 ## Decisões travadas
@@ -38,13 +40,15 @@ Divergências A×B no MAPA GERAL (9 linhas: Brejões, Catu, Iaçu, Ipiaú, Jagua
 - **Salvador (linha única, metas 30k/27k/25k) é pulado com relatório explícito.** O catálogo tem 19 Municípios-zona e a planilha não distribui; inventar rateio viola "não estimar o que não tem dado" (falsa precisão). Metas de zona entram via UI pelo coordenador. **Rejeitado:** rateio proporcional ao voto por zona (número inventado com cara de número).
 - **Arquivo A é o canônico de estratégia; B é referência.** Mais recente nos 9 conflitos e corroborado pela entrevista (Jaguaquara). O script aceita `--file` para apontar planilha nova se chegar versão mais atual.
 - **`priority`: `alta` → `alta`; `Baixa`/vazio → `normal`.** Cross-check com a aba PRIORITÁRIAS (conjunto alfabético de 50, não ranking): prioritária sem `alta` no MAPA GERAL = warning no relatório.
-- **Escrita via Payload Local API em transação única** (`withPayloadTransaction`-equivalente de CLI), `overrideAccess: true` (processo CLI, mesmo padrão de `seed-tse-results.mjs`); guarda de banco da família dos seeds (`assertLocalDatabase`; produção só com `ALLOW_REMOTE_DB=true`).
-- **i18n e naming:** identificadores em inglês (`importProjectionSheet`, `parseExpectationCell`, `--dry-run`/`--overwrite`/`--file`); relatório em pt-BR.
+- **Escrita via Payload Local API em transação única** (`withPayloadTransaction`), `overrideAccess: true` (processo CLI, mesmo padrão dos seeds); guarda de banco da família dos seeds (`assertLocalDatabase`; produção só com `ALLOW_REMOTE_DB=true`).
+- **Overwrite sempre na escrita:** cada linha casada do MAPA GERAL grava `voteGoals` + `priority` da planilha por cima do valor atual. **Rejeitado:** empty-only (quebraria o re-seed quando a mesa manda planilha atualizada). **Rejeitado:** merge por célula / “só se diferente” como gate — o dry-run já mostra o delta; a escrita é a declaração consciente após revisão.
+- **Não atualizar `lastUpdateAt`.** Seed/re-seed não é sinal de campo; frescor (E9/G8) não pode nascer inflado.
+- **Parser xlsx:** SheetJS CE (`xlsx`) como devDependency (knip entry `scripts/*.mjs`).
+- **i18n e naming:** identificadores em inglês (`importProjectionSheet`, `parseExpectationCell`, `--dry-run`/`--file`); relatório em pt-BR.
 
 ## Questões em aberto
 
-- **Parser xlsx: dependência ou zip+XML mínimo?** Opções: devDependency SheetJS CE (`xlsx`, Apache-2.0) | parser próprio (zipfile + `fast-xml-parser`/DOM, ~80 linhas para o subset usado). **Recomendação:** SheetJS CE como devDependency — formato consolidado, menos código nosso; remover se incomodar no knip (é usado só pelo script).
-- **Atualizar `lastUpdateAt` dos municípios seedados?** **Recomendação:** não — seed não é sinal de campo; frescor (E9/G8) não pode nascer inflado.
+_(nenhuma — SheetJS e lastUpdateAt fechados 2026-07-24; overwrite-always fechado na implementação.)_
 
 ## Abordagem proposta
 
@@ -54,7 +58,7 @@ flowchart LR
     Parse["parseExpectationCell<br/>(3 formatos + milhar)"]
     Match["canonicalizeMunicipalityName<br/>+ municipalityCatalog"]
     Sanity["sanity: votos × artefato<br/>REGIÃO × bahiaTerritories"]
-    Write["Payload Local API<br/>(voteGoals, priority; só vazios)"]
+    Write["Payload Local API<br/>(voteGoals, priority; overwrite)"]
     Report["relatório stdout<br/>(dry-run = só relatório)"]
     XLSX --> Parse --> Match --> Sanity --> Write --> Report
     Sanity -.warnings.-> Report
@@ -62,9 +66,9 @@ flowchart LR
 
 ### Runbook (ordem obrigatória)
 
-1. Local: `pnpm db:start` → `node scripts/import-projecao.mjs --dry-run` → revisar relatório → rodar sem `--dry-run` → conferir 3 municípios na UI (`/campanha/municipios`).
-2. Produção (após smoke pós-deploy): `ALLOW_REMOTE_DB=true DATABASE_URL=<prod> node scripts/import-projecao.mjs --dry-run` → revisar → aplicar. Sem revalidate (páginas de campanha são dinâmicas).
-3. Registrar no notebook a data do seed e o arquivo usado (proveniência).
+1. Local: `pnpm db:start` → `pnpm db:seed:projecao -- --dry-run` → revisar relatório → `pnpm db:seed:projecao` (sobrescreve) → conferir 3 municípios na UI (`/campanha/municipios`).
+2. Produção (após smoke pós-deploy, ou quando chegar planilha nova): `ALLOW_REMOTE_DB=true DATABASE_URL=<prod> pnpm db:seed:projecao -- --dry-run` → revisar → aplicar (sem `--dry-run`). Sem revalidate (páginas de campanha são dinâmicas).
+3. Registrar no notebook a data do seed e o arquivo usado (proveniência). Planilha nova: `--file <path>` + dry-run + apply.
 
 ## Dependências
 
@@ -85,7 +89,14 @@ flowchart LR
 
 - **Fase 2 (colunas com nomes).** Gatilho: lote jurídico final + decisão de destino com a assessoria.
 - **Metas de Salvador por zona via planilha.** Gatilho: coordenação produzir metas por ZE (hoje não existem em nenhuma aba).
-- **`--file` apontando planilha atualizada.** Gatilho: coordenador enviar versão mais nova que as de `docs/sheets/` (o script já nasce parametrizado; o gatilho é só o re-run consciente com `--overwrite`).
+- **`--file` apontando planilha atualizada.** Gatilho: coordenador enviar versão mais nova que as de `docs/sheets/` (o script já nasce parametrizado; o gatilho é o re-run consciente após dry-run — a escrita já sobrescreve).
+- **Batch SQL no lugar de ~189 `payload.update` sequenciais.** Gatilho: re-seed remoto (Neon) sentir-se lento; hoje Local API + overwrite-always cabem no appetite de seed one-shot. Helpers bulk existentes são insert-oriented (`supporterImportBulk`).
+
+## Já resolvido no simplify (não reabrir)
+
+- Chaves de Map via `normalizeMunicipalityKey` (não NFD local fraco)
+- `asCompleteGoals` / drop `sheetRow` morto / ordem Bom≥Regular≥Mínimo via `getVoteGoalsOrderViolation`
+- `--reference` explícito falha fechado; A×B só com B parseável
 
 ## Referências
 

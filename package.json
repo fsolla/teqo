@@ -28,6 +28,7 @@
     "db:seed:posts": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-posts.mjs",
     "db:seed:tse": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-tse-results.mjs",
     "db:seed:consent": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-consent.mjs",
+    "db:seed:projecao": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/import-projecao.mjs",
     "build:demographics": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-demographics.mjs",
     "build:election-aggregates": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/build-election-aggregates.mjs",
     "build:geometries": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-geometries.mjs",
@@ -130,6 +131,7 @@
     "typescript-7": "npm:typescript@7.0.2",
     "vite-tsconfig-paths": "6.0.5",
     "vitest": "4.0.18",
+    "xlsx": "^0.18.5",
     "yauzl": "^3.4.0"
   },
   "engines": {

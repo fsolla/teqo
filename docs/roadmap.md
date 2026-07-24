@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-24 (B14 município mais próximo por geolocalização no Início; janela 1 vigente — convenções até 05/08; foco: smoke pós-deploy, E4R→A11/E17 na semana de onboarding, R6, E8)
+Atualizado em: 2026-07-24 (E4R entregue em código — seed local; B14 município mais próximo no roadmap; janela 1: smoke pós-deploy, A11/E17, R6, E8 — [CUSTOMER.md](CUSTOMER.md))
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -31,7 +31,7 @@ Textos provisórios de Consent + `/privacidade` auto-provisionados ([onda-0.md](
 1. **Lote jurídico único** _(externo)_ — textos finais (substituem provisórios) + base LGPD art. 11: `lideranca-autopreenchimento`, `apoiador-cadastro`, `apoiador-intencao-voto`, `campanha-notificacoes-push`, **`campanha-whatsapp-canal`** (D3 — armazenamento/processamento do canal interno staff↔lideranças; se o lote já tiver fechado sem esta chave, entra no próximo passe com a assessoria — não abrir rodada jurídica só por ela), Aviso de Privacidade, avaliação RIPD.
 2. **Smoke pós-deploy** _(desbloqueado — deploy da remodelagem aplicado em produção em 2026-07-23)_ — `NEXT_PUBLIC_SITE_URL` HTTPS, login `/campanha`, município de teste; checklist no AGENTS.md.
 3. **Ativação com dados reais** assim que (1) liberar — lideranças/apoiadores reais e import em massa.
-4. **Onboarding do time** — usuários `coordinator`/`advisor`, primeiros municípios assumidos, treino de campo; **seed da planilha de prioridades via E4R** (estratégia sem PII: metas/prioridade — [plano](plans/import-planilha-projecao.md)); rede/lideranças (nomes) só após o lote jurídico.
+4. **Onboarding do time** — usuários `coordinator`/`advisor`, primeiros municípios assumidos, treino de campo; **seed da planilha de prioridades via E4R** (engenharia pronta — `pnpm db:seed:projecao`; aplicar em produção após smoke — [plano](plans/import-planilha-projecao.md)); rede/lideranças (nomes) só após o lote jurídico.
 
 **O0+** (escala/DRY pós-Onda 0) não bloqueia jurídico nem smoke fictício — [plano](plans/escala-dry-pos-onda0.md).
 
@@ -45,6 +45,7 @@ Textos provisórios de Consent + `/privacidade` auto-provisionados ([onda-0.md](
 - **A10 (2026-07-23)** — cenários pessimista/média/otimista em `votePledge.estimatedVotes` e `municipality.expectedVotes`; agregação por cenário (default média); seletor no mapa/overview; liderança segue com um `declaredVotes` ([plano](plans/cenarios-estimativa-votos.md)). Desbloqueou **E8**.
 - **Admin Payload (2026-07-23)** — export CSV de assinaturas e contatos ([plano](plans/exportar-csv-assinaturas.md)).
 - **Hardening de engenharia (2026-07-23, Fases 0–6)** — access lockdown (PII/CMS admin-only + gates de rota do leader), tooling gate (knip no CI, `--max-warnings=0`, ban `as never`), artefato TSE commitado + cache (`bahiaElectionAggregates`, `election-tse`, `loadMunicipalityScope`), pending honesto + Suspense streaming, state scoping, splits (`src/utilities/access/*`, `supporterImport.ts`, shells DRY). Tracker: [IMPROVE-CODE-QUALITY-PLAN.md](IMPROVE-CODE-QUALITY-PLAN.md) · ledger: [TECH-DEBT.md](TECH-DEBT.md) · mapa de testes: [TESTING.md](TESTING.md).
+- **E4R (2026-07-24)** — import único da planilha de projeção → `municipality.voteGoals` + `priority` (`pnpm db:seed:projecao`, always-overwrite, dry-run + runbook; Salvador pulado; zero PII). Plano: [import-planilha-projecao.md](plans/import-planilha-projecao.md). Seed local verificado (189 metas / 50 alta); produção após smoke.
 
 ## Próximos — Campanha (`/campanha`)
 
@@ -68,7 +69,7 @@ O discovery literatura→persona→entrevista ([relatório aprovado](research/re
 
 ### Demais itens abertos
 
-- **E4R** import único da planilha de projeção (`docs/sheets/`) → `voteGoals`/`priority` (reabre o corte E4 — decisão de produto 2026-07-24 + evidência O5: a planilha é a fonte de verdade da mesa) · script idempotente com dry-run + runbook de produção · Janela 1 · **não cortável** (seed do Big Hire; insumo de E8/A11/E17) · [plano](plans/import-planilha-projecao.md)
+- ~~**E4R** import único da planilha de projeção~~ — **entregue 2026-07-24** (`pnpm db:seed:projecao`; overwrite-always; [plano](plans/import-planilha-projecao.md))
 - **A11** posição em votos do município (rank absoluto + % da própria votação) + ordenação da lista por votação · a lente de prioridade atual da mesa (sessão 2026-07-23) · ~0,5–1d · Janela 1–2 · E9 absorve como coluna/ordenação da fila · [plano](plans/ranking-votos-municipio.md)
 - **E17** tabela comparativa dos Territórios de Identidade no Início (pedido do candidato) · somas/razões apenas, Metropolitano decomposto (salvaguardas MAUP) · ~1d · Janela 1–2 · primeira fatia de E12 · [plano](plans/tabela-ti-inicio.md)
 - **A6** dobradinha 2026 automática quando o TSE publicar candidaturas · gatilho externo: pós-15/08 · camada de insight sobre o registro operacional `stateDeputy` (M4) · alimenta **E13** · [plano](plans/insight-dobradinha-2026.md)
@@ -113,7 +114,7 @@ flowchart TD
     D4 -.thread.-> D5
     B8F2["B8 F2 Polígonos<br/>zonas de Salvador"]
     B14n["B14 Município mais próximo"]
-    E4R["E4R Import planilha<br/>(seed estratégia)"]
+    E4R["E4R ✓ Import planilha<br/>(seed estratégia)"]
     A11n["A11 Posição em votos"]
     E17n["E17 Tabela TI no Início"]
 
@@ -154,11 +155,11 @@ flowchart TD
     B8F2 -.ZE Salvador.-> B14n
 ```
 
-Paralelizáveis agora: **E4R → A11/E17** (semana de onboarding, sem deps), **E8** (A10 ✓ e remodelagem em produção), **C12** (paralelo a E8), **E16** (compõe o existente), **B14** (atalho geo no Início; soft B8 F2 só para ZE Salvador), fill-ins (O0+, RS+). **D3** só após smoke + folga e só se o fluxo sede-digita (C12) não absorver os deltas do ZAP (não compete com E8/E9).
+Paralelizáveis agora: **A11/E17** (semana de onboarding; E4R ✓ seedou o quadro), **E8** (A10 ✓ e remodelagem em produção), **C12** (paralelo a E8), **E16** (compõe o existente), **B14** (atalho geo no Início; soft B8 F2 só para ZE Salvador), fill-ins (O0+, RS+). **D3** só após smoke + folga e só se o fluxo sede-digita (C12) não absorver os deltas do ZAP (não compete com E8/E9).
 
 ### Sequência por janela (só pendentes)
 
-**Janela 1 — agora → 05/08 (convenções):** smoke pós-deploy em produção + onboarding do time (Onda 0 §2/§4), com **E4R → A11/E17** na semana de onboarding (quadro seedado + a lente da mesa prontos quando o time logar); gate de adoção: sinal Little Hire — ≥1 update espontâneo até 30/07, cobrança da tabela dispensada (planilhas já em `docs/sheets/`) — acompanhamento em [IMPROVE-APP-PLAN.md](IMPROVE-APP-PLAN.md); **R6** critique/polish; **E8** pode começar em paralelo; **B14** (atalho geo) se sobrar folga de campo no onboarding; Onda 0 jurídica em paralelo (externa).
+**Janela 1 — agora → 05/08 (convenções):** smoke pós-deploy em produção + onboarding do time (Onda 0 §2/§4); **E4R ✓** em código (aplicar `pnpm db:seed:projecao` em produção após smoke); **A11/E17** na semana de onboarding; gate de adoção: sinal Little Hire — ≥1 update espontâneo até 30/07, cobrança da tabela dispensada (planilhas já em `docs/sheets/`) — acompanhamento em [IMPROVE-APP-PLAN.md](IMPROVE-APP-PLAN.md); **R6** critique/polish; **E8** pode começar em paralelo; **B14** (atalho geo) se sobrar folga de campo no onboarding; Onda 0 jurídica em paralelo (externa).
 
 **Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; **E8** conta da cadeira → **E9** fila de alocação, com **C12** registro-fundação em paralelo (migrations cedo, longe do congelamento); **E16** dossiê do município (pedido O6 — compõe o existente, melhora com E8); D2 se sobrar folga.
 
@@ -168,7 +169,7 @@ Paralelizáveis agora: **E4R → A11/E17** (semana de onboarding, sem deps), **E
 
 ### Cortes seguros / não cortáveis
 
-**Não cortáveis:** Onda 0 (jurídico/Consent); **E4R** seed da planilha (Big Hire — o quadro nasce vazio sem ele); C2 dados reais; assimetria declarado×estimado (relação de campo); **E8**+**E9**+**C12** (a conta da cadeira, a fila e o registro ex-ante são o mínimo de "inteligência, não planilha" — e C12 é irrecuperável se não registrar durante a campanha).
+**Não cortáveis:** Onda 0 (jurídico/Consent); ~~**E4R** seed da planilha~~ (entregue 2026-07-24 — ainda aplicar em produção após smoke); C2 dados reais; assimetria declarado×estimado (relação de campo); **E8**+**E9**+**C12** (a conta da cadeira, a fila e o registro ex-ante são o mínimo de "inteligência, não planilha" — e C12 é irrecuperável se não registrar durante a campanha).
 
 **Cortes seguros** (se o prazo apertar, nesta ordem): **D5** inbox→rascunhos (manter registro manual + `wa.me`); **D4** envio bridge (manter `wa.me`); **D3** fundação do canal (atalho `wa.me` continua); **E12** camada TI (rollup manual por lista; **E17** já dá a leitura regional básica no Início); **E13** planejador de giros (rebaixado na fila de corte em 2026-07-24: "perna"/agenda é a restrição dominante nomeada em campo — cortar só depois de E12; agenda segue manual com J-A/J-B como guia); **E15** backtest (pós-eleição por definição — cortar = perder o aprendizado 2030); **E11** motor v1 (manter fila E9 sem sugestões); **B13** símbolo proporcional (manter quantis/LQ como escala); **E14** níveis (manter `priority` alta/normal); **B8 F2** polígonos (mapa continua agregado no município; manter F1 bairros); **D2** push (adiar); **A6**; **B14** município mais próximo (lista/busca e Recentes continuam); **A11**/**E17** (baratos e sem deps — cortar só em último caso); **E16** dossiê (último dos extras — pedido explícito de campo); débitos/fill-ins.
 
