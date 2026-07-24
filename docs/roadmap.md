@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-24 (E4R entregue em código — seed local; B14 município mais próximo no roadmap; janela 1: smoke pós-deploy, A11/E17, R6, E8 — [CUSTOMER.md](CUSTOMER.md))
+Atualizado em: 2026-07-24 (fill-in: seletor Cenário junto aos filtros em `/campanha/municipios` — [plano](plans/cenario-junto-filtros-municipios.md); E4R ✓; B14; janela 1: smoke, A11/E17, R6, E8)
 
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
@@ -86,6 +86,7 @@ O discovery literatura→persona→entrevista ([relatório aprovado](research/re
 
 ### Fill-ins abertos
 
+- **Cenário junto aos filtros** em `/campanha/municipios` — mover `VoteEstimateScenarioField` para a fileira de `MunicipalityFilters`; overview só consome o contexto · ~0,25–0,5d · Impeccable B · [plano](plans/cenario-junto-filtros-municipios.md)
 - **O0+** escala/DRY pós-Onda 0 · [plano](plans/escala-dry-pos-onda0.md)
 - **RS+** auth read leve + shells de senha · [plano](plans/escala-dry-pos-reset-senha-perfil.md)
 - **C10 / C11** escala apoiadores/planos · reavaliar nas superfícies remodeladas · gatilhos originais intactos: base nominal crescendo ([plano](plans/escala-dry-pos-c9.md)) / volume de planos medido ([plano](plans/escala-dry-pos-c7.md))
