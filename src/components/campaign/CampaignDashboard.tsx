@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { formatElectionNumber } from '@/lib/electionInsights'
 import type { StaffDashboardView } from '@/utilities/campaignDashboardData'
 import type { FederalCandidateOption } from '@/utilities/electionCandidateOptions'
-import type { MunicipalityMapBundle } from '@/utilities/municipalityMapData'
+import type { MunicipalityMapBundle } from '@/utilities/municipalityMapContract'
 import {
   formatVoteEstimateEndpointsLabel,
   voteEstimateScenarioLabels,

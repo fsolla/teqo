@@ -19,14 +19,14 @@ import { computeValidVoteShares, divergingGradientCss } from '@/lib/choroplethCo
 import { formatElectionNumber } from '@/lib/electionInsights'
 import type { FederalCandidateOption } from '@/utilities/electionCandidateOptions'
 import {
-  PLAZA_MAP_SCALE_MODES,
-  PLAZA_MAP_YEARS,
+  MUNICIPALITY_MAP_SCALE_MODES,
+  MUNICIPALITY_MAP_YEARS,
   municipalityMapScaleModeLabels,
   municipalityMapYearLabels,
   type MunicipalityMapBundle,
   type MunicipalityMapScaleMode,
   type MunicipalityMapYear,
-} from '@/utilities/municipalityMapData'
+} from '@/utilities/municipalityMapContract'
 import { resolveMunicipalityMapNavigation } from '@/utilities/municipalityMapNavigation'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
@@ -73,7 +73,10 @@ export const MunicipalityMapPanel = ({
     return bundle.valuesByYear[String(year)] ?? {}
   }, [bundle, comparison, comparisonActive, estimateScenario, year])
 
-  const validVotesForYear = bundle.validVotesByYear[String(year)] ?? {}
+  const validVotesForYear = useMemo(
+    () => bundle.validVotesByYear[String(year)] ?? {},
+    [bundle.validVotesByYear, year],
+  )
 
   const displayValues = useMemo(() => {
     if (percentScaleActive) {
@@ -179,7 +182,7 @@ export const MunicipalityMapPanel = ({
               onChange={(event) => setYear(Number(event.target.value) as MunicipalityMapYear)}
               className="min-h-11 w-full"
             >
-              {PLAZA_MAP_YEARS.map((entry) => (
+              {MUNICIPALITY_MAP_YEARS.map((entry) => (
                 <NativeSelectOption key={entry} value={String(entry)}>
                   {municipalityMapYearLabels[entry]}
                 </NativeSelectOption>
@@ -195,7 +198,7 @@ export const MunicipalityMapPanel = ({
                 onChange={(event) => setScaleMode(event.target.value as MunicipalityMapScaleMode)}
                 className="min-h-11 w-full"
               >
-                {PLAZA_MAP_SCALE_MODES.map((mode) => (
+                {MUNICIPALITY_MAP_SCALE_MODES.map((mode) => (
                   <NativeSelectOption key={mode} value={mode}>
                     {municipalityMapScaleModeLabels[mode]}
                   </NativeSelectOption>

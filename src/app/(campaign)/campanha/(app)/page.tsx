@@ -42,7 +42,7 @@ export default async function CampaignHomePage({ searchParams }: CampaignHomePag
     isStaff
       ? loadMunicipalityMapBundle(payload, user, { compare: rawSearchParams.compare })
       : Promise.resolve(null),
-    isStaff ? loadFederalCandidateOptions(payload, user) : Promise.resolve([]),
+    isStaff ? loadFederalCandidateOptions(user) : Promise.resolve([]),
   ])
 
   return (

@@ -1,18 +1,25 @@
+import 'server-only'
+
 import type { Payload } from 'payload'
 
+import { getMunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
 import { BASELINE_TICKET_2022, HISTORICAL_SERIES_YEARS } from '@/lib/electionResults'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import type { CampaignUser } from '@/payload-types'
+import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
 import {
   municipalityElectionGeography,
   type MunicipalityElectionGeography,
 } from '@/utilities/municipalityElectionGeography'
 import {
   loadCandidateVotesByCityZone,
-  loadValidVotesByCityZone,
   sumVotesForGeography,
 } from '@/utilities/municipalityElectoralBaseline'
-import { buildMunicipalitiesByIbgeCode, type MunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
+import type {
+  MunicipalityMapBundle,
+  MunicipalityMapComparison,
+} from '@/utilities/municipalityMapContract'
+import { buildMunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
 import {
   buildMunicipalityListWhere,
   parseMunicipalityListParams,
@@ -25,64 +32,21 @@ import {
   type VoteEstimateScenario,
 } from '@/utilities/voteEstimate'
 import {
-  aggregatePledgesByMunicipality,
   emptyMunicipalityPledgeAggregate,
   resolveMunicipalityStaffVoteTotal,
   type MunicipalityPledgeAggregate,
 } from '@/utilities/votePledgeData'
 
 export type { MunicipalityMapSlugEntry, MunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
-
-export const PLAZA_MAP_YEARS = [...HISTORICAL_SERIES_YEARS, 2026] as const
-export type MunicipalityMapYear = (typeof PLAZA_MAP_YEARS)[number]
-
-export type MunicipalityMapScaleMode = 'absolute' | 'percentValid'
-
-export const PLAZA_MAP_SCALE_MODES = [
-  'percentValid',
-  'absolute',
-] as const satisfies readonly MunicipalityMapScaleMode[]
-
-export const municipalityMapScaleModeLabels: Record<MunicipalityMapScaleMode, string> = {
-  absolute: 'Total (votos)',
-  percentValid: '% dos válidos',
-}
-
-export const municipalityMapYearLabels: Record<MunicipalityMapYear, string> = {
-  2014: '2014 (TSE)',
-  2018: '2018 (TSE)',
-  2022: '2022 (TSE)',
-  2026: '2026 (estimativas)',
-}
-
-export type MunicipalityZoneBreakdownRow = {
-  slug: string
-  name: string
-  votesByYear: Record<string, number>
-  votes2026ByScenario: Record<VoteEstimateScenario, number>
-}
-
-export type MunicipalityMapComparison = {
-  candidateNumber: number
-  candidateName: string
-  /** TSE year (as string) → codarea → (sollaVotes − otherVotes). */
-  diffByYear: Record<string, Record<string, number>>
-}
-
-export type MunicipalityMapBundle = {
-  /** year (as string) → codarea → value. 2026 = cenário médio (central). */
-  valuesByYear: Record<string, Record<string, number>>
-  /** 2026 totals per estimate scenario (codarea → votes). */
-  values2026ByScenario: Record<VoteEstimateScenario, Record<string, number>>
-  /** year (as string) → codarea → votosValidos (federal T1). 2026 reuses 2022. */
-  validVotesByYear: Record<string, Record<string, number>>
-  /** IBGE codarea → accessible municipality slugs for map click navigation. */
-  municipalitiesByIbgeCode: MunicipalitiesByIbgeCode
-  /** Zone municipalities in scope (Salvador/Camaçari) with per-year values. */
-  zoneBreakdown: MunicipalityZoneBreakdownRow[]
-  candidateName: string
-  comparison: MunicipalityMapComparison | null
-}
+// Client components import the map vocabulary from the contract module; the
+// server side re-exports it so data callers have one import surface.
+export type {
+  MunicipalityMapBundle,
+  MunicipalityMapComparison,
+  MunicipalityMapScaleMode,
+  MunicipalityMapYear,
+  MunicipalityZoneBreakdownRow,
+} from '@/utilities/municipalityMapContract'
 
 export type ScopedMunicipality = {
   id: number
@@ -128,25 +92,6 @@ export const scopeMunicipalitiesFromDocs = (docs: ReadonlyArray<ScopedMunicipali
     ]
   })
 
-const loadScopedMunicipalities = async (
-  payload: Payload,
-  user: CampaignUser,
-  state: MunicipalityListState,
-): Promise<ScopedMunicipality[]> => {
-  const result = await payload.find({
-    collection: 'municipality',
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    select: { slug: true, name: true, kind: true, ibgeCode: true, expectedVotes: true },
-    where: buildMunicipalityListWhere(state),
-    user,
-    overrideAccess: false,
-  })
-
-  return scopeMunicipalitiesFromDocs(result.docs)
-}
-
 export const buildMunicipalityMapBundleFromMunicipalities = async (
   payload: Payload,
   user: CampaignUser,
@@ -159,29 +104,17 @@ export const buildMunicipalityMapBundleFromMunicipalities = async (
   const valuesByYear: Record<string, Record<string, number>> = {}
   const validVotesByYear: Record<string, Record<string, number>> = {}
   const zoneVotesBySlug = new Map<string, Record<string, number>>()
-  const sollaVotesByYear = new Map<number, Map<string, number>>()
 
-  const yearLoads = await Promise.all(
-    HISTORICAL_SERIES_YEARS.map(async (year) => {
-      const [votesByCityZone, validByCityZone] = await Promise.all([
-        loadCandidateVotesByCityZone(payload, user, {
-          year,
-          candidateNumber: BASELINE_TICKET_2022.candidate.candidateNumber,
-        }),
-        loadValidVotesByCityZone(payload, user, { year }),
-      ])
-      return { year, votesByCityZone, validByCityZone }
-    }),
-  )
-
-  for (const { year, votesByCityZone, validByCityZone } of yearLoads) {
-    sollaVotesByYear.set(year, votesByCityZone)
+  // Historical years come from the committed artifact (immutable TSE data,
+  // pre-aggregated per municipality) — zero database work.
+  for (const year of HISTORICAL_SERIES_YEARS) {
     const values: Record<string, number> = {}
     const validValues: Record<string, number> = {}
     for (const municipality of municipalities) {
-      const votes = sumVotesForGeography(votesByCityZone, municipality.geography)
+      const baseline = getMunicipalityFederalBaseline(municipality.slug)
+      const votes = baseline.votesByYear[String(year)] ?? 0
       values[municipality.ibgeCode] = (values[municipality.ibgeCode] ?? 0) + votes
-      const valid = sumVotesForGeography(validByCityZone, municipality.geography)
+      const valid = baseline.validVotesByYear[String(year)] ?? 0
       validValues[municipality.ibgeCode] = (validValues[municipality.ibgeCode] ?? 0) + valid
       if (municipality.kind === 'zona') {
         const bySlug = zoneVotesBySlug.get(municipality.slug) ?? {}
@@ -269,10 +202,10 @@ export const buildMunicipalityMapBundleFromMunicipalities = async (
             year,
             candidateNumber: compareCandidate,
           })
-          const sollaVotes = sollaVotesByYear.get(year) ?? new Map<string, number>()
           const values: Record<string, number> = {}
           for (const municipality of municipalities) {
-            const solla = sumVotesForGeography(sollaVotes, municipality.geography)
+            const solla =
+              getMunicipalityFederalBaseline(municipality.slug).votesByYear[String(year)] ?? 0
             const other = sumVotesForGeography(otherVotes, municipality.geography)
             values[municipality.ibgeCode] = (values[municipality.ibgeCode] ?? 0) + (solla - other)
           }
@@ -313,13 +246,15 @@ export const loadMunicipalityMapBundle = async (
   if (user.role === 'leader') return null
 
   const state = parseMunicipalityListParams(searchParams)
-  const municipalities = await loadScopedMunicipalities(payload, user, state)
+  const scope = await loadMunicipalityScope(payload, user, buildMunicipalityListWhere(state))
+  const municipalities = scopeMunicipalitiesFromDocs(scope.municipalities)
   if (municipalities.length === 0) return null
 
-  const pledgeAggregates = await aggregatePledgesByMunicipality(
+  return buildMunicipalityMapBundleFromMunicipalities(
     payload,
-    municipalities.map((municipality) => municipality.id),
+    user,
+    state,
+    municipalities,
+    scope.pledgeAggregates,
   )
-
-  return buildMunicipalityMapBundleFromMunicipalities(payload, user, state, municipalities, pledgeAggregates)
 }

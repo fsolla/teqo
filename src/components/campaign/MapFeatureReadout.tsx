@@ -4,7 +4,7 @@ import type { BahiaMapFeatureInfo } from '@/components/campaign/BahiaMap'
 import { Button } from '@/components/ui/button'
 import { formatElectionNumber } from '@/lib/electionInsights'
 import type { MunicipalityMapNavigation } from '@/utilities/municipalityMapNavigation'
-import type { MunicipalityMapScaleMode } from '@/utilities/municipalityMapData'
+import type { MunicipalityMapScaleMode } from '@/utilities/municipalityMapContract'
 
 type MapFeatureReadoutProps = {
   feature: BahiaMapFeatureInfo | null

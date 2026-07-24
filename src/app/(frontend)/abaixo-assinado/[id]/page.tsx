@@ -3,7 +3,7 @@ import { MetaPixel } from '@/components/MetaPixel'
 import { SignatureCounter } from '@/components/SignatureCounter'
 import { getSignatureCount } from '@/app/(frontend)/actions/getSignatureCount'
 import { normalizeFacebookPixelId } from '@/lib/facebookPixel'
-import { getCachedDocumentById, getDocuments } from '@/utilities/documents'
+import { getCachedDocumentById, getPetitionIds } from '@/utilities/documents'
 import { getCachedGlobal } from '@/utilities/globals'
 import { extractFirstImageFromLexical } from '@/utilities/extractFirstImageFromLexical'
 import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
@@ -26,11 +26,10 @@ const toAbsoluteUrl = (url: string, siteUrl: string) =>
     : `${stripTrailingSlash(siteUrl)}${url.startsWith('/') ? '' : '/'}${url}`
 
 export async function generateStaticParams() {
-  const payload = await getDocuments('petition')
+  // Build-time enumeration only needs the ids — skip relationship population.
+  const ids = await getPetitionIds()
 
-  return payload.docs.map((doc) => ({
-    id: doc.id,
-  }))
+  return ids.map((id) => ({ id }))
 }
 
 export async function generateMetadata({

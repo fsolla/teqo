@@ -196,7 +196,7 @@ const OverviewTab = async ({
 const ElectionsTab = async ({
   slug,
   rawSearchParams,
-  payloadUser: { payload, user },
+  payloadUser: { user },
 }: {
   slug: string
   rawSearchParams: MunicipalityDetailSearchParams
@@ -213,11 +213,11 @@ const ElectionsTab = async ({
   ].slice(0, MAX_COMPARISON_CANDIDATES)
 
   const [baseline, comparisonRows, candidateOptions] = await Promise.all([
-    geography ? loadMunicipalityElectoralBaseline(payload, user, geography) : null,
+    geography ? loadMunicipalityElectoralBaseline(user, geography) : null,
     geography
-      ? loadMunicipalityCandidateComparison(payload, user, geography, compareNumbers)
+      ? loadMunicipalityCandidateComparison(user, geography, compareNumbers)
       : ([] as Awaited<ReturnType<typeof loadMunicipalityCandidateComparison>>),
-    loadFederalCandidateOptions(payload, user),
+    loadFederalCandidateOptions(user),
   ])
 
   return (

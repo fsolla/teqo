@@ -3,6 +3,7 @@ import type { Payload } from 'payload'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
+import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
 import {
   buildMunicipalityListWhere,
   municipalityPageSize,
@@ -20,21 +21,9 @@ import { relationshipId } from '@/utilities/relationship'
 import { loadStateDeputySummaries } from '@/utilities/stateDeputyData'
 import { type VoteEstimateScenario } from '@/utilities/voteEstimate'
 import {
-  aggregatePledgesByMunicipality,
   rollupMunicipalityStaffVotes,
   type MunicipalityPledgeAggregate,
 } from '@/utilities/votePledgeData'
-
-const municipalityListFilteredSelect = {
-  id: true,
-  slug: true,
-  name: true,
-  kind: true,
-  ibgeCode: true,
-  expectedVotes: true,
-  advisors: true,
-  priority: true,
-} as const
 
 export class MunicipalityNotFoundError extends Error {
   override name = 'MunicipalityNotFoundError'
@@ -79,7 +68,7 @@ export const loadMunicipalityListPageBundle = async (
     }
   }
 
-  const [paginatedResult, scopeCount, filteredResult] = await Promise.all([
+  const [paginatedResult, scopeCount, staffScope] = await Promise.all([
     payload.find({
       collection: 'municipality',
       depth: 0,
@@ -97,40 +86,24 @@ export const loadMunicipalityListPageBundle = async (
       user,
       overrideAccess: false,
     }),
-    isStaff
-      ? payload.find({
-          collection: 'municipality',
-          depth: 0,
-          limit: 0,
-          pagination: false,
-          where,
-          select: municipalityListFilteredSelect,
-          user,
-          overrideAccess: false,
-        })
-      : Promise.resolve(null),
+    // Request-scoped shared load (docs + pledge aggregates in one place).
+    isStaff ? loadMunicipalityScope(payload, user, where) : Promise.resolve(null),
   ])
 
   let overview: MunicipalityListOverviewData | null = null
   let pledgeAggregates = new Map<number, MunicipalityPledgeAggregate>()
 
-  if (filteredResult && filteredResult.docs.length > 0) {
-    pledgeAggregates = await aggregatePledgesByMunicipality(
-      payload,
-      filteredResult.docs.map((municipality) => municipality.id),
-    )
-
-    if (isStaff) {
-      const rollup = rollupMunicipalityStaffVotes(filteredResult.docs, pledgeAggregates)
-      overview = {
-        municipalityCount: filteredResult.docs.length,
-        staffVoteTotalByScenario: { ...rollup.staffVoteTotalByScenario },
-        pledgeCount: rollup.pledgeCount,
-        missingEstimateCount: rollup.missingEstimateCount,
-        withAdvisorCount: filteredResult.docs.filter(
-          (municipality) => (municipality.advisors ?? []).length > 0,
-        ).length,
-      }
+  if (staffScope && staffScope.municipalities.length > 0) {
+    pledgeAggregates = staffScope.pledgeAggregates
+    const rollup = rollupMunicipalityStaffVotes(staffScope.municipalities, pledgeAggregates)
+    overview = {
+      municipalityCount: staffScope.municipalities.length,
+      staffVoteTotalByScenario: { ...rollup.staffVoteTotalByScenario },
+      pledgeCount: rollup.pledgeCount,
+      missingEstimateCount: rollup.missingEstimateCount,
+      withAdvisorCount: staffScope.municipalities.filter(
+        (municipality) => (municipality.advisors ?? []).length > 0,
+      ).length,
     }
   }
 

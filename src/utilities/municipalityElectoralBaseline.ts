@@ -1,4 +1,6 @@
-import type { Payload } from 'payload'
+import configPromise from '@payload-config'
+import { unstable_cache } from 'next/cache'
+import { getPayload, type Payload } from 'payload'
 
 import {
   BASELINE_TICKET_2022,
@@ -8,6 +10,7 @@ import {
 } from '@/lib/electionResults'
 import type { CampaignUser, User } from '@/payload-types'
 import { assertCanReadElectionData } from '@/utilities/campaignAccess'
+import { ELECTION_TSE_CACHE_TAG } from '@/utilities/electionCache'
 import {
   municipalityGeographyWhere,
   type MunicipalityElectionGeography,
@@ -36,16 +39,37 @@ export type MunicipalityElectoralBaseline = {
 }
 
 /**
+ * Cross-request cached core — the TSE collections are immutable, so entries
+ * live until the `election-tse` tag is busted after a re-seed. The geography
+ * argument is part of the cache key (JSON-serialized by `unstable_cache`).
+ */
+const loadMunicipalityElectoralBaselineCached = unstable_cache(
+  async (
+    geography: MunicipalityElectionGeography,
+  ): Promise<MunicipalityElectoralBaseline | null> => {
+    const payload = await getPayload({ config: configPromise })
+    return queryMunicipalityElectoralBaseline(payload, geography)
+  },
+  ['municipality-electoral-baseline'],
+  { tags: [ELECTION_TSE_CACHE_TAG] },
+)
+
+/**
  * Candidate (Solla) vote series 2014/2018/2022 + 2022 turnout inside the
  * municipality geography, plus 2022 president/governor ticket votes.
  */
-export const loadMunicipalityElectoralBaseline = async (
-  payload: Payload,
+export const loadMunicipalityElectoralBaseline = (
   user: ElectionReader,
   geography: MunicipalityElectionGeography,
 ): Promise<MunicipalityElectoralBaseline | null> => {
   assertCanReadElectionData(user)
+  return loadMunicipalityElectoralBaselineCached(geography)
+}
 
+const queryMunicipalityElectoralBaseline = async (
+  payload: Payload,
+  geography: MunicipalityElectionGeography,
+): Promise<MunicipalityElectoralBaseline | null> => {
   const [candidateVotes, tallies, presidentVotes, governorVotes] = await Promise.all([
     payload.find({
       collection: 'electionCandidateVote',
