@@ -96,7 +96,7 @@ Componentes:
 ## Dependências
 
 - Nenhuma dura de outro item aberto. Reusa `campaignListUrl.ts`, bundle A9+ (`loadMunicipalityScope` / lista), B9 (células editáveis coexistindo), pending do hardening.
-**Suaves (consumidores):** **A11 ✓** já adicionou keys `name`|`votos` + coluna/leitura sobre este contrato (2026-07-24); **B15** amplia as keys restantes (`region`, `kind`, `trend`, `expectedVotes`, `lastUpdateAt`, `coverage`) e unifica headers. **E9** depois adiciona `deficit` / risco-frescor na fila.
+  **Suaves (consumidores):** **A11 ✓** já adicionou keys `name`|`votos` + coluna/leitura sobre este contrato (2026-07-24); **B15** amplia as keys restantes (`region`, `kind`, `trend`, `expectedVotes`, `lastUpdateAt`, `coverage`) e unifica headers. **B16** ([filtros-no-header-lista-municipios.md](filtros-no-header-lista-municipios.md)) compõe filtro URL no mesmo `TableHead` sem alterar `sort`/`dir`. **E9** depois adiciona `deficit` / risco-frescor na fila.
 
 ## Não escopo
 
@@ -117,6 +117,7 @@ Componentes:
 
 - **Coluna Assessores sortável (por contagem ou nome do 1º).** Revisitar quando: pedido explícito da mesa ou A11/E9 exigirem desempate por rede.
 - **Select "Ordenar por" no desktop** além do header. Revisitar quando: discovery mostrar que o header não é descoberto (improvável) ou A11 quiser atalho sem coluna ainda visível.
+- **Reorder / resize de colunas (drag-and-drop).** Avaliado 2026-07-24 → **fora de escopo** com gatilho — [reordenar-colunas-lista-municipios.md](reordenar-colunas-lista-municipios.md). Não reabrir como B17 sem o gatilho desse plano.
 - **Shared `SortableTableHead` em `components/ui`.** Revisitar quando: 2ª lista de `/campanha` pedir o mesmo padrão.
 
 ## Referências

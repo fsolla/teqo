@@ -31,6 +31,8 @@ Em `/campanha/municipios` (staff), o seletor **Cenário** (`VoteEstimateScenario
 
 A página hoje **embrulha o provider só em torno dos resultados**, de propósito — comentário em `municipios/page.tsx`: troca de cenário não deve re-renderizar os filtros. Pedido de produto (2026-07-24): o Cenário deve ficar **junto dos outros filtros** da página.
 
+> **Nota 2026-07-24 (B16):** [filtros-no-header-lista-municipios.md](filtros-no-header-lista-municipios.md) relocaciona os selects de recorte (`region`/`kind`/…) para o header da tabela no desktop. O destino deste fill-in passa a ser a **barra slim** (busca + Limpar + Cenário), não a fileira completa atual — mesmo componente `MunicipalityFilters`, layout enxuto. Preferir aterrar Cenário **com ou depois** de B16 se ambos forem pegos na mesma janela.
+
 Polish anterior (notebook 2026-07-23) já tinha movido o seletor do mapa → overview; este item completa o agrupamento mental “controles de recorte/leitura da lista”.
 
 ## Objetivos
@@ -44,7 +46,7 @@ Polish anterior (notebook 2026-07-23) já tinha movido o seletor do mapa → ove
 ## Decisões travadas
 
 - **Fill-in com plano próprio (não reabrir A10; não absorver só em R6; não item de trilha B).** Relocação barata, paralelizável, cortável; A10 já entregue a semântica. (2026-07-24, classificação roadmap-item.) **Rejeitado:** fase informal de A10 (mistura entrega fechada com polish de layout); só R6 (atrasa quick win no critique largo); ID B novo (infla grafo por ~½ dia).
-- **Provider envolve filtros + `CampaignListResults` (staff).** Necessário para o seletor viver em `MunicipalityFilters`. Custo: troca de cenário re-renderiza a árvore dos filtros — aceitável (controle local, sem navegação). **Rejeitado:** prop-drill `scenario`/`setScenario` sem provider; dois providers; manter seletor no overview *e* nos filtros (duplicata).
+- **Provider envolve filtros + `CampaignListResults` (staff).** Necessário para o seletor viver em `MunicipalityFilters`. Custo: troca de cenário re-renderiza a árvore dos filtros — aceitável (controle local, sem navegação). **Rejeitado:** prop-drill `scenario`/`setScenario` sem provider; dois providers; manter seletor no overview _e_ nos filtros (duplicata).
 - **Cenário continua fora da URL e fora de `buildMunicipalityFiltersKey` / Limpar.** Alinhado à decisão A10 (Ano/Escala locais; só `compare` na URL do mapa). **Rejeitado:** `?estimate=` neste item; Limpar resetar cenário (mistura recorte URL com lente de leitura).
 - **Hint:** adaptar copy do overview (hoje `VOTE_ESTIMATE_SCENARIO_OVERVIEW_HINT`) para o contexto dos filtros (“Troca o total da visão geral e os votos na lista…”); mapa no Início permanece com o hint próprio. **Rejeitado:** remover o `CampaignInfoHint`.
 - **i18n e naming** (AGENTS.md): identificadores existentes (`VoteEstimateScenarioField`, `MunicipalityEstimateScenarioProvider`); strings “Cenário” / Pessimista / Média / Otimista.
