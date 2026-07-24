@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import config from '@payload-config'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
@@ -111,24 +112,32 @@ export default async function MunicipalityDetailPage({
       ) : null}
 
       {activeTab === 'elections' ? (
-        <ElectionsTab
-          slug={view.slug}
-          rawSearchParams={rawSearchParams}
-          payloadUser={{ payload, user }}
-        />
+        // Streams below the header/tab chrome — the TSE baselines and the
+        // comparison table are the slowest reads on this page.
+        <Suspense fallback={<MunicipalityTabFallback />}>
+          <ElectionsTab
+            slug={view.slug}
+            rawSearchParams={rawSearchParams}
+            payloadUser={{ payload, user }}
+          />
+        </Suspense>
       ) : null}
 
       {activeTab === 'leaderships' ? (
-        <LeadershipsTab municipalityID={view.id} payloadUser={{ payload, user }} />
+        <Suspense fallback={<MunicipalityTabFallback />}>
+          <LeadershipsTab municipalityID={view.id} payloadUser={{ payload, user }} />
+        </Suspense>
       ) : null}
 
       {activeTab === 'updates' ? (
-        <UpdatesTab
-          municipalityID={view.id}
-          municipalitySlug={view.slug}
-          rawSearchParams={rawSearchParams}
-          payloadUser={{ payload, user }}
-        />
+        <Suspense fallback={<MunicipalityTabFallback />}>
+          <UpdatesTab
+            municipalityID={view.id}
+            municipalitySlug={view.slug}
+            rawSearchParams={rawSearchParams}
+            payloadUser={{ payload, user }}
+          />
+        </Suspense>
       ) : null}
 
       {activeTab === 'demands' ? (
@@ -192,6 +201,13 @@ const OverviewTab = async ({
     </div>
   )
 }
+
+const MunicipalityTabFallback = () => (
+  <div aria-hidden="true" className="flex flex-col gap-4">
+    <div className="h-40 w-full animate-pulse rounded-xl border bg-muted/40" />
+    <div className="h-64 w-full animate-pulse rounded-xl border bg-muted/40" />
+  </div>
+)
 
 const ElectionsTab = async ({
   slug,

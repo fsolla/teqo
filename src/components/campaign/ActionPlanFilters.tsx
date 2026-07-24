@@ -1,5 +1,6 @@
 'use client'
 
+import { useCampaignListPending } from '@/components/campaign/CampaignListPending'
 import { useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -81,7 +82,11 @@ export const ActionPlanFilters = ({
   const valuesRef = useRef(initialValues)
   const [values, setValues] = useState(initialValues)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
-  const [isPending, startTransition] = useTransition()
+  const sharedPending = useCampaignListPending()
+  const [isLocalPending, startLocalTransition] = useTransition()
+  // Prefer the page-level boundary so the results region dims together.
+  const isPending = sharedPending?.isPending ?? isLocalPending
+  const startTransition = sharedPending?.startTransition ?? startLocalTransition
 
   const replaceValues = (nextValues: FilterValues) => {
     valuesRef.current = nextValues
@@ -101,7 +106,8 @@ export const ActionPlanFilters = ({
 
   const updateKind = (kind: string) => replaceValues({ ...valuesRef.current, kind })
   const updateStatus = (status: string) => replaceValues({ ...valuesRef.current, status })
-  const updateMunicipality = (municipality: string) => replaceValues({ ...valuesRef.current, municipality })
+  const updateMunicipality = (municipality: string) =>
+    replaceValues({ ...valuesRef.current, municipality })
 
   const clearFilters = () => replaceValues({ kind: '', status: '', municipality: '' })
 

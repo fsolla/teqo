@@ -1,20 +1,18 @@
 import { ArrowRightIcon } from 'lucide-react'
 import Link from 'next/link'
 
+import type { ReactNode } from 'react'
+
 import { CampaignMetricStrip } from '@/components/campaign/CampaignMetricStrip'
 import {
   CampaignPageShell,
   campaignPrioritySurfaceClassName,
 } from '@/components/campaign/CampaignPageShell'
-import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/MunicipalityEstimateScenarioContext'
-import { MunicipalityMapPanelDynamic } from '@/components/campaign/MunicipalityMapPanelDynamic'
 import { RecentlyVisitedCard } from '@/components/campaign/RecentlyVisitedCard'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { formatElectionNumber } from '@/lib/electionInsights'
 import type { StaffDashboardView } from '@/utilities/campaignDashboardData'
-import type { FederalCandidateOption } from '@/utilities/electionCandidateOptions'
-import type { MunicipalityMapBundle } from '@/utilities/municipalityMapContract'
 import {
   formatVoteEstimateEndpointsLabel,
   voteEstimateScenarioLabels,
@@ -28,13 +26,12 @@ const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
 export const CampaignDashboard = ({
   view,
   userName,
-  mapBundle = null,
-  candidateOptions = [],
+  mapSlot = null,
 }: {
   view: StaffDashboardView
   userName: string
-  mapBundle?: MunicipalityMapBundle | null
-  candidateOptions?: FederalCandidateOption[]
+  /** Server-streamed map section (composition keeps this component map-agnostic). */
+  mapSlot?: ReactNode
 }) => (
   <CampaignPageShell>
     <header className="flex flex-col gap-1">
@@ -46,11 +43,7 @@ export const CampaignDashboard = ({
       </p>
     </header>
 
-    {mapBundle ? (
-      <MunicipalityEstimateScenarioProvider>
-        <MunicipalityMapPanelDynamic bundle={mapBundle} candidateOptions={candidateOptions} />
-      </MunicipalityEstimateScenarioProvider>
-    ) : null}
+    {mapSlot}
 
     <section
       aria-label="Indicadores das Praças"

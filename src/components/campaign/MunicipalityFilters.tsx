@@ -1,5 +1,6 @@
 'use client'
 
+import { useCampaignListPending } from '@/components/campaign/CampaignListPending'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
 
@@ -29,7 +30,11 @@ type MunicipalityFiltersProps = {
 export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFiltersProps) => {
   const router = useRouter()
   const [search, setSearch] = useState(state.q ?? '')
-  const [isPending, startTransition] = useTransition()
+  const sharedPending = useCampaignListPending()
+  const [isLocalPending, startLocalTransition] = useTransition()
+  // Prefer the page-level boundary so the results region dims together.
+  const isPending = sharedPending?.isPending ?? isLocalPending
+  const startTransition = sharedPending?.startTransition ?? startLocalTransition
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(
@@ -54,7 +59,8 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
       page: 1,
       q: normalizedText(patch.q !== undefined ? patch.q : search),
     }
-    if (buildMunicipalityFiltersKey(merged) === buildMunicipalityFiltersKey({ ...state, page: 1 })) return
+    if (buildMunicipalityFiltersKey(merged) === buildMunicipalityFiltersKey({ ...state, page: 1 }))
+      return
 
     startTransition(() => {
       router.replace(buildMunicipalityListHref(merged, 1), { scroll: false })
@@ -73,12 +79,12 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
 
   const hasActiveFilters = Boolean(
     state.q ||
-      normalizedText(search) ||
-      state.region ||
-      state.kind ||
-      state.coverage ||
-      state.priority ||
-      state.trend,
+    normalizedText(search) ||
+    state.region ||
+    state.kind ||
+    state.coverage ||
+    state.priority ||
+    state.trend,
   )
 
   return (
@@ -140,7 +146,9 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
             className="min-h-11 w-full"
           >
             <NativeSelectOption value="">Todos</NativeSelectOption>
-            {(Object.keys(municipalityKindLabels) as Array<keyof typeof municipalityKindLabels>).map((kind) => (
+            {(
+              Object.keys(municipalityKindLabels) as Array<keyof typeof municipalityKindLabels>
+            ).map((kind) => (
               <NativeSelectOption key={kind} value={kind}>
                 {municipalityKindLabels[kind]}
               </NativeSelectOption>
@@ -156,7 +164,8 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
                 value={state.coverage ?? ''}
                 onChange={(event) =>
                   commitNavigation({
-                    coverage: (event.target.value || undefined) as MunicipalityListState['coverage'],
+                    coverage: (event.target.value ||
+                      undefined) as MunicipalityListState['coverage'],
                   })
                 }
                 className="min-h-11 w-full"

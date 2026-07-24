@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState, useTransition } from 'react'
 
 import { BahiaMap, type BahiaMapFeatureInfo } from '@/components/campaign/BahiaMap'
 import { ChoroplethLegend } from '@/components/campaign/ChoroplethLegend'
@@ -90,7 +90,10 @@ export const MunicipalityMapPanel = ({
     return computeChoroplethMax(displayValues, fillMode, percentScaleActive ? 1 : undefined)
   }, [comparisonActive, displayValues, percentScaleActive])
 
-  const scopedKeys = useMemo(() => Object.keys(bundle.municipalitiesByIbgeCode), [bundle.municipalitiesByIbgeCode])
+  const scopedKeys = useMemo(
+    () => Object.keys(bundle.municipalitiesByIbgeCode),
+    [bundle.municipalitiesByIbgeCode],
+  )
 
   const metricLabel = useMemo(() => {
     if (comparisonActive) {
@@ -107,11 +110,26 @@ export const MunicipalityMapPanel = ({
     return `votos de ${bundle.candidateName} em ${year}`
   }, [bundle.candidateName, comparisonActive, estimateScenario, percentScaleActive, year])
 
+  // Optimistic on the control, honest pending on the map: the comparison data
+  // is a server round trip, so the select flips at once and the map region
+  // dims until the refreshed bundle arrives.
+  const [isComparePending, startCompareTransition] = useTransition()
+  const [optimisticCompare, setOptimisticCompare] = useState<string | null>(null)
+  const compareSelectValue =
+    isComparePending && optimisticCompare !== null
+      ? optimisticCompare
+      : comparison
+        ? String(comparison.candidateNumber)
+        : ''
+
   const setCompare = (candidateNumber: string) => {
+    setOptimisticCompare(candidateNumber)
     const params = new URLSearchParams(searchParams.toString())
     if (candidateNumber) params.set('compare', candidateNumber)
     else params.delete('compare')
-    router.replace(`${pathname}${params.size ? `?${params.toString()}` : ''}`, { scroll: false })
+    startCompareTransition(() => {
+      router.replace(`${pathname}${params.size ? `?${params.toString()}` : ''}`, { scroll: false })
+    })
   }
 
   const handleFeatureSelect = useCallback((info: BahiaMapFeatureInfo | null) => {
@@ -218,7 +236,7 @@ export const MunicipalityMapPanel = ({
             <FieldLabel htmlFor="municipality-map-compare">Comparar com</FieldLabel>
             <NativeSelect
               id="municipality-map-compare"
-              value={comparison ? String(comparison.candidateNumber) : ''}
+              value={compareSelectValue}
               onChange={(event) => setCompare(event.target.value)}
               className="min-h-11 w-full"
             >
@@ -237,100 +255,111 @@ export const MunicipalityMapPanel = ({
         </div>
       </div>
 
-      {comparisonActive && comparison ? (
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <span className="shrink-0 text-xs text-muted-foreground">
-              +{comparison.candidateName}
-            </span>
-            <div
-              className="h-2.5 min-w-0 flex-1 rounded-full ring-1 ring-foreground/10"
-              style={{ background: divergingGradientCss }}
-              role="img"
-              aria-label={`Escala divergente: azul onde ${comparison.candidateName} lidera, branco no empate, vermelho onde ${bundle.candidateName} lidera`}
-            />
-            <span className="shrink-0 text-xs text-muted-foreground">+{bundle.candidateName}</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Vermelho: {bundle.candidateName} na frente · Branco: empate · Azul:{' '}
-            {comparison.candidateName} na frente. Comparação usa diferença absoluta.
-          </p>
-        </div>
-      ) : displayMax > 0 ? (
-        <ChoroplethLegend
-          max={displayMax}
-          metricLabel={metricLabel}
-          formatMax={percentScaleActive ? () => '100%' : undefined}
-        />
-      ) : (
-        <p className="text-sm text-muted-foreground">Sem dados para este ano no seu escopo.</p>
-      )}
-
-      {comparison && year === 2026 ? (
-        <p className="text-sm text-muted-foreground">
-          A comparação usa os anos com dados TSE (2014, 2018, 2022). Escolha um destes anos para ver
-          o mapa comparativo.
+      <div
+        className="flex flex-col gap-4 transition-opacity data-[pending=true]:opacity-60"
+        data-pending={isComparePending || undefined}
+        aria-busy={isComparePending}
+      >
+        <p className="sr-only" aria-live="polite">
+          {isComparePending ? 'Atualizando comparação…' : ''}
         </p>
-      ) : null}
+        {comparisonActive && comparison ? (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 text-xs text-muted-foreground">
+                +{comparison.candidateName}
+              </span>
+              <div
+                className="h-2.5 min-w-0 flex-1 rounded-full ring-1 ring-foreground/10"
+                style={{ background: divergingGradientCss }}
+                role="img"
+                aria-label={`Escala divergente: azul onde ${comparison.candidateName} lidera, branco no empate, vermelho onde ${bundle.candidateName} lidera`}
+              />
+              <span className="shrink-0 text-xs text-muted-foreground">
+                +{bundle.candidateName}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Vermelho: {bundle.candidateName} na frente · Branco: empate · Azul:{' '}
+              {comparison.candidateName} na frente. Comparação usa diferença absoluta.
+            </p>
+          </div>
+        ) : displayMax > 0 ? (
+          <ChoroplethLegend
+            max={displayMax}
+            metricLabel={metricLabel}
+            formatMax={percentScaleActive ? () => '100%' : undefined}
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">Sem dados para este ano no seu escopo.</p>
+        )}
 
-      <BahiaMap
-        mode="municipality"
-        values={displayValues}
-        scaleMax={displayMax > 0 ? displayMax : undefined}
-        fillMode={comparisonActive ? 'diverging' : 'sequential'}
-        fitToKeys={scopedKeys}
-        interactiveKeys={scopedKeys}
-        selectedKey={selectedFeature?.key ?? null}
-        onFeatureSelect={handleFeatureSelect}
-        onFeatureActivate={handleFeatureActivate}
-        ariaLabel={
-          comparisonActive && comparison
-            ? `Mapa comparativo entre ${bundle.candidateName} e ${comparison.candidateName} por município`
-            : `Mapa da Bahia com ${metricLabel} por município`
-        }
-      />
-
-      <MapFeatureReadout
-        feature={selectedFeature}
-        metricValue={selectedMetricValue}
-        rawMetricValue={selectedRawMetricValue}
-        metricLabel={metricLabel}
-        scaleMode={comparisonActive ? 'absolute' : scaleMode}
-        comparisonActive={comparisonActive}
-        navigation={selectedNavigation}
-      />
-
-      {bundle.zoneBreakdown.length > 0 && !comparisonActive ? (
-        <div id="municipality-zone-breakdown" className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium">Praças por zona eleitoral</h3>
+        {comparison && year === 2026 ? (
           <p className="text-sm text-muted-foreground">
-            Zonas não têm polígono oficial — Salvador e Camaçari aparecem agregadas no mapa e
-            detalhadas aqui.
+            A comparação usa os anos com dados TSE (2014, 2018, 2022). Escolha um destes anos para
+            ver o mapa comparativo.
           </p>
-          <ul className="grid gap-1 sm:grid-cols-2">
-            {bundle.zoneBreakdown.map((zone) => (
-              <li
-                key={zone.slug}
-                className="flex items-center justify-between gap-2 rounded-md border px-3 py-2"
-              >
-                <Link
-                  href={`/campanha/municipios/${zone.slug}`}
-                  className="min-h-11 content-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+        ) : null}
+
+        <BahiaMap
+          mode="municipality"
+          values={displayValues}
+          scaleMax={displayMax > 0 ? displayMax : undefined}
+          fillMode={comparisonActive ? 'diverging' : 'sequential'}
+          fitToKeys={scopedKeys}
+          interactiveKeys={scopedKeys}
+          selectedKey={selectedFeature?.key ?? null}
+          onFeatureSelect={handleFeatureSelect}
+          onFeatureActivate={handleFeatureActivate}
+          ariaLabel={
+            comparisonActive && comparison
+              ? `Mapa comparativo entre ${bundle.candidateName} e ${comparison.candidateName} por município`
+              : `Mapa da Bahia com ${metricLabel} por município`
+          }
+        />
+
+        <MapFeatureReadout
+          feature={selectedFeature}
+          metricValue={selectedMetricValue}
+          rawMetricValue={selectedRawMetricValue}
+          metricLabel={metricLabel}
+          scaleMode={comparisonActive ? 'absolute' : scaleMode}
+          comparisonActive={comparisonActive}
+          navigation={selectedNavigation}
+        />
+
+        {bundle.zoneBreakdown.length > 0 && !comparisonActive ? (
+          <div id="municipality-zone-breakdown" className="flex flex-col gap-2">
+            <h3 className="text-sm font-medium">Praças por zona eleitoral</h3>
+            <p className="text-sm text-muted-foreground">
+              Zonas não têm polígono oficial — Salvador e Camaçari aparecem agregadas no mapa e
+              detalhadas aqui.
+            </p>
+            <ul className="grid gap-1 sm:grid-cols-2">
+              {bundle.zoneBreakdown.map((zone) => (
+                <li
+                  key={zone.slug}
+                  className="flex items-center justify-between gap-2 rounded-md border px-3 py-2"
                 >
-                  {zone.name}
-                </Link>
-                <span className="text-sm tabular-nums text-muted-foreground">
-                  {formatElectionNumber(
-                    year === 2026
-                      ? (zone.votes2026ByScenario[estimateScenario] ?? 0)
-                      : (zone.votesByYear[String(year)] ?? 0),
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+                  <Link
+                    href={`/campanha/municipios/${zone.slug}`}
+                    className="min-h-11 content-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {zone.name}
+                  </Link>
+                  <span className="text-sm tabular-nums text-muted-foreground">
+                    {formatElectionNumber(
+                      year === 2026
+                        ? (zone.votes2026ByScenario[estimateScenario] ?? 0)
+                        : (zone.votesByYear[String(year)] ?? 0),
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
     </section>
   )
 }

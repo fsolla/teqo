@@ -13,8 +13,8 @@
 | Phase | Content | Skill phases | Status | Date |
 | ----- | ------- | ------------ | ------ | ---- |
 | 0 | Security lockdown: collection access defaults, leader route gates, broken leader-supporter create, candidate alignment | — (P0 pre-work) | done | 2026-07-23 |
-| 1 | Tooling gate: knip + dead code, CI, tsconfig, zero lint warnings, `as never` ban, docs artifacts | 1 (net) + 2 (readability) + 6 (habits) | in-progress | 2026-07-23 |
-| 2 | Caching: React `cache()` dedup, committed election-aggregate artifact, `unstable_cache`, select/depth trims | 8 (sizing) | pending | |
+| 1 | Tooling gate: knip + dead code, CI, tsconfig, zero lint warnings, `as never` ban, docs artifacts | 1 (net) + 2 (readability) + 6 (habits) | done | 2026-07-23 |
+| 2 | Caching: React `cache()` dedup, committed election-aggregate artifact, `unstable_cache`, select/depth trims | 8 (sizing) | done | 2026-07-23 |
 | 3 | Loading feedback: task-toggle revalidation bug, map compare transition, result-region pending, Suspense streaming | — (UX correctness) | pending | |
 | 4 | Client boundary/state: map hover isolation, bundle slimming, provider narrowing, composition splits | 4 (deep modules, UI) | pending | |
 | 5 | Structure: split campaignAccess + supporter actions, dedupe clones, utilities organization, finish rename | 3 (refactoring) + 4 (deep modules) | pending | |
