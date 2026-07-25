@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { getCachedGlobal } from '@/utilities/globals'
+import { getCachedGlobal } from '@/utilities/globalReads'
 import Link from 'next/link'
 import { FacebookIcon, GlobeIcon, InstagramIcon, WhatsAppIcon, YoutubeIcon } from './socialIcons'
 

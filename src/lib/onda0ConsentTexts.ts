@@ -54,8 +54,8 @@ const consentFooter = `Mais informações: ${contactChannel} Consulte também a 
 const consentDefinitions: Record<Onda0ConsentKey, string[]> = {
   [ONDA0_CONSENT_KEYS.leadershipAutofill]: [
     ONDA0_PROVISIONAL_BANNER,
-    'Finalidade: registrar e atualizar seus dados de contato (nome, telefone, e-mail, setor) para participação como liderança de campanha vinculada às Praças em que atua, incluindo acesso à área interna /campanha quando aplicável.',
-    'Dados tratados: nome, telefone, e-mail, setor e vínculo com as Praças e organizações em que atua. Não coletamos dados sensíveis neste fluxo.',
+    'Finalidade: registrar e atualizar seus dados de contato (nome, telefone, e-mail, setor) para participação como liderança de campanha vinculada aos Municípios em que atua, incluindo acesso à área interna /campanha quando aplicável.',
+    'Dados tratados: nome, telefone, e-mail, setor e vínculo com os Municípios e organizações em que atua. Não coletamos dados sensíveis neste fluxo.',
     'Base legal: consentimento do titular (art. 7º, I, e art. 8º da Lei nº 13.709/2018 — LGPD).',
     'Compartilhamento: equipe autorizada da campanha e prestadores de hospedagem/processamento necessários à operação da plataforma, sem comercialização dos dados.',
     'Prazo de retenção: enquanto durar o vínculo de liderança e pelos prazos legais aplicáveis após o encerramento.',
@@ -63,7 +63,7 @@ const consentDefinitions: Record<Onda0ConsentKey, string[]> = {
   ],
   [ONDA0_CONSENT_KEYS.supporterRegistration]: [
     ONDA0_PROVISIONAL_BANNER,
-    'Finalidade: registrar seu apoio declarado à campanha de Jorge Solla, permitindo contato organizado pela equipe de campanha e eventual vinculação a uma Praça.',
+    'Finalidade: registrar seu apoio declarado à campanha de Jorge Solla, permitindo contato organizado pela equipe de campanha e eventual vinculação a um Município.',
     'Dados tratados: nome, telefone, e-mail (quando informado), município/território e observações operacionais inseridas pela equipe.',
     'Base legal: consentimento do titular (art. 7º, I, e art. 8º da LGPD).',
     'Compartilhamento: equipe autorizada da campanha; não há venda ou cessão a terceiros para fins comerciais.',
@@ -99,7 +99,7 @@ export const ONDA0_PRIVACY_POLICY_BODY: LexicalRoot = buildLexicalFromParagraphs
   ONDA0_PROVISIONAL_BANNER,
   'Esta Política de Privacidade descreve como a campanha de Jorge Solla (controlador) trata dados pessoais por meio do site público e da ferramenta interna /campanha (plataforma Teqo).',
   'Dados que podemos tratar: identificação e contato (nome, telefone, e-mail), dados territoriais de apoio, registros de consentimento, dados operacionais de campanha e, quando separadamente consentido, intenção de voto (dado sensível — art. 11 da LGPD).',
-  'Finalidades: organização das Praças da campanha, cadastro de apoiadores, comunicação com lideranças e equipe, operação de agenda e inteligência eleitoral interna, sempre conforme a finalidade informada no momento da coleta.',
+  'Finalidades: organização dos Municípios da campanha, cadastro de apoiadores, comunicação com lideranças e equipe, operação de agenda e inteligência eleitoral interna, sempre conforme a finalidade informada no momento da coleta.',
   'Bases legais: consentimento (arts. 7º e 8º da LGPD) e, para dado sensível de intenção de voto, consentimento específico e destacado (art. 11, I).',
   'Compartilhamento: não vendemos dados. Prestadores de tecnologia (hospedagem, banco de dados) atuam como operadores sob nossas instruções.',
   'Direitos do titular (art. 18 LGPD): confirmação de tratamento, acesso, correção, anonimização, portabilidade, eliminação e revogação de consentimento, mediante solicitação.',

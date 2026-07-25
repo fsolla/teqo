@@ -6,7 +6,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
-import { getCachedGlobal } from '@/utilities/globals'
+import { getCachedGlobal } from '@/utilities/globalReads'
 import Link from 'next/link'
 import { Fragment } from 'react'
 import { SocialLinks } from './socialLinks'

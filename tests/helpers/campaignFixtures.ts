@@ -378,6 +378,24 @@ export class CampaignFixtures {
     return value
   }
 
+  /**
+   * Schema-valid unique person name. The contact/leadership name schemas
+   * accept letters only (with single spaces/hyphens between words), so the
+   * regular `value()` marker — uuid digits plus hyphens glued to them —
+   * fails zod validation when a test feeds it through a real action. Digits
+   * are transliterated to letters to keep per-run uniqueness, and the name
+   * registers as a marker so cleanup sweeps still recognize the row.
+   */
+  personName(prefix: string): string {
+    this.counter += 1
+    const letterized = `${this.runID}${this.counter}`
+      .replaceAll('-', '')
+      .replaceAll(/[0-9]/g, (digit) => 'abcdefghij'[Number(digit)]!)
+    const name = `${prefix} ${letterized}`
+    this.markers.add(name)
+    return name
+  }
+
   phone(): string {
     const digest = createHash('sha256').update(this.value('phone')).digest('hex')
     const subscriber = (BigInt(`0x${digest.slice(0, 12)}`) % 90_000_000n) + 10_000_000n

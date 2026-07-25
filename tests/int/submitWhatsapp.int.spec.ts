@@ -44,7 +44,7 @@ describe('submitWhatsapp (consent by stable key)', () => {
 
     await expect(
       submitWhatsapp({
-        name: 'Contato Whatsapp',
+        name: campaignFixtures().personName('Contato'),
         email: `${campaignFixtures().value('whats')}@example.com`,
         phone: campaignFixtures().phone(),
         state: 'BA',
@@ -59,7 +59,7 @@ describe('submitWhatsapp (consent by stable key)', () => {
     const phone = fixtures.phone()
 
     const result = await submitWhatsapp({
-      name: 'Contato Whatsapp',
+      name: fixtures.personName('Contato'),
       email: `${fixtures.value('whats')}@example.com`,
       phone,
       state: 'BA',

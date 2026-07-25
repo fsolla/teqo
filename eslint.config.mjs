@@ -4,6 +4,12 @@ import checkFile from 'eslint-plugin-check-file'
 import { globalIgnores } from 'eslint/config'
 import { dirname } from 'path'
 import { fileURLToPath } from 'url'
+import {
+  legacyCamelCaseFilenameIgnores,
+  legacyComponentFilenameIgnores,
+  legacyComponentSyntaxIgnores,
+  legacyFrameworkExportIgnores,
+} from './eslint-legacy-ignores.mjs'
 import { localRules } from './eslint-local-rules.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -17,46 +23,25 @@ const frameworkComponentFiles = [
   'src/app/**/{page,layout,loading,error,not-found,template,default,global-error}.tsx',
 ]
 
-// These predate the naming convention. Keep them linted by Next's rules while
-// requiring new component files to use PascalCase.
-const legacyComponentFilenameIgnores = [
-  'src/components/campaign/shell/campaign-logo.tsx',
-  'src/components/socialIcons.tsx',
-  'src/components/socialLinks.tsx',
-  'src/components/ui/breadcrumb.tsx',
-  'src/components/ui/button.tsx',
-  'src/components/ui/card.tsx',
-  'src/components/ui/combobox.tsx',
-  'src/components/ui/dialog.tsx',
-  'src/components/ui/field.tsx',
-  'src/components/ui/input-group.tsx',
-  'src/components/ui/input.tsx',
-  'src/components/ui/label.tsx',
-  'src/components/ui/native-select.tsx',
-  'src/components/ui/select.tsx',
-  'src/components/ui/separator.tsx',
-  'src/components/ui/skeleton.tsx',
-  'src/components/ui/textarea.tsx',
-  'src/components/ui/tooltip.tsx',
-]
+// `as never` silences every type check on the expression (worse than `any`).
+// Fix the types instead; a justified eslint-disable comment is the only
+// sanctioned escape hatch.
+const noAsNeverCast = {
+  selector: 'TSAsExpression > TSNeverKeyword',
+  message:
+    'Do not cast with `as never` — it disables type checking entirely. Fix the types or use a narrowly-typed helper.',
+}
 
-const legacyFrameworkExportIgnores = [
-  'src/app/(payload)/admin/\\[\\[...segments\\]\\]/not-found.tsx',
-  'src/app/(payload)/admin/\\[\\[...segments\\]\\]/page.tsx',
-  'src/app/(payload)/layout.tsx',
-]
-
-const legacyComponentSyntaxIgnores = [
-  'src/components/StateSelect.tsx',
-  'src/components/ThemeProvider.tsx',
-]
-
-const legacyCamelCaseFilenameIgnores = [
-  'src/lib/schemas/campaign-login.ts',
-  'src/lib/schemas/petition-form.ts',
-  'src/lib/schemas/whatsapp-form.ts',
-  'tests/int/petition-page-layout.int.spec.ts',
-]
+// Consent documents are resolved by stable key, never by hardcoded id (ids
+// differ per environment and the lookup must fail closed). History:
+// `consent: 2` shipped in submitWhatsapp and needed a data migration
+// (20260725_170000) to untangle. Source-only: tests legitimately forge
+// numeric consent ids to prove schemas strip mass-assigned fields.
+const noHardcodedConsentId = {
+  selector: "Property[key.name='consent'][value.type='Literal'][value.raw=/^[0-9]+$/]",
+  message:
+    'Never hardcode a Consent document id — resolve it by stable key via requireConsentByKey (keys in src/lib/campaignConsentKeys.ts).',
+}
 
 const eslintConfig = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
@@ -132,13 +117,30 @@ const eslintConfig = [
     },
   },
   {
-    // Catch Next.js invalid-use-server-value before `next build` (Vercel).
-    files: ['src/**/*.{ts,tsx}'],
-    plugins: {
-      local: localRules,
-    },
+    // src/lib is the pure, client-safe layer (docs/ARCHITECTURE.md): it must
+    // never depend on Payload/Next server code, on utilities/, or on higher
+    // layers. Sharing types across the boundary is always fine.
+    files: ['src/lib/**/*.{ts,tsx}'],
     rules: {
-      'local/use-server-async-exports': 'error',
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/utilities/**', '@/components/**', '@/app/**'],
+              message:
+                'src/lib is the pure layer — it must not depend on utilities/components/app. Move the pure logic into lib/ or this module into utilities/.',
+              allowTypeImports: true,
+            },
+            {
+              group: ['payload', 'payload/**', '@payload-config', 'next', 'next/**'],
+              message:
+                'src/lib must stay Payload/Next-free. Server-coupled code lives in src/utilities (marked server-only).',
+              allowTypeImports: true,
+            },
+          ],
+        },
+      ],
     },
   },
   {
@@ -155,17 +157,21 @@ const eslintConfig = [
           varsIgnorePattern: '^_',
         },
       ],
-      // `as never` silences every type check on the expression (worse than
-      // `any`). Fix the types instead; a justified eslint-disable comment is
-      // the only sanctioned escape hatch.
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: 'TSAsExpression > TSNeverKeyword',
-          message:
-            'Do not cast with `as never` — it disables type checking entirely. Fix the types or use a narrowly-typed helper.',
-        },
-      ],
+      'no-restricted-syntax': ['error', noAsNeverCast],
+    },
+  },
+  {
+    // Catch Next.js invalid-use-server-value before `next build` (Vercel).
+    // MUST come after the global no-restricted-syntax block: for the same
+    // rule, the last matching config object wins wholesale, so this src-only
+    // widening (as-never + consent-id ban) would otherwise be overridden.
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: {
+      local: localRules,
+    },
+    rules: {
+      'local/use-server-async-exports': 'error',
+      'no-restricted-syntax': ['error', noAsNeverCast, noHardcodedConsentId],
     },
   },
   {

@@ -2,9 +2,9 @@ import type { Crumb } from '@/components/SiteHeader'
 import { SiteHeader } from '@/components/SiteHeader'
 import { Badge } from '@/components/ui/Badge'
 import type { Media, Post } from '@/payload-types'
-import { getCachedDocumentById } from '@/utilities/documents'
+import { getCachedDocumentById } from '@/utilities/documentReads'
 import { extractFirstImageFromLexical } from '@/utilities/extractFirstImageFromLexical'
-import { getCachedGlobal } from '@/utilities/globals'
+import { getCachedGlobal } from '@/utilities/globalReads'
 import {
   POST_TYPE_LABELS,
   formatPostDate,

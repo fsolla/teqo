@@ -1,4 +1,4 @@
-import { getCachedGlobal } from '@/utilities/globals'
+import { getCachedGlobal } from '@/utilities/globalReads'
 import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
