@@ -25,7 +25,7 @@ import {
   parseMunicipalityListParams,
   type MunicipalityListSearchParams,
   type MunicipalityListState,
-} from '@/utilities/municipalityUi'
+} from '@/utilities/municipalityListUrl'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   VOTE_ESTIMATE_SCENARIOS,

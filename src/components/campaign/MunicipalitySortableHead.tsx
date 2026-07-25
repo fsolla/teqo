@@ -8,16 +8,18 @@ import { MunicipalityHeaderFilter } from '@/components/campaign/MunicipalityHead
 import { MunicipalityHoverTooltip } from '@/components/campaign/MunicipalityHoverTooltip'
 import { TableHead } from '@/components/ui/Table'
 import { cn } from '@/lib/utils'
+import type {
+  MunicipalityFilterOption,
+  MunicipalityFilterParam,
+} from '@/utilities/municipalityListFilters'
 import {
   buildMunicipalitySortHref,
   defaultMunicipalityListSortDir,
   municipalityListSortLabels,
   resolveMunicipalityListSort,
-  type MunicipalityFilterOption,
-  type MunicipalityFilterParam,
   type MunicipalityListSortKey,
   type MunicipalityListState,
-} from '@/utilities/municipalityUi'
+} from '@/utilities/municipalityListUrl'
 
 type MunicipalitySortableHeadProps = {
   state: MunicipalityListState
@@ -27,7 +29,8 @@ type MunicipalitySortableHeadProps = {
   className?: string
   align?: 'left' | 'center' | 'right'
   filterParam?: MunicipalityFilterParam
-  filterOptions?: MunicipalityFilterOption[]
+  /** Pairs, or bare catalog slugs labeled on the client (B16+ payload trim). */
+  filterOptions?: MunicipalityFilterOption[] | readonly string[]
   showPriorityFilter?: boolean
 }
 

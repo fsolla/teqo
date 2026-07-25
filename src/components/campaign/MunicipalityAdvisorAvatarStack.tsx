@@ -2,7 +2,7 @@ import { CircleAlertIcon } from 'lucide-react'
 
 import { Avatar, AvatarFallback } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
-import { municipalityListCoverageLabels } from '@/utilities/municipalityUi'
+import { municipalityListCoverageLabels } from '@/utilities/municipalityLabels'
 
 export const campaignUserInitials = (name: string): string =>
   name

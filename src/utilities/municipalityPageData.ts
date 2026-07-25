@@ -17,13 +17,13 @@ import {
   buildMunicipalityListWhere,
   municipalityPageSize,
   parseMunicipalityListParams,
-  resolveMunicipalityLastSignalAt,
   resolveMunicipalityListSort,
   type MunicipalityListSearchParams,
   type MunicipalityListState,
   type MunicipalityListSortDirection,
   type MunicipalityListSortKey,
-} from '@/utilities/municipalityUi'
+} from '@/utilities/municipalityListUrl'
+import { resolveMunicipalityLastSignalAt } from '@/utilities/municipalitySignal'
 import {
   municipalityListSelect,
   toMunicipalityDetailViewModel,
@@ -101,11 +101,12 @@ const loadMunicipalityListFilterFacets = async (
   payload: Payload,
   user: CampaignUser,
   state: MunicipalityListState,
-  loadedScope: { where: Where; rows: MunicipalityFacetRow[] } | null,
+  /** The scope read is a PROMISE so the facets can join the page's main `Promise.all` (B16+). */
+  loadedScope: { where: Where; rows: Promise<MunicipalityFacetRow[]> } | null,
 ): Promise<MunicipalityListFilterFacets> => {
   const rowsByWhere = new Map<string, Promise<MunicipalityFacetRow[]>>()
   if (loadedScope) {
-    rowsByWhere.set(JSON.stringify(loadedScope.where), Promise.resolve(loadedScope.rows))
+    rowsByWhere.set(JSON.stringify(loadedScope.where), loadedScope.rows)
   }
   const facetRows = (omit: Partial<MunicipalityListState>): Promise<MunicipalityFacetRow[]> => {
     const where = buildMunicipalityListWhere({ ...state, ...omit })
@@ -291,7 +292,12 @@ export const loadMunicipalityListPageBundle = async (
         }),
   })
 
-  const [listResult, scopeCount, staffScope] = await Promise.all([
+  // Request-scoped shared load (docs + pledge aggregates in one place).
+  const staffScopePromise = isStaff
+    ? loadMunicipalityScope(payload, user, where)
+    : Promise.resolve(null)
+
+  const [listResult, scopeCount, staffScope, filterFacets] = await Promise.all([
     listQuery,
     payload.count({
       collection: 'municipality',
@@ -299,16 +305,18 @@ export const loadMunicipalityListPageBundle = async (
       user,
       overrideAccess: false,
     }),
-    // Request-scoped shared load (docs + pledge aggregates in one place).
-    isStaff ? loadMunicipalityScope(payload, user, where) : Promise.resolve(null),
+    staffScopePromise,
+    // Joins the same round of reads: its seed key derives from `where`
+    // synchronously, and the scope rows arrive as a promise (B16+).
+    loadMunicipalityListFilterFacets(
+      payload,
+      user,
+      state,
+      isStaff
+        ? { where, rows: staffScopePromise.then((scope) => scope?.municipalities ?? []) }
+        : null,
+    ),
   ])
-
-  const filterFacets = await loadMunicipalityListFilterFacets(
-    payload,
-    user,
-    state,
-    staffScope ? { where, rows: staffScope.municipalities } : null,
-  )
 
   let overview: MunicipalityListOverviewData | null = null
   let pledgeAggregates = new Map<number, MunicipalityPledgeAggregate>()

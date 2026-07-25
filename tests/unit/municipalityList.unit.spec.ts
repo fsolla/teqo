@@ -1,31 +1,37 @@
 import { describe, expect, it } from 'vitest'
 
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
+import { formatMunicipalityConcentrationHint } from '@/utilities/municipalityLabels'
 import {
   applyMunicipalityKindFilter,
   buildMunicipalityFilterHref,
-  buildMunicipalityListHref,
-  buildMunicipalityListWhere,
-  buildMunicipalitySortHref,
+  buildMunicipalityFilterOptionHref,
   formatMunicipalityActiveFiltersSummary,
-  formatMunicipalityConcentrationHint,
-  formatMunicipalityListSortSummary,
-  formatMunicipalitySignalAgeLabel,
   isMunicipalityColumnFilterActive,
-  isMunicipalitySignalCold,
-  MUNICIPALITY_COLD_SIGNAL_DAYS,
-  municipalityListSortLabels,
-  municipalitySignalAgeInDays,
-  parseMunicipalityListParams,
-  parseMunicipalitySortValue,
-  resolveMunicipalityLastSignalAt,
-  resolveMunicipalityListSort,
-  serializeMunicipalitySortValue,
-  shouldUpdateMunicipalitySearchUrl,
   toggleMunicipalityExclusiveFilterValue,
   toggleMunicipalityMultiFilterValue,
   toggleMunicipalityPriorityFilter,
-} from '@/utilities/municipalityUi'
+  type MunicipalityMultiFilterParam,
+} from '@/utilities/municipalityListFilters'
+import {
+  buildMunicipalityListHref,
+  buildMunicipalityListWhere,
+  buildMunicipalitySortHref,
+  formatMunicipalityListSortSummary,
+  municipalityListSortLabels,
+  parseMunicipalityListParams,
+  parseMunicipalitySortValue,
+  resolveMunicipalityListSort,
+  serializeMunicipalitySortValue,
+  shouldUpdateMunicipalitySearchUrl,
+} from '@/utilities/municipalityListUrl'
+import {
+  formatMunicipalitySignalAgeLabel,
+  isMunicipalitySignalCold,
+  MUNICIPALITY_COLD_SIGNAL_DAYS,
+  municipalitySignalAgeInDays,
+  resolveMunicipalityLastSignalAt,
+} from '@/utilities/municipalitySignal'
 
 describe('shouldUpdateMunicipalitySearchUrl', () => {
   it('returns false when canonical q matches the current URL q', () => {
@@ -278,5 +284,66 @@ describe('E9 frescor do sinal', () => {
     expect(formatMunicipalitySignalAgeLabel(0)).toBe('hoje')
     expect(formatMunicipalitySignalAgeLabel(1)).toBe('há 1 dia')
     expect(formatMunicipalitySignalAgeLabel(30)).toBe('há 30 dias')
+  })
+})
+
+describe('buildMunicipalityFilterOptionHref (B16+ fast path)', () => {
+  const [firstSlug, secondSlug, thirdSlug] = municipalityCatalog.map((entry) => entry.slug)
+
+  const cases: Array<{
+    name: string
+    state: Parameters<typeof buildMunicipalityFilterOptionHref>[0]
+    param: MunicipalityMultiFilterParam
+    value: string
+  }> = [
+    { name: 'adds a slug', state: parseMunicipalityListParams({}), param: 'slug', value: firstSlug! },
+    {
+      name: 'removes a selected slug',
+      state: parseMunicipalityListParams({ slug: [firstSlug!, secondSlug!] }),
+      param: 'slug',
+      value: secondSlug!,
+    },
+    {
+      name: 'keeps other filters and resets the page',
+      state: parseMunicipalityListParams({
+        q: 'santa',
+        page: '3',
+        sort: 'votos',
+        slug: [thirdSlug!],
+        priority: 'alta',
+      }),
+      param: 'slug',
+      value: firstSlug!,
+    },
+    {
+      name: 'sorts advisor ids numerically',
+      state: parseMunicipalityListParams({ advisor: ['20'] }),
+      param: 'advisor',
+      value: '5',
+    },
+    {
+      name: 'adds a region',
+      state: parseMunicipalityListParams({ region: ['Chapada Diamantina'] }),
+      param: 'region',
+      value: 'Sertão do São Francisco',
+    },
+    {
+      name: 'collapses the full trend set to "todas"',
+      state: parseMunicipalityListParams({ trend: ['favoravel', 'neutra'] }),
+      param: 'trend',
+      value: 'desfavoravel',
+    },
+    {
+      name: 'removes a selected trend',
+      state: parseMunicipalityListParams({ trend: ['favoravel', 'neutra'] }),
+      param: 'trend',
+      value: 'neutra',
+    },
+  ]
+
+  it.each(cases)('matches the canonical toggle+href path: $name', ({ state, param, value }) => {
+    expect(buildMunicipalityFilterOptionHref(state, param, value)).toBe(
+      buildMunicipalityFilterHref(toggleMunicipalityMultiFilterValue(state, param, value)),
+    )
   })
 })

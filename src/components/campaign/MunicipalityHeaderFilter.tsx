@@ -1,17 +1,18 @@
 'use client'
 
 import { FunnelIcon, FunnelPlusIcon } from 'lucide-react'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useOptimistic, useState, type ReactNode } from 'react'
 
 import { CampaignTransitionAnchor } from '@/components/campaign/CampaignListPending'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import { cn } from '@/lib/utils'
+import { municipalityPriorityLabels } from '@/utilities/municipalityLabels'
 import {
   applyMunicipalityKindFilter,
   buildMunicipalityFilterHref,
-  buildMunicipalityFiltersKey,
+  buildMunicipalityFilterOptionHref,
   clearMunicipalityAdvisorFilters,
   clearMunicipalityMultiFilter,
   clearMunicipalityNameFilters,
@@ -19,22 +20,26 @@ import {
   getMunicipalityMultiFilterValues,
   getMunicipalitySingleFilterValue,
   isMunicipalityColumnFilterActive,
-  municipalityPriorityLabels,
+  municipalityFilterOptionsForSlugs,
   toggleMunicipalityExclusiveFilterValue,
   toggleMunicipalityMultiFilterValue,
   toggleMunicipalityPriorityFilter,
   type MunicipalityFilterOption,
   type MunicipalityFilterParam,
-  type MunicipalityListState,
   type MunicipalityMultiFilterParam,
-} from '@/utilities/municipalityUi'
+} from '@/utilities/municipalityListFilters'
+import { type MunicipalityListState } from '@/utilities/municipalityListUrl'
 import { normalizeSearchPhrase } from '@/utilities/wordStartFilter'
 
 type MunicipalityHeaderFilterProps = {
   state: MunicipalityListState
   filterParam: MunicipalityFilterParam
-  /** Options already narrowed by the other active filters (server-computed). */
-  options?: MunicipalityFilterOption[]
+  /**
+   * Options already narrowed by the other active filters (server-computed).
+   * The Município column ships bare slugs — labels come from the catalog here
+   * on the client, so the RSC payload never carries 435 name pairs (B16+).
+   */
+  options?: MunicipalityFilterOption[] | readonly string[]
   /** Staff-only Prioritária checkbox inside the Município filter. */
   showPriorityFilter?: boolean
 }
@@ -94,29 +99,27 @@ const FilterOptionLink = ({
 export const MunicipalityHeaderFilter = ({
   state,
   filterParam,
-  options: optionsOverride,
+  options: optionsInput,
   showPriorityFilter = false,
 }: MunicipalityHeaderFilterProps) => {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   /**
-   * Optimistic selection, tagged with the URL state it was derived from: when the
-   * server answer lands the tag stops matching and the truth takes over — no
-   * effect racing the transition (and no reverting a still-pending click).
+   * Optimistic selection: set inside the navigation transition (see
+   * `CampaignTransitionAnchor.onNavigate`), so React shows the clicked state
+   * immediately and discards it for the server truth when the transition
+   * settles — no manual base-key bookkeeping, no reverting a pending click.
    */
-  const [optimistic, setOptimistic] = useState<{
-    baseKey: string
-    next: MunicipalityListState
-  } | null>(null)
+  const [viewState, setOptimisticState] = useOptimistic(state)
 
   const definition = getMunicipalityFilterDefinition(filterParam)
   const definitionOptions = definition.options
-  const options = useMemo(
-    () => optionsOverride ?? definitionOptions ?? [],
-    [optionsOverride, definitionOptions],
-  )
-  const stateKey = buildMunicipalityFiltersKey(state)
-  const viewState = optimistic?.baseKey === stateKey ? optimistic.next : state
+  const options = useMemo(() => {
+    if (!optionsInput) return definitionOptions ?? []
+    return typeof optionsInput[0] === 'string' || optionsInput.length === 0
+      ? municipalityFilterOptionsForSlugs(optionsInput as readonly string[])
+      : (optionsInput as MunicipalityFilterOption[])
+  }, [optionsInput, definitionOptions])
   const isActive = isMunicipalityColumnFilterActive(viewState, filterParam)
   const searchable = options.length >= SEARCHABLE_OPTION_THRESHOLD
 
@@ -131,7 +134,7 @@ export const MunicipalityHeaderFilter = ({
     : options
 
   const commit = (next: MunicipalityListState) => {
-    setOptimistic({ baseKey: stateKey, next })
+    setOptimisticState(next)
     if (definition.selection !== 'multi') setOpen(false)
   }
 
@@ -282,21 +285,22 @@ export const MunicipalityHeaderFilter = ({
               })
             : null}
 
+          {/* Option hrefs ride the cheap canonical-toggle serializer; the full
+              toggle (state for the optimistic commit) runs only on click. */}
           {multiParam
-            ? visibleOptions.map((option) => {
-                const next = toggleMunicipalityMultiFilterValue(viewState, multiParam, option.value)
-                return (
-                  <FilterOptionLink
-                    key={option.value}
-                    href={buildMunicipalityFilterHref(next)}
-                    selected={selectedMulti.includes(option.value)}
-                    checkbox
-                    onChoose={() => commit(next)}
-                  >
-                    {option.label}
-                  </FilterOptionLink>
-                )
-              })
+            ? visibleOptions.map((option) => (
+                <FilterOptionLink
+                  key={option.value}
+                  href={buildMunicipalityFilterOptionHref(viewState, multiParam, option.value)}
+                  selected={selectedMulti.includes(option.value)}
+                  checkbox
+                  onChoose={() =>
+                    commit(toggleMunicipalityMultiFilterValue(viewState, multiParam, option.value))
+                  }
+                >
+                  {option.label}
+                </FilterOptionLink>
+              ))
             : null}
 
           {visibleOptions.length === 0 ? (

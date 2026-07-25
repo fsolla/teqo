@@ -23,7 +23,7 @@ import {
   municipalityPriorityLabels,
   politicalTrendBadgeVariant,
   politicalTrendLabels,
-} from '@/utilities/municipalityUi'
+} from '@/utilities/municipalityLabels'
 import type {
   MunicipalityAdvisorSummary,
   MunicipalityDetailViewModel,

@@ -6,7 +6,7 @@ import {
   formatMunicipalityVoteShare,
   getMunicipalityVoteRank,
 } from '@/lib/municipalityVoteRank'
-import { formatMunicipalityConcentrationHint } from '@/utilities/municipalityUi'
+import { formatMunicipalityConcentrationHint } from '@/utilities/municipalityLabels'
 import type { MunicipalityElectoralBaseline } from '@/utilities/municipalityElectoralBaseline'
 
 const seriesVotes = (baseline: MunicipalityElectoralBaseline, year: number): number =>

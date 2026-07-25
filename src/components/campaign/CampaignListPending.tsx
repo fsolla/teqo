@@ -49,9 +49,10 @@ export const CampaignTransitionAnchor = forwardRef<
     replace?: boolean
     scroll?: boolean
     /**
-     * Optimistic hook, fired only after this click commits to `href`: a control
-     * whose `href` derives from optimistic state must not invert itself before
-     * the navigation it is about to trigger.
+     * Optimistic hook, fired inside the navigation transition (so
+     * `useOptimistic` setters are legal here) and only after this click commits
+     * to `href`: a control whose `href` derives from optimistic state must not
+     * invert itself before the navigation it is about to trigger.
      */
     onNavigate?: () => void
   }
@@ -81,8 +82,8 @@ export const CampaignTransitionAnchor = forwardRef<
           return
         }
         event.preventDefault()
-        onNavigate?.()
         startTransition(() => {
+          onNavigate?.()
           if (replace) router.replace(href, { scroll })
           else router.push(href, { scroll })
         })

@@ -8,7 +8,7 @@ import {
   municipalityPriorityLabels,
   politicalTrendBadgeVariant,
   politicalTrendLabels,
-} from '@/utilities/municipalityUi'
+} from '@/utilities/municipalityLabels'
 import type { MunicipalityDetailViewModel } from '@/utilities/municipalityViewModels'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')

@@ -6,7 +6,7 @@ import config from '@payload-config'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
+import { CampaignListFooter } from '@/components/campaign/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/MunicipalityEstimateScenarioContext'
@@ -20,16 +20,17 @@ import {
   isCampaignStaff,
 } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadMunicipalityListPageBundle } from '@/utilities/municipalityPageData'
+import { getCampaignScopeLabel } from '@/utilities/municipalityLabels'
+import {
+  buildMunicipalityListVisitHref,
+  buildMunicipalityListVisitLabel,
+} from '@/utilities/municipalityListFilters'
 import {
   buildMunicipalityFiltersKey,
   buildMunicipalityListHref,
-  buildMunicipalityListVisitHref,
-  buildMunicipalityListVisitLabel,
-  getCampaignScopeLabel,
-  municipalityFilterOptionsForSlugs,
   resolveMunicipalityListUrl,
-} from '@/utilities/municipalityUi'
+} from '@/utilities/municipalityListUrl'
+import { loadMunicipalityListPageBundle } from '@/utilities/municipalityPageData'
 import { getEligibleAdvisorOptions, loadAdvisorSummaries } from '@/utilities/municipalityViewModels'
 import {
   assignMunicipalityAdvisorsFormAction,
@@ -83,7 +84,9 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
 
   const selectedAdvisorIDs = new Set(state.advisors ?? [])
   const columnFilterOptions = {
-    name: municipalityFilterOptionsForSlugs(filterFacets.slugs),
+    // Bare slugs: the filter popover labels them from the catalog on the
+    // client, so the RSC payload never carries 435 name pairs (B16+).
+    name: filterFacets.slugs,
     region: filterFacets.regions.map((region) => ({ value: region, label: region })),
     advisor: filterFacets.advisorIDs
       .flatMap((id) => {
@@ -130,16 +133,14 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
         advisorsFormAction={assignMunicipalityAdvisorsFormAction}
         state={state}
       />
-      <div className="flex flex-col items-center gap-2">
-        <p className="text-sm text-muted-foreground">
-          {totalDocs} {totalDocs === 1 ? 'município encontrado' : 'municípios encontrados'}
-        </p>
-        <CampaignListPagination
-          page={state.page}
-          totalPages={totalPages}
-          hrefForPage={(page) => buildMunicipalityListHref(state, page)}
-        />
-      </div>
+      <CampaignListFooter
+        totalDocs={totalDocs}
+        singular="município encontrado"
+        plural="municípios encontrados"
+        page={state.page}
+        totalPages={totalPages}
+        hrefForPage={(page) => buildMunicipalityListHref(state, page)}
+      />
     </>
   )
 

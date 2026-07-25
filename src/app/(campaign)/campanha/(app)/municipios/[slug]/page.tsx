@@ -44,7 +44,7 @@ import {
 import {
   formatMunicipalityGeographyLabel,
   municipalityKindLabels,
-} from '@/utilities/municipalityUi'
+} from '@/utilities/municipalityLabels'
 import {
   loadMunicipalityUpdatesFeed,
   parseMunicipalityUpdateFeedParams,

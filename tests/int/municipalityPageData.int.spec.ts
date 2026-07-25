@@ -330,7 +330,11 @@ describe('loadMunicipalityListPageBundle', () => {
     expect(conflicting.filterFacets.slugs).toContain(outsideRegion.slug)
   })
 
-  it('keeps the options of filters that share a popover with the applied one', async () => {
+  // Two full-scope bundles back to back; since B16+ the facet reads join the
+  // page's main Promise.all, so under the 47-way parallel suite this test
+  // contends for the pool harder than any other — give it headroom beyond the
+  // 5s default (same convention as the ledgered e2e latency budgets).
+  it('keeps the options of filters that share a popover with the applied one', { timeout: 15_000 }, async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const advisor = await fixtures.createCampaignUser('advisor')

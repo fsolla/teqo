@@ -4,10 +4,8 @@ import type { MunicipalityVoteRankEntry } from '@/lib/municipalityVoteRank'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { eligibleCampaignStaffWhere } from '@/utilities/campaignAccess'
 import { createEmptyGoalCoverageByScenario, type MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
-import {
-  resolveMunicipalityLastSignalAt,
-  type PoliticalTrendStatus,
-} from '@/utilities/municipalityUi'
+import { type PoliticalTrendStatus } from '@/utilities/municipalityLabels'
+import { resolveMunicipalityLastSignalAt } from '@/utilities/municipalitySignal'
 import { relationshipId } from '@/utilities/relationship'
 import type { StateDeputySummary } from '@/utilities/stateDeputyData'
 import {

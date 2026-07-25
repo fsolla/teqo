@@ -11,7 +11,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import { Spinner } from '@/components/ui/Spinner'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import { politicalTrendBadgeVariant, politicalTrendLabels } from '@/utilities/municipalityUi'
+import { politicalTrendBadgeVariant, politicalTrendLabels } from '@/utilities/municipalityLabels'
 import type { MunicipalityPoliticalTrendViewModel } from '@/utilities/municipalityViewModels'
 
 type MunicipalityListTrendControlProps = {

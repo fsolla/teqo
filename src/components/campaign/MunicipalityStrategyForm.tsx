@@ -13,7 +13,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
-import { politicalTrendLabels } from '@/utilities/municipalityUi'
+import { politicalTrendLabels } from '@/utilities/municipalityLabels'
 import type { MunicipalityDetailViewModel } from '@/utilities/municipalityViewModels'
 
 type FormAction = (

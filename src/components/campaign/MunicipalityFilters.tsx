@@ -11,22 +11,25 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { normalizedText } from '@/utilities/campaignListUrl'
 import {
   applyMunicipalityKindFilter,
-  buildMunicipalityFiltersKey,
-  buildMunicipalityListHref,
+  clearMunicipalityListFilters,
   formatMunicipalityActiveFiltersSummary,
   getMunicipalityFilterDefinition,
   getMunicipalitySingleFilterValue,
   municipalityFilterDefinitions,
+  toggleMunicipalityExclusiveFilterValue,
+  toggleMunicipalityMultiFilterValue,
+  type MunicipalityFilterOption,
+} from '@/utilities/municipalityListFilters'
+import {
+  buildMunicipalityFiltersKey,
+  buildMunicipalityListHref,
   municipalityListSortOptions,
   parseMunicipalitySortValue,
   resolveMunicipalityListSort,
   serializeMunicipalitySortValue,
   shouldUpdateMunicipalitySearchUrl,
-  toggleMunicipalityExclusiveFilterValue,
-  toggleMunicipalityMultiFilterValue,
-  type MunicipalityFilterOption,
   type MunicipalityListState,
-} from '@/utilities/municipalityUi'
+} from '@/utilities/municipalityListUrl'
 
 const SEARCH_DEBOUNCE_MS = 1000
 
@@ -200,7 +203,7 @@ export const MunicipalityFilters = ({
                 setSearch('')
                 startTransition(() => {
                   router.replace(
-                    buildMunicipalityListHref({ page: 1, sort: state.sort, dir: state.dir }, 1),
+                    buildMunicipalityListHref(clearMunicipalityListFilters(state), 1),
                     { scroll: false },
                   )
                 })

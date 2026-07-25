@@ -1,9 +1,13 @@
+/**
+ * Municipality list URL contract: state type, param parsing/canonicalization,
+ * Payload `where`, serialization and sort. Split out of the former
+ * `municipalityUi.ts` in Pass 2 W1. The URL contract is frozen — B18 (saved
+ * filters) depends on it.
+ */
 import type { Where } from 'payload'
 
 import { bahiaIdentityTerritories, type BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
-import { formatElectionNumber } from '@/lib/electionInsights'
-import { municipalityCatalog } from '@/lib/municipalityCatalog'
-import type { CampaignUser, Municipality } from '@/payload-types'
+import { isMunicipalitySlug } from '@/lib/municipalityCatalog'
 import {
   allParamValues,
   buildListHref,
@@ -13,36 +17,12 @@ import {
   strictDecimalInteger,
   type RawSearchParams as CampaignListRawSearchParams,
 } from '@/utilities/campaignListUrl'
-import { latestIsoTimestamp } from '@/utilities/campaignTime'
+import { politicalTrendLabels, type PoliticalTrendStatus } from '@/utilities/municipalityLabels'
 import { normalizeSearchPhrase } from '@/utilities/wordStartFilter'
 
+import type { Municipality } from '@/payload-types'
+
 export const municipalityPageSize = 25
-
-export const municipalityKindLabels: Record<Municipality['kind'], string> = {
-  municipio: 'Município',
-  zona: 'Zona eleitoral',
-}
-
-export const municipalityPriorityLabels: Record<NonNullable<Municipality['priority']>, string> = {
-  alta: 'Prioritária',
-  normal: 'Normal',
-}
-
-export type PoliticalTrendStatus = NonNullable<
-  NonNullable<Municipality['politicalTrend']>['status']
->
-
-export const politicalTrendLabels: Record<PoliticalTrendStatus, string> = {
-  favoravel: 'Favorável',
-  neutra: 'Neutra',
-  desfavoravel: 'Desfavorável',
-}
-
-export const politicalTrendBadgeVariant = {
-  favoravel: 'estimate-confirmed',
-  neutra: 'secondary',
-  desfavoravel: 'destructive',
-} as const
 
 export type MunicipalityListSortKey =
   | 'name'
@@ -65,8 +45,7 @@ export type MunicipalityListSortDirection = 'asc' | 'desc'
  * the candidate's own 2022 vote, this ordering stays close to the previous
  * `votos` default instead of surfacing deserts with inflated goals.
  */
-export const DEFAULT_MUNICIPALITY_LIST_SORT_KEY: MunicipalityListSortKey = 'deficit'
-export const DEFAULT_MUNICIPALITY_LIST_SORT_DIR: MunicipalityListSortDirection = 'desc'
+const DEFAULT_MUNICIPALITY_LIST_SORT_KEY: MunicipalityListSortKey = 'deficit'
 
 export const municipalityListSortLabels: Record<MunicipalityListSortKey, string> = {
   name: 'Município',
@@ -108,7 +87,7 @@ export type MunicipalityListState = {
 
 export type MunicipalityListSearchParams = CampaignListRawSearchParams
 
-export const municipalityListParamNames = [
+const municipalityListParamNames = [
   'q',
   'region',
   'slug',
@@ -122,11 +101,6 @@ export const municipalityListParamNames = [
   'dir',
   'page',
 ] as const
-
-const municipalitySlugSet = new Set(municipalityCatalog.map((entry) => entry.slug))
-const municipalityNameBySlug = new Map(
-  municipalityCatalog.map((entry) => [entry.slug, entry.name] as const),
-)
 
 const municipalityListParamNameSet = new Set<string>(municipalityListParamNames)
 
@@ -155,55 +129,6 @@ export const resolveMunicipalityListSort = (
   const sort = state.sort ?? DEFAULT_MUNICIPALITY_LIST_SORT_KEY
   const dir = state.dir ?? defaultMunicipalityListSortDir(sort)
   return { sort, dir }
-}
-
-export const formatMunicipalityConcentrationHint = (
-  totalUnits: number = municipalityCatalog.length,
-): string =>
-  `Percentual da votação estadual do candidato neste município — não o % dos válidos locais. Colocação: posição no catálogo de ${formatElectionNumber(totalUnits)} unidades.`
-
-/**
- * E9 frescor — the last time ANYBODY recorded something here: a staff update
- * or a leadership pledge declaration/estimate. One rule, shared by the server
- * ordering (`municipalityPageData.ts`) and the list cell, so "há N dias"
- * never disagrees with the position in the queue.
- */
-export const resolveMunicipalityLastSignalAt = (
-  lastUpdateAt: string | null,
-  lastPledgeAt: string | null,
-): string | null => latestIsoTimestamp(lastUpdateAt, lastPledgeAt)
-
-/**
- * Days since the last signal, floored. The research report only says a
- * commitment left untouched "for weeks" is worth less, so the threshold below
- * is a convention (3 weeks), not a measured decay curve.
- */
-export const MUNICIPALITY_COLD_SIGNAL_DAYS = 21
-
-export const municipalitySignalAgeInDays = (
-  lastSignalAt: string | null,
-  now: Date = new Date(),
-): number | null => {
-  if (!lastSignalAt) return null
-  const elapsed = now.getTime() - new Date(lastSignalAt).getTime()
-  if (Number.isNaN(elapsed)) return null
-  return Math.max(0, Math.floor(elapsed / 86_400_000))
-}
-
-export const isMunicipalitySignalCold = (ageInDays: number | null): boolean =>
-  ageInDays === null || ageInDays >= MUNICIPALITY_COLD_SIGNAL_DAYS
-
-/**
- * "há 3 dias" / "hoje" / "Sem sinal" — dense cell copy for the queue.
- * Deliberately not `formatRelativeAge`: its `numeric: 'auto'` yields "ontem"/
- * "anteontem" and minute/hour granularity, which breaks both the day-based
- * cold threshold and the tabular-nums scan down the column.
- */
-export const formatMunicipalitySignalAgeLabel = (ageInDays: number | null): string => {
-  if (ageInDays === null) return 'Sem sinal'
-  if (ageInDays === 0) return 'hoje'
-  if (ageInDays === 1) return 'há 1 dia'
-  return `há ${ageInDays} dias`
 }
 
 export const formatMunicipalityListSortSummary = (
@@ -250,7 +175,7 @@ const parseSlugsParam = (raw: string | string[] | undefined): string[] => {
   const slugs: string[] = []
   const seen = new Set<string>()
   for (const token of allParamValues(raw)) {
-    if (!municipalitySlugSet.has(token) || seen.has(token)) continue
+    if (!isMunicipalitySlug(token) || seen.has(token)) continue
     seen.add(token)
     slugs.push(token)
   }
@@ -283,7 +208,7 @@ const parseTrendsParam = (raw: string | string[] | undefined): PoliticalTrendSta
   return trends.length < politicalTrendStatusSet.size ? trends : []
 }
 
-const municipalityListStateToRawParams = (
+export const municipalityListStateToRawParams = (
   state: MunicipalityListState,
   page = state.page,
 ): MunicipalityListSearchParams => ({
@@ -363,11 +288,15 @@ export const buildMunicipalityListWhere = (state: MunicipalityListState): Where 
   return filters.length ? { and: filters } : {}
 }
 
-export const buildMunicipalityListSearchParams = (
-  state: MunicipalityListState,
-  page = state.page,
+/**
+ * Serializes a state that is ALREADY canonical (came out of
+ * `parseMunicipalityListParams`, or was derived from a canonical state by a
+ * rule-preserving toggle). Kept private-ish so the public builder below stays
+ * the only entry point that accepts arbitrary states.
+ */
+export const serializeCanonicalMunicipalityListSearchParams = (
+  canonicalState: MunicipalityListState,
 ): URLSearchParams => {
-  const canonicalState = parseMunicipalityListParams(municipalityListStateToRawParams(state, page))
   const params = new URLSearchParams()
   const resolvedSort = canonicalState.sort ?? DEFAULT_MUNICIPALITY_LIST_SORT_KEY
   const resolvedDir = canonicalState.dir ?? defaultMunicipalityListSortDir(resolvedSort)
@@ -396,6 +325,14 @@ export const buildMunicipalityListSearchParams = (
 
   return params
 }
+
+const buildMunicipalityListSearchParams = (
+  state: MunicipalityListState,
+  page = state.page,
+): URLSearchParams =>
+  serializeCanonicalMunicipalityListSearchParams(
+    parseMunicipalityListParams(municipalityListStateToRawParams(state, page)),
+  )
 
 export const buildMunicipalityFiltersKey = (state: MunicipalityListState): string =>
   buildMunicipalityListSearchParams(state).toString()
@@ -427,7 +364,7 @@ export const buildMunicipalitySortHref = (
   return buildMunicipalityListHref(updatedState, 1)
 }
 
-export const formatMunicipalitySortOptionLabel = (
+const formatMunicipalitySortOptionLabel = (
   key: MunicipalityListSortKey,
   dir: MunicipalityListSortDirection,
 ): string => {
@@ -489,277 +426,3 @@ export const resolveMunicipalityListUrl = (
     basePath: '/campanha/municipios',
     totalPages,
   })
-
-export const municipalityListCoverageLabels: Record<
-  NonNullable<MunicipalityListState['coverage']>,
-  string
-> = {
-  com_assessor: 'Com assessor',
-  sem_assessor: 'Sem assessor',
-}
-
-/** Column-header filter affordances (B16+). `name` = Município (priority + slugs). */
-export type MunicipalityFilterParam = 'name' | 'region' | 'kind' | 'coverage' | 'trend' | 'advisor'
-
-type MunicipalityFilterSelectionMode = 'single' | 'multi' | 'toggle'
-
-export type MunicipalityFilterOption = {
-  value: string
-  label: string
-}
-
-/** Catalog labels for a (possibly cross-filtered) slug list. */
-export const municipalityFilterOptionsForSlugs = (
-  slugs: readonly string[],
-): MunicipalityFilterOption[] =>
-  slugs.map((slug) => ({ value: slug, label: municipalityNameBySlug.get(slug) ?? slug }))
-
-export type MunicipalityFilterDefinition = {
-  param: MunicipalityFilterParam
-  label: string
-  /** Shown for exclusive single-select clear row; omitted for toggle/multi. */
-  allLabel?: string
-  staffOnly: boolean
-  selection: MunicipalityFilterSelectionMode
-  /** Absent for the params whose options are cross-filtered server-side. */
-  options?: MunicipalityFilterOption[]
-}
-
-export const municipalityFilterDefinitions: MunicipalityFilterDefinition[] = [
-  {
-    param: 'name',
-    label: 'Município',
-    staffOnly: false,
-    selection: 'multi',
-  },
-  {
-    param: 'region',
-    label: 'Território',
-    staffOnly: false,
-    selection: 'multi',
-  },
-  {
-    param: 'kind',
-    label: 'Tipo',
-    allLabel: 'Todos',
-    staffOnly: false,
-    selection: 'single',
-    options: (
-      Object.keys(municipalityKindLabels) as Array<keyof typeof municipalityKindLabels>
-    ).map((kind) => ({ value: kind, label: municipalityKindLabels[kind] })),
-  },
-  {
-    param: 'advisor',
-    label: 'Assessores',
-    staffOnly: true,
-    selection: 'multi',
-  },
-  {
-    param: 'coverage',
-    label: 'Assessoria',
-    staffOnly: true,
-    selection: 'toggle',
-    options: (
-      Object.keys(municipalityListCoverageLabels) as Array<
-        keyof typeof municipalityListCoverageLabels
-      >
-    ).map((coverage) => ({ value: coverage, label: municipalityListCoverageLabels[coverage] })),
-  },
-  {
-    param: 'trend',
-    label: 'Tendência',
-    staffOnly: true,
-    selection: 'multi',
-    options: (Object.keys(politicalTrendLabels) as Array<keyof typeof politicalTrendLabels>).map(
-      (trend) => ({ value: trend, label: politicalTrendLabels[trend] }),
-    ),
-  },
-]
-
-const municipalityFilterDefinitionByParam = Object.fromEntries(
-  municipalityFilterDefinitions.map((definition) => [definition.param, definition]),
-) as Record<MunicipalityFilterParam, MunicipalityFilterDefinition>
-
-export const getMunicipalityFilterDefinition = (
-  param: MunicipalityFilterParam,
-): MunicipalityFilterDefinition => municipalityFilterDefinitionByParam[param]
-
-export const getMunicipalitySingleFilterValue = (
-  state: MunicipalityListState,
-  param: 'kind' | 'coverage',
-): string | undefined => state[param]
-
-export type MunicipalityMultiFilterParam = 'region' | 'slug' | 'advisor' | 'trend'
-
-export const getMunicipalityMultiFilterValues = (
-  state: MunicipalityListState,
-  param: MunicipalityMultiFilterParam,
-): string[] => {
-  if (param === 'region') return state.regions ?? []
-  if (param === 'slug') return state.slugs ?? []
-  if (param === 'trend') return state.trends ?? []
-  return (state.advisors ?? []).map(String)
-}
-
-const withMunicipalityListPageReset = (state: MunicipalityListState): MunicipalityListState =>
-  parseMunicipalityListParams(municipalityListStateToRawParams({ ...state, page: 1 }, 1))
-
-/** Exclusive single-value set/clear for `kind`. Empty (or invalid) clears. */
-export const applyMunicipalityKindFilter = (
-  state: MunicipalityListState,
-  value: string | undefined,
-): MunicipalityListState =>
-  parseMunicipalityListParams({
-    ...municipalityListStateToRawParams({ ...state, page: 1 }, 1),
-    kind: value || undefined,
-  })
-
-/** Toggle exclusivity: clicking the active value clears (coverage). */
-export const toggleMunicipalityExclusiveFilterValue = (
-  state: MunicipalityListState,
-  param: 'coverage',
-  value: string,
-): MunicipalityListState =>
-  withMunicipalityListPageReset({
-    ...state,
-    [param]: state[param] === value ? undefined : (value as MunicipalityListState['coverage']),
-  })
-
-export const toggleMunicipalityPriorityFilter = (
-  state: MunicipalityListState,
-): MunicipalityListState =>
-  withMunicipalityListPageReset({
-    ...state,
-    priority: state.priority === 'alta' ? undefined : 'alta',
-  })
-
-/**
- * Writes the RAW param and lets `parseMunicipalityListParams` validate, so no
- * branch has to cast a `string[]` into the state's narrow value types.
- */
-const setMunicipalityMultiFilterValues = (
-  state: MunicipalityListState,
-  param: MunicipalityMultiFilterParam,
-  values: string[],
-): MunicipalityListState =>
-  parseMunicipalityListParams({
-    ...municipalityListStateToRawParams({ ...state, page: 1 }, 1),
-    [param]: values,
-  })
-
-export const toggleMunicipalityMultiFilterValue = (
-  state: MunicipalityListState,
-  param: MunicipalityMultiFilterParam,
-  value: string,
-): MunicipalityListState => {
-  const current = getMunicipalityMultiFilterValues(state, param)
-  return setMunicipalityMultiFilterValues(
-    state,
-    param,
-    current.includes(value) ? current.filter((entry) => entry !== value) : [...current, value],
-  )
-}
-
-export const clearMunicipalityMultiFilter = (
-  state: MunicipalityListState,
-  param: MunicipalityMultiFilterParam,
-): MunicipalityListState => setMunicipalityMultiFilterValues(state, param, [])
-
-/** Clear municipality-column filters (priority + selected slugs). */
-export const clearMunicipalityNameFilters = (state: MunicipalityListState): MunicipalityListState =>
-  withMunicipalityListPageReset({ ...state, priority: undefined, slugs: undefined })
-
-/** Clear advisor-column filters (com/sem assessor + selected advisors). */
-export const clearMunicipalityAdvisorFilters = (
-  state: MunicipalityListState,
-): MunicipalityListState =>
-  withMunicipalityListPageReset({ ...state, coverage: undefined, advisors: undefined })
-
-export const buildMunicipalityFilterHref = (next: MunicipalityListState): string =>
-  buildMunicipalityListHref(next, 1)
-
-export const isMunicipalityColumnFilterActive = (
-  state: MunicipalityListState,
-  param: MunicipalityFilterParam,
-): boolean => {
-  switch (param) {
-    case 'name':
-      return Boolean(state.priority || state.slugs?.length)
-    case 'region':
-      return Boolean(state.regions?.length)
-    case 'advisor':
-      // The Assessores popover also owns the com/sem assessor toggle.
-      return Boolean(state.advisors?.length || state.coverage)
-    case 'kind':
-      return Boolean(state.kind)
-    case 'coverage':
-      return Boolean(state.coverage)
-    case 'trend':
-      return Boolean(state.trends?.length)
-  }
-}
-
-/** "Irecê, Recôncavo +3" — the summary never grows past two names per filter. */
-const firstNamesLabel = (names: string[]): string =>
-  names.length <= 2 ? names.join(', ') : `${names.slice(0, 2).join(', ')} +${names.length - 2}`
-
-export const formatMunicipalityActiveFiltersSummary = (
-  state: MunicipalityListState,
-): string | null => {
-  const parts: string[] = []
-  if (state.priority) parts.push(municipalityPriorityLabels.alta)
-  if (state.slugs?.length) {
-    parts.push(firstNamesLabel(state.slugs.map((slug) => municipalityNameBySlug.get(slug) ?? slug)))
-  }
-  if (state.regions?.length) parts.push(firstNamesLabel([...state.regions]))
-  if (state.kind) parts.push(municipalityKindLabels[state.kind])
-  if (state.advisors?.length) {
-    parts.push(state.advisors.length === 1 ? '1 assessor' : `${state.advisors.length} assessores`)
-  }
-  if (state.coverage) parts.push(municipalityListCoverageLabels[state.coverage])
-  if (state.trends?.length) {
-    parts.push(
-      `Tendência ${state.trends.map((trend) => politicalTrendLabels[trend].toLowerCase()).join(', ')}`,
-    )
-  }
-  if (state.q) parts.push(`Busca "${state.q}"`)
-
-  return parts.length ? parts.join(' · ') : null
-}
-
-const MAX_MUNICIPALITY_LIST_VISIT_LABEL_LENGTH = 80
-
-export const buildMunicipalityListVisitLabel = (state: MunicipalityListState): string | null => {
-  const summary = formatMunicipalityActiveFiltersSummary(state)
-  if (!summary) return null
-
-  const label = `Municípios · ${summary}`
-  if (label.length <= MAX_MUNICIPALITY_LIST_VISIT_LABEL_LENGTH) return label
-  return `${label.slice(0, MAX_MUNICIPALITY_LIST_VISIT_LABEL_LENGTH - 1)}…`
-}
-
-export const buildMunicipalityListVisitHref = (state: MunicipalityListState): string =>
-  buildMunicipalityListHref(state, 1)
-
-export const getCampaignScopeLabel = (
-  role: CampaignUser['role'],
-  municipalityCount: number,
-): string => {
-  if (role === 'advisor') {
-    return `${municipalityCount} ${municipalityCount === 1 ? 'município sob sua assessoria' : 'municípios sob sua assessoria'}`
-  }
-  if (role === 'leader') {
-    return `${municipalityCount} ${municipalityCount === 1 ? 'município em que você atua' : 'municípios em que você atua'}`
-  }
-  return `${municipalityCount} ${municipalityCount === 1 ? 'município' : 'municípios'}`
-}
-
-/** Short human description of a municipality's geography, e.g. "Chapada Diamantina · ZE 105". */
-export const formatMunicipalityGeographyLabel = (municipality: {
-  region: string
-  kind: Municipality['kind']
-  zoneNumber?: number | null
-}): string =>
-  municipality.kind === 'zona' && municipality.zoneNumber != null
-    ? `${municipality.region} · ZE ${municipality.zoneNumber}`
-    : municipality.region
