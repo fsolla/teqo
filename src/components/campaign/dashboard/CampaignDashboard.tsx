@@ -19,6 +19,7 @@ import {
   formatGoalCoverageRatioLabel,
   goalCoverageProgressPercent,
 } from '@/utilities/goalCoverage'
+import { buildMunicipalityListHref } from '@/utilities/municipalityListUrl'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
@@ -154,10 +155,23 @@ export const CampaignDashboard = ({
 
     {view.priorityMunicipalities.length ? (
       <section aria-labelledby="dashboard-priority-title" className="flex flex-col gap-3">
-        <h2 id="dashboard-priority-title" className="text-base font-medium">
-          Municípios prioritários
-        </h2>
-        <ul className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 id="dashboard-priority-title" className="text-base font-medium">
+              Municípios prioritários
+            </h2>
+            <Badge variant="secondary">{view.highPriorityCount}</Badge>
+          </div>
+          {view.highPriorityCount > view.priorityMunicipalities.length ? (
+            <Button asChild variant="ghost" className="min-h-11">
+              <Link href={buildMunicipalityListHref({ page: 1, priority: 'alta' }, 1)}>
+                Ver todas
+                <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
+              </Link>
+            </Button>
+          ) : null}
+        </div>
+        <ul className="m-0 flex list-none flex-wrap gap-2 p-0 [&>li]:mt-0">
           {view.priorityMunicipalities.map((municipality) => (
             <li key={municipality.slug}>
               <Button asChild variant="outline" className="min-h-11">

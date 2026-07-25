@@ -37,6 +37,11 @@ export type MunicipalityGoalCoverage = {
   deficit: number
 }
 
+/** E9 list + B20 dashboard: rank key for `central` when goal > 0; null sorts last. */
+export const centralDeficitSortValue = (
+  coverage: MunicipalityGoalCoverage | null | undefined,
+): number | null => (coverage && coverage.goal > 0 ? coverage.deficit : null)
+
 /** Read-only zero coverage — never mutate; use for view models outside the staff scope. */
 const emptyMunicipalityGoalCoverage: Readonly<MunicipalityGoalCoverage> = {
   goal: 0,
