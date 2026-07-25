@@ -1,0 +1,46 @@
+---
+description: Mapa navegacional do repositório Teqo — onde cada coisa vive e em que direção o código depende. Atualize no MESMO PR que mover módulos (par com docs/ARCHITECTURE.md).
+alwaysApply: true
+---
+
+# Codebase map (Teqo)
+
+Conceitos e decisões: `docs/ARCHITECTURE.md`. Operação (setup/seeds/deploy/segurança Payload): `AGENTS.md`.
+
+## Direção de dependência
+
+`lib/` (puro, client-safe) → `utilities/` (Payload/Next; loaders com `import 'server-only'`) → `components/` → `app/`. `lib/` nunca importa `utilities/`. Client components importam de módulos server só `import type` — valores compartilhados vivem em módulos de contrato (`municipalityMapContract`, `votePledgeViews`, `lib/campaignRoles`, `lib/campaignConsentKeys`).
+
+## Onde vive o quê
+
+- `src/app/(frontend)` — site público (ISR, tag `posts`); actions públicas em `(frontend)/actions/*`.
+- `src/app/(payload)` — admin `/admin` (auth `users`).
+- `src/app/(campaign)/campanha` — ferramenta interna (auth `campaignUser`, cookie `campaign-token`; barreira no layout de `(app)`). Server actions em `campanha/actions/*`; `formActions.ts` por rota são cascas sobre `runCampaignFormAction` / `runCampaignRedirectFormAction` (`utilities/campaignFormActionError.ts`).
+- `src/collections/` + `src/globals/` — modelo de dados Payload; TODA collection declara `access`; schema muda só por migration (`pnpm migrate:create`).
+- `src/utilities/access/` — RBAC por domínio; `campaignAccess.ts` é o barrel de re-export; predicados de role client-safe em `src/lib/campaignRoles.ts`.
+- `src/components/campaign/<domínio>/` — municipality, actionPlan, supporter, leadership, advisor, demand, organization, stateDeputy, votePledge, invite, map, dashboard, auth, shell (sidebar/nav/PWA), shared (sistema de listas + widgets genéricos).
+- `src/components/ui/` — kit shadcn da casa (sem peças mortas; `shadcn add` re-adiciona).
+- `src/lib/schemas/` — zod de entrada; `src/lib/` também guarda catálogos estáticos e o artefato TSE (`electionAggregates/`).
+- `src/migrations/` — história congelada; nunca editar retroativamente.
+- `tests/` — `unit` (DATABASE_URL inválida), `int` (Payload real em `teqo_test`, fixtures em `tests/helpers/campaignFixtures.ts`), `e2e` (Playwright smoke).
+
+## Sistema de listas (Pass 2 W1 — use, não reinvente)
+
+- URL: `utilities/campaignListUrl.ts` (parse/canonicalize/`resolveListUrl`) + módulo por domínio (`municipalityListUrl.ts`, `supporterUi.ts`, `actionPlanUi.ts`, parsers nos `*Data.ts`). Contrato de URL congelado (B18).
+- Tabela: `shared/CampaignTable.tsx` — colunas como dado (`id`, `head`, `cell`, seams `mandatory`/`defaultVisible` p/ B17); heads ricos = ilhas (`municipality/MunicipalitySortableHead` + `MunicipalityHeaderFilter`).
+- Shells: `CampaignSearchForm`, `CampaignFilterChips`, `CampaignListFooter`, `CampaignListEmptyState`, `CampaignListPagination`, pending compartilhado em `CampaignListPending.tsx` (dima o resultado, não o controle).
+- Exceções documentadas: planos = cards; `TerritoryOverviewTable` = sort no cliente; comparação de candidatos, LeaderContacts e preview de import ficam fora.
+- Detalhe por tabs: `utilities/detailTabUi.ts` (factory) + sections RSC colocadas na rota (`municipios/[slug]/MunicipalityDetailTabs.tsx`, `planos/[slug]/ActionPlanOverviewTab.tsx`).
+
+## Achar o dono de uma feature
+
+1. Rota em `src/app/(campaign)/campanha/(app)/<área>/page.tsx` → 2. loader `utilities/<área>Data.ts` ou `*PageData.ts` → 3. view models (`*ViewModels`/`*Views`) → 4. componentes em `components/campaign/<domínio>/` → 5. escrita em `campanha/actions/<área>.ts` (+ `formActions.ts` da rota) → 6. acesso em `utilities/access/<domínio>.ts` → 7. pins em `tests/unit|int` com o mesmo prefixo.
+
+## Invariantes que nunca se violam
+
+- Local API com `user` sempre com `overrideAccess: false`; bypass admin só com comentário justificando.
+- Escrita multi-collection = transação (`withPayloadTransaction`, `req: { transactionID }`).
+- `leader` é lockdown; view models são por papel; liderança nunca vê `estimatedVotes`.
+- Consent LGPD resolve por chave estável (`lib/campaignConsentKeys.ts`) e falha fechado.
+- Copy pt-BR / identificadores em inglês; "Praça"/"Núcleo" não voltam.
+- Gate por entrega: `tsc --noEmit`, `pnpm lint` (0 warnings), `pnpm exec knip` (exports em ERROR), `pnpm test`, `pnpm build`.
