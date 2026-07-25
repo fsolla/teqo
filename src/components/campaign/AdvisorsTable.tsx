@@ -17,15 +17,8 @@ import { toast } from 'sonner'
 import { AdvisorDebouncedTextCell } from '@/components/campaign/AdvisorDebouncedTextCell'
 import { AdvisorMunicipalityCell } from '@/components/campaign/AdvisorMunicipalityCell'
 import { AdvisorPasswordResetButton } from '@/components/campaign/AdvisorPasswordResetButton'
+import { CampaignListEmptyState } from '@/components/campaign/CampaignListEmptyState'
 import { Button } from '@/components/ui/button'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/Empty'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import {
@@ -204,29 +197,22 @@ export const AdvisorsTable = ({
       </div>
 
       {showEmpty ? (
-        <Empty className="min-h-72 border">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              {hasQuery ? <SearchXIcon aria-hidden="true" /> : <UserCogIcon aria-hidden="true" />}
-            </EmptyMedia>
-            <EmptyTitle>
-              {hasQuery ? 'Nenhum assessor encontrado' : 'Nenhum assessor cadastrado'}
-            </EmptyTitle>
-            <EmptyDescription>
-              {hasQuery
-                ? 'Ajuste a busca ou limpe o filtro para ver todos.'
-                : 'Ative a edição e crie a conta na tabela.'}
-            </EmptyDescription>
-          </EmptyHeader>
+        <CampaignListEmptyState
+          icon={hasQuery ? SearchXIcon : UserCogIcon}
+          title={hasQuery ? 'Nenhum assessor encontrado' : 'Nenhum assessor cadastrado'}
+          description={
+            hasQuery
+              ? 'Ajuste a busca ou limpe o filtro para ver todos.'
+              : 'Ative a edição e crie a conta na tabela.'
+          }
+        >
           {!hasQuery ? (
-            <EmptyContent>
-              <Button type="button" className="min-h-11" onClick={startDraft}>
-                <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                Novo assessor
-              </Button>
-            </EmptyContent>
+            <Button type="button" className="min-h-11" onClick={startDraft}>
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Novo assessor
+            </Button>
           ) : null}
-        </Empty>
+        </CampaignListEmptyState>
       ) : (
         <div className="overflow-x-auto rounded-xl border">
           <Table className="min-w-[56rem] table-fixed">

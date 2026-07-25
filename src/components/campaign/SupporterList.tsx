@@ -1,17 +1,14 @@
 import { PhoneIcon } from 'lucide-react'
 import Link from 'next/link'
 
+import {
+  CampaignTable,
+  CampaignTableHead,
+  type CampaignTableColumn,
+} from '@/components/campaign/CampaignTable'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/Table'
 import { formatBrazilianPhoneInput } from '@/utilities/phone'
 import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
 import type { SupporterListItemViewModel } from '@/utilities/supporterViewModels'
@@ -85,6 +82,66 @@ const SupporterCard = ({ supporter }: { supporter: SupporterListItemViewModel })
   )
 }
 
+const supporterColumns: Array<CampaignTableColumn<SupporterListItemViewModel>> = [
+  {
+    id: 'name',
+    mandatory: true,
+    head: <CampaignTableHead>Nome</CampaignTableHead>,
+    cellClassName: 'max-w-52 whitespace-normal',
+    cell: (supporter) => (
+      <Link
+        href={`/campanha/apoiadores/${supporter.id}`}
+        className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
+      >
+        {supporter.name}
+      </Link>
+    ),
+  },
+  {
+    id: 'city',
+    head: <CampaignTableHead>Município</CampaignTableHead>,
+    cell: (supporter) => supporter.city ?? '—',
+  },
+  {
+    id: 'municipality',
+    head: <CampaignTableHead>Praça</CampaignTableHead>,
+    cellClassName: 'max-w-48 whitespace-normal',
+    cell: (supporter) =>
+      supporter.municipalityName ? (
+        <Link
+          href={`/campanha/municipios/${supporter.municipalitySlug}`}
+          className="text-primary underline-offset-4 hover:underline"
+        >
+          {supporter.municipalityName}
+        </Link>
+      ) : (
+        <span className="text-muted-foreground">Sem Praça vinculada</span>
+      ),
+  },
+  {
+    id: 'voteIntention',
+    head: <CampaignTableHead>Intenção</CampaignTableHead>,
+    cell: (supporter) => {
+      const voteIntentionLabel = supporter.voteIntention
+        ? supporterVoteIntentionLabels[supporter.voteIntention]
+        : null
+      return voteIntentionLabel ? (
+        <Badge variant={voteIntentionBadgeVariant(supporter.voteIntention)}>
+          {voteIntentionLabel}
+        </Badge>
+      ) : (
+        <Badge variant="outline">Sem intenção</Badge>
+      )
+    },
+  },
+  {
+    id: 'phone',
+    head: <CampaignTableHead>Telefone</CampaignTableHead>,
+    cellClassName: 'tabular-nums',
+    cell: (supporter) => (supporter.phone ? formatBrazilianPhoneInput(supporter.phone) : '—'),
+  },
+]
+
 export const SupporterList = ({ supporters }: SupporterListProps) => (
   <>
     <div data-view="mobile-cards" className="flex flex-col gap-4 md:hidden">
@@ -93,63 +150,11 @@ export const SupporterList = ({ supporters }: SupporterListProps) => (
       ))}
     </div>
 
-    <div data-view="desktop-table" className="hidden overflow-hidden rounded-xl border md:block">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nome</TableHead>
-            <TableHead>Município</TableHead>
-            <TableHead>Praça</TableHead>
-            <TableHead>Intenção</TableHead>
-            <TableHead>Telefone</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {supporters.map((supporter) => {
-            const voteIntentionLabel = supporter.voteIntention
-              ? supporterVoteIntentionLabels[supporter.voteIntention]
-              : null
-
-            return (
-              <TableRow key={supporter.id}>
-                <TableCell className="max-w-52 whitespace-normal">
-                  <Link
-                    href={`/campanha/apoiadores/${supporter.id}`}
-                    className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {supporter.name}
-                  </Link>
-                </TableCell>
-                <TableCell>{supporter.city ?? '—'}</TableCell>
-                <TableCell className="max-w-48 whitespace-normal">
-                  {supporter.municipalityName ? (
-                    <Link
-                      href={`/campanha/municipios/${supporter.municipalitySlug}`}
-                      className="text-primary underline-offset-4 hover:underline"
-                    >
-                      {supporter.municipalityName}
-                    </Link>
-                  ) : (
-                    <span className="text-muted-foreground">Sem Praça vinculada</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {voteIntentionLabel ? (
-                    <Badge variant={voteIntentionBadgeVariant(supporter.voteIntention)}>
-                      {voteIntentionLabel}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">Sem intenção</Badge>
-                  )}
-                </TableCell>
-                <TableCell className="tabular-nums">
-                  {supporter.phone ? formatBrazilianPhoneInput(supporter.phone) : '—'}
-                </TableCell>
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
-    </div>
+    <CampaignTable
+      className="hidden md:block"
+      columns={supporterColumns}
+      rows={supporters}
+      rowKey={(supporter) => supporter.id}
+    />
   </>
 )

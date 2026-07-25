@@ -6,7 +6,7 @@ import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/CampaignListPending'
-import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
+import { CampaignListFooter } from '@/components/campaign/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
 import { CampaignSearchForm } from '@/components/campaign/CampaignSearchForm'
 import { AdvisorsTable } from '@/components/campaign/AdvisorsTable'
@@ -73,16 +73,14 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
           />
 
           {totalDocs > 0 ? (
-            <div className="flex flex-col items-center gap-2">
-              <p className="text-sm text-muted-foreground">
-                {totalDocs} {totalDocs === 1 ? 'assessor' : 'assessores'}
-              </p>
-              <CampaignListPagination
-                page={state.page}
-                totalPages={totalPages}
-                hrefForPage={(page) => advisorListHrefForPage(state, page)}
-              />
-            </div>
+            <CampaignListFooter
+              totalDocs={totalDocs}
+              singular="assessor"
+              plural="assessores"
+              page={state.page}
+              totalPages={totalPages}
+              hrefForPage={(page) => advisorListHrefForPage(state, page)}
+            />
           ) : null}
         </CampaignListResults>
       </CampaignListPendingBoundary>

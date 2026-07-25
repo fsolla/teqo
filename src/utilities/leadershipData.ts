@@ -4,6 +4,13 @@ import type { SupportStatus } from '@/lib/schemas/leadership'
 import { isSupportStatus } from '@/lib/schemas/leadership'
 import type { CampaignUser, Leadership } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
+import {
+  buildListHref,
+  firstValue,
+  normalizedText,
+  strictDecimalInteger,
+  type RawSearchParams,
+} from '@/utilities/campaignListUrl'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
 import { loadStateDeputySummaries, type StateDeputySummary } from '@/utilities/stateDeputyData'
 
@@ -162,17 +169,27 @@ export type LeadershipListState = {
 }
 
 export const parseLeadershipListParams = (
-  searchParams: Record<string, string | string[] | undefined>,
+  searchParams: RawSearchParams,
 ): LeadershipListState => {
-  const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value)
-  const q = first(searchParams.q)?.trim()
-  const rawPage = first(searchParams.page)
-
+  const q = normalizedText(firstValue(searchParams.q))
   return {
-    page: rawPage && /^[1-9]\d*$/.test(rawPage) ? Number(rawPage) : 1,
+    page: strictDecimalInteger(firstValue(searchParams.page)) ?? 1,
     ...(q ? { q } : {}),
   }
 }
+
+const buildLeadershipListSearchParams = (
+  state: LeadershipListState,
+  page = state.page,
+): URLSearchParams => {
+  const params = new URLSearchParams()
+  if (state.q) params.set('q', state.q)
+  if (page > 1) params.set('page', String(page))
+  return params
+}
+
+export const buildLeadershipListHref = (state: LeadershipListState, page: number): string =>
+  buildListHref(state, buildLeadershipListSearchParams, '/campanha/liderancas', page)
 
 export const loadLeadershipListPageData = async (
   payload: Payload,

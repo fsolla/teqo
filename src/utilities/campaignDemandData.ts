@@ -4,6 +4,12 @@ import type { CampaignDemandKind, CampaignDemandStatus } from '@/lib/schemas/cam
 import { campaignDemandKinds, campaignDemandStatuses } from '@/lib/schemas/campaignDemand'
 import type { ActionPlan, CampaignDemand, CampaignUser } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
+import {
+  buildListHref,
+  firstValue,
+  strictDecimalInteger,
+  type RawSearchParams,
+} from '@/utilities/campaignListUrl'
 import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 
 export const demandPageSize = 25
@@ -26,16 +32,12 @@ export type DemandListState = {
   kind?: CampaignDemandKind
 }
 
-export const parseDemandListParams = (
-  searchParams: Record<string, string | string[] | undefined>,
-): DemandListState => {
-  const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value)
-  const rawStatus = first(searchParams.status)
-  const rawKind = first(searchParams.kind)
-  const rawPage = first(searchParams.page)
+export const parseDemandListParams = (searchParams: RawSearchParams): DemandListState => {
+  const rawStatus = firstValue(searchParams.status)
+  const rawKind = firstValue(searchParams.kind)
 
   return {
-    page: rawPage && /^[1-9]\d*$/.test(rawPage) ? Number(rawPage) : 1,
+    page: strictDecimalInteger(firstValue(searchParams.page)) ?? 1,
     ...(campaignDemandStatuses.includes(rawStatus as CampaignDemandStatus)
       ? { status: rawStatus as CampaignDemandStatus }
       : {}),
@@ -44,6 +46,17 @@ export const parseDemandListParams = (
       : {}),
   }
 }
+
+const buildDemandListSearchParams = (state: DemandListState, page = state.page): URLSearchParams => {
+  const params = new URLSearchParams()
+  if (state.status) params.set('status', state.status)
+  if (state.kind) params.set('kind', state.kind)
+  if (page > 1) params.set('page', String(page))
+  return params
+}
+
+export const buildDemandListHref = (state: DemandListState, page: number): string =>
+  buildListHref(state, buildDemandListSearchParams, '/campanha/demandas', page)
 
 const resolveMunicipalityAndRequesterNames = async (
   payload: Payload,

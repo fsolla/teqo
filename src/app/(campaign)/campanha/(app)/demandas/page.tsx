@@ -5,30 +5,20 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignFilterChips } from '@/components/campaign/CampaignFilterChips'
-import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
+import { CampaignListEmptyState } from '@/components/campaign/CampaignListEmptyState'
+import { CampaignListFooter } from '@/components/campaign/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
+import {
+  CampaignTable,
+  CampaignTableHead,
+  type CampaignTableColumn,
+} from '@/components/campaign/CampaignTable'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/Empty'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/Table'
 import {
   campaignDemandKindLabels,
   campaignDemandStatusLabels,
@@ -37,7 +27,12 @@ import {
 } from '@/lib/schemas/campaignDemand'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadDemandListPageData, parseDemandListParams } from '@/utilities/campaignDemandData'
+import {
+  buildDemandListHref,
+  loadDemandListPageData,
+  parseDemandListParams,
+  type DemandRowViewModel,
+} from '@/utilities/campaignDemandData'
 
 type DemandsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -56,6 +51,52 @@ const statusVariant: Record<
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' })
 
+const demandColumns: Array<CampaignTableColumn<DemandRowViewModel>> = [
+  {
+    id: 'title',
+    mandatory: true,
+    head: <CampaignTableHead>Demanda</CampaignTableHead>,
+    cellClassName: 'max-w-64 whitespace-normal',
+    cell: (row) => (
+      <Link
+        href={`/campanha/demandas/${row.slug}`}
+        className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
+      >
+        {row.title}
+      </Link>
+    ),
+  },
+  {
+    id: 'kind',
+    head: <CampaignTableHead>Tipo</CampaignTableHead>,
+    cell: (row) => campaignDemandKindLabels[row.kind],
+  },
+  {
+    id: 'municipality',
+    head: <CampaignTableHead>Praça</CampaignTableHead>,
+    cellClassName: 'text-muted-foreground',
+    cell: (row) => row.municipalityName,
+  },
+  {
+    id: 'requester',
+    head: <CampaignTableHead>Solicitante</CampaignTableHead>,
+    cellClassName: 'text-muted-foreground',
+    cell: (row) => row.requesterName ?? '—',
+  },
+  {
+    id: 'status',
+    head: <CampaignTableHead>Status</CampaignTableHead>,
+    cell: (row) => (
+      <Badge variant={statusVariant[row.status]}>{campaignDemandStatusLabels[row.status]}</Badge>
+    ),
+  },
+  {
+    id: 'createdAt',
+    head: <CampaignTableHead>Aberta em</CampaignTableHead>,
+    cell: (row) => dateFormatter.format(new Date(row.createdAt)),
+  },
+]
+
 export default async function DemandsPage({ searchParams }: DemandsPageProps) {
   const rawSearchParams = await searchParams
   const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
@@ -69,86 +110,8 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
     state,
   )
 
-  const hrefFor = (status?: CampaignDemandStatus, page = 1) => {
-    const params = new URLSearchParams()
-    if (status) params.set('status', status)
-    if (state.kind) params.set('kind', state.kind)
-    if (page > 1) params.set('page', String(page))
-    const query = params.toString()
-    return query ? `/campanha/demandas?${query}` : '/campanha/demandas'
-  }
-
-  const listBody = rows.length ? (
-    <>
-      <div className="overflow-hidden rounded-xl border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Demanda</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Praça</TableHead>
-              <TableHead>Solicitante</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Aberta em</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell className="max-w-64 whitespace-normal">
-                  <Link
-                    href={`/campanha/demandas/${row.slug}`}
-                    className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {row.title}
-                  </Link>
-                </TableCell>
-                <TableCell>{campaignDemandKindLabels[row.kind]}</TableCell>
-                <TableCell className="text-muted-foreground">{row.municipalityName}</TableCell>
-                <TableCell className="text-muted-foreground">{row.requesterName ?? '—'}</TableCell>
-                <TableCell>
-                  <Badge variant={statusVariant[row.status]}>
-                    {campaignDemandStatusLabels[row.status]}
-                  </Badge>
-                </TableCell>
-                <TableCell>{dateFormatter.format(new Date(row.createdAt))}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex flex-col items-center gap-2">
-        <p className="text-sm text-muted-foreground">
-          {totalDocs} {totalDocs === 1 ? 'demanda' : 'demandas'}
-        </p>
-        <CampaignListPagination
-          page={state.page}
-          totalPages={totalPages}
-          hrefForPage={(page) => hrefFor(state.status, page)}
-        />
-      </div>
-    </>
-  ) : (
-    <Empty className="min-h-72 border">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <InboxIcon aria-hidden="true" />
-        </EmptyMedia>
-        <EmptyTitle>Nenhuma demanda por aqui</EmptyTitle>
-        <EmptyDescription>
-          Abra uma demanda quando precisar de material, transporte, espaço ou apoio para uma ação.
-        </EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent>
-        <Button asChild className="min-h-11">
-          <Link href="/campanha/demandas/nova">
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Nova demanda
-          </Link>
-        </Button>
-      </EmptyContent>
-    </Empty>
-  )
+  const hrefForStatus = (status?: CampaignDemandStatus) =>
+    buildDemandListHref({ ...state, status }, 1)
 
   return (
     <CampaignPageShell>
@@ -175,16 +138,43 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
         <CampaignFilterChips
           ariaLabel="Filtrar por status"
           chips={[
-            { href: hrefFor(undefined), label: 'Todas', active: state.status === undefined },
+            { href: hrefForStatus(undefined), label: 'Todas', active: state.status === undefined },
             ...campaignDemandStatuses.map((status) => ({
-              href: hrefFor(status),
+              href: hrefForStatus(status),
               label: campaignDemandStatusLabels[status],
               active: state.status === status,
             })),
           ]}
         />
 
-        <CampaignListResults>{listBody}</CampaignListResults>
+        <CampaignListResults>
+          {rows.length ? (
+            <>
+              <CampaignTable columns={demandColumns} rows={rows} rowKey={(row) => row.id} />
+              <CampaignListFooter
+                totalDocs={totalDocs}
+                singular="demanda"
+                plural="demandas"
+                page={state.page}
+                totalPages={totalPages}
+                hrefForPage={(page) => buildDemandListHref(state, page)}
+              />
+            </>
+          ) : (
+            <CampaignListEmptyState
+              icon={InboxIcon}
+              title="Nenhuma demanda por aqui"
+              description="Abra uma demanda quando precisar de material, transporte, espaço ou apoio para uma ação."
+            >
+              <Button asChild className="min-h-11">
+                <Link href="/campanha/demandas/nova">
+                  <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                  Nova demanda
+                </Link>
+              </Button>
+            </CampaignListEmptyState>
+          )}
+        </CampaignListResults>
       </CampaignListPendingBoundary>
     </CampaignPageShell>
   )

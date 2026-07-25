@@ -1,45 +1,70 @@
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-} from '@/components/campaign/CampaignListPending'
-import { CampaignSearchForm } from '@/components/campaign/CampaignSearchForm'
 import config from '@payload-config'
 import { PlusIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
+import { CampaignListEmptyState } from '@/components/campaign/CampaignListEmptyState'
+import { CampaignListFooter } from '@/components/campaign/CampaignListFooter'
+import {
+  CampaignListPendingBoundary,
+  CampaignListResults,
+} from '@/components/campaign/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
+import { CampaignSearchForm } from '@/components/campaign/CampaignSearchForm'
+import {
+  CampaignTable,
+  CampaignTableHead,
+  type CampaignTableColumn,
+} from '@/components/campaign/CampaignTable'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/Empty'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/Table'
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
+  buildOrganizationListHref,
   loadOrganizationListPageData,
   parseOrganizationListParams,
+  type OrganizationRowViewModel,
 } from '@/utilities/organizationData'
 
 type OrganizationsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
+
+const organizationColumns: Array<CampaignTableColumn<OrganizationRowViewModel>> = [
+  {
+    id: 'name',
+    mandatory: true,
+    head: <CampaignTableHead>Nome</CampaignTableHead>,
+    cell: (row) => (
+      <Link
+        href={`/campanha/organizacoes/${row.slug}`}
+        className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
+      >
+        {row.name}
+      </Link>
+    ),
+  },
+  {
+    id: 'kind',
+    head: <CampaignTableHead>Tipo</CampaignTableHead>,
+    cell: (row) => <Badge variant="secondary">{organizationKindLabels[row.kind]}</Badge>,
+  },
+  {
+    id: 'municipalities',
+    head: <CampaignTableHead>Praças de atuação</CampaignTableHead>,
+    cellClassName: 'max-w-64 whitespace-normal text-muted-foreground',
+    cell: (row) => row.municipalityNames.join(', ') || '—',
+  },
+  {
+    id: 'leaderships',
+    head: <CampaignTableHead>Lideranças</CampaignTableHead>,
+    cellClassName: 'tabular-nums',
+    cell: (row) => row.leadershipCount,
+  },
+]
 
 export default async function OrganizationsPage({ searchParams }: OrganizationsPageProps) {
   const rawSearchParams = await searchParams
@@ -49,15 +74,6 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
 
   const state = parseOrganizationListParams(rawSearchParams)
   const { rows, totalDocs, totalPages } = await loadOrganizationListPageData(payload, user, state)
-
-  const hrefForPage = (page: number) => {
-    const params = new URLSearchParams()
-    if (state.q) params.set('q', state.q)
-    if (state.kind) params.set('kind', state.kind)
-    if (page > 1) params.set('page', String(page))
-    const query = params.toString()
-    return query ? `/campanha/organizacoes?${query}` : '/campanha/organizacoes'
-  }
 
   return (
     <CampaignPageShell>
@@ -88,71 +104,29 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
         <CampaignListResults>
           {rows.length ? (
             <>
-              <div className="overflow-hidden rounded-xl border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Praças de atuação</TableHead>
-                      <TableHead>Lideranças</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell>
-                          <Link
-                            href={`/campanha/organizacoes/${row.slug}`}
-                            className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
-                          >
-                            {row.name}
-                          </Link>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{organizationKindLabels[row.kind]}</Badge>
-                        </TableCell>
-                        <TableCell className="max-w-64 whitespace-normal text-muted-foreground">
-                          {row.municipalityNames.join(', ') || '—'}
-                        </TableCell>
-                        <TableCell className="tabular-nums">{row.leadershipCount}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-sm text-muted-foreground">
-                  {totalDocs} {totalDocs === 1 ? 'organização' : 'organizações'}
-                </p>
-                <CampaignListPagination
-                  page={state.page}
-                  totalPages={totalPages}
-                  hrefForPage={hrefForPage}
-                />
-              </div>
+              <CampaignTable columns={organizationColumns} rows={rows} rowKey={(row) => row.id} />
+              <CampaignListFooter
+                totalDocs={totalDocs}
+                singular="organização"
+                plural="organizações"
+                page={state.page}
+                totalPages={totalPages}
+                hrefForPage={(page) => buildOrganizationListHref(state, page)}
+              />
             </>
           ) : (
-            <Empty className="min-h-72 border">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <SearchXIcon aria-hidden="true" />
-                </EmptyMedia>
-                <EmptyTitle>Nenhuma organização cadastrada</EmptyTitle>
-                <EmptyDescription>
-                  Cadastre sindicatos, associações e movimentos para vincular lideranças e Planos de
-                  Ação.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Button asChild className="min-h-11">
-                  <Link href="/campanha/organizacoes/nova">
-                    <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                    Nova organização
-                  </Link>
-                </Button>
-              </EmptyContent>
-            </Empty>
+            <CampaignListEmptyState
+              icon={SearchXIcon}
+              title="Nenhuma organização cadastrada"
+              description="Cadastre sindicatos, associações e movimentos para vincular lideranças e Planos de Ação."
+            >
+              <Button asChild className="min-h-11">
+                <Link href="/campanha/organizacoes/nova">
+                  <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                  Nova organização
+                </Link>
+              </Button>
+            </CampaignListEmptyState>
           )}
         </CampaignListResults>
       </CampaignListPendingBoundary>

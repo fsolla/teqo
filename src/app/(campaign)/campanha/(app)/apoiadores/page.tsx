@@ -8,21 +8,14 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
+import { CampaignListEmptyState } from '@/components/campaign/CampaignListEmptyState'
+import { CampaignListFooter } from '@/components/campaign/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { SupporterFilters } from '@/components/campaign/SupporterFilters'
 import { SupporterList } from '@/components/campaign/SupporterList'
 import { SupporterListOverview } from '@/components/campaign/SupporterListOverview'
 import { Button } from '@/components/ui/button'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/Empty'
 import { isCampaignCoordinator, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
@@ -57,35 +50,25 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
       <SupporterList
         supporters={result.docs.map((supporter) => toSupporterListItemViewModel(supporter))}
       />
-      <div className="flex flex-col items-center gap-3">
-        <p className="text-sm text-muted-foreground">
-          {result.totalDocs}{' '}
-          {result.totalDocs === 1 ? 'apoiador encontrado' : 'apoiadores encontrados'}
-        </p>
-        <CampaignListPagination
-          page={state.page}
-          totalPages={result.totalPages}
-          hrefForPage={(page) => buildSupporterListHref(state, page)}
-        />
-      </div>
+      <CampaignListFooter
+        totalDocs={result.totalDocs}
+        singular="apoiador encontrado"
+        plural="apoiadores encontrados"
+        page={state.page}
+        totalPages={result.totalPages}
+        hrefForPage={(page) => buildSupporterListHref(state, page)}
+      />
     </>
   ) : (
-    <Empty className="min-h-72 border">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <SearchXIcon aria-hidden="true" />
-        </EmptyMedia>
-        <EmptyTitle>Nenhum apoiador encontrado</EmptyTitle>
-        <EmptyDescription>
-          Ajuste a busca ou os filtros. Você só vê apoiadores dentro do seu escopo.
-        </EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent>
-        <Button asChild variant="outline" className="min-h-11">
-          <Link href="/campanha/apoiadores">Limpar busca e filtros</Link>
-        </Button>
-      </EmptyContent>
-    </Empty>
+    <CampaignListEmptyState
+      icon={SearchXIcon}
+      title="Nenhum apoiador encontrado"
+      description="Ajuste a busca ou os filtros. Você só vê apoiadores dentro do seu escopo."
+    >
+      <Button asChild variant="outline" className="min-h-11">
+        <Link href="/campanha/apoiadores">Limpar busca e filtros</Link>
+      </Button>
+    </CampaignListEmptyState>
   )
 
   return (

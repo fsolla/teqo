@@ -1,6 +1,13 @@
 import type { Payload } from 'payload'
 
 import type { CampaignUser, Leadership, StateDeputy } from '@/payload-types'
+import {
+  buildListHref,
+  firstValue,
+  normalizedText,
+  strictDecimalInteger,
+  type RawSearchParams,
+} from '@/utilities/campaignListUrl'
 import { relationshipId } from '@/utilities/relationship'
 
 export const stateDeputyPageSize = 25
@@ -20,17 +27,27 @@ export type StateDeputyListState = {
 }
 
 export const parseStateDeputyListParams = (
-  searchParams: Record<string, string | string[] | undefined>,
+  searchParams: RawSearchParams,
 ): StateDeputyListState => {
-  const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value)
-  const q = first(searchParams.q)?.trim()
-  const rawPage = first(searchParams.page)
-
+  const q = normalizedText(firstValue(searchParams.q))
   return {
-    page: rawPage && /^[1-9]\d*$/.test(rawPage) ? Number(rawPage) : 1,
+    page: strictDecimalInteger(firstValue(searchParams.page)) ?? 1,
     ...(q ? { q } : {}),
   }
 }
+
+const buildStateDeputyListSearchParams = (
+  state: StateDeputyListState,
+  page = state.page,
+): URLSearchParams => {
+  const params = new URLSearchParams()
+  if (state.q) params.set('q', state.q)
+  if (page > 1) params.set('page', String(page))
+  return params
+}
+
+export const buildStateDeputyListHref = (state: StateDeputyListState, page: number): string =>
+  buildListHref(state, buildStateDeputyListSearchParams, '/campanha/dobradinhas', page)
 
 export const loadStateDeputyListPageData = async (
   payload: Payload,

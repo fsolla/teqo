@@ -10,17 +10,10 @@ import { getPayload } from 'payload'
 
 import { ActionPlanFilters } from '@/components/campaign/ActionPlanFilters'
 import { ActionPlanList } from '@/components/campaign/ActionPlanList'
-import { CampaignListPagination } from '@/components/campaign/CampaignListPagination'
+import { CampaignListEmptyState } from '@/components/campaign/CampaignListEmptyState'
+import { CampaignListFooter } from '@/components/campaign/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
 import { Button } from '@/components/ui/button'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/Empty'
 import type { ActionPlan } from '@/payload-types'
 import { loadActionPlanListPageData } from '@/utilities/actionPlanPageData'
 import {
@@ -88,35 +81,25 @@ export default async function ActionPlanListPage({ searchParams }: ActionPlanLis
               <ActionPlanList
                 plans={result.docs.map((plan) => toActionPlanListViewModel(plan as ActionPlan))}
               />
-              <div className="flex flex-col items-center gap-3">
-                <p className="text-sm text-muted-foreground">
-                  {result.totalDocs}{' '}
-                  {result.totalDocs === 1 ? 'plano encontrado' : 'planos encontrados'}
-                </p>
-                <CampaignListPagination
-                  page={state.page}
-                  totalPages={result.totalPages}
-                  hrefForPage={(page) => buildActionPlanListHref(state, page)}
-                />
-              </div>
+              <CampaignListFooter
+                totalDocs={result.totalDocs}
+                singular="plano encontrado"
+                plural="planos encontrados"
+                page={state.page}
+                totalPages={result.totalPages}
+                hrefForPage={(page) => buildActionPlanListHref(state, page)}
+              />
             </>
           ) : (
-            <Empty className="min-h-72 border">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <SearchXIcon aria-hidden="true" />
-                </EmptyMedia>
-                <EmptyTitle>Nenhum plano encontrado</EmptyTitle>
-                <EmptyDescription>
-                  Ajuste os filtros ou a janela selecionada. Você só vê planos dentro do seu escopo.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Button asChild variant="outline" className="min-h-11">
-                  <Link href="/campanha/planos">Limpar filtros</Link>
-                </Button>
-              </EmptyContent>
-            </Empty>
+            <CampaignListEmptyState
+              icon={SearchXIcon}
+              title="Nenhum plano encontrado"
+              description="Ajuste os filtros ou a janela selecionada. Você só vê planos dentro do seu escopo."
+            >
+              <Button asChild variant="outline" className="min-h-11">
+                <Link href="/campanha/planos">Limpar filtros</Link>
+              </Button>
+            </CampaignListEmptyState>
           )}
         </CampaignListResults>
       </CampaignListPendingBoundary>
