@@ -11,9 +11,8 @@ import {
   requiredRelationshipFormValue,
 } from '@/lib/formData'
 import {
-  municipalitySignalTypes,
   municipalityUpdateKinds,
-  type MunicipalitySignalType,
+  parseMunicipalitySignalType,
   type MunicipalityUpdateKind,
 } from '@/lib/schemas/municipalityUpdate'
 import {
@@ -32,11 +31,6 @@ export const createMunicipalityUpdateFormAction = async (
       ? (rawKind as MunicipalityUpdateKind)
       : 'semanal'
 
-    const rawSignalType = optionalFormText(formData, 'signalType')
-    const signalType = municipalitySignalTypes.includes(rawSignalType as MunicipalitySignalType)
-      ? (rawSignalType as MunicipalitySignalType)
-      : undefined
-
     await createMunicipalityUpdate({
       municipality,
       kind,
@@ -46,7 +40,7 @@ export const createMunicipalityUpdateFormAction = async (
       body: optionalFormText(formData, 'body'),
       activeVolunteers: optionalIntegerFormValue(formData, 'activeVolunteers'),
       newSupports: optionalIntegerFormValue(formData, 'newSupports'),
-      signalType,
+      signalType: parseMunicipalitySignalType(optionalFormText(formData, 'signalType')),
       signalSource: optionalFormText(formData, 'signalSource'),
       triangulated: checkboxFormValue(formData, 'triangulated'),
     })

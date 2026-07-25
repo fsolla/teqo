@@ -37,6 +37,15 @@ export const municipalitySignalTypeDescriptions: Record<MunicipalitySignalType, 
   outro: 'Fato político relevante que não se encaixa nos tipos anteriores.',
 }
 
+export const parseMunicipalitySignalType = (
+  raw: string | undefined,
+): MunicipalitySignalType | undefined => {
+  if (!raw) return undefined
+  return municipalitySignalTypes.includes(raw as MunicipalitySignalType)
+    ? (raw as MunicipalitySignalType)
+    : undefined
+}
+
 const optionalCount = z.number().int().min(0).max(1_000_000).optional()
 
 export const municipalityUpdateCreateSchema = z

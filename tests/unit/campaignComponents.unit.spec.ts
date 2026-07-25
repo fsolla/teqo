@@ -42,6 +42,7 @@ const municipalityListDefaultProps = {
   columnFilterOptions: { name: [], region: [], advisor: [] },
   trendFormAction: noopListFormAction,
   advisorsFormAction: noopListFormAction,
+  signalFormAction: noopListFormAction,
   state: { page: 1 },
 }
 

@@ -8,6 +8,7 @@ import {
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/municipality/MunicipalityListAdvisorsControl'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
 import { MunicipalityListGoalCoverageCell } from '@/components/campaign/municipality/MunicipalityListGoalCoverageCell'
+import { MunicipalityListSignalControl } from '@/components/campaign/municipality/MunicipalityListSignalControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import { MunicipalitySortableHead } from '@/components/campaign/municipality/MunicipalitySortableHead'
 import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
@@ -79,6 +80,7 @@ export type MunicipalityListProps = {
   columnFilterOptions: MunicipalityColumnFilterOptions
   trendFormAction: MunicipalityStaffFormAction
   advisorsFormAction: MunicipalityStaffFormAction
+  signalFormAction: MunicipalityStaffFormAction
   state: MunicipalityListState
 }
 
@@ -207,6 +209,7 @@ const municipalityListColumns = ({
   advisorOptions,
   trendFormAction,
   advisorsFormAction,
+  signalFormAction,
   concentrationHint,
   signalHint,
   deficitHint,
@@ -361,7 +364,16 @@ const municipalityListColumns = ({
             </MunicipalitySortableHead>
           ),
           cell: (municipality) => (
-            <SignalAgeReadout lastSignalAt={municipality.lastSignalAt} layout="table" />
+            <MunicipalityListSignalControl
+              municipalityID={municipality.id}
+              municipalitySlug={municipality.slug}
+              municipalityName={municipality.name}
+              lastSignalAt={municipality.lastSignalAt}
+              variant="popover"
+              formAction={signalFormAction}
+            >
+              <SignalAgeReadout lastSignalAt={municipality.lastSignalAt} layout="table" />
+            </MunicipalityListSignalControl>
           ),
         },
         {
@@ -476,7 +488,16 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
                   <div>
                     <dt className="text-muted-foreground">Último sinal</dt>
                     <dd>
-                      <SignalAgeReadout lastSignalAt={municipality.lastSignalAt} layout="card" />
+                      <MunicipalityListSignalControl
+                        municipalityID={municipality.id}
+                        municipalitySlug={municipality.slug}
+                        municipalityName={municipality.name}
+                        lastSignalAt={municipality.lastSignalAt}
+                        variant="sheet"
+                        formAction={props.signalFormAction}
+                      >
+                        <SignalAgeReadout lastSignalAt={municipality.lastSignalAt} layout="card" />
+                      </MunicipalityListSignalControl>
                     </dd>
                   </div>
                   <div>
