@@ -17,10 +17,12 @@ export default async function CampaignAppLayout({ children }: { children: React.
   }
 
   return (
-    <SidebarProvider className="h-svh min-h-0 overflow-hidden">
+    // print: unlock the h-svh/overflow-hidden shells and drop the app chrome,
+    // otherwise only the first page of the municipality dossier prints (E16).
+    <SidebarProvider className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
       <CampaignSidebar user={campaignUserShellView(user)} />
-      <SidebarInset className="h-svh min-h-0 overflow-hidden">
-        <header className="flex min-h-14 shrink-0 items-center gap-3 bg-primary px-4 text-primary-foreground md:hidden">
+      <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
+        <header className="flex min-h-14 shrink-0 items-center gap-3 bg-primary px-4 text-primary-foreground md:hidden print:hidden">
           <SidebarTrigger
             label="Abrir ou fechar menu da campanha"
             className="text-primary-foreground"
@@ -34,7 +36,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
         </header>
         <div
           data-slot="campaign-content-scroll"
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-24 md:p-6 md:pb-6"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-24 md:p-6 md:pb-6 print:h-auto print:overflow-visible print:p-0"
         >
           {children}
         </div>

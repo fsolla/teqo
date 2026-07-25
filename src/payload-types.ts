@@ -452,6 +452,10 @@ export interface Municipality {
    */
   nextSteps?: string | null;
   /**
+   * Emendas parlamentares aportadas no município (valores, anos, situação) — nota manual da coordenação (G11).
+   */
+  budgetNotes?: string | null;
+  /**
    * Derivado automaticamente do feed de atualizações do município.
    */
   lastUpdateAt?: string | null;
@@ -1410,6 +1414,7 @@ export interface MunicipalitySelect<T extends boolean = true> {
   stateDeputies?: T;
   dobradinhaNotes?: T;
   nextSteps?: T;
+  budgetNotes?: T;
   lastUpdateAt?: T;
   updatedAt?: T;
   createdAt?: T;

@@ -20,6 +20,8 @@ export type LeadershipRowViewModel = {
   organizationNames: string[]
   stateDeputyNames: string[]
   hasAppAccess: boolean
+  /** Last write to the leadership row — the dossier's freshness readout. */
+  updatedAt: string
 }
 
 const contactNameAndPhone = (
@@ -105,6 +107,7 @@ const toLeadershipRows = async (
         .filter((id): id is number => id !== null)
         .map((id) => stateDeputyNames.get(id) ?? 'Dobradinha'),
       hasAppAccess: relationshipId(doc.user) !== null,
+      updatedAt: doc.updatedAt,
     }
   })
 }
@@ -125,6 +128,32 @@ export const loadMunicipalityLeaderships = async (
     overrideAccess: false,
   })
   return toLeadershipRows(payload, result.docs as Leadership[])
+}
+
+/**
+ * Dossier variant: only the `limit` most recently updated rows (sorted in
+ * Postgres), plus the full count — avoids fetching every leadership of a
+ * heavy município just to slice a handful.
+ */
+export const loadFreshestMunicipalityLeaderships = async (
+  payload: Payload,
+  user: CampaignUser,
+  municipalityID: number,
+  limit: number,
+): Promise<{ rows: LeadershipRowViewModel[]; totalCount: number }> => {
+  const result = await payload.find({
+    collection: 'leadership',
+    where: { municipalities: { in: [municipalityID] } },
+    depth: 1,
+    limit,
+    sort: '-updatedAt',
+    user,
+    overrideAccess: false,
+  })
+  return {
+    rows: await toLeadershipRows(payload, result.docs as Leadership[]),
+    totalCount: result.totalDocs,
+  }
 }
 
 export type LeadershipListState = {
@@ -230,7 +259,9 @@ export const loadLeadershipDetail = async (
 
   return {
     ...row,
-    municipalityIDs: (doc.municipalities ?? []).map(relationshipId).filter((id): id is number => id !== null),
+    municipalityIDs: (doc.municipalities ?? [])
+      .map(relationshipId)
+      .filter((id): id is number => id !== null),
     organizationIDs: (doc.organizations ?? [])
       .map(relationshipId)
       .filter((id): id is number => id !== null),

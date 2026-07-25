@@ -154,6 +154,17 @@ export const MunicipalityStrategyForm = ({
             defaultValue={strategy.nextSteps ?? undefined}
           />
         </Field>
+        <Field>
+          <FieldLabel htmlFor="municipality-budget-notes">Emendas aportadas</FieldLabel>
+          <Textarea
+            id="municipality-budget-notes"
+            name="budgetNotes"
+            rows={3}
+            maxLength={4000}
+            placeholder="Emendas parlamentares no município: valores, anos e situação…"
+            defaultValue={strategy.budgetNotes ?? undefined}
+          />
+        </Field>
         {strategyState.message && strategyState.status !== 'success' ? (
           <Alert variant="destructive">
             <AlertDescription>{strategyState.message}</AlertDescription>

@@ -10,6 +10,7 @@ import {
 
 const tabLabels: Record<MunicipalityDetailTab, string> = {
   overview: 'Visão geral',
+  dossie: 'Dossiê',
   elections: 'Eleições',
   leaderships: 'Lideranças',
   updates: 'Atualizações',
@@ -27,7 +28,7 @@ export const MunicipalityTabNav = ({
 }) => (
   <nav
     aria-label="Seções da Praça"
-    className="h-14 min-w-0 overflow-x-auto overflow-y-hidden border-b"
+    className="h-14 min-w-0 overflow-x-auto overflow-y-hidden border-b print:hidden"
   >
     <ul
       role="list"

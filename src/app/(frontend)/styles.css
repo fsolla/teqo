@@ -404,3 +404,40 @@ body,
     display: none; /* Chrome, Safari */
   }
 }
+
+/* E16 — municipality dossier print view: compact A4 typography (one step down
+   the DESIGN.md ramp: body text-sm→text-xs, section titles text-base→text-sm),
+   sections kept whole across page breaks. Chrome hiding lives in `print:`
+   utilities on the campaign layout/components; this block only tunes the
+   dossier itself. */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  html,
+  body,
+  #app {
+    height: auto;
+  }
+
+  [data-dossier] {
+    font-size: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  [data-dossier] section {
+    break-inside: avoid;
+    padding: 0.75rem;
+  }
+
+  [data-dossier] h2 {
+    font-size: 0.875rem;
+  }
+
+  [data-dossier] a {
+    text-decoration: none;
+    color: inherit;
+  }
+}

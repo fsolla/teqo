@@ -217,9 +217,11 @@ describe('municipality catalog seed and per-role access', () => {
       municipality: administered.id,
       priority: 'alta',
       nextSteps: 'Agendar reunião com a executiva municipal.',
+      budgetNotes: 'Emenda de R$ 2 mi para saúde (2025) empenhada.',
     })
     expect(updated.priority).toBe('alta')
     expect(updated.nextSteps).toBe('Agendar reunião com a executiva municipal.')
+    expect(updated.budgetNotes).toBe('Emenda de R$ 2 mi para saúde (2025) empenhada.')
     fixtures.touchMunicipality(administered.id)
 
     await expect(

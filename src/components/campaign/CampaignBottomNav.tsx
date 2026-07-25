@@ -14,7 +14,7 @@ export const CampaignBottomNav = ({ role }: { role: CampaignUser['role'] }) => {
   return (
     <nav
       aria-label="Navegação principal"
-      className="fixed inset-x-0 bottom-0 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden print:hidden"
     >
       <ul
         className="m-0 grid list-none p-0"

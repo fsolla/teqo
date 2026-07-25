@@ -124,6 +124,14 @@ export const MunicipalityStrategyCard = ({
           </p>
         </div>
       ) : null}
+      {strategy.budgetNotes ? (
+        <div>
+          <h3 className="text-sm font-medium">Emendas aportadas</h3>
+          <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+            {strategy.budgetNotes}
+          </p>
+        </div>
+      ) : null}
     </section>
   )
 }

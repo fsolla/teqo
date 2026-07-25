@@ -9,6 +9,7 @@ import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
 import { CandidateComparePicker } from '@/components/campaign/CandidateComparePicker'
 import { MunicipalityBaselineCard } from '@/components/campaign/MunicipalityBaselineCard'
 import { MunicipalityCandidateComparisonTable } from '@/components/campaign/MunicipalityCandidateComparisonTable'
+import { MunicipalityDossier } from '@/components/campaign/MunicipalityDossier'
 import { MunicipalityGoalAccountCard } from '@/components/campaign/MunicipalityGoalAccountCard'
 import { MunicipalityLeadershipsPanel } from '@/components/campaign/MunicipalityLeadershipsPanel'
 import { MunicipalityPledgesPanel } from '@/components/campaign/MunicipalityPledgesPanel'
@@ -34,6 +35,7 @@ import {
 import { municipalityElectionGeographyForSlug } from '@/utilities/municipalityElectionGeography'
 import { loadMunicipalityElectoralBaseline } from '@/utilities/municipalityElectoralBaseline'
 import { loadMunicipalityGoalAccount } from '@/utilities/municipalityGoalAccount'
+import { loadMunicipalityDossierData } from '@/utilities/municipalityDossierData'
 import {
   getMunicipalityDetailViewModel,
   MunicipalityNotFoundError,
@@ -90,7 +92,8 @@ export default async function MunicipalityDetailPage({
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-2">
+      {/* print: the dossier tab carries its own capa; page chrome stays out. */}
+      <header className="flex flex-col gap-2 print:hidden">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">{view.name}</h1>
           <Badge variant="scope">{municipalityKindLabels[view.kind]}</Badge>
@@ -114,6 +117,18 @@ export default async function MunicipalityDetailPage({
 
       {activeTab === 'overview' ? (
         <OverviewTab view={view} payloadUser={{ payload, user }} />
+      ) : null}
+
+      {activeTab === 'dossie' ? (
+        // Composes every vertical of the município in one read — streams like
+        // the elections tab since it includes the same TSE baseline read.
+        <Suspense fallback={<MunicipalityTabFallback />}>
+          <DossierTab
+            view={view}
+            advisorSummaries={advisorSummaries}
+            payloadUser={{ payload, user }}
+          />
+        </Suspense>
       ) : null}
 
       {activeTab === 'elections' ? (
@@ -243,6 +258,19 @@ const GoalAccountCard = async ({
       potential={potential}
     />
   )
+}
+
+const DossierTab = async ({
+  view,
+  advisorSummaries,
+  payloadUser: { payload, user },
+}: {
+  view: Awaited<ReturnType<typeof getMunicipalityDetailViewModel>>
+  advisorSummaries: Awaited<ReturnType<typeof loadAdvisorSummaries>>
+  payloadUser: PayloadUser
+}) => {
+  const data = await loadMunicipalityDossierData(payload, user, view)
+  return <MunicipalityDossier view={view} advisors={advisorSummaries} data={data} />
 }
 
 const MunicipalityTabFallback = () => (

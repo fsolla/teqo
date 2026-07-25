@@ -19,6 +19,7 @@ export const municipalityStrategyUpdateSchema = z.object({
   stateDeputies: stateDeputiesArraySchema.optional(),
   dobradinhaNotes: trimmedNullableText(4000),
   nextSteps: trimmedNullableText(4000),
+  budgetNotes: trimmedNullableText(4000),
 })
 
 export const municipalityPoliticalTrendSchema = z.object({
