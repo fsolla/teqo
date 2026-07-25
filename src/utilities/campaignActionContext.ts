@@ -4,7 +4,7 @@ import config from '@payload-config'
 import { getPayload, type Payload } from 'payload'
 
 import type { CampaignUser } from '@/payload-types'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
+import { isCampaignStaff, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 
@@ -66,6 +66,21 @@ export const reloadCoordinatorActor = async (
 ): Promise<CampaignUser> => {
   const currentActor = await reloadCampaignActor(payload, actor, req)
   if (currentActor.role !== 'coordinator') throw new Error(errorMessage)
+  return currentActor
+}
+
+/**
+ * Reloads the actor's fresh role and asserts they are unrestricted
+ * (coordinator or candidate). Throws `errorMessage` otherwise.
+ */
+export const reloadUnrestrictedActor = async (
+  payload: CampaignActorPayload,
+  actor: CampaignUser,
+  errorMessage: string,
+  req?: PayloadTransactionRequest,
+): Promise<CampaignUser> => {
+  const currentActor = await reloadCampaignActor(payload, actor, req)
+  if (!isCampaignUnrestricted(currentActor)) throw new Error(errorMessage)
   return currentActor
 }
 

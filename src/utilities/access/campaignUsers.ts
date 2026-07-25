@@ -8,7 +8,6 @@ import { getAccessibleMunicipalityIds } from '@/utilities/access/municipalities'
 import type { DynamicFind } from '@/utilities/access/shared'
 import {
   getFreshCampaignUser,
-  isCampaignCoordinator,
   isCampaignLeader,
   isCampaignStaff,
   isCampaignUnrestricted,
@@ -45,7 +44,7 @@ const canSelfOrStaffUpdateCampaignUser = async (
   id: string | number | undefined,
 ): Promise<boolean> => {
   if (isPayloadAdmin(req.user)) return true
-  if (isCampaignCoordinator(await getFreshCampaignUser(req))) return true
+  if (isCampaignUnrestricted(await getFreshCampaignUser(req))) return true
   if (!isCampaignUser(req.user) || id === undefined) return false
 
   return String(id) === String(req.user.id)
@@ -140,7 +139,7 @@ export const canReadCampaignUserPhone: FieldAccess = async ({ doc, id, req }) =>
 
 export const canCreateCampaignUserPhone: FieldAccess = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
-  return isCampaignCoordinator(await getFreshCampaignUser(req))
+  return isCampaignUnrestricted(await getFreshCampaignUser(req))
 }
 
 export const canUpdateCampaignUserPhone: FieldAccess = async ({ id, req }) => {
@@ -149,5 +148,5 @@ export const canUpdateCampaignUserPhone: FieldAccess = async ({ id, req }) => {
   const currentUser = await getFreshCampaignUser(req)
   if (!currentUser) return false
   if (id !== undefined && String(id) === String(currentUser.id)) return true
-  return isCampaignCoordinator(currentUser)
+  return isCampaignUnrestricted(currentUser)
 }

@@ -232,7 +232,7 @@ describe('municipality catalog seed and per-role access', () => {
     ).rejects.toThrow()
   })
 
-  it('restricts advisor assignment to the coordinator and validates roles', async () => {
+  it('restricts advisor assignment to unrestricted staff and validates roles', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const advisor = await fixtures.createCampaignUser('advisor')
@@ -244,7 +244,7 @@ describe('municipality catalog seed and per-role access', () => {
         municipality: municipality.id,
         advisors: [advisor.id],
       }),
-    ).rejects.toThrow('Coordenador Geral')
+    ).rejects.toThrow('coordenação geral ou o candidato')
 
     await expect(
       assignMunicipalityAdvisorsRecord(payload, coordinator, {
@@ -253,10 +253,9 @@ describe('municipality catalog seed and per-role access', () => {
       }),
     ).rejects.toThrow()
 
-    // The candidate is eligible: the projection sheet lists him as responsible
-    // for some municipalities (decision 2026-07-24).
+    // The candidate is eligible as both assignee and assigner (B19 + E4R).
     const candidate = await fixtures.createCampaignUser('candidate')
-    const assigned = await assignMunicipalityAdvisorsRecord(payload, coordinator, {
+    const assigned = await assignMunicipalityAdvisorsRecord(payload, candidate, {
       municipality: municipality.id,
       advisors: [advisor.id, candidate.id],
     })

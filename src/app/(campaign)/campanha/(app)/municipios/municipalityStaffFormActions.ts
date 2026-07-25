@@ -82,7 +82,7 @@ export const assignMunicipalityAdvisorsFormAction = async (
   } catch (error) {
     return mapCampaignFormActionError({
       error,
-      safeMessages: ['Somente o Coordenador Geral designa assessores.'],
+      safeMessages: ['Somente a coordenação geral ou o candidato designa assessores.'],
       genericMessage:
         'Não foi possível atualizar os assessores. Verifique seu acesso e tente novamente.',
     })

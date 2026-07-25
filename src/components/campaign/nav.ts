@@ -5,13 +5,14 @@ import {
   HomeIcon,
   InboxIcon,
   MapPinIcon,
+  UserCogIcon,
   Users2Icon,
   UsersIcon,
   type LucideIcon,
 } from 'lucide-react'
 
 import type { CampaignUser } from '@/payload-types'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
+import { isCampaignStaff, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { canAccessSupporterArea } from '@/utilities/supporterUi'
 
 export type CampaignNavItem = {
@@ -28,6 +29,7 @@ const staffNav: CampaignNavItem[] = [
   { title: 'Planos', href: '/campanha/planos', icon: CalendarDaysIcon },
   { title: 'Demandas', href: '/campanha/demandas', icon: InboxIcon },
   { title: 'Apoiadores', href: '/campanha/apoiadores', icon: UsersIcon },
+  { title: 'Assessores', href: '/campanha/assessores', icon: UserCogIcon },
 ]
 
 /**
@@ -53,9 +55,11 @@ const leaderNav: CampaignNavItem[] = [
 export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] => {
   if (role === 'leader') return leaderNav
 
-  return staffNav.filter(
-    (item) => item.href !== '/campanha/apoiadores' || canAccessSupporterArea(role),
-  )
+  return staffNav.filter((item) => {
+    if (item.href === '/campanha/apoiadores') return canAccessSupporterArea(role)
+    if (item.href === '/campanha/assessores') return isCampaignUnrestrictedRole(role)
+    return true
+  })
 }
 
 export const getCampaignSecondaryNav = (role: CampaignUser['role']): CampaignNavItem[] =>
@@ -63,12 +67,18 @@ export const getCampaignSecondaryNav = (role: CampaignUser['role']): CampaignNav
 
 /**
  * Compact set for the mobile bottom bar (max 5 items with a home slot).
+ * Assessores stays sidebar-only (same as perfil/organizações).
  */
 export const getCampaignBottomNav = (role: CampaignUser['role']): CampaignNavItem[] => {
   const nav = getCampaignNav(role)
   if (role === 'leader') return nav
 
-  return nav.filter((item) => item.href !== '/campanha/apoiadores').slice(0, 5)
+  return nav
+    .filter(
+      (item) =>
+        item.href !== '/campanha/apoiadores' && item.href !== '/campanha/assessores',
+    )
+    .slice(0, 5)
 }
 
 /** Home matches only exactly; other items also match nested paths. */
@@ -81,3 +91,6 @@ export const isCampaignNavActive = (pathname: string, href: string): boolean => 
 
 export const isCampaignStaffRole = (role: CampaignUser['role']): boolean =>
   isCampaignStaff({ collection: 'campaignUser', role } as CampaignUser)
+
+const isCampaignUnrestrictedRole = (role: CampaignUser['role']): boolean =>
+  isCampaignUnrestricted({ collection: 'campaignUser', role } as CampaignUser)

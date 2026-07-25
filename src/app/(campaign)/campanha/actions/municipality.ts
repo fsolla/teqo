@@ -15,8 +15,8 @@ import {
 import type { CampaignUser } from '@/payload-types'
 import {
   getCampaignActionContext,
-  reloadCoordinatorActor,
   reloadStaffActor,
+  reloadUnrestrictedActor,
 } from '@/utilities/campaignActionContext'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
@@ -124,7 +124,7 @@ export const setMunicipalityExpectedVotes = async (input: MunicipalityExpectedVo
   return setMunicipalityExpectedVotesRecord(payload, actor, input)
 }
 
-/** Advisor assignment is coordinator-only; the collection hook validates eligibility. */
+/** Advisor assignment is unrestricted staff (coordinator + candidate); the hook validates eligibility. */
 export const assignMunicipalityAdvisorsRecord = async (
   payload: Payload,
   actor: CampaignUser,
@@ -135,16 +135,16 @@ export const assignMunicipalityAdvisorsRecord = async (
   return withPayloadTransaction(
     payload,
     async ({ req }) => {
-      await reloadCoordinatorActor(
+      await reloadUnrestrictedActor(
         payload,
         actor,
-        'Somente o Coordenador Geral designa assessores.',
+        'Somente a coordenação geral ou o candidato designa assessores.',
         req,
       )
 
       await acquireTextAdvisoryLocks(payload, req, [`municipality-advisors:${municipality}`])
 
-      // Intentional admin bypass: coordinator role was freshly verified above;
+      // Intentional admin bypass: unrestricted role was freshly verified above;
       // the advisors field is admin-only by field access.
       return payload.update({
         collection: 'municipality',

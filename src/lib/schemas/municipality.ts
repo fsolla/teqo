@@ -37,11 +37,13 @@ export const parsePoliticalTrendStatusFormValue = (
     : null
 }
 
+export const MAX_ADVISORS_PER_MUNICIPALITY = 10
+
 export const municipalityAdvisorsAssignmentSchema = z.object({
   municipality: positiveRelationshipId,
   advisors: z
     .array(positiveRelationshipId)
-    .max(10)
+    .max(MAX_ADVISORS_PER_MUNICIPALITY)
     .transform((ids) => [...new Set(ids)]),
 })
 
