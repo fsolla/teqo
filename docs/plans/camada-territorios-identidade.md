@@ -3,7 +3,7 @@
 Status: rascunho
 Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios + hardening)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Inteligência de campanha", E12; plano-mestre [inteligencia-campanha.md](inteligencia-campanha.md))
-Impeccable: B — agrupamento/rollup nas superfícies existentes (lista/overview, detalhe do município, mapa TI opcional); sem rota nova
+Impeccable: B — agrupamento/rollup nas superfícies existentes (lista/overview, detalhe do município, mapa TI opcional); sem rota nova **própria** — desde 2026-07-25 a superfície regional dedicada é **B21** (`/campanha/territorios`, [plano](pagina-territorios-identidade.md)), onde as métricas deste item pousam
 Appetite: ~1,5 dia eng; sem migration (mapeamento município→TI é estático)
 Responsável: —
 
@@ -79,7 +79,7 @@ Componentes:
 
 ## Rabbit holes
 
-- **Rollup virar segunda página de analytics.** É um agrupamento da lista + números no header — não um dashboard regional novo.
+- **Rollup virar segunda página de analytics.** É um agrupamento da lista + números no header — não um dashboard regional novo. _(Atualização 2026-07-25: a página regional existe como item próprio, **B21** — tabela comparativa com sort/filtro, sem cards de KPI. As métricas deste item entram como colunas lá; a proibição continua valendo contra transformá-la em dashboard.)_
 - **Zonas de Salvador no rollup do Metropolitano.** As 19 Municípios-zona têm `region` = Metropolitano; agregar por soma funciona, mas o breakdown obrigatório precisa listar zonas E municípios RMS separados — não "resolver" juntando tudo.
 - **Comparação entre TIs virar ranking público.** Mesmo risco de gaming do benchmark (T4-contraindicação): benchmark é para aprender mecanismo, não régua punitiva — copy da UI reflete isso.
 
