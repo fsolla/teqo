@@ -1,6 +1,6 @@
 # Documentação de conceitos de inteligência de campanha
 
-Status: rascunho
+Status: entregue (2026-07-24)
 Atualizado em: 2026-07-24
 Item do roadmap: [docs/roadmap.md](../roadmap.md) ("Demais itens abertos", **E18** — adjacente ao programa Inteligência de campanha E8–E16/B13/C12)
 Impeccable: C — rota nova `/campanha/conceitos`, sem design-ref
@@ -43,7 +43,7 @@ O card "Conta da cadeira" no detalhe do município (`/campanha/municipios/<slug>
 
 - **Conteúdo em módulo de código estático (`src/lib`), não em collection Payload.** As explicações são 1:1 com fórmulas vivas em `municipalityPotential.ts`/`goalCoverage.ts` (e, depois, nos utilities de E9–E17); um texto curado por PR ao lado do código que ele descreve fica revisável junto da mudança de fórmula. **Rejeitado:** collection admin (richText) — deixaria a cópia dessincronizar da fórmula real sem qualquer teste/lint pegando, exigiria grupo `admin.group` e access novos para um conteúdo que nenhum coordenador vai editar no `/admin`.
 - **Rota nova staff-only (`isCampaignStaff`), sem acesso de `leader`.** Todo conceito documentado descreve campos staff-only (estimativas, metas, teto do campo) que a liderança nunca vê — expor o glossário a ela vazaria vocabulário sem contexto (M4 vocabulário duplo, mesmo princípio de E14). **Rejeitado:** liberar leitura a todo `campaignUser` — nada para a liderança ancorar a leitura.
-- **Descoberta via link contextual nos tooltips existentes, não item fixo na `staffNav`.** A sidebar hoje tem 7 itens fixos (`nav.ts`); glossário é material de referência, não destino de uso diário — Design Principle "Clarity under pressure". **Rejeitado:** adicionar a `staffNav` já nesta entrega (ver Adiado com gatilho).
+- **Descoberta por link contextual nos tooltips + entrada no rodapé da sidebar.** Os tooltips levam à âncora do número que a pessoa está olhando; a sidebar garante um caminho de volta sem depender de lembrar em qual card estava o link. A entrada não entra na `staffNav` (os 7 destinos de trabalho, `nav.ts`) nem na barra inferior do mobile: vai num grupo próprio colado no rodapé (`staffSecondaryNav`), material de referência separado de onde a mesa trabalha — Design Principle "Clarity under pressure". **Rejeitado:** oitavo item no meio da `staffNav`, competindo com Municípios/Lideranças/Demandas.
 - **i18n e naming**: identificadores em inglês (`campaignIntelligenceConcepts.ts`, `ConceptSection`, `conceptId`), strings visíveis em pt-BR; rota `/campanha/conceitos` (Português, mesmo padrão de `/campanha/dobradinhas`/`/campanha/planos` — não é param dinâmico).
 
 ## Questões em aberto
@@ -90,8 +90,22 @@ Componentes:
 
 ## Adiado com gatilho
 
-- **Item fixo na `staffNav` (`nav.ts`).** Revisitar quando houver evidência de que staff navega direto para `/campanha/conceitos` (não via link contextual do tooltip) — ex. analytics de navegação ou pedido explícito em sessão.
+- ~~**Item fixo na `staffNav` (`nav.ts`).**~~ Gatilho disparado no mesmo dia (pedido explícito em sessão): entrou como grupo secundário no rodapé da sidebar, não na `staffNav` — ver Entrega.
 - **Exemplo numérico "ao vivo" de município real.** Revisitar se o exemplo estático se mostrar insuficiente em uso real (feedback de campo pedindo números reais).
+
+## Entrega (2026-07-24)
+
+Implementado como planejado, com três desvios documentados:
+
+- **7 conceitos, não 6.** "Votos válidos projetados" entrou como conceito próprio (categoria "Base do cálculo"): a fórmula do teto projetado e a da meta sugerida citam a projeção de válidos, então descrevê-la de fora deixaria as duas explicações circulares. Categorias (`base` / `diagnostico` / `meta`) já existem no conteúdo — cada fatia futura do programa acrescenta a sua.
+- **Seções planas, sem `Card` por conceito.** É superfície de leitura: `article` por conceito com hairline entre eles, coluna capada em `max-w-prose`, e um índice sticky só em `lg` (num telefone ele empurraria as sete seções abaixo da dobra para duplicar o que rolar já dá). `article:target` recebe um tint `bg-muted/50` — é o que orienta quem chegou por âncora no meio da página. Cards empilhados seriam a resposta preguiçosa (`DESIGN.md`, "Flat-By-Default").
+- **Dois caminhos de "saiba mais", por acessibilidade.** Cada tooltip de métrica (`MetricExplanation`, prop `conceptID`) leva à âncora do conceito; o Popover `CampaignInfoHint` do título leva à página inteira. O Popover é o caminho de teclado — conteúdo de Tooltip do Radix não entra na ordem de tabulação. Para o toque funcionar, `MunicipalityHoverTooltip` passou a tratar o próprio conteúdo como "dentro" no listener de `pointerdown` (antes o link era desmontado antes do clique chegar).
+
+Ainda na mesma sessão, a pedido do usuário, a página ganhou **entrada na sidebar**: `staffSecondaryNav` (`nav.ts`) num `SidebarGroup` com `mt-auto` — colado no rodapé da navegação, acima do bloco de perfil/sair, fora da `staffNav` e fora da barra inferior do mobile. `getCampaignSecondaryNav` devolve vazio para `leader`, então a liderança não vê um link que só a devolveria para `/campanha`. O markup do item virou `CampaignSidebarLink` (dois pontos de uso: destinos e referência).
+
+Também corrigido no caminho (defeito de E8 achado ao conferir a redação contra a tela): `formatElectionNumber` usava `Intl.NumberFormat('pt-BR')` sem fixar dígitos fracionários, então a meta sugerida decomposta (fracionária) aparecia como "Meta usada na conta: 100,968" — lida como cem mil por qualquer humano na sala. Agora `maximumFractionDigits: 0`, com teste em `tests/unit/goalCoverage.unit.spec.ts`.
+
+Cobertura: `tests/unit/campaignIntelligenceConcepts.unit.spec.ts` (ids únicos/anchor-safe, toda categoria renderizada, campos obrigatórios) e `tests/e2e/campaignConcepts.e2e.spec.ts` (staff lê a página e chega nela pelo card; âncora do "Saiba mais"; `leader` é redirecionado). `/campanha/conceitos` entrou na lista de prewarm de `tests/e2e/setup.e2e.spec.ts`: sem isso o clique no link do Popover espera o dev server compilar a rota e a asserção de URL estoura antes da navegação — flake do ambiente de teste, não do produto.
 
 ## Referências
 

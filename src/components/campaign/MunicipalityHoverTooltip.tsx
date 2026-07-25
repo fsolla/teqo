@@ -20,7 +20,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
  * feature), so once opened by touch it would otherwise stay open until the
  * page navigates. The `pointerdown`-outside listener below closes it —
  * tapping a *different* metric's trigger counts as "outside" too, which is
- * what keeps at most one of these tooltips open at a time.
+ * what keeps at most one of these tooltips open at a time. The content itself
+ * counts as "inside": it may hold a link (E18's "Saiba mais"), and closing on
+ * `pointerdown` would unmount that link before its click ever landed.
  */
 type TappableElement = ReactElement<{
   onPointerUp?: (event: PointerEvent) => void
@@ -42,12 +44,15 @@ export const MunicipalityHoverTooltip = ({
 }) => {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLElement | null>(null)
+  const contentRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (!open) return
     const closeIfOutside = (event: globalThis.PointerEvent) => {
       if (event.pointerType !== 'touch') return
-      if (triggerRef.current?.contains(event.target as Node)) return
+      const target = event.target as Node
+      if (triggerRef.current?.contains(target)) return
+      if (contentRef.current?.contains(target)) return
       setOpen(false)
     }
     document.addEventListener('pointerdown', closeIfOutside)
@@ -69,6 +74,7 @@ export const MunicipalityHoverTooltip = ({
       <Tooltip open={open} onOpenChange={setOpen}>
         <TooltipTrigger asChild>{trigger}</TooltipTrigger>
         <TooltipContent
+          ref={contentRef}
           side={side}
           align={align}
           sideOffset={sideOffset}

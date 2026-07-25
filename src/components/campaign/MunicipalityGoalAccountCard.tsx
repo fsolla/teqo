@@ -1,9 +1,15 @@
+import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { CampaignInfoHint } from '@/components/campaign/CampaignInfoHint'
 import { MunicipalityHoverTooltip } from '@/components/campaign/MunicipalityHoverTooltip'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/MunicipalityListExpectedVotesControl'
 import { Progress } from '@/components/ui/Progress'
+import {
+  CAMPAIGN_CONCEPTS_PATH,
+  campaignConceptHref,
+  type CampaignConceptId,
+} from '@/lib/campaignIntelligenceConcepts'
 import { formatElectionNumber } from '@/lib/electionInsights'
 import {
   formatGoalCoverageDeficitLabel,
@@ -65,11 +71,29 @@ const GoalAccountMetric = ({
  * sentence with three technical terms didn't resolve the coordinator's
  * confusion. `formula` sits at `text-background/70` (tooltip content is
  * dark, so this lightens rather than muting against a light background).
+ *
+ * `conceptID` appends E18's "Saiba mais" deep link (every caller documents
+ * one, so this is required, not optional). The tooltip content is hoverable
+ * (Radix keeps it open while the pointer is inside) and its own touch-dismiss
+ * ignores taps on the content, so mouse and touch both reach the link; a
+ * keyboard user can't tab into tooltip content, which is why the card
+ * title's `CampaignInfoHint` Popover carries the same link.
  */
-const MetricExplanation = ({ lead, formula }: { lead: ReactNode; formula?: ReactNode }) => (
+const MetricExplanation = ({
+  lead,
+  formula,
+  conceptID,
+}: {
+  lead: ReactNode
+  formula?: ReactNode
+  conceptID: CampaignConceptId
+}) => (
   <div className="flex flex-col gap-1">
     <p>{lead}</p>
     {formula ? <p className="text-background/70">{formula}</p> : null}
+    <Link href={campaignConceptHref(conceptID)} className="font-medium underline underline-offset-2">
+      Saiba mais
+    </Link>
   </div>
 )
 
@@ -133,6 +157,17 @@ export const MunicipalityGoalAccountCard = ({
               O roll-off e o teto do campo (abaixo) só usam 2022 — a majoritária de 2014/2018 já
               foi importada, mas ainda não entra nessas contas.
             </p>
+            {/*
+              Keyboard path into E18's documentation: Popover content is
+              tabbable, tooltip content is not, so this link (unlike the
+              per-metric ones) is reachable without a pointer.
+            */}
+            <Link
+              href={CAMPAIGN_CONCEPTS_PATH}
+              className="font-medium text-primary underline underline-offset-4"
+            >
+              Como cada número é calculado
+            </Link>
           </div>
         </CampaignInfoHint>
       </div>
@@ -186,6 +221,7 @@ export const MunicipalityGoalAccountCard = ({
                 </>
               }
               formula="Fórmula: votos do presidencial do campo em 2022 (1º turno), ajustados pelo crescimento de comparecimento projetado para a disputa de deputado federal."
+              conceptID="teto-do-campo"
             />
           }
         />
@@ -201,6 +237,7 @@ export const MunicipalityGoalAccountCard = ({
                 </>
               }
               formula="Fórmula: votos de Solla (2022) ÷ teto do campo (presidencial 2022). Só diagnóstico — não entra na meta."
+              conceptID="captura"
             />
           }
         />
@@ -216,6 +253,7 @@ export const MunicipalityGoalAccountCard = ({
                 </>
               }
               formula="O denominador é o próprio campo nessa disputa — não o teto presidencial de 2022, que é o denominador da Captura."
+              conceptID="share-intracampo"
             />
           }
         />
@@ -231,6 +269,7 @@ export const MunicipalityGoalAccountCard = ({
                 </>
               }
               formula="Fórmula: (brancos + nulos, deputado federal 2022) − (brancos + nulos, presidencial 2022)."
+              conceptID="roll-off"
             />
           }
         />

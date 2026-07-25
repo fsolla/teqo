@@ -1,4 +1,5 @@
 import {
+  BookOpenIcon,
   CalendarDaysIcon,
   HandshakeIcon,
   HomeIcon,
@@ -29,6 +30,20 @@ const staffNav: CampaignNavItem[] = [
   { title: 'Apoiadores', href: '/campanha/apoiadores', icon: UsersIcon },
 ]
 
+/**
+ * Reference material, not a place to work: sits in its own group at the foot
+ * of the sidebar, below the destinations, and never in the mobile bottom bar.
+ * Staff-only — every documented number is one a `leader` never sees.
+ *
+ * The href is a literal, not an import from `campaignIntelligenceConcepts.ts`:
+ * this module reaches client components (`CampaignSidebar`), and that one
+ * carries the full glossary content — pulling it in for a single path string
+ * would put the whole glossary in the client bundle.
+ */
+const staffSecondaryNav: CampaignNavItem[] = [
+  { title: 'Conceitos', href: '/campanha/conceitos', icon: BookOpenIcon },
+]
+
 const leaderNav: CampaignNavItem[] = [
   // The leader home IS the contact tool — one entry, one href (duplicate
   // hrefs previously produced duplicate React keys in the sidebar).
@@ -42,6 +57,9 @@ export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] =>
     (item) => item.href !== '/campanha/apoiadores' || canAccessSupporterArea(role),
   )
 }
+
+export const getCampaignSecondaryNav = (role: CampaignUser['role']): CampaignNavItem[] =>
+  isCampaignStaffRole(role) ? staffSecondaryNav : []
 
 /**
  * Compact set for the mobile bottom bar (max 5 items with a home slot).
