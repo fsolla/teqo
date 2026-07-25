@@ -104,7 +104,9 @@ describe('campaign visual foundation', () => {
       'utf8',
     )
 
-    expect(layoutSource).toContain('className="h-svh min-h-0 overflow-hidden"')
+    expect(layoutSource).toContain(
+      'className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible"',
+    )
     expect(layoutSource).toContain('data-slot="campaign-content-scroll"')
     expect(layoutSource).toContain('min-h-0 flex-1 overflow-y-auto overscroll-contain')
     expect(sidebarSource).toContain('h-svh shrink-0')

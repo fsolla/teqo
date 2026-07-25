@@ -1,5 +1,6 @@
 export const municipalityDetailTabs = [
   'overview',
+  'dossie',
   'elections',
   'leaderships',
   'updates',
@@ -11,6 +12,7 @@ export type MunicipalityDetailSearchParams = Record<string, string | string[] | 
 
 const tabQueryKeys: Record<MunicipalityDetailTab, readonly string[]> = {
   overview: [],
+  dossie: [],
   elections: ['compare'],
   leaderships: ['leadershipQ', 'leadershipPage'],
   updates: ['updateKind', 'updatePage', 'newUpdate'],

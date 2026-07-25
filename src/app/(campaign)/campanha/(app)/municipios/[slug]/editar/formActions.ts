@@ -32,6 +32,7 @@ export const updateMunicipalityStrategyFormAction = async (
       stateDeputies: repeatedRelationshipFormValues(formData, 'stateDeputies'),
       dobradinhaNotes: nullableFormText(formData, 'dobradinhaNotes'),
       nextSteps: nullableFormText(formData, 'nextSteps'),
+      budgetNotes: nullableFormText(formData, 'budgetNotes'),
     })
     revalidateMunicipalityListPaths({ slug: optionalMunicipalitySlugFromForm(formData) })
     return { status: 'success', message: 'Estratégia atualizada.' }

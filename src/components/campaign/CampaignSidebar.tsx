@@ -46,7 +46,7 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
   }
 
   return (
-    <Sidebar collapsible="none" className="h-svh shrink-0 border-r border-sidebar-border">
+    <Sidebar collapsible="none" className="h-svh shrink-0 border-r border-sidebar-border print:hidden">
       <SidebarHeader className="border-b border-sidebar-border">
         <Link
           href="/campanha"

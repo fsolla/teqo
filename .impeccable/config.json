@@ -20,6 +20,15 @@
         ],
         "createdAt": "2026-07-23T22:40:00.000Z",
         "reason": "Meta's documented noscript tracking pixel: a hidden 1x1 <img> whose src is a templated facebook.com/tr URL — not a rendered image"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#c86112",
+        "files": [
+          "src/app/(frontend)/styles.css"
+        ],
+        "createdAt": "2026-07-25T02:48:38.641Z",
+        "reason": "Pre-existing public-site body brand gradient (live in production, predates the hook); flagged while an unrelated print block was added"
       }
     ]
   }

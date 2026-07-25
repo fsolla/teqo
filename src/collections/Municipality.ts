@@ -444,6 +444,21 @@ export const Municipality: CollectionConfig = {
       },
     },
     {
+      name: 'budgetNotes',
+      type: 'textarea',
+      label: 'Emendas aportadas',
+      maxLength: 4000,
+      access: {
+        read: canReadCampaignStaffField,
+        create: canManageCampaignStaffField,
+        update: canManageCampaignStaffField,
+      },
+      admin: {
+        description:
+          'Emendas parlamentares aportadas no município (valores, anos, situação) — nota manual da coordenação (G11).',
+      },
+    },
+    {
       name: 'lastUpdateAt',
       type: 'date',
       label: 'Última atualização',

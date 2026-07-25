@@ -1,10 +1,10 @@
 # E16 — Dossiê do município (pré-agenda)
 
-Status: rascunho (O6 — pedido explícito da sessão de campo de 2026-07-23)
-Atualizado em: 2026-07-24
+Status: entregue em código (2026-07-25)
+Atualizado em: 2026-07-25 (as-built: aba `?tab=dossie` staff-only com `MunicipalityDossier.tsx` + `municipalityDossierData.ts` compondo os loaders existentes — baseline TSE/rank A11, conta da cadeira E8, rede com frescor `updatedAt`, agenda `actionPlan`, sinais, perfil A8 com caveat para zonas; caps 8/5/3+2 com "ver tudo"; `municipality.budgetNotes` via migration `20260725_022155_add_municipality_budget_notes` — o `.json` também sara a cadeia de snapshots pós-`campaign_goals`; print CSS: chrome `print:hidden`, shells `print:h-auto print:overflow-visible`, tipografia A4; int test com mock do `unstable_cache` do baseline. Revisão pré-implementação 2026-07-24: `budgetNotes` ganhou migration própria — o veículo C12 caducou; registrado o estado zero-consumidor de A8, resolvido pela seção "Perfil")
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Inteligência de campanha, E16; plano-mestre [inteligencia-campanha.md](inteligencia-campanha.md), gap G11)
 Impeccable: B — visão nova dentro do detalhe do município existente (tab/rota `dossie` + print), sem sistema novo
-Appetite: ~1 dia eng; sem migration na v1 (compõe dados existentes; campo de emendas é fase G11 manual)
+Appetite: ~1 dia eng; uma migration pequena (`budgetNotes` — ver questão resolvida abaixo); o resto compõe dados existentes (fonte estruturada de emendas segue G11 adiado)
 Responsável: —
 
 ## Design (Impeccable)
@@ -26,7 +26,7 @@ A sessão real de 2026-07-23 ([CUSTOMER.md](../CUSTOMER.md)) trouxe O6 como o ú
 
 - **Tab/rota "Dossiê"** no detalhe do município (staff-only): seções na ordem de leitura de campo — capa (nome, TI, prioridade, nível quando existir), conta local (série 2014/2018/2022, % da própria votação via A11, captura/cobertura quando E8 existir), rede (lideranças ativas + responsável + frescor), conjuntura (`politicalTrend` + forças/riscos + disputa local), dobradinhas (M4 + notas), agenda/planos recentes e sinais recentes (últimos `municipalityUpdate`), perfil (demografia A8), emendas (quando houver dado — v1 mostra a seção só se preenchida).
 - **Visão print:** `print:`-friendly (CSS print da mesma rota; sem lib de PDF) — 1–2 páginas A4, cabeçalho com data de geração ("dossiê de <data>" — dado envelhece).
-- **Emendas manual-first (G11):** nota staff curta no `MunicipalityStrategyCard` existente se couber em campo atual (`nextSteps`/`dobradinhaNotes`) **ou** campo `budgetNotes` staff-only novo — decidir na implementação com custo de migration à vista (questão em aberto abaixo).
+- **Emendas manual-first (G11):** campo `budgetNotes` staff-only novo em `municipality` (migration pequena própria — decisão registrada na questão resolvida abaixo), editado no formulário de estratégia; a seção "Emendas aportadas" do dossiê só aparece quando preenchido.
 - Access: tudo staff (coordinator/advisor/candidate); leader não acessa (lockdown); campos staff-only seguem a redaction dos view models.
 
 ## Decisões travadas
@@ -38,7 +38,7 @@ A sessão real de 2026-07-23 ([CUSTOMER.md](../CUSTOMER.md)) trouxe O6 como o ú
 
 ## Questões em aberto
 
-- **Onde mora o dado de emendas na v1?** Opções: reusar campo texto existente (`nextSteps`) com convenção | campo staff-only novo `budgetNotes` (migration pequena). **Recomendação:** campo novo `budgetNotes` na migration de C12 se E16 for aprovado antes dela rodar (mesma janela 2 — zero migration extra); senão, convenção em `nextSteps` até C12.
+- ~~**Onde mora o dado de emendas na v1?**~~ **Resolvida (2026-07-24):** campo staff-only novo `budgetNotes` em `municipality`, com migration própria pequena (`add_municipality_budget_notes`). A opção "carona na migration de C12" caducou — C12 foi entregue com `20260724_180000_add_campaign_foundation_records` antes de E16 começar. **Rejeitada:** convenção dentro de `nextSteps` (polui a semântica do campo e quebra a regra "seção Emendas só aparece se preenchida").
 - **Dossiê mostra nível N0–N4 (E14)?** **Recomendação:** sim quando existir, staff-only — mas nunca no print destinado a circulação além da coordenação (vocabulário duplo). v1: print omite nível por default.
 
 ## Abordagem proposta
@@ -77,10 +77,25 @@ Componentes: `src/utilities/municipalityDossierData.ts` (novo — orquestra load
 - **Economia local virar pesquisa.** v1 usa o que A8 tem (demografia); "economia" além disso é nota de conjuntura manual — não construir base socioeconômica nova.
 - **Print pixel-perfect.** CSS print razoável basta; não é material de campanha, é documento de trabalho.
 
+## Já resolvido no simplify (não reabrir)
+
+- Dados mortos `votePosition2022` / `pledgeCoverage` removidos de `MunicipalityDossierData` (rank já vem do baseline card).
+- Agenda reusa `buildActionPlanListWhere` + `actionPlanListSelect` + `toActionPlanListViewModel` + `pagination: false`.
+- `loadFreshestMunicipalityLeaderships` (sort `-updatedAt` + limit no Postgres) em vez de fetch-all-and-slice.
+- Conta da cadeira encadeada no `Promise.all` (pledges → goal), concorrente com baseline/rede/sinais/agenda.
+- Datas/números via `formatBahiaDateTimeLabel` / `formatElectionNumber`; Prettier em `migrations/index.ts` e fontes novas.
+
+## Explicitamente fora (triage pós-simplify 2026-07-25)
+
+- Memoização em module-scope de `computeStatewideGoalDecomposition` — pré-existente E8, fora do diff do dossiê (revisitar no plano [conta-da-cadeira.md](conta-da-cadeira.md) se o hot path do dashboard doer).
+- Encolher o page size do feed de sinais de 10 → 5 — o loader compartilhado precisa de `totalDocs`; micro-otimização sem evidência.
+- Critique do `MunicipalityGoalAccountCard` (tooltips touch) — sessão E8, já hardenido no follow-up #3 daquele plano; não é dívida do E16.
+
 ## Adiado com gatilho
 
 - **G11 fonte estruturada de emendas** (Câmara/Portal da Transparência → valor por município/ano). Gatilho: E16 em uso real + coordenação pedindo o dado sistemático.
 - **Compartilhamento do dossiê via WhatsApp (kit).** Gatilho: pedido de campo; hoje o print resolve.
+- **Helper compartilhado da proveniência da meta** (`usesMesaEstimate` / rótulo "estimativa da mesa" vs "meta sugerida"). Hoje 2 call sites (`MunicipalityGoalAccountCard` + dossiê) abaixo do limiar de abstração do repo. Gatilho: 3º consumidor da mesma derivação/cópia.
 
 ## Referências
 

@@ -116,6 +116,7 @@ export type MunicipalityDetailViewModel = {
     stateDeputies: StateDeputySummary[]
     dobradinhaNotes: string | null
     nextSteps: string | null
+    budgetNotes: string | null
   } | null
 }
 
@@ -158,6 +159,7 @@ export const toMunicipalityDetailViewModel = (
           stateDeputies,
           dobradinhaNotes: municipality.dobradinhaNotes ?? null,
           nextSteps: municipality.nextSteps ?? null,
+          budgetNotes: municipality.budgetNotes ?? null,
         },
 })
 
