@@ -61,6 +61,14 @@ export async function down({ db }: MigrateDownArgs): Promise<void> {
 
 Then add both `up`/`down` and a `name` entry to `src/migrations/index.ts` (order matters — after the previous migration).
 
+### Guard rails for data migrations (learned from D3, 2026-07-25)
+
+The whatsapp consent-key migration originally targeted `WHERE "key" IS NULL` while the prod-shaped row held `''` — it ran "green" everywhere and tagged nothing. For every hand-written data migration:
+
+1. **Log affected-row counts.** `UPDATE ... RETURNING` (or `rowCount`) plus a `RAISE NOTICE`/log of the count — the Vercel build log shows it, so a silent no-op is visible at deploy time. An idempotent re-run legitimately reports 0; the first run must not.
+2. **Pin it with a spec** exercising the SQL against the realistic data variants (e.g. `NULL` **and** `''`). Precedents: `tests/unit/contactCityMigration.unit.spec.ts`, `tests/int/submitWhatsapp.int.spec.ts`.
+3. **Rehearse against prod-shaped data**: `pnpm db:pull`, then apply the migration locally on the pulled copy before deploying — local fixtures and production rows drift, which is exactly how the `NULL` vs `''` miss happened.
+
 ## Verifying against production (read-only, safe)
 
 To confirm what a deploy will apply, run status pointed at prod's unpooled URL — this only reads:

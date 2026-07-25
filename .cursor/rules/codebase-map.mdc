@@ -9,7 +9,7 @@ Conceitos e decisões: `docs/ARCHITECTURE.md`. Operação (setup/seeds/deploy/se
 
 ## Direção de dependência
 
-`lib/` (puro, client-safe) → `utilities/` (Payload/Next; loaders com `import 'server-only'`) → `components/` → `app/`. `lib/` nunca importa `utilities/`. Client components importam de módulos server só `import type` — valores compartilhados vivem em módulos de contrato (`municipalityMapContract`, `votePledgeViews`, `lib/campaignRoles`, `lib/campaignConsentKeys`).
+`lib/` (puro, client-safe) → `utilities/` (Payload/Next; loaders com `import 'server-only'`) → `components/` → `app/`. `lib/` nunca importa `utilities/` — agora enforcement programático: ESLint `no-restricted-imports` em `src/lib`, `pnpm check:cycles` (madge, 0 ciclos) e `codebaseConventions.unit.spec.ts` (exige `server-only` em utilities acoplados ao Payload). Client components importam de módulos server só `import type` — valores compartilhados vivem em módulos de contrato (`municipalityMapContract`, `votePledgeViews`, `lib/campaignRoles`, `lib/campaignConsentKeys`).
 
 ## Onde vive o quê
 
@@ -43,4 +43,4 @@ Conceitos e decisões: `docs/ARCHITECTURE.md`. Operação (setup/seeds/deploy/se
 - `leader` é lockdown; view models são por papel; liderança nunca vê `estimatedVotes`.
 - Consent LGPD resolve por chave estável (`lib/campaignConsentKeys.ts`) e falha fechado.
 - Copy pt-BR / identificadores em inglês; "Praça"/"Núcleo" não voltam.
-- Gate por entrega: `tsc --noEmit`, `pnpm lint` (0 warnings), `pnpm exec knip` (exports em ERROR), `pnpm test`, `pnpm build`.
+- Gate por entrega: `tsc --noEmit`, `pnpm lint` (0 warnings), `pnpm format:check`, `pnpm exec knip` (exports em ERROR), `pnpm check:cycles` (0 ciclos), `pnpm test`, `pnpm build`.

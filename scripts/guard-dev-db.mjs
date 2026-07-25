@@ -10,6 +10,7 @@
 import { config as loadEnv } from 'dotenv'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
+import { diagnoseDatabaseTarget, warnOnSharedDataVolumes } from './db-doctor.mjs'
 
 // Mirror Next.js precedence (.env.local wins over .env) WITHOUT overriding a
 // DATABASE_URL that is already set in the real environment (e.g. injected by
@@ -24,3 +25,16 @@ assertLocalDatabase(
     '  1. pnpm db:start\n' +
     '  2. set DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo in .env.local',
 )
+
+// Connectivity preflight: fail here with a named remedy (which container to
+// start, who is holding the port) instead of letting Next/Payload throw a
+// bare ECONNREFUSED minutes into the dev session. Skipped under the same
+// escape hatch as the locality guard — remote databases are on their own.
+if (process.env.ALLOW_REMOTE_DB !== 'true' && process.env.ALLOW_REMOTE_DB !== '1') {
+  const volumesClean = warnOnSharedDataVolumes()
+  const healthy = await diagnoseDatabaseTarget({
+    label: 'guard-dev-db',
+    databaseUrl: process.env.DATABASE_URL,
+  })
+  if (!healthy || !volumesClean) process.exit(1)
+}

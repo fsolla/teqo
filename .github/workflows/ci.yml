@@ -52,11 +52,17 @@ jobs:
       - name: Lint (zero warnings)
         run: pnpm lint
 
+      - name: Format check (prettier)
+        run: pnpm format:check
+
       - name: Typecheck
         run: pnpm typecheck
 
       - name: Dead code (knip)
         run: pnpm exec knip
+
+      - name: Circular dependencies (madge)
+        run: pnpm check:cycles
 
       - name: Unit tests
         run: pnpm test:unit

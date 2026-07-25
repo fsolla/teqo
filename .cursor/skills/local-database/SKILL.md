@@ -31,6 +31,12 @@ Production is a live **Neon Postgres** with real citizens' PII. Local developmen
 
 Stop the database with `pnpm db:stop`.
 
+## Troubleshooting connectivity (`pnpm db:doctor`)
+
+When `pnpm dev`, `pnpm build`, or the int suite cannot reach Postgres, run `pnpm db:doctor` before anything else. It checks the dev (`.env.local`/`.env`) and test (`.env.test`) targets with a real connection and prints the concrete remedy: which container to `docker start`, which foreign container is holding the port, or that a container is crash-looping (`docker logs`). `pnpm dev` runs the same preflight through `guard-dev-db`.
+
+It also flags Postgres containers sharing one data volume. **Never run a second Postgres container against `teqo_pgdata`**: the postmaster lock cannot interlock across container PID namespaces, so both instances write the same WAL and corrupt it (this destroyed the local cluster's checkpoint on 2026-07-25 — recovered via `pg_resetwal` + rebuilding `teqo_test`). The canonical setup is ONE compose container (`teqo-postgres-1`, host port 5432) hosting both `teqo` and `teqo_test`.
+
 ## Refresh local content from prod (`pnpm db:pull`)
 
 ```bash
