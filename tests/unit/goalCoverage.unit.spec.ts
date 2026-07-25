@@ -101,7 +101,7 @@ describe('goal coverage labels', () => {
   it('renders a fractional decomposed goal as whole votes', () => {
     // A suggested goal of 100.968 votes must not read as "100,968" in pt-BR.
     const aggregate = createEmptyMunicipalityPledgeAggregate()
-    const coverage = computeGoalCoverage(null, 100.968, aggregate, 'central')
+    const coverage = computeGoalCoverage(null, suggested(100.968), aggregate, 'central')
     expect(formatGoalCoverageDeficitLabel(coverage)).toBe('Faltam 101 votos para a meta')
   })
 })
