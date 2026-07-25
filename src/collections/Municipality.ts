@@ -17,6 +17,8 @@ import {
   canUpdateMunicipality,
   eligibleCampaignStaffWhere,
 } from '@/utilities/campaignAccess'
+import { politicalTrendStatuses } from '@/lib/schemas/municipality'
+import { politicalTrendLabels } from '@/utilities/municipalityLabels'
 import { relationshipId } from '@/utilities/relationship'
 import {
   getVoteEstimateOrderViolation,
@@ -327,11 +329,11 @@ export const Municipality: CollectionConfig = {
           name: 'status',
           type: 'select',
           label: 'Tendência',
-          options: [
-            { label: 'Favorável', value: 'favoravel' },
-            { label: 'Neutra', value: 'neutra' },
-            { label: 'Desfavorável', value: 'desfavoravel' },
-          ],
+          // Single source: the zod enum + the shared label table.
+          options: politicalTrendStatuses.map((value) => ({
+            label: politicalTrendLabels[value],
+            value,
+          })),
         },
         {
           name: 'note',

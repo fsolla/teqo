@@ -14,6 +14,13 @@ const FRESH_CAMPAIGN_USER_CONTEXT_KEY = 'campaignFreshUser'
 /** Enough of a request for Local API calls inside an existing transaction. */
 export type CampaignTransactionRequest = PayloadRequest | { transactionID: number | string }
 
+/**
+ * Narrow `payload.find` signature for helpers that query a collection chosen
+ * at runtime (Payload's generic can't be proven then). Call sites use the
+ * sanctioned `payload.find as unknown as DynamicFind` cast — the ONE approved
+ * spelling of that cast; keep the queried fields inside this arg shape so the
+ * casts stay honest.
+ */
 export type DynamicFind = (args: {
   collection: string
   depth: number

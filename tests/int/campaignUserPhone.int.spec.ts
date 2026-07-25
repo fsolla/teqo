@@ -231,16 +231,16 @@ describe('campaign user contact phone', () => {
       const coordinator = await fixtures.createCampaignUser('coordinator')
       const field = phoneField()
       if (field.type !== 'text') throw new Error('Campo phone deve ser text.')
-      const ownerReq = {
+      const ownerReq = stub<PayloadRequest>({
         context: {},
         payload,
         user: owner,
-      } as unknown as PayloadRequest
-      const coordinatorReq = {
+      })
+      const coordinatorReq = stub<PayloadRequest>({
         context: {},
         payload,
         user: coordinator,
-      } as unknown as PayloadRequest
+      })
 
       await expect(
         field.access?.update?.(stub<FieldAccessArgs>({ id: owner.id, req: ownerReq })),

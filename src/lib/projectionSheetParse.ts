@@ -6,6 +6,7 @@
  * Bom → optimistic, Regular → central (média), Mínimo → pessimistic.
  */
 
+import type { PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
 import type { VoteEstimateScenarioFields } from '@/lib/voteEstimate'
 
 /** Parsed sheet triple — all three scenarios present (same keys as expectedVotes). */
@@ -65,7 +66,7 @@ export const mapSheetPriority = (raw: string | null | undefined): ProjectionPrio
 }
 
 /** Municipality politicalTrend.status values derivable from the sheet SITUAÇÃO column. */
-export type ProjectionTrendStatus = 'favoravel' | 'neutra' | 'desfavoravel'
+export type ProjectionTrendStatus = PoliticalTrendStatusValue
 
 const stripDiacritics = (value: string): string =>
   value.normalize('NFD').replace(/[\u0300-\u036f]/g, '')

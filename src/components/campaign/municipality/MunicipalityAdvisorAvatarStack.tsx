@@ -2,15 +2,8 @@ import { CircleAlertIcon } from 'lucide-react'
 
 import { Avatar, AvatarFallback } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
+import { campaignUserInitials } from '@/utilities/campaignUserProfile'
 import { municipalityListCoverageLabels } from '@/utilities/municipalityLabels'
-
-export const campaignUserInitials = (name: string): string =>
-  name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
 
 export type MunicipalityAdvisorAvatarEntry = {
   id: number

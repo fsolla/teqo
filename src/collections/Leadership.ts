@@ -10,9 +10,8 @@ import {
   canReadLeadership,
   canSetAdministrativeLeadershipField,
 } from '@/utilities/campaignAccess'
+import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
 import { relationshipId } from '@/utilities/relationship'
-
-const MAX_LEADERSHIP_MUNICIPALITIES = 30
 
 const requireAtLeastOneMunicipality: CollectionBeforeValidateHook = ({
   data,

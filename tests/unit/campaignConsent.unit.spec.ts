@@ -12,13 +12,15 @@ import {
 } from '@/utilities/campaignConsent'
 import { CAMPAIGN_INVITE_CONSENT_KEY } from '@/utilities/campaignInvite'
 
+import { stub } from '../helpers/stub'
+
 describe('campaign consent descriptor', () => {
   it('returns the stable descriptor and propagates the transaction request', async () => {
     const req = { transactionID: 17 }
     const find = vi.fn().mockResolvedValue({
       docs: [{ id: 9, text: { root: { children: [] } } }],
     })
-    const payload = { find } as unknown as Payload
+    const payload = stub<Payload>({ find })
 
     const consent = await getLeadershipConsent(payload, req)
 
@@ -42,7 +44,7 @@ describe('campaign consent descriptor', () => {
         docs: [{ id: 3, text: { root: { children: [] } }, key: SUPPORTER_REGISTRATION_CONSENT_KEY }],
       })
       .mockResolvedValue({ docs: [] })
-    const payload = { find } as unknown as Payload
+    const payload = stub<Payload>({ find })
 
     await expect(getConsentByKey(payload, SUPPORTER_REGISTRATION_CONSENT_KEY)).resolves.toEqual({
       id: 3,
@@ -57,9 +59,9 @@ describe('campaign consent descriptor', () => {
   })
 
   it('keeps nullable and required missing-consent semantics distinct', async () => {
-    const payload = {
+    const payload = stub<Payload>({
       find: vi.fn().mockResolvedValue({ docs: [] }),
-    } as unknown as Payload
+    })
 
     await expect(getLeadershipConsent(payload)).resolves.toBeNull()
     await expect(requireLeadershipConsent(payload, undefined, 'Consentimento ausente.')).rejects.toThrow(

@@ -9,7 +9,7 @@ import {
   politicalTrendBadgeVariant,
   politicalTrendLabels,
 } from '@/utilities/municipalityLabels'
-import type { MunicipalityDetailViewModel } from '@/utilities/municipalityViewModels'
+import type { MunicipalityStrategyViewModel } from '@/utilities/municipalityViewModels'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
@@ -18,7 +18,7 @@ export const MunicipalityStrategyCard = ({
   municipalitySlug,
   canEdit,
 }: {
-  strategy: NonNullable<MunicipalityDetailViewModel['strategy']>
+  strategy: MunicipalityStrategyViewModel
   municipalitySlug: string
   canEdit: boolean
 }) => {

@@ -435,7 +435,7 @@ describe('campaign authentication foundation', () => {
     const otherMunicipality = await campaignFixtures().getMunicipality()
     await campaignFixtures().assignMunicipalityAdvisors(assignedMunicipality, [advisor])
 
-    const req = { context: {}, payload } as unknown as PayloadRequest
+    const req = stub<PayloadRequest>({ context: {}, payload })
 
     const ids = await getAccessibleMunicipalityIds(req, advisor)
 

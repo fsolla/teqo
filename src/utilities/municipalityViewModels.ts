@@ -119,18 +119,25 @@ export type MunicipalityDetailViewModel = {
   advisorIDs: number[]
   lastUpdateAt: string | null
   /** Staff-only block — null for the leader view model. */
-  strategy: {
-    priority: 'alta' | 'normal'
-    expectedVotes: VoteEstimateScenarioViewModel
-    politicalTrend: MunicipalityPoliticalTrendViewModel
-    strengths: string[]
-    risks: string[]
-    stateDeputyIDs: number[]
-    stateDeputies: StateDeputySummary[]
-    dobradinhaNotes: string | null
-    nextSteps: string | null
-    budgetNotes: string | null
-  } | null
+  strategy: MunicipalityStrategyViewModel | null
+}
+
+/**
+ * The staff strategy block as the UI consumes it. Deliberately NOT derived
+ * from the zod input schema or payload-types: storage keeps `{ text }` rows
+ * and nullable scenario fields, the view flattens both.
+ */
+export type MunicipalityStrategyViewModel = {
+  priority: 'alta' | 'normal'
+  expectedVotes: VoteEstimateScenarioViewModel
+  politicalTrend: MunicipalityPoliticalTrendViewModel
+  strengths: string[]
+  risks: string[]
+  stateDeputyIDs: number[]
+  stateDeputies: StateDeputySummary[]
+  dobradinhaNotes: string | null
+  nextSteps: string | null
+  budgetNotes: string | null
 }
 
 export const toMunicipalityDetailViewModel = (

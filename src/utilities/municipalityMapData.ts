@@ -30,6 +30,7 @@ import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   VOTE_ESTIMATE_SCENARIOS,
   type VoteEstimateScenario,
+  type VoteEstimateScenarioFields,
 } from '@/lib/voteEstimate'
 import { emptyMunicipalityPledgeAggregate, resolveMunicipalityStaffVoteTotal, type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
@@ -50,11 +51,7 @@ export type ScopedMunicipality = {
   name: string
   kind: 'municipio' | 'zona'
   ibgeCode: string
-  expectedVotes?: {
-    pessimistic?: number | null
-    central?: number | null
-    optimistic?: number | null
-  } | null
+  expectedVotes?: VoteEstimateScenarioFields | null
   geography: MunicipalityElectionGeography
 }
 
@@ -64,11 +61,7 @@ type ScopedMunicipalityDoc = {
   name: string
   kind: 'municipio' | 'zona'
   ibgeCode: string
-  expectedVotes?: {
-    pessimistic?: number | null
-    central?: number | null
-    optimistic?: number | null
-  } | null
+  expectedVotes?: VoteEstimateScenarioFields | null
 }
 
 export const scopeMunicipalitiesFromDocs = (docs: ReadonlyArray<ScopedMunicipalityDoc>): ScopedMunicipality[] =>

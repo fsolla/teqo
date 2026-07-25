@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 import { politicalTrendLabels } from '@/utilities/municipalityLabels'
-import type { MunicipalityDetailViewModel } from '@/utilities/municipalityViewModels'
+import type { MunicipalityStrategyViewModel } from '@/utilities/municipalityViewModels'
 
 type FormAction = (
   state: CampaignFormActionState,
@@ -24,7 +24,7 @@ type FormAction = (
 type MunicipalityStrategyFormProps = {
   municipalityID: number
   municipalitySlug: string
-  strategy: NonNullable<MunicipalityDetailViewModel['strategy']>
+  strategy: MunicipalityStrategyViewModel
   stateDeputyOptions: RelationOption[]
   strategyFormAction: FormAction
   expectedVotesFormAction: FormAction
