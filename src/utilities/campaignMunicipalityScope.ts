@@ -13,7 +13,15 @@ import {
 /** Superset of the fields the dashboard, map, and list overview consume. */
 export type ScopedMunicipalityDoc = Pick<
   Municipality,
-  'id' | 'name' | 'slug' | 'kind' | 'ibgeCode' | 'advisors' | 'priority' | 'expectedVotes'
+  | 'id'
+  | 'name'
+  | 'slug'
+  | 'kind'
+  | 'region'
+  | 'ibgeCode'
+  | 'advisors'
+  | 'priority'
+  | 'expectedVotes'
 >
 
 export type MunicipalityScope = {
@@ -35,6 +43,7 @@ const loadScope = async (
       name: true,
       slug: true,
       kind: true,
+      region: true,
       ibgeCode: true,
       advisors: true,
       priority: true,

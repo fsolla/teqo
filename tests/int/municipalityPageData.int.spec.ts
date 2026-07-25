@@ -4,6 +4,7 @@ import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import { getMunicipalityCatalogEntry, municipalityCatalog } from '@/lib/municipalityCatalog'
 import config from '@/payload.config'
 import { loadMunicipalityListPageBundle } from '@/utilities/municipalityPageData'
 import {
@@ -26,13 +27,17 @@ describe('loadMunicipalityListPageBundle', () => {
     payload = await getPayload({ config: await config })
   })
 
-  it('returns null overview when the filtered municipality set is empty', async () => {
+  it('keeps a zeroed overview when the filtered municipality set is empty', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
 
     const bundle = await loadMunicipalityListPageBundle(payload, coordinator, { q: 'zzznomatch' })
 
+    // The overview stays on screen next to the empty state instead of unmounting.
     expect(bundle.municipalities).toHaveLength(0)
-    expect(bundle.overview).toBeNull()
+    expect(bundle.overview).not.toBeNull()
+    expect(bundle.overview!.municipalityCount).toBe(0)
+    expect(bundle.overview!.staffVoteTotalByScenario.central).toBe(0)
+    expect(bundle.overview!.goalCoverageByScenario.central.goal).toBe(0)
   })
 
   it('rolls up staffVoteTotal from expectedVotes when no pledge overrides apply', async () => {
@@ -290,8 +295,71 @@ describe('loadMunicipalityListPageBundle', () => {
       administered.kind === 'zona'
         ? await loadMunicipalityListPageBundle(payload, advisor, { kind: 'municipio' })
         : await loadMunicipalityListPageBundle(payload, advisor, { kind: 'zona' })
-    expect(excluded.overview).toBeNull()
+    expect(excluded.overview?.municipalityCount).toBe(0)
     expect(excluded.municipalities).toHaveLength(0)
+  })
+
+  it('cross-filters column-filter options but never narrows a filter by itself', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const catalogEntry = getMunicipalityCatalogEntry(municipality.slug)
+    expect(catalogEntry).toBeDefined()
+    const outsideRegion = municipalityCatalog.find(
+      (entry) => entry.region !== catalogEntry!.region,
+    )!
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, {
+      region: catalogEntry!.region,
+    })
+
+    // The território filter narrows the Município options…
+    expect(bundle.filterFacets.slugs).toContain(municipality.slug)
+    expect(bundle.filterFacets.slugs).not.toContain(outsideRegion.slug)
+    expect(bundle.filterFacets.slugs.length).toBeLessThan(municipalityCatalog.length)
+    // …but not its own: the OR set must stay addable.
+    expect(bundle.filterFacets.regions.length).toBeGreaterThan(1)
+
+    // A selected value stays listed even when other filters exclude it, so it
+    // can be undone from the popover.
+    const conflicting = await loadMunicipalityListPageBundle(payload, coordinator, {
+      region: catalogEntry!.region,
+      slug: outsideRegion.slug,
+    })
+    expect(conflicting.municipalities).toHaveLength(0)
+    expect(conflicting.filterFacets.slugs).toContain(outsideRegion.slug)
+  })
+
+  it('keeps the options of filters that share a popover with the applied one', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const priorityMunicipality = await fixtures.getMunicipality()
+    await payload.update({
+      collection: 'municipality',
+      id: priorityMunicipality.id,
+      data: { priority: 'alta' },
+      overrideAccess: true,
+    })
+    const covered = await fixtures.getMunicipality(
+      municipalityCatalog.find((entry) => entry.slug !== priorityMunicipality.slug)!.slug,
+    )
+    await fixtures.assignMunicipalityAdvisors(covered.id, [advisor.id])
+
+    // "Prioritária" lives in the Município popover, so it must not hide the
+    // municipalities that popover is there to offer.
+    const byPriority = await loadMunicipalityListPageBundle(payload, coordinator, {
+      priority: 'alta',
+    })
+    expect(byPriority.municipalities.every((row) => row.priority === 'alta')).toBe(true)
+    expect(byPriority.filterFacets.slugs).toContain(covered.slug)
+
+    // Same for the "Sem assessor" toggle inside the Assessores popover: it would
+    // otherwise leave that popover with nobody to pick.
+    const withoutAdvisor = await loadMunicipalityListPageBundle(payload, coordinator, {
+      coverage: 'sem_assessor',
+    })
+    expect(withoutAdvisor.filterFacets.advisorIDs).toContain(advisor.id)
   })
 
   it('returns an empty bundle for leaders (municipality list lockdown)', async () => {

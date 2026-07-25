@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
+import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import {
+  applyMunicipalityKindFilter,
+  buildMunicipalityFilterHref,
   buildMunicipalityListHref,
+  buildMunicipalityListWhere,
   buildMunicipalitySortHref,
+  formatMunicipalityActiveFiltersSummary,
   formatMunicipalityConcentrationHint,
   formatMunicipalityListSortSummary,
   formatMunicipalitySignalAgeLabel,
+  isMunicipalityColumnFilterActive,
   isMunicipalitySignalCold,
   MUNICIPALITY_COLD_SIGNAL_DAYS,
+  municipalityListSortLabels,
   municipalitySignalAgeInDays,
   parseMunicipalityListParams,
   parseMunicipalitySortValue,
@@ -15,6 +22,9 @@ import {
   resolveMunicipalityListSort,
   serializeMunicipalitySortValue,
   shouldUpdateMunicipalitySearchUrl,
+  toggleMunicipalityExclusiveFilterValue,
+  toggleMunicipalityMultiFilterValue,
+  toggleMunicipalityPriorityFilter,
 } from '@/utilities/municipalityUi'
 
 describe('shouldUpdateMunicipalitySearchUrl', () => {
@@ -95,9 +105,7 @@ describe('municipality list sort params (A11 + B15 + E9)', () => {
     expect(formatMunicipalityListSortSummary('votos', 'desc')).toBe('Ordenado por 2022 ↓')
     expect(formatMunicipalityListSortSummary('votos', 'asc')).toBe('Ordenado por 2022 ↑')
     expect(formatMunicipalityListSortSummary('name', 'asc')).toBe('Ordenado por nome (A–Z)')
-    expect(formatMunicipalityListSortSummary('region', 'asc')).toBe(
-      'Ordenado por Território de identidade ↑',
-    )
+    expect(formatMunicipalityListSortSummary('region', 'asc')).toBe('Ordenado por Território ↑')
     expect(formatMunicipalityListSortSummary('deficit', 'desc')).toBe(
       'Ordenado por déficit da meta (maior primeiro)',
     )
@@ -111,6 +119,120 @@ describe('municipality list sort params (A11 + B15 + E9)', () => {
     expect(formatMunicipalityConcentrationHint()).toMatch(/435/)
     expect(formatMunicipalityConcentrationHint()).not.toMatch(/^%/)
     expect(formatMunicipalityConcentrationHint(12)).toMatch(/12/)
+  })
+
+  it('labels the advisor-count sort as Assessores (not Cobertura da meta)', () => {
+    expect(municipalityListSortLabels.coverage).toBe('Assessores')
+    expect(formatMunicipalityListSortSummary('coverage', 'asc')).toBe('Ordenado por Assessores ↑')
+  })
+})
+
+describe('municipality list header filters (B16+)', () => {
+  it('toggles multi region OR filters and preserves sort/dir', () => {
+    const state = parseMunicipalityListParams({
+      page: '3',
+      sort: 'votos',
+      dir: 'asc',
+      kind: 'zona',
+    })
+    const withRegion = toggleMunicipalityMultiFilterValue(state, 'region', 'Irecê')
+    expect(withRegion.regions).toEqual(['Irecê'])
+    expect(withRegion.page).toBe(1)
+    expect(buildMunicipalityFilterHref(withRegion)).toBe(
+      '/campanha/municipios?region=Irec%C3%AA&kind=zona&sort=votos&dir=asc',
+    )
+
+    const withTwo = toggleMunicipalityMultiFilterValue(withRegion, 'region', 'Recôncavo')
+    expect(withTwo.regions).toEqual(['Irecê', 'Recôncavo'])
+    expect(buildMunicipalityListHref(withTwo, 1)).toContain('region=Irec')
+    expect(buildMunicipalityListHref(withTwo, 1)).toContain('region=Rec')
+
+    const cleared = toggleMunicipalityMultiFilterValue(withRegion, 'region', 'Irecê')
+    expect(cleared.regions).toBeUndefined()
+  })
+
+  it('toggles the Prioritária filter in and out of the URL, keeping other filters', () => {
+    const state = parseMunicipalityListParams({ region: 'Irecê' })
+
+    const on = toggleMunicipalityPriorityFilter(state)
+    expect(on.priority).toBe('alta')
+    expect(buildMunicipalityFilterHref(on)).toBe(
+      '/campanha/municipios?region=Irec%C3%AA&priority=alta',
+    )
+
+    const off = toggleMunicipalityPriorityFilter(on)
+    expect(off.priority).toBeUndefined()
+    expect(buildMunicipalityFilterHref(off)).toBe('/campanha/municipios?region=Irec%C3%AA')
+  })
+
+  it('treats every trend selected as "todas" (no narrowing constraint)', () => {
+    const one = parseMunicipalityListParams({ trend: 'favoravel' })
+    expect(one.trends).toEqual(['favoravel'])
+    expect(isMunicipalityColumnFilterActive(one, 'trend')).toBe(true)
+    expect(buildMunicipalityListWhere(one)).toEqual({
+      and: [{ 'politicalTrend.status': { in: ['favoravel'] } }],
+    })
+
+    // "Todas" has a single encoding — absent — so the URL never carries params
+    // that filter nothing while the funnel reports itself inactive.
+    const all = parseMunicipalityListParams({ trend: ['favoravel', 'neutra', 'desfavoravel'] })
+    expect(all.trends).toBeUndefined()
+    expect(isMunicipalityColumnFilterActive(all, 'trend')).toBe(false)
+    expect(buildMunicipalityListWhere(all)).toEqual({})
+    expect(formatMunicipalityActiveFiltersSummary(all)).toBeNull()
+    expect(buildMunicipalityFilterHref(all)).toBe('/campanha/municipios')
+
+    // Ticking the last unchecked box lands on that same canonical state.
+    const twoSelected = parseMunicipalityListParams({ trend: ['favoravel', 'neutra'] })
+    expect(
+      toggleMunicipalityMultiFilterValue(twoSelected, 'trend', 'desfavoravel').trends,
+    ).toBeUndefined()
+
+    const none = toggleMunicipalityMultiFilterValue(one, 'trend', 'favoravel')
+    expect(none.trends).toBeUndefined()
+    expect(buildMunicipalityFilterHref(none)).toBe('/campanha/municipios')
+  })
+
+  it('toggles coverage by re-clicking the active value', () => {
+    const state = parseMunicipalityListParams({})
+    const on = toggleMunicipalityExclusiveFilterValue(state, 'coverage', 'com_assessor')
+    expect(on.coverage).toBe('com_assessor')
+    const off = toggleMunicipalityExclusiveFilterValue(on, 'coverage', 'com_assessor')
+    expect(off.coverage).toBeUndefined()
+  })
+
+  it('discards invalid filter values', () => {
+    const state = parseMunicipalityListParams({})
+    expect(
+      toggleMunicipalityMultiFilterValue(state, 'region', 'NotATerritory').regions,
+    ).toBeUndefined()
+    expect(applyMunicipalityKindFilter(state, 'bairro').kind).toBeUndefined()
+    expect(
+      toggleMunicipalityExclusiveFilterValue(state, 'coverage', 'maybe').coverage,
+    ).toBeUndefined()
+    expect(toggleMunicipalityMultiFilterValue(state, 'trend', 'alta').trends).toBeUndefined()
+    expect(parseMunicipalityListParams({ slug: 'not-a-slug', advisor: 'x' }).slugs).toBeUndefined()
+    expect(parseMunicipalityListParams({ advisor: 'x' }).advisors).toBeUndefined()
+  })
+
+  it('parses repeated advisor and slug params as OR filters', () => {
+    const slug = municipalityCatalog[0]?.slug
+    expect(slug).toBeTruthy()
+    const state = parseMunicipalityListParams({
+      slug: [slug!, 'also-invalid'],
+      advisor: ['12', '12', '7'],
+    })
+    expect(state.slugs).toEqual([slug])
+    expect(state.advisors).toEqual([7, 12])
+  })
+
+  it('summarizes active filters for the slim bar', () => {
+    expect(formatMunicipalityActiveFiltersSummary(parseMunicipalityListParams({}))).toBeNull()
+    expect(
+      formatMunicipalityActiveFiltersSummary(
+        parseMunicipalityListParams({ region: 'Irecê', priority: 'alta', q: 'feira' }),
+      ),
+    ).toBe('Prioritária · Irecê · Busca "feira"')
   })
 })
 

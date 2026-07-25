@@ -1,6 +1,7 @@
-import type { Payload } from 'payload'
+import type { Payload, Where } from 'payload'
 
-import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import { bahiaIdentityTerritories } from '@/lib/bahiaTerritories'
+import { getMunicipalityCatalogEntry, municipalityCatalog } from '@/lib/municipalityCatalog'
 import {
   compareMunicipalityVotesForSort,
   computeVoteRankByYear,
@@ -19,6 +20,7 @@ import {
   resolveMunicipalityLastSignalAt,
   resolveMunicipalityListSort,
   type MunicipalityListSearchParams,
+  type MunicipalityListState,
   type MunicipalityListSortDirection,
   type MunicipalityListSortKey,
 } from '@/utilities/municipalityUi'
@@ -62,12 +64,98 @@ export type MunicipalityListOverviewData = {
   goalCoverageByScenario: Record<VoteEstimateScenario, MunicipalityGoalCoverage>
 }
 
+/** Values still reachable under the OTHER active filters (column-filter options). */
+type MunicipalityListFilterFacets = {
+  /** Catalog order. */
+  slugs: string[]
+  regions: string[]
+  advisorIDs: number[]
+}
+
 export type MunicipalityListPageBundle = {
   municipalities: MunicipalityListViewModel[]
   totalDocs: number
   totalPages: number
   scopeTotal: number
   overview: MunicipalityListOverviewData | null
+  filterFacets: MunicipalityListFilterFacets
+}
+
+const emptyMunicipalityListFilterFacets: MunicipalityListFilterFacets = {
+  slugs: [],
+  regions: [],
+  advisorIDs: [],
+}
+
+type MunicipalityFacetRow = Pick<Municipality, 'slug' | 'region' | 'advisors'>
+
+/**
+ * Each facet applies every filter owned by ANOTHER popover (so it only offers
+ * values that still return rows) while omitting the ones its own popover owns —
+ * including the checkbox/toggle sharing that popover, or selecting "Prioritária"
+ * / "Sem assessor" would empty the very list it lives in. Identical `where`
+ * shapes collapse into one read, and the already-loaded scope seeds the
+ * unfiltered shape — with no filter active the facets cost no query at all.
+ */
+const loadMunicipalityListFilterFacets = async (
+  payload: Payload,
+  user: CampaignUser,
+  state: MunicipalityListState,
+  loadedScope: { where: Where; rows: MunicipalityFacetRow[] } | null,
+): Promise<MunicipalityListFilterFacets> => {
+  const rowsByWhere = new Map<string, Promise<MunicipalityFacetRow[]>>()
+  if (loadedScope) {
+    rowsByWhere.set(JSON.stringify(loadedScope.where), Promise.resolve(loadedScope.rows))
+  }
+  const facetRows = (omit: Partial<MunicipalityListState>): Promise<MunicipalityFacetRow[]> => {
+    const where = buildMunicipalityListWhere({ ...state, ...omit })
+    const key = JSON.stringify(where)
+    const pending = rowsByWhere.get(key)
+    if (pending) return pending
+
+    const rows = payload
+      .find({
+        collection: 'municipality',
+        where,
+        depth: 0,
+        limit: 0,
+        pagination: false,
+        select: { slug: true, region: true, advisors: true },
+        user,
+        overrideAccess: false,
+      })
+      .then((result) => result.docs as MunicipalityFacetRow[])
+    rowsByWhere.set(key, rows)
+    return rows
+  }
+
+  const [slugRows, regionRows, advisorRows] = await Promise.all([
+    facetRows({ slugs: undefined, priority: undefined }),
+    facetRows({ regions: undefined }),
+    facetRows({ advisors: undefined, coverage: undefined }),
+  ])
+
+  // Selected values are unioned in: a selection must stay visible to be undone.
+  const availableSlugs = new Set([...slugRows.map((row) => row.slug), ...(state.slugs ?? [])])
+  const availableRegions = new Set<string>([
+    ...regionRows.map((row) => row.region),
+    ...(state.regions ?? []),
+  ])
+  const availableAdvisorIDs = new Set<number>(state.advisors ?? [])
+  for (const row of advisorRows) {
+    for (const advisor of row.advisors ?? []) {
+      const id = relationshipId(advisor)
+      if (id !== null) availableAdvisorIDs.add(id)
+    }
+  }
+
+  return {
+    slugs: municipalityCatalog
+      .filter((entry) => availableSlugs.has(entry.slug))
+      .map((entry) => entry.slug),
+    regions: bahiaIdentityTerritories.filter((territory) => availableRegions.has(territory)),
+    advisorIDs: [...availableAdvisorIDs].sort((left, right) => left - right),
+  }
 }
 
 const payloadSortFieldByKey: Partial<Record<MunicipalityListSortKey, string>> = {
@@ -176,6 +264,7 @@ export const loadMunicipalityListPageBundle = async (
       totalPages: 0,
       scopeTotal: 0,
       overview: null,
+      filterFacets: emptyMunicipalityListFilterFacets,
     }
   }
 
@@ -214,6 +303,13 @@ export const loadMunicipalityListPageBundle = async (
     isStaff ? loadMunicipalityScope(payload, user, where) : Promise.resolve(null),
   ])
 
+  const filterFacets = await loadMunicipalityListFilterFacets(
+    payload,
+    user,
+    state,
+    staffScope ? { where, rows: staffScope.municipalities } : null,
+  )
+
   let overview: MunicipalityListOverviewData | null = null
   let pledgeAggregates = new Map<number, MunicipalityPledgeAggregate>()
   let goalCoverageByMunicipalityID = new Map<
@@ -221,7 +317,9 @@ export const loadMunicipalityListPageBundle = async (
     Record<VoteEstimateScenario, MunicipalityGoalCoverage>
   >()
 
-  if (staffScope && staffScope.municipalities.length > 0) {
+  // Computed even for an empty filtered scope: the overview stays on screen
+  // (zeroed) next to the empty state instead of disappearing with the rows.
+  if (staffScope) {
     pledgeAggregates = staffScope.pledgeAggregates
     const rollup = rollupMunicipalityStaffVotes(staffScope.municipalities, pledgeAggregates)
     const goalCoverageBundle = await loadMunicipalityGoalCoverageBundle(
@@ -286,6 +384,7 @@ export const loadMunicipalityListPageBundle = async (
     totalPages,
     scopeTotal: scopeCount.totalDocs,
     overview,
+    filterFacets,
   }
 }
 

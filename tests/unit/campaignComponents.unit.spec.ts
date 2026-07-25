@@ -15,7 +15,10 @@ import { Toggle } from '@/components/ui/Toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { createEmptyGoalCoverageByScenario } from '@/utilities/goalCoverage'
-import type { MunicipalityAdvisorSummary, MunicipalityListViewModel } from '@/utilities/municipalityViewModels'
+import type {
+  MunicipalityAdvisorSummary,
+  MunicipalityListViewModel,
+} from '@/utilities/municipalityViewModels'
 import { toVoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
 import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
 
@@ -36,6 +39,7 @@ const noopListFormAction = async (
 const municipalityListDefaultProps = {
   isCoordinator: false,
   advisorOptions: [],
+  columnFilterOptions: { name: [], region: [], advisor: [] },
   trendFormAction: noopListFormAction,
   advisorsFormAction: noopListFormAction,
   state: { page: 1 },
@@ -220,8 +224,10 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('1.500')
     expect(html).toContain('Cenários de estimativa')
     expect(html).toContain('Prioritária')
-    expect(html).toContain('Coberta')
-    expect(html).toContain('Sem assessor')
+    // The advisor column carries coverage on its own — no separate "Assessoria" column.
+    expect(html).toContain('Assessores')
+    expect(html).toContain('Ana Bastos')
+    expect(html).not.toContain('Assessoria')
     expect(html).toContain('Tendência')
     expect(html).toContain('Cobertura da meta')
     expect(html).toContain('80%')

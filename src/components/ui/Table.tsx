@@ -2,8 +2,19 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
-const Table = ({ className, ...props }: React.ComponentProps<'table'>) => (
-  <div data-slot="table-container" className="relative w-full overflow-x-auto">
+const Table = ({
+  className,
+  containerClassName,
+  ...props
+}: React.ComponentProps<'table'> & {
+  /** Escape hatch for the scroll container — e.g. `overflow-x-visible` so a
+   *  sticky header can resolve against the page scroller instead of this box. */
+  containerClassName?: string
+}) => (
+  <div
+    data-slot="table-container"
+    className={cn('relative w-full overflow-x-auto', containerClassName)}
+  >
     <table
       data-slot="table"
       className={cn('w-full caption-bottom text-sm', className)}

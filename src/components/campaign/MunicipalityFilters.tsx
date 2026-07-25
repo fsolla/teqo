@@ -8,30 +8,81 @@ import { CampaignSearchInput } from '@/components/campaign/CampaignSearchInput'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { bahiaIdentityTerritories } from '@/lib/bahiaTerritories'
 import { normalizedText } from '@/utilities/campaignListUrl'
 import {
+  applyMunicipalityKindFilter,
   buildMunicipalityFiltersKey,
   buildMunicipalityListHref,
-  municipalityKindLabels,
-  municipalityListCoverageLabels,
+  formatMunicipalityActiveFiltersSummary,
+  getMunicipalityFilterDefinition,
+  getMunicipalitySingleFilterValue,
+  municipalityFilterDefinitions,
   municipalityListSortOptions,
   parseMunicipalitySortValue,
-  politicalTrendLabels,
   resolveMunicipalityListSort,
   serializeMunicipalitySortValue,
   shouldUpdateMunicipalitySearchUrl,
+  toggleMunicipalityExclusiveFilterValue,
+  toggleMunicipalityMultiFilterValue,
+  type MunicipalityFilterOption,
   type MunicipalityListState,
 } from '@/utilities/municipalityUi'
 
 const SEARCH_DEBOUNCE_MS = 1000
 
+/** Mobile stand-in for a header multi-select: pick to add, pick again to remove. */
+const MobileMultiFilterField = ({
+  id,
+  label,
+  emptyLabel,
+  options,
+  selected,
+  onToggle,
+}: {
+  id: string
+  label: string
+  emptyLabel: string
+  options: MunicipalityFilterOption[]
+  selected: string[]
+  onToggle: (value: string) => void
+}) => (
+  <Field>
+    <FieldLabel htmlFor={id}>{label}</FieldLabel>
+    <NativeSelect
+      id={id}
+      value=""
+      onChange={(event) => {
+        if (event.target.value) onToggle(event.target.value)
+      }}
+      className="min-h-11 w-full"
+    >
+      <NativeSelectOption value="">
+        {selected.length ? `${selected.length} selecionado(s) — alterar` : emptyLabel}
+      </NativeSelectOption>
+      {options.map((option) => (
+        <NativeSelectOption key={option.value} value={option.value}>
+          {selected.includes(option.value) ? `✓ ${option.label}` : option.label}
+        </NativeSelectOption>
+      ))}
+    </NativeSelect>
+  </Field>
+)
+
 type MunicipalityFiltersProps = {
   state: MunicipalityListState
   showStaffFilters: boolean
+  /** Territory options already narrowed by the other active filters. */
+  regionFilterOptions: MunicipalityFilterOption[]
+  /** Advisor options already narrowed by the other active filters. */
+  advisorFilterOptions: MunicipalityFilterOption[]
 }
 
-export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFiltersProps) => {
+export const MunicipalityFilters = ({
+  state,
+  showStaffFilters,
+  regionFilterOptions,
+  advisorFilterOptions,
+}: MunicipalityFiltersProps) => {
   const router = useRouter()
   const [search, setSearch] = useState(state.q ?? '')
   const sharedPending = useCampaignListPending()
@@ -41,6 +92,12 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
   const startTransition = sharedPending?.startTransition ?? startLocalTransition
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { sort: activeSort, dir: activeDir } = resolveMunicipalityListSort(state)
+  const draftQ = normalizedText(search) || state.q
+  const activeFiltersSummary = formatMunicipalityActiveFiltersSummary({
+    ...state,
+    q: draftQ,
+  })
+  const hasActiveFilters = Boolean(activeFiltersSummary)
 
   useEffect(
     () => () => {
@@ -56,19 +113,28 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
     }
   }
 
-  const commitNavigation = (patch: Partial<MunicipalityListState>) => {
+  const navigateTo = (next: MunicipalityListState) => {
     clearDebounce()
-    const merged: MunicipalityListState = {
-      ...state,
-      ...patch,
+    const canonical: MunicipalityListState = {
+      ...next,
       page: 1,
-      q: normalizedText(patch.q !== undefined ? patch.q : search),
+      q: normalizedText(next.q),
     }
-    if (buildMunicipalityFiltersKey(merged) === buildMunicipalityFiltersKey({ ...state, page: 1 }))
+    if (
+      buildMunicipalityFiltersKey(canonical) === buildMunicipalityFiltersKey({ ...state, page: 1 })
+    )
       return
 
     startTransition(() => {
-      router.replace(buildMunicipalityListHref(merged, 1), { scroll: false })
+      router.replace(buildMunicipalityListHref(canonical, 1), { scroll: false })
+    })
+  }
+
+  const commitNavigation = (patch: Partial<MunicipalityListState>) => {
+    navigateTo({
+      ...state,
+      ...patch,
+      q: normalizedText(patch.q !== undefined ? patch.q : search),
     })
   }
 
@@ -82,15 +148,11 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
     }, SEARCH_DEBOUNCE_MS)
   }
 
-  const hasActiveFilters = Boolean(
-    state.q ||
-    normalizedText(search) ||
-    state.region ||
-    state.kind ||
-    state.coverage ||
-    state.priority ||
-    state.trend,
-  )
+  const mobileFilterDefinitions = municipalityFilterDefinitions.filter((definition) => {
+    if (definition.staffOnly && !showStaffFilters) return false
+    // Header popovers own multi/name filters; mobile keeps exclusive selects.
+    return definition.selection === 'single' || definition.selection === 'toggle'
+  })
 
   return (
     <form
@@ -106,6 +168,7 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
       <p className="sr-only" aria-live="polite">
         {isPending ? 'Atualizando resultados…' : ''}
       </p>
+
       <div className="flex flex-col gap-3 md:flex-row md:items-end">
         <CampaignSearchInput
           id="municipality-search"
@@ -118,136 +181,14 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
             scheduleSearchNavigation(value)
           }}
         />
-        <Field className="md:w-56">
-          <FieldLabel htmlFor="municipality-filter-region">Território de identidade</FieldLabel>
-          <NativeSelect
-            id="municipality-filter-region"
-            value={state.region ?? ''}
-            onChange={(event) =>
-              commitNavigation({
-                region: (event.target.value || undefined) as MunicipalityListState['region'],
-              })
-            }
-            className="min-h-11 w-full"
+        {activeFiltersSummary ? (
+          <p
+            className="hidden min-w-0 flex-1 text-sm text-muted-foreground md:block md:self-center md:pb-2 md:whitespace-normal"
+            aria-live="polite"
           >
-            <NativeSelectOption value="">Todos</NativeSelectOption>
-            {bahiaIdentityTerritories.map((territory) => (
-              <NativeSelectOption key={territory} value={territory}>
-                {territory}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </Field>
-        <Field className="md:w-44">
-          <FieldLabel htmlFor="municipality-filter-kind">Tipo</FieldLabel>
-          <NativeSelect
-            id="municipality-filter-kind"
-            value={state.kind ?? ''}
-            onChange={(event) =>
-              commitNavigation({
-                kind: (event.target.value || undefined) as MunicipalityListState['kind'],
-              })
-            }
-            className="min-h-11 w-full"
-          >
-            <NativeSelectOption value="">Todos</NativeSelectOption>
-            {(
-              Object.keys(municipalityKindLabels) as Array<keyof typeof municipalityKindLabels>
-            ).map((kind) => (
-              <NativeSelectOption key={kind} value={kind}>
-                {municipalityKindLabels[kind]}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </Field>
-        {showStaffFilters ? (
-          <>
-            <Field className="md:w-44">
-              <FieldLabel htmlFor="municipality-filter-coverage">Assessoria</FieldLabel>
-              <NativeSelect
-                id="municipality-filter-coverage"
-                value={state.coverage ?? ''}
-                onChange={(event) =>
-                  commitNavigation({
-                    coverage: (event.target.value ||
-                      undefined) as MunicipalityListState['coverage'],
-                  })
-                }
-                className="min-h-11 w-full"
-              >
-                <NativeSelectOption value="">Todas</NativeSelectOption>
-                {(
-                  Object.keys(municipalityListCoverageLabels) as Array<
-                    keyof typeof municipalityListCoverageLabels
-                  >
-                ).map((coverage) => (
-                  <NativeSelectOption key={coverage} value={coverage}>
-                    {municipalityListCoverageLabels[coverage]}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </Field>
-            <Field className="md:w-44">
-              <FieldLabel htmlFor="municipality-filter-trend">Tendência</FieldLabel>
-              <NativeSelect
-                id="municipality-filter-trend"
-                value={state.trend ?? ''}
-                onChange={(event) =>
-                  commitNavigation({
-                    trend: (event.target.value || undefined) as MunicipalityListState['trend'],
-                  })
-                }
-                className="min-h-11 w-full"
-              >
-                <NativeSelectOption value="">Todas</NativeSelectOption>
-                {(
-                  Object.keys(politicalTrendLabels) as Array<keyof typeof politicalTrendLabels>
-                ).map((trend) => (
-                  <NativeSelectOption key={trend} value={trend}>
-                    {politicalTrendLabels[trend]}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </Field>
-            <Field className="md:w-40">
-              <FieldLabel htmlFor="municipality-filter-priority">Prioridade</FieldLabel>
-              <NativeSelect
-                id="municipality-filter-priority"
-                value={state.priority ?? ''}
-                onChange={(event) =>
-                  commitNavigation({
-                    priority: event.target.value === 'alta' ? 'alta' : undefined,
-                  })
-                }
-                className="min-h-11 w-full"
-              >
-                <NativeSelectOption value="">Todas</NativeSelectOption>
-                <NativeSelectOption value="alta">Prioritárias</NativeSelectOption>
-              </NativeSelect>
-            </Field>
-          </>
+            {activeFiltersSummary}
+          </p>
         ) : null}
-        <Field className="md:hidden">
-          <FieldLabel htmlFor="municipality-sort">Ordenar</FieldLabel>
-          <NativeSelect
-            id="municipality-sort"
-            value={serializeMunicipalitySortValue(activeSort, activeDir)}
-            onChange={(event) => {
-              const parsed = parseMunicipalitySortValue(event.target.value)
-              if (parsed) commitNavigation({ sort: parsed.key, dir: parsed.dir })
-            }}
-            className="min-h-11 w-full"
-          >
-            {municipalityListSortOptions.map(({ key, dir, label }) => (
-              <NativeSelectOption
-                key={serializeMunicipalitySortValue(key, dir)}
-                value={serializeMunicipalitySortValue(key, dir)}
-              >
-                {label}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </Field>
         {hasActiveFilters ? (
           <div className="flex shrink-0 gap-2 md:self-end">
             <Button
@@ -269,6 +210,144 @@ export const MunicipalityFilters = ({ state, showStaffFilters }: MunicipalityFil
             </Button>
           </div>
         ) : null}
+      </div>
+
+      <div className="flex flex-col gap-3 md:hidden">
+        {showStaffFilters ? (
+          <Field>
+            <FieldLabel htmlFor="municipality-filter-priority">Prioridade</FieldLabel>
+            <NativeSelect
+              id="municipality-filter-priority"
+              value={state.priority ?? ''}
+              onChange={(event) => {
+                navigateTo({
+                  ...state,
+                  priority: event.target.value === 'alta' ? 'alta' : undefined,
+                  q: normalizedText(search),
+                })
+              }}
+              className="min-h-11 w-full"
+            >
+              <NativeSelectOption value="">Todas</NativeSelectOption>
+              <NativeSelectOption value="alta">Prioritária</NativeSelectOption>
+            </NativeSelect>
+          </Field>
+        ) : null}
+        {regionFilterOptions.length ? (
+          <MobileMultiFilterField
+            id="municipality-filter-region"
+            label="Território"
+            emptyLabel="Todos"
+            options={regionFilterOptions}
+            selected={state.regions ?? []}
+            onToggle={(value) =>
+              navigateTo(
+                toggleMunicipalityMultiFilterValue(
+                  { ...state, q: normalizedText(search) },
+                  'region',
+                  value,
+                ),
+              )
+            }
+          />
+        ) : null}
+        {mobileFilterDefinitions.map((definition) => {
+          const value =
+            definition.param === 'kind' || definition.param === 'coverage'
+              ? (getMunicipalitySingleFilterValue(state, definition.param) ?? '')
+              : ''
+          return (
+            <Field key={definition.param}>
+              <FieldLabel htmlFor={`municipality-filter-${definition.param}`}>
+                {definition.label}
+              </FieldLabel>
+              <NativeSelect
+                id={`municipality-filter-${definition.param}`}
+                value={value}
+                onChange={(event) => {
+                  const selected = event.target.value
+                  const withSearch = { ...state, q: normalizedText(search) }
+                  if (definition.selection === 'toggle') {
+                    navigateTo(
+                      selected
+                        ? toggleMunicipalityExclusiveFilterValue(withSearch, 'coverage', selected)
+                        : { ...withSearch, coverage: undefined, page: 1 },
+                    )
+                    return
+                  }
+                  if (definition.param === 'kind') {
+                    navigateTo(applyMunicipalityKindFilter(withSearch, selected))
+                  }
+                }}
+                className="min-h-11 w-full"
+              >
+                <NativeSelectOption value="">{definition.allLabel ?? 'Todas'}</NativeSelectOption>
+                {(definition.options ?? []).map((option) => (
+                  <NativeSelectOption key={option.value} value={option.value}>
+                    {option.label}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
+          )
+        })}
+        {showStaffFilters ? (
+          <MobileMultiFilterField
+            id="municipality-filter-trend"
+            label="Tendência"
+            emptyLabel="Todas"
+            options={getMunicipalityFilterDefinition('trend').options ?? []}
+            selected={state.trends ?? []}
+            onToggle={(value) =>
+              navigateTo(
+                toggleMunicipalityMultiFilterValue(
+                  { ...state, q: normalizedText(search) },
+                  'trend',
+                  value,
+                ),
+              )
+            }
+          />
+        ) : null}
+        {showStaffFilters && advisorFilterOptions.length ? (
+          <MobileMultiFilterField
+            id="municipality-filter-advisor"
+            label="Assessores"
+            emptyLabel="Todos"
+            options={advisorFilterOptions}
+            selected={(state.advisors ?? []).map(String)}
+            onToggle={(value) =>
+              navigateTo(
+                toggleMunicipalityMultiFilterValue(
+                  { ...state, q: normalizedText(search) },
+                  'advisor',
+                  value,
+                ),
+              )
+            }
+          />
+        ) : null}
+        <Field>
+          <FieldLabel htmlFor="municipality-sort">Ordenar</FieldLabel>
+          <NativeSelect
+            id="municipality-sort"
+            value={serializeMunicipalitySortValue(activeSort, activeDir)}
+            onChange={(event) => {
+              const parsed = parseMunicipalitySortValue(event.target.value)
+              if (parsed) commitNavigation({ sort: parsed.key, dir: parsed.dir })
+            }}
+            className="min-h-11 w-full"
+          >
+            {municipalityListSortOptions.map(({ key, dir, label }) => (
+              <NativeSelectOption
+                key={serializeMunicipalitySortValue(key, dir)}
+                value={serializeMunicipalitySortValue(key, dir)}
+              >
+                {label}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </Field>
       </div>
     </form>
   )
