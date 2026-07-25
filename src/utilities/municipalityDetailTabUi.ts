@@ -1,3 +1,5 @@
+import { createDetailTabHelpers, type DetailTabSearchParams } from '@/utilities/detailTabUi'
+
 export const municipalityDetailTabs = [
   'overview',
   'dossie',
@@ -8,52 +10,26 @@ export const municipalityDetailTabs = [
 ] as const
 
 export type MunicipalityDetailTab = (typeof municipalityDetailTabs)[number]
-export type MunicipalityDetailSearchParams = Record<string, string | string[] | undefined>
+export type MunicipalityDetailSearchParams = DetailTabSearchParams
 
-const tabQueryKeys: Record<MunicipalityDetailTab, readonly string[]> = {
-  overview: [],
-  dossie: [],
-  elections: ['compare'],
-  leaderships: ['leadershipQ', 'leadershipPage'],
-  updates: ['updateKind', 'updatePage', 'newUpdate'],
-  demands: ['demandStatus'],
-}
+const helpers = createDetailTabHelpers<MunicipalityDetailTab>({
+  tabs: municipalityDetailTabs,
+  defaultTab: 'overview',
+  tabQueryKeys: {
+    overview: [],
+    dossie: [],
+    elections: ['compare'],
+    leaderships: ['leadershipQ', 'leadershipPage'],
+    updates: ['updateKind', 'updatePage', 'newUpdate'],
+    demands: ['demandStatus'],
+  },
+  basePath: (municipalitySlug) => `/campanha/municipios/${municipalitySlug}`,
+  forcedTab: (searchParams) =>
+    (Array.isArray(searchParams.newUpdate) ? searchParams.newUpdate[0] : searchParams.newUpdate) ===
+    '1'
+      ? 'updates'
+      : null,
+})
 
-const firstValue = (value: string | string[] | undefined): string | undefined =>
-  Array.isArray(value) ? value[0] : value
-
-const appendQueryValue = (
-  params: URLSearchParams,
-  key: string,
-  value: string | string[] | undefined,
-) => {
-  for (const item of Array.isArray(value) ? value : [value]) {
-    if (item !== undefined) params.append(key, item)
-  }
-}
-
-const isAllowedTab = (value: string | undefined): value is MunicipalityDetailTab =>
-  municipalityDetailTabs.includes(value as MunicipalityDetailTab)
-
-export const resolveMunicipalityDetailTab = (
-  searchParams: MunicipalityDetailSearchParams,
-): MunicipalityDetailTab => {
-  if (firstValue(searchParams.newUpdate) === '1') return 'updates'
-
-  const requestedTab = firstValue(searchParams.tab)
-  return isAllowedTab(requestedTab) ? requestedTab : 'overview'
-}
-
-export const buildMunicipalityDetailTabHref = (
-  municipalitySlug: string,
-  tab: MunicipalityDetailTab,
-  searchParams: MunicipalityDetailSearchParams,
-): string => {
-  const params = new URLSearchParams()
-  for (const key of tabQueryKeys[tab]) {
-    appendQueryValue(params, key, searchParams[key])
-  }
-  params.set('tab', tab)
-
-  return `/campanha/municipios/${municipalitySlug}?${params.toString()}`
-}
+export const resolveMunicipalityDetailTab = helpers.resolveTab
+export const buildMunicipalityDetailTabHref = helpers.buildTabHref
