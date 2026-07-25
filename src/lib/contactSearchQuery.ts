@@ -1,4 +1,4 @@
-export const CONTACT_SEARCH_MIN_LENGTH = 2
+const CONTACT_SEARCH_MIN_LENGTH = 2
 
 export const normalizeContactSearchQuery = (raw: string) => {
   const trimmed = raw.trim().slice(0, 120)

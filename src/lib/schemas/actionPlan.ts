@@ -64,10 +64,10 @@ export const actionPlanStatusLabels: Record<(typeof actionPlanStatuses)[number],
   cancelado: 'Cancelado',
 }
 
-export const MAX_ACTION_PLAN_ORGANIZATIONS = 20
+const MAX_ACTION_PLAN_ORGANIZATIONS = 20
 export const MAX_ACTION_PLAN_DEMAND_DRAFTS = 20
 
-export const actionPlanDemandDraftSchema = campaignDemandCreateSchema.pick({
+const actionPlanDemandDraftSchema = campaignDemandCreateSchema.pick({
   title: true,
   kind: true,
   description: true,

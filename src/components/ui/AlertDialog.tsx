@@ -14,11 +14,11 @@ export const AlertDialogTrigger = (
   props: React.ComponentProps<typeof AlertDialogPrimitive.Trigger>,
 ) => <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
 
-export const AlertDialogPortal = (
+const AlertDialogPortal = (
   props: React.ComponentProps<typeof AlertDialogPrimitive.Portal>,
 ) => <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
 
-export const AlertDialogOverlay = ({
+const AlertDialogOverlay = ({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) => (

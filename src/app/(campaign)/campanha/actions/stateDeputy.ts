@@ -19,7 +19,7 @@ const stateDeputyPolicy: StaffEntityPolicy = {
   conflictMessage: 'Já existe uma dobradinha com este nome.',
 }
 
-export const createStateDeputyRecord = async (
+const createStateDeputyRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: StateDeputyCreateInput,
@@ -36,7 +36,7 @@ export const createStateDeputyRecord = async (
   )
 }
 
-export const updateStateDeputyRecord = async (
+const updateStateDeputyRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: StateDeputyUpdateInput,

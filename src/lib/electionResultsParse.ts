@@ -231,7 +231,7 @@ export type ScopeKey = {
   turn: ElectionTurn
 }
 
-export const scopeKeyString = (scope: ScopeKey): string =>
+const scopeKeyString = (scope: ScopeKey): string =>
   `${scope.year}|${scope.office}|${scope.turn}`
 
 const candidateAggregateKey = (row: {

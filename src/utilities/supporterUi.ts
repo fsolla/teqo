@@ -44,7 +44,7 @@ export type SupporterListState = {
 
 type RawSearchParams = CampaignListRawSearchParams
 
-export const supporterListParamNames = [
+const supporterListParamNames = [
   'q',
   'voteIntention',
   'city',

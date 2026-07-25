@@ -26,12 +26,6 @@ const statusPresentation = {
   },
 } as const
 
-export const supportStatusLabel = (status: SupportStatus): string =>
-  statusPresentation[status].label
-
-export const supportStatusSummary = (status: SupportStatus): string =>
-  statusPresentation[status].summary
-
 export const SupportStatusBadge = ({ status }: { status: SupportStatus }) => {
   const presentation = statusPresentation[status]
 

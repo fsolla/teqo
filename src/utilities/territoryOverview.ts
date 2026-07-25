@@ -29,7 +29,7 @@ export type TerritoryMunicipalityInput = {
   advisorCount: number
 }
 
-export type TerritoryOverviewSubRow = {
+type TerritoryOverviewSubRow = {
   label: string
   municipalityCount: number
   votesByYear: Record<string, number>

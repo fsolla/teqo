@@ -6,7 +6,7 @@ import configPromise from '@payload-config'
 import { unstable_cache } from 'next/cache'
 import { getPayload } from 'payload'
 
-export const POST_TYPES = ['noticia', 'campanha', 'artigo', 'evento'] as const
+const POST_TYPES = ['noticia', 'campanha', 'artigo', 'evento'] as const
 
 export type PostType = (typeof POST_TYPES)[number]
 
@@ -97,7 +97,7 @@ const findPublishedPostBySlug = (slug: string, depth: number) =>
  * Cached list of every published post. Tagged with the shared `posts` listing
  * tag so `revalidatePostsListing()` (called from Post/Tag `afterChange`) busts it.
  */
-export const getCachedPublishedPosts = (depth = 1) =>
+const getCachedPublishedPosts = (depth = 1) =>
   unstable_cache(() => findPublishedPosts(depth), ['posts', String(depth)], {
     tags: ['posts'],
   })

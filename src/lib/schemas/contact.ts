@@ -32,4 +32,3 @@ export const contactSchema = z.object({
     .optional(),
 })
 
-export type Contact = z.infer<typeof contactSchema>

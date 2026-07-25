@@ -1,6 +1,6 @@
 /** Light muted rose → campaign primary #c51414 */
-export const choroplethGradientStart = { r: 254, g: 226, b: 226 } as const
-export const choroplethGradientEnd = { r: 197, g: 20, b: 20 } as const
+const choroplethGradientStart = { r: 254, g: 226, b: 226 } as const
+const choroplethGradientEnd = { r: 197, g: 20, b: 20 } as const
 
 export const choroplethGradientCss = `linear-gradient(to right, rgb(${choroplethGradientStart.r} ${choroplethGradientStart.g} ${choroplethGradientStart.b}), rgb(${choroplethGradientEnd.r} ${choroplethGradientEnd.g} ${choroplethGradientEnd.b}))`
 
@@ -26,7 +26,7 @@ export const choroplethMaxValue = (values: Record<string, number>): number => {
  * Diverging comparison scale (product decision 2026-07-20): campaign red where
  * Solla leads, white at the tie, blue where the compared candidate leads.
  */
-export const divergingBlueEnd = { r: 30, g: 64, b: 175 } as const
+const divergingBlueEnd = { r: 30, g: 64, b: 175 } as const
 
 const white = { r: 255, g: 255, b: 255 } as const
 

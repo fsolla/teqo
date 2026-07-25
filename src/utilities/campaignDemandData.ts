@@ -14,7 +14,7 @@ import {
 } from '@/utilities/campaignListUrl'
 import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 
-export const demandPageSize = 25
+const demandPageSize = 25
 
 export type DemandRowViewModel = {
   id: number

@@ -1,4 +1,4 @@
-export type MunicipalityMapSlugEntry = {
+type MunicipalityMapSlugEntry = {
   slug: string
   name: string
 }

@@ -87,17 +87,6 @@ const CommandList = ({
   />
 )
 
-const CommandEmpty = ({
-  className,
-  ...props
-}: React.ComponentProps<typeof CommandPrimitive.Empty>) => (
-  <CommandPrimitive.Empty
-    data-slot="command-empty"
-    className={cn('py-6 text-center text-sm', className)}
-    {...props}
-  />
-)
-
 const CommandGroup = ({
   className,
   ...props
@@ -108,17 +97,6 @@ const CommandGroup = ({
       'overflow-hidden p-1 text-foreground **:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1.5 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground',
       className,
     )}
-    {...props}
-  />
-)
-
-const CommandSeparator = ({
-  className,
-  ...props
-}: React.ComponentProps<typeof CommandPrimitive.Separator>) => (
-  <CommandPrimitive.Separator
-    data-slot="command-separator"
-    className={cn('-mx-1 h-px bg-border', className)}
     {...props}
   />
 )
@@ -141,25 +119,14 @@ const CommandItem = ({
   </CommandPrimitive.Item>
 )
 
-const CommandShortcut = ({ className, ...props }: React.ComponentProps<'span'>) => (
-  <span
-    data-slot="command-shortcut"
-    className={cn(
-      'ml-auto text-xs tracking-widest text-muted-foreground group-data-selected/command-item:text-foreground',
-      className,
-    )}
-    {...props}
-  />
-)
-
 export {
   Command,
   CommandDialog,
   CommandInput,
   CommandList,
-  CommandEmpty,
+  
   CommandGroup,
   CommandItem,
-  CommandShortcut,
-  CommandSeparator,
+  
+  
 }

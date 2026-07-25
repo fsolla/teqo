@@ -17,13 +17,6 @@ export const campaignDemandCreateSchema = z.object({
   leadership: positiveRelationshipId.optional(),
 })
 
-export const campaignDemandDetailsUpdateSchema = z.object({
-  id: positiveRelationshipId,
-  kind: z.enum(campaignDemandKinds).optional(),
-  description: trimmedNullableText(4000),
-  actionPlan: positiveRelationshipId.nullable().optional(),
-})
-
 export const campaignDemandTransitionSchema = z.object({
   id: positiveRelationshipId,
   status: z.enum(campaignDemandStatuses),
@@ -36,6 +29,5 @@ export const campaignDemandCostSchema = z.object({
 })
 
 export type CampaignDemandCreateInput = z.input<typeof campaignDemandCreateSchema>
-export type CampaignDemandDetailsUpdateInput = z.input<typeof campaignDemandDetailsUpdateSchema>
 export type CampaignDemandTransitionInput = z.input<typeof campaignDemandTransitionSchema>
 export type CampaignDemandCostInput = z.input<typeof campaignDemandCostSchema>

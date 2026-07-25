@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/Pagination'
 import { cn } from '@/lib/utils'
 
-export const getPaginationPages = (page: number, totalPages: number): number[] => {
+const getPaginationPages = (page: number, totalPages: number): number[] => {
   const pages = new Set([1, totalPages, page - 1, page, page + 1])
   return [...pages]
     .filter((candidate) => candidate >= 1 && candidate <= totalPages)

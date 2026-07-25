@@ -64,7 +64,7 @@ export type ActionPlanFormFieldsProps = {
 
 const editableStatuses = ['rascunho', 'planejado'] as const
 
-export const ActionPlanFormFields = ({
+const ActionPlanFormFields = ({
   municipalityOptions,
   organizationOptions,
   advisorOptions = [],

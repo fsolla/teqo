@@ -1,10 +1,10 @@
 import type { CampaignUser, Media } from '@/payload-types'
 
-export const CAMPAIGN_AVATAR_MAX_BYTES = 2 * 1024 * 1024
+const CAMPAIGN_AVATAR_MAX_BYTES = 2 * 1024 * 1024
 
-export const CAMPAIGN_AVATAR_UNSUPPORTED_MIME_MESSAGE = 'Envie uma imagem JPEG, PNG ou WebP.'
-export const CAMPAIGN_AVATAR_MAX_SIZE_MESSAGE = 'A imagem deve ter no máximo 2 MB.'
-export const CAMPAIGN_AVATAR_EMPTY_FILE_MESSAGE = 'O arquivo enviado está vazio.'
+const CAMPAIGN_AVATAR_UNSUPPORTED_MIME_MESSAGE = 'Envie uma imagem JPEG, PNG ou WebP.'
+const CAMPAIGN_AVATAR_MAX_SIZE_MESSAGE = 'A imagem deve ter no máximo 2 MB.'
+const CAMPAIGN_AVATAR_EMPTY_FILE_MESSAGE = 'O arquivo enviado está vazio.'
 
 export const campaignRoleLabels: Record<CampaignUser['role'], string> = {
   coordinator: 'Coordenador Geral',
@@ -27,7 +27,7 @@ export const campaignUserShellView = (
   avatarUrl: mediaDocumentUrl(user.avatar),
 })
 
-export const CAMPAIGN_AVATAR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+const CAMPAIGN_AVATAR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 export const campaignUserInitials = (name: string): string => {
   const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2)

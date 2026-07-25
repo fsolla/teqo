@@ -8,7 +8,7 @@ import { getPayload } from 'payload'
 
 type Global = keyof Config['globals']
 
-export async function getGlobal<Slug extends Global>(slug: Slug, depth?: number) {
+async function getGlobal<Slug extends Global>(slug: Slug, depth?: number) {
   const payload = await getPayload({ config: configPromise })
 
   const global = await payload.findGlobal({

@@ -14,7 +14,7 @@ import {
 } from '@/utilities/campaignListUrl'
 import { relationshipId } from '@/utilities/relationship'
 
-export const organizationPageSize = 25
+const organizationPageSize = 25
 
 export type OrganizationRowViewModel = {
   id: number

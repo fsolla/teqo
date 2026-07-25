@@ -19,7 +19,7 @@ const organizationPolicy: StaffEntityPolicy = {
   conflictMessage: 'Já existe uma organização com este nome.',
 }
 
-export const createOrganizationRecord = async (
+const createOrganizationRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: OrganizationCreateInput,
@@ -36,7 +36,7 @@ export const createOrganizationRecord = async (
   )
 }
 
-export const updateOrganizationRecord = async (
+const updateOrganizationRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: OrganizationUpdateInput,

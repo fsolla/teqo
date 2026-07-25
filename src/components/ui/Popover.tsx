@@ -13,10 +13,6 @@ const PopoverTrigger = ({ ...props }: React.ComponentProps<typeof PopoverPrimiti
   <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
 )
 
-const PopoverAnchor = ({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Anchor>) => (
-  <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />
-)
-
 const PopoverContent = ({
   className,
   align = 'center',
@@ -37,4 +33,4 @@ const PopoverContent = ({
   </PopoverPrimitive.Portal>
 )
 
-export { Popover, PopoverAnchor, PopoverContent, PopoverTrigger }
+export { Popover,  PopoverContent, PopoverTrigger }

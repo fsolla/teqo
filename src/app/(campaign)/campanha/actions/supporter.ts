@@ -27,12 +27,7 @@ import {
   previewSupporterImportText as previewSupporterImportTextAction,
 } from './supporterImport'
 
-export type {
-  SupporterImportOkRow,
-  SupporterImportPreviewResult,
-  SupporterImportPreviewRow,
-  SupporterImportRowStatus,
-} from '@/utilities/supporterImport'
+
 
 const getFreshStaffActor = (
   payload: Payload,
@@ -46,7 +41,7 @@ const getFreshStaffActor = (
     req,
   )
 
-export const assertMunicipalityManagement = async (
+const assertMunicipalityManagement = async (
   payload: Payload,
   actor: CampaignUser,
   municipalityID: number,

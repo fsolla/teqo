@@ -9,7 +9,7 @@ import {
 } from '@/lib/schemas/primitives'
 import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 
-export const supporterVoteIntentions = ['certo', 'tende_a_certo', 'indeciso', 'outro'] as const
+const supporterVoteIntentions = ['certo', 'tende_a_certo', 'indeciso', 'outro'] as const
 
 export type SupporterVoteIntention = (typeof supporterVoteIntentions)[number]
 
@@ -96,7 +96,3 @@ export const supporterRemoveSchema = z.object({
   id: positiveRelationshipId,
 })
 
-export type SupporterCreateInput = z.input<typeof supporterCreateSchema>
-export type LeaderSupporterCreateInput = z.input<typeof leaderSupporterCreateSchema>
-export type SupporterVoteIntentionInput = z.input<typeof supporterVoteIntentionSchema>
-export type SupporterImportConfirmInput = z.input<typeof supporterImportConfirmSchema>

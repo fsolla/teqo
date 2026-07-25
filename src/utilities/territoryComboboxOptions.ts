@@ -1,5 +1,4 @@
 import {
-  bahiaIdentityTerritories,
   bahiaMunicipalities,
   citiesForTerritory,
   isBahiaIdentityTerritory,
@@ -13,10 +12,8 @@ export type StrictComboboxOption = {
 const toOptions = (values: readonly string[]): StrictComboboxOption[] =>
   values.map((value) => ({ label: value, value }))
 
-export const territoryComboboxOptions = toOptions(bahiaIdentityTerritories)
-
 /** Full Bahia municipality list — stable module reference for client filters. */
-export const allMunicipalityComboboxOptions = toOptions(bahiaMunicipalities)
+const allMunicipalityComboboxOptions = toOptions(bahiaMunicipalities)
 
 export const municipalityComboboxOptions = (region?: string | null): StrictComboboxOption[] =>
   region && isBahiaIdentityTerritory(region)

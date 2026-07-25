@@ -127,9 +127,6 @@ export const formatVoteEstimateScenarioAriaLabel = (
     }`
   }).join('; ')
 
-export const hasCompleteVoteEstimateRange = (estimates: VoteEstimateScenarioViewModel): boolean =>
-  estimates.pessimistic != null && estimates.central != null && estimates.optimistic != null
-
 /** Coerce staff-entered scenarios into pessimistic ≤ central ≤ optimistic on save. */
 export const normalizeVoteEstimateOnSave = (
   estimates: VoteEstimateScenarioViewModel,
@@ -154,14 +151,3 @@ export const normalizeVoteEstimateOnSave = (
   return { pessimistic, central, optimistic }
 }
 
-export const appendVoteEstimateScenarioToFormData = (
-  formData: FormData,
-  prefix: 'estimatedVotes' | 'expectedVotes',
-  values: VoteEstimateScenarioFields,
-): void => {
-  for (const scenario of VOTE_ESTIMATE_SCENARIOS) {
-    const value = values[scenario]
-    const fieldName = `${prefix}${scenario.charAt(0).toUpperCase()}${scenario.slice(1)}`
-    formData.set(fieldName, value == null ? '' : String(value))
-  }
-}

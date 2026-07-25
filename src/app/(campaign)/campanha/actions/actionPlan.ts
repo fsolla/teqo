@@ -63,7 +63,7 @@ export const createActionPlanRecord = async (
   )
 }
 
-export const updateActionPlanRecord = async (
+const updateActionPlanRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: ActionPlanUpdateInput,
@@ -134,7 +134,7 @@ const setActionPlanLifecycleStatusRecord = async (
     { beginFailureMessage: 'Não foi possível atualizar o status do plano.' },
   )
 
-export const toggleActionPlanTaskRecord = async (
+const toggleActionPlanTaskRecord = async (
   payload: Payload,
   actor: CampaignUser,
   planId: number,
@@ -176,7 +176,7 @@ export const toggleActionPlanTaskRecord = async (
     { beginFailureMessage: 'Não foi possível atualizar a tarefa do plano.' },
   )
 
-export const appendActionPlanUpdateRecord = async (
+const appendActionPlanUpdateRecord = async (
   payload: Payload,
   actor: CampaignUser,
   planId: number,
@@ -221,7 +221,7 @@ export const appendActionPlanUpdateRecord = async (
   )
 }
 
-export const registerActionPlanResult = async (
+const registerActionPlanResult = async (
   payload: Payload,
   actor: CampaignUser,
   planId: number,

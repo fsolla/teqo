@@ -5,7 +5,7 @@ export const ELECTION_YEAR_2018 = 2018 as const
 export const ELECTION_YEAR_2022 = 2022 as const
 
 /** Years loaded for prior-cycle comparison before 2022 (detail baseline query). */
-export const HISTORICAL_PRIOR_SERIES_YEARS = [
+const HISTORICAL_PRIOR_SERIES_YEARS = [
   ELECTION_YEAR_2014,
   ELECTION_YEAR_2018,
 ] as const
@@ -33,7 +33,7 @@ export const ELECTION_TURN_OPTIONS = [
   { label: '2º turno', value: '2' },
 ] as const
 
-export const ELECTION_TURNS = ELECTION_TURN_OPTIONS.map((o) => o.value)
+const ELECTION_TURNS = ELECTION_TURN_OPTIONS.map((o) => o.value)
 export type ElectionTurn = (typeof ELECTION_TURNS)[number]
 
 export const ELECTION_VOTE_TYPE_OPTIONS = [
@@ -41,8 +41,7 @@ export const ELECTION_VOTE_TYPE_OPTIONS = [
   { label: 'Legenda', value: 'legenda' },
 ] as const
 
-export const ELECTION_VOTE_TYPES = ELECTION_VOTE_TYPE_OPTIONS.map((o) => o.value)
-export type ElectionVoteType = (typeof ELECTION_VOTE_TYPES)[number]
+type ElectionVoteType = (typeof ELECTION_VOTE_TYPE_OPTIONS)[number]['value']
 
 export const ELECTION_ELECTED_BY_OPTIONS = [
   { label: 'Quociente partidário', value: 'QP' },
@@ -50,8 +49,7 @@ export const ELECTION_ELECTED_BY_OPTIONS = [
   { label: '2º turno', value: '2º turno' },
 ] as const
 
-export const ELECTION_ELECTED_BY = ELECTION_ELECTED_BY_OPTIONS.map((o) => o.value)
-export type ElectionElectedBy = (typeof ELECTION_ELECTED_BY)[number]
+type ElectionElectedBy = (typeof ELECTION_ELECTED_BY_OPTIONS)[number]['value']
 
 export const ELECTION_RUNNING_AGAIN_OPTIONS = [
   { label: 'Sim', value: 'sim' },
@@ -59,8 +57,7 @@ export const ELECTION_RUNNING_AGAIN_OPTIONS = [
   { label: 'Desconhecido', value: 'desconhecido' },
 ] as const
 
-export const ELECTION_RUNNING_AGAIN = ELECTION_RUNNING_AGAIN_OPTIONS.map((o) => o.value)
-export type ElectionRunningAgain = (typeof ELECTION_RUNNING_AGAIN)[number]
+type ElectionRunningAgain = (typeof ELECTION_RUNNING_AGAIN_OPTIONS)[number]['value']
 
 /**
  * Campaign ticket for the electoral baseline, keyed by role.
@@ -80,7 +77,7 @@ export const BASELINE_TICKET_2022 = {
 } as const
 
 /** TSE CD_CARGO → office enum used in collections. */
-export const TSE_CARGO_TO_OFFICE: Readonly<Record<string, ElectionOffice>> = {
+const TSE_CARGO_TO_OFFICE: Readonly<Record<string, ElectionOffice>> = {
   '1': 'presidente',
   '3': 'governador',
   '6': 'deputado_federal',
@@ -188,7 +185,7 @@ export const canonicalizeMunicipalityName = (tseMunicipalityName: string): strin
   return canonical
 }
 
-export const isElectionTurn = (value: string): value is ElectionTurn =>
+const isElectionTurn = (value: string): value is ElectionTurn =>
   (ELECTION_TURNS as readonly string[]).includes(value)
 
 export type CandidateVoteRow = {
@@ -208,7 +205,7 @@ export type CandidateVoteRow = {
 }
 
 /** Winner fields as stored on electionTally (null when no nominal votes in that cell). */
-export type TallyWinner = {
+type TallyWinner = {
   winnerCandidateNumber: number | null
   winnerCandidateName: string | null
   winnerVotes: number | null

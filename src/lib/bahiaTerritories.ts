@@ -650,11 +650,3 @@ export const validateBahiaTerritoryPair = (
 export const citiesForTerritory = (territory: BahiaIdentityTerritory): readonly string[] =>
   bahiaIdentityTerritoryRecords.find(({ name }) => name === territory)?.municipalities ?? []
 
-export const territoriesForCities = (cities: readonly string[]): BahiaIdentityTerritory[] => {
-  const territories = new Set<BahiaIdentityTerritory>()
-  for (const city of cities) {
-    const territory = territoryForCity(city)
-    if (territory) territories.add(territory)
-  }
-  return bahiaIdentityTerritories.filter((territory) => territories.has(territory))
-}

@@ -18,7 +18,7 @@ type ContactID = number
 
 const ACCESSIBLE_CONTACT_IDS_CONTEXT_KEY = 'campaignAccessibleContactIds'
 
-export const getAccessibleContactIds = async (
+const getAccessibleContactIds = async (
   req: PayloadRequest,
   user: CampaignActor = req.user,
 ): Promise<ContactID[]> => {

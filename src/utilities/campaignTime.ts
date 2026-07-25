@@ -60,19 +60,6 @@ const zonedCivilToInstant = (civil: CivilDateTime): Date => {
   throw new Error('Não foi possível calcular o intervalo semanal no fuso da Bahia.')
 }
 
-const addCivilDays = (civil: CivilDateTime, days: number): CivilDateTime => {
-  const date = new Date(civilAsUtcMilliseconds(civil))
-  date.setUTCDate(date.getUTCDate() + days)
-  return {
-    year: date.getUTCFullYear(),
-    month: date.getUTCMonth() + 1,
-    day: date.getUTCDate(),
-    hour: civil.hour,
-    minute: civil.minute,
-    second: civil.second,
-  }
-}
-
 const bahiaDateTimeInputPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/
 
 /**
@@ -131,18 +118,3 @@ export const latestIsoTimestamp = (
   return right > left ? right : left
 }
 
-export const getBahiaWeekRange = (now: Date): { start: Date; end: Date } => {
-  const local = getZonedParts(now)
-  const localMidnight = { ...local, hour: 0, minute: 0, second: 0 }
-  const weekday = new Date(
-    Date.UTC(localMidnight.year, localMidnight.month - 1, localMidnight.day),
-  ).getUTCDay()
-  const daysSinceMonday = weekday === 0 ? 6 : weekday - 1
-  const monday = addCivilDays(localMidnight, -daysSinceMonday)
-  const nextMonday = addCivilDays(monday, 7)
-
-  return {
-    start: zonedCivilToInstant(monday),
-    end: zonedCivilToInstant(nextMonday),
-  }
-}

@@ -26,7 +26,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Spinner } from '@/components/ui/Spinner'
 
-export type { BahiaMapFillMode, ChoroplethValues }
+
 
 const BAHIA_BOUNDS: L.LatLngBoundsExpression = [
   [-18.5, -46.8],

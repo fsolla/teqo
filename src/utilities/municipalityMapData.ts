@@ -34,18 +34,18 @@ import {
 } from '@/lib/voteEstimate'
 import { emptyMunicipalityPledgeAggregate, resolveMunicipalityStaffVoteTotal, type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
-export type { MunicipalityMapSlugEntry, MunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
+
 // Client components import the map vocabulary from the contract module; the
 // server side re-exports it so data callers have one import surface.
 export type {
   MunicipalityMapBundle,
-  MunicipalityMapComparison,
-  MunicipalityMapScaleMode,
-  MunicipalityMapYear,
-  MunicipalityZoneBreakdownRow,
+  
+  
+  
+  
 } from '@/utilities/municipalityMapContract'
 
-export type ScopedMunicipality = {
+type ScopedMunicipality = {
   id: number
   slug: string
   name: string
@@ -64,7 +64,7 @@ type ScopedMunicipalityDoc = {
   expectedVotes?: VoteEstimateScenarioFields | null
 }
 
-export const scopeMunicipalitiesFromDocs = (docs: ReadonlyArray<ScopedMunicipalityDoc>): ScopedMunicipality[] =>
+const scopeMunicipalitiesFromDocs = (docs: ReadonlyArray<ScopedMunicipalityDoc>): ScopedMunicipality[] =>
   docs.flatMap((municipality) => {
     const entry = getMunicipalityCatalogEntry(municipality.slug)
     if (!entry) return []
@@ -81,7 +81,7 @@ export const scopeMunicipalitiesFromDocs = (docs: ReadonlyArray<ScopedMunicipali
     ]
   })
 
-export const buildMunicipalityMapBundleFromMunicipalities = async (
+const buildMunicipalityMapBundleFromMunicipalities = async (
   payload: Payload,
   user: CampaignUser,
   state: MunicipalityListState,

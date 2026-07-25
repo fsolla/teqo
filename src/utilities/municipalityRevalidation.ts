@@ -1,6 +1,6 @@
 import { revalidatePath } from 'next/cache'
 
-export type MunicipalityListRevalidateScope = 'list' | 'detail' | 'both'
+type MunicipalityListRevalidateScope = 'list' | 'detail' | 'both'
 
 const municipalitySlugPathPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 

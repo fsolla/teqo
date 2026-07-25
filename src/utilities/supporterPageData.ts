@@ -50,7 +50,7 @@ const supporterDetailSelect = {
   createdBy: true,
 } as const
 
-export const loadSupporterListPageData = async (
+const loadSupporterListPageData = async (
   payload: Pick<Payload, 'find' | 'count'>,
   user: CampaignUser,
   searchParams: Promise<SupporterListSearchParams> | SupporterListSearchParams,

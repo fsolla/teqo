@@ -24,7 +24,7 @@ import {
 
 type ElectionReader = CampaignUser | User
 
-export type MunicipalityVoteSeriesPoint = {
+type MunicipalityVoteSeriesPoint = {
   year: number
   votes: number
 }
@@ -184,44 +184,6 @@ const queryMunicipalityElectoralBaseline = async (
       governor: sumVotes(governorVotes.docs),
     },
   }
-}
-
-export type CandidateVotesByCity = Map<string, number>
-
-/**
- * Statewide nominal votes of one federal-deputy candidate in one year, grouped
- * by TSE cityCode. Used by the municipalities map (choropleth per municipality).
- */
-export const loadCandidateVotesByCity = async (
-  payload: Payload,
-  user: ElectionReader,
-  { year, candidateNumber }: { year: number; candidateNumber: number },
-): Promise<CandidateVotesByCity> => {
-  assertCanReadElectionData(user)
-
-  const result = await payload.find({
-    collection: 'electionCandidateVote',
-    where: {
-      and: [
-        { year: { equals: year } },
-        { office: { equals: FEDERAL_DEPUTY_OFFICE } },
-        { turn: { equals: '1' } },
-        { voteType: { equals: 'nominal' } },
-        { candidateNumber: { equals: candidateNumber } },
-      ],
-    },
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    select: { cityCode: true, votes: true },
-    overrideAccess: true,
-  })
-
-  const votesByCity: CandidateVotesByCity = new Map()
-  for (const row of result.docs) {
-    votesByCity.set(row.cityCode, (votesByCity.get(row.cityCode) ?? 0) + (row.votes ?? 0))
-  }
-  return votesByCity
 }
 
 /**

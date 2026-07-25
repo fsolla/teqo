@@ -9,4 +9,3 @@ export const commentSchema = z.object({
     .optional(),
 })
 
-export type Comment = z.infer<typeof commentSchema>

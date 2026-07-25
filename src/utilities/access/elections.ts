@@ -10,7 +10,7 @@ import { isCampaignStaff, isPayloadAdmin } from '@/utilities/access/shared'
 
 export type ElectionDataReader = CampaignUser | User
 
-export const canReadElectionDataAsUser = (user: CampaignActor): user is ElectionDataReader =>
+const canReadElectionDataAsUser = (user: CampaignActor): user is ElectionDataReader =>
   isPayloadAdmin(user) || isCampaignStaff(user)
 
 export function assertCanReadElectionData(user: CampaignActor): asserts user is ElectionDataReader {

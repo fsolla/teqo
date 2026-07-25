@@ -13,10 +13,10 @@ import {
   strictDecimalInteger,
   type RawSearchParams,
 } from '@/utilities/campaignListUrl'
-import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
+import { relationshipId } from '@/utilities/relationship'
 import { loadStateDeputySummaries, type StateDeputySummary } from '@/utilities/stateDeputyData'
 
-export const leadershipPageSize = 25
+const leadershipPageSize = 25
 
 export type LeadershipRowViewModel = {
   id: number
@@ -292,6 +292,3 @@ export const loadLeadershipDetail = async (
     consentNote: doc.consentNote ?? null,
   }
 }
-
-export const requireLeadershipContactId = (leadership: Leadership): number =>
-  requireRelationshipId(leadership.contact)

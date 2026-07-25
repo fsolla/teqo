@@ -5,11 +5,11 @@
  * (or a new one) and re-export them here.
  */
 
-export type { CampaignTransactionRequest } from '@/utilities/access/shared'
+
 export {
   eligibleCampaignStaffWhere,
-  getFreshCampaignUser,
-  isCampaignCandidate,
+  
+  
   isCampaignCoordinator,
   isCampaignLeader,
   isCampaignStaff,
@@ -43,13 +43,13 @@ export {
   getAccessibleMunicipalityIds,
   getAdvisorMunicipalityIds,
   getEngagedLeaderMunicipalityIds,
-  getOwnEngagedLeadership,
+  
 } from '@/utilities/access/municipalities'
 
 export {
   canManageContacts,
   canReadContacts,
-  getAccessibleContactIds,
+  
 } from '@/utilities/access/contacts'
 
 export {
@@ -120,12 +120,12 @@ export {
   canUpdateActionPlan,
 } from '@/utilities/access/actionPlans'
 
-export type { ElectionDataReader } from '@/utilities/access/elections'
+
 export {
   assertCanReadElectionData,
   canMutateElectionData,
   canReadElectionData,
-  canReadElectionDataAsUser,
+  
 } from '@/utilities/access/elections'
 
 export {

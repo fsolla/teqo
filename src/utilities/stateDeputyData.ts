@@ -12,7 +12,7 @@ import {
 } from '@/utilities/campaignListUrl'
 import { relationshipId } from '@/utilities/relationship'
 
-export const stateDeputyPageSize = 25
+const stateDeputyPageSize = 25
 
 export type StateDeputyRowViewModel = {
   id: number

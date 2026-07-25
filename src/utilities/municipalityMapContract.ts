@@ -32,7 +32,7 @@ export const municipalityMapYearLabels: Record<MunicipalityMapYear, string> = {
   2026: '2026 (estimativas)',
 }
 
-export type MunicipalityZoneBreakdownRow = {
+type MunicipalityZoneBreakdownRow = {
   slug: string
   name: string
   votesByYear: Record<string, number>

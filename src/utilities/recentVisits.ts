@@ -2,7 +2,7 @@ export const STORAGE_KEY = 'teqo:campaign:recent-visits'
 export const MAX_ENTRIES = 8
 export const RECORD_DWELL_MS = 2000
 
-export type RecentVisitKind = 'municipality' | 'municipalityList'
+type RecentVisitKind = 'municipality' | 'municipalityList'
 
 export type RecentVisitEntry = {
   href: string

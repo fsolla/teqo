@@ -25,7 +25,7 @@ import { bahiaTseCityCodes } from '@/lib/bahiaTseCityCodes'
 import { tseZonesForCity } from '@/lib/bahiaTseZones'
 import { slugify } from '@/lib/slug'
 
-export type MunicipalityKind = 'municipio' | 'zona'
+type MunicipalityKind = 'municipio' | 'zona'
 
 export interface MunicipalityCatalogEntry {
   /** Canonical immutable slug — public URL segment and seed identity. */

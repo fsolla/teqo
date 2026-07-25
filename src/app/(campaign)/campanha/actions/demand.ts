@@ -5,11 +5,9 @@ import type { Payload } from 'payload'
 import {
   campaignDemandCostSchema,
   campaignDemandCreateSchema,
-  campaignDemandDetailsUpdateSchema,
   campaignDemandTransitionSchema,
   type CampaignDemandCostInput,
   type CampaignDemandCreateInput,
-  type CampaignDemandDetailsUpdateInput,
   type CampaignDemandTransitionInput,
 } from '@/lib/schemas/campaignDemandInput'
 import type { CampaignUser } from '@/payload-types'
@@ -47,33 +45,6 @@ export const createCampaignDemandRecord = async (
       })
     },
     { beginFailureMessage: 'Não foi possível iniciar o registro da demanda.' },
-  )
-}
-
-export const updateCampaignDemandDetailsRecord = async (
-  payload: Payload,
-  actor: CampaignUser,
-  input: CampaignDemandDetailsUpdateInput,
-) => {
-  const { id, ...data } = campaignDemandDetailsUpdateSchema.parse(input)
-
-  return withPayloadTransaction(
-    payload,
-    async ({ req }) => {
-      const currentActor = await reloadCampaignActor(payload, actor, req)
-      await acquireTextAdvisoryLocks(payload, req, [`campaign-demand:${id}`])
-
-      return payload.update({
-        collection: 'campaignDemand',
-        id,
-        data,
-        depth: 0,
-        user: currentActor,
-        overrideAccess: false,
-        req,
-      })
-    },
-    { beginFailureMessage: 'Não foi possível iniciar a atualização da demanda.' },
   )
 }
 
@@ -213,11 +184,6 @@ export const attachCampaignDemandReceiptRecord = async (
 export const createCampaignDemand = async (input: CampaignDemandCreateInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return createCampaignDemandRecord(payload, actor, input)
-}
-
-export const updateCampaignDemandDetails = async (input: CampaignDemandDetailsUpdateInput) => {
-  const { payload, actor } = await getCampaignActionContext()
-  return updateCampaignDemandDetailsRecord(payload, actor, input)
 }
 
 export const transitionCampaignDemand = async (input: CampaignDemandTransitionInput) => {

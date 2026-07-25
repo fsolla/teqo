@@ -11,7 +11,7 @@ const ALLOWED_REVALIDATE_TAGS = [
   ELECTION_TSE_CACHE_TAG,
 ] as const
 
-export type AllowedRevalidateTag = (typeof ALLOWED_REVALIDATE_TAGS)[number]
+type AllowedRevalidateTag = (typeof ALLOWED_REVALIDATE_TAGS)[number]
 
 const allowedTagSet = new Set<string>(ALLOWED_REVALIDATE_TAGS)
 

@@ -30,5 +30,3 @@ export const municipalityGeographyWhere = (geography: MunicipalityElectionGeogra
   and: [{ cityCode: { equals: geography.cityCode } }, { zoneNumber: { in: geography.zones } }],
 })
 
-export const zonesByCityCode = (geography: MunicipalityElectionGeography): Map<string, number[]> =>
-  new Map([[geography.cityCode, [...geography.zones]]])

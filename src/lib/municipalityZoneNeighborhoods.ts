@@ -13,7 +13,7 @@ import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 
 export type MunicipalityZoneNeighborhoodSource = 'tre-ra-02-2017'
 
-export type MunicipalityZoneNeighborhoodCity = 'Salvador'
+type MunicipalityZoneNeighborhoodCity = 'Salvador'
 
 export type MunicipalityZoneNeighborhoodEntry = {
   readonly municipalitySlug: string

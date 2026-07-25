@@ -6,10 +6,10 @@
  */
 
 export type {
-  BahiaMunicipalityFeature,
-  BahiaMunicipalityProperties,
-  BahiaTerritoryFeature,
-  BahiaTerritoryProperties,
+  
+  
+  
+  
   MunicipalityGeometryModule,
   TerritoryGeometryModule,
 } from '@/lib/bahiaGeometriesTypes'

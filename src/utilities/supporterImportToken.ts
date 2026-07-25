@@ -7,7 +7,7 @@ import type { Payload } from 'payload'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 
-export type SupporterImportOkRow = {
+type SupporterImportOkRow = {
   nome: string
   telefone: string
   municipio?: string

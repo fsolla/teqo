@@ -1,6 +1,6 @@
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 
-export type SupporterImportRowStatus =
+type SupporterImportRowStatus =
   | 'ok'
   | 'duplicado_pelo_telefone'
   | 'telefone_invalido'

@@ -1,12 +1,12 @@
 import type { Feature, MultiPolygon, Polygon } from 'geojson'
 import type { GeometryCollection, Topology } from 'topojson-specification'
 
-export type BahiaMunicipalityProperties = {
+type BahiaMunicipalityProperties = {
   codarea: string
   name: string
 }
 
-export type BahiaTerritoryProperties = {
+type BahiaTerritoryProperties = {
   code: string
   name: string
 }

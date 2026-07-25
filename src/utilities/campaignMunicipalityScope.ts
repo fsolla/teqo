@@ -9,7 +9,7 @@ import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
 import { type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 /** Superset of the fields the dashboard, map, and list overview consume. */
-export type ScopedMunicipalityDoc = Pick<
+type ScopedMunicipalityDoc = Pick<
   Municipality,
   | 'id'
   | 'name'

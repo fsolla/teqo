@@ -6,9 +6,9 @@
  * absolute-threshold insight clusters are superseded by E10's relative
  * territorial classification (see `docs/plans/classificacao-territorial-relativa.md`).
  */
-export const VOTE_TREND_STABLE_BAND = 0.1
+const VOTE_TREND_STABLE_BAND = 0.1
 
-export type VoteTrendStatus = 'decline' | 'stable' | 'increase' | 'noBaseline'
+type VoteTrendStatus = 'decline' | 'stable' | 'increase' | 'noBaseline'
 
 export type VoteTrendSeries = {
   y2014: number

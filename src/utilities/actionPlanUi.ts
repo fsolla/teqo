@@ -14,7 +14,7 @@ export const actionPlanPageSize = 25
 export const actionPlanTabs = ['proximos', 'todos', 'realizados', 'rascunhos'] as const
 export type ActionPlanTab = (typeof actionPlanTabs)[number]
 
-export type ActionPlanKind = (typeof actionPlanKinds)[number]
+type ActionPlanKind = (typeof actionPlanKinds)[number]
 export type ActionPlanStatus = (typeof actionPlanStatuses)[number]
 
 export const actionPlanTabLabels: Record<ActionPlanTab, string> = {
@@ -34,7 +34,7 @@ export type ActionPlanListState = {
 
 type RawSearchParams = CampaignListRawSearchParams
 
-export const actionPlanListParamNames = ['tab', 'kind', 'status', 'municipality', 'page'] as const
+const actionPlanListParamNames = ['tab', 'kind', 'status', 'municipality', 'page'] as const
 
 const actionPlanListParamNameSet = new Set<string>(actionPlanListParamNames)
 

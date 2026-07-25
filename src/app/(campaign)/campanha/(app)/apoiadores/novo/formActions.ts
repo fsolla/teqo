@@ -21,7 +21,7 @@ export type SupporterFormState = {
   revision?: number
 }
 
-export type SupporterFormValues = {
+type SupporterFormValues = {
   name?: string
   phone?: string
   email?: string

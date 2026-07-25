@@ -49,10 +49,6 @@ export const isCampaignUser = (user: CampaignActor): user is CampaignUser =>
 export const isCampaignCoordinator = (user: CampaignActor): boolean =>
   isCampaignUser(user) && user.role === 'coordinator'
 
-/** "Candidato" — full campaign visibility (superset of coordinator for reads). */
-export const isCampaignCandidate = (user: CampaignActor): boolean =>
-  isCampaignUser(user) && user.role === 'candidate'
-
 /** Coordinator or candidate — unrestricted scope (all municipalities, decisions). */
 export const isCampaignUnrestricted = (user: CampaignActor): boolean =>
   isCampaignUser(user) && isUnrestrictedCampaignRole(user.role)

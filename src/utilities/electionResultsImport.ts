@@ -19,7 +19,7 @@ const VOTE_TABLE = 'election_candidate_vote'
 const TALLY_TABLE = 'election_tally'
 const CANDIDATE_TABLE = 'election_candidate'
 
-export type ElectionImportScope = {
+type ElectionImportScope = {
   year: number
   office: ElectionOffice
   turn: ElectionTurn
@@ -98,7 +98,7 @@ const withTimestamps = <T extends Record<string, unknown>>(row: T, now: string) 
  * Replace all election data for a single (year, office, turn) scope in one transaction:
  * delete existing rows, then bulk-insert the provided bundle.
  */
-export const importElectionScope = async (
+const importElectionScope = async (
   payload: Payload,
   bundle: ElectionImportBundle,
 ): Promise<ElectionImportCounts> => {

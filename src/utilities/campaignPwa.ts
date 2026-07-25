@@ -2,7 +2,7 @@ export const CAMPAIGN_PWA_SCOPE = '/campanha'
 export const CAMPAIGN_PWA_MANIFEST_PATH = '/campanha/manifest.webmanifest'
 export const CAMPAIGN_PWA_SW_PATH = '/campanha/sw.js'
 export const CAMPAIGN_PWA_THEME_COLOR = '#c51414'
-export const CAMPAIGN_PWA_BACKGROUND_COLOR = '#ffffff'
+const CAMPAIGN_PWA_BACKGROUND_COLOR = '#ffffff'
 export const CAMPAIGN_CACHE_PREFIX = 'campanha-'
 export const CAMPAIGN_PWA_INSTALL_TOAST_KEY = 'pwa-install-toast-dismissed'
 export const CAMPAIGN_PWA_CLEAR_CACHES_MESSAGE = 'clear-campaign-caches' as const
@@ -29,7 +29,7 @@ const MANIFEST_ICONS = [
 ]
 
 /** Precache list: manifest icons + apple-touch (not in the web manifest). */
-export const CAMPAIGN_PWA_ICON_PATHS = [
+const CAMPAIGN_PWA_ICON_PATHS = [
   ...MANIFEST_ICONS.map((icon) => icon.src),
   '/campaign-icons/apple-touch-icon.png',
 ] as const

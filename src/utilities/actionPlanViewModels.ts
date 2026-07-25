@@ -17,7 +17,7 @@ export const actionPlanMunicipalitySummary = (
     : null
 
 /** Short "where" line, e.g. "Itabuna · Feira do Malhado". */
-export const formatActionPlanLocationLabel = ({
+const formatActionPlanLocationLabel = ({
   municipalityName,
   locality,
 }: {
@@ -103,7 +103,7 @@ export const actionPlanFormSelect = {
   tasks: true,
 } as const
 
-export type ActionPlanFormTaskViewModel = {
+type ActionPlanFormTaskViewModel = {
   id: string | null
   title: string
   responsible: { id: number; name: string; phone: string | null } | null
@@ -185,7 +185,7 @@ export const toActionPlanFormViewModel = (plan: ActionPlan): ActionPlanFormViewM
   })),
 })
 
-export const actionPlanDetailContextSelect = {
+const actionPlanDetailContextSelect = {
   title: true,
   slug: true,
   kind: true,
@@ -246,7 +246,7 @@ export type ActionPlanUpdateViewModel = {
   createdAt: string | null
 }
 
-export type ActionPlanResultViewModel = {
+type ActionPlanResultViewModel = {
   summary: string
   recordedByName: string | null
   recordedAt: string | null

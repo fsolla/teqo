@@ -36,8 +36,8 @@ export const isSupportStatus = (value: unknown): value is SupportStatus =>
   typeof value === 'string' && leadershipSupportStatuses.some((status) => status === value)
 
 export const MAX_LEADERSHIP_MUNICIPALITIES = 30
-export const MAX_LEADERSHIP_ORGANIZATIONS = 20
-export const MAX_LEADERSHIP_STATE_DEPUTIES = 20
+const MAX_LEADERSHIP_ORGANIZATIONS = 20
+const MAX_LEADERSHIP_STATE_DEPUTIES = 20
 
 const municipalitiesArraySchema = z
   .array(positiveRelationshipId)
@@ -82,5 +82,4 @@ export const leadershipInternalUpdateSchema = z.object({
   consentNote: trimmedNullableText(2000),
 })
 
-export type LeadershipCreateInput = z.input<typeof leadershipCreateSchema>
 export type LeadershipInternalUpdateInput = z.input<typeof leadershipInternalUpdateSchema>

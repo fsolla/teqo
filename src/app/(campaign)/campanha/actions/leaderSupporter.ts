@@ -28,7 +28,7 @@ export type LeaderSupporterFormState = {
   revision?: number
 }
 
-export type LeaderSupporterFormValues = {
+type LeaderSupporterFormValues = {
   name?: string
   phone?: string
   city?: string
@@ -144,7 +144,7 @@ export const createLeaderSupporterRecord = async (
   }
 }
 
-export const createLeaderSupporter = async (input: unknown) => {
+const createLeaderSupporter = async (input: unknown) => {
   const { payload, actor } = await getCampaignActionContext()
   return createLeaderSupporterRecord(payload, actor, input)
 }

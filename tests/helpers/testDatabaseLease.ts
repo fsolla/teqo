@@ -315,7 +315,7 @@ export const acquireSharedTestDatabaseLease = async (
   leaseKey: string,
 ): Promise<TestDatabaseLease> => beginTestDatabaseLease(payload, leaseKey, 'shared')
 
-export const withTestDatabaseLease = async <Result>(
+const withTestDatabaseLease = async <Result>(
   payload: Payload,
   leaseKey: string,
   operation: () => Promise<Result>,

@@ -338,7 +338,7 @@ class CampaignE2EOwnership {
   }
 }
 
-export type CampaignE2EFixture = {
+type CampaignE2EFixture = {
   baseURL: string
   fixtures: CampaignE2EOwnership
   login: (page: Page, identifier: string, password: string) => Promise<void>

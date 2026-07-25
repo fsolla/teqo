@@ -1,16 +1,11 @@
 import 'server-only'
 
-import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
 export type DrizzleTables = Record<string, Record<string, unknown>>
 
 type PayloadDbTables = {
   tables: DrizzleTables
-}
-
-type PostgresExecuteDb = {
-  execute: (query: ReturnType<typeof sql>) => Promise<unknown>
 }
 
 /** ~15-16 columns × 500 ≈ 7500-8000 bind params — well under PG's 65535 param limit. */
@@ -67,17 +62,3 @@ export const drizzleResultRows = (result: unknown): Array<Record<string, unknown
   return []
 }
 
-/** Returns the pool drizzle client for read-only `execute` aggregates (non-transactional). */
-export const requirePostgresDrizzle = (
-  payload: Pick<Payload, 'db'>,
-  contextLabel: string,
-): PostgresExecuteDb => {
-  if (payload.db.name !== 'postgres') {
-    throw new Error(`${contextLabel} exige o adaptador PostgreSQL.`)
-  }
-  const drizzle = (payload.db as unknown as { drizzle?: PostgresExecuteDb }).drizzle
-  if (!drizzle || typeof drizzle.execute !== 'function') {
-    throw new Error(`A sessão PostgreSQL de ${contextLabel} não está disponível.`)
-  }
-  return drizzle
-}

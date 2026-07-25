@@ -1,14 +1,11 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { Payload } from 'payload'
 
-import { ELECTION_YEAR_2014, ELECTION_YEAR_2018 } from '@/lib/electionResults'
 import { parseTseCsvString } from '@/lib/electionResultsCsv'
-import { buildElectionResultsFromCsvRows, FEDERAL_ONLY_OFFICES } from '@/lib/electionResultsBuild'
+import { buildElectionResultsFromCsvRows } from '@/lib/electionResultsBuild'
 import type { BuiltElectionResults } from '@/lib/electionResultsBuild'
 import type { TseCsvRow } from '@/lib/electionResultsParse'
 import type { ElectionOffice } from '@/lib/electionResults'
-import { buildImportBundles, importElectionBundles } from '@/utilities/electionResultsImport'
 
 const fixtureDir = join(process.cwd(), 'tests/fixtures/tse')
 
@@ -62,21 +59,3 @@ export const TSE_FIXTURE_EXPECTED = {
   tallyRowCount: 8,
 } as const
 
-/** Per-zone federal deputy T1 totals used by list-election overview int tests. */
-export const TSE_FIXTURE_ZONE_EXPECTED = {
-  salvadorZ1: { aptos: 10_000, abstencoes: 2000, sollaVotes2022: 1200, confirmedVoteEstimate: 2000 },
-  salvadorZ2: { aptos: 9000, abstencoes: 1800, sollaVotes2022: 900, confirmedVoteEstimate: 100 },
-} as const
-
-/** Import 2022 full scope plus federal-only 2018/2014 for E2 trend series int tests. */
-export const seedMultiYearFederalCandidateFixture = async (payload: Payload): Promise<void> => {
-  await importElectionBundles(payload, buildImportBundles(loadTseFixtureResults()))
-  await importElectionBundles(
-    payload,
-    buildImportBundles(loadTseFixtureResultsForYear(ELECTION_YEAR_2018, FEDERAL_ONLY_OFFICES)),
-  )
-  await importElectionBundles(
-    payload,
-    buildImportBundles(loadTseFixtureResultsForYear(ELECTION_YEAR_2014, FEDERAL_ONLY_OFFICES)),
-  )
-}

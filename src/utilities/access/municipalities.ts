@@ -87,7 +87,7 @@ type OwnLeadership = { id: number; municipalityIDs: number[]; organizationIDs: n
  * The engaged leadership record linked to the authenticated leader account
  * (contact is unique per person, so there is at most one). Cached per request.
  */
-export const getOwnEngagedLeadership = async (
+const getOwnEngagedLeadership = async (
   req: PayloadRequest,
   user: CampaignActor = req.user,
 ): Promise<OwnLeadership> => {
