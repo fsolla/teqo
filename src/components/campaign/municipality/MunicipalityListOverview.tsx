@@ -12,7 +12,7 @@ import {
   VoteEstimateScenarioField,
 } from '@/components/campaign/votePledge/VoteEstimateScenarioField'
 import { VoteEstimateScenarioStrip } from '@/components/campaign/votePledge/VoteEstimateScenarioStrip'
-import { formatElectionNumber } from '@/lib/electionInsights'
+import { formatElectionNumber } from '@/lib/electionFormat'
 import { cn } from '@/lib/utils'
 import {
   formatGoalCoverageDeficitLabel,

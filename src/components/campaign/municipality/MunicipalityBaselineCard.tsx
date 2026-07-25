@@ -1,5 +1,6 @@
 import { MunicipalityHoverTooltip } from '@/components/campaign/municipality/MunicipalityHoverTooltip'
-import { computeVoteTrend, formatElectionNumber } from '@/lib/electionInsights'
+import { formatElectionNumber } from '@/lib/electionFormat'
+import { computeVoteTrend } from '@/lib/voteTrend'
 import {
   DEFAULT_VOTE_RANK_YEAR,
   formatMunicipalityVoteRank,

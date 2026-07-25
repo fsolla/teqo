@@ -1,4 +1,4 @@
-import { formatElectionNumber } from '@/lib/electionInsights'
+import { formatElectionNumber } from '@/lib/electionFormat'
 import type { SuggestedGoalByScenario } from '@/utilities/municipalityPotential'
 import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 import {

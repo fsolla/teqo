@@ -16,7 +16,7 @@ import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { computeChoroplethMax } from '@/lib/bahiaMapStyle'
 import { computeValidVoteShares, divergingGradientCss } from '@/lib/choroplethColorScale'
-import { formatElectionNumber } from '@/lib/electionInsights'
+import { formatElectionNumber } from '@/lib/electionFormat'
 import type { FederalCandidateOption } from '@/utilities/electionCandidateOptions'
 import {
   MUNICIPALITY_MAP_SCALE_MODES,

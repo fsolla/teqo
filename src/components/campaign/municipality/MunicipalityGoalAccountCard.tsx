@@ -10,7 +10,7 @@ import {
   campaignConceptHref,
   type CampaignConceptId,
 } from '@/lib/campaignIntelligenceConcepts'
-import { formatElectionNumber } from '@/lib/electionInsights'
+import { formatElectionNumber } from '@/lib/electionFormat'
 import {
   formatGoalCoverageDeficitLabel,
   formatGoalCoverageRatioLabel,

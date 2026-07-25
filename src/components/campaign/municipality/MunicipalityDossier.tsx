@@ -7,7 +7,7 @@ import { MunicipalityUpdateFeed } from '@/components/campaign/municipality/Munic
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { Badge } from '@/components/ui/Badge'
 import type { MunicipalityAgeBandKey } from '@/lib/bahiaMunicipalityDemographics'
-import { formatElectionNumber } from '@/lib/electionInsights'
+import { formatElectionNumber } from '@/lib/electionFormat'
 import { actionPlanKindLabels } from '@/lib/schemas/actionPlan'
 import type { ActionPlanListViewModel } from '@/utilities/actionPlanViewModels'
 import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'

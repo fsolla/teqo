@@ -11,7 +11,7 @@ import {
 import { RecentlyVisitedCard } from '@/components/campaign/dashboard/RecentlyVisitedCard'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { formatElectionNumber } from '@/lib/electionInsights'
+import { formatElectionNumber } from '@/lib/electionFormat'
 import type { StaffDashboardView } from '@/utilities/campaignDashboardData'
 import {
   formatGoalCoverageDeficitLabel,

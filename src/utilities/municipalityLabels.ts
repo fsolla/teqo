@@ -3,7 +3,7 @@
  * surfaces. Client-safe: types + string tables only (split out of the former
  * `municipalityUi.ts` in Pass 2 W1).
  */
-import { formatElectionNumber } from '@/lib/electionInsights'
+import { formatElectionNumber } from '@/lib/electionFormat'
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import type { CampaignUser, Municipality } from '@/payload-types'
 

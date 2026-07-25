@@ -282,11 +282,11 @@ const {
   voteEstimatesEqual,
   voteEstimateScenarioLabels,
   hasAnyVoteEstimate,
-} = await import('../src/utilities/voteEstimate.ts')
+} = await import('../src/lib/voteEstimate.ts')
 const { withPayloadTransaction } = await import('../src/utilities/payloadTransaction.ts')
-const { slugify } = await import('../src/utilities/slug.ts')
+const { slugify } = await import('../src/lib/slug.ts')
 
-/** @param {import('../src/utilities/voteEstimate.ts').VoteEstimateScenarioViewModel} estimates */
+/** @param {import('../src/lib/voteEstimate.ts').VoteEstimateScenarioViewModel} estimates */
 const formatEstimates = (estimates) => {
   if (!hasAnyVoteEstimate(estimates)) return '(vazio)'
   return `${voteEstimateScenarioLabels.optimistic}:${estimates.optimistic ?? '—'} | ${voteEstimateScenarioLabels.central}:${estimates.central ?? '—'} | ${voteEstimateScenarioLabels.pessimistic}:${estimates.pessimistic ?? '—'}`

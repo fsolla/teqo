@@ -22,7 +22,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { formatElectionNumber } from '@/lib/electionInsights'
+import { formatElectionNumber } from '@/lib/electionFormat'
 import { formatMunicipalityVoteRank, formatMunicipalityVoteShare } from '@/lib/municipalityVoteRank'
 import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'

@@ -1,6 +1,7 @@
 # E10 — Classificação territorial relativa (defesa/ataque para DF)
 
 Status: rascunho
+Atualizado em: 2026-07-25 (Pass 2 W4a) — **`src/lib/electionInsights.ts` foi deletado**: os ~52 exports sem consumidor (limiares 35/20/10 da era núcleos, gap vs 2022, conversão, mobilização, ticket flip/leverage e os helpers de badge/label citados abaixo) saíram do repo com decisão D2 assinada; as fórmulas ficam no git history (commit "Pass 2 W4a"). Sobreviventes: `formatElectionNumber` → `src/lib/electionFormat.ts`; `computeVoteTrend` → `src/lib/voteTrend.ts`. **E10 nasce em módulo novo** (ex.: `dfTerritorialClass.ts`) em terreno limpo — a premissa "editar electionInsights in place" abaixo está superada.
 Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios + hardening)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Inteligência de campanha", E10; plano-mestre [inteligencia-campanha.md](inteligencia-campanha.md))
 Impeccable: B — muda o conteúdo de cards/badges existentes (insights do município, overview da lista); sem rota nova

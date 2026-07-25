@@ -2,7 +2,7 @@ import {
   federalBaselineMunicipalitySlugs,
   getMunicipalityFederalBaseline,
 } from '@/lib/bahiaElectionAggregates'
-import { formatElectionNumber } from '@/lib/electionInsights'
+import { formatElectionNumber } from '@/lib/electionFormat'
 
 /** Year the mesa uses as the current priority lens (A11 list sort + default readout). */
 export const DEFAULT_VOTE_RANK_YEAR = 2022

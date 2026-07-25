@@ -1,5 +1,5 @@
 import { choroplethGradientCss } from '@/lib/choroplethColorScale'
-import { formatElectionNumber } from '@/lib/electionInsights'
+import { formatElectionNumber } from '@/lib/electionFormat'
 
 type ChoroplethLegendProps = {
   max: number
