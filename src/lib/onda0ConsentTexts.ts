@@ -1,13 +1,17 @@
+import {
+  CAMPAIGN_INVITE_CONSENT_KEY,
+  SUPPORTER_REGISTRATION_CONSENT_KEY,
+  SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
+} from '@/lib/campaignConsentKeys'
 import type { Consent } from '@/payload-types'
-import { CAMPAIGN_INVITE_CONSENT_KEY } from '@/utilities/campaignInvite'
 
 export const ONDA0_PROVISIONAL_BANNER =
   'Texto provisório para MVP e testes internos da plataforma Teqo (campanha Jorge Solla). Não constitui parecer jurídico. Deve ser substituído por texto aprovado pela assessoria jurídica eleitoral antes de coleta de dados de titulares reais em produção.'
 
 export const ONDA0_CONSENT_KEYS = {
   leadershipAutofill: CAMPAIGN_INVITE_CONSENT_KEY,
-  supporterRegistration: 'apoiador-cadastro',
-  supporterVoteIntention: 'apoiador-intencao-voto',
+  supporterRegistration: SUPPORTER_REGISTRATION_CONSENT_KEY,
+  supporterVoteIntention: SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
   campaignPush: 'campanha-notificacoes-push',
 } as const
 

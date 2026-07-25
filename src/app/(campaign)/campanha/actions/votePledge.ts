@@ -17,7 +17,7 @@ import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
 import {
   normalizeVoteEstimateOnSave,
   toVoteEstimateScenarioViewModel,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 
 const STAFF_DECLARE_REQUIRED = 'Somente a coordenação e a assessoria registram votos declarados.'
 const MUNICIPALITY_NOT_LINKED =

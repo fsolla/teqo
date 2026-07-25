@@ -8,7 +8,7 @@ import {
   CAMPAIGN_SESSION_EXPIRED_MESSAGE,
   mapCampaignFormActionError,
 } from '@/utilities/campaignFormActionError'
-import { toVoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
+import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 
 import type { MunicipalityListExpectedVotesResponse } from './types'
 

@@ -1,7 +1,7 @@
 import type { Field } from 'payload'
 
 import { canManageCampaignStaffField, canReadCampaignStaffField } from '@/utilities/campaignAccess'
-import { voteEstimateScenarioLabels } from '@/utilities/voteEstimate'
+import { voteEstimateScenarioLabels } from '@/lib/voteEstimate'
 
 /** Shared staff-only trio for pledge estimates and municipality expected totals. */
 export const voteEstimateScenarioGroupFields = (): Field[] => [

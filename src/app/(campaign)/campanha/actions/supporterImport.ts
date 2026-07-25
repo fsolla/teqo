@@ -17,7 +17,7 @@ import {
 import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { normalizeBrazilianPhone } from '@/utilities/phone'
+import { normalizeBrazilianPhone } from '@/lib/phone'
 import { relationshipId } from '@/utilities/relationship'
 import {
   isPreviewErrorRow,

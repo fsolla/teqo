@@ -23,7 +23,7 @@ import {
   mapCampaignFormActionError,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
-import { normalizeBrazilianPhone } from '@/utilities/phone'
+import { normalizeBrazilianPhone } from '@/lib/phone'
 
 export const requestCampaignPasswordReset = async (
   input: { email: string },

@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { and, eq, type AnyColumn } from '@payloadcms/db-postgres/drizzle'
 import type { Payload } from 'payload'
 

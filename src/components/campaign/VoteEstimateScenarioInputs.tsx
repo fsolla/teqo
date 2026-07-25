@@ -12,7 +12,7 @@ import {
   voteEstimatesEqual,
   type VoteEstimateScenario,
   type VoteEstimateScenarioViewModel,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 
 const scenarioFieldName = (
   fieldPrefix: 'estimatedVotes' | 'expectedVotes',

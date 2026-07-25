@@ -11,7 +11,7 @@ import {
   planilhaPlaceholderEmailForAdvisor,
 } from '@/lib/schemas/advisor'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/utilities/phone'
+import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/lib/phone'
 
 const SAVE_DEBOUNCE_MS = 500
 

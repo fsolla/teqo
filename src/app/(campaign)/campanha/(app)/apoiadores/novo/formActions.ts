@@ -10,7 +10,7 @@ import {
 } from '@/lib/formData'
 import { supporterCreateSchema } from '@/lib/schemas/supporter'
 import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
-import { sanitizeBrazilianPhoneInput } from '@/utilities/phone'
+import { sanitizeBrazilianPhoneInput } from '@/lib/phone'
 
 export type SupporterFormState = {
   status?: 'success'

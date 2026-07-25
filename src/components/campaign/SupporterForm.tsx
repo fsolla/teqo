@@ -25,7 +25,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 import { fieldError, errorProps as buildErrorProps } from '@/utilities/campaignFormFields'
-import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/utilities/phone'
+import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
 import { municipalityComboboxOptions } from '@/utilities/territoryComboboxOptions'
 

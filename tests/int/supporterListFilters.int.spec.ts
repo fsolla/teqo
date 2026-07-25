@@ -8,12 +8,12 @@ import { toAggregateSqlConditions } from '@/utilities/supporterListSqlFilters'
 describe('supporterListFilters', () => {
   it('ignores search terms shorter than the contact search minimum', () => {
     expect(buildSupporterSearchTerms('a')).toBeNull()
-    expect(toPayloadWhere({ page: 1, q: 'a' })).toEqual({})
-    expect(toAggregateSqlConditions({ page: 1, q: 'a' }).needsContactJoin).toBe(false)
+    expect(toPayloadWhere({ q: 'a' })).toEqual({})
+    expect(toAggregateSqlConditions({ q: 'a' }).needsContactJoin).toBe(false)
   })
 
   it('builds matching payload and SQL search conditions for text queries', () => {
-    const state = { page: 1, q: 'ana' }
+    const state = { q: 'ana' }
     const payloadWhere = toPayloadWhere(state)
     const aggregate = toAggregateSqlConditions(state)
 
@@ -39,7 +39,7 @@ describe('supporterListFilters', () => {
       phoneDigits: null,
     })
 
-    const payloadWhere = toPayloadWhere({ page: 1, q: '(71) 98888-7777' })
+    const payloadWhere = toPayloadWhere({ q: '(71) 98888-7777' })
     expect(payloadWhere).toEqual({
       and: [
         {

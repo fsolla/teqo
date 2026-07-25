@@ -11,7 +11,7 @@ import {
   canUpdateCampaignUserPhone,
 } from '@/utilities/campaignAccess'
 import { buildCampaignPasswordResetUrl } from '@/utilities/campaignPasswordReset'
-import { normalizeBrazilianPhone } from '@/utilities/phone'
+import { normalizeBrazilianPhone } from '@/lib/phone'
 import {
   APIError,
   type CollectionAfterReadHook,

@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { buildWhatsAppUrl } from '@/utilities/phone'
+import { buildWhatsAppUrl } from '@/lib/phone'
 
 export const SupporterShareKit = ({
   supporterName,

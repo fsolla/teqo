@@ -1,8 +1,20 @@
 import type { Where } from 'payload'
 
 import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
-import { normalizeBrazilianPhone } from '@/utilities/phone'
-import type { SupporterListState } from '@/utilities/supporterUi'
+import { normalizeBrazilianPhone } from '@/lib/phone'
+import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
+
+/**
+ * The filters the where-builder actually reads — a structural subset of
+ * `SupporterListState` (`supporterUi.ts`), declared here so the type flows
+ * url-module → where-builder without a module cycle.
+ */
+export type SupporterListFilterInput = {
+  q?: string
+  voteIntention?: SupporterVoteIntention
+  city?: string
+  municipality?: number
+}
 
 export type SupporterSearchTerms = {
   q: string
@@ -35,7 +47,7 @@ const buildPayloadSearchWhere = (terms: SupporterSearchTerms): Where => {
   return { or: searchFilters }
 }
 
-export const toPayloadWhere = (state: SupporterListState): Where => {
+export const toPayloadWhere = (state: SupporterListFilterInput): Where => {
   const filters: Where[] = []
 
   if (state.q) {

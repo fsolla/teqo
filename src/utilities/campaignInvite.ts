@@ -1,8 +1,9 @@
 import { createHash, randomBytes } from 'node:crypto'
 
-import { buildWhatsAppUrl } from '@/utilities/phone'
+import { buildWhatsAppUrl } from '@/lib/phone'
 
-export const CAMPAIGN_INVITE_CONSENT_KEY = 'lideranca-autopreenchimento'
+export { CAMPAIGN_INVITE_CONSENT_KEY } from '@/lib/campaignConsentKeys'
+
 export const CAMPAIGN_INVITE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000
 
 export type CampaignInviteKind = 'login' | 'autopreenchimento'

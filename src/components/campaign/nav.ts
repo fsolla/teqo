@@ -11,8 +11,8 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
+import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import type { CampaignUser } from '@/payload-types'
-import { isCampaignStaff, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { canAccessSupporterArea } from '@/utilities/supporterUi'
 
 export type CampaignNavItem = {
@@ -57,13 +57,13 @@ export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] =>
 
   return staffNav.filter((item) => {
     if (item.href === '/campanha/apoiadores') return canAccessSupporterArea(role)
-    if (item.href === '/campanha/assessores') return isCampaignUnrestrictedRole(role)
+    if (item.href === '/campanha/assessores') return isUnrestrictedCampaignRole(role)
     return true
   })
 }
 
 export const getCampaignSecondaryNav = (role: CampaignUser['role']): CampaignNavItem[] =>
-  isCampaignStaffRole(role) ? staffSecondaryNav : []
+  isStaffCampaignRole(role) ? staffSecondaryNav : []
 
 /**
  * Compact set for the mobile bottom bar (max 5 items with a home slot).
@@ -88,9 +88,3 @@ export const isCampaignNavActive = (pathname: string, href: string): boolean => 
   }
   return pathname === href || pathname.startsWith(`${href}/`)
 }
-
-export const isCampaignStaffRole = (role: CampaignUser['role']): boolean =>
-  isCampaignStaff({ collection: 'campaignUser', role } as CampaignUser)
-
-const isCampaignUnrestrictedRole = (role: CampaignUser['role']): boolean =>
-  isCampaignUnrestricted({ collection: 'campaignUser', role } as CampaignUser)

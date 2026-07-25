@@ -6,7 +6,7 @@
  * Bom → optimistic, Regular → central (média), Mínimo → pessimistic.
  */
 
-import type { VoteEstimateScenarioFields } from '@/utilities/voteEstimate'
+import type { VoteEstimateScenarioFields } from '@/lib/voteEstimate'
 
 /** Parsed sheet triple — all three scenarios present (same keys as expectedVotes). */
 export type ProjectionVoteEstimates = Required<

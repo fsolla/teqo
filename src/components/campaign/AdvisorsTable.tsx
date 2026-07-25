@@ -39,7 +39,7 @@ import {
   normalizeBrazilianPhone,
   sanitizeBrazilianPhoneInput,
   buildWhatsAppUrl,
-} from '@/utilities/phone'
+} from '@/lib/phone'
 
 type MunicipalityRef = { id: number; name: string; slug: string }
 

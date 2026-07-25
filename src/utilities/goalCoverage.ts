@@ -1,12 +1,12 @@
 import { formatElectionNumber } from '@/lib/electionInsights'
 import type { SuggestedGoalByScenario } from '@/utilities/municipalityPotential'
-import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
+import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 import {
   getVoteEstimateForScenario,
   VOTE_ESTIMATE_SCENARIOS,
   type VoteEstimateScenario,
   type VoteEstimateScenarioFields,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 
 /**
  * E8 "conta da cadeira" — coverage of the goal by auditable pledges.

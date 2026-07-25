@@ -16,7 +16,7 @@ import {
   type VoteEstimateScenarioFields,
   getVoteEstimateOrderViolation,
   VOTE_ESTIMATE_ORDER_ERROR_MESSAGE,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 import {
   voteEstimateScenarioGroupAccess,
   voteEstimateScenarioGroupFields,

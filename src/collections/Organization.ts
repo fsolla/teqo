@@ -8,7 +8,7 @@ import {
   canReadOrganization,
   canSetCampaignSystemField,
 } from '@/utilities/campaignAccess'
-import { slugify } from '@/utilities/slug'
+import { slugify } from '@/lib/slug'
 
 const trimmedText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
 

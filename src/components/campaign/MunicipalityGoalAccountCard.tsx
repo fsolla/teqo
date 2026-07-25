@@ -19,8 +19,8 @@ import {
   type MunicipalityGoalCoverage,
 } from '@/utilities/goalCoverage'
 import type { MunicipalityPotential, RollOff } from '@/utilities/municipalityPotential'
-import type { VoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
-import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeData'
+import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
+import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
 /**
  * One `dt`/`dd` pair in the diagnostic grid, with a hover/focus/tap tooltip

@@ -1,4 +1,4 @@
-import type { VoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
+import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 
 export type MunicipalityListExpectedVotesResponse =
   | {

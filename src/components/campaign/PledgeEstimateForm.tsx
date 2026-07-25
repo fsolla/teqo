@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
-import type { VoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
+import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 
 type PledgeEstimateFormProps = {
   pledgeID: number

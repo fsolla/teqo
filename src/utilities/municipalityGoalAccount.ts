@@ -24,11 +24,8 @@ import {
   zeroByVoteEstimateScenario,
   type VoteEstimateScenarioFields,
   type VoteEstimateScenario,
-} from '@/utilities/voteEstimate'
-import {
-  emptyMunicipalityPledgeAggregate,
-  type MunicipalityPledgeAggregate,
-} from '@/utilities/votePledgeData'
+} from '@/lib/voteEstimate'
+import { emptyMunicipalityPledgeAggregate, type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 type GoalAccountReader = CampaignUser | User
 

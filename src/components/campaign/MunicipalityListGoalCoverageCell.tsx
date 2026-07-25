@@ -11,7 +11,7 @@ import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   voteEstimateScenarioLabels,
   type VoteEstimateScenario,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 
 /**
  * E8 "conta da cadeira" list cell: reads the shared scenario picker (same

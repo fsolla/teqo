@@ -1,3 +1,5 @@
+import 'server-only'
+
 import type { Payload } from 'payload'
 
 import type { MunicipalityVoteRankEntry } from '@/lib/municipalityVoteRank'
@@ -12,9 +14,9 @@ import {
   toVoteEstimateScenarioViewModel,
   type VoteEstimateScenario,
   type VoteEstimateScenarioViewModel,
-} from '@/utilities/voteEstimate'
-import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
-import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
+} from '@/lib/voteEstimate'
+import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
+import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 export const municipalityListSelect = {
   name: true,

@@ -1,4 +1,4 @@
-import { normalizeBrazilianPhone } from '@/utilities/phone'
+import { normalizeBrazilianPhone } from '@/lib/phone'
 import { z } from 'zod'
 
 const campaignIdentifierSchema = z

@@ -18,7 +18,7 @@ import {
   type RawSearchParams as CampaignListRawSearchParams,
 } from '@/utilities/campaignListUrl'
 import { politicalTrendLabels, type PoliticalTrendStatus } from '@/utilities/municipalityLabels'
-import { normalizeSearchPhrase } from '@/utilities/wordStartFilter'
+import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 
 import type { Municipality } from '@/payload-types'
 

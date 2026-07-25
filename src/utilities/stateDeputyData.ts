@@ -1,3 +1,5 @@
+import 'server-only'
+
 import type { Payload } from 'payload'
 
 import type { CampaignUser, Leadership, StateDeputy } from '@/payload-types'

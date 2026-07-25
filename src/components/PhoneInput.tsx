@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react'
 
-import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/utilities/phone'
+import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/lib/phone'
 
 import { FormInput } from './FormInput'
 

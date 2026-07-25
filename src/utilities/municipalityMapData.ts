@@ -30,12 +30,8 @@ import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   VOTE_ESTIMATE_SCENARIOS,
   type VoteEstimateScenario,
-} from '@/utilities/voteEstimate'
-import {
-  emptyMunicipalityPledgeAggregate,
-  resolveMunicipalityStaffVoteTotal,
-  type MunicipalityPledgeAggregate,
-} from '@/utilities/votePledgeData'
+} from '@/lib/voteEstimate'
+import { emptyMunicipalityPledgeAggregate, resolveMunicipalityStaffVoteTotal, type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 export type { MunicipalityMapSlugEntry, MunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
 // Client components import the map vocabulary from the contract module; the

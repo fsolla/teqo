@@ -7,7 +7,7 @@ import {
   positiveRelationshipId,
   trimmedNullableText,
 } from '@/lib/schemas/primitives'
-import { normalizeSearchPhrase } from '@/utilities/wordStartFilter'
+import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 
 export const supporterVoteIntentions = ['certo', 'tende_a_certo', 'indeciso', 'outro'] as const
 

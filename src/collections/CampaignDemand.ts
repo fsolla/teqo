@@ -24,7 +24,7 @@ import {
   isCampaignUnrestricted,
 } from '@/utilities/campaignAccess'
 import { relationshipId } from '@/utilities/relationship'
-import { slugify } from '@/utilities/slug'
+import { slugify } from '@/lib/slug'
 
 const trimmedText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
 

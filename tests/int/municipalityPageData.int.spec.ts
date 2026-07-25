@@ -7,10 +7,8 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { getMunicipalityCatalogEntry, municipalityCatalog } from '@/lib/municipalityCatalog'
 import config from '@/payload.config'
 import { loadMunicipalityListPageBundle } from '@/utilities/municipalityPageData'
-import {
-  aggregatePledgesByMunicipality,
-  rollupMunicipalityStaffVotes,
-} from '@/utilities/votePledgeData'
+import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
+import { rollupMunicipalityStaffVotes } from '@/utilities/votePledgeViews'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 

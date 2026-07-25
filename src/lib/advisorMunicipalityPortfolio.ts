@@ -8,7 +8,7 @@ import {
   type MunicipalityCatalogEntry,
 } from '@/lib/municipalityCatalog'
 import { citiesForTseZone } from '@/lib/bahiaTseZones'
-import { matchesAtWordStart, normalizeSearchPhrase } from '@/utilities/wordStartFilter'
+import { matchesAtWordStart, normalizeSearchPhrase } from '@/lib/wordStartFilter'
 
 export type AdvisorMunicipalityIndexEntry = {
   id: number

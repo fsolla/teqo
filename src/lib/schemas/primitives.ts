@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { normalizeBrazilianPhone } from '@/utilities/phone'
+import { normalizeBrazilianPhone } from '@/lib/phone'
 
 export const positiveRelationshipId = z.number().int().positive()
 

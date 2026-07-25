@@ -56,8 +56,8 @@ import type {
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   voteEstimateScenarioLabels,
-} from '@/utilities/voteEstimate'
-import { toMunicipalityPledgeCoverageView } from '@/utilities/votePledgeData'
+} from '@/lib/voteEstimate'
+import { toMunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 

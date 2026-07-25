@@ -11,7 +11,7 @@ import {
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import type { BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import type { CampaignGoal } from '@/payload-types'
-import type { VoteEstimateScenario } from '@/utilities/voteEstimate'
+import type { VoteEstimateScenario } from '@/lib/voteEstimate'
 
 /**
  * E8 "conta da cadeira" — derived electoral potential per municipality, built

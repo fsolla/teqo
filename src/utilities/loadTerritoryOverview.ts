@@ -5,11 +5,8 @@ import { cache } from 'react'
 
 import { getMunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
 import type { Municipality } from '@/payload-types'
-import {
-  aggregatePledgesByMunicipality,
-  emptyMunicipalityPledgeAggregate,
-  resolveMunicipalityStaffVoteTotal,
-} from '@/utilities/votePledgeData'
+import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
+import { emptyMunicipalityPledgeAggregate, resolveMunicipalityStaffVoteTotal } from '@/utilities/votePledgeViews'
 import {
   computeTerritoryRollup,
   type TerritoryMunicipalityInput,
@@ -18,7 +15,7 @@ import {
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   type VoteEstimateScenario,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 
 type MunicipalityDoc = Pick<
   Municipality,

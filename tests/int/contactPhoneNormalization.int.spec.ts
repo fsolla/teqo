@@ -6,8 +6,8 @@ const phoneMocks = vi.hoisted(() => ({
   normalizeBrazilianPhone: vi.fn<(value: string) => string | null>(),
 }))
 
-vi.mock('@/utilities/phone', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/utilities/phone')>()
+vi.mock('@/lib/phone', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/phone')>()
   phoneMocks.normalizeBrazilianPhone.mockImplementation(actual.normalizeBrazilianPhone)
 
   return {

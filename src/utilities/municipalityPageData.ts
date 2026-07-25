@@ -1,3 +1,5 @@
+import 'server-only'
+
 import type { Payload, Where } from 'payload'
 
 import { bahiaIdentityTerritories } from '@/lib/bahiaTerritories'
@@ -33,11 +35,8 @@ import {
 } from '@/utilities/municipalityViewModels'
 import { relationshipId } from '@/utilities/relationship'
 import { loadStateDeputySummaries } from '@/utilities/stateDeputyData'
-import { type VoteEstimateScenario } from '@/utilities/voteEstimate'
-import {
-  rollupMunicipalityStaffVotes,
-  type MunicipalityPledgeAggregate,
-} from '@/utilities/votePledgeData'
+import { type VoteEstimateScenario } from '@/lib/voteEstimate'
+import { rollupMunicipalityStaffVotes, type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 export class MunicipalityNotFoundError extends Error {
   override name = 'MunicipalityNotFoundError'

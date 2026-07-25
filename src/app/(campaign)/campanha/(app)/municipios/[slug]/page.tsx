@@ -50,14 +50,9 @@ import {
   parseMunicipalityUpdateFeedParams,
 } from '@/utilities/municipalityUpdatePageData'
 import { loadAdvisorSummaries } from '@/utilities/municipalityViewModels'
-import type { VoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
-import {
-  aggregateMunicipalityPledgesFromRows,
-  loadMunicipalityPledges,
-  toMunicipalityPledgeCoverageView,
-  type MunicipalityPledgeAggregate,
-  type MunicipalityPledgeCoverageView,
-} from '@/utilities/votePledgeData'
+import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
+import { loadMunicipalityPledges } from '@/utilities/votePledgeData'
+import { aggregateMunicipalityPledgesFromRows, toMunicipalityPledgeCoverageView, type MunicipalityPledgeAggregate, type MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 import { declareVotesFormAction, estimateVotesFormAction } from './pledgeFormActions'
 import { createMunicipalityUpdateFormAction } from './updateFormActions'
 

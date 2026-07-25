@@ -16,7 +16,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 import { campaignRoleLabels, type CampaignUserShellView } from '@/utilities/campaignUserProfile'
-import { formatBrazilianPhoneDisplay } from '@/utilities/phone'
+import { formatBrazilianPhoneDisplay } from '@/lib/phone'
 
 type CampaignProfileSettingsProps = {
   user: CampaignUserShellView & {

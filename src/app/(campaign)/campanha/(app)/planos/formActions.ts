@@ -13,7 +13,7 @@ import {
   parseActionPlanCreateFormData,
   parseActionPlanUpdateFormData,
 } from '@/utilities/actionPlanFormData'
-import { slugify } from '@/utilities/slug'
+import { slugify } from '@/lib/slug'
 
 const getActionError = (error: unknown): ActionPlanFormState => {
   if (

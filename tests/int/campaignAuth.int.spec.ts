@@ -16,7 +16,7 @@ import {
   buildWhatsAppUrl,
   normalizeBrazilianPhone,
   sanitizeBrazilianPhoneInput,
-} from '@/utilities/phone'
+} from '@/lib/phone'
 import { getPayload } from 'payload'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'

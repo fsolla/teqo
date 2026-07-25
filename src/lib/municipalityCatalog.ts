@@ -23,7 +23,7 @@ import {
 } from '@/lib/bahiaTerritories'
 import { bahiaTseCityCodes } from '@/lib/bahiaTseCityCodes'
 import { tseZonesForCity } from '@/lib/bahiaTseZones'
-import { slugify } from '@/utilities/slug'
+import { slugify } from '@/lib/slug'
 
 export type MunicipalityKind = 'municipio' | 'zona'
 

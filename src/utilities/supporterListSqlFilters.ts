@@ -6,7 +6,7 @@ import {
   buildSupporterSearchTerms,
   type SupporterSearchTerms,
 } from '@/utilities/supporterListFilters'
-import type { SupporterListState } from '@/utilities/supporterUi'
+import type { SupporterListFilterInput } from '@/utilities/supporterListFilters'
 
 export type AggregateSqlConditions = {
   conditions: ReturnType<typeof sql>[]
@@ -28,7 +28,7 @@ const buildSqlSearchCondition = (terms: SupporterSearchTerms): ReturnType<typeof
   return sql`(${sql.join(searchTerms, sql` OR `)})`
 }
 
-export const toAggregateSqlConditions = (state: SupporterListState): AggregateSqlConditions => {
+export const toAggregateSqlConditions = (state: SupporterListFilterInput): AggregateSqlConditions => {
   const conditions: ReturnType<typeof sql>[] = []
   let needsContactJoin = false
 

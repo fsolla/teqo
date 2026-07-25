@@ -7,7 +7,7 @@ import {
   formatGoalCoverageDeficitLabel,
 } from '@/utilities/goalCoverage'
 import type { SuggestedGoalByScenario } from '@/utilities/municipalityPotential'
-import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
+import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 /** Suggested goal ladder shaped like `deriveSuggestedGoalsByScenario` output. */
 const suggested = (

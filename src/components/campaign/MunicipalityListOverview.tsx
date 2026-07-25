@@ -24,7 +24,7 @@ import {
   formatVoteEstimateEndpointsLabel,
   hasAnyVoteEstimate,
   voteEstimateScenarioLabels,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 
 const SCENARIO_FLASH_MS = 420
 

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import type { LeadershipRowViewModel } from '@/utilities/leadershipData'
-import type { StaffPledgeRow } from '@/utilities/votePledgeData'
+import type { StaffPledgeRow } from '@/utilities/votePledgeViews'
 
 type MunicipalityLeadershipsPanelProps = {
   municipalityID: number

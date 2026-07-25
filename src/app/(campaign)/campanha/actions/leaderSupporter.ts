@@ -17,7 +17,7 @@ import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
 import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { sanitizeBrazilianPhoneInput } from '@/utilities/phone'
+import { sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import { isUniqueSupporterConflict } from '@/utilities/supporterErrors'
 
 export type LeaderSupporterFormState = {

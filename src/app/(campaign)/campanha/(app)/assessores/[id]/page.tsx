@@ -13,7 +13,7 @@ import { isPlanilhaPlaceholderEmail } from '@/lib/schemas/advisor'
 import { loadAdvisorDetail } from '@/utilities/advisorData'
 import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { formatBrazilianPhoneInput } from '@/utilities/phone'
+import { formatBrazilianPhoneInput } from '@/lib/phone'
 import {
   sendAdvisorPasswordResetFormAction,
   updateAdvisorProfileFormAction,

@@ -21,7 +21,7 @@ import {
 import {
   formatVoteEstimateEndpointsLabel,
   voteEstimateScenarioLabels,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',

@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/Table'
 import type { LeaderContactListItem } from '@/utilities/leaderContactsPageData'
-import { formatBrazilianPhoneInput } from '@/utilities/phone'
+import { formatBrazilianPhoneInput } from '@/lib/phone'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',

@@ -5,10 +5,8 @@ import { cache } from 'react'
 import type { Payload, Where } from 'payload'
 
 import type { CampaignUser, Municipality } from '@/payload-types'
-import {
-  aggregatePledgesByMunicipality,
-  type MunicipalityPledgeAggregate,
-} from '@/utilities/votePledgeData'
+import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
+import { type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 /** Superset of the fields the dashboard, map, and list overview consume. */
 export type ScopedMunicipalityDoc = Pick<

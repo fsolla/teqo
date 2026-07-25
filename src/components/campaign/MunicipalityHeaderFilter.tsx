@@ -29,7 +29,7 @@ import {
   type MunicipalityMultiFilterParam,
 } from '@/utilities/municipalityListFilters'
 import { type MunicipalityListState } from '@/utilities/municipalityListUrl'
-import { normalizeSearchPhrase } from '@/utilities/wordStartFilter'
+import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 
 type MunicipalityHeaderFilterProps = {
   state: MunicipalityListState

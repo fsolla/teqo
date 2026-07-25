@@ -2,12 +2,18 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import {
+  CAMPAIGN_INVITE_CONSENT_KEY,
+  SUPPORTER_REGISTRATION_CONSENT_KEY,
+  SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
+} from '@/lib/campaignConsentKeys'
 import type { Consent } from '@/payload-types'
-import { CAMPAIGN_INVITE_CONSENT_KEY } from '@/utilities/campaignInvite'
 import { hashConsentContent } from '@/utilities/consentContentHash'
 
-export const SUPPORTER_REGISTRATION_CONSENT_KEY = 'apoiador-cadastro'
-export const SUPPORTER_VOTE_INTENTION_CONSENT_KEY = 'apoiador-intencao-voto'
+export {
+  SUPPORTER_REGISTRATION_CONSENT_KEY,
+  SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
+} from '@/lib/campaignConsentKeys'
 
 export type ConsentDescriptor = {
   id: number

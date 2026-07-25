@@ -8,8 +8,8 @@ import {
   hasAnyVoteEstimate,
   type VoteEstimateScenario,
   type VoteEstimateScenarioViewModel,
-} from '@/utilities/voteEstimate'
-import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeData'
+} from '@/lib/voteEstimate'
+import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
 const voteFormatter = new Intl.NumberFormat('pt-BR')
 

@@ -7,7 +7,7 @@ import {
   canManageContacts,
   canReadContacts,
 } from '@/utilities/campaignAccess'
-import { normalizeBrazilianPhone } from '@/utilities/phone'
+import { normalizeBrazilianPhone } from '@/lib/phone'
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 

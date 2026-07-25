@@ -24,7 +24,7 @@ import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 import {
   normalizeVoteEstimateOnSave,
   toVoteEstimateScenarioViewModel,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 
 const getFreshStaffActor = (
   payload: Payload,

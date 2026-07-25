@@ -1,3 +1,5 @@
+import 'server-only'
+
 import type { Payload } from 'payload'
 
 import type { ActionPlan, CampaignDemand, CampaignUser } from '@/payload-types'

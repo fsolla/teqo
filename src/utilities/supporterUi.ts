@@ -5,6 +5,7 @@ import {
   resolveBahiaMunicipality,
   type SupporterVoteIntention,
 } from '@/lib/schemas/supporter'
+import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import type { CampaignUser, Supporter } from '@/payload-types'
 import {
   buildListHref,
@@ -122,4 +123,4 @@ export const getSupporterScopeLabel = (total: number): string =>
 
 /** Staff roles with supporter-area access — matches collection-level supporter access. */
 export const canAccessSupporterArea = (role: CampaignUser['role']): boolean =>
-  role === 'coordinator' || role === 'advisor' || role === 'candidate'
+  isStaffCampaignRole(role)

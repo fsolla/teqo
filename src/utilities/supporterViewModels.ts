@@ -1,7 +1,7 @@
 import { territoryForCity } from '@/lib/bahiaTerritories'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 import type { CampaignUser, Contact, Municipality, Supporter } from '@/payload-types'
-import { formatBrazilianPhoneInput } from '@/utilities/phone'
+import { formatBrazilianPhoneInput } from '@/lib/phone'
 import { isPopulatedRelationship } from '@/utilities/relationship'
 import { supporterSourceLabels } from '@/utilities/supporterUi'
 

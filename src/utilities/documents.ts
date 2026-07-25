@@ -1,3 +1,5 @@
+import 'server-only'
+
 import type { Config } from '@/payload-types'
 
 import configPromise from '@payload-config'

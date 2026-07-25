@@ -8,7 +8,7 @@ import {
   VOTE_ESTIMATE_SCENARIOS,
   voteEstimateScenarioLabels,
   type VoteEstimateScenario,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 
 export const VOTE_ESTIMATE_SCENARIO_OVERVIEW_HINT =
   'Troca o total desta visão geral e os votos na lista. No mapa, a cor só muda com Ano 2026.'

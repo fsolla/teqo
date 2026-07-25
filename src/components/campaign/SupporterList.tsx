@@ -9,7 +9,7 @@ import {
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatBrazilianPhoneInput } from '@/utilities/phone'
+import { formatBrazilianPhoneInput } from '@/lib/phone'
 import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
 import type { SupporterListItemViewModel } from '@/utilities/supporterViewModels'
 

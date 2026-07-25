@@ -1,3 +1,5 @@
+import 'server-only'
+
 /**
  * Cache tag for every `unstable_cache` entry derived from the immutable TSE
  * election collections (2014/2018/2022). The data only changes when the seed

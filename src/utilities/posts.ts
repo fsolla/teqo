@@ -1,3 +1,5 @@
+import 'server-only'
+
 import type { Post, Tag } from '@/payload-types'
 
 import configPromise from '@payload-config'

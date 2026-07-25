@@ -5,7 +5,7 @@ import {
   voteEstimateScenarioLabels,
   type VoteEstimateScenario,
   type VoteEstimateScenarioViewModel,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 
 const voteFormatter = new Intl.NumberFormat('pt-BR')
 

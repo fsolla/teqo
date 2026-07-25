@@ -3,6 +3,7 @@
 // Domain modules may import from here; this module must not import from them.
 // ---------------------------------------------------------------------------
 
+import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import type { CampaignUser, User } from '@/payload-types'
 import type { Access, PayloadRequest, Where } from 'payload'
 
@@ -47,15 +48,14 @@ export const isCampaignCandidate = (user: CampaignActor): boolean =>
 
 /** Coordinator or candidate — unrestricted scope (all municipalities, decisions). */
 export const isCampaignUnrestricted = (user: CampaignActor): boolean =>
-  isCampaignCoordinator(user) || isCampaignCandidate(user)
+  isCampaignUser(user) && isUnrestrictedCampaignRole(user.role)
 
 export const isCampaignLeader = (user: CampaignActor): boolean =>
   isCampaignUser(user) && user.role === 'leader'
 
 /** Staff = coordinator, advisor, or candidate. Leaders are not staff. */
 export const isCampaignStaff = (user: CampaignActor): boolean =>
-  isCampaignUser(user) &&
-  (user.role === 'coordinator' || user.role === 'advisor' || user.role === 'candidate')
+  isCampaignUser(user) && isStaffCampaignRole(user.role)
 
 /**
  * Eligible relationship targets for advisor assignments (municipality / action plan).

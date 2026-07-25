@@ -14,8 +14,8 @@ import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   voteEstimatesEqual,
   type VoteEstimateScenarioViewModel,
-} from '@/utilities/voteEstimate'
-import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeData'
+} from '@/lib/voteEstimate'
+import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
 const AUTOSAVE_MS = 600
 const EXPECTED_VOTES_ENDPOINT = '/campanha/municipios/expected-votes'

@@ -4,7 +4,7 @@ import { positiveRelationshipId, trimmedNullableText } from '@/lib/schemas/primi
 import {
   getVoteEstimateOrderViolation,
   VOTE_ESTIMATE_ORDER_ERROR_MESSAGE,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 
 const optionalEstimate = z.number().int().min(0).max(1_000_000).nullable().optional()
 

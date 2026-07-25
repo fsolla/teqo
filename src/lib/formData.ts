@@ -2,7 +2,7 @@ import 'server-only'
 
 import { z, type ZodError } from 'zod'
 
-import type { VoteEstimateScenarioFields } from '@/utilities/voteEstimate'
+import type { VoteEstimateScenarioFields } from '@/lib/voteEstimate'
 
 export class FormDataBoundaryError extends Error {
   field: string

@@ -19,8 +19,8 @@ import type {
   MunicipalityAdvisorSummary,
   MunicipalityListViewModel,
 } from '@/utilities/municipalityViewModels'
-import { toVoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
-import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
+import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
+import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 import { stub } from '../helpers/stub'
 

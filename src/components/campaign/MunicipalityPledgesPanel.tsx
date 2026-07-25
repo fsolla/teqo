@@ -5,9 +5,9 @@ import {
   effectivePledgeVotesForScenario,
   formatVoteEstimateRange,
   getVoteEstimateForScenario,
-} from '@/utilities/voteEstimate'
-import { type StaffPledgeRow } from '@/utilities/votePledgeData'
-import { hasAnyEstimate } from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
+import { type StaffPledgeRow } from '@/utilities/votePledgeViews'
+import { hasAnyEstimate } from '@/lib/voteEstimate'
 
 const voteFormatter = new Intl.NumberFormat('pt-BR')
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')

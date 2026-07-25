@@ -32,7 +32,7 @@ import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   voteEstimateScenarioLabels,
   type VoteEstimateScenario,
-} from '@/utilities/voteEstimate'
+} from '@/lib/voteEstimate'
 
 type MunicipalityMapPanelProps = {
   bundle: MunicipalityMapBundle
