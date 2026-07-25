@@ -4,11 +4,13 @@ import type { GlobalConfig } from 'payload'
 const slug = 'campaignGoals'
 
 /**
- * State-level campaign goal used by E8 "conta da cadeira" to decompose a
- * per-municipality suggested goal proportional to each municipality's
- * projected field ceiling (`municipalityPotential.ts`). Editable by staff
- * (piso do CG, sessão 2026-07-23: 150.000) rather than derived automatically —
- * decomposition reads this value, it never writes back to it.
+ * State-level campaign goal used by E8 "conta da cadeira" to derive the
+ * per-municipality suggested goal (`municipalityPotential.ts`'s
+ * `deriveSuggestedGoalsByScenario`, anchored on the candidate's own 2022 vote:
+ * `stateGoal` sets the optimistic scenario's growth factor, `margin` the
+ * pessimistic haircut). Editable by staff (piso do CG, sessão 2026-07-23:
+ * 150.000) rather than derived automatically — the derivation reads these
+ * values, it never writes back to them.
  *
  * No `afterChange` revalidation hook: `/campanha` is dynamic with
  * authentication on every request (no ISR/ISR tag caches this global), and
@@ -40,7 +42,7 @@ export const CampaignGoals: GlobalConfig = {
       min: 0,
       admin: {
         description:
-          'Piso decidido pela coordenação geral. A meta por município (E8) é decomposta proporcionalmente ao teto do campo projetado a partir deste valor.',
+          'Piso decidido pela coordenação geral. Define o cenário OTIMISTA da meta sugerida por município: a votação de 2022 de cada município é multiplicada por (meta estadual ÷ votação estadual de 2022), então a soma das metas otimistas fecha exatamente neste valor.',
       },
     },
     {
@@ -49,7 +51,8 @@ export const CampaignGoals: GlobalConfig = {
       label: 'Margem (%)',
       min: 0,
       admin: {
-        description: 'Margem de segurança sobre a meta estadual, para leitura da mesa (não altera a decomposição).',
+        description:
+          'Corte do cenário PESSIMISTA da meta sugerida: quanto da votação de 2022 a campanha admite perder (ex.: 10 = meta pessimista 10% abaixo de 2022). Vazio usa 10%.',
       },
     },
     {

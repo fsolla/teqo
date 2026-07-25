@@ -12,6 +12,7 @@ import {
   strictDecimalInteger,
   type RawSearchParams as CampaignListRawSearchParams,
 } from '@/utilities/campaignListUrl'
+import { latestIsoTimestamp } from '@/utilities/campaignTime'
 import { normalizeSearchPhrase } from '@/utilities/wordStartFilter'
 
 export const municipalityPageSize = 25
@@ -49,11 +50,19 @@ export type MunicipalityListSortKey =
   | 'lastUpdateAt'
   | 'coverage'
   | 'votos'
+  | 'deficit'
+  | 'frescor'
 
 export type MunicipalityListSortDirection = 'asc' | 'desc'
 
-/** Mesa lens: list opens by 2022 vote concentration (desc). */
-export const DEFAULT_MUNICIPALITY_LIST_SORT_KEY: MunicipalityListSortKey = 'votos'
+/**
+ * E9 allocation queue: the list opens on the decision it exists to serve —
+ * where the goal is least covered by auditable commitments (biggest deficit
+ * first), in the `central` scenario. Since E9 anchored the suggested goal on
+ * the candidate's own 2022 vote, this ordering stays close to the previous
+ * `votos` default instead of surfacing deserts with inflated goals.
+ */
+export const DEFAULT_MUNICIPALITY_LIST_SORT_KEY: MunicipalityListSortKey = 'deficit'
 export const DEFAULT_MUNICIPALITY_LIST_SORT_DIR: MunicipalityListSortDirection = 'desc'
 
 export const municipalityListSortLabels: Record<MunicipalityListSortKey, string> = {
@@ -63,9 +72,12 @@ export const municipalityListSortLabels: Record<MunicipalityListSortKey, string>
   trend: 'Tendência',
   expectedVotes: 'Votos estimados',
   lastUpdateAt: 'Última atualização',
-  coverage: 'Cobertura',
+  /** Advisor coverage — "Cobertura" alone now reads as the goal one (`deficit`). */
+  coverage: 'Assessoria',
   /** Short header — definition lives on hover (`formatMunicipalityConcentrationHint`). */
   votos: '2022',
+  deficit: 'Cobertura da meta',
+  frescor: 'Frescor do sinal',
 }
 
 export type MunicipalityListState = {
@@ -99,16 +111,9 @@ export const municipalityListParamNames = [
 
 const municipalityListParamNameSet = new Set<string>(municipalityListParamNames)
 
-const municipalityListSortKeySet = new Set<MunicipalityListSortKey>([
-  'name',
-  'region',
-  'kind',
-  'trend',
-  'expectedVotes',
-  'lastUpdateAt',
-  'coverage',
-  'votos',
-])
+// Derived from the label record (total over the union), so a new sort key is
+// declared in the type and the labels only.
+const municipalityListSortKeySet = new Set<string>(Object.keys(municipalityListSortLabels))
 
 const municipalityListSortDirSet = new Set<MunicipalityListSortDirection>(['asc', 'desc'])
 
@@ -116,6 +121,9 @@ const sortKeysWithDescDefault: MunicipalityListSortKey[] = [
   'expectedVotes',
   'lastUpdateAt',
   'votos',
+  // Both open on the worst case: biggest uncovered deficit, coldest signal.
+  'deficit',
+  'frescor',
 ]
 
 export const defaultMunicipalityListSortDir = (
@@ -135,6 +143,50 @@ export const formatMunicipalityConcentrationHint = (
 ): string =>
   `Percentual da votação estadual do candidato neste município — não o % dos válidos locais. Colocação: posição no catálogo de ${formatElectionNumber(totalUnits)} unidades.`
 
+/**
+ * E9 frescor — the last time ANYBODY recorded something here: a staff update
+ * or a leadership pledge declaration/estimate. One rule, shared by the server
+ * ordering (`municipalityPageData.ts`) and the list cell, so "há N dias"
+ * never disagrees with the position in the queue.
+ */
+export const resolveMunicipalityLastSignalAt = (
+  lastUpdateAt: string | null,
+  lastPledgeAt: string | null,
+): string | null => latestIsoTimestamp(lastUpdateAt, lastPledgeAt)
+
+/**
+ * Days since the last signal, floored. The research report only says a
+ * commitment left untouched "for weeks" is worth less, so the threshold below
+ * is a convention (3 weeks), not a measured decay curve.
+ */
+export const MUNICIPALITY_COLD_SIGNAL_DAYS = 21
+
+export const municipalitySignalAgeInDays = (
+  lastSignalAt: string | null,
+  now: Date = new Date(),
+): number | null => {
+  if (!lastSignalAt) return null
+  const elapsed = now.getTime() - new Date(lastSignalAt).getTime()
+  if (Number.isNaN(elapsed)) return null
+  return Math.max(0, Math.floor(elapsed / 86_400_000))
+}
+
+export const isMunicipalitySignalCold = (ageInDays: number | null): boolean =>
+  ageInDays === null || ageInDays >= MUNICIPALITY_COLD_SIGNAL_DAYS
+
+/**
+ * "há 3 dias" / "hoje" / "Sem sinal" — dense cell copy for the queue.
+ * Deliberately not `formatRelativeAge`: its `numeric: 'auto'` yields "ontem"/
+ * "anteontem" and minute/hour granularity, which breaks both the day-based
+ * cold threshold and the tabular-nums scan down the column.
+ */
+export const formatMunicipalitySignalAgeLabel = (ageInDays: number | null): string => {
+  if (ageInDays === null) return 'Sem sinal'
+  if (ageInDays === 0) return 'hoje'
+  if (ageInDays === 1) return 'há 1 dia'
+  return `há ${ageInDays} dias`
+}
+
 export const formatMunicipalityListSortSummary = (
   sort: MunicipalityListSortKey,
   dir: MunicipalityListSortDirection,
@@ -144,6 +196,16 @@ export const formatMunicipalityListSortSummary = (
   }
   if (sort === 'name') {
     return dir === 'asc' ? 'Ordenado por nome (A–Z)' : 'Ordenado por nome (Z–A)'
+  }
+  if (sort === 'deficit') {
+    return dir === 'desc'
+      ? 'Ordenado por déficit da meta (maior primeiro)'
+      : 'Ordenado por déficit da meta (menor primeiro)'
+  }
+  if (sort === 'frescor') {
+    return dir === 'desc'
+      ? 'Ordenado por frescor (sinal mais frio primeiro)'
+      : 'Ordenado por frescor (sinal mais recente primeiro)'
   }
   const label = municipalityListSortLabels[sort]
   return dir === 'desc' ? `Ordenado por ${label} ↓` : `Ordenado por ${label} ↑`
@@ -297,6 +359,12 @@ export const formatMunicipalitySortOptionLabel = (
   }
   if (key === 'lastUpdateAt') {
     return dir === 'asc' ? `${base} (mais antiga)` : `${base} (mais recente)`
+  }
+  if (key === 'deficit') {
+    return dir === 'asc' ? `${base} (mais coberta)` : `${base} (mais descoberta)`
+  }
+  if (key === 'frescor') {
+    return dir === 'asc' ? `${base} (mais recente)` : `${base} (mais frio)`
   }
   return dir === 'asc' ? `${base} (A–Z)` : `${base} (Z–A)`
 }

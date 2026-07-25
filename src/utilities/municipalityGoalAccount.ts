@@ -14,12 +14,14 @@ import {
 } from '@/utilities/goalCoverage'
 import {
   computeMunicipalityPotential,
-  computeStatewideGoalDecomposition,
+  computeStatewideSuggestedGoals,
   type MunicipalityPotential,
+  type SuggestedGoalByScenario,
 } from '@/utilities/municipalityPotential'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   VOTE_ESTIMATE_SCENARIOS,
+  zeroByVoteEstimateScenario,
   type VoteEstimateScenarioFields,
   type VoteEstimateScenario,
 } from '@/utilities/voteEstimate'
@@ -31,19 +33,19 @@ import {
 type GoalAccountReader = CampaignUser | User
 
 /**
- * E8 "conta da cadeira" — request-scoped statewide goal decomposition
- * (`campaignGoals` global + `computeStatewideGoalDecomposition`), degrau 1 da
- * caching ladder. Every surface (dashboard, list overview, list rows,
- * detail card) needs the SAME decomposition — `suggestedGoal` for one
- * município is only meaningful relative to the full 435-slug ceiling total,
- * so this always runs over the whole catalog, never a filtered scope, and is
+ * E8 "conta da cadeira" — request-scoped statewide suggested-goal ladder
+ * (`campaignGoals` global + `computeStatewideSuggestedGoals`), degrau 1 da
+ * caching ladder. Every surface (dashboard, list overview, list rows, detail
+ * card) needs the SAME goals — the optimistic scenario's growth factor is
+ * `stateGoal / Σ base` over the full 435-slug catalog, so this always runs
+ * over the whole catalog, never a filtered scope, and is
  * `cache()`-deduplicated so dashboard + list + detail don't each recompute it
  * on requests that touch more than one.
  */
-const loadGoalDecompositionCached = cache(
+const loadSuggestedGoalsCached = cache(
   async (payload: Payload, user: GoalAccountReader) => {
     const goals = await loadCampaignGoals(payload, user)
-    return computeStatewideGoalDecomposition(goals)
+    return computeStatewideSuggestedGoals(goals)
   },
 )
 
@@ -70,7 +72,7 @@ export const loadMunicipalityGoalCoverageBundle = async (
   }>,
   pledgeAggregates: Map<number, MunicipalityPledgeAggregate>,
 ): Promise<MunicipalityGoalCoverageBundle> => {
-  const { suggestedGoalBySlug } = await loadGoalDecompositionCached(payload, user)
+  const { suggestedGoalBySlug } = await loadSuggestedGoalsCached(payload, user)
 
   const coverageByMunicipalityID = new Map<
     number,
@@ -79,10 +81,15 @@ export const loadMunicipalityGoalCoverageBundle = async (
   for (const municipality of municipalities) {
     const pledgeAggregate =
       pledgeAggregates.get(municipality.id) ?? emptyMunicipalityPledgeAggregate
-    const suggestedGoal = suggestedGoalBySlug.get(municipality.slug) ?? 0
+    const suggestedGoalByScenario =
+      suggestedGoalBySlug.get(municipality.slug) ?? emptySuggestedGoalByScenario
     coverageByMunicipalityID.set(
       municipality.id,
-      computeGoalCoverageByScenario(municipality.expectedVotes, suggestedGoal, pledgeAggregate),
+      computeGoalCoverageByScenario(
+        municipality.expectedVotes,
+        suggestedGoalByScenario,
+        pledgeAggregate,
+      ),
     )
   }
 
@@ -97,7 +104,11 @@ export const loadMunicipalityGoalCoverageBundle = async (
   return { coverageByMunicipalityID, aggregateByScenario }
 }
 
+/** Unknown slug (never in the catalog): zero goal in every scenario, never mutated. */
+const emptySuggestedGoalByScenario: Readonly<SuggestedGoalByScenario> = zeroByVoteEstimateScenario()
+
 export type MunicipalityGoalAccount = {
+  /** Fixed to the `central` scenario, like `goalCoverage` below. */
   suggestedGoal: number
   /** Fixed to the `central` scenario — the detail page has no scenario selector. */
   goalCoverage: MunicipalityGoalCoverage
@@ -115,16 +126,21 @@ export const loadMunicipalityGoalAccount = async (
   municipality: { slug: string; expectedVotes?: VoteEstimateScenarioFields | null },
   pledgeAggregate: MunicipalityPledgeAggregate,
 ): Promise<MunicipalityGoalAccount> => {
-  const { suggestedGoalBySlug, potentialBySlug } = await loadGoalDecompositionCached(payload, user)
-  const suggestedGoal = suggestedGoalBySlug.get(municipality.slug) ?? 0
+  const { suggestedGoalBySlug, potentialBySlug } = await loadSuggestedGoalsCached(payload, user)
+  const suggestedGoalByScenario =
+    suggestedGoalBySlug.get(municipality.slug) ?? emptySuggestedGoalByScenario
   const goalCoverage = computeGoalCoverage(
     municipality.expectedVotes,
-    suggestedGoal,
+    suggestedGoalByScenario,
     pledgeAggregate,
     DEFAULT_VOTE_ESTIMATE_SCENARIO,
   )
   const potential =
     potentialBySlug.get(municipality.slug) ?? computeMunicipalityPotential(municipality.slug)
 
-  return { suggestedGoal, goalCoverage, potential }
+  return {
+    suggestedGoal: suggestedGoalByScenario[DEFAULT_VOTE_ESTIMATE_SCENARIO],
+    goalCoverage,
+    potential,
+  }
 }

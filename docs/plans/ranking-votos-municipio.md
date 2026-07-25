@@ -8,7 +8,7 @@ Appetite: ~0,5–1 dia eng; sem migration, sem collection, sem server action nov
 Responsável: —
 
 Revisões:
-- 2026-07-24 (entrega + polish pós-critique): helper `municipalityVoteRank`; baseline + coluna lista; default da lista = `votos` desc (omitido na URL); `?sort=name` para alfabético; share lidera a célula; rank no mobile; % dos válidos demoted. B15 amplia keys restantes.
+- 2026-07-24 (entrega + polish pós-critique): helper `municipalityVoteRank`; baseline + coluna lista; default da lista = `votos` desc (omitido na URL) — **substituído pelo default `deficit` desc do E9 ✓ no mesmo dia**, `?sort=votos` continua disponível; `?sort=name` para alfabético; share lidera a célula; rank no mobile; % dos válidos demoted. B15 amplia keys restantes.
 - 2026-07-24 (auditoria pre-implementação): B15 ainda ausente no código — esta entrega introduz `sort`/`dir` mínimo só para `name`|`votos` (fallback do plano); B15 amplia as demais keys depois. Seção Dados → decisão → apresentação preenchida. Questões em aberto fechadas: lista só 2022; sem delta de rank 2018→2022 na v1.
 
 ## Dados → decisão → apresentação

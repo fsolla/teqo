@@ -116,6 +116,21 @@ const bahiaDateTimeDisplayFormatter = new Intl.DateTimeFormat('pt-BR', {
 export const formatBahiaDateTimeLabel = (iso: string): string =>
   bahiaDateTimeDisplayFormatter.format(new Date(iso)).replace(', ', ' às ')
 
+/**
+ * Latest of two ISO timestamps, ignoring nulls. String comparison is only
+ * sound because every writer here produces fixed-width UTC — Payload's own
+ * `createdAt`/`updatedAt` and our `new Date().toISOString()` hooks. An offset
+ * form (`-03:00`) or variable precision would break it.
+ */
+export const latestIsoTimestamp = (
+  left: string | null | undefined,
+  right: string | null | undefined,
+): string | null => {
+  if (!left) return right ?? null
+  if (!right) return left
+  return right > left ? right : left
+}
+
 export const getBahiaWeekRange = (now: Date): { start: Date; end: Date } => {
   const local = getZonedParts(now)
   const localMidnight = { ...local, hour: 0, minute: 0, second: 0 }

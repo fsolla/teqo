@@ -1,11 +1,34 @@
 # E9 — Fila de alocação (lista de decisão do coordenador)
 
-Status: rascunho
-Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios + hardening)
+Status: entregue em código (2026-07-24; ver "Entregue (as-built)" abaixo)
+Atualizado em: 2026-07-24 (entrega registrada — escopo cortado e correção da fórmula do E8)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Inteligência de campanha", E9; plano-mestre [inteligencia-campanha.md](inteligencia-campanha.md))
 Impeccable: B — visão nova DENTRO de `/campanha/municipios` (ordenações + colunas + painel), sem rota nova
 Appetite: ~1,5 dia eng; sem migration (deriva de E8 + dados existentes)
 Responsável: —
+
+## Entregue (as-built, 2026-07-24)
+
+A fila é a lista de municípios existente com duas ordenações novas e três sinais dobrados em células que já existiam — **sem rota nova, sem coluna nova e sem migration**. A auditoria antes do craft encontrou um problema material na dependência: a meta sintética do E8 era decomposta proporcionalmente ao **teto do campo** (voto de Lula), ignorando a votação própria, o que dava meta 2.911 a Vitória da Conquista (5.005 votos dele em 2022) e 813 a Campo Formoso (47 votos). Ordenar por déficit sobre essa meta colocaria desertos no topo — o oposto do que o item existe para fazer, e contra o padrão P6 do relatório. Corrigir a fórmula virou a Fase 0 desta entrega.
+
+**Fase 0 — meta sintética por cenário, ancorada em 2022** ([municipalityPotential.ts](../../src/utilities/municipalityPotential.ts), [goalCoverage.ts](../../src/utilities/goalCoverage.ts), [municipalityGoalAccount.ts](../../src/utilities/municipalityGoalAccount.ts)):
+
+```
+base_i       = votação própria de 2022 no município (artefato TSE commitado)
+pessimista_i = base_i × (1 − margin)                 Σ = 116.071
+central_i    = base_i                                Σ = 128.968   ("repetir 2022")
+otimista_i   = base_i × (stateGoal ÷ Σ base)         Σ = 150.000   (exato)
+```
+
+`decomposeStateGoal` foi substituída por `deriveSuggestedGoalsByScenario`; `computeGoalCoverage`/`computeGoalCoverageByScenario` passaram a receber `SuggestedGoalByScenario` no lugar do escalar, deixando `expectedVotes[S] ?? suggestedGoal[S]` simétrico nos dois lados. Guarda implementada: se `stateGoal` < Σ base, o otimista clampa em `max(central, otimista)`. Os três totais caem na faixa realista da cadeira (80–150 mil, relatório linha 323) e o déficit central passa a medir o indicador que a literatura nomeia — "% do voto histórico da praça coberto por liderança ativa". Campo Formoso vira 42/47/55. `stateGoal` e `margin` do global `campaignGoals` mantiveram papel de cálculo (o fator 1,163 traduz "meta de 150 mil" em "2022 mais 16% em todo lugar"; `margin` vira o corte pessimista, fallback 10%) — só `admin.description` mudou, daí não haver migration.
+
+**Fase 1 — frescor e ordenações** ([votePledgeData.ts](../../src/utilities/votePledgeData.ts), [municipalityUi.ts](../../src/utilities/municipalityUi.ts), [municipalityPageData.ts](../../src/utilities/municipalityPageData.ts), [municipalityViewModels.ts](../../src/utilities/municipalityViewModels.ts)): `declaredAt`/`estimatedAt` entraram no `select` do agregado (`lastPledgeAt`); `lastSignalAt = max(municipality.lastUpdateAt, lastPledgeAt)` no view model, com o mesmo helper (`resolveMunicipalityLastSignalAt`) servindo o comparador do servidor e a leitura da UI, para não divergirem; sort keys `deficit` (**novo default do staff**, desc) e `frescor` (mais frio primeiro, "nunca teve sinal" na frente), ambas derivadas em memória sobre o bundle já carregado. A ordenação usa o cenário `central` fixo no servidor — o seletor de cenário é client-side, e movê-lo para a URL é o fill-in "Cenário junto aos filtros".
+
+**Fase 2 — UI (Impeccable B)** ([MunicipalityList.tsx](../../src/components/campaign/MunicipalityList.tsx), [MunicipalityListOverview.tsx](../../src/components/campaign/MunicipalityListOverview.tsx), [MunicipalityListGoalCoverageCell.tsx](../../src/components/campaign/MunicipalityListGoalCoverageCell.tsx)): frescor dobrado na coluna "Última atualização" ("há N dias"; frio a partir de `MUNICIPALITY_COLD_SIGNAL_DAYS` = 21); badge "sem responsável" na célula de assessoria quando `priority === 'alta'` e zero assessores; "coluna da vergonha" como `detail` da métrica "Cobertura de assessoria", linkando `?priority=alta&coverage=sem_assessor`; tooltip da célula de cobertura nomeando o cenário ativo; copy "Praças" → "Municípios" corrigida. O `critique` trocou o tom do sinal frio de `text-destructive` para `text-estimate-pending-foreground`: com badge de prioridade e badge "sem responsável" possíveis na mesma linha, o vermelho deixava de significar urgência.
+
+**Escopo cortado (e para onde foi):** votos em jogo → **B13** (que já prevê símbolo proporcional por votos em jogo); LQ/captura → **E10** (classe operacional e pesos por classe são daquele item); coluna dedicada de déficit → desnecessária, a célula do E8 já mostra % e déficit assinado; seletor de colunas → **B17**, não entregue, e é por isso que nenhum sinal novo virou coluna.
+
+**Verificação:** `tsc --noEmit`, `pnpm lint` (zero warnings) e `pnpm exec knip` limpos; 365 testes unit+int verdes (inclui unit do comparador e das três somas da meta, int de `deficit`/`frescor`, e2e cobrindo default + coluna de frescor); e2e 9 passed + 1 flaky (flake pré-existente de carga da máquina, verde no retry); `pnpm build` contra o banco local verde; Aikido sem achado novo (o único achado, object-injection em `municipalityPotential.ts`, está em linha pré-existente do E8, fora do diff).
 
 ## Design (Impeccable)
 
@@ -40,8 +63,8 @@ O relatório definiu a "fila de trabalho" com 7 colunas ranqueadas (FU3): votos 
 
 ## Questões em aberto
 
-- **Frescor conta o quê?** Opções: só `declaredAt`/`estimatedAt` de pledges | máx(pledge, `municipality.lastUpdateAt`) | incluir planos. **Recomendação:** máx(pledge mais recente, `lastUpdateAt`) — sinais de rede já alimentam `lastUpdateAt` via `municipalityUpdate`; planos entram quando C12 tipar sinais.
-- **Colunas visíveis por default no mobile?** **Recomendação:** déficit + cobertura + frescor (3), resto em disclosure — campo usa celular (PRODUCT.md).
+- ~~**Frescor conta o quê?**~~ Resolvido na entrega: máx(pledge mais recente, `municipality.lastUpdateAt`). Planos entram quando houver demanda — C12 já tipou sinais, mas incluí-los alargaria "frescor" sem pedido de campo.
+- ~~**Colunas visíveis por default no mobile?**~~ Não se aplica ao as-built: nenhum sinal novo virou coluna, todos dobraram em células existentes (o card mobile mostra frescor e badge junto do que já mostrava).
 
 ## Abordagem proposta
 

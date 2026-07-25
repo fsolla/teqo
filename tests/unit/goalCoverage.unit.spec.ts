@@ -6,7 +6,14 @@ import {
   computeGoalCoverageByScenario,
   formatGoalCoverageDeficitLabel,
 } from '@/utilities/goalCoverage'
+import type { SuggestedGoalByScenario } from '@/utilities/municipalityPotential'
 import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
+
+/** Suggested goal ladder shaped like `deriveSuggestedGoalsByScenario` output. */
+const suggested = (
+  central: number,
+  { pessimistic = central * 0.9, optimistic = central * 1.16 } = {},
+): SuggestedGoalByScenario => ({ pessimistic, central, optimistic })
 
 /**
  * Fixes the meta×comprometido semantics locked in the E8 plan audit: a
@@ -22,7 +29,7 @@ describe('computeGoalCoverage', () => {
     const aggregate = createEmptyMunicipalityPledgeAggregate()
     aggregate.effectiveByScenario.central = 1200
 
-    const coverage = computeGoalCoverage({ central: 3000 }, 5000, aggregate, 'central')
+    const coverage = computeGoalCoverage({ central: 3000 }, suggested(5000), aggregate, 'central')
 
     expect(coverage.goal).toBe(3000) // NOT 100% — expectedVotes wins over suggestedGoal, not over pledges
     expect(coverage.committed).toBe(1200)
@@ -34,7 +41,7 @@ describe('computeGoalCoverage', () => {
     const aggregate = createEmptyMunicipalityPledgeAggregate()
     aggregate.effectiveByScenario.central = 400
 
-    const coverage = computeGoalCoverage(null, 1000, aggregate, 'central')
+    const coverage = computeGoalCoverage(null, suggested(1000), aggregate, 'central')
     expect(coverage.goal).toBe(1000)
     expect(coverage.committed).toBe(400)
     expect(coverage.coverageRatio).toBeCloseTo(0.4, 6)
@@ -42,7 +49,7 @@ describe('computeGoalCoverage', () => {
 
   it('coverageRatio is null (not Infinity/NaN) when goal is zero', () => {
     const aggregate = createEmptyMunicipalityPledgeAggregate()
-    const coverage = computeGoalCoverage(null, 0, aggregate, 'central')
+    const coverage = computeGoalCoverage(null, suggested(0), aggregate, 'central')
     expect(coverage.coverageRatio).toBeNull()
     expect(coverage.deficit).toBe(0)
   })
@@ -50,7 +57,7 @@ describe('computeGoalCoverage', () => {
   it('deficit is negative when the municipality is over-committed relative to its goal', () => {
     const aggregate = createEmptyMunicipalityPledgeAggregate()
     aggregate.effectiveByScenario.central = 1500
-    const coverage = computeGoalCoverage(null, 1000, aggregate, 'central')
+    const coverage = computeGoalCoverage(null, suggested(1000), aggregate, 'central')
     expect(coverage.deficit).toBe(-500)
     expect(coverage.coverageRatio).toBeCloseTo(1.5, 6)
   })
@@ -63,7 +70,8 @@ describe('computeGoalCoverage', () => {
 
     const byScenario = computeGoalCoverageByScenario(
       { pessimistic: 500, optimistic: 900 },
-      600, // suggestedGoal fallback used only for 'central' (unset in expectedVotes)
+      // Suggested fallback used only for 'central' here (unset in expectedVotes).
+      suggested(600, { pessimistic: 540, optimistic: 700 }),
       aggregate,
     )
 
@@ -74,13 +82,26 @@ describe('computeGoalCoverage', () => {
     expect(byScenario.optimistic.goal).toBe(900)
     expect(byScenario.optimistic.committed).toBe(300)
   })
+
+  it('the suggested fallback moves with the scenario (E9: both sides are per-scenario)', () => {
+    const aggregate = createEmptyMunicipalityPledgeAggregate()
+    const byScenario = computeGoalCoverageByScenario(
+      null,
+      suggested(1000, { pessimistic: 900, optimistic: 1163 }),
+      aggregate,
+    )
+
+    expect(byScenario.pessimistic.goal).toBe(900)
+    expect(byScenario.central.goal).toBe(1000)
+    expect(byScenario.optimistic.goal).toBe(1163)
+  })
 })
 
 describe('goal coverage labels', () => {
   it('renders a fractional decomposed goal as whole votes', () => {
     // A suggested goal of 100.968 votes must not read as "100,968" in pt-BR.
     const aggregate = createEmptyMunicipalityPledgeAggregate()
-    const coverage = computeGoalCoverage(null, 100.968, aggregate, 'central')
+    const coverage = computeGoalCoverage(null, suggested(100.968), aggregate, 'central')
     expect(formatGoalCoverageDeficitLabel(coverage)).toBe('Faltam 101 votos para a meta')
   })
 })

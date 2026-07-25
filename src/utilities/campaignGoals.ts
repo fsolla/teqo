@@ -10,8 +10,8 @@ type CampaignGoalsReader = CampaignUser | User
 
 /**
  * Request-scoped read of the `campaignGoals` global (E8 "conta da cadeira" —
- * state-level vote goal + margin, decomposed into a per-municipality
- * suggested goal by `municipalityPotential.ts`). Degrau 1 da caching ladder
+ * state-level vote goal + margin, turned into a per-municipality suggested
+ * goal by `municipalityPotential.ts`). Degrau 1 da caching ladder
  * (React `cache()` per-request dedup): the global changes rarely and every
  * page that shows coverage needs the same value once per request.
  *

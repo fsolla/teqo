@@ -7,7 +7,11 @@ import {
   formatGoalCoverageRatioLabel,
   type MunicipalityGoalCoverage,
 } from '@/utilities/goalCoverage'
-import { DEFAULT_VOTE_ESTIMATE_SCENARIO, type VoteEstimateScenario } from '@/utilities/voteEstimate'
+import {
+  DEFAULT_VOTE_ESTIMATE_SCENARIO,
+  voteEstimateScenarioLabels,
+  type VoteEstimateScenario,
+} from '@/utilities/voteEstimate'
 
 /**
  * E8 "conta da cadeira" list cell: reads the shared scenario picker (same
@@ -31,16 +35,27 @@ export const MunicipalityListGoalCoverageCell = ({
   const activeScenario = scenarioContext?.scenario ?? DEFAULT_VOTE_ESTIMATE_SCENARIO
   const coverage = coverageByScenario[activeScenario]
   const deficitLabel = formatGoalCoverageDeficitLabel(coverage)
+  // Names the scenario the figures belong to: the header sorts by `central`
+  // regardless of this picker (E9), so an unnamed number here would be
+  // ambiguous the moment the two disagree.
+  const scenarioLabel = voteEstimateScenarioLabels[activeScenario]
 
   return (
     <div className="flex flex-col items-start">
-      <span className="font-medium tabular-nums">{formatGoalCoverageRatioLabel(coverage)}</span>
+      <span className="font-medium tabular-nums" title={`Cenário ${scenarioLabel}`}>
+        {formatGoalCoverageRatioLabel(coverage)}
+      </span>
       {layout === 'compact' ? (
-        <span className="text-xs text-muted-foreground tabular-nums" title={deficitLabel}>
+        <span
+          className="text-xs text-muted-foreground tabular-nums"
+          title={`${deficitLabel} (cenário ${scenarioLabel})`}
+        >
           {formatGoalCoverageDeficitShortLabel(coverage)}
         </span>
       ) : (
-        <span className="text-xs text-muted-foreground tabular-nums">{deficitLabel}</span>
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {deficitLabel} · cenário {scenarioLabel}
+        </span>
       )}
     </div>
   )

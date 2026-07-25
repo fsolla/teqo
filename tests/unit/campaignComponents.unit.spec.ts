@@ -160,6 +160,7 @@ describe('campaign visual foundation', () => {
         advisorIDs: [advisor.id],
         priority: 'alta',
         lastUpdateAt: null,
+        lastSignalAt: null,
         expectedVotes: { pessimistic: null, central: 1500, optimistic: null },
         politicalTrendStatus: 'favoravel',
         politicalTrendNote: null,
@@ -168,6 +169,7 @@ describe('campaign visual foundation', () => {
           effectiveByScenario: { pessimistic: 1200, central: 1200, optimistic: 1200 },
           pledgeCount: 2,
           missingEstimateCount: 1,
+          lastPledgeAt: null,
         },
         votePosition2022: {
           votes: 4200,
@@ -193,6 +195,7 @@ describe('campaign visual foundation', () => {
         advisorIDs: [],
         priority: 'normal',
         lastUpdateAt: null,
+        lastSignalAt: null,
         expectedVotes: toVoteEstimateScenarioViewModel(null),
         politicalTrendStatus: null,
         politicalTrendNote: null,
@@ -225,6 +228,88 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('Faltam 300 votos para a meta')
   })
 
+  /**
+   * E9 allocation queue: the two row-level signals the queue is scanned for —
+   * a priority município nobody answers for, and a signal that went cold.
+   */
+  it('names a priority município with no advisor and ages its last signal', () => {
+    const staleDays = 40
+    const staleSignal = new Date(Date.now() - staleDays * 86_400_000).toISOString()
+
+    const html = renderWithAppRouter(
+      createElement(MunicipalityList, {
+        municipalities: [
+          {
+            id: 9,
+            name: 'Barreiras',
+            slug: 'barreiras',
+            kind: 'municipio',
+            city: 'Barreiras',
+            region: 'Bacia do Rio Grande',
+            ibgeCode: '2903201',
+            zoneNumber: null,
+            advisorIDs: [],
+            priority: 'alta',
+            lastUpdateAt: staleSignal,
+            lastSignalAt: staleSignal,
+            expectedVotes: toVoteEstimateScenarioViewModel(null),
+            politicalTrendStatus: null,
+            politicalTrendNote: null,
+            pledges: createEmptyMunicipalityPledgeAggregate(),
+            votePosition2022: null,
+            goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
+          },
+        ],
+        advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
+        isStaffView: true,
+        ...municipalityListDefaultProps,
+      }),
+    )
+
+    // "Sem assessor" still appears in the Assessores column (the avatar stack's
+    // empty state); the status badge is what escalates to "Sem responsável".
+    expect(html).toContain('Sem responsável')
+    expect(html).toContain(`há ${staleDays} dias`)
+    expect(html).toContain('data-signal="cold"')
+    expect(html).toContain('Último sinal')
+  })
+
+  it('reads "Sem sinal" when nothing was ever recorded for the município', () => {
+    const html = renderWithAppRouter(
+      createElement(MunicipalityList, {
+        municipalities: [
+          {
+            id: 10,
+            name: 'Uauá',
+            slug: 'uaua',
+            kind: 'municipio',
+            city: 'Uauá',
+            region: 'Semiárido Nordeste II',
+            ibgeCode: '2932002',
+            zoneNumber: null,
+            advisorIDs: [],
+            priority: 'normal',
+            lastUpdateAt: null,
+            lastSignalAt: null,
+            expectedVotes: toVoteEstimateScenarioViewModel(null),
+            politicalTrendStatus: null,
+            politicalTrendNote: null,
+            pledges: createEmptyMunicipalityPledgeAggregate(),
+            votePosition2022: null,
+            goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
+          },
+        ],
+        advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
+        isStaffView: true,
+        ...municipalityListDefaultProps,
+      }),
+    )
+
+    expect(html).toContain('Sem sinal')
+    expect(html).toContain('Sem assessor')
+    expect(html).not.toContain('Sem responsável')
+  })
+
   it('hides leadership coverage subline when pledges only have declared votes', () => {
     const html = renderWithAppRouter(
       createElement(MunicipalityList, {
@@ -241,6 +326,7 @@ describe('campaign visual foundation', () => {
             advisorIDs: [],
             priority: 'normal',
             lastUpdateAt: null,
+            lastSignalAt: null,
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             politicalTrendStatus: null,
             politicalTrendNote: null,
@@ -249,6 +335,7 @@ describe('campaign visual foundation', () => {
               effectiveByScenario: { pessimistic: 800, central: 800, optimistic: 800 },
               pledgeCount: 1,
               missingEstimateCount: 1,
+              lastPledgeAt: null,
             },
             votePosition2022: null,
             goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
@@ -281,6 +368,7 @@ describe('campaign visual foundation', () => {
             advisorIDs: [],
             priority: 'alta',
             lastUpdateAt: null,
+            lastSignalAt: null,
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             politicalTrendStatus: null,
             politicalTrendNote: null,

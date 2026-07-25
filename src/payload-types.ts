@@ -2057,11 +2057,11 @@ export interface PrivacyPolicy {
 export interface CampaignGoal {
   id: number;
   /**
-   * Piso decidido pela coordenação geral. A meta por município (E8) é decomposta proporcionalmente ao teto do campo projetado a partir deste valor.
+   * Piso decidido pela coordenação geral. Define o cenário OTIMISTA da meta sugerida por município: a votação de 2022 de cada município é multiplicada por (meta estadual ÷ votação estadual de 2022), então a soma das metas otimistas fecha exatamente neste valor.
    */
   stateGoal: number;
   /**
-   * Margem de segurança sobre a meta estadual, para leitura da mesa (não altera a decomposição).
+   * Corte do cenário PESSIMISTA da meta sugerida: quanto da votação de 2022 a campanha admite perder (ex.: 10 = meta pessimista 10% abaixo de 2022). Vazio usa 10%.
    */
   margin?: number | null;
   /**

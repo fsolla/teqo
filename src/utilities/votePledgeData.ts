@@ -1,6 +1,7 @@
 import type { Payload, PayloadRequest } from 'payload'
 
 import type { CampaignUser, VotePledge } from '@/payload-types'
+import { latestIsoTimestamp } from '@/utilities/campaignTime'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
@@ -8,6 +9,7 @@ import {
   resolveMunicipalityStaffVoteTotalForScenario,
   toVoteEstimateScenarioViewModel,
   VOTE_ESTIMATE_SCENARIOS,
+  zeroByVoteEstimateScenario,
   type VoteEstimateScenario,
   type VoteEstimateScenarioFields,
   type VoteEstimateScenarioViewModel,
@@ -21,24 +23,26 @@ import {
 
 export type { VoteEstimateScenario, VoteEstimateScenarioViewModel }
 
-const emptyEffectiveByScenario = (): Record<VoteEstimateScenario, number> => ({
-  pessimistic: 0,
-  central: 0,
-  optimistic: 0,
-})
-
 export type MunicipalityPledgeAggregate = {
   declaredTotal: number
   effectiveByScenario: Record<VoteEstimateScenario, number>
   pledgeCount: number
   missingEstimateCount: number
+  /**
+   * Most recent `declaredAt`/`estimatedAt` across the município's pledges —
+   * E9 freshness: a commitment nobody has touched in weeks is worth less
+   * (`docs/research`, l. 339), so the allocation queue can order by how cold
+   * the signal is. `null` when no pledge carries a date.
+   */
+  lastPledgeAt: string | null
 }
 
 export const createEmptyMunicipalityPledgeAggregate = (): MunicipalityPledgeAggregate => ({
   declaredTotal: 0,
-  effectiveByScenario: emptyEffectiveByScenario(),
+  effectiveByScenario: zeroByVoteEstimateScenario(),
   pledgeCount: 0,
   missingEstimateCount: 0,
+  lastPledgeAt: null,
 })
 
 /** Read-only zero aggregate. Never mutate — use createEmptyMunicipalityPledgeAggregate() when writing. */
@@ -77,6 +81,8 @@ export const aggregateMunicipalityPledgesFromRows = (
   rows: ReadonlyArray<{
     declaredVotes: number
     estimatedVotes?: VoteEstimateScenarioFields | null
+    declaredAt?: string | null
+    estimatedAt?: string | null
   }>,
 ): MunicipalityPledgeAggregate => {
   const aggregate = createEmptyMunicipalityPledgeAggregate()
@@ -93,6 +99,10 @@ export const aggregateMunicipalityPledgesFromRows = (
     }
     aggregate.pledgeCount += 1
     if (!pledgeHasAnyEstimate(row.estimatedVotes)) aggregate.missingEstimateCount += 1
+    aggregate.lastPledgeAt = latestIsoTimestamp(
+      aggregate.lastPledgeAt,
+      latestIsoTimestamp(row.declaredAt, row.estimatedAt),
+    )
   }
 
   return aggregate
@@ -112,7 +122,7 @@ export const rollupMunicipalityStaffVotes = (
   scenario: VoteEstimateScenario = DEFAULT_VOTE_ESTIMATE_SCENARIO,
 ): MunicipalityStaffVoteRollup => {
   let staffVoteTotal = 0
-  const staffVoteTotalByScenario = emptyEffectiveByScenario()
+  const staffVoteTotalByScenario = zeroByVoteEstimateScenario()
   let declaredVotesTotal = 0
   let pledgeCount = 0
   let missingEstimateCount = 0
@@ -172,16 +182,21 @@ export const aggregatePledgesByMunicipality = async (
         central: true,
         optimistic: true,
       },
+      // E9 freshness (`lastPledgeAt`) — the queue orders by how cold the signal is.
+      declaredAt: true,
+      estimatedAt: true,
     },
     overrideAccess: true,
     ...(req ? { req } : {}),
   })
 
   for (const doc of result.docs) {
-    const municipalityID = relationshipId((doc as VotePledge).municipality)
+    // `select` narrows the runtime shape, not the static type Payload returns.
+    const pledge = doc as VotePledge
+    const municipalityID = relationshipId(pledge.municipality)
     if (municipalityID === null) continue
-    const declared = (doc as VotePledge).declaredVotes ?? 0
-    const estimated = (doc as VotePledge).estimatedVotes
+    const declared = pledge.declaredVotes ?? 0
+    const estimated = pledge.estimatedVotes
     const current = aggregates.get(municipalityID) ?? createEmptyMunicipalityPledgeAggregate()
     current.declaredTotal += declared
     for (const scenario of VOTE_ESTIMATE_SCENARIOS) {
@@ -193,6 +208,10 @@ export const aggregatePledgesByMunicipality = async (
     }
     current.pledgeCount += 1
     if (!pledgeHasAnyEstimate(estimated)) current.missingEstimateCount += 1
+    current.lastPledgeAt = latestIsoTimestamp(
+      current.lastPledgeAt,
+      latestIsoTimestamp(pledge.declaredAt, pledge.estimatedAt),
+    )
     aggregates.set(municipalityID, current)
   }
 

@@ -5,8 +5,13 @@ import {
   buildMunicipalitySortHref,
   formatMunicipalityConcentrationHint,
   formatMunicipalityListSortSummary,
+  formatMunicipalitySignalAgeLabel,
+  isMunicipalitySignalCold,
+  MUNICIPALITY_COLD_SIGNAL_DAYS,
+  municipalitySignalAgeInDays,
   parseMunicipalityListParams,
   parseMunicipalitySortValue,
+  resolveMunicipalityLastSignalAt,
   resolveMunicipalityListSort,
   serializeMunicipalitySortValue,
   shouldUpdateMunicipalitySearchUrl,
@@ -25,18 +30,33 @@ describe('shouldUpdateMunicipalitySearchUrl', () => {
   })
 })
 
-describe('municipality list sort params (A11 + B15)', () => {
-  it('omits default votos/desc from the URL (mesa order)', () => {
-    const state = parseMunicipalityListParams({ sort: 'votos', dir: 'desc' })
-    expect(state).toMatchObject({ sort: 'votos', dir: 'desc' })
-    expect(resolveMunicipalityListSort(state)).toEqual({ sort: 'votos', dir: 'desc' })
+describe('municipality list sort params (A11 + B15 + E9)', () => {
+  it('omits the default deficit/desc from the URL (E9 allocation queue order)', () => {
+    const state = parseMunicipalityListParams({ sort: 'deficit', dir: 'desc' })
+    expect(state).toMatchObject({ sort: 'deficit', dir: 'desc' })
+    expect(resolveMunicipalityListSort(state)).toEqual({ sort: 'deficit', dir: 'desc' })
     expect(buildMunicipalityListHref(state, 1)).toBe('/campanha/municipios')
   })
 
-  it('treats an empty query as votos desc', () => {
+  it('treats an empty query as deficit desc (biggest uncovered goal first)', () => {
     const state = parseMunicipalityListParams({})
-    expect(resolveMunicipalityListSort(state)).toEqual({ sort: 'votos', dir: 'desc' })
+    expect(resolveMunicipalityListSort(state)).toEqual({ sort: 'deficit', dir: 'desc' })
     expect(buildMunicipalityListHref(state, 1)).toBe('/campanha/municipios')
+  })
+
+  it('keeps sort=votos in the URL now that it is no longer the default', () => {
+    const state = parseMunicipalityListParams({ sort: 'votos', dir: 'desc' })
+    expect(buildMunicipalityListHref(state, 1)).toBe('/campanha/municipios?sort=votos')
+  })
+
+  it('opens frescor on the coldest signal (desc default) and keeps asc explicit', () => {
+    const base = parseMunicipalityListParams({})
+    expect(buildMunicipalitySortHref(base, 'frescor')).toBe('/campanha/municipios?sort=frescor')
+    const cold = parseMunicipalityListParams({ sort: 'frescor' })
+    expect(resolveMunicipalityListSort(cold)).toEqual({ sort: 'frescor', dir: 'desc' })
+    expect(buildMunicipalitySortHref(cold, 'frescor')).toBe(
+      '/campanha/municipios?sort=frescor&dir=asc',
+    )
   })
 
   it('keeps sort=name when sorting alphabetically (dir=asc is the name default)', () => {
@@ -52,15 +72,15 @@ describe('municipality list sort params (A11 + B15)', () => {
     expect(buildMunicipalityListHref(state, 1)).toBe('/campanha/municipios?sort=votos&dir=asc')
   })
 
-  it('toggles votos from default desc to asc', () => {
+  it('toggles deficit from the default desc to asc', () => {
     const base = parseMunicipalityListParams({})
-    const href = buildMunicipalitySortHref(base, 'votos')
-    expect(href).toBe('/campanha/municipios?sort=votos&dir=asc')
+    const href = buildMunicipalitySortHref(base, 'deficit')
+    expect(href).toBe('/campanha/municipios?sort=deficit&dir=asc')
   })
 
-  it('switches from name to votos with default desc (omitted URL)', () => {
+  it('switches from name back to the default deficit desc (omitted URL)', () => {
     const base = parseMunicipalityListParams({ sort: 'name' })
-    expect(buildMunicipalitySortHref(base, 'votos')).toBe('/campanha/municipios')
+    expect(buildMunicipalitySortHref(base, 'deficit')).toBe('/campanha/municipios')
   })
 
   it('parses mobile Ordenar values with | and rejects junk', () => {
@@ -78,6 +98,12 @@ describe('municipality list sort params (A11 + B15)', () => {
     expect(formatMunicipalityListSortSummary('region', 'asc')).toBe(
       'Ordenado por Território de identidade ↑',
     )
+    expect(formatMunicipalityListSortSummary('deficit', 'desc')).toBe(
+      'Ordenado por déficit da meta (maior primeiro)',
+    )
+    expect(formatMunicipalityListSortSummary('frescor', 'desc')).toBe(
+      'Ordenado por frescor (sinal mais frio primeiro)',
+    )
   })
 
   it('formats the concentração header hint once for tooltip/caption', () => {
@@ -85,5 +111,50 @@ describe('municipality list sort params (A11 + B15)', () => {
     expect(formatMunicipalityConcentrationHint()).toMatch(/435/)
     expect(formatMunicipalityConcentrationHint()).not.toMatch(/^%/)
     expect(formatMunicipalityConcentrationHint(12)).toMatch(/12/)
+  })
+})
+
+describe('E9 frescor do sinal', () => {
+  const now = new Date('2026-07-24T12:00:00.000Z')
+
+  it('takes the latest of the staff update and the pledge dates', () => {
+    expect(
+      resolveMunicipalityLastSignalAt('2026-07-01T00:00:00.000Z', '2026-07-10T00:00:00.000Z'),
+    ).toBe('2026-07-10T00:00:00.000Z')
+    expect(
+      resolveMunicipalityLastSignalAt('2026-07-20T00:00:00.000Z', '2026-07-10T00:00:00.000Z'),
+    ).toBe('2026-07-20T00:00:00.000Z')
+  })
+
+  it('falls back to whichever side exists, and stays null when neither does', () => {
+    expect(resolveMunicipalityLastSignalAt(null, '2026-07-10T00:00:00.000Z')).toBe(
+      '2026-07-10T00:00:00.000Z',
+    )
+    expect(resolveMunicipalityLastSignalAt('2026-07-10T00:00:00.000Z', null)).toBe(
+      '2026-07-10T00:00:00.000Z',
+    )
+    expect(resolveMunicipalityLastSignalAt(null, null)).toBeNull()
+  })
+
+  it('floors the age in days and never goes negative on a future timestamp', () => {
+    expect(municipalitySignalAgeInDays('2026-07-24T00:00:00.000Z', now)).toBe(0)
+    expect(municipalitySignalAgeInDays('2026-07-23T00:00:00.000Z', now)).toBe(1)
+    expect(municipalitySignalAgeInDays('2026-07-01T00:00:00.000Z', now)).toBe(23)
+    expect(municipalitySignalAgeInDays('2026-08-01T00:00:00.000Z', now)).toBe(0)
+    expect(municipalitySignalAgeInDays(null, now)).toBeNull()
+  })
+
+  it('treats "no signal at all" as cold, alongside anything past the threshold', () => {
+    expect(isMunicipalitySignalCold(null)).toBe(true)
+    expect(isMunicipalitySignalCold(MUNICIPALITY_COLD_SIGNAL_DAYS)).toBe(true)
+    expect(isMunicipalitySignalCold(MUNICIPALITY_COLD_SIGNAL_DAYS - 1)).toBe(false)
+    expect(isMunicipalitySignalCold(0)).toBe(false)
+  })
+
+  it('labels the age in dense pt-BR copy', () => {
+    expect(formatMunicipalitySignalAgeLabel(null)).toBe('Sem sinal')
+    expect(formatMunicipalitySignalAgeLabel(0)).toBe('hoje')
+    expect(formatMunicipalitySignalAgeLabel(1)).toBe('há 1 dia')
+    expect(formatMunicipalitySignalAgeLabel(30)).toBe('há 30 dias')
   })
 })

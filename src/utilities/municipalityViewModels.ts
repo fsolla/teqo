@@ -4,7 +4,10 @@ import type { MunicipalityVoteRankEntry } from '@/lib/municipalityVoteRank'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { eligibleCampaignStaffWhere } from '@/utilities/campaignAccess'
 import { createEmptyGoalCoverageByScenario, type MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
-import type { PoliticalTrendStatus } from '@/utilities/municipalityUi'
+import {
+  resolveMunicipalityLastSignalAt,
+  type PoliticalTrendStatus,
+} from '@/utilities/municipalityUi'
 import { relationshipId } from '@/utilities/relationship'
 import type { StateDeputySummary } from '@/utilities/stateDeputyData'
 import {
@@ -52,6 +55,12 @@ export type MunicipalityListViewModel = {
   advisorIDs: number[]
   priority: 'alta' | 'normal'
   lastUpdateAt: string | null
+  /**
+   * E9 frescor — `max(lastUpdateAt, pledges.lastPledgeAt)`, resolved once on
+   * the server so the "há N dias" in the cell always matches the `frescor`
+   * ordering.
+   */
+  lastSignalAt: string | null
   expectedVotes: VoteEstimateScenarioViewModel
   politicalTrendStatus: PoliticalTrendStatus | null
   politicalTrendNote: string | null
@@ -78,6 +87,10 @@ export const toMunicipalityListViewModel = (
   advisorIDs: (municipality.advisors ?? []).map(relationshipId).filter((id): id is number => id !== null),
   priority: municipality.priority === 'alta' ? 'alta' : 'normal',
   lastUpdateAt: municipality.lastUpdateAt ?? null,
+  lastSignalAt: resolveMunicipalityLastSignalAt(
+    municipality.lastUpdateAt ?? null,
+    pledges?.lastPledgeAt ?? null,
+  ),
   expectedVotes: toVoteEstimateScenarioViewModel(municipality.expectedVotes),
   politicalTrendStatus: municipality.politicalTrend?.status ?? null,
   politicalTrendNote: municipality.politicalTrend?.note ?? null,
