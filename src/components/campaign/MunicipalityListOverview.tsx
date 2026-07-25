@@ -12,6 +12,11 @@ import {
 import { VoteEstimateScenarioStrip } from '@/components/campaign/VoteEstimateScenarioStrip'
 import { formatElectionNumber } from '@/lib/electionInsights'
 import { cn } from '@/lib/utils'
+import {
+  formatGoalCoverageDeficitLabel,
+  formatGoalCoverageRatioLabel,
+  goalCoverageProgressPercent,
+} from '@/utilities/goalCoverage'
 import type { MunicipalityListOverviewData } from '@/utilities/municipalityPageData'
 import {
   formatVoteEstimateEndpointsLabel,
@@ -46,6 +51,7 @@ export const MunicipalityListOverview = ({ view }: { view: MunicipalityListOverv
   const endpointsLabel = formatVoteEstimateEndpointsLabel(scenarioTotals)
   const scenarioLabel = voteEstimateScenarioLabels[scenario]
   const hasScenarioTotals = hasAnyVoteEstimate(scenarioTotals)
+  const goalCoverage = view.goalCoverageByScenario[scenario]
 
   const heroDetail = (
     <div className="flex flex-col gap-1.5">
@@ -116,6 +122,12 @@ export const MunicipalityListOverview = ({ view }: { view: MunicipalityListOverv
               view.municipalityCount > 0
                 ? Math.round((view.withAdvisorCount / view.municipalityCount) * 100)
                 : undefined,
+          },
+          {
+            label: 'Cobertura da meta',
+            value: formatGoalCoverageRatioLabel(goalCoverage),
+            detail: formatGoalCoverageDeficitLabel(goalCoverage),
+            progress: goalCoverageProgressPercent(goalCoverage),
           },
         ]}
       />

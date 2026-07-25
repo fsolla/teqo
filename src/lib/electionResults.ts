@@ -138,7 +138,8 @@ const bahiaMunicipalityByKey = new Map(
 
 /**
  * Known TSE NM_MUNICIPIO spellings that diverge from the SEPLAN/SECULT canonical
- * names in bahiaTerritories (2022 open-data files). Keys are normalizeMunicipalityKey outputs.
+ * names in bahiaTerritories (seen across 2014/2018/2022 open-data files). Keys
+ * are normalizeMunicipalityKey outputs.
  */
 const TSE_MUNICIPALITY_ALIASES: Readonly<Record<string, string>> = {
   // TSE: CAMACÃ → canonical Camacan
@@ -149,6 +150,8 @@ const TSE_MUNICIPALITY_ALIASES: Readonly<Record<string, string>> = {
   'MUQUEM DO SAO FRANCISCO': 'Muquém de São Francisco',
   // TSE: SANTA TEREZINHA → Santa Teresinha
   'SANTA TEREZINHA': 'Santa Teresinha',
+  // TSE 2018 votacao_candidato_munzona: QUINJINGUE (typo) → canonical Quijingue
+  QUINJINGUE: 'Quijingue',
 }
 
 for (const [aliasKey, canonical] of Object.entries(TSE_MUNICIPALITY_ALIASES)) {

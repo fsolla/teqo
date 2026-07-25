@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { MunicipalityAdvisorAvatarStack } from '@/components/campaign/MunicipalityAdvisorAvatarStack'
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/MunicipalityListAdvisorsControl'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/MunicipalityListExpectedVotesControl'
+import { MunicipalityListGoalCoverageCell } from '@/components/campaign/MunicipalityListGoalCoverageCell'
 import { MunicipalityListTrendControl } from '@/components/campaign/MunicipalityListTrendControl'
 import { MunicipalitySortableHead } from '@/components/campaign/MunicipalitySortableHead'
 import { Badge } from '@/components/ui/Badge'
@@ -161,6 +162,14 @@ export const MunicipalityList = ({
                     </dd>
                   </div>
                   <div className="col-span-2">
+                    <dt className="text-muted-foreground">Cobertura da meta</dt>
+                    <dd>
+                      <MunicipalityListGoalCoverageCell
+                        coverageByScenario={municipality.goalCoverageByScenario}
+                      />
+                    </dd>
+                  </div>
+                  <div className="col-span-2">
                     <dt className="text-muted-foreground">Assessoria</dt>
                     <dd>
                       {isCoordinator ? (
@@ -224,8 +233,9 @@ export const MunicipalityList = ({
                     Última atualização
                   </MunicipalitySortableHead>
                   <MunicipalitySortableHead state={state} sortKey="coverage">
-                    Cobertura
+                    Assessoria
                   </MunicipalitySortableHead>
+                  <TableHead>Cobertura da meta</TableHead>
                 </>
               ) : (
                 <MunicipalitySortableHead state={state} sortKey="lastUpdateAt">
@@ -317,6 +327,12 @@ export const MunicipalityList = ({
                           )}
                           {hasAdvisor ? 'Coberta' : 'Sem assessor'}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <MunicipalityListGoalCoverageCell
+                          coverageByScenario={municipality.goalCoverageByScenario}
+                          layout="compact"
+                        />
                       </TableCell>
                     </>
                   ) : (

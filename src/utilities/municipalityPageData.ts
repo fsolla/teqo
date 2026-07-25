@@ -10,6 +10,8 @@ import {
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
 import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
+import type { MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
+import { loadMunicipalityGoalCoverageBundle } from '@/utilities/municipalityGoalAccount'
 import {
   buildMunicipalityListWhere,
   municipalityPageSize,
@@ -48,6 +50,8 @@ export type MunicipalityListOverviewData = {
   pledgeCount: number
   missingEstimateCount: number
   withAdvisorCount: number
+  /** E8 "conta da cadeira" — meta × comprometido do escopo filtrado, por cenário. */
+  goalCoverageByScenario: Record<VoteEstimateScenario, MunicipalityGoalCoverage>
 }
 
 export type MunicipalityListPageBundle = {
@@ -171,10 +175,21 @@ export const loadMunicipalityListPageBundle = async (
 
   let overview: MunicipalityListOverviewData | null = null
   let pledgeAggregates = new Map<number, MunicipalityPledgeAggregate>()
+  let goalCoverageByMunicipalityID = new Map<
+    number,
+    Record<VoteEstimateScenario, MunicipalityGoalCoverage>
+  >()
 
   if (staffScope && staffScope.municipalities.length > 0) {
     pledgeAggregates = staffScope.pledgeAggregates
     const rollup = rollupMunicipalityStaffVotes(staffScope.municipalities, pledgeAggregates)
+    const goalCoverageBundle = await loadMunicipalityGoalCoverageBundle(
+      payload,
+      user,
+      staffScope.municipalities,
+      pledgeAggregates,
+    )
+    goalCoverageByMunicipalityID = goalCoverageBundle.coverageByMunicipalityID
     overview = {
       municipalityCount: staffScope.municipalities.length,
       staffVoteTotalByScenario: { ...rollup.staffVoteTotalByScenario },
@@ -183,6 +198,7 @@ export const loadMunicipalityListPageBundle = async (
       withAdvisorCount: staffScope.municipalities.filter(
         (municipality) => (municipality.advisors ?? []).length > 0,
       ).length,
+      goalCoverageByScenario: goalCoverageBundle.aggregateByScenario,
     }
   }
 
@@ -214,6 +230,7 @@ export const loadMunicipalityListPageBundle = async (
         municipality,
         isStaff ? pledgeAggregates.get(municipality.id) : undefined,
         ranks.get(municipality.slug) ?? null,
+        isStaff ? goalCoverageByMunicipalityID.get(municipality.id) : undefined,
       ),
     ),
     totalDocs,

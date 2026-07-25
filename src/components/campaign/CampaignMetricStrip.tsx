@@ -12,6 +12,19 @@ export type CampaignMetric = {
   valueAriaLabel?: string
 }
 
+/**
+ * Tailwind needs the full class name present in source to generate it — this
+ * map keeps existing 3-metric callers (`sm:grid-cols-3`, unchanged) working
+ * byte-for-byte while giving 4-metric callers (E8 "conta da cadeira") a
+ * balanced 2x2 layout on narrow screens instead of an orphaned 4th cell.
+ */
+const gridColsBySize: Record<number, string> = {
+  1: 'sm:grid-cols-1',
+  2: 'sm:grid-cols-2',
+  3: 'sm:grid-cols-3',
+  4: 'sm:grid-cols-2 lg:grid-cols-4',
+}
+
 export const CampaignMetricStrip = ({
   metrics,
   className,
@@ -21,7 +34,8 @@ export const CampaignMetricStrip = ({
 }) => (
   <dl
     className={cn(
-      'grid grid-cols-1 gap-0 divide-y overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 sm:grid-cols-3 sm:divide-x sm:divide-y-0',
+      'grid grid-cols-1 gap-0 divide-y overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 sm:divide-x sm:divide-y-0',
+      gridColsBySize[metrics.length] ?? 'sm:grid-cols-3',
       className,
     )}
   >

@@ -1,7 +1,6 @@
 import { PencilIcon } from 'lucide-react'
 import Link from 'next/link'
 
-import { StaffMunicipalityVotesDisplay } from '@/components/campaign/StaffMunicipalityVotesDisplay'
 import { StateDeputyChips } from '@/components/campaign/StateDeputyChips'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -11,7 +10,6 @@ import {
   politicalTrendLabels,
 } from '@/utilities/municipalityUi'
 import type { MunicipalityDetailViewModel } from '@/utilities/municipalityViewModels'
-import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeData'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
@@ -19,12 +17,10 @@ export const MunicipalityStrategyCard = ({
   strategy,
   municipalitySlug,
   canEdit,
-  pledgeCoverage,
 }: {
   strategy: NonNullable<MunicipalityDetailViewModel['strategy']>
   municipalitySlug: string
   canEdit: boolean
-  pledgeCoverage: MunicipalityPledgeCoverageView | null
 }) => {
   const trend = strategy.politicalTrend
 
@@ -61,14 +57,6 @@ export const MunicipalityStrategyCard = ({
             </Link>
           </Button>
         ) : null}
-      </div>
-
-      <div className="rounded-lg bg-muted/40 px-3 py-2">
-        <p className="text-xs font-medium text-muted-foreground">Votos estimados</p>
-        <StaffMunicipalityVotesDisplay
-          expectedVotes={strategy.expectedVotes}
-          pledgeCoverage={pledgeCoverage}
-        />
       </div>
 
       {trend.status || trend.note ? (

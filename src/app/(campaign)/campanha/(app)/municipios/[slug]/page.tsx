@@ -9,6 +9,7 @@ import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
 import { CandidateComparePicker } from '@/components/campaign/CandidateComparePicker'
 import { MunicipalityBaselineCard } from '@/components/campaign/MunicipalityBaselineCard'
 import { MunicipalityCandidateComparisonTable } from '@/components/campaign/MunicipalityCandidateComparisonTable'
+import { MunicipalityGoalAccountCard } from '@/components/campaign/MunicipalityGoalAccountCard'
 import { MunicipalityLeadershipsPanel } from '@/components/campaign/MunicipalityLeadershipsPanel'
 import { MunicipalityPledgesPanel } from '@/components/campaign/MunicipalityPledgesPanel'
 import { MunicipalityStrategyCard } from '@/components/campaign/MunicipalityStrategyCard'
@@ -32,6 +33,7 @@ import {
 } from '@/utilities/municipalityDetailTabUi'
 import { municipalityElectionGeographyForSlug } from '@/utilities/municipalityElectionGeography'
 import { loadMunicipalityElectoralBaseline } from '@/utilities/municipalityElectoralBaseline'
+import { loadMunicipalityGoalAccount } from '@/utilities/municipalityGoalAccount'
 import {
   getMunicipalityDetailViewModel,
   MunicipalityNotFoundError,
@@ -46,10 +48,13 @@ import {
   parseMunicipalityUpdateFeedParams,
 } from '@/utilities/municipalityUpdatePageData'
 import { loadAdvisorSummaries } from '@/utilities/municipalityViewModels'
+import type { VoteEstimateScenarioViewModel } from '@/utilities/voteEstimate'
 import {
   aggregateMunicipalityPledgesFromRows,
   loadMunicipalityPledges,
   toMunicipalityPledgeCoverageView,
+  type MunicipalityPledgeAggregate,
+  type MunicipalityPledgeCoverageView,
 } from '@/utilities/votePledgeData'
 import { declareVotesFormAction, estimateVotesFormAction } from './pledgeFormActions'
 import { createMunicipalityUpdateFormAction } from './updateFormActions'
@@ -182,23 +187,61 @@ const OverviewTab = async ({
     view.kind === 'zona' ? <MunicipalityZoneNeighborhoodsCard municipalitySlug={view.slug} /> : null
 
   const pledges = await loadMunicipalityPledges(payload, user, view.id)
-  const pledgeCoverage = toMunicipalityPledgeCoverageView(
-    aggregateMunicipalityPledgesFromRows(pledges),
-  )
+  const pledgeAggregate = aggregateMunicipalityPledgesFromRows(pledges)
+  const pledgeCoverage = toMunicipalityPledgeCoverageView(pledgeAggregate)
 
   return (
     <div className="flex flex-col gap-6">
       {zoneNeighborhoodsCard}
       {view.strategy ? (
-        <MunicipalityStrategyCard
-          strategy={view.strategy}
-          municipalitySlug={view.slug}
-          canEdit
-          pledgeCoverage={pledgeCoverage}
-        />
+        <>
+          <MunicipalityStrategyCard strategy={view.strategy} municipalitySlug={view.slug} canEdit />
+          <GoalAccountCard
+            payloadUser={{ payload, user }}
+            municipalityID={view.id}
+            slug={view.slug}
+            expectedVotes={view.strategy.expectedVotes}
+            pledgeCoverage={pledgeCoverage}
+            pledgeAggregate={pledgeAggregate}
+          />
+        </>
       ) : null}
       <MunicipalityPledgesPanel pledges={pledges} estimateFormAction={estimateVotesFormAction} />
     </div>
+  )
+}
+
+const GoalAccountCard = async ({
+  payloadUser: { payload, user },
+  municipalityID,
+  slug,
+  expectedVotes,
+  pledgeCoverage,
+  pledgeAggregate,
+}: {
+  payloadUser: PayloadUser
+  municipalityID: number
+  slug: string
+  expectedVotes: VoteEstimateScenarioViewModel
+  pledgeCoverage: MunicipalityPledgeCoverageView | null
+  pledgeAggregate: MunicipalityPledgeAggregate
+}) => {
+  const { suggestedGoal, goalCoverage, potential } = await loadMunicipalityGoalAccount(
+    payload,
+    user,
+    { slug, expectedVotes },
+    pledgeAggregate,
+  )
+
+  return (
+    <MunicipalityGoalAccountCard
+      municipalityID={municipalityID}
+      expectedVotes={expectedVotes}
+      pledgeCoverage={pledgeCoverage}
+      suggestedGoal={suggestedGoal}
+      goalCoverage={goalCoverage}
+      potential={potential}
+    />
   )
 }
 

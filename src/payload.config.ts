@@ -34,6 +34,7 @@ import { SupporterImportBatch } from './collections/SupporterImportBatch'
 import { Tag } from './collections/Tag'
 import { Users } from './collections/Users'
 import { VotePledge } from './collections/VotePledge'
+import { CampaignGoals } from './globals/CampaignGoals'
 import { HomePage } from './globals/HomePage'
 import { Metadata } from './globals/Metadata'
 import { PrivacyPolicy } from './globals/PrivacyPolicy'
@@ -108,7 +109,7 @@ export default buildConfig({
     Post,
     Tag,
   ],
-  globals: [SiteSettings, HomePage, Metadata, PrivacyPolicy],
+  globals: [SiteSettings, HomePage, Metadata, PrivacyPolicy, CampaignGoals],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

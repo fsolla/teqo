@@ -2,11 +2,15 @@ import configPromise from '@payload-config'
 import { unstable_cache } from 'next/cache'
 import { getPayload, type Payload } from 'payload'
 
+import type { FederalBaselineTallyCell } from '@/lib/bahiaElectionAggregates'
+import { isCampoParty } from '@/lib/campoParties'
 import {
   BASELINE_TICKET_2022,
   ELECTION_YEAR_2022,
   FEDERAL_DEPUTY_OFFICE,
   HISTORICAL_SERIES_YEARS,
+  type ElectionOffice,
+  type ElectionTurn,
 } from '@/lib/electionResults'
 import type { CampaignUser, User } from '@/payload-types'
 import { assertCanReadElectionData } from '@/utilities/campaignAccess'
@@ -265,11 +269,21 @@ export const loadValidVotesByCityZone = async (
   return validVotes
 }
 
-/** cityCode:zone → votes map for one candidate/year (municipality-level slicing). */
+/**
+ * cityCode:zone → votes map for one candidate/year (municipality-level
+ * slicing). Defaults to deputado-federal T1 for the existing map/E2 callers;
+ * E8's "teto do campo" passes `office`/`turn` explicitly to slice
+ * presidente/governador instead.
+ */
 export const loadCandidateVotesByCityZone = async (
   payload: Payload,
   user: ElectionReader,
-  { year, candidateNumber }: { year: number; candidateNumber: number },
+  {
+    year,
+    candidateNumber,
+    office = FEDERAL_DEPUTY_OFFICE,
+    turn = '1',
+  }: { year: number; candidateNumber: number; office?: ElectionOffice; turn?: ElectionTurn },
 ): Promise<Map<string, number>> => {
   assertCanReadElectionData(user)
 
@@ -278,8 +292,8 @@ export const loadCandidateVotesByCityZone = async (
     where: {
       and: [
         { year: { equals: year } },
-        { office: { equals: FEDERAL_DEPUTY_OFFICE } },
-        { turn: { equals: '1' } },
+        { office: { equals: office } },
+        { turn: { equals: turn } },
         { voteType: { equals: 'nominal' } },
         { candidateNumber: { equals: candidateNumber } },
       ],
@@ -297,4 +311,118 @@ export const loadCandidateVotesByCityZone = async (
     votes.set(key, (votes.get(key) ?? 0) + (row.votes ?? 0))
   }
   return votes
+}
+
+/**
+ * cityCode:zone → sum of nominal deputado-federal T1 votes for every
+ * candidate whose party is in the curated `campoParties.ts` field for that
+ * year (E8 "share intracampo" denominator — CLI/build-time use only, this
+ * scans the whole statewide slice for the office).
+ */
+export const loadCampoFederalVotesByCityZone = async (
+  payload: Payload,
+  user: ElectionReader,
+  { year }: { year: number },
+): Promise<Map<string, number>> => {
+  assertCanReadElectionData(user)
+
+  const result = await payload.find({
+    collection: 'electionCandidateVote',
+    where: {
+      and: [
+        { year: { equals: year } },
+        { office: { equals: FEDERAL_DEPUTY_OFFICE } },
+        { turn: { equals: '1' } },
+        { voteType: { equals: 'nominal' } },
+      ],
+    },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { cityCode: true, zoneNumber: true, party: true, votes: true },
+    overrideAccess: true,
+  })
+
+  const votes = new Map<string, number>()
+  for (const row of result.docs) {
+    if (!isCampoParty(row.party, year)) continue
+    const key = `${row.cityCode}:${row.zoneNumber}`
+    votes.set(key, (votes.get(key) ?? 0) + (row.votes ?? 0))
+  }
+  return votes
+}
+
+/** Turnout/valid/blank/null tally cell — same shape the committed artifact stores per year. */
+export type OfficeTallyCell = FederalBaselineTallyCell
+
+/**
+ * cityCode:zone → turnout/valid/blank/null tally for one office×year×turn
+ * (used for the roll-off diagnostic: DF tally vs. majoritarian tally in the
+ * same cell — CLI/build-time use only).
+ */
+export const loadOfficeTallyByCityZone = async (
+  payload: Payload,
+  user: ElectionReader,
+  { year, office, turn }: { year: number; office: ElectionOffice; turn: ElectionTurn },
+): Promise<Map<string, OfficeTallyCell>> => {
+  assertCanReadElectionData(user)
+
+  const result = await payload.find({
+    collection: 'electionTally',
+    where: {
+      and: [{ year: { equals: year } }, { office: { equals: office } }, { turn: { equals: turn } }],
+    },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: {
+      cityCode: true,
+      zoneNumber: true,
+      comparecimento: true,
+      votosValidos: true,
+      votosBranco: true,
+      votosNulo: true,
+    },
+    overrideAccess: true,
+  })
+
+  const tally = new Map<string, OfficeTallyCell>()
+  for (const row of result.docs) {
+    const key = `${row.cityCode}:${row.zoneNumber}`
+    const current = tally.get(key) ?? {
+      comparecimento: 0,
+      votosValidos: 0,
+      votosBranco: 0,
+      votosNulo: 0,
+    }
+    tally.set(key, {
+      comparecimento: current.comparecimento + (row.comparecimento ?? 0),
+      votosValidos: current.votosValidos + (row.votosValidos ?? 0),
+      votosBranco: current.votosBranco + (row.votosBranco ?? 0),
+      votosNulo: current.votosNulo + (row.votosNulo ?? 0),
+    })
+  }
+  return tally
+}
+
+/** Sums an `OfficeTallyCell` map over a municipality's cityCode×zones. */
+export const sumOfficeTallyForGeography = (
+  tallyByCityZone: Map<string, OfficeTallyCell>,
+  geography: MunicipalityElectionGeography,
+): OfficeTallyCell => {
+  const total: OfficeTallyCell = {
+    comparecimento: 0,
+    votosValidos: 0,
+    votosBranco: 0,
+    votosNulo: 0,
+  }
+  for (const zone of geography.zones) {
+    const cell = tallyByCityZone.get(`${geography.cityCode}:${zone}`)
+    if (!cell) continue
+    total.comparecimento += cell.comparecimento
+    total.votosValidos += cell.votosValidos
+    total.votosBranco += cell.votosBranco
+    total.votosNulo += cell.votosNulo
+  }
+  return total
 }
