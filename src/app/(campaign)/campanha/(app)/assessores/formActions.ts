@@ -7,11 +7,7 @@ import {
   setAdvisorMunicipalityMembership,
   updateAdvisorProfile,
 } from '@/app/(campaign)/campanha/actions/advisor'
-import {
-  nullableFormText,
-  requiredFormText,
-  requiredRelationshipFormValue,
-} from '@/lib/formData'
+import { nullableFormText, requiredFormText, requiredRelationshipFormValue } from '@/lib/formData'
 import { ADVISOR_ACTION_SAFE_MESSAGES } from '@/lib/schemas/advisor'
 import {
   runCampaignFormAction,

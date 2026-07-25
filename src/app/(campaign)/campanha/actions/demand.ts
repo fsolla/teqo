@@ -17,9 +17,9 @@ import {
   reloadCampaignActor,
   reloadStaffActor,
 } from '@/utilities/campaignActionContext'
+import { hookFilledCreateData } from '@/utilities/hookFilledData'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
-import { hookFilledCreateData } from '@/utilities/hookFilledData'
 
 export const createCampaignDemandRecord = async (
   payload: Payload,

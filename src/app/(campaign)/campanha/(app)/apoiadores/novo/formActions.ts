@@ -3,14 +3,10 @@
 import { revalidatePath } from 'next/cache'
 
 import { createSupporter } from '@/app/(campaign)/campanha/actions/supporter'
-import {
-  checkboxFormValue,
-  nullableRelationshipFormValue,
-  optionalFormText,
-} from '@/lib/formData'
+import { checkboxFormValue, nullableRelationshipFormValue, optionalFormText } from '@/lib/formData'
+import { sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import { supporterCreateSchema } from '@/lib/schemas/supporter'
 import { runCampaignFormAction } from '@/utilities/campaignFormActionError'
-import { sanitizeBrazilianPhoneInput } from '@/lib/phone'
 
 export type SupporterFormState = {
   status?: 'success'

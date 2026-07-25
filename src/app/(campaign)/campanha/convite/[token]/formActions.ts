@@ -6,13 +6,13 @@ import {
   redeemCampaignInviteAutofill,
   redeemCampaignInviteLogin,
 } from '@/app/(campaign)/campanha/actions/invite'
-import { campaignInviteAutofillSchema, campaignInviteLoginSchema } from '@/lib/schemas/invite'
 import {
   checkboxFormValue,
   nullableFormText,
   requiredFormSecret,
   requiredFormText,
 } from '@/lib/formData'
+import { campaignInviteAutofillSchema, campaignInviteLoginSchema } from '@/lib/schemas/invite'
 import {
   mapCampaignFormActionError,
   runCampaignFormAction,

@@ -24,6 +24,5 @@ export const updateStateDeputyFormAction = async (
       return { message: 'Dobradinha atualizada.' }
     },
     safeMessages: ['Somente a coordenação e a assessoria gerenciam dobradinhas.'],
-    genericMessage:
-      'Não foi possível salvar a dobradinha. Verifique seu acesso e tente novamente.',
+    genericMessage: 'Não foi possível salvar a dobradinha. Verifique seu acesso e tente novamente.',
   })

@@ -11,12 +11,9 @@ import {
   removeSupporterData,
   setSupporterVoteIntention,
 } from '@/app/(campaign)/campanha/actions/supporter'
-import {
-  checkboxFormValue,
-  requiredRelationshipFormValue,
-} from '@/lib/formData'
-import { supporterRemoveSchema, supporterVoteIntentionSchema } from '@/lib/schemas/supporter'
+import { checkboxFormValue, requiredRelationshipFormValue } from '@/lib/formData'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
+import { supporterRemoveSchema, supporterVoteIntentionSchema } from '@/lib/schemas/supporter'
 import {
   mapCampaignFormActionError,
   type CampaignFormErrorState,
@@ -38,9 +35,7 @@ const safeVoteIntentionMessages = [
   'Somente a coordenação e a assessoria podem gerenciar apoiadores.',
 ] as const
 
-const toMessageOnlyState = (
-  mapped: CampaignFormErrorState<unknown>,
-): { message?: string } => {
+const toMessageOnlyState = (mapped: CampaignFormErrorState<unknown>): { message?: string } => {
   if (mapped.message) return { message: mapped.message }
   if (!mapped.fieldErrors) return {}
 

@@ -9,16 +9,10 @@
     "tests/**/*.spec.ts",
     "tests/helpers/serverOnly.ts"
   ],
-  "project": [
-    "src/**/*.{ts,tsx,js}",
-    "scripts/**/*.mjs",
-    "tests/**/*.ts"
-  ],
+  "project": ["src/**/*.{ts,tsx,js}", "scripts/**/*.mjs", "tests/**/*.ts"],
   "ignore": [],
   "paths": {
-    "server-only": [
-      "tests/helpers/serverOnly.ts"
-    ]
+    "server-only": ["tests/helpers/serverOnly.ts"]
   },
   "ignoreBinaries": [],
   "ignoreDependencies": [

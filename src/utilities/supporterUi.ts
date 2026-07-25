@@ -1,11 +1,11 @@
 import type { Where } from 'payload'
 
+import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import {
   isSupporterVoteIntention,
   resolveBahiaMunicipality,
   type SupporterVoteIntention,
 } from '@/lib/schemas/supporter'
-import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import type { CampaignUser, Supporter } from '@/payload-types'
 import {
   buildListHref,
@@ -44,13 +44,7 @@ export type SupporterListState = {
 
 type RawSearchParams = CampaignListRawSearchParams
 
-const supporterListParamNames = [
-  'q',
-  'voteIntention',
-  'city',
-  'municipality',
-  'page',
-] as const
+const supporterListParamNames = ['q', 'voteIntention', 'city', 'municipality', 'page'] as const
 
 const supporterListParamNameSet = new Set<string>(supporterListParamNames)
 

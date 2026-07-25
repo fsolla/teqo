@@ -39,6 +39,5 @@ export const updateMunicipalityStrategyFormAction = async (
       return { message: 'Estratégia atualizada.' }
     },
     safeMessages: municipalityStaffEditSafeMessages,
-    genericMessage:
-      'Não foi possível salvar a estratégia. Verifique seu acesso e tente novamente.',
+    genericMessage: 'Não foi possível salvar a estratégia. Verifique seu acesso e tente novamente.',
   })
