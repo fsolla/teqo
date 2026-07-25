@@ -1,5 +1,7 @@
 # Improve Code Quality Plan
 
+Two passes so far: **Pass 1** (2026-07-23/24, phases 0–6 below, all done) and **Pass 2** (started 2026-07-25, see [Pass 2](#pass-2--engineering-consolidation-2026-07-25)).
+
 ## Context
 
 - **Started:** 2026-07-23
@@ -49,3 +51,53 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 - [x] Phase 6 — documentation (`deca5c0`)
 - [x] E2E-driven fixes: leader home Forbidden, leader contact visibility, duplicate nav keys, RSC function-prop contracts, fixed e2e dist dir (`cb6c152`)
 - [ ] Remaining leftovers live in [TECH-DEBT.md](TECH-DEBT.md) Debt Ledger (drive knip `exports` warn→error, consent-window lease redesign, e2e local-latency flake, users roles migration)
+
+---
+
+# Pass 2 — Engineering Consolidation (2026-07-25)
+
+## Context
+
+- **Started:** 2026-07-25 (plan approved same day)
+- **Trigger:** everything shipped since Pass 1 (B15/B16/B19, E4R, E8/E9/E16/E18, A11, C12…) one-shotted per-feature infrastructure again. Six parallel audits (duplication, module boundaries, type honesty/dead code, safety net, docs drift, roadmap alignment) produced the evidence.
+- **Goal:** (1) generalized shared infrastructure where logic was per-feature (the campaign list/table system above all); (2) a deliberate, documented architecture; (3) an explicit mental model (`docs/ARCHITECTURE.md` + agent-facing map rule) that lets a human or agent orient in minutes.
+- **Method:** same `improve-code-quality` journey; each workstream is an independent delivery (full gate per delivery: `tsc --noEmit`, `pnpm lint` zero warnings, `pnpm exec knip`, `pnpm test`, `pnpm build`, Aikido scan), structure-only commits never mixed with behavior. Sequenced around the electoral calendar (window 1 → 05/08, window 2 → 16/08; nothing near the ~20/09 freeze).
+- **Audit headlines:** 12 `ui/Table` surfaces with a half-built shared spine; `src/lib/electionInsights.ts` 941 lines / 71 exports / **2 used in production**; `municipalityUi.ts` 765 lines / 59 exports (new god module); 21 loaders missing `server-only`, 9 `lib/`→`utilities/` inversions, 1 type cycle, client sidebar importing the access barrel; knip unused exports 158→164; safety net 41 unit / 46 int / 7 e2e with supporter/actionPlan/entity-list parsers+loaders unpinned; "Praça" copy ~96 hits in 53 files vs the ledger's ~15; AGENTS.md structure/route drift.
+
+## Workstream Status
+
+| WS  | Content                                                                                                                                 | Plan file                                                            | Status  | Date |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------- | ---- |
+| W0  | Safety net: pin list URL parsers + list loaders (unit + int smokes); TESTING/TECH-DEBT truth-up                                         | [pinagem-superficies-lista.md](plans/pinagem-superficies-lista.md)   | pending |      |
+| W1  | Generalized campaign list system (D1 core + municipality; D2 migrate entity triplet/demandas/apoiadores/assessores + delete superseded) | [sistema-listas-campanha.md](plans/sistema-listas-campanha.md)       | pending |      |
+| W2  | Architecture decision (DDD/clean-arch/SDP evaluation → conventions + boundary fixes) + staged `components/campaign` subfolders          | [decisao-arquitetura-dominios.md](plans/decisao-arquitetura-dominios.md) | pending |      |
+| W3  | `docs/ARCHITECTURE.md` + `.cursor/rules/codebase-map.mdc`                                                                               | [mapa-mental-arquitetura.md](plans/mapa-mental-arquitetura.md)       | pending |      |
+| W4a | `electionInsights.ts` gut/split: extract `electionFormat`, keep voteTrend, delete dead clusters (before E10)                            | [split-election-insights.md](plans/split-election-insights.md)       | pending |      |
+| W4b | knip unused-exports warn→error: delete zero-ref exports, un-export in-file symbols, config, CI flip                                     | (tracker only)                                                        | pending |      |
+| W4c | Detail-page RSC extraction (`municipios/[slug]`, `planos/[slug]`) + dedupe detail-tab helper twins                                      | (tracker only)                                                        | pending |      |
+| W4d | formActions finish: `runCampaignFormAction` (stay-on-page) + migrate 9 hand-rolled ladders (closes C8 F4)                               | (tracker only)                                                        | pending |      |
+| W4e | Single-source types: scenario triple, strategy VM, trend enum, duplicated constants/helpers, `DynamicFind` doc                          | (tracker only)                                                        | pending |      |
+| W4f | "Praça"→"Município" user-visible copy sweep (~55 visible hits + admin labels; consent texts stay for the legal batch)                   | (tracker only)                                                        | pending |      |
+| W5  | Documentation close-out: AGENTS.md refresh, ledger/TESTING reconcile, plan-status patches, roadmap fold-in, product-doc drift findings  | (tracker only)                                                        | pending |      |
+| D3  | `consent: 2` hardcode → Onda 0 provisional-key pattern (data migration + fail-closed switch; **migration SQL reviewed before landing**) | (tracker only)                                                        | pending |      |
+
+Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<reason\> · skipped: \<reason\>
+
+## Pass 2 Decisions (signed off 2026-07-25)
+
+| ID  | Decision                                                                                                                                                                                                       | Rationale                                                                                                                                                                                     |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | **No `src/domains/` reorg, no ports-and-adapters.** Conventions + mechanical boundary fixes + staged within-layer subfolders for `components/campaign/`; `utilities/` subfoldering deferred with trigger        | Payload collections ARE the data model; a big-bang move freezes the repo mid-window and risks the importmap. Full evaluation in [decisao-arquitetura-dominios.md](plans/decisao-arquitetura-dominios.md) |
+| D2  | **Delete** the ~52 consumer-less `electionInsights` exports (+ their tests) rather than quarantining them                                                                                                        | git history + plans carry the formulas; E10 replaces the 35/20/10 threshold approach with relative classification — keeping dead math invites accidental reuse                                 |
+| D3  | `consent: 2` hardcode folded into the Onda 0 provisional-key pattern in-pass, as an isolated delivery with the migration SQL explicitly reviewed by the user before landing                                     | Same fail-closed pattern as `lideranca-autopreenchimento`; leaving the hardcode makes the legal batch harder to verify                                                                        |
+| D4  | users-roles migration stays ledgered/deferred                                                                                                                                                                    | Schema migration; only blocks widening `/admin`, which isn't scheduled                                                                                                                        |
+| D5  | W1 scope boundary: planos stays cards (adopts toolbar/URL state only), `TerritoryOverviewTable` stays a documented client-sort exception, LeaderContacts/candidate-comparison/import-preview stay out            | Anti-classitis: the system earns its migrations; small static tables don't pay for the abstraction                                                                                            |
+| D6  | Praça sweep = user-visible copy + admin labels; provisional Onda 0 consent texts untouched (legal batch)                                                                                                        | Consent text versions are counsel-owned; code shouldn't edit them cosmetically                                                                                                                |
+
+## Next Actions
+
+- [x] Materialize Pass 2 tracker section + per-workstream plans (this commit)
+- [ ] W0 → W1-D1 → W1-D2 (window 1), W4a/W4e/W4f interleaved
+- [ ] W2 → W4c/W4d → W3 (window 2)
+- [ ] W4b (last code delivery) → W5 (docs close-out)
+- [ ] D3 isolated delivery — migration SQL reviewed by the user before landing
