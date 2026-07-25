@@ -4,6 +4,7 @@ import { ChevronDownIcon, ChevronsUpDownIcon, ChevronUpIcon } from 'lucide-react
 import type { ReactNode } from 'react'
 
 import { CampaignTransitionAnchor } from '@/components/campaign/CampaignListPending'
+import { MunicipalityHeaderFilter } from '@/components/campaign/MunicipalityHeaderFilter'
 import { MunicipalityHoverTooltip } from '@/components/campaign/MunicipalityHoverTooltip'
 import { TableHead } from '@/components/ui/Table'
 import { cn } from '@/lib/utils'
@@ -12,6 +13,8 @@ import {
   defaultMunicipalityListSortDir,
   municipalityListSortLabels,
   resolveMunicipalityListSort,
+  type MunicipalityFilterOption,
+  type MunicipalityFilterParam,
   type MunicipalityListSortKey,
   type MunicipalityListState,
 } from '@/utilities/municipalityUi'
@@ -23,6 +26,9 @@ type MunicipalitySortableHeadProps = {
   tooltip?: ReactNode
   className?: string
   align?: 'left' | 'center' | 'right'
+  filterParam?: MunicipalityFilterParam
+  filterOptions?: MunicipalityFilterOption[]
+  showPriorityFilter?: boolean
 }
 
 export const MunicipalitySortableHead = ({
@@ -32,6 +38,9 @@ export const MunicipalitySortableHead = ({
   tooltip,
   className,
   align = 'left',
+  filterParam,
+  filterOptions,
+  showPriorityFilter,
 }: MunicipalitySortableHeadProps) => {
   const href = buildMunicipalitySortHref(state, sortKey)
   const { sort: activeSort, dir } = resolveMunicipalityListSort(state)
@@ -51,12 +60,11 @@ export const MunicipalitySortableHead = ({
       replace
       scroll={false}
       className={cn(
-        'group inline-flex min-h-11 items-center gap-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        active
-          ? 'font-medium text-foreground hover:text-primary'
-          : 'font-normal text-muted-foreground hover:text-foreground',
-        align === 'right' && 'w-full justify-end',
-        align === 'center' && 'w-full justify-center',
+        'group inline-flex min-h-11 items-center gap-1 rounded-md text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'hover:text-foreground',
+        active ? 'font-medium' : 'font-normal',
+        align === 'right' && !filterParam && 'w-full justify-end',
+        align === 'center' && !filterParam && 'w-full justify-center',
       )}
       aria-label={
         active
@@ -80,25 +88,46 @@ export const MunicipalitySortableHead = ({
     </CampaignTransitionAnchor>
   )
 
+  const labeledSort = tooltip ? (
+    <MunicipalityHoverTooltip
+      content={tooltip}
+      align={align === 'right' ? 'end' : align === 'center' ? 'center' : 'start'}
+    >
+      {sortControl}
+    </MunicipalityHoverTooltip>
+  ) : (
+    sortControl
+  )
+
   return (
     <TableHead
       aria-sort={ariaSort}
       className={cn(
+        'text-muted-foreground',
         align === 'right' && 'text-right',
         align === 'center' && 'text-center',
         align === 'left' && 'text-left',
         className,
       )}
     >
-      {tooltip ? (
-        <MunicipalityHoverTooltip
-          content={tooltip}
-          align={align === 'right' ? 'end' : align === 'center' ? 'center' : 'start'}
+      {filterParam ? (
+        <div
+          className={cn(
+            'flex items-center',
+            align === 'right' && 'justify-end',
+            align === 'center' && 'justify-center',
+          )}
         >
-          {sortControl}
-        </MunicipalityHoverTooltip>
+          {labeledSort}
+          <MunicipalityHeaderFilter
+            state={state}
+            filterParam={filterParam}
+            options={filterOptions}
+            showPriorityFilter={showPriorityFilter}
+          />
+        </div>
       ) : (
-        sortControl
+        labeledSort
       )}
     </TableHead>
   )

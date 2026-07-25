@@ -1,6 +1,7 @@
-import { CircleAlertIcon, CircleCheckIcon } from 'lucide-react'
+import { CircleAlertIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 
+import { CampaignTransitionAnchor } from '@/components/campaign/CampaignListPending'
 import { MunicipalityAdvisorAvatarStack } from '@/components/campaign/MunicipalityAdvisorAvatarStack'
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/MunicipalityListAdvisorsControl'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/MunicipalityListExpectedVotesControl'
@@ -8,24 +9,29 @@ import { MunicipalityListGoalCoverageCell } from '@/components/campaign/Municipa
 import { MunicipalityListTrendControl } from '@/components/campaign/MunicipalityListTrendControl'
 import { MunicipalitySortableHead } from '@/components/campaign/MunicipalitySortableHead'
 import { Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/Empty'
 import {
   Table,
   TableBody,
   TableCaption,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
 import { formatElectionNumber } from '@/lib/electionInsights'
-import {
-  formatMunicipalityVoteRank,
-  formatMunicipalityVoteShare,
-} from '@/lib/municipalityVoteRank'
+import { formatMunicipalityVoteRank, formatMunicipalityVoteShare } from '@/lib/municipalityVoteRank'
 import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
+  buildMunicipalityListHref,
   formatMunicipalityConcentrationHint,
   formatMunicipalityGeographyLabel,
   formatMunicipalityListSortSummary,
@@ -37,6 +43,7 @@ import {
   municipalityPriorityLabels,
   municipalitySignalAgeInDays,
   resolveMunicipalityListSort,
+  type MunicipalityFilterOption,
   type MunicipalityListState,
 } from '@/utilities/municipalityUi'
 import type {
@@ -57,12 +64,19 @@ type MunicipalityStaffFormAction = (
   formData: FormData,
 ) => Promise<CampaignFormActionState>
 
+type MunicipalityColumnFilterOptions = {
+  name: MunicipalityFilterOption[]
+  region: MunicipalityFilterOption[]
+  advisor: MunicipalityFilterOption[]
+}
+
 export type MunicipalityListProps = {
   municipalities: MunicipalityListViewModel[]
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>
   isStaffView: boolean
   isCoordinator: boolean
   advisorOptions: EligibleAdvisorOption[]
+  columnFilterOptions: MunicipalityColumnFilterOptions
   trendFormAction: MunicipalityStaffFormAction
   advisorsFormAction: MunicipalityStaffFormAction
   state: MunicipalityListState
@@ -147,26 +161,41 @@ const SignalAgeReadout = ({
  * E9: a priority município with nobody answering for it is the queue's
  * loudest row, so it reads "Sem responsável" in destructive — the same words
  * the overview's coluna da vergonha uses to count them. Non-priority ones
- * keep the softer pending tone: they are a gap, not a fire.
+ * keep the softer pending tone: they are a gap, not a fire. Rendered in place
+ * of the advisor names, so it only ever states an absence.
  */
-const AdvisorStatusBadge = ({ municipality }: { municipality: MunicipalityListViewModel }) => {
-  if (municipality.advisorIDs.length > 0) {
-    return (
-      <Badge variant="estimate-confirmed">
-        <CircleCheckIcon data-icon="inline-start" aria-hidden="true" />
-        Coberta
-      </Badge>
-    )
-  }
+const MissingAdvisorBadge = ({ isPriority }: { isPriority: boolean }) => (
+  <Badge variant={isPriority ? 'destructive' : 'estimate-pending'}>
+    <CircleAlertIcon data-icon="inline-start" aria-hidden="true" />
+    {isPriority ? 'Sem responsável' : municipalityListCoverageLabels.sem_assessor}
+  </Badge>
+)
 
-  const isPriority = municipality.priority === 'alta'
-  return (
-    <Badge variant={isPriority ? 'destructive' : 'estimate-pending'}>
-      <CircleAlertIcon data-icon="inline-start" aria-hidden="true" />
-      {isPriority ? 'Sem responsável' : municipalityListCoverageLabels.sem_assessor}
-    </Badge>
-  )
-}
+/** Replaces only the rows: the filter header row and the overview stay put. */
+const MunicipalityListEmptyState = ({ state }: { state: MunicipalityListState }) => (
+  <Empty className="min-h-56">
+    <EmptyHeader>
+      <EmptyMedia variant="icon">
+        <SearchXIcon aria-hidden="true" />
+      </EmptyMedia>
+      <EmptyTitle>Nenhum município encontrado</EmptyTitle>
+      <EmptyDescription>
+        Ajuste a busca ou os filtros. Você só vê municípios dentro do seu escopo.
+      </EmptyDescription>
+    </EmptyHeader>
+    <EmptyContent>
+      {/* Same contract as the filter bar's Limpar: drop filters, keep the sort. */}
+      <CampaignTransitionAnchor
+        href={buildMunicipalityListHref({ page: 1, sort: state.sort, dir: state.dir }, 1)}
+        replace
+        scroll={false}
+        className={cn(buttonVariants({ variant: 'outline' }), 'min-h-11')}
+      >
+        Limpar busca e filtros
+      </CampaignTransitionAnchor>
+    </EmptyContent>
+  </Empty>
+)
 
 const advisorEntries = (
   municipality: MunicipalityListViewModel,
@@ -188,6 +217,7 @@ export const MunicipalityList = ({
   isStaffView,
   isCoordinator,
   advisorOptions,
+  columnFilterOptions,
   trendFormAction,
   advisorsFormAction,
   state,
@@ -199,6 +229,8 @@ export const MunicipalityList = ({
   // The scenario picker is client state, so the server can only order by one
   // scenario — named here so the ordering never looks arbitrary.
   const deficitHint = `Ordena pelo que falta para a meta (meta − comprometido) no cenário ${voteEstimateScenarioLabels[DEFAULT_VOTE_ESTIMATE_SCENARIO]}, independente do cenário selecionado acima.`
+  // Keep in sync with the header row below.
+  const columnCount = isStaffView ? 9 : 5
 
   return (
     <>
@@ -207,6 +239,7 @@ export const MunicipalityList = ({
       </p>
 
       <div data-view="mobile-cards" className="flex flex-col gap-4 md:hidden">
+        {municipalities.length === 0 ? <MunicipalityListEmptyState state={state} /> : null}
         {municipalities.map((municipality) => {
           const names = advisorNames(municipality, advisorNamesById)
           const position = municipality.votePosition2022
@@ -263,7 +296,7 @@ export const MunicipalityList = ({
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Assessoria</dt>
+                    <dt className="text-muted-foreground">Assessores</dt>
                     <dd>
                       {isCoordinator ? (
                         <MunicipalityListAdvisorsControl
@@ -277,7 +310,7 @@ export const MunicipalityList = ({
                       ) : names.length ? (
                         names.join(', ')
                       ) : (
-                        <AdvisorStatusBadge municipality={municipality} />
+                        <MissingAdvisorBadge isPriority={municipality.priority === 'alta'} />
                       )}
                     </dd>
                   </div>
@@ -291,20 +324,34 @@ export const MunicipalityList = ({
         })}
       </div>
 
-      <div data-view="desktop-table" className="hidden overflow-hidden rounded-xl border md:block">
-        <Table>
+      {/* No inner scroller: the app shell's <main> scrolls, so the sticky header
+          resolves against it. A sticky <th> can't paint the row border, hence the
+          inset shadow standing in for it. */}
+      <div data-view="desktop-table" className="hidden rounded-xl border md:block">
+        <Table containerClassName="overflow-x-visible">
           <TableCaption className="sr-only">
             {sortSummary}. Coluna 2022: {concentrationHint}
           </TableCaption>
-          <TableHeader>
+          <TableHeader className="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0">
             <TableRow>
-              <MunicipalitySortableHead state={state} sortKey="name">
+              <MunicipalitySortableHead
+                state={state}
+                sortKey="name"
+                filterParam="name"
+                filterOptions={columnFilterOptions.name}
+                showPriorityFilter={isStaffView}
+              >
                 Município
               </MunicipalitySortableHead>
-              <MunicipalitySortableHead state={state} sortKey="region">
-                Território de identidade
+              <MunicipalitySortableHead
+                state={state}
+                sortKey="region"
+                filterParam="region"
+                filterOptions={columnFilterOptions.region}
+              >
+                Território
               </MunicipalitySortableHead>
-              <MunicipalitySortableHead state={state} sortKey="kind">
+              <MunicipalitySortableHead state={state} sortKey="kind" filterParam="kind">
                 Tipo
               </MunicipalitySortableHead>
               <MunicipalitySortableHead
@@ -315,8 +362,15 @@ export const MunicipalityList = ({
               />
               {isStaffView ? (
                 <>
-                  <TableHead>Assessores</TableHead>
-                  <MunicipalitySortableHead state={state} sortKey="trend">
+                  <MunicipalitySortableHead
+                    state={state}
+                    sortKey="coverage"
+                    filterParam="advisor"
+                    filterOptions={columnFilterOptions.advisor}
+                  >
+                    Assessores
+                  </MunicipalitySortableHead>
+                  <MunicipalitySortableHead state={state} sortKey="trend" filterParam="trend">
                     Tendência
                   </MunicipalitySortableHead>
                   <MunicipalitySortableHead state={state} sortKey="expectedVotes" align="center">
@@ -328,9 +382,6 @@ export const MunicipalityList = ({
                     tooltip={signalHint}
                   >
                     Último sinal
-                  </MunicipalitySortableHead>
-                  <MunicipalitySortableHead state={state} sortKey="coverage">
-                    Assessoria
                   </MunicipalitySortableHead>
                   <MunicipalitySortableHead
                     state={state}
@@ -348,6 +399,13 @@ export const MunicipalityList = ({
             </TableRow>
           </TableHeader>
           <TableBody>
+            {municipalities.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={columnCount} className="whitespace-normal">
+                  <MunicipalityListEmptyState state={state} />
+                </TableCell>
+              </TableRow>
+            ) : null}
             {municipalities.map((municipality) => {
               return (
                 <TableRow key={municipality.id}>
@@ -390,10 +448,12 @@ export const MunicipalityList = ({
                             options={advisorOptions}
                             formAction={advisorsFormAction}
                           />
-                        ) : (
+                        ) : municipality.advisorIDs.length ? (
                           <MunicipalityAdvisorAvatarStack
                             advisors={advisorEntries(municipality, advisorNamesById)}
                           />
+                        ) : (
+                          <MissingAdvisorBadge isPriority={municipality.priority === 'alta'} />
                         )}
                       </TableCell>
                       <TableCell>
@@ -419,9 +479,6 @@ export const MunicipalityList = ({
                           lastSignalAt={municipality.lastSignalAt}
                           layout="table"
                         />
-                      </TableCell>
-                      <TableCell>
-                        <AdvisorStatusBadge municipality={municipality} />
                       </TableCell>
                       <TableCell>
                         <MunicipalityListGoalCoverageCell

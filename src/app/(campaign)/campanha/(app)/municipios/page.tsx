@@ -3,8 +3,6 @@ import {
   CampaignListResults,
 } from '@/components/campaign/CampaignListPending'
 import config from '@payload-config'
-import { SearchXIcon } from 'lucide-react'
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
@@ -16,15 +14,6 @@ import { MunicipalityFilters } from '@/components/campaign/MunicipalityFilters'
 import { MunicipalityList } from '@/components/campaign/MunicipalityList'
 import { MunicipalityListOverview } from '@/components/campaign/MunicipalityListOverview'
 import { RecentVisitTracker } from '@/components/campaign/RecentVisitTracker'
-import { Button } from '@/components/ui/button'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/Empty'
 import {
   isCampaignCoordinator,
   isCampaignLeader,
@@ -38,6 +27,7 @@ import {
   buildMunicipalityListVisitHref,
   buildMunicipalityListVisitLabel,
   getCampaignScopeLabel,
+  municipalityFilterOptionsForSlugs,
   resolveMunicipalityListUrl,
 } from '@/utilities/municipalityUi'
 import { getEligibleAdvisorOptions, loadAdvisorSummaries } from '@/utilities/municipalityViewModels'
@@ -69,24 +59,48 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
     totalPages,
     scopeTotal,
     overview,
+    filterFacets,
   } = pageBundle
   const resolvedUrl = resolveMunicipalityListUrl(rawSearchParams, totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
   const listVisitLabel = buildMunicipalityListVisitLabel(state)
 
+  // One read covers both needs: the listed municipalities' avatars and the
+  // (cross-filtered) advisor column-filter labels.
   const advisorIDs = [
-    ...new Set(listMunicipalities.flatMap((municipality) => municipality.advisorIDs)),
+    ...new Set([
+      ...listMunicipalities.flatMap((municipality) => municipality.advisorIDs),
+      ...filterFacets.advisorIDs,
+    ]),
   ]
-  const advisorSummaries = isStaffView ? await loadAdvisorSummaries(payload, user, advisorIDs) : []
+  const [advisorSummaries, advisorOptions] = await Promise.all([
+    isStaffView ? loadAdvisorSummaries(payload, user, advisorIDs) : [],
+    // Only the coordinator-only assign-advisors control consumes these.
+    isCoordinator ? getEligibleAdvisorOptions(payload, user) : [],
+  ])
   const advisorNamesById = new Map(advisorSummaries.map((advisor) => [advisor.id, advisor]))
-  const advisorOptions = isCoordinator ? await getEligibleAdvisorOptions(payload, user) : []
+
+  const selectedAdvisorIDs = new Set(state.advisors ?? [])
+  const columnFilterOptions = {
+    name: municipalityFilterOptionsForSlugs(filterFacets.slugs),
+    region: filterFacets.regions.map((region) => ({ value: region, label: region })),
+    advisor: filterFacets.advisorIDs
+      .flatMap((id) => {
+        const name = advisorNamesById.get(id)?.name
+        if (name) return [{ value: String(id), label: name }]
+        // Keep an unknown-but-selected advisor listed so the filter can be undone.
+        return selectedAdvisorIDs.has(id) ? [{ value: String(id), label: `Assessor #${id}` }] : []
+      })
+      .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR')),
+  }
 
   const filters = (
     <MunicipalityFilters
       key={buildMunicipalityFiltersKey(state)}
       state={state}
       showStaffFilters={isStaffView}
+      advisorFilterOptions={columnFilterOptions.advisor}
     />
   )
 
@@ -97,7 +111,9 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       ? null
       : buildMunicipalityListHref({ ...state, priority: 'alta', coverage: 'sem_assessor' }, 1)
 
-  const listBody = listMunicipalities.length ? (
+  // The overview and the table's filter header stay mounted even with zero
+  // results — only the rows are replaced by the empty state.
+  const listBody = (
     <>
       {isStaffView && overview ? (
         <MunicipalityListOverview view={overview} shameHref={shameHref} />
@@ -108,6 +124,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
         isStaffView={isStaffView}
         isCoordinator={isCoordinator}
         advisorOptions={advisorOptions}
+        columnFilterOptions={columnFilterOptions}
         trendFormAction={setMunicipalityPoliticalTrendFormAction}
         advisorsFormAction={assignMunicipalityAdvisorsFormAction}
         state={state}
@@ -123,23 +140,6 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
         />
       </div>
     </>
-  ) : (
-    <Empty className="min-h-72 border">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <SearchXIcon aria-hidden="true" />
-        </EmptyMedia>
-        <EmptyTitle>Nenhum município encontrado</EmptyTitle>
-        <EmptyDescription>
-          Ajuste a busca ou os filtros. Você só vê municípios dentro do seu escopo.
-        </EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent>
-        <Button asChild variant="outline" className="min-h-11">
-          <Link href="/campanha/municipios">Limpar busca e filtros</Link>
-        </Button>
-      </EmptyContent>
-    </Empty>
   )
 
   // Shared transition: the filters navigate, the results dim ("Feel the action").

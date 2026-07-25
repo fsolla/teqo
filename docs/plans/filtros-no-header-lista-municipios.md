@@ -1,15 +1,15 @@
 # B16 — Filtros no header das colunas da lista de Municípios
 
-Status: rascunho
+Status: entregue
 Atualizado em: 2026-07-24
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Demais itens abertos, B16; superfície de coordenação)
 Impeccable: B — encaixe em `MunicipalityList` / `MunicipalitySortableHead` / `MunicipalityFilters` em `/campanha/municipios`; sem rota nova
-Appetite: ~1–1,5 dia eng; relocação dos selects de recorte para o header (desktop) + barra slim + mobile disclosure; sem migration, sem collection, sem Consent
+Appetite: ~1–1,5 dia eng; relocação dos selects de recorte para o header (desktop) + barra slim + mobile stacked selects; sem migration, sem collection, sem Consent
 Responsável: —
 
 ## Design (Impeccable)
 
-Âncoras: `PRODUCT.md` (princípios 2 — clareza sob pressão — e 8 — Feel the action) / `DESIGN.md` (register `product`; Field Desk) · tema `data-theme='campaign'` · shells `MunicipalitySortableHead`, `CampaignListPendingBoundary`, shadcn `Table` / `NativeSelect` / `Popover` se precisar.
+Âncoras: `PRODUCT.md` (princípios 2 — clareza sob pressão — e 8 — Feel the action) / `DESIGN.md` (register `product`; Field Desk) · tema `data-theme='campaign'` · shells `MunicipalitySortableHead`, `CampaignListPendingBoundary`, shadcn `Table` / `NativeSelect` / `Popover`.
 
 Na implementação (`implement-roadmap-item`): craft compacto → critique → polish (só composição header+filtro; sem redesign da lista/overview).
 
@@ -31,57 +31,54 @@ Brief compacto:
 
 ## Contexto
 
-Em `/campanha/municipios`, o estado canônico de lista já vive na URL via `MunicipalityListState` (`municipalityUi.ts`): `q`, `region`, `kind`, `coverage`, `priority`, `trend`, `page`, e desde **B15** `sort`/`dir` com headers clicáveis (`MunicipalitySortableHead`). Os filtros de recorte ainda estão numa **fileira separada** (`MunicipalityFilters`) acima do overview — o olho alterna entre barra e tabela. Sort e filtro não compartilham affordance espacial.
+Em `/campanha/municipios`, o estado canônico de lista já vive na URL via `MunicipalityListState` (`municipalityUi.ts`): `q`, `region`, `kind`, `coverage`, `priority`, `trend`, `page`, e desde **B15** `sort`/`dir` com headers clicáveis (`MunicipalitySortableHead`). Os filtros de recorte ainda estavam numa **fileira separada** (`MunicipalityFilters`) acima do overview — o olho alternava entre barra e tabela.
 
-Mapeamento atual coluna ↔ filtro URL (staff):
+Mapeamento coluna ↔ filtro URL (staff) — as-built pós-E8:
 
-| Coluna (desktop)         | Sort (B15)      | Filtro URL hoje                                                            |
-| ------------------------ | --------------- | -------------------------------------------------------------------------- |
-| Município                | `name`          | `q` (busca; não é select) + `priority` (badge/ícone na célula, sem coluna) |
-| Território de identidade | `region`        | `region`                                                                   |
-| Tipo                     | `kind`          | `kind`                                                                     |
-| 2022 (`votos`)           | `votos`         | —                                                                          |
-| Assessores               | — (editor B9)   | — (filtro “Assessoria” alimenta a coluna **Cobertura**)                    |
-| Tendência                | `trend`         | `trend`                                                                    |
-| Votos estimados          | `expectedVotes` | —                                                                          |
-| Última atualização       | `lastUpdateAt`  | —                                                                          |
-| Cobertura                | `coverage`      | `coverage`                                                                 |
-
-Pedido de produto (2026-07-24): avaliar juntar os filtros aos headers, **idealmente no header de cada coluna**, mantendo sort.
-
-Fill-ins vizinhos: [Cenário junto aos filtros](cenario-junto-filtros-municipios.md) (assume fileira de filtros); [ícone de prioridade](icone-prioridade-lista-municipios.md) (coluna do nome). **E9** herda a mesma lista/URL — o padrão de header deve sobreviver à fila.
+| Coluna (desktop)   | Sort (B15)      | Filtro URL (B16)                                                                     |
+| ------------------ | --------------- | ------------------------------------------------------------------------------------ |
+| Município          | `name`          | `priority` (checkbox) + `slug` (multi, com busca)                                    |
+| Território         | `region`        | `region` (multi, com busca)                                                          |
+| Tipo               | `kind`          | `kind`                                                                               |
+| 2022 (`votos`)     | `votos`         | —                                                                                    |
+| Assessores         | `coverage`      | `coverage` (com/sem assessor) + `advisor` (multi) — **não** "Cobertura da meta" (E8) |
+| Tendência          | `trend`         | `trend` (multi; todos ou nenhum = todas)                                             |
+| Votos estimados    | `expectedVotes` | —                                                                                    |
+| Última atualização | `lastUpdateAt`  | —                                                                                    |
+| Cobertura da meta  | —               | — (estática; E8)                                                                     |
 
 ## Objetivos
 
 - Desktop (`md+`): para cada filtro URL já existente que tem coluna correspondente, o controle de filtro vive no `TableHead` daquela coluna, **ao lado** do sort B15 (sem perder `aria-sort` / toggle `dir`).
 - Semântica URL intacta (`parse`/`build`/`resolveMunicipalityListUrl`); pending via `CampaignListPendingBoundary` / `commitNavigation` (Feel the action).
-- Barra superior slim: **busca** (`q`) + **Limpar** (+ **Cenário** quando o fill-in de Cenário entregar; mobile: disclosure com os mesmos filtros).
-- Mobile (cards): filtros **não** fingem header — permanecem no disclosure/barra (padrão B15 do select “Ordenar”).
+- Barra superior slim: **busca** (`q`) + **resumo dos filtros ativos** + **Limpar** (+ **Cenário** quando o fill-in de Cenário entregar; mobile: selects empilhados).
+- Mobile (cards): filtros **não** fingem header — permanecem empilhados em `md:hidden` (sem disclosure novo — não havia precedente no repo).
 - Guardrails: sem migration, sem collection, sem Consent, sem server action; `leader` continua redirecionado; staff-only filters só com `showStaffFilters` / `isStaffView`.
 
 ## Decisões travadas
 
-- **Item de trilha B16 (não fill-in; não só R6; não reabrir B15).** Pattern de composição da lista que E9 consome; ~1–1,5d; B15 já entregue o contrato sort. (2026-07-24, roadmap-item.) **Rejeitado:** fill-in só (subestima conflito sort×filtro e o destino da barra); absorver em R6 (atrasa e dilui); fase informal de B15 (entrega fechada).
-- **Só relocacionar filtros URL existentes — não inventar where novos.** v1: `region`, `kind`, `trend`, `coverage`, `priority` no header; `q` fica na barra (texto livre). **Rejeitado:** filtro por faixa de `expectedVotes` / frescor / rank 2022 neste item (rabbit hole de produto + UI numérica); filtro no header de Assessores (ambíguo com editor B9 — o where “com/sem assessor” fica no header **Cobertura**, label do select pode continuar “Assessoria” ou alinhar a “Cobertura” no craft).
-- **Sort = clique no rótulo/chevron (B15); filtro = controle irmão no mesmo `TableHead`.** Dois alvos distintos (`CampaignTransitionAnchor` vs `NativeSelect`/`Popover`), `stopPropagation` no filtro. **Rejeitado:** clique único ciclando sort+filter; segunda linha de cells tipo Excel sob o header (altura + spreadsheet vibe); TanStack Table.
-- **Desktop: removes selects duplicados da fileira superior** para os params que migraram ao header. Barra slim = busca + Limpar (+ Cenário). **Rejeitado:** manter barra completa + header (duplicata); eliminar a barra inteira (busca/Limpar/Cenário precisam de casa).
-- **Mobile: disclosure com os filtros atuais** (e sort select B15). **Rejeitado:** inventar “headers” em cards.
-- **Prioridade no header da coluna Município** (select Todos / Prioritárias), coexistindo com o fill-in do ícone Flag na célula. **Rejeitado:** coluna Prioridade nova só para o filtro.
-- **i18n e naming:** identificadores ingleses (`MunicipalityColumnHead`, `MunicipalityHeaderFilter`, estender `MunicipalitySortableHead` ou composição); labels pt-BR inalterados na essência.
+- **Item de trilha B16 (não fill-in; não só R6; não reabrir B15).** Pattern de composição da lista que E9 consome; ~1–1,5d; B15 já entregue o contrato sort. (2026-07-24, roadmap-item.)
+- **Só relocacionar filtros URL existentes — não inventar where novos.** v1: `region`, `kind`, `trend`, `coverage`, `priority` no header; `q` fica na barra (texto livre).
+- **Sort = clique no rótulo/chevron (B15); filtro = funil irmão no mesmo `TableHead` → Popover uniforme.** Opções navegam por `CampaignTransitionAnchor`. **Rejeitado:** NativeSelect inline no header; híbrido NativeSelect+Popover.
+- **Desktop: removes selects duplicados da fileira superior.** Barra slim = busca + resumo + Limpar (+ Cenário).
+- **Mobile: selects empilhados** (não disclosure). **Rejeitado:** inventar Collapsible neste item.
+- **Prioridade no header da coluna Município** com trigger **rotulado** "Prioridade" (discoverability pós-critique).
+- **Coluna "Assessoria" removida (2026-07-25, produto):** ela repetia a informação de "Assessores". O param `coverage` sobrevive — ordena a coluna Assessores (por nº de assessores, label de sort "Assessores") e filtra "Com/Sem assessor" no mesmo popover, acima da lista de assessores; no mobile continua como select próprio ("Assessoria"). Segue **não** sendo a coluna "Cobertura da meta" (E8).
+- **i18n e naming:** `MunicipalityHeaderFilter`, `MunicipalityFilterParam`, estender `MunicipalitySortableHead`; labels pt-BR.
 
-## Questões em aberto
+## Questões em aberto (resolvidas na implementação)
 
-- **Controle no header: `NativeSelect` compacto vs ícone Filter → Popover?** **Opções:** A) NativeSelect sob/ao lado do rótulo | B) ícone Filter + Popover com as opções | C) DropdownMenu. **Recomendação:** **B** se a largura da coluna apertar (TI é longo); **A** em colunas curtas (Tipo, Cobertura) — decidir no craft medindo a tabela real; default de implementação: Popover+lista para TI, NativeSelect para enums curtos. _(assumido — validar no craft)_
-- **Fill-in Cenário: aterrar antes ou depois de B16?** **Opções:** A) Cenário primeiro (barra ainda “cheia”) | B) B16 primeiro (barra slim; Cenário encaixa na slim) | C) mesmo PR. **Recomendação:** **B** ou **C** se o implementador pegar os dois — B16 redefine o destino da barra; o plano de Cenário já prevê fileira de `MunicipalityFilters` (atualizar destino → slim bar no craft). _(assumido)_
-- **Label do filtro `coverage` no header Cobertura: “Assessoria” vs “Cobertura”?** **Opções:** A) manter “Assessoria” (copy atual do select) | B) “Cobertura” alinhado ao header | C) “Com assessor”. **Recomendação:** **B** no header (contexto da coluna); opções internas `Com assessor` / `Sem assessor` inalteradas.
+- **Controle no header:** Popover uniforme (confirmado com produto na sessão de plano).
+- **Fill-in Cenário:** fora deste PR — barra slim reserva o slot.
+- **Label coverage:** sort/coluna **Assessores**; select mobile **Assessoria** (auditoria pós-E8).
 
-## Abordagem proposta
+## Abordagem proposta (as-built)
 
 ```mermaid
 flowchart LR
   URL["MunicipalityListState\nURL where + sort/dir"]
-  Slim["MunicipalityFilters slim\nq + Limpar + Cenário + mobile"]
-  Head["MunicipalityColumnHead\nsort + filter"]
+  Slim["MunicipalityFilters slim\nq + resumo + Limpar + mobile"]
+  Head["MunicipalitySortableHead\n+ MunicipalityHeaderFilter"]
   List["MunicipalityList desktop"]
   Loader["loadMunicipalityListPageBundle"]
   Pending["CampaignListPendingBoundary"]
@@ -97,48 +94,61 @@ flowchart LR
 
 Componentes:
 
-- **`MunicipalityColumnHead`** (novo ou extensão de `MunicipalitySortableHead` em `src/components/campaign/`): `TableHead` com (1) âncora de sort B15 e (2) slot opcional de filtro (`filterParam` + options). Cliente leve; reusa `buildMunicipalityListHref` / `commitNavigation` pattern / pending compartilhado. Depth: **não** extrair factory multi-lista (&lt;3 call sites).
-- **`MunicipalityList.tsx`**: passar state + wire dos filtros por coluna; coluna Assessores permanece `TableHead` estático (sem filtro/sort).
-- **`MunicipalityFilters.tsx`**: desktop slim (busca + Limpar [+ Cenário]); em `md:hidden` (ou disclosure) manter os NativeSelects de `region`/`kind`/… espelhando a URL; remover duplicata desktop dos params migrados.
-- **`municipalityUi.ts`**: sem mudança de contrato URL se os params forem os mesmos; helpers opcionais `municipalityHeaderFilterOptions` para labels/options por param (evitar duplicar arrays no JSX).
-- **Migration:** Sem migration, sem collection, sem server action.
+- **`MunicipalityHeaderFilter`** — funil / FunnelPlus + Popover; optimistic enquanto pending; busca no Popover quando ≥8 opções; Prioridade rotulada.
+- **`MunicipalitySortableHead`** — prop opcional `filterParam`.
+- **`MunicipalityFilters`** — desktop slim; mobile `md:hidden` a partir de `municipalityFilterDefinitions`.
+- **`municipalityUi.ts`** — `municipalityFilterDefinitions`, `applyMunicipalityFilterValue`, `buildMunicipalityFilterHref`, `municipalityListFilterParts`, `formatMunicipalityActiveFiltersSummary`.
 
 ## Dependências
 
-- **Dura:** nenhuma de item aberto — **B15 ✓** (sort no header + `sort`/`dir`) é pré-requisito já entregue.
-- **Suaves:** fill-in Cenário (destino = barra slim); fill-in ícone prioridade (célula do nome); **E9** (herda o pattern).
+- **Dura:** nenhuma — **B15 ✓** já entregue.
+- **Suaves:** fill-in Cenário (destino = barra slim); fill-in ícone prioridade; **E9** (herda o pattern).
 
 ## Não escopo
 
-- Novos params de filtro (faixa de votos, frescor, rank) — produto futuro / E9 se a fila pedir.
-- Sort na coluna Assessores; filtro “por assessor nomeado” (pessoa) — fora; coverage binário basta.
-- Unificar headers filtráveis em apoiadores/lideranças — fill-in sob demanda (3º call site).
+- Novos params de filtro (faixa de votos, frescor, rank) — produto futuro / E9.
+- Sort na coluna Assessores; filtro “por assessor nomeado”.
+- Unificar headers filtráveis em apoiadores/lideranças.
 - Redesign do overview / mapa; R6 glossário.
-- Lib de data-grid / reorder/resize de colunas — avaliação dedicada em [reordenar-colunas-lista-municipios.md](reordenar-colunas-lista-municipios.md) (fora de escopo com gatilho; não B17 agora).
+- Lib de data-grid / reorder de colunas.
 
 ## Rabbit holes
 
-- **Spreadsheet mode.** Header filter+sort ≠ grade editável. **Mitigação:** só navegação URL + B9 Popovers existentes; ban TanStack/Editable grid neste item.
-- **Duplicar pending / segundo `useTransition`.** **Mitigação:** reusar `useCampaignListPending` / `CampaignTransitionAnchor` como B15/filtros-auto.
-- **Abstrair `FilterableSortableHead` genérico cedo.** **Mitigação:** composição local na lista de municípios; extrair no 2º consumidor.
-- **Reescrever o fill-in Cenário como B16.** **Mitigação:** Cenário continua plano próprio; B16 só reserva o slot na slim bar.
+- Spreadsheet mode · Mitigação: só navegação URL + B9 Popovers.
+- Segundo `useTransition` · Mitigação: `useCampaignListPending` / `CampaignTransitionAnchor`.
+- Abstrair `FilterableSortableHead` genérico · Mitigação: 1 call site.
+- Disclosure mobile novo · Mitigação: selects empilhados.
 
 ## Adiado com gatilho
 
-- **Filtro numérico / por faixa em Votos estimados ou 2022.** Revisitar quando: pedido explícito da mesa ou E9 exigir faceta na fila.
-- **Filtro “por assessor” (ID de `campaignUser`).** Revisitar quando: coordenação pedir “só os meus” além do scope de advisor já imposto pelo access.
-- **Shared head filtrável em `components/ui`.** Revisitar quando: 2ª lista `/campanha` pedir o mesmo padrão.
+- Filtro numérico / por faixa · pedido mesa ou E9.
+- Filtro “por assessor” (ID) · coordenação pedir além do scope de advisor.
+- Shared head filtrável em `components/ui` · 2ª lista pedir o padrão.
+- Chips dismissíveis no resumo (P2 critique) · atrito medido no onboarding.
+
+## Notas de implementação (2026-07-24)
+
+- **Auditoria pré-implementação:** mapa de colunas defasado pós-E8 (Assessoria ≠ Cobertura da meta); “disclosure mobile” inexistente → selects empilhados; default sort = `votos` desc (A11).
+- **Affordance:** Popover uniforme (não híbrido). Escopo: só B16 (Cenário fora).
+- **Critique** (dual-agent, score 25/40): 0 P0; 3 P1 fechados (optimistic control, Prioridade rotulada, busca no Popover de TI); P2 summary wrap mitigado. Snapshot: `.impeccable/critique/2026-07-25T02-37-03Z__src-components-campaign-municipalitylist-tsx.md`.
+- **Verificação:** `tsc`/`lint`/`knip`/`test:unit` (328)/`test:int` (verde; 2 timeouts flaky na 1ª passada, ok no retry)/`build` local. Aikido 0 findings nos arquivos editados. E2E `municip` bloqueado por ambiente da máquina (`ENOSPC` → Postgres local caiu / porta 5432 indisponível); não é regressão de produto deste item — revalidar com `pnpm test:e2e` quando o disco/DB local estabilizar.
+
+## Ajustes pós-uso (2026-07-25)
+
+- **Bug do clique que se auto-desfazia** (Prioritária não aplicava; TI selecionado não desmarcava): o `href` de cada opção era derivado do estado **otimista**, e o `onPointerUp` aplicava o otimista **antes** do `click` — o clique navegava para o estado já invertido. Regra agora: `CampaignTransitionAnchor` expõe `onNavigate`, chamado **depois** de o clique fixar o `href`; o otimista é derivado (`{ baseKey, next }` comparado com a chave do estado da URL), sem `useEffect` correndo contra a transição.
+- **Opções cruzadas com os filtros ativos:** `loadMunicipalityListFilterFacets` (em `municipalityPageData.ts`) devolve slugs/territórios/assessores ainda alcançáveis. Cada facet aplica todos os outros filtros e **omite o próprio param** (o conjunto OR continua somável); valores selecionados entram na união para poderem ser desfeitos; `where` idênticos colapsam em uma query (caso comum = 1 leitura).
+- **Peso dos headers:** "Assessores" e "Cobertura da meta" passaram a `font-normal`, igualando os headers ordenáveis inativos.
+- **Rolagem e header fixo:** a tabela não é mais um scroller próprio — `Table` ganhou `containerClassName` e a lista passa `overflow-x-visible`, de modo que o único scroller vertical é o da área de conteúdo (`campaign-content-scroll`) e o `sticky top-0` dos `th` resolve contra ele. Fundo opaco (`bg-background`) + `shadow-[inset_0_-1px_0_var(--border)]` no lugar da borda da `tr` (que não acompanha células sticky) e cantos arredondados nas células das pontas, já que o wrapper perdeu o `overflow-hidden`. Trade-off aceito: uma tabela mais larga que a viewport passa a rolar junto com a página em vez de ter barra própria.
+- **Tendência multi-escolha:** `state.trend` virou `state.trends[]` (param `trend` repetido). Regra travada: **todas ou nenhuma selecionadas = "todas"** — o `where` só restringe com `0 < n < 3` (senão municípios sem tendência registrada sumiriam), e o mesmo teste governa o ícone "filtro ativo" e o resumo. Sem opção "Todas" no popover. Mobile ganhou `MobileMultiFilterField` (escolher adiciona, escolher de novo remove), agora compartilhado com Assessores. `applyMunicipalityFilterValue` sobrou só para `kind` e virou `applyMunicipalityKindFilter`.
+- **Empty state só nas linhas:** o overview e a linha de header (com os filtros) continuam montados; `MunicipalityListEmptyState` entra numa `tr` com `colSpan` no `tbody` (e no lugar dos cards no mobile). Para isso `loadMunicipalityListPageBundle` passou a devolver overview **zerado** em vez de `null` quando o escopo filtrado é vazio (int test atualizado). Sem isso o usuário ficava sem como desfazer o filtro que zerou a lista.
+- **Verificação visual:** Playwright dirigido contra um dev server no banco de teste — header `position: sticky` colado no topo com o scroller em 900px, `table-container` com `overflow: visible` e sem scroll vertical próprio; empty state com overview + header + 6 botões de filtro presentes; popover de Tendência com as 3 opções e URL `?trend=favoravel&trend=neutra` após dois cliques.
 
 ## Referências
 
 - `docs/roadmap.md` (B16; B15 ✓; fill-ins Cenário / prioridade; E9)
-- [ordenacao-colunas-lista-municipios.md](ordenacao-colunas-lista-municipios.md) (B15 — contrato sort/header)
-- [filtros-auto-pracas.md](filtros-auto-pracas.md) (URL + pending + debounce busca)
-- [cenario-junto-filtros-municipios.md](cenario-junto-filtros-municipios.md) (destino da barra)
-- [icone-prioridade-lista-municipios.md](icone-prioridade-lista-municipios.md) (coluna nome)
-- [fila-de-alocacao.md](fila-de-alocacao.md) (E9 — herda lista)
-- `src/components/campaign/MunicipalityList.tsx`, `MunicipalitySortableHead.tsx`, `MunicipalityFilters.tsx`
-- `src/utilities/municipalityUi.ts` — `MunicipalityListState`, href/where
-- `src/components/campaign/CampaignListPending.tsx` — pending compartilhado
-- AGENTS.md — naming EN / strings pt-BR; Campaign auth; sem migration neste item
-- `PRODUCT.md` / `DESIGN.md` — Field Desk, Feel the action, anti spreadsheet
+- [ordenacao-colunas-lista-municipios.md](ordenacao-colunas-lista-municipios.md) (B15)
+- [filtros-auto-pracas.md](filtros-auto-pracas.md)
+- [cenario-junto-filtros-municipios.md](cenario-junto-filtros-municipios.md)
+- `src/components/campaign/MunicipalityList.tsx`, `MunicipalitySortableHead.tsx`, `MunicipalityHeaderFilter.tsx`, `MunicipalityFilters.tsx`
+- `src/utilities/municipalityUi.ts`
+- `PRODUCT.md` / `DESIGN.md`

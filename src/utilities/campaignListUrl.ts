@@ -3,6 +3,18 @@ export type RawSearchParams = Record<string, string | string[] | undefined>
 export const firstValue = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value
 
+/** Flatten a repeated query param into distinct trimmed values. */
+export const allParamValues = (value: string | string[] | undefined): string[] => {
+  if (value === undefined) return []
+  const cells = Array.isArray(value) ? value : [value]
+  const seen = new Set<string>()
+  for (const cell of cells) {
+    const trimmed = cell.trim()
+    if (trimmed) seen.add(trimmed)
+  }
+  return [...seen]
+}
+
 export const normalizedText = (value: string | undefined): string | undefined => {
   if (typeof value !== 'string') return undefined
   const normalized = value.trim()
