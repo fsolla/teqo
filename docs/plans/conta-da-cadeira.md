@@ -130,6 +130,7 @@ Componentes:
 
 - **Delta semanal persistido.** Revisitar quando C12 entregar trajetória (gatilho: primeira semana com 2 snapshots).
 - **Meta por cenário (pessimista/central/otimista) × cobertura tripla.** Resolvido nesta sessão como escopo do próprio E8 (não mais adiado): cobertura é computada para os três cenários no servidor, seletor de cenário fica no cliente (`MunicipalityEstimateScenarioProvider`, default `central`).
+- **Modelo de disclosure do grid de diagnóstico (`GoalAccountMetric`) ainda não "assentado" para mais métricas.** O `/impeccable critique` pós-hardening (26/40; ver Follow-up #3) levantou, em "Questions to Consider", se hover/foco continua o mecanismo certo de explicação conforme **E9/E10/B13/E11/E12/E13/E14** adicionam métricas a este mesmo card, e se "Captura"/"Share intracampo" deveriam virar um único número com toggle de denominador em vez de dois números cada um explicando o outro por tooltip. Nenhum achado adicional confirmado nesta sessão (é pergunta de design, não bug) — **não registrado como item**; gatilho: revisitar quando a próxima entrega de E9–E14 for adicionar uma 5ª métrica a esta `dl`/grid (nesse ponto, decidir layout/idioma de disclosure antes de replicar `GoalAccountMetric` de novo). Largura tablet/foldable intermediária também não testada — mesmo gatilho.
 
 ## Referências
 
