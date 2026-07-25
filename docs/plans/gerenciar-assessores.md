@@ -139,6 +139,7 @@ Componentes:
 - **Delete / desativar assessor na UI.** Revisitar quando: CG pedir remoção recorrente **e** houver regra clara para municípios órfãos (reassign obrigatório).
 - **Create com municípios no mesmo submit.** Revisitar quando: onboarding medir ≥2 cliques extras como atrito real pós-R6.
 - **Nav mobile dedicado.** Revisitar se bottom nav for redesenhado (hoje teto 5).
+- **N+1 no batch de atribuição de território/ZE (`setAdvisorMunicipalitiesBatchRecord`).** Um `findByID` por município ao adicionar/remover um território de identidade ou zona eleitoral inteira via chip agregado (achado do `/simplify` pós-entrega). O fix natural (`payload.find` com `id: { in: [...] }`) não tem precedente no código e mudaria o comportamento de erro para IDs inexistentes — não vale trocar sem necessidade real. Revisitar quando: a base de assessores/territórios crescer o suficiente para o lote ficar perceptivelmente lento, ou o usuário reportar demora ao atribuir um território completo.
 
 ## Referências
 
