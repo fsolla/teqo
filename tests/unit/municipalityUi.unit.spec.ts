@@ -173,10 +173,20 @@ describe('municipality list header filters (B16+)', () => {
       and: [{ 'politicalTrend.status': { in: ['favoravel'] } }],
     })
 
+    // "Todas" has a single encoding — absent — so the URL never carries params
+    // that filter nothing while the funnel reports itself inactive.
     const all = parseMunicipalityListParams({ trend: ['favoravel', 'neutra', 'desfavoravel'] })
+    expect(all.trends).toBeUndefined()
     expect(isMunicipalityColumnFilterActive(all, 'trend')).toBe(false)
     expect(buildMunicipalityListWhere(all)).toEqual({})
     expect(formatMunicipalityActiveFiltersSummary(all)).toBeNull()
+    expect(buildMunicipalityFilterHref(all)).toBe('/campanha/municipios')
+
+    // Ticking the last unchecked box lands on that same canonical state.
+    const twoSelected = parseMunicipalityListParams({ trend: ['favoravel', 'neutra'] })
+    expect(
+      toggleMunicipalityMultiFilterValue(twoSelected, 'trend', 'desfavoravel').trends,
+    ).toBeUndefined()
 
     const none = toggleMunicipalityMultiFilterValue(one, 'trend', 'favoravel')
     expect(none.trends).toBeUndefined()

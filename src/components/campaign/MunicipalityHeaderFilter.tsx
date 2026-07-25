@@ -39,7 +39,7 @@ type MunicipalityHeaderFilterProps = {
   showPriorityFilter?: boolean
 }
 
-/** Above this many options the popover gets a search box and a Limpar action. */
+/** Above this many options the popover gets a search box. */
 const SEARCHABLE_OPTION_THRESHOLD = 8
 
 const multiParamByFilter = {
@@ -170,7 +170,7 @@ export const MunicipalityHeaderFilter = ({
           : viewState
 
   const hasSelection = selectedMulti.length > 0 || exclusiveRows.some((row) => row.selected)
-  const showClear = searchable && hasSelection
+  const showClear = hasSelection
 
   return (
     <Popover
@@ -264,21 +264,16 @@ export const MunicipalityHeaderFilter = ({
             </FilterOptionLink>
           ) : null}
 
-          {definition.selection === 'single' || definition.selection === 'toggle'
+          {/* Tipo is the only single-select column; com/sem assessor rides along
+              as an exclusive row of the Assessores column. */}
+          {definition.selection === 'single'
             ? visibleOptions.map((option) => {
-                const current =
-                  filterParam === 'kind' || filterParam === 'coverage'
-                    ? getMunicipalitySingleFilterValue(viewState, filterParam)
-                    : undefined
-                const next =
-                  definition.selection === 'toggle'
-                    ? toggleMunicipalityExclusiveFilterValue(viewState, 'coverage', option.value)
-                    : applyMunicipalityKindFilter(viewState, option.value)
+                const next = applyMunicipalityKindFilter(viewState, option.value)
                 return (
                   <FilterOptionLink
                     key={option.value}
                     href={buildMunicipalityFilterHref(next)}
-                    selected={current === option.value}
+                    selected={getMunicipalitySingleFilterValue(viewState, 'kind') === option.value}
                     onChoose={() => commit(next)}
                   >
                     {option.label}

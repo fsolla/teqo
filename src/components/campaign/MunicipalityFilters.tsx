@@ -71,6 +71,8 @@ const MobileMultiFilterField = ({
 type MunicipalityFiltersProps = {
   state: MunicipalityListState
   showStaffFilters: boolean
+  /** Territory options already narrowed by the other active filters. */
+  regionFilterOptions: MunicipalityFilterOption[]
   /** Advisor options already narrowed by the other active filters. */
   advisorFilterOptions: MunicipalityFilterOption[]
 }
@@ -78,6 +80,7 @@ type MunicipalityFiltersProps = {
 export const MunicipalityFilters = ({
   state,
   showStaffFilters,
+  regionFilterOptions,
   advisorFilterOptions,
 }: MunicipalityFiltersProps) => {
   const router = useRouter()
@@ -229,6 +232,24 @@ export const MunicipalityFilters = ({
               <NativeSelectOption value="alta">Prioritária</NativeSelectOption>
             </NativeSelect>
           </Field>
+        ) : null}
+        {regionFilterOptions.length ? (
+          <MobileMultiFilterField
+            id="municipality-filter-region"
+            label="Território"
+            emptyLabel="Todos"
+            options={regionFilterOptions}
+            selected={state.regions ?? []}
+            onToggle={(value) =>
+              navigateTo(
+                toggleMunicipalityMultiFilterValue(
+                  { ...state, q: normalizedText(search) },
+                  'region',
+                  value,
+                ),
+              )
+            }
+          />
         ) : null}
         {mobileFilterDefinitions.map((definition) => {
           const value =

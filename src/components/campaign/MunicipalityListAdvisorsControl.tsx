@@ -17,6 +17,8 @@ type MunicipalityListAdvisorsControlProps = {
   municipalityID: number
   municipalitySlug: string
   currentAdvisorIDs: number[]
+  /** Raises the empty state to "Sem responsável" — see `MissingAdvisorBadge`. */
+  isPriority: boolean
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>
   options: EligibleAdvisorOption[]
   formAction: (
@@ -29,6 +31,7 @@ export const MunicipalityListAdvisorsControl = ({
   municipalityID,
   municipalitySlug,
   currentAdvisorIDs,
+  isPriority,
   advisorNamesById,
   options,
   formAction,
@@ -56,11 +59,7 @@ export const MunicipalityListAdvisorsControl = ({
           className="min-h-11 rounded-md px-1 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Editar assessores"
         >
-          {names.length ? (
-            <MunicipalityAdvisorAvatarStack advisors={names} />
-          ) : (
-            <span className="text-muted-foreground">Sem assessor</span>
-          )}
+          <MunicipalityAdvisorAvatarStack advisors={names} isPriority={isPriority} />
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80">

@@ -100,6 +100,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       key={buildMunicipalityFiltersKey(state)}
       state={state}
       showStaffFilters={isStaffView}
+      regionFilterOptions={columnFilterOptions.region}
       advisorFilterOptions={columnFilterOptions.advisor}
     />
   )

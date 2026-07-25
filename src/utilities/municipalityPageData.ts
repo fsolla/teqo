@@ -90,11 +90,12 @@ const emptyMunicipalityListFilterFacets: MunicipalityListFilterFacets = {
 type MunicipalityFacetRow = Pick<Municipality, 'slug' | 'region' | 'advisors'>
 
 /**
- * Each facet applies every OTHER active filter (so the popover only offers values
- * that still return rows) while omitting its own param (so the user can keep
- * adding to the OR set). Identical `where` shapes collapse into one read, and the
- * already-loaded scope seeds the unfiltered shape — with no multi-select active
- * (the common case) the facets cost no query at all.
+ * Each facet applies every filter owned by ANOTHER popover (so it only offers
+ * values that still return rows) while omitting the ones its own popover owns —
+ * including the checkbox/toggle sharing that popover, or selecting "Prioritária"
+ * / "Sem assessor" would empty the very list it lives in. Identical `where`
+ * shapes collapse into one read, and the already-loaded scope seeds the
+ * unfiltered shape — with no filter active the facets cost no query at all.
  */
 const loadMunicipalityListFilterFacets = async (
   payload: Payload,
@@ -129,9 +130,9 @@ const loadMunicipalityListFilterFacets = async (
   }
 
   const [slugRows, regionRows, advisorRows] = await Promise.all([
-    facetRows({ slugs: undefined }),
+    facetRows({ slugs: undefined, priority: undefined }),
     facetRows({ regions: undefined }),
-    facetRows({ advisors: undefined }),
+    facetRows({ advisors: undefined, coverage: undefined }),
   ])
 
   // Selected values are unioned in: a selection must stay visible to be undone.

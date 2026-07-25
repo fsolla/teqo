@@ -2,7 +2,10 @@ import { CircleAlertIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import { CampaignTransitionAnchor } from '@/components/campaign/CampaignListPending'
-import { MunicipalityAdvisorAvatarStack } from '@/components/campaign/MunicipalityAdvisorAvatarStack'
+import {
+  MissingAdvisorBadge,
+  MunicipalityAdvisorAvatarStack,
+} from '@/components/campaign/MunicipalityAdvisorAvatarStack'
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/MunicipalityListAdvisorsControl'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/MunicipalityListExpectedVotesControl'
 import { MunicipalityListGoalCoverageCell } from '@/components/campaign/MunicipalityListGoalCoverageCell'
@@ -39,7 +42,6 @@ import {
   isMunicipalitySignalCold,
   MUNICIPALITY_COLD_SIGNAL_DAYS,
   municipalityKindLabels,
-  municipalityListCoverageLabels,
   municipalityPriorityLabels,
   municipalitySignalAgeInDays,
   resolveMunicipalityListSort,
@@ -116,8 +118,8 @@ const VotePositionReadout = ({
  * most municípios are past the 21-day threshold, and painting them all red
  * would drown the one state that really is an error in this list — a priority
  * município with nobody answering for it. Same reason it stays text with an
- * icon instead of a third badge: the row already carries the priority and
- * assessoria pills.
+ * icon instead of a third badge: the row already carries the priority pill and,
+ * when it applies, the missing-advisor one.
  */
 const SignalAgeReadout = ({
   lastSignalAt,
@@ -156,20 +158,6 @@ const SignalAgeReadout = ({
     </div>
   )
 }
-
-/**
- * E9: a priority município with nobody answering for it is the queue's
- * loudest row, so it reads "Sem responsável" in destructive — the same words
- * the overview's coluna da vergonha uses to count them. Non-priority ones
- * keep the softer pending tone: they are a gap, not a fire. Rendered in place
- * of the advisor names, so it only ever states an absence.
- */
-const MissingAdvisorBadge = ({ isPriority }: { isPriority: boolean }) => (
-  <Badge variant={isPriority ? 'destructive' : 'estimate-pending'}>
-    <CircleAlertIcon data-icon="inline-start" aria-hidden="true" />
-    {isPriority ? 'Sem responsável' : municipalityListCoverageLabels.sem_assessor}
-  </Badge>
-)
 
 /** Replaces only the rows: the filter header row and the overview stay put. */
 const MunicipalityListEmptyState = ({ state }: { state: MunicipalityListState }) => (
@@ -243,6 +231,7 @@ export const MunicipalityList = ({
         {municipalities.map((municipality) => {
           const names = advisorNames(municipality, advisorNamesById)
           const position = municipality.votePosition2022
+          const isPriority = municipality.priority === 'alta'
           return (
             <article key={municipality.id} className="flex flex-col gap-3 rounded-xl border p-4">
               <div className="flex items-start justify-between gap-2">
@@ -253,7 +242,7 @@ export const MunicipalityList = ({
                   </p>
                   {position ? <VotePositionReadout position={position} layout="card" /> : null}
                 </div>
-                {municipality.priority === 'alta' && isStaffView ? (
+                {isPriority && isStaffView ? (
                   <Badge variant="destructive">{municipalityPriorityLabels.alta}</Badge>
                 ) : null}
               </div>
@@ -303,6 +292,7 @@ export const MunicipalityList = ({
                           municipalityID={municipality.id}
                           municipalitySlug={municipality.slug}
                           currentAdvisorIDs={municipality.advisorIDs}
+                          isPriority={isPriority}
                           advisorNamesById={advisorNamesById}
                           options={advisorOptions}
                           formAction={advisorsFormAction}
@@ -310,7 +300,7 @@ export const MunicipalityList = ({
                       ) : names.length ? (
                         names.join(', ')
                       ) : (
-                        <MissingAdvisorBadge isPriority={municipality.priority === 'alta'} />
+                        <MissingAdvisorBadge isPriority={isPriority} />
                       )}
                     </dd>
                   </div>
@@ -407,6 +397,7 @@ export const MunicipalityList = ({
               </TableRow>
             ) : null}
             {municipalities.map((municipality) => {
+              const isPriority = municipality.priority === 'alta'
               return (
                 <TableRow key={municipality.id}>
                   <TableCell className="max-w-52 whitespace-normal">
@@ -417,7 +408,7 @@ export const MunicipalityList = ({
                       >
                         {municipality.name}
                       </Link>
-                      {municipality.priority === 'alta' && isStaffView ? (
+                      {isPriority && isStaffView ? (
                         <Badge variant="destructive">{municipalityPriorityLabels.alta}</Badge>
                       ) : null}
                     </div>
@@ -444,16 +435,16 @@ export const MunicipalityList = ({
                             municipalityID={municipality.id}
                             municipalitySlug={municipality.slug}
                             currentAdvisorIDs={municipality.advisorIDs}
+                            isPriority={isPriority}
                             advisorNamesById={advisorNamesById}
                             options={advisorOptions}
                             formAction={advisorsFormAction}
                           />
-                        ) : municipality.advisorIDs.length ? (
+                        ) : (
                           <MunicipalityAdvisorAvatarStack
                             advisors={advisorEntries(municipality, advisorNamesById)}
+                            isPriority={isPriority}
                           />
-                        ) : (
-                          <MissingAdvisorBadge isPriority={municipality.priority === 'alta'} />
                         )}
                       </TableCell>
                       <TableCell>

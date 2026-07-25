@@ -330,6 +330,38 @@ describe('loadMunicipalityListPageBundle', () => {
     expect(conflicting.filterFacets.slugs).toContain(outsideRegion.slug)
   })
 
+  it('keeps the options of filters that share a popover with the applied one', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const priorityMunicipality = await fixtures.getMunicipality()
+    await payload.update({
+      collection: 'municipality',
+      id: priorityMunicipality.id,
+      data: { priority: 'alta' },
+      overrideAccess: true,
+    })
+    const covered = await fixtures.getMunicipality(
+      municipalityCatalog.find((entry) => entry.slug !== priorityMunicipality.slug)!.slug,
+    )
+    await fixtures.assignMunicipalityAdvisors(covered.id, [advisor.id])
+
+    // "Prioritária" lives in the Município popover, so it must not hide the
+    // municipalities that popover is there to offer.
+    const byPriority = await loadMunicipalityListPageBundle(payload, coordinator, {
+      priority: 'alta',
+    })
+    expect(byPriority.municipalities.every((row) => row.priority === 'alta')).toBe(true)
+    expect(byPriority.filterFacets.slugs).toContain(covered.slug)
+
+    // Same for the "Sem assessor" toggle inside the Assessores popover: it would
+    // otherwise leave that popover with nobody to pick.
+    const withoutAdvisor = await loadMunicipalityListPageBundle(payload, coordinator, {
+      coverage: 'sem_assessor',
+    })
+    expect(withoutAdvisor.filterFacets.advisorIDs).toContain(advisor.id)
+  })
+
   it('returns an empty bundle for leaders (municipality list lockdown)', async () => {
     const fixtures = campaignFixtures()
     const municipality = await fixtures.getMunicipality()

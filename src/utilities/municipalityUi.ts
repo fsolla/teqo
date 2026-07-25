@@ -95,7 +95,10 @@ export type MunicipalityListState = {
   kind?: Municipality['kind']
   coverage?: 'com_assessor' | 'sem_assessor'
   priority?: 'alta'
-  /** Multi-select (OR) political trends. All or none selected means "todas". */
+  /**
+   * Multi-select (OR) political trends. Never holds the full set: "todas" is
+   * encoded as absent, canonicalized by `parseMunicipalityListParams`.
+   */
   trends?: PoliticalTrendStatus[]
   /** Candidate number for the map comparison mode (does not filter the list). */
   compare?: number
@@ -268,6 +271,7 @@ const parseAdvisorsParam = (raw: string | string[] | undefined): number[] => {
 
 const politicalTrendStatusSet = new Set<string>(Object.keys(politicalTrendLabels))
 
+/** Selecting every trend means "todas", which is the same thing as selecting none. */
 const parseTrendsParam = (raw: string | string[] | undefined): PoliticalTrendStatus[] => {
   const trends: PoliticalTrendStatus[] = []
   for (const token of allParamValues(raw)) {
@@ -276,7 +280,7 @@ const parseTrendsParam = (raw: string | string[] | undefined): PoliticalTrendSta
     if (trends.includes(trend)) continue
     trends.push(trend)
   }
-  return trends
+  return trends.length < politicalTrendStatusSet.size ? trends : []
 }
 
 const municipalityListStateToRawParams = (
@@ -354,8 +358,7 @@ export const buildMunicipalityListWhere = (state: MunicipalityListState): Where 
     })
   }
   if (state.priority) filters.push({ priority: { equals: state.priority } })
-  const trends = narrowingMunicipalityTrends(state)
-  if (trends.length) filters.push({ 'politicalTrend.status': { in: trends } })
+  if (state.trends?.length) filters.push({ 'politicalTrend.status': { in: state.trends } })
 
   return filters.length ? { and: filters } : {}
 }
@@ -381,8 +384,8 @@ export const buildMunicipalityListSearchParams = (
   if (canonicalState.priority) params.set('priority', canonicalState.priority)
   for (const trend of canonicalState.trends ?? []) params.append('trend', trend)
   if (canonicalState.compare) params.set('compare', String(canonicalState.compare))
-  // Omit the mesa default pair (votos+desc). Keep `sort` whenever the pair is
-  // non-default so `dir` is never orphaned (e.g. votos+asc → sort=votos&dir=asc).
+  // Omit the default pair (staff: deficit+desc). Keep `sort` whenever the pair
+  // is non-default so `dir` is never orphaned (e.g. votos+asc → sort=votos&dir=asc).
   if (!isListDefault) {
     params.set('sort', resolvedSort)
     if (resolvedDir !== defaultMunicipalityListSortDir(resolvedSort)) {
@@ -692,14 +695,8 @@ export const isMunicipalityColumnFilterActive = (
     case 'coverage':
       return Boolean(state.coverage)
     case 'trend':
-      return narrowingMunicipalityTrends(state).length > 0
+      return Boolean(state.trends?.length)
   }
-}
-
-/** All (or no) trends selected means "todas", so neither narrows the list. */
-const narrowingMunicipalityTrends = (state: MunicipalityListState): PoliticalTrendStatus[] => {
-  const trends = state.trends ?? []
-  return trends.length < politicalTrendStatusSet.size ? trends : []
 }
 
 /** "Irecê, Recôncavo +3" — the summary never grows past two names per filter. */
@@ -720,10 +717,9 @@ export const formatMunicipalityActiveFiltersSummary = (
     parts.push(state.advisors.length === 1 ? '1 assessor' : `${state.advisors.length} assessores`)
   }
   if (state.coverage) parts.push(municipalityListCoverageLabels[state.coverage])
-  const trends = narrowingMunicipalityTrends(state)
-  if (trends.length) {
+  if (state.trends?.length) {
     parts.push(
-      `Tendência ${trends.map((trend) => politicalTrendLabels[trend].toLowerCase()).join(', ')}`,
+      `Tendência ${state.trends.map((trend) => politicalTrendLabels[trend].toLowerCase()).join(', ')}`,
     )
   }
   if (state.q) parts.push(`Busca "${state.q}"`)
