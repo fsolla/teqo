@@ -1,11 +1,15 @@
 # Registrar sinal a partir da célula "Último sinal" da lista de municípios
 
-Status: rascunho
+Status: entregue (2026-07-25)
 Atualizado em: 2026-07-25
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B26)
 Impeccable: B — encaixe na célula `lastSignal` de `/campanha/municipios` (tabela desktop + card mobile); sem rota nova de UI
 Appetite: ~0,75 dia eng; 1 controle novo + 1 form action + fields compartilhados; sem migration, sem collection, sem endpoint JSON
 Responsável: —
+
+## Revisão de entrega (2026-07-25)
+
+Entregue: `MunicipalitySignalFields` + `MunicipalityListSignalControl` (Popover desktop / Drawer mobile) na coluna "Último sinal"; `createMunicipalityListSignalFormAction` em `municipalityStaffFormActions.ts`; wiring em `MunicipalityList` + `municipios/page.tsx`; e2e dedicado. Correções da auditoria aplicadas: (1) form action no padrão try/catch das irmãs do arquivo — **não** `runCampaignFormAction` (esse arquivo ainda é hand-rolled); (2) sem novo teste int (access já coberto em `campaignMunicipalityUpdate.int.spec.ts`); (3) Drawer controlado sem `DrawerTrigger`. Gate: tsc/lint/format/knip/cycles/unit+int verdes; e2e do fluxo B26 verde; build verde. Aikido: 0 findings nos arquivos novos/editados.
 
 ## Design (Impeccable)
 
@@ -82,7 +86,7 @@ Componentes:
 - **`MunicipalitySignalFields`** (novo, `src/components/campaign/municipality/MunicipalitySignalFields.tsx`): só os campos do sinal (`body` textarea 2 linhas, `signalType` `NativeSelect` + descrição do tipo escolhido, `signalSource` `Input`, `triangulated` checkbox) mais os `fieldErrors` do estado da action. Reusa `municipalitySignalTypes` / `municipalitySignalTypeLabels` / `municipalitySignalTypeDescriptions` de `src/lib/schemas/municipalityUpdate.ts` e os shells `Field`/`FieldLabel`/`FieldError`. Consumido pelas duas variantes (Popover e Drawer) — e é a peça que o `MunicipalityUpdateForm` do detalhe pode passar a reusar depois (ver Adiado com gatilho).
 - **`MunicipalityListSignalControl`** (novo, `src/components/campaign/municipality/MunicipalityListSignalControl.tsx`): client component com prop `variant: 'popover' | 'sheet'`, `useActionState` sobre a form action, `Spinner` + `disabled` no submit, `Alert` de erro, live region `sr-only`, `setOpen(false)` + toast só no sucesso. O gatilho recebe o `SignalAgeReadout` como children — a leitura E9 não é reimplementada.
 - **`MunicipalityList`** (`src/components/campaign/municipality/MunicipalityList.tsx`): a célula `lastSignal` (coluna staff) passa a envolver `SignalAgeReadout` no controle com `variant="popover"`; o card mobile usa `variant="sheet"`. Nova prop `signalFormAction` no mesmo formato das existentes (`MunicipalityStaffFormAction`).
-- **`createMunicipalityListSignalFormAction`** (`src/app/(campaign)/campanha/(app)/municipios/municipalityStaffFormActions.ts`): casca sobre `runCampaignFormAction` — lê `municipalityId`, `body`, `signalType`, `signalSource`, `triangulated` e o `municipalitySlug` do `FormData` (helpers `requiredRelationshipFormValue` / `nullableFormText` / `optionalMunicipalitySlugFromForm` já usados no arquivo), chama `createMunicipalityUpdate({ kind: 'sinal', … })` e `revalidateMunicipalityListPaths({ slug })`. **Depth check:** ao contrário do `createMunicipalityUpdateFormAction` do detalhe (try/catch à mão), esta nasce dentro de `runCampaignFormAction` — o padrão fechado no Pass 2 W4d; a do detalhe fica como está (troca é fill-in de higiene, não deste item).
+- **`createMunicipalityListSignalFormAction`** (`src/app/(campaign)/campanha/(app)/municipios/municipalityStaffFormActions.ts`): casca no padrão try/catch + `mapCampaignFormActionError` das irmãs do arquivo — **não** `runCampaignFormAction` (esse arquivo ainda é hand-rolled; a troca do detalhe/`runCampaignFormAction` continua fill-in de higiene). Lê `municipalityId`, `body`, `signalType`, `signalSource`, `triangulated` e o `municipalitySlug` do `FormData` (helpers `requiredRelationshipFormValue` / `optionalFormText` / `checkboxFormValue` / `optionalMunicipalitySlugFromForm` + `parseMunicipalitySignalType`), chama `createMunicipalityUpdate({ kind: 'sinal', … })` e `revalidateMunicipalityListPaths({ slug })`.
 - **`municipios/page.tsx`**: passa a nova form action para `MunicipalityList`, ao lado de `trendFormAction`/`advisorsFormAction`.
 - **Migration:** nenhuma. `municipalityUpdate` e todos os campos do sinal existem desde o C12; `lastUpdateAt` já é derivado por hook.
 - **Testes:** int cobrindo o access da nova form action (assessor fora da carteira recebe erro e nada é criado; assessor da carteira cria e `lastUpdateAt` muda) em `tests/int/campaignMunicipalityUpdate.int.spec.ts`; e2e em `tests/e2e/campaignMunicipalities.e2e.spec.ts` — abrir a célula na tabela, preencher, submeter, ver a célula virar "hoje".
@@ -113,7 +117,7 @@ Componentes:
 
 - **Shell responsivo compartilhado (Popover ↔ Drawer) para controles de célula.** Revisitar quando: existir o **3º** controle de lista que precise das duas variantes.
 - **Reuso de `MunicipalitySignalFields` dentro do `MunicipalityUpdateForm` do detalhe.** Revisitar quando: este item estiver em produção e os dois blocos de campos tiverem divergido em algum detalhe visível (hoje seriam dois consumidores no mesmo dia — extrair é barato, unificar copy/erros no mesmo passe é que estoura o appetite).
-- **Contexto do último sinal dentro do popover.** Revisitar quando: alguém pedir em uso real "registrei duplicado porque não vi o que já tinha".
+- **Lazy-mount de `Popover`/`Drawer` até o primeiro open** (custo idle do ramo CSS-oculto). Revisitar quando: perfilar a lista com vários controles dual-branch montados e o idle cost aparecer no trace — aplicar em lote nos controles da linha, não só neste.
 
 ## Referências
 

@@ -122,6 +122,55 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(page.getByText(`Assessoria: ${advisor.name}`)).toBeVisible()
   })
 
+  test('coordinator registers a typed signal from the list freshness cell', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const password = fixtures.value('senha')
+    const coordinator = await campaign.payload.create({
+      collection: 'campaignUser',
+      data: {
+        name: fixtures.value('Coordenador Sinal'),
+        email: `${fixtures.value('coordinator-signal')}@example.com`,
+        password,
+        role: 'coordinator',
+      },
+      depth: 0,
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, password)
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+    await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
+
+    const signalTrigger = page.getByRole('button', {
+      name: new RegExp(`Registrar sinal em ${municipality.name}`),
+    })
+    await expect(signalTrigger).toBeVisible()
+    await signalTrigger.click()
+
+    const signalForm = page.locator('[data-slot="popover-content"]')
+    await expect(signalForm).toBeVisible()
+    await signalForm
+      .getByRole('textbox', { name: 'Texto' })
+      .fill('Liderança local reportou visita adversária na feira.')
+    await signalForm.getByLabel('Tipo do sinal').selectOption('visita_adversario')
+    await signalForm
+      .getByRole('textbox', { name: 'Fonte', exact: true })
+      .fill('Liderança local / WhatsApp')
+    await signalForm.getByRole('button', { name: 'Registrar sinal', exact: true }).click()
+
+    await expect(page.getByText('Sinal registrado.', { exact: true })).toBeVisible()
+    await expect(
+      page.getByRole('button', {
+        name: `Registrar sinal em ${municipality.name} — hoje`,
+      }),
+    ).toBeVisible()
+  })
+
   test('advisor scopes municipalities; staff declare and estimate; leader is locked to contacts', async ({
     campaign,
     page,

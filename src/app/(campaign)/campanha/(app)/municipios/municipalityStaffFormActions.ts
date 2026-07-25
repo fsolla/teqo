@@ -5,7 +5,9 @@ import {
   setMunicipalityExpectedVotes,
   setMunicipalityPoliticalTrend,
 } from '@/app/(campaign)/campanha/actions/municipality'
+import { createMunicipalityUpdate } from '@/app/(campaign)/campanha/actions/municipalityUpdate'
 import {
+  checkboxFormValue,
   nullableFormText,
   optionalFormText,
   optionalMunicipalitySlugFromForm,
@@ -14,6 +16,7 @@ import {
   voteEstimateScenarioFromForm,
 } from '@/lib/formData'
 import { parsePoliticalTrendStatusFormValue } from '@/lib/schemas/municipality'
+import { parseMunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 import {
   mapCampaignFormActionError,
   type CampaignFormActionState,
@@ -85,6 +88,31 @@ export const assignMunicipalityAdvisorsFormAction = async (
       safeMessages: ['Somente a coordenação geral ou o candidato designa assessores.'],
       genericMessage:
         'Não foi possível atualizar os assessores. Verifique seu acesso e tente novamente.',
+    })
+  }
+}
+
+export const createMunicipalityListSignalFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> => {
+  try {
+    const municipality = requiredRelationshipFormValue(formData, 'municipalityId')
+
+    await createMunicipalityUpdate({
+      municipality,
+      kind: 'sinal',
+      body: optionalFormText(formData, 'body'),
+      signalType: parseMunicipalitySignalType(optionalFormText(formData, 'signalType')),
+      signalSource: optionalFormText(formData, 'signalSource'),
+      triangulated: checkboxFormValue(formData, 'triangulated'),
+    })
+    revalidateMunicipalityListPaths({ slug: optionalMunicipalitySlugFromForm(formData) })
+    return { status: 'success', message: 'Sinal registrado.' }
+  } catch (error) {
+    return mapCampaignFormActionError({
+      error,
+      genericMessage: 'Não foi possível registrar o sinal. Verifique seu acesso e tente novamente.',
     })
   }
 }
