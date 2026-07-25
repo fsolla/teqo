@@ -1,7 +1,12 @@
 /**
  * Seeds electionTally / electionCandidateVote / electionCandidate from TSE
  * open data (Bahia scope). Default year: 2022 (full ticket). Historical years
- * 2014/2018 import only deputado_federal turno 1 (E2 series).
+ * 2014/2018 import deputado_federal + presidente + governador turno 1 (E2
+ * federal trend series + E8 majoritarian baseline for teto do campo/roll-off
+ * validation across cycles). Skips deputado_estadual for 2014/2018 — no
+ * consumer needs the state-assembly race historically. The country-wide
+ * (non-BA) files are always loaded too — see the inline comment above
+ * `voteBa`/`voteBr` below for why (presidente is BR-scope in TSE's data).
  *
  * Provenance (do not strip):
  * - Portal 2022: https://dadosabertos.tse.jus.br/dataset/resultados-2022
@@ -41,7 +46,7 @@ loadEnv({ path: '.env' })
 
 const config = (await import('../src/payload.config.ts')).default
 const { parseTseCsvBuffer } = await import('../src/lib/electionResultsCsv.ts')
-const { buildElectionResultsFromCsvRows, FEDERAL_ONLY_OFFICES } = await import(
+const { buildElectionResultsFromCsvRows, HISTORICAL_BASELINE_OFFICES } = await import(
   '../src/lib/electionResultsBuild.ts'
 )
 const { downloadToBuffer, readZipEntry } = await import('../src/lib/electionResultsZip.ts')
@@ -151,7 +156,9 @@ const main = async () => {
   const sources = sourcesForYear(year)
   const [votacaoZip, detalheZip, candZip] = await Promise.all(sources.map(ensureCachedZip))
 
-  console.log(`[seed:tse] year=${year} scope=${historicalOnly ? 'deputado_federal T1 BA' : 'full ticket BA'}`)
+  console.log(
+    `[seed:tse] year=${year} scope=${historicalOnly ? 'deputado_federal + presidente + governador T1 BA' : 'full ticket BA'}`,
+  )
   console.log('[seed:tse] provenance:')
   for (const source of [votacaoZip, detalheZip, candZip]) {
     console.log(`  - ${source.url}`)
@@ -161,12 +168,17 @@ const main = async () => {
   const csv = csvNamesForYear(year)
 
   // Sequential: BA vote CSV alone is hundreds of MB; parallel parse spikes peak RAM.
+  // TSE splits "_BA.csv" by unidade eleitoral (UE), not by voter's state: presidente
+  // runs under UE=BR, so its per-município/zona votes+tallies (BA municípios
+  // included) live only in the "_BR.csv" files, never in "_BA.csv" — those
+  // files are always needed once presidente is in scope, historical or not.
+  // candBr registers presidente candidates (also a national/BR-scope race).
   const voteBa = await loadCsvFromZip(votacaoZip.buffer, csv.voteBa)
-  const voteBr = historicalOnly ? [] : await loadCsvFromZip(votacaoZip.buffer, csv.voteBr)
+  const voteBr = await loadCsvFromZip(votacaoZip.buffer, csv.voteBr)
   const detalheBa = await loadCsvFromZip(detalheZip.buffer, csv.detalheBa)
-  const detalheBr = historicalOnly ? [] : await loadCsvFromZip(detalheZip.buffer, csv.detalheBr)
+  const detalheBr = await loadCsvFromZip(detalheZip.buffer, csv.detalheBr)
   const candBa = await loadCsvFromZip(candZip.buffer, csv.candBa)
-  const candBr = historicalOnly ? [] : await loadCsvFromZip(candZip.buffer, csv.candBr)
+  const candBr = await loadCsvFromZip(candZip.buffer, csv.candBr)
 
   const built = buildElectionResultsFromCsvRows({
     voteRows: [...voteBa, ...voteBr],
@@ -174,7 +186,7 @@ const main = async () => {
     candBaRows: candBa,
     candBrRows: candBr,
     year,
-    ...(historicalOnly ? { offices: FEDERAL_ONLY_OFFICES } : {}),
+    ...(historicalOnly ? { offices: HISTORICAL_BASELINE_OFFICES } : {}),
   })
 
   if (built.unknownMunicipalities.length > 0) {

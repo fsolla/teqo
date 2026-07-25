@@ -17,6 +17,8 @@ import {
 } from '@/lib/electionResults'
 import { loadTseFixtureResults, loadTseFixtureResultsForYear, TSE_FIXTURE_EXPECTED } from '../helpers/tseFixtures'
 import { FEDERAL_ONLY_OFFICES } from '@/lib/electionResultsBuild'
+import { mergeDuplicateTallyRows, mergeDuplicateVoteRows } from '@/lib/electionResultsParse'
+import type { CandidateVoteRow, TseDetalheApuracaoRow } from '@/lib/electionResults'
 
 describe('electionResults municipality mapping', () => {
   it('resolves every canonical Bahia municipality through itself', () => {
@@ -165,5 +167,89 @@ describe('electionResults fixture parse + winners', () => {
     expect(built.tallies.every((row) => row.office === 'deputado_federal')).toBe(true)
     expect(built.candidates.every((row) => row.office === 'deputado_federal')).toBe(true)
     expect(built.votes.every((row) => row.year === 2018)).toBe(true)
+  })
+})
+
+describe('electionResults "voto em trânsito" merge (2014 presidente duplicate rows)', () => {
+  const baseVote: CandidateVoteRow = {
+    year: 2014,
+    office: 'presidente',
+    turn: '1',
+    state: 'BA',
+    cityCode: '99999',
+    cityName: 'Feira de Santana',
+    zoneNumber: 154,
+    candidateNumber: 13,
+    candidateName: 'DILMA',
+    coalition: null,
+    party: 'PT',
+    voteType: 'nominal',
+    votes: 100,
+  }
+
+  it('sums votes for rows sharing the same scope/zone/candidate key (the trânsito split)', () => {
+    const merged = mergeDuplicateVoteRows([baseVote, { ...baseVote, votes: 40 }])
+
+    expect(merged).toHaveLength(1)
+    expect(merged[0].votes).toBe(140)
+  })
+
+  it('keeps rows with a different key separate (no false merge across zones/candidates)', () => {
+    const otherZone = { ...baseVote, zoneNumber: 155, votes: 10 }
+    const otherCandidate = { ...baseVote, candidateNumber: 45, votes: 20 }
+
+    const merged = mergeDuplicateVoteRows([baseVote, otherZone, otherCandidate])
+
+    expect(merged).toHaveLength(3)
+    expect(merged.reduce((sum, row) => sum + row.votes, 0)).toBe(130)
+  })
+
+  it('is a no-op when there is nothing to merge (2018/2022 shape)', () => {
+    const rows = [baseVote, { ...baseVote, zoneNumber: 1 }]
+    expect(mergeDuplicateVoteRows(rows)).toEqual(rows)
+  })
+
+  const baseTally: TseDetalheApuracaoRow = {
+    year: 2014,
+    office: 'presidente',
+    turn: '1',
+    state: 'BA',
+    cityCode: '99999',
+    cityName: 'Feira de Santana',
+    zoneNumber: 154,
+    aptos: 300,
+    comparecimento: 200,
+    abstencoes: 100,
+    votosValidos: 180,
+    votosNominaisValidos: 175,
+    votosLegenda: 5,
+    votosBranco: 10,
+    votosNulo: 10,
+    votosAnulados: 0,
+  }
+
+  it('sums every count field for duplicate tally rows sharing the same scope key', () => {
+    const merged = mergeDuplicateTallyRows([
+      baseTally,
+      { ...baseTally, aptos: 50, comparecimento: 40, abstencoes: 10, votosValidos: 35, votosNominaisValidos: 33, votosLegenda: 2, votosBranco: 3, votosNulo: 2, votosAnulados: 0 },
+    ])
+
+    expect(merged).toHaveLength(1)
+    expect(merged[0]).toMatchObject({
+      aptos: 350,
+      comparecimento: 240,
+      abstencoes: 110,
+      votosValidos: 215,
+      votosNominaisValidos: 208,
+      votosLegenda: 7,
+      votosBranco: 13,
+      votosNulo: 12,
+      votosAnulados: 0,
+    })
+  })
+
+  it('is a no-op when zones differ', () => {
+    const rows = [baseTally, { ...baseTally, zoneNumber: 155 }]
+    expect(mergeDuplicateTallyRows(rows)).toEqual(rows)
   })
 })

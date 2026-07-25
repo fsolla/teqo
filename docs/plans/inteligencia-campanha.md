@@ -1,7 +1,7 @@
-# Inteligência de campanha — do relatório de discovery ao produto (programa E8–E16 + B13 + C12; adjacentes A11/E17)
+# Inteligência de campanha — do relatório de discovery ao produto (programa E8–E16 + B13 + C12; adjacentes A11/E17/E18)
 
 Status: rascunho (plano-mestre; itens fatiados individualmente)
-Atualizado em: 2026-07-24 (referências sincronizadas pós-remodelagem Municípios + hardening; remodelagem em produção desde 2026-07-23; validação de campo 2026-07-23 incorporada — G11, E16, âncora % da própria votação)
+Atualizado em: 2026-07-24 (referências sincronizadas pós-remodelagem Municípios + hardening; remodelagem em produção desde 2026-07-23; validação de campo 2026-07-23 incorporada — G11, E16, âncora % da própria votação; **E18** registrado — documentação dos conceitos, gatilhado pela própria confusão do usuário ao ler os tooltips do E8)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Inteligência de campanha"; trilhas E/B/C)
 Impeccable: misto por item — E15 = A; E8/E9/C12/E10/B13/E14/E12/E16 = B; E11/E13 = C (classe final no plano de cada fatia)
 Appetite: programa ~2–3 semanas eng no total, fatiado em slices de ~1–3 dias
@@ -46,6 +46,8 @@ Uma única fila ordena "todos" heterogêneos (gatilhos do playbook, demandas, mu
 5. **Otimização/higiene** — T4 benchmark, T5 agenda dispersa, pledges sem atualização há N semanas, planos `realizado` sem resultado, K-C metas implausíveis.
 
 Regras transversais (de §6.2/§6.4, viram comportamento do produto): **barato-antes-de-caro** (todo gatilho gera primeiro a checagem de 48h para o assessor; só gatilho persistente/triangulado sobe para a reunião de realocação); **desempate por votos em jogo**; **histerese** (realocação cara exige 2 semanas de persistência; nível 1 fura a fila); **gatilho de ausência dispara auditoria de registro, nunca ação de campo**. A fila tem duas visões: _do assessor_ (checagens e tarefas dos seus municípios) e _do coordenador_ (decisões de recurso caro, pauta da reunião quinzenal).
+
+**E18 (adjacente, registrado 2026-07-24):** ao ler os tooltips de diagnóstico do E8 pela primeira vez, o usuário reconheceu que os conceitos ("teto do campo", "captura", "share intracampo", "roll-off") são interessantes mas complicados, e pediu uma página de documentação explicando cada conceito de inteligência da vertical e como é calculado — [documentacao-conceitos-campanha.md](documentacao-conceitos-campanha.md). v1 cobre só os conceitos já entregues (E8); cada fatia subsequente da tabela abaixo estende o conteúdo quando entregar.
 
 ## Fatias (funcionalidades faltantes)
 

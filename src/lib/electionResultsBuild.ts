@@ -13,6 +13,8 @@ import {
 import {
   applyStateVoteTotals,
   dedupeCandidates,
+  mergeDuplicateTallyRows,
+  mergeDuplicateVoteRows,
   parseCandidateVoteRow,
   parseConsultaCandRow,
   parseDetalheApuracaoRow,
@@ -21,6 +23,17 @@ import {
 
 const ALL_OFFICES = new Set<ElectionOffice>(ELECTION_OFFICES)
 export const FEDERAL_ONLY_OFFICES = new Set<ElectionOffice>([FEDERAL_DEPUTY_OFFICE])
+/**
+ * Historical seed scope (2014/2018): federal deputy (E2 trend series) plus
+ * presidente/governador (E8 majoritarian baseline — same rationale as the
+ * 2022 full-ticket import, just for the two prior cycles). Excludes
+ * deputado_estadual: no consumer needs the state-assembly race historically.
+ */
+export const HISTORICAL_BASELINE_OFFICES = new Set<ElectionOffice>([
+  FEDERAL_DEPUTY_OFFICE,
+  'presidente',
+  'governador',
+])
 const STATE_OFFICES = new Set<ElectionOffice>([
   'governador',
   'deputado_federal',
@@ -78,11 +91,16 @@ export const buildElectionResultsFromCsvRows = (args: {
     offices.has('deputado_estadual')
   const unknownMunicipalities = new Set<string>()
 
-  const votes = collectParsed(args.voteRows, year, unknownMunicipalities, (row) =>
-    parseCandidateVoteRow(row, { stateFilter: 'BA', offices }),
+  // Dedupe TSE's "voto em trânsito" split rows — see mergeDuplicateVoteRows's doc.
+  const votes = mergeDuplicateVoteRows(
+    collectParsed(args.voteRows, year, unknownMunicipalities, (row) =>
+      parseCandidateVoteRow(row, { stateFilter: 'BA', offices }),
+    ),
   )
-  const tallies = collectParsed(args.tallyRows, year, unknownMunicipalities, (row) =>
-    parseDetalheApuracaoRow(row, { stateFilter: 'BA', offices }),
+  const tallies = mergeDuplicateTallyRows(
+    collectParsed(args.tallyRows, year, unknownMunicipalities, (row) =>
+      parseDetalheApuracaoRow(row, { stateFilter: 'BA', offices }),
+    ),
   )
 
   const candidatesRaw: ElectionCandidateRow[] = []

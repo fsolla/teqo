@@ -15,6 +15,70 @@ import {
 } from '@/lib/electionResults'
 import { computeIdentityKey } from '@/lib/electionCandidateIdentity'
 
+/**
+ * Merges rows sharing the same `keyFn` key via `combine`, preserving first-seen
+ * order. Shared by `mergeDuplicateVoteRows`/`mergeDuplicateTallyRows` below —
+ * both fold TSE's "voto em trânsito" split rows (see their docs) and differ
+ * only in the key and how colliding rows combine.
+ */
+const mergeByKey = <T,>(
+  rows: readonly T[],
+  keyFn: (row: T) => string,
+  combine: (existing: T, row: T) => T,
+): T[] => {
+  const merged = new Map<string, T>()
+  for (const row of rows) {
+    const key = keyFn(row)
+    const existing = merged.get(key)
+    merged.set(key, existing ? combine(existing, row) : row)
+  }
+  return [...merged.values()]
+}
+
+const voteRowKey = (row: CandidateVoteRow): string =>
+  `${row.year}|${row.office}|${row.turn}|${row.state}|${row.cityCode}|${row.zoneNumber}|${row.candidateNumber}|${row.voteType}`
+
+/**
+ * TSE's presidente data (the only office open to "voto em trânsito" — voting
+ * away from your registered zone, national ballot only) records the trânsito
+ * ballots as a SEPARATE row sharing the same (year, office, turn, state,
+ * cityCode, zoneNumber, candidateNumber, voteType) key as the regular row —
+ * colliding with `ElectionCandidateVote`'s unique index, which doesn't track
+ * the untracked ST_VOTO_EM_TRANSITO flag. Both rows are additive (distinct
+ * electorates, same candidate/zone), so sum `votes` instead of dropping
+ * either. Observed in a handful of 2014 BA zones; absent in 2018/2022 — a
+ * no-op when there is nothing to merge.
+ */
+export const mergeDuplicateVoteRows = (rows: readonly CandidateVoteRow[]): CandidateVoteRow[] =>
+  mergeByKey(rows, voteRowKey, (existing, row) => ({ ...existing, votes: existing.votes + row.votes }))
+
+const tallyRowKey = (row: TseDetalheApuracaoRow): string =>
+  `${row.year}|${row.office}|${row.turn}|${row.state}|${row.cityCode}|${row.zoneNumber}`
+
+const SUMMABLE_TALLY_FIELDS = [
+  'aptos',
+  'comparecimento',
+  'abstencoes',
+  'votosValidos',
+  'votosNominaisValidos',
+  'votosLegenda',
+  'votosBranco',
+  'votosNulo',
+  'votosAnulados',
+] as const satisfies ReadonlyArray<keyof TseDetalheApuracaoRow>
+
+/** Same trânsito-split merge as `mergeDuplicateVoteRows`, for tally rows (sums every count field). */
+export const mergeDuplicateTallyRows = (
+  rows: readonly TseDetalheApuracaoRow[],
+): TseDetalheApuracaoRow[] =>
+  mergeByKey(rows, tallyRowKey, (existing, row) => {
+    const summed = { ...existing }
+    for (const field of SUMMABLE_TALLY_FIELDS) {
+      summed[field] = existing[field] + row[field]
+    }
+    return summed
+  })
+
 export type TseCsvRow = Record<string, string>
 
 const cell = (row: TseCsvRow, key: string): string => row[key] ?? ''

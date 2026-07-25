@@ -40,7 +40,8 @@ export const projectedValidVotes = (baseline: MunicipalityFederalBaseline): numb
  * so it stands in for "how many votes could the field plausibly get here".
  * Primary reading only (governador is a secondary cross-check surfaced by the
  * artifact, not blended in — assumption flagged for product validation in
- * the E8 plan). 2022-only: no majoritarian tally is seeded for 2014/2018.
+ * the E8 plan). 2022-only by design — see `bahiaElectionAggregates.ts` for
+ * why the committed artifact doesn't cut 2014/2018 majoritária too.
  */
 export const fieldCeiling = (baseline: MunicipalityFederalBaseline): number =>
   baseline.majoritarian2022?.president.votes ?? 0
@@ -95,8 +96,8 @@ export type RollOff = {
 /**
  * Roll-off (diagnostic only): the DF race always shows more blank/null votes
  * than the majoritarian race in the same turnout — this is the gap, in votes
- * and as a share of comparecimento. 2022-only (no majoritarian tally for
- * 2014/2018); `null` when either tally is missing for the slug.
+ * and as a share of comparecimento. 2022-only, same artifact limitation as
+ * `fieldCeiling` above; `null` when either tally is missing for the slug.
  */
 export const rollOff = (baseline: MunicipalityFederalBaseline): RollOff | null => {
   const majoritarian = baseline.majoritarian2022?.president
