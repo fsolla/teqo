@@ -139,7 +139,10 @@ const applyDerivedMunicipalitySort = (
         const coverage = goalCoverageByMunicipalityID.get(municipality.id)?.central
         return coverage && coverage.goal > 0 ? coverage.deficit : null
       })
-    case 'frescor':
+    case 'frescor': {
+      // One clock read for the whole sort: the accessor runs per comparison,
+      // and a "now" that drifts mid-sort is not a consistent ordering key.
+      const now = Date.now()
       // Descending = coldest first, so "never had a signal" must outrank the
       // oldest date instead of sinking as a null: age is +Infinity there.
       return sortByNullableValue(docs, dir, (municipality) => {
@@ -148,8 +151,9 @@ const applyDerivedMunicipalitySort = (
           pledgeAggregates.get(municipality.id)?.lastPledgeAt ?? null,
         )
         if (!lastSignalAt) return Number.POSITIVE_INFINITY
-        return Date.now() - new Date(lastSignalAt).getTime()
+        return now - new Date(lastSignalAt).getTime()
       })
+    }
     default:
       return docs
   }

@@ -184,17 +184,20 @@ describe('deriveSuggestedGoalsByScenario', () => {
     expect(goal?.optimistic).toBeGreaterThan(own2022)
   })
 
-  it('leaves a desert with a near-zero goal instead of inflating it', () => {
+  it('leaves a desert near its own vote instead of inflating it (E8 asked 813 for 47 votes)', () => {
     const slug = 'campo-formoso'
     const own2022 = ownVotes2022(getMunicipalityFederalBaseline(slug))
+    expect(own2022).toBeLessThan(100) // guards the fixture, not the formula
 
-    const { suggestedGoalBySlug } = deriveSuggestedGoalsByScenario(catalogSlugs(), {
+    const { suggestedGoalBySlug, growthFactor } = deriveSuggestedGoalsByScenario(catalogSlugs(), {
       stateGoal: 150_000,
       margin: 10,
     })
     const goal = suggestedGoalBySlug.get(slug)
 
-    expect(goal?.central).toBe(own2022)
+    // Growth is the same statewide factor everywhere — a desert cannot be
+    // handed a goal an order of magnitude above the votes it produced.
+    expect(goal?.optimistic).toBeCloseTo(own2022 * growthFactor, 6)
     expect(goal?.optimistic).toBeLessThan(own2022 * 2)
   })
 

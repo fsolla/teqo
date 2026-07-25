@@ -1,6 +1,7 @@
 import type { Payload, PayloadRequest } from 'payload'
 
 import type { CampaignUser, VotePledge } from '@/payload-types'
+import { latestIsoTimestamp } from '@/utilities/campaignTime'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
@@ -8,6 +9,7 @@ import {
   resolveMunicipalityStaffVoteTotalForScenario,
   toVoteEstimateScenarioViewModel,
   VOTE_ESTIMATE_SCENARIOS,
+  zeroByVoteEstimateScenario,
   type VoteEstimateScenario,
   type VoteEstimateScenarioFields,
   type VoteEstimateScenarioViewModel,
@@ -20,12 +22,6 @@ import {
  */
 
 export type { VoteEstimateScenario, VoteEstimateScenarioViewModel }
-
-const emptyEffectiveByScenario = (): Record<VoteEstimateScenario, number> => ({
-  pessimistic: 0,
-  central: 0,
-  optimistic: 0,
-})
 
 export type MunicipalityPledgeAggregate = {
   declaredTotal: number
@@ -43,7 +39,7 @@ export type MunicipalityPledgeAggregate = {
 
 export const createEmptyMunicipalityPledgeAggregate = (): MunicipalityPledgeAggregate => ({
   declaredTotal: 0,
-  effectiveByScenario: emptyEffectiveByScenario(),
+  effectiveByScenario: zeroByVoteEstimateScenario(),
   pledgeCount: 0,
   missingEstimateCount: 0,
   lastPledgeAt: null,
@@ -103,9 +99,9 @@ export const aggregateMunicipalityPledgesFromRows = (
     }
     aggregate.pledgeCount += 1
     if (!pledgeHasAnyEstimate(row.estimatedVotes)) aggregate.missingEstimateCount += 1
-    aggregate.lastPledgeAt = laterTimestamp(
+    aggregate.lastPledgeAt = latestIsoTimestamp(
       aggregate.lastPledgeAt,
-      laterTimestamp(row.declaredAt, row.estimatedAt),
+      latestIsoTimestamp(row.declaredAt, row.estimatedAt),
     )
   }
 
@@ -126,7 +122,7 @@ export const rollupMunicipalityStaffVotes = (
   scenario: VoteEstimateScenario = DEFAULT_VOTE_ESTIMATE_SCENARIO,
 ): MunicipalityStaffVoteRollup => {
   let staffVoteTotal = 0
-  const staffVoteTotalByScenario = emptyEffectiveByScenario()
+  const staffVoteTotalByScenario = zeroByVoteEstimateScenario()
   let declaredVotesTotal = 0
   let pledgeCount = 0
   let missingEstimateCount = 0
@@ -159,16 +155,6 @@ export const rollupMunicipalityStaffVotes = (
 
 const pledgeHasAnyEstimate = (estimated: VoteEstimateScenarioFields | null | undefined): boolean =>
   estimated?.pessimistic != null || estimated?.central != null || estimated?.optimistic != null
-
-/** Latest of two ISO timestamps, ignoring nulls (string compare is safe for ISO-8601 UTC). */
-const laterTimestamp = (
-  left: string | null | undefined,
-  right: string | null | undefined,
-): string | null => {
-  if (!left) return right ?? null
-  if (!right) return left
-  return right > left ? right : left
-}
 
 /**
  * Staff-only aggregate over an already access-checked municipality id set.
@@ -205,10 +191,12 @@ export const aggregatePledgesByMunicipality = async (
   })
 
   for (const doc of result.docs) {
-    const municipalityID = relationshipId((doc as VotePledge).municipality)
+    // `select` narrows the runtime shape, not the static type Payload returns.
+    const pledge = doc as VotePledge
+    const municipalityID = relationshipId(pledge.municipality)
     if (municipalityID === null) continue
-    const declared = (doc as VotePledge).declaredVotes ?? 0
-    const estimated = (doc as VotePledge).estimatedVotes
+    const declared = pledge.declaredVotes ?? 0
+    const estimated = pledge.estimatedVotes
     const current = aggregates.get(municipalityID) ?? createEmptyMunicipalityPledgeAggregate()
     current.declaredTotal += declared
     for (const scenario of VOTE_ESTIMATE_SCENARIOS) {
@@ -220,9 +208,9 @@ export const aggregatePledgesByMunicipality = async (
     }
     current.pledgeCount += 1
     if (!pledgeHasAnyEstimate(estimated)) current.missingEstimateCount += 1
-    current.lastPledgeAt = laterTimestamp(
+    current.lastPledgeAt = latestIsoTimestamp(
       current.lastPledgeAt,
-      laterTimestamp((doc as VotePledge).declaredAt, (doc as VotePledge).estimatedAt),
+      latestIsoTimestamp(pledge.declaredAt, pledge.estimatedAt),
     )
     aggregates.set(municipalityID, current)
   }

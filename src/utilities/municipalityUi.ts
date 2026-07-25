@@ -12,6 +12,7 @@ import {
   strictDecimalInteger,
   type RawSearchParams as CampaignListRawSearchParams,
 } from '@/utilities/campaignListUrl'
+import { latestIsoTimestamp } from '@/utilities/campaignTime'
 import { normalizeSearchPhrase } from '@/utilities/wordStartFilter'
 
 export const municipalityPageSize = 25
@@ -71,7 +72,8 @@ export const municipalityListSortLabels: Record<MunicipalityListSortKey, string>
   trend: 'Tendência',
   expectedVotes: 'Votos estimados',
   lastUpdateAt: 'Última atualização',
-  coverage: 'Cobertura',
+  /** Advisor coverage — "Cobertura" alone now reads as the goal one (`deficit`). */
+  coverage: 'Assessoria',
   /** Short header — definition lives on hover (`formatMunicipalityConcentrationHint`). */
   votos: '2022',
   deficit: 'Cobertura da meta',
@@ -109,18 +111,9 @@ export const municipalityListParamNames = [
 
 const municipalityListParamNameSet = new Set<string>(municipalityListParamNames)
 
-const municipalityListSortKeySet = new Set<MunicipalityListSortKey>([
-  'name',
-  'region',
-  'kind',
-  'trend',
-  'expectedVotes',
-  'lastUpdateAt',
-  'coverage',
-  'votos',
-  'deficit',
-  'frescor',
-])
+// Derived from the label record (total over the union), so a new sort key is
+// declared in the type and the labels only.
+const municipalityListSortKeySet = new Set<string>(Object.keys(municipalityListSortLabels))
 
 const municipalityListSortDirSet = new Set<MunicipalityListSortDirection>(['asc', 'desc'])
 
@@ -159,11 +152,7 @@ export const formatMunicipalityConcentrationHint = (
 export const resolveMunicipalityLastSignalAt = (
   lastUpdateAt: string | null,
   lastPledgeAt: string | null,
-): string | null => {
-  if (!lastUpdateAt) return lastPledgeAt
-  if (!lastPledgeAt) return lastUpdateAt
-  return lastPledgeAt > lastUpdateAt ? lastPledgeAt : lastUpdateAt
-}
+): string | null => latestIsoTimestamp(lastUpdateAt, lastPledgeAt)
 
 /**
  * Days since the last signal, floored. The research report only says a
@@ -185,7 +174,12 @@ export const municipalitySignalAgeInDays = (
 export const isMunicipalitySignalCold = (ageInDays: number | null): boolean =>
   ageInDays === null || ageInDays >= MUNICIPALITY_COLD_SIGNAL_DAYS
 
-/** "há 3 dias" / "hoje" / "sem sinal" — dense cell copy for the queue. */
+/**
+ * "há 3 dias" / "hoje" / "Sem sinal" — dense cell copy for the queue.
+ * Deliberately not `formatRelativeAge`: its `numeric: 'auto'` yields "ontem"/
+ * "anteontem" and minute/hour granularity, which breaks both the day-based
+ * cold threshold and the tabular-nums scan down the column.
+ */
 export const formatMunicipalitySignalAgeLabel = (ageInDays: number | null): string => {
   if (ageInDays === null) return 'Sem sinal'
   if (ageInDays === 0) return 'hoje'

@@ -270,8 +270,7 @@ describe('campaign visual foundation', () => {
     // empty state); the status badge is what escalates to "Sem responsável".
     expect(html).toContain('Sem responsável')
     expect(html).toContain(`há ${staleDays} dias`)
-    // Cold is the warning tone, never destructive — that stays for the badge above.
-    expect(html).toContain('text-estimate-pending-foreground')
+    expect(html).toContain('data-signal="cold"')
     expect(html).toContain('Último sinal')
   })
 

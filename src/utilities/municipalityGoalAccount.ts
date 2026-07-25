@@ -14,13 +14,14 @@ import {
 } from '@/utilities/goalCoverage'
 import {
   computeMunicipalityPotential,
-  computeStatewideGoalDecomposition,
+  computeStatewideSuggestedGoals,
   type MunicipalityPotential,
   type SuggestedGoalByScenario,
 } from '@/utilities/municipalityPotential'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   VOTE_ESTIMATE_SCENARIOS,
+  zeroByVoteEstimateScenario,
   type VoteEstimateScenarioFields,
   type VoteEstimateScenario,
 } from '@/utilities/voteEstimate'
@@ -32,8 +33,8 @@ import {
 type GoalAccountReader = CampaignUser | User
 
 /**
- * E8 "conta da cadeira" — request-scoped statewide goal decomposition
- * (`campaignGoals` global + `computeStatewideGoalDecomposition`), degrau 1 da
+ * E8 "conta da cadeira" — request-scoped statewide suggested-goal ladder
+ * (`campaignGoals` global + `computeStatewideSuggestedGoals`), degrau 1 da
  * caching ladder. Every surface (dashboard, list overview, list rows, detail
  * card) needs the SAME goals — the optimistic scenario's growth factor is
  * `stateGoal / Σ base` over the full 435-slug catalog, so this always runs
@@ -41,10 +42,10 @@ type GoalAccountReader = CampaignUser | User
  * `cache()`-deduplicated so dashboard + list + detail don't each recompute it
  * on requests that touch more than one.
  */
-const loadGoalDecompositionCached = cache(
+const loadSuggestedGoalsCached = cache(
   async (payload: Payload, user: GoalAccountReader) => {
     const goals = await loadCampaignGoals(payload, user)
-    return computeStatewideGoalDecomposition(goals)
+    return computeStatewideSuggestedGoals(goals)
   },
 )
 
@@ -71,7 +72,7 @@ export const loadMunicipalityGoalCoverageBundle = async (
   }>,
   pledgeAggregates: Map<number, MunicipalityPledgeAggregate>,
 ): Promise<MunicipalityGoalCoverageBundle> => {
-  const { suggestedGoalBySlug } = await loadGoalDecompositionCached(payload, user)
+  const { suggestedGoalBySlug } = await loadSuggestedGoalsCached(payload, user)
 
   const coverageByMunicipalityID = new Map<
     number,
@@ -104,11 +105,7 @@ export const loadMunicipalityGoalCoverageBundle = async (
 }
 
 /** Unknown slug (never in the catalog): zero goal in every scenario, never mutated. */
-const emptySuggestedGoalByScenario: Readonly<SuggestedGoalByScenario> = {
-  pessimistic: 0,
-  central: 0,
-  optimistic: 0,
-}
+const emptySuggestedGoalByScenario: Readonly<SuggestedGoalByScenario> = zeroByVoteEstimateScenario()
 
 export type MunicipalityGoalAccount = {
   /** Fixed to the `central` scenario, like `goalCoverage` below. */
@@ -129,7 +126,7 @@ export const loadMunicipalityGoalAccount = async (
   municipality: { slug: string; expectedVotes?: VoteEstimateScenarioFields | null },
   pledgeAggregate: MunicipalityPledgeAggregate,
 ): Promise<MunicipalityGoalAccount> => {
-  const { suggestedGoalBySlug, potentialBySlug } = await loadGoalDecompositionCached(payload, user)
+  const { suggestedGoalBySlug, potentialBySlug } = await loadSuggestedGoalsCached(payload, user)
   const suggestedGoalByScenario =
     suggestedGoalBySlug.get(municipality.slug) ?? emptySuggestedGoalByScenario
   const goalCoverage = computeGoalCoverage(

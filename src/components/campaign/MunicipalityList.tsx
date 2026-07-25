@@ -33,6 +33,7 @@ import {
   isMunicipalitySignalCold,
   MUNICIPALITY_COLD_SIGNAL_DAYS,
   municipalityKindLabels,
+  municipalityListCoverageLabels,
   municipalityPriorityLabels,
   municipalitySignalAgeInDays,
   resolveMunicipalityListSort,
@@ -95,9 +96,7 @@ const VotePositionReadout = ({
 
 /**
  * E9 frescor: how long since anybody recorded anything here (staff update or
- * leadership pledge). The age leads — "há 24 dias" is what makes a stale row
- * jump out while scanning the queue — with the exact date as the muted
- * second line for whoever needs it.
+ * leadership pledge).
  *
  * Cold reads in the warning amber, NOT destructive: early in the campaign
  * most municípios are past the 21-day threshold, and painting them all red
@@ -120,6 +119,7 @@ const SignalAgeReadout = ({
 
   return (
     <div
+      data-signal={isCold ? 'cold' : 'fresh'}
       className={cn('flex flex-col gap-0.5', layout === 'card' && 'text-sm')}
       title={
         isCold
@@ -149,14 +149,23 @@ const SignalAgeReadout = ({
  * the overview's coluna da vergonha uses to count them. Non-priority ones
  * keep the softer pending tone: they are a gap, not a fire.
  */
-const advisorBadgeVariant = (municipality: MunicipalityListViewModel) => {
-  if (municipality.advisorIDs.length > 0) return 'estimate-confirmed' as const
-  return municipality.priority === 'alta' ? ('destructive' as const) : ('estimate-pending' as const)
-}
+const AdvisorStatusBadge = ({ municipality }: { municipality: MunicipalityListViewModel }) => {
+  if (municipality.advisorIDs.length > 0) {
+    return (
+      <Badge variant="estimate-confirmed">
+        <CircleCheckIcon data-icon="inline-start" aria-hidden="true" />
+        Coberta
+      </Badge>
+    )
+  }
 
-const advisorBadgeLabel = (municipality: MunicipalityListViewModel): string => {
-  if (municipality.advisorIDs.length > 0) return 'Coberta'
-  return municipality.priority === 'alta' ? 'Sem responsável' : 'Sem assessor'
+  const isPriority = municipality.priority === 'alta'
+  return (
+    <Badge variant={isPriority ? 'destructive' : 'estimate-pending'}>
+      <CircleAlertIcon data-icon="inline-start" aria-hidden="true" />
+      {isPriority ? 'Sem responsável' : municipalityListCoverageLabels.sem_assessor}
+    </Badge>
+  )
 }
 
 const advisorEntries = (
@@ -268,10 +277,7 @@ export const MunicipalityList = ({
                       ) : names.length ? (
                         names.join(', ')
                       ) : (
-                        <Badge variant={advisorBadgeVariant(municipality)}>
-                          <CircleAlertIcon data-icon="inline-start" aria-hidden="true" />
-                          {advisorBadgeLabel(municipality)}
-                        </Badge>
+                        <AdvisorStatusBadge municipality={municipality} />
                       )}
                     </dd>
                   </div>
@@ -343,8 +349,6 @@ export const MunicipalityList = ({
           </TableHeader>
           <TableBody>
             {municipalities.map((municipality) => {
-              const hasAdvisor = municipality.advisorIDs.length > 0
-
               return (
                 <TableRow key={municipality.id}>
                   <TableCell className="max-w-52 whitespace-normal">
@@ -417,14 +421,7 @@ export const MunicipalityList = ({
                         />
                       </TableCell>
                       <TableCell>
-                        <Badge variant={advisorBadgeVariant(municipality)}>
-                          {hasAdvisor ? (
-                            <CircleCheckIcon data-icon="inline-start" aria-hidden="true" />
-                          ) : (
-                            <CircleAlertIcon data-icon="inline-start" aria-hidden="true" />
-                          )}
-                          {advisorBadgeLabel(municipality)}
-                        </Badge>
+                        <AdvisorStatusBadge municipality={municipality} />
                       </TableCell>
                       <TableCell>
                         <MunicipalityListGoalCoverageCell

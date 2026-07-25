@@ -87,7 +87,7 @@ Componentes: `src/utilities/municipalityDossierData.ts` (novo — orquestra load
 
 ## Explicitamente fora (triage pós-simplify 2026-07-25)
 
-- Memoização em module-scope de `computeStatewideGoalDecomposition` — pré-existente E8, fora do diff do dossiê (revisitar no plano [conta-da-cadeira.md](conta-da-cadeira.md) se o hot path do dashboard doer).
+- Memoização em module-scope de `computeStatewideSuggestedGoals` — pré-existente E8, fora do diff do dossiê (revisitar no plano [conta-da-cadeira.md](conta-da-cadeira.md) se o hot path do dashboard doer).
 - Encolher o page size do feed de sinais de 10 → 5 — o loader compartilhado precisa de `totalDocs`; micro-otimização sem evidência.
 - Critique do `MunicipalityGoalAccountCard` (tooltips touch) — sessão E8, já hardenido no follow-up #3 daquele plano; não é dívida do E16.
 

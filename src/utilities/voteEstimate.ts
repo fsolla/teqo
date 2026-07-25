@@ -16,6 +16,13 @@ export type VoteEstimateScenarioViewModel = {
   optimistic: number | null
 }
 
+/** Fresh zeroed record per scenario — a factory because callers accumulate into it. */
+export const zeroByVoteEstimateScenario = (): Record<VoteEstimateScenario, number> => ({
+  pessimistic: 0,
+  central: 0,
+  optimistic: 0,
+})
+
 /** True when at least one scenario has a recorded estimate. */
 export const hasAnyEstimate = (estimates: VoteEstimateScenarioViewModel): boolean =>
   estimates.pessimistic != null || estimates.central != null || estimates.optimistic != null
