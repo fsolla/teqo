@@ -8,7 +8,12 @@ import { logoutCampaign } from '@/app/(campaign)/campanha/actions/auth'
 import { CampaignLogo } from '@/components/campaign/campaign-logo'
 import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
 import { CampaignUserAvatar } from '@/components/campaign/CampaignUserAvatar'
-import { getCampaignNav, isCampaignNavActive } from '@/components/campaign/nav'
+import {
+  getCampaignNav,
+  getCampaignSecondaryNav,
+  isCampaignNavActive,
+  type CampaignNavItem,
+} from '@/components/campaign/nav'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import {
@@ -30,10 +35,34 @@ import { clearRecentVisits } from '@/utilities/recentVisits'
 
 export type CampaignSidebarUser = CampaignUserShellView
 
+const CampaignSidebarLink = ({
+  item,
+  isActive,
+  onNavigate,
+}: {
+  item: CampaignNavItem
+  isActive: boolean
+  onNavigate: () => void
+}) => (
+  <SidebarMenuItem>
+    <SidebarMenuButton asChild isActive={isActive}>
+      <Link href={item.href} onClick={onNavigate}>
+        <item.icon />
+        <span>{item.title}</span>
+      </Link>
+    </SidebarMenuButton>
+  </SidebarMenuItem>
+)
+
 export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
   const pathname = usePathname()
   const { isMobile, setOpenMobile } = useSidebar()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const secondaryNav = getCampaignSecondaryNav(user.role)
+
+  const closeMobileSidebar = () => {
+    if (isMobile) setOpenMobile(false)
+  }
 
   const handleLogout = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -64,23 +93,35 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
           <SidebarGroupContent>
             <SidebarMenu>
               {getCampaignNav(user.role).map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={isCampaignNavActive(pathname, item.href)}>
-                    <Link
-                      href={item.href}
-                      onClick={() => {
-                        if (isMobile) setOpenMobile(false)
-                      }}
-                    >
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <CampaignSidebarLink
+                  key={item.href}
+                  item={item}
+                  isActive={isCampaignNavActive(pathname, item.href)}
+                  onNavigate={closeMobileSidebar}
+                />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Reference, not a destination: pinned to the foot of the nav so it
+            never competes with the places the mesa works every day. */}
+        {secondaryNav.length > 0 ? (
+          <SidebarGroup className="mt-auto">
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {secondaryNav.map((item) => (
+                  <CampaignSidebarLink
+                    key={item.href}
+                    item={item}
+                    isActive={isCampaignNavActive(pathname, item.href)}
+                    onNavigate={closeMobileSidebar}
+                  />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
