@@ -165,7 +165,7 @@ export const getCampaignDashboardData = async (
           : 'Contato'
       return {
         pledgeID: pledge.id,
-        municipalityName: municipality?.name ?? 'Praça',
+        municipalityName: municipality?.name ?? 'Município',
         municipalitySlug: municipality?.slug ?? '',
         contactName,
         declaredVotes: pledge.declaredVotes,
@@ -180,7 +180,7 @@ export const getCampaignDashboardData = async (
       const author = authorsById.get(relationshipId(update.author) ?? -1)
       return {
         id: update.id,
-        municipalityName: municipality?.name ?? 'Praça',
+        municipalityName: municipality?.name ?? 'Município',
         municipalitySlug: municipality?.slug ?? '',
         authorName: String(author?.name ?? 'Usuário'),
         createdAt: update.createdAt,

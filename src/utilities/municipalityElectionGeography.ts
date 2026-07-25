@@ -3,9 +3,9 @@ import type { Where } from 'payload'
 import { getMunicipalityCatalogEntry, type MunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 
 /**
- * Election-data geography of a Praça: exactly one municipality (TSE cityCode)
- * and either all of its official zones (municipality Praça) or the single
- * zone (zone Praça). Election collections are keyed by cityCode × zoneNumber,
+ * Election-data geography of a Município: exactly one municipality (TSE cityCode)
+ * and either all of its official zones (whole-municipality unit) or the single
+ * zone (zona unit). Election collections are keyed by cityCode × zoneNumber,
  * so the cut at the municipal boundary is exact.
  */
 export type MunicipalityElectionGeography = {

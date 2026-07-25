@@ -213,7 +213,7 @@ export const SupporterForm = ({
         </Field>
 
         <Field data-invalid={municipalityField.invalid}>
-          <FieldLabel htmlFor="supporter-municipality">Praça{requireMunicipality ? ' *' : ''}</FieldLabel>
+          <FieldLabel htmlFor="supporter-municipality">Município{requireMunicipality ? ' *' : ''}</FieldLabel>
           <NativeSelect
             id="supporter-municipality"
             name="municipality"
@@ -221,7 +221,7 @@ export const SupporterForm = ({
             defaultValue={values?.municipality ?? ''}
             className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
           >
-            {!requireMunicipality ? <NativeSelectOption value="">Sem Praça</NativeSelectOption> : null}
+            {!requireMunicipality ? <NativeSelectOption value="">Sem município</NativeSelectOption> : null}
             {municipalityOptions.map((municipality) => (
               <NativeSelectOption key={municipality.id} value={String(municipality.id)}>
                 {municipality.name}

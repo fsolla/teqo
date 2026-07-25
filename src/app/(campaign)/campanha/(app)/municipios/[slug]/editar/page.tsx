@@ -60,7 +60,7 @@ export default async function MunicipalityEditPage({ params }: MunicipalityEditP
         </Button>
         <h1 className="text-2xl font-semibold tracking-tight">Editar {view.name}</h1>
         <p className="text-muted-foreground">
-          A geografia da Praça é pré-definida e não pode ser alterada. Aqui você edita metas,
+          A geografia do município é pré-definida e não pode ser alterada. Aqui você edita metas,
           votos estimados, inteligência e tendência política.
         </p>
       </header>

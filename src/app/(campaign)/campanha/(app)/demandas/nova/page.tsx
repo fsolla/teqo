@@ -49,7 +49,7 @@ export default async function NewDemandPage({ searchParams }: NewDemandPageProps
         </Button>
         <h1 className="text-2xl font-semibold tracking-tight">Nova demanda</h1>
         <p className="text-muted-foreground">
-          Descreva a necessidade (material, transporte, espaço, apoio…) e a Praça. A assessoria
+          Descreva a necessidade (material, transporte, espaço, apoio…) e o município. A assessoria
           revisa e responde por aqui.
         </p>
       </header>

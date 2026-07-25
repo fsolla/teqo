@@ -136,7 +136,7 @@ export const loadOrganizationListPageData = async (
       municipalityNames: (doc.municipalities ?? [])
         .map(relationshipId)
         .filter((id): id is number => id !== null)
-        .map((id) => municipalityNames.get(id) ?? 'Praça'),
+        .map((id) => municipalityNames.get(id) ?? 'Município'),
       leadershipCount: leadershipCounts.get(doc.id) ?? 0,
     })),
     totalDocs: result.totalDocs,
@@ -221,7 +221,7 @@ export const loadOrganizationDetail = async (
     kind: organization.kind as OrganizationKind,
     notes: organization.notes ?? null,
     municipalityIDs,
-    municipalityNames: municipalityIDs.map((id) => municipalityNames.get(id) ?? 'Praça'),
+    municipalityNames: municipalityIDs.map((id) => municipalityNames.get(id) ?? 'Município'),
     leaderships: leaderships.docs.map((leadership) => {
       const contact = leadership.contact
       return {

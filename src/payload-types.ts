@@ -683,7 +683,7 @@ export interface ActionPlan {
       }[]
     | null;
   /**
-   * O que aconteceu, público, aprendizados. Vira base para futuras atividades na mesma Praça.
+   * O que aconteceu, público, aprendizados. Vira base para futuras atividades no mesmo município.
    */
   resultSummary?: string | null;
   resultMedia?: (number | Media)[] | null;

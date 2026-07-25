@@ -73,7 +73,7 @@ const demandColumns: Array<CampaignTableColumn<DemandRowViewModel>> = [
   },
   {
     id: 'municipality',
-    head: <CampaignTableHead>Praça</CampaignTableHead>,
+    head: <CampaignTableHead>Município</CampaignTableHead>,
     cellClassName: 'text-muted-foreground',
     cell: (row) => row.municipalityName,
   },

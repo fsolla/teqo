@@ -190,7 +190,7 @@ export type CandidateVotesByCity = Map<string, number>
 
 /**
  * Statewide nominal votes of one federal-deputy candidate in one year, grouped
- * by TSE cityCode. Used by the Praças map (choropleth per municipality).
+ * by TSE cityCode. Used by the municipalities map (choropleth per municipality).
  */
 export const loadCandidateVotesByCity = async (
   payload: Payload,

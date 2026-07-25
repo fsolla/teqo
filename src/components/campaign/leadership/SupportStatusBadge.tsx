@@ -7,7 +7,7 @@ const statusPresentation = {
   engajado: {
     label: 'Engajado',
     variant: 'support-engaged',
-    summary: 'Participa ativamente da campanha nas suas Praças e pode ter acesso ao app.',
+    summary: 'Participa ativamente da campanha nos seus municípios e pode ter acesso ao app.',
   },
   a_abordar: {
     label: 'A abordar',

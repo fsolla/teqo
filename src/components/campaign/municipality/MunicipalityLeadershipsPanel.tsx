@@ -33,10 +33,10 @@ export const MunicipalityLeadershipsPanel = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <h2 id="municipality-leaderships-title" className="text-base font-medium">
-            Lideranças desta Praça
+            Lideranças deste município
           </h2>
           <p className="text-sm text-muted-foreground">
-            Uma liderança pode atuar em várias Praças e organizações.
+            Uma liderança pode atuar em vários municípios e organizações.
           </p>
         </div>
         <Button asChild className="min-h-11">
@@ -74,7 +74,7 @@ export const MunicipalityLeadershipsPanel = ({
                   </div>
                   {leadership.municipalityNames.length > 1 ? (
                     <span className="text-sm text-muted-foreground">
-                      Atua em {leadership.municipalityNames.length} Praças
+                      Atua em {leadership.municipalityNames.length} municípios
                     </span>
                   ) : null}
                 </div>
@@ -90,7 +90,7 @@ export const MunicipalityLeadershipsPanel = ({
         </ul>
       ) : (
         <p className="rounded-xl border px-4 py-6 text-sm text-muted-foreground">
-          Nenhuma liderança vinculada a esta Praça ainda.
+          Nenhuma liderança vinculada a este município ainda.
         </p>
       )}
     </section>

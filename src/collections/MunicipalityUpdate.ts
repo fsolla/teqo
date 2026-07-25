@@ -130,7 +130,7 @@ const lockMunicipalitiesBeforeChange: CollectionBeforeChangeHook = async ({
     relationshipId(originalDoc?.municipality),
     relationshipId(data.municipality ?? originalDoc?.municipality),
   ])
-  if (municipalityIDs.length === 0) throw new APIError('Praça da atualização inválida.', 500)
+  if (municipalityIDs.length === 0) throw new APIError('Município da atualização inválido.', 500)
 
   await acquireMunicipalityUpdateLocks(req, municipalityIDs)
   return data
@@ -147,7 +147,7 @@ const lockMunicipalityBeforeDelete: CollectionBeforeDeleteHook = async ({ contex
     req,
   })
   const municipalityIDs = uniqueSortedMunicipalityIDs([relationshipId(doc.municipality)])
-  if (municipalityIDs.length === 0) throw new APIError('Praça da atualização inválida.', 500)
+  if (municipalityIDs.length === 0) throw new APIError('Município da atualização inválido.', 500)
 
   await acquireMunicipalityUpdateLocks(req, municipalityIDs)
 }
@@ -164,7 +164,7 @@ const recomputeChangedMunicipalities: CollectionAfterChangeHook = async ({
     relationshipId(previousDoc?.municipality),
     relationshipId(doc.municipality),
   ])
-  if (municipalityIDs.length === 0) throw new APIError('Praça da atualização inválida.', 500)
+  if (municipalityIDs.length === 0) throw new APIError('Município da atualização inválido.', 500)
 
   await acquireMunicipalityUpdateLocks(req, municipalityIDs)
   await recomputeMunicipalityLastUpdateAt(req, municipalityIDs)
@@ -175,7 +175,7 @@ const recomputeDeletedMunicipality: CollectionAfterDeleteHook = async ({ context
   if (context[DERIVED_MUNICIPALITY_UPDATE_CONTEXT]) return doc
 
   const municipalityIDs = uniqueSortedMunicipalityIDs([relationshipId(doc.municipality)])
-  if (municipalityIDs.length === 0) throw new APIError('Praça da atualização inválida.', 500)
+  if (municipalityIDs.length === 0) throw new APIError('Município da atualização inválido.', 500)
 
   await acquireMunicipalityUpdateLocks(req, municipalityIDs)
   await recomputeMunicipalityLastUpdateAt(req, municipalityIDs)
@@ -185,8 +185,8 @@ const recomputeDeletedMunicipality: CollectionAfterDeleteHook = async ({ context
 export const MunicipalityUpdate: CollectionConfig = {
   slug: 'municipalityUpdate',
   labels: {
-    singular: 'Atualização da Praça',
-    plural: 'Atualizações das Praças',
+    singular: 'Atualização do Município',
+    plural: 'Atualizações dos Municípios',
   },
   admin: {
     group: 'Campanha',
@@ -211,7 +211,7 @@ export const MunicipalityUpdate: CollectionConfig = {
       name: 'municipality',
       type: 'relationship',
       relationTo: 'municipality',
-      label: 'Praça',
+      label: 'Município',
       required: true,
       index: true,
     },

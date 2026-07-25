@@ -276,7 +276,7 @@ export const MunicipalityGoalAccountCard = ({
       </dl>
       {!usesMesaEstimate && suggestedGoal <= 0 ? (
         <p className="text-xs text-muted-foreground">
-          Sem votação própria em 2022 aqui, então não há meta sugerida — é praça de expansão:
+          Sem votação própria em 2022 aqui, então não há meta sugerida — é município de expansão:
           cadastre a estimativa da mesa manualmente se decidir investir.
         </p>
       ) : null}

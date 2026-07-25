@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Municipalities (Praças)
+// Municipalities (Municípios)
 // ---------------------------------------------------------------------------
 
 import type { Access, FieldAccess, Payload, PayloadRequest } from 'payload'

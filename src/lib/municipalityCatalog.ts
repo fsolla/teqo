@@ -33,7 +33,7 @@ export interface MunicipalityCatalogEntry {
   /** Display name, e.g. "Feira de Santana" or "Salvador — ZE 3". */
   readonly name: string
   readonly kind: MunicipalityKind
-  /** Canonical municipality name (every Praça is single-municipality). */
+  /** Canonical municipality name (every catalog unit is single-municipality). */
   readonly city: string
   /** Official Bahia identity territory (TI) of the municipality. */
   readonly region: BahiaIdentityTerritory

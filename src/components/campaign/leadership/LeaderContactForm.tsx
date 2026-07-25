@@ -157,7 +157,7 @@ export const LeaderContactForm = ({
                 defaultValue={values?.municipality ?? ''}
                 className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
               >
-                <NativeSelectOption value="">Selecione a Praça</NativeSelectOption>
+                <NativeSelectOption value="">Selecione o município</NativeSelectOption>
                 {municipalityOptions.map((municipality) => (
                   <NativeSelectOption key={municipality.id} value={String(municipality.id)}>
                     {municipality.name}

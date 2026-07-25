@@ -141,7 +141,7 @@ const toDemandRow = (
     slug: demand.slug,
     kind: demand.kind as CampaignDemandKind,
     status: demand.status as CampaignDemandStatus,
-    municipalityName: municipality?.name ?? 'Praça',
+    municipalityName: municipality?.name ?? 'Município',
     municipalitySlug: municipality?.slug ?? '',
     requesterName: leadershipID ? (requesterBy.get(leadershipID) ?? null) : null,
     createdAt: demand.createdAt,

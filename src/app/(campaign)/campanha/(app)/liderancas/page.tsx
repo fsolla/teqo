@@ -54,7 +54,7 @@ const leadershipColumns: Array<CampaignTableColumn<LeadershipRowViewModel>> = [
   },
   {
     id: 'municipalities',
-    head: <CampaignTableHead>Praças</CampaignTableHead>,
+    head: <CampaignTableHead>Municípios</CampaignTableHead>,
     cellClassName: 'max-w-64 whitespace-normal text-muted-foreground',
     cell: (row) => row.municipalityNames.join(', ') || '—',
   },
@@ -90,7 +90,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">Lideranças</h1>
           <p className="text-muted-foreground">
-            Uma ficha por pessoa — cada liderança pode atuar em várias Praças e organizações.
+            Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações.
           </p>
         </div>
         <Button asChild className="min-h-11">
@@ -126,7 +126,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
             <CampaignListEmptyState
               icon={SearchXIcon}
               title="Nenhuma liderança encontrada"
-              description="Cadastre a primeira liderança ou ajuste a busca. Você só vê lideranças das suas Praças."
+              description="Cadastre a primeira liderança ou ajuste a busca. Você só vê lideranças dos seus municípios."
             >
               <Button asChild className="min-h-11">
                 <Link href="/campanha/liderancas/nova">

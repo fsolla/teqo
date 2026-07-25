@@ -186,14 +186,14 @@ export const ActionPlanFilters = ({
                 </Field>
               ) : null}
               <Field>
-                <FieldLabel htmlFor="action-plan-municipality">Praça</FieldLabel>
+                <FieldLabel htmlFor="action-plan-municipality">Município</FieldLabel>
                 <NativeSelect
                   id="action-plan-municipality"
                   value={values.municipality}
                   onChange={(event) => updateMunicipality(event.target.value)}
                   className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
                 >
-                  <NativeSelectOption value="">Todas as Praças</NativeSelectOption>
+                  <NativeSelectOption value="">Todos os municípios</NativeSelectOption>
                   {municipalityOptions.map((option) => (
                     <NativeSelectOption key={option.id} value={String(option.id)}>
                       {option.name}

@@ -395,7 +395,7 @@ export const ActionPlan: CollectionConfig = {
       name: 'municipality',
       type: 'relationship',
       relationTo: 'municipality',
-      label: 'Praça',
+      label: 'Município',
       required: true,
       index: true,
     },
@@ -574,7 +574,7 @@ export const ActionPlan: CollectionConfig = {
       },
       admin: {
         description:
-          'O que aconteceu, público, aprendizados. Vira base para futuras atividades na mesma Praça.',
+          'O que aconteceu, público, aprendizados. Vira base para futuras atividades no mesmo município.',
       },
     },
     {

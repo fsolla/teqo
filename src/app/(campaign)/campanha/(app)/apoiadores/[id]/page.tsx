@@ -72,7 +72,7 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
         <CampaignScopeBadge>{campaignRoleLabels[user.role]}</CampaignScopeBadge>
         <h1 className="text-2xl font-semibold tracking-tight">{supporter.name}</h1>
         <p className="text-muted-foreground">
-          {supporter.city ?? 'Município não informado'}
+          {supporter.city ?? 'Cidade não informada'}
           {supporter.territory ? ` · ${supporter.territory}` : ''}
         </p>
       </header>
@@ -109,7 +109,7 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
           <p>
             {supporter.municipalityName ? (
               <>
-                Praça:{' '}
+                Município:{' '}
                 <Link
                   href={`/campanha/municipios/${supporter.municipalitySlug}`}
                   className="font-medium text-primary underline-offset-4 hover:underline"
@@ -118,7 +118,7 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
                 </Link>
               </>
             ) : (
-              <span className="text-muted-foreground">Sem Praça vinculada</span>
+              <span className="text-muted-foreground">Sem município vinculado</span>
             )}
           </p>
         </CardContent>

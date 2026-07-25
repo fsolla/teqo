@@ -31,7 +31,7 @@ export type CandidateComparisonRow = {
 /**
  * Vote comparison between Jorge Solla and selected federal-deputy candidates
  * inside one municipality geography, across the TSE series years. This is the
- * coordination's core analysis tool ("com quem comparar nesta Praça?").
+ * coordination's core analysis tool ("com quem comparar neste município?").
  */
 /** Cross-request cached core — immutable TSE series, busted with `election-tse`. */
 const loadMunicipalityCandidateComparisonCached = unstable_cache(

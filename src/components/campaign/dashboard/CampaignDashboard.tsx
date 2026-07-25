@@ -46,28 +46,28 @@ export const CampaignDashboard = ({
       <h1 className="text-2xl font-semibold tracking-tight">Olá, {userName}</h1>
       <p className="text-muted-foreground">
         {view.role === 'advisor'
-          ? 'Quadro das Praças sob sua assessoria.'
-          : 'Quadro geral da campanha por Praça.'}
+          ? 'Quadro dos municípios sob sua assessoria.'
+          : 'Quadro geral da campanha por município.'}
       </p>
     </header>
 
     {mapSlot}
 
     <section
-      aria-label="Indicadores das Praças"
+      aria-label="Indicadores dos municípios"
       className={`rounded-xl ${campaignPrioritySurfaceClassName}`}
     >
       <CampaignMetricStrip
         metrics={[
           {
-            label: `${voteEstimateScenarioLabels.central} nas Praças`,
+            label: `${voteEstimateScenarioLabels.central} nos municípios`,
             value: formatElectionNumber(view.staffVoteTotalByScenario.central),
             detail: formatVoteEstimateEndpointsLabel(view.staffVoteTotalByScenario) ?? undefined,
             emphasize: true,
           },
           {
             label: 'Cobertura de assessoria',
-            value: `${view.withAdvisorCount} de ${view.municipalityCount} Praças`,
+            value: `${view.withAdvisorCount} de ${view.municipalityCount} municípios`,
             progress:
               view.municipalityCount > 0
                 ? Math.round((view.withAdvisorCount / view.municipalityCount) * 100)
@@ -158,7 +158,7 @@ export const CampaignDashboard = ({
     {view.priorityMunicipalities.length ? (
       <section aria-labelledby="dashboard-priority-title" className="flex flex-col gap-3">
         <h2 id="dashboard-priority-title" className="text-base font-medium">
-          Praças prioritárias
+          Municípios prioritários
         </h2>
         <ul className="flex flex-wrap gap-2">
           {view.priorityMunicipalities.map((municipality) => (
@@ -177,7 +177,7 @@ export const CampaignDashboard = ({
     <div>
       <Button asChild className="min-h-11">
         <Link href="/campanha/municipios">
-          Ver todas as Praças
+          Ver todos os municípios
           <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
         </Link>
       </Button>

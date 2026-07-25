@@ -71,7 +71,7 @@ const FilterFields = ({
       </NativeSelect>
     </Field>
     <Field>
-      <FieldLabel htmlFor="supporter-city">Município</FieldLabel>
+      <FieldLabel htmlFor="supporter-city">Cidade</FieldLabel>
       <StrictCombobox
         id="supporter-city"
         options={municipalityComboboxOptions()}
@@ -80,7 +80,7 @@ const FilterFields = ({
       />
     </Field>
     <Field>
-      <FieldLabel htmlFor="supporter-municipality">Praça</FieldLabel>
+      <FieldLabel htmlFor="supporter-municipality">Município</FieldLabel>
       <NativeSelect
         id="supporter-municipality"
         name="municipality"

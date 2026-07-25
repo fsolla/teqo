@@ -35,9 +35,9 @@ export const MunicipalityAdvisorsForm = ({
   return (
     <form action={submitAction} className="flex flex-col gap-4 rounded-xl border p-4">
       <div className="flex flex-col gap-1">
-        <h2 className="text-base font-medium">Assessores da Praça</h2>
+        <h2 className="text-base font-medium">Assessores do município</h2>
         <p className="text-sm text-muted-foreground">
-          O assessor vê e gerencia somente as Praças que administra.
+          O assessor vê e gerencia somente os municípios que administra.
         </p>
       </div>
       <input type="hidden" name="municipalityId" value={municipalityID} />

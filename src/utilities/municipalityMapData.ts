@@ -222,7 +222,7 @@ export const buildMunicipalityMapBundleFromMunicipalities = async (
 }
 
 /**
- * Map data for the Praças overview: municipalities matching the list URL filters (and
+ * Map data for the municipalities overview: municipalities matching the list URL filters (and
  * role access) contribute their geography's votes (or 2026 pledge estimates)
  * to municipality polygons. When `state.compare` is set, TSE years also carry
  * a red↔white↔blue diff (Solla − other candidate).

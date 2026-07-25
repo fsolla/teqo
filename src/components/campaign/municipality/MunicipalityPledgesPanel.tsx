@@ -104,7 +104,7 @@ export const MunicipalityPledgesPanel = ({
         </>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Nenhuma liderança declarou votos nesta Praça ainda.
+          Nenhuma liderança declarou votos neste município ainda.
         </p>
       )}
     </section>

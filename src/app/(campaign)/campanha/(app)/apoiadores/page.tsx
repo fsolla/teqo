@@ -77,7 +77,7 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">Apoiadores</h1>
           <p className="text-muted-foreground">
-            Base nominal de apoio com intenção de voto e vínculo opcional a Praças.
+            Base nominal de apoio com intenção de voto e vínculo opcional a municípios.
           </p>
           <CampaignScopeBadge>
             {isCampaignUnrestricted(user)

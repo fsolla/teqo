@@ -131,7 +131,7 @@ export default async function ActionPlanDetailPage({
                 )}
                 <dl className="grid gap-2 sm:grid-cols-2">
                   <div>
-                    <dt className="text-muted-foreground">Praça</dt>
+                    <dt className="text-muted-foreground">Município</dt>
                     <dd>
                       {view.municipality ? (
                         <Link

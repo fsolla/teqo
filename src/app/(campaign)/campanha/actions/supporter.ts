@@ -207,7 +207,7 @@ const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, i
     )
   } catch (error) {
     if (isUniqueSupporterConflict(error)) {
-      throw new Error('Esta pessoa já está cadastrada como apoiador nesta Praça.')
+      throw new Error('Esta pessoa já está cadastrada como apoiador neste município.')
     }
     throw error
   }

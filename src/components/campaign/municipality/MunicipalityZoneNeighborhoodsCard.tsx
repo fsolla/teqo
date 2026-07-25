@@ -16,7 +16,7 @@ export const MunicipalityZoneNeighborhoodsCard = ({ municipalitySlug }: { munici
     >
       <div className="flex flex-col gap-1">
         <h2 id="municipality-zone-neighborhoods-title" className="text-base font-medium">
-          Bairros desta Praça
+          Bairros deste município
         </h2>
         <p className="text-sm text-muted-foreground">
           {neighborhoods.length}{' '}

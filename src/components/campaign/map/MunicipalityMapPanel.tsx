@@ -138,7 +138,7 @@ export const MunicipalityMapPanel = ({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex flex-col gap-1">
           <h2 id="municipality-map-title" className="text-base font-medium">
-            Mapa das Praças
+            Mapa dos Municípios
           </h2>
           <p className="text-sm text-muted-foreground">
             {comparisonActive && comparison
@@ -277,7 +277,7 @@ export const MunicipalityMapPanel = ({
         {/* zone breakdown below */}
         {bundle.zoneBreakdown.length > 0 && !comparisonActive ? (
           <div id="municipality-zone-breakdown" className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">Praças por zona eleitoral</h3>
+            <h3 className="text-sm font-medium">Municípios por zona eleitoral</h3>
             <p className="text-sm text-muted-foreground">
               Zonas não têm polígono oficial — Salvador e Camaçari aparecem agregadas no mapa e
               detalhadas aqui.

@@ -109,7 +109,7 @@ export const LeaderContactsPanel = ({
 
     {municipalityOptions.length === 0 ? (
       <p className="rounded-xl border px-4 py-6 text-sm text-muted-foreground">
-        Você ainda não está vinculada a nenhuma Praça. Fale com a assessoria da campanha.
+        Você ainda não está vinculada a nenhum município. Fale com a assessoria da campanha.
       </p>
     ) : (
       <LeaderContactForm

@@ -80,11 +80,11 @@ export const OrganizationForm = ({
 
       <RelationMultiSelect
         name="municipalities"
-        label="Praças de atuação"
+        label="Municípios de atuação"
         options={municipalityOptions}
         initialSelectedIDs={initial?.municipalityIDs ?? []}
         error={fieldError(state.fieldErrors, 'municipalities')}
-        placeholder="Adicionar Praça…"
+        placeholder="Adicionar município…"
       />
 
       <Field>

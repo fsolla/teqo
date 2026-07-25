@@ -79,7 +79,7 @@ export const Supporter: CollectionConfig = {
       name: 'municipality',
       type: 'relationship',
       relationTo: 'municipality',
-      label: 'Praça',
+      label: 'Município',
       index: true,
       access: {
         update: canManageCampaignStaffField,

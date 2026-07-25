@@ -27,7 +27,7 @@ export const MunicipalityTabNav = ({
   searchParams: MunicipalityDetailSearchParams
 }) => (
   <nav
-    aria-label="Seções da Praça"
+    aria-label="Seções do município"
     className="h-14 min-w-0 overflow-x-auto overflow-y-hidden border-b print:hidden"
   >
     <ul

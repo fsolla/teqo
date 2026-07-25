@@ -87,14 +87,14 @@ export const MapFeatureReadout = ({
         ) : null}
         {navigation?.kind === 'zones' ? (
           <p className="text-xs text-muted-foreground">
-            Toque de novo no mapa ou role até as Praças por zona abaixo.
+            Toque de novo no mapa ou role até os Municípios por zona abaixo.
           </p>
         ) : null}
       </div>
 
       {navigation?.kind === 'navigate' ? (
         <Button asChild className="min-h-11 shrink-0">
-          <Link href={`/campanha/municipios/${navigation.slug}`}>Abrir Praça</Link>
+          <Link href={`/campanha/municipios/${navigation.slug}`}>Abrir município</Link>
         </Button>
       ) : null}
     </div>

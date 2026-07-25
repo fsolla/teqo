@@ -41,7 +41,7 @@ export const MAX_LEADERSHIP_STATE_DEPUTIES = 20
 
 const municipalitiesArraySchema = z
   .array(positiveRelationshipId)
-  .min(1, 'Vincule a liderança a pelo menos uma Praça.')
+  .min(1, 'Vincule a liderança a pelo menos um município.')
   .max(MAX_LEADERSHIP_MUNICIPALITIES)
   .transform((ids) => [...new Set(ids)])
 

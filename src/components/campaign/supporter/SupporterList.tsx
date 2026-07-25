@@ -52,7 +52,7 @@ const SupporterCard = ({ supporter }: { supporter: SupporterListItemViewModel })
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          {supporter.city ?? 'Município não informado'}
+          {supporter.city ?? 'Cidade não informada'}
         </p>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -65,7 +65,7 @@ const SupporterCard = ({ supporter }: { supporter: SupporterListItemViewModel })
               {supporter.municipalityName}
             </Link>
           ) : (
-            <span className="text-muted-foreground">Sem Praça vinculada</span>
+            <span className="text-muted-foreground">Sem município vinculado</span>
           )}
         </p>
         {supporter.phone ? (
@@ -99,12 +99,12 @@ const supporterColumns: Array<CampaignTableColumn<SupporterListItemViewModel>> =
   },
   {
     id: 'city',
-    head: <CampaignTableHead>Município</CampaignTableHead>,
+    head: <CampaignTableHead>Cidade</CampaignTableHead>,
     cell: (supporter) => supporter.city ?? '—',
   },
   {
     id: 'municipality',
-    head: <CampaignTableHead>Praça</CampaignTableHead>,
+    head: <CampaignTableHead>Município</CampaignTableHead>,
     cellClassName: 'max-w-48 whitespace-normal',
     cell: (supporter) =>
       supporter.municipalityName ? (
@@ -115,7 +115,7 @@ const supporterColumns: Array<CampaignTableColumn<SupporterListItemViewModel>> =
           {supporter.municipalityName}
         </Link>
       ) : (
-        <span className="text-muted-foreground">Sem Praça vinculada</span>
+        <span className="text-muted-foreground">Sem município vinculado</span>
       ),
   },
   {

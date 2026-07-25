@@ -30,7 +30,7 @@ test.describe('Planos de ação — registro-fundação', () => {
     await page.getByLabel('Título *').fill(planTitle)
     await page.getByLabel('Tipo de ação *').selectOption('caminhada')
     await page.getByLabel('Origem da ação').selectOption('obrigacao_politica')
-    await page.getByLabel('Praça *').selectOption(String(municipality.id))
+    await page.getByLabel('Município *').selectOption(String(municipality.id))
 
     await page.getByRole('button', { name: 'Adicionar demanda' }).click()
     await page.getByLabel('Título da demanda 1').fill(transportDemand)

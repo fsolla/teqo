@@ -64,7 +64,7 @@ const validatePledgeIntegrity: CollectionBeforeChangeHook = async ({
   const leadershipID = relationshipId(data.leadership ?? originalDoc?.leadership)
   const municipalityID = relationshipId(data.municipality ?? originalDoc?.municipality)
   if (!leadershipID || !municipalityID) {
-    throw new APIError('Informe a liderança e a Praça do compromisso de votos.', 400)
+    throw new APIError('Informe a liderança e o município do compromisso de votos.', 400)
   }
 
   if (operation === 'update') {
@@ -74,7 +74,7 @@ const validatePledgeIntegrity: CollectionBeforeChangeHook = async ({
       (data.leadership !== undefined && leadershipID !== previousLeadership) ||
       (data.municipality !== undefined && municipalityID !== previousMunicipality)
     ) {
-      throw new APIError('A liderança e a Praça do compromisso não podem ser alteradas.', 409)
+      throw new APIError('A liderança e o município do compromisso não podem ser alterados.', 409)
     }
   }
 
@@ -90,7 +90,7 @@ const validatePledgeIntegrity: CollectionBeforeChangeHook = async ({
     .filter((id): id is number => id !== null)
 
   if (!linkedMunicipalityIDs.includes(municipalityID)) {
-    throw new APIError('A liderança precisa estar vinculada à Praça para declarar votos nela.', 409)
+    throw new APIError('A liderança precisa estar vinculada ao município para declarar votos nele.', 409)
   }
 
   return data
@@ -172,7 +172,7 @@ export const VotePledge: CollectionConfig = {
       name: 'municipality',
       type: 'relationship',
       relationTo: 'municipality',
-      label: 'Praça',
+      label: 'Município',
       required: true,
       index: true,
     },

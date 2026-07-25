@@ -31,7 +31,7 @@ export type SupporterFormValues = {
 }
 
 const safeActionMessages = [
-  'Esta pessoa já está cadastrada como apoiador nesta Praça.',
+  'Esta pessoa já está cadastrada como apoiador neste município.',
   'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.',
   'Somente a coordenação e a assessoria podem gerenciar apoiadores.',
   'Somente o Coordenador Geral pode cadastrar apoiadores sem município.',

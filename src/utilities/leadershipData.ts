@@ -106,7 +106,7 @@ const toLeadershipRows = async (
       municipalityNames: (doc.municipalities ?? [])
         .map(relationshipId)
         .filter((id): id is number => id !== null)
-        .map((id) => municipalityNames.get(id) ?? 'Praça'),
+        .map((id) => municipalityNames.get(id) ?? 'Município'),
       organizationNames: (doc.organizations ?? [])
         .map(relationshipId)
         .filter((id): id is number => id !== null)

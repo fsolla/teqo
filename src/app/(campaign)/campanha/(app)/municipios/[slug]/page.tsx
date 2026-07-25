@@ -158,7 +158,7 @@ export default async function MunicipalityDetailPage({
       {activeTab === 'demands' ? (
         <section className="rounded-xl border px-4 py-6">
           <p className="text-sm text-muted-foreground">
-            As demandas desta Praça aparecem em{' '}
+            As demandas deste município aparecem em{' '}
             <Link
               href="/campanha/demandas"
               className="text-primary underline-offset-4 hover:underline"
@@ -314,7 +314,7 @@ const ElectionsTab = async ({
             Comparativo entre candidatos
           </h2>
           <p className="text-sm text-muted-foreground">
-            Compare a votação de deputados federais nesta Praça através dos anos (fonte TSE, votos
+            Compare a votação de deputados federais neste município através dos anos (fonte TSE, votos
             nominais do 1º turno).
           </p>
         </div>

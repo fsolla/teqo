@@ -54,7 +54,7 @@ const organizationColumns: Array<CampaignTableColumn<OrganizationRowViewModel>> 
   },
   {
     id: 'municipalities',
-    head: <CampaignTableHead>Praças de atuação</CampaignTableHead>,
+    head: <CampaignTableHead>Municípios de atuação</CampaignTableHead>,
     cellClassName: 'max-w-64 whitespace-normal text-muted-foreground',
     cell: (row) => row.municipalityNames.join(', ') || '—',
   },

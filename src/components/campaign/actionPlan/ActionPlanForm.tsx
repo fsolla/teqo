@@ -283,7 +283,7 @@ export const ActionPlanFormFields = ({
         <CardContent>
           <FieldGroup>
             <Field data-invalid={Boolean(errorFor('municipality'))}>
-              <FieldLabel htmlFor="municipality">Praça *</FieldLabel>
+              <FieldLabel htmlFor="municipality">Município *</FieldLabel>
               <NativeSelect
                 id="municipality"
                 name="municipality"
@@ -293,7 +293,7 @@ export const ActionPlanFormFields = ({
                 aria-describedby={errorFor('municipality') ? 'municipality-error' : undefined}
                 className="w-full **:data-[slot=native-select]:min-h-11"
               >
-                <NativeSelectOption value="">Selecione a Praça</NativeSelectOption>
+                <NativeSelectOption value="">Selecione o município</NativeSelectOption>
                 {municipalityOptions.map((option) => (
                   <NativeSelectOption key={option.id} value={String(option.id)}>
                     {option.name}

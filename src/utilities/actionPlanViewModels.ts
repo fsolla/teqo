@@ -16,7 +16,7 @@ export const actionPlanMunicipalitySummary = (
     ? { id: municipality.id, name: municipality.name, slug: municipality.slug }
     : null
 
-/** Short "where" line, e.g. "Praça de Itabuna · Feira do Malhado". */
+/** Short "where" line, e.g. "Itabuna · Feira do Malhado". */
 export const formatActionPlanLocationLabel = ({
   municipalityName,
   locality,
