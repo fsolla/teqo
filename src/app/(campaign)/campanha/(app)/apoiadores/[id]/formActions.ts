@@ -1,5 +1,9 @@
 'use server'
 
+// Documented exception to `runCampaignFormAction` (Pass 2 W4d): these actions
+// feed message-only inline controls, so every mapped state (field errors
+// included) is flattened to a single message via `toMessageOnlyState`.
+
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 

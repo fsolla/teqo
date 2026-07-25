@@ -11,32 +11,29 @@ import {
 } from '@/lib/formData'
 import { organizationKinds, type OrganizationKind } from '@/lib/schemas/organization'
 import {
-  mapCampaignFormActionError,
+  runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
 
 export const updateOrganizationFormAction = async (
   _state: CampaignFormActionState,
   formData: FormData,
-): Promise<CampaignFormActionState> => {
-  try {
-    const rawKind = optionalFormText(formData, 'kind')
-    await updateOrganization({
-      id: requiredRelationshipFormValue(formData, 'organizationId'),
-      kind: organizationKinds.includes(rawKind as OrganizationKind)
-        ? (rawKind as OrganizationKind)
-        : undefined,
-      notes: nullableFormText(formData, 'notes'),
-      municipalities: repeatedRelationshipFormValues(formData, 'municipalities'),
-    })
-    revalidatePath('/campanha/organizacoes/[slug]', 'page')
-    return { status: 'success', message: 'Organização atualizada.' }
-  } catch (error) {
-    return mapCampaignFormActionError({
-      error,
-      safeMessages: ['Somente a coordenação e a assessoria gerenciam organizações.'],
-      genericMessage:
-        'Não foi possível salvar a organização. Verifique seu acesso e tente novamente.',
-    })
-  }
-}
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      const rawKind = optionalFormText(formData, 'kind')
+      await updateOrganization({
+        id: requiredRelationshipFormValue(formData, 'organizationId'),
+        kind: organizationKinds.includes(rawKind as OrganizationKind)
+          ? (rawKind as OrganizationKind)
+          : undefined,
+        notes: nullableFormText(formData, 'notes'),
+        municipalities: repeatedRelationshipFormValues(formData, 'municipalities'),
+      })
+      revalidatePath('/campanha/organizacoes/[slug]', 'page')
+      return { message: 'Organização atualizada.' }
+    },
+    safeMessages: ['Somente a coordenação e a assessoria gerenciam organizações.'],
+    genericMessage:
+      'Não foi possível salvar a organização. Verifique seu acesso e tente novamente.',
+  })

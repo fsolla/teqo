@@ -51,6 +51,52 @@ export const mapCampaignFormActionError = <Values>(
 }
 
 /**
+ * The shared stay-on-page form-action ladder: parse + mutate inside
+ * `execute` (thrown `FormDataBoundaryError`/`ZodError`/safe messages map to
+ * the standard error state), spread whatever `execute` resolves into the
+ * success state (`message` plus extras like created ids). Pre-parsed `values`
+ * and `revision` are echoed on failure so forms can repopulate.
+ *
+ * Documented exceptions that deliberately stay hand-rolled: the planos
+ * ladders (custom unique-violation mapping + async duplicate-title fallback)
+ * and apoiadores/[id] (flattens field errors into message-only states for
+ * its inline controls).
+ */
+export const runCampaignFormAction = async <
+  Success extends { message: string },
+  Values = undefined,
+>({
+  execute,
+  safeMessages,
+  genericMessage,
+  values,
+  revision,
+  resolveBoundaryMessage,
+}: {
+  execute: () => Promise<Success>
+  safeMessages?: readonly string[]
+  genericMessage: string
+  /** Echoed back on failure so the form can repopulate. */
+  values?: Values
+  revision?: number
+  resolveBoundaryMessage?: (error: FormDataBoundaryError) => string
+}): Promise<({ status: 'success' } & Success) | CampaignFormErrorState<Values>> => {
+  try {
+    const success = await execute()
+    return { ...success, status: 'success' as const }
+  } catch (error) {
+    return mapCampaignFormActionError({
+      error,
+      safeMessages,
+      genericMessage,
+      values,
+      revision,
+      resolveBoundaryMessage,
+    })
+  }
+}
+
+/**
  * The shared create→redirect form-action ladder: run the mutation, map any
  * failure through `mapCampaignFormActionError`, redirect on success. The
  * redirect happens OUTSIDE the try so Next's control-flow error is never

@@ -1,5 +1,11 @@
 'use server'
 
+// Documented exception to `runCampaignRedirectFormAction`/`runCampaignFormAction`
+// (Pass 2 W4d): these ladders carry a custom error mapper (DB unique-violation
+// regexes surfacing as field errors) plus an async duplicate-title fallback
+// that links to the existing plan — policy the shared wrappers deliberately
+// don't grow parameters for.
+
 import config from '@payload-config'
 import { getPayload } from 'payload'
 import { redirect } from 'next/navigation'

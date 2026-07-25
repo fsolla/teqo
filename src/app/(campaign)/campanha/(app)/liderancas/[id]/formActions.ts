@@ -11,7 +11,7 @@ import {
 } from '@/lib/formData'
 import { leadershipSectors, leadershipSupportStatuses } from '@/lib/schemas/leadership'
 import {
-  mapCampaignFormActionError,
+  runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
 
@@ -23,34 +23,31 @@ const safeMessages = [
 export const updateLeadershipInternalFormAction = async (
   _state: CampaignFormActionState,
   formData: FormData,
-): Promise<CampaignFormActionState> => {
-  try {
-    const sector = optionalFormText(formData, 'sector')
-    const supportStatus = optionalFormText(formData, 'supportStatus')
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      const sector = optionalFormText(formData, 'sector')
+      const supportStatus = optionalFormText(formData, 'supportStatus')
 
-    await updateLeadershipInternal({
-      id: requiredRelationshipFormValue(formData, 'leadershipId'),
-      municipalities: repeatedRelationshipFormValues(formData, 'municipalities'),
-      organizations: repeatedRelationshipFormValues(formData, 'organizations'),
-      stateDeputies: repeatedRelationshipFormValues(formData, 'stateDeputies'),
-      sector: leadershipSectors.includes(sector as (typeof leadershipSectors)[number])
-        ? (sector as (typeof leadershipSectors)[number])
-        : null,
-      supportStatus: leadershipSupportStatuses.includes(
-        supportStatus as (typeof leadershipSupportStatuses)[number],
-      )
-        ? (supportStatus as (typeof leadershipSupportStatuses)[number])
-        : undefined,
-      notes: nullableFormText(formData, 'notes'),
-      consentNote: nullableFormText(formData, 'consentNote'),
-    })
-    revalidatePath('/campanha/liderancas/[id]', 'page')
-    return { status: 'success', message: 'Ficha da liderança atualizada.' }
-  } catch (error) {
-    return mapCampaignFormActionError({
-      error,
-      safeMessages,
-      genericMessage: 'Não foi possível salvar a ficha. Verifique seu acesso e tente novamente.',
-    })
-  }
-}
+      await updateLeadershipInternal({
+        id: requiredRelationshipFormValue(formData, 'leadershipId'),
+        municipalities: repeatedRelationshipFormValues(formData, 'municipalities'),
+        organizations: repeatedRelationshipFormValues(formData, 'organizations'),
+        stateDeputies: repeatedRelationshipFormValues(formData, 'stateDeputies'),
+        sector: leadershipSectors.includes(sector as (typeof leadershipSectors)[number])
+          ? (sector as (typeof leadershipSectors)[number])
+          : null,
+        supportStatus: leadershipSupportStatuses.includes(
+          supportStatus as (typeof leadershipSupportStatuses)[number],
+        )
+          ? (supportStatus as (typeof leadershipSupportStatuses)[number])
+          : undefined,
+        notes: nullableFormText(formData, 'notes'),
+        consentNote: nullableFormText(formData, 'consentNote'),
+      })
+      revalidatePath('/campanha/liderancas/[id]', 'page')
+      return { message: 'Ficha da liderança atualizada.' }
+    },
+    safeMessages,
+    genericMessage: 'Não foi possível salvar a ficha. Verifique seu acesso e tente novamente.',
+  })

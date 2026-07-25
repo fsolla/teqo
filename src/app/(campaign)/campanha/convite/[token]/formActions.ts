@@ -13,7 +13,10 @@ import {
   requiredFormSecret,
   requiredFormText,
 } from '@/lib/formData'
-import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
+import {
+  mapCampaignFormActionError,
+  runCampaignFormAction,
+} from '@/utilities/campaignFormActionError'
 
 export type CampaignInviteFormState = {
   status?: 'success'
@@ -46,22 +49,20 @@ export const redeemCampaignInviteAutofillFormAction = async (
   token: string,
   _state: CampaignInviteFormState,
   formData: FormData,
-): Promise<CampaignInviteFormState> => {
-  try {
-    const input = campaignInviteAutofillSchema.parse({
-      token,
-      ...profileFromForm(formData),
-      consentAccepted: checkboxFormValue(formData, 'consentAccepted'),
-    })
-    await redeemCampaignInviteAutofill(input)
-    return {
-      status: 'success',
-      message: 'Seus dados foram confirmados com sucesso.',
-    }
-  } catch (error) {
-    return inviteFormError(error)
-  }
-}
+): Promise<CampaignInviteFormState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      const input = campaignInviteAutofillSchema.parse({
+        token,
+        ...profileFromForm(formData),
+        consentAccepted: checkboxFormValue(formData, 'consentAccepted'),
+      })
+      await redeemCampaignInviteAutofill(input)
+      return { message: 'Seus dados foram confirmados com sucesso.' }
+    },
+    genericMessage:
+      'Este convite não está disponível. Peça um novo convite à pessoa que falou com você.',
+  })
 
 export const redeemCampaignInviteLoginFormAction = async (
   token: string,
