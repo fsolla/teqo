@@ -1,6 +1,6 @@
 # Pinagem das superfícies de lista (Pass 2 — W0)
 
-Status: aprovado (Pass 2, 2026-07-25)
+Status: **entregue** (Pass 2, 2026-07-25)
 Atualizado em: 2026-07-25
 Item pai: [IMPROVE-CODE-QUALITY-PLAN.md](../IMPROVE-CODE-QUALITY-PLAN.md) — Pass 2, W0 (GATE de W1)
 Appetite: ~1 dia; sem migration, sem UI

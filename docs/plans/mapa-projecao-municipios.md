@@ -1,6 +1,6 @@
 # Mapa de projeção de votos por município (equiparar e superar as planilhas 2026)
 
-Status: E1, E2 e E3 implementados e mesclados em `main` (2026-07-19); **E4 cortado** (2026-07-19) e **reaberto/entregue como E4R em 2026-07-24** ([import-planilha-projecao.md](import-planilha-projecao.md) — `pnpm db:seed:projecao`); E5 pendente
+Status: E1, E2 e E3 implementados e mesclados em `main` (2026-07-19); **E4 cortado** (2026-07-19) e **reaberto/entregue como E4R em 2026-07-24** — **atenção (nota 2026-07-25):** o E4R fase 2 importa TAMBÉM as colunas de estratégia (SITUAÇÃO/DOBRADINHAS/LIDERANÇAS/ASSESSOR/…), superando o que este plano descrevia como import zero-PII ([import-planilha-projecao.md](import-planilha-projecao.md) — `pnpm db:seed:projecao`); E5 pendente
 Atualizado em: 2026-07-24 (E4R entregue — seed overwrite-always)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha E — itens E1–E5, "Ciclo 3")
 Responsável: —

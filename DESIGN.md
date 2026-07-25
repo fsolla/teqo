@@ -256,6 +256,10 @@ Controls feel **confident and compact**: short primary buttons, dense toolbars, 
 
 Operational meaning for leadership/support/estimates. Always use `Badge` variants tied to CSS tokens — never hardcode greens/ambers that drift from `--support-*` / `--estimate-*`.
 
+### Campaign list system (Pass 2 W1 — canonical, do not fork)
+
+Every `/campanha` list surface composes the shared pieces in `src/components/campaign/shared/`: `CampaignTable` (columns as data over house `ui/Table`; `rounded-xl border` container), `CampaignSearchForm` / `CampaignFilterChips` as the toolbar, `CampaignListFooter` (count + pagination), `CampaignListEmptyState` (`Empty` with icon + CTA, `min-h-72 border`), all inside `CampaignListPendingBoundary` so navigation dims the RESULTS region ("Feel the action"). Rich headers (sort + filter popovers) are the municipality islands (`MunicipalitySortableHead`/`MunicipalityHeaderFilter`) — the reference implementation, not yet generalized. New list = new column definitions + these shells; a bespoke table needs a documented exception (precedents: planos cards, `TerritoryOverviewTable`).
+
 ## 6. Do's and Don'ts
 
 ### Do:

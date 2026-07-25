@@ -1,6 +1,6 @@
 # Decisão de arquitetura: domínios vs camadas (Pass 2 — W2)
 
-Status: aprovado (Pass 2, 2026-07-25) — veredito D1 assinado: NO-GO no reorg, GO em convenções + correções de fronteira
+Status: **entregue** (Pass 2, 2026-07-25) — veredito D1 assinado: NO-GO no reorg, GO em convenções + correções de fronteira
 Atualizado em: 2026-07-25
 Item pai: [IMPROVE-CODE-QUALITY-PLAN.md](../IMPROVE-CODE-QUALITY-PLAN.md) — Pass 2, W2
 Appetite: ~1,5 dia

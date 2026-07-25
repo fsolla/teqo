@@ -1,6 +1,6 @@
 # B17 — Seletor de colunas na lista de Municípios
 
-Status: rascunho
+Status: rascunho — **costuras prontas desde o Pass 2 W1 (2026-07-25):** as colunas da lista são dado (`CampaignTable`, `CampaignTableColumn.id`/`mandatory`/`defaultVisible`); o seletor vira um toggle de visibilidade sobre esses ids + `localStorage`
 Atualizado em: 2026-07-24
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Demais itens abertos, B17; superfície de coordenação)
 Impeccable: B — encaixe em `MunicipalityList` / barra slim de `/campanha/municipios`; sem rota nova

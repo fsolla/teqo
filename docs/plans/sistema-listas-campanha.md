@@ -1,6 +1,6 @@
 # Sistema de listas da campanha (Pass 2 — W1)
 
-Status: aprovado (Pass 2, 2026-07-25)
+Status: **entregue** (Pass 2, 2026-07-25)
 Atualizado em: 2026-07-25
 Item pai: [IMPROVE-CODE-QUALITY-PLAN.md](../IMPROVE-CODE-QUALITY-PLAN.md) — Pass 2, W1 (2 entregas)
 Appetite: ~4 dias; sem migration, sem mudança de comportamento visível

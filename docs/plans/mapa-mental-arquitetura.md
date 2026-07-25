@@ -1,6 +1,6 @@
 # Mapa mental da arquitetura (Pass 2 — W3)
 
-Status: aprovado (Pass 2, 2026-07-25)
+Status: **entregue** (Pass 2, 2026-07-25)
 Atualizado em: 2026-07-25
 Item pai: [IMPROVE-CODE-QUALITY-PLAN.md](../IMPROVE-CODE-QUALITY-PLAN.md) — Pass 2, W3 (depois de W1/W2)
 Appetite: ~1 dia; docs-only

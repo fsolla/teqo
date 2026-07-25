@@ -1,6 +1,6 @@
 # Split de electionInsights.ts (Pass 2 — W4a)
 
-Status: aprovado (Pass 2, 2026-07-25) — decisão D2 assinada: DELETAR os clusters mortos
+Status: **entregue** (Pass 2, 2026-07-25) — decisão D2 assinada: DELETAR os clusters mortos
 Atualizado em: 2026-07-25
 Item pai: [IMPROVE-CODE-QUALITY-PLAN.md](../IMPROVE-CODE-QUALITY-PLAN.md) — Pass 2, W4a
 Appetite: ~0,5 dia; precisa terminar antes de E10 começar (~16/08)

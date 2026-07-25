@@ -1,6 +1,6 @@
 # Escala e DRY pós-B16 (filtros no header da lista)
 
-Status: rascunho
+Status: **absorvido pelo Pass 2 W1-D1** (2026-07-25) — Fase 1 (`useOptimistic` no `MunicipalityHeaderFilter`, `onNavigate` dentro da transition), Fase 2 (facet de município como slugs rotulados no cliente), Fase 3 (hrefs de opção via serializador canônico confiável, 1 serialização por opção com pin de byte-igualdade) e Fase 4 (facets no mesmo `Promise.all`, catálogo DRY, `clearMunicipalityListFilters`) entregues em [sistema-listas-campanha.md](sistema-listas-campanha.md); selects mobile otimistas continuam adiados com gatilho
 Atualizado em: 2026-07-25
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (B16+, fill-in de engenharia)
 Impeccable: A — N/A (sem superfície UI nova; as fases preservam o comportamento visível de B16)

@@ -68,18 +68,18 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 
 | WS  | Content                                                                                                                                 | Plan file                                                            | Status  | Date |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------- | ---- |
-| W0  | Safety net: pin list URL parsers + list loaders (unit + int smokes); TESTING/TECH-DEBT truth-up                                         | [pinagem-superficies-lista.md](plans/pinagem-superficies-lista.md)   | pending |      |
-| W1  | Generalized campaign list system (D1 core + municipality; D2 migrate entity triplet/demandas/apoiadores/assessores + delete superseded) | [sistema-listas-campanha.md](plans/sistema-listas-campanha.md)       | pending |      |
-| W2  | Architecture decision (DDD/clean-arch/SDP evaluation → conventions + boundary fixes) + staged `components/campaign` subfolders          | [decisao-arquitetura-dominios.md](plans/decisao-arquitetura-dominios.md) | pending |      |
-| W3  | `docs/ARCHITECTURE.md` + `.cursor/rules/codebase-map.mdc`                                                                               | [mapa-mental-arquitetura.md](plans/mapa-mental-arquitetura.md)       | pending |      |
-| W4a | `electionInsights.ts` gut/split: extract `electionFormat`, keep voteTrend, delete dead clusters (before E10)                            | [split-election-insights.md](plans/split-election-insights.md)       | pending |      |
-| W4b | knip unused-exports warn→error: delete zero-ref exports, un-export in-file symbols, config, CI flip                                     | (tracker only)                                                        | pending |      |
-| W4c | Detail-page RSC extraction (`municipios/[slug]`, `planos/[slug]`) + dedupe detail-tab helper twins                                      | (tracker only)                                                        | pending |      |
-| W4d | formActions finish: `runCampaignFormAction` (stay-on-page) + migrate 9 hand-rolled ladders (closes C8 F4)                               | (tracker only)                                                        | pending |      |
-| W4e | Single-source types: scenario triple, strategy VM, trend enum, duplicated constants/helpers, `DynamicFind` doc                          | (tracker only)                                                        | pending |      |
-| W4f | "Praça"→"Município" user-visible copy sweep (~55 visible hits + admin labels; consent texts stay for the legal batch)                   | (tracker only)                                                        | pending |      |
-| W5  | Documentation close-out: AGENTS.md refresh, ledger/TESTING reconcile, plan-status patches, roadmap fold-in, product-doc drift findings  | (tracker only)                                                        | pending |      |
-| D3  | `consent: 2` hardcode → Onda 0 provisional-key pattern (data migration + fail-closed switch; **migration SQL reviewed before landing**) | (tracker only)                                                        | pending |      |
+| W0  | Safety net: pin list URL parsers + list loaders (unit + int smokes); TESTING/TECH-DEBT truth-up                                         | [pinagem-superficies-lista.md](plans/pinagem-superficies-lista.md)   | done | 2026-07-25 |
+| W1  | Generalized campaign list system (D1 core + municipality; D2 migrate entity triplet/demandas/apoiadores/assessores + delete superseded) | [sistema-listas-campanha.md](plans/sistema-listas-campanha.md)       | done | 2026-07-25 |
+| W2  | Architecture decision (DDD/clean-arch/SDP evaluation → conventions + boundary fixes) + staged `components/campaign` subfolders          | [decisao-arquitetura-dominios.md](plans/decisao-arquitetura-dominios.md) | done | 2026-07-25 |
+| W3  | `docs/ARCHITECTURE.md` + `.cursor/rules/codebase-map.mdc`                                                                               | [mapa-mental-arquitetura.md](plans/mapa-mental-arquitetura.md)       | done | 2026-07-25 |
+| W4a | `electionInsights.ts` gut/split: extract `electionFormat`, keep voteTrend, delete dead clusters (before E10)                            | [split-election-insights.md](plans/split-election-insights.md)       | done | 2026-07-25 |
+| W4b | knip unused-exports warn→error: delete zero-ref exports, un-export in-file symbols, config, CI flip                                     | (tracker only)                                                        | done | 2026-07-25 |
+| W4c | Detail-page RSC extraction (`municipios/[slug]`, `planos/[slug]`) + dedupe detail-tab helper twins                                      | (tracker only)                                                        | done |       2026-07-25 |
+| W4d | formActions finish: `runCampaignFormAction` (stay-on-page) + migrate 9 hand-rolled ladders (closes C8 F4)                               | (tracker only)                                                        | done |       2026-07-25 |
+| W4e | Single-source types: scenario triple, strategy VM, trend enum, duplicated constants/helpers, `DynamicFind` doc                          | (tracker only)                                                        | done |       2026-07-25 |
+| W4f | "Praça"→"Município" user-visible copy sweep (~55 visible hits + admin labels; consent texts stay for the legal batch)                   | (tracker only)                                                        | done |       2026-07-25 |
+| W5  | Documentation close-out: AGENTS.md refresh, ledger/TESTING reconcile, plan-status patches, roadmap fold-in, product-doc drift findings  | (tracker only)                                                        | done |       2026-07-25 |
+| D3  | `consent: 2` hardcode → Onda 0 provisional-key pattern (data migration + fail-closed switch; **migration SQL reviewed before landing**) | (tracker only)                                                        | done |       2026-07-25 |
 
 Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<reason\> · skipped: \<reason\>
 
@@ -96,8 +96,15 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 
 ## Next Actions
 
-- [x] Materialize Pass 2 tracker section + per-workstream plans (this commit)
-- [ ] W0 → W1-D1 → W1-D2 (window 1), W4a/W4e/W4f interleaved
-- [ ] W2 → W4c/W4d → W3 (window 2)
-- [ ] W4b (last code delivery) → W5 (docs close-out)
-- [ ] D3 isolated delivery — migration SQL reviewed by the user before landing
+- [x] Materialize Pass 2 tracker section + per-workstream plans
+- [x] W0 → W1-D1 → W1-D2, W4a/W4e/W4f interleaved (all 2026-07-25)
+- [x] W2 → W4c/W4d → W3
+- [x] W4b (last code delivery) → W5 (docs close-out)
+- [x] D3 isolated delivery — **migration `20260725_170000_whatsapp_subscription_consent_key` must be SQL-reviewed by the user before pushing/deploying** (applies to prod on the Vercel build)
+- [ ] Post-pass follow-ups live in [TECH-DEBT.md](TECH-DEBT.md) (utilities/ subfolder trigger, `MunicipalityHeaderFilter` generalization trigger, e2e depth, users-roles migration) and the roadmap fill-ins
+
+## Product-doc drift findings (reported, deliberately NOT applied — product owner's call)
+
+- **PRODUCT.md** still describes surfaces with nuclei-era wording in places (e.g. references to the pre-remodel operational unit); the design principles and job statement remain accurate.
+- **DESIGN.md** component inventory misses the canonical shared components consolidated in Pass 2 (`CampaignTable` column system, `CampaignListFooter`, `CampaignListEmptyState`, `CampaignListPendingBoundary` family) — worth a section when DESIGN.md is next revised.
+- **docs/CUSTOMER.md** maps field request O6 to E13, but the shipped answer was **E16** (dossiê) — the mapping note should say "atendido por E16; E13 segue como evolução".

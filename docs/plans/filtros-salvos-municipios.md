@@ -1,6 +1,6 @@
 # B18 — Filtros salvos na lista de Municípios (+ acesso rápido no sidebar)
 
-Status: rascunho
+Status: rascunho — **costuras prontas desde o Pass 2 W1 (2026-07-25):** o estado de URL é canônico e serializável (`municipalityListUrl.ts`, contrato congelado); salvar filtro = nomear a serialização atual
 Atualizado em: 2026-07-24
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Demais itens abertos, B18; superfície de coordenação)
 Impeccable: B — encaixe em `MunicipalityFilters` / barra slim + `CampaignSidebar` (2º nível sob Municípios); sem rota nova

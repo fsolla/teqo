@@ -1,6 +1,6 @@
 # Seletor de Cenário junto aos filtros de Municípios
 
-Status: rascunho
+Status: rascunho — **nota Pass 2 W1 (2026-07-25):** o cenário continua client-side e NUNCA entra na serialização de URL da lista; mover para a URL é exatamente o escopo deste fill-in
 Atualizado em: 2026-07-24
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins)
 Impeccable: B — encaixe em `MunicipalityFilters` + `MunicipalityListOverview` (`/campanha/municipios`); sem rota nova

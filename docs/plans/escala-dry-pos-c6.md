@@ -1,6 +1,6 @@
 # Escala e DRY pós-C6 (apoiadores / import / listas)
 
-Status: F4 (DRY de forms) **entregue** — twin praça 2026-07-21 + hardening 2026-07-23; F1–F2 abertos com gatilho (volume real de import/base nominal pós-Onda 0); F3 parcialmente absorvido
+Status: F4 (DRY de forms) **entregue** — twin praça 2026-07-21 + hardening 2026-07-23; **o resto do F4 (10 escadas hand-rolled escritas depois) fechou em 2026-07-25 no Pass 2 W4d** (`runCampaignFormAction`, exceções documentadas em comentário); **F3 (parsers das listas de entidade) fechou no Pass 2 W1-D2**; F1–F2 abertos com gatilho (volume real de import/base nominal pós-Onda 0)
 Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios + hardening)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos, item C8)
 Responsável: —
