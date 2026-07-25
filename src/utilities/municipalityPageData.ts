@@ -14,7 +14,7 @@ import { type VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
 import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
-import type { MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
+import { centralDeficitSortValue, type MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
 import { loadMunicipalityGoalCoverageBundle } from '@/utilities/municipalityGoalAccount'
 import {
   buildMunicipalityListWhere,
@@ -226,10 +226,9 @@ const applyDerivedMunicipalitySort = (
       // server has no scenario to sort by (moving it to the URL is the
       // "Cenário junto aos filtros" fill-in). A município with no goal at all
       // has no deficit to rank — `null` sends it to the end either way.
-      return sortByNullableValue(docs, dir, (municipality) => {
-        const coverage = goalCoverageByMunicipalityID.get(municipality.id)?.central
-        return coverage && coverage.goal > 0 ? coverage.deficit : null
-      })
+      return sortByNullableValue(docs, dir, (municipality) =>
+        centralDeficitSortValue(goalCoverageByMunicipalityID.get(municipality.id)?.central),
+      )
     case 'frescor': {
       // One clock read for the whole sort: the accessor runs per comparison,
       // and a "now" that drifts mid-sort is not a consistent ordering key.

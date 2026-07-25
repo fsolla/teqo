@@ -5,6 +5,10 @@ import type { Payload } from 'payload'
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, VotePledge } from '@/payload-types'
 import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
+import {
+  type DashboardPriorityMunicipality,
+  pickDashboardPriorityMunicipalities,
+} from '@/utilities/dashboardPriorityMunicipalities'
 import type { MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
 import { loadMunicipalityGoalCoverageBundle } from '@/utilities/municipalityGoalAccount'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
@@ -29,7 +33,7 @@ export type StaffDashboardView = {
     contactName: string
     declaredVotes: number
   }>
-  priorityMunicipalities: Array<{ name: string; slug: string }>
+  priorityMunicipalities: DashboardPriorityMunicipality[]
   recentUpdates: Array<{
     id: number
     municipalityName: string
@@ -139,6 +143,11 @@ export const getCampaignDashboardData = async (
     resolveNames(payload, 'campaignUser', authorIDs, { name: true }),
   ])
 
+  const dashboardPriority = pickDashboardPriorityMunicipalities(
+    municipalities.docs,
+    goalCoverageBundle.coverageByMunicipalityID,
+  )
+
   return {
     kind: 'staff',
     role:
@@ -146,9 +155,6 @@ export const getCampaignDashboardData = async (
     municipalityCount: municipalities.docs.length,
     withAdvisorCount: municipalities.docs.filter(
       (municipality) => (municipality.advisors ?? []).length > 0,
-    ).length,
-    highPriorityCount: municipalities.docs.filter(
-      (municipality) => municipality.priority === 'alta',
     ).length,
     staffVoteTotalByScenario: { ...staffVoteTotalByScenario },
     declaredVotesTotal,
@@ -171,10 +177,8 @@ export const getCampaignDashboardData = async (
         declaredVotes: pledge.declaredVotes,
       }
     }),
-    priorityMunicipalities: municipalities.docs
-      .filter((municipality) => municipality.priority === 'alta')
-      .slice(0, 6)
-      .map((municipality) => ({ name: municipality.name, slug: municipality.slug })),
+    highPriorityCount: dashboardPriority.highPriorityCount,
+    priorityMunicipalities: dashboardPriority.municipalities,
     recentUpdates: recentUpdatesResult.docs.map((update) => {
       const municipality = municipalityById.get(relationshipId(update.municipality) ?? -1)
       const author = authorsById.get(relationshipId(update.author) ?? -1)

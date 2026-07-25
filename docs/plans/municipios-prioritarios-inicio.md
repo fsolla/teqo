@@ -1,7 +1,8 @@
 # Municípios prioritários no Início
 
-Status: rascunho
+Status: entregue (2026-07-25)
 Atualizado em: 2026-07-25
+Revisão 2026-07-25: implementado — `dashboardPriorityMunicipalities.ts`, loader + `CampaignDashboard` (Badge, Ver todas, list-none); auditoria corrigiu `coverageByMunicipalityID` no texto do plano.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Demais itens abertos, B20)
 Impeccable: B — encaixe na seção existente do dashboard staff (`CampaignDashboard` em `/campanha`); sem rota nova
 Appetite: ~0,5 dia eng; semântica da seção + ordenação + link “Ver todas” + markup sem bullets; sem migration
@@ -87,7 +88,7 @@ flowchart LR
 
 Componentes:
 
-- **`getCampaignDashboardData`** (`src/utilities/campaignDashboardData.ts`): após o bundle E8, filtrar `priority === 'alta'`, ordenar por `goalCoverageBundle.byMunicipalityId` (ou equivalente já exposto) no cenário `central` — maior `deficit` primeiro; `null`/sem meta no fim; `slice(0, DASHBOARD_PRIORITY_SAMPLE_LIMIT)`; continuar populando `highPriorityCount` (agora consumido na UI). Extrair helper puro testável se o sort não couber inline (&lt;15 linhas → pode ficar no próprio arquivo; ≥ complexidade → `pickDashboardPriorityMunicipalities` no mesmo módulo ou ao lado de `goalCoverage`).
+- **`getCampaignDashboardData`** (`src/utilities/campaignDashboardData.ts`): após o bundle E8, filtrar `priority === 'alta'`, ordenar por `goalCoverageBundle.coverageByMunicipalityID` no cenário `central` — maior `deficit` primeiro; `null`/sem meta no fim; `slice(0, DASHBOARD_PRIORITY_SAMPLE_LIMIT)`; continuar populando `highPriorityCount` (agora consumido na UI). Helper puro `pickDashboardPriorityMunicipalities` em `src/utilities/dashboardPriorityMunicipalities.ts`.
 - **`CampaignDashboard`** (`src/components/campaign/dashboard/CampaignDashboard.tsx`): header da seção com título + `Badge`/`span` com `highPriorityCount`; `ul` com `m-0 flex list-none flex-wrap gap-2 p-0 [&>li]:mt-0`; chips `Button outline` + `Link` como hoje; CTA `Link` “Ver todas” via `buildMunicipalityListHref` com `priority: 'alta'` (defaults de sort da lista — `deficit` desc — alinhados a E9). Esconder CTA se `highPriorityCount <= amostra`.
 - **Unit test** do helper de pick/sort (fixture 10 municipíos, assert ordem e limite).
 - **Migration:** Sem migration, sem collection, sem server action.
@@ -115,12 +116,15 @@ Componentes:
 
 - **Priorizar “alta sem assessor” na amostra.** Revisitar quando: CG pedir explicitamente no Início **ou** a coluna da vergonha deixar de ser descoberta na lista (evidência de sessão/R6).
 - **Expor `highPriorityCount` no metric strip.** Revisitar quando: houver 2º consumidor além do header da seção (hoje seria vaidade).
+- **Extrair `sortByNullableValue` para `lib/`.** Revisitar no 3º call site de ordenação por valor nullable (E9 lista + B20 já compartilham `centralDeficitSortValue` em `goalCoverage.ts`).
+- **Paralelizar `loadMunicipalityGoalCoverageBundle` com os finds de pledge/update no loader do Início.** Revisitar se TTFB medido do `/campanha` staff virar gargalo.
 
 ## Referências
 
 - `docs/roadmap.md` (B20; E9 fila; E4R seed ~50 alta)
-- `src/utilities/campaignDashboardData.ts` — loader + `slice(0, 6)` atual + `highPriorityCount` morto
-- `src/components/campaign/dashboard/CampaignDashboard.tsx` — seção + `ul` sem `list-none`
+- `src/utilities/campaignDashboardData.ts` — `pickDashboardPriorityMunicipalities` + `highPriorityCount`
+- `src/components/campaign/dashboard/CampaignDashboard.tsx` — Badge, “Ver todas”, `list-none`
+- `src/utilities/dashboardPriorityMunicipalities.ts` — pick/sort (E9 `central` déficit)
 - `src/utilities/municipalityListUrl.ts` — `buildMunicipalityListHref` / filtro `priority`
 - `src/utilities/municipalityPageData.ts` — `applyDerivedMunicipalitySort` (precedente déficit)
 - `src/app/(campaign)/campanha/(app)/assessores/[id]/page.tsx` — strip `list-none` de referência
