@@ -130,6 +130,7 @@ const leasedConsentKeys = new Set([
   'lideranca-autopreenchimento',
   'apoiador-cadastro',
   'apoiador-intencao-voto',
+  'whatsapp-inscricao',
 ])
 
 const defaultConsentText = (text: string): Consent['text'] => ({

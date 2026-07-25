@@ -28,6 +28,7 @@ import * as migration_20260724_175500_contact_phone_optional from './20260724_17
 import * as migration_20260724_180000_add_campaign_foundation_records from './20260724_180000_add_campaign_foundation_records'
 import * as migration_20260724_180000_add_campaign_goals_global from './20260724_180000_add_campaign_goals_global'
 import * as migration_20260725_022155_add_municipality_budget_notes from './20260725_022155_add_municipality_budget_notes'
+import * as migration_20260725_170000_whatsapp_subscription_consent_key from './20260725_170000_whatsapp_subscription_consent_key'
 
 export const migrations = [
   {
@@ -179,5 +180,10 @@ export const migrations = [
     up: migration_20260725_022155_add_municipality_budget_notes.up,
     down: migration_20260725_022155_add_municipality_budget_notes.down,
     name: '20260725_022155_add_municipality_budget_notes',
+  },
+  {
+    up: migration_20260725_170000_whatsapp_subscription_consent_key.up,
+    down: migration_20260725_170000_whatsapp_subscription_consent_key.down,
+    name: '20260725_170000_whatsapp_subscription_consent_key',
   },
 ]
