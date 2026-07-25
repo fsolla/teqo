@@ -35,7 +35,7 @@ type CampaignCollection =
   | 'votePledge'
   | 'campaignDemand'
   | 'allocationDecision'
-  | 'actionPlan'
+  | 'activity'
   | 'leadership'
   | 'supporter'
   | 'organization'
@@ -110,7 +110,7 @@ const emptyOwnedIDs = (): OwnedIDs => ({
   votePledge: new Set(),
   campaignDemand: new Set(),
   allocationDecision: new Set(),
-  actionPlan: new Set(),
+  activity: new Set(),
   leadership: new Set(),
   supporter: new Set(),
   organization: new Set(),
@@ -209,7 +209,7 @@ const purgeMunicipalityResidue = async (
   payload: Payload,
   municipalityID: number,
 ): Promise<void> => {
-  const [pledges, updates, demands, leaderships, supporters, plans] = await Promise.all([
+  const [pledges, updates, demands, leaderships, supporters, activities] = await Promise.all([
     payload.find({
       collection: 'votePledge',
       where: { municipality: { equals: municipalityID } },
@@ -246,7 +246,7 @@ const purgeMunicipalityResidue = async (
       select: {},
     }),
     payload.find({
-      collection: 'actionPlan',
+      collection: 'activity',
       where: { municipality: { equals: municipalityID } },
       depth: 0,
       pagination: false,
@@ -277,14 +277,14 @@ const purgeMunicipalityResidue = async (
       | 'campaignDemand'
       | 'leadership'
       | 'supporter'
-      | 'actionPlan'
+      | 'activity'
     ids: number[]
   }> = [
     { collection: 'campaignInvite', ids: invites.docs.map((doc) => doc.id) },
     { collection: 'votePledge', ids: pledges.docs.map((doc) => doc.id) },
     { collection: 'municipalityUpdate', ids: updates.docs.map((doc) => doc.id) },
     { collection: 'campaignDemand', ids: demands.docs.map((doc) => doc.id) },
-    { collection: 'actionPlan', ids: plans.docs.map((doc) => doc.id) },
+    { collection: 'activity', ids: activities.docs.map((doc) => doc.id) },
     { collection: 'leadership', ids: leadershipIDs },
     { collection: 'supporter', ids: supporters.docs.map((doc) => doc.id) },
   ]
@@ -507,7 +507,7 @@ export class CampaignFixtures {
         pagination: false,
       }),
       this.rootPayload.find({
-        collection: 'actionPlan',
+        collection: 'activity',
         where: {
           or: [{ title: { contains: this.runID } }, { slug: { contains: this.runID } }],
         },
@@ -534,7 +534,7 @@ export class CampaignFixtures {
     for (const user of roots[1].docs) this.own('campaignUser', user)
     for (const contact of roots[2].docs) this.own('contact', contact)
     for (const organization of roots[3].docs) this.own('organization', organization)
-    for (const plan of roots[4].docs) this.own('actionPlan', plan)
+    for (const activity of roots[4].docs) this.own('activity', activity)
     for (const demand of roots[5].docs) this.own('campaignDemand', demand)
     for (const consent of roots[6].docs) this.own('consent', consent)
   }
@@ -907,7 +907,7 @@ export class CampaignFixtures {
     }
 
     const lockedDocumentConditions = [
-      ['action_plan_id', this.owned.actionPlan],
+      ['activity_id', this.owned.activity],
       ['allocation_decision_id', this.owned.allocationDecision],
       ['campaign_invite_id', this.owned.campaignInvite],
       ['campaign_user_id', this.owned.campaignUser],
@@ -1004,7 +1004,7 @@ export class CampaignFixtures {
         'campaignDemand',
         'allocationDecision',
         'municipalityUpdate',
-        'actionPlan',
+        'activity',
         'leadership',
         'supporter',
         'organization',

@@ -217,7 +217,7 @@ describe('static table composition', () => {
     createElement(
       TableBody,
       null,
-      createElement(TableRow, null, createElement(TableCell, null, 'Praça Centro')),
+      createElement(TableRow, null, createElement(TableCell, null, 'Município Centro')),
     ),
   )
 
@@ -241,7 +241,7 @@ describe('static table composition', () => {
     })
 
     expect(container.querySelector('table')).not.toBeNull()
-    expect(container.textContent).toContain('Praça Centro')
+    expect(container.textContent).toContain('Município Centro')
     expect(consoleError).not.toHaveBeenCalled()
 
     await act(async () => root?.unmount())

@@ -1,6 +1,6 @@
 # Renomear "Plano de Ação" para "Atividade" (entidade, código e rotas)
 
-Status: rascunho
+Status: entregue (2026-07-25)
 Atualizado em: 2026-07-25
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha C, item C13)
 Impeccable: B — encaixe em telas existentes (`/campanha/planos` → `/campanha/atividades`, sidebar, cards do Início/dossiê/organização/demanda); nenhuma tela nova
@@ -20,6 +20,19 @@ Brief compacto:
 - **Estratégia de cor:** Restrained — nenhuma mudança de cor, ícone ou hierarquia; só vocabulário.
 - **Edit where you see:** N/A — este item não muda affordance de edição (a agenda continua com `/editar` para o formulário multi-campo, como hoje).
 - **Anti-goals:** redesenhar a vertical no mesmo PR (o critique/polish visual dela é **R6**); introduzir um segundo sinônimo ("Agenda" em um lugar, "Atividade" em outro); manter nomes de banco divergentes do código "porque é só cosmético".
+
+## As-built (2026-07-25)
+
+Entregue como planejado, com quatro correções de inventário que a auditoria contra o banco real levantou:
+
+- **4 tabelas, não 5.** `action_plan_texts` não existe mais — a remodelagem de 2026-07-23 já a havia removido. O rename cobre `activity{,_tasks,_updates,_rels}`.
+- **O snapshot do drizzle não era a lista-alvo completa.** `action_plan_upcoming_start_at_idx` (índice parcial escrito à mão em `20260719_014906_action_plan_list_perf.ts`) não aparece no `.json`; a lista canônica veio de `pg_indexes`/`pg_constraint`/`pg_type`/`pg_sequences`. Total renomeado: **4 tabelas, 3 enums, 2 colunas, 39 índices** (4 pkeys inclusos — `ALTER INDEX … RENAME` leva a constraint junto), **14 FKs** e **2 sequences**.
+- **Fósseis `%plaza%` corrigidos no mesmo passo** (decisão do usuário nesta sessão): a remodelagem renomeou as colunas `plaza_id` → `municipality_id` mas não os índices, então o banco tinha `action_plan_plaza_idx`, `campaign_demand_plaza_idx`, `leadership_rels_plaza_id_idx`, `organization_rels_plaza_id_idx`, `supporter_plaza_idx`, `supporter_contact_plaza_nulls_not_distinct_idx`, `vote_pledge_plaza_idx` e `leadership_plaza_idx` enquanto o snapshot já dizia `*_municipality*`. Os 8 foram alinhados aqui; o `down()` os restaura, para não inventar um estado que nunca existiu.
+- **Snapshot escrito à mão.** `pnpm migrate:create` é interativo para renames (pergunta enum por enum), então o `.json` foi derivado do snapshot anterior por transformação textual e validado pelo teste que importa: `pnpm migrate:create __probe` responde **"No schema changes detected"**.
+
+Decisões de vocabulário fechadas na implementação: sidebar **"Atividades"**; rótulos de campo alinhados à entidade (**"Tipo de atividade"**, **"Origem da atividade"**, **"Resultado da atividade"**), porque "ação" ao lado de "atividade" reintroduzia a tradução mental que o item existe para eliminar. Rota nova é `/campanha/atividades/nova` (feminino, como `demandas/nova`). Valores de enum `kind`/`status` seguem inalterados, como o plano previa.
+
+Efeito colateral do guard: estendê-lo a `tests/` e `scripts/` revelou fósseis "Praça" em fixtures e nomes de teste (8 ocorrências), limpos no mesmo PR; `scripts/generate-remodel-municipalities-migration.mjs` (gera SQL congelado) e o comentário histórico em `tests/int/campaignMigrationReconciliation.int.spec.ts` entraram na allowlist.
 
 ## Dados → decisão → apresentação
 

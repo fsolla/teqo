@@ -82,7 +82,7 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
           <h1 className="text-2xl font-semibold tracking-tight">Organizações</h1>
           <p className="text-muted-foreground">
             Sindicatos, associações e movimentos que apoiam a campanha — com suas lideranças e
-            Planos de Ação.
+            atividades.
           </p>
         </div>
         <Button asChild className="min-h-11">
@@ -118,7 +118,7 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
             <CampaignListEmptyState
               icon={SearchXIcon}
               title="Nenhuma organização cadastrada"
-              description="Cadastre sindicatos, associações e movimentos para vincular lideranças e Planos de Ação."
+              description="Cadastre sindicatos, associações e movimentos para vincular lideranças e atividades."
             >
               <Button asChild className="min-h-11">
                 <Link href="/campanha/organizacoes/nova">

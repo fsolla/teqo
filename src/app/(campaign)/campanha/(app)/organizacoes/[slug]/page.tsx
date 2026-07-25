@@ -8,7 +8,7 @@ import { OrganizationForm } from '@/components/campaign/organization/Organizatio
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { actionPlanStatusLabels, actionPlanStatuses } from '@/lib/schemas/actionPlan'
+import { activityStatusLabels, activityStatuses } from '@/lib/schemas/activity'
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
@@ -23,8 +23,8 @@ type OrganizationDetailPageProps = {
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' })
 
 const statusLabel = (status: string): string =>
-  actionPlanStatuses.includes(status as (typeof actionPlanStatuses)[number])
-    ? actionPlanStatusLabels[status as (typeof actionPlanStatuses)[number]]
+  activityStatuses.includes(status as (typeof activityStatuses)[number])
+    ? activityStatusLabels[status as (typeof activityStatuses)[number]]
     : status
 
 export default async function OrganizationDetailPage({ params }: OrganizationDetailPageProps) {
@@ -94,31 +94,33 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
         </section>
 
         <section
-          aria-labelledby="organization-plans-title"
+          aria-labelledby="organization-activities-title"
           className="flex flex-col gap-3 rounded-xl border p-4"
         >
           <div className="flex items-center gap-2">
             <CalendarDaysIcon className="size-4 text-muted-foreground" aria-hidden="true" />
-            <h2 id="organization-plans-title" className="text-base font-medium">
-              Planos de Ação apoiados
+            <h2 id="organization-activities-title" className="text-base font-medium">
+              Atividades apoiadas
             </h2>
-            <Badge variant="outline">{organization.actionPlans.length}</Badge>
+            <Badge variant="outline">{organization.activities.length}</Badge>
           </div>
-          {organization.actionPlans.length ? (
+          {organization.activities.length ? (
             <ul className="flex flex-col gap-2">
-              {organization.actionPlans.map((plan) => (
-                <li key={plan.id} className="flex items-center justify-between gap-2">
+              {organization.activities.map((activity) => (
+                <li key={activity.id} className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 flex-col">
                     <Link
-                      href={`/campanha/planos/${plan.slug}`}
+                      href={`/campanha/atividades/${activity.slug}`}
                       className="truncate font-medium text-primary underline-offset-4 hover:underline"
                     >
-                      {plan.title}
+                      {activity.title}
                     </Link>
                     <span className="text-sm text-muted-foreground">
-                      {statusLabel(plan.status)}
-                      {plan.startAt ? ` · ${dateFormatter.format(new Date(plan.startAt))}` : ''}
-                      {plan.deputyPresent ? ' · Deputado presente' : ''}
+                      {statusLabel(activity.status)}
+                      {activity.startAt
+                        ? ` · ${dateFormatter.format(new Date(activity.startAt))}`
+                        : ''}
+                      {activity.deputyPresent ? ' · Deputado presente' : ''}
                     </span>
                   </div>
                 </li>
@@ -126,7 +128,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
             </ul>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Nenhum Plano de Ação vinculado a esta organização ainda.
+              Nenhuma atividade vinculada a esta organização ainda.
             </p>
           )}
         </section>

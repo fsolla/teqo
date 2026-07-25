@@ -30,8 +30,8 @@ export default async function NewOrganizationPage() {
         </Button>
         <h1 className="text-2xl font-semibold tracking-tight">Nova organização</h1>
         <p className="text-muted-foreground">
-          Cadastre sindicatos, associações, movimentos e afins para vincular lideranças e Planos de
-          Ação.
+          Cadastre sindicatos, associações, movimentos e afins para vincular lideranças e
+          atividades.
         </p>
       </header>
 

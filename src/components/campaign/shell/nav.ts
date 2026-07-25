@@ -26,7 +26,7 @@ const staffNav: CampaignNavItem[] = [
   { title: 'Municípios', href: '/campanha/municipios', icon: MapPinIcon },
   { title: 'Lideranças', href: '/campanha/liderancas', icon: HandshakeIcon },
   { title: 'Dobradinhas', href: '/campanha/dobradinhas', icon: Users2Icon },
-  { title: 'Planos', href: '/campanha/planos', icon: CalendarDaysIcon },
+  { title: 'Atividades', href: '/campanha/atividades', icon: CalendarDaysIcon },
   { title: 'Demandas', href: '/campanha/demandas', icon: InboxIcon },
   { title: 'Apoiadores', href: '/campanha/apoiadores', icon: UsersIcon },
   { title: 'Assessores', href: '/campanha/assessores', icon: UserCogIcon },

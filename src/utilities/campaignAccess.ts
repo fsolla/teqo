@@ -102,15 +102,15 @@ export {
 } from '@/utilities/access/demands'
 
 export {
-  canCreateActionPlan,
-  canCreateActionPlanAdvisors,
-  canDeleteActionPlan,
-  canManageActionPlanAdvisors,
-  canReadActionPlan,
-  canSetActionPlanStatus,
-  canSetActionPlanSystemField,
-  canUpdateActionPlan,
-} from '@/utilities/access/actionPlans'
+  canCreateActivity,
+  canCreateActivityAdvisors,
+  canDeleteActivity,
+  canManageActivityAdvisors,
+  canReadActivity,
+  canSetActivityStatus,
+  canSetActivitySystemField,
+  canUpdateActivity,
+} from '@/utilities/access/activities'
 
 export {
   assertCanReadElectionData,

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { ActionPlanStatusBadge } from '@/components/campaign/actionPlan/ActionPlanStatusBadge'
+import { ActivityStatusBadge } from '@/components/campaign/activity/ActivityStatusBadge'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { MunicipalityBaselineCard } from '@/components/campaign/municipality/MunicipalityBaselineCard'
 import { MunicipalityStrategyCard } from '@/components/campaign/municipality/MunicipalityStrategyCard'
@@ -8,8 +8,8 @@ import { MunicipalityUpdateFeed } from '@/components/campaign/municipality/Munic
 import { Badge } from '@/components/ui/Badge'
 import type { MunicipalityAgeBandKey } from '@/lib/bahiaMunicipalityDemographics'
 import { formatElectionNumber } from '@/lib/electionFormat'
-import { actionPlanKindLabels } from '@/lib/schemas/actionPlan'
-import type { ActionPlanListViewModel } from '@/utilities/actionPlanViewModels'
+import { activityKindLabels } from '@/lib/schemas/activity'
+import type { ActivityListViewModel } from '@/utilities/activityViewModels'
 import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 import {
   formatGoalCoverageDeficitLabel,
@@ -65,22 +65,22 @@ const SectionHeader = ({
   </div>
 )
 
-const PlanListItem = ({ plan }: { plan: ActionPlanListViewModel }) => (
+const ActivityListItem = ({ activity }: { activity: ActivityListViewModel }) => (
   <li className="flex flex-col gap-1 rounded-lg bg-muted/40 px-3 py-2">
     <div className="flex flex-wrap items-center gap-2">
       <Link
-        href={`/campanha/planos/${plan.slug}`}
+        href={`/campanha/atividades/${activity.slug}`}
         className="text-sm font-medium underline-offset-4 hover:underline"
       >
-        {plan.title}
+        {activity.title}
       </Link>
-      <Badge variant="secondary">{actionPlanKindLabels[plan.kind]}</Badge>
-      <ActionPlanStatusBadge status={plan.status} />
-      {plan.deputyPresent ? <Badge>Deputado presente</Badge> : null}
+      <Badge variant="secondary">{activityKindLabels[activity.kind]}</Badge>
+      <ActivityStatusBadge status={activity.status} />
+      {activity.deputyPresent ? <Badge>Deputado presente</Badge> : null}
     </div>
     <p className="text-xs text-muted-foreground">
-      {plan.startAt ? formatBahiaDateTimeLabel(plan.startAt) : 'Sem data definida'}
-      {plan.locality ? ` · ${plan.locality}` : ''}
+      {activity.startAt ? formatBahiaDateTimeLabel(activity.startAt) : 'Sem data definida'}
+      {activity.locality ? ` · ${activity.locality}` : ''}
     </p>
   </li>
 )
@@ -274,27 +274,27 @@ export const MunicipalityDossier = ({
         <SectionHeader
           id="dossier-agenda-title"
           title="Agenda no município"
-          seeAllHref={`/campanha/planos?municipality=${view.id}`}
+          seeAllHref={`/campanha/atividades?municipality=${view.id}`}
           seeAllLabel="Ver agenda completa"
         />
-        {data.upcomingPlans.length ? (
+        {data.upcomingActivities.length ? (
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">Próximos eventos</h3>
             <ul className="flex flex-col gap-2">
-              {data.upcomingPlans.map((plan) => (
-                <PlanListItem key={plan.id} plan={plan} />
+              {data.upcomingActivities.map((activity) => (
+                <ActivityListItem key={activity.id} activity={activity} />
               ))}
             </ul>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">Nenhum evento futuro planejado.</p>
         )}
-        {data.recentPlans.length ? (
+        {data.recentActivities.length ? (
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">Últimas ações realizadas</h3>
             <ul className="flex flex-col gap-2">
-              {data.recentPlans.map((plan) => (
-                <PlanListItem key={plan.id} plan={plan} />
+              {data.recentActivities.map((activity) => (
+                <ActivityListItem key={activity.id} activity={activity} />
               ))}
             </ul>
           </div>

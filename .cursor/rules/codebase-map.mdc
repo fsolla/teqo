@@ -18,7 +18,7 @@ Conceitos e decisões: `docs/ARCHITECTURE.md`. Operação (setup/seeds/deploy/se
 - `src/app/(campaign)/campanha` — ferramenta interna (auth `campaignUser`, cookie `campaign-token`; barreira no layout de `(app)`). Server actions em `campanha/actions/*`; `formActions.ts` por rota são cascas sobre `runCampaignFormAction` / `runCampaignRedirectFormAction` (`utilities/campaignFormActionError.ts`).
 - `src/collections/` + `src/globals/` — modelo de dados Payload; TODA collection declara `access`; schema muda só por migration (`pnpm migrate:create`).
 - `src/utilities/access/` — RBAC por domínio; `campaignAccess.ts` é o barrel de re-export; predicados de role client-safe em `src/lib/campaignRoles.ts`.
-- `src/components/campaign/<domínio>/` — municipality, actionPlan, supporter, leadership, advisor, demand, organization, stateDeputy, votePledge, invite, map, dashboard, auth, shell (sidebar/nav/PWA), shared (sistema de listas + widgets genéricos).
+- `src/components/campaign/<domínio>/` — municipality, activity, supporter, leadership, advisor, demand, organization, stateDeputy, votePledge, invite, map, dashboard, auth, shell (sidebar/nav/PWA), shared (sistema de listas + widgets genéricos).
 - `src/components/ui/` — kit shadcn da casa (sem peças mortas; `shadcn add` re-adiciona).
 - `src/lib/schemas/` — zod de entrada; `src/lib/` também guarda catálogos estáticos e o artefato TSE (`electionAggregates/`).
 - `src/migrations/` — história congelada; nunca editar retroativamente.
@@ -26,11 +26,11 @@ Conceitos e decisões: `docs/ARCHITECTURE.md`. Operação (setup/seeds/deploy/se
 
 ## Sistema de listas (Pass 2 W1 — use, não reinvente)
 
-- URL: `utilities/campaignListUrl.ts` (parse/canonicalize/`resolveListUrl`) + módulo por domínio (`municipalityListUrl.ts`, `supporterUi.ts`, `actionPlanUi.ts`, parsers nos `*Data.ts`). Contrato de URL congelado (B18).
+- URL: `utilities/campaignListUrl.ts` (parse/canonicalize/`resolveListUrl`) + módulo por domínio (`municipalityListUrl.ts`, `supporterUi.ts`, `activityUi.ts`, parsers nos `*Data.ts`). Contrato de URL congelado (B18).
 - Tabela: `shared/CampaignTable.tsx` — colunas como dado (`id`, `head`, `cell`, seams `mandatory`/`defaultVisible` p/ B17); heads ricos = ilhas (`municipality/MunicipalitySortableHead` + `MunicipalityHeaderFilter`).
 - Shells: `CampaignSearchForm`, `CampaignFilterChips`, `CampaignListFooter`, `CampaignListEmptyState`, `CampaignListPagination`, pending compartilhado em `CampaignListPending.tsx` (dima o resultado, não o controle).
-- Exceções documentadas: planos = cards; `TerritoryOverviewTable` = sort no cliente; comparação de candidatos, LeaderContacts e preview de import ficam fora.
-- Detalhe por tabs: `utilities/detailTabUi.ts` (factory) + sections RSC colocadas na rota (`municipios/[slug]/MunicipalityDetailTabs.tsx`, `planos/[slug]/ActionPlanOverviewTab.tsx`).
+- Exceções documentadas: atividades = cards; `TerritoryOverviewTable` = sort no cliente; comparação de candidatos, LeaderContacts e preview de import ficam fora.
+- Detalhe por tabs: `utilities/detailTabUi.ts` (factory) + sections RSC colocadas na rota (`municipios/[slug]/MunicipalityDetailTabs.tsx`, `atividades/[slug]/ActivityOverviewTab.tsx`).
 
 ## Achar o dono de uma feature
 

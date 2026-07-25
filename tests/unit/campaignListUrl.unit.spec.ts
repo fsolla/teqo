@@ -70,7 +70,7 @@ describe('inspectRawListParams', () => {
   })
 })
 
-// A minimal list-state fixture mirroring how supporter/actionPlan lists wire
+// A minimal list-state fixture mirroring how supporter/activity lists wire
 // resolveListUrl: q + page, canonical order q-then-page, page omitted at 1.
 type FixtureState = { page: number; q?: string }
 

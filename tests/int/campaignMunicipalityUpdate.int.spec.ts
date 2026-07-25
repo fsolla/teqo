@@ -474,7 +474,7 @@ describe('campaign municipality update domain', () => {
     const oldRemaining = await createMunicipalityUpdateRecord(payload, coordinator, {
       municipality: oldMunicipality.id,
       kind: 'nota',
-      body: 'Permanece na Praça original',
+      body: 'Permanece no município original',
     })
     const moved = await createMunicipalityUpdateRecord(payload, coordinator, {
       municipality: oldMunicipality.id,

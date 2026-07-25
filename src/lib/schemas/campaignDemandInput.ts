@@ -12,7 +12,7 @@ export const campaignDemandCreateSchema = z.object({
   kind: z.enum(campaignDemandKinds),
   description: trimmedOptionalText(4000),
   municipality: positiveRelationshipId,
-  actionPlan: positiveRelationshipId.optional(),
+  activity: positiveRelationshipId.optional(),
   /** Staff may record on behalf of a leadership; leaders get their own. */
   leadership: positiveRelationshipId.optional(),
 })

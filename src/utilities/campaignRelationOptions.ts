@@ -6,7 +6,7 @@ import type { RelationOption } from '@/components/campaign/shared/RelationMultiS
 import type { CampaignUser } from '@/payload-types'
 import { relationshipId } from '@/utilities/relationship'
 
-export type ActionPlanRelationOption = RelationOption & {
+export type ActivityRelationOption = RelationOption & {
   municipalityId: number
 }
 
@@ -47,12 +47,12 @@ export const loadOrganizationOptions = async (
   return result.docs.map((organization) => ({ id: organization.id, name: organization.name }))
 }
 
-export const loadActionPlanOptions = async (
+export const loadActivityOptions = async (
   payload: Payload,
   user: CampaignUser,
-): Promise<ActionPlanRelationOption[]> => {
+): Promise<ActivityRelationOption[]> => {
   const result = await payload.find({
-    collection: 'actionPlan',
+    collection: 'activity',
     depth: 0,
     limit: 0,
     pagination: false,
@@ -63,9 +63,9 @@ export const loadActionPlanOptions = async (
     overrideAccess: false,
   })
 
-  return result.docs.flatMap((plan) => {
-    const municipalityId = relationshipId(plan.municipality)
-    return municipalityId ? [{ id: plan.id, name: plan.title, municipalityId }] : []
+  return result.docs.flatMap((activity) => {
+    const municipalityId = relationshipId(activity.municipality)
+    return municipalityId ? [{ id: activity.id, name: activity.title, municipalityId }] : []
   })
 }
 

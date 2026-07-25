@@ -156,7 +156,7 @@ export type OrganizationDetailViewModel = {
   municipalityIDs: number[]
   municipalityNames: string[]
   leaderships: Array<{ id: number; name: string }>
-  actionPlans: Array<{
+  activities: Array<{
     id: number
     title: string
     slug: string
@@ -188,7 +188,7 @@ export const loadOrganizationDetail = async (
     .filter((id): id is number => id !== null)
   const municipalityNames = await municipalityNamesByIds(payload, municipalityIDs)
 
-  const [leaderships, actionPlans] = await Promise.all([
+  const [leaderships, activities] = await Promise.all([
     payload.find({
       collection: 'leadership',
       where: { organizations: { in: [organization.id] } },
@@ -199,7 +199,7 @@ export const loadOrganizationDetail = async (
       overrideAccess: false,
     }),
     payload.find({
-      collection: 'actionPlan',
+      collection: 'activity',
       where: { organizations: { in: [organization.id] } },
       depth: 0,
       limit: 20,
@@ -235,13 +235,13 @@ export const loadOrganizationDetail = async (
             : 'Contato',
       }
     }),
-    actionPlans: actionPlans.docs.map((plan) => ({
-      id: plan.id,
-      title: plan.title,
-      slug: plan.slug,
-      status: String(plan.status),
-      startAt: plan.startAt ?? null,
-      deputyPresent: Boolean(plan.deputyPresent),
+    activities: activities.docs.map((activity) => ({
+      id: activity.id,
+      title: activity.title,
+      slug: activity.slug,
+      status: String(activity.status),
+      startAt: activity.startAt ?? null,
+      deputyPresent: Boolean(activity.deputyPresent),
     })),
   }
 }

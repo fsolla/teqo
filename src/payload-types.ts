@@ -81,7 +81,7 @@ export interface Config {
     supporter: Supporter;
     supporterImportBatch: SupporterImportBatch;
     municipalityUpdate: MunicipalityUpdate;
-    actionPlan: ActionPlan;
+    activity: Activity;
     electionTally: ElectionTally;
     electionCandidateVote: ElectionCandidateVote;
     electionCandidate: ElectionCandidate;
@@ -116,7 +116,7 @@ export interface Config {
     supporter: SupporterSelect<false> | SupporterSelect<true>;
     supporterImportBatch: SupporterImportBatchSelect<false> | SupporterImportBatchSelect<true>;
     municipalityUpdate: MunicipalityUpdateSelect<false> | MunicipalityUpdateSelect<true>;
-    actionPlan: ActionPlanSelect<false> | ActionPlanSelect<true>;
+    activity: ActivitySelect<false> | ActivitySelect<true>;
     electionTally: ElectionTallySelect<false> | ElectionTallySelect<true>;
     electionCandidateVote: ElectionCandidateVoteSelect<false> | ElectionCandidateVoteSelect<true>;
     electionCandidate: ElectionCandidateSelect<false> | ElectionCandidateSelect<true>;
@@ -479,7 +479,7 @@ export interface StateDeputy {
   createdAt: string;
 }
 /**
- * Sindicatos, associações, movimentos e afins. Concentra lideranças associadas e Planos de Ação apoiados.
+ * Sindicatos, associações, movimentos e afins. Concentra lideranças associadas e Atividades apoiadas.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "organization".
@@ -597,7 +597,7 @@ export interface CampaignDemand {
     | 'outro';
   description?: string | null;
   municipality: number | Municipality;
-  actionPlan?: (number | null) | ActionPlan;
+  activity?: (number | null) | Activity;
   leadership?: (number | null) | Leadership;
   status: 'aberta' | 'em_analise' | 'escalada' | 'aprovada' | 'rejeitada';
   decisionNote?: string | null;
@@ -626,9 +626,9 @@ export interface CampaignDemand {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "actionPlan".
+ * via the `definition` "activity".
  */
-export interface ActionPlan {
+export interface Activity {
   id: number;
   title: string;
   slug: string;
@@ -650,7 +650,7 @@ export interface ActionPlan {
   description?: string | null;
   origin?: ('dado' | 'pedido_broker' | 'obrigacao_politica') | null;
   /**
-   * Marque quando o deputado Jorge Solla estiver presente na ação.
+   * Marque quando o deputado Jorge Solla estiver presente na atividade.
    */
   deputyPresent?: boolean | null;
   startAt?: string | null;
@@ -1206,8 +1206,8 @@ export interface PayloadLockedDocument {
         value: number | MunicipalityUpdate;
       } | null)
     | ({
-        relationTo: 'actionPlan';
-        value: number | ActionPlan;
+        relationTo: 'activity';
+        value: number | Activity;
       } | null)
     | ({
         relationTo: 'electionTally';
@@ -1516,7 +1516,7 @@ export interface CampaignDemandSelect<T extends boolean = true> {
   kind?: T;
   description?: T;
   municipality?: T;
-  actionPlan?: T;
+  activity?: T;
   leadership?: T;
   status?: T;
   decisionNote?: T;
@@ -1592,9 +1592,9 @@ export interface MunicipalityUpdateSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "actionPlan_select".
+ * via the `definition` "activity_select".
  */
-export interface ActionPlanSelect<T extends boolean = true> {
+export interface ActivitySelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   kind?: T;
@@ -2193,7 +2193,7 @@ export interface TaskCreateCollectionExport {
       | 'supporter'
       | 'supporterImportBatch'
       | 'municipalityUpdate'
-      | 'actionPlan'
+      | 'activity'
       | 'electionTally'
       | 'electionCandidateVote'
       | 'electionCandidate'

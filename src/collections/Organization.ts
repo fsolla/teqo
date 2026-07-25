@@ -42,7 +42,7 @@ export const Organization: CollectionConfig = {
     useAsTitle: 'name',
     defaultColumns: ['name', 'kind', 'updatedAt'],
     description:
-      'Sindicatos, associações, movimentos e afins. Concentra lideranças associadas e Planos de Ação apoiados.',
+      'Sindicatos, associações, movimentos e afins. Concentra lideranças associadas e Atividades apoiadas.',
   },
   access: {
     create: canCreateOrganization,

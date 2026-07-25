@@ -64,7 +64,7 @@ describe('recentVisits storage', () => {
       recordRecentVisit(
         sampleEntry({
           href: `/campanha/municipios/praca-${index}`,
-          label: `Praça ${index}`,
+          label: `Município `,
           visitedAt: index,
         }),
       )

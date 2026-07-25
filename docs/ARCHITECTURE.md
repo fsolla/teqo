@@ -30,7 +30,7 @@ flowchart LR
 - **`src/lib/`** — lógica pura e dados estáticos, importável de client e server: catálogos (`municipalityCatalog`, `bahiaTerritories`, geometrias TopoJSON), schemas zod (`lib/schemas/*`), helpers puros (`phone`, `slug`, `wordStartFilter`, `voteEstimate`, `electionFormat`, `voteTrend`), constantes client-safe (`campaignConsentKeys`, `campaignRoles`), artefato TSE (`electionAggregates/` + `bahiaElectionAggregates.ts`). `lib/` **nunca importa de `utilities/`** (as 9 inversões históricas foram zeradas no Pass 2 W2).
 - **`src/utilities/`** — código acoplado a Payload/Next. Loaders que tocam banco ou `unstable_cache` são marcados **`import 'server-only'`** na primeira linha (21 marcados no Pass 2). Módulos de UI-helper client-safe (ex.: `municipalityListUrl`, `supporterUi`) ficam aqui sem a marca por importarem apenas TIPOS do Payload.
 - **`src/collections/` + `src/globals/`** — o modelo de domínio É o Payload. Toda collection declara `access` explicitamente; hooks passam `req` (transação) — ver `AGENTS.md` e `.cursor/rules/security-critical.mdc`.
-- **`src/components/campaign/`** — subpastas por domínio (Pass 2 W2): `municipality/ actionPlan/ supporter/ leadership/ advisor/ demand/ organization/ stateDeputy/ votePledge/ invite/ map/ dashboard/ auth/ shell/ shared/`. `shared/` é o sistema transversal (listas, tabela, comboboxes); `shell/` é o chrome do app (sidebar, nav, PWA).
+- **`src/components/campaign/`** — subpastas por domínio (Pass 2 W2): `municipality/ activity/ supporter/ leadership/ advisor/ demand/ organization/ stateDeputy/ votePledge/ invite/ map/ dashboard/ auth/ shell/ shared/`. `shared/` é o sistema transversal (listas, tabela, comboboxes); `shell/` é o chrome do app (sidebar, nav, PWA).
 - **Atravessando a fronteira client:** um client component nunca importa um módulo de dados de servidor por VALOR. Tipos/constantes compartilhados vivem num módulo de contrato client-safe — precedentes: `municipalityMapContract.ts` (mapa), `votePledgeViews.ts` (matemática de pledges; loaders em `votePledgeData.ts` são `server-only`), `lib/campaignRoles.ts` (predicados de role para a sidebar — a fonte da qual `utilities/access/shared.ts` deriva). `import type` é sempre seguro.
 
 ## Fluxo de dados de uma página `/campanha`
@@ -48,7 +48,7 @@ flowchart LR
 - **Leituras** passam `user` + `overrideAccess: false` (bypass admin só documentado, ex. resolução de nomes sobre linhas já checadas).
 - **Escritas** saem de server actions em `src/app/(campaign)/campanha/actions/*`; multi-collection = transação Payload com `req: { transactionID }`. As `formActions.ts` por rota são cascas finas sobre os wrappers compartilhados: `runCampaignFormAction` (fica na página, estado de sucesso/erro) e `runCampaignRedirectFormAction` (cria e redireciona) em `campaignFormActionError.ts` — exceções documentadas nos próprios arquivos (planos, apoiadores/[id], convite login).
 - **Listas** usam o sistema do Pass 2 W1: parse/canonicalização de URL em `campaignListUrl.ts` (+ módulo por domínio, ex. `municipalityListUrl.ts`), colunas como dado em `CampaignTable` (`shared/CampaignTable.tsx`, seams `mandatory`/`defaultVisible` para B17), shells `CampaignSearchForm`/`CampaignFilterChips`/`CampaignListFooter`/`CampaignListEmptyState`/`CampaignListPagination`, pending compartilhado via `CampaignListPendingBoundary` (dima o RESULTADO, não o controle — princípio "Feel the action"). Contrato de URL congelado (B18 depende).
-- **Páginas de detalhe** roteiam tabs por querystring (`detailTabUi.ts` → `municipalityDetailTabUi`/`actionPlanDetailTabUi`); cada tab é uma section RSC própria colocada na rota (`MunicipalityDetailTabs.tsx`, `ActionPlanOverviewTab.tsx`), streamando atrás de `Suspense` quando a leitura é pesada.
+- **Páginas de detalhe** roteiam tabs por querystring (`detailTabUi.ts` → `municipalityDetailTabUi`/`activityDetailTabUi`); cada tab é uma section RSC própria colocada na rota (`MunicipalityDetailTabs.tsx`, `ActionPlanOverviewTab.tsx`), streamando atrás de `Suspense` quando a leitura é pesada.
 
 ## Escada de caching (decidir nesta ordem)
 
@@ -61,12 +61,12 @@ flowchart LR
 
 Papéis em `campaignUser.role` — predicados client-safe em `lib/campaignRoles.ts`, checks de ator em `utilities/access/shared.ts`, regras por domínio em `utilities/access/*` (re-exportadas por `campaignAccess.ts`):
 
-| Papel         | Escopo                                                                                                                   |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `coordinator` | tudo (staff irrestrito); único que importa CSV de apoiadores e gerencia assessores (com `candidate`)                     |
-| `candidate`   | visibilidade irrestrita (staff); elegível como assessor responsável                                                      |
-| `advisor`     | staff restrito aos municípios em `municipality.advisors`                                                                 |
-| `leader`      | **lockdown**: home = ferramenta de contatos; lê só apoiadores que criou; sem municípios/pledges/demandas/planos/eleições |
+| Papel         | Escopo                                                                                                                       |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `coordinator` | tudo (staff irrestrito); único que importa CSV de apoiadores e gerencia assessores (com `candidate`)                         |
+| `candidate`   | visibilidade irrestrita (staff); elegível como assessor responsável                                                          |
+| `advisor`     | staff restrito aos municípios em `municipality.advisors`                                                                     |
+| `leader`      | **lockdown**: home = ferramenta de contatos; lê só apoiadores que criou; sem municípios/pledges/demandas/atividades/eleições |
 
 Assimetria estrutural de pledge: staff registra `declaredVotes` + `estimatedVotes` (3 cenários); a liderança **nunca** vê estimativas (view models por papel; agregados usam `estimated[S] ?? declared`, default `central`).
 
@@ -80,7 +80,7 @@ Dois contexts principais + um de suporte, espelhados nos prefixos de módulo e n
 - **Liderança** — ficha única por pessoa (`contact` UNIQUE), atua em N municípios/organizações; pode ter conta `leader`.
 - **Pledge (compromisso de votos)** — por liderança×município; `declaredVotes` (staff-entered, visível à liderança) vs `estimatedVotes` (staff-only, 3 cenários: `pessimistic|central|optimistic`).
 - **Conta da cadeira (E8)** — vocabulário staff-only: _válidos projetados_, _teto do campo_, _captura_, _share intracampo_, _roll-off_, _meta_ (`expectedVotes[cenário] ?? meta sugerida`), _cobertura da meta_ (`comprometido ÷ meta`, comprometido = SÓ pledges). Glossário do usuário em `/campanha/conceitos` (`lib/campaignIntelligenceConcepts.ts`).
-- **Demanda** — pedido de material/serviço, staff-only, escalada decidida por coordinator/candidate. **Plano de Ação** — evento/agenda ancorado em UM município. **Apoiador** — join `Contact`↔campanha (consent LGPD fail-closed por chave estável). **Dobradinha** — deputado estadual parceiro (`stateDeputy`). **Assessor responsável** — carteira em `municipality.advisors`.
+- **Demanda** — pedido de material/serviço, staff-only, escalada decidida por coordinator/candidate. **Atividade** — evento/agenda ancorado em UM município (renomeada de "Plano de Ação" pelo C13 em 2026-07-25). **Apoiador** — join `Contact`↔campanha (consent LGPD fail-closed por chave estável). **Dobradinha** — deputado estadual parceiro (`stateDeputy`). **Assessor responsável** — carteira em `municipality.advisors`.
 - **Contact** é o registro normalizado de PESSOA compartilhado com o site público — features novas criam JOINS para `contact`, nunca uma segunda tabela de pessoa.
 
 **Site público (`(frontend)`)** — `post`/`tag` (taxonomia com `hidden` fail-closed para o período eleitoral), `petition`/`signature`, `subscription`, `consent` (versionado, resolvido por `key` estável). Cache ISR sob a tag `posts`.
@@ -97,9 +97,10 @@ Dois contexts principais + um de suporte, espelhados nos prefixos de módulo e n
 | 2026-07-23 | Agregados TSE imutáveis viram artefato commitado; build da Vercel não depende de conteúdo do banco                                                                                                                                                                                                                            |
 | 2026-07-25 | **Pass 2 D1:** NO-GO em `src/domains/` e ports-and-adapters; GO em convenções + correções de fronteira + subpastas por domínio DENTRO de `components/campaign/`; subpastas em `utilities/` adiadas (gatilho: 3º módulo novo de um domínio num mês) — [decisao-arquitetura-dominios.md](plans/decisao-arquitetura-dominios.md) |
 | 2026-07-25 | **Pass 2 D2:** matemática de insights da era núcleos DELETADA (`electionInsights.ts`); E10 nasce em módulo novo com classificação relativa                                                                                                                                                                                    |
-| 2026-07-25 | **Pass 2 W1/D5:** listas de tabela no sistema compartilhado (colunas como dado); exceções documentadas: planos (cards), `TerritoryOverviewTable` (sort client, ≤27 linhas), comparação de candidatos, LeaderContacts, preview de import                                                                                       |
+| 2026-07-25 | **Pass 2 W1/D5:** listas de tabela no sistema compartilhado (colunas como dado); exceções documentadas: atividades (cards), `TerritoryOverviewTable` (sort client, ≤27 linhas), comparação de candidatos, LeaderContacts, preview de import                                                                                   |
 | 2026-07-25 | **Pass 2 W2:** dedup por POLÍTICA continua valendo (wrappers nomeados como `runCampaignFormAction`), nunca plumbing genérico de dados; aliases de access `canUpdateX = canReadX` são declarações de política deliberadas                                                                                                      |
 | 2026-07-25 | **Pass 2 W4b:** knip `exports`/`types`/`enumMembers` em ERROR no CI; tests fazem parte do grafo; kit `ui/` sem peças mortas (shadcn re-adiciona sob demanda)                                                                                                                                                                  |
+| 2026-07-25 | **C13:** vocabulário do produto é lei no código — "Plano de Ação" → **Atividade** (`activity`), rename completo (entidade, banco, rota, copy) por migration data-preserving escrita à mão; termo velho banido pelo guard de convenções em `src`+`tests`+`scripts`                                                             |
 
 ## Manutenção deste documento
 

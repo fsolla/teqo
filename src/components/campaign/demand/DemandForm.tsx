@@ -13,13 +13,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { campaignDemandKindLabels, campaignDemandKinds } from '@/lib/schemas/campaignDemand'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
-import type { ActionPlanRelationOption } from '@/utilities/campaignRelationOptions'
+import type { ActivityRelationOption } from '@/utilities/campaignRelationOptions'
 
 type DemandFormProps = {
   municipalityOptions: RelationOption[]
-  actionPlanOptions: ActionPlanRelationOption[]
+  activityOptions: ActivityRelationOption[]
   initialMunicipalityId?: number
-  initialActionPlanId?: number
+  initialActivityId?: number
   formAction: (
     state: CampaignFormActionState,
     formData: FormData,
@@ -28,21 +28,19 @@ type DemandFormProps = {
 
 export const DemandForm = ({
   municipalityOptions,
-  actionPlanOptions,
+  activityOptions,
   initialMunicipalityId,
-  initialActionPlanId,
+  initialActivityId,
   formAction,
 }: DemandFormProps) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
   const [municipalityId, setMunicipalityId] = useState(
     initialMunicipalityId ? String(initialMunicipalityId) : '',
   )
-  const [actionPlanId, setActionPlanId] = useState(
-    initialActionPlanId ? String(initialActionPlanId) : '',
-  )
-  const visibleActionPlans = municipalityId
-    ? actionPlanOptions.filter((plan) => String(plan.municipalityId) === municipalityId)
-    : actionPlanOptions
+  const [activityId, setActivityId] = useState(initialActivityId ? String(initialActivityId) : '')
+  const visibleActivities = municipalityId
+    ? activityOptions.filter((activity) => String(activity.municipalityId) === municipalityId)
+    : activityOptions
 
   return (
     <form action={submitAction} className="flex max-w-2xl flex-col gap-4">
@@ -86,11 +84,14 @@ export const DemandForm = ({
             onChange={(event) => {
               const nextMunicipalityId = event.target.value
               setMunicipalityId(nextMunicipalityId)
-              const selectedPlan = actionPlanOptions.find(
-                (plan) => String(plan.id) === actionPlanId,
+              const selectedActivity = activityOptions.find(
+                (activity) => String(activity.id) === activityId,
               )
-              if (selectedPlan && String(selectedPlan.municipalityId) !== nextMunicipalityId) {
-                setActionPlanId('')
+              if (
+                selectedActivity &&
+                String(selectedActivity.municipalityId) !== nextMunicipalityId
+              ) {
+                setActivityId('')
               }
             }}
             className="min-h-11 w-full"
@@ -110,31 +111,34 @@ export const DemandForm = ({
         </Field>
       </div>
       <Field>
-        <FieldLabel htmlFor="demand-action-plan">Plano de ação relacionado</FieldLabel>
+        <FieldLabel htmlFor="demand-activity">Atividade relacionada</FieldLabel>
         <NativeSelect
-          id="demand-action-plan"
-          name="actionPlanId"
-          value={actionPlanId}
+          id="demand-activity"
+          name="activityId"
+          value={activityId}
           onChange={(event) => {
-            const nextPlanId = event.target.value
-            setActionPlanId(nextPlanId)
-            const selectedPlan = actionPlanOptions.find((plan) => String(plan.id) === nextPlanId)
-            if (selectedPlan) setMunicipalityId(String(selectedPlan.municipalityId))
+            const nextActivityId = event.target.value
+            setActivityId(nextActivityId)
+            const selectedActivity = activityOptions.find(
+              (activity) => String(activity.id) === nextActivityId,
+            )
+            if (selectedActivity) setMunicipalityId(String(selectedActivity.municipalityId))
           }}
           className="min-h-11 w-full"
         >
-          <NativeSelectOption value="">Nenhum plano</NativeSelectOption>
-          {visibleActionPlans.map((option) => (
+          <NativeSelectOption value="">Nenhuma atividade</NativeSelectOption>
+          {visibleActivities.map((option) => (
             <NativeSelectOption key={option.id} value={String(option.id)}>
               {option.name}
             </NativeSelectOption>
           ))}
         </NativeSelect>
         <FieldDescription>
-          Opcional. Ao escolher um plano, o município correspondente é preenchido automaticamente.
+          Opcional. Ao escolher uma atividade, o município correspondente é preenchido
+          automaticamente.
         </FieldDescription>
-        {fieldError(state.fieldErrors, 'actionPlan') ? (
-          <FieldError>{fieldError(state.fieldErrors, 'actionPlan')}</FieldError>
+        {fieldError(state.fieldErrors, 'activity') ? (
+          <FieldError>{fieldError(state.fieldErrors, 'activity')}</FieldError>
         ) : null}
       </Field>
       <Field>

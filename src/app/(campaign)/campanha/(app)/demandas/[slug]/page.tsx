@@ -79,15 +79,15 @@ export default async function DemandDetailPage({ params }: DemandDetailPageProps
           >
             {demand.municipalityName}
           </Link>
-          {demand.actionPlan ? (
+          {demand.activity ? (
             <>
               {' '}
-              · Plano:{' '}
+              · Atividade:{' '}
               <Link
-                href={`/campanha/planos/${demand.actionPlan.slug}`}
+                href={`/campanha/atividades/${demand.activity.slug}`}
                 className="text-primary underline-offset-4 hover:underline"
               >
-                {demand.actionPlan.title}
+                {demand.activity.title}
               </Link>
             </>
           ) : null}

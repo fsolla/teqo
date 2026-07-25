@@ -23,7 +23,7 @@ type OwnedCollection =
   | 'campaignDemand'
   | 'allocationDecision'
   | 'municipalityUpdate'
-  | 'actionPlan'
+  | 'activity'
   | 'campaignInvite'
   | 'consent'
   | 'supporter'
@@ -34,7 +34,7 @@ const deletionOrder: OwnedCollection[] = [
   'campaignDemand',
   'allocationDecision',
   'municipalityUpdate',
-  'actionPlan',
+  'activity',
   'leadership',
   'supporter',
   'organization',
@@ -133,8 +133,8 @@ class CampaignE2EOwnership {
   }
 
   private async discoverOwnedRows(): Promise<void> {
-    const [users, campaignUsers, contacts, organizations, actionPlans, consents] =
-      await Promise.all([
+    const [users, campaignUsers, contacts, organizations, activities, consents] = await Promise.all(
+      [
         this.rootPayload.find({
           collection: 'users',
           where: { email: { contains: this.runID } },
@@ -170,7 +170,7 @@ class CampaignE2EOwnership {
           pagination: false,
         }),
         this.rootPayload.find({
-          collection: 'actionPlan',
+          collection: 'activity',
           where: {
             or: [{ title: { contains: this.runID } }, { slug: { contains: this.runID } }],
           },
@@ -183,12 +183,13 @@ class CampaignE2EOwnership {
           depth: 0,
           pagination: false,
         }),
-      ])
+      ],
+    )
     for (const user of users.docs) this.own('users', user.id)
     for (const user of campaignUsers.docs) this.own('campaignUser', user.id)
     for (const contact of contacts.docs) this.own('contact', contact.id)
     for (const organization of organizations.docs) this.own('organization', organization.id)
-    for (const actionPlan of actionPlans.docs) this.own('actionPlan', actionPlan.id)
+    for (const activity of activities.docs) this.own('activity', activity.id)
     for (const consent of consents.docs) this.own('consent', consent.id)
 
     const userIDs = this.ids('campaignUser')
