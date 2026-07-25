@@ -15,6 +15,7 @@ import type {
   Municipality,
   MunicipalityUpdate,
   Organization,
+  StateDeputy,
   Supporter,
   User,
   VotePledge,
@@ -38,6 +39,7 @@ type CampaignCollection =
   | 'leadership'
   | 'supporter'
   | 'organization'
+  | 'stateDeputy'
   | 'contact'
   | 'campaignUser'
   | 'consent'
@@ -85,6 +87,7 @@ type VotePledgeInput = Partial<
 type OrganizationInput = Partial<
   Pick<Organization, 'name' | 'slug' | 'kind' | 'notes' | 'municipalities'>
 >
+type StateDeputyInput = Partial<Pick<StateDeputy, 'name' | 'slug' | 'party' | 'notes'>>
 type CampaignDemandInput = Partial<
   Pick<
     CampaignDemand,
@@ -111,6 +114,7 @@ const emptyOwnedIDs = (): OwnedIDs => ({
   leadership: new Set(),
   supporter: new Set(),
   organization: new Set(),
+  stateDeputy: new Set(),
   contact: new Set(),
   campaignUser: new Set(),
   consent: new Set(),
@@ -662,6 +666,21 @@ export class CampaignFixtures {
     return organization
   }
 
+  async createStateDeputy(input: StateDeputyInput = {}): Promise<StateDeputy> {
+    const name = input.name ?? this.value('Deputado')
+    const stateDeputy = await this.rootPayload.create({
+      collection: 'stateDeputy',
+      data: {
+        ...input,
+        name,
+        slug: input.slug ?? this.value('deputado'),
+      },
+      depth: 0,
+    })
+    this.own('stateDeputy', stateDeputy)
+    return stateDeputy
+  }
+
   async createCampaignDemand(input: CampaignDemandInput): Promise<CampaignDemand> {
     const title = input.title ?? this.value('Demanda')
     const demand = await this.rootPayload.create({
@@ -970,6 +989,7 @@ export class CampaignFixtures {
         'leadership',
         'supporter',
         'organization',
+        'stateDeputy',
         'contact',
         'campaignUser',
         'consent',

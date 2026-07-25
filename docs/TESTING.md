@@ -4,9 +4,9 @@
 
 Three layers, all local-database-only (see `local-database` skill; tests refuse any database not ending in `_test`):
 
-- **Unit** (`tests/unit/**/*.unit.spec.ts`, 33+ specs): pure logic; runs with a deliberately invalid `DATABASE_URL` so nothing can touch a database.
-- **Integration** (`tests/int/**/*.int.spec.ts`, 42+ specs): real Payload + Postgres (`teqo_test`); campaign fixtures allocate seeded municipalities via a Postgres sequence so parallel spec files never share one, and purge residue on claim. Shared consent rows with stable keys are leased (`tests/helpers/testDatabaseLease.ts`), never owned.
-- **E2E** (`tests/e2e`, Playwright, 5 specs): smoke-level; most campaign behavior is pinned at the int layer.
+- **Unit** (`tests/unit/**/*.unit.spec.ts`, 45 specs as of 2026-07-25): pure logic; runs with a deliberately invalid `DATABASE_URL` so nothing can touch a database.
+- **Integration** (`tests/int/**/*.int.spec.ts`, 47 specs): real Payload + Postgres (`teqo_test`); campaign fixtures allocate seeded municipalities via a Postgres sequence so parallel spec files never share one, and purge residue on claim. Shared consent rows with stable keys are leased (`tests/helpers/testDatabaseLease.ts`), never owned.
+- **E2E** (`tests/e2e`, Playwright, 7 specs): smoke-level; most campaign behavior is pinned at the int layer.
 
 CI (`.github/workflows/ci.yml`) runs lint (zero warnings), typecheck, knip, unit, migrate, int against a Postgres 17 service.
 
@@ -23,10 +23,12 @@ Modules the 2026-07 hardening phases touch, and where their behavior is pinned:
 | Supporter import (token/bulk)                                                                    | preview→confirm flow, dedup by phone, consent fail-closed                                                        | `campaignSupporter.int.spec.ts`                                                                                                                                                | `supporterImportBulk`/`supporterImportToken` internals only via flow                   |
 | Leader supporter create                                                                          | linked-municipality scope; out-of-scope rejection; staff rejection                                               | `collectionAccessLockdown.int.spec.ts`                                                                                                                                         |                                                                                        |
 | Posts visibility/caching                                                                         | `isPostVisible` fail-closed; cached listing                                                                      | (indirect via routes)                                                                                                                                                          | no dedicated `posts` spec — backlog                                                    |
+| List URL contracts (Pass 2 W0, pinned 2026-07-25)                                                | `campaignListUrl` canonicalize/clamp/redirect; supporter + actionPlan parse/serialize/href; 5 entity parsers     | `campaignListUrl`, `supporterUi`, `actionPlanUi`, `campaignEntityListParsers` (unit)                                                                                           | municipality list URL pinned separately in `municipalityUi.unit.spec.ts`               |
+| Entity list loaders (Pass 2 W0)                                                                  | scope (leader empty/denied), marker-narrowed q, kind/status filters, pagination shape                            | `campaignEntityListData.int.spec.ts`                                                                                                                                           | advisor loader runs post-gate with `overrideAccess: true` (gate asserted upstream)     |
 
 ## Characterization Backlog
 
 - [ ] `src/utilities/posts.ts` — dedicated spec for `isPostVisible` fail-closed matrix and cache wrappers.
-- [ ] `actionPlanViewModels.ts` + other `actionPlan*` utilities (~1k lines) — currently untested directly.
-- [ ] `campaignDemandData.ts` / `leadershipData.ts` / `organizationData.ts` / `stateDeputyData.ts` list loaders.
-- [ ] Election aggregate artifact (Phase 2): snapshot test pinning artifact ↔ `municipalityCatalog` key consistency.
+- [ ] `actionPlanViewModels.ts` + other `actionPlan*` utilities (~1k lines) — `actionPlanUi.ts` pinned 2026-07-25 (Pass 2 W0); view models still untested directly.
+- [x] `campaignDemandData.ts` / `leadershipData.ts` / `organizationData.ts` / `stateDeputyData.ts` list loaders — smoked 2026-07-25 (`campaignEntityListData.int.spec.ts`, Pass 2 W0).
+- [x] Election aggregate artifact (Phase 2): snapshot test pinning artifact ↔ `municipalityCatalog` key consistency — delivered as `bahiaElectionAggregates.unit.spec.ts`.
