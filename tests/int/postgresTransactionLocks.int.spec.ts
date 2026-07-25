@@ -5,19 +5,19 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import config from '@/payload.config'
 import {
-  contactPhoneLockKeys,
   CONTACT_PHONE_CONFLICT_MESSAGE,
+  contactPhoneLockKeys,
 } from '@/utilities/contactPhoneInvariant'
 import {
   acquireTextAdvisoryLocks,
   getPostgresTransactionDatabase,
   type PostgresTransactionDatabase,
 } from '@/utilities/postgresTransactionLocks'
+import { stub } from '../helpers/stub'
 import {
   getTestTransactionBackendPID,
   waitForAdvisoryLockWaiter,
 } from '../helpers/testDatabaseLease'
-import { stub } from '../helpers/stub'
 
 type DatabaseSession = NonNullable<Payload['db']['sessions']>[string]
 

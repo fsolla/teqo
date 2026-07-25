@@ -10,8 +10,8 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import {
-  municipalitySignalTypeLabels,
   municipalitySignalTypeDescriptions,
+  municipalitySignalTypeLabels,
   municipalitySignalTypes,
   municipalityUpdateKindLabels,
   municipalityUpdateKinds,

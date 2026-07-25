@@ -6,8 +6,8 @@ import {
   searchAdvisorPortfolio,
   type AdvisorMunicipalityIndexEntry,
 } from '@/lib/advisorMunicipalityPortfolio'
-import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import { citiesForTerritory } from '@/lib/bahiaTerritories'
+import { municipalityCatalog } from '@/lib/municipalityCatalog'
 
 const buildIndex = (): AdvisorMunicipalityIndexEntry[] =>
   municipalityCatalog.map((entry, index) => ({

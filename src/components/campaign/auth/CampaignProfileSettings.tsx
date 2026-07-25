@@ -13,10 +13,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
+import { formatBrazilianPhoneDisplay } from '@/lib/phone'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 import { campaignRoleLabels, type CampaignUserShellView } from '@/utilities/campaignUserProfile'
-import { formatBrazilianPhoneDisplay } from '@/lib/phone'
 
 type CampaignProfileSettingsProps = {
   user: CampaignUserShellView & {

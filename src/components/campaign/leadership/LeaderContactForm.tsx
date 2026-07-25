@@ -25,8 +25,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
-import { errorProps as buildErrorProps, fieldError } from '@/utilities/campaignFormFields'
 import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/lib/phone'
+import { errorProps as buildErrorProps, fieldError } from '@/utilities/campaignFormFields'
 import { municipalityComboboxOptions } from '@/utilities/territoryComboboxOptions'
 
 const errorProps = (fieldErrors: Record<string, string[]> | undefined, field: string) =>

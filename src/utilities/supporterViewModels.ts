@@ -1,7 +1,7 @@
 import { territoryForCity } from '@/lib/bahiaTerritories'
+import { formatBrazilianPhoneInput } from '@/lib/phone'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 import type { CampaignUser, Contact, Municipality, Supporter } from '@/payload-types'
-import { formatBrazilianPhoneInput } from '@/lib/phone'
 import { isPopulatedRelationship } from '@/utilities/relationship'
 import { supporterSourceLabels } from '@/utilities/supporterUi'
 
@@ -42,7 +42,9 @@ export type SupporterDetailViewModel = {
 const contactFromSupporter = (supporter: { contact: Supporter['contact'] }): Contact | null =>
   isPopulatedRelationship<Contact>(supporter.contact) ? supporter.contact : null
 
-const municipalityFromSupporter = (supporter: { municipality?: Supporter['municipality'] }): Municipality | null =>
+const municipalityFromSupporter = (supporter: {
+  municipality?: Supporter['municipality']
+}): Municipality | null =>
   isPopulatedRelationship<Municipality>(supporter.municipality) ? supporter.municipality : null
 
 export const toSupporterListItemViewModel = (

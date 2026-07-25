@@ -5,11 +5,8 @@
  * (or a new one) and re-export them here.
  */
 
-
 export {
   eligibleCampaignStaffWhere,
-  
-  
   isCampaignCoordinator,
   isCampaignLeader,
   isCampaignStaff,
@@ -43,14 +40,9 @@ export {
   getAccessibleMunicipalityIds,
   getAdvisorMunicipalityIds,
   getEngagedLeaderMunicipalityIds,
-  
 } from '@/utilities/access/municipalities'
 
-export {
-  canManageContacts,
-  canReadContacts,
-  
-} from '@/utilities/access/contacts'
+export { canManageContacts, canReadContacts } from '@/utilities/access/contacts'
 
 export {
   canCreateLeadership,
@@ -120,12 +112,10 @@ export {
   canUpdateActionPlan,
 } from '@/utilities/access/actionPlans'
 
-
 export {
   assertCanReadElectionData,
   canMutateElectionData,
   canReadElectionData,
-  
 } from '@/utilities/access/elections'
 
 export {

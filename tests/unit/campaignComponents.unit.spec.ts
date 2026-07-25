@@ -6,20 +6,20 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
-import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
-import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
+import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
 import { TseZoneBadge } from '@/components/campaign/municipality/TseZoneBadge'
+import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { Progress } from '@/components/ui/Progress'
 import { Toggle } from '@/components/ui/Toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
+import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { createEmptyGoalCoverageByScenario } from '@/utilities/goalCoverage'
 import type {
   MunicipalityAdvisorSummary,
   MunicipalityListViewModel,
 } from '@/utilities/municipalityViewModels'
-import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 import { stub } from '../helpers/stub'

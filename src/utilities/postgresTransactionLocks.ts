@@ -38,9 +38,7 @@ export const acquireTextAdvisoryLocks = async (
   req: TransactionRequest,
   keys: string[],
 ): Promise<void> => {
-  if (
-    keys.some((key) => typeof key !== 'string' || key.trim().length === 0)
-  ) {
+  if (keys.some((key) => typeof key !== 'string' || key.trim().length === 0)) {
     throw new Error('A chave do bloqueio PostgreSQL deve ser um texto não vazio.')
   }
 

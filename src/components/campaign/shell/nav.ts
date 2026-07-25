@@ -74,10 +74,7 @@ export const getCampaignBottomNav = (role: CampaignUser['role']): CampaignNavIte
   if (role === 'leader') return nav
 
   return nav
-    .filter(
-      (item) =>
-        item.href !== '/campanha/apoiadores' && item.href !== '/campanha/assessores',
-    )
+    .filter((item) => item.href !== '/campanha/apoiadores' && item.href !== '/campanha/assessores')
     .slice(0, 5)
 }
 

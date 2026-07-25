@@ -3,9 +3,9 @@
 import { ChevronDownIcon, ChevronsUpDownIcon, ChevronUpIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
 import { MunicipalityHeaderFilter } from '@/components/campaign/municipality/MunicipalityHeaderFilter'
 import { MunicipalityHoverTooltip } from '@/components/campaign/municipality/MunicipalityHoverTooltip'
+import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
 import { TableHead } from '@/components/ui/Table'
 import { cn } from '@/lib/utils'
 import type {

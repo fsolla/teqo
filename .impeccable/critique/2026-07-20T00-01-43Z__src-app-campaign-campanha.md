@@ -8,23 +8,24 @@ p3_count: 2
 timestamp: 2026-07-20T00-01-43Z
 slug: src-app-campaign-campanha
 ---
+
 Method: dual-agent (A: 22ac0b39-b0f9-4111-b890-4c4125d1218b · B: bacccead-08e1-4dce-9b0d-4fe7984b1853)
 
 ## Design Health Score
 
-| # | Heuristic | Score | Key Issue |
-|---|-----------|-------|-----------|
-| 1 | Visibility of System Status | 3 | KPIs têm `CampaignDataFreshness`; filas não mostram idade do item na linha |
-| 2 | Match System / Real World | 4 | Linguagem de núcleo/fila encaixa; `LeadershipStatusCard` contextualiza status |
-| 3 | User Control and Freedom | 4 | `RecentlyVisitedCard` com `aria-label` no limpar; liderança tem CTA no empty |
-| 4 | Consistency and Standards | 3 | Dashboard `geral` alinhado ao grid coordenador; empty de eventos ainda é `<p>` solto |
-| 5 | Error Prevention | 3 | Dashboard read-only; sem riscos destrutivos nesta tela |
-| 6 | Recognition Rather Than Recall | 4 | `ChoroplethLegend` + visitados recentes; glossário ainda só em `title` |
-| 7 | Flexibility and Efficiency | 2 | Fila prioritária ainda é um clique por núcleo; sem triagem em lote |
-| 8 | Aesthetic and Minimalist Design | 3 | Top row 3:2:1 funciona; dois `CampaignMetricStrip` + mapa sem header |
-| 9 | Error Recovery | 3 | Empty de liderança com CTA; coordenador sem próximo passo |
-| 10 | Help and Documentation | 2 | Status de apoio e estimativa sem affordance touch (`?`/Popover) |
-| **Total** | | **32/40** | **Good — fundação sólida; flexibilidade e ajuda ainda abaixo do ideal** |
+| #         | Heuristic                       | Score     | Key Issue                                                                            |
+| --------- | ------------------------------- | --------- | ------------------------------------------------------------------------------------ |
+| 1         | Visibility of System Status     | 3         | KPIs têm `CampaignDataFreshness`; filas não mostram idade do item na linha           |
+| 2         | Match System / Real World       | 4         | Linguagem de núcleo/fila encaixa; `LeadershipStatusCard` contextualiza status        |
+| 3         | User Control and Freedom        | 4         | `RecentlyVisitedCard` com `aria-label` no limpar; liderança tem CTA no empty         |
+| 4         | Consistency and Standards       | 3         | Dashboard `geral` alinhado ao grid coordenador; empty de eventos ainda é `<p>` solto |
+| 5         | Error Prevention                | 3         | Dashboard read-only; sem riscos destrutivos nesta tela                               |
+| 6         | Recognition Rather Than Recall  | 4         | `ChoroplethLegend` + visitados recentes; glossário ainda só em `title`               |
+| 7         | Flexibility and Efficiency      | 2         | Fila prioritária ainda é um clique por núcleo; sem triagem em lote                   |
+| 8         | Aesthetic and Minimalist Design | 3         | Top row 3:2:1 funciona; dois `CampaignMetricStrip` + mapa sem header                 |
+| 9         | Error Recovery                  | 3         | Empty de liderança com CTA; coordenador sem próximo passo                            |
+| 10        | Help and Documentation          | 2         | Status de apoio e estimativa sem affordance touch (`?`/Popover)                      |
+| **Total** |                                 | **32/40** | **Good — fundação sólida; flexibilidade e ajuda ainda abaixo do ideal**              |
 
 ## Anti-Patterns Verdict
 
@@ -49,26 +50,31 @@ O dashboard `geral` saiu da pilha vertical ingênua para um desk operacional: fi
 ## Priority Issues
 
 ### [P2] Triagem em lote ainda ausente na fila prioritária
+
 - **Why:** Cada item “Sem coordenador” é um link isolado; 15 núcleos = 15 idas e voltas.
 - **Fix:** Multi-select só em `withoutCoordinator` + barra “Atribuir coordenador (N)” reutilizando shell de designação existente.
 - **Suggested command:** `/impeccable layout`
 
 ### [P2] Jargão de domínio opaco no touch
+
 - **Why:** `SupportStatusBadge`, estimativa confirmada vs proposta, métricas do mapa dependem de `title` (hover) — inútil no celular.
 - **Fix:** `CampaignGlossaryHint` com gatilho `?` (`min-h-11`) em badges e labels de KPI.
 - **Suggested command:** `/impeccable clarify`
 
 ### [P2] Outline de headings pula `h2` em Filas
+
 - **Why:** `h1` → `CardTitle` Filas (não heading) → `h3` nas subfilas → depois `h2` Indicadores — ordem invertida para leitores de tela.
 - **Fix:** Promover “Filas de ação” a `h2` semântico (`id="action-queues"` já existe).
 - **Suggested command:** `/impeccable audit`
 
 ### [P3] Empty do coordenador sem CTA
+
 - **Why:** Texto explica o bloqueio mas não oferece ação (liderança já tem “Ver meu perfil”).
 - **Fix:** Espelhar `LeadershipDashboard` empty com `EmptyContent` + CTA.
 - **Suggested command:** `/impeccable onboard`
 
 ### [P3] Recentes compactos escondem timestamp
+
 - **Why:** Modo `compact` põe idade só em `sr-only`; Alex não distingue visita recente de antiga.
 - **Fix:** Mostrar `text-xs text-muted-foreground` truncado no modo compacto.
 - **Suggested command:** `/impeccable polish`

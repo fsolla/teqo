@@ -84,10 +84,7 @@ describe('bahiaMapStyle', () => {
 
     it('keeps fillOpacity when highlighted', () => {
       const base = resolvePathStyle(baseContext, '2927408')
-      const highlighted = resolvePathStyle(
-        { ...baseContext, hoveredKey: '2927408' },
-        '2927408',
-      )
+      const highlighted = resolvePathStyle({ ...baseContext, hoveredKey: '2927408' }, '2927408')
 
       expect(highlighted.fillOpacity).toBe(base.fillOpacity)
       expect(highlighted.color).toBe('#c51414')

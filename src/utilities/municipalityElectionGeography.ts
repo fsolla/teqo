@@ -1,6 +1,9 @@
 import type { Where } from 'payload'
 
-import { getMunicipalityCatalogEntry, type MunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import {
+  getMunicipalityCatalogEntry,
+  type MunicipalityCatalogEntry,
+} from '@/lib/municipalityCatalog'
 
 /**
  * Election-data geography of a Município: exactly one municipality (TSE cityCode)
@@ -20,7 +23,9 @@ export const municipalityElectionGeography = (
   zones: [...entry.tseZones],
 })
 
-export const municipalityElectionGeographyForSlug = (slug: string): MunicipalityElectionGeography | null => {
+export const municipalityElectionGeographyForSlug = (
+  slug: string,
+): MunicipalityElectionGeography | null => {
   const entry = getMunicipalityCatalogEntry(slug)
   return entry ? municipalityElectionGeography(entry) : null
 }
@@ -29,4 +34,3 @@ export const municipalityElectionGeographyForSlug = (slug: string): Municipality
 export const municipalityGeographyWhere = (geography: MunicipalityElectionGeography): Where => ({
   and: [{ cityCode: { equals: geography.cityCode } }, { zoneNumber: { in: geography.zones } }],
 })
-

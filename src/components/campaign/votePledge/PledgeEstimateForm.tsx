@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
+import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
-import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 
 type PledgeEstimateFormProps = {
   pledgeID: number

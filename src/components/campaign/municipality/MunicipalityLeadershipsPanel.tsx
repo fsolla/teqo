@@ -1,8 +1,8 @@
 import { PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 
-import { DeclareVotesForm } from '@/components/campaign/votePledge/DeclareVotesForm'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
+import { DeclareVotesForm } from '@/components/campaign/votePledge/DeclareVotesForm'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'

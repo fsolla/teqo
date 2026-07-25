@@ -1,5 +1,5 @@
-import type { ActionPlan, CampaignUser, Contact, Organization, Municipality } from '@/payload-types'
 import type { ActionPlanOrigin } from '@/lib/schemas/actionPlan'
+import type { ActionPlan, CampaignUser, Contact, Municipality, Organization } from '@/payload-types'
 import type { ActionPlanDetailTab } from '@/utilities/actionPlanDetailTabUi'
 import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 

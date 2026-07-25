@@ -125,9 +125,9 @@ const importElectionScope = async (
 
     for (const batch of chunk(talliesWithWinners, INSERT_CHUNK_SIZE)) {
       if (batch.length > 0) {
-        await tx.insert(tallyTable).values(
-          batch.map((row: ElectionTallyRow) => withTimestamps(row, now)),
-        )
+        await tx
+          .insert(tallyTable)
+          .values(batch.map((row: ElectionTallyRow) => withTimestamps(row, now)))
       }
     }
 
@@ -182,9 +182,7 @@ export const buildImportBundles = (args: {
 
   return [...keys].map((key) => {
     const sample =
-      votesByScope.get(key)?.[0] ??
-      talliesByScope.get(key)?.[0] ??
-      candidatesByScope.get(key)?.[0]
+      votesByScope.get(key)?.[0] ?? talliesByScope.get(key)?.[0] ?? candidatesByScope.get(key)?.[0]
     if (!sample) {
       throw new Error(`Empty election import scope key: ${key}`)
     }

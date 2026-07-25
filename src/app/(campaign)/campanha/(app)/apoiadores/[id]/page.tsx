@@ -13,8 +13,8 @@ import { VoteIntentionControl } from '@/components/campaign/supporter/VoteIntent
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import {
   loadSupporterDetailConsentData,
   loadSupporterDetailPageData,

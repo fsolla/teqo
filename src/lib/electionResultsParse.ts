@@ -1,5 +1,6 @@
 /** Pure parsers for TSE open-data CSVs (Latin-1, `;`-separated). */
 
+import { computeIdentityKey } from '@/lib/electionCandidateIdentity'
 import {
   canonicalizeMunicipalityName,
   officeFromTseCargo,
@@ -13,7 +14,6 @@ import {
   type ElectionTurn,
   type TseDetalheApuracaoRow,
 } from '@/lib/electionResults'
-import { computeIdentityKey } from '@/lib/electionCandidateIdentity'
 
 /**
  * Merges rows sharing the same `keyFn` key via `combine`, preserving first-seen
@@ -21,7 +21,7 @@ import { computeIdentityKey } from '@/lib/electionCandidateIdentity'
  * both fold TSE's "voto em trânsito" split rows (see their docs) and differ
  * only in the key and how colliding rows combine.
  */
-const mergeByKey = <T,>(
+const mergeByKey = <T>(
   rows: readonly T[],
   keyFn: (row: T) => string,
   combine: (existing: T, row: T) => T,
@@ -50,7 +50,10 @@ const voteRowKey = (row: CandidateVoteRow): string =>
  * no-op when there is nothing to merge.
  */
 export const mergeDuplicateVoteRows = (rows: readonly CandidateVoteRow[]): CandidateVoteRow[] =>
-  mergeByKey(rows, voteRowKey, (existing, row) => ({ ...existing, votes: existing.votes + row.votes }))
+  mergeByKey(rows, voteRowKey, (existing, row) => ({
+    ...existing,
+    votes: existing.votes + row.votes,
+  }))
 
 const tallyRowKey = (row: TseDetalheApuracaoRow): string =>
   `${row.year}|${row.office}|${row.turn}|${row.state}|${row.cityCode}|${row.zoneNumber}`
@@ -231,8 +234,7 @@ export type ScopeKey = {
   turn: ElectionTurn
 }
 
-const scopeKeyString = (scope: ScopeKey): string =>
-  `${scope.year}|${scope.office}|${scope.turn}`
+const scopeKeyString = (scope: ScopeKey): string => `${scope.year}|${scope.office}|${scope.turn}`
 
 const candidateAggregateKey = (row: {
   year: number
@@ -240,8 +242,7 @@ const candidateAggregateKey = (row: {
   turn: ElectionTurn
   state: string
   candidateNumber: number
-}): string =>
-  `${row.year}|${row.office}|${row.turn}|${row.state}|${row.candidateNumber}`
+}): string => `${row.year}|${row.office}|${row.turn}|${row.state}|${row.candidateNumber}`
 
 /** Deduplicate candidate rows by unique key, preferring elected=true when colliding. */
 export const dedupeCandidates = (rows: readonly ElectionCandidateRow[]): ElectionCandidateRow[] => {

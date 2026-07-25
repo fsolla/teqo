@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar'
-import { campaignUserInitials } from '@/utilities/campaignUserProfile'
 import { cn } from '@/lib/utils'
+import { campaignUserInitials } from '@/utilities/campaignUserProfile'
 
 type CampaignUserAvatarProps = {
   name: string

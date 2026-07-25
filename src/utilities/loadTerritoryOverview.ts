@@ -4,18 +4,18 @@ import type { Payload } from 'payload'
 import { cache } from 'react'
 
 import { getMunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
+import { DEFAULT_VOTE_ESTIMATE_SCENARIO, type VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { Municipality } from '@/payload-types'
-import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
-import { emptyMunicipalityPledgeAggregate, resolveMunicipalityStaffVoteTotal } from '@/utilities/votePledgeViews'
 import {
   computeTerritoryRollup,
   type TerritoryMunicipalityInput,
   type TerritoryOverviewRow,
 } from '@/utilities/territoryOverview'
+import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
 import {
-  DEFAULT_VOTE_ESTIMATE_SCENARIO,
-  type VoteEstimateScenario,
-} from '@/lib/voteEstimate'
+  emptyMunicipalityPledgeAggregate,
+  resolveMunicipalityStaffVoteTotal,
+} from '@/utilities/votePledgeViews'
 
 type MunicipalityDoc = Pick<
   Municipality,

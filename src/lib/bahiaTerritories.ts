@@ -649,4 +649,3 @@ export const validateBahiaTerritoryPair = (
 
 export const citiesForTerritory = (territory: BahiaIdentityTerritory): readonly string[] =>
   bahiaIdentityTerritoryRecords.find(({ name }) => name === territory)?.municipalities ?? []
-

@@ -305,28 +305,21 @@ describe('test database lease', () => {
     ).catch((error: unknown) => error)
 
     expect(failure).toBeInstanceOf(AggregateError)
-    expect((failure as AggregateError).errors).toEqual([
-      callbackFailure,
-      restoreAcquisitionFailure,
-    ])
+    expect((failure as AggregateError).errors).toEqual([callbackFailure, restoreAcquisitionFailure])
   })
 
   it('aggregates snapshot setup and setup lease release failures in original order', async () => {
     const snapshotFailure = new Error('intentional snapshot setup failure')
     const releaseFailure = new Error('intentional setup release failure')
 
-    const failure = await withMissingInviteConsentFixture(
-      payload,
-      async () => undefined,
-      {
-        beforeSnapshotSetup: async () => {
-          throw snapshotFailure
-        },
-        beforeSetupLeaseRelease: async () => {
-          throw releaseFailure
-        },
+    const failure = await withMissingInviteConsentFixture(payload, async () => undefined, {
+      beforeSnapshotSetup: async () => {
+        throw snapshotFailure
       },
-    ).catch((error: unknown) => error)
+      beforeSetupLeaseRelease: async () => {
+        throw releaseFailure
+      },
+    }).catch((error: unknown) => error)
 
     expect(failure).toBeInstanceOf(AggregateError)
     expect((failure as AggregateError).errors).toEqual([snapshotFailure, releaseFailure])

@@ -5,6 +5,12 @@ import type { Payload } from 'payload'
 import { getMunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
 import { BASELINE_TICKET_2022, HISTORICAL_SERIES_YEARS } from '@/lib/electionResults'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import {
+  DEFAULT_VOTE_ESTIMATE_SCENARIO,
+  VOTE_ESTIMATE_SCENARIOS,
+  type VoteEstimateScenario,
+  type VoteEstimateScenarioFields,
+} from '@/lib/voteEstimate'
 import type { CampaignUser } from '@/payload-types'
 import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
 import {
@@ -15,35 +21,26 @@ import {
   loadCandidateVotesByCityZone,
   sumVotesForGeography,
 } from '@/utilities/municipalityElectoralBaseline'
-import type {
-  MunicipalityMapBundle,
-  MunicipalityMapComparison,
-} from '@/utilities/municipalityMapContract'
-import { buildMunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
 import {
   buildMunicipalityListWhere,
   parseMunicipalityListParams,
   type MunicipalityListSearchParams,
   type MunicipalityListState,
 } from '@/utilities/municipalityListUrl'
+import type {
+  MunicipalityMapBundle,
+  MunicipalityMapComparison,
+} from '@/utilities/municipalityMapContract'
+import { buildMunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
 import {
-  DEFAULT_VOTE_ESTIMATE_SCENARIO,
-  VOTE_ESTIMATE_SCENARIOS,
-  type VoteEstimateScenario,
-  type VoteEstimateScenarioFields,
-} from '@/lib/voteEstimate'
-import { emptyMunicipalityPledgeAggregate, resolveMunicipalityStaffVoteTotal, type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
-
+  emptyMunicipalityPledgeAggregate,
+  resolveMunicipalityStaffVoteTotal,
+  type MunicipalityPledgeAggregate,
+} from '@/utilities/votePledgeViews'
 
 // Client components import the map vocabulary from the contract module; the
 // server side re-exports it so data callers have one import surface.
-export type {
-  MunicipalityMapBundle,
-  
-  
-  
-  
-} from '@/utilities/municipalityMapContract'
+export type { MunicipalityMapBundle } from '@/utilities/municipalityMapContract'
 
 type ScopedMunicipality = {
   id: number
@@ -64,7 +61,9 @@ type ScopedMunicipalityDoc = {
   expectedVotes?: VoteEstimateScenarioFields | null
 }
 
-const scopeMunicipalitiesFromDocs = (docs: ReadonlyArray<ScopedMunicipalityDoc>): ScopedMunicipality[] =>
+const scopeMunicipalitiesFromDocs = (
+  docs: ReadonlyArray<ScopedMunicipalityDoc>,
+): ScopedMunicipality[] =>
   docs.flatMap((municipality) => {
     const entry = getMunicipalityCatalogEntry(municipality.slug)
     if (!entry) return []

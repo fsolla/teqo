@@ -1,16 +1,17 @@
 // @vitest-environment node
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { getPayload, type Payload } from 'payload'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import config from '@/payload.config'
 import { BASELINE_TICKET_2022 } from '@/lib/electionResults'
-import {
-  buildImportBundles,
-  importElectionBundles,
-} from '@/utilities/electionResultsImport'
-import { loadTseFixtureResults, loadTseFixtureResultsForYear, TSE_FIXTURE_EXPECTED } from '../helpers/tseFixtures'
 import { FEDERAL_ONLY_OFFICES } from '@/lib/electionResultsBuild'
+import config from '@/payload.config'
+import { buildImportBundles, importElectionBundles } from '@/utilities/electionResultsImport'
+import {
+  loadTseFixtureResults,
+  loadTseFixtureResultsForYear,
+  TSE_FIXTURE_EXPECTED,
+} from '../helpers/tseFixtures'
 
 let payload: Payload
 
@@ -111,15 +112,11 @@ describe('election results import', () => {
     )
     const lula = candidates.docs.find(
       (doc) =>
-        doc.office === 'presidente' &&
-        Number(doc.candidateNumber) === 13 &&
-        doc.turn === '2',
+        doc.office === 'presidente' && Number(doc.candidateNumber) === 13 && doc.turn === '2',
     )
     const jeronimo = candidates.docs.find(
       (doc) =>
-        doc.office === 'governador' &&
-        Number(doc.candidateNumber) === 13 &&
-        doc.turn === '2',
+        doc.office === 'governador' && Number(doc.candidateNumber) === 13 && doc.turn === '2',
     )
     expect(solla?.elected).toBe(true)
     expect(lula?.elected).toBe(true)

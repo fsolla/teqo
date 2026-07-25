@@ -4,20 +4,20 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
 import {
   CampaignTable,
   CampaignTableHead,
   type CampaignTableColumn,
 } from '@/components/campaign/shared/CampaignTable'
-import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { isCampaignStaff } from '@/utilities/campaignAccess'

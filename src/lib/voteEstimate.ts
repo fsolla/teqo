@@ -150,4 +150,3 @@ export const normalizeVoteEstimateOnSave = (
 
   return { pessimistic, central, optimistic }
 }
-

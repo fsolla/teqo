@@ -72,8 +72,8 @@ export default async function CampaignConceptsPage() {
       <header className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Conceitos de inteligência</h1>
         <p className="max-w-prose text-muted-foreground">
-          O que cada número da campanha mede e como é calculado. Só o que o produto já calcula
-          hoje — a lista cresce conforme novas análises entram.
+          O que cada número da campanha mede e como é calculado. Só o que o produto já calcula hoje
+          — a lista cresce conforme novas análises entram.
         </p>
       </header>
 

@@ -23,10 +23,10 @@
  *   pnpm db:seed:posts
  *   (against a remote DB, on purpose:)  ALLOW_REMOTE_DB=true pnpm db:seed:posts
  */
-import { config as loadEnv } from 'dotenv'
-import { JSDOM } from 'jsdom'
 import { convertHTMLToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical'
 import { del as blobDel } from '@vercel/blob'
+import { config as loadEnv } from 'dotenv'
+import { JSDOM } from 'jsdom'
 import { getPayload } from 'payload'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
@@ -223,7 +223,9 @@ async function fetchViaRestApi() {
 // ---------------------------------------------------------------------------
 
 const FALLBACK_CATEGORIES = ['noticias', 'uncategorized']
-const PERMALINK_RE = new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/\\d{4}/\\d{2}/\\d{2}/[^/]+/?$`)
+const PERMALINK_RE = new RegExp(
+  `^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/\\d{4}/\\d{2}/\\d{2}/[^/]+/?$`,
+)
 
 async function fetchViaHtmlArchive() {
   /** @type {Article[]} */
@@ -272,8 +274,7 @@ async function fetchSinglePage(url) {
   const doc = new JSDOM(await res.text()).window.document
 
   const slug = url.replace(/\/$/, '').split('/').pop()
-  const contentEl =
-    doc.querySelector('.entry-content') || doc.querySelector('article') || doc.body
+  const contentEl = doc.querySelector('.entry-content') || doc.querySelector('article') || doc.body
   const time = doc.querySelector('time[datetime]')
   const firstImg = contentEl.querySelector('img')
 

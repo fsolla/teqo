@@ -19,7 +19,8 @@ type ConsentNode = {
 const asNode = (value: unknown): ConsentNode | null =>
   typeof value === 'object' && value !== null ? (value as ConsentNode) : null
 
-const childrenOf = (node: ConsentNode): unknown[] => (Array.isArray(node.children) ? node.children : [])
+const childrenOf = (node: ConsentNode): unknown[] =>
+  Array.isArray(node.children) ? node.children : []
 
 const safeLink = (value: unknown): string | null => {
   if (typeof value !== 'string') return null

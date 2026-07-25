@@ -60,7 +60,8 @@ export const CampaignGoals: GlobalConfig = {
       type: 'number',
       label: 'Ano de referência',
       admin: {
-        description: 'Ano-base considerado pela coordenação ao fixar a meta estadual (contexto, não usado em cálculo).',
+        description:
+          'Ano-base considerado pela coordenação ao fixar a meta estadual (contexto, não usado em cálculo).',
       },
     },
     {

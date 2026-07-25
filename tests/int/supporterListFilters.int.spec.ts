@@ -20,10 +20,7 @@ describe('supporterListFilters', () => {
     expect(payloadWhere).toEqual({
       and: [
         {
-          or: [
-            { 'contact.name': { contains: 'ana' } },
-            { 'contact.city': { contains: 'ana' } },
-          ],
+          or: [{ 'contact.name': { contains: 'ana' } }, { 'contact.city': { contains: 'ana' } }],
         },
       ],
     })

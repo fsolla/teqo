@@ -1,18 +1,16 @@
 import { feature } from 'topojson-client'
 
-import municipalityTopologyJson from '@/lib/geometries/bahia-municipalities.topo.json'
 import type {
   BahiaMunicipalityFeature,
   MunicipalityGeometryModule,
   MunicipalityTopology,
 } from '@/lib/bahiaGeometriesTypes'
+import municipalityTopologyJson from '@/lib/geometries/bahia-municipalities.topo.json'
 
 const topology = municipalityTopologyJson as unknown as MunicipalityTopology
 
-const municipalityFeatures = feature(
-  topology,
-  topology.objects.municipalities,
-).features as BahiaMunicipalityFeature[]
+const municipalityFeatures = feature(topology, topology.objects.municipalities)
+  .features as BahiaMunicipalityFeature[]
 
 const municipalityByCodarea = new Map(
   municipalityFeatures.map((entry) => [entry.properties.codarea, entry]),

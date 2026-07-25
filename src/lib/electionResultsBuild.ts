@@ -86,9 +86,7 @@ export const buildElectionResultsFromCsvRows = (args: {
   const offices = args.offices ?? ALL_OFFICES
   const includePresident = offices.has('presidente')
   const includeStateTicket =
-    offices.has('governador') ||
-    offices.has('deputado_federal') ||
-    offices.has('deputado_estadual')
+    offices.has('governador') || offices.has('deputado_federal') || offices.has('deputado_estadual')
   const unknownMunicipalities = new Set<string>()
 
   // Dedupe TSE's "voto em trânsito" split rows — see mergeDuplicateVoteRows's doc.

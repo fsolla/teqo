@@ -1,5 +1,6 @@
 'use client'
 
+import { submitPetitionSignature } from '@/app/(frontend)/actions/submitPetitionSignature'
 import {
   Field,
   FieldDescription,
@@ -8,26 +9,22 @@ import {
   FieldLegend,
   FieldSet,
 } from '@/components/ui/field'
+import { trackMetaLead } from '@/lib/facebookPixel'
+import { petitionFormSchema, type PetitionFormInput } from '@/lib/schemas/petition-form'
 import { Petition } from '@/payload-types'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { FormProvider, type SubmitHandler, useForm } from 'react-hook-form'
 import { useState, useTransition } from 'react'
-import { Textarea } from './ui/textarea'
-import { Button } from './ui/button'
-import { petitionFormSchema, type PetitionFormInput } from '@/lib/schemas/petition-form'
-import { trackMetaLead } from '@/lib/facebookPixel'
-import { submitPetitionSignature } from '@/app/(frontend)/actions/submitPetitionSignature'
-import { NameInput } from './NameInput'
-import { EmailInput } from './EmailInput'
-import { PhoneInput } from './PhoneInput'
-import { StateSelect } from './StateSelect'
+import { FormProvider, useForm, type SubmitHandler } from 'react-hook-form'
 import { CitySelect } from './CitySelect'
-import { PostalCodeInput } from './PostalCodeInput'
+import { EmailInput } from './EmailInput'
+import { NameInput } from './NameInput'
 import { PetitionSuccessDialog } from './PetitionSuccessDialog'
-import {
-  SIGNATURE_CREATED_EVENT,
-  type SignatureCreatedDetail,
-} from './SignatureCounter'
+import { PhoneInput } from './PhoneInput'
+import { PostalCodeInput } from './PostalCodeInput'
+import { SIGNATURE_CREATED_EVENT, type SignatureCreatedDetail } from './SignatureCounter'
+import { StateSelect } from './StateSelect'
+import { Button } from './ui/button'
+import { Textarea } from './ui/textarea'
 
 interface PetitionFormProps {
   id: string

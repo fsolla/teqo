@@ -100,7 +100,9 @@ const nextAdvisorIdsAfterMembership = (
 
   if (assigned) {
     if (currentAdvisorIDs.length >= MAX_ADVISORS_PER_MUNICIPALITY) {
-      throw new Error(`Cada município aceita no máximo ${MAX_ADVISORS_PER_MUNICIPALITY} assessores.`)
+      throw new Error(
+        `Cada município aceita no máximo ${MAX_ADVISORS_PER_MUNICIPALITY} assessores.`,
+      )
     }
     return [...currentAdvisorIDs, advisorId]
   }

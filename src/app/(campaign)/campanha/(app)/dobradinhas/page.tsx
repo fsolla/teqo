@@ -10,13 +10,13 @@ import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
 import {
   CampaignTable,
   CampaignTableHead,
   type CampaignTableColumn,
 } from '@/components/campaign/shared/CampaignTable'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'

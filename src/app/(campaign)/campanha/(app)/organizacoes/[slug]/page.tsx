@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { OrganizationForm } from '@/components/campaign/organization/OrganizationForm'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { actionPlanStatusLabels, actionPlanStatuses } from '@/lib/schemas/actionPlan'
@@ -52,7 +52,9 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
           <Badge variant="secondary">{organizationKindLabels[organization.kind]}</Badge>
         </div>
         {organization.municipalityNames.length ? (
-          <p className="text-muted-foreground">Atua em {organization.municipalityNames.join(', ')}</p>
+          <p className="text-muted-foreground">
+            Atua em {organization.municipalityNames.join(', ')}
+          </p>
         ) : null}
         {organization.notes ? (
           <p className="whitespace-pre-wrap text-sm text-muted-foreground">{organization.notes}</p>

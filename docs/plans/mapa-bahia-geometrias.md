@@ -80,16 +80,16 @@ Hierarquia TSE: município → (1+) zona → (muitas) seção; a relação munic
 
 ## Entrega as-built (B2, 2026-07-18)
 
-| Artefato | Caminho | Notas |
-| -------- | ------- | ----- |
-| TopoJSON municípios | `src/lib/geometries/bahia-municipalities.topo.json` | ~132 KB; 417 features; object `municipalities` |
-| TopoJSON TIs | `src/lib/geometries/bahia-identity-territories.topo.json` | ~15 KB; 27 features; object `territories` (dissolução IBGE) |
-| Tabela nome→`codarea` | `src/lib/bahiaMunicipalityCodes.ts` | + `codeForMunicipality` / `municipalityForCode` |
-| Helpers runtime | `src/lib/bahiaGeometries.ts` | `topojson-client` `feature()` + Maps no load do módulo |
-| Fixture oficial | `tests/fixtures/bahia-municipality-codes.official.json` | evidence SHA + bijeção |
-| Testes int | `tests/int/bahiaMunicipalityCodes.int.spec.ts`, `tests/int/bahiaGeometries.int.spec.ts` | cobertura 417/27, teto de bytes, nomes de objects via módulo |
-| Script | `scripts/build-bahia-geometries.mjs` | `pnpm build:geometries`; deps: `topojson-client` (runtime), `topojson-server` / `topojson-simplify` (dev) |
-| Cache | `data/geometries/` | gitignored |
+| Artefato              | Caminho                                                                                 | Notas                                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| TopoJSON municípios   | `src/lib/geometries/bahia-municipalities.topo.json`                                     | ~132 KB; 417 features; object `municipalities`                                                            |
+| TopoJSON TIs          | `src/lib/geometries/bahia-identity-territories.topo.json`                               | ~15 KB; 27 features; object `territories` (dissolução IBGE)                                               |
+| Tabela nome→`codarea` | `src/lib/bahiaMunicipalityCodes.ts`                                                     | + `codeForMunicipality` / `municipalityForCode`                                                           |
+| Helpers runtime       | `src/lib/bahiaGeometries.ts`                                                            | `topojson-client` `feature()` + Maps no load do módulo                                                    |
+| Fixture oficial       | `tests/fixtures/bahia-municipality-codes.official.json`                                 | evidence SHA + bijeção                                                                                    |
+| Testes int            | `tests/int/bahiaMunicipalityCodes.int.spec.ts`, `tests/int/bahiaGeometries.int.spec.ts` | cobertura 417/27, teto de bytes, nomes de objects via módulo                                              |
+| Script                | `scripts/build-bahia-geometries.mjs`                                                    | `pnpm build:geometries`; deps: `topojson-client` (runtime), `topojson-server` / `topojson-simplify` (dev) |
+| Cache                 | `data/geometries/`                                                                      | gitignored                                                                                                |
 
 **Cleanup `/simplify` já aplicado no PR da Fase 1:** reuso de `downloadToBuffer`; catch só de `UnknownMunicipalityError`; remoção de dead code de codegen (`stableStringifyTopo` enganoso, tipo `BahiaMunicipalityCode` não usado). **Não aplicado (→ B5):** lazy load split mun/TI; helper CLI compartilhado `ensureCachedDownload`.
 

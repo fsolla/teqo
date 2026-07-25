@@ -4,16 +4,20 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { LeadershipInternalForm } from '@/components/campaign/leadership/LeadershipInternalForm'
 import { LeadershipInviteButtons } from '@/components/campaign/invite/LeadershipInviteButtons'
-import { StateDeputyChips } from '@/components/campaign/stateDeputy/StateDeputyChips'
+import { LeadershipInternalForm } from '@/components/campaign/leadership/LeadershipInternalForm'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { StateDeputyChips } from '@/components/campaign/stateDeputy/StateDeputyChips'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadOrganizationOptions, loadMunicipalityOptions, loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
+import {
+  loadMunicipalityOptions,
+  loadOrganizationOptions,
+  loadStateDeputyOptions,
+} from '@/utilities/campaignRelationOptions'
 import { loadLeadershipDetail } from '@/utilities/leadershipData'
 import { updateLeadershipInternalFormAction } from './formActions'
 

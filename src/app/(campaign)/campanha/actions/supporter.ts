@@ -27,8 +27,6 @@ import {
   previewSupporterImportText as previewSupporterImportTextAction,
 } from './supporterImport'
 
-
-
 const getFreshStaffActor = (
   payload: Payload,
   actor: CampaignUser,

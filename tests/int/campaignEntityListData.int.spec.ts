@@ -171,9 +171,7 @@ describe('loadDemandListPageData', () => {
     const fixtures = campaignFixtures()
     const leader = await fixtures.createCampaignUser('leader')
 
-    await expect(loadDemandListPageData(payload, leader, { page: 1 })).rejects.toThrow(
-      /permissão/i,
-    )
+    await expect(loadDemandListPageData(payload, leader, { page: 1 })).rejects.toThrow(/permissão/i)
   })
 })
 

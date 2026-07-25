@@ -2,25 +2,25 @@
 
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { getPayload, type Payload } from 'payload'
 import { createElement, type ReactElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { getPayload, type Payload } from 'payload'
 
 import {
   redeemCampaignInviteAutofillFormAction,
   redeemCampaignInviteLoginFormAction,
 } from '@/app/(campaign)/campanha/convite/[token]/formActions'
 import { CampaignInviteForm } from '@/components/campaign/invite/CampaignInviteForm'
-import { ConsentText } from '@/components/campaign/shared/ConsentText'
 import { InvalidCampaignInvite } from '@/components/campaign/invite/InvalidCampaignInvite'
+import { ConsentText } from '@/components/campaign/shared/ConsentText'
 import type { Consent } from '@/payload-types'
 import config from '@/payload.config'
+import { hashCampaignInviteToken } from '@/utilities/campaignInvite'
 import {
   getCampaignInviteConsentState,
   getCampaignInvitePageData,
 } from '@/utilities/campaignInvitePageData'
-import { hashCampaignInviteToken } from '@/utilities/campaignInvite'
 import { hashConsentContent } from '@/utilities/consentContentHash'
 import { withInviteConsent } from '../helpers/testDatabaseLease'
 

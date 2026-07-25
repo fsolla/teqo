@@ -1,12 +1,12 @@
 import { formatElectionNumber } from '@/lib/electionFormat'
-import type { SuggestedGoalByScenario } from '@/utilities/municipalityPotential'
-import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 import {
   getVoteEstimateForScenario,
   VOTE_ESTIMATE_SCENARIOS,
   type VoteEstimateScenario,
   type VoteEstimateScenarioFields,
 } from '@/lib/voteEstimate'
+import type { SuggestedGoalByScenario } from '@/utilities/municipalityPotential'
+import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 /**
  * E8 "conta da cadeira" — coverage of the goal by auditable pledges.
@@ -51,7 +51,8 @@ export const createEmptyGoalCoverageByScenario = (): Record<
   MunicipalityGoalCoverage
 > => {
   const byScenario = {} as Record<VoteEstimateScenario, MunicipalityGoalCoverage>
-  for (const scenario of VOTE_ESTIMATE_SCENARIOS) byScenario[scenario] = emptyMunicipalityGoalCoverage
+  for (const scenario of VOTE_ESTIMATE_SCENARIOS)
+    byScenario[scenario] = emptyMunicipalityGoalCoverage
   return byScenario
 }
 
@@ -113,8 +114,12 @@ export const formatGoalCoverageRatioLabel = (coverage: MunicipalityGoalCoverage)
   formatRatioAsPercentLabel(coverage.coverageRatio)
 
 /** `coverageRatio` clamped to [0, 100] for a `Progress` bar, or `undefined` when unknown. */
-export const goalCoverageProgressPercent = (coverage: MunicipalityGoalCoverage): number | undefined =>
-  coverage.coverageRatio == null ? undefined : Math.min(100, Math.round(coverage.coverageRatio * 100))
+export const goalCoverageProgressPercent = (
+  coverage: MunicipalityGoalCoverage,
+): number | undefined =>
+  coverage.coverageRatio == null
+    ? undefined
+    : Math.min(100, Math.round(coverage.coverageRatio * 100))
 
 /** UI copy for `deficit`: how many votes are missing (or exceeded) relative to the goal. */
 export const formatGoalCoverageDeficitLabel = (coverage: MunicipalityGoalCoverage): string => {

@@ -41,7 +41,7 @@ Gate: W0 ([pinagem-superficies-lista.md](pinagem-superficies-lista.md)) verde
 
 ## Rabbit holes
 
-- **Generalizar `MunicipalityHeaderFilter` inteiro no D1.** As facetas de município (435 opções + busca) são as mais complexas; a generalização é a *interface* (filterDef + slot), a implementação rica continua específica até um segundo consumidor pedir.
+- **Generalizar `MunicipalityHeaderFilter` inteiro no D1.** As facetas de município (435 opções + busca) são as mais complexas; a generalização é a _interface_ (filterDef + slot), a implementação rica continua específica até um segundo consumidor pedir.
 - **DataTable do shadcn como base.** Consultar composição, mas a casa já tem `ui/Table` + DESIGN.md; introduzir TanStack Table trocaria o modelo server-first por client state — não.
 - **Mexer na semântica de URL "aproveitando".** Congelada (B18 depende dela).
 

@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { cn } from '@/lib/utils'
 import { getSignatureCount } from '@/app/(frontend)/actions/getSignatureCount'
+import { cn } from '@/lib/utils'
+import { useEffect, useRef, useState } from 'react'
 
 const POLL_INTERVAL_MS = 10_000
 const ANIMATION_DURATION_MS = 1200

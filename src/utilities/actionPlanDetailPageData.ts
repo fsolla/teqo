@@ -4,6 +4,7 @@ import type { Payload } from 'payload'
 
 import type { ActionPlan, CampaignDemand, CampaignUser } from '@/payload-types'
 import type { ActionPlanDetailTab } from '@/utilities/actionPlanDetailTabUi'
+import type { AccessibleActionPlanContext } from '@/utilities/actionPlanPageData'
 import {
   actionPlanMunicipalitySummary,
   toActionPlanDetailViewModel,
@@ -11,7 +12,6 @@ import {
   type ActionPlanMunicipalitySummary,
 } from '@/utilities/actionPlanViewModels'
 import { relationshipId } from '@/utilities/relationship'
-import type { AccessibleActionPlanContext } from '@/utilities/actionPlanPageData'
 
 type ActionPlanDemandSummary = {
   id: number

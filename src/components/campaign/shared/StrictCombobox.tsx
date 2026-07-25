@@ -10,8 +10,8 @@ import {
   ComboboxItem,
   ComboboxList,
 } from '@/components/ui/combobox'
-import type { StrictComboboxOption } from '@/utilities/territoryComboboxOptions'
 import { matchesAtWordStart, normalizeSearchPhrase } from '@/lib/wordStartFilter'
+import type { StrictComboboxOption } from '@/utilities/territoryComboboxOptions'
 
 type StrictComboboxProps = {
   id: string
@@ -61,9 +61,7 @@ export const StrictCombobox = ({
         aria-describedby={error ? `${id}-error` : undefined}
         onBlur={(event) => {
           const normalized = normalizeSearchPhrase(event.currentTarget.value)
-          const exact = options.find(
-            (option) => normalizeSearchPhrase(option.label) === normalized,
-          )
+          const exact = options.find((option) => normalizeSearchPhrase(option.label) === normalized)
           if (normalized && !exact) {
             setInputValue('')
             onValueChange('')

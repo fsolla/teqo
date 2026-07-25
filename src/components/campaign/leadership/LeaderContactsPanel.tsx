@@ -1,8 +1,8 @@
 import { PhoneIcon } from 'lucide-react'
 
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { LeaderContactForm } from '@/components/campaign/leadership/LeaderContactForm'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import {
   Table,
   TableBody,
@@ -11,8 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
-import type { LeaderContactListItem } from '@/utilities/leaderContactsPageData'
 import { formatBrazilianPhoneInput } from '@/lib/phone'
+import type { LeaderContactListItem } from '@/utilities/leaderContactsPageData'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',

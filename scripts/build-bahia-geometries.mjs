@@ -22,20 +22,18 @@
  */
 
 import { createHash } from 'node:crypto'
-import { mkdir, readFile, writeFile, access } from 'node:fs/promises'
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { topology } from 'topojson-server'
 import { merge, quantize } from 'topojson-client'
-import { presimplify, simplify, quantile } from 'topojson-simplify'
+import { topology } from 'topojson-server'
+import { presimplify, quantile, simplify } from 'topojson-simplify'
 
-const { canonicalizeMunicipalityName, UnknownMunicipalityError } = await import(
-  '../src/lib/electionResults.ts'
-)
-const { bahiaMunicipalities, bahiaIdentityTerritoryRecords } = await import(
-  '../src/lib/bahiaTerritories.ts'
-)
+const { canonicalizeMunicipalityName, UnknownMunicipalityError } =
+  await import('../src/lib/electionResults.ts')
+const { bahiaMunicipalities, bahiaIdentityTerritoryRecords } =
+  await import('../src/lib/bahiaTerritories.ts')
 const { downloadToBuffer } = await import('../src/lib/electionResultsZip.ts')
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -224,7 +222,8 @@ const main = async () => {
     const memberGeometries = territory.municipalities.map((name) => {
       const code = codeByCanonical.get(name)
       const geometry = geometriesByCodarea.get(code)
-      if (!geometry) die(`Missing municipality geometry for ${name} (${code}) in territory ${territory.code}`)
+      if (!geometry)
+        die(`Missing municipality geometry for ${name} (${code}) in territory ${territory.code}`)
       return geometry
     })
     return {

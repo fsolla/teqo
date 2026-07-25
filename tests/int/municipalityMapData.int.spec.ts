@@ -4,8 +4,8 @@ import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import config from '@/payload.config'
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
+import config from '@/payload.config'
 import { loadMunicipalityMapBundle } from '@/utilities/municipalityMapData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'

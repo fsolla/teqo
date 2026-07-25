@@ -1,7 +1,7 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useActionState, useEffect } from 'react'
 import { toast } from 'sonner'
 
 import { registerActionPlanResultFormAction } from '@/app/(campaign)/campanha/(app)/planos/[slug]/resultFormActions'
@@ -50,9 +50,7 @@ export const ActionPlanResultForm = ({
     <Card>
       <CardHeader>
         <CardTitle>Resultado da ação</CardTitle>
-        {recordedLabel ? (
-          <p className="text-sm text-muted-foreground">{recordedLabel}</p>
-        ) : null}
+        {recordedLabel ? <p className="text-sm text-muted-foreground">{recordedLabel}</p> : null}
       </CardHeader>
       <CardContent>
         <form action={formAction} className="flex flex-col gap-4">

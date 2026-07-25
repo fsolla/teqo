@@ -6,10 +6,6 @@
  */
 
 export type {
-  
-  
-  
-  
   MunicipalityGeometryModule,
   TerritoryGeometryModule,
 } from '@/lib/bahiaGeometriesTypes'

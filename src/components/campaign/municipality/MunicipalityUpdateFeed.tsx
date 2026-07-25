@@ -33,7 +33,9 @@ export const MunicipalityUpdateFeed = ({ updates }: { updates: MunicipalityUpdat
       {updates.map((update) => (
         <li key={update.id} className="flex flex-col gap-3 rounded-xl border p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={kindVariant[update.kind]}>{municipalityUpdateKindLabels[update.kind]}</Badge>
+            <Badge variant={kindVariant[update.kind]}>
+              {municipalityUpdateKindLabels[update.kind]}
+            </Badge>
             <span className="text-sm font-medium">{update.authorName}</span>
             <span className="text-sm text-muted-foreground">
               {dateTimeFormatter.format(new Date(update.createdAt))}
@@ -59,7 +61,9 @@ export const MunicipalityUpdateFeed = ({ updates }: { updates: MunicipalityUpdat
           )}
           {update.kind === 'sinal' ? (
             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-              {update.signalType ? <Badge variant="outline">{municipalitySignalTypeLabels[update.signalType]}</Badge> : null}
+              {update.signalType ? (
+                <Badge variant="outline">{municipalitySignalTypeLabels[update.signalType]}</Badge>
+              ) : null}
               {update.signalSource ? <span>Fonte: {update.signalSource}</span> : null}
               {update.triangulated ? <span>Triangulado</span> : null}
             </div>

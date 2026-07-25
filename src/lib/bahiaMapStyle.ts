@@ -38,9 +38,7 @@ const getFeatureStyle = ({
   weight: highlighted ? 2 : 1,
   color: highlighted ? '#c51414' : '#a8a29e',
   fillColor:
-    fillMode === 'diverging'
-      ? divergingFillColor(metric, max)
-      : choroplethFillColor(metric, max),
+    fillMode === 'diverging' ? divergingFillColor(metric, max) : choroplethFillColor(metric, max),
   fillOpacity: metric !== 0 ? 0.78 : 0.35,
 })
 

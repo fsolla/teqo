@@ -5,6 +5,12 @@ import type {
 } from 'payload'
 import { APIError } from 'payload'
 
+import { politicalTrendStatuses } from '@/lib/schemas/municipality'
+import {
+  getVoteEstimateOrderViolation,
+  VOTE_ESTIMATE_ORDER_ERROR_MESSAGE,
+  type VoteEstimateScenarioFields,
+} from '@/lib/voteEstimate'
 import {
   canAssignMunicipalityAdvisors,
   canCreateMunicipality,
@@ -17,14 +23,8 @@ import {
   canUpdateMunicipality,
   eligibleCampaignStaffWhere,
 } from '@/utilities/campaignAccess'
-import { politicalTrendStatuses } from '@/lib/schemas/municipality'
 import { politicalTrendLabels } from '@/utilities/municipalityLabels'
 import { relationshipId } from '@/utilities/relationship'
-import {
-  getVoteEstimateOrderViolation,
-  VOTE_ESTIMATE_ORDER_ERROR_MESSAGE,
-  type VoteEstimateScenarioFields,
-} from '@/lib/voteEstimate'
 import {
   voteEstimateScenarioGroupAccess,
   voteEstimateScenarioGroupFields,
@@ -99,7 +99,10 @@ const validateMunicipalityAdvisors: CollectionBeforeValidateHook = async ({ data
   })
 
   if (eligibleAdvisors.docs.length !== advisorIDs.length) {
-    throw new APIError('Cada assessor deve ter papel de Coordenador Geral, Assessor ou Candidato.', 400)
+    throw new APIError(
+      'Cada assessor deve ter papel de Coordenador Geral, Assessor ou Candidato.',
+      400,
+    )
   }
 
   return data

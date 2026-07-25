@@ -2,7 +2,10 @@
 
 import { useActionState } from 'react'
 
-import { RelationMultiSelect, type RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
+import {
+  RelationMultiSelect,
+  type RelationOption,
+} from '@/components/campaign/shared/RelationMultiSelect'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'

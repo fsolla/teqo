@@ -62,8 +62,7 @@ const artifact = artifactJson as FederalBaselineArtifact
 
 export const FEDERAL_BASELINE_CANDIDATE_NUMBER = artifact.candidateNumber
 
-export const federalBaselineMunicipalitySlugs = (): string[] =>
-  Object.keys(artifact.municipalities)
+export const federalBaselineMunicipalitySlugs = (): string[] => Object.keys(artifact.municipalities)
 
 const EMPTY_BASELINE: MunicipalityFederalBaseline = {
   votesByYear: {},

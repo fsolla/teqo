@@ -104,7 +104,9 @@ export const loadSupportersPageData = async (
   searchParams: Promise<SupporterListSearchParams> | SupporterListSearchParams,
 ): Promise<SupportersPageData> => {
   const advisorPromise =
-    user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : Promise.resolve(undefined)
+    user.role === 'advisor'
+      ? getAdvisorMunicipalityIds(payload, user.id)
+      : Promise.resolve(undefined)
 
   const [{ result, state, redirectHref }, advisorMunicipalityIds] = await Promise.all([
     loadSupporterListPageData(payload, user, searchParams),

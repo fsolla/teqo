@@ -3,7 +3,6 @@ import { SiteHeader } from '@/components/SiteHeader'
 import { Badge } from '@/components/ui/Badge'
 import { Separator } from '@/components/ui/separator'
 import { getCachedGlobal } from '@/utilities/globals'
-import { stripTrailingSlash } from '@/utilities/seo'
 import {
   POST_TYPE_LABELS,
   getCategoryName,
@@ -11,6 +10,7 @@ import {
   getVisiblePosts,
   isPostType,
 } from '@/utilities/posts'
+import { stripTrailingSlash } from '@/utilities/seo'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 

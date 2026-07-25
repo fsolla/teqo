@@ -33,10 +33,10 @@
  *   TSE_CACHE_DIR=./data/tse pnpm db:seed:tse
  */
 
-import { createHash } from 'node:crypto'
-import { mkdir, readFile, writeFile, access } from 'node:fs/promises'
-import { join } from 'node:path'
 import { config as loadEnv } from 'dotenv'
+import { createHash } from 'node:crypto'
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { getPayload } from 'payload'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
@@ -46,13 +46,11 @@ loadEnv({ path: '.env' })
 
 const config = (await import('../src/payload.config.ts')).default
 const { parseTseCsvBuffer } = await import('../src/lib/electionResultsCsv.ts')
-const { buildElectionResultsFromCsvRows, HISTORICAL_BASELINE_OFFICES } = await import(
-  '../src/lib/electionResultsBuild.ts'
-)
+const { buildElectionResultsFromCsvRows, HISTORICAL_BASELINE_OFFICES } =
+  await import('../src/lib/electionResultsBuild.ts')
 const { downloadToBuffer, readZipEntry } = await import('../src/lib/electionResultsZip.ts')
-const { buildImportBundles, importElectionBundles } = await import(
-  '../src/utilities/electionResultsImport.ts'
-)
+const { buildImportBundles, importElectionBundles } =
+  await import('../src/utilities/electionResultsImport.ts')
 
 const SUPPORTED_YEARS = [2014, 2018, 2022]
 

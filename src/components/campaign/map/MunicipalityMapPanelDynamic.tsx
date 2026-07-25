@@ -6,7 +6,10 @@ import type { FederalCandidateOption } from '@/utilities/electionCandidateOption
 import type { MunicipalityMapBundle } from '@/utilities/municipalityMapContract'
 
 const MunicipalityMapPanelLazy = dynamic(
-  () => import('@/components/campaign/map/MunicipalityMapPanel').then((module) => module.MunicipalityMapPanel),
+  () =>
+    import('@/components/campaign/map/MunicipalityMapPanel').then(
+      (module) => module.MunicipalityMapPanel,
+    ),
   {
     ssr: false,
     loading: () => (

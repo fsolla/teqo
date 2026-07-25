@@ -5,12 +5,12 @@ import type { Payload } from 'payload'
 
 import type { CampaignInviteKind } from '@/utilities/campaignInvite'
 import { hashCampaignInviteToken } from '@/utilities/campaignInvite'
+import { drizzleResultRows } from '@/utilities/drizzleBulk'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import {
   acquireTextAdvisoryLocks,
   getPostgresTransactionDatabase,
 } from '@/utilities/postgresTransactionLocks'
-import { drizzleResultRows } from '@/utilities/drizzleBulk'
 
 export const INVALID_CAMPAIGN_INVITE_MESSAGE = 'Convite inválido ou expirado.'
 

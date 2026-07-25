@@ -5,6 +5,7 @@ import type { Payload } from 'payload'
 
 import { upsertContactByPhone } from '@/app/(campaign)/campanha/actions/supporter'
 import { checkboxFormValue, nullableRelationshipFormValue, optionalFormText } from '@/lib/formData'
+import { sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import { leaderSupporterCreateSchema } from '@/lib/schemas/supporter'
 import type { CampaignUser, Supporter } from '@/payload-types'
 import { getEngagedLeaderMunicipalityIds, isCampaignLeader } from '@/utilities/campaignAccess'
@@ -17,7 +18,6 @@ import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
 import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import { isUniqueSupporterConflict } from '@/utilities/supporterErrors'
 
 export type LeaderSupporterFormState = {

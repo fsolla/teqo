@@ -51,7 +51,8 @@ const markDismissedThisSession = (): void => {
 const isIosSafari = (): boolean => {
   const ua = navigator.userAgent
   const isIos =
-    /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
   return isIos && /WebKit/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua)
 }
 
@@ -138,7 +139,12 @@ export const InstallPwaToast = () => {
         <DrawerFooter>
           <DrawerClose
             render={
-              <Button type="button" variant="outline" className="w-full" onClick={dismissInstallToast} />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={dismissInstallToast}
+              />
             }
           >
             Entendi

@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
-import { CampaignInfoHint } from '@/components/campaign/shared/CampaignInfoHint'
 import { MunicipalityHoverTooltip } from '@/components/campaign/municipality/MunicipalityHoverTooltip'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
+import { CampaignInfoHint } from '@/components/campaign/shared/CampaignInfoHint'
 import { Progress } from '@/components/ui/Progress'
 import {
   CAMPAIGN_CONCEPTS_PATH,
@@ -11,6 +11,7 @@ import {
   type CampaignConceptId,
 } from '@/lib/campaignIntelligenceConcepts'
 import { formatElectionNumber } from '@/lib/electionFormat'
+import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import {
   formatGoalCoverageDeficitLabel,
   formatGoalCoverageRatioLabel,
@@ -19,7 +20,6 @@ import {
   type MunicipalityGoalCoverage,
 } from '@/utilities/goalCoverage'
 import type { MunicipalityPotential, RollOff } from '@/utilities/municipalityPotential'
-import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
 /**
@@ -91,7 +91,10 @@ const MetricExplanation = ({
   <div className="flex flex-col gap-1">
     <p>{lead}</p>
     {formula ? <p className="text-background/70">{formula}</p> : null}
-    <Link href={campaignConceptHref(conceptID)} className="font-medium underline underline-offset-2">
+    <Link
+      href={campaignConceptHref(conceptID)}
+      className="font-medium underline underline-offset-2"
+    >
       Saiba mais
     </Link>
   </div>
@@ -146,16 +149,16 @@ export const MunicipalityGoalAccountCard = ({
         <CampaignInfoHint label="Sobre a conta da cadeira">
           <div className="flex flex-col gap-2">
             <p>
-              <strong>Meta</strong> é a estimativa da mesa; sem estimativa, usa a meta sugerida —
-              a votação do próprio Jorge Solla aqui em 2022 (cenário média).
+              <strong>Meta</strong> é a estimativa da mesa; sem estimativa, usa a meta sugerida — a
+              votação do próprio Jorge Solla aqui em 2022 (cenário média).
             </p>
             <p>
               <strong>Comprometido</strong> é só a soma das declarações de lideranças — nunca a
               meta.
             </p>
             <p>
-              O roll-off e o teto do campo (abaixo) só usam 2022 — a majoritária de 2014/2018 já
-              foi importada, mas ainda não entra nessas contas.
+              O roll-off e o teto do campo (abaixo) só usam 2022 — a majoritária de 2014/2018 já foi
+              importada, mas ainda não entra nessas contas.
             </p>
             {/*
               Keyboard path into E18's documentation: Popover content is
@@ -216,8 +219,8 @@ export const MunicipalityGoalAccountCard = ({
             <MetricExplanation
               lead={
                 <>
-                  <strong>Teto do campo</strong> projeta quantos votos válidos o campo pode
-                  alcançar em 2026.
+                  <strong>Teto do campo</strong> projeta quantos votos válidos o campo pode alcançar
+                  em 2026.
                 </>
               }
               formula="Fórmula: votos do presidencial do campo em 2022 (1º turno), ajustados pelo crescimento de comparecimento projetado para a disputa de deputado federal."
@@ -232,8 +235,8 @@ export const MunicipalityGoalAccountCard = ({
             <MetricExplanation
               lead={
                 <>
-                  <strong>Captura</strong> mostra quanto do teto do campo Jorge Solla conquistou
-                  em 2022.
+                  <strong>Captura</strong> mostra quanto do teto do campo Jorge Solla conquistou em
+                  2022.
                 </>
               }
               formula="Fórmula: votos de Solla (2022) ÷ teto do campo (presidencial 2022). Só diagnóstico — não entra na meta."

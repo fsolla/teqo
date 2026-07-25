@@ -73,4 +73,4 @@ const TableCaption = ({ className, ...props }: React.ComponentProps<'caption'>) 
   />
 )
 
-export { Table, TableHeader, TableBody,  TableHead, TableRow, TableCell, TableCaption }
+export { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow }

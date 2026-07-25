@@ -9,7 +9,8 @@ type MunicipalityEstimateScenarioContextValue = {
   setScenario: (scenario: VoteEstimateScenario) => void
 }
 
-const MunicipalityEstimateScenarioContext = createContext<MunicipalityEstimateScenarioContextValue | null>(null)
+const MunicipalityEstimateScenarioContext =
+  createContext<MunicipalityEstimateScenarioContextValue | null>(null)
 
 export const MunicipalityEstimateScenarioProvider = ({ children }: { children: ReactNode }) => {
   const [scenario, setScenario] = useState<VoteEstimateScenario>(DEFAULT_VOTE_ESTIMATE_SCENARIO)
@@ -25,10 +26,13 @@ export const MunicipalityEstimateScenarioProvider = ({ children }: { children: R
 export const useMunicipalityEstimateScenario = (): MunicipalityEstimateScenarioContextValue => {
   const value = useContext(MunicipalityEstimateScenarioContext)
   if (!value) {
-    throw new Error('useMunicipalityEstimateScenario must be used within MunicipalityEstimateScenarioProvider')
+    throw new Error(
+      'useMunicipalityEstimateScenario must be used within MunicipalityEstimateScenarioProvider',
+    )
   }
   return value
 }
 
-export const useMunicipalityEstimateScenarioOptional = (): MunicipalityEstimateScenarioContextValue | null =>
-  useContext(MunicipalityEstimateScenarioContext)
+export const useMunicipalityEstimateScenarioOptional =
+  (): MunicipalityEstimateScenarioContextValue | null =>
+    useContext(MunicipalityEstimateScenarioContext)

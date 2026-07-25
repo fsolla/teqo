@@ -117,4 +117,3 @@ export const latestIsoTimestamp = (
   if (!right) return left
   return right > left ? right : left
 }
-

@@ -1,14 +1,14 @@
 import { MunicipalityHoverTooltip } from '@/components/campaign/municipality/MunicipalityHoverTooltip'
 import { formatElectionNumber } from '@/lib/electionFormat'
-import { computeVoteTrend } from '@/lib/voteTrend'
 import {
   DEFAULT_VOTE_RANK_YEAR,
   formatMunicipalityVoteRank,
   formatMunicipalityVoteShare,
   getMunicipalityVoteRank,
 } from '@/lib/municipalityVoteRank'
-import { formatMunicipalityConcentrationHint } from '@/utilities/municipalityLabels'
+import { computeVoteTrend } from '@/lib/voteTrend'
 import type { MunicipalityElectoralBaseline } from '@/utilities/municipalityElectoralBaseline'
+import { formatMunicipalityConcentrationHint } from '@/utilities/municipalityLabels'
 
 const seriesVotes = (baseline: MunicipalityElectoralBaseline, year: number): number =>
   baseline.series.find((point) => point.year === year)?.votes ?? 0

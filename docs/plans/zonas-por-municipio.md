@@ -6,6 +6,7 @@ Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha A → A2)
 Responsável: —
 
 Revisões:
+
 - 2026-07-18 (entrega): cadastro estático `bahiaTseZones` a partir do TSE 2024 `detalhe_votacao_munzona` BA (SHA-256 no cabeçalho); motor `territorySuggestions` + chips opt-in no coordenador `NucleusTerritoryAndZonesFields`; sem migration. Corrigido drift factual: a validação server-side existente chama-se `validateTerritoryAndZones` (não `validateGeographyAndZones`). Reuso de `canonicalizeMunicipalityName` / aliases de A3 na geração do dataset.
 - 2026-07-18 (as-built / pós-simplify): `TseZoneInput` só controlado; `NucleusTerritoryFields` removido (só `NucleusTerritoryAndZonesFields`); `buildTerritorySuggestions` devolve também `outsideZones`; helpers de membership `isTseZoneOf*` removidos (usar `.includes` nos arrays); caches módulo `citiesByZone` / `zonesByTerritory`; chips com props discriminadas `kind: 'zone'|'city'`; teto UI de 8 + “+N sugestões”.
 

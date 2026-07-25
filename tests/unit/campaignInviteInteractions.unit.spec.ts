@@ -1,5 +1,5 @@
-import { createElement } from 'react'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { createElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const inviteActionState = vi.hoisted(() => ({
@@ -37,9 +37,7 @@ describe('campaign invite interactions', () => {
       }),
     )
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Convidar para completar cadastro' }),
-    )
+    fireEvent.click(screen.getByRole('button', { name: 'Convidar para completar cadastro' }))
     await screen.findByText(/Convite para completar cadastro gerado/)
 
     expect(inviteActionState.createCampaignInvite).toHaveBeenCalledWith({

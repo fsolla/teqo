@@ -5,12 +5,12 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { bahiaMunicipalityCodes } from '@/lib/bahiaMunicipalityCodes'
 import {
   bahiaMunicipalityDemographics,
   demographicsForCode,
   demographicsForMunicipalityName,
 } from '@/lib/bahiaMunicipalityDemographics'
-import { bahiaMunicipalityCodes } from '@/lib/bahiaMunicipalityCodes'
 import { bahiaMunicipalities } from '@/lib/bahiaTerritories'
 
 type OfficialEvidence = {

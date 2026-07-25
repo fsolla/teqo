@@ -80,9 +80,7 @@ describe('Bahia municipality ↔ TSE zone mapping', () => {
     expect(tseZonesForCity('Salvador').includes(999)).toBe(false)
     expect(tseZonesForCity('Município inexistente').includes(1)).toBe(false)
 
-    expect(citiesForTseZone(37)).toEqual(
-      expect.arrayContaining(['Itiruçu', 'Maracás']),
-    )
+    expect(citiesForTseZone(37)).toEqual(expect.arrayContaining(['Itiruçu', 'Maracás']))
     expect([...citiesForTseZone(37)]).toEqual(
       [...citiesForTseZone(37)].sort((left, right) => left.localeCompare(right, 'pt-BR')),
     )
@@ -91,7 +89,9 @@ describe('Bahia municipality ↔ TSE zone mapping', () => {
     expect(isBahiaIdentityTerritory('Vale do Jiquiriçá')).toBe(true)
     const valeZones = tseZonesForTerritory('Vale do Jiquiriçá')
     const expectedUnion = [
-      ...new Set(citiesForTerritory('Vale do Jiquiriçá').flatMap((city) => [...tseZonesForCity(city)])),
+      ...new Set(
+        citiesForTerritory('Vale do Jiquiriçá').flatMap((city) => [...tseZonesForCity(city)]),
+      ),
     ].sort((left, right) => left - right)
     expect(valeZones).toEqual(expectedUnion)
     expect(valeZones.includes(37)).toBe(true)

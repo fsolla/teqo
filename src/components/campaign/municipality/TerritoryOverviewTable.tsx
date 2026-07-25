@@ -67,7 +67,8 @@ export const TerritoryOverviewTable = ({ rows }: TerritoryOverviewTableProps) =>
   }
 
   const sortIcon = (key: TerritorySortKey) => {
-    if (key !== sortKey) return <ChevronsUpDownIcon className="text-muted-foreground/50" aria-hidden="true" />
+    if (key !== sortKey)
+      return <ChevronsUpDownIcon className="text-muted-foreground/50" aria-hidden="true" />
     return sortDir === 'asc' ? (
       <ChevronUpIcon aria-hidden="true" />
     ) : (
@@ -108,7 +109,8 @@ export const TerritoryOverviewTable = ({ rows }: TerritoryOverviewTableProps) =>
         </TableBody>
       </Table>
       <p className="text-xs text-muted-foreground">
-        Leitura regional; alocação decide-se por município. % da votação = votos do TI ÷ votos estaduais (2022).
+        Leitura regional; alocação decide-se por município. % da votação = votos do TI ÷ votos
+        estaduais (2022).
       </p>
     </div>
   )
@@ -135,7 +137,9 @@ const TerritoryRow = ({ row }: { row: TerritoryOverviewRow }) => (
       <TableCell className="text-right tabular-nums text-muted-foreground">
         {formatElectionNumber(row.validVotes2022)}
       </TableCell>
-      <TableCell className="text-right tabular-nums">{formatElectionNumber(row.estimate2026)}</TableCell>
+      <TableCell className="text-right tabular-nums">
+        {formatElectionNumber(row.estimate2026)}
+      </TableCell>
       <TableCell className="text-right">
         <CoverageCell withAdvisorCount={row.withAdvisorCount} total={row.municipalityCount} />
       </TableCell>
@@ -157,7 +161,11 @@ const TerritoryRow = ({ row }: { row: TerritoryOverviewRow }) => (
           {formatElectionNumber(subRow.estimate2026)}
         </TableCell>
         <TableCell className="text-right">
-          <CoverageCell withAdvisorCount={subRow.withAdvisorCount} total={subRow.municipalityCount} muted />
+          <CoverageCell
+            withAdvisorCount={subRow.withAdvisorCount}
+            total={subRow.municipalityCount}
+            muted
+          />
         </TableCell>
       </TableRow>
     ))}

@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState, type FormEvent } from 'react'
 
 import { logoutCampaign } from '@/app/(campaign)/campanha/actions/auth'
-import { CampaignLogo } from '@/components/campaign/shell/campaign-logo'
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { CampaignUserAvatar } from '@/components/campaign/shared/CampaignUserAvatar'
+import { CampaignLogo } from '@/components/campaign/shell/campaign-logo'
 import {
   getCampaignNav,
   getCampaignSecondaryNav,
@@ -15,7 +15,6 @@ import {
   type CampaignNavItem,
 } from '@/components/campaign/shell/nav'
 import { Button } from '@/components/ui/button'
-import { Spinner } from '@/components/ui/Spinner'
 import {
   Sidebar,
   SidebarContent,
@@ -28,9 +27,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/Sidebar'
+import { Spinner } from '@/components/ui/Spinner'
+import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 import type { CampaignUserShellView } from '@/utilities/campaignUserProfile'
 import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
-import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 import { clearRecentVisits } from '@/utilities/recentVisits'
 
 export type CampaignSidebarUser = CampaignUserShellView
@@ -75,7 +75,10 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
   }
 
   return (
-    <Sidebar collapsible="none" className="h-svh shrink-0 border-r border-sidebar-border print:hidden">
+    <Sidebar
+      collapsible="none"
+      className="h-svh shrink-0 border-r border-sidebar-border print:hidden"
+    >
       <SidebarHeader className="border-b border-sidebar-border">
         <Link
           href="/campanha"

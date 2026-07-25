@@ -51,7 +51,9 @@ export const AdvisorPasswordResetButton = ({
           size="icon"
           className="size-10"
           disabled={disabled || isPending}
-          aria-label={disabled ? `${accessibleName} — ${PLACEHOLDER_RESET_MESSAGE}` : accessibleName}
+          aria-label={
+            disabled ? `${accessibleName} — ${PLACEHOLDER_RESET_MESSAGE}` : accessibleName
+          }
         >
           {isPending ? (
             <Spinner className="size-4" aria-hidden="true" />

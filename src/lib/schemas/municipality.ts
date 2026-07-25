@@ -54,5 +54,7 @@ export const municipalityExpectedVotesSchema = z.object({
 
 export type MunicipalityStrategyUpdateInput = z.input<typeof municipalityStrategyUpdateSchema>
 export type MunicipalityPoliticalTrendInput = z.input<typeof municipalityPoliticalTrendSchema>
-export type MunicipalityAdvisorsAssignmentInput = z.input<typeof municipalityAdvisorsAssignmentSchema>
+export type MunicipalityAdvisorsAssignmentInput = z.input<
+  typeof municipalityAdvisorsAssignmentSchema
+>
 export type MunicipalityExpectedVotesInput = z.input<typeof municipalityExpectedVotesSchema>

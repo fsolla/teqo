@@ -35,7 +35,8 @@ export const createActionPlanUpdateFormAction = async (
     return mapCampaignFormActionError({
       error,
       safeMessages,
-      genericMessage: 'Não foi possível enviar a atualização. Verifique seu acesso e tente novamente.',
+      genericMessage:
+        'Não foi possível enviar a atualização. Verifique seu acesso e tente novamente.',
     })
   }
 }

@@ -50,7 +50,9 @@ export const MunicipalityListTrendControl = ({
           aria-label="Editar tendência política"
         >
           {status ? (
-            <Badge variant={politicalTrendBadgeVariant[status]}>{politicalTrendLabels[status]}</Badge>
+            <Badge variant={politicalTrendBadgeVariant[status]}>
+              {politicalTrendLabels[status]}
+            </Badge>
           ) : (
             <Badge variant="outline">Não registrada</Badge>
           )}

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import 'leaflet/dist/leaflet.css'
 
+import { Spinner } from '@/components/ui/Spinner'
 import {
   loadMunicipalityGeometryModule,
   loadTerritoryGeometryModule,
@@ -24,9 +25,6 @@ import {
   type LayerStyleContext,
 } from '@/lib/bahiaMapStyle'
 import { cn } from '@/lib/utils'
-import { Spinner } from '@/components/ui/Spinner'
-
-
 
 const BAHIA_BOUNDS: L.LatLngBoundsExpression = [
   [-18.5, -46.8],

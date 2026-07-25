@@ -8,16 +8,13 @@ import {
   type DeclareVotesInput,
   type EstimateVotesInput,
 } from '@/lib/schemas/votePledge'
+import { normalizeVoteEstimateOnSave, toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { CampaignUser } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
-import {
-  normalizeVoteEstimateOnSave,
-  toVoteEstimateScenarioViewModel,
-} from '@/lib/voteEstimate'
 
 const STAFF_DECLARE_REQUIRED = 'Somente a coordenação e a assessoria registram votos declarados.'
 const MUNICIPALITY_NOT_LINKED =

@@ -2,7 +2,10 @@
 
 import { useActionState, useState } from 'react'
 
-import { RelationMultiSelect, type RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
+import {
+  RelationMultiSelect,
+  type RelationOption,
+} from '@/components/campaign/shared/RelationMultiSelect'
 import { VoteEstimateScenarioInputs } from '@/components/campaign/votePledge/VoteEstimateScenarioInputs'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'

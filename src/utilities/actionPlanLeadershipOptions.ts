@@ -2,10 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import {
-  isContactSearchQueryReady,
-  normalizeContactSearchQuery,
-} from '@/lib/contactSearchQuery'
+import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
 import type { CampaignUser, Contact, Leadership } from '@/payload-types'
 import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 

@@ -2,11 +2,11 @@ import 'server-only'
 
 import { sql } from '@payloadcms/db-postgres'
 
+import type { SupporterListFilterInput } from '@/utilities/supporterListFilters'
 import {
   buildSupporterSearchTerms,
   type SupporterSearchTerms,
 } from '@/utilities/supporterListFilters'
-import type { SupporterListFilterInput } from '@/utilities/supporterListFilters'
 
 export type AggregateSqlConditions = {
   conditions: ReturnType<typeof sql>[]
@@ -28,7 +28,9 @@ const buildSqlSearchCondition = (terms: SupporterSearchTerms): ReturnType<typeof
   return sql`(${sql.join(searchTerms, sql` OR `)})`
 }
 
-export const toAggregateSqlConditions = (state: SupporterListFilterInput): AggregateSqlConditions => {
+export const toAggregateSqlConditions = (
+  state: SupporterListFilterInput,
+): AggregateSqlConditions => {
   const conditions: ReturnType<typeof sql>[] = []
   let needsContactJoin = false
 

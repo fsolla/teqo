@@ -72,8 +72,7 @@ export const getMunicipalityVoteRank = (
   year: number = DEFAULT_VOTE_RANK_YEAR,
 ): MunicipalityVoteRankEntry | null => computeVoteRankByYear(year).get(slug) ?? null
 
-export const formatMunicipalityVoteRank = (rank: number): string =>
-  `${formatElectionNumber(rank)}º`
+export const formatMunicipalityVoteRank = (rank: number): string => `${formatElectionNumber(rank)}º`
 
 export const formatMunicipalityVoteShare = (share: number): string =>
   `${(share * 100).toLocaleString('pt-BR', {

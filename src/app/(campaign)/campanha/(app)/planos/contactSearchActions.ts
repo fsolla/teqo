@@ -4,15 +4,12 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import type { ContactComboboxOption } from '@/components/campaign/shared/ContactCombobox'
-import {
-  isContactSearchQueryReady,
-  normalizeContactSearchQuery,
-} from '@/lib/contactSearchQuery'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
 import {
   searchActionPlanLeadershipOptions,
   type ActionPlanLeadershipOption,
 } from '@/utilities/actionPlanLeadershipOptions'
+import { getCampaignUser } from '@/utilities/campaignAuth'
 
 const CONTACT_OPTION_LIMIT = 20
 

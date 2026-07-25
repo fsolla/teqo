@@ -19,7 +19,9 @@ import {
   type MunicipalityPotential,
 } from '@/utilities/municipalityPotential'
 
-const baseline = (overrides: Partial<MunicipalityFederalBaseline> = {}): MunicipalityFederalBaseline => ({
+const baseline = (
+  overrides: Partial<MunicipalityFederalBaseline> = {},
+): MunicipalityFederalBaseline => ({
   votesByYear: {},
   validVotesByYear: {},
   campoFederalVotesByYear: {},
@@ -44,8 +46,20 @@ describe('fieldCeiling / projectedFieldCeiling', () => {
   it('reads the 2022 president #13 votes as the primary ceiling', () => {
     const b = baseline({
       majoritarian2022: {
-        president: { votes: 5000, comparecimento: 8000, votosValidos: 7500, votosBranco: 300, votosNulo: 200 },
-        governor: { votes: 5500, comparecimento: 8000, votosValidos: 7500, votosBranco: 300, votosNulo: 200 },
+        president: {
+          votes: 5000,
+          comparecimento: 8000,
+          votosValidos: 7500,
+          votosBranco: 300,
+          votosNulo: 200,
+        },
+        governor: {
+          votes: 5500,
+          comparecimento: 8000,
+          votosValidos: 7500,
+          votosBranco: 300,
+          votosNulo: 200,
+        },
       },
     })
     expect(fieldCeiling(b)).toBe(5000)
@@ -59,8 +73,20 @@ describe('fieldCeiling / projectedFieldCeiling', () => {
     const b = baseline({
       validVotesByYear: { '2014': 4000, '2018': 6000, '2022': 8000 },
       majoritarian2022: {
-        president: { votes: 5000, comparecimento: 9000, votosValidos: 8500, votosBranco: 300, votosNulo: 200 },
-        governor: { votes: 5200, comparecimento: 9000, votosValidos: 8500, votosBranco: 300, votosNulo: 200 },
+        president: {
+          votes: 5000,
+          comparecimento: 9000,
+          votosValidos: 8500,
+          votosBranco: 300,
+          votosNulo: 200,
+        },
+        governor: {
+          votes: 5200,
+          comparecimento: 9000,
+          votosValidos: 8500,
+          votosBranco: 300,
+          votosNulo: 200,
+        },
       },
     })
     // projected = (4000 + 6000 + 2*8000) / 4 = 6500; ratio = 6500/8000 = 0.8125
@@ -70,8 +96,20 @@ describe('fieldCeiling / projectedFieldCeiling', () => {
   it('falls back to the unscaled ceiling when 2022 valid votes are unknown', () => {
     const b = baseline({
       majoritarian2022: {
-        president: { votes: 5000, comparecimento: 9000, votosValidos: 8500, votosBranco: 300, votosNulo: 200 },
-        governor: { votes: 5200, comparecimento: 9000, votosValidos: 8500, votosBranco: 300, votosNulo: 200 },
+        president: {
+          votes: 5000,
+          comparecimento: 9000,
+          votosValidos: 8500,
+          votosBranco: 300,
+          votosNulo: 200,
+        },
+        governor: {
+          votes: 5200,
+          comparecimento: 9000,
+          votosValidos: 8500,
+          votosBranco: 300,
+          votosNulo: 200,
+        },
       },
     })
     expect(projectedFieldCeiling(b)).toBe(5000)
@@ -83,8 +121,20 @@ describe('captureRate', () => {
     const b = baseline({
       votesByYear: { '2022': 1000 },
       majoritarian2022: {
-        president: { votes: 5000, comparecimento: 9000, votosValidos: 8500, votosBranco: 300, votosNulo: 200 },
-        governor: { votes: 5200, comparecimento: 9000, votosValidos: 8500, votosBranco: 300, votosNulo: 200 },
+        president: {
+          votes: 5000,
+          comparecimento: 9000,
+          votosValidos: 8500,
+          votosBranco: 300,
+          votosNulo: 200,
+        },
+        governor: {
+          votes: 5200,
+          comparecimento: 9000,
+          votosValidos: 8500,
+          votosBranco: 300,
+          votosNulo: 200,
+        },
       },
     })
     expect(captureRate(b)).toBeCloseTo(0.2, 6)
@@ -116,8 +166,20 @@ describe('rollOff', () => {
         '2022': { comparecimento: 10_000, votosValidos: 9000, votosBranco: 600, votosNulo: 400 },
       },
       majoritarian2022: {
-        president: { votes: 5000, comparecimento: 10_000, votosValidos: 9600, votosBranco: 250, votosNulo: 150 },
-        governor: { votes: 5200, comparecimento: 10_000, votosValidos: 9600, votosBranco: 250, votosNulo: 150 },
+        president: {
+          votes: 5000,
+          comparecimento: 10_000,
+          votosValidos: 9600,
+          votosBranco: 250,
+          votosNulo: 150,
+        },
+        governor: {
+          votes: 5200,
+          comparecimento: 10_000,
+          votosValidos: 9600,
+          votosBranco: 250,
+          votosNulo: 150,
+        },
       },
     })
     // DF blank+null = 1000; majoritarian blank+null = 400; roll-off = 600

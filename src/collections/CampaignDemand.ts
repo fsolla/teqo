@@ -13,6 +13,7 @@ import {
   campaignDemandTransitions,
   type CampaignDemandStatus,
 } from '@/lib/schemas/campaignDemand'
+import { slugify } from '@/lib/slug'
 import {
   canCreateCampaignDemand,
   canDeleteCampaignDemand,
@@ -24,7 +25,6 @@ import {
   isCampaignUnrestricted,
 } from '@/utilities/campaignAccess'
 import { relationshipId } from '@/utilities/relationship'
-import { slugify } from '@/lib/slug'
 
 const trimmedText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
 

@@ -23,11 +23,7 @@ declare global {
   }
 }
 
-export function trackMetaLead(
-  pixelId: string,
-  contentName: string,
-  eventID: string,
-): void {
+export function trackMetaLead(pixelId: string, contentName: string, eventID: string): void {
   if (typeof window === 'undefined') return
   if (!isValidFacebookPixelId(pixelId)) return
 

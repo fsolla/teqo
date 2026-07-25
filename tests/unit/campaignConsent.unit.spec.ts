@@ -1,7 +1,7 @@
 // @vitest-environment node
 
-import { describe, expect, it, vi } from 'vitest'
 import type { Payload } from 'payload'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
   getConsentByKey,
@@ -41,7 +41,9 @@ describe('campaign consent descriptor', () => {
     const find = vi
       .fn()
       .mockResolvedValueOnce({
-        docs: [{ id: 3, text: { root: { children: [] } }, key: SUPPORTER_REGISTRATION_CONSENT_KEY }],
+        docs: [
+          { id: 3, text: { root: { children: [] } }, key: SUPPORTER_REGISTRATION_CONSENT_KEY },
+        ],
       })
       .mockResolvedValue({ docs: [] })
     const payload = stub<Payload>({ find })
@@ -64,8 +66,8 @@ describe('campaign consent descriptor', () => {
     })
 
     await expect(getLeadershipConsent(payload)).resolves.toBeNull()
-    await expect(requireLeadershipConsent(payload, undefined, 'Consentimento ausente.')).rejects.toThrow(
-      'Consentimento ausente.',
-    )
+    await expect(
+      requireLeadershipConsent(payload, undefined, 'Consentimento ausente.'),
+    ).rejects.toThrow('Consentimento ausente.')
   })
 })

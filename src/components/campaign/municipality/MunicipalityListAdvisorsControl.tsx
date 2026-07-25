@@ -3,15 +3,18 @@
 import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+import { MunicipalityAdvisorAvatarStack } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import { Spinner } from '@/components/ui/Spinner'
-import { MunicipalityAdvisorAvatarStack } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import type { EligibleAdvisorOption, MunicipalityAdvisorSummary } from '@/utilities/municipalityViewModels'
+import type {
+  EligibleAdvisorOption,
+  MunicipalityAdvisorSummary,
+} from '@/utilities/municipalityViewModels'
 
 type MunicipalityListAdvisorsControlProps = {
   municipalityID: number

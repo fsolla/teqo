@@ -1,6 +1,6 @@
 import {
-  expect,
   test as base,
+  expect,
   type ConsoleMessage,
   type Response,
   type WebError,

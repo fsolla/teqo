@@ -3,6 +3,7 @@
 import { parse } from 'csv-parse/sync'
 import type { Payload } from 'payload'
 
+import { normalizeBrazilianPhone } from '@/lib/phone'
 import {
   resolveBahiaMunicipality,
   supporterImportConfirmSchema,
@@ -17,7 +18,6 @@ import {
 import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { normalizeBrazilianPhone } from '@/lib/phone'
 import { relationshipId } from '@/utilities/relationship'
 import {
   isPreviewErrorRow,

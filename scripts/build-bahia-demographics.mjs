@@ -132,8 +132,7 @@ const buildDemographicsByCode = ({ ageCategoryRows, femaleRows, medianRows }) =>
 
   for (const record of byCode.values()) {
     record.population = Object.values(record.ageBands).reduce((sum, value) => sum + value, 0)
-    record.sexShareFemale =
-      record.population > 0 ? record.femalePopulation / record.population : 0
+    record.sexShareFemale = record.population > 0 ? record.femalePopulation / record.population : 0
     delete record.femalePopulation
   }
 
@@ -141,14 +140,15 @@ const buildDemographicsByCode = ({ ageCategoryRows, femaleRows, medianRows }) =>
 }
 
 const buildModuleSource = (demographicsByCode, provenance) => {
-  const entries = [...demographicsByCode.entries()].sort(([left], [right]) => left.localeCompare(right))
+  const entries = [...demographicsByCode.entries()].sort(([left], [right]) =>
+    left.localeCompare(right),
+  )
   const lines = entries
     .map(([code, record]) => {
       const bands = Object.entries(record.ageBands)
         .map(([band, value]) => `${JSON.stringify(band)}: ${value}`)
         .join(', ')
-      const median =
-        record.medianAge == null ? 'null' : JSON.stringify(record.medianAge)
+      const median = record.medianAge == null ? 'null' : JSON.stringify(record.medianAge)
       const sexShare = record.sexShareFemale.toFixed(6)
       return `  ${JSON.stringify(code)}: { population: ${record.population}, ageBands: { ${bands} }, sexShareFemale: ${sexShare}, medianAge: ${median} },`
     })

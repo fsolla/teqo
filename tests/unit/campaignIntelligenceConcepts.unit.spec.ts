@@ -72,10 +72,9 @@ describe('concepts sidebar entry', () => {
   })
 
   it('stays out of the work destinations and the mobile bottom bar', () => {
-    const hrefs = [
-      ...getCampaignNav('coordinator'),
-      ...getCampaignBottomNav('coordinator'),
-    ].map((item) => item.href)
+    const hrefs = [...getCampaignNav('coordinator'), ...getCampaignBottomNav('coordinator')].map(
+      (item) => item.href,
+    )
 
     expect(hrefs).not.toContain(CAMPAIGN_CONCEPTS_PATH)
   })

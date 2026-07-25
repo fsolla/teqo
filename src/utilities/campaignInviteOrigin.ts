@@ -11,8 +11,7 @@ export type CampaignInviteOriginInput = {
   allowLocalTLS?: boolean
 }
 
-const LOCAL_AUTHORITY_PATTERN =
-  /^(localhost|127\.0\.0\.1|\[::1\])(?::([0-9]{1,5}))?$/i
+const LOCAL_AUTHORITY_PATTERN = /^(localhost|127\.0\.0\.1|\[::1\])(?::([0-9]{1,5}))?$/i
 const DNS_HOSTNAME_PATTERN =
   /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i
 
@@ -40,7 +39,9 @@ const parseHTTPOrigin = (rawURL: string, source: string): URL => {
     throw new Error(`${source} não pode conter credenciais.`)
   }
   if (url.pathname !== '/' || url.search || url.hash) {
-    throw new Error(`${source} precisa conter somente a origem, sem caminho, consulta ou fragmento.`)
+    throw new Error(
+      `${source} precisa conter somente a origem, sem caminho, consulta ou fragmento.`,
+    )
   }
   if (url.port && !parsePort(url.port)) {
     throw new Error(`${source} precisa usar uma porta válida.`)
@@ -74,10 +75,9 @@ const parseLocalForwardedOrigin = ({
   forwardedHost,
   forwardedProto,
   allowLocalTLS,
-}: Pick<
-  CampaignInviteOriginInput,
-  'forwardedHost' | 'forwardedProto' | 'allowLocalTLS'
->): string | undefined => {
+}: Pick<CampaignInviteOriginInput, 'forwardedHost' | 'forwardedProto' | 'allowLocalTLS'>):
+  | string
+  | undefined => {
   if (!forwardedHost || !parseRawLocalAuthority(forwardedHost)) return undefined
   if (
     forwardedProto &&
@@ -89,10 +89,7 @@ const parseLocalForwardedOrigin = ({
   }
 
   const protocol = forwardedProto?.toLowerCase() || 'http'
-  return parseLocalRequestOrigin(
-    `${protocol}://${forwardedHost}`,
-    Boolean(allowLocalTLS),
-  )
+  return parseLocalRequestOrigin(`${protocol}://${forwardedHost}`, Boolean(allowLocalTLS))
 }
 
 const requireProductionDNSOrigin = (configuredURL: string): string => {
@@ -111,9 +108,7 @@ const requireProductionDNSOrigin = (configuredURL: string): string => {
     hostname.endsWith('.localdomain') ||
     hostname.endsWith('.internal')
   if (isIP(hostname) !== 0 || forbiddenHostname || !DNS_HOSTNAME_PATTERN.test(hostname)) {
-    throw new Error(
-      'NEXT_PUBLIC_SITE_URL precisa apontar para um nome DNS público em produção.',
-    )
+    throw new Error('NEXT_PUBLIC_SITE_URL precisa apontar para um nome DNS público em produção.')
   }
   return url.origin
 }
@@ -141,9 +136,7 @@ export const getCampaignInviteBaseURL = (input: CampaignInviteOriginInput = {}):
   if (configuredURL) {
     const url = parseHTTPOrigin(configuredURL, 'NEXT_PUBLIC_SITE_URL')
     if (
-      (url.hostname === 'localhost' ||
-        url.hostname === '127.0.0.1' ||
-        url.hostname === '[::1]') &&
+      (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]') &&
       url.protocol === 'https:' &&
       !input.allowLocalTLS
     ) {

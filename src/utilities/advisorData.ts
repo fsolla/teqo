@@ -2,8 +2,8 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import type { BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import type { AdvisorMunicipalityIndexEntry } from '@/lib/advisorMunicipalityPortfolio'
+import type { BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import {
   buildListHref,
   firstValue,

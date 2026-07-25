@@ -4,11 +4,11 @@ import { z } from 'zod'
 import { municipalityStaffEditSafeMessages } from '@/app/(campaign)/campanha/(app)/municipios/municipalityStaffEditMessages'
 import { setMunicipalityExpectedVotes } from '@/app/(campaign)/campanha/actions/municipality'
 import { positiveRelationshipId } from '@/lib/schemas/primitives'
+import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import {
   CAMPAIGN_SESSION_EXPIRED_MESSAGE,
   mapCampaignFormActionError,
 } from '@/utilities/campaignFormActionError'
-import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 
 import type { MunicipalityListExpectedVotesResponse } from './types'
 

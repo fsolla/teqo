@@ -2,12 +2,12 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import type { VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, VotePledge } from '@/payload-types'
 import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
 import type { MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
 import { loadMunicipalityGoalCoverageBundle } from '@/utilities/municipalityGoalAccount'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
-import type { VoteEstimateScenario } from '@/lib/voteEstimate'
 import { rollupMunicipalityStaffVotes } from '@/utilities/votePledgeViews'
 
 export type StaffDashboardView = {

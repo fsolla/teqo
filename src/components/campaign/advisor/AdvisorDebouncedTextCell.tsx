@@ -6,12 +6,12 @@ import { toast } from 'sonner'
 
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
+import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import {
   isPlanilhaPlaceholderEmail,
   planilhaPlaceholderEmailForAdvisor,
 } from '@/lib/schemas/advisor'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/lib/phone'
 
 const SAVE_DEBOUNCE_MS = 500
 
@@ -79,8 +79,7 @@ export const AdvisorDebouncedTextCell = ({
     const displayNext = nextRaw.trim()
     if (displayNext === lastSaved.current) return
 
-    const persisted =
-      field === 'email' ? resolveEmailToPersist(nextRaw) : displayNext
+    const persisted = field === 'email' ? resolveEmailToPersist(nextRaw) : displayNext
 
     const formData = new FormData()
     formData.set('advisorId', String(advisorId))

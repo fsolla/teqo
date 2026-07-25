@@ -47,9 +47,7 @@ describe('campaign invite module boundaries', () => {
 
   it('keeps the use-server entrypoint thin with only public actions exported', () => {
     const action = source(actionPath)
-    const exports = [...action.matchAll(/^export const (\w+)/gm)]
-      .map(([, name]) => name)
-      .sort()
+    const exports = [...action.matchAll(/^export const (\w+)/gm)].map(([, name]) => name).sort()
 
     expect(action).toMatch(/^['"]use server['"]/)
     expect(exports).toEqual([

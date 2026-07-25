@@ -9,15 +9,12 @@ import { AdvisorPasswordResetButton } from '@/components/campaign/advisor/Adviso
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { formatBrazilianPhoneInput } from '@/lib/phone'
 import { isPlanilhaPlaceholderEmail } from '@/lib/schemas/advisor'
 import { loadAdvisorDetail } from '@/utilities/advisorData'
 import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { formatBrazilianPhoneInput } from '@/lib/phone'
-import {
-  sendAdvisorPasswordResetFormAction,
-  updateAdvisorProfileFormAction,
-} from '../formActions'
+import { sendAdvisorPasswordResetFormAction, updateAdvisorProfileFormAction } from '../formActions'
 
 type AdvisorDetailPageProps = {
   params: Promise<{ id: string }>
@@ -35,8 +32,7 @@ export default async function AdvisorDetailPage({ params }: AdvisorDetailPagePro
   const advisor = await loadAdvisorDetail(payload, advisorId)
   if (!advisor) notFound()
 
-  const email =
-    advisor.email && !isPlanilhaPlaceholderEmail(advisor.email) ? advisor.email : null
+  const email = advisor.email && !isPlanilhaPlaceholderEmail(advisor.email) ? advisor.email : null
 
   return (
     <CampaignPageShell>

@@ -1,13 +1,13 @@
+import { RefreshRouteOnSave } from '@/components/RefreshRouteOnSave'
+import { ThemeProvider } from '@/components/ThemeProvider'
 import { getCachedDocumentById } from '@/utilities/documents'
 import { getCachedGlobal } from '@/utilities/globals'
-import { RefreshRouteOnSave } from '@/components/RefreshRouteOnSave'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import React from 'react'
 import './styles.css'
-import { ThemeProvider } from '@/components/ThemeProvider'
-import { Inter } from 'next/font/google'
-import { SpeedInsights } from '@vercel/speed-insights/next'
-import { Analytics } from '@vercel/analytics/next'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 

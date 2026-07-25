@@ -5,11 +5,22 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { requiredFormSecret, requiredFormText } from '@/lib/formData'
+import { normalizeBrazilianPhone } from '@/lib/phone'
 import {
   campaignChangePasswordSchema,
   campaignPasswordResetRequestSchema,
   campaignPasswordResetSchema,
 } from '@/lib/schemas/campaignPassword'
+import {
+  campaignLoginCredentials,
+  getCampaignUser,
+  setCampaignAuthCookie,
+} from '@/utilities/campaignAuth'
+import {
+  CAMPAIGN_SESSION_EXPIRED_MESSAGE,
+  mapCampaignFormActionError,
+  type CampaignFormActionState,
+} from '@/utilities/campaignFormActionError'
 import {
   assertCampaignEmailConfigured,
   CAMPAIGN_LEADERSHIP_FORGOT_PASSWORD_MESSAGE,
@@ -17,17 +28,10 @@ import {
   CAMPAIGN_PASSWORD_RESET_INVALID_TOKEN_MESSAGE,
   isCampaignEmailConfigured,
 } from '@/utilities/campaignPasswordReset'
-import { campaignLoginCredentials, getCampaignUser, setCampaignAuthCookie } from '@/utilities/campaignAuth'
-import {
-  CAMPAIGN_SESSION_EXPIRED_MESSAGE,
-  mapCampaignFormActionError,
-  type CampaignFormActionState,
-} from '@/utilities/campaignFormActionError'
-import { normalizeBrazilianPhone } from '@/lib/phone'
 
-export const requestCampaignPasswordReset = async (
-  input: { email: string },
-): Promise<CampaignFormActionState> => {
+export const requestCampaignPasswordReset = async (input: {
+  email: string
+}): Promise<CampaignFormActionState> => {
   const parsed = campaignPasswordResetRequestSchema.safeParse(input)
   if (!parsed.success) {
     return mapCampaignFormActionError({
@@ -81,9 +85,11 @@ export const requestCampaignPasswordResetFormAction = async (
   }
 }
 
-const resetCampaignPassword = async (
-  input: { token: string; password: string; passwordConfirmation: string },
-): Promise<CampaignFormActionState> => {
+const resetCampaignPassword = async (input: {
+  token: string
+  password: string
+  passwordConfirmation: string
+}): Promise<CampaignFormActionState> => {
   const parsed = campaignPasswordResetSchema.safeParse(input)
   if (!parsed.success) {
     return mapCampaignFormActionError({
@@ -140,9 +146,11 @@ export const resetCampaignPasswordFormAction = async (
   }
 }
 
-const changeCampaignPassword = async (
-  input: { currentPassword: string; password: string; passwordConfirmation: string },
-): Promise<CampaignFormActionState> => {
+const changeCampaignPassword = async (input: {
+  currentPassword: string
+  password: string
+  passwordConfirmation: string
+}): Promise<CampaignFormActionState> => {
   const user = await getCampaignUser()
   if (!user) {
     return { message: CAMPAIGN_SESSION_EXPIRED_MESSAGE }

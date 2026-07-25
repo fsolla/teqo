@@ -7,16 +7,12 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { assignMunicipalityAdvisorsRecord } from '@/app/(campaign)/campanha/actions/municipality'
 import { CampaignUser as CampaignUserCollection } from '@/collections/CampaignUser'
+import { buildWhatsAppUrl, normalizeBrazilianPhone, sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import { campaignLoginSchema } from '@/lib/schemas/campaign-login'
 import type { CampaignUser } from '@/payload-types'
 import config from '@/payload.config'
 import { getAccessibleMunicipalityIds, isCampaignCoordinator } from '@/utilities/campaignAccess'
 import { authenticateCampaignToken } from '@/utilities/campaignAuth'
-import {
-  buildWhatsAppUrl,
-  normalizeBrazilianPhone,
-  sanitizeBrazilianPhoneInput,
-} from '@/lib/phone'
 import { getPayload } from 'payload'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'

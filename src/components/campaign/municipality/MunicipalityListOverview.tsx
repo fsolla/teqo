@@ -3,10 +3,10 @@
 import { CircleAlertIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
+import { useMunicipalityEstimateScenario } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignMetricStrip } from '@/components/campaign/shared/CampaignMetricStrip'
 import { campaignPrioritySurfaceClassName } from '@/components/campaign/shell/CampaignPageShell'
-import { useMunicipalityEstimateScenario } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import {
   VOTE_ESTIMATE_SCENARIO_OVERVIEW_HINT,
   VoteEstimateScenarioField,
@@ -15,16 +15,16 @@ import { VoteEstimateScenarioStrip } from '@/components/campaign/votePledge/Vote
 import { formatElectionNumber } from '@/lib/electionFormat'
 import { cn } from '@/lib/utils'
 import {
+  formatVoteEstimateEndpointsLabel,
+  hasAnyVoteEstimate,
+  voteEstimateScenarioLabels,
+} from '@/lib/voteEstimate'
+import {
   formatGoalCoverageDeficitLabel,
   formatGoalCoverageRatioLabel,
   goalCoverageProgressPercent,
 } from '@/utilities/goalCoverage'
 import type { MunicipalityListOverviewData } from '@/utilities/municipalityPageData'
-import {
-  formatVoteEstimateEndpointsLabel,
-  hasAnyVoteEstimate,
-  voteEstimateScenarioLabels,
-} from '@/lib/voteEstimate'
 
 const SCENARIO_FLASH_MS = 420
 

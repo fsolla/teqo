@@ -225,12 +225,12 @@ describe('splitNameCell', () => {
       names: ['Rosival Presidente do PT'],
       skipped: ['Sec. Saúde', 'Associação de mulheres'],
     })
-    expect(splitNameCell('Adiel  e irmã de Nagib, pessoal do Circo (Oseas) e Pessoal do Roque')).toEqual(
-      {
-        names: ['Adiel'],
-        skipped: ['(Oseas)', 'irmã de Nagib', 'pessoal do Circo', 'Pessoal do Roque'],
-      },
-    )
+    expect(
+      splitNameCell('Adiel  e irmã de Nagib, pessoal do Circo (Oseas) e Pessoal do Roque'),
+    ).toEqual({
+      names: ['Adiel'],
+      skipped: ['(Oseas)', 'irmã de Nagib', 'pessoal do Circo', 'Pessoal do Roque'],
+    })
   })
 
   it('splits sentence periods while keeping honorific abbreviations intact', () => {

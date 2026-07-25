@@ -105,9 +105,7 @@ const buildSupporterRows = (
     consentContentHash: args.registrationConsent.contentHash,
     consentedAt: args.now,
     voteIntentionConsent: row.intencao ? args.voteIntentionConsent.id : null,
-    voteIntentionConsentContentHash: row.intencao
-      ? args.voteIntentionConsent.contentHash
-      : null,
+    voteIntentionConsentContentHash: row.intencao ? args.voteIntentionConsent.contentHash : null,
     voteIntentionConsentedAt: row.intencao ? args.now : null,
     source: 'import_csv',
     consentNote: args.consentNote,

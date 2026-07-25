@@ -16,7 +16,9 @@ type MunicipalityForIbgeIndex = {
   ibgeCode: string
 }
 
-export const buildMunicipalitiesByIbgeCode = (municipalities: MunicipalityForIbgeIndex[]): MunicipalitiesByIbgeCode => {
+export const buildMunicipalitiesByIbgeCode = (
+  municipalities: MunicipalityForIbgeIndex[],
+): MunicipalitiesByIbgeCode => {
   const byIbge: MunicipalitiesByIbgeCode = {}
 
   for (const municipality of municipalities) {

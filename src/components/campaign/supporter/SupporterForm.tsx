@@ -5,9 +5,9 @@ import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { SupporterFormState } from '@/app/(campaign)/campanha/(app)/apoiadores/novo/formActions'
-import { FormattedInput } from '@/components/FormattedInput'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { StrictCombobox } from '@/components/campaign/shared/StrictCombobox'
+import { FormattedInput } from '@/components/FormattedInput'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -23,9 +23,9 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
-import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
-import { fieldError, errorProps as buildErrorProps } from '@/utilities/campaignFormFields'
 import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/lib/phone'
+import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
+import { errorProps as buildErrorProps, fieldError } from '@/utilities/campaignFormFields'
 import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
 import { municipalityComboboxOptions } from '@/utilities/territoryComboboxOptions'
 
@@ -34,10 +34,8 @@ export type SupporterFormAction = (
   formData: FormData,
 ) => Promise<SupporterFormState>
 
-const errorProps = (
-  fieldErrors: Record<string, string[]> | undefined,
-  field: string,
-) => buildErrorProps(fieldErrors, field, 'supporter')
+const errorProps = (fieldErrors: Record<string, string[]> | undefined, field: string) =>
+  buildErrorProps(fieldErrors, field, 'supporter')
 
 const ConsentBlock = ({
   id,
@@ -213,7 +211,9 @@ export const SupporterForm = ({
         </Field>
 
         <Field data-invalid={municipalityField.invalid}>
-          <FieldLabel htmlFor="supporter-municipality">Município{requireMunicipality ? ' *' : ''}</FieldLabel>
+          <FieldLabel htmlFor="supporter-municipality">
+            Município{requireMunicipality ? ' *' : ''}
+          </FieldLabel>
           <NativeSelect
             id="supporter-municipality"
             name="municipality"
@@ -221,7 +221,9 @@ export const SupporterForm = ({
             defaultValue={values?.municipality ?? ''}
             className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
           >
-            {!requireMunicipality ? <NativeSelectOption value="">Sem município</NativeSelectOption> : null}
+            {!requireMunicipality ? (
+              <NativeSelectOption value="">Sem município</NativeSelectOption>
+            ) : null}
             {municipalityOptions.map((municipality) => (
               <NativeSelectOption key={municipality.id} value={String(municipality.id)}>
                 {municipality.name}

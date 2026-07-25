@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { OrganizationForm } from '@/components/campaign/organization/OrganizationForm'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
@@ -35,7 +35,10 @@ export default async function NewOrganizationPage() {
         </p>
       </header>
 
-      <OrganizationForm municipalityOptions={municipalityOptions} formAction={createOrganizationFormAction} />
+      <OrganizationForm
+        municipalityOptions={municipalityOptions}
+        formAction={createOrganizationFormAction}
+      />
     </CampaignPageShell>
   )
 }

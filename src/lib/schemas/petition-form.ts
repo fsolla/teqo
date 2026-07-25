@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { contactSchema } from './contact'
 import { commentSchema } from './comment'
+import { contactSchema } from './contact'
 
 export const petitionFormSchema = contactSchema.extend(commentSchema.shape)
 

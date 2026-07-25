@@ -38,23 +38,27 @@ describe('Onda 0 provision (integration)', () => {
     // EXCLUSIVE lease — without the shared leases this test races that window.
     await withSharedTestDatabaseLease(payload, CAMPAIGN_INVITE_CONSENT_LEASE_KEY, () =>
       withSharedTestDatabaseLease(payload, SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY, () =>
-        withSharedTestDatabaseLease(payload, SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY, async () => {
-          await provisionOnda0ConsentAndPrivacy(payload)
-          await provisionOnda0ConsentAndPrivacy(payload)
+        withSharedTestDatabaseLease(
+          payload,
+          SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY,
+          async () => {
+            await provisionOnda0ConsentAndPrivacy(payload)
+            await provisionOnda0ConsentAndPrivacy(payload)
 
-          for (const { key } of ONDA0_CONSENT_ENTRIES) {
-            const descriptor = await requireConsentByKey(payload, key)
-            expect(descriptor.key).toBe(key)
-            expect(descriptor.contentHash).toMatch(/^[a-f0-9]{64}$/)
-          }
+            for (const { key } of ONDA0_CONSENT_ENTRIES) {
+              const descriptor = await requireConsentByKey(payload, key)
+              expect(descriptor.key).toBe(key)
+              expect(descriptor.contentHash).toMatch(/^[a-f0-9]{64}$/)
+            }
 
-          const privacy = await payload.findGlobal({
-            slug: 'privacy-policy',
-            overrideAccess: true,
-          })
-          expect(privacy.published).toBe(true)
-          expect(privacy.body).toBeTruthy()
-        }),
+            const privacy = await payload.findGlobal({
+              slug: 'privacy-policy',
+              overrideAccess: true,
+            })
+            expect(privacy.published).toBe(true)
+            expect(privacy.body).toBeTruthy()
+          },
+        ),
       ),
     )
   })

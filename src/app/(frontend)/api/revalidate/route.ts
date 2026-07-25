@@ -1,7 +1,7 @@
 import { resolveRevalidateTag } from '@/utilities/revalidateRequest'
-import { timingSafeEqual } from 'node:crypto'
 import { revalidateTag } from 'next/cache'
 import { NextResponse } from 'next/server'
+import { timingSafeEqual } from 'node:crypto'
 
 /**
  * On-demand revalidation endpoint for content written straight to the database
@@ -69,8 +69,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const url = new URL(request.url)
   const queryTag = url.searchParams.get('tag')
-  const bodyResult =
-    queryTag != null && queryTag !== '' ? {} : await parseBodyTag(request)
+  const bodyResult = queryTag != null && queryTag !== '' ? {} : await parseBodyTag(request)
 
   if ('invalid' in bodyResult) {
     return NextResponse.json({ revalidated: false, error: 'Invalid JSON body' }, { status: 400 })

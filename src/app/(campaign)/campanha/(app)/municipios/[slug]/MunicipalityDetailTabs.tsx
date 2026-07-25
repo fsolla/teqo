@@ -1,4 +1,3 @@
-import { CampaignListPagination } from '@/components/campaign/shared/CampaignListPagination'
 import { CandidateComparePicker } from '@/components/campaign/map/CandidateComparePicker'
 import { MunicipalityBaselineCard } from '@/components/campaign/municipality/MunicipalityBaselineCard'
 import { MunicipalityCandidateComparisonTable } from '@/components/campaign/municipality/MunicipalityCandidateComparisonTable'
@@ -10,6 +9,7 @@ import { MunicipalityStrategyCard } from '@/components/campaign/municipality/Mun
 import { MunicipalityUpdateFeed } from '@/components/campaign/municipality/MunicipalityUpdateFeed'
 import { MunicipalityUpdateForm } from '@/components/campaign/municipality/MunicipalityUpdateForm'
 import { MunicipalityZoneNeighborhoodsCard } from '@/components/campaign/municipality/MunicipalityZoneNeighborhoodsCard'
+import { CampaignListPagination } from '@/components/campaign/shared/CampaignListPagination'
 import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'

@@ -9,10 +9,7 @@ describe('petition page layout', () => {
     'utf8',
   )
   const formSource = readFileSync(resolve(process.cwd(), 'src/components/PetitionForm.tsx'), 'utf8')
-  const stylesSource = readFileSync(
-    resolve(process.cwd(), 'src/app/(frontend)/styles.css'),
-    'utf8',
-  )
+  const stylesSource = readFileSync(resolve(process.cwd(), 'src/app/(frontend)/styles.css'), 'utf8')
   const inputSource = readFileSync(resolve(process.cwd(), 'src/components/ui/input.tsx'), 'utf8')
   const textareaSource = readFileSync(
     resolve(process.cwd(), 'src/components/ui/textarea.tsx'),
@@ -42,7 +39,7 @@ describe('petition page layout', () => {
     expect(formSource).toContain('petition.form.subtitle')
     expect(formSource).not.toContain('manter a orla de Salvador')
     expect(pageSource).toContain('consentHTML')
-    expect(formSource).not.toContain("convertLexicalToHTML")
+    expect(formSource).not.toContain('convertLexicalToHTML')
   })
 
   it('uses semantic field color variables for shared form controls', () => {

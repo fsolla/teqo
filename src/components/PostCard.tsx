@@ -1,6 +1,6 @@
-import type { Post } from '@/payload-types'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/card'
+import type { Post } from '@/payload-types'
 import { formatPostDate, getCategoryName, getPostCanonicalPath } from '@/utilities/posts'
 import Image from 'next/image'
 import Link from 'next/link'

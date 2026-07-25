@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { bahiaMunicipalities } from '@/lib/bahiaTerritories'
 import { computeIdentityKey, normalizeIdentityPart } from '@/lib/electionCandidateIdentity'
+import type { CandidateVoteRow, TseDetalheApuracaoRow } from '@/lib/electionResults'
 import {
   assertAllCanonicalMunicipalitiesResolvable,
   BASELINE_TICKET_2022,
@@ -15,10 +16,13 @@ import {
   UnknownMunicipalityError,
   winnerKey,
 } from '@/lib/electionResults'
-import { loadTseFixtureResults, loadTseFixtureResultsForYear, TSE_FIXTURE_EXPECTED } from '../helpers/tseFixtures'
 import { FEDERAL_ONLY_OFFICES } from '@/lib/electionResultsBuild'
 import { mergeDuplicateTallyRows, mergeDuplicateVoteRows } from '@/lib/electionResultsParse'
-import type { CandidateVoteRow, TseDetalheApuracaoRow } from '@/lib/electionResults'
+import {
+  loadTseFixtureResults,
+  loadTseFixtureResultsForYear,
+  TSE_FIXTURE_EXPECTED,
+} from '../helpers/tseFixtures'
 
 describe('electionResults municipality mapping', () => {
   it('resolves every canonical Bahia municipality through itself', () => {
@@ -36,14 +40,14 @@ describe('electionResults municipality mapping', () => {
   it('maps known TSE spelling aliases to canonical names', () => {
     expect(canonicalizeMunicipalityName('CAMACÃ')).toBe('Camacan')
     expect(canonicalizeMunicipalityName('DIAS D ÁVILA')).toBe("Dias d'Ávila")
-    expect(canonicalizeMunicipalityName('MUQUÉM DO SÃO FRANCISCO')).toBe(
-      'Muquém de São Francisco',
-    )
+    expect(canonicalizeMunicipalityName('MUQUÉM DO SÃO FRANCISCO')).toBe('Muquém de São Francisco')
     expect(canonicalizeMunicipalityName('SANTA TEREZINHA')).toBe('Santa Teresinha')
   })
 
   it('fails closed on unknown municipality names', () => {
-    expect(() => canonicalizeMunicipalityName('CIDADE INEXISTENTE')).toThrow(UnknownMunicipalityError)
+    expect(() => canonicalizeMunicipalityName('CIDADE INEXISTENTE')).toThrow(
+      UnknownMunicipalityError,
+    )
   })
 
   it('normalizes accent and apostrophe variants to the same key', () => {
@@ -109,7 +113,8 @@ describe('electionResults fixture parse + winners', () => {
     const sollaVotes = built.votes
       .filter(
         (row) =>
-          row.office === 'deputado_federal' && row.candidateNumber === BASELINE_TICKET_2022.candidate.candidateNumber,
+          row.office === 'deputado_federal' &&
+          row.candidateNumber === BASELINE_TICKET_2022.candidate.candidateNumber,
       )
       .reduce((sum, row) => sum + row.votes, 0)
     expect(sollaVotes).toBe(TSE_FIXTURE_EXPECTED.sollaVotesTotal)
@@ -117,7 +122,9 @@ describe('electionResults fixture parse + winners', () => {
 
   it('marks Solla, Lula and Jerônimo as elected', () => {
     const solla = built.candidates.find(
-      (c) => c.office === 'deputado_federal' && c.candidateNumber === BASELINE_TICKET_2022.candidate.candidateNumber,
+      (c) =>
+        c.office === 'deputado_federal' &&
+        c.candidateNumber === BASELINE_TICKET_2022.candidate.candidateNumber,
     )
     const lula = built.candidates.find(
       (c) =>
@@ -231,7 +238,18 @@ describe('electionResults "voto em trânsito" merge (2014 presidente duplicate r
   it('sums every count field for duplicate tally rows sharing the same scope key', () => {
     const merged = mergeDuplicateTallyRows([
       baseTally,
-      { ...baseTally, aptos: 50, comparecimento: 40, abstencoes: 10, votosValidos: 35, votosNominaisValidos: 33, votosLegenda: 2, votosBranco: 3, votosNulo: 2, votosAnulados: 0 },
+      {
+        ...baseTally,
+        aptos: 50,
+        comparecimento: 40,
+        abstencoes: 10,
+        votosValidos: 35,
+        votosNominaisValidos: 33,
+        votosLegenda: 2,
+        votosBranco: 3,
+        votosNulo: 2,
+        votosAnulados: 0,
+      },
     ])
 
     expect(merged).toHaveLength(1)

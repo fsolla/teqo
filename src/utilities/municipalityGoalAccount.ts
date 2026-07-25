@@ -4,6 +4,13 @@ import { cache } from 'react'
 
 import type { Payload } from 'payload'
 
+import {
+  DEFAULT_VOTE_ESTIMATE_SCENARIO,
+  VOTE_ESTIMATE_SCENARIOS,
+  zeroByVoteEstimateScenario,
+  type VoteEstimateScenario,
+  type VoteEstimateScenarioFields,
+} from '@/lib/voteEstimate'
 import type { CampaignUser, User } from '@/payload-types'
 import { loadCampaignGoals } from '@/utilities/campaignGoals'
 import {
@@ -19,13 +26,9 @@ import {
   type SuggestedGoalByScenario,
 } from '@/utilities/municipalityPotential'
 import {
-  DEFAULT_VOTE_ESTIMATE_SCENARIO,
-  VOTE_ESTIMATE_SCENARIOS,
-  zeroByVoteEstimateScenario,
-  type VoteEstimateScenarioFields,
-  type VoteEstimateScenario,
-} from '@/lib/voteEstimate'
-import { emptyMunicipalityPledgeAggregate, type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
+  emptyMunicipalityPledgeAggregate,
+  type MunicipalityPledgeAggregate,
+} from '@/utilities/votePledgeViews'
 
 type GoalAccountReader = CampaignUser | User
 
@@ -39,12 +42,10 @@ type GoalAccountReader = CampaignUser | User
  * `cache()`-deduplicated so dashboard + list + detail don't each recompute it
  * on requests that touch more than one.
  */
-const loadSuggestedGoalsCached = cache(
-  async (payload: Payload, user: GoalAccountReader) => {
-    const goals = await loadCampaignGoals(payload, user)
-    return computeStatewideSuggestedGoals(goals)
-  },
-)
+const loadSuggestedGoalsCached = cache(async (payload: Payload, user: GoalAccountReader) => {
+  const goals = await loadCampaignGoals(payload, user)
+  return computeStatewideSuggestedGoals(goals)
+})
 
 export type MunicipalityGoalCoverageBundle = {
   coverageByMunicipalityID: Map<number, Record<VoteEstimateScenario, MunicipalityGoalCoverage>>

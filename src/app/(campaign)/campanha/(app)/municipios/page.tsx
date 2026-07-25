@@ -6,14 +6,14 @@ import config from '@payload-config'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
+import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitTracker'
 import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import { MunicipalityFilters } from '@/components/campaign/municipality/MunicipalityFilters'
 import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
 import { MunicipalityListOverview } from '@/components/campaign/municipality/MunicipalityListOverview'
-import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitTracker'
+import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import {
   isCampaignCoordinator,
   isCampaignLeader,

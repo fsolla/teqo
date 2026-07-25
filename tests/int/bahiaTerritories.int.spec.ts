@@ -6,8 +6,8 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 import {
-  bahiaMunicipalities,
   bahiaIdentityTerritoryRecords,
+  bahiaMunicipalities,
   citiesForTerritory,
   isBahiaMunicipality,
   territoryForCity,
@@ -45,10 +45,7 @@ describe('Bahia identity territory mapping', () => {
 
   it('matches every official municipality assignment by a fixed evidence checksum', () => {
     const territoryRows = bahiaIdentityTerritoryRecords
-      .map(
-        ({ code, name, municipalityCount }) =>
-          `T\t${code}\t${name}\t${municipalityCount}\n`,
-      )
+      .map(({ code, name, municipalityCount }) => `T\t${code}\t${name}\t${municipalityCount}\n`)
       .join('')
     const assignmentRows = bahiaIdentityTerritoryRecords
       .flatMap(({ code, municipalities }) =>
@@ -64,9 +61,11 @@ describe('Bahia identity territory mapping', () => {
       .map(({ municipality, code }) => `M\t${municipality}\t${code}\n`)
       .join('')
 
-    expect(createHash('sha256').update(territoryRows + assignmentRows).digest('hex')).toBe(
-      officialEvidence.evidenceSha256,
-    )
+    expect(
+      createHash('sha256')
+        .update(territoryRows + assignmentRows)
+        .digest('hex'),
+    ).toBe(officialEvidence.evidenceSha256)
   })
 
   it('supports representative bidirectional lookups', () => {

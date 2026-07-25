@@ -274,8 +274,13 @@ const { canonicalizeMunicipalityName, UnknownMunicipalityError, normalizeMunicip
 const { municipalityCatalogEntriesForCity } = await import('../src/lib/municipalityCatalog.ts')
 const { getMunicipalityFederalBaseline } = await import('../src/lib/bahiaElectionAggregates.ts')
 const { territoryForCity } = await import('../src/lib/bahiaTerritories.ts')
-const { parseExpectationCell, mapSheetPriority, parseSheetNumber, parseSituationCell, splitNameCell } =
-  await import('../src/lib/projectionSheetParse.ts')
+const {
+  parseExpectationCell,
+  mapSheetPriority,
+  parseSheetNumber,
+  parseSituationCell,
+  splitNameCell,
+} = await import('../src/lib/projectionSheetParse.ts')
 const {
   getVoteEstimateOrderViolation,
   toVoteEstimateScenarioViewModel,
@@ -512,12 +517,12 @@ for (const sheetRow of canonicalRows.values()) {
       priorityRaw: sheetRow.priorityRaw,
       hasStrategy: Boolean(
         sheetRow.situationRaw ||
-          sheetRow.dobradinhasRaw ||
-          sheetRow.leadershipsRaw ||
-          sheetRow.advisorsRaw ||
-          sheetRow.nextStepsRaw ||
-          sheetRow.observationRaw ||
-          prioritariaRow,
+        sheetRow.dobradinhasRaw ||
+        sheetRow.leadershipsRaw ||
+        sheetRow.advisorsRaw ||
+        sheetRow.nextStepsRaw ||
+        sheetRow.observationRaw ||
+        prioritariaRow,
       ),
     })
     continue
@@ -988,8 +993,11 @@ if (staffPlans.size > 0) {
     const status = plan.existing
       ? `casa com usuário existente #${plan.existing.id} (${plan.existing.name}, ${plan.existing.role})`
       : `criar (papel ${plan.role}, sem credenciais)`
-    const variants = plan.entry.variants.size > 1 ? ` · variantes: ${formatVariants(plan.entry)}` : ''
-    console.log(`  ${plan.name}: ${status} · ${plan.entry.municipalityIds.size} município(s)${variants}`)
+    const variants =
+      plan.entry.variants.size > 1 ? ` · variantes: ${formatVariants(plan.entry)}` : ''
+    console.log(
+      `  ${plan.name}: ${status} · ${plan.entry.municipalityIds.size} município(s)${variants}`,
+    )
   }
 }
 
@@ -997,8 +1005,11 @@ if (deputyPlans.size > 0) {
   console.log('\n— Dobradinhas (deputados estaduais) —')
   for (const plan of [...deputyPlans.values()].sort((a, b) => a.name.localeCompare(b.name))) {
     const status = plan.existing ? `casa com dobradinha existente #${plan.existing.id}` : 'criar'
-    const variants = plan.entry.variants.size > 1 ? ` · variantes: ${formatVariants(plan.entry)}` : ''
-    console.log(`  ${plan.name}: ${status} · ${plan.entry.municipalityIds.size} município(s)${variants}`)
+    const variants =
+      plan.entry.variants.size > 1 ? ` · variantes: ${formatVariants(plan.entry)}` : ''
+    console.log(
+      `  ${plan.name}: ${status} · ${plan.entry.municipalityIds.size} município(s)${variants}`,
+    )
   }
 }
 
@@ -1025,7 +1036,9 @@ if (prioritariaOverrides.length > 0) {
 }
 
 if (skippedSegments.length > 0) {
-  console.log('\n— Segmentos descartados (notas/coletivos/incertezas — permanecem só na planilha) —')
+  console.log(
+    '\n— Segmentos descartados (notas/coletivos/incertezas — permanecem só na planilha) —',
+  )
   for (const skipped of skippedSegments.slice(0, 80)) {
     console.log(`  [${skipped.label}] ${skipped.column}: ${JSON.stringify(skipped.segment)}`)
   }
@@ -1180,7 +1193,13 @@ try {
       municipalitiesUpdated += 1
     }
 
-    return { usersCreated, deputiesCreated, leadershipsCreated, leadershipsLinked, municipalitiesUpdated }
+    return {
+      usersCreated,
+      deputiesCreated,
+      leadershipsCreated,
+      leadershipsLinked,
+      municipalitiesUpdated,
+    }
   })
 
   console.log(

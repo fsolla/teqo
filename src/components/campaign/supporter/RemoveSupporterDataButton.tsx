@@ -19,10 +19,10 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 
 export const RemoveSupporterDataButton = ({ supporterId }: { supporterId: number }) => {
-  const [state, formAction, pending] = useActionState<
-    SupporterRemoveFormState,
-    FormData
-  >(removeSupporterDataFormAction, {})
+  const [state, formAction, pending] = useActionState<SupporterRemoveFormState, FormData>(
+    removeSupporterDataFormAction,
+    {},
+  )
 
   return (
     <section className="rounded-[6px] border border-destructive/30 bg-destructive/5 p-4">

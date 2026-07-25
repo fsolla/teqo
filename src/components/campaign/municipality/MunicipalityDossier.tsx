@@ -1,10 +1,10 @@
 import Link from 'next/link'
 
 import { ActionPlanStatusBadge } from '@/components/campaign/actionPlan/ActionPlanStatusBadge'
+import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { MunicipalityBaselineCard } from '@/components/campaign/municipality/MunicipalityBaselineCard'
 import { MunicipalityStrategyCard } from '@/components/campaign/municipality/MunicipalityStrategyCard'
 import { MunicipalityUpdateFeed } from '@/components/campaign/municipality/MunicipalityUpdateFeed'
-import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { Badge } from '@/components/ui/Badge'
 import type { MunicipalityAgeBandKey } from '@/lib/bahiaMunicipalityDemographics'
 import { formatElectionNumber } from '@/lib/electionFormat'

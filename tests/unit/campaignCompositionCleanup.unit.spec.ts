@@ -203,7 +203,6 @@ describe('campaign client module boundaries', () => {
       }
     }
   })
-
 })
 
 describe('static table composition', () => {

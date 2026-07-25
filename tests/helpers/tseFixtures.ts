@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { parseTseCsvString } from '@/lib/electionResultsCsv'
-import { buildElectionResultsFromCsvRows } from '@/lib/electionResultsBuild'
-import type { BuiltElectionResults } from '@/lib/electionResultsBuild'
-import type { TseCsvRow } from '@/lib/electionResultsParse'
 import type { ElectionOffice } from '@/lib/electionResults'
+import type { BuiltElectionResults } from '@/lib/electionResultsBuild'
+import { buildElectionResultsFromCsvRows } from '@/lib/electionResultsBuild'
+import { parseTseCsvString } from '@/lib/electionResultsCsv'
+import type { TseCsvRow } from '@/lib/electionResultsParse'
 
 const fixtureDir = join(process.cwd(), 'tests/fixtures/tse')
 
@@ -14,8 +14,7 @@ const readFixture = (name: string): string => readFileSync(join(fixtureDir, name
 const remapFixtureYear = (rows: readonly TseCsvRow[], year: number): TseCsvRow[] =>
   rows.map((row) => ({ ...row, ANO_ELEICAO: String(year) }))
 
-export const loadTseFixtureResults = (): BuiltElectionResults =>
-  loadTseFixtureResultsForYear(2022)
+export const loadTseFixtureResults = (): BuiltElectionResults => loadTseFixtureResultsForYear(2022)
 
 export const loadTseFixtureResultsForYear = (
   year: number,
@@ -58,4 +57,3 @@ export const TSE_FIXTURE_EXPECTED = {
   voteRowCount: 15, // 16 CSV rows minus the zero-vote row
   tallyRowCount: 8,
 } as const
-

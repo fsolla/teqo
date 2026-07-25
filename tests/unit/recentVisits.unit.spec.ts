@@ -49,7 +49,9 @@ describe('recentVisits storage', () => {
   it('deduplicates by href and keeps the newest visit at the top', () => {
     recordRecentVisit(sampleEntry({ href: '/campanha/municipios/a', visitedAt: 10 }))
     recordRecentVisit(sampleEntry({ href: '/campanha/municipios/b', visitedAt: 20 }))
-    recordRecentVisit(sampleEntry({ href: '/campanha/municipios/a', label: 'Atualizado', visitedAt: 30 }))
+    recordRecentVisit(
+      sampleEntry({ href: '/campanha/municipios/a', label: 'Atualizado', visitedAt: 30 }),
+    )
 
     expect(listRecentVisits()).toEqual([
       sampleEntry({ href: '/campanha/municipios/a', label: 'Atualizado', visitedAt: 30 }),

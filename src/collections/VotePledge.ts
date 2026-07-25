@@ -2,6 +2,11 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
 import {
+  type VoteEstimateScenarioFields,
+  getVoteEstimateOrderViolation,
+  VOTE_ESTIMATE_ORDER_ERROR_MESSAGE,
+} from '@/lib/voteEstimate'
+import {
   canCreateVotePledge,
   canDeleteVotePledge,
   canManageCampaignStaffField,
@@ -12,11 +17,6 @@ import {
   payloadAdminOnly,
 } from '@/utilities/campaignAccess'
 import { relationshipId } from '@/utilities/relationship'
-import {
-  type VoteEstimateScenarioFields,
-  getVoteEstimateOrderViolation,
-  VOTE_ESTIMATE_ORDER_ERROR_MESSAGE,
-} from '@/lib/voteEstimate'
 import {
   voteEstimateScenarioGroupAccess,
   voteEstimateScenarioGroupFields,
@@ -85,12 +85,17 @@ const validatePledgeIntegrity: CollectionBeforeChangeHook = async ({
     overrideAccess: true,
     req,
   })
-  const linkedMunicipalityIDs = (Array.isArray(leadership.municipalities) ? leadership.municipalities : [])
+  const linkedMunicipalityIDs = (
+    Array.isArray(leadership.municipalities) ? leadership.municipalities : []
+  )
     .map(relationshipId)
     .filter((id): id is number => id !== null)
 
   if (!linkedMunicipalityIDs.includes(municipalityID)) {
-    throw new APIError('A liderança precisa estar vinculada ao município para declarar votos nele.', 409)
+    throw new APIError(
+      'A liderança precisa estar vinculada ao município para declarar votos nele.',
+      409,
+    )
   }
 
   return data
@@ -138,7 +143,13 @@ export const VotePledge: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'id',
-    defaultColumns: ['leadership', 'municipality', 'declaredVotes', 'estimatedVotes.central', 'updatedAt'],
+    defaultColumns: [
+      'leadership',
+      'municipality',
+      'declaredVotes',
+      'estimatedVotes.central',
+      'updatedAt',
+    ],
   },
   access: {
     create: canCreateVotePledge,

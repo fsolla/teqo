@@ -49,7 +49,10 @@ export const parseDemandListParams = (searchParams: RawSearchParams): DemandList
   }
 }
 
-const buildDemandListSearchParams = (state: DemandListState, page = state.page): URLSearchParams => {
+const buildDemandListSearchParams = (
+  state: DemandListState,
+  page = state.page,
+): URLSearchParams => {
   const params = new URLSearchParams()
   if (state.status) params.set('status', state.status)
   if (state.kind) params.set('kind', state.kind)

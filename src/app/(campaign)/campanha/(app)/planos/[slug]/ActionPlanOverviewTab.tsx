@@ -170,9 +170,7 @@ export const ActionPlanOverviewTab = ({
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            Nenhuma demanda vinculada a este plano.
-          </p>
+          <p className="text-sm text-muted-foreground">Nenhuma demanda vinculada a este plano.</p>
         )}
       </CardContent>
     </Card>

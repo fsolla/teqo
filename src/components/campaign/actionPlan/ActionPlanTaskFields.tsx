@@ -1,9 +1,12 @@
 'use client'
 
-import { useId, useState } from 'react'
 import { PlusIcon, Trash2Icon } from 'lucide-react'
+import { useId, useState } from 'react'
 
-import { ContactCombobox, type ContactComboboxOption } from '@/components/campaign/shared/ContactCombobox'
+import {
+  ContactCombobox,
+  type ContactComboboxOption,
+} from '@/components/campaign/shared/ContactCombobox'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -84,7 +87,10 @@ export const ActionPlanTaskFields = ({
       <input type="hidden" id={fieldId} name="tasksJson" value={serializeTasks(tasks)} readOnly />
       <div className="flex flex-col gap-3">
         {tasks.map((task, index) => (
-          <div key={task.key} className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-start">
+          <div
+            key={task.key}
+            className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-start"
+          >
             <div className="grid flex-1 gap-3 sm:grid-cols-[2fr_1fr_1fr]">
               <Input
                 aria-label={`Título da tarefa ${index + 1}`}

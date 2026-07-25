@@ -4,12 +4,16 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { LeadershipForm } from '@/components/campaign/leadership/LeadershipForm'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadOrganizationOptions, loadMunicipalityOptions, loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
+import {
+  loadMunicipalityOptions,
+  loadOrganizationOptions,
+  loadStateDeputyOptions,
+} from '@/utilities/campaignRelationOptions'
 import { createLeadershipFormAction } from './formActions'
 
 type NewLeadershipPageProps = {
@@ -32,9 +36,12 @@ export default async function NewLeadershipPage({ searchParams }: NewLeadershipP
     ? rawSearchParams.municipality[0]
     : rawSearchParams.municipality
   const initialMunicipalityID =
-    rawInitialMunicipality && /^[1-9]\d*$/.test(rawInitialMunicipality) ? Number(rawInitialMunicipality) : null
+    rawInitialMunicipality && /^[1-9]\d*$/.test(rawInitialMunicipality)
+      ? Number(rawInitialMunicipality)
+      : null
   const initialMunicipalityIDs =
-    initialMunicipalityID && municipalityOptions.some((option) => option.id === initialMunicipalityID)
+    initialMunicipalityID &&
+    municipalityOptions.some((option) => option.id === initialMunicipalityID)
       ? [initialMunicipalityID]
       : []
 

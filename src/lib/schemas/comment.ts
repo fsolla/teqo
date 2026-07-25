@@ -8,4 +8,3 @@ export const commentSchema = z.object({
     .refine((v) => !/<\/?[a-z][\s\S]*>/i.test(v), 'O comentário não pode conter HTML')
     .optional(),
 })
-

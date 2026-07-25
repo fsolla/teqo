@@ -51,9 +51,7 @@ const SupporterCard = ({ supporter }: { supporter: SupporterListItemViewModel })
             <Badge variant="outline">Sem intenção</Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
-          {supporter.city ?? 'Cidade não informada'}
-        </p>
+        <p className="text-sm text-muted-foreground">{supporter.city ?? 'Cidade não informada'}</p>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <p className="text-sm">

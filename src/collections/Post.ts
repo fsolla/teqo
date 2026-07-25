@@ -1,6 +1,6 @@
+import { slugify } from '@/lib/slug'
 import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { revalidateDocumentById, revalidatePostsListing } from '@/utilities/documents'
-import { slugify } from '@/lib/slug'
 import type { CollectionConfig } from 'payload'
 
 const slug = 'post'

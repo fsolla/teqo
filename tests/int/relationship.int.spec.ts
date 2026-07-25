@@ -25,9 +25,7 @@ describe('relationship primitives', () => {
   it('requires a valid relationship with the caller message', () => {
     expect(requireRelationshipId({ id: 3 })).toBe(3)
     for (const invalid of [NaN, Infinity, 1.5, 0, -1, '3', { id: '3' }]) {
-      expect(() => requireRelationshipId(invalid, 'Contato inválido.')).toThrow(
-        'Contato inválido.',
-      )
+      expect(() => requireRelationshipId(invalid, 'Contato inválido.')).toThrow('Contato inválido.')
     }
   })
 

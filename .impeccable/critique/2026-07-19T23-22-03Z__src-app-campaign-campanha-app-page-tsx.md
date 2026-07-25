@@ -7,23 +7,24 @@ p2_count: 3
 timestamp: 2026-07-19T23-22-03Z
 slug: src-app-campaign-campanha-app-page-tsx
 ---
+
 Method: dual-agent (A: design review · B: detector + Playwright screenshots)
 
 ## Design Health Score
 
-| # | Heuristic | Score | Key Issue |
-|---|-----------|-------|-----------|
-| 1 | Visibility of System Status | 3 | KPIs têm `CampaignDataFreshness`; filas não mostram idade dos itens |
-| 2 | Match System / Real World | 3 | Linguagem de núcleo/fila encaixa; **"Lideranças" sem contexto** |
-| 3 | User Control and Freedom | 3 | **"Limpar"** em Visitados é ghost sem ícone nem `aria-label` claro |
-| 4 | Consistency and Standards | 2 | **Lista de núcleos usa `lg:grid-cols-2`; dashboard geral não** |
-| 5 | Error Prevention | 3 | Dashboard read-only; sem riscos destrutivos aqui |
-| 6 | Recognition Rather Than Recall | 3 | Visitados ajuda recall; **cores do mapa não são decodificáveis** |
-| 7 | Flexibility and Efficiency | 2 | **Coluna única + `max-w-screen-2xl`** desperdiça desktop largo |
-| 8 | Aesthetic and Minimalist Design | 2 | **Três subseções vazias nas filas**; cards com muito respiro interno |
-| 9 | Error Recovery | 3 | N/A nesta tela |
-| 10 | Help and Documentation | 2 | Status de apoio e escala do mapa sem glossário/legenda visual |
-| **Total** | | **27/40** | **Acceptable — melhorias significativas antes de sentir "pronto"** |
+| #         | Heuristic                       | Score     | Key Issue                                                            |
+| --------- | ------------------------------- | --------- | -------------------------------------------------------------------- |
+| 1         | Visibility of System Status     | 3         | KPIs têm `CampaignDataFreshness`; filas não mostram idade dos itens  |
+| 2         | Match System / Real World       | 3         | Linguagem de núcleo/fila encaixa; **"Lideranças" sem contexto**      |
+| 3         | User Control and Freedom        | 3         | **"Limpar"** em Visitados é ghost sem ícone nem `aria-label` claro   |
+| 4         | Consistency and Standards       | 2         | **Lista de núcleos usa `lg:grid-cols-2`; dashboard geral não**       |
+| 5         | Error Prevention                | 3         | Dashboard read-only; sem riscos destrutivos aqui                     |
+| 6         | Recognition Rather Than Recall  | 3         | Visitados ajuda recall; **cores do mapa não são decodificáveis**     |
+| 7         | Flexibility and Efficiency      | 2         | **Coluna única + `max-w-screen-2xl`** desperdiça desktop largo       |
+| 8         | Aesthetic and Minimalist Design | 2         | **Três subseções vazias nas filas**; cards com muito respiro interno |
+| 9         | Error Recovery                  | 3         | N/A nesta tela                                                       |
+| 10        | Help and Documentation          | 2         | Status de apoio e escala do mapa sem glossário/legenda visual        |
+| **Total** |                                 | **27/40** | **Acceptable — melhorias significativas antes de sentir "pronto"**   |
 
 ## Anti-Patterns Verdict
 
@@ -46,26 +47,31 @@ O dashboard tem ingredientes certos para o Field Desk (fila prioritária, faixa 
 ## Priority Issues
 
 ### [P1] Desktop não aproveita largura; ultra-wide deixa vazio à direita
+
 - **Why:** `CampaignPageShell` usa `flex-col gap-8` sem breakpoint grid; `mr-auto max-w-screen-2xl` prende conteúdo à esquerda em monitores largos.
 - **Fix:** Reflow `GeneralDashboard` em `lg:grid` (ex.: filas + KPIs à esquerda, mapa sticky + eventos à direita), espelhando `NucleusListOverview`. Considerar `mx-auto` ou remover cap em `xl:` quando houver grid de 2 colunas.
 - **Suggested command:** `/impeccable layout`
 
 ### [P1] Filas de ação vazias ocupam espaço sem valor
+
 - **Why:** `QueueSection` sempre renderiza; com tudo zerado o usuário lê três mensagens + três badges "0".
 - **Fix:** Se todas as filas vazias, um único estado positivo ("Nada pendente — filas em dia"); renderizar subseções só quando `items.length > 0`.
 - **Suggested command:** `/impeccable quieter`
 
 ### [P2] Escala do mapa sem cores
+
 - **Why:** `choroplethFillColor` implementa gradiente rose→vermelho; UI só mostra números em `ChoroplethMapControls`.
 - **Fix:** Barra de legenda com swatches usando o mesmo ramp; rótulos 0 e máximo.
 - **Suggested command:** `/impeccable clarify`
 
 ### [P2] "Lideranças" sem framing
+
 - **Why:** Linha solta com badges de status + contagem; não fica claro que são contatos de liderança em todos os núcleos por status de apoio.
 - **Fix:** Card com título + descrição; link para lista filtrada; tooltip/glossário nos status.
 - **Suggested command:** `/impeccable clarify`
 
 ### [P2] Visitados recentemente — bullets e botão Limpar
+
 - **Why:** `<ul>` sem `list-none` (padrão do projeto em outras listas); "Limpar" ghost compete com o título sem affordance de ação destrutiva/secundária.
 - **Fix:** `list-none m-0 p-0`; botão outline ou ícone + `aria-label="Limpar histórico de visitas"`.
 - **Suggested command:** `/impeccable polish`

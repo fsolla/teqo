@@ -10,6 +10,7 @@ import {
   DEFAULT_VOTE_RANK_YEAR,
   type MunicipalityVoteRankEntry,
 } from '@/lib/municipalityVoteRank'
+import { type VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
 import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
@@ -21,9 +22,9 @@ import {
   parseMunicipalityListParams,
   resolveMunicipalityListSort,
   type MunicipalityListSearchParams,
-  type MunicipalityListState,
   type MunicipalityListSortDirection,
   type MunicipalityListSortKey,
+  type MunicipalityListState,
 } from '@/utilities/municipalityListUrl'
 import { resolveMunicipalityLastSignalAt } from '@/utilities/municipalitySignal'
 import {
@@ -35,8 +36,10 @@ import {
 } from '@/utilities/municipalityViewModels'
 import { relationshipId } from '@/utilities/relationship'
 import { loadStateDeputySummaries } from '@/utilities/stateDeputyData'
-import { type VoteEstimateScenario } from '@/lib/voteEstimate'
-import { rollupMunicipalityStaffVotes, type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
+import {
+  rollupMunicipalityStaffVotes,
+  type MunicipalityPledgeAggregate,
+} from '@/utilities/votePledgeViews'
 
 export class MunicipalityNotFoundError extends Error {
   override name = 'MunicipalityNotFoundError'

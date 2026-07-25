@@ -3,8 +3,8 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import type { Consent, Leadership } from '@/payload-types'
-import type { CampaignInviteKind } from '@/utilities/campaignInvite'
 import { getLeadershipConsent } from '@/utilities/campaignConsent'
+import type { CampaignInviteKind } from '@/utilities/campaignInvite'
 import { findActiveCampaignInvite } from '@/utilities/campaignInviteRepository'
 import { relationshipId } from '@/utilities/relationship'
 

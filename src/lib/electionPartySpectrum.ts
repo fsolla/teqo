@@ -51,7 +51,7 @@ const PARTY_MEAN_2022: Readonly<Record<string, number>> = {
   PTB: 7.2,
   PL: 7.5,
   NOVO: 7.8,
-  'UNIÃO': 6.4,
+  UNIÃO: 6.4,
   PRD: 6.6,
   DC: 7.1,
   PATRIOTA: 7.3,

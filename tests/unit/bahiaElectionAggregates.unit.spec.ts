@@ -8,13 +8,14 @@ import {
   federalBaselineMunicipalitySlugs,
   getMunicipalityFederalBaseline,
 } from '@/lib/bahiaElectionAggregates'
-import { BASELINE_TICKET_2022, ELECTION_YEAR_2022, HISTORICAL_SERIES_YEARS } from '@/lib/electionResults'
+import {
+  BASELINE_TICKET_2022,
+  ELECTION_YEAR_2022,
+  HISTORICAL_SERIES_YEARS,
+} from '@/lib/electionResults'
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 
-const ARTIFACT_PATH = join(
-  process.cwd(),
-  'src/lib/electionAggregates/bahia-federal-baseline.json',
-)
+const ARTIFACT_PATH = join(process.cwd(), 'src/lib/electionAggregates/bahia-federal-baseline.json')
 
 /**
  * Pins the committed election-aggregate artifact to the municipality catalog.
@@ -99,7 +100,9 @@ describe('election aggregates artifact', () => {
       if (!majoritarian) continue
       expect(majoritarian.president.votes).toBeGreaterThanOrEqual(0)
       expect(majoritarian.governor.votes).toBeGreaterThanOrEqual(0)
-      expect(majoritarian.president.comparecimento).toBeGreaterThanOrEqual(majoritarian.president.votes)
+      expect(majoritarian.president.comparecimento).toBeGreaterThanOrEqual(
+        majoritarian.president.votes,
+      )
       presidentTotal += majoritarian.president.votes
     }
     expect(presidentTotal).toBeGreaterThan(10_000)

@@ -8,7 +8,5 @@ export const normalizeContactSearchQuery = (raw: string) => {
 
 export const isContactSearchQueryReady = (raw: string) => {
   const { trimmed, digits } = normalizeContactSearchQuery(raw)
-  return (
-    trimmed.length >= CONTACT_SEARCH_MIN_LENGTH || digits.length >= CONTACT_SEARCH_MIN_LENGTH
-  )
+  return trimmed.length >= CONTACT_SEARCH_MIN_LENGTH || digits.length >= CONTACT_SEARCH_MIN_LENGTH
 }

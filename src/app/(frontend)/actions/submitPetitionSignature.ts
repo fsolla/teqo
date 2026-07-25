@@ -1,7 +1,7 @@
 'use server'
 
-import config from '@payload-config'
 import { petitionFormSchema, type PetitionFormInput } from '@/lib/schemas/petition-form'
+import config from '@payload-config'
 import { getPayload } from 'payload'
 
 type SubmitPetitionSignatureInput = PetitionFormInput & {

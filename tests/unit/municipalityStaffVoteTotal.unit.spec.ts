@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { createEmptyMunicipalityPledgeAggregate, resolveMunicipalityStaffVoteTotal, rollupMunicipalityStaffVotes } from '@/utilities/votePledgeViews'
+import {
+  createEmptyMunicipalityPledgeAggregate,
+  resolveMunicipalityStaffVoteTotal,
+  rollupMunicipalityStaffVotes,
+} from '@/utilities/votePledgeViews'
 
 describe('resolveMunicipalityStaffVoteTotal', () => {
   it('falls back to pledge effective total when expectedVotes central is null', () => {

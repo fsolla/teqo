@@ -170,9 +170,7 @@ export type LeadershipListState = {
   q?: string
 }
 
-export const parseLeadershipListParams = (
-  searchParams: RawSearchParams,
-): LeadershipListState => {
+export const parseLeadershipListParams = (searchParams: RawSearchParams): LeadershipListState => {
   const q = normalizedText(firstValue(searchParams.q))
   return {
     page: strictDecimalInteger(firstValue(searchParams.page)) ?? 1,

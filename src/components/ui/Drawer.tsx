@@ -1,7 +1,7 @@
 'use client'
 
-import * as React from 'react'
 import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer'
+import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -168,14 +168,10 @@ const DrawerDescription = ({ className, ...props }: DrawerPrimitive.Description.
 
 export {
   Drawer,
-  
-  
-  
-  
   DrawerClose,
   DrawerContent,
-  DrawerHeader,
-  DrawerFooter,
-  DrawerTitle,
   DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
 }

@@ -4,8 +4,8 @@ import { redirect } from 'next/navigation'
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { SupporterImportWizard } from '@/components/campaign/supporter/SupporterImportWizard'
 import { Button } from '@/components/ui/button'
-import { getCampaignUser } from '@/utilities/campaignAuth'
 import { isCampaignCoordinator } from '@/utilities/campaignAccess'
+import { getCampaignUser } from '@/utilities/campaignAuth'
 
 export default async function ImportSupportersPage() {
   const user = await getCampaignUser()

@@ -1,6 +1,6 @@
 import config from '@payload-config'
-import { getPayload } from 'payload'
 import { redirect } from 'next/navigation'
+import { getPayload } from 'payload'
 
 import {
   searchActionPlanContactOptions,
@@ -10,7 +10,10 @@ import { createActionPlanFormAction } from '@/app/(campaign)/campanha/(app)/plan
 import { ActionPlanForm } from '@/components/campaign/actionPlan/ActionPlanForm'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadOrganizationOptions, loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import {
+  loadMunicipalityOptions,
+  loadOrganizationOptions,
+} from '@/utilities/campaignRelationOptions'
 import { getEligibleAdvisorOptions } from '@/utilities/municipalityViewModels'
 
 export default async function NewActionPlanPage() {

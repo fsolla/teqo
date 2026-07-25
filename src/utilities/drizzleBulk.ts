@@ -20,10 +20,7 @@ export const chunk = <T>(rows: readonly T[], size: number): T[][] => {
 export const getDrizzleTables = (payload: Pick<Payload, 'db'>): DrizzleTables =>
   (payload.db as unknown as PayloadDbTables).tables
 
-export const requireTable = (
-  tables: DrizzleTables,
-  name: string,
-): Record<string, unknown> => {
+export const requireTable = (tables: DrizzleTables, name: string): Record<string, unknown> => {
   const table = tables[name]
   if (!table) throw new Error(`Tabela drizzle ausente: ${name}. Rode as migrations.`)
   return table
@@ -61,4 +58,3 @@ export const drizzleResultRows = (result: unknown): Array<Record<string, unknown
   }
   return []
 }
-

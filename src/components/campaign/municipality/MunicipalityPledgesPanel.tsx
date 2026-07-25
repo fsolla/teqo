@@ -1,13 +1,13 @@
 import { PledgeEstimateForm } from '@/components/campaign/votePledge/PledgeEstimateForm'
 import { Badge } from '@/components/ui/Badge'
-import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
   effectivePledgeVotesForScenario,
   formatVoteEstimateRange,
   getVoteEstimateForScenario,
+  hasAnyEstimate,
 } from '@/lib/voteEstimate'
+import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { type StaffPledgeRow } from '@/utilities/votePledgeViews'
-import { hasAnyEstimate } from '@/lib/voteEstimate'
 
 const voteFormatter = new Intl.NumberFormat('pt-BR')
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')

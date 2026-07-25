@@ -16,13 +16,12 @@
  */
 
 import { createHash } from 'node:crypto'
-import { mkdir, readFile, writeFile, access } from 'node:fs/promises'
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const { canonicalizeMunicipalityName, UnknownMunicipalityError } = await import(
-  '../src/lib/electionResults.ts'
-)
+const { canonicalizeMunicipalityName, UnknownMunicipalityError } =
+  await import('../src/lib/electionResults.ts')
 const { bahiaMunicipalities } = await import('../src/lib/bahiaTerritories.ts')
 const { parseTseCsvBuffer } = await import('../src/lib/electionResultsCsv.ts')
 const { downloadToBuffer, readZipEntry } = await import('../src/lib/electionResultsZip.ts')
@@ -160,7 +159,9 @@ const main = async () => {
 
   const missing = bahiaMunicipalities.filter((city) => !codeByCanonical.has(city))
   if (missing.length > 0) {
-    die(`Missing TSE city codes for: ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? '…' : ''}`)
+    die(
+      `Missing TSE city codes for: ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? '…' : ''}`,
+    )
   }
 
   const accessed = new Date().toISOString().slice(0, 10)

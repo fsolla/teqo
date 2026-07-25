@@ -8,8 +8,8 @@ import {
   redeemCampaignInviteLoginFormAction,
 } from '@/app/(campaign)/campanha/convite/[token]/formActions'
 import { CampaignInviteForm } from '@/components/campaign/invite/CampaignInviteForm'
-import { ConsentText } from '@/components/campaign/shared/ConsentText'
 import { InvalidCampaignInvite } from '@/components/campaign/invite/InvalidCampaignInvite'
+import { ConsentText } from '@/components/campaign/shared/ConsentText'
 import { getCampaignInvitePageData } from '@/utilities/campaignInvitePageData'
 
 export const dynamic = 'force-dynamic'
@@ -48,7 +48,9 @@ export default async function CampaignInvitePage({ params }: CampaignInvitePageP
     preview.kind === 'login'
       ? redeemCampaignInviteLoginFormAction.bind(null, token)
       : redeemCampaignInviteAutofillFormAction.bind(null, token)
-  const consentText = preview.requiresConsent ? ConsentText({ data: preview.consentData }) : undefined
+  const consentText = preview.requiresConsent
+    ? ConsentText({ data: preview.consentData })
+    : undefined
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4 sm:p-6">

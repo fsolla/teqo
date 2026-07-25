@@ -1,6 +1,7 @@
 import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
+import { slugify } from '@/lib/slug'
 import {
   canCreateOrganization,
   canDeleteOrganization,
@@ -8,7 +9,6 @@ import {
   canReadOrganization,
   canSetCampaignSystemField,
 } from '@/utilities/campaignAccess'
-import { slugify } from '@/lib/slug'
 
 const trimmedText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
 

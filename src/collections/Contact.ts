@@ -1,13 +1,10 @@
 import { CitiesByState } from '@/lib/cities'
+import { normalizeBrazilianPhone } from '@/lib/phone'
+import { canManageContacts, canReadContacts } from '@/utilities/campaignAccess'
 import {
   acquireContactPhoneLocks,
   assertContactPhoneAvailable,
 } from '@/utilities/contactPhoneInvariant'
-import {
-  canManageContacts,
-  canReadContacts,
-} from '@/utilities/campaignAccess'
-import { normalizeBrazilianPhone } from '@/lib/phone'
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
@@ -35,9 +32,7 @@ const enforceUniqueContactPhone: CollectionBeforeChangeHook = async ({
   // Phone-less contacts (e.g. name-only leadership imports) have no uniqueness to enforce.
   if (!phone) return data
   const oldPhone =
-    operation === 'update' && typeof originalDoc?.phone === 'string'
-      ? originalDoc.phone
-      : undefined
+    operation === 'update' && typeof originalDoc?.phone === 'string' ? originalDoc.phone : undefined
 
   await acquireContactPhoneLocks(
     req.payload,

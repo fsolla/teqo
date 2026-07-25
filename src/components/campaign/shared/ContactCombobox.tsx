@@ -38,9 +38,7 @@ export const ContactCombobox = ({
     <AsyncSearchCombobox
       name={name}
       label={label}
-      value={
-        current ? { id: current.id, label: contactLabel(current) } : null
-      }
+      value={current ? { id: current.id, label: contactLabel(current) } : null}
       emptyOptionLabel={emptyOptionLabel}
       dialogDescription="Busque por nome ou celular."
       isQueryReady={isContactSearchQueryReady}

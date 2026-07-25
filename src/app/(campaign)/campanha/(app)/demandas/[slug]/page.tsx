@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { DemandWorkflowCard } from '@/components/campaign/demand/DemandWorkflowCard'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import {

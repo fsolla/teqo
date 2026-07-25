@@ -2,6 +2,7 @@ import {
   getMunicipalityFederalBaseline,
   type MunicipalityFederalBaseline,
 } from '@/lib/bahiaElectionAggregates'
+import type { BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import {
   ELECTION_YEAR_2014,
   ELECTION_YEAR_2018,
@@ -9,9 +10,8 @@ import {
   HISTORICAL_SERIES_YEARS,
 } from '@/lib/electionResults'
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
-import type { BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
-import type { CampaignGoal } from '@/payload-types'
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
+import type { CampaignGoal } from '@/payload-types'
 
 /**
  * E8 "conta da cadeira" — derived electoral potential per municipality, built
@@ -83,7 +83,10 @@ export const captureRate = (baseline: MunicipalityFederalBaseline): number | nul
  * historical years (unlike `fieldCeiling`, which is majoritarian and
  * 2022-only). `null` when the field polled zero that year.
  */
-export const intraFieldShare = (baseline: MunicipalityFederalBaseline, year: number): number | null => {
+export const intraFieldShare = (
+  baseline: MunicipalityFederalBaseline,
+  year: number,
+): number | null => {
   const campo = baseline.campoFederalVotesByYear[String(year)] ?? 0
   if (campo <= 0) return null
   return votesInYear(baseline, year) / campo
@@ -110,7 +113,8 @@ export const rollOff = (baseline: MunicipalityFederalBaseline): RollOff | null =
   const dfBlankNull = federalTally.votosBranco + federalTally.votosNulo
   const majoritarianBlankNull = majoritarian.votosBranco + majoritarian.votosNulo
   const votes = dfBlankNull - majoritarianBlankNull
-  const percentOfTurnout = federalTally.comparecimento > 0 ? votes / federalTally.comparecimento : null
+  const percentOfTurnout =
+    federalTally.comparecimento > 0 ? votes / federalTally.comparecimento : null
 
   return { votes, percentOfTurnout }
 }

@@ -1,0 +1,32 @@
+# Build outputs and tool caches
+.next/
+out/
+build/
+playwright-report/
+test-results/
+data/
+pnpm-lock.yaml
+
+# Generated files (owned by their generators, not by Prettier)
+src/payload-types.ts
+src/app/(payload)/admin/importMap.js
+
+# Frozen history — migrations are never edited retroactively
+src/migrations/
+
+# Committed data artifacts (rebuilt by scripts; pretty-printing would explode them
+# and the next regeneration would revert it)
+src/lib/geometries/
+src/lib/electionAggregates/
+src/lib/bahiaMunicipalityDemographics.ts
+src/lib/bahiaTseCityCodes.ts
+src/lib/bahiaMunicipalityCodes.ts
+src/lib/bahiaTseZones.ts
+tests/fixtures/
+output/
+
+# Static assets and vendored agent material
+public/
+.agents/
+.cursor/
+docs/sheets/

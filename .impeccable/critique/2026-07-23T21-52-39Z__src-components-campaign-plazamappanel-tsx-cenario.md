@@ -8,23 +8,24 @@ p3_count: 1
 timestamp: 2026-07-23T21-52-39Z
 slug: src-components-campaign-plazamappanel-tsx-cenario
 ---
+
 Method: dual-agent (A: c3613972-8d1f-41bb-b210-501b0ddc14c9 · B: 8ae72814-5de3-4010-9ebb-7c9d64d8ccec)
 
 ## Design Health Score
 
-| # | Heuristic | Score | Key Issue |
-|---|-----------|-------|-----------|
-| 1 | Visibility of System Status | 1 | Ano default 2022: mudar Cenário não pinta o mapa; efeito no overview abaixo do fold |
-| 2 | Match System / Real World | 1 | “overview” / “preenchimento” ≠ linguagem de campo; toolbar diz “filtro do mapa” |
-| 3 | User Control and Freedom | 3 | Três opções reversíveis; baixo risco |
-| 4 | Consistency and Standards | 2 | Mesmo NativeSelect que Ano/Escala, mas escopo de página (não só mapa) |
-| 5 | Error Prevention | 1 | Posição convida o modelo errado; disclaimer é pós-fato |
-| 6 | Recognition Rather Than Recall | 2 | Labels P/M/O ok; regra “só 2026” exige ler o rodapé |
-| 7 | Flexibility and Efficiency | 2 | Sync global é eficiente se entendido; sem atalho Ano→2026 |
-| 8 | Aesthetic and Minimalist Design | 2 | Quarto controle + disclaimer xs no estado comum (Ano≠2026) |
-| 9 | Error Recovery | 2 | Mapa “não fez nada” sem live region no overview |
-| 10 | Help and Documentation | 2 | Hint existe; copy de engenheiro; sempre ligada no first paint |
-| **Total** | | **18/40** | **Poor — labels A10 ok; assento + disclaimer quebram o controle** |
+| #         | Heuristic                       | Score     | Key Issue                                                                           |
+| --------- | ------------------------------- | --------- | ----------------------------------------------------------------------------------- |
+| 1         | Visibility of System Status     | 1         | Ano default 2022: mudar Cenário não pinta o mapa; efeito no overview abaixo do fold |
+| 2         | Match System / Real World       | 1         | “overview” / “preenchimento” ≠ linguagem de campo; toolbar diz “filtro do mapa”     |
+| 3         | User Control and Freedom        | 3         | Três opções reversíveis; baixo risco                                                |
+| 4         | Consistency and Standards       | 2         | Mesmo NativeSelect que Ano/Escala, mas escopo de página (não só mapa)               |
+| 5         | Error Prevention                | 1         | Posição convida o modelo errado; disclaimer é pós-fato                              |
+| 6         | Recognition Rather Than Recall  | 2         | Labels P/M/O ok; regra “só 2026” exige ler o rodapé                                 |
+| 7         | Flexibility and Efficiency      | 2         | Sync global é eficiente se entendido; sem atalho Ano→2026                           |
+| 8         | Aesthetic and Minimalist Design | 2         | Quarto controle + disclaimer xs no estado comum (Ano≠2026)                          |
+| 9         | Error Recovery                  | 2         | Mapa “não fez nada” sem live region no overview                                     |
+| 10        | Help and Documentation          | 2         | Hint existe; copy de engenheiro; sempre ligada no first paint                       |
+| **Total** |                                 | **18/40** | **Poor — labels A10 ok; assento + disclaimer quebram o controle**                   |
 
 ## Anti-Patterns Verdict
 
@@ -47,26 +48,31 @@ A10 labels e sync via context estão certos. O bug de UX é estrutural: **Cenár
 ## Priority Issues
 
 ### [P1] Assento na toolbar do mapa implica choropleth quando Ano≠2026
+
 - **Why:** First paint comum: muda Cenário → mapa igual → sensação de broken.
-- **Fix:** Relocar ao overview; **ou** desabilitar/ghost + explicar; **ou** Cenário força Ano→2026; **ou** esconder no mapa quando ≠2026 *e* hospedar o controle onde o efeito é visível.
+- **Fix:** Relocar ao overview; **ou** desabilitar/ghost + explicar; **ou** Cenário força Ano→2026; **ou** esconder no mapa quando ≠2026 _e_ hospedar o controle onde o efeito é visível.
 - **Suggested command:** `/impeccable layout` (ou `/impeccable shape`)
 
 ### [P1] Disclaimer em português de engenheiro
+
 - **Why:** “overview” não está na UI; “preenchimento” é jargão de mapa.
 - **Fix:** Uma linha de resultado (“Muda os totais acima da lista. No mapa, só com Ano 2026.”) — ou matar a linha relocando o controle.
 - **Suggested command:** `/impeccable clarify` / `/impeccable distill`
 
 ### [P2] Feel the action: efeito fora do viewport
+
 - **Why:** Mapa acima; overview/lista abaixo. Em mobile parece no-op.
 - **Fix:** Highlight/pending no overview; ou co-localizar o controle.
 - **Suggested command:** `/impeccable animate` + layout
 
 ### [P2] Always-show na fila do mapa vs hide
-- **Why:** Sync global é racional; *nesta* fila treina o affordance errado.
+
+- **Why:** Sync global é racional; _nesta_ fila treina o affordance errado.
 - **Fix:** Não esconder sem relocação; se global, não vestir como filtro do mapa.
 - **Suggested command:** `/impeccable shape`
 
 ### [P3] Densidade Ano / Escala / Cenário / Comparar
+
 - **Why:** Quarto peer + disclaimer wrap em narrow (Casey).
 - **Suggested command:** `/impeccable quieter`
 

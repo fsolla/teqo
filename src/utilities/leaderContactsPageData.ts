@@ -38,8 +38,7 @@ const toLeaderContactListItem = (supporter: {
     name: typeof contact === 'object' && contact ? contact.name : 'Contato',
     phone: typeof contact === 'object' && contact ? (contact.phone ?? null) : null,
     city: typeof contact === 'object' && contact ? (contact.city ?? null) : null,
-    municipalityName:
-      typeof municipality === 'object' && municipality ? municipality.name : null,
+    municipalityName: typeof municipality === 'object' && municipality ? municipality.name : null,
     createdAt: supporter.createdAt,
   }
 }

@@ -8,6 +8,7 @@ import type { Where } from 'payload'
 
 import { bahiaIdentityTerritories, type BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import { isMunicipalitySlug } from '@/lib/municipalityCatalog'
+import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 import {
   allParamValues,
   buildListHref,
@@ -18,7 +19,6 @@ import {
   type RawSearchParams as CampaignListRawSearchParams,
 } from '@/utilities/campaignListUrl'
 import { politicalTrendLabels, type PoliticalTrendStatus } from '@/utilities/municipalityLabels'
-import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 
 import type { Municipality } from '@/payload-types'
 

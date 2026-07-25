@@ -1,8 +1,8 @@
 // @vitest-environment node
 
-import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { sql } from '@payloadcms/db-postgres'
 import { getPayload, type Payload } from 'payload'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { Consent } from '@/collections/Consent'
 import type { CampaignUser, Consent as ConsentDocument } from '@/payload-types'

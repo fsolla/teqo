@@ -1,5 +1,6 @@
 'use client'
 
+import { submitWhatsapp } from '@/app/(frontend)/actions/submitWhatsapp'
 import { CitySelect } from '@/components/CitySelect'
 import { EmailInput } from '@/components/EmailInput'
 import { NameInput } from '@/components/NameInput'
@@ -10,9 +11,8 @@ import { Field, FieldDescription, FieldGroup } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { WhatsAppFormInput, whatsAppFormSchema } from '@/lib/schemas/whatsapp-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { FormProvider, SubmitHandler, useForm } from 'react-hook-form'
 import { useTransition } from 'react'
-import { submitWhatsapp } from '@/app/(frontend)/actions/submitWhatsapp'
+import { FormProvider, SubmitHandler, useForm } from 'react-hook-form'
 
 interface WhatsappFormProps {
   classname?: string

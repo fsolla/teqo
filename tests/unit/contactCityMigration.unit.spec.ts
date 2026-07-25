@@ -4,10 +4,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 const migration = readFileSync(
-  new URL(
-    '../../src/migrations/20260718_010733_consolidate_campaign_schema.ts',
-    import.meta.url,
-  ),
+  new URL('../../src/migrations/20260718_010733_consolidate_campaign_schema.ts', import.meta.url),
   'utf8',
 )
 

@@ -11,10 +11,7 @@ type BahiaTerritoryProperties = {
   name: string
 }
 
-export type BahiaMunicipalityFeature = Feature<
-  Polygon | MultiPolygon,
-  BahiaMunicipalityProperties
->
+export type BahiaMunicipalityFeature = Feature<Polygon | MultiPolygon, BahiaMunicipalityProperties>
 
 export type BahiaTerritoryFeature = Feature<Polygon | MultiPolygon, BahiaTerritoryProperties>
 

@@ -1,12 +1,12 @@
-import Link from 'next/link'
 import { CalendarIcon, MapPinIcon, UserIcon } from 'lucide-react'
+import Link from 'next/link'
 
 import { ActionPlanStatusBadge } from '@/components/campaign/actionPlan/ActionPlanStatusBadge'
 import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { actionPlanKindLabels } from '@/lib/schemas/actionPlan'
-import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 import type { ActionPlanListViewModel } from '@/utilities/actionPlanViewModels'
+import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 
 const formatWhen = (plan: ActionPlanListViewModel): string =>
   plan.startAt ? formatBahiaDateTimeLabel(plan.startAt) : 'Data a definir'

@@ -1,13 +1,10 @@
-import {
-  bahiaIdentityTerritories,
-  type BahiaIdentityTerritory,
-} from '@/lib/bahiaTerritories'
+import { bahiaIdentityTerritories, type BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
+import { citiesForTseZone } from '@/lib/bahiaTseZones'
 import {
   municipalityCatalog,
   municipalityCatalogEntriesForCity,
   type MunicipalityCatalogEntry,
 } from '@/lib/municipalityCatalog'
-import { citiesForTseZone } from '@/lib/bahiaTseZones'
 import { matchesAtWordStart, normalizeSearchPhrase } from '@/lib/wordStartFilter'
 
 export type AdvisorMunicipalityIndexEntry = {
@@ -118,14 +115,18 @@ export const buildAdvisorPortfolioChips = (
   index: readonly AdvisorMunicipalityIndexEntry[],
 ): AdvisorPortfolioChip[] => {
   const byId = new Map(index.map((entry) => [entry.id, entry]))
-  const assigned = new Map(assignedMunicipalities.map((municipality) => [municipality.id, municipality]))
+  const assigned = new Map(
+    assignedMunicipalities.map((municipality) => [municipality.id, municipality]),
+  )
   const remaining = new Set(assigned.keys())
   const chips: AdvisorPortfolioChip[] = []
 
   // Prefer the live index's `region` (DB) over catalog→slug resolution so chips
   // collapse even when slug casing/alias differs across environments.
   for (const territory of bahiaIdentityTerritories) {
-    const territoryIds = index.filter((entry) => entry.region === territory).map((entry) => entry.id)
+    const territoryIds = index
+      .filter((entry) => entry.region === territory)
+      .map((entry) => entry.id)
     if (territoryIds.length === 0) continue
     if (!territoryIds.every((id) => remaining.has(id))) continue
 
@@ -223,7 +224,9 @@ export const searchAdvisorPortfolio = (
   const zonesToScan =
     zoneFromQuery !== null
       ? [zoneFromQuery]
-      : uniqueZoneNumbers().filter((zoneNumber) => matchesAtWordStart(zoneLabel(zoneNumber), trimmed))
+      : uniqueZoneNumbers().filter((zoneNumber) =>
+          matchesAtWordStart(zoneLabel(zoneNumber), trimmed),
+        )
 
   for (const zoneNumber of zonesToScan) {
     const municipalityIds = municipalityIdsForTseZone(zoneNumber, bySlug).filter(

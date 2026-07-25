@@ -15,13 +15,7 @@
     "server-only": ["tests/helpers/serverOnly.ts"]
   },
   "ignoreBinaries": [],
-  "ignoreDependencies": [
-    "tailwindcss-animate",
-    "tw-animate-css",
-    "shadcn",
-    "eslint-config-next",
-    "prettier"
-  ],
+  "ignoreDependencies": ["tailwindcss-animate", "tw-animate-css", "shadcn", "eslint-config-next"],
   "rules": {
     "exports": "error",
     "types": "error",

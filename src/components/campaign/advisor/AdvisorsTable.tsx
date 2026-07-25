@@ -30,16 +30,16 @@ import {
   TableRow,
 } from '@/components/ui/Table'
 import type { AdvisorMunicipalityIndexEntry } from '@/lib/advisorMunicipalityPortfolio'
+import {
+  buildWhatsAppUrl,
+  formatBrazilianPhoneInput,
+  normalizeBrazilianPhone,
+  sanitizeBrazilianPhoneInput,
+} from '@/lib/phone'
 import { isPlanilhaPlaceholderEmail } from '@/lib/schemas/advisor'
 import { cn } from '@/lib/utils'
 import type { AdvisorRowViewModel } from '@/utilities/advisorData'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import {
-  formatBrazilianPhoneInput,
-  normalizeBrazilianPhone,
-  sanitizeBrazilianPhoneInput,
-  buildWhatsAppUrl,
-} from '@/lib/phone'
 
 type MunicipalityRef = { id: number; name: string; slug: string }
 
@@ -180,17 +180,17 @@ export const AdvisorsTable = ({
             Concluir edição
           </Button>
         ) : (
-          <Button type="button" variant="outline" className="min-h-11" onClick={() => setEditing(true)}>
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11"
+            onClick={() => setEditing(true)}
+          >
             <PencilIcon data-icon="inline-start" aria-hidden="true" />
             Editar
           </Button>
         )}
-        <Button
-          type="button"
-          className="min-h-11"
-          onClick={startDraft}
-          disabled={Boolean(draft)}
-        >
+        <Button type="button" className="min-h-11" onClick={startDraft} disabled={Boolean(draft)}>
           <PlusIcon data-icon="inline-start" aria-hidden="true" />
           Novo assessor
         </Button>

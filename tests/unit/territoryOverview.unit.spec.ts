@@ -6,7 +6,10 @@ import {
   type TerritoryMunicipalityInput,
 } from '@/utilities/territoryOverview'
 
-const input = (overrides: Partial<TerritoryMunicipalityInput> & Pick<TerritoryMunicipalityInput, 'slug' | 'region' | 'city'>): TerritoryMunicipalityInput => ({
+const input = (
+  overrides: Partial<TerritoryMunicipalityInput> &
+    Pick<TerritoryMunicipalityInput, 'slug' | 'region' | 'city'>,
+): TerritoryMunicipalityInput => ({
   name: overrides.slug,
   kind: 'municipio',
   votesByYear: { 2022: 0 },
@@ -18,13 +21,54 @@ const input = (overrides: Partial<TerritoryMunicipalityInput> & Pick<TerritoryMu
 
 const fixture: TerritoryMunicipalityInput[] = [
   // Irecê (TI 01) — 2 municípios, 1 com assessor
-  input({ slug: 'ibipeba', region: 'Irecê', city: 'Ibipeba', votesByYear: { 2014: 10, 2018: 20, 2022: 30 }, validVotesByYear: { 2022: 1000 }, estimate2026: 40, advisorCount: 1 }),
-  input({ slug: 'irece', region: 'Irecê', city: 'Irecê', votesByYear: { 2014: 5, 2018: 15, 2022: 25 }, validVotesByYear: { 2022: 2000 }, estimate2026: 35, advisorCount: 0 }),
+  input({
+    slug: 'ibipeba',
+    region: 'Irecê',
+    city: 'Ibipeba',
+    votesByYear: { 2014: 10, 2018: 20, 2022: 30 },
+    validVotesByYear: { 2022: 1000 },
+    estimate2026: 40,
+    advisorCount: 1,
+  }),
+  input({
+    slug: 'irece',
+    region: 'Irecê',
+    city: 'Irecê',
+    votesByYear: { 2014: 5, 2018: 15, 2022: 25 },
+    validVotesByYear: { 2022: 2000 },
+    estimate2026: 35,
+    advisorCount: 0,
+  }),
   // Velho Chico (TI 02) — 1 município, com assessor
-  input({ slug: 'barra', region: 'Velho Chico', city: 'Barra', votesByYear: { 2014: 100, 2018: 110, 2022: 120 }, validVotesByYear: { 2022: 5000 }, estimate2026: 150, advisorCount: 2 }),
+  input({
+    slug: 'barra',
+    region: 'Velho Chico',
+    city: 'Barra',
+    votesByYear: { 2014: 100, 2018: 110, 2022: 120 },
+    validVotesByYear: { 2022: 5000 },
+    estimate2026: 150,
+    advisorCount: 2,
+  }),
   // Metropolitano de Salvador (TI 26) — Salvador (1 zona) + Camaçari (demais)
-  input({ slug: 'salvador-ze-1', region: 'Metropolitano de Salvador', city: 'Salvador', kind: 'zona', votesByYear: { 2014: 1000, 2018: 1100, 2022: 1200 }, validVotesByYear: { 2022: 40000 }, estimate2026: 1300, advisorCount: 1 }),
-  input({ slug: 'camacari', region: 'Metropolitano de Salvador', city: 'Camaçari', votesByYear: { 2014: 200, 2018: 210, 2022: 220 }, validVotesByYear: { 2022: 8000 }, estimate2026: 250, advisorCount: 0 }),
+  input({
+    slug: 'salvador-ze-1',
+    region: 'Metropolitano de Salvador',
+    city: 'Salvador',
+    kind: 'zona',
+    votesByYear: { 2014: 1000, 2018: 1100, 2022: 1200 },
+    validVotesByYear: { 2022: 40000 },
+    estimate2026: 1300,
+    advisorCount: 1,
+  }),
+  input({
+    slug: 'camacari',
+    region: 'Metropolitano de Salvador',
+    city: 'Camaçari',
+    votesByYear: { 2014: 200, 2018: 210, 2022: 220 },
+    validVotesByYear: { 2022: 8000 },
+    estimate2026: 250,
+    advisorCount: 0,
+  }),
 ]
 
 describe('computeTerritoryRollup', () => {

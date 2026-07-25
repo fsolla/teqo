@@ -1,7 +1,7 @@
 'use client'
 
-import { type ReactNode, useActionState } from 'react'
 import { CheckCircle2Icon, ShieldCheckIcon } from 'lucide-react'
+import { type ReactNode, useActionState } from 'react'
 
 import type {
   BoundCampaignInviteFormAction,
@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { fieldError, errorProps } from '@/utilities/campaignFormFields'
+import { errorProps, fieldError } from '@/utilities/campaignFormFields'
 import { leadershipGenderLabels, leadershipSectorLabels } from '@/utilities/leadershipUi'
 
 type CampaignInviteProfile = {
@@ -52,13 +52,7 @@ const CampaignInviteFeedback = ({ state }: { state: CampaignInviteFormState }) =
   )
 }
 
-const ConsentField = ({
-  children,
-  error,
-}: {
-  children: ReactNode
-  error?: string
-}) => (
+const ConsentField = ({ children, error }: { children: ReactNode; error?: string }) => (
   <section id="texto-consentimento" className="flex flex-col gap-3" aria-labelledby="consent-title">
     <div>
       <h2 id="consent-title" className="font-medium">

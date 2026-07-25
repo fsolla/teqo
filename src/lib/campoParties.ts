@@ -44,7 +44,9 @@ const CAMPO_PARTIES_BY_YEAR: Readonly<Record<CampoElectionYear, readonly string[
   2026: ['PT', 'PCDOB', 'PV'],
 }
 
-export const CAMPO_ELECTION_YEARS = Object.keys(CAMPO_PARTIES_BY_YEAR).map(Number) as CampoElectionYear[]
+export const CAMPO_ELECTION_YEARS = Object.keys(CAMPO_PARTIES_BY_YEAR).map(
+  Number,
+) as CampoElectionYear[]
 
 export const isCampoElectionYear = (year: number): year is CampoElectionYear =>
   (CAMPO_ELECTION_YEARS as readonly number[]).includes(year)

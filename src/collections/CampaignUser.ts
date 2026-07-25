@@ -1,3 +1,4 @@
+import { normalizeBrazilianPhone } from '@/lib/phone'
 import type { CampaignUser as CampaignUserDocument } from '@/payload-types'
 import {
   canCreateCampaignUserPhone,
@@ -11,7 +12,6 @@ import {
   canUpdateCampaignUserPhone,
 } from '@/utilities/campaignAccess'
 import { buildCampaignPasswordResetUrl } from '@/utilities/campaignPasswordReset'
-import { normalizeBrazilianPhone } from '@/lib/phone'
 import {
   APIError,
   type CollectionAfterReadHook,

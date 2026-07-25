@@ -5,10 +5,7 @@ export const ELECTION_YEAR_2018 = 2018 as const
 export const ELECTION_YEAR_2022 = 2022 as const
 
 /** Years loaded for prior-cycle comparison before 2022 (detail baseline query). */
-const HISTORICAL_PRIOR_SERIES_YEARS = [
-  ELECTION_YEAR_2014,
-  ELECTION_YEAR_2018,
-] as const
+const HISTORICAL_PRIOR_SERIES_YEARS = [ELECTION_YEAR_2014, ELECTION_YEAR_2018] as const
 
 /** Years shown in the federal candidate vote series (E2). */
 export const HISTORICAL_SERIES_YEARS = [
@@ -229,8 +226,12 @@ const EMPTY_WINNER: TallyWinner = {
   winnerParty: null,
 }
 
-export const winnerKey = (cityCode: string, zoneNumber: number, office: ElectionOffice, turn: ElectionTurn) =>
-  `${cityCode}|${zoneNumber}|${office}|${turn}`
+export const winnerKey = (
+  cityCode: string,
+  zoneNumber: number,
+  office: ElectionOffice,
+  turn: ElectionTurn,
+) => `${cityCode}|${zoneNumber}|${office}|${turn}`
 
 /**
  * Compute the local winner (highest nominal votes) for each city+zone+office+turn.

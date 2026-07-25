@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import { CopyIcon, MessageCircleIcon } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { Alert, AlertDescription } from '@/components/ui/Alert'

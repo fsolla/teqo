@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
 import { ChevronsUpDownIcon } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -76,7 +76,8 @@ export const AsyncSearchCombobox = ({
     const timeout = window.setTimeout(() => {
       setLoading(true)
       setFailed(false)
-      void searchRef.current(query.trim())
+      void searchRef
+        .current(query.trim())
         .then((nextOptions) => {
           if (requestId.current !== currentRequestId) return
           setOptions(nextOptions)

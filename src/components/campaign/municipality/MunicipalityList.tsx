@@ -1,8 +1,6 @@
 import { CircleAlertIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 
-import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
-import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import {
   MissingAdvisorBadge,
   MunicipalityAdvisorAvatarStack,
@@ -12,6 +10,8 @@ import { MunicipalityListExpectedVotesControl } from '@/components/campaign/muni
 import { MunicipalityListGoalCoverageCell } from '@/components/campaign/municipality/MunicipalityListGoalCoverageCell'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import { MunicipalitySortableHead } from '@/components/campaign/municipality/MunicipalitySortableHead'
+import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
+import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import { Badge } from '@/components/ui/Badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
@@ -25,6 +25,7 @@ import {
 import { formatElectionNumber } from '@/lib/electionFormat'
 import { formatMunicipalityVoteRank, formatMunicipalityVoteShare } from '@/lib/municipalityVoteRank'
 import { cn } from '@/lib/utils'
+import { DEFAULT_VOTE_ESTIMATE_SCENARIO, voteEstimateScenarioLabels } from '@/lib/voteEstimate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
   formatMunicipalityConcentrationHint,
@@ -53,10 +54,6 @@ import type {
   MunicipalityAdvisorSummary,
   MunicipalityListViewModel,
 } from '@/utilities/municipalityViewModels'
-import {
-  DEFAULT_VOTE_ESTIMATE_SCENARIO,
-  voteEstimateScenarioLabels,
-} from '@/lib/voteEstimate'
 import { toMunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')

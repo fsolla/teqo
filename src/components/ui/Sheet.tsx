@@ -1,10 +1,10 @@
 'use client'
 
-import * as React from 'react'
 import { Dialog as SheetPrimitive } from 'radix-ui'
+import * as React from 'react'
 
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { XIcon } from 'lucide-react'
 
 const Sheet = ({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) => (
@@ -86,13 +86,4 @@ const SheetDescription = ({
   />
 )
 
-export {
-  Sheet,
-  
-  
-  SheetContent,
-  SheetHeader,
-  
-  SheetTitle,
-  SheetDescription,
-}
+export { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle }

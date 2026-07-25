@@ -19,8 +19,7 @@ export type ResolveRevalidateTagResult =
   | { ok: true; tag: AllowedRevalidateTag }
   | { ok: false; error: string }
 
-const isAllowedRevalidateTag = (tag: string): tag is AllowedRevalidateTag =>
-  allowedTagSet.has(tag)
+const isAllowedRevalidateTag = (tag: string): tag is AllowedRevalidateTag => allowedTagSet.has(tag)
 
 export const resolveRevalidateTag = (
   queryTag: string | null | undefined,

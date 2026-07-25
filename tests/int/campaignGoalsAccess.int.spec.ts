@@ -65,25 +65,22 @@ describe('campaignGoals global access', () => {
     ).rejects.toThrow(/permissão|not allowed/i)
   })
 
-  it.each(['coordinator', 'candidate'] as const)(
-    'lets a %s read and write',
-    async (role) => {
-      const fixtures = campaignFixtures()
-      const staff = await fixtures.createCampaignUser(role)
+  it.each(['coordinator', 'candidate'] as const)('lets a %s read and write', async (role) => {
+    const fixtures = campaignFixtures()
+    const staff = await fixtures.createCampaignUser(role)
 
-      const updated = await payload.updateGlobal({
-        slug: 'campaignGoals',
-        data: { stateGoal: 155_000, margin: 5 },
-        user: staff,
-        overrideAccess: false,
-      })
-      expect(updated.stateGoal).toBe(155_000)
+    const updated = await payload.updateGlobal({
+      slug: 'campaignGoals',
+      data: { stateGoal: 155_000, margin: 5 },
+      user: staff,
+      overrideAccess: false,
+    })
+    expect(updated.stateGoal).toBe(155_000)
 
-      await expect(
-        payload.findGlobal({ slug: 'campaignGoals', user: staff, overrideAccess: false }),
-      ).resolves.toMatchObject({ stateGoal: 155_000, margin: 5 })
-    },
-  )
+    await expect(
+      payload.findGlobal({ slug: 'campaignGoals', user: staff, overrideAccess: false }),
+    ).resolves.toMatchObject({ stateGoal: 155_000, margin: 5 })
+  })
 
   it('lets a payload admin read and write', async () => {
     const fixtures = campaignFixtures()

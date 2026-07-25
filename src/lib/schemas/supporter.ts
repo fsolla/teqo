@@ -95,4 +95,3 @@ export const leaderSupporterCreateSchema = z.object({
 export const supporterRemoveSchema = z.object({
   id: positiveRelationshipId,
 })
-

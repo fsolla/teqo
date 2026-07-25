@@ -32,7 +32,9 @@ describe('parseActionPlanListParams', () => {
     expect(parseActionPlanListParams({ tab: 'todos', status: 'realizado' }).status).toBe(
       'realizado',
     )
-    expect(parseActionPlanListParams({ tab: 'todos', status: 'inexistente' }).status).toBeUndefined()
+    expect(
+      parseActionPlanListParams({ tab: 'todos', status: 'inexistente' }).status,
+    ).toBeUndefined()
   })
 
   it('validates kind and municipality', () => {

@@ -1,6 +1,7 @@
 import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
+import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
 import {
   canCreateLeadership,
   canDeleteLeadership,
@@ -10,7 +11,6 @@ import {
   canReadLeadership,
   canSetAdministrativeLeadershipField,
 } from '@/utilities/campaignAccess'
-import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
 import { relationshipId } from '@/utilities/relationship'
 
 const requireAtLeastOneMunicipality: CollectionBeforeValidateHook = ({

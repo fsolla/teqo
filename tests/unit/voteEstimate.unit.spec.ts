@@ -7,7 +7,11 @@ import {
   normalizeVoteEstimateOnSave,
   resolveMunicipalityStaffVoteTotalForScenario,
 } from '@/lib/voteEstimate'
-import { createEmptyMunicipalityPledgeAggregate, resolveMunicipalityStaffVoteTotal, rollupMunicipalityStaffVotes } from '@/utilities/votePledgeViews'
+import {
+  createEmptyMunicipalityPledgeAggregate,
+  resolveMunicipalityStaffVoteTotal,
+  rollupMunicipalityStaffVotes,
+} from '@/utilities/votePledgeViews'
 
 describe('getVoteEstimateOrderViolation', () => {
   it('returns null when pessimistic ≤ central ≤ optimistic', () => {

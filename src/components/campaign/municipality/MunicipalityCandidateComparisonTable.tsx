@@ -13,7 +13,11 @@ import type { CandidateComparisonRow } from '@/utilities/municipalityCandidateCo
 const voteFormatter = new Intl.NumberFormat('pt-BR')
 
 /** Candidates × years vote table for one municipality — the coordination's analysis tool. */
-export const MunicipalityCandidateComparisonTable = ({ rows }: { rows: CandidateComparisonRow[] }) => (
+export const MunicipalityCandidateComparisonTable = ({
+  rows,
+}: {
+  rows: CandidateComparisonRow[]
+}) => (
   <div className="overflow-hidden rounded-xl border">
     <Table>
       <TableHeader>

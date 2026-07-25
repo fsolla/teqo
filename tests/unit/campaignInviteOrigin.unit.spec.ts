@@ -19,9 +19,7 @@ describe('campaign invite origin policy', () => {
     'https://2130706433',
     'https://0x7f000001',
   ])('rejects the production IP literal %s', (configuredURL) => {
-    expect(() =>
-      getCampaignInviteBaseURL({ environment: 'production', configuredURL }),
-    ).toThrow()
+    expect(() => getCampaignInviteBaseURL({ environment: 'production', configuredURL })).toThrow()
   })
 
   it.each([

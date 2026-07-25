@@ -3,25 +3,22 @@ import Link from 'next/link'
 
 import type { ReactNode } from 'react'
 
+import { RecentlyVisitedCard } from '@/components/campaign/dashboard/RecentlyVisitedCard'
 import { CampaignMetricStrip } from '@/components/campaign/shared/CampaignMetricStrip'
 import {
   CampaignPageShell,
   campaignPrioritySurfaceClassName,
 } from '@/components/campaign/shell/CampaignPageShell'
-import { RecentlyVisitedCard } from '@/components/campaign/dashboard/RecentlyVisitedCard'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { formatElectionNumber } from '@/lib/electionFormat'
+import { formatVoteEstimateEndpointsLabel, voteEstimateScenarioLabels } from '@/lib/voteEstimate'
 import type { StaffDashboardView } from '@/utilities/campaignDashboardData'
 import {
   formatGoalCoverageDeficitLabel,
   formatGoalCoverageRatioLabel,
   goalCoverageProgressPercent,
 } from '@/utilities/goalCoverage'
-import {
-  formatVoteEstimateEndpointsLabel,
-  voteEstimateScenarioLabels,
-} from '@/lib/voteEstimate'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',

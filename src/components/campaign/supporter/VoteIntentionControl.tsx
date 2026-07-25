@@ -7,12 +7,7 @@ import type { SupporterVoteIntentionFormState } from '@/app/(campaign)/campanha/
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldLabel,
-} from '@/components/ui/field'
+import { Field, FieldContent, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/Spinner'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'

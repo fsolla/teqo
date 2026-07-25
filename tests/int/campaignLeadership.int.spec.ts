@@ -31,7 +31,8 @@ const campaignFixtures = installCampaignFixtures({
 
 const DUPLICATE_LEADERSHIP_MESSAGE =
   'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novos municípios.'
-const OUT_OF_SCOPE_MUNICIPALITY_MESSAGE = 'Você só pode vincular lideranças aos municípios que assessora.'
+const OUT_OF_SCOPE_MUNICIPALITY_MESSAGE =
+  'Você só pode vincular lideranças aos municípios que assessora.'
 
 describe('campaign leadership domain', () => {
   beforeAll(async () => {

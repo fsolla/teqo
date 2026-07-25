@@ -1,4 +1,3 @@
-import { latestIsoTimestamp } from '@/utilities/campaignTime'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   effectivePledgeVotesForScenario,
@@ -9,6 +8,7 @@ import {
   type VoteEstimateScenarioFields,
   type VoteEstimateScenarioViewModel,
 } from '@/lib/voteEstimate'
+import { latestIsoTimestamp } from '@/utilities/campaignTime'
 
 /**
  * Pledge aggregation VIEWS — pure math and view models, client-safe (the

@@ -40,9 +40,9 @@ describe('Bahia municipality name → IBGE code mapping', () => {
   })
 
   it('is a bijection with the canonical bahiaMunicipalities set', () => {
-    expect(Object.keys(bahiaMunicipalityCodes).sort((left, right) => left.localeCompare(right, 'pt-BR'))).toEqual(
-      [...bahiaMunicipalities].sort((left, right) => left.localeCompare(right, 'pt-BR')),
-    )
+    expect(
+      Object.keys(bahiaMunicipalityCodes).sort((left, right) => left.localeCompare(right, 'pt-BR')),
+    ).toEqual([...bahiaMunicipalities].sort((left, right) => left.localeCompare(right, 'pt-BR')))
   })
 
   it('matches the independently downloaded official municipality→code evidence', () => {

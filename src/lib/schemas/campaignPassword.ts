@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import type { RefinementCtx } from 'zod'
+import { z } from 'zod'
 
 export const CAMPAIGN_PASSWORD_RESET_TOKEN_MIN_LENGTH = 20
 

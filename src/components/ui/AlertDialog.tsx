@@ -1,7 +1,7 @@
 'use client'
 
-import * as React from 'react'
 import { AlertDialog as AlertDialogPrimitive } from 'radix-ui'
+import * as React from 'react'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -14,9 +14,9 @@ export const AlertDialogTrigger = (
   props: React.ComponentProps<typeof AlertDialogPrimitive.Trigger>,
 ) => <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
 
-const AlertDialogPortal = (
-  props: React.ComponentProps<typeof AlertDialogPrimitive.Portal>,
-) => <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
+const AlertDialogPortal = (props: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) => (
+  <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
+)
 
 const AlertDialogOverlay = ({
   className,

@@ -1,8 +1,8 @@
 'use client'
 
-import * as React from 'react'
-import { Dialog as DialogPrimitive } from 'radix-ui'
 import { XIcon } from 'lucide-react'
+import { Dialog as DialogPrimitive } from 'radix-ui'
+import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -78,10 +78,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
-function DialogTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Title>) {
+function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
@@ -104,15 +101,4 @@ function DialogDescription({
   )
 }
 
-export {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  
-  DialogHeader,
-  
-  
-  DialogTitle,
-  
-}
+export { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle }

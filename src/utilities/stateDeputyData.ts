@@ -28,9 +28,7 @@ export type StateDeputyListState = {
   q?: string
 }
 
-export const parseStateDeputyListParams = (
-  searchParams: RawSearchParams,
-): StateDeputyListState => {
+export const parseStateDeputyListParams = (searchParams: RawSearchParams): StateDeputyListState => {
   const q = normalizedText(firstValue(searchParams.q))
   return {
     page: strictDecimalInteger(firstValue(searchParams.page)) ?? 1,

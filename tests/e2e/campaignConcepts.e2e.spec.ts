@@ -48,7 +48,9 @@ test.describe('Conceitos de inteligência', () => {
     await page.getByRole('link', { name: 'Como cada número é calculado' }).click()
 
     await expect(page).toHaveURL(/\/campanha\/conceitos$/)
-    await expect(page.getByRole('heading', { level: 1, name: 'Conceitos de inteligência' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Conceitos de inteligência' }),
+    ).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Cobertura da meta' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Teto do campo (projetado)' })).toBeVisible()
 

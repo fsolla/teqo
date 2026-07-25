@@ -342,7 +342,12 @@ export const AdvisorMunicipalityCell = ({
                   <span className="truncate">{chip.label}</span>
                 </Badge>
               ) : (
-                <Badge key={chip.key} variant="secondary" className="max-w-full font-normal" asChild>
+                <Badge
+                  key={chip.key}
+                  variant="secondary"
+                  className="max-w-full font-normal"
+                  asChild
+                >
                   <Link
                     href={`/campanha/municipios/${chip.slug}`}
                     data-portfolio-chip
@@ -363,10 +368,7 @@ export const AdvisorMunicipalityCell = ({
   return (
     <div
       ref={rootRef}
-      className={cn(
-        CELL_WRAPPER_CLASS,
-        'outline-none hover:bg-muted/40 focus-within:bg-muted/40',
-      )}
+      className={cn(CELL_WRAPPER_CLASS, 'outline-none hover:bg-muted/40 focus-within:bg-muted/40')}
       onClick={(event) => {
         if ((event.target as HTMLElement).closest('[data-chip-remove]')) return
         inputRef.current?.focus()

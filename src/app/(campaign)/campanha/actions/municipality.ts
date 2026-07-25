@@ -12,6 +12,7 @@ import {
   type MunicipalityPoliticalTrendInput,
   type MunicipalityStrategyUpdateInput,
 } from '@/lib/schemas/municipality'
+import { normalizeVoteEstimateOnSave, toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { CampaignUser } from '@/payload-types'
 import {
   getCampaignActionContext,
@@ -21,10 +22,6 @@ import {
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
-import {
-  normalizeVoteEstimateOnSave,
-  toVoteEstimateScenarioViewModel,
-} from '@/lib/voteEstimate'
 
 const getFreshStaffActor = (
   payload: Payload,

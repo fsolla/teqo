@@ -27,10 +27,10 @@
  * writes only src/lib/electionAggregates/.
  */
 
+import { config as loadEnv } from 'dotenv'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { config as loadEnv } from 'dotenv'
 import { getPayload } from 'payload'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
@@ -42,9 +42,8 @@ const payloadConfig = (await import('../src/payload.config.ts')).default
 const { BASELINE_TICKET_2022, ELECTION_YEAR_2022, FEDERAL_DEPUTY_OFFICE, HISTORICAL_SERIES_YEARS } =
   await import('../src/lib/electionResults.ts')
 const { municipalityCatalog } = await import('../src/lib/municipalityCatalog.ts')
-const { municipalityElectionGeography } = await import(
-  '../src/utilities/municipalityElectionGeography.ts'
-)
+const { municipalityElectionGeography } =
+  await import('../src/utilities/municipalityElectionGeography.ts')
 const {
   loadCampoFederalVotesByCityZone,
   loadCandidateVotesByCityZone,
@@ -84,7 +83,11 @@ for (const year of HISTORICAL_SERIES_YEARS) {
     loadCandidateVotesByCityZone(payload, cliReader, { year, candidateNumber }),
     loadValidVotesByCityZone(payload, cliReader, { year }),
     loadCampoFederalVotesByCityZone(payload, cliReader, { year }),
-    loadOfficeTallyByCityZone(payload, cliReader, { year, office: FEDERAL_DEPUTY_OFFICE, turn: '1' }),
+    loadOfficeTallyByCityZone(payload, cliReader, {
+      year,
+      office: FEDERAL_DEPUTY_OFFICE,
+      turn: '1',
+    }),
   ])
 
   if (candidateVotes.size === 0) {
@@ -119,8 +122,16 @@ for (const year of HISTORICAL_SERIES_YEARS) {
 // 2022-only: majoritarian (presidente/governador #13) votes + tally, used for
 // "teto do campo" and roll-off — no majoritária seeded for 2014/2018 (E8 audit).
 const majoritarianOffices = [
-  { key: 'president', office: 'presidente', candidateNumber: BASELINE_TICKET_2022.president.candidateNumber },
-  { key: 'governor', office: 'governador', candidateNumber: BASELINE_TICKET_2022.governor.candidateNumber },
+  {
+    key: 'president',
+    office: 'presidente',
+    candidateNumber: BASELINE_TICKET_2022.president.candidateNumber,
+  },
+  {
+    key: 'governor',
+    office: 'governador',
+    candidateNumber: BASELINE_TICKET_2022.governor.candidateNumber,
+  },
 ]
 
 const majoritarianByOffice = {}

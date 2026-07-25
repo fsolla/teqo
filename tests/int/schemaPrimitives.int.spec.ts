@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest'
 import {
   brazilianMobile,
   nullablePersistedEmail,
+  optionalPersistedEmail,
   positiveRelationshipId,
   trimmedNullableText,
   trimmedOptionalText,
-  optionalPersistedEmail,
 } from '@/lib/schemas/primitives'
 
 describe('persisted schema primitives', () => {

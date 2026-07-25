@@ -56,8 +56,7 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
     id: 'votos-validos-projetados',
     categoryID: 'base',
     title: 'Votos válidos projetados',
-    oneLiner:
-      'Quantos votos válidos a disputa de deputado federal deve ter no município em 2026.',
+    oneLiner: 'Quantos votos válidos a disputa de deputado federal deve ter no município em 2026.',
     formula:
       'válidos projetados = (válidos 2014 + válidos 2018 + 2 × válidos 2022) ÷ 4, sobre o 1º turno de deputado federal.',
     example:
@@ -79,15 +78,13 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
       'Teto de 12.000 votos em 2022 num município que projeta crescer 5% de válidos vira um teto projetado de 12.600.',
     whyItMatters:
       'A disputa majoritária mostra o tamanho real do campo no município — muito maior do que a eleição fragmentada de deputado federal consegue revelar. É o denominador da captura e o peso usado para decompor a meta estadual. Usa só 2022: a majoritária de 2014 e 2018 já foi importada, mas ainda não entra nestas contas.',
-    whereItAppears:
-      'Card "Conta da cadeira", no detalhe do município ("Teto do campo (proj.)").',
+    whereItAppears: 'Card "Conta da cadeira", no detalhe do município ("Teto do campo (proj.)").',
   },
   {
     id: 'captura',
     categoryID: 'diagnostico',
     title: 'Captura (2022)',
-    oneLiner:
-      'Quanto do teto do campo o Jorge Solla efetivamente conquistou no município em 2022.',
+    oneLiner: 'Quanto do teto do campo o Jorge Solla efetivamente conquistou no município em 2022.',
     formula: 'captura = votos de Solla para deputado federal em 2022 ÷ teto do campo de 2022.',
     example: '1.200 votos de Solla sobre um teto de 12.000 = 10% de captura.',
     whyItMatters:
@@ -140,7 +137,8 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
       'Quanto da meta já está coberto por compromissos de lideranças — não por expectativa da mesa.',
     formula:
       'cobertura = comprometido ÷ meta. Comprometido = soma dos votos das lideranças do município (estimativa do cenário quando existe, senão o número declarado pela liderança). Déficit = meta − comprometido.',
-    example: 'Meta de 3.000 com 1.200 votos comprometidos em lideranças = 40% de cobertura, déficit de 1.800.',
+    example:
+      'Meta de 3.000 com 1.200 votos comprometidos em lideranças = 40% de cobertura, déficit de 1.800.',
     whyItMatters:
       'É a diferença entre querer e ter: a expectativa da mesa define a meta, mas nunca conta como compromisso — se contasse, todo município com estimativa preenchida apareceria coberto sem uma única liderança por trás. O déficit descoberto é o que ordena onde a campanha precisa de mais rede.',
     whereItAppears:

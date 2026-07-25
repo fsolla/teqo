@@ -60,7 +60,10 @@ const buildOrganizationListSearchParams = (
 export const buildOrganizationListHref = (state: OrganizationListState, page: number): string =>
   buildListHref(state, buildOrganizationListSearchParams, '/campanha/organizacoes', page)
 
-const municipalityNamesByIds = async (payload: Payload, ids: number[]): Promise<Map<number, string>> => {
+const municipalityNamesByIds = async (
+  payload: Payload,
+  ids: number[],
+): Promise<Map<number, string>> => {
   if (ids.length === 0) return new Map()
   const result = await payload.find({
     collection: 'municipality',

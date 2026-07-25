@@ -172,9 +172,9 @@ describe('campaign advisor management (B19)', () => {
       municipalityId: municipality.id,
       assigned: true,
     })
-    expect(
-      again.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id)),
-    ).toEqual([advisor.id])
+    expect(again.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id))).toEqual([
+      advisor.id,
+    ])
 
     await setAdvisorMunicipalityMembershipRecord(payload, coordinator, {
       advisorId: advisor.id,

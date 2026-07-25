@@ -6,10 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
-import {
-  loadMunicipalityGeometryModule,
-  loadTerritoryGeometryModule,
-} from '@/lib/bahiaGeometries'
+import { loadMunicipalityGeometryModule, loadTerritoryGeometryModule } from '@/lib/bahiaGeometries'
 import { bahiaMunicipalityCodes } from '@/lib/bahiaMunicipalityCodes'
 import { bahiaIdentityTerritoryRecords } from '@/lib/bahiaTerritories'
 

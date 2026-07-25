@@ -2,14 +2,14 @@ import config from '@payload-config'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { AdvisorsTable } from '@/components/campaign/advisor/AdvisorsTable'
+import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
-import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
-import { AdvisorsTable } from '@/components/campaign/advisor/AdvisorsTable'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import {
   advisorListHrefForPage,
   loadAdvisorListPageData,

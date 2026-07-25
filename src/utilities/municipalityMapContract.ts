@@ -1,6 +1,6 @@
 import { HISTORICAL_SERIES_YEARS } from '@/lib/electionResults'
-import type { MunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
+import type { MunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
 
 /**
  * Client-safe contract of the municipality map: the bundle shape the server

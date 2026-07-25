@@ -32,7 +32,10 @@ import {
 } from '@/utilities/municipalityUpdatePageData'
 import type { MunicipalityDetailViewModel } from '@/utilities/municipalityViewModels'
 import { loadMunicipalityPledges } from '@/utilities/votePledgeData'
-import { aggregateMunicipalityPledgesFromRows, type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
+import {
+  aggregateMunicipalityPledgesFromRows,
+  type MunicipalityPledgeAggregate,
+} from '@/utilities/votePledgeViews'
 
 /**
  * E16 dossiê — section caps. The dossier is a 1–2 page pre-visit read, not a

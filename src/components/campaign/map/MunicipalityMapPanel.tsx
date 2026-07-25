@@ -17,6 +17,11 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { computeChoroplethMax } from '@/lib/bahiaMapStyle'
 import { computeValidVoteShares, divergingGradientCss } from '@/lib/choroplethColorScale'
 import { formatElectionNumber } from '@/lib/electionFormat'
+import {
+  DEFAULT_VOTE_ESTIMATE_SCENARIO,
+  voteEstimateScenarioLabels,
+  type VoteEstimateScenario,
+} from '@/lib/voteEstimate'
 import type { FederalCandidateOption } from '@/utilities/electionCandidateOptions'
 import {
   MUNICIPALITY_MAP_SCALE_MODES,
@@ -28,11 +33,6 @@ import {
   type MunicipalityMapYear,
 } from '@/utilities/municipalityMapContract'
 import { resolveMunicipalityMapNavigation } from '@/utilities/municipalityMapNavigation'
-import {
-  DEFAULT_VOTE_ESTIMATE_SCENARIO,
-  voteEstimateScenarioLabels,
-  type VoteEstimateScenario,
-} from '@/lib/voteEstimate'
 
 type MunicipalityMapPanelProps = {
   bundle: MunicipalityMapBundle

@@ -296,7 +296,12 @@ describe('buildMunicipalityFilterOptionHref (B16+ fast path)', () => {
     param: MunicipalityMultiFilterParam
     value: string
   }> = [
-    { name: 'adds a slug', state: parseMunicipalityListParams({}), param: 'slug', value: firstSlug! },
+    {
+      name: 'adds a slug',
+      state: parseMunicipalityListParams({}),
+      param: 'slug',
+      value: firstSlug!,
+    },
     {
       name: 'removes a selected slug',
       state: parseMunicipalityListParams({ slug: [firstSlug!, secondSlug!] }),

@@ -3,18 +3,21 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import type { MunicipalityVoteRankEntry } from '@/lib/municipalityVoteRank'
-import type { CampaignUser, Municipality } from '@/payload-types'
-import { eligibleCampaignStaffWhere } from '@/utilities/campaignAccess'
-import { createEmptyGoalCoverageByScenario, type MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
-import { type PoliticalTrendStatus } from '@/utilities/municipalityLabels'
-import { resolveMunicipalityLastSignalAt } from '@/utilities/municipalitySignal'
-import { relationshipId } from '@/utilities/relationship'
-import type { StateDeputySummary } from '@/utilities/stateDeputyData'
 import {
   toVoteEstimateScenarioViewModel,
   type VoteEstimateScenario,
   type VoteEstimateScenarioViewModel,
 } from '@/lib/voteEstimate'
+import type { CampaignUser, Municipality } from '@/payload-types'
+import { eligibleCampaignStaffWhere } from '@/utilities/campaignAccess'
+import {
+  createEmptyGoalCoverageByScenario,
+  type MunicipalityGoalCoverage,
+} from '@/utilities/goalCoverage'
+import { type PoliticalTrendStatus } from '@/utilities/municipalityLabels'
+import { resolveMunicipalityLastSignalAt } from '@/utilities/municipalitySignal'
+import { relationshipId } from '@/utilities/relationship'
+import type { StateDeputySummary } from '@/utilities/stateDeputyData'
 import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
@@ -84,7 +87,9 @@ export const toMunicipalityListViewModel = (
   region: municipality.region,
   ibgeCode: municipality.ibgeCode,
   zoneNumber: municipality.zoneNumber ?? null,
-  advisorIDs: (municipality.advisors ?? []).map(relationshipId).filter((id): id is number => id !== null),
+  advisorIDs: (municipality.advisors ?? [])
+    .map(relationshipId)
+    .filter((id): id is number => id !== null),
   priority: municipality.priority === 'alta' ? 'alta' : 'normal',
   lastUpdateAt: municipality.lastUpdateAt ?? null,
   lastSignalAt: resolveMunicipalityLastSignalAt(
@@ -157,7 +162,9 @@ export const toMunicipalityDetailViewModel = (
   tseCityCode: municipality.tseCityCode,
   zoneNumber: municipality.zoneNumber ?? null,
   tseZones,
-  advisorIDs: (municipality.advisors ?? []).map(relationshipId).filter((id): id is number => id !== null),
+  advisorIDs: (municipality.advisors ?? [])
+    .map(relationshipId)
+    .filter((id): id is number => id !== null),
   lastUpdateAt: municipality.lastUpdateAt ?? null,
   strategy:
     role === 'leader'

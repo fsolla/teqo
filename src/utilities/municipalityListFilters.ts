@@ -6,19 +6,19 @@
 import { isBahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import {
-  buildMunicipalityListHref,
-  municipalityListStateToRawParams,
-  parseMunicipalityListParams,
-  serializeCanonicalMunicipalityListSearchParams,
-  type MunicipalityListState,
-} from '@/utilities/municipalityListUrl'
-import {
   municipalityKindLabels,
   municipalityListCoverageLabels,
   municipalityPriorityLabels,
   politicalTrendLabels,
   type PoliticalTrendStatus,
 } from '@/utilities/municipalityLabels'
+import {
+  buildMunicipalityListHref,
+  municipalityListStateToRawParams,
+  parseMunicipalityListParams,
+  serializeCanonicalMunicipalityListSearchParams,
+  type MunicipalityListState,
+} from '@/utilities/municipalityListUrl'
 
 /** Column-header filter affordances (B16+). `name` = Município (priority + slugs). */
 export type MunicipalityFilterParam = 'name' | 'region' | 'kind' | 'coverage' | 'trend' | 'advisor'
@@ -288,9 +288,7 @@ export const formatMunicipalityActiveFiltersSummary = (
   if (state.priority) parts.push(municipalityPriorityLabels.alta)
   if (state.slugs?.length) {
     parts.push(
-      firstNamesLabel(
-        state.slugs.map((slug) => getMunicipalityCatalogEntry(slug)?.name ?? slug),
-      ),
+      firstNamesLabel(state.slugs.map((slug) => getMunicipalityCatalogEntry(slug)?.name ?? slug)),
     )
   }
   if (state.regions?.length) parts.push(firstNamesLabel([...state.regions]))

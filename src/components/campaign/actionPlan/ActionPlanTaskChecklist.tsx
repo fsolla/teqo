@@ -5,8 +5,8 @@ import { toast } from 'sonner'
 
 import { toggleActionPlanTaskAction } from '@/app/(campaign)/campanha/(app)/planos/[slug]/taskActions'
 import { Checkbox } from '@/components/ui/Checkbox'
-import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 import type { ActionPlanTaskViewModel } from '@/utilities/actionPlanViewModels'
+import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 
 type ActionPlanTaskChecklistProps = {
   planId: number

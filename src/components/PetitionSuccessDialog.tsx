@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { WhatsAppIcon } from '@/components/socialIcons'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -9,8 +9,8 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { WhatsAppIcon } from '@/components/socialIcons'
 import { XIcon } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface PetitionSuccessDialogProps {
   open: boolean

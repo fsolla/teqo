@@ -7,8 +7,8 @@ import { createSupporterFormAction } from '@/app/(campaign)/campanha/(app)/apoia
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { SupporterForm } from '@/components/campaign/supporter/SupporterForm'
 import { Button } from '@/components/ui/button'
-import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { loadSupporterCreatePageData } from '@/utilities/supporterPageData'
 import { canAccessSupporterArea } from '@/utilities/supporterUi'
 

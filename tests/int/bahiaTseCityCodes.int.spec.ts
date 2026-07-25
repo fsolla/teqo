@@ -5,12 +5,12 @@ import { readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
+import { bahiaMunicipalities } from '@/lib/bahiaTerritories'
 import {
   bahiaTseCityCodes,
   municipalityForTseCityCode,
   tseCityCodeForMunicipality,
 } from '@/lib/bahiaTseCityCodes'
-import { bahiaMunicipalities } from '@/lib/bahiaTerritories'
 
 type OfficialEvidence = {
   municipalityCount: number
@@ -19,10 +19,7 @@ type OfficialEvidence = {
 }
 
 const officialEvidence = JSON.parse(
-  readFileSync(
-    new URL('../fixtures/bahia-tse-city-codes.official.json', import.meta.url),
-    'utf8',
-  ),
+  readFileSync(new URL('../fixtures/bahia-tse-city-codes.official.json', import.meta.url), 'utf8'),
 ) as OfficialEvidence
 
 describe('Bahia municipality name → TSE city code mapping', () => {
@@ -40,9 +37,9 @@ describe('Bahia municipality name → TSE city code mapping', () => {
   })
 
   it('is a bijection with the canonical bahiaMunicipalities set', () => {
-    expect(Object.keys(bahiaTseCityCodes).sort((left, right) => left.localeCompare(right, 'pt-BR'))).toEqual(
-      [...bahiaMunicipalities].sort((left, right) => left.localeCompare(right, 'pt-BR')),
-    )
+    expect(
+      Object.keys(bahiaTseCityCodes).sort((left, right) => left.localeCompare(right, 'pt-BR')),
+    ).toEqual([...bahiaMunicipalities].sort((left, right) => left.localeCompare(right, 'pt-BR')))
   })
 
   it('matches the independently downloaded official municipality→code evidence', () => {

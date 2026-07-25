@@ -34,8 +34,7 @@ export const createDetailTabHelpers = <Tab extends string>({
   /** Params that force a tab regardless of `?tab=` (e.g. `?newUpdate=1`). */
   forcedTab?: (searchParams: DetailTabSearchParams) => Tab | null
 }) => {
-  const isAllowedTab = (value: string | undefined): value is Tab =>
-    tabs.includes(value as Tab)
+  const isAllowedTab = (value: string | undefined): value is Tab => tabs.includes(value as Tab)
 
   const resolveTab = (searchParams: DetailTabSearchParams): Tab => {
     const forced = forcedTab?.(searchParams)
@@ -45,11 +44,7 @@ export const createDetailTabHelpers = <Tab extends string>({
     return isAllowedTab(requestedTab) ? requestedTab : defaultTab
   }
 
-  const buildTabHref = (
-    slug: string,
-    tab: Tab,
-    searchParams: DetailTabSearchParams,
-  ): string => {
+  const buildTabHref = (slug: string, tab: Tab, searchParams: DetailTabSearchParams): string => {
     const params = new URLSearchParams()
     for (const key of tabQueryKeys[tab]) {
       appendQueryValue(params, key, searchParams[key])

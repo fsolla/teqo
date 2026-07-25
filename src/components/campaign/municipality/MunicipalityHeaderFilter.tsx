@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/Checkbox'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import { cn } from '@/lib/utils'
+import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 import { municipalityPriorityLabels } from '@/utilities/municipalityLabels'
 import {
   applyMunicipalityKindFilter,
@@ -29,7 +30,6 @@ import {
   type MunicipalityMultiFilterParam,
 } from '@/utilities/municipalityListFilters'
 import { type MunicipalityListState } from '@/utilities/municipalityListUrl'
-import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 
 type MunicipalityHeaderFilterProps = {
   state: MunicipalityListState

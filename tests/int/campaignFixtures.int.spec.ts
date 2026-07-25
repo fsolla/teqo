@@ -1,10 +1,10 @@
 // @vitest-environment node
 
-import { beforeAll, describe, expect, it } from 'vitest'
 import { getPayload, type Payload } from 'payload'
+import { beforeAll, describe, expect, it } from 'vitest'
 
-import config from '@/payload.config'
 import type { Consent } from '@/payload-types'
+import config from '@/payload.config'
 import { createCampaignFixtures, withCampaignFixtures } from '../helpers/campaignFixtures'
 import { withInviteConsent, withMutableConsentFixture } from '../helpers/testDatabaseLease'
 
@@ -163,7 +163,11 @@ describe('campaign integration fixtures', () => {
     expect(await exists('organization', organizationID)).toBe(false)
     expect(await exists('municipalityUpdate', updateID)).toBe(false)
 
-    const municipality = await payload.findByID({ collection: 'municipality', id: municipalityID, depth: 0 })
+    const municipality = await payload.findByID({
+      collection: 'municipality',
+      id: municipalityID,
+      depth: 0,
+    })
     expect(municipality.advisors ?? []).toEqual([])
     expect(municipality.priority).toBe('normal')
     expect(municipality.expectedVotes).toMatchObject({
@@ -384,7 +388,11 @@ describe('campaign integration fixtures', () => {
     await fixtures.cleanup()
 
     await expect(fixtures.expectNoOwnedRows()).resolves.toBeUndefined()
-    const persistedMunicipality = await payload.findByID({ collection: 'municipality', id: municipality.id, depth: 0 })
+    const persistedMunicipality = await payload.findByID({
+      collection: 'municipality',
+      id: municipality.id,
+      depth: 0,
+    })
     expect(persistedMunicipality.advisors ?? []).toEqual([])
   })
 })
