@@ -1,11 +1,16 @@
 # B19 — Gerenciar assessores (`/campanha/assessores`)
 
-Status: rascunho
+Status: entregue em código (2026-07-24)
 Atualizado em: 2026-07-24
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Demais itens abertos, B19; superfície de coordenação)
 Impeccable: C — UI nova em `/campanha/assessores` (lista + novo + detalhe); sem design-ref
-Appetite: ~1,5–2 dias eng; lista + create + detalhe/edição in-context + gate de nav; sem migration; alinhamento de access `candidate`↔`coordinator` nos helpers de `campaignUser`
+Appetite: ~1,5–2 dias eng; lista + create + detalhe/edição in-context + gate de nav; sem migration; alinhamento de access `candidate`↔`coordinator` nos helpers de `campaignUser` **e** na atribuição `municipality.advisors`
 Responsável: —
+
+## Revisões
+
+- **2026-07-25 (edit-where-you-see na lista):** a tabela em `/campanha/assessores` passou a ser a superfície única — e-mail/celular/nome com auto-save com debounce; chips de municípios com remoção no X; busca inline por município / território de identidade (chip agregado) / ZE (chips por município); WhatsApp por linha; “+ Novo assessor” cria linha no topo (sem `/novo` nem detalhe `[id]`, que só redirecionam). Batch `setAdvisorMunicipalitiesBatch` para TI/ZE. A carteira colapsa em 3 linhas com “Ver mais…” **como último item da terceira linha**: a célula mede o layout real (linhas de chips, largura do toggle e do input de busca) e corta a lista de chips, em vez de cortar por altura — a medição é reavaliada ao alternar edição, porque o chip removível é mais largo.
+- **2026-07-24 (implementação):** entregue. Auditoria pré-build corrigiu quatro defasagens: (1) atribuição de municípios alinhada a `isCampaignUnrestricted` nas três camadas (`canAssignMunicipalityAdvisors`, `assignMunicipalityAdvisorsRecord`, mensagem segura) — decisão de produto: Candidato designa igual ao CG; (2) coluna E-mail via leitura privilegiada (`overrideAccess: true` sem `user` após o gate de rota — e-mail completo, não só badge); (3) carteira do assessor com auto-save por município (delta + lock), não o Popover "Salvar" do B9; (4) `sendAdvisorPasswordReset` próprio (resultado honesto; bloqueia `@planilha.invalid`). `reloadUnrestrictedActor` adicionado. Rotas `/campanha/assessores`, `/novo`, `/[id]`; nav gated; testes int `campaignAdvisorManagement.int.spec.ts`.
 
 ## Design (Impeccable)
 
@@ -59,19 +64,20 @@ Pedido de produto (2026-07-24): página na vertical `/campanha` para gerenciar a
 ## Decisões travadas
 
 - **Visibilidade e escrita = `isCampaignUnrestricted` (coordinator + candidate).** Pedido explícito; alinha create já existente. **Rejeitado:** só coordinator (candidate ficaria cego no onboarding); staff inteiro vê a lista (assessor não gerencia pares — vazaria e-mails/carteiras); Payload `/admin` como UX principal (CG não entra).
-- **Alinhar access de update/phone de terceiros a unrestricted.** Hoje `canUpdateCampaignUser` / `canCreateCampaignUserPhone` / `canUpdateCampaignUserPhone` são coordinator-only — candidate criaria conta e não corrigiria e-mail. **Rejeitado:** deixar assimetria (página inútil para candidate); página “só leitura” para candidate.
+- **Alinhar access de update/phone **e** atribuição de municípios a unrestricted.** `canUpdateCampaignUser` / phone create-update / `canAssignMunicipalityAdvisors` / `assignMunicipalityAdvisorsRecord` passam a `isCampaignUnrestricted` (+ admin). **Rejeitado:** deixar assimetria (página inútil para candidate na carteira); página “só leitura” para candidate.
+- **E-mail visível na lista/detalhe para unrestricted.** Loader usa `overrideAccess: true` sem `user` após o gate (hook `removePrivateAuthFields` + field access self-only apagariam o e-mail). **Rejeitado:** só badge de status; ocultar e-mail (impede ativar placeholders E4R).
 - **Escopo = só papel `advisor`.** Create força `role: 'advisor'`; lista filtra esse role. Coordinator/candidate continuam fora desta UI. **Rejeitado:** “Equipe” multi-papel (explode IAM); promover assessor a coordinator nesta tela.
 - **URL `/campanha/assessores` + detalhe por `[id]`.** Português no segmento (padrão da vertical); id interno (sem slug em `campaignUser`). **Rejeitado:** `/campanha/usuarios` genérico; slug inventado.
 - **Sem delete na UI v1.** Evita órfãos e disputa com vínculos. Desativar = remover municípios + (futuro) flag — Adiado. **Rejeitado:** soft-delete/collection `archived` neste appetite; hard-delete com cascade silenciosa.
-- **Senha: nunca exibida; onboarding via forgot-password / e-mail.** Reusa Resend + `requestCampaignPasswordReset` (ou equivalente privilegiado unbound ao titular). Placeholder `@planilha.invalid` exige troca de e-mail antes do envio. **Rejeitado:** senha temporária na tela (vazamento em share/screenshot); SMS.
-- **Atribuição de municípios no detalhe do assessor (além de B9).** Edit where you see: quem olha a carteira do assessor ajusta ali; B9 continua no sentido município→assessores. **Rejeitado:** só links “vá à lista de municípios” (onboarding sofrível); segunda planilha full-grid.
-- **i18n e naming:** identificadores em inglês (`AdvisorList`, `loadAdvisorListPageData`, `createAdvisor`, `updateAdvisorMunicipalities`, `reloadUnrestrictedActor`); strings pt-BR (“Assessores”, “Novo assessor”, “Enviar link de senha”).
+- **Senha: nunca exibida; onboarding via forgot-password / e-mail.** Action própria `sendAdvisorPasswordReset` (não o forgot público anti-enumeração). Placeholder `@planilha.invalid` exige troca de e-mail antes do envio. **Rejeitado:** senha temporária na tela (vazamento em share/screenshot); SMS.
+- **Atribuição de municípios no detalhe do assessor (além de B9) com auto-save por delta.** Um município por toggle + advisory lock; B9 continua no sentido município→assessores. **Rejeitado:** só links “vá à lista de municípios”; segunda planilha full-grid; botão Salvar no Popover (anti-goal Auto-save).
+- **i18n e naming:** identificadores em inglês (`AdvisorList`, `loadAdvisorListPageData`, `createAdvisor`, `setAdvisorMunicipalityMembership`, `reloadUnrestrictedActor`); strings pt-BR (“Assessores”, “Novo assessor”, “Enviar link de senha”).
 
 ## Questões em aberto
 
-- **Nav: item no sidebar staff filtrado, ou só link a partir do Início/onboarding?** **Opções:** A) item “Assessores” no `staffNav` só se unrestricted | B) fora do nav (como Organizações hoje) + atalho no dashboard. **Recomendação:** **A** — onboarding precisa descobrir a superfície; bottom nav mobile **não** inclui (já no limite de 5; perfil/organizações também ficam de fora). _(assumido — validar no craft)_
-- **Create: celular obrigatório?** **Opções:** obrigatório | opcional. **Recomendação:** opcional — e-mail é o login staff; celular ajuda contato/WhatsApp (D3) mas seed já criou name-only.
-- **Atribuição em lote no create (municípios no mesmo form)?** **Opções:** create só conta → detalhe atribui | create com multi-select. **Recomendação:** create só conta (submit atômico curto); municípios no detalhe com auto-save — evita form monstro e falha parcial.
+- **Nav: item no sidebar staff filtrado, ou só link a partir do Início/onboarding?** **Resolvido (craft):** A — item “Assessores” no `staffNav` só se unrestricted; bottom nav mobile **não** inclui.
+- **Create: celular obrigatório?** **Resolvido:** opcional.
+- **Atribuição em lote no create (municípios no mesmo form)?** **Resolvido:** create só conta; municípios no detalhe com auto-save.
 
 ## Abordagem proposta
 

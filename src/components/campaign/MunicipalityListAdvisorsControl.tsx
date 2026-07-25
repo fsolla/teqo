@@ -68,7 +68,7 @@ export const MunicipalityListAdvisorsControl = ({
           <input type="hidden" name="municipalityId" value={municipalityID} />
           <input type="hidden" name="municipalitySlug" value={municipalitySlug} />
           <p className="text-sm text-muted-foreground">
-            O assessor vê e gerencia somente as Praças que administra.
+            O assessor vê e gerencia somente os municípios que administra.
           </p>
           <ul className="flex max-h-60 flex-col gap-1 overflow-y-auto">
             {options.map((option) => (

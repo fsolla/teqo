@@ -11,7 +11,6 @@ import type {
 } from '@/utilities/access/shared'
 import {
   getFreshCampaignUser,
-  isCampaignCoordinator,
   isCampaignLeader,
   isCampaignUnrestricted,
   isCampaignUser,
@@ -215,11 +214,11 @@ export const canUpdateMunicipality: Access = async ({ req }) => {
 
 export const canDeleteMunicipality: Access = ({ req }) => isPayloadAdmin(req.user)
 
-/** Advisor assignment is coordinator-only (server actions use overrideAccess). */
+/** Advisor assignment is unrestricted staff (coordinator + candidate; actions use overrideAccess). */
 export const canAssignMunicipalityAdvisors: FieldAccess = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
-  return isCampaignCoordinator(await getFreshCampaignUser(req))
+  return isCampaignUnrestricted(await getFreshCampaignUser(req))
 }
 
 export const canManageMunicipalityAdvisors: FieldAccess = ({ req }) => isPayloadAdmin(req.user)

@@ -1,0 +1,354 @@
+'use server'
+
+import { randomBytes } from 'node:crypto'
+
+import { revalidatePath } from 'next/cache'
+import type { Payload } from 'payload'
+
+import {
+  ADVISOR_EMAIL_CONFLICT_MESSAGE,
+  ADVISOR_UNRESTRICTED_MESSAGE,
+  PLACEHOLDER_RESET_MESSAGE,
+  advisorCreateSchema,
+  advisorMunicipalitiesBatchSchema,
+  advisorMunicipalityMembershipSchema,
+  advisorPasswordResetSchema,
+  advisorProfileUpdateSchema,
+  isPlanilhaPlaceholderEmail,
+  type AdvisorCreateInput,
+  type AdvisorMunicipalitiesBatchInput,
+  type AdvisorMunicipalityMembershipInput,
+  type AdvisorPasswordResetInput,
+  type AdvisorProfileUpdateInput,
+} from '@/lib/schemas/advisor'
+import { MAX_ADVISORS_PER_MUNICIPALITY } from '@/lib/schemas/municipality'
+import type { CampaignUser } from '@/payload-types'
+import {
+  getCampaignActionContext,
+  reloadUnrestrictedActor,
+} from '@/utilities/campaignActionContext'
+import {
+  assertCampaignEmailConfigured,
+  isCampaignEmailConfigured,
+} from '@/utilities/campaignPasswordReset'
+import { hookFilledCreateData } from '@/utilities/hookFilledData'
+import { revalidateMunicipalityListPaths } from '@/utilities/municipalityRevalidation'
+import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
+import { relationshipId } from '@/utilities/relationship'
+
+const revalidateAdvisorPaths = (advisorId?: number) => {
+  revalidatePath('/campanha/assessores', 'page')
+  if (advisorId !== undefined) {
+    revalidatePath(`/campanha/assessores/${advisorId}`, 'page')
+  }
+}
+
+type AdvisorAccount = {
+  id: number
+  name: string
+  email?: string | null
+  phone?: string | null
+  role: CampaignUser['role']
+}
+
+const assertTargetAdvisor = async (
+  payload: Payload,
+  advisorId: number,
+  actorId: number,
+): Promise<AdvisorAccount> => {
+  const target = await payload.findByID({
+    collection: 'campaignUser',
+    id: advisorId,
+    depth: 0,
+    select: { name: true, email: true, phone: true, role: true },
+    overrideAccess: true,
+  })
+
+  if (target.role !== 'advisor') {
+    throw new Error('Só é possível gerenciar contas com papel de Assessor nesta tela.')
+  }
+  if (String(target.id) === String(actorId)) {
+    throw new Error('Use Meu perfil para alterar a própria conta.')
+  }
+
+  return target
+}
+
+const translateUniqueEmailConflict = (error: unknown): never => {
+  const message = error instanceof Error ? error.message : String(error)
+  // Payload may surface the unique email collision as email, username, or a
+  // generic "field is invalid" ValidationError depending on auth config.
+  if (/email|username|duplicate key|unique/i.test(message)) {
+    throw new Error(ADVISOR_EMAIL_CONFLICT_MESSAGE)
+  }
+  throw error instanceof Error ? error : new Error(String(error))
+}
+
+/**
+ * Returns the next advisor-id list after applying one membership change, or
+ * `null` when the municipality is already in the desired state (no write
+ * needed). Shared by the single-toggle and batch (territory/ZE) mutations.
+ */
+const nextAdvisorIdsAfterMembership = (
+  currentAdvisorIDs: readonly number[],
+  advisorId: number,
+  assigned: boolean,
+): number[] | null => {
+  const alreadyAssigned = currentAdvisorIDs.includes(advisorId)
+  if (assigned === alreadyAssigned) return null
+
+  if (assigned) {
+    if (currentAdvisorIDs.length >= MAX_ADVISORS_PER_MUNICIPALITY) {
+      throw new Error(`Cada município aceita no máximo ${MAX_ADVISORS_PER_MUNICIPALITY} assessores.`)
+    }
+    return [...currentAdvisorIDs, advisorId]
+  }
+  return currentAdvisorIDs.filter((id) => id !== advisorId)
+}
+
+export const createAdvisorRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: AdvisorCreateInput,
+) => {
+  const data = advisorCreateSchema.parse(input)
+  const currentActor = await reloadUnrestrictedActor(payload, actor, ADVISOR_UNRESTRICTED_MESSAGE)
+
+  try {
+    const created = await payload.create({
+      collection: 'campaignUser',
+      data: hookFilledCreateData<'campaignUser'>({
+        name: data.name,
+        email: data.email,
+        role: 'advisor',
+        password: randomBytes(24).toString('base64url'),
+        ...(data.phone !== undefined ? { phone: data.phone } : {}),
+      }),
+      depth: 0,
+      user: currentActor,
+      overrideAccess: false,
+    })
+    return created
+  } catch (error) {
+    return translateUniqueEmailConflict(error)
+  }
+}
+
+export const createAdvisor = async (input: AdvisorCreateInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const created = await createAdvisorRecord(payload, actor, input)
+  revalidateAdvisorPaths()
+  return created
+}
+
+export const updateAdvisorProfileRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: AdvisorProfileUpdateInput,
+) => {
+  const { id, ...fields } = advisorProfileUpdateSchema.parse(input)
+  const currentActor = await reloadUnrestrictedActor(payload, actor, ADVISOR_UNRESTRICTED_MESSAGE)
+  await assertTargetAdvisor(payload, id, currentActor.id)
+
+  const data: {
+    name?: string
+    email?: string
+    phone?: string | null
+  } = {}
+  if (fields.name !== undefined) data.name = fields.name
+  if (fields.email !== undefined) data.email = fields.email
+  if (fields.phone !== undefined) data.phone = fields.phone
+
+  try {
+    const updated = await payload.update({
+      collection: 'campaignUser',
+      id,
+      data,
+      depth: 0,
+      user: currentActor,
+      overrideAccess: false,
+    })
+    return updated
+  } catch (error) {
+    return translateUniqueEmailConflict(error)
+  }
+}
+
+export const updateAdvisorProfile = async (input: AdvisorProfileUpdateInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const updated = await updateAdvisorProfileRecord(payload, actor, input)
+  revalidateAdvisorPaths(updated.id)
+  return updated
+}
+
+export const setAdvisorMunicipalityMembershipRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: AdvisorMunicipalityMembershipInput,
+) => {
+  const { advisorId, municipalityId, assigned } = advisorMunicipalityMembershipSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await reloadUnrestrictedActor(
+        payload,
+        actor,
+        ADVISOR_UNRESTRICTED_MESSAGE,
+        req,
+      )
+      await assertTargetAdvisor(payload, advisorId, currentActor.id)
+
+      await acquireTextAdvisoryLocks(payload, req, [`municipality-advisors:${municipalityId}`])
+
+      const municipality = await payload.findByID({
+        collection: 'municipality',
+        id: municipalityId,
+        depth: 0,
+        select: { advisors: true, slug: true },
+        overrideAccess: true,
+        req,
+      })
+
+      const currentAdvisorIDs = [
+        ...new Set(
+          (municipality.advisors ?? [])
+            .map(relationshipId)
+            .filter((id): id is number => id !== null),
+        ),
+      ]
+      const nextAdvisorIDs = nextAdvisorIdsAfterMembership(currentAdvisorIDs, advisorId, assigned)
+      if (nextAdvisorIDs === null) return municipality
+
+      // Intentional admin bypass: unrestricted role verified above; advisors
+      // field update access is admin-only in the collection config.
+      const updated = await payload.update({
+        collection: 'municipality',
+        id: municipalityId,
+        data: { advisors: nextAdvisorIDs },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+
+      return updated
+    },
+    { beginFailureMessage: 'Não foi possível atualizar a carteira do assessor.' },
+  )
+}
+
+export const setAdvisorMunicipalityMembership = async (
+  input: AdvisorMunicipalityMembershipInput,
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const municipality = await setAdvisorMunicipalityMembershipRecord(payload, actor, input)
+  revalidateMunicipalityListPaths({
+    slug: typeof municipality.slug === 'string' ? municipality.slug : undefined,
+  })
+  revalidateAdvisorPaths(input.advisorId)
+  return municipality
+}
+
+export const setAdvisorMunicipalitiesBatchRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: AdvisorMunicipalitiesBatchInput,
+) => {
+  const { advisorId, municipalityIds, assigned } = advisorMunicipalitiesBatchSchema.parse(input)
+  const uniqueMunicipalityIds = [...new Set(municipalityIds)].sort((left, right) => left - right)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await reloadUnrestrictedActor(
+        payload,
+        actor,
+        ADVISOR_UNRESTRICTED_MESSAGE,
+        req,
+      )
+      await assertTargetAdvisor(payload, advisorId, currentActor.id)
+
+      await acquireTextAdvisoryLocks(
+        payload,
+        req,
+        uniqueMunicipalityIds.map((id) => `municipality-advisors:${id}`),
+      )
+
+      let lastSlug: string | undefined
+
+      for (const municipalityId of uniqueMunicipalityIds) {
+        const municipality = await payload.findByID({
+          collection: 'municipality',
+          id: municipalityId,
+          depth: 0,
+          select: { advisors: true, slug: true },
+          overrideAccess: true,
+          req,
+        })
+
+        const currentAdvisorIDs = [
+          ...new Set(
+            (municipality.advisors ?? [])
+              .map(relationshipId)
+              .filter((id): id is number => id !== null),
+          ),
+        ]
+        const nextAdvisorIDs = nextAdvisorIdsAfterMembership(currentAdvisorIDs, advisorId, assigned)
+        if (nextAdvisorIDs === null) continue
+
+        // Intentional admin bypass: unrestricted role verified above; advisors
+        // field update access is admin-only in the collection config.
+        await payload.update({
+          collection: 'municipality',
+          id: municipalityId,
+          data: { advisors: nextAdvisorIDs },
+          depth: 0,
+          overrideAccess: true,
+          req,
+        })
+        if (typeof municipality.slug === 'string') lastSlug = municipality.slug
+      }
+
+      return { slug: lastSlug }
+    },
+    { beginFailureMessage: 'Não foi possível atualizar a carteira do assessor.' },
+  )
+}
+
+export const setAdvisorMunicipalitiesBatch = async (input: AdvisorMunicipalitiesBatchInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const result = await setAdvisorMunicipalitiesBatchRecord(payload, actor, input)
+  revalidateMunicipalityListPaths({ slug: result.slug })
+  revalidateAdvisorPaths(input.advisorId)
+  return result
+}
+
+export const sendAdvisorPasswordResetRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: AdvisorPasswordResetInput,
+) => {
+  const { advisorId } = advisorPasswordResetSchema.parse(input)
+  const currentActor = await reloadUnrestrictedActor(payload, actor, ADVISOR_UNRESTRICTED_MESSAGE)
+  const target = await assertTargetAdvisor(payload, advisorId, currentActor.id)
+
+  if (!target.email || isPlanilhaPlaceholderEmail(target.email)) {
+    throw new Error(PLACEHOLDER_RESET_MESSAGE)
+  }
+
+  assertCampaignEmailConfigured()
+
+  await payload.forgotPassword({
+    collection: 'campaignUser',
+    data: { email: target.email },
+    disableEmail: !isCampaignEmailConfigured(),
+  })
+
+  return { email: target.email }
+}
+
+export const sendAdvisorPasswordReset = async (input: AdvisorPasswordResetInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return sendAdvisorPasswordResetRecord(payload, actor, input)
+}
