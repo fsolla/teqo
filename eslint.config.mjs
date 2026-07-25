@@ -20,7 +20,7 @@ const frameworkComponentFiles = [
 // These predate the naming convention. Keep them linted by Next's rules while
 // requiring new component files to use PascalCase.
 const legacyComponentFilenameIgnores = [
-  'src/components/campaign/campaign-logo.tsx',
+  'src/components/campaign/shell/campaign-logo.tsx',
   'src/components/socialIcons.tsx',
   'src/components/socialLinks.tsx',
   'src/components/ui/breadcrumb.tsx',

@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation'
 import React from 'react'
 
-import { CampaignBottomNav } from '@/components/campaign/CampaignBottomNav'
-import { CampaignSidebar } from '@/components/campaign/CampaignSidebar'
-import { InstallPwaToast } from '@/components/campaign/InstallPwaToast'
+import { CampaignBottomNav } from '@/components/campaign/shell/CampaignBottomNav'
+import { CampaignSidebar } from '@/components/campaign/shell/CampaignSidebar'
+import { InstallPwaToast } from '@/components/campaign/shell/InstallPwaToast'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/Sidebar'
 import { Toaster } from '@/components/ui/Toaster'
 import { getCampaignUser } from '@/utilities/campaignAuth'

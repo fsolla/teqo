@@ -5,11 +5,11 @@ import { getPayload } from 'payload'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
-} from '@/components/campaign/CampaignListPending'
-import { CampaignListFooter } from '@/components/campaign/CampaignListFooter'
-import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
-import { CampaignSearchForm } from '@/components/campaign/CampaignSearchForm'
-import { AdvisorsTable } from '@/components/campaign/AdvisorsTable'
+} from '@/components/campaign/shared/CampaignListPending'
+import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
+import { AdvisorsTable } from '@/components/campaign/advisor/AdvisorsTable'
 import {
   advisorListHrefForPage,
   loadAdvisorListPageData,

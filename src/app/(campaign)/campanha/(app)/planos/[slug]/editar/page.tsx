@@ -7,7 +7,7 @@ import {
   searchActionPlanLeadershipOptionsAction,
 } from '@/app/(campaign)/campanha/(app)/planos/contactSearchActions'
 import { updateActionPlanFormAction } from '@/app/(campaign)/campanha/(app)/planos/formActions'
-import { ActionPlanForm } from '@/components/campaign/ActionPlanForm'
+import { ActionPlanForm } from '@/components/campaign/actionPlan/ActionPlanForm'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {

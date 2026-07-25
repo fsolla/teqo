@@ -5,7 +5,7 @@ import { getPayload } from 'payload'
 import { redirect } from 'next/navigation'
 
 import { createActionPlan, updateActionPlan } from '@/app/(campaign)/campanha/actions/actionPlan'
-import type { ActionPlanFormState } from '@/components/campaign/ActionPlanForm'
+import type { ActionPlanFormState } from '@/components/campaign/actionPlan/ActionPlanForm'
 import { optionalFormText } from '@/lib/formData'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'

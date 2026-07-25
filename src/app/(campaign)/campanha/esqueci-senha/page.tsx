@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
 import { ForgotPasswordForm } from '@/app/(campaign)/campanha/esqueci-senha/ForgotPasswordForm'
-import { CampaignAuthPageShell } from '@/components/campaign/CampaignAuthPageShell'
+import { CampaignAuthPageShell } from '@/components/campaign/auth/CampaignAuthPageShell'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 
 export const metadata: Metadata = {

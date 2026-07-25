@@ -7,9 +7,9 @@ import {
   redeemCampaignInviteAutofillFormAction,
   redeemCampaignInviteLoginFormAction,
 } from '@/app/(campaign)/campanha/convite/[token]/formActions'
-import { CampaignInviteForm } from '@/components/campaign/CampaignInviteForm'
-import { ConsentText } from '@/components/campaign/ConsentText'
-import { InvalidCampaignInvite } from '@/components/campaign/InvalidCampaignInvite'
+import { CampaignInviteForm } from '@/components/campaign/invite/CampaignInviteForm'
+import { ConsentText } from '@/components/campaign/shared/ConsentText'
+import { InvalidCampaignInvite } from '@/components/campaign/invite/InvalidCampaignInvite'
 import { getCampaignInvitePageData } from '@/utilities/campaignInvitePageData'
 
 export const dynamic = 'force-dynamic'

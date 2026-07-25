@@ -1,18 +1,18 @@
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
-} from '@/components/campaign/CampaignListPending'
+} from '@/components/campaign/shared/CampaignListPending'
 import config from '@payload-config'
 import { PlusIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { ActionPlanFilters } from '@/components/campaign/ActionPlanFilters'
-import { ActionPlanList } from '@/components/campaign/ActionPlanList'
-import { CampaignListEmptyState } from '@/components/campaign/CampaignListEmptyState'
-import { CampaignListFooter } from '@/components/campaign/CampaignListFooter'
-import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
+import { ActionPlanFilters } from '@/components/campaign/actionPlan/ActionPlanFilters'
+import { ActionPlanList } from '@/components/campaign/actionPlan/ActionPlanList'
+import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
+import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
 import type { ActionPlan } from '@/payload-types'
 import { loadActionPlanListPageData } from '@/utilities/actionPlanPageData'

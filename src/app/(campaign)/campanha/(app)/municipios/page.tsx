@@ -1,19 +1,19 @@
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
-} from '@/components/campaign/CampaignListPending'
+} from '@/components/campaign/shared/CampaignListPending'
 import config from '@payload-config'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignListFooter } from '@/components/campaign/CampaignListFooter'
-import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
-import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
-import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/MunicipalityEstimateScenarioContext'
-import { MunicipalityFilters } from '@/components/campaign/MunicipalityFilters'
-import { MunicipalityList } from '@/components/campaign/MunicipalityList'
-import { MunicipalityListOverview } from '@/components/campaign/MunicipalityListOverview'
-import { RecentVisitTracker } from '@/components/campaign/RecentVisitTracker'
+import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
+import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
+import { MunicipalityFilters } from '@/components/campaign/municipality/MunicipalityFilters'
+import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
+import { MunicipalityListOverview } from '@/components/campaign/municipality/MunicipalityListOverview'
+import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitTracker'
 import {
   isCampaignCoordinator,
   isCampaignLeader,

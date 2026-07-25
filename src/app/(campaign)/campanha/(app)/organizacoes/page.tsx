@@ -4,19 +4,19 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignListEmptyState } from '@/components/campaign/CampaignListEmptyState'
-import { CampaignListFooter } from '@/components/campaign/CampaignListFooter'
+import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
+import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
-} from '@/components/campaign/CampaignListPending'
-import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
-import { CampaignSearchForm } from '@/components/campaign/CampaignSearchForm'
+} from '@/components/campaign/shared/CampaignListPending'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
 import {
   CampaignTable,
   CampaignTableHead,
   type CampaignTableColumn,
-} from '@/components/campaign/CampaignTable'
+} from '@/components/campaign/shared/CampaignTable'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { organizationKindLabels } from '@/lib/schemas/organization'

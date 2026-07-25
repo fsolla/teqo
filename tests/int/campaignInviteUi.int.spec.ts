@@ -11,9 +11,9 @@ import {
   redeemCampaignInviteAutofillFormAction,
   redeemCampaignInviteLoginFormAction,
 } from '@/app/(campaign)/campanha/convite/[token]/formActions'
-import { CampaignInviteForm } from '@/components/campaign/CampaignInviteForm'
-import { ConsentText } from '@/components/campaign/ConsentText'
-import { InvalidCampaignInvite } from '@/components/campaign/InvalidCampaignInvite'
+import { CampaignInviteForm } from '@/components/campaign/invite/CampaignInviteForm'
+import { ConsentText } from '@/components/campaign/shared/ConsentText'
+import { InvalidCampaignInvite } from '@/components/campaign/invite/InvalidCampaignInvite'
 import type { Consent } from '@/payload-types'
 import config from '@/payload.config'
 import {
@@ -186,15 +186,15 @@ describe('campaign invite UI contracts', () => {
 
   it('keeps consent rendering and invalid-state markup outside the client module graph', () => {
     const clientSource = readFileSync(
-      resolve(process.cwd(), 'src/components/campaign/CampaignInviteForm.tsx'),
+      resolve(process.cwd(), 'src/components/campaign/invite/CampaignInviteForm.tsx'),
       'utf8',
     )
     const consentSource = readFileSync(
-      resolve(process.cwd(), 'src/components/campaign/ConsentText.tsx'),
+      resolve(process.cwd(), 'src/components/campaign/shared/ConsentText.tsx'),
       'utf8',
     )
     const invalidSource = readFileSync(
-      resolve(process.cwd(), 'src/components/campaign/InvalidCampaignInvite.tsx'),
+      resolve(process.cwd(), 'src/components/campaign/invite/InvalidCampaignInvite.tsx'),
       'utf8',
     )
 

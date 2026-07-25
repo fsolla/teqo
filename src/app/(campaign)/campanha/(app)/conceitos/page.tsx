@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
-import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import {
   CAMPAIGN_CONCEPT_CATEGORIES,
   campaignConceptsByCategory,

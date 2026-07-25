@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
-import { SupporterImportWizard } from '@/components/campaign/SupporterImportWizard'
+import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
+import { SupporterImportWizard } from '@/components/campaign/supporter/SupporterImportWizard'
 import { Button } from '@/components/ui/button'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { isCampaignCoordinator } from '@/utilities/campaignAccess'

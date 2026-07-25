@@ -1,20 +1,20 @@
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
-} from '@/components/campaign/CampaignListPending'
+} from '@/components/campaign/shared/CampaignListPending'
 import config from '@payload-config'
 import { FileUpIcon, PlusIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignListEmptyState } from '@/components/campaign/CampaignListEmptyState'
-import { CampaignListFooter } from '@/components/campaign/CampaignListFooter'
-import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
-import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
-import { SupporterFilters } from '@/components/campaign/SupporterFilters'
-import { SupporterList } from '@/components/campaign/SupporterList'
-import { SupporterListOverview } from '@/components/campaign/SupporterListOverview'
+import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
+import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
+import { SupporterFilters } from '@/components/campaign/supporter/SupporterFilters'
+import { SupporterList } from '@/components/campaign/supporter/SupporterList'
+import { SupporterListOverview } from '@/components/campaign/supporter/SupporterListOverview'
 import { Button } from '@/components/ui/button'
 import { isCampaignCoordinator, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'

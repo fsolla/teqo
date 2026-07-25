@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
-import { CampaignProfileSettings } from '@/components/campaign/CampaignProfileSettings'
+import { CampaignProfileSettings } from '@/components/campaign/auth/CampaignProfileSettings'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { campaignUserShellView } from '@/utilities/campaignUserProfile'
 

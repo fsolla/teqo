@@ -6,7 +6,7 @@ import {
   getCampaignBottomNav,
   getCampaignNav,
   getCampaignSecondaryNav,
-} from '@/components/campaign/nav'
+} from '@/components/campaign/shell/nav'
 import {
   CAMPAIGN_CONCEPT_CATEGORIES,
   CAMPAIGN_CONCEPTS_PATH,

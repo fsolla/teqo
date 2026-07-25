@@ -2,7 +2,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import { CampaignSearchInput } from '@/components/campaign/CampaignSearchInput'
+import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
 
 describe('CampaignSearchInput', () => {
   it('renders the shared accessible 44px campaign search composition', () => {

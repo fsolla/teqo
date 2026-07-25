@@ -6,10 +6,10 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
-import { CampaignScopeBadge } from '@/components/campaign/CampaignScopeBadge'
-import { MunicipalityList } from '@/components/campaign/MunicipalityList'
-import { SupportStatusBadge } from '@/components/campaign/SupportStatusBadge'
-import { TseZoneBadge } from '@/components/campaign/TseZoneBadge'
+import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
+import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
+import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
+import { TseZoneBadge } from '@/components/campaign/municipality/TseZoneBadge'
 import { Progress } from '@/components/ui/Progress'
 import { Toggle } from '@/components/ui/Toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
@@ -104,7 +104,7 @@ describe('campaign visual foundation', () => {
       'utf8',
     )
     const sidebarSource = readFileSync(
-      resolve(process.cwd(), 'src/components/campaign/CampaignSidebar.tsx'),
+      resolve(process.cwd(), 'src/components/campaign/shell/CampaignSidebar.tsx'),
       'utf8',
     )
 
@@ -119,7 +119,7 @@ describe('campaign visual foundation', () => {
   it('uses light sidebar tokens and readable logout states', () => {
     const styles = readFileSync(resolve(process.cwd(), 'src/app/(frontend)/styles.css'), 'utf8')
     const sidebarSource = readFileSync(
-      resolve(process.cwd(), 'src/components/campaign/CampaignSidebar.tsx'),
+      resolve(process.cwd(), 'src/components/campaign/shell/CampaignSidebar.tsx'),
       'utf8',
     )
 

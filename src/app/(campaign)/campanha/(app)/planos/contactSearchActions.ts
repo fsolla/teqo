@@ -3,7 +3,7 @@
 import config from '@payload-config'
 import { getPayload } from 'payload'
 
-import type { ContactComboboxOption } from '@/components/campaign/ContactCombobox'
+import type { ContactComboboxOption } from '@/components/campaign/shared/ContactCombobox'
 import {
   isContactSearchQueryReady,
   normalizeContactSearchQuery,

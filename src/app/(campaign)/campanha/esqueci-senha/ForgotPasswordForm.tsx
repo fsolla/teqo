@@ -3,8 +3,8 @@
 import { useActionState } from 'react'
 
 import { requestCampaignPasswordResetFormAction } from '@/app/(campaign)/campanha/actions/password'
-import { CampaignAuthBackToLoginLink } from '@/components/campaign/CampaignAuthBackToLoginLink'
-import { CampaignAuthCardHeader } from '@/components/campaign/CampaignAuthCardHeader'
+import { CampaignAuthBackToLoginLink } from '@/components/campaign/auth/CampaignAuthBackToLoginLink'
+import { CampaignAuthCardHeader } from '@/components/campaign/auth/CampaignAuthCardHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'

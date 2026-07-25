@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
-import { CampaignAuthPageShell } from '@/components/campaign/CampaignAuthPageShell'
+import { CampaignAuthPageShell } from '@/components/campaign/auth/CampaignAuthPageShell'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { LoginForm } from './LoginForm'
 

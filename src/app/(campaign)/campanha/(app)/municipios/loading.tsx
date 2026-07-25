@@ -1,4 +1,4 @@
-import { CampaignPageShell } from '@/components/campaign/CampaignPageShell'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Skeleton } from '@/components/ui/skeleton'
 
 /** List-shaped skeleton for /municipios and its detail routes. */

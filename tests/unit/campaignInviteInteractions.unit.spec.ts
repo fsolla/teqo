@@ -10,7 +10,7 @@ vi.mock('@/app/(campaign)/campanha/actions/invite', () => ({
   createCampaignInvite: inviteActionState.createCampaignInvite,
 }))
 
-import { LeadershipInviteButtons } from '@/components/campaign/LeadershipInviteButtons'
+import { LeadershipInviteButtons } from '@/components/campaign/invite/LeadershipInviteButtons'
 
 describe('campaign invite interactions', () => {
   afterEach(() => {

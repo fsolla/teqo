@@ -2,7 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import type { RelationOption } from '@/components/campaign/RelationMultiSelect'
+import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import type { CampaignUser } from '@/payload-types'
 import { relationshipId } from '@/utilities/relationship'
 

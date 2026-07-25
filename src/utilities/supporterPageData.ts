@@ -2,7 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import type { RelationOption } from '@/components/campaign/RelationMultiSelect'
+import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import type { CampaignUser, Consent, Supporter } from '@/payload-types'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import {

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useActionState, useState } from 'react'
 
 import { loginCampaignFormAction, type LoginResult } from '@/app/(campaign)/campanha/actions/auth'
-import { CampaignAuthCardHeader } from '@/components/campaign/CampaignAuthCardHeader'
+import { CampaignAuthCardHeader } from '@/components/campaign/auth/CampaignAuthCardHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'

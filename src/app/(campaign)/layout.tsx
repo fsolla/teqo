@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import React from 'react'
 
-import { RegisterServiceWorker } from '@/components/campaign/RegisterServiceWorker'
+import { RegisterServiceWorker } from '@/components/campaign/shell/RegisterServiceWorker'
 import { CAMPAIGN_PWA_MANIFEST_PATH, CAMPAIGN_PWA_THEME_COLOR } from '@/utilities/campaignPwa'
 
 import '../(frontend)/styles.css'
