@@ -90,9 +90,18 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
     />
   )
 
+  // E9 coluna da vergonha: same scope, filtered down to priority municipalities
+  // with nobody answering for them. `null` when that is already the filter.
+  const isShameFilterActive = state.priority === 'alta' && state.coverage === 'sem_assessor'
+  const shameHref = isShameFilterActive
+    ? null
+    : buildMunicipalityListHref({ ...state, priority: 'alta', coverage: 'sem_assessor' }, 1)
+
   const listBody = listMunicipalities.length ? (
     <>
-      {isStaffView && overview ? <MunicipalityListOverview view={overview} /> : null}
+      {isStaffView && overview ? (
+        <MunicipalityListOverview view={overview} shameHref={shameHref} />
+      ) : null}
       <MunicipalityList
         municipalities={listMunicipalities}
         advisorNamesById={advisorNamesById}

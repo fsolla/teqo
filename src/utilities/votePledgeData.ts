@@ -32,6 +32,13 @@ export type MunicipalityPledgeAggregate = {
   effectiveByScenario: Record<VoteEstimateScenario, number>
   pledgeCount: number
   missingEstimateCount: number
+  /**
+   * Most recent `declaredAt`/`estimatedAt` across the município's pledges —
+   * E9 freshness: a commitment nobody has touched in weeks is worth less
+   * (`docs/research`, l. 339), so the allocation queue can order by how cold
+   * the signal is. `null` when no pledge carries a date.
+   */
+  lastPledgeAt: string | null
 }
 
 export const createEmptyMunicipalityPledgeAggregate = (): MunicipalityPledgeAggregate => ({
@@ -39,6 +46,7 @@ export const createEmptyMunicipalityPledgeAggregate = (): MunicipalityPledgeAggr
   effectiveByScenario: emptyEffectiveByScenario(),
   pledgeCount: 0,
   missingEstimateCount: 0,
+  lastPledgeAt: null,
 })
 
 /** Read-only zero aggregate. Never mutate — use createEmptyMunicipalityPledgeAggregate() when writing. */
@@ -77,6 +85,8 @@ export const aggregateMunicipalityPledgesFromRows = (
   rows: ReadonlyArray<{
     declaredVotes: number
     estimatedVotes?: VoteEstimateScenarioFields | null
+    declaredAt?: string | null
+    estimatedAt?: string | null
   }>,
 ): MunicipalityPledgeAggregate => {
   const aggregate = createEmptyMunicipalityPledgeAggregate()
@@ -93,6 +103,10 @@ export const aggregateMunicipalityPledgesFromRows = (
     }
     aggregate.pledgeCount += 1
     if (!pledgeHasAnyEstimate(row.estimatedVotes)) aggregate.missingEstimateCount += 1
+    aggregate.lastPledgeAt = laterTimestamp(
+      aggregate.lastPledgeAt,
+      laterTimestamp(row.declaredAt, row.estimatedAt),
+    )
   }
 
   return aggregate
@@ -146,6 +160,16 @@ export const rollupMunicipalityStaffVotes = (
 const pledgeHasAnyEstimate = (estimated: VoteEstimateScenarioFields | null | undefined): boolean =>
   estimated?.pessimistic != null || estimated?.central != null || estimated?.optimistic != null
 
+/** Latest of two ISO timestamps, ignoring nulls (string compare is safe for ISO-8601 UTC). */
+const laterTimestamp = (
+  left: string | null | undefined,
+  right: string | null | undefined,
+): string | null => {
+  if (!left) return right ?? null
+  if (!right) return left
+  return right > left ? right : left
+}
+
 /**
  * Staff-only aggregate over an already access-checked municipality id set.
  * Intentional admin bypass: callers pass municipality ids the actor may read.
@@ -172,6 +196,9 @@ export const aggregatePledgesByMunicipality = async (
         central: true,
         optimistic: true,
       },
+      // E9 freshness (`lastPledgeAt`) — the queue orders by how cold the signal is.
+      declaredAt: true,
+      estimatedAt: true,
     },
     overrideAccess: true,
     ...(req ? { req } : {}),
@@ -193,6 +220,10 @@ export const aggregatePledgesByMunicipality = async (
     }
     current.pledgeCount += 1
     if (!pledgeHasAnyEstimate(estimated)) current.missingEstimateCount += 1
+    current.lastPledgeAt = laterTimestamp(
+      current.lastPledgeAt,
+      laterTimestamp((doc as VotePledge).declaredAt, (doc as VotePledge).estimatedAt),
+    )
     aggregates.set(municipalityID, current)
   }
 

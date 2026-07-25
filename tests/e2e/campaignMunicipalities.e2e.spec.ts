@@ -85,6 +85,16 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
     await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
 
+    // E9 allocation queue: the list opens on the uncovered deficit and exposes
+    // the freshness column the ordering is paired with. `exact` keeps this off
+    // the table caption, which embeds the same summary plus column glossary.
+    await expect(
+      page.getByText('Ordenado por déficit da meta (maior primeiro)', { exact: true }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('columnheader', { name: /Ordenar por Frescor do sinal/ }),
+    ).toBeVisible()
+
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
     await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
 

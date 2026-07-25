@@ -11,6 +11,7 @@ import {
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import type { BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import type { CampaignGoal } from '@/payload-types'
+import type { VoteEstimateScenario } from '@/utilities/voteEstimate'
 
 /**
  * E8 "conta da cadeira" — derived electoral potential per municipality, built
@@ -145,36 +146,89 @@ export const computeMunicipalityPotential = (slug: string): MunicipalityPotentia
 export const computeAllMunicipalityPotentials = (): MunicipalityPotential[] =>
   municipalityCatalog.map((entry) => computeMunicipalityPotential(entry.slug))
 
+/** Fallback pessimistic haircut (as a share) when `campaignGoals.margin` is unset. */
+const DEFAULT_PESSIMISTIC_HAIRCUT = 0.1
+
 /**
- * Decomposes the state goal proportionally to each municipality's projected
- * field ceiling — `suggestedGoal_i = stateGoal × projectedFieldCeiling_i / Σ
- * projectedFieldCeiling` — NOT a composite formula folding in capture rate or
- * intra-field share (those stay diagnostic columns; see the E8 plan's
- * "rabbit holes vigiados"). `margin` on the `campaignGoals` global is
- * informational for the table (a safety reading for the coordination), it
- * does not change the decomposed value.
- *
- * Falls back to an even split when every ceiling is zero/unknown (e.g. an
- * empty potentials list slice) rather than producing `NaN` suggested goals.
+ * `campaignGoals.margin` is a percent (the global's field is "Margem (%)", so
+ * `5` means 5%) with only `min: 0` enforced — clamped to [0, 1] as a share so
+ * a mistyped 500 can't produce a negative pessimistic goal.
  */
-export const decomposeStateGoal = (
-  potentials: ReadonlyArray<Pick<MunicipalityPotential, 'slug' | 'projectedFieldCeiling'>>,
-  goals: Pick<CampaignGoal, 'stateGoal'>,
-): Map<string, number> => {
-  const stateGoal = goals.stateGoal
-  const totalCeiling = potentials.reduce((sum, entry) => sum + entry.projectedFieldCeiling, 0)
-  const suggestedGoalBySlug = new Map<string, number>()
+const pessimisticHaircut = (margin: number | null | undefined): number =>
+  margin == null ? DEFAULT_PESSIMISTIC_HAIRCUT : Math.min(1, Math.max(0, margin / 100))
 
-  if (totalCeiling <= 0) {
-    const even = potentials.length > 0 ? stateGoal / potentials.length : 0
-    for (const entry of potentials) suggestedGoalBySlug.set(entry.slug, even)
-    return suggestedGoalBySlug
+/** Own 2022 nominal votes — the anchor of every suggested goal (E9 revision). */
+export const ownVotes2022 = (baseline: MunicipalityFederalBaseline): number =>
+  baseline.votesByYear[String(ELECTION_YEAR_2022)] ?? 0
+
+/** Suggested goal for one município across the three scenarios. */
+export type SuggestedGoalByScenario = Record<VoteEstimateScenario, number>
+
+/**
+ * Suggested goal per município, per scenario, anchored on the candidate's OWN
+ * 2022 vote in that município:
+ *
+ * - `pessimistic` = base × (1 − margin) — losing part of the base
+ * - `central`     = base — repeating 2022 where the network already produced
+ * - `optimistic`  = base × (stateGoal / Σ base) — growth that closes the seat
+ *   account, so Σ optimistic === `stateGoal` exactly
+ *
+ * This replaced (2026-07-24, E9) a decomposition proportional to the
+ * projected FIELD ceiling, which read the field's majoritarian vote (Lula's
+ * ~5,3 M) instead of the candidate's own (~129 k) and therefore handed
+ * strongholds a goal below the votes they already produce while inflating
+ * deserts ~17×. Ranking an allocation queue by uncovered deficit needs the
+ * opposite: the research report's "voto histórico próprio mais fração do
+ * campo não capturado" (`docs/research`, l. 323/331), whose leading indicator
+ * is "% do voto histórico da praça coberto por liderança ativa". The
+ * "fração do campo não capturado" half is deliberately NOT folded in here —
+ * the report conditions it on operational class (defesa carries maintenance,
+ * ataque carries growth), which is E10's scope; until then the open field
+ * stays a diagnostic (`captureRate`, `projectedFieldCeiling`).
+ *
+ * `margin` (the coordination's safety reading) is reused as the pessimistic
+ * haircut rather than adding a fourth knob to the global.
+ *
+ * Guard: a `stateGoal` below Σ base would make the optimistic scenario land
+ * BELOW central (an "optimistic" that loses votes), so the growth factor is
+ * clamped at 1 — `goalDecompositionBelowBase` reports it so the UI can tell
+ * the coordination its state goal is under the projected base.
+ */
+export const deriveSuggestedGoalsByScenario = (
+  slugs: ReadonlyArray<string>,
+  goals: Pick<CampaignGoal, 'stateGoal' | 'margin'>,
+): {
+  suggestedGoalBySlug: Map<string, SuggestedGoalByScenario>
+  /** Σ of every `central` goal — the "repeat 2022" statewide total. */
+  baseTotal: number
+  /** `stateGoal / baseTotal`, clamped at 1 (see the guard above). */
+  growthFactor: number
+  /** True when `stateGoal` is below `baseTotal` and the growth factor was clamped. */
+  belowBase: boolean
+} => {
+  const baseBySlug = new Map<string, number>()
+  let baseTotal = 0
+  for (const slug of slugs) {
+    const base = ownVotes2022(getMunicipalityFederalBaseline(slug))
+    baseBySlug.set(slug, base)
+    baseTotal += base
   }
 
-  for (const entry of potentials) {
-    suggestedGoalBySlug.set(entry.slug, stateGoal * (entry.projectedFieldCeiling / totalCeiling))
+  const rawGrowthFactor = baseTotal > 0 ? goals.stateGoal / baseTotal : 1
+  const belowBase = baseTotal > 0 && rawGrowthFactor < 1
+  const growthFactor = Math.max(1, rawGrowthFactor)
+  const haircut = pessimisticHaircut(goals.margin)
+
+  const suggestedGoalBySlug = new Map<string, SuggestedGoalByScenario>()
+  for (const [slug, base] of baseBySlug) {
+    suggestedGoalBySlug.set(slug, {
+      pessimistic: base * (1 - haircut),
+      central: base,
+      optimistic: base * growthFactor,
+    })
   }
-  return suggestedGoalBySlug
+
+  return { suggestedGoalBySlug, baseTotal, growthFactor, belowBase }
 }
 
 export type TerritorySanityWarning = {
@@ -187,11 +241,15 @@ export type TerritorySanityWarning = {
 
 /**
  * Sanity check (never blocking, per the plan): flags identity territories
- * (TI) where the decomposed suggested goals, summed, exceed the projected
- * valid-vote electorate of that territory — a signal that the decomposition
- * needs a human look (state goal too high, or ceilings skewed), never a
- * thrown error. Callers surface `warnAboveRatio` as an `CampaignInfoHint`,
- * not a validation failure.
+ * (TI) where the suggested goals, summed, exceed the projected valid-vote
+ * electorate of that territory — a signal that the goals need a human look
+ * (state goal too high), never a thrown error. Callers surface
+ * `warnAboveRatio` as a `CampaignInfoHint`, not a validation failure.
+ *
+ * Since E9 anchored goals on the candidate's own vote, this is close to
+ * inert (his base is a small share of any electorate); the plausibility
+ * ceiling the research report actually asks for — Σ pledges above the local
+ * FIELD ceiling — is a pledge signal, not a goal one, and belongs to E11.
  */
 export const sanityCheckSuggestedGoalsByTerritory = (
   entries: ReadonlyArray<{
@@ -242,14 +300,24 @@ export const sanityCheckSuggestedGoalsByTerritory = (
  * directly — it stays exported and unit-tested for that.
  */
 export const computeStatewideGoalDecomposition = (
-  goals: Pick<CampaignGoal, 'stateGoal'>,
+  goals: Pick<CampaignGoal, 'stateGoal' | 'margin'>,
 ): {
   potentialBySlug: Map<string, MunicipalityPotential>
-  suggestedGoalBySlug: Map<string, number>
+  suggestedGoalBySlug: Map<string, SuggestedGoalByScenario>
+  /** Σ `central` over the whole catalog — "repetir 2022" statewide. */
+  baseTotal: number
+  /** `stateGoal / baseTotal` (clamped at 1): what the state goal means as growth everywhere. */
+  growthFactor: number
+  /** True when `stateGoal` sits below the projected base (growth factor clamped). */
+  belowBase: boolean
 } => {
   const potentials = computeAllMunicipalityPotentials()
-  const suggestedGoalBySlug = decomposeStateGoal(potentials, goals)
+  const { suggestedGoalBySlug, baseTotal, growthFactor, belowBase } =
+    deriveSuggestedGoalsByScenario(
+      potentials.map((potential) => potential.slug),
+      goals,
+    )
   const potentialBySlug = new Map(potentials.map((potential) => [potential.slug, potential]))
 
-  return { potentialBySlug, suggestedGoalBySlug }
+  return { potentialBySlug, suggestedGoalBySlug, baseTotal, growthFactor, belowBase }
 }

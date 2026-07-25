@@ -29,8 +29,12 @@ import {
   formatMunicipalityConcentrationHint,
   formatMunicipalityGeographyLabel,
   formatMunicipalityListSortSummary,
+  formatMunicipalitySignalAgeLabel,
+  isMunicipalitySignalCold,
+  MUNICIPALITY_COLD_SIGNAL_DAYS,
   municipalityKindLabels,
   municipalityPriorityLabels,
+  municipalitySignalAgeInDays,
   resolveMunicipalityListSort,
   type MunicipalityListState,
 } from '@/utilities/municipalityUi'
@@ -39,6 +43,10 @@ import type {
   MunicipalityAdvisorSummary,
   MunicipalityListViewModel,
 } from '@/utilities/municipalityViewModels'
+import {
+  DEFAULT_VOTE_ESTIMATE_SCENARIO,
+  voteEstimateScenarioLabels,
+} from '@/utilities/voteEstimate'
 import { toMunicipalityPledgeCoverageView } from '@/utilities/votePledgeData'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
@@ -85,6 +93,72 @@ const VotePositionReadout = ({
   )
 }
 
+/**
+ * E9 frescor: how long since anybody recorded anything here (staff update or
+ * leadership pledge). The age leads — "há 24 dias" is what makes a stale row
+ * jump out while scanning the queue — with the exact date as the muted
+ * second line for whoever needs it.
+ *
+ * Cold reads in the warning amber, NOT destructive: early in the campaign
+ * most municípios are past the 21-day threshold, and painting them all red
+ * would drown the one state that really is an error in this list — a priority
+ * município with nobody answering for it. Same reason it stays text with an
+ * icon instead of a third badge: the row already carries the priority and
+ * assessoria pills.
+ */
+const SignalAgeReadout = ({
+  lastSignalAt,
+  layout,
+}: {
+  lastSignalAt: string | null
+  layout: 'table' | 'card'
+}) => {
+  const ageInDays = municipalitySignalAgeInDays(lastSignalAt)
+  const isCold = isMunicipalitySignalCold(ageInDays)
+  const ageLabel = formatMunicipalitySignalAgeLabel(ageInDays)
+  const dateLabel = lastSignalAt ? dateFormatter.format(new Date(lastSignalAt)) : null
+
+  return (
+    <div
+      className={cn('flex flex-col gap-0.5', layout === 'card' && 'text-sm')}
+      title={
+        isCold
+          ? `Sem registro novo há ${MUNICIPALITY_COLD_SIGNAL_DAYS} dias ou mais — atualização da equipe ou declaração de liderança.`
+          : undefined
+      }
+    >
+      <span
+        className={cn(
+          'inline-flex items-center gap-1 tabular-nums',
+          isCold ? 'font-medium text-estimate-pending-foreground' : 'text-foreground',
+        )}
+      >
+        {isCold ? <CircleAlertIcon className="size-3.5 shrink-0" aria-hidden="true" /> : null}
+        {ageLabel}
+      </span>
+      {dateLabel ? (
+        <span className="text-xs text-muted-foreground tabular-nums">{dateLabel}</span>
+      ) : null}
+    </div>
+  )
+}
+
+/**
+ * E9: a priority município with nobody answering for it is the queue's
+ * loudest row, so it reads "Sem responsável" in destructive — the same words
+ * the overview's coluna da vergonha uses to count them. Non-priority ones
+ * keep the softer pending tone: they are a gap, not a fire.
+ */
+const advisorBadgeVariant = (municipality: MunicipalityListViewModel) => {
+  if (municipality.advisorIDs.length > 0) return 'estimate-confirmed' as const
+  return municipality.priority === 'alta' ? ('destructive' as const) : ('estimate-pending' as const)
+}
+
+const advisorBadgeLabel = (municipality: MunicipalityListViewModel): string => {
+  if (municipality.advisorIDs.length > 0) return 'Coberta'
+  return municipality.priority === 'alta' ? 'Sem responsável' : 'Sem assessor'
+}
+
 const advisorEntries = (
   municipality: MunicipalityListViewModel,
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>,
@@ -112,6 +186,10 @@ export const MunicipalityList = ({
   const { sort: activeSort, dir: activeDir } = resolveMunicipalityListSort(state)
   const sortSummary = formatMunicipalityListSortSummary(activeSort, activeDir)
   const concentrationHint = formatMunicipalityConcentrationHint()
+  const signalHint = `Última atualização da equipe ou declaração de liderança, o que for mais recente. Fica destacado a partir de ${MUNICIPALITY_COLD_SIGNAL_DAYS} dias sem registro.`
+  // The scenario picker is client state, so the server can only order by one
+  // scenario — named here so the ordering never looks arbitrary.
+  const deficitHint = `Ordena pelo que falta para a meta (meta − comprometido) no cenário ${voteEstimateScenarioLabels[DEFAULT_VOTE_ESTIMATE_SCENARIO]}, independente do cenário selecionado acima.`
 
   return (
     <>
@@ -169,7 +247,13 @@ export const MunicipalityList = ({
                       />
                     </dd>
                   </div>
-                  <div className="col-span-2">
+                  <div>
+                    <dt className="text-muted-foreground">Último sinal</dt>
+                    <dd>
+                      <SignalAgeReadout lastSignalAt={municipality.lastSignalAt} layout="card" />
+                    </dd>
+                  </div>
+                  <div>
                     <dt className="text-muted-foreground">Assessoria</dt>
                     <dd>
                       {isCoordinator ? (
@@ -184,7 +268,10 @@ export const MunicipalityList = ({
                       ) : names.length ? (
                         names.join(', ')
                       ) : (
-                        'Sem assessor'
+                        <Badge variant={advisorBadgeVariant(municipality)}>
+                          <CircleAlertIcon data-icon="inline-start" aria-hidden="true" />
+                          {advisorBadgeLabel(municipality)}
+                        </Badge>
                       )}
                     </dd>
                   </div>
@@ -229,13 +316,23 @@ export const MunicipalityList = ({
                   <MunicipalitySortableHead state={state} sortKey="expectedVotes" align="center">
                     Votos estimados
                   </MunicipalitySortableHead>
-                  <MunicipalitySortableHead state={state} sortKey="lastUpdateAt">
-                    Última atualização
+                  <MunicipalitySortableHead
+                    state={state}
+                    sortKey="frescor"
+                    tooltip={signalHint}
+                  >
+                    Último sinal
                   </MunicipalitySortableHead>
                   <MunicipalitySortableHead state={state} sortKey="coverage">
                     Assessoria
                   </MunicipalitySortableHead>
-                  <TableHead>Cobertura da meta</TableHead>
+                  <MunicipalitySortableHead
+                    state={state}
+                    sortKey="deficit"
+                    tooltip={deficitHint}
+                  >
+                    Cobertura da meta
+                  </MunicipalitySortableHead>
                 </>
               ) : (
                 <MunicipalitySortableHead state={state} sortKey="lastUpdateAt">
@@ -314,18 +411,19 @@ export const MunicipalityList = ({
                         </div>
                       </TableCell>
                       <TableCell>
-                        {municipality.lastUpdateAt
-                          ? dateFormatter.format(new Date(municipality.lastUpdateAt))
-                          : 'Sem atualização'}
+                        <SignalAgeReadout
+                          lastSignalAt={municipality.lastSignalAt}
+                          layout="table"
+                        />
                       </TableCell>
                       <TableCell>
-                        <Badge variant={hasAdvisor ? 'estimate-confirmed' : 'estimate-pending'}>
+                        <Badge variant={advisorBadgeVariant(municipality)}>
                           {hasAdvisor ? (
                             <CircleCheckIcon data-icon="inline-start" aria-hidden="true" />
                           ) : (
                             <CircleAlertIcon data-icon="inline-start" aria-hidden="true" />
                           )}
-                          {hasAdvisor ? 'Coberta' : 'Sem assessor'}
+                          {advisorBadgeLabel(municipality)}
                         </Badge>
                       </TableCell>
                       <TableCell>

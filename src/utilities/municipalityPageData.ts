@@ -16,6 +16,7 @@ import {
   buildMunicipalityListWhere,
   municipalityPageSize,
   parseMunicipalityListParams,
+  resolveMunicipalityLastSignalAt,
   resolveMunicipalityListSort,
   type MunicipalityListSearchParams,
   type MunicipalityListSortDirection,
@@ -50,6 +51,13 @@ export type MunicipalityListOverviewData = {
   pledgeCount: number
   missingEstimateCount: number
   withAdvisorCount: number
+  /**
+   * E9 "coluna da vergonha": priority municipalities in scope with nobody
+   * answering for them — the one gap the coordination can close today, so it
+   * gets named as a number and a filtered link instead of hiding inside the
+   * assessoria ratio.
+   */
+  priorityWithoutAdvisorCount: number
   /** E8 "conta da cadeira" — meta × comprometido do escopo filtrado, por cenário. */
   goalCoverageByScenario: Record<VoteEstimateScenario, MunicipalityGoalCoverage>
 }
@@ -92,11 +100,20 @@ const sortByNullableValue = (
   })
 }
 
+type DerivedSortContext = {
+  ranks: ReadonlyMap<string, MunicipalityVoteRankEntry>
+  goalCoverageByMunicipalityID: ReadonlyMap<
+    number,
+    Record<VoteEstimateScenario, MunicipalityGoalCoverage>
+  >
+  pledgeAggregates: ReadonlyMap<number, MunicipalityPledgeAggregate>
+}
+
 const applyDerivedMunicipalitySort = (
   docs: Municipality[],
   sortKey: MunicipalityListSortKey,
   dir: MunicipalityListSortDirection,
-  ranks: ReadonlyMap<string, MunicipalityVoteRankEntry>,
+  { ranks, goalCoverageByMunicipalityID, pledgeAggregates }: DerivedSortContext,
 ): Municipality[] => {
   switch (sortKey) {
     case 'expectedVotes':
@@ -112,6 +129,26 @@ const applyDerivedMunicipalitySort = (
         )
         if (byVotes !== 0) return byVotes
         return municipalityNameCompare(left, right)
+      })
+    case 'deficit':
+      // Fixed to `central`: the scenario picker is client-side state, so the
+      // server has no scenario to sort by (moving it to the URL is the
+      // "Cenário junto aos filtros" fill-in). A município with no goal at all
+      // has no deficit to rank — `null` sends it to the end either way.
+      return sortByNullableValue(docs, dir, (municipality) => {
+        const coverage = goalCoverageByMunicipalityID.get(municipality.id)?.central
+        return coverage && coverage.goal > 0 ? coverage.deficit : null
+      })
+    case 'frescor':
+      // Descending = coldest first, so "never had a signal" must outrank the
+      // oldest date instead of sinking as a null: age is +Infinity there.
+      return sortByNullableValue(docs, dir, (municipality) => {
+        const lastSignalAt = resolveMunicipalityLastSignalAt(
+          municipality.lastUpdateAt ?? null,
+          pledgeAggregates.get(municipality.id)?.lastPledgeAt ?? null,
+        )
+        if (!lastSignalAt) return Number.POSITIVE_INFINITY
+        return Date.now() - new Date(lastSignalAt).getTime()
       })
     default:
       return docs
@@ -198,6 +235,10 @@ export const loadMunicipalityListPageBundle = async (
       withAdvisorCount: staffScope.municipalities.filter(
         (municipality) => (municipality.advisors ?? []).length > 0,
       ).length,
+      priorityWithoutAdvisorCount: staffScope.municipalities.filter(
+        (municipality) =>
+          municipality.priority === 'alta' && (municipality.advisors ?? []).length === 0,
+      ).length,
       goalCoverageByScenario: goalCoverageBundle.aggregateByScenario,
     }
   }
@@ -216,7 +257,11 @@ export const loadMunicipalityListPageBundle = async (
       listResult.docs as Municipality[],
       sortKey,
       sortDir,
-      ranks,
+      {
+        ranks,
+        goalCoverageByMunicipalityID,
+        pledgeAggregates,
+      },
     )
     totalDocs = allDocs.length
     totalPages = Math.max(1, Math.ceil(totalDocs / municipalityPageSize))

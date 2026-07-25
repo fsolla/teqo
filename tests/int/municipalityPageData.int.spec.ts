@@ -126,6 +126,154 @@ describe('loadMunicipalityListPageBundle', () => {
     }
   })
 
+  /**
+   * E9 allocation queue: the default ordering. Uses `expectedVotes` (mesa
+   * goals) so the deficits are pinned by the fixture instead of by whatever
+   * the 2022 artifact says for the allocated slugs.
+   */
+  it('orders by uncovered deficit (default sort), biggest gap first', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const wideGap = await fixtures.getMunicipality()
+    const nearlyCovered = await fixtures.getMunicipality()
+
+    const marker = `e9-deficit-${Date.now()}`
+    await payload.update({
+      collection: 'municipality',
+      id: wideGap.id,
+      data: {
+        name: `${marker}-wide`,
+        expectedVotes: { pessimistic: null, central: 5_000, optimistic: null },
+      },
+      depth: 0,
+      overrideAccess: true,
+    })
+    fixtures.touchMunicipality(wideGap.id)
+    await payload.update({
+      collection: 'municipality',
+      id: nearlyCovered.id,
+      data: {
+        name: `${marker}-near`,
+        expectedVotes: { pessimistic: null, central: 1_000, optimistic: null },
+      },
+      depth: 0,
+      overrideAccess: true,
+    })
+    fixtures.touchMunicipality(nearlyCovered.id)
+
+    const contact = await fixtures.createContact()
+    const leadership = await fixtures.createLeadership({
+      contact: contact.id,
+      municipalities: [nearlyCovered.id],
+      supportStatus: 'engajado',
+    })
+    await fixtures.createVotePledge({
+      leadership: leadership.id,
+      municipality: nearlyCovered.id,
+      declaredVotes: 900,
+      estimatedVotes: { pessimistic: null, central: 900, optimistic: null },
+    })
+
+    const descending = await loadMunicipalityListPageBundle(payload, coordinator, { q: marker })
+    expect(descending.municipalities.map((row) => row.slug)).toEqual([
+      wideGap.slug,
+      nearlyCovered.slug,
+    ])
+    expect(descending.municipalities[0]!.goalCoverageByScenario.central.deficit).toBe(5_000)
+    expect(descending.municipalities[1]!.goalCoverageByScenario.central.deficit).toBe(100)
+
+    const ascending = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: marker,
+      sort: 'deficit',
+      dir: 'asc',
+    })
+    expect(ascending.municipalities.map((row) => row.slug)).toEqual([
+      nearlyCovered.slug,
+      wideGap.slug,
+    ])
+  })
+
+  it('orders by frescor with "never had a signal" ahead of the oldest signal', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const silent = await fixtures.getMunicipality()
+    const touched = await fixtures.getMunicipality()
+
+    const marker = `e9-frescor-${Date.now()}`
+    await payload.update({
+      collection: 'municipality',
+      id: silent.id,
+      data: { name: `${marker}-silent`, lastUpdateAt: null },
+      depth: 0,
+      overrideAccess: true,
+    })
+    fixtures.touchMunicipality(silent.id)
+    await payload.update({
+      collection: 'municipality',
+      id: touched.id,
+      data: { name: `${marker}-touched` },
+      depth: 0,
+      overrideAccess: true,
+    })
+    // The collection hook recomputes `lastUpdateAt` from this update.
+    await fixtures.createMunicipalityUpdate({
+      municipality: touched.id,
+      author: coordinator.id,
+    })
+
+    const coldestFirst = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: marker,
+      sort: 'frescor',
+    })
+    expect(coldestFirst.municipalities.map((row) => row.slug)).toEqual([silent.slug, touched.slug])
+    expect(coldestFirst.municipalities[0]!.lastSignalAt).toBeNull()
+    expect(coldestFirst.municipalities[1]!.lastSignalAt).not.toBeNull()
+
+    const freshestFirst = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: marker,
+      sort: 'frescor',
+      dir: 'asc',
+    })
+    expect(freshestFirst.municipalities.map((row) => row.slug)).toEqual([touched.slug, silent.slug])
+  })
+
+  it('counts a pledge date as a signal even when no staff update exists', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    fixtures.touchMunicipality(municipality.id)
+
+    const marker = `e9-pledge-signal-${Date.now()}`
+    await payload.update({
+      collection: 'municipality',
+      id: municipality.id,
+      data: { name: marker, lastUpdateAt: null },
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    const contact = await fixtures.createContact()
+    const leadership = await fixtures.createLeadership({
+      contact: contact.id,
+      municipalities: [municipality.id],
+      supportStatus: 'engajado',
+    })
+    // `declaredAt` is stamped by the collection's own beforeChange hook, so the
+    // fixture cannot pin it — read it back and assert the signal matches.
+    const pledge = await fixtures.createVotePledge({
+      leadership: leadership.id,
+      municipality: municipality.id,
+      declaredVotes: 50,
+    })
+    expect(pledge.declaredAt).toBeTruthy()
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, { q: marker })
+    const row = bundle.municipalities.find((item) => item.slug === municipality.slug)
+    expect(row?.lastUpdateAt).toBeNull()
+    expect(row?.lastSignalAt).toBe(pledge.declaredAt)
+    expect(row?.pledges.lastPledgeAt).toBe(pledge.declaredAt)
+  })
+
   it('keeps advisor access and applies URL filters on top', async () => {
     const fixtures = campaignFixtures()
     const advisor = await fixtures.createCampaignUser('advisor')

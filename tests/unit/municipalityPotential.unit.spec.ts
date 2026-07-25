@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-import type { MunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
+import {
+  getMunicipalityFederalBaseline,
+  type MunicipalityFederalBaseline,
+} from '@/lib/bahiaElectionAggregates'
 import type { BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
+import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import {
   captureRate,
-  decomposeStateGoal,
+  deriveSuggestedGoalsByScenario,
   fieldCeiling,
   intraFieldShare,
+  ownVotes2022,
   projectedFieldCeiling,
   projectedValidVotes,
   rollOff,
@@ -136,35 +141,106 @@ describe('rollOff', () => {
   })
 })
 
-describe('decomposeStateGoal', () => {
-  it('splits the state goal proportionally to projectedFieldCeiling, summing back to it', () => {
-    const potentials = [
-      { slug: 'a', projectedFieldCeiling: 1000 },
-      { slug: 'b', projectedFieldCeiling: 3000 },
-      { slug: 'c', projectedFieldCeiling: 6000 },
-    ]
-    const suggested = decomposeStateGoal(potentials, { stateGoal: 150_000 })
+/**
+ * E9 revision of the E8 formula: the suggested goal is anchored on the
+ * candidate's OWN 2022 vote per município, not on the field's majoritarian
+ * ceiling. The three scenarios are the same anchor at three ambitions, and
+ * `stateGoal` survives as the optimistic growth factor so the seat account
+ * still closes exactly.
+ */
+describe('deriveSuggestedGoalsByScenario', () => {
+  const catalogSlugs = () => municipalityCatalog.map((entry) => entry.slug)
 
-    expect(suggested.get('a')).toBeCloseTo(15_000, 6)
-    expect(suggested.get('b')).toBeCloseTo(45_000, 6)
-    expect(suggested.get('c')).toBeCloseTo(90_000, 6)
+  it('central repeats the own 2022 vote, and Σ optimistic equals the state goal exactly', () => {
+    const slugs = catalogSlugs()
+    const { suggestedGoalBySlug, baseTotal, growthFactor, belowBase } =
+      deriveSuggestedGoalsByScenario(slugs, { stateGoal: 150_000, margin: 10 })
 
-    const total = [...suggested.values()].reduce((sum, value) => sum + value, 0)
-    expect(total).toBeCloseTo(150_000, 6)
+    expect(suggestedGoalBySlug.size).toBe(slugs.length)
+    expect(belowBase).toBe(false)
+    expect(growthFactor).toBeGreaterThan(1)
+
+    const goals = [...suggestedGoalBySlug.values()]
+    const sum = (scenario: 'pessimistic' | 'central' | 'optimistic') =>
+      goals.reduce((total, goal) => total + goal[scenario], 0)
+
+    expect(sum('central')).toBeCloseTo(baseTotal, 6)
+    expect(sum('optimistic')).toBeCloseTo(150_000, 4)
+    expect(sum('pessimistic')).toBeCloseTo(baseTotal * 0.9, 4)
   })
 
-  it('falls back to an even split when every ceiling is zero (never NaN)', () => {
-    const potentials = [
-      { slug: 'a', projectedFieldCeiling: 0 },
-      { slug: 'b', projectedFieldCeiling: 0 },
-    ]
-    const suggested = decomposeStateGoal(potentials, { stateGoal: 100_000 })
-    expect(suggested.get('a')).toBe(50_000)
-    expect(suggested.get('b')).toBe(50_000)
+  it('keeps a stronghold at or above the votes it already produced (the E8 formula did not)', () => {
+    const slug = 'vitoria-da-conquista'
+    const own2022 = ownVotes2022(getMunicipalityFederalBaseline(slug))
+    expect(own2022).toBeGreaterThan(1000) // guards the fixture, not the formula
+
+    const { suggestedGoalBySlug } = deriveSuggestedGoalsByScenario(catalogSlugs(), {
+      stateGoal: 150_000,
+      margin: 10,
+    })
+    const goal = suggestedGoalBySlug.get(slug)
+
+    expect(goal?.central).toBe(own2022)
+    expect(goal?.optimistic).toBeGreaterThan(own2022)
   })
 
-  it('returns an empty map for an empty potentials list', () => {
-    expect(decomposeStateGoal([], { stateGoal: 150_000 }).size).toBe(0)
+  it('leaves a desert with a near-zero goal instead of inflating it', () => {
+    const slug = 'campo-formoso'
+    const own2022 = ownVotes2022(getMunicipalityFederalBaseline(slug))
+
+    const { suggestedGoalBySlug } = deriveSuggestedGoalsByScenario(catalogSlugs(), {
+      stateGoal: 150_000,
+      margin: 10,
+    })
+    const goal = suggestedGoalBySlug.get(slug)
+
+    expect(goal?.central).toBe(own2022)
+    expect(goal?.optimistic).toBeLessThan(own2022 * 2)
+  })
+
+  it('clamps the growth factor at 1 when the state goal sits below the projected base', () => {
+    const { suggestedGoalBySlug, baseTotal, growthFactor, belowBase } =
+      deriveSuggestedGoalsByScenario(catalogSlugs(), { stateGoal: 1000, margin: 10 })
+
+    expect(belowBase).toBe(true)
+    expect(growthFactor).toBe(1)
+
+    const goals = [...suggestedGoalBySlug.values()]
+    // An "optimistic" scenario must never land below central.
+    for (const goal of goals) expect(goal.optimistic).toBeGreaterThanOrEqual(goal.central)
+    expect(goals.reduce((total, goal) => total + goal.optimistic, 0)).toBeCloseTo(baseTotal, 6)
+  })
+
+  it('defaults the pessimistic haircut to 10% when margin is unset, and clamps a mistyped one', () => {
+    const slugs = catalogSlugs()
+    const unset = deriveSuggestedGoalsByScenario(slugs, { stateGoal: 150_000, margin: null })
+    const mistyped = deriveSuggestedGoalsByScenario(slugs, { stateGoal: 150_000, margin: 500 })
+
+    const slug = 'vitoria-da-conquista'
+    const own2022 = ownVotes2022(getMunicipalityFederalBaseline(slug))
+
+    expect(unset.suggestedGoalBySlug.get(slug)?.pessimistic).toBeCloseTo(own2022 * 0.9, 6)
+    expect(mistyped.suggestedGoalBySlug.get(slug)?.pessimistic).toBe(0)
+  })
+
+  it('returns an empty map for an empty slug list (never NaN)', () => {
+    const result = deriveSuggestedGoalsByScenario([], { stateGoal: 150_000, margin: 10 })
+    expect(result.suggestedGoalBySlug.size).toBe(0)
+    expect(result.baseTotal).toBe(0)
+    expect(result.growthFactor).toBe(1)
+    expect(result.belowBase).toBe(false)
+  })
+
+  it('gives an unknown slug a zero goal in every scenario', () => {
+    const { suggestedGoalBySlug } = deriveSuggestedGoalsByScenario(['nao-existe'], {
+      stateGoal: 150_000,
+      margin: 10,
+    })
+    expect(suggestedGoalBySlug.get('nao-existe')).toEqual({
+      pessimistic: 0,
+      central: 0,
+      optimistic: 0,
+    })
   })
 })
 
@@ -200,7 +276,6 @@ describe('sanityCheckSuggestedGoalsByTerritory', () => {
 describe('computeMunicipalityPotential / computeAllMunicipalityPotentials (real artifact)', () => {
   it('returns a well-shaped potential for a real catalog slug and a zeroed one for an unknown slug', async () => {
     const { computeMunicipalityPotential } = await import('@/utilities/municipalityPotential')
-    const { municipalityCatalog } = await import('@/lib/municipalityCatalog')
 
     const realSlug = municipalityCatalog[0]!.slug
     const real: MunicipalityPotential = computeMunicipalityPotential(realSlug)
@@ -216,7 +291,6 @@ describe('computeMunicipalityPotential / computeAllMunicipalityPotentials (real 
 
   it('computeAllMunicipalityPotentials covers exactly the municipality catalog', async () => {
     const { computeAllMunicipalityPotentials } = await import('@/utilities/municipalityPotential')
-    const { municipalityCatalog } = await import('@/lib/municipalityCatalog')
 
     const potentials = computeAllMunicipalityPotentials()
     expect(potentials).toHaveLength(municipalityCatalog.length)

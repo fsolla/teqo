@@ -146,8 +146,8 @@ export const MunicipalityGoalAccountCard = ({
         <CampaignInfoHint label="Sobre a conta da cadeira">
           <div className="flex flex-col gap-2">
             <p>
-              <strong>Meta</strong> é a estimativa da mesa; sem estimativa, usa a meta sugerida
-              (decomposição proporcional da meta estadual pelo teto do campo projetado).
+              <strong>Meta</strong> é a estimativa da mesa; sem estimativa, usa a meta sugerida —
+              a votação do próprio Jorge Solla aqui em 2022 (cenário média).
             </p>
             <p>
               <strong>Comprometido</strong> é só a soma das declarações de lideranças — nunca a
@@ -181,7 +181,7 @@ export const MunicipalityGoalAccountCard = ({
         />
         <p className="mt-1 text-xs text-muted-foreground">
           Meta usada na conta: {formatElectionNumber(goalCoverage.goal)} (
-          {usesMesaEstimate ? 'estimativa da mesa' : 'meta sugerida, decomposição da meta estadual'})
+          {usesMesaEstimate ? 'estimativa da mesa' : 'meta sugerida: votação de 2022 aqui'})
         </p>
       </div>
 
@@ -276,8 +276,8 @@ export const MunicipalityGoalAccountCard = ({
       </dl>
       {suggestedGoal <= 0 ? (
         <p className="text-xs text-muted-foreground">
-          Sem teto do campo projetado para decompor uma meta sugerida — cadastre a estimativa da
-          mesa manualmente.
+          Sem votação própria em 2022 aqui, então não há meta sugerida — é praça de expansão:
+          cadastre a estimativa da mesa manualmente se decidir investir.
         </p>
       ) : null}
     </section>

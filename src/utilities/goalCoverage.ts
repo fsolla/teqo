@@ -1,4 +1,5 @@
 import { formatElectionNumber } from '@/lib/electionInsights'
+import type { SuggestedGoalByScenario } from '@/utilities/municipalityPotential'
 import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeData'
 import {
   getVoteEstimateForScenario,
@@ -11,9 +12,12 @@ import {
  * E8 "conta da cadeira" — coverage of the goal by auditable pledges.
  *
  * Semantics locked this session (see the E8 plan's audit finding #2):
- * - **meta** = `expectedVotes[cenário] ?? suggestedGoal` — the mesa's own
- *   expectation when set (`Municipality.expectedVotes`), falling back to the
- *   goal decomposed from the state goal (`municipalityPotential.ts`).
+ * - **meta** = `expectedVotes[cenário] ?? suggestedGoal[cenário]` — the mesa's
+ *   own expectation when set (`Municipality.expectedVotes`), falling back to
+ *   the suggested goal for the SAME scenario (`municipalityPotential.ts`'s
+ *   `deriveSuggestedGoalsByScenario`, anchored on the candidate's own 2022
+ *   vote). Both sides of the fallback are now per-scenario, so switching the
+ *   list's scenario picker moves the goal as well as the commitment.
  * - **comprometido** = `aggregate.effectiveByScenario[cenário]` — the pledge
  *   aggregate ONLY (`estimated[S] ?? declared`, summed over `votePledge`
  *   rows). It is deliberately **not** `resolveMunicipalityStaffVoteTotal`,
@@ -54,11 +58,12 @@ export const createEmptyGoalCoverageByScenario = (): Record<
 /** Coverage for one municipality, one scenario. */
 export const computeGoalCoverage = (
   expectedVotes: VoteEstimateScenarioFields | null | undefined,
-  suggestedGoal: number,
+  suggestedGoalByScenario: SuggestedGoalByScenario,
   pledgeAggregate: MunicipalityPledgeAggregate,
   scenario: VoteEstimateScenario,
 ): MunicipalityGoalCoverage => {
-  const goal = getVoteEstimateForScenario(expectedVotes, scenario) ?? suggestedGoal
+  const goal =
+    getVoteEstimateForScenario(expectedVotes, scenario) ?? suggestedGoalByScenario[scenario]
   const committed = pledgeAggregate.effectiveByScenario[scenario]
   const coverageRatio = goal > 0 ? committed / goal : null
   const deficit = goal - committed
@@ -68,14 +73,14 @@ export const computeGoalCoverage = (
 /** Coverage for one municipality, all three scenarios (mirrors `staffVoteTotalByScenario`). */
 export const computeGoalCoverageByScenario = (
   expectedVotes: VoteEstimateScenarioFields | null | undefined,
-  suggestedGoal: number,
+  suggestedGoalByScenario: SuggestedGoalByScenario,
   pledgeAggregate: MunicipalityPledgeAggregate,
 ): Record<VoteEstimateScenario, MunicipalityGoalCoverage> => {
   const coverageByScenario = {} as Record<VoteEstimateScenario, MunicipalityGoalCoverage>
   for (const scenario of VOTE_ESTIMATE_SCENARIOS) {
     coverageByScenario[scenario] = computeGoalCoverage(
       expectedVotes,
-      suggestedGoal,
+      suggestedGoalByScenario,
       pledgeAggregate,
       scenario,
     )
