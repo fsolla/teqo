@@ -9,6 +9,14 @@ import { describe, expect, it } from 'vitest'
 import { loadMunicipalityGeometryModule, loadTerritoryGeometryModule } from '@/lib/bahiaGeometries'
 import { bahiaMunicipalityCodes } from '@/lib/bahiaMunicipalityCodes'
 import { bahiaIdentityTerritoryRecords } from '@/lib/bahiaTerritories'
+import { municipalityCatalog } from '@/lib/municipalityCatalog'
+import {
+  featureCentroid,
+  findContainingMunicipality,
+  resolveNearbyMunicipality,
+} from '@/lib/municipalityProximity'
+
+import { featureBounds } from '../helpers/featureBounds'
 
 /** Soft ceiling against accidental unsimplified meshes (plan target ≤ ~600 KB). */
 const MAX_TOPO_BYTES = 600 * 1024
@@ -77,6 +85,79 @@ describe('Bahia static geometries', () => {
 
     expect(getTerritoryFeature('01')?.properties.name).toBe('Irecê')
     expect(getTerritoryFeature('99')).toBeUndefined()
+  })
+
+  /**
+   * B14 resolves "onde estou" against this same mesh, so the containment used in
+   * the field is pinned here with real coordinates — the synthetic squares in
+   * tests/unit/municipalityProximity cover the algorithm, not the data.
+   */
+  describe('municipality containment (B14)', () => {
+    const cityCentres: ReadonlyArray<{ city: string; lat: number; lng: number }> = [
+      { city: 'Salvador', lat: -12.973, lng: -38.5121 },
+      { city: 'Feira de Santana', lat: -12.2664, lng: -38.9663 },
+      { city: 'Vitória da Conquista', lat: -14.8615, lng: -40.8442 },
+      { city: 'Seabra', lat: -12.4172, lng: -41.7702 },
+    ]
+
+    it('places known city centres in their own município', async () => {
+      const { features } = await loadMunicipalityGeometryModule()
+
+      for (const { city, lat, lng } of cityCentres) {
+        const containing = findContainingMunicipality(features, { lat, lng })
+        expect(containing?.properties.name, city).toBe(city)
+      }
+    })
+
+    it('resolves nothing outside the state', async () => {
+      const { features } = await loadMunicipalityGeometryModule()
+
+      // Atlantic off Salvador and downtown São Paulo.
+      expect(findContainingMunicipality(features, { lat: -13, lng: -37.5 })).toBeUndefined()
+      expect(findContainingMunicipality(features, { lat: -23.55, lng: -46.63 })).toBeUndefined()
+    })
+
+    it('keeps every centroid inside its own bounding box', async () => {
+      const { features } = await loadMunicipalityGeometryModule()
+
+      for (const entry of features) {
+        const centroid = featureCentroid(entry)
+        const bounds = featureBounds(entry)
+
+        expect(centroid.lng, entry.properties.name).toBeGreaterThanOrEqual(bounds.west)
+        expect(centroid.lng, entry.properties.name).toBeLessThanOrEqual(bounds.east)
+        expect(centroid.lat, entry.properties.name).toBeGreaterThanOrEqual(bounds.south)
+        expect(centroid.lat, entry.properties.name).toBeLessThanOrEqual(bounds.north)
+      }
+    })
+
+    it('sends a Salvador position to the zone list and an out-of-portfolio one to the nearest', async () => {
+      const geometry = await loadMunicipalityGeometryModule()
+      const salvadorZones = municipalityCatalog.filter((entry) => entry.city === 'Salvador')
+      const seabra = municipalityCatalog.find((entry) => entry.slug === 'seabra')!
+      const salvadorPoint = { lat: -12.973, lng: -38.5121 }
+
+      expect(
+        resolveNearbyMunicipality({
+          point: salvadorPoint,
+          geometry,
+          accessible: salvadorZones,
+        }),
+      ).toEqual({
+        kind: 'zoneCity',
+        city: 'Salvador',
+        ibgeCode: '2927408',
+        zoneCount: salvadorZones.length,
+      })
+
+      expect(
+        resolveNearbyMunicipality({
+          point: salvadorPoint,
+          geometry,
+          accessible: [seabra],
+        }),
+      ).toEqual({ kind: 'outOfScope', city: 'Salvador', nearestInScope: null })
+    })
   })
 
   it('exposes TopoJSON object names expected by consumers', async () => {

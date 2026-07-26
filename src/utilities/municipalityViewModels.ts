@@ -44,7 +44,7 @@ export const municipalityListSelect = {
   },
 } as const
 
-export type MunicipalityPoliticalTrendViewModel = {
+type MunicipalityPoliticalTrendViewModel = {
   status: PoliticalTrendStatus | null
   note: string | null
   recordedByName: string | null

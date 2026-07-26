@@ -1,3 +1,5 @@
+import type { AccessibleMunicipality } from '@/lib/municipalityProximity'
+
 type MunicipalityMapSlugEntry = {
   slug: string
   name: string
@@ -10,14 +12,8 @@ export type MunicipalityMapNavigation =
   | { kind: 'navigate'; slug: string }
   | { kind: 'zones' }
 
-type MunicipalityForIbgeIndex = {
-  slug: string
-  name: string
-  ibgeCode: string
-}
-
 export const buildMunicipalitiesByIbgeCode = (
-  municipalities: MunicipalityForIbgeIndex[],
+  municipalities: readonly AccessibleMunicipality[],
 ): MunicipalitiesByIbgeCode => {
   const byIbge: MunicipalitiesByIbgeCode = {}
 

@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import type { ReactNode } from 'react'
 
+import { NearestMunicipalityCard } from '@/components/campaign/dashboard/NearestMunicipalityCard'
 import { RecentlyVisitedCard } from '@/components/campaign/dashboard/RecentlyVisitedCard'
 import { CampaignMetricStrip } from '@/components/campaign/shared/CampaignMetricStrip'
 import {
@@ -11,7 +12,9 @@ import {
 } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { municipalityForCode } from '@/lib/bahiaMunicipalityCodes'
 import { formatElectionNumber } from '@/lib/electionFormat'
+import type { AccessibleMunicipality } from '@/lib/municipalityProximity'
 import { formatVoteEstimateEndpointsLabel, voteEstimateScenarioLabels } from '@/lib/voteEstimate'
 import type { StaffDashboardView } from '@/utilities/campaignDashboardData'
 import {
@@ -20,11 +23,36 @@ import {
   goalCoverageProgressPercent,
 } from '@/utilities/goalCoverage'
 import { buildMunicipalityListHref } from '@/utilities/municipalityListUrl'
+import { buildMunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
   timeStyle: 'short',
 })
+
+/**
+ * B14 — one filtered-list href per city the catalog splits into zone municipalities
+ * (today only Salvador), for the cities where the actor can open more than one zone.
+ * Serialized here rather than in the island: the canonical list-URL builder validates
+ * against the catalog and the identity-territory table, and importing it into a client
+ * component added 21 KB to this route's First Load JS for a single link.
+ *
+ * The search term is the whole-city name, which matches every `Salvador — ZE n` row
+ * and is then scoped by the list to what the actor may read.
+ */
+const buildZoneCityHrefs = (
+  accessible: readonly AccessibleMunicipality[],
+): Record<string, string> => {
+  const hrefs: Record<string, string> = {}
+
+  for (const [ibgeCode, entries] of Object.entries(buildMunicipalitiesByIbgeCode(accessible))) {
+    if (entries.length < 2) continue
+    const city = municipalityForCode(ibgeCode)
+    if (city) hrefs[ibgeCode] = buildMunicipalityListHref({ page: 1, q: city }, 1)
+  }
+
+  return hrefs
+}
 
 export const CampaignDashboard = ({
   view,
@@ -178,7 +206,21 @@ export const CampaignDashboard = ({
       </section>
     ) : null}
 
-    <RecentlyVisitedCard now={new Date()} />
+    {/*
+     * Navigation shortcuts. Both cards decide for themselves whether they have
+     * anything to say — recent visits are empty on a fresh device, and the geo
+     * card hides when the browser cannot help — so the row disappears in CSS
+     * (`has-[>*]`) instead of asking the islands to report visibility upward,
+     * which cost two state slots and a layout shift on every load. Two columns
+     * even with a single card, keeping the width rhythm of the panels above.
+     */}
+    <div className="hidden gap-6 has-[>*]:grid lg:grid-cols-2">
+      <NearestMunicipalityCard
+        accessible={view.accessibleMunicipalities}
+        zoneCityHrefs={buildZoneCityHrefs(view.accessibleMunicipalities)}
+      />
+      <RecentlyVisitedCard now={new Date()} />
+    </div>
 
     <div>
       <Button asChild className="min-h-11">
