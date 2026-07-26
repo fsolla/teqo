@@ -4,38 +4,90 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
+  CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
-import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
 import {
   CampaignTable,
   CampaignTableHead,
   type CampaignTableColumn,
 } from '@/components/campaign/shared/CampaignTable'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { Button } from '@/components/ui/button'
+import { StateDeputyFilters } from '@/components/campaign/stateDeputy/StateDeputyFilters'
+import { StateDeputySortableHead } from '@/components/campaign/stateDeputy/StateDeputySortableHead'
+import { Button, buttonVariants } from '@/components/ui/button'
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/Empty'
+import { cn } from '@/lib/utils'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
-  buildStateDeputyListHref,
   loadStateDeputyListPageData,
-  parseStateDeputyListParams,
   type StateDeputyRowViewModel,
 } from '@/utilities/stateDeputyData'
+import {
+  clearStateDeputyListFilters,
+  type StateDeputyFilterOption,
+} from '@/utilities/stateDeputyListFilters'
+import {
+  buildStateDeputyListHref,
+  formatStateDeputyListSortSummary,
+  resolveStateDeputyListSort,
+  resolveStateDeputyListUrl,
+  type StateDeputyListState,
+} from '@/utilities/stateDeputyListUrl'
 
 type StateDeputiesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-const stateDeputyColumns: Array<CampaignTableColumn<StateDeputyRowViewModel>> = [
+const StateDeputyListEmptyState = ({ state }: { state: StateDeputyListState }) => (
+  <Empty className="min-h-56">
+    <EmptyHeader>
+      <EmptyMedia variant="icon">
+        <SearchXIcon aria-hidden="true" />
+      </EmptyMedia>
+      <EmptyTitle>Nenhuma dobradinha encontrada</EmptyTitle>
+      <EmptyDescription>
+        Ajuste a busca ou os filtros para encontrar as dobradinhas.
+      </EmptyDescription>
+    </EmptyHeader>
+    <EmptyContent>
+      {/* Same contract as the filter bar's Limpar: drop filters, keep the sort. */}
+      <CampaignTransitionAnchor
+        href={buildStateDeputyListHref(clearStateDeputyListFilters(state), 1)}
+        replace
+        scroll={false}
+        className={cn(buttonVariants({ variant: 'outline' }), 'min-h-11')}
+      >
+        Limpar busca e filtros
+      </CampaignTransitionAnchor>
+    </EmptyContent>
+  </Empty>
+)
+
+const stateDeputyColumns = (
+  state: StateDeputyListState,
+  partyFilterOptions: StateDeputyFilterOption[],
+  hasNoPartyOption: boolean,
+): Array<CampaignTableColumn<StateDeputyRowViewModel>> => [
   {
     id: 'name',
     mandatory: true,
-    head: <CampaignTableHead>Nome</CampaignTableHead>,
+    head: (
+      <StateDeputySortableHead state={state} sortKey="name">
+        Nome
+      </StateDeputySortableHead>
+    ),
     cell: (row) => (
       <Link
         href={`/campanha/dobradinhas/${row.slug}`}
@@ -47,7 +99,16 @@ const stateDeputyColumns: Array<CampaignTableColumn<StateDeputyRowViewModel>> = 
   },
   {
     id: 'party',
-    head: <CampaignTableHead>Partido</CampaignTableHead>,
+    head: (
+      <StateDeputySortableHead
+        state={state}
+        sortKey="party"
+        filterOptions={partyFilterOptions}
+        hasNoPartyOption={hasNoPartyOption}
+      >
+        Partido
+      </StateDeputySortableHead>
+    ),
     cellClassName: 'text-muted-foreground',
     cell: (row) => row.party ?? '—',
   },
@@ -67,12 +128,25 @@ const stateDeputyColumns: Array<CampaignTableColumn<StateDeputyRowViewModel>> = 
 
 export default async function StateDeputiesPage({ searchParams }: StateDeputiesPageProps) {
   const rawSearchParams = await searchParams
+  const canonicalUrl = resolveStateDeputyListUrl(rawSearchParams)
+  if (canonicalUrl.redirectHref) redirect(canonicalUrl.redirectHref)
+
   const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
   if (!user) redirect('/campanha/login')
   if (!isCampaignStaff(user)) redirect('/campanha')
 
-  const state = parseStateDeputyListParams(rawSearchParams)
-  const { rows, totalDocs, totalPages } = await loadStateDeputyListPageData(payload, user, state)
+  const { rows, totalDocs, totalPages, filterFacets } = await loadStateDeputyListPageData(
+    payload,
+    user,
+    canonicalUrl.state,
+  )
+  const resolvedUrl = resolveStateDeputyListUrl(rawSearchParams, totalPages)
+  if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
+  const { state } = resolvedUrl
+
+  const { sort, dir } = resolveStateDeputyListSort(state)
+  const sortSummary = formatStateDeputyListSortSummary(sort, dir)
+  const partyFilterOptions = filterFacets.parties.map((party) => ({ value: party, label: party }))
 
   return (
     <CampaignPageShell>
@@ -93,40 +167,33 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
       </header>
 
       <CampaignListPendingBoundary>
-        <CampaignSearchForm
-          ariaLabel="Buscar dobradinha por nome"
-          placeholder="Buscar por nome…"
-          initialQuery={state.q ?? ''}
-          basePath="/campanha/dobradinhas"
+        <StateDeputyFilters
+          state={state}
+          partyOptions={partyFilterOptions}
+          hasNoParty={filterFacets.hasNoParty}
         />
 
         <CampaignListResults>
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {sortSummary}
+          </p>
+          <CampaignTable
+            caption={`${sortSummary}. Deputados estaduais com quem a campanha dobra.`}
+            columns={stateDeputyColumns(state, partyFilterOptions, filterFacets.hasNoParty)}
+            rows={rows}
+            rowKey={(row) => row.id}
+            empty={<StateDeputyListEmptyState state={state} />}
+          />
           {rows.length ? (
-            <>
-              <CampaignTable columns={stateDeputyColumns} rows={rows} rowKey={(row) => row.id} />
-              <CampaignListFooter
-                totalDocs={totalDocs}
-                singular="dobradinha"
-                plural="dobradinhas"
-                page={state.page}
-                totalPages={totalPages}
-                hrefForPage={(page) => buildStateDeputyListHref(state, page)}
-              />
-            </>
-          ) : (
-            <CampaignListEmptyState
-              icon={SearchXIcon}
-              title="Nenhuma dobradinha cadastrada"
-              description="Cadastre deputados estaduais parceiros para vincular a municípios e lideranças."
-            >
-              <Button asChild className="min-h-11">
-                <Link href="/campanha/dobradinhas/nova">
-                  <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                  Nova dobradinha
-                </Link>
-              </Button>
-            </CampaignListEmptyState>
-          )}
+            <CampaignListFooter
+              totalDocs={totalDocs}
+              singular="dobradinha"
+              plural="dobradinhas"
+              page={state.page}
+              totalPages={totalPages}
+              hrefForPage={(page) => buildStateDeputyListHref(state, page)}
+            />
+          ) : null}
         </CampaignListResults>
       </CampaignListPendingBoundary>
     </CampaignPageShell>

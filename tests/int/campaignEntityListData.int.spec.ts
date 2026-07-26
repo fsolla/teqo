@@ -15,6 +15,7 @@ import { loadDemandListPageData } from '@/utilities/campaignDemandData'
 import { loadLeadershipListPageData } from '@/utilities/leadershipData'
 import { loadOrganizationListPageData } from '@/utilities/organizationData'
 import { loadStateDeputyListPageData } from '@/utilities/stateDeputyData'
+import { NO_PARTY_FILTER_VALUE } from '@/utilities/stateDeputyListUrl'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -133,6 +134,85 @@ describe('loadStateDeputyListPageData', () => {
       municipalityCount: 0,
       leadershipCount: 0,
     })
+  })
+
+  it('sorts by party in both directions, pinning where the party-less row falls', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const marker = fixtures.value('sort')
+    const withPsd = await fixtures.createStateDeputy({
+      name: `Dep ${marker} PSD`,
+      party: 'PSD',
+    })
+    const withPt = await fixtures.createStateDeputy({ name: `Dep ${marker} PT`, party: 'PT' })
+    const withoutParty = await fixtures.createStateDeputy({ name: `Dep ${marker} sem` })
+
+    // Pinned adapter behavior (Postgres default, unmodified by Payload): ASC
+    // sorts nulls LAST, DESC sorts nulls FIRST — the party-less row never
+    // lands in the middle. "Sem partido" is the direct, unambiguous path to
+    // find it either way.
+    const asc = await loadStateDeputyListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      sort: 'party',
+      dir: 'asc',
+    })
+    expect(asc.rows.map((row) => row.slug)).toEqual([withPsd.slug, withPt.slug, withoutParty.slug])
+
+    const desc = await loadStateDeputyListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      sort: 'party',
+      dir: 'desc',
+    })
+    expect(desc.rows.map((row) => row.slug)).toEqual([withoutParty.slug, withPt.slug, withPsd.slug])
+  })
+
+  it('filters by selected parties and by the "Sem partido" sentinel', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const marker = fixtures.value('filter')
+    const withPt = await fixtures.createStateDeputy({ name: `Dep ${marker} PT`, party: 'PT' })
+    await fixtures.createStateDeputy({ name: `Dep ${marker} PSD`, party: 'PSD' })
+    const withoutParty = await fixtures.createStateDeputy({ name: `Dep ${marker} sem` })
+
+    const byParty = await loadStateDeputyListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      parties: ['PT'],
+    })
+    expect(byParty.rows.map((row) => row.slug)).toEqual([withPt.slug])
+
+    const byNoParty = await loadStateDeputyListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      parties: [NO_PARTY_FILTER_VALUE],
+    })
+    expect(byNoParty.rows.map((row) => row.slug)).toEqual([withoutParty.slug])
+  })
+
+  it('computes the party facet from the current search, ignoring the party filter itself', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const marker = fixtures.value('facet')
+    await fixtures.createStateDeputy({ name: `Dep ${marker} PT`, party: 'PT' })
+    await fixtures.createStateDeputy({ name: `Dep ${marker} PSD`, party: 'PSD' })
+    await fixtures.createStateDeputy({ name: `Dep ${marker} sem` })
+
+    const unfiltered = await loadStateDeputyListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+    })
+    expect(unfiltered.filterFacets).toEqual({ parties: ['PSD', 'PT'], hasNoParty: true })
+
+    // Selecting PT keeps every party option reachable — the facet ignores its
+    // own popover's filter so the other options remain visible to switch to.
+    const filteredByPt = await loadStateDeputyListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      parties: ['PT'],
+    })
+    expect(filteredByPt.filterFacets).toEqual({ parties: ['PSD', 'PT'], hasNoParty: true })
   })
 })
 

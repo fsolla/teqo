@@ -1,3 +1,4 @@
+import { truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import {
   parseTerritoryListParams,
   territoryListStateToRawParams,
@@ -54,12 +55,9 @@ export const isTerritoryFilterActive = (
   param: TerritoryFilterParam,
 ): boolean => (param === 'region' ? Boolean(state.regions?.length) : Boolean(state.coverage))
 
-const firstTerritoryNamesLabel = (names: readonly string[]): string =>
-  names.length <= 2 ? names.join(', ') : `${names.slice(0, 2).join(', ')} +${names.length - 2}`
-
 export const formatTerritoryActiveFiltersSummary = (state: TerritoryListState): string | null => {
   const parts: string[] = []
-  if (state.regions?.length) parts.push(firstTerritoryNamesLabel(state.regions))
+  if (state.regions?.length) parts.push(truncatedNamesLabel(state.regions))
   if (state.coverage) parts.push(territoryCoverageLabels[state.coverage])
   if (state.q) parts.push(`Busca "${state.q}"`)
   return parts.length ? parts.join(' · ') : null

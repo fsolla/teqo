@@ -3,16 +3,15 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import type { CampaignUser, Leadership, StateDeputy } from '@/payload-types'
-import {
-  buildListHref,
-  firstValue,
-  normalizedText,
-  strictDecimalInteger,
-  type RawSearchParams,
-} from '@/utilities/campaignListUrl'
 import { relationshipId } from '@/utilities/relationship'
-
-const stateDeputyPageSize = 25
+import {
+  buildStateDeputyListWhere,
+  NO_PARTY_FILTER_VALUE,
+  resolveStateDeputyListPayloadSort,
+  resolveStateDeputyListSort,
+  stateDeputyPageSize,
+  type StateDeputyListState,
+} from '@/utilities/stateDeputyListUrl'
 
 export type StateDeputyRowViewModel = {
   id: number
@@ -23,47 +22,75 @@ export type StateDeputyRowViewModel = {
   leadershipCount: number
 }
 
-export type StateDeputyListState = {
-  page: number
-  q?: string
+/** Values still reachable under the OTHER active filters (the Partido popover). */
+export type StateDeputyListFilterFacets = {
+  parties: string[]
+  hasNoParty: boolean
 }
 
-export const parseStateDeputyListParams = (searchParams: RawSearchParams): StateDeputyListState => {
-  const q = normalizedText(firstValue(searchParams.q))
+/**
+ * Respects the search (an OTHER filter, from the popover's point of view) but
+ * drops the party filter itself — same contract as
+ * `loadMunicipalityListFilterFacets`: a selected value is unioned in so it
+ * stays visible to undo even if the search would otherwise hide it.
+ */
+const loadStateDeputyPartyFacet = async (
+  payload: Payload,
+  user: CampaignUser,
+  state: StateDeputyListState,
+): Promise<StateDeputyListFilterFacets> => {
+  const result = await payload.find({
+    collection: 'stateDeputy',
+    where: buildStateDeputyListWhere({ ...state, parties: undefined }),
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { party: true },
+    user,
+    overrideAccess: false,
+  })
+
+  const availableParties = new Set<string>(
+    (state.parties ?? []).filter((party) => party !== NO_PARTY_FILTER_VALUE),
+  )
+  let hasNoParty = (state.parties ?? []).includes(NO_PARTY_FILTER_VALUE)
+
+  for (const doc of result.docs) {
+    if (doc.party) availableParties.add(doc.party)
+    else hasNoParty = true
+  }
+
   return {
-    page: strictDecimalInteger(firstValue(searchParams.page)) ?? 1,
-    ...(q ? { q } : {}),
+    parties: [...availableParties].sort((left, right) => left.localeCompare(right, 'pt-BR')),
+    hasNoParty,
   }
 }
-
-const buildStateDeputyListSearchParams = (
-  state: StateDeputyListState,
-  page = state.page,
-): URLSearchParams => {
-  const params = new URLSearchParams()
-  if (state.q) params.set('q', state.q)
-  if (page > 1) params.set('page', String(page))
-  return params
-}
-
-export const buildStateDeputyListHref = (state: StateDeputyListState, page: number): string =>
-  buildListHref(state, buildStateDeputyListSearchParams, '/campanha/dobradinhas', page)
 
 export const loadStateDeputyListPageData = async (
   payload: Payload,
   user: CampaignUser,
   state: StateDeputyListState,
-): Promise<{ rows: StateDeputyRowViewModel[]; totalDocs: number; totalPages: number }> => {
-  const result = await payload.find({
-    collection: 'stateDeputy',
-    where: state.q ? { name: { contains: state.q } } : {},
-    depth: 0,
-    limit: stateDeputyPageSize,
-    page: state.page,
-    sort: 'name',
-    user,
-    overrideAccess: false,
-  })
+): Promise<{
+  rows: StateDeputyRowViewModel[]
+  totalDocs: number
+  totalPages: number
+  filterFacets: StateDeputyListFilterFacets
+}> => {
+  const { sort, dir } = resolveStateDeputyListSort(state)
+  const [result, filterFacets] = await Promise.all([
+    payload.find({
+      collection: 'stateDeputy',
+      where: buildStateDeputyListWhere(state),
+      depth: 0,
+      limit: stateDeputyPageSize,
+      page: state.page,
+      sort: resolveStateDeputyListPayloadSort(sort, dir),
+      select: { name: true, slug: true, party: true },
+      user,
+      overrideAccess: false,
+    }),
+    loadStateDeputyPartyFacet(payload, user, state),
+  ])
 
   const stateDeputyIDs = result.docs.map((doc) => doc.id)
   const municipalityCounts = new Map<number, number>()
@@ -121,6 +148,7 @@ export const loadStateDeputyListPageData = async (
     })),
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
+    filterFacets,
   }
 }
 
