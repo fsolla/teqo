@@ -90,7 +90,7 @@ Componentes tocados: `src/lib/municipalityVoteRank.ts` (novo, puro + unit tests)
 
 - **Seletor de ano na ordenação da lista.** Gatilho: pedido da mesa por leitura de série na lista.
 - **Coluna de rank na fila do E9.** Entra junto com E9 (a fila referencia este helper).
-- **Hidratação única do sort derivado `votos` (evitar find filtrado + `loadMunicipalityScope` redundante).** Gatilho: lista lenta no recorte amplo ou 3º path derivado no loader; B15 já documenta full-scan de `expectedVotes`/`coverage` — tratar junto.
+- ~~**Hidratação única do sort derivado `votos` (evitar find filtrado + `loadMunicipalityScope` redundante).** Gatilho: lista lenta no recorte amplo ou 3º path derivado no loader; B15 já documenta full-scan de `expectedVotes`/`coverage` — tratar junto.~~ — **gatilho disparou em 2026-07-25**: com `classe` (E10) o loader chegou ao 4º path derivado (`votos`, `deficit`, `frescor`, `classe`). Registrado como **E10+ F1** · [plano](escala-dry-pos-e10.md).
 
 ## Já resolvido no simplify/critique (não reabrir)
 
