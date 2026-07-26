@@ -85,7 +85,6 @@ export type MunicipalityListProps = {
   isCoordinator: boolean
   advisorOptions: EligibleAdvisorOption[]
   columnFilterOptions: MunicipalityColumnFilterOptions
-  trendFormAction: MunicipalityStaffFormAction
   signalFormAction: MunicipalityStaffFormAction
   state: MunicipalityListState
 }
@@ -249,7 +248,6 @@ const municipalityListColumns = ({
   columnFilterOptions,
   advisorNamesById,
   advisorOptions,
-  trendFormAction,
   signalFormAction,
 }: MunicipalityListProps): Array<CampaignTableColumn<MunicipalityListViewModel>> => [
   {
@@ -407,10 +405,8 @@ const municipalityListColumns = ({
           cell: (municipality) => (
             <MunicipalityListTrendControl
               municipalityID={municipality.id}
-              municipalitySlug={municipality.slug}
               status={municipality.politicalTrendStatus}
               trendNote={municipality.politicalTrendNote}
-              formAction={trendFormAction}
             />
           ),
         },
@@ -501,15 +497,8 @@ const municipalityListColumns = ({
 ]
 
 export const MunicipalityList = (props: MunicipalityListProps) => {
-  const {
-    municipalities,
-    advisorNamesById,
-    isStaffView,
-    isCoordinator,
-    advisorOptions,
-    trendFormAction,
-    state,
-  } = props
+  const { municipalities, advisorNamesById, isStaffView, isCoordinator, advisorOptions, state } =
+    props
   const { sort: activeSort, dir: activeDir } = resolveMunicipalityListSort(state)
   const sortSummary = formatMunicipalityListSortSummary(activeSort, activeDir)
   const columns = municipalityListColumns(props)
@@ -563,10 +552,8 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
                     <dd>
                       <MunicipalityListTrendControl
                         municipalityID={municipality.id}
-                        municipalitySlug={municipality.slug}
                         status={municipality.politicalTrendStatus}
                         trendNote={municipality.politicalTrendNote}
-                        formAction={trendFormAction}
                       />
                     </dd>
                   </div>

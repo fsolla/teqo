@@ -23,7 +23,11 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
   // for any client currently connected — which aborts an in-flight fetch mid
   // test. An unauthenticated POST never succeeds, but it still forces the
   // compile before any spec's client makes the real request.
-  for (const path of ['/campanha/municipios/advisors', '/campanha/municipios/expected-votes']) {
+  for (const path of [
+    '/campanha/municipios/advisors',
+    '/campanha/municipios/expected-votes',
+    '/campanha/municipios/political-trend',
+  ]) {
     await request.post(`${baseURL}${path}`, { data: {} }).catch(() => undefined)
   }
 })

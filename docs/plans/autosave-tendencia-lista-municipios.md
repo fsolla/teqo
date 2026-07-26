@@ -1,8 +1,12 @@
 # Auto-save e justificativa no popover de Tendência da lista de municípios
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue (2026-07-26)
+Atualizado em: 2026-07-26
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B24)
+
+**Revisão 2026-07-26 (auditoria pré-implementação):** `isSameOriginRequest` e o shell JSON (`parseCampaignJsonRequestBody` / `campaignJsonMutationErrorResponse`) já vivem em `src/utilities/` (extraídos pelo **B27 ✓**); o popover de Assessores sem "Salvar" já foi **B27 ✓** (sai de "Não escopo" como fill-in aberto); **B23 ✓** já pluga tooltip + `openOnTouch={false}`/`disabled={open}` — este item só troca a nota read-only do Popover pelo `Textarea`. Questões em aberto fechadas: (1) reconciliar sort/filtro só na próxima navegação; (2) sem contador de caracteres; (3) Assessores fora (já B27).
+
+**Entrega 2026-07-26:** `POST /campanha/municipios/political-trend` + `MunicipalityListTrendControl` reescrito (select ~150 ms / nota 600 ms, flush blur/fechamento, rollback + live region, sem "Salvar", sem `revalidatePath`); lista/page desacoplados de `trendFormAction` (`/editar` mantém o form action); e2e B24 + prewarm da rota; gate tsc/lint/format/knip/check:cycles/unit/int/build verde; Aikido 0 findings.
 Impeccable: B — encaixe em `MunicipalityListTrendControl` (tabela desktop + card mobile de `/campanha/municipios`); sem rota nova de UI
 Appetite: ~0,5 dia eng; 1 componente reescrito + 1 route handler JSON espelhando o de votos estimados; sem migration
 Responsável: —
@@ -54,9 +58,11 @@ Duas coisas envelheceram desde o B9:
 
 ## Questões em aberto
 
-- **Reconciliar sort/filtro depois de editar?** **Opções:** A) nunca (só na próxima navegação); B) `router.refresh()` ao fechar o popover; C) refresh só quando a lista **não** está filtrada/ordenada por tendência. **Recomendação:** A, alinhada ao precedente de votos estimados — e, se o time reclamar de defasagem em uso real, subir para C (que é barata e não remove a linha embaixo de quem está trabalhando). Não implementar B.
-- **Contador de caracteres na justificativa?** **Opções:** A) nenhum; B) contador sempre; C) contador só a partir de ~90% dos 2000. **Recomendação:** A — 2000 caracteres é folga enorme para uma nota de conjuntura, e o `maxLength` do textarea já impede o estouro; C só se alguém realmente encostar no limite.
-- **O popover de Assessores (mesmo B9) também tem "Salvar" — entra junto?** **Opções:** A) não, item separado; B) sim, no mesmo passe. **Recomendação:** A — é multi-seleção (semântica de commit em lote, precedente de delta + advisory lock no B19) e dobraria o appetite; registrado em _Não escopo_ como fill-in próprio.
+_Fechadas na auditoria 2026-07-26:_
+
+- **Reconciliar sort/filtro depois de editar?** → **A** (só na próxima navegação). Opção C fica em _Adiado com gatilho_.
+- **Contador de caracteres na justificativa?** → **A** (nenhum; `maxLength={2000}`).
+- **Popover de Assessores no mesmo passe?** → **A** — entregue como **B27 ✓** (não neste item).
 
 ## Abordagem proposta
 
@@ -77,7 +83,7 @@ Componentes:
 
 - **`MunicipalityListTrendControl`** (`src/components/campaign/municipality/MunicipalityListTrendControl.tsx`): deixa de receber `formAction`/`municipalitySlug` e passa a espelhar a máquina de estado do controle de votos — `draft` / `displayStatus` / `committedRef` / `saveGenerationRef` / `abortRef` / `saveTimeoutRef`, `onOpenChange` com flush, `Alert` de erro, `<p className="sr-only" aria-live="polite">`. Some o `<form>`, o `Button` "Salvar" e o hidden `trendNote`; entra `Textarea` (`src/components/ui/textarea`) rotulada "Justificativa" com `maxLength={2000}`.
 - **`src/app/(campaign)/campanha/(app)/municipios/political-trend/route.ts` + `types.ts`** (novos): `POST` com guarda de mesma origem, `zod` (`municipalityId`, `status` nullable enum, `note` nullable ≤2000) reusando `politicalTrendStatuses` / `trimmedNullableText` de `src/lib/schemas/municipality.ts`, chamando `setMunicipalityPoliticalTrend` e devolvendo `{ status: 'success', savedTrend: { status, note } }`; erros por `mapCampaignFormActionError` + `municipalityStaffEditSafeMessages`, `401` em sessão expirada — cópia fiel do contrato de `expected-votes/route.ts`.
-- **Guarda CSRF compartilhada** (`isSameOriginRequest`): hoje vive privada dentro de `expected-votes/route.ts`; com o segundo endpoint vira helper nomeado em `src/utilities/` (política de segurança vale nomear mesmo com 2 call sites — exceção explícita ao "3+ call sites" do `engineering-standards`). Não criar framework de rotas JSON de campanha.
+- **Guarda CSRF + shell JSON compartilhados:** reusar `isSameOriginRequest` (`src/utilities/sameOriginRequest.ts`) e `parseCampaignJsonRequestBody` / `campaignJsonMutationErrorResponse` (`src/utilities/campaignJsonMutationRoute.ts`) — já extraídos pelo B27. Não criar framework de rotas JSON de campanha.
 - **`MunicipalityList`** (`src/components/campaign/municipality/MunicipalityList.tsx`): remove as props `trendFormAction`/`municipalitySlug` dos dois pontos de uso (coluna `trend` e card mobile).
 - **`municipios/page.tsx` + `municipalityStaffFormActions.ts`**: para de passar `setMunicipalityPoliticalTrendFormAction` para a lista. O form action **permanece** — `/[slug]/editar` continua usando (`MunicipalityStrategyForm`); só a lista deixa de consumi-lo. Rodar `pnpm exec knip` para confirmar que nada ficou órfão.
 - **Depth check:** nenhum `useAutosave` genérico nem `EditableCell` — dois controles com máquinas parecidas ainda são dois controles nomeados (ver _Adiado com gatilho_).
@@ -87,15 +93,15 @@ Componentes:
 ## Dependências
 
 - **Nenhuma dura.** Reusa `setMunicipalityPoliticalTrend` (`src/app/(campaign)/campanha/actions/municipality.ts`), `municipalityPoliticalTrendSchema`, `politicalTrendLabels`/`politicalTrendBadgeVariant` (`src/utilities/municipalityLabels.ts`) e o padrão de endpoint de `expected-votes/`.
-- **Suave:** **B23** ([tooltip-celulas-listas.md](tooltip-celulas-listas.md)) — só a ordem de chegada muda o encaixe (ver "Dados → decisão → apresentação"); nenhum bloqueia o outro, e ambos precisam de `disabled={open}` / `openOnTouch={false}` na célula para o tooltip não brigar com o Popover. **B9 ✓** (origem da célula e do adiado que este item fecha), **B16 ✓** (filtro `?trend=` no header, cuja defasagem é discutida acima), **E4R ✓** (semeou notas de tendência em massa a partir da planilha — são elas que a mesa vai querer corrigir na varredura).
+- **Suave:** **B23 ✓** ([tooltip-celulas-listas.md](tooltip-celulas-listas.md)) — tooltip + convivência Popover já na célula; este item só troca a leitura read-only no Popover pelo `Textarea`. **B27 ✓** — irmão Assessores + helpers JSON compartilhados. **B9 ✓** (origem da célula e do adiado que este item fecha), **B16 ✓** (filtro `?trend=` no header, cuja defasagem é discutida acima), **E4R ✓** (semeou notas de tendência em massa a partir da planilha — são elas que a mesa vai querer corrigir na varredura).
 
 ## Não escopo
 
-- **Popover de Assessores sem botão "Salvar"** → fill-in próprio (multi-seleção pede delta/lock como no **B19 ✓**).
-- **Mostrar a justificativa no hover da célula** → **B23** ([tooltip-celulas-listas.md](tooltip-celulas-listas.md)).
+- **Popover de Assessores sem botão "Salvar"** → **B27 ✓** (entregue 2026-07-26).
+- **Mostrar a justificativa no hover da célula** → **B23 ✓**.
 - **Auto-save no formulário longo `/editar`** → continua submit explícito por decisão de produto (form multi-campo).
 - **Histórico/versionamento da tendência** → **C12 ✓** cobre registro ex-ante de decisões (`allocationDecision`), não conjuntura.
-- **Revalidação/facets em tempo real da lista** → questão em aberto acima; se virar trabalho, cai no mesmo lugar do débito de revalidação do controle de votos.
+- **Revalidação/facets em tempo real da lista** → adiado (opção C); se virar trabalho, cai no mesmo lugar do débito de revalidação do controle de votos.
 
 ## Rabbit holes
 
@@ -106,7 +112,7 @@ Componentes:
 
 ## Adiado com gatilho
 
-- **Hook/shell compartilhado de auto-save em popover de lista.** Revisitar quando: **3º** controle com a mesma máquina (candidatos: assessores na lista, prioridade, `budgetNotes`).
+- **Hook/shell compartilhado de auto-save em popover de lista.** Revisitar quando: **3º** controle com a mesma máquina **debounce+draft** (ExpectedVotes + este = 2; Advisors/B27 é delta distinto — não conta). Candidatos: prioridade, `budgetNotes`.
 - **Reconciliação de sort/filtro pós-edição (opção C).** Revisitar quando: alguém relatar em uso real linha "presa" no filtro de tendência errado.
 - **Contador de caracteres da justificativa.** Revisitar quando: houver nota real perto de 2000 caracteres.
 
