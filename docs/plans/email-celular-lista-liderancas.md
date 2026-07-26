@@ -122,6 +122,8 @@ Depth check: reusa `CampaignTable`, `phone` helpers, padrão visual do B19; extr
 
 - **Editar e-mail/celular da liderança (detalhe e/ou lista com debounce).** Revisitar quando: (1) produto pedir correção de contato sem `/admin`, **ou** (2) E4R/name-only seed gerar volume de fichas sem telefone que o time precise completar em massa na lista. Entrega mínima futura: action `updateLeadershipContact` + campos na ficha interna; lista in-place só se o 2º gesto se repetir.
 - **Incluir e-mail/telefone na busca `q`.** Revisitar quando: ≥1 feedback de uso pedindo achar liderança pelo número.
+- **Achado do `/simplify` (2026-07-26): botão de ação WhatsApp por linha duplicado verbatim entre `liderancas/page.tsx` e `AdvisorsTable.tsx`** (mesma estrutura `Button`/`<a>`/disabled — só o `whatsAppHrefForPhone` foi promovido a `lib/phone.ts`, não o JSX do botão). Só 2 call sites hoje — extrair um `CampaignWhatsAppIconButton` agora seria abstração prematura (padrão do repo: 3+ call sites). Revisitar quando um 3º botão de WhatsApp por linha aparecer (candidato natural: `/campanha/apoiadores`).
+- **Achado do `/simplify` (2026-07-26): `copyText` (`CampaignCopyableCell.tsx`) duplica a forma de `copyMessage` em `SupporterShareKit.tsx`** (clipboard write + toast sucesso/erro; formatos de UI diferentes — célula vs. botão com label toggle). Pré-existente, não introduzido por este item. Revisitar quando um 3º site de copy-to-clipboard-com-toast aparecer — aí sim vale um `copyToClipboard(value, { successMessage, errorMessage })` em `src/lib/`.
 
 ## Referências
 
