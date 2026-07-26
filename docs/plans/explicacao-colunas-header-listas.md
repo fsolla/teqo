@@ -1,11 +1,19 @@
 # Explicação por coluna no header das listas
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue — 2026-07-26
+Atualizado em: 2026-07-26
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B22**)
-Impeccable: B — encaixe no header já existente da lista de municípios (`MunicipalitySortableHead`) + capacidade promovida para o sistema de listas compartilhado
-Appetite: ~0,5 dia eng; promover 1 componente de domínio para `shared/`, 1 prop em 2 heads, copy das colunas de `/campanha/municipios`; sem migration
+Impeccable: B — encaixe no header já existente da lista de municípios (`MunicipalitySortableHead`) + prop `description` em `CampaignTableHead`
+Appetite: ~0,5 dia eng; 1 prop em 2 heads (`CampaignTableHead`, `MunicipalitySortableHead`), 1 mapa de copy em `municipalityLabels.ts`, 1 helper em `campaignIntelligenceConcepts.ts`; sem migration
 Responsável: —
+
+## Revisão 2026-07-26 (auditoria pré-implementação)
+
+O primitivo de tooltip **já foi promovido para `shared/` pelo E10** (entregue 2026-07-25, mesmo dia em que este plano foi escrito, mas depois dele): `MunicipalityHoverTooltip` não existe mais — é `src/components/campaign/shared/CampaignHoverTooltip.tsx`, e o seam genérico `cellTooltip`/`CampaignCellTooltip` também já existe em `CampaignTable`. O Objetivo #3 e a decisão de "mover o primitivo" abaixo estão **concluídos** — nada a fazer aqui. `CampaignSortableHead` (chrome de sort genérico, `wrapSortControl`) também já foi extraído para `shared/` (pela B21), e `MunicipalitySortableHead` já compõe esse primitivo. A contagem de colunas também mudou: o E10 acrescentou a coluna **"Classe"**, que já nasceu com tooltip de header (`CLASS_COLUMN_HINT`) — hoje são **10 colunas no papel staff** (não 9) e **4 delas já têm tooltip de header** (`votos`, `classe`, `frescor`/"Último sinal", `deficit`/"Cobertura da meta"), não 3. O que falta é exatamente o que o objetivo já previa, só que menor: `description` em `CampaignTableHead` (nunca implementado), rename `tooltip`→`description` em `MunicipalitySortableHead` + affordance de sublinhado pontilhado, e o mapa único `municipalityColumnDescriptions` cobrindo as 7 colunas ainda mudas (`name`, `region`, `kind`, `advisors`, `trend`, `expectedVotes`, `lastUpdateAt`). Ver plano de implementação na skill para a lista exata de arquivos.
+
+## Entrega 2026-07-26
+
+Implementado como desenhado na revisão acima: `campaignConceptOneLiner` (`src/lib/campaignIntelligenceConcepts.ts`); `description?: ReactNode` em `CampaignTableHead`; `tooltip` → `description` em `MunicipalitySortableHead` + sublinhado pontilhado no label em ambos; `MunicipalityListColumnId` + `municipalityColumnDescriptions` em `src/utilities/municipalityLabels.ts` (as 11 colunas, `classe` mantendo o texto mais informativo em vez do `oneLiner` terso — decisão assumida documentada na revisão); as 11 chamadas de `MunicipalitySortableHead` em `MunicipalityList.tsx` passam `description=`, e os três `*Hint` locais + a intersecção de tipo extra em `municipalityListColumns()` foram removidos. Testes: pin do `campaignConceptOneLiner` no spec do glossário, `describe('CampaignTableHead description')` em `campaignTable.unit.spec.ts`, e contagem de `data-slot="tooltip-trigger"` no `<thead>` (10 staff / 5 leader) em `campaignComponents.unit.spec.ts`. Gate completo (`tsc`, `lint`, `format:check`, `check:cycles`, `test:unit` 442/442, `test:int` 387/387, `build`) verde; Aikido sem findings. `knip` segue com o erro pré-existente de carregar `payload.config.ts` (ledgerado P3 no AGENTS.md, confirmado idêntico fora desta mudança).
 
 ## Design (Impeccable)
 
@@ -30,9 +38,9 @@ Brief compacto:
 
 ## Contexto
 
-`/campanha/municipios` é a superfície mais densa do produto: tabela de 435 municípios com até 9 colunas no papel staff (Município, Território, Tipo, 2022, Assessores, Tendência, Votos estimados, Último sinal, Cobertura da meta), header já carregado de sort (**B15**) e funil de filtro (**B16**). Várias colunas são métricas derivadas do E8/E9 cujo nome curto não se explica sozinho.
+`/campanha/municipios` é a superfície mais densa do produto: tabela de 435 municípios com **10** colunas no papel staff (Município, Território, Tipo, 2022, Classe, Assessores, Tendência, Votos estimados, Último sinal, Cobertura da meta — a coluna "Classe" entrou com o **E10**, 2026-07-25), header já carregado de sort (**B15**) e funil de filtro (**B16**). Várias colunas são métricas derivadas do E8/E9/E10 cujo nome curto não se explica sozinho.
 
-A capacidade **existe pela metade**: `MunicipalitySortableHead` (`src/components/campaign/municipality/MunicipalitySortableHead.tsx`) já aceita `tooltip?: ReactNode` e o envolve em `MunicipalityHoverTooltip` — mas só **3** colunas passam a prop (`votos`, `frescor`, `deficit`, com as frases montadas ad hoc em `MunicipalityList.tsx:410–415`). As outras seis ficam mudas, e as demais listas do produto (lideranças, organizações, dobradinhas, demandas, apoiadores e a futura **B21** territórios) usam `CampaignTableHead`, que não tem prop nenhuma de explicação. O primitivo de tooltip (hover + foco + tap em touch, com dismiss por `pointerdown`) também mora no domínio `municipality`, apesar de não ter nada de municipal.
+A capacidade **existe pela metade**: `MunicipalitySortableHead` (`src/components/campaign/municipality/MunicipalitySortableHead.tsx`) já aceita `tooltip?: ReactNode` e o envolve em `CampaignHoverTooltip` (`src/components/campaign/shared/CampaignHoverTooltip.tsx` — **já promovido para `shared/` pelo E10**, não mais `MunicipalityHoverTooltip`) — mas só **4** colunas passam a prop (`votos`, `classe`, `frescor`, `deficit`, com as frases montadas ad hoc em `MunicipalityList.tsx`). As outras seis ficam mudas, e as demais listas do produto (lideranças, organizações, dobradinhas, demandas, apoiadores e a já entregue **B21** territórios) usam `CampaignTableHead`, que não tem prop nenhuma de explicação.
 
 Pedido de produto (2026-07-25): tooltip no hover de cada header de coluna em `/campanha/municipios`, **implementado no componente de header** para ser reaproveitado em outras páginas. Isso também dá evidência datada para o débito **O3** ("jargão") / glossário inline do **R6** — que estava em _A validar_ por falta de pedido concreto.
 
@@ -72,7 +80,7 @@ flowchart LR
 
 Componentes:
 
-- **`CampaignHoverTooltip`** (move de `src/components/campaign/municipality/MunicipalityHoverTooltip.tsx` para `src/components/campaign/shared/CampaignHoverTooltip.tsx`): mesmo comportamento, mesma assinatura; atualizar os imports de `MunicipalityBaselineCard.tsx` e `MunicipalityGoalAccountCard.tsx` e o comentário de cabeçalho (deixa de citar "município").
+- **`CampaignHoverTooltip`** — **já em `src/components/campaign/shared/CampaignHoverTooltip.tsx`** (promovido pelo E10, 2026-07-25); nada a mover aqui.
 - **`CampaignTableHead`** (`src/components/campaign/shared/CampaignTable.tsx`): nova prop `description?: ReactNode`. Quando presente, envolve o label num `<span tabIndex={0}>` com `focus-visible:ring` e `underline decoration-dotted underline-offset-4` dentro do `CampaignHoverTooltip` — o `<th>` em si continua não interativo. Sem `description`, o render é byte a byte o de hoje.
 - **`MunicipalitySortableHead`** (`src/components/campaign/municipality/…`): `tooltip` → `description`, apontando para o primitivo compartilhado; o gatilho continua sendo o próprio `CampaignTransitionAnchor` de sort (já focável, então o teclado já funciona) e ganha o mesmo sublinhado pontilhado.
 - **`municipalityColumnDescriptions`** (novo, em `src/utilities/municipalityLabels.ts` — onde os labels da lista já moram): mapa `columnId → string` em pt-BR com as 9 colunas do staff + a coluna `lastUpdateAt` do papel assessor. `goalCoverage` lê `campaignConceptOneLiner('cobertura-da-meta')` e acrescenta a nota de cenário que hoje está no `deficitHint`; `frescor` reaproveita a frase atual com `MUNICIPALITY_COLD_SIGNAL_DAYS`; `votos` reaproveita `formatMunicipalityConcentrationHint()`.
@@ -103,6 +111,7 @@ Componentes:
 
 - **Copy de coluna nas listas de lideranças/organizações/dobradinhas/demandas/apoiadores.** Revisitar quando: alguém do time perguntar o que uma coluna dessas significa em sessão/R6, ou quando a superfície ganhar coluna derivada.
 - **Variante Popover (com link) no mobile.** Revisitar quando: o critique do R6 registrar falha de descoberta em touch — o tap já abre o tooltip hoje.
+- **`description` só foi ligado a `MunicipalitySortableHead`, não à base compartilhada `CampaignSortableHead`.** Achado do `/simplify` da entrega (2026-07-26): hoje é 1 call site (municípios), então subir a prop para o componente genérico seria abstração sem 2º uso. Revisitar quando: um 2º domínio com header rico (dobradinhas **B33**, territórios **B21**) pedir explicação de coluna — aí `description`/`wrapSortControl`+sublinhado pontilhado sobe para `CampaignSortableHead` e os dois wrappers de domínio ficam finos.
 
 ## Referências
 

@@ -61,3 +61,34 @@ describe('CampaignTable cellTooltip', () => {
     expect(renderTable((row) => row.note)).not.toContain('Vereador migrou para a base')
   })
 })
+
+/**
+ * B22 seam: a plain header can carry the same redundant hover/focus/tap
+ * explanation `cellTooltip` gives a cell. Without `description` the render is
+ * byte-for-byte what it was before B22 — no new wrapper, no new tab stop.
+ */
+describe('CampaignTableHead description', () => {
+  it('renders unchanged when no description is declared', () => {
+    const html = renderToStaticMarkup(createElement(CampaignTableHead, {}, 'Território'))
+
+    expect(html).toContain('Território')
+    expect(html).not.toContain('data-slot="tooltip-trigger"')
+    expect(html).not.toContain('tabindex')
+  })
+
+  it('wraps the label in exactly one tooltip trigger when description is declared', () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        CampaignTableHead,
+        { description: 'Território de Identidade a que o município pertence.' },
+        'Território',
+      ),
+    )
+
+    expect(html.match(/data-slot="tooltip-trigger"/g)).toHaveLength(1)
+    expect(html).toContain('>Território<')
+    // Same contract as cellTooltip: Radix only mounts content once opened, so
+    // the description text never reaches the server markup.
+    expect(html).not.toContain('Território de Identidade a que o município pertence.')
+  })
+})
