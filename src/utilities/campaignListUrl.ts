@@ -30,6 +30,10 @@ export const parseExhaustiveEnumParam = <T extends string>(
   return values.length < allowed.size ? values : []
 }
 
+/** "A, B" for ≤2 names, "A, B +N" beyond — the active-filters summary shorthand. */
+export const truncatedNamesLabel = (names: readonly string[]): string =>
+  names.length <= 2 ? names.join(', ') : `${names.slice(0, 2).join(', ')} +${names.length - 2}`
+
 export const normalizedText = (value: string | undefined): string | undefined => {
   if (typeof value !== 'string') return undefined
   const normalized = value.trim()

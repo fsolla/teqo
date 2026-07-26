@@ -1,7 +1,10 @@
 /**
- * Pins the five "simple" entity list parsers ahead of the Pass 2 list-system
- * consolidation (W1): lideranças, organizações, dobradinhas, demandas and
- * assessores. Their URL contracts must survive the migration byte-identical.
+ * Pins the "simple" entity list parsers ahead of the Pass 2 list-system
+ * consolidation (W1): lideranças, organizações, demandas and assessores.
+ * Their URL contracts must survive the migration byte-identical. Dobradinhas
+ * left this group in B33 — its parser grew a full sort/filter contract of its
+ * own and moved to `stateDeputyListUrl.ts`, pinned in
+ * `stateDeputyListUrl.unit.spec.ts`.
  */
 import { describe, expect, it } from 'vitest'
 
@@ -9,11 +12,9 @@ import { advisorListHrefForPage, parseAdvisorListParams } from '@/utilities/advi
 import { parseDemandListParams } from '@/utilities/campaignDemandData'
 import { parseLeadershipListParams } from '@/utilities/leadershipData'
 import { parseOrganizationListParams } from '@/utilities/organizationData'
-import { parseStateDeputyListParams } from '@/utilities/stateDeputyData'
 
 const qAndPageParsers = [
   ['leadership', parseLeadershipListParams],
-  ['stateDeputy', parseStateDeputyListParams],
   ['advisor', parseAdvisorListParams],
 ] as const
 

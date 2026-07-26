@@ -5,6 +5,7 @@
  */
 import { isBahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import { truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import {
   municipalityKindLabels,
   municipalityListCoverageLabels,
@@ -310,10 +311,6 @@ export const isMunicipalityColumnFilterActive = (
   }
 }
 
-/** "Irecê, Recôncavo +3" — the summary never grows past two names per filter. */
-const firstNamesLabel = (names: string[]): string =>
-  names.length <= 2 ? names.join(', ') : `${names.slice(0, 2).join(', ')} +${names.length - 2}`
-
 export const formatMunicipalityActiveFiltersSummary = (
   state: MunicipalityListState,
 ): string | null => {
@@ -321,10 +318,12 @@ export const formatMunicipalityActiveFiltersSummary = (
   if (state.priority) parts.push(municipalityPriorityLabels.alta)
   if (state.slugs?.length) {
     parts.push(
-      firstNamesLabel(state.slugs.map((slug) => getMunicipalityCatalogEntry(slug)?.name ?? slug)),
+      truncatedNamesLabel(
+        state.slugs.map((slug) => getMunicipalityCatalogEntry(slug)?.name ?? slug),
+      ),
     )
   }
-  if (state.regions?.length) parts.push(firstNamesLabel([...state.regions]))
+  if (state.regions?.length) parts.push(truncatedNamesLabel([...state.regions]))
   if (state.kind) parts.push(municipalityKindLabels[state.kind])
   if (state.advisors?.length) {
     parts.push(state.advisors.length === 1 ? '1 assessor' : `${state.advisors.length} assessores`)
