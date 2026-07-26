@@ -19,7 +19,6 @@ type RecentlyVisitedCardProps = {
   compact?: boolean
   clearControl?: 'icon' | 'labeled'
   className?: string
-  onVisitCountChange?: (count: number) => void
 }
 
 export const RecentlyVisitedCard = ({
@@ -27,20 +26,16 @@ export const RecentlyVisitedCard = ({
   compact = false,
   clearControl = 'icon',
   className,
-  onVisitCountChange,
 }: RecentlyVisitedCardProps) => {
   const [entries, setEntries] = useState<RecentVisitEntry[]>([])
 
   useEffect(() => {
-    const visits = listRecentVisits()
-    setEntries(visits)
-    onVisitCountChange?.(visits.length)
-  }, [onVisitCountChange])
+    setEntries(listRecentVisits())
+  }, [])
 
   const handleClear = () => {
     clearRecentVisits()
     setEntries([])
-    onVisitCountChange?.(0)
   }
 
   if (!entries.length) return null

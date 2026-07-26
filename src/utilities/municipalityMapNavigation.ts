@@ -17,7 +17,7 @@ type MunicipalityForIbgeIndex = {
 }
 
 export const buildMunicipalitiesByIbgeCode = (
-  municipalities: MunicipalityForIbgeIndex[],
+  municipalities: readonly MunicipalityForIbgeIndex[],
 ): MunicipalitiesByIbgeCode => {
   const byIbge: MunicipalitiesByIbgeCode = {}
 

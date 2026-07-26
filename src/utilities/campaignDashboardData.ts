@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import type { AccessibleMunicipality } from '@/lib/municipalityProximity'
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, VotePledge } from '@/payload-types'
 import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
@@ -34,6 +35,13 @@ export type StaffDashboardView = {
     declaredVotes: number
   }>
   priorityMunicipalities: DashboardPriorityMunicipality[]
+  /**
+   * B14 — every município the actor can open, for the geo shortcut to match a
+   * browser position against without sending the position anywhere. Minimal by
+   * design: three short strings per row, so the whole catalog stays a few KB of
+   * RSC payload.
+   */
+  accessibleMunicipalities: AccessibleMunicipality[]
   recentUpdates: Array<{
     id: number
     municipalityName: string
@@ -148,6 +156,10 @@ export const getCampaignDashboardData = async (
     goalCoverageBundle.coverageByMunicipalityID,
   )
 
+  const accessibleMunicipalities: AccessibleMunicipality[] = municipalities.docs.map(
+    ({ slug, name, ibgeCode }) => ({ slug, name, ibgeCode }),
+  )
+
   return {
     kind: 'staff',
     role:
@@ -179,6 +191,7 @@ export const getCampaignDashboardData = async (
     }),
     highPriorityCount: dashboardPriority.highPriorityCount,
     priorityMunicipalities: dashboardPriority.municipalities,
+    accessibleMunicipalities,
     recentUpdates: recentUpdatesResult.docs.map((update) => {
       const municipality = municipalityById.get(relationshipId(update.municipality) ?? -1)
       const author = authorsById.get(relationshipId(update.author) ?? -1)
