@@ -7,15 +7,12 @@ import { CampaignDashboard } from '@/components/campaign/dashboard/CampaignDashb
 import { LeaderContactsPanel } from '@/components/campaign/leadership/LeaderContactsPanel'
 import { MunicipalityMapPanelDynamic } from '@/components/campaign/map/MunicipalityMapPanelDynamic'
 import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
-import { TerritoryOverviewTable } from '@/components/campaign/municipality/TerritoryOverviewTable'
-import { campaignPrioritySurfaceClassName } from '@/components/campaign/shell/CampaignPageShell'
 import type { CampaignUser } from '@/payload-types'
 import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { getCampaignDashboardData } from '@/utilities/campaignDashboardData'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'
 import { loadLeaderContactsPageData } from '@/utilities/leaderContactsPageData'
-import { loadTerritoryOverview } from '@/utilities/loadTerritoryOverview'
 import { loadMunicipalityMapBundle } from '@/utilities/municipalityMapData'
 
 export const dynamic = 'force-dynamic'
@@ -66,20 +63,6 @@ export default async function CampaignHomePage({ searchParams }: CampaignHomePag
           </Suspense>
         ) : null
       }
-      territorySlot={
-        isStaff ? (
-          <Suspense
-            fallback={
-              <div
-                aria-hidden="true"
-                className="h-[280px] w-full animate-pulse rounded-xl border bg-muted/40"
-              />
-            }
-          >
-            <TerritoryOverviewSection payload={payload} />
-          </Suspense>
-        ) : null
-      }
     />
   )
 }
@@ -103,20 +86,5 @@ const DashboardMapSection = async ({
     <MunicipalityEstimateScenarioProvider>
       <MunicipalityMapPanelDynamic bundle={mapBundle} candidateOptions={candidateOptions} />
     </MunicipalityEstimateScenarioProvider>
-  )
-}
-
-const TerritoryOverviewSection = async ({ payload }: { payload: Payload }) => {
-  const rows = await loadTerritoryOverview(payload)
-  return (
-    <section
-      aria-labelledby="territory-overview-title"
-      className={`rounded-xl border p-4 ${campaignPrioritySurfaceClassName}`}
-    >
-      <h2 id="territory-overview-title" className="mb-3 text-base font-medium">
-        Territórios de Identidade
-      </h2>
-      <TerritoryOverviewTable rows={rows} />
-    </section>
   )
 }
