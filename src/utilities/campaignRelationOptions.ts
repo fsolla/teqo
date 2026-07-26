@@ -69,17 +69,30 @@ export const loadActivityOptions = async (
   })
 }
 
+/**
+ * `name` folds in the party for select/typeahead disambiguation (e.g.
+ * `RelationMultiSelect`); `plainName`/`party`/`slug` ride along so cell-level
+ * consumers (B31's "Dobradinhas" column) can build a `StateDeputySummary`
+ * chip for an optimistic add and link to `/campanha/dobradinhas/<slug>`
+ * without a second catalog fetch.
+ */
+export type StateDeputyRelationOption = RelationOption & {
+  plainName: string
+  party: string | null
+  slug: string
+}
+
 export const loadStateDeputyOptions = async (
   payload: Payload,
   user: CampaignUser,
-): Promise<RelationOption[]> => {
+): Promise<StateDeputyRelationOption[]> => {
   const result = await payload.find({
     collection: 'stateDeputy',
     depth: 0,
     limit: 0,
     pagination: false,
     sort: 'name',
-    select: { name: true, party: true },
+    select: { name: true, party: true, slug: true },
     where: {},
     user,
     overrideAccess: false,
@@ -87,5 +100,8 @@ export const loadStateDeputyOptions = async (
   return result.docs.map((stateDeputy) => ({
     id: stateDeputy.id,
     name: stateDeputy.party ? `${stateDeputy.name} (${stateDeputy.party})` : stateDeputy.name,
+    plainName: stateDeputy.name,
+    party: stateDeputy.party ?? null,
+    slug: stateDeputy.slug,
   }))
 }

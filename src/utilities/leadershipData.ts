@@ -28,7 +28,7 @@ export type LeadershipRowViewModel = {
   sector: string | null
   municipalityNames: string[]
   organizationNames: string[]
-  stateDeputyNames: string[]
+  stateDeputies: StateDeputySummary[]
   hasAppAccess: boolean
   /** Last write to the leadership row — the dossier's freshness readout. */
   updatedAt: string
@@ -50,7 +50,7 @@ const contactSummary = (
 
 const namesForIds = async (
   payload: Payload,
-  collection: 'municipality' | 'organization' | 'stateDeputy',
+  collection: 'municipality' | 'organization',
   ids: number[],
 ): Promise<Map<number, string>> => {
   if (ids.length === 0) return new Map()
@@ -90,11 +90,12 @@ const toLeadershipRows = async (
     }
   }
 
-  const [municipalityNames, organizationNames, stateDeputyNames] = await Promise.all([
+  const [municipalityNames, organizationNames, stateDeputySummaries] = await Promise.all([
     namesForIds(payload, 'municipality', [...municipalityIDs]),
     namesForIds(payload, 'organization', [...organizationIDs]),
-    namesForIds(payload, 'stateDeputy', [...stateDeputyIDs]),
+    loadStateDeputySummaries(payload, [...stateDeputyIDs]),
   ])
+  const stateDeputyById = new Map(stateDeputySummaries.map((summary) => [summary.id, summary]))
 
   return docs.map((doc) => {
     const contact = contactSummary(doc.contact)
@@ -114,10 +115,11 @@ const toLeadershipRows = async (
         .map(relationshipId)
         .filter((id): id is number => id !== null)
         .map((id) => organizationNames.get(id) ?? 'Organização'),
-      stateDeputyNames: (doc.stateDeputies ?? [])
+      stateDeputies: (doc.stateDeputies ?? [])
         .map(relationshipId)
         .filter((id): id is number => id !== null)
-        .map((id) => stateDeputyNames.get(id) ?? 'Dobradinha'),
+        .map((id) => stateDeputyById.get(id))
+        .filter((summary): summary is StateDeputySummary => summary !== undefined),
       hasAppAccess: relationshipId(doc.user) !== null,
       updatedAt: doc.updatedAt,
     }
@@ -239,7 +241,6 @@ export type LeadershipDetailViewModel = LeadershipRowViewModel & {
   municipalityIDs: number[]
   organizationIDs: number[]
   stateDeputyIDs: number[]
-  stateDeputies: StateDeputySummary[]
   sectorNotes: string | null
   notes: string | null
   consentNote: string | null
@@ -265,11 +266,6 @@ export const loadLeadershipDetail = async (
   const [row] = await toLeadershipRows(payload, [doc])
   if (!row) return null
 
-  const stateDeputyIDs = (doc.stateDeputies ?? [])
-    .map(relationshipId)
-    .filter((id): id is number => id !== null)
-  const stateDeputies = await loadStateDeputySummaries(payload, stateDeputyIDs)
-
   return {
     ...row,
     municipalityIDs: (doc.municipalities ?? [])
@@ -278,8 +274,7 @@ export const loadLeadershipDetail = async (
     organizationIDs: (doc.organizations ?? [])
       .map(relationshipId)
       .filter((id): id is number => id !== null),
-    stateDeputyIDs,
-    stateDeputies,
+    stateDeputyIDs: row.stateDeputies.map((summary) => summary.id),
     sectorNotes: doc.sectorNotes ?? null,
     notes: doc.notes ?? null,
     consentNote: doc.consentNote ?? null,

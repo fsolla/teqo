@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Command, CommandInput, CommandItem, CommandList } from '@/components/ui/Command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import { Spinner } from '@/components/ui/Spinner'
+import { sameIdSet } from '@/lib/sameIdSet'
 import { cn } from '@/lib/utils'
 import { matchesAtWordStart } from '@/lib/wordStartFilter'
 import type {
@@ -24,12 +25,6 @@ import type {
 
 const ADVISORS_ENDPOINT = '/campanha/municipios/advisors'
 const SAVE_ERROR_MESSAGE = 'Não foi possível atualizar os assessores. Tente novamente.'
-
-const sameIdSet = (left: readonly number[], right: readonly number[]): boolean => {
-  if (left.length !== right.length) return false
-  const rightSet = new Set(right)
-  return left.every((id) => rightSet.has(id))
-}
 
 type MunicipalityListAdvisorsControlProps = {
   municipalityID: number

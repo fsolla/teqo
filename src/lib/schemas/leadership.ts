@@ -37,7 +37,7 @@ export const isSupportStatus = (value: unknown): value is SupportStatus =>
 
 export const MAX_LEADERSHIP_MUNICIPALITIES = 30
 const MAX_LEADERSHIP_ORGANIZATIONS = 20
-const MAX_LEADERSHIP_STATE_DEPUTIES = 20
+export const MAX_LEADERSHIP_STATE_DEPUTIES = 20
 
 const municipalitiesArraySchema = z
   .array(positiveRelationshipId)
@@ -83,3 +83,14 @@ export const leadershipInternalUpdateSchema = z.object({
 })
 
 export type LeadershipInternalUpdateInput = z.input<typeof leadershipInternalUpdateSchema>
+
+/** Delta write for one chip in the "Dobradinhas" column of `/campanha/liderancas` (B31). */
+export const leadershipStateDeputyMembershipSchema = z.object({
+  leadershipId: positiveRelationshipId,
+  stateDeputyId: positiveRelationshipId,
+  assigned: z.boolean(),
+})
+
+export type LeadershipStateDeputyMembershipInput = z.input<
+  typeof leadershipStateDeputyMembershipSchema
+>
