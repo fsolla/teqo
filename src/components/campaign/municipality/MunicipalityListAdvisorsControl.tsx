@@ -3,7 +3,12 @@
 import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-import { MunicipalityAdvisorAvatarStack } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
+import {
+  advisorEntriesFromIds,
+  formatAdvisorNamesTooltip,
+  MunicipalityAdvisorAvatarStack,
+} from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
+import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -43,10 +48,8 @@ export const MunicipalityListAdvisorsControl = ({
   const [state, submitAction, isPending] = useActionState(formAction, {})
   const currentSet = new Set(currentAdvisorIDs)
 
-  const names = currentAdvisorIDs.flatMap((id) => {
-    const advisor = advisorNamesById.get(id)
-    return advisor ? [{ id: advisor.id, name: advisor.name }] : []
-  })
+  const names = advisorEntriesFromIds(currentAdvisorIDs, advisorNamesById)
+  const tooltipContent = formatAdvisorNamesTooltip(names)
 
   useEffect(() => {
     if (state.status !== 'success') return
@@ -56,15 +59,25 @@ export const MunicipalityListAdvisorsControl = ({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="min-h-11 rounded-md px-1 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="Editar assessores"
-        >
-          <MunicipalityAdvisorAvatarStack advisors={names} isPriority={isPriority} />
-        </button>
-      </PopoverTrigger>
+      {/* No advisors: the button already reads "Sem responsável"/"Sem assessor"
+          by extenso, so a tooltip would only echo it (`tooltipContent` is
+          null — see `CampaignHoverTooltip` for the no-op contract). */}
+      <CampaignHoverTooltip
+        content={tooltipContent}
+        align="start"
+        openOnTouch={false}
+        disabled={open}
+      >
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="min-h-11 rounded-md px-1 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Editar assessores"
+          >
+            <MunicipalityAdvisorAvatarStack advisors={names} isPriority={isPriority} />
+          </button>
+        </PopoverTrigger>
+      </CampaignHoverTooltip>
       <PopoverContent align="start" className="w-80">
         <form action={submitAction} className="flex flex-col gap-3">
           <input type="hidden" name="municipalityId" value={municipalityID} />

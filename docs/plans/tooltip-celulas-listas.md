@@ -1,11 +1,13 @@
 # Tooltip de conteúdo nas células das listas
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue
+Atualizado em: 2026-07-26
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B23**)
 Impeccable: B — encaixe nas células "Assessores" e "Tendência" já existentes de `/campanha/municipios`, com a capacidade promovida para o sistema de listas compartilhado (`CampaignTable`)
-Appetite: ~0,75 dia eng; 1 prop em `CampaignTableColumn`, 1 wrapper na célula, 1 flag no primitivo de tooltip, 2 consumidores (Assessores nos dois papéis + justificativa da Tendência); sem migration
+Appetite: ~0,4 dia eng (revisado 2026-07-26 — a capacidade genérica de `cellTooltip`/`CampaignHoverTooltip` já tinha sido entregue de graça pelo **E10**, ver nota abaixo; o que restava era só os dois consumidores + `openOnTouch`/`disabled`); orçamento original ~0,75d
 Responsável: —
+
+> **Nota de fechamento (2026-07-26):** quando este item foi implementado, `cellTooltip` em `CampaignTableColumn`, `CampaignCellTooltip` e a promoção de `MunicipalityHoverTooltip` → `shared/CampaignHoverTooltip` **já existiam no código**, entregues como efeito colateral do **E10** (2026-07-25, coluna "Classe"). O texto abaixo ("Contexto", parte de "Decisões travadas") foi escrito antes disso e ainda descreve essa promoção como trabalho deste item — histórico, não corrigido retroativamente. O que este item de fato implementou: `openOnTouch`/`disabled` em `CampaignHoverTooltip`, `formatAdvisorNamesTooltip`, e os dois consumidores (célula "Assessores" nos dois papéis + célula "Tendência" com a nota lida no Popover).
 
 ## Design (Impeccable)
 
@@ -124,6 +126,8 @@ Componentes:
 - **Adotar `cellTooltip` em outras colunas/listas** (Território truncado, dobradinhas por município). Revisitar quando: alguém do time relatar em sessão/R6 não conseguir ler uma célula, ou quando uma coluna nova nascer com conteúdo abreviado.
 - **Justificativa em tooltip nas outras superfícies de tendência** (`MunicipalityStrategyCard`, dossiê). Revisitar quando: alguma delas passar a esconder a nota por densidade — hoje ambas a exibem por extenso.
 - **Afford­ance visual (sublinhado pontilhado) na célula.** Revisitar quando: a primeira coluna de **texto** adotar a capacidade, ou o critique do R6 registrar falha de descoberta.
+- **Paridade de leitor de tela para a nota de tendência.** A célula de assessores expõe todos os nomes em `sr-only` independente de hover (`MunicipalityAdvisorAvatarStack`); a de tendência não tem equivalente — `trendNote` só existe dentro do `CampaignHoverTooltip`/`PopoverContent`, ambos lazy-mount (contrato pinado em `campaignComponents.unit.spec.ts`: `not.toContain(trendNote)` na renderização estática). Achado do `/simplify` pós-rebase (2026-07-26), não corrigido nesta entrega porque adicionar um `sr-only` ali quebraria esse contrato de propósito e pede decisão explícita se a paridade vale o "duplo anúncio" para leitor de tela. Revisitar quando: um relato de acessibilidade real aparecer, ou o critique do R6 flagar hover-only content de novo.
+- **Wrapper compartilhado `Popover` + `CampaignHoverTooltip`.** `MunicipalityListAdvisorsControl` e `MunicipalityListTrendControl` repetem a mesma composição (`openOnTouch={false}`, `disabled={open}`, `align="start"`) — 2º call site, abaixo do piso de 3 para extrair (achado do `/simplify` pós-rebase, 2026-07-26). Revisitar quando: uma 3ª célula precisar da mesma combinação Popover+tooltip (checado nesta sessão: `MunicipalityListSignalControl`/B26 não precisa — o `aria-label` do gatilho já carrega o texto por extenso).
 
 ## Referências
 

@@ -1,4 +1,5 @@
 import { CircleAlertIcon } from 'lucide-react'
+import type { ReactElement } from 'react'
 
 import { Avatar, AvatarFallback } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
@@ -9,6 +10,16 @@ export type MunicipalityAdvisorAvatarEntry = {
   id: number
   name: string
 }
+
+/** Resolves advisor ids to `{id, name}` entries, dropping any without a name (deleted/unknown user). */
+export const advisorEntriesFromIds = (
+  advisorIDs: number[],
+  advisorNamesById: ReadonlyMap<number, { id: number; name: string }>,
+): MunicipalityAdvisorAvatarEntry[] =>
+  advisorIDs.flatMap((id) => {
+    const advisor = advisorNamesById.get(id)
+    return advisor ? [{ id: advisor.id, name: advisor.name }] : []
+  })
 
 /**
  * E9: a priority município with nobody answering for it is the queue's loudest
@@ -23,6 +34,18 @@ export const MissingAdvisorBadge = ({ isPriority }: { isPriority: boolean }) => 
     {isPriority ? 'Sem responsável' : municipalityListCoverageLabels.sem_assessor}
   </Badge>
 )
+
+/** One advisor name per line, for the tooltip — `null` when the list is empty (that's `MissingAdvisorBadge`'s job). */
+export const formatAdvisorNamesTooltip = (
+  advisors: MunicipalityAdvisorAvatarEntry[],
+): ReactElement | null =>
+  advisors.length === 0 ? null : (
+    <div className="flex flex-col">
+      {advisors.map((advisor) => (
+        <span key={advisor.id}>{advisor.name}</span>
+      ))}
+    </div>
+  )
 
 export const MunicipalityAdvisorAvatarStack = ({
   advisors,

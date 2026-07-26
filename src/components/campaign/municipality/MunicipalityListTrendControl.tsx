@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -41,28 +42,40 @@ export const MunicipalityListTrendControl = ({
     setOpen(false)
   }, [state.message, state.status])
 
+  const hasNote = Boolean(trendNote?.trim())
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="min-h-11 rounded-md px-1 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="Editar tendência política"
-        >
-          {status ? (
-            <Badge variant={politicalTrendBadgeVariant[status]}>
-              {politicalTrendLabels[status]}
-            </Badge>
-          ) : (
-            <Badge variant="outline">Não registrada</Badge>
-          )}
-        </button>
-      </PopoverTrigger>
+      <CampaignHoverTooltip
+        content={hasNote ? <p className="whitespace-pre-wrap">{trendNote}</p> : null}
+        align="start"
+        openOnTouch={false}
+        disabled={open}
+      >
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="min-h-11 rounded-md px-1 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Editar tendência política"
+          >
+            {status ? (
+              <Badge variant={politicalTrendBadgeVariant[status]}>
+                {politicalTrendLabels[status]}
+              </Badge>
+            ) : (
+              <Badge variant="outline">Não registrada</Badge>
+            )}
+          </button>
+        </PopoverTrigger>
+      </CampaignHoverTooltip>
       <PopoverContent align="start" className="w-72">
         <form action={submitAction} className="flex flex-col gap-3">
           <input type="hidden" name="municipalityId" value={municipalityID} />
           <input type="hidden" name="municipalitySlug" value={municipalitySlug} />
           <input type="hidden" name="trendNote" value={trendNote ?? ''} />
+          {hasNote ? (
+            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{trendNote}</p>
+          ) : null}
           <Field>
             <FieldLabel htmlFor={`municipality-list-trend-${municipalityID}`}>Tendência</FieldLabel>
             <NativeSelect
