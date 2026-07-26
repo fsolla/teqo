@@ -11,6 +11,7 @@ import {
   CAMPAIGN_CONCEPT_CATEGORIES,
   CAMPAIGN_CONCEPTS_PATH,
   campaignConceptHref,
+  campaignConceptOneLiner,
   campaignConceptsByCategory,
   campaignIntelligenceConcepts,
 } from '@/lib/campaignIntelligenceConcepts'
@@ -53,6 +54,12 @@ describe('campaignIntelligenceConcepts', () => {
 
   it('builds anchor hrefs into the concepts page', () => {
     expect(campaignConceptHref('cobertura-da-meta')).toBe('/campanha/conceitos#cobertura-da-meta')
+  })
+
+  it('quotes the same oneLiner the glossary page renders (B22 single source)', () => {
+    const meta = campaignIntelligenceConcepts.find((concept) => concept.id === 'meta')
+    expect(meta).toBeDefined()
+    expect(campaignConceptOneLiner('meta')).toBe(meta!.oneLiner)
   })
 })
 

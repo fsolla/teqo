@@ -5,14 +5,17 @@
  * from a `server-only` module (split out of the former `municipalityUi.ts` in
  * Pass 2 W1).
  */
+import { campaignConceptOneLiner } from '@/lib/campaignIntelligenceConcepts'
 import {
   formatElectionNumber,
   formatVoteSharePercent,
   oneDecimalFormatter,
 } from '@/lib/electionFormat'
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
+import { DEFAULT_VOTE_ESTIMATE_SCENARIO, voteEstimateScenarioLabels } from '@/lib/voteEstimate'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { formatRatioAsPercentLabel } from '@/utilities/goalCoverage'
+import { MUNICIPALITY_COLD_SIGNAL_DAYS } from '@/utilities/municipalitySignal'
 import type {
   MunicipalityTerritorialClass,
   TerritorialFactor,
@@ -148,3 +151,54 @@ export const formatMunicipalityGeographyLabel = (municipality: {
   municipality.kind === 'zona' && municipality.zoneNumber != null
     ? `${municipality.region} · ZE ${municipality.zoneNumber}`
     : municipality.region
+
+/**
+ * The 11 real column ids in `/campanha/municipios` — 10 staff columns plus
+ * `lastUpdateAt`, which only the non-staff (leader) view renders. Closed union
+ * so `municipalityColumnDescriptions` below can't silently drop a column.
+ */
+export type MunicipalityListColumnId =
+  | 'name'
+  | 'region'
+  | 'kind'
+  | 'votos'
+  | 'classe'
+  | 'advisors'
+  | 'trend'
+  | 'expectedVotes'
+  | 'lastSignal'
+  | 'goalCoverage'
+  | 'lastUpdateAt'
+
+/**
+ * E10 "Classe" header hint — kept verbatim rather than swapped for the
+ * terser E18 `oneLiner` (`classe-territorial`): a 5-way classification needs
+ * more than one sentence, and the shorter concept text would be a clarity
+ * downgrade for this specific column.
+ */
+const CLASS_COLUMN_DESCRIPTION =
+  'Leitura relativa de 2022: o desempenho aqui contra o padrão estadual do próprio candidato. Reduto (bem acima do padrão), Expansão (abaixo, mas com campo a ocupar), Manutenção (no padrão), Marginal (abaixo, com pouco campo) e — sem série do TSE. É sugestão de leitura, não decisão: cada classe traz o porquê ao passar o mouse ou tocar nela.'
+
+/**
+ * B22 — single source of copy for every `/campanha/municipios` column header
+ * tooltip. E18-documented metrics quote their canonical `oneLiner` instead of
+ * a second, driftable sentence; the rest is new short pt-BR copy. Computed at
+ * module scope: every entry here only ever depended on static constants, not
+ * on props, so there is nothing to recompute per render.
+ */
+export const municipalityColumnDescriptions: Record<MunicipalityListColumnId, string> = {
+  name: 'Nome do município e prioridade da campanha.',
+  region: 'Território de Identidade (Bahia) a que o município pertence.',
+  kind: 'Município inteiro ou zona eleitoral de Salvador (ZE 1–19).',
+  votos: formatMunicipalityConcentrationHint(),
+  classe: CLASS_COLUMN_DESCRIPTION,
+  advisors: 'Assessor(es) responsável(is) pelo município — o coordenador atribui clicando aqui.',
+  trend: 'Tendência política percebida pela equipe: favorável, neutra ou desfavorável.',
+  expectedVotes: campaignConceptOneLiner('meta'),
+  lastSignal: `Última atualização da equipe ou declaração de liderança, o que for mais recente. Fica destacado a partir de ${MUNICIPALITY_COLD_SIGNAL_DAYS} dias sem registro.`,
+  // The scenario picker above the table is client state, so the server can
+  // only sort by one scenario — named here so the ordering never looks
+  // arbitrary next to whatever scenario is currently selected.
+  goalCoverage: `${campaignConceptOneLiner('cobertura-da-meta')} Ordena pelo que falta para a meta (meta − comprometido) no cenário ${voteEstimateScenarioLabels[DEFAULT_VOTE_ESTIMATE_SCENARIO]}, independente do cenário selecionado acima.`,
+  lastUpdateAt: 'Data do último registro da equipe ou de liderança neste município.',
+}

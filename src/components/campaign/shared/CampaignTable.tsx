@@ -2,6 +2,11 @@ import { Fragment, type ReactNode } from 'react'
 
 import { CampaignCellTooltip } from '@/components/campaign/shared/CampaignCellTooltip'
 import {
+  CampaignHoverTooltip,
+  campaignHoverExplanationClassName,
+  campaignHoverTooltipAlign,
+} from '@/components/campaign/shared/CampaignHoverTooltip'
+import {
   Table,
   TableBody,
   TableCaption,
@@ -46,15 +51,25 @@ export type CampaignTableColumn<Row> = {
   defaultVisible?: boolean
 }
 
-/** Plain (non-sortable) header cell for column definitions. */
+/**
+ * Plain (non-sortable) header cell for column definitions. `description`
+ * (B22) wraps the label in the same `CampaignHoverTooltip` `cellTooltip` uses
+ * for cells, but — unlike `cellTooltip`, which adds no tab stop because it
+ * repeats content already on the row — a header's explanation is often new
+ * information, so the wrapping `<span tabIndex={0}>` is a deliberate new tab
+ * stop; the `<th>` itself stays non-interactive. Without `description` the
+ * render is byte-for-byte what it was before B22.
+ */
 export const CampaignTableHead = ({
   align = 'left',
   className,
   children,
+  description,
 }: {
   align?: 'left' | 'center' | 'right'
   className?: string
   children?: ReactNode
+  description?: ReactNode
 }) => (
   <TableHead
     className={cn(
@@ -64,7 +79,21 @@ export const CampaignTableHead = ({
       className,
     )}
   >
-    {children}
+    {description ? (
+      <CampaignHoverTooltip content={description} align={campaignHoverTooltipAlign(align)}>
+        <span
+          tabIndex={0}
+          className={cn(
+            campaignHoverExplanationClassName,
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          )}
+        >
+          {children}
+        </span>
+      </CampaignHoverTooltip>
+    ) : (
+      children
+    )}
   </TableHead>
 )
 

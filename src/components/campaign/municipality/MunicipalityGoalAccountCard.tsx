@@ -2,7 +2,10 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
-import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
+import {
+  CampaignHoverTooltip,
+  campaignHoverExplanationClassName,
+} from '@/components/campaign/shared/CampaignHoverTooltip'
 import { CampaignInfoHint } from '@/components/campaign/shared/CampaignInfoHint'
 import { Badge } from '@/components/ui/Badge'
 import { Progress } from '@/components/ui/Progress'
@@ -12,6 +15,7 @@ import {
   type CampaignConceptId,
 } from '@/lib/campaignIntelligenceConcepts'
 import { formatElectionNumber } from '@/lib/electionFormat'
+import { cn } from '@/lib/utils'
 import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import {
   formatGoalCoverageDeficitLabel,
@@ -63,7 +67,7 @@ const GoalAccountMetric = ({
       aria-label={`${label}: mais informações`}
       className="flex min-h-11 w-fit flex-col items-start gap-0.5 rounded-md px-1.5 py-1 text-left outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <dt className="text-xs text-muted-foreground underline decoration-dotted decoration-muted-foreground/70 underline-offset-2">
+      <dt className={cn('text-xs text-muted-foreground', campaignHoverExplanationClassName)}>
         {label}
       </dt>
       <dd className="tabular-nums">{value}</dd>
@@ -145,7 +149,7 @@ const TerritorialClassRow = ({
           aria-label={`Classe: ${territorialClassLabels[territorialClass.class]}. Mais informações`}
           className="flex min-h-11 w-fit items-center gap-2 rounded-md px-1.5 py-1 text-left outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span className="text-xs text-muted-foreground underline decoration-dotted decoration-muted-foreground/70 underline-offset-2">
+          <span className={cn('text-xs text-muted-foreground', campaignHoverExplanationClassName)}>
             Classe
           </span>
           <Badge variant={territorialClassBadgeVariant[territorialClass.class]}>

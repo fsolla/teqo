@@ -3,7 +3,11 @@
 import type { ReactNode } from 'react'
 
 import { MunicipalityHeaderFilter } from '@/components/campaign/municipality/MunicipalityHeaderFilter'
-import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
+import {
+  CampaignHoverTooltip,
+  campaignHoverExplanationClassName,
+  campaignHoverTooltipAlign,
+} from '@/components/campaign/shared/CampaignHoverTooltip'
 import { CampaignSortableHead } from '@/components/campaign/shared/CampaignSortableHead'
 import type {
   MunicipalityFilterOption,
@@ -22,7 +26,8 @@ type MunicipalitySortableHeadProps = {
   state: MunicipalityListState
   sortKey: MunicipalityListSortKey
   children?: ReactNode
-  tooltip?: ReactNode
+  /** Hover/focus/tap explanation for the column (B22) — names the content, not the mechanism. */
+  description?: ReactNode
   className?: string
   align?: 'left' | 'center' | 'right'
   filterParam?: MunicipalityFilterParam
@@ -35,7 +40,7 @@ export const MunicipalitySortableHead = ({
   state,
   sortKey,
   children,
-  tooltip,
+  description,
   className,
   align = 'left',
   filterParam,
@@ -71,19 +76,16 @@ export const MunicipalitySortableHead = ({
         ) : null
       }
       wrapSortControl={
-        tooltip
+        description
           ? (control) => (
-              <CampaignHoverTooltip
-                content={tooltip}
-                align={align === 'right' ? 'end' : align === 'center' ? 'center' : 'start'}
-              >
+              <CampaignHoverTooltip content={description} align={campaignHoverTooltipAlign(align)}>
                 {control}
               </CampaignHoverTooltip>
             )
           : undefined
       }
     >
-      {label}
+      {description ? <span className={campaignHoverExplanationClassName}>{label}</span> : label}
     </CampaignSortableHead>
   )
 }

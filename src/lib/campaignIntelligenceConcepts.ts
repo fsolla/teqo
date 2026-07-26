@@ -187,3 +187,18 @@ export const CAMPAIGN_CONCEPTS_PATH = '/campanha/conceitos'
 /** Anchor href for a documented concept — typed so a renamed id can't leave a dead link behind. */
 export const campaignConceptHref = (id: CampaignConceptId): string =>
   `${CAMPAIGN_CONCEPTS_PATH}#${id}`
+
+/**
+ * `oneLiner` indexed by id, built once at module init. Callers (e.g. the B22
+ * column-header tooltips) quote the same sentence the glossary page shows
+ * instead of writing a second, driftable one. The cast is the single place
+ * that assumes every `CampaignConceptId` has a matching concept — the
+ * "unique ids" test above pins that assumption for the whole union, so
+ * `campaignConceptOneLiner` itself stays a plain, assertion-free lookup.
+ */
+const campaignConceptOneLinerByID = Object.fromEntries(
+  campaignIntelligenceConcepts.map((concept) => [concept.id, concept.oneLiner]),
+) as Record<CampaignConceptId, string>
+
+export const campaignConceptOneLiner = (id: CampaignConceptId): string =>
+  campaignConceptOneLinerByID[id]

@@ -240,6 +240,11 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('Cobertura da meta')
     expect(html).toContain('80%')
     expect(html).toContain('Faltam 300 votos para a meta')
+    // B22: every one of the 10 staff columns carries a header explanation —
+    // pinned in the `<thead>` only, since `cellTooltip` (e.g. "Classe") adds
+    // its own triggers in the body.
+    const [theadHtml] = html.split('<tbody')
+    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(10)
   })
 
   /**
@@ -471,5 +476,9 @@ describe('campaign visual foundation', () => {
     expect(html).not.toContain('Votos estimados')
     expect(html).not.toContain('Cobertura')
     expect(html).not.toContain('Prioritária')
+    // B22: the leader view's 5 columns (name/region/kind/votos/lastUpdateAt)
+    // also carry header explanations.
+    const [theadHtml] = html.split('<tbody')
+    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(5)
   })
 })

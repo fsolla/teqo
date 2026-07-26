@@ -26,12 +26,11 @@ import {
 import { formatElectionNumber, formatVoteSharePercent } from '@/lib/electionFormat'
 import { formatMunicipalityVoteRank } from '@/lib/municipalityVoteRank'
 import { cn } from '@/lib/utils'
-import { DEFAULT_VOTE_ESTIMATE_SCENARIO, voteEstimateScenarioLabels } from '@/lib/voteEstimate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
-  formatMunicipalityConcentrationHint,
   formatMunicipalityGeographyLabel,
   formatTerritorialClassWhy,
+  municipalityColumnDescriptions,
   municipalityKindLabels,
   municipalityPriorityLabels,
   territorialClassBadgeVariant,
@@ -112,9 +111,6 @@ const VotePositionReadout = ({
     </div>
   )
 }
-
-const CLASS_COLUMN_HINT =
-  'Leitura relativa de 2022: o desempenho aqui contra o padrão estadual do próprio candidato. Reduto (bem acima do padrão), Expansão (abaixo, mas com campo a ocupar), Manutenção (no padrão), Marginal (abaixo, com pouco campo) e — sem série do TSE. É sugestão de leitura, não decisão: cada classe traz o porquê ao passar o mouse ou tocar nela.'
 
 /**
  * E10 classe. In the table only the pill is visible — spelling the factors out
@@ -256,14 +252,7 @@ const municipalityListColumns = ({
   trendFormAction,
   advisorsFormAction,
   signalFormAction,
-  concentrationHint,
-  signalHint,
-  deficitHint,
-}: MunicipalityListProps & {
-  concentrationHint: string
-  signalHint: string
-  deficitHint: string
-}): Array<CampaignTableColumn<MunicipalityListViewModel>> => [
+}: MunicipalityListProps): Array<CampaignTableColumn<MunicipalityListViewModel>> => [
   {
     id: 'name',
     mandatory: true,
@@ -274,6 +263,7 @@ const municipalityListColumns = ({
         filterParam="name"
         filterOptions={columnFilterOptions.name}
         showPriorityFilter={isStaffView}
+        description={municipalityColumnDescriptions.name}
       >
         Município
       </MunicipalitySortableHead>
@@ -301,6 +291,7 @@ const municipalityListColumns = ({
         sortKey="region"
         filterParam="region"
         filterOptions={columnFilterOptions.region}
+        description={municipalityColumnDescriptions.region}
       >
         Território
       </MunicipalitySortableHead>
@@ -311,7 +302,12 @@ const municipalityListColumns = ({
   {
     id: 'kind',
     head: (
-      <MunicipalitySortableHead state={state} sortKey="kind" filterParam="kind">
+      <MunicipalitySortableHead
+        state={state}
+        sortKey="kind"
+        filterParam="kind"
+        description={municipalityColumnDescriptions.kind}
+      >
         Tipo
       </MunicipalitySortableHead>
     ),
@@ -324,7 +320,7 @@ const municipalityListColumns = ({
         state={state}
         sortKey="votos"
         align="right"
-        tooltip={concentrationHint}
+        description={municipalityColumnDescriptions.votos}
       />
     ),
     cellClassName: 'text-right',
@@ -346,7 +342,7 @@ const municipalityListColumns = ({
               state={state}
               sortKey="classe"
               filterParam="class"
-              tooltip={CLASS_COLUMN_HINT}
+              description={municipalityColumnDescriptions.classe}
             >
               Classe
             </MunicipalitySortableHead>
@@ -369,6 +365,7 @@ const municipalityListColumns = ({
               sortKey="coverage"
               filterParam="advisor"
               filterOptions={columnFilterOptions.advisor}
+              description={municipalityColumnDescriptions.advisors}
             >
               Assessores
             </MunicipalitySortableHead>
@@ -394,7 +391,12 @@ const municipalityListColumns = ({
         {
           id: 'trend',
           head: (
-            <MunicipalitySortableHead state={state} sortKey="trend" filterParam="trend">
+            <MunicipalitySortableHead
+              state={state}
+              sortKey="trend"
+              filterParam="trend"
+              description={municipalityColumnDescriptions.trend}
+            >
               Tendência
             </MunicipalitySortableHead>
           ),
@@ -411,7 +413,12 @@ const municipalityListColumns = ({
         {
           id: 'expectedVotes',
           head: (
-            <MunicipalitySortableHead state={state} sortKey="expectedVotes" align="center">
+            <MunicipalitySortableHead
+              state={state}
+              sortKey="expectedVotes"
+              align="center"
+              description={municipalityColumnDescriptions.expectedVotes}
+            >
               Votos estimados
             </MunicipalitySortableHead>
           ),
@@ -429,7 +436,11 @@ const municipalityListColumns = ({
         {
           id: 'lastSignal',
           head: (
-            <MunicipalitySortableHead state={state} sortKey="frescor" tooltip={signalHint}>
+            <MunicipalitySortableHead
+              state={state}
+              sortKey="frescor"
+              description={municipalityColumnDescriptions.lastSignal}
+            >
               Último sinal
             </MunicipalitySortableHead>
           ),
@@ -449,7 +460,11 @@ const municipalityListColumns = ({
         {
           id: 'goalCoverage',
           head: (
-            <MunicipalitySortableHead state={state} sortKey="deficit" tooltip={deficitHint}>
+            <MunicipalitySortableHead
+              state={state}
+              sortKey="deficit"
+              description={municipalityColumnDescriptions.goalCoverage}
+            >
               Cobertura da meta
             </MunicipalitySortableHead>
           ),
@@ -465,7 +480,11 @@ const municipalityListColumns = ({
         {
           id: 'lastUpdateAt',
           head: (
-            <MunicipalitySortableHead state={state} sortKey="lastUpdateAt">
+            <MunicipalitySortableHead
+              state={state}
+              sortKey="lastUpdateAt"
+              description={municipalityColumnDescriptions.lastUpdateAt}
+            >
               Última atualização
             </MunicipalitySortableHead>
           ),
@@ -489,17 +508,7 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
   } = props
   const { sort: activeSort, dir: activeDir } = resolveMunicipalityListSort(state)
   const sortSummary = formatMunicipalityListSortSummary(activeSort, activeDir)
-  const concentrationHint = formatMunicipalityConcentrationHint()
-  const signalHint = `Última atualização da equipe ou declaração de liderança, o que for mais recente. Fica destacado a partir de ${MUNICIPALITY_COLD_SIGNAL_DAYS} dias sem registro.`
-  // The scenario picker is client state, so the server can only order by one
-  // scenario — named here so the ordering never looks arbitrary.
-  const deficitHint = `Ordena pelo que falta para a meta (meta − comprometido) no cenário ${voteEstimateScenarioLabels[DEFAULT_VOTE_ESTIMATE_SCENARIO]}, independente do cenário selecionado acima.`
-  const columns = municipalityListColumns({
-    ...props,
-    concentrationHint,
-    signalHint,
-    deficitHint,
-  })
+  const columns = municipalityListColumns(props)
 
   return (
     <>
@@ -619,7 +628,7 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
         headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
         caption={
           <>
-            {sortSummary}. Coluna 2022: {concentrationHint}
+            {sortSummary}. Coluna 2022: {municipalityColumnDescriptions.votos}
           </>
         }
         columns={columns}
