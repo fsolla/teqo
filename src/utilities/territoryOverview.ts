@@ -11,6 +11,8 @@
  * fixture. The server loader lives in `loadTerritoryOverview.ts`.
  */
 
+import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
+
 const SALVADOR_CITY = 'Salvador'
 const SALVADOR_SUB_LABEL = 'Salvador (19 zonas)'
 const RMS_DEMAIS_SUB_LABEL = 'Demais municípios da RMS'
@@ -49,6 +51,10 @@ export type TerritoryOverviewRow = {
   withAdvisorCount: number
   subRows?: TerritoryOverviewSubRow[]
 }
+
+export type TerritoryTableRow =
+  | ({ variant: 'parent' } & Omit<TerritoryOverviewRow, 'subRows'>)
+  | ({ variant: 'sub'; parentRegion: string } & TerritoryOverviewSubRow)
 
 export type TerritorySortKey =
   | 'region'
@@ -204,3 +210,43 @@ export const sortTerritoryRows = (
     return (a - b) * factor
   })
 }
+
+type TerritoryRowFilters = {
+  q?: string
+  regions?: readonly string[]
+  coverage?: 'com_assessor' | 'sem_assessor'
+}
+
+/** Filters top-level territories; display-only sub-rows always follow their parent. */
+export const filterTerritoryRows = (
+  rows: ReadonlyArray<TerritoryOverviewRow>,
+  filters: TerritoryRowFilters,
+): TerritoryOverviewRow[] => {
+  const query = filters.q ? normalizeSearchPhrase(filters.q) : ''
+  const selectedRegions = new Set(filters.regions ?? [])
+
+  return rows.filter((row) => {
+    if (query && !normalizeSearchPhrase(row.region).includes(query)) return false
+    if (selectedRegions.size && !selectedRegions.has(row.region)) return false
+    if (filters.coverage === 'com_assessor') {
+      return row.municipalityCount > 0 && row.withAdvisorCount === row.municipalityCount
+    }
+    if (filters.coverage === 'sem_assessor') {
+      return row.withAdvisorCount < row.municipalityCount
+    }
+    return true
+  })
+}
+
+/** Flattens display-only sub-rows while preserving their parent adjacency. */
+export const flattenTerritoryRows = (
+  rows: ReadonlyArray<TerritoryOverviewRow>,
+): TerritoryTableRow[] =>
+  rows.flatMap(({ subRows, ...row }) => [
+    { ...row, variant: 'parent' as const },
+    ...(subRows ?? []).map((subRow) => ({
+      ...subRow,
+      variant: 'sub' as const,
+      parentRegion: row.region,
+    })),
+  ])

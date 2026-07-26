@@ -3,9 +3,11 @@
 Status: rascunho
 Atualizado em: 2026-07-25
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — superfícies de coordenação, item B33)
-Impeccable: B — encaixe em tela existente (`/campanha/dobradinhas`), sem rota nova; consome o header rico compartilhado que **B29** extrai (ou extrai o dele mesmo, se chegar primeiro — ver Dependências)
-Appetite: ~0,5–0,75 dia eng se `shared/CampaignSortableHead`/`CampaignHeaderFilterPopover` já existirem (B29 ou B21 já entregues); ~1–1,5 dia eng se este item chegar primeiro e precisar fazer a extração
+Impeccable: B — encaixe em tela existente (`/campanha/dobradinhas`), sem rota nova; consome o header rico compartilhado entregue pelo **B21 ✓**
+Appetite: ~0,5–0,75 dia eng; `shared/CampaignSortableHead`/`CampaignHeaderFilterPopover` já existem
 Responsável: —
+
+**Atualização B21 (2026-07-25):** a corrida de ordem de chegada foi encerrada. B33 não extrai nem duplica chrome; implementa somente `StateDeputySortableHead`/`StateDeputyHeaderFilter` e seus módulos de URL/filtros.
 
 ## Design (Impeccable)
 

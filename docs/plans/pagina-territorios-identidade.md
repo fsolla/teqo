@@ -1,11 +1,20 @@
 # B21 — Página própria dos Territórios de Identidade (overview + tabela)
 
-Status: rascunho
+Status: ✓ entregue em 2026-07-25
 Atualizado em: 2026-07-25
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — superfícies de coordenação, item B21; conteúdo herdado de E17 ✓ e estendido por E12)
 Impeccable: C — rota nova `/campanha/territorios`, mas com encaixe direto no sistema de listas existente (`CampaignPageShell` + `CampaignTable` + header sort/filtro do B15/B16)
 Appetite: ~1–1,5 dia eng; sem migration, sem collection, sem server action — rota + módulo de URL + definições de coluna + entrada no sidebar
 Responsável: —
+
+## As built (2026-07-25)
+
+- `/campanha/territorios` é RSC staff-only, com busca, filtros por TI/assessoria, sort, canonicalização e pending pela URL; `leader` redireciona para `/campanha`.
+- O contrato compartilhado `resolveListUrl` exige `page`; como esta lista fixa de 27 linhas não pagina, `resolveTerritoryListUrl` usa `inspectRawListParams` e não inventa `page: 1`.
+- `CampaignTable` renderiza linhas planas; `flattenTerritoryRows` transforma pai/sub-linhas num union e mantém as duas decomposições do Metropolitano adjacentes ao pai.
+- `CampaignSearchForm` descartaria sort/filtros; `TerritoryFilters` segue o padrão de `MunicipalityFilters`, preservando o estado e oferecendo controles mobile.
+- A extração disparada por B29/B33 foi antecipada: `shared/CampaignSortableHead` e `CampaignHeaderFilterPopover` contêm só chrome/a11y; wrappers de município e território mantêm política de domínio.
+- Por decisão desta sessão, o painel de TI foi **removido** do Início, junto com `territorySlot` e `TerritoryOverviewTable`; não há variante compacta.
 
 ## Design (Impeccable)
 
@@ -48,7 +57,7 @@ O pedido (2026-07-25) é fechar essa distância: uma **página própria** para o
 - **Filtro no header** (Popover, padrão B16) no conjunto mínimo que decide algo com 27 linhas: Território (multi-seleção) e Cobertura (`com_assessor` / `sem_assessor`), mais busca por nome; chips de filtro ativo + "Limpar" pelos shells compartilhados.
 - **Metropolitano decomposto** preservado (Salvador 19 zonas × Demais RMS) — salvaguarda permanente do relatório; sub-linhas nunca são reordenadas independentemente.
 - **Linha → lista filtrada** `/campanha/municipios?region=<TI>` (comportamento já entregue no E17).
-- **Uma única implementação da leitura por TI:** o painel do Início passa a consumir as mesmas definições de coluna (subconjunto compacto) e ganha um link "Ver todos os territórios" para a página. Sem segunda tabela divergente.
+- **Uma única implementação da leitura por TI:** a página dedicada substitui o painel do Início; a tabela antiga e seu slot foram removidos para não manter duas superfícies divergentes.
 - Guardrails: sem migration, sem collection, sem `Consent`, sem server action; leitura agregada com `overrideAccess: true` (precedente E17), nunca PII por município.
 
 ## Decisões travadas
@@ -63,7 +72,7 @@ O pedido (2026-07-25) é fechar essa distância: uma **página própria** para o
 
 ## Questões em aberto
 
-- **O painel do Início continua?** **Opções:** (A) continua completo + link; (B) vira versão compacta (Território · % da votação · Com assessor) com "Ver todos"; (C) sai do Início. **Recomendação: B** — o Início volta a ser resumo e a página vira o lugar de trabalhar, sem perder o pedido do candidato (a leitura regional segue visível na home). Reaproveita as mesmas definições de coluna via subconjunto de `id`s. _(assumido — validar na primeira demo.)_
+- **O painel do Início continua?** **Resolvido em 2026-07-25: C — saiu do Início.** A página dedicada é o lugar de comparar TIs; a remoção também eliminou `territorySlot` e `TerritoryOverviewTable`.
 - **Entrada no sidebar: item próprio ou 2º nível sob Municípios?** **Opções:** item em `staffNav` logo abaixo de Municípios | submenu de Municípios (o padrão que o B18 planeja para filtros salvos). **Recomendação:** item próprio em `staffNav` (`MapIcon`), **fora** do `getCampaignBottomNav` (o bottom bar corta em 5 e Territórios não desloca Planos). O submenu do B18 é para estados salvos da mesma lista, não para outra entidade.
 - **Filtro de "peso" (ex.: só TIs acima de X% da votação)?** **Recomendação:** não na v1 — com 27 linhas, ordenar por % resolve; um filtro numérico é controle a mais sem decisão nova. Reavaliar se a mesa pedir corte fixo.
 
@@ -124,6 +133,7 @@ Componentes:
 ## Adiado com gatilho
 
 - **Head/URL genéricos em `shared/`.** Gatilho **disparado em 2026-07-25**: o 3º call site é o **B29** (sort + filtro no header de `/campanha/liderancas` — [plano](ordenacao-filtros-lista-liderancas.md)), que **assume** a extração do par head/filtro para `shared/` e a migração de municípios. Se B21 entrar primeiro, duplica o head uma vez como descrito acima e o B29 migra os três; se B29 entrar primeiro, esta página já nasce consumindo o compartilhado. Os **módulos de URL** seguem um por domínio em qualquer ordem.
+- **Agregação SQL específica para a página.** O rollup atual lê 435 municípios e agrega os pledges vivos em memória a cada navegação de sort/filtro; isso é deliberado enquanto a cardinalidade é pequena e não existe invalidação segura para cache cross-request. Gatilho: p95 medido da rota ultrapassar 500 ms ou o volume de pledges tornar essa leitura material; então projetar somente os totais por cenário necessários no banco, sem cache de campanha sem invalidação.
 - **Filtros adicionais no header** (tendência agregada, faixa de peso). Gatilho: a mesa pedir um corte que a ordenação não resolve em sessão real.
 - **Coluna de cobertura de meta por TI.** Gatilho: **E12** entregue com a regra "razão dos agregados + decomposição obrigatória".
 

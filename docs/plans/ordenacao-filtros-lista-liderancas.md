@@ -4,8 +4,10 @@ Status: rascunho
 Atualizado em: 2026-07-25
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — superfícies de coordenação, item B29)
 Impeccable: B — encaixe em tela existente (`/campanha/liderancas`), sem rota nova; herda o header rico de `/campanha/municipios` (B15 ✓ + B16 ✓)
-Appetite: ~1,5–2 dias eng; sem migration — módulo de URL + filtros no loader + duas colunas + extração do par head/filtro para `shared/` (com municípios migrado junto)
+Appetite: ~1–1,5 dia eng; sem migration — módulo de URL + filtros no loader + duas colunas; o chrome compartilhado já foi entregue pelo B21
 Responsável: —
+
+**Atualização B21 (2026-07-25):** a extração deixou de fazer parte do appetite deste item. `shared/CampaignSortableHead` e `CampaignHeaderFilterPopover` já existem, e os wrappers de municípios já foram migrados. B29 implementa apenas os wrappers/política de liderança e o contrato de URL/filtros próprios.
 
 ## Design (Impeccable)
 

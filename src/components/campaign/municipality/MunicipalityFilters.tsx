@@ -4,6 +4,7 @@ import { useCampaignListPending } from '@/components/campaign/shared/CampaignLis
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
 
+import { CampaignMobileMultiFilterField } from '@/components/campaign/shared/CampaignMobileMultiFilterField'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
@@ -32,44 +33,6 @@ import {
 } from '@/utilities/municipalityListUrl'
 
 const SEARCH_DEBOUNCE_MS = 1000
-
-/** Mobile stand-in for a header multi-select: pick to add, pick again to remove. */
-const MobileMultiFilterField = ({
-  id,
-  label,
-  emptyLabel,
-  options,
-  selected,
-  onToggle,
-}: {
-  id: string
-  label: string
-  emptyLabel: string
-  options: MunicipalityFilterOption[]
-  selected: string[]
-  onToggle: (value: string) => void
-}) => (
-  <Field>
-    <FieldLabel htmlFor={id}>{label}</FieldLabel>
-    <NativeSelect
-      id={id}
-      value=""
-      onChange={(event) => {
-        if (event.target.value) onToggle(event.target.value)
-      }}
-      className="min-h-11 w-full"
-    >
-      <NativeSelectOption value="">
-        {selected.length ? `${selected.length} selecionado(s) — alterar` : emptyLabel}
-      </NativeSelectOption>
-      {options.map((option) => (
-        <NativeSelectOption key={option.value} value={option.value}>
-          {selected.includes(option.value) ? `✓ ${option.label}` : option.label}
-        </NativeSelectOption>
-      ))}
-    </NativeSelect>
-  </Field>
-)
 
 type MunicipalityFiltersProps = {
   state: MunicipalityListState
@@ -237,7 +200,7 @@ export const MunicipalityFilters = ({
           </Field>
         ) : null}
         {regionFilterOptions.length ? (
-          <MobileMultiFilterField
+          <CampaignMobileMultiFilterField
             id="municipality-filter-region"
             label="Território"
             emptyLabel="Todos"
@@ -295,7 +258,7 @@ export const MunicipalityFilters = ({
           )
         })}
         {showStaffFilters ? (
-          <MobileMultiFilterField
+          <CampaignMobileMultiFilterField
             id="municipality-filter-trend"
             label="Tendência"
             emptyLabel="Todas"
@@ -313,7 +276,7 @@ export const MunicipalityFilters = ({
           />
         ) : null}
         {showStaffFilters && advisorFilterOptions.length ? (
-          <MobileMultiFilterField
+          <CampaignMobileMultiFilterField
             id="municipality-filter-advisor"
             label="Assessores"
             emptyLabel="Todos"

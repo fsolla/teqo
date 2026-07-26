@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   computeTerritoryRollup,
+  filterTerritoryRows,
+  flattenTerritoryRows,
   sortTerritoryRows,
   type TerritoryMunicipalityInput,
 } from '@/utilities/territoryOverview'
@@ -142,5 +144,53 @@ describe('sortTerritoryRows', () => {
     expect(sorted[0].votesByYear[2022] ?? 0).toBeLessThanOrEqual(
       sorted[sorted.length - 1].votesByYear[2022] ?? 0,
     )
+  })
+})
+
+describe('flattenTerritoryRows', () => {
+  it('places Metropolitano sub-rows immediately after their parent', () => {
+    const rows = sortTerritoryRows(computeTerritoryRollup(fixture), 'region', 'asc')
+    const flattened = flattenTerritoryRows(rows)
+    const metroIndex = flattened.findIndex(
+      (row) => row.variant === 'parent' && row.region === 'Metropolitano de Salvador',
+    )
+
+    expect(flattened.slice(metroIndex, metroIndex + 3).map((row) => row.variant)).toEqual([
+      'parent',
+      'sub',
+      'sub',
+    ])
+    expect(flattened[metroIndex + 1]).toMatchObject({
+      variant: 'sub',
+      parentRegion: 'Metropolitano de Salvador',
+      label: 'Salvador (19 zonas)',
+    })
+  })
+})
+
+describe('filterTerritoryRows', () => {
+  const rows = computeTerritoryRollup(fixture)
+
+  it('combines accent-insensitive search and selected regions', () => {
+    expect(
+      filterTerritoryRows(rows, {
+        q: 'irece',
+        regions: ['Irecê', 'Velho Chico'],
+      }).map((row) => row.region),
+    ).toEqual(['Irecê'])
+  })
+
+  it('treats com assessor as complete coverage and sem assessor as any gap', () => {
+    expect(
+      filterTerritoryRows(rows, { coverage: 'com_assessor' }).map((row) => row.region),
+    ).toEqual(['Velho Chico'])
+    expect(
+      filterTerritoryRows(rows, { coverage: 'sem_assessor' }).map((row) => row.region),
+    ).toEqual(['Irecê', 'Metropolitano de Salvador'])
+  })
+
+  it('keeps Metropolitano sub-rows attached when the parent matches', () => {
+    const [metropolitano] = filterTerritoryRows(rows, { q: 'metropolitano' })
+    expect(metropolitano.subRows).toHaveLength(2)
   })
 })

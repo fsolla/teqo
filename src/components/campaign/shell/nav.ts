@@ -4,6 +4,7 @@ import {
   HandshakeIcon,
   HomeIcon,
   InboxIcon,
+  MapIcon,
   MapPinIcon,
   UserCogIcon,
   Users2Icon,
@@ -24,6 +25,7 @@ export type CampaignNavItem = {
 const staffNav: CampaignNavItem[] = [
   { title: 'Início', href: '/campanha', icon: HomeIcon },
   { title: 'Municípios', href: '/campanha/municipios', icon: MapPinIcon },
+  { title: 'Territórios', href: '/campanha/territorios', icon: MapIcon },
   { title: 'Lideranças', href: '/campanha/liderancas', icon: HandshakeIcon },
   { title: 'Dobradinhas', href: '/campanha/dobradinhas', icon: Users2Icon },
   { title: 'Atividades', href: '/campanha/atividades', icon: CalendarDaysIcon },
@@ -74,7 +76,12 @@ export const getCampaignBottomNav = (role: CampaignUser['role']): CampaignNavIte
   if (role === 'leader') return nav
 
   return nav
-    .filter((item) => item.href !== '/campanha/apoiadores' && item.href !== '/campanha/assessores')
+    .filter(
+      (item) =>
+        item.href !== '/campanha/territorios' &&
+        item.href !== '/campanha/apoiadores' &&
+        item.href !== '/campanha/assessores',
+    )
     .slice(0, 5)
 }
 
