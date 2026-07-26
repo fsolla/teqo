@@ -50,7 +50,7 @@ Soft histórico: FD2 Fase 5 (“Sidebar layout-transition”) era motion cortáv
 ## Decisões travadas
 
 - **Trilha B com ID B38 (não fill-in anônimo).** Chrome do shell da vertical inteira, pedido explícito de produto, paralelizável e cortável — merece nó no grafo. (2026-07-26, roadmap-item.) **Rejeitado:** só fill-in sem ID (some no grafo ao lado de B18); absorver em R6 (atrasa quick win de viewport); inventar componente fora do shadcn Sidebar.
-- **`collapsible="offcanvas"` (não `"icon"`, não manter `"none"`).** Recolhido = gap `w-0` / rail fora da tela; conteúdo ganha a largura toda — o job do tablet nas listas densas. Expandir = `SidebarTrigger` (e ⌘B). **Rejeitado:** `"icon"` (rail 3 rem + tooltips; obriga adaptar logo/perfil/role badge e ainda come viewport — sidebar-07 é referência de *toggle*, não de modo); `"none"` (status quo); Sheet também em tablet (duplica o idioma mobile e perde o peer-gap do desktop).
+- **`collapsible="offcanvas"` (não `"icon"`, não manter `"none"`).** Recolhido = gap `w-0` / rail fora da tela; conteúdo ganha a largura toda — o job do tablet nas listas densas. Expandir = `SidebarTrigger` (e ⌘B). **Rejeitado:** `"icon"` (rail 3 rem + tooltips; obriga adaptar logo/perfil/role badge e ainda come viewport — sidebar-07 é referência de _toggle_, não de modo); `"none"` (status quo); Sheet também em tablet (duplica o idioma mobile e perde o peer-gap do desktop).
 - **Faixas:** mobile &lt;768 (Sheet, já); tablet 768–1023 (`md`…`lg-1`) default **collapsed**; desktop ≥1024 (`lg+`) default **expanded**. Alinha ao `md:` já usado no layout/bottom nav e ao `lg` Tailwind padrão. **Rejeitado:** tablet = tudo `md+` collapsed (mata o default aberto no desktop); breakpoint custom 900 px fora do design system; só CSS sem estado (não liga o trigger shadcn).
 - **Default inicial: viewport quando não há cookie `sidebar_state`; cookie vence depois do primeiro toggle.** `SidebarProvider` já grava o cookie — não reinventar storage. No layout RSC: ler cookie se existir; senão `defaultOpen` derivado do User-Agent/viewport é frágil — preferir efeito client mínimo na 1ª montagem sem cookie (matchMedia `min-width: 1024px`) **ou** passar `defaultOpen` só do cookie e, sem cookie, `true` no SSR + sync tablet→`setOpen(false)` uma vez. **Rejeitado:** ignorar cookie sempre (apaga preferência); cookies separados por faixa (overkill); auto-collapse em todo `resize` (briga com o usuário).
 - **`SidebarTrigger` visível em `md+`** (não só mobile). Colocar num header slim do `SidebarInset` (ou strip sticky) com `hidden md:flex` / espelho do mobile — o trigger mobile do top bar vermelho permanece `md:hidden`. **Rejeitado:** só atalho de teclado; trigger flutuante fora do inset; esconder trigger no desktop (pedido: manter abrir/fechar).
@@ -82,7 +82,7 @@ Componentes:
 - **Smoke visual:** 360 (Sheet), 768/820 (collapsed + trigger), 1280 (open + toggle). Print do dossiê (E16) sem regressão de chrome.
 - **Migration**: Sem migration, sem collection, sem server action.
 
-Depth check: reusa `Sidebar`/`SidebarProvider`/`SidebarTrigger`/`useSidebar` já no produto; espelha sidebar-07 só no *padrão* de trigger no inset. Sem segundo drawer, sem fork do shadcn.
+Depth check: reusa `Sidebar`/`SidebarProvider`/`SidebarTrigger`/`useSidebar` já no produto; espelha sidebar-07 só no _padrão_ de trigger no inset. Sem segundo drawer, sem fork do shadcn.
 
 ## Dependências
 
