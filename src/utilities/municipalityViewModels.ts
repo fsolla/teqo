@@ -76,7 +76,7 @@ export type MunicipalityListViewModel = {
   votePosition2022: MunicipalityVoteRankEntry | null
   /** E10 — classe operacional derivada do artefato TSE. */
   territorialClass: MunicipalityTerritorialClass
-  /** Os dois fatores que produziram a classe: a célula nunca mostra o rótulo sozinho. */
+  /** Os fatores que produziram a classe: a célula nunca mostra o rótulo sozinho. */
   territorialClassFactors: TerritorialFactor[]
   /** E8 "conta da cadeira" — meta × comprometido por cenário; null fora da staff view. */
   goalCoverageByScenario: Record<VoteEstimateScenario, MunicipalityGoalCoverage>
@@ -114,7 +114,7 @@ export const toMunicipalityListViewModel = (
     pledges: pledges ?? createEmptyMunicipalityPledgeAggregate(),
     votePosition2022,
     territorialClass: territorialClass.class,
-    territorialClassFactors: territorialClass.factors.slice(0, 2),
+    territorialClassFactors: territorialClass.factors,
     goalCoverageByScenario: goalCoverageByScenario ?? createEmptyGoalCoverageByScenario(),
   }
 }

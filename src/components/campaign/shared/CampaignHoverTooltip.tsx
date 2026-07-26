@@ -10,10 +10,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
  * heading or table cell. Shared by the campaign list system: column headers
  * (`MunicipalitySortableHead`), card metrics, and cell content via
  * `CampaignTable`'s `cellTooltip`. Radix's `TooltipTrigger` deliberately
- * ignores touch pointer
- * events — no hover on touch, and a tap doesn't reliably focus a non-form
- * element either — which otherwise makes the whole tooltip unreachable on
- * phones (an `/impeccable critique` finding). The open state is controlled
+ * ignores touch pointer events — no hover on touch, and a tap doesn't
+ * reliably focus a non-form element either — which otherwise makes the whole
+ * tooltip unreachable on phones (an `/impeccable critique` finding). The open state is controlled
  * so a `pointerType === 'touch'` tap can explicitly toggle it; mouse hover
  * and keyboard focus are untouched (Radix keeps driving `onOpenChange` for
  * those exactly as before), so a **mouse** click — which already hovered the

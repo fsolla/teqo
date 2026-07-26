@@ -80,13 +80,11 @@ export const getMunicipalityFederalBaseline = (slug: string): MunicipalityFedera
   artifact.municipalities[slug] ?? EMPTY_BASELINE
 
 /** Statewide sums of the artifact for one year — the denominators of every relative reading. */
-export type StatewideFederalTotals = {
+type StatewideFederalTotals = {
   /** Candidate's own nominal votes across every catalog municipality. */
   ownVotes: number
   /** Federal T1 valid votes across every catalog municipality. */
   validVotes: number
-  /** Curated campo-parties federal nominal votes across every catalog municipality. */
-  campoVotes: number
 }
 
 const statewideTotalsCache = new Map<number, StatewideFederalTotals>()
@@ -101,11 +99,10 @@ export const getStatewideFederalTotals = (year: number): StatewideFederalTotals 
   if (cached) return cached
 
   const yearKey = String(year)
-  const totals: StatewideFederalTotals = { ownVotes: 0, validVotes: 0, campoVotes: 0 }
+  const totals: StatewideFederalTotals = { ownVotes: 0, validVotes: 0 }
   for (const baseline of Object.values(artifact.municipalities)) {
     totals.ownVotes += baseline.votesByYear[yearKey] ?? 0
     totals.validVotes += baseline.validVotesByYear[yearKey] ?? 0
-    totals.campoVotes += baseline.campoFederalVotesByYear[yearKey] ?? 0
   }
 
   statewideTotalsCache.set(year, totals)

@@ -126,9 +126,15 @@ const loadMunicipalityListFilterFacets = async (
   /** The scope read is a PROMISE so the facets can join the page's main `Promise.all` (B16+). */
   loadedScope: { where: Where; rows: Promise<MunicipalityFacetRow[]> } | null,
 ): Promise<MunicipalityListFilterFacets> => {
+  // No facet popover owns the class filter, so every facet read keeps it
+  // applied — inside the memo, so a `where` shared by two facets is filtered once.
+  const classMatches = territorialClassFilterPredicate(state)
+  const applyClassFilter = (rows: MunicipalityFacetRow[]): MunicipalityFacetRow[] =>
+    classMatches ? rows.filter((row) => classMatches(row.slug)) : rows
+
   const rowsByWhere = new Map<string, Promise<MunicipalityFacetRow[]>>()
   if (loadedScope) {
-    rowsByWhere.set(JSON.stringify(loadedScope.where), loadedScope.rows)
+    rowsByWhere.set(JSON.stringify(loadedScope.where), loadedScope.rows.then(applyClassFilter))
   }
   const facetRows = (omit: Partial<MunicipalityListState>): Promise<MunicipalityFacetRow[]> => {
     const where = buildMunicipalityListWhere({ ...state, ...omit })
@@ -147,24 +153,16 @@ const loadMunicipalityListFilterFacets = async (
         user,
         overrideAccess: false,
       })
-      .then((result) => result.docs as MunicipalityFacetRow[])
+      .then((result) => applyClassFilter(result.docs as MunicipalityFacetRow[]))
     rowsByWhere.set(key, rows)
     return rows
   }
 
-  // No facet popover owns the class filter, so all three keep it applied.
-  const classMatches = territorialClassFilterPredicate(state)
-  const withClassFilter = (rows: MunicipalityFacetRow[]): MunicipalityFacetRow[] =>
-    classMatches ? rows.filter((row) => classMatches(row.slug)) : rows
-
-  const [rawSlugRows, rawRegionRows, rawAdvisorRows] = await Promise.all([
+  const [slugRows, regionRows, advisorRows] = await Promise.all([
     facetRows({ slugs: undefined, priority: undefined }),
     facetRows({ regions: undefined }),
     facetRows({ advisors: undefined, coverage: undefined }),
   ])
-  const slugRows = withClassFilter(rawSlugRows)
-  const regionRows = withClassFilter(rawRegionRows)
-  const advisorRows = withClassFilter(rawAdvisorRows)
 
   // Selected values are unioned in: a selection must stay visible to be undone.
   const availableSlugs = new Set([...slugRows.map((row) => row.slug), ...(state.slugs ?? [])])

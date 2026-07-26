@@ -6,6 +6,12 @@
  */
 const numberFormatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 })
 
+/** Shares and multiples: one decimal at most, never a forced trailing zero. */
+export const oneDecimalFormatter = new Intl.NumberFormat('pt-BR', {
+  maximumFractionDigits: 1,
+  minimumFractionDigits: 0,
+})
+
 export const formatElectionNumber = (value: number): string => numberFormatter.format(value)
 
 /**
@@ -15,7 +21,4 @@ export const formatElectionNumber = (value: number): string => numberFormatter.f
  * committed TSE artifact along with it.
  */
 export const formatVoteSharePercent = (share: number): string =>
-  `${(share * 100).toLocaleString('pt-BR', {
-    maximumFractionDigits: 1,
-    minimumFractionDigits: 0,
-  })}%`
+  `${oneDecimalFormatter.format(share * 100)}%`

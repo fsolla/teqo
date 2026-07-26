@@ -14,6 +14,7 @@ import {
   buildListHref,
   firstValue,
   normalizedText,
+  parseExhaustiveEnumParam,
   resolveListUrl,
   strictDecimalInteger,
   type RawSearchParams as CampaignListRawSearchParams,
@@ -217,32 +218,7 @@ const parseAdvisorsParam = (raw: string | string[] | undefined): number[] => {
 }
 
 const politicalTrendStatusSet = new Set<string>(Object.keys(politicalTrendLabels))
-
-/** Selecting every trend means "todas", which is the same thing as selecting none. */
-const parseTrendsParam = (raw: string | string[] | undefined): PoliticalTrendStatus[] => {
-  const trends: PoliticalTrendStatus[] = []
-  for (const token of allParamValues(raw)) {
-    if (!politicalTrendStatusSet.has(token)) continue
-    const trend = token as PoliticalTrendStatus
-    if (trends.includes(trend)) continue
-    trends.push(trend)
-  }
-  return trends.length < politicalTrendStatusSet.size ? trends : []
-}
-
 const territorialClassSet = new Set<string>(Object.keys(territorialClassLabels))
-
-/** Same "todas = nenhuma" canonicalization as `parseTrendsParam`. */
-const parseClassesParam = (raw: string | string[] | undefined): MunicipalityTerritorialClass[] => {
-  const classes: MunicipalityTerritorialClass[] = []
-  for (const token of allParamValues(raw)) {
-    if (!territorialClassSet.has(token)) continue
-    const territorialClass = token as MunicipalityTerritorialClass
-    if (classes.includes(territorialClass)) continue
-    classes.push(territorialClass)
-  }
-  return classes.length < territorialClassSet.size ? classes : []
-}
 
 export const municipalityListStateToRawParams = (
   state: MunicipalityListState,
@@ -274,8 +250,14 @@ export const parseMunicipalityListParams = (
   const rawKind = firstValue(params.kind)
   const rawCoverage = firstValue(params.coverage)
   const rawPriority = firstValue(params.priority)
-  const trends = parseTrendsParam(params.trend)
-  const classes = parseClassesParam(params.class)
+  const trends = parseExhaustiveEnumParam<PoliticalTrendStatus>(
+    params.trend,
+    politicalTrendStatusSet,
+  )
+  const classes = parseExhaustiveEnumParam<MunicipalityTerritorialClass>(
+    params.class,
+    territorialClassSet,
+  )
   const rawCompare = strictDecimalInteger(firstValue(params.compare))
   const rawSort = firstValue(params.sort) as MunicipalityListSortKey | undefined
   const sort = rawSort && municipalityListSortKeySet.has(rawSort) ? rawSort : undefined

@@ -277,7 +277,7 @@ export const buildMunicipalityFilterOptionHref = (
     const trends = toggled.filter(isPoliticalTrendStatus)
     if (trends.length && trends.length < trendStatusCount) next.trends = trends
     else delete next.trends
-  } else {
+  } else if (param === 'class') {
     const classes = toggled.filter(isTerritorialClass)
     if (classes.length && classes.length < territorialClassCount) next.classes = classes
     else delete next.classes

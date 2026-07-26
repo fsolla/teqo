@@ -24,7 +24,6 @@ import {
   municipalityPriorityLabels,
   politicalTrendBadgeVariant,
   politicalTrendLabels,
-  TERRITORIAL_CLASS_NO_DATA,
   territorialClassBadgeVariant,
   territorialClassLabels,
 } from '@/utilities/municipalityLabels'
@@ -110,7 +109,7 @@ export const MunicipalityDossier = ({
   const goalAccount = data.goalAccount
   const territorialClass = goalAccount?.territorialClass ?? null
   const territorialClassWhy = territorialClass
-    ? formatTerritorialClassWhy(territorialClass.factors) || TERRITORIAL_CLASS_NO_DATA
+    ? formatTerritorialClassWhy(territorialClass.factors)
     : null
   const usesMesaEstimate = strategy?.expectedVotes.central != null
 

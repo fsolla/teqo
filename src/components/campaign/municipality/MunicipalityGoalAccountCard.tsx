@@ -22,7 +22,6 @@ import {
 } from '@/utilities/goalCoverage'
 import {
   formatTerritorialClassWhy,
-  TERRITORIAL_CLASS_NO_DATA,
   territorialClassBadgeVariant,
   territorialClassLabels,
 } from '@/utilities/municipalityLabels'
@@ -154,7 +153,7 @@ const TerritorialClassRow = ({
           </Badge>
         </button>
       </CampaignHoverTooltip>
-      <p className="px-1.5 text-xs text-muted-foreground">{why || TERRITORIAL_CLASS_NO_DATA}</p>
+      <p className="px-1.5 text-xs text-muted-foreground">{why}</p>
     </div>
   )
 }

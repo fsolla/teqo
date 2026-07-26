@@ -5,6 +5,7 @@ import {
   type MunicipalityFederalBaseline,
 } from '@/lib/bahiaElectionAggregates'
 import { ELECTION_YEAR_2022 } from '@/lib/electionResults'
+import { computeVoteRankByYear } from '@/lib/municipalityVoteRank'
 import { captureRate, ownVotes2022, projectedFieldCeiling } from '@/utilities/municipalityPotential'
 
 /**
@@ -71,8 +72,6 @@ export type MunicipalityTerritorialClassification = {
   lq: number | null
   /** Share of his statewide vote that comes from here (the mesa's own anchor, A11). */
   ownShare: number
-  /** Field votes (projected 2022 ceiling) his candidacy did not capture. */
-  fieldHeadroom: number
   /** True when the município belongs to the block holding `coreCumulativeShare` of his vote. */
   inCoreBlock: boolean
 }
@@ -95,7 +94,6 @@ const UNCLASSIFIED: MunicipalityTerritorialClassification = {
   factors: [],
   lq: null,
   ownShare: 0,
-  fieldHeadroom: 0,
   inCoreBlock: false,
 }
 
@@ -114,12 +112,7 @@ export const classifyMunicipalityTerritory = (
   const stateShare = stateOwnVotes / stateValidVotes
   const lq = ownVotes / validVotes / stateShare
   const ownShare = ownVotes / stateOwnVotes
-  const shared = {
-    lq,
-    ownShare,
-    fieldHeadroom: input.fieldHeadroom,
-    inCoreBlock: input.inCoreBlock,
-  }
+  const shared = { lq, ownShare, inCoreBlock: input.inCoreBlock }
   const dominance: TerritorialFactor = { id: 'dominance', value: lq }
   const ownShareFactor: TerritorialFactor = { id: 'ownShare', value: ownShare }
   const fieldFactor: TerritorialFactor = { id: 'field', value: input.fieldHeadroom }
@@ -173,31 +166,26 @@ let catalogContext: CatalogContext | null = null
 const getCatalogContext = (): CatalogContext => {
   if (catalogContext) return catalogContext
 
-  const rows = federalBaselineMunicipalitySlugs().map((slug) => {
-    const baseline = getMunicipalityFederalBaseline(slug)
-    return {
-      slug,
-      ownVotes: ownVotes2022(baseline),
-      fieldHeadroom: fieldHeadroomOf(baseline),
-      hasFieldData: projectedFieldCeiling(baseline) > 0,
-    }
-  })
-
   // Slugs whose majoritarian cell is missing would drag the median to zero and
   // make every weak município read as "expansão".
   const medianFieldHeadroom = median(
-    rows.filter((row) => row.hasFieldData).map((row) => row.fieldHeadroom),
+    federalBaselineMunicipalitySlugs()
+      .map(getMunicipalityFederalBaseline)
+      .filter((baseline) => projectedFieldCeiling(baseline) > 0)
+      .map(fieldHeadroomOf),
   )
 
-  const stateOwnVotes = getStatewideFederalTotals(TERRITORIAL_CLASS_YEAR).ownVotes
+  // A11 already ranks every slug by own vote, descending, and memoizes it —
+  // walking that map is the same order this used to re-sort for itself.
+  const coreVoteTarget =
+    getStatewideFederalTotals(TERRITORIAL_CLASS_YEAR).ownVotes *
+    TERRITORIAL_CLASS_ANCHORS.coreCumulativeShare
   const coreBlockSlugs = new Set<string>()
   let accumulated = 0
-  for (const row of [...rows].sort(
-    (a, b) => b.ownVotes - a.ownVotes || a.slug.localeCompare(b.slug),
-  )) {
-    if (accumulated >= stateOwnVotes * TERRITORIAL_CLASS_ANCHORS.coreCumulativeShare) break
-    coreBlockSlugs.add(row.slug)
-    accumulated += row.ownVotes
+  for (const [slug, entry] of computeVoteRankByYear(TERRITORIAL_CLASS_YEAR)) {
+    if (accumulated >= coreVoteTarget) break
+    coreBlockSlugs.add(slug)
+    accumulated += entry.votes
   }
 
   catalogContext = { medianFieldHeadroom, coreBlockSlugs }
