@@ -71,7 +71,7 @@ const leadershipColumns = (
       <CampaignCopyableCell
         value={row.phone}
         label="Celular"
-        formatDisplay={formatBrazilianPhoneInput}
+        displayValue={row.phone ? formatBrazilianPhoneInput(row.phone) : undefined}
         className="tabular-nums"
       />
     ),

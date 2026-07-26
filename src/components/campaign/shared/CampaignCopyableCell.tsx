@@ -22,8 +22,12 @@ type CampaignCopyableCellProps = {
   value: string | null
   /** Used in the toast ("`label` copiado.") and the button's `aria-label`. */
   label: string
-  /** Transforms `value` for display only — the clipboard still gets the raw value (e.g. phone masking). */
-  formatDisplay?: (value: string) => string
+  /**
+   * Preformatted label (e.g. masked phone). Clipboard still gets raw `value`.
+   * String, not a formatter — Client Component; RSC cannot pass functions
+   * (broke `/campanha/liderancas` after B28).
+   */
+  displayValue?: string
   emptyDisplay?: string
   className?: string
 }
@@ -37,7 +41,7 @@ type CampaignCopyableCellProps = {
 export const CampaignCopyableCell = ({
   value,
   label,
-  formatDisplay,
+  displayValue,
   emptyDisplay = '—',
   className,
 }: CampaignCopyableCellProps) => {
@@ -49,8 +53,6 @@ export const CampaignCopyableCell = ({
     )
   }
 
-  const displayValue = formatDisplay ? formatDisplay(value) : value
-
   return (
     <button
       type="button"
@@ -58,7 +60,7 @@ export const CampaignCopyableCell = ({
       aria-label={`Copiar ${label.toLowerCase()}`}
       onClick={() => void copyText(label, value)}
     >
-      <span className="truncate">{displayValue}</span>
+      <span className="truncate">{displayValue ?? value}</span>
     </button>
   )
 }

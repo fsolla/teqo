@@ -9,6 +9,8 @@ Responsável: —
 
 **Nota de revisão (2026-07-26):** entregue como especificado — `CampaignCopyableCell` nasceu compartilhado (`shared/`) já no 2º call site (`AdvisorsTable.tsx` migrado no mesmo PR), `whatsAppHrefForPhone` promovido a `lib/phone.ts`, `LeadershipRowViewModel.email` populado sem query nova, e `loadLeadershipDetail` deduplicado (reusa `row.email` de `toLeadershipRows` em vez de reparsear `doc.contact`). Ordem de colunas final: Nome → E-mail → Celular → Status → Municípios → Organizações → Acesso ao app → Ações (WhatsApp), exatamente como travado abaixo. Gate completo (tsc/lint/format/knip/cycles/test/build) verde; `pnpm exec knip` mantém o erro pré-existente ao carregar `payload.config.ts` (P3, não relacionado); `pnpm test:e2e` reproduziu apenas o flake pré-existente já documentado em `campaignMunicipalities.e2e.spec.ts` (checkbox de consentimento do `LeaderContactsPanel` antes da hidratação) — nenhuma falha nas rotas tocadas por este item.
 
+**Hotfix produção (2026-07-26 noite):** `/campanha/liderancas` 500 em prod — RSC não pode passar `formatDisplay` (função) para o Client Component `CampaignCopyableCell`. API trocada para `displayValue?: string` (formatação no caller); Vercel runtime error: "Functions cannot be passed directly to Client Components". Assessores (`AdvisorsTable`, já `'use client'`) não quebrava, mas foi alinhado.
+
 ## Design (Impeccable)
 
 Âncoras: `PRODUCT.md` (princípios 2 clareza sob pressão, 8 Feel the action; anti spreadsheet) / `DESIGN.md` (register `product`; Field Desk) · tema `data-theme='campaign'` · precedente de interação [`AdvisorsTable.tsx`](../../src/components/campaign/advisor/AdvisorsTable.tsx) (B19 ✓) · shells `CampaignTable` / `CampaignPageShell`.
