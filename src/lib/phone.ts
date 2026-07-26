@@ -53,3 +53,9 @@ export const buildWhatsAppUrl = (phone: string, message?: string): string => {
 
   return url.toString()
 }
+
+/** `wa.me` href for a row's phone, or `null` when it doesn't normalize — the shared guard behind every per-row WhatsApp button in the campaign lists. */
+export const whatsAppHrefForPhone = (phone: string | null): string | null => {
+  if (!phone || !normalizeBrazilianPhone(phone)) return null
+  return buildWhatsAppUrl(phone)
+}

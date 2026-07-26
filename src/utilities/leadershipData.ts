@@ -23,6 +23,7 @@ export type LeadershipRowViewModel = {
   contactID: number
   name: string
   phone: string | null
+  email: string | null
   supportStatus: SupportStatus | null
   sector: string | null
   municipalityNames: string[]
@@ -33,17 +34,18 @@ export type LeadershipRowViewModel = {
   updatedAt: string
 }
 
-const contactNameAndPhone = (
+const contactSummary = (
   contact: Leadership['contact'],
-): { id: number; name: string; phone: string | null } => {
+): { id: number; name: string; phone: string | null; email: string | null } => {
   if (typeof contact === 'object' && contact !== null) {
     return {
       id: contact.id,
       name: contact.name ?? 'Contato',
-      phone: (contact as { phone?: string | null }).phone ?? null,
+      phone: contact.phone ?? null,
+      email: contact.email ?? null,
     }
   }
-  return { id: Number(contact), name: 'Contato', phone: null }
+  return { id: Number(contact), name: 'Contato', phone: null, email: null }
 }
 
 const namesForIds = async (
@@ -95,12 +97,13 @@ const toLeadershipRows = async (
   ])
 
   return docs.map((doc) => {
-    const contact = contactNameAndPhone(doc.contact)
+    const contact = contactSummary(doc.contact)
     return {
       id: doc.id,
       contactID: contact.id,
       name: contact.name,
       phone: contact.phone,
+      email: contact.email,
       supportStatus: isSupportStatus(doc.supportStatus) ? doc.supportStatus : null,
       sector: doc.sector ?? null,
       municipalityNames: (doc.municipalities ?? [])
@@ -237,7 +240,6 @@ export type LeadershipDetailViewModel = LeadershipRowViewModel & {
   organizationIDs: number[]
   stateDeputyIDs: number[]
   stateDeputies: StateDeputySummary[]
-  email: string | null
   sectorNotes: string | null
   notes: string | null
   consentNote: string | null
@@ -263,12 +265,6 @@ export const loadLeadershipDetail = async (
   const [row] = await toLeadershipRows(payload, [doc])
   if (!row) return null
 
-  const contact = doc.contact
-  const email =
-    typeof contact === 'object' && contact !== null
-      ? ((contact as { email?: string | null }).email ?? null)
-      : null
-
   const stateDeputyIDs = (doc.stateDeputies ?? [])
     .map(relationshipId)
     .filter((id): id is number => id !== null)
@@ -284,7 +280,6 @@ export const loadLeadershipDetail = async (
       .filter((id): id is number => id !== null),
     stateDeputyIDs,
     stateDeputies,
-    email,
     sectorNotes: doc.sectorNotes ?? null,
     notes: doc.notes ?? null,
     consentNote: doc.consentNote ?? null,
