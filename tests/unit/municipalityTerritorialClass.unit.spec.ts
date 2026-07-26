@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
+import { TERRITORIAL_CLASS_ANCHORS } from '@/lib/territorialClassAnchors'
 import {
   classifyMunicipalityTerritory,
+  computeAggregateTerritorialClass,
   computeMunicipalityTerritorialClass,
-  TERRITORIAL_CLASS_ANCHORS,
   TERRITORIAL_CLASSES,
   territorialClassSortWeight,
   type MunicipalityTerritorialClass,
@@ -147,6 +148,57 @@ describe('computeMunicipalityTerritorialClass over the committed artifact', () =
     expect(computeMunicipalityTerritorialClass(slug)).toBe(
       computeMunicipalityTerritorialClass(slug),
     )
+  })
+})
+
+describe('computeAggregateTerritorialClass', () => {
+  const salvadorSlugs = municipalityCatalog
+    .filter((entry) => entry.kind === 'zona')
+    .map((entry) => entry.slug)
+
+  it('reads Salvador as one territory, not nineteen', () => {
+    expect(salvadorSlugs.length).toBe(19)
+
+    const aggregate = computeAggregateTerritorialClass(salvadorSlugs)
+    expect(aggregate.class).not.toBe('sem_base')
+    expect(aggregate.lq).toBeGreaterThan(0)
+  })
+
+  it('sums the inputs instead of averaging the zones\u2019 ratios', () => {
+    const aggregate = computeAggregateTerritorialClass(salvadorSlugs)
+    const zoneLqs = salvadorSlugs
+      .map((slug) => computeMunicipalityTerritorialClass(slug).lq)
+      .filter((lq): lq is number => lq !== null)
+    const meanZoneLq = zoneLqs.reduce((total, lq) => total + lq, 0) / zoneLqs.length
+
+    // The aggregate is vote-weighted, so it must land inside the zones' range
+    // but not on their unweighted mean — LQ is a ratio, and the mean of ratios
+    // is not the ratio of the sums.
+    expect(aggregate.lq).toBeGreaterThanOrEqual(Math.min(...zoneLqs))
+    expect(aggregate.lq).toBeLessThanOrEqual(Math.max(...zoneLqs))
+    expect(aggregate.lq).not.toBeCloseTo(meanZoneLq, 6)
+  })
+
+  it('adds up the share of his statewide vote across the group', () => {
+    const aggregate = computeAggregateTerritorialClass(salvadorSlugs)
+    const summed = salvadorSlugs.reduce(
+      (total, slug) => total + computeMunicipalityTerritorialClass(slug).ownShare,
+      0,
+    )
+
+    expect(aggregate.ownShare).toBeCloseTo(summed, 10)
+  })
+
+  it('matches the single-slug classifier for a group of one', () => {
+    const slug = municipalityCatalog.find((entry) => entry.kind === 'municipio')!.slug
+
+    expect(computeAggregateTerritorialClass([slug])).toEqual(
+      computeMunicipalityTerritorialClass(slug),
+    )
+  })
+
+  it('has no class for an empty group', () => {
+    expect(computeAggregateTerritorialClass([]).class).toBe('sem_base')
   })
 })
 

@@ -5,12 +5,17 @@ type ChoroplethLegendProps = {
   max: number
   metricLabel: string
   formatMax?: (max: number) => string
+  /** What the colour means, in the caller's words. Shares the id with the scale selector. */
+  noteId?: string
+  note?: string | null
 }
 
 export const ChoroplethLegend = ({
   max,
   metricLabel,
   formatMax = formatElectionNumber,
+  noteId,
+  note,
 }: ChoroplethLegendProps) => (
   <div className="flex flex-col gap-1.5">
     <div className="flex items-center gap-2">
@@ -25,8 +30,8 @@ export const ChoroplethLegend = ({
         {formatMax(max)}
       </span>
     </div>
-    <p className="text-xs text-muted-foreground">
-      Escala: intensidade da cor indica {metricLabel} no território.
+    <p id={noteId} className="text-xs text-muted-foreground">
+      {note ?? `Escala: intensidade da cor indica ${metricLabel} no território.`}
     </p>
   </div>
 )

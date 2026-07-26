@@ -316,6 +316,72 @@ export const loadCampoFederalVotesByCityZone = async (
   return votes
 }
 
+/**
+ * cityCode:zone → (candidateNumber → nominal deputado-federal T1 votes) for
+ * one year — the whole statewide slice, ungrouped by candidate, so a caller
+ * can fold it over any municipality geography and rank candidates against
+ * each other (B13's "posição no município").
+ *
+ * CLI/build-time use only, same as `loadCampoFederalVotesByCityZone`: this
+ * scans ~100k rows and must never run on a request path — the ranking it
+ * feeds is precomputed into the committed artifact.
+ */
+export const loadFederalVotesByCityZoneAndCandidate = async (
+  payload: Payload,
+  user: ElectionReader,
+  { year }: { year: number },
+): Promise<Map<string, Map<number, number>>> => {
+  assertCanReadElectionData(user)
+
+  const result = await payload.find({
+    collection: 'electionCandidateVote',
+    where: {
+      and: [
+        { year: { equals: year } },
+        { office: { equals: FEDERAL_DEPUTY_OFFICE } },
+        { turn: { equals: '1' } },
+        { voteType: { equals: 'nominal' } },
+      ],
+    },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { cityCode: true, zoneNumber: true, candidateNumber: true, votes: true },
+    overrideAccess: true,
+  })
+
+  const byCityZone = new Map<string, Map<number, number>>()
+  for (const row of result.docs) {
+    const key = `${row.cityCode}:${row.zoneNumber}`
+    let byCandidate = byCityZone.get(key)
+    if (!byCandidate) {
+      byCandidate = new Map<number, number>()
+      byCityZone.set(key, byCandidate)
+    }
+    byCandidate.set(
+      row.candidateNumber,
+      (byCandidate.get(row.candidateNumber) ?? 0) + (row.votes ?? 0),
+    )
+  }
+  return byCityZone
+}
+
+/** Folds `loadFederalVotesByCityZoneAndCandidate` over one municipality's cityCode×zones. */
+export const sumCandidateVotesForGeography = (
+  votesByCityZoneAndCandidate: Map<string, Map<number, number>>,
+  geography: MunicipalityElectionGeography,
+): Map<number, number> => {
+  const total = new Map<number, number>()
+  for (const zone of geography.zones) {
+    const byCandidate = votesByCityZoneAndCandidate.get(`${geography.cityCode}:${zone}`)
+    if (!byCandidate) continue
+    for (const [candidateNumber, votes] of byCandidate) {
+      total.set(candidateNumber, (total.get(candidateNumber) ?? 0) + votes)
+    }
+  }
+  return total
+}
+
 /** Turnout/valid/blank/null tally cell — same shape the committed artifact stores per year. */
 export type OfficeTallyCell = FederalBaselineTallyCell
 

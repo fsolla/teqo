@@ -2,7 +2,12 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import { getMunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
+import {
+  getFederalCompetitiveRank,
+  getMunicipalityFederalBaseline,
+  getStatewideFederalTotals,
+  type FederalCompetitiveRank,
+} from '@/lib/bahiaElectionAggregates'
 import { BASELINE_TICKET_2022, HISTORICAL_SERIES_YEARS } from '@/lib/electionResults'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import {
@@ -32,6 +37,11 @@ import type {
   MunicipalityMapComparison,
 } from '@/utilities/municipalityMapContract'
 import { buildMunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
+import { projectedValidVotes } from '@/utilities/municipalityPotential'
+import {
+  computeAggregateTerritorialClass,
+  type MunicipalityTerritorialClass,
+} from '@/utilities/municipalityTerritorialClass'
 import {
   emptyMunicipalityPledgeAggregate,
   resolveMunicipalityStaffVoteTotal,
@@ -91,7 +101,15 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
 
   const valuesByYear: Record<string, Record<string, number>> = {}
   const validVotesByYear: Record<string, Record<string, number>> = {}
+  const statewideShareByYear: Record<string, number> = {}
+  const competitiveRankByYear: Record<string, Record<string, FederalCompetitiveRank>> = {}
   const zoneVotesBySlug = new Map<string, Record<string, number>>()
+  const slugsByIbgeCode = new Map<string, string[]>()
+  for (const municipality of municipalities) {
+    const slugs = slugsByIbgeCode.get(municipality.ibgeCode) ?? []
+    slugs.push(municipality.slug)
+    slugsByIbgeCode.set(municipality.ibgeCode, slugs)
+  }
 
   // Historical years come from the committed artifact (immutable TSE data,
   // pre-aggregated per municipality) — zero database work.
@@ -112,8 +130,36 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
     }
     valuesByYear[String(year)] = values
     validVotesByYear[String(year)] = validValues
+
+    // The LQ denominator is his STATEWIDE standard, not the average of what is
+    // on screen: an advisor looking at 14 municípios must read the same "2×"
+    // that the list's "Classe" column shows.
+    const statewide = getStatewideFederalTotals(year)
+    statewideShareByYear[String(year)] =
+      statewide.validVotes > 0 ? statewide.ownVotes / statewide.validVotes : 0
+
+    const ranks: Record<string, FederalCompetitiveRank> = {}
+    for (const ibgeCode of slugsByIbgeCode.keys()) {
+      const rank = getFederalCompetitiveRank(ibgeCode, year)
+      if (rank) ranks[ibgeCode] = rank
+    }
+    competitiveRankByYear[String(year)] = ranks
   }
   validVotesByYear['2026'] = validVotesByYear['2022'] ?? {}
+  // 2026 has no statewide truth to measure against — the estimates only exist
+  // where the mesa filled them in — so it keeps 2022 as the standard, the same
+  // substitution `validVotesByYear` already makes.
+  statewideShareByYear['2026'] = statewideShareByYear['2022'] ?? 0
+
+  const territorialClassByCode: Record<string, MunicipalityTerritorialClass> = {}
+  const projectedValidVotesByCode: Record<string, number> = {}
+  for (const [ibgeCode, slugs] of slugsByIbgeCode) {
+    territorialClassByCode[ibgeCode] = computeAggregateTerritorialClass(slugs).class
+    projectedValidVotesByCode[ibgeCode] = slugs.reduce(
+      (total, slug) => total + projectedValidVotes(getMunicipalityFederalBaseline(slug)),
+      0,
+    )
+  }
 
   const pledgeValuesByScenario = Object.fromEntries(
     VOTE_ESTIMATE_SCENARIOS.map((scenario) => [scenario, {} as Record<string, number>]),
@@ -213,6 +259,10 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
     valuesByYear,
     values2026ByScenario: pledgeValuesByScenario,
     validVotesByYear,
+    statewideShareByYear,
+    territorialClassByCode,
+    competitiveRankByYear,
+    projectedValidVotesByCode,
     municipalitiesByIbgeCode: buildMunicipalitiesByIbgeCode(municipalities),
     zoneBreakdown,
     candidateName: BASELINE_TICKET_2022.candidate.name,

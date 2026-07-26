@@ -12,6 +12,14 @@ type MapFeatureReadoutProps = {
   rawMetricValue: number | undefined
   metricLabel: string
   scaleMode: MunicipalityMapScaleMode
+  /**
+   * What the colour means for THIS município, spelled out — "4ª de 5 faixas",
+   * "1,8× o padrão estadual do candidato", "12º entre 663 candidatos". A class
+   * without its reason is a verdict the reader cannot check.
+   */
+  relativeReading: string | null
+  /** What the bubble encodes for THIS município — only while the layer is on. */
+  bubbleReading: string | null
   comparisonActive: boolean
   navigation: MunicipalityMapNavigation | null
 }
@@ -41,6 +49,8 @@ export const MapFeatureReadout = ({
   rawMetricValue,
   metricLabel,
   scaleMode,
+  relativeReading,
+  bubbleReading,
   comparisonActive,
   navigation,
 }: MapFeatureReadoutProps) => {
@@ -53,6 +63,10 @@ export const MapFeatureReadout = ({
   }
 
   const formattedValue = formatMetricValue(metricValue, scaleMode, comparisonActive)
+  // Every mode except the percentage prints the metric next to the number, so
+  // announcing it again would read it twice.
+  const showMetricLabel =
+    !comparisonActive && metricValue !== undefined && scaleMode !== 'percentValid'
   const showPercentSecondary =
     !comparisonActive &&
     scaleMode === 'percentValid' &&
@@ -68,16 +82,17 @@ export const MapFeatureReadout = ({
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="truncate text-sm font-medium">{feature.name}</p>
         <p className="text-sm text-muted-foreground">
-          <span className="sr-only">{metricLabel}: </span>
+          {showMetricLabel ? null : <span className="sr-only">{metricLabel}: </span>}
           <span className="tabular-nums">{formattedValue}</span>
-          {!comparisonActive && metricValue !== undefined && scaleMode === 'absolute' ? (
-            <span className="text-muted-foreground"> {metricLabel}</span>
-          ) : null}
+          {showMetricLabel ? <span className="text-muted-foreground"> {metricLabel}</span> : null}
           {!comparisonActive && metricValue !== undefined && scaleMode === 'percentValid' ? (
             <span className="text-muted-foreground"> dos válidos</span>
           ) : null}
           {comparisonActive && metricValue !== undefined ? (
             <span className="text-muted-foreground"> (diferença)</span>
+          ) : null}
+          {relativeReading ? (
+            <span className="text-muted-foreground"> · {relativeReading}</span>
           ) : null}
         </p>
         {showPercentSecondary ? (
@@ -85,6 +100,9 @@ export const MapFeatureReadout = ({
             {formatElectionNumber(rawMetricValue)} votos
           </p>
         ) : null}
+        {/* The bubble's own line: mixing "votes he got" and "votes at stake"
+            into one sentence is how a reader ends up quoting the wrong one. */}
+        {bubbleReading ? <p className="text-xs text-muted-foreground">{bubbleReading}</p> : null}
         {navigation?.kind === 'zones' ? (
           <p className="text-xs text-muted-foreground">
             Toque de novo no mapa ou role até os Municípios por zona abaixo.

@@ -108,4 +108,31 @@ describe('bahiaMapStyle', () => {
       expect(style.weight).toBe(1)
     })
   })
+
+  describe('discrete class fills (B13)', () => {
+    const classedContext = buildLayerStyleContext({
+      values: { '2927408': 500, '2905701': 200, '2910800': 0 },
+      fillMode: 'sequential',
+      fillByKey: { '2927408': '#111111', '2905701': '#eeeeee' },
+      highlightKey: '',
+      selectedKey: null,
+    })
+
+    it('paints the class fill instead of the continuous ramp', () => {
+      expect(resolvePathStyle(classedContext, '2927408').fillColor).toBe('#111111')
+      expect(resolvePathStyle(classedContext, '2905701').fillColor).toBe('#eeeeee')
+    })
+
+    it('renders a key without a class as no data, even when it has a value', () => {
+      const style = resolvePathStyle(classedContext, '2910800')
+      expect(style.fillColor).toBe('#f4f4f5')
+      expect(style.fillOpacity).toBe(0.35)
+    })
+
+    it('still highlights hover and selection', () => {
+      const style = resolvePathStyle({ ...classedContext, hoveredKey: '2927408' }, '2927408')
+      expect(style.weight).toBe(2)
+      expect(style.fillColor).toBe('#111111')
+    })
+  })
 })

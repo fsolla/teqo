@@ -23063,5 +23063,5569 @@
         }
       }
     }
+  },
+  "federalRankByIbgeCode": {
+    "2900108": {
+      "2014": {
+        "rank": 4,
+        "candidates": 75
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 111
+      },
+      "2022": {
+        "rank": 8,
+        "candidates": 123
+      }
+    },
+    "2900207": {
+      "2014": {
+        "rank": 18,
+        "candidates": 81
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 95
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 129
+      }
+    },
+    "2900306": {
+      "2014": {
+        "rank": 4,
+        "candidates": 118
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 158
+      },
+      "2022": {
+        "rank": 30,
+        "candidates": 193
+      }
+    },
+    "2900355": {
+      "2014": {
+        "rank": 22,
+        "candidates": 92
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 116
+      },
+      "2022": {
+        "rank": 26,
+        "candidates": 155
+      }
+    },
+    "2900405": {
+      "2014": {
+        "rank": 7,
+        "candidates": 109
+      },
+      "2018": {
+        "rank": 8,
+        "candidates": 142
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 205
+      }
+    },
+    "2900504": {
+      "2014": {
+        "rank": 6,
+        "candidates": 64
+      },
+      "2018": {
+        "rank": 3,
+        "candidates": 101
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 122
+      }
+    },
+    "2900603": {
+      "2014": {
+        "rank": 9,
+        "candidates": 73
+      },
+      "2018": {
+        "rank": 8,
+        "candidates": 79
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 92
+      }
+    },
+    "2900702": {
+      "2014": {
+        "rank": 9,
+        "candidates": 190
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 328
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 470
+      }
+    },
+    "2900801": {
+      "2014": {
+        "rank": 11,
+        "candidates": 109
+      },
+      "2018": {
+        "rank": 6,
+        "candidates": 153
+      },
+      "2022": {
+        "rank": 10,
+        "candidates": 203
+      }
+    },
+    "2900900": {
+      "2014": {
+        "rank": 21,
+        "candidates": 80
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 84
+      },
+      "2022": {
+        "rank": 38,
+        "candidates": 112
+      }
+    },
+    "2901007": {
+      "2014": {
+        "rank": 1,
+        "candidates": 144
+      },
+      "2018": {
+        "rank": 1,
+        "candidates": 211
+      },
+      "2022": {
+        "rank": 1,
+        "candidates": 266
+      }
+    },
+    "2901106": {
+      "2018": {
+        "rank": 15,
+        "candidates": 209
+      },
+      "2022": {
+        "rank": 29,
+        "candidates": 317
+      }
+    },
+    "2901155": {
+      "2014": {
+        "rank": 20,
+        "candidates": 94
+      },
+      "2018": {
+        "rank": 27,
+        "candidates": 121
+      },
+      "2022": {
+        "rank": 36,
+        "candidates": 179
+      }
+    },
+    "2901205": {
+      "2014": {
+        "rank": 8,
+        "candidates": 108
+      },
+      "2018": {
+        "rank": 22,
+        "candidates": 150
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 207
+      }
+    },
+    "2901304": {
+      "2014": {
+        "rank": 4,
+        "candidates": 102
+      },
+      "2018": {
+        "rank": 3,
+        "candidates": 136
+      },
+      "2022": {
+        "rank": 5,
+        "candidates": 186
+      }
+    },
+    "2901353": {
+      "2014": {
+        "rank": 28,
+        "candidates": 101
+      },
+      "2018": {
+        "rank": 4,
+        "candidates": 120
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 157
+      }
+    },
+    "2901403": {
+      "2014": {
+        "rank": 8,
+        "candidates": 100
+      },
+      "2018": {
+        "rank": 6,
+        "candidates": 120
+      },
+      "2022": {
+        "rank": 35,
+        "candidates": 159
+      }
+    },
+    "2901502": {
+      "2022": {
+        "rank": 13,
+        "candidates": 183
+      }
+    },
+    "2901601": {
+      "2014": {
+        "rank": 17,
+        "candidates": 89
+      },
+      "2018": {
+        "rank": 3,
+        "candidates": 102
+      },
+      "2022": {
+        "rank": 10,
+        "candidates": 153
+      }
+    },
+    "2901700": {
+      "2014": {
+        "rank": 24,
+        "candidates": 108
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 135
+      },
+      "2022": {
+        "rank": 15,
+        "candidates": 199
+      }
+    },
+    "2901809": {
+      "2014": {
+        "rank": 28,
+        "candidates": 73
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 126
+      },
+      "2022": {
+        "rank": 29,
+        "candidates": 137
+      }
+    },
+    "2901908": {
+      "2014": {
+        "rank": 7,
+        "candidates": 103
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 153
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 160
+      }
+    },
+    "2901957": {
+      "2014": {
+        "rank": 7,
+        "candidates": 80
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 87
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 106
+      }
+    },
+    "2902005": {
+      "2014": {
+        "rank": 24,
+        "candidates": 90
+      },
+      "2018": {
+        "rank": 28,
+        "candidates": 141
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 147
+      }
+    },
+    "2902054": {
+      "2018": {
+        "rank": 21,
+        "candidates": 137
+      },
+      "2022": {
+        "rank": 20,
+        "candidates": 174
+      }
+    },
+    "2902104": {
+      "2014": {
+        "rank": 21,
+        "candidates": 136
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 201
+      },
+      "2022": {
+        "rank": 35,
+        "candidates": 256
+      }
+    },
+    "2902203": {
+      "2014": {
+        "rank": 5,
+        "candidates": 103
+      },
+      "2018": {
+        "rank": 19,
+        "candidates": 130
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 174
+      }
+    },
+    "2902252": {
+      "2014": {
+        "rank": 22,
+        "candidates": 71
+      },
+      "2018": {
+        "rank": 19,
+        "candidates": 117
+      },
+      "2022": {
+        "rank": 40,
+        "candidates": 141
+      }
+    },
+    "2902302": {
+      "2014": {
+        "rank": 8,
+        "candidates": 96
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 129
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 185
+      }
+    },
+    "2902401": {
+      "2014": {
+        "rank": 8,
+        "candidates": 83
+      },
+      "2018": {
+        "rank": 7,
+        "candidates": 140
+      },
+      "2022": {
+        "rank": 3,
+        "candidates": 195
+      }
+    },
+    "2902500": {
+      "2018": {
+        "rank": 14,
+        "candidates": 108
+      },
+      "2022": {
+        "rank": 40,
+        "candidates": 151
+      }
+    },
+    "2902609": {
+      "2014": {
+        "rank": 12,
+        "candidates": 117
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 164
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 222
+      }
+    },
+    "2902658": {
+      "2014": {
+        "rank": 24,
+        "candidates": 89
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 113
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 112
+      }
+    },
+    "2902708": {
+      "2014": {
+        "rank": 25,
+        "candidates": 117
+      },
+      "2018": {
+        "rank": 26,
+        "candidates": 171
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 248
+      }
+    },
+    "2902807": {
+      "2014": {
+        "rank": 5,
+        "candidates": 105
+      },
+      "2018": {
+        "rank": 6,
+        "candidates": 144
+      },
+      "2022": {
+        "rank": 11,
+        "candidates": 184
+      }
+    },
+    "2902906": {
+      "2014": {
+        "rank": 5,
+        "candidates": 127
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 179
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 236
+      }
+    },
+    "2903003": {
+      "2014": {
+        "rank": 7,
+        "candidates": 101
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 128
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 173
+      }
+    },
+    "2903102": {
+      "2018": {
+        "rank": 5,
+        "candidates": 100
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 102
+      }
+    },
+    "2903201": {
+      "2014": {
+        "rank": 12,
+        "candidates": 187
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 274
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 401
+      }
+    },
+    "2903235": {
+      "2014": {
+        "rank": 14,
+        "candidates": 85
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 106
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 147
+      }
+    },
+    "2903276": {
+      "2014": {
+        "rank": 3,
+        "candidates": 98
+      },
+      "2018": {
+        "rank": 3,
+        "candidates": 142
+      },
+      "2022": {
+        "rank": 3,
+        "candidates": 199
+      }
+    },
+    "2903300": {
+      "2014": {
+        "rank": 17,
+        "candidates": 85
+      },
+      "2018": {
+        "rank": 22,
+        "candidates": 119
+      },
+      "2022": {
+        "rank": 34,
+        "candidates": 148
+      }
+    },
+    "2903409": {
+      "2014": {
+        "rank": 23,
+        "candidates": 106
+      },
+      "2018": {
+        "rank": 23,
+        "candidates": 168
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 224
+      }
+    },
+    "2903508": {
+      "2014": {
+        "rank": 6,
+        "candidates": 98
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 128
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 177
+      }
+    },
+    "2903607": {
+      "2014": {
+        "rank": 26,
+        "candidates": 105
+      },
+      "2018": {
+        "rank": 2,
+        "candidates": 141
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 200
+      }
+    },
+    "2903706": {
+      "2014": {
+        "rank": 9,
+        "candidates": 91
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 127
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 174
+      }
+    },
+    "2903805": {
+      "2014": {
+        "rank": 13,
+        "candidates": 103
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 139
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 180
+      }
+    },
+    "2903904": {
+      "2014": {
+        "rank": 3,
+        "candidates": 133
+      },
+      "2018": {
+        "rank": 4,
+        "candidates": 211
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 280
+      }
+    },
+    "2903953": {
+      "2014": {
+        "rank": 12,
+        "candidates": 80
+      },
+      "2018": {
+        "rank": 9,
+        "candidates": 104
+      },
+      "2022": {
+        "rank": 8,
+        "candidates": 144
+      }
+    },
+    "2904001": {
+      "2014": {
+        "rank": 10,
+        "candidates": 81
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 115
+      },
+      "2022": {
+        "rank": 11,
+        "candidates": 154
+      }
+    },
+    "2904050": {
+      "2014": {
+        "rank": 14,
+        "candidates": 81
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 120
+      },
+      "2022": {
+        "rank": 15,
+        "candidates": 148
+      }
+    },
+    "2904100": {
+      "2014": {
+        "rank": 7,
+        "candidates": 92
+      },
+      "2018": {
+        "rank": 7,
+        "candidates": 124
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 165
+      }
+    },
+    "2904209": {
+      "2018": {
+        "rank": 13,
+        "candidates": 108
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 129
+      }
+    },
+    "2904308": {
+      "2014": {
+        "rank": 16,
+        "candidates": 91
+      },
+      "2018": {
+        "rank": 1,
+        "candidates": 128
+      },
+      "2022": {
+        "rank": 1,
+        "candidates": 183
+      }
+    },
+    "2904407": {
+      "2014": {
+        "rank": 14,
+        "candidates": 63
+      },
+      "2018": {
+        "rank": 28,
+        "candidates": 92
+      },
+      "2022": {
+        "rank": 37,
+        "candidates": 108
+      }
+    },
+    "2904506": {
+      "2014": {
+        "rank": 15,
+        "candidates": 82
+      },
+      "2018": {
+        "rank": 7,
+        "candidates": 94
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 147
+      }
+    },
+    "2904605": {
+      "2014": {
+        "rank": 12,
+        "candidates": 152
+      },
+      "2018": {
+        "rank": 25,
+        "candidates": 240
+      },
+      "2022": {
+        "rank": 24,
+        "candidates": 309
+      }
+    },
+    "2904704": {
+      "2014": {
+        "rank": 24,
+        "candidates": 117
+      },
+      "2018": {
+        "rank": 36,
+        "candidates": 177
+      },
+      "2022": {
+        "rank": 20,
+        "candidates": 203
+      }
+    },
+    "2904753": {
+      "2014": {
+        "rank": 23,
+        "candidates": 76
+      },
+      "2018": {
+        "rank": 24,
+        "candidates": 97
+      },
+      "2022": {
+        "rank": 31,
+        "candidates": 151
+      }
+    },
+    "2904803": {
+      "2018": {
+        "rank": 42,
+        "candidates": 94
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 111
+      }
+    },
+    "2904852": {
+      "2014": {
+        "rank": 13,
+        "candidates": 103
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 144
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 210
+      }
+    },
+    "2904902": {
+      "2014": {
+        "rank": 8,
+        "candidates": 166
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 210
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 346
+      }
+    },
+    "2905008": {
+      "2014": {
+        "rank": 9,
+        "candidates": 104
+      },
+      "2018": {
+        "rank": 24,
+        "candidates": 150
+      },
+      "2022": {
+        "rank": 33,
+        "candidates": 175
+      }
+    },
+    "2905107": {
+      "2014": {
+        "rank": 25,
+        "candidates": 91
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 102
+      },
+      "2022": {
+        "rank": 46,
+        "candidates": 157
+      }
+    },
+    "2905156": {
+      "2018": {
+        "rank": 20,
+        "candidates": 89
+      },
+      "2022": {
+        "rank": 34,
+        "candidates": 125
+      }
+    },
+    "2905206": {
+      "2014": {
+        "rank": 16,
+        "candidates": 146
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 211
+      },
+      "2022": {
+        "rank": 23,
+        "candidates": 295
+      }
+    },
+    "2905305": {
+      "2014": {
+        "rank": 11,
+        "candidates": 90
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 124
+      },
+      "2022": {
+        "rank": 24,
+        "candidates": 178
+      }
+    },
+    "2905404": {
+      "2014": {
+        "rank": 15,
+        "candidates": 109
+      },
+      "2018": {
+        "rank": 39,
+        "candidates": 166
+      },
+      "2022": {
+        "rank": 35,
+        "candidates": 273
+      }
+    },
+    "2905503": {
+      "2014": {
+        "rank": 9,
+        "candidates": 79
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 90
+      },
+      "2022": {
+        "rank": 32,
+        "candidates": 140
+      }
+    },
+    "2905602": {
+      "2014": {
+        "rank": 14,
+        "candidates": 119
+      },
+      "2018": {
+        "rank": 4,
+        "candidates": 188
+      },
+      "2022": {
+        "rank": 10,
+        "candidates": 242
+      }
+    },
+    "2905701": {
+      "2014": {
+        "rank": 15,
+        "candidates": 250
+      },
+      "2018": {
+        "rank": 26,
+        "candidates": 376
+      },
+      "2022": {
+        "rank": 30,
+        "candidates": 582
+      }
+    },
+    "2905800": {
+      "2014": {
+        "rank": 22,
+        "candidates": 134
+      },
+      "2018": {
+        "rank": 24,
+        "candidates": 201
+      },
+      "2022": {
+        "rank": 24,
+        "candidates": 275
+      }
+    },
+    "2905909": {
+      "2014": {
+        "rank": 22,
+        "candidates": 85
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 96
+      },
+      "2022": {
+        "rank": 30,
+        "candidates": 174
+      }
+    },
+    "2906006": {
+      "2014": {
+        "rank": 24,
+        "candidates": 137
+      },
+      "2018": {
+        "rank": 28,
+        "candidates": 196
+      },
+      "2022": {
+        "rank": 30,
+        "candidates": 243
+      }
+    },
+    "2906105": {
+      "2014": {
+        "rank": 10,
+        "candidates": 58
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 86
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 122
+      }
+    },
+    "2906204": {
+      "2014": {
+        "rank": 12,
+        "candidates": 113
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 127
+      },
+      "2022": {
+        "rank": 31,
+        "candidates": 187
+      }
+    },
+    "2906303": {
+      "2014": {
+        "rank": 8,
+        "candidates": 138
+      },
+      "2018": {
+        "rank": 33,
+        "candidates": 205
+      },
+      "2022": {
+        "rank": 46,
+        "candidates": 284
+      }
+    },
+    "2906402": {
+      "2014": {
+        "rank": 20,
+        "candidates": 104
+      },
+      "2018": {
+        "rank": 22,
+        "candidates": 130
+      },
+      "2022": {
+        "rank": 24,
+        "candidates": 198
+      }
+    },
+    "2906501": {
+      "2014": {
+        "rank": 20,
+        "candidates": 186
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 276
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 443
+      }
+    },
+    "2906600": {
+      "2014": {
+        "rank": 11,
+        "candidates": 70
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 96
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 130
+      }
+    },
+    "2906709": {
+      "2018": {
+        "rank": 26,
+        "candidates": 146
+      },
+      "2022": {
+        "rank": 34,
+        "candidates": 193
+      }
+    },
+    "2906808": {
+      "2014": {
+        "rank": 33,
+        "candidates": 116
+      },
+      "2018": {
+        "rank": 36,
+        "candidates": 153
+      },
+      "2022": {
+        "rank": 32,
+        "candidates": 229
+      }
+    },
+    "2906824": {
+      "2018": {
+        "rank": 33,
+        "candidates": 126
+      },
+      "2022": {
+        "rank": 35,
+        "candidates": 169
+      }
+    },
+    "2906857": {
+      "2018": {
+        "rank": 18,
+        "candidates": 140
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 165
+      }
+    },
+    "2906873": {
+      "2014": {
+        "rank": 12,
+        "candidates": 129
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 195
+      },
+      "2022": {
+        "rank": 37,
+        "candidates": 253
+      }
+    },
+    "2906899": {
+      "2014": {
+        "rank": 8,
+        "candidates": 70
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 96
+      },
+      "2022": {
+        "rank": 15,
+        "candidates": 136
+      }
+    },
+    "2906907": {
+      "2018": {
+        "rank": 15,
+        "candidates": 147
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 220
+      }
+    },
+    "2907004": {
+      "2014": {
+        "rank": 7,
+        "candidates": 89
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 98
+      },
+      "2022": {
+        "rank": 15,
+        "candidates": 167
+      }
+    },
+    "2907103": {
+      "2014": {
+        "rank": 14,
+        "candidates": 104
+      },
+      "2018": {
+        "rank": 33,
+        "candidates": 131
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 180
+      }
+    },
+    "2907202": {
+      "2014": {
+        "rank": 35,
+        "candidates": 148
+      },
+      "2018": {
+        "rank": 29,
+        "candidates": 200
+      },
+      "2022": {
+        "rank": 36,
+        "candidates": 281
+      }
+    },
+    "2907301": {
+      "2014": {
+        "rank": 4,
+        "candidates": 124
+      },
+      "2018": {
+        "rank": 4,
+        "candidates": 188
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 293
+      }
+    },
+    "2907400": {
+      "2014": {
+        "rank": 11,
+        "candidates": 57
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 66
+      }
+    },
+    "2907509": {
+      "2014": {
+        "rank": 19,
+        "candidates": 170
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 265
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 353
+      }
+    },
+    "2907558": {
+      "2014": {
+        "rank": 5,
+        "candidates": 65
+      },
+      "2018": {
+        "rank": 4,
+        "candidates": 96
+      },
+      "2022": {
+        "rank": 11,
+        "candidates": 109
+      }
+    },
+    "2907608": {
+      "2014": {
+        "rank": 7,
+        "candidates": 97
+      },
+      "2018": {
+        "rank": 32,
+        "candidates": 130
+      },
+      "2022": {
+        "rank": 22,
+        "candidates": 197
+      }
+    },
+    "2907707": {
+      "2014": {
+        "rank": 15,
+        "candidates": 77
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 87
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 131
+      }
+    },
+    "2907806": {
+      "2014": {
+        "rank": 25,
+        "candidates": 129
+      },
+      "2018": {
+        "rank": 19,
+        "candidates": 177
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 228
+      }
+    },
+    "2907905": {
+      "2014": {
+        "rank": 10,
+        "candidates": 116
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 137
+      },
+      "2022": {
+        "rank": 22,
+        "candidates": 187
+      }
+    },
+    "2908002": {
+      "2014": {
+        "rank": 15,
+        "candidates": 128
+      },
+      "2018": {
+        "rank": 26,
+        "candidates": 172
+      },
+      "2022": {
+        "rank": 31,
+        "candidates": 213
+      }
+    },
+    "2908101": {
+      "2014": {
+        "rank": 33,
+        "candidates": 76
+      },
+      "2018": {
+        "rank": 36,
+        "candidates": 95
+      },
+      "2022": {
+        "rank": 32,
+        "candidates": 136
+      }
+    },
+    "2908200": {
+      "2014": {
+        "rank": 10,
+        "candidates": 146
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 181
+      },
+      "2022": {
+        "rank": 13,
+        "candidates": 238
+      }
+    },
+    "2908309": {
+      "2014": {
+        "rank": 17,
+        "candidates": 128
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 168
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 235
+      }
+    },
+    "2908408": {
+      "2014": {
+        "rank": 8,
+        "candidates": 161
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 250
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 340
+      }
+    },
+    "2908507": {
+      "2014": {
+        "rank": 16,
+        "candidates": 153
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 229
+      },
+      "2022": {
+        "rank": 29,
+        "candidates": 339
+      }
+    },
+    "2908606": {
+      "2014": {
+        "rank": 10,
+        "candidates": 119
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 182
+      },
+      "2022": {
+        "rank": 26,
+        "candidates": 244
+      }
+    },
+    "2908705": {
+      "2014": {
+        "rank": 3,
+        "candidates": 91
+      },
+      "2018": {
+        "rank": 8,
+        "candidates": 147
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 169
+      }
+    },
+    "2908804": {
+      "2018": {
+        "rank": 20,
+        "candidates": 80
+      },
+      "2022": {
+        "rank": 30,
+        "candidates": 111
+      }
+    },
+    "2908903": {
+      "2014": {
+        "rank": 3,
+        "candidates": 142
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 205
+      },
+      "2022": {
+        "rank": 11,
+        "candidates": 310
+      }
+    },
+    "2909000": {
+      "2014": {
+        "rank": 10,
+        "candidates": 56
+      },
+      "2018": {
+        "rank": 29,
+        "candidates": 96
+      },
+      "2022": {
+        "rank": 15,
+        "candidates": 106
+      }
+    },
+    "2909109": {
+      "2014": {
+        "rank": 23,
+        "candidates": 67
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 97
+      },
+      "2022": {
+        "rank": 15,
+        "candidates": 131
+      }
+    },
+    "2909208": {
+      "2018": {
+        "rank": 20,
+        "candidates": 103
+      },
+      "2022": {
+        "rank": 9,
+        "candidates": 134
+      }
+    },
+    "2909307": {
+      "2014": {
+        "rank": 28,
+        "candidates": 115
+      },
+      "2018": {
+        "rank": 4,
+        "candidates": 177
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 222
+      }
+    },
+    "2909406": {
+      "2014": {
+        "rank": 23,
+        "candidates": 85
+      },
+      "2018": {
+        "rank": 30,
+        "candidates": 103
+      },
+      "2022": {
+        "rank": 34,
+        "candidates": 138
+      }
+    },
+    "2909505": {
+      "2018": {
+        "rank": 3,
+        "candidates": 78
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 109
+      }
+    },
+    "2909604": {
+      "2014": {
+        "rank": 11,
+        "candidates": 93
+      },
+      "2018": {
+        "rank": 27,
+        "candidates": 111
+      },
+      "2022": {
+        "rank": 35,
+        "candidates": 161
+      }
+    },
+    "2909703": {
+      "2018": {
+        "rank": 28,
+        "candidates": 113
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 157
+      }
+    },
+    "2909802": {
+      "2014": {
+        "rank": 17,
+        "candidates": 176
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 247
+      },
+      "2022": {
+        "rank": 9,
+        "candidates": 365
+      }
+    },
+    "2909901": {
+      "2014": {
+        "rank": 21,
+        "candidates": 111
+      },
+      "2018": {
+        "rank": 38,
+        "candidates": 137
+      },
+      "2022": {
+        "rank": 45,
+        "candidates": 200
+      }
+    },
+    "2910008": {
+      "2014": {
+        "rank": 12,
+        "candidates": 77
+      },
+      "2018": {
+        "rank": 25,
+        "candidates": 115
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 140
+      }
+    },
+    "2910057": {
+      "2014": {
+        "rank": 13,
+        "candidates": 184
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 284
+      },
+      "2022": {
+        "rank": 13,
+        "candidates": 437
+      }
+    },
+    "2910107": {
+      "2014": {
+        "rank": 16,
+        "candidates": 86
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 100
+      },
+      "2022": {
+        "rank": 3,
+        "candidates": 143
+      }
+    },
+    "2910206": {
+      "2018": {
+        "rank": 28,
+        "candidates": 90
+      },
+      "2022": {
+        "rank": 1,
+        "candidates": 141
+      }
+    },
+    "2910305": {
+      "2014": {
+        "rank": 10,
+        "candidates": 94
+      },
+      "2018": {
+        "rank": 2,
+        "candidates": 120
+      },
+      "2022": {
+        "rank": 3,
+        "candidates": 157
+      }
+    },
+    "2910404": {
+      "2014": {
+        "rank": 6,
+        "candidates": 92
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 132
+      },
+      "2022": {
+        "rank": 31,
+        "candidates": 171
+      }
+    },
+    "2910503": {
+      "2014": {
+        "rank": 18,
+        "candidates": 148
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 230
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 335
+      }
+    },
+    "2910602": {
+      "2014": {
+        "rank": 16,
+        "candidates": 144
+      },
+      "2018": {
+        "rank": 26,
+        "candidates": 196
+      },
+      "2022": {
+        "rank": 31,
+        "candidates": 264
+      }
+    },
+    "2910701": {
+      "2014": {
+        "rank": 29,
+        "candidates": 134
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 203
+      },
+      "2022": {
+        "rank": 30,
+        "candidates": 287
+      }
+    },
+    "2910727": {
+      "2014": {
+        "rank": 18,
+        "candidates": 196
+      },
+      "2018": {
+        "rank": 23,
+        "candidates": 320
+      },
+      "2022": {
+        "rank": 23,
+        "candidates": 414
+      }
+    },
+    "2910750": {
+      "2014": {
+        "rank": 35,
+        "candidates": 103
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 137
+      },
+      "2022": {
+        "rank": 42,
+        "candidates": 173
+      }
+    },
+    "2910776": {
+      "2014": {
+        "rank": 13,
+        "candidates": 49
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 54
+      },
+      "2022": {
+        "rank": 31,
+        "candidates": 77
+      }
+    },
+    "2910800": {
+      "2014": {
+        "rank": 11,
+        "candidates": 263
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 421
+      },
+      "2022": {
+        "rank": 20,
+        "candidates": 597
+      }
+    },
+    "2910859": {
+      "2014": {
+        "rank": 16,
+        "candidates": 100
+      },
+      "2018": {
+        "rank": 2,
+        "candidates": 134
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 172
+      }
+    },
+    "2910909": {
+      "2014": {
+        "rank": 14,
+        "candidates": 69
+      },
+      "2018": {
+        "rank": 51,
+        "candidates": 101
+      },
+      "2022": {
+        "rank": 59,
+        "candidates": 122
+      }
+    },
+    "2911006": {
+      "2014": {
+        "rank": 9,
+        "candidates": 82
+      },
+      "2018": {
+        "rank": 27,
+        "candidates": 113
+      },
+      "2022": {
+        "rank": 22,
+        "candidates": 149
+      }
+    },
+    "2911105": {
+      "2014": {
+        "rank": 12,
+        "candidates": 91
+      },
+      "2018": {
+        "rank": 34,
+        "candidates": 138
+      },
+      "2022": {
+        "rank": 36,
+        "candidates": 183
+      }
+    },
+    "2911204": {
+      "2014": {
+        "rank": 11,
+        "candidates": 137
+      },
+      "2018": {
+        "rank": 22,
+        "candidates": 183
+      },
+      "2022": {
+        "rank": 13,
+        "candidates": 286
+      }
+    },
+    "2911253": {
+      "2014": {
+        "rank": 20,
+        "candidates": 82
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 99
+      },
+      "2022": {
+        "rank": 29,
+        "candidates": 118
+      }
+    },
+    "2911303": {
+      "2018": {
+        "rank": 25,
+        "candidates": 91
+      },
+      "2022": {
+        "rank": 33,
+        "candidates": 133
+      }
+    },
+    "2911402": {
+      "2014": {
+        "rank": 15,
+        "candidates": 71
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 111
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 145
+      }
+    },
+    "2911501": {
+      "2014": {
+        "rank": 12,
+        "candidates": 65
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 97
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 119
+      }
+    },
+    "2911600": {
+      "2014": {
+        "rank": 1,
+        "candidates": 128
+      },
+      "2018": {
+        "rank": 1,
+        "candidates": 194
+      },
+      "2022": {
+        "rank": 1,
+        "candidates": 236
+      }
+    },
+    "2911659": {
+      "2014": {
+        "rank": 19,
+        "candidates": 60
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 79
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 100
+      }
+    },
+    "2911709": {
+      "2014": {
+        "rank": 5,
+        "candidates": 168
+      },
+      "2018": {
+        "rank": 9,
+        "candidates": 227
+      },
+      "2022": {
+        "rank": 10,
+        "candidates": 295
+      }
+    },
+    "2911808": {
+      "2014": {
+        "rank": 18,
+        "candidates": 108
+      },
+      "2018": {
+        "rank": 23,
+        "candidates": 141
+      },
+      "2022": {
+        "rank": 23,
+        "candidates": 191
+      }
+    },
+    "2911857": {
+      "2018": {
+        "rank": 19,
+        "candidates": 125
+      },
+      "2022": {
+        "rank": 15,
+        "candidates": 137
+      }
+    },
+    "2911907": {
+      "2014": {
+        "rank": 21,
+        "candidates": 118
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 186
+      },
+      "2022": {
+        "rank": 2,
+        "candidates": 212
+      }
+    },
+    "2912004": {
+      "2014": {
+        "rank": 13,
+        "candidates": 73
+      },
+      "2018": {
+        "rank": 19,
+        "candidates": 103
+      },
+      "2022": {
+        "rank": 37,
+        "candidates": 128
+      }
+    },
+    "2912103": {
+      "2014": {
+        "rank": 17,
+        "candidates": 136
+      },
+      "2018": {
+        "rank": 24,
+        "candidates": 188
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 257
+      }
+    },
+    "2912202": {
+      "2014": {
+        "rank": 20,
+        "candidates": 105
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 147
+      },
+      "2022": {
+        "rank": 23,
+        "candidates": 193
+      }
+    },
+    "2912301": {
+      "2014": {
+        "rank": 11,
+        "candidates": 93
+      },
+      "2018": {
+        "rank": 39,
+        "candidates": 134
+      },
+      "2022": {
+        "rank": 22,
+        "candidates": 178
+      }
+    },
+    "2912400": {
+      "2014": {
+        "rank": 15,
+        "candidates": 94
+      },
+      "2018": {
+        "rank": 28,
+        "candidates": 122
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 188
+      }
+    },
+    "2912509": {
+      "2014": {
+        "rank": 10,
+        "candidates": 80
+      },
+      "2018": {
+        "rank": 33,
+        "candidates": 96
+      },
+      "2022": {
+        "rank": 29,
+        "candidates": 128
+      }
+    },
+    "2912608": {
+      "2014": {
+        "rank": 19,
+        "candidates": 55
+      },
+      "2018": {
+        "rank": 34,
+        "candidates": 66
+      },
+      "2022": {
+        "rank": 11,
+        "candidates": 97
+      }
+    },
+    "2912707": {
+      "2014": {
+        "rank": 26,
+        "candidates": 99
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 160
+      },
+      "2022": {
+        "rank": 20,
+        "candidates": 198
+      }
+    },
+    "2912806": {
+      "2014": {
+        "rank": 6,
+        "candidates": 70
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 97
+      },
+      "2022": {
+        "rank": 9,
+        "candidates": 148
+      }
+    },
+    "2912905": {
+      "2014": {
+        "rank": 17,
+        "candidates": 101
+      },
+      "2018": {
+        "rank": 5,
+        "candidates": 163
+      },
+      "2022": {
+        "rank": 17,
+        "candidates": 214
+      }
+    },
+    "2913002": {
+      "2018": {
+        "rank": 22,
+        "candidates": 107
+      },
+      "2022": {
+        "rank": 13,
+        "candidates": 148
+      }
+    },
+    "2913101": {
+      "2018": {
+        "rank": 21,
+        "candidates": 129
+      },
+      "2022": {
+        "rank": 23,
+        "candidates": 185
+      }
+    },
+    "2913200": {
+      "2014": {
+        "rank": 9,
+        "candidates": 115
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 152
+      },
+      "2022": {
+        "rank": 23,
+        "candidates": 218
+      }
+    },
+    "2913309": {
+      "2018": {
+        "rank": 29,
+        "candidates": 128
+      },
+      "2022": {
+        "rank": 36,
+        "candidates": 156
+      }
+    },
+    "2913408": {
+      "2018": {
+        "rank": 13,
+        "candidates": 129
+      },
+      "2022": {
+        "rank": 29,
+        "candidates": 154
+      }
+    },
+    "2913457": {
+      "2018": {
+        "rank": 15,
+        "candidates": 128
+      },
+      "2022": {
+        "rank": 13,
+        "candidates": 201
+      }
+    },
+    "2913507": {
+      "2014": {
+        "rank": 3,
+        "candidates": 109
+      },
+      "2018": {
+        "rank": 22,
+        "candidates": 148
+      },
+      "2022": {
+        "rank": 32,
+        "candidates": 204
+      }
+    },
+    "2913606": {
+      "2014": {
+        "rank": 13,
+        "candidates": 224
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 354
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 472
+      }
+    },
+    "2913705": {
+      "2014": {
+        "rank": 8,
+        "candidates": 136
+      },
+      "2018": {
+        "rank": 8,
+        "candidates": 197
+      },
+      "2022": {
+        "rank": 8,
+        "candidates": 294
+      }
+    },
+    "2913804": {
+      "2014": {
+        "rank": 32,
+        "candidates": 111
+      },
+      "2018": {
+        "rank": 8,
+        "candidates": 161
+      },
+      "2022": {
+        "rank": 17,
+        "candidates": 215
+      }
+    },
+    "2913903": {
+      "2014": {
+        "rank": 6,
+        "candidates": 149
+      },
+      "2018": {
+        "rank": 4,
+        "candidates": 234
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 255
+      }
+    },
+    "2914000": {
+      "2014": {
+        "rank": 18,
+        "candidates": 157
+      },
+      "2018": {
+        "rank": 19,
+        "candidates": 243
+      },
+      "2022": {
+        "rank": 13,
+        "candidates": 335
+      }
+    },
+    "2914109": {
+      "2014": {
+        "rank": 13,
+        "candidates": 64
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 82
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 119
+      }
+    },
+    "2914208": {
+      "2014": {
+        "rank": 9,
+        "candidates": 64
+      },
+      "2018": {
+        "rank": 8,
+        "candidates": 87
+      },
+      "2022": {
+        "rank": 11,
+        "candidates": 112
+      }
+    },
+    "2914307": {
+      "2018": {
+        "rank": 35,
+        "candidates": 115
+      },
+      "2022": {
+        "rank": 9,
+        "candidates": 143
+      }
+    },
+    "2914406": {
+      "2018": {
+        "rank": 5,
+        "candidates": 133
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 184
+      }
+    },
+    "2914505": {
+      "2014": {
+        "rank": 1,
+        "candidates": 152
+      },
+      "2018": {
+        "rank": 1,
+        "candidates": 208
+      },
+      "2022": {
+        "rank": 13,
+        "candidates": 306
+      }
+    },
+    "2914604": {
+      "2014": {
+        "rank": 11,
+        "candidates": 159
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 216
+      },
+      "2022": {
+        "rank": 13,
+        "candidates": 346
+      }
+    },
+    "2914653": {
+      "2014": {
+        "rank": 17,
+        "candidates": 116
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 172
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 249
+      }
+    },
+    "2914703": {
+      "2014": {
+        "rank": 6,
+        "candidates": 161
+      },
+      "2018": {
+        "rank": 5,
+        "candidates": 241
+      },
+      "2022": {
+        "rank": 3,
+        "candidates": 342
+      }
+    },
+    "2914802": {
+      "2014": {
+        "rank": 19,
+        "candidates": 230
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 350
+      },
+      "2022": {
+        "rank": 11,
+        "candidates": 475
+      }
+    },
+    "2914901": {
+      "2018": {
+        "rank": 17,
+        "candidates": 170
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 257
+      }
+    },
+    "2915007": {
+      "2018": {
+        "rank": 12,
+        "candidates": 116
+      },
+      "2022": {
+        "rank": 23,
+        "candidates": 158
+      }
+    },
+    "2915106": {
+      "2014": {
+        "rank": 8,
+        "candidates": 84
+      },
+      "2018": {
+        "rank": 6,
+        "candidates": 126
+      },
+      "2022": {
+        "rank": 23,
+        "candidates": 151
+      }
+    },
+    "2915205": {
+      "2014": {
+        "rank": 20,
+        "candidates": 98
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 127
+      },
+      "2022": {
+        "rank": 17,
+        "candidates": 169
+      }
+    },
+    "2915304": {
+      "2014": {
+        "rank": 24,
+        "candidates": 72
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 102
+      },
+      "2022": {
+        "rank": 23,
+        "candidates": 125
+      }
+    },
+    "2915353": {
+      "2014": {
+        "rank": 24,
+        "candidates": 76
+      },
+      "2018": {
+        "rank": 27,
+        "candidates": 105
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 163
+      }
+    },
+    "2915403": {
+      "2014": {
+        "rank": 29,
+        "candidates": 74
+      },
+      "2018": {
+        "rank": 32,
+        "candidates": 88
+      },
+      "2022": {
+        "rank": 26,
+        "candidates": 111
+      }
+    },
+    "2915502": {
+      "2014": {
+        "rank": 5,
+        "candidates": 133
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 181
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 240
+      }
+    },
+    "2915601": {
+      "2014": {
+        "rank": 13,
+        "candidates": 156
+      },
+      "2018": {
+        "rank": 19,
+        "candidates": 215
+      },
+      "2022": {
+        "rank": 10,
+        "candidates": 297
+      }
+    },
+    "2915700": {
+      "2014": {
+        "rank": 22,
+        "candidates": 70
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 107
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 130
+      }
+    },
+    "2915809": {
+      "2014": {
+        "rank": 13,
+        "candidates": 104
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 160
+      },
+      "2022": {
+        "rank": 37,
+        "candidates": 194
+      }
+    },
+    "2915908": {
+      "2014": {
+        "rank": 24,
+        "candidates": 74
+      },
+      "2018": {
+        "rank": 26,
+        "candidates": 116
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 174
+      }
+    },
+    "2916005": {
+      "2014": {
+        "rank": 9,
+        "candidates": 104
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 135
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 178
+      }
+    },
+    "2916104": {
+      "2014": {
+        "rank": 12,
+        "candidates": 145
+      },
+      "2018": {
+        "rank": 23,
+        "candidates": 218
+      },
+      "2022": {
+        "rank": 11,
+        "candidates": 309
+      }
+    },
+    "2916203": {
+      "2014": {
+        "rank": 18,
+        "candidates": 102
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 142
+      },
+      "2022": {
+        "rank": 40,
+        "candidates": 178
+      }
+    },
+    "2916302": {
+      "2014": {
+        "rank": 30,
+        "candidates": 92
+      },
+      "2018": {
+        "rank": 24,
+        "candidates": 118
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 174
+      }
+    },
+    "2916401": {
+      "2014": {
+        "rank": 22,
+        "candidates": 161
+      },
+      "2018": {
+        "rank": 2,
+        "candidates": 268
+      },
+      "2022": {
+        "rank": 34,
+        "candidates": 342
+      }
+    },
+    "2916500": {
+      "2014": {
+        "rank": 38,
+        "candidates": 118
+      },
+      "2018": {
+        "rank": 28,
+        "candidates": 158
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 181
+      }
+    },
+    "2916609": {
+      "2014": {
+        "rank": 34,
+        "candidates": 81
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 103
+      },
+      "2022": {
+        "rank": 31,
+        "candidates": 140
+      }
+    },
+    "2916708": {
+      "2014": {
+        "rank": 4,
+        "candidates": 73
+      },
+      "2018": {
+        "rank": 5,
+        "candidates": 101
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 134
+      }
+    },
+    "2916807": {
+      "2018": {
+        "rank": 5,
+        "candidates": 157
+      },
+      "2022": {
+        "rank": 32,
+        "candidates": 187
+      }
+    },
+    "2916856": {
+      "2014": {
+        "rank": 7,
+        "candidates": 94
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 125
+      },
+      "2022": {
+        "rank": 13,
+        "candidates": 195
+      }
+    },
+    "2916906": {
+      "2014": {
+        "rank": 1,
+        "candidates": 83
+      },
+      "2018": {
+        "rank": 1,
+        "candidates": 122
+      },
+      "2022": {
+        "rank": 1,
+        "candidates": 157
+      }
+    },
+    "2917003": {
+      "2014": {
+        "rank": 11,
+        "candidates": 132
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 180
+      },
+      "2022": {
+        "rank": 33,
+        "candidates": 234
+      }
+    },
+    "2917102": {
+      "2014": {
+        "rank": 23,
+        "candidates": 119
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 166
+      },
+      "2022": {
+        "rank": 38,
+        "candidates": 230
+      }
+    },
+    "2917201": {
+      "2014": {
+        "rank": 10,
+        "candidates": 95
+      },
+      "2018": {
+        "rank": 24,
+        "candidates": 138
+      },
+      "2022": {
+        "rank": 30,
+        "candidates": 161
+      }
+    },
+    "2917300": {
+      "2014": {
+        "rank": 24,
+        "candidates": 111
+      },
+      "2018": {
+        "rank": 27,
+        "candidates": 172
+      },
+      "2022": {
+        "rank": 33,
+        "candidates": 252
+      }
+    },
+    "2917334": {
+      "2018": {
+        "rank": 18,
+        "candidates": 86
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 91
+      }
+    },
+    "2917359": {
+      "2014": {
+        "rank": 19,
+        "candidates": 59
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 98
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 114
+      }
+    },
+    "2917409": {
+      "2014": {
+        "rank": 10,
+        "candidates": 76
+      },
+      "2018": {
+        "rank": 23,
+        "candidates": 111
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 149
+      }
+    },
+    "2917508": {
+      "2014": {
+        "rank": 19,
+        "candidates": 170
+      },
+      "2018": {
+        "rank": 2,
+        "candidates": 257
+      },
+      "2022": {
+        "rank": 31,
+        "candidates": 359
+      }
+    },
+    "2917607": {
+      "2014": {
+        "rank": 5,
+        "candidates": 137
+      },
+      "2018": {
+        "rank": 6,
+        "candidates": 198
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 285
+      }
+    },
+    "2917706": {
+      "2014": {
+        "rank": 31,
+        "candidates": 124
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 155
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 229
+      }
+    },
+    "2917805": {
+      "2014": {
+        "rank": 5,
+        "candidates": 116
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 152
+      },
+      "2022": {
+        "rank": 8,
+        "candidates": 250
+      }
+    },
+    "2917904": {
+      "2014": {
+        "rank": 14,
+        "candidates": 89
+      },
+      "2018": {
+        "rank": 27,
+        "candidates": 112
+      },
+      "2022": {
+        "rank": 46,
+        "candidates": 143
+      }
+    },
+    "2918001": {
+      "2014": {
+        "rank": 3,
+        "candidates": 181
+      },
+      "2018": {
+        "rank": 3,
+        "candidates": 320
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 406
+      }
+    },
+    "2918100": {
+      "2014": {
+        "rank": 23,
+        "candidates": 122
+      },
+      "2018": {
+        "rank": 26,
+        "candidates": 161
+      },
+      "2022": {
+        "rank": 20,
+        "candidates": 207
+      }
+    },
+    "2918209": {
+      "2018": {
+        "rank": 7,
+        "candidates": 128
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 190
+      }
+    },
+    "2918308": {
+      "2018": {
+        "rank": 3,
+        "candidates": 130
+      },
+      "2022": {
+        "rank": 9,
+        "candidates": 185
+      }
+    },
+    "2918357": {
+      "2014": {
+        "rank": 15,
+        "candidates": 104
+      },
+      "2018": {
+        "rank": 25,
+        "candidates": 140
+      },
+      "2022": {
+        "rank": 33,
+        "candidates": 190
+      }
+    },
+    "2918407": {
+      "2014": {
+        "rank": 30,
+        "candidates": 197
+      },
+      "2018": {
+        "rank": 30,
+        "candidates": 331
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 445
+      }
+    },
+    "2918456": {
+      "2014": {
+        "rank": 9,
+        "candidates": 62
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 84
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 128
+      }
+    },
+    "2918506": {
+      "2014": {
+        "rank": 26,
+        "candidates": 90
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 120
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 156
+      }
+    },
+    "2918555": {
+      "2018": {
+        "rank": 15,
+        "candidates": 92
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 127
+      }
+    },
+    "2918605": {
+      "2014": {
+        "rank": 14,
+        "candidates": 70
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 98
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 102
+      }
+    },
+    "2918704": {
+      "2018": {
+        "rank": 6,
+        "candidates": 84
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 89
+      }
+    },
+    "2918753": {
+      "2014": {
+        "rank": 23,
+        "candidates": 76
+      },
+      "2018": {
+        "rank": 22,
+        "candidates": 113
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 129
+      }
+    },
+    "2918803": {
+      "2014": {
+        "rank": 13,
+        "candidates": 118
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 170
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 222
+      }
+    },
+    "2918902": {
+      "2014": {
+        "rank": 15,
+        "candidates": 59
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 77
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 101
+      }
+    },
+    "2919009": {
+      "2014": {
+        "rank": 30,
+        "candidates": 70
+      },
+      "2018": {
+        "rank": 22,
+        "candidates": 70
+      },
+      "2022": {
+        "rank": 9,
+        "candidates": 93
+      }
+    },
+    "2919058": {
+      "2014": {
+        "rank": 11,
+        "candidates": 77
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 91
+      },
+      "2022": {
+        "rank": 8,
+        "candidates": 109
+      }
+    },
+    "2919108": {
+      "2014": {
+        "rank": 7,
+        "candidates": 94
+      },
+      "2018": {
+        "rank": 24,
+        "candidates": 113
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 172
+      }
+    },
+    "2919157": {
+      "2014": {
+        "rank": 19,
+        "candidates": 112
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 135
+      },
+      "2022": {
+        "rank": 29,
+        "candidates": 192
+      }
+    },
+    "2919207": {
+      "2014": {
+        "rank": 23,
+        "candidates": 253
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 388
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 579
+      }
+    },
+    "2919306": {
+      "2018": {
+        "rank": 16,
+        "candidates": 124
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 151
+      }
+    },
+    "2919405": {
+      "2018": {
+        "rank": 12,
+        "candidates": 112
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 118
+      }
+    },
+    "2919504": {
+      "2014": {
+        "rank": 16,
+        "candidates": 141
+      },
+      "2018": {
+        "rank": 8,
+        "candidates": 203
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 258
+      }
+    },
+    "2919553": {
+      "2014": {
+        "rank": 43,
+        "candidates": 159
+      },
+      "2018": {
+        "rank": 32,
+        "candidates": 248
+      },
+      "2022": {
+        "rank": 41,
+        "candidates": 376
+      }
+    },
+    "2919603": {
+      "2014": {
+        "rank": 13,
+        "candidates": 97
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 123
+      },
+      "2022": {
+        "rank": 13,
+        "candidates": 154
+      }
+    },
+    "2919702": {
+      "2014": {
+        "rank": 19,
+        "candidates": 93
+      },
+      "2018": {
+        "rank": 28,
+        "candidates": 137
+      },
+      "2022": {
+        "rank": 35,
+        "candidates": 180
+      }
+    },
+    "2919801": {
+      "2014": {
+        "rank": 7,
+        "candidates": 129
+      },
+      "2018": {
+        "rank": 9,
+        "candidates": 165
+      },
+      "2022": {
+        "rank": 11,
+        "candidates": 212
+      }
+    },
+    "2919900": {
+      "2014": {
+        "rank": 19,
+        "candidates": 77
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 79
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 105
+      }
+    },
+    "2919926": {
+      "2014": {
+        "rank": 11,
+        "candidates": 139
+      },
+      "2018": {
+        "rank": 25,
+        "candidates": 195
+      },
+      "2022": {
+        "rank": 10,
+        "candidates": 307
+      }
+    },
+    "2919959": {
+      "2018": {
+        "rank": 16,
+        "candidates": 77
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 109
+      }
+    },
+    "2920007": {
+      "2014": {
+        "rank": 6,
+        "candidates": 72
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 98
+      },
+      "2022": {
+        "rank": 32,
+        "candidates": 134
+      }
+    },
+    "2920106": {
+      "2014": {
+        "rank": 27,
+        "candidates": 115
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 157
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 185
+      }
+    },
+    "2920205": {
+      "2014": {
+        "rank": 16,
+        "candidates": 72
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 114
+      },
+      "2022": {
+        "rank": 10,
+        "candidates": 127
+      }
+    },
+    "2920304": {
+      "2014": {
+        "rank": 22,
+        "candidates": 71
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 87
+      },
+      "2022": {
+        "rank": 69,
+        "candidates": 103
+      }
+    },
+    "2920403": {
+      "2014": {
+        "rank": 5,
+        "candidates": 97
+      },
+      "2018": {
+        "rank": 5,
+        "candidates": 131
+      },
+      "2022": {
+        "rank": 22,
+        "candidates": 152
+      }
+    },
+    "2920452": {
+      "2014": {
+        "rank": 11,
+        "candidates": 59
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 92
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 117
+      }
+    },
+    "2920502": {
+      "2014": {
+        "rank": 15,
+        "candidates": 125
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 154
+      },
+      "2022": {
+        "rank": 17,
+        "candidates": 241
+      }
+    },
+    "2920601": {
+      "2018": {
+        "rank": 35,
+        "candidates": 207
+      },
+      "2022": {
+        "rank": 15,
+        "candidates": 325
+      }
+    },
+    "2920700": {
+      "2018": {
+        "rank": 5,
+        "candidates": 159
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 227
+      }
+    },
+    "2920809": {
+      "2014": {
+        "rank": 8,
+        "candidates": 94
+      },
+      "2018": {
+        "rank": 8,
+        "candidates": 109
+      },
+      "2022": {
+        "rank": 8,
+        "candidates": 144
+      }
+    },
+    "2920908": {
+      "2014": {
+        "rank": 26,
+        "candidates": 83
+      },
+      "2018": {
+        "rank": 6,
+        "candidates": 141
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 160
+      }
+    },
+    "2921005": {
+      "2014": {
+        "rank": 20,
+        "candidates": 153
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 280
+      },
+      "2022": {
+        "rank": 17,
+        "candidates": 389
+      }
+    },
+    "2921054": {
+      "2014": {
+        "rank": 5,
+        "candidates": 66
+      },
+      "2018": {
+        "rank": 5,
+        "candidates": 103
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 127
+      }
+    },
+    "2921104": {
+      "2014": {
+        "rank": 22,
+        "candidates": 89
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 136
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 194
+      }
+    },
+    "2921203": {
+      "2014": {
+        "rank": 13,
+        "candidates": 131
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 178
+      },
+      "2022": {
+        "rank": 22,
+        "candidates": 239
+      }
+    },
+    "2921302": {
+      "2014": {
+        "rank": 3,
+        "candidates": 100
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 120
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 162
+      }
+    },
+    "2921401": {
+      "2014": {
+        "rank": 13,
+        "candidates": 87
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 126
+      },
+      "2022": {
+        "rank": 42,
+        "candidates": 162
+      }
+    },
+    "2921450": {
+      "2014": {
+        "rank": 12,
+        "candidates": 80
+      },
+      "2018": {
+        "rank": 9,
+        "candidates": 85
+      },
+      "2022": {
+        "rank": 32,
+        "candidates": 116
+      }
+    },
+    "2921500": {
+      "2014": {
+        "rank": 28,
+        "candidates": 135
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 204
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 262
+      }
+    },
+    "2921609": {
+      "2014": {
+        "rank": 17,
+        "candidates": 66
+      },
+      "2018": {
+        "rank": 27,
+        "candidates": 92
+      },
+      "2022": {
+        "rank": 33,
+        "candidates": 134
+      }
+    },
+    "2921708": {
+      "2014": {
+        "rank": 26,
+        "candidates": 123
+      },
+      "2018": {
+        "rank": 27,
+        "candidates": 169
+      },
+      "2022": {
+        "rank": 30,
+        "candidates": 248
+      }
+    },
+    "2921807": {
+      "2014": {
+        "rank": 6,
+        "candidates": 59
+      },
+      "2018": {
+        "rank": 23,
+        "candidates": 91
+      },
+      "2022": {
+        "rank": 11,
+        "candidates": 127
+      }
+    },
+    "2921906": {
+      "2014": {
+        "rank": 11,
+        "candidates": 102
+      },
+      "2018": {
+        "rank": 5,
+        "candidates": 120
+      },
+      "2022": {
+        "rank": 22,
+        "candidates": 179
+      }
+    },
+    "2922003": {
+      "2014": {
+        "rank": 9,
+        "candidates": 133
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 184
+      },
+      "2022": {
+        "rank": 31,
+        "candidates": 283
+      }
+    },
+    "2922052": {
+      "2014": {
+        "rank": 1,
+        "candidates": 65
+      },
+      "2018": {
+        "rank": 2,
+        "candidates": 101
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 119
+      }
+    },
+    "2922102": {
+      "2014": {
+        "rank": 21,
+        "candidates": 111
+      },
+      "2018": {
+        "rank": 37,
+        "candidates": 162
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 200
+      }
+    },
+    "2922201": {
+      "2018": {
+        "rank": 18,
+        "candidates": 124
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 193
+      }
+    },
+    "2922250": {
+      "2018": {
+        "rank": 32,
+        "candidates": 97
+      },
+      "2022": {
+        "rank": 38,
+        "candidates": 144
+      }
+    },
+    "2922300": {
+      "2014": {
+        "rank": 16,
+        "candidates": 148
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 200
+      },
+      "2022": {
+        "rank": 10,
+        "candidates": 312
+      }
+    },
+    "2922409": {
+      "2014": {
+        "rank": 9,
+        "candidates": 122
+      },
+      "2018": {
+        "rank": 5,
+        "candidates": 174
+      },
+      "2022": {
+        "rank": 2,
+        "candidates": 219
+      }
+    },
+    "2922508": {
+      "2014": {
+        "rank": 5,
+        "candidates": 135
+      },
+      "2018": {
+        "rank": 9,
+        "candidates": 188
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 300
+      }
+    },
+    "2922607": {
+      "2014": {
+        "rank": 23,
+        "candidates": 90
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 122
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 183
+      }
+    },
+    "2922656": {
+      "2014": {
+        "rank": 23,
+        "candidates": 80
+      },
+      "2018": {
+        "rank": 29,
+        "candidates": 107
+      },
+      "2022": {
+        "rank": 32,
+        "candidates": 155
+      }
+    },
+    "2922706": {
+      "2014": {
+        "rank": 4,
+        "candidates": 99
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 131
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 166
+      }
+    },
+    "2922730": {
+      "2018": {
+        "rank": 3,
+        "candidates": 127
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 163
+      }
+    },
+    "2922755": {
+      "2014": {
+        "rank": 24,
+        "candidates": 82
+      },
+      "2018": {
+        "rank": 32,
+        "candidates": 100
+      },
+      "2022": {
+        "rank": 32,
+        "candidates": 129
+      }
+    },
+    "2922805": {
+      "2014": {
+        "rank": 19,
+        "candidates": 84
+      },
+      "2018": {
+        "rank": 4,
+        "candidates": 84
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 138
+      }
+    },
+    "2922854": {
+      "2014": {
+        "rank": 9,
+        "candidates": 71
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 97
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 139
+      }
+    },
+    "2922904": {
+      "2014": {
+        "rank": 30,
+        "candidates": 110
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 162
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 206
+      }
+    },
+    "2923001": {
+      "2014": {
+        "rank": 6,
+        "candidates": 123
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 175
+      },
+      "2022": {
+        "rank": 29,
+        "candidates": 243
+      }
+    },
+    "2923035": {
+      "2018": {
+        "rank": 26,
+        "candidates": 97
+      },
+      "2022": {
+        "rank": 33,
+        "candidates": 122
+      }
+    },
+    "2923050": {
+      "2014": {
+        "rank": 19,
+        "candidates": 68
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 87
+      },
+      "2022": {
+        "rank": 22,
+        "candidates": 98
+      }
+    },
+    "2923100": {
+      "2014": {
+        "rank": 28,
+        "candidates": 116
+      },
+      "2018": {
+        "rank": 36,
+        "candidates": 170
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 199
+      }
+    },
+    "2923209": {
+      "2014": {
+        "rank": 14,
+        "candidates": 106
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 130
+      },
+      "2022": {
+        "rank": 20,
+        "candidates": 195
+      }
+    },
+    "2923308": {
+      "2014": {
+        "rank": 7,
+        "candidates": 95
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 114
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 159
+      }
+    },
+    "2923357": {
+      "2014": {
+        "rank": 12,
+        "candidates": 91
+      },
+      "2018": {
+        "rank": 9,
+        "candidates": 128
+      },
+      "2022": {
+        "rank": 8,
+        "candidates": 181
+      }
+    },
+    "2923407": {
+      "2014": {
+        "rank": 12,
+        "candidates": 81
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 141
+      },
+      "2022": {
+        "rank": 13,
+        "candidates": 168
+      }
+    },
+    "2923506": {
+      "2014": {
+        "rank": 9,
+        "candidates": 98
+      },
+      "2018": {
+        "rank": 6,
+        "candidates": 120
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 171
+      }
+    },
+    "2923605": {
+      "2014": {
+        "rank": 4,
+        "candidates": 115
+      },
+      "2018": {
+        "rank": 23,
+        "candidates": 137
+      },
+      "2022": {
+        "rank": 23,
+        "candidates": 186
+      }
+    },
+    "2923704": {
+      "2014": {
+        "rank": 12,
+        "candidates": 109
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 128
+      },
+      "2022": {
+        "rank": 32,
+        "candidates": 160
+      }
+    },
+    "2923803": {
+      "2014": {
+        "rank": 15,
+        "candidates": 115
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 178
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 217
+      }
+    },
+    "2923902": {
+      "2014": {
+        "rank": 10,
+        "candidates": 82
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 123
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 156
+      }
+    },
+    "2924009": {
+      "2014": {
+        "rank": 17,
+        "candidates": 166
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 264
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 338
+      }
+    },
+    "2924058": {
+      "2014": {
+        "rank": 26,
+        "candidates": 94
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 142
+      },
+      "2022": {
+        "rank": 38,
+        "candidates": 186
+      }
+    },
+    "2924108": {
+      "2018": {
+        "rank": 11,
+        "candidates": 124
+      },
+      "2022": {
+        "rank": 42,
+        "candidates": 166
+      }
+    },
+    "2924207": {
+      "2014": {
+        "rank": 24,
+        "candidates": 65
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 102
+      },
+      "2022": {
+        "rank": 35,
+        "candidates": 119
+      }
+    },
+    "2924306": {
+      "2014": {
+        "rank": 14,
+        "candidates": 94
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 139
+      },
+      "2022": {
+        "rank": 5,
+        "candidates": 198
+      }
+    },
+    "2924405": {
+      "2014": {
+        "rank": 17,
+        "candidates": 101
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 131
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 190
+      }
+    },
+    "2924504": {
+      "2014": {
+        "rank": 13,
+        "candidates": 79
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 113
+      },
+      "2022": {
+        "rank": 24,
+        "candidates": 140
+      }
+    },
+    "2924603": {
+      "2018": {
+        "rank": 13,
+        "candidates": 134
+      },
+      "2022": {
+        "rank": 44,
+        "candidates": 184
+      }
+    },
+    "2924652": {
+      "2014": {
+        "rank": 20,
+        "candidates": 83
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 112
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 122
+      }
+    },
+    "2924678": {
+      "2018": {
+        "rank": 38,
+        "candidates": 123
+      },
+      "2022": {
+        "rank": 30,
+        "candidates": 139
+      }
+    },
+    "2924702": {
+      "2018": {
+        "rank": 37,
+        "candidates": 113
+      },
+      "2022": {
+        "rank": 35,
+        "candidates": 117
+      }
+    },
+    "2924801": {
+      "2014": {
+        "rank": 23,
+        "candidates": 116
+      },
+      "2018": {
+        "rank": 24,
+        "candidates": 158
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 206
+      }
+    },
+    "2924900": {
+      "2014": {
+        "rank": 10,
+        "candidates": 78
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 93
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 114
+      }
+    },
+    "2925006": {
+      "2014": {
+        "rank": 4,
+        "candidates": 112
+      },
+      "2018": {
+        "rank": 26,
+        "candidates": 141
+      },
+      "2022": {
+        "rank": 24,
+        "candidates": 193
+      }
+    },
+    "2925105": {
+      "2014": {
+        "rank": 6,
+        "candidates": 138
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 200
+      },
+      "2022": {
+        "rank": 23,
+        "candidates": 291
+      }
+    },
+    "2925204": {
+      "2014": {
+        "rank": 3,
+        "candidates": 156
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 230
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 343
+      }
+    },
+    "2925253": {
+      "2018": {
+        "rank": 11,
+        "candidates": 125
+      },
+      "2022": {
+        "rank": 17,
+        "candidates": 140
+      }
+    },
+    "2925303": {
+      "2014": {
+        "rank": 20,
+        "candidates": 207
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 321
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 457
+      }
+    },
+    "2925402": {
+      "2018": {
+        "rank": 40,
+        "candidates": 125
+      },
+      "2022": {
+        "rank": 43,
+        "candidates": 168
+      }
+    },
+    "2925501": {
+      "2014": {
+        "rank": 21,
+        "candidates": 107
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 178
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 241
+      }
+    },
+    "2925600": {
+      "2018": {
+        "rank": 19,
+        "candidates": 142
+      },
+      "2022": {
+        "rank": 26,
+        "candidates": 168
+      }
+    },
+    "2925709": {
+      "2014": {
+        "rank": 21,
+        "candidates": 78
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 110
+      },
+      "2022": {
+        "rank": 15,
+        "candidates": 141
+      }
+    },
+    "2925758": {
+      "2018": {
+        "rank": 24,
+        "candidates": 164
+      },
+      "2022": {
+        "rank": 20,
+        "candidates": 240
+      }
+    },
+    "2925808": {
+      "2014": {
+        "rank": 29,
+        "candidates": 127
+      },
+      "2018": {
+        "rank": 23,
+        "candidates": 177
+      },
+      "2022": {
+        "rank": 13,
+        "candidates": 220
+      }
+    },
+    "2925907": {
+      "2014": {
+        "rank": 22,
+        "candidates": 110
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 141
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 199
+      }
+    },
+    "2925931": {
+      "2014": {
+        "rank": 8,
+        "candidates": 86
+      },
+      "2018": {
+        "rank": 19,
+        "candidates": 105
+      },
+      "2022": {
+        "rank": 22,
+        "candidates": 134
+      }
+    },
+    "2925956": {
+      "2014": {
+        "rank": 6,
+        "candidates": 111
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 163
+      },
+      "2022": {
+        "rank": 8,
+        "candidates": 242
+      }
+    },
+    "2926004": {
+      "2014": {
+        "rank": 17,
+        "candidates": 119
+      },
+      "2018": {
+        "rank": 7,
+        "candidates": 164
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 215
+      }
+    },
+    "2926103": {
+      "2018": {
+        "rank": 6,
+        "candidates": 137
+      },
+      "2022": {
+        "rank": 10,
+        "candidates": 185
+      }
+    },
+    "2926202": {
+      "2014": {
+        "rank": 16,
+        "candidates": 108
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 135
+      },
+      "2022": {
+        "rank": 34,
+        "candidates": 200
+      }
+    },
+    "2926301": {
+      "2014": {
+        "rank": 16,
+        "candidates": 152
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 212
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 288
+      }
+    },
+    "2926400": {
+      "2014": {
+        "rank": 16,
+        "candidates": 97
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 153
+      },
+      "2022": {
+        "rank": 8,
+        "candidates": 193
+      }
+    },
+    "2926509": {
+      "2014": {
+        "rank": 16,
+        "candidates": 91
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 116
+      },
+      "2022": {
+        "rank": 42,
+        "candidates": 158
+      }
+    },
+    "2926608": {
+      "2014": {
+        "rank": 7,
+        "candidates": 152
+      },
+      "2018": {
+        "rank": 6,
+        "candidates": 223
+      },
+      "2022": {
+        "rank": 9,
+        "candidates": 228
+      }
+    },
+    "2926657": {
+      "2014": {
+        "rank": 12,
+        "candidates": 81
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 104
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 139
+      }
+    },
+    "2926707": {
+      "2014": {
+        "rank": 16,
+        "candidates": 95
+      },
+      "2018": {
+        "rank": 8,
+        "candidates": 132
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 159
+      }
+    },
+    "2926806": {
+      "2014": {
+        "rank": 7,
+        "candidates": 84
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 111
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 154
+      }
+    },
+    "2926905": {
+      "2014": {
+        "rank": 7,
+        "candidates": 75
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 85
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 112
+      }
+    },
+    "2927002": {
+      "2014": {
+        "rank": 23,
+        "candidates": 121
+      },
+      "2018": {
+        "rank": 19,
+        "candidates": 173
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 257
+      }
+    },
+    "2927101": {
+      "2014": {
+        "rank": 9,
+        "candidates": 64
+      },
+      "2018": {
+        "rank": 8,
+        "candidates": 81
+      },
+      "2022": {
+        "rank": 41,
+        "candidates": 90
+      }
+    },
+    "2927200": {
+      "2014": {
+        "rank": 25,
+        "candidates": 144
+      },
+      "2018": {
+        "rank": 26,
+        "candidates": 187
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 257
+      }
+    },
+    "2927309": {
+      "2014": {
+        "rank": 18,
+        "candidates": 106
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 155
+      },
+      "2022": {
+        "rank": 7,
+        "candidates": 284
+      }
+    },
+    "2927408": {
+      "2014": {
+        "rank": 9,
+        "candidates": 287
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 445
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 663
+      }
+    },
+    "2927507": {
+      "2014": {
+        "rank": 19,
+        "candidates": 135
+      },
+      "2018": {
+        "rank": 1,
+        "candidates": 189
+      },
+      "2022": {
+        "rank": 3,
+        "candidates": 291
+      }
+    },
+    "2927606": {
+      "2018": {
+        "rank": 15,
+        "candidates": 98
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 153
+      }
+    },
+    "2927705": {
+      "2018": {
+        "rank": 23,
+        "candidates": 194
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 255
+      }
+    },
+    "2927804": {
+      "2014": {
+        "rank": 43,
+        "candidates": 67
+      },
+      "2018": {
+        "rank": 39,
+        "candidates": 92
+      },
+      "2022": {
+        "rank": 26,
+        "candidates": 122
+      }
+    },
+    "2927903": {
+      "2018": {
+        "rank": 1,
+        "candidates": 112
+      },
+      "2022": {
+        "rank": 1,
+        "candidates": 146
+      }
+    },
+    "2928000": {
+      "2014": {
+        "rank": 54,
+        "candidates": 143
+      },
+      "2018": {
+        "rank": 30,
+        "candidates": 204
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 289
+      }
+    },
+    "2928059": {
+      "2014": {
+        "rank": 16,
+        "candidates": 90
+      },
+      "2018": {
+        "rank": 22,
+        "candidates": 110
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 165
+      }
+    },
+    "2928109": {
+      "2014": {
+        "rank": 20,
+        "candidates": 131
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 162
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 249
+      }
+    },
+    "2928208": {
+      "2014": {
+        "rank": 23,
+        "candidates": 88
+      },
+      "2018": {
+        "rank": 27,
+        "candidates": 132
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 197
+      }
+    },
+    "2928307": {
+      "2014": {
+        "rank": 13,
+        "candidates": 106
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 134
+      },
+      "2022": {
+        "rank": 17,
+        "candidates": 203
+      }
+    },
+    "2928406": {
+      "2014": {
+        "rank": 11,
+        "candidates": 110
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 147
+      },
+      "2022": {
+        "rank": 24,
+        "candidates": 201
+      }
+    },
+    "2928505": {
+      "2014": {
+        "rank": 12,
+        "candidates": 103
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 137
+      },
+      "2022": {
+        "rank": 8,
+        "candidates": 179
+      }
+    },
+    "2928604": {
+      "2014": {
+        "rank": 13,
+        "candidates": 195
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 270
+      },
+      "2022": {
+        "rank": 10,
+        "candidates": 417
+      }
+    },
+    "2928703": {
+      "2014": {
+        "rank": 4,
+        "candidates": 201
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 301
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 435
+      }
+    },
+    "2928802": {
+      "2014": {
+        "rank": 26,
+        "candidates": 149
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 240
+      },
+      "2022": {
+        "rank": 11,
+        "candidates": 327
+      }
+    },
+    "2928901": {
+      "2014": {
+        "rank": 23,
+        "candidates": 113
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 152
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 204
+      }
+    },
+    "2928950": {
+      "2014": {
+        "rank": 5,
+        "candidates": 82
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 102
+      },
+      "2022": {
+        "rank": 37,
+        "candidates": 123
+      }
+    },
+    "2929008": {
+      "2014": {
+        "rank": 15,
+        "candidates": 114
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 154
+      },
+      "2022": {
+        "rank": 19,
+        "candidates": 230
+      }
+    },
+    "2929057": {
+      "2014": {
+        "rank": 31,
+        "candidates": 83
+      },
+      "2018": {
+        "rank": 5,
+        "candidates": 124
+      },
+      "2022": {
+        "rank": 5,
+        "candidates": 177
+      }
+    },
+    "2929107": {
+      "2014": {
+        "rank": 8,
+        "candidates": 138
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 161
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 251
+      }
+    },
+    "2929206": {
+      "2014": {
+        "rank": 1,
+        "candidates": 174
+      },
+      "2018": {
+        "rank": 2,
+        "candidates": 227
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 368
+      }
+    },
+    "2929255": {
+      "2014": {
+        "rank": 16,
+        "candidates": 96
+      },
+      "2018": {
+        "rank": 19,
+        "candidates": 125
+      },
+      "2022": {
+        "rank": 26,
+        "candidates": 195
+      }
+    },
+    "2929305": {
+      "2014": {
+        "rank": 5,
+        "candidates": 166
+      },
+      "2018": {
+        "rank": 5,
+        "candidates": 229
+      },
+      "2022": {
+        "rank": 8,
+        "candidates": 363
+      }
+    },
+    "2929354": {
+      "2014": {
+        "rank": 17,
+        "candidates": 78
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 107
+      },
+      "2022": {
+        "rank": 15,
+        "candidates": 123
+      }
+    },
+    "2929370": {
+      "2014": {
+        "rank": 7,
+        "candidates": 88
+      },
+      "2018": {
+        "rank": 11,
+        "candidates": 113
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 160
+      }
+    },
+    "2929404": {
+      "2014": {
+        "rank": 12,
+        "candidates": 101
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 120
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 159
+      }
+    },
+    "2929503": {
+      "2014": {
+        "rank": 3,
+        "candidates": 173
+      },
+      "2018": {
+        "rank": 8,
+        "candidates": 231
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 356
+      }
+    },
+    "2929602": {
+      "2018": {
+        "rank": 15,
+        "candidates": 159
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 237
+      }
+    },
+    "2929701": {
+      "2014": {
+        "rank": 32,
+        "candidates": 106
+      },
+      "2018": {
+        "rank": 13,
+        "candidates": 132
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 170
+      }
+    },
+    "2929750": {
+      "2014": {
+        "rank": 16,
+        "candidates": 111
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 148
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 257
+      }
+    },
+    "2929800": {
+      "2014": {
+        "rank": 16,
+        "candidates": 89
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 117
+      },
+      "2022": {
+        "rank": 32,
+        "candidates": 144
+      }
+    },
+    "2929909": {
+      "2014": {
+        "rank": 3,
+        "candidates": 135
+      },
+      "2018": {
+        "rank": 3,
+        "candidates": 200
+      },
+      "2022": {
+        "rank": 2,
+        "candidates": 282
+      }
+    },
+    "2930006": {
+      "2014": {
+        "rank": 7,
+        "candidates": 55
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 70
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 88
+      }
+    },
+    "2930105": {
+      "2014": {
+        "rank": 12,
+        "candidates": 176
+      },
+      "2018": {
+        "rank": 20,
+        "candidates": 252
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 356
+      }
+    },
+    "2930154": {
+      "2014": {
+        "rank": 6,
+        "candidates": 101
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 151
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 193
+      }
+    },
+    "2930204": {
+      "2014": {
+        "rank": 28,
+        "candidates": 113
+      },
+      "2018": {
+        "rank": 24,
+        "candidates": 154
+      },
+      "2022": {
+        "rank": 29,
+        "candidates": 219
+      }
+    },
+    "2930303": {
+      "2014": {
+        "rank": 14,
+        "candidates": 84
+      },
+      "2018": {
+        "rank": 28,
+        "candidates": 107
+      },
+      "2022": {
+        "rank": 33,
+        "candidates": 152
+      }
+    },
+    "2930402": {
+      "2022": {
+        "rank": 12,
+        "candidates": 254
+      }
+    },
+    "2930501": {
+      "2014": {
+        "rank": 19,
+        "candidates": 182
+      },
+      "2018": {
+        "rank": 19,
+        "candidates": 279
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 395
+      }
+    },
+    "2930600": {
+      "2018": {
+        "rank": 17,
+        "candidates": 122
+      },
+      "2022": {
+        "rank": 26,
+        "candidates": 148
+      }
+    },
+    "2930709": {
+      "2014": {
+        "rank": 21,
+        "candidates": 223
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 334
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 505
+      }
+    },
+    "2930758": {
+      "2014": {
+        "rank": 14,
+        "candidates": 71
+      },
+      "2018": {
+        "rank": 27,
+        "candidates": 107
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 123
+      }
+    },
+    "2930766": {
+      "2014": {
+        "rank": 34,
+        "candidates": 88
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 89
+      },
+      "2022": {
+        "rank": 20,
+        "candidates": 139
+      }
+    },
+    "2930774": {
+      "2014": {
+        "rank": 30,
+        "candidates": 119
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 146
+      },
+      "2022": {
+        "rank": 20,
+        "candidates": 198
+      }
+    },
+    "2930808": {
+      "2014": {
+        "rank": 16,
+        "candidates": 71
+      },
+      "2018": {
+        "rank": 9,
+        "candidates": 95
+      },
+      "2022": {
+        "rank": 10,
+        "candidates": 147
+      }
+    },
+    "2930907": {
+      "2014": {
+        "rank": 13,
+        "candidates": 78
+      },
+      "2018": {
+        "rank": 12,
+        "candidates": 99
+      },
+      "2022": {
+        "rank": 35,
+        "candidates": 131
+      }
+    },
+    "2931004": {
+      "2018": {
+        "rank": 33,
+        "candidates": 144
+      },
+      "2022": {
+        "rank": 44,
+        "candidates": 188
+      }
+    },
+    "2931053": {
+      "2018": {
+        "rank": 27,
+        "candidates": 102
+      },
+      "2022": {
+        "rank": 26,
+        "candidates": 131
+      }
+    },
+    "2931103": {
+      "2018": {
+        "rank": 7,
+        "candidates": 143
+      },
+      "2022": {
+        "rank": 23,
+        "candidates": 166
+      }
+    },
+    "2931202": {
+      "2014": {
+        "rank": 18,
+        "candidates": 111
+      },
+      "2018": {
+        "rank": 18,
+        "candidates": 144
+      },
+      "2022": {
+        "rank": 29,
+        "candidates": 226
+      }
+    },
+    "2931301": {
+      "2014": {
+        "rank": 26,
+        "candidates": 91
+      },
+      "2018": {
+        "rank": 31,
+        "candidates": 124
+      },
+      "2022": {
+        "rank": 37,
+        "candidates": 169
+      }
+    },
+    "2931350": {
+      "2014": {
+        "rank": 9,
+        "candidates": 197
+      },
+      "2018": {
+        "rank": 7,
+        "candidates": 284
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 433
+      }
+    },
+    "2931400": {
+      "2018": {
+        "rank": 10,
+        "candidates": 123
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 200
+      }
+    },
+    "2931509": {
+      "2014": {
+        "rank": 7,
+        "candidates": 116
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 167
+      },
+      "2022": {
+        "rank": 15,
+        "candidates": 209
+      }
+    },
+    "2931608": {
+      "2018": {
+        "rank": 27,
+        "candidates": 120
+      },
+      "2022": {
+        "rank": 29,
+        "candidates": 186
+      }
+    },
+    "2931707": {
+      "2018": {
+        "rank": 19,
+        "candidates": 154
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 254
+      }
+    },
+    "2931806": {
+      "2014": {
+        "rank": 7,
+        "candidates": 98
+      },
+      "2018": {
+        "rank": 17,
+        "candidates": 143
+      },
+      "2022": {
+        "rank": 25,
+        "candidates": 166
+      }
+    },
+    "2931905": {
+      "2014": {
+        "rank": 6,
+        "candidates": 150
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 212
+      },
+      "2022": {
+        "rank": 33,
+        "candidates": 246
+      }
+    },
+    "2932002": {
+      "2014": {
+        "rank": 24,
+        "candidates": 108
+      },
+      "2018": {
+        "rank": 31,
+        "candidates": 145
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 225
+      }
+    },
+    "2932101": {
+      "2014": {
+        "rank": 8,
+        "candidates": 114
+      },
+      "2018": {
+        "rank": 9,
+        "candidates": 158
+      },
+      "2022": {
+        "rank": 3,
+        "candidates": 238
+      }
+    },
+    "2932200": {
+      "2014": {
+        "rank": 7,
+        "candidates": 116
+      },
+      "2018": {
+        "rank": 2,
+        "candidates": 189
+      },
+      "2022": {
+        "rank": 3,
+        "candidates": 219
+      }
+    },
+    "2932309": {
+      "2014": {
+        "rank": 15,
+        "candidates": 116
+      },
+      "2018": {
+        "rank": 15,
+        "candidates": 157
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 208
+      }
+    },
+    "2932408": {
+      "2014": {
+        "rank": 7,
+        "candidates": 93
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 138
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 178
+      }
+    },
+    "2932457": {
+      "2014": {
+        "rank": 34,
+        "candidates": 86
+      },
+      "2018": {
+        "rank": 14,
+        "candidates": 117
+      },
+      "2022": {
+        "rank": 22,
+        "candidates": 154
+      }
+    },
+    "2932507": {
+      "2014": {
+        "rank": 7,
+        "candidates": 111
+      },
+      "2018": {
+        "rank": 25,
+        "candidates": 179
+      },
+      "2022": {
+        "rank": 27,
+        "candidates": 206
+      }
+    },
+    "2932606": {
+      "2014": {
+        "rank": 12,
+        "candidates": 78
+      },
+      "2018": {
+        "rank": 23,
+        "candidates": 120
+      },
+      "2022": {
+        "rank": 20,
+        "candidates": 127
+      }
+    },
+    "2932705": {
+      "2014": {
+        "rank": 16,
+        "candidates": 124
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 203
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 259
+      }
+    },
+    "2932804": {
+      "2014": {
+        "rank": 20,
+        "candidates": 110
+      },
+      "2018": {
+        "rank": 5,
+        "candidates": 145
+      },
+      "2022": {
+        "rank": 12,
+        "candidates": 188
+      }
+    },
+    "2932903": {
+      "2014": {
+        "rank": 11,
+        "candidates": 184
+      },
+      "2018": {
+        "rank": 22,
+        "candidates": 279
+      },
+      "2022": {
+        "rank": 16,
+        "candidates": 420
+      }
+    },
+    "2933000": {
+      "2014": {
+        "rank": 10,
+        "candidates": 137
+      },
+      "2018": {
+        "rank": 8,
+        "candidates": 170
+      },
+      "2022": {
+        "rank": 28,
+        "candidates": 236
+      }
+    },
+    "2933059": {
+      "2014": {
+        "rank": 18,
+        "candidates": 87
+      },
+      "2018": {
+        "rank": 26,
+        "candidates": 128
+      },
+      "2022": {
+        "rank": 14,
+        "candidates": 173
+      }
+    },
+    "2933109": {
+      "2018": {
+        "rank": 17,
+        "candidates": 106
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 128
+      }
+    },
+    "2933158": {
+      "2014": {
+        "rank": 14,
+        "candidates": 82
+      },
+      "2018": {
+        "rank": 9,
+        "candidates": 125
+      },
+      "2022": {
+        "rank": 22,
+        "candidates": 155
+      }
+    },
+    "2933174": {
+      "2014": {
+        "rank": 10,
+        "candidates": 92
+      },
+      "2018": {
+        "rank": 23,
+        "candidates": 127
+      },
+      "2022": {
+        "rank": 18,
+        "candidates": 166
+      }
+    },
+    "2933208": {
+      "2014": {
+        "rank": 17,
+        "candidates": 175
+      },
+      "2018": {
+        "rank": 21,
+        "candidates": 273
+      },
+      "2022": {
+        "rank": 4,
+        "candidates": 420
+      }
+    },
+    "2933257": {
+      "2014": {
+        "rank": 7,
+        "candidates": 73
+      },
+      "2018": {
+        "rank": 4,
+        "candidates": 79
+      },
+      "2022": {
+        "rank": 11,
+        "candidates": 114
+      }
+    },
+    "2933307": {
+      "2014": {
+        "rank": 4,
+        "candidates": 242
+      },
+      "2018": {
+        "rank": 4,
+        "candidates": 380
+      },
+      "2022": {
+        "rank": 6,
+        "candidates": 536
+      }
+    },
+    "2933406": {
+      "2014": {
+        "rank": 39,
+        "candidates": 73
+      },
+      "2018": {
+        "rank": 16,
+        "candidates": 111
+      },
+      "2022": {
+        "rank": 10,
+        "candidates": 143
+      }
+    },
+    "2933455": {
+      "2014": {
+        "rank": 17,
+        "candidates": 89
+      },
+      "2018": {
+        "rank": 10,
+        "candidates": 105
+      },
+      "2022": {
+        "rank": 9,
+        "candidates": 133
+      }
+    },
+    "2933505": {
+      "2018": {
+        "rank": 17,
+        "candidates": 151
+      },
+      "2022": {
+        "rank": 9,
+        "candidates": 210
+      }
+    },
+    "2933604": {
+      "2014": {
+        "rank": 30,
+        "candidates": 123
+      },
+      "2018": {
+        "rank": 32,
+        "candidates": 196
+      },
+      "2022": {
+        "rank": 21,
+        "candidates": 274
+      }
+    }
   }
 }

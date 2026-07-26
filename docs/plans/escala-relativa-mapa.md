@@ -1,11 +1,21 @@
 # B13 — Escala relativa no mapa dos Municípios (quantis/LQ/rank + símbolo proporcional)
 
-Status: rascunho
-Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios + hardening)
+Status: entregue (2026-07-26)
+Atualizado em: 2026-07-26 (as-built da entrega; auditoria do plano aplicada)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Inteligência de campanha", B13; plano-mestre [inteligencia-campanha.md](inteligencia-campanha.md))
 Impeccable: B — estende `MunicipalityMapPanel`/`BahiaMap` existentes (seletor de escala, camada de símbolos); sem rota nova
 Appetite: ~2 dias eng; sem migration
 Responsável: —
+
+## Revisão na entrega (2026-07-26)
+
+Três correções do plano original, encontradas ao auditá-lo contra o repositório antes de codar:
+
+1. **Caminhos e nomes defasados.** `BahiaMap.tsx`/`MunicipalityMapPanel.tsx` moraram em `src/components/campaign/` até o Pass 2 W2 e hoje estão em `src/components/campaign/map/`; o classificador do E10 chama-se `computeMunicipalityTerritorialClass`, não `computeDfTerritorialClass`. Os diagramas e a lista de componentes abaixo ficaram como estavam para preservar o registro do que foi planejado — leia-os com esta errata.
+2. **"O mapa acompanha a lista" deixou de ser verdade.** Desde a remodelagem dos Municípios o mapa só existe no Início (`/campanha`) e recebe apenas `compare`; `/campanha/municipios` é lista/overview. A questão em aberto "quantis sobre o conjunto filtrado ou o estado inteiro" foi resolvida como **escopo de acesso do usuário** (435 municípios para coordenador/candidato, a carteira para o assessor), que é o análogo do "conjunto filtrado" na única superfície que o mapa tem.
+3. **LQ como classes, não diverging.** Os Objetivos pediam "LQ diverging em torno de 1" e as Decisões travadas, três linhas abaixo, reservavam diverging exclusivamente ao compare. Resolvido a favor das decisões travadas: LQ virou **5 classes nomeadas** cortadas nas âncoras que o E10 já usa (`TERRITORIAL_CLASS_ANCHORS.weakLq` 0,5 / `strongLq` 2 mais a banda `AT_STANDARD_LQ` 0,95–1,15), na rampa sequencial do tema. Vermelho × azul continua significando "Solla × adversário" e só aparece no compare.
+
+Uma decisão cara que o plano não previa: **"Posição no município" não existia em lugar nenhum** — nem no artefato, nem em query reaproveitável (`municipalityCandidateComparison.ts` é por município × candidatos escolhidos). Construí-la em request significaria varrer ~100 mil linhas por ano para um dado que nunca muda, então o ranking foi para o **artefato TSE commitado** (regra 3 da escada de cache), como o E8 fez na v2. O rabbit hole "rank v1 = posição entre os top-N carregados, documentado" desapareceu junto: o rank do artefato é sobre **todos** os candidatos com votos na geografia.
 
 ## Design (Impeccable)
 
@@ -88,6 +98,22 @@ Componentes:
 
 - **Value-by-alpha (opacidade ∝ eleitorado).** Gatilho: teste com o time em reunião real pedir alternativa às bolhas.
 - **Roll-off como métrica de mapa.** Gatilho: I-A entrar no motor (E11 fase 2) e o time pedir a leitura espacial.
+
+## As-built (2026-07-26)
+
+**Artefato v3.** `pnpm build:election-aggregates` passou a emitir `federalRankByIbgeCode: Record<codarea, Record<year, { rank, candidates }>>` — a colocação do candidato entre **todos** os candidatos a deputado federal com votos > 0 naquela geografia, em 2014/2018/2022. Chaveado por `ibgeCode` (417 códigos) e não por slug porque é o que o mapa desenha: as 19 zonas de Salvador somam a cidade inteira. Geografia sem votos dele não recebe entrada (nunca `rank: 0`). O insumo é `loadFederalVotesByCityZoneAndCandidate` em `municipalityElectoralBaseline.ts` — irmão de `loadCampoFederalVotesByCityZone`, mesma varredura estadual, CLI/build-time only. O arquivo foi de 534 KB para 623 KB, dentro do orçamento de 700 KB que o E8 já tinha fixado.
+
+**Escalas.** A matemática pura vive em `src/lib/mapScaleClasses.ts` (arquivo novo — `bahiaMapStyle.ts` já carregava estilo de path e teria virado duas responsabilidades): quantis sobre os valores > 0 do escopo renderizado, **degradando para 3 classes com menos de 10 municípios** e devolvendo a contagem efetiva para a legenda não mentir; faixas de LQ nas âncoras do E10; buckets de rank (1º · 2º–3º · 4º+). `resolvePathStyle` ganhou um caminho de fill discreto por chave (`fillByKey`) que **substitui** a rampa contínua quando presente — chave ausente é "sem dado", que não é a mesma coisa que valor zero.
+
+As âncoras saíram de `municipalityTerritorialClass.ts` para `src/lib/territorialClassAnchors.ts` porque o painel do mapa é client component: importar o classificador lá arrastaria o artefato TSE inteiro para o bundle do navegador. Só números, sem dados nem lógica; classificador e copy leem do mesmo lugar, então recalibrar (E15) continua sendo um diff de uma linha em um arquivo.
+
+**Bundle.** `computeAggregateTerritorialClass(slugs)` classifica um grupo de slugs como um território só — soma os insumos e roda o **mesmo** `classifyMunicipalityTerritory`, nunca a média das classes por slug (LQ é razão, e a média de razões não é a razão das somas). O E12 herda o helper para o rollup por TI. O loader do mapa preenche `statewideShareByYear`, `territorialClassByCode`, `competitiveRankByYear` e `projectedValidVotesByCode`, todos puros sobre o artefato: **nenhuma query nova em request**. Rank fica indisponível em 2026 (dado TSE), mesmo precedente do compare; LQ em 2026 reusa o padrão estadual de 2022, como `percentValid` já fazia.
+
+**UI.** Default passou a ser **quantis**. A legenda discreta (`MapScaleLegend`) mostra um swatch por classe com a faixa real, do mais fraco para o mais forte, e a nota abaixo dela é ligada ao seletor por `aria-describedby` — inclusive a nota que declara a degradação ("cerca de um quinto dos N municípios com votos no seu escopo"). O readout nunca mostra a classe sozinha: soletra o porquê em texto real ("4ª de 5 faixas", "1,8× o padrão estadual do candidato", "12º entre 663 candidatos votados aqui"). Duas entradas novas em `/campanha/conceitos` (Quantis e Posição no município) e um "Saiba mais" inline na nota da legenda; LQ já estava coberto por `dominancia-relativa`.
+
+**Bolhas.** `L.circleMarker` no centro dos bounds de cada feature, raio ∝ √(válidos projetados) — a **área** carrega o valor. Fill pela classe do E10, `interactive: false` (a bolha fica em cima do próprio município, então deixar o ponteiro atravessar mantém um alvo de hover e um readout, não dois empilhados), desenhadas da menor para a maior para que os prêmios grandes não fiquem cobertos. Toggle desligado por default, com legenda de tamanho + cor que só aparece com a camada. Medido antes de otimizar, como o plano mandava: 417 marcadores não derrubaram o frame, então o corte para top-K **não** foi feito.
+
+**Sem migration, sem collection, sem server action.** O bundle client de `/campanha` ficou byte a byte igual (9,46 kB / 265 kB) — o painel do mapa já carrega em chunk próprio.
 
 ## Referências
 

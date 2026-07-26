@@ -17,6 +17,24 @@ export const choroplethFillColor = (value: number, max: number): string => {
   return `rgb(${r}, ${g}, ${b})`
 }
 
+/**
+ * The same sequential ramp sampled at `total` evenly spaced steps — the fill
+ * for class `index` (0 = weakest). Discrete classes are what make a relative
+ * scale readable at a glance: a continuous ramp over a federal-deputy race
+ * paints almost the whole state the same shade (B11's lesson).
+ *
+ * The floor keeps the lightest class distinguishable from "no data" (#f4f4f5).
+ */
+const DISCRETE_CLASS_FLOOR = 0.18
+
+export const discreteChoroplethFill = (index: number, total: number): string => {
+  if (total <= 0) return '#f4f4f5'
+  if (total === 1) return choroplethFillColor(1, 1)
+
+  const step = index / (total - 1)
+  return choroplethFillColor(DISCRETE_CLASS_FLOOR + (1 - DISCRETE_CLASS_FLOOR) * step, 1)
+}
+
 export const choroplethMaxValue = (values: Record<string, number>): number => {
   const entries = Object.values(values).filter((value) => value > 0)
   return entries.length > 0 ? Math.max(...entries) : 0
