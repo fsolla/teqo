@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { LeadershipStateDeputiesCell } from '@/components/campaign/leadership/LeadershipStateDeputiesCell'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { CampaignCopyableCell } from '@/components/campaign/shared/CampaignCopyableCell'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
@@ -25,17 +26,25 @@ import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
+  loadStateDeputyOptions,
+  type StateDeputyRelationOption,
+} from '@/utilities/campaignRelationOptions'
+import {
   buildLeadershipListHref,
   loadLeadershipListPageData,
   parseLeadershipListParams,
   type LeadershipRowViewModel,
 } from '@/utilities/leadershipData'
 
+import { setLeadershipStateDeputyMembershipFormAction } from './formActions'
+
 type LeadershipsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-const leadershipColumns: Array<CampaignTableColumn<LeadershipRowViewModel>> = [
+const leadershipColumns = (
+  stateDeputyOptions: StateDeputyRelationOption[],
+): Array<CampaignTableColumn<LeadershipRowViewModel>> => [
   {
     id: 'name',
     mandatory: true,
@@ -83,6 +92,19 @@ const leadershipColumns: Array<CampaignTableColumn<LeadershipRowViewModel>> = [
     head: <CampaignTableHead>Organizações</CampaignTableHead>,
     cellClassName: 'max-w-56 whitespace-normal text-muted-foreground',
     cell: (row) => row.organizationNames.join(', ') || '—',
+  },
+  {
+    id: 'stateDeputies',
+    head: <CampaignTableHead>Dobradinhas</CampaignTableHead>,
+    cellClassName: 'max-w-56 whitespace-normal',
+    cell: (row) => (
+      <LeadershipStateDeputiesCell
+        leadershipId={row.id}
+        stateDeputies={row.stateDeputies}
+        options={stateDeputyOptions}
+        membershipAction={setLeadershipStateDeputyMembershipFormAction}
+      />
+    ),
   },
   {
     id: 'appAccess',
@@ -137,7 +159,11 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
   if (!isCampaignStaff(user)) redirect('/campanha')
 
   const state = parseLeadershipListParams(rawSearchParams)
-  const { rows, totalDocs, totalPages } = await loadLeadershipListPageData(payload, user, state)
+  const [{ rows, totalDocs, totalPages }, stateDeputyOptions] = await Promise.all([
+    loadLeadershipListPageData(payload, user, state),
+    loadStateDeputyOptions(payload, user),
+  ])
+  const columns = leadershipColumns(stateDeputyOptions)
 
   return (
     <CampaignPageShell>
@@ -167,7 +193,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
         <CampaignListResults>
           {rows.length ? (
             <>
-              <CampaignTable columns={leadershipColumns} rows={rows} rowKey={(row) => row.id} />
+              <CampaignTable columns={columns} rows={rows} rowKey={(row) => row.id} />
               <CampaignListFooter
                 totalDocs={totalDocs}
                 singular="liderança"

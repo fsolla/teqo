@@ -1,7 +1,7 @@
 # Coluna de dobradinhas na lista de lideranças
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue
+Atualizado em: 2026-07-26
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B31**)
 Impeccable: B — encaixe em `/campanha/liderancas` (coluna + célula editável no `CampaignTable` existente); sem rota nova
 Appetite: ~1 dia eng (0,75–1,25); coluna + célula de chips com busca e gravação por delta + action nova + provider de opções; sem migration
@@ -136,3 +136,48 @@ Depth check: reusa `CampaignTable`, `Popover`/`Command`/`Badge` do kit, `wordSta
 - [`combobox-assessores-lista-municipios.md`](combobox-assessores-lista-municipios.md) (B27) · [`email-celular-lista-liderancas.md`](email-celular-lista-liderancas.md) (B28) · [`ordenacao-filtros-lista-liderancas.md`](ordenacao-filtros-lista-liderancas.md) (B29) · [`convite-whatsapp-lista-liderancas.md`](convite-whatsapp-lista-liderancas.md) (B30) · [`gerenciar-assessores.md`](gerenciar-assessores.md) (B19 ✓)
 - AGENTS.md — Campaign auth, naming, `overrideAccess: false`, escrita transacional, `Contact` join
 - `PRODUCT.md` / `DESIGN.md` — princípios 3, 4 e 8; Field Desk · `.cursor/rules/campanha-edit-where-you-see.mdc`
+
+## Revisão na entrega (2026-07-26)
+
+O plano acima executou como escrito, com as 5 defasagens já sinalizadas na auditoria pré-implementação corrigidas no código, não no texto deste plano (preservado como histórico):
+
+- **Ordem de colunas.** B28 ✓ já tinha inserido E-mail/Celular e a coluna Ações antes deste item chegar; "Dobradinhas" entrou entre Organizações e Acesso ao app como previsto, só a vizinhança mudou (Nome · E-mail · Celular · Status · Municípios · Organizações · **Dobradinhas** · Acesso ao app · Ações).
+- **B27 já entregue.** A questão em aberto sobre "Popover ou inline" ficou resolvida por precedente direto, não por suposição: `LeadershipStateDeputiesCell` usa a mesma mecânica Popover+`Command`+chips de `MunicipalityListAdvisorsControl` (B27), mas grava por **server action chamada direto do cliente via `useTransition`** (padrão de `AdvisorMunicipalityCell`/B19), não pelo endpoint JSON que o B27 usou — a diferença existe porque esta célula tem derivados a revalidar (`leadershipCount`, a ficha do deputado) e o B27 não tinha.
+- **`MAX_LEADERSHIP_STATE_DEPUTIES` exportado**, `loadStateDeputyOptions` estendido com `plainName`/`party`/`slug` (não só `slug`) para a célula montar o chip otimista sem 2ª busca, e a chamada duplicada de `loadStateDeputySummaries` em `loadLeadershipDetail` removida — `LeadershipDetailViewModel` deriva `stateDeputyIDs` de `row.stateDeputies`.
+- **Extração de célula genérica continua adiada.** Este é o **2º call site** do padrão Popover+Command+chips (depois de B27); a extração para `shared/` segue esperando o 3º (candidatos: B34/B36/B37).
+- Questões em aberto resolvidas: Popover (não inline) confirmado pelo precedente B27; chip só com nome na célula, partido no resultado da busca (A); sem filtro por dobradinha no header (gatilho no B29, ainda não entregue); sem "Ver mais…" (A).
+
+Gate verde (tsc, lint, format, knip — P3 pré-existente, check:cycles, unit+int, e2e smoke, build); Aikido 0 achados nos 9 arquivos novos/editados.
+
+### `/simplify` (2026-07-26)
+
+Três revisores paralelos (qualidade, performance, reuso) sobre o diff completo. Corrigidos:
+
+- **Bug de revert otimista.** `LeadershipStateDeputiesCell` desfazia a falha de um toggle voltando para `lastPropsRef.current` (o snapshot pré-edição inteiro), o que apagava um toggle anterior já salvo com sucesso na mesma sessão de popover. Agora desfaz só o delta que falhou (mesma garantia que `MunicipalityListAdvisorsControl`/B27 tem via `revertDelta`, sem herdar sua complexidade de `requestSeq`/`latestConfirmed` — a action daqui não devolve a lista "fonte da verdade" do servidor, então não há o que reconciliar).
+- **Fallback silencioso na adição.** `toggle` construía o chip otimista com `option?.plainName ?? 'Dobradinha'` / `slug: option?.slug ?? ''` — nunca deveria disparar (a opção sempre vem de `filteredOptions`), mas escondia um bug e podia gerar um link `/campanha/dobradinhas/` quebrado. Agora exige a opção e sai sem efeito se ela não existir.
+- **`sameIdSet` duplicado byte a byte** entre este arquivo e `MunicipalityListAdvisorsControl.tsx` (B27) — extraído para [`src/lib/sameIdSet.ts`](../../src/lib/sameIdSet.ts), importado pelos dois.
+- **No-op ainda pagava uma leitura + revalidação.** `setLeadershipStateDeputyMembershipRecord` buscava o `slug` do deputado _antes_ de checar `nextStateDeputyIDs === null`, e o wrapper sempre chamava `revalidateLeadershipStateDeputyPaths` mesmo sem escrita. Agora o no-op retorna antes da busca do slug, e o wrapper só revalida quando algo foi de fato escrito.
+
+Adiados (achados reais, mas fora do apetite deste item — ver também o "2º call site" acima):
+
+- Unificar `nextStateDeputyIdsAfterMembership`/`nextAdvisorIdsAfterMembership` num helper genérico parametrizado — casa com a extração adiada para o 3º call site (B34/B36/B37), não antes.
+- `StateDeputyOptionsProvider` como Context vs. props diretas: um revisor sugeriu trocar por uma columns factory; outro validou o Context como decisão correta (só um consumidor hoje, mesmo padrão de `MunicipalityEstimateScenarioProvider`). Mantido como está — não há um 2º catálogo consumindo o Context ainda para justificar a escolha de forma ou outra.
+- Query duplicada de `stateDeputy` na página da lista (catálogo completo para o Popover + subconjunto por IDs em `toLeadershipRows`) — `toLeadershipRows` é compartilhado com rotas que não carregam o catálogo, então não pode simplesmente consumi-lo; ficaria como uma otimização condicional só para esta rota.
+
+Gate verde novamente após os ajustes (tsc, lint, format:check, unit 526/526, int 406/406 incl. os 6 do B31, build); Aikido 0 achados nos 4 arquivos tocados pelo `/simplify`.
+
+### `/simplify` — segunda rodada, pós-rebase (2026-07-26)
+
+Mesmos três revisores paralelos sobre o diff (já rebaseado em `origin/main`). Corrigidos:
+
+- **`StateDeputyOptionsProvider` revertido para prop direta.** A primeira rodada tinha decidido manter o Context; esta rodada trouxe a evidência concreta que faltava — `MunicipalityList.tsx` já resolve exatamente o mesmo problema ("colunas estáticas + uma coluna que precisa de opções por request") com uma **columns factory** (`municipalityListColumns(props)`, chamada dentro do componente, fechando sobre `advisorOptions`), sem Context. Adotar esse precedente em vez de divergir dele: `leadershipColumns` virou `leadershipColumns(stateDeputyOptions)`, `LeadershipStateDeputiesCell` recebe `options` como prop comum, e `StateDeputyOptionsProvider.tsx` foi deletado. Zero comportamento mudado, um arquivo e uma camada de Context a menos.
+- **`revalidatePath` mais largo que o necessário.** `revalidateLeadershipStateDeputyPaths` chamava `revalidatePath('/campanha/liderancas/[id]', 'page')` — a forma de padrão dinâmico, que invalida a entrada de cache de **toda** ficha de liderança a cada toggle, não só a tocada — mesmo com o `leadershipId` já em escopo. Contrasta com o precedente já estabelecido (`revalidateAdvisorPaths`/`revalidateMunicipalityListPaths`), que sempre usa o id/slug concreto quando ele é conhecido. Corrigido para `revalidatePath(`/campanha/liderancas/${leadershipId}`, 'page')`.
+- **Non-null assertion evitável.** `optionById.get(stateDeputyId)!` dentro do `setCurrent` updater dependia de uma guarda feita *fora* do updater (`if (assigned && !optionById.has(...)) return`) — correto hoje, mas as duas partes podiam se separar numa edição futura sem o TypeScript avisar. Movida a checagem para dentro do próprio updater (`if (!option) return previous`), sem asserção.
+
+Adiados (achados reais desta rodada, registrados para quem tocar este código de novo):
+
+- **Round-trip de DB só para resolver o `slug` do deputado a revalidar.** `setLeadershipStateDeputyMembershipRecord` faz um `findByID('stateDeputy', ..., select: { slug })` extra dentro da transação, e o cliente já tem esse slug (vem em `StateDeputyRelationOption`/`StateDeputySummary`). Passar o slug pelo `FormData`/schema evitaria a leitura, mas move a fonte de verdade do slug para o cliente só para fins de cache — a escrita em si continua validada pelo Payload (`overrideAccess: false` + FK); pior caso de um slug incorreto é invalidar a página errada, não uma falha de segurança. Ainda assim é uma mudança de superfície de confiança maior que o achado justifica isolado — fica para quando o 3º call site (B34/B36/B37) tocar esta mesma action.
+- Query duplicada de `stateDeputy` (catálogo completo + subconjunto por IDs em `toLeadershipRows`) — mesmo adiado da primeira rodada, ainda válido.
+- `optionById` recomputado uma vez por linha (célula) em vez de uma vez por tabela — `useMemo` já evita recomputar em cada render, só recomputa por linha no mount; moveria para o provider/hook compartilhado se algum dia importar na prática (catálogo de dobradinhas é pequeno).
+
+Gate verde novamente (tsc, lint --max-warnings=0, format:check, unit 530/530, int 406/406 incl. os 6 do B31, knip com o P3 pré-existente do `payload.config.ts`); Aikido 0 achados nos 3 arquivos editados.

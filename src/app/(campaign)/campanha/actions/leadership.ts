@@ -1,11 +1,15 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
+import { nextStateDeputyIdsAfterMembership } from '@/lib/leadershipStateDeputyMembership'
 import {
   leadershipCreateSchema,
   leadershipInternalUpdateSchema,
+  leadershipStateDeputyMembershipSchema,
   type LeadershipInternalUpdateInput,
+  type LeadershipStateDeputyMembershipInput,
 } from '@/lib/schemas/leadership'
 import type { CampaignUser, Contact } from '@/payload-types'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
@@ -13,6 +17,8 @@ import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaign
 import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
+import { uniqueRelationshipIds } from '@/utilities/relationship'
 
 const getFreshStaffActor = (
   payload: Payload,
@@ -223,4 +229,104 @@ export const createLeadership = async (input: unknown) => {
 export const updateLeadershipInternal = async (input: LeadershipInternalUpdateInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return updateLeadershipInternalRecord(payload, actor, input)
+}
+
+const revalidateLeadershipStateDeputyPaths = (leadershipId: number, stateDeputySlug?: string) => {
+  revalidatePath('/campanha/liderancas', 'page')
+  revalidatePath(`/campanha/liderancas/${leadershipId}`, 'page')
+  revalidatePath('/campanha/dobradinhas', 'page')
+  if (stateDeputySlug) {
+    revalidatePath(`/campanha/dobradinhas/${stateDeputySlug}`, 'page')
+  }
+}
+
+/**
+ * Delta write for one chip in the "Dobradinhas" column of `/campanha/liderancas`
+ * (B31) — the other side of the same `leadership.stateDeputies` relation that
+ * `updateLeadershipInternalRecord` replaces wholesale from the ficha form.
+ * Under auto-save-per-chip a replace would let two actors on the same ficha
+ * clobber each other, so this locks per leadership and writes only the delta.
+ */
+export const setLeadershipStateDeputyMembershipRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: LeadershipStateDeputyMembershipInput,
+) => {
+  const { leadershipId, stateDeputyId, assigned } =
+    leadershipStateDeputyMembershipSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await getFreshStaffActor(payload, actor, req)
+
+      await acquireTextAdvisoryLocks(payload, req, [`leadership-state-deputies:${leadershipId}`])
+
+      // Row access verifies the leadership is in the actor's scope (same
+      // guard `updateLeadershipInternalRecord` relies on).
+      const current = await payload.findByID({
+        collection: 'leadership',
+        id: leadershipId,
+        depth: 0,
+        select: { stateDeputies: true },
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      const currentStateDeputyIDs = uniqueRelationshipIds(current.stateDeputies)
+      const nextStateDeputyIDs = nextStateDeputyIdsAfterMembership(
+        currentStateDeputyIDs,
+        stateDeputyId,
+        assigned,
+      )
+
+      // No-op: nothing to write, and nothing for the caller to revalidate —
+      // skip the slug lookup below, which exists only to target that revalidate.
+      if (nextStateDeputyIDs === null) {
+        return { leadership: current, stateDeputySlug: undefined }
+      }
+
+      // Intentional admin bypass: only used to resolve the slug of the
+      // touched deputy for a targeted revalidate; existence is otherwise
+      // enforced by Payload's relationship validation on `update`.
+      const stateDeputySlug = (
+        await payload.findByID({
+          collection: 'stateDeputy',
+          id: stateDeputyId,
+          depth: 0,
+          select: { slug: true },
+          overrideAccess: true,
+          req,
+        })
+      ).slug
+
+      const updated = await payload.update({
+        collection: 'leadership',
+        id: leadershipId,
+        data: { stateDeputies: nextStateDeputyIDs },
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      return { leadership: updated, stateDeputySlug }
+    },
+    { beginFailureMessage: 'Não foi possível atualizar as dobradinhas.' },
+  )
+}
+
+export const setLeadershipStateDeputyMembership = async (
+  input: LeadershipStateDeputyMembershipInput,
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const { leadership, stateDeputySlug } = await setLeadershipStateDeputyMembershipRecord(
+    payload,
+    actor,
+    input,
+  )
+  // No-op writes nothing, so there is nothing to revalidate.
+  if (stateDeputySlug) revalidateLeadershipStateDeputyPaths(input.leadershipId, stateDeputySlug)
+  return leadership
 }
