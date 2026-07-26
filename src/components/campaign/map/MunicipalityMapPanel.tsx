@@ -4,11 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useMemo, useRef, useState, useTransition } from 'react'
 
-import {
-  BahiaMap,
-  BUBBLE_MAX_RADIUS,
-  type BahiaMapFeatureInfo,
-} from '@/components/campaign/map/BahiaMap'
+import { BahiaMap, type BahiaMapFeatureInfo } from '@/components/campaign/map/BahiaMap'
 import { ChoroplethLegend } from '@/components/campaign/map/ChoroplethLegend'
 import { MapFeatureReadout } from '@/components/campaign/map/MapFeatureReadout'
 import { MapScaleLegend } from '@/components/campaign/map/MapScaleLegend'
@@ -20,15 +16,26 @@ import {
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { computeChoroplethMax } from '@/lib/bahiaMapStyle'
+import {
+  bubbleRadius,
+  computeChoroplethMax,
+  type ChoroplethFills,
+  type ChoroplethValues,
+} from '@/lib/bahiaMapStyle'
 import type { CampaignConceptId } from '@/lib/campaignIntelligenceConcepts'
-import { computeValidVoteShares, divergingGradientCss } from '@/lib/choroplethColorScale'
-import { formatElectionNumber } from '@/lib/electionFormat'
+import {
+  choroplethMaxValue,
+  computeValidVoteShares,
+  divergingGradientCss,
+} from '@/lib/choroplethColorScale'
+import { formatElectionNumber, formatPlacementOrdinal } from '@/lib/electionFormat'
 import {
   buildCompetitiveRankClassing,
   buildLqClassing,
   buildQuantileClassing,
   fillsForClassing,
+  QUANTILE_CLASSES,
+  QUANTILE_MIN_FEATURES_FOR_FULL_SPLIT,
 } from '@/lib/mapScaleClasses'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
@@ -58,6 +65,7 @@ import type { MunicipalityTerritorialClass } from '@/utilities/municipalityTerri
 
 /** The legend's note doubles as the scale selector's description. */
 const SCALE_NOTE_ID = 'municipality-map-scale-note'
+const BUBBLE_TOGGLE_ID = 'municipality-map-bubbles'
 
 /**
  * Scales that have their own glossary entry (E18). LQ is documented as
@@ -82,7 +90,7 @@ const MapBubbleKey = ({ largestValue }: { largestValue: number }) => (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
       <ul className="flex items-center gap-3" aria-label="Tamanho da bolha por votos em jogo">
         {BUBBLE_KEY_FRACTIONS.map((fraction) => {
-          const diameter = 2 * BUBBLE_MAX_RADIUS * Math.sqrt(fraction)
+          const diameter = 2 * bubbleRadius(fraction, 1)
           return (
             <li key={fraction} className="flex items-center gap-1.5">
               <span
@@ -154,7 +162,8 @@ export const MunicipalityMapPanel = ({
 
   // Comparing forces the diverging absolute scale, and the competitive
   // placement has no 2026 reading (it is a TSE result). Rather than let the
-  // select show a mode the map isn't painting, fall back and say so.
+  // select show a mode the map isn't painting, fall back — and the legend note
+  // below says which mode stepped aside, so the fallback isn't silent.
   const effectiveScaleMode: MunicipalityMapScaleMode = comparisonActive
     ? 'absolute'
     : isMunicipalityMapScaleModeAvailable(scaleMode, year)
@@ -236,7 +245,14 @@ export const MunicipalityMapPanel = ({
     }
   }, [competitiveRankForYear, effectiveScaleMode, lqByCode, rawValues])
 
-  const fillByKey = useMemo(() => (classing ? fillsForClassing(classing) : undefined), [classing])
+  // A classing with no classes paints nothing, so the legend must fall through
+  // to the continuous ramp — passing `{}` here would tell `BahiaMap` the map is
+  // classed and grey out every polygon under a red gradient legend.
+  const classed = classing !== null && classing.classes.length > 0
+  const fillByKey = useMemo(
+    () => (classed && classing ? fillsForClassing(classing) : undefined),
+    [classed, classing],
+  )
 
   /**
    * What the colour means, said ONCE and next to the swatches that need
@@ -247,15 +263,28 @@ export const MunicipalityMapPanel = ({
   const legendNote = useMemo(() => {
     const parts = [municipalityMapScaleModeHints[effectiveScaleMode]]
 
-    if (classing) {
-      const painted = Object.keys(classing.classIndexByKey).length
-      const missing = scopedKeys.length - painted
+    if (!isMunicipalityMapScaleModeAvailable(scaleMode, year) && !comparisonActive) {
+      parts.push(
+        `${municipalityMapScaleModeLabels[scaleMode]} só existe nos anos com resultado do TSE, então ${year} volta para esta escala.`,
+      )
+    }
 
-      if (effectiveScaleMode === 'quantile') {
+    if (classed && classing) {
+      const painted = Object.keys(classing.classIndexByKey).length
+
+      // One sentence for the coverage, not two: "N com votos" plus "M em
+      // cinza" made the reader add them up to check they matched the scope.
+      parts.push(
+        painted === scopedKeys.length
+          ? `Todos os ${formatElectionNumber(painted)} municípios do seu escopo entraram na escala.`
+          : `${formatElectionNumber(painted)} de ${formatElectionNumber(scopedKeys.length)} municípios do seu escopo entraram na escala; os demais ficam em cinza.`,
+      )
+
+      if (effectiveScaleMode === 'quantile' && classing.classes.length < QUANTILE_CLASSES) {
         parts.push(
-          classing.reduced
-            ? `Só ${formatElectionNumber(painted)} municípios do seu escopo têm votos — poucos para cinco, então a escala usa ${classing.classes.length}.`
-            : `Aqui são ${formatElectionNumber(painted)} municípios com votos no seu escopo.`,
+          painted < QUANTILE_MIN_FEATURES_FOR_FULL_SPLIT
+            ? `São poucos para cinco faixas, então a escala usa ${classing.classes.length}.`
+            : `Os valores se repetem demais para cinco faixas, então a escala usa ${classing.classes.length}.`,
         )
       }
       if (effectiveScaleMode === 'lq') {
@@ -264,15 +293,10 @@ export const MunicipalityMapPanel = ({
       if (effectiveScaleMode === 'competitiveRank') {
         parts.push('Vale para a cidade inteira: em Salvador, as 19 zonas dividem a mesma posição.')
       }
-      if (missing > 0) {
-        parts.push(
-          `${formatElectionNumber(missing)} sem dado ${missing === 1 ? 'ficou' : 'ficaram'} em cinza.`,
-        )
-      }
     }
 
     return parts.join(' ')
-  }, [classing, effectiveScaleMode, scopedKeys.length])
+  }, [classed, classing, comparisonActive, effectiveScaleMode, scaleMode, scopedKeys.length, year])
 
   const metricLabel = useMemo(() => {
     if (comparisonActive) {
@@ -290,33 +314,26 @@ export const MunicipalityMapPanel = ({
   }, [bundle.candidateName, comparisonActive, estimateScenario, percentScaleActive, year])
 
   /**
-   * The relative sentence for one município — the class alone ("Q4") is a
-   * verdict without evidence, so the readout always spells out what the colour
-   * means for the município under the cursor.
-   */
-  /**
    * Votes at stake, not votes won: the bubble asks "how big is the prize
    * here", which is a different question from the colour's "how is he doing
    * here" — reading them together is the point of the layer.
+   *
+   * Both sides are already stable references, so there is nothing to memoize.
    */
-  const bubbleValues = useMemo(
-    () => (showBubbles ? bundle.projectedValidVotesByCode : undefined),
-    [bundle.projectedValidVotesByCode, showBubbles],
-  )
+  const bubbleValues = showBubbles ? bundle.projectedValidVotesByCode : undefined
 
   const bubbleFillByKey = useMemo(() => {
     if (!showBubbles) return undefined
-    const fills: Record<string, string> = {}
+    const fills: ChoroplethFills = {}
     for (const [code, territorialClass] of Object.entries(bundle.territorialClassByCode)) {
       fills[code] = territorialClassMapFill[territorialClass]
     }
     return fills
   }, [bundle.territorialClassByCode, showBubbles])
 
-  const largestBubbleValue = useMemo(() => {
-    if (!bubbleValues) return 0
-    return Object.values(bubbleValues).reduce((max, value) => Math.max(max, value), 0)
-  }, [bubbleValues])
+  // The key's reference circles and the map's radius denominator have to be
+  // the same number, or the key labels a size the map never draws.
+  const largestBubbleValue = bubbleValues ? choroplethMaxValue(bubbleValues) : 0
 
   const bubbleReadingFor = useCallback(
     (key: string): string | null => {
@@ -332,6 +349,11 @@ export const MunicipalityMapPanel = ({
     [bundle.projectedValidVotesByCode, bundle.territorialClassByCode, showBubbles],
   )
 
+  /**
+   * The relative sentence for one município — the class alone ("Q4") is a
+   * verdict without evidence, so the readout always spells out what the colour
+   * means for the município under the cursor.
+   */
   const relativeReadingFor = useCallback(
     (key: string): string | null => {
       if (!classing) return null
@@ -350,7 +372,7 @@ export const MunicipalityMapPanel = ({
         case 'competitiveRank': {
           const placement = competitiveRankForYear[key]
           if (!placement) return null
-          return `${placement.rank}º entre ${formatElectionNumber(placement.candidates)} candidatos votados aqui`
+          return `${formatPlacementOrdinal(placement.rank)} entre ${formatElectionNumber(placement.candidates)} candidatos votados aqui`
         }
         default:
           return null
@@ -396,7 +418,7 @@ export const MunicipalityMapPanel = ({
           <p className="text-sm text-muted-foreground">
             {comparisonActive && comparison
               ? `Comparação ${bundle.candidateName} × ${comparison.candidateName} em ${year}.`
-              : `Votação de ${bundle.candidateName} por município — em 2026, pelas estimativas da campanha.`}
+              : `Votação de ${bundle.candidateName} por município — ${year === 2026 ? 'em 2026, pelas estimativas da campanha' : `em ${year}, pelo resultado do TSE`}.`}
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -495,7 +517,7 @@ export const MunicipalityMapPanel = ({
               {comparison.candidateName} na frente. Comparação usa diferença absoluta.
             </p>
           </div>
-        ) : classing && classing.classes.length > 0 ? (
+        ) : classed && classing ? (
           <MapScaleLegend
             classing={classing}
             metricLabel={metricLabel}
@@ -512,19 +534,22 @@ export const MunicipalityMapPanel = ({
             noteId={SCALE_NOTE_ID}
           />
         ) : (
-          <p className="text-sm text-muted-foreground">Sem dados para este ano no seu escopo.</p>
+          <p id={SCALE_NOTE_ID} className="text-sm text-muted-foreground">
+            Sem dados para este ano no seu escopo.
+          </p>
         )}
 
         {/* A second encoding, so it is opt-in and its key only appears with it. */}
         {!comparisonActive ? (
           <div className="flex flex-col gap-2">
-            <label className="flex min-h-11 w-fit items-center gap-2 text-sm">
+            <Field orientation="horizontal" className="min-h-11 w-fit">
               <Checkbox
+                id={BUBBLE_TOGGLE_ID}
                 checked={bubblesEnabled}
                 onCheckedChange={(checked) => setBubblesEnabled(checked === true)}
               />
-              Bolhas por votos em jogo
-            </label>
+              <FieldLabel htmlFor={BUBBLE_TOGGLE_ID}>Bolhas por votos em jogo</FieldLabel>
+            </Field>
             {showBubbles ? (
               largestBubbleValue > 0 ? (
                 <MapBubbleKey largestValue={largestBubbleValue} />
@@ -623,12 +648,12 @@ const MunicipalityMapSelection = ({
   municipalitiesByIbgeCode,
   ariaLabel,
 }: {
-  displayValues: Record<string, number>
-  rawValues: Record<string, number>
+  displayValues: ChoroplethValues
+  rawValues: ChoroplethValues
   displayMax: number
-  fillByKey: Record<string, string> | undefined
-  bubbleValues: Record<string, number> | undefined
-  bubbleFillByKey: Record<string, string> | undefined
+  fillByKey: ChoroplethFills | undefined
+  bubbleValues: ChoroplethValues | undefined
+  bubbleFillByKey: ChoroplethFills | undefined
   scopedKeys: string[]
   metricLabel: string
   scaleMode: MunicipalityMapScaleMode

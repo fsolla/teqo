@@ -3,7 +3,6 @@ import {
   getMunicipalityFederalBaseline,
   getStatewideFederalTotals,
 } from '@/lib/bahiaElectionAggregates'
-import { formatElectionNumber } from '@/lib/electionFormat'
 
 /** Year the mesa uses as the current priority lens (A11 list sort + default readout). */
 export const DEFAULT_VOTE_RANK_YEAR = 2022
@@ -71,8 +70,6 @@ export const getMunicipalityVoteRank = (
   slug: string,
   year: number = DEFAULT_VOTE_RANK_YEAR,
 ): MunicipalityVoteRankEntry | null => computeVoteRankByYear(year).get(slug) ?? null
-
-export const formatMunicipalityVoteRank = (rank: number): string => `${formatElectionNumber(rank)}º`
 
 /** Compare for list sort=votos. Zero-vote rows always sort last (any dir). */
 export const compareMunicipalityVotesForSort = (

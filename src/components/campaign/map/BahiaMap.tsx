@@ -14,6 +14,7 @@ import {
   type TerritoryGeometryModule,
 } from '@/lib/bahiaGeometries'
 import {
+  bubbleRadius,
   buildHighlightSet,
   buildLayerStyleContext,
   canonicalMapKeysKey,
@@ -25,6 +26,7 @@ import {
   type ChoroplethValues,
   type LayerStyleContext,
 } from '@/lib/bahiaMapStyle'
+import { choroplethMaxValue } from '@/lib/choroplethColorScale'
 import { cn } from '@/lib/utils'
 
 const BAHIA_BOUNDS: L.LatLngBoundsExpression = [
@@ -33,17 +35,11 @@ const BAHIA_BOUNDS: L.LatLngBoundsExpression = [
 ]
 
 /**
- * Proportional symbols scale by the SQUARE ROOT of the magnitude, so the area
- * of the circle carries the value — sizing the radius directly would make a
- * município with twice the votes look four times as big. Flannery's
- * perceptual correction is deliberately skipped: it inflates the large end on
- * purpose, and here the exact number is one hover away in the readout.
+ * Bubbles get their own pane above the polygons: hovering a município calls
+ * `bringToFront()` on its path, which in a shared pane would raise the polygon
+ * over the very bubble it describes.
  */
-export const BUBBLE_MAX_RADIUS = 16
-/** Small enough that a crowded east reads as texture, not as a second choropleth. */
-const BUBBLE_MIN_RADIUS = 1.5
-/** Used when the caller gives no fill for a key — grey reads as "no class". */
-const BUBBLE_NEUTRAL_FILL = '#78716c'
+const BUBBLE_PANE = 'municipality-bubbles'
 
 export type BahiaMapMode = 'municipality' | 'territory'
 
@@ -448,11 +444,14 @@ export const BahiaMap = ({
     const map = mapRef.current
     if (!map || !bubbleValues || status !== 'ready') return
 
-    let maxValue = 0
-    for (const value of Object.values(bubbleValues)) {
-      if (value > maxValue) maxValue = value
-    }
+    const maxValue = choroplethMaxValue(bubbleValues)
     if (maxValue <= 0) return
+
+    if (!map.getPane(BUBBLE_PANE)) {
+      const pane = map.createPane(BUBBLE_PANE)
+      pane.style.zIndex = '450'
+      pane.style.pointerEvents = 'none'
+    }
 
     // Smallest first so the big prizes end up drawn on top of the crowd
     // instead of being covered by whichever key the object happened to list last.
@@ -463,12 +462,16 @@ export const BahiaMap = ({
     const markers: L.CircleMarker[] = []
     for (const [key, value] of ordered) {
       const path = pathByKeyRef.current.get(key)
-      if (!(path instanceof L.Polygon)) continue
+      const fillColor = bubbleFillByKey?.[key]
+      if (!(path instanceof L.Polygon) || !fillColor) continue
 
       markers.push(
-        L.circleMarker(path.getBounds().getCenter(), {
-          radius: Math.max(BUBBLE_MIN_RADIUS, BUBBLE_MAX_RADIUS * Math.sqrt(value / maxValue)),
-          fillColor: bubbleFillByKey?.[key] ?? BUBBLE_NEUTRAL_FILL,
+        // Polygon centroid, not the bounding box's centre: a concave or
+        // L-shaped município would put a box centre outside its own outline.
+        L.circleMarker(path.getCenter(), {
+          pane: BUBBLE_PANE,
+          radius: bubbleRadius(value, maxValue),
+          fillColor,
           fillOpacity: 0.8,
           color: '#ffffff',
           weight: 0.75,
@@ -485,7 +488,9 @@ export const BahiaMap = ({
     return () => {
       group.remove()
     }
-  }, [bubbleValues, bubbleFillByKey, status])
+    // `mode` rebuilds the geometry layer this reads centroids from, so the
+    // markers must be rebuilt with it or they would sit at stale positions.
+  }, [bubbleValues, bubbleFillByKey, status, mode])
 
   useEffect(() => {
     const context = styleContextRef.current

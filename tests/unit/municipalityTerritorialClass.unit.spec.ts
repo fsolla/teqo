@@ -23,7 +23,7 @@ const input = (overrides: Partial<TerritorialClassInput> = {}): TerritorialClass
   stateOwnVotes: 100_000,
   stateValidVotes: 5_000_000,
   fieldHeadroom: 1_000,
-  medianFieldHeadroom: 2_000,
+  fieldHeadroomCut: 2_000,
   captureRate: 0.1,
   inCoreBlock: false,
   ...overrides,
@@ -59,7 +59,7 @@ describe('classifyMunicipalityTerritory', () => {
 
   it('classifies as expansão when he is weak but the field still has votes to win', () => {
     const result = classifyMunicipalityTerritory(
-      input({ ownVotes: 50, fieldHeadroom: 9_000, medianFieldHeadroom: 2_000 }),
+      input({ ownVotes: 50, fieldHeadroom: 9_000, fieldHeadroomCut: 2_000 }),
     )
     expect(result.class).toBe('expansao')
     expect(result.factors[0]).toEqual({ id: 'field', value: 9_000 })
@@ -68,14 +68,14 @@ describe('classifyMunicipalityTerritory', () => {
   it('classifies as marginal when he is weak and the field is small', () => {
     expect(
       classifyMunicipalityTerritory(
-        input({ ownVotes: 50, fieldHeadroom: 100, medianFieldHeadroom: 2_000 }),
+        input({ ownVotes: 50, fieldHeadroom: 100, fieldHeadroomCut: 2_000 }),
       ).class,
     ).toBe('marginal')
   })
 
   it('never calls a core-block município marginal, even with a small field', () => {
     const result = classifyMunicipalityTerritory(
-      input({ ownVotes: 50, fieldHeadroom: 100, medianFieldHeadroom: 2_000, inCoreBlock: true }),
+      input({ ownVotes: 50, fieldHeadroom: 100, fieldHeadroomCut: 2_000, inCoreBlock: true }),
     )
     expect(result.class).toBe('expansao')
     expect(result.inCoreBlock).toBe(true)
@@ -177,6 +177,20 @@ describe('computeAggregateTerritorialClass', () => {
     expect(aggregate.lq).toBeGreaterThanOrEqual(Math.min(...zoneLqs))
     expect(aggregate.lq).toBeLessThanOrEqual(Math.max(...zoneLqs))
     expect(aggregate.lq).not.toBeCloseTo(meanZoneLq, 6)
+  })
+
+  it('scales the field cut by the group size instead of a per-município median', () => {
+    // Field headroom is a LEVEL, so a summed one has to meet a summed cut.
+    // Comparing 19 zones' worth of headroom against the catalog median would
+    // clear it by an order of magnitude and make "marginal" unreachable for
+    // any group — the failure mode E12's 27-território rollup would inherit.
+    const perUnit = { ownVotes: 50, fieldHeadroom: 900, fieldHeadroomCut: 1_000 }
+    expect(classifyMunicipalityTerritory(input(perUnit)).class).toBe('marginal')
+    expect(
+      classifyMunicipalityTerritory(
+        input({ ...perUnit, fieldHeadroom: 900 * 3, fieldHeadroomCut: 1_000 * 3 }),
+      ).class,
+    ).toBe('marginal')
   })
 
   it('adds up the share of his statewide vote across the group', () => {

@@ -19,7 +19,6 @@ describe('buildQuantileClassing', () => {
     const classing = buildQuantileClassing(values)
 
     expect(classing.classes).toHaveLength(QUANTILE_CLASSES)
-    expect(classing.reduced).toBe(false)
     expect(classing.classIndexByKey.k0).toBe(0)
     expect(classing.classIndexByKey.k99).toBe(QUANTILE_CLASSES - 1)
   })
@@ -41,7 +40,6 @@ describe('buildQuantileClassing', () => {
     const classing = buildQuantileClassing(values)
 
     expect(classing.classes).toHaveLength(3)
-    expect(classing.reduced).toBe(true)
   })
 
   it('collapses classes rather than repeating a break when values tie heavily', () => {
@@ -50,7 +48,6 @@ describe('buildQuantileClassing', () => {
     // Eleven features share one value: quantiles 1-4 all end at 5, so the
     // legend gets two honest classes instead of five with duplicate bounds.
     expect(classing.classes).toHaveLength(2)
-    expect(classing.reduced).toBe(true)
     expect(classing.classes[0].label).toBe('5')
     expect(classing.classes[1].label).toBe('900')
   })
@@ -100,7 +97,6 @@ describe('buildLqClassing', () => {
     const classing = buildLqClassing({ a: 1 })
 
     expect(classing.classes).toHaveLength(5)
-    expect(classing.reduced).toBe(false)
   })
 
   it('spells the band edges without rounding 0,95 into 1', () => {

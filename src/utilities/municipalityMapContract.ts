@@ -47,7 +47,16 @@ export const municipalityMapScaleModeLabels: Record<MunicipalityMapScaleMode, st
   absolute: 'Total (votos)',
 }
 
-/** What the colour means, printed with the legend the scale selector describes. */
+/**
+ * What the colour means, printed with the legend the scale selector describes.
+ *
+ * Deliberately NOT the canonical E18 `oneLiner` the list's column descriptions
+ * quote: three of these five scales have a glossary entry and two do not, so
+ * quoting would fork the voice inside one record — and the legend already
+ * carries two to four more sentences after this one, where a standalone
+ * definition ("Divide os municípios em cinco faixas…") reads as padding. The
+ * "Saiba mais" link next to the note is the path to the full entry.
+ */
 export const municipalityMapScaleModeHints: Record<MunicipalityMapScaleMode, string> = {
   quantile: 'Cinco faixas com o mesmo número de municípios.',
   lq: 'Força local comparada ao padrão estadual do próprio candidato.',

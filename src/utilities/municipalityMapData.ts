@@ -104,12 +104,9 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
   const statewideShareByYear: Record<string, number> = {}
   const competitiveRankByYear: Record<string, Record<string, FederalCompetitiveRank>> = {}
   const zoneVotesBySlug = new Map<string, Record<string, number>>()
-  const slugsByIbgeCode = new Map<string, string[]>()
-  for (const municipality of municipalities) {
-    const slugs = slugsByIbgeCode.get(municipality.ibgeCode) ?? []
-    slugs.push(municipality.slug)
-    slugsByIbgeCode.set(municipality.ibgeCode, slugs)
-  }
+  // One polygon per IBGE code, N catalog slugs behind it (Salvador is 19) —
+  // the same index the map uses to navigate, reused here for the rollups.
+  const municipalitiesByIbgeCode = buildMunicipalitiesByIbgeCode(municipalities)
 
   // Historical years come from the committed artifact (immutable TSE data,
   // pre-aggregated per municipality) — zero database work.
@@ -139,7 +136,7 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
       statewide.validVotes > 0 ? statewide.ownVotes / statewide.validVotes : 0
 
     const ranks: Record<string, FederalCompetitiveRank> = {}
-    for (const ibgeCode of slugsByIbgeCode.keys()) {
+    for (const ibgeCode of Object.keys(municipalitiesByIbgeCode)) {
       const rank = getFederalCompetitiveRank(ibgeCode, year)
       if (rank) ranks[ibgeCode] = rank
     }
@@ -153,7 +150,8 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
 
   const territorialClassByCode: Record<string, MunicipalityTerritorialClass> = {}
   const projectedValidVotesByCode: Record<string, number> = {}
-  for (const [ibgeCode, slugs] of slugsByIbgeCode) {
+  for (const [ibgeCode, entries] of Object.entries(municipalitiesByIbgeCode)) {
+    const slugs = entries.map((entry) => entry.slug)
     territorialClassByCode[ibgeCode] = computeAggregateTerritorialClass(slugs).class
     projectedValidVotesByCode[ibgeCode] = slugs.reduce(
       (total, slug) => total + projectedValidVotes(getMunicipalityFederalBaseline(slug)),
@@ -263,7 +261,7 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
     territorialClassByCode,
     competitiveRankByYear,
     projectedValidVotesByCode,
-    municipalitiesByIbgeCode: buildMunicipalitiesByIbgeCode(municipalities),
+    municipalitiesByIbgeCode,
     zoneBreakdown,
     candidateName: BASELINE_TICKET_2022.candidate.name,
     comparison,

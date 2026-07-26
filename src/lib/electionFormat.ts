@@ -22,3 +22,10 @@ export const formatElectionNumber = (value: number): string => numberFormatter.f
  */
 export const formatVoteSharePercent = (share: number): string =>
   `${oneDecimalFormatter.format(share * 100)}%`
+
+/**
+ * A placement as a pt-BR ordinal — "4º". Used for both rankings the product
+ * shows (a município among the 435, A11; the candidate among those votados
+ * num município, B13), and here for the same bundle reason as the share above.
+ */
+export const formatPlacementOrdinal = (rank: number): string => `${formatElectionNumber(rank)}º`

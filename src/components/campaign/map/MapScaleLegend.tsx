@@ -32,8 +32,8 @@ export const MapScaleLegend = ({
       className="flex flex-wrap items-center gap-x-3 gap-y-1.5"
       aria-label={`Faixas de cor para ${metricLabel}`}
     >
-      {classing.classes.map((entry) => (
-        <li key={entry.label} className="flex items-center gap-1.5">
+      {classing.classes.map((entry, index) => (
+        <li key={index} className="flex items-center gap-1.5">
           <span
             aria-hidden="true"
             className="size-3 shrink-0 rounded-[3px] ring-1 ring-foreground/15"

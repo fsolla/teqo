@@ -4,9 +4,12 @@ const choroplethGradientEnd = { r: 197, g: 20, b: 20 } as const
 
 export const choroplethGradientCss = `linear-gradient(to right, rgb(${choroplethGradientStart.r} ${choroplethGradientStart.g} ${choroplethGradientStart.b}), rgb(${choroplethGradientEnd.r} ${choroplethGradientEnd.g} ${choroplethGradientEnd.b}))`
 
+/** Painted where the geography has no reading at all — never where the value is zero. */
+export const NO_DATA_FILL = '#f4f4f5'
+
 /** Sequential fill for campaign choropleth maps (primary red scale). */
 export const choroplethFillColor = (value: number, max: number): string => {
-  if (value <= 0 || max <= 0) return '#f4f4f5'
+  if (value <= 0 || max <= 0) return NO_DATA_FILL
 
   const ratio = Math.min(1, value / max)
   const start = choroplethGradientStart
@@ -23,12 +26,11 @@ export const choroplethFillColor = (value: number, max: number): string => {
  * scale readable at a glance: a continuous ramp over a federal-deputy race
  * paints almost the whole state the same shade (B11's lesson).
  *
- * The floor keeps the lightest class distinguishable from "no data" (#f4f4f5).
+ * The floor keeps the lightest class distinguishable from `NO_DATA_FILL`.
  */
 const DISCRETE_CLASS_FLOOR = 0.18
 
 export const discreteChoroplethFill = (index: number, total: number): string => {
-  if (total <= 0) return '#f4f4f5'
   if (total === 1) return choroplethFillColor(1, 1)
 
   const step = index / (total - 1)

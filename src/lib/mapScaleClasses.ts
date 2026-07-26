@@ -1,5 +1,5 @@
 import { discreteChoroplethFill } from '@/lib/choroplethColorScale'
-import { formatElectionNumber } from '@/lib/electionFormat'
+import { formatElectionNumber, formatPlacementOrdinal } from '@/lib/electionFormat'
 import { AT_STANDARD_LQ, TERRITORIAL_CLASS_ANCHORS } from '@/lib/territorialClassAnchors'
 
 /**
@@ -26,26 +26,19 @@ export type MapScaleClassing = {
   classes: MapScaleClass[]
   /** Feature key → class index. Keys without a class are absent, never 0. */
   classIndexByKey: Record<string, number>
-  /**
-   * True when the set was too small to cut into the full number of classes —
-   * the legend says so instead of implying a five-way split that isn't there.
-   */
-  reduced: boolean
 }
 
-const EMPTY_CLASSING: MapScaleClassing = { classes: [], classIndexByKey: {}, reduced: false }
+const EMPTY_CLASSING: MapScaleClassing = { classes: [], classIndexByKey: {} }
 
 const buildClassing = (
   ranges: ReadonlyArray<{ label: string }>,
   classIndexByKey: Record<string, number>,
-  reduced: boolean,
 ): MapScaleClassing => ({
   classes: ranges.map((range, index) => ({
     label: range.label,
     fill: discreteChoroplethFill(index, ranges.length),
   })),
   classIndexByKey,
-  reduced,
 })
 
 /** Full quantile split; below this many features the split degrades. */
@@ -91,11 +84,11 @@ export const buildQuantileClassing = (values: Record<string, number>): MapScaleC
   const extremes = upperBounds.map(() => ({ min: Number.POSITIVE_INFINITY, max: 0 }))
   const classIndexByKey: Record<string, number> = {}
   for (const [key, value] of entries) {
+    // Always found: the last bound is the maximum of the same set.
     const index = upperBounds.findIndex((bound) => value <= bound)
-    const resolved = index === -1 ? upperBounds.length - 1 : index
-    classIndexByKey[key] = resolved
-    extremes[resolved].min = Math.min(extremes[resolved].min, value)
-    extremes[resolved].max = Math.max(extremes[resolved].max, value)
+    classIndexByKey[key] = index
+    extremes[index].min = Math.min(extremes[index].min, value)
+    extremes[index].max = Math.max(extremes[index].max, value)
   }
 
   const ranges = extremes.map(({ min, max }) => ({
@@ -105,7 +98,7 @@ export const buildQuantileClassing = (values: Record<string, number>): MapScaleC
         : `${formatElectionNumber(min)}–${formatElectionNumber(max)}`,
   }))
 
-  return buildClassing(ranges, classIndexByKey, upperBounds.length < QUANTILE_CLASSES)
+  return buildClassing(ranges, classIndexByKey)
 }
 
 /**
@@ -153,29 +146,30 @@ export const buildLqClassing = (lqByKey: Record<string, number>): MapScaleClassi
   }
 
   if (Object.keys(classIndexByKey).length === 0) return EMPTY_CLASSING
-  return buildClassing(LQ_CLASS_RANGES, classIndexByKey, false)
+  return buildClassing(LQ_CLASS_RANGES, classIndexByKey)
 }
+
+/** Best placement that still counts as a contender rather than the field. */
+const COMPETITIVE_RANK_CONTENDER = 3
 
 /**
  * Competitive placement, ordered weakest first so the legend keeps the same
  * left-to-right reading as the other scales even though a LOWER placement
- * number is the better one.
+ * number is the better one. `bestRank` is the strongest placement each band
+ * accepts, and the labels are derived from it — the same shape as the LQ
+ * ranges above, so moving a cut can never leave the legend describing the old one.
  */
 const COMPETITIVE_RANK_RANGES = [
-  { label: '4º ou pior' },
-  { label: '2º–3º' },
-  { label: '1º' },
+  {
+    bestRank: COMPETITIVE_RANK_CONTENDER + 1,
+    label: `${formatPlacementOrdinal(COMPETITIVE_RANK_CONTENDER + 1)} ou pior`,
+  },
+  {
+    bestRank: 2,
+    label: `${formatPlacementOrdinal(2)}–${formatPlacementOrdinal(COMPETITIVE_RANK_CONTENDER)}`,
+  },
+  { bestRank: 1, label: formatPlacementOrdinal(1) },
 ] as const
-
-/** Worst placement still inside each class, read from the strongest end. */
-const COMPETITIVE_RANK_TOP = 1
-const COMPETITIVE_RANK_CONTENDER = 3
-
-const competitiveRankClassIndex = (rank: number): number => {
-  if (rank <= COMPETITIVE_RANK_TOP) return 2
-  if (rank <= COMPETITIVE_RANK_CONTENDER) return 1
-  return 0
-}
 
 export const buildCompetitiveRankClassing = (
   rankByKey: Record<string, number>,
@@ -183,11 +177,11 @@ export const buildCompetitiveRankClassing = (
   const classIndexByKey: Record<string, number> = {}
   for (const [key, rank] of Object.entries(rankByKey)) {
     if (!(rank >= 1)) continue
-    classIndexByKey[key] = competitiveRankClassIndex(rank)
+    classIndexByKey[key] = COMPETITIVE_RANK_RANGES.findIndex((range) => rank >= range.bestRank)
   }
 
   if (Object.keys(classIndexByKey).length === 0) return EMPTY_CLASSING
-  return buildClassing(COMPETITIVE_RANK_RANGES, classIndexByKey, false)
+  return buildClassing(COMPETITIVE_RANK_RANGES, classIndexByKey)
 }
 
 /** Feature key → fill, ready for `BahiaMap`'s `fillByKey`. */

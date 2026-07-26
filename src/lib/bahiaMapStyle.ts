@@ -5,6 +5,7 @@ import {
   choroplethMaxAbsValue,
   choroplethMaxValue,
   divergingFillColor,
+  NO_DATA_FILL,
 } from '@/lib/choroplethColorScale'
 
 export type ChoroplethValues = Record<string, number>
@@ -29,8 +30,6 @@ export type LayerStyleContext = {
   selectedKey: string | null
   hoveredKey: string | null
 }
-
-const NO_DATA_FILL = '#f4f4f5'
 
 type FeatureStyleInput = {
   metric: number
@@ -66,6 +65,25 @@ export const computeChoroplethMax = (
 ): number =>
   scaleMax ??
   (fillMode === 'diverging' ? choroplethMaxAbsValue(values) : choroplethMaxValue(values))
+
+/**
+ * B13 — proportional symbols scale by the SQUARE ROOT of the magnitude, so the
+ * AREA of the circle carries the value: sizing the radius directly would make
+ * a município with twice the votes look four times as big. Flannery's
+ * perceptual correction is deliberately skipped — it inflates the large end on
+ * purpose, and here the exact number is one hover away in the readout.
+ *
+ * Lives here rather than in the Leaflet component because the legend draws its
+ * reference circles from the same formula; two implementations would let the
+ * key claim a size the map does not paint.
+ */
+const BUBBLE_MAX_RADIUS = 16
+
+/** Small enough that a crowded east reads as texture, not as a second choropleth. */
+const BUBBLE_MIN_RADIUS = 1.5
+
+export const bubbleRadius = (value: number, max: number): number =>
+  max > 0 ? Math.max(BUBBLE_MIN_RADIUS, BUBBLE_MAX_RADIUS * Math.sqrt(value / max)) : 0
 
 export const buildHighlightSet = (highlightKey: string): Set<string> =>
   new Set(highlightKey.length > 0 ? highlightKey.split(',').filter(Boolean) : [])

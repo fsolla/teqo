@@ -98,6 +98,11 @@ Componentes:
 
 - **Value-by-alpha (opacidade ∝ eleitorado).** Gatilho: teste com o time em reunião real pedir alternativa às bolhas.
 - **Roll-off como métrica de mapa.** Gatilho: I-A entrar no motor (E11 fase 2) e o time pedir a leitura espacial.
+- **`CampaignConceptLink` / `MapLegendNote` compartilhados** (2–3 cópias hoje). Gatilho: 3º call site fora do mapa. Registrado em [escala-dry-pos-b13.md](escala-dry-pos-b13.md).
+- **`municipalityLabels.ts` arrastando `municipalityCatalog` (~66 KB) para o chunk do mapa.** Gatilho: 3ª superfície cliente precisar da apresentação da classe. Mesmo plano.
+- **Memo de processo para `computeAggregateTerritorialClass`.** Gatilho: **E12** (27 TIs × ~16 municípios). Mesmo plano.
+
+Os quatro débitos maiores que o cleanup do `/simplify` — pin de concordância do LQ, escopo declarado no readout, varredura única no script de agregados e a tupla do `competitiveRankByYear` — viraram o fill-in **B13+**: [escala-dry-pos-b13.md](escala-dry-pos-b13.md).
 
 ## As-built (2026-07-26)
 
@@ -113,7 +118,7 @@ As âncoras saíram de `municipalityTerritorialClass.ts` para `src/lib/territori
 
 **Bolhas.** `L.circleMarker` no centro dos bounds de cada feature, raio ∝ √(válidos projetados) — a **área** carrega o valor. Fill pela classe do E10, `interactive: false` (a bolha fica em cima do próprio município, então deixar o ponteiro atravessar mantém um alvo de hover e um readout, não dois empilhados), desenhadas da menor para a maior para que os prêmios grandes não fiquem cobertos. Toggle desligado por default, com legenda de tamanho + cor que só aparece com a camada. Medido antes de otimizar, como o plano mandava: 417 marcadores não derrubaram o frame, então o corte para top-K **não** foi feito.
 
-**Sem migration, sem collection, sem server action.** O bundle client de `/campanha` ficou byte a byte igual (9,46 kB / 265 kB) — o painel do mapa já carrega em chunk próprio.
+**Sem migration, sem collection, sem server action.** O **First Load JS** de `/campanha` ficou byte a byte igual (9,46 kB / 265 kB) porque o painel do mapa já carrega em chunk próprio (`ssr: false`); o chunk cresceu, e o payload RSC subiu ~64 KB não comprimidos (~10 KB gzip), quase tudo `competitiveRankByYear`.
 
 ## Referências
 

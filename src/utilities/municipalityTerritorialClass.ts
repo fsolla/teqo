@@ -73,8 +73,13 @@ export type TerritorialClassInput = {
   stateValidVotes: number
   /** Projected field ceiling minus own votes (E8), floored at 0. */
   fieldHeadroom: number
-  /** Median `fieldHeadroom` across the catalog — the relative "big field" cut. */
-  medianFieldHeadroom: number
+  /**
+   * The "big field" cut `fieldHeadroom` is measured against: the catalog
+   * median for one município, and that median times the group size for an
+   * aggregate — headroom is a level, not a ratio, so a summed one has to be
+   * compared against a reference summed the same way.
+   */
+  fieldHeadroomCut: number
   captureRate: number | null
   inCoreBlock: boolean
 }
@@ -120,7 +125,7 @@ export const classifyMunicipalityTerritory = (
     // A município inside the core block carries real votes even while
     // under-performing, so it can never read as "marginal" — the honest label
     // there is expansão (big base, low penetration).
-    const hasFieldLeft = input.fieldHeadroom >= input.medianFieldHeadroom || input.inCoreBlock
+    const hasFieldLeft = input.fieldHeadroom >= input.fieldHeadroomCut || input.inCoreBlock
     return hasFieldLeft
       ? { ...shared, class: 'expansao', factors: [fieldFactor, dominance, ...captureFactor] }
       : { ...shared, class: 'marginal', factors: [dominance, fieldFactor] }
@@ -201,7 +206,7 @@ export const computeMunicipalityTerritorialClass = (
     stateOwnVotes: totals.ownVotes,
     stateValidVotes: totals.validVotes,
     fieldHeadroom: fieldHeadroomOf(baseline),
-    medianFieldHeadroom,
+    fieldHeadroomCut: medianFieldHeadroom,
     captureRate: captureRate(baseline),
     inCoreBlock: coreBlockSlugs.has(slug),
   })
@@ -216,10 +221,11 @@ export const computeMunicipalityTerritorialClass = (
  *
  * It sums the inputs and runs the SAME `classifyMunicipalityTerritory`; it
  * never averages or votes on the per-slug classes, because LQ is a ratio and
- * the average of ratios is not the ratio of the sums. The catalog-wide
- * references (median field headroom, core block) stay exactly as they are:
- * the aggregate is compared against the same statewide standard as everyone
- * else.
+ * the average of ratios is not the ratio of the sums. The ratios (LQ, capture)
+ * are compared against exactly the statewide standard everyone else gets; the
+ * one LEVEL among the inputs, field headroom, needs its cut scaled by the
+ * group size or a 19-slug Salvador would clear a per-município median by an
+ * order of magnitude and never read as "marginal".
  *
  * E12's TI rollup inherits this helper rather than growing a second one.
  */
@@ -253,7 +259,7 @@ export const computeAggregateTerritorialClass = (
     stateOwnVotes: totals.ownVotes,
     stateValidVotes: totals.validVotes,
     fieldHeadroom,
-    medianFieldHeadroom,
+    fieldHeadroomCut: medianFieldHeadroom * slugs.length,
     captureRate: fieldCeiling2022 > 0 ? ownVotes / fieldCeiling2022 : null,
     inCoreBlock,
   })
