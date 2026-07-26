@@ -1,11 +1,13 @@
 # Limitar o mapa da Bahia a pan/zoom dentro do estado
 
-Status: rascunho
+Status: entregue (2026-07-26)
 Atualizado em: 2026-07-26
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos)
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins — ✓)
 Impeccable: B — encaixe em `BahiaMap`/`MunicipalityMapPanel` (mapa do Início staff); muda só comportamento de interação, sem layout novo
 Appetite: ~0,25–0,5 dia eng; sem migration, sem UI nova — só opções de `L.map`
 Responsável: —
+
+**Revisão na entrega (2026-07-26):** fechada a questão da folga — `pad(0.1)` só em `maxBounds`; `minZoom` via `getBoundsZoom(BAHIA_BOUNDS, false, L.point(16, 16))` alinhado ao padding do `fitBounds` inicial (defasagem leve do rascunho, que omitia o padding). Helper local `applyBahiaMinZoom` no mount + no `ResizeObserver` existente. Critique: 0 P0/P1; harden/optimize out.
 
 ## Design (Impeccable)
 
@@ -61,12 +63,12 @@ map.fitBounds(BAHIA_BOUNDS, { padding: [16, 16] })
 
 - **Bounds da trava = a mesma constante `BAHIA_BOUNDS` já usada no `fitBounds` inicial**, sem segunda fonte de verdade geográfica. **Rejeitado:** calcular a bounding box a partir do TopoJSON dos 417 municípios (`bahiaGeometries.ts`) — mais "preciso" ao contorno real, mas exigiria esperar o módulo de geometria carregar (é `import()` dinâmico, ~132 KB) antes de a trava existir, e o retângulo já sobra confortavelmente para o único objetivo aqui (não deixar sair do estado por engano, não desenhar uma fronteira exata).
 - **`maxBoundsViscosity: 1` (trava rígida), não elástica.** O pedido é explícito — "não sair... por engano" — e uma viscosidade parcial (ex. Leaflet default incremental) ainda deixa arrastar um pouco para fora antes de voltar, que é precisamente o engano que o pedido quer eliminar. **Rejeitado:** viscosidade padrão (`0`, sem trava nenhuma) e viscosidade intermediária (ex. `0.6`) — ambas permitem sair visivelmente da Bahia antes de qualquer resistência.
-- **`minZoom` calculado em runtime via `map.getBoundsZoom(BAHIA_BOUNDS)`**, o mesmo cálculo que o `fitBounds` já faz internamente, em vez de uma constante fixa. O zoom em que o estado cabe inteiro depende do tamanho do contêiner (`heightClassName` varia por consumidor — hoje só `MunicipalityMapPanel`, mas o componente é compartilhado) e da largura da viewport (mobile vs. desktop). **Rejeitado:** constante única (ex. `minZoom: 6`) — erra para qualquer contêiner com aspect ratio diferente do testado.
+- **`minZoom` calculado em runtime via `map.getBoundsZoom(BAHIA_BOUNDS, false, L.point(16, 16))`**, o mesmo padding que o `fitBounds` inicial usa, em vez de uma constante fixa. O zoom em que o estado cabe inteiro depende do tamanho do contêiner (`heightClassName` varia por consumidor — hoje só `MunicipalityMapPanel`, mas o componente é compartilhado) e da largura da viewport (mobile vs. desktop). **Rejeitado:** constante única (ex. `minZoom: 6`) — erra para qualquer contêiner com aspect ratio diferente do testado; **também rejeitado na entrega:** `getBoundsZoom` sem padding (deixaria uma faixa de zoom-out entre o fit inicial e o piso).
 - **i18n e naming**: sem strings novas (nenhuma UI textual nova); identificadores propostos em inglês (`applyBahiaMinZoom`, se extraído como função local) seguem o padrão já usado no arquivo (`fitMapToHighlights`, `resolvePathStyleForFeature`).
 
 ## Questões em aberto
 
-- **A folga (`pad`) ao redor de `BAHIA_BOUNDS` para o `maxBounds` deve ser igual ao padding do `fitBounds` inicial ou maior?** Opções: (a) usar `BAHIA_BOUNDS` sem folga extra para `maxBounds`; (b) aplicar `L.latLngBounds(BAHIA_BOUNDS).pad(0.1)` (10%) só para o `maxBounds`, mantendo `BAHIA_BOUNDS` original para o `fitBounds` e o cálculo de `minZoom`. **Recomendação:** (b) — sem folga, a trava "gruda" exatamente na fronteira do retângulo ao arrastar perto da borda, cortando ao meio o último município visível; uma folga pequena (10%) é suficiente para dar conforto tátil ao arrastar sem deixar o usuário perceber que "saiu" da Bahia _(assumido — validar visualmente no craft; se 10% parecer pouco/demais, ajustar o número, não a decisão)_.
+- ~~**A folga (`pad`) ao redor de `BAHIA_BOUNDS` para o `maxBounds`…**~~ **Resolvida na entrega (2026-07-26):** opção (b) — `L.latLngBounds(BAHIA_BOUNDS).pad(0.1)` só no `maxBounds`; `fitBounds` / `minZoom` usam `BAHIA_BOUNDS` com padding `L.point(16, 16)`.
 
 ## Abordagem proposta
 
@@ -81,8 +83,8 @@ flowchart LR
 Componentes:
 
 - **`BahiaMap.tsx`** (`src/components/campaign/map/BahiaMap.tsx`, único arquivo tocado):
-  - No `useEffect` de criação do mapa (linhas ~247-281), acrescentar `maxBounds` e `maxBoundsViscosity: 1` às opções de `L.map(...)`, calculando o bounds com folga a partir de `L.latLngBounds(BAHIA_BOUNDS).pad(0.1)` (Questão em aberto acima).
-  - Extrair um pequeno helper local `applyBahiaMinZoom(map: L.Map)` que chama `map.setMinZoom(map.getBoundsZoom(BAHIA_BOUNDS))`, com guarda para o caso do contêiner ainda ter tamanho zero (`getBoundsZoom` pode retornar `Infinity`/`NaN` num container `0×0` — ex. aba oculta) — só aplicar quando `Number.isFinite(zoom)`. Chamar uma vez logo após o `fitBounds` inicial.
+  - No `useEffect` de criação do mapa, acrescentar `maxBounds` e `maxBoundsViscosity: 1` às opções de `L.map(...)`, calculando o bounds com folga a partir de `L.latLngBounds(BAHIA_BOUNDS).pad(0.1)`.
+  - Extrair um pequeno helper local `applyBahiaMinZoom(map: L.Map)` que chama `map.setMinZoom(map.getBoundsZoom(BAHIA_BOUNDS, false, L.point(16, 16)))` (mesmo padding do `fitBounds`), com guarda para o caso do contêiner ainda ter tamanho zero (`getBoundsZoom` pode retornar `Infinity`/`NaN` num container `0×0` — ex. aba oculta) — só aplicar quando `Number.isFinite(zoom)`. Chamar uma vez logo após o `fitBounds` inicial.
   - Reusar o `resizeObserver` já existente (linhas ~262-269, hoje só chama `map.invalidateSize()`) para chamar `applyBahiaMinZoom(map)` de novo a cada resize — não criar um segundo observer.
   - Nenhuma mudança nas props públicas do componente (`BahiaMapProps` inalterado) — `MunicipalityMapPanel.tsx` e qualquer futuro consumidor não precisam de alteração.
 - **Sem migration, sem collection, sem server action.**

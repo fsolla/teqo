@@ -34,12 +34,33 @@ const BAHIA_BOUNDS: L.LatLngBoundsExpression = [
   [-8.5, -37.0],
 ]
 
+/** Shared by state-level `fitBounds` and `getBoundsZoom` so minZoom matches the initial fit. */
+const BAHIA_FIT_PADDING = L.point(16, 16)
+
 /**
  * Bubbles get their own pane above the polygons: hovering a município calls
  * `bringToFront()` on its path, which in a shared pane would raise the polygon
  * over the very bubble it describes.
  */
 const BUBBLE_PANE = 'municipality-bubbles'
+
+/**
+ * Clamp zoom-out to the zoom where the whole state still fills the container.
+ * Temporarily drops the floor before measuring: `getBoundsZoom` clamps to the
+ * current `minZoom`, so without that the floor can only rise on shrink and never
+ * fall on enlarge. Restores the previous floor if the measure is non-finite
+ * (0×0 container before layout / hidden tab).
+ */
+const applyBahiaMinZoom = (map: L.Map) => {
+  const previousMinZoom = map.getMinZoom()
+  map.setMinZoom(0)
+  const zoom = map.getBoundsZoom(BAHIA_BOUNDS, false, BAHIA_FIT_PADDING)
+  if (!Number.isFinite(zoom)) {
+    map.setMinZoom(previousMinZoom)
+    return
+  }
+  map.setMinZoom(zoom)
+}
 
 export type BahiaMapMode = 'municipality' | 'territory'
 
@@ -92,7 +113,7 @@ const fitMapToHighlights = (
   geometryModule: MunicipalityGeometryModule | TerritoryGeometryModule,
 ) => {
   if (highlightSet.size === 0) {
-    map.fitBounds(BAHIA_BOUNDS, { padding: [16, 16] })
+    map.fitBounds(BAHIA_BOUNDS, { padding: BAHIA_FIT_PADDING })
     return
   }
 
@@ -108,7 +129,7 @@ const fitMapToHighlights = (
         })
 
   if (highlightedFeatures.length === 0) {
-    map.fitBounds(BAHIA_BOUNDS, { padding: [16, 16] })
+    map.fitBounds(BAHIA_BOUNDS, { padding: BAHIA_FIT_PADDING })
     return
   }
 
@@ -250,8 +271,12 @@ export const BahiaMap = ({
       zoomControl: true,
       attributionControl: true,
       scrollWheelZoom: false,
+      // Soft pad so viscosity:1 does not clip the edge município on drag.
+      maxBounds: L.latLngBounds(BAHIA_BOUNDS).pad(0.1),
+      maxBoundsViscosity: 1,
     })
-    map.fitBounds(BAHIA_BOUNDS, { padding: [16, 16] })
+    map.fitBounds(BAHIA_BOUNDS, { padding: BAHIA_FIT_PADDING })
+    applyBahiaMinZoom(map)
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -264,6 +289,7 @@ export const BahiaMap = ({
       typeof ResizeObserver !== 'undefined'
         ? new ResizeObserver(() => {
             map.invalidateSize()
+            applyBahiaMinZoom(map)
           })
         : null
     resizeObserver?.observe(container)
@@ -370,6 +396,8 @@ export const BahiaMap = ({
         layer.addTo(map)
         layerRef.current = layer
         map.invalidateSize()
+        // Layout may have been 0×0 on mount — re-apply after size is known.
+        applyBahiaMinZoom(map)
 
         syncMountStyleContext()
         restyleAllPaths()
