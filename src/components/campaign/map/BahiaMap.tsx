@@ -14,6 +14,7 @@ import {
   type TerritoryGeometryModule,
 } from '@/lib/bahiaGeometries'
 import {
+  bubbleRadius,
   buildHighlightSet,
   buildLayerStyleContext,
   canonicalMapKeysKey,
@@ -21,15 +22,24 @@ import {
   keyPropertyForMode,
   resolvePathStyle,
   type BahiaMapFillMode,
+  type ChoroplethFills,
   type ChoroplethValues,
   type LayerStyleContext,
 } from '@/lib/bahiaMapStyle'
+import { choroplethMaxValue } from '@/lib/choroplethColorScale'
 import { cn } from '@/lib/utils'
 
 const BAHIA_BOUNDS: L.LatLngBoundsExpression = [
   [-18.5, -46.8],
   [-8.5, -37.0],
 ]
+
+/**
+ * Bubbles get their own pane above the polygons: hovering a município calls
+ * `bringToFront()` on its path, which in a shared pane would raise the polygon
+ * over the very bubble it describes.
+ */
+const BUBBLE_PANE = 'municipality-bubbles'
 
 export type BahiaMapMode = 'municipality' | 'territory'
 
@@ -45,6 +55,20 @@ type BahiaMapProps = {
   fillMode?: BahiaMapFillMode
   /** When set, overrides auto max from `values` (e.g. fixed 1 for 0–100% shares). */
   scaleMax?: number
+  /**
+   * Discrete class fills by feature key (B13). When provided they replace the
+   * continuous ramp entirely, and a key that is absent renders as "no data".
+   * Must be referentially stable across renders, or every render repaints
+   * every path.
+   */
+  fillByKey?: ChoroplethFills
+  /**
+   * B13 — proportional symbols: feature key → magnitude, drawn as a circle at
+   * the feature's centre with radius ∝ √value. Absent keys get no bubble.
+   */
+  bubbleValues?: ChoroplethValues
+  /** Bubble fill by feature key; keys without one fall back to the neutral fill. */
+  bubbleFillByKey?: ChoroplethFills
   highlightKeys?: string[]
   /** Fit viewport to these keys without highlighting them. */
   fitToKeys?: string[]
@@ -99,6 +123,9 @@ export const BahiaMap = ({
   values,
   fillMode = 'sequential',
   scaleMax,
+  fillByKey,
+  bubbleValues,
+  bubbleFillByKey,
   highlightKeys = [],
   fitToKeys = [],
   interactiveKeys = [],
@@ -127,6 +154,7 @@ export const BahiaMap = ({
     values,
     fillMode,
     scaleMax,
+    fillByKey,
     highlightKey: '',
     selectedKey,
   })
@@ -146,6 +174,7 @@ export const BahiaMap = ({
     values,
     fillMode,
     scaleMax,
+    fillByKey,
     highlightKey,
     selectedKey,
   }
@@ -398,6 +427,7 @@ export const BahiaMap = ({
       values,
       fillMode,
       scaleMax,
+      fillByKey,
       highlightKey,
       selectedKey,
       hoveredKey: previousContext?.hoveredKey ?? null,
@@ -408,7 +438,59 @@ export const BahiaMap = ({
     restyleAllPaths()
     // `selectedKey` changes use the dedicated 2-path effect below (not full O(n) restyle).
     // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedKey excluded on purpose
-  }, [values, fillMode, scaleMax, highlightKey, mode])
+  }, [values, fillMode, scaleMax, fillByKey, highlightKey, mode])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !bubbleValues || status !== 'ready') return
+
+    const maxValue = choroplethMaxValue(bubbleValues)
+    if (maxValue <= 0) return
+
+    if (!map.getPane(BUBBLE_PANE)) {
+      const pane = map.createPane(BUBBLE_PANE)
+      pane.style.zIndex = '450'
+      pane.style.pointerEvents = 'none'
+    }
+
+    // Smallest first so the big prizes end up drawn on top of the crowd
+    // instead of being covered by whichever key the object happened to list last.
+    const ordered = Object.entries(bubbleValues)
+      .filter(([, value]) => value > 0)
+      .sort(([, left], [, right]) => left - right)
+
+    const markers: L.CircleMarker[] = []
+    for (const [key, value] of ordered) {
+      const path = pathByKeyRef.current.get(key)
+      const fillColor = bubbleFillByKey?.[key]
+      if (!(path instanceof L.Polygon) || !fillColor) continue
+
+      markers.push(
+        // Polygon centroid, not the bounding box's centre: a concave or
+        // L-shaped município would put a box centre outside its own outline.
+        L.circleMarker(path.getCenter(), {
+          pane: BUBBLE_PANE,
+          radius: bubbleRadius(value, maxValue),
+          fillColor,
+          fillOpacity: 0.8,
+          color: '#ffffff',
+          weight: 0.75,
+          // Deliberately not interactive: every bubble sits on top of its own
+          // município, so letting the pointer fall through keeps ONE hover
+          // target and one readout instead of two stacked ones.
+          interactive: false,
+        }),
+      )
+    }
+
+    const group = L.layerGroup(markers).addTo(map)
+
+    return () => {
+      group.remove()
+    }
+    // `mode` rebuilds the geometry layer this reads centroids from, so the
+    // markers must be rebuilt with it or they would sit at stale positions.
+  }, [bubbleValues, bubbleFillByKey, status, mode])
 
   useEffect(() => {
     const context = styleContextRef.current

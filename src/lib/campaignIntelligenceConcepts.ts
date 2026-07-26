@@ -10,9 +10,11 @@
  * actually computes; when a formula changes, this text changes with it.
  *
  * v1 covers the E8 "conta da cadeira" numbers; E10 added dominância relativa
- * and a classe territorial. Each later slice of the intelligence program (B13
- * escala do mapa, E11 sugestões, E12 TI, E13 giros, E14 níveis) appends its
- * own entries as part of its own delivery.
+ * and a classe territorial; B13 added the two map scales that are not just a
+ * re-rendering of an existing number (quantis and posição no município — LQ is
+ * already documented as dominância relativa). Each later slice of the
+ * intelligence program (E11 sugestões, E12 TI, E13 giros, E14 níveis) appends
+ * its own entries as part of its own delivery.
  */
 
 export type CampaignConceptId =
@@ -23,6 +25,8 @@ export type CampaignConceptId =
   | 'roll-off'
   | 'dominancia-relativa'
   | 'classe-territorial'
+  | 'quantis-do-mapa'
+  | 'posicao-no-municipio'
   | 'meta'
   | 'cobertura-da-meta'
 
@@ -145,6 +149,34 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
       'Responde onde a perna vai na semana: defender reduto dormente ou abrir rede em expansão. A classe é sugestão, não sentença — ela nunca aparece sozinha, sempre com os dois fatores que a produziram, e a mesa pode decidir contra ela. Os cortes exatos (2 e 0,5) são ilustrativos: valem até o backtest contra 2014–2022 calibrá-los.',
     whereItAppears:
       'Card "Conta da cadeira" e capa do dossiê, no detalhe do município, e a coluna "Classe" da lista de municípios (com filtro e ordenação).',
+  },
+  {
+    id: 'quantis-do-mapa',
+    categoryID: 'diagnostico',
+    title: 'Quantis (escala do mapa)',
+    oneLiner:
+      'Divide os municípios em cinco faixas com o mesmo número de municípios cada, da menor votação para a maior.',
+    formula:
+      'Ordena os municípios do seu escopo que tiveram votos e corta a lista em cinco partes iguais em QUANTIDADE de municípios. Cada faixa da legenda mostra o menor e o maior valor real que caíram nela. Com menos de 10 municípios em tela a escala cai para três faixas, e a legenda avisa.',
+    example:
+      'Com 415 municípios, cada faixa tem cerca de 83. A faixa mais escura pode ir de 267 a 27.264 votos — as distâncias entre faixas não são iguais, o número de municípios é.',
+    whyItMatters:
+      'Numa disputa de deputado federal, uma escala de 0 a 100% pinta a Bahia inteira de uma cor só: o melhor município dele dá menos de 5% dos válidos de lá. O quantil sempre usa a paleta inteira, então o mapa volta a discriminar. O preço é que a cor é relativa ao conjunto em tela — não compare a cor de uma carteira de assessor com a cor do mapa estadual.',
+    whereItAppears: 'Mapa dos Municípios, no Início — é a escala padrão.',
+  },
+  {
+    id: 'posicao-no-municipio',
+    categoryID: 'diagnostico',
+    title: 'Posição no município',
+    oneLiner:
+      'Em que lugar o Jorge Solla ficou entre todos os candidatos a deputado federal votados naquele município.',
+    formula:
+      'Ordena todos os candidatos a deputado federal por votos no município (1º turno do ano escolhido) e lê a colocação dele. Vale para a cidade inteira: em Salvador, as 19 zonas dividem a mesma posição, porque o mapa desenha a cidade e não a zona.',
+    example:
+      '5.005 votos em Vitória da Conquista o colocaram em 6º entre 663 candidatos votados lá.',
+    whyItMatters:
+      'É a leitura de competição que falta nas outras escalas: dominância compara ele com ele mesmo, e a posição compara ele com quem disputa a mesma cadeira ali. Ser 1º num município pequeno é uma relação política concreta; ser 40º num município grande diz que o voto está pulverizado. Só existe para anos com resultado do TSE — 2026 não tem posição.',
+    whereItAppears: 'Mapa dos Municípios, no Início (escala "Posição no município").',
   },
   {
     id: 'meta',

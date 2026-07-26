@@ -1,10 +1,10 @@
 import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
-import { formatElectionNumber, formatVoteSharePercent } from '@/lib/electionFormat'
 import {
-  DEFAULT_VOTE_RANK_YEAR,
-  formatMunicipalityVoteRank,
-  getMunicipalityVoteRank,
-} from '@/lib/municipalityVoteRank'
+  formatElectionNumber,
+  formatPlacementOrdinal,
+  formatVoteSharePercent,
+} from '@/lib/electionFormat'
+import { DEFAULT_VOTE_RANK_YEAR, getMunicipalityVoteRank } from '@/lib/municipalityVoteRank'
 import { computeVoteTrend } from '@/lib/voteTrend'
 import type { MunicipalityElectoralBaseline } from '@/utilities/municipalityElectoralBaseline'
 import { formatMunicipalityConcentrationHint } from '@/utilities/municipalityLabels'
@@ -81,10 +81,10 @@ export const MunicipalityBaselineCard = ({
               {position ? (
                 <dd
                   className="mt-1 flex flex-col gap-0.5 text-xs tabular-nums text-muted-foreground"
-                  aria-label={`${formatVoteSharePercent(position.share)} da votação estadual, ${formatMunicipalityVoteRank(position.rank)} de ${formatElectionNumber(position.totalUnits)}`}
+                  aria-label={`${formatVoteSharePercent(position.share)} da votação estadual, ${formatPlacementOrdinal(position.rank)} de ${formatElectionNumber(position.totalUnits)}`}
                 >
                   <span>{formatVoteSharePercent(position.share)}</span>
-                  <span>{formatMunicipalityVoteRank(position.rank)}</span>
+                  <span>{formatPlacementOrdinal(position.rank)}</span>
                 </dd>
               ) : (
                 <dd className="mt-1 text-xs text-muted-foreground">—</dd>

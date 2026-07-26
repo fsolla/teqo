@@ -12,6 +12,10 @@
  * #13) votes+tally — cut by the same `municipalityCatalog` geography used at
  * runtime (Salvador split into zone municipalities, every other municipality
  * whole) removes all historical-year DB work from the request/build path.
+ * The same reasoning covers B13's competitive placement
+ * (`federalRankByIbgeCode`): ranking him against every other candidate means
+ * reading the whole statewide slice, which is exactly what must not happen
+ * per request.
  *
  * Why not compute during `pnpm build`: Vercel builds must not depend on the
  * production database CONTENT (TSE seeds are local-only by policy), and the
@@ -47,8 +51,10 @@ const { municipalityElectionGeography } =
 const {
   loadCampoFederalVotesByCityZone,
   loadCandidateVotesByCityZone,
+  loadFederalVotesByCityZoneAndCandidate,
   loadOfficeTallyByCityZone,
   loadValidVotesByCityZone,
+  sumCandidateVotesForGeography,
   sumOfficeTallyForGeography,
   sumVotesForGeography,
 } = await import('../src/utilities/municipalityElectoralBaseline.ts')
@@ -166,6 +172,63 @@ console.log(
   `[build:election-aggregates] 2022 majoritarian: ${presidentTotal} votes for president #${BASELINE_TICKET_2022.president.candidateNumber}.`,
 )
 
+// B13 "posição no município": where the candidate placed among every federal
+// deputy voted inside each municipality. Keyed by IBGE code rather than by
+// catalog slug because the competitive question only has an answer for a whole
+// city — Salvador's 19 zone municipalities are one placement, and the map
+// paints one polygon for them anyway.
+const geographiesByIbgeCode = new Map()
+for (const entry of municipalityCatalog) {
+  const geographies = geographiesByIbgeCode.get(entry.ibgeCode) ?? []
+  geographies.push(municipalityElectionGeography(entry))
+  geographiesByIbgeCode.set(entry.ibgeCode, geographies)
+}
+
+const federalRankByIbgeCode = {}
+for (const year of HISTORICAL_SERIES_YEARS) {
+  const votesByCityZoneAndCandidate = await loadFederalVotesByCityZoneAndCandidate(
+    payload,
+    cliReader,
+    { year },
+  )
+
+  for (const [ibgeCode, geographies] of geographiesByIbgeCode) {
+    const byCandidate = new Map()
+    for (const geography of geographies) {
+      for (const [number, votes] of sumCandidateVotesForGeography(
+        votesByCityZoneAndCandidate,
+        geography,
+      )) {
+        byCandidate.set(number, (byCandidate.get(number) ?? 0) + votes)
+      }
+    }
+
+    const ownVotes = byCandidate.get(candidateNumber) ?? 0
+    // No votes here means no placement — a last place would read as a fact
+    // when it is really absence of data.
+    if (ownVotes <= 0) continue
+
+    let ahead = 0
+    let candidates = 0
+    for (const votes of byCandidate.values()) {
+      if (votes <= 0) continue
+      candidates += 1
+      if (votes > ownVotes) ahead += 1
+    }
+
+    federalRankByIbgeCode[ibgeCode] ??= {}
+    // Competition rank: tied candidates share a placement.
+    federalRankByIbgeCode[ibgeCode][String(year)] = { rank: ahead + 1, candidates }
+  }
+
+  const ranked = Object.values(federalRankByIbgeCode).filter(
+    (byYear) => byYear[String(year)] !== undefined,
+  ).length
+  console.log(
+    `[build:election-aggregates] ${year}: placement computed for ${ranked}/${geographiesByIbgeCode.size} IBGE municipalities.`,
+  )
+}
+
 const artifact = {
   provenance:
     'Derived from TSE open data seeded by pnpm db:seed:tse; regenerate with pnpm build:election-aggregates.',
@@ -173,6 +236,7 @@ const artifact = {
   candidateName: BASELINE_TICKET_2022.candidate.name,
   years: [...HISTORICAL_SERIES_YEARS],
   municipalities,
+  federalRankByIbgeCode,
 }
 
 await mkdir(OUTPUT_DIR, { recursive: true })

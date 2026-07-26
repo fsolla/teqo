@@ -6,7 +6,13 @@ import {
 } from '@/lib/bahiaElectionAggregates'
 import { ELECTION_YEAR_2022 } from '@/lib/electionResults'
 import { computeVoteRankByYear } from '@/lib/municipalityVoteRank'
-import { captureRate, ownVotes2022, projectedFieldCeiling } from '@/utilities/municipalityPotential'
+import { TERRITORIAL_CLASS_ANCHORS } from '@/lib/territorialClassAnchors'
+import {
+  captureRate,
+  fieldCeiling,
+  ownVotes2022,
+  projectedFieldCeiling,
+} from '@/utilities/municipalityPotential'
 
 /**
  * E10 "classificação territorial relativa" — the operational class of one
@@ -35,22 +41,6 @@ export const TERRITORIAL_CLASSES = [
 ] as const
 
 export type MunicipalityTerritorialClass = (typeof TERRITORIAL_CLASSES)[number]
-
-/**
- * Cuts are ILLUSTRATIVE, not calibrated: the research report gives the shape
- * (LQ > 2–3 = reduto, ~1 = padrão, < 0,5 = fraqueza) and says the exact
- * numbers can only come from a backtest against 2014–2022 — that is **E15**.
- * They live here, named and versioned, so recalibration is a one-line diff
- * with a test to prove what moved.
- */
-export const TERRITORIAL_CLASS_ANCHORS = {
-  /** LQ at or above this = performing at least 2× his own statewide standard. */
-  strongLq: 2,
-  /** LQ below this = performing at less than half his own standard. */
-  weakLq: 0.5,
-  /** Municípios that together hold this share of his statewide vote are the "core block". */
-  coreCumulativeShare: 0.5,
-} as const
 
 /** The axes behind a class — the UI always shows the "por quê", never the label alone. */
 type TerritorialFactorId = 'dominance' | 'ownShare' | 'field' | 'capture'
@@ -83,8 +73,13 @@ export type TerritorialClassInput = {
   stateValidVotes: number
   /** Projected field ceiling minus own votes (E8), floored at 0. */
   fieldHeadroom: number
-  /** Median `fieldHeadroom` across the catalog — the relative "big field" cut. */
-  medianFieldHeadroom: number
+  /**
+   * The "big field" cut `fieldHeadroom` is measured against: the catalog
+   * median for one município, and that median times the group size for an
+   * aggregate — headroom is a level, not a ratio, so a summed one has to be
+   * compared against a reference summed the same way.
+   */
+  fieldHeadroomCut: number
   captureRate: number | null
   inCoreBlock: boolean
 }
@@ -130,7 +125,7 @@ export const classifyMunicipalityTerritory = (
     // A município inside the core block carries real votes even while
     // under-performing, so it can never read as "marginal" — the honest label
     // there is expansão (big base, low penetration).
-    const hasFieldLeft = input.fieldHeadroom >= input.medianFieldHeadroom || input.inCoreBlock
+    const hasFieldLeft = input.fieldHeadroom >= input.fieldHeadroomCut || input.inCoreBlock
     return hasFieldLeft
       ? { ...shared, class: 'expansao', factors: [fieldFactor, dominance, ...captureFactor] }
       : { ...shared, class: 'marginal', factors: [dominance, fieldFactor] }
@@ -211,13 +206,63 @@ export const computeMunicipalityTerritorialClass = (
     stateOwnVotes: totals.ownVotes,
     stateValidVotes: totals.validVotes,
     fieldHeadroom: fieldHeadroomOf(baseline),
-    medianFieldHeadroom,
+    fieldHeadroomCut: medianFieldHeadroom,
     captureRate: captureRate(baseline),
     inCoreBlock: coreBlockSlugs.has(slug),
   })
 
   classificationBySlug.set(slug, classification)
   return classification
+}
+
+/**
+ * The class of a GROUP of catalog slugs read as one territory — the map paints
+ * one polygon per IBGE municipality, and Salvador is 19 catalog slugs.
+ *
+ * It sums the inputs and runs the SAME `classifyMunicipalityTerritory`; it
+ * never averages or votes on the per-slug classes, because LQ is a ratio and
+ * the average of ratios is not the ratio of the sums. The ratios (LQ, capture)
+ * are compared against exactly the statewide standard everyone else gets; the
+ * one LEVEL among the inputs, field headroom, needs its cut scaled by the
+ * group size or a 19-slug Salvador would clear a per-município median by an
+ * order of magnitude and never read as "marginal".
+ *
+ * E12's TI rollup inherits this helper rather than growing a second one.
+ */
+export const computeAggregateTerritorialClass = (
+  slugs: ReadonlyArray<string>,
+): MunicipalityTerritorialClassification => {
+  if (slugs.length === 1) return computeMunicipalityTerritorialClass(slugs[0])
+  if (slugs.length === 0) return UNCLASSIFIED
+
+  const totals = getStatewideFederalTotals(TERRITORIAL_CLASS_YEAR)
+  const { medianFieldHeadroom, coreBlockSlugs } = getCatalogContext()
+
+  let ownVotes = 0
+  let validVotes = 0
+  let fieldHeadroom = 0
+  let fieldCeiling2022 = 0
+  let inCoreBlock = false
+
+  for (const slug of slugs) {
+    const baseline = getMunicipalityFederalBaseline(slug)
+    ownVotes += ownVotes2022(baseline)
+    validVotes += baseline.validVotesByYear[String(TERRITORIAL_CLASS_YEAR)] ?? 0
+    fieldHeadroom += fieldHeadroomOf(baseline)
+    fieldCeiling2022 += fieldCeiling(baseline)
+    inCoreBlock ||= coreBlockSlugs.has(slug)
+  }
+
+  return classifyMunicipalityTerritory({
+    ownVotes,
+    validVotes,
+    stateOwnVotes: totals.ownVotes,
+    stateValidVotes: totals.validVotes,
+    fieldHeadroom,
+    fieldHeadroomCut: medianFieldHeadroom * slugs.length,
+    captureRate: fieldCeiling2022 > 0 ? ownVotes / fieldCeiling2022 : null,
+    inCoreBlock,
+  })
 }
 
 /**

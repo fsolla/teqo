@@ -12,6 +12,7 @@ import {
   oneDecimalFormatter,
 } from '@/lib/electionFormat'
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
+import { AT_STANDARD_LQ } from '@/lib/territorialClassAnchors'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO, voteEstimateScenarioLabels } from '@/lib/voteEstimate'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { formatRatioAsPercentLabel } from '@/utilities/goalCoverage'
@@ -83,8 +84,24 @@ export const territorialClassBadgeVariant = {
   sem_base: 'ghost',
 } as const
 
-/** Band where the multiple rounds to "1×", which says nothing — name it instead. */
-const AT_STANDARD_LQ = { min: 0.95, max: 1.15 } as const
+/**
+ * The same ladder as fills for the map's proportional symbols (B13). Literal
+ * hex rather than the CSS tokens above because Leaflet writes the SVG `fill`
+ * ATTRIBUTE, where `var(--estimate-confirmed)` does not resolve — these mirror
+ * the token values in `styles.css` (see `DESIGN.md` § Status Badge) and must
+ * be changed together with them.
+ *
+ * Saturated over a basemap: the badge tints are tuned for a white row and
+ * would disappear on top of tiles, so each step is the readable sibling of
+ * its token, not the token itself.
+ */
+export const territorialClassMapFill: Record<MunicipalityTerritorialClass, string> = {
+  reduto: '#16a34a',
+  expansao: '#d97706',
+  manutencao: '#78716c',
+  marginal: '#a8a29e',
+  sem_base: '#d6d3d1',
+}
 
 /**
  * The "por quê" behind a class, in the mesa's own phrasing — "aqui a votação
@@ -92,15 +109,19 @@ const AT_STANDARD_LQ = { min: 0.95, max: 1.15 } as const
  * survives the table; "LQ 0,6" is not. The possessive names the candidate
  * ("do candidato"), never "seu", which an assessor reads as their own.
  */
+export const formatDominanceAgainstOwnStandard = (lq: number): string => {
+  if (lq >= AT_STANDARD_LQ.min && lq < AT_STANDARD_LQ.max) {
+    return 'no padrão estadual do candidato'
+  }
+  return lq >= 1
+    ? `${oneDecimalFormatter.format(lq)}× o padrão estadual do candidato`
+    : `${formatRatioAsPercentLabel(1 - lq)} abaixo do padrão estadual do candidato`
+}
+
 const formatTerritorialClassFactor = (factor: TerritorialFactor): string => {
   switch (factor.id) {
     case 'dominance':
-      if (factor.value >= AT_STANDARD_LQ.min && factor.value < AT_STANDARD_LQ.max) {
-        return 'no padrão estadual do candidato'
-      }
-      return factor.value >= 1
-        ? `${oneDecimalFormatter.format(factor.value)}× o padrão estadual do candidato`
-        : `${formatRatioAsPercentLabel(1 - factor.value)} abaixo do padrão estadual do candidato`
+      return formatDominanceAgainstOwnStandard(factor.value)
     case 'ownShare':
       return `${formatVoteSharePercent(factor.value)} da votação estadual do candidato`
     case 'field':

@@ -25,8 +25,11 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { formatElectionNumber, formatVoteSharePercent } from '@/lib/electionFormat'
-import { formatMunicipalityVoteRank } from '@/lib/municipalityVoteRank'
+import {
+  formatElectionNumber,
+  formatPlacementOrdinal,
+  formatVoteSharePercent,
+} from '@/lib/electionFormat'
 import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
@@ -95,7 +98,7 @@ const VotePositionReadout = ({
   layout: 'table' | 'card'
 }) => {
   const share = formatVoteSharePercent(position.share)
-  const rank = formatMunicipalityVoteRank(position.rank)
+  const rank = formatPlacementOrdinal(position.rank)
   const metaLine = `${formatElectionNumber(position.votes)} · ${rank}`
   const ariaLabel = `${share} da votação estadual, ${formatElectionNumber(position.votes)} votos, ${rank} de ${formatElectionNumber(position.totalUnits)}`
 

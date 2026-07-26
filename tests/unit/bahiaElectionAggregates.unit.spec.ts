@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import {
   FEDERAL_BASELINE_CANDIDATE_NUMBER,
   federalBaselineMunicipalitySlugs,
+  getFederalCompetitiveRank,
   getMunicipalityFederalBaseline,
 } from '@/lib/bahiaElectionAggregates'
 import {
@@ -111,12 +112,51 @@ describe('election aggregates artifact', () => {
     expect(HISTORICAL_SERIES_YEARS).toContain(ELECTION_YEAR_2022)
   })
 
+  it('has a plausible competitive placement per IBGE municipality (v3 field)', () => {
+    const ibgeCodes = new Set(municipalityCatalog.map((entry) => entry.ibgeCode))
+    let placed = 0
+
+    for (const ibgeCode of ibgeCodes) {
+      for (const year of HISTORICAL_SERIES_YEARS) {
+        const placement = getFederalCompetitiveRank(ibgeCode, year)
+        // Absent is legitimate: he took no votes in that municipality that
+        // year (351/417 municipalities placed in 2014, 416/417 in 2022).
+        if (!placement) continue
+        placed += 1
+        expect(placement.rank).toBeGreaterThanOrEqual(1)
+        expect(placement.candidates).toBeGreaterThanOrEqual(placement.rank)
+      }
+    }
+
+    // A statewide campaign places in most municipalities in most years.
+    expect(placed).toBeGreaterThan(ibgeCodes.size * 2)
+  })
+
+  it('gives Salvador one whole-city placement, not one per zone municipality', () => {
+    const salvadorZones = municipalityCatalog.filter((entry) => entry.kind === 'zona')
+    const salvadorCodes = new Set(salvadorZones.map((entry) => entry.ibgeCode))
+
+    // The 19 zone municipalities share Salvador's IBGE code, which is why the
+    // placement is keyed by code: "which place did he come in" only has an
+    // answer for the whole city.
+    expect(salvadorZones.length).toBeGreaterThan(1)
+    expect(salvadorCodes.size).toBe(1)
+
+    const [salvadorCode] = salvadorCodes
+    expect(getFederalCompetitiveRank(salvadorCode, ELECTION_YEAR_2022)).not.toBeNull()
+  })
+
+  it('has no placement for an unknown IBGE code', () => {
+    expect(getFederalCompetitiveRank('0000000', ELECTION_YEAR_2022)).toBeNull()
+  })
+
   it('stays under the committed artifact byte budget', () => {
     const { size } = statSync(ARTIFACT_PATH)
     // v1 (votes + valid votes only) was ~96 KB; v2 adds campo votes, federal
-    // tally and the 2022 majoritarian slice, measured at ~522 KB — budget
-    // with headroom, not a precise pin, so future fields don't require
-    // touching this test.
+    // tally and the 2022 majoritarian slice, measured at ~522 KB; v3 adds the
+    // per-IBGE competitive placement, measured at ~613 KB — budget with
+    // headroom, not a precise pin, so future fields don't require touching
+    // this test.
     expect(size).toBeLessThan(700 * 1024)
   })
 })

@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { federalBaselineMunicipalitySlugs } from '@/lib/bahiaElectionAggregates'
-import { formatVoteSharePercent } from '@/lib/electionFormat'
+import { formatPlacementOrdinal, formatVoteSharePercent } from '@/lib/electionFormat'
 import {
   compareMunicipalityVotesForSort,
   computeVoteRankByYear,
   DEFAULT_VOTE_RANK_YEAR,
-  formatMunicipalityVoteRank,
   getMunicipalityVoteRank,
 } from '@/lib/municipalityVoteRank'
 
@@ -57,7 +56,7 @@ describe('municipalityVoteRank', () => {
   })
 
   it('formats rank as colocação only (catalog size lives in the header hint)', () => {
-    expect(formatMunicipalityVoteRank(12)).toBe('12º')
+    expect(formatPlacementOrdinal(12)).toBe('12º')
     expect(formatVoteSharePercent(0.031)).toMatch(/3[,.]1%/)
   })
 
