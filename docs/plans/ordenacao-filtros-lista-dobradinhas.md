@@ -130,6 +130,7 @@ Componentes:
 ## Adiado com gatilho
 
 - **Sort/filtro por `municipalityCount`/`leadershipCount`.** Revisitar quando: houver pedido nomeado de produto para "dobradinhas sem nenhuma liderança/município" como recorte de onboarding, ou quando outro item já precisar do mesmo agregado SQL sobre `stateDeputy` (ex.: um "C8-like" de escala).
+- **Agregado SQL para o facet de partido em vez de escanear `stateDeputy` inteiro.** O facet hoje faz um `payload.find` de todos os registros (respeitando `q`) e agrega `party` em memória — só compensa a complexidade quando o volume de dobradinhas crescer o bastante para o full scan pesar (achado do `/simplify` B33 rodada 1, 2026-07-26). Revisitar quando: `stateDeputy` passar a ter volume comparável a `supporter`/`leadership` (centenas+), ou quando outro facet de lista já precisar do mesmo padrão de agregado (o `COUNT(*) FILTER` de `supporterListOverviewAggregate.ts`, do C6 ✓, é o precedente a seguir).
 
 ## Referências
 
