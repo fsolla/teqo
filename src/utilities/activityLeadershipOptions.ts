@@ -21,7 +21,7 @@ const leadershipLabel = (leadership: Leadership): string | null => {
 }
 
 /**
- * Engaged leaderships visible to the actor (for linking a activity to a leadership).
+ * Engaged leaderships visible to the actor (for linking an activity to a leadership).
  * Uses overrideAccess: false so Payload row-level access applies.
  */
 export const searchActivityLeadershipOptions = async (

@@ -5,6 +5,7 @@ import type { Payload } from 'payload'
 import type { OrganizationKind } from '@/lib/schemas/organization'
 import { organizationKinds } from '@/lib/schemas/organization'
 import type { CampaignUser, Organization } from '@/payload-types'
+import type { ActivityStatus } from '@/utilities/activityUi'
 import {
   buildListHref,
   firstValue,
@@ -160,7 +161,7 @@ export type OrganizationDetailViewModel = {
     id: number
     title: string
     slug: string
-    status: string
+    status: ActivityStatus
     startAt: string | null
     deputyPresent: boolean
   }>
@@ -239,7 +240,7 @@ export const loadOrganizationDetail = async (
       id: activity.id,
       title: activity.title,
       slug: activity.slug,
-      status: String(activity.status),
+      status: activity.status,
       startAt: activity.startAt ?? null,
       deputyPresent: Boolean(activity.deputyPresent),
     })),

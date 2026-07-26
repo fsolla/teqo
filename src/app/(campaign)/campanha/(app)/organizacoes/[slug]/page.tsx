@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { ActivityStatusBadge } from '@/components/campaign/activity/ActivityStatusBadge'
 import { OrganizationForm } from '@/components/campaign/organization/OrganizationForm'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { activityStatusLabels, activityStatuses } from '@/lib/schemas/activity'
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
@@ -21,11 +21,6 @@ type OrganizationDetailPageProps = {
 }
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' })
-
-const statusLabel = (status: string): string =>
-  activityStatuses.includes(status as (typeof activityStatuses)[number])
-    ? activityStatusLabels[status as (typeof activityStatuses)[number]]
-    : status
 
 export default async function OrganizationDetailPage({ params }: OrganizationDetailPageProps) {
   const { slug } = await params
@@ -108,18 +103,20 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
             <ul className="flex flex-col gap-2">
               {organization.activities.map((activity) => (
                 <li key={activity.id} className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 flex-col">
-                    <Link
-                      href={`/campanha/atividades/${activity.slug}`}
-                      className="truncate font-medium text-primary underline-offset-4 hover:underline"
-                    >
-                      {activity.title}
-                    </Link>
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/campanha/atividades/${activity.slug}`}
+                        className="truncate font-medium text-primary underline-offset-4 hover:underline"
+                      >
+                        {activity.title}
+                      </Link>
+                      <ActivityStatusBadge status={activity.status} />
+                    </div>
                     <span className="text-sm text-muted-foreground">
-                      {statusLabel(activity.status)}
                       {activity.startAt
-                        ? ` · ${dateFormatter.format(new Date(activity.startAt))}`
-                        : ''}
+                        ? dateFormatter.format(new Date(activity.startAt))
+                        : 'Sem data definida'}
                       {activity.deputyPresent ? ' · Deputado presente' : ''}
                     </span>
                   </div>

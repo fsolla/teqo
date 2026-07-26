@@ -479,7 +479,7 @@ export interface StateDeputy {
   createdAt: string;
 }
 /**
- * Sindicatos, associações, movimentos e afins. Concentra lideranças associadas e Atividades apoiadas.
+ * Sindicatos, associações, movimentos e afins. Concentra lideranças associadas e atividades apoiadas.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "organization".

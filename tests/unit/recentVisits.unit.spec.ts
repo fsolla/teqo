@@ -63,8 +63,8 @@ describe('recentVisits storage', () => {
     for (let index = 0; index < MAX_ENTRIES + 2; index += 1) {
       recordRecentVisit(
         sampleEntry({
-          href: `/campanha/municipios/praca-${index}`,
-          label: `Município `,
+          href: `/campanha/municipios/municipio-${index}`,
+          label: `Município ${index}`,
           visitedAt: index,
         }),
       )
@@ -72,8 +72,9 @@ describe('recentVisits storage', () => {
 
     const visits = listRecentVisits()
     expect(visits).toHaveLength(MAX_ENTRIES)
-    expect(visits[0]?.href).toBe(`/campanha/municipios/praca-${MAX_ENTRIES + 1}`)
-    expect(visits.at(-1)?.href).toBe('/campanha/municipios/praca-2')
+    expect(visits[0]?.href).toBe(`/campanha/municipios/municipio-${MAX_ENTRIES + 1}`)
+    expect(visits[0]?.label).toBe(`Município ${MAX_ENTRIES + 1}`)
+    expect(visits.at(-1)?.href).toBe('/campanha/municipios/municipio-2')
   })
 
   it('clears stored visits', () => {

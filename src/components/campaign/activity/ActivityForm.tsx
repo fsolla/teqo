@@ -179,8 +179,8 @@ const ActivityFormFields = ({
                   </>
                 ) : (
                   <FieldDescription>
-                    Status atual: {activityStatusLabels[activity?.status ?? ''] ?? activity?.status}
-                    . Use as ações do detalhe para marcar como realizado ou cancelado.
+                    Status atual: {activity ? activityStatusLabels[activity.status] : ''}. Use as
+                    ações do detalhe para marcar como realizado ou cancelado.
                   </FieldDescription>
                 )}
               </Field>

@@ -128,6 +128,25 @@ Componentes:
 - **Rótulo "Agenda" no sidebar.** Revisitar se, no onboarding (ou no R6), ≥2 pessoas do time chamarem o destino de "agenda" ao navegar — aí o rail muda de rótulo mantendo a entidade "Atividade".
 - **Terceira entrada no guard de vocabulário (extração para módulo próprio).** Revisitar quando existir um 3º rename de termo — antes disso, a tabela no spec basta.
 
+## Simplify (2026-07-25 pós-C13)
+
+Passagem `/simplify` (qualidade + perf + reuso) e `capture-review-debts`. O diff é rename mecânico: nenhuma forma de query mudou, o índice parcial `activity_upcoming_start_at_idx` sobreviveu com o predicado intacto (`EXPLAIN` confirma Index Scan sem Filter residual) e o app segue usando os shells compartilhados.
+
+**Já resolvido (não reabrir):** interpolação `${index}` comida em `tests/unit/recentVisits.unit.spec.ts` (fixture com label único, agora com assertion que fecha a brecha, e slugs `praca-` alinhados); guard tolerante a espaço (`action[\s_-]?plan`), que era o buraco por onde `access/shared.ts` mantinha "action plan" em prosa; allowlist encolhida (o comentário de `campaignMigrationReconciliation.int.spec.ts` cita `activity` e o arquivo saiu da exceção); entrada morta `action_plan_municipality_idx` fora da migration (nenhuma migration jamais criou esse nome — só os snapshots o afirmam), deixando `up()`/`down()` com os mesmos 48 pares; buscas de FK com `to_regclass` em vez de `::regclass`; detalhe de organização reusando `ActivityStatusBadge` com `status` tipado como `ActivityStatus` no loader; resíduos de find-and-replace (banner `// Action activities`, `DOSSIER_*_PLAN_LIMIT`, "a activity", nome de teste "zona Município"); concordância pt-BR ("Criada por", "atividades apoiadas"); `??` impossível em `ActivityForm`.
+
+**Absorvido em outro plano:** o guard de `formActions` só inspeciona arquivos chamados exatamente `formActions.ts`, deixando `lifecycleFormActions.ts`/`resultFormActions.ts`/`updateFormActions.ts`/`taskActions.ts` sem verificação → [escala-dry-pos-c6.md](escala-dry-pos-c6.md) **Fase 4b** (dono da invariante do C8 F4).
+
+**Explicitamente fora (triage `capture-review-debts` 2026-07-25 pós-C13):**
+
+- **Redirect de `/campanha/planos*` → `/campanha/atividades*`** — gatilho: primeiro relato de 404 por bookmark. A rota viveu 7 dias, a navegação é pelo rail, e nada persistido aponta para ela (`recentVisits` só grava páginas de município); um redirect reintroduziria a string que o guard bane.
+- **Projeção de activity duplicada em `organizationData.ts`** (em vez de `activityListSelect` + `toActivityListViewModel`) — gatilho: a seção passar a mostrar localidade ou progresso de tarefas. Hoje a forma é subconjunto estrito e o view model completo faria over-fetch numa lista de resumo.
+- **Painel de filtros mobile compartilhado entre `ActivityFilters` e `SupporterFilters`** — gatilho: 3º painel com a mesma mecânica de colapso (municípios usa header rico, não este shape).
+- **Hoist das listas de rename da migration para constantes + helper local** — recusado: migration é história congelada, o consumidor é único, e a divergência que o helper preveniria está verificada como inexistente (conjuntos idênticos nos dois sentidos).
+- **Contadores `renamed` + `RAISE NOTICE` do `up()`** — mantidos: são a única evidência, no log do build da Vercel, de que o rename tocou o número esperado de objetos; a assimetria com `down()` é aceitável porque `down()` só roda local.
+- **`payload.create` sequencial dos rascunhos de demanda em `actions/activity.ts`** — pré-existente, roda sobre os rascunhos de um único submit dentro de uma transação; batchear perderia as semânticas de hook por linha.
+- **`it.each` do guard re-varrer `src`+`tests`+`scripts` por termo** — 150 ms na suíte unitária; hoisting da leitura é throughput, não duplicação.
+- **Padrão de "Praça" tolerante à falta de cedilha** — cobraria três allowlists novas (nomes reais de organização vindos da planilha, teste de entradas legadas `kind: 'nucleus'`) para pegar um fóssil já corrigido à mão.
+
 ## Referências
 
 - `docs/roadmap.md` (Trilha C / "Demais itens abertos"; Janela 1; grafo)

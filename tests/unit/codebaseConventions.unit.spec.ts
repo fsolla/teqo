@@ -80,43 +80,39 @@ describe('banned campaign terminology', () => {
     },
     {
       id: 'Plano de Ação',
-      pattern:
-        /actionPlan|ActionPlan|ACTION_PLAN|action_plan|action-plan|planos? de aç[aã]o|\/campanha\/planos/i,
+      // Accent-tolerant (agents routinely type "plano de acao") and space-tolerant,
+      // so English prose ("action plan") cannot slip past the identifier forms.
+      pattern: /action[\s_-]?plan|planos? de a[çc][aã]o|\/campanha\/planos/i,
       remedy: 'use "Atividade" / activity (or allowlist frozen history)',
       allowlist: [
         // Emits the frozen remodel migration, whose SQL predates the rename.
         'scripts/generate-remodel-municipalities-migration.mjs',
-        // Asserts against the frozen migration chain by its historical names.
-        'tests/int/campaignMigrationReconciliation.int.spec.ts',
       ],
     },
   ] as const
 
   const searchRoots = ['src', 'tests', 'scripts'] as const
 
-  it.each(bannedTerms.map((term) => [term.id, term] as const))(
-    'keeps %s out of src, tests and scripts',
-    (_id, term) => {
-      // This spec quotes the banned literals itself.
-      const allowlist = new Set<string>([...term.allowlist, repoPath(import.meta.filename)])
-      const offenders: string[] = []
+  it.each(bannedTerms)('keeps $id out of src, tests and scripts', (term) => {
+    // This spec quotes the banned literals itself.
+    const allowlist = new Set<string>([...term.allowlist, repoPath(import.meta.filename)])
+    const offenders: string[] = []
 
-      for (const root of searchRoots) {
-        for (const file of walkSourceFiles(resolve(repoRoot, root), ['.ts', '.tsx', '.mjs'])) {
-          const path = repoPath(file)
-          if (path.startsWith('src/migrations/')) continue
-          if (allowlist.has(path)) continue
+    for (const root of searchRoots) {
+      for (const file of walkSourceFiles(resolve(repoRoot, root), ['.ts', '.tsx', '.mjs'])) {
+        const path = repoPath(file)
+        if (path.startsWith('src/migrations/')) continue
+        if (allowlist.has(path)) continue
 
-          const lines = readFileSync(file, 'utf8').split('\n')
-          for (const [index, line] of lines.entries()) {
-            if (term.pattern.test(line)) offenders.push(`${path}:${index + 1}`)
-          }
+        const lines = readFileSync(file, 'utf8').split('\n')
+        for (const [index, line] of lines.entries()) {
+          if (term.pattern.test(line)) offenders.push(`${path}:${index + 1}`)
         }
       }
+    }
 
-      expect(offenders, term.remedy).toEqual([])
-    },
-  )
+    expect(offenders, term.remedy).toEqual([])
+  })
 })
 
 describe('eslint legacy ignore lists', () => {

@@ -14,10 +14,11 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
  * Two index names in the lists are fossils from the Município remodel, which
  * renamed the `plaza_id` columns but not their indexes: the database holds
  * `action_plan_plaza_idx` and `campaign_demand_plaza_idx` while the drizzle
- * snapshot expects `*_municipality_idx`. The six remaining `%plaza%` fossils on
- * other tables are aligned here too, so the database matches the snapshot in one
- * pass. Every rename is guarded on the source object existing, so environments
- * that already carry either name converge.
+ * snapshot expects `*_municipality_idx` — no migration ever created the aligned
+ * name, so the fossil is the only name any database can hold. The six remaining
+ * `%plaza%` fossils on other tables are aligned here too, so the database matches
+ * the snapshot in one pass. Every rename is guarded on the source object existing,
+ * so a partially converged environment still lands on the same state.
  */
 
 const renameTables = sql`
@@ -117,7 +118,6 @@ const renameIndexes = sql`
       ('action_plan_start_at_idx', 'activity_start_at_idx'),
       ('action_plan_upcoming_start_at_idx', 'activity_upcoming_start_at_idx'),
       ('action_plan_plaza_idx', 'activity_municipality_idx'),
-      ('action_plan_municipality_idx', 'activity_municipality_idx'),
       ('action_plan_responsible_idx', 'activity_responsible_idx'),
       ('action_plan_leadership_idx', 'activity_leadership_idx'),
       ('action_plan_result_recorded_by_idx', 'activity_result_recorded_by_idx'),
@@ -188,7 +188,7 @@ const renameForeignKeys = sql`
     LOOP
       IF EXISTS (
         SELECT 1 FROM pg_constraint
-        WHERE conname = r.old_name AND conrelid = format('public.%I', r.table_name)::regclass
+        WHERE conname = r.old_name AND conrelid = to_regclass('public.' || quote_ident(r.table_name))
       ) THEN
         EXECUTE format(
           'ALTER TABLE public.%I RENAME CONSTRAINT %I TO %I',
@@ -281,7 +281,7 @@ export async function down({ db }: MigrateDownArgs): Promise<void> {
       LOOP
         IF EXISTS (
           SELECT 1 FROM pg_constraint
-          WHERE conname = r.new_name AND conrelid = format('public.%I', r.table_name)::regclass
+          WHERE conname = r.new_name AND conrelid = to_regclass('public.' || quote_ident(r.table_name))
         ) THEN
           EXECUTE format(
             'ALTER TABLE public.%I RENAME CONSTRAINT %I TO %I',

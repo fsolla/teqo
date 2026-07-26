@@ -160,7 +160,7 @@ describe('campaign migration existing-schema reconciliation', () => {
   // NOTE: the pre-remodel "empty path" rollback test (municipalityRemodel.down →
   // consolidated.down → original.down) is intentionally absent: the municipality
   // remodel down is currently broken — `DROP TABLE "municipality" CASCADE` already
-  // cascades the supporter/action_plan/locked-documents FKs that the script
+  // cascades the supporter/activity/locked-documents FKs that the script
   // then tries to DROP CONSTRAINT explicitly, so the rollback always aborts.
   // Restore that coverage once the migration down uses IF EXISTS (or drops
   // constraints before the cascaded tables).

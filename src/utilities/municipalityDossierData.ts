@@ -43,8 +43,8 @@ import {
  */
 export const DOSSIER_LEADERSHIP_LIMIT = 8
 export const DOSSIER_SIGNAL_LIMIT = 5
-const DOSSIER_UPCOMING_PLAN_LIMIT = 3
-const DOSSIER_RECENT_PLAN_LIMIT = 2
+const DOSSIER_UPCOMING_ACTIVITY_LIMIT = 3
+const DOSSIER_RECENT_ACTIVITY_LIMIT = 2
 
 export type MunicipalityDossierData = {
   baseline: MunicipalityElectoralBaseline | null
@@ -77,8 +77,8 @@ const loadDossierActivities = async (
     })
 
   const [upcoming, recent] = await Promise.all([
-    findActivities('proximos', DOSSIER_UPCOMING_PLAN_LIMIT, 'startAt'),
-    findActivities('realizados', DOSSIER_RECENT_PLAN_LIMIT, '-startAt'),
+    findActivities('proximos', DOSSIER_UPCOMING_ACTIVITY_LIMIT, 'startAt'),
+    findActivities('realizados', DOSSIER_RECENT_ACTIVITY_LIMIT, '-startAt'),
   ])
 
   return {

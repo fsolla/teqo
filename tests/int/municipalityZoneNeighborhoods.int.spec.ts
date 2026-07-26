@@ -45,7 +45,7 @@ const canonicalEvidenceRows = (assignments: OfficialEvidence['assignments']): st
 describe('Municipality zone neighborhood catalog (Salvador only)', () => {
   const zoneMunicipalities = municipalityCatalog.filter((entry) => entry.kind === 'zona')
 
-  it('covers every zona Município with a non-empty neighborhood list', () => {
+  it('covers every zone municipality with a non-empty neighborhood list', () => {
     expect(municipalityZoneNeighborhoods).toHaveLength(zoneMunicipalities.length)
     expect(new Set(municipalityZoneNeighborhoods.map((entry) => entry.municipalitySlug)).size).toBe(
       zoneMunicipalities.length,

@@ -616,7 +616,7 @@ export const Activity: CollectionConfig = {
       name: 'createdBy',
       type: 'relationship',
       relationTo: 'campaignUser',
-      label: 'Criado por',
+      label: 'Criada por',
       index: true,
       admin: {
         readOnly: true,

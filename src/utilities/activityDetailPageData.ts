@@ -51,7 +51,7 @@ const loadActivityUpdateAuthorNames = async (
 }
 
 /**
- * Display-name lookup for a activity's municipality when the document was loaded at
+ * Display-name lookup for an activity's municipality when the document was loaded at
  * depth 0 (updates tab). The actor already passed row access on the activity
  * itself, so reading the municipality's name/slug privileged avoids a second
  * per-role access round-trip (established display-name pattern).
