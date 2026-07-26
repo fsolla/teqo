@@ -32,10 +32,7 @@ import {
 } from '@/utilities/municipalityListUrl'
 import { loadMunicipalityListPageBundle } from '@/utilities/municipalityPageData'
 import { getEligibleAdvisorOptions, loadAdvisorSummaries } from '@/utilities/municipalityViewModels'
-import {
-  createMunicipalityListSignalFormAction,
-  setMunicipalityPoliticalTrendFormAction,
-} from './municipalityStaffFormActions'
+import { createMunicipalityListSignalFormAction } from './municipalityStaffFormActions'
 
 type MunicipalitiesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -129,7 +126,6 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
         isCoordinator={isCoordinator}
         advisorOptions={advisorOptions}
         columnFilterOptions={columnFilterOptions}
-        trendFormAction={setMunicipalityPoliticalTrendFormAction}
         signalFormAction={createMunicipalityListSignalFormAction}
         state={state}
       />

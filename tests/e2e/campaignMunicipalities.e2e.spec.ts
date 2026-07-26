@@ -186,6 +186,60 @@ test.describe('Municípios — jornadas por papel', () => {
     ).toBeVisible()
   })
 
+  test('coordinator sets trend status and justification with auto-save (B24)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const password = fixtures.value('senha')
+    const coordinator = await campaign.payload.create({
+      collection: 'campaignUser',
+      data: {
+        name: fixtures.value('Coordenador Tendência'),
+        email: `${fixtures.value('coordinator-trend')}@example.com`,
+        password,
+        role: 'coordinator',
+      },
+      depth: 0,
+    })
+    const municipality = await fixtures.claimMunicipality()
+    const note = fixtures.value('Vereador confirmou apoio local')
+
+    await campaign.login(page, coordinator.email!, password)
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+    await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Editar tendência política' }).click()
+    const trendPopover = page.locator('[data-slot="popover-content"]')
+    await expect(trendPopover).toBeVisible()
+    await expect(trendPopover.getByRole('button', { name: 'Salvar' })).toHaveCount(0)
+
+    await trendPopover.getByLabel('Justificativa').fill(note)
+    await trendPopover.getByLabel('Tendência', { exact: true }).selectOption('favoravel')
+    await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/campanha/municipios/political-trend') &&
+          response.request().method() === 'POST' &&
+          response.ok(),
+      ),
+      trendPopover.getByLabel('Justificativa').blur(),
+    ])
+
+    await expect(page.getByRole('button', { name: 'Editar tendência política' })).toContainText(
+      'Favorável',
+    )
+
+    await page.keyboard.press('Escape')
+    await page.reload()
+    await page.getByRole('button', { name: 'Editar tendência política' }).click()
+    const reopened = page.locator('[data-slot="popover-content"]')
+    await expect(reopened.getByLabel('Tendência', { exact: true })).toHaveValue('favoravel')
+    await expect(reopened.getByLabel('Justificativa')).toHaveValue(note)
+  })
+
   test('coordinator registers a typed signal from the list freshness cell', async ({
     campaign,
     page,

@@ -43,8 +43,6 @@ const municipalityListDefaultProps = {
   isCoordinator: false,
   advisorOptions: [],
   columnFilterOptions: { name: [], region: [], advisor: [] },
-  trendFormAction: noopListFormAction,
-  advisorsFormAction: noopListFormAction,
   signalFormAction: noopListFormAction,
   state: { page: 1 },
 }
@@ -598,24 +596,22 @@ describe('campaign visual foundation', () => {
       const withNote = renderToStaticMarkup(
         createElement(MunicipalityListTrendControl, {
           municipalityID: 1,
-          municipalitySlug: 'seabra',
           status: 'favoravel',
           trendNote: 'Vereador migrou para a base',
-          formAction: noopListFormAction,
         }),
       )
       expect(withNote.match(/data-slot="tooltip-trigger"/g)).toHaveLength(1)
       // Radix mounts tooltip content lazily — it never reaches the server
       // markup, same contract as `campaignTable.unit.spec.ts`.
       expect(withNote).not.toContain('Vereador migrou para a base')
+      expect(withNote).toContain('aria-haspopup="dialog"')
+      expect(withNote).not.toContain('Salvar')
 
       const withoutNote = renderToStaticMarkup(
         createElement(MunicipalityListTrendControl, {
           municipalityID: 1,
-          municipalitySlug: 'seabra',
           status: 'favoravel',
           trendNote: null,
-          formAction: noopListFormAction,
         }),
       )
       expect(withoutNote).not.toContain('data-slot="tooltip-trigger"')
