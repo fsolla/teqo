@@ -1,37 +1,31 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
-import { municipalityStaffEditSafeMessages } from '@/app/(campaign)/campanha/(app)/municipios/municipalityStaffEditMessages'
-import { setMunicipalityExpectedVotes } from '@/app/(campaign)/campanha/actions/municipality'
+import { setMunicipalityAdvisorMembership } from '@/app/(campaign)/campanha/actions/municipality'
+import { MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES } from '@/lib/schemas/municipality'
 import { positiveRelationshipId } from '@/lib/schemas/primitives'
-import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import {
   CAMPAIGN_SESSION_EXPIRED_MESSAGE,
   mapCampaignFormActionError,
 } from '@/utilities/campaignFormActionError'
+import { uniqueRelationshipIds } from '@/utilities/relationship'
 import { isSameOriginRequest } from '@/utilities/sameOriginRequest'
 
-import type { MunicipalityListExpectedVotesResponse } from './types'
+import type { MunicipalityListAdvisorsResponse } from './types'
 
-export type { MunicipalityListExpectedVotesResponse } from './types'
+export type { MunicipalityListAdvisorsResponse } from './types'
 
 export const dynamic = 'force-dynamic'
 
-const optionalEstimate = z.number().int().min(0).max(1_000_000).nullable()
-
-/** Unordered draft body — setMunicipalityExpectedVotes normalizes before persist. */
 const bodySchema = z.object({
   municipalityId: positiveRelationshipId,
-  expectedVotes: z.object({
-    pessimistic: optionalEstimate,
-    central: optionalEstimate,
-    optimistic: optionalEstimate,
-  }),
+  advisorId: positiveRelationshipId,
+  assigned: z.boolean(),
 })
 
 export async function POST(
   request: Request,
-): Promise<NextResponse<MunicipalityListExpectedVotesResponse>> {
+): Promise<NextResponse<MunicipalityListAdvisorsResponse>> {
   if (!isSameOriginRequest(request)) {
     return NextResponse.json({ status: 'error', message: 'Requisição inválida.' }, { status: 403 })
   }
@@ -47,27 +41,28 @@ export async function POST(
   }
 
   try {
-    const { municipalityId, expectedVotes } = bodySchema.parse(json)
-    const updated = await setMunicipalityExpectedVotes({
+    const { municipalityId, advisorId, assigned } = bodySchema.parse(json)
+    const updated = await setMunicipalityAdvisorMembership({
       municipality: municipalityId,
-      expectedVotes,
+      advisor: advisorId,
+      assigned,
     })
 
     return NextResponse.json({
       status: 'success',
-      message: 'Votos estimados atualizados.',
-      savedExpectedVotes: toVoteEstimateScenarioViewModel(updated.expectedVotes),
+      message: assigned ? 'Assessor atribuído.' : 'Assessor removido.',
+      advisors: uniqueRelationshipIds(updated.advisors),
     })
   } catch (error) {
     const mapped = mapCampaignFormActionError({
       error,
       safeMessages: [
-        ...municipalityStaffEditSafeMessages,
+        ...MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES,
         'Autenticação necessária.',
         CAMPAIGN_SESSION_EXPIRED_MESSAGE,
       ],
       genericMessage:
-        'Não foi possível salvar os votos estimados. Verifique seu acesso e tente novamente.',
+        'Não foi possível atualizar os assessores. Verifique seu acesso e tente novamente.',
     })
 
     const isAuthError =
@@ -78,7 +73,7 @@ export async function POST(
     return NextResponse.json(
       {
         status: 'error',
-        message: mapped.message ?? 'Não foi possível salvar os votos estimados.',
+        message: mapped.message ?? 'Não foi possível atualizar os assessores.',
       },
       { status: isAuthError ? 401 : 400 },
     )

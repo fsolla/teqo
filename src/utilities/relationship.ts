@@ -21,3 +21,8 @@ export const requireRelationshipId = (
   if (id === null) throw new Error(message)
   return id
 }
+
+/** Normalizes a `hasMany` relationship field (ids or populated docs, any depth) into a deduped id list. */
+export const uniqueRelationshipIds = (values: readonly unknown[] | null | undefined): number[] => [
+  ...new Set((values ?? []).map(relationshipId).filter((id): id is number => id !== null)),
+]

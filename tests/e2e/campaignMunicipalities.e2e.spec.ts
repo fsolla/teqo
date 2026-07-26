@@ -122,6 +122,70 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(page.getByText(`Assessoria: ${advisor.name}`)).toBeVisible()
   })
 
+  test('coordinator assigns an advisor from the list combobox with auto-save (B27)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const password = fixtures.value('senha')
+    const coordinator = await campaign.payload.create({
+      collection: 'campaignUser',
+      data: {
+        name: fixtures.value('Coordenador Combobox'),
+        email: `${fixtures.value('coordinator-combobox')}@example.com`,
+        password,
+        role: 'coordinator',
+      },
+      depth: 0,
+    })
+    const advisor = await campaign.payload.create({
+      collection: 'campaignUser',
+      data: {
+        name: fixtures.value('Assessora Combobox'),
+        email: `${fixtures.value('advisor-combobox')}@example.com`,
+        password,
+        role: 'advisor',
+      },
+      depth: 0,
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, password)
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+    await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
+
+    const advisorsTrigger = page.getByRole('button', { name: 'Editar assessores' })
+    await advisorsTrigger.click()
+
+    const advisorsPopover = page.locator('[data-slot="popover-content"]')
+    await expect(advisorsPopover).toBeVisible()
+
+    const searchNamePart = advisor.name.split(' ')[0]
+    await advisorsPopover.getByRole('combobox', { name: 'Buscar assessor' }).fill(searchNamePart)
+    await advisorsPopover.getByText(advisor.name, { exact: false }).click()
+
+    // No "Salvar" button in this popover: selecting the option auto-saves the
+    // delta and renders it as a removable chip immediately.
+    const chip = advisorsPopover.getByRole('button', { name: `Remover ${advisor.name}` })
+    await expect(chip).toBeVisible()
+
+    // The popover stays open after the write (auto-save, not submit+close).
+    await expect(advisorsPopover).toBeVisible()
+    await page.keyboard.press('Escape')
+
+    // Persistence: reload and reopen to confirm the server, not just local
+    // state, now holds the assignment.
+    await page.reload()
+    await page.getByRole('button', { name: 'Editar assessores' }).click()
+    await expect(
+      page.locator('[data-slot="popover-content"]').getByRole('button', {
+        name: `Remover ${advisor.name}`,
+      }),
+    ).toBeVisible()
+  })
+
   test('coordinator registers a typed signal from the list freshness cell', async ({
     campaign,
     page,

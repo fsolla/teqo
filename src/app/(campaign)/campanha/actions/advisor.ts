@@ -5,6 +5,7 @@ import { randomBytes } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
+import { nextAdvisorIdsAfterMembership } from '@/lib/municipalityAdvisorMembership'
 import {
   ADVISOR_EMAIL_CONFLICT_MESSAGE,
   ADVISOR_UNRESTRICTED_MESSAGE,
@@ -21,7 +22,6 @@ import {
   type AdvisorPasswordResetInput,
   type AdvisorProfileUpdateInput,
 } from '@/lib/schemas/advisor'
-import { MAX_ADVISORS_PER_MUNICIPALITY } from '@/lib/schemas/municipality'
 import type { CampaignUser } from '@/payload-types'
 import {
   getCampaignActionContext,
@@ -35,7 +35,7 @@ import { hookFilledCreateData } from '@/utilities/hookFilledData'
 import { revalidateMunicipalityListPaths } from '@/utilities/municipalityRevalidation'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
-import { relationshipId } from '@/utilities/relationship'
+import { uniqueRelationshipIds } from '@/utilities/relationship'
 
 const revalidateAdvisorPaths = (advisorId?: number) => {
   revalidatePath('/campanha/assessores', 'page')
@@ -83,30 +83,6 @@ const translateUniqueEmailConflict = (error: unknown): never => {
     throw new Error(ADVISOR_EMAIL_CONFLICT_MESSAGE)
   }
   throw error instanceof Error ? error : new Error(String(error))
-}
-
-/**
- * Returns the next advisor-id list after applying one membership change, or
- * `null` when the municipality is already in the desired state (no write
- * needed). Shared by the single-toggle and batch (territory/ZE) mutations.
- */
-const nextAdvisorIdsAfterMembership = (
-  currentAdvisorIDs: readonly number[],
-  advisorId: number,
-  assigned: boolean,
-): number[] | null => {
-  const alreadyAssigned = currentAdvisorIDs.includes(advisorId)
-  if (assigned === alreadyAssigned) return null
-
-  if (assigned) {
-    if (currentAdvisorIDs.length >= MAX_ADVISORS_PER_MUNICIPALITY) {
-      throw new Error(
-        `Cada município aceita no máximo ${MAX_ADVISORS_PER_MUNICIPALITY} assessores.`,
-      )
-    }
-    return [...currentAdvisorIDs, advisorId]
-  }
-  return currentAdvisorIDs.filter((id) => id !== advisorId)
 }
 
 export const createAdvisorRecord = async (
@@ -213,13 +189,7 @@ export const setAdvisorMunicipalityMembershipRecord = async (
         req,
       })
 
-      const currentAdvisorIDs = [
-        ...new Set(
-          (municipality.advisors ?? [])
-            .map(relationshipId)
-            .filter((id): id is number => id !== null),
-        ),
-      ]
+      const currentAdvisorIDs = uniqueRelationshipIds(municipality.advisors)
       const nextAdvisorIDs = nextAdvisorIdsAfterMembership(currentAdvisorIDs, advisorId, assigned)
       if (nextAdvisorIDs === null) return municipality
 
@@ -289,13 +259,7 @@ export const setAdvisorMunicipalitiesBatchRecord = async (
           req,
         })
 
-        const currentAdvisorIDs = [
-          ...new Set(
-            (municipality.advisors ?? [])
-              .map(relationshipId)
-              .filter((id): id is number => id !== null),
-          ),
-        ]
+        const currentAdvisorIDs = uniqueRelationshipIds(municipality.advisors)
         const nextAdvisorIDs = nextAdvisorIdsAfterMembership(currentAdvisorIDs, advisorId, assigned)
         if (nextAdvisorIDs === null) continue
 

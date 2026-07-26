@@ -1,7 +1,7 @@
 # Combobox, chips e auto-save no popover de Assessores da lista de municípios
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue
+Atualizado em: 2026-07-26
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B27**)
 Impeccable: B — encaixe no `MunicipalityListAdvisorsControl` (tabela desktop + card mobile de `/campanha/municipios`); sem rota nova de UI
 Appetite: ~0,75 dia eng; 1 componente reescrito + 1 route handler JSON + 1 record de delta + 1 helper puro movido; sem migration
@@ -122,8 +122,8 @@ Componentes:
 ## Referências
 
 - `docs/roadmap.md` (Trilha B, B27; grafo; Janela 1–2; cortes seguros)
-- `src/components/campaign/municipality/MunicipalityListAdvisorsControl.tsx` — superfície alvo (checkbox list + "Salvar assessores")
-- `src/components/campaign/municipality/MunicipalityList.tsx` (~290–320 e card mobile ~483–494) — os dois pontos de uso do controle
+- `src/components/campaign/municipality/MunicipalityListAdvisorsControl.tsx` — superfície entregue (chips + `Command` + auto-save por delta; antiga checkbox list + "Salvar assessores" removida)
+- `src/components/campaign/municipality/MunicipalityList.tsx` (~378 e card mobile ~583) — os dois pontos de uso do controle (números de linha corrigidos nesta entrega)
 - `src/components/campaign/municipality/MunicipalityListExpectedVotesControl.tsx` — máquina de auto-save (pendência, rollback, live region) a espelhar
 - `src/app/(campaign)/campanha/(app)/municipios/expected-votes/route.ts` e `types.ts` — contrato do endpoint e `isSameOriginRequest`
 - `src/components/campaign/advisor/AdvisorMunicipalityCell.tsx` — chips removíveis + gravação por delta (padrão visual e de interação)
@@ -137,3 +137,11 @@ Componentes:
 - `docs/plans/autosave-tendencia-lista-municipios.md` (**B24**) · `docs/plans/tooltip-celulas-listas.md` (**B23**) · `docs/plans/gerenciar-assessores.md` (**B19 ✓**) · `docs/plans/edicao-rapida-lista-pracas.md` (**B9 ✓**)
 - AGENTS.md — Campaign auth, naming pt-BR/inglês, `overrideAccess: false`, escrita transacional
 - `PRODUCT.md` / `DESIGN.md` — princípios 2, 3, 4 e 8; Field Desk · regras `campanha-edit-where-you-see.mdc`, `campanha-action-feedback.mdc`
+
+## Entregue (2026-07-26)
+
+Implementado como planejado, sem desvio de escopo. `nextAdvisorIdsAfterMembership` mora agora em `src/lib/municipalityAdvisorMembership.ts` (com unit tests próprios, que faltavam); `setMunicipalityAdvisorMembershipRecord`/`setMunicipalityAdvisorMembership` em `actions/municipality.ts` cobertos por 6 int tests (coordinator/candidate, auto-atribuição, negação de `advisor`/`leader`, idempotência, limite de 10); `POST /campanha/municipios/advisors` espelha `expected-votes/route.ts` byte a byte no contrato. O polish do `/impeccable` alinhou o gatilho ao irmão `MunicipalityListExpectedVotesControl` (`aria-expanded`/`aria-haspopup`/realce ao abrir) — única mudança visual além do que o plano já especificava. `assignMunicipalityAdvisorsFormAction` sobrevive intacto só para `/editar`; `pnpm exec knip` confirma nada órfão (a checagem full falha por um problema pré-existente P3 ao carregar `payload.config.ts`, não relacionado a este item).
+
+Achado de infraestrutura fora do escopo original: o `webServer` do Playwright (`pnpm dev`) compila uma rota `POST`-only só no primeiro hit, e o Fast Refresh disparado por essa compilação recarrega a página e aborta o fetch em voo do e2e (`ERR_ABORTED`). Corrigido com um prewarm dummy de `/campanha/municipios/advisors` e `/campanha/municipios/expected-votes` em `tests/e2e/setup.e2e.spec.ts`, antes dos specs reais.
+
+Gate: `tsc --noEmit`, `lint --max-warnings=0`, `format:check`, `check:cycles` limpos; 393 unit+int (6 novos) verdes; `pnpm build` verde; Aikido 0 achados nos 9 arquivos novos/editados. E2E do fluxo B27 verde tanto isolado quanto dentro da suíte completa — rodadas full-suite mostraram falhas rotativas em specs **não relacionados** (checkbox de consentimento, demandas, conceitos) sob carga sustentada da máquina, sempre verdes ao isolar; tratado como flakiness de ambiente pré-existente, não regressão desta entrega.

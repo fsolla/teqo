@@ -2,11 +2,15 @@
 
 import type { Payload } from 'payload'
 
+import { nextAdvisorIdsAfterMembership } from '@/lib/municipalityAdvisorMembership'
 import {
+  MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE,
+  municipalityAdvisorMembershipSchema,
   municipalityAdvisorsAssignmentSchema,
   municipalityExpectedVotesSchema,
   municipalityPoliticalTrendSchema,
   municipalityStrategyUpdateSchema,
+  type MunicipalityAdvisorMembershipInput,
   type MunicipalityAdvisorsAssignmentInput,
   type MunicipalityExpectedVotesInput,
   type MunicipalityPoliticalTrendInput,
@@ -22,6 +26,7 @@ import {
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
+import { uniqueRelationshipIds } from '@/utilities/relationship'
 
 const getFreshStaffActor = (
   payload: Payload,
@@ -135,7 +140,7 @@ export const assignMunicipalityAdvisorsRecord = async (
       await reloadUnrestrictedActor(
         payload,
         actor,
-        'Somente a coordenação geral ou o candidato designa assessores.',
+        MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE,
         req,
       )
 
@@ -159,4 +164,70 @@ export const assignMunicipalityAdvisorsRecord = async (
 export const assignMunicipalityAdvisors = async (input: MunicipalityAdvisorsAssignmentInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return assignMunicipalityAdvisorsRecord(payload, actor, input)
+}
+
+/**
+ * Single-advisor delta from the list popover — writes one toggle instead of
+ * replacing the whole `advisors` array, so a concurrent edit from another
+ * tab/actor is never clobbered. Same lock and eligibility hook as
+ * `assignMunicipalityAdvisorsRecord`; unlike it, the target can be coordinator
+ * or candidate too (the popover lists every unrestricted staff member as
+ * eligible, not just `advisor`-role accounts), so it does not reuse
+ * `assertTargetAdvisor` from `actions/advisor.ts`. Deliberately does not
+ * revalidate — the list's facet/sort by advisor reconciles on next navigation,
+ * same choice as the votos estimados popover.
+ */
+export const setMunicipalityAdvisorMembershipRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: MunicipalityAdvisorMembershipInput,
+) => {
+  const { municipality, advisor, assigned } = municipalityAdvisorMembershipSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      await reloadUnrestrictedActor(
+        payload,
+        actor,
+        MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE,
+        req,
+      )
+
+      await acquireTextAdvisoryLocks(payload, req, [`municipality-advisors:${municipality}`])
+
+      const current = await payload.findByID({
+        collection: 'municipality',
+        id: municipality,
+        depth: 0,
+        select: { advisors: true },
+        overrideAccess: true,
+        req,
+      })
+
+      const currentAdvisorIDs = uniqueRelationshipIds(current.advisors)
+      const nextAdvisorIDs = nextAdvisorIdsAfterMembership(currentAdvisorIDs, advisor, assigned)
+      if (nextAdvisorIDs === null) return current
+
+      // Intentional admin bypass: unrestricted role was freshly verified above;
+      // the advisors field is admin-only by field access, and eligibility is
+      // reconfirmed by the `validateMunicipalityAdvisors` beforeValidate hook.
+      return payload.update({
+        collection: 'municipality',
+        id: municipality,
+        data: { advisors: nextAdvisorIDs },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+    },
+    { beginFailureMessage: 'Não foi possível iniciar a atualização de assessores.' },
+  )
+}
+
+export const setMunicipalityAdvisorMembership = async (
+  input: MunicipalityAdvisorMembershipInput,
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return setMunicipalityAdvisorMembershipRecord(payload, actor, input)
 }
