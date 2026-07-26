@@ -7,7 +7,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
+import { formatAdvisorNamesTooltip } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
 import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
+import { MunicipalityListAdvisorsControl } from '@/components/campaign/municipality/MunicipalityListAdvisorsControl'
+import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import { TseZoneBadge } from '@/components/campaign/municipality/TseZoneBadge'
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { Progress } from '@/components/ui/Progress'
@@ -480,5 +483,146 @@ describe('campaign visual foundation', () => {
     // also carry header explanations.
     const [theadHtml] = html.split('<tbody')
     expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(5)
+  })
+
+  /**
+   * B23: the advisor stack only shows up to 3 initials (and initials
+   * collide), so the full names ride along as redundant text. Radix mounts
+   * tooltip content only once opened, so these pin the trigger half of the
+   * contract — the same shape `campaignTable.unit.spec.ts` pins generically.
+   */
+  describe('B23 cell tooltips', () => {
+    it('formats one advisor name per line and returns null for an empty list', () => {
+      expect(formatAdvisorNamesTooltip([])).toBeNull()
+
+      const one = renderToStaticMarkup(formatAdvisorNamesTooltip([{ id: 1, name: 'Ana Bastos' }])!)
+      expect(one).toContain('Ana Bastos')
+
+      const three = renderToStaticMarkup(
+        formatAdvisorNamesTooltip([
+          { id: 1, name: 'Ana Bastos' },
+          { id: 2, name: 'Beto Lima' },
+          { id: 3, name: 'Carla Dias' },
+        ])!,
+      )
+      expect(three).toContain('Ana Bastos')
+      expect(three).toContain('Beto Lima')
+      expect(three).toContain('Carla Dias')
+    })
+
+    it('wraps the advisor cell in a tooltip only when there is a name to show', () => {
+      // The staff `<thead>` already carries 10 header-explanation tooltips
+      // (B22), regardless of row data. This baseline isolates the advisors
+      // CELL tooltip, the one this test actually exercises.
+      const HEADER_TOOLTIP_COUNT = 10
+      const baseMunicipality = {
+        id: 1,
+        name: 'Seabra',
+        slug: 'seabra',
+        kind: 'municipio' as const,
+        city: 'Seabra',
+        region: 'Chapada Diamantina',
+        ibgeCode: '2929800',
+        zoneNumber: null,
+        priority: 'normal' as const,
+        lastUpdateAt: null,
+        lastSignalAt: null,
+        expectedVotes: toVoteEstimateScenarioViewModel(null),
+        politicalTrendStatus: null,
+        politicalTrendNote: null,
+        pledges: createEmptyMunicipalityPledgeAggregate(),
+        votePosition2022: null,
+        territorialClass: 'sem_base' as const,
+        territorialClassFactors: [],
+        goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
+      }
+
+      const withAdvisors = renderToStaticMarkup(
+        createElement(MunicipalityList, {
+          municipalities: [{ ...baseMunicipality, advisorIDs: [7] }],
+          advisorNamesById: new Map([[7, { id: 7, name: 'Ana Bastos', phone: null }]]),
+          isStaffView: true,
+          ...municipalityListDefaultProps,
+        }),
+      )
+      expect(withAdvisors.match(/data-slot="tooltip-trigger"/g)).toHaveLength(
+        HEADER_TOOLTIP_COUNT + 1,
+      )
+
+      const withoutAdvisors = renderToStaticMarkup(
+        createElement(MunicipalityList, {
+          municipalities: [{ ...baseMunicipality, advisorIDs: [] }],
+          advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
+          isStaffView: true,
+          ...municipalityListDefaultProps,
+        }),
+      )
+      expect(withoutAdvisors.match(/data-slot="tooltip-trigger"/g)).toHaveLength(
+        HEADER_TOOLTIP_COUNT,
+      )
+      expect(withoutAdvisors).toContain('Sem assessor')
+    })
+
+    it("wraps the coordinator's advisor Popover trigger in a tooltip, never doubling the affordance", () => {
+      const withAdvisors = renderToStaticMarkup(
+        createElement(MunicipalityListAdvisorsControl, {
+          municipalityID: 1,
+          municipalitySlug: 'seabra',
+          currentAdvisorIDs: [7],
+          isPriority: false,
+          advisorNamesById: new Map([[7, { id: 7, name: 'Ana Bastos', phone: null }]]),
+          options: [],
+          formAction: noopListFormAction,
+        }),
+      )
+      expect(withAdvisors.match(/data-slot="tooltip-trigger"/g)).toHaveLength(1)
+      // The tooltip wraps the SAME trigger — nesting `asChild` composition
+      // means only the outer wrapper's `data-slot` survives on the button,
+      // but Popover's own trigger wiring (still the innermost primitive)
+      // stays intact and functional.
+      expect(withAdvisors).toContain('aria-haspopup="dialog"')
+
+      const withoutAdvisors = renderToStaticMarkup(
+        createElement(MunicipalityListAdvisorsControl, {
+          municipalityID: 1,
+          municipalitySlug: 'seabra',
+          currentAdvisorIDs: [],
+          isPriority: false,
+          advisorNamesById: new Map(),
+          options: [],
+          formAction: noopListFormAction,
+        }),
+      )
+      expect(withoutAdvisors).not.toContain('data-slot="tooltip-trigger"')
+      expect(withoutAdvisors).toContain('data-slot="popover-trigger"')
+      expect(withoutAdvisors).toContain('aria-haspopup="dialog"')
+    })
+
+    it('shows the trend justification on hover only when one was recorded', () => {
+      const withNote = renderToStaticMarkup(
+        createElement(MunicipalityListTrendControl, {
+          municipalityID: 1,
+          municipalitySlug: 'seabra',
+          status: 'favoravel',
+          trendNote: 'Vereador migrou para a base',
+          formAction: noopListFormAction,
+        }),
+      )
+      expect(withNote.match(/data-slot="tooltip-trigger"/g)).toHaveLength(1)
+      // Radix mounts tooltip content lazily — it never reaches the server
+      // markup, same contract as `campaignTable.unit.spec.ts`.
+      expect(withNote).not.toContain('Vereador migrou para a base')
+
+      const withoutNote = renderToStaticMarkup(
+        createElement(MunicipalityListTrendControl, {
+          municipalityID: 1,
+          municipalitySlug: 'seabra',
+          status: 'favoravel',
+          trendNote: null,
+          formAction: noopListFormAction,
+        }),
+      )
+      expect(withoutNote).not.toContain('data-slot="tooltip-trigger"')
+    })
   })
 })

@@ -1,11 +1,13 @@
 # Tooltip de conteúdo nas células das listas
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue
+Atualizado em: 2026-07-26
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B23**)
 Impeccable: B — encaixe nas células "Assessores" e "Tendência" já existentes de `/campanha/municipios`, com a capacidade promovida para o sistema de listas compartilhado (`CampaignTable`)
-Appetite: ~0,75 dia eng; 1 prop em `CampaignTableColumn`, 1 wrapper na célula, 1 flag no primitivo de tooltip, 2 consumidores (Assessores nos dois papéis + justificativa da Tendência); sem migration
+Appetite: ~0,4 dia eng (revisado 2026-07-26 — a capacidade genérica de `cellTooltip`/`CampaignHoverTooltip` já tinha sido entregue de graça pelo **E10**, ver nota abaixo; o que restava era só os dois consumidores + `openOnTouch`/`disabled`); orçamento original ~0,75d
 Responsável: —
+
+> **Nota de fechamento (2026-07-26):** quando este item foi implementado, `cellTooltip` em `CampaignTableColumn`, `CampaignCellTooltip` e a promoção de `MunicipalityHoverTooltip` → `shared/CampaignHoverTooltip` **já existiam no código**, entregues como efeito colateral do **E10** (2026-07-25, coluna "Classe"). O texto abaixo ("Contexto", parte de "Decisões travadas") foi escrito antes disso e ainda descreve essa promoção como trabalho deste item — histórico, não corrigido retroativamente. O que este item de fato implementou: `openOnTouch`/`disabled` em `CampaignHoverTooltip`, `formatAdvisorNamesTooltip`, e os dois consumidores (célula "Assessores" nos dois papéis + célula "Tendência" com a nota lida no Popover).
 
 ## Design (Impeccable)
 

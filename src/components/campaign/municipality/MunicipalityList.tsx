@@ -2,6 +2,8 @@ import { CircleAlertIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import {
+  advisorEntriesFromIds,
+  formatAdvisorNamesTooltip,
   MissingAdvisorBadge,
   MunicipalityAdvisorAvatarStack,
 } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
@@ -230,11 +232,7 @@ const MunicipalityListEmptyState = ({ state }: { state: MunicipalityListState })
 const advisorEntries = (
   municipality: MunicipalityListViewModel,
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>,
-) =>
-  municipality.advisorIDs.flatMap((id) => {
-    const advisor = advisorNamesById.get(id)
-    return advisor ? [{ id: advisor.id, name: advisor.name }] : []
-  })
+) => advisorEntriesFromIds(municipality.advisorIDs, advisorNamesById)
 
 const advisorNames = (
   municipality: MunicipalityListViewModel,
@@ -387,6 +385,13 @@ const municipalityListColumns = ({
                 isPriority={municipality.priority === 'alta'}
               />
             ),
+          // The coordinator's cell already wraps its own Popover trigger in a
+          // tooltip (see `MunicipalityListAdvisorsControl`) — declaring it
+          // here too would double it up on the same gesture.
+          cellTooltip: (municipality) =>
+            isCoordinator
+              ? null
+              : formatAdvisorNamesTooltip(advisorEntries(municipality, advisorNamesById)),
         },
         {
           id: 'trend',
