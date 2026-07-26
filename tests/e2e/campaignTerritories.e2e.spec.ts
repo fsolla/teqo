@@ -39,6 +39,31 @@ test.describe('Territórios de Identidade', () => {
     await expect(page).toHaveURL(/\/campanha\/municipios\?region=Irec%C3%AA/)
   })
 
+  test('parent territory rows expose hash anchor ids for deep links', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const password = fixtures.value('senha')
+    const email = `${fixtures.value('territorios-anchors')}@example.com`
+    await campaign.payload.create({
+      collection: 'campaignUser',
+      data: {
+        name: fixtures.value('Coordenadora Âncoras'),
+        email,
+        password,
+        role: 'coordinator',
+      },
+      depth: 0,
+    })
+
+    await campaign.login(page, email, password)
+    await page.goto('/campanha/territorios')
+
+    await expect(page.locator('#ti-irece')).toBeVisible()
+    await expect(page.locator('#ti-velho-chico')).toBeVisible()
+  })
+
   test('leader cannot open the territories page', async ({ campaign, page }) => {
     const { fixtures } = campaign
     const password = fixtures.value('senha')

@@ -163,15 +163,27 @@ export const getCampaignScopeLabel = (
   return `${municipalityCount} ${municipalityCount === 1 ? 'município' : 'municípios'}`
 }
 
+export const municipalityGeographyParts = (municipality: {
+  region: string
+  kind: Municipality['kind']
+  zoneNumber?: number | null
+}): { region: string; zoneSuffix: string | null } => ({
+  region: municipality.region,
+  zoneSuffix:
+    municipality.kind === 'zona' && municipality.zoneNumber != null
+      ? `· ZE ${municipality.zoneNumber}`
+      : null,
+})
+
 /** Short human description of a municipality's geography, e.g. "Chapada Diamantina · ZE 105". */
 export const formatMunicipalityGeographyLabel = (municipality: {
   region: string
   kind: Municipality['kind']
   zoneNumber?: number | null
-}): string =>
-  municipality.kind === 'zona' && municipality.zoneNumber != null
-    ? `${municipality.region} · ZE ${municipality.zoneNumber}`
-    : municipality.region
+}): string => {
+  const { region, zoneSuffix } = municipalityGeographyParts(municipality)
+  return zoneSuffix ? `${region} ${zoneSuffix}` : region
+}
 
 /**
  * The 11 real column ids in `/campanha/municipios` — 10 staff columns plus

@@ -1,7 +1,7 @@
 # B25 — Link do território na lista de municípios
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue
+Atualizado em: 2026-07-26
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — superfícies de coordenação, item B25; entrada da página entregue por B21)
 Impeccable: B — encaixe na célula "Território" da lista existente (`MunicipalityList`), mais o `id` de âncora nas linhas da tabela do B21
 Appetite: ~0,25 dia eng; sem migration, sem collection, sem server action, sem loader novo — uma célula vira link, um helper puro e um `id` por linha
@@ -31,9 +31,9 @@ Brief compacto:
 
 Na lista `/campanha/municipios` a coluna "Território" é texto morto: em `src/components/campaign/municipality/MunicipalityList.tsx` a definição de coluna `region` tem `cell: (municipality) => municipality.region`, e no card mobile o território aparece dentro de `formatMunicipalityGeographyLabel(...)` como parágrafo. A única coisa que se pode fazer com o território ali é usá-lo como **filtro** (Popover do header, B16 ✓).
 
-A navegação inversa já existe e é assimétrica: no painel do Início, `TerritoryOverviewTable` (E17 ✓) linka cada TI para `/campanha/municipios?region=<TI>`. Ou seja, do território se chega aos municípios, mas do município não se chega ao território.
+A navegação inversa já existe e é assimétrica: em `/campanha/territorios` (B21 ✓), cada linha de TI linka para `/campanha/municipios?region=<TI>` (rollup herdado do E17 ✓). Ou seja, do território se chega aos municípios, mas do município não se chega ao território.
 
-O pedido (2026-07-25) fecha essa assimetria: clicar no território da lista deve levar à página daquele território. Hoje **não existe** superfície de TI fora do painel do Início — a página própria é o **B21** (`/campanha/territorios`, planejado no mesmo dia), que entrega os 27 TIs no sistema de listas e **exclui explicitamente** uma rota de detalhe por TI ("o drill continua sendo a lista de municípios filtrada"). Este item é, portanto, a entrada de navegação para a página do B21 — não uma tela nova.
+O pedido (2026-07-25) fecha essa assimetria: clicar no território da lista deve levar à página daquele território. A superfície de comparação dos 27 TIs é o **B21** (`/campanha/territorios`), que **exclui explicitamente** uma rota de detalhe por TI ("o drill continua sendo a lista de municípios filtrada"). Este item é, portanto, a entrada de navegação para a página do B21 — não uma tela nova.
 
 ## Objetivos
 
@@ -76,7 +76,8 @@ Componentes:
 - **`src/lib/territoryAnchor.ts`** (novo, puro/client-safe): `territoryAnchorId(region: BahiaIdentityTerritory): string` (`ti-${slugify(region)}`) e `buildTerritoryPageHref(region)` (`/campanha/territorios#${territoryAnchorId(region)}`). Reusa `slugify` de `src/lib/slug.ts`. Unit test curto garantindo estabilidade e unicidade sobre `bahiaIdentityTerritories` (27 âncoras distintas) — é o pino que impede link e `id` de divergirem.
 - **`TerritoryLink`** (novo, em `src/components/campaign/municipality/`): `<Link>` com o nome do TI, `min-h-11`, estilo alinhado ao link do nome do município (`underline-offset-4 hover:underline`), porém em `text-muted-foreground` para manter a hierarquia atual da coluna. **Depth check:** é um wrapper fino de `Link` **com** duas responsabilidades reais (href canônico + rótulo acessível) e 2–3 call sites imediatos (célula desktop, card mobile, futuro cabeçalho do detalhe); se ficar em 1 call site na implementação, inline o `Link` e mantenha só o helper de href.
 - **`src/components/campaign/municipality/MunicipalityList.tsx`** (alterado): coluna `region` passa a renderizar `<TerritoryLink region={municipality.region} />`; no card mobile, o parágrafo de geografia usa o link no trecho do território, preservando o sufixo `· ZE N` das zonas (hoje montado por `formatMunicipalityGeographyLabel` em `src/utilities/municipalityLabels.ts` — dividir a formatação em rótulo + sufixo em vez de duplicar a regra).
-- **Página/tabela do B21** (alterada): cada `<TableRow>` de território recebe `id={territoryAnchorId(row.region)}` e as classes de chegada (`scroll-mt-*` para folgar o header sticky + `target:bg-muted/50`), no precedente de `src/app/(campaign)/campanha/(app)/conceitos/page.tsx`.
+- **`CampaignTable`** (alterado): prop opcional `rowId` para expor `id` no `<TableRow>` sem duplicar tabelas.
+- **`TerritoryList`** (B21, alterado): `rowId` nas linhas `parent` com `territoryAnchorId(row.region)` e classes de chegada (`scroll-mt-*` + `target:bg-muted/50`), no precedente de `src/app/(campaign)/campanha/(app)/conceitos/page.tsx`.
 - **Sem migration, sem collection, sem `Consent`, sem server action, sem alteração de loader.**
 
 ## Dependências
@@ -110,8 +111,19 @@ Componentes:
 - `docs/roadmap.md` (Trilha B / "Demais itens abertos", B25; Janela 1–2; cortes seguros)
 - [pagina-territorios-identidade.md](pagina-territorios-identidade.md) (B21 — o destino, incl. o Não escopo da rota de detalhe) · [tabela-ti-inicio.md](tabela-ti-inicio.md) (E17 ✓ — rollup e o link inverso) · [camada-territorios-identidade.md](camada-territorios-identidade.md) (E12) · [tooltip-celulas-listas.md](tooltip-celulas-listas.md) (B23 — por que o hover de dado não é deste item)
 - `src/components/campaign/municipality/MunicipalityList.tsx` — coluna `region` e card mobile a alterar
-- `src/components/campaign/municipality/TerritoryOverviewTable.tsx` — linhas que recebem o `id` de âncora (e o link inverso já existente)
+- `src/components/campaign/municipality/TerritoryList.tsx` — linhas parent que recebem o `id` de âncora (link inverso para municípios em `TerritoryListColumns.tsx`)
 - `src/utilities/municipalityLabels.ts` (`formatMunicipalityGeographyLabel`), `src/lib/slug.ts`, `src/lib/bahiaTerritories.ts` — o que o helper reusa
 - `src/app/(campaign)/campanha/(app)/conceitos/page.tsx` — precedente de âncora com `scroll-mt` + `target:`
 - AGENTS.md — Campaign auth e acesso por papel (a página destino é staff-only; `leader` nunca vê a coluna), naming (identificadores em inglês, copy pt-BR), sem migration neste item
 - `PRODUCT.md` / `DESIGN.md` — Field Desk, anti-goal de dashboard/spreadsheet, hierarquia de links na lista
+
+## Revisão (2026-07-26)
+
+Auditoria pré-implementação: o painel `TerritoryOverviewTable` saiu do Início com o B21 — âncoras e link inverso vivem em `TerritoryList` + seam `rowId` em `CampaignTable`.
+
+## As built (2026-07-26)
+
+- `src/lib/territoryAnchor.ts` — `territoryAnchorId` / `buildTerritoryPageHref`; unit test com 27 âncoras distintas.
+- `TerritoryLink` — coluna desktop e trecho de território no card mobile (`municipalityGeographyParts` preserva `· ZE N` fora do link).
+- `CampaignTable.rowId` — linhas parent em `TerritoryList` com `id` + `scroll-mt-6 target:bg-muted/50`.
+- Escopo A (só lista); detalhe/dossiê permanecem adiados.

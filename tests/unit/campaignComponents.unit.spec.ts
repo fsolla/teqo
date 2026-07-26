@@ -233,6 +233,7 @@ describe('campaign visual foundation', () => {
 
     expect(html).toContain('Seabra')
     expect(html).toContain('Chapada Diamantina')
+    expect(html).toContain('href="/campanha/territorios#ti-chapada-diamantina"')
     expect(html).toContain('href="/campanha/municipios/seabra"')
     expect(html).toContain('1.500')
     expect(html).toContain('Cenários de estimativa')

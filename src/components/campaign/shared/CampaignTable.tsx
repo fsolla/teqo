@@ -101,6 +101,8 @@ type CampaignTableProps<Row> = {
   columns: Array<CampaignTableColumn<Row>>
   rows: readonly Row[]
   rowKey: (row: Row) => string | number
+  /** Optional DOM id per row (e.g. hash targets on `/campanha/territorios`). */
+  rowId?: (row: Row) => string | undefined
   /** Rendered inside a full-width row when there are no rows — the header chrome stays mounted. */
   empty?: ReactNode
   /** Screen-reader table description. */
@@ -118,6 +120,7 @@ export const CampaignTable = <Row,>({
   columns,
   rows,
   rowKey,
+  rowId,
   empty,
   caption,
   className,
@@ -146,6 +149,7 @@ export const CampaignTable = <Row,>({
         {rows.map((row) => (
           <TableRow
             key={rowKey(row)}
+            id={rowId?.(row)}
             className={typeof rowClassName === 'function' ? rowClassName(row) : rowClassName}
           >
             {columns.map((column) => {

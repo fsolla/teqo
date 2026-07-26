@@ -12,6 +12,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
+import { territoryAnchorId } from '@/lib/territoryAnchor'
 import { cn } from '@/lib/utils'
 import {
   clearTerritoryListFilters,
@@ -76,7 +77,10 @@ export const TerritoryList = ({
         rowKey={(row) =>
           row.variant === 'parent' ? row.region : `${row.parentRegion}-${row.label}`
         }
-        rowClassName={(row) => (row.variant === 'sub' ? 'bg-muted/30' : undefined)}
+        rowId={(row) => (row.variant === 'parent' ? territoryAnchorId(row.region) : undefined)}
+        rowClassName={(row) =>
+          row.variant === 'sub' ? 'bg-muted/30' : 'scroll-mt-6 target:bg-muted/50'
+        }
         empty={<TerritoryListEmptyState state={state} />}
       />
     </>
