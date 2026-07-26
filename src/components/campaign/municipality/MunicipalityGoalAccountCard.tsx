@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
-import { MunicipalityHoverTooltip } from '@/components/campaign/municipality/MunicipalityHoverTooltip'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
+import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import { CampaignInfoHint } from '@/components/campaign/shared/CampaignInfoHint'
+import { Badge } from '@/components/ui/Badge'
 import { Progress } from '@/components/ui/Progress'
 import {
   CAMPAIGN_CONCEPTS_PATH,
@@ -19,7 +20,13 @@ import {
   goalCoverageProgressPercent,
   type MunicipalityGoalCoverage,
 } from '@/utilities/goalCoverage'
+import {
+  formatTerritorialClassWhy,
+  territorialClassBadgeVariant,
+  territorialClassLabels,
+} from '@/utilities/municipalityLabels'
 import type { MunicipalityPotential, RollOff } from '@/utilities/municipalityPotential'
+import type { MunicipalityTerritorialClassification } from '@/utilities/municipalityTerritorialClass'
 import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
 /**
@@ -29,7 +36,7 @@ import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews
  * card-level context that persists open; this is a per-metric definition
  * that dismisses on its own), per the E8 UI feedback: these are dense
  * numbers that need an inline explanation, not a separate affordance to
- * seek out. Reuses `MunicipalityHoverTooltip` (same shadcn Tooltip stack
+ * seek out. Reuses `CampaignHoverTooltip` (same shadcn Tooltip stack
  * wired for baseline/sortable-header hints), which handles the tap-to-open
  * itself.
  *
@@ -50,7 +57,7 @@ const GoalAccountMetric = ({
   value: string
   explanation: ReactNode
 }) => (
-  <MunicipalityHoverTooltip content={explanation} side="right" align="start" sideOffset={8}>
+  <CampaignHoverTooltip content={explanation} side="right" align="start" sideOffset={8}>
     <button
       type="button"
       aria-label={`${label}: mais informações`}
@@ -61,7 +68,7 @@ const GoalAccountMetric = ({
       </dt>
       <dd className="tabular-nums">{value}</dd>
     </button>
-  </MunicipalityHoverTooltip>
+  </CampaignHoverTooltip>
 )
 
 /**
@@ -100,6 +107,57 @@ const MetricExplanation = ({
   </div>
 )
 
+/**
+ * E10 — the class is the one-word reading of the four diagnostics right
+ * below it, so it opens that block instead of getting a card of its own.
+ * Never the label alone: the two dominant factors ride with it (research
+ * §6.4 — a bare label reads as a verdict and buys false confidence).
+ */
+const TerritorialClassRow = ({
+  territorialClass,
+}: {
+  territorialClass: MunicipalityTerritorialClassification
+}) => {
+  const why = formatTerritorialClassWhy(territorialClass.factors)
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <CampaignHoverTooltip
+        content={
+          <MetricExplanation
+            lead={
+              <>
+                <strong>Classe</strong> resume o que este município pede: defender (Reduto), abrir
+                rede (Expansão), manter o padrão (Manutenção) ou não gastar perna (Marginal). Sem
+                série do TSE, a classe fica em Sem base.
+              </>
+            }
+            formula="Leitura relativa: o desempenho aqui contra o padrão estadual do próprio candidato, cruzado com quanto da votação dele vem daqui e quanto voto do campo segue sem captura. É sugestão, não sentença."
+            conceptID="classe-territorial"
+          />
+        }
+        side="right"
+        align="start"
+        sideOffset={8}
+      >
+        <button
+          type="button"
+          aria-label={`Classe: ${territorialClassLabels[territorialClass.class]}. Mais informações`}
+          className="flex min-h-11 w-fit items-center gap-2 rounded-md px-1.5 py-1 text-left outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="text-xs text-muted-foreground underline decoration-dotted decoration-muted-foreground/70 underline-offset-2">
+            Classe
+          </span>
+          <Badge variant={territorialClassBadgeVariant[territorialClass.class]}>
+            {territorialClassLabels[territorialClass.class]}
+          </Badge>
+        </button>
+      </CampaignHoverTooltip>
+      <p className="px-1.5 text-xs text-muted-foreground">{why}</p>
+    </div>
+  )
+}
+
 const formatRollOff = (rollOff: RollOff | null): string => {
   if (!rollOff) return 'Sem majoritária 2022 disponível'
   const votesLabel = formatElectionNumber(rollOff.votes)
@@ -123,6 +181,7 @@ export const MunicipalityGoalAccountCard = ({
   suggestedGoal,
   goalCoverage,
   potential,
+  territorialClass,
 }: {
   municipalityID: number
   expectedVotes: VoteEstimateScenarioViewModel
@@ -130,6 +189,7 @@ export const MunicipalityGoalAccountCard = ({
   suggestedGoal: number
   goalCoverage: MunicipalityGoalCoverage
   potential: MunicipalityPotential
+  territorialClass: MunicipalityTerritorialClassification
 }) => {
   const usesMesaEstimate = expectedVotes.central != null
   const latestIntraFieldShareYear = Math.max(
@@ -211,72 +271,75 @@ export const MunicipalityGoalAccountCard = ({
         </p>
       </div>
 
-      <dl className="grid grid-cols-2 gap-3 border-t pt-3 text-sm sm:grid-cols-4">
-        <GoalAccountMetric
-          label="Teto do campo (proj.)"
-          value={formatElectionNumber(Math.round(potential.projectedFieldCeiling))}
-          explanation={
-            <MetricExplanation
-              lead={
-                <>
-                  <strong>Teto do campo</strong> projeta quantos votos válidos o campo pode alcançar
-                  em 2026.
-                </>
-              }
-              formula="Fórmula: votos do presidencial do campo em 2022 (1º turno), ajustados pelo crescimento de comparecimento projetado para a disputa de deputado federal."
-              conceptID="teto-do-campo"
-            />
-          }
-        />
-        <GoalAccountMetric
-          label="Captura (2022)"
-          value={formatRatioAsPercentLabel(potential.captureRate2022)}
-          explanation={
-            <MetricExplanation
-              lead={
-                <>
-                  <strong>Captura</strong> mostra quanto do teto do campo Jorge Solla conquistou em
-                  2022.
-                </>
-              }
-              formula="Fórmula: votos de Solla (2022) ÷ teto do campo (presidencial 2022). Só diagnóstico — não entra na meta."
-              conceptID="captura"
-            />
-          }
-        />
-        <GoalAccountMetric
-          label={`Share intracampo (${latestIntraFieldShareYear})`}
-          value={formatRatioAsPercentLabel(latestIntraFieldShare)}
-          explanation={
-            <MetricExplanation
-              lead={
-                <>
-                  <strong>Share intracampo</strong> mostra a fração dos votos do campo, só na
-                  disputa de deputado federal, que foi para Jorge Solla nesse ano.
-                </>
-              }
-              formula="O denominador é o próprio campo nessa disputa — não o teto presidencial de 2022, que é o denominador da Captura."
-              conceptID="share-intracampo"
-            />
-          }
-        />
-        <GoalAccountMetric
-          label="Roll-off (2022)"
-          value={formatRollOff(potential.rollOff2022)}
-          explanation={
-            <MetricExplanation
-              lead={
-                <>
-                  <strong>Roll-off</strong> mede quanto voto em branco/nulo a disputa de deputado
-                  federal atrai a mais que a presidencial, no mesmo pleito.
-                </>
-              }
-              formula="Fórmula: (brancos + nulos, deputado federal 2022) − (brancos + nulos, presidencial 2022)."
-              conceptID="roll-off"
-            />
-          }
-        />
-      </dl>
+      <div className="flex flex-col gap-3 border-t pt-3">
+        <TerritorialClassRow territorialClass={territorialClass} />
+        <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+          <GoalAccountMetric
+            label="Teto do campo (proj.)"
+            value={formatElectionNumber(Math.round(potential.projectedFieldCeiling))}
+            explanation={
+              <MetricExplanation
+                lead={
+                  <>
+                    <strong>Teto do campo</strong> projeta quantos votos válidos o campo pode
+                    alcançar em 2026.
+                  </>
+                }
+                formula="Fórmula: votos do presidencial do campo em 2022 (1º turno), ajustados pelo crescimento de comparecimento projetado para a disputa de deputado federal."
+                conceptID="teto-do-campo"
+              />
+            }
+          />
+          <GoalAccountMetric
+            label="Captura (2022)"
+            value={formatRatioAsPercentLabel(potential.captureRate2022)}
+            explanation={
+              <MetricExplanation
+                lead={
+                  <>
+                    <strong>Captura</strong> mostra quanto do teto do campo Jorge Solla conquistou
+                    em 2022.
+                  </>
+                }
+                formula="Fórmula: votos de Solla (2022) ÷ teto do campo (presidencial 2022). Só diagnóstico — não entra na meta."
+                conceptID="captura"
+              />
+            }
+          />
+          <GoalAccountMetric
+            label={`Share intracampo (${latestIntraFieldShareYear})`}
+            value={formatRatioAsPercentLabel(latestIntraFieldShare)}
+            explanation={
+              <MetricExplanation
+                lead={
+                  <>
+                    <strong>Share intracampo</strong> mostra a fração dos votos do campo, só na
+                    disputa de deputado federal, que foi para Jorge Solla nesse ano.
+                  </>
+                }
+                formula="O denominador é o próprio campo nessa disputa — não o teto presidencial de 2022, que é o denominador da Captura."
+                conceptID="share-intracampo"
+              />
+            }
+          />
+          <GoalAccountMetric
+            label="Roll-off (2022)"
+            value={formatRollOff(potential.rollOff2022)}
+            explanation={
+              <MetricExplanation
+                lead={
+                  <>
+                    <strong>Roll-off</strong> mede quanto voto em branco/nulo a disputa de deputado
+                    federal atrai a mais que a presidencial, no mesmo pleito.
+                  </>
+                }
+                formula="Fórmula: (brancos + nulos, deputado federal 2022) − (brancos + nulos, presidencial 2022)."
+                conceptID="roll-off"
+              />
+            }
+          />
+        </dl>
+      </div>
       {!usesMesaEstimate && suggestedGoal <= 0 ? (
         <p className="text-xs text-muted-foreground">
           Sem votação própria em 2022 aqui, então não há meta sugerida — é município de expansão:

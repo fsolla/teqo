@@ -16,6 +16,11 @@ import {
 } from '@/utilities/goalCoverage'
 import { type PoliticalTrendStatus } from '@/utilities/municipalityLabels'
 import { resolveMunicipalityLastSignalAt } from '@/utilities/municipalitySignal'
+import {
+  computeMunicipalityTerritorialClass,
+  type MunicipalityTerritorialClass,
+  type TerritorialFactor,
+} from '@/utilities/municipalityTerritorialClass'
 import { relationshipId } from '@/utilities/relationship'
 import type { StateDeputySummary } from '@/utilities/stateDeputyData'
 import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
@@ -69,6 +74,10 @@ export type MunicipalityListViewModel = {
   politicalTrendNote: string | null
   pledges: MunicipalityPledgeAggregate
   votePosition2022: MunicipalityVoteRankEntry | null
+  /** E10 — classe operacional derivada do artefato TSE. */
+  territorialClass: MunicipalityTerritorialClass
+  /** Os fatores que produziram a classe: a célula nunca mostra o rótulo sozinho. */
+  territorialClassFactors: TerritorialFactor[]
   /** E8 "conta da cadeira" — meta × comprometido por cenário; null fora da staff view. */
   goalCoverageByScenario: Record<VoteEstimateScenario, MunicipalityGoalCoverage>
 }
@@ -78,31 +87,37 @@ export const toMunicipalityListViewModel = (
   pledges: MunicipalityPledgeAggregate | undefined,
   votePosition2022: MunicipalityListViewModel['votePosition2022'],
   goalCoverageByScenario?: Record<VoteEstimateScenario, MunicipalityGoalCoverage>,
-): MunicipalityListViewModel => ({
-  id: municipality.id,
-  name: municipality.name,
-  slug: municipality.slug,
-  kind: municipality.kind,
-  city: municipality.city,
-  region: municipality.region,
-  ibgeCode: municipality.ibgeCode,
-  zoneNumber: municipality.zoneNumber ?? null,
-  advisorIDs: (municipality.advisors ?? [])
-    .map(relationshipId)
-    .filter((id): id is number => id !== null),
-  priority: municipality.priority === 'alta' ? 'alta' : 'normal',
-  lastUpdateAt: municipality.lastUpdateAt ?? null,
-  lastSignalAt: resolveMunicipalityLastSignalAt(
-    municipality.lastUpdateAt ?? null,
-    pledges?.lastPledgeAt ?? null,
-  ),
-  expectedVotes: toVoteEstimateScenarioViewModel(municipality.expectedVotes),
-  politicalTrendStatus: municipality.politicalTrend?.status ?? null,
-  politicalTrendNote: municipality.politicalTrend?.note ?? null,
-  pledges: pledges ?? createEmptyMunicipalityPledgeAggregate(),
-  votePosition2022,
-  goalCoverageByScenario: goalCoverageByScenario ?? createEmptyGoalCoverageByScenario(),
-})
+): MunicipalityListViewModel => {
+  const territorialClass = computeMunicipalityTerritorialClass(municipality.slug)
+
+  return {
+    id: municipality.id,
+    name: municipality.name,
+    slug: municipality.slug,
+    kind: municipality.kind,
+    city: municipality.city,
+    region: municipality.region,
+    ibgeCode: municipality.ibgeCode,
+    zoneNumber: municipality.zoneNumber ?? null,
+    advisorIDs: (municipality.advisors ?? [])
+      .map(relationshipId)
+      .filter((id): id is number => id !== null),
+    priority: municipality.priority === 'alta' ? 'alta' : 'normal',
+    lastUpdateAt: municipality.lastUpdateAt ?? null,
+    lastSignalAt: resolveMunicipalityLastSignalAt(
+      municipality.lastUpdateAt ?? null,
+      pledges?.lastPledgeAt ?? null,
+    ),
+    expectedVotes: toVoteEstimateScenarioViewModel(municipality.expectedVotes),
+    politicalTrendStatus: municipality.politicalTrend?.status ?? null,
+    politicalTrendNote: municipality.politicalTrend?.note ?? null,
+    pledges: pledges ?? createEmptyMunicipalityPledgeAggregate(),
+    votePosition2022,
+    territorialClass: territorialClass.class,
+    territorialClassFactors: territorialClass.factors,
+    goalCoverageByScenario: goalCoverageByScenario ?? createEmptyGoalCoverageByScenario(),
+  }
+}
 
 export type MunicipalityAdvisorSummary = {
   id: number

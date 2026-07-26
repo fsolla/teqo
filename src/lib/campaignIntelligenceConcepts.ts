@@ -9,10 +9,10 @@
  * would let the copy drift silently. Every entry must describe what the code
  * actually computes; when a formula changes, this text changes with it.
  *
- * v1 covers the E8 "conta da cadeira" numbers. Each later slice of the
- * intelligence program (E9 fila, E10 classificação relativa, B13 escala do
- * mapa, E11 sugestões, E12 TI, E13 giros, E14 níveis) appends its own entries
- * as part of its own delivery.
+ * v1 covers the E8 "conta da cadeira" numbers; E10 added dominância relativa
+ * and a classe territorial. Each later slice of the intelligence program (B13
+ * escala do mapa, E11 sugestões, E12 TI, E13 giros, E14 níveis) appends its
+ * own entries as part of its own delivery.
  */
 
 export type CampaignConceptId =
@@ -21,6 +21,8 @@ export type CampaignConceptId =
   | 'captura'
   | 'share-intracampo'
   | 'roll-off'
+  | 'dominancia-relativa'
+  | 'classe-territorial'
   | 'meta'
   | 'cobertura-da-meta'
 
@@ -114,6 +116,35 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
     whyItMatters:
       'Mede quanto eleitor comparece, vota para presidente e desiste de escolher deputado. Roll-off alto indica eleitorado disponível para quem chegar com nome e razão para votar — mas é diagnóstico de contexto, não um reservatório de votos garantidos. Também usa só 2022.',
     whereItAppears: 'Card "Conta da cadeira", no detalhe do município ("Roll-off (2022)").',
+  },
+  {
+    id: 'dominancia-relativa',
+    categoryID: 'diagnostico',
+    title: 'Dominância relativa',
+    oneLiner:
+      'Quanto o desempenho do Jorge Solla no município se afasta do padrão dele no estado inteiro.',
+    formula:
+      'dominância = (votos de Solla ÷ votos válidos do município, em 2022) ÷ (votos de Solla ÷ votos válidos da Bahia, em 2022). Acima de 1 é acima do padrão dele; abaixo de 1 é abaixo.',
+    example:
+      'Um município onde ele fez 4% dos válidos, quando o padrão estadual dele é 2%, tem dominância 2 — "aqui rendemos o dobro do nosso normal". Onde ele fez 1,2%, a dominância é 0,6: "aqui rendemos 40% abaixo do nosso padrão".',
+    whyItMatters:
+      'Em deputado federal, o percentual absoluto engana: 3% dos válidos parece pouco e pode ser o melhor município da campanha. A comparação útil é com o próprio padrão, não com 50% + 1 — que é conta de eleição majoritária. É a leitura que separa "pequeno" de "fraco".',
+    whereItAppears:
+      'Como o "por quê" da classe, no card "Conta da cadeira", na capa do dossiê e na coluna "Classe" da lista de municípios.',
+  },
+  {
+    id: 'classe-territorial',
+    categoryID: 'diagnostico',
+    title: 'Classe do município',
+    oneLiner: 'Uma palavra para o que o município pede: Reduto, Expansão, Manutenção ou Marginal.',
+    formula:
+      'Reduto = dominância 2 ou mais. Marginal = dominância abaixo de 0,5 com pouco voto do campo sem captura (abaixo da mediana dos 435 municípios). Expansão = dominância abaixo de 0,5 mas com campo grande sem captura, ou município do bloco que concentra metade da votação dele. Manutenção = o meio, entre 0,5 e 2. Sem base = município sem série do TSE.',
+    example:
+      'Dominância 0,3 com 9.000 votos do campo sem captura é Expansão: o campo está lá e a campanha não chegou. A mesma dominância com 300 votos do campo disponíveis é Marginal — não compensa a perna.',
+    whyItMatters:
+      'Responde onde a perna vai na semana: defender reduto dormente ou abrir rede em expansão. A classe é sugestão, não sentença — ela nunca aparece sozinha, sempre com os dois fatores que a produziram, e a mesa pode decidir contra ela. Os cortes exatos (2 e 0,5) são ilustrativos: valem até o backtest contra 2014–2022 calibrá-los.',
+    whereItAppears:
+      'Card "Conta da cadeira" e capa do dossiê, no detalhe do município, e a coluna "Classe" da lista de municípios (com filtro e ordenação).',
   },
   {
     id: 'meta',

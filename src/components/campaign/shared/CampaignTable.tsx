@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from 'react'
 
+import { CampaignCellTooltip } from '@/components/campaign/shared/CampaignCellTooltip'
 import {
   Table,
   TableBody,
@@ -27,6 +28,18 @@ export type CampaignTableColumn<Row> = {
    */
   head: ReactNode
   cell: (row: Row) => ReactNode
+  /**
+   * Extra reading for the cell content, shown on hover/focus/tap. Return
+   * `null` for a row and that row gets no wrapper at all — a column whose
+   * detail only exists on some rows (a trend with no justification) stays
+   * exactly as it renders today on the others.
+   *
+   * Accessibility contract: the tooltip is a REDUNDANT affordance, never the
+   * only path to the information. Only declare it on a column whose cell
+   * already carries that content as text — visible, or `sr-only` when the
+   * visible form is a badge/avatar. The table adds no tab stops for it.
+   */
+  cellTooltip?: (row: Row) => ReactNode
   cellClassName?: string | ((row: Row) => string | undefined)
   /** B17 seams — a mandatory column is not hideable; hidden-by-default starts unchecked. */
   mandatory?: boolean
@@ -106,18 +119,27 @@ export const CampaignTable = <Row,>({
             key={rowKey(row)}
             className={typeof rowClassName === 'function' ? rowClassName(row) : rowClassName}
           >
-            {columns.map((column) => (
-              <TableCell
-                key={column.id}
-                className={
-                  typeof column.cellClassName === 'function'
-                    ? column.cellClassName(row)
-                    : column.cellClassName
-                }
-              >
-                {column.cell(row)}
-              </TableCell>
-            ))}
+            {columns.map((column) => {
+              const cell = column.cell(row)
+              const tooltip = column.cellTooltip?.(row)
+
+              return (
+                <TableCell
+                  key={column.id}
+                  className={
+                    typeof column.cellClassName === 'function'
+                      ? column.cellClassName(row)
+                      : column.cellClassName
+                  }
+                >
+                  {tooltip ? (
+                    <CampaignCellTooltip content={tooltip}>{cell}</CampaignCellTooltip>
+                  ) : (
+                    cell
+                  )}
+                </TableCell>
+              )
+            })}
           </TableRow>
         ))}
       </TableBody>

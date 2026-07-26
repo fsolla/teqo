@@ -6,11 +6,13 @@ import { cloneElement, useEffect, useRef, useState } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 /**
- * Hover/focus explanation with no extra chrome — wraps an existing control or
- * heading. Radix's `TooltipTrigger` deliberately ignores touch pointer
- * events — no hover on touch, and a tap doesn't reliably focus a non-form
- * element either — which otherwise makes the whole tooltip unreachable on
- * phones (an `/impeccable critique` finding). The open state is controlled
+ * Hover/focus explanation with no extra chrome — wraps an existing control,
+ * heading or table cell. Shared by the campaign list system: column headers
+ * (`MunicipalitySortableHead`), card metrics, and cell content via
+ * `CampaignTable`'s `cellTooltip`. Radix's `TooltipTrigger` deliberately
+ * ignores touch pointer events — no hover on touch, and a tap doesn't
+ * reliably focus a non-form element either — which otherwise makes the whole
+ * tooltip unreachable on phones (an `/impeccable critique` finding). The open state is controlled
  * so a `pointerType === 'touch'` tap can explicitly toggle it; mouse hover
  * and keyboard focus are untouched (Radix keeps driving `onOpenChange` for
  * those exactly as before), so a **mouse** click — which already hovered the
@@ -29,7 +31,7 @@ type TappableElement = ReactElement<{
   ref?: Ref<HTMLElement>
 }>
 
-export const MunicipalityHoverTooltip = ({
+export const CampaignHoverTooltip = ({
   content,
   children,
   side = 'bottom',

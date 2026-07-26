@@ -23,16 +23,19 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { formatElectionNumber } from '@/lib/electionFormat'
-import { formatMunicipalityVoteRank, formatMunicipalityVoteShare } from '@/lib/municipalityVoteRank'
+import { formatElectionNumber, formatVoteSharePercent } from '@/lib/electionFormat'
+import { formatMunicipalityVoteRank } from '@/lib/municipalityVoteRank'
 import { cn } from '@/lib/utils'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO, voteEstimateScenarioLabels } from '@/lib/voteEstimate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
   formatMunicipalityConcentrationHint,
   formatMunicipalityGeographyLabel,
+  formatTerritorialClassWhy,
   municipalityKindLabels,
   municipalityPriorityLabels,
+  territorialClassBadgeVariant,
+  territorialClassLabels,
 } from '@/utilities/municipalityLabels'
 import {
   clearMunicipalityListFilters,
@@ -91,7 +94,7 @@ const VotePositionReadout = ({
   position: NonNullable<MunicipalityListViewModel['votePosition2022']>
   layout: 'table' | 'card'
 }) => {
-  const share = formatMunicipalityVoteShare(position.share)
+  const share = formatVoteSharePercent(position.share)
   const rank = formatMunicipalityVoteRank(position.rank)
   const metaLine = `${formatElectionNumber(position.votes)} · ${rank}`
   const ariaLabel = `${share} da votação estadual, ${formatElectionNumber(position.votes)} votos, ${rank} de ${formatElectionNumber(position.totalUnits)}`
@@ -107,6 +110,49 @@ const VotePositionReadout = ({
       <span className={cn('font-medium', layout === 'card' && 'text-foreground')}>{share}</span>
       <span className="text-xs text-muted-foreground">{metaLine}</span>
     </div>
+  )
+}
+
+const CLASS_COLUMN_HINT =
+  'Leitura relativa de 2022: o desempenho aqui contra o padrão estadual do próprio candidato. Reduto (bem acima do padrão), Expansão (abaixo, mas com campo a ocupar), Manutenção (no padrão), Marginal (abaixo, com pouco campo) e — sem série do TSE. É sugestão de leitura, não decisão: cada classe traz o porquê ao passar o mouse ou tocar nela.'
+
+/**
+ * E10 classe. In the table only the pill is visible — spelling the factors out
+ * under it made this the widest cell in a grid that cannot scroll
+ * horizontally, so the "por quê" moves to the column's `cellTooltip` (hover,
+ * focus and tap) and stays as `sr-only` text; the card has the width to show
+ * it outright. Either way the class never reaches anyone as a bare verdict,
+ * which is the one thing it must never be.
+ */
+const TerritorialClassReadout = ({
+  municipality,
+  layout,
+}: {
+  municipality: MunicipalityListViewModel
+  layout: 'table' | 'card'
+}) => {
+  const isTable = layout === 'table'
+  const why = formatTerritorialClassWhy(municipality.territorialClassFactors)
+
+  if (municipality.territorialClass === 'sem_base') {
+    // Same idiom as the "2022" column: absent data is a dash, not a pill.
+    return isTable ? (
+      <span className="text-muted-foreground">
+        <span aria-hidden="true">—</span>
+        <span className="sr-only">{why}</span>
+      </span>
+    ) : (
+      <span className="text-xs text-muted-foreground">{why}</span>
+    )
+  }
+
+  return (
+    <>
+      <Badge variant={territorialClassBadgeVariant[municipality.territorialClass]}>
+        {territorialClassLabels[municipality.territorialClass]}
+      </Badge>
+      <span className={isTable ? 'sr-only' : 'text-xs text-muted-foreground'}>{why}</span>
+    </>
   )
 }
 
@@ -292,6 +338,30 @@ const municipalityListColumns = ({
   ...(isStaffView
     ? ([
         {
+          // Sits right after "2022": both read the same TSE artifact, and the
+          // class is the one-word summary of the votes beside it.
+          id: 'classe',
+          head: (
+            <MunicipalitySortableHead
+              state={state}
+              sortKey="classe"
+              filterParam="class"
+              tooltip={CLASS_COLUMN_HINT}
+            >
+              Classe
+            </MunicipalitySortableHead>
+          ),
+          cell: (municipality) => (
+            <TerritorialClassReadout municipality={municipality} layout="table" />
+          ),
+          // The factors behind the label — the cell keeps them as `sr-only`
+          // text, so this stays a redundant affordance (see `cellTooltip`).
+          cellTooltip: (municipality) =>
+            municipality.territorialClass === 'sem_base'
+              ? null
+              : formatTerritorialClassWhy(municipality.territorialClassFactors),
+        },
+        {
           id: 'advisors',
           head: (
             <MunicipalitySortableHead
@@ -424,8 +494,12 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
   // The scenario picker is client state, so the server can only order by one
   // scenario — named here so the ordering never looks arbitrary.
   const deficitHint = `Ordena pelo que falta para a meta (meta − comprometido) no cenário ${voteEstimateScenarioLabels[DEFAULT_VOTE_ESTIMATE_SCENARIO]}, independente do cenário selecionado acima.`
-
-  const columns = municipalityListColumns({ ...props, concentrationHint, signalHint, deficitHint })
+  const columns = municipalityListColumns({
+    ...props,
+    concentrationHint,
+    signalHint,
+    deficitHint,
+  })
 
   return (
     <>
@@ -455,6 +529,12 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
               </div>
               {isStaffView ? (
                 <dl className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="col-span-2">
+                    <dt className="text-muted-foreground">Classe</dt>
+                    <dd className="flex flex-wrap items-center gap-2">
+                      <TerritorialClassReadout municipality={municipality} layout="card" />
+                    </dd>
+                  </div>
                   <div>
                     <dt className="text-muted-foreground">Votos estimados</dt>
                     <dd className="flex justify-center">

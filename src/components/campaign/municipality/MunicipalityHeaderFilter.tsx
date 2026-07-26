@@ -46,6 +46,7 @@ const multiParamByFilter = {
   region: 'region',
   advisor: 'advisor',
   trend: 'trend',
+  class: 'class',
   kind: null,
   coverage: null,
 } as const satisfies Record<MunicipalityFilterParam, MunicipalityMultiFilterParam | null>

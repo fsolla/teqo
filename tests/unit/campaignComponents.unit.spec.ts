@@ -182,6 +182,11 @@ describe('campaign visual foundation', () => {
           share: 0.031,
           totalUnits: 435,
         },
+        territorialClass: 'reduto',
+        territorialClassFactors: [
+          { id: 'dominance', value: 2.4 },
+          { id: 'ownShare', value: 0.031 },
+        ],
         goalCoverageByScenario: {
           pessimistic: { goal: 1500, committed: 1200, coverageRatio: 0.8, deficit: 300 },
           central: { goal: 1500, committed: 1200, coverageRatio: 0.8, deficit: 300 },
@@ -206,6 +211,8 @@ describe('campaign visual foundation', () => {
         politicalTrendNote: null,
         pledges: createEmptyMunicipalityPledgeAggregate(),
         votePosition2022: null,
+        territorialClass: 'expansao',
+        territorialClassFactors: [{ id: 'field', value: 9000 }],
         goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
       },
     ]
@@ -233,6 +240,68 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('Cobertura da meta')
     expect(html).toContain('80%')
     expect(html).toContain('Faltam 300 votos para a meta')
+  })
+
+  /**
+   * E10: the class is a suggestion, and a suggestion without its reason reads
+   * as a verdict (research §6.4). The reason moved into the column's
+   * `cellTooltip` so the cell stays narrow, so what this pins is that it is
+   * still TEXT in the markup (`sr-only`) rather than a `title` attribute,
+   * which reached neither keyboard nor touch. A município without a TSE
+   * series must not wear a badge that implies a reading.
+   */
+  it('never renders a territorial class without its reason, and dashes the ones with no series', () => {
+    const html = renderWithAppRouter(
+      createElement(MunicipalityList, {
+        municipalities: [
+          stub<MunicipalityListViewModel>({
+            id: 1,
+            name: 'Seabra',
+            slug: 'seabra',
+            kind: 'municipio',
+            city: 'Seabra',
+            region: 'Chapada Diamantina',
+            advisorIDs: [],
+            priority: 'normal',
+            expectedVotes: toVoteEstimateScenarioViewModel(null),
+            pledges: createEmptyMunicipalityPledgeAggregate(),
+            votePosition2022: null,
+            territorialClass: 'reduto',
+            territorialClassFactors: [
+              { id: 'dominance', value: 2.4 },
+              { id: 'ownShare', value: 0.031 },
+            ],
+            goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
+          }),
+          stub<MunicipalityListViewModel>({
+            id: 2,
+            name: 'Sem série',
+            slug: 'sem-serie',
+            kind: 'municipio',
+            city: 'Sem série',
+            region: 'Chapada Diamantina',
+            advisorIDs: [],
+            priority: 'normal',
+            expectedVotes: toVoteEstimateScenarioViewModel(null),
+            pledges: createEmptyMunicipalityPledgeAggregate(),
+            votePosition2022: null,
+            territorialClass: 'sem_base',
+            territorialClassFactors: [],
+            goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
+          }),
+        ],
+        advisorNamesById: new Map(),
+        isStaffView: true,
+        ...municipalityListDefaultProps,
+      }),
+    )
+
+    expect(html).toContain('Reduto')
+    // The factors ride along as text, in the mesa's phrasing — never a `title`.
+    expect(html).toContain('2,4× o padrão estadual do candidato')
+    expect(html).not.toContain('title="2,4×')
+    expect(html).not.toContain('Sem base')
+    expect(html).toContain('Sem série do TSE para este município.')
   })
 
   /**
@@ -264,6 +333,8 @@ describe('campaign visual foundation', () => {
             politicalTrendNote: null,
             pledges: createEmptyMunicipalityPledgeAggregate(),
             votePosition2022: null,
+            territorialClass: 'expansao',
+            territorialClassFactors: [{ id: 'field', value: 9000 }],
             goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
           },
         ],
@@ -303,6 +374,8 @@ describe('campaign visual foundation', () => {
             politicalTrendNote: null,
             pledges: createEmptyMunicipalityPledgeAggregate(),
             votePosition2022: null,
+            territorialClass: 'expansao',
+            territorialClassFactors: [{ id: 'field', value: 9000 }],
             goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
           },
         ],
@@ -345,6 +418,8 @@ describe('campaign visual foundation', () => {
               lastPledgeAt: null,
             },
             votePosition2022: null,
+            territorialClass: 'expansao',
+            territorialClassFactors: [{ id: 'field', value: 9000 }],
             goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
           },
         ],
@@ -381,6 +456,8 @@ describe('campaign visual foundation', () => {
             politicalTrendNote: null,
             pledges: createEmptyMunicipalityPledgeAggregate(),
             votePosition2022: null,
+            territorialClass: 'expansao',
+            territorialClassFactors: [{ id: 'field', value: 9000 }],
             goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
           },
         ],

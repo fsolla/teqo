@@ -15,6 +15,21 @@ export const allParamValues = (value: string | string[] | undefined): string[] =
   return [...seen]
 }
 
+/**
+ * A repeatable enum param where selecting EVERY member means "todas" — which
+ * is the same filter as selecting none, and canonicalizes to the absent param
+ * so both produce one URL (B18's frozen contract). `allParamValues` already
+ * dropped duplicates and unknown tokens are ignored, so a hand-typed URL can
+ * never widen the filter.
+ */
+export const parseExhaustiveEnumParam = <T extends string>(
+  raw: string | string[] | undefined,
+  allowed: ReadonlySet<string>,
+): T[] => {
+  const values = allParamValues(raw).filter((token): token is T => allowed.has(token))
+  return values.length < allowed.size ? values : []
+}
+
 export const normalizedText = (value: string | undefined): string | undefined => {
   if (typeof value !== 'string') return undefined
   const normalized = value.trim()

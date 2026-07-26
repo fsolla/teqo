@@ -28,6 +28,10 @@ import {
 } from '@/utilities/municipalityListUrl'
 import { resolveMunicipalityLastSignalAt } from '@/utilities/municipalitySignal'
 import {
+  computeMunicipalityTerritorialClass,
+  territorialClassSortWeight,
+} from '@/utilities/municipalityTerritorialClass'
+import {
   municipalityListSelect,
   toMunicipalityDetailViewModel,
   toMunicipalityListViewModel,
@@ -92,6 +96,22 @@ const emptyMunicipalityListFilterFacets: MunicipalityListFilterFacets = {
 type MunicipalityFacetRow = Pick<Municipality, 'slug' | 'region' | 'advisors'>
 
 /**
+ * E10's class filter is the only one that isn't a Payload constraint (the
+ * class is derived from the committed TSE artifact, not stored), so every
+ * place that would otherwise trust `where` — the page query, the overview
+ * scope and the facets — has to apply this predicate itself. Returns `null`
+ * when no class is selected, which is also the signal to keep the cheap
+ * database-paginated path.
+ */
+const territorialClassFilterPredicate = (
+  state: MunicipalityListState,
+): ((slug: string) => boolean) | null => {
+  if (!state.classes?.length) return null
+  const selected = new Set(state.classes)
+  return (slug) => selected.has(computeMunicipalityTerritorialClass(slug).class)
+}
+
+/**
  * Each facet applies every filter owned by ANOTHER popover (so it only offers
  * values that still return rows) while omitting the ones its own popover owns —
  * including the checkbox/toggle sharing that popover, or selecting "Prioritária"
@@ -106,9 +126,15 @@ const loadMunicipalityListFilterFacets = async (
   /** The scope read is a PROMISE so the facets can join the page's main `Promise.all` (B16+). */
   loadedScope: { where: Where; rows: Promise<MunicipalityFacetRow[]> } | null,
 ): Promise<MunicipalityListFilterFacets> => {
+  // No facet popover owns the class filter, so every facet read keeps it
+  // applied — inside the memo, so a `where` shared by two facets is filtered once.
+  const classMatches = territorialClassFilterPredicate(state)
+  const applyClassFilter = (rows: MunicipalityFacetRow[]): MunicipalityFacetRow[] =>
+    classMatches ? rows.filter((row) => classMatches(row.slug)) : rows
+
   const rowsByWhere = new Map<string, Promise<MunicipalityFacetRow[]>>()
   if (loadedScope) {
-    rowsByWhere.set(JSON.stringify(loadedScope.where), loadedScope.rows)
+    rowsByWhere.set(JSON.stringify(loadedScope.where), loadedScope.rows.then(applyClassFilter))
   }
   const facetRows = (omit: Partial<MunicipalityListState>): Promise<MunicipalityFacetRow[]> => {
     const where = buildMunicipalityListWhere({ ...state, ...omit })
@@ -127,7 +153,7 @@ const loadMunicipalityListFilterFacets = async (
         user,
         overrideAccess: false,
       })
-      .then((result) => result.docs as MunicipalityFacetRow[])
+      .then((result) => applyClassFilter(result.docs as MunicipalityFacetRow[]))
     rowsByWhere.set(key, rows)
     return rows
   }
@@ -244,7 +270,18 @@ const applyDerivedMunicipalitySort = (
         return now - new Date(lastSignalAt).getTime()
       })
     }
+    case 'classe':
+      // Ordinal weight, not the label: descending means reduto first, and
+      // `sem_base` (no weight) lands at the end in either direction.
+      return sortByNullableValue(
+        docs,
+        dir,
+        (municipality) =>
+          territorialClassSortWeight[computeMunicipalityTerritorialClass(municipality.slug).class],
+      )
     default:
+      // Native keys reach here when a derived FILTER forced the in-memory
+      // path; the query already sorted them, so the order is preserved.
       return docs
   }
 }
@@ -272,7 +309,12 @@ export const loadMunicipalityListPageBundle = async (
 
   const ranks = computeVoteRankByYear(DEFAULT_VOTE_RANK_YEAR)
   const nativeSortField = payloadSortFieldByKey[sortKey]
-  const isNative = nativeSortField !== undefined
+  const classMatches = territorialClassFilterPredicate(state)
+  // A derived filter can't be expressed in `where`, so it forces the
+  // load-everything path even when the SORT itself is native — otherwise the
+  // page would drop rows out of a 25-row window and `totalDocs` would count
+  // municípios the filter excludes.
+  const isPagedByPayload = nativeSortField !== undefined && !classMatches
 
   const listQuery = payload.find({
     collection: 'municipality',
@@ -281,11 +323,13 @@ export const loadMunicipalityListPageBundle = async (
     select: municipalityListSelect,
     user,
     overrideAccess: false,
-    ...(isNative
+    // Kept outside the pagination branch: with a class filter the query is
+    // still the cheapest place to order by a native field.
+    ...(nativeSortField ? { sort: `${sortDir === 'desc' ? '-' : ''}${nativeSortField}` } : {}),
+    ...(isPagedByPayload
       ? {
           limit: municipalityPageSize,
           page: state.page,
-          sort: `${sortDir === 'desc' ? '-' : ''}${nativeSortField}`,
         }
       : {
           limit: 0,
@@ -330,23 +374,29 @@ export const loadMunicipalityListPageBundle = async (
   // (zeroed) next to the empty state instead of disappearing with the rows.
   if (staffScope) {
     pledgeAggregates = staffScope.pledgeAggregates
-    const rollup = rollupMunicipalityStaffVotes(staffScope.municipalities, pledgeAggregates)
+    // Never mutate the scope: `loadMunicipalityScope` is request-cached and
+    // shared with the facets. Filtering here is what keeps the overview
+    // (E8 coverage, E9 shame column) counting the filtered scope.
+    const scopedMunicipalities = classMatches
+      ? staffScope.municipalities.filter((municipality) => classMatches(municipality.slug))
+      : staffScope.municipalities
+    const rollup = rollupMunicipalityStaffVotes(scopedMunicipalities, pledgeAggregates)
     const goalCoverageBundle = await loadMunicipalityGoalCoverageBundle(
       payload,
       user,
-      staffScope.municipalities,
+      scopedMunicipalities,
       pledgeAggregates,
     )
     goalCoverageByMunicipalityID = goalCoverageBundle.coverageByMunicipalityID
     overview = {
-      municipalityCount: staffScope.municipalities.length,
+      municipalityCount: scopedMunicipalities.length,
       staffVoteTotalByScenario: { ...rollup.staffVoteTotalByScenario },
       pledgeCount: rollup.pledgeCount,
       missingEstimateCount: rollup.missingEstimateCount,
-      withAdvisorCount: staffScope.municipalities.filter(
+      withAdvisorCount: scopedMunicipalities.filter(
         (municipality) => (municipality.advisors ?? []).length > 0,
       ).length,
-      priorityWithoutAdvisorCount: staffScope.municipalities.filter(
+      priorityWithoutAdvisorCount: scopedMunicipalities.filter(
         (municipality) =>
           municipality.priority === 'alta' && (municipality.advisors ?? []).length === 0,
       ).length,
@@ -358,22 +408,22 @@ export const loadMunicipalityListPageBundle = async (
   let totalDocs: number
   let totalPages: number
 
-  if (isNative) {
+  if (isPagedByPayload) {
     // Payload select narrows the inferred type; the selected fields cover the view model.
     pageDocs = listResult.docs as Municipality[]
     totalDocs = listResult.totalDocs
     totalPages = listResult.totalPages
   } else {
-    const allDocs = applyDerivedMunicipalitySort(
-      listResult.docs as Municipality[],
-      sortKey,
-      sortDir,
-      {
-        ranks,
-        goalCoverageByMunicipalityID,
-        pledgeAggregates,
-      },
-    )
+    const scopedDocs = classMatches
+      ? (listResult.docs as Municipality[]).filter((municipality) =>
+          classMatches(municipality.slug),
+        )
+      : (listResult.docs as Municipality[])
+    const allDocs = applyDerivedMunicipalitySort(scopedDocs, sortKey, sortDir, {
+      ranks,
+      goalCoverageByMunicipalityID,
+      pledgeAggregates,
+    })
     totalDocs = allDocs.length
     totalPages = Math.max(1, Math.ceil(totalDocs / municipalityPageSize))
     const start = (state.page - 1) * municipalityPageSize

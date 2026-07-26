@@ -131,6 +131,70 @@ describe('municipality list sort params (A11 + B15 + E9)', () => {
     expect(municipalityListSortLabels.coverage).toBe('Assessores')
     expect(formatMunicipalityListSortSummary('coverage', 'asc')).toBe('Ordenado por Assessores ↑')
   })
+
+  it('opens the classe sort on reduto (desc default) and names the direction', () => {
+    const base = parseMunicipalityListParams({})
+    expect(buildMunicipalitySortHref(base, 'classe')).toBe('/campanha/municipios?sort=classe')
+    const byClass = parseMunicipalityListParams({ sort: 'classe' })
+    expect(resolveMunicipalityListSort(byClass)).toEqual({ sort: 'classe', dir: 'desc' })
+    expect(formatMunicipalityListSortSummary('classe', 'desc')).toBe(
+      'Ordenado por classe (reduto primeiro)',
+    )
+    expect(formatMunicipalityListSortSummary('classe', 'asc')).toBe(
+      'Ordenado por classe (marginal primeiro)',
+    )
+  })
+})
+
+describe('E10 classe territorial filter (derived, not a Payload constraint)', () => {
+  it('parses repeated ?class= params and keeps them out of the where clause', () => {
+    const state = parseMunicipalityListParams({ class: ['reduto', 'expansao', 'reduto'] })
+    expect(state.classes).toEqual(['reduto', 'expansao'])
+    expect(isMunicipalityColumnFilterActive(state, 'class')).toBe(true)
+    // The class lives in the committed TSE artifact, so `where` must stay clean —
+    // `municipalityPageData` applies it in memory over the unpaginated scope.
+    expect(buildMunicipalityListWhere(state)).toEqual({})
+    expect(buildMunicipalityFilterHref(state)).toBe(
+      '/campanha/municipios?class=reduto&class=expansao',
+    )
+  })
+
+  it('discards unknown classes and treats "todas" as absent', () => {
+    expect(parseMunicipalityListParams({ class: 'perdida' }).classes).toBeUndefined()
+
+    const all = parseMunicipalityListParams({
+      class: ['reduto', 'expansao', 'manutencao', 'marginal', 'sem_base'],
+    })
+    expect(all.classes).toBeUndefined()
+    expect(isMunicipalityColumnFilterActive(all, 'class')).toBe(false)
+    expect(formatMunicipalityActiveFiltersSummary(all)).toBeNull()
+
+    // Ticking the last unchecked box lands on that same canonical state.
+    const allButOne = parseMunicipalityListParams({
+      class: ['reduto', 'expansao', 'manutencao', 'marginal'],
+    })
+    expect(
+      toggleMunicipalityMultiFilterValue(allButOne, 'class', 'sem_base').classes,
+    ).toBeUndefined()
+  })
+
+  it('names the class in the active-filters summary', () => {
+    expect(
+      formatMunicipalityActiveFiltersSummary(
+        parseMunicipalityListParams({ class: ['reduto', 'expansao'] }),
+      ),
+    ).toBe('Classe reduto, expansão')
+  })
+
+  it('toggles a class in and out while preserving the other filters', () => {
+    const state = parseMunicipalityListParams({ region: 'Irecê', sort: 'votos' })
+    const on = toggleMunicipalityMultiFilterValue(state, 'class', 'reduto')
+    expect(on.classes).toEqual(['reduto'])
+    expect(buildMunicipalityFilterHref(on)).toBe(
+      '/campanha/municipios?region=Irec%C3%AA&class=reduto&sort=votos',
+    )
+    expect(toggleMunicipalityMultiFilterValue(on, 'class', 'reduto').classes).toBeUndefined()
+  })
 })
 
 describe('municipality list header filters (B16+)', () => {

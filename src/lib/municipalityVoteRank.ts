@@ -1,6 +1,7 @@
 import {
   federalBaselineMunicipalitySlugs,
   getMunicipalityFederalBaseline,
+  getStatewideFederalTotals,
 } from '@/lib/bahiaElectionAggregates'
 import { formatElectionNumber } from '@/lib/electionFormat'
 
@@ -37,8 +38,7 @@ export const computeVoteRankByYear = (
     votes: getMunicipalityFederalBaseline(slug).votesByYear[yearKey] ?? 0,
   }))
 
-  let candidateTotal = 0
-  for (const row of rows) candidateTotal += row.votes
+  const candidateTotal = getStatewideFederalTotals(year).ownVotes
 
   rows.sort((a, b) => {
     if (b.votes !== a.votes) return b.votes - a.votes
@@ -73,12 +73,6 @@ export const getMunicipalityVoteRank = (
 ): MunicipalityVoteRankEntry | null => computeVoteRankByYear(year).get(slug) ?? null
 
 export const formatMunicipalityVoteRank = (rank: number): string => `${formatElectionNumber(rank)}º`
-
-export const formatMunicipalityVoteShare = (share: number): string =>
-  `${(share * 100).toLocaleString('pt-BR', {
-    maximumFractionDigits: 1,
-    minimumFractionDigits: 0,
-  })}%`
 
 /** Compare for list sort=votos. Zero-vote rows always sort last (any dir). */
 export const compareMunicipalityVotesForSort = (

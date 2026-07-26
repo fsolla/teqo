@@ -14,11 +14,17 @@ import {
   buildListHref,
   firstValue,
   normalizedText,
+  parseExhaustiveEnumParam,
   resolveListUrl,
   strictDecimalInteger,
   type RawSearchParams as CampaignListRawSearchParams,
 } from '@/utilities/campaignListUrl'
-import { politicalTrendLabels, type PoliticalTrendStatus } from '@/utilities/municipalityLabels'
+import {
+  politicalTrendLabels,
+  territorialClassLabels,
+  type PoliticalTrendStatus,
+} from '@/utilities/municipalityLabels'
+import type { MunicipalityTerritorialClass } from '@/utilities/municipalityTerritorialClass'
 
 import type { Municipality } from '@/payload-types'
 
@@ -35,6 +41,7 @@ export type MunicipalityListSortKey =
   | 'votos'
   | 'deficit'
   | 'frescor'
+  | 'classe'
 
 export type MunicipalityListSortDirection = 'asc' | 'desc'
 
@@ -60,6 +67,7 @@ export const municipalityListSortLabels: Record<MunicipalityListSortKey, string>
   votos: '2022',
   deficit: 'Cobertura da meta',
   frescor: 'Frescor do sinal',
+  classe: 'Classe',
 }
 
 export type MunicipalityListState = {
@@ -79,6 +87,13 @@ export type MunicipalityListState = {
    * encoded as absent, canonicalized by `parseMunicipalityListParams`.
    */
   trends?: PoliticalTrendStatus[]
+  /**
+   * Multi-select (OR) E10 territorial classes. Derived from the committed TSE
+   * artifact, so — unlike every filter above — it is NOT part of
+   * `buildMunicipalityListWhere`: `municipalityPageData` applies it in memory.
+   * Never holds the full set (same "todas" canonicalization as `trends`).
+   */
+  classes?: MunicipalityTerritorialClass[]
   /** Candidate number for the map comparison mode (does not filter the list). */
   compare?: number
   sort?: MunicipalityListSortKey
@@ -96,6 +111,7 @@ const municipalityListParamNames = [
   'coverage',
   'priority',
   'trend',
+  'class',
   'compare',
   'sort',
   'dir',
@@ -117,6 +133,8 @@ const sortKeysWithDescDefault: MunicipalityListSortKey[] = [
   // Both open on the worst case: biggest uncovered deficit, coldest signal.
   'deficit',
   'frescor',
+  // Ordinal, not alphabetical: descending means reduto first.
+  'classe',
 ]
 
 export const defaultMunicipalityListSortDir = (
@@ -150,6 +168,11 @@ export const formatMunicipalityListSortSummary = (
     return dir === 'desc'
       ? 'Ordenado por frescor (sinal mais frio primeiro)'
       : 'Ordenado por frescor (sinal mais recente primeiro)'
+  }
+  if (sort === 'classe') {
+    return dir === 'desc'
+      ? 'Ordenado por classe (reduto primeiro)'
+      : 'Ordenado por classe (marginal primeiro)'
   }
   const label = municipalityListSortLabels[sort]
   return dir === 'desc' ? `Ordenado por ${label} ↓` : `Ordenado por ${label} ↑`
@@ -195,18 +218,7 @@ const parseAdvisorsParam = (raw: string | string[] | undefined): number[] => {
 }
 
 const politicalTrendStatusSet = new Set<string>(Object.keys(politicalTrendLabels))
-
-/** Selecting every trend means "todas", which is the same thing as selecting none. */
-const parseTrendsParam = (raw: string | string[] | undefined): PoliticalTrendStatus[] => {
-  const trends: PoliticalTrendStatus[] = []
-  for (const token of allParamValues(raw)) {
-    if (!politicalTrendStatusSet.has(token)) continue
-    const trend = token as PoliticalTrendStatus
-    if (trends.includes(trend)) continue
-    trends.push(trend)
-  }
-  return trends.length < politicalTrendStatusSet.size ? trends : []
-}
+const territorialClassSet = new Set<string>(Object.keys(territorialClassLabels))
 
 export const municipalityListStateToRawParams = (
   state: MunicipalityListState,
@@ -221,6 +233,7 @@ export const municipalityListStateToRawParams = (
   coverage: state.coverage,
   priority: state.priority,
   trend: state.trends,
+  class: state.classes,
   compare: state.compare === undefined ? undefined : String(state.compare),
   sort: state.sort,
   dir: state.dir,
@@ -237,7 +250,14 @@ export const parseMunicipalityListParams = (
   const rawKind = firstValue(params.kind)
   const rawCoverage = firstValue(params.coverage)
   const rawPriority = firstValue(params.priority)
-  const trends = parseTrendsParam(params.trend)
+  const trends = parseExhaustiveEnumParam<PoliticalTrendStatus>(
+    params.trend,
+    politicalTrendStatusSet,
+  )
+  const classes = parseExhaustiveEnumParam<MunicipalityTerritorialClass>(
+    params.class,
+    territorialClassSet,
+  )
   const rawCompare = strictDecimalInteger(firstValue(params.compare))
   const rawSort = firstValue(params.sort) as MunicipalityListSortKey | undefined
   const sort = rawSort && municipalityListSortKeySet.has(rawSort) ? rawSort : undefined
@@ -256,6 +276,7 @@ export const parseMunicipalityListParams = (
       : {}),
     ...(rawPriority === 'alta' ? { priority: 'alta' } : {}),
     ...(trends.length ? { trends } : {}),
+    ...(classes.length ? { classes } : {}),
     ...(rawCompare && rawCompare <= 99999 ? { compare: rawCompare } : {}),
     ...(sort ? { sort } : {}),
     ...(dir ? { dir } : {}),
@@ -284,6 +305,9 @@ export const buildMunicipalityListWhere = (state: MunicipalityListState): Where 
   }
   if (state.priority) filters.push({ priority: { equals: state.priority } })
   if (state.trends?.length) filters.push({ 'politicalTrend.status': { in: state.trends } })
+  // `state.classes` is absent on purpose: the class is derived from the TSE
+  // artifact, not stored, so it can't be a Payload constraint. `municipalityPageData`
+  // filters it in memory over the unpaginated scope.
 
   return filters.length ? { and: filters } : {}
 }
@@ -312,6 +336,9 @@ export const serializeCanonicalMunicipalityListSearchParams = (
   if (canonicalState.coverage) params.set('coverage', canonicalState.coverage)
   if (canonicalState.priority) params.set('priority', canonicalState.priority)
   for (const trend of canonicalState.trends ?? []) params.append('trend', trend)
+  for (const territorialClass of canonicalState.classes ?? []) {
+    params.append('class', territorialClass)
+  }
   if (canonicalState.compare) params.set('compare', String(canonicalState.compare))
   // Omit the default pair (staff: deficit+desc). Keep `sort` whenever the pair
   // is non-default so `dir` is never orphaned (e.g. votos+asc → sort=votos&dir=asc).
@@ -380,6 +407,9 @@ const formatMunicipalitySortOptionLabel = (
   }
   if (key === 'frescor') {
     return dir === 'asc' ? `${base} (mais recente)` : `${base} (mais frio)`
+  }
+  if (key === 'classe') {
+    return dir === 'asc' ? `${base} (marginal primeiro)` : `${base} (reduto primeiro)`
   }
   return dir === 'asc' ? `${base} (A–Z)` : `${base} (Z–A)`
 }

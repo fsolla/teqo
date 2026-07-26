@@ -6,4 +6,19 @@
  */
 const numberFormatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 })
 
+/** Shares and multiples: one decimal at most, never a forced trailing zero. */
+export const oneDecimalFormatter = new Intl.NumberFormat('pt-BR', {
+  maximumFractionDigits: 1,
+  minimumFractionDigits: 0,
+})
+
 export const formatElectionNumber = (value: number): string => numberFormatter.format(value)
+
+/**
+ * A ratio (0..1) as a share label with at most one decimal — the shape used
+ * for "% da própria votação estadual". Lives here, not next to the ranking it
+ * was written for, so client bundles can format a share without pulling the
+ * committed TSE artifact along with it.
+ */
+export const formatVoteSharePercent = (share: number): string =>
+  `${oneDecimalFormatter.format(share * 100)}%`
