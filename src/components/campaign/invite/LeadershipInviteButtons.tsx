@@ -6,6 +6,7 @@ import { createCampaignInvite } from '@/app/(campaign)/campanha/actions/invite'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
+import { mapCreateCampaignInviteError } from '@/lib/campaignInviteClient'
 
 type InviteKind = 'autopreenchimento' | 'login'
 
@@ -41,11 +42,7 @@ export const LeadershipInviteButtons = ({
         const invite = await createCampaignInvite({ leadership: leadershipID, kind })
         setResult({ kind, ...invite })
       } catch (cause) {
-        setError(
-          cause instanceof Error && cause.message === 'Consentimento ainda não configurado.'
-            ? 'Consentimento ainda não configurado — peça a um admin para criar o texto de consentimento antes de convidar.'
-            : 'Não foi possível gerar o convite. Verifique seu acesso e tente novamente.',
-        )
+        setError(mapCreateCampaignInviteError(cause))
       }
     })
   }

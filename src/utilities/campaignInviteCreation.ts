@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { CREATE_CAMPAIGN_INVITE_MISSING_CONSENT_MESSAGE } from '@/lib/campaignInviteClient'
 import { campaignInviteCreateSchema, type CampaignInviteCreateInput } from '@/lib/schemas/invite'
 import type { CampaignUser } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
@@ -20,8 +21,6 @@ import {
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { requireRelationshipId } from '@/utilities/relationship'
-
-const MISSING_CONSENT_MESSAGE = 'Consentimento ainda não configurado.'
 
 const getFreshInviteCreator = async (
   payload: Payload,
@@ -49,7 +48,7 @@ export const createCampaignInviteForActor = async (
     async ({ req }) => {
       requireCampaignInvitePostgres(payload)
       const currentActor = await getFreshInviteCreator(payload, actor, req)
-      await requireLeadershipConsent(payload, req, MISSING_CONSENT_MESSAGE)
+      await requireLeadershipConsent(payload, req, CREATE_CAMPAIGN_INVITE_MISSING_CONSENT_MESSAGE)
       const leadership = await payload.findByID({
         collection: 'leadership',
         id: data.leadership,

@@ -11,6 +11,7 @@ vi.mock('@/app/(campaign)/campanha/actions/invite', () => ({
 }))
 
 import { LeadershipInviteButtons } from '@/components/campaign/invite/LeadershipInviteButtons'
+import { LeadershipInviteRowAction } from '@/components/campaign/invite/LeadershipInviteRowAction'
 
 describe('campaign invite interactions', () => {
   afterEach(() => {
@@ -87,5 +88,50 @@ describe('campaign invite interactions', () => {
       leadership: 31,
       kind: 'login',
     })
+  })
+
+  it('disables the list-row invite trigger when the phone is missing or invalid', () => {
+    render(
+      createElement(LeadershipInviteRowAction, {
+        leadershipID: 9,
+        name: 'Ana Silva',
+        hasValidPhone: false,
+      }),
+    )
+
+    const trigger = screen.getByRole('button', {
+      name: 'Sem celular cadastrado — Ana Silva',
+    })
+    expect((trigger as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('generates an autofill invite from the list-row popover', async () => {
+    const inviteUrl = 'https://example.com/campanha/convite/list-row'
+    const whatsappUrl = 'https://wa.me/5571999990000?text=Convite'
+    inviteActionState.createCampaignInvite.mockResolvedValue({ inviteUrl, whatsappUrl })
+
+    render(
+      createElement(LeadershipInviteRowAction, {
+        leadershipID: 42,
+        name: 'João Souza',
+        hasValidPhone: true,
+      }),
+    )
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Convidar João Souza para completar cadastro por WhatsApp',
+      }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Gerar convite' }))
+
+    await screen.findByText(/Convite para completar cadastro gerado/)
+    expect(inviteActionState.createCampaignInvite).toHaveBeenCalledWith({
+      leadership: 42,
+      kind: 'autopreenchimento',
+    })
+    expect(screen.getByRole('link', { name: 'Enviar pelo WhatsApp' }).getAttribute('href')).toBe(
+      whatsappUrl,
+    )
   })
 })
