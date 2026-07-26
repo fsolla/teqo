@@ -5,9 +5,9 @@ import { setMunicipalityAdvisorMembership } from '@/app/(campaign)/campanha/acti
 import { MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES } from '@/lib/schemas/municipality'
 import { positiveRelationshipId } from '@/lib/schemas/primitives'
 import {
-  CAMPAIGN_SESSION_EXPIRED_MESSAGE,
-  mapCampaignFormActionError,
-} from '@/utilities/campaignFormActionError'
+  campaignJsonMutationErrorResponse,
+  parseCampaignJsonRequestBody,
+} from '@/utilities/campaignJsonMutationRoute'
 import { uniqueRelationshipIds } from '@/utilities/relationship'
 import { isSameOriginRequest } from '@/utilities/sameOriginRequest'
 
@@ -30,18 +30,11 @@ export async function POST(
     return NextResponse.json({ status: 'error', message: 'Requisição inválida.' }, { status: 403 })
   }
 
-  let json: unknown
-  try {
-    json = await request.json()
-  } catch {
-    return NextResponse.json(
-      { status: 'error', message: 'Corpo da requisição inválido.' },
-      { status: 400 },
-    )
-  }
+  const parsed = await parseCampaignJsonRequestBody(request)
+  if (!parsed.ok) return parsed.response
 
   try {
-    const { municipalityId, advisorId, assigned } = bodySchema.parse(json)
+    const { municipalityId, advisorId, assigned } = bodySchema.parse(parsed.body)
     const updated = await setMunicipalityAdvisorMembership({
       municipality: municipalityId,
       advisor: advisorId,
@@ -54,28 +47,10 @@ export async function POST(
       advisors: uniqueRelationshipIds(updated.advisors),
     })
   } catch (error) {
-    const mapped = mapCampaignFormActionError({
-      error,
-      safeMessages: [
-        ...MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES,
-        'Autenticação necessária.',
-        CAMPAIGN_SESSION_EXPIRED_MESSAGE,
-      ],
+    return campaignJsonMutationErrorResponse(error, {
+      safeMessages: MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES,
       genericMessage:
         'Não foi possível atualizar os assessores. Verifique seu acesso e tente novamente.',
     })
-
-    const isAuthError =
-      error instanceof Error &&
-      (error.message === 'Autenticação necessária.' ||
-        error.message === CAMPAIGN_SESSION_EXPIRED_MESSAGE)
-
-    return NextResponse.json(
-      {
-        status: 'error',
-        message: mapped.message ?? 'Não foi possível atualizar os assessores.',
-      },
-      { status: isAuthError ? 401 : 400 },
-    )
   }
 }

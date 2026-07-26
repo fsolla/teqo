@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { MunicipalityListAdvisorsResponse } from '@/app/(campaign)/campanha/(app)/municipios/advisors/types'
 import {
+  advisorEntriesFromIds,
   formatAdvisorNamesTooltip,
   MunicipalityAdvisorAvatarStack,
 } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
@@ -53,10 +54,15 @@ export const MunicipalityListAdvisorsControl = ({
   const [isPending, setIsPending] = useState(false)
   const pendingCountRef = useRef(0)
   const lastPropsIDsRef = useRef(currentAdvisorIDs)
-  // Requests can settle out of send order (network jitter). Track the send
-  // order explicitly and only ever adopt the response with the highest
-  // sequence number seen so far — never "whichever response happens to be
-  // the one that brings the pending count to zero".
+  // Requests can settle out of send order (network jitter), so the send order
+  // is tracked explicitly: only the response with the highest sequence number
+  // seen so far is kept, and it is adopted — win or fail — once every
+  // in-flight delta has settled (`pendingCountRef` back to 0). No response
+  // ever writes `lastPropsIDsRef`: that ref exists solely to tell a genuine
+  // external prop change (nav/refresh) apart from a no-op re-render carrying
+  // the same pre-edit content, and advancing it here would make a later
+  // stale re-render of that same pre-edit content look "external" and
+  // clobber the optimistic state back to it.
   const requestSeqRef = useRef(0)
   const latestConfirmedRef = useRef<{ seq: number; advisors: number[] } | null>(null)
 
@@ -70,30 +76,29 @@ export const MunicipalityListAdvisorsControl = ({
   }, [currentAdvisorIDs])
 
   // Every eligible account (coordinator/advisor/candidate) is listed here
-  // regardless of current assignment, so it doubles as the name lookup for
-  // chips the popover just added — no round trip needed to label them.
-  const optionNameById = useMemo(
-    () => new Map(options.map((option) => [option.id, option.name])),
-    [options],
-  )
+  // regardless of current assignment, so it doubles as the name lookup for an
+  // id the popover just optimistically added — no round trip needed to label
+  // it. `advisorNamesById` is the fallback for an id that fell out of
+  // eligibility but is still assigned; `advisorEntriesFromIds` drops the rare
+  // id found in neither, same as every other advisor cell in the list.
+  const advisorLookup = useMemo(() => {
+    const lookup = new Map<number, { id: number; name: string }>(advisorNamesById)
+    for (const option of options) lookup.set(option.id, { id: option.id, name: option.name })
+    return lookup
+  }, [advisorNamesById, options])
 
   const selectedSet = useMemo(() => new Set(selectedIDs), [selectedIDs])
   const chips = useMemo(
     () =>
-      selectedIDs
-        .map((id) => ({
-          id,
-          name: optionNameById.get(id) ?? advisorNamesById.get(id)?.name ?? `Assessor #${id}`,
-        }))
-        .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR')),
-    [selectedIDs, optionNameById, advisorNamesById],
+      [...advisorEntriesFromIds(selectedIDs, advisorLookup)].sort((left, right) =>
+        left.name.localeCompare(right.name, 'pt-BR'),
+      ),
+    [selectedIDs, advisorLookup],
   )
 
-  // Redundant with the chips themselves, but B23's hover/focus tooltip on the
-  // trigger stays here so the coordinator sees the full list without opening
-  // the popover — `formatAdvisorNamesTooltip` returns `null` for an empty
-  // list (the trigger already reads "Sem responsável"/"Sem assessor" by
-  // extenso, so a tooltip would only echo it).
+  // B23's hover/focus tooltip stays on the trigger even though it repeats the
+  // chips: it's the no-open-popover read. `null` for an empty list — the
+  // trigger already reads "Sem responsável"/"Sem assessor" by extenso.
   const tooltipContent = formatAdvisorNamesTooltip(chips)
 
   const filteredOptions = useMemo(
@@ -125,6 +130,18 @@ export const MunicipalityListAdvisorsControl = ({
         })
       }
 
+      // Single settle point for every exit path (success, mapped error,
+      // network failure): decrements the pending count and, once it reaches
+      // 0, stops the spinner and reconciles to the latest confirmed server
+      // set — even on this request's own failure, an earlier delta in the
+      // same batch may have already confirmed one.
+      const finishRequest = () => {
+        pendingCountRef.current = Math.max(0, pendingCountRef.current - 1)
+        if (pendingCountRef.current > 0) return
+        setIsPending(false)
+        if (latestConfirmedRef.current) setSelectedIDs(latestConfirmedRef.current.advisors)
+      }
+
       try {
         const response = await fetch(ADVISORS_ENDPOINT, {
           method: 'POST',
@@ -134,32 +151,22 @@ export const MunicipalityListAdvisorsControl = ({
         })
 
         const payload = (await response.json()) as MunicipalityListAdvisorsResponse
-        pendingCountRef.current = Math.max(0, pendingCountRef.current - 1)
 
         if (!response.ok || payload.status !== 'success') {
           revertDelta()
           setErrorMessage(payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE)
+          finishRequest()
           return
         }
 
         if (requestSeq > (latestConfirmedRef.current?.seq ?? 0)) {
           latestConfirmedRef.current = { seq: requestSeq, advisors: payload.advisors }
         }
-
-        // Only adopt the server's confirmed set once every in-flight delta has
-        // settled, and always the most recently *sent* delta's response (not
-        // whichever response happens to be the one landing last — responses
-        // can arrive out of send order under network jitter).
-        if (pendingCountRef.current === 0 && latestConfirmedRef.current) {
-          lastPropsIDsRef.current = latestConfirmedRef.current.advisors
-          setSelectedIDs(latestConfirmedRef.current.advisors)
-        }
+        finishRequest()
       } catch {
-        pendingCountRef.current = Math.max(0, pendingCountRef.current - 1)
         revertDelta()
         setErrorMessage(SAVE_ERROR_MESSAGE)
-      } finally {
-        if (pendingCountRef.current === 0) setIsPending(false)
+        finishRequest()
       }
     })()
   }

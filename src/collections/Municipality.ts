@@ -24,7 +24,7 @@ import {
   eligibleCampaignStaffWhere,
 } from '@/utilities/campaignAccess'
 import { politicalTrendLabels } from '@/utilities/municipalityLabels'
-import { relationshipId } from '@/utilities/relationship'
+import { relationshipId, uniqueRelationshipIds } from '@/utilities/relationship'
 import {
   voteEstimateScenarioGroupAccess,
   voteEstimateScenarioGroupFields,
@@ -81,9 +81,7 @@ const validateExpectedVotes: CollectionBeforeValidateHook = ({ data, originalDoc
 const validateMunicipalityAdvisors: CollectionBeforeValidateHook = async ({ data, req }) => {
   if (!data || data.advisors === undefined) return data
 
-  const advisorIDs = Array.isArray(data.advisors)
-    ? [...new Set(data.advisors.map(relationshipId).filter((id): id is number => id !== null))]
-    : []
+  const advisorIDs = Array.isArray(data.advisors) ? uniqueRelationshipIds(data.advisors) : []
   if (advisorIDs.length === 0) return data
 
   const eligibleAdvisors = await req.payload.find({
