@@ -8,6 +8,7 @@ import {
   haversineKm,
   type GeoPoint,
 } from '../../src/lib/municipalityProximity.js'
+import { featureBounds } from '../helpers/featureBounds.js'
 
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
@@ -36,17 +37,7 @@ const geoCard = (page: Page) => page.locator('[data-slot="card"]').filter({ hasT
  * fall outside a concave município, and the fixture hands out an arbitrary one.
  */
 const interiorPointOf = (feature: BahiaMunicipalityFeature): GeoPoint => {
-  const rings =
-    feature.geometry.type === 'Polygon'
-      ? [feature.geometry.coordinates]
-      : feature.geometry.coordinates
-  const positions = rings.flat(2)
-  const longitudes = positions.map(([lng]) => lng)
-  const latitudes = positions.map(([, lat]) => lat)
-  const west = Math.min(...longitudes)
-  const east = Math.max(...longitudes)
-  const south = Math.min(...latitudes)
-  const north = Math.max(...latitudes)
+  const { west, east, south, north } = featureBounds(feature)
   const steps = 24
 
   for (let row = 1; row < steps; row += 1) {

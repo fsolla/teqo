@@ -16,6 +16,8 @@ import {
   resolveNearbyMunicipality,
 } from '@/lib/municipalityProximity'
 
+import { featureBounds } from '../helpers/featureBounds'
+
 /** Soft ceiling against accidental unsimplified meshes (plan target ≤ ~600 KB). */
 const MAX_TOPO_BYTES = 600 * 1024
 
@@ -120,26 +122,18 @@ describe('Bahia static geometries', () => {
 
       for (const entry of features) {
         const centroid = featureCentroid(entry)
-        const rings =
-          entry.geometry.type === 'Polygon'
-            ? [entry.geometry.coordinates]
-            : entry.geometry.coordinates
-        const positions = rings.flat(2)
-        const longitudes = positions.map(([lng]) => lng)
-        const latitudes = positions.map(([, lat]) => lat)
+        const bounds = featureBounds(entry)
 
-        expect(centroid.lng, entry.properties.name).toBeGreaterThanOrEqual(Math.min(...longitudes))
-        expect(centroid.lng, entry.properties.name).toBeLessThanOrEqual(Math.max(...longitudes))
-        expect(centroid.lat, entry.properties.name).toBeGreaterThanOrEqual(Math.min(...latitudes))
-        expect(centroid.lat, entry.properties.name).toBeLessThanOrEqual(Math.max(...latitudes))
+        expect(centroid.lng, entry.properties.name).toBeGreaterThanOrEqual(bounds.west)
+        expect(centroid.lng, entry.properties.name).toBeLessThanOrEqual(bounds.east)
+        expect(centroid.lat, entry.properties.name).toBeGreaterThanOrEqual(bounds.south)
+        expect(centroid.lat, entry.properties.name).toBeLessThanOrEqual(bounds.north)
       }
     })
 
     it('sends a Salvador position to the zone list and an out-of-portfolio one to the nearest', async () => {
       const geometry = await loadMunicipalityGeometryModule()
-      const salvadorZones = municipalityCatalog
-        .filter((entry) => entry.city === 'Salvador')
-        .map(({ slug, name, ibgeCode }) => ({ slug, name, ibgeCode }))
+      const salvadorZones = municipalityCatalog.filter((entry) => entry.city === 'Salvador')
       const seabra = municipalityCatalog.find((entry) => entry.slug === 'seabra')!
       const salvadorPoint = { lat: -12.973, lng: -38.5121 }
 
@@ -160,7 +154,7 @@ describe('Bahia static geometries', () => {
         resolveNearbyMunicipality({
           point: salvadorPoint,
           geometry,
-          accessible: [{ slug: seabra.slug, name: seabra.name, ibgeCode: seabra.ibgeCode }],
+          accessible: [seabra],
         }),
       ).toEqual({ kind: 'outOfScope', city: 'Salvador', nearestInScope: null })
     })

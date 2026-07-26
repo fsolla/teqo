@@ -137,9 +137,10 @@ describe('municipalityProximity', () => {
       const onBorder = { lat: -12.5, lng: -39 }
 
       const matches = features.filter((feature) => featureContainsPoint(feature, onBorder))
+      // Exactly one, and it is the eastern feature: the half-open ray test counts
+      // only crossings strictly east of the point, so a shared edge belongs to the
+      // polygon whose interior lies east of it. Scan order never gets a say.
       expect(matches).toHaveLength(1)
-      // The border belongs to the feature whose interior is west of it, and the
-      // tie-break is feature order — not "whichever the scan happened to hit".
       expect(findContainingMunicipality(features, onBorder)).toBe(east)
     })
 

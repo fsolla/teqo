@@ -23,6 +23,9 @@ import {
   type GeolocationFailureReason,
 } from '@/utilities/campaignGeolocation'
 
+/** Everything except `unsupported`, which is a state of its own — the card hides. */
+type ActionableFailureReason = Exclude<GeolocationFailureReason, 'unsupported'>
+
 type CardState =
   /**
    * Mounted, permission not read yet. Renders the explanation without the CTA:
@@ -34,9 +37,14 @@ type CardState =
   | { status: 'ready' }
   | { status: 'locating' }
   | { status: 'resolved'; resolution: NearbyMunicipalityResolution; coarse: boolean }
-  | { status: 'failed'; reason: GeolocationFailureReason }
+  | { status: 'failed'; reason: ActionableFailureReason }
+  /** No geolocation in this browser: nothing to act on, so the card takes no space. */
+  | { status: 'unsupported' }
 
-const failureCopy: Record<GeolocationFailureReason, { title: string; hint: string } | null> = {
+/** The states that render — `unsupported` never reaches the body. */
+type VisibleCardState = Exclude<CardState, { status: 'unsupported' }>
+
+const failureCopy: Record<ActionableFailureReason, { title: string; hint: string }> = {
   denied: {
     title: 'Localização bloqueada neste navegador',
     hint: 'Libere o acesso à localização nas permissões do site e tente de novo.',
@@ -51,8 +59,6 @@ const failureCopy: Record<GeolocationFailureReason, { title: string; hint: strin
     title: 'A localização demorou para responder',
     hint: 'Sinal fraco costuma ser a causa. Tente de novo.',
   },
-  // Nothing the user can do here, so the card does not take space (see render).
-  unsupported: null,
 }
 
 /**
@@ -65,17 +71,21 @@ const failureCopy: Record<GeolocationFailureReason, { title: string; hint: strin
  * `leader` nunca chega aqui: a página `/campanha` roteia liderança para o
  * `LeaderContactsPanel` antes do dashboard.
  */
+/**
+ * Filtered-list href per multi-zone city, keyed by IBGE code — only the cities
+ * that have several zone municipalities, hence `Partial`: most codes are absent
+ * and the lookup must be guarded. Ready-made on the server on purpose: importing
+ * the canonical list-URL builder here costs 21 KB of the dashboard's First Load
+ * JS (see `buildZoneCityHrefs` in `CampaignDashboard`).
+ */
+type ZoneCityHrefs = Readonly<Partial<Record<string, string>>>
+
 export const NearestMunicipalityCard = ({
   accessible,
   zoneCityHrefs,
 }: {
   accessible: readonly AccessibleMunicipality[]
-  /**
-   * Filtered-list href per multi-zone city, keyed by IBGE code. Ready-made on
-   * purpose: importing the canonical list-URL builder here costs 21 KB of the
-   * dashboard's First Load JS (see `buildZoneCityHrefs` in `CampaignDashboard`).
-   */
-  zoneCityHrefs: Readonly<Record<string, string>>
+  zoneCityHrefs: ZoneCityHrefs
 }) => {
   const [state, setState] = useState<CardState>({ status: 'starting' })
   const autoStartedRef = useRef(false)
@@ -104,7 +114,11 @@ export const NearestMunicipalityCard = ({
     const [result, geometry] = loaded
 
     if (!result.ok) {
-      setState({ status: 'failed', reason: result.reason })
+      setState(
+        result.reason === 'unsupported'
+          ? { status: 'unsupported' }
+          : { status: 'failed', reason: result.reason },
+      )
       return
     }
 
@@ -150,7 +164,7 @@ export const NearestMunicipalityCard = ({
     void start()
   }, [accessible.length, locate])
 
-  if (accessible.length === 0 || !isCardWorthShowing(state)) return null
+  if (accessible.length === 0 || state.status === 'unsupported') return null
 
   return (
     <Card className="flex h-full flex-col">
@@ -174,59 +188,50 @@ export const NearestMunicipalityCard = ({
   )
 }
 
-/** A browser without geolocation takes no space: there is nothing to act on. */
-const isCardWorthShowing = (state: CardState): boolean =>
-  state.status !== 'failed' || state.reason !== 'unsupported'
-
 /**
  * The multi-second wait and its outcome must reach a screen reader, and the
  * visible copy is spread over paragraph and button — hence one sentence here.
  */
-const statusAnnouncement = (state: CardState): string => {
+const statusAnnouncement = (state: VisibleCardState): string => {
   if (state.status === 'locating') return 'Localizando…'
-  if (state.status === 'failed') return failureCopy[state.reason]?.title ?? ''
+  if (state.status === 'failed') return failureCopy[state.reason].title
   if (state.status !== 'resolved') return ''
 
   return headlineSentence(locationHeadline(state.resolution))
 }
 
 /**
- * Where the actor is, written once: the announcement above and the visible
- * headline below both read it, so they cannot drift apart.
+ * Where the actor is, in parts: the announcement joins them into a sentence and
+ * the visible headline emphasizes the place, so the copy exists in one place and
+ * the two cannot drift apart.
  */
-type LocationHeadline = { place: string; suffix: string } | { place: null; sentence: string }
+type LocationHeadline = { lead: string; place: string | null; tail: string }
+
+const PLACE_LEAD = 'Você está em '
 
 const locationHeadline = (resolution: NearbyMunicipalityResolution): LocationHeadline => {
   switch (resolution.kind) {
     case 'inScope':
-      return { place: resolution.municipality.name, suffix: '.' }
+      return { lead: PLACE_LEAD, place: resolution.municipality.name, tail: '.' }
     case 'zoneCity':
-      return { place: resolution.city, suffix: ', dividida por zona eleitoral.' }
+      return { lead: PLACE_LEAD, place: resolution.city, tail: ', dividida por zona eleitoral.' }
     case 'outOfScope':
-      return { place: resolution.city, suffix: ', fora da sua carteira.' }
+      return { lead: PLACE_LEAD, place: resolution.city, tail: ', fora da sua carteira.' }
     case 'outsideBahia':
-      return {
-        place: null,
-        sentence: resolution.nearestInScope
-          ? 'Você está fora da Bahia.'
-          : 'Nenhum município da campanha perto de você.',
-      }
+      // What to do about it is the detail's job, so the headline states only the
+      // fact — the same sentence whether or not there is a município to offer.
+      return { lead: 'Você está fora da Bahia.', place: null, tail: '' }
   }
 }
 
-const headlineSentence = (headline: LocationHeadline): string =>
-  headline.place === null ? headline.sentence : `Você está em ${headline.place}${headline.suffix}`
+const headlineSentence = ({ lead, place, tail }: LocationHeadline): string =>
+  `${lead}${place ?? ''}${tail}`
 
-const Headline = ({ headline }: { headline: LocationHeadline }) => (
+const Headline = ({ headline: { lead, place, tail } }: { headline: LocationHeadline }) => (
   <p className="text-sm">
-    {headline.place === null ? (
-      headline.sentence
-    ) : (
-      <>
-        Você está em <strong className="font-medium">{headline.place}</strong>
-        {headline.suffix}
-      </>
-    )}
+    {lead}
+    {place ? <strong className="font-medium">{place}</strong> : null}
+    {tail}
   </p>
 )
 
@@ -256,10 +261,12 @@ const CoarseFixCaveat = () => (
   </Explanation>
 )
 
+const NothingNearby = () => <Explanation>Nenhum município da sua carteira por perto.</Explanation>
+
 const renderBody = (
-  state: CardState,
+  state: VisibleCardState,
   locate: () => void,
-  zoneCityHrefs: Readonly<Record<string, string>>,
+  zoneCityHrefs: ZoneCityHrefs,
 ): ReactNode => {
   if (state.status === 'starting' || state.status === 'ready') {
     return (
@@ -285,7 +292,6 @@ const renderBody = (
 
   if (state.status === 'failed') {
     const copy = failureCopy[state.reason]
-    if (!copy) return null
 
     return (
       <>
@@ -310,7 +316,7 @@ const renderBody = (
 const resolutionDetail = (
   resolution: NearbyMunicipalityResolution,
   locate: () => void,
-  zoneCityHrefs: Readonly<Record<string, string>>,
+  zoneCityHrefs: ZoneCityHrefs,
 ): ReactNode => {
   const nearest = 'nearestInScope' in resolution ? resolution.nearestInScope : null
   const nearestDetail = nearest ? (
@@ -356,13 +362,14 @@ const resolutionDetail = (
     }
 
     case 'outOfScope':
-      return nearestDetail ?? <Explanation>Nenhum município da sua carteira por perto.</Explanation>
+      return nearestDetail ?? <NothingNearby />
 
     case 'outsideBahia':
       return (
         nearestDetail ?? (
           <>
-            <Explanation>Sua posição está longe do território da campanha.</Explanation>
+            <NothingNearby />
+            {/* Out of state with nothing to offer is also what a bad fix looks like. */}
             <LocateButton label="Tentar de novo" onClick={locate} />
           </>
         )

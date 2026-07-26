@@ -4,6 +4,7 @@ import type {
   BahiaMunicipalityFeature,
   MunicipalityGeometryModule,
 } from '@/lib/bahiaGeometriesTypes'
+import { oneDecimalFormatter } from '@/lib/electionFormat'
 
 /**
  * B14 — "onde estou" resolvido contra a malha municipal da Bahia.
@@ -79,9 +80,10 @@ export const haversineKm = (from: GeoPoint, to: GeoPoint): number => {
 }
 
 /**
- * Even-odd ray casting. A point exactly on a ring is undefined by construction,
- * which is why `findContainingMunicipality` documents a deterministic tie-break
- * instead of pretending shared borders belong to nobody.
+ * Even-odd ray casting, half-open on purpose: only crossings strictly east of
+ * the point count (`point.lng < crossingLng`). That is what makes a point on a
+ * shared border belong to exactly one município — the one whose interior lies
+ * east of the edge (north, for a horizontal one) — instead of to both or neither.
  */
 const isPointInRing = (point: GeoPoint, ring: readonly Position[]): boolean => {
   let inside = false
@@ -168,9 +170,11 @@ export const featureCentroid = (feature: BahiaMunicipalityFeature): GeoPoint => 
 }
 
 /**
- * First feature whose polygons contain the point. Shared borders are resolved
- * by feature order, so a point on a boundary belongs to exactly one município —
- * never to both, never to none.
+ * First feature whose polygons contain the point. A point on a shared border
+ * lands in exactly one município by the half-open convention in `isPointInRing`,
+ * not by this scan's order: the mesh is TopoJSON-derived, so neighbours share
+ * numerically identical arcs and never overlap. Feature order only decides
+ * pathological overlaps the committed mesh does not contain.
  */
 export const findContainingMunicipality = (
   features: readonly BahiaMunicipalityFeature[],
@@ -252,10 +256,8 @@ export const resolveNearbyMunicipality = ({
   }
 }
 
-const kmFormatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 })
-
 /** Distance as field copy: precise where it is felt, rounded where it is not. */
 export const formatDistanceKm = (distanceKm: number): string => {
   if (distanceKm < 1) return 'menos de 1 km'
-  return `${kmFormatter.format(distanceKm < 10 ? distanceKm : Math.round(distanceKm))} km`
+  return `${oneDecimalFormatter.format(distanceKm < 10 ? distanceKm : Math.round(distanceKm))} km`
 }
