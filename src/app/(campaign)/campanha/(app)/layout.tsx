@@ -1,10 +1,17 @@
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
 import { CampaignBottomNav } from '@/components/campaign/shell/CampaignBottomNav'
 import { CampaignSidebar } from '@/components/campaign/shell/CampaignSidebar'
+import { CampaignSidebarViewportDefault } from '@/components/campaign/shell/CampaignSidebarViewportDefault'
 import { InstallPwaToast } from '@/components/campaign/shell/InstallPwaToast'
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/Sidebar'
+import {
+  SIDEBAR_COOKIE_NAME,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/Sidebar'
 import { Toaster } from '@/components/ui/Toaster'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { campaignUserShellView } from '@/utilities/campaignUserProfile'
@@ -16,23 +23,32 @@ export default async function CampaignAppLayout({ children }: { children: React.
     redirect('/campanha/login')
   }
 
+  const cookieStore = await cookies()
+  const sidebarStateCookie = cookieStore.get(SIDEBAR_COOKIE_NAME)
+  const hasSidebarCookie = sidebarStateCookie !== undefined
+  const defaultOpen = sidebarStateCookie ? sidebarStateCookie.value === 'true' : true
+
   return (
     // print: unlock the h-svh/overflow-hidden shells and drop the app chrome,
     // otherwise only the first page of the municipality dossier prints (E16).
-    <SidebarProvider className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
+    <SidebarProvider
+      defaultOpen={defaultOpen}
+      className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible"
+    >
+      <CampaignSidebarViewportDefault hasSidebarCookie={hasSidebarCookie} />
       <CampaignSidebar user={campaignUserShellView(user)} />
       <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
         <header className="flex min-h-14 shrink-0 items-center gap-3 bg-primary px-4 text-primary-foreground md:hidden print:hidden">
-          <SidebarTrigger
-            label="Abrir ou fechar menu da campanha"
-            className="text-primary-foreground"
-          />
+          <SidebarTrigger className="text-primary-foreground" />
           <div className="min-w-0 leading-tight">
             <span className="block truncate text-sm font-semibold">Jorge Solla</span>
             <span className="block truncate text-xs text-primary-foreground/80">
               Campanha · Bahia
             </span>
           </div>
+        </header>
+        <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
+          <SidebarTrigger />
         </header>
         <div
           data-slot="campaign-content-scroll"

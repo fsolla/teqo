@@ -1,11 +1,13 @@
 # Sidebar recolhido em tablet (/campanha)
 
-Status: rascunho
+Status: entregue
 Atualizado em: 2026-07-26
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B38)
 Impeccable: B — encaixe no shell `CampaignSidebar` + layout `(app)`; sem rota nova
 Appetite: ~0,5 dia eng; ligar collapsible shadcn + trigger em md+ + default por faixa de viewport; sem migration
 Responsável: —
+
+**Revisão na entrega (2026-07-26):** `CampaignSidebar` passou a `collapsible="offcanvas"`; layout RSC lê cookie `sidebar_state` em `defaultOpen`; ilha `CampaignSidebarViewportDefault` aplica colapso único em viewport &lt;1024 px quando não há cookie; header slim `md+` com `SidebarTrigger`. Questões em aberto fechadas: trigger sempre visível no inset (opção A); sync tablet via `matchMedia` one-shot (opção A).
 
 ## Design (Impeccable)
 
@@ -108,6 +110,7 @@ Depth check: reusa `Sidebar`/`SidebarProvider`/`SidebarTrigger`/`useSidebar` já
 
 - **`collapsible="icon"` como opção de densidade.** Revisitar se, após uso real em tablet, a mesa pedir nav por ícone sem abrir o rail (evidência ≥2 atores ou critique R6).
 - **Persistir preferência por faixa (tablet vs desktop).** Revisitar se o cookie único gerar atrito medido (abre tablet “preso” aberto após uso no desktop).
+- **Flash breve sem cookie em tablet (SSR `defaultOpen` aberto → ilha `matchMedia` colapsa).** Revisitar só se campo reportar incômodo; mitigação aceita na entrega: uma frame antes da hidratação.
 
 ## Referências
 

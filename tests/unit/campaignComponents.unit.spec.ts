@@ -115,7 +115,11 @@ describe('campaign visual foundation', () => {
     )
     expect(layoutSource).toContain('data-slot="campaign-content-scroll"')
     expect(layoutSource).toContain('min-h-0 flex-1 overflow-y-auto overscroll-contain')
-    expect(sidebarSource).toContain('h-svh shrink-0')
+    expect(layoutSource).toContain(
+      'hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden',
+    )
+    expect(sidebarSource).toContain('collapsible="offcanvas"')
+    expect(sidebarSource).toContain('print:hidden')
   })
 
   it('uses light sidebar tokens and readable logout states', () => {
