@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { LeadershipInviteRowAction } from '@/components/campaign/invite/LeadershipInviteRowAction'
 import { LeadershipStateDeputiesCell } from '@/components/campaign/leadership/LeadershipStateDeputiesCell'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { CampaignCopyableCell } from '@/components/campaign/shared/CampaignCopyableCell'
@@ -125,28 +126,37 @@ const leadershipColumns = (
     cellClassName: 'text-right',
     cell: (row) => {
       const whatsAppHref = whatsAppHrefForPhone(row.phone)
-      return whatsAppHref ? (
-        <Button asChild variant="ghost" size="icon" className="size-10">
-          <a
-            href={whatsAppHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Enviar WhatsApp para ${row.name}`}
-          >
-            <MessageCircleIcon className="size-4" aria-hidden="true" />
-          </a>
-        </Button>
-      ) : (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-10"
-          disabled
-          aria-label={`WhatsApp indisponível — ${row.name} sem celular`}
-        >
-          <MessageCircleIcon className="size-4" aria-hidden="true" />
-        </Button>
+      return (
+        <div className="inline-flex items-center justify-end gap-1">
+          <LeadershipInviteRowAction
+            leadershipID={row.id}
+            name={row.name}
+            hasValidPhone={whatsAppHref !== null}
+          />
+          {whatsAppHref ? (
+            <Button asChild variant="ghost" size="icon" className="size-10">
+              <a
+                href={whatsAppHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Enviar WhatsApp para ${row.name}`}
+              >
+                <MessageCircleIcon className="size-4" aria-hidden="true" />
+              </a>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-10"
+              disabled
+              aria-label={`WhatsApp indisponível — ${row.name} sem celular`}
+            >
+              <MessageCircleIcon className="size-4" aria-hidden="true" />
+            </Button>
+          )}
+        </div>
       )
     },
   },

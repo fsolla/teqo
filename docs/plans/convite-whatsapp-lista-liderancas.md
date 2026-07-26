@@ -1,17 +1,17 @@
 # Convite por WhatsApp na lista de lideranças
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue
+Atualizado em: 2026-07-26
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B30**)
 Impeccable: B — encaixe de uma ação na tabela existente de `/campanha/liderancas`
-Appetite: ~0,25–0,5 dia eng; zero migration/collection/action nova; um componente client + uma coluna
+Appetite: ~0,25–0,5 dia eng; zero migration/collection/action nova; um componente client encaixado na coluna `actions` existente (B28 ✓)
 Responsável: —
 
 ## Design (Impeccable)
 
 Âncoras: `PRODUCT.md` (register Field Desk) · tema `data-theme='campaign'` · princípios `campanha-edit-where-you-see.mdc` e `campanha-action-feedback.mdc`.
 
-Na implementação (`implement-roadmap-item`): craft compacto → critique → polish (a UI já existe em dois lugares — `LeadershipInviteButtons.tsx` no detalhe e o ícone de WhatsApp em `AdvisorsTable.tsx` — este item só compõe os dois padrões numa coluna nova).
+Na implementação (`implement-roadmap-item`): craft compacto → critique → polish (a UI já existe em dois lugares — `LeadershipInviteButtons.tsx` no detalhe e o ícone de WhatsApp em `AdvisorsTable.tsx` / coluna `actions` do B28 — este item compõe convite + contato na mesma célula).
 
 Brief compacto:
 
@@ -27,7 +27,7 @@ Dados: N/A — item é uma ação de disparo (convite), não introduz métrica, 
 
 ## Contexto
 
-`/campanha/liderancas` (`src/app/(campaign)/campanha/(app)/liderancas/page.tsx`) já lista lideranças numa `CampaignTable` (Pass 2 W1 — colunas como dado, `leadershipColumns`) com as colunas `name` | `supportStatus` | `municipalities` | `organizations` | `appAccess`. `LeadershipRowViewModel` (`src/utilities/leadershipData.ts`) já expõe `phone: string | null` por linha — não falta nenhum dado no loader.
+`/campanha/liderancas` (`src/app/(campaign)/campanha/(app)/liderancas/page.tsx`) já lista lideranças numa `CampaignTable` (Pass 2 W1 — `leadershipColumns(stateDeputyOptions)`). Colunas atuais (pós-B28 ✓ / B31 ✓): `name` | `email` | `phone` | `supportStatus` | `municipalities` | `organizations` | `stateDeputies` | `appAccess` | `actions` (WhatsApp de contato `MessageCircleIcon` + `whatsAppHrefForPhone`). `LeadershipRowViewModel` (`src/utilities/leadershipData.ts`) já expõe `phone: string | null` por linha — não falta nenhum dado no loader.
 
 A funcionalidade "convidar para completar cadastro por WhatsApp" já existe e funciona, mas só no detalhe (`/campanha/liderancas/[id]`), via `LeadershipInviteButtons` (`src/components/campaign/invite/LeadershipInviteButtons.tsx`): chama a server action `createCampaignInvite` (`src/app/(campaign)/campanha/actions/invite.ts` → `createCampaignInviteForActor` em `src/utilities/campaignInviteCreation.ts`), que cria um `campaignInvite` com token único (`generateCampaignInviteToken`, expira em 7 dias) e monta a URL do WhatsApp (`buildCampaignInviteWhatsAppLink` em `src/utilities/campaignInvite.ts` → `buildWhatsAppUrl` em `src/lib/phone.ts`). Se `contact.phone` estiver vazio, a action lança `Error('Cadastre o celular da liderança antes de gerar o convite.')` — hoje **só** validado no servidor; o botão do detalhe nunca desabilita por telefone.
 
@@ -39,7 +39,7 @@ Pedido de produto (2026-07-25): adicionar, ao fim de cada linha de `/campanha/li
 
 ## Objetivos
 
-- Nova coluna ao final de `leadershipColumns` com uma ação de "Convidar para completar cadastro (WhatsApp)" por linha.
+- Encaixar na coluna `actions` existente (B28 ✓) uma ação de "Convidar para completar cadastro (WhatsApp)" por linha, ao lado do atalho de contato.
 - Reusa a mesma server action `createCampaignInvite` e o mesmo `kind: 'autopreenchimento'` já usados no detalhe — nenhuma regra de negócio nova, nenhuma mudança de access (`src/utilities/access/invites.ts` já escopa advisor a lideranças acessíveis).
 - Botão desabilitado quando `row.phone` for `null` ou não passar em `normalizeBrazilianPhone` (mesmo critério do `AdvisorsTable`), com `aria-label`/tooltip explicando o motivo.
 - Sem migration, sem collection nova, sem endpoint novo.
@@ -49,13 +49,15 @@ Pedido de produto (2026-07-25): adicionar, ao fim de cada linha de `/campanha/li
 - **Two-step reveal (gerar → depois um `<a>` real de "Enviar pelo WhatsApp") em vez de `window.open` automático pós-`await`.** O convite exige uma chamada de servidor (criação de token) antes de existir a URL do WhatsApp; abrir a aba automaticamente depois de um `await` quebra o vínculo síncrono com o gesto do usuário e é bloqueado por popup blockers em Safari/Firefox com frequência. O próprio detalhe (`LeadershipInviteButtons`) já resolve isso mostrando um `Alert` com um link real depois de gerar — este item replica o mesmo contrato, só compactado num `Popover` disparado pela linha. **Rejeitado:** `window.open(whatsappUrl, '_blank')` direto após o `await` da action — risco de bloqueio silencioso, sem precedente no código; o usuário não teria como saber que nada abriu.
 - **Reusar `createCampaignInvite`/`kind: 'autopreenchimento'` sem tocar na action, no schema ou na collection `campaignInvite`.** É exatamente a mesma operação já usada no detalhe (mesmo consentimento fail-closed, mesmo token, mesma expiração) — criar uma segunda entrada de convite seria duplicar sem motivo. **Rejeitado:** action dedicada "quick invite" — não há diferença de contrato que justifique um segundo caminho.
 - **Critério de "celular válido" = `normalizeBrazilianPhone(row.phone)` retorna não-nulo**, o mesmo helper já usado em `AdvisorsTable.tsx` e dentro de `buildWhatsAppUrl`. **Rejeitado:** checar só `Boolean(row.phone)` — aceitaria strings malformadas que a action rejeitaria de qualquer forma no servidor, produzindo um botão "ativo" que sempre falha.
-- **i18n e naming:** identificadores em inglês — componente `LeadershipInviteRowAction` (`src/components/campaign/invite/LeadershipInviteRowAction.tsx`), coluna `id: 'inviteAction'`; strings visíveis em pt-BR ("Convidar por WhatsApp", "Sem celular cadastrado").
-- **Ícone distinto do WhatsApp de contato do B28.** Como as duas ações podem coexistir na mesma linha, o ícone deste item usa um glifo diferente do `MessageCircleIcon` genérico (ex.: `SendIcon`/`UserPlusIcon` — craft define o exato) com `aria-label` explícito ("Convidar {nome} para completar cadastro por WhatsApp"), para não parecer um segundo botão de "falar com a pessoa". **Rejeitado:** mesmo ícone dos dois itens — ambíguo sobre qual ação cada clique dispara.
+- **i18n e naming:** identificadores em inglês — componente `LeadershipInviteRowAction` (`src/components/campaign/invite/LeadershipInviteRowAction.tsx`); strings visíveis em pt-BR ("Convidar por WhatsApp", "Sem celular cadastrado").
+- **Ícone distinto do WhatsApp de contato do B28.** Como as duas ações coexistem na mesma célula `actions`, o ícone deste item é `UserPlusIcon` (não `MessageCircleIcon`) com `aria-label` explícito ("Convidar {nome} para completar cadastro por WhatsApp"). **Rejeitado:** mesmo ícone dos dois itens — ambíguo sobre qual ação cada clique dispara.
 
 ## Questões em aberto
 
-- **A coluna nova aparece só para quem pode convidar, ou para todos os papéis que acessam a lista?** **Opções:** A) renderizar sempre, deixando o access da própria `createCampaignInvite` decidir (advisor sem acesso àquela liderança já recebe erro do servidor); B) esconder a coluna para quem não tem permissão de convite. **Recomendação:** A — a página já é staff-only (`isCampaignStaff`, redirect no topo do `page.tsx`) e todo staff que enxerga a linha já pode convidar aquela liderança (mesma regra do detalhe, onde o botão também não checa nada além de estar logado como staff); esconder a coluna duplicaria uma checagem de access que já existe no lado do servidor.
-- **O ícone/label da ação repete "Convidar para completar cadastro" (texto longo do detalhe) ou vira só um ícone compacto?** **Opções:** A) botão texto completo (não cabe numa linha de tabela); B) ícone `MessageCircleIcon`/similar com `aria-label` completo, igual ao ícone de WhatsApp da `AdvisorsTable`. **Recomendação:** B — consistente com o precedente e com a densidade da tabela de lideranças (5 colunas hoje).
+_(Fechadas na revisão 2026-07-26 — defaults adotados na implementação.)_
+
+- **Visibilidade da ação:** A — renderizar para todo staff que vê a linha; access na `createCampaignInvite`.
+- **Ícone compacto:** B — `UserPlusIcon` + `aria-label` completo, densidade da tabela.
 
 ## Abordagem proposta
 
@@ -70,9 +72,11 @@ flowchart LR
 
 Componentes:
 
-- **`LeadershipInviteRowAction`** (novo, `src/components/campaign/invite/LeadershipInviteRowAction.tsx`, client): recebe `leadershipID: number`, `name: string`, `phone: string | null`. Calcula validade com `normalizeBrazilianPhone` (`src/lib/phone.ts`, reusado, sem duplicar `whatsAppHrefForPhone`). Renderiza um `Popover` (`@/components/ui/popover`, já em uso no B9/B24/B26) com trigger `Button variant="ghost" size="icon"` (`MessageCircleIcon`, `disabled` quando telefone inválido, `aria-label` diferenciado). Conteúdo do Popover: replica o fluxo de `LeadershipInviteButtons` só para `kind: 'autopreenchimento'` — `useTransition` + chama `createCampaignInvite({ leadership: leadershipID, kind: 'autopreenchimento' })` (import direto de `@/app/(campaign)/campanha/actions/invite`, sem mudança de assinatura) e, no sucesso, mostra a âncora real `whatsappUrl` (mesmo tratamento de erro de consentimento ausente que `LeadershipInviteButtons` já tem).
-- **`leadershipColumns`** (`src/app/(campaign)/campanha/(app)/liderancas/page.tsx`): novo item ao final do array, `id: 'inviteAction'`, `head: <CampaignTableHead align="right"><span className="sr-only">Ações</span></CampaignTableHead>`, `cell: (row) => <LeadershipInviteRowAction leadershipID={row.id} name={row.name} phone={row.phone} />`, `cellClassName: 'text-right'` (mesmo padrão de `AdvisorsTable`).
-- **Sem migration, sem collection, sem server action nova, sem endpoint.** `LeadershipRowViewModel.phone` já existe no loader; `createCampaignInvite` e `campaignInvite` ficam intactos.
+- **`LeadershipInviteRowAction`** (novo, `src/components/campaign/invite/LeadershipInviteRowAction.tsx`, client): recebe `leadershipID: number`, `name: string`, `phone: string | null`. Calcula validade com `normalizeBrazilianPhone`. Trigger `Button variant="ghost" size="icon"` com `UserPlusIcon`, `disabled` quando telefone inválido. Popover replica o fluxo de `LeadershipInviteButtons` só para `kind: 'autopreenchimento'` — `useTransition` + `createCampaignInvite` + Alert com âncora `whatsappUrl` e "Copiar link".
+- **`leadershipColumns` → célula `id: 'actions'`:** `inline-flex justify-end gap-1` com `LeadershipInviteRowAction` + botão WhatsApp de contato do B28 (inalterado em comportamento).
+- **Sem migration, sem collection, sem server action nova, sem endpoint.**
+
+**Revisão 2026-07-26:** auditoria pré-implementação achou o plano defasado (coluna `inviteAction` separada e contagem de colunas pré-B28/B31); as-built encaixa na coluna `actions` com `UserPlusIcon`. **Entregue em código (2026-07-26):** `LeadershipInviteRowAction` + testes em `campaignInviteInteractions.unit.spec.ts`; gate tsc/lint/format/cycles/532 unit/406 int; `pnpm build` não rodou neste worktree (falta `PAYLOAD_SECRET`); knip P3 pré-existente. **Pós-`/simplify` (mesmo dia):** disable via `hasValidPhone` (mesmo critério que `whatsAppHrefForPhone` na célula); erros de convite em `src/lib/campaignInviteClient.ts` (`mapCreateCampaignInviteError` + constante compartilhada com `campaignInviteCreation`).
 
 ## Dependências
 
@@ -94,6 +98,8 @@ Componentes:
 ## Adiado com gatilho
 
 - **Convite de acesso ao app (`kind: 'login'`) também na lista.** Revisitar se o coordenador pedir a mesma ação para lideranças `engajado` sem abrir o detalhe — nesse ponto o componente já criado aqui vira a base (um segundo trigger no mesmo Popover).
+- **`CampaignInviteDeliveryAlert` compartilhado (Alert + WhatsApp + copiar link).** Só após um 3º call site além de `LeadershipInviteButtons` e `LeadershipInviteRowAction` (regra depth check).
+- **Unificar string `MISSING_CONSENT` em `campaignInviteRedemption` / defaults de `campaignConsent`.** No próximo toque nesses módulos; constante canônica já vive em `campaignInviteClient.ts`.
 
 ## Referências
 
