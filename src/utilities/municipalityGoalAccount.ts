@@ -26,6 +26,10 @@ import {
   type SuggestedGoalByScenario,
 } from '@/utilities/municipalityPotential'
 import {
+  computeMunicipalityTerritorialClass,
+  type MunicipalityTerritorialClassification,
+} from '@/utilities/municipalityTerritorialClass'
+import {
   emptyMunicipalityPledgeAggregate,
   type MunicipalityPledgeAggregate,
 } from '@/utilities/votePledgeViews'
@@ -111,6 +115,8 @@ export type MunicipalityGoalAccount = {
   /** Fixed to the `central` scenario — the detail page has no scenario selector. */
   goalCoverage: MunicipalityGoalCoverage
   potential: MunicipalityPotential
+  /** E10 — the one-word reading of `potential` plus the factors behind it. */
+  territorialClass: MunicipalityTerritorialClassification
 }
 
 /**
@@ -140,5 +146,6 @@ export const loadMunicipalityGoalAccount = async (
     suggestedGoal: suggestedGoalByScenario[DEFAULT_VOTE_ESTIMATE_SCENARIO],
     goalCoverage,
     potential,
+    territorialClass: computeMunicipalityTerritorialClass(municipality.slug),
   }
 }

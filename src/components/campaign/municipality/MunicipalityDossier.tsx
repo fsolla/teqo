@@ -19,10 +19,14 @@ import {
 import type { MunicipalityDossierData } from '@/utilities/municipalityDossierData'
 import {
   formatMunicipalityGeographyLabel,
+  formatTerritorialClassWhy,
   municipalityKindLabels,
   municipalityPriorityLabels,
   politicalTrendBadgeVariant,
   politicalTrendLabels,
+  TERRITORIAL_CLASS_NO_DATA,
+  territorialClassBadgeVariant,
+  territorialClassLabels,
 } from '@/utilities/municipalityLabels'
 import type {
   MunicipalityAdvisorSummary,
@@ -104,6 +108,10 @@ export const MunicipalityDossier = ({
   const strategy = view.strategy
   const trendStatus = strategy?.politicalTrend.status ?? null
   const goalAccount = data.goalAccount
+  const territorialClass = goalAccount?.territorialClass ?? null
+  const territorialClassWhy = territorialClass
+    ? formatTerritorialClassWhy(territorialClass.factors) || TERRITORIAL_CLASS_NO_DATA
+    : null
   const usesMesaEstimate = strategy?.expectedVotes.central != null
 
   return (
@@ -138,7 +146,19 @@ export const MunicipalityDossier = ({
           ) : (
             <Badge variant="outline">Tendência não registrada</Badge>
           )}
+          {territorialClass ? (
+            // Self-labeling like its two neighbors: on paper "Reduto" alone,
+            // between "Prioridade" and "Tendência", reads as a fourth noun.
+            <Badge variant={territorialClassBadgeVariant[territorialClass.class]}>
+              Classe {territorialClassLabels[territorialClass.class].toLowerCase()}
+            </Badge>
+          ) : null}
         </div>
+        {/* The class never travels alone on paper either — printed, nobody can
+            hover the tooltip that carries the "por quê" on screen. */}
+        {territorialClassWhy ? (
+          <p className="text-xs text-muted-foreground">{territorialClassWhy}</p>
+        ) : null}
         <p className="text-sm text-muted-foreground">
           {advisors.length
             ? `Assessoria: ${advisors.map((advisor) => advisor.name).join(', ')}`

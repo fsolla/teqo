@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 
 import { MunicipalityHeaderFilter } from '@/components/campaign/municipality/MunicipalityHeaderFilter'
-import { MunicipalityHoverTooltip } from '@/components/campaign/municipality/MunicipalityHoverTooltip'
+import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import { CampaignSortableHead } from '@/components/campaign/shared/CampaignSortableHead'
 import type {
   MunicipalityFilterOption,
@@ -73,12 +73,12 @@ export const MunicipalitySortableHead = ({
       wrapSortControl={
         tooltip
           ? (control) => (
-              <MunicipalityHoverTooltip
+              <CampaignHoverTooltip
                 content={tooltip}
                 align={align === 'right' ? 'end' : align === 'center' ? 'center' : 'start'}
               >
                 {control}
-              </MunicipalityHoverTooltip>
+              </CampaignHoverTooltip>
             )
           : undefined
       }

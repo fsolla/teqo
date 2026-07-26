@@ -10,6 +10,7 @@ import {
   municipalityListCoverageLabels,
   municipalityPriorityLabels,
   politicalTrendLabels,
+  territorialClassLabels,
   type PoliticalTrendStatus,
 } from '@/utilities/municipalityLabels'
 import {
@@ -19,9 +20,17 @@ import {
   serializeCanonicalMunicipalityListSearchParams,
   type MunicipalityListState,
 } from '@/utilities/municipalityListUrl'
+import type { MunicipalityTerritorialClass } from '@/utilities/municipalityTerritorialClass'
 
 /** Column-header filter affordances (B16+). `name` = Município (priority + slugs). */
-export type MunicipalityFilterParam = 'name' | 'region' | 'kind' | 'coverage' | 'trend' | 'advisor'
+export type MunicipalityFilterParam =
+  | 'name'
+  | 'region'
+  | 'kind'
+  | 'coverage'
+  | 'trend'
+  | 'class'
+  | 'advisor'
 
 type MunicipalityFilterSelectionMode = 'single' | 'multi' | 'toggle'
 
@@ -96,6 +105,18 @@ export const municipalityFilterDefinitions: MunicipalityFilterDefinition[] = [
       (trend) => ({ value: trend, label: politicalTrendLabels[trend] }),
     ),
   },
+  {
+    param: 'class',
+    label: 'Classe',
+    staffOnly: true,
+    selection: 'multi',
+    options: (
+      Object.keys(territorialClassLabels) as Array<keyof typeof territorialClassLabels>
+    ).map((territorialClass) => ({
+      value: territorialClass,
+      label: territorialClassLabels[territorialClass],
+    })),
+  },
 ]
 
 const municipalityFilterDefinitionByParam = Object.fromEntries(
@@ -111,7 +132,7 @@ export const getMunicipalitySingleFilterValue = (
   param: 'kind' | 'coverage',
 ): string | undefined => state[param]
 
-export type MunicipalityMultiFilterParam = 'region' | 'slug' | 'advisor' | 'trend'
+export type MunicipalityMultiFilterParam = 'region' | 'slug' | 'advisor' | 'trend' | 'class'
 
 export const getMunicipalityMultiFilterValues = (
   state: MunicipalityListState,
@@ -120,6 +141,7 @@ export const getMunicipalityMultiFilterValues = (
   if (param === 'region') return state.regions ?? []
   if (param === 'slug') return state.slugs ?? []
   if (param === 'trend') return state.trends ?? []
+  if (param === 'class') return state.classes ?? []
   return (state.advisors ?? []).map(String)
 }
 
@@ -213,6 +235,11 @@ const trendStatusCount = Object.keys(politicalTrendLabels).length
 const isPoliticalTrendStatus = (value: string): value is PoliticalTrendStatus =>
   value in politicalTrendLabels
 
+const territorialClassCount = Object.keys(territorialClassLabels).length
+
+const isTerritorialClass = (value: string): value is MunicipalityTerritorialClass =>
+  value in territorialClassLabels
+
 /**
  * B16+ href fast path: option rows only need the WOULD-BE href, so the toggled
  * state is derived with the same canonical rules the parser applies (advisors
@@ -246,10 +273,14 @@ export const buildMunicipalityFilterOptionHref = (
       .sort((left, right) => left - right)
     if (advisors.length) next.advisors = advisors
     else delete next.advisors
-  } else {
+  } else if (param === 'trend') {
     const trends = toggled.filter(isPoliticalTrendStatus)
     if (trends.length && trends.length < trendStatusCount) next.trends = trends
     else delete next.trends
+  } else {
+    const classes = toggled.filter(isTerritorialClass)
+    if (classes.length && classes.length < territorialClassCount) next.classes = classes
+    else delete next.classes
   }
 
   const query = serializeCanonicalMunicipalityListSearchParams(next).toString()
@@ -274,6 +305,8 @@ export const isMunicipalityColumnFilterActive = (
       return Boolean(state.coverage)
     case 'trend':
       return Boolean(state.trends?.length)
+    case 'class':
+      return Boolean(state.classes?.length)
   }
 }
 
@@ -300,6 +333,11 @@ export const formatMunicipalityActiveFiltersSummary = (
   if (state.trends?.length) {
     parts.push(
       `Tendência ${state.trends.map((trend) => politicalTrendLabels[trend].toLowerCase()).join(', ')}`,
+    )
+  }
+  if (state.classes?.length) {
+    parts.push(
+      `Classe ${state.classes.map((territorialClass) => territorialClassLabels[territorialClass].toLowerCase()).join(', ')}`,
     )
   }
   if (state.q) parts.push(`Busca "${state.q}"`)

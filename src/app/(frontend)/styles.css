@@ -440,4 +440,13 @@ body,
     text-decoration: none;
     color: inherit;
   }
+
+  /* Badges carry meaning by fill (prioridade, tendência, classe territorial);
+     without this the printer drops the background and every badge prints as
+     identical grey text. */
+  [data-dossier] [data-slot='badge'] {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    border: 1px solid rgb(0 0 0 / 20%);
+  }
 }

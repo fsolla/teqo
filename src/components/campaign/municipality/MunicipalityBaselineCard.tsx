@@ -1,9 +1,8 @@
-import { MunicipalityHoverTooltip } from '@/components/campaign/municipality/MunicipalityHoverTooltip'
-import { formatElectionNumber } from '@/lib/electionFormat'
+import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
+import { formatElectionNumber, formatVoteSharePercent } from '@/lib/electionFormat'
 import {
   DEFAULT_VOTE_RANK_YEAR,
   formatMunicipalityVoteRank,
-  formatMunicipalityVoteShare,
   getMunicipalityVoteRank,
 } from '@/lib/municipalityVoteRank'
 import { computeVoteTrend } from '@/lib/voteTrend'
@@ -53,11 +52,11 @@ export const MunicipalityBaselineCard = ({
       className="flex flex-col gap-4 rounded-xl border p-4"
     >
       <div className="flex flex-col gap-1">
-        <MunicipalityHoverTooltip content={concentrationHint}>
+        <CampaignHoverTooltip content={concentrationHint}>
           <h2 id="municipality-baseline-title" className="w-fit text-base font-medium">
             Votação de {baseline.candidateName} ({baseline.candidateParty})
           </h2>
-        </MunicipalityHoverTooltip>
+        </CampaignHoverTooltip>
         <p className="text-sm text-muted-foreground">
           Votos nominais para deputado federal (1º turno) na geografia deste município — fonte TSE.
         </p>
@@ -82,9 +81,9 @@ export const MunicipalityBaselineCard = ({
               {position ? (
                 <dd
                   className="mt-1 flex flex-col gap-0.5 text-xs tabular-nums text-muted-foreground"
-                  aria-label={`${formatMunicipalityVoteShare(position.share)} da votação estadual, ${formatMunicipalityVoteRank(position.rank)} de ${formatElectionNumber(position.totalUnits)}`}
+                  aria-label={`${formatVoteSharePercent(position.share)} da votação estadual, ${formatMunicipalityVoteRank(position.rank)} de ${formatElectionNumber(position.totalUnits)}`}
                 >
-                  <span>{formatMunicipalityVoteShare(position.share)}</span>
+                  <span>{formatVoteSharePercent(position.share)}</span>
                   <span>{formatMunicipalityVoteRank(position.rank)}</span>
                 </dd>
               ) : (
@@ -110,8 +109,8 @@ export const MunicipalityBaselineCard = ({
           {latest && baseline.tally2022.votosValidos > 0 ? (
             <p>
               Dominância local:{' '}
-              {formatMunicipalityVoteShare(latest.votes / baseline.tally2022.votosValidos)} dos
-              válidos neste município (distinto da concentração acima).
+              {formatVoteSharePercent(latest.votes / baseline.tally2022.votosValidos)} dos válidos
+              neste município (distinto da concentração acima).
             </p>
           ) : null}
         </div>

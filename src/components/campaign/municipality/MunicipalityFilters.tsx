@@ -275,6 +275,24 @@ export const MunicipalityFilters = ({
             }
           />
         ) : null}
+        {showStaffFilters ? (
+          <CampaignMobileMultiFilterField
+            id="municipality-filter-class"
+            label="Classe"
+            emptyLabel="Todas"
+            options={getMunicipalityFilterDefinition('class').options ?? []}
+            selected={state.classes ?? []}
+            onToggle={(value) =>
+              navigateTo(
+                toggleMunicipalityMultiFilterValue(
+                  { ...state, q: normalizedText(search) },
+                  'class',
+                  value,
+                ),
+              )
+            }
+          />
+        ) : null}
         {showStaffFilters && advisorFilterOptions.length ? (
           <CampaignMobileMultiFilterField
             id="municipality-filter-advisor"

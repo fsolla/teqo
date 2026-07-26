@@ -23,16 +23,20 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { formatElectionNumber } from '@/lib/electionFormat'
-import { formatMunicipalityVoteRank, formatMunicipalityVoteShare } from '@/lib/municipalityVoteRank'
+import { formatElectionNumber, formatVoteSharePercent } from '@/lib/electionFormat'
+import { formatMunicipalityVoteRank } from '@/lib/municipalityVoteRank'
 import { cn } from '@/lib/utils'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO, voteEstimateScenarioLabels } from '@/lib/voteEstimate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
   formatMunicipalityConcentrationHint,
   formatMunicipalityGeographyLabel,
+  formatTerritorialClassWhy,
   municipalityKindLabels,
   municipalityPriorityLabels,
+  TERRITORIAL_CLASS_NO_DATA,
+  territorialClassBadgeVariant,
+  territorialClassLabels,
 } from '@/utilities/municipalityLabels'
 import {
   clearMunicipalityListFilters,
@@ -91,7 +95,7 @@ const VotePositionReadout = ({
   position: NonNullable<MunicipalityListViewModel['votePosition2022']>
   layout: 'table' | 'card'
 }) => {
-  const share = formatMunicipalityVoteShare(position.share)
+  const share = formatVoteSharePercent(position.share)
   const rank = formatMunicipalityVoteRank(position.rank)
   const metaLine = `${formatElectionNumber(position.votes)} · ${rank}`
   const ariaLabel = `${share} da votação estadual, ${formatElectionNumber(position.votes)} votos, ${rank} de ${formatElectionNumber(position.totalUnits)}`
@@ -107,6 +111,36 @@ const VotePositionReadout = ({
       <span className={cn('font-medium', layout === 'card' && 'text-foreground')}>{share}</span>
       <span className="text-xs text-muted-foreground">{metaLine}</span>
     </div>
+  )
+}
+
+/**
+ * E10 classe. Only the pill is visible — spelling the factors out under it
+ * made this the widest cell in a table that cannot scroll horizontally. The
+ * "por quê" moves to the column's `cellTooltip` (hover, focus and tap), and
+ * stays in the cell as `sr-only` text so the class still never reaches anyone
+ * as a bare verdict, which is the one thing it must never be.
+ */
+const TerritorialClassCell = ({ municipality }: { municipality: MunicipalityListViewModel }) => {
+  if (municipality.territorialClass === 'sem_base') {
+    // Same idiom as the "2022" column: absent data is a dash, not a pill.
+    return (
+      <span className="text-muted-foreground">
+        <span aria-hidden="true">—</span>
+        <span className="sr-only">{TERRITORIAL_CLASS_NO_DATA}</span>
+      </span>
+    )
+  }
+
+  return (
+    <>
+      <Badge variant={territorialClassBadgeVariant[municipality.territorialClass]}>
+        {territorialClassLabels[municipality.territorialClass]}
+      </Badge>
+      <span className="sr-only">
+        {formatTerritorialClassWhy(municipality.territorialClassFactors)}
+      </span>
+    </>
   )
 }
 
@@ -213,10 +247,12 @@ const municipalityListColumns = ({
   concentrationHint,
   signalHint,
   deficitHint,
+  classHint,
 }: MunicipalityListProps & {
   concentrationHint: string
   signalHint: string
   deficitHint: string
+  classHint: string
 }): Array<CampaignTableColumn<MunicipalityListViewModel>> => [
   {
     id: 'name',
@@ -291,6 +327,28 @@ const municipalityListColumns = ({
   },
   ...(isStaffView
     ? ([
+        {
+          // Sits right after "2022": both read the same TSE artifact, and the
+          // class is the one-word summary of the votes beside it.
+          id: 'classe',
+          head: (
+            <MunicipalitySortableHead
+              state={state}
+              sortKey="classe"
+              filterParam="class"
+              tooltip={classHint}
+            >
+              Classe
+            </MunicipalitySortableHead>
+          ),
+          cell: (municipality) => <TerritorialClassCell municipality={municipality} />,
+          // The factors behind the label — the cell keeps them as `sr-only`
+          // text, so this stays a redundant affordance (see `cellTooltip`).
+          cellTooltip: (municipality) =>
+            municipality.territorialClass === 'sem_base'
+              ? null
+              : formatTerritorialClassWhy(municipality.territorialClassFactors),
+        },
         {
           id: 'advisors',
           head: (
@@ -424,8 +482,16 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
   // The scenario picker is client state, so the server can only order by one
   // scenario — named here so the ordering never looks arbitrary.
   const deficitHint = `Ordena pelo que falta para a meta (meta − comprometido) no cenário ${voteEstimateScenarioLabels[DEFAULT_VOTE_ESTIMATE_SCENARIO]}, independente do cenário selecionado acima.`
+  const classHint =
+    'Leitura relativa de 2022: o desempenho aqui contra o padrão estadual do próprio candidato. Reduto (bem acima do padrão), Expansão (abaixo, mas com campo a ocupar), Manutenção (no padrão), Marginal (abaixo, com pouco campo) e — sem série do TSE. É sugestão de leitura, não decisão: cada classe traz o porquê ao passar o mouse ou tocar nela.'
 
-  const columns = municipalityListColumns({ ...props, concentrationHint, signalHint, deficitHint })
+  const columns = municipalityListColumns({
+    ...props,
+    concentrationHint,
+    signalHint,
+    deficitHint,
+    classHint,
+  })
 
   return (
     <>
@@ -455,6 +521,24 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
               </div>
               {isStaffView ? (
                 <dl className="grid grid-cols-2 gap-2 text-sm">
+                  {/* The card has room for both factors the table trims to one. */}
+                  <div className="col-span-2">
+                    <dt className="text-muted-foreground">Classe</dt>
+                    {municipality.territorialClass === 'sem_base' ? (
+                      <dd className="text-xs text-muted-foreground">{TERRITORIAL_CLASS_NO_DATA}</dd>
+                    ) : (
+                      <dd className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant={territorialClassBadgeVariant[municipality.territorialClass]}
+                        >
+                          {territorialClassLabels[municipality.territorialClass]}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {formatTerritorialClassWhy(municipality.territorialClassFactors)}
+                        </span>
+                      </dd>
+                    )}
+                  </div>
                   <div>
                     <dt className="text-muted-foreground">Votos estimados</dt>
                     <dd className="flex justify-center">

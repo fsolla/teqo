@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { getMunicipalityCatalogEntry, municipalityCatalog } from '@/lib/municipalityCatalog'
 import config from '@/payload.config'
 import { loadMunicipalityListPageBundle } from '@/utilities/municipalityPageData'
+import { computeMunicipalityTerritorialClass } from '@/utilities/municipalityTerritorialClass'
 import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
 import { rollupMunicipalityStaffVotes } from '@/utilities/votePledgeViews'
 
@@ -275,6 +276,66 @@ describe('loadMunicipalityListPageBundle', () => {
     expect(row?.lastUpdateAt).toBeNull()
     expect(row?.lastSignalAt).toBe(pledge.declaredAt)
     expect(row?.pledges.lastPledgeAt).toBe(pledge.declaredAt)
+  })
+
+  /**
+   * E10: the class is derived from the committed TSE artifact, so the filter
+   * cannot be a Payload constraint. The bundle must still agree with itself —
+   * rows, `totalDocs` and the overview all counting the filtered scope.
+   */
+  it('filters by the derived territorial class and keeps the overview honest', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const redutoEntry = municipalityCatalog.find(
+      (entry) => computeMunicipalityTerritorialClass(entry.slug).class === 'reduto',
+    )!
+    const marginalEntry = municipalityCatalog.find(
+      (entry) => computeMunicipalityTerritorialClass(entry.slug).class === 'marginal',
+    )!
+    const reduto = await fixtures.getMunicipality(redutoEntry.slug)
+    const marginal = await fixtures.getMunicipality(marginalEntry.slug)
+
+    const marker = `e10-classe-${Date.now()}`
+    for (const [municipality, suffix] of [
+      [reduto, 'reduto'],
+      [marginal, 'marginal'],
+    ] as const) {
+      await payload.update({
+        collection: 'municipality',
+        id: municipality.id,
+        data: { name: `${marker}-${suffix}` },
+        depth: 0,
+        overrideAccess: true,
+      })
+      fixtures.touchMunicipality(municipality.id)
+    }
+
+    const filtered = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: marker,
+      class: 'reduto',
+    })
+    expect(filtered.municipalities.map((row) => row.slug)).toEqual([reduto.slug])
+    expect(filtered.totalDocs).toBe(1)
+    expect(filtered.overview?.municipalityCount).toBe(1)
+    expect(filtered.municipalities[0]!.territorialClass).toBe('reduto')
+    expect(filtered.municipalities[0]!.territorialClassFactors.length).toBeGreaterThan(0)
+
+    // A native sort key would otherwise let Payload paginate before the class
+    // filter runs, which would hand back a short page with an inflated total.
+    const byName = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: marker,
+      class: 'reduto',
+      sort: 'name',
+    })
+    expect(byName.municipalities.map((row) => row.slug)).toEqual([reduto.slug])
+    expect(byName.totalDocs).toBe(1)
+
+    const sorted = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: marker,
+      sort: 'classe',
+    })
+    expect(sorted.municipalities.map((row) => row.slug)).toEqual([reduto.slug, marginal.slug])
   })
 
   it('keeps advisor access and applies URL filters on top', async () => {
