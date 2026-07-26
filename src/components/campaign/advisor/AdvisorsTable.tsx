@@ -17,6 +17,10 @@ import { toast } from 'sonner'
 import { AdvisorDebouncedTextCell } from '@/components/campaign/advisor/AdvisorDebouncedTextCell'
 import { AdvisorMunicipalityCell } from '@/components/campaign/advisor/AdvisorMunicipalityCell'
 import { AdvisorPasswordResetButton } from '@/components/campaign/advisor/AdvisorPasswordResetButton'
+import {
+  CampaignCopyableCell,
+  campaignReadCellClassName,
+} from '@/components/campaign/shared/CampaignCopyableCell'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,10 +35,9 @@ import {
 } from '@/components/ui/Table'
 import type { AdvisorMunicipalityIndexEntry } from '@/lib/advisorMunicipalityPortfolio'
 import {
-  buildWhatsAppUrl,
   formatBrazilianPhoneInput,
-  normalizeBrazilianPhone,
   sanitizeBrazilianPhoneInput,
+  whatsAppHrefForPhone,
 } from '@/lib/phone'
 import { isPlanilhaPlaceholderEmail } from '@/lib/schemas/advisor'
 import { cn } from '@/lib/utils'
@@ -83,30 +86,8 @@ const emptyDraft = (): DraftAdvisor => ({
   municipalities: [],
 })
 
-const whatsAppHrefForPhone = (phone: string | null): string | null => {
-  if (!phone || !normalizeBrazilianPhone(phone)) return null
-  try {
-    return buildWhatsAppUrl(phone)
-  } catch {
-    return null
-  }
-}
-
-const copyText = async (label: string, value: string) => {
-  try {
-    await navigator.clipboard.writeText(value)
-    toast.success(`${label} copiado.`)
-  } catch {
-    toast.error(`Não foi possível copiar o ${label.toLowerCase()}.`)
-  }
-}
-
-/** Mirrors the inline input box (height, border, padding) so toggling edition never reflows. */
-const READ_CELL_CLASS =
-  'flex min-h-10 w-full items-center rounded-full border border-transparent px-2 text-left'
-
-const displayEmail = (email: string | null): string => {
-  if (!email || isPlanilhaPlaceholderEmail(email)) return ''
+const displayEmail = (email: string | null): string | null => {
+  if (!email || isPlanilhaPlaceholderEmail(email)) return null
   return email
 }
 
@@ -321,7 +302,6 @@ export const AdvisorsTable = ({
               {rows.map((row) => {
                 const whatsAppHref = whatsAppHrefForPhone(row.phone)
                 const emailShown = displayEmail(row.email)
-                const phoneShown = row.phone ? formatBrazilianPhoneInput(row.phone) : ''
 
                 return (
                   <TableRow key={row.id}>
@@ -338,7 +318,7 @@ export const AdvisorsTable = ({
                         <Link
                           href={`/campanha/assessores/${row.id}`}
                           className={cn(
-                            READ_CELL_CLASS,
+                            campaignReadCellClassName,
                             'font-medium text-primary underline-offset-4 hover:underline',
                           )}
                         >
@@ -358,18 +338,8 @@ export const AdvisorsTable = ({
                           placeholderEmailFallback={row.email}
                           formAction={updateProfileAction}
                         />
-                      ) : emailShown ? (
-                        <button
-                          type="button"
-                          className={cn(READ_CELL_CLASS, 'underline-offset-4 hover:underline')}
-                          onClick={() => void copyText('E-mail', emailShown)}
-                        >
-                          <span className="truncate">{emailShown}</span>
-                        </button>
                       ) : (
-                        <span className={cn(READ_CELL_CLASS, 'text-sm text-muted-foreground')}>
-                          —
-                        </span>
+                        <CampaignCopyableCell value={emailShown} label="E-mail" />
                       )}
                     </TableCell>
                     <TableCell>
@@ -383,21 +353,13 @@ export const AdvisorsTable = ({
                           ariaLabel={`Celular de ${row.name}`}
                           formAction={updateProfileAction}
                         />
-                      ) : phoneShown ? (
-                        <button
-                          type="button"
-                          className={cn(
-                            READ_CELL_CLASS,
-                            'tabular-nums underline-offset-4 hover:underline',
-                          )}
-                          onClick={() => void copyText('Celular', row.phone ?? phoneShown)}
-                        >
-                          <span className="truncate">{phoneShown}</span>
-                        </button>
                       ) : (
-                        <span className={cn(READ_CELL_CLASS, 'text-sm text-muted-foreground')}>
-                          —
-                        </span>
+                        <CampaignCopyableCell
+                          value={row.phone}
+                          label="Celular"
+                          formatDisplay={formatBrazilianPhoneInput}
+                          className="tabular-nums"
+                        />
                       )}
                     </TableCell>
                     <TableCell>

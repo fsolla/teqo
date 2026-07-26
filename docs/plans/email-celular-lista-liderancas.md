@@ -1,11 +1,13 @@
 # E-mail e celular na lista de lideranças
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue
+Atualizado em: 2026-07-26
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B28**)
 Impeccable: B — encaixe em `/campanha/liderancas` (colunas + células no `CampaignTable` existente); sem rota nova
 Appetite: ~0,5–0,75 dia eng; expor `email` no view model da lista + 2 colunas + células copiáveis + ícone WhatsApp (padrão B19 ✓); sem migration
 Responsável: —
+
+**Nota de revisão (2026-07-26):** entregue como especificado — `CampaignCopyableCell` nasceu compartilhado (`shared/`) já no 2º call site (`AdvisorsTable.tsx` migrado no mesmo PR), `whatsAppHrefForPhone` promovido a `lib/phone.ts`, `LeadershipRowViewModel.email` populado sem query nova, e `loadLeadershipDetail` deduplicado (reusa `row.email` de `toLeadershipRows` em vez de reparsear `doc.contact`). Ordem de colunas final: Nome → E-mail → Celular → Status → Municípios → Organizações → Acesso ao app → Ações (WhatsApp), exatamente como travado abaixo. Gate completo (tsc/lint/format/knip/cycles/test/build) verde; `pnpm exec knip` mantém o erro pré-existente ao carregar `payload.config.ts` (P3, não relacionado); `pnpm test:e2e` reproduziu apenas o flake pré-existente já documentado em `campaignMunicipalities.e2e.spec.ts` (checkbox de consentimento do `LeaderContactsPanel` antes da hidratação) — nenhuma falha nas rotas tocadas por este item.
 
 ## Design (Impeccable)
 

@@ -1,10 +1,11 @@
 import config from '@payload-config'
-import { PlusIcon, SearchXIcon } from 'lucide-react'
+import { MessageCircleIcon, PlusIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
+import { CampaignCopyableCell } from '@/components/campaign/shared/CampaignCopyableCell'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
@@ -20,6 +21,7 @@ import {
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
@@ -48,6 +50,24 @@ const leadershipColumns: Array<CampaignTableColumn<LeadershipRowViewModel>> = [
     ),
   },
   {
+    id: 'email',
+    head: <CampaignTableHead>E-mail</CampaignTableHead>,
+    cellClassName: 'max-w-56',
+    cell: (row) => <CampaignCopyableCell value={row.email} label="E-mail" />,
+  },
+  {
+    id: 'phone',
+    head: <CampaignTableHead>Celular</CampaignTableHead>,
+    cell: (row) => (
+      <CampaignCopyableCell
+        value={row.phone}
+        label="Celular"
+        formatDisplay={formatBrazilianPhoneInput}
+        className="tabular-nums"
+      />
+    ),
+  },
+  {
     id: 'supportStatus',
     head: <CampaignTableHead>Status</CampaignTableHead>,
     cell: (row) => (row.supportStatus ? <SupportStatusBadge status={row.supportStatus} /> : '—'),
@@ -72,6 +92,41 @@ const leadershipColumns: Array<CampaignTableColumn<LeadershipRowViewModel>> = [
         {row.hasAppAccess ? 'Com acesso' : 'Sem acesso'}
       </Badge>
     ),
+  },
+  {
+    id: 'actions',
+    head: (
+      <CampaignTableHead align="right">
+        <span className="sr-only">Ações</span>
+      </CampaignTableHead>
+    ),
+    cellClassName: 'text-right',
+    cell: (row) => {
+      const whatsAppHref = whatsAppHrefForPhone(row.phone)
+      return whatsAppHref ? (
+        <Button asChild variant="ghost" size="icon" className="size-10">
+          <a
+            href={whatsAppHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Enviar WhatsApp para ${row.name}`}
+          >
+            <MessageCircleIcon className="size-4" aria-hidden="true" />
+          </a>
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-10"
+          disabled
+          aria-label={`WhatsApp indisponível — ${row.name} sem celular`}
+        >
+          <MessageCircleIcon className="size-4" aria-hidden="true" />
+        </Button>
+      )
+    },
   },
 ]
 
