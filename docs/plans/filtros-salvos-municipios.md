@@ -103,6 +103,7 @@ Componentes:
 
 - Soft: **B16** (barra slim = destino natural do Salvar) e **B17** (vizinho na mesma barra) — não bloqueiam; sem eles, Salvar pousa ao lado de Limpar na fileira atual.
 - Soft: precedente Visitados ([visitados-recentemente.md](visitados-recentemente.md)) — padrão storage/logout.
+- Soft: **B38** ([sidebar-recolhido-tablet.md](sidebar-recolhido-tablet.md)) — com `collapsible="offcanvas"`, o submenu hover/expand sob Municípios só é usável com o rail expandido (ou no Sheet mobile); se B38 landar antes, o craft do B18 trata collapsed como “abrir rail”.
 - Nenhuma dependência dura de outro plano. Reusa `municipalityUi.ts`, `CampaignSidebar`, `SidebarMenuSub*`, `CampaignListPendingBoundary`.
 
 ## Não escopo
