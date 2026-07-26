@@ -83,7 +83,6 @@ export type MunicipalityListProps = {
   advisorOptions: EligibleAdvisorOption[]
   columnFilterOptions: MunicipalityColumnFilterOptions
   trendFormAction: MunicipalityStaffFormAction
-  advisorsFormAction: MunicipalityStaffFormAction
   signalFormAction: MunicipalityStaffFormAction
   state: MunicipalityListState
 }
@@ -248,7 +247,6 @@ const municipalityListColumns = ({
   advisorNamesById,
   advisorOptions,
   trendFormAction,
-  advisorsFormAction,
   signalFormAction,
 }: MunicipalityListProps): Array<CampaignTableColumn<MunicipalityListViewModel>> => [
   {
@@ -372,12 +370,10 @@ const municipalityListColumns = ({
             isCoordinator ? (
               <MunicipalityListAdvisorsControl
                 municipalityID={municipality.id}
-                municipalitySlug={municipality.slug}
                 currentAdvisorIDs={municipality.advisorIDs}
                 isPriority={municipality.priority === 'alta'}
                 advisorNamesById={advisorNamesById}
                 options={advisorOptions}
-                formAction={advisorsFormAction}
               />
             ) : (
               <MunicipalityAdvisorAvatarStack
@@ -600,12 +596,10 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
                       {isCoordinator ? (
                         <MunicipalityListAdvisorsControl
                           municipalityID={municipality.id}
-                          municipalitySlug={municipality.slug}
                           currentAdvisorIDs={municipality.advisorIDs}
                           isPriority={isPriority}
                           advisorNamesById={advisorNamesById}
                           options={advisorOptions}
-                          formAction={props.advisorsFormAction}
                         />
                       ) : names.length ? (
                         names.join(', ')

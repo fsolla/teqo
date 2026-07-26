@@ -6,9 +6,10 @@ import { setMunicipalityExpectedVotes } from '@/app/(campaign)/campanha/actions/
 import { positiveRelationshipId } from '@/lib/schemas/primitives'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import {
-  CAMPAIGN_SESSION_EXPIRED_MESSAGE,
-  mapCampaignFormActionError,
-} from '@/utilities/campaignFormActionError'
+  campaignJsonMutationErrorResponse,
+  parseCampaignJsonRequestBody,
+} from '@/utilities/campaignJsonMutationRoute'
+import { isSameOriginRequest } from '@/utilities/sameOriginRequest'
 
 import type { MunicipalityListExpectedVotesResponse } from './types'
 
@@ -28,16 +29,6 @@ const bodySchema = z.object({
   }),
 })
 
-const isSameOriginRequest = (request: Request): boolean => {
-  const origin = request.headers.get('origin')
-  if (!origin) return true
-  try {
-    return new URL(origin).origin === new URL(request.url).origin
-  } catch {
-    return false
-  }
-}
-
 export async function POST(
   request: Request,
 ): Promise<NextResponse<MunicipalityListExpectedVotesResponse>> {
@@ -45,18 +36,11 @@ export async function POST(
     return NextResponse.json({ status: 'error', message: 'Requisição inválida.' }, { status: 403 })
   }
 
-  let json: unknown
-  try {
-    json = await request.json()
-  } catch {
-    return NextResponse.json(
-      { status: 'error', message: 'Corpo da requisição inválido.' },
-      { status: 400 },
-    )
-  }
+  const parsed = await parseCampaignJsonRequestBody(request)
+  if (!parsed.ok) return parsed.response
 
   try {
-    const { municipalityId, expectedVotes } = bodySchema.parse(json)
+    const { municipalityId, expectedVotes } = bodySchema.parse(parsed.body)
     const updated = await setMunicipalityExpectedVotes({
       municipality: municipalityId,
       expectedVotes,
@@ -68,28 +52,10 @@ export async function POST(
       savedExpectedVotes: toVoteEstimateScenarioViewModel(updated.expectedVotes),
     })
   } catch (error) {
-    const mapped = mapCampaignFormActionError({
-      error,
-      safeMessages: [
-        ...municipalityStaffEditSafeMessages,
-        'Autenticação necessária.',
-        CAMPAIGN_SESSION_EXPIRED_MESSAGE,
-      ],
+    return campaignJsonMutationErrorResponse(error, {
+      safeMessages: municipalityStaffEditSafeMessages,
       genericMessage:
         'Não foi possível salvar os votos estimados. Verifique seu acesso e tente novamente.',
     })
-
-    const isAuthError =
-      error instanceof Error &&
-      (error.message === 'Autenticação necessária.' ||
-        error.message === CAMPAIGN_SESSION_EXPIRED_MESSAGE)
-
-    return NextResponse.json(
-      {
-        status: 'error',
-        message: mapped.message ?? 'Não foi possível salvar os votos estimados.',
-      },
-      { status: isAuthError ? 401 : 400 },
-    )
   }
 }

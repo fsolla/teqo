@@ -17,4 +17,13 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     const response = await request.get(`${baseURL}${path}`)
     expect(response.ok(), `Failed to prewarm ${path}`).toBe(true)
   }
+
+  // POST-only API route handlers (auto-save popovers): Next dev compiles a
+  // route on its first hit, and that compile can trigger a full-page reload
+  // for any client currently connected — which aborts an in-flight fetch mid
+  // test. An unauthenticated POST never succeeds, but it still forces the
+  // compile before any spec's client makes the real request.
+  for (const path of ['/campanha/municipios/advisors', '/campanha/municipios/expected-votes']) {
+    await request.post(`${baseURL}${path}`, { data: {} }).catch(() => undefined)
+  }
 })

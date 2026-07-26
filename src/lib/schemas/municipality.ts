@@ -47,6 +47,21 @@ export const municipalityAdvisorsAssignmentSchema = z.object({
     .transform((ids) => [...new Set(ids)]),
 })
 
+/** Single-toggle delta from the list popover — one advisor at a time, never the whole array. */
+export const municipalityAdvisorMembershipSchema = z.object({
+  municipality: positiveRelationshipId,
+  advisor: positiveRelationshipId,
+  assigned: z.boolean(),
+})
+
+export const MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE =
+  'Somente a coordenação geral ou o candidato designa assessores.'
+
+export const MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES = [
+  MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE,
+  `Cada município aceita no máximo ${MAX_ADVISORS_PER_MUNICIPALITY} assessores.`,
+] as const
+
 export const municipalityExpectedVotesSchema = z.object({
   municipality: positiveRelationshipId,
   expectedVotes: voteEstimateScenarioFieldsSchema,
@@ -57,4 +72,5 @@ export type MunicipalityPoliticalTrendInput = z.input<typeof municipalityPolitic
 export type MunicipalityAdvisorsAssignmentInput = z.input<
   typeof municipalityAdvisorsAssignmentSchema
 >
+export type MunicipalityAdvisorMembershipInput = z.input<typeof municipalityAdvisorMembershipSchema>
 export type MunicipalityExpectedVotesInput = z.input<typeof municipalityExpectedVotesSchema>

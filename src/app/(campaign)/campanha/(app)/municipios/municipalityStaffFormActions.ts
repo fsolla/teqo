@@ -15,7 +15,10 @@ import {
   requiredRelationshipFormValue,
   voteEstimateScenarioFromForm,
 } from '@/lib/formData'
-import { parsePoliticalTrendStatusFormValue } from '@/lib/schemas/municipality'
+import {
+  MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE,
+  parsePoliticalTrendStatusFormValue,
+} from '@/lib/schemas/municipality'
 import { parseMunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 import {
   mapCampaignFormActionError,
@@ -85,7 +88,7 @@ export const assignMunicipalityAdvisorsFormAction = async (
   } catch (error) {
     return mapCampaignFormActionError({
       error,
-      safeMessages: ['Somente a coordenação geral ou o candidato designa assessores.'],
+      safeMessages: [MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE],
       genericMessage:
         'Não foi possível atualizar os assessores. Verifique seu acesso e tente novamente.',
     })

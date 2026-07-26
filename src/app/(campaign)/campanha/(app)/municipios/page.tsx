@@ -33,7 +33,6 @@ import {
 import { loadMunicipalityListPageBundle } from '@/utilities/municipalityPageData'
 import { getEligibleAdvisorOptions, loadAdvisorSummaries } from '@/utilities/municipalityViewModels'
 import {
-  assignMunicipalityAdvisorsFormAction,
   createMunicipalityListSignalFormAction,
   setMunicipalityPoliticalTrendFormAction,
 } from './municipalityStaffFormActions'
@@ -131,7 +130,6 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
         advisorOptions={advisorOptions}
         columnFilterOptions={columnFilterOptions}
         trendFormAction={setMunicipalityPoliticalTrendFormAction}
-        advisorsFormAction={assignMunicipalityAdvisorsFormAction}
         signalFormAction={createMunicipalityListSignalFormAction}
         state={state}
       />

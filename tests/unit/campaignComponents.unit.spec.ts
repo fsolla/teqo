@@ -567,12 +567,10 @@ describe('campaign visual foundation', () => {
       const withAdvisors = renderToStaticMarkup(
         createElement(MunicipalityListAdvisorsControl, {
           municipalityID: 1,
-          municipalitySlug: 'seabra',
           currentAdvisorIDs: [7],
           isPriority: false,
           advisorNamesById: new Map([[7, { id: 7, name: 'Ana Bastos', phone: null }]]),
           options: [],
-          formAction: noopListFormAction,
         }),
       )
       expect(withAdvisors.match(/data-slot="tooltip-trigger"/g)).toHaveLength(1)
@@ -585,12 +583,10 @@ describe('campaign visual foundation', () => {
       const withoutAdvisors = renderToStaticMarkup(
         createElement(MunicipalityListAdvisorsControl, {
           municipalityID: 1,
-          municipalitySlug: 'seabra',
           currentAdvisorIDs: [],
           isPriority: false,
           advisorNamesById: new Map(),
           options: [],
-          formAction: noopListFormAction,
         }),
       )
       expect(withoutAdvisors).not.toContain('data-slot="tooltip-trigger"')
