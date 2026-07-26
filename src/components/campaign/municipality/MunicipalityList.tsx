@@ -13,6 +13,7 @@ import { MunicipalityListGoalCoverageCell } from '@/components/campaign/municipa
 import { MunicipalityListSignalControl } from '@/components/campaign/municipality/MunicipalityListSignalControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import { MunicipalitySortableHead } from '@/components/campaign/municipality/MunicipalitySortableHead'
+import { TerritoryLink } from '@/components/campaign/municipality/TerritoryLink'
 import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import { Badge } from '@/components/ui/Badge'
@@ -33,9 +34,9 @@ import {
 import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
-  formatMunicipalityGeographyLabel,
   formatTerritorialClassWhy,
   municipalityColumnDescriptions,
+  municipalityGeographyParts,
   municipalityKindLabels,
   municipalityPriorityLabels,
   territorialClassBadgeVariant,
@@ -294,7 +295,7 @@ const municipalityListColumns = ({
       </MunicipalitySortableHead>
     ),
     cellClassName: 'max-w-56 whitespace-normal text-muted-foreground',
-    cell: (municipality) => municipality.region,
+    cell: (municipality) => <TerritoryLink region={municipality.region} />,
   },
   {
     id: 'kind',
@@ -515,13 +516,15 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
           const names = advisorNames(municipality, advisorNamesById)
           const position = municipality.votePosition2022
           const isPriority = municipality.priority === 'alta'
+          const { region, zoneSuffix } = municipalityGeographyParts(municipality)
           return (
             <article key={municipality.id} className="flex flex-col gap-3 rounded-xl border p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex flex-col gap-1">
                   <h3 className="font-medium">{municipality.name}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {formatMunicipalityGeographyLabel(municipality)}
+                    <TerritoryLink region={region} />
+                    {zoneSuffix ? ` ${zoneSuffix}` : null}
                   </p>
                   {position ? <VotePositionReadout position={position} layout="card" /> : null}
                 </div>
