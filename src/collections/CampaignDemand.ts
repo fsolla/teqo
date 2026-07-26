@@ -136,7 +136,7 @@ const enforceDemandWorkflow: CollectionBeforeChangeHook = async ({
   return data
 }
 
-const validateDemandActionPlanMunicipality: CollectionBeforeValidateHook = async ({
+const validateDemandActivityMunicipality: CollectionBeforeValidateHook = async ({
   data,
   operation,
   originalDoc,
@@ -145,34 +145,34 @@ const validateDemandActionPlanMunicipality: CollectionBeforeValidateHook = async
   if (!data) return data
 
   const municipalityID = relationshipId(data.municipality ?? originalDoc?.municipality)
-  const actionPlanID = relationshipId(data.actionPlan ?? originalDoc?.actionPlan)
-  if (!actionPlanID) return data
+  const activityID = relationshipId(data.activity ?? originalDoc?.activity)
+  if (!activityID) return data
   if (!municipalityID) throw new APIError('Município da demanda inválido.', 400)
   if (
     operation === 'update' &&
     municipalityID === relationshipId(originalDoc?.municipality) &&
-    actionPlanID === relationshipId(originalDoc?.actionPlan)
+    activityID === relationshipId(originalDoc?.activity)
   ) {
     return data
   }
 
   const requestContext = req.context as Record<string, unknown>
-  const cacheKey = `campaignDemand:actionPlanMunicipality:${actionPlanID}`
-  let actionPlanMunicipalityID = requestContext[cacheKey]
-  if (typeof actionPlanMunicipalityID !== 'number') {
-    const actionPlan = await req.payload.findByID({
-      collection: 'actionPlan',
-      id: actionPlanID,
+  const cacheKey = `campaignDemand:activityMunicipality:${activityID}`
+  let activityMunicipalityID = requestContext[cacheKey]
+  if (typeof activityMunicipalityID !== 'number') {
+    const activity = await req.payload.findByID({
+      collection: 'activity',
+      id: activityID,
       depth: 0,
       select: { municipality: true },
       overrideAccess: true,
       req,
     })
-    actionPlanMunicipalityID = relationshipId(actionPlan.municipality)
-    requestContext[cacheKey] = actionPlanMunicipalityID
+    activityMunicipalityID = relationshipId(activity.municipality)
+    requestContext[cacheKey] = activityMunicipalityID
   }
-  if (actionPlanMunicipalityID !== municipalityID) {
-    throw new APIError('A demanda e o plano de ação devem pertencer ao mesmo município.', 409)
+  if (activityMunicipalityID !== municipalityID) {
+    throw new APIError('A demanda e a atividade devem pertencer ao mesmo município.', 409)
   }
 
   return data
@@ -198,7 +198,7 @@ export const CampaignDemand: CollectionConfig = {
     delete: canDeleteCampaignDemand,
   },
   hooks: {
-    beforeValidate: [setCanonicalDemandSlug, validateDemandActionPlanMunicipality],
+    beforeValidate: [setCanonicalDemandSlug, validateDemandActivityMunicipality],
     beforeChange: [enforceDemandWorkflow],
   },
   fields: [
@@ -249,10 +249,10 @@ export const CampaignDemand: CollectionConfig = {
       index: true,
     },
     {
-      name: 'actionPlan',
+      name: 'activity',
       type: 'relationship',
-      relationTo: 'actionPlan',
-      label: 'Plano de ação',
+      relationTo: 'activity',
+      label: 'Atividade',
       index: true,
     },
     {

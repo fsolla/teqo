@@ -9,7 +9,7 @@ import { resendAdapter } from '@payloadcms/email-resend'
 import { importExportPlugin } from '@payloadcms/plugin-import-export'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { pt } from 'payload/i18n/pt'
-import { ActionPlan } from './collections/ActionPlan'
+import { Activity } from './collections/Activity'
 import { AllocationDecision } from './collections/AllocationDecision'
 import { CampaignDemand } from './collections/CampaignDemand'
 import { CampaignInvite } from './collections/CampaignInvite'
@@ -96,7 +96,7 @@ export default buildConfig({
     Supporter,
     SupporterImportBatch,
     MunicipalityUpdate,
-    ActionPlan,
+    Activity,
     ElectionTally,
     ElectionCandidateVote,
     ElectionCandidate,

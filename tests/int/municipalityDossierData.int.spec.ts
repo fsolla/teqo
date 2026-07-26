@@ -11,7 +11,7 @@ vi.mock('@/utilities/municipalityElectoralBaseline', () => ({
   loadMunicipalityElectoralBaseline: vi.fn().mockResolvedValue(null),
 }))
 
-import { createActionPlanRecord } from '@/app/(campaign)/campanha/actions/actionPlan'
+import { createActivityRecord } from '@/app/(campaign)/campanha/actions/activity'
 import { updateMunicipalityStrategyRecord } from '@/app/(campaign)/campanha/actions/municipality'
 import config from '@/payload.config'
 import {
@@ -39,7 +39,7 @@ describe('municipality dossier data (E16)', () => {
     payload = await getPayload({ config: await config })
   })
 
-  // The fixture builds ~20 rows sequentially (leaderships, updates, plans),
+  // The fixture builds ~20 rows sequentially (leaderships, updates, activities),
   // so this test legitimately outlives the 5s default under parallel load.
   it(
     'composes the pre-visit dossier with section caps and full totals',
@@ -64,7 +64,7 @@ describe('municipality dossier data (E16)', () => {
         })
       }
 
-      const upcomingPlan = await createActionPlanRecord(payload, coordinator, {
+      const upcomingActivity = await createActivityRecord(payload, coordinator, {
         title: fixtures.value('Caminhada dossiê'),
         kind: 'caminhada',
         status: 'planejado',
@@ -72,7 +72,7 @@ describe('municipality dossier data (E16)', () => {
         municipality: municipality.id,
         locality: 'Centro',
       })
-      fixtures.own('actionPlan', upcomingPlan.id)
+      fixtures.own('activity', upcomingActivity.id)
 
       await updateMunicipalityStrategyRecord(payload, coordinator, {
         municipality: municipality.id,
@@ -96,8 +96,10 @@ describe('municipality dossier data (E16)', () => {
       expect(dossier.signals.rows).toHaveLength(DOSSIER_SIGNAL_LIMIT)
       expect(dossier.signals.totalCount).toBe(DOSSIER_SIGNAL_LIMIT + 1)
 
-      expect(dossier.upcomingPlans.map((plan) => plan.id)).toContain(upcomingPlan.id)
-      expect(dossier.recentPlans).toEqual([])
+      expect(dossier.upcomingActivities.map((activity) => activity.id)).toContain(
+        upcomingActivity.id,
+      )
+      expect(dossier.recentActivities).toEqual([])
 
       // Staff view model exists, so the E8 goal account block is present.
       expect(dossier.goalAccount).not.toBeNull()

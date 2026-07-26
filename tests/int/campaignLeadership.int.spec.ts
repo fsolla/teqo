@@ -75,7 +75,11 @@ describe('campaign leadership domain', () => {
     expect(Object.hasOwn(parsed, 'user')).toBe(false)
     expect(Object.hasOwn(parsed, 'consent')).toBe(false)
     expect(() =>
-      leadershipCreateSchema.parse({ municipalities: [], name: 'Sem Praça', phone: '71999990000' }),
+      leadershipCreateSchema.parse({
+        municipalities: [],
+        name: 'Sem município',
+        phone: '71999990000',
+      }),
     ).toThrow()
     const update = leadershipInternalUpdateSchema.parse({
       id: 1,
@@ -340,7 +344,7 @@ describe('campaign leadership domain', () => {
 
     const ownLeadership = await createLeadershipRecord(payload, advisor, {
       municipalities: [assigned.id],
-      name: 'Liderança da Praça',
+      name: 'Liderança do município',
       phone: campaignFixtures().phone(),
       supportStatus: 'engajado',
       notes: 'Avaliação interna',

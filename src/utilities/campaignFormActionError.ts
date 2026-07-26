@@ -57,7 +57,7 @@ export const mapCampaignFormActionError = <Values>(
  * success state (`message` plus extras like created ids). Pre-parsed `values`
  * and `revision` are echoed on failure so forms can repopulate.
  *
- * Documented exceptions that deliberately stay hand-rolled: the planos
+ * Documented exceptions that deliberately stay hand-rolled: the atividades
  * ladders (custom unique-violation mapping + async duplicate-title fallback)
  * and apoiadores/[id] (flattens field errors into message-only states for
  * its inline controls).

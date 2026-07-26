@@ -61,29 +61,57 @@ describe('server-only boundary in src/utilities', () => {
 })
 
 describe('banned campaign terminology', () => {
-  // "Praça"/"Núcleo" were replaced by "Município" (2026-07-23 remodel; W4f
-  // swept the copy). The manual sweep still missed 4 consent drafts — this
-  // keeps the invariant self-enforcing. Migrations are frozen history and
-  // stay out of scope. Allowlisted files carry legitimate data, not copy:
-  const allowlist = new Set<string>([
-    'src/lib/cities.ts', // real locality names (e.g. "Núcleo Bandeirante" — DF)
-  ])
+  // Every rename of an operational concept leaves prose behind: the 2026-07-23
+  // remodel ("Praça"/"Núcleo" → "Município") needed a manual W4f sweep that
+  // still missed 4 consent drafts, and C13 ("Plano de Ação" → "Atividade")
+  // touched 62 files. Each retired term gets a row here so it cannot come back.
+  // Migrations are frozen history and stay out of scope; allowlisted files
+  // carry legitimate data or frozen SQL, not live copy.
+  const bannedTerms = [
+    {
+      id: 'Praça/Núcleo',
+      pattern: /praç|núcleo/i,
+      remedy: 'use "Município" (or allowlist genuine data)',
+      allowlist: [
+        'src/lib/cities.ts', // real locality names (e.g. "Núcleo Bandeirante" — DF)
+        // Emits the frozen remodel migration, which names the term it retired.
+        'scripts/generate-remodel-municipalities-migration.mjs',
+      ],
+    },
+    {
+      id: 'Plano de Ação',
+      // Accent-tolerant (agents routinely type "plano de acao") and space-tolerant,
+      // so English prose ("action plan") cannot slip past the identifier forms.
+      pattern: /action[\s_-]?plan|planos? de a[çc][aã]o|\/campanha\/planos/i,
+      remedy: 'use "Atividade" / activity (or allowlist frozen history)',
+      allowlist: [
+        // Emits the frozen remodel migration, whose SQL predates the rename.
+        'scripts/generate-remodel-municipalities-migration.mjs',
+      ],
+    },
+  ] as const
 
-  it('keeps Praça/Núcleo out of src (data catalogs allowlisted)', () => {
+  const searchRoots = ['src', 'tests', 'scripts'] as const
+
+  it.each(bannedTerms)('keeps $id out of src, tests and scripts', (term) => {
+    // This spec quotes the banned literals itself.
+    const allowlist = new Set<string>([...term.allowlist, repoPath(import.meta.filename)])
     const offenders: string[] = []
 
-    for (const file of walkSourceFiles(resolve(repoRoot, 'src'), ['.ts', '.tsx'])) {
-      const path = repoPath(file)
-      if (path.startsWith('src/migrations/')) continue
-      if (allowlist.has(path)) continue
+    for (const root of searchRoots) {
+      for (const file of walkSourceFiles(resolve(repoRoot, root), ['.ts', '.tsx', '.mjs'])) {
+        const path = repoPath(file)
+        if (path.startsWith('src/migrations/')) continue
+        if (allowlist.has(path)) continue
 
-      const lines = readFileSync(file, 'utf8').split('\n')
-      for (const [index, line] of lines.entries()) {
-        if (/praç|núcleo/i.test(line)) offenders.push(`${path}:${index + 1}`)
+        const lines = readFileSync(file, 'utf8').split('\n')
+        for (const [index, line] of lines.entries()) {
+          if (term.pattern.test(line)) offenders.push(`${path}:${index + 1}`)
+        }
       }
     }
 
-    expect(offenders, 'use "Município" (or allowlist genuine data)').toEqual([])
+    expect(offenders, term.remedy).toEqual([])
   })
 })
 

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { firstValue, strictDecimalInteger } from '@/utilities/campaignListUrl'
-import { loadActionPlanOptions, loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import { loadActivityOptions, loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { createDemandFormAction } from './formActions'
 
 type NewDemandPageProps = {
@@ -26,16 +26,16 @@ export default async function NewDemandPage({ searchParams }: NewDemandPageProps
   if (!user) redirect('/campanha/login')
   if (!isCampaignStaff(user)) redirect('/campanha')
 
-  const [municipalityOptions, actionPlanOptions] = await Promise.all([
+  const [municipalityOptions, activityOptions] = await Promise.all([
     loadMunicipalityOptions(payload, user),
-    loadActionPlanOptions(payload, user),
+    loadActivityOptions(payload, user),
   ])
-  const requestedActionPlan = actionPlanOptions.find(
-    (plan) => plan.id === strictDecimalInteger(firstValue(query.actionPlan)),
+  const requestedActivity = activityOptions.find(
+    (activity) => activity.id === strictDecimalInteger(firstValue(query.activity)),
   )
   const requestedMunicipalityId = strictDecimalInteger(firstValue(query.municipality))
   const initialMunicipalityId =
-    requestedActionPlan?.municipalityId ??
+    requestedActivity?.municipalityId ??
     municipalityOptions.find((option) => option.id === requestedMunicipalityId)?.id
 
   return (
@@ -56,9 +56,9 @@ export default async function NewDemandPage({ searchParams }: NewDemandPageProps
 
       <DemandForm
         municipalityOptions={municipalityOptions}
-        actionPlanOptions={actionPlanOptions}
+        activityOptions={activityOptions}
         initialMunicipalityId={initialMunicipalityId}
-        initialActionPlanId={requestedActionPlan?.id}
+        initialActivityId={requestedActivity?.id}
         formAction={createDemandFormAction}
       />
     </CampaignPageShell>

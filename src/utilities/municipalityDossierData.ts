@@ -6,13 +6,13 @@ import {
   demographicsForCode,
   type MunicipalityDemographics,
 } from '@/lib/bahiaMunicipalityDemographics'
-import type { ActionPlan, CampaignUser } from '@/payload-types'
-import { buildActionPlanListWhere } from '@/utilities/actionPlanUi'
+import type { Activity, CampaignUser } from '@/payload-types'
+import { buildActivityListWhere } from '@/utilities/activityUi'
 import {
-  actionPlanListSelect,
-  toActionPlanListViewModel,
-  type ActionPlanListViewModel,
-} from '@/utilities/actionPlanViewModels'
+  activityListSelect,
+  toActivityListViewModel,
+  type ActivityListViewModel,
+} from '@/utilities/activityViewModels'
 import {
   loadFreshestMunicipalityLeaderships,
   type LeadershipRowViewModel,
@@ -43,8 +43,8 @@ import {
  */
 export const DOSSIER_LEADERSHIP_LIMIT = 8
 export const DOSSIER_SIGNAL_LIMIT = 5
-const DOSSIER_UPCOMING_PLAN_LIMIT = 3
-const DOSSIER_RECENT_PLAN_LIMIT = 2
+const DOSSIER_UPCOMING_ACTIVITY_LIMIT = 3
+const DOSSIER_RECENT_ACTIVITY_LIMIT = 2
 
 export type MunicipalityDossierData = {
   baseline: MunicipalityElectoralBaseline | null
@@ -52,38 +52,38 @@ export type MunicipalityDossierData = {
   pledgeAggregate: MunicipalityPledgeAggregate
   leaderships: { rows: LeadershipRowViewModel[]; totalCount: number }
   signals: { rows: MunicipalityUpdateViewModel[]; totalCount: number }
-  upcomingPlans: ActionPlanListViewModel[]
-  recentPlans: ActionPlanListViewModel[]
+  upcomingActivities: ActivityListViewModel[]
+  recentActivities: ActivityListViewModel[]
   demographics: MunicipalityDemographics | null
 }
 
-const loadDossierPlans = async (
+const loadDossierActivities = async (
   payload: Payload,
   user: CampaignUser,
   municipalityID: number,
-): Promise<{ upcoming: ActionPlanListViewModel[]; recent: ActionPlanListViewModel[] }> => {
+): Promise<{ upcoming: ActivityListViewModel[]; recent: ActivityListViewModel[] }> => {
   const now = new Date()
-  const findPlans = (tab: 'proximos' | 'realizados', limit: number, sort: string) =>
+  const findActivities = (tab: 'proximos' | 'realizados', limit: number, sort: string) =>
     payload.find({
-      collection: 'actionPlan',
-      where: buildActionPlanListWhere({ page: 1, tab, municipality: municipalityID }, now),
+      collection: 'activity',
+      where: buildActivityListWhere({ page: 1, tab, municipality: municipalityID }, now),
       depth: 0,
       limit,
       pagination: false,
       sort,
-      select: actionPlanListSelect,
+      select: activityListSelect,
       user,
       overrideAccess: false,
     })
 
   const [upcoming, recent] = await Promise.all([
-    findPlans('proximos', DOSSIER_UPCOMING_PLAN_LIMIT, 'startAt'),
-    findPlans('realizados', DOSSIER_RECENT_PLAN_LIMIT, '-startAt'),
+    findActivities('proximos', DOSSIER_UPCOMING_ACTIVITY_LIMIT, 'startAt'),
+    findActivities('realizados', DOSSIER_RECENT_ACTIVITY_LIMIT, '-startAt'),
   ])
 
   return {
-    upcoming: upcoming.docs.map((plan) => toActionPlanListViewModel(plan as ActionPlan)),
-    recent: recent.docs.map((plan) => toActionPlanListViewModel(plan as ActionPlan)),
+    upcoming: upcoming.docs.map((activity) => toActivityListViewModel(activity as Activity)),
+    recent: recent.docs.map((activity) => toActivityListViewModel(activity as Activity)),
   }
 }
 
@@ -98,7 +98,7 @@ export const loadMunicipalityDossierData = async (
 ): Promise<MunicipalityDossierData> => {
   const geography = municipalityElectionGeographyForSlug(view.slug)
 
-  const [baseline, pledgesAndGoal, leaderships, feed, plans] = await Promise.all([
+  const [baseline, pledgesAndGoal, leaderships, feed, activities] = await Promise.all([
     geography ? loadMunicipalityElectoralBaseline(user, geography) : null,
     loadMunicipalityPledges(payload, user, view.id).then(async (pledges) => {
       const pledgeAggregate = aggregateMunicipalityPledgesFromRows(pledges)
@@ -114,7 +114,7 @@ export const loadMunicipalityDossierData = async (
     }),
     loadFreshestMunicipalityLeaderships(payload, user, view.id, DOSSIER_LEADERSHIP_LIMIT),
     loadMunicipalityUpdatesFeed(payload, user, view.id, { page: 1 }),
-    loadDossierPlans(payload, user, view.id),
+    loadDossierActivities(payload, user, view.id),
   ])
 
   return {
@@ -123,8 +123,8 @@ export const loadMunicipalityDossierData = async (
     pledgeAggregate: pledgesAndGoal.pledgeAggregate,
     leaderships,
     signals: { rows: feed.updates.slice(0, DOSSIER_SIGNAL_LIMIT), totalCount: feed.totalDocs },
-    upcomingPlans: plans.upcoming,
-    recentPlans: plans.recent,
+    upcomingActivities: activities.upcoming,
+    recentActivities: activities.recent,
     demographics: demographicsForCode(view.ibgeCode) ?? null,
   }
 }

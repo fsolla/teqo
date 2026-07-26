@@ -27,7 +27,7 @@ export const createDemandFormAction = async (
           : 'outro',
         description: optionalFormText(formData, 'description'),
         municipality: requiredRelationshipFormValue(formData, 'municipalityId'),
-        actionPlan: nullableRelationshipFormValue(formData, 'actionPlanId') ?? undefined,
+        activity: nullableRelationshipFormValue(formData, 'activityId') ?? undefined,
       })
     },
     redirectTo: (demand) => `/campanha/demandas/${demand.slug}`,

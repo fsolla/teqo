@@ -4,7 +4,7 @@ import type { Payload } from 'payload'
 
 import type { CampaignDemandKind, CampaignDemandStatus } from '@/lib/schemas/campaignDemand'
 import { campaignDemandKinds, campaignDemandStatuses } from '@/lib/schemas/campaignDemand'
-import type { ActionPlan, CampaignDemand, CampaignUser } from '@/payload-types'
+import type { Activity, CampaignDemand, CampaignUser } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import {
   buildListHref,
@@ -214,7 +214,7 @@ export type DemandDetailViewModel = DemandRowViewModel & {
     createdAt: string | null
   }>
   canLeaderEdit: boolean
-  actionPlan: { title: string; slug: string } | null
+  activity: { title: string; slug: string } | null
 }
 
 export const loadDemandDetail = async (
@@ -287,8 +287,8 @@ export const loadDemandDetail = async (
         }))
       : [],
     canLeaderEdit: user.role === 'leader' && demand.status === 'aberta',
-    actionPlan: isPopulatedRelationship<ActionPlan>(demand.actionPlan)
-      ? { title: demand.actionPlan.title, slug: demand.actionPlan.slug }
+    activity: isPopulatedRelationship<Activity>(demand.activity)
+      ? { title: demand.activity.title, slug: demand.activity.slug }
       : null,
   }
 }

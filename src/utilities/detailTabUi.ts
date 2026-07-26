@@ -1,6 +1,6 @@
 /**
- * Shared factory behind the detail-page tab helpers (município, plano de
- * ação): querystring-tab resolution with per-tab preserved params and
+ * Shared factory behind the detail-page tab helpers (município, atividade):
+ * querystring-tab resolution with per-tab preserved params and
  * canonical hrefs. Each detail page declares its config in its own
  * `*DetailTabUi.ts` module and re-exports the generated helpers.
  */

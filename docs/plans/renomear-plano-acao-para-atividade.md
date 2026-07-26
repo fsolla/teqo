@@ -1,6 +1,6 @@
 # Renomear "Plano de Ação" para "Atividade" (entidade, código e rotas)
 
-Status: rascunho
+Status: entregue (2026-07-25)
 Atualizado em: 2026-07-25
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha C, item C13)
 Impeccable: B — encaixe em telas existentes (`/campanha/planos` → `/campanha/atividades`, sidebar, cards do Início/dossiê/organização/demanda); nenhuma tela nova
@@ -20,6 +20,19 @@ Brief compacto:
 - **Estratégia de cor:** Restrained — nenhuma mudança de cor, ícone ou hierarquia; só vocabulário.
 - **Edit where you see:** N/A — este item não muda affordance de edição (a agenda continua com `/editar` para o formulário multi-campo, como hoje).
 - **Anti-goals:** redesenhar a vertical no mesmo PR (o critique/polish visual dela é **R6**); introduzir um segundo sinônimo ("Agenda" em um lugar, "Atividade" em outro); manter nomes de banco divergentes do código "porque é só cosmético".
+
+## As-built (2026-07-25)
+
+Entregue como planejado, com quatro correções de inventário que a auditoria contra o banco real levantou:
+
+- **4 tabelas, não 5.** `action_plan_texts` não existe mais — a remodelagem de 2026-07-23 já a havia removido. O rename cobre `activity{,_tasks,_updates,_rels}`.
+- **O snapshot do drizzle não era a lista-alvo completa.** `action_plan_upcoming_start_at_idx` (índice parcial escrito à mão em `20260719_014906_action_plan_list_perf.ts`) não aparece no `.json`; a lista canônica veio de `pg_indexes`/`pg_constraint`/`pg_type`/`pg_sequences`. Total renomeado: **4 tabelas, 3 enums, 2 colunas, 39 índices** (4 pkeys inclusos — `ALTER INDEX … RENAME` leva a constraint junto), **14 FKs** e **2 sequences**.
+- **Fósseis `%plaza%` corrigidos no mesmo passo** (decisão do usuário nesta sessão): a remodelagem renomeou as colunas `plaza_id` → `municipality_id` mas não os índices, então o banco tinha `action_plan_plaza_idx`, `campaign_demand_plaza_idx`, `leadership_rels_plaza_id_idx`, `organization_rels_plaza_id_idx`, `supporter_plaza_idx`, `supporter_contact_plaza_nulls_not_distinct_idx`, `vote_pledge_plaza_idx` e `leadership_plaza_idx` enquanto o snapshot já dizia `*_municipality*`. Os 8 foram alinhados aqui; o `down()` os restaura, para não inventar um estado que nunca existiu.
+- **Snapshot escrito à mão.** `pnpm migrate:create` é interativo para renames (pergunta enum por enum), então o `.json` foi derivado do snapshot anterior por transformação textual e validado pelo teste que importa: `pnpm migrate:create __probe` responde **"No schema changes detected"**.
+
+Decisões de vocabulário fechadas na implementação: sidebar **"Atividades"**; rótulos de campo alinhados à entidade (**"Tipo de atividade"**, **"Origem da atividade"**, **"Resultado da atividade"**), porque "ação" ao lado de "atividade" reintroduzia a tradução mental que o item existe para eliminar. Rota nova é `/campanha/atividades/nova` (feminino, como `demandas/nova`). Valores de enum `kind`/`status` seguem inalterados, como o plano previa.
+
+Efeito colateral do guard: estendê-lo a `tests/` e `scripts/` revelou fósseis "Praça" em fixtures e nomes de teste (8 ocorrências), limpos no mesmo PR; `scripts/generate-remodel-municipalities-migration.mjs` (gera SQL congelado) e o comentário histórico em `tests/int/campaignMigrationReconciliation.int.spec.ts` entraram na allowlist.
 
 ## Dados → decisão → apresentação
 
@@ -114,6 +127,25 @@ Componentes:
 
 - **Rótulo "Agenda" no sidebar.** Revisitar se, no onboarding (ou no R6), ≥2 pessoas do time chamarem o destino de "agenda" ao navegar — aí o rail muda de rótulo mantendo a entidade "Atividade".
 - **Terceira entrada no guard de vocabulário (extração para módulo próprio).** Revisitar quando existir um 3º rename de termo — antes disso, a tabela no spec basta.
+
+## Simplify (2026-07-25 pós-C13)
+
+Passagem `/simplify` (qualidade + perf + reuso) e `capture-review-debts`. O diff é rename mecânico: nenhuma forma de query mudou, o índice parcial `activity_upcoming_start_at_idx` sobreviveu com o predicado intacto (`EXPLAIN` confirma Index Scan sem Filter residual) e o app segue usando os shells compartilhados.
+
+**Já resolvido (não reabrir):** interpolação `${index}` comida em `tests/unit/recentVisits.unit.spec.ts` (fixture com label único, agora com assertion que fecha a brecha, e slugs `praca-` alinhados); guard tolerante a espaço (`action[\s_-]?plan`), que era o buraco por onde `access/shared.ts` mantinha "action plan" em prosa; allowlist encolhida (o comentário de `campaignMigrationReconciliation.int.spec.ts` cita `activity` e o arquivo saiu da exceção); entrada morta `action_plan_municipality_idx` fora da migration (nenhuma migration jamais criou esse nome — só os snapshots o afirmam), deixando `up()`/`down()` com os mesmos 48 pares; buscas de FK com `to_regclass` em vez de `::regclass`; detalhe de organização reusando `ActivityStatusBadge` com `status` tipado como `ActivityStatus` no loader; resíduos de find-and-replace (banner `// Action activities`, `DOSSIER_*_PLAN_LIMIT`, "a activity", nome de teste "zona Município"); concordância pt-BR ("Criada por", "atividades apoiadas"); `??` impossível em `ActivityForm`.
+
+**Absorvido em outro plano:** o guard de `formActions` só inspeciona arquivos chamados exatamente `formActions.ts`, deixando `lifecycleFormActions.ts`/`resultFormActions.ts`/`updateFormActions.ts`/`taskActions.ts` sem verificação → [escala-dry-pos-c6.md](escala-dry-pos-c6.md) **Fase 4b** (dono da invariante do C8 F4).
+
+**Explicitamente fora (triage `capture-review-debts` 2026-07-25 pós-C13):**
+
+- **Redirect de `/campanha/planos*` → `/campanha/atividades*`** — gatilho: primeiro relato de 404 por bookmark. A rota viveu 7 dias, a navegação é pelo rail, e nada persistido aponta para ela (`recentVisits` só grava páginas de município); um redirect reintroduziria a string que o guard bane.
+- **Projeção de activity duplicada em `organizationData.ts`** (em vez de `activityListSelect` + `toActivityListViewModel`) — gatilho: a seção passar a mostrar localidade ou progresso de tarefas. Hoje a forma é subconjunto estrito e o view model completo faria over-fetch numa lista de resumo.
+- **Painel de filtros mobile compartilhado entre `ActivityFilters` e `SupporterFilters`** — gatilho: 3º painel com a mesma mecânica de colapso (municípios usa header rico, não este shape).
+- **Hoist das listas de rename da migration para constantes + helper local** — recusado: migration é história congelada, o consumidor é único, e a divergência que o helper preveniria está verificada como inexistente (conjuntos idênticos nos dois sentidos).
+- **Contadores `renamed` + `RAISE NOTICE` do `up()`** — mantidos: são a única evidência, no log do build da Vercel, de que o rename tocou o número esperado de objetos; a assimetria com `down()` é aceitável porque `down()` só roda local.
+- **`payload.create` sequencial dos rascunhos de demanda em `actions/activity.ts`** — pré-existente, roda sobre os rascunhos de um único submit dentro de uma transação; batchear perderia as semânticas de hook por linha.
+- **`it.each` do guard re-varrer `src`+`tests`+`scripts` por termo** — 150 ms na suíte unitária; hoisting da leitura é throughput, não duplicação.
+- **Padrão de "Praça" tolerante à falta de cedilha** — cobraria três allowlists novas (nomes reais de organização vindos da planilha, teste de entradas legadas `kind: 'nucleus'`) para pegar um fóssil já corrigido à mão.
 
 ## Referências
 
