@@ -1,6 +1,7 @@
 import type { Position } from 'geojson'
 
 import type {
+  BahiaGeometryFeature,
   BahiaMunicipalityFeature,
   MunicipalityGeometryModule,
 } from '@/lib/bahiaGeometriesTypes'
@@ -105,7 +106,7 @@ const isPointInRing = (point: GeoPoint, ring: readonly Position[]): boolean => {
   return inside
 }
 
-const polygonRingsOf = (feature: BahiaMunicipalityFeature): readonly Position[][][] =>
+const polygonRingsOf = (feature: BahiaGeometryFeature): readonly Position[][][] =>
   feature.geometry.type === 'Polygon'
     ? [feature.geometry.coordinates]
     : feature.geometry.coordinates
@@ -114,7 +115,7 @@ const polygonRingsOf = (feature: BahiaMunicipalityFeature): readonly Position[][
  * Holes and MultiPolygons do not occur in the committed mesh (417 plain
  * Polygons), but a rebuild at finer quality would introduce them.
  */
-export const featureContainsPoint = (feature: BahiaMunicipalityFeature, point: GeoPoint): boolean =>
+export const featureContainsPoint = (feature: BahiaGeometryFeature, point: GeoPoint): boolean =>
   polygonRingsOf(feature).some(([outerRing, ...holes]) => {
     if (!outerRing || !isPointInRing(point, outerRing)) return false
     return !holes.some((hole) => isPointInRing(point, hole))
@@ -125,7 +126,7 @@ export const featureContainsPoint = (feature: BahiaMunicipalityFeature, point: G
  * at Bahia's latitudes is far below the precision this feeds). Holes are
  * ignored: they move the centre by less than the rounding of the label.
  */
-export const featureCentroid = (feature: BahiaMunicipalityFeature): GeoPoint => {
+export const featureCentroid = (feature: BahiaGeometryFeature): GeoPoint => {
   let weightedLng = 0
   let weightedLat = 0
   let totalArea = 0

@@ -4,14 +4,22 @@ import { statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import type { Position } from 'geojson'
 import { describe, expect, it } from 'vitest'
 
-import { loadMunicipalityGeometryModule, loadTerritoryGeometryModule } from '@/lib/bahiaGeometries'
+import type { BahiaGeometryFeature } from '@/lib/bahiaGeometriesTypes'
+
+import {
+  loadMunicipalityGeometryModule,
+  loadMunicipalityZoneGeometryModule,
+  loadTerritoryGeometryModule,
+} from '@/lib/bahiaGeometries'
 import { bahiaMunicipalityCodes } from '@/lib/bahiaMunicipalityCodes'
 import { bahiaIdentityTerritoryRecords } from '@/lib/bahiaTerritories'
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import {
   featureCentroid,
+  featureContainsPoint,
   findContainingMunicipality,
   resolveNearbyMunicipality,
 } from '@/lib/municipalityProximity'
@@ -20,6 +28,9 @@ import { featureBounds } from '../helpers/featureBounds'
 
 /** Soft ceiling against accidental unsimplified meshes (plan target ≤ ~600 KB). */
 const MAX_TOPO_BYTES = 600 * 1024
+
+/** Square degrees → km² at Salvador's latitude — good to a few percent, which is all this needs. */
+const SQUARE_DEGREE_KM2 = 110.57 * 108.5
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -31,6 +42,32 @@ const hasNonEmptyGeometry = (
   return true
 }
 
+/** Planar shoelace in square degrees — only ever compared against itself. */
+const featureArea = (feature: BahiaGeometryFeature): number => {
+  const polygons =
+    feature.geometry.type === 'Polygon'
+      ? [feature.geometry.coordinates]
+      : feature.geometry.coordinates
+
+  return polygons.reduce((total, [outerRing, ...holes]) => {
+    const ringArea = (ring: readonly Position[]): number => {
+      let sum = 0
+      for (
+        let current = 0, previous = ring.length - 1;
+        current < ring.length;
+        previous = current++
+      ) {
+        sum += ring[previous][0] * ring[current][1] - ring[current][0] * ring[previous][1]
+      }
+      return Math.abs(sum) / 2
+    }
+
+    return (
+      total + ringArea(outerRing) - holes.reduce((holeTotal, hole) => holeTotal + ringArea(hole), 0)
+    )
+  }, 0)
+}
+
 describe('Bahia static geometries', () => {
   it('keeps committed TopoJSON under the size budget', () => {
     const municipalityBytes = statSync(
@@ -39,11 +76,16 @@ describe('Bahia static geometries', () => {
     const territoryBytes = statSync(
       join(repoRoot, 'src/lib/geometries/bahia-identity-territories.topo.json'),
     ).size
+    const zoneBytes = statSync(
+      join(repoRoot, 'src/lib/geometries/bahia-municipality-zones.topo.json'),
+    ).size
 
     expect(municipalityBytes).toBeGreaterThan(10_000)
     expect(territoryBytes).toBeGreaterThan(1_000)
+    expect(zoneBytes).toBeGreaterThan(10_000)
     expect(municipalityBytes).toBeLessThanOrEqual(MAX_TOPO_BYTES)
     expect(territoryBytes).toBeLessThanOrEqual(MAX_TOPO_BYTES)
+    expect(zoneBytes).toBeLessThanOrEqual(MAX_TOPO_BYTES)
   })
 
   it('exposes 417 municipality features whose codarea set matches the code table', async () => {
@@ -85,6 +127,72 @@ describe('Bahia static geometries', () => {
 
     expect(getTerritoryFeature('01')?.properties.name).toBe('Irecê')
     expect(getTerritoryFeature('99')).toBeUndefined()
+  })
+
+  /**
+   * B8 F2 — the 19 Salvador zones are dissolved from the IBGE neighborhood mesh,
+   * a different source than the municipal mesh above, so what is pinned here is
+   * the contract the map depends on: one feature per catalog zona, keyed by slug,
+   * geometrically inside the city it decomposes.
+   */
+  describe('zone municipality geometries (B8 F2)', () => {
+    const zoneCatalog = municipalityCatalog.filter((entry) => entry.kind === 'zona')
+
+    it('exposes one feature per zona municipality, keyed by catalog slug', async () => {
+      const { topology, features, getMunicipalityZoneFeature } =
+        await loadMunicipalityZoneGeometryModule()
+
+      expect(Object.keys(topology.objects)).toEqual(['municipalityZones'])
+      expect(topology.objects.municipalityZones.geometries).toHaveLength(zoneCatalog.length)
+      expect(features).toHaveLength(zoneCatalog.length)
+
+      for (const entry of zoneCatalog) {
+        const zone = getMunicipalityZoneFeature(entry.slug)
+        expect(zone, entry.slug).toBeDefined()
+        expect(zone?.properties.name).toBe(entry.name)
+        expect(zone?.properties.zoneNumber).toBe(entry.zoneNumber)
+        expect(zone?.properties.ibgeCode).toBe(entry.ibgeCode)
+        expect(hasNonEmptyGeometry(zone?.geometry)).toBe(true)
+      }
+
+      expect(getMunicipalityZoneFeature('feira-de-santana')).toBeUndefined()
+    })
+
+    it('keeps every zone inside the municipality it decomposes', async () => {
+      const [{ getMunicipalityFeature }, { features }] = await Promise.all([
+        loadMunicipalityGeometryModule(),
+        loadMunicipalityZoneGeometryModule(),
+      ])
+
+      for (const zone of features) {
+        const city = getMunicipalityFeature(zone.properties.ibgeCode)
+        expect(city, zone.properties.municipalitySlug).toBeDefined()
+        expect(
+          featureContainsPoint(city!, featureCentroid(zone)),
+          zone.properties.municipalitySlug,
+        ).toBe(true)
+      }
+    })
+
+    /**
+     * Salvador's land is ~324 km². It is NOT compared against the municipal
+     * polygon: that one measures ~690 km², matching the official IBGE area,
+     * because the municipal limits enclose the bay water around the islands —
+     * water the neighborhood mesh does not draw.
+     *
+     * Since each neighborhood polygon is assigned to exactly one zone, the sum is
+     * also the overlap check: a neighborhood counted twice, or dropped, moves this
+     * by its own area.
+     */
+    it('sums to Salvador’s land area, so no neighborhood is dropped or counted twice', async () => {
+      const { features } = await loadMunicipalityZoneGeometryModule()
+
+      const zoneKm2 =
+        features.reduce((total, zone) => total + featureArea(zone), 0) * SQUARE_DEGREE_KM2
+
+      expect(zoneKm2).toBeGreaterThan(280)
+      expect(zoneKm2).toBeLessThan(360)
+    })
   })
 
   /**

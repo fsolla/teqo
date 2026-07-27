@@ -16,7 +16,8 @@ type OfficialEvidence = {
   zoneCount: number
   assignments: Array<{
     municipalitySlug: string
-    city: 'Salvador' | 'Camaçari'
+    /** Hydrated from the catalog since Fase 0 of B8 F2, so the fixture no longer narrows it. */
+    city: string
     zoneNumber: number
     source: 'tre-ra-02-2017' | 'tre-voting-locations-curated'
     neighborhoods: string[]
@@ -58,6 +59,12 @@ describe('Municipality zone neighborhood catalog (Salvador only)', () => {
       expect(record?.zoneNumber).toBe(municipality.zoneNumber)
       expect(record?.neighborhoods.length, municipality.slug).toBeGreaterThan(0)
     }
+  })
+
+  it('lists zones in catalog order', () => {
+    expect(municipalityZoneNeighborhoods.map((entry) => entry.municipalitySlug)).toEqual(
+      zoneMunicipalities.map((entry) => entry.slug),
+    )
   })
 
   it('keeps Salvador neighborhoods exclusive across zones', () => {

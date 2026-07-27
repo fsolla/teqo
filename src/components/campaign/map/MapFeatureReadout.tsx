@@ -103,11 +103,6 @@ export const MapFeatureReadout = ({
         {/* The bubble's own line: mixing "votes he got" and "votes at stake"
             into one sentence is how a reader ends up quoting the wrong one. */}
         {bubbleReading ? <p className="text-xs text-muted-foreground">{bubbleReading}</p> : null}
-        {navigation?.kind === 'zones' ? (
-          <p className="text-xs text-muted-foreground">
-            Toque de novo no mapa ou role até os Municípios por zona abaixo.
-          </p>
-        ) : null}
       </div>
 
       {navigation?.kind === 'navigate' ? (

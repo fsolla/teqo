@@ -1,7 +1,7 @@
 import type { FederalCompetitiveRank } from '@/lib/bahiaElectionAggregates'
 import { HISTORICAL_SERIES_YEARS } from '@/lib/electionResults'
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
-import type { MunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
+import type { MunicipalitiesByMapKey } from '@/utilities/municipalityMapNavigation'
 import type { MunicipalityTerritorialClass } from '@/utilities/municipalityTerritorialClass'
 
 /**
@@ -89,16 +89,22 @@ type MunicipalityZoneBreakdownRow = {
 export type MunicipalityMapComparison = {
   candidateNumber: number
   candidateName: string
-  /** TSE year (as string) → codarea → (sollaVotes − otherVotes). */
+  /** TSE year (as string) → map key → (sollaVotes − otherVotes). */
   diffByYear: Record<string, Record<string, number>>
 }
 
+/**
+ * Every record below is keyed by MAP KEY, not by IBGE codarea: since B8 F2 the
+ * map paints one polygon per catalog unit, so Salvador's 19 zones are addressed
+ * by slug (`salvador-ze-3`) and every other município by its codarea. See
+ * `mapKeyForMunicipality`.
+ */
 export type MunicipalityMapBundle = {
-  /** year (as string) → codarea → value. 2026 = cenário médio (central). */
+  /** year (as string) → map key → value. 2026 = cenário médio (central). */
   valuesByYear: Record<string, Record<string, number>>
-  /** 2026 totals per estimate scenario (codarea → votes). */
+  /** 2026 totals per estimate scenario (map key → votes). */
   values2026ByScenario: Record<VoteEstimateScenario, Record<string, number>>
-  /** year (as string) → codarea → votosValidos (federal T1). 2026 reuses 2022. */
+  /** year (as string) → map key → votosValidos (federal T1). 2026 reuses 2022. */
   validVotesByYear: Record<string, Record<string, number>>
   /**
    * year (as string) → his own STATEWIDE share of valid votes: the "1×" the LQ
@@ -107,14 +113,18 @@ export type MunicipalityMapBundle = {
    * the same standard. 2026 reuses the 2022 standard, like `validVotesByYear`.
    */
   statewideShareByYear: Record<string, number>
-  /** codarea → E10 territorial class, aggregated over the slugs in scope. */
-  territorialClassByCode: Record<string, MunicipalityTerritorialClass>
-  /** codarea → his placement among the federal-deputy candidates voted there. */
+  /** map key → E10 territorial class of that unit. */
+  territorialClassByMapKey: Record<string, MunicipalityTerritorialClass>
+  /**
+   * map key → his placement among the federal-deputy candidates voted there. The
+   * TSE artifact ranks by codarea only, so Salvador's zones all carry the city's
+   * position (the legend says so).
+   */
   competitiveRankByYear: Record<string, Record<string, FederalCompetitiveRank>>
-  /** codarea → projected 2026 valid votes (E8) — the size of the proportional symbol. */
-  projectedValidVotesByCode: Record<string, number>
-  /** IBGE codarea → accessible municipality slugs for map click navigation. */
-  municipalitiesByIbgeCode: MunicipalitiesByIbgeCode
+  /** map key → projected 2026 valid votes (E8) — the size of the proportional symbol. */
+  projectedValidVotesByMapKey: Record<string, number>
+  /** map key → the municipality it opens on click. */
+  municipalitiesByMapKey: MunicipalitiesByMapKey
   /** Zone municipalities in scope (Salvador) with per-year values. */
   zoneBreakdown: MunicipalityZoneBreakdownRow[]
   candidateName: string

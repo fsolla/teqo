@@ -202,20 +202,20 @@ export const MunicipalityMapPanel = ({
   }, [comparisonActive, displayValues, percentScaleActive])
 
   const scopedKeys = useMemo(
-    () => Object.keys(bundle.municipalitiesByIbgeCode),
-    [bundle.municipalitiesByIbgeCode],
+    () => Object.keys(bundle.municipalitiesByMapKey),
+    [bundle.municipalitiesByMapKey],
   )
 
   /** LQ per município against his statewide standard — the same ratio E10 classes on. */
-  const lqByCode = useMemo(() => {
+  const lqByMapKey = useMemo(() => {
     const statewideShare = bundle.statewideShareByYear[String(year)] ?? 0
     if (statewideShare <= 0) return {}
 
     const lq: Record<string, number> = {}
-    for (const [code, votes] of Object.entries(rawValues)) {
-      const validVotes = validVotesForYear[code] ?? 0
+    for (const [mapKey, votes] of Object.entries(rawValues)) {
+      const validVotes = validVotesForYear[mapKey] ?? 0
       if (votes <= 0 || validVotes <= 0) continue
-      lq[code] = votes / validVotes / statewideShare
+      lq[mapKey] = votes / validVotes / statewideShare
     }
     return lq
   }, [bundle.statewideShareByYear, rawValues, validVotesForYear, year])
@@ -230,12 +230,12 @@ export const MunicipalityMapPanel = ({
       case 'quantile':
         return buildQuantileClassing(rawValues)
       case 'lq':
-        return buildLqClassing(lqByCode)
+        return buildLqClassing(lqByMapKey)
       case 'competitiveRank':
         return buildCompetitiveRankClassing(
           Object.fromEntries(
-            Object.entries(competitiveRankForYear).map(([code, placement]) => [
-              code,
+            Object.entries(competitiveRankForYear).map(([mapKey, placement]) => [
+              mapKey,
               placement.rank,
             ]),
           ),
@@ -243,7 +243,7 @@ export const MunicipalityMapPanel = ({
       default:
         return null
     }
-  }, [competitiveRankForYear, effectiveScaleMode, lqByCode, rawValues])
+  }, [competitiveRankForYear, effectiveScaleMode, lqByMapKey, rawValues])
 
   // A classing with no classes paints nothing, so the legend must fall through
   // to the continuous ramp — passing `{}` here would tell `BahiaMap` the map is
@@ -320,16 +320,16 @@ export const MunicipalityMapPanel = ({
    *
    * Both sides are already stable references, so there is nothing to memoize.
    */
-  const bubbleValues = showBubbles ? bundle.projectedValidVotesByCode : undefined
+  const bubbleValues = showBubbles ? bundle.projectedValidVotesByMapKey : undefined
 
   const bubbleFillByKey = useMemo(() => {
     if (!showBubbles) return undefined
     const fills: ChoroplethFills = {}
-    for (const [code, territorialClass] of Object.entries(bundle.territorialClassByCode)) {
-      fills[code] = territorialClassMapFill[territorialClass]
+    for (const [mapKey, territorialClass] of Object.entries(bundle.territorialClassByMapKey)) {
+      fills[mapKey] = territorialClassMapFill[territorialClass]
     }
     return fills
-  }, [bundle.territorialClassByCode, showBubbles])
+  }, [bundle.territorialClassByMapKey, showBubbles])
 
   // The key's reference circles and the map's radius denominator have to be
   // the same number, or the key labels a size the map never draws.
@@ -339,14 +339,14 @@ export const MunicipalityMapPanel = ({
     (key: string): string | null => {
       if (!showBubbles) return null
 
-      const projected = bundle.projectedValidVotesByCode[key] ?? 0
+      const projected = bundle.projectedValidVotesByMapKey[key] ?? 0
       if (projected <= 0) return null
 
-      const territorialClass = bundle.territorialClassByCode[key]
+      const territorialClass = bundle.territorialClassByMapKey[key]
       const classLabel = territorialClass ? territorialClassLabels[territorialClass] : null
       return `${formatElectionNumber(projected)} válidos projetados em jogo${classLabel ? ` · ${classLabel}` : ''}`
     },
-    [bundle.projectedValidVotesByCode, bundle.territorialClassByCode, showBubbles],
+    [bundle.projectedValidVotesByMapKey, bundle.territorialClassByMapKey, showBubbles],
   )
 
   /**
@@ -366,7 +366,7 @@ export const MunicipalityMapPanel = ({
           return `${classIndex + 1}ª de ${classing.classes.length} faixas${range ? ` (${range} votos)` : ''}`
         }
         case 'lq': {
-          const lq = lqByCode[key]
+          const lq = lqByMapKey[key]
           return lq === undefined ? null : formatDominanceAgainstOwnStandard(lq)
         }
         case 'competitiveRank': {
@@ -378,7 +378,7 @@ export const MunicipalityMapPanel = ({
           return null
       }
     },
-    [classing, competitiveRankForYear, effectiveScaleMode, lqByCode],
+    [classing, competitiveRankForYear, effectiveScaleMode, lqByMapKey],
   )
 
   // Optimistic on the control, honest pending on the map: the comparison data
@@ -582,7 +582,7 @@ export const MunicipalityMapPanel = ({
           relativeReadingFor={relativeReadingFor}
           bubbleReadingFor={bubbleReadingFor}
           comparisonActive={comparisonActive}
-          municipalitiesByIbgeCode={bundle.municipalitiesByIbgeCode}
+          municipalitiesByMapKey={bundle.municipalitiesByMapKey}
           ariaLabel={
             comparisonActive && comparison
               ? `Mapa comparativo entre ${bundle.candidateName} e ${comparison.candidateName} por município`
@@ -592,11 +592,12 @@ export const MunicipalityMapPanel = ({
 
         {/* zone breakdown below */}
         {bundle.zoneBreakdown.length > 0 && !comparisonActive ? (
-          <div id="municipality-zone-breakdown" className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">Municípios por zona eleitoral</h3>
             <p className="text-sm text-muted-foreground">
-              Zonas não têm polígono oficial — Salvador e Camaçari aparecem agregadas no mapa e
-              detalhadas aqui.
+              Salvador é pintada zona por zona. O desenho vem dos bairros de cada circunscrição
+              (TRE-BA, RA nº 2/2017) sobre a malha do IBGE — é aproximado, não é o limite oficial do
+              TSE.
             </p>
             <ul className="grid gap-1 sm:grid-cols-2">
               {bundle.zoneBreakdown.map((zone) => (
@@ -645,7 +646,7 @@ const MunicipalityMapSelection = ({
   relativeReadingFor,
   bubbleReadingFor,
   comparisonActive,
-  municipalitiesByIbgeCode,
+  municipalitiesByMapKey,
   ariaLabel,
 }: {
   displayValues: ChoroplethValues
@@ -660,7 +661,7 @@ const MunicipalityMapSelection = ({
   relativeReadingFor: (key: string) => string | null
   bubbleReadingFor: (key: string) => string | null
   comparisonActive: boolean
-  municipalitiesByIbgeCode: MunicipalityMapBundle['municipalitiesByIbgeCode']
+  municipalitiesByMapKey: MunicipalityMapBundle['municipalitiesByMapKey']
   ariaLabel: string
 }) => {
   const router = useRouter()
@@ -676,20 +677,12 @@ const MunicipalityMapSelection = ({
     (key: string) => {
       if (selectedKeyRef.current !== key) return
 
-      const navigation = resolveMunicipalityMapNavigation(key, municipalitiesByIbgeCode)
+      const navigation = resolveMunicipalityMapNavigation(key, municipalitiesByMapKey)
       if (navigation.kind === 'navigate') {
         router.push(`/campanha/municipios/${navigation.slug}`)
-        return
-      }
-
-      if (navigation.kind === 'zones') {
-        document.getElementById('municipality-zone-breakdown')?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-        })
       }
     },
-    [municipalitiesByIbgeCode, router],
+    [municipalitiesByMapKey, router],
   )
 
   const selectedMetricValue =
@@ -703,9 +696,9 @@ const MunicipalityMapSelection = ({
   const selectedNavigation = useMemo(
     () =>
       selectedFeature
-        ? resolveMunicipalityMapNavigation(selectedFeature.key, municipalitiesByIbgeCode)
+        ? resolveMunicipalityMapNavigation(selectedFeature.key, municipalitiesByMapKey)
         : null,
-    [municipalitiesByIbgeCode, selectedFeature],
+    [municipalitiesByMapKey, selectedFeature],
   )
 
   return (
