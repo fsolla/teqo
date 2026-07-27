@@ -67,10 +67,19 @@ const reactActEnvironment = globalThis as typeof globalThis & {
 
 beforeAll(() => {
   reactActEnvironment.IS_REACT_ACT_ENVIRONMENT = true
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  )
 })
 
 afterAll(() => {
   delete reactActEnvironment.IS_REACT_ACT_ENVIRONMENT
+  vi.unstubAllGlobals()
 })
 
 afterEach(() => {
@@ -95,6 +104,7 @@ describe('campaign login composition', () => {
 
     const identifier = screen.getByLabelText('E-mail ou celular')
     const password = screen.getByLabelText('Senha')
+    const rememberMe = screen.getByLabelText('Lembrar de mim neste dispositivo')
     const submit = screen.getByRole('button', { name: 'Entrar' })
 
     expect(screen.getByRole('heading', { level: 1, name: 'Entrar na campanha' })).toBeTruthy()
@@ -105,6 +115,13 @@ describe('campaign login composition', () => {
     expect(password.getAttribute('name')).toBe('password')
     expect(password.hasAttribute('required')).toBe(true)
     expect(password.getAttribute('autocomplete')).toBe('current-password')
+    expect(rememberMe.getAttribute('aria-checked')).toBe('false')
+    expect(rememberMe.getAttribute('aria-describedby')).toBe('remember-me-description')
+    expect(
+      screen.getByText(
+        'Em aparelho pessoal, fique conectado por 14 dias. Desmarcado, o acesso dura 8 horas.',
+      ),
+    ).toBeTruthy()
     expect(submit.getAttribute('type')).toBe('submit')
     expect(submit.className).toContain('w-full')
   })

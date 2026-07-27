@@ -9,11 +9,13 @@ import {
   CAMPAIGN_ACCOUNT_LOCKED_MESSAGE,
   CAMPAIGN_LOGIN_INVALID_CREDENTIALS_MESSAGE,
 } from '@/lib/campaignAuthCopy'
-import { requiredFormSecret, requiredFormText } from '@/lib/formData'
+import { CAMPAIGN_SESSION_TTL_LONG, CAMPAIGN_SESSION_TTL_SHORT } from '@/lib/campaignSessionTtl'
+import { checkboxFormValue, requiredFormSecret, requiredFormText } from '@/lib/formData'
 import { campaignLoginSchema, type CampaignLoginInput } from '@/lib/schemas/campaign-login'
 import {
-  CAMPAIGN_COOKIE_PATH,
   CAMPAIGN_TOKEN_COOKIE,
+  clearCampaignAuthCookie,
+  revokeCampaignSession,
   setCampaignAuthCookie,
 } from '@/utilities/campaignAuth'
 
@@ -33,11 +35,11 @@ export const loginCampaign = async (input: CampaignLoginInput): Promise<LoginRes
   }
 
   const payload = await getPayload({ config })
+  const { identifier, password, rememberMe } = parsed.data
 
   let token: string | undefined
 
   try {
-    const { identifier, password } = parsed.data
     const credentials = identifier.includes('@')
       ? { email: identifier, password }
       : { username: identifier, password }
@@ -59,7 +61,11 @@ export const loginCampaign = async (input: CampaignLoginInput): Promise<LoginRes
     return { error: CAMPAIGN_LOGIN_INVALID_CREDENTIALS_MESSAGE }
   }
 
-  await setCampaignAuthCookie(token, payload)
+  await setCampaignAuthCookie(
+    token,
+    payload,
+    rememberMe ? CAMPAIGN_SESSION_TTL_LONG : CAMPAIGN_SESSION_TTL_SHORT,
+  )
 
   redirect('/campanha')
 }
@@ -72,6 +78,7 @@ export const loginCampaignFormAction = async (
     return loginCampaign({
       identifier: requiredFormText(formData, 'identifier'),
       password: requiredFormSecret(formData, 'password'),
+      rememberMe: checkboxFormValue(formData, 'rememberMe'),
     })
   } catch {
     return { error: 'Dados inválidos.' }
@@ -80,14 +87,18 @@ export const loginCampaignFormAction = async (
 
 export const logoutCampaign = async (): Promise<void> => {
   const cookieStore = await cookies()
+  const token = cookieStore.get(CAMPAIGN_TOKEN_COOKIE)?.value
 
-  cookieStore.set(CAMPAIGN_TOKEN_COOKIE, '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: CAMPAIGN_COOKIE_PATH,
-    maxAge: 0,
-  })
+  if (token) {
+    try {
+      const payload = await getPayload({ config })
+      await revokeCampaignSession(token, payload)
+    } catch {
+      // Cookie deletion must still succeed if the token is malformed or revocation is unavailable.
+    }
+  }
+
+  await clearCampaignAuthCookie()
 
   redirect('/campanha/login')
 }

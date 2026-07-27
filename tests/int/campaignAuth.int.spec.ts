@@ -3,16 +3,17 @@
 import { readFileSync } from 'node:fs'
 
 import type { Payload, PayloadRequest, RequiredDataFromCollectionSlug } from 'payload'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { assert, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { assignMunicipalityAdvisorsRecord } from '@/app/(campaign)/campanha/actions/municipality'
 import { CampaignUser as CampaignUserCollection } from '@/collections/CampaignUser'
+import { CAMPAIGN_SESSION_TTL_LONG } from '@/lib/campaignSessionTtl'
 import { buildWhatsAppUrl, normalizeBrazilianPhone, sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import { campaignLoginSchema } from '@/lib/schemas/campaign-login'
 import type { CampaignUser } from '@/payload-types'
 import config from '@/payload.config'
 import { getAccessibleMunicipalityIds, isCampaignCoordinator } from '@/utilities/campaignAccess'
-import { authenticateCampaignToken } from '@/utilities/campaignAuth'
+import { authenticateCampaignToken, revokeCampaignSession } from '@/utilities/campaignAuth'
 import { getPayload } from 'payload'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
@@ -40,6 +41,7 @@ describe('campaign authentication foundation', () => {
 
   it('configures optional username and email login', () => {
     expect(CampaignUserCollection.auth).toMatchObject({
+      tokenExpiration: CAMPAIGN_SESSION_TTL_LONG,
       loginWithUsername: {
         allowEmailLogin: true,
         requireEmail: false,
@@ -97,6 +99,30 @@ describe('campaign authentication foundation', () => {
 
     expect(staffLogin.user?.email).toBe(email)
     expect(leadershipLogin.user?.username).toBe(phone)
+  })
+
+  it('stops authenticating a token after its server session is revoked', async () => {
+    const email = `${campaignFixtures().value('logout')}@example.com`
+    const password = campaignFixtures().value('password')
+    await payload.create({
+      collection: 'campaignUser',
+      data: {
+        name: 'Sessão encerrada',
+        email,
+        password,
+        role: 'advisor',
+      },
+    })
+    const login = await payload.login({
+      collection: 'campaignUser',
+      data: { email, password },
+    })
+    assert(login.token)
+    const token = login.token
+
+    await expect(authenticateCampaignToken(token, payload)).resolves.not.toBeNull()
+    await revokeCampaignSession(token, payload)
+    await expect(authenticateCampaignToken(token, payload)).resolves.toBeNull()
   })
 
   it('preserves leading and trailing password spaces through validation and Payload login', async () => {

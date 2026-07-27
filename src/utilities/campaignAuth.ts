@@ -4,16 +4,85 @@ import type { CampaignUser } from '@/payload-types'
 
 import configPromise from '@payload-config'
 import { cookies } from 'next/headers'
-import { getPayload, type Payload } from 'payload'
+import { createLocalReq, getPayload, jwtSign, logoutOperation, type Payload } from 'payload'
 import { cache } from 'react'
 
+import { CAMPAIGN_SESSION_TTL_LONG, CAMPAIGN_SESSION_TTL_SHORT } from '@/lib/campaignSessionTtl'
+
 export const CAMPAIGN_TOKEN_COOKIE = 'campaign-token'
-export const CAMPAIGN_COOKIE_PATH = '/campanha'
-const DEFAULT_TOKEN_EXPIRATION = 7200
+const CAMPAIGN_COOKIE_PATH = '/campanha'
 
 type CampaignAuthPayload = Pick<Payload, 'auth' | 'findByID'>
-type CampaignCookiePayload = Pick<Payload, 'collections'>
+type CampaignCookiePayload = Pick<Payload, 'secret'>
 export type AuthenticatedCampaignUser = CampaignUser & { email: string }
+
+type CampaignTokenClaims = Record<string, unknown> & {
+  collection: 'campaignUser'
+  id: number | string
+  sid: string
+}
+
+const campaignTokenClaims = (token: string): CampaignTokenClaims => {
+  try {
+    const segments = token.split('.')
+    if (segments.length !== 3 || !segments[1]) throw new Error('Malformed JWT')
+
+    const base64 = segments[1].replace(/-/g, '+').replace(/_/g, '/')
+    const paddedBase64 = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')
+    const decoded = JSON.parse(atob(paddedBase64)) as unknown
+    if (typeof decoded !== 'object' || decoded === null || Array.isArray(decoded)) {
+      throw new Error('Invalid campaign claims')
+    }
+    const claims = decoded as CampaignTokenClaims
+    if (
+      (typeof claims.id !== 'number' && typeof claims.id !== 'string') ||
+      claims.collection !== 'campaignUser' ||
+      typeof claims.sid !== 'string'
+    ) {
+      throw new Error('Invalid campaign claims')
+    }
+
+    const { exp: _exp, iat: _iat, ...fieldsToSign } = claims
+    return fieldsToSign
+  } catch {
+    throw new Error('Token de campanha inválido.')
+  }
+}
+
+const campaignSessionToken = async (
+  token: string,
+  payload: CampaignCookiePayload,
+  tokenExpiration: number,
+): Promise<string> => {
+  if (tokenExpiration === CAMPAIGN_SESSION_TTL_LONG) return token
+
+  const { token: resignedToken } = await jwtSign({
+    fieldsToSign: campaignTokenClaims(token),
+    secret: payload.secret,
+    tokenExpiration,
+  })
+  return resignedToken
+}
+
+export const revokeCampaignSession = async (token: string, payload: Payload): Promise<void> => {
+  const headers = new Headers({ Authorization: `JWT ${token}` })
+  const { user: authenticatedUser } = await payload.auth({ headers })
+  if (authenticatedUser?.collection !== 'campaignUser') {
+    throw new Error('Token de campanha inválido.')
+  }
+
+  const req = await createLocalReq(
+    {
+      req: { headers },
+      user: authenticatedUser,
+    },
+    payload,
+  )
+  await logoutOperation({
+    collection: payload.collections.campaignUser,
+    req,
+  })
+}
 
 export const authenticateCampaignToken = async (
   token: string,
@@ -53,21 +122,28 @@ export const getCampaignUserRaw = async (): Promise<AuthenticatedCampaignUser | 
 
 export const getCampaignUser = cache(getCampaignUserRaw)
 
+const campaignCookieOptions = (maxAge: number) => ({
+  httpOnly: true,
+  maxAge,
+  path: CAMPAIGN_COOKIE_PATH,
+  sameSite: 'lax' as const,
+  secure: process.env.NODE_ENV === 'production',
+})
+
 export const setCampaignAuthCookie = async (
   token: string,
   payload: CampaignCookiePayload,
+  tokenExpiration: number = CAMPAIGN_SESSION_TTL_SHORT,
 ): Promise<void> => {
-  const tokenExpiration =
-    payload.collections.campaignUser?.config.auth?.tokenExpiration ?? DEFAULT_TOKEN_EXPIRATION
+  const sessionToken = await campaignSessionToken(token, payload, tokenExpiration)
   const cookieStore = await cookies()
 
-  cookieStore.set(CAMPAIGN_TOKEN_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: CAMPAIGN_COOKIE_PATH,
-    maxAge: tokenExpiration,
-  })
+  cookieStore.set(CAMPAIGN_TOKEN_COOKIE, sessionToken, campaignCookieOptions(tokenExpiration))
+}
+
+export const clearCampaignAuthCookie = async (): Promise<void> => {
+  const cookieStore = await cookies()
+  cookieStore.set(CAMPAIGN_TOKEN_COOKIE, '', campaignCookieOptions(0))
 }
 
 export const campaignLoginCredentials = (

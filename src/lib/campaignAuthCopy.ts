@@ -11,6 +11,9 @@ export const CAMPAIGN_FIRST_ACCESS_HINT =
 
 export const CAMPAIGN_LOGIN_SUBTITLE = 'Use o e-mail ou o celular cadastrado na sua conta.'
 
+export const CAMPAIGN_REMEMBER_ME_DESCRIPTION =
+  'Em aparelho pessoal, fique conectado por 14 dias. Desmarcado, o acesso dura 8 horas.'
+
 /** Shown when Payload locks the account after maxLoginAttempts (default: 5 / 10 min). */
 export const CAMPAIGN_ACCOUNT_LOCKED_MESSAGE =
   'Conta temporariamente bloqueada após várias tentativas. Aguarde alguns minutos e tente de novo.'

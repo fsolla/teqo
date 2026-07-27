@@ -22,6 +22,7 @@ const campaignIdentifierSchema = z
 export const campaignLoginSchema = z.object({
   identifier: campaignIdentifierSchema,
   password: z.string().min(1, 'Informe a senha'),
+  rememberMe: z.boolean().optional(),
 })
 
 export type CampaignLoginInput = z.infer<typeof campaignLoginSchema>
