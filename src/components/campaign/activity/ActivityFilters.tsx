@@ -1,10 +1,10 @@
 'use client'
 
-import { useCampaignListPending } from '@/components/campaign/shared/CampaignListPending'
+import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
 import { ChevronDownIcon, FilterIcon, XIcon } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useRef, useState, useTransition } from 'react'
+import { useRef, useState } from 'react'
 
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { Button } from '@/components/ui/button'
@@ -82,11 +82,7 @@ export const ActivityFilters = ({
   const valuesRef = useRef(initialValues)
   const [values, setValues] = useState(initialValues)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
-  const sharedPending = useCampaignListPending()
-  const [isLocalPending, startLocalTransition] = useTransition()
-  // Prefer the page-level boundary so the results region dims together.
-  const isPending = sharedPending?.isPending ?? isLocalPending
-  const startTransition = sharedPending?.startTransition ?? startLocalTransition
+  const { isPending, startTransition } = useCampaignListTransition()
 
   const replaceValues = (nextValues: FilterValues) => {
     valuesRef.current = nextValues

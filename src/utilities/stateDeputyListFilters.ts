@@ -6,6 +6,7 @@
  */
 import { truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import {
+  buildStateDeputyListHref,
   NO_PARTY_FILTER_VALUE,
   parseStateDeputyListParams,
   stateDeputyListStateToRawParams,
@@ -63,6 +64,13 @@ export const clearStateDeputyListFilters = (state: StateDeputyListState): StateD
   sort: state.sort,
   dir: state.dir,
 })
+
+/**
+ * Every filter change resets pagination, so the page-1 pin belongs here rather
+ * than at each call site — sibling of `buildMunicipalityFilterHref`.
+ */
+export const buildStateDeputyFilterHref = (next: StateDeputyListState): string =>
+  buildStateDeputyListHref(next, 1)
 
 export const isStateDeputyPartyFilterActive = (state: StateDeputyListState): boolean =>
   Boolean(state.parties?.length)

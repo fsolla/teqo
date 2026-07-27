@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState, useTransition, type MouseEvent } from 'react'
+import { useState, type MouseEvent } from 'react'
 
-import { useCampaignListPending } from '@/components/campaign/shared/CampaignListPending'
+import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
 import { Button } from '@/components/ui/button'
 
 export type CampaignFilterChip = {
@@ -26,10 +26,7 @@ export const CampaignFilterChips = ({
   chips: CampaignFilterChip[]
 }) => {
   const router = useRouter()
-  const shared = useCampaignListPending()
-  const [isLocalPending, startLocalTransition] = useTransition()
-  const isPending = shared?.isPending ?? isLocalPending
-  const startTransition = shared?.startTransition ?? startLocalTransition
+  const { isPending, startTransition } = useCampaignListTransition()
   const [optimisticHref, setOptimisticHref] = useState<string | null>(null)
 
   const activeHref =

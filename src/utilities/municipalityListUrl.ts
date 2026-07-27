@@ -361,9 +361,6 @@ const buildMunicipalityListSearchParams = (
     parseMunicipalityListParams(municipalityListStateToRawParams(state, page)),
   )
 
-export const buildMunicipalityFiltersKey = (state: MunicipalityListState): string =>
-  buildMunicipalityListSearchParams(state).toString()
-
 export const buildMunicipalityListHref = (state: MunicipalityListState, page: number): string =>
   buildListHref(state, buildMunicipalityListSearchParams, '/campanha/municipios', page)
 
@@ -434,11 +431,6 @@ export const parseMunicipalitySortValue = (
   if (!municipalityListSortDirSet.has(rawDir as MunicipalityListSortDirection)) return null
   return { key: rawKey as MunicipalityListSortKey, dir: rawDir as MunicipalityListSortDirection }
 }
-
-export const shouldUpdateMunicipalitySearchUrl = (
-  input: string,
-  currentQ: string | undefined,
-): boolean => normalizedText(input) !== currentQ
 
 export const resolveMunicipalityListUrl = (
   params: MunicipalityListSearchParams,

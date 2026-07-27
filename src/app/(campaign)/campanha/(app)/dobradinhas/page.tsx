@@ -40,6 +40,7 @@ import {
   type StateDeputyRowViewModel,
 } from '@/utilities/stateDeputyData'
 import {
+  buildStateDeputyFilterHref,
   clearStateDeputyListFilters,
   type StateDeputyFilterOption,
 } from '@/utilities/stateDeputyListFilters'
@@ -71,7 +72,7 @@ const StateDeputyListEmptyState = ({ state }: { state: StateDeputyListState }) =
     <EmptyContent>
       {/* Same contract as the filter bar's Limpar: drop filters, keep the sort. */}
       <CampaignTransitionAnchor
-        href={buildStateDeputyListHref(clearStateDeputyListFilters(state), 1)}
+        href={buildStateDeputyFilterHref(clearStateDeputyListFilters(state))}
         replace
         scroll={false}
         className={cn(buttonVariants({ variant: 'outline' }), 'min-h-11')}

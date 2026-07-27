@@ -7,13 +7,14 @@ import {
   type CampaignHeaderFilterRow,
 } from '@/components/campaign/shared/CampaignHeaderFilterPopover'
 import {
+  buildStateDeputyFilterHref,
   buildStateDeputyPartyOptions,
   clearStateDeputyPartyFilter,
   isStateDeputyPartyFilterActive,
   toggleStateDeputyPartyFilter,
   type StateDeputyFilterOption,
 } from '@/utilities/stateDeputyListFilters'
-import { buildStateDeputyListHref, type StateDeputyListState } from '@/utilities/stateDeputyListUrl'
+import { type StateDeputyListState } from '@/utilities/stateDeputyListUrl'
 
 export const StateDeputyHeaderFilter = ({
   state,
@@ -36,7 +37,7 @@ export const StateDeputyHeaderFilter = ({
     return {
       value: option.value,
       label: option.label,
-      href: buildStateDeputyListHref(next, 1),
+      href: buildStateDeputyFilterHref(next),
       selected: Boolean(viewState.parties?.includes(option.value)),
       checkbox: true,
       onChoose: () => setOptimisticState(next),
@@ -54,7 +55,7 @@ export const StateDeputyHeaderFilter = ({
       clear={
         active
           ? {
-              href: buildStateDeputyListHref(clearedState, 1),
+              href: buildStateDeputyFilterHref(clearedState),
               onChoose: () => setOptimisticState(clearedState),
             }
           : undefined

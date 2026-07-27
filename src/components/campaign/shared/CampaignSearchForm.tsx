@@ -1,9 +1,9 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 
-import { useCampaignListPending } from '@/components/campaign/shared/CampaignListPending'
+import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
 import { Button } from '@/components/ui/button'
 
 /**
@@ -24,10 +24,7 @@ export const CampaignSearchForm = ({
   basePath: string
 }) => {
   const router = useRouter()
-  const shared = useCampaignListPending()
-  const [isLocalPending, startLocalTransition] = useTransition()
-  const isPending = shared?.isPending ?? isLocalPending
-  const startTransition = shared?.startTransition ?? startLocalTransition
+  const { isPending, startTransition } = useCampaignListTransition()
   const [query, setQuery] = useState(initialQuery)
 
   const hrefForQuery = (value: string) =>
