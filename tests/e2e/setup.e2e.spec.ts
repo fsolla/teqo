@@ -6,10 +6,12 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
   test.slow()
   for (const path of [
     '/campanha/login',
+    '/campanha',
     '/campanha/municipios',
     '/campanha/territorios',
     '/campanha/municipios/e2e-prewarm',
     '/campanha/demandas',
+    '/campanha/liderancas',
     '/campanha/conceitos',
     '/campanha/convite/e2e-prewarm',
     '/',
@@ -27,6 +29,7 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/municipios/advisors',
     '/campanha/municipios/expected-votes',
     '/campanha/municipios/political-trend',
+    '/campanha/liderancas/support-status',
   ]) {
     await request.post(`${baseURL}${path}`, { data: {} }).catch(() => undefined)
   }

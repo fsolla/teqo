@@ -16,6 +16,7 @@ import { leadershipSectors, leadershipSupportStatuses } from '@/lib/schemas/lead
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 import type { LeadershipDetailViewModel } from '@/utilities/leadershipData'
+import { supportStatusLabels } from '@/utilities/leadershipLabels'
 
 const sectorLabels: Record<(typeof leadershipSectors)[number], string> = {
   religioso: 'Religioso',
@@ -28,13 +29,6 @@ const sectorLabels: Record<(typeof leadershipSectors)[number], string> = {
   educacao: 'Educação',
   cultura: 'Cultura',
   outro: 'Outro',
-}
-
-const supportStatusLabels: Record<(typeof leadershipSupportStatuses)[number], string> = {
-  engajado: 'Engajado',
-  a_abordar: 'A abordar',
-  em_disputa: 'Em disputa',
-  negativo: 'Negativo',
 }
 
 type LeadershipInternalFormProps = {

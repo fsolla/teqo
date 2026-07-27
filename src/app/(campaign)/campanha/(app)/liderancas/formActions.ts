@@ -1,5 +1,6 @@
 'use server'
 
+import { leadershipStaffEditSafeMessages } from '@/app/(campaign)/campanha/(app)/liderancas/leadershipStaffEditMessages'
 import { setLeadershipStateDeputyMembership } from '@/app/(campaign)/campanha/actions/leadership'
 import { requiredFormBoolean, requiredRelationshipFormValue } from '@/lib/formData'
 import { MAX_LEADERSHIP_STATE_DEPUTIES } from '@/lib/schemas/leadership'
@@ -9,7 +10,7 @@ import {
 } from '@/utilities/campaignFormActionError'
 
 const safeMessages = [
-  'Somente a coordenação e a assessoria podem gerenciar lideranças.',
+  ...leadershipStaffEditSafeMessages,
   `Cada liderança aceita no máximo ${MAX_LEADERSHIP_STATE_DEPUTIES} dobradinhas.`,
 ] as const
 
