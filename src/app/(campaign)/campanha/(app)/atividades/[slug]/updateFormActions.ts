@@ -4,13 +4,10 @@ import { revalidatePath } from 'next/cache'
 
 import { appendActivityUpdate } from '@/app/(campaign)/campanha/actions/activity'
 import { requiredFormText, requiredRelationshipFormValue } from '@/lib/formData'
-import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
-
-export type ActivityUpdateFormState = {
-  status?: 'success'
-  message?: string
-  fieldErrors?: Record<string, string[]>
-}
+import {
+  runCampaignFormAction,
+  type CampaignFormActionState,
+} from '@/utilities/campaignFormActionError'
 
 // The specific validation/transaction messages `appendActivityUpdate` throws —
 // safe to surface verbatim. Anything else (e.g. an unexpected Payload API error)
@@ -22,21 +19,18 @@ const safeMessages = [
 ] as const
 
 export const createActivityUpdateFormAction = async (
-  _state: ActivityUpdateFormState,
+  _state: CampaignFormActionState,
   formData: FormData,
-): Promise<ActivityUpdateFormState> => {
-  try {
-    const activityId = requiredRelationshipFormValue(formData, 'activityId')
-    const body = requiredFormText(formData, 'body')
-    await appendActivityUpdate(activityId, body)
-    revalidatePath('/campanha/atividades/[slug]', 'page')
-    return { status: 'success', message: 'Atualização registrada com sucesso.' }
-  } catch (error) {
-    return mapCampaignFormActionError({
-      error,
-      safeMessages,
-      genericMessage:
-        'Não foi possível enviar a atualização. Verifique seu acesso e tente novamente.',
-    })
-  }
-}
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      const activityId = requiredRelationshipFormValue(formData, 'activityId')
+      const body = requiredFormText(formData, 'body')
+      await appendActivityUpdate(activityId, body)
+      revalidatePath('/campanha/atividades/[slug]', 'page')
+      return { message: 'Atualização registrada com sucesso.' }
+    },
+    safeMessages,
+    genericMessage:
+      'Não foi possível enviar a atualização. Verifique seu acesso e tente novamente.',
+  })

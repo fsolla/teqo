@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { relative, resolve } from 'node:path'
+import { basename, relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -132,15 +132,24 @@ describe('eslint legacy ignore lists', () => {
 })
 
 describe('campaign formActions convention', () => {
-  // Every route-level formActions.ts goes through the shared wrappers
-  // (runCampaignFormAction / runCampaignRedirectFormAction) so error mapping
-  // and revalidation cannot drift per route (Pass 2 W4d). A file that truly
-  // cannot use them gets an allowlist entry documenting why:
-  const allowlist = new Set<string>([])
+  // Every route-level *FormActions.ts (and the known sibling taskActions.ts)
+  // goes through the shared wrappers (runCampaignFormAction /
+  // runCampaignRedirectFormAction) so error mapping and revalidation cannot
+  // drift per route (Pass 2 W4d / C8 F4b). A file that truly cannot use them
+  // gets an allowlist entry documenting why:
+  const isGuardedActionFile = (name: string): boolean =>
+    /^\w*[Ff]ormActions\.ts$/.test(name) || name === 'taskActions.ts'
 
-  it('routes every formActions.ts through a shared wrapper', () => {
+  const allowlist = new Set<string>([
+    // Positional (activityId, taskId, done) => Promise<{ok, message}> consumed
+    // by useOptimistic in ActivityTaskChecklist — not a (state, formData) ladder,
+    // nothing to route through the shared wrapper.
+    'src/app/(campaign)/campanha/(app)/atividades/[slug]/taskActions.ts',
+  ])
+
+  it('routes every *FormActions / taskActions ladder through a shared wrapper', () => {
     const offenders = walkSourceFiles(resolve(repoRoot, 'src/app/(campaign)'), ['.ts'])
-      .filter((file) => file.endsWith('/formActions.ts'))
+      .filter((file) => isGuardedActionFile(basename(file)))
       .map(repoPath)
       .filter((path) => !allowlist.has(path))
       .filter(

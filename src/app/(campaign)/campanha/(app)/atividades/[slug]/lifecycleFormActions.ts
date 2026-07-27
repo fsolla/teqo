@@ -1,44 +1,41 @@
 'use server'
 
-import { redirect } from 'next/navigation'
-
 import { cancelActivity, markActivityRealized } from '@/app/(campaign)/campanha/actions/activity'
 import { requiredRelationshipFormValue } from '@/lib/formData'
 import type { Activity } from '@/payload-types'
+import {
+  runCampaignRedirectFormAction,
+  type CampaignFormActionState,
+} from '@/utilities/campaignFormActionError'
 
-export type ActivityLifecycleFormState = {
-  message?: string
-}
+const ACTIVITY_ID_MISSING_MESSAGE =
+  'Não foi possível identificar a atividade. Atualize a página e tente novamente.'
 
+// Parse the id before the redirect ladder so a missing/invalid hidden field
+// returns `message` (ActivityLifecycleDialog only reads that — not fieldErrors).
 const setActivityLifecycleFormAction = async (
   formData: FormData,
   mutate: (activityId: number) => Promise<Pick<Activity, 'slug'>>,
   failureMessage: string,
-): Promise<ActivityLifecycleFormState> => {
+): Promise<CampaignFormActionState> => {
   let activityId: number
   try {
     activityId = requiredRelationshipFormValue(formData, 'id')
   } catch {
-    return {
-      message: 'Não foi possível identificar a atividade. Atualize a página e tente novamente.',
-    }
+    return { message: ACTIVITY_ID_MISSING_MESSAGE }
   }
 
-  let activitySlug: string
-  try {
-    const activity = await mutate(activityId)
-    activitySlug = activity.slug
-  } catch {
-    return { message: failureMessage }
-  }
-
-  redirect(`/campanha/atividades/${activitySlug}`)
+  return runCampaignRedirectFormAction({
+    execute: () => mutate(activityId),
+    redirectTo: (activity) => `/campanha/atividades/${activity.slug}`,
+    genericMessage: failureMessage,
+  })
 }
 
 export const cancelActivityFormAction = async (
-  _state: ActivityLifecycleFormState,
+  _state: CampaignFormActionState,
   formData: FormData,
-): Promise<ActivityLifecycleFormState> =>
+): Promise<CampaignFormActionState> =>
   setActivityLifecycleFormAction(
     formData,
     cancelActivity,
@@ -46,9 +43,9 @@ export const cancelActivityFormAction = async (
   )
 
 export const markActivityRealizedFormAction = async (
-  _state: ActivityLifecycleFormState,
+  _state: CampaignFormActionState,
   formData: FormData,
-): Promise<ActivityLifecycleFormState> =>
+): Promise<CampaignFormActionState> =>
   setActivityLifecycleFormAction(
     formData,
     markActivityRealized,
