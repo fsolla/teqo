@@ -3,6 +3,11 @@
 import type { ReactNode } from 'react'
 
 import { TerritoryHeaderFilter } from '@/components/campaign/municipality/TerritoryHeaderFilter'
+import {
+  CampaignHoverTooltip,
+  campaignHoverExplanationClassName,
+  campaignHoverTooltipAlign,
+} from '@/components/campaign/shared/CampaignHoverTooltip'
 import { CampaignSortableHead } from '@/components/campaign/shared/CampaignSortableHead'
 import type { TerritoryFilterOption } from '@/utilities/territoryListFilters'
 import {
@@ -18,6 +23,7 @@ type TerritorySortableHeadProps = {
   state: TerritoryListState
   sortKey: TerritoryListSortKey
   children?: ReactNode
+  description?: ReactNode
   align?: 'left' | 'center' | 'right'
   className?: string
 } & (
@@ -39,6 +45,7 @@ export const TerritorySortableHead = ({
   state,
   sortKey,
   children,
+  description,
   align = 'left',
   className,
   filterParam,
@@ -47,6 +54,7 @@ export const TerritorySortableHead = ({
   const { sort: activeSort, dir } = resolveTerritoryListSort(state)
   const active = activeSort === sortKey
   const nextDir = active ? (dir === 'asc' ? 'desc' : 'asc') : defaultTerritoryListSortDir(sortKey)
+  const label = children ?? territoryListSortLabels[sortKey]
 
   return (
     <CampaignSortableHead
@@ -64,8 +72,17 @@ export const TerritorySortableHead = ({
           <TerritoryHeaderFilter state={state} filterParam="coverage" />
         ) : null
       }
+      wrapSortControl={
+        description
+          ? (control) => (
+              <CampaignHoverTooltip content={description} align={campaignHoverTooltipAlign(align)}>
+                {control}
+              </CampaignHoverTooltip>
+            )
+          : undefined
+      }
     >
-      {children ?? territoryListSortLabels[sortKey]}
+      {description ? <span className={campaignHoverExplanationClassName}>{label}</span> : label}
     </CampaignSortableHead>
   )
 }

@@ -6,7 +6,9 @@ import {
 } from '@/lib/bahiaElectionAggregates'
 import { ELECTION_YEAR_2022 } from '@/lib/electionResults'
 import { computeVoteRankByYear } from '@/lib/municipalityVoteRank'
+import { medianOf } from '@/lib/median'
 import { TERRITORIAL_CLASS_ANCHORS } from '@/lib/territorialClassAnchors'
+import { territorialClassSortWeight } from '@/lib/territorialClassSortWeight'
 import {
   captureRate,
   fieldCeiling,
@@ -138,13 +140,6 @@ export const classifyMunicipalityTerritory = (
 const fieldHeadroomOf = (baseline: MunicipalityFederalBaseline): number =>
   Math.max(0, projectedFieldCeiling(baseline) - ownVotes2022(baseline))
 
-const median = (values: number[]): number => {
-  if (values.length === 0) return 0
-  const sorted = [...values].sort((a, b) => a - b)
-  const middle = Math.floor(sorted.length / 2)
-  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle]
-}
-
 type CatalogContext = {
   medianFieldHeadroom: number
   coreBlockSlugs: ReadonlySet<string>
@@ -163,12 +158,13 @@ const getCatalogContext = (): CatalogContext => {
 
   // Slugs whose majoritarian cell is missing would drag the median to zero and
   // make every weak município read as "expansão".
-  const medianFieldHeadroom = median(
-    federalBaselineMunicipalitySlugs()
-      .map(getMunicipalityFederalBaseline)
-      .filter((baseline) => projectedFieldCeiling(baseline) > 0)
-      .map(fieldHeadroomOf),
-  )
+  const medianFieldHeadroom =
+    medianOf(
+      federalBaselineMunicipalitySlugs()
+        .map(getMunicipalityFederalBaseline)
+        .filter((baseline) => projectedFieldCeiling(baseline) > 0)
+        .map(fieldHeadroomOf),
+    ) ?? 0
 
   // A11 already ranks every slug by own vote, descending, and memoizes it —
   // walking that map is the same order this used to re-sort for itself.
@@ -265,15 +261,4 @@ export const computeAggregateTerritorialClass = (
   })
 }
 
-/**
- * Sort weight for the list's `classe` ordering: descending puts the
- * municípios that carry the campaign (reduto) first and the ones without a
- * baseline last, in either direction.
- */
-export const territorialClassSortWeight: Record<MunicipalityTerritorialClass, number | null> = {
-  reduto: 4,
-  expansao: 3,
-  manutencao: 2,
-  marginal: 1,
-  sem_base: null,
-}
+export { territorialClassSortWeight }

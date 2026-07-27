@@ -31,6 +31,7 @@ import {
 } from '@/utilities/municipalityLabels'
 import type { MunicipalityPotential, RollOff } from '@/utilities/municipalityPotential'
 import type { MunicipalityTerritorialClassification } from '@/utilities/municipalityTerritorialClass'
+import type { MunicipalityIntraTerritoryCaptureBenchmark } from '@/utilities/territoryIntraCaptureBenchmark'
 import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
 /**
@@ -186,6 +187,7 @@ export const MunicipalityGoalAccountCard = ({
   goalCoverage,
   potential,
   territorialClass,
+  territoryCaptureBenchmark,
 }: {
   municipalityID: number
   expectedVotes: VoteEstimateScenarioViewModel
@@ -194,12 +196,27 @@ export const MunicipalityGoalAccountCard = ({
   goalCoverage: MunicipalityGoalCoverage
   potential: MunicipalityPotential
   territorialClass: MunicipalityTerritorialClassification
+  territoryCaptureBenchmark: MunicipalityIntraTerritoryCaptureBenchmark
 }) => {
   const usesMesaEstimate = expectedVotes.central != null
   const latestIntraFieldShareYear = Math.max(
     ...Object.keys(potential.intraFieldShareByYear).map(Number),
   )
   const latestIntraFieldShare = potential.intraFieldShareByYear[latestIntraFieldShareYear] ?? null
+
+  const benchmarkRatioLabel =
+    territoryCaptureBenchmark.ratioToMedian != null
+      ? `${territoryCaptureBenchmark.ratioToMedian.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}×`
+      : '—'
+  const benchmarkLead =
+    territoryCaptureBenchmark.medianCapture != null ? (
+      <>
+        Captura <strong>{benchmarkRatioLabel}</strong> a mediana do seu território (
+        {formatRatioAsPercentLabel(territoryCaptureBenchmark.medianCapture)}).
+      </>
+    ) : (
+      <>Sem mediana de captura no território — faltam tetos de 2022 nos pares.</>
+    )
 
   return (
     <section
@@ -310,6 +327,25 @@ export const MunicipalityGoalAccountCard = ({
               />
             }
           />
+        </dl>
+        <p className="text-xs text-muted-foreground">
+          {benchmarkLead}
+          {territoryCaptureBenchmark.beacon ? (
+            <>
+              {' '}
+              Referência no território:{' '}
+              <Link
+                href={`/campanha/municipios/${territoryCaptureBenchmark.beacon.slug}`}
+                className="font-medium text-primary underline underline-offset-4"
+              >
+                {territoryCaptureBenchmark.beacon.name}
+              </Link>{' '}
+              ({formatRatioAsPercentLabel(territoryCaptureBenchmark.beacon.captureRate)}). Leitura
+              para aprender mecanismo — não é nota.
+            </>
+          ) : null}
+        </p>
+        <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           <GoalAccountMetric
             label={`Share intracampo (${latestIntraFieldShareYear})`}
             value={formatRatioAsPercentLabel(latestIntraFieldShare)}

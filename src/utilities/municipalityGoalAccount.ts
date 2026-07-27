@@ -30,6 +30,10 @@ import {
   type MunicipalityTerritorialClassification,
 } from '@/utilities/municipalityTerritorialClass'
 import {
+  getMunicipalityIntraTerritoryCaptureBenchmark,
+  type MunicipalityIntraTerritoryCaptureBenchmark,
+} from '@/utilities/territoryIntraCaptureBenchmark'
+import {
   emptyMunicipalityPledgeAggregate,
   type MunicipalityPledgeAggregate,
 } from '@/utilities/votePledgeViews'
@@ -124,6 +128,8 @@ export type MunicipalityGoalAccount = {
   potential: MunicipalityPotential
   /** E10 — the one-word reading of `potential` plus the factors behind it. */
   territorialClass: MunicipalityTerritorialClassification
+  /** E12 T4 — capture vs median of peers in the same TI (or Metropolitano sub-group). */
+  territoryCaptureBenchmark: MunicipalityIntraTerritoryCaptureBenchmark
 }
 
 /**
@@ -154,5 +160,6 @@ export const loadMunicipalityGoalAccount = async (
     goalCoverage,
     potential,
     territorialClass: computeMunicipalityTerritorialClass(municipality.slug),
+    territoryCaptureBenchmark: getMunicipalityIntraTerritoryCaptureBenchmark(municipality.slug),
   }
 }

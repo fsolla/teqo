@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  computeTerritoryE12Rollup,
   computeTerritoryRollup,
   filterTerritoryRows,
   flattenTerritoryRows,
+  meanCaptureRateOfMunicipalities,
   sortTerritoryRows,
   type TerritoryMunicipalityInput,
 } from '@/utilities/territoryOverview'
+
+const emptyGoalCoverage = {
+  goal: 0,
+  committed: 0,
+  coverageRatio: null as number | null,
+  deficit: 0,
+}
 
 const input = (
   overrides: Partial<TerritoryMunicipalityInput> &
@@ -18,6 +27,9 @@ const input = (
   validVotesByYear: { 2022: 0 },
   estimate2026: 0,
   advisorCount: 0,
+  ownVotes2022: 0,
+  fieldCeiling2022: 0,
+  goalCoverage: emptyGoalCoverage,
   ...overrides,
 })
 
@@ -31,6 +43,9 @@ const fixture: TerritoryMunicipalityInput[] = [
     validVotesByYear: { 2022: 1000 },
     estimate2026: 40,
     advisorCount: 1,
+    ownVotes2022: 30,
+    fieldCeiling2022: 300,
+    goalCoverage: { goal: 100, committed: 20, coverageRatio: 0.2, deficit: 80 },
   }),
   input({
     slug: 'irece',
@@ -40,6 +55,9 @@ const fixture: TerritoryMunicipalityInput[] = [
     validVotesByYear: { 2022: 2000 },
     estimate2026: 35,
     advisorCount: 0,
+    ownVotes2022: 25,
+    fieldCeiling2022: 100,
+    goalCoverage: { goal: 50, committed: 10, coverageRatio: 0.2, deficit: 40 },
   }),
   // Velho Chico (TI 02) — 1 município, com assessor
   input({
@@ -50,6 +68,8 @@ const fixture: TerritoryMunicipalityInput[] = [
     validVotesByYear: { 2022: 5000 },
     estimate2026: 150,
     advisorCount: 2,
+    ownVotes2022: 120,
+    fieldCeiling2022: 1200,
   }),
   // Metropolitano de Salvador (TI 26) — Salvador (1 zona) + Camaçari (demais)
   input({
@@ -61,6 +81,8 @@ const fixture: TerritoryMunicipalityInput[] = [
     validVotesByYear: { 2022: 40000 },
     estimate2026: 1300,
     advisorCount: 1,
+    ownVotes2022: 1200,
+    fieldCeiling2022: 12000,
   }),
   input({
     slug: 'camacari',
@@ -70,6 +92,8 @@ const fixture: TerritoryMunicipalityInput[] = [
     validVotesByYear: { 2022: 8000 },
     estimate2026: 250,
     advisorCount: 0,
+    ownVotes2022: 220,
+    fieldCeiling2022: 2200,
   }),
 ]
 
@@ -192,5 +216,75 @@ describe('filterTerritoryRows', () => {
   it('keeps Metropolitano sub-rows attached when the parent matches', () => {
     const [metropolitano] = filterTerritoryRows(rows, { q: 'metropolitano' })
     expect(metropolitano.subRows).toHaveLength(2)
+  })
+})
+
+describe('computeTerritoryE12Rollup (MAUP)', () => {
+  const rows = computeTerritoryRollup(fixture)
+
+  it('uses ratio of aggregates, not mean of ratios, when municipalities differ', () => {
+    const heterogeneous: TerritoryMunicipalityInput[] = [
+      input({
+        slug: 'a',
+        region: 'Irecê',
+        city: 'A',
+        ownVotes2022: 10,
+        fieldCeiling2022: 100,
+        goalCoverage: emptyGoalCoverage,
+      }),
+      input({
+        slug: 'b',
+        region: 'Irecê',
+        city: 'B',
+        ownVotes2022: 90,
+        fieldCeiling2022: 100,
+        goalCoverage: emptyGoalCoverage,
+      }),
+    ]
+    const rollup = computeTerritoryE12Rollup(heterogeneous)
+    const mean = meanCaptureRateOfMunicipalities(heterogeneous)
+    expect(rollup.captureRate).toBeCloseTo(0.5, 6)
+    expect(mean).toBeCloseTo(0.5, 6)
+    // Same in this symmetric case — use skewed ceilings to diverge.
+    const skewed: TerritoryMunicipalityInput[] = [
+      input({
+        slug: 'low',
+        region: 'Irecê',
+        city: 'Low',
+        ownVotes2022: 10,
+        fieldCeiling2022: 1000,
+        goalCoverage: emptyGoalCoverage,
+      }),
+      input({
+        slug: 'high',
+        region: 'Irecê',
+        city: 'High',
+        ownVotes2022: 90,
+        fieldCeiling2022: 100,
+        goalCoverage: emptyGoalCoverage,
+      }),
+    ]
+    const skewedRollup = computeTerritoryE12Rollup(skewed)
+    const skewedMean = meanCaptureRateOfMunicipalities(skewed)!
+    expect(skewedRollup.captureRate).toBeCloseTo(100 / 1100, 6)
+    expect(skewedMean).not.toBeCloseTo(skewedRollup.captureRate!, 4)
+  })
+
+  it('names the municipality with the largest goal deficit as critical', () => {
+    const irece = rows.find((row) => row.region === 'Irecê')!
+    expect(irece.criticalMunicipality).toEqual({
+      slug: 'ibipeba',
+      name: 'ibipeba',
+      deficit: 80,
+    })
+    expect(irece.goalCoverage.goal).toBe(150)
+    expect(irece.goalCoverage.committed).toBe(30)
+  })
+
+  it('computes capture stats on Metropolitano sub-rows', () => {
+    const metro = rows.find((row) => row.region === 'Metropolitano de Salvador')!
+    const salvador = metro.subRows![0]
+    expect(salvador.captureRate).not.toBeNull()
+    expect(salvador.medianCapture).not.toBeNull()
   })
 })

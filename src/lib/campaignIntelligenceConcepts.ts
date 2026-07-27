@@ -29,6 +29,8 @@ export type CampaignConceptId =
   | 'posicao-no-municipio'
   | 'meta'
   | 'cobertura-da-meta'
+  | 'captura-regional'
+  | 'benchmark-intra-ti'
 
 export type CampaignConceptCategoryId = 'base' | 'diagnostico' | 'meta'
 
@@ -95,7 +97,37 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
     example: '1.200 votos de Solla sobre um teto de 12.000 = 10% de captura.',
     whyItMatters:
       'Separa "município pequeno" de "município onde o campo é grande e a campanha não chegou". Captura baixa com teto alto é espaço a ocupar; captura alta é base a defender. É só diagnóstico: não entra no cálculo da meta, para não premiar o que já está consolidado nem punir onde ainda não se trabalhou.',
-    whereItAppears: 'Card "Conta da cadeira", no detalhe do município ("Captura (2022)").',
+    whereItAppears:
+      'Card "Conta da cadeira", no detalhe do município ("Captura (2022)"), e a coluna "Captura" em `/campanha/territorios`.',
+  },
+  {
+    id: 'captura-regional',
+    categoryID: 'diagnostico',
+    title: 'Captura regional (território)',
+    oneLiner:
+      'Quanto do teto do campo o Jorge Solla conquistou em 2022, somando todos os municípios do Território de Identidade.',
+    formula:
+      'captura do TI = Σ votos de Solla (2022) nos municípios do território ÷ Σ tetos do campo (2022) nos mesmos municípios. A mediana e a amplitude vêm das capturas município a município — só para leitura, nunca como substituto do agregado.',
+    example:
+      'Dois municípios com 10% e 50% de captura não têm "30% no território" se os tetos forem muito diferentes — o número certo é a soma dos votos ÷ soma dos tetos.',
+    whyItMatters:
+      'Evita a média que mente (MAUP): uma média de percentuais esconde onde o campo é grande e a campanha não chegou. O agregado do território sempre vem com mediana, amplitude e município crítico (maior déficit de meta) a um clique.',
+    whereItAppears: 'Coluna "Captura" em `/campanha/territorios` (tooltip com decomposição).',
+  },
+  {
+    id: 'benchmark-intra-ti',
+    categoryID: 'diagnostico',
+    title: 'Benchmark intra-TI (captura)',
+    oneLiner:
+      'Compara a captura deste município com a mediana dos pares no mesmo Território de Identidade.',
+    formula:
+      'razão = captura do município ÷ mediana das capturas dos municípios do mesmo TI (Salvador compara só com as 19 zonas; demais RMS só entre si).',
+    example:
+      'Captura 12% com mediana 6% no TI = 2× a mediana — mecanismo acima do padrão local, não "nota".',
+    whyItMatters:
+      'Responde se o município rende acima ou abaixo do que o próprio território já mostrou possível — aprendizado de mecanismo, não régua punitiva entre TIs.',
+    whereItAppears:
+      'Parágrafo abaixo de "Captura (2022)" no card "Conta da cadeira" do detalhe do município.',
   },
   {
     id: 'share-intracampo',
@@ -148,7 +180,7 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
     whyItMatters:
       'Responde onde a perna vai na semana: defender reduto dormente ou abrir rede em expansão. A classe é sugestão, não sentença — ela nunca aparece sozinha, sempre com os dois fatores que a produziram, e a mesa pode decidir contra ela. Os cortes exatos (2 e 0,5) são ilustrativos: valem até o backtest contra 2014–2022 calibrá-los.',
     whereItAppears:
-      'Card "Conta da cadeira" e capa do dossiê, no detalhe do município, e a coluna "Classe" da lista de municípios (com filtro e ordenação).',
+      'Card "Conta da cadeira" e capa do dossiê, no detalhe do município, coluna "Classe" da lista de municípios (com filtro e ordenação), e coluna "Classe" em `/campanha/territorios`.',
   },
   {
     id: 'quantis-do-mapa',
@@ -205,7 +237,7 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
     whyItMatters:
       'É a diferença entre querer e ter: a expectativa da mesa define a meta, mas nunca conta como compromisso — se contasse, todo município com estimativa preenchida apareceria coberto sem uma única liderança por trás. O déficit descoberto é o que ordena onde a campanha precisa de mais rede.',
     whereItAppears:
-      'Início (staff), visão geral e coluna "Cobertura da meta" na lista de municípios, e o card "Conta da cadeira" no detalhe.',
+      'Início (staff), visão geral e coluna "Cobertura da meta" na lista de municípios, coluna homônima em `/campanha/territorios`, e o card "Conta da cadeira" no detalhe.',
   },
 ]
 

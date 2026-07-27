@@ -1,23 +1,56 @@
 /**
  * E17 — Territórios de Identidade comparative rollup for the staff Início.
+ * E12 — extends rows with goal coverage, capture (MAUP), critical municipality.
  *
- * First slice of the TI layer (E12 extends). Only sums and ratios of aggregates
- * — never a mean of ratios (MAUP safeguard). The Metropolitano de Salvador TI
- * is always decomposed into two sub-rows (Salvador = 19 zones, Demais RMS),
- * the permanent exception from the discovery report (24,4% of the electorate).
+ * Only sums and ratios of aggregates — never a mean of ratios (MAUP safeguard).
+ * The Metropolitano de Salvador TI is always decomposed into two sub-rows
+ * (Salvador = 19 zones, Demais RMS).
  *
- * This module is **client-safe** (no `server-only`, no Payload/artifact imports):
- * `computeTerritoryRollup` / `sortTerritoryRows` are pure and unit-tested with a
- * fixture. The server loader lives in `loadTerritoryOverview.ts`.
+ * This module is **client-safe** (no `server-only`, no Payload imports):
+ * `computeTerritoryRollup` / `sortTerritoryRows` are pure and unit-tested.
+ * Territorial class is attached in `loadTerritoryOverview.ts` (B13 artifact).
  */
 
+import { medianOf } from '@/lib/median'
+import { territorialClassSortWeight } from '@/lib/territorialClassSortWeight'
 import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
+import type { MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
+import { aggregateGoalCoverage } from '@/utilities/goalCoverage'
+import type {
+  MunicipalityTerritorialClassification,
+} from '@/utilities/municipalityTerritorialClass'
 
-const SALVADOR_CITY = 'Salvador'
-const SALVADOR_SUB_LABEL = 'Salvador (19 zonas)'
+export const METROPOLITANO_REGION = 'Metropolitano de Salvador'
+export const SALVADOR_CITY = 'Salvador'
+/** Metropolitano sub-row label — shared with `loadTerritoryOverview` for aggregate class slugs. */
+export const METROPOLITANO_SALVADOR_SUB_ROW_LABEL = 'Salvador (19 zonas)'
+const SALVADOR_SUB_LABEL = METROPOLITANO_SALVADOR_SUB_ROW_LABEL
 const RMS_DEMAIS_SUB_LABEL = 'Demais municípios da RMS'
-const METROPOLITANO_REGION = 'Metropolitano de Salvador'
 const ELECTION_YEAR_2022 = '2022'
+
+type TerritoryCriticalMunicipality = {
+  slug: string
+  name: string
+  deficit: number
+}
+
+type TerritoryCaptureBeacon = {
+  slug: string
+  name: string
+  captureRate: number
+}
+
+/** E12 metrics shared by parent rows and Metropolitano sub-rows. */
+export type TerritoryE12Rollup = {
+  goalCoverage: MunicipalityGoalCoverage
+  /** Σ own ÷ Σ ceiling — never the mean of per-municipality capture rates. */
+  captureRate: number | null
+  medianCapture: number | null
+  captureMin: number | null
+  captureMax: number | null
+  criticalMunicipality: TerritoryCriticalMunicipality | null
+  captureBeacon: TerritoryCaptureBeacon | null
+}
 
 export type TerritoryMunicipalityInput = {
   slug: string
@@ -29,6 +62,9 @@ export type TerritoryMunicipalityInput = {
   validVotesByYear: Record<string, number>
   estimate2026: number
   advisorCount: number
+  ownVotes2022: number
+  fieldCeiling2022: number
+  goalCoverage: MunicipalityGoalCoverage
 }
 
 type TerritoryOverviewSubRow = {
@@ -39,7 +75,9 @@ type TerritoryOverviewSubRow = {
   estimate2026: number
   withAdvisorCount: number
   pctPropriaVotacao: number
-}
+} & TerritoryE12Rollup & {
+    territorialClass?: MunicipalityTerritorialClassification | null
+  }
 
 export type TerritoryOverviewRow = {
   region: string
@@ -50,7 +88,9 @@ export type TerritoryOverviewRow = {
   estimate2026: number
   withAdvisorCount: number
   subRows?: TerritoryOverviewSubRow[]
-}
+} & TerritoryE12Rollup & {
+    territorialClass?: MunicipalityTerritorialClassification | null
+  }
 
 export type TerritoryTableRow =
   | ({ variant: 'parent' } & Omit<TerritoryOverviewRow, 'subRows'>)
@@ -64,6 +104,9 @@ export type TerritorySortKey =
   | 'validVotes2022'
   | 'estimate2026'
   | 'coverage'
+  | 'cobertura'
+  | 'captura'
+  | 'classe'
 
 export type TerritorySortDir = 'asc' | 'desc'
 
@@ -74,6 +117,71 @@ type Accumulator = {
   validVotes2022: number
   estimate2026: number
   withAdvisorCount: number
+}
+
+/**
+ * E12 rollup for a set of municipalities in one TI (or Metropolitano sub-group).
+ * Exposes aggregate capture vs mean-of-ratios only through tests — UI uses aggregate.
+ */
+export const computeTerritoryE12Rollup = (
+  inputs: ReadonlyArray<TerritoryMunicipalityInput>,
+): TerritoryE12Rollup => {
+  const goalCoverage = aggregateGoalCoverage(inputs.map((input) => input.goalCoverage))
+
+  let sumOwn = 0
+  let sumCeiling = 0
+  const perMunicipalityRates: number[] = []
+  let criticalMunicipality: TerritoryCriticalMunicipality | null = null
+  let captureBeacon: TerritoryCaptureBeacon | null = null
+
+  for (const input of inputs) {
+    sumOwn += input.ownVotes2022
+    sumCeiling += input.fieldCeiling2022
+
+    if (input.fieldCeiling2022 > 0) {
+      const rate = input.ownVotes2022 / input.fieldCeiling2022
+      perMunicipalityRates.push(rate)
+      if (!captureBeacon || rate > captureBeacon.captureRate) {
+        captureBeacon = { slug: input.slug, name: input.name, captureRate: rate }
+      }
+    }
+
+    if (input.goalCoverage.goal > 0) {
+      if (!criticalMunicipality || input.goalCoverage.deficit > criticalMunicipality.deficit) {
+        criticalMunicipality = {
+          slug: input.slug,
+          name: input.name,
+          deficit: input.goalCoverage.deficit,
+        }
+      }
+    }
+  }
+
+  const captureRate = sumCeiling > 0 ? sumOwn / sumCeiling : null
+  const medianCapture = medianOf(perMunicipalityRates)
+  const captureMin = perMunicipalityRates.length > 0 ? Math.min(...perMunicipalityRates) : null
+  const captureMax = perMunicipalityRates.length > 0 ? Math.max(...perMunicipalityRates) : null
+
+  return {
+    goalCoverage,
+    captureRate,
+    medianCapture,
+    captureMin,
+    captureMax,
+    criticalMunicipality,
+    captureBeacon,
+  }
+}
+
+/** Mean of per-municipality capture rates — MAUP alarm only; not shown in UI. */
+export const meanCaptureRateOfMunicipalities = (
+  inputs: ReadonlyArray<TerritoryMunicipalityInput>,
+): number | null => {
+  const rates = inputs
+    .filter((input) => input.fieldCeiling2022 > 0)
+    .map((input) => input.ownVotes2022 / input.fieldCeiling2022)
+  if (rates.length === 0) return null
+  return rates.reduce((sum, rate) => sum + rate, 0) / rates.length
 }
 
 const createAccumulator = (region: string): Accumulator => ({
@@ -98,7 +206,11 @@ const accumulateInto = (acc: Accumulator, input: TerritoryMunicipalityInput): vo
 const pctOf = (acc: Accumulator, stateTotal2022: number): number =>
   stateTotal2022 > 0 ? (acc.votesByYear[ELECTION_YEAR_2022] ?? 0) / stateTotal2022 : 0
 
-const finalizeRow = (acc: Accumulator, stateTotal2022: number): TerritoryOverviewRow => ({
+const finalizeRow = (
+  acc: Accumulator,
+  stateTotal2022: number,
+  e12: TerritoryE12Rollup,
+): TerritoryOverviewRow => ({
   region: acc.region,
   municipalityCount: acc.municipalityCount,
   votesByYear: { ...acc.votesByYear },
@@ -106,12 +218,14 @@ const finalizeRow = (acc: Accumulator, stateTotal2022: number): TerritoryOvervie
   pctPropriaVotacao: pctOf(acc, stateTotal2022),
   estimate2026: acc.estimate2026,
   withAdvisorCount: acc.withAdvisorCount,
+  ...e12,
 })
 
 const finalizeSubRow = (
   label: string,
   acc: Accumulator,
   stateTotal2022: number,
+  e12: TerritoryE12Rollup,
 ): TerritoryOverviewSubRow => ({
   label,
   municipalityCount: acc.municipalityCount,
@@ -120,7 +234,23 @@ const finalizeSubRow = (
   estimate2026: acc.estimate2026,
   withAdvisorCount: acc.withAdvisorCount,
   pctPropriaVotacao: pctOf(acc, stateTotal2022),
+  ...e12,
 })
+
+const inputsInRegion = (
+  inputs: ReadonlyArray<TerritoryMunicipalityInput>,
+  region: string,
+): TerritoryMunicipalityInput[] => inputs.filter((input) => input.region === region)
+
+const metropolitanoSalvadorInputs = (
+  inputs: ReadonlyArray<TerritoryMunicipalityInput>,
+): TerritoryMunicipalityInput[] =>
+  inputs.filter((input) => input.region === METROPOLITANO_REGION && input.city === SALVADOR_CITY)
+
+const metropolitanoDemaisInputs = (
+  inputs: ReadonlyArray<TerritoryMunicipalityInput>,
+): TerritoryMunicipalityInput[] =>
+  inputs.filter((input) => input.region === METROPOLITANO_REGION && input.city !== SALVADOR_CITY)
 
 /**
  * Computes the 27-TI comparative rollup. Rows are returned in first-seen order
@@ -141,10 +271,6 @@ export const computeTerritoryRollup = (
   const metropolitanoDemais = createAccumulator(METROPOLITANO_REGION)
 
   for (const input of inputs) {
-    // Metropolitano inputs are decomposed into the Salvador/Demais sub-rows
-    // below AND rolled into the parent TI total — this is intentional, not a
-    // double-count: the parent row sums all of Metropolitano, the sub-rows
-    // break it down.
     if (input.region === METROPOLITANO_REGION) {
       if (input.city === SALVADOR_CITY) {
         accumulateInto(metropolitanoSalvador, input)
@@ -159,17 +285,39 @@ export const computeTerritoryRollup = (
 
   const rows: TerritoryOverviewRow[] = []
   for (const acc of byRegion.values()) {
-    const row = finalizeRow(acc, stateTotal2022)
+    const regionInputs = inputsInRegion(inputs, acc.region)
+    const e12 = computeTerritoryE12Rollup(regionInputs)
+    const row = finalizeRow(acc, stateTotal2022, e12)
     if (acc.region === METROPOLITANO_REGION) {
       row.subRows = [
-        finalizeSubRow(SALVADOR_SUB_LABEL, metropolitanoSalvador, stateTotal2022),
-        finalizeSubRow(RMS_DEMAIS_SUB_LABEL, metropolitanoDemais, stateTotal2022),
+        finalizeSubRow(
+          SALVADOR_SUB_LABEL,
+          metropolitanoSalvador,
+          stateTotal2022,
+          computeTerritoryE12Rollup(metropolitanoSalvadorInputs(inputs)),
+        ),
+        finalizeSubRow(
+          RMS_DEMAIS_SUB_LABEL,
+          metropolitanoDemais,
+          stateTotal2022,
+          computeTerritoryE12Rollup(metropolitanoDemaisInputs(inputs)),
+        ),
       ]
     }
     rows.push(row)
   }
 
   return rows
+}
+
+const goalCoverageSortValue = (row: TerritoryE12Rollup): number =>
+  row.goalCoverage.coverageRatio ?? -1
+
+const classeSortValue = (row: TerritoryOverviewRow | TerritoryOverviewSubRow): number => {
+  const weight = row.territorialClass
+    ? territorialClassSortWeight[row.territorialClass.class]
+    : null
+  return weight ?? -1
 }
 
 const rowSortValue = (row: TerritoryOverviewRow, key: TerritorySortKey): number | string => {
@@ -188,6 +336,12 @@ const rowSortValue = (row: TerritoryOverviewRow, key: TerritorySortKey): number 
       return row.estimate2026
     case 'coverage':
       return row.municipalityCount > 0 ? row.withAdvisorCount / row.municipalityCount : 0
+    case 'cobertura':
+      return goalCoverageSortValue(row)
+    case 'captura':
+      return row.captureRate ?? -1
+    case 'classe':
+      return classeSortValue(row)
   }
 }
 
