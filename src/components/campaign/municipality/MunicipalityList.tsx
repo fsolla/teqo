@@ -118,7 +118,7 @@ const VotePositionReadout = ({
 
 /**
  * E10 classe. In the table only the pill is visible — spelling the factors out
- * under it still bloats the sticky/dense row even with B41's horizontal scroll,
+ * under it still bloats the sticky/dense row even with horizontal scroll,
  * so the "por quê" moves to the column's `cellTooltip` (hover, focus and tap)
  * and stays as `sr-only` text; the card has the width to show it outright.
  * Either way the class never reaches anyone as a bare verdict, which is the
@@ -612,8 +612,7 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
         })}
       </div>
 
-      {/* overflow-visible overrides CampaignTable's overflow-hidden so sticky can
-          paint. A sticky <th> can't paint the row border, hence the inset shadow. */}
+      {/* A sticky <th> can't paint the row border, hence the inset shadow. */}
       <CampaignTable
         className="hidden overflow-visible md:block"
         containerClassName="overflow-x-auto"
