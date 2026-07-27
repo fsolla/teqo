@@ -7,6 +7,7 @@ import type { Media } from '@/payload-types'
 import { getCachedDocumentById, getPetitionIds } from '@/utilities/documentReads'
 import { extractFirstImageFromLexical } from '@/utilities/extractFirstImageFromLexical'
 import { getCachedGlobal } from '@/utilities/globalReads'
+import { absoluteSitePath, resolveSiteMetadata, toAbsoluteUrl, truncate } from '@/utilities/seo'
 import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -14,16 +15,6 @@ import { notFound } from 'next/navigation'
 import type { Article, WithContext } from 'schema-dts'
 
 const MAX_DESCRIPTION_LENGTH = 200
-
-const stripTrailingSlash = (url: string) => url.replace(/\/+$/, '')
-
-const truncate = (text: string, max: number) =>
-  text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`
-
-const toAbsoluteUrl = (url: string, siteUrl: string) =>
-  /^https?:\/\//i.test(url)
-    ? url
-    : `${stripTrailingSlash(siteUrl)}${url.startsWith('/') ? '' : '/'}${url}`
 
 export async function generateStaticParams() {
   // Build-time enumeration only needs the ids — skip relationship population.
@@ -45,8 +36,13 @@ export async function generateMetadata({
   }
 
   const globalMetadata = await getCachedGlobal('metadata')()
-  const siteUrl = stripTrailingSlash(globalMetadata.URL)
-  const canonicalUrl = `${siteUrl}/abaixo-assinado/${petition.id}`
+  const {
+    siteUrl,
+    siteName,
+    twitterCreator,
+    keywords: baseKeywords,
+  } = resolveSiteMetadata(globalMetadata)
+  const canonicalUrl = absoluteSitePath(siteUrl, `/abaixo-assinado/${petition.id}`)
 
   const bodyImage = extractFirstImageFromLexical(petition.body)
   let fallbackImage: Media | null = null
@@ -59,18 +55,11 @@ export async function generateMetadata({
   const image = bodyImage ?? fallbackImage
 
   const description = truncate(petition.subtitle, MAX_DESCRIPTION_LENGTH)
-  const title = `${petition.title} | ${globalMetadata.openGraph.siteName}`
+  const title = `${petition.title} | ${siteName}`
 
-  const keywords = [
-    ...globalMetadata.keywords
-      .map((k) => (typeof k === 'string' ? k : k.keyword))
-      .filter((k): k is string => typeof k === 'string'),
-    'abaixo-assinado',
-    'petição',
-    petition.title,
-  ]
+  const keywords = [...baseKeywords, 'abaixo-assinado', 'petição', petition.title]
 
-  const imageUrl = image?.url ? toAbsoluteUrl(image.url, siteUrl) : undefined
+  const imageUrl = image?.url && siteUrl ? toAbsoluteUrl(image.url, siteUrl) : undefined
 
   const ogImages = imageUrl
     ? [
@@ -89,14 +78,12 @@ export async function generateMetadata({
     title,
     description,
     keywords,
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    ...(canonicalUrl ? { alternates: { canonical: canonicalUrl } } : {}),
     openGraph: {
       type: 'article',
       locale: 'pt-BR',
-      url: canonicalUrl,
-      siteName: globalMetadata.openGraph.siteName,
+      ...(canonicalUrl ? { url: canonicalUrl } : {}),
+      siteName,
       title,
       description,
       images: ogImages,
@@ -107,7 +94,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      creator: globalMetadata.twitter.creator,
+      creator: twitterCreator,
       images: ogImages.map((img) => img.url),
     },
   }
@@ -122,8 +109,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   }
 
   const globalMetadata = await getCachedGlobal('metadata')()
-  const siteUrl = stripTrailingSlash(globalMetadata.URL)
-  const canonicalUrl = `${siteUrl}/abaixo-assinado/${petition.id}`
+  const { siteUrl, siteName } = resolveSiteMetadata(globalMetadata)
+  const canonicalUrl = absoluteSitePath(siteUrl, `/abaixo-assinado/${petition.id}`)
 
   const bodyImage = extractFirstImageFromLexical(petition.body)
   let fallbackImage: Media | null = null
@@ -134,7 +121,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         : globalMetadata.image
   }
   const ogImage = bodyImage ?? fallbackImage
-  const ogImageUrl = ogImage?.url ? toAbsoluteUrl(ogImage.url, siteUrl) : undefined
+  const ogImageUrl = ogImage?.url && siteUrl ? toAbsoluteUrl(ogImage.url, siteUrl) : undefined
 
   const jsonLd: WithContext<Article> = {
     '@context': 'https://schema.org',
@@ -142,20 +129,24 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     headline: petition.title,
     description: truncate(petition.subtitle, MAX_DESCRIPTION_LENGTH),
     inLanguage: 'pt-BR',
-    url: canonicalUrl,
-    mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+    ...(canonicalUrl
+      ? {
+          url: canonicalUrl,
+          mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+        }
+      : {}),
     datePublished: petition.createdAt,
     dateModified: petition.updatedAt,
     ...(ogImageUrl ? { image: [ogImageUrl] } : {}),
     author: {
       '@type': 'Organization',
-      name: globalMetadata.openGraph.siteName,
-      url: siteUrl,
+      name: siteName,
+      ...(siteUrl ? { url: siteUrl } : {}),
     },
     publisher: {
       '@type': 'Organization',
-      name: globalMetadata.openGraph.siteName,
-      url: siteUrl,
+      name: siteName,
+      ...(siteUrl ? { url: siteUrl } : {}),
     },
   }
 
