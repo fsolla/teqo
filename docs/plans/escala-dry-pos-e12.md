@@ -40,9 +40,9 @@ Responsável: —
 
 ## Explicitamente fora (triage close-delivery 2026-07-26)
 
-| Achado | Destino | Gatilho / racional |
-| --- | --- | --- |
-| Módulo Metropolitano peers | defer → F1 | 4º call site ou regra de peers mais complexa |
-| E8 bundle escopado a `central` | defer | `?scenario=` na lista de TIs ou perf |
-| Célula classe compartilhada | descartar | score 2; 2 surfaces |
-| Memo peer-group T4 | defer → F2 | profiling no detalhe |
+| Achado                         | Destino    | Gatilho / racional                           |
+| ------------------------------ | ---------- | -------------------------------------------- |
+| Módulo Metropolitano peers     | defer → F1 | 4º call site ou regra de peers mais complexa |
+| E8 bundle escopado a `central` | defer      | `?scenario=` na lista de TIs ou perf         |
+| Célula classe compartilhada    | descartar  | score 2; 2 surfaces                          |
+| Memo peer-group T4             | defer → F2 | profiling no detalhe                         |

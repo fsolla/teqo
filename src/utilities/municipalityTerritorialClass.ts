@@ -5,8 +5,8 @@ import {
   type MunicipalityFederalBaseline,
 } from '@/lib/bahiaElectionAggregates'
 import { ELECTION_YEAR_2022 } from '@/lib/electionResults'
-import { computeVoteRankByYear } from '@/lib/municipalityVoteRank'
 import { medianOf } from '@/lib/median'
+import { computeVoteRankByYear } from '@/lib/municipalityVoteRank'
 import { TERRITORIAL_CLASS_ANCHORS } from '@/lib/territorialClassAnchors'
 import { territorialClassSortWeight } from '@/lib/territorialClassSortWeight'
 import {

@@ -16,9 +16,7 @@ import { territorialClassSortWeight } from '@/lib/territorialClassSortWeight'
 import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 import type { MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
 import { aggregateGoalCoverage } from '@/utilities/goalCoverage'
-import type {
-  MunicipalityTerritorialClassification,
-} from '@/utilities/municipalityTerritorialClass'
+import type { MunicipalityTerritorialClassification } from '@/utilities/municipalityTerritorialClass'
 
 export const METROPOLITANO_REGION = 'Metropolitano de Salvador'
 export const SALVADOR_CITY = 'Salvador'

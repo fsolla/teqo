@@ -11,10 +11,7 @@ import { getMunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
 import { medianOf } from '@/lib/median'
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import { captureRate } from '@/utilities/municipalityPotential'
-import {
-  METROPOLITANO_REGION,
-  SALVADOR_CITY,
-} from '@/utilities/territoryOverview'
+import { METROPOLITANO_REGION, SALVADOR_CITY } from '@/utilities/territoryOverview'
 
 type TerritoryCaptureBeacon = {
   slug: string
