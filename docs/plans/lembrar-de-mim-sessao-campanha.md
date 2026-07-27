@@ -1,7 +1,7 @@
 # Lembrar de mim / sessão longa em `/campanha`
 
-Status: rascunho
-Atualizado em: 2026-07-26
+Status: entregue em código (2026-07-27)
+Atualizado em: 2026-07-27
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B39)
 Impeccable: B — encaixe no `LoginForm` + cookie `campaign-token`; sem rota nova
 Appetite: ~0,5 dia eng; checkbox + duas durações de JWT/cookie + testes; sem migration
@@ -27,18 +27,26 @@ Dados: N/A — auth/sessão; nenhum KPI/série/mapa.
 
 ## Contexto
 
-A sessão de `/campanha` é o cookie httpOnly `campaign-token` (`path: '/campanha'`, `sameSite: 'lax'`, `secure` em produção), setado por [`setCampaignAuthCookie`](../../src/utilities/campaignAuth.ts) após `payload.login` em [`loginCampaign`](<../../src/app/(campaign)/campanha/actions/auth.ts>). O `maxAge` do cookie espelha `campaignUser.config.auth.tokenExpiration`, com fallback **`DEFAULT_TOKEN_EXPIRATION = 7200`** (2 horas). A collection [`CampaignUser`](../../src/collections/CampaignUser.ts) **não declara** `tokenExpiration` hoje — Payload + o fallback deixam a sessão curta demais para mesa/campo. Não há checkbox "Lembrar de mim"; o `LoginForm` só pede identificador + senha.
+A sessão de `/campanha` era o cookie httpOnly `campaign-token` (`path: '/campanha'`, `sameSite: 'lax'`, `secure` em produção), setado por [`setCampaignAuthCookie`](../../src/utilities/campaignAuth.ts) após `payload.login` em [`loginCampaign`](<../../src/app/(campaign)/campanha/actions/auth.ts>). Antes desta entrega, Payload aplicava seu default de **7.200 s** (2 horas) ao JWT e o helper repetia esse valor no `maxAge`. Não havia checkbox "Lembrar de mim"; o `LoginForm` só pedia identificador + senha.
 
 Pedido de produto (2026-07-26): o usuário é deslogado com frequência; oferecer "Lembrar de mim neste dispositivo" e manter a sessão por mais tempo.
 
 PWA (D1 ✓): o SW envia o cookie automaticamente nos `fetch`; logout já limpa caches (`clearCampaignPwaCaches`). Sessão mais longa beneficia o PWA instalado sem mudar o modelo de auth.
+
+## Revisão na entrega
+
+- **`payload.login` não aceita TTL por chamada.** `CampaignUser.auth.tokenExpiration` passou ao teto de 14 dias e `setCampaignAuthCookie` re-assina o mesmo conjunto de claims com 8 horas no caminho padrão.
+- **`useSessions` é `true` por default no Payload.** A sessão armazenada precisa nascer com o teto longo; deixá-la em 8 horas e só alongar o JWT lembrado faria outro login podar a sessão longa como expirada.
+- **Logout só apagava o cookie.** Com TTL de 14 dias, isso deixaria um token reutilizável no aparelho. `logoutCampaign` agora autentica o token e delega a remoção da sessão corrente à operação transacional pública `logoutOperation` do Payload antes de apagar o cookie; falha de revogação nunca impede a limpeza local.
+- **Custo aceito:** `POST /api/campaignUser/login` direto emite o `payload-token` de 14 dias. A aplicação `/campanha` não lê esse cookie: usa apenas `campaign-token`, path `/campanha`, re-assinado para 8 horas salvo opt-in.
+- **Medições:** `pnpm migrate:create __probe` informou “No schema changes detected”; o smoke E2E confirmou `campaign-token.expires` em ~14 dias com o checkbox marcado.
 
 ## Objetivos
 
 - No login, checkbox **"Lembrar de mim neste dispositivo"** (default **desmarcado**).
 - Sessão **sem** lembrar: duração de **dia de trabalho** (recomendação: **8 h**), não 2 h.
 - Sessão **com** lembrar: duração **longa** (recomendação: **14 dias**), JWT + cookie alinhados.
-- Logout explícito continua invalidando o cookie (`maxAge: 0`) e os caches PWA.
+- Logout explícito revoga a sessão no servidor, invalida o cookie (`maxAge: 0`) e mantém a limpeza de caches PWA.
 - Guardrails: sem migration, sem collection, sem Consent novo; cookie permanece httpOnly / path `/campanha` / isolado de `payload-token`; `leader` e staff no mesmo contrato.
 
 ## Decisões travadas
@@ -48,17 +56,17 @@ PWA (D1 ✓): o SW envia o cookie automaticamente nos `fetch`; logout já limpa 
 - **Sem persistir a senha no cliente.** "Lembrar" = duração do token, não Credential Manager nem `localStorage` de senha. Biometria / WebAuthn fica em **B40**. **Rejeitado:** autofill como "feature" de produto (já é do browser); guardar credenciais em plain storage.
 - **i18n e naming** (AGENTS.md): identificadores `rememberMe`, `CAMPAIGN_SESSION_TTL_SHORT` / `_LONG` (ou nomes equivalentes); copy pt-BR "Lembrar de mim neste dispositivo".
 
-## Questões em aberto
+## Questões resolvidas
 
-- **Durações exatas (8 h / 14 d)?** **Opções:** A) 8 h + 14 d _(recomendado)_ | B) 12 h + 30 d | C) 4 h + 7 d. **Recomendação:** A — dia de trabalho tipico + quinzena cobrindo giro sem re-login diário; 30 d é agressivo com PII de apoiadores ainda sob hold jurídico. _(assumido — validar com produto / assessoria se o lote jurídico quiser teto menor.)_
+- **Durações:** 8 horas sem opt-in e 14 dias com “Lembrar de mim”, decididas pelo produto nesta entrega.
 
 ## Abordagem proposta
 
 ```mermaid
 flowchart LR
   form["LoginForm + checkbox rememberMe"] --> action["loginCampaign"]
-  action --> login["payload.login<br/>tokenExpiration short|long"]
-  login --> cookie["setCampaignAuthCookie<br/>maxAge = tokenExpiration"]
+  action --> login["payload.login<br/>JWT + session 14 d"]
+  login --> cookie["setCampaignAuthCookie<br/>re-sign 8 h ou mantém 14 d"]
   cookie --> gate["getCampaignUser<br/>(layout app)"]
 ```
 
@@ -67,8 +75,9 @@ Componentes:
 - **`src/lib/schemas/campaign-login.ts`**: campo opcional `rememberMe` (boolean / "on").
 - **`LoginForm.tsx`**: `Checkbox` + label; `name="rememberMe"`; `autoComplete` inalterado.
 - **`loginCampaign` / `setCampaignAuthCookie`**: aceitar TTL explícito; alinhar JWT + cookie; constantes numéricas num módulo pequeno (`campaignSessionTtl.ts` em `lib/` se puro).
-- **`CampaignUser` auth config**: se Payload exigir `tokenExpiration` estático na collection, usar o **máximo** (longo) na config e emitir tokens com `exp` menor no caminho curto — ou o mecanismo que o Payload 3 expuser sem segundo cookie. Confirmar na implementação lendo a API de `payload.login` / collection auth (depth check: não inventar refresh token).
-- **Testes:** unit do schema; int do login com/sem remember (cookie `maxAge` / claim `exp` se observável); e2e smoke do checkbox opcional.
+- **`CampaignUser` auth config**: `tokenExpiration = CAMPAIGN_SESSION_TTL_LONG`; o caminho curto re-assina por API pública `jwtSign`, com `payload.secret`.
+- **Logout:** autentica o token, revoga só a sessão corrente via `logoutOperation` do Payload e sempre apaga o cookie.
+- **Testes:** unit de claims/`exp`/`maxAge` e action/FormData; int de autenticação após revogação; e2e do checkbox e expiração longa.
 - **Migration:** nenhuma.
 
 Depth check: reusa `setCampaignAuthCookie`, `CAMPAIGN_TOKEN_COOKIE`, form action existente. Não cria sessão paralela nem collection de refresh.
@@ -87,7 +96,7 @@ Depth check: reusa `setCampaignAuthCookie`, `CAMPAIGN_TOKEN_COOKIE`, form action
 ## Rabbit holes
 
 - **Refresh-token / dual-cookie.** Se alguém “só completar” com refresh: segundo segredo, rotação, invalidação no logout, testes de race. **Mitigação:** uma JWT + um cookie, duas durações no emit.
-- **`tokenExpiration` estático na collection vs por login.** Payload pode não aceitar TTL por request. **Mitigação:** medir na Fase 1 da implementação; se só houver TTL estático, config = longo e o caminho curto usa cookie `maxAge` menor **somente se** o JWT curto for emitível — senão documentar e cair para default único alongado + checkbox como no-op visual (falha de produto: não mentir). Preferir falhar o gate a mentir a duração.
+- **`tokenExpiration` estático na collection vs por login.** Resolvido: Payload não aceita TTL por request, mas exporta `jwtSign`; config = longo e o helper re-assina para o curto preservando `id`/`collection`/`role`/`email`/`sid`.
 
 ## Adiado com gatilho
 
@@ -97,7 +106,7 @@ Depth check: reusa `setCampaignAuthCookie`, `CAMPAIGN_TOKEN_COOKIE`, form action
 ## Referências
 
 - `docs/roadmap.md` (Trilha B · B39)
-- `src/utilities/campaignAuth.ts` — cookie + `DEFAULT_TOKEN_EXPIRATION`
+- `src/utilities/campaignAuth.ts` — re-assinatura, cookie e revogação de sessão
 - `src/app/(campaign)/campanha/actions/auth.ts` — `loginCampaign` / logout
 - `src/app/(campaign)/campanha/login/LoginForm.tsx`
 - `src/collections/CampaignUser.ts` — auth

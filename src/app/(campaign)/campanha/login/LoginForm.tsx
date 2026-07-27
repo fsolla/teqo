@@ -7,13 +7,22 @@ import { loginCampaignFormAction, type LoginResult } from '@/app/(campaign)/camp
 import { CampaignAuthCardHeader } from '@/components/campaign/auth/CampaignAuthCardHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Checkbox } from '@/components/ui/Checkbox'
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import {
   CAMPAIGN_FIRST_ACCESS_HINT,
   CAMPAIGN_LEADERSHIP_LOGIN_RECOVERY_HINT,
   CAMPAIGN_LOGIN_SUBTITLE,
+  CAMPAIGN_REMEMBER_ME_DESCRIPTION,
   campaignAuthMutedTextClassName,
   campaignAuthTextLinkClassName,
 } from '@/lib/campaignAuthCopy'
@@ -75,6 +84,21 @@ export const LoginForm = () => {
                 aria-invalid={hasAuthError || undefined}
                 aria-describedby={hasAuthError ? LOGIN_ERROR_ID : undefined}
               />
+            </Field>
+            <Field orientation="horizontal">
+              <Checkbox
+                id="remember-me"
+                name="rememberMe"
+                value="true"
+                aria-describedby="remember-me-description"
+                className="after:-inset-x-3.5 after:-inset-y-3.5"
+              />
+              <FieldContent>
+                <FieldLabel htmlFor="remember-me">Lembrar de mim neste dispositivo</FieldLabel>
+                <FieldDescription id="remember-me-description">
+                  {CAMPAIGN_REMEMBER_ME_DESCRIPTION}
+                </FieldDescription>
+              </FieldContent>
             </Field>
             <div className="flex flex-col gap-2 text-sm">
               <Link href="/campanha/esqueci-senha" className={campaignAuthTextLinkClassName}>

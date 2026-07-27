@@ -1,3 +1,4 @@
+import { CAMPAIGN_SESSION_TTL_LONG } from '@/lib/campaignSessionTtl'
 import { normalizeBrazilianPhone } from '@/lib/phone'
 import type { CampaignUser as CampaignUserDocument } from '@/payload-types'
 import {
@@ -105,6 +106,7 @@ export const CampaignUser: CollectionConfig = {
     useAsTitle: 'name',
   },
   auth: {
+    tokenExpiration: CAMPAIGN_SESSION_TTL_LONG,
     loginWithUsername: {
       allowEmailLogin: true,
       requireEmail: false,

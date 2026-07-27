@@ -3,39 +3,47 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  cookieSet: vi.fn(),
+  clearAuthCookie: vi.fn(),
+  cookieGet: vi.fn(),
   login: vi.fn(),
   redirect: vi.fn(),
+  revokeSession: vi.fn(),
+  setAuthCookie: vi.fn(),
 }))
 
 vi.mock('@payload-config', () => ({ default: {} }))
 vi.mock('next/headers', () => ({
-  cookies: vi.fn(async () => ({ set: mocks.cookieSet })),
+  cookies: vi.fn(async () => ({ get: mocks.cookieGet })),
 }))
 vi.mock('next/navigation', () => ({
   redirect: mocks.redirect,
 }))
 vi.mock('payload', () => ({
   getPayload: vi.fn(async () => ({
-    collections: {
-      campaignUser: {
-        config: {
-          auth: {
-            tokenExpiration: 7200,
-          },
-        },
-      },
-    },
     login: mocks.login,
   })),
 }))
+vi.mock('@/utilities/campaignAuth', () => ({
+  CAMPAIGN_TOKEN_COOKIE: 'campaign-token',
+  clearCampaignAuthCookie: mocks.clearAuthCookie,
+  revokeCampaignSession: mocks.revokeSession,
+  setCampaignAuthCookie: mocks.setAuthCookie,
+}))
 
-import { loginCampaign, loginCampaignFormAction } from '@/app/(campaign)/campanha/actions/auth'
+import {
+  loginCampaign,
+  loginCampaignFormAction,
+  logoutCampaign,
+} from '@/app/(campaign)/campanha/actions/auth'
+import { CAMPAIGN_SESSION_TTL_LONG, CAMPAIGN_SESSION_TTL_SHORT } from '@/lib/campaignSessionTtl'
+
+const longToken =
+  'header.eyJpZCI6MSwiY29sbGVjdGlvbiI6ImNhbXBhaWduVXNlciIsInNpZCI6InNlc3Npb24taWQiLCJpYXQiOjEsImV4cCI6Mn0.signature'
 
 describe('loginCampaign credential mapping', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.login.mockResolvedValue({ token: 'campaign-token' })
+    mocks.login.mockResolvedValue({ token: longToken })
   })
 
   it('maps an email identifier to email credentials', async () => {
@@ -82,6 +90,34 @@ describe('loginCampaign credential mapping', () => {
         username: '71999991234',
       },
     })
+  })
+
+  it('uses an eight-hour session when remember me is not selected', async () => {
+    await loginCampaign({
+      identifier: 'staff@example.com',
+      password: 'secret',
+    })
+
+    expect(mocks.setAuthCookie).toHaveBeenCalledWith(
+      longToken,
+      expect.objectContaining({ login: mocks.login }),
+      CAMPAIGN_SESSION_TTL_SHORT,
+    )
+  })
+
+  it('uses a fourteen-day session when remember me is selected in FormData', async () => {
+    const formData = new FormData()
+    formData.set('identifier', 'staff@example.com')
+    formData.set('password', 'secret')
+    formData.set('rememberMe', 'true')
+
+    await loginCampaignFormAction({}, formData)
+
+    expect(mocks.setAuthCookie).toHaveBeenCalledWith(
+      longToken,
+      expect.objectContaining({ login: mocks.login }),
+      CAMPAIGN_SESSION_TTL_LONG,
+    )
   })
 
   it('preserves password whitespace at the FormData boundary', async () => {
@@ -137,6 +173,30 @@ describe('loginCampaign credential mapping', () => {
     ).resolves.toEqual({
       error:
         'Conta temporariamente bloqueada após várias tentativas. Aguarde alguns minutos e tente de novo.',
+    })
+  })
+
+  describe('logoutCampaign', () => {
+    beforeEach(() => {
+      mocks.cookieGet.mockReturnValue({ value: longToken })
+    })
+
+    it('revokes the current server session before clearing the logout cookie', async () => {
+      await logoutCampaign()
+
+      expect(mocks.revokeSession).toHaveBeenCalledWith(
+        longToken,
+        expect.objectContaining({ login: mocks.login }),
+      )
+      expect(mocks.clearAuthCookie).toHaveBeenCalledOnce()
+    })
+
+    it('still clears the logout cookie when server revocation rejects the token', async () => {
+      mocks.revokeSession.mockRejectedValueOnce(new Error('revocation unavailable'))
+
+      await logoutCampaign()
+
+      expect(mocks.clearAuthCookie).toHaveBeenCalledOnce()
     })
   })
 })
