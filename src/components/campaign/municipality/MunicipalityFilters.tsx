@@ -1,15 +1,11 @@
 'use client'
 
-import { useCampaignListPending } from '@/components/campaign/shared/CampaignListPending'
-import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition } from 'react'
-
 import { CampaignMobileMultiFilterField } from '@/components/campaign/shared/CampaignMobileMultiFilterField'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
+import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { normalizedText } from '@/utilities/campaignListUrl'
 import {
   applyMunicipalityKindFilter,
   clearMunicipalityListFilters,
@@ -22,17 +18,13 @@ import {
   type MunicipalityFilterOption,
 } from '@/utilities/municipalityListFilters'
 import {
-  buildMunicipalityFiltersKey,
   buildMunicipalityListHref,
   municipalityListSortOptions,
   parseMunicipalitySortValue,
   resolveMunicipalityListSort,
   serializeMunicipalitySortValue,
-  shouldUpdateMunicipalitySearchUrl,
   type MunicipalityListState,
 } from '@/utilities/municipalityListUrl'
-
-const SEARCH_DEBOUNCE_MS = 1000
 
 type MunicipalityFiltersProps = {
   state: MunicipalityListState
@@ -49,70 +41,17 @@ export const MunicipalityFilters = ({
   regionFilterOptions,
   advisorFilterOptions,
 }: MunicipalityFiltersProps) => {
-  const router = useRouter()
-  const [search, setSearch] = useState(state.q ?? '')
-  const sharedPending = useCampaignListPending()
-  const [isLocalPending, startLocalTransition] = useTransition()
-  // Prefer the page-level boundary so the results region dims together.
-  const isPending = sharedPending?.isPending ?? isLocalPending
-  const startTransition = sharedPending?.startTransition ?? startLocalTransition
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { search, setSearch, draftQ, isPending, navigateTo, navigateWithSearch, scheduleSearch } =
+    useCampaignListFilterNavigation({
+      state,
+      toHref: (next) => buildMunicipalityListHref(next, 1),
+    })
   const { sort: activeSort, dir: activeDir } = resolveMunicipalityListSort(state)
-  const draftQ = normalizedText(search) || state.q
   const activeFiltersSummary = formatMunicipalityActiveFiltersSummary({
     ...state,
     q: draftQ,
   })
   const hasActiveFilters = Boolean(activeFiltersSummary)
-
-  useEffect(
-    () => () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    },
-    [],
-  )
-
-  const clearDebounce = () => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current)
-      debounceRef.current = null
-    }
-  }
-
-  const navigateTo = (next: MunicipalityListState) => {
-    clearDebounce()
-    const canonical: MunicipalityListState = {
-      ...next,
-      page: 1,
-      q: normalizedText(next.q),
-    }
-    if (
-      buildMunicipalityFiltersKey(canonical) === buildMunicipalityFiltersKey({ ...state, page: 1 })
-    )
-      return
-
-    startTransition(() => {
-      router.replace(buildMunicipalityListHref(canonical, 1), { scroll: false })
-    })
-  }
-
-  const commitNavigation = (patch: Partial<MunicipalityListState>) => {
-    navigateTo({
-      ...state,
-      ...patch,
-      q: normalizedText(patch.q !== undefined ? patch.q : search),
-    })
-  }
-
-  const scheduleSearchNavigation = (value: string) => {
-    clearDebounce()
-    if (!shouldUpdateMunicipalitySearchUrl(value, state.q)) return
-
-    debounceRef.current = setTimeout(() => {
-      debounceRef.current = null
-      commitNavigation({ q: value })
-    }, SEARCH_DEBOUNCE_MS)
-  }
 
   const mobileFilterDefinitions = municipalityFilterDefinitions.filter((definition) => {
     if (definition.staffOnly && !showStaffFilters) return false
@@ -128,7 +67,7 @@ export const MunicipalityFilters = ({
       aria-busy={isPending}
       onSubmit={(event) => {
         event.preventDefault()
-        commitNavigation({ q: search })
+        navigateWithSearch(state)
       }}
     >
       <p className="sr-only" aria-live="polite">
@@ -144,37 +83,26 @@ export const MunicipalityFilters = ({
           onChange={(event) => {
             const value = event.target.value
             setSearch(value)
-            scheduleSearchNavigation(value)
+            scheduleSearch(value)
           }}
         />
         {activeFiltersSummary ? (
-          <p
-            className="hidden min-w-0 flex-1 text-sm text-muted-foreground md:block md:self-center md:pb-2 md:whitespace-normal"
-            aria-live="polite"
-          >
+          <p className="hidden min-w-0 flex-1 text-sm text-muted-foreground md:block md:self-center md:pb-2 md:whitespace-normal">
             {activeFiltersSummary}
           </p>
         ) : null}
         {hasActiveFilters ? (
-          <div className="flex shrink-0 gap-2 md:self-end">
-            <Button
-              type="button"
-              variant="ghost"
-              className="min-h-11"
-              onClick={() => {
-                clearDebounce()
-                setSearch('')
-                startTransition(() => {
-                  router.replace(
-                    buildMunicipalityListHref(clearMunicipalityListFilters(state), 1),
-                    { scroll: false },
-                  )
-                })
-              }}
-            >
-              Limpar
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11 shrink-0 md:self-end"
+            onClick={() => {
+              setSearch('')
+              navigateTo(clearMunicipalityListFilters(state))
+            }}
+          >
+            Limpar
+          </Button>
         ) : null}
       </div>
 
@@ -186,10 +114,9 @@ export const MunicipalityFilters = ({
               id="municipality-filter-priority"
               value={state.priority ?? ''}
               onChange={(event) => {
-                navigateTo({
+                navigateWithSearch({
                   ...state,
                   priority: event.target.value === 'alta' ? 'alta' : undefined,
-                  q: normalizedText(search),
                 })
               }}
               className="min-h-11 w-full"
@@ -207,13 +134,7 @@ export const MunicipalityFilters = ({
             options={regionFilterOptions}
             selected={state.regions ?? []}
             onToggle={(value) =>
-              navigateTo(
-                toggleMunicipalityMultiFilterValue(
-                  { ...state, q: normalizedText(search) },
-                  'region',
-                  value,
-                ),
-              )
+              navigateWithSearch(toggleMunicipalityMultiFilterValue(state, 'region', value))
             }
           />
         ) : null}
@@ -232,17 +153,16 @@ export const MunicipalityFilters = ({
                 value={value}
                 onChange={(event) => {
                   const selected = event.target.value
-                  const withSearch = { ...state, q: normalizedText(search) }
                   if (definition.selection === 'toggle') {
-                    navigateTo(
+                    navigateWithSearch(
                       selected
-                        ? toggleMunicipalityExclusiveFilterValue(withSearch, 'coverage', selected)
-                        : { ...withSearch, coverage: undefined, page: 1 },
+                        ? toggleMunicipalityExclusiveFilterValue(state, 'coverage', selected)
+                        : { ...state, coverage: undefined },
                     )
                     return
                   }
                   if (definition.param === 'kind') {
-                    navigateTo(applyMunicipalityKindFilter(withSearch, selected))
+                    navigateWithSearch(applyMunicipalityKindFilter(state, selected))
                   }
                 }}
                 className="min-h-11 w-full"
@@ -265,13 +185,7 @@ export const MunicipalityFilters = ({
             options={getMunicipalityFilterDefinition('trend').options ?? []}
             selected={state.trends ?? []}
             onToggle={(value) =>
-              navigateTo(
-                toggleMunicipalityMultiFilterValue(
-                  { ...state, q: normalizedText(search) },
-                  'trend',
-                  value,
-                ),
-              )
+              navigateWithSearch(toggleMunicipalityMultiFilterValue(state, 'trend', value))
             }
           />
         ) : null}
@@ -283,13 +197,7 @@ export const MunicipalityFilters = ({
             options={getMunicipalityFilterDefinition('class').options ?? []}
             selected={state.classes ?? []}
             onToggle={(value) =>
-              navigateTo(
-                toggleMunicipalityMultiFilterValue(
-                  { ...state, q: normalizedText(search) },
-                  'class',
-                  value,
-                ),
-              )
+              navigateWithSearch(toggleMunicipalityMultiFilterValue(state, 'class', value))
             }
           />
         ) : null}
@@ -301,13 +209,7 @@ export const MunicipalityFilters = ({
             options={advisorFilterOptions}
             selected={(state.advisors ?? []).map(String)}
             onToggle={(value) =>
-              navigateTo(
-                toggleMunicipalityMultiFilterValue(
-                  { ...state, q: normalizedText(search) },
-                  'advisor',
-                  value,
-                ),
-              )
+              navigateWithSearch(toggleMunicipalityMultiFilterValue(state, 'advisor', value))
             }
           />
         ) : null}
@@ -318,7 +220,7 @@ export const MunicipalityFilters = ({
             value={serializeMunicipalitySortValue(activeSort, activeDir)}
             onChange={(event) => {
               const parsed = parseMunicipalitySortValue(event.target.value)
-              if (parsed) commitNavigation({ sort: parsed.key, dir: parsed.dir })
+              if (parsed) navigateWithSearch({ ...state, sort: parsed.key, dir: parsed.dir })
             }}
             className="min-h-11 w-full"
           >

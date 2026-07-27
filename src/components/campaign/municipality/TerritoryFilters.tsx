@@ -1,15 +1,11 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition } from 'react'
-
-import { useCampaignListPending } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignMobileMultiFilterField } from '@/components/campaign/shared/CampaignMobileMultiFilterField'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
+import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { normalizedText } from '@/utilities/campaignListUrl'
 import {
   clearTerritoryListFilters,
   formatTerritoryActiveFiltersSummary,
@@ -19,16 +15,12 @@ import {
 } from '@/utilities/territoryListFilters'
 import {
   buildTerritoryListHref,
-  parseTerritoryListParams,
   parseTerritorySortValue,
   resolveTerritoryListSort,
   serializeTerritorySortValue,
   territoryListSortOptions,
-  territoryListStateToRawParams,
   type TerritoryListState,
 } from '@/utilities/territoryListUrl'
-
-const SEARCH_DEBOUNCE_MS = 1000
 
 export const TerritoryFilters = ({
   state,
@@ -37,51 +29,10 @@ export const TerritoryFilters = ({
   state: TerritoryListState
   regionOptions: TerritoryFilterOption[]
 }) => {
-  const router = useRouter()
-  const [search, setSearch] = useState(state.q ?? '')
-  const sharedPending = useCampaignListPending()
-  const [isLocalPending, startLocalTransition] = useTransition()
-  const isPending = sharedPending?.isPending ?? isLocalPending
-  const startTransition = sharedPending?.startTransition ?? startLocalTransition
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { search, setSearch, draftQ, isPending, navigateTo, navigateWithSearch, scheduleSearch } =
+    useCampaignListFilterNavigation({ state, toHref: buildTerritoryListHref })
   const { sort, dir } = resolveTerritoryListSort(state)
-  const activeSummary = formatTerritoryActiveFiltersSummary({
-    ...state,
-    q: normalizedText(search) || state.q,
-  })
-
-  useEffect(
-    () => () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    },
-    [],
-  )
-
-  const clearDebounce = () => {
-    if (!debounceRef.current) return
-    clearTimeout(debounceRef.current)
-    debounceRef.current = null
-  }
-
-  const navigateTo = (next: TerritoryListState) => {
-    clearDebounce()
-    const canonical = parseTerritoryListParams(
-      territoryListStateToRawParams({ ...next, q: normalizedText(next.q) }),
-    )
-    if (buildTerritoryListHref(canonical) === buildTerritoryListHref(state)) return
-    startTransition(() => {
-      router.replace(buildTerritoryListHref(canonical), { scroll: false })
-    })
-  }
-
-  const scheduleSearch = (value: string) => {
-    clearDebounce()
-    if (normalizedText(value) === state.q) return
-    debounceRef.current = setTimeout(() => {
-      debounceRef.current = null
-      navigateTo({ ...state, q: value })
-    }, SEARCH_DEBOUNCE_MS)
-  }
+  const activeSummary = formatTerritoryActiveFiltersSummary({ ...state, q: draftQ })
 
   return (
     <form
@@ -91,7 +42,7 @@ export const TerritoryFilters = ({
       aria-busy={isPending}
       onSubmit={(event) => {
         event.preventDefault()
-        navigateTo({ ...state, q: search })
+        navigateWithSearch(state)
       }}
     >
       <p className="sr-only" aria-live="polite">
@@ -120,7 +71,6 @@ export const TerritoryFilters = ({
             variant="ghost"
             className="min-h-11 md:self-end"
             onClick={() => {
-              clearDebounce()
               setSearch('')
               navigateTo(clearTerritoryListFilters(state))
             }}
@@ -138,7 +88,7 @@ export const TerritoryFilters = ({
           emptyLabel="Todos"
           options={regionOptions}
           selected={state.regions ?? []}
-          onToggle={(value) => navigateTo(toggleTerritoryRegionFilter(state, value))}
+          onToggle={(value) => navigateWithSearch(toggleTerritoryRegionFilter(state, value))}
         />
 
         <Field>
@@ -147,7 +97,7 @@ export const TerritoryFilters = ({
             id="territory-filter-coverage"
             value={state.coverage ?? ''}
             onChange={(event) =>
-              navigateTo({
+              navigateWithSearch({
                 ...state,
                 coverage:
                   event.target.value === 'com_assessor' || event.target.value === 'sem_assessor'
@@ -173,7 +123,7 @@ export const TerritoryFilters = ({
             value={serializeTerritorySortValue(sort, dir)}
             onChange={(event) => {
               const parsed = parseTerritorySortValue(event.target.value)
-              if (parsed) navigateTo({ ...state, sort: parsed.key, dir: parsed.dir })
+              if (parsed) navigateWithSearch({ ...state, sort: parsed.key, dir: parsed.dir })
             }}
             className="w-full [&_select]:h-11"
           >

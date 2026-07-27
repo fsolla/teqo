@@ -37,9 +37,20 @@ export const CampaignListPendingBoundary = ({ children }: { children: ReactNode 
   )
 }
 
-/** Filter controls prefer the shared transition so the results dim with them. */
-export const useCampaignListPending = (): CampaignListPendingValue | null =>
-  useContext(CampaignListPendingContext)
+/**
+ * The transition a navigating control should drive: the page-level boundary
+ * when there is one — so the results region dims with the control — and a local
+ * one otherwise, for controls rendered outside a boundary.
+ */
+export const useCampaignListTransition = (): CampaignListPendingValue => {
+  const shared = useContext(CampaignListPendingContext)
+  const [isLocalPending, startLocalTransition] = useTransition()
+
+  return {
+    isPending: shared?.isPending ?? isLocalPending,
+    startTransition: shared?.startTransition ?? startLocalTransition,
+  }
+}
 
 /** Dims while a shared list navigation is pending; safe to render from RSC. */
 export const CampaignTransitionAnchor = forwardRef<
@@ -61,9 +72,7 @@ export const CampaignTransitionAnchor = forwardRef<
   ref,
 ) {
   const router = useRouter()
-  const shared = useContext(CampaignListPendingContext)
-  const [, startLocalTransition] = useTransition()
-  const startTransition = shared?.startTransition ?? startLocalTransition
+  const { startTransition } = useCampaignListTransition()
 
   return (
     <a

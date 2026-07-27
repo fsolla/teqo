@@ -435,11 +435,6 @@ export const parseMunicipalitySortValue = (
   return { key: rawKey as MunicipalityListSortKey, dir: rawDir as MunicipalityListSortDirection }
 }
 
-export const shouldUpdateMunicipalitySearchUrl = (
-  input: string,
-  currentQ: string | undefined,
-): boolean => normalizedText(input) !== currentQ
-
 export const resolveMunicipalityListUrl = (
   params: MunicipalityListSearchParams,
   totalPages?: number,

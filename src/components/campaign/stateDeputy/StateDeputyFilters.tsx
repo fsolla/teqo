@@ -1,15 +1,11 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition } from 'react'
-
-import { useCampaignListPending } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignMobileMultiFilterField } from '@/components/campaign/shared/CampaignMobileMultiFilterField'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
+import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { normalizedText } from '@/utilities/campaignListUrl'
 import {
   buildStateDeputyPartyOptions,
   clearStateDeputyListFilters,
@@ -19,16 +15,12 @@ import {
 } from '@/utilities/stateDeputyListFilters'
 import {
   buildStateDeputyListHref,
-  parseStateDeputyListParams,
   parseStateDeputySortValue,
   resolveStateDeputyListSort,
   serializeStateDeputySortValue,
   stateDeputyListSortOptions,
-  stateDeputyListStateToRawParams,
   type StateDeputyListState,
 } from '@/utilities/stateDeputyListUrl'
-
-const SEARCH_DEBOUNCE_MS = 1000
 
 export const StateDeputyFilters = ({
   state,
@@ -41,53 +33,14 @@ export const StateDeputyFilters = ({
   /** Whether at least one facet-matching row has no party — gates the "Sem partido" option. */
   hasNoParty: boolean
 }) => {
-  const router = useRouter()
-  const [search, setSearch] = useState(state.q ?? '')
-  const sharedPending = useCampaignListPending()
-  const [isLocalPending, startLocalTransition] = useTransition()
-  const isPending = sharedPending?.isPending ?? isLocalPending
-  const startTransition = sharedPending?.startTransition ?? startLocalTransition
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { search, setSearch, draftQ, isPending, navigateTo, navigateWithSearch, scheduleSearch } =
+    useCampaignListFilterNavigation({
+      state,
+      toHref: (next) => buildStateDeputyListHref(next, 1),
+    })
   const { sort, dir } = resolveStateDeputyListSort(state)
   const mobilePartyOptions = buildStateDeputyPartyOptions(partyOptions, hasNoParty)
-  const activeSummary = formatStateDeputyActiveFiltersSummary({
-    ...state,
-    q: normalizedText(search) || state.q,
-  })
-
-  useEffect(
-    () => () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    },
-    [],
-  )
-
-  const clearDebounce = () => {
-    if (!debounceRef.current) return
-    clearTimeout(debounceRef.current)
-    debounceRef.current = null
-  }
-
-  const navigateTo = (next: StateDeputyListState) => {
-    clearDebounce()
-    const canonical = parseStateDeputyListParams(
-      stateDeputyListStateToRawParams({ ...next, q: normalizedText(next.q), page: 1 }, 1),
-    )
-    const nextHref = buildStateDeputyListHref(canonical, 1)
-    if (nextHref === buildStateDeputyListHref(state, 1)) return
-    startTransition(() => {
-      router.replace(nextHref, { scroll: false })
-    })
-  }
-
-  const scheduleSearch = (value: string) => {
-    clearDebounce()
-    if (normalizedText(value) === state.q) return
-    debounceRef.current = setTimeout(() => {
-      debounceRef.current = null
-      navigateTo({ ...state, q: value, page: 1 })
-    }, SEARCH_DEBOUNCE_MS)
-  }
+  const activeSummary = formatStateDeputyActiveFiltersSummary({ ...state, q: draftQ })
 
   return (
     <form
@@ -97,7 +50,7 @@ export const StateDeputyFilters = ({
       aria-busy={isPending}
       onSubmit={(event) => {
         event.preventDefault()
-        navigateTo({ ...state, q: search, page: 1 })
+        navigateWithSearch(state)
       }}
     >
       <p className="sr-only" aria-live="polite">
@@ -126,7 +79,6 @@ export const StateDeputyFilters = ({
             variant="ghost"
             className="min-h-11 md:self-end"
             onClick={() => {
-              clearDebounce()
               setSearch('')
               navigateTo(clearStateDeputyListFilters(state))
             }}
@@ -144,7 +96,7 @@ export const StateDeputyFilters = ({
           emptyLabel="Todos"
           options={mobilePartyOptions}
           selected={state.parties ?? []}
-          onToggle={(value) => navigateTo(toggleStateDeputyPartyFilter(state, value))}
+          onToggle={(value) => navigateWithSearch(toggleStateDeputyPartyFilter(state, value))}
         />
 
         <Field>
@@ -154,7 +106,7 @@ export const StateDeputyFilters = ({
             value={serializeStateDeputySortValue(sort, dir)}
             onChange={(event) => {
               const parsed = parseStateDeputySortValue(event.target.value)
-              if (parsed) navigateTo({ ...state, sort: parsed.key, dir: parsed.dir, page: 1 })
+              if (parsed) navigateWithSearch({ ...state, sort: parsed.key, dir: parsed.dir })
             }}
             className="w-full [&_select]:h-11"
           >

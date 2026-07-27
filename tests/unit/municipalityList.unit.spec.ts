@@ -23,7 +23,6 @@ import {
   parseMunicipalitySortValue,
   resolveMunicipalityListSort,
   serializeMunicipalitySortValue,
-  shouldUpdateMunicipalitySearchUrl,
 } from '@/utilities/municipalityListUrl'
 import {
   formatMunicipalitySignalAgeLabel,
@@ -32,19 +31,6 @@ import {
   municipalitySignalAgeInDays,
   resolveMunicipalityLastSignalAt,
 } from '@/utilities/municipalitySignal'
-
-describe('shouldUpdateMunicipalitySearchUrl', () => {
-  it('returns false when canonical q matches the current URL q', () => {
-    expect(shouldUpdateMunicipalitySearchUrl('salvador', 'salvador')).toBe(false)
-    expect(shouldUpdateMunicipalitySearchUrl('  salvador  ', 'salvador')).toBe(false)
-  })
-
-  it('returns true when q differs or is newly set', () => {
-    expect(shouldUpdateMunicipalitySearchUrl('salv', 'salvador')).toBe(true)
-    expect(shouldUpdateMunicipalitySearchUrl('salvador', undefined)).toBe(true)
-    expect(shouldUpdateMunicipalitySearchUrl('', 'salvador')).toBe(true)
-  })
-})
 
 describe('municipality list sort params (A11 + B15 + E9)', () => {
   it('omits the default deficit/desc from the URL (E9 allocation queue order)', () => {
