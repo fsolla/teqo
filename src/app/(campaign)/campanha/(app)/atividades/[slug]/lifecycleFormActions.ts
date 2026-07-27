@@ -1,7 +1,7 @@
 'use server'
 
 import { cancelActivity, markActivityRealized } from '@/app/(campaign)/campanha/actions/activity'
-import { requiredRelationshipFormValue } from '@/lib/formData'
+import { FormDataBoundaryError, requiredRelationshipFormValue } from '@/lib/formData'
 import type { Activity } from '@/payload-types'
 import {
   runCampaignRedirectFormAction,
@@ -21,7 +21,8 @@ const setActivityLifecycleFormAction = async (
   let activityId: number
   try {
     activityId = requiredRelationshipFormValue(formData, 'id')
-  } catch {
+  } catch (error) {
+    if (!(error instanceof FormDataBoundaryError)) throw error
     return { message: ACTIVITY_ID_MISSING_MESSAGE }
   }
 

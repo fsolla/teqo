@@ -145,6 +145,11 @@ describe('campaign formActions convention', () => {
     // by useOptimistic in ActivityTaskChecklist — not a (state, formData) ladder,
     // nothing to route through the shared wrapper.
     'src/app/(campaign)/campanha/(app)/atividades/[slug]/taskActions.ts',
+    // Custom unique-violation → fieldErrors + async duplicate-title fallback
+    // that links to the existing activity — policy the wrappers don't grow for.
+    'src/app/(campaign)/campanha/(app)/atividades/formActions.ts',
+    // Flattens field errors into message-only states for inline detail controls.
+    'src/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions.ts',
   ])
 
   it('routes every *FormActions / taskActions ladder through a shared wrapper', () => {
@@ -152,10 +157,12 @@ describe('campaign formActions convention', () => {
       .filter((file) => isGuardedActionFile(basename(file)))
       .map(repoPath)
       .filter((path) => !allowlist.has(path))
-      .filter(
-        (path) =>
-          !/runCampaign(Redirect)?FormAction/.test(readFileSync(resolve(repoRoot, path), 'utf8')),
-      )
+      .filter((path) => {
+        // Require a real call site — a comment naming the wrappers must not pass
+        // (the documented exceptions above used to hide behind that loophole).
+        const source = readFileSync(resolve(repoRoot, path), 'utf8')
+        return !/\brunCampaign(Redirect)?FormAction\s*\(/.test(source)
+      })
 
     expect(offenders, 'wrap with runCampaignFormAction/runCampaignRedirectFormAction').toEqual([])
   })
