@@ -71,7 +71,7 @@ assertLocalDatabase(
 const payload = await getPayload({ config: payloadConfig })
 
 /** CLI reader — satisfies the election-data read assertion (admin realm). */
-const cliReader = { collection: 'users' }
+const cliReader = { collection: 'users', roles: ['admin'] }
 
 const candidateNumber = BASELINE_TICKET_2022.candidate.candidateNumber
 const municipalities = {}

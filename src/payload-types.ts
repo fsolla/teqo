@@ -226,6 +226,10 @@ export interface CampaignUserAuthOperations {
  */
 export interface User {
   id: number;
+  /**
+   * Administrador: acesso total ao painel. Editor: publica notícias/tags/mídia — sem PII nem campanha. Contas novas de comunicação devem ser “Editor”.
+   */
+  roles: ('admin' | 'editor')[];
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -1310,6 +1314,7 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  roles?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

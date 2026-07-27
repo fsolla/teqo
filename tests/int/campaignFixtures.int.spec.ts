@@ -191,6 +191,7 @@ describe('campaign integration fixtures', () => {
         data: {
           email: `${fixtures.value('proxy-admin')}@example.com`,
           password: fixtures.value('password'),
+          roles: ['admin'],
         },
         depth: 0,
       })
@@ -335,6 +336,7 @@ describe('campaign integration fixtures', () => {
       data: {
         email: `sentinel-${marker}@example.com`,
         password: `password-${marker}`,
+        roles: ['admin'],
       },
       depth: 0,
     })

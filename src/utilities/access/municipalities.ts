@@ -186,9 +186,11 @@ export const canReadMunicipality: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
+  // Editors (and any non-campaign actor) must not see Municípios in /admin.
+  if (!currentUser) return false
   if (isCampaignLeader(currentUser)) return false
 
-  const ids = await getAccessibleMunicipalityIds(req)
+  const ids = await getAccessibleMunicipalityIds(req, currentUser)
   if (ids === null) return true
 
   return {
@@ -202,8 +204,9 @@ export const canUpdateMunicipality: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
+  if (!currentUser) return false
   if (isCampaignUnrestricted(currentUser)) return true
-  if (currentUser?.role !== 'advisor') return false
+  if (currentUser.role !== 'advisor') return false
 
   return {
     advisors: {

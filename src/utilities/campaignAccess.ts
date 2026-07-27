@@ -6,7 +6,9 @@
  */
 
 export {
+  canManagePublishedContent,
   eligibleCampaignStaffWhere,
+  hasPayloadPanelAccess,
   isCampaignCoordinator,
   isCampaignLeader,
   isCampaignStaff,

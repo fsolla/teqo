@@ -49,7 +49,15 @@ type OwnedIDs = Record<CampaignCollection, Set<number>>
 type CampaignUserInput = Partial<
   Pick<CampaignUser, 'name' | 'role' | 'phone' | 'email' | 'username' | 'password'>
 >
-type AdminUserInput = Partial<Pick<User, 'email' | 'password'>>
+type AdminUserInput = {
+  email?: string
+  password?: string
+  roles?: User['roles']
+}
+type EditorUserInput = {
+  email?: string
+  password?: string
+}
 type ConsentInput = Partial<Pick<Consent, 'key' | 'text'>>
 type ContactInput = Partial<
   Pick<Contact, 'name' | 'email' | 'phone' | 'gender' | 'state' | 'city' | 'postalCode'>
@@ -564,12 +572,21 @@ export class CampaignFixtures {
       data: {
         email: `${this.value('admin')}@example.com`,
         password: this.value('password'),
+        roles: ['admin'],
         ...input,
       },
       depth: 0,
     })
     this.own('users', user)
     return user
+  }
+
+  async createEditorUser(input: EditorUserInput = {}): Promise<User> {
+    return this.createAdminUser({
+      email: `${this.value('editor')}@example.com`,
+      roles: ['editor'],
+      ...input,
+    })
   }
 
   /**

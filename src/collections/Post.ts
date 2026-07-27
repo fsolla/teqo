@@ -1,5 +1,5 @@
 import { slugify } from '@/lib/slug'
-import { payloadAdminOnly } from '@/utilities/campaignAccess'
+import { canManagePublishedContent } from '@/utilities/campaignAccess'
 import { revalidateDocumentById, revalidatePostsListing } from '@/utilities/documents'
 import type { CollectionConfig } from 'payload'
 
@@ -23,10 +23,10 @@ export const Post: CollectionConfig<typeof slug> = {
   },
   access: {
     read: () => true,
-    readVersions: payloadAdminOnly,
-    create: payloadAdminOnly,
-    update: payloadAdminOnly,
-    delete: payloadAdminOnly,
+    readVersions: canManagePublishedContent,
+    create: canManagePublishedContent,
+    update: canManagePublishedContent,
+    delete: canManagePublishedContent,
   },
   hooks: {
     afterChange: [

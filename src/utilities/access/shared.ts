@@ -32,7 +32,25 @@ export type DynamicFind = (args: {
   where: Record<string, unknown>
 }) => Promise<{ docs: Array<Record<string, unknown>> }>
 
-export const isPayloadAdmin = (user: CampaignActor): user is User => user?.collection === 'users'
+/** Narrow to the Payload `users` collection (admin or editor). */
+const isPayloadUsersActor = (user: CampaignActor): user is User => user?.collection === 'users'
+
+/**
+ * True Payload admin — `users` collection AND the `admin` role.
+ * Fails closed when `roles` is missing or empty (pre-migration JWTs, stripped
+ * fields). Returns boolean (not `user is User`) so a false result does not
+ * erase editors from the User union after panel narrowing.
+ */
+export const isPayloadAdmin = (user: CampaignActor): boolean =>
+  isPayloadUsersActor(user) && (user.roles?.includes('admin') ?? false)
+
+/** Editorial staff: `users` with the `editor` role (may also be admin). */
+export const isPayloadEditor = (user: CampaignActor): boolean =>
+  isPayloadUsersActor(user) && (user.roles?.includes('editor') ?? false)
+
+/** May open `/admin` — admin or editor. */
+export const hasPayloadPanelAccess = (user: CampaignActor): user is User =>
+  isPayloadUsersActor(user) && (isPayloadAdmin(user) || isPayloadEditor(user))
 
 /**
  * Payload-admin-only collection access. Collections without explicit access fall
@@ -41,6 +59,9 @@ export const isPayloadAdmin = (user: CampaignActor): user is User => user?.colle
  * collection must set this (or something stricter) explicitly.
  */
 export const payloadAdminOnly: Access = ({ req }) => isPayloadAdmin(req.user)
+
+/** Admin or editor — write access to public published content (`post`/`tag`/`media`). */
+export const canManagePublishedContent: Access = ({ req }) => hasPayloadPanelAccess(req.user)
 
 export const isCampaignUser = (user: CampaignActor): user is CampaignUser =>
   user?.collection === 'campaignUser'

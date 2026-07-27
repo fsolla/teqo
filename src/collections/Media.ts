@@ -1,4 +1,4 @@
-import { payloadAdminOnly } from '@/utilities/campaignAccess'
+import { canManagePublishedContent } from '@/utilities/campaignAccess'
 import type { CollectionConfig } from 'payload'
 
 export const Media: CollectionConfig = {
@@ -14,9 +14,9 @@ export const Media: CollectionConfig = {
   // explicit overrideAccess: true after their own role checks.
   access: {
     read: () => true,
-    create: payloadAdminOnly,
-    update: payloadAdminOnly,
-    delete: payloadAdminOnly,
+    create: canManagePublishedContent,
+    update: canManagePublishedContent,
+    delete: canManagePublishedContent,
   },
   fields: [
     {
