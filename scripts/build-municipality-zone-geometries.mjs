@@ -30,9 +30,15 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import shp from 'shpjs'
-import { merge, quantize } from 'topojson-client'
+import { merge } from 'topojson-client'
 import { topology } from 'topojson-server'
-import { presimplify, quantile, simplify } from 'topojson-simplify'
+
+import {
+  describeGroundScale,
+  quantizeToGroundGrid,
+  SIMPLIFY_TOLERANCE_M2,
+  simplifyToGroundScale,
+} from './lib/topology.mjs'
 
 const { municipalityCatalog } = await import('../src/lib/municipalityCatalog.ts')
 const { municipalityZoneNeighborhoods } =
@@ -48,11 +54,6 @@ const SOURCE = {
 }
 
 const OUTPUT_PATH = 'src/lib/geometries/bahia-municipality-zones.topo.json'
-
-/** Quantile of triangle area kept after presimplify (higher = more detail). */
-const SIMPLIFY_QUANTILE = 0.35
-/** Quantization precision for the final topology. */
-const QUANTIZE_DIGITS = 1e4
 
 /**
  * Same neighborhood, different name in the two sources — IBGE composites
@@ -116,7 +117,7 @@ const ensureCachedBinary = async ({ key, url, ext }) => {
     await access(path)
     log(`cache hit ${path}`)
     const buffer = await readFile(path)
-    return { url, hash: sha256(buffer), buffer }
+    return { hash: sha256(buffer), buffer }
   } catch (error) {
     if (error?.code !== 'ENOENT') throw error
   }
@@ -125,7 +126,7 @@ const ensureCachedBinary = async ({ key, url, ext }) => {
   const hash = sha256(buffer)
   await writeFile(path, buffer)
   log(`saved ${path} (${buffer.length} bytes, sha256=${hash})`)
-  return { url, hash, buffer }
+  return { hash, buffer }
 }
 
 const writeJson = async (relativePath, value) => {
@@ -134,13 +135,6 @@ const writeJson = async (relativePath, value) => {
   const body = `${JSON.stringify(value)}\n`
   await writeFile(path, body)
   log(`wrote ${relativePath} (${Buffer.byteLength(body)} bytes)`)
-}
-
-const simplifyTopology = (topo) => {
-  let next = presimplify(topo)
-  const minWeight = quantile(next, SIMPLIFY_QUANTILE)
-  next = simplify(next, minWeight)
-  return quantize(next, QUANTIZE_DIGITS)
 }
 
 /** Accent-folded, punctuation-free key; parentheses (the TRE's split notes) drop. */
@@ -152,9 +146,6 @@ const normalizeNeighborhood = (name) =>
     .replace(/\(.*?\)/g, ' ')
     .replace(/[^A-Z0-9]+/g, ' ')
     .trim()
-
-const polygonCount = (geometry) =>
-  geometry?.type === 'MultiPolygon' ? geometry.coordinates.length : geometry ? 1 : 0
 
 const arcIndexes = (arcs, into = new Set()) => {
   for (const item of arcs) {
@@ -270,12 +261,22 @@ const main = async () => {
   })
   const geometries = neighborhoodTopology.objects.neighborhoods.geometries
 
+  // The TRE key each polygon resolves to once aliases are applied. Resolved once
+  // because the assignment pass and the coverage check below used to derive it
+  // separately with the same fallback: the `die` guard is built on the second, so
+  // a divergence between the two would let it pass over a wrong assignment.
+  const treKeyByGeometry = new Map(
+    geometries.map((geometry) => {
+      const key = normalizeNeighborhood(geometry.properties.name)
+      return [geometry, aliasTargets.get(key) ?? key]
+    }),
+  )
+
   // Pass 1 — the resolution's own names.
   const zoneSlugByGeometry = new Map()
   const unnamed = []
   for (const geometry of geometries) {
-    const key = normalizeNeighborhood(geometry.properties.name)
-    const slug = zoneSlugByNeighborhood.get(aliasTargets.get(key) ?? key)
+    const slug = zoneSlugByNeighborhood.get(treKeyByGeometry.get(geometry))
     if (slug) zoneSlugByGeometry.set(geometry, slug)
     else unnamed.push(geometry)
   }
@@ -300,12 +301,7 @@ const main = async () => {
     )
   }
 
-  const coveredKeys = new Set(
-    geometries.map((geometry) => {
-      const key = normalizeNeighborhood(geometry.properties.name)
-      return aliasTargets.get(key) ?? key
-    }),
-  )
+  const coveredKeys = new Set(treKeyByGeometry.values())
   for (const hostName of Object.values(TRE_NEIGHBORHOODS_MERGED_INTO)) {
     if (!coveredKeys.has(normalizeNeighborhood(hostName))) continue
     for (const [treName, host] of Object.entries(TRE_NEIGHBORHOODS_MERGED_INTO)) {
@@ -320,7 +316,9 @@ const main = async () => {
 
   const geometriesByZone = new Map()
   for (const [geometry, slug] of zoneSlugByGeometry) {
-    geometriesByZone.set(slug, [...(geometriesByZone.get(slug) ?? []), geometry])
+    const bucket = geometriesByZone.get(slug)
+    if (bucket) bucket.push(geometry)
+    else geometriesByZone.set(slug, [geometry])
   }
   log(
     `assigned ${zoneSlugByGeometry.size}/${geometries.length} polygons to ${geometriesByZone.size}/${zoneEntries.length} zones`,
@@ -353,7 +351,10 @@ const main = async () => {
 
   // Simplification keeps geometry order and properties, so the zone buckets
   // above still address the right shapes.
-  const simplified = simplifyTopology(neighborhoodTopology)
+  const simplified = simplifyToGroundScale(
+    neighborhoodTopology,
+    SIMPLIFY_TOLERANCE_M2.bahiaMunicipalityZones,
+  )
   const simplifiedById = new Map(
     simplified.objects.neighborhoods.geometries.map((geometry) => [
       geometry.properties.id,
@@ -379,7 +380,6 @@ const main = async () => {
       properties: {
         municipalitySlug: entry.slug,
         name: entry.name,
-        zoneNumber: entry.zoneNumber,
         ibgeCode: entry.ibgeCode,
       },
       geometry,
@@ -388,16 +388,15 @@ const main = async () => {
 
   // Already simplified above — the final pass only quantizes, so the artifact
   // stores short integers instead of the floats `merge` hands back.
-  await writeJson(
-    OUTPUT_PATH,
-    quantize(
-      topology({ municipalityZones: { type: 'FeatureCollection', features: zoneFeatures } }),
-      QUANTIZE_DIGITS,
-    ),
+  const zoneTopology = quantizeToGroundGrid(
+    topology({ municipalityZones: { type: 'FeatureCollection', features: zoneFeatures } }),
   )
+  log(describeGroundScale(zoneTopology))
+  await writeJson(OUTPUT_PATH, zoneTopology)
 
   for (const feature of zoneFeatures) {
-    const pieces = polygonCount(feature.geometry)
+    // `merge` always hands back a MultiPolygon, so this is the piece count.
+    const pieces = feature.geometry.coordinates.length
     log(
       `${feature.properties.municipalitySlug}: ${
         geometriesByZone.get(feature.properties.municipalitySlug).length

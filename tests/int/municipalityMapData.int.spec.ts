@@ -35,6 +35,7 @@ describe('loadMunicipalityMapBundle — list URL filters', () => {
 
     expect(bundle).not.toBeNull()
     expect(bundle!.zoneBreakdown).toHaveLength(ZONE_MUNICIPALITY_COUNT)
+    expect(bundle!.hasZoneMunicipalities).toBe(true)
 
     const mapKeys = Object.keys(bundle!.valuesByYear['2022'] ?? {})
     expect(mapKeys.length).toBeGreaterThan(0)
@@ -69,6 +70,8 @@ describe('loadMunicipalityMapBundle — list URL filters', () => {
     expect(included!.zoneBreakdown.some((row) => row.slug === administered.slug)).toBe(
       administered.kind === 'zona',
     )
+    // The map's provenance caveat follows the actor's scope, not the list below it.
+    expect(included!.hasZoneMunicipalities).toBe(administered.kind === 'zona')
     expect(Object.keys(included!.valuesByYear['2022'] ?? {})).toEqual([
       administered.kind === 'zona' ? administered.slug : administered.ibgeCode,
     ])

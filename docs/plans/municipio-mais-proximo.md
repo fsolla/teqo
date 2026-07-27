@@ -138,7 +138,7 @@ Componentes:
 - **Atalho também na lista `/campanha/municipios`.** Revisitar quando: evidência de uso no Início (campo pede o mesmo atalho na lista).
 - **Lembrar última sugestão em `sessionStorage` para paint imediato.** Revisitar quando: critique acusar flash/vazio perceptível no card. _(Não acusou: o chunk de geometria costuma estar resolvido antes do fix chegar.)_
 - **Atalho geo também para `leader`.** Permanece fora: liderança não sai do `LeaderContactsPanel`.
-- **Reusar `resolveMunicipalityMapNavigation` no branch `none|navigate|zones`.** Revisitar quando: um 3º chamador precisar do `zoneCount`/da entrada casada. Hoje a união existente descarta justamente o que o card precisa, então reusar significa alargar um contrato de que duas superfícies do mapa dependem para servir um caller — mais caro que as ~18 linhas duplicadas.
+- **Reusar a navegação do mapa no branch `inScope|zoneCity|outOfScope`.** Revisitar quando: um 3º chamador precisar do `zoneCount`/da entrada casada. Encerrado como reuso possível pelo **B8+** F4: `resolveMunicipalityMapNavigation` e sua união de estados morreram — o mapa lê `municipalitiesByMapKey[key]` direto, um `Record<string, string>` que não carrega nada do que este card precisa.
 - **Helper compartilhado para flags de sessão (`sessionStorage`).** Revisitar quando: nascer a 3ª flag. Hoje são duas (`campaignGeolocation` e `InstallPwaToast`) e elas **discordam de propósito** no fallback de leitura — em modo privado o geo suprime o prompt automático e o toast continua aparecendo —, o que é a maior parte do que o helper faria.
 
 ## Referências

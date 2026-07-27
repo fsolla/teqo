@@ -12,7 +12,8 @@ export type ChoroplethValues = Record<string, number>
 
 export type BahiaMapFillMode = 'sequential' | 'diverging'
 
-/** Properties that carry a map key, most specific first (see `featureMapKey`). */
+/** The three names a map key can arrive under — mutually exclusive on the
+ * committed meshes, so the order is incidental (see `featureMapKey`). */
 const MAP_KEY_PROPERTIES = ['municipalitySlug', 'codarea', 'code'] as const
 
 /**
@@ -96,8 +97,12 @@ export const canonicalMapKeysKey = (keys: string[]): string =>
  * The key a feature is painted and addressed by, whichever mesh it came from:
  * a zone municipality carries `municipalitySlug` (B8 F2 — the whole city shares
  * one codarea, so the code cannot identify it), a município `codarea`, an
- * identity territory `code`. The three never coexist on one feature, so no mode
- * argument is needed.
+ * identity territory `code`. Exactly one of the three is present on any feature
+ * of the committed meshes, so this is a lookup over mutually exclusive names and
+ * not a precedence rule — no mode argument is needed. The zone mesh does also
+ * carry the city's `ibgeCode`, which is deliberately not a key property: all 19
+ * zones share it. Pinned against the real meshes in
+ * `tests/int/bahiaGeometries.int.spec.ts`.
  */
 export const featureMapKey = (
   properties: Record<string, unknown> | undefined | null,

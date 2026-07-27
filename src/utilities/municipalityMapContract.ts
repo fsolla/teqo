@@ -125,6 +125,16 @@ export type MunicipalityMapBundle = {
   projectedValidVotesByMapKey: Record<string, number>
   /** map key → the municipality it opens on click. */
   municipalitiesByMapKey: MunicipalitiesByMapKey
+  /**
+   * Whether the actor's scope includes a zone municipality, i.e. whether the
+   * approximate ZE mesh is painted at all — which is what the map's provenance
+   * caveat is about. Published rather than re-derived on the client so `kind`
+   * stays the single answer to "is this a zona": reading it off the key's shape
+   * would be a second encoding of the rule in `mapKeyForMunicipality`, and
+   * `zoneBreakdown` is scheduled for deletion by the fill-in that removes the
+   * textual zone list.
+   */
+  hasZoneMunicipalities: boolean
   /** Zone municipalities in scope (Salvador) with per-year values. */
   zoneBreakdown: MunicipalityZoneBreakdownRow[]
   candidateName: string

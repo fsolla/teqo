@@ -31,22 +31,16 @@ describe('bahiaMapStyle', () => {
   })
 
   describe('featureMapKey (B8 F2)', () => {
-    it('keys a zone municipality by its catalog slug', () => {
-      expect(
-        featureMapKey({ municipalitySlug: 'salvador-ze-7', ibgeCode: '2927408', zoneNumber: 7 }),
-      ).toBe('salvador-ze-7')
+    it('keys a zone municipality by its slug, never by the city code it also carries', () => {
+      expect(featureMapKey({ municipalitySlug: 'salvador-ze-7', ibgeCode: '2927408' })).toBe(
+        'salvador-ze-7',
+      )
     })
 
     it('keys a município by codarea and an identity territory by code', () => {
       expect(featureMapKey({ codarea: '2905701', name: 'Barreiras' })).toBe('2905701')
       expect(featureMapKey({ code: 'chapada-diamantina', name: 'Chapada Diamantina' })).toBe(
         'chapada-diamantina',
-      )
-    })
-
-    it('prefers the slug when the zone mesh also carries the city code', () => {
-      expect(featureMapKey({ municipalitySlug: 'salvador-ze-1', codarea: '2927408' })).toBe(
-        'salvador-ze-1',
       )
     })
 

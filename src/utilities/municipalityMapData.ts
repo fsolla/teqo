@@ -155,11 +155,9 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
 
   const territorialClassByMapKey: Record<string, MunicipalityTerritorialClass> = {}
   const projectedValidVotesByMapKey: Record<string, number> = {}
-  for (const [mapKey, entry] of Object.entries(municipalitiesByMapKey)) {
-    territorialClassByMapKey[mapKey] = computeMunicipalityTerritorialClass(entry.slug).class
-    projectedValidVotesByMapKey[mapKey] = projectedValidVotes(
-      getMunicipalityFederalBaseline(entry.slug),
-    )
+  for (const [mapKey, slug] of Object.entries(municipalitiesByMapKey)) {
+    territorialClassByMapKey[mapKey] = computeMunicipalityTerritorialClass(slug).class
+    projectedValidVotesByMapKey[mapKey] = projectedValidVotes(getMunicipalityFederalBaseline(slug))
   }
 
   const pledgeValuesByScenario = Object.fromEntries(
@@ -264,6 +262,7 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
     competitiveRankByYear,
     projectedValidVotesByMapKey,
     municipalitiesByMapKey,
+    hasZoneMunicipalities: municipalities.some((municipality) => municipality.kind === 'zona'),
     zoneBreakdown,
     candidateName: BASELINE_TICKET_2022.candidate.name,
     comparison,

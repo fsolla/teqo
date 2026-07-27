@@ -1,11 +1,53 @@
 # Escala e DRY pós-B8 F2 (polígonos das ZE de Salvador)
 
-Status: rascunho
-Atualizado em: 2026-07-26
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos, **B8+**, fill-in de engenharia)
+Status: **entregue 2026-07-27** (as quatro fases; ver "Como foi entregue")
+Atualizado em: 2026-07-27
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (**B8+ ✓**, fill-in de engenharia)
 Impeccable: A — N/A (nenhuma superfície nova; F3 muda um parágrafo de copy e um estado de falha, o resto preserva o comportamento visível do B8 F2)
 Appetite: ~0,75–1 dia eng; quatro fases independentes, nenhuma com migration, collection ou `Consent`; só F1 reescreve o artefato commitado
 Responsável: —
+
+## Como foi entregue (as-built, 2026-07-27)
+
+As quatro fases entraram numa sessão, F1 primeiro. Duas correções ao plano vieram de medição, não de preferência, e estão registradas abaixo porque mudam o que a próxima pessoa deve acreditar.
+
+### F1 — a alavanca era o peso absoluto, não os dígitos
+
+O plano tratava o alvo como resolução de chão **implementada via dígitos de quantização**. Medindo o re-snap do artefato commitado para grades mais grossas, quantização sozinha quase não corta: ~12 m → 8.990 pontos (99% do original), ~25 m → 8.164 (90%), ~50 m → 6.219 (68%), e mesmo **na grade da malha estadual (~103 m) → 3.849 pontos, ainda 203/feature** — ~9× a densidade do irmão. A alavanca dominante é o limiar absoluto de Visvalingam, que o plano mencionava entre parênteses. A política inverteu a ordem: **o peso absoluto (em m² de chão) é a política; os dígitos são derivados do bbox de cada topologia por consistência.**
+
+`scripts/lib/topology.mjs` (primeiro módulo de `scripts/lib/` — **B5 F2** deve pousar nele, não abrir um segundo) declara `SIMPLIFY_TOLERANCE_M2` por malha, `GROUND_GRID_METRES = 102.82`, `simplifyToGroundScale`, `quantizeToGroundGrid` e `describeGroundScale`. `SIMPLIFY_QUANTILE` e `QUANTIZE_DIGITS` saíram dos dois scripts.
+
+| artefato                       | antes                             | depois                                       |
+| ------------------------------ | --------------------------------- | -------------------------------------------- |
+| `bahia-municipalities`         | 132.162 B · 9.139 pts · 21,9/ft   | **byte-idêntico** (política semeada nele)    |
+| `bahia-identity-territories`   | 14.862 B · 1.210 pts · 44,8/ft    | 14.861 B · 1.210 pts · 44,8/ft (−1 B)        |
+| **`bahia-municipality-zones`** | **72.310 B · 9.120 pts · 480/ft** | **7.687 B · 574 pts · 30,2/ft** (−89% bytes) |
+
+Três coisas que a implementação aprendeu e deixou no comentário do módulo, para ninguém re-derivar:
+
+- **Tolerâncias são por malha de propósito**, agora lado a lado em unidades de chão. A tolerância municipal (1,78 km²) até chega a 17,9 pontos/feature nas zonas, mas come **5% da área de Salvador (306 → 291 km²)** — e a soma de áreas é justamente a asserção que prova que nenhum bairro foi descartado nem contado duas vezes. As zonas ficaram em 0,06 km²; os territórios em 13,6 km² (são dissolve da malha municipal, então já vêm generalizados).
+- **A ordem importa:** quantizar antes de simplificar colapsa vértices em duplicatas e o `merge` posterior produz anéis quebrados — medido: Salvador dissolveu para 24 km² em vez de 307.
+- O 1 byte dos territórios é a grade indo de 102,730 m para 102,822 m: os dígitos passaram a ser derivados do bbox para a grade pedida em vez de um `1e4` fixo.
+
+A área das zonas saiu em **306,3 km²** (era ~324), dentro da janela de 280–360 km² que o int já asseverava — medida, não presumida, como o plano exigia. O tripwire de bytes ficou e ganhou ao lado `MAX_POINTS_PER_FEATURE = 60`, a grandeza que a política controla. `zoneNumber` saiu do artefato e do tipo.
+
+### F2 — o invariante valia; caiu o teste sintético
+
+`featureMapKey` agora roda sobre features **reais** das três malhas commitadas, cada uma no laço que já as varre por inteiro: 417 municípios respondem `codarea`, 27 TIs respondem `code`, 19 zonas respondem `slug` **mesmo carregando o `ibgeCode` da cidade**. A primeira escrita asseria a cidade dentro do laço das zonas, e o `/simplify` pegou o furo: as 19 entradas compartilham o código de Salvador, então aquilo era uma feature municipal asserida 19 vezes enquanto 416 municípios e os 27 territórios nunca passavam por `featureMapKey`. O caso de precedência pinado no unit usava a forma `{ municipalitySlug, codarea }`, que nenhuma malha produz: caiu, e o comentário passou a declarar o invariante real (as três propriedades de chave são mutuamente exclusivas; `ibgeCode` na malha de zonas deliberadamente não é chave, porque as 19 o compartilham). Sem resolvedor único, como travado.
+
+### F3 — degrada e admite a aproximação em todo modo
+
+`loadLayerFeatures` faz `.catch()` na metade das zonas e segue com a malha municipal. A precisão que o plano deixava otimista: como o bundle é keyed por slug, **Salvador não volta a pintar agregada** — volta como polígono sem dado e sem interação, porque não está em `scopedKeys`. A memoização da rejeição fica (é o que dá ao B14 um estado de falha acionável) e `status === 'error'` segue reservado à falha da malha municipal. A ressalva de aproximação saiu do gate `!comparisonActive` e passou a ser um `<p>` condicionado a **haver ZE no escopo**. A primeira escrita derivava isso no cliente com um `isZoneMapKey` (um município é keyed por 7 dígitos; uma zona, pelo slug) e o `/simplify` a **rejeitou**: era uma segunda codificação da regra de `mapKeyForMunicipality`, agora em espaço negativo (qualquer chave sem 7 dígitos responde "zona"), e o servidor já conhece a resposta por `kind`. O gate é `bundle.hasZoneMunicipalities`, campo próprio do contrato preenchido no mesmo passe que monta `zoneBreakdown` — e **não** `zoneBreakdown.length > 0`, que recriaria justamente o acoplamento que o fill-in [remover-lista-zonas-mapa-inicio.md](remover-lista-zonas-mapa-inicio.md) vai deletar; assim ele só apaga o `<ul>` + o campo do bundle.
+
+### F4 — deletado, colapsado e **um item rejeitado**
+
+Saíram `getTerritoryFeature` e `getMunicipalityZoneFeature` (os int specs montam o índice em uma linha). `MunicipalityMapNavigation` virou `string | undefined` e `MunicipalitiesByMapKey` virou `Record<string, string>` — com o tipo, morreram o helper, o `useMemo` que só existia porque o helper alocava por chamada, o `| null` do `MapFeatureReadout` e 435 strings no payload RSC de toda visita ao Início. `polygonRingsOf` foi exportado (3º call site) e os helpers de geometria passaram a declarar o requisito real com `PolygonalFeature`, mais `BahiaFeature<P>` para as quatro grafias de `Feature<Polygon | MultiPolygon, P>` e `BahiaMeshFeature` para o que a camada do mapa recebe. As limpezas do script entraram (chave por alias num `Map` acima do passe 1, `polygonCount` sem branches inalcançáveis, `[await shp(buffer)].flat()`, o `url` que ninguém desestrutura, `push` em vez de copiar o array).
+
+**Rejeitado por medição, contra o plano:** deletar `city`/`zoneNumber` de `MunicipalityZoneNeighborhoodEntry`. É verdade que nenhum runtime os lê, mas os dois entram nas linhas hasheadas por `canonicalEvidenceRows` e são colunas do fixture de proveniência da RA 02/2017 — uma transcrição **independente** da resolução. Deletar enfraqueceria a verificação ou forçaria regerar um fixture de proveniência por ganho zero. **Ficaram**, e com eles o filtro `entry.city === 'Salvador'` no int. Só o `zoneNumber` do **artefato TopoJSON** saiu (F1 reescreveu o arquivo).
+
+### O que continua verdade
+
+Sem migration, collection, server action ou `Consent`. Contrato de URL, escalas e catálogo TRE inalterados. O e2e segue em 436 paths / 435 interativos (o não-interativo é a base municipal de Salvador). Os dois débitos de produto do B8 F2 (rank por ZE, ZE exata no "Onde estou") continuam abertos com gatilho no [plano do B8](poligonos-pracas-zona.md), e a decisão sobre o modo `territory` morto do `loadLayerFeatures` continua pertencendo ao **E12**.
 
 ## Dados → decisão → apresentação
 
@@ -46,10 +88,10 @@ A comparação que fecha o caso: **Salvador é um `Polygon` de 35 pontos na malh
 - **A ressalva de aproximação pertence à malha, não à lista.** O parágrafo "é aproximado, não é o limite oficial do TSE" estava dentro do gate `bundle.zoneBreakdown.length > 0 && !comparisonActive`, mas o mapa divergente da comparação pinta Salvador zona por zona a partir da **mesma** malha aproximada. A ressalva foi pendurada na condição de render da lista em vez de na presença da malha na tela — e o rabbit hole que o próprio plano do B8 nomeia é "tratar polígono derivado como limite oficial". **Rejeitado:** duplicar a frase nos dois braços (duas cópias da mesma afirmação jurídica divergem na primeira revisão de copy). **Atualização 2026-07-26:** o fill-in [remover-lista-zonas-mapa-inicio.md](remover-lista-zonas-mapa-inicio.md) remove a lista `zoneBreakdown` inteira (pedido de produto pós-B8 F2). F3 **não** presupõe o `<ul>`: quem landar primeiro coloca a ressalva atrelada ao escopo com ZE / presença da malha; o outro só ajusta.
 - **i18n e naming** seguem o AGENTS.md: identificadores em inglês, strings visíveis em pt-BR.
 
-## Questões em aberto
+## Questões em aberto (resolvidas na entrega)
 
-- **Qual resolução de chão para as duas malhas?** **Opções:** (a) ~100 m nas duas, igualando a malha municipal de hoje (`QUANTIZE_DIGITS ≈ 380` nas zonas); (b) ~25 m nas zonas, aceitando nitidez até ~zoom 14 (`≈ 1500`), e 100 m no estado; (c) ~25 m nas duas (encarece a malha estadual, que é a que todo mundo baixa). **Recomendação:** (b) — o zoom útil de uma ZE é maior que o de um município do interior, e mesmo assim corta a densidade atual várias vezes; (a) é o corte máximo e vale se a medição pós-mudança mostrar que 1500 ainda dobra a camada.
-- **Deletar os dois acessores órfãos ou declará-los contrato do módulo?** **Opções:** (a) deletar `getMunicipalityZoneFeature` e `getTerritoryFeature`, com os specs montando o índice em uma linha; (b) manter e documentar como contrato uniforme dos três módulos de malha. **Recomendação:** (a) — o `getTerritoryFeature` perdeu o último consumidor de produção **neste commit** (quando `fitMapToHighlights` parou de consultar os módulos de geometria) e o knip não vê nenhum dos dois porque specs são entry points; a regra do repo é deletar o que a mudança orfanou. Se o produto quiser o contrato uniforme, ele volta de graça no 4º mesh.
+- **Qual resolução de chão para as duas malhas?** ~~Opções (a) ~100 m nas duas · (b) ~25 m nas zonas · (c) ~25 m nas duas.~~ **Resolvido: (a), ~100 m nas duas** (decisão do usuário na sessão de implementação), e a pergunta estava mal-posta: a **grade** é a mesma nas três malhas, mas o que controla densidade é a **tolerância de simplificação**, que é por malha. Ver "Como foi entregue → F1" — a tolerância municipal aplicada às zonas custaria 5% da área de Salvador, então elas têm a própria, declarada em m² ao lado das irmãs.
+- **Deletar os dois acessores órfãos ou declará-los contrato do módulo?** **Resolvido: (a), deletados.** Os int specs montam o índice em uma linha. Se o produto quiser o contrato uniforme, ele volta de graça no 4º mesh.
 
 ## Abordagem proposta
 

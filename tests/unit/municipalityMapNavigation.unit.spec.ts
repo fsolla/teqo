@@ -4,7 +4,6 @@ import {
   buildMunicipalitiesByIbgeCode,
   buildMunicipalitiesByMapKey,
   mapKeyForMunicipality,
-  resolveMunicipalityMapNavigation,
 } from '@/utilities/municipalityMapNavigation'
 
 const abaira = { slug: 'abaira', name: 'Abaíra', ibgeCode: '2900108', kind: 'municipio' } as const
@@ -40,31 +39,11 @@ describe('municipalityMapNavigation', () => {
   it('gives every zone its own map key instead of pooling them under the city', () => {
     const byMapKey = buildMunicipalitiesByMapKey([salvadorZe1, salvadorZe2, abaira])
 
-    expect(Object.keys(byMapKey).sort()).toEqual(['2900108', 'salvador-ze-1', 'salvador-ze-2'])
+    expect(byMapKey).toEqual({
+      '2900108': 'abaira',
+      'salvador-ze-1': 'salvador-ze-1',
+      'salvador-ze-2': 'salvador-ze-2',
+    })
     expect(byMapKey['2927408']).toBeUndefined()
-    expect(byMapKey['salvador-ze-2']).toEqual({
-      slug: 'salvador-ze-2',
-      name: 'Salvador — ZE 2',
-    })
-  })
-
-  it('resolveMunicipalityMapNavigation returns none for an unknown or empty key', () => {
-    const byMapKey = buildMunicipalitiesByMapKey([abaira])
-
-    expect(resolveMunicipalityMapNavigation('9999999', byMapKey)).toEqual({ kind: 'none' })
-    expect(resolveMunicipalityMapNavigation('2900108', {})).toEqual({ kind: 'none' })
-  })
-
-  it('resolveMunicipalityMapNavigation opens the unit behind the key, zone included', () => {
-    const byMapKey = buildMunicipalitiesByMapKey([abaira, salvadorZe1])
-
-    expect(resolveMunicipalityMapNavigation('2900108', byMapKey)).toEqual({
-      kind: 'navigate',
-      slug: 'abaira',
-    })
-    expect(resolveMunicipalityMapNavigation('salvador-ze-1', byMapKey)).toEqual({
-      kind: 'navigate',
-      slug: 'salvador-ze-1',
-    })
   })
 })

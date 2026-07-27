@@ -4,7 +4,6 @@ import type { BahiaMapFeatureInfo } from '@/components/campaign/map/BahiaMap'
 import { Button } from '@/components/ui/button'
 import { formatElectionNumber } from '@/lib/electionFormat'
 import type { MunicipalityMapScaleMode } from '@/utilities/municipalityMapContract'
-import type { MunicipalityMapNavigation } from '@/utilities/municipalityMapNavigation'
 
 type MapFeatureReadoutProps = {
   feature: BahiaMapFeatureInfo | null
@@ -21,7 +20,8 @@ type MapFeatureReadoutProps = {
   /** What the bubble encodes for THIS município — only while the layer is on. */
   bubbleReading: string | null
   comparisonActive: boolean
-  navigation: MunicipalityMapNavigation | null
+  /** The município the painted feature opens, when it is one the actor can read. */
+  municipalitySlug: string | undefined
 }
 
 const percentFormatter = new Intl.NumberFormat('pt-BR', {
@@ -52,7 +52,7 @@ export const MapFeatureReadout = ({
   relativeReading,
   bubbleReading,
   comparisonActive,
-  navigation,
+  municipalitySlug,
 }: MapFeatureReadoutProps) => {
   if (!feature) {
     return (
@@ -105,9 +105,9 @@ export const MapFeatureReadout = ({
         {bubbleReading ? <p className="text-xs text-muted-foreground">{bubbleReading}</p> : null}
       </div>
 
-      {navigation?.kind === 'navigate' ? (
+      {municipalitySlug ? (
         <Button asChild className="min-h-11 shrink-0">
-          <Link href={`/campanha/municipios/${navigation.slug}`}>Abrir município</Link>
+          <Link href={`/campanha/municipios/${municipalitySlug}`}>Abrir município</Link>
         </Button>
       ) : null}
     </div>
