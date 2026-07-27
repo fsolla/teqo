@@ -95,8 +95,16 @@ Appetite: **~2h eng, fill-in.** O `/simplify` do C13 mostrou que a invariante do
 **As-built:**
 - Guard ampliado para basename `/^\w*[Ff]ormActions\.ts$/` + `taskActions.ts`.
 - Migrados para `runCampaignRedirectFormAction` / `runCampaignFormAction`: `atividades/[slug]/lifecycleFormActions.ts`, `resultFormActions.ts`, `updateFormActions.ts`; `municipios/[slug]/updateFormActions.ts`, `pledgeFormActions.ts`; `municipios/municipalityStaffFormActions.ts` (4 actions).
-- Allowlist com racional: `atividades/[slug]/taskActions.ts` (contrato posicional `Promise<{ok,message}>` para `useOptimistic`, não é ladder `(state, formData)`).
-- Docstring de `runCampaignFormAction` precisada: a exceção de atividades é só `atividades/formActions.ts` (unique-violation + duplicate-title), não os irmãos.
+- Allowlist com racional: `taskActions.ts` (contrato posicional); `atividades/formActions.ts` (unique-violation + duplicate-title); `apoiadores/[id]/formActions.ts` (message-only flatten).
+- Guard exige call site `runCampaign…FormAction(` — comentário nomeando o wrapper não passa.
+- Docstring de `runCampaignFormAction` precisada: as exceções hand-rolled são só os dois allowlisted acima.
+- `/simplify` pós-F4b: pre-parse de `id` em `lifecycleFormActions` só engole `FormDataBoundaryError`.
+
+**Já resolvido no simplify (não reabrir):** loophole de comment-token no guard; `catch` nu do lifecycle id.
+
+**Explicitamente fora / Adiado com gatilho (triage 2026-07-27):**
+- `actions/password.ts` / `profile.ts` / `leaderSupporter.ts` exportam `*FormAction` com ladder hand-rolled fora do filtro `*FormActions.ts` — gatilho: próximo toque nesses arquivos **ou** decisão de expandir o guard além de route-level FormActions.
+- `convite/[token]/formActions.ts` login half ainda hand-rolled (password-confirm + redirect) — gatilho: próximo toque no convite; autofill já usa o wrapper.
 
 **Revisão 2026-07-27:** F4b fechada; F1–F2 seguem com gatilho de volume.
 
