@@ -7,7 +7,12 @@ import {
   setAdvisorMunicipalityMembership,
   updateAdvisorProfile,
 } from '@/app/(campaign)/campanha/actions/advisor'
-import { nullableFormText, requiredFormText, requiredRelationshipFormValue } from '@/lib/formData'
+import {
+  nullableFormText,
+  requiredFormBoolean,
+  requiredFormText,
+  requiredRelationshipFormValue,
+} from '@/lib/formData'
 import { ADVISOR_ACTION_SAFE_MESSAGES } from '@/lib/schemas/advisor'
 import {
   runCampaignFormAction,
@@ -65,11 +70,10 @@ export const setAdvisorMunicipalityMembershipFormAction = async (
 ): Promise<CampaignFormActionState> =>
   runCampaignFormAction({
     execute: async () => {
-      const assignedRaw = requiredFormText(formData, 'assigned')
       await setAdvisorMunicipalityMembership({
         advisorId: requiredRelationshipFormValue(formData, 'advisorId'),
         municipalityId: requiredRelationshipFormValue(formData, 'municipalityId'),
-        assigned: assignedRaw === 'true',
+        assigned: requiredFormBoolean(formData, 'assigned'),
       })
       return { message: 'Carteira atualizada.' }
     },
@@ -87,11 +91,10 @@ export const setAdvisorMunicipalitiesBatchFormAction = async (
       if (municipalityIds.length === 0) {
         throw new Error(EMPTY_BATCH_MESSAGE)
       }
-      const assignedRaw = requiredFormText(formData, 'assigned')
       await setAdvisorMunicipalitiesBatch({
         advisorId: requiredRelationshipFormValue(formData, 'advisorId'),
         municipalityIds,
-        assigned: assignedRaw === 'true',
+        assigned: requiredFormBoolean(formData, 'assigned'),
       })
       return { message: 'Carteira atualizada.' }
     },

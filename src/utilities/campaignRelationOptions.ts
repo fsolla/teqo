@@ -4,7 +4,7 @@ import type { Payload } from 'payload'
 
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import type { CampaignUser } from '@/payload-types'
-import { relationshipId } from '@/utilities/relationship'
+import { populatedContactName, relationshipId } from '@/utilities/relationship'
 
 export type ActivityRelationOption = RelationOption & {
   municipalityId: number
@@ -104,4 +104,31 @@ export const loadStateDeputyOptions = async (
     party: stateDeputy.party ?? null,
     slug: stateDeputy.slug,
   }))
+}
+
+/**
+ * Leadership catalog for typeahead cells (B36). Access of `canReadLeadership`
+ * already scopes an advisor to leaderships of administered municipalities —
+ * no manual intersection with `getAccessibleLeadershipIds`.
+ */
+export const loadLeadershipOptions = async (
+  payload: Payload,
+  user: CampaignUser,
+): Promise<RelationOption[]> => {
+  const result = await payload.find({
+    collection: 'leadership',
+    depth: 1,
+    limit: 0,
+    pagination: false,
+    select: { contact: true },
+    where: {},
+    user,
+    overrideAccess: false,
+  })
+  return result.docs
+    .map((leadership) => ({
+      id: leadership.id,
+      name: populatedContactName(leadership.contact),
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
 }

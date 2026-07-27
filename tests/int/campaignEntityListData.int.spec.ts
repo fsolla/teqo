@@ -132,7 +132,36 @@ describe('loadStateDeputyListPageData', () => {
       slug: stateDeputy.slug,
       party: 'PT',
       municipalityCount: 0,
-      leadershipCount: 0,
+      leaderships: [],
+    })
+  })
+
+  it('resolves named leaderships linked to the deputy (not a bare count)', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const stateDeputy = await fixtures.createStateDeputy({ party: 'PT' })
+    const contact = await fixtures.createContact()
+    const leadership = await fixtures.createLeadership({
+      contact: contact.id,
+      municipalities: [municipality.id],
+    })
+    await payload.update({
+      collection: 'leadership',
+      id: leadership.id,
+      data: { stateDeputies: [stateDeputy.id] },
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    const result = await loadStateDeputyListPageData(payload, coordinator, {
+      page: 1,
+      q: stateDeputy.name,
+    })
+
+    expect(result.rows[0]).toMatchObject({
+      slug: stateDeputy.slug,
+      leaderships: [{ id: leadership.id, name: contact.name }],
     })
   })
 

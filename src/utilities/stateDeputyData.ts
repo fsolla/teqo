@@ -2,8 +2,8 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import type { CampaignUser, Leadership, StateDeputy } from '@/payload-types'
-import { relationshipId } from '@/utilities/relationship'
+import type { CampaignUser, StateDeputy } from '@/payload-types'
+import { populatedContactName, relationshipId } from '@/utilities/relationship'
 import {
   buildStateDeputyListWhere,
   NO_PARTY_FILTER_VALUE,
@@ -13,13 +13,18 @@ import {
   type StateDeputyListState,
 } from '@/utilities/stateDeputyListUrl'
 
+type LeadershipRelationSummary = {
+  id: number
+  name: string
+}
+
 export type StateDeputyRowViewModel = {
   id: number
   name: string
   slug: string
   party: string | null
   municipalityCount: number
-  leadershipCount: number
+  leaderships: LeadershipRelationSummary[]
 }
 
 /** Values still reachable under the OTHER active filters (the Partido popover). */
@@ -94,7 +99,7 @@ export const loadStateDeputyListPageData = async (
 
   const stateDeputyIDs = result.docs.map((doc) => doc.id)
   const municipalityCounts = new Map<number, number>()
-  const leadershipCounts = new Map<number, number>()
+  const leadershipsByDeputy = new Map<number, LeadershipRelationSummary[]>()
 
   if (stateDeputyIDs.length) {
     const [municipalities, leaderships] = await Promise.all([
@@ -110,11 +115,14 @@ export const loadStateDeputyListPageData = async (
       payload.find({
         collection: 'leadership',
         where: { stateDeputies: { in: stateDeputyIDs } },
-        depth: 0,
+        depth: 1,
         limit: 0,
         pagination: false,
-        select: { stateDeputies: true },
-        overrideAccess: true,
+        select: { stateDeputies: true, contact: true },
+        // Names ship in the list cell — honour canReadLeadership (unlike
+        // municipalityCounts above, which stays aggregate-only).
+        user,
+        overrideAccess: false,
       }),
     ])
 
@@ -128,12 +136,23 @@ export const loadStateDeputyListPageData = async (
     }
 
     for (const leadership of leaderships.docs) {
+      const summary: LeadershipRelationSummary = {
+        id: leadership.id,
+        name: populatedContactName(leadership.contact),
+      }
       for (const deputy of leadership.stateDeputies ?? []) {
         const id = relationshipId(deputy)
         if (id !== null && stateDeputyIDs.includes(id)) {
-          leadershipCounts.set(id, (leadershipCounts.get(id) ?? 0) + 1)
+          const list = leadershipsByDeputy.get(id) ?? []
+          list.push(summary)
+          leadershipsByDeputy.set(id, list)
         }
       }
+    }
+
+    for (const [id, list] of leadershipsByDeputy) {
+      list.sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
+      leadershipsByDeputy.set(id, list)
     }
   }
 
@@ -144,7 +163,7 @@ export const loadStateDeputyListPageData = async (
       slug: doc.slug,
       party: doc.party ?? null,
       municipalityCount: municipalityCounts.get(doc.id) ?? 0,
-      leadershipCount: leadershipCounts.get(doc.id) ?? 0,
+      leaderships: leadershipsByDeputy.get(doc.id) ?? [],
     })),
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
@@ -217,16 +236,10 @@ export const loadStateDeputyDetail = async (
       name: municipality.name,
       slug: municipality.slug,
     })),
-    leaderships: leaderships.docs.map((leadership) => {
-      const contact = leadership.contact as Leadership['contact']
-      return {
-        id: leadership.id,
-        name:
-          typeof contact === 'object' && contact !== null && 'name' in contact
-            ? String(contact.name)
-            : 'Contato',
-      }
-    }),
+    leaderships: leaderships.docs.map((leadership) => ({
+      id: leadership.id,
+      name: populatedContactName(leadership.contact),
+    })),
   }
 }
 

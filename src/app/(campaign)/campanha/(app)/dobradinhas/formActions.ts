@@ -13,7 +13,7 @@ const safeMessages = [
   `Cada liderança aceita no máximo ${MAX_LEADERSHIP_STATE_DEPUTIES} dobradinhas.`,
 ] as const
 
-/** One chip toggle in the "Dobradinhas" column of `/campanha/liderancas` (B31). */
+/** One chip toggle in the "Lideranças" column of `/campanha/dobradinhas` (B36). */
 export const setLeadershipStateDeputyMembershipFormAction = async (
   _state: CampaignFormActionState,
   formData: FormData,
@@ -25,8 +25,8 @@ export const setLeadershipStateDeputyMembershipFormAction = async (
         stateDeputyId: requiredRelationshipFormValue(formData, 'stateDeputyId'),
         assigned: requiredFormBoolean(formData, 'assigned'),
       })
-      return { message: 'Dobradinhas atualizadas.' }
+      return { message: 'Lideranças atualizadas.' }
     },
     safeMessages,
-    genericMessage: 'Não foi possível atualizar as dobradinhas. Tente novamente.',
+    genericMessage: 'Não foi possível atualizar as lideranças. Tente novamente.',
   })
