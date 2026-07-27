@@ -1,29 +1,16 @@
 import { Badge } from '@/components/ui/Badge'
 import type { SupportStatus } from '@/lib/schemas/leadership'
+import { supportStatusLabels } from '@/utilities/leadershipLabels'
 
 export type { SupportStatus } from '@/lib/schemas/leadership'
 
+// Labels live in `leadershipLabels.ts` (shared with the ficha forms and the
+// list quick-edit control) — this table only adds the badge-specific variant.
 const statusPresentation = {
-  engajado: {
-    label: 'Engajado',
-    variant: 'support-engaged',
-    summary: 'Participa ativamente da campanha nos seus municípios e pode ter acesso ao app.',
-  },
-  a_abordar: {
-    label: 'A abordar',
-    variant: 'support-to-approach',
-    summary: 'Cadastrado, mas o engajamento ainda não foi confirmado.',
-  },
-  em_disputa: {
-    label: 'Em disputa',
-    variant: 'support-disputed',
-    summary: 'Apoio contestado, incerto ou em negociação.',
-  },
-  negativo: {
-    label: 'Negativo',
-    variant: 'support-negative',
-    summary: 'Declarou não apoiar ou recusou o contato.',
-  },
+  engajado: { variant: 'support-engaged' },
+  a_abordar: { variant: 'support-to-approach' },
+  em_disputa: { variant: 'support-disputed' },
+  negativo: { variant: 'support-negative' },
 } as const
 
 export const SupportStatusBadge = ({ status }: { status: SupportStatus }) => {
@@ -31,7 +18,7 @@ export const SupportStatusBadge = ({ status }: { status: SupportStatus }) => {
 
   return (
     <Badge variant={presentation.variant} data-support-status={status}>
-      {presentation.label}
+      {supportStatusLabels[status]}
     </Badge>
   )
 }

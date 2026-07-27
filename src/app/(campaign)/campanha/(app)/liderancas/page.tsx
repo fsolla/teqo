@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { LeadershipInviteRowAction } from '@/components/campaign/invite/LeadershipInviteRowAction'
-import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
+import { LeadershipListSupportStatusControl } from '@/components/campaign/leadership/LeadershipListSupportStatusControl'
 import { CampaignCopyableCell } from '@/components/campaign/shared/CampaignCopyableCell'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
@@ -80,7 +80,9 @@ const leadershipColumns = (
   {
     id: 'supportStatus',
     head: <CampaignTableHead>Status</CampaignTableHead>,
-    cell: (row) => (row.supportStatus ? <SupportStatusBadge status={row.supportStatus} /> : '—'),
+    cell: (row) => (
+      <LeadershipListSupportStatusControl leadershipID={row.id} status={row.supportStatus} />
+    ),
   },
   {
     id: 'municipalities',

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { leadershipStaffEditSafeMessages } from '@/app/(campaign)/campanha/(app)/liderancas/leadershipStaffEditMessages'
 import { updateLeadershipInternal } from '@/app/(campaign)/campanha/actions/leadership'
 import {
   nullableFormText,
@@ -17,7 +18,7 @@ import {
 
 const safeMessages = [
   'Você só pode vincular lideranças aos municípios que assessora.',
-  'Somente a coordenação e a assessoria podem gerenciar lideranças.',
+  ...leadershipStaffEditSafeMessages,
 ] as const
 
 export const updateLeadershipInternalFormAction = async (

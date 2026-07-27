@@ -1,5 +1,6 @@
 'use server'
 
+import { leadershipStaffEditSafeMessages } from '@/app/(campaign)/campanha/(app)/liderancas/leadershipStaffEditMessages'
 import { createLeadership } from '@/app/(campaign)/campanha/actions/leadership'
 import { optionalFormText, repeatedRelationshipFormValues, requiredFormText } from '@/lib/formData'
 import { leadershipSectors, leadershipSupportStatuses } from '@/lib/schemas/leadership'
@@ -11,7 +12,7 @@ import {
 const safeMessages = [
   'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novos municípios.',
   'Você só pode vincular lideranças aos municípios que assessora.',
-  'Somente a coordenação e a assessoria podem gerenciar lideranças.',
+  ...leadershipStaffEditSafeMessages,
   'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.',
 ] as const
 

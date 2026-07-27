@@ -1,11 +1,15 @@
 # Auto-save do Status de apoio na lista de lideranças
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue
+Atualizado em: 2026-07-26
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B32)
 Impeccable: B — encaixe em `LeadershipsPage` / `CampaignTable` de `/campanha/liderancas` (coluna "Status"); sem rota nova de UI
 Appetite: ~0,4–0,5 dia eng; 1 componente novo + 1 route handler JSON espelhando `expected-votes/`; extração do guard CSRF compartilhado; sem migration
 Responsável: —
+
+## Revisão na entrega (2026-07-26)
+
+Implementado como planejado, com duas defasagens (o repo andou desde o rascunho — menos trabalho, não mais): `isSameOriginRequest` já tinha sido extraído para `src/utilities/sameOriginRequest.ts` pelo B24/B27 (este item é o 3º consumidor, não o 2º) e o shell genérico `src/utilities/campaignJsonMutationRoute.ts` (`parseCampaignJsonRequestBody`/`campaignJsonMutationErrorResponse`) já existia — o route novo reusa os dois em vez de reescrever parsing/erro do zero. A verificação de "unit do parse/erro do route" foi trocada por e2e (nenhum dos routes irmãos — `political-trend`/`advisors`/`expected-votes` — tem esse unit; a cobertura real da família é e2e). Extração adicional não prevista no plano: `src/utilities/leadershipLabels.ts` (`supportStatusLabels`), por já ter 3 call sites (`LeadershipInternalForm`, `LeadershipForm`, o novo controle). Gate completo (tsc/lint/format/knip/check:cycles/unit/int/e2e/Aikido) verde; 2 falhas isoladas em `campaignMunicipalities.e2e.spec.ts` (B24/B27) na suíte cheia com 1 worker foram reproduzidas como contenção de outra sessão de agente concorrente no mesmo Postgres local — passam limpo isoladas, não relacionadas a este item.
 
 ## Design (Impeccable)
 
