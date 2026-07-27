@@ -361,9 +361,6 @@ const buildMunicipalityListSearchParams = (
     parseMunicipalityListParams(municipalityListStateToRawParams(state, page)),
   )
 
-export const buildMunicipalityFiltersKey = (state: MunicipalityListState): string =>
-  buildMunicipalityListSearchParams(state).toString()
-
 export const buildMunicipalityListHref = (state: MunicipalityListState, page: number): string =>
   buildListHref(state, buildMunicipalityListSearchParams, '/campanha/municipios', page)
 

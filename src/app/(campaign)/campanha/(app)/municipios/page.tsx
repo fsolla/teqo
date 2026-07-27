@@ -26,7 +26,6 @@ import {
   buildMunicipalityListVisitLabel,
 } from '@/utilities/municipalityListFilters'
 import {
-  buildMunicipalityFiltersKey,
   buildMunicipalityListHref,
   resolveMunicipalityListUrl,
 } from '@/utilities/municipalityListUrl'
@@ -97,7 +96,6 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
 
   const filters = (
     <MunicipalityFilters
-      key={buildMunicipalityFiltersKey(state)}
       state={state}
       showStaffFilters={isStaffView}
       regionFilterOptions={columnFilterOptions.region}

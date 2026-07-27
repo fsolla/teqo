@@ -8,6 +8,7 @@ import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import {
   applyMunicipalityKindFilter,
+  buildMunicipalityFilterHref,
   clearMunicipalityListFilters,
   formatMunicipalityActiveFiltersSummary,
   getMunicipalityFilterDefinition,
@@ -18,7 +19,6 @@ import {
   type MunicipalityFilterOption,
 } from '@/utilities/municipalityListFilters'
 import {
-  buildMunicipalityListHref,
   municipalityListSortOptions,
   parseMunicipalitySortValue,
   resolveMunicipalityListSort,
@@ -41,11 +41,8 @@ export const MunicipalityFilters = ({
   regionFilterOptions,
   advisorFilterOptions,
 }: MunicipalityFiltersProps) => {
-  const { search, setSearch, draftQ, isPending, navigateTo, navigateWithSearch, scheduleSearch } =
-    useCampaignListFilterNavigation({
-      state,
-      toHref: (next) => buildMunicipalityListHref(next, 1),
-    })
+  const { search, onSearchChange, draftQ, isPending, navigateWithSearch, clearSearchAndNavigate } =
+    useCampaignListFilterNavigation({ state, toHref: buildMunicipalityFilterHref })
   const { sort: activeSort, dir: activeDir } = resolveMunicipalityListSort(state)
   const activeFiltersSummary = formatMunicipalityActiveFiltersSummary({
     ...state,
@@ -70,21 +67,13 @@ export const MunicipalityFilters = ({
         navigateWithSearch(state)
       }}
     >
-      <p className="sr-only" aria-live="polite">
-        {isPending ? 'Atualizando resultados…' : ''}
-      </p>
-
       <div className="flex flex-col gap-3 md:flex-row md:items-end">
         <CampaignSearchInput
           id="municipality-search"
           label="Buscar município"
           placeholder="Buscar por município ou zona…"
           value={search}
-          onChange={(event) => {
-            const value = event.target.value
-            setSearch(value)
-            scheduleSearch(value)
-          }}
+          onChange={(event) => onSearchChange(event.target.value)}
         />
         {activeFiltersSummary ? (
           <p className="hidden min-w-0 flex-1 text-sm text-muted-foreground md:block md:self-center md:pb-2 md:whitespace-normal">
@@ -96,10 +85,7 @@ export const MunicipalityFilters = ({
             type="button"
             variant="ghost"
             className="min-h-11 shrink-0 md:self-end"
-            onClick={() => {
-              setSearch('')
-              navigateTo(clearMunicipalityListFilters(state))
-            }}
+            onClick={() => clearSearchAndNavigate(clearMunicipalityListFilters(state))}
           >
             Limpar
           </Button>
@@ -107,6 +93,9 @@ export const MunicipalityFilters = ({
       </div>
 
       <div className="flex flex-col gap-3 md:hidden">
+        {activeFiltersSummary ? (
+          <p className="text-sm text-muted-foreground">{activeFiltersSummary}</p>
+        ) : null}
         {showStaffFilters ? (
           <Field>
             <FieldLabel htmlFor="municipality-filter-priority">Prioridade</FieldLabel>

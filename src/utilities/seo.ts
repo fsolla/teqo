@@ -1,5 +1,5 @@
 /** Remove any trailing slash(es) so URLs concatenate predictably. */
-export const stripTrailingSlash = (url: string): string => url.replace(/\/+$/, '')
+const stripTrailingSlash = (url: string): string => url.replace(/\/+$/, '')
 
 /** Truncate `text` to `max` characters, appending an ellipsis when cut. */
 export const truncate = (text: string, max: number): string =>

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import {
+  buildStateDeputyFilterHref,
   buildStateDeputyPartyOptions,
   clearStateDeputyListFilters,
   formatStateDeputyActiveFiltersSummary,
@@ -14,7 +15,6 @@ import {
   type StateDeputyFilterOption,
 } from '@/utilities/stateDeputyListFilters'
 import {
-  buildStateDeputyListHref,
   parseStateDeputySortValue,
   resolveStateDeputyListSort,
   serializeStateDeputySortValue,
@@ -33,11 +33,8 @@ export const StateDeputyFilters = ({
   /** Whether at least one facet-matching row has no party — gates the "Sem partido" option. */
   hasNoParty: boolean
 }) => {
-  const { search, setSearch, draftQ, isPending, navigateTo, navigateWithSearch, scheduleSearch } =
-    useCampaignListFilterNavigation({
-      state,
-      toHref: (next) => buildStateDeputyListHref(next, 1),
-    })
+  const { search, onSearchChange, draftQ, isPending, navigateWithSearch, clearSearchAndNavigate } =
+    useCampaignListFilterNavigation({ state, toHref: buildStateDeputyFilterHref })
   const { sort, dir } = resolveStateDeputyListSort(state)
   const mobilePartyOptions = buildStateDeputyPartyOptions(partyOptions, hasNoParty)
   const activeSummary = formatStateDeputyActiveFiltersSummary({ ...state, q: draftQ })
@@ -53,20 +50,13 @@ export const StateDeputyFilters = ({
         navigateWithSearch(state)
       }}
     >
-      <p className="sr-only" aria-live="polite">
-        {isPending ? 'Atualizando resultados…' : ''}
-      </p>
-
       <div className="flex flex-col gap-3 md:flex-row md:items-end">
         <CampaignSearchInput
           id="state-deputy-search"
           label="Buscar dobradinha"
           placeholder="Buscar por nome…"
           value={search}
-          onChange={(event) => {
-            setSearch(event.target.value)
-            scheduleSearch(event.target.value)
-          }}
+          onChange={(event) => onSearchChange(event.target.value)}
         />
         {activeSummary ? (
           <p className="hidden min-w-0 flex-1 text-sm text-muted-foreground md:block md:self-center md:pb-2">
@@ -78,10 +68,7 @@ export const StateDeputyFilters = ({
             type="button"
             variant="ghost"
             className="min-h-11 md:self-end"
-            onClick={() => {
-              setSearch('')
-              navigateTo(clearStateDeputyListFilters(state))
-            }}
+            onClick={() => clearSearchAndNavigate(clearStateDeputyListFilters(state))}
           >
             Limpar
           </Button>

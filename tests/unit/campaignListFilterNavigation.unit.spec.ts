@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act, createElement, type ReactElement } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const routerState = vi.hoisted(() => ({
   replace: vi.fn(),
@@ -121,13 +121,37 @@ const typeSearch = (label: string, value: string) => {
   fireEvent.change(screen.getByLabelText(label), { target: { value } })
 }
 
+const searchInput = (label: string) => screen.getByLabelText(label) as HTMLInputElement
+
+/**
+ * `dir` never appears in these: every `sortValue` here is an `asc` key, which is
+ * each list's default direction, so the canonical serializer drops it.
+ */
+const sortKeyOf = ({ sortValue }: FilterCase) => sortValue.split('|')[0]
+const hrefWithSort = (filterCase: FilterCase) =>
+  `${filterCase.bareHref}?sort=${sortKeyOf(filterCase)}`
+const hrefWithQueryAndSort = (filterCase: FilterCase) =>
+  `${filterCase.bareHref}?q=silva&sort=${sortKeyOf(filterCase)}`
+
 const advance = (ms: number) => {
   act(() => {
     vi.advanceTimersByTime(ms)
   })
 }
 
+const reactActEnvironment = globalThis as typeof globalThis & {
+  IS_REACT_ACT_ENVIRONMENT?: boolean
+}
+
 describe('campaign list filter navigation', () => {
+  beforeAll(() => {
+    reactActEnvironment.IS_REACT_ACT_ENVIRONMENT = true
+  })
+
+  afterAll(() => {
+    delete reactActEnvironment.IS_REACT_ACT_ENVIRONMENT
+  })
+
   beforeEach(() => {
     // React's scheduler needs real microtasks; only the debounce clock is faked.
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
@@ -209,9 +233,9 @@ describe('campaign list filter navigation', () => {
       fireEvent.change(screen.getByLabelText('Ordenar'), { target: { value: sortValue } })
 
       expect(routerState.replace).toHaveBeenCalledTimes(1)
-      const [href] = routerState.replace.mock.calls[0] as [string, unknown]
-      expect(href).toContain('q=silva')
-      expect(href).toContain(`sort=${sortValue.split('|')[0]}`)
+      expect(routerState.replace).toHaveBeenCalledWith(hrefWithQueryAndSort(filterCase), {
+        scroll: false,
+      })
 
       // The sort consumed the pending search; the timer must not fire a second one.
       advance(SEARCH_DEBOUNCE_MS)
@@ -236,7 +260,7 @@ describe('campaign list filter navigation', () => {
   it.each(filterCases)(
     '$name: a pending search does not revert a navigation made from outside the shell',
     (filterCase) => {
-      const { searchLabel, sortValue, elementWithSort } = filterCase
+      const { searchLabel, elementWithSort } = filterCase
       const { rerenderWith } = mountCase(filterCase)
 
       typeSearch(searchLabel, 'silva')
@@ -245,9 +269,43 @@ describe('campaign list filter navigation', () => {
       advance(SEARCH_DEBOUNCE_MS)
 
       expect(routerState.replace).toHaveBeenCalledTimes(1)
-      const [href] = routerState.replace.mock.calls[0] as [string, unknown]
-      expect(href).toContain('q=silva')
-      expect(href).toContain(`sort=${sortValue.split('|')[0]}`)
+      expect(routerState.replace).toHaveBeenCalledWith(hrefWithQueryAndSort(filterCase), {
+        scroll: false,
+      })
+    },
+  )
+
+  it.each(filterCases)(
+    '$name: follows the URL when the committed query is dropped from outside the shell',
+    (filterCase) => {
+      const { searchLabel, element } = filterCase
+      const { rerenderWith } = mountCase(filterCase, 'silva')
+
+      // The empty state's "Limpar busca e filtros" is an anchor: it drops `q`
+      // from the URL without this shell's controls being touched.
+      rerenderWith(element())
+      expect(searchInput(searchLabel).value).toBe('')
+
+      // The box must not put the dropped query back on the next filter touch.
+      fireEvent.change(screen.getByLabelText('Ordenar'), {
+        target: { value: filterCase.sortValue },
+      })
+      expect(routerState.replace).toHaveBeenCalledWith(hrefWithSort(filterCase), { scroll: false })
+    },
+  )
+
+  it.each(filterCases)(
+    '$name: the active-filters summary describes the typed query before it commits',
+    (filterCase) => {
+      const { searchLabel } = filterCase
+      mountCase(filterCase)
+
+      typeSearch(searchLabel, 'silva')
+
+      // One copy per breakpoint: dobradinhas and territórios also render the
+      // summary in their mobile column, municípios only in the desktop row.
+      expect(screen.getAllByText(/Busca "silva"/).length).toBeGreaterThan(0)
+      expect(routerState.replace).not.toHaveBeenCalled()
     },
   )
 

@@ -29,7 +29,7 @@ export const TerritoryFilters = ({
   state: TerritoryListState
   regionOptions: TerritoryFilterOption[]
 }) => {
-  const { search, setSearch, draftQ, isPending, navigateTo, navigateWithSearch, scheduleSearch } =
+  const { search, onSearchChange, draftQ, isPending, navigateWithSearch, clearSearchAndNavigate } =
     useCampaignListFilterNavigation({ state, toHref: buildTerritoryListHref })
   const { sort, dir } = resolveTerritoryListSort(state)
   const activeSummary = formatTerritoryActiveFiltersSummary({ ...state, q: draftQ })
@@ -45,20 +45,13 @@ export const TerritoryFilters = ({
         navigateWithSearch(state)
       }}
     >
-      <p className="sr-only" aria-live="polite">
-        {isPending ? 'Atualizando resultados…' : ''}
-      </p>
-
       <div className="flex flex-col gap-3 md:flex-row md:items-end">
         <CampaignSearchInput
           id="territory-search"
           label="Buscar território"
           placeholder="Buscar por território…"
           value={search}
-          onChange={(event) => {
-            setSearch(event.target.value)
-            scheduleSearch(event.target.value)
-          }}
+          onChange={(event) => onSearchChange(event.target.value)}
         />
         {activeSummary ? (
           <p className="hidden min-w-0 flex-1 text-sm text-muted-foreground md:block md:self-center md:pb-2">
@@ -70,10 +63,7 @@ export const TerritoryFilters = ({
             type="button"
             variant="ghost"
             className="min-h-11 md:self-end"
-            onClick={() => {
-              setSearch('')
-              navigateTo(clearTerritoryListFilters(state))
-            }}
+            onClick={() => clearSearchAndNavigate(clearTerritoryListFilters(state))}
           >
             Limpar
           </Button>
