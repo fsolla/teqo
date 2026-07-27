@@ -347,12 +347,12 @@ Paralelizáveis agora: **B13** (E10 ✓ entregou as classes; consome `computeMun
 
 ## Bloqueadores atuais
 
-| Item                                                                                                                            | Status                               | Fonte                          |
-| ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------ |
-| Lote jurídico final LGPD (Consent + privacidade + RIPD) — PII real em hold                                                      | **caminho crítico para dados reais** | notebook; onda-0; AGENTS       |
-| Smoke pós-deploy + onboarding do time (deploy da remodelagem aplicado em produção 2026-07-23)                                   | pendente (operacional)               | Onda 0 §2/§4; checklist AGENTS |
-| Consent público ainda por ID numérico (`submitWhatsapp.ts` etc.)                                                                | pendente                             | AGENTS Known Gap #2            |
-| Collection `Pages` + hero/copy da home editáveis                                                                                | pendente (não bloqueia `/campanha`)  | AGENTS Known Gap #3            |
+| Item                                                                                          | Status                               | Fonte                          |
+| --------------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------ |
+| Lote jurídico final LGPD (Consent + privacidade + RIPD) — PII real em hold                    | **caminho crítico para dados reais** | notebook; onda-0; AGENTS       |
+| Smoke pós-deploy + onboarding do time (deploy da remodelagem aplicado em produção 2026-07-23) | pendente (operacional)               | Onda 0 §2/§4; checklist AGENTS |
+| Consent público ainda por ID numérico (`submitWhatsapp.ts` etc.)                              | pendente                             | AGENTS Known Gap #2            |
+| Collection `Pages` + hero/copy da home editáveis                                              | pendente (não bloqueia `/campanha`)  | AGENTS Known Gap #3            |
 
 ## Site público
 
