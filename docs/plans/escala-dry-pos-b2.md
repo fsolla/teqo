@@ -1,7 +1,7 @@
 # Escala e DRY pós-B2 (geometrias + scripts CLI)
 
 Status: Fase 1 entregue com B3 (2026-07-19); Fases 2–3 pendentes
-Atualizado em: 2026-07-20 (`capture-review-debts` pós-A8: `build-bahia-demographics.mjs` reforça gatilho F2 como 4º call site)
+Atualizado em: 2026-07-27 (`capture-review-debts` pós-B8+: `scripts/lib/topology.mjs` resolve por precedente onde o helper da F2 vive — `scripts/lib/`, não `src/lib/`; 2026-07-26 pós-B8 F2: 5º call site; 2026-07-20 pós-A8: `build-bahia-demographics.mjs` reforça o gatilho da F2 como 4º call site)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B5)
 Responsável: —
 
@@ -35,7 +35,7 @@ Este plano é o registro canônico desses follow-ups. Sem ele, o B3 pode embarca
 ## Questões em aberto
 
 - **API pública pós-lazy: manter `getMunicipalityFeature` sync após warm, ou só async loaders?** **Recomendação:** loaders async (`loadMunicipalityGeometryModule()` / `loadTerritoryGeometryModule()`) que resolvem o módulo já indexado; os getters sync atuais viram métodos do módulo carregado (ou ficam em submodule lazy). Evitar Promise em cada hover do mapa.
-- **Onde vive o helper de cache CLI?** **Recomendação:** `src/lib/cliCachedDownload.ts` (ou `scripts/lib/cached-download.mjs` se quiser zero risco de import no app). Preferir `src/lib/` só se tipado e importado só pelos scripts via `--import=tsx/esm` — não expor no client bundle.
+- ~~**Onde vive o helper de cache CLI?**~~ **RESOLVIDO POR PRECEDENTE (`capture-review-debts` pós-B8+, 2026-07-27):** `scripts/lib/`. O B8+ precisou compartilhar a política de escala de chão entre os dois scripts de geometria e criou **`scripts/lib/topology.mjs`** — o primeiro módulo da pasta. A F2 **pousa nele** (`scripts/lib/cached-download.mjs`) em vez de abrir um segundo endereço: dois lares para código de CLI é exatamente a duplicação que esta fase existe para remover. A recomendação anterior (`src/lib/cliCachedDownload.ts`) fica **rejeitada** — `src/lib/` é client-safe por contrato (`.cursor/rules/codebase-map.mdc`) e um helper que faz `mkdir`/`fetch`/`writeFile` não pertence a uma pasta que o bundle do browser pode alcançar, mesmo que hoje ninguém o importe de lá.
 - **Unificar env `TSE_CACHE_DIR` / `GEOMETRIES_CACHE_DIR`?** **Recomendação:** não — um parâmetro `cacheDir` por chamada; cada script mantém sua env e pasta sob `data/`.
 
 ## Abordagem proposta
