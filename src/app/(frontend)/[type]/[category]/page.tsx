@@ -10,7 +10,7 @@ import {
   getVisiblePosts,
   isPostType,
 } from '@/utilities/posts'
-import { stripTrailingSlash } from '@/utilities/seo'
+import { absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
@@ -46,22 +46,22 @@ export async function generateMetadata({
   if (!posts.length) return {}
 
   const globalMetadata = await getCachedGlobal('metadata')()
-  const siteUrl = stripTrailingSlash(globalMetadata.URL)
+  const { siteUrl, siteName } = resolveSiteMetadata(globalMetadata)
   const categoryName = getCategoryName(posts[0]) ?? category
   const label = POST_TYPE_LABELS[type]
-  const title = `${categoryName} | ${label} | ${globalMetadata.openGraph.siteName}`
-  const description = `${label} sobre ${categoryName} de ${globalMetadata.openGraph.siteName}.`
-  const canonicalUrl = `${siteUrl}/${type}/${category}`
+  const title = `${categoryName} | ${label} | ${siteName}`
+  const description = `${label} sobre ${categoryName} de ${siteName}.`
+  const canonicalUrl = absoluteSitePath(siteUrl, `/${type}/${category}`)
 
   return {
     title,
     description,
-    alternates: { canonical: canonicalUrl },
+    ...(canonicalUrl ? { alternates: { canonical: canonicalUrl } } : {}),
     openGraph: {
       type: 'website',
       locale: 'pt-BR',
-      url: canonicalUrl,
-      siteName: globalMetadata.openGraph.siteName,
+      ...(canonicalUrl ? { url: canonicalUrl } : {}),
+      siteName,
       title,
       description,
     },

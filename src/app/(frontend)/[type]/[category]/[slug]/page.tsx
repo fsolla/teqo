@@ -18,7 +18,7 @@ import {
   isPostType,
   isPostVisible,
 } from '@/utilities/posts'
-import { stripTrailingSlash, toAbsoluteUrl, truncate } from '@/utilities/seo'
+import { absoluteSitePath, resolveSiteMetadata, toAbsoluteUrl, truncate } from '@/utilities/seo'
 import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
 import type { Metadata } from 'next'
 import Image from 'next/image'
@@ -74,26 +74,26 @@ export async function generateMetadata({
   if (!post || !isPostVisible(post)) return {}
 
   const globalMetadata = await getCachedGlobal('metadata')()
-  const siteUrl = stripTrailingSlash(globalMetadata.URL)
+  const {
+    siteUrl,
+    siteName,
+    description: fallbackDescription,
+    twitterCreator,
+    keywords: baseKeywords,
+  } = resolveSiteMetadata(globalMetadata)
   const canonicalPath = getPostCanonicalPath(post)
-  const canonicalUrl = canonicalPath ? `${siteUrl}${canonicalPath}` : siteUrl
+  const canonicalUrl = canonicalPath ? absoluteSitePath(siteUrl, canonicalPath) : undefined
 
   const image = await resolveOgImage(post, globalMetadata.image)
-  const imageUrl = image?.url ? toAbsoluteUrl(image.url, siteUrl) : undefined
+  const imageUrl = image?.url && siteUrl ? toAbsoluteUrl(image.url, siteUrl) : undefined
 
   const description = post.subtitle
     ? truncate(post.subtitle, MAX_DESCRIPTION_LENGTH)
-    : globalMetadata.description
-  const title = `${post.title} | ${globalMetadata.openGraph.siteName}`
+    : fallbackDescription
+  const title = `${post.title} | ${siteName}`
   const categoryName = getCategoryName(post)
 
-  const keywords = [
-    ...globalMetadata.keywords
-      .map((k) => (typeof k === 'string' ? k : k.keyword))
-      .filter((k): k is string => typeof k === 'string'),
-    post.title,
-    ...(categoryName ? [categoryName] : []),
-  ]
+  const keywords = [...baseKeywords, post.title, ...(categoryName ? [categoryName] : [])]
 
   const ogImages = imageUrl
     ? [
@@ -112,14 +112,12 @@ export async function generateMetadata({
     title,
     description,
     keywords,
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    ...(canonicalUrl ? { alternates: { canonical: canonicalUrl } } : {}),
     openGraph: {
       type: 'article',
       locale: 'pt-BR',
-      url: canonicalUrl,
-      siteName: globalMetadata.openGraph.siteName,
+      ...(canonicalUrl ? { url: canonicalUrl } : {}),
+      siteName,
       title,
       description,
       images: ogImages,
@@ -130,7 +128,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      creator: globalMetadata.twitter.creator,
+      creator: twitterCreator,
       images: ogImages.map((img) => img.url),
     },
   }
@@ -154,11 +152,11 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
   }
 
   const globalMetadata = await getCachedGlobal('metadata')()
-  const siteUrl = stripTrailingSlash(globalMetadata.URL)
-  const canonicalUrl = `${siteUrl}${canonicalPath}`
+  const { siteUrl, siteName } = resolveSiteMetadata(globalMetadata)
+  const canonicalUrl = absoluteSitePath(siteUrl, canonicalPath)
 
   const ogImage = await resolveOgImage(post, globalMetadata.image)
-  const ogImageUrl = ogImage?.url ? toAbsoluteUrl(ogImage.url, siteUrl) : undefined
+  const ogImageUrl = ogImage?.url && siteUrl ? toAbsoluteUrl(ogImage.url, siteUrl) : undefined
 
   const categoryName = getCategoryName(post)
   const categorySlug = getCategorySlug(post)
@@ -181,20 +179,24 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
     headline: post.title,
     ...(post.subtitle ? { description: truncate(post.subtitle, MAX_DESCRIPTION_LENGTH) } : {}),
     inLanguage: 'pt-BR',
-    url: canonicalUrl,
-    mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+    ...(canonicalUrl
+      ? {
+          url: canonicalUrl,
+          mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+        }
+      : {}),
     datePublished: post.publishedDate ?? post.createdAt,
     dateModified: post.updatedAt,
     ...(ogImageUrl ? { image: [ogImageUrl] } : {}),
     author: {
       '@type': 'Organization',
-      name: globalMetadata.openGraph.siteName,
-      url: siteUrl,
+      name: siteName,
+      ...(siteUrl ? { url: siteUrl } : {}),
     },
     publisher: {
       '@type': 'Organization',
-      name: globalMetadata.openGraph.siteName,
-      url: siteUrl,
+      name: siteName,
+      ...(siteUrl ? { url: siteUrl } : {}),
     },
   }
 
@@ -251,7 +253,7 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
         <section className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 lg:px-8 lg:py-14">
           {bodyHTML ? (
             <article
-              className="space-y-6 text-lg leading-8 text-foreground/90 [&_a]:font-medium [&_a]:text-primary [&_a]:underline-offset-4 [&_a:hover]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-4 [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:border-none [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-primary [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-lg [&_li]:ml-5 [&_li]:list-disc [&_p]:text-lg [&_strong]:font-semibold [&_strong]:text-foreground"
+              className="space-y-6 text-lg leading-8 text-foreground/90 [&_a]:font-medium [&_a]:text-primary [&_a]:underline-offset-4 [&_a:hover]:underline [&_blockquote]:border-l [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:border-none [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-primary [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-lg [&_li]:ml-5 [&_li]:list-disc [&_p]:text-lg [&_strong]:font-semibold [&_strong]:text-foreground"
               dangerouslySetInnerHTML={{ __html: bodyHTML }}
             />
           ) : null}

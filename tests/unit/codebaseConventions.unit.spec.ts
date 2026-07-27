@@ -151,3 +151,25 @@ describe('campaign formActions convention', () => {
     expect(offenders, 'wrap with runCampaignFormAction/runCampaignRedirectFormAction').toEqual([])
   })
 })
+
+describe('public site metadata global access', () => {
+  // An empty `metadata` global (fresh DB / poisoned unstable_cache) used to
+  // crash `next build` via raw field access. Every `getCachedGlobal('metadata')`
+  // consumer must also call `resolveSiteMetadata` in the same file.
+  it('routes every metadata global consumer through resolveSiteMetadata', () => {
+    const offenders: string[] = []
+
+    for (const file of walkSourceFiles(resolve(repoRoot, 'src'), ['.ts', '.tsx'])) {
+      const path = repoPath(file)
+      if (path.startsWith('src/migrations/')) continue
+
+      const source = readFileSync(file, 'utf8')
+      if (!/getCachedGlobal\(\s*['"]metadata['"]\s*\)/.test(source)) continue
+      if (!/\bresolveSiteMetadata\b/.test(source)) {
+        offenders.push(path)
+      }
+    }
+
+    expect(offenders, 'import and call resolveSiteMetadata from @/utilities/seo').toEqual([])
+  })
+})

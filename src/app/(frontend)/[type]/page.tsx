@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Separator } from '@/components/ui/separator'
 import { getCachedGlobal } from '@/utilities/globalReads'
 import { POST_TYPE_LABELS, getVisiblePosts, isPostType } from '@/utilities/posts'
-import { stripTrailingSlash } from '@/utilities/seo'
+import { absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
@@ -27,20 +27,21 @@ export async function generateMetadata({
   if (!isPostType(type)) return {}
 
   const globalMetadata = await getCachedGlobal('metadata')()
-  const siteUrl = stripTrailingSlash(globalMetadata.URL)
+  const { siteUrl, siteName } = resolveSiteMetadata(globalMetadata)
   const label = POST_TYPE_LABELS[type]
-  const title = `${label} | ${globalMetadata.openGraph.siteName}`
-  const description = `${label} de ${globalMetadata.openGraph.siteName}.`
+  const title = `${label} | ${siteName}`
+  const description = `${label} de ${siteName}.`
+  const canonicalUrl = absoluteSitePath(siteUrl, `/${type}`)
 
   return {
     title,
     description,
-    alternates: { canonical: `${siteUrl}/${type}` },
+    ...(canonicalUrl ? { alternates: { canonical: canonicalUrl } } : {}),
     openGraph: {
       type: 'website',
       locale: 'pt-BR',
-      url: `${siteUrl}/${type}`,
-      siteName: globalMetadata.openGraph.siteName,
+      ...(canonicalUrl ? { url: canonicalUrl } : {}),
+      siteName,
       title,
       description,
     },
