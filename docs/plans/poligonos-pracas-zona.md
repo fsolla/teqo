@@ -170,6 +170,10 @@ Atribuição em dois passes: (1) nome citado pela resolução; (2) **maior front
 - **S9 — Double gate** `view.kind === 'zona'` na página + card `null`. Defesa em profundidade; não simplificar só por DRY.
 - **S10 — `key={neighborhood}` no card.** Seguro com exclusividade Salvador testada.
 
+## Débitos do `/simplify` da F2 → B8+
+
+Os relatórios dos três revisores chegaram **depois** do merge; o cleanup barato entrou antes (ver "Já resolvido"), e os quatro achados maiores viraram o fill-in **B8+**: [escala-dry-pos-b8f2.md](escala-dry-pos-b8f2.md) — a malha de 19 zonas com a densidade de vértices da malha estadual (as duas constantes de simplificação são relativas ao bbox), o buraco de teste da map key, a falha de chunk das zonas derrubando o mapa inteiro (mais a ressalva de aproximação sumindo no modo comparação), e o que a entrega orfanou.
+
 ## Adiado com gatilho
 
 - **S6 — CSS compartilhado lista zona** (`MunicipalityMapPanel` zone breakdown ↔ `MunicipalityZoneNeighborhoodsCard`). **Gatilho disparou** na F2 (o painel foi alterado) e foi reavaliado: as duas listas continuam pequenas e com estrutura diferente, então extrair peça compartilhada agora seria abstração por coincidência visual. Segue adiado, agora com gatilho único: **R6** citar a duplicação em ≥2 superfícies de zona.
