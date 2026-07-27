@@ -1,15 +1,17 @@
 # E12 — Camada Territórios de Identidade (rollups regionais com salvaguardas MAUP)
 
-Status: rascunho
-Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios + hardening)
+Status: entregue (2026-07-26)
+Atualizado em: 2026-07-26 (entrega E12: colunas Cobertura/Captura/Classe em `/campanha/territorios`, benchmark intra-TI no card Conta da cadeira, conceitos E18)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Inteligência de campanha", E12; plano-mestre [inteligencia-campanha.md](inteligencia-campanha.md))
-Impeccable: B — agrupamento/rollup nas superfícies existentes (lista/overview, detalhe do município, mapa TI opcional); sem rota nova **própria** — desde 2026-07-25 a superfície regional dedicada é **B21** (`/campanha/territorios`, [plano](pagina-territorios-identidade.md)), onde as métricas deste item pousam
+Impeccable: B — colunas em `/campanha/territorios` (B21) + benchmark intra-TI no `MunicipalityGoalAccountCard`; sem rota nova
 Appetite: ~1,5 dia eng; sem migration (mapeamento município→TI é estático)
 Responsável: —
 
+**Revisão 2026-07-26:** O plano de 2026-07-24 previa `territoryRollup.ts` e agrupamento `?group=territorio` na lista de municípios. No código, E17/B21 já entregaram `computeTerritoryRollup` em `src/utilities/territoryOverview.ts` e a página `/campanha/territorios`. E12 **estende** esse rollup com métricas E8/E10 (cobertura, captura MAUP, classe via `computeAggregateTerritorialClass`). **Cortado na v1:** agrupamento na lista de municípios (B21 cobre a leitura comparativa); mapa TI (gatilho mantido). Benchmark no detalhe pousa no card **Conta da cadeira**, não no `MunicipalityBaselineCard`.
+
 ## Design (Impeccable)
 
-Âncoras: `PRODUCT.md` (princípio 5) / `DESIGN.md` (register `product`) · `MunicipalityListOverview`, geometria `bahia-identity-territories.topo.json` (B2).
+Âncoras: `PRODUCT.md` (princípio 5) / `DESIGN.md` (register `product`) · `TerritoryList` (B21), geometria `bahia-identity-territories.topo.json` (B2).
 
 Na implementação: craft compacto → critique → polish.
 
@@ -25,73 +27,75 @@ Relatório §6.5: TI é a camada default de coordenação (decisões sobre gente
 
 ## Objetivos
 
-- **Rollup por TI** sobre o bundle existente: votos em jogo, meta/cobertura (Σ), captura regional (Σ nominais ÷ Σ teto — razão dos agregados), nº de municípios por classe/nível, município crítico (pior déficit/frescor) nomeado, mediana e amplitude da captura.
-- **Agrupamento na lista:** modo "por Território" na lista de municípios (grupos colapsáveis com o rollup no header do grupo) — mesma URL/filtros.
-- **Benchmark intra-TI (T4):** no detalhe do município, comparação com a mediana do TI ("captura 2,1× a mediana do seu território") + município-farol nomeado.
+- **Rollup por TI** sobre o bundle existente: votos em jogo, meta/cobertura (Σ), captura regional (Σ nominais ÷ Σ teto — razão dos agregados), nº de municípios por classe (E10; E14 adiado), município crítico (pior déficit) nomeado, mediana e amplitude da captura.
+- **Superfície:** colunas novas em `/campanha/territorios` (B21).
+- **Benchmark intra-TI (T4):** no detalhe do município (`MunicipalityGoalAccountCard`), comparação com a mediana do TI + município-farol nomeado.
 - **Metropolitano decomposto:** o grupo "Metropolitano de Salvador" sempre expande zonas SSA + municípios RMS; nunca agrega num número único sem breakdown visível.
 - **Malha congelada:** constante de versão da composição TI usada no ciclo (já é estática em `bahiaTerritories.ts` — documentar como frozen 2026).
-- Opcional barato (se couber no appetite): modo TI no mapa usando a geometria B2 (fills por rollup, mesmas escalas B13).
 
 ## Decisões travadas
 
 - **TI como única camada regional do produto neste ciclo** (default operacional — relatório H4). **Rejeitado:** Regiões Imediatas IBGE como camada paralela (teste de sensibilidade fica manual/ad-hoc — G10 adiado); cluster empírico como camada operacional (instável e ilegível; vira exercício de auditoria única fora do produto).
 - **Razão dos agregados, nunca média das razões** — regra de implementação com teste unit dedicado (divergência entre as duas contas exposta como alarme de heterogeneidade). **Rejeitado:** médias simples (a média que mente — §6.5).
-- **i18n e naming:** `territoryRollup`, `computeTerritoryRollups`, `criticalMunicipality`, `medianCapture`; labels pt-BR ("Território", "Município crítico").
+- **Classe do TI:** `computeAggregateTerritorialClass(slugs)` (B13) — nunca votação/média de classes por município.
+- **i18n e naming:** `criticalMunicipality`, `medianCapture`; labels pt-BR ("Território", "Município crítico").
 
-## Questões em aberto
+## Questões em aberto (resolvidas na entrega)
 
-- **Padrões T1–T3/T5 entram aqui ou no E11 fase 2?** Opções: avaliador TI neste item | tudo no motor. **Recomendação:** os rollups (insumo) aqui; os gatilhos T no E11 fase 2 — evita duplicar o mecanismo de sugestão.
-- **Mapa TI na v1?** **Recomendação:** sim se sobrar ½ dia (geometria pronta, `BahiaMap` aceita features de TI); senão adiado com gatilho.
+- **Padrões T1–T3/T5:** rollups aqui; gatilhos T no E11 fase 2.
+- **Mapa TI na v1:** adiado (gatilho: primeiro giro regional com mapa municipal insuficiente).
+- **Agrupamento na lista de municípios:** adiado (B21 cobre comparação dos 27 TIs).
 
-## Abordagem proposta
+## Abordagem (as-built)
 
 ```mermaid
 flowchart LR
-    Bundle["loadMunicipalityListPageBundle"]
-    Terr["bahiaTerritories.ts<br/>(município→TI, frozen 2026)"]
-    Roll["computeTerritoryRollups<br/>(Σ, mediana, amplitude, crítica)"]
-    List["MunicipalityList agrupada + headers de grupo"]
-    Detail["benchmark intra-TI no detalhe"]
-    Map["(opcional) fills TI no BahiaMap"]
-    Bundle --> Roll
-    Terr --> Roll
-    Roll --> List
-    Roll --> Detail
-    Roll --> Map
+    Loader["loadTerritoryOverview"]
+    Terr["territoryOverview.ts<br/>computeTerritoryRollup"]
+    Page["/campanha/territorios"]
+    Detail["MunicipalityGoalAccountCard"]
+    Loader --> Terr
+    Terr --> Page
+    Loader --> Detail
 ```
 
 Componentes:
 
-- **`src/utilities/territoryRollup.ts`**: rollup puro sobre as linhas do bundle + derivados E8; salvaguardas como invariantes testadas (razão de agregados, Metropolitano flagged).
-- **`MunicipalityList.tsx`**: modo de agrupamento (param `?group=territorio`) com headers de grupo; `MunicipalityListOverview` ganha corte por TI quando agrupado.
-- **Detalhe do município:** linha de benchmark no card de baseline (reusa `MunicipalityBaselineCard`).
-- **Mapa (opcional):** `bahiaTerritoryGeometries.ts`/`getTerritoryFeature` já existem; modo TI colore os 27 polígonos pelo rollup.
+- **`src/utilities/territoryOverview.ts`**: rollup puro (E17) estendido com cobertura, captura MAUP, município crítico; Metropolitano com sub-rows.
+- **`src/utilities/loadTerritoryOverview.ts`**: E8 bundle + classe agregada por TI.
+- **`TerritoryListColumns.tsx`**: colunas Cobertura, Captura, Classe.
+- **Detalhe:** benchmark intra-TI no `MunicipalityGoalAccountCard`.
 - **Sem migration.**
 
 ## Dependências
 
-- Dura: **E8** (captura/meta/cobertura por município para agregar). Suaves: E9 (agrupamento compõe com as colunas da fila), E14 (nível no rollup), B13 (escalas do mapa TI).
-- Reusa: `bahiaTerritories.ts`, `bahiaTerritoryGeometries.ts`/`bahiaGeometries.ts` (B2), bundle A9+.
+- Dura: **E8** ✓. Suaves: E17 ✓, B21 ✓, E10 ✓, B13 ✓. E14 não entregue (rollup por nível adiado).
 
 ## Não escopo
 
-- Gatilhos T1–T5 como sugestões (E11 fase 2); malha Regiões Imediatas (G10 — adiado no plano-mestre); carteiras de assessor como entidade (continua `municipality.advisors`); qualquer edição em nível TI.
+- Gatilhos T1–T5 como sugestões (E11 fase 2); malha Regiões Imediatas (G10); carteiras de assessor como entidade; edição em nível TI; `?group=territorio` na lista de municípios (v1); mapa TI (v1).
 
 ## Rabbit holes
 
-- **Rollup virar segunda página de analytics.** É um agrupamento da lista + números no header — não um dashboard regional novo. _(Atualização 2026-07-25: a página regional existe como item próprio, **B21** — tabela comparativa com sort/filtro, sem cards de KPI. As métricas deste item entram como colunas lá; a proibição continua valendo contra transformá-la em dashboard.)_
-- **Zonas de Salvador no rollup do Metropolitano.** As 19 Municípios-zona têm `region` = Metropolitano; agregar por soma funciona, mas o breakdown obrigatório precisa listar zonas E municípios RMS separados — não "resolver" juntando tudo.
-- **Comparação entre TIs virar ranking público.** Mesmo risco de gaming do benchmark (T4-contraindicação): benchmark é para aprender mecanismo, não régua punitiva — copy da UI reflete isso.
+- **Rollup virar segunda página de analytics.** Métricas entram como colunas em B21 — não dashboard.
+- **Zonas de Salvador no rollup do Metropolitano.** Breakdown Salvador + Demais RMS obrigatório.
+- **Comparação entre TIs virar ranking público.** Copy: benchmark é aprendizado, não punição.
 
 ## Adiado com gatilho
 
-- **Mapa TI** (se não couber na v1). Gatilho: primeiro giro regional planejado com o mapa municipal se mostrando insuficiente.
+- **Mapa TI.** Gatilho: primeiro giro regional planejado com o mapa municipal se mostrando insuficiente.
+- **Agrupamento na lista de municípios.** Gatilho: mesa pedir leitura agrupada após adoção de B21.
 - **Teste de sensibilidade TI×Imediatas.** Gatilho: decisão cara sustentada por leitura regional divergente (§6.5 salvaguarda 4).
+
+## Revisão na entrega (2026-07-26)
+
+- Estende `territoryOverview.ts` / `loadTerritoryOverview.ts` (E17/B21) com cobertura E8 (`central`), captura regional (razão Σ votos ÷ Σ teto, mediana, amplitude, município crítico e farol), classe agregada via `computeAggregateTerritorialClass`.
+- UI: três colunas novas em `/campanha/territorios` + sort `cobertura`/`captura`/`classe` + descrições B22; benchmark T4 em `MunicipalityGoalAccountCard` via `territoryIntraCaptureBenchmark.ts` (pares Metropolitano = Salvador zonas × demais RMS).
+- Dois conceitos E18 (`captura-regional`, `benchmark-intra-ti`). `sanityCheckSuggestedGoalsByTerritory` permanece sem superfície de UI (export/testada; gatilho E11/E13).
+- Cortes mantidos: sem `?group=territorio`, sem mapa TI.
 
 ## Referências
 
-- `docs/roadmap.md` (Inteligência de campanha, E12) · [plano-mestre](inteligencia-campanha.md)
-- `docs/research/relatorio-entrevista-persona-campanha.md` §6.5 (veredito TI, análises, T1–T5, salvaguardas MAUP)
-- `src/lib/bahiaTerritories.ts`, `src/lib/bahiaTerritoryGeometries.ts`, `src/lib/geometries/bahia-identity-territories.topo.json` (B2)
-- `src/components/campaign/MunicipalityList.tsx`, `MunicipalityListOverview.tsx`, `MunicipalityBaselineCard.tsx`, `src/utilities/municipalityPageData.ts`
-- AGENTS.md — B2 as-built, naming
+- `docs/roadmap.md` (Inteligência de campanha, E12) · [plano-mestre](inteligencia-campanha.md) · [pagina-territorios-identidade.md](pagina-territorios-identidade.md) (B21)
+- `docs/research/relatorio-entrevista-persona-campanha.md` §6.5
+- `src/utilities/territoryOverview.ts`, `src/utilities/loadTerritoryOverview.ts`, `src/components/campaign/municipality/TerritoryListColumns.tsx`, `MunicipalityGoalAccountCard.tsx`

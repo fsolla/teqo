@@ -33,6 +33,9 @@ const territoryListSortKeys: TerritoryListSortKey[] = [
   'validVotes2022',
   'estimate2026',
   'coverage',
+  'cobertura',
+  'captura',
+  'classe',
 ]
 const territoryListSortKeySet = new Set<string>(territoryListSortKeys)
 const territoryListSortDirSet = new Set<TerritoryListSortDirection>(['asc', 'desc'])
@@ -47,6 +50,9 @@ export const territoryListSortLabels: Record<TerritoryListSortKey, string> = {
   validVotes2022: 'Válidos 2022',
   estimate2026: 'Estimativa 2026 (média)',
   coverage: 'Assessoria',
+  cobertura: 'Cobertura da meta',
+  captura: 'Captura (2022)',
+  classe: 'Classe',
 }
 
 const canonicalTerritoryBySearchValue = new Map(
@@ -67,7 +73,10 @@ const parseRegions = (value: string | string[] | undefined): BahiaIdentityTerrit
 
 export const defaultTerritoryListSortDir = (
   key: TerritoryListSortKey,
-): TerritoryListSortDirection => (key === 'region' ? 'asc' : 'desc')
+): TerritoryListSortDirection => {
+  if (key === 'region') return 'asc'
+  return 'desc'
+}
 
 export const resolveTerritoryListSort = (
   state: TerritoryListState,

@@ -30,7 +30,7 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
   if (!user) return null
   if (isCampaignLeader(user)) redirect('/campanha')
 
-  const allRows = await loadTerritoryOverview(payload)
+  const allRows = await loadTerritoryOverview(payload, user)
   const { state } = resolvedUrl
   const { sort, dir } = resolveTerritoryListSort(state)
   const rows = sortTerritoryRows(filterTerritoryRows(allRows, state), sort, dir)

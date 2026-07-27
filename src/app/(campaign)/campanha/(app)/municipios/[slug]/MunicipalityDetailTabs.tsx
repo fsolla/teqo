@@ -106,7 +106,7 @@ const GoalAccountCard = async ({
   pledgeCoverage: MunicipalityPledgeCoverageView | null
   pledgeAggregate: MunicipalityPledgeAggregate
 }) => {
-  const { suggestedGoal, goalCoverage, potential, territorialClass } =
+  const { suggestedGoal, goalCoverage, potential, territorialClass, territoryCaptureBenchmark } =
     await loadMunicipalityGoalAccount(payload, user, { slug, expectedVotes }, pledgeAggregate)
 
   return (
@@ -118,6 +118,7 @@ const GoalAccountCard = async ({
       goalCoverage={goalCoverage}
       potential={potential}
       territorialClass={territorialClass}
+      territoryCaptureBenchmark={territoryCaptureBenchmark}
     />
   )
 }
