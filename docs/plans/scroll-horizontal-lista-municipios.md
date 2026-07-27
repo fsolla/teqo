@@ -1,11 +1,15 @@
 # Scroll horizontal + coluna Município fixa na lista de municípios
 
-Status: rascunho
-Atualizado em: 2026-07-26
+Status: entregue
+Atualizado em: 2026-07-27
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B41)
 Impeccable: B — encaixe em `CampaignTable` / `MunicipalityList` (desktop/tablet); sem rota nova
 Appetite: ~0,5–0,75 dia eng; overflow-x + sticky left na 1ª coluna; reusa padrão de `TerritoryList`
 Responsável: —
+
+**Revisão 2026-07-26 (auditoria pré-implementação):** questão aberta fechada — **A** (classes na column def `name` só; sem `stickyColumnId` no `CampaignTable` até o 3º call site). O wrapper desktop já usa `className="hidden overflow-visible md:block"` (sobrescreve o `overflow-hidden` do `CampaignTable`, como Territory) — **manter** ao trocar só `containerClassName` para `overflow-x-auto`.
+
+**Revisão 2026-07-27 (as-built):** `MunicipalityList` → `containerClassName="overflow-x-auto"`; coluna `name` com `sticky left-0 z-20` (head) / `z-[5]` (cell) + `min-w-56 bg-background` (espelho Territory; `max-w-52` removido no polish — conflitava com `min-w-56`). Mobile cards intactos. Critique: 0 P0; P1 width fix aplicado; edge fade permanece Adiado; sticky top+left layering igual Territory (header pode grudar no scroller interno do `overflow-x-auto` — aceitável). Gate: tsc/lint/format/knip(P3 pré-existente)/cycles/540 unit/413 int/build; Aikido 0 findings (Opengrep exit 2 conhecido).
 
 ## Design (Impeccable)
 
@@ -50,7 +54,7 @@ O precedente já existe na página de territórios (**B21 ✓**): [`TerritoryLis
 
 ## Questões em aberto
 
-- **Extrair helper de classes sticky para `CampaignTable`?** **Opções:** A) só classes nas column defs de municípios (e Territory já tem as suas) | B) prop `stickyColumnId` no `CampaignTable`. **Recomendação:** A no v1 (&lt;3 call sites distintos de API); B quando B29/outras listas pedirem o mesmo seam. _(assumido.)_
+- **Extrair helper de classes sticky para `CampaignTable`?** **Resolvida (2026-07-26):** **A** — só classes nas column defs de municípios (Territory já tem as suas). **B** (`stickyColumnId` no `CampaignTable`) quando o 3º call site pedir o mesmo seam. _(assumido — validado na auditoria de implementação.)_
 
 ## Abordagem proposta
 
@@ -91,7 +95,8 @@ Depth check: copiar o padrão Territory, não um grid library.
 ## Adiado com gatilho
 
 - **Sticky first column genérico no `CampaignTable`.** Revisitar no 3º call site (municípios + territórios + uma terceira).
-- **Sombra/edge fade indicando mais colunas à direita.** Revisitar se critique acusar descoberta fraca do scroll.
+- **Sombra/edge fade indicando mais colunas à direita.** Revisitar se critique acusar descoberta fraca do scroll (critique B41 2026-07-27 confirmou descoberta fraca — ainda Adiado até pedido de campo).
+- **Tint de hover na célula sticky.** Territory parent rows usam `bg-background` sólido; revisitar no 3º call site sticky (ou se a mesa reclamar da coluna “morta” sob hover).
 
 ## Referências
 

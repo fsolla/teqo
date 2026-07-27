@@ -109,7 +109,7 @@ type CampaignTableProps<Row> = {
   caption?: ReactNode
   /** Outer wrapper (border/rounding live here). */
   className?: string
-  /** `ui/Table` scroll container override (e.g. municipality's `overflow-x-visible`). */
+  /** `ui/Table` scroll container class (default already includes `overflow-x-auto`). */
   containerClassName?: string
   /** `<thead>` override (e.g. sticky headers). */
   headerClassName?: string

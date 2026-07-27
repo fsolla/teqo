@@ -118,11 +118,11 @@ const VotePositionReadout = ({
 
 /**
  * E10 classe. In the table only the pill is visible — spelling the factors out
- * under it made this the widest cell in a grid that cannot scroll
- * horizontally, so the "por quê" moves to the column's `cellTooltip` (hover,
- * focus and tap) and stays as `sr-only` text; the card has the width to show
- * it outright. Either way the class never reaches anyone as a bare verdict,
- * which is the one thing it must never be.
+ * under it still bloats the sticky/dense row even with horizontal scroll,
+ * so the "por quê" moves to the column's `cellTooltip` (hover, focus and tap)
+ * and stays as `sr-only` text; the card has the width to show it outright.
+ * Either way the class never reaches anyone as a bare verdict, which is the
+ * one thing it must never be.
  */
 const TerritorialClassReadout = ({
   municipality,
@@ -262,11 +262,12 @@ const municipalityListColumns = ({
         filterOptions={columnFilterOptions.name}
         showPriorityFilter={isStaffView}
         description={municipalityColumnDescriptions.name}
+        className="sticky left-0 z-20 min-w-56 bg-background"
       >
         Município
       </MunicipalitySortableHead>
     ),
-    cellClassName: 'max-w-52 whitespace-normal',
+    cellClassName: 'sticky left-0 z-[5] min-w-56 whitespace-normal bg-background',
     cell: (municipality) => (
       <div className="flex flex-wrap items-center gap-2">
         <Link
@@ -611,12 +612,10 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
         })}
       </div>
 
-      {/* No inner scroller: the app shell's <main> scrolls, so the sticky header
-          resolves against it. A sticky <th> can't paint the row border, hence the
-          inset shadow standing in for it. */}
+      {/* A sticky <th> can't paint the row border, hence the inset shadow. */}
       <CampaignTable
         className="hidden overflow-visible md:block"
-        containerClassName="overflow-x-visible"
+        containerClassName="overflow-x-auto"
         headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
         caption={
           <>
