@@ -12,12 +12,7 @@ const topology = municipalityZoneTopologyJson as unknown as MunicipalityZoneTopo
 const municipalityZoneFeatures = feature(topology, topology.objects.municipalityZones)
   .features as MunicipalityZoneFeature[]
 
-const zoneBySlug = new Map(
-  municipalityZoneFeatures.map((entry) => [entry.properties.municipalitySlug, entry]),
-)
-
 export const municipalityZoneGeometryModule: MunicipalityZoneGeometryModule = {
   topology,
   features: municipalityZoneFeatures,
-  getMunicipalityZoneFeature: (municipalitySlug: string) => zoneBySlug.get(municipalitySlug),
 }

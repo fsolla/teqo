@@ -1,4 +1,5 @@
-import type { BahiaMunicipalityFeature } from '../../src/lib/bahiaGeometriesTypes.js'
+import type { PolygonalFeature } from '../../src/lib/bahiaGeometriesTypes.js'
+import { polygonRingsOf } from '../../src/lib/municipalityProximity.js'
 
 export type FeatureBounds = {
   west: number
@@ -7,17 +8,9 @@ export type FeatureBounds = {
   north: number
 }
 
-/**
- * Bounding box of every ring of a municipality feature. Type-only import on
- * purpose: this helper is shared by the vitest int suite and the Playwright e2e
- * suite, which resolve runtime modules differently.
- */
-export const featureBounds = (feature: BahiaMunicipalityFeature): FeatureBounds => {
-  const rings =
-    feature.geometry.type === 'Polygon'
-      ? [feature.geometry.coordinates]
-      : feature.geometry.coordinates
-  const positions = rings.flat(2)
+/** Bounding box of every ring of a mesh feature. Shared by the int and e2e suites. */
+export const featureBounds = (feature: PolygonalFeature): FeatureBounds => {
+  const positions = polygonRingsOf(feature).flat(2)
   const longitudes = positions.map(([lng]) => lng)
   const latitudes = positions.map(([, lat]) => lat)
 

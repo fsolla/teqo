@@ -1,5 +1,8 @@
-import type { Feature, GeoJsonProperties, MultiPolygon, Polygon } from 'geojson'
+import type { Feature, MultiPolygon, Polygon } from 'geojson'
 import type { GeometryCollection, Topology } from 'topojson-specification'
+
+/** Every committed mesh is polygonal; only the properties differ. */
+type BahiaFeature<Properties> = Feature<Polygon | MultiPolygon, Properties>
 
 type BahiaMunicipalityProperties = {
   codarea: string
@@ -18,18 +21,27 @@ type BahiaTerritoryProperties = {
 type MunicipalityZoneProperties = {
   municipalitySlug: string
   name: string
-  zoneNumber: number
   ibgeCode: string
 }
 
-export type BahiaMunicipalityFeature = Feature<Polygon | MultiPolygon, BahiaMunicipalityProperties>
+export type BahiaMunicipalityFeature = BahiaFeature<BahiaMunicipalityProperties>
 
-export type BahiaTerritoryFeature = Feature<Polygon | MultiPolygon, BahiaTerritoryProperties>
+export type BahiaTerritoryFeature = BahiaFeature<BahiaTerritoryProperties>
 
-export type MunicipalityZoneFeature = Feature<Polygon | MultiPolygon, MunicipalityZoneProperties>
+export type MunicipalityZoneFeature = BahiaFeature<MunicipalityZoneProperties>
 
-/** Any feature of the committed meshes — for helpers that only read coordinates. */
-export type BahiaGeometryFeature = Feature<Polygon | MultiPolygon, GeoJsonProperties>
+/** Any feature of the committed meshes, as the map layer receives them. */
+export type BahiaMeshFeature =
+  | BahiaMunicipalityFeature
+  | BahiaTerritoryFeature
+  | MunicipalityZoneFeature
+
+/**
+ * What the geometry helpers actually need — a polygonal geometry, nothing else.
+ * Declaring the requirement instead of a feature union keeps `GeoJsonProperties`
+ * (which is `any`) out of the signature of a helper that only reads coordinates.
+ */
+export type PolygonalFeature = { geometry: Polygon | MultiPolygon }
 
 export type MunicipalityTopology = Topology<{
   municipalities: GeometryCollection<BahiaMunicipalityProperties>
@@ -52,11 +64,9 @@ export type MunicipalityGeometryModule = {
 export type TerritoryGeometryModule = {
   topology: TerritoryTopology
   features: readonly BahiaTerritoryFeature[]
-  getTerritoryFeature: (code: string) => BahiaTerritoryFeature | undefined
 }
 
 export type MunicipalityZoneGeometryModule = {
   topology: MunicipalityZoneTopology
   features: readonly MunicipalityZoneFeature[]
-  getMunicipalityZoneFeature: (municipalitySlug: string) => MunicipalityZoneFeature | undefined
 }

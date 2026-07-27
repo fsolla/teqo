@@ -60,7 +60,6 @@ import {
   type MunicipalityMapScaleMode,
   type MunicipalityMapYear,
 } from '@/utilities/municipalityMapContract'
-import { resolveMunicipalityMapNavigation } from '@/utilities/municipalityMapNavigation'
 import type { MunicipalityTerritorialClass } from '@/utilities/municipalityTerritorialClass'
 
 /** The legend's note doubles as the scale selector's description. */
@@ -590,15 +589,20 @@ export const MunicipalityMapPanel = ({
           }
         />
 
-        {/* zone breakdown below */}
+        {/* B8+ F3 — tied to the MESH, not to the list below: the comparison mode
+            paints Salvador from the same approximate polygons, so the caveat has
+            to survive with or without comparison. */}
+        {bundle.hasZoneMunicipalities ? (
+          <p className="text-sm text-muted-foreground">
+            Salvador é pintada zona por zona. O desenho vem dos bairros de cada circunscrição
+            (TRE-BA, RA nº 2/2017) sobre a malha do IBGE — é aproximado, não é o limite oficial do
+            TSE.
+          </p>
+        ) : null}
+
         {bundle.zoneBreakdown.length > 0 && !comparisonActive ? (
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">Municípios por zona eleitoral</h3>
-            <p className="text-sm text-muted-foreground">
-              Salvador é pintada zona por zona. O desenho vem dos bairros de cada circunscrição
-              (TRE-BA, RA nº 2/2017) sobre a malha do IBGE — é aproximado, não é o limite oficial do
-              TSE.
-            </p>
             <ul className="grid gap-1 sm:grid-cols-2">
               {bundle.zoneBreakdown.map((zone) => (
                 <li
@@ -677,10 +681,10 @@ const MunicipalityMapSelection = ({
     (key: string) => {
       if (selectedKeyRef.current !== key) return
 
-      const navigation = resolveMunicipalityMapNavigation(key, municipalitiesByMapKey)
-      if (navigation.kind === 'navigate') {
-        router.push(`/campanha/municipios/${navigation.slug}`)
-      }
+      // Annotated because `noUncheckedIndexedAccess` is off: the index is
+      // genuinely partial — a painted key outside the actor's scope has no slug.
+      const slug: string | undefined = municipalitiesByMapKey[key]
+      if (slug) router.push(`/campanha/municipios/${slug}`)
     },
     [municipalitiesByMapKey, router],
   )
@@ -693,13 +697,9 @@ const MunicipalityMapSelection = ({
   const selectedRawMetricValue =
     selectedFeature && selectedFeature.key in rawValues ? rawValues[selectedFeature.key] : undefined
 
-  const selectedNavigation = useMemo(
-    () =>
-      selectedFeature
-        ? resolveMunicipalityMapNavigation(selectedFeature.key, municipalitiesByMapKey)
-        : null,
-    [municipalitiesByMapKey, selectedFeature],
-  )
+  const selectedSlug: string | undefined = selectedFeature
+    ? municipalitiesByMapKey[selectedFeature.key]
+    : undefined
 
   return (
     <>
@@ -728,7 +728,7 @@ const MunicipalityMapSelection = ({
         relativeReading={selectedFeature ? relativeReadingFor(selectedFeature.key) : null}
         bubbleReading={selectedFeature ? bubbleReadingFor(selectedFeature.key) : null}
         comparisonActive={comparisonActive}
-        navigation={selectedNavigation}
+        municipalitySlug={selectedSlug}
       />
     </>
   )

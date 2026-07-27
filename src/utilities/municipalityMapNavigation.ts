@@ -9,13 +9,13 @@ type MunicipalityMapSlugEntry = {
 export type MunicipalitiesByIbgeCode = Record<string, MunicipalityMapSlugEntry[]>
 
 /**
- * Map key → the single unit it paints. Since B8 F2 the map draws one polygon per
- * catalog unit — zone municipalities by slug, everything else by IBGE codarea —
- * so this index is 1:1 where `MunicipalitiesByIbgeCode` is 1:N.
+ * Map key → the slug of the single unit it paints. Since B8 F2 the map draws one
+ * polygon per catalog unit — zone municipalities by slug, everything else by IBGE
+ * codarea — so this index is 1:1 where `MunicipalitiesByIbgeCode` is 1:N, and the
+ * name it used to carry alongside was 435 dead strings in the RSC payload of
+ * every visit to Início (the readout takes the name from the feature it painted).
  */
-export type MunicipalitiesByMapKey = Record<string, MunicipalityMapSlugEntry>
-
-export type MunicipalityMapNavigation = { kind: 'none' } | { kind: 'navigate'; slug: string }
+export type MunicipalitiesByMapKey = Record<string, string>
 
 /**
  * What the choropleth paints a unit by: a zone municipality has no code of its
@@ -52,19 +52,8 @@ export const buildMunicipalitiesByMapKey = (
   const byMapKey: MunicipalitiesByMapKey = {}
 
   for (const municipality of municipalities) {
-    byMapKey[mapKeyForMunicipality(municipality)] = {
-      slug: municipality.slug,
-      name: municipality.name,
-    }
+    byMapKey[mapKeyForMunicipality(municipality)] = municipality.slug
   }
 
   return byMapKey
-}
-
-export const resolveMunicipalityMapNavigation = (
-  mapKey: string,
-  municipalitiesByMapKey: MunicipalitiesByMapKey,
-): MunicipalityMapNavigation => {
-  const entry = municipalitiesByMapKey[mapKey]
-  return entry ? { kind: 'navigate', slug: entry.slug } : { kind: 'none' }
 }

@@ -5,15 +5,17 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import type { Position } from 'geojson'
+import type { GeometryCollection, Topology } from 'topojson-specification'
 import { describe, expect, it } from 'vitest'
 
-import type { BahiaGeometryFeature } from '@/lib/bahiaGeometriesTypes'
+import type { PolygonalFeature } from '@/lib/bahiaGeometriesTypes'
 
 import {
   loadMunicipalityGeometryModule,
   loadMunicipalityZoneGeometryModule,
   loadTerritoryGeometryModule,
 } from '@/lib/bahiaGeometries'
+import { featureMapKey } from '@/lib/bahiaMapStyle'
 import { bahiaMunicipalityCodes } from '@/lib/bahiaMunicipalityCodes'
 import { bahiaIdentityTerritoryRecords } from '@/lib/bahiaTerritories'
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
@@ -21,6 +23,7 @@ import {
   featureCentroid,
   featureContainsPoint,
   findContainingMunicipality,
+  polygonRingsOf,
   resolveNearbyMunicipality,
 } from '@/lib/municipalityProximity'
 
@@ -28,6 +31,22 @@ import { featureBounds } from '../helpers/featureBounds'
 
 /** Soft ceiling against accidental unsimplified meshes (plan target ≤ ~600 KB). */
 const MAX_TOPO_BYTES = 600 * 1024
+
+/**
+ * B8+ — the grandeza the ground-scale policy in `scripts/lib/topology.mjs`
+ * actually controls. Bytes only catch a mesh nobody simplified at all: the zone
+ * mesh shipped at 480 points/feature, 22× the state mesh, while sitting at 10% of
+ * the byte budget, because a simplification tolerance copied as a *quantile* of
+ * each mesh's own triangles cut Salvador's zones at ~0.6 m² and Bahia's
+ * municipalities at ~1.78 km². A mesh that goes back to a relative cut fails here.
+ */
+const MAX_POINTS_PER_FEATURE = 60
+
+/** Arc points over features — sound because each mesh holds exactly one object. */
+const pointsPerFeature = (topology: Topology<{ [key: string]: GeometryCollection }>): number => {
+  const arcPoints = topology.arcs.reduce((total, arc) => total + arc.length, 0)
+  return arcPoints / Object.values(topology.objects)[0].geometries.length
+}
 
 /** Square degrees → km² at Salvador's latitude — good to a few percent, which is all this needs. */
 const SQUARE_DEGREE_KM2 = 110.57 * 108.5
@@ -43,13 +62,8 @@ const hasNonEmptyGeometry = (
 }
 
 /** Planar shoelace in square degrees — only ever compared against itself. */
-const featureArea = (feature: BahiaGeometryFeature): number => {
-  const polygons =
-    feature.geometry.type === 'Polygon'
-      ? [feature.geometry.coordinates]
-      : feature.geometry.coordinates
-
-  return polygons.reduce((total, [outerRing, ...holes]) => {
+const featureArea = (feature: PolygonalFeature): number =>
+  polygonRingsOf(feature).reduce((total, [outerRing, ...holes]) => {
     const ringArea = (ring: readonly Position[]): number => {
       let sum = 0
       for (
@@ -66,7 +80,6 @@ const featureArea = (feature: BahiaGeometryFeature): number => {
       total + ringArea(outerRing) - holes.reduce((holeTotal, hole) => holeTotal + ringArea(hole), 0)
     )
   }, 0)
-}
 
 describe('Bahia static geometries', () => {
   it('keeps committed TopoJSON under the size budget', () => {
@@ -82,10 +95,23 @@ describe('Bahia static geometries', () => {
 
     expect(municipalityBytes).toBeGreaterThan(10_000)
     expect(territoryBytes).toBeGreaterThan(1_000)
-    expect(zoneBytes).toBeGreaterThan(10_000)
+    expect(zoneBytes).toBeGreaterThan(1_000)
     expect(municipalityBytes).toBeLessThanOrEqual(MAX_TOPO_BYTES)
     expect(territoryBytes).toBeLessThanOrEqual(MAX_TOPO_BYTES)
     expect(zoneBytes).toBeLessThanOrEqual(MAX_TOPO_BYTES)
+  })
+
+  it('cuts every mesh at the shared ground scale, not at its own bbox', async () => {
+    const [municipalityModule, territoryModule, zoneModule] = await Promise.all([
+      loadMunicipalityGeometryModule(),
+      loadTerritoryGeometryModule(),
+      loadMunicipalityZoneGeometryModule(),
+    ])
+
+    for (const { topology } of [municipalityModule, territoryModule, zoneModule]) {
+      const [objectName] = Object.keys(topology.objects)
+      expect(pointsPerFeature(topology), objectName).toBeLessThanOrEqual(MAX_POINTS_PER_FEATURE)
+    }
   })
 
   it('exposes 417 municipality features whose codarea set matches the code table', async () => {
@@ -102,6 +128,9 @@ describe('Bahia static geometries', () => {
       expect(entry.properties.codarea).toMatch(/^29\d{5}$/)
       expect(bahiaMunicipalityCodes[entry.properties.name]).toBe(entry.properties.codarea)
       expect(hasNonEmptyGeometry(entry.geometry)).toBe(true)
+      // B8+ F2 — the map key every one of these is painted and hovered by,
+      // resolved from the real properties instead of a synthetic literal.
+      expect(featureMapKey(entry.properties), entry.properties.name).toBe(entry.properties.codarea)
     }
 
     expect(getMunicipalityFeature('2927408')?.properties.name).toBe('Salvador')
@@ -109,7 +138,7 @@ describe('Bahia static geometries', () => {
   })
 
   it('exposes 27 territory features whose codes match bahiaIdentityTerritoryRecords', async () => {
-    const { topology, features, getTerritoryFeature } = await loadTerritoryGeometryModule()
+    const { topology, features } = await loadTerritoryGeometryModule()
 
     expect(topology.objects.territories.geometries).toHaveLength(27)
     expect(features).toHaveLength(27)
@@ -118,15 +147,19 @@ describe('Bahia static geometries', () => {
     const recordCodes = bahiaIdentityTerritoryRecords.map((entry) => entry.code).sort()
     expect(featureCodes).toEqual(recordCodes)
 
+    const territoryByCode = new Map(
+      features.map((entry) => [entry.properties.code, entry] as const),
+    )
+
     for (const record of bahiaIdentityTerritoryRecords) {
-      const featureEntry = getTerritoryFeature(record.code)
+      const featureEntry = territoryByCode.get(record.code)
       expect(featureEntry, record.code).toBeDefined()
       expect(featureEntry?.properties.name).toBe(record.name)
       expect(hasNonEmptyGeometry(featureEntry?.geometry)).toBe(true)
+      expect(featureMapKey(featureEntry?.properties), record.code).toBe(record.code)
     }
 
-    expect(getTerritoryFeature('01')?.properties.name).toBe('Irecê')
-    expect(getTerritoryFeature('99')).toBeUndefined()
+    expect(territoryByCode.get('01')?.properties.name).toBe('Irecê')
   })
 
   /**
@@ -139,23 +172,31 @@ describe('Bahia static geometries', () => {
     const zoneCatalog = municipalityCatalog.filter((entry) => entry.kind === 'zona')
 
     it('exposes one feature per zona municipality, keyed by catalog slug', async () => {
-      const { topology, features, getMunicipalityZoneFeature } =
-        await loadMunicipalityZoneGeometryModule()
+      const { topology, features } = await loadMunicipalityZoneGeometryModule()
 
       expect(Object.keys(topology.objects)).toEqual(['municipalityZones'])
       expect(topology.objects.municipalityZones.geometries).toHaveLength(zoneCatalog.length)
       expect(features).toHaveLength(zoneCatalog.length)
 
+      const zoneBySlug = new Map(
+        features.map((zone) => [zone.properties.municipalitySlug, zone] as const),
+      )
+
       for (const entry of zoneCatalog) {
-        const zone = getMunicipalityZoneFeature(entry.slug)
+        const zone = zoneBySlug.get(entry.slug)
         expect(zone, entry.slug).toBeDefined()
         expect(zone?.properties.name).toBe(entry.name)
-        expect(zone?.properties.zoneNumber).toBe(entry.zoneNumber)
         expect(zone?.properties.ibgeCode).toBe(entry.ibgeCode)
         expect(hasNonEmptyGeometry(zone?.geometry)).toBe(true)
+
+        // B8+ F2 — a zone answers its own slug even though it also carries the
+        // city's `ibgeCode`, which all 19 share and which is therefore not a key
+        // property. The municipal side of the contract is pinned over all 417
+        // features in the codarea test above.
+        expect(featureMapKey(zone?.properties), entry.slug).toBe(entry.slug)
       }
 
-      expect(getMunicipalityZoneFeature('feira-de-santana')).toBeUndefined()
+      expect(zoneBySlug.get('feira-de-santana')).toBeUndefined()
     })
 
     it('keeps every zone inside the municipality it decomposes', async () => {

@@ -26,9 +26,14 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { merge, quantize } from 'topojson-client'
+import { merge } from 'topojson-client'
 import { topology } from 'topojson-server'
-import { presimplify, quantile, simplify } from 'topojson-simplify'
+
+import {
+  describeGroundScale,
+  SIMPLIFY_TOLERANCE_M2,
+  simplifyToGroundScale,
+} from './lib/topology.mjs'
 
 const { canonicalizeMunicipalityName, UnknownMunicipalityError } =
   await import('../src/lib/electionResults.ts')
@@ -50,11 +55,6 @@ const SOURCES = {
     ext: 'json',
   },
 }
-
-/** Quantile of triangle area kept after presimplify (higher = more detail). */
-const SIMPLIFY_QUANTILE = 0.35
-/** Quantization precision for the final topology. */
-const QUANTIZE_DIGITS = 1e4
 
 const die = (message) => {
   console.error(`\n[build:geometries] ${message}\n`)
@@ -91,13 +91,6 @@ const writeJson = async (relativePath, value) => {
   const body = typeof value === 'string' ? value : `${JSON.stringify(value)}\n`
   await writeFile(path, body)
   console.log(`[build:geometries] wrote ${relativePath} (${Buffer.byteLength(body)} bytes)`)
-}
-
-const simplifyTopology = (topo) => {
-  let next = presimplify(topo)
-  const minWeight = quantile(next, SIMPLIFY_QUANTILE)
-  next = simplify(next, minWeight)
-  return quantize(next, QUANTIZE_DIGITS)
 }
 
 const buildMunicipalityCodesModule = (entries, provenance) => {
@@ -209,7 +202,11 @@ const main = async () => {
   let municipalityTopo = topology({
     municipalities: { type: 'FeatureCollection', features: municipalityFeatures },
   })
-  municipalityTopo = simplifyTopology(municipalityTopo)
+  municipalityTopo = simplifyToGroundScale(
+    municipalityTopo,
+    SIMPLIFY_TOLERANCE_M2.bahiaMunicipalities,
+  )
+  console.log(`[build:geometries] ${describeGroundScale(municipalityTopo)}`)
 
   const geometriesByCodarea = new Map(
     municipalityTopo.objects.municipalities.geometries.map((geometry) => [
@@ -236,7 +233,11 @@ const main = async () => {
   let territoryTopo = topology({
     territories: { type: 'FeatureCollection', features: territoryFeatures },
   })
-  territoryTopo = simplifyTopology(territoryTopo)
+  territoryTopo = simplifyToGroundScale(
+    territoryTopo,
+    SIMPLIFY_TOLERANCE_M2.bahiaIdentityTerritories,
+  )
+  console.log(`[build:geometries] ${describeGroundScale(territoryTopo)}`)
 
   const accessed = new Date().toISOString().slice(0, 10)
   const provenance = {

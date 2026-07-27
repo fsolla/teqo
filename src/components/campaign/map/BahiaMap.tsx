@@ -12,7 +12,7 @@ import {
   loadMunicipalityZoneGeometryModule,
   loadTerritoryGeometryModule,
 } from '@/lib/bahiaGeometries'
-import type { BahiaGeometryFeature } from '@/lib/bahiaGeometriesTypes'
+import type { BahiaMeshFeature } from '@/lib/bahiaGeometriesTypes'
 import {
   bubbleRadius,
   buildHighlightSet,
@@ -61,6 +61,13 @@ const applyBahiaMinZoom = (map: L.Map) => {
   map.setMinZoom(zoom)
 }
 
+/**
+ * `territory` has no caller today — B21 moved the Identity Territories to their
+ * own page and `MunicipalityMapPanel` hardcodes `municipality`. It is kept
+ * because E12 registered the TI map mode as a trigger, not because something
+ * still reads it; `bahiaTerritoryGeometries` and its ~15 KB artifact are alive
+ * only through that decision and the int spec.
+ */
 export type BahiaMapMode = 'municipality' | 'territory'
 
 /**
@@ -72,7 +79,7 @@ export type BahiaMapMode = 'municipality' | 'territory'
  */
 const loadLayerFeatures = async (
   mode: BahiaMapMode,
-): Promise<{ features: BahiaGeometryFeature[]; baseKeys: Set<string> }> => {
+): Promise<{ features: BahiaMeshFeature[]; baseKeys: Set<string> }> => {
   if (mode === 'territory') {
     const { features } = await loadTerritoryGeometryModule()
     return { features: [...features], baseKeys: new Set() }
@@ -80,12 +87,24 @@ const loadLayerFeatures = async (
 
   const [municipalities, zones] = await Promise.all([
     loadMunicipalityGeometryModule(),
-    loadMunicipalityZoneGeometryModule(),
+    // B8+ F3 — the state mesh is the map; the zone mesh is a detail on top of it.
+    // If it fails to arrive, Salvador falls back to the base polygon it already
+    // has underneath: drawn, but with no value and no pointer, since the bundle
+    // is keyed by zone slug and the city code is not a scoped key. Every other
+    // município keeps working instead of the whole panel erroring out. A network
+    // ChunkLoadError is the expected failure and needs no report; a decode error
+    // or a renamed topology object is a bug, so the reason is logged either way.
+    loadMunicipalityZoneGeometryModule().catch((error: unknown) => {
+      console.error('[map] malha das zonas indisponível; Bahia sem as ZE de Salvador', error)
+      return null
+    }),
   ])
 
+  const zoneFeatures = zones?.features ?? []
+
   return {
-    features: [...municipalities.features, ...zones.features],
-    baseKeys: new Set(zones.features.map((zone) => zone.properties.ibgeCode)),
+    features: [...municipalities.features, ...zoneFeatures],
+    baseKeys: new Set(zoneFeatures.map((zone) => zone.properties.ibgeCode)),
   }
 }
 
