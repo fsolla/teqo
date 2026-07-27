@@ -95,7 +95,8 @@ Depth check: copiar o padrão Territory, não um grid library.
 ## Adiado com gatilho
 
 - **Sticky first column genérico no `CampaignTable`.** Revisitar no 3º call site (municípios + territórios + uma terceira).
-- **Sombra/edge fade indicando mais colunas à direita.** Revisitar se critique acusar descoberta fraca do scroll.
+- **Sombra/edge fade indicando mais colunas à direita.** Revisitar se critique acusar descoberta fraca do scroll (critique B41 2026-07-27 confirmou descoberta fraca — ainda Adiado até pedido de campo).
+- **Tint de hover na célula sticky.** Territory parent rows usam `bg-background` sólido; revisitar no 3º call site sticky (ou se a mesa reclamar da coluna “morta” sob hover).
 
 ## Referências
 
