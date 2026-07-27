@@ -37,8 +37,8 @@ describe('CampaignTable cellTooltip', () => {
     const html = renderTable()
 
     expect(html).toContain('Seabra')
-    // No wrapper at all: the municipality list runs with `overflow-x-visible`
-    // and a sticky header, so an unrequested inline-flex span is a layout risk.
+    // No wrapper at all: the municipality list uses overflow-x-auto + sticky
+    // header/first column, so an unrequested inline-flex span is a layout risk.
     expect(html).not.toContain('inline-flex')
   })
 

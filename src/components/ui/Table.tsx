@@ -7,8 +7,9 @@ const Table = ({
   containerClassName,
   ...props
 }: React.ComponentProps<'table'> & {
-  /** Escape hatch for the scroll container — e.g. `overflow-x-visible` so a
-   *  sticky header can resolve against the page scroller instead of this box. */
+  /** Override the scroll container (default already includes `overflow-x-auto`).
+   *  Sticky-left columns keep that default; `overflow-x-visible` only when a
+   *  sticky header must resolve against the page scroller instead of this box. */
   containerClassName?: string
 }) => (
   <div

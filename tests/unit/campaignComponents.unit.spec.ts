@@ -249,8 +249,13 @@ describe('campaign visual foundation', () => {
     // B22: every one of the 10 staff columns carries a header explanation —
     // pinned in the `<thead>` only, since `cellTooltip` (e.g. "Classe") adds
     // its own triggers in the body.
-    const [theadHtml] = html.split('<tbody')
+    const [theadHtml, tbodyHtml = ''] = html.split('<tbody')
     expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(10)
+
+    // B41: horizontal scroll + sticky Município (Territory pattern).
+    expect(html).toMatch(/data-slot="table-container"[^>]*class="[^"]*overflow-x-auto/)
+    expect(theadHtml).toMatch(/sticky left-0 z-20[^"]*min-w-56[^"]*bg-background/)
+    expect(tbodyHtml).toMatch(/sticky left-0 z-\[5\][^"]*min-w-56[^"]*bg-background/)
   })
 
   /**
