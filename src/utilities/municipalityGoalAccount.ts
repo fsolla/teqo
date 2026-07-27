@@ -45,11 +45,18 @@ type GoalAccountReader = CampaignUser | User
  * over the whole catalog, never a filtered scope, and is
  * `cache()`-deduplicated so dashboard + list + detail don't each recompute it
  * on requests that touch more than one.
+ *
+ * Exported so a page can start it inside the `Promise.all` that already reads
+ * the scope: the coverage bundle needs it, and awaiting it only at the bundle
+ * call site left one global read (plus the catalog-wide pure computation) alone
+ * at the tail of the request.
  */
-const loadSuggestedGoalsCached = cache(async (payload: Payload, user: GoalAccountReader) => {
-  const goals = await loadCampaignGoals(payload, user)
-  return computeStatewideSuggestedGoals(goals)
-})
+export const loadStatewideSuggestedGoals = cache(
+  async (payload: Payload, user: GoalAccountReader) => {
+    const goals = await loadCampaignGoals(payload, user)
+    return computeStatewideSuggestedGoals(goals)
+  },
+)
 
 export type MunicipalityGoalCoverageBundle = {
   coverageByMunicipalityID: Map<number, Record<VoteEstimateScenario, MunicipalityGoalCoverage>>
@@ -74,7 +81,7 @@ export const loadMunicipalityGoalCoverageBundle = async (
   }>,
   pledgeAggregates: Map<number, MunicipalityPledgeAggregate>,
 ): Promise<MunicipalityGoalCoverageBundle> => {
-  const { suggestedGoalBySlug } = await loadSuggestedGoalsCached(payload, user)
+  const { suggestedGoalBySlug } = await loadStatewideSuggestedGoals(payload, user)
 
   const coverageByMunicipalityID = new Map<
     number,
@@ -130,7 +137,7 @@ export const loadMunicipalityGoalAccount = async (
   municipality: { slug: string; expectedVotes?: VoteEstimateScenarioFields | null },
   pledgeAggregate: MunicipalityPledgeAggregate,
 ): Promise<MunicipalityGoalAccount> => {
-  const { suggestedGoalBySlug, potentialBySlug } = await loadSuggestedGoalsCached(payload, user)
+  const { suggestedGoalBySlug, potentialBySlug } = await loadStatewideSuggestedGoals(payload, user)
   const suggestedGoalByScenario =
     suggestedGoalBySlug.get(municipality.slug) ?? emptySuggestedGoalByScenario
   const goalCoverage = computeGoalCoverage(

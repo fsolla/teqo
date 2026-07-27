@@ -11,7 +11,10 @@ import {
   pickDashboardPriorityMunicipalities,
 } from '@/utilities/dashboardPriorityMunicipalities'
 import type { MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
-import { loadMunicipalityGoalCoverageBundle } from '@/utilities/municipalityGoalAccount'
+import {
+  loadMunicipalityGoalCoverageBundle,
+  loadStatewideSuggestedGoals,
+} from '@/utilities/municipalityGoalAccount'
 import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
 import { rollupMunicipalityStaffVotes } from '@/utilities/votePledgeViews'
 
@@ -121,6 +124,10 @@ export const getCampaignDashboardData = async (
           overrideAccess: false,
         })
       : Promise.resolve({ docs: [] }),
+    // Result discarded on purpose: the goal-coverage bundle below reads
+    // `campaignGoals` through the same `cache()`, so starting it here keeps the
+    // global read off the tail of the request.
+    loadStatewideSuggestedGoals(payload, user),
   ])
 
   const rollup = rollupMunicipalityStaffVotes(municipalities.docs, pledgeAggregates)

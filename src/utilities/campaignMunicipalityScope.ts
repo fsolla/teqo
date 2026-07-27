@@ -4,8 +4,12 @@ import { cache } from 'react'
 
 import type { Payload, Where } from 'payload'
 
+import { isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import type { CampaignUser, Municipality } from '@/payload-types'
-import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
+import {
+  aggregateAllPledgesByMunicipality,
+  aggregatePledgesByMunicipality,
+} from '@/utilities/votePledgeData'
 import { type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 /** Superset of the fields the dashboard, map, and list overview consume. */
@@ -32,27 +36,42 @@ const loadScope = async (
   user: CampaignUser,
   where: Where,
 ): Promise<MunicipalityScope> => {
-  const result = await payload.find({
-    collection: 'municipality',
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    select: {
-      name: true,
-      slug: true,
-      kind: true,
-      region: true,
-      ibgeCode: true,
-      advisors: true,
-      priority: true,
-      expectedVotes: true,
-    },
-    where,
-    user,
-    overrideAccess: false,
-  })
+  const municipalitiesPromise = payload
+    .find({
+      collection: 'municipality',
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      select: {
+        name: true,
+        slug: true,
+        kind: true,
+        region: true,
+        ibgeCode: true,
+        advisors: true,
+        priority: true,
+        expectedVotes: true,
+      },
+      where,
+      user,
+      overrideAccess: false,
+    })
+    .then((result) => result.docs as ScopedMunicipalityDoc[])
 
-  const municipalities = result.docs as ScopedMunicipalityDoc[]
+  // An unrestricted actor with no filter has the WHOLE catalog in scope, so the
+  // pledge aggregate has nothing to narrow: both reads can leave in the same
+  // round trip. Every narrower scope still has to wait for the município ids —
+  // the aggregate would otherwise count pledges the actor cannot read.
+  if (isUnrestrictedCampaignRole(user.role) && Object.keys(where).length === 0) {
+    const [municipalities, pledgeAggregates] = await Promise.all([
+      municipalitiesPromise,
+      aggregateAllPledgesByMunicipality(payload),
+    ])
+
+    return { municipalities, pledgeAggregates }
+  }
+
+  const municipalities = await municipalitiesPromise
   const pledgeAggregates = await aggregatePledgesByMunicipality(
     payload,
     municipalities.map((municipality) => municipality.id),

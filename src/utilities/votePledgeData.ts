@@ -1,6 +1,6 @@
 import 'server-only'
 
-import type { Payload, PayloadRequest } from 'payload'
+import type { Payload, PayloadRequest, Where } from 'payload'
 
 import {
   effectivePledgeVotesForScenario,
@@ -31,12 +31,34 @@ export const aggregatePledgesByMunicipality = async (
   municipalityIDs: number[],
   req?: PayloadRequest,
 ): Promise<Map<number, MunicipalityPledgeAggregate>> => {
+  if (municipalityIDs.length === 0) return new Map()
+
+  return aggregatePledgesWhere(payload, { municipality: { in: municipalityIDs } }, req)
+}
+
+/**
+ * The same aggregate over EVERY pledge, for a caller whose município scope is
+ * the whole catalog: there `municipality IN (…)` excludes nothing, so dropping
+ * it lets the pledge read leave in the same round trip as the município read
+ * instead of waiting for its ids (and drops a 435-element IN list). Keys the
+ * caller doesn't know are harmless — every consumer looks the map up by
+ * município id, none iterates it.
+ */
+export const aggregateAllPledgesByMunicipality = (
+  payload: Pick<Payload, 'find'>,
+  req?: PayloadRequest,
+): Promise<Map<number, MunicipalityPledgeAggregate>> => aggregatePledgesWhere(payload, {}, req)
+
+const aggregatePledgesWhere = async (
+  payload: Pick<Payload, 'find'>,
+  where: Where,
+  req?: PayloadRequest,
+): Promise<Map<number, MunicipalityPledgeAggregate>> => {
   const aggregates = new Map<number, MunicipalityPledgeAggregate>()
-  if (municipalityIDs.length === 0) return aggregates
 
   const result = await payload.find({
     collection: 'votePledge',
-    where: { municipality: { in: municipalityIDs } },
+    where,
     depth: 0,
     limit: 0,
     pagination: false,

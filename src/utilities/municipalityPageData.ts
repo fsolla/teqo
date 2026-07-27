@@ -15,7 +15,10 @@ import type { CampaignUser, Municipality } from '@/payload-types'
 import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
 import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
 import { centralDeficitSortValue, type MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
-import { loadMunicipalityGoalCoverageBundle } from '@/utilities/municipalityGoalAccount'
+import {
+  loadMunicipalityGoalCoverageBundle,
+  loadStatewideSuggestedGoals,
+} from '@/utilities/municipalityGoalAccount'
 import {
   buildMunicipalityListWhere,
   municipalityPageSize,
@@ -361,6 +364,10 @@ export const loadMunicipalityListPageBundle = async (
         ? { where, rows: staffScopePromise.then((scope) => scope?.municipalities ?? []) }
         : null,
     ),
+    // Result discarded on purpose: the `campaignGoals` read below is
+    // `cache()`-deduplicated, so starting it here moves it off the tail of the
+    // request instead of adding a round trip after everything else resolved.
+    isStaff ? loadStatewideSuggestedGoals(payload, user) : null,
   ])
 
   let overview: MunicipalityListOverviewData | null = null
