@@ -52,10 +52,13 @@ export type NearbyMunicipalityResolution =
   | { kind: 'inScope'; municipality: AccessibleMunicipality }
   /**
    * The point falls inside a city modeled as several zone municipalities
-   * (Salvador). Without zone polygons (B8 F2) the honest answer is the filtered
-   * list, never a guessed ZE. `zoneCount` is what the actor can open, so an
-   * advisor with three zones is not told there are nineteen. `ibgeCode` is how
-   * the caller finds the filtered-list href the server serialized for it.
+   * (Salvador). The answer is the filtered list, never a guessed ZE. B8 F2 has
+   * since drawn the zone polygons, so resolving the exact ZE became possible —
+   * this resolver deliberately still does not, because that is a separate
+   * decision (an open debt) rather than a side effect of the map delivery.
+   * `zoneCount` is what the actor can open, so an advisor with three zones is
+   * not told there are nineteen. `ibgeCode` is how the caller finds the
+   * filtered-list href the server serialized for it.
    */
   | { kind: 'zoneCity'; city: string; ibgeCode: string; zoneCount: number }
   /** Inside Bahia, but in a município outside the actor's portfolio. */

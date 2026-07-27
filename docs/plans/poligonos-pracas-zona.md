@@ -1,7 +1,8 @@
 # B8 — Polígonos dos Municípios-zona de Salvador (ZE 1–19)
 
-Status: F1 entregue em código (2026-07-21; em produção desde 2026-07-23); F2 pendente
-Atualizado em: 2026-07-24
+Status: F1 entregue em código (2026-07-21; em produção desde 2026-07-23); **F2 entregue em código (2026-07-26)** — deploy pendente
+Atualizado em: 2026-07-26
+Revisão 2026-07-26 (F2 entregue): as duas questões em aberto foram fechadas na implementação (malha **IBGE 2022**, sem pivô para GeoSalvador; chave = **híbrido A+B** — `municipalitySlug` nas zonas, `ibgeCode` no resto, com o polígono municipal de Salvador **mantido como base sem interação** em vez de removido). As-built completo na seção "F2 as-built" abaixo; débitos novos em "Adiado com gatilho".
 Revisão 2026-07-24 (remodelagem Municípios M1): **Camaçari saiu do escopo** — virou município inteiro (ZE 170/171 agregadas), e as entradas de Camaçari foram removidas do catálogo (`MunicipalityZoneNeighborhoodCity = 'Salvador'`; fonte única `tre-ra-02-2017`). B8 agora cobre **só as 19 zonas de Salvador**. Identificadores renomeados `plaza*` → `municipality*` na M1. As menções a Camaçari abaixo foram mantidas apenas como histórico de pesquisa.
 Revisão 2026-07-21: F1 implementada — `municipalityZoneNeighborhoods.ts`, fixture+int, `MunicipalityZoneNeighborhoodsCard` no overview do Município-zona; mapa inalterado (F2).
 Revisão 2026-07-21 (pós-`/simplify` + capture-review-debts): débitos S1–S3 absorvidos como **F2 prep** (~½ dia, dentro do appetite F2); S4–S10 em Explicitamente fora / Adiado; JR1–JR7 em Já resolvido (não reabrir no simplify).
@@ -58,10 +59,10 @@ _Histórico Camaçari (fora de escopo desde M1):_ não havia lista oficial zona�
 - **Polígonos = dissolve de bairros (IBGE e/ou malha municipal), não geocodificar seções.** Mesmo padrão de dissolução já usado em TIs (B2). Gaps: polígono manual leve ou omitir pedaço com nota. **Rejeitado:** geocodificar milhares de seções → casco; pedir shapefile ao TRE neste ciclo; PostGIS.
 - **i18n e naming** (AGENTS.md): identificadores `municipalityZoneNeighborhoods` (existente), `build-municipality-zone-geometries.mjs`, `bahia-municipality-zones.topo.json`, `getMunicipalityZoneFeature(slug)`; strings UI em pt-BR.
 
-## Questões em aberto
+## Questões em aberto — fechadas na F2 (2026-07-26)
 
-- **Malha de bairros: IBGE 2022 vs GeoSalvador?** **Opções:** A) só IBGE BA | B) GeoSalvador. **Recomendação:** A na F2 com reconciliação de nomes TRE↔`NM_BAIRRO`; se cobertura de Salvador for insuficiente no spike de ½ dia, pivotar B. Validar no spike antes de lock de artefato.
-- **Chave do coroplético no mapa: `municipalitySlug` ou continuar `ibgeCode` + overlay?** **Opções:** A) mode/`values` por `municipalitySlug` para Municípios-zona + município para o resto | B) split Salvador em features de zona substituindo o polígono municipal. **Recomendação:** B no footprint de Salvador (um polígono por Município-zona; o polígono municipal some lá) e A/`ibgeCode` no restante da Bahia — evita dupla contagem visual. _(assumido — validar no craft)_
+- **Malha de bairros: IBGE 2022 vs GeoSalvador?** → **A (IBGE `BA_bairros_CD2022`)**, sem pivô. O spike deu **170/170** polígonos de Salvador atribuídos e **19/19** zonas cobertas; os unmatched críticos que disparariam GeoSalvador (>10% dos bairros TRE sem polígono) não apareceram. Custo: `shpjs` como devDependency, porque o IBGE só publica SHP (SIRGAS 2000) nesse recorte.
+- **Chave do coroplético: `municipalitySlug` ou `ibgeCode` + overlay?** → **híbrido A+B**, com um ajuste sobre a recomendação: o polígono municipal de Salvador **não sumiu**, ficou desenhado por baixo como **base sem dado e sem pointer**. Duas malhas simplificadas de forma independente não fecham na mesma linha de costa, e apagar o polígono municipal abria sliver de fundo no contorno do estado. A base não entra no índice de chaves, então não há dupla contagem visual nem alvo duplo de hover — o risco que a recomendação original queria evitar.
 
 ## Abordagem proposta
 
@@ -88,11 +89,11 @@ Componentes:
 
 ### Fases
 
-| Fase    | Entrega                                                                        | Appetite      |
-| ------- | ------------------------------------------------------------------------------ | ------------- |
-| F1 ✓    | Catálogo + testes + bloco no município (entregue; Salvador-only desde M1)      | ~1 dia        |
-| F2 prep | Hidratação via `municipalityCatalog` + canônico JSON→TS + teste ordem de slugs | ~½ dia        |
-| F2      | Spike cobertura malha → script → TopoJSON → mapa                               | ~1,5–2,5 dias |
+| Fase      | Entrega                                                                                     | Appetite      |
+| --------- | ------------------------------------------------------------------------------------------- | ------------- |
+| F1 ✓      | Catálogo + testes + bloco no município (entregue; Salvador-only desde M1)                   | ~1 dia        |
+| F2 prep ✓ | Hidratação via `municipalityCatalog` + teste ordem de slugs (S1+S3; **S2 cortado**, abaixo) | ~½ dia        |
+| F2 ✓      | Spike cobertura malha → script → TopoJSON → mapa (entregue 2026-07-26)                      | ~1,5–2,5 dias |
 
 **F2 prep** (débitos pós-`/simplify`, capture-review-debts 2026-07-21 — não item paralelo no roadmap):
 
@@ -122,6 +123,30 @@ Componentes:
 - **Desenhar 19 polígonos à mão no QGIS sem catálogo.** Irrepetível e sem teste. **Mitigação:** F1 obrigatória (feita); manual só para unmatched.
 - **Tratar polígono derivado como limite oficial TSE.** Risco jurídico/comunicação. **Mitigação:** copy “aproximação a partir de bairros; não é limite oficial”.
 
+## F2 as-built (2026-07-26)
+
+**Artefato.** `src/lib/geometries/bahia-municipality-zones.topo.json` — **72.310 bytes** (~20 KB gzip; budget de 600 KB do padrão B2 sobrou inteiro), objeto `municipalityZones`, 19 features com `properties: { municipalitySlug, name, zoneNumber, ibgeCode }`. Gerado por `pnpm build:municipality-zone-geometries` (`scripts/build-municipality-zone-geometries.mjs`, flag `--report` para só reconciliar sem escrever), que baixa/cacheia `BA_bairros_CD2022.zip` em `data/geometries/` (gitignored), parseia com `shpjs`, filtra `CD_MUN === '2927408'`, simplifica no quantil 0.35, dissolve por zona com `topojson.merge` e quantiza em 1e4 — mesma ordem do irmão `build-bahia-geometries.mjs`, e como ele **não toca o banco**. Consumo lazy por `loadMunicipalityZoneGeometryModule()` (`bahiaMunicipalityZoneGeometries.ts`), no padrão memoizado de B5 F1: o grafo default do `/campanha` não paga o decode.
+
+**Reconciliação (a parte que não é código).** Três tabelas curadas no cabeçalho do script, cada linha com a evidência:
+
+- `IBGE_TO_TRE_NEIGHBORHOOD` — 7 aliases de grafia/composição (`Beiru/Tancredo Neves`, CAB, ilhas da baía).
+- `TRE_NEIGHBORHOODS_MERGED_INTO` — bairro da resolução sem polígono próprio no IBGE (Jardim Cruzeiro dentro de Vila Ruy Barbosa). O build **recusa** um merge cujos dois lados caiam em zonas diferentes.
+- `SPLIT_NEIGHBORHOOD_ZONES` — Periperi, que a RA 02/2017 corta na Rua das Pedrinhas entre duas zonas, vai **inteiro** para a ZE 17: o bairro é o átomo geométrico disponível, e partir polígono por descrição de rua era o rabbit hole que este plano já recusava.
+
+Atribuição em dois passes: (1) nome citado pela resolução; (2) **maior fronteira compartilhada** para os 5 bairros que a RA nunca nomeia (Ilha Amarela, Dois de Julho, Chame-Chame, Horto Florestal, Mirantes de Periperi). O passe 2 foi **validado**, não assumido: rodado sobre os 4 bairros que a resolução nomeia sob outro rótulo, ele reproduz a zona oficial nos 4. O build falha se sobrar polígono órfão ou bairro TRE sem polígono — hoje 170/170 → 19/19.
+
+**Re-keying (o que mudou fora do mapa).** Map key = `kind === 'zona' ? municipalitySlug : ibgeCode`, via `mapKeyForMunicipality` + `buildMunicipalitiesByMapKey` (`municipalityMapNavigation.ts`). O bundle inteiro passou a ser keyed por ela (`valuesByYear`, `values2026ByScenario`, `validVotesByYear`, `diffByYear`, `territorialClassByMapKey`, `projectedValidVotesByMapKey`, `municipalitiesByMapKey`); os rollups pararam de acumular com `+=` porque cada chave é agora 1:1, e por isso `computeAggregateTerritorialClass` deu lugar a `computeMunicipalityTerritorialClass`. `resolveMunicipalityMapNavigation` virou 1:1 e o ramo `kind: 'zones'` morreu junto com a copy "toque de novo para ver as zonas" e o scroll-anchor do painel. `buildMunicipalitiesByIbgeCode` sobrevive intacto: o href de lista do **B14 ✓** é por cidade, de propósito.
+
+**Rank competitivo continua por cidade.** O artefato TSE (v3) só tem `federalRankByIbgeCode`, então as 19 zonas herdam a posição da cidade inteira — exatamente o que a legenda da escala "posição no município" já afirma. Int novo pina que as 19 compartilham **uma** posição, para que a limitação seja um invariante testado e não uma surpresa. Rank por ZE exigiria uma dimensão nova no artefato (gatilho abaixo).
+
+**Mapa.** `BahiaMap` monta a camada de município a partir de duas malhas (`loadLayerFeatures`), com o polígono municipal de Salvador desenhado por baixo como base sem dado e sem pointer (`baseKeys`). `keyPropertyForMode`/`featureKeyFromProperties` deram lugar a `featureMapKey` (`municipalitySlug ?? codarea ?? code` — as três nunca coexistem, então o argumento de modo era supérfluo); `fitMapToHighlights` passou a medir os paths desenhados (`pathByKeyRef`) em vez do módulo de geometria, que já não sabe sozinho de qual malha veio a chave, e `geometryModuleRef` foi apagado.
+
+**Dois fatos medidos (não re-derivar).** (1) O polígono municipal de Salvador tem **~690 km²** e a soma das 19 zonas **~324 km²**: a diferença é a água da baía que o limite municipal encerra e a malha de bairros não desenha. Por isso o int de área compara contra a área de **terra** (280–360 km²) e não contra o município — a primeira versão do teste, que exigia ≥95% de razão, estava medindo terra contra terra+água. (2) Centróide-dentro-de-outra-zona **não** é teste de sobreposição válido aqui: a ZE 16 é concava e envolve a ZE 14, então o centróide da 16 cai legitimamente na 14. A não-sobreposição é garantida estruturalmente (cada bairro entra em exatamente uma zona, verificado no build) mais a soma de áreas.
+
+**Testes.** Int de contrato do artefato (19 features, slugs == catálogo `kind === 'zona'`, budget, centróide de cada zona dentro do polígono municipal de Salvador, área somada); int de rank compartilhado; unit de `featureMapKey` e de `mapKeyForMunicipality`/`buildMunicipalitiesByMapKey`; e2e `campaignZoneMap.e2e.spec.ts` — 436 paths / 435 interativos (o único não-interativo é a base de Salvador), readout "Salvador — ZE N" e clique abrindo `/campanha/municipios/salvador-ze-N`.
+
+**Gate.** tsc, lint, format, knip (P3 pré-existente em `payload.config.ts`), `check:cycles`, unit+int, e2e e build rodados. **Aikido não fechou:** o scanner responde Opengrep exit code 2 em qualquer entrada, inclusive num arquivo-probe trivial de uma linha, então os achados que ele reportou são artefato da execução quebrada e não são atribuíveis; o feed do Aikido não lista nada deste repo. SCA do `shpjs` (devDependency nova) também pendente — ambos registrados como débito abaixo.
+
 ## Já resolvido no simplify/critique (não reabrir)
 
 - **JR1** — `MunicipalityZoneNeighborhoodsCard`: um lookup `municipalityZoneNeighborhoodEntryForSlug` (sem duplo hit no `entryBySlug`).
@@ -132,6 +157,9 @@ Componentes:
 - **JR6** — cobertura usa `zoneMunicipalities.length` em vez de constante fixa.
 - **JR7** — _(histórico)_ exclusividade de Camaçari sem teste — obsoleto: Camaçari saiu do catálogo na M1.
 - Impeccable compacto na F1: sem snapshot `.impeccable/critique/` nem P0–P3 abertos nesta superfície; polish visual amplo → **R6**.
+- **JR8** _(F2)_ — comentário de `NearbyMunicipalityResolution.zoneCity` que afirmava não existirem polígonos de zona: corrigido para dizer que existem e que o card **deliberadamente** não os usa.
+- **JR9** _(F2)_ — duas asserções do int de bairros que a hidratação da Fase 0 tornou tautológicas (comparavam `city`/`zoneNumber` com o catálogo de onde acabaram de ser copiados) removidas; a verificação real segue no `deepEqual` contra o fixture transcrito à mão.
+- **JR10** _(F2)_ — o script re-indexava geometrias simplificadas por **nome** de bairro; passou a usar `id` próprio (o irmão usa `codarea`, único por construção). Hoje são 170 nomes distintos, mas um nome repetido em malha futura colapsaria dois polígonos em silêncio dentro de um artefato commitado. Rebuild saiu byte-idêntico.
 
 ## Explicitamente fora (skips `/simplify` + descartes do triage)
 
@@ -144,7 +172,10 @@ Componentes:
 
 ## Adiado com gatilho
 
-- **S6 — CSS compartilhado lista zona** (`MunicipalityMapPanel` zone breakdown ↔ `MunicipalityZoneNeighborhoodsCard`). **Gatilho:** F2 alterar `MunicipalityMapPanel`/`BahiaMap` ou R6 citar duplicação visual em ≥2 superfícies de zona.
+- **S6 — CSS compartilhado lista zona** (`MunicipalityMapPanel` zone breakdown ↔ `MunicipalityZoneNeighborhoodsCard`). **Gatilho disparou** na F2 (o painel foi alterado) e foi reavaliado: as duas listas continuam pequenas e com estrutura diferente, então extrair peça compartilhada agora seria abstração por coincidência visual. Segue adiado, agora com gatilho único: **R6** citar a duplicação em ≥2 superfícies de zona.
+- **F2-D1 — card "Onde estou" (B14 ✓) resolver a ZE exata de Salvador.** Os polígonos passaram a existir nesta entrega, e `featureContainsPoint` já é genérico o suficiente para recebê-los; o card continua levando à lista filtrada por decisão. **Gatilho:** pedido de campo ("estou em Salvador e quero abrir minha zona"). Custo real é uma segunda malha no chunk do card, não matemática nova. Aresta já registrada no grafo do roadmap.
+- **F2-D2 — rank competitivo por ZE.** Exige dimensão nova no artefato TSE (hoje `federalRankByIbgeCode`), o que mexe no budget de 700 KB. **Gatilho:** E11 pedir o eixo de competição dentro de Salvador, ou o dossiê de um Município-zona exibir posição própria. Hoje as 19 zonas herdam a posição da cidade, com int pinando o fato.
+- **S2 — fonte única TS ↔ fixture do catálogo de bairros** (gerar `municipalityZoneNeighborhoods.ts` a partir do JSON). **Cortado na F2 prep:** a curadoria que a F2 exigia foi para o **script** de geometrias, não para o catálogo, então o gerador não teria a quem servir; o `deepEqual` fixture↔código já pega drift. **Gatilho:** um terceiro consumidor precisar do catálogo em runtime não-TS.
 - **Malha GeoSalvador em vez de IBGE.** Revisitar quando: spike F2 mostrar unmatched críticos em Salvador (>10% bairros TRE sem polígono).
 - **Camada ZE estadual (B4 antigo).** Revisitar quando: produto pedir mapa de ZE fora de Salvador (improvável neste ciclo).
 

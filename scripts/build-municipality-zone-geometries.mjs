@@ -258,9 +258,12 @@ const main = async () => {
   const neighborhoodTopology = topology({
     neighborhoods: {
       type: 'FeatureCollection',
-      features: features.map((feature) => ({
+      // `id` is what the simplified topology is re-indexed by further down.
+      // Neighborhood names are unique in today's mesh but nothing guarantees it,
+      // and keying by name would silently collapse two polygons into one.
+      features: features.map((feature, index) => ({
         type: 'Feature',
-        properties: { name: feature.properties?.NM_BAIRRO ?? '' },
+        properties: { id: index, name: feature.properties?.NM_BAIRRO ?? '' },
         geometry: feature.geometry,
       })),
     },
@@ -351,16 +354,16 @@ const main = async () => {
   // Simplification keeps geometry order and properties, so the zone buckets
   // above still address the right shapes.
   const simplified = simplifyTopology(neighborhoodTopology)
-  const simplifiedByName = new Map(
+  const simplifiedById = new Map(
     simplified.objects.neighborhoods.geometries.map((geometry) => [
-      geometry.properties.name,
+      geometry.properties.id,
       geometry,
     ]),
   )
 
   const zoneFeatures = zoneEntries.map((entry) => {
     const members = (geometriesByZone.get(entry.slug) ?? []).map((geometry) =>
-      simplifiedByName.get(geometry.properties.name),
+      simplifiedById.get(geometry.properties.id),
     )
     if (members.length === 0 || members.some((member) => !member)) {
       die(`Missing neighborhood geometry for ${entry.slug}.`)

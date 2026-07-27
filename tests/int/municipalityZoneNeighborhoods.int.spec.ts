@@ -55,8 +55,9 @@ describe('Municipality zone neighborhood catalog (Salvador only)', () => {
     for (const municipality of zoneMunicipalities) {
       const record = municipalityZoneNeighborhoodEntryForSlug(municipality.slug)
       expect(record, municipality.slug).toBeDefined()
-      expect(record?.city).toBe(municipality.city)
-      expect(record?.zoneNumber).toBe(municipality.zoneNumber)
+      // `city`/`zoneNumber` are copied from this same catalog, so comparing them
+      // here could not fail. The fixture test below is what actually checks them,
+      // against an independent transcription of the resolution.
       expect(record?.neighborhoods.length, municipality.slug).toBeGreaterThan(0)
     }
   })
