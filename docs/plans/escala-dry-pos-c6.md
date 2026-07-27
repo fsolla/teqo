@@ -93,6 +93,7 @@ flowchart TD
 Appetite: **~2h eng, fill-in.** O `/simplify` do C13 mostrou que a invariante do F4 é menor do que o texto acima sugere: o guard `campaign formActions convention` (`tests/unit/codebaseConventions.unit.spec.ts`) filtrava `file.endsWith('/formActions.ts')`, então os arquivos de action irmãos que cada rota escreveu depois — `lifecycleFormActions.ts`, `resultFormActions.ts`, `updateFormActions.ts`, `taskActions.ts` — **não eram verificados em nenhuma rota**. A exceção documentada na Revisão 2026-07-24 ("`lifecycleFormActions.ts` só retorna safe-messages fixas — sem ladder para migrar") foi escrita quando o alvo era `mapCampaignFormActionError`; com `runCampaignRedirectFormAction` (Pass 2 W4d) a conta mudou, porque esse arquivo faz exatamente a forma que o wrapper padroniza: dois `catch` nus que descartam o erro + `redirect` no sucesso.
 
 **As-built:**
+
 - Guard ampliado para basename `/^\w*[Ff]ormActions\.ts$/` + `taskActions.ts`.
 - Migrados para `runCampaignRedirectFormAction` / `runCampaignFormAction`: `atividades/[slug]/lifecycleFormActions.ts`, `resultFormActions.ts`, `updateFormActions.ts`; `municipios/[slug]/updateFormActions.ts`, `pledgeFormActions.ts`; `municipios/municipalityStaffFormActions.ts` (4 actions).
 - Allowlist com racional: `taskActions.ts` (contrato posicional); `atividades/formActions.ts` (unique-violation + duplicate-title); `apoiadores/[id]/formActions.ts` (message-only flatten).
@@ -103,6 +104,7 @@ Appetite: **~2h eng, fill-in.** O `/simplify` do C13 mostrou que a invariante do
 **Já resolvido no simplify (não reabrir):** loophole de comment-token no guard; `catch` nu do lifecycle id.
 
 **Explicitamente fora / Adiado com gatilho (triage 2026-07-27):**
+
 - `actions/password.ts` / `profile.ts` / `leaderSupporter.ts` exportam `*FormAction` com ladder hand-rolled fora do filtro `*FormActions.ts` — gatilho: próximo toque nesses arquivos **ou** decisão de expandir o guard além de route-level FormActions.
 - `convite/[token]/formActions.ts` login half ainda hand-rolled (password-confirm + redirect) — gatilho: próximo toque no convite; autofill já usa o wrapper.
 
