@@ -27,7 +27,7 @@ Dados: N/A — credenciais WebAuthn; nenhum KPI/série/mapa.
 
 ## Contexto
 
-Hoje o único caminho de login é senha (`payload.login` → cookie `campaign-token`). **B39** alonga a sessão (checkbox "Lembrar de mim"), mas quando a sessão expira o usuário digita de novo. Em dispositivos com Secure Enclave / StrongBox, o browser expõe **WebAuthn** (`navigator.credentials`) com *platform authenticator* — a UI do SO pede digital/Face ID e devolve uma asserção verificável no servidor.
+Hoje o único caminho de login é senha (`payload.login` → cookie `campaign-token`). **B39** alonga a sessão (checkbox "Lembrar de mim"), mas quando a sessão expira o usuário digita de novo. Em dispositivos com Secure Enclave / StrongBox, o browser expõe **WebAuthn** (`navigator.credentials`) com _platform authenticator_ — a UI do SO pede digital/Face ID e devolve uma asserção verificável no servidor.
 
 Pedido de produto (2026-07-26): após o primeiro login, oferecer login com digital nos aparelhos que tiverem leitor.
 
@@ -46,7 +46,7 @@ Não há WebAuthn / passkey / Credential Management de produto no código hoje. 
 - **WebAuthn platform authenticator (passkey/device-bound), não "ler a digital e comparar com hash nosso".** O SO faz a biometria; o app só verifica a asserção. **Rejeitado:** (a) Credential Management API só para autofill de senha (não é feature de produto); (b) armazenar senha cifrada e "desbloquear" com WebAuthn sem asserção server-side (pior modelo); (c) SDK nativo / Capacitor (fora do app Next).
 - **Enrollment só depois de sessão senha válida** (ou reset de senha recente). **Rejeitado:** registrar passkey a partir de e-mail mágico sem senha no v1 (explode recovery).
 - **Storage server-side das credenciais** (collection ou campo array versionado em `campaignUser`) com `credentialID`, `publicKey`, `counter`, `transports`, label do dispositivo. **Rejeitado:** só `localStorage` (não autentica no servidor); depender só do password manager do browser sem registro nosso (não controlamos UX "Entrar com digital").
-- **Login biométrico emite o TTL longo (B39 "lembrar")** — o enrollment no dispositivo *é* o consentimento de confiança. **Rejeitado:** TTL curto no biométrico (derrota o job); exigir checkbox remember no fluxo biométrico.
+- **Login biométrico emite o TTL longo (B39 "lembrar")** — o enrollment no dispositivo _é_ o consentimento de confiança. **Rejeitado:** TTL curto no biométrico (derrota o job); exigir checkbox remember no fluxo biométrico.
 - **i18n e naming:** `campaignWebAuthn`, `passkey`/`webauthnCredential` nos identificadores; copy pt-BR ("Entrar com digital ou Face ID", "Ativar neste aparelho").
 
 ## Questões em aberto

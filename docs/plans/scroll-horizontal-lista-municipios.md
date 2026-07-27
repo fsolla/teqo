@@ -27,9 +27,9 @@ Dados: N/A — chrome de tabela; as métricas já existentes não mudam de forma
 
 ## Contexto
 
-Em **B16 ✓**, a lista de municípios optou por `containerClassName="overflow-x-visible"` para o `sticky top-0` dos `th` resolver contra o scroller do `<main>` (`campaign-content-scroll`). Trade-off documentado no plano: *"uma tabela mais larga que a viewport passa a rolar junto com a página"*. Com as colunas de E8/E9/E10/B27, em tablet/desktop a tabela **estoura** a tela — pedido de produto 2026-07-26.
+Em **B16 ✓**, a lista de municípios optou por `containerClassName="overflow-x-visible"` para o `sticky top-0` dos `th` resolver contra o scroller do `<main>` (`campaign-content-scroll`). Trade-off documentado no plano: _"uma tabela mais larga que a viewport passa a rolar junto com a página"_. Com as colunas de E8/E9/E10/B27, em tablet/desktop a tabela **estoura** a tela — pedido de produto 2026-07-26.
 
-O precedente já existe na página de territórios (**B21 ✓**): [`TerritoryList.tsx`](../../src/components/campaign/municipality/TerritoryList.tsx) usa `overflow-x-auto` e [`TerritoryListColumns.tsx`](../../src/components/campaign/municipality/TerritoryListColumns.tsx) marca a 1ª coluna com `sticky left-0 z-20 … bg-background`. O plano de reorder ([reordenar-colunas-lista-municipios.md](reordenar-colunas-lista-municipios.md), fora de escopo) já travava *"Coluna Município fixa à esquerda"* como âncora — este item entrega essa âncora **sem** DnD.
+O precedente já existe na página de territórios (**B21 ✓**): [`TerritoryList.tsx`](../../src/components/campaign/municipality/TerritoryList.tsx) usa `overflow-x-auto` e [`TerritoryListColumns.tsx`](../../src/components/campaign/municipality/TerritoryListColumns.tsx) marca a 1ª coluna com `sticky left-0 z-20 … bg-background`. O plano de reorder ([reordenar-colunas-lista-municipios.md](reordenar-colunas-lista-municipios.md), fora de escopo) já travava _"Coluna Município fixa à esquerda"_ como âncora — este item entrega essa âncora **sem** DnD.
 
 `CampaignTable` / `MunicipalityList` (trecho desktop `hidden md:block`) são o alvo. Cards mobile (`md:hidden`) ficam em **B42**.
 
