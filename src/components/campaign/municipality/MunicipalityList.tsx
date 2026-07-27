@@ -14,10 +14,11 @@ import { MunicipalityListSignalControl } from '@/components/campaign/municipalit
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import { MunicipalitySortableHead } from '@/components/campaign/municipality/MunicipalitySortableHead'
 import { TerritoryLink } from '@/components/campaign/municipality/TerritoryLink'
+import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import { Badge } from '@/components/ui/Badge'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import {
   Empty,
   EmptyContent,
@@ -117,32 +118,24 @@ const VotePositionReadout = ({
 }
 
 /**
- * E10 classe. In the table only the pill is visible — spelling the factors out
- * under it still bloats the sticky/dense row even with horizontal scroll,
- * so the "por quê" moves to the column's `cellTooltip` (hover, focus and tap)
- * and stays as `sr-only` text; the card has the width to show it outright.
- * Either way the class never reaches anyone as a bare verdict, which is the
- * one thing it must never be.
+ * E10 classe. Only the pill is visible — spelling the factors out under it
+ * bloats the dense row on desktop and, on the mobile card, was the tallest
+ * block in a card the field asked us to shorten (B42). So the "por quê" is
+ * `sr-only` text here, and both surfaces add a tap/hover/focus channel around
+ * it: the column's `cellTooltip` in the table, an explicit `CampaignHoverTooltip`
+ * on the card. Neither may be dropped — the class must never reach anyone,
+ * sighted or not, as a bare verdict.
  */
-const TerritorialClassReadout = ({
-  municipality,
-  layout,
-}: {
-  municipality: MunicipalityListViewModel
-  layout: 'table' | 'card'
-}) => {
-  const isTable = layout === 'table'
+const TerritorialClassReadout = ({ municipality }: { municipality: MunicipalityListViewModel }) => {
   const why = formatTerritorialClassWhy(municipality.territorialClassFactors)
 
   if (municipality.territorialClass === 'sem_base') {
     // Same idiom as the "2022" column: absent data is a dash, not a pill.
-    return isTable ? (
+    return (
       <span className="text-muted-foreground">
         <span aria-hidden="true">—</span>
         <span className="sr-only">{why}</span>
       </span>
-    ) : (
-      <span className="text-xs text-muted-foreground">{why}</span>
     )
   }
 
@@ -151,7 +144,7 @@ const TerritorialClassReadout = ({
       <Badge variant={territorialClassBadgeVariant[municipality.territorialClass]}>
         {territorialClassLabels[municipality.territorialClass]}
       </Badge>
-      <span className={isTable ? 'sr-only' : 'text-xs text-muted-foreground'}>{why}</span>
+      <span className="sr-only">{why}</span>
     </>
   )
 }
@@ -346,9 +339,7 @@ const municipalityListColumns = ({
               Classe
             </MunicipalitySortableHead>
           ),
-          cell: (municipality) => (
-            <TerritorialClassReadout municipality={municipality} layout="table" />
-          ),
+          cell: (municipality) => <TerritorialClassReadout municipality={municipality} />,
           // The factors behind the label — the cell keeps them as `sr-only`
           // text, so this stays a redundant affordance (see `cellTooltip`).
           cellTooltip: (municipality) =>
@@ -373,10 +364,12 @@ const municipalityListColumns = ({
             isCoordinator ? (
               <MunicipalityListAdvisorsControl
                 municipalityID={municipality.id}
+                municipalityName={municipality.name}
                 currentAdvisorIDs={municipality.advisorIDs}
                 isPriority={municipality.priority === 'alta'}
                 advisorNamesById={advisorNamesById}
                 options={advisorOptions}
+                variant="popover"
               />
             ) : (
               <MunicipalityAdvisorAvatarStack
@@ -407,8 +400,10 @@ const municipalityListColumns = ({
           cell: (municipality) => (
             <MunicipalityListTrendControl
               municipalityID={municipality.id}
+              municipalityName={municipality.name}
               status={municipality.politicalTrendStatus}
               trendNote={municipality.politicalTrendNote}
+              variant="popover"
             />
           ),
         },
@@ -429,8 +424,10 @@ const municipalityListColumns = ({
             <div className="flex min-h-11 items-center justify-center">
               <MunicipalityListExpectedVotesControl
                 municipalityID={municipality.id}
+                municipalityName={municipality.name}
                 expectedVotes={municipality.expectedVotes}
                 pledgeCoverage={toMunicipalityPledgeCoverageView(municipality.pledges)}
+                variant="popover"
               />
             </div>
           ),
@@ -473,7 +470,6 @@ const municipalityListColumns = ({
           cell: (municipality) => (
             <MunicipalityListGoalCoverageCell
               coverageByScenario={municipality.goalCoverageByScenario}
-              layout="compact"
             />
           ),
         },
@@ -519,12 +515,33 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
           const isPriority = municipality.priority === 'alta'
           const { region, zoneSuffix } = municipalityGeographyParts(municipality)
           return (
-            <article key={municipality.id} className="flex flex-col gap-3 rounded-xl border p-4">
+            <article
+              key={municipality.id}
+              className="relative flex flex-col gap-3 rounded-xl border p-4"
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex flex-col gap-1">
-                  <h3 className="font-medium">{municipality.name}</h3>
+                  {/*
+                   * The name's link stretches over the whole card, so tapping
+                   * anywhere that isn't a control opens the município — B42
+                   * removed the "Abrir município" button that used to be the
+                   * only way in. Each control carries its own `relative`,
+                   * which paints it above this overlay and keeps its own tap;
+                   * nothing else in the card may be positioned, or it would
+                   * become a hole in the card's tap target.
+                   */}
+                  <h3 className="font-medium">
+                    <Link
+                      href={`/campanha/municipios/${municipality.slug}`}
+                      className="rounded-md after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      {municipality.name}
+                    </Link>
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    <TerritoryLink region={region} />
+                    <span className="relative">
+                      <TerritoryLink region={region} />
+                    </span>
                     {zoneSuffix ? ` ${zoneSuffix}` : null}
                   </p>
                   {position ? <VotePositionReadout position={position} layout="card" /> : null}
@@ -535,19 +552,46 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
               </div>
               {isStaffView ? (
                 <dl className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="col-span-2">
+                  <div>
                     <dt className="text-muted-foreground">Classe</dt>
                     <dd className="flex flex-wrap items-center gap-2">
-                      <TerritorialClassReadout municipality={municipality} layout="card" />
+                      {/*
+                       * The card has no hover, so the "por quê" the class must
+                       * never travel without gets the same tap-to-open channel
+                       * the desktop column gets through `cellTooltip` — the
+                       * `sr-only` copy inside the readout covers AT either way.
+                       */}
+                      <CampaignHoverTooltip
+                        content={
+                          municipality.territorialClass === 'sem_base'
+                            ? null
+                            : formatTerritorialClassWhy(municipality.territorialClassFactors)
+                        }
+                        align="start"
+                      >
+                        <span className="relative inline-flex items-center">
+                          <TerritorialClassReadout municipality={municipality} />
+                        </span>
+                      </CampaignHoverTooltip>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Cobertura da meta</dt>
+                    <dd>
+                      <MunicipalityListGoalCoverageCell
+                        coverageByScenario={municipality.goalCoverageByScenario}
+                      />
                     </dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Votos estimados</dt>
-                    <dd className="flex justify-center">
+                    <dd>
                       <MunicipalityListExpectedVotesControl
                         municipalityID={municipality.id}
+                        municipalityName={municipality.name}
                         expectedVotes={municipality.expectedVotes}
                         pledgeCoverage={toMunicipalityPledgeCoverageView(municipality.pledges)}
+                        variant="sheet"
                       />
                     </dd>
                   </div>
@@ -556,16 +600,10 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
                     <dd>
                       <MunicipalityListTrendControl
                         municipalityID={municipality.id}
+                        municipalityName={municipality.name}
                         status={municipality.politicalTrendStatus}
                         trendNote={municipality.politicalTrendNote}
-                      />
-                    </dd>
-                  </div>
-                  <div className="col-span-2">
-                    <dt className="text-muted-foreground">Cobertura da meta</dt>
-                    <dd>
-                      <MunicipalityListGoalCoverageCell
-                        coverageByScenario={municipality.goalCoverageByScenario}
+                        variant="sheet"
                       />
                     </dd>
                   </div>
@@ -590,10 +628,12 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
                       {isCoordinator ? (
                         <MunicipalityListAdvisorsControl
                           municipalityID={municipality.id}
+                          municipalityName={municipality.name}
                           currentAdvisorIDs={municipality.advisorIDs}
                           isPriority={isPriority}
                           advisorNamesById={advisorNamesById}
                           options={advisorOptions}
+                          variant="sheet"
                         />
                       ) : names.length ? (
                         names.join(', ')
@@ -604,9 +644,6 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
                   </div>
                 </dl>
               ) : null}
-              <Button asChild variant="outline" className="min-h-11 w-full">
-                <Link href={`/campanha/municipios/${municipality.slug}`}>Abrir município</Link>
-              </Button>
             </article>
           )
         })}

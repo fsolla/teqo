@@ -1,21 +1,23 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 import type {
   MunicipalityListPoliticalTrendResponse,
   MunicipalityListSavedPoliticalTrend,
 } from '@/app/(campaign)/campanha/(app)/municipios/political-trend/types'
-import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
+import {
+  CampaignCellEditOverlay,
+  type CampaignCellEditOverlayVariant,
+} from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { parsePoliticalTrendStatusFormValue } from '@/lib/schemas/municipality'
-import { cn } from '@/lib/utils'
 import { politicalTrendBadgeVariant, politicalTrendLabels } from '@/utilities/municipalityLabels'
 
 const NOTE_AUTOSAVE_MS = 600
@@ -36,14 +38,18 @@ const trendsEqual = (
 
 type MunicipalityListTrendControlProps = {
   municipalityID: number
+  municipalityName: string
   status: MunicipalityListSavedPoliticalTrend['status']
   trendNote: string | null
+  variant: CampaignCellEditOverlayVariant
 }
 
 export const MunicipalityListTrendControl = ({
   municipalityID,
+  municipalityName,
   status,
   trendNote,
+  variant,
 }: MunicipalityListTrendControlProps) => {
   const initialTrend: MunicipalityListSavedPoliticalTrend = {
     status,
@@ -63,6 +69,18 @@ export const MunicipalityListTrendControl = ({
   const saveGenerationRef = useRef(0)
   /** Skip abort+re-POST when blur and popover-close flush the same payload. */
   const inFlightTrendRef = useRef<MunicipalityListSavedPoliticalTrend | null>(null)
+  const openRef = useRef(false)
+
+  /**
+   * Closing is what commits the draft, and closing also unmounts the Alert and
+   * the live region that would carry a failure — so a save that fails on the
+   * way out reverts the badge with nobody told. A toast outlives the overlay;
+   * while it is still open the inline Alert remains the closer channel.
+   */
+  const reportFailure = (message: string) => {
+    setErrorMessage(message)
+    if (!openRef.current) toast.error(message)
+  }
 
   const adoptTrend = (trend: MunicipalityListSavedPoliticalTrend) => {
     setDisplayTrend(trend)
@@ -128,7 +146,7 @@ export const MunicipalityListTrendControl = ({
       if (!response.ok || payload.status !== 'success') {
         adoptTrend(committedTrendRef.current)
         setIsDirty(false)
-        setErrorMessage(payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE)
+        reportFailure(payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE)
         return
       }
 
@@ -139,7 +157,7 @@ export const MunicipalityListTrendControl = ({
       if (controller.signal.aborted || generation !== saveGenerationRef.current) return
       adoptTrend(committedTrendRef.current)
       setIsDirty(false)
-      setErrorMessage(SAVE_ERROR_MESSAGE)
+      reportFailure(SAVE_ERROR_MESSAGE)
     } finally {
       if (generation === saveGenerationRef.current) {
         inFlightTrendRef.current = null
@@ -196,6 +214,7 @@ export const MunicipalityListTrendControl = ({
   }
 
   const handleOpenChange = (nextOpen: boolean) => {
+    openRef.current = nextOpen
     if (nextOpen) {
       setIsDirty(false)
       setErrorMessage(null)
@@ -207,6 +226,9 @@ export const MunicipalityListTrendControl = ({
   }
 
   const hasNote = Boolean(displayTrend.note)
+  const trendLabel = displayTrend.status
+    ? politicalTrendLabels[displayTrend.status]
+    : 'Não registrada'
   const statusMessage = errorMessage
     ? errorMessage
     : isPending
@@ -216,91 +238,78 @@ export const MunicipalityListTrendControl = ({
         : ''
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <CampaignHoverTooltip
-        content={hasNote ? <p className="whitespace-pre-wrap">{displayTrend.note}</p> : null}
-        align="start"
-        openOnTouch={false}
-        disabled={open}
-      >
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-haspopup="dialog"
-            aria-busy={isPending || undefined}
-            className={cn(
-              'min-h-11 rounded-md px-1 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              open ? 'bg-muted/60' : undefined,
-            )}
-            aria-label="Editar tendência política"
+    <CampaignCellEditOverlay
+      variant={variant}
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Editar tendência"
+      description={municipalityName}
+      // The label names the current reading: an `aria-label` replaces the
+      // badge's own text, so without it the trigger would announce the verb and
+      // swallow the value every sighted user reads off the pill. Same shape as
+      // `MunicipalityListSignalControl`'s.
+      triggerLabel={`Editar tendência política em ${municipalityName} — ${trendLabel}`}
+      triggerBusy={isPending}
+      tooltipContent={hasNote ? <p className="whitespace-pre-wrap">{displayTrend.note}</p> : null}
+      contentClassName="w-72 p-3"
+      preventPopoverAutoFocus
+      trigger={
+        displayTrend.status ? (
+          <Badge variant={politicalTrendBadgeVariant[displayTrend.status]}>{trendLabel}</Badge>
+        ) : (
+          <Badge variant="outline">{trendLabel}</Badge>
+        )
+      }
+    >
+      <div className="relative flex flex-col gap-3">
+        {isPending ? (
+          <Spinner
+            className="absolute top-0 right-0 size-3.5 text-muted-foreground"
+            aria-label="Salvando tendência"
+          />
+        ) : null}
+        <Field>
+          <FieldLabel htmlFor={`municipality-list-trend-${municipalityID}`}>Tendência</FieldLabel>
+          <NativeSelect
+            id={`municipality-list-trend-${municipalityID}`}
+            value={draft.status ?? ''}
+            onChange={(event) => handleStatusChange(event.target.value)}
+            className="min-h-11 w-full"
           >
-            {displayTrend.status ? (
-              <Badge variant={politicalTrendBadgeVariant[displayTrend.status]}>
-                {politicalTrendLabels[displayTrend.status]}
-              </Badge>
-            ) : (
-              <Badge variant="outline">Não registrada</Badge>
+            <NativeSelectOption value="">Não registrada</NativeSelectOption>
+            {(Object.keys(politicalTrendLabels) as Array<keyof typeof politicalTrendLabels>).map(
+              (trendStatus) => (
+                <NativeSelectOption key={trendStatus} value={trendStatus}>
+                  {politicalTrendLabels[trendStatus]}
+                </NativeSelectOption>
+              ),
             )}
-          </button>
-        </PopoverTrigger>
-      </CampaignHoverTooltip>
-      <PopoverContent
-        align="start"
-        sideOffset={8}
-        className="w-72 p-3"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-      >
-        <div className="relative flex flex-col gap-3">
-          {isPending ? (
-            <Spinner
-              className="absolute top-0 right-0 size-3.5 text-muted-foreground"
-              aria-label="Salvando tendência"
-            />
-          ) : null}
-          <Field>
-            <FieldLabel htmlFor={`municipality-list-trend-${municipalityID}`}>Tendência</FieldLabel>
-            <NativeSelect
-              id={`municipality-list-trend-${municipalityID}`}
-              value={draft.status ?? ''}
-              onChange={(event) => handleStatusChange(event.target.value)}
-              className="min-h-11 w-full"
-            >
-              <NativeSelectOption value="">Não registrada</NativeSelectOption>
-              {(Object.keys(politicalTrendLabels) as Array<keyof typeof politicalTrendLabels>).map(
-                (trendStatus) => (
-                  <NativeSelectOption key={trendStatus} value={trendStatus}>
-                    {politicalTrendLabels[trendStatus]}
-                  </NativeSelectOption>
-                ),
-              )}
-            </NativeSelect>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor={`municipality-list-trend-note-${municipalityID}`}>
-              Justificativa
-            </FieldLabel>
-            <Textarea
-              id={`municipality-list-trend-note-${municipalityID}`}
-              value={noteDraft}
-              onChange={(event) => handleNoteChange(event.target.value)}
-              onBlur={flushDraft}
-              maxLength={NOTE_MAX_LENGTH}
-              rows={3}
-              className="min-h-20 resize-y"
-              placeholder="Por que essa leitura?"
-            />
-          </Field>
-          {errorMessage ? (
-            <Alert variant="destructive" className="py-2">
-              <AlertDescription className="text-xs">{errorMessage}</AlertDescription>
-            </Alert>
-          ) : null}
-          <p className="sr-only" aria-live="polite">
-            {statusMessage}
-          </p>
-        </div>
-      </PopoverContent>
-    </Popover>
+          </NativeSelect>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`municipality-list-trend-note-${municipalityID}`}>
+            Justificativa
+          </FieldLabel>
+          <Textarea
+            id={`municipality-list-trend-note-${municipalityID}`}
+            value={noteDraft}
+            onChange={(event) => handleNoteChange(event.target.value)}
+            onBlur={flushDraft}
+            maxLength={NOTE_MAX_LENGTH}
+            rows={3}
+            className="min-h-20 resize-y"
+            placeholder="Por que essa leitura?"
+          />
+        </Field>
+        {errorMessage ? (
+          <Alert variant="destructive" className="py-2">
+            <AlertDescription className="text-xs">{errorMessage}</AlertDescription>
+          </Alert>
+        ) : null}
+        <p className="sr-only" aria-live="polite">
+          {statusMessage}
+        </p>
+      </div>
+    </CampaignCellEditOverlay>
   )
 }
