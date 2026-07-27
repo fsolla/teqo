@@ -5,12 +5,28 @@ type MunicipalityMapSlugEntry = {
   name: string
 }
 
+/** IBGE codarea → the accessible catalog units inside it (Salvador has 19). */
 export type MunicipalitiesByIbgeCode = Record<string, MunicipalityMapSlugEntry[]>
 
-export type MunicipalityMapNavigation =
-  | { kind: 'none' }
-  | { kind: 'navigate'; slug: string }
-  | { kind: 'zones' }
+/**
+ * Map key → the single unit it paints. Since B8 F2 the map draws one polygon per
+ * catalog unit — zone municipalities by slug, everything else by IBGE codarea —
+ * so this index is 1:1 where `MunicipalitiesByIbgeCode` is 1:N.
+ */
+export type MunicipalitiesByMapKey = Record<string, MunicipalityMapSlugEntry>
+
+export type MunicipalityMapNavigation = { kind: 'none' } | { kind: 'navigate'; slug: string }
+
+/**
+ * What the choropleth paints a unit by: a zone municipality has no code of its
+ * own (the whole city shares one), so it is keyed by its immutable catalog slug,
+ * which is also the polygon's key in `bahia-municipality-zones.topo.json`.
+ */
+export const mapKeyForMunicipality = (municipality: {
+  kind: 'municipio' | 'zona'
+  slug: string
+  ibgeCode: string
+}): string => (municipality.kind === 'zona' ? municipality.slug : municipality.ibgeCode)
 
 export const buildMunicipalitiesByIbgeCode = (
   municipalities: readonly AccessibleMunicipality[],
@@ -30,12 +46,25 @@ export const buildMunicipalitiesByIbgeCode = (
   return byIbge
 }
 
+export const buildMunicipalitiesByMapKey = (
+  municipalities: ReadonlyArray<AccessibleMunicipality & { kind: 'municipio' | 'zona' }>,
+): MunicipalitiesByMapKey => {
+  const byMapKey: MunicipalitiesByMapKey = {}
+
+  for (const municipality of municipalities) {
+    byMapKey[mapKeyForMunicipality(municipality)] = {
+      slug: municipality.slug,
+      name: municipality.name,
+    }
+  }
+
+  return byMapKey
+}
+
 export const resolveMunicipalityMapNavigation = (
-  ibgeCode: string,
-  municipalitiesByIbgeCode: MunicipalitiesByIbgeCode,
+  mapKey: string,
+  municipalitiesByMapKey: MunicipalitiesByMapKey,
 ): MunicipalityMapNavigation => {
-  const entries = municipalitiesByIbgeCode[ibgeCode]
-  if (!entries || entries.length === 0) return { kind: 'none' }
-  if (entries.length === 1) return { kind: 'navigate', slug: entries[0].slug }
-  return { kind: 'zones' }
+  const entry = municipalitiesByMapKey[mapKey]
+  return entry ? { kind: 'navigate', slug: entry.slug } : { kind: 'none' }
 }

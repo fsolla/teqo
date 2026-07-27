@@ -4,6 +4,7 @@ import {
   buildLayerStyleContext,
   canonicalMapKeysKey,
   computeChoroplethMax,
+  featureMapKey,
   resolvePathStyle,
 } from '@/lib/bahiaMapStyle'
 
@@ -26,6 +27,34 @@ describe('bahiaMapStyle', () => {
 
     it('uses absolute max in diverging mode', () => {
       expect(computeChoroplethMax({ '2927408': -40, '2905701': 100 }, 'diverging')).toBe(100)
+    })
+  })
+
+  describe('featureMapKey (B8 F2)', () => {
+    it('keys a zone municipality by its catalog slug', () => {
+      expect(
+        featureMapKey({ municipalitySlug: 'salvador-ze-7', ibgeCode: '2927408', zoneNumber: 7 }),
+      ).toBe('salvador-ze-7')
+    })
+
+    it('keys a município by codarea and an identity territory by code', () => {
+      expect(featureMapKey({ codarea: '2905701', name: 'Barreiras' })).toBe('2905701')
+      expect(featureMapKey({ code: 'chapada-diamantina', name: 'Chapada Diamantina' })).toBe(
+        'chapada-diamantina',
+      )
+    })
+
+    it('prefers the slug when the zone mesh also carries the city code', () => {
+      expect(featureMapKey({ municipalitySlug: 'salvador-ze-1', codarea: '2927408' })).toBe(
+        'salvador-ze-1',
+      )
+    })
+
+    it('returns undefined when no key property is usable', () => {
+      expect(featureMapKey(undefined)).toBeUndefined()
+      expect(featureMapKey({ name: 'Sem chave' })).toBeUndefined()
+      expect(featureMapKey({ codarea: '' })).toBeUndefined()
+      expect(featureMapKey({ codarea: 2905701 })).toBeUndefined()
     })
   })
 

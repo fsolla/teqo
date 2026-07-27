@@ -36,10 +36,13 @@ import type {
   MunicipalityMapBundle,
   MunicipalityMapComparison,
 } from '@/utilities/municipalityMapContract'
-import { buildMunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
+import {
+  buildMunicipalitiesByMapKey,
+  mapKeyForMunicipality,
+} from '@/utilities/municipalityMapNavigation'
 import { projectedValidVotes } from '@/utilities/municipalityPotential'
 import {
-  computeAggregateTerritorialClass,
+  computeMunicipalityTerritorialClass,
   type MunicipalityTerritorialClass,
 } from '@/utilities/municipalityTerritorialClass'
 import {
@@ -104,9 +107,9 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
   const statewideShareByYear: Record<string, number> = {}
   const competitiveRankByYear: Record<string, Record<string, FederalCompetitiveRank>> = {}
   const zoneVotesBySlug = new Map<string, Record<string, number>>()
-  // One polygon per IBGE code, N catalog slugs behind it (Salvador is 19) —
-  // the same index the map uses to navigate, reused here for the rollups.
-  const municipalitiesByIbgeCode = buildMunicipalitiesByIbgeCode(municipalities)
+  // One polygon per catalog unit since B8 F2, so this index — the same one the
+  // map navigates by — is also the key of every rollup below.
+  const municipalitiesByMapKey = buildMunicipalitiesByMapKey(municipalities)
 
   // Historical years come from the committed artifact (immutable TSE data,
   // pre-aggregated per municipality) — zero database work.
@@ -114,11 +117,11 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
     const values: Record<string, number> = {}
     const validValues: Record<string, number> = {}
     for (const municipality of municipalities) {
+      const mapKey = mapKeyForMunicipality(municipality)
       const baseline = getMunicipalityFederalBaseline(municipality.slug)
       const votes = baseline.votesByYear[String(year)] ?? 0
-      values[municipality.ibgeCode] = (values[municipality.ibgeCode] ?? 0) + votes
-      const valid = baseline.validVotesByYear[String(year)] ?? 0
-      validValues[municipality.ibgeCode] = (validValues[municipality.ibgeCode] ?? 0) + valid
+      values[mapKey] = votes
+      validValues[mapKey] = baseline.validVotesByYear[String(year)] ?? 0
       if (municipality.kind === 'zona') {
         const bySlug = zoneVotesBySlug.get(municipality.slug) ?? {}
         bySlug[String(year)] = votes
@@ -135,10 +138,12 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
     statewideShareByYear[String(year)] =
       statewide.validVotes > 0 ? statewide.ownVotes / statewide.validVotes : 0
 
+    // Rank exists per city only, so every zone of Salvador carries the city's
+    // position — stated in the legend rather than faked per zone.
     const ranks: Record<string, FederalCompetitiveRank> = {}
-    for (const ibgeCode of Object.keys(municipalitiesByIbgeCode)) {
-      const rank = getFederalCompetitiveRank(ibgeCode, year)
-      if (rank) ranks[ibgeCode] = rank
+    for (const municipality of municipalities) {
+      const rank = getFederalCompetitiveRank(municipality.ibgeCode, year)
+      if (rank) ranks[mapKeyForMunicipality(municipality)] = rank
     }
     competitiveRankByYear[String(year)] = ranks
   }
@@ -148,14 +153,12 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
   // substitution `validVotesByYear` already makes.
   statewideShareByYear['2026'] = statewideShareByYear['2022'] ?? 0
 
-  const territorialClassByCode: Record<string, MunicipalityTerritorialClass> = {}
-  const projectedValidVotesByCode: Record<string, number> = {}
-  for (const [ibgeCode, entries] of Object.entries(municipalitiesByIbgeCode)) {
-    const slugs = entries.map((entry) => entry.slug)
-    territorialClassByCode[ibgeCode] = computeAggregateTerritorialClass(slugs).class
-    projectedValidVotesByCode[ibgeCode] = slugs.reduce(
-      (total, slug) => total + projectedValidVotes(getMunicipalityFederalBaseline(slug)),
-      0,
+  const territorialClassByMapKey: Record<string, MunicipalityTerritorialClass> = {}
+  const projectedValidVotesByMapKey: Record<string, number> = {}
+  for (const [mapKey, entry] of Object.entries(municipalitiesByMapKey)) {
+    territorialClassByMapKey[mapKey] = computeMunicipalityTerritorialClass(entry.slug).class
+    projectedValidVotesByMapKey[mapKey] = projectedValidVotes(
+      getMunicipalityFederalBaseline(entry.slug),
     )
   }
 
@@ -178,8 +181,7 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
         scenario,
       )
       if (votes > 0) {
-        pledgeValuesByScenario[scenario][municipality.ibgeCode] =
-          (pledgeValuesByScenario[scenario][municipality.ibgeCode] ?? 0) + votes
+        pledgeValuesByScenario[scenario][mapKeyForMunicipality(municipality)] = votes
       }
       if (municipality.kind === 'zona') {
         const byScenario = zoneVotes2026BySlug.get(municipality.slug) ?? emptyZoneScenarioVotes()
@@ -239,7 +241,7 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
             const solla =
               getMunicipalityFederalBaseline(municipality.slug).votesByYear[String(year)] ?? 0
             const other = sumVotesForGeography(otherVotes, municipality.geography)
-            values[municipality.ibgeCode] = (values[municipality.ibgeCode] ?? 0) + (solla - other)
+            values[mapKeyForMunicipality(municipality)] = solla - other
           }
           diffByYear[String(year)] = values
         }),
@@ -258,10 +260,10 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
     values2026ByScenario: pledgeValuesByScenario,
     validVotesByYear,
     statewideShareByYear,
-    territorialClassByCode,
+    territorialClassByMapKey,
     competitiveRankByYear,
-    projectedValidVotesByCode,
-    municipalitiesByIbgeCode,
+    projectedValidVotesByMapKey,
+    municipalitiesByMapKey,
     zoneBreakdown,
     candidateName: BASELINE_TICKET_2022.candidate.name,
     comparison,

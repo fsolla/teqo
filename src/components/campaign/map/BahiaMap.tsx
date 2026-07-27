@@ -9,17 +9,16 @@ import 'leaflet/dist/leaflet.css'
 import { Spinner } from '@/components/ui/Spinner'
 import {
   loadMunicipalityGeometryModule,
+  loadMunicipalityZoneGeometryModule,
   loadTerritoryGeometryModule,
-  type MunicipalityGeometryModule,
-  type TerritoryGeometryModule,
 } from '@/lib/bahiaGeometries'
+import type { BahiaGeometryFeature } from '@/lib/bahiaGeometriesTypes'
 import {
   bubbleRadius,
   buildHighlightSet,
   buildLayerStyleContext,
   canonicalMapKeysKey,
-  featureKeyFromProperties,
-  keyPropertyForMode,
+  featureMapKey,
   resolvePathStyle,
   type BahiaMapFillMode,
   type ChoroplethFills,
@@ -64,6 +63,32 @@ const applyBahiaMinZoom = (map: L.Map) => {
 
 export type BahiaMapMode = 'municipality' | 'territory'
 
+/**
+ * The municipality layer is two meshes: the 417 municípios plus the 19 Salvador
+ * zone polygons on top (insertion order is z-order in the SVG). The zone city's
+ * own polygon stays underneath as a BASE — no value, no pointer — so a sliver of
+ * disagreement between two independently simplified meshes cannot punch a hole
+ * in the state's outline.
+ */
+const loadLayerFeatures = async (
+  mode: BahiaMapMode,
+): Promise<{ features: BahiaGeometryFeature[]; baseKeys: Set<string> }> => {
+  if (mode === 'territory') {
+    const { features } = await loadTerritoryGeometryModule()
+    return { features: [...features], baseKeys: new Set() }
+  }
+
+  const [municipalities, zones] = await Promise.all([
+    loadMunicipalityGeometryModule(),
+    loadMunicipalityZoneGeometryModule(),
+  ])
+
+  return {
+    features: [...municipalities.features, ...zones.features],
+    baseKeys: new Set(zones.features.map((zone) => zone.properties.ibgeCode)),
+  }
+}
+
 export type BahiaMapFeatureInfo = {
   key: string
   name: string
@@ -106,37 +131,28 @@ type BahiaMapProps = {
 const getPointerType = (event: L.LeafletMouseEvent, fallback = 'mouse') =>
   event.originalEvent instanceof PointerEvent ? event.originalEvent.pointerType : fallback
 
+/**
+ * Fits from the drawn paths rather than the geometry modules: since B8 F2 a
+ * municipality layer is assembled from two meshes, and the paths are the one
+ * index that already knows which key came from which.
+ */
 const fitMapToHighlights = (
   map: L.Map,
-  mode: BahiaMapMode,
   highlightSet: Set<string>,
-  geometryModule: MunicipalityGeometryModule | TerritoryGeometryModule,
+  pathByKey: Map<string, L.Path>,
 ) => {
-  if (highlightSet.size === 0) {
+  const highlightBounds = L.latLngBounds([])
+  for (const key of highlightSet) {
+    const path = pathByKey.get(key)
+    if (path instanceof L.Polygon) highlightBounds.extend(path.getBounds())
+  }
+
+  if (!highlightBounds.isValid()) {
     map.fitBounds(BAHIA_BOUNDS, { padding: BAHIA_FIT_PADDING })
     return
   }
 
-  const highlightedFeatures =
-    mode === 'municipality'
-      ? [...highlightSet].flatMap((key) => {
-          const feature = (geometryModule as MunicipalityGeometryModule).getMunicipalityFeature(key)
-          return feature ? [feature] : []
-        })
-      : [...highlightSet].flatMap((key) => {
-          const feature = (geometryModule as TerritoryGeometryModule).getTerritoryFeature(key)
-          return feature ? [feature] : []
-        })
-
-  if (highlightedFeatures.length === 0) {
-    map.fitBounds(BAHIA_BOUNDS, { padding: BAHIA_FIT_PADDING })
-    return
-  }
-
-  const highlightBounds = L.geoJSON(highlightedFeatures).getBounds()
-  if (highlightBounds.isValid()) {
-    map.fitBounds(highlightBounds, { padding: [24, 24], maxZoom: 10 })
-  }
+  map.fitBounds(highlightBounds, { padding: [24, 24], maxZoom: 10 })
 }
 
 export const BahiaMap = ({
@@ -160,9 +176,6 @@ export const BahiaMap = ({
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layerRef = useRef<L.GeoJSON | null>(null)
-  const geometryModuleRef = useRef<MunicipalityGeometryModule | TerritoryGeometryModule | null>(
-    null,
-  )
   const pathByKeyRef = useRef<Map<string, L.Path>>(new Map())
   const styleContextRef = useRef<LayerStyleContext | null>(null)
   const geometryReadyRef = useRef(false)
@@ -299,7 +312,6 @@ export const BahiaMap = ({
       map.remove()
       mapRef.current = null
       layerRef.current = null
-      geometryModuleRef.current = null
       pathByKeyRef.current = new Map()
       styleContextRef.current = null
       geometryReadyRef.current = false
@@ -317,19 +329,13 @@ export const BahiaMap = ({
 
     const renderLayer = async () => {
       try {
-        const geometryModule =
-          mode === 'municipality'
-            ? await loadMunicipalityGeometryModule()
-            : await loadTerritoryGeometryModule()
+        const { features, baseKeys } = await loadLayerFeatures(mode)
 
         if (cancelled) return
 
         layerRef.current?.remove()
         pathByKeyRef.current = new Map()
 
-        geometryModuleRef.current = geometryModule
-
-        const keyProperty = keyPropertyForMode(mode)
         const syncMountStyleContext = () => {
           styleContextRef.current = buildLayerStyleContext({
             ...stylePropsRef.current,
@@ -340,21 +346,32 @@ export const BahiaMap = ({
         syncMountStyleContext()
         const mountContext = styleContextRef.current!
 
-        const layer = L.geoJSON([...geometryModule.features], {
+        /**
+         * The key this feature answers for, or `undefined` when it is a base
+         * polygon: those carry no value, take no pointer, and must not answer
+         * for a key the data has moved off of.
+         */
+        const paintedKey = (properties: Feature['properties'] | undefined) => {
+          const key = featureMapKey(properties)
+          return key && !baseKeys.has(key) ? key : undefined
+        }
+
+        const layer = L.geoJSON(features, {
           style: (feature?: Feature) => {
-            const properties = feature?.properties as Record<string, string> | undefined
-            const key = featureKeyFromProperties(properties, keyProperty)
             const context = styleContextRef.current ?? mountContext
-            return resolvePathStyleForFeature(context, key ?? '')
+            const key = paintedKey(feature?.properties)
+            return key
+              ? resolvePathStyleForFeature(context, key)
+              : { ...resolvePathStyle(context, ''), interactive: false }
           },
           onEachFeature: (feature, featureLayer) => {
             if (!(featureLayer instanceof L.Path)) return
 
-            const properties = feature.properties as Record<string, string> | undefined
-            const key = featureKeyFromProperties(properties, keyProperty)
+            const key = paintedKey(feature.properties)
             if (!key) return
 
-            const name = properties?.name ?? key
+            const name =
+              typeof feature.properties?.name === 'string' ? feature.properties.name : key
             pathByKeyRef.current.set(key, featureLayer)
 
             featureLayer.on('mouseover', (event) => {
@@ -403,7 +420,7 @@ export const BahiaMap = ({
         restyleAllPaths()
 
         const fitIdentity = `${mode}:${viewportKey}`
-        fitMapToHighlights(map, mode, buildHighlightSet(viewportKey), geometryModule)
+        fitMapToHighlights(map, buildHighlightSet(viewportKey), pathByKeyRef.current)
         lastFittedViewportKeyRef.current = fitIdentity
 
         geometryReadyRef.current = true
@@ -420,7 +437,6 @@ export const BahiaMap = ({
       layerRef.current?.remove()
       layerRef.current = null
       pathByKeyRef.current = new Map()
-      geometryModuleRef.current = null
       geometryReadyRef.current = false
     }
     // Geometry layer rebuilds only when `mode` changes; metric/hover updates use separate effects.
@@ -434,10 +450,9 @@ export const BahiaMap = ({
     if (lastFittedViewportKeyRef.current === fitIdentity) return
 
     const map = mapRef.current
-    const geometryModule = geometryModuleRef.current
-    if (!map || !geometryModule || !layerRef.current) return
+    if (!map || !layerRef.current) return
 
-    fitMapToHighlights(map, mode, buildHighlightSet(viewportKey), geometryModule)
+    fitMapToHighlights(map, buildHighlightSet(viewportKey), pathByKeyRef.current)
     lastFittedViewportKeyRef.current = fitIdentity
   }, [viewportKey, mode])
 

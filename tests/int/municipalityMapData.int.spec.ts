@@ -10,10 +10,10 @@ import { loadMunicipalityMapBundle } from '@/utilities/municipalityMapData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
-const ZONE_MUNICIPALITY_COUNT = municipalityCatalog.filter((entry) => entry.kind === 'zona').length
-const ZONE_MUNICIPALITY_CODES = new Set(
-  municipalityCatalog.filter((entry) => entry.kind === 'zona').map((entry) => entry.ibgeCode),
-)
+const zoneMunicipalities = municipalityCatalog.filter((entry) => entry.kind === 'zona')
+const ZONE_MUNICIPALITY_COUNT = zoneMunicipalities.length
+const ZONE_MUNICIPALITY_SLUGS = new Set(zoneMunicipalities.map((entry) => entry.slug))
+const ZONE_MUNICIPALITY_CODES = new Set(zoneMunicipalities.map((entry) => entry.ibgeCode))
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -28,7 +28,7 @@ describe('loadMunicipalityMapBundle — list URL filters', () => {
     payload = await getPayload({ config: await config })
   })
 
-  it('scopes the map to zone municipalities when kind=zona is in the URL', async () => {
+  it('paints each zone under its own map key, never pooled under the city code', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
 
     const bundle = await loadMunicipalityMapBundle(payload, coordinator, { kind: 'zona' })
@@ -36,11 +36,18 @@ describe('loadMunicipalityMapBundle — list URL filters', () => {
     expect(bundle).not.toBeNull()
     expect(bundle!.zoneBreakdown).toHaveLength(ZONE_MUNICIPALITY_COUNT)
 
-    const ibgeCodes = Object.keys(bundle!.valuesByYear['2022'] ?? {})
-    expect(ibgeCodes.length).toBeGreaterThan(0)
-    for (const code of ibgeCodes) {
-      expect(ZONE_MUNICIPALITY_CODES.has(code)).toBe(true)
+    const mapKeys = Object.keys(bundle!.valuesByYear['2022'] ?? {})
+    expect(mapKeys.length).toBeGreaterThan(0)
+    for (const key of mapKeys) {
+      expect(ZONE_MUNICIPALITY_SLUGS.has(key), key).toBe(true)
+      expect(ZONE_MUNICIPALITY_CODES.has(key), key).toBe(false)
     }
+    expect(Object.keys(bundle!.municipalitiesByMapKey).sort()).toEqual([...mapKeys].sort())
+
+    // The zones share the city's TSE rank — the artifact ranks by codarea only.
+    const ranks = bundle!.competitiveRankByYear['2022'] ?? {}
+    const positions = new Set(mapKeys.map((key) => ranks[key]?.rank))
+    expect(positions.size).toBe(1)
   })
 
   it('returns null when the filtered municipality set is empty', async () => {
@@ -62,9 +69,9 @@ describe('loadMunicipalityMapBundle — list URL filters', () => {
     expect(included!.zoneBreakdown.some((row) => row.slug === administered.slug)).toBe(
       administered.kind === 'zona',
     )
-    if (administered.kind !== 'zona') {
-      expect(Object.keys(included!.valuesByYear['2022'] ?? {})).toEqual([administered.ibgeCode])
-    }
+    expect(Object.keys(included!.valuesByYear['2022'] ?? {})).toEqual([
+      administered.kind === 'zona' ? administered.slug : administered.ibgeCode,
+    ])
 
     const excluded =
       administered.kind === 'zona'

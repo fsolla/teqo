@@ -12,7 +12,8 @@ export type ChoroplethValues = Record<string, number>
 
 export type BahiaMapFillMode = 'sequential' | 'diverging'
 
-export type FeatureKeyProperty = 'codarea' | 'code'
+/** Properties that carry a map key, most specific first (see `featureMapKey`). */
+const MAP_KEY_PROPERTIES = ['municipalitySlug', 'codarea', 'code'] as const
 
 /**
  * Feature key → fill, for the discrete relative scales (B13). When present it
@@ -91,13 +92,22 @@ export const buildHighlightSet = (highlightKey: string): Set<string> =>
 export const canonicalMapKeysKey = (keys: string[]): string =>
   keys.length > 0 ? [...keys].sort().join(',') : ''
 
-export const keyPropertyForMode = (mode: 'municipality' | 'territory'): FeatureKeyProperty =>
-  mode === 'municipality' ? 'codarea' : 'code'
-
-export const featureKeyFromProperties = (
-  properties: Record<string, string> | undefined,
-  keyProperty: FeatureKeyProperty,
-): string | undefined => properties?.[keyProperty]
+/**
+ * The key a feature is painted and addressed by, whichever mesh it came from:
+ * a zone municipality carries `municipalitySlug` (B8 F2 — the whole city shares
+ * one codarea, so the code cannot identify it), a município `codarea`, an
+ * identity territory `code`. The three never coexist on one feature, so no mode
+ * argument is needed.
+ */
+export const featureMapKey = (
+  properties: Record<string, unknown> | undefined | null,
+): string | undefined => {
+  for (const property of MAP_KEY_PROPERTIES) {
+    const value = properties?.[property]
+    if (typeof value === 'string' && value.length > 0) return value
+  }
+  return undefined
+}
 
 export const resolvePathStyle = (context: LayerStyleContext, key: string): PathOptions => {
   const classed = context.fillByKey !== undefined

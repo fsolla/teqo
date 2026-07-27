@@ -16,7 +16,8 @@ type OfficialEvidence = {
   zoneCount: number
   assignments: Array<{
     municipalitySlug: string
-    city: 'Salvador' | 'Camaçari'
+    /** Hydrated from the catalog since Fase 0 of B8 F2, so the fixture no longer narrows it. */
+    city: string
     zoneNumber: number
     source: 'tre-ra-02-2017' | 'tre-voting-locations-curated'
     neighborhoods: string[]
@@ -54,10 +55,17 @@ describe('Municipality zone neighborhood catalog (Salvador only)', () => {
     for (const municipality of zoneMunicipalities) {
       const record = municipalityZoneNeighborhoodEntryForSlug(municipality.slug)
       expect(record, municipality.slug).toBeDefined()
-      expect(record?.city).toBe(municipality.city)
-      expect(record?.zoneNumber).toBe(municipality.zoneNumber)
+      // `city`/`zoneNumber` are copied from this same catalog, so comparing them
+      // here could not fail. The fixture test below is what actually checks them,
+      // against an independent transcription of the resolution.
       expect(record?.neighborhoods.length, municipality.slug).toBeGreaterThan(0)
     }
+  })
+
+  it('lists zones in catalog order', () => {
+    expect(municipalityZoneNeighborhoods.map((entry) => entry.municipalitySlug)).toEqual(
+      zoneMunicipalities.map((entry) => entry.slug),
+    )
   })
 
   it('keeps Salvador neighborhoods exclusive across zones', () => {

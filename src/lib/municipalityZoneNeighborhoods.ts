@@ -6,6 +6,10 @@
  *   https://www.tre-ba.jus.br/legislacao/compilada/resolucao/2017/resolucao-administrativa-no-2-de-10-de-maio-de-2017
  *   (accessed 2026-07-21)
  *
+ * Rows author the slug and the neighborhood list only: `city` and `zoneNumber`
+ * are hydrated from `municipalityCatalog`, which is also what makes an unknown
+ * or non-zona slug fail at import instead of drifting silently.
+ *
  * Coverage is independently checked by tests/fixtures/municipality-zone-neighborhoods.official.json.
  */
 
@@ -13,11 +17,9 @@ import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 
 export type MunicipalityZoneNeighborhoodSource = 'tre-ra-02-2017'
 
-type MunicipalityZoneNeighborhoodCity = 'Salvador'
-
 export type MunicipalityZoneNeighborhoodEntry = {
   readonly municipalitySlug: string
-  readonly city: MunicipalityZoneNeighborhoodCity
+  readonly city: string
   readonly zoneNumber: number
   readonly source: MunicipalityZoneNeighborhoodSource
   readonly neighborhoods: readonly string[]
@@ -28,20 +30,25 @@ const sortNeighborhoods = (names: readonly string[]): readonly string[] =>
 
 const entry = (
   municipalitySlug: string,
-  city: MunicipalityZoneNeighborhoodCity,
-  zoneNumber: number,
   source: MunicipalityZoneNeighborhoodSource,
   neighborhoods: readonly string[],
-): MunicipalityZoneNeighborhoodEntry => ({
-  municipalitySlug,
-  city,
-  zoneNumber,
-  source,
-  neighborhoods: sortNeighborhoods(neighborhoods),
-})
+): MunicipalityZoneNeighborhoodEntry => {
+  const catalogEntry = getMunicipalityCatalogEntry(municipalitySlug)
+  if (!catalogEntry || catalogEntry.kind !== 'zona' || catalogEntry.zoneNumber === undefined) {
+    throw new Error(`Missing zona municipality catalog entry for slug: ${municipalitySlug}`)
+  }
+
+  return {
+    municipalitySlug,
+    city: catalogEntry.city,
+    zoneNumber: catalogEntry.zoneNumber,
+    source,
+    neighborhoods: sortNeighborhoods(neighborhoods),
+  }
+}
 
 export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoodEntry[] = [
-  entry('salvador-ze-1', 'Salvador', 1, 'tre-ra-02-2017', [
+  entry('salvador-ze-1', 'tre-ra-02-2017', [
     'Alto das Pombas',
     'Barra',
     'Calabar',
@@ -52,7 +59,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Graça',
     'Vitória',
   ]),
-  entry('salvador-ze-2', 'Salvador', 2, 'tre-ra-02-2017', [
+  entry('salvador-ze-2', 'tre-ra-02-2017', [
     'Amaralina',
     'Chapada do Rio Vermelho',
     'Engenho Velho da Federação',
@@ -60,7 +67,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Ondina',
     'Rio Vermelho',
   ]),
-  entry('salvador-ze-3', 'Salvador', 3, 'tre-ra-02-2017', [
+  entry('salvador-ze-3', 'tre-ra-02-2017', [
     'Baixa de Quintas',
     'Cidade Nova',
     'Fazenda Grande do Retiro',
@@ -69,7 +76,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Pero Vaz',
     'Santa Mônica',
   ]),
-  entry('salvador-ze-4', 'Salvador', 4, 'tre-ra-02-2017', [
+  entry('salvador-ze-4', 'tre-ra-02-2017', [
     'Coutos',
     'Fazenda Coutos',
     'Ilha de Bom Jesus dos Passos',
@@ -80,7 +87,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Periperi (parte ao norte da Rua das Pedrinhas)',
     'São Tomé',
   ]),
-  entry('salvador-ze-5', 'Salvador', 5, 'tre-ra-02-2017', [
+  entry('salvador-ze-5', 'tre-ra-02-2017', [
     'Barreiras',
     'Cabula',
     'Engomadeira',
@@ -89,14 +96,14 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Retiro',
     'São Gonçalo',
   ]),
-  entry('salvador-ze-6', 'Salvador', 6, 'tre-ra-02-2017', [
+  entry('salvador-ze-6', 'tre-ra-02-2017', [
     'Acupe',
     'Boa Vista de Brotas',
     'Brotas',
     'Candeal',
     'Engenho Velho de Brotas',
   ]),
-  entry('salvador-ze-7', 'Salvador', 7, 'tre-ra-02-2017', [
+  entry('salvador-ze-7', 'tre-ra-02-2017', [
     'Barbalho',
     'Barris',
     'Comércio',
@@ -111,7 +118,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Tororó',
     'Vila Laura',
   ]),
-  entry('salvador-ze-8', 'Salvador', 8, 'tre-ra-02-2017', [
+  entry('salvador-ze-8', 'tre-ra-02-2017', [
     'Cajazeiras II',
     'Cajazeiras IV',
     'Cajazeiras V',
@@ -125,7 +132,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Pirajá',
     'Valéria',
   ]),
-  entry('salvador-ze-9', 'Salvador', 9, 'tre-ra-02-2017', [
+  entry('salvador-ze-9', 'tre-ra-02-2017', [
     'Boa Viagem',
     'Bonfim',
     'Jardim Cruzeiro',
@@ -137,7 +144,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Uruguai',
     'Vila Ruy Barbosa',
   ]),
-  entry('salvador-ze-10', 'Salvador', 10, 'tre-ra-02-2017', [
+  entry('salvador-ze-10', 'tre-ra-02-2017', [
     'Bairro da Paz',
     'Boca do Rio',
     'Costa Azul',
@@ -148,7 +155,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Pituaçu',
     'STIEP',
   ]),
-  entry('salvador-ze-11', 'Salvador', 11, 'tre-ra-02-2017', [
+  entry('salvador-ze-11', 'tre-ra-02-2017', [
     'Águas Claras',
     'Calabetão',
     'Castelo Branco',
@@ -161,7 +168,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Sete de Abril',
     'Vila Canária',
   ]),
-  entry('salvador-ze-12', 'Salvador', 12, 'tre-ra-02-2017', [
+  entry('salvador-ze-12', 'tre-ra-02-2017', [
     'Aeroporto',
     'Alto do Coqueirinho',
     'Areia Branca',
@@ -171,7 +178,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'São Cristóvão',
     'Stella Maris',
   ]),
-  entry('salvador-ze-13', 'Salvador', 13, 'tre-ra-02-2017', [
+  entry('salvador-ze-13', 'tre-ra-02-2017', [
     'Caminho das Árvores',
     'Itaigara',
     'Nordeste de Amaralina',
@@ -179,14 +186,14 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Santa Cruz',
     'Vale das Pedrinhas',
   ]),
-  entry('salvador-ze-14', 'Salvador', 14, 'tre-ra-02-2017', [
+  entry('salvador-ze-14', 'tre-ra-02-2017', [
     'Arenoso',
     'Novo Horizonte',
     'São Marcos',
     'Sussuarana',
     'Tancredo Neves',
   ]),
-  entry('salvador-ze-15', 'Salvador', 15, 'tre-ra-02-2017', [
+  entry('salvador-ze-15', 'tre-ra-02-2017', [
     'Arraial do Retiro',
     'Boa Vista de São Caetano',
     'Bom Juá',
@@ -194,7 +201,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Lobato',
     'São Caetano',
   ]),
-  entry('salvador-ze-16', 'Salvador', 16, 'tre-ra-02-2017', [
+  entry('salvador-ze-16', 'tre-ra-02-2017', [
     'Cabula VI',
     'Canabrava',
     'Centro Administrativo da Bahia',
@@ -207,7 +214,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Saramandaia',
     'Vale dos Lagos',
   ]),
-  entry('salvador-ze-17', 'Salvador', 17, 'tre-ra-02-2017', [
+  entry('salvador-ze-17', 'tre-ra-02-2017', [
     'Alto da Terezinha',
     'Alto do Cabrito',
     'Itacaranha',
@@ -217,7 +224,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Rio Sena',
     'São João do Cabrito',
   ]),
-  entry('salvador-ze-18', 'Salvador', 18, 'tre-ra-02-2017', [
+  entry('salvador-ze-18', 'tre-ra-02-2017', [
     "Caixa D'água",
     'Calçada',
     'Caminho de Areia',
@@ -227,7 +234,7 @@ export const municipalityZoneNeighborhoods: readonly MunicipalityZoneNeighborhoo
     'Mares',
     'Roma',
   ]),
-  entry('salvador-ze-19', 'Salvador', 19, 'tre-ra-02-2017', [
+  entry('salvador-ze-19', 'tre-ra-02-2017', [
     'Boca da Mata',
     'Cajazeiras X',
     'Cajazeiras XI',
@@ -264,19 +271,3 @@ export const municipalityZoneNeighborhoodSourceLabel = (
       return source satisfies never
   }
 }
-
-const assertMunicipalityZoneNeighborhoodCatalogIntegrity = (): void => {
-  for (const record of municipalityZoneNeighborhoods) {
-    const catalogEntry = getMunicipalityCatalogEntry(record.municipalitySlug)
-    if (!catalogEntry || catalogEntry.kind !== 'zona') {
-      throw new Error(
-        `Missing zona municipality catalog entry for slug: ${record.municipalitySlug}`,
-      )
-    }
-    if (catalogEntry.city !== record.city || catalogEntry.zoneNumber !== record.zoneNumber) {
-      throw new Error(`Catalog mismatch for slug: ${record.municipalitySlug}`)
-    }
-  }
-}
-
-assertMunicipalityZoneNeighborhoodCatalogIntegrity()
