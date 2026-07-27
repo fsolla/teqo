@@ -33,7 +33,7 @@ Auditoria na implementação (2026-07-27) achou o mesmo padrão nas três rotas 
 ## As-built
 
 - `resolveSiteMetadata` + `SITE_METADATA_DEFAULTS` em [`src/utilities/seo.ts`](../../src/utilities/seo.ts).
-- Consumidores: [`layout.tsx`](../../src/app/(frontend)/layout.tsx), [`abaixo-assinado/[id]/page.tsx`](../../src/app/(frontend)/abaixo-assinado/[id]/page.tsx), [`[type]/page.tsx`](../../src/app/(frontend)/[type]/page.tsx), [`[type]/[category]/page.tsx`](../../src/app/(frontend)/[type]/[category]/page.tsx), [`[type]/[category]/[slug]/page.tsx`](../../src/app/(frontend)/[type]/[category]/[slug]/page.tsx).
+- Consumidores: [`layout.tsx`](<../../src/app/(frontend)/layout.tsx>), [`abaixo-assinado/[id]/page.tsx`](<../../src/app/(frontend)/abaixo-assinado/[id]/page.tsx>), [`[type]/page.tsx`](<../../src/app/(frontend)/[type]/page.tsx>), [`[type]/[category]/page.tsx`](<../../src/app/(frontend)/[type]/[category]/page.tsx>), [`[type]/[category]/[slug]/page.tsx`](<../../src/app/(frontend)/[type]/[category]/[slug]/page.tsx>).
 - Cópias locais de `stripTrailingSlash` / `truncate` / `toAbsoluteUrl` na página de abaixo-assinado removidas.
 - Pins: `tests/unit/siteMetadata.unit.spec.ts`, `tests/int/siteMetadataFallback.int.spec.ts`, guard em `tests/unit/codebaseConventions.unit.spec.ts`.
 
