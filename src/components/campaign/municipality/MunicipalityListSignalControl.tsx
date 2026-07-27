@@ -4,6 +4,10 @@ import { useActionState, useEffect, useId, useState, type ReactNode } from 'reac
 import { toast } from 'sonner'
 
 import { MunicipalitySignalFields } from '@/components/campaign/municipality/MunicipalitySignalFields'
+import {
+  campaignCellEditTriggerClassName,
+  type CampaignCellEditOverlayVariant,
+} from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,6 +21,7 @@ import {
 } from '@/components/ui/Drawer'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import { Spinner } from '@/components/ui/Spinner'
+import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
   formatMunicipalitySignalAgeLabel,
@@ -33,7 +38,7 @@ type MunicipalityListSignalControlProps = {
   municipalitySlug: string
   municipalityName: string
   lastSignalAt: string | null
-  variant: 'popover' | 'sheet'
+  variant: CampaignCellEditOverlayVariant
   formAction: MunicipalityStaffFormAction
   children: ReactNode
 }
@@ -97,8 +102,18 @@ export const MunicipalityListSignalControl = ({
     setFormKey((key) => key + 1)
   }, [state.message, state.status])
 
-  const triggerClassName =
-    'min-h-11 rounded-md px-1 text-left hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+  // This control keeps its own container (its `<form>` has to wrap header, body
+  // and submit), so it borrows the shell's trigger instead of re-spelling it —
+  // `relative` included, which is what keeps the tap on the mobile card.
+  const triggerClassName = cn(campaignCellEditTriggerClassName, 'text-left')
+  const triggerProps = {
+    type: 'button',
+    'aria-expanded': open,
+    'aria-haspopup': 'dialog',
+    'aria-busy': isPending || undefined,
+    className: triggerClassName,
+    'aria-label': triggerLabel,
+  } as const
 
   const fields = (
     <SignalFormFields
@@ -113,12 +128,7 @@ export const MunicipalityListSignalControl = ({
   if (variant === 'sheet') {
     return (
       <>
-        <button
-          type="button"
-          className={triggerClassName}
-          aria-label={triggerLabel}
-          onClick={() => setOpen(true)}
-        >
+        <button {...triggerProps} onClick={() => setOpen(true)}>
           {children}
         </button>
         <Drawer open={open} onOpenChange={setOpen}>
@@ -149,9 +159,7 @@ export const MunicipalityListSignalControl = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" className={triggerClassName} aria-label={triggerLabel}>
-          {children}
-        </button>
+        <button {...triggerProps}>{children}</button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80">
         <form key={formKey} action={submitAction} className="flex flex-col gap-3">

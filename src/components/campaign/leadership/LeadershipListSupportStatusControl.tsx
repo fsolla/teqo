@@ -1,20 +1,20 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 import type { LeadershipListSupportStatusResponse } from '@/app/(campaign)/campanha/(app)/liderancas/support-status/types'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
+import { CampaignCellEditOverlay } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import { Spinner } from '@/components/ui/Spinner'
 import {
   isSupportStatus,
   leadershipSupportStatuses,
   type SupportStatus,
 } from '@/lib/schemas/leadership'
-import { cn } from '@/lib/utils'
 import { supportStatusLabels } from '@/utilities/leadershipLabels'
 
 const STATUS_AUTOSAVE_MS = 150
@@ -46,6 +46,18 @@ export const LeadershipListSupportStatusControl = ({
   const committedStatusRef = useRef(initialStatus)
   const lastPropsStatusRef = useRef(initialStatus)
   const saveGenerationRef = useRef(0)
+  const openRef = useRef(false)
+
+  /**
+   * Closing flushes the pending save and unmounts the Alert that would carry a
+   * failure, so a save that fails on the way out would revert the badge with
+   * nobody told. Same channel as the município controls: toast once closed,
+   * inline Alert while open.
+   */
+  const reportFailure = (message: string) => {
+    setErrorMessage(message)
+    if (!openRef.current) toast.error(message)
+  }
 
   // Adopt server props only when they change from outside (navigation / RSC refresh).
   useEffect(() => {
@@ -92,7 +104,7 @@ export const LeadershipListSupportStatusControl = ({
       if (!response.ok || payload.status !== 'success') {
         setValue(committedStatusRef.current)
         setIsDirty(false)
-        setErrorMessage(payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE)
+        reportFailure(payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE)
         return
       }
 
@@ -103,7 +115,7 @@ export const LeadershipListSupportStatusControl = ({
       if (controller.signal.aborted || generation !== saveGenerationRef.current) return
       setValue(committedStatusRef.current)
       setIsDirty(false)
-      setErrorMessage(SAVE_ERROR_MESSAGE)
+      reportFailure(SAVE_ERROR_MESSAGE)
     } finally {
       if (generation === saveGenerationRef.current) {
         setIsPending(false)
@@ -123,6 +135,7 @@ export const LeadershipListSupportStatusControl = ({
   }
 
   const handleOpenChange = (nextOpen: boolean) => {
+    openRef.current = nextOpen
     if (nextOpen) {
       setIsDirty(false)
       setErrorMessage(null)
@@ -147,62 +160,53 @@ export const LeadershipListSupportStatusControl = ({
         : ''
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-haspopup="dialog"
-          aria-busy={isPending || undefined}
-          className={cn(
-            'min-h-11 rounded-md px-1 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            open ? 'bg-muted/60' : undefined,
-          )}
-          aria-label="Editar status de apoio"
-        >
-          <SupportStatusBadge status={value} />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        sideOffset={8}
-        className="w-64 p-3"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-      >
-        <div className="relative flex flex-col gap-3">
-          {isPending ? (
-            <Spinner
-              className="absolute top-0 right-0 size-3.5 text-muted-foreground"
-              aria-label="Salvando status de apoio"
-            />
-          ) : null}
-          <Field>
-            <FieldLabel htmlFor={`leadership-list-support-status-${leadershipID}`}>
-              Status de apoio
-            </FieldLabel>
-            <NativeSelect
-              id={`leadership-list-support-status-${leadershipID}`}
-              value={value}
-              onChange={(event) => handleStatusChange(event.target.value)}
-              className="min-h-11 w-full"
-            >
-              {leadershipSupportStatuses.map((option) => (
-                <NativeSelectOption key={option} value={option}>
-                  {supportStatusLabels[option]}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </Field>
-          {errorMessage ? (
-            <Alert variant="destructive" className="py-2">
-              <AlertDescription className="text-xs">{errorMessage}</AlertDescription>
-            </Alert>
-          ) : null}
-          <p className="sr-only" aria-live="polite">
-            {statusMessage}
-          </p>
-        </div>
-      </PopoverContent>
-    </Popover>
+    // The leaderships list is table-only, so this stays a Popover at every
+    // viewport — the shell is here for the trigger and content it already owns,
+    // not for a Drawer this surface has nowhere to put (B42).
+    <CampaignCellEditOverlay
+      variant="popover"
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Editar status de apoio"
+      triggerLabel={`Editar status de apoio — ${supportStatusLabels[value]}`}
+      triggerBusy={isPending}
+      contentClassName="w-64 p-3"
+      preventPopoverAutoFocus
+      trigger={<SupportStatusBadge status={value} />}
+    >
+      <div className="relative flex flex-col gap-3">
+        {isPending ? (
+          <Spinner
+            className="absolute top-0 right-0 size-3.5 text-muted-foreground"
+            aria-label="Salvando status de apoio"
+          />
+        ) : null}
+        <Field>
+          <FieldLabel htmlFor={`leadership-list-support-status-${leadershipID}`}>
+            Status de apoio
+          </FieldLabel>
+          <NativeSelect
+            id={`leadership-list-support-status-${leadershipID}`}
+            value={value}
+            onChange={(event) => handleStatusChange(event.target.value)}
+            className="min-h-11 w-full"
+          >
+            {leadershipSupportStatuses.map((option) => (
+              <NativeSelectOption key={option} value={option}>
+                {supportStatusLabels[option]}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </Field>
+        {errorMessage ? (
+          <Alert variant="destructive" className="py-2">
+            <AlertDescription className="text-xs">{errorMessage}</AlertDescription>
+          </Alert>
+        ) : null}
+        <p className="sr-only" aria-live="polite">
+          {statusMessage}
+        </p>
+      </div>
+    </CampaignCellEditOverlay>
   )
 }

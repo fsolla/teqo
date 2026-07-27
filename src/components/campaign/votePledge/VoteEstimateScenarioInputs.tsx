@@ -46,8 +46,11 @@ const valuesFromDrafts = (
   optimistic: parseScenarioInput(drafts.optimistic),
 })
 
+// Three inputs side by side in a 15.5rem overlay: dense enough for a mouse at
+// `md+`, where this only ever renders inside a Popover, and 44px below it,
+// where B42 renders it inside a Drawer meant for thumbs.
 const compactInputClassName =
-  'h-9 min-h-9 rounded-md px-1.5 text-center tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+  'h-11 min-h-11 rounded-md px-1.5 text-center tabular-nums [appearance:textfield] md:h-9 md:min-h-9 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
 
 type VoteEstimateScenarioInputsProps = {
   fieldPrefix: 'estimatedVotes' | 'expectedVotes'

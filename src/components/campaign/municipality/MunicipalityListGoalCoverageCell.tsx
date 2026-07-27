@@ -18,18 +18,18 @@ import {
  * pattern as `MunicipalityListExpectedVotesControl`) and shows the
  * percent + deficit for that scenario, computed server-side for all three.
  *
- * `compact` (desktop table, dense) shows a short signed deficit with the
- * full sentence as a `title` tooltip — same "abbreviate + title" pattern as
- * `StaffMunicipalityVotesDisplay`'s "Nas lideranças" subline — so the column
- * doesn't force a wide `whitespace-nowrap` cell. `default` (mobile cards,
- * more room) spells the sentence out.
+ * The signed deficit is abbreviated so neither the desktop column forces a wide
+ * `whitespace-nowrap` cell nor the mobile card spends two lines on it (B42).
+ * The full sentence rides along twice: as a `title` for the mouse (same pattern
+ * as `StaffMunicipalityVotesDisplay`'s "Nas lideranças" subline) and as
+ * `sr-only` text, because `title` alone reaches neither a screen reader nor a
+ * touch device. Sighted touch users read the abbreviation under its `dt` label;
+ * the sentence itself is on the detail page's "Conta da cadeira" card.
  */
 export const MunicipalityListGoalCoverageCell = ({
   coverageByScenario,
-  layout = 'default',
 }: {
   coverageByScenario: Record<VoteEstimateScenario, MunicipalityGoalCoverage>
-  layout?: 'default' | 'compact'
 }) => {
   const scenarioContext = useMunicipalityEstimateScenarioOptional()
   const activeScenario = scenarioContext?.scenario ?? DEFAULT_VOTE_ESTIMATE_SCENARIO
@@ -45,18 +45,19 @@ export const MunicipalityListGoalCoverageCell = ({
       <span className="font-medium tabular-nums" title={`Cenário ${scenarioLabel}`}>
         {formatGoalCoverageRatioLabel(coverage)}
       </span>
-      {layout === 'compact' ? (
-        <span
-          className="text-xs text-muted-foreground tabular-nums"
-          title={`${deficitLabel} (cenário ${scenarioLabel})`}
-        >
-          {formatGoalCoverageDeficitShortLabel(coverage)}
-        </span>
-      ) : (
-        <span className="text-xs text-muted-foreground tabular-nums">
-          {deficitLabel} · cenário {scenarioLabel}
-        </span>
-      )}
+      <span
+        aria-hidden="true"
+        className="text-xs text-muted-foreground tabular-nums"
+        title={`${deficitLabel} (cenário ${scenarioLabel})`}
+      >
+        {formatGoalCoverageDeficitShortLabel(coverage)}
+      </span>
+      {/*
+       * `title` is a mouse-only channel — never announced reliably, never
+       * reachable by touch — so the abbreviation it explains is hidden from
+       * assistive tech and the sentence itself is what gets read.
+       */}
+      <span className="sr-only">{`${deficitLabel} (cenário ${scenarioLabel})`}</span>
     </div>
   )
 }

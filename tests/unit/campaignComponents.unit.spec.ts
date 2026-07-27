@@ -247,9 +247,10 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('80%')
     expect(html).toContain('Faltam 300 votos para a meta')
     // B22: every one of the 10 staff columns carries a header explanation —
-    // pinned in the `<thead>` only, since `cellTooltip` (e.g. "Classe") adds
-    // its own triggers in the body.
-    const [theadHtml, tbodyHtml = ''] = html.split('<tbody')
+    // pinned inside `<thead>` itself, since `cellTooltip` (e.g. "Classe") and
+    // the mobile card's own class tooltip (B42) add triggers of their own.
+    const [, tbodyHtml = ''] = html.split('<tbody')
+    const theadHtml = html.slice(html.indexOf('<thead'), html.indexOf('</thead>'))
     expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(10)
 
     // B41: horizontal scroll + sticky Município (Territory pattern).
@@ -575,10 +576,12 @@ describe('campaign visual foundation', () => {
       const withAdvisors = renderToStaticMarkup(
         createElement(MunicipalityListAdvisorsControl, {
           municipalityID: 1,
+          municipalityName: 'Feira de Santana',
           currentAdvisorIDs: [7],
           isPriority: false,
           advisorNamesById: new Map([[7, { id: 7, name: 'Ana Bastos', phone: null }]]),
           options: [],
+          variant: 'popover',
         }),
       )
       expect(withAdvisors.match(/data-slot="tooltip-trigger"/g)).toHaveLength(1)
@@ -591,10 +594,12 @@ describe('campaign visual foundation', () => {
       const withoutAdvisors = renderToStaticMarkup(
         createElement(MunicipalityListAdvisorsControl, {
           municipalityID: 1,
+          municipalityName: 'Feira de Santana',
           currentAdvisorIDs: [],
           isPriority: false,
           advisorNamesById: new Map(),
           options: [],
+          variant: 'popover',
         }),
       )
       expect(withoutAdvisors).not.toContain('data-slot="tooltip-trigger"')
@@ -606,8 +611,10 @@ describe('campaign visual foundation', () => {
       const withNote = renderToStaticMarkup(
         createElement(MunicipalityListTrendControl, {
           municipalityID: 1,
+          municipalityName: 'Feira de Santana',
           status: 'favoravel',
           trendNote: 'Vereador migrou para a base',
+          variant: 'popover',
         }),
       )
       expect(withNote.match(/data-slot="tooltip-trigger"/g)).toHaveLength(1)
@@ -620,8 +627,10 @@ describe('campaign visual foundation', () => {
       const withoutNote = renderToStaticMarkup(
         createElement(MunicipalityListTrendControl, {
           municipalityID: 1,
+          municipalityName: 'Feira de Santana',
           status: 'favoravel',
           trendNote: null,
+          variant: 'popover',
         }),
       )
       expect(withoutNote).not.toContain('data-slot="tooltip-trigger"')

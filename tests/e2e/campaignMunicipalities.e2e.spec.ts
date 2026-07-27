@@ -433,3 +433,59 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(page.getByText('Aprovada', { exact: true })).toBeVisible()
   })
 })
+
+/**
+ * B42: on the phone the list is cards, the quick-edit cells are Drawers, and the
+ * card itself is the way into the município — the "Abrir município" button is
+ * gone. The two gestures that can only fail together are pinned here: tapping a
+ * control must not navigate, and tapping anything else must.
+ */
+test.describe('Municípios — cards no celular (B42)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('opens the trend Drawer without navigating, and the card body opens the município', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const password = fixtures.value('senha')
+    const coordinator = await campaign.payload.create({
+      collection: 'campaignUser',
+      data: {
+        name: fixtures.value('Coordenador Mobile'),
+        email: `${fixtures.value('coordinator-mobile')}@example.com`,
+        password,
+        role: 'coordinator',
+      },
+      depth: 0,
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, password)
+    const listURL = `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`
+    await page.goto(listURL)
+
+    const card = page.locator('[data-view="mobile-cards"] article').first()
+    await expect(card).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Abrir município' })).toHaveCount(0)
+
+    await card.getByRole('button', { name: 'Editar tendência política' }).click()
+    const drawer = page.locator('[data-slot="drawer-popup"]')
+    await expect(drawer).toBeVisible()
+    await expect(drawer.getByText(municipality.name, { exact: true })).toBeVisible()
+    await expect(page).toHaveURL(listURL)
+
+    await drawer.getByRole('button', { name: 'Fechar' }).click()
+    await expect(drawer).toBeHidden()
+
+    // Anywhere outside a control is the município's own link: the click lands on
+    // the stretched `after:inset-0` overlay, which belongs to the card heading.
+    // The tap goes on a field LABEL inside the metrics grid on purpose — the
+    // first version of this card positioned each grid cell instead of each
+    // control, which lifted the labels and their padding above the overlay and
+    // made half the card a tap that neither edited nor navigated.
+    await card.getByText('Tendência', { exact: true }).click()
+    await expect(page).toHaveURL(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
+    await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
+  })
+})

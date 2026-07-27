@@ -262,6 +262,7 @@ export const MunicipalityGoalAccountCard = ({
           municipalityID={municipalityID}
           expectedVotes={expectedVotes}
           pledgeCoverage={pledgeCoverage}
+          variant="popover"
         />
         <p className="mt-1 text-xs text-muted-foreground">
           Meta usada na conta: {formatElectionNumber(goalCoverage.goal)} (

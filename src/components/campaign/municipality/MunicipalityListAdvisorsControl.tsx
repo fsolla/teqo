@@ -9,11 +9,13 @@ import {
   formatAdvisorNamesTooltip,
   MunicipalityAdvisorAvatarStack,
 } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
-import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
+import {
+  CampaignCellEditOverlay,
+  type CampaignCellEditOverlayVariant,
+} from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
 import { Command, CommandInput, CommandItem, CommandList } from '@/components/ui/Command'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import { Spinner } from '@/components/ui/Spinner'
 import { sameIdSet } from '@/lib/sameIdSet'
 import { cn } from '@/lib/utils'
@@ -28,19 +30,23 @@ const SAVE_ERROR_MESSAGE = 'Não foi possível atualizar os assessores. Tente no
 
 type MunicipalityListAdvisorsControlProps = {
   municipalityID: number
+  municipalityName: string
   currentAdvisorIDs: number[]
   /** Raises the empty state to "Sem responsável" — see `MissingAdvisorBadge`. */
   isPriority: boolean
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>
   options: EligibleAdvisorOption[]
+  variant: CampaignCellEditOverlayVariant
 }
 
 export const MunicipalityListAdvisorsControl = ({
   municipalityID,
+  municipalityName,
   currentAdvisorIDs,
   isPriority,
   advisorNamesById,
   options,
+  variant,
 }: MunicipalityListAdvisorsControlProps) => {
   const [open, setOpen] = useState(false)
   const [selectedIDs, setSelectedIDs] = useState<number[]>(currentAdvisorIDs)
@@ -95,6 +101,11 @@ export const MunicipalityListAdvisorsControl = ({
   // chips: it's the no-open-popover read. `null` for an empty list — the
   // trigger already reads "Sem responsável"/"Sem assessor" by extenso.
   const tooltipContent = formatAdvisorNamesTooltip(chips)
+  const assignedLabel = chips.length
+    ? chips.map((chip) => chip.name).join(', ')
+    : isPriority
+      ? 'sem responsável'
+      : 'sem assessor'
 
   const filteredOptions = useMemo(
     () => options.filter((option) => matchesAtWordStart(option.name, query)),
@@ -167,106 +178,109 @@ export const MunicipalityListAdvisorsControl = ({
   }
 
   const statusMessage = errorMessage ? errorMessage : isPending ? 'Salvando assessores.' : ''
+  // The body pads its own sections (`px-4`, aligned with the Drawer header) so
+  // the `Command` can stay full-bleed in both containers — hence `px-0` on the
+  // sheet body and `p-0` on the popover content.
+  const isSheet = variant === 'sheet'
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <CampaignHoverTooltip
-        content={tooltipContent}
-        align="start"
-        openOnTouch={false}
-        disabled={open}
-      >
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-haspopup="dialog"
-            className={cn(
-              'min-h-11 rounded-md px-1 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              open ? 'bg-muted/60' : undefined,
-            )}
-            aria-label="Editar assessores"
-          >
-            <MunicipalityAdvisorAvatarStack advisors={chips} isPriority={isPriority} />
-          </button>
-        </PopoverTrigger>
-      </CampaignHoverTooltip>
-      <PopoverContent align="start" className="w-80 p-0">
-        <div className="relative flex flex-col gap-2 p-3 pb-0">
-          <p className="text-sm font-medium">Atribuir assessores</p>
-          <p className="text-xs text-muted-foreground">
-            O assessor vê e gerencia somente os municípios que administra.
-          </p>
-          {isPending ? (
-            <Spinner
-              className="absolute top-3 right-3 size-3.5 text-muted-foreground"
-              aria-label="Salvando assessores"
-            />
-          ) : null}
-        </div>
-        {chips.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5 px-3 pt-2">
-            {chips.map((chip) => (
-              <button
-                key={chip.id}
-                type="button"
-                aria-label={`Remover ${chip.name}`}
-                onClick={() => toggle(chip.id, false)}
-              >
-                <Badge
-                  variant="secondary"
-                  className="max-w-full cursor-pointer gap-1 pr-1 font-normal hover:bg-destructive/15"
-                >
-                  <span className="truncate">{chip.name}</span>
-                  <XIcon className="size-3 shrink-0 opacity-70" aria-hidden="true" />
-                </Badge>
-              </button>
-            ))}
-          </div>
-        ) : null}
-        <Command shouldFilter={false} className="mt-1">
-          <CommandInput
-            value={query}
-            onValueChange={setQuery}
-            placeholder="Buscar assessor…"
-            aria-label="Buscar assessor"
-          />
-          <CommandList>
-            {filteredOptions.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-                Nenhum resultado.
-              </p>
-            ) : (
-              filteredOptions.map((option) => {
-                const assigned = selectedSet.has(option.id)
-                return (
-                  <CommandItem
-                    key={option.id}
-                    value={`advisor-${option.id}`}
-                    data-checked={assigned}
-                    onSelect={() => toggle(option.id, !assigned)}
-                  >
-                    <span className="truncate">
-                      {option.name}
-                      {option.isCurrent ? ' (você)' : ''}
-                    </span>
-                  </CommandItem>
-                )
-              })
-            )}
-          </CommandList>
-        </Command>
-        {errorMessage ? (
-          <div className="p-3 pt-2">
-            <Alert variant="destructive">
-              <AlertDescription>{errorMessage}</AlertDescription>
-            </Alert>
-          </div>
-        ) : null}
-        <p className="sr-only" aria-live="polite">
-          {statusMessage}
+    <CampaignCellEditOverlay
+      variant={variant}
+      open={open}
+      onOpenChange={setOpen}
+      title="Atribuir assessores"
+      description={municipalityName}
+      // The avatar stack reads as initials at best, and an `aria-label` replaces
+      // even those — so who is assigned goes in the label, by extenso.
+      triggerLabel={`Editar assessores em ${municipalityName} — ${assignedLabel}`}
+      triggerBusy={isPending}
+      tooltipContent={tooltipContent}
+      contentClassName="w-80 p-0"
+      sheetBodyClassName="px-0 pt-2"
+      trigger={<MunicipalityAdvisorAvatarStack advisors={chips} isPriority={isPriority} />}
+    >
+      <div className={cn('relative flex shrink-0 flex-col gap-2 px-4 pb-0', !isSheet && 'pt-3')}>
+        {/* The Drawer's own header already titles it. */}
+        {isSheet ? null : <p className="text-sm font-medium">Atribuir assessores</p>}
+        {/* `pr-6` keeps this line clear of the sheet's spinner, which sits at
+            `top-0 right-4` because there is no title row above it to hold it. */}
+        <p className={cn('text-xs text-muted-foreground', isSheet && 'pr-6')}>
+          O assessor vê e gerencia somente os municípios que administra.
         </p>
-      </PopoverContent>
-    </Popover>
+        {isPending ? (
+          <Spinner
+            className={cn(
+              'absolute size-3.5 text-muted-foreground',
+              isSheet ? 'top-0 right-4' : 'top-3 right-3',
+            )}
+            aria-label="Salvando assessores"
+          />
+        ) : null}
+      </div>
+      {chips.length > 0 ? (
+        <div className="flex shrink-0 flex-wrap gap-1.5 px-4 pt-2">
+          {chips.map((chip) => (
+            <button
+              key={chip.id}
+              type="button"
+              // A 20px pill is a fine mouse target and a bad thumb one: the
+              // Drawer pads it to the 44px minimum without growing the pill.
+              className={cn('inline-flex items-center', isSheet && 'min-h-11')}
+              aria-label={`Remover ${chip.name}`}
+              onClick={() => toggle(chip.id, false)}
+            >
+              <Badge
+                variant="secondary"
+                className="max-w-full cursor-pointer gap-1 pr-1 font-normal hover:bg-destructive/15"
+              >
+                <span className="truncate">{chip.name}</span>
+                <XIcon className="size-3 shrink-0 opacity-70" aria-hidden="true" />
+              </Badge>
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <Command shouldFilter={false} className="mt-1">
+        <CommandInput
+          value={query}
+          onValueChange={setQuery}
+          placeholder="Buscar assessor…"
+          aria-label="Buscar assessor"
+        />
+        <CommandList>
+          {filteredOptions.length === 0 ? (
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
+          ) : (
+            filteredOptions.map((option) => {
+              const assigned = selectedSet.has(option.id)
+              return (
+                <CommandItem
+                  key={option.id}
+                  value={`advisor-${option.id}`}
+                  data-checked={assigned}
+                  className={isSheet ? 'min-h-11' : undefined}
+                  onSelect={() => toggle(option.id, !assigned)}
+                >
+                  <span className="truncate">
+                    {option.name}
+                    {option.isCurrent ? ' (você)' : ''}
+                  </span>
+                </CommandItem>
+              )
+            })
+          )}
+        </CommandList>
+      </Command>
+      {errorMessage ? (
+        <div className="shrink-0 px-4 pt-2 pb-3">
+          <Alert variant="destructive">
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
+      <p className="sr-only" aria-live="polite">
+        {statusMessage}
+      </p>
+    </CampaignCellEditOverlay>
   )
 }
