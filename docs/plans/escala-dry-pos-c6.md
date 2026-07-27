@@ -1,7 +1,7 @@
 # Escala e DRY pós-C6 (apoiadores / import / listas)
 
-Status: F4 (DRY de forms) **entregue** — twin praça 2026-07-21 + hardening 2026-07-23; **o resto do F4 (10 escadas hand-rolled escritas depois) fechou em 2026-07-25 no Pass 2 W4d** (`runCampaignFormAction`, exceções documentadas em comentário); **F3 (parsers das listas de entidade) fechou no Pass 2 W1-D2**; **F4b aberta** (o guard do F4 só inspeciona `formActions.ts`, deixando os arquivos de action irmãos sem verificação — achado do `/simplify` do C13); F1–F2 abertos com gatilho (volume real de import/base nominal pós-Onda 0)
-Atualizado em: 2026-07-25 (F4b registrada pelo `capture-review-debts` pós-C13)
+Status: F4 (DRY de forms) **entregue** — twin praça 2026-07-21 + hardening 2026-07-23; **o resto do F4 (10 escadas hand-rolled escritas depois) fechou em 2026-07-25 no Pass 2 W4d** (`runCampaignFormAction`, exceções documentadas em comentário); **F3 (parsers das listas de entidade) fechou no Pass 2 W1-D2**; **F4b entregue 2026-07-27** (guard ampliado para `*FormActions.ts` + `taskActions.ts`; 6 irmãos migrados; `taskActions.ts` allowlisted); F1–F2 abertos com gatilho (volume real de import/base nominal pós-Onda 0)
+Atualizado em: 2026-07-27 (F4b entregue — guard + migração dos irmãos)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos, item C8)
 Responsável: —
 
@@ -88,13 +88,27 @@ flowchart TD
 - ~~Migrar `fieldError`/`firstError` local em forms legados~~ — `CampaignInviteForm.tsx` já importa de `campaignFormFields.ts`.
 - **Nota pós-remodel:** paths `nucleos/*`/`pracas/*` foram superseded; não reabrir.
 
-### Fase 4b — o guard do F4 só vê `formActions.ts` — **ABERTA** (registrada 2026-07-25 pós-C13)
+### Fase 4b — o guard do F4 só vê `formActions.ts` — **ENTREGUE** (2026-07-27)
 
-Appetite: **~2h eng, fill-in.** O `/simplify` do C13 mostrou que a invariante do F4 é menor do que o texto acima sugere: o guard `campaign formActions convention` (`tests/unit/codebaseConventions.unit.spec.ts`) filtra `file.endsWith('/formActions.ts')`, então os arquivos de action irmãos que cada rota escreveu depois — `lifecycleFormActions.ts`, `resultFormActions.ts`, `updateFormActions.ts`, `taskActions.ts` — **não são verificados em nenhuma rota**. A exceção documentada na Revisão 2026-07-24 ("`lifecycleFormActions.ts` só retorna safe-messages fixas — sem ladder para migrar") foi escrita quando o alvo era `mapCampaignFormActionError`; com `runCampaignRedirectFormAction` (Pass 2 W4d) a conta mudou, porque esse arquivo faz exatamente a forma que o wrapper padroniza: dois `catch` nus que descartam o erro + `redirect` no sucesso.
+Appetite: **~2h eng, fill-in.** O `/simplify` do C13 mostrou que a invariante do F4 é menor do que o texto acima sugere: o guard `campaign formActions convention` (`tests/unit/codebaseConventions.unit.spec.ts`) filtrava `file.endsWith('/formActions.ts')`, então os arquivos de action irmãos que cada rota escreveu depois — `lifecycleFormActions.ts`, `resultFormActions.ts`, `updateFormActions.ts`, `taskActions.ts` — **não eram verificados em nenhuma rota**. A exceção documentada na Revisão 2026-07-24 ("`lifecycleFormActions.ts` só retorna safe-messages fixas — sem ladder para migrar") foi escrita quando o alvo era `mapCampaignFormActionError`; com `runCampaignRedirectFormAction` (Pass 2 W4d) a conta mudou, porque esse arquivo faz exatamente a forma que o wrapper padroniza: dois `catch` nus que descartam o erro + `redirect` no sucesso.
 
-- Ampliar o filtro do guard para os irmãos (`/^\w*[Ff]ormActions\.ts$/` + `taskActions.ts`, ou um sufixo declarado) e allowlistar com racional escrito o que realmente não couber.
-- Migrar o que o wrapper cobre; onde o `catch` nu ficar, decidir se o erro deve ser observável (hoje é descartado sem log em ambos os caminhos, então não é um débito diferencial — verificar no PR antes de inflar o escopo).
-- Não escopo: mudar a semântica das safe-messages (copy revisada) e tocar `actions/*.ts` (as server actions em si já usam transação/lock).
+**As-built:**
+
+- Guard ampliado para basename `/^\w*[Ff]ormActions\.ts$/` + `taskActions.ts`.
+- Migrados para `runCampaignRedirectFormAction` / `runCampaignFormAction`: `atividades/[slug]/lifecycleFormActions.ts`, `resultFormActions.ts`, `updateFormActions.ts`; `municipios/[slug]/updateFormActions.ts`, `pledgeFormActions.ts`; `municipios/municipalityStaffFormActions.ts` (4 actions).
+- Allowlist com racional: `taskActions.ts` (contrato posicional); `atividades/formActions.ts` (unique-violation + duplicate-title); `apoiadores/[id]/formActions.ts` (message-only flatten).
+- Guard exige call site `runCampaign…FormAction(` — comentário nomeando o wrapper não passa.
+- Docstring de `runCampaignFormAction` precisada: as exceções hand-rolled são só os dois allowlisted acima.
+- `/simplify` pós-F4b: pre-parse de `id` em `lifecycleFormActions` só engole `FormDataBoundaryError`.
+
+**Já resolvido no simplify (não reabrir):** loophole de comment-token no guard; `catch` nu do lifecycle id.
+
+**Explicitamente fora / Adiado com gatilho (triage 2026-07-27):**
+
+- `actions/password.ts` / `profile.ts` / `leaderSupporter.ts` exportam `*FormAction` com ladder hand-rolled fora do filtro `*FormActions.ts` — gatilho: próximo toque nesses arquivos **ou** decisão de expandir o guard além de route-level FormActions.
+- `convite/[token]/formActions.ts` login half ainda hand-rolled (password-confirm + redirect) — gatilho: próximo toque no convite; autofill já usa o wrapper.
+
+**Revisão 2026-07-27:** F4b fechada; F1–F2 seguem com gatilho de volume.
 
 **Migration:** Fases 1, 3, 4, 4b sem schema. Fase 2: `pnpm migrate:create add_contact_trgm_index` (extensão + 2 GIN indexes). Sem Consent novo.
 
