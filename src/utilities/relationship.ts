@@ -13,6 +13,13 @@ export const relationshipId = (value: unknown): number | null => {
   return isPopulatedRelationship(value) ? value.id : null
 }
 
+/** Display name from a populated `Contact` relation (or `fallback` when unpopulated). */
+export const populatedContactName = (contact: unknown, fallback = 'Contato'): string => {
+  if (typeof contact !== 'object' || contact === null || !('name' in contact)) return fallback
+  const { name } = contact
+  return typeof name === 'string' && name.length > 0 ? name : fallback
+}
+
 export const requireRelationshipId = (
   value: unknown,
   message = 'Relacionamento inválido.',

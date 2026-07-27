@@ -15,6 +15,10 @@ import {
   CampaignTableHead,
   type CampaignTableColumn,
 } from '@/components/campaign/shared/CampaignTable'
+import {
+  LeadershipStateDeputyRelationCell,
+  type RelationCellOption,
+} from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { StateDeputyFilters } from '@/components/campaign/stateDeputy/StateDeputyFilters'
 import { StateDeputySortableHead } from '@/components/campaign/stateDeputy/StateDeputySortableHead'
@@ -30,6 +34,7 @@ import {
 import { cn } from '@/lib/utils'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { loadLeadershipOptions } from '@/utilities/campaignRelationOptions'
 import {
   loadStateDeputyListPageData,
   type StateDeputyRowViewModel,
@@ -45,6 +50,8 @@ import {
   resolveStateDeputyListUrl,
   type StateDeputyListState,
 } from '@/utilities/stateDeputyListUrl'
+
+import { setLeadershipStateDeputyMembershipFormAction } from './formActions'
 
 type StateDeputiesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -79,6 +86,7 @@ const stateDeputyColumns = (
   state: StateDeputyListState,
   partyFilterOptions: StateDeputyFilterOption[],
   hasNoPartyOption: boolean,
+  leadershipOptions: RelationCellOption[],
 ): Array<CampaignTableColumn<StateDeputyRowViewModel>> => [
   {
     id: 'name',
@@ -121,8 +129,20 @@ const stateDeputyColumns = (
   {
     id: 'leaderships',
     head: <CampaignTableHead>Lideranças</CampaignTableHead>,
-    cellClassName: 'tabular-nums',
-    cell: (row) => row.leadershipCount,
+    cellClassName: 'max-w-72 whitespace-normal',
+    cell: (row) => (
+      <LeadershipStateDeputyRelationCell
+        direction="fromStateDeputy"
+        fixedId={row.id}
+        items={row.leaderships.map((leadership) => ({
+          id: leadership.id,
+          label: leadership.name,
+          href: `/campanha/liderancas/${leadership.id}`,
+        }))}
+        options={leadershipOptions}
+        membershipAction={setLeadershipStateDeputyMembershipFormAction}
+      />
+    ),
   },
 ]
 
@@ -135,11 +155,10 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
   if (!user) redirect('/campanha/login')
   if (!isCampaignStaff(user)) redirect('/campanha')
 
-  const { rows, totalDocs, totalPages, filterFacets } = await loadStateDeputyListPageData(
-    payload,
-    user,
-    canonicalUrl.state,
-  )
+  const [{ rows, totalDocs, totalPages, filterFacets }, leadershipOptions] = await Promise.all([
+    loadStateDeputyListPageData(payload, user, canonicalUrl.state),
+    loadLeadershipOptions(payload, user),
+  ])
   const resolvedUrl = resolveStateDeputyListUrl(rawSearchParams, totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
@@ -147,6 +166,20 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
   const { sort, dir } = resolveStateDeputyListSort(state)
   const sortSummary = formatStateDeputyListSortSummary(sort, dir)
   const partyFilterOptions = filterFacets.parties.map((party) => ({ value: party, label: party }))
+  const columns = stateDeputyColumns(
+    state,
+    partyFilterOptions,
+    filterFacets.hasNoParty,
+    leadershipOptions.map((option) => ({
+      id: option.id,
+      searchLabel: option.name,
+      item: {
+        id: option.id,
+        label: option.name,
+        href: `/campanha/liderancas/${option.id}`,
+      },
+    })),
+  )
 
   return (
     <CampaignPageShell>
@@ -154,8 +187,8 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">Dobradinhas</h1>
           <p className="text-muted-foreground">
-            Deputados estaduais com quem a campanha dobra — vincule a municípios e lideranças nas
-            fichas correspondentes.
+            Deputados estaduais com quem a campanha dobra — vincule lideranças na própria lista e
+            municípios nas fichas correspondentes.
           </p>
         </div>
         <Button asChild className="min-h-11">
@@ -179,7 +212,7 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
           </p>
           <CampaignTable
             caption={`${sortSummary}. Deputados estaduais com quem a campanha dobra.`}
-            columns={stateDeputyColumns(state, partyFilterOptions, filterFacets.hasNoParty)}
+            columns={columns}
             rows={rows}
             rowKey={(row) => row.id}
             empty={<StateDeputyListEmptyState state={state} />}

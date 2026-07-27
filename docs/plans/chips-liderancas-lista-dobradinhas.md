@@ -1,11 +1,22 @@
 # Chips de lideranças na lista de dobradinhas (espelho da coluna Municípios de Assessores)
 
-Status: rascunho
-Atualizado em: 2026-07-25
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B36**)
-Impeccable: B — encaixe na coluna "Lideranças" de `/campanha/dobradinhas`, reusando o padrão visual já em produção em `/campanha/assessores` (**B19 ✓**) e a mutação desenhada pelo **B31** para o lado inverso da mesma relação
-Appetite: ~0,5–0,75 dia se **B31** já tiver aterrissado (só a direção nova + o loader da lista); ~1–1,5 dia se **B36** entrar primeiro (paga a extração do componente/ação compartilhados que o B31 passaria a consumir)
+Status: entregue (2026-07-26)
+Atualizado em: 2026-07-26
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B36** ✓)
+Impeccable: B — encaixe na coluna "Lideranças" de `/campanha/dobradinhas`, reusando o padrão visual já em produção em `/campanha/assessores` (**B19 ✓**) e a mutação entregue pelo **B31 ✓** para o lado inverso da mesma relação
+Appetite: ~0,75–1d (B31 já aterrissado; paga a extração da célula compartilhada que o B31 deixou pendente)
 Responsável: —
+
+## Revisão na entrega (2026-07-26)
+
+Auditoria pré-implementação contra o B31 as-built:
+
+1. **Context → columns factory.** O plano pedia `RelationOptionsProvider`; o B31 `/simplify` rodada 2 já tinha deletado o Context em favor de `leadershipColumns(options)`. Entrega seguiu o precedente: `stateDeputyColumns(..., leadershipOptions)` + `toLeadershipRelationOptions`.
+2. **Casca por rota.** `setLeadershipStateDeputyMembershipFormAction` ganhou cópia fina em `dobradinhas/formActions.ts` (não importa de `liderancas/` — `formActions` são cascas por rota no codebase-map). Mutação/schema/lock inalterados.
+3. **Célula compartilhada.** `LeadershipStateDeputiesCell` deletado; nasce `shared/LeadershipStateDeputyRelationCell` com `direction` + `measureOverflow` (default true; lado liderança passa `false`). Tipos de UI: `RelationCellItem` / `RelationCellOption`.
+4. **Loader.** `leadershipCount` → `leaderships: {id,name}[]` em `StateDeputyRowViewModel`; `loadLeadershipOptions` em `campaignRelationOptions.ts`.
+
+As-built bate com as Decisões travadas de mutação/reuso; só o packaging de UI/catalogo divergiu do rascunho de 25/07, alinhado ao B31 real.
 
 ## Design (Impeccable)
 

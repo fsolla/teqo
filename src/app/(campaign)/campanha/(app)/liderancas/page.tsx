@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { LeadershipInviteRowAction } from '@/components/campaign/invite/LeadershipInviteRowAction'
-import { LeadershipStateDeputiesCell } from '@/components/campaign/leadership/LeadershipStateDeputiesCell'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { CampaignCopyableCell } from '@/components/campaign/shared/CampaignCopyableCell'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
@@ -20,16 +19,17 @@ import {
   CampaignTableHead,
   type CampaignTableColumn,
 } from '@/components/campaign/shared/CampaignTable'
+import {
+  LeadershipStateDeputyRelationCell,
+  type RelationCellOption,
+} from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import {
-  loadStateDeputyOptions,
-  type StateDeputyRelationOption,
-} from '@/utilities/campaignRelationOptions'
+import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
 import {
   buildLeadershipListHref,
   loadLeadershipListPageData,
@@ -44,7 +44,7 @@ type LeadershipsPageProps = {
 }
 
 const leadershipColumns = (
-  stateDeputyOptions: StateDeputyRelationOption[],
+  stateDeputyOptions: RelationCellOption[],
 ): Array<CampaignTableColumn<LeadershipRowViewModel>> => [
   {
     id: 'name',
@@ -99,11 +99,18 @@ const leadershipColumns = (
     head: <CampaignTableHead>Dobradinhas</CampaignTableHead>,
     cellClassName: 'max-w-56 whitespace-normal',
     cell: (row) => (
-      <LeadershipStateDeputiesCell
-        leadershipId={row.id}
-        stateDeputies={row.stateDeputies}
+      <LeadershipStateDeputyRelationCell
+        direction="fromLeadership"
+        fixedId={row.id}
+        items={row.stateDeputies.map((deputy) => ({
+          id: deputy.id,
+          label: deputy.name,
+          href: `/campanha/dobradinhas/${deputy.slug}`,
+          ...(deputy.party ? { party: deputy.party } : {}),
+        }))}
         options={stateDeputyOptions}
         membershipAction={setLeadershipStateDeputyMembershipFormAction}
+        measureOverflow={false}
       />
     ),
   },
@@ -173,7 +180,18 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     loadLeadershipListPageData(payload, user, state),
     loadStateDeputyOptions(payload, user),
   ])
-  const columns = leadershipColumns(stateDeputyOptions)
+  const columns = leadershipColumns(
+    stateDeputyOptions.map((option) => ({
+      id: option.id,
+      searchLabel: option.name,
+      item: {
+        id: option.id,
+        label: option.plainName,
+        href: `/campanha/dobradinhas/${option.slug}`,
+        ...(option.party ? { party: option.party } : {}),
+      },
+    })),
+  )
 
   return (
     <CampaignPageShell>

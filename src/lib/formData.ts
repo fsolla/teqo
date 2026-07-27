@@ -32,6 +32,14 @@ export const requiredFormText = (formData: FormData, field: string): string => {
   return value
 }
 
+/** Membership toggles send `'true'` / `'false'` as form text. */
+export const requiredFormBoolean = (formData: FormData, field: string): boolean => {
+  const value = requiredFormText(formData, field)
+  if (value === 'true') return true
+  if (value === 'false') return false
+  throw new FormDataBoundaryError(field, 'Valor inválido.')
+}
+
 export const requiredFormSecret = (formData: FormData, field: string): string => {
   const entry = formEntry(formData, field)
   const value = entry.present ? entry.value : ''
