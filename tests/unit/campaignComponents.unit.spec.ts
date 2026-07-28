@@ -16,6 +16,7 @@ import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBa
 import { Progress } from '@/components/ui/Progress'
 import { Toggle } from '@/components/ui/Toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
+import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { createEmptyGoalCoverageByScenario } from '@/utilities/goalCoverage'
@@ -41,6 +42,10 @@ const noopListFormAction = async (
 
 const municipalityListDefaultProps = {
   isCoordinator: false,
+  columnVisibility: {
+    listId: 'municipios',
+    hiddenColumnIds: [],
+  } satisfies CampaignColumnVisibility,
   canMoveEngagementLevel: false,
   advisorOptions: [],
   columnFilterOptions: { name: [], region: [], advisor: [] },

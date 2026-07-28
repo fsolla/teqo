@@ -95,11 +95,12 @@ export const municipalityListSortLabels: Record<MunicipalityListSortKey, string>
 
 /**
  * B17 — the name each column answers to in the column picker. Ten of the
- * twelve quote the sort label the header already renders
- * (`MunicipalitySortableHead` resolves its text from that record), so renaming
- * a header renames the menu entry with it. The two that differ do so on
- * purpose: a header sits above its own data and can be telegraphic, while the
- * same word alone in a list of column names says nothing.
+ * twelve quote the sort label, and the header renders that same record
+ * (`MunicipalitySortableHead` falls back to it when given no children, which
+ * is why those heads pass none), so renaming a header renames the menu entry
+ * with it. The two that differ do so on purpose: a header sits above its own
+ * data and can be telegraphic, while the same word alone in a list of column
+ * names says nothing. `lastSignal` is read back by the header it names.
  */
 export const municipalityColumnLabels: Record<MunicipalityListColumnId, string> = {
   name: municipalityListSortLabels.name,

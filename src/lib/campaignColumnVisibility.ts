@@ -16,7 +16,6 @@ export const CAMPAIGN_COLUMNS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 /** A malformed or oversized cookie shows the full table instead of guessing. */
 const MAX_COOKIE_LENGTH = 2048
-const MAX_HIDDEN_PER_LIST = 40
 
 const CAMPAIGN_LIST_IDS = [
   'municipios',
@@ -69,6 +68,9 @@ export const parseCampaignHiddenColumns = (raw: string | undefined): CampaignHid
     const listId = entry.slice(0, separatorIndex)
     if (!isCampaignListId(listId)) continue
 
+    // An id matching nothing on the table is inert, so the length cap above is
+    // the only bound worth having — a per-list one would also have to be
+    // mirrored in `serialize`, or writing 41 and reading back 40 would differ.
     const columnIds = [
       ...new Set(
         entry
@@ -76,7 +78,7 @@ export const parseCampaignHiddenColumns = (raw: string | undefined): CampaignHid
           .split(COLUMN_SEPARATOR)
           .filter((columnId) => COLUMN_ID_PATTERN.test(columnId)),
       ),
-    ].slice(0, MAX_HIDDEN_PER_LIST)
+    ]
 
     if (columnIds.length) parsed[listId] = columnIds
   }
@@ -116,8 +118,8 @@ type HideableColumn = { id: string; mandatory?: boolean }
 export const resolveVisibleColumns = <Column extends HideableColumn>(
   columns: readonly Column[],
   hiddenColumnIds: readonly string[] | undefined,
-): Column[] => {
-  if (!hiddenColumnIds?.length) return [...columns]
+): readonly Column[] => {
+  if (!hiddenColumnIds?.length) return columns
 
   const hidden = new Set(hiddenColumnIds)
   return columns.filter((column) => column.mandatory || !hidden.has(column.id))

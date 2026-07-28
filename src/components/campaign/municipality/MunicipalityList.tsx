@@ -104,8 +104,7 @@ export type MunicipalityListProps = {
   columnFilterOptions: MunicipalityColumnFilterOptions
   signalFormAction: MunicipalityStaffFormAction
   state: MunicipalityListState
-  /** B17 — optional only because the unit tests render this list without a cookie. */
-  columnVisibility?: CampaignColumnVisibility
+  columnVisibility: CampaignColumnVisibility
 }
 
 const VotePositionReadout = ({
@@ -252,6 +251,14 @@ const advisorNames = (
 ): string[] => advisorEntries(municipality, advisorNamesById).map((advisor) => advisor.name)
 
 /** The desktop table as column definitions (Pass 2 W1 list system). */
+/**
+ * The id is the picker's key, the cookie's key and the key of the B22
+ * description record, so it is typed instead of widening to `string`.
+ */
+type MunicipalityColumn = CampaignTableColumn<MunicipalityListViewModel> & {
+  id: MunicipalityListColumnId
+}
+
 const municipalityListColumns = ({
   state,
   isStaffView,
@@ -261,9 +268,7 @@ const municipalityListColumns = ({
   advisorNamesById,
   advisorOptions,
   signalFormAction,
-}: MunicipalityListProps): Array<
-  CampaignTableColumn<MunicipalityListViewModel> & { id: MunicipalityListColumnId }
-> => [
+}: MunicipalityListProps): Array<MunicipalityColumn> => [
   {
     id: 'name',
     label: municipalityColumnLabels.name,
@@ -277,9 +282,7 @@ const municipalityListColumns = ({
         showPriorityFilter={isStaffView}
         description={municipalityColumnDescriptions.name}
         className="sticky left-0 z-20 min-w-56 bg-background"
-      >
-        Município
-      </MunicipalitySortableHead>
+      />
     ),
     cellClassName: 'sticky left-0 z-[5] min-w-56 whitespace-normal bg-background',
     cell: (municipality) => (
@@ -306,9 +309,7 @@ const municipalityListColumns = ({
         filterParam="region"
         filterOptions={columnFilterOptions.region}
         description={municipalityColumnDescriptions.region}
-      >
-        Território
-      </MunicipalitySortableHead>
+      />
     ),
     cellClassName: 'max-w-56 whitespace-normal text-muted-foreground',
     cell: (municipality) => <TerritoryLink region={municipality.region} />,
@@ -322,9 +323,7 @@ const municipalityListColumns = ({
         sortKey="kind"
         filterParam="kind"
         description={municipalityColumnDescriptions.kind}
-      >
-        Tipo
-      </MunicipalitySortableHead>
+      />
     ),
     cell: (municipality) => municipalityKindLabels[municipality.kind],
   },
@@ -360,9 +359,7 @@ const municipalityListColumns = ({
               sortKey="classe"
               filterParam="class"
               description={municipalityColumnDescriptions.classe}
-            >
-              Classe
-            </MunicipalitySortableHead>
+            />
           ),
           cell: (municipality) => <TerritorialClassReadout municipality={municipality} />,
           // The factors behind the label — the cell keeps them as `sr-only`
@@ -382,9 +379,7 @@ const municipalityListColumns = ({
               sortKey="nivel"
               filterParam="level"
               description={municipalityColumnDescriptions.level}
-            >
-              Nível
-            </MunicipalitySortableHead>
+            />
           ),
           cell: (municipality) =>
             canMoveEngagementLevel ? (
@@ -422,9 +417,7 @@ const municipalityListColumns = ({
               filterParam="advisor"
               filterOptions={columnFilterOptions.advisor}
               description={municipalityColumnDescriptions.advisors}
-            >
-              Assessores
-            </MunicipalitySortableHead>
+            />
           ),
           cell: (municipality) =>
             isCoordinator ? (
@@ -460,9 +453,7 @@ const municipalityListColumns = ({
               sortKey="trend"
               filterParam="trend"
               description={municipalityColumnDescriptions.trend}
-            >
-              Tendência
-            </MunicipalitySortableHead>
+            />
           ),
           cell: (municipality) => (
             <MunicipalityListTrendControl
@@ -483,9 +474,7 @@ const municipalityListColumns = ({
               sortKey="expectedVotes"
               align="center"
               description={municipalityColumnDescriptions.expectedVotes}
-            >
-              Votos estimados
-            </MunicipalitySortableHead>
+            />
           ),
           cellClassName: 'relative overflow-visible align-middle text-center',
           cell: (municipality) => (
@@ -509,7 +498,9 @@ const municipalityListColumns = ({
               sortKey="frescor"
               description={municipalityColumnDescriptions.lastSignal}
             >
-              Último sinal
+              {/* The one header that does NOT inherit its sort label: the column
+                  shows the signal, `frescor` sorts by how old it is. */}
+              {municipalityColumnLabels.lastSignal}
             </MunicipalitySortableHead>
           ),
           cell: (municipality) => (
@@ -533,9 +524,7 @@ const municipalityListColumns = ({
               state={state}
               sortKey="deficit"
               description={municipalityColumnDescriptions.goalCoverage}
-            >
-              Cobertura da meta
-            </MunicipalitySortableHead>
+            />
           ),
           cell: (municipality) => (
             <MunicipalityListGoalCoverageCell
@@ -543,9 +532,7 @@ const municipalityListColumns = ({
             />
           ),
         },
-      ] satisfies Array<
-        CampaignTableColumn<MunicipalityListViewModel> & { id: MunicipalityListColumnId }
-      >)
+      ] satisfies Array<MunicipalityColumn>)
     : ([
         {
           id: 'lastUpdateAt',
@@ -555,18 +542,14 @@ const municipalityListColumns = ({
               state={state}
               sortKey="lastUpdateAt"
               description={municipalityColumnDescriptions.lastUpdateAt}
-            >
-              Última atualização
-            </MunicipalitySortableHead>
+            />
           ),
           cell: (municipality) =>
             municipality.lastUpdateAt
               ? dateFormatter.format(new Date(municipality.lastUpdateAt))
               : 'Sem atualização',
         },
-      ] satisfies Array<
-        CampaignTableColumn<MunicipalityListViewModel> & { id: MunicipalityListColumnId }
-      >)),
+      ] satisfies Array<MunicipalityColumn>)),
 ]
 
 export const MunicipalityList = (props: MunicipalityListProps) => {
@@ -579,7 +562,7 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
   // `mandatory` cannot be on screen while the caption denies it.
   const showsVoteColumn = resolveVisibleColumns(
     columns,
-    props.columnVisibility?.hiddenColumnIds,
+    props.columnVisibility.hiddenColumnIds,
   ).some((column) => column.id === 'votos')
 
   return (

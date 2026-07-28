@@ -6,7 +6,12 @@ import { CampaignColumnPicker } from '@/components/campaign/shared/CampaignColum
 
 const refresh = vi.fn()
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh }) }))
+// Spread the real module, like the sibling specs: replacing it wholesale would
+// break the day the picker renders anything reading `usePathname`.
+vi.mock('next/navigation', async (importActual) => ({
+  ...(await importActual()),
+  useRouter: () => ({ refresh }),
+}))
 
 /**
  * jsdom scopes `document.cookie` by the document URL, and the real cookie is
@@ -85,7 +90,7 @@ describe('CampaignColumnPicker', () => {
     }
   })
 
-  it('commits on its own when the menu is left open', async () => {
+  it('saves without repainting when the menu is left open', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
 
     try {
@@ -95,11 +100,40 @@ describe('CampaignColumnPicker', () => {
 
       await vi.advanceTimersByTimeAsync(3_000)
 
-      expect(refresh).toHaveBeenCalledTimes(1)
+      // The idle timer is durability, not the commit: a slow reader who takes
+      // more than the interval between checkboxes must not pay a route render
+      // per column, which is the failure the 400 ms debounce was rejected for.
       expect(cookieJar).toContain('campaign_columns=municipios:kind')
+      expect(refresh).not.toHaveBeenCalled()
+
+      closeMenu()
+      expect(refresh).toHaveBeenCalledTimes(1)
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('does not refresh a session that ends where it started', () => {
+    render(picker(['kind']))
+    openMenu()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Tipo' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Tipo' }))
+    closeMenu()
+
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('saves a pending edit when the list unmounts with the menu open', () => {
+    const { unmount } = render(picker([]))
+    openMenu()
+
+    // Radix reports no close event here, so without the unmount flush this
+    // choice would be lost to a sidebar navigation with no feedback at all.
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Tipo' }))
+    unmount()
+
+    expect(cookieJar).toContain('campaign_columns=municipios:kind')
   })
 
   it('never lets the mandatory column be unchecked', () => {

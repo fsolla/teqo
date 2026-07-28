@@ -129,11 +129,7 @@ const leadershipColumns = ({
     id: 'name',
     label: leadershipListSortLabels.name,
     mandatory: true,
-    head: (
-      <LeadershipSortableHead state={state} sortKey="name">
-        Nome
-      </LeadershipSortableHead>
-    ),
+    head: <LeadershipSortableHead state={state} sortKey="name" />,
     cell: (row) => (
       <Link
         href={`/campanha/liderancas/${row.id}`}
@@ -165,9 +161,7 @@ const leadershipColumns = ({
     id: 'supportStatus',
     label: leadershipListSortLabels.supportStatus,
     head: (
-      <LeadershipSortableHead state={state} sortKey="supportStatus" filterParam="supportStatus">
-        Status
-      </LeadershipSortableHead>
+      <LeadershipSortableHead state={state} sortKey="supportStatus" filterParam="supportStatus" />
     ),
     cell: (row) => (
       <LeadershipListSupportStatusControl leadershipID={row.id} status={row.supportStatus} />
@@ -176,11 +170,7 @@ const leadershipColumns = ({
   {
     id: 'sector',
     label: leadershipListSortLabels.sector,
-    head: (
-      <LeadershipSortableHead state={state} sortKey="sector" filterParam="sector">
-        Setor
-      </LeadershipSortableHead>
-    ),
+    head: <LeadershipSortableHead state={state} sortKey="sector" filterParam="sector" />,
     cell: (row) => {
       if (!row.sector || !isLeadershipSector(row.sector)) return row.sector || '—'
       return leadershipSectorLabels[row.sector]
@@ -258,11 +248,7 @@ const leadershipColumns = ({
   {
     id: 'updatedAt',
     label: leadershipListSortLabels.updatedAt,
-    head: (
-      <LeadershipSortableHead state={state} sortKey="updatedAt">
-        Última atualização
-      </LeadershipSortableHead>
-    ),
+    head: <LeadershipSortableHead state={state} sortKey="updatedAt" />,
     cell: (row) => {
       const absolute = formatBahiaDateTimeLabel(row.updatedAt)
       const relative = formatRelativeAge(new Date(row.updatedAt).getTime(), nowMs)

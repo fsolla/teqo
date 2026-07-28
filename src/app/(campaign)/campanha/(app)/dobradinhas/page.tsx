@@ -91,11 +91,7 @@ const stateDeputyColumns = (
     id: 'name',
     label: stateDeputyListSortLabels.name,
     mandatory: true,
-    head: (
-      <StateDeputySortableHead state={state} sortKey="name">
-        Nome
-      </StateDeputySortableHead>
-    ),
+    head: <StateDeputySortableHead state={state} sortKey="name" />,
     cell: (row) => (
       <Link
         href={`/campanha/dobradinhas/${row.slug}`}
@@ -114,9 +110,7 @@ const stateDeputyColumns = (
         sortKey="party"
         filterOptions={partyFilterOptions}
         hasNoPartyOption={hasNoPartyOption}
-      >
-        Partido
-      </StateDeputySortableHead>
+      />
     ),
     cellClassName: 'text-muted-foreground',
     cell: (row) => row.party ?? '—',
