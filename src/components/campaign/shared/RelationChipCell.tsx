@@ -73,8 +73,6 @@ export type RelationSearchHit = {
 
 export type RelationChipCellCopy = {
   searchPlaceholder: string
-  /** Shown once the cell already has chips. Defaults to "Adicionar…". */
-  addPlaceholder?: string
   searchLabel: string
   suggestionsLabel: string
   emptyDrawerMessage: string
@@ -679,9 +677,7 @@ export const RelationChipCell = ({
                 }, 120)
               }}
               onKeyDown={onSearchKeyDown}
-              placeholder={
-                chips.length ? (copy.addPlaceholder ?? 'Adicionar…') : copy.searchPlaceholder
-              }
+              placeholder={chips.length ? 'Adicionar…' : copy.searchPlaceholder}
               aria-label={copy.searchLabel}
               className="hidden min-h-8 min-w-32 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground pointer-fine:block"
             />

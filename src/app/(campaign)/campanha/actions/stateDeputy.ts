@@ -5,7 +5,8 @@ import type { Payload } from 'payload'
 
 import { nextStateDeputyIdsAfterMunicipalityMembership } from '@/lib/municipalityStateDeputyMembership'
 import {
-  STATE_DEPUTY_MUNICIPALITIES_STAFF_MESSAGE,
+  STATE_DEPUTY_CONFLICT_MESSAGE,
+  STATE_DEPUTY_STAFF_MESSAGE,
   stateDeputyCreateSchema,
   stateDeputyMunicipalitiesBatchSchema,
   stateDeputyUpdateSchema,
@@ -23,9 +24,9 @@ import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 import { uniqueRelationshipIds } from '@/utilities/relationship'
 
 const stateDeputyPolicy: StaffEntityPolicy = {
-  staffMessage: 'Somente a coordenação e a assessoria gerenciam dobradinhas.',
+  staffMessage: STATE_DEPUTY_STAFF_MESSAGE,
   conflictPattern: /state_deputy_(name|slug)|duplicate key/i,
-  conflictMessage: 'Já existe uma dobradinha com este nome.',
+  conflictMessage: STATE_DEPUTY_CONFLICT_MESSAGE,
 }
 
 const createStateDeputyRecord = async (
@@ -105,38 +106,20 @@ export const setStateDeputyMunicipalitiesBatchRecord = async (
 ) => {
   const { stateDeputyId, municipalityIds, assigned } =
     stateDeputyMunicipalitiesBatchSchema.parse(input)
-  const uniqueMunicipalityIds = [...new Set(municipalityIds)].sort((left, right) => left - right)
+  // Already deduped by the schema's `.transform`; sorted only so the advisory
+  // locks below are always taken in the same order (deadlock avoidance).
+  const uniqueMunicipalityIds = [...municipalityIds].sort((left, right) => left - right)
 
   return withPayloadTransaction(
     payload,
     async ({ req }) => {
-      const currentActor = await reloadStaffActor(
-        payload,
-        actor,
-        STATE_DEPUTY_MUNICIPALITIES_STAFF_MESSAGE,
-        req,
-      )
+      const currentActor = await reloadStaffActor(payload, actor, STATE_DEPUTY_STAFF_MESSAGE, req)
 
       await acquireTextAdvisoryLocks(
         payload,
         req,
         uniqueMunicipalityIds.map((id) => `municipality-state-deputies:${id}`),
       )
-
-      // Intentional admin bypass: only used to resolve the slug of the
-      // touched dobradinha for a targeted revalidate; existence is otherwise
-      // enforced by Payload's relationship validation on `update` (same
-      // precedent as `setLeadershipStateDeputyMembershipRecord`, B31).
-      const stateDeputySlug = (
-        await payload.findByID({
-          collection: 'stateDeputy',
-          id: stateDeputyId,
-          depth: 0,
-          select: { slug: true },
-          overrideAccess: true,
-          req,
-        })
-      ).slug
 
       // Every município actually changed, not just the last one — same bug
       // class the B34 twin fixed: a território chip can touch up to 435
@@ -177,6 +160,27 @@ export const setStateDeputyMunicipalitiesBatchRecord = async (
         })
         if (typeof municipality.slug === 'string') changedSlugs.push(municipality.slug)
       }
+
+      // Resolved AFTER the loop, and only when something changed: the slug
+      // exists solely to target the revalidate, which the caller skips on a
+      // no-op batch — so on a no-op this read was pure waste (the guard the
+      // `setLeadershipMunicipalitiesMembershipRecord` twin already had).
+      // Intentional admin bypass: existence is otherwise enforced by Payload's
+      // relationship validation on `update` (precedent:
+      // `setLeadershipStateDeputyMembershipRecord`, B31).
+      const stateDeputySlug =
+        changedSlugs.length > 0
+          ? (
+              await payload.findByID({
+                collection: 'stateDeputy',
+                id: stateDeputyId,
+                depth: 0,
+                select: { slug: true },
+                overrideAccess: true,
+                req,
+              })
+            ).slug
+          : undefined
 
       return { stateDeputySlug, slugs: changedSlugs }
     },

@@ -11,6 +11,7 @@ import {
 } from '@/components/campaign/shared/RelationChipCell'
 import {
   buildMunicipalityPortfolioChips,
+  scopedPortfolioIndex,
   searchMunicipalityPortfolio,
   type MunicipalityPortfolioChip,
   type MunicipalityPortfolioIndexEntry,
@@ -113,13 +114,12 @@ export const MunicipalityPortfolioCell = ({
   /**
    * Suggestions are scoped, chips are not: filtering the index the search reads
    * also shrinks the território / ZE hits to what the actor may actually add,
-   * instead of offering a batch the server would reject halfway.
+   * instead of offering a batch the server would reject halfway. Memoized by
+   * `(index, addableIds)` rather than per row so all rows share one array — see
+   * `scopedPortfolioIndex`.
    */
   const searchIndex = useMemo(
-    () =>
-      addableIds
-        ? municipalityIndex.filter((entry) => addableIds.has(entry.id))
-        : municipalityIndex,
+    () => scopedPortfolioIndex(municipalityIndex, addableIds),
     [addableIds, municipalityIndex],
   )
 

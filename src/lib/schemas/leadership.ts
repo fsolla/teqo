@@ -48,6 +48,9 @@ export const LEADERSHIP_MUNICIPALITY_FLOOR_MESSAGE =
 
 export const LEADERSHIP_MUNICIPALITY_CAP_MESSAGE = `Cada liderança aceita no máximo ${MAX_LEADERSHIP_MUNICIPALITIES} municípios.`
 
+/** Thrown by the chip toggle on both sides of the relation (B31/B36), so both routes allowlist it. */
+export const LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE = `Cada liderança aceita no máximo ${MAX_LEADERSHIP_STATE_DEPUTIES} dobradinhas.`
+
 /** Thrown by the actions and matched verbatim by every route's `safeMessages`. */
 export const LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE =
   'Você só pode vincular lideranças aos municípios que assessora.'

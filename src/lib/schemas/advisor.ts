@@ -1,6 +1,9 @@
 import { z } from 'zod'
 
-import { MAX_ADVISORS_PER_MUNICIPALITY } from '@/lib/schemas/municipality'
+import {
+  MAX_MUNICIPALITIES_PER_BATCH,
+  MUNICIPALITY_ADVISORS_CAP_MESSAGE,
+} from '@/lib/schemas/municipality'
 import {
   brazilianMobile,
   optionalPersistedEmail,
@@ -41,7 +44,7 @@ export const ADVISOR_ACTION_SAFE_MESSAGES = [
   PLACEHOLDER_RESET_MESSAGE,
   'Só é possível gerenciar contas com papel de Assessor nesta tela.',
   'Use Meu perfil para alterar a própria conta.',
-  `Cada município aceita no máximo ${MAX_ADVISORS_PER_MUNICIPALITY} assessores.`,
+  MUNICIPALITY_ADVISORS_CAP_MESSAGE,
 ] as const
 
 export const advisorCreateSchema = z.object({
@@ -64,7 +67,7 @@ export const advisorProfileUpdateSchema = z
 
 export const advisorMunicipalitiesBatchSchema = z.object({
   advisorId: positiveRelationshipId,
-  municipalityIds: z.array(positiveRelationshipId).min(1).max(435),
+  municipalityIds: z.array(positiveRelationshipId).min(1).max(MAX_MUNICIPALITIES_PER_BATCH),
   assigned: z.boolean(),
 })
 

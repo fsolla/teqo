@@ -7,7 +7,7 @@ import {
   requiredFormBoolean,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
-import { MAX_LEADERSHIP_STATE_DEPUTIES } from '@/lib/schemas/leadership'
+import { LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE } from '@/lib/schemas/leadership'
 import { STATE_DEPUTY_MUNICIPALITIES_SAFE_MESSAGES } from '@/lib/schemas/stateDeputy'
 import {
   runCampaignFormAction,
@@ -16,7 +16,7 @@ import {
 
 const safeMessages = [
   'Somente a coordenação e a assessoria podem gerenciar lideranças.',
-  `Cada liderança aceita no máximo ${MAX_LEADERSHIP_STATE_DEPUTIES} dobradinhas.`,
+  LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE,
 ] as const
 
 /** One chip toggle in the "Lideranças" column of `/campanha/dobradinhas` (B36). */

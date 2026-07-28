@@ -8,7 +8,7 @@ import {
   type RelationChipCellCopy,
   type RelationSearchHit,
 } from '@/components/campaign/shared/RelationChipCell'
-import { matchesAtWordStart } from '@/lib/wordStartFilter'
+import { matchesNormalizedAtWordStart, normalizeSearchPhrase } from '@/lib/wordStartFilter'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 
 export type RelationCellItem = {
@@ -43,6 +43,25 @@ type LeadershipStateDeputyRelationCellProps = {
 
 const itemLabel = (item: RelationCellItem): string =>
   item.party ? `${item.label} (${item.party})` : item.label
+
+/**
+ * Normalized search labels, once per `options` array rather than per row: the
+ * RSC builds one array and every row of the table gets that same reference, so a
+ * `WeakMap` shares the work where a per-row `useMemo` would repeat it (same
+ * reasoning as `municipalityPortfolio`'s derivation cache).
+ */
+const normalizedLabelsByOptions = new WeakMap<readonly RelationCellOption[], Map<number, string>>()
+
+const normalizedOptionLabels = (options: readonly RelationCellOption[]): Map<number, string> => {
+  const cached = normalizedLabelsByOptions.get(options)
+  if (cached) return cached
+
+  const normalized = new Map(
+    options.map((option) => [option.id, normalizeSearchPhrase(option.searchLabel)] as const),
+  )
+  normalizedLabelsByOptions.set(options, normalized)
+  return normalized
+}
 
 const DIRECTION_COPY: Record<
   LeadershipStateDeputyRelationDirection,
@@ -127,12 +146,24 @@ export const LeadershipStateDeputyRelationCell = ({
   )
 
   const searchHits = useCallback(
-    (query: string, assignedIds: ReadonlySet<number>): RelationSearchHit[] =>
-      options
-        .filter(
-          (option) => !assignedIds.has(option.id) && matchesAtWordStart(option.searchLabel, query),
-        )
-        .map((option) => ({ key: String(option.id), label: option.searchLabel, ids: [option.id] })),
+    (query: string, assignedIds: ReadonlySet<number>): RelationSearchHit[] => {
+      // Normalize the query ONCE and read pre-normalized labels, instead of an
+      // NFD pass plus three Unicode-property regexes per candidate per
+      // keystroke — the cost `wordStartFilter`'s own doc comment warns about,
+      // and which matters here because `options` in the `fromStateDeputy`
+      // direction is the whole (unpaginated) leadership catalog.
+      const normalizedQuery = normalizeSearchPhrase(query)
+      const normalizedLabels = normalizedOptionLabels(options)
+      const hits: RelationSearchHit[] = []
+      for (const option of options) {
+        if (assignedIds.has(option.id)) continue
+        if (!matchesNormalizedAtWordStart(normalizedLabels.get(option.id) ?? '', normalizedQuery)) {
+          continue
+        }
+        hits.push({ key: String(option.id), label: option.searchLabel, ids: [option.id] })
+      }
+      return hits
+    },
     [options],
   )
 
