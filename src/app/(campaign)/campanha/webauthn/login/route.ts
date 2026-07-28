@@ -5,10 +5,7 @@ import { getPayload } from 'payload'
 import type { CampaignWebAuthnLoginResponse } from '@/lib/campaignWebAuthn'
 import { campaignWebAuthnLoginSchema } from '@/lib/schemas/campaignWebAuthn'
 import { setCampaignAuthCookie } from '@/utilities/campaignAuth'
-import {
-  campaignJsonMutationErrorResponse,
-  parseCampaignJsonRequestBody,
-} from '@/utilities/campaignJsonMutationRoute'
+import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute'
 import {
   campaignWebAuthnSafeMessages,
   completeCampaignAuthentication,
@@ -18,7 +15,6 @@ import {
   CAMPAIGN_WEBAUTHN_ACCOUNT_LOCKED_MESSAGE,
   CAMPAIGN_WEBAUTHN_ACCOUNT_UNAVAILABLE_MESSAGE,
 } from '@/utilities/campaignWebAuthnSession'
-import { isSameOriginRequest } from '@/utilities/sameOriginRequest'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,30 +23,22 @@ export const dynamic = 'force-dynamic'
  * on the way out, with the same 14-day TTL the "Lembrar de mim" checkbox grants
  * — enrolling the passkey on this device *is* the trust opt-in.
  */
-export async function POST(request: Request): Promise<NextResponse<CampaignWebAuthnLoginResponse>> {
-  if (!isSameOriginRequest(request)) {
-    return NextResponse.json({ status: 'error', message: 'Requisição inválida.' }, { status: 403 })
-  }
-
-  const parsed = await parseCampaignJsonRequestBody(request)
-  if (!parsed.ok) return parsed.response
-
-  try {
-    const { credential } = campaignWebAuthnLoginSchema.parse(parsed.body)
+export const POST = campaignJsonMutationRoute(
+  {
+    bodySchema: campaignWebAuthnLoginSchema,
+    safeMessages: [
+      ...campaignWebAuthnSafeMessages,
+      CAMPAIGN_WEBAUTHN_CHALLENGE_EXPIRED_MESSAGE,
+      CAMPAIGN_WEBAUTHN_ACCOUNT_UNAVAILABLE_MESSAGE,
+      CAMPAIGN_WEBAUTHN_ACCOUNT_LOCKED_MESSAGE,
+    ],
+    genericMessage: 'Não foi possível entrar com a biometria. Use sua senha.',
+  },
+  async ({ credential }): Promise<NextResponse<CampaignWebAuthnLoginResponse>> => {
     const payload = await getPayload({ config })
     const { token, tokenExpiration } = await completeCampaignAuthentication(payload, credential)
     await setCampaignAuthCookie(token, payload, tokenExpiration)
 
     return NextResponse.json({ status: 'success', redirectTo: '/campanha' })
-  } catch (error) {
-    return campaignJsonMutationErrorResponse(error, {
-      safeMessages: [
-        ...campaignWebAuthnSafeMessages,
-        CAMPAIGN_WEBAUTHN_CHALLENGE_EXPIRED_MESSAGE,
-        CAMPAIGN_WEBAUTHN_ACCOUNT_UNAVAILABLE_MESSAGE,
-        CAMPAIGN_WEBAUTHN_ACCOUNT_LOCKED_MESSAGE,
-      ],
-      genericMessage: 'Não foi possível entrar com a biometria. Use sua senha.',
-    })
-  }
-}
+  },
+)

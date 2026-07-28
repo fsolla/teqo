@@ -21,6 +21,7 @@ import {
   CAMPAIGN_BIOMETRIC_DUPLICATE_DEVICE_MESSAGE,
   CAMPAIGN_BIOMETRIC_UNSUPPORTED_MESSAGE,
 } from '@/lib/campaignAuthCopy'
+import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import {
   CAMPAIGN_WEBAUTHN_ROUTES,
   type CampaignPasskeyView,
@@ -30,21 +31,21 @@ import {
 } from '@/lib/campaignWebAuthn'
 import { CampaignWebAuthnError } from '@/lib/campaignWebAuthnSupport'
 
+/**
+ * Transport is `postCampaignJson`; this adds the two things the ceremonies need
+ * on top of it. The status is dropped on purpose — a 403/409/500 from these
+ * routes still carries the typed envelope, so the discriminant decides — and a
+ * response that is not JSON at all (proxy error page, offline) surfaces as one
+ * sentence instead of a `SyntaxError` about position 0. A rejection that is not
+ * a parse failure is a network failure and is rethrown untouched.
+ */
 const postJson = async <Response>(path: string, body?: unknown): Promise<Response> => {
-  const response = await fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    credentials: 'same-origin',
-    body: JSON.stringify(body ?? {}),
-  })
-
-  // A 409/403/500 from these routes still carries the typed envelope, so the
-  // discriminant — not the status — decides. A non-JSON error page (proxy,
-  // offline) is the only case that has to be invented here.
   try {
-    return (await response.json()) as Response
-  } catch {
-    throw new Error('Resposta inválida do servidor.')
+    const { payload } = await postCampaignJson<Response>(path, body ?? {})
+    return payload
+  } catch (error) {
+    if (error instanceof SyntaxError) throw new Error('Resposta inválida do servidor.')
+    throw error
   }
 }
 

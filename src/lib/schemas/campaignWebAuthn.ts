@@ -62,4 +62,13 @@ export const campaignPasskeyRemoveSchema = z.object({
   passkeyId: positiveRelationshipId,
 })
 
+/**
+ * The two `*-options` routes have nothing to validate: what ceremony to open is
+ * decided by the session, or by nothing at all in the anonymous case. They still
+ * go through `campaignJsonMutationRoute` — the same-origin check is the point of
+ * that shell — and it always parses a body, so the client posts `{}` and this is
+ * what "no input" looks like at the boundary.
+ */
+export const campaignWebAuthnNoBodySchema = z.unknown()
+
 export type CampaignPasskeyRemoveInput = z.infer<typeof campaignPasskeyRemoveSchema>
