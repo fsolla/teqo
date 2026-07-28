@@ -7,9 +7,21 @@ import { voteEstimateScenarioFieldsSchema } from '@/lib/schemas/votePledge'
 export const politicalTrendStatuses = ['favoravel', 'neutra', 'desfavoravel'] as const
 export type PoliticalTrendStatusValue = (typeof politicalTrendStatuses)[number]
 
+/**
+ * Anti-payload bound, not a domain rule: `municipality.stateDeputies` has no
+ * product-level ceiling (a município can be dobrado with any number of
+ * deputados), and the catalog itself caps out at 435. Named so the chip-batch
+ * write (B37) and this whole-array strategy update stay on the same number —
+ * they parse through the same schema, and a batch write that pushed past a
+ * lower bound would leave the strategy ficha unsavable on its next submit.
+ */
+export const MAX_STATE_DEPUTIES_PER_MUNICIPALITY = 435
+
+export const MUNICIPALITY_STATE_DEPUTIES_CAP_MESSAGE = `Cada município aceita no máximo ${MAX_STATE_DEPUTIES_PER_MUNICIPALITY} dobradinhas.`
+
 const stateDeputiesArraySchema = z
   .array(positiveRelationshipId)
-  .max(20)
+  .max(MAX_STATE_DEPUTIES_PER_MUNICIPALITY)
   .transform((ids) => [...new Set(ids)])
 
 export const municipalityStrategyUpdateSchema = z.object({

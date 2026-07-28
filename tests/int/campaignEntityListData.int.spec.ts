@@ -303,7 +303,7 @@ describe('loadStateDeputyListPageData', () => {
     expect(result.rows[0]).toMatchObject({
       slug: stateDeputy.slug,
       party: 'PT',
-      municipalityCount: 0,
+      municipalityIDs: [],
       leaderships: [],
     })
   })

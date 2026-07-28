@@ -1,11 +1,31 @@
 # Chips editáveis de municípios na lista de dobradinhas (paridade com Assessores)
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue (2026-07-28)
+Atualizado em: 2026-07-28
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B37**)
 Impeccable: B — encaixe na coluna "Municípios" de `/campanha/dobradinhas`; sem rota nova
 Appetite: ~0,75–1 dia eng — 1 componente de célula novo (Popover + Command), 2 server actions + schema + helper puro, ajuste no loader da lista; sem migration. (Menor que o B34 análogo: sem piso mínimo, sem `assertMunicipalitiesWithinScope`, lock por município em vez de por documento.)
 Responsável: —
+
+## Entregue (2026-07-28) — as-built
+
+**A célula é a mesma peça do B34, sem cópia.** Este item não construiu `StateDeputyMunicipalitiesCell` nem um provider novo — plugou `shared/MunicipalityPortfolioCell` (já promovida pelo B34 ✓) direto na coluna "Municípios" de `/campanha/dobradinhas`, com as costuras que o B34 já desenhou para isso: sem `minItems` (uma dobradinha pode ficar sem município — o piso deste plano nunca existiu no schema, e o comentário permanece correto), sem `maxItems` do lado da dobradinha (o teto que existe é por município — `MAX_STATE_DEPUTIES_PER_MUNICIPALITY`, inalterado), `addableIds` só quando o ator é `advisor`. O container herda **integralmente** a decisão do B34: sempre editável em `pointer-fine` (chips + "×" no hover/foco + input de busca na própria linha), Drawer em `pointer-coarse` — nenhuma decisão de container nova foi tomada aqui, e o "conflito com o pedido literal" registrado abaixo já estava fechado antes deste item começar (ver B34 ✓ e a nota B34/B36/B37 em `codebase-map.mdc`).
+
+**Generalização feita nesta entrega, não adiada para um "3º call site" futuro.** Este plano registrava a extração de um `RelationshipChipEditor` agnóstico em "Adiado com gatilho", esperando B31+B34+este landarem primeiro. Na crítica pós-implementação (`/simplify` + `/impeccable`) ficou visível que **este item já era o 3º call site**: `MunicipalityPortfolioCell` (município) e `LeadershipStateDeputyRelationCell` (dobradinha↔liderança, B31 ✓/B36 ✓) tinham interfaces incompatíveis para o mesmo padrão (delta otimista, undo, combobox ARIA, piso/teto, split pointer-fine/coarse) — P1 do critique. A resposta foi generalizar imediatamente em vez de registrar um quarto "adiado com gatilho": `src/components/campaign/shared/RelationChipCell.tsx` (813 linhas) nasceu como a máquina de interação única, e `MunicipalityPortfolioCell` (816 → ~180 linhas) e `LeadershipStateDeputyRelationCell` (450 → ~185 linhas) foram reduzidos a wrappers finos — chips/busca/`FormData`/copy por domínio, nada de interação duplicada. `LeadershipStateDeputyRelationCell` ganhou `ownerName` (para o Drawer e os `aria-label`) e perdeu sua própria implementação de Popover+Command, sem mudar contrato para os dois call sites existentes (`liderancas/page.tsx`, `dobradinhas/page.tsx`) além de passar o novo prop.
+
+**Segundo P1 do critique, também resolvido nesta entrega:** um assessor via — e tentava remover — chips de municípios fora do seu escopo, e a remoção falhava em silêncio no nível do documento (`canUpdateMunicipality` recusa, mas a célula não sabia explicar por quê). `MunicipalityPortfolioCell` agora filtra `municipalityIds` por `addableIds` quando presente (`visibleIds`), então um assessor só vê — e só pode tentar remover — municípios que administra; staff sem `addableIds` continua vendo e removendo todos os vínculos. Trade-off aceito: em uma janela rara de reatribuição de carteira, um piso client-side poderia recusar uma remoção que o servidor aceitaria — aceitável porque o servidor segue sendo a fonte de verdade e o pedido explícito era esconder, não apenas explicar.
+
+**Escrita:** `setStateDeputyMunicipalitiesBatch` — uma única action de lote (não a dupla delta+lote do plano), transacional, com lock por município (`municipality-state-deputies:{id}`, um por município tocado, ordenado) e leitura+escrita de `municipality.stateDeputies` com `overrideAccess: false` (o acesso real é `canUpdateMunicipality`; sem `assertMunicipalitiesWithinScope`, como planejado). **Falha em lote é tudo-ou-nada**: se qualquer município do lote está fora do escopo do assessor ou não existe, a transação inteira é revertida com uma mensagem única — decisão explícita desta sessão (rejeita a alternativa "aplica o que pode, ignora o resto", que deixaria o assessor sem saber quais municípios silenciosamente falharam). `nextStateDeputyMunicipalityIdsAfterMembership` (em `src/lib/municipalityStateDeputyMembership.ts`, puro) espelha `nextAdvisorIdsAfterMembership`.
+
+**Cap de 20 → 435 em `stateDeputiesArraySchema`** (`src/lib/schemas/municipality.ts`): o teto original de 20 dobradinhas por município era um vestígio de outra era do dado; com a coluna agora permitindo lote de território/ZE (até 435 municípios de uma vez do lado do dobradinha), o teto do lado do município precisava cobrir o universo inteiro em vez de truncar silenciosamente um lote grande. `MUNICIPALITY_STATE_DEPUTIES_CAP_MESSAGE` foi ajustado e reexportado como mensagem segura da nova action.
+
+**Loader:** `StateDeputyRowViewModel.municipalityCount` (número) → `municipalityIDs: number[]` — não o `{ id, name, slug }[]` do plano. Mesma razão do B34: a célula já recebe o catálogo completo (435 municípios) via `municipalityIndex`, então nome/slug/território resolvem no cliente e o loader não repete strings por linha.
+
+**Sem provider de contexto** (mesma decisão do B34): `municipalityIndex` e `addableIds` viajam como props da factory de colunas que o RSC monta uma vez por tabela.
+
+**Testes:** unit da lib pura (`municipalityStateDeputyMembership.unit.spec.ts`), int da action de lote (`campaignStateDeputyMunicipalityMembership.int.spec.ts` — escopo do assessor, teto, lock, tudo-ou-nada, no-op idempotente), e uma nova suite unit dedicada a `LeadershipStateDeputyRelationCell` (`leadershipStateDeputyRelationCell.unit.spec.ts`) que não existia antes desta entrega — o componente tinha zero cobertura própria.
+
+**Gate:** `tsc`/`lint`/`format:check`/`check:cycles` limpos; unit 651/651, int 452/452 (suítes completas, não só os arquivos tocados); Aikido 0 findings nos arquivos de primeira parte editados; `knip` bloqueado pela limitação pré-existente e já ledgerada de não conseguir carregar `payload.config.ts` (P3 em `TECH-DEBT.md`) — não uma regressão desta entrega.
 
 ## ⚠️ Conflito com o pedido literal — leia antes de implementar
 

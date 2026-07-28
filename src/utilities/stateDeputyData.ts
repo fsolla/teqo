@@ -23,7 +23,7 @@ export type StateDeputyRowViewModel = {
   name: string
   slug: string
   party: string | null
-  municipalityCount: number
+  municipalityIDs: number[]
   leaderships: LeadershipRelationSummary[]
 }
 
@@ -98,11 +98,14 @@ export const loadStateDeputyListPageData = async (
   ])
 
   const stateDeputyIDs = result.docs.map((doc) => doc.id)
-  const municipalityCounts = new Map<number, number>()
+  const municipalityIDsByDeputy = new Map<number, number[]>()
   const leadershipsByDeputy = new Map<number, LeadershipRelationSummary[]>()
 
   if (stateDeputyIDs.length) {
     const [municipalities, leaderships] = await Promise.all([
+      // Intentional admin bypass: the chips render outside an advisor's scope
+      // on purpose (B34 precedent) — an advisor must be able to see and undo
+      // a município link even outside their own portfolio.
       payload.find({
         collection: 'municipality',
         where: { stateDeputies: { in: stateDeputyIDs } },
@@ -130,7 +133,9 @@ export const loadStateDeputyListPageData = async (
       for (const deputy of municipality.stateDeputies ?? []) {
         const id = relationshipId(deputy)
         if (id !== null && stateDeputyIDs.includes(id)) {
-          municipalityCounts.set(id, (municipalityCounts.get(id) ?? 0) + 1)
+          const list = municipalityIDsByDeputy.get(id) ?? []
+          list.push(municipality.id)
+          municipalityIDsByDeputy.set(id, list)
         }
       }
     }
@@ -162,7 +167,7 @@ export const loadStateDeputyListPageData = async (
       name: doc.name,
       slug: doc.slug,
       party: doc.party ?? null,
-      municipalityCount: municipalityCounts.get(doc.id) ?? 0,
+      municipalityIDs: municipalityIDsByDeputy.get(doc.id) ?? [],
       leaderships: leadershipsByDeputy.get(doc.id) ?? [],
     })),
     totalDocs: result.totalDocs,

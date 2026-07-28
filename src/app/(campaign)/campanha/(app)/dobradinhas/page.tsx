@@ -10,11 +10,16 @@ import {
   CampaignListResults,
   CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
-import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
+import {
+  CampaignTable,
+  CampaignTableHead,
+  type CampaignTableColumn,
+} from '@/components/campaign/shared/CampaignTable'
 import {
   LeadershipStateDeputyRelationCell,
   type RelationCellOption,
 } from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
+import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { StateDeputyFilters } from '@/components/campaign/stateDeputy/StateDeputyFilters'
 import { StateDeputySortableHead } from '@/components/campaign/stateDeputy/StateDeputySortableHead'
@@ -27,11 +32,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
+import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import { cn } from '@/lib/utils'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
+import { getAdvisorMunicipalityIds, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { loadLeadershipOptions } from '@/utilities/campaignRelationOptions'
+import { loadMunicipalityPortfolioIndex } from '@/utilities/municipalityPortfolioIndex'
 import {
   loadStateDeputyListPageData,
   type StateDeputyRowViewModel,
@@ -50,7 +57,10 @@ import {
   type StateDeputyListState,
 } from '@/utilities/stateDeputyListUrl'
 
-import { setLeadershipStateDeputyMembershipFormAction } from './formActions'
+import {
+  setLeadershipStateDeputyMembershipFormAction,
+  setStateDeputyMunicipalitiesFormAction,
+} from './formActions'
 
 type StateDeputiesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -86,6 +96,8 @@ const stateDeputyColumns = (
   partyFilterOptions: StateDeputyFilterOption[],
   hasNoPartyOption: boolean,
   leadershipOptions: RelationCellOption[],
+  municipalityIndex: MunicipalityPortfolioIndexEntry[],
+  addableMunicipalityIds: ReadonlySet<number> | undefined,
 ): Array<CampaignTableColumn<StateDeputyRowViewModel>> => [
   {
     id: 'name',
@@ -118,8 +130,24 @@ const stateDeputyColumns = (
   {
     id: 'municipalities',
     label: 'Municípios',
-    cellClassName: 'tabular-nums',
-    cell: (row) => row.municipalityCount,
+    head: (
+      <CampaignTableHead description="Edite aqui: passe o mouse em um chip para remover, ou busque para adicionar. Um território ou ZE entra e sai como um bloco.">
+        Municípios
+      </CampaignTableHead>
+    ),
+    cellClassName: 'max-w-64 whitespace-normal',
+    cell: (row) => (
+      <MunicipalityPortfolioCell
+        ownerId={row.id}
+        ownerName={row.name}
+        municipalityIds={row.municipalityIDs}
+        municipalityIndex={municipalityIndex}
+        {...(addableMunicipalityIds ? { addableIds: addableMunicipalityIds } : {})}
+        commitAction={setStateDeputyMunicipalitiesFormAction}
+        drawerTitle="Municípios da dobradinha"
+        updateErrorMessage="Não foi possível atualizar os municípios."
+      />
+    ),
   },
   {
     id: 'leaderships',
@@ -129,6 +157,7 @@ const stateDeputyColumns = (
       <LeadershipStateDeputyRelationCell
         direction="fromStateDeputy"
         fixedId={row.id}
+        ownerName={row.name}
         items={row.leaderships.map((leadership) => ({
           id: leadership.id,
           label: leadership.name,
@@ -150,9 +179,16 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
   if (!user) redirect('/campanha/login')
   if (!isCampaignStaff(user)) redirect('/campanha')
 
-  const [{ rows, totalDocs, totalPages, filterFacets }, leadershipOptions] = await Promise.all([
+  const [
+    { rows, totalDocs, totalPages, filterFacets },
+    leadershipOptions,
+    municipalityIndex,
+    administeredIds,
+  ] = await Promise.all([
     loadStateDeputyListPageData(payload, user, canonicalUrl.state),
     loadLeadershipOptions(payload, user),
+    loadMunicipalityPortfolioIndex(payload),
+    user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
   ])
   const resolvedUrl = resolveStateDeputyListUrl(rawSearchParams, totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
@@ -175,6 +211,8 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
         href: `/campanha/liderancas/${option.id}`,
       },
     })),
+    municipalityIndex,
+    administeredIds ? new Set(administeredIds) : undefined,
   )
 
   return (
@@ -183,8 +221,8 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">Dobradinhas</h1>
           <p className="text-muted-foreground">
-            Deputados estaduais com quem a campanha dobra — vincule lideranças na própria lista e
-            municípios nas fichas correspondentes.
+            Deputados estaduais com quem a campanha dobra — vincule lideranças e municípios direto
+            na lista.
           </p>
         </div>
         <Button asChild className="min-h-11">
