@@ -30,6 +30,10 @@ import {
   EmptyTitle,
 } from '@/components/ui/Empty'
 import {
+  resolveVisibleColumns,
+  type CampaignColumnVisibility,
+} from '@/lib/campaignColumnVisibility'
+import {
   formatElectionNumber,
   formatPlacementOrdinal,
   formatVoteSharePercent,
@@ -45,6 +49,7 @@ import {
   municipalityPriorityLabels,
   territorialClassBadgeVariant,
   territorialClassLabels,
+  type MunicipalityListColumnId,
 } from '@/utilities/municipalityLabels'
 import {
   clearMunicipalityListFilters,
@@ -53,6 +58,7 @@ import {
 import {
   buildMunicipalityListHref,
   formatMunicipalityListSortSummary,
+  municipalityColumnLabels,
   resolveMunicipalityListSort,
   type MunicipalityListState,
 } from '@/utilities/municipalityListUrl'
@@ -98,6 +104,8 @@ export type MunicipalityListProps = {
   columnFilterOptions: MunicipalityColumnFilterOptions
   signalFormAction: MunicipalityStaffFormAction
   state: MunicipalityListState
+  /** B17 — optional only because the unit tests render this list without a cookie. */
+  columnVisibility?: CampaignColumnVisibility
 }
 
 const VotePositionReadout = ({
@@ -253,9 +261,12 @@ const municipalityListColumns = ({
   advisorNamesById,
   advisorOptions,
   signalFormAction,
-}: MunicipalityListProps): Array<CampaignTableColumn<MunicipalityListViewModel>> => [
+}: MunicipalityListProps): Array<
+  CampaignTableColumn<MunicipalityListViewModel> & { id: MunicipalityListColumnId }
+> => [
   {
     id: 'name',
+    label: municipalityColumnLabels.name,
     mandatory: true,
     head: (
       <MunicipalitySortableHead
@@ -287,6 +298,7 @@ const municipalityListColumns = ({
   },
   {
     id: 'region',
+    label: municipalityColumnLabels.region,
     head: (
       <MunicipalitySortableHead
         state={state}
@@ -303,6 +315,7 @@ const municipalityListColumns = ({
   },
   {
     id: 'kind',
+    label: municipalityColumnLabels.kind,
     head: (
       <MunicipalitySortableHead
         state={state}
@@ -317,6 +330,7 @@ const municipalityListColumns = ({
   },
   {
     id: 'votos',
+    label: municipalityColumnLabels.votos,
     head: (
       <MunicipalitySortableHead
         state={state}
@@ -339,6 +353,7 @@ const municipalityListColumns = ({
           // Sits right after "2022": both read the same TSE artifact, and the
           // class is the one-word summary of the votes beside it.
           id: 'classe',
+          label: municipalityColumnLabels.classe,
           head: (
             <MunicipalitySortableHead
               state={state}
@@ -360,12 +375,13 @@ const municipalityListColumns = ({
         {
           // Right after "Classe": the pair reads diagnosis then decision.
           id: 'level',
+          label: municipalityColumnLabels.level,
           head: (
             <MunicipalitySortableHead
               state={state}
               sortKey="nivel"
               filterParam="level"
-              description={municipalityColumnDescriptions.nivel}
+              description={municipalityColumnDescriptions.level}
             >
               Nível
             </MunicipalitySortableHead>
@@ -398,6 +414,7 @@ const municipalityListColumns = ({
         },
         {
           id: 'advisors',
+          label: municipalityColumnLabels.advisors,
           head: (
             <MunicipalitySortableHead
               state={state}
@@ -436,6 +453,7 @@ const municipalityListColumns = ({
         },
         {
           id: 'trend',
+          label: municipalityColumnLabels.trend,
           head: (
             <MunicipalitySortableHead
               state={state}
@@ -458,6 +476,7 @@ const municipalityListColumns = ({
         },
         {
           id: 'expectedVotes',
+          label: municipalityColumnLabels.expectedVotes,
           head: (
             <MunicipalitySortableHead
               state={state}
@@ -483,6 +502,7 @@ const municipalityListColumns = ({
         },
         {
           id: 'lastSignal',
+          label: municipalityColumnLabels.lastSignal,
           head: (
             <MunicipalitySortableHead
               state={state}
@@ -507,6 +527,7 @@ const municipalityListColumns = ({
         },
         {
           id: 'goalCoverage',
+          label: municipalityColumnLabels.goalCoverage,
           head: (
             <MunicipalitySortableHead
               state={state}
@@ -522,10 +543,13 @@ const municipalityListColumns = ({
             />
           ),
         },
-      ] satisfies Array<CampaignTableColumn<MunicipalityListViewModel>>)
+      ] satisfies Array<
+        CampaignTableColumn<MunicipalityListViewModel> & { id: MunicipalityListColumnId }
+      >)
     : ([
         {
           id: 'lastUpdateAt',
+          label: municipalityColumnLabels.lastUpdateAt,
           head: (
             <MunicipalitySortableHead
               state={state}
@@ -540,7 +564,9 @@ const municipalityListColumns = ({
               ? dateFormatter.format(new Date(municipality.lastUpdateAt))
               : 'Sem atualização',
         },
-      ] satisfies Array<CampaignTableColumn<MunicipalityListViewModel>>)),
+      ] satisfies Array<
+        CampaignTableColumn<MunicipalityListViewModel> & { id: MunicipalityListColumnId }
+      >)),
 ]
 
 export const MunicipalityList = (props: MunicipalityListProps) => {
@@ -549,6 +575,12 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
   const { sort: activeSort, dir: activeDir } = resolveMunicipalityListSort(state)
   const sortSummary = formatMunicipalityListSortSummary(activeSort, activeDir)
   const columns = municipalityListColumns(props)
+  // Asks the same function the table asks, so a column that becomes
+  // `mandatory` cannot be on screen while the caption denies it.
+  const showsVoteColumn = resolveVisibleColumns(
+    columns,
+    props.columnVisibility?.hiddenColumnIds,
+  ).some((column) => column.id === 'votos')
 
   return (
     <>
@@ -726,10 +758,12 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
         headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
         caption={
           <>
-            {sortSummary}. Coluna 2022: {municipalityColumnDescriptions.votos}
+            {sortSummary}
+            {showsVoteColumn ? `. Coluna 2022: ${municipalityColumnDescriptions.votos}` : null}
           </>
         }
         columns={columns}
+        columnVisibility={props.columnVisibility}
         rows={municipalities}
         rowKey={(municipality) => municipality.id}
         empty={<MunicipalityListEmptyState state={state} />}

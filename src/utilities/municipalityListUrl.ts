@@ -23,6 +23,7 @@ import {
 import {
   politicalTrendLabels,
   territorialClassLabels,
+  type MunicipalityListColumnId,
   type PoliticalTrendStatus,
 } from '@/utilities/municipalityLabels'
 import type { MunicipalityTerritorialClass } from '@/utilities/municipalityTerritorialClass'
@@ -90,6 +91,31 @@ export const municipalityListSortLabels: Record<MunicipalityListSortKey, string>
   frescor: 'Frescor do sinal',
   classe: 'Classe',
   nivel: 'Nível',
+}
+
+/**
+ * B17 — the name each column answers to in the column picker. Ten of the
+ * twelve quote the sort label the header already renders
+ * (`MunicipalitySortableHead` resolves its text from that record), so renaming
+ * a header renames the menu entry with it. The two that differ do so on
+ * purpose: a header sits above its own data and can be telegraphic, while the
+ * same word alone in a list of column names says nothing.
+ */
+export const municipalityColumnLabels: Record<MunicipalityListColumnId, string> = {
+  name: municipalityListSortLabels.name,
+  region: municipalityListSortLabels.region,
+  kind: municipalityListSortLabels.kind,
+  /** Header is the bare year, under the "2022" group of the table. */
+  votos: 'Votação 2022',
+  classe: municipalityListSortLabels.classe,
+  level: municipalityListSortLabels.nivel,
+  advisors: municipalityListSortLabels.coverage,
+  trend: municipalityListSortLabels.trend,
+  expectedVotes: municipalityListSortLabels.expectedVotes,
+  /** The column shows the signal; `frescor` sorts by how old it is. */
+  lastSignal: 'Último sinal',
+  goalCoverage: municipalityListSortLabels.deficit,
+  lastUpdateAt: municipalityListSortLabels.lastUpdateAt,
 }
 
 export type MunicipalityListState = {

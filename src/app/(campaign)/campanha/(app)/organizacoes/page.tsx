@@ -11,17 +11,14 @@ import {
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
-import {
-  CampaignTable,
-  CampaignTableHead,
-  type CampaignTableColumn,
-} from '@/components/campaign/shared/CampaignTable'
+import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import {
   buildOrganizationListHref,
   loadOrganizationListPageData,
@@ -36,8 +33,8 @@ type OrganizationsPageProps = {
 const organizationColumns: Array<CampaignTableColumn<OrganizationRowViewModel>> = [
   {
     id: 'name',
+    label: 'Nome',
     mandatory: true,
-    head: <CampaignTableHead>Nome</CampaignTableHead>,
     cell: (row) => (
       <Link
         href={`/campanha/organizacoes/${row.slug}`}
@@ -49,18 +46,18 @@ const organizationColumns: Array<CampaignTableColumn<OrganizationRowViewModel>> 
   },
   {
     id: 'kind',
-    head: <CampaignTableHead>Tipo</CampaignTableHead>,
+    label: 'Tipo',
     cell: (row) => <Badge variant="secondary">{organizationKindLabels[row.kind]}</Badge>,
   },
   {
     id: 'municipalities',
-    head: <CampaignTableHead>Municípios de atuação</CampaignTableHead>,
+    label: 'Municípios de atuação',
     cellClassName: 'max-w-64 whitespace-normal text-muted-foreground',
     cell: (row) => row.municipalityNames.join(', ') || '—',
   },
   {
     id: 'leaderships',
-    head: <CampaignTableHead>Lideranças</CampaignTableHead>,
+    label: 'Lideranças',
     cellClassName: 'tabular-nums',
     cell: (row) => row.leadershipCount,
   },
@@ -74,6 +71,7 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
 
   const state = parseOrganizationListParams(rawSearchParams)
   const { rows, totalDocs, totalPages } = await loadOrganizationListPageData(payload, user, state)
+  const columnVisibility = await readCampaignColumnVisibility('organizacoes')
 
   return (
     <CampaignPageShell>
@@ -104,7 +102,12 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
         <CampaignListResults>
           {rows.length ? (
             <>
-              <CampaignTable columns={organizationColumns} rows={rows} rowKey={(row) => row.id} />
+              <CampaignTable
+                columns={organizationColumns}
+                columnVisibility={columnVisibility}
+                rows={rows}
+                rowKey={(row) => row.id}
+              />
               <CampaignListFooter
                 totalDocs={totalDocs}
                 singular="organização"

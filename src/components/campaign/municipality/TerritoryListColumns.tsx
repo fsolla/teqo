@@ -17,7 +17,7 @@ import {
 } from '@/utilities/municipalityLabels'
 import type { TerritoryFilterOption } from '@/utilities/territoryListFilters'
 import { territoryColumnDescriptions } from '@/utilities/territoryListLabels'
-import type { TerritoryListState } from '@/utilities/territoryListUrl'
+import { territoryListSortLabels, type TerritoryListState } from '@/utilities/territoryListUrl'
 import type { TerritoryTableRow } from '@/utilities/territoryOverview'
 
 const percentFormatter = new Intl.NumberFormat('pt-BR', {
@@ -146,7 +146,7 @@ export const territoryListColumns = ({
   {
     id: 'region',
     mandatory: true,
-    defaultVisible: true,
+    label: territoryListSortLabels.region,
     head: (
       <TerritorySortableHead
         state={state}
@@ -173,7 +173,7 @@ export const territoryListColumns = ({
   },
   {
     id: 'municipalities',
-    defaultVisible: true,
+    label: territoryListSortLabels.municipalities,
     head: (
       <TerritorySortableHead
         state={state}
@@ -187,7 +187,7 @@ export const territoryListColumns = ({
   },
   {
     id: 'votes2022',
-    defaultVisible: true,
+    label: territoryListSortLabels.votes2022,
     head: (
       <TerritorySortableHead
         state={state}
@@ -201,7 +201,7 @@ export const territoryListColumns = ({
   },
   {
     id: 'pct',
-    defaultVisible: true,
+    label: territoryListSortLabels.pct,
     head: (
       <TerritorySortableHead
         state={state}
@@ -216,7 +216,7 @@ export const territoryListColumns = ({
   },
   {
     id: 'validVotes2022',
-    defaultVisible: true,
+    label: territoryListSortLabels.validVotes2022,
     head: (
       <TerritorySortableHead
         state={state}
@@ -230,7 +230,7 @@ export const territoryListColumns = ({
   },
   {
     id: 'estimate2026',
-    defaultVisible: true,
+    label: territoryListSortLabels.estimate2026,
     head: (
       <TerritorySortableHead
         state={state}
@@ -245,7 +245,7 @@ export const territoryListColumns = ({
   },
   {
     id: 'cobertura',
-    defaultVisible: true,
+    label: territoryListSortLabels.cobertura,
     head: (
       <TerritorySortableHead
         state={state}
@@ -271,7 +271,7 @@ export const territoryListColumns = ({
   },
   {
     id: 'captura',
-    defaultVisible: true,
+    label: territoryListSortLabels.captura,
     head: (
       <TerritorySortableHead
         state={state}
@@ -286,7 +286,7 @@ export const territoryListColumns = ({
   },
   {
     id: 'classe',
-    defaultVisible: true,
+    label: territoryListSortLabels.classe,
     head: (
       <TerritorySortableHead
         state={state}
@@ -302,7 +302,7 @@ export const territoryListColumns = ({
   },
   {
     id: 'coverage',
-    defaultVisible: true,
+    label: territoryListSortLabels.coverage,
     head: (
       <TerritorySortableHead
         state={state}

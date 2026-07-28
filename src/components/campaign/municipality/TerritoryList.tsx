@@ -12,6 +12,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
+import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
 import { territoryAnchorId } from '@/lib/territoryAnchor'
 import { cn } from '@/lib/utils'
 import {
@@ -54,10 +55,12 @@ export const TerritoryList = ({
   rows,
   state,
   regionOptions,
+  columnVisibility,
 }: {
   rows: TerritoryOverviewRow[]
   state: TerritoryListState
   regionOptions: TerritoryFilterOption[]
+  columnVisibility: CampaignColumnVisibility
 }) => {
   const { sort, dir } = resolveTerritoryListSort(state)
   const sortSummary = formatTerritoryListSortSummary(sort, dir)
@@ -73,6 +76,7 @@ export const TerritoryList = ({
         containerClassName="overflow-x-auto"
         headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
         columns={territoryListColumns({ state, regionOptions })}
+        columnVisibility={columnVisibility}
         rows={flattenTerritoryRows(rows)}
         rowKey={(row) =>
           row.variant === 'parent' ? row.region : `${row.parentRegion}-${row.label}`
