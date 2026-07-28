@@ -4,16 +4,19 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/municipality/MunicipalityListAdvisorsControl'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
+import { MunicipalityListLevelControl } from '@/components/campaign/municipality/MunicipalityListLevelControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import type { CampaignCellEditOverlayVariant } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 
 /**
- * B42: the three auto-save quick-edit cells of `/campanha/municipios` share one
- * container (`CampaignCellEditOverlay`) that is a Popover in the desktop table
- * and a bottom Drawer in the mobile card. These cases pin the part a call site
- * can silently get wrong — which container it renders and whether the touch
- * surface says which município is being edited — for all three at once.
+ * B42: the quick-edit cells of `/campanha/municipios` share one container
+ * (`CampaignCellEditOverlay`) that is a Popover in the desktop table and a
+ * bottom Drawer in the mobile card. These cases pin the part a call site can
+ * silently get wrong — which container it renders and whether the touch surface
+ * says which município is being edited — for all of them at once. Three
+ * auto-save; the level cell (E14) submits explicitly and is here for the
+ * container contract all four share.
  */
 const MUNICIPALITY_NAME = 'Feira de Santana'
 
@@ -69,6 +72,20 @@ const overlayCases: OverlayCase[] = [
         municipalityName: MUNICIPALITY_NAME,
         expectedVotes: toVoteEstimateScenarioViewModel({ central: 1200 }),
         pledgeCoverage: null,
+        variant,
+      }),
+  },
+  {
+    name: 'nível de envolvimento',
+    triggerLabel: `Nível de envolvimento de ${MUNICIPALITY_NAME}: N3 · Rede + agenda`,
+    drawerTitle: 'Registrar nível de envolvimento',
+    element: (variant) =>
+      createElement(MunicipalityListLevelControl, {
+        municipalityID: 1,
+        municipalityName: MUNICIPALITY_NAME,
+        level: 'n3',
+        levelNote: 'Rede montada e giro agendado',
+        levelChangedAt: '2026-07-01T12:00:00.000Z',
         variant,
       }),
   },

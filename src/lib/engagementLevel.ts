@@ -47,7 +47,7 @@ const engagementLevelNames: Record<EngagementLevel, string> = {
 
 /**
  * "N3 · Rede + agenda" — the numeral alone is the badge, this is the tooltip.
- * Here rather than in `municipalityLabels` so the Popover island can name a
+ * Here rather than in `municipalityLabels` so the client island can name a
  * level without importing a module that builds the 435-entry catalog and the
  * concept glossary at init.
  */

@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
-import type {
-  MunicipalityListEngagementLevelResponse,
-  MunicipalityListSavedEngagementLevel,
-} from '@/app/(campaign)/campanha/(app)/municipios/engagement-level/types'
+import type { MunicipalityListEngagementLevelResponse } from '@/app/(campaign)/campanha/(app)/municipios/engagement-level/types'
 import { MunicipalityLevelBadge } from '@/components/campaign/municipality/MunicipalityLevelBadge'
 import {
   CampaignCellEditOverlay,
@@ -20,6 +18,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import {
   EMPTY_ENGAGEMENT_LEVEL_LABEL,
+  ENGAGEMENT_LEVEL_RULES,
   ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH,
   engagementLevelRank,
   engagementLevels,
@@ -43,7 +42,7 @@ type MunicipalityListLevelControlProps = {
 }
 
 /**
- * E14 — unlike the trend and estimate popovers next to it, this one submits
+ * E14 — unlike the trend and estimate cells next to it, this one submits
  * explicitly: a movement carries a motivo AND the signals that would reverse
  * it, and it may need an override. Auto-saving half of that would file an
  * incomplete decision under the coordinator's name.
@@ -57,10 +56,18 @@ export const MunicipalityListLevelControl = ({
   variant,
 }: MunicipalityListLevelControlProps) => {
   const [open, setOpen] = useState(false)
-  const [saved, setSaved] = useState<MunicipalityListSavedEngagementLevel | null>(
-    level ? { level, note: levelNote, changedAt: levelChangedAt } : null,
-  )
-  // Seeded by `resetDraft` on every open; while closed the popover body — and
+  // Not the route's success payload: that one always names a level, and a row
+  // need not have one.
+  const [saved, setSaved] = useState<{
+    level: EngagementLevel | null
+    note: string | null
+    changedAt: string | null
+  }>({
+    level,
+    note: levelNote,
+    changedAt: levelChangedAt,
+  })
+  // Seeded by `resetDraft` on every open; while closed the overlay body — and
   // with it the select — is not mounted.
   const [draftLevel, setDraftLevel] = useState<EngagementLevel | ''>('')
   const [note, setNote] = useState('')
@@ -76,7 +83,16 @@ export const MunicipalityListLevelControl = ({
     violations: EngagementLevelViolation[]
   } | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const openRef = useRef(false)
   const lastPropsRef = useRef({ level, levelNote, levelChangedAt })
+
+  // Closing unmounts the Alert and the live region, and nothing aborts a
+  // movement already in flight — so a failure after that would be silent.
+  // Same shape as the trend and estimate controls.
+  const reportFailure = (message: string) => {
+    setErrorMessage(message)
+    if (!openRef.current) toast.error(message)
+  }
 
   // Adopt the server value when it changes from outside (navigation / refresh).
   useEffect(() => {
@@ -88,13 +104,16 @@ export const MunicipalityListLevelControl = ({
     )
       return
     lastPropsRef.current = { level, levelNote, levelChangedAt }
-    setSaved(level ? { level, note: levelNote, changedAt: levelChangedAt } : null)
+    setSaved({ level, note: levelNote, changedAt: levelChangedAt })
   }, [level, levelNote, levelChangedAt])
 
   useEffect(() => () => abortRef.current?.abort(), [])
 
-  const currentLevel = saved?.level ?? null
-  const currentNote = saved?.note ?? null
+  const currentLevel = saved.level
+  const currentNote = saved.note
+  const currentLabel = currentLevel
+    ? formatEngagementLevelLabel(currentLevel)
+    : EMPTY_ENGAGEMENT_LEVEL_LABEL
   const isMovement = draftLevel !== '' && draftLevel !== currentLevel
 
   // The rules are pure and client-safe, so the coordinator sees why a movement
@@ -105,7 +124,7 @@ export const MunicipalityListLevelControl = ({
     ? getEngagementLevelViolations({
         from: currentLevel,
         to: draftLevel,
-        levelChangedAt: saved?.changedAt ?? null,
+        levelChangedAt: saved.changedAt,
         now: new Date(),
         triangulatedShock,
       })
@@ -123,7 +142,8 @@ export const MunicipalityListLevelControl = ({
   const isJump =
     isMovement &&
     currentLevel !== null &&
-    Math.abs(engagementLevelRank[draftLevel] - engagementLevelRank[currentLevel]) > 1
+    Math.abs(engagementLevelRank[draftLevel] - engagementLevelRank[currentLevel]) >
+      ENGAGEMENT_LEVEL_RULES.maxStepsWithoutShock
 
   const resetDraft = () => {
     setDraftLevel(currentLevel ?? '')
@@ -137,6 +157,7 @@ export const MunicipalityListLevelControl = ({
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) resetDraft()
+    openRef.current = nextOpen
     setOpen(nextOpen)
   }
 
@@ -165,31 +186,42 @@ export const MunicipalityListLevelControl = ({
         }),
       })
 
+      // Deliberately not gated on `response.ok` the way the siblings are:
+      // `blocked` arrives as a 409 carrying the violations the coordinator may
+      // override, so the status line is not the signal here — the discriminant is.
       const payload = (await response.json()) as MunicipalityListEngagementLevelResponse
 
       if (payload.status === 'success') {
         setSaved(payload.savedLevel)
-        setOpen(false)
+        handleOpenChange(false)
         return
       }
 
-      // A blocked movement keeps the popover open with the draft intact: the
+      // A blocked movement keeps the overlay open with the draft intact: the
       // next click is "override", not "type it all again".
       if (payload.status === 'blocked') {
         setServerBlock({ level: draftLevel, violations: payload.violations })
         return
       }
 
-      setErrorMessage(payload.message)
+      reportFailure(payload.message)
     } catch {
-      setErrorMessage(SAVE_ERROR_MESSAGE)
+      // Network failure, a non-JSON error page, or the unmount abort below —
+      // only the first two have anyone left to tell.
+      if (controller.signal.aborted) return
+      reportFailure(SAVE_ERROR_MESSAGE)
     } finally {
       setIsPending(false)
     }
   }
 
-  const canSubmit = isMovement && note.trim().length > 0 && reversalSignals.trim().length > 0
+  const canSubmit =
+    isMovement &&
+    note.trim().length > 0 &&
+    reversalSignals.trim().length > 0 &&
+    (violations.length === 0 || override)
   const fieldId = (suffix: string) => `municipality-list-level-${suffix}-${municipalityID}`
+  const isSheet = variant === 'sheet'
 
   return (
     <CampaignCellEditOverlay
@@ -198,13 +230,12 @@ export const MunicipalityListLevelControl = ({
       onOpenChange={handleOpenChange}
       title="Registrar nível de envolvimento"
       description={municipalityName}
-      triggerLabel={`Nível de envolvimento de ${municipalityName}: ${
-        currentLevel ? formatEngagementLevelLabel(currentLevel) : EMPTY_ENGAGEMENT_LEVEL_LABEL
-      }`}
+      triggerLabel={`Nível de envolvimento de ${municipalityName}: ${currentLabel}`}
+      triggerBusy={isPending}
       tooltipContent={
         currentLevel ? (
           <div className="space-y-1">
-            <p>{formatEngagementLevelLabel(currentLevel)}</p>
+            <p>{currentLabel}</p>
             {currentNote ? <p className="whitespace-pre-wrap">{currentNote}</p> : null}
           </div>
         ) : null
@@ -216,8 +247,8 @@ export const MunicipalityListLevelControl = ({
         // level out there and stays the bare numeral in the table.
         <MunicipalityLevelBadge
           level={currentLevel}
-          note={variant === 'sheet' ? currentNote : null}
-          layout={variant === 'sheet' ? 'card' : 'table'}
+          note={isSheet ? currentNote : null}
+          layout={isSheet ? 'card' : 'table'}
         />
       }
     >
@@ -265,7 +296,7 @@ export const MunicipalityListLevelControl = ({
           />
         </Field>
         {isJump ? (
-          <Field orientation="horizontal">
+          <Field orientation="horizontal" className={isSheet ? 'min-h-11' : undefined}>
             <Checkbox
               id={fieldId('shock')}
               checked={triangulatedShock}
@@ -289,7 +320,7 @@ export const MunicipalityListLevelControl = ({
                 </ul>
               </AlertDescription>
             </Alert>
-            <Field orientation="horizontal">
+            <Field orientation="horizontal" className={isSheet ? 'min-h-11' : undefined}>
               <Checkbox
                 id={fieldId('override')}
                 checked={override}
@@ -310,8 +341,9 @@ export const MunicipalityListLevelControl = ({
         ) : null}
         <Button
           type="button"
-          size="sm"
-          disabled={!canSubmit || isPending || (violations.length > 0 && !override)}
+          size={isSheet ? 'default' : 'sm'}
+          className={isSheet ? 'min-h-11 w-full' : undefined}
+          disabled={!canSubmit || isPending}
           onClick={() => void submit()}
         >
           {isPending ? <Spinner className="size-3.5" aria-hidden /> : null}

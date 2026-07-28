@@ -44,8 +44,12 @@ export async function POST(
     return NextResponse.json({
       status: 'success',
       message: 'Nível de envolvimento registrado.',
+      // Echoes the document, never the request: with `overrideAccess: false`
+      // Payload drops a field the actor cannot write instead of refusing the
+      // update, so reporting the requested level could claim a movement that
+      // never landed.
       savedLevel: {
-        level: movement.level,
+        level: updated.engagementLevel ?? movement.level,
         note: updated.levelNote ?? null,
         changedAt: updated.levelChangedAt ?? null,
       },
