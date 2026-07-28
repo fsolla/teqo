@@ -103,6 +103,10 @@ Decididos nesta sessão, com o gatilho de cada um:
 - **Padrões J como sugestão automática** → E11 fase 2.
 - **Entidade `tour` persistida** (com resultado do giro) → 3º giro real composto e time pedindo visão consolidada pós-giro.
 
+Um débito de engenharia ficou registrado aqui em vez de virar ID, na triage do fechamento (2026-07-27):
+
+- **Um loader batelado da conta da cadeira.** O planejador compõe `loadStatewideSuggestedGoals` + `computeGoalCoverage` diretamente, como faz `loadMunicipalityGoalCoverageBundle` (E8) — são as mesmas primitivas, não um segundo orquestrador, e não há laço de `await` por município. Mas os dois divergem de propósito no dado ausente: a lista **preenche** meta zero para um slug fora do catálogo (a linha existe e tem de aparecer) e o planejador **descarta** o município (não se propõe visita sem base para raciocinar). Um revisor do `/simplify` leu isso como definição conflitante; é intencional, e por isso está dito aqui. Revisitar quando: um **3º** consumidor compor essas primitivas fora de `municipalityGoalAccount.ts` — aí a política de dado ausente passa a ser argumento do loader, em vez de convenção repetida em três lugares.
+
 ## Dependências
 
 - Duras: **E8 ✓** (volume/headroom), **C12 ✓** (`origin`). Suaves: **E16 ✓** dossiê ([dossie-municipio.md](dossie-municipio.md) — preparação da visita, link por município do giro), **E12 ✓** (rollup de TI), **E4R ✓** (semeou `stateDeputies` e `politicalTrend`, que sustentam a condição de janela), **A6** dobradinha (janela política ganha dado real pós-15/08), **E14** (níveis alimentam o "não vá" quando existirem).
