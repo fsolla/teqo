@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, type ReactNode } from 'react'
 
 import { changeCampaignPasswordFormAction } from '@/app/(campaign)/campanha/actions/password'
 import {
@@ -24,6 +24,8 @@ type CampaignProfileSettingsProps = {
     username?: string | null
   }
   passwordResetBanner?: boolean
+  /** Server-composed biometric card (B40), rendered between photo and password. */
+  biometricsSlot: ReactNode
 }
 
 const FormActionStatus = ({ state }: { state: CampaignFormActionState }) => {
@@ -44,6 +46,7 @@ const FormActionStatus = ({ state }: { state: CampaignFormActionState }) => {
 export const CampaignProfileSettings = ({
   user,
   passwordResetBanner = false,
+  biometricsSlot,
 }: CampaignProfileSettingsProps) => {
   const [passwordState, passwordAction, passwordPending] = useActionState(
     changeCampaignPasswordFormAction,
@@ -63,7 +66,7 @@ export const CampaignProfileSettings = ({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Meu perfil</h1>
         <p className="text-sm text-muted-foreground">
-          Gerencie sua foto e senha de acesso à ferramenta de campanha.
+          Gerencie sua foto, sua senha e a entrada por biometria.
         </p>
       </div>
 
@@ -148,6 +151,8 @@ export const CampaignProfileSettings = ({
           ) : null}
         </CardContent>
       </Card>
+
+      {biometricsSlot}
 
       <Card>
         <CardHeader>

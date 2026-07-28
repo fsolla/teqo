@@ -1,7 +1,7 @@
 # Login com biometria (WebAuthn) em `/campanha`
 
-Status: rascunho
-Atualizado em: 2026-07-26
+Status: entregue (2026-07-28)
+Atualizado em: 2026-07-28
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B40)
 Impeccable: C — fluxo novo na tela de login + registro pós-primeiro-login; brief compacto
 Appetite: ~1,5–2 dias eng; WebAuthn platform authenticator + storage server-side + UI login/perfil; migration leve
@@ -49,10 +49,29 @@ Não há WebAuthn / passkey / Credential Management de produto no código hoje. 
 - **Login biométrico emite o TTL longo (B39 "lembrar")** — o enrollment no dispositivo _é_ o consentimento de confiança. **Rejeitado:** TTL curto no biométrico (derrota o job); exigir checkbox remember no fluxo biométrico.
 - **i18n e naming:** `campaignWebAuthn`, `passkey`/`webauthnCredential` nos identificadores; copy pt-BR ("Entrar com digital ou Face ID", "Ativar neste aparelho").
 
-## Questões em aberto
+## Revisão na entrega (2026-07-28)
 
-- **Collection nova `campaignWebAuthnCredential` vs array no `campaignUser`?** **Opções:** A) collection join (1:N, admin-visível, delete fácil) | B) array no user. **Recomendação:** A — contadores WebAuthn e revogação por dispositivo ficam limpos; access `create/read/delete` = self. _(assumido.)_
-- **Mostrar o botão biométrico antes de digitar o identificador (discoverable credentials) ou depois?** **Opções:** A) botão sempre visível se o browser reportar platform authenticator + há credencial no device | B) só após blur do identificador. **Recomendação:** A com conditional UI (`PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable`).
+As seis lacunas que a auditoria pré-implementação abriu, e como cada uma fechou:
+
+1. **Como o token é forjado sem senha.** Não existe caminho password-less no Payload 3.82.0 — `loginOperation` exige `password`. `issueCampaignWebAuthnSession` ([src/utilities/campaignWebAuthnSession.ts](../../src/utilities/campaignWebAuthnSession.ts)) monta a sessão só com exports públicos: `payload.db.findOne` → `checkLoginPermission` → `addSessionToUser` (de `payload/shared`) → `getFieldsToSign` + `jwtSign` → `setCampaignAuthCookie`.
+2. **A mina, confirmada e neutralizada.** `addSessionToUser` reescreve o documento inteiro do usuário. Carregar com `payload.findByID` passaria pelo `afterRead` `removePrivateAuthFields` de [CampaignUser](../../src/collections/CampaignUser.ts) e gravaria de volta um usuário sem `sessions` nem `email`, derrubando **todas as outras sessões** e transformando `avatar` em objeto. O `db.findOne` cru está no código com o comentário nomeando o perigo, e `campaignWebAuthn.int.spec.ts` prova que uma sessão pré-existente sobrevive ao mint.
+3. **Concorrência.** O mint roda em `withPayloadTransaction` + `acquireTextAdvisoryLocks(['campaign-webauthn-session:{id}'])`, precedente do E14.
+4. **`getFieldsToSign` exige `email: string`.** Conta de liderança não tem e-mail; passamos `user.email ?? ''`, claim decorativa (`payload.auth` relê o usuário do banco).
+5. **RP ID / origem — e o furo que a auditoria não previu.** `getCampaignWebAuthnRelyingParty` deriva `rpID`/`origin` de `getCampaignInviteBaseURL` e devolve `null` quando ela falha. Mas isso **não bastava**: num preview da Vercel a função devolvia a origem canônica com sucesso, o botão aparecia, e o browser estourava `SecurityError` porque o host servindo a página é outro. A função agora compara o host do request (`origin`, ou `x-forwarded-host`/`host`) com o host derivado e devolve `null` quando divergem — a UI se esconde onde a cerimônia não pode funcionar, que era a intenção declarada.
+6. **Challenge em cookie HMAC**, path `/campanha`, 5 min, apagado na verificação (molde de `supporterImportToken.ts`). **A armadilha custou uma rodada de e2e:** a primeira versão gerava o challenge por conta própria e deixava o `@simplewebauthn/server` gerar o dele, então o valor no cookie e o valor assinado pelo autenticador eram bytes diferentes e todo `register` respondia 400. O helper agora recebe o challenge que `generateRegistrationOptions`/`generateAuthenticationOptions` já produziram e guarda **aquela** string base64url, verbatim.
+
+Outros achados da entrega:
+
+- **Deleção de `campaignUser` quebrava.** A FK que o Payload gera é `ON DELETE SET NULL` sobre um `user_id` `NOT NULL`. Em vez de editar a migration, `CampaignUser` ganhou um `beforeDelete` que apaga as credenciais do usuário — cascade explícito, na mesma transação.
+- **Mensagem de conta bloqueada.** `checkLoginPermission` lança o erro genérico do Payload; o mint captura e relança a cópia pt-BR, para que o usuário trancado saiba que é bloqueio e não falha de biometria.
+- **Anúncio duplicado no leitor de tela.** O erro vivia no `FieldError` **e** na região `aria-live` do botão; o `sr-only` agora só anuncia o estado pendente.
+- **Medição de bundle:** `@simplewebauthn/browser` adiciona **3,0 kB** gzip (orçamento do plano: 10 kB), com `/campanha/login` em **130 kB** de First Load JS. Sem débito registrado.
+- **e2e com autenticador virtual CDP** cobre cadastrar → sair → entrar com biometria → revogar. Para isso o fixture ganhou `expectedRequestFailurePaths`: o teste da credencial revogada provoca um 4xx de propósito, e o guard global de falhas tratava o `console.error` do fetch como erro não tratado.
+
+## Questões em aberto (fechadas na entrega)
+
+- **Collection nova `campaignWebAuthnCredential` vs array no `campaignUser`?** **Opções:** A) collection join (1:N, admin-visível, delete fácil) | B) array no user. **Recomendação:** A — contadores WebAuthn e revogação por dispositivo ficam limpos; access `create/read/delete` = self. **Entregue como A.**
+- **Mostrar o botão biométrico antes de digitar o identificador (discoverable credentials) ou depois?** **Opções:** A) botão sempre visível se o browser reportar platform authenticator + há credencial no device | B) só após blur do identificador. **Recomendação:** A com conditional UI (`PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable`). **Entregue como A**, com um segundo gate no servidor (o RP tem de estar configurado para o host que serve a página).
 
 ## Abordagem proposta
 
@@ -99,6 +118,18 @@ Depth check: reusa `setCampaignAuthCookie` / `getCampaignUser`; não cria segund
 
 - **Passkeys sincronizadas multi-device como copy de produto.** Revisitar quando: mesa pedir login no laptop novo sem senha após enrollment no celular.
 - **Exigir re-senha a cada N dias mesmo com biometria.** Revisitar se assessoria jurídica pedir após lote Onda 0.
+- **Núcleo HMAC compartilhado com `supporterImportToken.ts`.** ~35 linhas idênticas (assinar, comparar em tempo constante, `base64url`), 2 call sites. Revisitar quando: um **terceiro** consumidor de cookie/token assinado nascer — extrair agora mexeria no caminho do token de import por nada.
+- **`bodySchema` opcional em `campaignJsonMutationRoute`.** Duas das quatro rotas WebAuthn não têm corpo para validar e usam `campaignWebAuthnNoBodySchema` (`z.unknown()`), porque a casca sempre faz `parse`. Revisitar quando: nascer uma **terceira** rota JSON sem corpo fora da biometria — aí o `{}` que o cliente posta e o schema-fantasma valem um seam.
+- **`postJson` promovido a `campaignJsonRequest.ts`.** A casca de uma linha sobre `postCampaignJson` só descarta o `ok` (o discriminante do envelope é que decide), e é o único chamador que quer isso. Revisitar quando: um segundo módulo fora da biometria precisar do payload sem o `ok`.
+
+## Explicitamente fora (triage do fechamento)
+
+Achados dos revisores do `/simplify` **descartados com motivo**, para não voltarem como “óbvios”:
+
+- **Sobrepor o `import()` do módulo de cerimônia ao POST de `*-options`.** Economiza um RTT **só na primeira** cerimônia do dispositivo (o chunk tem 3,7 kB gzip e fica em cache depois), nunca foi medido em ms, e threading do `Promise.all` por duas funções exportadas e três ilhas é mais código do que o ganho justifica.
+- **Webpack duplicando o módulo de cerimônia em dois chunks lazy (~1,6 kB gzip).** Dimensionamento de split-chunk, não coisa do código-fonte; o próprio revisor de performance o pôs abaixo de P2.
+- **A terceira grafia da falha de enrollment em `BiometricEnrollmentToast`.** “Não foi possível cadastrar este aparelho agora.” **não** é a constante compartilhada de propósito: o toast não tem afordância de repetir, então terminar em “Tente novamente.” seria uma instrução falsa. Unificar pioraria a copy.
+- **Unit test para `campaignWebAuthnClient`.** O único ramo que merecia pino — a tradução de `SyntaxError` — foi **deletado** neste fechamento; o que sobrou é transporte, coberto pelo e2e com autenticador virtual.
 
 ## Referências
 

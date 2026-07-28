@@ -1,7 +1,13 @@
-import { cookies } from 'next/headers'
+import config from '@payload-config'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { getPayload } from 'payload'
 import React from 'react'
 
+import {
+  BiometricEnrollmentToast,
+  type BiometricEnrollmentOffer,
+} from '@/components/campaign/shell/BiometricEnrollmentToast'
 import { CampaignBottomNav } from '@/components/campaign/shell/CampaignBottomNav'
 import { CampaignSidebar } from '@/components/campaign/shell/CampaignSidebar'
 import { CampaignSidebarViewportDefault } from '@/components/campaign/shell/CampaignSidebarViewportDefault'
@@ -13,8 +19,11 @@ import {
   SidebarTrigger,
 } from '@/components/ui/Sidebar'
 import { Toaster } from '@/components/ui/Toaster'
+import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { campaignUserShellView } from '@/utilities/campaignUserProfile'
+import { loadCampaignPasskeys } from '@/utilities/campaignWebAuthnCeremony'
+import { resolveCampaignWebAuthnRelyingParty } from '@/utilities/campaignWebAuthnConfig'
 
 export default async function CampaignAppLayout({ children }: { children: React.ReactNode }) {
   const user = await getCampaignUser()
@@ -27,6 +36,27 @@ export default async function CampaignAppLayout({ children }: { children: React.
   const sidebarStateCookie = cookieStore.get(SIDEBAR_COOKIE_NAME)
   const hasSidebarCookie = sidebarStateCookie !== undefined
   const defaultOpen = sidebarStateCookie ? sidebarStateCookie.value === 'true' : true
+
+  // B40 discovery. The relying party is decided from headers alone, so it is
+  // resolved first and this layout — which runs on every authenticated
+  // navigation — reads no passkeys at all on an origin that cannot host a
+  // ceremony. Whether THIS device is already enrolled is a question only the
+  // browser can answer, so the island finishes the decision.
+  const relyingParty = await resolveCampaignWebAuthnRelyingParty()
+  let biometricEnrollment: BiometricEnrollmentOffer | null = null
+  if (relyingParty) {
+    const payload = await getPayload({ config })
+    const [passkeys, requestHeaders] = await Promise.all([
+      loadCampaignPasskeys(payload, user.id),
+      headers(),
+    ])
+    biometricEnrollment = {
+      // Only the emptiness crosses the boundary: the device labels have no
+      // business in the RSC payload of every page.
+      hasEnrolledPasskeys: passkeys.length > 0,
+      suggestedDeviceLabel: deviceLabelFromUserAgent(requestHeaders.get('user-agent')),
+    }
+  }
 
   return (
     // print: unlock the h-svh/overflow-hidden shells and drop the app chrome,
@@ -59,6 +89,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
         <CampaignBottomNav role={user.role} />
         <Toaster position="top-center" />
         <InstallPwaToast />
+        {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
       </SidebarInset>
     </SidebarProvider>
   )

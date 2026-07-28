@@ -10,6 +10,7 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/municipios',
     '/campanha/territorios',
     '/campanha/municipios/e2e-prewarm',
+    '/campanha/perfil',
     '/campanha/demandas',
     '/campanha/liderancas',
     '/campanha/conceitos',
@@ -31,6 +32,10 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/municipios/expected-votes',
     '/campanha/municipios/political-trend',
     '/campanha/liderancas/support-status',
+    '/campanha/webauthn/login-options',
+    '/campanha/webauthn/login',
+    '/campanha/webauthn/register-options',
+    '/campanha/webauthn/register',
   ]) {
     await request.post(`${baseURL}${path}`, { data: {} }).catch(() => undefined)
   }

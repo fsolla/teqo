@@ -32,6 +32,7 @@ import * as migration_20260725_170000_whatsapp_subscription_consent_key from './
 import * as migration_20260725_213000_rename_action_plan_to_activity from './20260725_213000_rename_action_plan_to_activity';
 import * as migration_20260727_032523_add_users_roles from './20260727_032523_add_users_roles';
 import * as migration_20260727_161752_add_municipality_engagement_level from './20260727_161752_add_municipality_engagement_level';
+import * as migration_20260728_041958_add_campaign_webauthn_credentials from './20260728_041958_add_campaign_webauthn_credentials';
 
 export const migrations = [
   {
@@ -202,6 +203,11 @@ export const migrations = [
   {
     up: migration_20260727_161752_add_municipality_engagement_level.up,
     down: migration_20260727_161752_add_municipality_engagement_level.down,
-    name: '20260727_161752_add_municipality_engagement_level'
+    name: '20260727_161752_add_municipality_engagement_level',
+  },
+  {
+    up: migration_20260728_041958_add_campaign_webauthn_credentials.up,
+    down: migration_20260728_041958_add_campaign_webauthn_credentials.down,
+    name: '20260728_041958_add_campaign_webauthn_credentials'
   },
 ];

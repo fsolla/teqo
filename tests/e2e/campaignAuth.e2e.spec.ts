@@ -31,7 +31,7 @@ test('logs in with a remembered fourteen-day campaign session', async ({
   await page.getByLabel('Senha').fill(password)
   await rememberMe.check()
   const loggedInAt = Math.floor(Date.now() / 1000)
-  await page.getByRole('button', { name: 'Entrar' }).click()
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click()
   await page.waitForURL(/\/campanha$/)
 
   const tokenCookie = (await context.cookies()).find((cookie) => cookie.name === 'campaign-token')

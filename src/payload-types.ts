@@ -70,6 +70,7 @@ export interface Config {
   collections: {
     users: User;
     campaignUser: CampaignUser;
+    campaignWebAuthnCredential: CampaignWebAuthnCredential;
     campaignInvite: CampaignInvite;
     municipality: Municipality;
     leadership: Leadership;
@@ -105,6 +106,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     campaignUser: CampaignUserSelect<false> | CampaignUserSelect<true>;
+    campaignWebAuthnCredential: CampaignWebAuthnCredentialSelect<false> | CampaignWebAuthnCredentialSelect<true>;
     campaignInvite: CampaignInviteSelect<false> | CampaignInviteSelect<true>;
     municipality: MunicipalitySelect<false> | MunicipalitySelect<true>;
     leadership: LeadershipSelect<false> | LeadershipSelect<true>;
@@ -300,6 +302,32 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * Chaves públicas dos aparelhos que entram com digital ou Face ID. Nenhum dado biométrico é armazenado.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaignWebAuthnCredential".
+ */
+export interface CampaignWebAuthnCredential {
+  id: number;
+  user: number | CampaignUser;
+  credentialId: string;
+  publicKey: string;
+  counter: number;
+  transports?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  deviceLabel: string;
+  lastUsedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1178,6 +1206,10 @@ export interface PayloadLockedDocument {
         value: number | CampaignUser;
       } | null)
     | ({
+        relationTo: 'campaignWebAuthnCredential';
+        value: number | CampaignWebAuthnCredential;
+      } | null)
+    | ({
         relationTo: 'campaignInvite';
         value: number | CampaignInvite;
       } | null)
@@ -1370,6 +1402,21 @@ export interface CampaignUserSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaignWebAuthnCredential_select".
+ */
+export interface CampaignWebAuthnCredentialSelect<T extends boolean = true> {
+  user?: T;
+  credentialId?: T;
+  publicKey?: T;
+  counter?: T;
+  transports?: T;
+  deviceLabel?: T;
+  lastUsedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2202,6 +2249,7 @@ export interface TaskCreateCollectionExport {
     collectionSlug:
       | 'users'
       | 'campaignUser'
+      | 'campaignWebAuthnCredential'
       | 'campaignInvite'
       | 'municipality'
       | 'leadership'

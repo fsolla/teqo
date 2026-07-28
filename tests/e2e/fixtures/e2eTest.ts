@@ -15,7 +15,21 @@ type BrowserFailure = {
 
 type E2EFailureGuardFixtures = {
   e2eFailureGuard: void
+  /**
+   * Same-origin paths whose failed responses this spec provokes on purpose.
+   *
+   * A `fetch` the app handles in code still makes the browser log "Failed to
+   * load resource", so a spec asserting a refusal (B40: signing in with a
+   * revoked passkey) would otherwise fail the guard for doing its job. Declaring
+   * the path — rather than allowing 4xx broadly — keeps an unhandled request
+   * failure in any other spec a failure. It is an option so a spec declares it
+   * once with `test.use`, instead of pushing at exactly the right moment
+   * mid-test.
+   */
+  expectedRequestFailurePaths: string[]
 }
+
+const loadFailurePrefix = 'Failed to load resource'
 
 const missingFaviconConsoleError =
   'Failed to load resource: the server responded with a status of 404 (Not Found)'
@@ -31,24 +45,40 @@ const consoleDetail = (message: ConsoleMessage): string => {
   return `${message.text()}${location}`
 }
 
-const isAllowedConsoleError = (message: ConsoleMessage, origin: string | null): boolean => {
+const isAllowedConsoleError = (
+  message: ConsoleMessage,
+  origin: string | null,
+  expectedRequestFailurePaths: string[],
+): boolean => {
   const { url } = message.location()
-  if (!url || origin === null || message.text() !== missingFaviconConsoleError) return false
+  if (!url || origin === null) return false
 
   const location = new URL(url)
-  // The app intentionally has no /favicon.ico asset yet. This exact same-origin
-  // missing-resource message is the only accepted browser console error.
-  return location.origin === origin && location.pathname === '/favicon.ico'
+  if (location.origin !== origin) return false
+
+  // The app intentionally has no /favicon.ico asset yet.
+  if (message.text() === missingFaviconConsoleError) return location.pathname === '/favicon.ico'
+
+  return (
+    message.text().startsWith(loadFailurePrefix) &&
+    expectedRequestFailurePaths.includes(location.pathname)
+  )
 }
 
 export const test = base.extend<E2EFailureGuardFixtures>({
+  expectedRequestFailurePaths: [[], { option: true }],
   e2eFailureGuard: [
-    async ({ baseURL, context, page }, use) => {
+    async ({ baseURL, context, expectedRequestFailurePaths, page }, use) => {
       const failures: BrowserFailure[] = []
       const origin = baseURL ? new URL(baseURL).origin : null
 
       const onConsole = (message: ConsoleMessage) => {
-        if (message.type() !== 'error' || isAllowedConsoleError(message, origin)) return
+        if (
+          message.type() !== 'error' ||
+          isAllowedConsoleError(message, origin, expectedRequestFailurePaths)
+        ) {
+          return
+        }
         failures.push({ kind: 'console.error', detail: consoleDetail(message) })
       }
       const onPageError = (error: Error) => {

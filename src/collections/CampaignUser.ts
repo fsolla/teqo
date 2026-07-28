@@ -17,6 +17,7 @@ import {
   APIError,
   type CollectionAfterReadHook,
   type CollectionBeforeChangeHook,
+  type CollectionBeforeDeleteHook,
   type CollectionConfig,
 } from 'payload'
 
@@ -95,6 +96,26 @@ const preventSelfServicePrivilegedFields: CollectionBeforeChangeHook<
   return data
 }
 
+/**
+ * Revokes the account's passkeys (roadmap B40) before it is deleted. This is a
+ * hook rather than an `ON DELETE cascade` because Payload derives FK actions
+ * from the field config, so a hand-written cascade in the migration is drift the
+ * next `migrate:create` reverts. `campaign_web_authn_credential.user_id` is NOT
+ * NULL with `ON DELETE set null`, so without this the delete fails and the
+ * account becomes undeletable the moment it enrolled a passkey. Note that the
+ * test fixtures rely on it too: `campaignWebAuthnCredential` is the one
+ * collection with no `owned` entry, because `deleteOwned('campaignUser')`
+ * reaches it through here.
+ */
+const deleteCampaignUserPasskeys: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  await req.payload.delete({
+    collection: 'campaignWebAuthnCredential',
+    where: { user: { equals: id } },
+    overrideAccess: true,
+    req,
+  })
+}
+
 export const CampaignUser: CollectionConfig = {
   slug: 'campaignUser',
   labels: {
@@ -148,6 +169,7 @@ export const CampaignUser: CollectionConfig = {
   },
   hooks: {
     beforeChange: [preventAssignedAdvisorDowngrade, preventSelfServicePrivilegedFields],
+    beforeDelete: [deleteCampaignUserPasskeys],
     afterRead: [removePrivateAuthFields],
   },
   fields: [

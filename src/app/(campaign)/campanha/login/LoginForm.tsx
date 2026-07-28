@@ -5,6 +5,7 @@ import { useActionState, useState } from 'react'
 
 import { loginCampaignFormAction, type LoginResult } from '@/app/(campaign)/campanha/actions/auth'
 import { CampaignAuthCardHeader } from '@/components/campaign/auth/CampaignAuthCardHeader'
+import { CampaignBiometricLoginButton } from '@/components/campaign/auth/CampaignBiometricLoginButton'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -39,7 +40,12 @@ const identifierInputMode = (value: string): 'tel' | 'email' | 'text' => {
   return 'text'
 }
 
-export const LoginForm = () => {
+type LoginFormProps = {
+  /** False when the origin cannot host a WebAuthn ceremony (Vercel previews). */
+  biometricsConfigured: boolean
+}
+
+export const LoginForm = ({ biometricsConfigured }: LoginFormProps) => {
   const [state, formAction, pending] = useActionState(
     loginCampaignFormAction,
     {} satisfies LoginResult,
@@ -132,6 +138,9 @@ export const LoginForm = () => {
             </details>
           </FieldGroup>
         </form>
+        {/* Outside the form: this is a second, independent way in, and nesting
+            it would make it look like a submit path of the password fields. */}
+        {biometricsConfigured ? <CampaignBiometricLoginButton /> : null}
       </CardContent>
     </Card>
   )
