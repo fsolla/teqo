@@ -31,6 +31,7 @@ import * as migration_20260725_022155_add_municipality_budget_notes from './2026
 import * as migration_20260725_170000_whatsapp_subscription_consent_key from './20260725_170000_whatsapp_subscription_consent_key';
 import * as migration_20260725_213000_rename_action_plan_to_activity from './20260725_213000_rename_action_plan_to_activity';
 import * as migration_20260727_032523_add_users_roles from './20260727_032523_add_users_roles';
+import * as migration_20260727_161752_add_municipality_engagement_level from './20260727_161752_add_municipality_engagement_level';
 
 export const migrations = [
   {
@@ -197,5 +198,10 @@ export const migrations = [
     up: migration_20260727_032523_add_users_roles.up,
     down: migration_20260727_032523_add_users_roles.down,
     name: '20260727_032523_add_users_roles',
+  },
+  {
+    up: migration_20260727_161752_add_municipality_engagement_level.up,
+    down: migration_20260727_161752_add_municipality_engagement_level.down,
+    name: '20260727_161752_add_municipality_engagement_level'
   },
 ];

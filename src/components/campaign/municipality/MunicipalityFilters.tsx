@@ -190,6 +190,18 @@ export const MunicipalityFilters = ({
             }
           />
         ) : null}
+        {showStaffFilters ? (
+          <CampaignMobileMultiFilterField
+            id="municipality-filter-level"
+            label="Nível"
+            emptyLabel="Todos"
+            options={getMunicipalityFilterDefinition('level').options ?? []}
+            selected={state.levels ?? []}
+            onToggle={(value) =>
+              navigateWithSearch(toggleMunicipalityMultiFilterValue(state, 'level', value))
+            }
+          />
+        ) : null}
         {showStaffFilters && advisorFilterOptions.length ? (
           <CampaignMobileMultiFilterField
             id="municipality-filter-advisor"

@@ -25,6 +25,7 @@ export type CampaignConceptId =
   | 'roll-off'
   | 'dominancia-relativa'
   | 'classe-territorial'
+  | 'nivel-de-envolvimento'
   | 'quantis-do-mapa'
   | 'posicao-no-municipio'
   | 'meta'
@@ -183,6 +184,21 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
       'Responde onde a perna vai na semana: defender reduto dormente ou abrir rede em expansão. A classe é sugestão, não sentença — ela nunca aparece sozinha, sempre com os dois fatores que a produziram, e a mesa pode decidir contra ela. Os cortes exatos (2 e 0,5) são ilustrativos: valem até o backtest contra 2014–2022 calibrá-los.',
     whereItAppears:
       'Card "Conta da cadeira" e capa do dossiê, no detalhe do município, coluna "Classe" da lista de municípios (com filtro e ordenação), e coluna "Classe" em `/campanha/territorios`.',
+  },
+  {
+    id: 'nivel-de-envolvimento',
+    categoryID: 'diagnostico',
+    title: 'Nível de envolvimento (N0–N4)',
+    oneLiner:
+      'Quanto a campanha decidiu investir neste município: N0 monitorar, N1 presença de mandato, N2 rede sem agenda, N3 rede com agenda, N4 investimento pleno.',
+    formula:
+      'Não é calculado: é declarado pela coordenação geral. Todo movimento exige motivo e os sinais que o fariam ser revertido, e fica registrado em Decisões de alocação com o nível anterior, o novo e a data. Três regras seguram a oscilação: pular dois níveis de uma vez só com choque triangulado, não rebaixar um nível decidido há menos de três semanas, e um movimento por mês. A coordenação pode passar por cima delas — o override é gravado com as regras que contrariou.',
+    example:
+      'Um município em N1 que recebeu rede e entrou na agenda de giro sobe para N3; nas três semanas seguintes um pedido de rebaixamento fica bloqueado até a janela de proteção fechar, salvo override justificado.',
+    whyItMatters:
+      'Separa o que a campanha SABE sobre o município (classe, captura, cobertura da meta) do que a campanha DECIDIU fazer nele. Sem esse registro, a alocação de presença vira memória de reunião: ninguém sabe quem prometeu o quê, nem por quê, nem o que faria voltar atrás. Os cortes das regras de estabilidade são ilustrativos até o backtest calibrá-los.',
+    whereItAppears:
+      'Coluna "Nível" da lista de municípios (com filtro, ordenação e edição pela coordenação) e bloco de estratégia no detalhe do município.',
   },
   {
     id: 'elegibilidade-para-visita',

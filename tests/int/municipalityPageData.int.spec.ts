@@ -338,6 +338,51 @@ describe('loadMunicipalityListPageBundle', () => {
     expect(sorted.municipalities.map((row) => row.slug)).toEqual([reduto.slug, marginal.slug])
   })
 
+  /**
+   * E14: `nivel` is a stored column, so ordering is Postgres's. With no
+   * backfill almost every município is null, and where the nulls land decides
+   * what page 1 of "N4 primeiro" actually shows — so it is pinned rather than
+   * inferred from the label.
+   */
+  it('sorts by nível with the un-levelled municípios last in both directions', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const low = await fixtures.getMunicipality(municipalityCatalog[0]!.slug)
+    const high = await fixtures.getMunicipality(municipalityCatalog[1]!.slug)
+    const none = await fixtures.getMunicipality(municipalityCatalog[2]!.slug)
+
+    const marker = `e14-nivel-${Date.now()}`
+    for (const [municipality, suffix, engagementLevel] of [
+      [low, 'n0', 'n0'],
+      [high, 'n4', 'n4'],
+      [none, 'sem', null],
+    ] as const) {
+      await payload.update({
+        collection: 'municipality',
+        id: municipality.id,
+        data: { name: `${marker}-${suffix}`, engagementLevel },
+        depth: 0,
+        overrideAccess: true,
+      })
+      fixtures.touchMunicipality(municipality.id)
+    }
+
+    const descending = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: marker,
+      sort: 'nivel',
+      dir: 'desc',
+    })
+    expect(descending.municipalities.map((row) => row.engagementLevel)).toEqual(['n4', 'n0', null])
+
+    const ascending = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: marker,
+      sort: 'nivel',
+      dir: 'asc',
+    })
+    expect(ascending.municipalities.map((row) => row.engagementLevel)).toEqual(['n0', 'n4', null])
+  })
+
   it('keeps advisor access and applies URL filters on top', async () => {
     const fixtures = campaignFixtures()
     const advisor = await fixtures.createCampaignUser('advisor')

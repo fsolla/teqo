@@ -418,6 +418,18 @@ export interface Municipality {
   advisors?: (number | CampaignUser)[] | null;
   priority?: ('alta' | 'normal') | null;
   /**
+   * Quanto a campanha investe neste município (N0 a N4). Movimento é decisão da coordenação e fica registrado em Decisões de alocação.
+   */
+  engagementLevel?: ('n0' | 'n1' | 'n2' | 'n3' | 'n4') | null;
+  /**
+   * Motivo corrente do nível — o histórico vive em Decisões de alocação.
+   */
+  levelNote?: string | null;
+  /**
+   * Derivado da última mudança de nível.
+   */
+  levelChangedAt?: string | null;
+  /**
    * Total esperado do município por cenário (pessimista/média/otimista) — distinto da soma das lideranças.
    */
   expectedVotes?: {
@@ -560,7 +572,7 @@ export interface AllocationDecision {
   id: number;
   municipality: number | Municipality;
   patternId: string;
-  outcome: 'aceita' | 'descarta';
+  outcome: 'aceita' | 'descarta' | 'movimento';
   rationale: string;
   alternativeReading?: string | null;
   /**
@@ -1389,6 +1401,9 @@ export interface MunicipalitySelect<T extends boolean = true> {
   zoneNumber?: T;
   advisors?: T;
   priority?: T;
+  engagementLevel?: T;
+  levelNote?: T;
+  levelChangedAt?: T;
   expectedVotes?:
     | T
     | {

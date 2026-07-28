@@ -999,6 +999,8 @@ export class CampaignFixtures {
           priority: 'normal',
           expectedVotes: { pessimistic: null, central: null, optimistic: null },
           politicalTrend: { status: null, note: null, recordedBy: null, recordedAt: null },
+          engagementLevel: null,
+          levelNote: null,
           strengths: [],
           risks: [],
           dobradinhaNotes: null,

@@ -3,6 +3,7 @@ import 'server-only'
 import type { Payload, Where } from 'payload'
 
 import { bahiaIdentityTerritories } from '@/lib/bahiaTerritories'
+import { engagementLevelRank } from '@/lib/engagementLevel'
 import { getMunicipalityCatalogEntry, municipalityCatalog } from '@/lib/municipalityCatalog'
 import {
   compareMunicipalityVotesForSort,
@@ -196,6 +197,9 @@ const payloadSortFieldByKey: Partial<Record<MunicipalityListSortKey, string>> = 
   kind: 'kind',
   lastUpdateAt: 'lastUpdateAt',
   trend: 'politicalTrend.status',
+  // E9 (deficit, frescor), E10 (classe) and E14 (nivel) are absent on purpose:
+  // the first three are derived, and `nivel` needs its NULLs at the end, which
+  // the query cannot express.
 }
 
 const municipalityNameCompare = (left: Municipality, right: Municipality): number =>
@@ -273,6 +277,14 @@ const applyDerivedMunicipalitySort = (
         return now - new Date(lastSignalAt).getTime()
       })
     }
+    case 'nivel':
+      // Stored, so Postgres could order it — but Postgres puts NULLs FIRST on
+      // DESC, and with no backfill that hands "N4 primeiro" a page of "Sem
+      // nível". Absence of a decision is not the top of the ladder: it sorts
+      // like `sem_base` above, at the end in either direction.
+      return sortByNullableValue(docs, dir, (municipality) =>
+        municipality.engagementLevel ? engagementLevelRank[municipality.engagementLevel] : null,
+      )
     case 'classe':
       // Ordinal weight, not the label: descending means reduto first, and
       // `sem_base` (no weight) lands at the end in either direction.

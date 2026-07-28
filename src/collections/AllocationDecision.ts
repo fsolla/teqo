@@ -99,9 +99,13 @@ export const AllocationDecision: CollectionConfig = {
       type: 'select',
       label: 'Decisão',
       required: true,
+      // `aceita`/`descarta` is the triage of a SUGGESTED pattern (E11). A level
+      // movement (E14) is neither — it is a decision taken outright — so it
+      // gets its own value instead of masquerading as an acceptance.
       options: [
         { label: 'Aceita', value: 'aceita' },
         { label: 'Descarta', value: 'descarta' },
+        { label: 'Movimento', value: 'movimento' },
       ],
     },
     {

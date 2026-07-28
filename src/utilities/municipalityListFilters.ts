@@ -4,6 +4,7 @@
  * the former `municipalityUi.ts` in Pass 2 W1.
  */
 import { isBahiaIdentityTerritory } from '@/lib/bahiaTerritories'
+import { EMPTY_ENGAGEMENT_LEVEL_LABEL, formatEngagementLevelLabel } from '@/lib/engagementLevel'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import { truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import {
@@ -16,9 +17,12 @@ import {
 } from '@/utilities/municipalityLabels'
 import {
   buildMunicipalityListHref,
+  municipalityListLevelFilterValues,
   municipalityListStateToRawParams,
+  NO_LEVEL_FILTER_VALUE,
   parseMunicipalityListParams,
   serializeCanonicalMunicipalityListSearchParams,
+  type MunicipalityListLevelFilterValue,
   type MunicipalityListState,
 } from '@/utilities/municipalityListUrl'
 import type { MunicipalityTerritorialClass } from '@/utilities/municipalityTerritorialClass'
@@ -31,6 +35,7 @@ export type MunicipalityFilterParam =
   | 'coverage'
   | 'trend'
   | 'class'
+  | 'level'
   | 'advisor'
 
 type MunicipalityFilterSelectionMode = 'single' | 'multi' | 'toggle'
@@ -118,6 +123,22 @@ export const municipalityFilterDefinitions: MunicipalityFilterDefinition[] = [
       label: territorialClassLabels[territorialClass],
     })),
   },
+  {
+    param: 'level',
+    label: 'Nível',
+    staffOnly: true,
+    selection: 'multi',
+    // Static options, like `trend`: the ladder is a closed set, so offering
+    // only the levels currently in use would hide the empty rungs the mesa is
+    // deciding to fill. "Sem nível" is an option because it is the triage queue.
+    options: municipalityListLevelFilterValues.map((value) => ({
+      value,
+      label:
+        value === NO_LEVEL_FILTER_VALUE
+          ? EMPTY_ENGAGEMENT_LEVEL_LABEL
+          : formatEngagementLevelLabel(value),
+    })),
+  },
 ]
 
 const municipalityFilterDefinitionByParam = Object.fromEntries(
@@ -133,7 +154,13 @@ export const getMunicipalitySingleFilterValue = (
   param: 'kind' | 'coverage',
 ): string | undefined => state[param]
 
-export type MunicipalityMultiFilterParam = 'region' | 'slug' | 'advisor' | 'trend' | 'class'
+export type MunicipalityMultiFilterParam =
+  | 'region'
+  | 'slug'
+  | 'advisor'
+  | 'trend'
+  | 'class'
+  | 'level'
 
 export const getMunicipalityMultiFilterValues = (
   state: MunicipalityListState,
@@ -143,6 +170,7 @@ export const getMunicipalityMultiFilterValues = (
   if (param === 'slug') return state.slugs ?? []
   if (param === 'trend') return state.trends ?? []
   if (param === 'class') return state.classes ?? []
+  if (param === 'level') return state.levels ?? []
   return (state.advisors ?? []).map(String)
 }
 
@@ -241,6 +269,11 @@ const territorialClassCount = Object.keys(territorialClassLabels).length
 const isTerritorialClass = (value: string): value is MunicipalityTerritorialClass =>
   value in territorialClassLabels
 
+const engagementLevelFilterCount = municipalityListLevelFilterValues.length
+
+const isEngagementLevelFilterValue = (value: string): value is MunicipalityListLevelFilterValue =>
+  (municipalityListLevelFilterValues as readonly string[]).includes(value)
+
 /**
  * B16+ href fast path: option rows only need the WOULD-BE href, so the toggled
  * state is derived with the same canonical rules the parser applies (advisors
@@ -282,6 +315,10 @@ export const buildMunicipalityFilterOptionHref = (
     const classes = toggled.filter(isTerritorialClass)
     if (classes.length && classes.length < territorialClassCount) next.classes = classes
     else delete next.classes
+  } else if (param === 'level') {
+    const levels = toggled.filter(isEngagementLevelFilterValue)
+    if (levels.length && levels.length < engagementLevelFilterCount) next.levels = levels
+    else delete next.levels
   }
 
   const query = serializeCanonicalMunicipalityListSearchParams(next).toString()
@@ -308,6 +345,8 @@ export const isMunicipalityColumnFilterActive = (
       return Boolean(state.trends?.length)
     case 'class':
       return Boolean(state.classes?.length)
+    case 'level':
+      return Boolean(state.levels?.length)
   }
 }
 
@@ -337,6 +376,17 @@ export const formatMunicipalityActiveFiltersSummary = (
   if (state.classes?.length) {
     parts.push(
       `Classe ${state.classes.map((territorialClass) => territorialClassLabels[territorialClass].toLowerCase()).join(', ')}`,
+    )
+  }
+  if (state.levels?.length) {
+    parts.push(
+      `Nível ${state.levels
+        .map((level) =>
+          level === NO_LEVEL_FILTER_VALUE
+            ? EMPTY_ENGAGEMENT_LEVEL_LABEL.toLowerCase()
+            : level.toUpperCase(),
+        )
+        .join(', ')}`,
     )
   }
   if (state.q) parts.push(`Busca "${state.q}"`)

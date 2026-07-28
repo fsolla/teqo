@@ -18,6 +18,7 @@ import {
   isCampaignCoordinator,
   isCampaignLeader,
   isCampaignStaff,
+  isCampaignUnrestricted,
 } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { getCampaignScopeLabel } from '@/utilities/municipalityLabels'
@@ -48,6 +49,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
   if (isCampaignLeader(user)) redirect('/campanha')
   const isStaffView = isCampaignStaff(user)
   const isCoordinator = isCampaignCoordinator(user)
+  const canMoveEngagementLevel = isCampaignUnrestricted(user)
 
   const pageBundle = await loadMunicipalityListPageBundle(payload, user, rawSearchParams)
   const {
@@ -122,6 +124,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
         advisorNamesById={advisorNamesById}
         isStaffView={isStaffView}
         isCoordinator={isCoordinator}
+        canMoveEngagementLevel={canMoveEngagementLevel}
         advisorOptions={advisorOptions}
         columnFilterOptions={columnFilterOptions}
         signalFormAction={createMunicipalityListSignalFormAction}

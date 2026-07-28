@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import type { EngagementLevel } from '@/lib/engagementLevel'
 import type { MunicipalityVoteRankEntry } from '@/lib/municipalityVoteRank'
 import {
   toVoteEstimateScenarioViewModel,
@@ -42,6 +43,9 @@ export const municipalityListSelect = {
     status: true,
     note: true,
   },
+  engagementLevel: true,
+  levelNote: true,
+  levelChangedAt: true,
 } as const
 
 type MunicipalityPoliticalTrendViewModel = {
@@ -72,6 +76,10 @@ export type MunicipalityListViewModel = {
   expectedVotes: VoteEstimateScenarioViewModel
   politicalTrendStatus: PoliticalTrendStatus | null
   politicalTrendNote: string | null
+  /** E14 — staff-only; field access leaves it undefined for anyone else. */
+  engagementLevel: EngagementLevel | null
+  levelNote: string | null
+  levelChangedAt: string | null
   pledges: MunicipalityPledgeAggregate
   votePosition2022: MunicipalityVoteRankEntry | null
   /** E10 — classe operacional derivada do artefato TSE. */
@@ -111,6 +119,9 @@ export const toMunicipalityListViewModel = (
     expectedVotes: toVoteEstimateScenarioViewModel(municipality.expectedVotes),
     politicalTrendStatus: municipality.politicalTrend?.status ?? null,
     politicalTrendNote: municipality.politicalTrend?.note ?? null,
+    engagementLevel: municipality.engagementLevel ?? null,
+    levelNote: municipality.levelNote ?? null,
+    levelChangedAt: municipality.levelChangedAt ?? null,
     pledges: pledges ?? createEmptyMunicipalityPledgeAggregate(),
     votePosition2022,
     territorialClass: territorialClass.class,
@@ -151,6 +162,10 @@ export type MunicipalityStrategyViewModel = {
   priority: 'alta' | 'normal'
   expectedVotes: VoteEstimateScenarioViewModel
   politicalTrend: MunicipalityPoliticalTrendViewModel
+  /** E14 — the ladder and the motivo behind the current rung. */
+  engagementLevel: EngagementLevel | null
+  levelNote: string | null
+  levelChangedAt: string | null
   strengths: string[]
   risks: string[]
   stateDeputyIDs: number[]
@@ -193,6 +208,9 @@ export const toMunicipalityDetailViewModel = (
             recordedByName: trendRecordedByName,
             recordedAt: municipality.politicalTrend?.recordedAt ?? null,
           },
+          engagementLevel: municipality.engagementLevel ?? null,
+          levelNote: municipality.levelNote ?? null,
+          levelChangedAt: municipality.levelChangedAt ?? null,
           strengths: (municipality.strengths ?? []).map((item) => item.text),
           risks: (municipality.risks ?? []).map((item) => item.text),
           stateDeputyIDs: (municipality.stateDeputies ?? [])

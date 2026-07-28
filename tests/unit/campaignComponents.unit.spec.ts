@@ -41,6 +41,7 @@ const noopListFormAction = async (
 
 const municipalityListDefaultProps = {
   isCoordinator: false,
+  canMoveEngagementLevel: false,
   advisorOptions: [],
   columnFilterOptions: { name: [], region: [], advisor: [] },
   signalFormAction: noopListFormAction,
@@ -174,6 +175,9 @@ describe('campaign visual foundation', () => {
         expectedVotes: { pessimistic: null, central: 1500, optimistic: null },
         politicalTrendStatus: 'favoravel',
         politicalTrendNote: null,
+        engagementLevel: null,
+        levelNote: null,
+        levelChangedAt: null,
         pledges: {
           declaredTotal: 1200,
           effectiveByScenario: { pessimistic: 1200, central: 1200, optimistic: 1200 },
@@ -214,6 +218,9 @@ describe('campaign visual foundation', () => {
         expectedVotes: toVoteEstimateScenarioViewModel(null),
         politicalTrendStatus: null,
         politicalTrendNote: null,
+        engagementLevel: null,
+        levelNote: null,
+        levelChangedAt: null,
         pledges: createEmptyMunicipalityPledgeAggregate(),
         votePosition2022: null,
         territorialClass: 'expansao',
@@ -246,12 +253,12 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('Cobertura da meta')
     expect(html).toContain('80%')
     expect(html).toContain('Faltam 300 votos para a meta')
-    // B22: every one of the 10 staff columns carries a header explanation —
+    // B22: every one of the 11 staff columns carries a header explanation —
     // pinned inside `<thead>` itself, since `cellTooltip` (e.g. "Classe") and
     // the mobile card's own class tooltip (B42) add triggers of their own.
     const [, tbodyHtml = ''] = html.split('<tbody')
     const theadHtml = html.slice(html.indexOf('<thead'), html.indexOf('</thead>'))
-    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(10)
+    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(11)
 
     // B41: horizontal scroll + sticky Município (Territory pattern).
     expect(html).toMatch(/data-slot="table-container"[^>]*class="[^"]*overflow-x-auto/)
@@ -348,6 +355,9 @@ describe('campaign visual foundation', () => {
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             politicalTrendStatus: null,
             politicalTrendNote: null,
+            engagementLevel: null,
+            levelNote: null,
+            levelChangedAt: null,
             pledges: createEmptyMunicipalityPledgeAggregate(),
             votePosition2022: null,
             territorialClass: 'expansao',
@@ -389,6 +399,9 @@ describe('campaign visual foundation', () => {
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             politicalTrendStatus: null,
             politicalTrendNote: null,
+            engagementLevel: null,
+            levelNote: null,
+            levelChangedAt: null,
             pledges: createEmptyMunicipalityPledgeAggregate(),
             votePosition2022: null,
             territorialClass: 'expansao',
@@ -427,6 +440,9 @@ describe('campaign visual foundation', () => {
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             politicalTrendStatus: null,
             politicalTrendNote: null,
+            engagementLevel: null,
+            levelNote: null,
+            levelChangedAt: null,
             pledges: {
               declaredTotal: 800,
               effectiveByScenario: { pessimistic: 800, central: 800, optimistic: 800 },
@@ -471,6 +487,9 @@ describe('campaign visual foundation', () => {
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             politicalTrendStatus: null,
             politicalTrendNote: null,
+            engagementLevel: null,
+            levelNote: null,
+            levelChangedAt: null,
             pledges: createEmptyMunicipalityPledgeAggregate(),
             votePosition2022: null,
             territorialClass: 'expansao',
@@ -520,10 +539,10 @@ describe('campaign visual foundation', () => {
     })
 
     it('wraps the advisor cell in a tooltip only when there is a name to show', () => {
-      // The staff `<thead>` already carries 10 header-explanation tooltips
+      // The staff `<thead>` already carries 11 header-explanation tooltips
       // (B22), regardless of row data. This baseline isolates the advisors
       // CELL tooltip, the one this test actually exercises.
-      const HEADER_TOOLTIP_COUNT = 10
+      const HEADER_TOOLTIP_COUNT = 11
       const baseMunicipality = {
         id: 1,
         name: 'Seabra',
@@ -539,6 +558,9 @@ describe('campaign visual foundation', () => {
         expectedVotes: toVoteEstimateScenarioViewModel(null),
         politicalTrendStatus: null,
         politicalTrendNote: null,
+        engagementLevel: null,
+        levelNote: null,
+        levelChangedAt: null,
         pledges: createEmptyMunicipalityPledgeAggregate(),
         votePosition2022: null,
         territorialClass: 'sem_base' as const,

@@ -183,6 +183,72 @@ describe('E10 classe territorial filter (derived, not a Payload constraint)', ()
   })
 })
 
+describe('E14 nível de envolvimento (stored: sort and filter both reach the query)', () => {
+  it('opens the nivel sort on N4 (desc default) and names the direction', () => {
+    const base = parseMunicipalityListParams({})
+    expect(buildMunicipalitySortHref(base, 'nivel')).toBe('/campanha/municipios?sort=nivel')
+    const byLevel = parseMunicipalityListParams({ sort: 'nivel' })
+    expect(resolveMunicipalityListSort(byLevel)).toEqual({ sort: 'nivel', dir: 'desc' })
+    expect(formatMunicipalityListSortSummary('nivel', 'desc')).toBe(
+      'Ordenado por nível (N4 primeiro)',
+    )
+    expect(formatMunicipalityListSortSummary('nivel', 'asc')).toBe(
+      'Ordenado por nível (N0 primeiro)',
+    )
+  })
+
+  it('constrains the query by the selected levels', () => {
+    const state = parseMunicipalityListParams({ level: ['n3', 'n4', 'n3'] })
+    expect(state.levels).toEqual(['n3', 'n4'])
+    expect(isMunicipalityColumnFilterActive(state, 'level')).toBe(true)
+    expect(buildMunicipalityListWhere(state)).toEqual({
+      and: [{ engagementLevel: { in: ['n3', 'n4'] } }],
+    })
+    expect(buildMunicipalityFilterHref(state)).toBe('/campanha/municipios?level=n3&level=n4')
+  })
+
+  /**
+   * "Sem nível" is the triage queue, so it must be selectable — and absence
+   * can't ride inside an `in`, which is why it becomes its own OR branch.
+   */
+  it('expresses "sem nível" as absence, alone or beside real levels', () => {
+    expect(buildMunicipalityListWhere(parseMunicipalityListParams({ level: 'sem_nivel' }))).toEqual(
+      { and: [{ engagementLevel: { exists: false } }] },
+    )
+    expect(
+      buildMunicipalityListWhere(parseMunicipalityListParams({ level: ['n0', 'sem_nivel'] })),
+    ).toEqual({
+      and: [{ or: [{ engagementLevel: { in: ['n0'] } }, { engagementLevel: { exists: false } }] }],
+    })
+  })
+
+  it('discards unknown levels and treats "todos" as absent', () => {
+    expect(parseMunicipalityListParams({ level: 'n9' }).levels).toBeUndefined()
+
+    const all = parseMunicipalityListParams({
+      level: ['n0', 'n1', 'n2', 'n3', 'n4', 'sem_nivel'],
+    })
+    expect(all.levels).toBeUndefined()
+    expect(buildMunicipalityListWhere(all)).toEqual({})
+    expect(isMunicipalityColumnFilterActive(all, 'level')).toBe(false)
+
+    const allButOne = parseMunicipalityListParams({
+      level: ['n0', 'n1', 'n2', 'n3', 'n4'],
+    })
+    expect(
+      toggleMunicipalityMultiFilterValue(allButOne, 'level', 'sem_nivel').levels,
+    ).toBeUndefined()
+  })
+
+  it('names the level in the active-filters summary', () => {
+    expect(
+      formatMunicipalityActiveFiltersSummary(
+        parseMunicipalityListParams({ level: ['n4', 'sem_nivel'] }),
+      ),
+    ).toBe('Nível N4, sem nível')
+  })
+})
+
 describe('municipality list header filters (B16+)', () => {
   it('toggles multi region OR filters and preserves sort/dir', () => {
     const state = parseMunicipalityListParams({
@@ -393,6 +459,18 @@ describe('buildMunicipalityFilterOptionHref (B16+ fast path)', () => {
       state: parseMunicipalityListParams({ trend: ['favoravel', 'neutra'] }),
       param: 'trend',
       value: 'neutra',
+    },
+    {
+      name: 'adds "sem nível" beside a level',
+      state: parseMunicipalityListParams({ level: ['n0'] }),
+      param: 'level',
+      value: 'sem_nivel',
+    },
+    {
+      name: 'collapses the full level set to "todos"',
+      state: parseMunicipalityListParams({ level: ['n0', 'n1', 'n2', 'n3', 'n4'] }),
+      param: 'level',
+      value: 'sem_nivel',
     },
   ]
 

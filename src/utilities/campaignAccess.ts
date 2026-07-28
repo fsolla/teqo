@@ -37,6 +37,7 @@ export {
   canCreateMunicipality,
   canDeleteMunicipality,
   canManageMunicipalityAdvisors,
+  canManageMunicipalityEngagementLevel,
   canReadMunicipality,
   canUpdateMunicipality,
   getAccessibleMunicipalityIds,

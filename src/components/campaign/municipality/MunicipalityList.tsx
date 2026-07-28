@@ -7,9 +7,11 @@ import {
   MissingAdvisorBadge,
   MunicipalityAdvisorAvatarStack,
 } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
+import { MunicipalityLevelBadge } from '@/components/campaign/municipality/MunicipalityLevelBadge'
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/municipality/MunicipalityListAdvisorsControl'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
 import { MunicipalityListGoalCoverageCell } from '@/components/campaign/municipality/MunicipalityListGoalCoverageCell'
+import { MunicipalityListLevelControl } from '@/components/campaign/municipality/MunicipalityListLevelControl'
 import { MunicipalityListSignalControl } from '@/components/campaign/municipality/MunicipalityListSignalControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import { MunicipalitySortableHead } from '@/components/campaign/municipality/MunicipalitySortableHead'
@@ -32,6 +34,7 @@ import {
   formatPlacementOrdinal,
   formatVoteSharePercent,
 } from '@/lib/electionFormat'
+import { formatEngagementLevelLabel } from '@/lib/engagementLevel'
 import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
@@ -85,6 +88,12 @@ export type MunicipalityListProps = {
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>
   isStaffView: boolean
   isCoordinator: boolean
+  /**
+   * E14 — moving the ladder is unrestricted staff (coordinator + candidate),
+   * a wider set than `isCoordinator`, so it travels as its own prop instead of
+   * quietly hiding the control from the candidate.
+   */
+  canMoveEngagementLevel: boolean
   advisorOptions: EligibleAdvisorOption[]
   columnFilterOptions: MunicipalityColumnFilterOptions
   signalFormAction: MunicipalityStaffFormAction
@@ -239,6 +248,7 @@ const municipalityListColumns = ({
   state,
   isStaffView,
   isCoordinator,
+  canMoveEngagementLevel,
   columnFilterOptions,
   advisorNamesById,
   advisorOptions,
@@ -346,6 +356,44 @@ const municipalityListColumns = ({
             municipality.territorialClass === 'sem_base'
               ? null
               : formatTerritorialClassWhy(municipality.territorialClassFactors),
+        },
+        {
+          // Right after "Classe": the pair reads diagnosis then decision.
+          id: 'level',
+          head: (
+            <MunicipalitySortableHead
+              state={state}
+              sortKey="nivel"
+              filterParam="level"
+              description={municipalityColumnDescriptions.nivel}
+            >
+              Nível
+            </MunicipalitySortableHead>
+          ),
+          cell: (municipality) =>
+            canMoveEngagementLevel ? (
+              <MunicipalityListLevelControl
+                municipalityID={municipality.id}
+                municipalityName={municipality.name}
+                level={municipality.engagementLevel}
+                levelNote={municipality.levelNote}
+                levelChangedAt={municipality.levelChangedAt}
+              />
+            ) : (
+              <MunicipalityLevelBadge
+                level={municipality.engagementLevel}
+                note={municipality.levelNote}
+                layout="table"
+              />
+            ),
+          // The editable cell wraps its own trigger in a tooltip; declaring it
+          // here too would double it up on the same gesture (as in `advisors`).
+          cellTooltip: (municipality) =>
+            canMoveEngagementLevel || !municipality.engagementLevel
+              ? null
+              : [formatEngagementLevelLabel(municipality.engagementLevel), municipality.levelNote]
+                  .filter(Boolean)
+                  .join(' — '),
         },
         {
           id: 'advisors',
@@ -593,6 +641,26 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
                         pledgeCoverage={toMunicipalityPledgeCoverageView(municipality.pledges)}
                         variant="sheet"
                       />
+                    </dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className="text-muted-foreground">Nível</dt>
+                    <dd>
+                      {props.canMoveEngagementLevel ? (
+                        <MunicipalityListLevelControl
+                          municipalityID={municipality.id}
+                          municipalityName={municipality.name}
+                          level={municipality.engagementLevel}
+                          levelNote={municipality.levelNote}
+                          levelChangedAt={municipality.levelChangedAt}
+                        />
+                      ) : (
+                        <MunicipalityLevelBadge
+                          level={municipality.engagementLevel}
+                          note={municipality.levelNote}
+                          layout="card"
+                        />
+                      )}
                     </dd>
                   </div>
                   <div>
