@@ -139,7 +139,19 @@ Componentes (molde B33 — não re-extrair chrome):
 - ~~**Edição rápida de `supportStatus` na célula**~~ — **fechado por B32 ✓** (2026-07-26).
 - **Filtro por organização e por dobradinha.** Revisitar quando: houver decisão nomeada em sessão (ex.: "quero as lideranças do sindicato X") ou quando a cobertura de `organizations` na base real passar a ser a regra, não a exceção.
 - **Select compacto / barra empilhada de ordenação no mobile.** Revisitar quando: uso real em celular mostrar que rolar o header na horizontal atrapalha (mesmo gatilho que produziu o select compacto do B15; B33 optou por paridade mobile — lideranças não).
-- **Sort por nome (se o join não sair no adapter).** Revisitar quando: houver evidência de que a ordem alfabética é bloqueante — e ainda assim sem desnormalizar (a alternativa seria uma view/consulta dedicada).
+- ~~**Sort por nome (se o join não sair no adapter).**~~ — **fechado no as-built 2026-07-28** (`contact.name` where+sort, int verdes).
+- **`leadershipFilterDefinitions` (tabela de defs multi-filtro à la município).** Revisitar quando: um 3º domínio multi-filtro copiar o molde de lideranças (hoje o toggle DRY + branch config bastam; YAGNI).
+- **`select` + `depth: 0` no find paginado de lideranças.** Pré-existente (não regressão B29); revisitar quando `/campanha/liderancas` aparecer em traces — o path é page-bounded (25).
+
+## Já resolvido no simplify (não reabrir)
+
+- `parseExhaustiveEnumParam` em status/setor (B18: todas → ausente) + teste unit.
+- Toggles multi via raw params + `strictDecimalInteger` no município; `CampaignTableHead.filter`; HeaderFilter colapsado; labels de acesso em `leadershipLabels`; `isLeadershipSector`; summary aceita `Record`|`Map`; re-export morto de `LeadershipListState` removido.
+
+## Explicitamente fora (triage pós-simplify 2026-07-28)
+
+- Flatten do wrapper `filterFacets` de um só campo — higiene sem ROI.
+- Casts de setor nos `formActions` de ficha/nova — fora do diff; `isLeadershipSector` já existe para o próximo toque.
 
 ## Referências
 
