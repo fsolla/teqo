@@ -1,22 +1,17 @@
 /**
  * Pins the "simple" entity list parsers ahead of the Pass 2 list-system
- * consolidation (W1): lideranças, organizações, demandas and assessores.
- * Their URL contracts must survive the migration byte-identical. Dobradinhas
- * left this group in B33 — its parser grew a full sort/filter contract of its
- * own and moved to `stateDeputyListUrl.ts`, pinned in
- * `stateDeputyListUrl.unit.spec.ts`.
+ * consolidation (W1): organizações, demandas and assessores. Lideranças left
+ * this group in B29 — its parser grew a full sort/filter contract of its own
+ * and moved to `leadershipListUrl.ts`, pinned in
+ * `leadershipListUrl.unit.spec.ts`. Dobradinhas left earlier in B33.
  */
 import { describe, expect, it } from 'vitest'
 
 import { advisorListHrefForPage, parseAdvisorListParams } from '@/utilities/advisorData'
 import { parseDemandListParams } from '@/utilities/campaignDemandData'
-import { parseLeadershipListParams } from '@/utilities/leadershipData'
 import { parseOrganizationListParams } from '@/utilities/organizationData'
 
-const qAndPageParsers = [
-  ['leadership', parseLeadershipListParams],
-  ['advisor', parseAdvisorListParams],
-] as const
+const qAndPageParsers = [['advisor', parseAdvisorListParams]] as const
 
 describe.each(qAndPageParsers)('%s list parser (q + page)', (_name, parse) => {
   it('defaults to page 1 without q', () => {

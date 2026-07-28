@@ -52,6 +52,7 @@ describe('loadLeadershipListPageData', () => {
       municipalityIDs: [municipality.id],
       hasAppAccess: false,
     })
+    expect(result.filterFacets.municipalityIDs).toContain(municipality.id)
   })
 
   it('short-circuits to an empty page when no contact matches the query', async () => {
@@ -63,7 +64,12 @@ describe('loadLeadershipListPageData', () => {
       q: fixtures.value('sem-resultado'),
     })
 
-    expect(result).toEqual({ rows: [], totalDocs: 0, totalPages: 0 })
+    expect(result).toEqual({
+      rows: [],
+      totalDocs: 0,
+      totalPages: 0,
+      filterFacets: { municipalityIDs: [] },
+    })
   })
 
   it('returns an empty page for leaders (staff guard, no throw)', async () => {
@@ -72,7 +78,173 @@ describe('loadLeadershipListPageData', () => {
 
     const result = await loadLeadershipListPageData(payload, leader, { page: 1 })
 
-    expect(result).toEqual({ rows: [], totalDocs: 0, totalPages: 0 })
+    expect(result).toEqual({
+      rows: [],
+      totalDocs: 0,
+      totalPages: 0,
+      filterFacets: { municipalityIDs: [] },
+    })
+  })
+
+  it('filters by supportStatus, sector, access and municipality', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipalityA = await fixtures.getMunicipality()
+    const municipalityB = await fixtures.getMunicipality()
+    const marker = fixtures.value('lead-filter')
+
+    const matchContact = await fixtures.createContact({ name: `Ana ${marker}` })
+    const missContact = await fixtures.createContact({ name: `Bruno ${marker}` })
+    const match = await fixtures.createLeadership({
+      contact: matchContact.id,
+      municipalities: [municipalityA.id],
+      supportStatus: 'a_abordar',
+      sector: 'religioso',
+    })
+    await fixtures.createLeadership({
+      contact: missContact.id,
+      municipalities: [municipalityB.id],
+      supportStatus: 'engajado',
+      sector: 'sindical',
+    })
+
+    const byStatus = await loadLeadershipListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      statuses: ['a_abordar'],
+    })
+    expect(byStatus.rows.map((row) => row.id)).toEqual([match.id])
+
+    const bySector = await loadLeadershipListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      sectors: ['religioso'],
+    })
+    expect(bySector.rows.map((row) => row.id)).toEqual([match.id])
+
+    const byMunicipality = await loadLeadershipListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      municipalities: [municipalityA.id],
+    })
+    expect(byMunicipality.rows.map((row) => row.id)).toEqual([match.id])
+
+    const withoutAccess = await loadLeadershipListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      access: 'sem',
+    })
+    expect(withoutAccess.totalDocs).toBe(2)
+    expect(withoutAccess.rows.every((row) => !row.hasAppAccess)).toBe(true)
+
+    const withAccess = await loadLeadershipListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      access: 'com',
+    })
+    expect(withAccess.totalDocs).toBe(0)
+  })
+
+  it('sorts by contact.name in both directions via the dotted join path', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const marker = fixtures.value('lead-sort')
+    const alpha = await fixtures.createContact({ name: `Aaa ${marker}` })
+    const omega = await fixtures.createContact({ name: `Zzz ${marker}` })
+    const first = await fixtures.createLeadership({
+      contact: alpha.id,
+      municipalities: [municipality.id],
+    })
+    const last = await fixtures.createLeadership({
+      contact: omega.id,
+      municipalities: [municipality.id],
+    })
+
+    const asc = await loadLeadershipListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      sort: 'name',
+      dir: 'asc',
+    })
+    expect(asc.rows.map((row) => row.id)).toEqual([first.id, last.id])
+
+    const desc = await loadLeadershipListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      sort: 'name',
+      dir: 'desc',
+    })
+    expect(desc.rows.map((row) => row.id)).toEqual([last.id, first.id])
+  })
+
+  it('keeps the municipality facet reachable under other filters and unions the selection', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipalityA = await fixtures.getMunicipality()
+    const municipalityB = await fixtures.getMunicipality()
+    const marker = fixtures.value('lead-facet')
+    await fixtures.createLeadership({
+      contact: (await fixtures.createContact({ name: `A ${marker}` })).id,
+      municipalities: [municipalityA.id],
+      supportStatus: 'a_abordar',
+    })
+    await fixtures.createLeadership({
+      contact: (await fixtures.createContact({ name: `B ${marker}` })).id,
+      municipalities: [municipalityB.id],
+      supportStatus: 'engajado',
+    })
+
+    const unfiltered = await loadLeadershipListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+    })
+    expect(unfiltered.filterFacets.municipalityIDs).toEqual(
+      expect.arrayContaining([municipalityA.id, municipalityB.id]),
+    )
+
+    const filtered = await loadLeadershipListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      statuses: ['a_abordar'],
+      municipalities: [municipalityB.id],
+    })
+    // Own filter ignored for the facet — A stays; B stays because it is selected.
+    expect(filtered.filterFacets.municipalityIDs).toEqual(
+      expect.arrayContaining([municipalityA.id, municipalityB.id]),
+    )
+  })
+
+  it('does not leak out-of-scope leaderships to an advisor even with a foreign municipality filter', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const inScope = await fixtures.getMunicipality()
+    const outOfScope = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(inScope.id, [advisor.id])
+
+    const marker = fixtures.value('lead-scope')
+    const visible = await fixtures.createLeadership({
+      contact: (await fixtures.createContact({ name: `In ${marker}` })).id,
+      municipalities: [inScope.id],
+    })
+    await fixtures.createLeadership({
+      contact: (await fixtures.createContact({ name: `Out ${marker}` })).id,
+      municipalities: [outOfScope.id],
+    })
+
+    const foreignFilter = await loadLeadershipListPageData(payload, advisor, {
+      page: 1,
+      q: marker,
+      municipalities: [outOfScope.id],
+    })
+    expect(foreignFilter.totalDocs).toBe(0)
+    expect(foreignFilter.rows).toEqual([])
+
+    const scoped = await loadLeadershipListPageData(payload, advisor, {
+      page: 1,
+      q: marker,
+    })
+    expect(scoped.rows.map((row) => row.id)).toEqual([visible.id])
   })
 })
 

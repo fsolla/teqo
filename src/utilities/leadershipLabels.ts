@@ -10,3 +10,8 @@ export const supportStatusLabels: Record<SupportStatus, string> = {
   em_disputa: 'Em disputa',
   negativo: 'Negativo',
 }
+
+export const leadershipAccessFilterLabels: Record<'com' | 'sem', string> = {
+  com: 'Com acesso',
+  sem: 'Sem acesso',
+}

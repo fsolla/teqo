@@ -1,13 +1,17 @@
 # B29 — Ordenação e filtro no header da lista de lideranças
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue em código
+Atualizado em: 2026-07-28
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — superfícies de coordenação, item B29)
-Impeccable: B — encaixe em tela existente (`/campanha/liderancas`), sem rota nova; herda o header rico de `/campanha/municipios` (B15 ✓ + B16 ✓)
-Appetite: ~1–1,5 dia eng; sem migration — módulo de URL + filtros no loader + duas colunas; o chrome compartilhado já foi entregue pelo B21
+Impeccable: B — encaixe em tela existente (`/campanha/liderancas`), sem rota nova; herda o header rico (B15 ✓ + B16 ✓) via chrome compartilhado do B21 ✓; molde de domínio = B33 ✓ (`StateDeputy*`)
+Appetite: ~1–1,5 dia eng; sem migration — módulo de URL + filtros no loader + duas colunas + wrappers; chrome já pago
 Responsável: —
 
+**As-built 2026-07-28:** join `contact.name` funcionou para `where` e `sort` (int tests verdes); `LeadershipFilters` substitui `CampaignSearchForm` (busca + resumo/Limpar, sem barra mobile empilhada); colunas Setor + Última atualização (idade relativa visível; absoluto em `title`); facet de municípios cross-filtrado; empty via `CampaignTable empty`; harden/optimize out. Critique P1s fechados (copy do header Municípios; freshness relativa).
+
 **Atualização B21 (2026-07-25):** a extração deixou de fazer parte do appetite deste item. `shared/CampaignSortableHead` e `CampaignHeaderFilterPopover` já existem, e os wrappers de municípios já foram migrados. B29 implementa apenas os wrappers/política de liderança e o contrato de URL/filtros próprios.
+
+**Revisão 2026-07-28 (auditoria pré-implementação):** (1) template real = B33 dobradinhas (`StateDeputySortableHead`/`StateDeputyHeaderFilter`/`StateDeputyFilters` + `useCampaignListFilterNavigation`), não re-extrair chrome; (2) Adiado "editar supportStatus na célula" fechado por **B32 ✓**; (3) `CampaignSearchForm` em lideranças é substituído por `LeadershipFilters` (preserva params de URL); (4) mobile v1 = header em todos os breakpoints + busca/resumo, sem barra empilhada.
 
 ## Design (Impeccable)
 
@@ -20,7 +24,7 @@ Brief compacto:
 - **Persona / contexto:** Assessor com carteira de municípios (e o CG na mesa) abrindo a lista de lideranças para trabalhar uma fatia — "quem ainda está `a abordar` em Feira de Santana?", "quais lideranças religiosas de Irecê ainda não têm acesso ao app?". Hoje a única ferramenta é a busca por nome, e a ordem é sempre a última escrita.
 - **Job principal:** recortar a lista de pessoas pelo critério do dia e ordená-la pela coluna que importa, sem sair da tela nem decorar quem é quem.
 - **Estratégia de cor:** Restrained. O único acento continua sendo o `SupportStatusBadge` existente; filtro ativo é o funil preenchido do B16, não cor nova.
-- **Edit where you see:** **não neste item.** A lista de lideranças ainda é leitura + navegação para a ficha; edição rápida de `supportStatus` na célula é candidata natural (mesmo padrão do B9/B24), mas é outra decisão, com outro appetite — registrada em "Adiado com gatilho", não semeada aqui.
+- **Edit where you see:** fora do escopo de sort/filtro deste item. A edição rápida de `supportStatus` na célula já foi entregue por **B32 ✓** (`LeadershipListSupportStatusControl`); este item não toca mutação.
 - **Anti-goals:** score/nível sintético de liderança na tela (é **E14**); KPI strip / overview de lideranças; filtro por telefone ou qualquer recorte de PII sensível; segunda gramática de lista (chips próprios, sort client-side, estado fora da URL).
 
 ## Dados → decisão → apresentação
@@ -42,7 +46,7 @@ Com o seed do E4R ✓ a base já entrou com lideranças nominais vindas da plani
 
 Há ainda um defeito adjacente na busca atual: como o nome vive em `Contact`, `loadLeadershipListPageData` pré-resolve os contatos com `contains` e **`limit: 200`**, e depois filtra as lideranças por esses ids. Uma busca por sobrenome comum trunca silenciosamente. Este item toca exatamente esse caminho de query, então a correção entra junto (ver Objetivos).
 
-Do lado da UI, o header rico hoje é **exclusivo do domínio `municipality`**: `MunicipalitySortableHead` importa `municipalityListUrl`, e `MunicipalityHeaderFilter` importa `municipalityListFilters`. As outras cinco listas (`demandas`, `dobradinhas`, `organizacoes`, `liderancas`, `apoiadores`) usam o `CampaignTableHead` simples. O B21 (página dos Territórios de Identidade) registrou "head/URL genéricos em `shared/`" como **adiado até o 3º call site**; com este item o terceiro consumidor deixa de ser hipótese.
+Do lado da UI, o chrome compartilhado (`CampaignSortableHead` / `CampaignHeaderFilterPopover`) já existe (B21 ✓) e é consumido por municípios, territórios e dobradinhas (B33 ✓). Lideranças ainda usa `CampaignTableHead` simples + `CampaignSearchForm` (só `q`+`page`).
 
 ## Objetivos
 
@@ -50,8 +54,8 @@ Do lado da UI, o header rico hoje é **exclusivo do domínio `municipality`**: `
 - **Filtrar pelo header** (Popover, padrão B16 ✓) em Status de apoio (multi), Setor (multi), Município (multi, com facet) e Acesso ao app (com/sem) — mais chips de filtro ativo e "Limpar" pelos shells compartilhados.
 - **Toda chave de ordenação e todo filtro pousam numa coluna visível**: entram as colunas "Setor" e "Última atualização" (ambas já no `LeadershipRowViewModel`, hoje não renderizadas), para não existir ordenação invisível.
 - **Ordenação e filtro executados no banco** (`payload.find` com `sort`/`where`), nunca em memória sobre a página de 25 linhas.
-- **Header e filtros permanecem montados com zero resultados** — a lista passa a usar a prop `empty` do `CampaignTable` (precedente B16 ✓), em vez de trocar a tabela inteira pelo empty state.
-- **Par head/filtro extraído para `src/components/campaign/shared/`** e `/campanha/municipios` migrado junto, sem mudança de comportamento observável lá (mesmos hrefs, mesmo `aria-sort`, mesmo optimistic).
+- **Header e filtros permanecem montados com zero resultados** — a lista passa a usar a prop `empty` do `CampaignTable` (precedente B16 ✓ / B33 ✓), em vez de trocar a tabela inteira pelo empty state.
+- **Wrappers de domínio** (`LeadershipSortableHead` / `LeadershipHeaderFilter` / `LeadershipFilters`) consomem o chrome compartilhado já entregue — sem re-extração.
 - **Teto de 200 na busca por nome eliminado** — a busca passa pela mesma query da lista se o caminho relacional funcionar no adapter; caso contrário, permanece a pré-resolução e o teto vira defeito nomeado, não silencioso (ver Decisões travadas).
 - Guardrails: **sem migration, sem collection, sem `Consent`, sem server action**; access inalterado (`isCampaignStaff` na rota, `overrideAccess: false` na leitura, escopo do assessor pelo access da collection); liderança segue sem acesso à área.
 
@@ -61,7 +65,7 @@ Do lado da UI, o header rico hoje é **exclusivo do domínio `municipality`**: `
 - **Ordenação por nome via join na query, não por desnormalização.** O adapter Postgres resolve `sort: 'contact.name'` por caminho pontilhado (`buildOrderBy` → `getTableColumnFromPath`, que adiciona o join), então o nome — que vive em `Contact`, a fonte única de pessoa — pode ordenar sem duplicar dado. **Rejeitado:** copiar `contact.name` para um campo `leadership.name` mantido por hook (migration + segunda fonte de verdade de nome, exatamente o cadastro paralelo que o AGENTS proíbe, e por um sort); carregar todas as lideranças do escopo e ordenar em memória (não escala com a base nominal real da C2 e duplica a paginação); ordenar só a página carregada (ordenação que mente). **Fallback nomeado:** se na implementação o caminho relacional não sair no adapter, a v1 entrega apenas as chaves locais (`supportStatus`, `sector`, `updatedAt`) e o sort por nome vira Adiado com gatilho — a desnormalização continua rejeitada.
 - **Filtros v1 = as colunas visíveis** (Status, Setor, Município, Acesso ao app), todos sobre campos indexados da própria `leadership` (`supportStatus`, `sector`, `municipalities`, `user`). **Rejeitado:** filtro por organização e por dobradinha (não têm decisão nomeada hoje e cada popover custa uma query de facet — adiados com gatilho); filtro por telefone/e-mail preenchido (recorte de PII sem decisão, e o telefone é justamente o que o seed do E4R não trouxe); filtro por "criada por mim".
 - **Opções dos filtros vêm de facet no escopo do ator**, unindo sempre o valor já selecionado (precedente `loadMunicipalityListFilterFacets`, `src/utilities/municipalityPageData.ts`). O assessor só vê no popover os municípios em que existem lideranças suas. **Rejeitado:** listar os 435 municípios do catálogo (o assessor veria opções que zeram a lista dele — e o payload RSC carregaria 435 pares por render); options fixas sem cross-filtragem (o B16 já pagou o preço de aprender que filtro que zera a lista é filtro quebrado).
-- **O par head/filtro é extraído para `shared/` neste item, com municípios migrado junto** — `CampaignSortableHead` (âncora de sort + `aria-sort` + slot de filtro + seam de `description` para o B22) e `CampaignHeaderFilterPopover` (chrome do popover: busca, linhas com checkbox, "Limpar", `min-h-11`, a11y). A política — estado, optimistic, hrefs canônicos — **fica no wrapper de domínio** (`LeadershipHeaderFilter`, `MunicipalityHeaderFilter`), não no componente compartilhado. Este é o 3º call site que o B21 nomeou como gatilho. **Rejeitado:** terceira cópia do head (a próxima métrica/tooltip entraria em uma cópia só — foi assim que o `tooltip` do B22 nasceu meio implementado); item de refactor isolado (abstração sem consumidor, zero valor de usuário, e desenhada sem o terceiro caso na mão); esperar o B21 (empurra a decisão e garante três cópias em vez de duas).
+- **Chrome compartilhado já existe (B21 ✓)** — B29 só escreve wrappers de domínio. Molde: B33 (`StateDeputy*`). **Rejeitado:** re-extrair ou duplicar o head.
 - **Sem métrica, score ou nível de liderança nesta tela.** Níveis N0–N4 são **E14**, com histerese e vocabulário duplo. **Rejeitado:** coluna "engajamento" ad hoc derivada de `supportStatus` (criaria um segundo vocabulário de nível que o E14 teria de reconciliar).
 - **i18n e naming** seguem o AGENTS.md: identificadores em inglês (`leadershipListUrl.ts`, `LeadershipListState`, `LeadershipListSortKey`, `buildLeadershipSortHref`, `leadershipFilterDefinitions`, `LeadershipSortableHead`, `CampaignSortableHead`, `CampaignHeaderFilterPopover`), strings visíveis em pt-BR ("Status", "Setor", "Acesso ao app", "Última atualização", "Limpar").
 
@@ -76,32 +80,34 @@ Do lado da UI, o header rico hoje é **exclusivo do domínio `municipality`**: `
 
 ```mermaid
 flowchart LR
-    Url["leadershipListUrl.ts<br/>(state · parse · where · sort · hrefs)"]
-    Filt["leadershipListFilters.ts<br/>(definições · toggles · chips)"]
-    Loader["leadershipData.ts<br/>(find paginado + facets)"]
-    Page["/campanha/liderancas/page.tsx (RSC)"]
-    Dom["LeadershipSortableHead / LeadershipHeaderFilter<br/>(estado + optimistic + hrefs)"]
-    MunDom["MunicipalitySortableHead / MunicipalityHeaderFilter<br/>(migrados)"]
-    Shared["shared/CampaignSortableHead<br/>shared/CampaignHeaderFilterPopover"]
-    Table["CampaignTable (colunas como dado)"]
-    Url --> Loader --> Page --> Table
-    Url --> Dom
-    Filt --> Dom
-    Dom --> Shared
-    MunDom --> Shared
-    Dom --> Table
+    Url["leadershipListUrl.ts"]
+    Filt["leadershipListFilters.ts"]
+    Loader["leadershipData.ts"]
+    Page["liderancas/page.tsx"]
+    Head["LeadershipSortableHead"]
+    Filter["LeadershipHeaderFilter"]
+    Shell["LeadershipFilters"]
+    Shared["CampaignSortableHead + CampaignHeaderFilterPopover"]
+    Nav["useCampaignListFilterNavigation"]
+    Url --> Loader --> Page
+    Url --> Head
+    Filt --> Filter
+    Filt --> Shell
+    Head --> Shared
+    Filter --> Shared
+    Shell --> Nav
+    Page --> Head
+    Page --> Shell
 ```
 
-Componentes:
+Componentes (molde B33 — não re-extrair chrome):
 
-- **`src/utilities/leadershipListUrl.ts`** (novo): `LeadershipListState`, `parseLeadershipListParams` (movido de `leadershipData.ts` e estendido), `buildLeadershipListWhere`, `resolveLeadershipListSort`, serialização canônica, `buildLeadershipListHref` / `buildLeadershipSortHref` / `buildLeadershipFilterOptionHref` e `resolveLeadershipListUrl` (redirect canônico), tudo sobre `campaignListUrl.ts` (`firstValue`, `allParamValues`, `normalizedText`, `strictDecimalInteger`, `buildListHref`, `resolveListUrl`). Espelha `municipalityListUrl.ts` sem importá-lo.
-- **`src/utilities/leadershipListFilters.ts`** (novo): `leadershipFilterDefinitions` (label, seleção multi/toggle, options estáticas para status/setor), helpers de toggle/clear, `formatLeadershipActiveFiltersSummary` para os chips e o empty state. Espelha `municipalityListFilters.ts`.
-- **`src/utilities/leadershipData.ts`** (alterado, `server-only`): `loadLeadershipListPageData` passa a receber o estado completo, montar `where` a partir de `buildLeadershipListWhere`, aplicar `sort` resolvido e devolver também `filterFacets` (municípios presentes no escopo filtrado). Queries seguem com `user` + `overrideAccess: false`; a resolução de nomes de exibição continua no `namesForIds` (bypass já documentado). `parseLeadershipListParams` sai daqui para o módulo de URL.
-- **`src/app/(campaign)/campanha/(app)/liderancas/page.tsx`** (alterado): `resolveLeadershipListUrl` + `redirect` canônico (molde de `municipios/page.tsx`), colunas ganham `LeadershipSortableHead` com `filterParam`, entram as colunas `sector` e `updatedAt`, `CampaignFilterChips` + `CampaignTable empty={…}` no lugar da troca de árvore, footer inalterado.
-- **`src/components/campaign/leadership/LeadershipSortableHead.tsx` / `LeadershipHeaderFilter.tsx`** (novos, client): wrappers finos — `useOptimistic(state)`, hrefs pelo módulo de URL, e render delegado aos compartilhados.
-- **`src/components/campaign/shared/CampaignSortableHead.tsx` / `CampaignHeaderFilterPopover.tsx`** (novos, extraídos de `MunicipalitySortableHead`/`MunicipalityHeaderFilter`): chrome, a11y (`aria-sort`, `aria-label`, `min-h-11`), busca acima do limiar de opções, linhas exclusivas + multi com checkbox, "Limpar". **Depth check:** só chrome; nenhuma regra de URL, nenhum `state` de domínio, nenhum `useOptimistic` dentro. O tooltip do header (**B22**) e o `cellTooltip` (**B23**) passam a ter um único lugar onde pousar.
-- **`MunicipalitySortableHead` / `MunicipalityHeaderFilter`** (alterados): mantêm nome, props e comportamento; passam a compor os compartilhados. O "selecionados no topo" (fill-in) continua sendo helper puro em `src/lib/`, consumido pelo popover compartilhado.
-- **Testes:** unit de `leadershipListUrl` (parse → serialize idempotente, defaults omitidos, valores inválidos descartados — molde de `municipalityListUrl.unit.spec.ts`); int de `loadLeadershipListPageData` (cada filtro, ordenação por nome, e o assessor não vendo liderança fora da carteira mesmo com `?municipality=` de outro município).
+- **`src/utilities/leadershipListUrl.ts`** (novo): contrato `q`/`status`/`sector`/`municipality`/`access`/`sort`/`dir`/`page`; where/sort/hrefs/`resolveLeadershipListUrl`. Espelha `stateDeputyListUrl.ts`.
+- **`src/utilities/leadershipListFilters.ts`** (novo): toggles/clear/summary; options estáticas status/setor; municipality por id; access `com`|`sem`.
+- **`src/utilities/leadershipData.ts`** (alterado): where+sort+facet de municípios; busca via `'contact.name'`; parse/hrefs saem para o módulo de URL (re-export se preciso).
+- **`LeadershipSortableHead` / `LeadershipHeaderFilter` / `LeadershipFilters`** (novos): wrappers + busca que preserva URL (substitui `CampaignSearchForm`).
+- **`liderancas/page.tsx`**: redirect canônico; colunas Setor + Última atualização; heads ricos; `CampaignTable empty={…}`.
+- **Testes:** unit `leadershipListUrl`; int filtros + sort por nome + escopo do assessor.
 - **Sem migration, sem collection, sem `Consent`, sem server action.**
 
 ## Dependências
@@ -130,10 +136,22 @@ Componentes:
 
 ## Adiado com gatilho
 
-- **Edição rápida de `supportStatus` na célula** (Popover + auto-save, padrão B9/B24). Revisitar quando: a mesa reportar que abre a ficha só para mudar o status, ou ≥1 pedido em sessão/R6.
+- ~~**Edição rápida de `supportStatus` na célula**~~ — **fechado por B32 ✓** (2026-07-26).
 - **Filtro por organização e por dobradinha.** Revisitar quando: houver decisão nomeada em sessão (ex.: "quero as lideranças do sindicato X") ou quando a cobertura de `organizations` na base real passar a ser a regra, não a exceção.
-- **Select compacto de ordenação no mobile.** Revisitar quando: uso real em celular mostrar que rolar o header na horizontal atrapalha (mesmo gatilho que produziu o select compacto do B15).
-- **Sort por nome (se o join não sair no adapter).** Revisitar quando: houver evidência de que a ordem alfabética é bloqueante — e ainda assim sem desnormalizar (a alternativa seria uma view/consulta dedicada).
+- **Select compacto / barra empilhada de ordenação no mobile.** Revisitar quando: uso real em celular mostrar que rolar o header na horizontal atrapalha (mesmo gatilho que produziu o select compacto do B15; B33 optou por paridade mobile — lideranças não).
+- ~~**Sort por nome (se o join não sair no adapter).**~~ — **fechado no as-built 2026-07-28** (`contact.name` where+sort, int verdes).
+- **`leadershipFilterDefinitions` (tabela de defs multi-filtro à la município).** Revisitar quando: um 3º domínio multi-filtro copiar o molde de lideranças (hoje o toggle DRY + branch config bastam; YAGNI).
+- **`select` + `depth: 0` no find paginado de lideranças.** Pré-existente (não regressão B29); revisitar quando `/campanha/liderancas` aparecer em traces — o path é page-bounded (25).
+
+## Já resolvido no simplify (não reabrir)
+
+- `parseExhaustiveEnumParam` em status/setor (B18: todas → ausente) + teste unit.
+- Toggles multi via raw params + `strictDecimalInteger` no município; `CampaignTableHead.filter`; HeaderFilter colapsado; labels de acesso em `leadershipLabels`; `isLeadershipSector`; summary aceita `Record`|`Map`; re-export morto de `LeadershipListState` removido.
+
+## Explicitamente fora (triage pós-simplify 2026-07-28)
+
+- Flatten do wrapper `filterFacets` de um só campo — higiene sem ROI.
+- Casts de setor nos `formActions` de ficha/nova — fora do diff; `isLeadershipSector` já existe para o próximo toque.
 
 ## Referências
 

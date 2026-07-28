@@ -5,15 +5,19 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { LeadershipInviteRowAction } from '@/components/campaign/invite/LeadershipInviteRowAction'
+import { LeadershipFilters } from '@/components/campaign/leadership/LeadershipFilters'
 import { LeadershipListSupportStatusControl } from '@/components/campaign/leadership/LeadershipListSupportStatusControl'
+import {
+  LeadershipFilterHead,
+  LeadershipSortableHead,
+} from '@/components/campaign/leadership/LeadershipSortableHead'
 import { CampaignCopyableCell } from '@/components/campaign/shared/CampaignCopyableCell'
-import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
+  CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
-import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
 import {
   CampaignTable,
   CampaignTableHead,
@@ -26,19 +30,39 @@ import {
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/Empty'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
-import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
+import { MAX_LEADERSHIP_MUNICIPALITIES, isLeadershipSector } from '@/lib/schemas/leadership'
+import { cn } from '@/lib/utils'
 import { getAdvisorMunicipalityIds, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
+import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
+import { formatRelativeAge } from '@/utilities/formatRelativeAge'
+import { loadLeadershipListPageData, type LeadershipRowViewModel } from '@/utilities/leadershipData'
+import { leadershipAccessFilterLabels } from '@/utilities/leadershipLabels'
+import {
+  buildLeadershipFilterHref,
+  clearLeadershipListFilters,
+  type LeadershipFilterOption,
+} from '@/utilities/leadershipListFilters'
 import {
   buildLeadershipListHref,
-  loadLeadershipListPageData,
-  parseLeadershipListParams,
-  type LeadershipRowViewModel,
-} from '@/utilities/leadershipData'
+  formatLeadershipListSortSummary,
+  resolveLeadershipListSort,
+  resolveLeadershipListUrl,
+  type LeadershipListState,
+} from '@/utilities/leadershipListUrl'
+import { leadershipSectorLabels } from '@/utilities/leadershipUi'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipalityPortfolioIndex'
 
 import {
@@ -50,20 +74,63 @@ type LeadershipsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
+const dateFormatter = new Intl.DateTimeFormat('pt-BR')
+
+const LeadershipListEmptyState = ({ state }: { state: LeadershipListState }) => (
+  <Empty className="min-h-56">
+    <EmptyHeader>
+      <EmptyMedia variant="icon">
+        <SearchXIcon aria-hidden="true" />
+      </EmptyMedia>
+      <EmptyTitle>Nenhuma liderança encontrada</EmptyTitle>
+      <EmptyDescription>
+        Cadastre a primeira liderança ou ajuste a busca e os filtros. Você só vê lideranças dos seus
+        municípios.
+      </EmptyDescription>
+    </EmptyHeader>
+    <EmptyContent>
+      <CampaignTransitionAnchor
+        href={buildLeadershipFilterHref(clearLeadershipListFilters(state))}
+        replace
+        scroll={false}
+        className={cn(buttonVariants({ variant: 'outline' }), 'min-h-11')}
+      >
+        Limpar busca e filtros
+      </CampaignTransitionAnchor>
+      <Button asChild className="min-h-11">
+        <Link href="/campanha/liderancas/nova">
+          <PlusIcon data-icon="inline-start" aria-hidden="true" />
+          Nova liderança
+        </Link>
+      </Button>
+    </EmptyContent>
+  </Empty>
+)
+
 const leadershipColumns = ({
+  state,
   stateDeputyOptions,
   municipalityIndex,
+  municipalityFilterOptions,
   addableMunicipalityIds,
+  nowMs,
 }: {
+  state: LeadershipListState
   stateDeputyOptions: RelationCellOption[]
   municipalityIndex: MunicipalityPortfolioIndexEntry[]
+  municipalityFilterOptions: LeadershipFilterOption[]
   /** Advisors may only link municipalities they administer; staff: undefined. */
   addableMunicipalityIds?: ReadonlySet<number>
+  nowMs: number
 }): Array<CampaignTableColumn<LeadershipRowViewModel>> => [
   {
     id: 'name',
     mandatory: true,
-    head: <CampaignTableHead>Nome</CampaignTableHead>,
+    head: (
+      <LeadershipSortableHead state={state} sortKey="name">
+        Nome
+      </LeadershipSortableHead>
+    ),
     cell: (row) => (
       <Link
         href={`/campanha/liderancas/${row.id}`}
@@ -93,17 +160,38 @@ const leadershipColumns = ({
   },
   {
     id: 'supportStatus',
-    head: <CampaignTableHead>Status</CampaignTableHead>,
+    head: (
+      <LeadershipSortableHead state={state} sortKey="supportStatus" filterParam="supportStatus">
+        Status
+      </LeadershipSortableHead>
+    ),
     cell: (row) => (
       <LeadershipListSupportStatusControl leadershipID={row.id} status={row.supportStatus} />
     ),
   },
   {
+    id: 'sector',
+    head: (
+      <LeadershipSortableHead state={state} sortKey="sector" filterParam="sector">
+        Setor
+      </LeadershipSortableHead>
+    ),
+    cell: (row) => {
+      if (!row.sector || !isLeadershipSector(row.sector)) return row.sector || '—'
+      return leadershipSectorLabels[row.sector]
+    },
+  },
+  {
     id: 'municipalities',
     head: (
-      <CampaignTableHead description="Edite aqui: passe o mouse em um chip para remover, ou busque para adicionar. Um território ou ZE entra e sai como um bloco. Cada liderança fica entre 1 e 30 municípios.">
+      <LeadershipFilterHead
+        state={state}
+        filterParam="municipality"
+        options={municipalityFilterOptions}
+        description="Recorte por um ou mais municípios da carteira. Na célula, os chips editam o vínculo (fine pointer) ou abrem o drawer (touch)."
+      >
         Municípios
-      </CampaignTableHead>
+      </LeadershipFilterHead>
     ),
     cellClassName: 'max-w-64 whitespace-normal',
     cell: (row) => (
@@ -149,12 +237,34 @@ const leadershipColumns = ({
   },
   {
     id: 'appAccess',
-    head: <CampaignTableHead>Acesso ao app</CampaignTableHead>,
+    head: (
+      <LeadershipFilterHead state={state} filterParam="access">
+        Acesso ao app
+      </LeadershipFilterHead>
+    ),
     cell: (row) => (
       <Badge variant={row.hasAppAccess ? 'estimate-confirmed' : 'outline'}>
-        {row.hasAppAccess ? 'Com acesso' : 'Sem acesso'}
+        {row.hasAppAccess ? leadershipAccessFilterLabels.com : leadershipAccessFilterLabels.sem}
       </Badge>
     ),
+  },
+  {
+    id: 'updatedAt',
+    head: (
+      <LeadershipSortableHead state={state} sortKey="updatedAt">
+        Última atualização
+      </LeadershipSortableHead>
+    ),
+    cell: (row) => {
+      const absolute = formatBahiaDateTimeLabel(row.updatedAt)
+      const relative = formatRelativeAge(new Date(row.updatedAt).getTime(), nowMs)
+      return (
+        <time dateTime={row.updatedAt} title={absolute} className="text-muted-foreground">
+          <span className="capitalize">{relative}</span>
+          <span className="sr-only"> ({dateFormatter.format(new Date(row.updatedAt))})</span>
+        </time>
+      )
+    },
   },
   {
     id: 'actions',
@@ -204,19 +314,51 @@ const leadershipColumns = ({
 
 export default async function LeadershipsPage({ searchParams }: LeadershipsPageProps) {
   const rawSearchParams = await searchParams
+  const canonicalUrl = resolveLeadershipListUrl(rawSearchParams)
+  if (canonicalUrl.redirectHref) redirect(canonicalUrl.redirectHref)
+
   const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
   if (!user) redirect('/campanha/login')
   if (!isCampaignStaff(user)) redirect('/campanha')
 
-  const state = parseLeadershipListParams(rawSearchParams)
-  const [{ rows, totalDocs, totalPages }, stateDeputyOptions, municipalityIndex, administeredIds] =
-    await Promise.all([
-      loadLeadershipListPageData(payload, user, state),
-      loadStateDeputyOptions(payload, user),
-      loadMunicipalityPortfolioIndex(payload),
-      user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
-    ])
+  const [
+    { rows, totalDocs, totalPages, filterFacets },
+    stateDeputyOptions,
+    municipalityIndex,
+    administeredIds,
+  ] = await Promise.all([
+    loadLeadershipListPageData(payload, user, canonicalUrl.state),
+    loadStateDeputyOptions(payload, user),
+    loadMunicipalityPortfolioIndex(payload),
+    user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
+  ])
+  const resolvedUrl = resolveLeadershipListUrl(rawSearchParams, totalPages)
+  if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
+  const { state } = resolvedUrl
+
+  const municipalityById = new Map(municipalityIndex.map((entry) => [entry.id, entry]))
+  const municipalityFilterOptions: LeadershipFilterOption[] = filterFacets.municipalityIDs
+    .map((id) => {
+      const entry = municipalityById.get(id)
+      return entry ? { value: String(id), label: entry.name } : null
+    })
+    .filter((option): option is LeadershipFilterOption => option !== null)
+    .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
+
+  const municipalityLabelsById: Record<number, string> = {}
+  for (const option of municipalityFilterOptions) {
+    municipalityLabelsById[Number(option.value)] = option.label
+  }
+  for (const id of state.municipalities ?? []) {
+    if (!municipalityLabelsById[id]) {
+      municipalityLabelsById[id] = municipalityById.get(id)?.name ?? `Município #${id}`
+    }
+  }
+
+  const { sort, dir } = resolveLeadershipListSort(state)
+  const sortSummary = formatLeadershipListSortSummary(sort, dir)
   const columns = leadershipColumns({
+    state,
     stateDeputyOptions: stateDeputyOptions.map((option) => ({
       id: option.id,
       searchLabel: option.name,
@@ -228,7 +370,9 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
       },
     })),
     municipalityIndex,
+    municipalityFilterOptions,
     ...(administeredIds ? { addableMunicipalityIds: new Set(administeredIds) } : {}),
+    nowMs: Date.now(),
   })
 
   return (
@@ -249,40 +393,29 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
       </header>
 
       <CampaignListPendingBoundary>
-        <CampaignSearchForm
-          ariaLabel="Buscar liderança por nome"
-          placeholder="Buscar por nome…"
-          initialQuery={state.q ?? ''}
-          basePath="/campanha/liderancas"
-        />
+        <LeadershipFilters state={state} municipalityLabelsById={municipalityLabelsById} />
 
         <CampaignListResults>
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {sortSummary}
+          </p>
+          <CampaignTable
+            caption={`${sortSummary}. Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações.`}
+            columns={columns}
+            rows={rows}
+            rowKey={(row) => row.id}
+            empty={<LeadershipListEmptyState state={state} />}
+          />
           {rows.length ? (
-            <>
-              <CampaignTable columns={columns} rows={rows} rowKey={(row) => row.id} />
-              <CampaignListFooter
-                totalDocs={totalDocs}
-                singular="liderança"
-                plural="lideranças"
-                page={state.page}
-                totalPages={totalPages}
-                hrefForPage={(page) => buildLeadershipListHref(state, page)}
-              />
-            </>
-          ) : (
-            <CampaignListEmptyState
-              icon={SearchXIcon}
-              title="Nenhuma liderança encontrada"
-              description="Cadastre a primeira liderança ou ajuste a busca. Você só vê lideranças dos seus municípios."
-            >
-              <Button asChild className="min-h-11">
-                <Link href="/campanha/liderancas/nova">
-                  <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                  Nova liderança
-                </Link>
-              </Button>
-            </CampaignListEmptyState>
-          )}
+            <CampaignListFooter
+              totalDocs={totalDocs}
+              singular="liderança"
+              plural="lideranças"
+              page={state.page}
+              totalPages={totalPages}
+              hrefForPage={(page) => buildLeadershipListHref(state, page)}
+            />
+          ) : null}
         </CampaignListResults>
       </CampaignListPendingBoundary>
     </CampaignPageShell>
