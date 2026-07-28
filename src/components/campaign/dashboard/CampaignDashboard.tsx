@@ -58,11 +58,14 @@ export const CampaignDashboard = ({
   view,
   userName,
   mapSlot = null,
+  suggestionsSlot = null,
 }: {
   view: StaffDashboardView
   userName: string
   /** Server-streamed map section (composition keeps this component map-agnostic). */
   mapSlot?: ReactNode
+  /** Server-streamed suggestion queue (E11) — right after the KPIs: it is the "onde ajo". */
+  suggestionsSlot?: ReactNode
 }) => (
   <CampaignPageShell>
     <header className="flex flex-col gap-1">
@@ -109,6 +112,8 @@ export const CampaignDashboard = ({
         ]}
       />
     </section>
+
+    {suggestionsSlot}
 
     <div className="grid gap-6 lg:grid-cols-2">
       <section

@@ -47,3 +47,11 @@ export const formatMunicipalitySignalAgeLabel = (ageInDays: number | null): stri
   if (ageInDays === 1) return 'há 1 dia'
   return `há ${ageInDays} dias`
 }
+
+/**
+ * The same age as a lowercase clause for prose ("o município nunca recebeu
+ * sinal", "…sem sinal há 40 dias") — E11's silence review embeds it
+ * mid-sentence, where the cell label above would break the flow.
+ */
+export const formatSilenceAgeLabel = (ageInDays: number | null): string =>
+  ageInDays === null ? 'nunca recebeu sinal' : `sem sinal há ${ageInDays} dias`
