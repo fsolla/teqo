@@ -176,7 +176,6 @@ describe('CampaignHeaderFilterPopover selected-first ordering', () => {
       target: { value: 'o' },
     })
 
-    // Echo / Foxtrot / Golf / Hotel match "o"; selected (Hotel, Foxtrot) first.
     expect(labelsInOrder(optionNav())).toEqual(['Foxtrot', 'Hotel', 'Echo', 'Golf'])
   })
 

@@ -27,6 +27,7 @@ export const CampaignMobileMultiFilterField = ({
   // No snapshot: the NativeSelect closes on every choice, so the next open
   // already wants the just-toggled value at the top.
   const { ordered } = orderFilterOptionsSelectedFirst(options, selected)
+  const selectedSet = new Set(selected)
 
   return (
     <Field>
@@ -44,7 +45,7 @@ export const CampaignMobileMultiFilterField = ({
         </NativeSelectOption>
         {ordered.map((option) => (
           <NativeSelectOption key={option.value} value={option.value}>
-            {selected.includes(option.value) ? `✓ ${option.label}` : option.label}
+            {selectedSet.has(option.value) ? `✓ ${option.label}` : option.label}
           </NativeSelectOption>
         ))}
       </NativeSelect>

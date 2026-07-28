@@ -101,8 +101,6 @@ export const CampaignHeaderFilterPopover = ({
   const filteredRows = needle
     ? searchIndex.filter((entry) => entry.haystack.includes(needle)).map((entry) => entry.row)
     : optionRows
-  // Order only while open: a closed popover keeps the natural facet order, and
-  // the snapshot is irrelevant until the next open.
   const { ordered: visibleRows, selectedCount } =
     open && isMultiSelect
       ? orderFilterOptionsSelectedFirst(filteredRows, selectionSnapshot)
