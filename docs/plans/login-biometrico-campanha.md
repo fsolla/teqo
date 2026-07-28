@@ -118,6 +118,18 @@ Depth check: reusa `setCampaignAuthCookie` / `getCampaignUser`; não cria segund
 
 - **Passkeys sincronizadas multi-device como copy de produto.** Revisitar quando: mesa pedir login no laptop novo sem senha após enrollment no celular.
 - **Exigir re-senha a cada N dias mesmo com biometria.** Revisitar se assessoria jurídica pedir após lote Onda 0.
+- **Núcleo HMAC compartilhado com `supporterImportToken.ts`.** ~35 linhas idênticas (assinar, comparar em tempo constante, `base64url`), 2 call sites. Revisitar quando: um **terceiro** consumidor de cookie/token assinado nascer — extrair agora mexeria no caminho do token de import por nada.
+- **`bodySchema` opcional em `campaignJsonMutationRoute`.** Duas das quatro rotas WebAuthn não têm corpo para validar e usam `campaignWebAuthnNoBodySchema` (`z.unknown()`), porque a casca sempre faz `parse`. Revisitar quando: nascer uma **terceira** rota JSON sem corpo fora da biometria — aí o `{}` que o cliente posta e o schema-fantasma valem um seam.
+- **`postJson` promovido a `campaignJsonRequest.ts`.** A casca de uma linha sobre `postCampaignJson` só descarta o `ok` (o discriminante do envelope é que decide), e é o único chamador que quer isso. Revisitar quando: um segundo módulo fora da biometria precisar do payload sem o `ok`.
+
+## Explicitamente fora (triage do fechamento)
+
+Achados dos revisores do `/simplify` **descartados com motivo**, para não voltarem como “óbvios”:
+
+- **Sobrepor o `import()` do módulo de cerimônia ao POST de `*-options`.** Economiza um RTT **só na primeira** cerimônia do dispositivo (o chunk tem 3,7 kB gzip e fica em cache depois), nunca foi medido em ms, e threading do `Promise.all` por duas funções exportadas e três ilhas é mais código do que o ganho justifica.
+- **Webpack duplicando o módulo de cerimônia em dois chunks lazy (~1,6 kB gzip).** Dimensionamento de split-chunk, não coisa do código-fonte; o próprio revisor de performance o pôs abaixo de P2.
+- **A terceira grafia da falha de enrollment em `BiometricEnrollmentToast`.** “Não foi possível cadastrar este aparelho agora.” **não** é a constante compartilhada de propósito: o toast não tem afordância de repetir, então terminar em “Tente novamente.” seria uma instrução falsa. Unificar pioraria a copy.
+- **Unit test para `campaignWebAuthnClient`.** O único ramo que merecia pino — a tradução de `SyntaxError` — foi **deletado** neste fechamento; o que sobrou é transporte, coberto pelo e2e com autenticador virtual.
 
 ## Referências
 
