@@ -1,11 +1,17 @@
 # Opções selecionadas no topo nos filtros do header
 
-Status: rascunho
-Atualizado em: 2026-07-25
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos — "Selecionados no topo nos filtros do header"; superfície de coordenação, encaixe em B16 ✓)
-Impeccable: B — encaixe no Popover de filtro já entregue (`MunicipalityHeaderFilter`) e no select mobile equivalente; sem rota nova, sem tela nova
-Appetite: ~0,25–0,5 dia eng; helper puro client-safe + consumo nos dois controles + unit test; sem migration, sem collection, sem Consent, sem server action
+Status: entregue (2026-07-28)
+Atualizado em: 2026-07-28
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins — "Selecionados no topo nos filtros do header"; ✓)
+Impeccable: B — craft → critique → polish no `CampaignHeaderFilterPopover` compartilhado; `harden`/`optimize` out
+Appetite: ~0,25–0,5 dia eng; helper puro client-safe + consumo nos shells compartilhados + unit tests; sem migration, sem collection, sem Consent, sem server action
 Responsável: —
+
+## Revisão 2026-07-28 (as-built)
+
+A premissa do plano de 2026-07-25 ("não extrair o head genérico — B21, 3º call site") **já tinha sido paga** por B21/B29/B33: `CampaignHeaderFilterPopover` e `CampaignMobileMultiFilterField` vivem em `shared/` com 4 consumidores de header e 7 montagens mobile. O comportamento entrou nesses **dois** arquivos e alcança municípios, lideranças, territórios e dobradinhas de uma vez — nenhum `*HeaderFilter.tsx` de domínio mudou.
+
+Entrega: `src/lib/listFilterOptions.ts` (`orderFilterOptionsSelectedFirst`) + consumo no Popover (snapshot na abertura; ordem congelada; hairline entre grupos; divisor oculto durante busca) e no mobile (sem snapshot, reordena a cada abertura). Gate multi = `optionRows.every(row => row.checkbox)` (1:1 com multi-seleção hoje; single-select intocado). Specs: `listFilterOptions.unit.spec.ts` + `campaignHeaderFilterPopover.unit.spec.ts` (freeze verificado). Critique: P1 "hairline pula na busca" fechado no polish; P1 "desmarcado acima da linha" aceito (snapshot intencional). Sem migration/action/Consent.
 
 ## Design (Impeccable)
 
@@ -105,6 +111,7 @@ Componentes:
 
 ## Adiado com gatilho
 
+- **Prop explícita de modo multi no `CampaignHeaderFilterPopover`.** Hoje o gate é `optionRows.every(row => row.checkbox)` (1:1 com os quatro consumidores atuais). Revisitar se surgir single-select com checkbox ou um terceiro modo de seleção — aí trocar heurística por prop (`liftSelected` / `multi`).
 - **Aplicar a regra a `RelationMultiSelect` / comboboxes de formulário.** Revisitar quando houver relato de atrito de desmarcação em formulário (ex.: carteira de municípios em `/campanha/assessores`) — o padrão lá é chip + busca, não lista de checkboxes.
 - **Head de filtro genérico em `shared/`.** Gatilho herdado do B21: 3º call site (E12 ou outra lista com header rico).
 
