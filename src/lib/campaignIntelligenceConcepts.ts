@@ -286,7 +286,7 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
     whyItMatters:
       'É a diferença entre querer e ter: a expectativa da mesa define a meta, mas nunca conta como compromisso — se contasse, todo município com estimativa preenchida apareceria coberto sem uma única liderança por trás. O déficit descoberto é o que ordena onde a campanha precisa de mais rede.',
     whereItAppears:
-      'Início (staff), visão geral e coluna "Cobertura da meta" na lista de municípios, coluna homônima em `/campanha/territorios`, e o card "Conta da cadeira" no detalhe.',
+      'Início (staff), visão geral e coluna "Cobertura" na lista de municípios, coluna "Cobertura da meta" em `/campanha/territorios`, e o card "Conta da cadeira" no detalhe.',
   },
   {
     id: 'triagem-de-sugestoes',

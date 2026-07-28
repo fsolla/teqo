@@ -255,7 +255,8 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('Ana Bastos')
     expect(html).not.toContain('Assessoria')
     expect(html).toContain('Tendência')
-    expect(html).toContain('Cobertura da meta')
+    expect(html).toContain('Cobertura')
+    expect(html).not.toContain('Cobertura da meta')
     expect(html).toContain('80%')
     expect(html).toContain('Faltam 300 votos para a meta')
     // B22: every one of the 11 staff columns carries a header explanation —
@@ -510,7 +511,8 @@ describe('campaign visual foundation', () => {
 
     expect(html).toContain('Seabra')
     expect(html).not.toContain('Votos estimados')
-    expect(html).not.toContain('Cobertura')
+    expect(html).not.toContain('Cenários de estimativa')
+    expect(html).not.toContain('Faltam')
     expect(html).not.toContain('Prioritária')
     // B22: the leader view's 5 columns (name/region/kind/votos/lastUpdateAt)
     // also carry header explanations.

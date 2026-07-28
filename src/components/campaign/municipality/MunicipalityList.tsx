@@ -640,7 +640,9 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Cobertura da meta</dt>
+                    <dt className="text-muted-foreground">
+                      {municipalityColumnLabels.goalCoverage}
+                    </dt>
                     <dd>
                       <MunicipalityListGoalCoverageCell
                         coverageByScenario={municipality.goalCoverageByScenario}

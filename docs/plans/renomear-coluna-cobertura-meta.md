@@ -1,7 +1,7 @@
 # Renomear coluna "Cobertura da meta" → "Cobertura"
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue (2026-07-28)
+Atualizado em: 2026-07-28
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins)
 Impeccable: B — encaixe no header/card de `/campanha/municipios`; sem rota nova
 Appetite: ~0,25 dia eng (ou menos); só strings + pins de teste; sem migration
@@ -31,11 +31,11 @@ No E8 a coluna antiga "Cobertura" (= tem assessor) foi renomeada para "Assessori
 
 Pedido de produto (2026-07-25): **coluna = "Cobertura"**. Mesmo padrão do A11 (`2022` em vez de "Concentração 2022"): título curto na tabela; definição no hover (**B22** consome `oneLiner` de `cobertura-da-meta` no E18).
 
-Onde a string aparece hoje na lista:
+Onde a string aparecia na lista (pré-B17 o header citava `children`; pós-B17 ✓ o SSoT é `municipalityListSortLabels.deficit` → `municipalityColumnLabels.goalCoverage` → header/picker/sort):
 
-- Header desktop: `MunicipalityList.tsx` coluna `id: 'goalCoverage'` → `MunicipalitySortableHead` children.
-- Card mobile: `<dt>Cobertura da meta</dt>` no mesmo arquivo.
-- Sort select / summary: `municipalityListSortLabels.deficit = 'Cobertura da meta'`.
+- Header desktop: `MunicipalityList.tsx` coluna `id: 'goalCoverage'` → `MunicipalitySortableHead` `sortKey="deficit"` (label do registro de sort).
+- Card mobile: `<dt>` via `municipalityColumnLabels.goalCoverage`.
+- Sort select / summary: `municipalityListSortLabels.deficit`.
 
 Fora da lista (não escopo deste fill-in): strip do dashboard/overview, card "Conta da cadeira", dossiê, título do conceito em `/campanha/conceitos` — o nome canônico da métrica continua "Cobertura da meta".
 
@@ -70,7 +70,7 @@ flowchart LR
 
 Componentes:
 
-- **`MunicipalityList.tsx`**: children do `MunicipalitySortableHead` `sortKey="deficit"` → `"Cobertura"`; `<dt>` do card mobile idem.
+- **`MunicipalityList.tsx`**: `<dt>` do card mobile usa `municipalityColumnLabels.goalCoverage` (header desktop segue o mesmo registro via B17).
 - **`municipalityListUrl.ts`**: `municipalityListSortLabels.deficit = 'Cobertura'`; comentário do sort `coverage` já documenta a intenção — confirmar que continua verdadeiro.
 - **Testes:** `tests/unit/campaignComponents.unit.spec.ts` (`toContain('Cobertura')` / deixar de exigir o sufixo "da meta" na lista); opcional pin em `municipalityList.unit.spec.ts` (`deficit` → `"Cobertura"`).
 - **B22:** ao implementar, o mapa de `description` da coluna `goalCoverage` já aponta para `campaignConceptOneLiner('cobertura-da-meta')` — o header curto + tooltip longo é o desenho desejado; **não** editar o plano B22 em massa neste fill-in.
@@ -80,13 +80,14 @@ Depth check: só strings nos módulos que já donam a coluna — sem helper novo
 
 ## Dependências
 
-- Nenhuma dura. Soft: **B16 ✓** (liberou o nome "Cobertura"); **A11 ✓** (precedente de header curto); **B22** (tooltip carrega a definição — soft, não bloqueia este rename).
+- Nenhuma dura. Soft: **B16 ✓** (liberou o nome "Cobertura"); **A11 ✓** (precedente de header curto); **B22 ✓** (tooltip carrega a definição); **B17 ✓** (picker/header compartilham `deficit`).
 
 ## Não escopo
 
 - Título do conceito / heading em `/campanha/conceitos` — **E18 ✓** (e2e `campaignConcepts.e2e.spec.ts` permanece).
 - Labels do `CampaignMetricStrip` (dashboard + overview) e do `MunicipalityGoalAccountCard` / dossiê.
-- Seletor de colunas / explicação no header / tooltip de célula — **B17** / **B22** / **B23**.
+- Label da coluna homônima em `/campanha/territorios` (continua "Cobertura da meta" em `territoryListSortLabels.cobertura`).
+- Seletor de colunas / explicação no header / tooltip de célula — consumidores de B17 ✓ / B22 ✓ / B23 ✓ (não reimplementar).
 - Semântica ou sort key `deficit` / fórmula E8.
 
 ## Rabbit holes
@@ -114,3 +115,7 @@ Depth check: só strings nos módulos que já donam a coluna — sem helper novo
 - [remover-coluna-tipo-municipios.md](remover-coluna-tipo-municipios.md) — precedente fill-in Impeccable B na mesma lista
 - AGENTS.md — naming; E8
 - `PRODUCT.md` / `DESIGN.md` — Field Desk
+
+## Revisão (2026-07-28)
+
+Auditoria `implement-roadmap-item`: header não usa mais `children` do `MunicipalitySortableHead` — B17 centraliza rótulos em `municipalityListSortLabels`/`municipalityColumnLabels`. Entrega: `deficit: 'Cobertura'`, mobile `<dt>` via `municipalityColumnLabels.goalCoverage`, `whereItAppears` do conceito E18 atualizado (lista curta; título longo intacto). TI fora de escopo.
