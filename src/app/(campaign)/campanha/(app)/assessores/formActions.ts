@@ -4,11 +4,11 @@ import {
   createAdvisor,
   sendAdvisorPasswordReset,
   setAdvisorMunicipalitiesBatch,
-  setAdvisorMunicipalityMembership,
   updateAdvisorProfile,
 } from '@/app/(campaign)/campanha/actions/advisor'
 import {
   nullableFormText,
+  repeatedRelationshipFormValues,
   requiredFormBoolean,
   requiredFormText,
   requiredRelationshipFormValue,
@@ -20,21 +20,8 @@ import {
 } from '@/utilities/campaignFormActionError'
 
 const INVALID_FIELD_MESSAGE = 'Campo inválido.'
-const EMPTY_BATCH_MESSAGE = 'Selecione ao menos um município.'
 
-const advisorSafeMessages = [
-  ...ADVISOR_ACTION_SAFE_MESSAGES,
-  INVALID_FIELD_MESSAGE,
-  EMPTY_BATCH_MESSAGE,
-] as const
-
-const parseMunicipalityIds = (formData: FormData): number[] => {
-  const raw = formData.getAll('municipalityIds')
-  const ids = raw
-    .map((value) => (typeof value === 'string' ? Number(value) : NaN))
-    .filter((id) => Number.isInteger(id) && id > 0)
-  return [...new Set(ids)]
-}
+const advisorSafeMessages = [...ADVISOR_ACTION_SAFE_MESSAGES, INVALID_FIELD_MESSAGE] as const
 
 export const updateAdvisorProfileFormAction = async (
   _state: CampaignFormActionState,
@@ -64,36 +51,20 @@ export const updateAdvisorProfileFormAction = async (
     genericMessage: 'Não foi possível salvar. Verifique os dados e tente novamente.',
   })
 
-export const setAdvisorMunicipalityMembershipFormAction = async (
+/**
+ * Add or remove municipalities in the advisor's carteira — one município or a
+ * whole território / ZE. `ownerId` is the field name `MunicipalityPortfolioCell`
+ * sends, so the same cell serves lideranças and assessores.
+ */
+export const setAdvisorMunicipalitiesFormAction = async (
   _state: CampaignFormActionState,
   formData: FormData,
 ): Promise<CampaignFormActionState> =>
   runCampaignFormAction({
     execute: async () => {
-      await setAdvisorMunicipalityMembership({
-        advisorId: requiredRelationshipFormValue(formData, 'advisorId'),
-        municipalityId: requiredRelationshipFormValue(formData, 'municipalityId'),
-        assigned: requiredFormBoolean(formData, 'assigned'),
-      })
-      return { message: 'Carteira atualizada.' }
-    },
-    safeMessages: advisorSafeMessages,
-    genericMessage: 'Não foi possível atualizar a carteira do assessor.',
-  })
-
-export const setAdvisorMunicipalitiesBatchFormAction = async (
-  _state: CampaignFormActionState,
-  formData: FormData,
-): Promise<CampaignFormActionState> =>
-  runCampaignFormAction({
-    execute: async () => {
-      const municipalityIds = parseMunicipalityIds(formData)
-      if (municipalityIds.length === 0) {
-        throw new Error(EMPTY_BATCH_MESSAGE)
-      }
       await setAdvisorMunicipalitiesBatch({
-        advisorId: requiredRelationshipFormValue(formData, 'advisorId'),
-        municipalityIds,
+        advisorId: requiredRelationshipFormValue(formData, 'ownerId'),
+        municipalityIds: repeatedRelationshipFormValues(formData, 'municipalityIds'),
         assigned: requiredFormBoolean(formData, 'assigned'),
       })
       return { message: 'Carteira atualizada.' }
@@ -129,7 +100,7 @@ export const createAdvisorFormAction = async (
         phone: nullableFormText(formData, 'phone') ?? undefined,
       })
 
-      const municipalityIds = parseMunicipalityIds(formData)
+      const municipalityIds = repeatedRelationshipFormValues(formData, 'municipalityIds')
       if (municipalityIds.length > 0) {
         await setAdvisorMunicipalitiesBatch({
           advisorId: created.id,

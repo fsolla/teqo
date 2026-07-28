@@ -12,13 +12,11 @@ import {
   PLACEHOLDER_RESET_MESSAGE,
   advisorCreateSchema,
   advisorMunicipalitiesBatchSchema,
-  advisorMunicipalityMembershipSchema,
   advisorPasswordResetSchema,
   advisorProfileUpdateSchema,
   isPlanilhaPlaceholderEmail,
   type AdvisorCreateInput,
   type AdvisorMunicipalitiesBatchInput,
-  type AdvisorMunicipalityMembershipInput,
   type AdvisorPasswordResetInput,
   type AdvisorProfileUpdateInput,
 } from '@/lib/schemas/advisor'
@@ -160,68 +158,6 @@ export const updateAdvisorProfile = async (input: AdvisorProfileUpdateInput) => 
   return updated
 }
 
-export const setAdvisorMunicipalityMembershipRecord = async (
-  payload: Payload,
-  actor: CampaignUser,
-  input: AdvisorMunicipalityMembershipInput,
-) => {
-  const { advisorId, municipalityId, assigned } = advisorMunicipalityMembershipSchema.parse(input)
-
-  return withPayloadTransaction(
-    payload,
-    async ({ req }) => {
-      const currentActor = await reloadUnrestrictedActor(
-        payload,
-        actor,
-        ADVISOR_UNRESTRICTED_MESSAGE,
-        req,
-      )
-      await assertTargetAdvisor(payload, advisorId, currentActor.id)
-
-      await acquireTextAdvisoryLocks(payload, req, [`municipality-advisors:${municipalityId}`])
-
-      const municipality = await payload.findByID({
-        collection: 'municipality',
-        id: municipalityId,
-        depth: 0,
-        select: { advisors: true, slug: true },
-        overrideAccess: true,
-        req,
-      })
-
-      const currentAdvisorIDs = uniqueRelationshipIds(municipality.advisors)
-      const nextAdvisorIDs = nextAdvisorIdsAfterMembership(currentAdvisorIDs, advisorId, assigned)
-      if (nextAdvisorIDs === null) return municipality
-
-      // Intentional admin bypass: unrestricted role verified above; advisors
-      // field update access is admin-only in the collection config.
-      const updated = await payload.update({
-        collection: 'municipality',
-        id: municipalityId,
-        data: { advisors: nextAdvisorIDs },
-        depth: 0,
-        overrideAccess: true,
-        req,
-      })
-
-      return updated
-    },
-    { beginFailureMessage: 'Não foi possível atualizar a carteira do assessor.' },
-  )
-}
-
-export const setAdvisorMunicipalityMembership = async (
-  input: AdvisorMunicipalityMembershipInput,
-) => {
-  const { payload, actor } = await getCampaignActionContext()
-  const municipality = await setAdvisorMunicipalityMembershipRecord(payload, actor, input)
-  revalidateMunicipalityListPaths({
-    slug: typeof municipality.slug === 'string' ? municipality.slug : undefined,
-  })
-  revalidateAdvisorPaths(input.advisorId)
-  return municipality
-}
-
 export const setAdvisorMunicipalitiesBatchRecord = async (
   payload: Payload,
   actor: CampaignUser,
@@ -247,7 +183,10 @@ export const setAdvisorMunicipalitiesBatchRecord = async (
         uniqueMunicipalityIds.map((id) => `municipality-advisors:${id}`),
       )
 
-      let lastSlug: string | undefined
+      // Every município actually changed, not just the last one: since B34 this
+      // is the only advisor write path, and a território chip moves up to 30 in
+      // one call — revalidating one would leave 29 detail pages stale.
+      const changedSlugs: string[] = []
 
       for (const municipalityId of uniqueMunicipalityIds) {
         const municipality = await payload.findByID({
@@ -273,10 +212,10 @@ export const setAdvisorMunicipalitiesBatchRecord = async (
           overrideAccess: true,
           req,
         })
-        if (typeof municipality.slug === 'string') lastSlug = municipality.slug
+        if (typeof municipality.slug === 'string') changedSlugs.push(municipality.slug)
       }
 
-      return { slug: lastSlug }
+      return { slugs: changedSlugs }
     },
     { beginFailureMessage: 'Não foi possível atualizar a carteira do assessor.' },
   )
@@ -285,7 +224,10 @@ export const setAdvisorMunicipalitiesBatchRecord = async (
 export const setAdvisorMunicipalitiesBatch = async (input: AdvisorMunicipalitiesBatchInput) => {
   const { payload, actor } = await getCampaignActionContext()
   const result = await setAdvisorMunicipalitiesBatchRecord(payload, actor, input)
-  revalidateMunicipalityListPaths({ slug: result.slug })
+  revalidateMunicipalityListPaths({ scope: 'list' })
+  for (const slug of result.slugs) {
+    revalidateMunicipalityListPaths({ slug, scope: 'detail' })
+  }
   revalidateAdvisorPaths(input.advisorId)
   return result
 }

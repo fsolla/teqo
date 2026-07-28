@@ -41,20 +41,6 @@ type TappableElement = ReactElement<{
   ref?: Ref<HTMLElement>
 }>
 
-/**
- * Dotted-underline affordance for any label wrapped in a `CampaignHoverTooltip`
- * (column headers, card metrics). Shared so the four call sites don't drift
- * on the exact underline styling.
- */
-export const campaignHoverExplanationClassName =
-  'underline decoration-dotted decoration-muted-foreground/70 underline-offset-2'
-
-/** Maps a left/center/right layout align to the tooltip `align` it should open toward. */
-export const campaignHoverTooltipAlign = (
-  align: 'left' | 'center' | 'right',
-): 'start' | 'center' | 'end' =>
-  align === 'right' ? 'end' : align === 'center' ? 'center' : 'start'
-
 export const CampaignHoverTooltip = ({
   content,
   children,

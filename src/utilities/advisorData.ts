@@ -2,8 +2,6 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import type { AdvisorMunicipalityIndexEntry } from '@/lib/advisorMunicipalityPortfolio'
-import type { BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import {
   buildListHref,
   firstValue,
@@ -95,33 +93,6 @@ const municipalitiesByAdvisorIds = async (
   }
 
   return byAdvisor
-}
-
-/**
- * Full municipality index for client-side portfolio search (município / TI / ZE).
- * Intentional admin bypass after the unrestricted route gate.
- */
-export const loadAdvisorMunicipalityIndex = async (
-  payload: Payload,
-): Promise<AdvisorMunicipalityIndexEntry[]> => {
-  const result = await payload.find({
-    collection: 'municipality',
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    sort: 'name',
-    select: { name: true, slug: true, region: true, city: true, zoneNumber: true },
-    overrideAccess: true,
-  })
-
-  return result.docs.map((municipality) => ({
-    id: municipality.id,
-    name: municipality.name,
-    slug: municipality.slug,
-    region: municipality.region as BahiaIdentityTerritory,
-    city: municipality.city,
-    zoneNumber: municipality.zoneNumber ?? null,
-  }))
 }
 
 /**

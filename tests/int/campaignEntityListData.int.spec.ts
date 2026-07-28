@@ -32,7 +32,7 @@ beforeAll(async () => {
 })
 
 describe('loadLeadershipListPageData', () => {
-  it('returns marker-scoped rows with municipality names for staff', async () => {
+  it('returns marker-scoped rows with municipality ids for staff', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
@@ -49,7 +49,7 @@ describe('loadLeadershipListPageData', () => {
     expect(result.rows).toHaveLength(1)
     expect(result.rows[0]).toMatchObject({
       name: contact.name,
-      municipalityNames: [municipality.name],
+      municipalityIDs: [municipality.id],
       hasAppAccess: false,
     })
   })

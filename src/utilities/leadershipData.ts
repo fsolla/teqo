@@ -26,7 +26,13 @@ export type LeadershipRowViewModel = {
   email: string | null
   supportStatus: SupportStatus | null
   sector: string | null
-  municipalityNames: string[]
+  /**
+   * Ids only: the "Municípios" cell renders chips through
+   * `buildMunicipalityPortfolioChips` over the shared portfolio index, which
+   * already carries every name/slug and is what collapses a whole território
+   * into one chip. Resolving names here too would be a second source of truth.
+   */
+  municipalityIDs: number[]
   organizationNames: string[]
   stateDeputies: StateDeputySummary[]
   hasAppAccess: boolean
@@ -48,16 +54,15 @@ const contactSummary = (
   return { id: Number(contact), name: 'Contato', phone: null, email: null }
 }
 
-const namesForIds = async (
+const organizationNamesForIds = async (
   payload: Payload,
-  collection: 'municipality' | 'organization',
   ids: number[],
 ): Promise<Map<number, string>> => {
   if (ids.length === 0) return new Map()
   // Intentional admin bypass: display-name resolution for rows the actor
   // already passed row-level access on.
   const result = await payload.find({
-    collection,
+    collection: 'organization',
     where: { id: { in: ids } },
     depth: 0,
     limit: 0,
@@ -72,14 +77,9 @@ const toLeadershipRows = async (
   payload: Payload,
   docs: Leadership[],
 ): Promise<LeadershipRowViewModel[]> => {
-  const municipalityIDs = new Set<number>()
   const organizationIDs = new Set<number>()
   const stateDeputyIDs = new Set<number>()
   for (const doc of docs) {
-    for (const municipality of doc.municipalities ?? []) {
-      const id = relationshipId(municipality)
-      if (id !== null) municipalityIDs.add(id)
-    }
     for (const organization of doc.organizations ?? []) {
       const id = relationshipId(organization)
       if (id !== null) organizationIDs.add(id)
@@ -90,9 +90,8 @@ const toLeadershipRows = async (
     }
   }
 
-  const [municipalityNames, organizationNames, stateDeputySummaries] = await Promise.all([
-    namesForIds(payload, 'municipality', [...municipalityIDs]),
-    namesForIds(payload, 'organization', [...organizationIDs]),
+  const [organizationNames, stateDeputySummaries] = await Promise.all([
+    organizationNamesForIds(payload, [...organizationIDs]),
     loadStateDeputySummaries(payload, [...stateDeputyIDs]),
   ])
   const stateDeputyById = new Map(stateDeputySummaries.map((summary) => [summary.id, summary]))
@@ -107,10 +106,9 @@ const toLeadershipRows = async (
       email: contact.email,
       supportStatus: isSupportStatus(doc.supportStatus) ? doc.supportStatus : null,
       sector: doc.sector ?? null,
-      municipalityNames: (doc.municipalities ?? [])
+      municipalityIDs: (doc.municipalities ?? [])
         .map(relationshipId)
-        .filter((id): id is number => id !== null)
-        .map((id) => municipalityNames.get(id) ?? 'Município'),
+        .filter((id): id is number => id !== null),
       organizationNames: (doc.organizations ?? [])
         .map(relationshipId)
         .filter((id): id is number => id !== null)

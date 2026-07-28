@@ -62,12 +62,6 @@ export const advisorProfileUpdateSchema = z
     { message: 'Informe ao menos um campo para atualizar.' },
   )
 
-export const advisorMunicipalityMembershipSchema = z.object({
-  advisorId: positiveRelationshipId,
-  municipalityId: positiveRelationshipId,
-  assigned: z.boolean(),
-})
-
 export const advisorMunicipalitiesBatchSchema = z.object({
   advisorId: positiveRelationshipId,
   municipalityIds: z.array(positiveRelationshipId).min(1).max(435),
@@ -80,6 +74,5 @@ export const advisorPasswordResetSchema = z.object({
 
 export type AdvisorCreateInput = z.input<typeof advisorCreateSchema>
 export type AdvisorProfileUpdateInput = z.input<typeof advisorProfileUpdateSchema>
-export type AdvisorMunicipalityMembershipInput = z.input<typeof advisorMunicipalityMembershipSchema>
 export type AdvisorMunicipalitiesBatchInput = z.input<typeof advisorMunicipalitiesBatchSchema>
 export type AdvisorPasswordResetInput = z.input<typeof advisorPasswordResetSchema>

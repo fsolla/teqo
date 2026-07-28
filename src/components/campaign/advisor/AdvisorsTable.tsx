@@ -11,17 +11,17 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { AdvisorDebouncedTextCell } from '@/components/campaign/advisor/AdvisorDebouncedTextCell'
-import { AdvisorMunicipalityCell } from '@/components/campaign/advisor/AdvisorMunicipalityCell'
 import { AdvisorPasswordResetButton } from '@/components/campaign/advisor/AdvisorPasswordResetButton'
 import {
   CampaignCopyableCell,
   campaignReadCellClassName,
 } from '@/components/campaign/shared/CampaignCopyableCell'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
+import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
@@ -33,7 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
-import type { AdvisorMunicipalityIndexEntry } from '@/lib/advisorMunicipalityPortfolio'
+import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import {
   formatBrazilianPhoneInput,
   sanitizeBrazilianPhoneInput,
@@ -44,28 +44,22 @@ import { cn } from '@/lib/utils'
 import type { AdvisorRowViewModel } from '@/utilities/advisorData'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 
-type MunicipalityRef = { id: number; name: string; slug: string }
-
 type DraftAdvisor = {
   name: string
   email: string
   phone: string
-  municipalities: MunicipalityRef[]
+  municipalityIds: number[]
 }
 
 type AdvisorsTableProps = {
   rows: AdvisorRowViewModel[]
-  municipalityIndex: AdvisorMunicipalityIndexEntry[]
+  municipalityIndex: MunicipalityPortfolioIndexEntry[]
   hasQuery: boolean
   updateProfileAction: (
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
-  membershipAction: (
-    state: CampaignFormActionState,
-    formData: FormData,
-  ) => Promise<CampaignFormActionState>
-  batchAction: (
+  municipalitiesAction: (
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
@@ -83,7 +77,7 @@ const emptyDraft = (): DraftAdvisor => ({
   name: '',
   email: '',
   phone: '',
-  municipalities: [],
+  municipalityIds: [],
 })
 
 const displayEmail = (email: string | null): string | null => {
@@ -96,8 +90,7 @@ export const AdvisorsTable = ({
   municipalityIndex,
   hasQuery,
   updateProfileAction,
-  membershipAction,
-  batchAction,
+  municipalitiesAction,
   createAction,
   passwordResetAction,
 }: AdvisorsTableProps) => {
@@ -107,6 +100,16 @@ export const AdvisorsTable = ({
   const [isCreating, startCreate] = useTransition()
 
   const refresh = () => router.refresh()
+
+  // One array per row per render of `rows`, not per render of this table: the
+  // cell reconciles its optimistic state against this prop by identity.
+  const municipalityIdsByAdvisor = useMemo(
+    () =>
+      new Map(
+        rows.map((row) => [row.id, row.municipalities.map((municipality) => municipality.id)]),
+      ),
+    [rows],
+  )
 
   const startDraft = () => {
     setEditing(true)
@@ -135,8 +138,8 @@ export const AdvisorsTable = ({
     formData.set('name', draft.name.trim())
     formData.set('email', draft.email.trim())
     if (draft.phone.trim()) formData.set('phone', draft.phone.trim())
-    for (const municipality of draft.municipalities) {
-      formData.append('municipalityIds', String(municipality.id))
+    for (const municipalityId of draft.municipalityIds) {
+      formData.append('municipalityIds', String(municipalityId))
     }
 
     startCreate(async () => {
@@ -168,7 +171,7 @@ export const AdvisorsTable = ({
             onClick={() => setEditing(true)}
           >
             <PencilIcon data-icon="inline-start" aria-hidden="true" />
-            Editar
+            Editar nome e contato
           </Button>
         )}
         <Button type="button" className="min-h-11" onClick={startDraft} disabled={Boolean(draft)}>
@@ -254,17 +257,18 @@ export const AdvisorsTable = ({
                     />
                   </TableCell>
                   <TableCell>
-                    <AdvisorMunicipalityCell
-                      advisorId={null}
-                      municipalities={draft.municipalities}
+                    <MunicipalityPortfolioCell
+                      ownerId={null}
+                      ownerName={draft.name.trim() || 'um novo assessor'}
+                      municipalityIds={draft.municipalityIds}
                       municipalityIndex={municipalityIndex}
-                      editing
                       draft
-                      onDraftChange={(municipalities) =>
-                        setDraft((current) => (current ? { ...current, municipalities } : current))
+                      onDraftChange={(municipalityIds) =>
+                        setDraft((current) => (current ? { ...current, municipalityIds } : current))
                       }
-                      membershipAction={membershipAction}
-                      batchAction={batchAction}
+                      commitAction={municipalitiesAction}
+                      drawerTitle="Carteira do assessor"
+                      updateErrorMessage="Não foi possível atualizar a carteira."
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -365,14 +369,14 @@ export const AdvisorsTable = ({
                       )}
                     </TableCell>
                     <TableCell>
-                      <AdvisorMunicipalityCell
-                        advisorId={row.id}
-                        municipalities={row.municipalities}
+                      <MunicipalityPortfolioCell
+                        ownerId={row.id}
+                        ownerName={row.name}
+                        municipalityIds={municipalityIdsByAdvisor.get(row.id) ?? []}
                         municipalityIndex={municipalityIndex}
-                        editing={editing}
-                        membershipAction={membershipAction}
-                        batchAction={batchAction}
-                        onPersisted={refresh}
+                        commitAction={municipalitiesAction}
+                        drawerTitle="Carteira do assessor"
+                        updateErrorMessage="Não foi possível atualizar a carteira."
                       />
                     </TableCell>
                     <TableCell className="text-right">

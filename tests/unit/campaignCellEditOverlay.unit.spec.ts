@@ -7,6 +7,7 @@ import { MunicipalityListExpectedVotesControl } from '@/components/campaign/muni
 import { MunicipalityListLevelControl } from '@/components/campaign/municipality/MunicipalityListLevelControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import type { CampaignCellEditOverlayVariant } from '@/components/campaign/shared/CampaignCellEditOverlay'
+import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 
 /**
@@ -157,4 +158,39 @@ describe('campaign cell edit overlay', () => {
       expect(document.querySelector('[data-slot="drawer-description"]')).toBeNull()
     },
   )
+
+  /**
+   * B34's cell is the one caller that is a sheet at EVERY viewport: it picks its
+   * surface by `pointer:`, not by width, so it has no `variant` to sweep and
+   * cannot join the cases above. It is here for the half it does share — the
+   * sheet chrome and, above all, `initialFocus`: its own Drawer used to hand
+   * focus to the first chip, a link that navigates away from the row being
+   * edited.
+   */
+  it('opens the município portfolio in a Drawer focused on its title', async () => {
+    render(
+      createElement(MunicipalityPortfolioCell, {
+        ownerId: 1,
+        ownerName: 'Maria Souza',
+        municipalityIds: [11],
+        municipalityIndex: [
+          { id: 11, name: MUNICIPALITY_NAME, slug: 'feira-de-santana', region: 'Portal do Sertão' },
+        ],
+        commitAction: async () => ({}),
+        drawerTitle: 'Editar municípios',
+        updateErrorMessage: 'Não foi possível atualizar os municípios.',
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Editar municípios de Maria Souza' }))
+
+    const dialog = await screen.findByRole('dialog')
+    const title = dialog.querySelector('[data-slot="drawer-title"]')
+    expect(title?.textContent).toBe('Editar municípios')
+    expect(dialog.querySelector('[data-slot="drawer-description"]')?.textContent).toBe(
+      'Maria Souza',
+    )
+    await waitFor(() => expect(document.activeElement).toBe(title))
+    expect(dialog.textContent).toContain('Fechar')
+  })
 })

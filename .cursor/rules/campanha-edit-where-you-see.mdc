@@ -13,13 +13,15 @@ When adding or changing a **staff** (coordinator / advisor) view that displays m
 1. **Default to in-context edit** if the role can update that field — list cell, detail card, queue row — not a dead readout that only links to `/editar`.
 2. **Reuse existing server actions** and the **same access** as the full form. Thin route wrappers OK; do not invent a generic quick-edit service (&lt;3 call sites → named controls).
 3. **UX pattern:** named Popover / select / short number input per affordance; touch `min-h-11`. **Auto-save** on select change, blur, or short debounce — no “Salvar” button on single-field / in-context edits. Show pending / saved / error on the control (Feel the action). Then server revalidate / RSC refresh.
+   - **Exception — relation-by-chips cells** (B34, 2026-07-27): a column whose value is a set of related records (municípios de uma liderança, carteira de um assessor) may mount its editor inline, always, **with a fine pointer** — chips with a hover/focus-revealed remove button plus a trailing "add" input, no Popover trigger and no table-wide "Editar" toggle. On any other pointer the same cell is a read-only trigger that opens a **Drawer** for editing, because a coarse pointer scrolling a table cannot be asked to distinguish "tap to navigate" from "tap to delete". This is the only sanctioned always-mounted input; single-value fields keep the Popover.
 4. **Keep `/editar` (or long Sheet) + explicit submit** only for multi-field strategy forms, rare fields, and flows that need a note, confirmation, or legal consent.
 5. **Never** expose staff-only fields to `leader`. View models stay role-split.
 
 ## Anti-goals
 
 - Full-row spreadsheet / data-grid mode
-- Always-mounted inputs on every list row
+- A table-wide "Editar" toggle that flips every column into inputs
+- Always-mounted inputs on every list row — except the relation-by-chips cell of rule 3
 - Generic `EditableCell` / contentEditable mass edit
 - Optimistic UI that skips server refresh when the list is source of truth
 - Save buttons on Popovers / quick-edit cells “just in case”

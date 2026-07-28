@@ -72,9 +72,9 @@ export const MunicipalityLeadershipsPanel = ({
                       ))}
                     </div>
                   </div>
-                  {leadership.municipalityNames.length > 1 ? (
+                  {leadership.municipalityIDs.length > 1 ? (
                     <span className="text-sm text-muted-foreground">
-                      Atua em {leadership.municipalityNames.length} municípios
+                      Atua em {leadership.municipalityIDs.length} municípios
                     </span>
                   ) : null}
                 </div>
