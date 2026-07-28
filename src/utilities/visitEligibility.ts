@@ -30,10 +30,11 @@ export type VisitCondition = {
 /**
  * The contraindication is an ADVISORY, never a block: "a geografia serve à
  * política" (T5), so the coordination overrides it whenever a political reason
- * outweighs the numbers. Recording that override writes an
- * `allocationDecision`, which has no application write path yet — it is E11's
- * first job, and until then the override lives in the head of whoever ignored
- * the warning.
+ * outweighs the numbers. `allocationDecision` write paths exist since E14
+ * (level movements) and E11 (`resolveSuggestion` — aceita/descarta/adiada);
+ * wiring THIS advisory's override into the registry is a small follow-up on
+ * that action, and until then it lives in the head of whoever ignored the
+ * warning.
  */
 export const VISIT_CONTRAINDICATIONS = ['perdida', 'sem_rede', 'no_teto'] as const
 

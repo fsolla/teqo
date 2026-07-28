@@ -101,11 +101,14 @@ export const AllocationDecision: CollectionConfig = {
       required: true,
       // `aceita`/`descarta` is the triage of a SUGGESTED pattern (E11). A level
       // movement (E14) is neither — it is a decision taken outright — so it
-      // gets its own value instead of masquerading as an acceptance.
+      // gets its own value instead of masquerading as an acceptance. `adiada`
+      // (E11) is "not now": recording it as a special-cased dismissal would
+      // poison the alternative-reading data the E15 backtest depends on.
       options: [
         { label: 'Aceita', value: 'aceita' },
         { label: 'Descarta', value: 'descarta' },
         { label: 'Movimento', value: 'movimento' },
+        { label: 'Adiada', value: 'adiada' },
       ],
     },
     {

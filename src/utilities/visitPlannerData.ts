@@ -59,8 +59,10 @@ type PlannerMunicipalityDoc = Pick<
  * Lideranças per município in ONE query with a Map, never N counts — the
  * precedent is `leadershipCount` in `organizationData.ts`. Intentional admin
  * bypass: counts only, over município ids the actor was already allowed to read.
+ * Exported for the suggestion evaluator (E11), which assembles the same
+ * network inputs over the same scope.
  */
-const countLeadershipsByMunicipality = async (
+export const countLeadershipsByMunicipality = async (
   payload: Payload,
   municipalityIDs: ReadonlyArray<number>,
 ): Promise<Map<number, number>> => {

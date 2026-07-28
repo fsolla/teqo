@@ -1,11 +1,58 @@
 # E11 — Motor de sugestões v1 (dado → decisão com humano no loop)
 
-Status: rascunho
-Atualizado em: 2026-07-24 (refs sincronizadas pós-remodelagem Municípios + hardening)
+Status: entregue (2026-07-28)
+Atualizado em: 2026-07-28 (as-built; revisões da auditoria pré-implementação registradas abaixo)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Inteligência de campanha", E11; plano-mestre [inteligencia-campanha.md](inteligencia-campanha.md))
 Impeccable: C — superfície nova de sugestões (painel/fila em `/campanha`), sem design-ref
-Appetite: ~3 dias eng; sem migration própria (lê E8/E10/E14 e grava via `allocationDecision` de C12)
+Appetite: ~3 dias eng; **uma migration mínima** (`20260728_041547_add_allocation_decision_adiada_outcome` — o plano dizia "sem migration", ver revisão)
 Responsável: —
+
+## As-built (2026-07-28)
+
+- **Catálogo:** `src/lib/suggestionCatalog.ts` (client-safe — o formulário de descarte oferece os "descartes" do padrão como quick-picks, então o browser precisa dos textos): 8 padrões com predicados puros sobre `MunicipalityTriggerInput` (números já derivados, sem artefato), textos do §6.1, triagem 1–5 com rótulos do §6.2 (`suggestionTriageLabels`), âncoras ilustrativas em `SUGGESTION_ANCHORS` (interno), janelas de supressão (`aceita` 14d / `descarta` 30d / `adiada` até `suppressUntil` do snapshot) e `isSuggestionSuppressedByDecision` — pura, com a regra "nível 1 fura a fila": um gatilho que volta como nível 1 atravessa supressão registrada em urgência menor. Diferencial estrutural codificado (§6.3): P2 cede a P3 e K-B; P7 cede a K-A quando há esforço registrado no ciclo.
+- **Avaliador:** `src/utilities/municipalityTriggers.ts` (`server-only`), no molde de `visitPlannerData.ts` (leitura própria de `municipality` — o select do scope compartilhado não tem `engagementLevel`/`lastUpdateAt`): 6 leituras em `Promise.all` (pledges, contagem de lideranças exportada de `visitPlannerData`, metas `cache()`, sinais `kind: 'sinal'` ≤28d, atividades ≥now−42d, últimas `allocationDecision` ≤90d por padrão), LQ por ano com a fórmula exata do E10, cortes de catálogo memoizados por processo (mediana + quartil superior + padrão intracampo estadual). Pauta do silêncio = alta/N2+ sem gatilho DISPARADO (supressão não conta como silêncio) e sem sinal ≥30d.
+- **Decisão:** `resolveSuggestionRecord` (`actions/suggestion.ts`) **reavalia o padrão server-side** — o snapshot registra os fatores do momento da decisão, nunca os do render; padrão fora da fila recusa com `SUGGESTION_STALE_MESSAGE` (safe message). Transação + lock `municipality-suggestion:{id}:{patternId}` antes de reler a última decisão. `adiada` deriva a duração do nível recomputado (7d; 14d nos níveis 4–5) e grava `suppressUntil` no snapshot. Aceite exige a ação do menu (zod valida contra o catálogo); descarte exige `alternativeReading` (zod + hook da collection). Casca `runCampaignFormAction` em `(app)/suggestionFormActions.ts` — compartilhada pelas duas superfícies.
+- **UI:** `src/components/campaign/suggestion/` — `SuggestionsPanel` (RSC; estatuto no rodapé; `CampaignInfoHint` → conceitos) + `SuggestionCard` (ilha client: Aceitar com radios do menu — 1º item pré-selecionado, é a checagem barata — + nota opcional; Adiar em um toque com a duração no rótulo; Descartar com quick-picks + textarea obrigatória; submit explícito — a exceção prevista para flows com nota/confirmação, mesmo precedente do E14). Dashboard: slot Suspense `suggestionsSlot` (top-5 + pauta do silêncio com chips). Detalhe do município: card na `OverviewTab` após elegibilidade de visita, lista completa; município silencioso diz isso no empty state. Foco gerenciado na troca trigger↔form (abrir foca o primeiro campo; cancelar devolve ao trigger). Cor contida: só nível 1 usa `destructive`.
+- **Conceitos (E18):** `triagem-de-sugestoes` e `pauta-do-silencio` em `diagnostico`.
+- **Testes:** `suggestionCatalog.unit.spec.ts` (45 casos — red/green por predicado, exclusividade dos diferenciais, supressão incl. pierce de nível 1 e snapshot malformado) e `campaignSuggestions.int.spec.ts` (9 casos — P7 end-to-end com decisões governando a fila, K-A vs P7, P6 com priorização mudando a triagem, escopo do advisor/leader, silêncio, action: aceite/adiamento/descarte/stale/fora-de-escopo). Padrões ancorados no artefato (P1/P2/P3/P5/K-B) não são encenáveis por linhas do banco — os int tests que precisam de propriedade de artefato alocam municípios pelo alocador das fixtures até um qualificar (taxas medidas: 109/435 quartil superior, 205/435 quietos; slug explícito colidiria com o alocador, que é uma sequence com wrap).
+- **Medidas:** First Load JS de `/campanha` 268 → 277 kB (catálogo + ilha do card; medido pós-simplify); suíte completa 453 testes em ~84s.
+
+## Pós-`/simplify` (mesma sessão, 2026-07-28)
+
+Três revisores paralelos (qualidade, performance, reuso); tudo aplicado sem mudança de comportamento observável, exceto onde dito:
+
+- **Perf P1 — o dashboard varria `votePledge` duas vezes por request:** o avaliador re-agregava com `aggregatePledgesByMunicipality` o que `loadMunicipalityScope` (React `cache()`, já pago pelo `getCampaignDashboardData` no mesmo request) segura em `pledgeAggregates`. O caminho sem filtro agora reusa o scope; o caminho com `municipalityID` (detalhe/action) mantém a agregação de 1 município — puxar o scope inteiro ali seria o erro inverso.
+- **Janela de decisões derivada, não chutada:** buscava 90 dias de `allocationDecision` quando nada acima de `max(supressões, adiamento máximo)` = 30d pode suprimir — `SUGGESTION_INPUT_WINDOWS.decisionDays` agora é computada das constantes (linhas jsonb crescem com uso real).
+- **Bundle do cliente — a lição do B14 de novo:** o catálogo importava `ELECTION_YEAR_*` de `lib/electionResults`, cujo primeiro import é `bahiaTerritories` — três números arrastavam a tabela de territórios para o chunk do card. Anos locais com comentário apontando o espelho.
+- **`triggerSummary` era copy morta** (8 parágrafos que nada renderizava — o card mostra leitura + fatores + menu): campo deletado do tipo e dos 8 padrões.
+- **`silence.totalCount` era estado derivado** (sempre `entries.length`): o bundle expõe `silence: MunicipalitySilenceEntry[]` e a faixa deriva as contagens.
+- **Filtro de tipo de sinal desceu para o `where`** (`signalType: { in: [invasao, visita_adversario, proposta_broker] }`) — menos linhas trafegadas e morreu o único cast do delivery.
+- **LQ 2022 reusa `classification.lq`** (mesma fórmula, memoizada) em vez de recomputar ao lado — `lqForYear` fica só para 2014/2018.
+- **Copy dos fatores alinhada ao canônico** de `formatDominanceAgainstOwnStandard` ("… o padrão estadual **do candidato**", sem prefixo "LQ") — "próprio" era uma terceira variação do possessivo que a docstring do E10 já proibia.
+- **Card adotou os primitivos `ui/field`** (`FieldSet`/`FieldLegend`/`FieldLabel`, idioma do `ActivityForm`) no lugar de fieldset/legend/label à mão; `DAY_MS` (3 declarações no delivery) e `SUGGESTION_TEXT_MAX_LENGTH` unificados no catálogo; `formatSilenceAgeLabel` mudou para `municipalitySignal.ts`, ao lado do formatter irmão de idade de sinal.
+- **Correção de registro:** as suítes são **685 unit / 453 int** — o número anterior desta página ("suíte 453") era só a fase int.
+
+**Recomendações que ficaram (maiores que o cleanup):** consolidar as ~4 leituras de pledges/lideranças que a `OverviewTab` do detalhe faz por três loaders não coordenados (conta da cadeira + elegibilidade + sugestões — composição pré-existente, o E11 só somou o 4º caminho barato); ~~extrair `firstErrorMessage`/`toMessageOnlyState` no 3º call site~~ (feito na rodada 2 — o rebase entregou o 3º site); mover `formatDominanceAgainstOwnStandard` para `lib/` (cadeia com `formatRatioAsPercentLabel`) quando um segundo módulo `lib` precisar dele; os memos de estatística do catálogo (quartil superior, padrão intracampo estadual) migram para `municipalityPotential.ts` quando ganharem um 2º consumidor (precedente E13).
+
+### Rodada 2 — pós-rebase sobre main (2026-07-28)
+
+O rebase trouxe B17/B29/B32+/B37/B40; os três revisores confirmaram que **nenhuma premissa do E11 morreu** (o card corretamente NÃO adota a máquina de célula do B32+ — formulários inline com submit explícito não têm o problema "fechar desmonta o Alert"; o guard de convenções aceita `suggestionFormActions.ts`; o cache hit do scope sobreviveu — verificado o mecanismo da chave `JSON.stringify(where)`), mas o rebase **entregou o 3º call site** da extração adiada na rodada 1: `RelationChipCell` (B37, agora em main) extrai a mensagem do mesmo `CampaignFormActionState`. Aplicado:
+
+- **P2 real — `rationale` composta estourava o cap de 2000 da collection:** nota no cap + prefixo do rótulo do menu > 2000 → Payload rejeitava o create e o usuário via o erro genérico, sem retry possível. Clamp `slice(0, SUGGESTION_TEXT_MAX_LENGTH)` (o prefixo carrega a decisão; só uma nota máxima perde a cauda) + caso int pinando (nota de 2000 chars grava com rationale = 2000).
+- **`firstFormActionMessage`** em `utilities/campaignFormFields.ts` (client-safe, dono de `fieldError`) — adotado no card, no `RelationChipCell` (que antes ignorava `fieldErrors`) e no `toMessageOnlyState` de apoiadores.
+- **Um canal por falha:** o card anunciava em dois (linha `role="alert"` + toast) — o card nunca desmonta na falha, então a linha inline basta; o toast ficou só para sucesso (o card sai da fila).
+- **`metrics` não viaja mais ao cliente** (~209 B/card): o painel monta `SuggestionCardData` campo a campo; o view model completo (com metrics para o snapshot da action) fica no servidor.
+- Miudezas: `SUGGESTION_OUTCOMES` exportado do schema (3ª grafia da lista morreu); fallback de snapshot malformado e `decisionDays` derivados de `Math.min/max` sobre os níveis (recalibração não inverte silenciosamente); `metrics` 100% lidos de `input` (contrato "os números sobre os quais a decisão foi tomada" provável por construção); IIFE de `fieldShareOfValid2022` virou irmã nomeada de `lqForYear`; `DAY_MS` do int spec importado do catálogo.
+
+**Ficou (registrado):** juntar as 6 leituras do avaliador num estágio único para ator irrestrito; a tripla leitura de pledges da `OverviewTab` (pré-existente, acima).
+
+## Revisões da auditoria (2026-07-28)
+
+- **"Sem migration" caiu:** o enum real de `allocationDecision.outcome` era `aceita | descarta | movimento` — o plano citava `aceita|descartada|adiada` (valores que nunca existiram). "Adiar" exigiu a migration `add_allocation_decision_adiada_outcome` (precedente exato: E14 adicionou `movimento`). Registrar adiamento como descarte especial foi rejeitado — envenenaria o dado de leitura alternativa do backtest (E15).
+- **Refs mortas corrigidas:** `electionInsights.ts` (deletado no Pass 2) e o stack `NucleusInsights` (não existe; o precedente vivo é `MunicipalityVisitEligibilityCard`) saíram da abordagem; "bundle A9+ no dashboard" — o dashboard usa `loadMunicipalityScope`, e o avaliador faz leitura própria (mesma justificativa do planner E13).
+- **P3 sem `runningAgain2026`:** o campo existe mas está 100% `desconhecido` e sem read path — o gatilho usa só o artefato (campo forte + fatia intracampo < 0,5× o padrão estadual próprio, com gate de volume na mediana); "concorre de novo?" é o 1º item do menu (inteligência), não gatilho.
+- **Proxies assumidos (calibráveis, E15):** P7 "delta ≈ 0" = cobertura < meta + `lastPledgeAt` ≥ 21d (trajetória por versions fica para a fase 2); P2 sem NEC (mesmo corte do E10 — gatilho segue sendo E11 fase 2 precisar do eixo de competição); persistência/histerese sem tabela nova — janelas temporais nos próprios gatilhos + supressão pela última decisão; o rebaixamento caro continua protegido no write path do E14.
+- **Pauta do silêncio inclui `priority: alta`** além de N2+ — E14 nasceu sem backfill; só N2+ daria pauta vazia até a triagem de níveis acontecer.
 
 ## Design (Impeccable)
 

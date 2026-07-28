@@ -34,6 +34,8 @@ export type CampaignConceptId =
   | 'benchmark-intra-ti'
   | 'elegibilidade-para-visita'
   | 'fase-do-calendario'
+  | 'triagem-de-sugestoes'
+  | 'pauta-do-silencio'
 
 export type CampaignConceptCategoryId = 'base' | 'diagnostico' | 'meta'
 
@@ -285,6 +287,35 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
       'É a diferença entre querer e ter: a expectativa da mesa define a meta, mas nunca conta como compromisso — se contasse, todo município com estimativa preenchida apareceria coberto sem uma única liderança por trás. O déficit descoberto é o que ordena onde a campanha precisa de mais rede.',
     whereItAppears:
       'Início (staff), visão geral e coluna "Cobertura da meta" na lista de municípios, coluna homônima em `/campanha/territorios`, e o card "Conta da cadeira" no detalhe.',
+  },
+  {
+    id: 'triagem-de-sugestoes',
+    categoryID: 'diagnostico',
+    title: 'Triagem das sugestões (níveis 1–5)',
+    oneLiner:
+      'A ordem da fila de sugestões: risco confirmado primeiro, otimização por último — nunca um score.',
+    formula:
+      'Cada padrão do catálogo entra num nível fixo: 1 = estoque em risco confirmado (reduto com sinal de adversário triangulado), 2 = falha de canal, 3 = cobertura zero onde a meta exige, 4 = janela de oportunidade, 5 = otimização e higiene. Empate dentro do nível é decidido por votos em jogo (déficit da meta). Uma decisão registrada suprime o padrão por uma janela — exceto quando ele volta como nível 1.',
+    example:
+      'Um reduto do bloco central com sinal de invasão triangulado entra no nível 1 e fura qualquer supressão; um município grande sem rede entra no nível 3 quando priorizado; pledges parados são nível 5 até o diagnóstico.',
+    whyItMatters:
+      'A precedência vem de custos assimétricos: estoque quase-certo em risco vale mais que oportunidade hipotética, e mediação quebrada não se recompra em semanas. A sugestão é sempre um menu para o julgamento do staff — o produto nunca decide sozinho, e cada decisão (inclusive a leitura descartada) fica registrada para o backtest.',
+    whereItAppears:
+      'Painel "Sugestões" no Início (staff) e card homônimo na visão geral do município.',
+  },
+  {
+    id: 'pauta-do-silencio',
+    categoryID: 'diagnostico',
+    title: 'Pauta do silêncio',
+    oneLiner:
+      'Municípios priorizados onde nenhum padrão dispara e nada é registrado há mais de um mês — silêncio é pergunta, não conforto.',
+    formula:
+      'Entra na pauta o município com prioridade alta ou nível N2+ onde nenhum padrão do catálogo dispara E o último sinal registrado (atualização ou pledge) tem mais de um mês — ou nunca existiu.',
+    example:
+      'Um município priorizado sem atualização e sem pledge desde o início do ciclo aparece na pauta mesmo sem nenhum gatilho — a pergunta é se está tudo bem ou se ninguém está digitando.',
+    whyItMatters:
+      'O sistema só enxerga onde há rede registrando (viés da base): sem esta pauta, os desertos ficam mudos e o investimento se realimenta onde já há registro. A revisão mensal transforma a ausência de dado em pergunta explícita — e a resposta certa é auditar o registro, nunca despachar agenda.',
+    whereItAppears: 'Faixa "Pauta do silêncio" no painel de sugestões do Início (staff).',
   },
 ]
 

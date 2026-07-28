@@ -11,6 +11,7 @@ import { MunicipalityUpdateForm } from '@/components/campaign/municipality/Munic
 import { MunicipalityVisitEligibilityCard } from '@/components/campaign/municipality/MunicipalityVisitEligibilityCard'
 import { MunicipalityZoneNeighborhoodsCard } from '@/components/campaign/municipality/MunicipalityZoneNeighborhoodsCard'
 import { CampaignListPagination } from '@/components/campaign/shared/CampaignListPagination'
+import { SuggestionsPanel } from '@/components/campaign/suggestion/SuggestionsPanel'
 import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'
@@ -25,6 +26,8 @@ import { municipalityElectionGeographyForSlug } from '@/utilities/municipalityEl
 import { loadMunicipalityElectoralBaseline } from '@/utilities/municipalityElectoralBaseline'
 import { loadMunicipalityGoalAccount } from '@/utilities/municipalityGoalAccount'
 import type { getMunicipalityDetailViewModel } from '@/utilities/municipalityPageData'
+import { formatSilenceAgeLabel } from '@/utilities/municipalitySignal'
+import { loadMunicipalitySuggestions } from '@/utilities/municipalityTriggers'
 import {
   loadMunicipalityUpdatesFeed,
   parseMunicipalityUpdateFeedParams,
@@ -42,6 +45,7 @@ import {
 import type { getPayload } from 'payload'
 import { Suspense } from 'react'
 
+import { resolveSuggestionFormAction } from '../../suggestionFormActions'
 import { declareVotesFormAction, estimateVotesFormAction } from './pledgeFormActions'
 import { createMunicipalityUpdateFormAction } from './updateFormActions'
 
@@ -99,10 +103,60 @@ export const OverviewTab = async ({
           >
             <VisitEligibilityCard payloadUser={{ payload, user }} slug={view.slug} />
           </Suspense>
+          {/* E11 — the evaluator adds its own reads (signals, agenda, decisions),
+              so it streams like the eligibility card above. */}
+          <Suspense
+            fallback={
+              <div
+                aria-hidden="true"
+                className="h-40 animate-pulse rounded-xl border bg-muted/40"
+              />
+            }
+          >
+            <SuggestionsCard payloadUser={{ payload, user }} municipalityID={view.id} />
+          </Suspense>
         </>
       ) : null}
       <MunicipalityPledgesPanel pledges={pledges} estimateFormAction={estimateVotesFormAction} />
     </div>
+  )
+}
+
+/**
+ * E11 — the município's own triggered patterns, full list (the dashboard shows
+ * the statewide top-5). A silent prioritized município says so instead of
+ * showing a bare "nothing here": silence is the question (§6.4).
+ */
+const SuggestionsCard = async ({
+  payloadUser: { payload, user },
+  municipalityID,
+}: {
+  payloadUser: PayloadUser
+  municipalityID: number
+}) => {
+  const bundle = await loadMunicipalitySuggestions(payload, user, { municipalityID })
+  const silence = bundle.silence.find((entry) => entry.municipalityID === municipalityID)
+
+  return (
+    <SuggestionsPanel
+      titleId="municipality-suggestions-title"
+      suggestions={bundle.suggestions}
+      activeCount={bundle.suggestions.length}
+      resolveAction={resolveSuggestionFormAction}
+      emptyState={
+        silence ? (
+          <p className="text-sm text-muted-foreground">
+            Nenhum padrão do catálogo dispara aqui — e o município{' '}
+            {formatSilenceAgeLabel(silence.lastSignalAgeDays)}. Silêncio é pergunta: vale checar a
+            rede e o registro.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Nenhum padrão do catálogo dispara aqui agora.
+          </p>
+        )
+      }
+    />
   )
 }
 

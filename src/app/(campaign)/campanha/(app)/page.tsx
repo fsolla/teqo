@@ -7,6 +7,10 @@ import { CampaignDashboard } from '@/components/campaign/dashboard/CampaignDashb
 import { LeaderContactsPanel } from '@/components/campaign/leadership/LeaderContactsPanel'
 import { MunicipalityMapPanelDynamic } from '@/components/campaign/map/MunicipalityMapPanelDynamic'
 import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
+import {
+  SuggestionSilenceStrip,
+  SuggestionsPanel,
+} from '@/components/campaign/suggestion/SuggestionsPanel'
 import type { CampaignUser } from '@/payload-types'
 import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
@@ -14,6 +18,9 @@ import { getCampaignDashboardData } from '@/utilities/campaignDashboardData'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'
 import { loadLeaderContactsPageData } from '@/utilities/leaderContactsPageData'
 import { loadMunicipalityMapBundle } from '@/utilities/municipalityMapData'
+import { loadMunicipalitySuggestions } from '@/utilities/municipalityTriggers'
+
+import { resolveSuggestionFormAction } from './suggestionFormActions'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,7 +70,51 @@ export default async function CampaignHomePage({ searchParams }: CampaignHomePag
           </Suspense>
         ) : null
       }
+      suggestionsSlot={
+        isStaff ? (
+          // Streams too: the evaluator adds its own reads (signals, agenda,
+          // decisions) and must not hold the KPI shell.
+          <Suspense
+            fallback={
+              <div
+                aria-hidden="true"
+                className="h-48 w-full animate-pulse rounded-xl border bg-muted/40"
+              />
+            }
+          >
+            <DashboardSuggestionsSection payload={payload} user={user} />
+          </Suspense>
+        ) : null
+      }
     />
+  )
+}
+
+/** E11 — the decision queue: top-5 by triage plus the monthly silence review. */
+const DashboardSuggestionsSection = async ({
+  payload,
+  user,
+}: {
+  payload: Payload
+  user: CampaignUser
+}) => {
+  const bundle = await loadMunicipalitySuggestions(payload, user)
+
+  return (
+    <SuggestionsPanel
+      titleId="dashboard-suggestions-title"
+      suggestions={bundle.suggestions.slice(0, 5)}
+      activeCount={bundle.suggestions.length}
+      showMunicipality
+      resolveAction={resolveSuggestionFormAction}
+      emptyState={
+        <p className="text-sm text-muted-foreground">
+          Nenhum padrão do catálogo dispara nos seus municípios agora.
+        </p>
+      }
+    >
+      <SuggestionSilenceStrip entries={bundle.silence} />
+    </SuggestionsPanel>
   )
 }
 

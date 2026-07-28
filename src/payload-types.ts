@@ -600,7 +600,7 @@ export interface AllocationDecision {
   id: number;
   municipality: number | Municipality;
   patternId: string;
-  outcome: 'aceita' | 'descarta' | 'movimento';
+  outcome: 'aceita' | 'descarta' | 'movimento' | 'adiada';
   rationale: string;
   alternativeReading?: string | null;
   /**
