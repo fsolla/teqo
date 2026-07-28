@@ -99,7 +99,7 @@ describe('municipality list sort params (A11 + B15 + E9)', () => {
     expect(formatMunicipalityListSortSummary('name', 'asc')).toBe('Ordenado por nome (A–Z)')
     expect(formatMunicipalityListSortSummary('region', 'asc')).toBe('Ordenado por Território ↑')
     expect(formatMunicipalityListSortSummary('deficit', 'desc')).toBe(
-      'Ordenado por déficit da meta (maior primeiro)',
+      'Ordenado por Cobertura (maior déficit primeiro)',
     )
     expect(formatMunicipalityListSortSummary('frescor', 'desc')).toBe(
       'Ordenado por frescor (sinal mais frio primeiro)',
@@ -113,8 +113,9 @@ describe('municipality list sort params (A11 + B15 + E9)', () => {
     expect(formatMunicipalityConcentrationHint(12)).toMatch(/12/)
   })
 
-  it('labels the advisor-count sort as Assessores (not Cobertura da meta)', () => {
+  it('disambiguates Assessores (coverage) from goal Cobertura (deficit)', () => {
     expect(municipalityListSortLabels.coverage).toBe('Assessores')
+    expect(municipalityListSortLabels.deficit).toBe('Cobertura')
     expect(formatMunicipalityListSortSummary('coverage', 'asc')).toBe('Ordenado por Assessores ↑')
   })
 

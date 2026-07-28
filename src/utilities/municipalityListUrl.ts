@@ -87,7 +87,7 @@ export const municipalityListSortLabels: Record<MunicipalityListSortKey, string>
   coverage: 'Assessores',
   /** Short header — definition lives on hover (`formatMunicipalityConcentrationHint`). */
   votos: '2022',
-  deficit: 'Cobertura da meta',
+  deficit: 'Cobertura',
   frescor: 'Frescor do sinal',
   classe: 'Classe',
   nivel: 'Nível',
@@ -218,9 +218,10 @@ export const formatMunicipalityListSortSummary = (
     return dir === 'asc' ? 'Ordenado por nome (A–Z)' : 'Ordenado por nome (Z–A)'
   }
   if (sort === 'deficit') {
+    const label = municipalityListSortLabels.deficit
     return dir === 'desc'
-      ? 'Ordenado por déficit da meta (maior primeiro)'
-      : 'Ordenado por déficit da meta (menor primeiro)'
+      ? `Ordenado por ${label} (maior déficit primeiro)`
+      : `Ordenado por ${label} (menor déficit primeiro)`
   }
   if (sort === 'frescor') {
     return dir === 'desc'
