@@ -8,6 +8,7 @@ import { MunicipalityPledgesPanel } from '@/components/campaign/municipality/Mun
 import { MunicipalityStrategyCard } from '@/components/campaign/municipality/MunicipalityStrategyCard'
 import { MunicipalityUpdateFeed } from '@/components/campaign/municipality/MunicipalityUpdateFeed'
 import { MunicipalityUpdateForm } from '@/components/campaign/municipality/MunicipalityUpdateForm'
+import { MunicipalityVisitEligibilityCard } from '@/components/campaign/municipality/MunicipalityVisitEligibilityCard'
 import { MunicipalityZoneNeighborhoodsCard } from '@/components/campaign/municipality/MunicipalityZoneNeighborhoodsCard'
 import { CampaignListPagination } from '@/components/campaign/shared/CampaignListPagination'
 import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
@@ -29,6 +30,7 @@ import {
   parseMunicipalityUpdateFeedParams,
 } from '@/utilities/municipalityUpdatePageData'
 import type { loadAdvisorSummaries } from '@/utilities/municipalityViewModels'
+import { loadMunicipalityVisitEligibility } from '@/utilities/visitPlannerData'
 import { loadMunicipalityPledges } from '@/utilities/votePledgeData'
 import {
   aggregateMunicipalityPledgesFromRows,
@@ -38,6 +40,7 @@ import {
 } from '@/utilities/votePledgeViews'
 
 import type { getPayload } from 'payload'
+import { Suspense } from 'react'
 
 import { declareVotesFormAction, estimateVotesFormAction } from './pledgeFormActions'
 import { createMunicipalityUpdateFormAction } from './updateFormActions'
@@ -84,6 +87,18 @@ export const OverviewTab = async ({
             pledgeCoverage={pledgeCoverage}
             pledgeAggregate={pledgeAggregate}
           />
+          {/* Two round trips deep (território scope, then its aggregates), against
+              one for the goal account — so it streams instead of holding the tab. */}
+          <Suspense
+            fallback={
+              <div
+                aria-hidden="true"
+                className="h-64 animate-pulse rounded-xl border bg-muted/40"
+              />
+            }
+          >
+            <VisitEligibilityCard payloadUser={{ payload, user }} slug={view.slug} />
+          </Suspense>
         </>
       ) : null}
       <MunicipalityPledgesPanel pledges={pledges} estimateFormAction={estimateVotesFormAction} />
@@ -121,6 +136,25 @@ const GoalAccountCard = async ({
       territoryCaptureBenchmark={territoryCaptureBenchmark}
     />
   )
+}
+
+/**
+ * E13 — the checklist that authorizes a day of the candidate's agenda, right
+ * after the goal account it reads its headroom from. The loader is scoped to
+ * the município's own identity territory: "encaixe em giro" is a statement
+ * about the neighbours, so it cannot be answered for one município alone.
+ */
+const VisitEligibilityCard = async ({
+  payloadUser: { payload, user },
+  slug,
+}: {
+  payloadUser: PayloadUser
+  slug: string
+}) => {
+  const { candidate, phase } = await loadMunicipalityVisitEligibility(payload, user, slug)
+  if (!candidate) return null
+
+  return <MunicipalityVisitEligibilityCard candidate={candidate} phase={phase} />
 }
 
 export const DossierTab = async ({

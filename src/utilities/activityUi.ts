@@ -1,6 +1,6 @@
 import type { Where } from 'payload'
 
-import { activityKinds, activityStatuses } from '@/lib/schemas/activity'
+import { activityKinds, activityStatuses, type ActivityKind } from '@/lib/schemas/activity'
 import {
   buildListHref,
   firstValue,
@@ -14,7 +14,6 @@ export const activityPageSize = 25
 export const activityTabs = ['proximos', 'todos', 'realizados', 'rascunhos'] as const
 export type ActivityTab = (typeof activityTabs)[number]
 
-type ActivityKind = (typeof activityKinds)[number]
 export type ActivityStatus = (typeof activityStatuses)[number]
 
 export const activityTabLabels: Record<ActivityTab, string> = {

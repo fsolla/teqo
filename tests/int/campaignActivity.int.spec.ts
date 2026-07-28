@@ -8,10 +8,13 @@ import {
 } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { createActivityRecord } from '@/app/(campaign)/campanha/actions/activity'
+import {
+  createActivityRecord,
+  createTourDraftActivitiesRecord,
+} from '@/app/(campaign)/campanha/actions/activity'
 import { activityCreateSchema, activityUpdateSchema } from '@/lib/schemas/activity'
 import config from '@/payload.config'
-import { parseActivityCreateFormData } from '@/utilities/activityFormData'
+import { parseActivityCreateFormData, parseTourDraftFormData } from '@/utilities/activityFormData'
 import {
   canCreateActivity,
   canReadActivity,
@@ -426,5 +429,147 @@ describe('activity domain', () => {
         overrideAccess: false,
       }),
     ).rejects.toThrow()
+  })
+})
+
+const tourFormData = (
+  stops: unknown,
+  { tourName = 'Giro Sisal 27/07', note }: { tourName?: string; note?: string } = {},
+): FormData => {
+  const formData = new FormData()
+  formData.set('tourName', tourName)
+  if (note !== undefined) formData.set('note', note)
+  formData.set('stopsJson', JSON.stringify(stops))
+  return formData
+}
+
+describe('tour composer (E13)', () => {
+  it('parses the giro name, the shared note and one stop per município', () => {
+    expect(
+      parseTourDraftFormData(
+        tourFormData(
+          [
+            { municipality: 7, kind: 'comicio', origin: 'dado' },
+            { municipality: 9, kind: 'reuniao_apoio', origin: 'pedido_broker' },
+          ],
+          { note: 'Falar com o vereador antes.' },
+        ),
+      ),
+    ).toEqual({
+      tourName: 'Giro Sisal 27/07',
+      note: 'Falar com o vereador antes.',
+      stops: [
+        { municipality: 7, kind: 'comicio', origin: 'dado' },
+        { municipality: 9, kind: 'reuniao_apoio', origin: 'pedido_broker' },
+      ],
+    })
+  })
+
+  it('refuses a composition it cannot trust', () => {
+    expect(() => parseTourDraftFormData(tourFormData([]))).toThrow(/ao menos uma parada/i)
+    expect(() =>
+      parseTourDraftFormData(tourFormData([{ municipality: 7, kind: 'visita', origin: 'dado' }])),
+    ).toThrow(/Paradas do giro inválidas/i)
+    expect(() =>
+      parseTourDraftFormData(tourFormData([{ municipality: 0, kind: 'comicio', origin: 'dado' }])),
+    ).toThrow(/Paradas do giro inválidas/i)
+    expect(() =>
+      parseTourDraftFormData(
+        tourFormData([{ municipality: 7, kind: 'comicio', origin: 'inventada' }]),
+      ),
+    ).toThrow(/Paradas do giro inválidas/i)
+    expect(() =>
+      parseTourDraftFormData(
+        tourFormData([{ municipality: 7, kind: 'comicio', origin: 'dado' }], {
+          tourName: 'G'.repeat(120),
+        }),
+      ),
+    ).toThrow(/muito longo/i)
+  })
+
+  it('writes every stop of a giro as a draft in one transaction, titled after the município', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const [anchor, satellite] = await Promise.all([
+      fixtures.getMunicipality(),
+      fixtures.getMunicipality(),
+    ])
+    const tourName = fixtures.value('Giro do teste')
+
+    const created = await createTourDraftActivitiesRecord(payload, coordinator, {
+      tourName,
+      note: 'Falar com o vereador antes.',
+      stops: [
+        { municipality: anchor.id, kind: 'comicio', origin: 'dado' },
+        { municipality: satellite.id, kind: 'reuniao_apoio', origin: 'dado' },
+      ],
+    })
+    created.forEach((activity) => fixtures.own('activity', activity.id))
+
+    expect(created).toHaveLength(2)
+    // The title names the município as the DATABASE spells it — the client only
+    // ever sent the id, which is also the only thing that granted the write.
+    expect(created.map((activity) => activity.title)).toEqual([
+      `${tourName} — ${anchor.name}`,
+      `${tourName} — ${satellite.name}`,
+    ])
+    expect(
+      created.every((activity) => activity.description === 'Falar com o vereador antes.'),
+    ).toBe(true)
+    // Drafts without a date, flagged as the candidate's own agenda: that flag is
+    // what makes a giro derivable without a `tour` entity.
+    expect(created.every((activity) => activity.status === 'rascunho')).toBe(true)
+    expect(created.every((activity) => activity.deputyPresent === true)).toBe(true)
+    expect(created.every((activity) => activity.startAt === null)).toBe(true)
+  })
+
+  it('rolls back the whole giro when one stop is outside the advisor portfolio', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const [inPortfolio, outOfPortfolio] = await Promise.all([
+      fixtures.getMunicipality(),
+      fixtures.getMunicipality(),
+    ])
+    await fixtures.assignMunicipalityAdvisors(inPortfolio, [advisor])
+    const tourName = fixtures.value('Giro fora de escopo')
+
+    await expect(
+      createTourDraftActivitiesRecord(payload, advisor, {
+        tourName,
+        note: undefined,
+        stops: [
+          { municipality: inPortfolio.id, kind: 'comicio', origin: 'dado' },
+          { municipality: outOfPortfolio.id, kind: 'reuniao_apoio', origin: 'dado' },
+        ],
+      }),
+    ).rejects.toThrow(/fora do seu escopo|saiu do seu escopo/i)
+
+    const leftovers = await payload.find({
+      collection: 'activity',
+      where: { title: { contains: tourName } },
+      depth: 0,
+      pagination: false,
+      overrideAccess: true,
+    })
+    leftovers.docs.forEach((activity) => fixtures.own('activity', activity.id))
+    expect(leftovers.docs).toHaveLength(0)
+  })
+
+  it('caps a giro so one submit cannot write an unbounded batch', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+
+    await expect(
+      createTourDraftActivitiesRecord(payload, coordinator, {
+        tourName: fixtures.value('Giro grande demais'),
+        note: undefined,
+        stops: Array.from({ length: 9 }, () => ({
+          municipality: municipality.id,
+          kind: 'reuniao_apoio' as const,
+          origin: 'dado' as const,
+        })),
+      }),
+    ).rejects.toThrow(/no máximo 8 paradas/i)
   })
 })

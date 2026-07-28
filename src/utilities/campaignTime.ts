@@ -60,6 +60,19 @@ const zonedCivilToInstant = (civil: CivilDateTime): Date => {
   throw new Error('Não foi possível calcular o intervalo semanal no fuso da Bahia.')
 }
 
+const pad = (value: number): string => String(value).padStart(2, '0')
+
+/**
+ * `aaaa-mm-dd` of an instant in Bahia civil time. Fixed width, so the result
+ * is lexicographically comparable against a date anchor written the same way —
+ * which is how the calendar phase (E13) decides its cut without importing a
+ * date library, and why the day turns at midnight in Bahia rather than in UTC.
+ */
+export const formatBahiaCivilDate = (date: Date): string => {
+  const { year, month, day } = getZonedParts(date)
+  return `${year}-${pad(month)}-${pad(day)}`
+}
+
 const bahiaDateTimeInputPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/
 
 /**
@@ -85,7 +98,6 @@ export const parseBahiaDateTimeInput = (value: string): string | null => {
 /** Formats a UTC ISO instant as a `datetime-local` input value in Bahia civil time. */
 export const formatIsoAsBahiaDateTimeInput = (iso: string): string => {
   const { year, month, day, hour, minute } = getZonedParts(new Date(iso))
-  const pad = (value: number): string => String(value).padStart(2, '0')
 
   return `${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}`
 }
@@ -102,6 +114,15 @@ const bahiaDateTimeDisplayFormatter = new Intl.DateTimeFormat('pt-BR', {
 /** Formats a UTC ISO instant as `dd/mm/aaaa às hh:mm` in Bahia civil time. */
 export const formatBahiaDateTimeLabel = (iso: string): string =>
   bahiaDateTimeDisplayFormatter.format(new Date(iso)).replace(', ', ' às ')
+
+const bahiaDateDisplayFormatter = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: BAHIA_TIME_ZONE,
+  day: '2-digit',
+  month: '2-digit',
+})
+
+/** Formats an instant as `dd/mm` in Bahia civil time — the day the staff names things by. */
+export const formatBahiaDayLabel = (date: Date): string => bahiaDateDisplayFormatter.format(date)
 
 /**
  * Latest of two ISO timestamps, ignoring nulls. String comparison is only

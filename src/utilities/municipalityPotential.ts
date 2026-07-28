@@ -9,6 +9,7 @@ import {
   ELECTION_YEAR_2022,
   HISTORICAL_SERIES_YEARS,
 } from '@/lib/electionResults'
+import { medianOf } from '@/lib/median'
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignGoal } from '@/payload-types'
@@ -166,6 +167,56 @@ const pessimisticHaircut = (margin: number | null | undefined): number =>
 /** Own 2022 nominal votes — the anchor of every suggested goal (E9 revision). */
 export const ownVotes2022 = (baseline: MunicipalityFederalBaseline): number =>
   votesInYear(baseline, ELECTION_YEAR_2022)
+
+/**
+ * "Campo não capturado": projected field ceiling minus his own vote, floored at
+ * 0. Lives here rather than next to its first consumer because two features
+ * read it and a second definition would drift — E10 measures a município's
+ * remaining field against the catalog median to tell expansão from marginal,
+ * and E13's headroom condition asks the same question for one visit.
+ */
+export const uncapturedFieldVotes = (baseline: MunicipalityFederalBaseline): number =>
+  Math.max(0, projectedFieldCeiling(baseline) - ownVotes2022(baseline))
+
+type CatalogMedians = { uncapturedFieldVotes: number; projectedValidVotes: number }
+
+let catalogMedians: CatalogMedians | null = null
+
+/**
+ * Catalog-wide medians, computed once per process (the artifact is immutable).
+ * Both cuts are RELATIVE on purpose: a hardcoded "20.000 votos é grande" ages
+ * with every election, a median does not.
+ *
+ * Slugs with no measurable denominator are excluded — a município whose
+ * majoritarian cell is missing would report a zero ceiling and drag the median
+ * down until every weak município cleared it.
+ */
+const getCatalogMedians = (): CatalogMedians => {
+  if (catalogMedians) return catalogMedians
+
+  const uncaptured: number[] = []
+  const projected: number[] = []
+  for (const entry of municipalityCatalog) {
+    const baseline = getMunicipalityFederalBaseline(entry.slug)
+    if (projectedFieldCeiling(baseline) > 0) uncaptured.push(uncapturedFieldVotes(baseline))
+    const votes = projectedValidVotes(baseline)
+    if (votes > 0) projected.push(votes)
+  }
+
+  catalogMedians = {
+    uncapturedFieldVotes: medianOf(uncaptured) ?? 0,
+    projectedValidVotes: medianOf(projected) ?? 0,
+  }
+  return catalogMedians
+}
+
+/** Median uncaptured field votes across the catalog — E10's "big field" cut. */
+export const catalogMedianUncapturedFieldVotes = (): number =>
+  getCatalogMedians().uncapturedFieldVotes
+
+/** Median projected 2026 valid votes across the catalog — E13's "volume" cut. */
+export const catalogMedianProjectedValidVotes = (): number =>
+  getCatalogMedians().projectedValidVotes
 
 /** Suggested goal for one município across the three scenarios. */
 export type SuggestedGoalByScenario = Record<VoteEstimateScenario, number>

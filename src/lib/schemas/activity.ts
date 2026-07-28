@@ -22,6 +22,7 @@ export const activityKinds = [
   'digital',
   'outro',
 ] as const
+export type ActivityKind = (typeof activityKinds)[number]
 
 export const activityStatuses = [
   'rascunho',
@@ -40,7 +41,7 @@ export const activityOriginLabels: Record<ActivityOrigin, string> = {
   obrigacao_politica: 'Obrigação política',
 }
 
-export const activityKindLabels: Record<(typeof activityKinds)[number], string> = {
+export const activityKindLabels: Record<ActivityKind, string> = {
   caminhada: 'Caminhada',
   comicio: 'Comício',
   carreata: 'Carreata',
@@ -169,3 +170,17 @@ export const activityUpdateSchema = activityFieldsSchema
 
 export type ActivityCreateInput = z.input<typeof activityCreateSchema>
 export type ActivityUpdateInput = z.input<typeof activityUpdateSchema>
+
+/**
+ * E13 — one stop of a giro, as the composer submits it: which município, what
+ * happens there, where the decision came from. The title is deliberately NOT
+ * part of it: it is composed on the server from the município's own name, so a
+ * client cannot label a draft after a município it did not pick.
+ */
+const tourStopDraftSchema = activityFieldsSchema
+  .pick({ municipality: true, kind: true })
+  .extend({ origin: z.enum(activityOrigins) })
+
+export const tourStopDraftsSchema = z.array(tourStopDraftSchema)
+
+export type TourStopDraft = z.infer<typeof tourStopDraftSchema>

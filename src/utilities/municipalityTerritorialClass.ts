@@ -1,19 +1,17 @@
 import {
-  federalBaselineMunicipalitySlugs,
   getMunicipalityFederalBaseline,
   getStatewideFederalTotals,
-  type MunicipalityFederalBaseline,
 } from '@/lib/bahiaElectionAggregates'
 import { ELECTION_YEAR_2022 } from '@/lib/electionResults'
-import { medianOf } from '@/lib/median'
 import { computeVoteRankByYear } from '@/lib/municipalityVoteRank'
 import { TERRITORIAL_CLASS_ANCHORS } from '@/lib/territorialClassAnchors'
 import { territorialClassSortWeight } from '@/lib/territorialClassSortWeight'
 import {
   captureRate,
+  catalogMedianUncapturedFieldVotes,
   fieldCeiling,
   ownVotes2022,
-  projectedFieldCeiling,
+  uncapturedFieldVotes,
 } from '@/utilities/municipalityPotential'
 
 /**
@@ -136,12 +134,7 @@ export const classifyMunicipalityTerritory = (
   return { ...shared, class: 'manutencao', factors: [dominance, ownShareFactor, ...captureFactor] }
 }
 
-/** Uncaptured field votes: projected 2022 field ceiling minus his own vote. */
-const fieldHeadroomOf = (baseline: MunicipalityFederalBaseline): number =>
-  Math.max(0, projectedFieldCeiling(baseline) - ownVotes2022(baseline))
-
 type CatalogContext = {
-  medianFieldHeadroom: number
   coreBlockSlugs: ReadonlySet<string>
 }
 
@@ -149,22 +142,14 @@ let catalogContext: CatalogContext | null = null
 
 /**
  * Catalog-wide reference values, computed once per process (the artifact is
- * immutable): the median field headroom — a relative cut, so no magic vote
- * count ages — and the set of municípios that, sorted by his own vote,
- * accumulate `coreCumulativeShare` of his statewide total.
+ * immutable): the set of municípios that, sorted by his own vote, accumulate
+ * `coreCumulativeShare` of his statewide total. The "big field" cut it used to
+ * compute here now lives with the rest of the E8 potential math
+ * (`catalogMedianUncapturedFieldVotes`), because E13's visit eligibility reads
+ * the same median.
  */
 const getCatalogContext = (): CatalogContext => {
   if (catalogContext) return catalogContext
-
-  // Slugs whose majoritarian cell is missing would drag the median to zero and
-  // make every weak município read as "expansão".
-  const medianFieldHeadroom =
-    medianOf(
-      federalBaselineMunicipalitySlugs()
-        .map(getMunicipalityFederalBaseline)
-        .filter((baseline) => projectedFieldCeiling(baseline) > 0)
-        .map(fieldHeadroomOf),
-    ) ?? 0
 
   // A11 already ranks every slug by own vote, descending, and memoizes it —
   // walking that map is the same order this used to re-sort for itself.
@@ -179,7 +164,7 @@ const getCatalogContext = (): CatalogContext => {
     accumulated += entry.votes
   }
 
-  catalogContext = { medianFieldHeadroom, coreBlockSlugs }
+  catalogContext = { coreBlockSlugs }
   return catalogContext
 }
 
@@ -194,15 +179,15 @@ export const computeMunicipalityTerritorialClass = (
 
   const baseline = getMunicipalityFederalBaseline(slug)
   const totals = getStatewideFederalTotals(TERRITORIAL_CLASS_YEAR)
-  const { medianFieldHeadroom, coreBlockSlugs } = getCatalogContext()
+  const { coreBlockSlugs } = getCatalogContext()
 
   const classification = classifyMunicipalityTerritory({
     ownVotes: ownVotes2022(baseline),
     validVotes: baseline.validVotesByYear[String(TERRITORIAL_CLASS_YEAR)] ?? 0,
     stateOwnVotes: totals.ownVotes,
     stateValidVotes: totals.validVotes,
-    fieldHeadroom: fieldHeadroomOf(baseline),
-    fieldHeadroomCut: medianFieldHeadroom,
+    fieldHeadroom: uncapturedFieldVotes(baseline),
+    fieldHeadroomCut: catalogMedianUncapturedFieldVotes(),
     captureRate: captureRate(baseline),
     inCoreBlock: coreBlockSlugs.has(slug),
   })
@@ -232,7 +217,7 @@ export const computeAggregateTerritorialClass = (
   if (slugs.length === 0) return UNCLASSIFIED
 
   const totals = getStatewideFederalTotals(TERRITORIAL_CLASS_YEAR)
-  const { medianFieldHeadroom, coreBlockSlugs } = getCatalogContext()
+  const { coreBlockSlugs } = getCatalogContext()
 
   let ownVotes = 0
   let validVotes = 0
@@ -244,7 +229,7 @@ export const computeAggregateTerritorialClass = (
     const baseline = getMunicipalityFederalBaseline(slug)
     ownVotes += ownVotes2022(baseline)
     validVotes += baseline.validVotesByYear[String(TERRITORIAL_CLASS_YEAR)] ?? 0
-    fieldHeadroom += fieldHeadroomOf(baseline)
+    fieldHeadroom += uncapturedFieldVotes(baseline)
     fieldCeiling2022 += fieldCeiling(baseline)
     inCoreBlock ||= coreBlockSlugs.has(slug)
   }
@@ -255,7 +240,7 @@ export const computeAggregateTerritorialClass = (
     stateOwnVotes: totals.ownVotes,
     stateValidVotes: totals.validVotes,
     fieldHeadroom,
-    fieldHeadroomCut: medianFieldHeadroom * slugs.length,
+    fieldHeadroomCut: catalogMedianUncapturedFieldVotes() * slugs.length,
     captureRate: fieldCeiling2022 > 0 ? ownVotes / fieldCeiling2022 : null,
     inCoreBlock,
   })
