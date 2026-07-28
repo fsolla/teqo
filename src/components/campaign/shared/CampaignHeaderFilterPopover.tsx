@@ -7,6 +7,7 @@ import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignL
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
+import { orderFilterOptionsSelectedFirst } from '@/lib/listFilterOptions'
 import { cn } from '@/lib/utils'
 import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 
@@ -72,7 +73,22 @@ export const CampaignHeaderFilterPopover = ({
 }: CampaignHeaderFilterPopoverProps) => {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  /**
+   * Selected values at open time. Governs presentation order only — checkboxes
+   * still read live `row.selected`. Freezing order while open keeps rows from
+   * sliding under the pointer when the optimistic selection flips (same race
+   * the B16 "click that undoes itself" bug taught).
+   */
+  const [selectionSnapshot, setSelectionSnapshot] = useState<readonly string[]>([])
   const searchable = optionRows.length >= SEARCHABLE_OPTION_THRESHOLD
+  /**
+   * Selected-first ordering is multi-select only. Today every multi-select
+   * consumer marks every option row with `checkbox: true`, and every
+   * single-select leaves it off — so this gate is 1:1 with selection mode
+   * without a new prop. Reordering a single-select would push "Todas" under
+   * the marked value, which the product rejected.
+   */
+  const isMultiSelect = optionRows.length > 0 && optionRows.every((row) => row.checkbox)
   const searchIndex = useMemo(
     () =>
       optionRows.map((row) => ({
@@ -82,21 +98,40 @@ export const CampaignHeaderFilterPopover = ({
     [optionRows],
   )
   const needle = normalizeSearchPhrase(query)
-  const visibleRows = needle
+  const filteredRows = needle
     ? searchIndex.filter((entry) => entry.haystack.includes(needle)).map((entry) => entry.row)
     : optionRows
+  // Order only while open: a closed popover keeps the natural facet order, and
+  // the snapshot is irrelevant until the next open.
+  const { ordered: visibleRows, selectedCount } =
+    open && isMultiSelect
+      ? orderFilterOptionsSelectedFirst(filteredRows, selectionSnapshot)
+      : { ordered: filteredRows, selectedCount: 0 }
+  // Hide the hairline while searching: filtering already reshapes the list,
+  // and relocating the group boundary on every keystroke is spatial noise.
+  // Order still follows the open-time snapshot among matches.
+  const showSelectedDivider =
+    isMultiSelect && !needle && selectedCount > 0 && selectedCount < visibleRows.length
 
   const choose = (row: CampaignHeaderFilterRow) => {
     row.onChoose()
     if (closeOnChoose) setOpen(false)
   }
 
+  const renderRows = (rows: readonly CampaignHeaderFilterRow[]) =>
+    rows.map((row) => <FilterRow key={row.value} row={row} onChoose={() => choose(row)} />)
+
   return (
     <Popover
       open={open}
       onOpenChange={(next) => {
         setOpen(next)
-        if (!next) setQuery('')
+        if (next) {
+          setSelectionSnapshot(optionRows.filter((row) => row.selected).map((row) => row.value))
+          return
+        }
+        setQuery('')
+        setSelectionSnapshot([])
       }}
     >
       <PopoverTrigger asChild>
@@ -158,9 +193,15 @@ export const CampaignHeaderFilterPopover = ({
           aria-labelledby={`${id}-heading`}
           className="flex max-h-72 flex-col gap-0.5 overflow-y-auto"
         >
-          {visibleRows.map((row) => (
-            <FilterRow key={row.value} row={row} onChoose={() => choose(row)} />
-          ))}
+          {showSelectedDivider ? (
+            <>
+              {renderRows(visibleRows.slice(0, selectedCount))}
+              <div className="my-1 border-t border-border" role="presentation" />
+              {renderRows(visibleRows.slice(selectedCount))}
+            </>
+          ) : (
+            renderRows(visibleRows)
+          )}
           {visibleRows.length === 0 ? (
             <p className="px-2 py-3 text-sm text-muted-foreground">
               {needle ? 'Nenhum resultado encontrado.' : emptyLabel}
