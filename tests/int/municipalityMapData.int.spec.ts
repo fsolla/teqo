@@ -34,8 +34,8 @@ describe('loadMunicipalityMapBundle — list URL filters', () => {
     const bundle = await loadMunicipalityMapBundle(payload, coordinator, { kind: 'zona' })
 
     expect(bundle).not.toBeNull()
-    expect(bundle!.zoneBreakdown).toHaveLength(ZONE_MUNICIPALITY_COUNT)
     expect(bundle!.hasZoneMunicipalities).toBe(true)
+    expect(Object.keys(bundle!.municipalitiesByMapKey)).toHaveLength(ZONE_MUNICIPALITY_COUNT)
 
     const mapKeys = Object.keys(bundle!.valuesByYear['2022'] ?? {})
     expect(mapKeys.length).toBeGreaterThan(0)
@@ -67,14 +67,11 @@ describe('loadMunicipalityMapBundle — list URL filters', () => {
 
     const included = await loadMunicipalityMapBundle(payload, advisor, { q: administered.name })
     expect(included).not.toBeNull()
-    expect(included!.zoneBreakdown.some((row) => row.slug === administered.slug)).toBe(
-      administered.kind === 'zona',
-    )
-    // The map's provenance caveat follows the actor's scope, not the list below it.
     expect(included!.hasZoneMunicipalities).toBe(administered.kind === 'zona')
-    expect(Object.keys(included!.valuesByYear['2022'] ?? {})).toEqual([
-      administered.kind === 'zona' ? administered.slug : administered.ibgeCode,
-    ])
+    // Hand-written map key — must not call mapKeyForMunicipality (independent expectation).
+    const expectedMapKey = administered.kind === 'zona' ? administered.slug : administered.ibgeCode
+    expect(Object.keys(included!.municipalitiesByMapKey)).toEqual([expectedMapKey])
+    expect(Object.keys(included!.valuesByYear['2022'] ?? {})).toEqual([expectedMapKey])
 
     const excluded =
       administered.kind === 'zona'

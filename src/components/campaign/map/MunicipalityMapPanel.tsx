@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useMemo, useRef, useState, useTransition } from 'react'
 
@@ -589,43 +588,15 @@ export const MunicipalityMapPanel = ({
           }
         />
 
-        {/* B8+ F3 — tied to the MESH, not to the list below: the comparison mode
-            paints Salvador from the same approximate polygons, so the caveat has
-            to survive with or without comparison. */}
+        {/* B8+ F3 — tied to the MESH: the comparison mode paints Salvador from
+            the same approximate polygons, so the caveat has to survive with or
+            without comparison. */}
         {bundle.hasZoneMunicipalities ? (
           <p className="text-sm text-muted-foreground">
             Salvador é pintada zona por zona. O desenho vem dos bairros de cada circunscrição
             (TRE-BA, RA nº 2/2017) sobre a malha do IBGE — é aproximado, não é o limite oficial do
             TSE.
           </p>
-        ) : null}
-
-        {bundle.zoneBreakdown.length > 0 && !comparisonActive ? (
-          <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">Municípios por zona eleitoral</h3>
-            <ul className="grid gap-1 sm:grid-cols-2">
-              {bundle.zoneBreakdown.map((zone) => (
-                <li
-                  key={zone.slug}
-                  className="flex items-center justify-between gap-2 rounded-md border px-3 py-2"
-                >
-                  <Link
-                    href={`/campanha/municipios/${zone.slug}`}
-                    className="min-h-11 content-center text-sm font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {zone.name}
-                  </Link>
-                  <span className="text-sm tabular-nums text-muted-foreground">
-                    {formatElectionNumber(
-                      year === 2026
-                        ? (zone.votes2026ByScenario[estimateScenario] ?? 0)
-                        : (zone.votesByYear[String(year)] ?? 0),
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
         ) : null}
       </div>
     </section>
@@ -634,8 +605,8 @@ export const MunicipalityMapPanel = ({
 
 /**
  * Selection/hover live here so a mouseover re-renders only the map and the
- * readout — not the whole panel (controls, legend, zone list). The Leaflet
- * paint path itself stays ref-based inside BahiaMap (O(2) restyle).
+ * readout — not the whole panel (controls, legend). The Leaflet paint path
+ * itself stays ref-based inside BahiaMap (O(2) restyle).
  */
 const MunicipalityMapSelection = ({
   displayValues,
