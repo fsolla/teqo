@@ -1,8 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
 
+import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
@@ -33,7 +33,7 @@ export const TourRegionPicker = ({
   clearHref: string
 }) => {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, startTransition } = useCampaignListTransition()
 
   return (
     <Field className="max-w-md">

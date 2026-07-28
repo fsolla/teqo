@@ -6,6 +6,10 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
+import {
+  CampaignListPendingBoundary,
+  CampaignListResults,
+} from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { CalendarPhaseNote } from '@/components/campaign/tour/CalendarPhaseNote'
 import { TourComposerForm, type TourStopOption } from '@/components/campaign/tour/TourComposerForm'
@@ -124,49 +128,54 @@ export default async function TourComposerPage({ searchParams }: TourComposerPag
         </Button>
       </header>
 
-      {bundle ? <CalendarPhaseNote phase={bundle.phase} /> : null}
+      {/* Shared transition: the picker navigates, the proposal dims ("Feel the action"). */}
+      <CampaignListPendingBoundary>
+        {regions.length > 0 ? (
+          <TourRegionPicker
+            regions={regions.map((option) => ({
+              ...option,
+              href: buildTourComposerHref({ region: option.region }),
+            }))}
+            selectedRegion={region}
+            clearHref={buildTourComposerHref({ region: null })}
+          />
+        ) : null}
 
-      {regions.length > 0 ? (
-        <TourRegionPicker
-          regions={regions.map((option) => ({
-            ...option,
-            href: buildTourComposerHref({ region: option.region }),
-          }))}
-          selectedRegion={region}
-          clearHref={buildTourComposerHref({ region: null })}
-        />
-      ) : null}
+        <CampaignListResults>
+          {bundle ? <CalendarPhaseNote phase={bundle.phase} /> : null}
 
-      {regions.length === 0 ? (
-        <CampaignListEmptyState
-          icon={MapPinnedIcon}
-          title="Você ainda não acompanha nenhum município"
-          description="A composição do giro sai da sua carteira. Peça ao Coordenador Geral para vincular seus municípios."
-        />
-      ) : region === null ? (
-        <CampaignListEmptyState
-          icon={MapPinnedIcon}
-          title="Escolha um território para começar"
-          description="A composição do giro compara os municípios entre si dentro do mesmo território — é assim que 'encaixe em giro' faz sentido."
-        />
-      ) : stops.length === 0 ? (
-        <CampaignListEmptyState
-          icon={MapPinnedIcon}
-          title={`Nenhum município candidato em ${region}`}
-          description="Nenhum município deste território está no seu escopo com dados suficientes para compor um giro. Cadastre lideranças ou compromissos de voto e volte aqui."
-        >
-          <Button asChild variant="outline" className="min-h-11">
-            <Link href="/campanha/municipios">Ver municípios</Link>
-          </Button>
-        </CampaignListEmptyState>
-      ) : (
-        <TourComposerForm
-          region={region}
-          stops={stops}
-          defaultTourName={defaultTourName(region, now)}
-          formAction={createTourDraftsFormAction}
-        />
-      )}
+          {regions.length === 0 ? (
+            <CampaignListEmptyState
+              icon={MapPinnedIcon}
+              title="Você ainda não acompanha nenhum município"
+              description="A composição do giro sai da sua carteira. Peça ao Coordenador Geral para vincular seus municípios."
+            />
+          ) : region === null ? (
+            <CampaignListEmptyState
+              icon={MapPinnedIcon}
+              title="Escolha um território para começar"
+              description="A composição do giro compara os municípios entre si dentro do mesmo território — é assim que 'encaixe em giro' faz sentido."
+            />
+          ) : stops.length === 0 ? (
+            <CampaignListEmptyState
+              icon={MapPinnedIcon}
+              title={`Nenhum município candidato em ${region}`}
+              description="Nenhum município deste território está no seu escopo com dados suficientes para compor um giro. Cadastre lideranças ou compromissos de voto e volte aqui."
+            >
+              <Button asChild variant="outline" className="min-h-11">
+                <Link href="/campanha/municipios">Ver municípios</Link>
+              </Button>
+            </CampaignListEmptyState>
+          ) : (
+            <TourComposerForm
+              region={region}
+              stops={stops}
+              defaultTourName={defaultTourName(region, now)}
+              formAction={createTourDraftsFormAction}
+            />
+          )}
+        </CampaignListResults>
+      </CampaignListPendingBoundary>
     </CampaignPageShell>
   )
 }

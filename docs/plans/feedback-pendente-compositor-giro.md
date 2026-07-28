@@ -1,11 +1,15 @@
 # Dimir o resultado no compositor de giro (feedback pendente)
 
-Status: rascunho
-Atualizado em: 2026-07-27
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos)
+Status: entregue (2026-07-28)
+Atualizado em: 2026-07-28
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos — riscado)
 Impeccable: B — encaixe em `/campanha/atividades/giros` (rota entregue no **E13 ✓**); nenhuma superfície nova
 Appetite: ~0,25 dia eng; três pontos de edição, sem migration/action/`Consent`
 Responsável: —
+
+Revisão 2026-07-28 (auditoria pré-implementação): questões em aberto fechadas (copy aria-live reutilizada; spinner do select permanece). `CalendarPhaseNote` hoje renderiza _acima_ do picker — a entrega move a nota para dentro de `CampaignListResults` (abaixo do seletor), como a abordagem já descrevia.
+
+**As-built 2026-07-28:** `CampaignListPendingBoundary` + `CampaignListResults` em `giros/page.tsx`; `TourRegionPicker` passou a `useCampaignListTransition`; `CalendarPhaseNote` dentro de Results; unit `tourRegionPending.unit.spec.ts` pina `aria-busy`/`data-pending` com `push` Promise pendente (React 19). Critique: sem P0/P1; polish sem mudança de código. Gate tsc/lint/format/cycles; knip P3 pré-existente (`payload.config.ts`); Aikido 0 findings nos first-party.
 
 ## Design (Impeccable)
 
@@ -53,10 +57,10 @@ Dois efeitos concretos, além da inconsistência com as dez listas vizinhas:
 - **Nada de `loading.tsx` na rota.** A navegação é `router.push` dentro de uma transição, então o segmento não remonta; um `loading.tsx` só apareceria na entrada direta, que já é rápida. **Rejeitado:** skeleton do compositor (a proposta anterior dimada é mais informativa que um esqueleto).
 - **i18n e naming** (AGENTS.md): identificadores em inglês; a copy visível reusa "Atualizando resultados…" já existente, sem nova string.
 
-## Questões em aberto
+## Questões resolvidas (2026-07-28)
 
-- **A copy `aria-live` "Atualizando resultados…" serve para uma proposta de giro?** **Opções:** A) reusar como está | B) prop de mensagem no `CampaignListResults` para dizer "Recompondo o giro…". **Recomendação:** **A** — "resultados" descreve honestamente o que muda, e um prop novo abriria a porta para dez variações de copy nas listas; revisitar no critique se soar errado em voz alta.
-- **O spinner atual do `FieldDescription` fica ou sai?** **Opções:** A) fica (controle + resultado sinalizam) | B) sai, deixando só o dim. **Recomendação:** **A** — é o feedback imediato no ponto do gesto; o dim é o que informa o escopo. Custa duas linhas manter.
+- **Copy `aria-live`:** reusar "Atualizando resultados…" (sem prop de mensagem no `CampaignListResults`). Revisitar no critique se soar errado em voz alta.
+- **Spinner do `FieldDescription`:** permanece — feedback imediato no gesto; o dim informa o escopo.
 
 ## Abordagem proposta
 
