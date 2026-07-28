@@ -3,6 +3,7 @@ import { createElement } from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
+import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 
 type ToastAction = { label: string; onClick: () => void }
@@ -19,17 +20,26 @@ vi.mock('sonner', () => ({
 }))
 
 /**
- * Two municípios that are the WHOLE of their território, so the chip collapses
- * and removing it is a multi-id delta — which is what raises the undo toast.
+ * Real slugs, because the cell resolves name and território from the static
+ * catalog: Itaparica is the smallest TI (6 municípios), so assigning all of it
+ * collapses to one chip and removing that chip is a multi-id delta — which is
+ * what raises the undo toast. Ilhéus stands in for a later, unrelated edit;
+ * Itabuna is never assigned and is load-bearing, since without a second entry
+ * of Litoral Sul left over, Ilhéus alone would collapse into a território chip.
  */
+const TERRITORY = 'Itaparica'
+const TERRITORY_SLUGS = municipalityCatalog
+  .filter((entry) => entry.region === TERRITORY)
+  .map((entry) => entry.slug)
+
 const INDEX: MunicipalityPortfolioIndexEntry[] = [
-  { id: 1, name: 'Feira de Santana', slug: 'feira-de-santana', region: 'Portal do Sertão' },
-  { id: 2, name: 'Serrinha', slug: 'serrinha', region: 'Portal do Sertão' },
-  { id: 3, name: 'Ilhéus', slug: 'ilheus', region: 'Litoral Sul' },
-  // Never assigned, and load-bearing: without a second entry in its território,
-  // Ilhéus alone would BE Litoral Sul and collapse into a território chip.
-  { id: 4, name: 'Itabuna', slug: 'itabuna', region: 'Litoral Sul' },
+  ...TERRITORY_SLUGS.map((slug, position) => ({ id: position + 1, slug })),
+  { id: 90, slug: 'ilheus' },
+  { id: 91, slug: 'itabuna' },
 ]
+
+const TERRITORY_IDS = INDEX.slice(0, TERRITORY_SLUGS.length).map((entry) => entry.id)
+const ILHEUS_ID = 90
 
 const cell = (municipalityIds: number[]) =>
   createElement(MunicipalityPortfolioCell, {
@@ -71,17 +81,21 @@ describe('município portfolio cell — optimistic baseline', () => {
    * exact match, the row stayed wrong through every later revalidation.
    */
   it('undoes a removal against the current set, not the one its render captured', async () => {
-    const { rerender } = render(cell([1, 2]))
+    const { rerender } = render(cell(TERRITORY_IDS))
 
-    // 1. Drop the território (ids 1 and 2) — a multi-id delta, so it toasts.
-    fireEvent.click(screen.getByRole('button', { name: 'Remover Portal do Sertão — 2 municípios' }))
+    // 1. Drop the whole território — a multi-id delta, so it toasts.
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: `Remover ${TERRITORY} — ${TERRITORY_SLUGS.length} municípios`,
+      }),
+    )
     await waitFor(() => expect(toastActions).toHaveLength(1))
 
     // 2. The write landed and the server re-rendered the row empty.
     rerender(cell([]))
 
     // 3. A LATER edit the undo closure knows nothing about.
-    rerender(cell([3]))
+    rerender(cell([ILHEUS_ID]))
     expect(screen.getByText('Ilhéus')).toBeTruthy()
 
     // 4. Undo. It must ADD the território back, never rewind the row to step 1.
@@ -89,7 +103,7 @@ describe('município portfolio cell — optimistic baseline', () => {
       toastActions[0]?.onClick()
     })
 
-    await waitFor(() => expect(screen.getByText('Portal do Sertão')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(TERRITORY)).toBeTruthy())
     expect(screen.getByText('Ilhéus')).toBeTruthy()
   })
 })

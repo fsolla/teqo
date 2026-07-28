@@ -471,8 +471,7 @@ describe('loadAdvisorListPageData', () => {
 
     expect(result.totalDocs).toBe(1)
     expect(result.rows[0]).toMatchObject({ id: advisor.id, name: advisor.name })
-    expect(result.rows[0]!.municipalities).toEqual([
-      { id: municipality.id, name: municipality.name, slug: municipality.slug },
-    ])
+    // Ids only: the list's chips resolve their labels from the static catalog.
+    expect(result.rows[0]!.municipalityIDs).toEqual([municipality.id])
   })
 })

@@ -25,15 +25,25 @@ type AdvisorMunicipalityViewModel = {
   slug: string
 }
 
-export type AdvisorRowViewModel = {
+type AdvisorAccountViewModel = {
   id: number
   name: string
   email: string | null
   phone: string | null
-  municipalities: AdvisorMunicipalityViewModel[]
 }
 
-export type AdvisorDetailViewModel = AdvisorRowViewModel
+/**
+ * Ids only: the list renders the portfolio as chips, which resolve their own
+ * labels from the static catalog. Names here would ship a second copy of them.
+ */
+export type AdvisorRowViewModel = AdvisorAccountViewModel & {
+  municipalityIDs: number[]
+}
+
+/** The detail page renders real names and links, so it keeps the labels. */
+export type AdvisorDetailViewModel = AdvisorAccountViewModel & {
+  municipalities: AdvisorMunicipalityViewModel[]
+}
 
 export const parseAdvisorListParams = (searchParams: RawSearchParams): AdvisorListState => {
   const q = normalizedText(firstValue(searchParams.q))
@@ -55,6 +65,56 @@ const buildAdvisorListSearchParams = (state: AdvisorListState, page = state.page
 export const advisorListHrefForPage = (state: AdvisorListState, page: number): string =>
   buildListHref(state, buildAdvisorListSearchParams, advisorListBasePath, page)
 
+/** Fan a município out to each of the advisors the caller asked about. */
+const collectByAdvisor = <T>(
+  advisors: readonly unknown[] | null | undefined,
+  advisorIdSet: ReadonlySet<number>,
+  byAdvisor: Map<number, T[]>,
+  value: T,
+) => {
+  for (const advisor of advisors ?? []) {
+    const id = relationshipId(advisor)
+    if (id === null || !advisorIdSet.has(id)) continue
+    const list = byAdvisor.get(id)
+    if (list) list.push(value)
+    else byAdvisor.set(id, [value])
+  }
+}
+
+/**
+ * Portfolio ids for the LIST, which renders chips that resolve their own labels
+ * from the static catalog — sending names here would ship a second copy of them.
+ *
+ * Intentional admin bypass: advisor rows already resolved after the unrestricted
+ * route gate.
+ */
+const municipalityIdsByAdvisorIds = async (
+  payload: Payload,
+  advisorIDs: number[],
+): Promise<Map<number, number[]>> => {
+  const byAdvisor = new Map<number, number[]>()
+  if (advisorIDs.length === 0) return byAdvisor
+
+  const advisorIdSet = new Set(advisorIDs)
+  const municipalities = await payload.find({
+    collection: 'municipality',
+    where: { advisors: { in: advisorIDs } },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    sort: 'name',
+    select: { advisors: true },
+    overrideAccess: true,
+  })
+
+  for (const municipality of municipalities.docs) {
+    collectByAdvisor(municipality.advisors, advisorIdSet, byAdvisor, municipality.id)
+  }
+
+  return byAdvisor
+}
+
+/** Same portfolio with labels, for the DETAIL page, which renders real links. */
 const municipalitiesByAdvisorIds = async (
   payload: Payload,
   advisorIDs: number[],
@@ -63,9 +123,7 @@ const municipalitiesByAdvisorIds = async (
   if (advisorIDs.length === 0) return byAdvisor
 
   const advisorIdSet = new Set(advisorIDs)
-
-  // Intentional admin bypass: portfolio labels only, over advisor rows already
-  // resolved after the unrestricted route gate.
+  // Intentional admin bypass — same rationale as the sibling above.
   const municipalities = await payload.find({
     collection: 'municipality',
     where: { advisors: { in: advisorIDs } },
@@ -78,18 +136,11 @@ const municipalitiesByAdvisorIds = async (
   })
 
   for (const municipality of municipalities.docs) {
-    const view: AdvisorMunicipalityViewModel = {
+    collectByAdvisor(municipality.advisors, advisorIdSet, byAdvisor, {
       id: municipality.id,
       name: municipality.name,
       slug: municipality.slug,
-    }
-    for (const advisor of municipality.advisors ?? []) {
-      const id = relationshipId(advisor)
-      if (id === null || !advisorIdSet.has(id)) continue
-      const list = byAdvisor.get(id)
-      if (list) list.push(view)
-      else byAdvisor.set(id, [view])
-    }
+    })
   }
 
   return byAdvisor
@@ -130,19 +181,16 @@ export const loadAdvisorListPageData = async (
   })
 
   const advisorIDs = result.docs.map((doc) => doc.id)
-  const municipalitiesByAdvisor = await municipalitiesByAdvisorIds(payload, advisorIDs)
+  const municipalityIdsByAdvisor = await municipalityIdsByAdvisorIds(payload, advisorIDs)
 
   return {
-    rows: result.docs.map((doc) => {
-      const email = doc.email ?? null
-      return {
-        id: doc.id,
-        name: doc.name,
-        email,
-        phone: doc.phone ?? null,
-        municipalities: municipalitiesByAdvisor.get(doc.id) ?? [],
-      }
-    }),
+    rows: result.docs.map((doc) => ({
+      id: doc.id,
+      name: doc.name,
+      email: doc.email ?? null,
+      phone: doc.phone ?? null,
+      municipalityIDs: municipalityIdsByAdvisor.get(doc.id) ?? [],
+    })),
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
   }

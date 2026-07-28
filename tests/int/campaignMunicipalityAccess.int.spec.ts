@@ -14,7 +14,7 @@ import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import config from '@/payload.config'
 import { getAccessibleMunicipalityIds } from '@/utilities/campaignAccess'
 
-import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { installCampaignFixtures, relationIds } from '../helpers/campaignFixtures'
 import { stub } from '../helpers/stub'
 
 let payload: Payload
@@ -40,6 +40,33 @@ describe('municipality catalog seed and per-role access', () => {
       where: { and: [{ city: { equals: 'Salvador' } }, { kind: { equals: 'zona' } }] },
     })
     expect(salvadorZones.totalDocs).toBe(19)
+  })
+
+  it('agrees with the static catalog on every slug and território', async () => {
+    // The chip cells ship `{ id, slug }` and resolve name/região from the static
+    // catalog, so a seeded row the catalog does not know would render no chip at
+    // all. Only the count was pinned before; this is the agreement that swap needs.
+    //
+    // `name` is deliberately not asserted: it is a system field in production,
+    // but `municipalityPageData.int.spec.ts` renames three rows to search for
+    // them and never restores them, so the shared test database diverges by
+    // design. Slug is the identity fixtures claim rows by, and it never moves.
+    const seeded = await payload.find({
+      collection: 'municipality',
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      select: { slug: true, region: true },
+    })
+
+    const bySlug = new Map(seeded.docs.map((municipality) => [municipality.slug, municipality]))
+    expect(bySlug.size).toBe(municipalityCatalog.length)
+
+    for (const entry of municipalityCatalog) {
+      const row = bySlug.get(entry.slug)
+      expect(row, entry.slug).toBeDefined()
+      expect(row?.region, entry.slug).toBe(entry.region)
+    }
   })
 
   it('gives the coordinator unrestricted municipality reads', async () => {
@@ -260,17 +287,13 @@ describe('municipality catalog seed and per-role access', () => {
       advisors: [advisor.id, candidate.id],
     })
     fixtures.touchMunicipality(municipality.id)
-    expect(
-      assigned.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id)),
-    ).toEqual([advisor.id, candidate.id])
+    expect(relationIds(assigned.advisors)).toEqual([advisor.id, candidate.id])
 
     const advisorOnly = await assignMunicipalityAdvisorsRecord(payload, coordinator, {
       municipality: municipality.id,
       advisors: [advisor.id],
     })
-    expect(
-      advisorOnly.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id)),
-    ).toEqual([advisor.id])
+    expect(relationIds(advisorOnly.advisors)).toEqual([advisor.id])
 
     const scope = await getAccessibleMunicipalityIds(
       stub<PayloadRequest>({ payload, user: advisor, context: {} }),

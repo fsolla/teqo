@@ -15,14 +15,15 @@ import {
   isCampaignUnrestricted,
   isCampaignUser,
   isPayloadAdmin,
+  memoizePerRequest,
 } from '@/utilities/access/shared'
 import { relationshipId } from '@/utilities/relationship'
 
 type MunicipalityID = number
 type AccessibleMunicipalityIDs = MunicipalityID[] | null
 
-const ACCESSIBLE_MUNICIPALITY_IDS_CONTEXT_KEY = 'campaignAccessibleMunicipalityIds'
-const OWN_LEADERSHIP_CONTEXT_KEY = 'campaignOwnLeadership'
+const ACCESSIBLE_MUNICIPALITY_IDS_MEMO_KEY = 'campaignAccessibleMunicipalityIds'
+const OWN_LEADERSHIP_MEMO_KEY = 'campaignOwnLeadership'
 
 /**
  * Municipality IDs where `advisorID` is an assigned advisor, without requiring a
@@ -95,14 +96,10 @@ const getOwnEngagedLeadership = async (
     isCampaignUser(user) && user === req.user ? await getFreshCampaignUser(req, user) : user
   if (!isCampaignUser(currentUser)) return null
 
-  const context = req.context as Record<string, unknown>
-  const cacheKey = `${OWN_LEADERSHIP_CONTEXT_KEY}:${currentUser.id}`
-  if (cacheKey in context) return context[cacheKey] as OwnLeadership
+  return memoizePerRequest(req, `${OWN_LEADERSHIP_MEMO_KEY}:${currentUser.id}`, async () => {
+    const collections = req.payload.collections as Record<string, unknown>
+    if (!collections.leadership) return null
 
-  const collections = req.payload.collections as Record<string, unknown>
-  let ownLeadership: OwnLeadership = null
-
-  if (collections.leadership) {
     const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
     const result = await find({
       collection: 'leadership',
@@ -118,24 +115,21 @@ const getOwnEngagedLeadership = async (
     })
 
     const doc = result.docs[0]
-    if (doc) {
-      const id = relationshipId(doc.id)
-      if (id !== null) {
-        ownLeadership = {
-          id,
-          municipalityIDs: (Array.isArray(doc.municipalities) ? doc.municipalities : [])
-            .map(relationshipId)
-            .filter((value): value is number => value !== null),
-          organizationIDs: (Array.isArray(doc.organizations) ? doc.organizations : [])
-            .map(relationshipId)
-            .filter((value): value is number => value !== null),
-        }
-      }
-    }
-  }
+    if (!doc) return null
 
-  context[cacheKey] = ownLeadership
-  return ownLeadership
+    const id = relationshipId(doc.id)
+    if (id === null) return null
+
+    return {
+      id,
+      municipalityIDs: (Array.isArray(doc.municipalities) ? doc.municipalities : [])
+        .map(relationshipId)
+        .filter((value): value is number => value !== null),
+      organizationIDs: (Array.isArray(doc.organizations) ? doc.organizations : [])
+        .map(relationshipId)
+        .filter((value): value is number => value !== null),
+    }
+  })
 }
 
 /**
@@ -153,30 +147,25 @@ export const getAccessibleMunicipalityIds = async (
   if (!isCampaignUser(currentUser)) return []
   if (isCampaignUnrestricted(currentUser)) return null
 
-  const context = req.context as Record<string, unknown>
-  const cacheKey = `${ACCESSIBLE_MUNICIPALITY_IDS_CONTEXT_KEY}:${currentUser.id}:${currentUser.role}`
-  const cached = context[cacheKey]
+  return memoizePerRequest(
+    req,
+    `${ACCESSIBLE_MUNICIPALITY_IDS_MEMO_KEY}:${currentUser.id}:${currentUser.role}`,
+    async () => {
+      const collections = req.payload.collections as Record<string, unknown>
+      let ids: MunicipalityID[] = []
 
-  if (Array.isArray(cached)) {
-    return cached.filter((id): id is number => typeof id === 'number')
-  }
+      if (currentUser.role === 'advisor' && collections.municipality) {
+        ids = await getAdvisorMunicipalityIds(req.payload, currentUser.id, req)
+      }
 
-  const collections = req.payload.collections as Record<string, unknown>
-  let ids: MunicipalityID[] = []
+      if (currentUser.role === 'leader') {
+        const ownLeadership = await getOwnEngagedLeadership(req, currentUser)
+        ids = ownLeadership?.municipalityIDs ?? []
+      }
 
-  if (currentUser.role === 'advisor' && collections.municipality) {
-    ids = await getAdvisorMunicipalityIds(req.payload, currentUser.id, req)
-  }
-
-  if (currentUser.role === 'leader') {
-    const ownLeadership = await getOwnEngagedLeadership(req, currentUser)
-    ids = ownLeadership?.municipalityIDs ?? []
-  }
-
-  const uniqueIDs = [...new Set(ids)]
-  context[cacheKey] = uniqueIDs
-
-  return uniqueIDs
+      return [...new Set(ids)]
+    },
+  )
 }
 
 /** Municipalities are seeded by migration; nobody creates or deletes them in the app. */

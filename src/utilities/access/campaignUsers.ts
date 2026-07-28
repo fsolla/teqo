@@ -13,9 +13,10 @@ import {
   isCampaignUnrestricted,
   isCampaignUser,
   isPayloadAdmin,
+  memoizePerRequest,
 } from '@/utilities/access/shared'
 
-const CAMPAIGN_USER_PHONE_ACCESS_CONTEXT_KEY = 'campaignUserPhoneAccess'
+const CAMPAIGN_USER_PHONE_ACCESS_MEMO_KEY = 'campaignUserPhoneAccess'
 
 export const canManageCampaignUsers: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
@@ -88,53 +89,49 @@ export const canReadCampaignUserPhone: FieldAccess = async ({ doc, id, req }) =>
   const targetUserID = Number(id)
   if (!Number.isInteger(targetUserID) || targetUserID <= 0) return false
 
-  const context = req.context as Record<string, unknown>
-  const cacheKey = `${CAMPAIGN_USER_PHONE_ACCESS_CONTEXT_KEY}:${currentUser.id}:${targetUserID}`
-  if (typeof context[cacheKey] === 'boolean') return context[cacheKey]
-
-  let targetRole = typeof doc === 'object' && doc !== null && 'role' in doc ? doc.role : undefined
-  if (targetRole === undefined) {
-    try {
-      const target = await req.payload.findByID({
-        collection: 'campaignUser',
-        id: targetUserID,
-        depth: 0,
-        select: { role: true },
-        overrideAccess: true,
-        req,
-      })
-      targetRole = target.role
-    } catch {
-      // Missing target only — fall through to the municipality-scope check.
-    }
-  }
-  if (targetRole === 'coordinator') {
-    context[cacheKey] = true
-    return true
-  }
-
-  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
-  if (!municipalityIDs?.length) {
-    context[cacheKey] = false
-    return false
-  }
-
-  const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
-  const result = await find({
-    collection: 'municipality',
-    depth: 0,
-    limit: 1,
-    overrideAccess: true,
-    pagination: false,
+  return memoizePerRequest(
     req,
-    select: { id: true },
-    where: {
-      and: [{ id: { in: municipalityIDs } }, { advisors: { contains: targetUserID } }],
+    `${CAMPAIGN_USER_PHONE_ACCESS_MEMO_KEY}:${currentUser.id}:${targetUserID}`,
+    async () => {
+      let targetRole =
+        typeof doc === 'object' && doc !== null && 'role' in doc ? doc.role : undefined
+      if (targetRole === undefined) {
+        try {
+          const target = await req.payload.findByID({
+            collection: 'campaignUser',
+            id: targetUserID,
+            depth: 0,
+            select: { role: true },
+            overrideAccess: true,
+            req,
+          })
+          targetRole = target.role
+        } catch {
+          // Missing target only — fall through to the municipality-scope check.
+        }
+      }
+      if (targetRole === 'coordinator') return true
+
+      const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
+      if (!municipalityIDs?.length) return false
+
+      const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
+      const result = await find({
+        collection: 'municipality',
+        depth: 0,
+        limit: 1,
+        overrideAccess: true,
+        pagination: false,
+        req,
+        select: { id: true },
+        where: {
+          and: [{ id: { in: municipalityIDs } }, { advisors: { contains: targetUserID } }],
+        },
+      })
+
+      return result.docs.length > 0
     },
-  })
-  const allowed = result.docs.length > 0
-  context[cacheKey] = allowed
-  return allowed
+  )
 }
 
 export const canCreateCampaignUserPhone: FieldAccess = async ({ req }) => {

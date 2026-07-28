@@ -104,10 +104,7 @@ export const AdvisorsTable = ({
   // One array per row per render of `rows`, not per render of this table: the
   // cell reconciles its optimistic state against this prop by identity.
   const municipalityIdsByAdvisor = useMemo(
-    () =>
-      new Map(
-        rows.map((row) => [row.id, row.municipalities.map((municipality) => municipality.id)]),
-      ),
+    () => new Map(rows.map((row) => [row.id, row.municipalityIDs])),
     [rows],
   )
 

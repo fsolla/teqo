@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { setMunicipalityAdvisorMembershipRecord } from '@/app/(campaign)/campanha/actions/municipality'
 import config from '@/payload.config'
 
-import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { installCampaignFixtures, relationIds } from '../helpers/campaignFixtures'
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -36,18 +36,14 @@ describe('setMunicipalityAdvisorMembershipRecord (B27)', () => {
         assigned: true,
       })
       fixtures.touchMunicipality(municipality.id)
-      expect(
-        assigned.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id)),
-      ).toContain(advisor.id)
+      expect(relationIds(assigned.advisors)).toContain(advisor.id)
 
       const removed = await setMunicipalityAdvisorMembershipRecord(payload, actor, {
         municipality: municipality.id,
         advisor: advisor.id,
         assigned: false,
       })
-      expect(
-        removed.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id)) ?? [],
-      ).not.toContain(advisor.id)
+      expect(relationIds(removed.advisors)).not.toContain(advisor.id)
     },
   )
 
@@ -63,18 +59,14 @@ describe('setMunicipalityAdvisorMembershipRecord (B27)', () => {
       assigned: true,
     })
     fixtures.touchMunicipality(municipality.id)
-    expect(
-      selfAssigned.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id)),
-    ).toContain(coordinator.id)
+    expect(relationIds(selfAssigned.advisors)).toContain(coordinator.id)
 
     const candidateAssigned = await setMunicipalityAdvisorMembershipRecord(payload, coordinator, {
       municipality: municipality.id,
       advisor: candidate.id,
       assigned: true,
     })
-    expect(
-      candidateAssigned.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id)),
-    ).toContain(candidate.id)
+    expect(relationIds(candidateAssigned.advisors)).toContain(candidate.id)
   })
 
   it('denies advisor and leader actors', async () => {
@@ -119,9 +111,7 @@ describe('setMunicipalityAdvisorMembershipRecord (B27)', () => {
       advisor: advisor.id,
       assigned: true,
     })
-    expect(again.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id))).toEqual([
-      advisor.id,
-    ])
+    expect(relationIds(again.advisors)).toEqual([advisor.id])
   })
 
   it('rejects once the municipality is at the 10-advisor cap', async () => {

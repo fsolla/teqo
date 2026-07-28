@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { setLeadershipStateDeputyMembershipRecord } from '@/app/(campaign)/campanha/actions/leadership'
 import config from '@/payload.config'
 
-import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { installCampaignFixtures, relationIds } from '../helpers/campaignFixtures'
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -19,8 +19,7 @@ const campaignFixtures = installCampaignFixtures({
 
 const stateDeputyIds = (leadership: {
   stateDeputies?: (number | { id: number })[] | null
-}): number[] =>
-  (leadership.stateDeputies ?? []).map((entry) => (typeof entry === 'number' ? entry : entry.id))
+}): number[] => relationIds(leadership.stateDeputies)
 
 describe('setLeadershipStateDeputyMembershipRecord (B31)', () => {
   beforeAll(async () => {

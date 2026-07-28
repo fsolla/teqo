@@ -22,7 +22,7 @@ import {
   getAccessibleLeadershipIds,
 } from '@/utilities/campaignAccess'
 
-import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { installCampaignFixtures, relationId, relationIds } from '../helpers/campaignFixtures'
 import { stub } from '../helpers/stub'
 
 /** Create data with server-derived fields (e.g. `slug`) intentionally omitted. */
@@ -168,11 +168,7 @@ describe('activity domain', () => {
       ]),
     )
     expect(
-      demands.docs.every((demand) => {
-        const demandMunicipality =
-          typeof demand.municipality === 'number' ? demand.municipality : demand.municipality.id
-        return demandMunicipality === municipality.id
-      }),
+      demands.docs.every((demand) => relationId(demand.municipality) === municipality.id),
     ).toBe(true)
   })
 
@@ -348,13 +344,8 @@ describe('activity domain', () => {
     })
     fixtures.own('activity', activity.id)
 
-    const advisorIds = (activity.advisors ?? []).map((value) =>
-      typeof value === 'number' ? value : value.id,
-    )
-    expect(advisorIds).toEqual([advisor.id])
-    expect(
-      typeof activity.createdBy === 'number' ? activity.createdBy : activity.createdBy?.id,
-    ).toBe(advisor.id)
+    expect(relationIds(activity.advisors)).toEqual([advisor.id])
+    expect(relationId(activity.createdBy)).toBe(advisor.id)
   })
 
   it('enforces schedule validation in the collection hook', async () => {

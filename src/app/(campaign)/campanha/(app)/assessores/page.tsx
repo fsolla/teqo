@@ -38,7 +38,7 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
   const state = parseAdvisorListParams(rawSearchParams)
   const [{ rows, totalDocs, totalPages }, municipalityIndex] = await Promise.all([
     loadAdvisorListPageData(payload, state),
-    loadMunicipalityPortfolioIndex(payload),
+    loadMunicipalityPortfolioIndex(),
   ])
 
   return (

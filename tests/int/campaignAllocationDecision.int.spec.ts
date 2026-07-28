@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import config from '@/payload.config'
 
-import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { installCampaignFixtures, relationId } from '../helpers/campaignFixtures'
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -41,9 +41,7 @@ describe('campaign allocation decisions', () => {
     })
     fixtures.own('allocationDecision', decision.id)
 
-    expect(
-      typeof decision.decidedBy === 'number' ? decision.decidedBy : decision.decidedBy?.id,
-    ).toBe(advisor.id)
+    expect(relationId(decision.decidedBy)).toBe(advisor.id)
     await expect(
       payload.update({
         collection: 'allocationDecision',

@@ -1,6 +1,7 @@
 import { bahiaIdentityTerritories, type BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import { citiesForTseZone } from '@/lib/bahiaTseZones'
 import {
+  getMunicipalityCatalogEntry,
   municipalityCatalog,
   municipalityCatalogEntriesForCity,
   type MunicipalityCatalogEntry,
@@ -14,10 +15,22 @@ import { matchesNormalizedAtWordStart, normalizeSearchPhrase } from '@/lib/wordS
  * and search the catalog by município, território de identidade or zona
  * eleitoral. Nothing here is advisor-specific.
  */
+/**
+ * Payload-minimal: name and região are NOT sent from the server. Both live in
+ * `municipalityCatalog`, which is already in the bundle of every route that
+ * mounts a chip cell, so shipping them again costs ~35 bytes × 435 in each RSC
+ * payload. `portfolioIndexDerivations` resolves them by slug.
+ */
 export type MunicipalityPortfolioIndexEntry = {
   id: number
-  name: string
   slug: string
+}
+
+/** An index entry joined to its catalog row — what the chip logic actually needs. */
+export type ResolvedPortfolioEntry = {
+  id: number
+  slug: string
+  name: string
   region: BahiaIdentityTerritory
 }
 
@@ -81,8 +94,8 @@ export const catalogEntriesForTseZone = (
 }
 
 type PortfolioIndexDerivations = {
-  byId: Map<number, MunicipalityPortfolioIndexEntry>
-  bySlug: Map<string, MunicipalityPortfolioIndexEntry>
+  byId: Map<number, ResolvedPortfolioEntry>
+  idBySlug: Map<string, number>
   idsByTerritory: Map<BahiaIdentityTerritory, number[]>
   normalizedNames: Map<number, string>
 }
@@ -108,17 +121,30 @@ const portfolioIndexDerivations = (
 
   const derived: PortfolioIndexDerivations = {
     byId: new Map(),
-    bySlug: new Map(),
+    idBySlug: new Map(),
     idsByTerritory: new Map(),
     normalizedNames: new Map(),
   }
   for (const entry of index) {
-    derived.byId.set(entry.id, entry)
-    derived.bySlug.set(entry.slug, entry)
-    derived.normalizedNames.set(entry.id, normalizeSearchPhrase(entry.name))
-    const territoryIds = derived.idsByTerritory.get(entry.region)
-    if (territoryIds) territoryIds.push(entry.id)
-    else derived.idsByTerritory.set(entry.region, [entry.id])
+    // A slug the catalog does not know has no name and no território, so it can
+    // neither be labeled nor collapsed — dropping it is what the chip builder
+    // already did with an id it could not resolve. An int test pins that the
+    // seeded rows and the catalog agree, so this branch stays unreachable.
+    const catalogEntry = getMunicipalityCatalogEntry(entry.slug)
+    if (!catalogEntry) continue
+
+    const resolved: ResolvedPortfolioEntry = {
+      id: entry.id,
+      slug: entry.slug,
+      name: catalogEntry.name,
+      region: catalogEntry.region,
+    }
+    derived.byId.set(resolved.id, resolved)
+    derived.idBySlug.set(resolved.slug, resolved.id)
+    derived.normalizedNames.set(resolved.id, normalizeSearchPhrase(resolved.name))
+    const territoryIds = derived.idsByTerritory.get(resolved.region)
+    if (territoryIds) territoryIds.push(resolved.id)
+    else derived.idsByTerritory.set(resolved.region, [resolved.id])
   }
 
   derivationsByIndex.set(index, derived)
@@ -157,14 +183,26 @@ export const scopedPortfolioIndex = (
   return scoped
 }
 
-const municipalityIdsForTseZone = (
-  zoneNumber: number,
-  bySlug: Map<string, MunicipalityPortfolioIndexEntry>,
-): number[] => {
+/**
+ * The index resolved against the catalog, by id — for callers that need a
+ * município's name outside a chip (list filter labels). Shares the memoized
+ * derivation the chips already built for the same array.
+ */
+export const resolvedPortfolioEntriesById = (
+  index: readonly MunicipalityPortfolioIndexEntry[],
+): ReadonlyMap<number, ResolvedPortfolioEntry> => portfolioIndexDerivations(index).byId
+
+/**
+ * The only slug→id resolution left in the file: the território twin it used to
+ * have now reads `idsByTerritory` off the same derivation the chips collapse
+ * with, so a generic `municipalityIdsForEntries` would be an abstraction with
+ * one caller.
+ */
+const municipalityIdsForTseZone = (zoneNumber: number, idBySlug: Map<string, number>): number[] => {
   const ids: number[] = []
   for (const entry of catalogEntriesForTseZone(zoneNumber)) {
-    const resolved = bySlug.get(entry.slug)
-    if (resolved) ids.push(resolved.id)
+    const id = idBySlug.get(entry.slug)
+    if (id !== undefined) ids.push(id)
   }
   return ids
 }
@@ -184,8 +222,6 @@ export const buildMunicipalityPortfolioChips = (
   const remaining = new Set(assignedMunicipalityIds)
   const chips: MunicipalityPortfolioChip[] = []
 
-  // Prefer the live index's `region` (DB) over catalog→slug resolution so chips
-  // collapse even when slug casing/alias differs across environments.
   for (const territory of bahiaIdentityTerritories) {
     const territoryIds = idsByTerritory.get(territory)
     if (!territoryIds || territoryIds.length === 0) continue
@@ -209,7 +245,7 @@ export const buildMunicipalityPortfolioChips = (
 
   const leftover = [...remaining]
     .map((id) => byId.get(id))
-    .filter((entry): entry is MunicipalityPortfolioIndexEntry => entry !== undefined)
+    .filter((entry): entry is ResolvedPortfolioEntry => entry !== undefined)
     .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
 
   for (const entry of leftover) {
@@ -266,11 +302,13 @@ export const searchMunicipalityPortfolio = (
   // Normalize the query ONCE: it used to be re-normalized inside the matcher for
   // each of ~660 candidates (435 names + 27 TI + up to 199 ZE labels).
   const normalizedQuery = normalizeSearchPhrase(trimmed)
-  const { bySlug, idsByTerritory, normalizedNames } = portfolioIndexDerivations(index)
+  const { byId, idBySlug, idsByTerritory, normalizedNames } = portfolioIndexDerivations(index)
   const hits: MunicipalityPortfolioSearchHit[] = []
   const zoneFromQuery = queryLooksLikeZone(normalizedQuery)
 
-  for (const entry of index) {
+  // `byId` is built in index order, so the suggestions stay alphabetical for the
+  // same reason the index is — and an entry the catalog cannot name is not here.
+  for (const entry of byId.values()) {
     if (alreadyAssignedIds.has(entry.id)) continue
     if (!matchesNormalizedAtWordStart(normalizedNames.get(entry.id) ?? '', normalizedQuery))
       continue
@@ -285,8 +323,8 @@ export const searchMunicipalityPortfolio = (
 
   for (const { territory, normalized } of NORMALIZED_TERRITORIES) {
     if (!matchesNormalizedAtWordStart(normalized, normalizedQuery)) continue
-    // Same source as the chip collapse above (the live index's `region`), so a
-    // território cannot be offered under one rule and fail to collapse under another.
+    // Same derivation as the chip collapse above, so a território cannot be
+    // offered under one rule and fail to collapse under another.
     const municipalityIds = (idsByTerritory.get(territory) ?? []).filter(
       (id) => !alreadyAssignedIds.has(id),
     )
@@ -310,7 +348,7 @@ export const searchMunicipalityPortfolio = (
         ).map((zone) => zone.zoneNumber)
 
   for (const zoneNumber of zonesToScan) {
-    const municipalityIds = municipalityIdsForTseZone(zoneNumber, bySlug).filter(
+    const municipalityIds = municipalityIdsForTseZone(zoneNumber, idBySlug).filter(
       (id) => !alreadyAssignedIds.has(id),
     )
     if (municipalityIds.length === 0) continue

@@ -10,12 +10,10 @@ import {
 } from '@/lib/municipalityPortfolio'
 
 const buildIndex = (): MunicipalityPortfolioIndexEntry[] =>
-  municipalityCatalog.map((entry, index) => ({
-    id: index + 1,
-    name: entry.name,
-    slug: entry.slug,
-    region: entry.region,
-  }))
+  municipalityCatalog.map((entry, index) => ({ id: index + 1, slug: entry.slug }))
+
+const catalogNameForSlug = (slug: string): string =>
+  municipalityCatalog.find((entry) => entry.slug === slug)?.name ?? ''
 
 /** The index is keyed by slug; `city` lives only in the catalog it is built from. */
 const slugsForCities = (cities: readonly string[]): Set<string> =>
@@ -42,7 +40,7 @@ describe('municipalityPortfolio', () => {
       {
         kind: 'municipality',
         key: `municipality:${one!.id}`,
-        label: one!.name,
+        label: catalogNameForSlug(one!.slug),
         municipalityId: one!.id,
         slug: one!.slug,
       },

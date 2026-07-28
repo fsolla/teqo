@@ -1,7 +1,7 @@
 import type { Payload } from 'payload'
 
 import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '../../src/utilities/campaignConsent.js'
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, expectPostResponse, test } from './fixtures/campaignE2EFixtures.js'
 
 /**
  * Core municipality-model journeys per role: coordinator strategy editing, advisor
@@ -219,12 +219,7 @@ test.describe('Municípios — jornadas por papel', () => {
     await trendPopover.getByLabel('Justificativa').fill(note)
     await trendPopover.getByLabel('Tendência', { exact: true }).selectOption('favoravel')
     await Promise.all([
-      page.waitForResponse(
-        (response) =>
-          response.url().includes('/campanha/municipios/political-trend') &&
-          response.request().method() === 'POST' &&
-          response.ok(),
-      ),
+      expectPostResponse(page, '/campanha/municipios/political-trend'),
       trendPopover.getByLabel('Justificativa').blur(),
     ])
 

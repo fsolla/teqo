@@ -35,11 +35,14 @@ import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 import { uniqueRelationshipIds } from '@/utilities/relationship'
 
+const revalidateAdvisorDetailPath = (advisorId: number) => {
+  revalidatePath(`/campanha/assessores/${advisorId}`, 'page')
+}
+
+/** For writes that change the LIST itself — a new advisor, or a renamed one. */
 const revalidateAdvisorPaths = (advisorId?: number) => {
   revalidatePath('/campanha/assessores', 'page')
-  if (advisorId !== undefined) {
-    revalidatePath(`/campanha/assessores/${advisorId}`, 'page')
-  }
+  if (advisorId !== undefined) revalidateAdvisorDetailPath(advisorId)
 }
 
 type AdvisorAccount = {
@@ -224,11 +227,16 @@ export const setAdvisorMunicipalitiesBatchRecord = async (
 export const setAdvisorMunicipalitiesBatch = async (input: AdvisorMunicipalitiesBatchInput) => {
   const { payload, actor } = await getCampaignActionContext()
   const result = await setAdvisorMunicipalitiesBatchRecord(payload, actor, input)
-  revalidateMunicipalityListPaths({ scope: 'list' })
-  for (const slug of result.slugs) {
-    revalidateMunicipalityListPaths({ slug, scope: 'detail' })
+  // A no-op batch changed nothing, so there is nothing to revalidate — the guard
+  // the other three chip wrappers already had. `/campanha/assessores` itself
+  // stays out: the cell that calls this is on it and already shows the toggle.
+  if (result.slugs.length > 0) {
+    revalidateMunicipalityListPaths({ scope: 'list' })
+    for (const slug of result.slugs) {
+      revalidateMunicipalityListPaths({ slug, scope: 'detail' })
+    }
+    revalidateAdvisorDetailPath(input.advisorId)
   }
-  revalidateAdvisorPaths(input.advisorId)
   return result
 }
 

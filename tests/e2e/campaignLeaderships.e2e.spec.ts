@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, expectPostResponse, test } from './fixtures/campaignE2EFixtures.js'
 
 /**
  * `/campanha/liderancas` journeys: the B32 support-status quick edit (Popover +
@@ -25,25 +25,9 @@ test.describe('campaign leaderships list', () => {
     })
 
     const municipality = await fixtures.claimMunicipality()
-    const contactName = fixtures.value('Liderança Status')
-    const contact = await campaign.payload.create({
-      collection: 'contact',
-      data: {
-        name: contactName,
-        phone: fixtures.phone(),
-        state: 'BA',
-        city: municipality.name,
-      },
-      depth: 0,
-    })
-    await campaign.payload.create({
-      collection: 'leadership',
-      data: {
-        contact: contact.id,
-        municipalities: [municipality.id],
-        supportStatus: 'a_abordar',
-      },
-      depth: 0,
+    const { contactName } = await fixtures.createStaffLeadership({
+      namePrefix: 'Liderança Status',
+      municipalities: [municipality],
     })
 
     await campaign.login(page, coordinator.email!, password)
@@ -60,12 +44,7 @@ test.describe('campaign leaderships list', () => {
     // text-only assertion here would race the reload below against a save
     // that hasn't reached the database yet.
     await Promise.all([
-      page.waitForResponse(
-        (response) =>
-          response.url().includes('/campanha/liderancas/support-status') &&
-          response.request().method() === 'POST' &&
-          response.ok(),
-      ),
+      expectPostResponse(page, '/campanha/liderancas/support-status'),
       statusPopover.getByLabel('Status de apoio', { exact: true }).selectOption('engajado'),
     ])
     await expect(page.getByRole('button', { name: 'Editar status de apoio' })).toContainText(
@@ -99,21 +78,9 @@ test.describe('campaign leaderships list', () => {
     const linked = await fixtures.claimMunicipality()
     const added = await fixtures.claimMunicipality()
     const keyboardQuery = await fixtures.claimMunicipality()
-    const contactName = fixtures.value('Liderança Municípios')
-    const contact = await campaign.payload.create({
-      collection: 'contact',
-      data: {
-        name: contactName,
-        phone: fixtures.phone(),
-        state: 'BA',
-        city: linked.name,
-      },
-      depth: 0,
-    })
-    const leadership = await campaign.payload.create({
-      collection: 'leadership',
-      data: { contact: contact.id, municipalities: [linked.id], supportStatus: 'a_abordar' },
-      depth: 0,
+    const { contactName, leadershipId } = await fixtures.createStaffLeadership({
+      namePrefix: 'Liderança Municípios',
+      municipalities: [linked],
     })
 
     await campaign.login(page, coordinator.email!, password)
@@ -133,13 +100,7 @@ test.describe('campaign leaderships list', () => {
 
     // Server actions POST to the page URL, so the response filter is the route
     // itself — the optimistic chip renders before the write lands.
-    const persisted = () =>
-      page.waitForResponse(
-        (response) =>
-          response.request().method() === 'POST' &&
-          response.url().includes('/campanha/liderancas') &&
-          response.ok(),
-      )
+    const persisted = () => expectPostResponse(page, '/campanha/liderancas')
 
     const search = page.getByRole('combobox', {
       name: 'Buscar município, território de identidade ou zona eleitoral',
@@ -182,7 +143,7 @@ test.describe('campaign leaderships list', () => {
 
     const stored = await campaign.payload.findByID({
       collection: 'leadership',
-      id: leadership.id,
+      id: leadershipId,
       depth: 0,
     })
     expect(stored.municipalities).toHaveLength(2)

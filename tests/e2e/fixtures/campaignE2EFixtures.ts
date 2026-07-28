@@ -113,11 +113,61 @@ class CampaignE2EOwnership {
     if (!municipality)
       throw new Error(`Seeded municipality "${slug}" not found — run migrations first.`)
     this.touchedMunicipalities.add(municipality.id)
-    return { id: municipality.id, name: municipality.name, slug: municipality.slug }
+    // The catalog name, not the row's: since B34+ the chips label from
+    // `municipalityCatalog`, so a row an int spec renamed and left behind would
+    // make a specifier here miss the element the UI actually renders.
+    return {
+      id: municipality.id,
+      name: municipalityCatalog[index]!.name,
+      slug: municipality.slug,
+    }
   }
 
   touchMunicipality(id: number): void {
     this.touchedMunicipalities.add(id)
+  }
+
+  /**
+   * A leadership plus the `contact` it is required to point at — the pair every
+   * spec that needs a row on `/campanha/liderancas` was writing out by hand.
+   * Returns both, since assertions look the leadership up by id and find the row
+   * by the contact's name.
+   */
+  async createStaffLeadership({
+    namePrefix,
+    municipalities,
+    supportStatus = 'a_abordar',
+    user,
+  }: {
+    namePrefix: string
+    municipalities: { id: number; name: string }[]
+    supportStatus?: 'a_abordar' | 'em_disputa' | 'engajado' | 'negativo'
+    user?: number
+  }): Promise<{ contactName: string; contactId: number; leadershipId: number }> {
+    const contactName = this.value(namePrefix)
+    const contact = await this.payload.create({
+      collection: 'contact',
+      data: {
+        name: contactName,
+        phone: this.phone(),
+        state: 'BA',
+        city: municipalities[0]?.name ?? 'Salvador',
+      },
+      depth: 0,
+    })
+
+    const leadership = await this.payload.create({
+      collection: 'leadership',
+      data: {
+        contact: contact.id,
+        municipalities: municipalities.map((municipality) => municipality.id),
+        supportStatus,
+        ...(user === undefined ? {} : { user }),
+      },
+      depth: 0,
+    })
+
+    return { contactName, contactId: contact.id, leadershipId: leadership.id }
   }
 
   private isOwnedCollection(collection: CollectionSlug): collection is OwnedCollection {
@@ -338,6 +388,21 @@ class CampaignE2EOwnership {
     }
   }
 }
+
+/**
+ * Waits for an auto-saving cell's write to actually land.
+ *
+ * Every cell in the B32+ family paints optimistically, so asserting on the text
+ * proves nothing about the database — a `page.reload()` right after would race
+ * the POST. Pair this with the interaction inside one `Promise.all`.
+ */
+export const expectPostResponse = (page: Page, urlFragment: string) =>
+  page.waitForResponse(
+    (response) =>
+      response.url().includes(urlFragment) &&
+      response.request().method() === 'POST' &&
+      response.ok(),
+  )
 
 type CampaignE2EFixture = {
   baseURL: string

@@ -22,7 +22,7 @@ import {
 } from '@/utilities/supporterPageData'
 import { buildSupporterListWhere } from '@/utilities/supporterUi'
 
-import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { installCampaignFixtures, relationId } from '../helpers/campaignFixtures'
 import {
   ensureLeasedConsent,
   SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
@@ -361,7 +361,7 @@ describe('campaign supporter domain', () => {
       phone,
       consentAccepted: true,
     })
-    const contactID = typeof created.contact === 'number' ? created.contact : created.contact.id
+    const contactID = relationId(created.contact)
     fixtures.own('supporter', created.id)
     fixtures.own('contact', contactID)
 

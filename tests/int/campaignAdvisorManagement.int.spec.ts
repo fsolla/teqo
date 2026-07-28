@@ -13,7 +13,7 @@ import {
 import { assignMunicipalityAdvisorsRecord } from '@/app/(campaign)/campanha/actions/municipality'
 import config from '@/payload.config'
 
-import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { installCampaignFixtures, relationIds } from '../helpers/campaignFixtures'
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -31,9 +31,7 @@ const advisorIdsOf = async (municipalityID: number): Promise<number[]> => {
     select: { advisors: true },
     overrideAccess: true,
   })
-  return (municipality.advisors ?? []).map((entry) =>
-    typeof entry === 'number' ? entry : entry.id,
-  )
+  return relationIds(municipality.advisors)
 }
 
 describe('campaign advisor management (B19)', () => {

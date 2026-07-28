@@ -187,7 +187,7 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
   ] = await Promise.all([
     loadStateDeputyListPageData(payload, user, canonicalUrl.state),
     loadLeadershipOptions(payload, user),
-    loadMunicipalityPortfolioIndex(payload),
+    loadMunicipalityPortfolioIndex(),
     user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
   ])
   const resolvedUrl = resolveStateDeputyListUrl(rawSearchParams, totalPages)
