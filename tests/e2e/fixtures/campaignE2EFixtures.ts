@@ -371,7 +371,10 @@ export const test = base.extend<CampaignE2ETestFixtures>({
           await page.goto(`${baseURL}/campanha/login`)
           await page.getByLabel('E-mail ou celular').fill(identifier)
           await page.getByLabel('Senha').fill(password)
-          await page.getByRole('button', { name: 'Entrar' }).click()
+          // `exact`: the login screen also offers "Entrar com digital ou Face
+          // ID" (B40) whenever the device has a platform authenticator — which
+          // any spec adding a virtual one does.
+          await page.getByRole('button', { name: 'Entrar', exact: true }).click()
           await page.waitForURL(`${baseURL}/campanha`)
         },
         payload: fixtures.payload,

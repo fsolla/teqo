@@ -127,3 +127,9 @@ export {
   canManageStateDeputy,
   canReadStateDeputy,
 } from '@/utilities/access/stateDeputies'
+
+export {
+  canDeleteOwnWebAuthnCredentials,
+  canReadOwnWebAuthnCredentials,
+  canWriteWebAuthnCredentials,
+} from '@/utilities/access/webauthnCredentials'

@@ -14,6 +14,7 @@ import { AllocationDecision } from './collections/AllocationDecision'
 import { CampaignDemand } from './collections/CampaignDemand'
 import { CampaignInvite } from './collections/CampaignInvite'
 import { CampaignUser } from './collections/CampaignUser'
+import { CampaignWebAuthnCredential } from './collections/CampaignWebAuthnCredential'
 import { Consent } from './collections/Consent'
 import { Contact } from './collections/Contact'
 import { ElectionCandidate } from './collections/ElectionCandidate'
@@ -85,6 +86,7 @@ export default buildConfig({
   collections: [
     Users,
     CampaignUser,
+    CampaignWebAuthnCredential,
     CampaignInvite,
     Municipality,
     Leadership,
