@@ -12,6 +12,7 @@ import {
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { isCampaignLeader } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { loadTerritoryOverview } from '@/utilities/loadTerritoryOverview'
 import { resolveTerritoryListSort, resolveTerritoryListUrl } from '@/utilities/territoryListUrl'
 import { filterTerritoryRows, sortTerritoryRows } from '@/utilities/territoryOverview'
@@ -31,6 +32,7 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
   if (isCampaignLeader(user)) redirect('/campanha')
 
   const allRows = await loadTerritoryOverview(payload, user)
+  const columnVisibility = await readCampaignColumnVisibility('territorios')
   const { state } = resolvedUrl
   const { sort, dir } = resolveTerritoryListSort(state)
   const rows = sortTerritoryRows(filterTerritoryRows(allRows, state), sort, dir)
@@ -52,7 +54,12 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
       <CampaignListPendingBoundary>
         <TerritoryFilters state={state} regionOptions={regionOptions} />
         <CampaignListResults>
-          <TerritoryList rows={rows} state={state} regionOptions={regionOptions} />
+          <TerritoryList
+            rows={rows}
+            state={state}
+            regionOptions={regionOptions}
+            columnVisibility={columnVisibility}
+          />
           <CampaignListFooter
             totalDocs={rows.length}
             singular="território encontrado"

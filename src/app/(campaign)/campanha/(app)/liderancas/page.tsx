@@ -45,6 +45,7 @@ import { MAX_LEADERSHIP_MUNICIPALITIES, isLeadershipSector } from '@/lib/schemas
 import { cn } from '@/lib/utils'
 import { getAdvisorMunicipalityIds, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
 import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 import { formatRelativeAge } from '@/utilities/formatRelativeAge'
@@ -58,6 +59,7 @@ import {
 import {
   buildLeadershipListHref,
   formatLeadershipListSortSummary,
+  leadershipListSortLabels,
   resolveLeadershipListSort,
   resolveLeadershipListUrl,
   type LeadershipListState,
@@ -125,12 +127,9 @@ const leadershipColumns = ({
 }): Array<CampaignTableColumn<LeadershipRowViewModel>> => [
   {
     id: 'name',
+    label: leadershipListSortLabels.name,
     mandatory: true,
-    head: (
-      <LeadershipSortableHead state={state} sortKey="name">
-        Nome
-      </LeadershipSortableHead>
-    ),
+    head: <LeadershipSortableHead state={state} sortKey="name" />,
     cell: (row) => (
       <Link
         href={`/campanha/liderancas/${row.id}`}
@@ -142,13 +141,13 @@ const leadershipColumns = ({
   },
   {
     id: 'email',
-    head: <CampaignTableHead>E-mail</CampaignTableHead>,
+    label: 'E-mail',
     cellClassName: 'max-w-56',
     cell: (row) => <CampaignCopyableCell value={row.email} label="E-mail" />,
   },
   {
     id: 'phone',
-    head: <CampaignTableHead>Celular</CampaignTableHead>,
+    label: 'Celular',
     cell: (row) => (
       <CampaignCopyableCell
         value={row.phone}
@@ -160,10 +159,9 @@ const leadershipColumns = ({
   },
   {
     id: 'supportStatus',
+    label: leadershipListSortLabels.supportStatus,
     head: (
-      <LeadershipSortableHead state={state} sortKey="supportStatus" filterParam="supportStatus">
-        Status
-      </LeadershipSortableHead>
+      <LeadershipSortableHead state={state} sortKey="supportStatus" filterParam="supportStatus" />
     ),
     cell: (row) => (
       <LeadershipListSupportStatusControl leadershipID={row.id} status={row.supportStatus} />
@@ -171,11 +169,8 @@ const leadershipColumns = ({
   },
   {
     id: 'sector',
-    head: (
-      <LeadershipSortableHead state={state} sortKey="sector" filterParam="sector">
-        Setor
-      </LeadershipSortableHead>
-    ),
+    label: leadershipListSortLabels.sector,
+    head: <LeadershipSortableHead state={state} sortKey="sector" filterParam="sector" />,
     cell: (row) => {
       if (!row.sector || !isLeadershipSector(row.sector)) return row.sector || '—'
       return leadershipSectorLabels[row.sector]
@@ -183,6 +178,7 @@ const leadershipColumns = ({
   },
   {
     id: 'municipalities',
+    label: 'Municípios',
     head: (
       <LeadershipFilterHead
         state={state}
@@ -211,13 +207,13 @@ const leadershipColumns = ({
   },
   {
     id: 'organizations',
-    head: <CampaignTableHead>Organizações</CampaignTableHead>,
+    label: 'Organizações',
     cellClassName: 'max-w-56 whitespace-normal text-muted-foreground',
     cell: (row) => row.organizationNames.join(', ') || '—',
   },
   {
     id: 'stateDeputies',
-    head: <CampaignTableHead>Dobradinhas</CampaignTableHead>,
+    label: 'Dobradinhas',
     cellClassName: 'max-w-56 whitespace-normal',
     cell: (row) => (
       <LeadershipStateDeputyRelationCell
@@ -237,6 +233,7 @@ const leadershipColumns = ({
   },
   {
     id: 'appAccess',
+    label: 'Acesso ao app',
     head: (
       <LeadershipFilterHead state={state} filterParam="access">
         Acesso ao app
@@ -250,11 +247,8 @@ const leadershipColumns = ({
   },
   {
     id: 'updatedAt',
-    head: (
-      <LeadershipSortableHead state={state} sortKey="updatedAt">
-        Última atualização
-      </LeadershipSortableHead>
-    ),
+    label: leadershipListSortLabels.updatedAt,
+    head: <LeadershipSortableHead state={state} sortKey="updatedAt" />,
     cell: (row) => {
       const absolute = formatBahiaDateTimeLabel(row.updatedAt)
       const relative = formatRelativeAge(new Date(row.updatedAt).getTime(), nowMs)
@@ -268,6 +262,7 @@ const leadershipColumns = ({
   },
   {
     id: 'actions',
+    label: 'Ações',
     head: (
       <CampaignTableHead align="right">
         <span className="sr-only">Ações</span>
@@ -357,6 +352,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
 
   const { sort, dir } = resolveLeadershipListSort(state)
   const sortSummary = formatLeadershipListSortSummary(sort, dir)
+  const columnVisibility = await readCampaignColumnVisibility('liderancas')
   const columns = leadershipColumns({
     state,
     stateDeputyOptions: stateDeputyOptions.map((option) => ({
@@ -402,6 +398,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
           <CampaignTable
             caption={`${sortSummary}. Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações.`}
             columns={columns}
+            columnVisibility={columnVisibility}
             rows={rows}
             rowKey={(row) => row.id}
             empty={<LeadershipListEmptyState state={state} />}

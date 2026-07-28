@@ -10,11 +10,7 @@ import {
   CampaignListResults,
   CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
-import {
-  CampaignTable,
-  CampaignTableHead,
-  type CampaignTableColumn,
-} from '@/components/campaign/shared/CampaignTable'
+import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import {
   LeadershipStateDeputyRelationCell,
   type RelationCellOption,
@@ -34,6 +30,7 @@ import {
 import { cn } from '@/lib/utils'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { loadLeadershipOptions } from '@/utilities/campaignRelationOptions'
 import {
   loadStateDeputyListPageData,
@@ -49,6 +46,7 @@ import {
   formatStateDeputyListSortSummary,
   resolveStateDeputyListSort,
   resolveStateDeputyListUrl,
+  stateDeputyListSortLabels,
   type StateDeputyListState,
 } from '@/utilities/stateDeputyListUrl'
 
@@ -91,12 +89,9 @@ const stateDeputyColumns = (
 ): Array<CampaignTableColumn<StateDeputyRowViewModel>> => [
   {
     id: 'name',
+    label: stateDeputyListSortLabels.name,
     mandatory: true,
-    head: (
-      <StateDeputySortableHead state={state} sortKey="name">
-        Nome
-      </StateDeputySortableHead>
-    ),
+    head: <StateDeputySortableHead state={state} sortKey="name" />,
     cell: (row) => (
       <Link
         href={`/campanha/dobradinhas/${row.slug}`}
@@ -108,28 +103,27 @@ const stateDeputyColumns = (
   },
   {
     id: 'party',
+    label: stateDeputyListSortLabels.party,
     head: (
       <StateDeputySortableHead
         state={state}
         sortKey="party"
         filterOptions={partyFilterOptions}
         hasNoPartyOption={hasNoPartyOption}
-      >
-        Partido
-      </StateDeputySortableHead>
+      />
     ),
     cellClassName: 'text-muted-foreground',
     cell: (row) => row.party ?? '—',
   },
   {
     id: 'municipalities',
-    head: <CampaignTableHead>Municípios</CampaignTableHead>,
+    label: 'Municípios',
     cellClassName: 'tabular-nums',
     cell: (row) => row.municipalityCount,
   },
   {
     id: 'leaderships',
-    head: <CampaignTableHead>Lideranças</CampaignTableHead>,
+    label: 'Lideranças',
     cellClassName: 'max-w-72 whitespace-normal',
     cell: (row) => (
       <LeadershipStateDeputyRelationCell
@@ -164,6 +158,7 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
 
+  const columnVisibility = await readCampaignColumnVisibility('dobradinhas')
   const { sort, dir } = resolveStateDeputyListSort(state)
   const sortSummary = formatStateDeputyListSortSummary(sort, dir)
   const partyFilterOptions = filterFacets.parties.map((party) => ({ value: party, label: party }))
@@ -214,6 +209,7 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
           <CampaignTable
             caption={`${sortSummary}. Deputados estaduais com quem a campanha dobra.`}
             columns={columns}
+            columnVisibility={columnVisibility}
             rows={rows}
             rowKey={(row) => row.id}
             empty={<StateDeputyListEmptyState state={state} />}

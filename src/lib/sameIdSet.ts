@@ -4,7 +4,10 @@
  * (navigation/RSC refresh) apart from a re-render carrying the same
  * pre-edit content (which must not clobber in-flight optimistic state).
  */
-export const sameIdSet = (left: readonly number[], right: readonly number[]): boolean => {
+export const sameIdSet = <Id extends string | number>(
+  left: readonly Id[],
+  right: readonly Id[],
+): boolean => {
   if (left.length !== right.length) return false
   const rightSet = new Set(right)
   return left.every((id) => rightSet.has(id))

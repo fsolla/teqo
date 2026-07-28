@@ -21,6 +21,7 @@ import {
   isCampaignUnrestricted,
 } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { getCampaignScopeLabel } from '@/utilities/municipalityLabels'
 import {
   buildMunicipalityListVisitHref,
@@ -64,6 +65,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
   const listVisitLabel = buildMunicipalityListVisitLabel(state)
+  const columnVisibility = await readCampaignColumnVisibility('municipios')
 
   // One read covers both needs: the listed municipalities' avatars and the
   // (cross-filtered) advisor column-filter labels.
@@ -129,6 +131,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
         columnFilterOptions={columnFilterOptions}
         signalFormAction={createMunicipalityListSignalFormAction}
         state={state}
+        columnVisibility={columnVisibility}
       />
       <CampaignListFooter
         totalDocs={totalDocs}

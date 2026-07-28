@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from 'react'
 
 import { CampaignCellTooltip } from '@/components/campaign/shared/CampaignCellTooltip'
+import { CampaignColumnPicker } from '@/components/campaign/shared/CampaignColumnPicker'
 import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import {
   Table,
@@ -11,6 +12,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
+import {
+  resolveVisibleColumns,
+  type CampaignColumnVisibility,
+} from '@/lib/campaignColumnVisibility'
 import {
   campaignHoverExplanationClassName,
   campaignHoverTooltipAlign,
@@ -24,14 +29,25 @@ import { cn } from '@/lib/utils'
  * a definition instead of a new table.
  */
 export type CampaignTableColumn<Row> = {
-  /** Stable identifier — the future column-picker key (B17). */
+  /** Stable identifier — the column-picker key (B17). */
   id: string
   /**
-   * Full `<th>` node. Plain labels use `<CampaignTableHead>`; rich columns
-   * render their own head island (e.g. `MunicipalitySortableHead`), which owns
-   * `aria-sort` and the filter popover.
+   * Short pt-BR name of the column, and the default header copy. `head` is an
+   * opaque `ReactNode` (often a client island), so the picker — which only
+   * receives serializable data — needs the name spelled out here.
+   *
+   * It normally IS the header copy, but it does not have to be: a header can
+   * afford to be terse because it sits above its own data (municípios' "2022"),
+   * while the same word alone in a menu of column names says nothing.
    */
-  head: ReactNode
+  label: string
+  /**
+   * Full `<th>` node, defaulting to `<CampaignTableHead>{label}</CampaignTableHead>`.
+   * Declare it only when the header is more than its name: an alignment, a
+   * B22 `description`, or a head island of its own (`MunicipalitySortableHead`)
+   * owning `aria-sort` and the filter popover.
+   */
+  head?: ReactNode
   cell: (row: Row) => ReactNode
   /**
    * Extra reading for the cell content, shown on hover/focus/tap. Return
@@ -46,9 +62,8 @@ export type CampaignTableColumn<Row> = {
    */
   cellTooltip?: (row: Row) => ReactNode
   cellClassName?: string | ((row: Row) => string | undefined)
-  /** B17 seams — a mandatory column is not hideable; hidden-by-default starts unchecked. */
+  /** B17 — a mandatory column is listed in the picker but cannot be unchecked. */
   mandatory?: boolean
-  defaultVisible?: boolean
 }
 
 /**
@@ -124,6 +139,12 @@ export const CampaignTableHead = ({
 
 type CampaignTableProps<Row> = {
   columns: Array<CampaignTableColumn<Row>>
+  /**
+   * B17 — passing this turns the column picker on. The caller reads the cookie
+   * (`readCampaignColumnVisibility`) and hands the result over whole: hidden
+   * columns are never rendered, so they cost nothing in the RSC payload either.
+   */
+  columnVisibility?: CampaignColumnVisibility
   rows: readonly Row[]
   rowKey: (row: Row) => string | number
   /** Optional DOM id per row (e.g. hash targets on `/campanha/territorios`). */
@@ -143,6 +164,7 @@ type CampaignTableProps<Row> = {
 
 export const CampaignTable = <Row,>({
   columns,
+  columnVisibility,
   rows,
   rowKey,
   rowId,
@@ -152,55 +174,78 @@ export const CampaignTable = <Row,>({
   containerClassName,
   headerClassName,
   rowClassName,
-}: CampaignTableProps<Row>) => (
-  <div className={cn('overflow-hidden rounded-xl border', className)}>
-    <Table containerClassName={containerClassName}>
-      {caption ? <TableCaption className="sr-only">{caption}</TableCaption> : null}
-      <TableHeader className={headerClassName}>
-        <TableRow>
-          {columns.map((column) => (
-            <Fragment key={column.id}>{column.head}</Fragment>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {rows.length === 0 && empty ? (
-          <TableRow className="hover:bg-transparent">
-            <TableCell colSpan={columns.length} className="whitespace-normal">
-              {empty}
-            </TableCell>
-          </TableRow>
-        ) : null}
-        {rows.map((row) => (
-          <TableRow
-            key={rowKey(row)}
-            id={rowId?.(row)}
-            className={typeof rowClassName === 'function' ? rowClassName(row) : rowClassName}
-          >
-            {columns.map((column) => {
-              const cell = column.cell(row)
-              const tooltip = column.cellTooltip?.(row)
+}: CampaignTableProps<Row>) => {
+  const visibleColumns = resolveVisibleColumns(columns, columnVisibility?.hiddenColumnIds)
 
-              return (
-                <TableCell
-                  key={column.id}
-                  className={
-                    typeof column.cellClassName === 'function'
-                      ? column.cellClassName(row)
-                      : column.cellClassName
-                  }
-                >
-                  {tooltip ? (
-                    <CampaignCellTooltip content={tooltip}>{cell}</CampaignCellTooltip>
-                  ) : (
-                    cell
-                  )}
+  return (
+    <>
+      {columnVisibility ? (
+        // Gated at `md:` because municípios and apoiadores hide this table
+        // below that width (`className="hidden md:block"`) and show curated
+        // cards instead — a picker over a table nobody can see is noise. The
+        // cost is that the five surfaces which DO scroll this table on a phone
+        // have no picker there; giving them one needs a per-caller seam, not a
+        // breakpoint (registered as a fill-in in the B17 plan).
+        <div className="hidden justify-end md:flex">
+          <CampaignColumnPicker
+            listId={columnVisibility.listId}
+            columns={columns.map(({ id, label, mandatory }) => ({ id, label, mandatory }))}
+            hiddenColumnIds={columnVisibility.hiddenColumnIds}
+          />
+        </div>
+      ) : null}
+      <div className={cn('overflow-hidden rounded-xl border', className)}>
+        <Table containerClassName={containerClassName}>
+          {caption ? <TableCaption className="sr-only">{caption}</TableCaption> : null}
+          <TableHeader className={headerClassName}>
+            <TableRow>
+              {visibleColumns.map((column) => (
+                <Fragment key={column.id}>
+                  {column.head ?? <CampaignTableHead>{column.label}</CampaignTableHead>}
+                </Fragment>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 && empty ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={visibleColumns.length} className="whitespace-normal">
+                  {empty}
                 </TableCell>
-              )
-            })}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  </div>
-)
+              </TableRow>
+            ) : null}
+            {rows.map((row) => (
+              <TableRow
+                key={rowKey(row)}
+                id={rowId?.(row)}
+                className={typeof rowClassName === 'function' ? rowClassName(row) : rowClassName}
+              >
+                {visibleColumns.map((column) => {
+                  const cell = column.cell(row)
+                  const tooltip = column.cellTooltip?.(row)
+
+                  return (
+                    <TableCell
+                      key={column.id}
+                      className={
+                        typeof column.cellClassName === 'function'
+                          ? column.cellClassName(row)
+                          : column.cellClassName
+                      }
+                    >
+                      {tooltip ? (
+                        <CampaignCellTooltip content={tooltip}>{cell}</CampaignCellTooltip>
+                      ) : (
+                        cell
+                      )}
+                    </TableCell>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
+  )
+}

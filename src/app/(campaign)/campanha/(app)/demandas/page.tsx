@@ -11,11 +11,7 @@ import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
-import {
-  CampaignTable,
-  CampaignTableHead,
-  type CampaignTableColumn,
-} from '@/components/campaign/shared/CampaignTable'
+import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -27,6 +23,7 @@ import {
 } from '@/lib/schemas/campaignDemand'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import {
   buildDemandListHref,
   loadDemandListPageData,
@@ -54,8 +51,8 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' })
 const demandColumns: Array<CampaignTableColumn<DemandRowViewModel>> = [
   {
     id: 'title',
+    label: 'Demanda',
     mandatory: true,
-    head: <CampaignTableHead>Demanda</CampaignTableHead>,
     cellClassName: 'max-w-64 whitespace-normal',
     cell: (row) => (
       <Link
@@ -68,31 +65,31 @@ const demandColumns: Array<CampaignTableColumn<DemandRowViewModel>> = [
   },
   {
     id: 'kind',
-    head: <CampaignTableHead>Tipo</CampaignTableHead>,
+    label: 'Tipo',
     cell: (row) => campaignDemandKindLabels[row.kind],
   },
   {
     id: 'municipality',
-    head: <CampaignTableHead>Município</CampaignTableHead>,
+    label: 'Município',
     cellClassName: 'text-muted-foreground',
     cell: (row) => row.municipalityName,
   },
   {
     id: 'requester',
-    head: <CampaignTableHead>Solicitante</CampaignTableHead>,
+    label: 'Solicitante',
     cellClassName: 'text-muted-foreground',
     cell: (row) => row.requesterName ?? '—',
   },
   {
     id: 'status',
-    head: <CampaignTableHead>Status</CampaignTableHead>,
+    label: 'Status',
     cell: (row) => (
       <Badge variant={statusVariant[row.status]}>{campaignDemandStatusLabels[row.status]}</Badge>
     ),
   },
   {
     id: 'createdAt',
-    head: <CampaignTableHead>Aberta em</CampaignTableHead>,
+    label: 'Aberta em',
     cell: (row) => dateFormatter.format(new Date(row.createdAt)),
   },
 ]
@@ -109,6 +106,7 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
     user,
     state,
   )
+  const columnVisibility = await readCampaignColumnVisibility('demandas')
 
   const hrefForStatus = (status?: CampaignDemandStatus) =>
     buildDemandListHref({ ...state, status }, 1)
@@ -150,7 +148,12 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
         <CampaignListResults>
           {rows.length ? (
             <>
-              <CampaignTable columns={demandColumns} rows={rows} rowKey={(row) => row.id} />
+              <CampaignTable
+                columns={demandColumns}
+                columnVisibility={columnVisibility}
+                rows={rows}
+                rowKey={(row) => row.id}
+              />
               <CampaignListFooter
                 totalDocs={totalDocs}
                 singular="demanda"

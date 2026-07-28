@@ -17,7 +17,7 @@ const renderTable = (cellTooltip?: (row: Row) => string | null) =>
       columns: [
         {
           id: 'name',
-          head: createElement(CampaignTableHead, {}, 'Município'),
+          label: 'Município',
           cell: (row) => row.name,
           cellTooltip,
         },
@@ -26,6 +26,38 @@ const renderTable = (cellTooltip?: (row: Row) => string | null) =>
       rowKey: (row) => row.id,
     }),
   )
+
+/**
+ * B17: `label` is what the column picker shows, and it is the header too
+ * unless the column asks for more. Declaring both is how the two drift.
+ */
+describe('CampaignTable head', () => {
+  it('builds the header from the label when the column declares no head', () => {
+    const html = renderTable()
+
+    expect(html).toContain('>Município<')
+    expect(html.match(/<th[\s>]/g)).toHaveLength(1)
+  })
+
+  it('lets a column own its header when it needs more than its name', () => {
+    const html = renderToStaticMarkup(
+      createElement(CampaignTable<Row>, {
+        columns: [
+          {
+            id: 'name',
+            label: 'Município',
+            head: createElement(CampaignTableHead, { align: 'right' }, 'Município'),
+            cell: (row) => row.name,
+          },
+        ],
+        rows,
+        rowKey: (row) => row.id,
+      }),
+    )
+
+    expect(html).toContain('text-right')
+  })
+})
 
 /**
  * B23 seam consumed by E10's "Classe" column: the tooltip is declared by the

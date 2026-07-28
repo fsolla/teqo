@@ -18,6 +18,7 @@ import { SupporterListOverview } from '@/components/campaign/supporter/Supporter
 import { Button } from '@/components/ui/button'
 import { isCampaignCoordinator, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { loadSupportersPageData } from '@/utilities/supporterPageData'
 import {
@@ -43,12 +44,14 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
   const { result, state, redirectHref, municipalityOptions, overview } =
     await loadSupportersPageData(payload, user, rawSearchParams)
   if (redirectHref) redirect(redirectHref)
+  const columnVisibility = await readCampaignColumnVisibility('apoiadores')
 
   const listBody = result.docs.length ? (
     <>
       {overview ? <SupporterListOverview view={overview} now={now} /> : null}
       <SupporterList
         supporters={result.docs.map((supporter) => toSupporterListItemViewModel(supporter))}
+        columnVisibility={columnVisibility}
       />
       <CampaignListFooter
         totalDocs={result.totalDocs}

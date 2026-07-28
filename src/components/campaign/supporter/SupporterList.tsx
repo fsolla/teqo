@@ -1,20 +1,18 @@
 import { PhoneIcon } from 'lucide-react'
 import Link from 'next/link'
 
-import {
-  CampaignTable,
-  CampaignTableHead,
-  type CampaignTableColumn,
-} from '@/components/campaign/shared/CampaignTable'
+import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
 import { formatBrazilianPhoneInput } from '@/lib/phone'
 import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
 import type { SupporterListItemViewModel } from '@/utilities/supporterViewModels'
 
 export type SupporterListProps = {
   supporters: SupporterListItemViewModel[]
+  columnVisibility: CampaignColumnVisibility
 }
 
 const voteIntentionBadgeVariant = (
@@ -83,8 +81,8 @@ const SupporterCard = ({ supporter }: { supporter: SupporterListItemViewModel })
 const supporterColumns: Array<CampaignTableColumn<SupporterListItemViewModel>> = [
   {
     id: 'name',
+    label: 'Nome',
     mandatory: true,
-    head: <CampaignTableHead>Nome</CampaignTableHead>,
     cellClassName: 'max-w-52 whitespace-normal',
     cell: (supporter) => (
       <Link
@@ -97,12 +95,12 @@ const supporterColumns: Array<CampaignTableColumn<SupporterListItemViewModel>> =
   },
   {
     id: 'city',
-    head: <CampaignTableHead>Cidade</CampaignTableHead>,
+    label: 'Cidade',
     cell: (supporter) => supporter.city ?? '—',
   },
   {
     id: 'municipality',
-    head: <CampaignTableHead>Município</CampaignTableHead>,
+    label: 'Município',
     cellClassName: 'max-w-48 whitespace-normal',
     cell: (supporter) =>
       supporter.municipalityName ? (
@@ -118,7 +116,7 @@ const supporterColumns: Array<CampaignTableColumn<SupporterListItemViewModel>> =
   },
   {
     id: 'voteIntention',
-    head: <CampaignTableHead>Intenção</CampaignTableHead>,
+    label: 'Intenção',
     cell: (supporter) => {
       const voteIntentionLabel = supporter.voteIntention
         ? supporterVoteIntentionLabels[supporter.voteIntention]
@@ -134,13 +132,13 @@ const supporterColumns: Array<CampaignTableColumn<SupporterListItemViewModel>> =
   },
   {
     id: 'phone',
-    head: <CampaignTableHead>Telefone</CampaignTableHead>,
+    label: 'Telefone',
     cellClassName: 'tabular-nums',
     cell: (supporter) => (supporter.phone ? formatBrazilianPhoneInput(supporter.phone) : '—'),
   },
 ]
 
-export const SupporterList = ({ supporters }: SupporterListProps) => (
+export const SupporterList = ({ supporters, columnVisibility }: SupporterListProps) => (
   <>
     <div data-view="mobile-cards" className="flex flex-col gap-4 md:hidden">
       {supporters.map((supporter) => (
@@ -151,6 +149,7 @@ export const SupporterList = ({ supporters }: SupporterListProps) => (
     <CampaignTable
       className="hidden md:block"
       columns={supporterColumns}
+      columnVisibility={columnVisibility}
       rows={supporters}
       rowKey={(supporter) => supporter.id}
     />

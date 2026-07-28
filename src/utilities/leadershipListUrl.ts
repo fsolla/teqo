@@ -27,7 +27,7 @@ export type LeadershipListSortKey = 'name' | 'supportStatus' | 'sector' | 'updat
 export type LeadershipListSortDirection = 'asc' | 'desc'
 
 /** Acesso ao app — exclusive filter (com | sem), same shape as municipality coverage. */
-export type LeadershipListAccessFilter = 'com' | 'sem'
+type LeadershipListAccessFilter = 'com' | 'sem'
 
 type LeadershipSector = (typeof leadershipSectors)[number]
 

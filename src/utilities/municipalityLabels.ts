@@ -196,7 +196,9 @@ export type MunicipalityListColumnId =
   | 'kind'
   | 'votos'
   | 'classe'
-  | 'nivel'
+  // Matches the column's own `id` and its `?level=` filter param; the SORT key
+  // for the same column is `nivel`, and both URL spellings are frozen (B18).
+  | 'level'
   | 'advisors'
   | 'trend'
   | 'expectedVotes'
@@ -226,7 +228,7 @@ export const municipalityColumnDescriptions: Record<MunicipalityListColumnId, st
   kind: 'Município inteiro ou zona eleitoral de Salvador (ZE 1–19).',
   votos: formatMunicipalityConcentrationHint(),
   classe: CLASS_COLUMN_DESCRIPTION,
-  nivel: campaignConceptOneLiner('nivel-de-envolvimento'),
+  level: campaignConceptOneLiner('nivel-de-envolvimento'),
   advisors: 'Assessor(es) responsável(is) pelo município — o coordenador atribui clicando aqui.',
   trend: 'Tendência política percebida pela equipe: favorável, neutra ou desfavorável.',
   expectedVotes: campaignConceptOneLiner('meta'),
