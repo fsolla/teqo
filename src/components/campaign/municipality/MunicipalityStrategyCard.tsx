@@ -1,6 +1,7 @@
 import { PencilIcon } from 'lucide-react'
 import Link from 'next/link'
 
+import { MunicipalityLevelBadge } from '@/components/campaign/municipality/MunicipalityLevelBadge'
 import { StateDeputyChips } from '@/components/campaign/stateDeputy/StateDeputyChips'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -47,6 +48,7 @@ export const MunicipalityStrategyCard = ({
             ) : (
               <Badge variant="outline">Tendência não registrada</Badge>
             )}
+            <MunicipalityLevelBadge level={strategy.engagementLevel} layout="card" />
           </div>
         </div>
         {canEdit ? (
@@ -58,6 +60,22 @@ export const MunicipalityStrategyCard = ({
           </Button>
         ) : null}
       </div>
+
+      {strategy.engagementLevel && (strategy.levelNote || strategy.levelChangedAt) ? (
+        <div className="flex flex-col gap-1">
+          <h3 className="text-sm font-medium">Nível de envolvimento</h3>
+          {strategy.levelNote ? (
+            <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+              {strategy.levelNote}
+            </p>
+          ) : null}
+          {strategy.levelChangedAt ? (
+            <p className="text-xs text-muted-foreground">
+              Registrado em {dateFormatter.format(new Date(strategy.levelChangedAt))}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {trend.status || trend.note ? (
         <div className="flex flex-col gap-1">

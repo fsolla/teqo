@@ -217,11 +217,27 @@ export const canUpdateMunicipality: Access = async ({ req }) => {
 
 export const canDeleteMunicipality: Access = ({ req }) => isPayloadAdmin(req.user)
 
-/** Advisor assignment is unrestricted staff (coordinator + candidate; actions use overrideAccess). */
-export const canAssignMunicipalityAdvisors: FieldAccess = async ({ req }) => {
+/**
+ * Fields only the coordination itself may write. The two policies below are
+ * named apart because they answer different questions and can diverge, but
+ * they resolve "unrestricted staff" once so a change to what that means is
+ * made in one place.
+ */
+const unrestrictedCampaignFieldAccess: FieldAccess = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   return isCampaignUnrestricted(await getFreshCampaignUser(req))
 }
 
+/** Advisor assignment is unrestricted staff (coordinator + candidate; actions use overrideAccess). */
+export const canAssignMunicipalityAdvisors = unrestrictedCampaignFieldAccess
+
 export const canManageMunicipalityAdvisors: FieldAccess = ({ req }) => isPayloadAdmin(req.user)
+
+/**
+ * E14 — moving a município between engagement levels is a reallocation
+ * decision, so it is unrestricted staff only; the advisor proposes it through
+ * a signal. Reading stays with `canReadCampaignStaffField` like the rest of
+ * the staff block.
+ */
+export const canManageMunicipalityEngagementLevel = unrestrictedCampaignFieldAccess

@@ -27,6 +27,7 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
   // compile before any spec's client makes the real request.
   for (const path of [
     '/campanha/municipios/advisors',
+    '/campanha/municipios/engagement-level',
     '/campanha/municipios/expected-votes',
     '/campanha/municipios/political-trend',
     '/campanha/liderancas/support-status',

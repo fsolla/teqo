@@ -7,6 +7,7 @@
 import type { Where } from 'payload'
 
 import { bahiaIdentityTerritories, type BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
+import { engagementLevels, type EngagementLevel } from '@/lib/engagementLevel'
 import { isMunicipalitySlug } from '@/lib/municipalityCatalog'
 import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 import {
@@ -42,8 +43,28 @@ export type MunicipalityListSortKey =
   | 'deficit'
   | 'frescor'
   | 'classe'
+  | 'nivel'
 
 export type MunicipalityListSortDirection = 'asc' | 'desc'
+
+/**
+ * E14 filter values: the five levels plus the absence of one. "Sem nível" is
+ * a real answer here — it is the triage queue — so it is a selectable value
+ * and not the empty selection.
+ *
+ * Same sentinel convention as `NO_PARTY_FILTER_VALUE` in `stateDeputyListUrl`
+ * (second call site; a third should extract the pair sentinel + `exists: false`
+ * branch). Unlike `party`, the level is a closed enum, so it also gets the
+ * "all selected → absent" canonicalization of `parseExhaustiveEnumParam`.
+ */
+export const NO_LEVEL_FILTER_VALUE = 'sem_nivel'
+
+export type MunicipalityListLevelFilterValue = EngagementLevel | typeof NO_LEVEL_FILTER_VALUE
+
+export const municipalityListLevelFilterValues: readonly MunicipalityListLevelFilterValue[] = [
+  ...engagementLevels,
+  NO_LEVEL_FILTER_VALUE,
+]
 
 /**
  * E9 allocation queue: the list opens on the decision it exists to serve —
@@ -68,6 +89,7 @@ export const municipalityListSortLabels: Record<MunicipalityListSortKey, string>
   deficit: 'Cobertura da meta',
   frescor: 'Frescor do sinal',
   classe: 'Classe',
+  nivel: 'Nível',
 }
 
 export type MunicipalityListState = {
@@ -94,6 +116,12 @@ export type MunicipalityListState = {
    * Never holds the full set (same "todas" canonicalization as `trends`).
    */
   classes?: MunicipalityTerritorialClass[]
+  /**
+   * Multi-select (OR) E14 engagement levels, including "sem nível". Stored,
+   * so unlike `classes` this one IS part of `buildMunicipalityListWhere`.
+   * Never holds the full set (same "todos" canonicalization as `trends`).
+   */
+  levels?: MunicipalityListLevelFilterValue[]
   /** Candidate number for the map comparison mode (does not filter the list). */
   compare?: number
   sort?: MunicipalityListSortKey
@@ -112,6 +140,7 @@ const municipalityListParamNames = [
   'priority',
   'trend',
   'class',
+  'level',
   'compare',
   'sort',
   'dir',
@@ -135,6 +164,8 @@ const sortKeysWithDescDefault: MunicipalityListSortKey[] = [
   'frescor',
   // Ordinal, not alphabetical: descending means reduto first.
   'classe',
+  // Ordinal too: descending opens on N4, where the campaign is most invested.
+  'nivel',
 ]
 
 export const defaultMunicipalityListSortDir = (
@@ -173,6 +204,9 @@ export const formatMunicipalityListSortSummary = (
     return dir === 'desc'
       ? 'Ordenado por classe (reduto primeiro)'
       : 'Ordenado por classe (marginal primeiro)'
+  }
+  if (sort === 'nivel') {
+    return dir === 'desc' ? 'Ordenado por nível (N4 primeiro)' : 'Ordenado por nível (N0 primeiro)'
   }
   const label = municipalityListSortLabels[sort]
   return dir === 'desc' ? `Ordenado por ${label} ↓` : `Ordenado por ${label} ↑`
@@ -219,6 +253,7 @@ const parseAdvisorsParam = (raw: string | string[] | undefined): number[] => {
 
 const politicalTrendStatusSet = new Set<string>(Object.keys(politicalTrendLabels))
 const territorialClassSet = new Set<string>(Object.keys(territorialClassLabels))
+const engagementLevelFilterSet = new Set<string>(municipalityListLevelFilterValues)
 
 export const municipalityListStateToRawParams = (
   state: MunicipalityListState,
@@ -234,6 +269,7 @@ export const municipalityListStateToRawParams = (
   priority: state.priority,
   trend: state.trends,
   class: state.classes,
+  level: state.levels,
   compare: state.compare === undefined ? undefined : String(state.compare),
   sort: state.sort,
   dir: state.dir,
@@ -258,6 +294,10 @@ export const parseMunicipalityListParams = (
     params.class,
     territorialClassSet,
   )
+  const levels = parseExhaustiveEnumParam<MunicipalityListLevelFilterValue>(
+    params.level,
+    engagementLevelFilterSet,
+  )
   const rawCompare = strictDecimalInteger(firstValue(params.compare))
   const rawSort = firstValue(params.sort) as MunicipalityListSortKey | undefined
   const sort = rawSort && municipalityListSortKeySet.has(rawSort) ? rawSort : undefined
@@ -277,6 +317,7 @@ export const parseMunicipalityListParams = (
     ...(rawPriority === 'alta' ? { priority: 'alta' } : {}),
     ...(trends.length ? { trends } : {}),
     ...(classes.length ? { classes } : {}),
+    ...(levels.length ? { levels } : {}),
     ...(rawCompare && rawCompare <= 99999 ? { compare: rawCompare } : {}),
     ...(sort ? { sort } : {}),
     ...(dir ? { dir } : {}),
@@ -305,6 +346,20 @@ export const buildMunicipalityListWhere = (state: MunicipalityListState): Where 
   }
   if (state.priority) filters.push({ priority: { equals: state.priority } })
   if (state.trends?.length) filters.push({ 'politicalTrend.status': { in: state.trends } })
+  if (state.levels?.length) {
+    // "Sem nível" is absence, which no `in` can express — it rides along as an
+    // OR branch so "N0 ou sem nível" (the triage view) is one query.
+    const selectedLevels = state.levels.filter(
+      (level): level is EngagementLevel => level !== NO_LEVEL_FILTER_VALUE,
+    )
+    const levelFilters: Where[] = []
+    if (selectedLevels.length) levelFilters.push({ engagementLevel: { in: selectedLevels } })
+    if (state.levels.includes(NO_LEVEL_FILTER_VALUE)) {
+      levelFilters.push({ engagementLevel: { exists: false } })
+    }
+    const [onlyFilter, ...restFilters] = levelFilters
+    filters.push(onlyFilter && restFilters.length === 0 ? onlyFilter : { or: levelFilters })
+  }
   // `state.classes` is absent on purpose: the class is derived from the TSE
   // artifact, not stored, so it can't be a Payload constraint. `municipalityPageData`
   // filters it in memory over the unpaginated scope.
@@ -339,6 +394,7 @@ export const serializeCanonicalMunicipalityListSearchParams = (
   for (const territorialClass of canonicalState.classes ?? []) {
     params.append('class', territorialClass)
   }
+  for (const level of canonicalState.levels ?? []) params.append('level', level)
   if (canonicalState.compare) params.set('compare', String(canonicalState.compare))
   // Omit the default pair (staff: deficit+desc). Keep `sort` whenever the pair
   // is non-default so `dir` is never orphaned (e.g. votos+asc → sort=votos&dir=asc).
@@ -407,6 +463,9 @@ const formatMunicipalitySortOptionLabel = (
   }
   if (key === 'classe') {
     return dir === 'asc' ? `${base} (marginal primeiro)` : `${base} (reduto primeiro)`
+  }
+  if (key === 'nivel') {
+    return dir === 'asc' ? `${base} (N0 primeiro)` : `${base} (N4 primeiro)`
   }
   return dir === 'asc' ? `${base} (A–Z)` : `${base} (Z–A)`
 }

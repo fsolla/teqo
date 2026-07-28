@@ -2,16 +2,24 @@
 
 import type { Payload } from 'payload'
 
+import {
+  ENGAGEMENT_LEVEL_PATTERN_ID,
+  EngagementLevelBlockedError,
+  getEngagementLevelViolations,
+} from '@/lib/engagementLevel'
 import { nextAdvisorIdsAfterMembership } from '@/lib/municipalityAdvisorMembership'
 import {
   MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE,
+  MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE,
   municipalityAdvisorMembershipSchema,
   municipalityAdvisorsAssignmentSchema,
+  municipalityEngagementLevelSchema,
   municipalityExpectedVotesSchema,
   municipalityPoliticalTrendSchema,
   municipalityStrategyUpdateSchema,
   type MunicipalityAdvisorMembershipInput,
   type MunicipalityAdvisorsAssignmentInput,
+  type MunicipalityEngagementLevelInput,
   type MunicipalityExpectedVotesInput,
   type MunicipalityPoliticalTrendInput,
   type MunicipalityStrategyUpdateInput,
@@ -124,6 +132,105 @@ export const setMunicipalityExpectedVotesRecord = async (
 export const setMunicipalityExpectedVotes = async (input: MunicipalityExpectedVotesInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return setMunicipalityExpectedVotesRecord(payload, actor, input)
+}
+
+/**
+ * E14 — moving a município up or down the N0–N4 ladder. Two writes in one
+ * transaction: the município carries the current level, and `allocationDecision`
+ * carries the movement forever (C12's first production writer), so the history
+ * survives the next movement instead of being overwritten by it.
+ *
+ * The lock is what makes the recorded "nível anterior" true: without it two
+ * coordinators moving the same município would each read the same `from` and
+ * write two decisions claiming to start from it.
+ */
+export const setMunicipalityEngagementLevelRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: MunicipalityEngagementLevelInput,
+) => {
+  const { municipality, level, note, reversalSignals, triangulatedShock, override } =
+    municipalityEngagementLevelSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await reloadUnrestrictedActor(
+        payload,
+        actor,
+        MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE,
+        req,
+      )
+
+      await acquireTextAdvisoryLocks(payload, req, [
+        `municipality-engagement-level:${municipality}`,
+      ])
+
+      const current = await payload.findByID({
+        collection: 'municipality',
+        id: municipality,
+        depth: 0,
+        select: { engagementLevel: true, levelChangedAt: true },
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      const from = current.engagementLevel ?? null
+      const violations = getEngagementLevelViolations({
+        from,
+        to: level,
+        levelChangedAt: current.levelChangedAt ?? null,
+        now: new Date(),
+        triangulatedShock,
+      })
+
+      if (violations.length > 0 && !override) throw new EngagementLevelBlockedError(violations)
+
+      const updated = await payload.update({
+        collection: 'municipality',
+        id: municipality,
+        data: { engagementLevel: level, levelNote: note },
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      await payload.create({
+        collection: 'allocationDecision',
+        data: {
+          municipality,
+          patternId: ENGAGEMENT_LEVEL_PATTERN_ID,
+          outcome: 'movimento',
+          rationale: note,
+          // Only the values the decision was taken on — no document dumps
+          // (the collection caps the serialized snapshot at 16 KB).
+          snapshot: {
+            from,
+            to: level,
+            reversalSignals,
+            triangulatedShock,
+            violations: violations.map((violation) => violation.id),
+            overridden: violations.length > 0,
+            previousLevelChangedAt: current.levelChangedAt ?? null,
+          },
+        },
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      return updated
+    },
+    { beginFailureMessage: 'Não foi possível iniciar o movimento de nível.' },
+  )
+}
+
+export const setMunicipalityEngagementLevel = async (input: MunicipalityEngagementLevelInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return setMunicipalityEngagementLevelRecord(payload, actor, input)
 }
 
 /** Advisor assignment is unrestricted staff (coordinator + candidate); the hook validates eligibility. */

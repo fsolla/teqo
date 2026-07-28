@@ -5,6 +5,11 @@ import type {
 } from 'payload'
 import { APIError } from 'payload'
 
+import {
+  ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH,
+  engagementLevels,
+  formatEngagementLevelLabel,
+} from '@/lib/engagementLevel'
 import { politicalTrendStatuses } from '@/lib/schemas/municipality'
 import {
   getVoteEstimateOrderViolation,
@@ -17,6 +22,7 @@ import {
   canDeleteMunicipality,
   canManageCampaignStaffField,
   canManageMunicipalityAdvisors,
+  canManageMunicipalityEngagementLevel,
   canReadCampaignStaffField,
   canReadMunicipality,
   canSetCampaignSystemField,
@@ -106,6 +112,22 @@ const validateMunicipalityAdvisors: CollectionBeforeValidateHook = async ({ data
   return data
 }
 
+/**
+ * E14 — `levelChangedAt` is the clock the movement rules read (protection
+ * window, one movement per month), so it is derived here rather than trusted
+ * from the caller: an admin editing the level in `/admin` has to start the
+ * same clock the server action does.
+ */
+const deriveEngagementLevelAudit: CollectionBeforeChangeHook = ({ data, originalDoc }) => {
+  if (!data || data.engagementLevel === undefined) return data
+  if (data.engagementLevel === (originalDoc?.engagementLevel ?? null)) return data
+
+  // Clearing the level clears its clock too: "registrado em" with no level is
+  // a date that describes nothing, and the rules would read it as history.
+  data.levelChangedAt = data.engagementLevel ? new Date().toISOString() : null
+  return data
+}
+
 const trendSnapshot = (value: unknown) => {
   const trend = (value ?? {}) as { status?: unknown; note?: unknown }
   return `${trend.status ?? ''}\u0000${typeof trend.note === 'string' ? trend.note.trim() : ''}`
@@ -150,7 +172,7 @@ export const Municipality: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [validateMunicipalityAdvisors, validateExpectedVotes],
-    beforeChange: [derivePoliticalTrendAudit],
+    beforeChange: [derivePoliticalTrendAudit, deriveEngagementLevelAudit],
   },
   fields: [
     {
@@ -301,6 +323,58 @@ export const Municipality: CollectionConfig = {
         { label: 'Alta', value: 'alta' },
         { label: 'Normal', value: 'normal' },
       ],
+    },
+    {
+      name: 'engagementLevel',
+      type: 'select',
+      label: 'Nível de envolvimento',
+      index: true,
+      // No default on purpose: stamping N2 on all 435 municípios would assert a
+      // decision nobody took. Absent means "ainda não decidido", and filtering
+      // for it is the triage queue.
+      access: {
+        read: canReadCampaignStaffField,
+        create: canManageMunicipalityEngagementLevel,
+        update: canManageMunicipalityEngagementLevel,
+      },
+      admin: {
+        description:
+          'Quanto a campanha investe neste município (N0 a N4). Movimento é decisão da coordenação e fica registrado em Decisões de alocação.',
+      },
+      // Single source: the ladder in `lib/engagementLevel` + the shared label table.
+      options: engagementLevels.map((value) => ({
+        label: formatEngagementLevelLabel(value),
+        value,
+      })),
+    },
+    {
+      name: 'levelNote',
+      type: 'textarea',
+      label: 'Motivo do nível',
+      maxLength: ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH,
+      access: {
+        read: canReadCampaignStaffField,
+        create: canManageMunicipalityEngagementLevel,
+        update: canManageMunicipalityEngagementLevel,
+      },
+      admin: {
+        description: 'Motivo corrente do nível — o histórico vive em Decisões de alocação.',
+      },
+    },
+    {
+      name: 'levelChangedAt',
+      type: 'date',
+      label: 'Nível registrado em',
+      index: true,
+      admin: {
+        readOnly: true,
+        description: 'Derivado da última mudança de nível.',
+      },
+      access: {
+        read: canReadCampaignStaffField,
+        create: canSetCampaignSystemField,
+        update: canSetCampaignSystemField,
+      },
     },
     {
       name: 'expectedVotes',
