@@ -167,7 +167,10 @@ export const buildMunicipalityPortfolioChips = (
       key: `territory:${territory}`,
       label: territory,
       territory,
-      municipalityIds: territoryIds,
+      // Copied out of the derivation: that array is memoized per index and
+      // shared by every row of the table, so handing it to a caller would turn
+      // any later sort/splice on a chip into corruption of the whole page.
+      municipalityIds: [...territoryIds],
     })
     for (const id of territoryIds) remaining.delete(id)
   }

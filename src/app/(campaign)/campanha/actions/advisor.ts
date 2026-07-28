@@ -183,7 +183,10 @@ export const setAdvisorMunicipalitiesBatchRecord = async (
         uniqueMunicipalityIds.map((id) => `municipality-advisors:${id}`),
       )
 
-      let lastSlug: string | undefined
+      // Every município actually changed, not just the last one: since B34 this
+      // is the only advisor write path, and a território chip moves up to 30 in
+      // one call — revalidating one would leave 29 detail pages stale.
+      const changedSlugs: string[] = []
 
       for (const municipalityId of uniqueMunicipalityIds) {
         const municipality = await payload.findByID({
@@ -209,10 +212,10 @@ export const setAdvisorMunicipalitiesBatchRecord = async (
           overrideAccess: true,
           req,
         })
-        if (typeof municipality.slug === 'string') lastSlug = municipality.slug
+        if (typeof municipality.slug === 'string') changedSlugs.push(municipality.slug)
       }
 
-      return { slug: lastSlug }
+      return { slugs: changedSlugs }
     },
     { beginFailureMessage: 'Não foi possível atualizar a carteira do assessor.' },
   )
@@ -221,7 +224,10 @@ export const setAdvisorMunicipalitiesBatchRecord = async (
 export const setAdvisorMunicipalitiesBatch = async (input: AdvisorMunicipalitiesBatchInput) => {
   const { payload, actor } = await getCampaignActionContext()
   const result = await setAdvisorMunicipalitiesBatchRecord(payload, actor, input)
-  revalidateMunicipalityListPaths({ slug: result.slug })
+  revalidateMunicipalityListPaths({ scope: 'list' })
+  for (const slug of result.slugs) {
+    revalidateMunicipalityListPaths({ slug, scope: 'detail' })
+  }
   revalidateAdvisorPaths(input.advisorId)
   return result
 }

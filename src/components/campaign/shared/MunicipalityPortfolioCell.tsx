@@ -14,17 +14,9 @@ import {
 } from 'react'
 import { toast } from 'sonner'
 
+import { CampaignCellEditOverlay } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/Drawer'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/Popover'
 import {
@@ -157,6 +149,19 @@ export const MunicipalityPortfolioCell = ({
 
   const effectiveIds = optimistic ?? municipalityIds
 
+  /**
+   * The baseline a deferred delta falls back to, which cannot be the render's
+   * `municipalityIds`: the toast's "Desfazer" outlives the render that created
+   * it, and by the time it fires the optimistic value has usually reconciled to
+   * null — so the functional updater takes the fallback branch and would rebuild
+   * the row from a set that predates every edit made since. That divergence is
+   * permanent, because the reconcile effect above only clears on an exact match.
+   */
+  const latestIds = useRef(municipalityIds)
+  useEffect(() => {
+    latestIds.current = effectiveIds
+  }, [effectiveIds])
+
   const assignedIds = useMemo(() => new Set(effectiveIds), [effectiveIds])
   const chips = useMemo(
     () => buildMunicipalityPortfolioChips(effectiveIds, municipalityIndex),
@@ -286,8 +291,16 @@ export const MunicipalityPortfolioCell = ({
   const commit = (changedIds: number[], assigned: boolean) => {
     if (changedIds.length === 0) return
 
-    if (draft) onDraftChange?.(withDelta(effectiveIds, changedIds, assigned))
-    else setOptimistic((current) => withDelta(current ?? municipalityIds, changedIds, assigned))
+    if (draft) {
+      // Advanced synchronously as well: the parent holds the draft in state, so
+      // two toggles batched into one tick would otherwise both read the prop of
+      // the render they were queued from and the second would drop the first.
+      const next = withDelta(latestIds.current, changedIds, assigned)
+      latestIds.current = next
+      onDraftChange?.(next)
+    } else {
+      setOptimistic((current) => withDelta(current ?? latestIds.current, changedIds, assigned))
+    }
     setQuery('')
     setOpen(false)
     setFeedback(null)
@@ -316,7 +329,7 @@ export const MunicipalityPortfolioCell = ({
       }
       // Undo only THIS delta: reverting to the server baseline would also wipe
       // a sibling toggle from the same burst that already saved.
-      setOptimistic((current) => withDelta(current ?? municipalityIds, changedIds, !assigned))
+      setOptimistic((current) => withDelta(current ?? latestIds.current, changedIds, !assigned))
       const message = result.message ?? updateErrorMessage
       setFeedback({ kind: 'error', message })
       toast.error(message)
@@ -685,100 +698,106 @@ export const MunicipalityPortfolioCell = ({
        * Coarse pointer: the cell is one big trigger, because a thumb scrolling a
        * table cannot be asked to tell "open the município" from "delete it". The
        * links it covers come back inside the Drawer.
+       *
+       * `variant` is hardcoded because the container takes its policy from the
+       * call site (B42) — and here the policy is the `pointer:` media query on
+       * the trigger, not the viewport, so a touch laptop gets this sheet and a
+       * tablet with a mouse gets the inline editor above. `hover:bg-transparent`
+       * undoes the shared class's hover: this trigger is an invisible pane over
+       * the whole cell, and tinting it would tint the chips it covers.
        */}
-      <button
-        type="button"
-        className="absolute inset-0 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none pointer-fine:hidden"
-        aria-label={`Editar municípios de ${ownerName}`}
-        onClick={(event) => {
-          event.stopPropagation()
-          setDrawerOpen(true)
+      <CampaignCellEditOverlay
+        variant="sheet"
+        open={drawerOpen}
+        // The container's trigger lets the click bubble to the cell root, which
+        // opens the inline suggestions — harmless while the sheet is up, but it
+        // would surface a portaled listbox on a touch device the moment the
+        // sheet closed. Clearing the search on close settles both.
+        //
+        // Guarded on the sheet having actually been open: a closed Drawer still
+        // reports `onOpenChange(false)` when a dismiss elsewhere on the page
+        // sweeps the layer stack, and unguarded this erased whatever the fine
+        // pointer had typed into the inline input.
+        onOpenChange={(next) => {
+          setDrawerOpen(next)
+          if (!next && drawerOpen) closeSuggestions()
         }}
-      />
-
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent>
-          {/* Eager JSX: allocated on every render of every row, including the fine
-           * pointer where this never opens. The portal already skips the DOM. */}
-          {drawerOpen ? (
-            <>
-              <DrawerHeader>
-                <DrawerTitle>{drawerTitle}</DrawerTitle>
-                <DrawerDescription>{ownerName}</DrawerDescription>
-              </DrawerHeader>
-              <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-2">
-                {chips.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum município vinculado.</p>
-                ) : (
-                  <ul className="flex flex-col gap-1">
-                    {chips.map((chip) => {
-                      const floorReason = removalFloorReason(chip)
-                      return (
-                        <li
-                          key={chip.key}
-                          className="flex min-h-11 items-center justify-between gap-2 rounded-md border px-2"
-                        >
-                          {chip.kind === 'municipality' ? (
-                            <Link
-                              href={`/campanha/municipios/${chip.slug}`}
-                              className="flex min-h-11 min-w-0 flex-1 items-center underline-offset-4 hover:underline"
-                            >
-                              <Badge variant="secondary" className="min-w-0 font-normal">
-                                {chipBody(chip)}
-                              </Badge>
-                            </Link>
-                          ) : (
-                            <Badge variant="secondary" className="min-w-0 gap-1 font-normal">
-                              {chipBody(chip)}
-                            </Badge>
-                          )}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className={cn('size-11 shrink-0', floorReason && 'opacity-50')}
-                            aria-disabled={floorReason !== null || undefined}
-                            aria-label={chipRemoveLabel(chip, floorReason)}
-                            onClick={() => attemptRemove(chip)}
-                          >
-                            <XIcon className="size-4" aria-hidden="true" />
-                          </Button>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
-                <Input
-                  value={query}
-                  role="combobox"
-                  aria-expanded={drawerSuggesting}
-                  aria-controls={listboxId('drawer')}
-                  aria-autocomplete="list"
-                  aria-activedescendant={drawerSuggesting ? activeOptionId : undefined}
-                  onChange={(event) => {
-                    setQuery(event.currentTarget.value)
-                    setFeedback(null)
-                  }}
-                  onKeyDown={onSearchKeyDown}
-                  placeholder={SEARCH_PLACEHOLDER}
-                  aria-label={SEARCH_LABEL}
-                  className="min-h-11"
-                />
-                {searching ? (
-                  <div className="flex flex-col gap-1">{suggestionList('drawer')}</div>
-                ) : null}
-              </div>
-              <DrawerFooter>
-                <DrawerClose
-                  render={<Button type="button" variant="outline" className="min-h-11 w-full" />}
-                >
-                  Fechar
-                </DrawerClose>
-              </DrawerFooter>
-            </>
-          ) : null}
-        </DrawerContent>
-      </Drawer>
+        title={drawerTitle}
+        description={ownerName}
+        trigger={null}
+        triggerLabel={`Editar municípios de ${ownerName}`}
+        triggerClassName="absolute inset-0 hover:bg-transparent pointer-fine:hidden"
+        triggerBusy={isPending}
+        sheetBodyClassName="gap-3"
+      >
+        {/*
+         * Rendered unmounted, like the repo's other two in-cell sheets: base-ui
+         * keeps the popup mounted through a ~450 ms exit transition, so gating
+         * this on `drawerOpen` animated an empty collapsing box out of view. The
+         * allocation it saved was measured and is not a cost — the closed portal
+         * emits no DOM, and the class string is a tailwind-merge cache hit.
+         */}
+        <>
+          {chips.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum município vinculado.</p>
+          ) : (
+            <ul className="flex flex-col gap-1">
+              {chips.map((chip) => {
+                const floorReason = removalFloorReason(chip)
+                return (
+                  <li
+                    key={chip.key}
+                    className="flex min-h-11 items-center justify-between gap-2 rounded-md border px-2"
+                  >
+                    {chip.kind === 'municipality' ? (
+                      <Link
+                        href={`/campanha/municipios/${chip.slug}`}
+                        className="flex min-h-11 min-w-0 flex-1 items-center underline-offset-4 hover:underline"
+                      >
+                        <Badge variant="secondary" className="min-w-0 font-normal">
+                          {chipBody(chip)}
+                        </Badge>
+                      </Link>
+                    ) : (
+                      <Badge variant="secondary" className="min-w-0 gap-1 font-normal">
+                        {chipBody(chip)}
+                      </Badge>
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className={cn('size-11 shrink-0', floorReason && 'opacity-50')}
+                      aria-disabled={floorReason !== null || undefined}
+                      aria-label={chipRemoveLabel(chip, floorReason)}
+                      onClick={() => attemptRemove(chip)}
+                    >
+                      <XIcon className="size-4" aria-hidden="true" />
+                    </Button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+          <Input
+            value={query}
+            role="combobox"
+            aria-expanded={drawerSuggesting}
+            aria-controls={listboxId('drawer')}
+            aria-autocomplete="list"
+            aria-activedescendant={drawerSuggesting ? activeOptionId : undefined}
+            onChange={(event) => {
+              setQuery(event.currentTarget.value)
+              setFeedback(null)
+            }}
+            onKeyDown={onSearchKeyDown}
+            placeholder={SEARCH_PLACEHOLDER}
+            aria-label={SEARCH_LABEL}
+            className="min-h-11"
+          />
+          {searching ? <div className="flex flex-col gap-1">{suggestionList('drawer')}</div> : null}
+        </>
+      </CampaignCellEditOverlay>
 
       <p className="sr-only" role="status" aria-live="polite">
         {statusMessage}
