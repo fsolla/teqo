@@ -3,12 +3,12 @@
 import type { ReactNode } from 'react'
 
 import { MunicipalityHeaderFilter } from '@/components/campaign/municipality/MunicipalityHeaderFilter'
+import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
+import { CampaignSortableHead } from '@/components/campaign/shared/CampaignSortableHead'
 import {
-  CampaignHoverTooltip,
   campaignHoverExplanationClassName,
   campaignHoverTooltipAlign,
-} from '@/components/campaign/shared/CampaignHoverTooltip'
-import { CampaignSortableHead } from '@/components/campaign/shared/CampaignSortableHead'
+} from '@/lib/campaignHoverTooltip'
 import type {
   MunicipalityFilterOption,
   MunicipalityFilterParam,

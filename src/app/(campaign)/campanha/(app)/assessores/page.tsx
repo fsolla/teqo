@@ -13,16 +13,15 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import {
   advisorListHrefForPage,
   loadAdvisorListPageData,
-  loadAdvisorMunicipalityIndex,
   parseAdvisorListParams,
 } from '@/utilities/advisorData'
 import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { loadMunicipalityPortfolioIndex } from '@/utilities/municipalityPortfolioIndex'
 import {
   createAdvisorFormAction,
   sendAdvisorPasswordResetFormAction,
-  setAdvisorMunicipalitiesBatchFormAction,
-  setAdvisorMunicipalityMembershipFormAction,
+  setAdvisorMunicipalitiesFormAction,
   updateAdvisorProfileFormAction,
 } from './formActions'
 
@@ -39,7 +38,7 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
   const state = parseAdvisorListParams(rawSearchParams)
   const [{ rows, totalDocs, totalPages }, municipalityIndex] = await Promise.all([
     loadAdvisorListPageData(payload, state),
-    loadAdvisorMunicipalityIndex(payload),
+    loadMunicipalityPortfolioIndex(payload),
   ])
 
   return (
@@ -66,8 +65,7 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
             municipalityIndex={municipalityIndex}
             hasQuery={Boolean(state.q)}
             updateProfileAction={updateAdvisorProfileFormAction}
-            membershipAction={setAdvisorMunicipalityMembershipFormAction}
-            batchAction={setAdvisorMunicipalitiesBatchFormAction}
+            municipalitiesAction={setAdvisorMunicipalitiesFormAction}
             createAction={createAdvisorFormAction}
             passwordResetAction={sendAdvisorPasswordResetFormAction}
           />

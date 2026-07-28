@@ -39,9 +39,18 @@ export const MAX_LEADERSHIP_MUNICIPALITIES = 30
 const MAX_LEADERSHIP_ORGANIZATIONS = 20
 export const MAX_LEADERSHIP_STATE_DEPUTIES = 20
 
+export const LEADERSHIP_MUNICIPALITY_FLOOR_MESSAGE =
+  'Vincule a liderança a pelo menos um município.'
+
+export const LEADERSHIP_MUNICIPALITY_CAP_MESSAGE = `Cada liderança aceita no máximo ${MAX_LEADERSHIP_MUNICIPALITIES} municípios.`
+
+/** Thrown by the actions and matched verbatim by every route's `safeMessages`. */
+export const LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE =
+  'Você só pode vincular lideranças aos municípios que assessora.'
+
 const municipalitiesArraySchema = z
   .array(positiveRelationshipId)
-  .min(1, 'Vincule a liderança a pelo menos um município.')
+  .min(1, LEADERSHIP_MUNICIPALITY_FLOOR_MESSAGE)
   .max(MAX_LEADERSHIP_MUNICIPALITIES)
   .transform((ids) => [...new Set(ids)])
 
@@ -93,4 +102,24 @@ export const leadershipStateDeputyMembershipSchema = z.object({
 
 export type LeadershipStateDeputyMembershipInput = z.input<
   typeof leadershipStateDeputyMembershipSchema
+>
+
+/**
+ * Delta writes for the "Municípios" column of `/campanha/liderancas` (B34).
+ * The batch variant carries a whole território/ZE, so the cap is the schema's
+ * own ceiling; the floor of one município is enforced against the *resulting*
+ * array by `nextMunicipalityIdsAfterLeadershipMembership`, not here.
+ */
+export const leadershipMunicipalitiesMembershipSchema = z.object({
+  leadershipId: positiveRelationshipId,
+  municipalityIds: z
+    .array(positiveRelationshipId)
+    .min(1)
+    .max(MAX_LEADERSHIP_MUNICIPALITIES)
+    .transform((ids) => [...new Set(ids)]),
+  assigned: z.boolean(),
+})
+
+export type LeadershipMunicipalitiesMembershipInput = z.input<
+  typeof leadershipMunicipalitiesMembershipSchema
 >

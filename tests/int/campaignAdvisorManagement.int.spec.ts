@@ -8,7 +8,6 @@ import {
   createAdvisorRecord,
   sendAdvisorPasswordResetRecord,
   setAdvisorMunicipalitiesBatchRecord,
-  setAdvisorMunicipalityMembershipRecord,
   updateAdvisorProfileRecord,
 } from '@/app/(campaign)/campanha/actions/advisor'
 import { assignMunicipalityAdvisorsRecord } from '@/app/(campaign)/campanha/actions/municipality'
@@ -23,6 +22,19 @@ const campaignFixtures = installCampaignFixtures({
     payload = nextPayload
   },
 })
+
+const advisorIdsOf = async (municipalityID: number): Promise<number[]> => {
+  const municipality = await payload.findByID({
+    collection: 'municipality',
+    id: municipalityID,
+    depth: 0,
+    select: { advisors: true },
+    overrideAccess: true,
+  })
+  return (municipality.advisors ?? []).map((entry) =>
+    typeof entry === 'number' ? entry : entry.id,
+  )
+}
 
 describe('campaign advisor management (B19)', () => {
   beforeAll(async () => {
@@ -54,15 +66,13 @@ describe('campaign advisor management (B19)', () => {
       expect(stored.email).toBe(email)
       expect(stored.role).toBe('advisor')
 
-      const assigned = await setAdvisorMunicipalityMembershipRecord(payload, actor, {
+      await setAdvisorMunicipalitiesBatchRecord(payload, actor, {
         advisorId: created.id,
-        municipalityId: municipality.id,
+        municipalityIds: [municipality.id],
         assigned: true,
       })
       fixtures.touchMunicipality(municipality.id)
-      expect(
-        assigned.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id)),
-      ).toContain(created.id)
+      expect(await advisorIdsOf(municipality.id)).toContain(created.id)
 
       const updated = await updateAdvisorProfileRecord(payload, actor, {
         id: created.id,
@@ -94,9 +104,9 @@ describe('campaign advisor management (B19)', () => {
     ).rejects.toThrow(/coordenação geral ou o candidato/i)
 
     await expect(
-      setAdvisorMunicipalityMembershipRecord(payload, advisor, {
+      setAdvisorMunicipalitiesBatchRecord(payload, advisor, {
         advisorId: target.id,
-        municipalityId: municipality.id,
+        municipalityIds: [municipality.id],
         assigned: true,
       }),
     ).rejects.toThrow(/coordenação geral ou o candidato/i)
@@ -160,33 +170,31 @@ describe('campaign advisor management (B19)', () => {
     const advisor = await fixtures.createCampaignUser('advisor')
     const municipality = await fixtures.getMunicipality()
 
-    await setAdvisorMunicipalityMembershipRecord(payload, coordinator, {
+    await setAdvisorMunicipalitiesBatchRecord(payload, coordinator, {
       advisorId: advisor.id,
-      municipalityId: municipality.id,
+      municipalityIds: [municipality.id],
       assigned: true,
     })
     fixtures.touchMunicipality(municipality.id)
 
-    const again = await setAdvisorMunicipalityMembershipRecord(payload, coordinator, {
+    await setAdvisorMunicipalitiesBatchRecord(payload, coordinator, {
       advisorId: advisor.id,
-      municipalityId: municipality.id,
+      municipalityIds: [municipality.id],
       assigned: true,
     })
-    expect(again.advisors?.map((entry) => (typeof entry === 'number' ? entry : entry.id))).toEqual([
-      advisor.id,
-    ])
+    expect(await advisorIdsOf(municipality.id)).toEqual([advisor.id])
 
-    await setAdvisorMunicipalityMembershipRecord(payload, coordinator, {
+    await setAdvisorMunicipalitiesBatchRecord(payload, coordinator, {
       advisorId: advisor.id,
-      municipalityId: municipality.id,
+      municipalityIds: [municipality.id],
       assigned: false,
     })
-    const cleared = await setAdvisorMunicipalityMembershipRecord(payload, coordinator, {
+    await setAdvisorMunicipalitiesBatchRecord(payload, coordinator, {
       advisorId: advisor.id,
-      municipalityId: municipality.id,
+      municipalityIds: [municipality.id],
       assigned: false,
     })
-    expect(cleared.advisors ?? []).toEqual([])
+    expect(await advisorIdsOf(municipality.id)).toEqual([])
   })
 
   it('assigns and removes multiple municipalities in one batch', async () => {

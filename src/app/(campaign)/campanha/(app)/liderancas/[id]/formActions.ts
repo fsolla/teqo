@@ -10,14 +10,18 @@ import {
   repeatedRelationshipFormValues,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
-import { leadershipSectors, leadershipSupportStatuses } from '@/lib/schemas/leadership'
+import {
+  LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
+  leadershipSectors,
+  leadershipSupportStatuses,
+} from '@/lib/schemas/leadership'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
 
 const safeMessages = [
-  'Você só pode vincular lideranças aos municípios que assessora.',
+  LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
   ...leadershipStaffEditSafeMessages,
 ] as const
 

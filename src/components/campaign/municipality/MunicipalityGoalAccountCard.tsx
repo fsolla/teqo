@@ -2,13 +2,11 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
-import {
-  CampaignHoverTooltip,
-  campaignHoverExplanationClassName,
-} from '@/components/campaign/shared/CampaignHoverTooltip'
+import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import { CampaignInfoHint } from '@/components/campaign/shared/CampaignInfoHint'
 import { Badge } from '@/components/ui/Badge'
 import { Progress } from '@/components/ui/Progress'
+import { campaignHoverExplanationClassName } from '@/lib/campaignHoverTooltip'
 import {
   CAMPAIGN_CONCEPTS_PATH,
   campaignConceptHref,

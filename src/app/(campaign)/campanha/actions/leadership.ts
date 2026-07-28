@@ -3,12 +3,16 @@
 import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
+import { nextMunicipalityIdsAfterLeadershipMembership } from '@/lib/leadershipMunicipalityMembership'
 import { nextStateDeputyIdsAfterMembership } from '@/lib/leadershipStateDeputyMembership'
 import {
+  LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
   leadershipCreateSchema,
   leadershipInternalUpdateSchema,
+  leadershipMunicipalitiesMembershipSchema,
   leadershipStateDeputyMembershipSchema,
   type LeadershipInternalUpdateInput,
+  type LeadershipMunicipalitiesMembershipInput,
   type LeadershipStateDeputyMembershipInput,
 } from '@/lib/schemas/leadership'
 import type { CampaignUser, Contact } from '@/payload-types'
@@ -44,7 +48,7 @@ const assertMunicipalitiesWithinScope = async (
   const administered = new Set(await getAdvisorMunicipalityIds(payload, actor.id, req))
   const outside = municipalityIDs.filter((id) => !administered.has(id))
   if (outside.length > 0) {
-    throw new Error('Você só pode vincular lideranças aos municípios que assessora.')
+    throw new Error(LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE)
   }
 }
 
@@ -328,5 +332,117 @@ export const setLeadershipStateDeputyMembership = async (
   )
   // No-op writes nothing, so there is nothing to revalidate.
   if (stateDeputySlug) revalidateLeadershipStateDeputyPaths(input.leadershipId, stateDeputySlug)
+  return leadership
+}
+
+const revalidateLeadershipMunicipalityPaths = (
+  leadershipId: number,
+  municipalitySlugs: readonly string[],
+) => {
+  revalidatePath('/campanha/liderancas', 'page')
+  revalidatePath(`/campanha/liderancas/${leadershipId}`, 'page')
+  for (const slug of municipalitySlugs) {
+    revalidatePath(`/campanha/municipios/${slug}`, 'page')
+  }
+}
+
+/**
+ * Delta write for the "Municípios" column of `/campanha/liderancas` (B34) —
+ * adds or removes a set of municipalities (one chip, or a whole território/ZE)
+ * on `leadership.municipalities`.
+ *
+ * Deliberately NOT `updateLeadershipInternalRecord`: that one replaces the whole
+ * array and revalidates every id against the advisor's scope, which would make a
+ * cross-boundary leadership unsavable by the advisor who only owns part of it.
+ * Only the *added* ids are scope-checked; removal needs no scope beyond the row
+ * access that already resolved the leadership.
+ */
+export const setLeadershipMunicipalitiesMembershipRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: LeadershipMunicipalitiesMembershipInput,
+) => {
+  const { leadershipId, municipalityIds, assigned } =
+    leadershipMunicipalitiesMembershipSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await getFreshStaffActor(payload, actor, req)
+
+      await acquireTextAdvisoryLocks(payload, req, [`leadership-municipalities:${leadershipId}`])
+
+      // Row access verifies the leadership is in the actor's scope (same
+      // guard `updateLeadershipInternalRecord` relies on).
+      const current = await payload.findByID({
+        collection: 'leadership',
+        id: leadershipId,
+        depth: 0,
+        select: { municipalities: true },
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      const change = nextMunicipalityIdsAfterLeadershipMembership(
+        uniqueRelationshipIds(current.municipalities),
+        municipalityIds,
+        assigned,
+      )
+
+      // No-op: nothing to write, and nothing for the caller to revalidate —
+      // skip the slug lookup below, which exists only to target that revalidate.
+      if (change === null) {
+        return { leadership: current, municipalitySlugs: [] }
+      }
+
+      // Only the ids the write actually adds: an advisor must stay able to drop a
+      // link outside their scope, and re-deriving `added` here could disagree.
+      if (change.added.length > 0) {
+        await assertMunicipalitiesWithinScope(payload, currentActor, change.added, req)
+      }
+
+      // Intentional admin bypass: only used to resolve the slugs of the touched
+      // municipalities for a targeted revalidate; existence is otherwise
+      // enforced by Payload's relationship validation on `update`.
+      const touched = await payload.find({
+        collection: 'municipality',
+        where: { id: { in: change.changed } },
+        depth: 0,
+        pagination: false,
+        select: { slug: true },
+        overrideAccess: true,
+        req,
+      })
+
+      const updated = await payload.update({
+        collection: 'leadership',
+        id: leadershipId,
+        data: { municipalities: change.next },
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      return { leadership: updated, municipalitySlugs: touched.docs.map((doc) => doc.slug) }
+    },
+    { beginFailureMessage: 'Não foi possível atualizar os municípios da liderança.' },
+  )
+}
+
+export const setLeadershipMunicipalitiesMembership = async (
+  input: LeadershipMunicipalitiesMembershipInput,
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const { leadership, municipalitySlugs } = await setLeadershipMunicipalitiesMembershipRecord(
+    payload,
+    actor,
+    input,
+  )
+  // No-op writes nothing, so there is nothing to revalidate.
+  if (municipalitySlugs.length > 0) {
+    revalidateLeadershipMunicipalityPaths(input.leadershipId, municipalitySlugs)
+  }
   return leadership
 }

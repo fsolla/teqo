@@ -1,11 +1,7 @@
 import { Fragment, type ReactNode } from 'react'
 
 import { CampaignCellTooltip } from '@/components/campaign/shared/CampaignCellTooltip'
-import {
-  CampaignHoverTooltip,
-  campaignHoverExplanationClassName,
-  campaignHoverTooltipAlign,
-} from '@/components/campaign/shared/CampaignHoverTooltip'
+import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import {
   Table,
   TableBody,
@@ -15,6 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
+import {
+  campaignHoverExplanationClassName,
+  campaignHoverTooltipAlign,
+} from '@/lib/campaignHoverTooltip'
 import { cn } from '@/lib/utils'
 
 /**

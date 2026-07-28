@@ -23,11 +23,14 @@ import {
   LeadershipStateDeputyRelationCell,
   type RelationCellOption,
 } from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
+import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
+import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
+import { getAdvisorMunicipalityIds, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
 import {
@@ -36,16 +39,27 @@ import {
   parseLeadershipListParams,
   type LeadershipRowViewModel,
 } from '@/utilities/leadershipData'
+import { loadMunicipalityPortfolioIndex } from '@/utilities/municipalityPortfolioIndex'
 
-import { setLeadershipStateDeputyMembershipFormAction } from './formActions'
+import {
+  setLeadershipMunicipalitiesFormAction,
+  setLeadershipStateDeputyMembershipFormAction,
+} from './formActions'
 
 type LeadershipsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-const leadershipColumns = (
-  stateDeputyOptions: RelationCellOption[],
-): Array<CampaignTableColumn<LeadershipRowViewModel>> => [
+const leadershipColumns = ({
+  stateDeputyOptions,
+  municipalityIndex,
+  addableMunicipalityIds,
+}: {
+  stateDeputyOptions: RelationCellOption[]
+  municipalityIndex: MunicipalityPortfolioIndexEntry[]
+  /** Advisors may only link municipalities they administer; staff: undefined. */
+  addableMunicipalityIds?: ReadonlySet<number>
+}): Array<CampaignTableColumn<LeadershipRowViewModel>> => [
   {
     id: 'name',
     mandatory: true,
@@ -86,9 +100,26 @@ const leadershipColumns = (
   },
   {
     id: 'municipalities',
-    head: <CampaignTableHead>Municípios</CampaignTableHead>,
-    cellClassName: 'max-w-64 whitespace-normal text-muted-foreground',
-    cell: (row) => row.municipalityNames.join(', ') || '—',
+    head: (
+      <CampaignTableHead description="Edite aqui: passe o mouse em um chip para remover, ou busque para adicionar. Um território ou ZE entra e sai como um bloco. Cada liderança fica entre 1 e 30 municípios.">
+        Municípios
+      </CampaignTableHead>
+    ),
+    cellClassName: 'max-w-64 whitespace-normal',
+    cell: (row) => (
+      <MunicipalityPortfolioCell
+        ownerId={row.id}
+        ownerName={row.name}
+        municipalityIds={row.municipalityIDs}
+        municipalityIndex={municipalityIndex}
+        {...(addableMunicipalityIds ? { addableIds: addableMunicipalityIds } : {})}
+        minItems={1}
+        maxItems={MAX_LEADERSHIP_MUNICIPALITIES}
+        commitAction={setLeadershipMunicipalitiesFormAction}
+        drawerTitle="Municípios da liderança"
+        updateErrorMessage="Não foi possível atualizar os municípios."
+      />
+    ),
   },
   {
     id: 'organizations',
@@ -178,12 +209,15 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
   if (!isCampaignStaff(user)) redirect('/campanha')
 
   const state = parseLeadershipListParams(rawSearchParams)
-  const [{ rows, totalDocs, totalPages }, stateDeputyOptions] = await Promise.all([
-    loadLeadershipListPageData(payload, user, state),
-    loadStateDeputyOptions(payload, user),
-  ])
-  const columns = leadershipColumns(
-    stateDeputyOptions.map((option) => ({
+  const [{ rows, totalDocs, totalPages }, stateDeputyOptions, municipalityIndex, administeredIds] =
+    await Promise.all([
+      loadLeadershipListPageData(payload, user, state),
+      loadStateDeputyOptions(payload, user),
+      loadMunicipalityPortfolioIndex(payload),
+      user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
+    ])
+  const columns = leadershipColumns({
+    stateDeputyOptions: stateDeputyOptions.map((option) => ({
       id: option.id,
       searchLabel: option.name,
       item: {
@@ -193,7 +227,9 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
         ...(option.party ? { party: option.party } : {}),
       },
     })),
-  )
+    municipalityIndex,
+    ...(administeredIds ? { addableMunicipalityIds: new Set(administeredIds) } : {}),
+  })
 
   return (
     <CampaignPageShell>

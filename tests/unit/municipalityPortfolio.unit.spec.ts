@@ -1,45 +1,43 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  buildAdvisorPortfolioChips,
-  catalogEntriesForTseZone,
-  searchAdvisorPortfolio,
-  type AdvisorMunicipalityIndexEntry,
-} from '@/lib/advisorMunicipalityPortfolio'
 import { citiesForTerritory } from '@/lib/bahiaTerritories'
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
+import {
+  buildMunicipalityPortfolioChips,
+  catalogEntriesForTseZone,
+  searchMunicipalityPortfolio,
+  type MunicipalityPortfolioIndexEntry,
+} from '@/lib/municipalityPortfolio'
 
-const buildIndex = (): AdvisorMunicipalityIndexEntry[] =>
+const buildIndex = (): MunicipalityPortfolioIndexEntry[] =>
   municipalityCatalog.map((entry, index) => ({
     id: index + 1,
     name: entry.name,
     slug: entry.slug,
     region: entry.region,
-    city: entry.city,
-    zoneNumber: entry.zoneNumber ?? null,
   }))
 
-describe('advisorMunicipalityPortfolio', () => {
+/** The index is keyed by slug; `city` lives only in the catalog it is built from. */
+const slugsForCities = (cities: readonly string[]): Set<string> =>
+  new Set(municipalityCatalog.filter((entry) => cities.includes(entry.city)).map((e) => e.slug))
+
+describe('municipalityPortfolio', () => {
   it('collapses a full identity territory into a single chip', () => {
     const index = buildIndex()
-    const irece = citiesForTerritory('Irecê')
-    const assigned = index
-      .filter((entry) => irece.includes(entry.city))
-      .map((entry) => ({ id: entry.id, name: entry.name, slug: entry.slug }))
+    const irece = slugsForCities(citiesForTerritory('Irecê'))
+    const assignedIds = index.filter((entry) => irece.has(entry.slug)).map((entry) => entry.id)
 
-    const chips = buildAdvisorPortfolioChips(assigned, index)
+    const chips = buildMunicipalityPortfolioChips(assignedIds, index)
     expect(chips).toHaveLength(1)
     expect(chips[0]).toMatchObject({ kind: 'territory', label: 'Irecê' })
   })
 
   it('keeps partial territory membership as municipality chips', () => {
     const index = buildIndex()
-    const one = index.find((entry) => entry.city === 'Irecê')
+    const ireceSlugs = slugsForCities(['Irecê'])
+    const one = index.find((entry) => ireceSlugs.has(entry.slug))
     expect(one).toBeTruthy()
-    const chips = buildAdvisorPortfolioChips(
-      [{ id: one!.id, name: one!.name, slug: one!.slug }],
-      index,
-    )
+    const chips = buildMunicipalityPortfolioChips([one!.id], index)
     expect(chips).toEqual([
       {
         kind: 'municipality',
@@ -51,6 +49,11 @@ describe('advisorMunicipalityPortfolio', () => {
     ])
   })
 
+  it('drops an id the index does not know (no name, no link to render)', () => {
+    const index = buildIndex()
+    expect(buildMunicipalityPortfolioChips([999_999], index)).toEqual([])
+  })
+
   it('resolves Salvador ZE to the zone municipality entry only', () => {
     const entries = catalogEntriesForTseZone(3)
     expect(entries).toHaveLength(1)
@@ -59,15 +62,15 @@ describe('advisorMunicipalityPortfolio', () => {
 
   it('searches municipalities, territories and zones', () => {
     const index = buildIndex()
-    const municipalityHits = searchAdvisorPortfolio('Feira', index, new Set())
+    const municipalityHits = searchMunicipalityPortfolio('Feira', index, new Set())
     expect(municipalityHits.some((hit) => hit.kind === 'municipality')).toBe(true)
 
-    const territoryHits = searchAdvisorPortfolio('Irecê', index, new Set())
+    const territoryHits = searchMunicipalityPortfolio('Irecê', index, new Set())
     expect(territoryHits.some((hit) => hit.kind === 'territory' && hit.label === 'Irecê')).toBe(
       true,
     )
 
-    const zoneHits = searchAdvisorPortfolio('ZE 3', index, new Set())
+    const zoneHits = searchMunicipalityPortfolio('ZE 3', index, new Set())
     expect(zoneHits.some((hit) => hit.kind === 'zone' && hit.zoneNumber === 3)).toBe(true)
   })
 })
