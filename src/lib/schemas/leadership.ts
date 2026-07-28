@@ -31,9 +31,13 @@ export const leadershipSupportStatuses = [
 ] as const
 
 export type SupportStatus = (typeof leadershipSupportStatuses)[number]
+export type LeadershipSector = (typeof leadershipSectors)[number]
 
 export const isSupportStatus = (value: unknown): value is SupportStatus =>
   typeof value === 'string' && leadershipSupportStatuses.some((status) => status === value)
+
+export const isLeadershipSector = (value: unknown): value is LeadershipSector =>
+  typeof value === 'string' && leadershipSectors.some((sector) => sector === value)
 
 export const MAX_LEADERSHIP_MUNICIPALITIES = 30
 const MAX_LEADERSHIP_ORGANIZATIONS = 20

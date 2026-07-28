@@ -2,8 +2,8 @@
  * State deputy ("dobradinha") list URL contract: state type, param
  * parsing/canonicalization, Payload `where`, sort resolution and hrefs.
  * Mirrors `municipalityListUrl.ts` (paginated, `resolveListUrl` clamp) and
- * `territoryListUrl.ts` (lean sort-key/label shape) without importing either
- * (B29's `leadershipListUrl.ts` doesn't exist yet — nothing to mirror there).
+ * `territoryListUrl.ts` / `leadershipListUrl.ts` (lean sort-key/label shape)
+ * without importing either.
  */
 import type { Where } from 'payload'
 

@@ -7,16 +7,14 @@ import { isSupportStatus } from '@/lib/schemas/leadership'
 import type { CampaignUser, Leadership } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import {
-  buildListHref,
-  firstValue,
-  normalizedText,
-  strictDecimalInteger,
-  type RawSearchParams,
-} from '@/utilities/campaignListUrl'
+  buildLeadershipListWhere,
+  leadershipPageSize,
+  resolveLeadershipListPayloadSort,
+  resolveLeadershipListSort,
+  type LeadershipListState,
+} from '@/utilities/leadershipListUrl'
 import { relationshipId } from '@/utilities/relationship'
 import { loadStateDeputySummaries, type StateDeputySummary } from '@/utilities/stateDeputyData'
-
-const leadershipPageSize = 25
 
 export type LeadershipRowViewModel = {
   id: number
@@ -168,70 +166,79 @@ export const loadFreshestMunicipalityLeaderships = async (
   }
 }
 
-export type LeadershipListState = {
-  page: number
-  q?: string
+export type LeadershipListFilterFacets = {
+  /** Municipality ids present under the other active filters (cross-filtered). */
+  municipalityIDs: number[]
 }
 
-export const parseLeadershipListParams = (searchParams: RawSearchParams): LeadershipListState => {
-  const q = normalizedText(firstValue(searchParams.q))
+/**
+ * Respects every OTHER filter (search, status, sector, access) but drops the
+ * municipality filter itself — same contract as `loadStateDeputyPartyFacet`:
+ * a selected id is unioned in so it stays visible to undo.
+ */
+const loadLeadershipMunicipalityFacet = async (
+  payload: Payload,
+  user: CampaignUser,
+  state: LeadershipListState,
+): Promise<LeadershipListFilterFacets> => {
+  const result = await payload.find({
+    collection: 'leadership',
+    where: buildLeadershipListWhere({ ...state, municipalities: undefined }),
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { municipalities: true },
+    user,
+    overrideAccess: false,
+  })
+
+  const available = new Set<number>(state.municipalities ?? [])
+  for (const doc of result.docs) {
+    for (const municipality of doc.municipalities ?? []) {
+      const id = relationshipId(municipality)
+      if (id !== null) available.add(id)
+    }
+  }
+
   return {
-    page: strictDecimalInteger(firstValue(searchParams.page)) ?? 1,
-    ...(q ? { q } : {}),
+    municipalityIDs: [...available].sort((left, right) => left - right),
   }
 }
-
-const buildLeadershipListSearchParams = (
-  state: LeadershipListState,
-  page = state.page,
-): URLSearchParams => {
-  const params = new URLSearchParams()
-  if (state.q) params.set('q', state.q)
-  if (page > 1) params.set('page', String(page))
-  return params
-}
-
-export const buildLeadershipListHref = (state: LeadershipListState, page: number): string =>
-  buildListHref(state, buildLeadershipListSearchParams, '/campanha/liderancas', page)
 
 export const loadLeadershipListPageData = async (
   payload: Payload,
   user: CampaignUser,
   state: LeadershipListState,
-): Promise<{ rows: LeadershipRowViewModel[]; totalDocs: number; totalPages: number }> => {
-  if (!isCampaignStaff(user)) return { rows: [], totalDocs: 0, totalPages: 0 }
-
-  let contactFilter: { contact: { in: number[] } } | null = null
-  if (state.q) {
-    // Names live on Contact — resolve matching contact ids first.
-    const contacts = await payload.find({
-      collection: 'contact',
-      where: { name: { contains: state.q } },
-      depth: 0,
-      limit: 200,
-      pagination: false,
-      select: { name: true },
-      overrideAccess: true,
-    })
-    contactFilter = { contact: { in: contacts.docs.map((contact) => contact.id) } }
-    if (contacts.docs.length === 0) return { rows: [], totalDocs: 0, totalPages: 0 }
+): Promise<{
+  rows: LeadershipRowViewModel[]
+  totalDocs: number
+  totalPages: number
+  filterFacets: LeadershipListFilterFacets
+}> => {
+  if (!isCampaignStaff(user)) {
+    return { rows: [], totalDocs: 0, totalPages: 0, filterFacets: { municipalityIDs: [] } }
   }
 
-  const result = await payload.find({
-    collection: 'leadership',
-    where: contactFilter ?? {},
-    depth: 1,
-    limit: leadershipPageSize,
-    page: state.page,
-    sort: '-updatedAt',
-    user,
-    overrideAccess: false,
-  })
+  const { sort, dir } = resolveLeadershipListSort(state)
+  const [result, filterFacets] = await Promise.all([
+    payload.find({
+      collection: 'leadership',
+      where: buildLeadershipListWhere(state),
+      depth: 1,
+      limit: leadershipPageSize,
+      page: state.page,
+      sort: resolveLeadershipListPayloadSort(sort, dir),
+      user,
+      overrideAccess: false,
+    }),
+    loadLeadershipMunicipalityFacet(payload, user, state),
+  ])
 
   return {
     rows: await toLeadershipRows(payload, result.docs as Leadership[]),
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
+    filterFacets,
   }
 }
 

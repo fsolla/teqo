@@ -59,43 +59,68 @@ export type CampaignTableColumn<Row> = {
  * information, so the wrapping `<span tabIndex={0}>` is a deliberate new tab
  * stop; the `<th>` itself stays non-interactive. Without `description` the
  * render is byte-for-byte what it was before B22.
+ *
+ * Optional `filter` mirrors `CampaignSortableHead`'s slot for filter-only
+ * columns (no sort control) so domain wrappers don't re-copy the tooltip chrome.
  */
 export const CampaignTableHead = ({
   align = 'left',
   className,
   children,
   description,
+  filter,
 }: {
   align?: 'left' | 'center' | 'right'
   className?: string
   children?: ReactNode
   description?: ReactNode
-}) => (
-  <TableHead
-    className={cn(
-      'text-muted-foreground',
-      align === 'right' && 'text-right',
-      align === 'center' && 'text-center',
-      className,
-    )}
-  >
-    {description ? (
-      <CampaignHoverTooltip content={description} align={campaignHoverTooltipAlign(align)}>
-        <span
-          tabIndex={0}
+  filter?: ReactNode
+}) => {
+  const label = description ? (
+    <CampaignHoverTooltip content={description} align={campaignHoverTooltipAlign(align)}>
+      <span
+        tabIndex={0}
+        className={cn(
+          campaignHoverExplanationClassName,
+          filter && 'inline-flex min-h-11 items-center',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        )}
+      >
+        {children}
+      </span>
+    </CampaignHoverTooltip>
+  ) : filter ? (
+    <span className="inline-flex min-h-11 items-center">{children}</span>
+  ) : (
+    children
+  )
+
+  return (
+    <TableHead
+      className={cn(
+        'text-muted-foreground',
+        align === 'right' && 'text-right',
+        align === 'center' && 'text-center',
+        className,
+      )}
+    >
+      {filter ? (
+        <div
           className={cn(
-            campaignHoverExplanationClassName,
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'flex items-center',
+            align === 'right' && 'justify-end',
+            align === 'center' && 'justify-center',
           )}
         >
-          {children}
-        </span>
-      </CampaignHoverTooltip>
-    ) : (
-      children
-    )}
-  </TableHead>
-)
+          {label}
+          {filter}
+        </div>
+      ) : (
+        label
+      )}
+    </TableHead>
+  )
+}
 
 type CampaignTableProps<Row> = {
   columns: Array<CampaignTableColumn<Row>>
