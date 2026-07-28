@@ -99,7 +99,7 @@ Depth check: só strings nos módulos que já donam a coluna — sem helper novo
 ## Adiado com gatilho
 
 - **Encurtar "Cobertura da meta" nos strips / card de detalhe.** Revisitar quando: critique/R6 ou CG pedir paridade explícita com a lista.
-- Nenhum outro neste item.
+- **Demais `<dt>` do card mobile ainda literais** (Classe, Nível, Tendência, …). Revisitar quando: fill-in remover coluna Tipo ou passada de paridade mobile na lista de municípios.
 
 ## Referências
 
