@@ -7,13 +7,15 @@ import type {
   MunicipalityListSavedEngagementLevel,
 } from '@/app/(campaign)/campanha/(app)/municipios/engagement-level/types'
 import { MunicipalityLevelBadge } from '@/components/campaign/municipality/MunicipalityLevelBadge'
-import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
+import {
+  CampaignCellEditOverlay,
+  type CampaignCellEditOverlayVariant,
+} from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -27,7 +29,6 @@ import {
   type EngagementLevel,
   type EngagementLevelViolation,
 } from '@/lib/engagementLevel'
-import { cn } from '@/lib/utils'
 
 const ENGAGEMENT_LEVEL_ENDPOINT = '/campanha/municipios/engagement-level'
 const SAVE_ERROR_MESSAGE = 'Não foi possível registrar o nível. Tente novamente.'
@@ -38,6 +39,7 @@ type MunicipalityListLevelControlProps = {
   level: EngagementLevel | null
   levelNote: string | null
   levelChangedAt: string | null
+  variant: CampaignCellEditOverlayVariant
 }
 
 /**
@@ -52,6 +54,7 @@ export const MunicipalityListLevelControl = ({
   level,
   levelNote,
   levelChangedAt,
+  variant,
 }: MunicipalityListLevelControlProps) => {
   const [open, setOpen] = useState(false)
   const [saved, setSaved] = useState<MunicipalityListSavedEngagementLevel | null>(
@@ -189,144 +192,135 @@ export const MunicipalityListLevelControl = ({
   const fieldId = (suffix: string) => `municipality-list-level-${suffix}-${municipalityID}`
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <CampaignHoverTooltip
-        content={
-          currentLevel ? (
-            <div className="space-y-1">
-              <p>{formatEngagementLevelLabel(currentLevel)}</p>
-              {currentNote ? <p className="whitespace-pre-wrap">{currentNote}</p> : null}
-            </div>
-          ) : null
-        }
-        align="start"
-        openOnTouch={false}
-        disabled={open}
-      >
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-haspopup="dialog"
-            className={cn(
-              'min-h-11 rounded-md px-1 hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-              open ? 'bg-muted/60' : undefined,
-            )}
-            aria-label={`Nível de envolvimento de ${municipalityName}: ${
-              currentLevel ? formatEngagementLevelLabel(currentLevel) : EMPTY_ENGAGEMENT_LEVEL_LABEL
-            }`}
+    <CampaignCellEditOverlay
+      variant={variant}
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Registrar nível de envolvimento"
+      description={municipalityName}
+      triggerLabel={`Nível de envolvimento de ${municipalityName}: ${
+        currentLevel ? formatEngagementLevelLabel(currentLevel) : EMPTY_ENGAGEMENT_LEVEL_LABEL
+      }`}
+      tooltipContent={
+        currentLevel ? (
+          <div className="space-y-1">
+            <p>{formatEngagementLevelLabel(currentLevel)}</p>
+            {currentNote ? <p className="whitespace-pre-wrap">{currentNote}</p> : null}
+          </div>
+        ) : null
+      }
+      contentClassName="w-80 p-3"
+      preventPopoverAutoFocus
+      trigger={
+        // The sheet has no hover to carry the rest, so the trigger spells the
+        // level out there and stays the bare numeral in the table.
+        <MunicipalityLevelBadge
+          level={currentLevel}
+          note={variant === 'sheet' ? currentNote : null}
+          layout={variant === 'sheet' ? 'card' : 'table'}
+        />
+      }
+    >
+      <div className="flex flex-col gap-3">
+        <Field>
+          <FieldLabel htmlFor={fieldId('select')}>Nível de envolvimento</FieldLabel>
+          <NativeSelect
+            id={fieldId('select')}
+            value={draftLevel}
+            onChange={(event) =>
+              setDraftLevel(isEngagementLevel(event.target.value) ? event.target.value : '')
+            }
+            className="min-h-11 w-full"
           >
-            <MunicipalityLevelBadge level={currentLevel} layout="table" />
-          </button>
-        </PopoverTrigger>
-      </CampaignHoverTooltip>
-      <PopoverContent
-        align="start"
-        sideOffset={8}
-        className="w-80 p-3"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-      >
-        <div className="flex flex-col gap-3">
-          <Field>
-            <FieldLabel htmlFor={fieldId('select')}>Nível de envolvimento</FieldLabel>
-            <NativeSelect
-              id={fieldId('select')}
-              value={draftLevel}
-              onChange={(event) =>
-                setDraftLevel(isEngagementLevel(event.target.value) ? event.target.value : '')
-              }
-              className="min-h-11 w-full"
-            >
-              <NativeSelectOption value="">{EMPTY_ENGAGEMENT_LEVEL_LABEL}</NativeSelectOption>
-              {engagementLevels.map((option) => (
-                <NativeSelectOption key={option} value={option}>
-                  {formatEngagementLevelLabel(option)}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor={fieldId('note')}>Motivo</FieldLabel>
-            <Textarea
-              id={fieldId('note')}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              maxLength={ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH}
-              rows={2}
-              className="min-h-16 resize-y"
-              placeholder="O que mudou para justificar este nível?"
+            <NativeSelectOption value="">{EMPTY_ENGAGEMENT_LEVEL_LABEL}</NativeSelectOption>
+            {engagementLevels.map((option) => (
+              <NativeSelectOption key={option} value={option}>
+                {formatEngagementLevelLabel(option)}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={fieldId('note')}>Motivo</FieldLabel>
+          <Textarea
+            id={fieldId('note')}
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            maxLength={ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH}
+            rows={2}
+            className="min-h-16 resize-y"
+            placeholder="O que mudou para justificar este nível?"
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={fieldId('reversal')}>O que faria voltar atrás</FieldLabel>
+          <Textarea
+            id={fieldId('reversal')}
+            value={reversalSignals}
+            onChange={(event) => setReversalSignals(event.target.value)}
+            maxLength={ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH}
+            rows={2}
+            className="min-h-16 resize-y"
+            placeholder="Sinais que fariam rever esta decisão."
+          />
+        </Field>
+        {isJump ? (
+          <Field orientation="horizontal">
+            <Checkbox
+              id={fieldId('shock')}
+              checked={triangulatedShock}
+              onCheckedChange={(checked) => setTriangulatedShock(checked === true)}
             />
+            <FieldContent>
+              <FieldLabel htmlFor={fieldId('shock')}>
+                Choque triangulado (dois níveis de uma vez)
+              </FieldLabel>
+            </FieldContent>
           </Field>
-          <Field>
-            <FieldLabel htmlFor={fieldId('reversal')}>O que faria voltar atrás</FieldLabel>
-            <Textarea
-              id={fieldId('reversal')}
-              value={reversalSignals}
-              onChange={(event) => setReversalSignals(event.target.value)}
-              maxLength={ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH}
-              rows={2}
-              className="min-h-16 resize-y"
-              placeholder="Sinais que fariam rever esta decisão."
-            />
-          </Field>
-          {isJump ? (
+        ) : null}
+        {violations.length > 0 ? (
+          <>
+            <Alert className="py-2">
+              <AlertDescription className="text-xs">
+                <ul className="list-disc space-y-1 pl-4">
+                  {violations.map((violation) => (
+                    <li key={violation.id}>{violation.message}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
             <Field orientation="horizontal">
               <Checkbox
-                id={fieldId('shock')}
-                checked={triangulatedShock}
-                onCheckedChange={(checked) => setTriangulatedShock(checked === true)}
+                id={fieldId('override')}
+                checked={override}
+                onCheckedChange={(checked) => setOverride(checked === true)}
               />
               <FieldContent>
-                <FieldLabel htmlFor={fieldId('shock')}>
-                  Choque triangulado (dois níveis de uma vez)
+                <FieldLabel htmlFor={fieldId('override')}>
+                  Registrar mesmo assim, ciente das ressalvas
                 </FieldLabel>
               </FieldContent>
             </Field>
-          ) : null}
-          {violations.length > 0 ? (
-            <>
-              <Alert className="py-2">
-                <AlertDescription className="text-xs">
-                  <ul className="list-disc space-y-1 pl-4">
-                    {violations.map((violation) => (
-                      <li key={violation.id}>{violation.message}</li>
-                    ))}
-                  </ul>
-                </AlertDescription>
-              </Alert>
-              <Field orientation="horizontal">
-                <Checkbox
-                  id={fieldId('override')}
-                  checked={override}
-                  onCheckedChange={(checked) => setOverride(checked === true)}
-                />
-                <FieldContent>
-                  <FieldLabel htmlFor={fieldId('override')}>
-                    Registrar mesmo assim, ciente das ressalvas
-                  </FieldLabel>
-                </FieldContent>
-              </Field>
-            </>
-          ) : null}
-          {errorMessage ? (
-            <Alert variant="destructive" className="py-2">
-              <AlertDescription className="text-xs">{errorMessage}</AlertDescription>
-            </Alert>
-          ) : null}
-          <Button
-            type="button"
-            size="sm"
-            disabled={!canSubmit || isPending || (violations.length > 0 && !override)}
-            onClick={() => void submit()}
-          >
-            {isPending ? <Spinner className="size-3.5" aria-hidden /> : null}
-            Registrar movimento
-          </Button>
-          <p className="sr-only" aria-live="polite">
-            {isPending ? 'Registrando nível.' : (errorMessage ?? '')}
-          </p>
-        </div>
-      </PopoverContent>
-    </Popover>
+          </>
+        ) : null}
+        {errorMessage ? (
+          <Alert variant="destructive" className="py-2">
+            <AlertDescription className="text-xs">{errorMessage}</AlertDescription>
+          </Alert>
+        ) : null}
+        <Button
+          type="button"
+          size="sm"
+          disabled={!canSubmit || isPending || (violations.length > 0 && !override)}
+          onClick={() => void submit()}
+        >
+          {isPending ? <Spinner className="size-3.5" aria-hidden /> : null}
+          Registrar movimento
+        </Button>
+        <p className="sr-only" aria-live="polite">
+          {isPending ? 'Registrando nível.' : (errorMessage ?? '')}
+        </p>
+      </div>
+    </CampaignCellEditOverlay>
   )
 }

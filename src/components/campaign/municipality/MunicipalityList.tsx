@@ -378,6 +378,7 @@ const municipalityListColumns = ({
                 level={municipality.engagementLevel}
                 levelNote={municipality.levelNote}
                 levelChangedAt={municipality.levelChangedAt}
+                variant="popover"
               />
             ) : (
               <MunicipalityLevelBadge
@@ -653,6 +654,7 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
                           level={municipality.engagementLevel}
                           levelNote={municipality.levelNote}
                           levelChangedAt={municipality.levelChangedAt}
+                          variant="sheet"
                         />
                       ) : (
                         <MunicipalityLevelBadge
