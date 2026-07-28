@@ -5,23 +5,13 @@ import { toast } from 'sonner'
 
 import { MunicipalitySignalFields } from '@/components/campaign/municipality/MunicipalitySignalFields'
 import {
-  campaignCellEditTriggerClassName,
+  CampaignCellEditOverlay,
   type CampaignCellEditOverlayVariant,
 } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/Drawer'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
+import { DrawerClose } from '@/components/ui/Drawer'
 import { Spinner } from '@/components/ui/Spinner'
-import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
   formatMunicipalitySignalAgeLabel,
@@ -43,41 +33,6 @@ type MunicipalityListSignalControlProps = {
   children: ReactNode
 }
 
-const SignalFormFields = ({
-  municipalityID,
-  municipalitySlug,
-  idPrefix,
-  state,
-  isPending,
-}: {
-  municipalityID: number
-  municipalitySlug: string
-  idPrefix: string
-  state: CampaignFormActionState
-  isPending: boolean
-}) => (
-  <>
-    <input type="hidden" name="municipalityId" value={municipalityID} />
-    <input type="hidden" name="municipalitySlug" value={municipalitySlug} />
-    <MunicipalitySignalFields idPrefix={idPrefix} fieldErrors={state.fieldErrors} />
-    {state.message && state.status !== 'success' ? (
-      <Alert variant="destructive">
-        <AlertDescription>{state.message}</AlertDescription>
-      </Alert>
-    ) : null}
-    <span className="sr-only" aria-live="polite">
-      {isPending ? 'Registrando sinal…' : ''}
-    </span>
-  </>
-)
-
-const SubmitButton = ({ isPending }: { isPending: boolean }) => (
-  <Button type="submit" disabled={isPending} className="min-h-11 w-full">
-    {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
-    Registrar sinal
-  </Button>
-)
-
 export const MunicipalityListSignalControl = ({
   municipalityID,
   municipalitySlug,
@@ -92,8 +47,9 @@ export const MunicipalityListSignalControl = ({
   const [state, submitAction, isPending] = useActionState(formAction, {})
   const reactId = useId()
   const idPrefix = `municipality-list-signal-${variant}-${municipalityID}-${reactId}`
+  const formId = `${idPrefix}-form`
+  const isSheet = variant === 'sheet'
   const frescorLabel = formatMunicipalitySignalAgeLabel(municipalitySignalAgeInDays(lastSignalAt))
-  const triggerLabel = `Registrar sinal em ${municipalityName} — ${frescorLabel}`
 
   useEffect(() => {
     if (state.status !== 'success') return
@@ -102,71 +58,61 @@ export const MunicipalityListSignalControl = ({
     setFormKey((key) => key + 1)
   }, [state.message, state.status])
 
-  // This control keeps its own container (its `<form>` has to wrap header, body
-  // and submit), so it borrows the shell's trigger instead of re-spelling it —
-  // `relative` included, which is what keeps the tap on the mobile card.
-  const triggerClassName = cn(campaignCellEditTriggerClassName, 'text-left')
-  const triggerProps = {
-    type: 'button',
-    'aria-expanded': open,
-    'aria-haspopup': 'dialog',
-    'aria-busy': isPending || undefined,
-    className: triggerClassName,
-    'aria-label': triggerLabel,
-  } as const
-
-  const fields = (
-    <SignalFormFields
-      municipalityID={municipalityID}
-      municipalitySlug={municipalitySlug}
-      idPrefix={idPrefix}
-      state={state}
-      isPending={isPending}
-    />
+  const submitButton = (
+    // On the sheet this button lives in the footer, outside the `<form>` it
+    // submits: `form={formId}` is the standard association, and React's action
+    // still runs because the submit event fires on the form either way. That is
+    // what let this control drop the Drawer/Popover it used to hand-roll only
+    // because its `<form>` had to wrap the footer (B32+ F5).
+    <Button type="submit" form={formId} disabled={isPending} className="min-h-11 w-full">
+      {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
+      Registrar sinal
+    </Button>
   )
 
-  if (variant === 'sheet') {
-    return (
-      <>
-        <button {...triggerProps} onClick={() => setOpen(true)}>
-          {children}
-        </button>
-        <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerContent>
-            <form key={formKey} action={submitAction} className="flex min-h-0 flex-1 flex-col">
-              <DrawerHeader>
-                <DrawerTitle>Registrar sinal</DrawerTitle>
-                <DrawerDescription>{municipalityName}</DrawerDescription>
-              </DrawerHeader>
-              <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-2">
-                {fields}
-              </div>
-              <DrawerFooter>
-                <SubmitButton isPending={isPending} />
-                <DrawerClose
-                  render={<Button type="button" variant="outline" className="min-h-11 w-full" />}
-                >
-                  Cancelar
-                </DrawerClose>
-              </DrawerFooter>
-            </form>
-          </DrawerContent>
-        </Drawer>
-      </>
-    )
-  }
-
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button {...triggerProps}>{children}</button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-80">
-        <form key={formKey} action={submitAction} className="flex flex-col gap-3">
-          {fields}
-          <SubmitButton isPending={isPending} />
-        </form>
-      </PopoverContent>
-    </Popover>
+    <CampaignCellEditOverlay
+      variant={variant}
+      open={open}
+      onOpenChange={setOpen}
+      title="Registrar sinal"
+      description={municipalityName}
+      triggerLabel={`Registrar sinal em ${municipalityName} — ${frescorLabel}`}
+      triggerBusy={isPending}
+      statusMessage={isPending ? 'Registrando sinal…' : ''}
+      triggerClassName="text-left"
+      contentClassName="w-80"
+      trigger={children}
+      footer={
+        isSheet ? (
+          <>
+            {submitButton}
+            <DrawerClose
+              render={<Button type="button" variant="outline" className="min-h-11 w-full" />}
+            >
+              Cancelar
+            </DrawerClose>
+          </>
+        ) : undefined
+      }
+    >
+      <form
+        key={formKey}
+        id={formId}
+        action={submitAction}
+        className="flex flex-col gap-3"
+        aria-busy={isPending || undefined}
+      >
+        <input type="hidden" name="municipalityId" value={municipalityID} />
+        <input type="hidden" name="municipalitySlug" value={municipalitySlug} />
+        <MunicipalitySignalFields idPrefix={idPrefix} fieldErrors={state.fieldErrors} />
+        {state.message && state.status !== 'success' ? (
+          <Alert variant="destructive">
+            <AlertDescription>{state.message}</AlertDescription>
+          </Alert>
+        ) : null}
+        {isSheet ? null : submitButton}
+      </form>
+    </CampaignCellEditOverlay>
   )
 }

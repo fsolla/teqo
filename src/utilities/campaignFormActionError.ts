@@ -15,6 +15,12 @@ export type CampaignFormActionState = CampaignFormErrorState<undefined> & {
 }
 
 export const CAMPAIGN_SESSION_EXPIRED_MESSAGE = 'Sessão expirada. Entre novamente.'
+/**
+ * Thrown when there is no campaign session at all. It is matched by exact
+ * string in `safeMessages`, so a reworded throw would silently collapse a 401
+ * into the generic message — hence the constant rather than the literal.
+ */
+export const CAMPAIGN_AUTH_REQUIRED_MESSAGE = 'Autenticação necessária.'
 
 export type MapCampaignFormActionErrorOptions<Values> = {
   error: unknown

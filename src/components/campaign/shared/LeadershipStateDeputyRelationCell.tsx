@@ -375,11 +375,18 @@ export const LeadershipStateDeputyRelationCell = ({
               )}
             </CommandList>
           </Command>
-          <p className="sr-only" aria-live="polite">
-            {statusMessage}
-          </p>
         </PopoverContent>
       </Popover>
+
+      {/*
+       * Outside the Popover on purpose (B32+ F4): a region that unmounts with
+       * the overlay announces nothing once the overlay closes, and closing is
+       * what commits here. This cell still hand-rolls its trigger and popover —
+       * migrating it onto `CampaignCellEditOverlay` is B31's extraction trigger.
+       */}
+      <p className="sr-only" role="status" aria-live="polite">
+        {statusMessage}
+      </p>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 
 import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import { Button } from '@/components/ui/button'
@@ -18,12 +18,8 @@ import { cn } from '@/lib/utils'
 
 export type CampaignCellEditOverlayVariant = 'popover' | 'sheet'
 
-/**
- * Shared so the triggers this container does NOT own — `MunicipalityListSignalControl`,
- * which wraps its own `<form>` — can't drift from the ones it does.
- * `relative` is load-bearing: see the comment where it is composed below.
- */
-export const campaignCellEditTriggerClassName =
+/** `relative` is load-bearing: see the comment where it is composed below. */
+const campaignCellEditTriggerClassName =
   'relative min-h-11 rounded-md px-1 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 type CampaignCellEditOverlayProps = {
@@ -36,6 +32,14 @@ type CampaignCellEditOverlayProps = {
   triggerLabel: string
   triggerClassName?: string
   triggerBusy?: boolean
+  /**
+   * Announced by the region this shell keeps OUTSIDE the overlay. Closing is
+   * what commits a draft, and a region rendered inside the Popover/Drawer
+   * unmounts with it — so the one announcement that matters most ("Salvando…",
+   * and the failure that follows) was the one that never reached a screen
+   * reader (B32+ F4).
+   */
+  statusMessage?: string
   children: ReactNode
 
   // Popover only ─────────────────────────────────────────────────────────────
@@ -54,6 +58,15 @@ type CampaignCellEditOverlayProps = {
   /** Subject line under the title: which row is being edited. */
   description?: string
   sheetBodyClassName?: string
+  /**
+   * Replaces the default "Fechar" for a sheet whose primary action is an
+   * explicit submit (E14's "Registrar movimento"): in a scrolling body the
+   * button drifts below the fold, and the footer is where a thumb expects it.
+   * A submit that belongs to a `<form>` in `children` is associated by the
+   * standard `form` attribute — the caller owns both ids, so the shell does not
+   * need to know there is a form at all.
+   */
+  footer?: ReactNode
 }
 
 /**
@@ -80,13 +93,26 @@ export const CampaignCellEditOverlay = ({
   triggerLabel,
   triggerClassName,
   triggerBusy,
+  statusMessage,
   tooltipContent,
   align = 'start',
   contentClassName,
   sheetBodyClassName,
+  footer,
   preventPopoverAutoFocus,
   children,
 }: CampaignCellEditOverlayProps) => {
+  /**
+   * The region is mounted from the first open onwards and never unmounted
+   * again — a live region has to exist BEFORE its text changes or most screen
+   * readers skip the first message, and it has to outlive the close, which is
+   * what commits. Mounting it unconditionally instead would leave ~250 polite
+   * regions registered on a 25-row município page (5 controls × 2 sibling
+   * trees), which is a load on assistive tech that nothing here needs.
+   */
+  const [everOpened, setEverOpened] = useState(open)
+  if (open && !everOpened) setEverOpened(true)
+
   const titleRef = useRef<HTMLHeadingElement | null>(null)
   const triggerButton = (
     <button
@@ -113,10 +139,24 @@ export const CampaignCellEditOverlay = ({
     </button>
   )
 
+  // One region per control, next to its trigger — never a single global one:
+  // two cells saving at once would then overwrite each other's announcement,
+  // and neither would say which row it came from.
+  // `role="status"` and not a bare `aria-live`: its implicit `aria-atomic`
+  // makes the sentence be announced whole, which is what these messages are —
+  // `MunicipalityPortfolioCell` had already settled on it.
+  const liveRegion =
+    statusMessage === undefined || !everOpened ? null : (
+      <p className="sr-only" role="status" aria-live="polite">
+        {statusMessage}
+      </p>
+    )
+
   if (variant === 'sheet') {
     return (
       <>
         {triggerButton}
+        {liveRegion}
         <Drawer open={open} onOpenChange={onOpenChange}>
           {/*
            * Focus lands on the title, never on the first field: base-ui's
@@ -144,11 +184,15 @@ export const CampaignCellEditOverlay = ({
               {children}
             </div>
             <DrawerFooter>
-              <DrawerClose
-                render={<Button type="button" variant="outline" className="min-h-11 w-full" />}
-              >
-                Fechar
-              </DrawerClose>
+              {footer ?? (
+                // Swiping down is the gesture, but it is not an affordance
+                // anyone sees.
+                <DrawerClose
+                  render={<Button type="button" variant="outline" className="min-h-11 w-full" />}
+                >
+                  Fechar
+                </DrawerClose>
+              )}
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
@@ -157,26 +201,29 @@ export const CampaignCellEditOverlay = ({
   }
 
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <CampaignHoverTooltip
-        content={tooltipContent}
-        align={align}
-        openOnTouch={false}
-        disabled={open}
-      >
-        <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
-      </CampaignHoverTooltip>
-      <PopoverContent
-        align={align}
-        sideOffset={8}
-        className={contentClassName}
-        // Radix gives the popover `role="dialog"` and no name; the Drawer's
-        // title is the same sentence, so it serves as one here too.
-        aria-label={title}
-        onOpenAutoFocus={preventPopoverAutoFocus ? (event) => event.preventDefault() : undefined}
-      >
-        {children}
-      </PopoverContent>
-    </Popover>
+    <>
+      <Popover open={open} onOpenChange={onOpenChange}>
+        <CampaignHoverTooltip
+          content={tooltipContent}
+          align={align}
+          openOnTouch={false}
+          disabled={open}
+        >
+          <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+        </CampaignHoverTooltip>
+        <PopoverContent
+          align={align}
+          sideOffset={8}
+          className={contentClassName}
+          // Radix gives the popover `role="dialog"` and no name; the Drawer's
+          // title is the same sentence, so it serves as one here too.
+          aria-label={title}
+          onOpenAutoFocus={preventPopoverAutoFocus ? (event) => event.preventDefault() : undefined}
+        >
+          {children}
+        </PopoverContent>
+      </Popover>
+      {liveRegion}
+    </>
   )
 }

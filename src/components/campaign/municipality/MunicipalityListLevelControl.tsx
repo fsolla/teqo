@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
 
 import type { MunicipalityListEngagementLevelResponse } from '@/app/(campaign)/campanha/(app)/municipios/engagement-level/types'
 import { MunicipalityLevelBadge } from '@/components/campaign/municipality/MunicipalityLevelBadge'
@@ -9,13 +8,16 @@ import {
   CampaignCellEditOverlay,
   type CampaignCellEditOverlayVariant,
 } from '@/components/campaign/shared/CampaignCellEditOverlay'
+import { useCampaignCellFailureChannel } from '@/components/campaign/shared/useCampaignCellFailureChannel'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
+import { DrawerClose } from '@/components/ui/Drawer'
 import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
+import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import {
   EMPTY_ENGAGEMENT_LEVEL_LABEL,
   ENGAGEMENT_LEVEL_RULES,
@@ -75,7 +77,8 @@ export const MunicipalityListLevelControl = ({
   const [triangulatedShock, setTriangulatedShock] = useState(false)
   const [override, setOverride] = useState(false)
   const [isPending, setIsPending] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const { errorMessage, setErrorMessage, reportFailure, noteOpenChange } =
+    useCampaignCellFailureChannel()
   // Violations only the server could know (it re-reads the município under the
   // lock), kept with the level they were raised for so a changed draft drops them.
   const [serverBlock, setServerBlock] = useState<{
@@ -83,16 +86,7 @@ export const MunicipalityListLevelControl = ({
     violations: EngagementLevelViolation[]
   } | null>(null)
   const abortRef = useRef<AbortController | null>(null)
-  const openRef = useRef(false)
   const lastPropsRef = useRef({ level, levelNote, levelChangedAt })
-
-  // Closing unmounts the Alert and the live region, and nothing aborts a
-  // movement already in flight — so a failure after that would be silent.
-  // Same shape as the trend and estimate controls.
-  const reportFailure = (message: string) => {
-    setErrorMessage(message)
-    if (!openRef.current) toast.error(message)
-  }
 
   // Adopt the server value when it changes from outside (navigation / refresh).
   useEffect(() => {
@@ -157,7 +151,7 @@ export const MunicipalityListLevelControl = ({
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) resetDraft()
-    openRef.current = nextOpen
+    noteOpenChange(nextOpen)
     setOpen(nextOpen)
   }
 
@@ -171,25 +165,21 @@ export const MunicipalityListLevelControl = ({
     setServerBlock(null)
 
     try {
-      const response = await fetch(ENGAGEMENT_LEVEL_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        credentials: 'same-origin',
-        signal: controller.signal,
-        body: JSON.stringify({
+      // Deliberately ignores the transport's `ok` the way the siblings do not:
+      // `blocked` arrives as a 409 carrying the violations the coordinator may
+      // override, so the status line is not the signal here — the discriminant is.
+      const { payload } = await postCampaignJson<MunicipalityListEngagementLevelResponse>(
+        ENGAGEMENT_LEVEL_ENDPOINT,
+        {
           municipalityId: municipalityID,
           level: draftLevel,
           note,
           reversalSignals,
           triangulatedShock,
           override,
-        }),
-      })
-
-      // Deliberately not gated on `response.ok` the way the siblings are:
-      // `blocked` arrives as a 409 carrying the violations the coordinator may
-      // override, so the status line is not the signal here — the discriminant is.
-      const payload = (await response.json()) as MunicipalityListEngagementLevelResponse
+        },
+        controller.signal,
+      )
 
       if (payload.status === 'success') {
         setSaved(payload.savedLevel)
@@ -222,6 +212,18 @@ export const MunicipalityListLevelControl = ({
     (violations.length === 0 || override)
   const fieldId = (suffix: string) => `municipality-list-level-${suffix}-${municipalityID}`
   const isSheet = variant === 'sheet'
+  const submitButton = (
+    <Button
+      type="button"
+      size={isSheet ? 'default' : 'sm'}
+      className={isSheet ? 'min-h-11 w-full' : undefined}
+      disabled={!canSubmit || isPending}
+      onClick={() => void submit()}
+    >
+      {isPending ? <Spinner className="size-3.5" aria-hidden /> : null}
+      Registrar movimento
+    </Button>
+  )
 
   return (
     <CampaignCellEditOverlay
@@ -232,6 +234,19 @@ export const MunicipalityListLevelControl = ({
       description={municipalityName}
       triggerLabel={`Nível de envolvimento de ${municipalityName}: ${currentLabel}`}
       triggerBusy={isPending}
+      statusMessage={isPending ? 'Registrando nível.' : (errorMessage ?? '')}
+      footer={
+        isSheet ? (
+          <>
+            {submitButton}
+            <DrawerClose
+              render={<Button type="button" variant="outline" className="min-h-11 w-full" />}
+            >
+              Cancelar
+            </DrawerClose>
+          </>
+        ) : undefined
+      }
       tooltipContent={
         currentLevel ? (
           <div className="space-y-1">
@@ -339,19 +354,9 @@ export const MunicipalityListLevelControl = ({
             <AlertDescription className="text-xs">{errorMessage}</AlertDescription>
           </Alert>
         ) : null}
-        <Button
-          type="button"
-          size={isSheet ? 'default' : 'sm'}
-          className={isSheet ? 'min-h-11 w-full' : undefined}
-          disabled={!canSubmit || isPending}
-          onClick={() => void submit()}
-        >
-          {isPending ? <Spinner className="size-3.5" aria-hidden /> : null}
-          Registrar movimento
-        </Button>
-        <p className="sr-only" aria-live="polite">
-          {isPending ? 'Registrando nível.' : (errorMessage ?? '')}
-        </p>
+        {/* On touch the same button is pinned to the footer, out of a body
+            that scrolls past it. */}
+        {isSheet ? null : submitButton}
       </div>
     </CampaignCellEditOverlay>
   )

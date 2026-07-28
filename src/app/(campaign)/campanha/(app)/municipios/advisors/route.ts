@@ -4,12 +4,8 @@ import { z } from 'zod'
 import { setMunicipalityAdvisorMembership } from '@/app/(campaign)/campanha/actions/municipality'
 import { MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES } from '@/lib/schemas/municipality'
 import { positiveRelationshipId } from '@/lib/schemas/primitives'
-import {
-  campaignJsonMutationErrorResponse,
-  parseCampaignJsonRequestBody,
-} from '@/utilities/campaignJsonMutationRoute'
+import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute'
 import { uniqueRelationshipIds } from '@/utilities/relationship'
-import { isSameOriginRequest } from '@/utilities/sameOriginRequest'
 
 import type { MunicipalityListAdvisorsResponse } from './types'
 
@@ -23,34 +19,24 @@ const bodySchema = z.object({
   assigned: z.boolean(),
 })
 
-export async function POST(
-  request: Request,
-): Promise<NextResponse<MunicipalityListAdvisorsResponse>> {
-  if (!isSameOriginRequest(request)) {
-    return NextResponse.json({ status: 'error', message: 'Requisição inválida.' }, { status: 403 })
-  }
-
-  const parsed = await parseCampaignJsonRequestBody(request)
-  if (!parsed.ok) return parsed.response
-
-  try {
-    const { municipalityId, advisorId, assigned } = bodySchema.parse(parsed.body)
+export const POST = campaignJsonMutationRoute(
+  {
+    bodySchema,
+    safeMessages: MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES,
+    genericMessage:
+      'Não foi possível atualizar os assessores. Verifique seu acesso e tente novamente.',
+  },
+  async ({ municipalityId, advisorId, assigned }) => {
     const updated = await setMunicipalityAdvisorMembership({
       municipality: municipalityId,
       advisor: advisorId,
       assigned,
     })
 
-    return NextResponse.json({
+    return NextResponse.json<MunicipalityListAdvisorsResponse>({
       status: 'success',
       message: assigned ? 'Assessor atribuído.' : 'Assessor removido.',
       advisors: uniqueRelationshipIds(updated.advisors),
     })
-  } catch (error) {
-    return campaignJsonMutationErrorResponse(error, {
-      safeMessages: MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES,
-      genericMessage:
-        'Não foi possível atualizar os assessores. Verifique seu acesso e tente novamente.',
-    })
-  }
-}
+  },
+)

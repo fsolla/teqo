@@ -7,11 +7,7 @@ import {
   municipalityEngagementLevelSchema,
 } from '@/lib/schemas/municipality'
 import { positiveRelationshipId } from '@/lib/schemas/primitives'
-import {
-  campaignJsonMutationErrorResponse,
-  parseCampaignJsonRequestBody,
-} from '@/utilities/campaignJsonMutationRoute'
-import { isSameOriginRequest } from '@/utilities/sameOriginRequest'
+import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute'
 
 import type { MunicipalityListEngagementLevelResponse } from './types'
 
@@ -24,49 +20,51 @@ const bodySchema = municipalityEngagementLevelSchema
   .omit({ municipality: true })
   .extend({ municipalityId: positiveRelationshipId })
 
-export async function POST(
-  request: Request,
-): Promise<NextResponse<MunicipalityListEngagementLevelResponse>> {
-  if (!isSameOriginRequest(request)) {
-    return NextResponse.json({ status: 'error', message: 'Requisição inválida.' }, { status: 403 })
-  }
+export const POST = campaignJsonMutationRoute(
+  {
+    bodySchema,
+    // Only the unrestricted-actor message: this action reloads the actor with
+    // its own guard, never through `getFreshStaffActor` (same as `advisors/`).
+    safeMessages: [MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE],
+    genericMessage: 'Não foi possível registrar o nível. Verifique seu acesso e tente novamente.',
+  },
+  async ({ municipalityId, ...movement }) => {
+    // A blocked movement is the third state, not a failure: it is caught here
+    // so the shared error mapping never sees it and never has to know about it.
+    try {
+      const updated = await setMunicipalityEngagementLevel({
+        municipality: municipalityId,
+        ...movement,
+      })
 
-  const parsed = await parseCampaignJsonRequestBody(request)
-  if (!parsed.ok) return parsed.response
-
-  try {
-    const { municipalityId, ...movement } = bodySchema.parse(parsed.body)
-    const updated = await setMunicipalityEngagementLevel({
-      municipality: municipalityId,
-      ...movement,
-    })
-
-    return NextResponse.json({
-      status: 'success',
-      message: 'Nível de envolvimento registrado.',
       // Echoes the document, never the request: with `overrideAccess: false`
       // Payload drops a field the actor cannot write instead of refusing the
       // update, so reporting the requested level could claim a movement that
-      // never landed.
-      savedLevel: {
-        level: updated.engagementLevel ?? movement.level,
-        note: updated.levelNote ?? null,
-        changedAt: updated.levelChangedAt ?? null,
-      },
-    })
-  } catch (error) {
-    if (error instanceof EngagementLevelBlockedError) {
-      return NextResponse.json(
-        { status: 'blocked', message: error.message, violations: error.violations },
-        { status: 409 },
-      )
-    }
+      // never landed. A movement always sets a level, so a document without one
+      // IS that dropped write — it fails rather than falling back to the
+      // request, which would be the lie this comment forbids.
+      // Not a safe message: the mapping answers with this route's
+      // `genericMessage`, and the internal text stays in the server log.
+      if (!updated.engagementLevel) throw new Error('Engagement level write was dropped.')
 
-    return campaignJsonMutationErrorResponse(error, {
-      // Only the unrestricted-actor message: this action reloads the actor with
-      // its own guard, never through `getFreshStaffActor` (same as `advisors/`).
-      safeMessages: [MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE],
-      genericMessage: 'Não foi possível registrar o nível. Verifique seu acesso e tente novamente.',
-    })
-  }
-}
+      return NextResponse.json<MunicipalityListEngagementLevelResponse>({
+        status: 'success',
+        message: 'Nível de envolvimento registrado.',
+        savedLevel: {
+          level: updated.engagementLevel,
+          note: updated.levelNote ?? null,
+          changedAt: updated.levelChangedAt ?? null,
+        },
+      })
+    } catch (error) {
+      if (error instanceof EngagementLevelBlockedError) {
+        return NextResponse.json<MunicipalityListEngagementLevelResponse>(
+          { status: 'blocked', message: error.message, violations: error.violations },
+          { status: 409 },
+        )
+      }
+
+      throw error
+    }
+  },
+)

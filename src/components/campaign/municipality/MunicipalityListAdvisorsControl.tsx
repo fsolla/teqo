@@ -13,10 +13,12 @@ import {
   CampaignCellEditOverlay,
   type CampaignCellEditOverlayVariant,
 } from '@/components/campaign/shared/CampaignCellEditOverlay'
+import { useCampaignCellFailureChannel } from '@/components/campaign/shared/useCampaignCellFailureChannel'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
 import { Command, CommandInput, CommandItem, CommandList } from '@/components/ui/Command'
 import { Spinner } from '@/components/ui/Spinner'
+import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import { sameIdSet } from '@/lib/sameIdSet'
 import { cn } from '@/lib/utils'
 import { matchesAtWordStart } from '@/lib/wordStartFilter'
@@ -51,7 +53,8 @@ export const MunicipalityListAdvisorsControl = ({
   const [open, setOpen] = useState(false)
   const [selectedIDs, setSelectedIDs] = useState<number[]>(currentAdvisorIDs)
   const [query, setQuery] = useState('')
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const { errorMessage, setErrorMessage, reportFailure, noteOpenChange } =
+    useCampaignCellFailureChannel()
   const [isPending, setIsPending] = useState(false)
   const pendingCountRef = useRef(0)
   const lastPropsIDsRef = useRef(currentAdvisorIDs)
@@ -66,6 +69,11 @@ export const MunicipalityListAdvisorsControl = ({
   // clobber the optimistic state back to it.
   const requestSeqRef = useRef(0)
   const latestConfirmedRef = useRef<{ seq: number; advisors: number[] } | null>(null)
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    noteOpenChange(nextOpen)
+    setOpen(nextOpen)
+  }
 
   // Adopt server props only when they change from outside (navigation / RSC
   // refresh) — an in-flight delta's optimistic state must not be clobbered by
@@ -149,18 +157,14 @@ export const MunicipalityListAdvisorsControl = ({
       }
 
       try {
-        const response = await fetch(ADVISORS_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ municipalityId: municipalityID, advisorId, assigned }),
-        })
+        const { ok, payload } = await postCampaignJson<MunicipalityListAdvisorsResponse>(
+          ADVISORS_ENDPOINT,
+          { municipalityId: municipalityID, advisorId, assigned },
+        )
 
-        const payload = (await response.json()) as MunicipalityListAdvisorsResponse
-
-        if (!response.ok || payload.status !== 'success') {
+        if (!ok || payload.status !== 'success') {
           revertDelta()
-          setErrorMessage(payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE)
+          reportFailure(payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE)
           finishRequest()
           return
         }
@@ -171,7 +175,7 @@ export const MunicipalityListAdvisorsControl = ({
         finishRequest()
       } catch {
         revertDelta()
-        setErrorMessage(SAVE_ERROR_MESSAGE)
+        reportFailure(SAVE_ERROR_MESSAGE)
         finishRequest()
       }
     })()
@@ -187,13 +191,14 @@ export const MunicipalityListAdvisorsControl = ({
     <CampaignCellEditOverlay
       variant={variant}
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={handleOpenChange}
       title="Atribuir assessores"
       description={municipalityName}
       // The avatar stack reads as initials at best, and an `aria-label` replaces
       // even those — so who is assigned goes in the label, by extenso.
       triggerLabel={`Editar assessores em ${municipalityName} — ${assignedLabel}`}
       triggerBusy={isPending}
+      statusMessage={statusMessage}
       tooltipContent={tooltipContent}
       contentClassName="w-80 p-0"
       sheetBodyClassName="px-0 pt-2"
@@ -278,9 +283,6 @@ export const MunicipalityListAdvisorsControl = ({
           </Alert>
         </div>
       ) : null}
-      <p className="sr-only" aria-live="polite">
-        {statusMessage}
-      </p>
     </CampaignCellEditOverlay>
   )
 }

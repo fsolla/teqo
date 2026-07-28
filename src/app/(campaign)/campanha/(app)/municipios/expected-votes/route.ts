@@ -5,11 +5,7 @@ import { municipalityStaffEditSafeMessages } from '@/app/(campaign)/campanha/(ap
 import { setMunicipalityExpectedVotes } from '@/app/(campaign)/campanha/actions/municipality'
 import { positiveRelationshipId } from '@/lib/schemas/primitives'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
-import {
-  campaignJsonMutationErrorResponse,
-  parseCampaignJsonRequestBody,
-} from '@/utilities/campaignJsonMutationRoute'
-import { isSameOriginRequest } from '@/utilities/sameOriginRequest'
+import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute'
 
 import type { MunicipalityListExpectedVotesResponse } from './types'
 
@@ -29,33 +25,23 @@ const bodySchema = z.object({
   }),
 })
 
-export async function POST(
-  request: Request,
-): Promise<NextResponse<MunicipalityListExpectedVotesResponse>> {
-  if (!isSameOriginRequest(request)) {
-    return NextResponse.json({ status: 'error', message: 'Requisição inválida.' }, { status: 403 })
-  }
-
-  const parsed = await parseCampaignJsonRequestBody(request)
-  if (!parsed.ok) return parsed.response
-
-  try {
-    const { municipalityId, expectedVotes } = bodySchema.parse(parsed.body)
+export const POST = campaignJsonMutationRoute(
+  {
+    bodySchema,
+    safeMessages: municipalityStaffEditSafeMessages,
+    genericMessage:
+      'Não foi possível salvar os votos estimados. Verifique seu acesso e tente novamente.',
+  },
+  async ({ municipalityId, expectedVotes }) => {
     const updated = await setMunicipalityExpectedVotes({
       municipality: municipalityId,
       expectedVotes,
     })
 
-    return NextResponse.json({
+    return NextResponse.json<MunicipalityListExpectedVotesResponse>({
       status: 'success',
       message: 'Votos estimados atualizados.',
       savedExpectedVotes: toVoteEstimateScenarioViewModel(updated.expectedVotes),
     })
-  } catch (error) {
-    return campaignJsonMutationErrorResponse(error, {
-      safeMessages: municipalityStaffEditSafeMessages,
-      genericMessage:
-        'Não foi possível salvar os votos estimados. Verifique seu acesso e tente novamente.',
-    })
-  }
-}
+  },
+)
