@@ -1,0 +1,43 @@
+---
+description: Estado do discovery de funcionalidades financeiras do /campanha (gestão financeira de campanha de DF)
+---
+
+# Projeto — Finanças de campanha (discovery)
+
+## Status atual (2026-07-28)
+
+Discovery sintético COMPLETO; validação real acontece em **2026-07-29** (entrevista com a gestora financeira da campanha — [roteiro](../../../docs/research/roteiro-entrevista-gestora-financeira-real.md)). **Nenhum item de produto no roadmap** — deliberado (ver decisões). Origem da investigação: **pedido do candidato**.
+
+## Decisões-chave (quem + data)
+
+- **2026-07-28 (Francisco):** **não complicar o Teqo sem uma dificuldade real, validada, que possamos ajudar a resolver.** Um módulo financeiro completo para o ciclo 2026 está descartado a priori (timing: janela de setup fecha em ~3 semanas; adoção de ferramenta nova no pico de estresse é o padrão de abandono do `CUSTOMER.md`; gestora nem é usuária do sistema hoje; risco jurídico exige revisão do advogado antes de qualquer schema). A decisão de abrir/adiar/matar qualquer trilha fica para DEPOIS da entrevista com a gestora real.
+- **2026-07-28 (sessão de discovery):** método replicado do ciclo territorial de 2026-07-21 — literatura → 3 personas sintéticas (contadora, advogado eleitoralista, tesoureiro político) em subagents isolados → 2 rodadas de entrevista (com acareação cruzada) → relatório → roteiro para a sessão real. Artefatos em `docs/research/` (ver README, "Ciclo 2").
+- **Kernel consolidado:** dois gargalos em série, de donos diferentes — (1) a cota do partido (número e data; gargalo do candidato, se resolve com política) e (2) o desenho do processo de gasto (alçadas, canal único, documentação na origem; gargalo da operação, se resolve com processo).
+- **Salvaguarda inegociável para qualquer produto** (relatório §5): princípio do espelho (só o que vai à prestação), 3 estados de compromisso (pendente-com-teto-e-caducidade → instrumento → conciliado), contrapartida = entrega física NUNCA métrica eleitoral, proibições duras (valor×pessoa-eleitora; movimentação fora da conta; léxico da Res. 23.607), memória política separada e sem valores.
+- **Anti-goals** (relatório §8): não é contabilidade nem Conta+JE paralelo; não é ferramenta de "arrecadação"; não automatiza alocação; nada distribuído na ponta.
+
+## Avaliação pré-validação (exercício de 2026-07-28 — HIPÓTESE, não roadmap)
+
+Registro do exercício feito em chat antes da entrevista real, para confrontar com o que a gestora disser:
+
+- **P0 (quase grátis, zero risco jurídico — candidatos a construir mesmo sem trilha):** (a) calendário financeiro 2026 + checklist de infraestrutura como conteúdo de referência (padrão E18 / `/campanha/conceitos`); (b) **limite do art. 100-A por município** como coluna/hint na página do município — função pura sobre o eleitorado que o catálogo já tem.
+- **P1 (a aposta real, condicionada à gestora + advogado):** registro de compromissos por município/liderança com as travas do §5, contrapartida amarrada a `activity`; orçamento/gasto por município na fila de alocação (E9) → custo marginal por voto. É onde o Teqo tem vantagem que planilha não tem (o lado "voto" mora no produto). Depende de a campanha querer o PROCESSO (alçadas, parcela condicionada) — ferramenta não impõe processo.
+- **P2 (pós-eleição / próximo ciclo / white-label):** fila de pagamento, conciliação por exceção, exportação para o contador, radar de cota, checklist de novembro + "planilha casada com a urna" (conecta com o backtest pós-eleição já planejado). Alvo natural do módulo completo: 2028/white-label (campanhas menores, sem contador especializado).
+- **Condições de morte:** gestora diz que planilha + contador resolvem e que o gargalo é a negociação da cota → ficam só os P0, trilha encerra. **Condições de vida:** apostas 1 e 9 do relatório confirmadas com artefato (contratou antes de saber o número; fila sob escassez sem critério escrito) + o compromisso que "nunca entrou em planilha nenhuma" existir e ter custado caro.
+
+## Contexto normativo 2026 (resumo — detalhes no compêndio)
+
+Res. TSE 23.607/2019 + **23.752/2026**; Conta+JE substitui SPCE (cruzamento em tempo real); teto DF R$ 3.176.572,53 (Portaria 449/2026); FEFC R$ 4,96 bi (PT ~R$ 615 mi; federação ~R$ 721 mi; critérios PT: PJe 0601252-72.2026.6.00.0000); **vedado repasse FEFC/FP entre candidatos** (mata o financiamento antigo de dobradinha); parcial 09–13/09; final 03/11; militância Portaria 444/2026.
+
+## Threads abertas
+
+1. **Entrevista real com a gestora financeira — 2026-07-29 (amanhã).** Roteiro pronto em `docs/research/roteiro-entrevista-gestora-financeira-real.md`. Preparação obrigatória do entrevistador ANTES da sessão: ler a prestação de contas 2022 do candidato no DivulgaCandContas (levar impressa), reler §§2–3 e 9–10 do relatório, levar a linha do tempo financeira 2026, checar se o critério do PT (PJe 0601252-72.2026.6.00.0000) já está público.
+2. **Pós-entrevista:** preencher Interview Evidence + Snapshot em `docs/CUSTOMER.md`, veredito por aposta no §9 do relatório, e decidir abrir/adiar/matar a trilha. Se abrir, registrar itens via skill `roadmap-items` a partir do OST draft (OF1–OF8) e passar a spec do "registro seguro" pela revisão do advogado da campanha; os P0 podem entrar independentemente da trilha.
+3. Itens do compêndio marcados **[VERIFICAR]** (ex.: data exata da distribuição das cotas de gênero/raça em 2026) — confirmar com contador/advogado reais.
+
+## Links
+
+- Compêndio: `docs/research/literatura-financas-campanha-df-ba.md`
+- Relatório (canônico do ciclo, pendente validação): `docs/research/relatorio-entrevistas-financas-personas.md`
+- Roteiro da sessão real: `docs/research/roteiro-entrevista-gestora-financeira-real.md`
+- Precedente metodológico: `docs/research/relatorio-entrevista-persona-campanha.md` + `docs/CUSTOMER.md`
