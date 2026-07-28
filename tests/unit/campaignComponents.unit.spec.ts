@@ -20,6 +20,7 @@ import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { createEmptyGoalCoverageByScenario } from '@/utilities/goalCoverage'
+import { municipalityPriorityIndicatorLabel } from '@/utilities/municipalityLabels'
 import type {
   MunicipalityAdvisorSummary,
   MunicipalityListViewModel,
@@ -249,7 +250,9 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('href="/campanha/municipios/seabra"')
     expect(html).toContain('1.500')
     expect(html).toContain('Cenários de estimativa')
-    expect(html).toContain('Prioritária')
+    expect(html).toContain(`aria-label="${municipalityPriorityIndicatorLabel}"`)
+    expect(html).toContain('lucide-flag')
+    expect(html).not.toMatch(/>\s*Prioritária\s*<\/span>/)
     // The advisor column carries coverage on its own — no separate "Assessoria" column.
     expect(html).toContain('Assessores')
     expect(html).toContain('Ana Bastos')
@@ -514,6 +517,7 @@ describe('campaign visual foundation', () => {
     expect(html).not.toContain('Cenários de estimativa')
     expect(html).not.toContain('Faltam')
     expect(html).not.toContain('Prioritária')
+    expect(html).not.toContain(`aria-label="${municipalityPriorityIndicatorLabel}"`)
     // B22: the leader view's 5 columns (name/region/kind/votos/lastUpdateAt)
     // also carry header explanations.
     const [theadHtml] = html.split('<tbody')

@@ -14,6 +14,7 @@ import { MunicipalityListGoalCoverageCell } from '@/components/campaign/municipa
 import { MunicipalityListLevelControl } from '@/components/campaign/municipality/MunicipalityListLevelControl'
 import { MunicipalityListSignalControl } from '@/components/campaign/municipality/MunicipalityListSignalControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
+import { MunicipalityPriorityIndicator } from '@/components/campaign/municipality/MunicipalityPriorityIndicator'
 import { MunicipalitySortableHead } from '@/components/campaign/municipality/MunicipalitySortableHead'
 import { TerritoryLink } from '@/components/campaign/municipality/TerritoryLink'
 import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
@@ -46,7 +47,6 @@ import {
   municipalityColumnDescriptions,
   municipalityGeographyParts,
   municipalityKindLabels,
-  municipalityPriorityLabels,
   territorialClassBadgeVariant,
   territorialClassLabels,
   type MunicipalityListColumnId,
@@ -172,8 +172,8 @@ const TerritorialClassReadout = ({ municipality }: { municipality: MunicipalityL
  * Cold reads in the warning amber, NOT destructive: early in the campaign
  * most municípios are past the 21-day threshold, and painting them all red
  * would drown the one state that really is an error in this list — a priority
- * município with nobody answering for it. Same reason it stays text with an
- * icon instead of a third badge: the row already carries the priority pill and,
+ * município with nobody answering for it. Same reason the priority flag stays
+ * an icon instead of a third badge: the row already carries the priority signal and,
  * when it applies, the missing-advisor one.
  */
 const SignalAgeReadout = ({
@@ -250,10 +250,9 @@ const advisorNames = (
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>,
 ): string[] => advisorEntries(municipality, advisorNamesById).map((advisor) => advisor.name)
 
-/** The desktop table as column definitions (Pass 2 W1 list system). */
 /**
- * The id is the picker's key, the cookie's key and the key of the B22
- * description record, so it is typed instead of widening to `string`.
+ * Desktop table columns (Pass 2 W1). `id` is the picker key, cookie key, and B22
+ * description key — typed instead of widening to `string`.
  */
 type MunicipalityColumn = CampaignTableColumn<MunicipalityListViewModel> & {
   id: MunicipalityListColumnId
@@ -293,9 +292,7 @@ const municipalityListColumns = ({
         >
           {municipality.name}
         </Link>
-        {municipality.priority === 'alta' && isStaffView ? (
-          <Badge variant="destructive">{municipalityPriorityLabels.alta}</Badge>
-        ) : null}
+        {municipality.priority === 'alta' && isStaffView ? <MunicipalityPriorityIndicator /> : null}
       </div>
     ),
   },
@@ -611,7 +608,7 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
                   {position ? <VotePositionReadout position={position} layout="card" /> : null}
                 </div>
                 {isPriority && isStaffView ? (
-                  <Badge variant="destructive">{municipalityPriorityLabels.alta}</Badge>
+                  <MunicipalityPriorityIndicator className="relative size-11" />
                 ) : null}
               </div>
               {isStaffView ? (
