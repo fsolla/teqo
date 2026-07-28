@@ -147,7 +147,8 @@ const municipalityLabel = (
 ): string => {
   if (!labels) return `Município #${id}`
   if (labels instanceof Map) return labels.get(id) ?? `Município #${id}`
-  return labels[id] ?? `Município #${id}`
+  const record = labels as Readonly<Record<number, string>>
+  return record[id] ?? `Município #${id}`
 }
 
 export const formatLeadershipActiveFiltersSummary = (
