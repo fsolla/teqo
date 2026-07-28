@@ -70,6 +70,14 @@ export const CAMPAIGN_BIOMETRIC_ENROLLED_MESSAGE =
 export const CAMPAIGN_BIOMETRIC_ENROLL_ERROR_MESSAGE =
   'Não foi possível cadastrar este aparelho. Tente novamente.'
 
+/**
+ * Twin of the one above for the sign-in half: the route's `genericMessage` and
+ * the login button's fallback are the same sentence in the same slot, reached
+ * depending on whether the server answered an envelope or the network broke.
+ */
+export const CAMPAIGN_BIOMETRIC_LOGIN_ERROR_MESSAGE =
+  'Não foi possível entrar com a biometria. Use sua senha.'
+
 export const CAMPAIGN_BIOMETRIC_REMOVED_MESSAGE =
   'Aparelho removido. Ele não entra mais com biometria.'
 

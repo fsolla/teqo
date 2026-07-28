@@ -2,6 +2,7 @@ import config from '@payload-config'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
+import { CAMPAIGN_BIOMETRIC_LOGIN_ERROR_MESSAGE } from '@/lib/campaignAuthCopy'
 import type { CampaignWebAuthnLoginResponse } from '@/lib/campaignWebAuthn'
 import { campaignWebAuthnLoginSchema } from '@/lib/schemas/campaignWebAuthn'
 import { setCampaignAuthCookie } from '@/utilities/campaignAuth'
@@ -32,7 +33,7 @@ export const POST = campaignJsonMutationRoute(
       CAMPAIGN_WEBAUTHN_ACCOUNT_UNAVAILABLE_MESSAGE,
       CAMPAIGN_WEBAUTHN_ACCOUNT_LOCKED_MESSAGE,
     ],
-    genericMessage: 'Não foi possível entrar com a biometria. Use sua senha.',
+    genericMessage: CAMPAIGN_BIOMETRIC_LOGIN_ERROR_MESSAGE,
   },
   async ({ credential }): Promise<NextResponse<CampaignWebAuthnLoginResponse>> => {
     const payload = await getPayload({ config })

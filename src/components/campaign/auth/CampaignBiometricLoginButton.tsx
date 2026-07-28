@@ -8,10 +8,11 @@ import { useCampaignBiometricsAvailable } from '@/components/campaign/auth/useCa
 import { Button } from '@/components/ui/button'
 import { FieldError } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/Spinner'
-import { CAMPAIGN_BIOMETRIC_LOGIN_LABEL } from '@/lib/campaignAuthCopy'
+import {
+  CAMPAIGN_BIOMETRIC_LOGIN_ERROR_MESSAGE,
+  CAMPAIGN_BIOMETRIC_LOGIN_LABEL,
+} from '@/lib/campaignAuthCopy'
 import { CampaignWebAuthnError } from '@/lib/campaignWebAuthnSupport'
-
-const FALLBACK_ERROR_MESSAGE = 'Não foi possível entrar com a biometria. Use sua senha.'
 
 /**
  * Password-less sign-in on the login screen. It is mounted only when the server
@@ -47,7 +48,9 @@ export const CampaignBiometricLoginButton = () => {
       // A cancelled prompt is a decision, not a failure: say it plainly and
       // leave the password form untouched.
       setErrorMessage(
-        error instanceof CampaignWebAuthnError ? error.message : FALLBACK_ERROR_MESSAGE,
+        error instanceof CampaignWebAuthnError
+          ? error.message
+          : CAMPAIGN_BIOMETRIC_LOGIN_ERROR_MESSAGE,
       )
     }
     setPending(false)

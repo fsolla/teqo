@@ -1,8 +1,9 @@
 /**
- * Transport half of the list cells' quick edits: the preamble every control
- * repeated around `fetch` (same-origin credentials, JSON headers, the cast of
- * the discriminated response). Deliberately knows nothing about revert, retry
- * or debounce — that is `useCampaignCellAutosave`'s, or the caller's.
+ * Transport half of every `/campanha` JSON POST — the list cells' quick edits
+ * and the WebAuthn ceremonies: the preamble each one repeated around `fetch`
+ * (same-origin credentials, JSON headers, the cast of the discriminated
+ * response). Deliberately knows nothing about revert, retry or debounce — that
+ * is `useCampaignCellAutosave`'s, or the caller's.
  *
  * `ok` travels next to the payload because a route can answer a real body with
  * a non-200 status (`engagement-level` returns its `blocked` state as 409), so

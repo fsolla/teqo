@@ -73,8 +73,9 @@ const campaignJsonMutationErrorResponse = (
 
 /**
  * Builds the `POST` of a `/campanha/**` JSON mutation route (the list cells'
- * quick edits): same-origin check, body parse, schema parse and error mapping,
- * leaving each route with its schema, its action call and its success payload.
+ * quick edits, and the WebAuthn ceremonies): same-origin check, body parse,
+ * schema parse and error mapping, leaving each route with its schema, its
+ * action call and its success payload.
  *
  * It is a wrapper and not a `guard(request)` helper because the origin check is
  * the kind of line a sixth route forgets, and forgetting it fails OPEN — a

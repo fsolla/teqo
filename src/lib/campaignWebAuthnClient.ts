@@ -32,22 +32,20 @@ import {
 import { CampaignWebAuthnError } from '@/lib/campaignWebAuthnSupport'
 
 /**
- * Transport is `postCampaignJson`; this adds the two things the ceremonies need
- * on top of it. The status is dropped on purpose — a 403/409/500 from these
- * routes still carries the typed envelope, so the discriminant decides — and a
- * response that is not JSON at all (proxy error page, offline) surfaces as one
- * sentence instead of a `SyntaxError` about position 0. A rejection that is not
- * a parse failure is a network failure and is rethrown untouched.
+ * Transport is `postCampaignJson`; the only thing added here is dropping `ok`,
+ * because a 403/409/500 from these routes still carries the typed envelope and
+ * the discriminant is what decides. The `{}` default is load-bearing: the route
+ * shell always parses a body, so omitting it would answer 400.
+ *
+ * Nothing is caught. A transport failure — offline, or a proxy answering HTML
+ * that `response.json()` rejects — bubbles as a plain `Error`, which is the
+ * channel `CampaignWebAuthnError` reserves for "the island shows its own copy".
+ * An earlier version rewrote that case as "Resposta inválida do servidor." and
+ * the sentence never reached a screen, because all three islands read `message`
+ * only off a `CampaignWebAuthnError`.
  */
-const postJson = async <Response>(path: string, body?: unknown): Promise<Response> => {
-  try {
-    const { payload } = await postCampaignJson<Response>(path, body ?? {})
-    return payload
-  } catch (error) {
-    if (error instanceof SyntaxError) throw new Error('Resposta inválida do servidor.')
-    throw error
-  }
-}
+const postJson = async <Response>(path: string, body?: unknown): Promise<Response> =>
+  (await postCampaignJson<Response>(path, body ?? {})).payload
 
 /**
  * `navigator.credentials` rejects with DOM exceptions whose names are the only
