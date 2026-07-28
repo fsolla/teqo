@@ -1,5 +1,6 @@
 'use client'
 
+import { SaveMunicipalityFilterControl } from '@/components/campaign/municipality/SaveMunicipalityFilterControl'
 import { CampaignMobileMultiFilterField } from '@/components/campaign/shared/CampaignMobileMultiFilterField'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
@@ -80,6 +81,7 @@ export const MunicipalityFilters = ({
             {activeFiltersSummary}
           </p>
         ) : null}
+        <SaveMunicipalityFilterControl state={state} />
         {hasActiveFilters ? (
           <Button
             type="button"

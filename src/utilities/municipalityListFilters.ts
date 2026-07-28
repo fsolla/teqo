@@ -407,3 +407,11 @@ export const buildMunicipalityListVisitLabel = (state: MunicipalityListState): s
 
 export const buildMunicipalityListVisitHref = (state: MunicipalityListState): string =>
   buildMunicipalityListHref(state, 1)
+
+/**
+ * The href a saved filter (B18) bookmarks: the visit href minus `compare`, which
+ * is the Início map's comparison lens rather than a recorte of this list, and
+ * which the list's param set only carries so a hand-typed URL survives.
+ */
+export const buildMunicipalitySavedFilterHref = (state: MunicipalityListState): string =>
+  buildMunicipalityListHref({ ...state, compare: undefined }, 1)
