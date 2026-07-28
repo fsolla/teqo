@@ -79,13 +79,6 @@ export const municipalityMapYearLabels: Record<MunicipalityMapYear, string> = {
   2026: '2026 (estimativas)',
 }
 
-type MunicipalityZoneBreakdownRow = {
-  slug: string
-  name: string
-  votesByYear: Record<string, number>
-  votes2026ByScenario: Record<VoteEstimateScenario, number>
-}
-
 export type MunicipalityMapComparison = {
   candidateNumber: number
   candidateName: string
@@ -130,13 +123,9 @@ export type MunicipalityMapBundle = {
    * approximate ZE mesh is painted at all — which is what the map's provenance
    * caveat is about. Published rather than re-derived on the client so `kind`
    * stays the single answer to "is this a zona": reading it off the key's shape
-   * would be a second encoding of the rule in `mapKeyForMunicipality`, and
-   * `zoneBreakdown` is scheduled for deletion by the fill-in that removes the
-   * textual zone list.
+   * would be a second encoding of the rule in `mapKeyForMunicipality`.
    */
   hasZoneMunicipalities: boolean
-  /** Zone municipalities in scope (Salvador) with per-year values. */
-  zoneBreakdown: MunicipalityZoneBreakdownRow[]
   candidateName: string
   comparison: MunicipalityMapComparison | null
 }

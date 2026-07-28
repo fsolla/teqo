@@ -1,17 +1,21 @@
 # Remover lista "Municípios por zona eleitoral" do Início
 
-Status: rascunho
-Atualizado em: 2026-07-26
+Status: entregue
+Atualizado em: 2026-07-28
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins)
 Impeccable: B — encaixe em `MunicipalityMapPanel` no Início (`/campanha`); sem rota nova
 Appetite: ~0,25–0,5 dia eng; remove bloco UI + payload `zoneBreakdown` do bundle; sem migration
 Responsável: —
 
+Revisão 2026-07-28 (auditoria pré-implementação): **B8+ F3 ✓** já landou — a ressalva de aproximação vive sob o mapa gated por `bundle.hasZoneMunicipalities` (inclusive em comparação). Residual deste item = apagar o `<ul>` + dropar `zoneBreakdown` / `zoneVotes*BySlug` do bundle. Questões em aberto fechadas por evidência.
+
+**Entrega 2026-07-28:** lista "Municípios por zona eleitoral" removida do Início; `zoneBreakdown` / `MunicipalityZoneBreakdownRow` / `zoneVotes*BySlug` saíram do contrato e do loader; `hasZoneMunicipalities` + ressalva B8+ F3 intactos; int `municipalityMapData` e `TESTING.md` atualizados. Sem migration. Gate: tsc/lint/format/cycles; knip P3 pré-existente; int do loader 4/4; Aikido 0 findings nos módulos de contrato/loader.
+
 ## Design (Impeccable)
 
 Âncoras: `PRODUCT.md` (clareza sob pressão; anti dashboard clutter) / `DESIGN.md` (register `product`; Field Desk) · tema `data-theme='campaign'` · shells `MunicipalityMapPanel` + `BahiaMap` + `MapFeatureReadout`.
 
-Na implementação (`implement-roadmap-item`): craft compacto → critique → polish (só remoção de densidade morta + relocação de uma frase de ressalva; sem redesign do mapa).
+Na implementação (`implement-roadmap-item`): craft compacto → critique → polish (só remoção de densidade morta; a ressalva já está no lugar via B8+ F3 ✓ — sem redesign do mapa).
 
 Brief compacto:
 
@@ -34,48 +38,47 @@ Até o **B8 F2 ✓** (2026-07-26), Salvador era **um** polígono no mapa; a úni
 
 Com o artefato `bahia-municipality-zones.topo.json` e o re-keying por map key, cada ZE é pintável, hoverável e clicável. Pedido de produto (2026-07-26): **remover a seção** — não precisamos mais dela.
 
-O fill-in de engenharia **B8+** ([escala-dry-pos-b8f2.md](escala-dry-pos-b8f2.md)) F3 ainda assume a lista viva (só move a ressalva “é aproximado…” para fora do gate `!comparisonActive`). Este item **supersede** essa premissa: a lista sai; a ressalva fica atrelada à **malha** (decisão já travada no B8+), não a um `<ul>` de zonas.
+O fill-in de engenharia **B8+** ([escala-dry-pos-b8f2.md](escala-dry-pos-b8f2.md)) F3 ✓ (2026-07-27) já moveu a ressalva para fora do gate `!comparisonActive` e a condicionou a `bundle.hasZoneMunicipalities` (campo próprio — não `zoneBreakdown.length`). Este item só remove a lista + o campo do bundle; a ressalva atrelada à malha permanece.
 
 ## Objetivos
 
 - Em `/campanha` (staff, `MunicipalityMapPanel`): sumir o bloco "Municípios por zona eleitoral" (título, lista, números).
 - Remover `zoneBreakdown` do contrato do bundle e do loader (e os intermediários `zoneVotesBySlug` / `zoneVotes2026BySlug` se só servirem a ele) — dead code dies.
-- Manter **uma** ressalva de aproximação (TRE/IBGE, não limite oficial TSE) visível quando a malha de zonas está em jogo — inclusive no modo comparação (alinha B8+ F3).
-- Atualizar int `municipalityMapData.int.spec.ts` (pins de `zoneBreakdown`) e qualquer copy/comentário que ainda diga que a lista é a navegação N>1.
+- Manter a ressalva de aproximação já entregue por B8+ F3 (`hasZoneMunicipalities`, inclusive em comparação) — **não** reinseri-la.
+- Atualizar int `municipalityMapData.int.spec.ts` (pins de `zoneBreakdown` → `hasZoneMunicipalities` / map keys) e qualquer copy/comentário que ainda diga que a lista é a navegação N>1.
 - Guardrails: sem migration, sem collection, sem Consent, sem server action; malha B8 / `BahiaMap` / catálogo `kind === 'zona'` intactos; card de bairros no detalhe (F1) intacto.
 
 ## Decisões travadas
 
 - **Fill-in com plano próprio (sem ID B novo).** Quick win de densidade no Início pós-B8 F2; ~¼–½ dia; paralelizável; cortável. (2026-07-26, classificação roadmap-item.) **Rejeitado:** B43 de trilha (infla grafo para delete de bloco); absorver _só_ como nota no B8+ sem plano de produto (pedido explícito de produto merece plano próprio + link no Fill-ins); deixar para R6 (atrasa).
 - **Remover UI + dropar `zoneBreakdown` do bundle — não só esconder.** Payload RSC do Início carrega 19 rows por visita; knip/engineering-standards: o que a mudança orfanou morre no mesmo PR. **Rejeitado:** `display: none` / flag; manter array “por se” sem consumidor.
-- **Ressalva de aproximação sobrevive, atrelada à malha.** Uma frase muted sob o mapa (ou junto à legenda), gated por presença de ZE no escopo (`salvador-ze-*` em `municipalitiesByMapKey` **ou** boolean derivado no painel) e **visível também em comparação**. Fonte: decisão B8+ F3 + rabbit hole B8 (“tratar polígono derivado como limite oficial”). **Rejeitado:** apagar a ressalva com a lista; duplicar copy em dois braços.
+- **Ressalva de aproximação sobrevive, atrelada à malha.** Entregue por B8+ F3 ✓ como `<p>` gated por `bundle.hasZoneMunicipalities` (publicado pelo loader a partir de `kind === 'zona'`), visível também em comparação. Fonte: decisão B8+ F3 + rabbit hole B8 (“tratar polígono derivado como limite oficial”). **Rejeitado:** apagar a ressalva com a lista; duplicar copy em dois braços; re-derivar “é zona?” da forma da chave no cliente.
 - **Lista de bairros no detalhe da ZE (B8 F1) permanece.** Geografia operacional no município ≠ lista redundante no dashboard. **Rejeitado:** cascatear remoção para `MunicipalityZoneNeighborhoodsCard`.
 - **i18n e naming** (AGENTS.md): identificadores `zoneBreakdown` / `MunicipalityZoneBreakdownRow` saem; strings pt-BR da seção saem; disclaimer permanece em pt-BR.
 
 ## Questões em aberto
 
-- **Gate da ressalva: “há ZE no escopo do ator” vs “malha de zonas carregou no cliente”?** **Opções:** A) keys `salvador-ze-*` em `municipalitiesByMapKey` (server/escopo) | B) flag do `BahiaMap` após load da malha | C) sempre no painel. **Recomendação:** **A** — assessor sem Salvador na carteira não vê frase sobre ZE; se o chunk falhar, B8+ F3 degrada o mapa e a ressalva some junto com as zonas no escopo visual (aceitável). _(assumido)_
-- **Quem landa primeiro: este fill-in ou B8+ F3?** **Opções:** A) este fill-in primeiro (B8+ F3 vira “não há lista; só degradar chunk + ressalva já no lugar”) | B) B8+ primeiro (este fill-in remove o `<ul>` e mantém a frase onde F3 a colocou). **Recomendação:** **A** se o pedido de produto for o próximo a implementar; senão B — o plano do B8+ foi atualizado para não depender da lista. _(ordem = quem puxar o PR)_
+- **Gate da ressalva.** **Resolvido 2026-07-27 (B8+ F3 ✓):** `bundle.hasZoneMunicipalities` (server, `kind === 'zona'` no escopo). Assessor sem Salvador não vê a frase; chunk das zonas que falha degrada o mapa (aceitável). **Rejeitado no as-built do B8+:** derivar da forma da chave no cliente; gatear em `zoneBreakdown.length`.
+- **Ordem vs B8+ F3.** **Resolvido 2026-07-27:** B8+ landou primeiro. Este fill-in só apaga o `<ul>` + o campo do bundle e mantém a frase onde F3 a colocou.
 
 ## Abordagem proposta
 
 ```mermaid
 flowchart LR
   panel["MunicipalityMapPanel"] -->|remove| list["ul zoneBreakdown"]
-  panel -->|keep relocated| note["Ressalva aproximação"]
+  panel -->|keep| note["Ressalva hasZoneMunicipalities"]
   contract["municipalityMapContract"] -->|drop| zb["zoneBreakdown"]
   loader["municipalityMapData"] -->|drop| maps["zoneVotes*BySlug"]
-  tests["municipalityMapData.int"] -->|rewrite| scope["pins de escopo / map key"]
+  tests["municipalityMapData.int"] -->|rewrite| scope["pins hasZoneMunicipalities / map key"]
 ```
 
 Componentes:
 
-- **`MunicipalityMapPanel.tsx`**: apagar o bloco ~L593–625; comentário “zone breakdown below”; atualizar o comentário de `MunicipalityMapSelection` que menciona “zone list”. Inserir a ressalva (uma `<p className="text-sm text-muted-foreground">`) fora do gate de comparação, condicionada ao escopo com ZE.
-- **`municipalityMapContract.ts`**: remover `MunicipalityZoneBreakdownRow` e `zoneBreakdown` de `MunicipalityMapBundle`.
-- **`municipalityMapData.ts`**: parar de montar `zoneBreakdown` / `zoneVotesBySlug` / `zoneVotes2026BySlug` (verificar que nenhum outro campo os lê — hoje só alimentam a lista).
-- **`tests/int/municipalityMapData.int.spec.ts`**: trocar expects de `zoneBreakdown` por asserts de escopo já existentes (ex.: keys `salvador-ze-*` em `municipalitiesByMapKey` / length de unidades no escopo).
-- **`docs/TESTING.md`**: dropar a coluna “zone breakdown shape” da linha do loader se ainda apontar para o campo.
-- **B8+ / B8 planos:** ver Dependências — notas de coordenação, não reescrever histórico F2.
+- **`MunicipalityMapPanel.tsx`**: apagar o bloco do `<ul>` (~L603–629); manter a ressalva B8+ F3 (~L595–601); atualizar o comentário de `MunicipalityMapSelection` que menciona “zone list”.
+- **`municipalityMapContract.ts`**: remover `MunicipalityZoneBreakdownRow` e `zoneBreakdown` de `MunicipalityMapBundle`; manter `hasZoneMunicipalities`.
+- **`municipalityMapData.ts`**: parar de montar `zoneBreakdown` / `zoneVotesBySlug` / `zoneVotes2026BySlug` (só alimentavam a lista; o coroplético usa `valuesByYear` por map key).
+- **`tests/int/municipalityMapData.int.spec.ts`**: trocar expects de `zoneBreakdown` por `hasZoneMunicipalities` + keys de zona em `municipalitiesByMapKey` / `valuesByYear`.
+- **`docs/TESTING.md`**: coluna “zone breakdown shape” → pin de `hasZoneMunicipalities` / map keys.
 - **Migration**: Sem migration, sem collection, sem server action.
 
 Depth check: delete/estreitamento nos módulos que já são donos do bundle e do painel — sem wrapper novo.
@@ -83,8 +86,8 @@ Depth check: delete/estreitamento nos módulos que já são donos do bundle e do
 ## Dependências
 
 - **Dura:** ~~B8 F2~~ ✓ (polígonos — sem eles a lista ainda seria a única visão por ZE).
-- Soft: **B8+** F3 ([escala-dry-pos-b8f2.md](escala-dry-pos-b8f2.md)) — mesma ressalva / mesmo arquivo; quem entrar 2º só ajusta.
-- Reusa: `MunicipalityMapPanel`, `BahiaMap`, `municipalitiesByMapKey`, `formatElectionNumber` (só se algum residual precisar — provavelmente some do painel).
+- Soft: ~~**B8+** F3~~ ✓ (2026-07-27) — ressalva já no lugar via `hasZoneMunicipalities`; este item só removeu a lista + o campo.
+- Reusa: `MunicipalityMapPanel`, `BahiaMap`, `municipalitiesByMapKey`, `hasZoneMunicipalities`.
 
 ## Não escopo
 

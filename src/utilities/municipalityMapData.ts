@@ -106,7 +106,6 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
   const validVotesByYear: Record<string, Record<string, number>> = {}
   const statewideShareByYear: Record<string, number> = {}
   const competitiveRankByYear: Record<string, Record<string, FederalCompetitiveRank>> = {}
-  const zoneVotesBySlug = new Map<string, Record<string, number>>()
   // One polygon per catalog unit since B8 F2, so this index — the same one the
   // map navigates by — is also the key of every rollup below.
   const municipalitiesByMapKey = buildMunicipalitiesByMapKey(municipalities)
@@ -122,11 +121,6 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
       const votes = baseline.votesByYear[String(year)] ?? 0
       values[mapKey] = votes
       validValues[mapKey] = baseline.validVotesByYear[String(year)] ?? 0
-      if (municipality.kind === 'zona') {
-        const bySlug = zoneVotesBySlug.get(municipality.slug) ?? {}
-        bySlug[String(year)] = votes
-        zoneVotesBySlug.set(municipality.slug, bySlug)
-      }
     }
     valuesByYear[String(year)] = values
     validVotesByYear[String(year)] = validValues
@@ -163,12 +157,6 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
   const pledgeValuesByScenario = Object.fromEntries(
     VOTE_ESTIMATE_SCENARIOS.map((scenario) => [scenario, {} as Record<string, number>]),
   ) as Record<VoteEstimateScenario, Record<string, number>>
-  const zoneVotes2026BySlug = new Map<string, Record<VoteEstimateScenario, number>>()
-  const emptyZoneScenarioVotes = (): Record<VoteEstimateScenario, number> => ({
-    pessimistic: 0,
-    central: 0,
-    optimistic: 0,
-  })
 
   for (const municipality of municipalities) {
     const aggregate = pledgeAggregates.get(municipality.id) ?? emptyMunicipalityPledgeAggregate
@@ -181,29 +169,9 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
       if (votes > 0) {
         pledgeValuesByScenario[scenario][mapKeyForMunicipality(municipality)] = votes
       }
-      if (municipality.kind === 'zona') {
-        const byScenario = zoneVotes2026BySlug.get(municipality.slug) ?? emptyZoneScenarioVotes()
-        byScenario[scenario] = votes
-        zoneVotes2026BySlug.set(municipality.slug, byScenario)
-        if (scenario === DEFAULT_VOTE_ESTIMATE_SCENARIO) {
-          const bySlug = zoneVotesBySlug.get(municipality.slug) ?? {}
-          bySlug['2026'] = votes
-          zoneVotesBySlug.set(municipality.slug, bySlug)
-        }
-      }
     }
   }
   valuesByYear['2026'] = pledgeValuesByScenario[DEFAULT_VOTE_ESTIMATE_SCENARIO]
-
-  const zoneBreakdown = municipalities
-    .filter((municipality) => municipality.kind === 'zona')
-    .map((municipality) => ({
-      slug: municipality.slug,
-      name: municipality.name,
-      votesByYear: zoneVotesBySlug.get(municipality.slug) ?? {},
-      votes2026ByScenario: zoneVotes2026BySlug.get(municipality.slug) ?? emptyZoneScenarioVotes(),
-    }))
-    .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
 
   let comparison: MunicipalityMapComparison | null = null
   const compareCandidate = state.compare
@@ -263,7 +231,6 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
     projectedValidVotesByMapKey,
     municipalitiesByMapKey,
     hasZoneMunicipalities: municipalities.some((municipality) => municipality.kind === 'zona'),
-    zoneBreakdown,
     candidateName: BASELINE_TICKET_2022.candidate.name,
     comparison,
   }
