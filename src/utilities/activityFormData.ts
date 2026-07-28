@@ -7,6 +7,7 @@ import {
   nullableRelationshipFormValue,
   optionalFormText,
   repeatedRelationshipFormValues,
+  requiredFormText,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
 import {
@@ -15,11 +16,14 @@ import {
   activityOrigins,
   activityStatuses,
   MAX_ACTIVITY_DEMAND_DRAFTS,
+  tourStopDraftsSchema,
   type ActivityCreateInput,
   type ActivityDemandDraft,
   type ActivityUpdateInput,
+  type TourStopDraft,
 } from '@/lib/schemas/activity'
 import { parseBahiaDateTimeInput } from '@/utilities/campaignTime'
+import { MAX_TOUR_NAME_LENGTH, TOUR_EMPTY_MESSAGE } from '@/utilities/visitPlannerViews'
 
 type ParsedActivityTask = {
   title: string
@@ -136,6 +140,40 @@ export const parseActivityCreateFormData = (formData: FormData): ParsedActivityC
     organizations: shared.organizations.length ? shared.organizations : undefined,
     advisors: advisorIds.length ? advisorIds : undefined,
   }
+}
+
+/**
+ * E13 — the composer submits its stops as one bounded JSON field, the precedent
+ * `tasksJson`/`demandsJson` already set: the alternative is per-stop field names
+ * whose correlation has to be reconstructed from `FormData` ordering.
+ *
+ * The stop shape itself is a zod schema picked from the activity fields, so this
+ * boundary only has to decide the ONE thing zod cannot: which message the mesa
+ * sees. Titles are not parsed here — the action composes them from the município
+ * names it reads for the scope check.
+ */
+export type ParsedTourDraftFormData = {
+  tourName: string
+  note: string | undefined
+  stops: TourStopDraft[]
+}
+
+export const parseTourDraftFormData = (formData: FormData): ParsedTourDraftFormData => {
+  const tourName = requiredFormText(formData, 'tourName')
+  if (tourName.length > MAX_TOUR_NAME_LENGTH) {
+    throw new FormDataBoundaryError('tourName', 'Nome do giro muito longo.')
+  }
+
+  const parsed = tourStopDraftsSchema.safeParse(boundedJsonFormValue(formData, 'stopsJson', 20_000))
+  if (!parsed.success) {
+    throw new FormDataBoundaryError(
+      'stopsJson',
+      'Paradas do giro inválidas. Atualize a página e monte o giro novamente.',
+    )
+  }
+  if (parsed.data.length === 0) throw new FormDataBoundaryError('stopsJson', TOUR_EMPTY_MESSAGE)
+
+  return { tourName, note: optionalFormText(formData, 'note'), stops: parsed.data }
 }
 
 export type ParsedActivityUpdateFormData = ActivityUpdateInput & {

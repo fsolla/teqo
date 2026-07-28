@@ -28,6 +28,21 @@ import {
 const sourceRoot = resolve(process.cwd(), 'src')
 const localImportPattern = /(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]/g
 
+/**
+ * The client graphs overlap heavily — the ui kit sits in almost every one — so
+ * each file is read and scanned once for the whole suite instead of once per
+ * entry that reaches it.
+ */
+const sourceCache = new Map<string, string>()
+
+const readSource = (file: string): string => {
+  const cached = sourceCache.get(file)
+  if (cached !== undefined) return cached
+  const source = readFileSync(file, 'utf8')
+  sourceCache.set(file, source)
+  return source
+}
+
 const resolveLocalModule = (importer: string, specifier: string): string | null => {
   const base = specifier.startsWith('@/')
     ? resolve(sourceRoot, specifier.slice(2))
@@ -47,16 +62,32 @@ const resolveLocalModule = (importer: string, specifier: string): string | null 
   return null
 }
 
+const runtimeDependencyCache = new Map<string, string[]>()
+
+/** Local modules a file pulls in for VALUES — `import type` never reaches the client. */
+const runtimeDependenciesOf = (file: string): string[] => {
+  const cached = runtimeDependencyCache.get(file)
+  if (cached) return cached
+
+  const dependencies: string[] = []
+  for (const match of readSource(file).matchAll(localImportPattern)) {
+    if (/^import\s+type\b/.test(match[0])) continue
+    const dependency = resolveLocalModule(file, match[1]!)
+    // A `'use server'` module is a network boundary, not a bundled import.
+    if (dependency && !/^['"]use server['"]/.test(readSource(dependency))) {
+      dependencies.push(dependency)
+    }
+  }
+
+  runtimeDependencyCache.set(file, dependencies)
+  return dependencies
+}
+
 const collectLocalDependencyGraph = (entry: string, visited = new Set<string>()): Set<string> => {
   if (visited.has(entry)) return visited
   visited.add(entry)
-  const source = readFileSync(entry, 'utf8')
-  for (const match of source.matchAll(localImportPattern)) {
-    if (/^import\s+type\b/.test(match[0])) continue
-    const dependency = resolveLocalModule(entry, match[1]!)
-    if (dependency && !/^['"]use server['"]/.test(readFileSync(dependency, 'utf8'))) {
-      collectLocalDependencyGraph(dependency, visited)
-    }
+  for (const dependency of runtimeDependenciesOf(entry)) {
+    collectLocalDependencyGraph(dependency, visited)
   }
   return visited
 }
@@ -208,16 +239,18 @@ describe('campaign client module boundaries', () => {
     const clientEntries = readdirSync(sourceRoot, { recursive: true, withFileTypes: true })
       .filter((entry) => entry.isFile() && ['.ts', '.tsx'].includes(extname(entry.name)))
       .map((entry) => resolve(entry.parentPath, entry.name))
-      .filter((file) => /^['"]use client['"]/.test(readFileSync(file, 'utf8')))
+      .filter((file) => /^['"]use client['"]/.test(readSource(file)))
 
+    const reachable = new Set<string>()
     for (const entry of clientEntries) {
-      for (const dependency of collectLocalDependencyGraph(entry)) {
-        const source = readFileSync(dependency, 'utf8')
-        expect(dependency).not.toBe(resolve(sourceRoot, 'lib/formData.ts'))
-        expect(source, `${dependency} entered the client graph`).not.toMatch(
-          /(?:from\s+['"]node:|require\(['"]node:|\bBuffer\b)/,
-        )
-      }
+      for (const dependency of collectLocalDependencyGraph(entry)) reachable.add(dependency)
+    }
+
+    for (const dependency of reachable) {
+      expect(dependency).not.toBe(resolve(sourceRoot, 'lib/formData.ts'))
+      expect(readSource(dependency), `${dependency} entered the client graph`).not.toMatch(
+        /(?:from\s+['"]node:|require\(['"]node:|\bBuffer\b)/,
+      )
     }
   })
 })

@@ -31,6 +31,8 @@ export type CampaignConceptId =
   | 'cobertura-da-meta'
   | 'captura-regional'
   | 'benchmark-intra-ti'
+  | 'elegibilidade-para-visita'
+  | 'fase-do-calendario'
 
 export type CampaignConceptCategoryId = 'base' | 'diagnostico' | 'meta'
 
@@ -181,6 +183,35 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
       'Responde onde a perna vai na semana: defender reduto dormente ou abrir rede em expansão. A classe é sugestão, não sentença — ela nunca aparece sozinha, sempre com os dois fatores que a produziram, e a mesa pode decidir contra ela. Os cortes exatos (2 e 0,5) são ilustrativos: valem até o backtest contra 2014–2022 calibrá-los.',
     whereItAppears:
       'Card "Conta da cadeira" e capa do dossiê, no detalhe do município, coluna "Classe" da lista de municípios (com filtro e ordenação), e coluna "Classe" em `/campanha/territorios`.',
+  },
+  {
+    id: 'elegibilidade-para-visita',
+    categoryID: 'diagnostico',
+    title: 'Elegibilidade para visita',
+    oneLiner:
+      'Cinco condições que dizem se vale gastar um dia da agenda do candidato no município.',
+    formula:
+      'Volume: válidos projetados acima da mediana dos 435 municípios. Espaço para crescer: déficit de meta positivo, ou voto do campo sem captura acima da mediana. Rede de recepção: ao menos um assessor responsável E ao menos uma liderança ou um compromisso. Janela política: dobradinha estadual vinculada, ou tendência política registrada como favorável ou neutra. Encaixe em giro: ao menos um outro município do mesmo Território de Identidade com liderança ou compromisso — parada possível na mesma viagem.',
+    example:
+      'Um município grande, com déficit de meta, assessor e três lideranças, mas sem dobradinha e com tendência não registrada, fecha quatro de cinco: a condição que falta é a janela, e ela é acionável (registrar a conjuntura ou casar uma dobradinha).',
+    whyItMatters:
+      'A visita rende o que a rede local converte dela — sem quem receba, o dia do candidato vira foto. Por isso a leitura é uma checklist, e nunca uma nota de 0 a 100: um número composto esconde qual condição falta e cria confiança que o dado não sustenta. Exigir as cinco é o critério; a contraindicação ("não recomendado agora") é aviso com contra-oferta, jamais bloqueio — a coordenação decide contra ela quando a política pede. Os cortes são ilustrativos até o backtest calibrá-los.',
+    whereItAppears:
+      'Card "Elegibilidade para visita" no detalhe do município e a lista de candidatas no compositor de giros (`/campanha/atividades/giros`).',
+  },
+  {
+    id: 'fase-do-calendario',
+    categoryID: 'diagnostico',
+    title: 'Fase do calendário',
+    oneLiner: 'Em que etapa da campanha estamos — e, por consequência, para que serve uma visita.',
+    formula:
+      'Construção até 15/08 (véspera da abertura legal da propaganda), Consolidação de 16/08 a 27/09, Ativação de 28/09 até a votação em 04/10. A virada acontece à meia-noite no fuso da Bahia.',
+    example:
+      'A mesma reunião com lideranças é o produto certo em agosto e o produto errado na última semana, quando o dia rende mais em ato e mobilização de quem já está com a campanha.',
+    whyItMatters:
+      'A fase muda o produto da visita, não apenas a urgência: em julho ela existe para montar rede, em setembro para fechar compromissos e casar dobradinha, na última semana para mobilizar quem já decidiu. Sem esse rótulo, a agenda repete em outubro o formato que fazia sentido em julho. As duas datas de virada são âncoras reais (abertura da propaganda e véspera da eleição); o corte exato entre consolidação e ativação é decisão da coordenação.',
+    whereItAppears:
+      'Card "Elegibilidade para visita" no detalhe do município e o cabeçalho do compositor de giros.',
   },
   {
     id: 'quantis-do-mapa',

@@ -3,7 +3,7 @@ import {
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import config from '@payload-config'
-import { PlusIcon, SearchXIcon } from 'lucide-react'
+import { MapPinnedIcon, PlusIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
@@ -25,6 +25,7 @@ import { toActivityListViewModel } from '@/utilities/activityViewModels'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import { TOUR_COMPOSER_PATH } from '@/utilities/visitPlannerUrl'
 
 type ActivityListPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -59,12 +60,22 @@ export default async function ActivityListPage({ searchParams }: ActivityListPag
           </p>
         </div>
         {canCreate ? (
-          <Button asChild className="min-h-11">
-            <Link href="/campanha/atividades/nova">
-              <PlusIcon data-icon="inline-start" aria-hidden="true" />
-              Nova atividade
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {/* E13: the planner generates several drafts at once, so it sits next
+                to "Nova atividade" rather than replacing it. */}
+            <Button asChild variant="outline" className="min-h-11">
+              <Link href={TOUR_COMPOSER_PATH}>
+                <MapPinnedIcon data-icon="inline-start" aria-hidden="true" />
+                Planejar giro
+              </Link>
+            </Button>
+            <Button asChild className="min-h-11">
+              <Link href="/campanha/atividades/nova">
+                <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                Nova atividade
+              </Link>
+            </Button>
+          </div>
         ) : null}
       </header>
 
