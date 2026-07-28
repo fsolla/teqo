@@ -1,0 +1,41 @@
+---
+description: Estado do discovery de emendas parlamentares do mandato (verticais /mandato e /comunicacao — registro/ledger de emendas consumido pelas três verticais)
+---
+
+# Projeto — Emendas do mandato (discovery)
+
+## Status atual (2026-07-28)
+
+Discovery sintético COMPLETO (ciclo 3 de `docs/research/` — compêndio de 4 eixos, 4 personas, entrevistas em 2 rodadas com acareação, relatório consolidado, roteiro da sessão real). **Entrevista real ainda SEM data** — o próximo passo é agendar com a pessoa do gabinete que mantém a planilha de emendas hoje ([roteiro pronto](../../../docs/research/roteiro-entrevista-emendas-responsavel-real.md)). **Nenhum item de produto no roadmap, nenhuma vertical criada** — deliberado (ver decisões). Origem da investigação: visão de produto — mandato manteria um ledger de emendas em `/mandato`, consumido por `/campanha` (dossiê de município, pedido real O6 do coordenador-geral) e por `/comunicacao` (anunciar as ações do deputado).
+
+## Decisões-chave (quem + data)
+
+- **2026-07-28 (enquadramento do pedido):** isto é discovery, não implementação. **Nada entra no roadmap nem vira código antes da validação com a pessoa real — inclusive a criação das verticais `/mandato` e `/comunicacao`.** Qualquer registro novo da camada política passa pelo advogado antes de existir (o relatório §5 T6 e §8 são condição de existência, não sugestão).
+- **2026-07-28 (sessão de discovery):** método replicado dos ciclos 1–2 — literatura (4 eixos, incl. eixo D novo: dados públicos/APIs) → 4 personas sintéticas em subagents isolados (deputado, assessora de orçamento, comunicação de mandato, coordenador de campanha — esta última ancorada em evidência real [R] de 2026-07-23) → 2 rodadas com acareação cruzada (cede/mantém explícito) → relatório → roteiro real. Artefatos em `docs/research/` (ver README, "Ciclo 3").
+- **Kernel consolidado (a validar):** a camada FISCAL da emenda é pública e se reconstrói sozinha (código de 12 dígitos, D-1, push FNS ao autor); a camada POLÍTICA (pedido → promessa → anúncio → porquê) não existe em sistema nenhum, mora numa pessoa e morre primeiro sob pressão porque não tem cobrador; e a informação que existe não viaja (conciliação morre na mesa; ponte sem função; push morre no bolso do deputado). Em 2026, o calendário jurídico está dentro do fluxo ou o fluxo para.
+- **Convergências da acareação que valem contrato (se a trilha abrir):** "conciliar e ENTREGAR" (a página que viaja é o produto); **4 estados** (prometida/garantida/saiu/não saiu) com semântica travada e última milha blindada com peça pronta; fila dupla do dossiê (top-20 semanal + gatilho de agenda 72h); carimbo jurídico **por classe**, advogado revisa a tabela e não o card; registro "anunciado" só como subproduto do publicar (responder no fio).
+- **Fronteira inegociável (relatório §5 T6 + §8):** modelo dos três andares — o fato do pedido se escreve; a promessa se escreve com verbo exato; **a taxa de câmbio (alocação × retorno eleitoral) NUNCA se escreve** — campo obrigatório que as pessoas temem "produz mentira ou abandono". O porquê do VOTO pode ter casa; o porquê da ALOCAÇÃO morre oral por desenho jurídico. Não cruzar emendas com projeção de votos em tela ou export.
+
+## Anti-goals (relatório §8)
+
+Sem contabilidade de contrapartida eleitoral; sem registro da negociação política (combinado de palanque, leitura "fulano comprando liderança"); sem automatizar decisão/timing de anúncio; sem espelhar sistema público (o painel do TCU é "vitrine, não ferramenta" — não re-hospedar o Portal); sem formulário para o campo (o território fala por áudio); sem presumir CRM de pedidos antes de testar a dor real (a planilha da pessoa pode já resolver); sem tratar o defeso como pausa (2º semestre = RAP + janelas de agosto/outubro + a lista do pós-eleição).
+
+## Threads abertas
+
+1. **Agendar a entrevista real** com a pessoa do gabinete que mantém a planilha de emendas. Roteiro pronto: [`roteiro-entrevista-emendas-responsavel-real.md`](../../../docs/research/roteiro-entrevista-emendas-responsavel-real.md). Preparação obrigatória ANTES: levantar as emendas reais do mandato (Portal da Transparência por autor + Painel SIOP + painel TCU, impresso), reler §§2/9/10 do relatório, levar a linha do tempo do ciclo (janela de saneamento 22–31/08; alteração 22–31/10; justificativas até 20/01), checar se o mandato usa o app do FNS, combinar enquadramento com o coordenador-geral SEM contaminar (não contar as respostas dele).
+2. **Pós-entrevista:** preencher Interview Evidence + Snapshot em `docs/CUSTOMER.md`, veredito por aposta no §9 do relatório (14 apostas), e decidir abrir/adiar/matar as verticais. Condições de vida/morte já fixadas no §9 do relatório. Se abrir: registrar itens via skill `roadmap-items` a partir do OST draft (OE1–OE10) e passar o desenho do registro (3 andares + anti-goals) pela revisão do advogado antes de qualquer schema.
+3. Itens do compêndio marcados **[VERIFICar]** (ex.: defasagens exatas de SIGA/TransfereGov, data da API REST do TransfereGov) — confirmar com a pessoa real/documentação quando a trilha abrir.
+4. **Sinergia com o ciclo 2 (finanças):** a entrevista real de finanças é 2026-07-29; se a trilha financeira abrir, o "compromisso com contrapartida = entrega física" de lá e o registro de compromisso territorial daqui (OE1) tocam o mesmo objeto — não criar dois registros de compromisso.
+
+## Contexto normativo 2026 (resumo — detalhes no compêndio, eixo B)
+
+Defeso desde 04/07 (transferência voluntária vedada; empenhar pode); inauguração proibida a candidato (art. 77 — circunscrição = o estado inteiro; precedente de cassação por comparecimento ostensivo); CEAP fechada para divulgação de candidato desde 06/06 (Ato da Mesa 40/2012); publicidade institucional suspensa; prefeitura exaltando candidato = risco de cassação do DIPLOMA (TSE 2024); LDO 2026 mandou pagar 65% (saúde/assistência/especiais) até 30/06 — R$ 17,5 bi quitados, recorde; AP 2670 (STF, mar/2026) condenou parlamentar por mercadejar emenda com planilha como peça de acusação; LC 210/2024 (lista fechada de impedimentos, ata, solicitante identificado); ~R$ 40 mi/deputado (metade ASPS), bancada BA R$ 415 mi.
+
+## Links
+
+- Compêndio: `docs/research/literatura-emendas-mandato-df.md`
+- Relatório (canônico do ciclo, pendente validação): `docs/research/relatorio-entrevistas-emendas-personas.md`
+- Roteiro da sessão real: `docs/research/roteiro-entrevista-emendas-responsavel-real.md`
+- Fichas: `persona-emendas-parlamentar.md` · `persona-emendas-assessor-orcamento.md` · `persona-emendas-coordenador-comunicacao.md` · `persona-emendas-coordenador-campanha.md` (anexo [R] = extrato da sessão real 2026-07-23)
+- Evidência real de campo: `docs/CUSTOMER.md` (Interview Snapshot 2026-07-23 — O6 dossiê pré-agenda com "emendas aportadas", caso Nazaré das Farinhas)
+- Precedente metodológico: ciclos 1–2 em `docs/research/README.md`; notebook irmão `.cursor/rules/projects/financas-campanha.mdc`
