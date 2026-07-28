@@ -18,6 +18,7 @@ import {
   type SuggestionTriageLevel,
 } from '@/lib/suggestionCatalog'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
+import { firstFormActionMessage } from '@/utilities/campaignFormFields'
 
 /** The slice of the evaluator's view model the card renders — texts come from the catalog. */
 export type SuggestionCardData = {
@@ -35,15 +36,6 @@ type SuggestionResolveAction = (
 ) => Promise<CampaignFormActionState>
 
 const GENERIC_ERROR_MESSAGE = 'Não foi possível registrar a decisão. Tente novamente.'
-
-const firstErrorMessage = (state: CampaignFormActionState): string => {
-  if ('message' in state && state.message) return state.message
-  if ('fieldErrors' in state && state.fieldErrors) {
-    const first = Object.values(state.fieldErrors).flat()[0]
-    if (first) return first
-  }
-  return GENERIC_ERROR_MESSAGE
-}
 
 /**
  * E11 — one triggered pattern as a decision card: the reading, the observed
@@ -103,16 +95,16 @@ export const SuggestionCard = ({
     }
     startTransition(async () => {
       const result = await resolveAction({}, formData)
-      if ('status' in result && result.status === 'success') {
+      if (result.status === 'success') {
         // The card leaves the queue when the revalidated RSC lands — the same
         // transition — so the toast is the persistent copy of what happened.
         toast.success(result.message)
         setMode(null)
         return
       }
-      const message = firstErrorMessage(result)
-      setErrorMessage(message)
-      toast.error(message)
+      // One channel only: the card never unmounts on failure, so the inline
+      // `role="alert"` line is the announcement — a toast would say it twice.
+      setErrorMessage(firstFormActionMessage(result) ?? GENERIC_ERROR_MESSAGE)
     })
   }
 

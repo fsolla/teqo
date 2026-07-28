@@ -18,6 +18,7 @@ import {
   mapCampaignFormActionError,
   type CampaignFormErrorState,
 } from '@/utilities/campaignFormActionError'
+import { firstFormActionMessage } from '@/utilities/campaignFormFields'
 
 export type SupporterVoteIntentionFormState = {
   status?: 'success'
@@ -36,14 +37,8 @@ const safeVoteIntentionMessages = [
 ] as const
 
 const toMessageOnlyState = (mapped: CampaignFormErrorState<unknown>): { message?: string } => {
-  if (mapped.message) return { message: mapped.message }
-  if (!mapped.fieldErrors) return {}
-
-  const firstFieldMessage = Object.values(mapped.fieldErrors)
-    .flat()
-    .find((message) => message.length > 0)
-
-  return firstFieldMessage ? { message: firstFieldMessage } : {}
+  const message = firstFormActionMessage(mapped)
+  return message ? { message } : {}
 }
 
 export const setSupporterVoteIntentionFormAction = async (

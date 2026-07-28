@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { resolveSuggestionRecord } from '@/app/(campaign)/campanha/actions/suggestion'
 import { SUGGESTION_STALE_MESSAGE } from '@/lib/schemas/suggestion'
+import { DAY_MS } from '@/lib/suggestionCatalog'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import config from '@/payload.config'
 import {
@@ -26,8 +27,6 @@ const campaignFixtures = installCampaignFixtures({
     payload = nextPayload
   },
 })
-
-const DAY_MS = 86_400_000
 
 /**
  * E11's loader meets real rows here: the access scope, the four auxiliary
@@ -354,6 +353,28 @@ describe('resolveSuggestionRecord (E11)', () => {
     // The acceptance now suppresses the pattern on the next load.
     const bundle = await suggestionsFor(coordinator, municipality.id)
     expect(bundle.suggestions.some((suggestion) => suggestion.patternId === 'P7')).toBe(false)
+  })
+
+  it('clamps the composed rationale so a maximal note still records', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    await stageStalePledge(fixtures, municipality)
+
+    // The note alone sits at the collection cap; the menu-label prefix would
+    // push the composition past it and Payload would reject the create with a
+    // message no retry could fix.
+    const { decision } = await resolveSuggestionRecord(payload, coordinator, {
+      municipality: municipality.id,
+      patternId: 'P7',
+      outcome: 'aceita',
+      chosenActionId: 'diagnostico-diferencial',
+      note: 'x'.repeat(2000),
+    })
+    await ownDecisions(fixtures, municipality.id)
+
+    expect(decision.rationale).toHaveLength(2000)
+    expect(decision.rationale).toContain('Diagnóstico diferencial')
   })
 
   it('postponing snoozes with a recorded suppressUntil', async () => {

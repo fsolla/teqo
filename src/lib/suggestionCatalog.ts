@@ -147,6 +147,11 @@ export const SUGGESTION_SUPPRESSION_DAYS = {
 export const suggestionPostponeDays = (level: SuggestionTriageLevel): number =>
   level >= 4 ? 14 : 7
 
+/** Derived over every level so a recalibration cannot silently invert them. */
+const TRIAGE_LEVELS: readonly SuggestionTriageLevel[] = [1, 2, 3, 4, 5]
+const SHORTEST_POSTPONE_DAYS = Math.min(...TRIAGE_LEVELS.map(suggestionPostponeDays))
+const LONGEST_POSTPONE_DAYS = Math.max(...TRIAGE_LEVELS.map(suggestionPostponeDays))
+
 /** Windows the evaluator uses when it assembles signal/agenda inputs. */
 export const SUGGESTION_INPUT_WINDOWS = {
   /** Days an adversary signal stays "recent" for P1. */
@@ -162,7 +167,7 @@ export const SUGGESTION_INPUT_WINDOWS = {
   decisionDays: Math.max(
     SUGGESTION_SUPPRESSION_DAYS.aceita,
     SUGGESTION_SUPPRESSION_DAYS.descarta,
-    suggestionPostponeDays(5),
+    LONGEST_POSTPONE_DAYS,
   ),
 } as const
 
@@ -206,7 +211,7 @@ export const isSuggestionSuppressedByDecision = (
     const untilMs = typeof untilRaw === 'string' ? new Date(untilRaw).getTime() : Number.NaN
     if (!Number.isNaN(untilMs)) return now.getTime() < untilMs
     // Malformed snapshot: fall back to the shortest postpone rather than never expiring.
-    return now.getTime() < decidedAtMs + 7 * DAY_MS
+    return now.getTime() < decidedAtMs + SHORTEST_POSTPONE_DAYS * DAY_MS
   }
   if (decision.outcome === 'aceita') {
     return now.getTime() < decidedAtMs + SUGGESTION_SUPPRESSION_DAYS.aceita * DAY_MS

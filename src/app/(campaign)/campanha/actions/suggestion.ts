@@ -12,6 +12,7 @@ import {
   DAY_MS,
   getSuggestionPattern,
   isSuggestionSuppressedByDecision,
+  SUGGESTION_TEXT_MAX_LENGTH,
   suggestionPostponeDays,
 } from '@/lib/suggestionCatalog'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO } from '@/lib/voteEstimate'
@@ -62,12 +63,17 @@ export const resolveSuggestionRecord = async (
     ? (pattern.menu.find((action) => action.id === data.chosenActionId) ?? null)
     : null
   const note = data.note?.trim()
-  const rationale =
+  const composedRationale =
     data.outcome === 'aceita'
       ? `${chosenAction?.label ?? 'Ação do menu'}${note ? ` — ${note}` : ''}`
       : data.outcome === 'adiada'
         ? `Adiada por ${postponeDays} dias.${note ? ` ${note}` : ''}`
         : (note ?? 'Descartada — leitura alternativa registrada.')
+  // The note alone may already be at the cap the collection enforces, so the
+  // composed prefix (menu label / postpone sentence) can push past it — and a
+  // rejected create would read as a generic error no retry could fix. The
+  // prefix carries the decision; only a maximal note loses its tail.
+  const rationale = composedRationale.slice(0, SUGGESTION_TEXT_MAX_LENGTH)
 
   const decision = await withPayloadTransaction(
     payload,

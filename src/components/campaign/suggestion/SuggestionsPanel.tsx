@@ -82,15 +82,34 @@ export const SuggestionsPanel = ({
 
     {suggestions.length ? (
       <ul className="m-0 flex list-none flex-col gap-3 p-0 [&>li]:mt-0">
-        {suggestions.map((suggestion) => (
-          <li key={`${suggestion.municipalityID}:${suggestion.patternId}`}>
-            <SuggestionCard
-              suggestion={suggestion}
-              showMunicipality={showMunicipality}
-              resolveAction={resolveAction}
-            />
-          </li>
-        ))}
+        {suggestions.map(
+          ({
+            municipalityID,
+            municipalityName,
+            municipalitySlug,
+            patternId,
+            triageLevel,
+            factors,
+          }) => (
+            <li key={`${municipalityID}:${patternId}`}>
+              <SuggestionCard
+                // Picked field by field: the loader's view model also carries the
+                // snapshot `metrics`, which only the server action reads — spreading
+                // the whole object would serialize them into the RSC payload.
+                suggestion={{
+                  municipalityID,
+                  municipalityName,
+                  municipalitySlug,
+                  patternId,
+                  triageLevel,
+                  factors,
+                }}
+                showMunicipality={showMunicipality}
+                resolveAction={resolveAction}
+              />
+            </li>
+          ),
+        )}
       </ul>
     ) : (
       emptyState

@@ -11,6 +11,9 @@ import {
 export const SUGGESTION_STALE_MESSAGE =
   'A sugestão não está mais ativa — a fila foi atualizada. Recarregue para ver o estado atual.'
 
+/** The three outcomes a card can record — one spelling for zod and the form boundary. */
+export const SUGGESTION_OUTCOMES = ['aceita', 'descarta', 'adiada'] as const
+
 /**
  * E11 — one recorded decision about one triggered pattern. What each outcome
  * requires is schema, not form courtesy: an acceptance without the chosen
@@ -21,7 +24,7 @@ export const suggestionDecisionSchema = z
   .object({
     municipality: positiveRelationshipId,
     patternId: z.enum(suggestionPatternIds),
-    outcome: z.enum(['aceita', 'descarta', 'adiada']),
+    outcome: z.enum(SUGGESTION_OUTCOMES),
     /** The menu action taken — required (and validated against the menu) on `aceita`. */
     chosenActionId: z.string().trim().max(120).optional(),
     note: z.string().trim().max(SUGGESTION_TEXT_MAX_LENGTH).optional(),

@@ -23,6 +23,7 @@ import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/Popover'
 import { sameIdSet } from '@/lib/sameIdSet'
 import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
+import { firstFormActionMessage } from '@/utilities/campaignFormFields'
 
 const COLLAPSED_CHIP_ROWS = 3
 /** Matches `gap-1.5` on the chip row, and `max-h-18` (72px) is this math at a 20px chip. */
@@ -350,7 +351,7 @@ export const RelationChipCell = ({
       // Undo only THIS delta: reverting to the server baseline would also wipe
       // a sibling toggle from the same burst that already saved.
       setOptimistic((current) => withDelta(current ?? latestIds.current, changedIds, !assigned))
-      const message = result.message ?? updateErrorMessage
+      const message = firstFormActionMessage(result) ?? updateErrorMessage
       setFeedback({ kind: 'error', message })
       toast.error(message)
     })

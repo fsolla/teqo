@@ -161,6 +161,13 @@ const lqForYear = (baseline: MunicipalityFederalBaseline, year: number): number 
   return own / valid / (totals.ownVotes / totals.validVotes)
 }
 
+/** Campo federal votes ÷ valid votes, 2022 — P3's "captura agregada do campo". */
+const fieldShareOfValid2022 = (baseline: MunicipalityFederalBaseline): number | null => {
+  const valid = baseline.validVotesByYear[String(ELECTION_YEAR_2022)] ?? 0
+  const campo = baseline.campoFederalVotesByYear[String(ELECTION_YEAR_2022)] ?? 0
+  return valid > 0 ? campo / valid : null
+}
+
 type LatestDecision = Pick<AllocationDecision, 'outcome' | 'snapshot' | 'createdAt'>
 
 const compareSuggestions = (
@@ -372,11 +379,7 @@ export const loadMunicipalitySuggestions = async (
       uncapturedFieldVotes: uncapturedFieldVotes(baseline),
       uncapturedFieldVotesCut: catalogMedianUncapturedFieldVotes(),
       captureRate2022: potential.captureRate2022,
-      fieldShareOfValid2022: (() => {
-        const valid = baseline.validVotesByYear[String(ELECTION_YEAR_2022)] ?? 0
-        const campo = baseline.campoFederalVotesByYear[String(ELECTION_YEAR_2022)] ?? 0
-        return valid > 0 ? campo / valid : null
-      })(),
+      fieldShareOfValid2022: fieldShareOfValid2022(baseline),
       intraFieldShare2022: potential.intraFieldShareByYear[ELECTION_YEAR_2022] ?? null,
       intraFieldShareStateStandard2022: intraFieldShareStateStandard2022(),
       advisorCount: uniqueRelationshipIds(municipality.advisors).length,
@@ -404,12 +407,14 @@ export const loadMunicipalitySuggestions = async (
       })
     }
 
+    // Every field comes from `input` — the snapshot's contract is "the numbers
+    // the decision was made ON", which is exactly what the predicates saw.
     const metrics: SuggestionMetrics = {
-      lq2022: input.lqByYear[ELECTION_YEAR_2022] ?? null,
-      coverageRatio: coverage.coverageRatio,
-      coverageDeficit: coverage.deficit,
-      projectedValidVotes: potential.projectedValidVotes,
-      pledgeCount: pledgeAggregate.pledgeCount,
+      lq2022: input.lqByYear[ELECTION_YEAR_2022],
+      coverageRatio: input.coverageRatio,
+      coverageDeficit: input.coverageDeficit,
+      projectedValidVotes: input.projectedValidVotes,
+      pledgeCount: input.pledgeCount,
       leadershipCount: input.leadershipCount,
       advisorCount: input.advisorCount,
       lastSignalAgeDays: input.lastSignalAgeDays,

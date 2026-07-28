@@ -7,14 +7,12 @@ import {
   requiredFormText,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
-import { SUGGESTION_STALE_MESSAGE } from '@/lib/schemas/suggestion'
+import { SUGGESTION_OUTCOMES, SUGGESTION_STALE_MESSAGE } from '@/lib/schemas/suggestion'
 import { suggestionPatternIds } from '@/lib/suggestionCatalog'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
-
-const SUGGESTION_OUTCOMES = ['aceita', 'descarta', 'adiada'] as const
 
 /**
  * E11 — accept / postpone / dismiss one suggestion card. Lives at the `(app)`
