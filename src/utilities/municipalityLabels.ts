@@ -32,6 +32,9 @@ export const municipalityPriorityLabels: Record<NonNullable<Municipality['priori
   normal: 'Normal',
 }
 
+/** List name-column flag tooltip / `aria-label` — not the short filter label above. */
+export const municipalityPriorityIndicatorLabel = 'Município prioritário' as const
+
 export type PoliticalTrendStatus = NonNullable<
   NonNullable<Municipality['politicalTrend']>['status']
 >
