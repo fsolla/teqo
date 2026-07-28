@@ -10,6 +10,7 @@ import {
   type ActivityLeadershipOption,
 } from '@/utilities/activityLeadershipOptions'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { CAMPAIGN_AUTH_REQUIRED_MESSAGE } from '@/utilities/campaignFormActionError'
 
 const CONTACT_OPTION_LIMIT = 20
 
@@ -17,7 +18,7 @@ export const searchActivityContactOptions = async (
   query: string,
 ): Promise<ContactComboboxOption[]> => {
   const [payload, user] = await Promise.all([getPayload({ config }), getCampaignUser()])
-  if (!user) throw new Error('Autenticação necessária.')
+  if (!user) throw new Error(CAMPAIGN_AUTH_REQUIRED_MESSAGE)
 
   const normalizedQuery = typeof query === 'string' ? query : ''
   if (!isContactSearchQueryReady(normalizedQuery)) return []
@@ -45,7 +46,7 @@ export const searchActivityLeadershipOptionsAction = async (
   query: string,
 ): Promise<ActivityLeadershipOption[]> => {
   const [payload, user] = await Promise.all([getPayload({ config }), getCampaignUser()])
-  if (!user) throw new Error('Autenticação necessária.')
+  if (!user) throw new Error(CAMPAIGN_AUTH_REQUIRED_MESSAGE)
 
   return searchActivityLeadershipOptions(payload, user, query)
 }

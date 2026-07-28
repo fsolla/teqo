@@ -168,6 +168,46 @@ describe('campaign formActions convention', () => {
   })
 })
 
+describe('campaign JSON mutation route convention', () => {
+  // The cells' quick edits POST to cookie-authenticated route handlers, so each
+  // one needs the same-origin check. Written by hand it is a line a new route
+  // forgets, and forgetting it fails OPEN — hence the wrapper (B32+ F2), and
+  // hence this sweep, which is what stops the sixth route from opting out.
+  //
+  // It sweeps all of `src/app` and not just `(campaign)`: a cookie-authenticated
+  // endpoint written under `api/` would be exactly as exposed and exactly as
+  // invisible, so the exceptions are declared here with their reason instead of
+  // being implied by a folder.
+  const allowlist = new Map<string, string>([
+    ['src/app/(payload)/api/[...slug]/route.ts', "re-export of Payload's own handler and auth"],
+    ['src/app/(payload)/api/graphql/route.ts', "re-export of Payload's own handler and auth"],
+    [
+      'src/app/(frontend)/api/revalidate/route.ts',
+      'server-to-server: authenticated by a secret header, deliberately callable cross-origin',
+    ],
+  ])
+
+  it('builds every POST route under src/app with campaignJsonMutationRoute', () => {
+    const offenders = walkSourceFiles(resolve(repoRoot, 'src/app'), ['.ts'])
+      .filter((file) => basename(file) === 'route.ts')
+      .map(repoPath)
+      .filter((path) => !allowlist.has(path))
+      .filter((path) => {
+        const source = readFileSync(resolve(repoRoot, path), 'utf8')
+        // GET-only handlers (manifest, service worker) have no cookie-authed
+        // mutation to guard — matched on the export and not the bare word, so a
+        // GET route whose comment says "POST" is not a false offender. On the
+        // positive side the binding is what is matched, not a mention of the
+        // wrapper, which stops a file from pairing one wrapped handler with a
+        // second hand-rolled one.
+        if (!/export (const|async function) POST\b/.test(source)) return false
+        return !/export const POST = campaignJsonMutationRoute\(/.test(source)
+      })
+
+    expect(offenders, 'build the handler with campaignJsonMutationRoute').toEqual([])
+  })
+})
+
 describe('public site metadata global access', () => {
   // An empty `metadata` global (fresh DB / poisoned unstable_cache) used to
   // crash `next build` via raw field access. Every `getCachedGlobal('metadata')`

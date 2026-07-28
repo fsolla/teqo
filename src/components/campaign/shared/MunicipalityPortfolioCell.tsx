@@ -799,6 +799,12 @@ export const MunicipalityPortfolioCell = ({
         </>
       </CampaignCellEditOverlay>
 
+      {/*
+       * This cell keeps its own region rather than the shell's `statusMessage`:
+       * the shell mounts that one from the first open of the overlay, and on a
+       * fine pointer this cell's editor IS the cell — the Drawer never opens,
+       * so nothing would ever be announced.
+       */}
       <p className="sr-only" role="status" aria-live="polite">
         {statusMessage}
       </p>

@@ -6,6 +6,7 @@ import { getPayload, type Payload } from 'payload'
 import type { CampaignUser } from '@/payload-types'
 import { isCampaignStaff, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { CAMPAIGN_AUTH_REQUIRED_MESSAGE } from '@/utilities/campaignFormActionError'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 
 export type CampaignActionContext = {
@@ -20,7 +21,7 @@ export const requireCampaignUser = async (
   getUser: CampaignUserGetter = getCampaignUser,
 ): Promise<CampaignUser> => {
   const actor = await getUser()
-  if (!actor) throw new Error('Autenticação necessária.')
+  if (!actor) throw new Error(CAMPAIGN_AUTH_REQUIRED_MESSAGE)
   return actor
 }
 
