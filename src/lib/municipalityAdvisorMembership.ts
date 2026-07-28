@@ -1,4 +1,8 @@
-import { MAX_ADVISORS_PER_MUNICIPALITY } from '@/lib/schemas/municipality'
+import { nextIdsAfterMembership } from '@/lib/relationMembershipDelta'
+import {
+  MAX_ADVISORS_PER_MUNICIPALITY,
+  MUNICIPALITY_ADVISORS_CAP_MESSAGE,
+} from '@/lib/schemas/municipality'
 
 /**
  * Returns the next advisor-id list after applying one membership change, or
@@ -11,17 +15,8 @@ export const nextAdvisorIdsAfterMembership = (
   currentAdvisorIDs: readonly number[],
   advisorId: number,
   assigned: boolean,
-): number[] | null => {
-  const alreadyAssigned = currentAdvisorIDs.includes(advisorId)
-  if (assigned === alreadyAssigned) return null
-
-  if (assigned) {
-    if (currentAdvisorIDs.length >= MAX_ADVISORS_PER_MUNICIPALITY) {
-      throw new Error(
-        `Cada município aceita no máximo ${MAX_ADVISORS_PER_MUNICIPALITY} assessores.`,
-      )
-    }
-    return [...currentAdvisorIDs, advisorId]
-  }
-  return currentAdvisorIDs.filter((id) => id !== advisorId)
-}
+): number[] | null =>
+  nextIdsAfterMembership(currentAdvisorIDs, advisorId, assigned, {
+    max: MAX_ADVISORS_PER_MUNICIPALITY,
+    message: MUNICIPALITY_ADVISORS_CAP_MESSAGE,
+  })

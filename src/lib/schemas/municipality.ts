@@ -7,9 +7,29 @@ import { voteEstimateScenarioFieldsSchema } from '@/lib/schemas/votePledge'
 export const politicalTrendStatuses = ['favoravel', 'neutra', 'desfavoravel'] as const
 export type PoliticalTrendStatusValue = (typeof politicalTrendStatuses)[number]
 
+/**
+ * Anti-payload bound, not a domain rule: `municipality.stateDeputies` has no
+ * product-level ceiling (a município can be dobrado with any number of
+ * deputados), and the catalog itself caps out at 435. Named so the chip-batch
+ * write (B37) and this whole-array strategy update stay on the same number —
+ * they parse through the same schema, and a batch write that pushed past a
+ * lower bound would leave the strategy ficha unsavable on its next submit.
+ */
+export const MAX_STATE_DEPUTIES_PER_MUNICIPALITY = 435
+
+/**
+ * Anti-payload bound on a batch that names many municípios at once (a whole
+ * território/ZE): the catalog is 435 rows and ids are unique, so this is the
+ * whole universe and not a product rule. Named because both município-side
+ * batch schemas (`advisor`, `stateDeputy`) were carrying a bare `435`.
+ */
+export const MAX_MUNICIPALITIES_PER_BATCH = 435
+
+export const MUNICIPALITY_STATE_DEPUTIES_CAP_MESSAGE = `Cada município aceita no máximo ${MAX_STATE_DEPUTIES_PER_MUNICIPALITY} dobradinhas.`
+
 const stateDeputiesArraySchema = z
   .array(positiveRelationshipId)
-  .max(20)
+  .max(MAX_STATE_DEPUTIES_PER_MUNICIPALITY)
   .transform((ids) => [...new Set(ids)])
 
 export const municipalityStrategyUpdateSchema = z.object({
@@ -40,6 +60,8 @@ export const parsePoliticalTrendStatusFormValue = (
 
 export const MAX_ADVISORS_PER_MUNICIPALITY = 10
 
+export const MUNICIPALITY_ADVISORS_CAP_MESSAGE = `Cada município aceita no máximo ${MAX_ADVISORS_PER_MUNICIPALITY} assessores.`
+
 export const municipalityAdvisorsAssignmentSchema = z.object({
   municipality: positiveRelationshipId,
   advisors: z
@@ -60,7 +82,7 @@ export const MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE =
 
 export const MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES = [
   MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE,
-  `Cada município aceita no máximo ${MAX_ADVISORS_PER_MUNICIPALITY} assessores.`,
+  MUNICIPALITY_ADVISORS_CAP_MESSAGE,
 ] as const
 
 export const MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE =

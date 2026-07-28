@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import { updateStateDeputy } from '@/app/(campaign)/campanha/actions/stateDeputy'
 import { nullableFormText, requiredRelationshipFormValue } from '@/lib/formData'
+import { STATE_DEPUTY_STAFF_MESSAGE } from '@/lib/schemas/stateDeputy'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
@@ -23,6 +24,6 @@ export const updateStateDeputyFormAction = async (
       revalidatePath('/campanha/dobradinhas/[slug]', 'page')
       return { message: 'Dobradinha atualizada.' }
     },
-    safeMessages: ['Somente a coordenação e a assessoria gerenciam dobradinhas.'],
+    safeMessages: [STATE_DEPUTY_STAFF_MESSAGE],
     genericMessage: 'Não foi possível salvar a dobradinha. Verifique seu acesso e tente novamente.',
   })

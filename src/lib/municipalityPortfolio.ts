@@ -125,6 +125,38 @@ const portfolioIndexDerivations = (
   return derived
 }
 
+/**
+ * The index an advisor's suggestions may draw from, as ONE array shared by every
+ * row — a per-row `.filter()` returns a distinct array identity even when the
+ * content is identical, which silently defeats the `WeakMap` above and makes each
+ * searching row rebuild the same O(435) derivation. Keyed on both inputs because
+ * the scope belongs to the actor, not to the index.
+ */
+const scopedIndexByAddableIds = new WeakMap<
+  ReadonlySet<number>,
+  WeakMap<readonly MunicipalityPortfolioIndexEntry[], readonly MunicipalityPortfolioIndexEntry[]>
+>()
+
+export const scopedPortfolioIndex = (
+  index: readonly MunicipalityPortfolioIndexEntry[],
+  addableIds: ReadonlySet<number> | undefined,
+): readonly MunicipalityPortfolioIndexEntry[] => {
+  if (!addableIds) return index
+
+  let byIndex = scopedIndexByAddableIds.get(addableIds)
+  if (!byIndex) {
+    byIndex = new WeakMap()
+    scopedIndexByAddableIds.set(addableIds, byIndex)
+  }
+
+  const cached = byIndex.get(index)
+  if (cached) return cached
+
+  const scoped = index.filter((entry) => addableIds.has(entry.id))
+  byIndex.set(index, scoped)
+  return scoped
+}
+
 const municipalityIdsForTseZone = (
   zoneNumber: number,
   bySlug: Map<string, MunicipalityPortfolioIndexEntry>,

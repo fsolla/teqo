@@ -219,6 +219,7 @@ const leadershipColumns = ({
       <LeadershipStateDeputyRelationCell
         direction="fromLeadership"
         fixedId={row.id}
+        ownerName={row.name}
         items={row.stateDeputies.map((deputy) => ({
           id: deputy.id,
           label: deputy.name,
