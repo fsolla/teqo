@@ -59,6 +59,7 @@ import {
 import {
   buildLeadershipListHref,
   formatLeadershipListSortSummary,
+  leadershipListSortLabels,
   resolveLeadershipListSort,
   resolveLeadershipListUrl,
   type LeadershipListState,
@@ -126,7 +127,7 @@ const leadershipColumns = ({
 }): Array<CampaignTableColumn<LeadershipRowViewModel>> => [
   {
     id: 'name',
-    label: 'Nome',
+    label: leadershipListSortLabels.name,
     mandatory: true,
     head: (
       <LeadershipSortableHead state={state} sortKey="name">
@@ -162,7 +163,7 @@ const leadershipColumns = ({
   },
   {
     id: 'supportStatus',
-    label: 'Status',
+    label: leadershipListSortLabels.supportStatus,
     head: (
       <LeadershipSortableHead state={state} sortKey="supportStatus" filterParam="supportStatus">
         Status
@@ -174,7 +175,7 @@ const leadershipColumns = ({
   },
   {
     id: 'sector',
-    label: 'Setor',
+    label: leadershipListSortLabels.sector,
     head: (
       <LeadershipSortableHead state={state} sortKey="sector" filterParam="sector">
         Setor
@@ -256,6 +257,7 @@ const leadershipColumns = ({
   },
   {
     id: 'updatedAt',
+    label: leadershipListSortLabels.updatedAt,
     head: (
       <LeadershipSortableHead state={state} sortKey="updatedAt">
         Última atualização
