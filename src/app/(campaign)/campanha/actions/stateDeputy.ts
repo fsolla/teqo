@@ -106,8 +106,9 @@ export const setStateDeputyMunicipalitiesBatchRecord = async (
 ) => {
   const { stateDeputyId, municipalityIds, assigned } =
     stateDeputyMunicipalitiesBatchSchema.parse(input)
-  // Already deduped by the schema's `.transform`; sorted only so the advisory
-  // locks below are always taken in the same order (deadlock avoidance).
+  // Already deduped by the schema's `.transform`; sorted only so a batch applies
+  // and reports in a stable order — `acquireTextAdvisoryLocks` sorts its own keys,
+  // so the deadlock-avoidance ordering does not depend on this line.
   const uniqueMunicipalityIds = [...municipalityIds].sort((left, right) => left - right)
 
   return withPayloadTransaction(
