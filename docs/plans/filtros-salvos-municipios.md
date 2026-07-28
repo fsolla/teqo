@@ -1,142 +1,76 @@
 # B18 — Filtros salvos na lista de Municípios (+ acesso rápido no sidebar)
 
-Status: rascunho — **costuras prontas desde o Pass 2 W1 (2026-07-25):** o estado de URL é canônico e serializável (`municipalityListUrl.ts`, contrato congelado); salvar filtro = nomear a serialização atual
-Atualizado em: 2026-07-24
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Demais itens abertos, B18; superfície de coordenação)
-Impeccable: B — encaixe em `MunicipalityFilters` / barra slim + `CampaignSidebar` (2º nível sob Municípios); sem rota nova
-Appetite: ~1–1,5 dia eng; persistência local + Salvar com nome + submenu hover/sticky no sidebar; sem migration, sem collection, sem Consent
+Status: ✓ entregue (2026-07-28) — sem migration, sem collection, sem server action, sem `Consent`
+Atualizado em: 2026-07-28
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (B18; superfície de coordenação)
+Impeccable: B — craft + critique + polish em `MunicipalityFilters` e `CampaignSidebar`; sem rota nova
+Appetite: ~1–1,5 dia eng (gasto: dentro)
 Responsável: —
 
-## Design (Impeccable)
+## O que ficou de pé
 
-Âncoras: `PRODUCT.md` (princípios 2 — clareza sob pressão — e 8 — Feel the action; exceção justificada ao “Auto-save, no Save button” porque nomear é confirmatório) / `DESIGN.md` (register `product`; Field Desk) · tema `data-theme='campaign'` · shells `CampaignSidebar`, `MunicipalityFilters`, primitivos `SidebarMenuSub*` já em `src/components/ui/Sidebar.tsx`.
+Em `/campanha/municipios`, um botão **Salvar filtro** ao lado de **Limpar** nomeia o recorte atual da URL, e o atalho passa a viver como **submenu de 2º nível sob Municípios** no sidebar — com chevron, estado persistido, item ativo, apagar com desfazer.
 
-Na implementação (`implement-roadmap-item`): craft compacto → critique → polish (só salvar + submenu; sem redesign da nav completa nem sync multi-device).
+Três camadas:
 
-Brief compacto:
+- **`src/utilities/municipalitySavedFilters.ts`** — `localStorage` com cache de snapshot para `useSyncExternalStore`, `MAX_ENTRIES = 12`, `MAX_NAME_LENGTH = 60`, ordem alfabética, limpeza no logout.
+- **`src/lib/listQueryMatch.ts`** — `isSameListHref(a, b, ignoredParams)`, puro e sem imports pesados.
+- **`MunicipalityNavSavedFilters`** + **`SaveMunicipalityFilterControl`**, sincronizados pelo hook compartilhado `useMunicipalitySavedFilters`.
 
-- **Persona / contexto:** Alex (CG / Assessor / Candidato) monta o mesmo recorte várias vezes na semana (ex. “Prioritárias sem assessor · TI X · sort votos”) e precisa voltar a ele em um toque a partir da nav — sem refazer selects.
-- **Job principal:** nomear o estado atual da URL da lista e reabri-lo como atalho de 2º nível sob **Municípios** no sidebar.
-- **Estratégia de cor:** Restrained — submenu indentado com `border-l` do `SidebarMenuSub`; active sóbrio (`data-active`); sem chips coloridos de “views”.
-- **Edit where you see:** não — bookmark de navegação URL; mutações B9 nas células seguem iguais.
-- **Anti-goals:** collection/`campaignUser` prefs; saved views genéricas em todas as listas; segundo nível sempre visível (polui nav); sticky em qualquer `/campanha/municipios` (só no filtro salvo ativo); auto-gravar sem nome (vira “Visitados”).
+## Premissas do plano de 2026-07-24 que morreram na auditoria
 
-## Dados → decisão → apresentação
+Registradas porque cada uma custou trabalho que o appetite original não previa, e porque voltar a acreditar nelas custaria de novo:
 
-- **Vou apresentar dados?** Não — **Dados: N/A**. Este item não inventa métrica; só persiste e reabre o **mesmo** recorte URL que a lista já resolve.
-- **Decisões desbloqueadas:** Staff: “voltar ao recorte mental desta sessão (ex. prioritárias / TI / sem assessor) sem remontar filtros.”
-- **Forma escolhida:** **lista/tabela existente** + links nomeados no sidebar — **por quê:** o dado já está na lista; o problema é atrito de remontagem. **Rejeitado:** dashboard de “minhas views”; chart de uso de filtros; segunda página de gestão de views.
-- **Profile:** N/A.
-- **Anti-goals de dado:** sem KPI de “quantos filtros salvos”; sem % estadual.
+1. **`SidebarMenuSub` / `SidebarMenuSubItem` / `SidebarMenuSubButton` / `SidebarMenuAction` NÃO existiam.** O plano dizia "existem no shadcn local e não são usados" — o Pass 2 W4b pôs knip `exports` em ERROR e o kit foi podado. Foi preciso **re-adicioná-los** do upstream. Ao fazê-lo apareceu um bug latente do kit: React renderiza `data-active={false}` como `data-active="false"`, e o seletor Tailwind `data-active:` casa com `[data-active]` — ou seja, **todo item não-ativo estava recebendo o estilo de ativo**. Agora o atributo só é emitido quando verdadeiro (`data-active={isActive || undefined}`), em `SidebarMenuButton` e `SidebarMenuSubButton`.
+2. **`src/utilities/municipalityUi.ts` não existe** — o Pass 2 W1 o dividiu em `municipalityListUrl.ts`, `municipalityListFilters.ts`, `municipalityLabels.ts` e `municipalitySignal.ts`. `buildMunicipalitySavedFilterHref` nasceu em `municipalityListFilters.ts`.
+3. **O estado da URL cresceu** muito além do que o plano listava (`q`, `regions[]`, `slugs[]`, `advisors[]`, `kind`, `coverage`, `priority`, `trends[]`, `classes[]`, `levels[]`, `compare`, `sort`, `dir`, `page`). Serializar o estado inteiro menos `page`/`compare` absorveu isso sozinho — nenhuma lista de params foi escrita à mão.
+4. **B17 persiste em cookie, não `localStorage`.** A linha de contexto do plano estava errada. Não muda a decisão (o bookmark não precisa chegar ao render do servidor).
+5. **"Ao lado de Limpar / Colunas" como uma fileira só é impossível:** `Limpar` está em `MunicipalityFilters` e `Colunas` está dentro de `CampaignTable`, numa fileira compartilhada pelas sete listas. Decidido na sessão: **barra de filtros, ao lado de Limpar**.
+6. **`municipalityListHasSavableFilters` não precisou existir.** `formatMunicipalityActiveFiltersSummary` já é o gate "tem filtro?" (é o que o `Limpar` usa) **e** já produz o rótulo legível de todos os filtros — então ele é ao mesmo tempo a condição de montagem do botão e o **nome padrão** sugerido no Popover.
+7. **Disclosure por hover morreu com B38 ✓.** Com `collapsible="offcanvas"`, recolhido no desktop a sidebar sai inteira da tela e não sobra rail para hover. Virou **collapsible com chevron e estado persistido**, decidido com o usuário.
+8. **Renomear entrou no v1**, ao contrário do "adiado" do plano: como a identidade é o href e re-salvar é upsert, o botão simplesmente lê **"Renomear"** quando o recorte atual já está salvo, e o Popover abre pré-preenchido. Custou uma string, não uma fase.
 
-Self-check dados: N/A (sem superfície de métrica nova).
+## Decisões de engenharia que valem guardar
 
-## Contexto
+- **O casamento "URL atual == filtro salvo" não pode usar o serializador de URL do domínio.** A sidebar está no layout de `(app)`, então tudo que ela importa entra no First Load JS de **toda** rota `/campanha`, e o AGENTS.md já registra que importar `buildMunicipalityListHref` num island custou **21 kB** (arrasta `bahiaTerritories` + `municipalityCatalog`). Daí `src/lib/listQueryMatch.ts`: comparação de `URLSearchParams` insensível à ordem, que de quebra resolve um caso que o plano não previu — **estar na página 3 de um filtro salvo ainda é estar nele** (`page` é posição dentro do recorte, não parte dele).
+- **Medido contra árvore limpa (`git stash`), que é a única forma de afirmar isso:** `/campanha` ficou **inalterado em 277 kB**; `/campanha/municipios` foi de **328 → 330 kB**. A fase `optimize` não disparou.
+- **A identidade é o href, não um UUID.** O plano previa `id` + `name` + `href` + `savedAt`; sobrou `{ href, name }`. Um UUID só existiria para permitir dois atalhos que navegam para o mesmo lugar, que é exatamente o que o upsert existe para impedir — e `savedAt` não é lido por nada, porque a ordem é **alfabética** de propósito: um atalho nomeado que se reordena sozinho sob o cursor cada vez que é re-salvo é um bug de navegação. Recência é o trabalho de Visitados.
+- **O teto é checado contra as OUTRAS entradas** (`others.length >= MAX_ENTRIES`), não contra o tamanho armazenado — senão renomear no limite passaria a ser recusado.
+- **O `useSyncExternalStore` tem o server snapshot como constante congelada.** Devolver `[]` fresco ali é o loop de render clássico; o snapshot do cliente é cacheado e invalidado por escrita e por `storage` de outra aba (o evento nativo não dispara na aba que escreveu — daí o evento custom que cobre a outra metade).
 
-Em `/campanha/municipios`, o estado canônico de recorte/ordem vive na URL via `MunicipalityListState` (`src/utilities/municipalityUi.ts`: `q`, `region`, `kind`, `coverage`, `priority`, `trend`, `sort`/`dir`, `page`, `compare`). Helpers já canonicalizam href (`resolveMunicipalityListUrl` / `buildMunicipalityListHref` / `buildMunicipalityListVisitHref`). **B15** ✓ sort; **B16** relocaciona filtros ao header e deixa barra slim; **B17** preferência de colunas em `localStorage`.
+## Dois bugs reais que só o e2e pegou
 
-O sidebar (`CampaignSidebar.tsx` + `nav.ts`) é **flat** — um `SidebarMenuButton` por item; primitivos `SidebarMenuSub` / `SidebarMenuSubButton` existem no shadcn local e **não são usados**. “Visitados recentemente” (`recentVisits.ts`) já prova o padrão client-only + limpeza no logout, mas é histórico automático — não nomeado.
+1. **O auto-open reabria o grupo em toda montagem, tornando a preferência persistida inobservável exatamente para quem mais usa filtros salvos:** o usuário recolhe o grupo, recarrega, e ele volta. A causa não é óbvia — o gatilho era `activeHref` aparecer, mas **o store responde vazio até o cliente ler o `localStorage`**, então um match surgindo da hidratação se parecia com uma navegação. O gatilho passou a ser a **URL mudar**; a preferência guardada vence na montagem e o "revelar onde você está" fica reservado à navegação que de fato muda o atalho corrente.
+2. **Apagar uma linha derrubava o foco para `<body>`.** O sucessor é resolvido **antes** da remoção, porque esvaziar o grupo desmonta o componente inteiro — chevron incluído — e nesse caso o alvo tem de ser o link de nav.
 
-Pedido de produto (2026-07-24): **salvar** o filtro atual com um **nome**, e expor os salvos como **acesso rápido de 2º nível** sob Municípios: aparecem no **hover** (desktop) ou **clique/expansão** (mobile no drawer do sidebar); **permanecem visíveis** quando a URL atual é a de um filtro salvo; **somem** fora de Municípios e sem hover/expansão.
+## Achados de acessibilidade corrigidos no critique
 
-FD2 ([field-desk-ux-pos-critique.md](field-desk-ux-pos-critique.md)) adiava “saved views genéricas”; este item é a fatia **concreta e única** (só lista de municípios), não um framework de views.
+- **SC 2.5.3 (Label in Name):** o botão mostrava "Salvar filtro" e tinha `aria-label="Salvar este filtro"`. O nome acessível precisa **conter** o rótulo visível, ou "clique em Salvar filtro" por voz não casa com nada. O `aria-label` saiu do caso de salvar; o de renomear fica, porque mantém a palavra visível na frente.
+- A mensagem de recusa ganhou `aria-describedby` do input além do `role="alert"` que o `Alert` já traz: o alerta anuncia uma vez, o `describedby` é o que conta a quem volta ao campo **por que** ele ainda está inválido.
+- O `<ul>` do submenu ganhou nome (`aria-label="Filtros salvos de Municípios"`), e os links ativos ganharam `aria-current="page"` — inclusive os de 1º nível, que não tinham.
+- Apagar é revelado no hover/foco no desktop com `opacity-0` (que continua focável e no a11y tree, ao contrário de `hidden`) e é **permanentemente visível no toque**.
 
-## Objetivos
+## Não escopo (mantido)
 
-- Staff em `/campanha/municipios`: affordance **Salvar filtro** (nome obrigatório) que grava o estado canônico atual da URL (sem `page`, sem `compare`).
-- Lista de filtros salvos no **sidebar**, indentada sob **Municípios**, cada um linkando ao href canônico; item ativo quando a URL atual casa com o href salvo.
-- Visibilidade do submenu:
-  - **mostrar** no hover do item Municípios (desktop);
-  - **mostrar** ao expandir Municípios no drawer mobile (clique);
-  - **mostrar (sticky)** quando a página atual é um filtro salvo (match de href);
-  - **esconder** em rotas que não são de municípios **e** sem hover/expansão.
-- CRUD mínimo: criar + abrir + apagar (renomear = questão em aberto).
-- Guardrails: sem migration, sem collection, sem Consent, sem server action de escrita; `leader` sem a página; access/loader inalterados; Feel the action no Salvar (pending no controle) e na navegação do atalho (`CampaignListPending` já cobre a lista).
-
-## Decisões travadas
-
-- **Item de trilha B18 (não fill-in; não fase de B16/B17; não absorver em Visitados).** Job distinto: bookmark **nomeado e intencional** vs histórico automático (Visitados) vs viewport de colunas (B17) vs relocação de selects (B16). Appetite ~1–1,5d; cortável. (2026-07-24, roadmap-item.) **Rejeitado:** fill-in só (subestima o contrato de submenu sticky/hover); estender `recentVisits` com “pin” (mistura dwell automático com nomeação); saved views genéricas multi-lista (FD2 já vetou; explode escopo).
-- **Persistência = `localStorage` (não servidor).** Preferência/atalho por dispositivo; mesmo racional de Visitados e B17. Key estável namespaced (ex. `teqo:campaign:municipality-saved-filters`). **Rejeitado:** collection `savedFilter` / campo em `campaignUser` (migration + access + sync sem evidência de multi-device); `sessionStorage` (perde no ritual diário); cookie server-side.
-- **Estado salvo = subset da URL da lista**, canonicalizado via `municipalityUi` (reusar `parseMunicipalityListParams` + href page=1): `q`, `region`, `kind`, `coverage`, `priority`, `trend`, `sort`, `dir`. **Excluir** `page` (sempre reabre na 1) e `compare` (lente do mapa no Início, não da lista). **Excluir** cenário A10 (fora da URL; lente local — alinhado ao fill-in Cenário / decisão A10). **Rejeitado:** gravar `page`/`compare`/cenário; gravar snapshot de IDs de municípios (vira lista morta).
-- **Identidade:** `id` client-side (UUID) + `name` (pt-BR, trim, length cap) + `href` canônico (+ opcional `savedAt`). Active = comparação de href canônico com a URL atual (pathname `/campanha/municipios` + search normalizado). **Rejeitado:** rota dedicada `/campanha/municipios/vistas/[id]` (URL nova cara; share pior); dedup só por nome (dois nomes iguais OK se href diferente).
-- **UI de salvar = submit explícito com nome** (Dialog/Popover + input + confirmar). Exceção justa ao princípio “Auto-save, no Save button”: nomear é confirmatório. **Rejeitado:** auto-save silencioso a cada mudança de filtro (vira Visitados); prompt nativo `window.prompt`.
-- **Sidebar = 2º nível sob Municípios** com `SidebarMenuSub*` existente; hover (desktop) / expand (mobile); sticky só no match de filtro salvo — **não** sticky em `/campanha/municipios` genérico nem em `/campanha/municipios/[slug]`. Bottom nav mobile permanece flat (atalhos vivem no drawer do sidebar). **Rejeitado:** sempre listar salvos sob Municípios (polui); grupo separado no rodapé do sidebar; chips no dashboard.
-- **Limite + logout:** `MAX_ENTRIES` curto (recomendação 12); `clearMunicipalitySavedFilters()` no logout junto com `clearRecentVisits()` (dispositivo compartilhado). **Rejeitado:** ilimitado; sync cross-device.
-- **i18n e naming:** `MunicipalitySavedFilter`, `municipalitySavedFilters.ts`, `SaveMunicipalityFilterControl`, `MunicipalityNavSavedFilters`; strings “Salvar filtro”, “Filtros salvos”, “Apagar”; identificadores em inglês.
-
-## Questões em aberto
-
-- **Permitir salvar a lista “nua” (sem filtros, só sort default)?** **Opções:** A) só com ao menos um param de recorte (`q`/`region`/…) | B) qualquer estado, inclusive nua | C) nua só se `sort`/`dir` ≠ default. **Recomendação:** **A** — alinhado a Visitados (`buildMunicipalityListVisitLabel` retorna null sem filtro); atalho “Municípios” já cobre a lista nua. _(assumido — validar com produto)_
-- **Renomear no v1?** **Opções:** A) só criar/apagar | B) renomear no submenu (inline/Dialog). **Recomendação:** **A** — apagar+recriar basta no appetite; renomear = Adiado. _(assumido)_
-- **Onde mora o botão Salvar?** **Opções:** A) barra slim de `MunicipalityFilters` (ao lado de Limpar / Colunas) | B) menu “…” da lista | C) só no overview. **Recomendação:** **A** — mesmo lugar mental dos filtros; soft com B16/B17. _(assumido)_
-- **Dois salvos com o mesmo href: atualizar o existente ou criar duplicata?** **Opções:** A) upsert (pede confirmação se nome diferente) | B) sempre criar | C) bloquear com mensagem. **Recomendação:** **A** — um atalho por href; evita submenu duplicado. _(assumido)_
-
-## Abordagem proposta
-
-```mermaid
-flowchart LR
-  List["/campanha/municipios?…\nMunicipalityListState"]
-  Save["SaveMunicipalityFilterControl\nnome + confirmar"]
-  Store["municipalitySavedFilters.ts\nlocalStorage"]
-  Nav["CampaignSidebar\nMunicípios + SidebarMenuSub"]
-  Match["href canônico == URL atual\n→ sticky open + active"]
-
-  List --> Save
-  Save --> Store
-  Store --> Nav
-  List --> Match
-  Match --> Nav
-  Nav -->|Link| List
-```
-
-Componentes:
-
-- **`src/utilities/municipalitySavedFilters.ts`** (client-safe, guarda `typeof window`): `STORAGE_KEY`, `MAX_ENTRIES`, tipos, `list` / `upsert` / `remove` / `clear`; validação de shape; no-op fora do browser. Depth: espelhar `recentVisits.ts`, não inventar service genérico de “prefs”.
-- **Helpers em `municipalityUi.ts`:** `buildMunicipalitySavedFilterHref(state)` (= visit href / page=1 sem compare) + `municipalityListHasSavableFilters(state)` (gate do botão). Reusar parse/canonical já existentes.
-- **`SaveMunicipalityFilterControl`** (client, em `src/components/campaign/`): Popover/Dialog com nome; desabilitado se não há filtro salvável ou se já é o ativo sem mudanças; pending imediato no confirmar; toast/inline “Salvo” curto; montar na barra slim (`MunicipalityFilters` pós-B16, ou fileira atual se B16 ainda não aterrissou).
-- **`MunicipalityNavSavedFilters`** (client island no `CampaignSidebar`): lê storage pós-mount (sem mismatch de hidratação); renderiza `SidebarMenuSub` sob o item Municípios; hover/focus-within (desktop) + estado expandido (mobile); `forceOpen` quando `usePathname`+`useSearchParams` casam com algum `href` salvo; cada linha = `SidebarMenuSubButton asChild` + `Link` + ação apagar (`SidebarMenuAction` ou botão sr-only no hover); fechar drawer mobile ao navegar (mesmo padrão atual).
-- **`CampaignSidebar` / item Municípios:** especializar só o item `href === '/campanha/municipios'` (não mudar `nav.ts` para árvore genérica — YAGNI &lt;3 call sites). `isCampaignNavActive` do pai continua por pathname; sub-item ativo por match de search.
-- **Logout:** chamar `clearMunicipalitySavedFilters()` ao lado de `clearRecentVisits()`.
-- **Sem migration, sem collection, sem server action, sem Consent.**
-
-## Dependências
-
-- Soft: **B16** (barra slim = destino natural do Salvar) e **B17** (vizinho na mesma barra) — não bloqueiam; sem eles, Salvar pousa ao lado de Limpar na fileira atual.
-- Soft: precedente Visitados ([visitados-recentemente.md](visitados-recentemente.md)) — padrão storage/logout.
-- Soft: **B38** ([sidebar-recolhido-tablet.md](sidebar-recolhido-tablet.md)) — com `collapsible="offcanvas"`, o submenu hover/expand sob Municípios só é usável com o rail expandido (ou no Sheet mobile); se B38 landar antes, o craft do B18 trata collapsed como “abrir rail”.
-- Nenhuma dependência dura de outro plano. Reusa `municipalityUi.ts`, `CampaignSidebar`, `SidebarMenuSub*`, `CampaignListPendingBoundary`.
-
-## Não escopo
-
-- Sync multi-device / preferências em `campaignUser` — exigiria migration + access.
-- Saved views em Planos / Apoiadores / Demandas — FD2 “genéricas”; só Municípios aqui.
-- Sticky do submenu em qualquer rota `/campanha/municipios*` — só match de filtro salvo.
-- Incluir Cenário A10 ou `compare` do mapa no bookmark.
-- Substituir Visitados recentemente / B14 município mais próximo.
-- Reorder DnD de colunas — [fora de escopo](reordenar-colunas-lista-municipios.md).
-
-## Rabbit holes
-
-- **Framework de “nav tree” / collapsible genérico no `nav.ts`.** Se alguém “só preparar” para outros itens: explode o shell. **Mitigação:** especializar só Municípios neste item; 3º call site = gatilho de abstrair.
-- **Rota `/vistas/[id]` + loader server.** Se alguém “só para deep-link nomeado”: migration mental + share frágil. **Mitigação:** href = query canônica da lista.
-- **Optimistic list sem refresh ao abrir atalho.** Anti-goal Feel the action. **Mitigação:** `Link` + pending da região de resultados existente.
-- **Spreadsheet / painel de gestão de views.** **Mitigação:** criar/apagar no fluxo; sem página admin de views.
+Sync multi-device / preferências em `campaignUser`; saved views em outras listas (FD2 já vetou o genérico); rota `/vistas/[id]`; incluir Cenário A10 ou `compare` do mapa no bookmark; salvar junto o viewport de colunas do B17.
 
 ## Adiado com gatilho
 
-- **Renomear filtro salvo.** Revisitar quando: ≥2 atores pedirem em R6/sessão **ou** apagar+recriar gerar atrito medido.
-- **Sync servidor / share de view entre assessores.** Revisitar quando: evidência de multi-device **e** pedido explícito de “mandar este recorte” (aí sim collection + access; não neste appetite).
-- **Salvar também o viewport B17 (colunas visíveis) junto do filtro.** Revisitar quando: B17 estável **e** usuários pedirem “a view completa” (hoje misturaria bookmark de decisão com preferência de densidade).
+- **Árvore de navegação genérica em `nav.ts`.** Este item especializa **só** Municípios, via a constante exportada `MUNICIPALITY_NAV_HREF`. **Gatilho:** o 3º call site de submenu no sidebar.
+- **Sync servidor / compartilhar recorte entre assessores.** **Gatilho:** evidência de multi-device **e** pedido explícito de "mandar este recorte" — aí sim collection + access, fora deste appetite.
+
+## Testes
+
+- `tests/unit/listQueryMatch.unit.spec.ts` — ordem trocada casa, `page` diferente casa, filtro a mais não casa, percent-encoding normaliza.
+- `tests/unit/municipalitySavedFilters.unit.spec.ts` — upsert por href, cap, shape inválido, dedup, cache de snapshot.
+- `tests/e2e/campaignSavedFilters.e2e.spec.ts` — filtrar → salvar → submenu → ativo na página 2 → restaurar → renomear → apagar → desfazer, e o disclosure persistido através de reload.
+
+**Nota operacional:** `pnpm build` limpa `.next`, e o servidor de dev do e2e usa `NEXT_DIST_DIR=.next/e2e` — rodar o build entre duas rodadas de e2e derruba o cache de compilação e faz o projeto `setup` estourar os 90 s. Não é flake do teste.
 
 ## Referências
 
-- `docs/roadmap.md` (Demais itens abertos · grafo · Janela 1–2 · cortes)
-- `docs/plans/visitados-recentemente.md` — precedente localStorage + logout
-- `docs/plans/filtros-no-header-lista-municipios.md` (B16) · `docs/plans/seletor-colunas-lista-municipios.md` (B17)
-- `docs/plans/field-desk-ux-pos-critique.md` — “saved views genéricas” adiadas; este item é a fatia concreta
-- `src/utilities/municipalityUi.ts` — estado URL / href canônico / visit label
+- `docs/plans/visitados-recentemente.md` — precedente de localStorage + logout
+- `docs/plans/seletor-colunas-lista-municipios.md` (B17) — vizinho que persiste em **cookie**, porque o servidor precisa ler
+- `src/utilities/municipalityListUrl.ts` / `municipalityListFilters.ts` — contrato de URL congelado
 - `src/utilities/recentVisits.ts` — espelho de storage
-- `src/components/campaign/CampaignSidebar.tsx`, `nav.ts`, `MunicipalityFilters.tsx`
-- `src/components/ui/Sidebar.tsx` — `SidebarMenuSub*`
-- AGENTS.md — naming EN / copy pt-BR; campaign auth; sem Consent para preferência local do próprio usuário
-- `PRODUCT.md` / `DESIGN.md` — Field Desk; Feel the action; Auto-save (exceção nomear)
+- `src/components/ui/Sidebar.tsx` — `SidebarMenuSub*` / `SidebarMenuAction` re-adicionados

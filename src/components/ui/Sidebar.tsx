@@ -391,7 +391,10 @@ const SidebarMenuButton = ({
       data-slot="sidebar-menu-button"
       data-sidebar="menu-button"
       data-size={size}
-      data-active={isActive}
+      // Absent, not `"false"`: Tailwind compiles `data-active:` to the bare
+      // `[data-active]`, and React renders `data-active={false}` as the string
+      // `"false"` — which matches it. Every row was wearing the active accent.
+      data-active={isActive || undefined}
       className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
       {...props}
     />
@@ -420,6 +423,90 @@ const SidebarMenuButton = ({
   )
 }
 
+/**
+ * Re-added from upstream shadcn for B18 (the kit had been pruned of all four
+ * submenu pieces). Two deliberate deviations, both load-bearing:
+ *
+ * - upstream's `showOnHover` prop is not here — the only caller reveals its
+ *   action against the SUB-item group, and `group-hover/menu-item` would leak
+ *   from the parent row, revealing every child's action at once;
+ * - the mobile hit-area expansion is not `md:`-gated. A 20 px visible target on
+ *   a pointer device is still a 20 px target (SC 2.5.8 has no mouse exemption),
+ *   which is the call B34 already made for the chip "×".
+ */
+const SidebarMenuAction = ({
+  className,
+  asChild = false,
+  ...props
+}: React.ComponentProps<'button'> & {
+  asChild?: boolean
+}) => {
+  const Comp = asChild ? Slot.Root : 'button'
+
+  return (
+    <Comp
+      data-slot="sidebar-menu-action"
+      data-sidebar="menu-action"
+      className={cn(
+        'absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform after:absolute after:-inset-2 peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 peer-data-active/menu-button:text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+const SidebarMenuSub = ({ className, ...props }: React.ComponentProps<'ul'>) => (
+  <ul
+    data-slot="sidebar-menu-sub"
+    data-sidebar="menu-sub"
+    className={cn(
+      'mx-3.5 flex min-w-0 translate-x-px list-none flex-col gap-0 border-l border-sidebar-border px-2.5 py-0.5 group-data-[collapsible=icon]:hidden',
+      className,
+    )}
+    {...props}
+  />
+)
+
+const SidebarMenuSubItem = ({ className, ...props }: React.ComponentProps<'li'>) => (
+  <li
+    data-slot="sidebar-menu-sub-item"
+    data-sidebar="menu-sub-item"
+    className={cn('group/menu-sub-item relative', className)}
+    {...props}
+  />
+)
+
+const SidebarMenuSubButton = ({
+  asChild = false,
+  size = 'md',
+  isActive = false,
+  className,
+  ...props
+}: React.ComponentProps<'a'> & {
+  asChild?: boolean
+  size?: 'sm' | 'md'
+  isActive?: boolean
+}) => {
+  const Comp = asChild ? Slot.Root : 'a'
+
+  return (
+    <Comp
+      data-slot="sidebar-menu-sub-button"
+      data-sidebar="menu-sub-button"
+      data-size={size}
+      data-active={isActive || undefined}
+      className={cn(
+        'flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground ring-sidebar-ring outline-hidden group-has-data-[sidebar=menu-action]/menu-sub-item:pr-8 group-data-[collapsible=icon]:hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-active:bg-sidebar-accent data-active:font-medium data-active:text-sidebar-accent-foreground [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
+        size === 'sm' && 'text-xs',
+        size === 'md' && 'text-sm',
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
 export {
   Sidebar,
   SidebarContent,
@@ -429,8 +516,12 @@ export {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
   useSidebar,

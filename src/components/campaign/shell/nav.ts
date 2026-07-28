@@ -22,9 +22,16 @@ export type CampaignNavItem = {
   icon: LucideIcon
 }
 
+/**
+ * Named because the sidebar has to recognize this one item to hang B18's saved
+ * filters under it, and a third spelling that silently no-ops when it drifts is
+ * the failure mode this codebase keeps paying for.
+ */
+export const MUNICIPALITY_NAV_HREF = '/campanha/municipios'
+
 const staffNav: CampaignNavItem[] = [
   { title: 'Início', href: '/campanha', icon: HomeIcon },
-  { title: 'Municípios', href: '/campanha/municipios', icon: MapPinIcon },
+  { title: 'Municípios', href: MUNICIPALITY_NAV_HREF, icon: MapPinIcon },
   { title: 'Territórios', href: '/campanha/territorios', icon: MapIcon },
   { title: 'Lideranças', href: '/campanha/liderancas', icon: HandshakeIcon },
   { title: 'Dobradinhas', href: '/campanha/dobradinhas', icon: Users2Icon },

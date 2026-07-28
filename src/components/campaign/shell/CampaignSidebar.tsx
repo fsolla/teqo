@@ -2,16 +2,18 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 
 import { logoutCampaign } from '@/app/(campaign)/campanha/actions/auth'
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { CampaignUserAvatar } from '@/components/campaign/shared/CampaignUserAvatar'
 import { CampaignLogo } from '@/components/campaign/shell/campaign-logo'
+import { MunicipalityNavSavedFilters } from '@/components/campaign/shell/MunicipalityNavSavedFilters'
 import {
   getCampaignNav,
   getCampaignSecondaryNav,
   isCampaignNavActive,
+  MUNICIPALITY_NAV_HREF,
   type CampaignNavItem,
 } from '@/components/campaign/shell/nav'
 import { Button } from '@/components/ui/button'
@@ -31,6 +33,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 import type { CampaignUserShellView } from '@/utilities/campaignUserProfile'
 import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
+import { clearMunicipalitySavedFilters } from '@/utilities/municipalitySavedFilters'
 import { clearRecentVisits } from '@/utilities/recentVisits'
 
 export type CampaignSidebarUser = CampaignUserShellView
@@ -39,18 +42,22 @@ const CampaignSidebarLink = ({
   item,
   isActive,
   onNavigate,
+  children,
 }: {
   item: CampaignNavItem
   isActive: boolean
   onNavigate: () => void
+  /** Row affordances that sit beside the link — B18's disclosure and sub-list. */
+  children?: ReactNode
 }) => (
   <SidebarMenuItem>
     <SidebarMenuButton asChild isActive={isActive}>
-      <Link href={item.href} onClick={onNavigate}>
+      <Link href={item.href} onClick={onNavigate} aria-current={isActive ? 'page' : undefined}>
         <item.icon />
         <span>{item.title}</span>
       </Link>
     </SidebarMenuButton>
+    {children}
   </SidebarMenuItem>
 )
 
@@ -69,6 +76,7 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
     if (isLoggingOut) return
     setIsLoggingOut(true)
     clearRecentVisits()
+    clearMunicipalitySavedFilters()
     await clearCampaignPwaCaches()
     // logoutCampaign redirects — no need to reset the pending flag on success.
     await logoutCampaign()
@@ -98,7 +106,11 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
                   item={item}
                   isActive={isCampaignNavActive(pathname, item.href)}
                   onNavigate={closeMobileSidebar}
-                />
+                >
+                  {item.href === MUNICIPALITY_NAV_HREF ? (
+                    <MunicipalityNavSavedFilters onNavigate={closeMobileSidebar} />
+                  ) : null}
+                </CampaignSidebarLink>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
