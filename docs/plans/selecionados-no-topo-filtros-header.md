@@ -111,6 +111,7 @@ Componentes:
 
 ## Adiado com gatilho
 
+- **Prop explícita de modo multi no `CampaignHeaderFilterPopover`.** Hoje o gate é `optionRows.every(row => row.checkbox)` (1:1 com os quatro consumidores atuais). Revisitar se surgir single-select com checkbox ou um terceiro modo de seleção — aí trocar heurística por prop (`liftSelected` / `multi`).
 - **Aplicar a regra a `RelationMultiSelect` / comboboxes de formulário.** Revisitar quando houver relato de atrito de desmarcação em formulário (ex.: carteira de municípios em `/campanha/assessores`) — o padrão lá é chip + busca, não lista de checkboxes.
 - **Head de filtro genérico em `shared/`.** Gatilho herdado do B21: 3º call site (E12 ou outra lista com header rico).
 
