@@ -39,7 +39,10 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
+import {
+  resolvedPortfolioEntriesById,
+  type MunicipalityPortfolioIndexEntry,
+} from '@/lib/municipalityPortfolio'
 import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
 import { MAX_LEADERSHIP_MUNICIPALITIES, isLeadershipSector } from '@/lib/schemas/leadership'
 import { cn } from '@/lib/utils'
@@ -325,14 +328,14 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
   ] = await Promise.all([
     loadLeadershipListPageData(payload, user, canonicalUrl.state),
     loadStateDeputyOptions(payload, user),
-    loadMunicipalityPortfolioIndex(payload),
+    loadMunicipalityPortfolioIndex(),
     user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
   ])
   const resolvedUrl = resolveLeadershipListUrl(rawSearchParams, totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
 
-  const municipalityById = new Map(municipalityIndex.map((entry) => [entry.id, entry]))
+  const municipalityById = resolvedPortfolioEntriesById(municipalityIndex)
   const municipalityFilterOptions: LeadershipFilterOption[] = filterFacets.municipalityIDs
     .map((id) => {
       const entry = municipalityById.get(id)

@@ -11,12 +11,13 @@ import {
   isCampaignUnrestricted,
   isCampaignUser,
   isPayloadAdmin,
+  memoizePerRequest,
 } from '@/utilities/access/shared'
 import { relationshipId } from '@/utilities/relationship'
 
 type ContactID = number
 
-const ACCESSIBLE_CONTACT_IDS_CONTEXT_KEY = 'campaignAccessibleContactIds'
+const ACCESSIBLE_CONTACT_IDS_MEMO_KEY = 'campaignAccessibleContactIds'
 
 const getAccessibleContactIds = async (
   req: PayloadRequest,
@@ -27,77 +28,75 @@ const getAccessibleContactIds = async (
 
   if (!isCampaignUser(currentUser)) return []
 
-  const context = req.context as Record<string, unknown>
-  const cacheKey = `${ACCESSIBLE_CONTACT_IDS_CONTEXT_KEY}:${currentUser.id}:${currentUser.role}`
-  const cached = context[cacheKey]
+  return memoizePerRequest(
+    req,
+    `${ACCESSIBLE_CONTACT_IDS_MEMO_KEY}:${currentUser.id}:${currentUser.role}`,
+    async () => {
+      const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
+      const leadershipWhere =
+        currentUser.role === 'leader'
+          ? {
+              and: [
+                { user: { equals: currentUser.id } },
+                { supportStatus: { equals: 'engajado' } },
+              ],
+            }
+          : {
+              municipalities: {
+                in: municipalityIDs ?? [],
+              },
+            }
 
-  if (Array.isArray(cached)) {
-    return cached.filter((id): id is number => typeof id === 'number')
-  }
+      const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
+      const collections = req.payload.collections as Record<string, unknown>
+      const contactIDs: ContactID[] = []
 
-  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
-  const leadershipWhere =
-    currentUser.role === 'leader'
-      ? {
-          and: [{ user: { equals: currentUser.id } }, { supportStatus: { equals: 'engajado' } }],
+      if (collections.leadership) {
+        const leadershipResult = await find({
+          collection: 'leadership',
+          depth: 0,
+          limit: 0,
+          overrideAccess: true,
+          pagination: false,
+          req,
+          select: { contact: true },
+          where: leadershipWhere,
+        })
+        for (const doc of leadershipResult.docs) {
+          const id = relationshipId(doc.contact)
+          if (id !== null) contactIDs.push(id)
         }
-      : {
-          municipalities: {
-            in: municipalityIDs ?? [],
-          },
+      }
+
+      // Advisors read contacts of supporters in their municipalities; leaders read
+      // contacts of the supporters they created — mirroring `canReadSupporter`.
+      const supporterWhere =
+        currentUser.role === 'advisor'
+          ? { municipality: { in: municipalityIDs ?? [] } }
+          : currentUser.role === 'leader'
+            ? { createdBy: { equals: currentUser.id } }
+            : null
+
+      if (supporterWhere && collections.supporter) {
+        const supporterResult = await find({
+          collection: 'supporter',
+          depth: 0,
+          limit: 0,
+          overrideAccess: true,
+          pagination: false,
+          req,
+          select: { contact: true },
+          where: supporterWhere,
+        })
+        for (const doc of supporterResult.docs) {
+          const id = relationshipId(doc.contact)
+          if (id !== null) contactIDs.push(id)
         }
+      }
 
-  const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
-  const collections = req.payload.collections as Record<string, unknown>
-  const contactIDs: ContactID[] = []
-
-  if (collections.leadership) {
-    const leadershipResult = await find({
-      collection: 'leadership',
-      depth: 0,
-      limit: 0,
-      overrideAccess: true,
-      pagination: false,
-      req,
-      select: { contact: true },
-      where: leadershipWhere,
-    })
-    for (const doc of leadershipResult.docs) {
-      const id = relationshipId(doc.contact)
-      if (id !== null) contactIDs.push(id)
-    }
-  }
-
-  // Advisors read contacts of supporters in their municipalities; leaders read
-  // contacts of the supporters they created — mirroring `canReadSupporter`.
-  const supporterWhere =
-    currentUser.role === 'advisor'
-      ? { municipality: { in: municipalityIDs ?? [] } }
-      : currentUser.role === 'leader'
-        ? { createdBy: { equals: currentUser.id } }
-        : null
-
-  if (supporterWhere && collections.supporter) {
-    const supporterResult = await find({
-      collection: 'supporter',
-      depth: 0,
-      limit: 0,
-      overrideAccess: true,
-      pagination: false,
-      req,
-      select: { contact: true },
-      where: supporterWhere,
-    })
-    for (const doc of supporterResult.docs) {
-      const id = relationshipId(doc.contact)
-      if (id !== null) contactIDs.push(id)
-    }
-  }
-
-  const ids = [...new Set(contactIDs)]
-  context[cacheKey] = ids
-
-  return ids
+      return [...new Set(contactIDs)]
+    },
+  )
 }
 
 export const canReadContacts: Access = async ({ req }) => {

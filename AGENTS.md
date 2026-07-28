@@ -154,7 +154,7 @@ curl -X POST "https://<prod-domain>/api/revalidate?tag=global_privacy-policy" \
 
 - **Auth:** send the secret via `x-revalidate-secret` or `Authorization: Bearer <secret>`; it is compared to `REVALIDATE_SECRET` with a constant-time check.
 - `REVALIDATE_SECRET` must be set in the Vercel **production** env (and in your local env if you want to test the endpoint). It is documented in `.env.example`.
-- **Tag:** optional `?tag=` query or JSON body `{ "tag": "..." }` (query wins). Allowlist: `posts` (default), `global_privacy-policy`, `election-tse` (bust after re-running `pnpm db:seed:tse` so the cached elections-tab reads refresh). Unknown tag → `400`.
+- **Tag:** optional `?tag=` query or JSON body `{ "tag": "..." }` (query wins). Allowlist: `posts` (default), `global_privacy-policy`, `election-tse` (bust after re-running `pnpm db:seed:tse` so the cached elections-tab reads refresh), `municipality-catalog` (bust after a migration/seed that adds or renames a município so chip indexes and `unstable_cache` loaders refresh). Unknown tag → `400`.
 - **Responses:** `200 { revalidated: true, tag: '...' }` on success; `401` if the secret is missing/wrong; `500` if `REVALIDATE_SECRET` is not configured on the server.
 - This POST is the required last step of the post-seed / direct-DB-change runbook.
 

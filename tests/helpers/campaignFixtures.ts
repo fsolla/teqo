@@ -4,7 +4,7 @@ import { sql } from '@payloadcms/db-postgres'
 import type { Payload, Where } from 'payload'
 import { afterEach, beforeEach } from 'vitest'
 
-import { municipalityCatalog } from '@/lib/municipalityCatalog'
+import { getMunicipalityCatalogEntry, municipalityCatalog } from '@/lib/municipalityCatalog'
 import type {
   CampaignDemand,
   CampaignInvite,
@@ -161,8 +161,25 @@ const defaultConsentText = (text: string): Consent['text'] => ({
   },
 })
 
-const relationshipID = (value: number | { id: number }): number =>
-  typeof value === 'number' ? value : value.id
+type RelationshipValue = number | { id: number }
+
+/**
+ * Id of a relationship field at any depth.
+ *
+ * Specs use this instead of `relationshipId` from `src/utilities/relationship`
+ * so an assertion never runs through the production helper it is checking, and
+ * instead of `uniqueRelationshipIds`, which dedups — hiding a duplicated link.
+ */
+export function relationId(value: RelationshipValue): number
+export function relationId(value: RelationshipValue | null | undefined): number | undefined
+export function relationId(value: RelationshipValue | null | undefined): number | undefined {
+  if (value === null || value === undefined) return undefined
+  return typeof value === 'number' ? value : value.id
+}
+
+/** Order-preserving, non-deduping ids of a `hasMany` relationship field. */
+export const relationIds = (values: readonly RelationshipValue[] | null | undefined): number[] =>
+  (values ?? []).map((value) => relationId(value))
 
 const bulkErrors = (result: unknown): unknown[] => {
   if (
@@ -413,11 +430,11 @@ export class CampaignFixtures {
   }
 
   id(value: number | { id: number }): number {
-    return relationshipID(value)
+    return relationId(value)
   }
 
   own(collection: CampaignCollection, value: number | { id: number }): void {
-    this.owned[collection].add(relationshipID(value))
+    this.owned[collection].add(relationId(value))
   }
 
   ownedIDs(collection: CampaignCollection): number[] {
@@ -470,7 +487,7 @@ export class CampaignFixtures {
 
   /** Mark a municipality mutated by the test so cleanup resets its operational fields. */
   touchMunicipality(value: number | { id: number }): void {
-    this.touchedMunicipalities.add(relationshipID(value))
+    this.touchedMunicipalities.add(relationId(value))
   }
 
   private async discoverMarkedRoots(): Promise<void> {
@@ -637,12 +654,12 @@ export class CampaignFixtures {
     municipality: number | { id: number },
     advisors: Array<number | { id: number }>,
   ): Promise<Municipality> {
-    const municipalityID = relationshipID(municipality)
+    const municipalityID = relationId(municipality)
     this.touchedMunicipalities.add(municipalityID)
     return this.rootPayload.update({
       collection: 'municipality',
       id: municipalityID,
-      data: { advisors: advisors.map(relationshipID) },
+      data: { advisors: relationIds(advisors) },
       depth: 0,
     })
   }
@@ -653,20 +670,20 @@ export class CampaignFixtures {
       data: {
         supportStatus: 'engajado',
         ...input,
-        contact: relationshipID(input.contact),
-        municipalities: input.municipalities.map(relationshipID),
+        contact: relationId(input.contact),
+        municipalities: relationIds(input.municipalities),
         ...(input.organizations
-          ? { organizations: input.organizations.map((value) => relationshipID(value)) }
+          ? { organizations: input.organizations.map((value) => relationId(value)) }
           : {}),
-        ...(input.user ? { user: relationshipID(input.user) } : {}),
-        ...(input.createdBy ? { createdBy: relationshipID(input.createdBy) } : {}),
-        ...(input.consent ? { consent: relationshipID(input.consent) } : {}),
+        ...(input.user ? { user: relationId(input.user) } : {}),
+        ...(input.createdBy ? { createdBy: relationId(input.createdBy) } : {}),
+        ...(input.consent ? { consent: relationId(input.consent) } : {}),
       },
       depth: 0,
     })
     this.own('leadership', leadership)
     for (const municipality of input.municipalities)
-      this.touchedMunicipalities.add(relationshipID(municipality))
+      this.touchedMunicipalities.add(relationId(municipality))
     return leadership
   }
 
@@ -676,13 +693,13 @@ export class CampaignFixtures {
       data: {
         declaredVotes: 100,
         ...input,
-        leadership: relationshipID(input.leadership),
-        municipality: relationshipID(input.municipality),
+        leadership: relationId(input.leadership),
+        municipality: relationId(input.municipality),
       },
       depth: 0,
     })
     this.own('votePledge', pledge)
-    this.touchedMunicipalities.add(relationshipID(input.municipality))
+    this.touchedMunicipalities.add(relationId(input.municipality))
     return pledge
   }
 
@@ -727,14 +744,14 @@ export class CampaignFixtures {
         ...input,
         title,
         slug: input.slug ?? this.value('demanda'),
-        municipality: relationshipID(input.municipality),
-        ...(input.leadership ? { leadership: relationshipID(input.leadership) } : {}),
-        ...(input.createdBy ? { createdBy: relationshipID(input.createdBy) } : {}),
+        municipality: relationId(input.municipality),
+        ...(input.leadership ? { leadership: relationId(input.leadership) } : {}),
+        ...(input.createdBy ? { createdBy: relationId(input.createdBy) } : {}),
       },
       depth: 0,
     })
     this.own('campaignDemand', demand)
-    this.touchedMunicipalities.add(relationshipID(input.municipality))
+    this.touchedMunicipalities.add(relationId(input.municipality))
     return demand
   }
 
@@ -761,10 +778,10 @@ export class CampaignFixtures {
       data: {
         source: 'manual',
         ...input,
-        contact: relationshipID(input.contact),
-        ...(input.municipality ? { municipality: relationshipID(input.municipality) } : {}),
-        ...(input.createdBy ? { createdBy: relationshipID(input.createdBy) } : {}),
-        ...(input.consent ? { consent: relationshipID(input.consent) } : {}),
+        contact: relationId(input.contact),
+        ...(input.municipality ? { municipality: relationId(input.municipality) } : {}),
+        ...(input.createdBy ? { createdBy: relationId(input.createdBy) } : {}),
+        ...(input.consent ? { consent: relationId(input.consent) } : {}),
       },
       depth: 0,
     })
@@ -779,13 +796,13 @@ export class CampaignFixtures {
         kind: 'nota',
         body: this.value('Atualização'),
         ...input,
-        municipality: relationshipID(input.municipality),
-        author: relationshipID(input.author),
+        municipality: relationId(input.municipality),
+        author: relationId(input.author),
       },
       depth: 0,
     })
     this.own('municipalityUpdate', update)
-    this.touchedMunicipalities.add(relationshipID(input.municipality))
+    this.touchedMunicipalities.add(relationId(input.municipality))
     return update
   }
 
@@ -797,8 +814,8 @@ export class CampaignFixtures {
         kind: 'autopreenchimento',
         expiresAt: new Date('2099-01-01T00:00:00.000Z').toISOString(),
         ...input,
-        leadership: relationshipID(input.leadership),
-        createdBy: relationshipID(input.createdBy),
+        leadership: relationId(input.leadership),
+        createdBy: relationId(input.createdBy),
       },
       depth: 0,
     })
@@ -827,8 +844,8 @@ export class CampaignFixtures {
       const candidateUserIDs = new Set<number>()
       for (const leadership of leaderships.docs) {
         this.own('leadership', leadership)
-        candidateContactIDs.add(relationshipID(leadership.contact))
-        if (leadership.user) candidateUserIDs.add(relationshipID(leadership.user))
+        candidateContactIDs.add(relationId(leadership.contact))
+        if (leadership.user) candidateUserIDs.add(relationId(leadership.user))
       }
       if (candidateContactIDs.size > 0) {
         const contacts = await this.rootPayload.find({
@@ -900,7 +917,7 @@ export class CampaignFixtures {
       })
       for (const update of updates.docs) {
         this.own('municipalityUpdate', update)
-        this.touchedMunicipalities.add(relationshipID(update.municipality))
+        this.touchedMunicipalities.add(relationId(update.municipality))
       }
     }
 
@@ -919,7 +936,7 @@ export class CampaignFixtures {
       })
       for (const supporter of supporters.docs) {
         this.own('supporter', supporter)
-        this.own('contact', relationshipID(supporter.contact))
+        this.own('contact', relationId(supporter.contact))
       }
     }
 
@@ -990,11 +1007,36 @@ export class CampaignFixtures {
 
   /** Seeded municipalities are never deleted — touched ones get their fields reset. */
   private async resetTouchedMunicipalities(req: { transactionID: number | string }): Promise<void> {
+    if (this.touchedMunicipalities.size === 0) return
+
+    // `name` is reset from the catalog, not left as the spec wrote it: specs that
+    // exercise search and sorting rename rows, and since B34+ the chips resolve
+    // labels through `municipalityCatalog`, so a name left diverged makes the UI
+    // and the fixture disagree in a LATER run — which is how it surfaced (an e2e
+    // chip rendering the catalog name against a fixture holding the renamed one).
+    const touched = await this.rootPayload.find({
+      collection: 'municipality',
+      where: { id: { in: [...this.touchedMunicipalities] } },
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      select: { slug: true },
+      req,
+    })
+    const catalogNameById = new Map(
+      touched.docs.map((municipality) => [
+        municipality.id,
+        getMunicipalityCatalogEntry(municipality.slug)?.name,
+      ]),
+    )
+
     for (const municipalityID of this.touchedMunicipalities) {
+      const catalogName = catalogNameById.get(municipalityID)
       await this.rootPayload.update({
         collection: 'municipality',
         id: municipalityID,
         data: {
+          ...(catalogName ? { name: catalogName } : {}),
           advisors: [],
           priority: 'normal',
           expectedVotes: { pessimistic: null, central: null, optimistic: null },

@@ -2,6 +2,24 @@
 
 Fill-in de engenharia com os débitos que sobreviveram ao `/simplify` do **B34 ✓** (chips editáveis de municípios na lista de lideranças). Entrega-mãe: [`chips-municipios-lista-liderancas.md`](chips-municipios-lista-liderancas.md).
 
+## Entregue 2026-07-28
+
+**Appetite real ~3d** (sete fases abertas + Fase 0 do N+1; roadmap atualizado). Três rotas com célula de município: `/campanha/liderancas`, `/campanha/assessores`, `/campanha/dobradinhas`.
+
+| Fase                         | Veredito                                                                                                                                                                                                                                                                           |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **0 — N+1 de access**        | `memoizePerRequest` em `WeakMap<req>` (não `req.context` — medido: 367 contextos, 1 `req` em `/campanha/liderancas`). `getFreshCampaignUser` + escopos de município/liderança/contato/telefone. Int `campaignAccessRequestMemo.int.spec.ts`.                                       |
+| **F7 — revalidate da lista** | `revalidatePath` da própria lista removido nos toggles de chip (liderança, dobradinha); assessor só revalida detalhe + municípios quando `slugs.length > 0`.                                                                                                                       |
+| **F8 — cache do índice**     | `loadMunicipalityPortfolioIndex` em `unstable_cache` + tag `municipality-catalog` no allowlist de `revalidateRequest.ts`.                                                                                                                                                          |
+| **F1 — payload mínimo**      | Índice `{ id, slug }`; `name`/`region` do `municipalityCatalog`. RSC do índice **−21.900 B raw / −3.773 B gzip** por rota (medido). First Load JS das 3 rotas **byte-idêntico** ao `main` limpo (306/298/271 kB) — o catálogo já estava no bundle. Int: slug+`region` vs catálogo. |
+| **F4 — assessor lista**      | `AdvisorRowViewModel.municipalityIDs`; detalhe mantém `{id,name,slug}`.                                                                                                                                                                                                            |
+| **F3 — delta liderança**     | `withLeadershipRelationDelta` **não** — extraído `openLeadershipForRelationDelta` (lock + leitura escopada).                                                                                                                                                                       |
+| **F5 — combobox kit**        | **Não** — `ui/combobox.tsx` é valor único; mantido combobox ARIA 1.2 à mão com `aria-controls` só quando expandido.                                                                                                                                                                |
+| **F6 — baixos**              | `expectPostResponse` + `createStaffLeadership` em `campaignE2EFixtures.ts`; `relationId`/`relationIds` exportados; cleanup de fixture restaura `name` do catálogo. `municipalityIdsForEntries` **não** (só caller `municipalityIdsForTseZone`).                                    |
+| **F10**                      | Adiado (gatilho inalterado).                                                                                                                                                                                                                                                       |
+
+**e2e:** suíte cheia **4 falhas** nesta árvore (picker de colunas + 3 em `campaignMunicipalities`); baseline em stash não completou por timeout de ambiente — chip specs (`campaignLeaderships`, `campaignZoneMap`) verdes a 1 worker. **Gate:** tsc/lint/format/check:cycles/build; unit 770; int 482; knip P3 pré-existente; Aikido 0 findings nos arquivos escaneados (Opengrep exit 2 do runner).
+
 Três achados dos relatórios foram aplicados **no próprio fechamento do B34** e não voltam aqui: campos mortos no índice RSC (`city`/`zoneNumber`), o parser divergente de `FormData` em `/campanha/assessores`, e a mensagem de seleção vazia declarada duas vezes.
 
 ## Já resolvido no fechamento (medido, não estimado)

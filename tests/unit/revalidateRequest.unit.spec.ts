@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { getGlobalCacheTag } from '@/utilities/globals'
+import { MUNICIPALITY_CATALOG_CACHE_TAG } from '@/utilities/municipalityRevalidation'
 import {
   REVALIDATE_POSTS_TAG,
   REVALIDATE_PRIVACY_POLICY_CACHE_TAG,
@@ -25,6 +26,10 @@ describe('resolveRevalidateTag', () => {
     expect(resolveRevalidateTag(null, REVALIDATE_PRIVACY_POLICY_CACHE_TAG)).toEqual({
       ok: true,
       tag: REVALIDATE_PRIVACY_POLICY_CACHE_TAG,
+    })
+    expect(resolveRevalidateTag(MUNICIPALITY_CATALOG_CACHE_TAG, null)).toEqual({
+      ok: true,
+      tag: MUNICIPALITY_CATALOG_CACHE_TAG,
     })
   })
 

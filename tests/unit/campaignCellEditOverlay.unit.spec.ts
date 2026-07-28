@@ -323,9 +323,7 @@ describe('campaign cell edit overlay', () => {
         ownerId: 1,
         ownerName: 'Maria Souza',
         municipalityIds: [11],
-        municipalityIndex: [
-          { id: 11, name: MUNICIPALITY_NAME, slug: 'feira-de-santana', region: 'Portal do Sertão' },
-        ],
+        municipalityIndex: [{ id: 11, slug: 'feira-de-santana' }],
         commitAction: async () => ({}),
         drawerTitle: 'Editar municípios',
         updateErrorMessage: 'Não foi possível atualizar os municípios.',

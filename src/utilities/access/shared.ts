@@ -9,7 +9,51 @@ import type { Access, PayloadRequest, Where } from 'payload'
 
 export type CampaignActor = CampaignUser | User | null | undefined
 
-const FRESH_CAMPAIGN_USER_CONTEXT_KEY = 'campaignFreshUser'
+const FRESH_CAMPAIGN_USER_MEMO_KEY = 'campaignFreshUser'
+
+/**
+ * Per-request memo for the reads the RBAC modules repeat (fresh actor, accessible
+ * ids). Keyed on the `req` OBJECT, deliberately not on `req.context`.
+ *
+ * `req.context` cannot hold this: `createLocalReq` reassigns `req.context` to a
+ * fresh copy on every nested Local API call, and a `depth: 1` populate makes one
+ * per batched collection — while field-level access runs concurrently against
+ * whatever object `req.context` points at at that instant, so writes land on an
+ * object the next nested find has already replaced. Measured on
+ * `/campanha/liderancas`: 367 calls into `getFreshCampaignUser`, **367 distinct
+ * `req.context` objects, one `req`**. Keying on `req` gives the scope
+ * `req.context` was meant to give and expires with it (WeakMap).
+ *
+ * The PENDING PROMISE is stored, not the resolved value: `traverseFields` starts
+ * every field's access check before any of them settles, so memoizing only the
+ * result still lets hundreds of identical reads leave together.
+ */
+const memosByRequest = new WeakMap<object, Map<string, Promise<unknown>>>()
+
+export const memoizePerRequest = <T>(
+  req: PayloadRequest,
+  key: string,
+  load: () => Promise<T>,
+): Promise<T> => {
+  let memo = memosByRequest.get(req)
+  if (!memo) {
+    memo = new Map()
+    memosByRequest.set(req, memo)
+  }
+
+  const cached = memo.get(key)
+  if (cached) return cached as Promise<T>
+
+  const pending = load()
+  memo.set(key, pending)
+  // A failed read must not poison the rest of the request; the caller still gets
+  // this rejection, and `.catch` here only marks this branch as handled.
+  pending.catch(() => {
+    if (memo.get(key) === pending) memo.delete(key)
+  })
+
+  return pending
+}
 
 /** Enough of a request for Local API calls inside an existing transaction. */
 export type CampaignTransactionRequest = PayloadRequest | { transactionID: number | string }
@@ -94,29 +138,23 @@ export const eligibleCampaignStaffWhere: Where = {
   ],
 }
 
-export const getFreshCampaignUser = async (
+export const getFreshCampaignUser = (
   req: PayloadRequest,
   user: CampaignActor = req.user,
 ): Promise<CampaignUser | null> => {
-  if (!isCampaignUser(user)) return null
+  if (!isCampaignUser(user)) return Promise.resolve(null)
 
-  const context = req.context as Record<string, unknown>
-  const cacheKey = `${FRESH_CAMPAIGN_USER_CONTEXT_KEY}:${user.id}`
-  if (cacheKey in context) return context[cacheKey] as CampaignUser | null
-
-  let fresh: CampaignUser | null = null
-  try {
-    fresh = await req.payload.findByID({
-      collection: 'campaignUser',
-      id: user.id,
-      depth: 0,
-      overrideAccess: true,
-      req,
-    })
-  } catch {
-    fresh = null
-  }
-
-  context[cacheKey] = fresh
-  return fresh
+  return memoizePerRequest(req, `${FRESH_CAMPAIGN_USER_MEMO_KEY}:${user.id}`, async () => {
+    try {
+      return await req.payload.findByID({
+        collection: 'campaignUser',
+        id: user.id,
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+    } catch {
+      return null
+    }
+  })
 }

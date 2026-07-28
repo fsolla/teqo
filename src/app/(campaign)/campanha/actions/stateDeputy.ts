@@ -74,11 +74,16 @@ export const updateStateDeputy = async (input: StateDeputyUpdateInput) => {
   return updateStateDeputyRecord(payload, actor, input)
 }
 
+/**
+ * `/campanha/dobradinhas` — the list this chip cell lives on since B37 — is
+ * deliberately absent, on the same reasoning as the leadership twin: the cell
+ * already shows the toggle, so refreshing its own list re-serializes the table
+ * and the município index for a change already on screen.
+ */
 const revalidateStateDeputyMunicipalityPaths = (
   stateDeputySlug: string | undefined,
   municipalitySlugs: readonly string[],
 ) => {
-  revalidatePath('/campanha/dobradinhas', 'page')
   if (stateDeputySlug) {
     revalidatePath(`/campanha/dobradinhas/${stateDeputySlug}`, 'page')
   }

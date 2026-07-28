@@ -12,13 +12,14 @@ import {
   isCampaignUnrestricted,
   isCampaignUser,
   isPayloadAdmin,
+  memoizePerRequest,
 } from '@/utilities/access/shared'
 import { relationshipId } from '@/utilities/relationship'
 
 type LeadershipID = number
 type AccessibleLeadershipIDs = LeadershipID[] | null
 
-const ACCESSIBLE_LEADERSHIP_IDS_CONTEXT_KEY = 'campaignAccessibleLeadershipIds'
+const ACCESSIBLE_LEADERSHIP_IDS_MEMO_KEY = 'campaignAccessibleLeadershipIds'
 
 export const canSetAdministrativeLeadershipField: FieldAccess = ({ req }) =>
   isPayloadAdmin(req.user)
@@ -92,44 +93,37 @@ export const getAccessibleLeadershipIds = async (
   if (!isCampaignUser(currentUser)) return []
   if (isCampaignUnrestricted(currentUser)) return null
 
-  const context = req.context as Record<string, unknown>
-  const cacheKey = `${ACCESSIBLE_LEADERSHIP_IDS_CONTEXT_KEY}:${currentUser.id}:${currentUser.role}`
-  const cached = context[cacheKey]
+  return memoizePerRequest(
+    req,
+    `${ACCESSIBLE_LEADERSHIP_IDS_MEMO_KEY}:${currentUser.id}:${currentUser.role}`,
+    async () => {
+      const collections = req.payload.collections as Record<string, unknown>
+      const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
+      let ids: LeadershipID[] = []
 
-  if (Array.isArray(cached)) {
-    return cached.filter((id): id is number => typeof id === 'number')
-  }
+      if (currentUser.role === 'advisor' && collections.leadership) {
+        const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
+        const result = await find({
+          collection: 'leadership',
+          depth: 0,
+          limit: 0,
+          overrideAccess: true,
+          pagination: false,
+          req,
+          select: { id: true },
+          where: {
+            municipalities: {
+              in: municipalityIDs ?? [],
+            },
+          },
+        })
 
-  const collections = req.payload.collections as Record<string, unknown>
-  const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
-  let ids: LeadershipID[] = []
+        ids = result.docs
+          .map((doc) => relationshipId(doc.id))
+          .filter((id): id is number => id !== null)
+      }
 
-  if (currentUser.role === 'leader') {
-    ids = []
-  }
-
-  if (currentUser.role === 'advisor' && collections.leadership) {
-    const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
-    const result = await find({
-      collection: 'leadership',
-      depth: 0,
-      limit: 0,
-      overrideAccess: true,
-      pagination: false,
-      req,
-      select: { id: true },
-      where: {
-        municipalities: {
-          in: municipalityIDs ?? [],
-        },
-      },
-    })
-
-    ids = result.docs.map((doc) => relationshipId(doc.id)).filter((id): id is number => id !== null)
-  }
-
-  const uniqueIDs = [...new Set(ids)]
-  context[cacheKey] = uniqueIDs
-
-  return uniqueIDs
+      return [...new Set(ids)]
+    },
+  )
 }

@@ -406,6 +406,17 @@ export const RelationChipCell = ({
    * ARIA 1.2 combobox keyboard contract, shared by the inline input and the
    * Drawer's: Up/Down/Home/End move the active option, Enter picks it, Escape
    * abandons the search. Without it the suggestions are mouse-only.
+   *
+   * Kept by hand, against B34+ F5's recommendation to adopt `ui/combobox.tsx`.
+   * Two reasons the base-ui `Combobox` cannot take this shape: its `Root` owns
+   * exactly ONE input, and this cell has two live at once (the inline row and
+   * the Drawer's) driving one set of hits — two Roots would mean a second copy
+   * of the state this file has already been bitten by twice; and its `Root` is
+   * a value-selection widget, while this one holds no value at all — picking a
+   * hit fires a write and clears the query. What it would remove is this
+   * handler plus the aria wiring, ~45 lines, in exchange for syncing two
+   * external stores back into the cell. `anchor`/`data-chips` do fit, and
+   * remain the right call for a chip picker that does hold a value.
    */
   const onSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -661,7 +672,10 @@ export const RelationChipCell = ({
               value={query}
               role="combobox"
               aria-expanded={inlineSuggesting}
-              aria-controls={listboxId('inline')}
+              // Only while expanded: the listbox lives inside the Popover, which
+              // Radix unmounts on close, so an unconditional `aria-controls`
+              // points at an id that is not in the document.
+              aria-controls={inlineSuggesting ? listboxId('inline') : undefined}
               aria-autocomplete="list"
               aria-activedescendant={inlineSuggesting ? activeOptionId : undefined}
               onChange={(event) => {
@@ -786,7 +800,9 @@ export const RelationChipCell = ({
             value={query}
             role="combobox"
             aria-expanded={drawerSuggesting}
-            aria-controls={listboxId('drawer')}
+            // Same as the inline input: the drawer list is only rendered while
+            // searching, so a permanent `aria-controls` would dangle.
+            aria-controls={drawerSuggesting ? listboxId('drawer') : undefined}
             aria-autocomplete="list"
             aria-activedescendant={drawerSuggesting ? activeOptionId : undefined}
             onChange={(event) => {

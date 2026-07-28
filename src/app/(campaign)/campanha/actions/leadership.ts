@@ -235,13 +235,61 @@ export const updateLeadershipInternal = async (input: LeadershipInternalUpdateIn
   return updateLeadershipInternalRecord(payload, actor, input)
 }
 
+/**
+ * `/campanha/liderancas` — the list the chip was toggled ON — is deliberately
+ * NOT here: see `revalidateLeadershipMunicipalityPaths` below for the reason.
+ */
 const revalidateLeadershipStateDeputyPaths = (leadershipId: number, stateDeputySlug?: string) => {
-  revalidatePath('/campanha/liderancas', 'page')
   revalidatePath(`/campanha/liderancas/${leadershipId}`, 'page')
   revalidatePath('/campanha/dobradinhas', 'page')
   if (stateDeputySlug) {
     revalidatePath(`/campanha/dobradinhas/${stateDeputySlug}`, 'page')
   }
+}
+
+const LEADERSHIP_RELATION_LOCK_KEYS = {
+  municipalities: 'leadership-municipalities',
+  stateDeputies: 'leadership-state-deputies',
+} as const
+
+/**
+ * Opens a leadership for a delta write on one of its relations: reloads the
+ * actor, takes the lock that belongs to THAT relation, and reads the current
+ * ids under the actor's row access (the same guard
+ * `updateLeadershipInternalRecord` relies on).
+ *
+ * The pairing is the point: relation and lock key used to be two independent
+ * string literals a few lines apart, so a third relation could quietly take a
+ * lock that guards a different column. The rest of the two delta writes — the
+ * delta shape, the scope assertion, the slug lookup, the return — is genuinely
+ * different in each, and hoisting it would cost six callbacks to share ~24 lines.
+ */
+const openLeadershipForRelationDelta = async <
+  Relation extends keyof typeof LEADERSHIP_RELATION_LOCK_KEYS,
+>(
+  payload: Payload,
+  actor: CampaignUser,
+  req: PayloadTransactionRequest,
+  leadershipId: number,
+  relation: Relation,
+) => {
+  const currentActor = await getFreshStaffActor(payload, actor, req)
+
+  await acquireTextAdvisoryLocks(payload, req, [
+    `${LEADERSHIP_RELATION_LOCK_KEYS[relation]}:${leadershipId}`,
+  ])
+
+  const current = await payload.findByID({
+    collection: 'leadership',
+    id: leadershipId,
+    depth: 0,
+    select: { [relation]: true } as Record<Relation, true>,
+    user: currentActor,
+    overrideAccess: false,
+    req,
+  })
+
+  return { currentActor, current }
 }
 
 /**
@@ -262,21 +310,13 @@ export const setLeadershipStateDeputyMembershipRecord = async (
   return withPayloadTransaction(
     payload,
     async ({ req }) => {
-      const currentActor = await getFreshStaffActor(payload, actor, req)
-
-      await acquireTextAdvisoryLocks(payload, req, [`leadership-state-deputies:${leadershipId}`])
-
-      // Row access verifies the leadership is in the actor's scope (same
-      // guard `updateLeadershipInternalRecord` relies on).
-      const current = await payload.findByID({
-        collection: 'leadership',
-        id: leadershipId,
-        depth: 0,
-        select: { stateDeputies: true },
-        user: currentActor,
-        overrideAccess: false,
+      const { currentActor, current } = await openLeadershipForRelationDelta(
+        payload,
+        actor,
         req,
-      })
+        leadershipId,
+        'stateDeputies',
+      )
 
       const currentStateDeputyIDs = uniqueRelationshipIds(current.stateDeputies)
       const nextStateDeputyIDs = nextStateDeputyIdsAfterMembership(
@@ -335,11 +375,21 @@ export const setLeadershipStateDeputyMembership = async (
   return leadership
 }
 
+/**
+ * `/campanha/liderancas` is deliberately absent: the chip cell that calls this
+ * IS on that list, and it already shows the result optimistically, so
+ * revalidating it re-renders and re-serializes the whole table (plus the 435-row
+ * município index it carries) on every toggle, for a change already on screen.
+ * The routes below are the ones an actor cannot see from here.
+ *
+ * Accepted consequence: with the list filtered BY município, dropping that
+ * município leaves the row in place until the next navigation instead of making
+ * it vanish under the cursor mid-edit.
+ */
 const revalidateLeadershipMunicipalityPaths = (
   leadershipId: number,
   municipalitySlugs: readonly string[],
 ) => {
-  revalidatePath('/campanha/liderancas', 'page')
   revalidatePath(`/campanha/liderancas/${leadershipId}`, 'page')
   for (const slug of municipalitySlugs) {
     revalidatePath(`/campanha/municipios/${slug}`, 'page')
@@ -368,21 +418,13 @@ export const setLeadershipMunicipalitiesMembershipRecord = async (
   return withPayloadTransaction(
     payload,
     async ({ req }) => {
-      const currentActor = await getFreshStaffActor(payload, actor, req)
-
-      await acquireTextAdvisoryLocks(payload, req, [`leadership-municipalities:${leadershipId}`])
-
-      // Row access verifies the leadership is in the actor's scope (same
-      // guard `updateLeadershipInternalRecord` relies on).
-      const current = await payload.findByID({
-        collection: 'leadership',
-        id: leadershipId,
-        depth: 0,
-        select: { municipalities: true },
-        user: currentActor,
-        overrideAccess: false,
+      const { currentActor, current } = await openLeadershipForRelationDelta(
+        payload,
+        actor,
         req,
-      })
+        leadershipId,
+        'municipalities',
+      )
 
       const change = nextMunicipalityIdsAfterLeadershipMembership(
         uniqueRelationshipIds(current.municipalities),

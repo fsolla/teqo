@@ -1,5 +1,6 @@
 import { ELECTION_TSE_CACHE_TAG } from '@/utilities/electionCache'
 import { getGlobalCacheTag } from '@/utilities/globals'
+import { MUNICIPALITY_CATALOG_CACHE_TAG } from '@/utilities/municipalityRevalidation'
 
 export const REVALIDATE_POSTS_TAG = 'posts' as const
 
@@ -9,6 +10,7 @@ const ALLOWED_REVALIDATE_TAGS = [
   REVALIDATE_POSTS_TAG,
   REVALIDATE_PRIVACY_POLICY_CACHE_TAG,
   ELECTION_TSE_CACHE_TAG,
+  MUNICIPALITY_CATALOG_CACHE_TAG,
 ] as const
 
 type AllowedRevalidateTag = (typeof ALLOWED_REVALIDATE_TAGS)[number]

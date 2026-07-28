@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { setStateDeputyMunicipalitiesBatchRecord } from '@/app/(campaign)/campanha/actions/stateDeputy'
 import config from '@/payload.config'
 
-import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { installCampaignFixtures, relationIds } from '../helpers/campaignFixtures'
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -25,9 +25,7 @@ const stateDeputyIdsOf = async (municipalityID: number): Promise<number[]> => {
     select: { stateDeputies: true },
     overrideAccess: true,
   })
-  return (municipality.stateDeputies ?? []).map((entry) =>
-    typeof entry === 'number' ? entry : entry.id,
-  )
+  return relationIds(municipality.stateDeputies)
 }
 
 describe('setStateDeputyMunicipalitiesBatchRecord (B37)', () => {
