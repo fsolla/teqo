@@ -94,6 +94,16 @@ Componentes:
 
 - **Drag-to-scroll no desktop.** Revisitar se CG não descobrir overflow na strip.
 - **Fade edges** na strip. Revisitar no critique Impeccable se o corte visual mentir “acabou”.
+- **Lazy mount do Drawer** (só no primeiro long-press). Trade-off B34/B42: Drawer coarse montado por ação com `description`; revisitar se o Início (B45) com 6 ações perfilar DOM pesado.
+- **Shell read-only “info drawer”** compartilhado com `CampaignCellEditOverlay` / `InstallPwaToast`. Gatilho: **2º** call site idêntico (título + descrição + Fechar).
+- **`children` da strip sem `<li>`.** Documentar ou validar quando B45 montar ações custom.
+- **Mover `useCampaignLongPress` para fora de `lib/`.** Gatilho: 2º call site idêntico (plano já prevê extrair no 2º).
+
+## Pós-simplify (2026-07-29, não reabrir)
+
+**Já resolvido na entrega:** timer long-press com cleanup no unmount; `aria-describedby` só com drawer aberto; `useCoarsePointer` com um listener `matchMedia` compartilhado; `href` sem `onClick` no hook (navegação = tap curto); Drawer omitido quando `disabled`; keys `href ?? label`; specs duplicadas `.ts` removidas; testes coarse long-press + unmount.
+
+**Descartado (score baixo):** constante de classe Tooltip compartilhada com `CampaignHoverTooltip`; e2e de scroll do `body` além de smoke de classes na strip.
 
 ## Referências
 
