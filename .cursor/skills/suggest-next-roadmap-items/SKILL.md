@@ -38,6 +38,7 @@ Esta skill **só recomenda** — não implementa, não edita o roadmap e não cr
 - [ ] 4. Pontuar candidatos (calendário × valor × prontidão × risco)
 - [ ] 5. Ler planos: principal em profundidade; demais paralelos só cabeçalho se preciso
 - [ ] 6. Checar colisões vs principal e listar TODOS os paralelos (priorizados, sem teto)
+- [ ] 6b. Para o principal e **cada linha** da tabela paralela, atribuir modelo × effort via `.cursor/skills/model-selection/SKILL.md` (tabela canônica + regras de effort)
 - [ ] 7. Entregar principal + lista paralela completa + próximo passo; parar
 ```
 
@@ -117,6 +118,25 @@ Atribua a cada **Pronto** / **Quase** uma nota 1–5 (soma ponderada mental; nã
 
 Se dois candidatos forem quase equivalentes para o #1, prefira o de menor risco de migration / o que o calendário pune mais se atrasar.
 
+### Modelo × effort (principal + paralelos)
+
+Antes de entregar, leia **só a tabela canônica e as regras** em `.cursor/skills/model-selection/SKILL.md` (não precisa reler gates de `/simplify`/`ship` aqui). Para **cada** item (principal e todas as linhas paralelas), escolha **um** par modelo + effort para a **worktree de `implement-roadmap-item`**:
+
+| Sinal no item                                                                   | Classe típica → modelo (1ª escolha) · effort                                                                                |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Feature/fill-in B/E/C multi-arquivo, gates completos, sem migration de risco    | Composer 2.5 · **medium**                                                                                                   |
+| Fix pequeno/localizado (1 arquivo, teste quebrado)                              | Kimi K2.7 · medium                                                                                                          |
+| Migration, access/RBAC, Consent/LGPD, hooks com `req`/transação                 | Kimi K3 · **high**                                                                                                          |
+| Perf/loader/bundle/waterfall (medir antes de otimizar)                          | Gemini 3.1 Pro · medium                                                                                                     |
+| Débito `escala-dry-pos-*` com risco de race/closure/drift de string (auditoria) | Kimi K3 · high na fase `/simplify`; entrega em si pode ser Composer · medium se o plano for só refactor mecânico            |
+| R6 / passes `/impeccable` / critique multi-superfície                           | Composer · medium na implementação; **avisar** K3 · high na sessão que rodar `/impeccable` (subagentes herdam o modelo pai) |
+| Rename/chore/docs/roadmap bookkeeping                                           | Grok 4.5 · **low**                                                                                                          |
+| Discovery/research longo pt-BR                                                  | GLM 5.2 · medium                                                                                                            |
+
+**Formato na célula da tabela:** `Composer 2.5 · med` — modelo legível + effort `low`/`med`/`high` (abrevie `medium` → `med` na tabela para caber). Opcional, após travessão: meia frase da classe (`perf loader`, `migration+Consent`, etc.). Se o item tiver **duas fases** com classes diferentes (ex.: D2 schema + polish), use a fase de **maior blast radius** na célula e uma nota curta em "Por que agora" (`schema: K3 high`).
+
+**Pool primeiro:** não recomende K3/Pro/GLM para trabalho que cabe em Composer/Grok sem violar as regras de effort (migrations e Consent são exceção obrigatória).
+
 ## Passo 6 — Checar colisões e listar TODOS os paralelos
 
 Premissa: cada item roda na **sua própria branch/worktree** e fecha com `close-delivery` (rebase em `main` antes do merge). Logo, paralelizável não é "cabe no mesmo dia" — é "pode viver em worktree separada e reencontrar `main` sem conflito que exija reescrita **com o principal**".
@@ -172,9 +192,9 @@ Formato obrigatório da resposta (conciso; sem reescrever o roadmap):
 
 Cada um em sua própria worktree; nenhum depende do principal. Ordenados por score (maior primeiro). **Sem limite de linhas.**
 
-| #   | ID  | Por que agora | Por que não colide com o principal | Colide com (irmãos) | Plano |
-| --- | --- | ------------- | ---------------------------------- | ------------------- | ----- |
-| 2   | …   | …             | …                                  | — / ID (superfície) | …     |
+| #   | ID  | Por que agora | Por que não colide com o principal | Colide com (irmãos) | Modelo (`model-selection`) | Plano |
+| --- | --- | ------------- | ---------------------------------- | ------------------- | -------------------------- | ----- |
+| 2   | …   | …             | …                                  | — / ID (superfície) | Composer 2.5 · med — …     | …     |
 
 - Migration no lote: liste os IDs com migration (no máximo um por worktree simultânea).
 - Serializar depois do principal: \<ID\> — colide em \<superfície\>.
@@ -196,6 +216,7 @@ Quer que eu rode `implement-roadmap-item` em algum destes?
 - Editar `docs/roadmap.md` / `docs/plans/` (se achar inconsistência material, **reporte** e ofereça `roadmap-item` / correção via `implement-roadmap-item` Passo 7)
 - Inventar IDs ou itens que não estão no roadmap
 - **Omitir** um Pronto/Quase que passa nos três testes contra o principal só para "encurtar" a resposta — a lista paralela é completa; concisão vem das células curtas, não do corte
+- **Omitir** a coluna **Modelo** na tabela paralela ou deixar linha sem par modelo × effort — cada linha precisa de recomendação para a worktree de implementação
 - Apresentar o lote como "alternativas ao principal" ou como um plano de execução sequencial
 - Colocar na lista paralela item que colide com o **principal** (Passo 6) — ele vai para "Serializar depois"
 - Auditoria afirmação-a-afirmação do plano (isso é `implement-roadmap-item`)
