@@ -1,7 +1,7 @@
 # Remover coluna Tipo da lista de Municípios
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue
+Atualizado em: 2026-07-29
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins)
 Impeccable: B — encaixe em `MunicipalityList` / filtros da lista (`/campanha/municipios`); sem rota nova
 Appetite: ~0,25–0,5 dia eng; remove coluna + filtro/sort `kind` da URL da lista; sem migration
@@ -105,8 +105,8 @@ Depth check: só delete/estreitamento nos módulos profundos já donos do contra
 
 - `docs/roadmap.md` (Fill-ins abertos)
 - `src/components/campaign/municipality/MunicipalityList.tsx` — coluna `kind` (~L262–270)
-- `src/utilities/municipalityListUrl.ts` — contrato URL / sort / where
-- `src/utilities/municipalityListFilters.ts` — definition + `applyMunicipalityKindFilter`
+- `src/utilities/municipality/municipalityListUrl.ts` — contrato URL / sort / where (Pass 2 W2)
+- `src/utilities/municipality/municipalityListFilters.ts` — definitions (sem `kind` desde 2026-07-29)
 - `src/components/campaign/municipality/MunicipalityHeaderFilter.tsx` — single-select Tipo
 - `src/components/campaign/municipality/MunicipalityFilters.tsx` — mobile
 - `src/utilities/municipalityLabels.ts` — `municipalityKindLabels` (permanece para detalhe)

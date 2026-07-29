@@ -46,7 +46,6 @@ import {
   formatTerritorialClassWhy,
   municipalityColumnDescriptions,
   municipalityGeographyParts,
-  municipalityKindLabels,
   territorialClassBadgeVariant,
   territorialClassLabels,
   type MunicipalityListColumnId,
@@ -310,19 +309,6 @@ const municipalityListColumns = ({
     ),
     cellClassName: 'max-w-56 whitespace-normal text-muted-foreground',
     cell: (municipality) => <TerritoryLink region={municipality.region} />,
-  },
-  {
-    id: 'kind',
-    label: municipalityColumnLabels.kind,
-    head: (
-      <MunicipalitySortableHead
-        state={state}
-        sortKey="kind"
-        filterParam="kind"
-        description={municipalityColumnDescriptions.kind}
-      />
-    ),
-    cell: (municipality) => municipalityKindLabels[municipality.kind],
   },
   {
     id: 'votos',

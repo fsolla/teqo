@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import { formatMunicipalityConcentrationHint } from '@/utilities/municipality/municipalityLabels'
 import {
-  applyMunicipalityKindFilter,
   buildMunicipalityFilterHref,
   buildMunicipalityFilterOptionHref,
   formatMunicipalityActiveFiltersSummary,
@@ -256,13 +255,13 @@ describe('municipality list header filters (B16+)', () => {
       page: '3',
       sort: 'votos',
       dir: 'asc',
-      kind: 'zona',
+      priority: 'alta',
     })
     const withRegion = toggleMunicipalityMultiFilterValue(state, 'region', 'Irecê')
     expect(withRegion.regions).toEqual(['Irecê'])
     expect(withRegion.page).toBe(1)
     expect(buildMunicipalityFilterHref(withRegion)).toBe(
-      '/campanha/municipios?region=Irec%C3%AA&kind=zona&sort=votos&dir=asc',
+      '/campanha/municipios?region=Irec%C3%AA&priority=alta&sort=votos&dir=asc',
     )
 
     const withTwo = toggleMunicipalityMultiFilterValue(withRegion, 'region', 'Recôncavo')
@@ -329,7 +328,6 @@ describe('municipality list header filters (B16+)', () => {
     expect(
       toggleMunicipalityMultiFilterValue(state, 'region', 'NotATerritory').regions,
     ).toBeUndefined()
-    expect(applyMunicipalityKindFilter(state, 'bairro').kind).toBeUndefined()
     expect(
       toggleMunicipalityExclusiveFilterValue(state, 'coverage', 'maybe').coverage,
     ).toBeUndefined()

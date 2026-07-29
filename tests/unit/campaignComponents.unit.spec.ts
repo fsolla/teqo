@@ -267,7 +267,7 @@ describe('campaign visual foundation', () => {
     // the mobile card's own class tooltip (B42) add triggers of their own.
     const [, tbodyHtml = ''] = html.split('<tbody')
     const theadHtml = html.slice(html.indexOf('<thead'), html.indexOf('</thead>'))
-    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(11)
+    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(10)
 
     // B41: horizontal scroll + sticky Município (Territory pattern).
     expect(html).toMatch(/data-slot="table-container"[^>]*class="[^"]*overflow-x-auto/)
@@ -521,7 +521,7 @@ describe('campaign visual foundation', () => {
     // B22: the leader view's 5 columns (name/region/kind/votos/lastUpdateAt)
     // also carry header explanations.
     const [theadHtml] = html.split('<tbody')
-    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(5)
+    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(4)
   })
 
   /**
@@ -553,7 +553,7 @@ describe('campaign visual foundation', () => {
       // The staff `<thead>` already carries 11 header-explanation tooltips
       // (B22), regardless of row data. This baseline isolates the advisors
       // CELL tooltip, the one this test actually exercises.
-      const HEADER_TOOLTIP_COUNT = 11
+      const HEADER_TOOLTIP_COUNT = 10
       const baseMunicipality = {
         id: 1,
         name: 'Seabra',

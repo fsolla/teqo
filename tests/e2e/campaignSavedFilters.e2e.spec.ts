@@ -9,7 +9,7 @@ import { expect, test } from './fixtures/campaignE2EFixtures.js'
  */
 
 /** 416 whole municipalities — deep enough that `?page=2` is a real page. */
-const SAVED_RECORTE = '/campanha/municipios?kind=municipio'
+const SAVED_RECORTE = '/campanha/municipios?priority=alta'
 
 const SAVED_NAME = 'Recorte do teste'
 const RENAMED = 'Recorte renomeado'
