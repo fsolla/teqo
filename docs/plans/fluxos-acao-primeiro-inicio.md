@@ -107,7 +107,7 @@ Copy: zero “broker”, “campo sem captura”, “LQ” nos passos. Se precis
 | 2     | Que tipo?          | Grid de tiles grandes + Drawer de info por tipo (**B63**); “Pular registro de sinal” no topo direito **só se** a origem ≠ ação `register-signal` |
 | 3     | Detalhe?           | Texto livre; Skip (mesma regra); **Salvar** inferior direito (**B63**)                                                                           |
 
-Chrome de toda etapa: seta **Voltar** no topo esquerdo **só mobile**; desktop = browser (**B59**).
+Chrome de toda etapa: seta **Voltar** no topo esquerdo **só mobile**; desktop = browser (**B59**). Após escolher o município: **nome do município sticky no limite superior central**, semi-discreto (**B59** — absorvido 2026-07-29).
 
 Opcional ao fim: “Isso muda a projeção de votos?” → entra em A1 / **B61**.
 

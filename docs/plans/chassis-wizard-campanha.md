@@ -1,10 +1,10 @@
 # Chassis do wizard de campanha (shell + voltar)
 
 Status: rascunho
-Atualizado em: 2026-07-29
+Atualizado em: 2026-07-29 — absorve lembrete de produto: município em atualização sempre visível no topo (centro, semi-discreto)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B59 — UX-1 wizards)
 Impeccable: C — UI nova (shell de fluxo multi-passo sob `/campanha`)
-Appetite: ~0,75 dia eng; layout de passo + header mobile + slot de conteúdo; sem migration
+Appetite: ~0,75–1 dia eng; layout de passo + header mobile + slot de conteúdo + caption sticky do município; sem migration
 Responsável: —
 
 ## Design (Impeccable)
@@ -15,11 +15,11 @@ Na implementação (`implement-roadmap-item`): shape → craft → critique → 
 
 Brief compacto:
 
-- **Persona / contexto:** CG/assessor no celular entre Zaps; um passo por vez, sem chrome de lista.
-- **Job principal:** enquadrar qualquer etapa de wizard (busca, votos, sinal…) com volta óbvia no mobile e conteúdo focável.
+- **Persona / contexto:** CG/assessor no celular entre Zaps; um passo por vez, sem chrome de lista — e sem esquecer **qual** município está atualizando enquanto edita votos/sinal/tendência.
+- **Job principal:** enquadrar qualquer etapa de wizard (busca, votos, sinal…) com volta óbvia no mobile, conteúdo focável e **contexto de município sempre legível** após a escolha.
 - **Estratégia de cor:** Restrained.
 - **Edit where you see:** não — fluxo linear; escrita nas etapas filhas.
-- **Anti-goals:** sidebar/nav do app competindo com o passo; seta “voltar” no desktop (lá é browser); segundo design system de wizard.
+- **Anti-goals:** sidebar/nav do app competindo com o passo; seta “voltar” no desktop (lá é browser); segundo design system de wizard; badge/chip gritante de município no meio do passo; repetir o nome do município no título de cada pergunta.
 
 ## Dados → decisão → apresentação
 
@@ -34,18 +34,20 @@ Este item é o **frame** compartilhado — não a busca, nem o ajuste de votos, 
 ## Objetivos
 
 - Componente shell (nome final no PR, ex. `CampaignWizardShell`) com: título/pergunta do passo, slot `children`, slot opcional de ação no topo direito (ex. “Pular…” do B63), **back control só em viewport mobile** (`md:hidden` ou equivalente) que navega ao passo anterior / Início conforme o fluxo.
+- **Contexto de município (pedido 2026-07-29):** quando o fluxo já tem município escolhido, o **nome** permanece visível no **limite superior central**, semi-discreto (`text-sm` / `muted-foreground` — craft), **sticky** no scroll do passo (não some ao rolar formulário longo). Ausente na etapa **B60** (ainda não há município). Não substitui o título/pergunta do passo.
 - Desktop: sem seta; documentar que `history.back` / rota anterior cobre o gesto.
 - Layout: uma coluna; conteúdo alinhado ao bottom em mobile quando a etapa pedir (B63 tipifica), top em `md+` — o shell expõe um prop de alinhamento (`contentAlign: 'start' | 'end'`) sem hardcodar o grid de sinais.
 - Rotas sob `/campanha/…` (recomendação UX-1 travada: rota, não Sheet — sobrevive a refresh/Zap). Este item define o layout e o header; as rotas concretas nascem com B60/B61/B63 ou com o wiring A1.
 - Sem migration / Consent / action de escrita.
-- a11y: seta com nome acessível contendo o verbo visível (“Voltar”); foco gerenciado ao trocar de passo (mínimo: foco no heading do passo).
+- a11y: seta com nome acessível contendo o verbo visível (“Voltar”); caption do município anunciável (`aria`-nomeada, não só cor); foco gerenciado ao trocar de passo (mínimo: foco no heading do passo).
 
 ## Decisões travadas
 
 - **Voltar mobile = chrome do wizard; desktop = browser.** **Rejeitado:** seta também em `md+` (ruído; duplica gesto nativo); só `Link` “Cancelar” no rodapé (longe do polegar no topo).
 - **Wizard = rota**, não Drawer sobre o Início. **Rejeitado:** Sheet full-screen (refresh/Zap perde contexto; URL não compartilha passo). Fonte: gate UX-1 2026-07-29 + rascunho.
-- **Shell não grava estado de domínio** — só navegação/chrome. Estado de município/votos/sinal fica nas etapas ou num store mínimo do fluxo (Adiado com gatilho se 3º wizard pedir).
-- **i18n:** ids em inglês (`WizardShell`, `onBack`, `trailingAction`); copy pt-BR.
+- **Shell não grava estado de domínio** — só navegação/chrome. Estado de município/votos/sinal fica nas etapas ou num store mínimo do fluxo (Adiado com gatilho se 3º wizard pedir). O shell **recebe** o rótulo (`municipalityLabel?: string` / slot) — não resolve slug→nome sozinho.
+- **Município no topo = caption sticky semi-discreta, centro superior.** **Rejeitado:** A) só no título do passo (some da hierarquia quando a pergunta muda); B) chip/badge primário gritante (compete com CTA); C) link obrigatório para `/municipios/[slug]` na v1 (abandona o wizard no meio do ritual — Adiado com gatilho). Fonte: produto 2026-07-29.
+- **i18n:** ids em inglês (`WizardShell`, `onBack`, `trailingAction`, `municipalityLabel` / `contextCaption`); copy pt-BR.
 
 ## Questões em aberto
 
@@ -58,13 +60,14 @@ flowchart TB
   Home["/campanha Início"] --> Route["rota de passo"]
   Route --> Shell["CampaignWizardShell"]
   Shell --> Back["Voltar md:hidden"]
+  Shell --> Ctx["municipalityLabel sticky centro"]
   Shell --> Trail["trailingAction?"]
   Shell --> Body["children = etapa"]
 ```
 
 Componentes:
 
-- **`CampaignWizardShell`** em `src/components/campaign/shared/` (ou `shell/`): header + main; reusa tokens/`Button` ghost para a seta (`ArrowLeft`).
+- **`CampaignWizardShell`** em `src/components/campaign/shared/` (ou `shell/`): header (back | caption município | trailing) + main; reusa tokens/`Button` ghost para a seta (`ArrowLeft`); caption com `sticky top-0` no scroller do passo (respeitar safe-area / não cobrir a seta).
 - **Hook/helper de passo** (opcional neste item): `useWizardBack({ previousHref })` — se &lt;2 call sites, inline no shell.
 - **Migration:** Sem migration, sem collection, sem server action.
 
@@ -75,18 +78,21 @@ Componentes:
 
 ## Não escopo
 
-- Busca de município → **B60**. Ajuste de votos → **B61**. Modelo/UI de sinal → **B62**/ **B63**.
+- Busca de município → **B60** (é quem **escolhe**; o caption só aparece **depois**). Ajuste de votos → **B61**. Modelo/UI de sinal → **B62**/ **B63**.
 - Resumo final + CTA “Registrar atualização” do A1 → wiring do wizard A1 (após estas etapas).
 - Rascunho persistente cross-session → Adiado.
+- Modo focado da busca do Início no focus → **B66**.
 
 ## Rabbit holes
 
 - **State machine genérica de wizard (XState / multi-route orchestrator).** **Mitigação:** shell burro + hrefs/query de passo por fluxo; extrair só no 3º wizard.
 - **App chrome (`CampaignSidebar`) dentro do wizard.** **Mitigação:** layout de `(app)` pode permanecer; visualmente o conteúdo é full-bleed de passo — não inventar segundo layout group sem medição.
+- **Segundo header sticky competindo com `CampaignPageShell`.** **Mitigação:** um único sticky no chrome do wizard; não sticky o título do passo também.
 
 ## Adiado com gatilho
 
 - **Persistência de rascunho (município + ação) ao reabrir.** Revisitar quando a 1ª sessão real for interrompida por Zap e o CG reclamar (UX-1 § contrato #8).
+- **Caption do município como `Link` para a ficha.** Revisitar se a mesa pedir “abrir município” sem sair do fluxo (ex. Sheet de leitura) — v1 é texto só.
 
 ## Referências
 

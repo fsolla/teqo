@@ -43,7 +43,7 @@ Em scrollport com altura definida pelo flex do `SidebarInset`, filhos com só `m
 
 - No viewport **&lt; `md`**, com Início **não** focado (query B47 inativa): o **grupo** strip de ações + barra de busca fica colado ao limite inferior do conteúdo útil (acima da bottom nav / `pb-24` do scroll), sem gap morto entre o grupo e esse limite.
 - Em **`md+`**: comportamento visual inalterado (busca acima das ações, no topo do conteúdo).
-- Modo focado **B47** intacto: spacer/strip ocultos; input sobe; resultados abaixo.
+- Modo focado **B47/B66** intacto: spacer/strip ocultos; input sobe; resultados abaixo. **B66** (quando landar) dispara a limpeza no **focus** e anima a retração — este item só ancora o dock no idle.
 - Leader (só strip, sem busca) também ancora a strip no inferior no mobile.
 - Sem migration / collection / Consent / server action / mudança de URL.
 - Pin em unit (cadeia de classes / presença do dock) + checklist visual mobile (viewport ~390) no e2e existente ou asserção de layout leve se couber sem flake.

@@ -44,7 +44,7 @@ Início blank (**B43**) + ações (**B44/B45**) + posição (**B46**). Pedido (2
 
 - **Debounce no cliente; sem botão Pesquisar.** **Rejeitado:** submit form; busca a cada keystroke sem debounce.
 - **Staff-only.** Leader continua lockdown (contatos). **Rejeitado:** omnibox para leader com só apoiadores nesta fatia (outro job).
-- **Expand = query não vazia**, não focus-only. **Rejeitado:** sumir a strip no focus vazio (rouba o ritual de ações).
+- **Expand = query não vazia**, não focus-only. **Rejeitado:** sumir a strip no focus vazio (rouba o ritual de ações). **Supersedido 2026-07-29 por B66** ([modo-focado-busca-no-focus.md](modo-focado-busca-no-focus.md)): produto pediu limpeza **no focus** + animação de expansão; hits continuam gated por query.
 - **i18n:** `CampaignHomeSearch`, `homeSearchQuery`; label pt-BR “Buscar na campanha” (ou copy curta a fechar no craft).
 
 ## Questões em aberto
