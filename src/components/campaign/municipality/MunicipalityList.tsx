@@ -16,6 +16,7 @@ import { MunicipalityListSignalControl } from '@/components/campaign/municipalit
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import { MunicipalityPriorityIndicator } from '@/components/campaign/municipality/MunicipalityPriorityIndicator'
 import { MunicipalitySortableHead } from '@/components/campaign/municipality/MunicipalitySortableHead'
+import { MunicipalityVotePositionReadout } from '@/components/campaign/municipality/MunicipalityVotePositionReadout'
 import { TerritoryLink } from '@/components/campaign/municipality/TerritoryLink'
 import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
@@ -34,11 +35,6 @@ import {
   resolveVisibleColumns,
   type CampaignColumnVisibility,
 } from '@/lib/campaignColumnVisibility'
-import {
-  formatElectionNumber,
-  formatPlacementOrdinal,
-  formatVoteSharePercent,
-} from '@/lib/electionFormat'
 import { formatEngagementLevelLabel } from '@/lib/engagementLevel'
 import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
@@ -104,32 +100,6 @@ export type MunicipalityListProps = {
   signalFormAction: MunicipalityStaffFormAction
   state: MunicipalityListState
   columnVisibility: CampaignColumnVisibility
-}
-
-const VotePositionReadout = ({
-  position,
-  layout,
-}: {
-  position: NonNullable<MunicipalityListViewModel['votePosition2022']>
-  layout: 'table' | 'card'
-}) => {
-  const share = formatVoteSharePercent(position.share)
-  const rank = formatPlacementOrdinal(position.rank)
-  const metaLine = `${formatElectionNumber(position.votes)} · ${rank}`
-  const ariaLabel = `${share} da votação estadual, ${formatElectionNumber(position.votes)} votos, ${rank} de ${formatElectionNumber(position.totalUnits)}`
-
-  return (
-    <div
-      className={cn(
-        'flex flex-col gap-0.5 tabular-nums',
-        layout === 'table' ? 'items-end text-right' : 'text-sm',
-      )}
-      aria-label={ariaLabel}
-    >
-      <span className={cn('font-medium', layout === 'card' && 'text-foreground')}>{share}</span>
-      <span className="text-xs text-muted-foreground">{metaLine}</span>
-    </div>
-  )
 }
 
 /**
@@ -324,7 +294,7 @@ const municipalityListColumns = ({
     cellClassName: 'text-right',
     cell: (municipality) =>
       municipality.votePosition2022 ? (
-        <VotePositionReadout position={municipality.votePosition2022} layout="table" />
+        <MunicipalityVotePositionReadout position={municipality.votePosition2022} layout="table" />
       ) : (
         <span className="text-muted-foreground">—</span>
       ),
@@ -591,7 +561,9 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
                     </span>
                     {zoneSuffix ? ` ${zoneSuffix}` : null}
                   </p>
-                  {position ? <VotePositionReadout position={position} layout="card" /> : null}
+                  {position ? (
+                    <MunicipalityVotePositionReadout position={position} layout="card" />
+                  ) : null}
                 </div>
                 {isPriority && isStaffView ? (
                   <MunicipalityPriorityIndicator className="relative size-11" />

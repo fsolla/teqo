@@ -46,6 +46,27 @@ test.describe('Início — busca global (B47)', () => {
     await page.getByLabel('Buscar na campanha').fill('')
     await expect(heading).toBeVisible({ timeout: 5000 })
   })
+
+  test('staff search shows municipality hits and opens detail (B48)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    const search = page.getByLabel('Buscar na campanha')
+    await search.fill('Cairu')
+
+    const group = page.getByRole('region', { name: 'Resultados da busca' })
+    await expect(group.getByRole('heading', { name: 'Municípios' })).toBeVisible({
+      timeout: 15000,
+    })
+    await group.getByRole('link', { name: /Cairu/i }).click()
+    await page.waitForURL(/\/campanha\/municipios\/cairu/)
+  })
 })
 
 test.describe('Início — catálogo de ações (B45)', () => {

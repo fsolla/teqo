@@ -1,7 +1,7 @@
 # Busca global — resultados Municípios (+ Territórios)
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `POST /campanha/home-search` (`campaignJsonMutationRoute` + `homeSearchBodySchema`); loader `searchHomeMunicipalities` (`loadMunicipalityScope` + `matchesAtWordStart` + A11 readout; TIs no mesmo grupo via `loadTerritoryOverview` + votos 2022); client `HomeSearchResultsContext` (fetch único, extensível B49+) + `HomeSearchResultsShell` + `HomeSearchMunicipalityGroup`; `MunicipalityVotePositionReadout` extraído da lista; empty “Nenhum resultado.”; sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B48 — busca global)
 Impeccable: B — grupo de resultados no chrome B47; linhas sem card
 Appetite: ~1–1,5 dia eng; loader scoped + UI do grupo; 1º provider da busca
@@ -81,10 +81,22 @@ Componentes:
 
 - **Fuzzy/typo tolerance.** **Mitigação:** word-start como listas.
 - **Salvador ZE vs cidade.** **Mitigação:** hits são as 19 unidades operacionais + TIs; não agregar Salvador num hit único.
+- **Custo de `loadTerritoryOverview` por keystroke.** v1 reutiliza o loader E17/E12 (pledges + E8 + classe) só para `votesByYear[2022]` nos TIs. **Mitigação futura:** ver Adiado abaixo.
+
+## Já resolvido no simplify (2026-07-29 — não reabrir)
+
+- Resposta `ok` sem `status: 'success'` deixava loading infinito → erro genérico.
+- `aria-busy` na região de resultados durante fetch (`resultsBusy` no chrome).
+- Mensagens staff/erro em `campaignHomeSearchMessages.ts`; `HOME_SEARCH_MIN_QUERY_LENGTH` único com Zod + `maxLength` no input.
+- Filtro word-start: query normalizada uma vez (`matchesNormalizedAtWordStart`).
 
 ## Adiado com gatilho
 
 - **Hit “sem responsável” / deficit na linha.** Revisitar se a busca virar fila E9.
+- **Loader leve de TIs na busca** (nomes estáticos + votos 2022 do artefato `bahiaElectionAggregates`, sem `loadTerritoryOverview` / pledges / E8). **Gatilho:** latência perceptível no Início com uso real **ou** antes de **B49+** se o mesmo POST continuar pesado com mais providers.
+- **`reloadStaffActor` no handler** (JWT role stale). **Gatilho:** próxima rota JSON staff-only que toque o mesmo padrão.
+- **Builder compartilhado de href `/campanha/municipios/[slug]`.** **Gatilho:** 3º call site além de lista + busca.
+- **Coalescer POSTs abortados no servidor.** **Gatilho:** debounce 250 ms gerar carga Neon mensurável em produção.
 
 ## Referências
 

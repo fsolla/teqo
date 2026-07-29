@@ -5,8 +5,24 @@ import type { ReactNode } from 'react'
 import { CampaignHomeLayout } from '@/components/campaign/dashboard/CampaignHomeLayout'
 import { CampaignHomeSearch } from '@/components/campaign/dashboard/CampaignHomeSearch'
 import { HomeSearchProvider } from '@/components/campaign/dashboard/HomeSearchContext'
+import {
+  HomeSearchResultsProvider,
+  useHomeSearchResultsState,
+} from '@/components/campaign/dashboard/HomeSearchResultsContext'
 import { useHomeSearchQuery } from '@/components/campaign/dashboard/useHomeSearchQuery'
 import { cn } from '@/lib/utils'
+
+const CampaignHomeStaffSearchSlot = ({ searchResults }: { searchResults: ReactNode }) => {
+  const searchResultsState = useHomeSearchResultsState()
+
+  return (
+    <CampaignHomeSearch resultsBusy={searchResultsState.isFetching}>
+      <HomeSearchResultsProvider value={searchResultsState}>
+        {searchResults}
+      </HomeSearchResultsProvider>
+    </CampaignHomeSearch>
+  )
+}
 
 export const CampaignHomeStaffChrome = ({
   actions,
@@ -28,7 +44,13 @@ export const CampaignHomeStaffChrome = ({
         <CampaignHomeLayout
           actions={actions}
           focused={focused}
-          searchSlot={<CampaignHomeSearch>{searchResults}</CampaignHomeSearch>}
+          searchSlot={
+            searchResults ? (
+              <CampaignHomeStaffSearchSlot searchResults={searchResults} />
+            ) : (
+              <CampaignHomeSearch />
+            )
+          }
         />
       </div>
     </HomeSearchProvider>
