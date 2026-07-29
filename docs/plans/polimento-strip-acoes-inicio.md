@@ -109,6 +109,13 @@ Sem migration, sem collection, sem server action.
 ## Adiado com gatilho
 
 - **Fade nas bordas da strip** quando `scrollWidth > clientWidth`. Revisitar se, após scrollbar oculta, usuários não descobrirem mais ações (sessão observada ou suporte).
+- **Utilitário global `scrollbar-hide`** — manter classes arbitrárias na strip até um 2º call site justificar extrair para `styles.css`.
+- **`useMemo` do array `actions` no RSC pai** — só se medição mostrar re-render custoso na strip (hoje o catálogo é estático por request).
+
+## Já resolvido no simplify (não reabrir)
+
+- Estado `pressing` do feedback coarse no círculo vive em `useCampaignLongPress` (B44/B58).
+- Prop `children` morta removida de `CampaignHomeActionStrip`.
 
 ## Referências
 
