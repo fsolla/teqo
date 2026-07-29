@@ -80,16 +80,16 @@ Copy: zero “broker”, “campo sem captura”, “LQ” nos passos. Se precis
 
 **Abre:** botão Início · ou sugestão E11 “atualizar projeção” · ou deep-link.
 
-| Passo | Pergunta                            | UI                                             | Escrita (já existe / quase)                      |
-| ----- | ----------------------------------- | ---------------------------------------------- | ------------------------------------------------ |
-| 1     | Em qual município?                  | Busca + 3 recentes / prioritários              | —                                                |
-| 2     | Qual a nova estimativa **média**?   | Número; mostra valor atual                     | `expectedVotes.central`                          |
-| 3     | E o **pessimista**?                 | Número; default = atual ou coerência com média | `expectedVotes.pessimistic`                      |
-| 4     | E o **otimista**?                   | Número                                         | `expectedVotes.optimistic`                       |
-| 5     | Quer registrar **o que aconteceu**? | Sim → mini A2 embutido / Não                   | `municipalityUpdate` sinal                       |
-| 6     | Quer mudar a **tendência**?         | Sim → A3 embutido / Não                        | `politicalTrend` + nota                          |
-| 7     | Quer ajustar **liderança** agora?   | Sim → A4 embutido (curto) / Não                | leadership / pledge                              |
-| 8     | Resumo → **Registrar atualização**  | CTA único                                      | transação ou sequência das actions já existentes |
+| Passo | Pergunta                            | UI                                                                              | Escrita (já existe / quase) |
+| ----- | ----------------------------------- | ------------------------------------------------------------------------------- | --------------------------- |
+| 1     | Em qual município?                  | Busca só municípios (UX Início, sem grupos); select → avança (**B60**)          | —                           |
+| 2     | Qual a nova estimativa **média**?   | Input grande pré-preenchido + atalhos 2× / ±50 / ±100; CTA “Ajustar…” (**B61**) | `expectedVotes.central`     |
+| 3     | E o **pessimista**?                 | Idem; se quebrar ordem vs média → jump + warning + atalho de volta (**B61**)    | `expectedVotes.pessimistic` |
+| 4     | E o **otimista**?                   | Idem + coerência vs anteriores (**B61**)                                        | `expectedVotes.optimistic`  |
+| 5     | Quer registrar **o que aconteceu**? | Sim → mini A2 (**B63**) / Não                                                   | `municipalityUpdate` sinal  |
+| 6     | Quer mudar a **tendência**?         | Sim → A3 embutido / Não                                                         | `politicalTrend` + nota     |
+| 7     | Quer ajustar **liderança** agora?   | Sim → A4 embutido (curto) / Não                                                 | leadership / pledge         |
+| 8     | Resumo → **Registrar atualização**  | CTA único                                                                       | actions existentes          |
 
 **Corte 03/08 se apertar:** passos 1–4 + 8; 5–7 como “Quer também?” com um campo cada, sem sub-wizard profundo.
 
@@ -99,17 +99,17 @@ Copy: zero “broker”, “campo sem captura”, “LQ” nos passos. Se precis
 
 ## Fluxo A2 — Registrar o que aconteceu (sinal)
 
-| Passo | Pergunta                        | UI                                                                                                                                |
-| ----- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | Em qual município?              | Busca (pular se veio de A1)                                                                                                       |
-| 2     | O que aconteceu? (título curto) | Texto — “Vereador foi apoiar outro candidato”                                                                                     |
-| 3     | Que tipo?                       | Lista curta em linguagem de mesa: Invasão · Perda de apoio · Novo apoio · Dificuldade · Outro (mapear para `kind`/enum existente) |
-| 4     | Quem contou? (fonte)            | Texto livre                                                                                                                       |
-| 5     | Confirmou com outra pessoa?     | Sim / Não (triangulação)                                                                                                          |
-| 6     | Urgente?                        | Sim / Não                                                                                                                         |
-| 7     | Resumo → **Registrar**          |                                                                                                                                   |
+**Modelo (B62, 2026-07-29):** só `signalType` + texto (`body`). **Sem** fonte nem triangulado. Rótulos de mesa (enum values estáveis): Invasão · Rede esfriou · Adversário apareceu · Alguém pediu algo · Outro.
 
-Opcional ao fim: “Isso muda a projeção de votos?” → entra em A1 passo 2.
+| Passo | Pergunta           | UI                                                                                                                                               |
+| ----- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1     | Em qual município? | Busca só municípios, select → avança (**B60**; pular se veio de A1)                                                                              |
+| 2     | Que tipo?          | Grid de tiles grandes + Drawer de info por tipo (**B63**); “Pular registro de sinal” no topo direito **só se** a origem ≠ ação `register-signal` |
+| 3     | Detalhe?           | Texto livre; Skip (mesma regra); **Salvar** inferior direito (**B63**)                                                                           |
+
+Chrome de toda etapa: seta **Voltar** no topo esquerdo **só mobile**; desktop = browser (**B59**).
+
+Opcional ao fim: “Isso muda a projeção de votos?” → entra em A1 / **B61**.
 
 ---
 
@@ -214,16 +214,17 @@ Não competir com os botões.
 1. **B44** Botão circular + strip horizontal — [botao-acao-inicio-strip.md](botao-acao-inicio-strip.md)
 2. **B45** Catálogo por persona + botões (atalhos reais; wizards ainda inertes) — [catalogo-acoes-inicio-por-persona.md](catalogo-acoes-inicio-por-persona.md)
 
-### Wizards (ainda planejamento — IDs depois de B45)
+### Wizards (etapas compartilhadas registradas 2026-07-29)
 
-3. **Chassis do wizard** (shell de passos + busca de município + CTA final + resumo)
-4. **A1** (votos) com “quer também?” sinal + tendência
-5. **A6** — atalho já parcialmente em B45 (`uncovered-municipalities`); tabela above-the-fold na lista se ainda faltar
-6. **A2** standalone (se não ficou bom só embutido)
-7. **A4** curto (status / observação / quem coordena)
-8. **A5** + edição de demanda
-9. Ligar E11 → wizards
-10. Copy pass + A3 standalone se ainda fizer falta
+3. **B59** Chassis (shell + voltar mobile) — [chassis-wizard-campanha.md](chassis-wizard-campanha.md)
+4. **B60** Busca município (só municípios; select → avança) — [busca-municipio-wizard.md](busca-municipio-wizard.md)
+5. **B61** Ajuste votos (média→pessimista→otimista + atalhos + coerência) — [ajuste-votos-wizard.md](ajuste-votos-wizard.md)
+6. **B62** Simplificar modelo de sinal (tipo+texto; labels mesa) — [simplificar-modelo-sinal.md](simplificar-modelo-sinal.md)
+7. **B63** Wizard sinal (grid tipo + texto + pular) — [wizard-registro-sinal.md](wizard-registro-sinal.md)
+8. **A1** wiring (orquestrar B60+B61 + “quer também?” sinal/tendência + resumo/CTA)
+9. **A6** — atalho já em B45 (`uncovered-municipalities`)
+10. **A2** standalone = B60+B63 (se não ficou bom só embutido em A1)
+11. **A4** curto · **A5** + edição de demanda · E11 → wizards · A3 standalone
 
 ---
 
