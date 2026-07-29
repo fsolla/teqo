@@ -93,6 +93,20 @@ Componentes:
 
 - **2ª dobra no Início** (mapa/KPI/sugestões sob as ações). Revisitar quando: B45 entregue **e** CG pedir briefing no mesmo viewport (soft 03/08).
 - **Quadro no bottom nav mobile.** Revisitar se analytics/sessão mostrarem acesso frequente ao mapa no telefone.
+- **`contatos/loading.tsx`** (paridade com `quadro/loading.tsx`). Revisitar se a navegação leader→contatos mostrar flash de layout em campo.
+- **Auditoria de `revalidatePath('/campanha')` restantes** (sugestões/contatos já apontam para `/campanha/quadro` e `/campanha/contatos`). Revisitar se surgir helper central de revalidação de rotas `/campanha`.
+
+## Já resolvido no simplify pós-entrega (não reabrir)
+
+- Remoção de `isCampaignStaff` morto em `quadro/page.tsx` (gate `staff` já garante o ator).
+- `LEADER_CONTACTS_HOME` / `CAMPAIGN_STAFF_QUADRO_PATH` + revalidação em `leaderSupporter` e `resolveSuggestion`.
+
+## Explicitamente fora (triage simplify 2026-07-29)
+
+- Constantes client-safe de href no estilo `MUNICIPALITY_NAV_HREF` (dois call sites; `nav.ts` não importa `server-only`).
+- Helper e2e `gotoStaffQuadro` (três usos — DRY cosmético).
+- Extrair seções compartilhadas do dashboard (um consumidor).
+- Dedupar `loadMunicipalityScope` entre dashboard e sugestões (hot path pré-B43; gatilho: medição de dupla leitura em produção ou 3º consumidor).
 
 ## Referências
 
