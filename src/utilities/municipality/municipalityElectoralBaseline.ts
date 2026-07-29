@@ -278,45 +278,6 @@ export const loadCandidateVotesByCityZone = async (
 }
 
 /**
- * cityCode:zone → sum of nominal deputado-federal T1 votes for every
- * candidate whose party is in the curated `campoParties.ts` field for that
- * year (E8 "share intracampo" denominator — CLI/build-time use only, this
- * scans the whole statewide slice for the office).
- */
-export const loadCampoFederalVotesByCityZone = async (
-  payload: Payload,
-  user: ElectionReader,
-  { year }: { year: number },
-): Promise<Map<string, number>> => {
-  assertCanReadElectionData(user)
-
-  const result = await payload.find({
-    collection: 'electionCandidateVote',
-    where: {
-      and: [
-        { year: { equals: year } },
-        { office: { equals: FEDERAL_DEPUTY_OFFICE } },
-        { turn: { equals: '1' } },
-        { voteType: { equals: 'nominal' } },
-      ],
-    },
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    select: { cityCode: true, zoneNumber: true, party: true, votes: true },
-    overrideAccess: true,
-  })
-
-  const votes = new Map<string, number>()
-  for (const row of result.docs) {
-    if (!isCampoParty(row.party, year)) continue
-    const key = `${row.cityCode}:${row.zoneNumber}`
-    votes.set(key, (votes.get(key) ?? 0) + (row.votes ?? 0))
-  }
-  return votes
-}
-
-/**
  * cityCode:zone → (candidateNumber → nominal deputado-federal T1 votes) for
  * one year — the whole statewide slice, ungrouped by candidate, so a caller
  * can fold it over any municipality geography and rank candidates against
@@ -326,11 +287,16 @@ export const loadCampoFederalVotesByCityZone = async (
  * scans ~100k rows and must never run on a request path — the ranking it
  * feeds is precomputed into the committed artifact.
  */
+export type FederalNominalVoteCell = {
+  votes: number
+  party: string | null
+}
+
 export const loadFederalVotesByCityZoneAndCandidate = async (
   payload: Payload,
   user: ElectionReader,
   { year }: { year: number },
-): Promise<Map<string, Map<number, number>>> => {
+): Promise<Map<string, Map<number, FederalNominalVoteCell>>> => {
   assertCanReadElectionData(user)
 
   const result = await payload.find({
@@ -346,37 +312,87 @@ export const loadFederalVotesByCityZoneAndCandidate = async (
     depth: 0,
     limit: 0,
     pagination: false,
-    select: { cityCode: true, zoneNumber: true, candidateNumber: true, votes: true },
+    select: {
+      cityCode: true,
+      zoneNumber: true,
+      candidateNumber: true,
+      votes: true,
+      party: true,
+    },
     overrideAccess: true,
   })
 
-  const byCityZone = new Map<string, Map<number, number>>()
+  const byCityZone = new Map<string, Map<number, FederalNominalVoteCell>>()
   for (const row of result.docs) {
     const key = `${row.cityCode}:${row.zoneNumber}`
     let byCandidate = byCityZone.get(key)
     if (!byCandidate) {
-      byCandidate = new Map<number, number>()
+      byCandidate = new Map<number, FederalNominalVoteCell>()
       byCityZone.set(key, byCandidate)
     }
-    byCandidate.set(
-      row.candidateNumber,
-      (byCandidate.get(row.candidateNumber) ?? 0) + (row.votes ?? 0),
-    )
+    const previous = byCandidate.get(row.candidateNumber)
+    byCandidate.set(row.candidateNumber, {
+      votes: (previous?.votes ?? 0) + (row.votes ?? 0),
+      party: row.party ?? previous?.party ?? null,
+    })
   }
   return byCityZone
 }
 
+/** Derives the per-candidate map used by `loadCandidateVotesByCityZone` from one federal slice. */
+export const candidateVotesByCityZoneFromFederalSlice = (
+  slice: Map<string, Map<number, FederalNominalVoteCell>>,
+  candidateNumber: number,
+): Map<string, number> => {
+  const votes = new Map<string, number>()
+  for (const [key, byCandidate] of slice) {
+    const cell = byCandidate.get(candidateNumber)
+    if (cell && cell.votes > 0) votes.set(key, cell.votes)
+  }
+  return votes
+}
+
+/** Derives the campo-parties map used by `loadCampoFederalVotesByCityZone` from one federal slice. */
+export const campoFederalVotesByCityZoneFromFederalSlice = (
+  slice: Map<string, Map<number, FederalNominalVoteCell>>,
+  year: number,
+): Map<string, number> => {
+  const votes = new Map<string, number>()
+  for (const [key, byCandidate] of slice) {
+    let total = 0
+    for (const cell of byCandidate.values()) {
+      if (cell.party && isCampoParty(cell.party, year)) total += cell.votes
+    }
+    if (total > 0) votes.set(key, total)
+  }
+  return votes
+}
+
+/**
+ * cityCode:zone → sum of nominal deputado-federal T1 votes for campo parties
+ * (E8 "share intracampo"). One DB scan via the federal nominal slice.
+ */
+export const loadCampoFederalVotesByCityZone = async (
+  payload: Payload,
+  user: ElectionReader,
+  { year }: { year: number },
+): Promise<Map<string, number>> => {
+  assertCanReadElectionData(user)
+  const slice = await loadFederalVotesByCityZoneAndCandidate(payload, user, { year })
+  return campoFederalVotesByCityZoneFromFederalSlice(slice, year)
+}
+
 /** Folds `loadFederalVotesByCityZoneAndCandidate` over one municipality's cityCode×zones. */
 export const sumCandidateVotesForGeography = (
-  votesByCityZoneAndCandidate: Map<string, Map<number, number>>,
+  votesByCityZoneAndCandidate: Map<string, Map<number, FederalNominalVoteCell>>,
   geography: MunicipalityElectionGeography,
 ): Map<number, number> => {
   const total = new Map<number, number>()
   for (const zone of geography.zones) {
     const byCandidate = votesByCityZoneAndCandidate.get(`${geography.cityCode}:${zone}`)
     if (!byCandidate) continue
-    for (const [candidateNumber, votes] of byCandidate) {
-      total.set(candidateNumber, (total.get(candidateNumber) ?? 0) + votes)
+    for (const [candidateNumber, cell] of byCandidate) {
+      total.set(candidateNumber, (total.get(candidateNumber) ?? 0) + cell.votes)
     }
   }
   return total

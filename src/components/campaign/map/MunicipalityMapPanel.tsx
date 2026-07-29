@@ -22,6 +22,7 @@ import {
   type ChoroplethValues,
 } from '@/lib/bahiaMapStyle'
 import type { CampaignConceptId } from '@/lib/campaignIntelligenceConcepts'
+import { isUnrestrictedCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 import {
   choroplethMaxValue,
   computeValidVoteShares,
@@ -55,6 +56,7 @@ import {
   municipalityMapScaleModeHints,
   municipalityMapScaleModeLabels,
   municipalityMapYearLabels,
+  readFederalCompetitivePlacement,
   type MunicipalityMapBundle,
   type MunicipalityMapScaleMode,
   type MunicipalityMapYear,
@@ -132,12 +134,14 @@ const MapBubbleKey = ({ largestValue }: { largestValue: number }) => (
 type MunicipalityMapPanelProps = {
   bundle: MunicipalityMapBundle
   candidateOptions: FederalCandidateOption[]
+  actorRole: CampaignRole
   defaultYear?: MunicipalityMapYear
 }
 
 export const MunicipalityMapPanel = ({
   bundle,
   candidateOptions,
+  actorRole,
   defaultYear = 2022,
 }: MunicipalityMapPanelProps) => {
   const router = useRouter()
@@ -157,6 +161,7 @@ export const MunicipalityMapPanel = ({
 
   const comparison = bundle.comparison
   const comparisonActive = comparison !== null && year !== 2026
+  const portfolioScopedActor = !isUnrestrictedCampaignRole(actorRole)
 
   // Comparing forces the diverging absolute scale, and the competitive
   // placement has no 2026 reading (it is a TSE result). Rather than let the
@@ -180,7 +185,14 @@ export const MunicipalityMapPanel = ({
       return bundle.values2026ByScenario[estimateScenario] ?? {}
     }
     return bundle.valuesByYear[String(year)] ?? {}
-  }, [bundle, comparison, comparisonActive, estimateScenario, year])
+  }, [
+    bundle.valuesByYear,
+    bundle.values2026ByScenario,
+    comparison,
+    comparisonActive,
+    estimateScenario,
+    year,
+  ])
 
   const validVotesForYear = useMemo(
     () => bundle.validVotesByYear[String(year)] ?? {},
@@ -206,6 +218,8 @@ export const MunicipalityMapPanel = ({
 
   /** LQ per município against his statewide standard — the same ratio E10 classes on. */
   const lqByMapKey = useMemo(() => {
+    if (effectiveScaleMode !== 'lq') return {}
+
     const statewideShare = bundle.statewideShareByYear[String(year)] ?? 0
     if (statewideShare <= 0) return {}
 
@@ -216,7 +230,7 @@ export const MunicipalityMapPanel = ({
       lq[mapKey] = votes / validVotes / statewideShare
     }
     return lq
-  }, [bundle.statewideShareByYear, rawValues, validVotesForYear, year])
+  }, [bundle.statewideShareByYear, effectiveScaleMode, rawValues, validVotesForYear, year])
 
   const competitiveRankForYear = useMemo(
     () => bundle.competitiveRankByYear[String(year)] ?? {},
@@ -234,7 +248,7 @@ export const MunicipalityMapPanel = ({
           Object.fromEntries(
             Object.entries(competitiveRankForYear).map(([mapKey, placement]) => [
               mapKey,
-              placement.rank,
+              placement[0],
             ]),
           ),
         )
@@ -248,7 +262,7 @@ export const MunicipalityMapPanel = ({
   // classed and grey out every polygon under a red gradient legend.
   const classed = classing !== null && classing.classes.length > 0
   const fillByKey = useMemo(
-    () => (classed && classing ? fillsForClassing(classing) : undefined),
+    () => (classed && classing !== null ? fillsForClassing(classing) : undefined),
     [classed, classing],
   )
 
@@ -342,9 +356,19 @@ export const MunicipalityMapPanel = ({
 
       const territorialClass = bundle.territorialClassByMapKey[key]
       const classLabel = territorialClass ? territorialClassLabels[territorialClass] : null
-      return `${formatElectionNumber(projected)} válidos projetados em jogo${classLabel ? ` · ${classLabel}` : ''}`
+      const classSuffix = classLabel
+        ? portfolioScopedActor
+          ? ` · ${classLabel} (lista)`
+          : ` · ${classLabel}`
+        : ''
+      return `${formatElectionNumber(projected)} válidos projetados em jogo${classSuffix}`
     },
-    [bundle.projectedValidVotesByMapKey, bundle.territorialClassByMapKey, showBubbles],
+    [
+      bundle.projectedValidVotesByMapKey,
+      bundle.territorialClassByMapKey,
+      portfolioScopedActor,
+      showBubbles,
+    ],
   )
 
   /**
@@ -361,22 +385,26 @@ export const MunicipalityMapPanel = ({
         case 'quantile': {
           if (classIndex === undefined) return null
           const range = classing.classes[classIndex]?.label
-          return `${classIndex + 1}ª de ${classing.classes.length} faixas${range ? ` (${range} votos)` : ''}`
+          const scopeSuffix = portfolioScopedActor ? ' no seu escopo' : ''
+          return `${classIndex + 1}ª de ${classing.classes.length} faixas${range ? ` (${range} votos)` : ''}${scopeSuffix}`
         }
         case 'lq': {
           const lq = lqByMapKey[key]
-          return lq === undefined ? null : formatDominanceAgainstOwnStandard(lq)
+          if (lq === undefined) return null
+          const reading = formatDominanceAgainstOwnStandard(lq)
+          return portfolioScopedActor ? `${reading} no seu escopo` : reading
         }
         case 'competitiveRank': {
-          const placement = competitiveRankForYear[key]
-          if (!placement) return null
-          return `${formatPlacementOrdinal(placement.rank)} entre ${formatElectionNumber(placement.candidates)} candidatos votados aqui`
+          const tuple = competitiveRankForYear[key]
+          if (!tuple) return null
+          const placement = readFederalCompetitivePlacement(tuple)
+          return `${formatPlacementOrdinal(placement.rank)} entre ${formatElectionNumber(placement.candidates)} candidatos votados aqui, na cidade inteira`
         }
         default:
           return null
       }
     },
-    [classing, competitiveRankForYear, effectiveScaleMode, lqByMapKey],
+    [classing, competitiveRankForYear, effectiveScaleMode, lqByMapKey, portfolioScopedActor],
   )
 
   // Optimistic on the control, honest pending on the map: the comparison data

@@ -1,7 +1,7 @@
 # Escala e DRY pós-B13 (escala relativa no mapa dos Municípios)
 
-Status: rascunho
-Atualizado em: 2026-07-26
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos, **B13+**, fill-in de engenharia)
 Impeccable: A — N/A (nenhuma superfície nova; as quatro fases preservam o comportamento visível do B13, exceto uma linha de copy em F2)
 Appetite: ~0,5–0,75 dia eng; quatro fases independentes, nenhuma com migration, collection ou `Consent`
@@ -83,6 +83,7 @@ Componentes:
 - **`CampaignConceptLink` / `MapLegendNote` compartilhados.** O link "Saiba mais" para `/campanha/conceitos` e o parágrafo de nota da legenda estão em 2–3 pontos (`MapScaleLegend`, `ChoroplethLegend`, tooltips do E18). Revisitar quando: **3º call site fora do mapa** pedir o mesmo par — abaixo disso é a abstração prematura que o `engineering-standards.mdc` proíbe (3+ call sites ou uma política com nome).
 - **`municipalityLabels.ts` puxa `municipalityCatalog` + conceitos para o chunk do mapa.** Separar as constantes de apresentação da classe (`territorialClassMapFill`, labels) do resto do módulo removeria ~66 KB de fonte do chunk. Revisitar quando: uma **3ª superfície cliente** precisar da apresentação da classe (hoje são a lista e o mapa) — ou quando o chunk do mapa aparecer num orçamento de bundle real.
 - **`computeAggregateTerritorialClass` sem memo.** Cada polígono multi-slug (só Salvador hoje) reclassifica por render. Revisitar no **E12**: 27 TIs × ~16 municípios cada é outra ordem de grandeza, e o precedente de memo de processo já está escrito (`bahiaElectionAggregates`, `municipalityVoteRank`).
+- **Modo compare (`?compare=`): varredura federal no loader.** F3 unificou o scan no `build:election-aggregates`; em runtime `municipalityMapData` ainda pode chamar `loadCandidateVotesByCityZone` até 3× por ano para o divergente. Revisitar quando: profiling do compare no dashboard ou fechamento da linha em [TECH-DEBT.md](../TECH-DEBT.md) (“Compare mode still queries per candidate”).
 
 ## Explicitamente fora (descartes deste triage)
 
@@ -91,6 +92,9 @@ Componentes:
 - **`MapFeatureReadout` e `TerritoryListColumns` com formatadores de percentual próprios** — pré-existente em `main`, fora do escopo do B13, e unificar exige decisão de produto sobre a casa decimal (mesmo descarte registrado no [escala-dry-pos-e10.md](escala-dry-pos-e10.md)).
 - **Flakiness dos e2e** (`campaignMunicipalities`, `campaign-pwa`) — reproduzida em `main` limpo, portanto não é débito do B13: foi para o ledger ([TECH-DEBT.md](../TECH-DEBT.md), linha de test-infra, causa afinada e prioridade P3 → P2).
 - **`territorialClassMapFill` como segunda paleta fora do `DESIGN.md`** — resolvido na própria sessão: o `DESIGN.md` § Status Badge agora declara o acoplamento (Leaflet pinta hex, não `var()`) e a obrigação de re-derivar à mão.
+- **Skeleton compartilhado do mapa** — score 2; um único `loading` do painel já cobre o caso.
+- **Sincronizar `scaleMode` quando o ano esconde rank competitivo** — score 2; o readout já declara indisponível; trocar escala automaticamente seria surpresa de UX.
+- **Separar memos de classificação territorial no painel** — score 2; micro-otimização de render sem gatilho de produto.
 
 ## Referências
 
