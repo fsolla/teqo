@@ -1,7 +1,7 @@
 # Botão de ação do Início + lista horizontal
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `CampaignHomeActionButton` + `CampaignHomeActionStrip` + `useCampaignLongPress`; Tooltip (fine) / long-press Drawer (coarse via `matchMedia`); sem mount no Início (B45).
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B44 — chassis UX-1)
 Impeccable: C — primitivo UI novo (botão circular + strip rolável) no Início blank
 Appetite: ~1 dia eng; 2 componentes client + long-press + Tooltip/Drawer; sem migration
