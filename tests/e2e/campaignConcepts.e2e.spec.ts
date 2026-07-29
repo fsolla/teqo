@@ -66,7 +66,7 @@ test.describe('Conceitos de inteligência', () => {
 
     await page.goto('/campanha/conceitos')
 
-    await expect(page).toHaveURL(/\/campanha\/?$/)
+    await expect(page).toHaveURL(/\/campanha\/contatos\/?$/)
     await expect(
       page.getByRole('heading', { level: 1, name: 'Conceitos de inteligência' }),
     ).toHaveCount(0)

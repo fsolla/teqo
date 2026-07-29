@@ -18,6 +18,7 @@ import { DAY_MS } from '@/lib/text'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO } from '@/lib/voteEstimate'
 import type { AllocationDecision, CampaignUser } from '@/payload-types'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
+import { CAMPAIGN_STAFF_QUADRO_PATH } from '@/utilities/campaignPageActor'
 import { loadMunicipalitySuggestions } from '@/utilities/municipality/municipalityTriggers'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
@@ -144,7 +145,7 @@ export const resolveSuggestion = async (
 
   // The two surfaces that render the queue: the staff dashboard panel and the
   // município detail card.
-  revalidatePath('/campanha')
+  revalidatePath(CAMPAIGN_STAFF_QUADRO_PATH)
   revalidatePath(`/campanha/municipios/${municipalitySlug}`)
 
   return { postponeDays }
