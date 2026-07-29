@@ -8,8 +8,8 @@ import {
 } from '@/components/campaign/dashboard/CampaignHomeActionButton'
 import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { CAMPAIGN_LONG_PRESS_MS } from '@/lib/campaignLongPress'
 import { resetCampaignCoarsePointerForTests } from '@/lib/campaignCoarsePointer'
+import { CAMPAIGN_LONG_PRESS_MS } from '@/lib/campaignLongPress'
 
 vi.mock('next/link', () => ({
   default: ({
