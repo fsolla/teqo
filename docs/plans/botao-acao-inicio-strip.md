@@ -1,7 +1,7 @@
 # Botão de ação do Início + lista horizontal
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `CampaignHomeActionButton` + `CampaignHomeActionStrip` + `useCampaignLongPress`; Tooltip (fine) / long-press Drawer (coarse via `matchMedia`); sem mount no Início (B45).
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B44 — chassis UX-1)
 Impeccable: C — primitivo UI novo (botão circular + strip rolável) no Início blank
 Appetite: ~1 dia eng; 2 componentes client + long-press + Tooltip/Drawer; sem migration
@@ -94,6 +94,16 @@ Componentes:
 
 - **Drag-to-scroll no desktop.** Revisitar se CG não descobrir overflow na strip.
 - **Fade edges** na strip. Revisitar no critique Impeccable se o corte visual mentir “acabou”.
+- **Lazy mount do Drawer** (só no primeiro long-press). Trade-off B34/B42: Drawer coarse montado por ação com `description`; revisitar se o Início (B45) com 6 ações perfilar DOM pesado.
+- **Shell read-only “info drawer”** compartilhado com `CampaignCellEditOverlay` / `InstallPwaToast`. Gatilho: **2º** call site idêntico (título + descrição + Fechar).
+- **`children` da strip sem `<li>`.** Documentar ou validar quando B45 montar ações custom.
+- **Mover `useCampaignLongPress` para fora de `lib/`.** Gatilho: 2º call site idêntico (plano já prevê extrair no 2º).
+
+## Pós-simplify (2026-07-29, não reabrir)
+
+**Já resolvido na entrega:** timer long-press com cleanup no unmount; `aria-describedby` só com drawer aberto; `useCoarsePointer` com um listener `matchMedia` compartilhado; `href` sem `onClick` no hook (navegação = tap curto); Drawer omitido quando `disabled`; keys `href ?? label`; specs duplicadas `.ts` removidas; testes coarse long-press + unmount.
+
+**Descartado (score baixo):** constante de classe Tooltip compartilhada com `CampaignHoverTooltip`; e2e de scroll do `body` além de smoke de classes na strip.
 
 ## Referências
 

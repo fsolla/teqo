@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-29 — B43 entregue (chassis UX-1); B44–B45 pendentes.
+Atualizado em: 2026-07-29 — B44 entregue (botão/strip UX-1); B45 pendente.
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
 ## Âncoras do calendário eleitoral 2026 (Res. TSE 23.760/2026)
@@ -83,9 +83,9 @@ O discovery literatura→persona→entrevista ([relatório aprovado](research/re
 
 ### Demais itens abertos
 
-- **UX-1 fluxos ação-primeiro (prioridade pós-sessão 29/07)** — evidência: [snapshot](plans/sessao-observada-coordenador-2026-07-29-snapshot.md) · O9–O11 em CUSTOMER.md · **rascunho:** [fluxos-acao-primeiro-inicio.md](plans/fluxos-acao-primeiro-inicio.md). Soft deadline: **03/08**. **Chassis:** ~~**B43**~~ ✓ → **B44** → **B45** (botão/strip + catálogo; wizards com escrita = fatias seguintes).
+- **UX-1 fluxos ação-primeiro (prioridade pós-sessão 29/07)** — evidência: [snapshot](plans/sessao-observada-coordenador-2026-07-29-snapshot.md) · O9–O11 em CUSTOMER.md · **rascunho:** [fluxos-acao-primeiro-inicio.md](plans/fluxos-acao-primeiro-inicio.md). Soft deadline: **03/08**. **Chassis:** ~~**B43**~~ ✓ → ~~**B44**~~ ✓ → **B45** (catálogo por persona; wizards com escrita = fatias seguintes).
 - ~~**B43** Início em branco + Quadro~~ — **entregue 2026-07-29** (`/campanha` blank; staff dashboard em `/campanha/quadro`; liderança em `/campanha/contatos`; nav Início+Quadro / Início+Meus contatos; `requireCampaignPageActor` manda leader bloqueado → `/campanha/contatos`; sem migration) · [plano](plans/inicio-em-branco-quadro.md)
-- **B44** Botão de ação do Início + lista horizontal — círculo `muted` + ícone + label; strip com scroll interno; descrição opcional Tooltip (fine) / Drawer via long-press (coarse; long-press ≠ click). Depende de B43 · ~1d · Janela 1 · Impeccable C · [plano](plans/botao-acao-inicio-strip.md)
+- ~~**B44** Botão de ação do Início + lista horizontal~~ — **entregue 2026-07-29** (`CampaignHomeActionButton` + `CampaignHomeActionStrip`; Tooltip fine / long-press Drawer coarse; sem mount no Início — B45) · ~1d · Janela 1 · Impeccable C · [plano](plans/botao-acao-inicio-strip.md)
 - **B45** Catálogo de ações por persona — CG/candidato e assessor (6 ações; `uncovered-municipalities` já navega); liderança (2; `my-contacts` → `/campanha/contatos`); resto inerte até wizards. Depende de B44 · ~0,5d · Janela 1 · Impeccable B · [plano](plans/catalogo-acoes-inicio-por-persona.md)
 - ~~**E4R** import único da planilha de projeção~~ — **entregue 2026-07-24** (`pnpm db:seed:projecao`; overwrite-always; [plano](plans/import-planilha-projecao.md))
 - ~~**A11** posição em votos do município (rank absoluto + % da própria votação) + ordenação da lista por votação~~ — **entregue 2026-07-24** (helper `municipalityVoteRank`; baseline + coluna lista; default `?sort=votos` desc; header=`2022`; consome contrato B15) · [plano](plans/ranking-votos-municipio.md)
@@ -188,7 +188,7 @@ flowchart TD
     B41n["B41 ✓ Scroll horizontal<br/>+ sticky Município"]
     B42n["B42 ✓ Polimento mobile<br/>lista municípios"]
     B43n["B43 ✓ Início em branco<br/>+ Quadro / Contatos"]
-    B44n["B44 Botão ação<br/>+ strip horizontal"]
+    B44n["B44 ✓ Botão ação<br/>+ strip horizontal"]
     B45n["B45 Catálogo ações<br/>por persona"]
     B15n["B15 ✓ Ordenar lista<br/>por coluna"]
     B16n["B16 ✓ Filtros no header<br/>da lista"]
