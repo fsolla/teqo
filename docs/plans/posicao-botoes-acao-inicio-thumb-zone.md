@@ -1,7 +1,7 @@
 # Posição dos botões de ação do Início (thumb zone)
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `CampaignHomeLayout` (`min-h-full` + spacer `flex-1` só em mobile; `data-slot="home-actions"` / `home-search`; ordem flex `order-*` — mobile ações→busca, `md+` busca→ações); `/campanha` usa `CampaignPageShell` `min-h-full` + layout; decisão sticky vs coluna = coluna (opção B). Unit `campaignHomeLayout.unit.spec.ts`; e2e B45 intacto. Sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B46 — chassis UX-1)
 Impeccable: B — encaixe de layout no Início sob tema `campaign` (strip B44/B45 já montada)
 Appetite: ~0,5 dia eng; CSS/layout do shell do Início; sem migration
@@ -46,7 +46,7 @@ Com **B43** o Início está blank; **B44/B45** colocam a strip de ações. Sem r
 
 ## Questões em aberto
 
-- **`position: sticky` vs flex column com `mt-auto` no mobile?** **Opções:** A sticky na base do scroller | B coluna full-height com strip no fim. **Recomendação:** B se o Início continuar sem scroll de conteúdo útil (blank + strip + busca); A se a 2ª dobra voltar cedo. _(assumido — medir no PR com o shell real)_
+- **`position: sticky` vs flex column com `mt-auto` no mobile?** **Resolvido (2026-07-29):** opção B — coluna full-height com spacer `flex-1` (`CampaignHomeLayout`); sticky não foi necessário com Início blank.
 
 ## Abordagem proposta
 
