@@ -2,6 +2,7 @@ import 'server-only'
 
 import { redirect } from 'next/navigation'
 
+import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 
@@ -10,7 +11,7 @@ export type CampaignPageActor = NonNullable<Awaited<ReturnType<typeof getCampaig
 
 export type CampaignPageGate = 'staff' | 'unrestricted' | 'noLeader'
 
-export const LEADER_CONTACTS_HOME = '/campanha/contatos'
+export { LEADER_CONTACTS_HOME }
 
 /** Staff dashboard (B43 — moved off blank `/campanha`). */
 export const CAMPAIGN_STAFF_QUADRO_PATH = '/campanha/quadro'

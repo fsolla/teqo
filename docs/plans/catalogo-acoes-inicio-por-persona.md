@@ -1,7 +1,7 @@
 # Catálogo de ações do Início por persona
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: catálogo em `src/lib/campaignHomeActions.ts`; mount via `CampaignHomeActions` (client island — RSC não passa ícones Lucide); href de municípios sem assessor resolvido no server; e2e `campaignHomeActions.e2e.spec.ts`.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B45 — chassis UX-1)
 Impeccable: B — mount da strip B44 no Início com catálogo por role
 Appetite: ~0,5 dia eng; módulo client-safe + page wire-up; 2 atalhos com href; resto inerte
