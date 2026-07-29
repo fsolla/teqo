@@ -13,13 +13,32 @@ const providerValue = {
 }
 
 describe('CampaignHomeLayout focused mode', () => {
-  it('hides actions and thumb spacer when focused', () => {
+  it('hides actions, thumb spacer, and summary when focused', () => {
     const { container } = render(
-      <CampaignHomeLayout focused actions={<p>Actions block</p>} searchSlot={<p>Search</p>} />,
+      <CampaignHomeLayout
+        focused
+        actions={<p>Actions block</p>}
+        searchSlot={<p>Search</p>}
+        summarySlot={<p>Summary block</p>}
+      />,
     )
 
     expect(container.querySelector('[data-slot="home-thumb-spacer"]')).toBeNull()
     expect(container.querySelector('[data-slot="home-actions"]')?.className).toContain('hidden')
+    expect(container.querySelector('[data-slot="home-summary"]')?.className).toContain('hidden')
+  })
+
+  it('shows summary when not focused', () => {
+    render(
+      <CampaignHomeLayout
+        actions={<p>Actions block</p>}
+        summarySlot={<p data-testid="home-summary-stub">Summary stub</p>}
+      />,
+    )
+
+    expect(
+      screen.getByTestId('home-summary-stub').closest('[data-slot="home-summary"]'),
+    ).not.toBeNull()
   })
 })
 

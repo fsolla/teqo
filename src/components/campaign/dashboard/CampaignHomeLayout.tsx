@@ -5,14 +5,21 @@ import { cn } from '@/lib/utils'
 export const CampaignHomeLayout = ({
   actions,
   searchSlot,
+  summarySlot,
   focused = false,
 }: {
   actions: ReactNode
   searchSlot?: ReactNode
+  summarySlot?: ReactNode
   /** When true (trimmed debounced query length ≥ min), hide thumb-zone spacer and action strip. */
   focused?: boolean
 }) => (
   <div className="flex min-h-full w-full flex-col md:min-h-0">
+    {summarySlot ? (
+      <div className={cn('order-0 min-w-0', focused && 'hidden')} data-slot="home-summary">
+        {summarySlot}
+      </div>
+    ) : null}
     {focused ? null : (
       <div aria-hidden className="min-h-0 flex-1 md:hidden" data-slot="home-thumb-spacer" />
     )}
