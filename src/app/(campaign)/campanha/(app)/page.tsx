@@ -1,6 +1,8 @@
 import { CampaignHomeActions } from '@/components/campaign/dashboard/CampaignHomeActions'
 import { CampaignHomeLayout } from '@/components/campaign/dashboard/CampaignHomeLayout'
 import { CampaignHomeStaffChrome } from '@/components/campaign/dashboard/CampaignHomeStaffChrome'
+import { HomeSearchMunicipalityGroup } from '@/components/campaign/dashboard/HomeSearchMunicipalityGroup'
+import { HomeSearchResultsShell } from '@/components/campaign/dashboard/HomeSearchResultsShell'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -27,7 +29,14 @@ export default async function CampaignHomePage() {
   return (
     <CampaignPageShell aria-label="Início" className="min-h-full">
       {staff ? (
-        <CampaignHomeStaffChrome actions={actions} />
+        <CampaignHomeStaffChrome
+          actions={actions}
+          searchResults={
+            <HomeSearchResultsShell>
+              <HomeSearchMunicipalityGroup />
+            </HomeSearchResultsShell>
+          }
+        />
       ) : (
         <CampaignHomeLayout actions={actions} />
       )}

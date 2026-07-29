@@ -1,7 +1,7 @@
 # Busca global — resultados Municípios (+ Territórios)
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `POST /campanha/home-search` (`campaignJsonMutationRoute` + `homeSearchBodySchema`); loader `searchHomeMunicipalities` (`loadMunicipalityScope` + `matchesAtWordStart` + A11 readout; TIs no mesmo grupo via `loadTerritoryOverview` + votos 2022); client `HomeSearchResultsContext` (fetch único, extensível B49+) + `HomeSearchResultsShell` + `HomeSearchMunicipalityGroup`; `MunicipalityVotePositionReadout` extraído da lista; empty “Nenhum resultado.”; sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B48 — busca global)
 Impeccable: B — grupo de resultados no chrome B47; linhas sem card
 Appetite: ~1–1,5 dia eng; loader scoped + UI do grupo; 1º provider da busca

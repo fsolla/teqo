@@ -4,13 +4,20 @@ import type { ReactNode } from 'react'
 
 import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
+import { HOME_SEARCH_QUERY_MAX_LENGTH } from '@/lib/schemas/homeSearch'
 
 const HOME_SEARCH_INPUT_ID = 'homeSearchQuery'
 const HOME_SEARCH_LABEL = 'Buscar na campanha'
 
-export const CampaignHomeSearch = ({ children }: { children?: ReactNode }) => {
+export const CampaignHomeSearch = ({
+  children,
+  resultsBusy = false,
+}: {
+  children?: ReactNode
+  resultsBusy?: boolean
+}) => {
   const { query, setRaw, clear, isDebouncing } = useHomeSearch()
-  const ariaBusy = isDebouncing || undefined
+  const ariaBusy = isDebouncing || resultsBusy || undefined
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4">
@@ -29,6 +36,7 @@ export const CampaignHomeSearch = ({ children }: { children?: ReactNode }) => {
         autoComplete="off"
         enterKeyHint="search"
         aria-busy={ariaBusy}
+        maxLength={HOME_SEARCH_QUERY_MAX_LENGTH}
       />
       <div
         role="region"
