@@ -34,13 +34,13 @@ export type CampaignHomeAction = {
 const staffHomeActionsCoordinator: readonly CampaignHomeAction[] = [
   {
     id: 'update-votes',
-    label: 'Atualizar votos de um município',
+    label: 'Ajustar votos',
     icon: BarChart3,
     description: 'Atualizar a projeção (média, pessimista, otimista) de um município',
   },
   {
     id: 'register-signal',
-    label: 'Registrar o que aconteceu',
+    label: 'Registrar sinal',
     icon: Megaphone,
     description: 'Anotar sinal urgente: invasão, perda de apoio, novo apoio, dificuldade',
   },
@@ -64,7 +64,7 @@ const staffHomeActionsCoordinator: readonly CampaignHomeAction[] = [
   },
   {
     id: 'uncovered-municipalities',
-    label: 'Ver quem ainda não está coberto',
+    label: 'Ver esquecidos',
     icon: UserRoundSearch,
     description: 'Abrir a lista de municípios sem assessor (atalho — não é wizard)',
   },

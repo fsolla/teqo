@@ -4,8 +4,6 @@ import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/Campaig
 import { homeActionsForRole, toHomeActionButtonProps } from '@/lib/campaignHomeActions'
 import type { CampaignRole } from '@/lib/campaignRoles'
 
-const homeActionsHeadingId = 'campaign-home-actions-heading'
-
 export const CampaignHomeActions = ({
   role,
   uncoveredMunicipalitiesHref,
@@ -17,12 +15,5 @@ export const CampaignHomeActions = ({
 
   if (actions.length === 0) return null
 
-  return (
-    <section aria-labelledby={homeActionsHeadingId} className="w-full">
-      <h2 id={homeActionsHeadingId} className="text-base font-semibold text-foreground">
-        O que você quer fazer?
-      </h2>
-      <CampaignHomeActionStrip actions={actions} className="mt-4 w-full" />
-    </section>
-  )
+  return <CampaignHomeActionStrip actions={actions} className="w-full" />
 }

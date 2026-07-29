@@ -9,13 +9,13 @@ const LongPressHarness = ({
   onLongPress: () => void
   onClick?: () => void
 }) => {
-  const handlers = useCampaignLongPress({
+  const { pressing, ...handlers } = useCampaignLongPress({
     enabled: true,
     onLongPress,
     onClick,
   })
   return (
-    <button type="button" {...handlers}>
+    <button type="button" data-pressing={pressing ? true : undefined} {...handlers}>
       Alvo
     </button>
   )
@@ -86,6 +86,20 @@ describe('useCampaignLongPress', () => {
       vi.advanceTimersByTime(CAMPAIGN_LONG_PRESS_MS)
     })
     expect(onLongPress).not.toHaveBeenCalled()
+  })
+
+  it('sets pressing while the primary pointer is down', () => {
+    const onLongPress = vi.fn()
+    render(<LongPressHarness onLongPress={onLongPress} />)
+
+    const target = screen.getByRole('button', { name: 'Alvo' })
+    expect(target.getAttribute('data-pressing')).toBeNull()
+
+    fireEvent.pointerDown(target, { button: 0, clientX: 0, clientY: 0 })
+    expect(target.getAttribute('data-pressing')).toBe('true')
+
+    fireEvent.pointerUp(target)
+    expect(target.getAttribute('data-pressing')).toBeNull()
   })
 
   it('does not call onLongPress after unmount during the hold', () => {

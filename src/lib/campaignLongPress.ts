@@ -1,16 +1,29 @@
 'use client'
 
-import { useCallback, useEffect, useRef, type MouseEvent, type PointerEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+} from 'react'
 
 export const CAMPAIGN_LONG_PRESS_MS = 450
 const CAMPAIGN_LONG_PRESS_SLOP_PX = 10
 
-type CampaignLongPressPointerHandlers = {
+export type CampaignLongPressPointerHandlers = {
   onPointerDown: (event: PointerEvent) => void
   onPointerMove: (event: PointerEvent) => void
   onPointerUp: (event: PointerEvent) => void
   onPointerCancel: (event: PointerEvent) => void
   onClick: (event: MouseEvent) => void
+}
+
+export type CampaignLongPressResult = CampaignLongPressPointerHandlers & {
+  /** True while the primary pointer is down (only when `enabled`). */
+  pressing: boolean
 }
 
 /**
@@ -25,7 +38,8 @@ export const useCampaignLongPress = ({
   enabled: boolean
   onLongPress: () => void
   onClick?: (event: MouseEvent) => void
-}): CampaignLongPressPointerHandlers => {
+}): CampaignLongPressResult => {
+  const [pressing, setPressing] = useState(false)
   const suppressClickRef = useRef(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const originRef = useRef<{ x: number; y: number } | null>(null)
@@ -37,9 +51,16 @@ export const useCampaignLongPress = ({
     }
   }, [])
 
+  const releasePress = useCallback(() => {
+    clearTimer()
+    originRef.current = null
+    setPressing(false)
+  }, [clearTimer])
+
   const onPointerDown = useCallback(
     (event: PointerEvent) => {
       if (!enabled || event.button !== 0) return
+      setPressing(true)
       originRef.current = { x: event.clientX, y: event.clientY }
       clearTimer()
       timerRef.current = setTimeout(() => {
@@ -65,11 +86,6 @@ export const useCampaignLongPress = ({
     [clearTimer],
   )
 
-  const endPointer = useCallback(() => {
-    clearTimer()
-    originRef.current = null
-  }, [clearTimer])
-
   useEffect(() => () => clearTimer(), [clearTimer])
 
   const onClickHandler = useCallback(
@@ -85,11 +101,15 @@ export const useCampaignLongPress = ({
     [onClick],
   )
 
-  return {
-    onPointerDown,
-    onPointerMove,
-    onPointerUp: endPointer,
-    onPointerCancel: endPointer,
-    onClick: onClickHandler,
-  }
+  return useMemo(
+    () => ({
+      pressing: enabled && pressing,
+      onPointerDown,
+      onPointerMove,
+      onPointerUp: releasePress,
+      onPointerCancel: releasePress,
+      onClick: onClickHandler,
+    }),
+    [enabled, onClickHandler, onPointerDown, onPointerMove, pressing, releasePress],
+  )
 }

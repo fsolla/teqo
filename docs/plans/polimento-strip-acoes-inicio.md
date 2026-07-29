@@ -1,7 +1,7 @@
 # Polimento visual da strip de ações do Início
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: rótulos curtos no catálogo; sem `h2` em `CampaignHomeActions`; scrollbar oculta na strip; escala no círculo (hover fine / press coarse) + `active:opacity-90`; e2e retarget de heading para `[data-slot="home-actions"]` / `Ações rápidas`.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — **B58**; chassis UX-1)
 Impeccable: B — encaixe na strip existente (`CampaignHomeActionButton` / `CampaignHomeActionStrip` / `campaignHomeActions.ts`)
 Appetite: ~0,5 dia eng (sem migration, sem action, sem URL)
