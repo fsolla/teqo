@@ -7,8 +7,8 @@ import { relationshipId, requireRelationshipId } from '@/lib/relationship'
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, VotePledge } from '@/payload-types'
 import {
-  type DashboardPriorityMunicipality,
   pickDashboardPriorityMunicipalities,
+  type DashboardPriorityMunicipality,
 } from '@/utilities/dashboardPriorityMunicipalities'
 import {
   loadCampaignUserNamesByIds,
@@ -19,8 +19,12 @@ import type { MunicipalityGoalCoverage } from '@/utilities/municipality/goalCove
 import {
   loadMunicipalityGoalCoverageBundle,
   loadStatewideSuggestedGoals,
+  type MunicipalityGoalCoverageBundle,
 } from '@/utilities/municipality/municipalityGoalAccount'
-import { rollupMunicipalityStaffVotes } from '@/utilities/votePledgeViews'
+import {
+  rollupMunicipalityStaffVotes,
+  type MunicipalityPledgeAggregate,
+} from '@/utilities/votePledgeViews'
 
 export type StaffDashboardView = {
   kind: 'staff'
@@ -56,6 +60,29 @@ export type StaffDashboardView = {
     authorName: string
     createdAt: string
   }>
+}
+
+type ScopedMunicipalityDoc = Awaited<
+  ReturnType<typeof loadMunicipalityScope>
+>['municipalities'][number]
+
+const loadStaffRollupAndGoalCoverageBundle = async (
+  payload: Payload,
+  user: CampaignUser,
+  municipalities: ReadonlyArray<ScopedMunicipalityDoc>,
+  pledgeAggregates: Map<number, MunicipalityPledgeAggregate>,
+): Promise<{
+  rollup: ReturnType<typeof rollupMunicipalityStaffVotes>
+  goalCoverageBundle: MunicipalityGoalCoverageBundle
+}> => {
+  const goalCoverageBundle = await loadMunicipalityGoalCoverageBundle(
+    payload,
+    user,
+    municipalities,
+    pledgeAggregates,
+  )
+  const rollup = rollupMunicipalityStaffVotes(municipalities, pledgeAggregates)
+  return { rollup, goalCoverageBundle }
 }
 
 /**
@@ -118,15 +145,13 @@ export const getCampaignDashboardData = async (
     loadStatewideSuggestedGoals(payload, user),
   ])
 
-  const rollup = rollupMunicipalityStaffVotes(municipalities.docs, pledgeAggregates)
-  const { staffVoteTotalByScenario, declaredVotesTotal, pledgeCount, missingEstimateCount } = rollup
-
-  const goalCoverageBundle = await loadMunicipalityGoalCoverageBundle(
+  const { rollup, goalCoverageBundle } = await loadStaffRollupAndGoalCoverageBundle(
     payload,
     user,
     municipalities.docs,
     pledgeAggregates,
   )
+  const { staffVoteTotalByScenario, declaredVotesTotal, pledgeCount, missingEstimateCount } = rollup
 
   const leadershipIDs = [
     ...new Set(
@@ -193,5 +218,29 @@ export const getCampaignDashboardData = async (
         createdAt: update.createdAt,
       }
     }),
+  }
+}
+
+/** Staff Início: central staff vote total + E8 aggregate coverage (Quadro KPI contract). */
+export type CampaignHomeSummaryView = Pick<StaffDashboardView, 'goalCoverage'> & {
+  staffVoteTotalCentral: StaffDashboardView['staffVoteTotalByScenario']['central']
+}
+
+/** Slim loader for `/campanha` — scope + rollup + coverage only (no map, suggestions, or queues). */
+export const loadCampaignHomeSummary = async (
+  payload: Payload,
+  user: CampaignUser,
+): Promise<CampaignHomeSummaryView> => {
+  const scope = await loadMunicipalityScope(payload, user, {})
+  const { rollup, goalCoverageBundle } = await loadStaffRollupAndGoalCoverageBundle(
+    payload,
+    user,
+    scope.municipalities,
+    scope.pledgeAggregates,
+  )
+
+  return {
+    staffVoteTotalCentral: rollup.staffVoteTotalByScenario.central,
+    goalCoverage: goalCoverageBundle.aggregateByScenario.central,
   }
 }

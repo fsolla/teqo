@@ -1,6 +1,6 @@
 # Resumo da campanha no Início (total + cobertura)
 
-Status: rascunho
+Status: entregue
 Atualizado em: 2026-07-29
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B56)
 Impeccable: C — bloco KPI novo no Início (não é strip do Quadro)
@@ -75,7 +75,7 @@ flowchart TB
 
 Componentes:
 
-- **`loadCampaignHomeSummary`** (`utilities/` — p.ex. `campaignHomeSummaryData.ts`, `server-only`): `getCampaignUser` / actor já na page; `loadMunicipalityScope` + `aggregateAllPledgesByMunicipality` (ou o caminho que o dashboard já usa) → `rollupMunicipalityStaffVotes` + `loadMunicipalityGoalCoverageBundle`; devolver `{ staffVoteTotalCentral, goalCoverage }` (só `central`). `overrideAccess: false` com `user`.
+- **`loadCampaignHomeSummary`** em [`src/utilities/campaignDashboardData.ts`](../../src/utilities/campaignDashboardData.ts) (`server-only`, colocado no módulo do Quadro em vez de `campaignHomeSummaryData.ts` top-level): `loadMunicipalityScope` + `rollupMunicipalityStaffVotes` + `loadMunicipalityGoalCoverageBundle`; devolve `{ staffVoteTotalCentral, goalCoverage }` (só `central`). `overrideAccess: false` com `user`.
 - **`CampaignHomeSummary.tsx`** (`components/campaign/dashboard/`): RSC ou server-friendly; `formatElectionNumber`; `Progress`; sem import de catálogo/Bahia no client.
 - **Wire-up** em `page.tsx`: acima de ações/busca na ordem de leitura; no mobile o **B46** continua ancorando a strip embaixo — o resumo fica no fluxo superior do scroll.
 - **Migration:** Sem migration, sem collection, sem server action.
@@ -113,3 +113,13 @@ Componentes:
 - `src/app/(campaign)/campanha/(app)/page.tsx` — mount atual
 - `docs/plans/conta-da-cadeira.md` (E8) — semântica de cobertura
 - `PRODUCT.md` / `DESIGN.md` — anti hero-metric; tipografia
+
+**Revisão 2026-07-29 (entrega):** loader slim colocado em `campaignDashboardData.ts`; `CampaignHomeSummary` + `summarySlot` no layout staff com ocultação no modo focado B47; specs `campaignHomeSummary.unit.spec.tsx` e extensão de `campaignHomeSearch.unit.spec.tsx`.
+
+## Explicitamente fora (pós-`/simplify`)
+
+- `CampaignMetricStrip` no Início — anti-goal do plano; Quadro já cobre multi-KPI.
+- Componente compartilhado Progress+label — só dois call sites (resumo + métricas); extrair quando ≥3.
+- Renomear rótulo para “Cobertura da meta” sem sign-off de produto (copy atual alinhada ao plano).
+- Helper E8 só-agregado / int test do loader — cobertura unit do componente + rollup existente bastam por ora.
+- Módulo top-level `campaignHomeSummaryData.ts` — loader permanece em `campaignDashboardData.ts` (pin + um call site).

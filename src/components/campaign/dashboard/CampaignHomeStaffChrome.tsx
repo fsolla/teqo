@@ -27,10 +27,12 @@ const CampaignHomeStaffSearchSlot = ({ searchResults }: { searchResults: ReactNo
 export const CampaignHomeStaffChrome = ({
   actions,
   searchResults,
+  summarySlot,
 }: {
   actions: ReactNode
   /** Result groups plug in here from B48+. */
   searchResults?: ReactNode
+  summarySlot?: ReactNode
 }) => {
   const searchState = useHomeSearchQuery()
   const focused = searchState.query.isActive
@@ -51,6 +53,7 @@ export const CampaignHomeStaffChrome = ({
               <CampaignHomeSearch />
             )
           }
+          summarySlot={summarySlot}
         />
       </div>
     </HomeSearchProvider>
