@@ -1,7 +1,7 @@
 # B14 — Município mais próximo (acesso rápido por geolocalização)
 
-Status: entregue (2026-07-26)
-Atualizado em: 2026-07-26
+Status: entregue (2026-07-26); débito B8 F2-D1 (ZE exata em Salvador) fechado em 2026-07-29
+Atualizado em: 2026-07-29
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Demais itens abertos, B14; superfície de coordenação)
 Impeccable: B — encaixe no dashboard staff (`/campanha`), sem rota nova
 Appetite: ~1 dia eng (gasto ~0,75d: o artefato de centroides e seu script saíram do escopo); ilha cliente no Início; sem migration, sem collection, sem Consent
@@ -73,7 +73,7 @@ Decisão de produto (2026-07-24, pedido explícito): sugerir acesso rápido ao m
 - **Client-only, casando contra a malha que o mapa já carrega (sem modelo no servidor).** Posição fica no browser; containment por point-in-polygon sobre o chunk memoizado de `bahiaMunicipalityGeometries`, e Haversine sobre centroides derivados na hora só para ordenar o fallback. Análogo a visitados recentes. **Rejeitado:** POST de lat/lng ao servidor (PII de localização + Consent + superfície de abuso); reverse-geocode comercial (custo/vendor); PostGIS (fora de escopo do AGENTS.md sem query espacial real); **artefato commitado de centroides** — era a decisão de 2026-07-24 e foi revertida em 2026-07-26 por ser menos precisa a custo de bundle zero (o chunk já está no browser).
 - **Prompt automático no máximo 1× por sessão (`sessionStorage`).** Cumpre o pedido de produto sem martelar o usuário a cada navegação no Início. Chave estável: `teqo:campaign:geo-prompted-session`. **Rejeitado:** prompt a cada mount do card; `localStorage` "nunca mais perguntar" como único gate (impediria retry legítimo em sessão nova após o usuário mudar a permissão no SO).
 - **Sem `Consent` / sem lote jurídico.** Tratamento local da própria localização do usuário autenticado, sem transmissão — mesmo racional de visitados. **Rejeitado:** chave `Consent` só para UX de GPS (multiplica lead time jurídico sem dado no servidor).
-- **Malha de matching = município IBGE (417), depois mapear ao catálogo operacional.** Polígonos por `ibgeCode`; entradas `kind: 'municipio'` 1:1; entradas `kind: 'zona'` (Salvador) **não** recebem ZE automática na v1 — quem está em Salvador vai para `/campanha/municipios?q=Salvador`, com o href serializado no servidor e a contagem de zonas limitada ao que o ator pode abrir (um assessor com três zonas não é informado de dezenove). **Rejeitado:** escolher ZE aleatória/primeira; inventar centroides de zona sem polígonos (B8 F2).
+- **Malha de matching = município IBGE (417), depois ZE em Salvador (B8 F2).** Containment na malha municipal; cidades multi-zona usam `bahia-municipality-zones` quando o card carrega o chunk — link direto à ZE acessível, ou ZE mais próxima (≤ `NEAREST_ZONE_MAX_KM` = 30 km), ou lista filtrada (`zoneCityHrefs`). **Rejeitado:** chute de ZE sem polígonos; lista sempre.
 - **Staff only no Início.** Leader lockdown intacto. **Rejeitado:** expor municípios ao leader via atalho geo.
 - **i18n e naming:** identificadores em inglês (`NearestMunicipalityCard`, `municipalityProximity`, `resolveNearbyMunicipality`, `GEO_PROMPT_SESSION_KEY`); strings visíveis em pt-BR (título "Onde estou", "Abrir <município>", "Usar minha localização", "Ver zonas de Salvador").
 - **Precisão declarada, nunca escondida.** Fix com raio acima de 10 km (rede/IP, típico de desktop) mostra o resultado com a ressalva "Localização aproximada — confira o município antes de agir", entre o título e o CTA. **Rejeitado:** descartar o fix grosseiro (o município costuma estar certo) e confiar nele em silêncio (nomear o município errado com confiança total é o pior dos dois).
@@ -134,7 +134,7 @@ Componentes:
 
 ## Adiado com gatilho
 
-- **Desambiguação Salvador ZE por ponto-em-polígono.** Revisitar quando: **B8 F2** entregue (polígonos no mapa).
+- ~~**Desambiguação Salvador ZE por ponto-em-polígono.**~~ **Resolvido 2026-07-29** (débito B8 F2-D1): `NearestMunicipalityCard` carrega `loadMunicipalityZoneGeometryModule()` de forma opcional; falha do chunk degrada para `zoneCity`.
 - **Atalho também na lista `/campanha/municipios`.** Revisitar quando: evidência de uso no Início (campo pede o mesmo atalho na lista).
 - **Lembrar última sugestão em `sessionStorage` para paint imediato.** Revisitar quando: critique acusar flash/vazio perceptível no card. _(Não acusou: o chunk de geometria costuma estar resolvido antes do fix chegar.)_
 - **Atalho geo também para `leader`.** Permanece fora: liderança não sai do `LeaderContactsPanel`.

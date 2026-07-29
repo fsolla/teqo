@@ -280,9 +280,40 @@ describe('Bahia static geometries', () => {
       }
     })
 
-    it('sends a Salvador position to the zone list and an out-of-portfolio one to the nearest', async () => {
+    it('resolves Salvador to an accessible zone when the zone mesh is loaded', async () => {
       const geometry = await loadMunicipalityGeometryModule()
-      const salvadorZones = municipalityCatalog.filter((entry) => entry.city === 'Salvador')
+      const zoneGeometry = await loadMunicipalityZoneGeometryModule()
+      const salvadorZones = municipalityCatalog
+        .filter((entry) => entry.city === 'Salvador')
+        .map((entry) => ({
+          slug: entry.slug,
+          name: entry.name,
+          ibgeCode: entry.ibgeCode,
+        }))
+      const salvadorPoint = { lat: -12.973, lng: -38.5121 }
+
+      const resolution = resolveNearbyMunicipality({
+        point: salvadorPoint,
+        geometry,
+        zoneGeometry,
+        accessible: salvadorZones,
+      })
+
+      expect(resolution.kind).toBe('inScope')
+      if (resolution.kind !== 'inScope') return
+      expect(resolution.match).toBe('zoneContainment')
+      expect(salvadorZones.some((zone) => zone.slug === resolution.municipality.slug)).toBe(true)
+    })
+
+    it('falls back to the zone list without zone mesh and reports out-of-portfolio in Salvador', async () => {
+      const geometry = await loadMunicipalityGeometryModule()
+      const salvadorZones = municipalityCatalog
+        .filter((entry) => entry.city === 'Salvador')
+        .map((entry) => ({
+          slug: entry.slug,
+          name: entry.name,
+          ibgeCode: entry.ibgeCode,
+        }))
       const seabra = municipalityCatalog.find((entry) => entry.slug === 'seabra')!
       const salvadorPoint = { lat: -12.973, lng: -38.5121 }
 
@@ -303,7 +334,13 @@ describe('Bahia static geometries', () => {
         resolveNearbyMunicipality({
           point: salvadorPoint,
           geometry,
-          accessible: [seabra],
+          accessible: [
+            {
+              slug: seabra.slug,
+              name: seabra.name,
+              ibgeCode: seabra.ibgeCode,
+            },
+          ],
         }),
       ).toEqual({ kind: 'outOfScope', city: 'Salvador', nearestInScope: null })
     })

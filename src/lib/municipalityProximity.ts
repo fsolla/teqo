@@ -3,6 +3,7 @@ import type { Position } from 'geojson'
 import type {
   BahiaMunicipalityFeature,
   MunicipalityGeometryModule,
+  MunicipalityZoneFeature,
   PolygonalFeature,
 } from '@/lib/bahiaGeometriesTypes'
 import { oneDecimalFormatter } from '@/lib/electionFormat'
@@ -14,9 +15,10 @@ import { oneDecimalFormatter } from '@/lib/electionFormat'
  * loads `bahiaMunicipalityGeometries` on mount, so the same memoized chunk
  * answers containment without a centroid artifact of its own.
  *
- * Containment is the real answer ("o município onde estou"); the centroid
- * distance below only ranks the fallback suggestions, where being off by a few
- * kilometres changes nothing.
+ * Salvador multi-zona: when the caller also supplies the B8 F2 zone mesh,
+ * containment runs on the 19 ZE polygons first; centroid distance ranks only
+ * the "nearest accessible zone" fallback when the point is in the city polygon
+ * but outside every zone polygon (bay water, mesh gap, coarse fix).
  */
 
 export type GeoPoint = {
@@ -34,6 +36,10 @@ type MunicipalityGeometryLookup = Pick<
   'features' | 'getMunicipalityFeature'
 >
 
+type ZoneGeometryLookup = {
+  features: readonly MunicipalityZoneFeature[]
+}
+
 /** The minimum a município needs to be linkable — what the server ships to the island. */
 export type AccessibleMunicipality = {
   slug: string
@@ -47,18 +53,22 @@ type NearestInScope = {
   distanceKm: number
 }
 
+export type InScopeMunicipalityMatch = 'municipality' | 'zoneContainment' | 'nearestZone'
+
 export type NearbyMunicipalityResolution =
   /** The point falls inside a município the actor can open. */
-  | { kind: 'inScope'; municipality: AccessibleMunicipality }
+  | {
+      kind: 'inScope'
+      municipality: AccessibleMunicipality
+      /** Omitted for a single whole-municipality unit; set for Salvador ZE paths. */
+      match?: InScopeMunicipalityMatch
+      /** Present when `match` is `nearestZone` — distance to the zone centroid. */
+      distanceKm?: number
+    }
   /**
-   * The point falls inside a city modeled as several zone municipalities
-   * (Salvador). The answer is the filtered list, never a guessed ZE. B8 F2 has
-   * since drawn the zone polygons, so resolving the exact ZE became possible —
-   * this resolver deliberately still does not, because that is a separate
-   * decision (an open debt) rather than a side effect of the map delivery.
-   * `zoneCount` is what the actor can open, so an advisor with three zones is
-   * not told there are nineteen. `ibgeCode` is how the caller finds the
-   * filtered-list href the server serialized for it.
+   * The actor can open several zone municipalities in the same city but the
+   * resolver could not pick one (zone mesh missing, or no zone within
+   * `NEAREST_ZONE_MAX_KM`). The filtered list is the honest answer.
    */
   | { kind: 'zoneCity'; city: string; ibgeCode: string; zoneCount: number }
   /** Inside Bahia, but in a município outside the actor's portfolio. */
@@ -176,22 +186,31 @@ export const featureCentroid = (feature: PolygonalFeature): GeoPoint => {
 
 /**
  * First feature whose polygons contain the point. A point on a shared border
- * lands in exactly one município by the half-open convention in `isPointInRing`,
+ * lands in exactly one feature by the half-open convention in `isPointInRing`,
  * not by this scan's order: the mesh is TopoJSON-derived, so neighbours share
- * numerically identical arcs and never overlap. Feature order only decides
- * pathological overlaps the committed mesh does not contain.
+ * numerically identical arcs and never overlap.
  */
+export const findContainingFeature = <F extends PolygonalFeature>(
+  features: readonly F[],
+  point: GeoPoint,
+): F | undefined => features.find((feature) => featureContainsPoint(feature, point))
+
 export const findContainingMunicipality = (
   features: readonly BahiaMunicipalityFeature[],
   point: GeoPoint,
-): BahiaMunicipalityFeature | undefined =>
-  features.find((feature) => featureContainsPoint(feature, point))
+): BahiaMunicipalityFeature | undefined => findContainingFeature(features, point)
 
 /**
  * Past this, "o mais próximo na sua carteira" stops being a shortcut and starts
  * being noise — an advisor in Salvador does not need a link to Barreiras.
  */
-const NEAREST_IN_SCOPE_MAX_KM = 150
+export const NEAREST_IN_SCOPE_MAX_KM = 150
+
+/**
+ * When the point is inside Salvador's municipal polygon but outside every ZE
+ * polygon, only zones within this radius are offered as a direct link.
+ */
+export const NEAREST_ZONE_MAX_KM = 30
 
 const findNearestInScope = (
   getMunicipalityFeature: MunicipalityGeometryLookup['getMunicipalityFeature'],
@@ -214,6 +233,77 @@ const findNearestInScope = (
   return nearest
 }
 
+const findNearestAccessibleZone = (
+  zoneFeatures: readonly MunicipalityZoneFeature[],
+  accessibleBySlug: ReadonlyMap<string, AccessibleMunicipality>,
+  point: GeoPoint,
+): NearestInScope | null => {
+  let nearest: NearestInScope | null = null
+
+  for (const zone of zoneFeatures) {
+    const municipality = accessibleBySlug.get(zone.properties.municipalitySlug)
+    if (!municipality) continue
+
+    const distanceKm = haversineKm(point, featureCentroid(zone))
+    if (distanceKm > NEAREST_ZONE_MAX_KM) continue
+    if (nearest && nearest.distanceKm <= distanceKm) continue
+
+    nearest = { municipality, distanceKm }
+  }
+
+  return nearest
+}
+
+const resolveMultiZoneCity = ({
+  city,
+  ibgeCode,
+  inCity,
+  point,
+  zoneGeometry,
+  geometry,
+  accessible,
+}: {
+  city: string
+  ibgeCode: string
+  inCity: readonly AccessibleMunicipality[]
+  point: GeoPoint
+  zoneGeometry: ZoneGeometryLookup | undefined
+  geometry: MunicipalityGeometryLookup
+  accessible: readonly AccessibleMunicipality[]
+}): NearbyMunicipalityResolution => {
+  if (!zoneGeometry) {
+    return { kind: 'zoneCity', city, ibgeCode, zoneCount: inCity.length }
+  }
+
+  const accessibleBySlug = new Map(inCity.map((entry) => [entry.slug, entry]))
+  const containingZone = findContainingFeature(zoneGeometry.features, point)
+
+  if (containingZone) {
+    const municipality = accessibleBySlug.get(containingZone.properties.municipalitySlug)
+    if (municipality) {
+      return { kind: 'inScope', municipality, match: 'zoneContainment' }
+    }
+
+    return {
+      kind: 'outOfScope',
+      city: containingZone.properties.name,
+      nearestInScope: findNearestInScope(geometry.getMunicipalityFeature, accessible, point),
+    }
+  }
+
+  const nearestZone = findNearestAccessibleZone(zoneGeometry.features, accessibleBySlug, point)
+  if (nearestZone) {
+    return {
+      kind: 'inScope',
+      municipality: nearestZone.municipality,
+      match: 'nearestZone',
+      distanceKm: nearestZone.distanceKm,
+    }
+  }
+
+  return { kind: 'zoneCity', city, ibgeCode, zoneCount: inCity.length }
+}
+
 /**
  * Resolves a browser position into the one município the card should offer.
  *
@@ -225,10 +315,12 @@ const findNearestInScope = (
 export const resolveNearbyMunicipality = ({
   point,
   geometry,
+  zoneGeometry,
   accessible,
 }: {
   point: GeoPoint
   geometry: MunicipalityGeometryLookup
+  zoneGeometry?: ZoneGeometryLookup
   accessible: readonly AccessibleMunicipality[]
 }): NearbyMunicipalityResolution => {
   const containing = findContainingMunicipality(geometry.features, point)
@@ -246,12 +338,15 @@ export const resolveNearbyMunicipality = ({
 
   if (inCity.length === 1) return { kind: 'inScope', municipality: inCity[0] }
   if (inCity.length > 1) {
-    return {
-      kind: 'zoneCity',
+    return resolveMultiZoneCity({
       city: containing.properties.name,
       ibgeCode: containing.properties.codarea,
-      zoneCount: inCity.length,
-    }
+      inCity,
+      point,
+      zoneGeometry,
+      geometry,
+      accessible,
+    })
   }
 
   return {

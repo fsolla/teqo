@@ -7,7 +7,10 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/Spinner'
-import { loadMunicipalityGeometryModule } from '@/lib/bahiaGeometries'
+import {
+  loadMunicipalityGeometryModule,
+  loadMunicipalityZoneGeometryModule,
+} from '@/lib/bahiaGeometries'
 import {
   formatDistanceKm,
   resolveNearbyMunicipality,
@@ -64,9 +67,9 @@ const failureCopy: Record<ActionableFailureReason, { title: string; hint: string
 /**
  * B14 — "abrir a ficha do município onde estou" no Início staff.
  *
- * A posição fica no navegador: o casamento é feito contra a malha municipal que
- * o mapa do dashboard já carrega (mesmo chunk memoizado), sem action, sem
- * artefato e sem `Consent` — nada de coordenada sai do aparelho.
+ * A posição fica no navegador: o casamento usa a malha municipal que o mapa já
+ * carrega e, em Salvador multi-zona, a malha das 19 ZE (B8 F2). Falha no chunk
+ * de zonas degrada para a lista filtrada — sem action, sem `Consent`.
  *
  * `leader` nunca chega aqui: a página `/campanha` roteia liderança para o
  * `LeaderContactsPanel` antes do dashboard.
@@ -122,10 +125,17 @@ export const NearestMunicipalityCard = ({
       return
     }
 
+    const zoneModule = await loadMunicipalityZoneGeometryModule().catch(() => null)
+
     setState({
       status: 'resolved',
       coarse: result.fix.accuracyM > COARSE_ACCURACY_M,
-      resolution: resolveNearbyMunicipality({ point: result.fix, geometry, accessible }),
+      resolution: resolveNearbyMunicipality({
+        point: result.fix,
+        geometry,
+        zoneGeometry: zoneModule ?? undefined,
+        accessible,
+      }),
     })
   }, [accessible])
 
@@ -330,13 +340,25 @@ const resolutionDetail = (
   ) : null
 
   switch (resolution.kind) {
-    case 'inScope':
+    case 'inScope': {
+      const nearestZone =
+        resolution.match === 'nearestZone' && resolution.distanceKm !== undefined ? (
+          <Explanation>
+            Zona eleitoral mais próxima na sua carteira, a {formatDistanceKm(resolution.distanceKm)}{' '}
+            — confira antes de agir.
+          </Explanation>
+        ) : null
+
       return (
-        <OpenMunicipalityButton
-          slug={resolution.municipality.slug}
-          name={resolution.municipality.name}
-        />
+        <>
+          {nearestZone}
+          <OpenMunicipalityButton
+            slug={resolution.municipality.slug}
+            name={resolution.municipality.name}
+          />
+        </>
       )
+    }
 
     case 'zoneCity': {
       // Server and client read the same `accessible` set, so the href is there —
