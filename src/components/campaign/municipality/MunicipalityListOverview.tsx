@@ -7,10 +7,6 @@ import { useMunicipalityEstimateScenario } from '@/components/campaign/municipal
 import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignMetricStrip } from '@/components/campaign/shared/CampaignMetricStrip'
 import { campaignPrioritySurfaceClassName } from '@/components/campaign/shell/CampaignPageShell'
-import {
-  VOTE_ESTIMATE_SCENARIO_OVERVIEW_HINT,
-  VoteEstimateScenarioField,
-} from '@/components/campaign/votePledge/VoteEstimateScenarioField'
 import { VoteEstimateScenarioStrip } from '@/components/campaign/votePledge/VoteEstimateScenarioStrip'
 import { formatElectionNumber } from '@/lib/electionFormat'
 import { cn } from '@/lib/utils'
@@ -74,7 +70,7 @@ export const MunicipalityListOverview = ({
   view: MunicipalityListOverviewData
   shameHref: string | null
 }) => {
-  const { scenario, setScenario } = useMunicipalityEstimateScenario()
+  const { scenario } = useMunicipalityEstimateScenario()
   const [isFlashing, setIsFlashing] = useState(false)
   const skipFlashRef = useRef(true)
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -134,14 +130,6 @@ export const MunicipalityListOverview = ({
         isFlashing ? 'ring-2 ring-primary/35' : undefined,
       )}
     >
-      <div className="flex flex-col gap-2 border-b border-foreground/10 px-4 py-2 sm:flex-row sm:items-end sm:justify-between">
-        <VoteEstimateScenarioField
-          id="municipality-overview-estimate-scenario"
-          value={scenario}
-          onChange={setScenario}
-          hint={VOTE_ESTIMATE_SCENARIO_OVERVIEW_HINT}
-        />
-      </div>
       <CampaignMetricStrip
         className="rounded-none ring-0"
         metrics={[

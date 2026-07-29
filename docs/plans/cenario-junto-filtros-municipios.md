@@ -1,11 +1,13 @@
 # Seletor de Cenário junto aos filtros de Municípios
 
-Status: rascunho — **nota Pass 2 W1 (2026-07-25):** o cenário continua client-side e NUNCA entra na serialização de URL da lista; mover para a URL é exatamente o escopo deste fill-in
-Atualizado em: 2026-07-24
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins)
 Impeccable: B — encaixe em `MunicipalityFilters` + `MunicipalityListOverview` (`/campanha/municipios`); sem rota nova
 Appetite: ~0,25–0,5 dia eng; relocação de controle + ajuste do provider; sem migration
 Responsável: —
+
+- **Revisão 2026-07-29 (implementação):** pós-B16 ✓ o Cenário pousou na **barra slim** (desktop: entre resumo e Salvar/Limpar; mobile: após filtros staff, antes de Ordenar). `MunicipalityEstimateScenarioProvider` envolve filtros + `CampaignListResults` em staff. Hint `VOTE_ESTIMATE_SCENARIO_FILTERS_HINT`. Testes do shell de filtros montam o provider (mesmo contrato que a página). Caminhos reais: `src/components/campaign/municipality/*`, `src/components/campaign/votePledge/VoteEstimateScenarioField.tsx`.
 
 ## Design (Impeccable)
 
@@ -48,12 +50,12 @@ Polish anterior (notebook 2026-07-23) já tinha movido o seletor do mapa → ove
 - **Fill-in com plano próprio (não reabrir A10; não absorver só em R6; não item de trilha B).** Relocação barata, paralelizável, cortável; A10 já entregue a semântica. (2026-07-24, classificação roadmap-item.) **Rejeitado:** fase informal de A10 (mistura entrega fechada com polish de layout); só R6 (atrasa quick win no critique largo); ID B novo (infla grafo por ~½ dia).
 - **Provider envolve filtros + `CampaignListResults` (staff).** Necessário para o seletor viver em `MunicipalityFilters`. Custo: troca de cenário re-renderiza a árvore dos filtros — aceitável (controle local, sem navegação). **Rejeitado:** prop-drill `scenario`/`setScenario` sem provider; dois providers; manter seletor no overview _e_ nos filtros (duplicata).
 - **Cenário continua fora da URL e fora de `buildMunicipalityFiltersKey` / Limpar.** Alinhado à decisão A10 (Ano/Escala locais; só `compare` na URL do mapa). **Rejeitado:** `?estimate=` neste item; Limpar resetar cenário (mistura recorte URL com lente de leitura).
-- **Hint:** adaptar copy do overview (hoje `VOTE_ESTIMATE_SCENARIO_OVERVIEW_HINT`) para o contexto dos filtros (“Troca o total da visão geral e os votos na lista…”); mapa no Início permanece com o hint próprio. **Rejeitado:** remover o `CampaignInfoHint`.
+- **Hint:** `VOTE_ESTIMATE_SCENARIO_FILTERS_HINT` no controle da barra de filtros; mapa no Início permanece com `VOTE_ESTIMATE_SCENARIO_MAP_HINT`.
 - **i18n e naming** (AGENTS.md): identificadores existentes (`VoteEstimateScenarioField`, `MunicipalityEstimateScenarioProvider`); strings “Cenário” / Pessimista / Média / Otimista.
 
 ## Questões em aberto
 
-- **Posição exata na fileira (antes ou depois dos selects de recorte)?** **Opções:** A) após Prioridade (fim dos staff filters, antes de Limpar) | B) logo após a busca | C) fileira própria abaixo. **Recomendação:** **A** — Cenário é lente de leitura do resultado, não critério de where; fica com os controles staff sem competir com busca/TI. _(assumido — validar no craft se a fileira quebrar em mobile)_
+- **Posição exata na fileira (antes ou depois dos selects de recorte)?** **Resolvido 2026-07-29:** desktop = barra slim B16 (antes de Salvar/Limpar); mobile = após assessores, antes de Ordenar.
 - **Mapa do Início: espelhar “Cenário nos filtros do dashboard”?** **Opções:** A) neste item | B) fora / R6 se critique pedir. **Recomendação:** **B** — pedido é a página de municípios; mapa já agrupa Cenário com Ano/Escala.
 
 ## Abordagem proposta
@@ -101,6 +103,12 @@ Depth check: reusa field + context + filters existentes; sem hook/shared shell n
 ## Adiado com gatilho
 
 - **Mesma colocação mental no dashboard (mapa).** Revisitar quando: R6 critique o Início ou produto pedir “um só lugar para Cenário” entre mapa e lista.
+- **Cenário fora do `<form role="search">`.** Revisitar quando: auditoria a11y/semântica da barra B16 apontar conflito busca × cenário (fill-in mantém padrão B16).
+- **Mount único do seletor (breakpoint).** Revisitar quando: medição mostrar custo dos dois `VoteEstimateScenarioField` (desktop/mobile) ou regressão de foco/Popover.
+
+## Já resolvido no simplify (não reabrir)
+
+- Provider obrigatório no controle de Cenário + `MunicipalityEstimateScenarioProvider` nos testes do shell de filtros (`campaignListFilterNavigation.unit.spec.ts`).
 
 ## Referências
 
