@@ -4,11 +4,7 @@ import type { Payload } from 'payload'
 import { cache } from 'react'
 
 import { getMunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
-import {
-  filterDemaisRmsSubgroup,
-  filterSalvadorSubgroup,
-  isSalvadorMetropolitanoSubRowLabel,
-} from '@/lib/metropolitanoTerritoryPeers'
+import { slugsForMetropolitanoSubRowLabel } from '@/lib/metropolitanoTerritoryPeers'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO, type VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, Municipality, User } from '@/payload-types'
 import { loadMunicipalityGoalCoverageBundle } from '@/utilities/municipality/municipalityGoalAccount'
@@ -32,16 +28,6 @@ type MunicipalityDoc = Pick<
 
 type TerritoryReader = CampaignUser | User
 
-const slugsForMetropolitanoSubRow = (
-  inputs: ReadonlyArray<TerritoryMunicipalityInput>,
-  label: string,
-): string[] => {
-  const filtered = isSalvadorMetropolitanoSubRowLabel(label)
-    ? filterSalvadorSubgroup(inputs)
-    : filterDemaisRmsSubgroup(inputs)
-  return filtered.map((input) => input.slug)
-}
-
 const attachTerritorialClasses = (
   inputs: ReadonlyArray<TerritoryMunicipalityInput>,
   rows: TerritoryOverviewRow[],
@@ -53,7 +39,7 @@ const attachTerritorialClasses = (
     const subRows = row.subRows?.map((subRow) => ({
       ...subRow,
       territorialClass: computeAggregateTerritorialClass(
-        slugsForMetropolitanoSubRow(inputs, subRow.label),
+        slugsForMetropolitanoSubRowLabel(inputs, subRow.label),
       ),
     }))
     return {

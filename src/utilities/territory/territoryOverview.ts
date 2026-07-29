@@ -242,14 +242,6 @@ const inputsInRegion = (
   region: string,
 ): TerritoryMunicipalityInput[] => inputs.filter((input) => input.region === region)
 
-const metropolitanoSalvadorInputs = (
-  inputs: ReadonlyArray<TerritoryMunicipalityInput>,
-): TerritoryMunicipalityInput[] => filterSalvadorSubgroup(inputs)
-
-const metropolitanoDemaisInputs = (
-  inputs: ReadonlyArray<TerritoryMunicipalityInput>,
-): TerritoryMunicipalityInput[] => filterDemaisRmsSubgroup(inputs)
-
 /**
  * Computes the 27-TI comparative rollup. Rows are returned in first-seen order
  * (catalog order when fed from the loader); the Metropolitano de Salvador row
@@ -292,13 +284,13 @@ export const computeTerritoryRollup = (
           METROPOLITANO_SALVADOR_SUB_ROW_LABEL,
           metropolitanoSalvador,
           stateTotal2022,
-          computeTerritoryE12Rollup(metropolitanoSalvadorInputs(inputs)),
+          computeTerritoryE12Rollup(filterSalvadorSubgroup(regionInputs)),
         ),
         finalizeSubRow(
           METROPOLITANO_DEMAIS_SUB_ROW_LABEL,
           metropolitanoDemais,
           stateTotal2022,
-          computeTerritoryE12Rollup(metropolitanoDemaisInputs(inputs)),
+          computeTerritoryE12Rollup(filterDemaisRmsSubgroup(regionInputs)),
         ),
       ]
     }

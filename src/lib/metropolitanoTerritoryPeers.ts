@@ -6,7 +6,11 @@
  * class slugs, and intra-TI capture benchmark (T4).
  */
 
-import { municipalityCatalog, type MunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import {
+  getMunicipalityCatalogEntry,
+  municipalityCatalog,
+  type MunicipalityCatalogEntry,
+} from '@/lib/municipalityCatalog'
 
 export const METROPOLITANO_REGION = 'Metropolitano de Salvador'
 export const SALVADOR_CITY = 'Salvador'
@@ -35,6 +39,16 @@ export const filterSalvadorSubgroup = <T extends MetropolitanoGeo>(items: Readon
 export const filterDemaisRmsSubgroup = <T extends MetropolitanoGeo>(items: ReadonlyArray<T>): T[] =>
   items.filter(isDemaisRmsSubMunicipality)
 
+export const slugsForMetropolitanoSubRowLabel = <T extends MetropolitanoGeo & { slug: string }>(
+  inputs: ReadonlyArray<T>,
+  label: string,
+): string[] => {
+  const filtered = isSalvadorMetropolitanoSubRowLabel(label)
+    ? filterSalvadorSubgroup(inputs)
+    : filterDemaisRmsSubgroup(inputs)
+  return filtered.map((input) => input.slug)
+}
+
 const peersForCatalogEntry = (
   entry: MunicipalityCatalogEntry,
 ): ReadonlyArray<MunicipalityCatalogEntry> => {
@@ -47,9 +61,9 @@ const peersForCatalogEntry = (
     : municipalityCatalog.filter(isDemaisRmsSubMunicipality)
 }
 
-/** Catalog peers for one slug — TI-wide, or Metropolitano Salvador vs demais RMS. */
+/** TI-wide peers, or Metropolitano Salvador vs demais RMS. */
 export const catalogPeersForSlug = (slug: string): ReadonlyArray<MunicipalityCatalogEntry> => {
-  const entry = municipalityCatalog.find((row) => row.slug === slug)
+  const entry = getMunicipalityCatalogEntry(slug)
   if (!entry) return []
   return peersForCatalogEntry(entry)
 }

@@ -2,9 +2,7 @@
  * E12 — intra-TI capture benchmark (T4) for municipality detail.
  *
  * Pure over the committed TSE artifact + `municipalityCatalog` (client-safe).
- * Peers share the same Território de Identidade; Metropolitano de Salvador
- * splits Salvador (all zone slugs) vs demais RMS municipalities — same rule as
- * E17/E12 rollups.
+ * Peers share the same Território de Identidade (`catalogPeersForSlug`).
  */
 
 import { getMunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
