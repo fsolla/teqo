@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-29 — fill-in Cenário junto aos filtros (municípios) ✓; B46 ✓ (thumb-zone ações no Início UX-1); B58 registrado (polimento strip); B56–B57 registrados; B47–B55 busca global fatiada.
+Atualizado em: 2026-07-29 — B47 ✓ (busca global input + modo focado no Início); fill-in Cenário junto aos filtros (municípios) ✓; B46 ✓; B58 registrado; B48–B55 resultados busca.
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
 ## Âncoras do calendário eleitoral 2026 (Res. TSE 23.760/2026)
@@ -83,13 +83,13 @@ O discovery literatura→persona→entrevista ([relatório aprovado](research/re
 
 ### Demais itens abertos
 
-- **UX-1 fluxos ação-primeiro (prioridade pós-sessão 29/07)** — evidência: [snapshot](plans/sessao-observada-coordenador-2026-07-29-snapshot.md) · O9–O11 em CUSTOMER.md · **rascunho:** [fluxos-acao-primeiro-inicio.md](plans/fluxos-acao-primeiro-inicio.md). Soft deadline: **03/08**. **Chassis:** ~~**B43**~~ ✓ → ~~**B44**~~ ✓ → ~~**B45**~~ ✓ → ~~**B46**~~ ✓ → **B58** (polimento strip) → **B47–B55** (busca global fatiada) · **B56** (resumo total+cobertura no topo do Início); **B57** delta 7d = futuro/baixa prioridade; wizards com escrita = fatias seguintes.
+- **UX-1 fluxos ação-primeiro (prioridade pós-sessão 29/07)** — evidência: [snapshot](plans/sessao-observada-coordenador-2026-07-29-snapshot.md) · O9–O11 em CUSTOMER.md · **rascunho:** [fluxos-acao-primeiro-inicio.md](plans/fluxos-acao-primeiro-inicio.md). Soft deadline: **03/08**. **Chassis:** ~~**B43**~~ ✓ → ~~**B44**~~ ✓ → ~~**B45**~~ ✓ → ~~**B46**~~ ✓ → ~~**B47**~~ ✓ → **B58** (polimento strip) → **B48–B55** (resultados busca) · **B56** (resumo total+cobertura no topo do Início); **B57** delta 7d = futuro/baixa prioridade; wizards com escrita = fatias seguintes.
 - ~~**B43** Início em branco + Quadro~~ — **entregue 2026-07-29** (`/campanha` blank; staff dashboard em `/campanha/quadro`; liderança em `/campanha/contatos`; nav Início+Quadro / Início+Meus contatos; `requireCampaignPageActor` manda leader bloqueado → `/campanha/contatos`; sem migration) · [plano](plans/inicio-em-branco-quadro.md)
 - ~~**B44** Botão de ação do Início + lista horizontal~~ — **entregue 2026-07-29** (`CampaignHomeActionButton` + `CampaignHomeActionStrip`; Tooltip fine / long-press Drawer coarse; montado no Início por B45 ✓) · ~1d · Janela 1 · Impeccable C · [plano](plans/botao-acao-inicio-strip.md)
 - ~~**B45** Catálogo de ações por persona~~ — **entregue 2026-07-29** (`src/lib/campaignHomeActions.ts` + `CampaignHomeActions`; staff 6 ações com `uncovered-municipalities` → `?coverage=sem_assessor&sort=votos`; leader 2 com `my-contacts` → `/campanha/contatos`; demais inertes; ilha client por limite RSC↔ícones Lucide) · [plano](plans/catalogo-acoes-inicio-por-persona.md)
 - **B58** Polimento visual da strip de ações do Início — remover heading "O que você quer fazer?"; rótulos curtos (Ajustar votos, Registrar sinal, …; atalho → **"Ver esquecidos"** _(proposto — validar com produto)_); scale discreto no círculo (hover/long-press) + opacity no active; scrollbar horizontal oculta (pan preservado) · Depende de B45 ✓ · ~0,5d · Janela 1 · Paralelizável com ~~B46~~ ✓ · Impeccable B · [plano](plans/polimento-strip-acoes-inicio.md)
 - ~~**B46** Posição dos botões de ação (thumb zone)~~ — **entregue 2026-07-29** (`CampaignHomeLayout`: coluna `min-h-full` + spacer mobile; strip em `data-slot="home-actions"` na metade inferior do viewport; `md+` no topo; slot `searchSlot` + `data-slot="home-search"` para B47; sem migration) · [plano](plans/posicao-botoes-acao-inicio-thumb-zone.md)
-- **B47** Busca global — input (debounce, sem botão; modo focado: sobe e esconde o resto) · staff-only · Depende de B46 ✓ · ~1–1,5d · Janela 1 · Impeccable C · [plano](plans/busca-global-inicio-input.md)
+- ~~**B47** Busca global — input (debounce, sem botão; modo focado: sobe e esconde o resto)~~ — **entregue 2026-07-29** (`CampaignHomeStaffChrome` + `CampaignHomeSearch` + `useHomeSearchQuery`; debounce 250 ms; query ativa ≥2 chars; `HomeSearchContext` para B48+; staff-only via `isStaffCampaignRole`; Escape limpa; região `aria-live` sem hits ainda; sem migration) · [plano](plans/busca-global-inicio-input.md)
 - **B48** Busca — resultados Municípios (+ TIs no mesmo grupo; flag de prioridade alinhada; “2022” / agregado à direita; sem card) · Depende de B47 · ~1–1,5d · Janela 1 · Impeccable B · [plano](plans/busca-global-resultados-municipios.md)
 - **B49** Busca — resultados Lideranças · Depende de B47 · ~0,5–0,75d · Janela 1 · Impeccable B · [plano](plans/busca-global-resultados-liderancas.md)
 - **B50** Busca — resultados Assessores (access B19) · Depende de B47 · ~0,5d · Janela 1 · Impeccable B · [plano](plans/busca-global-resultados-assessores.md)
@@ -205,7 +205,7 @@ flowchart TD
     B45n["B45 ✓ Catálogo ações<br/>por persona"]
     B58n["B58 Polish strip<br/>ações Início"]
     B46n["B46 ✓ Thumb zone<br/>ações Início"]
-    B47n["B47 Busca global<br/>input + modo focado"]
+    B47n["B47 ✓ Busca global<br/>input + modo focado"]
     B48n["B48 Busca<br/>Municípios + TIs"]
     B49n["B49 Busca Lideranças"]
     B50n["B50 Busca Assessores"]

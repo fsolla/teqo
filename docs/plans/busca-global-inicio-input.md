@@ -1,7 +1,7 @@
 # Busca global do Início — input e modo resultados
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `CampaignHomeStaffChrome` (client) + `CampaignHomeSearch` + `useHomeSearchQuery` + `HomeSearchContext`; contrato `src/lib/campaignHomeSearchContract.ts` (debounce 250 ms, mín. 2 chars); staff-only em `page.tsx`; modo focado esconde strip/spacer via `CampaignHomeLayout` `focused`; região de resultados vazia (hits = B48+); DOM mantém ordem B46 (`order-*`); sem endpoint; Escape limpa query. Unit `campaignHomeSearchQuery` + `campaignHomeSearch`; e2e B47 em `campaignHomeActions`. Sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B47 — busca global)
 Impeccable: C — superfície nova de busca no Início (expand/collapse + empty results region)
 Appetite: ~1–1,5 dia eng; ilha client + debounce + chrome de modo focado; sem provider de hits ainda
