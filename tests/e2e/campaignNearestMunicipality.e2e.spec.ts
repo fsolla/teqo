@@ -150,6 +150,7 @@ test.describe('Município mais próximo', () => {
     await page.context().setGeolocation({ latitude: inside.lat, longitude: inside.lng })
 
     await campaign.login(page, email, password)
+    await page.goto(`${campaign.baseURL}/campanha/quadro`)
 
     const card = geoCard(page)
     await expect(visibleText(card, `Você está em ${municipality.name}`)).toBeVisible()
@@ -190,6 +191,7 @@ test.describe('Município mais próximo', () => {
     })
 
     await campaign.login(page, email, password)
+    await page.goto(`${campaign.baseURL}/campanha/quadro`)
 
     const card = geoCard(page)
     await expect(visibleText(card, zone.name)).toBeVisible()
@@ -213,6 +215,7 @@ test.describe('Município mais próximo', () => {
 
     // No grantPermissions: Chromium refuses the position, the same as a user tapping "Block".
     await campaign.login(page, email, password)
+    await page.goto(`${campaign.baseURL}/campanha/quadro`)
 
     const card = geoCard(page)
     await expect(visibleText(card, 'Localização bloqueada neste navegador')).toBeVisible()

@@ -4,6 +4,7 @@ import {
   HandshakeIcon,
   HomeIcon,
   InboxIcon,
+  LayoutDashboardIcon,
   MapIcon,
   MapPinIcon,
   UserCogIcon,
@@ -31,6 +32,7 @@ export const MUNICIPALITY_NAV_HREF = '/campanha/municipios'
 
 const staffNav: CampaignNavItem[] = [
   { title: 'Início', href: '/campanha', icon: HomeIcon },
+  { title: 'Quadro', href: '/campanha/quadro', icon: LayoutDashboardIcon },
   { title: 'Municípios', href: MUNICIPALITY_NAV_HREF, icon: MapPinIcon },
   { title: 'Territórios', href: '/campanha/territorios', icon: MapIcon },
   { title: 'Lideranças', href: '/campanha/liderancas', icon: HandshakeIcon },
@@ -56,9 +58,8 @@ const staffSecondaryNav: CampaignNavItem[] = [
 ]
 
 const leaderNav: CampaignNavItem[] = [
-  // The leader home IS the contact tool — one entry, one href (duplicate
-  // hrefs previously produced duplicate React keys in the sidebar).
-  { title: 'Meus contatos', href: '/campanha', icon: UsersIcon },
+  { title: 'Início', href: '/campanha', icon: HomeIcon },
+  { title: 'Meus contatos', href: '/campanha/contatos', icon: UsersIcon },
 ]
 
 export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] => {
@@ -85,6 +86,7 @@ export const getCampaignBottomNav = (role: CampaignUser['role']): CampaignNavIte
   return nav
     .filter(
       (item) =>
+        item.href !== '/campanha/quadro' &&
         item.href !== '/campanha/territorios' &&
         item.href !== '/campanha/apoiadores' &&
         item.href !== '/campanha/assessores',

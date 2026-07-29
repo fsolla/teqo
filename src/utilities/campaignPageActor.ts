@@ -10,15 +10,20 @@ export type CampaignPageActor = NonNullable<Awaited<ReturnType<typeof getCampaig
 
 export type CampaignPageGate = 'staff' | 'unrestricted' | 'noLeader'
 
+export const LEADER_CONTACTS_HOME = '/campanha/contatos'
+
+/** Staff dashboard (B43 — moved off blank `/campanha`). */
+export const CAMPAIGN_STAFF_QUADRO_PATH = '/campanha/quadro'
+
 /**
  * THE staff page prologue (Pass 3 P3-I — was ~110 hand-spelled lines across 30
  * pages, with a real divergence: 5 pages answered a missing session with
  * `return null` — a blank screen — instead of redirecting to login). Gates:
  *
  * - (none)         → any authenticated campaign user;
- * - 'staff'        → non-staff (leader) goes to `/campanha`;
+ * - 'staff'        → non-staff (leader) goes to `/campanha/contatos` (B43);
  * - 'unrestricted' → non-coordinator/candidate goes to `/campanha`;
- * - 'noLeader'     → leader goes to `/campanha` (their home is the contact tool).
+ * - 'noLeader'     → leader goes to `/campanha/contatos` (B43).
  *
  * A custom `redirectTo` overrides the gate's default target. The convention
  * guard in `codebaseConventions.unit.spec.ts` fails the build on a
@@ -30,10 +35,12 @@ export const requireCampaignPageActor = async (
   const user = await getCampaignUser()
   if (!user) redirect('/campanha/login')
 
-  const { gate, redirectTo = '/campanha' } = options
-  if (gate === 'staff' && !isStaffCampaignRole(user.role)) redirect(redirectTo)
-  if (gate === 'unrestricted' && !isUnrestrictedCampaignRole(user.role)) redirect(redirectTo)
-  if (gate === 'noLeader' && user.role === 'leader') redirect(redirectTo)
+  const { gate, redirectTo } = options
+  const denyRedirect = redirectTo ?? (user.role === 'leader' ? LEADER_CONTACTS_HOME : '/campanha')
+
+  if (gate === 'staff' && !isStaffCampaignRole(user.role)) redirect(denyRedirect)
+  if (gate === 'unrestricted' && !isUnrestrictedCampaignRole(user.role)) redirect(denyRedirect)
+  if (gate === 'noLeader' && user.role === 'leader') redirect(denyRedirect)
 
   return user
 }

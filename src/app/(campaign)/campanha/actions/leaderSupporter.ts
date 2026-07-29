@@ -17,6 +17,7 @@ import { getEngagedLeaderMunicipalityIds, isCampaignLeader } from '@/utilities/c
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { requireSupporterRegistrationConsent } from '@/utilities/campaignConsent'
 import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
+import { LEADER_CONTACTS_HOME } from '@/utilities/campaignPageActor'
 import {
   acquireContactPhoneLocks,
   CONTACT_PHONE_AMBIGUOUS_MESSAGE,
@@ -176,7 +177,7 @@ export const createLeaderSupporterFormAction = async (
     })
 
     const supporter = await createLeaderSupporter(input)
-    revalidatePath('/campanha')
+    revalidatePath(LEADER_CONTACTS_HOME)
 
     return {
       status: 'success',

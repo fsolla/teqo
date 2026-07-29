@@ -206,16 +206,24 @@ Não competir com os botões.
 
 ---
 
-## Ordem de entrega sugerida (ainda planejamento)
+## Ordem de entrega sugerida
 
-1. **Chassis do wizard** (shell de passos + busca de município + CTA final + resumo)
-2. **A1** (votos) com “quer também?” sinal + tendência
-3. **A6** atalho + tabela above-the-fold na lista
-4. **A2** standalone (se não ficou bom só embutido)
-5. **A4** curto (status / observação / quem coordena)
-6. **A5** + edição de demanda
-7. Ligar E11 → wizards
-8. Copy pass + A3 standalone se ainda fizer falta
+### Chassis do Início (registrado 2026-07-29)
+
+0. **B43** Início em branco + Quadro/Contatos — [inicio-em-branco-quadro.md](inicio-em-branco-quadro.md)
+1. **B44** Botão circular + strip horizontal — [botao-acao-inicio-strip.md](botao-acao-inicio-strip.md)
+2. **B45** Catálogo por persona + botões (atalhos reais; wizards ainda inertes) — [catalogo-acoes-inicio-por-persona.md](catalogo-acoes-inicio-por-persona.md)
+
+### Wizards (ainda planejamento — IDs depois de B45)
+
+3. **Chassis do wizard** (shell de passos + busca de município + CTA final + resumo)
+4. **A1** (votos) com “quer também?” sinal + tendência
+5. **A6** — atalho já parcialmente em B45 (`uncovered-municipalities`); tabela above-the-fold na lista se ainda faltar
+6. **A2** standalone (se não ficou bom só embutido)
+7. **A4** curto (status / observação / quem coordena)
+8. **A5** + edição de demanda
+9. Ligar E11 → wizards
+10. Copy pass + A3 standalone se ainda fizer falta
 
 ---
 
