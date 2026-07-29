@@ -13,6 +13,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
+import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import type { CampaignUser } from '@/payload-types'
 import { canAccessSupporterArea } from '@/utilities/supporter/supporterUi'
@@ -59,7 +60,7 @@ const staffSecondaryNav: CampaignNavItem[] = [
 
 const leaderNav: CampaignNavItem[] = [
   { title: 'Início', href: '/campanha', icon: HomeIcon },
-  { title: 'Meus contatos', href: '/campanha/contatos', icon: UsersIcon },
+  { title: 'Meus contatos', href: LEADER_CONTACTS_HOME, icon: UsersIcon },
 ]
 
 export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] => {

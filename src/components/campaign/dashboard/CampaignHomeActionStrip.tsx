@@ -16,7 +16,7 @@ export const CampaignHomeActionStrip = ({
   className,
 }: {
   children?: ReactNode
-  actions?: readonly CampaignHomeActionButtonProps[]
+  actions?: readonly (CampaignHomeActionButtonProps & { id?: string })[]
   ariaLabel?: string
   className?: string
 }) => (
@@ -30,9 +30,9 @@ export const CampaignHomeActionStrip = ({
     >
       <ul role="list" className="m-0 flex min-w-max list-none snap-x snap-proximity gap-6 p-0 pb-1">
         {children}
-        {actions?.map((action) => (
-          <li key={action.href ?? action.label} className="m-0 list-none p-0">
-            <CampaignHomeActionButton {...action} />
+        {actions?.map(({ id, ...button }) => (
+          <li key={id ?? button.href ?? button.label} className="m-0 list-none p-0">
+            <CampaignHomeActionButton {...button} />
           </li>
         ))}
       </ul>

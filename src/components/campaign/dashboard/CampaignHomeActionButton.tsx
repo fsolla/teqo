@@ -17,6 +17,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useCoarsePointer } from '@/lib/campaignCoarsePointer'
 import { useCampaignLongPress } from '@/lib/campaignLongPress'
+import { cn } from '@/lib/utils'
 
 export type CampaignHomeActionButtonProps = {
   label: string
@@ -69,6 +70,7 @@ export const CampaignHomeActionButton = ({
   )
 
   const useLongPress = Boolean(description) && isCoarsePointer && !disabled
+  const isInert = !disabled && !href && !onClick
   const longPress = useCampaignLongPress({
     enabled: useLongPress,
     onLongPress: openDescription,
@@ -76,7 +78,7 @@ export const CampaignHomeActionButton = ({
   })
 
   const pointerHandlers = useLongPress ? longPress : undefined
-  const className = actionControlClassName
+  const className = cn(actionControlClassName, isInert && 'cursor-default')
   const aria = {
     'aria-label': label,
     'aria-describedby': drawerOpen && useLongPress ? descriptionId : undefined,
