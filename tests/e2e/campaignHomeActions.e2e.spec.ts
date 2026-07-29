@@ -9,6 +9,45 @@ const staffActionLabels = [
   'Ver quem ainda não está coberto',
 ] as const
 
+test.describe('Início — busca global (B47)', () => {
+  test('staff sees campaign search on home', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await expect(page.getByLabel('Buscar na campanha')).toBeVisible()
+  })
+
+  test('leader does not see campaign search on home', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const leader = await fixtures.createCampaignUser('leader', {
+      name: fixtures.value('Liderança'),
+    })
+
+    await campaign.login(page, leader.email!, leader.password)
+    await expect(page.getByLabel('Buscar na campanha')).toHaveCount(0)
+  })
+
+  test('staff focused search hides action strip after debounce', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    const heading = page.getByRole('heading', { name: 'O que você quer fazer?', exact: true })
+    await expect(heading).toBeVisible()
+
+    await page.getByLabel('Buscar na campanha').fill('ca')
+    await expect(heading).toBeHidden({ timeout: 5000 })
+
+    await page.getByLabel('Buscar na campanha').fill('')
+    await expect(heading).toBeVisible({ timeout: 5000 })
+  })
+})
+
 test.describe('Início — catálogo de ações (B45)', () => {
   test('staff sees six home actions and can open municipalities without coverage', async ({
     campaign,

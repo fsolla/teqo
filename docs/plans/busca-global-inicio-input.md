@@ -1,7 +1,7 @@
 # Busca global do Início — input e modo resultados
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `CampaignHomeStaffChrome` (client) + `CampaignHomeSearch` + `useHomeSearchQuery` + `HomeSearchContext`; contrato `src/lib/campaignHomeSearchContract.ts` (debounce 250 ms, mín. 2 chars); staff-only em `page.tsx`; modo focado esconde strip/spacer via `CampaignHomeLayout` `focused`; região de resultados vazia (hits = B48+); DOM mantém ordem B46 (`order-*`); sem endpoint; Escape limpa query. Unit `campaignHomeSearchQuery` + `campaignHomeSearch`; e2e B47 em `campaignHomeActions`. Sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B47 — busca global)
 Impeccable: C — superfície nova de busca no Início (expand/collapse + empty results region)
 Appetite: ~1–1,5 dia eng; ilha client + debounce + chrome de modo focado; sem provider de hits ainda
@@ -93,6 +93,13 @@ Componentes:
 
 - **`?q=` na URL do Início** (shareable). Revisitar se mesa pedir mandar link da busca.
 - **Busca na liderança (apoiadores).** Revisitar se leader pedir achar contato sem rolar a lista.
+- **Contexto / boundary só com query debounced para grupos B48+** (evitar re-render por keystroke nos providers). Revisitar ao plugar o primeiro provider com trabalho não trivial em `searchResults`.
+- **`useDebouncedState` compartilhado com `AsyncSearchCombobox`.** Revisitar no 3º call site client-only com o mesmo contrato de debounce.
+- **Fundir wrapper `CampaignHomeStaffChrome` em `CampaignHomeLayout`.** Revisitar se `data-home-focused` ganhar CSS além de `focused` prop (B48 layout).
+
+## Já resolvido no simplify pós-B47 (não reabrir)
+
+- Estado `isDebouncing` derivado (`raw !== debounced`); `HomeSearchController` como tipo único; JSDoc de `focused`; `aria-busy` deduplicado no input.
 
 ## Referências
 
