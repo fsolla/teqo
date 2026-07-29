@@ -87,7 +87,7 @@ Copy: zero “broker”, “campo sem captura”, “LQ” nos passos. Se precis
 | 3     | E o **pessimista**?                 | Idem; se quebrar ordem vs média → jump + warning + atalho de volta (**B61**)    | `expectedVotes.pessimistic` |
 | 4     | E o **otimista**?                   | Idem + coerência vs anteriores (**B61**)                                        | `expectedVotes.optimistic`  |
 | 5     | Quer registrar **o que aconteceu**? | Sim → mini A2 (**B63**) / Não                                                   | `municipalityUpdate` sinal  |
-| 6     | Quer mudar a **tendência**?         | Sim → A3 embutido / Não                                                         | `politicalTrend` + nota     |
+| 6     | Quer mudar a **tendência**?         | Sim → A3 embutido (**B64**) / Não                                               | `politicalTrend` + nota     |
 | 7     | Quer ajustar **liderança** agora?   | Sim → A4 embutido (curto) / Não                                                 | leadership / pledge         |
 | 8     | Resumo → **Registrar atualização**  | CTA único                                                                       | actions existentes          |
 
@@ -115,14 +115,15 @@ Opcional ao fim: “Isso muda a projeção de votos?” → entra em A1 / **B61*
 
 ## Fluxo A3 — Mudar tendência
 
-| Passo | Pergunta                                                                           |
-| ----- | ---------------------------------------------------------------------------------- |
-| 1     | Município?                                                                         |
-| 2     | Nova tendência? Favorável / Mantém / Desfavorável (labels da planilha, não jargão) |
-| 3     | Por quê? (obrigatório se mudou)                                                    |
-| 4     | **Registrar tendência**                                                            |
+**Modelo (B64, 2026-07-29):** duas etapas após o município. Tiles no mesmo chassis do sinal (**B63**), mas fundo branco + cor/borda da tendência; só opções ≠ atual; título = estado atual (“Tendência Favorável”). Justificativa com prefill quando veio de outro fluxo; Limpar + Salvar. “Pular mudança de tendência →” nas duas etapas.
 
-Curto de propósito; também passo embutido de A1.
+| Passo | Pergunta                        | UI                                                                                                             |
+| ----- | ------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 1     | Em qual município?              | Busca só municípios (**B60**; pular se veio de A1)                                                             |
+| 2     | Nova tendência?                 | Grid de tiles (≠ atual) + Drawer de info; skip no topo (**B64**)                                               |
+| 3     | Por quê? (obrigatório se mudou) | Textarea (prefill ex.: sinal / ajuste de votos); Limpar; **Salvar** → `politicalTrend` (**B64** / write B24 ✓) |
+
+Chrome: seta **Voltar** só mobile (**B59**). Também passo embutido de A1.
 
 ---
 

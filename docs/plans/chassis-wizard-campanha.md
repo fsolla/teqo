@@ -23,7 +23,7 @@ Brief compacto:
 
 ## Dados → decisão → apresentação
 
-Dados: N/A — chrome de navegação; conteúdo numérico/textual nas etapas B60–B63.
+Dados: N/A — chrome de navegação; conteúdo numérico/textual nas etapas B60–B64.
 
 ## Contexto
 
