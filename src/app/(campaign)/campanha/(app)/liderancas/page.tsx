@@ -39,6 +39,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
+import { resolveVisibleColumns } from '@/lib/campaignColumnVisibility'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import {
   resolvedPortfolioEntriesById,
@@ -324,6 +325,10 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     getPayload({ config }),
   ])
 
+  const columnVisibility = await readCampaignColumnVisibility('liderancas')
+  const isStateDeputyVisible =
+    resolveVisibleColumns([{ id: 'stateDeputies' }], columnVisibility.hiddenColumnIds).length > 0
+
   const [
     { rows, totalDocs, totalPages, filterFacets },
     stateDeputyOptions,
@@ -331,7 +336,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     administeredIds,
   ] = await Promise.all([
     loadLeadershipListPageData(payload, user, canonicalUrl.state),
-    loadStateDeputyOptions(payload, user),
+    isStateDeputyVisible ? loadStateDeputyOptions(payload, user) : Promise.resolve([]),
     loadMunicipalityPortfolioIndex(),
     user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
   ])
@@ -360,7 +365,6 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
 
   const { sort, dir } = resolveLeadershipListSort(state)
   const sortSummary = formatLeadershipListSortSummary(sort, dir)
-  const columnVisibility = await readCampaignColumnVisibility('liderancas')
   const columns = leadershipColumns({
     state,
     stateDeputyOptions: stateDeputyOptions.map((option) => ({

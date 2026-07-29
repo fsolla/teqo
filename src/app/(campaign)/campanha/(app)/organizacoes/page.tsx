@@ -105,37 +105,36 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
         />
 
         <CampaignListResults>
+          <CampaignTable
+            columns={organizationColumns}
+            columnVisibility={columnVisibility}
+            rows={rows}
+            rowKey={(row) => row.id}
+            empty={
+              <CampaignListEmptyState
+                icon={SearchXIcon}
+                title="Nenhuma organização cadastrada"
+                description="Cadastre sindicatos, associações e movimentos para vincular lideranças e atividades."
+              >
+                <Button asChild className="min-h-11">
+                  <Link href="/campanha/organizacoes/nova">
+                    <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                    Nova organização
+                  </Link>
+                </Button>
+              </CampaignListEmptyState>
+            }
+          />
           {rows.length ? (
-            <>
-              <CampaignTable
-                columns={organizationColumns}
-                columnVisibility={columnVisibility}
-                rows={rows}
-                rowKey={(row) => row.id}
-              />
-              <CampaignListFooter
-                totalDocs={totalDocs}
-                singular="organização"
-                plural="organizações"
-                page={state.page}
-                totalPages={totalPages}
-                hrefForPage={(page) => buildOrganizationListHref(state, page)}
-              />
-            </>
-          ) : (
-            <CampaignListEmptyState
-              icon={SearchXIcon}
-              title="Nenhuma organização cadastrada"
-              description="Cadastre sindicatos, associações e movimentos para vincular lideranças e atividades."
-            >
-              <Button asChild className="min-h-11">
-                <Link href="/campanha/organizacoes/nova">
-                  <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                  Nova organização
-                </Link>
-              </Button>
-            </CampaignListEmptyState>
-          )}
+            <CampaignListFooter
+              totalDocs={totalDocs}
+              singular="organização"
+              plural="organizações"
+              page={state.page}
+              totalPages={totalPages}
+              hrefForPage={(page) => buildOrganizationListHref(state, page)}
+            />
+          ) : null}
         </CampaignListResults>
       </CampaignListPendingBoundary>
     </CampaignPageShell>

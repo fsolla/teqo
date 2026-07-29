@@ -13,6 +13,7 @@ import type { SupporterListItemViewModel } from '@/utilities/supporter/supporter
 export type SupporterListProps = {
   supporters: SupporterListItemViewModel[]
   columnVisibility: CampaignColumnVisibility
+  empty?: React.ReactNode
 }
 
 const voteIntentionBadgeVariant = (
@@ -138,9 +139,10 @@ const supporterColumns: Array<CampaignTableColumn<SupporterListItemViewModel>> =
   },
 ]
 
-export const SupporterList = ({ supporters, columnVisibility }: SupporterListProps) => (
+export const SupporterList = ({ supporters, columnVisibility, empty }: SupporterListProps) => (
   <>
     <div data-view="mobile-cards" className="flex flex-col gap-4 md:hidden">
+      {supporters.length === 0 ? empty : null}
       {supporters.map((supporter) => (
         <SupporterCard key={supporter.id} supporter={supporter} />
       ))}
@@ -152,6 +154,7 @@ export const SupporterList = ({ supporters, columnVisibility }: SupporterListPro
       columnVisibility={columnVisibility}
       rows={supporters}
       rowKey={(supporter) => supporter.id}
+      empty={empty}
     />
   </>
 )

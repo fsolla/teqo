@@ -32,6 +32,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
+import { resolveVisibleColumns } from '@/lib/campaignColumnVisibility'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import { cn } from '@/lib/utils'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
@@ -180,6 +181,10 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
     getPayload({ config }),
   ])
 
+  const columnVisibility = await readCampaignColumnVisibility('dobradinhas')
+  const isLeadershipVisible =
+    resolveVisibleColumns([{ id: 'leaderships' }], columnVisibility.hiddenColumnIds).length > 0
+
   const [
     { rows, totalDocs, totalPages, filterFacets },
     leadershipOptions,
@@ -187,7 +192,7 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
     administeredIds,
   ] = await Promise.all([
     loadStateDeputyListPageData(payload, user, canonicalUrl.state),
-    loadLeadershipOptions(payload, user),
+    isLeadershipVisible ? loadLeadershipOptions(payload, user) : Promise.resolve([]),
     loadMunicipalityPortfolioIndex(),
     user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
   ])
@@ -195,7 +200,6 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
 
-  const columnVisibility = await readCampaignColumnVisibility('dobradinhas')
   const { sort, dir } = resolveStateDeputyListSort(state)
   const sortSummary = formatStateDeputyListSortSummary(sort, dir)
   const partyFilterOptions = filterFacets.parties.map((party) => ({ value: party, label: party }))
