@@ -1,11 +1,13 @@
 # Escala e DRY pós-E12 (camada TI)
 
-Status: rascunho
-Atualizado em: 2026-07-26
+Status: entregue (F1, 2026-07-29)
+Atualizado em: 2026-07-29
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos, **E12+**, fill-in de engenharia)
 Impeccable: A — N/A (higiene de loaders/utilities; sem superfície nova)
 Appetite: ~0,25–0,5 dia eng; duas fases opcionais, nenhuma com migration
 Responsável: —
+
+**Revisão 2026-07-29:** F1 entregue por override explícito de produto (antes do 4º call site): `src/lib/metropolitanoTerritoryPeers.ts` concentra constantes, filtros de sub-linha e `catalogPeersForSlug`; `territoryOverview.ts`, `loadTerritoryOverview.ts` e `territoryIntraCaptureBenchmark.ts` migrados. **F2 out:** `benchmarkBySlug` em `territoryIntraCaptureBenchmark.ts` já memoiza por slug por processo; `loadMunicipalityGoalAccount` chama o benchmark uma vez por request — sem `cache()` adicional.
 
 ## Dados → decisão → apresentação
 
@@ -15,7 +17,7 @@ Responsável: —
 
 **E12** ([camada-territorios-identidade.md](camada-territorios-identidade.md), entregue 2026-07-26) estendeu E17/B21 com rollups MAUP, colunas Cobertura/Captura/Classe em `/campanha/territorios` e benchmark intra-TI no card Conta da cadeira. O `/simplify` da entrega (duas rodadas, 2026-07-26) aplicou o cleanup barato (`medianOf`, `territorialClassSortWeight` em `lib/`, constantes Metropolitano exportadas de `territoryOverview.ts`) e deixou achados maiores que cleanup, registrados aqui.
 
-**Já resolvido no simplify (não reabrir):** `medianOf` compartilhado (`src/lib/median.ts`) e usado no classificador E10; pesos de sort de classe em `src/lib/territorialClassSortWeight.ts`; `METROPOLITANO_REGION` / `SALVADOR_CITY` / `METROPOLITANO_SALVADOR_SUB_ROW_LABEL` exportados de `territoryOverview.ts` e consumidos por `loadTerritoryOverview` e `territoryIntraCaptureBenchmark`.
+**Já resolvido no simplify (não reabrir):** `medianOf` compartilhado (`src/lib/median.ts`) e usado no classificador E10; pesos de sort de classe em `src/lib/territorialClassSortWeight.ts`. **E12+ (2026-07-29):** regras Metropolitano (constantes, sub-linhas, peers por slug) em `src/lib/metropolitanoTerritoryPeers.ts` — substitui as constantes que viviam em `territoryOverview.ts` e a lógica espelhada no benchmark T4.
 
 ## Objetivos
 

@@ -4,6 +4,11 @@ import type { Payload } from 'payload'
 import { cache } from 'react'
 
 import { getMunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
+import {
+  filterDemaisRmsSubgroup,
+  filterSalvadorSubgroup,
+  isSalvadorMetropolitanoSubRowLabel,
+} from '@/lib/metropolitanoTerritoryPeers'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO, type VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, Municipality, User } from '@/payload-types'
 import { loadMunicipalityGoalCoverageBundle } from '@/utilities/municipality/municipalityGoalAccount'
@@ -11,9 +16,6 @@ import { fieldCeiling, ownVotes2022 } from '@/utilities/municipality/municipalit
 import { computeAggregateTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
 import {
   computeTerritoryRollup,
-  METROPOLITANO_REGION,
-  METROPOLITANO_SALVADOR_SUB_ROW_LABEL,
-  SALVADOR_CITY,
   type TerritoryMunicipalityInput,
   type TerritoryOverviewRow,
 } from '@/utilities/territory/territoryOverview'
@@ -34,14 +36,10 @@ const slugsForMetropolitanoSubRow = (
   inputs: ReadonlyArray<TerritoryMunicipalityInput>,
   label: string,
 ): string[] => {
-  if (label === METROPOLITANO_SALVADOR_SUB_ROW_LABEL) {
-    return inputs
-      .filter((input) => input.region === METROPOLITANO_REGION && input.city === SALVADOR_CITY)
-      .map((input) => input.slug)
-  }
-  return inputs
-    .filter((input) => input.region === METROPOLITANO_REGION && input.city !== SALVADOR_CITY)
-    .map((input) => input.slug)
+  const filtered = isSalvadorMetropolitanoSubRowLabel(label)
+    ? filterSalvadorSubgroup(inputs)
+    : filterDemaisRmsSubgroup(inputs)
+  return filtered.map((input) => input.slug)
 }
 
 const attachTerritorialClasses = (
