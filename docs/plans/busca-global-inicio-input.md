@@ -49,6 +49,7 @@ Início blank (**B43**) + ações (**B44/B45**) + posição (**B46**). Pedido (2
 
 ## Questões em aberto
 
+- **Ordem de foco no `md+`:** com `searchSlot`, o visual fica busca→ações (`order-*`), mas o DOM hoje é ações→busca. No craft do B47, colocar o nó de busca **antes** de `home-actions` no markup e usar `order-*` só no mobile, **ou** aceitar exceção documentada se produto priorizar o markup atual.
 - **Transporte dos hits: `POST` JSON vs server action vs fetch RSC?** **Opções:** A rota `campaignJsonMutationRoute`-like GET/POST search | B server action | C debounce + `router` query. **Recomendação:** A — `GET`/`POST` same-origin com body/query curta, access no loader, sem sujar a URL do Início com `?q=` (Início não é lista). _(assumido)_
 - **Limiar mínimo de caracteres?** **Opções:** 1 | 2. **Recomendação:** 2 para reduzir ruído em nomes curtos; 1 se critique pedir. _(assumido)_
 

@@ -1,4 +1,5 @@
 import { CampaignHomeActions } from '@/components/campaign/dashboard/CampaignHomeActions'
+import { CampaignHomeLayout } from '@/components/campaign/dashboard/CampaignHomeLayout'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -14,10 +15,14 @@ export default async function CampaignHomePage() {
     : undefined
 
   return (
-    <CampaignPageShell aria-label="Início">
-      <CampaignHomeActions
-        role={user.role}
-        uncoveredMunicipalitiesHref={uncoveredMunicipalitiesHref}
+    <CampaignPageShell aria-label="Início" className="min-h-full">
+      <CampaignHomeLayout
+        actions={
+          <CampaignHomeActions
+            role={user.role}
+            uncoveredMunicipalitiesHref={uncoveredMunicipalitiesHref}
+          />
+        }
       />
     </CampaignPageShell>
   )
