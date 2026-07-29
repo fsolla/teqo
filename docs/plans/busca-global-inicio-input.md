@@ -93,6 +93,13 @@ Componentes:
 
 - **`?q=` na URL do Início** (shareable). Revisitar se mesa pedir mandar link da busca.
 - **Busca na liderança (apoiadores).** Revisitar se leader pedir achar contato sem rolar a lista.
+- **Contexto / boundary só com query debounced para grupos B48+** (evitar re-render por keystroke nos providers). Revisitar ao plugar o primeiro provider com trabalho não trivial em `searchResults`.
+- **`useDebouncedState` compartilhado com `AsyncSearchCombobox`.** Revisitar no 3º call site client-only com o mesmo contrato de debounce.
+- **Fundir wrapper `CampaignHomeStaffChrome` em `CampaignHomeLayout`.** Revisitar se `data-home-focused` ganhar CSS além de `focused` prop (B48 layout).
+
+## Já resolvido no simplify pós-B47 (não reabrir)
+
+- Estado `isDebouncing` derivado (`raw !== debounced`); `HomeSearchController` como tipo único; JSDoc de `focused`; `aria-busy` deduplicado no input.
 
 ## Referências
 
