@@ -1,3 +1,4 @@
+import { systemStampedActorField } from '@/utilities/campaignAuditFields'
 import { Buffer } from 'node:buffer'
 
 import type {
@@ -136,19 +137,10 @@ export const AllocationDecision: CollectionConfig = {
         description: 'Somente os números e classificações usados no momento da decisão.',
       },
     },
-    {
+    systemStampedActorField({
       name: 'decidedBy',
-      type: 'relationship',
-      relationTo: 'campaignUser',
       label: 'Decidido por',
-      index: true,
-      admin: {
-        readOnly: true,
-      },
-      access: {
-        create: canSetCampaignSystemField,
-        update: canSetCampaignSystemField,
-      },
-    },
+      setAccess: canSetCampaignSystemField,
+    }),
   ],
 }

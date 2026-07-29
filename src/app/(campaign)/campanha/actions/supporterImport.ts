@@ -4,9 +4,15 @@ import { parse } from 'csv-parse/sync'
 import type { Payload } from 'payload'
 
 import { normalizeBrazilianPhone } from '@/lib/phone'
+import { relationshipId } from '@/lib/relationship'
 import {
   resolveBahiaMunicipality,
+  SUPPORTER_IMPORT_BATCH_EMPTY_MESSAGE,
+  SUPPORTER_IMPORT_CSV_EMPTY_MESSAGE,
+  SUPPORTER_IMPORT_CSV_UNREADABLE_MESSAGE,
   supporterImportConfirmSchema,
+  supporterImportCsvTooManyRowsMessage,
+  supporterImportCsvUnknownColumnsMessage,
   type SupporterVoteIntention,
 } from '@/lib/schemas/supporter'
 import type { CampaignUser } from '@/payload-types'
@@ -18,22 +24,22 @@ import {
 import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { relationshipId } from '@/utilities/relationship'
+import { POSTGRES_DEDUP_LOCK_MESSAGE } from '@/utilities/postgresTransactionLocks'
 import {
   isPreviewErrorRow,
   isSupporterImportOkRow,
   type SupporterImportPreviewResult,
   type SupporterImportPreviewRow,
   type SupporterImportPreviewRowBase,
-} from '@/utilities/supporterImport'
-import { bulkInsertSupporterImport } from '@/utilities/supporterImportBulk'
+} from '@/utilities/supporter/supporterImport'
+import { bulkInsertSupporterImport } from '@/utilities/supporter/supporterImportBulk'
 import {
   deleteSupporterImportBatch,
   issueSupporterImportToken,
   loadSupporterImportBatch,
   storeSupporterImportBatch,
   verifySupporterImportToken,
-} from '@/utilities/supporterImportToken'
+} from '@/utilities/supporter/supporterImportToken'
 
 const MAX_IMPORT_ROWS = 5000
 
@@ -130,23 +136,19 @@ export const previewSupporterImportText = async (
       relax_column_count: true,
     }) as Record<string, string>[]
   } catch {
-    throw new Error('Não foi possível ler o CSV. Verifique o formato e tente novamente.')
+    throw new Error(SUPPORTER_IMPORT_CSV_UNREADABLE_MESSAGE)
   }
 
   if (records.length === 0) {
-    throw new Error('O CSV está vazio.')
+    throw new Error(SUPPORTER_IMPORT_CSV_EMPTY_MESSAGE)
   }
   if (records.length > MAX_IMPORT_ROWS) {
-    throw new Error(`O CSV excede o limite de ${MAX_IMPORT_ROWS} linhas.`)
+    throw new Error(supporterImportCsvTooManyRowsMessage(MAX_IMPORT_ROWS))
   }
 
   const unknownColumns = Object.keys(records[0] ?? {}).filter((key) => key.startsWith('__unknown_'))
   if (unknownColumns.length > 0) {
-    throw new Error(
-      `Colunas não reconhecidas no CSV: ${unknownColumns
-        .map((column) => column.replace(/^__unknown_/, ''))
-        .join(', ')}. Use apenas nome, telefone, municipio e intencao.`,
-    )
+    throw new Error(supporterImportCsvUnknownColumnsMessage(unknownColumns))
   }
 
   const phonesInFile = new Set<string>()
@@ -312,7 +314,7 @@ export const confirmSupporterImportRecord = async (
   const verified = verifySupporterImportToken(data.importToken, actor.id)
   const batch = await loadSupporterImportBatch(payload, verified.batchId, actor.id)
   if (batch.okRows.length === 0) {
-    throw new Error('O lote de importação não contém apoiadores válidos.')
+    throw new Error(SUPPORTER_IMPORT_BATCH_EMPTY_MESSAGE)
   }
 
   return withPayloadTransaction(
@@ -323,7 +325,7 @@ export const confirmSupporterImportRecord = async (
       const voteIntentionConsent = await requireSupporterVoteIntentionConsent(payload, req)
 
       if (payload.db.name !== 'postgres') {
-        throw new Error('O bloqueio de deduplicação exige o adaptador PostgreSQL.')
+        throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
       }
 
       const phones = [...new Set(batch.okRows.map((row) => row.telefone))]

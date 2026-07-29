@@ -1,6 +1,9 @@
 const BRAZIL_COUNTRY_CODE = '55'
 const BRAZILIAN_MOBILE_PHONE_LENGTH = 11
 
+/** One refusal copy for the URL builder, the zod primitive and the Contact hook — rewording in one layer only would give the same refusal two phrasings. */
+export const BRAZILIAN_PHONE_INVALID_MESSAGE = 'Celular brasileiro inválido.'
+
 export const sanitizeBrazilianPhoneInput = (value: string): string => {
   const digits = value.replace(/\D/g, '')
   const domesticDigits =
@@ -34,15 +37,14 @@ export const normalizeBrazilianPhone = (value: string): string | null => {
   return digits
 }
 
-/** Display formatting for a normalized 11-digit mobile: (71) 99999-9999. */
-export const formatBrazilianPhoneDisplay = (phone: string): string =>
-  phone.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3')
+/** Display formatting for a normalized 11-digit mobile: (71) 99999-9999 — the input formatter's final shape, named for display call sites. */
+export const formatBrazilianPhoneDisplay = formatBrazilianPhoneInput
 
 export const buildWhatsAppUrl = (phone: string, message?: string): string => {
   const normalizedPhone = normalizeBrazilianPhone(phone)
 
   if (!normalizedPhone) {
-    throw new Error('Celular brasileiro inválido.')
+    throw new Error(BRAZILIAN_PHONE_INVALID_MESSAGE)
   }
 
   const url = new URL(`https://wa.me/${BRAZIL_COUNTRY_CODE}${normalizedPhone}`)

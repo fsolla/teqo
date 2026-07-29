@@ -33,16 +33,13 @@
  *   TSE_CACHE_DIR=./data/tse pnpm db:seed:tse
  */
 
-import { config as loadEnv } from 'dotenv'
-import { createHash } from 'node:crypto'
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { getPayload } from 'payload'
+import { dieWithLabel, ensureCachedDownload, loadCliEnv } from './lib/cli.mjs'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
 
-loadEnv({ path: '.env.local' })
-loadEnv({ path: '.env' })
+loadCliEnv()
 
 const config = (await import('../src/payload.config.ts')).default
 const { parseTseCsvBuffer } = await import('../src/lib/electionResultsCsv.ts')
@@ -88,12 +85,7 @@ const csvNamesForYear = (year) => ({
   candBr: `consulta_cand_${year}_BR.csv`,
 })
 
-const die = (message) => {
-  console.error(`\n[seed:tse] ${message}\n`)
-  process.exit(1)
-}
-
-const sha256 = (buffer) => createHash('sha256').update(buffer).digest('hex')
+const die = dieWithLabel('seed:tse')
 
 const parseYearArg = () => {
   const explicit = process.argv.find((arg) => arg.startsWith('--year='))
@@ -107,31 +99,16 @@ const parseYearArg = () => {
 
 const cacheDir = () => process.env.TSE_CACHE_DIR || join(process.cwd(), 'data', 'tse')
 
-const ensureCachedZip = async ({ key, url, expectedSha256 }) => {
-  const dir = cacheDir()
-  await mkdir(dir, { recursive: true })
-  const path = join(dir, `${key}.zip`)
-  let buffer
-  try {
-    await access(path)
-    console.log(`[seed:tse] cache hit ${path}`)
-    buffer = await readFile(path)
-  } catch (error) {
-    if (error?.code !== 'ENOENT') throw error
-    console.log(`[seed:tse] downloading ${url}`)
-    buffer = await downloadToBuffer(url)
-    await writeFile(path, buffer)
-    console.log(`[seed:tse] saved ${path} (${buffer.length} bytes)`)
-  }
-
-  const hash = sha256(buffer)
-  if (expectedSha256 && hash !== expectedSha256) {
-    die(
-      `SHA-256 mismatch for ${key}\n  expected=${expectedSha256}\n  actual=${hash}\n  Delete ${path} and retry.`,
-    )
-  }
-  return { key, url, buffer, hash }
-}
+const ensureCachedZip = ({ key, url, expectedSha256 }) =>
+  ensureCachedDownload({
+    label: 'seed:tse',
+    key,
+    url,
+    ext: 'zip',
+    cacheDir: cacheDir(),
+    expectedSha256,
+    download: downloadToBuffer,
+  })
 
 const loadCsvFromZip = async (zipBuffer, fileName) => {
   const entry = await readZipEntry(zipBuffer, (name) => name.endsWith(fileName))

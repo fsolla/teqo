@@ -11,9 +11,9 @@ import {
   visitConditionLabels,
   visitContraindicationLabels,
   type VisitCondition,
-} from '@/utilities/visitEligibility'
-import { buildTourComposerHref } from '@/utilities/visitPlannerUrl'
-import type { VisitCandidateViewModel } from '@/utilities/visitPlannerViews'
+} from '@/utilities/visit/visitEligibility'
+import { buildTourComposerHref } from '@/utilities/visit/visitPlannerUrl'
+import type { VisitCandidateViewModel } from '@/utilities/visit/visitPlannerViews'
 
 /**
  * One condition of the checklist. The reason is ALWAYS visible text, never a

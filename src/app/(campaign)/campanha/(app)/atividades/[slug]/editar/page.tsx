@@ -1,5 +1,5 @@
 import config from '@payload-config'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import {
@@ -9,13 +9,12 @@ import {
 import { updateActivityFormAction } from '@/app/(campaign)/campanha/(app)/atividades/formActions'
 import { ActivityForm } from '@/components/campaign/activity/ActivityForm'
 import { ActivityNotFoundError, getActivityEditPageData } from '@/utilities/activityPageData'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadMunicipalityOptions,
   loadOrganizationOptions,
 } from '@/utilities/campaignRelationOptions'
-import { getEligibleAdvisorOptions } from '@/utilities/municipalityViewModels'
+import { getEligibleAdvisorOptions } from '@/utilities/municipality/municipalityViewModels'
 
 type EditActivityPageProps = {
   params: Promise<{ slug: string }>
@@ -24,12 +23,9 @@ type EditActivityPageProps = {
 export default async function EditActivityPage({ params }: EditActivityPageProps) {
   const [{ slug }, user, payload] = await Promise.all([
     params,
-    getCampaignUser(),
+    requireCampaignPageActor({ gate: 'staff', redirectTo: '/campanha/atividades' }),
     getPayload({ config }),
   ])
-
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha/atividades')
   if (!slug) notFound()
 
   const canManageAdvisors = user.role === 'coordinator'

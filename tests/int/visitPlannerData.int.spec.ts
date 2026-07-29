@@ -5,7 +5,10 @@ import { getPayload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import config from '@/payload.config'
-import { loadMunicipalityVisitEligibility, loadVisitCandidates } from '@/utilities/visitPlannerData'
+import {
+  loadMunicipalityVisitEligibility,
+  loadVisitCandidates,
+} from '@/utilities/visit/visitPlannerData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 

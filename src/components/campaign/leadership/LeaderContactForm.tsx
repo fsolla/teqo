@@ -1,15 +1,16 @@
 'use client'
 
 import { UserPlusIcon } from 'lucide-react'
-import { useActionState, useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { useActionState, useState } from 'react'
 
 import {
   createLeaderSupporterFormAction,
   type LeaderSupporterFormState,
 } from '@/app/(campaign)/campanha/actions/leaderSupporter'
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { StrictCombobox } from '@/components/campaign/shared/StrictCombobox'
+import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
 import { FormattedInput } from '@/components/FormattedInput'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
@@ -27,7 +28,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import { errorProps as buildErrorProps, fieldError } from '@/utilities/campaignFormFields'
-import { municipalityComboboxOptions } from '@/utilities/territoryComboboxOptions'
+import { municipalityComboboxOptions } from '@/utilities/territory/territoryComboboxOptions'
 
 const errorProps = (fieldErrors: Record<string, string[]> | undefined, field: string) =>
   buildErrorProps(fieldErrors, field, 'leader-contact')
@@ -52,10 +53,7 @@ export const LeaderContactForm = ({
   const [city, setCity] = useState<string>((state.values?.city as string | undefined) ?? '')
   const values = state.values
 
-  useEffect(() => {
-    if (state.status !== 'success') return
-    toast.success(state.message)
-  }, [state.message, state.status])
+  useCampaignFormSuccessToast(state)
 
   const phoneField = errorProps(state.fieldErrors, 'phone')
   const nameField = errorProps(state.fieldErrors, 'name')
@@ -80,16 +78,12 @@ export const LeaderContactForm = ({
         action={formAction}
         className="flex flex-col gap-4"
       >
-        {(state.message || state.fieldErrors?.form) && state.status !== 'success' ? (
-          <Alert variant="destructive" aria-live="polite">
-            <AlertTitle>Não foi possível cadastrar</AlertTitle>
-            <AlertDescription>
-              {state.message ? <p>{state.message}</p> : null}
-              {state.fieldErrors?.form?.map((error) => (
-                <p key={error}>{error}</p>
-              ))}
-            </AlertDescription>
-          </Alert>
+        {state.status !== 'success' ? (
+          <CampaignFormActionMessage
+            state={state}
+            errorTitle="Não foi possível cadastrar"
+            formFieldErrors={state.fieldErrors?.form}
+          />
         ) : null}
 
         <FieldGroup>

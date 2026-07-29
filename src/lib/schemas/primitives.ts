@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { normalizeBrazilianPhone } from '@/lib/phone'
+import { BRAZILIAN_PHONE_INVALID_MESSAGE, normalizeBrazilianPhone } from '@/lib/phone'
 
 export const positiveRelationshipId = z.number().int().positive()
 
@@ -24,7 +24,7 @@ export const brazilianMobile = z.string().transform((value, context) => {
 
   context.addIssue({
     code: 'custom',
-    message: 'Celular brasileiro inválido.',
+    message: BRAZILIAN_PHONE_INVALID_MESSAGE,
   })
   return z.NEVER
 })
@@ -38,3 +38,6 @@ export const nullablePersistedEmail = z
   .union([z.email('E-mail inválido.'), z.literal(''), z.null()])
   .optional()
   .transform((value) => (value === '' ? null : value))
+
+/** Upper bound for any vote count field — one bound, two validation layers (P3-K, was 1_000_000 spelled ×6). */
+export const MAX_VOTE_COUNT = 1_000_000

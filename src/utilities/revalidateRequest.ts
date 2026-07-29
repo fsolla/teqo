@@ -1,6 +1,6 @@
 import { ELECTION_TSE_CACHE_TAG } from '@/utilities/electionCache'
 import { getGlobalCacheTag } from '@/utilities/globals'
-import { MUNICIPALITY_CATALOG_CACHE_TAG } from '@/utilities/municipalityRevalidation'
+import { MUNICIPALITY_CATALOG_CACHE_TAG } from '@/utilities/municipality/municipalityCatalogCache'
 
 export const REVALIDATE_POSTS_TAG = 'posts' as const
 

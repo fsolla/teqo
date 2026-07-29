@@ -18,18 +18,15 @@
  * DATABASE_URL_UNPOOLED value in .env.local).
  */
 import { execFileSync } from 'node:child_process'
+import { dieWithLabel, LOCAL_HOSTS } from './lib/cli.mjs'
 
 const PG_IMAGE = 'postgres:17-alpine' // must match the prod major version
 const PII_TABLE_REGEX = '^(contact|signature|subscription)(_|$)'
-const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1'])
 
 const prodUrl = process.env.PROD_DATABASE_URL
 const localUrl = process.env.LOCAL_DATABASE_URL ?? 'postgresql://teqo:teqo@localhost:5432/teqo'
 
-const die = (message) => {
-  console.error(`\n[db:pull] ${message}\n`)
-  process.exit(1)
-}
+const die = dieWithLabel('db:pull')
 
 if (!prodUrl) {
   die(

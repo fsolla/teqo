@@ -2,17 +2,12 @@ import 'server-only'
 
 import type { Payload, PayloadRequest, Where } from 'payload'
 
-import {
-  effectivePledgeVotesForScenario,
-  toVoteEstimateScenarioViewModel,
-  VOTE_ESTIMATE_SCENARIOS,
-} from '@/lib/voteEstimate'
+import { relationshipId, requireRelationshipId } from '@/lib/relationship'
+import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { CampaignUser, VotePledge } from '@/payload-types'
-import { latestIsoTimestamp } from '@/utilities/campaignTime'
-import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
+import { loadLeadershipContactNamesByIds } from '@/utilities/loadNamesByIds'
 import {
-  createEmptyMunicipalityPledgeAggregate,
-  pledgeHasAnyEstimate,
+  aggregateMunicipalityPledgesFromRows,
   type MunicipalityPledgeAggregate,
   type StaffPledgeRow,
 } from '@/utilities/votePledgeViews'
@@ -54,8 +49,6 @@ const aggregatePledgesWhere = async (
   where: Where,
   req?: PayloadRequest,
 ): Promise<Map<number, MunicipalityPledgeAggregate>> => {
-  const aggregates = new Map<number, MunicipalityPledgeAggregate>()
-
   const result = await payload.find({
     collection: 'votePledge',
     where,
@@ -74,35 +67,43 @@ const aggregatePledgesWhere = async (
       declaredAt: true,
       estimatedAt: true,
     },
+    // Intentional admin bypass: the `where` argument is already scope-narrowed
+    // by the exported wrappers above; the aggregate must not re-filter silently.
     overrideAccess: true,
     ...(req ? { req } : {}),
   })
 
+  // Group rows by município, then fold each bucket with the ONE pledge-aggregate
+  // fold (`aggregateMunicipalityPledgesFromRows`) — the list and the dossiê
+  // cannot drift because there is only one implementation (P3-E pin).
+  const rowsByMunicipality = new Map<
+    number,
+    Array<{
+      declaredVotes: number
+      estimatedVotes: VotePledge['estimatedVotes']
+      declaredAt?: string | null
+      estimatedAt?: string | null
+    }>
+  >()
   for (const doc of result.docs) {
     // `select` narrows the runtime shape, not the static type Payload returns.
     const pledge = doc as VotePledge
     const municipalityID = relationshipId(pledge.municipality)
     if (municipalityID === null) continue
-    const declared = pledge.declaredVotes ?? 0
-    const estimated = pledge.estimatedVotes
-    const current = aggregates.get(municipalityID) ?? createEmptyMunicipalityPledgeAggregate()
-    current.declaredTotal += declared
-    for (const scenario of VOTE_ESTIMATE_SCENARIOS) {
-      current.effectiveByScenario[scenario] += effectivePledgeVotesForScenario(
-        declared,
-        estimated,
-        scenario,
-      )
-    }
-    current.pledgeCount += 1
-    if (!pledgeHasAnyEstimate(estimated)) current.missingEstimateCount += 1
-    current.lastPledgeAt = latestIsoTimestamp(
-      current.lastPledgeAt,
-      latestIsoTimestamp(pledge.declaredAt, pledge.estimatedAt),
-    )
-    aggregates.set(municipalityID, current)
+    const rows = rowsByMunicipality.get(municipalityID) ?? []
+    rows.push({
+      declaredVotes: pledge.declaredVotes ?? 0,
+      estimatedVotes: pledge.estimatedVotes,
+      declaredAt: pledge.declaredAt,
+      estimatedAt: pledge.estimatedAt,
+    })
+    rowsByMunicipality.set(municipalityID, rows)
   }
 
+  const aggregates = new Map<number, MunicipalityPledgeAggregate>()
+  for (const [municipalityID, rows] of rowsByMunicipality) {
+    aggregates.set(municipalityID, aggregateMunicipalityPledgesFromRows(rows))
+  }
   return aggregates
 }
 
@@ -127,24 +128,7 @@ export const loadMunicipalityPledges = async (
   const leadershipIDs = [
     ...new Set(pledges.docs.map((pledge) => requireRelationshipId(pledge.leadership))),
   ]
-  const leaderships = await payload.find({
-    collection: 'leadership',
-    where: { id: { in: leadershipIDs } },
-    depth: 1,
-    limit: 0,
-    pagination: false,
-    select: { contact: true },
-    overrideAccess: true,
-  })
-  const nameByLeadership = new Map<number, string>()
-  for (const leadership of leaderships.docs) {
-    const contact = leadership.contact
-    const name =
-      typeof contact === 'object' && contact !== null && 'name' in contact
-        ? (contact.name as string)
-        : 'Contato'
-    nameByLeadership.set(leadership.id, name)
-  }
+  const nameByLeadership = await loadLeadershipContactNamesByIds(payload, leadershipIDs)
 
   return pledges.docs.map((pledge) => ({
     id: pledge.id,

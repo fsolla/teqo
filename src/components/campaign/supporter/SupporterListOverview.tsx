@@ -1,6 +1,6 @@
 import { CampaignDataFreshness } from '@/components/campaign/dashboard/CampaignDataFreshness'
 import { CampaignMetricStrip } from '@/components/campaign/shared/CampaignMetricStrip'
-import type { SupporterListOverviewViewModel } from '@/utilities/supporterViewModels'
+import type { SupporterListOverviewViewModel } from '@/utilities/supporter/supporterViewModels'
 
 const numberFormatter = new Intl.NumberFormat('pt-BR')
 

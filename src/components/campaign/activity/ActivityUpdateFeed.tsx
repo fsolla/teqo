@@ -2,8 +2,8 @@ import { MessageSquareTextIcon } from 'lucide-react'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/Empty'
+import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import type { ActivityUpdateViewModel } from '@/utilities/activityViewModels'
-import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 
 const UpdateCard = ({ update }: { update: ActivityUpdateViewModel }) => (
   <article>

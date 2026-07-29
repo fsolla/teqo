@@ -37,15 +37,14 @@ import { randomBytes } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { loadCliEnv } from './lib/cli.mjs'
 
-import { config as loadEnv } from 'dotenv'
 import { getPayload } from 'payload'
 import XLSX from 'xlsx'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
 
-loadEnv({ path: '.env.local' })
-loadEnv({ path: '.env' })
+loadCliEnv()
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const repoRoot = join(__dirname, '..')

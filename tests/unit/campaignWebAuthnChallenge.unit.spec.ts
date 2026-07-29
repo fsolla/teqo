@@ -30,7 +30,7 @@ import {
   clearCampaignWebAuthnChallenge,
   readCampaignWebAuthnChallenge,
   storeCampaignWebAuthnChallenge,
-} from '@/utilities/campaignWebAuthnChallenge'
+} from '@/utilities/webauthn/campaignWebAuthnChallenge'
 
 const CHALLENGE = 'Zm9vYmFyLWNoYWxsZW5nZS1iYXNlNjR1cmw'
 

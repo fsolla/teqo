@@ -1,8 +1,8 @@
 import { bahiaMunicipalities } from '@/lib/bahiaTerritories'
+import { ELECTION_YEAR_2014, ELECTION_YEAR_2018, ELECTION_YEAR_2022 } from '@/lib/electionYears'
+import { resolveMunicipalityName } from '@/lib/municipalityNameAliases'
 
-export const ELECTION_YEAR_2014 = 2014 as const
-export const ELECTION_YEAR_2018 = 2018 as const
-export const ELECTION_YEAR_2022 = 2022 as const
+export { ELECTION_YEAR_2014, ELECTION_YEAR_2018, ELECTION_YEAR_2022 } from '@/lib/electionYears'
 
 /** Years loaded for prior-cycle comparison before 2022 (detail baseline query). */
 const HISTORICAL_PRIOR_SERIES_YEARS = [ELECTION_YEAR_2014, ELECTION_YEAR_2018] as const
@@ -126,34 +126,12 @@ export const normalizeMunicipalityKey = (value: string): string =>
     .trim()
     .toUpperCase()
 
-const bahiaMunicipalityByKey = new Map(
-  bahiaMunicipalities.map((name) => [normalizeMunicipalityKey(name), name]),
-)
-
 /**
- * Known TSE NM_MUNICIPIO spellings that diverge from the SEPLAN/SECULT canonical
- * names in bahiaTerritories (seen across 2014/2018/2022 open-data files). Keys
- * are normalizeMunicipalityKey outputs.
+ * Curated variant spellings (TSE open data, typed CSVs) live in
+ * `@/lib/municipalityNameAliases` — THE single fold both this pipeline and the
+ * supporter import resolve through (P3-H). Aliases point at the catalog at
+ * module load there, so this file no longer validates its own table.
  */
-const TSE_MUNICIPALITY_ALIASES: Readonly<Record<string, string>> = {
-  // TSE: CAMACÃ → canonical Camacan
-  CAMACA: 'Camacan',
-  // TSE: "DIAS D ÁVILA" (space, no apostrophe) → Dias d'Ávila
-  'DIAS D AVILA': "Dias d'Ávila",
-  // TSE: MUQUÉM DO SÃO FRANCISCO → Muquém de São Francisco
-  'MUQUEM DO SAO FRANCISCO': 'Muquém de São Francisco',
-  // TSE: SANTA TEREZINHA → Santa Teresinha
-  'SANTA TEREZINHA': 'Santa Teresinha',
-  // TSE 2018 votacao_candidato_munzona: QUINJINGUE (typo) → canonical Quijingue
-  QUINJINGUE: 'Quijingue',
-}
-
-for (const [aliasKey, canonical] of Object.entries(TSE_MUNICIPALITY_ALIASES)) {
-  if (!bahiaMunicipalityByKey.has(normalizeMunicipalityKey(canonical))) {
-    throw new Error(`TSE alias points to unknown canonical municipality: ${canonical}`)
-  }
-  bahiaMunicipalityByKey.set(aliasKey, canonical)
-}
 
 export class UnknownMunicipalityError extends Error {
   constructor(public readonly tseName: string) {
@@ -173,8 +151,7 @@ export const canonicalizeMunicipalityName = (tseMunicipalityName: string): strin
   const cached = municipalityResolveCache.get(tseMunicipalityName)
   if (cached) return cached
 
-  const key = normalizeMunicipalityKey(tseMunicipalityName)
-  const canonical = bahiaMunicipalityByKey.get(key)
+  const canonical = resolveMunicipalityName(tseMunicipalityName)
   if (!canonical) {
     throw new UnknownMunicipalityError(tseMunicipalityName)
   }

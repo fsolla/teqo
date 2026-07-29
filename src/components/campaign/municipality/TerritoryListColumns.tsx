@@ -9,16 +9,19 @@ import {
   formatGoalCoverageDeficitShortLabel,
   formatGoalCoverageRatioLabel,
   formatRatioAsPercentLabel,
-} from '@/utilities/goalCoverage'
+} from '@/utilities/municipality/goalCoverage'
 import {
   formatTerritorialClassWhy,
   territorialClassBadgeVariant,
   territorialClassLabels,
-} from '@/utilities/municipalityLabels'
-import type { TerritoryFilterOption } from '@/utilities/territoryListFilters'
-import { territoryColumnDescriptions } from '@/utilities/territoryListLabels'
-import { territoryListSortLabels, type TerritoryListState } from '@/utilities/territoryListUrl'
-import type { TerritoryTableRow } from '@/utilities/territoryOverview'
+} from '@/utilities/municipality/municipalityLabels'
+import type { TerritoryFilterOption } from '@/utilities/territory/territoryListFilters'
+import { territoryColumnDescriptions } from '@/utilities/territory/territoryListLabels'
+import {
+  territoryListSortLabels,
+  type TerritoryListState,
+} from '@/utilities/territory/territoryListUrl'
+import type { TerritoryTableRow } from '@/utilities/territory/territoryOverview'
 
 const percentFormatter = new Intl.NumberFormat('pt-BR', {
   minimumFractionDigits: 1,

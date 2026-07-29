@@ -12,10 +12,10 @@ import { createLeaderSupporterRecord } from '@/app/(campaign)/campanha/actions/l
 import { Media } from '@/collections/Media'
 import { Post } from '@/collections/Post'
 import { Tag } from '@/collections/Tag'
+import { relationshipId } from '@/lib/relationship'
 import config from '@/payload.config'
 import { canManagePublishedContent } from '@/utilities/access/shared'
 import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '@/utilities/campaignConsent'
-import { relationshipId } from '@/utilities/relationship'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 import { stub } from '../helpers/stub'

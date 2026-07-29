@@ -1,23 +1,21 @@
 'use client'
 
-import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
-import { ChevronDownIcon, FilterIcon, XIcon } from 'lucide-react'
-import { usePathname, useRouter } from 'next/navigation'
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef } from 'react'
 
+import { CampaignCollapsibleFilterPanel } from '@/components/campaign/shared/CampaignCollapsibleFilterPanel'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { StrictCombobox } from '@/components/campaign/shared/StrictCombobox'
-import { Button } from '@/components/ui/button'
+import { useCampaignFilterValues } from '@/components/campaign/shared/useCampaignFilterValues'
+import { SEARCH_DEBOUNCE_MS } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { cn } from '@/lib/utils'
 import {
   buildSupporterListSearchParams,
   supporterVoteIntentionLabels,
   type SupporterListState,
-} from '@/utilities/supporterUi'
-import { municipalityComboboxOptions } from '@/utilities/territoryComboboxOptions'
+} from '@/utilities/supporter/supporterUi'
+import { municipalityComboboxOptions } from '@/utilities/territory/territoryComboboxOptions'
 
 type FilterValues = {
   q: string
@@ -35,70 +33,6 @@ const valuesFromState = (state: SupporterListState): FilterValues => ({
 
 const filterNames = ['voteIntention', 'city', 'municipality'] as const
 
-type FilterFieldsProps = {
-  values: FilterValues
-  municipalityOptions: RelationOption[]
-  updateFilter: (name: (typeof filterNames)[number], value: string) => void
-  updateCity: (city: string) => void
-}
-
-const FilterFields = ({
-  values,
-  municipalityOptions,
-  updateFilter,
-  updateCity,
-}: FilterFieldsProps) => (
-  <form
-    autoComplete="off"
-    onSubmit={(event) => event.preventDefault()}
-    className="grid gap-4 lg:grid-cols-3"
-  >
-    <Field>
-      <FieldLabel htmlFor="supporter-voteIntention">Intenção de voto</FieldLabel>
-      <NativeSelect
-        id="supporter-voteIntention"
-        name="voteIntention"
-        value={values.voteIntention}
-        onChange={(event) => updateFilter('voteIntention', event.target.value)}
-        className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
-      >
-        <NativeSelectOption value="">Todas</NativeSelectOption>
-        {Object.entries(supporterVoteIntentionLabels).map(([value, label]) => (
-          <NativeSelectOption key={value} value={value}>
-            {label}
-          </NativeSelectOption>
-        ))}
-      </NativeSelect>
-    </Field>
-    <Field>
-      <FieldLabel htmlFor="supporter-city">Cidade</FieldLabel>
-      <StrictCombobox
-        id="supporter-city"
-        options={municipalityComboboxOptions()}
-        value={values.city}
-        onValueChange={updateCity}
-      />
-    </Field>
-    <Field>
-      <FieldLabel htmlFor="supporter-municipality">Município</FieldLabel>
-      <NativeSelect
-        id="supporter-municipality"
-        name="municipality"
-        value={values.municipality}
-        onChange={(event) => updateFilter('municipality', event.target.value)}
-        className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
-      >
-        <NativeSelectOption value="">Todas</NativeSelectOption>
-        {municipalityOptions.map((municipality) => (
-          <NativeSelectOption key={municipality.id} value={String(municipality.id)}>
-            {municipality.name}
-          </NativeSelectOption>
-        ))}
-      </NativeSelect>
-    </Field>
-  </form>
-)
-
 export const SupporterFilters = ({
   state,
   municipalityOptions,
@@ -106,49 +40,47 @@ export const SupporterFilters = ({
   state: SupporterListState
   municipalityOptions: RelationOption[]
 }) => {
-  const router = useRouter()
-  const pathname = usePathname()
-  const initialValues = valuesFromState(state)
-  const valuesRef = useRef(initialValues)
-  const [values, setValues] = useState(initialValues)
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
-  const { isPending, startTransition } = useCampaignListTransition()
+  const { values, isPending, updateValues, setLocalValues } = useCampaignFilterValues({
+    committedValues: valuesFromState(state),
+    toHref: (next) => {
+      const params = buildSupporterListSearchParams({
+        page: 1,
+        q: next.q,
+        voteIntention: next.voteIntention as SupporterListState['voteIntention'],
+        city: next.city,
+        municipality: next.municipality ? Number(next.municipality) : undefined,
+      })
+      const query = params.toString()
+      return query ? `/campanha/apoiadores?${query}` : '/campanha/apoiadores'
+    },
+  })
 
-  const replaceValues = (nextValues: FilterValues) => {
-    valuesRef.current = nextValues
-    setValues(nextValues)
-    const params = buildSupporterListSearchParams({
-      page: 1,
-      q: nextValues.q,
-      voteIntention: nextValues.voteIntention as SupporterListState['voteIntention'],
-      city: nextValues.city,
-      municipality: nextValues.municipality ? Number(nextValues.municipality) : undefined,
-    })
-    const query = params.toString()
-    startTransition(() => {
-      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    })
+  /**
+   * Search-as-you-type (P3-F unified idiom — this shell used to require an
+   * explicit submit): the keystroke mirrors locally and the debounce commits,
+   * so a re-typed identical value still cancels the pending navigation through
+   * the hook's no-op guard instead of firing a second round-trip.
+   */
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    },
+    [],
+  )
+  const onSearchChange = (value: string) => {
+    setLocalValues((current) => ({ ...current, q: value }))
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      updateValues((current) => ({ ...current, q: value.trim() }))
+    }, SEARCH_DEBOUNCE_MS)
   }
 
-  const updateFilter = (name: (typeof filterNames)[number], value: string) => {
-    replaceValues({ ...valuesRef.current, [name]: value })
-  }
-
-  const updateCity = (city: string) => {
-    replaceValues({ ...valuesRef.current, city })
-  }
-
-  const clearFilters = () => {
-    const cleared = Object.fromEntries(
-      filterNames.map((name) => [name, '']),
-    ) as Partial<FilterValues>
-    replaceValues({ ...valuesRef.current, ...cleared })
-  }
-
-  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    replaceValues({ ...valuesRef.current, q: valuesRef.current.q.trim() })
-  }
+  const clearFilters = () =>
+    updateValues((current) => ({
+      ...current,
+      ...(Object.fromEntries(filterNames.map((name) => [name, ''])) as Partial<FilterValues>),
+    }))
 
   const hasFilters = filterNames.some((name) => Boolean(values[name]))
 
@@ -161,72 +93,73 @@ export const SupporterFilters = ({
       <p className="sr-only" aria-live="polite">
         {isPending ? 'Atualizando resultados…' : ''}
       </p>
-      <div>
-        <form onSubmit={submitSearch} className="flex gap-2">
-          <CampaignSearchInput
-            id="supporter-search"
-            label="Buscar por nome, telefone ou município"
-            name="q"
-            value={values.q}
-            onChange={(event) => {
-              const nextValues = { ...valuesRef.current, q: event.target.value }
-              valuesRef.current = nextValues
-              setValues(nextValues)
-            }}
-            placeholder="Buscar por nome, telefone ou município"
-            enterKeyHint="search"
-          />
-          <Button type="submit" className="min-h-11 rounded-[6px]" disabled={isPending}>
-            Buscar
-          </Button>
-        </form>
+      <div role="search">
+        <CampaignSearchInput
+          id="supporter-search"
+          label="Buscar por nome, telefone ou município"
+          name="q"
+          value={values.q}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Buscar por nome, telefone ou município"
+          enterKeyHint="search"
+        />
       </div>
 
-      <div className="rounded-[6px] border bg-card">
-        <Button
-          type="button"
-          variant="ghost"
-          className="min-h-11 w-full justify-start rounded-[6px] px-3 lg:hidden"
-          aria-expanded={mobileFiltersOpen}
-          aria-controls="supporter-filter-controls"
-          onClick={() => setMobileFiltersOpen((open) => !open)}
-        >
-          <FilterIcon data-icon="inline-start" aria-hidden="true" />
-          <span>Filtros</span>
-          <ChevronDownIcon
-            data-icon="inline-end"
-            className="ml-auto transition-transform group-aria-expanded/button:rotate-180"
-            aria-hidden="true"
-          />
-        </Button>
-        <div
-          id="supporter-filter-controls"
-          className={cn(
-            mobileFiltersOpen ? 'block' : 'hidden',
-            'border-t p-4 lg:block lg:border-t-0',
-          )}
-        >
-          <FilterFields
-            values={values}
-            municipalityOptions={municipalityOptions}
-            updateFilter={updateFilter}
-            updateCity={updateCity}
-          />
-          {hasFilters ? (
-            <div className="mt-4 flex justify-end">
-              <Button
-                type="button"
-                variant="ghost"
-                className="min-h-11 rounded-[6px]"
-                onClick={clearFilters}
-              >
-                <XIcon data-icon="inline-start" aria-hidden="true" />
-                Limpar filtros
-              </Button>
-            </div>
-          ) : null}
+      <CampaignCollapsibleFilterPanel
+        panelId="supporter-filter-controls"
+        hasFilters={hasFilters}
+        onClear={clearFilters}
+      >
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Field>
+            <FieldLabel htmlFor="supporter-voteIntention">Intenção de voto</FieldLabel>
+            <NativeSelect
+              id="supporter-voteIntention"
+              name="voteIntention"
+              value={values.voteIntention}
+              onChange={(event) =>
+                updateValues((current) => ({ ...current, voteIntention: event.target.value }))
+              }
+              className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
+            >
+              <NativeSelectOption value="">Todas</NativeSelectOption>
+              {Object.entries(supporterVoteIntentionLabels).map(([value, label]) => (
+                <NativeSelectOption key={value} value={value}>
+                  {label}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="supporter-city">Cidade</FieldLabel>
+            <StrictCombobox
+              id="supporter-city"
+              options={municipalityComboboxOptions()}
+              value={values.city}
+              onValueChange={(city) => updateValues((current) => ({ ...current, city }))}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="supporter-municipality">Município</FieldLabel>
+            <NativeSelect
+              id="supporter-municipality"
+              name="municipality"
+              value={values.municipality}
+              onChange={(event) =>
+                updateValues((current) => ({ ...current, municipality: event.target.value }))
+              }
+              className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
+            >
+              <NativeSelectOption value="">Todas</NativeSelectOption>
+              {municipalityOptions.map((municipality) => (
+                <NativeSelectOption key={municipality.id} value={String(municipality.id)}>
+                  {municipality.name}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </Field>
         </div>
-      </div>
+      </CampaignCollapsibleFilterPanel>
     </div>
   )
 }

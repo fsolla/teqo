@@ -5,7 +5,7 @@ import { getPayload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import config from '@/payload.config'
-import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
+import { loadMunicipalityScope } from '@/utilities/municipality/campaignMunicipalityScope'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 

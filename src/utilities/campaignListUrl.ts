@@ -115,3 +115,30 @@ export const buildListHref = <State>(
   const query = params.toString()
   return query ? `${basePath}?${query}` : basePath
 }
+
+export type ListSortDirection = 'asc' | 'desc'
+
+/**
+ * The sort-toggle algorithm every list repeats (P3-F): clicking the active key
+ * flips its direction, clicking another key applies that key's default — and
+ * either way the list returns to page 1. Domain modules supply their data
+ * (current sort, default dir, href builder); the B18 contract stays frozen
+ * because the href still goes through the domain's own serializer.
+ */
+export const createSortToggleHref =
+  <State, Key extends string>(config: {
+    resolveCurrentSort: (state: State) => { sort: Key; dir: ListSortDirection }
+    defaultDir: (key: Key) => ListSortDirection
+    buildHref: (state: State) => string
+  }) =>
+  (state: State, nextKey: Key): string => {
+    const current = config.resolveCurrentSort(state)
+    const dir: ListSortDirection =
+      current.sort === nextKey
+        ? current.dir === 'asc'
+          ? 'desc'
+          : 'asc'
+        : config.defaultDir(nextKey)
+
+    return config.buildHref({ ...state, sort: nextKey, dir, page: 1 } as State)
+  }

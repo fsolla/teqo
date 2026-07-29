@@ -1,5 +1,5 @@
+import { isPopulatedRelationship } from '@/lib/relationship'
 import type { Contact, Petition } from '@/payload-types'
-import { isPopulatedRelationship } from '@/utilities/relationship'
 import type { ToCSVFunction } from '@payloadcms/plugin-import-export/types'
 
 type ExportRow = Record<string, unknown>

@@ -1,14 +1,14 @@
 'use client'
 
-import { useActionState, useEffect, useId, useState, type ReactNode } from 'react'
-import { toast } from 'sonner'
+import { useActionState, useId, useState, type ReactNode } from 'react'
 
 import { MunicipalitySignalFields } from '@/components/campaign/municipality/MunicipalitySignalFields'
 import {
   CampaignCellEditOverlay,
   type CampaignCellEditOverlayVariant,
 } from '@/components/campaign/shared/CampaignCellEditOverlay'
-import { Alert, AlertDescription } from '@/components/ui/Alert'
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
+import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
 import { Button } from '@/components/ui/button'
 import { DrawerClose } from '@/components/ui/Drawer'
 import { Spinner } from '@/components/ui/Spinner'
@@ -16,7 +16,7 @@ import type { CampaignFormActionState } from '@/utilities/campaignFormActionErro
 import {
   formatMunicipalitySignalAgeLabel,
   municipalitySignalAgeInDays,
-} from '@/utilities/municipalitySignal'
+} from '@/utilities/municipality/municipalitySignal'
 
 type MunicipalityStaffFormAction = (
   state: CampaignFormActionState,
@@ -51,12 +51,10 @@ export const MunicipalityListSignalControl = ({
   const isSheet = variant === 'sheet'
   const frescorLabel = formatMunicipalitySignalAgeLabel(municipalitySignalAgeInDays(lastSignalAt))
 
-  useEffect(() => {
-    if (state.status !== 'success') return
-    toast.success(state.message)
+  useCampaignFormSuccessToast(state, () => {
     setOpen(false)
     setFormKey((key) => key + 1)
-  }, [state.message, state.status])
+  })
 
   const submitButton = (
     // On the sheet this button lives in the footer, outside the `<form>` it
@@ -106,11 +104,7 @@ export const MunicipalityListSignalControl = ({
         <input type="hidden" name="municipalityId" value={municipalityID} />
         <input type="hidden" name="municipalitySlug" value={municipalitySlug} />
         <MunicipalitySignalFields idPrefix={idPrefix} fieldErrors={state.fieldErrors} />
-        {state.message && state.status !== 'success' ? (
-          <Alert variant="destructive">
-            <AlertDescription>{state.message}</AlertDescription>
-          </Alert>
-        ) : null}
+        {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
         {isSheet ? null : submitButton}
       </form>
     </CampaignCellEditOverlay>

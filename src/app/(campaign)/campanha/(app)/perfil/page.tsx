@@ -1,16 +1,15 @@
 import config from '@payload-config'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignPasskeysCard } from '@/components/campaign/auth/CampaignPasskeysCard'
 import { CampaignProfileSettings } from '@/components/campaign/auth/CampaignProfileSettings'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { campaignUserShellView } from '@/utilities/campaignUserProfile'
-import { loadCampaignPasskeys } from '@/utilities/campaignWebAuthnCeremony'
-import { resolveCampaignWebAuthnRelyingParty } from '@/utilities/campaignWebAuthnConfig'
+import { loadCampaignPasskeys } from '@/utilities/webauthn/campaignWebAuthnCeremony'
+import { resolveCampaignWebAuthnRelyingParty } from '@/utilities/webauthn/campaignWebAuthnConfig'
 
 export const metadata: Metadata = {
   title: 'Meu perfil | Campanha',
@@ -25,11 +24,7 @@ type CampaignProfilePageProps = {
 }
 
 export default async function CampaignProfilePage({ searchParams }: CampaignProfilePageProps) {
-  const [user, params] = await Promise.all([getCampaignUser(), searchParams])
-
-  if (!user) {
-    redirect('/campanha/login')
-  }
+  const [user, params] = await Promise.all([requireCampaignPageActor(), searchParams])
 
   const payload = await getPayload({ config })
   const [passkeys, relyingParty, requestHeaders] = await Promise.all([

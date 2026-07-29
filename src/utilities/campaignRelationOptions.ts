@@ -3,8 +3,8 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
+import { populatedContactName, relationshipId } from '@/lib/relationship'
 import type { CampaignUser } from '@/payload-types'
-import { populatedContactName, relationshipId } from '@/utilities/relationship'
 
 export type ActivityRelationOption = RelationOption & {
   municipalityId: number

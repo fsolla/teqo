@@ -6,6 +6,7 @@ import type { Access, FieldAccess, Where } from 'payload'
 
 import { getAccessibleMunicipalityIds } from '@/utilities/access/municipalities'
 import {
+  advisorMunicipalityScopeWhere,
   getFreshCampaignUser,
   isCampaignCoordinator,
   isCampaignLeader,
@@ -39,11 +40,7 @@ export const canReadActivity: Access = async ({ req }): Promise<boolean | Where>
             contains: currentUser.id,
           },
         },
-        {
-          municipality: {
-            in: municipalityIDs ?? [],
-          },
-        },
+        advisorMunicipalityScopeWhere('municipality', municipalityIDs),
       ],
     }
   }

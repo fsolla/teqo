@@ -11,7 +11,7 @@ import {
   formatGoalCoverageDeficitShortLabel,
   formatGoalCoverageRatioLabel,
   type MunicipalityGoalCoverage,
-} from '@/utilities/goalCoverage'
+} from '@/utilities/municipality/goalCoverage'
 
 /**
  * E8 "conta da cadeira" list cell: reads the shared scenario picker (same

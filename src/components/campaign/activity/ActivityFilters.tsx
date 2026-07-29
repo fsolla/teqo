@@ -1,12 +1,10 @@
 'use client'
 
-import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
-import { ChevronDownIcon, FilterIcon, XIcon } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { useRef, useState } from 'react'
 
+import { CampaignCollapsibleFilterPanel } from '@/components/campaign/shared/CampaignCollapsibleFilterPanel'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
+import { useCampaignFilterValues } from '@/components/campaign/shared/useCampaignFilterValues'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
@@ -76,36 +74,20 @@ export const ActivityFilters = ({
   state: ActivityListState
   municipalityOptions: RelationOption[]
 }) => {
-  const router = useRouter()
-  const pathname = usePathname()
-  const initialValues = valuesFromState(state)
-  const valuesRef = useRef(initialValues)
-  const [values, setValues] = useState(initialValues)
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
-  const { isPending, startTransition } = useCampaignListTransition()
-
-  const replaceValues = (nextValues: FilterValues) => {
-    valuesRef.current = nextValues
-    setValues(nextValues)
-    const params = buildActivityListSearchParams({
-      page: 1,
-      tab: state.tab,
-      kind: nextValues.kind as ActivityListState['kind'],
-      status: nextValues.status as ActivityListState['status'],
-      municipality: municipalityIdFromValue(nextValues.municipality),
-    })
-    const query = params.toString()
-    startTransition(() => {
-      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    })
-  }
-
-  const updateKind = (kind: string) => replaceValues({ ...valuesRef.current, kind })
-  const updateStatus = (status: string) => replaceValues({ ...valuesRef.current, status })
-  const updateMunicipality = (municipality: string) =>
-    replaceValues({ ...valuesRef.current, municipality })
-
-  const clearFilters = () => replaceValues({ kind: '', status: '', municipality: '' })
+  const { values, isPending, replaceValues, updateValues } = useCampaignFilterValues({
+    committedValues: valuesFromState(state),
+    toHref: (next) => {
+      const params = buildActivityListSearchParams({
+        page: 1,
+        tab: state.tab,
+        kind: next.kind as ActivityListState['kind'],
+        status: next.status as ActivityListState['status'],
+        municipality: municipalityIdFromValue(next.municipality),
+      })
+      const query = params.toString()
+      return query ? `/campanha/atividades?${query}` : '/campanha/atividades'
+    },
+  })
 
   const hasFilters = Object.values(values).some(Boolean)
 
@@ -121,98 +103,75 @@ export const ActivityFilters = ({
         <p className="sr-only" aria-live="polite">
           {isPending ? 'Atualizando resultados…' : ''}
         </p>
-        <div className="rounded-[6px] border bg-card">
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11 w-full justify-start rounded-[6px] px-3 lg:hidden"
-            aria-expanded={mobileFiltersOpen}
-            aria-controls="activity-filter-controls"
-            onClick={() => setMobileFiltersOpen((open) => !open)}
-          >
-            <FilterIcon data-icon="inline-start" aria-hidden="true" />
-            <span>Filtros</span>
-            <ChevronDownIcon data-icon="inline-end" className="ml-auto" aria-hidden="true" />
-          </Button>
+        <CampaignCollapsibleFilterPanel
+          panelId="activity-filter-controls"
+          hasFilters={hasFilters}
+          onClear={() => replaceValues({ kind: '', status: '', municipality: '' })}
+        >
           <div
-            id="activity-filter-controls"
             className={cn(
-              mobileFiltersOpen ? 'block' : 'hidden',
-              'border-t p-4 lg:block lg:border-t-0',
+              'grid gap-4',
+              state.tab === 'todos' ? 'lg:grid-cols-3' : 'lg:grid-cols-2',
             )}
           >
-            <div
-              className={cn(
-                'grid gap-4',
-                state.tab === 'todos' ? 'lg:grid-cols-3' : 'lg:grid-cols-2',
-              )}
-            >
+            <Field>
+              <FieldLabel htmlFor="activity-kind">Tipo de atividade</FieldLabel>
+              <NativeSelect
+                id="activity-kind"
+                value={values.kind}
+                onChange={(event) =>
+                  updateValues((current) => ({ ...current, kind: event.target.value }))
+                }
+                className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
+              >
+                <NativeSelectOption value="">Todos os tipos</NativeSelectOption>
+                {Object.entries(activityKindLabels).map(([value, label]) => (
+                  <NativeSelectOption key={value} value={value}>
+                    {label}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
+            {state.tab === 'todos' ? (
               <Field>
-                <FieldLabel htmlFor="activity-kind">Tipo de atividade</FieldLabel>
+                <FieldLabel htmlFor="activity-status">Status</FieldLabel>
                 <NativeSelect
-                  id="activity-kind"
-                  value={values.kind}
-                  onChange={(event) => updateKind(event.target.value)}
+                  id="activity-status"
+                  value={values.status}
+                  onChange={(event) =>
+                    updateValues((current) => ({ ...current, status: event.target.value }))
+                  }
                   className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
                 >
-                  <NativeSelectOption value="">Todos os tipos</NativeSelectOption>
-                  {Object.entries(activityKindLabels).map(([value, label]) => (
+                  <NativeSelectOption value="">Todos os status</NativeSelectOption>
+                  {Object.entries(activityStatusLabels).map(([value, label]) => (
                     <NativeSelectOption key={value} value={value}>
                       {label}
                     </NativeSelectOption>
                   ))}
                 </NativeSelect>
               </Field>
-              {state.tab === 'todos' ? (
-                <Field>
-                  <FieldLabel htmlFor="activity-status">Status</FieldLabel>
-                  <NativeSelect
-                    id="activity-status"
-                    value={values.status}
-                    onChange={(event) => updateStatus(event.target.value)}
-                    className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
-                  >
-                    <NativeSelectOption value="">Todos os status</NativeSelectOption>
-                    {Object.entries(activityStatusLabels).map(([value, label]) => (
-                      <NativeSelectOption key={value} value={value}>
-                        {label}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </Field>
-              ) : null}
-              <Field>
-                <FieldLabel htmlFor="activity-municipality">Município</FieldLabel>
-                <NativeSelect
-                  id="activity-municipality"
-                  value={values.municipality}
-                  onChange={(event) => updateMunicipality(event.target.value)}
-                  className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
-                >
-                  <NativeSelectOption value="">Todos os municípios</NativeSelectOption>
-                  {municipalityOptions.map((option) => (
-                    <NativeSelectOption key={option.id} value={String(option.id)}>
-                      {option.name}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-              </Field>
-            </div>
-            {hasFilters ? (
-              <div className="mt-4 flex justify-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="min-h-11 rounded-[6px]"
-                  onClick={clearFilters}
-                >
-                  <XIcon data-icon="inline-start" aria-hidden="true" />
-                  Limpar filtros
-                </Button>
-              </div>
             ) : null}
+            <Field>
+              <FieldLabel htmlFor="activity-municipality">Município</FieldLabel>
+              <NativeSelect
+                id="activity-municipality"
+                value={values.municipality}
+                onChange={(event) =>
+                  updateValues((current) => ({ ...current, municipality: event.target.value }))
+                }
+                className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
+              >
+                <NativeSelectOption value="">Todos os municípios</NativeSelectOption>
+                {municipalityOptions.map((option) => (
+                  <NativeSelectOption key={option.id} value={String(option.id)}>
+                    {option.name}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
           </div>
-        </div>
+        </CampaignCollapsibleFilterPanel>
       </div>
     </div>
   )

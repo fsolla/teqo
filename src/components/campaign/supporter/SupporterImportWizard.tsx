@@ -32,8 +32,8 @@ import {
   isPreviewErrorRow,
   type SupporterImportPreviewResult,
   type SupporterImportPreviewRow,
-} from '@/utilities/supporterImport'
-import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
+} from '@/utilities/supporter/supporterImport'
+import { supporterVoteIntentionLabels } from '@/utilities/supporter/supporterUi'
 
 const importStatusLabels: Record<SupporterImportPreviewRow['status'], string> = {
   ok: 'Pronto',

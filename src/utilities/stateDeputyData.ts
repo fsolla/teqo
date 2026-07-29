@@ -2,8 +2,8 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { populatedContactName, relationshipId } from '@/lib/relationship'
 import type { CampaignUser, StateDeputy } from '@/payload-types'
-import { populatedContactName, relationshipId } from '@/utilities/relationship'
 import {
   buildStateDeputyListWhere,
   NO_PARTY_FILTER_VALUE,

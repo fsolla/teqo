@@ -3,6 +3,12 @@
 import type { Payload } from 'payload'
 
 import {
+  ACTIVITY_RESULT_REQUIRED_MESSAGE,
+  ACTIVITY_RESULT_STAFF_MESSAGE,
+  ACTIVITY_RESULT_TOO_LONG_MESSAGE,
+  ACTIVITY_TASK_NOT_FOUND_MESSAGE,
+  ACTIVITY_UPDATE_BODY_REQUIRED_MESSAGE,
+  ACTIVITY_UPDATE_BODY_TOO_LONG_MESSAGE,
   activityCreateSchema,
   activityDemandDraftsSchema,
   activityUpdateSchema,
@@ -23,7 +29,7 @@ import {
   TOUR_MAX_STOPS_MESSAGE,
   TOUR_OUT_OF_SCOPE_MESSAGE,
   TOUR_STAFF_ONLY_MESSAGE,
-} from '@/utilities/visitPlannerViews'
+} from '@/utilities/visit/visitPlannerViews'
 
 const MAX_ACTIVITY_UPDATE_BODY_LENGTH = 4000
 const MAX_ACTIVITY_RESULT_SUMMARY_LENGTH = 6000
@@ -246,7 +252,7 @@ const toggleActivityTaskRecord = async (
 
       const tasks = activity.tasks ?? []
       const taskIndex = tasks.findIndex((task) => task.id === taskId)
-      if (taskIndex === -1) throw new Error('Tarefa não encontrada.')
+      if (taskIndex === -1) throw new Error(ACTIVITY_TASK_NOT_FOUND_MESSAGE)
 
       const nextTasks = tasks.map((task, index) => (index === taskIndex ? { ...task, done } : task))
 
@@ -271,9 +277,9 @@ const appendActivityUpdateRecord = async (
   body: string,
 ) => {
   const trimmedBody = body.trim()
-  if (!trimmedBody) throw new Error('Informe o texto da atualização.')
+  if (!trimmedBody) throw new Error(ACTIVITY_UPDATE_BODY_REQUIRED_MESSAGE)
   if (trimmedBody.length > MAX_ACTIVITY_UPDATE_BODY_LENGTH) {
-    throw new Error('Atualização muito longa. Reduza o texto e tente novamente.')
+    throw new Error(ACTIVITY_UPDATE_BODY_TOO_LONG_MESSAGE)
   }
 
   return withPayloadTransaction(
@@ -317,9 +323,9 @@ const registerActivityResult = async (
   mediaIDs: number[],
 ) => {
   const trimmedSummary = resultSummary.trim()
-  if (!trimmedSummary) throw new Error('Informe o resultado da atividade.')
+  if (!trimmedSummary) throw new Error(ACTIVITY_RESULT_REQUIRED_MESSAGE)
   if (trimmedSummary.length > MAX_ACTIVITY_RESULT_SUMMARY_LENGTH) {
-    throw new Error('Resultado muito longo. Reduza o texto e tente novamente.')
+    throw new Error(ACTIVITY_RESULT_TOO_LONG_MESSAGE)
   }
 
   return withPayloadTransaction(
@@ -327,7 +333,7 @@ const registerActivityResult = async (
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
       if (!isCampaignStaff(currentActor)) {
-        throw new Error('Apenas a equipe da campanha pode registrar o resultado da atividade.')
+        throw new Error(ACTIVITY_RESULT_STAFF_MESSAGE)
       }
 
       return payload.update({

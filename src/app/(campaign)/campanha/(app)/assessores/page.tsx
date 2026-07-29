@@ -1,5 +1,4 @@
 import config from '@payload-config'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { AdvisorsTable } from '@/components/campaign/advisor/AdvisorsTable'
@@ -15,9 +14,8 @@ import {
   loadAdvisorListPageData,
   parseAdvisorListParams,
 } from '@/utilities/advisorData'
-import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
-import { loadMunicipalityPortfolioIndex } from '@/utilities/municipalityPortfolioIndex'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
 import {
   createAdvisorFormAction,
   sendAdvisorPasswordResetFormAction,
@@ -31,9 +29,10 @@ type AdvisorsPageProps = {
 
 export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) {
   const rawSearchParams = await searchParams
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignUnrestricted(user)) redirect('/campanha')
+  const [, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'unrestricted' }),
+    getPayload({ config }),
+  ])
 
   const state = parseAdvisorListParams(rawSearchParams)
   const [{ rows, totalDocs, totalPages }, municipalityIndex] = await Promise.all([

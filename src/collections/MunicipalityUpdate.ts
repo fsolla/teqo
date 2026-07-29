@@ -9,6 +9,7 @@ import type {
 } from 'payload'
 import { APIError } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import {
   municipalitySignalTypeLabels,
   municipalitySignalTypes,
@@ -24,7 +25,6 @@ import {
   canSetMunicipalityUpdateAuthor,
 } from '@/utilities/campaignAccess'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
-import { relationshipId } from '@/utilities/relationship'
 
 const DERIVED_MUNICIPALITY_UPDATE_CONTEXT = 'municipalityUpdateDerivedField'
 const MUNICIPALITY_UPDATE_KIND_OPTIONS = municipalityUpdateKinds.map((value) => ({

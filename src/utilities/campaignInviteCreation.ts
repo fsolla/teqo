@@ -3,6 +3,7 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import { CREATE_CAMPAIGN_INVITE_MISSING_CONSENT_MESSAGE } from '@/lib/campaignInviteClient'
+import { requireRelationshipId } from '@/lib/relationship'
 import { campaignInviteCreateSchema, type CampaignInviteCreateInput } from '@/lib/schemas/invite'
 import type { CampaignUser } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
@@ -20,7 +21,6 @@ import {
 } from '@/utilities/campaignInviteRepository'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { requireRelationshipId } from '@/utilities/relationship'
 
 const getFreshInviteCreator = async (
   payload: Payload,

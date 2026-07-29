@@ -17,16 +17,17 @@ Esta skill **só recomenda** — não implementa, não edita o roadmap e não cr
 
 **Divisão com as skills irmãs:**
 
-| Skill                        | Papel                                                  |
-| ---------------------------- | ------------------------------------------------------ |
-| `compile-roadmap`            | Enxugar roadmap: resumir feito, destacar abertos       |
+| Skill                        | Papel                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| `compile-roadmap`            | Enxugar roadmap: resumir feito, destacar abertos                           |
 | `suggest-next-roadmap-items` | **Escolher o próximo + todos os paralelos** entre o que o roadmap já lista |
-| `roadmap-item`               | Registrar ideia nova / criar plano                     |
-| `implement-roadmap-item`     | Auditar plano + implementar o ID escolhido             |
-| `rebase-on-main`             | Após simplify: fetch + rebase em main + conflitos      |
-| `capture-review-debts`       | Triagear débitos de `/simplify` / critique             |
-| `ship-to-main`               | Commit + push + merge main + apagar worktree           |
-| `close-delivery`             | Orquestra rebase + debts (auto-confirm) + ship         |
+| `roadmap-item`               | Registrar ideia nova / criar plano                                         |
+| `implement-roadmap-item`     | Auditar plano + implementar o ID escolhido                                 |
+| `rebase-on-main`             | Após simplify: fetch + rebase em main + conflitos                          |
+| `capture-review-debts`       | Triagear débitos de `/simplify` / critique                                 |
+| `ship-to-main`               | Commit + push + merge main + apagar worktree                               |
+| `close-delivery`             | Orquestra rebase + debts (auto-confirm) + ship                             |
+| `model-selection`            | Modelo × effort por classe de tarefa (custo/valor)                         |
 
 ## Checklist
 
@@ -132,8 +133,8 @@ Um candidato entra na lista paralela quando passa **nos três testes contra o pr
 
 **Superfícies serializadoras do Teqo (no máximo 1 item ativo por linha em qualquer worktree simultânea):**
 
-| Superfície                                                                                    | Por que serializa                                                                                            |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Superfície                                                                                     | Por que serializa                                                                                              |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `src/migrations/` (SQL + `.json` snapshot + `index.ts`) e o `src/payload-types.ts` que a segue | A cadeia de snapshots é linear: dois itens com migration não se resolvem por merge textual, um tem que refazer |
 | Artefato TSE (`src/lib/electionAggregates/`, `build:election-aggregates`, orçamento de bytes)  | Arquivo gerado grande + teste de tamanho; dois geradores em paralelo colidem inteiros                          |
 | Seams do sistema de listas (`CampaignTable`, `campaignListUrl`, shells de `campaign/shared`)   | Quem **altera** a seam serializa; quem só **consome** pode ir junto                                            |
@@ -164,7 +165,8 @@ Formato obrigatório da resposta (conciso; sem reescrever o roadmap):
 - Plano: `docs/plans/…`
 - Dependências: ok / suave pendente: …
 - Impeccable: A|B|C|D
-- Próximo passo: skill `implement-roadmap-item` neste ID
+- Modelo (skill `model-selection`): <modelo> · effort <low|medium|high> — classe da tarefa em meia frase
+- Próximo passo: skill `implement-roadmap-item` neste ID (na worktree do item, já no modelo acima)
 
 ## Em paralelo com ele (todos, por prioridade)
 

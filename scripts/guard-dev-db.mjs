@@ -7,16 +7,15 @@
  *
  * Escape hatch (use with care): ALLOW_REMOTE_DB=true pnpm dev
  */
-import { config as loadEnv } from 'dotenv'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
 import { diagnoseDatabaseTarget, warnOnSharedDataVolumes } from './db-doctor.mjs'
+import { isRemoteDbOverrideSet, loadCliEnv } from './lib/cli.mjs'
 
 // Mirror Next.js precedence (.env.local wins over .env) WITHOUT overriding a
 // DATABASE_URL that is already set in the real environment (e.g. injected by
 // Playwright's webServer). dotenv's default `override: false` guarantees this.
-loadEnv({ path: '.env.local' })
-loadEnv({ path: '.env' })
+loadCliEnv()
 
 assertLocalDatabase(
   'guard-dev-db',
@@ -30,7 +29,7 @@ assertLocalDatabase(
 // start, who is holding the port) instead of letting Next/Payload throw a
 // bare ECONNREFUSED minutes into the dev session. Skipped under the same
 // escape hatch as the locality guard — remote databases are on their own.
-if (process.env.ALLOW_REMOTE_DB !== 'true' && process.env.ALLOW_REMOTE_DB !== '1') {
+if (!isRemoteDbOverrideSet()) {
   const volumesClean = warnOnSharedDataVolumes()
   const healthy = await diagnoseDatabaseTarget({
     label: 'guard-dev-db',

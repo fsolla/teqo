@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { setMunicipalityAdvisorMembership } from '@/app/(campaign)/campanha/actions/municipality'
+import { uniqueRelationshipIds } from '@/lib/relationship'
 import { MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES } from '@/lib/schemas/municipality'
 import { positiveRelationshipId } from '@/lib/schemas/primitives'
 import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute'
-import { uniqueRelationshipIds } from '@/utilities/relationship'
 
 import type { MunicipalityListAdvisorsResponse } from './types'
 

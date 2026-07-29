@@ -24,10 +24,9 @@
  *   GEOMETRIES_CACHE_DIR=./data/geometries pnpm build:municipality-zone-geometries
  */
 
-import { createHash } from 'node:crypto'
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { dieWithLabel, ensureCachedDownload, writeRepoFile } from './lib/cli.mjs'
 
 import shp from 'shpjs'
 import { merge } from 'topojson-client'
@@ -98,44 +97,32 @@ const SPLIT_NEIGHBORHOOD_ZONES = {
 
 const REPORT_ONLY = process.argv.includes('--report')
 
-const die = (message) => {
-  console.error(`\n[build:municipality-zone-geometries] ${message}\n`)
-  process.exit(1)
-}
+const die = dieWithLabel('build:municipality-zone-geometries')
 
 const log = (message) => console.log(`[build:municipality-zone-geometries] ${message}`)
-
-const sha256 = (buffer) => createHash('sha256').update(buffer).digest('hex')
 
 const cacheDir = () => process.env.GEOMETRIES_CACHE_DIR || join(ROOT, 'data', 'geometries')
 
 const ensureCachedBinary = async ({ key, url, ext }) => {
-  const dir = cacheDir()
-  await mkdir(dir, { recursive: true })
-  const path = join(dir, `${key}.${ext}`)
-  try {
-    await access(path)
-    log(`cache hit ${path}`)
-    const buffer = await readFile(path)
-    return { hash: sha256(buffer), buffer }
-  } catch (error) {
-    if (error?.code !== 'ENOENT') throw error
-  }
-  log(`downloading ${url}`)
-  const buffer = await downloadToBuffer(url)
-  const hash = sha256(buffer)
-  await writeFile(path, buffer)
-  log(`saved ${path} (${buffer.length} bytes, sha256=${hash})`)
+  const { hash, buffer } = await ensureCachedDownload({
+    label: 'build:municipality-zone-geometries',
+    key,
+    url,
+    ext,
+    cacheDir: cacheDir(),
+    download: downloadToBuffer,
+  })
   return { hash, buffer }
 }
 
-const writeJson = async (relativePath, value) => {
-  const path = join(ROOT, relativePath)
-  await mkdir(dirname(path), { recursive: true })
-  const body = `${JSON.stringify(value)}\n`
-  await writeFile(path, body)
-  log(`wrote ${relativePath} (${Buffer.byteLength(body)} bytes)`)
-}
+const writeJson = (relativePath, value) =>
+  writeRepoFile({
+    label: 'build:municipality-zone-geometries',
+    root: ROOT,
+    relativePath,
+    body: `${JSON.stringify(value)}
+`,
+  }).then(() => log(`wrote ${relativePath}`))
 
 /** Accent-folded, punctuation-free key; parentheses (the TRE's split notes) drop. */
 const normalizeNeighborhood = (name) =>

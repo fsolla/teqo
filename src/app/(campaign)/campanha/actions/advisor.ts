@@ -6,8 +6,11 @@ import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
 import { nextAdvisorIdsAfterMembership } from '@/lib/municipalityAdvisorMembership'
+import { uniqueRelationshipIds } from '@/lib/relationship'
 import {
   ADVISOR_EMAIL_CONFLICT_MESSAGE,
+  ADVISOR_ROLE_REQUIRED_MESSAGE,
+  ADVISOR_SELF_ACCOUNT_MESSAGE,
   ADVISOR_UNRESTRICTED_MESSAGE,
   PLACEHOLDER_RESET_MESSAGE,
   advisorCreateSchema,
@@ -30,10 +33,9 @@ import {
   isCampaignEmailConfigured,
 } from '@/utilities/campaignPasswordReset'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
-import { revalidateMunicipalityListPaths } from '@/utilities/municipalityRevalidation'
+import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
-import { uniqueRelationshipIds } from '@/utilities/relationship'
 
 const revalidateAdvisorDetailPath = (advisorId: number) => {
   revalidatePath(`/campanha/assessores/${advisorId}`, 'page')
@@ -67,10 +69,10 @@ const assertTargetAdvisor = async (
   })
 
   if (target.role !== 'advisor') {
-    throw new Error('Só é possível gerenciar contas com papel de Assessor nesta tela.')
+    throw new Error(ADVISOR_ROLE_REQUIRED_MESSAGE)
   }
   if (String(target.id) === String(actorId)) {
-    throw new Error('Use Meu perfil para alterar a própria conta.')
+    throw new Error(ADVISOR_SELF_ACCOUNT_MESSAGE)
   }
 
   return target
@@ -167,7 +169,7 @@ export const setAdvisorMunicipalitiesBatchRecord = async (
   input: AdvisorMunicipalitiesBatchInput,
 ) => {
   const { advisorId, municipalityIds, assigned } = advisorMunicipalitiesBatchSchema.parse(input)
-  const uniqueMunicipalityIds = [...new Set(municipalityIds)].sort((left, right) => left - right)
+  const uniqueMunicipalityIds = [...municipalityIds].sort((left, right) => left - right)
 
   return withPayloadTransaction(
     payload,

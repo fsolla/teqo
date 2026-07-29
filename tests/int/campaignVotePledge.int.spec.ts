@@ -10,6 +10,7 @@ import {
 } from '@/app/(campaign)/campanha/actions/votePledge'
 import config from '@/payload.config'
 import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
+import { aggregateMunicipalityPledgesFromRows } from '@/utilities/votePledgeViews'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -252,5 +253,47 @@ describe('vote pledges (declared by staff, estimated by staff)', () => {
     expect(aggregate?.effectiveByScenario.central).toBe(120)
     expect(aggregate?.missingEstimateCount).toBe(1)
     expect(secondPledge.declaredVotes).toBe(40)
+  })
+
+  // P3-E pin: the LIST aggregate (aggregatePledgesByMunicipality, whose fold now
+  // delegates) and the DOSSIÊ fold (aggregateMunicipalityPledgesFromRows on the
+  // detail loaders' rows) must produce the same aggregate for the same pledges —
+  // the whole point of the fold delegation.
+  it('produces the dossiê aggregate and the list aggregate from one fold', async () => {
+    const { municipality, advisor, leadership } = await createEngagedLeadership()
+    const pledge = await declareVotesRecord(payload, advisor, {
+      municipality: municipality.id,
+      leadership: leadership.id,
+      declaredVotes: 150,
+    })
+    campaignFixtures().own('votePledge', pledge.id)
+    await estimateVotesRecord(payload, advisor, {
+      pledge: pledge.id,
+      estimatedVotes: { pessimistic: 120, central: 150, optimistic: 180 },
+      estimateNote: null,
+    })
+
+    const listAggregate = (await aggregatePledgesByMunicipality(payload, [municipality.id])).get(
+      municipality.id,
+    )
+
+    const { docs } = await payload.find({
+      collection: 'votePledge',
+      where: { municipality: { equals: municipality.id } },
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      overrideAccess: true,
+    })
+    const dossierAggregate = aggregateMunicipalityPledgesFromRows(
+      docs.map((doc) => ({
+        declaredVotes: doc.declaredVotes ?? 0,
+        estimatedVotes: doc.estimatedVotes,
+        declaredAt: doc.declaredAt,
+        estimatedAt: doc.estimatedAt,
+      })),
+    )
+
+    expect(listAggregate).toEqual(dossierAggregate)
   })
 })

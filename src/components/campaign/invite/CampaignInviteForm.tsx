@@ -7,6 +7,7 @@ import type {
   BoundCampaignInviteFormAction,
   CampaignInviteFormState,
 } from '@/app/(campaign)/campanha/convite/[token]/formActions'
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,7 +25,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { errorProps, fieldError } from '@/utilities/campaignFormFields'
-import { leadershipGenderLabels, leadershipSectorLabels } from '@/utilities/leadershipUi'
+import { leadershipGenderLabels, leadershipSectorLabels } from '@/utilities/leadership/leadershipUi'
 
 type CampaignInviteProfile = {
   name: string
@@ -43,13 +44,8 @@ const sectorOptions = Object.entries(leadershipSectorLabels) as Array<
 >
 
 const CampaignInviteFeedback = ({ state }: { state: CampaignInviteFormState }) => {
-  if (!state.message || state.status === 'success') return null
-  return (
-    <Alert variant="destructive" aria-live="polite">
-      <AlertTitle>Não foi possível confirmar</AlertTitle>
-      <AlertDescription>{state.message}</AlertDescription>
-    </Alert>
-  )
+  if (state.status === 'success') return null
+  return <CampaignFormActionMessage state={state} errorTitle="Não foi possível confirmar" />
 }
 
 const ConsentField = ({ children, error }: { children: ReactNode; error?: string }) => (

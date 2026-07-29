@@ -10,12 +10,12 @@ import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute
 import {
   campaignWebAuthnSafeMessages,
   completeCampaignAuthentication,
-} from '@/utilities/campaignWebAuthnCeremony'
-import { CAMPAIGN_WEBAUTHN_CHALLENGE_EXPIRED_MESSAGE } from '@/utilities/campaignWebAuthnChallenge'
+} from '@/utilities/webauthn/campaignWebAuthnCeremony'
+import { CAMPAIGN_WEBAUTHN_CHALLENGE_EXPIRED_MESSAGE } from '@/utilities/webauthn/campaignWebAuthnChallenge'
 import {
   CAMPAIGN_WEBAUTHN_ACCOUNT_LOCKED_MESSAGE,
   CAMPAIGN_WEBAUTHN_ACCOUNT_UNAVAILABLE_MESSAGE,
-} from '@/utilities/campaignWebAuthnSession'
+} from '@/utilities/webauthn/campaignWebAuthnSession'
 
 export const dynamic = 'force-dynamic'
 

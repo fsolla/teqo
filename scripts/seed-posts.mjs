@@ -25,23 +25,19 @@
  */
 import { convertHTMLToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical'
 import { del as blobDel } from '@vercel/blob'
-import { config as loadEnv } from 'dotenv'
 import { JSDOM } from 'jsdom'
 import { getPayload } from 'payload'
+import { loadCliEnv } from './lib/cli.mjs'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
 
 // Mirror Next.js precedence (.env.local wins over .env) without clobbering a
 // DATABASE_URL already set in the real environment.
-loadEnv({ path: '.env.local' })
-loadEnv({ path: '.env' })
+loadCliEnv()
 
 const config = (await import('../src/payload.config.ts')).default
 
-const die = (message) => {
-  console.error(`\n[seed:posts] ${message}\n`)
-  process.exit(1)
-}
+const die = dieWithLabel('seed:posts')
 
 // ---------------------------------------------------------------------------
 // Taxonomy (Section 7): the categories + control tag, and the per-article map.

@@ -2,13 +2,13 @@
 
 import { useActionState } from 'react'
 
-import { Alert, AlertDescription } from '@/components/ui/Alert'
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/Spinner'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import type { EligibleAdvisorOption } from '@/utilities/municipalityViewModels'
+import type { EligibleAdvisorOption } from '@/utilities/municipality/municipalityViewModels'
 
 type MunicipalityAdvisorsFormProps = {
   municipalityID: number
@@ -63,16 +63,7 @@ export const MunicipalityAdvisorsForm = ({
           </li>
         ))}
       </ul>
-      {state.message && state.status !== 'success' ? (
-        <Alert variant="destructive">
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      ) : null}
-      {state.status === 'success' ? (
-        <Alert>
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      ) : null}
+      <CampaignFormActionMessage state={state} />
       <Button type="submit" disabled={isPending} className="min-h-11 self-start">
         {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
         Salvar assessores

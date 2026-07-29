@@ -4,7 +4,7 @@ import {
   buildMunicipalitiesByIbgeCode,
   buildMunicipalitiesByMapKey,
   mapKeyForMunicipality,
-} from '@/utilities/municipalityMapNavigation'
+} from '@/utilities/municipality/municipalityMapNavigation'
 
 const abaira = { slug: 'abaira', name: 'Abaíra', ibgeCode: '2900108', kind: 'municipio' } as const
 const salvadorZe1 = {

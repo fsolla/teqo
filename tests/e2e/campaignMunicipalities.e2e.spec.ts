@@ -1,56 +1,24 @@
-import type { Payload } from 'payload'
-
-import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '../../src/utilities/campaignConsent.js'
-import { expect, expectPostResponse, test } from './fixtures/campaignE2EFixtures.js'
+import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '../../src/lib/campaignConsentKeys.js'
+import {
+  ensureLeasedConsent,
+  SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
+} from '../helpers/testDatabaseLease.js'
+import {
+  checkRadixWhenHydrated,
+  expect,
+  expectPostResponse,
+  test,
+} from './fixtures/campaignE2EFixtures.js'
 
 /**
  * Core municipality-model journeys per role: coordinator strategy editing, advisor
  * scoping, staff declare/estimate privacy boundary, leader lockdown, and staff-only
  * demand workflow.
+ *
+ * The shared registration consent is LEASED (`ensureLeasedConsent`), never owned
+ * through the fixture proxy — creating it there would let this file's cleanup
+ * delete the row a parallel spec is using.
  */
-
-const ensureSupporterRegistrationConsent = async (campaign: {
-  payload: Pick<Payload, 'find' | 'create'>
-}) => {
-  const existing = await campaign.payload.find({
-    collection: 'consent',
-    where: { key: { equals: SUPPORTER_REGISTRATION_CONSENT_KEY } },
-    depth: 0,
-    limit: 1,
-    pagination: false,
-  })
-  if (existing.docs[0]) return existing.docs[0]
-
-  return campaign.payload.create({
-    collection: 'consent',
-    data: {
-      key: SUPPORTER_REGISTRATION_CONSENT_KEY,
-      text: {
-        root: {
-          type: 'root',
-          children: [
-            {
-              type: 'paragraph',
-              version: 1,
-              children: [
-                {
-                  type: 'text',
-                  version: 1,
-                  text: 'Consentimento de cadastro de apoiador (E2E).',
-                },
-              ],
-            },
-          ],
-          direction: 'ltr',
-          format: '',
-          indent: 0,
-          version: 1,
-        },
-      },
-    },
-    depth: 0,
-  })
-}
 
 test.describe('Municípios — jornadas por papel', () => {
   test('coordinator opens the municipalities list, edits strategy and assigns an advisor', async ({
@@ -58,26 +26,12 @@ test.describe('Municípios — jornadas por papel', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const coordinator = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenadora Geral'),
-        email: `${fixtures.value('coordinator')}@example.com`,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
     })
-    const advisor = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Assessor Regional'),
-        email: `${fixtures.value('advisor')}@example.com`,
-        password,
-        role: 'advisor',
-      },
-      depth: 0,
+    const password = coordinator.password
+    const advisor = await fixtures.createCampaignUser('advisor', {
+      name: fixtures.value('Assessor Regional'),
     })
     const municipality = await fixtures.claimMunicipality()
 
@@ -89,7 +43,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // the freshness column the ordering is paired with. `exact` keeps this off
     // the table caption, which embeds the same summary plus column glossary.
     await expect(
-      page.getByText('Ordenado por déficit da meta (maior primeiro)', { exact: true }),
+      page.getByText('Ordenado por Cobertura (maior déficit primeiro)', { exact: true }),
     ).toBeVisible()
     await expect(
       page.getByRole('columnheader', { name: /Ordenar por Frescor do sinal/ }),
@@ -103,9 +57,9 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.getByRole('button', { name: 'Salvar assessores' }).click()
     await expect(page.getByText('Assessores atualizados.')).toBeVisible()
 
-    await page.getByLabel('Pessimista').fill('1000')
-    await page.getByLabel('Média').fill('3000')
-    await page.getByLabel('Otimista').fill('5000')
+    await page.getByLabel('Pessimista', { exact: true }).fill('1000')
+    await page.getByLabel('Média', { exact: true }).fill('3000')
+    await page.getByLabel('Otimista', { exact: true }).fill('5000')
     await page.getByRole('button', { name: 'Salvar votos estimados' }).click()
     await expect(page.getByText('Votos estimados atualizados.')).toBeVisible()
 
@@ -127,26 +81,12 @@ test.describe('Municípios — jornadas por papel', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const coordinator = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenador Combobox'),
-        email: `${fixtures.value('coordinator-combobox')}@example.com`,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Combobox'),
     })
-    const advisor = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Assessora Combobox'),
-        email: `${fixtures.value('advisor-combobox')}@example.com`,
-        password,
-        role: 'advisor',
-      },
-      depth: 0,
+    const password = coordinator.password
+    const advisor = await fixtures.createCampaignUser('advisor', {
+      name: fixtures.value('Assessora Combobox'),
     })
     const municipality = await fixtures.claimMunicipality()
 
@@ -163,13 +103,21 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(advisorsPopover).toBeVisible()
 
     const searchNamePart = advisor.name.split(' ')[0]
-    await advisorsPopover.getByRole('combobox', { name: 'Buscar assessor' }).fill(searchNamePart)
-    await advisorsPopover.getByText(advisor.name, { exact: false }).click()
-
+    const search = advisorsPopover.getByRole('combobox', { name: 'Buscar assessor' })
+    const option = advisorsPopover.getByRole('option', { name: advisor.name })
     // No "Salvar" button in this popover: selecting the option auto-saves the
     // delta and renders it as a removable chip immediately.
     const chip = advisorsPopover.getByRole('button', { name: `Remover ${advisor.name}` })
-    await expect(chip).toBeVisible()
+    // Click the option itself: the inner text generic does not always trigger
+    // the combobox selection (measured — the popover stayed on "selected: você").
+    // Retry loop for the pre-hydration flake class (same as
+    // `checkRadixWhenHydrated`): a click before React attaches is a silent
+    // no-op, so the probe retries until the chip sticks.
+    await expect(async () => {
+      await search.fill(searchNamePart)
+      await option.click({ timeout: 1_000 })
+      await expect(chip).toBeVisible({ timeout: 4_000 })
+    }).toPass({ timeout: 20_000 })
 
     // The popover stays open after the write (auto-save, not submit+close).
     await expect(advisorsPopover).toBeVisible()
@@ -191,17 +139,10 @@ test.describe('Municípios — jornadas por papel', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const coordinator = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenador Tendência'),
-        email: `${fixtures.value('coordinator-trend')}@example.com`,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Tendência'),
     })
+    const password = coordinator.password
     const municipality = await fixtures.claimMunicipality()
     const note = fixtures.value('Vereador confirmou apoio local')
 
@@ -240,17 +181,10 @@ test.describe('Municípios — jornadas por papel', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const coordinator = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenador Sinal'),
-        email: `${fixtures.value('coordinator-signal')}@example.com`,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Sinal'),
     })
+    const password = coordinator.password
     const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, password)
@@ -259,8 +193,12 @@ test.describe('Municípios — jornadas por papel', () => {
     )
     await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
 
+    // Anchored: a bare template regex on a municipality name collides with
+    // prefix-shared names (Conde/Condeúba — 23/435 measured in the catalog),
+    // and `exact` no longer matches because the accessible name appends the
+    // current signal state ("— Sem sinal").
     const signalTrigger = page.getByRole('button', {
-      name: new RegExp(`Registrar sinal em ${municipality.name}`),
+      name: new RegExp(`^Registrar sinal em ${municipality.name} —`),
     })
     await expect(signalTrigger).toBeVisible()
     await signalTrigger.click()
@@ -289,20 +227,13 @@ test.describe('Municípios — jornadas por papel', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
     const administered = await fixtures.claimMunicipality()
     const outside = await fixtures.claimMunicipality()
 
-    const advisor = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Assessora'),
-        email: `${fixtures.value('advisor')}@example.com`,
-        password,
-        role: 'advisor',
-      },
-      depth: 0,
+    const advisor = await fixtures.createCampaignUser('advisor', {
+      name: fixtures.value('Assessora'),
     })
+    const password = advisor.password
     await campaign.payload.update({
       collection: 'municipality',
       id: administered.id,
@@ -312,15 +243,9 @@ test.describe('Municípios — jornadas por papel', () => {
     fixtures.touchMunicipality(administered.id)
 
     const leaderPhone = fixtures.phone()
-    const leaderAccount = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Liderança'),
-        username: leaderPhone,
-        password,
-        role: 'leader',
-      },
-      depth: 0,
+    const leaderAccount = await fixtures.createCampaignUser('leader', {
+      name: fixtures.value('Liderança'),
+      username: leaderPhone,
     })
     const contact = await campaign.payload.create({
       collection: 'contact',
@@ -343,7 +268,10 @@ test.describe('Municípios — jornadas por papel', () => {
       depth: 0,
     })
 
-    await ensureSupporterRegistrationConsent(campaign)
+    await ensureLeasedConsent(campaign.payload, {
+      consentKey: SUPPORTER_REGISTRATION_CONSENT_KEY,
+      leaseKey: SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
+    })
 
     // Advisor scope: only the administered municipality shows up.
     await campaign.login(page, advisor.email!, password)
@@ -362,13 +290,15 @@ test.describe('Municípios — jornadas por papel', () => {
 
     // Advisor records an internal estimate on the overview pledges panel.
     await page.goto(`${campaign.baseURL}/campanha/municipios/${administered.slug}`)
-    await page.getByLabel('Média').fill('90')
+    await page.getByLabel('Média', { exact: true }).fill('90')
     await page.getByLabel('Justificativa').fill('Histórico da região indica menos.')
     await page.getByRole('button', { name: 'Salvar estimativa' }).click()
     await expect(page.getByText('Média: 90')).toBeVisible()
 
     // Leader home is the contact tool; municipalities redirect away.
-    await campaign.login(page, leaderPhone, password)
+    // Each `createCampaignUser` call mints its own password — the advisor's
+    // `password` variable above does NOT unlock the leader account.
+    await campaign.login(page, leaderPhone, leaderAccount.password)
     await page.goto(`${campaign.baseURL}/campanha`)
     await expect(page.getByText('Cadastre apoiadores pelo celular.')).toBeVisible()
 
@@ -379,7 +309,8 @@ test.describe('Municípios — jornadas por papel', () => {
     const supporterPhone = fixtures.phone()
     await page.getByLabel('Nome *').fill(supporterName)
     await page.getByLabel('Celular *').fill(supporterPhone)
-    await page.getByLabel('A pessoa autorizou o cadastro *').check()
+    // Radix checkbox: a pre-hydration click is a silent no-op (B13/B17 flake).
+    await checkRadixWhenHydrated(page, 'A pessoa autorizou o cadastro *')
     await page.getByRole('button', { name: 'Cadastrar contato' }).click()
     await expect(page.getByText(supporterName)).toBeVisible()
 
@@ -388,19 +319,12 @@ test.describe('Municípios — jornadas por papel', () => {
 
   test('advisor opens a demand and decides it', async ({ campaign, page }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
     const municipality = await fixtures.claimMunicipality()
 
-    const advisor = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Assessor Demandas'),
-        email: `${fixtures.value('advisor')}@example.com`,
-        password,
-        role: 'advisor',
-      },
-      depth: 0,
+    const advisor = await fixtures.createCampaignUser('advisor', {
+      name: fixtures.value('Assessor Demandas'),
     })
+    const password = advisor.password
     await campaign.payload.update({
       collection: 'municipality',
       id: municipality.id,
@@ -443,17 +367,10 @@ test.describe('Municípios — cards no celular (B42)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const coordinator = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenador Mobile'),
-        email: `${fixtures.value('coordinator-mobile')}@example.com`,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Mobile'),
     })
+    const password = coordinator.password
     const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, password)
@@ -479,7 +396,11 @@ test.describe('Municípios — cards no celular (B42)', () => {
     // first version of this card positioned each grid cell instead of each
     // control, which lifted the labels and their padding above the overlay and
     // made half the card a tap that neither edited nor navigated.
-    await card.getByText('Tendência', { exact: true }).click()
+    // `force`: Playwright's hit-target check retries forever here precisely
+    // BECAUSE the stretched overlay intercepts the pointer — which is the
+    // behavior under test. Force dispatches the tap at the label's point, the
+    // overlay receives it (as a user's finger would), and the card navigates.
+    await card.getByText('Tendência', { exact: true }).click({ force: true })
     await expect(page).toHaveURL(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
     await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
   })

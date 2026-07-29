@@ -6,6 +6,7 @@ playwright-report/
 test-results/
 data/
 pnpm-lock.yaml
+.impeccable/hook.cache.json
 
 # Generated files (owned by their generators, not by Prettier)
 src/payload-types.ts

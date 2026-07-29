@@ -22,8 +22,8 @@ import {
   toggleLeadershipStatusFilter,
   type LeadershipFilterOption,
   type LeadershipFilterParam,
-} from '@/utilities/leadershipListFilters'
-import { type LeadershipListState } from '@/utilities/leadershipListUrl'
+} from '@/utilities/leadership/leadershipListFilters'
+import { type LeadershipListState } from '@/utilities/leadership/leadershipListUrl'
 
 const FILTER_LABELS: Record<LeadershipFilterParam, string> = {
   supportStatus: 'Status',

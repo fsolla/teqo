@@ -2,16 +2,17 @@
 // Campaign demands
 // ---------------------------------------------------------------------------
 
-import type { Access, Where } from 'payload'
+import type { Access } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import { getAccessibleMunicipalityIds } from '@/utilities/access/municipalities'
 import {
   getFreshCampaignUser,
   isCampaignLeader,
   isCampaignUnrestricted,
   isPayloadAdmin,
+  resolveActorScopedRead,
 } from '@/utilities/access/shared'
-import { relationshipId } from '@/utilities/relationship'
 
 export const canCreateCampaignDemand: Access = async ({ data, req }) => {
   if (isPayloadAdmin(req.user)) return true
@@ -29,21 +30,8 @@ export const canCreateCampaignDemand: Access = async ({ data, req }) => {
   return municipalityIDs?.includes(municipalityID) ?? false
 }
 
-export const canReadCampaignDemand: Access = async ({ req }): Promise<boolean | Where> => {
-  if (isPayloadAdmin(req.user)) return true
-
-  const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignLeader(currentUser)) return false
-  if (isCampaignUnrestricted(currentUser)) return true
-  if (!currentUser || currentUser.role !== 'advisor') return false
-
-  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
-  return {
-    municipality: {
-      in: municipalityIDs ?? [],
-    },
-  }
-}
+export const canReadCampaignDemand: Access = ({ req }) =>
+  resolveActorScopedRead(req, 'municipality', getAccessibleMunicipalityIds)
 
 /**
  * Staff manage demands in their municipalities; leaders have no demand access.

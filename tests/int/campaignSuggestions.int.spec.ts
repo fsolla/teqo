@@ -5,14 +5,14 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { resolveSuggestionRecord } from '@/app/(campaign)/campanha/actions/suggestion'
 import { SUGGESTION_STALE_MESSAGE } from '@/lib/schemas/suggestion'
-import { DAY_MS } from '@/lib/suggestionCatalog'
+import { DAY_MS } from '@/lib/text'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import config from '@/payload.config'
 import {
   computeAllMunicipalityPotentials,
   computeMunicipalityPotential,
-} from '@/utilities/municipalityPotential'
-import { loadMunicipalitySuggestions } from '@/utilities/municipalityTriggers'
+} from '@/utilities/municipality/municipalityPotential'
+import { loadMunicipalitySuggestions } from '@/utilities/municipality/municipalityTriggers'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 import { stub } from '../helpers/stub'

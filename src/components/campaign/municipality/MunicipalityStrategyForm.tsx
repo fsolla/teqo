@@ -16,8 +16,8 @@ import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
-import { politicalTrendLabels } from '@/utilities/municipalityLabels'
-import type { MunicipalityStrategyViewModel } from '@/utilities/municipalityViewModels'
+import { politicalTrendLabels } from '@/utilities/municipality/municipalityLabels'
+import type { MunicipalityStrategyViewModel } from '@/utilities/municipality/municipalityViewModels'
 
 type FormAction = (
   state: CampaignFormActionState,

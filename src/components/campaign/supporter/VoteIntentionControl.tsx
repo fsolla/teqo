@@ -1,9 +1,10 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { useActionState, useState } from 'react'
 
 import type { SupporterVoteIntentionFormState } from '@/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions'
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
+import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -11,7 +12,7 @@ import { Field, FieldContent, FieldDescription, FieldLabel } from '@/components/
 import { Spinner } from '@/components/ui/Spinner'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
-import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
+import { supporterVoteIntentionLabels } from '@/utilities/supporter/supporterUi'
 
 export type VoteIntentionControlAction = (
   state: SupporterVoteIntentionFormState,
@@ -38,11 +39,9 @@ export const VoteIntentionControl = ({
   const canEdit =
     hasVoteIntentionConsent || (localConsentAccepted && voteIntentionConsentConfigured)
 
-  useEffect(() => {
-    if (state.status !== 'success') return
-    toast.success(state.message)
+  useCampaignFormSuccessToast(state, () => {
     if (state.voteIntention) setSelected(state.voteIntention)
-  }, [state.message, state.status, state.voteIntention])
+  })
 
   return (
     <section className="rounded-[6px] border bg-card p-4" aria-labelledby="vote-intention-title">
@@ -108,11 +107,7 @@ export const VoteIntentionControl = ({
           </p>
         ) : null}
 
-        {state.message && state.status !== 'success' ? (
-          <Alert variant="destructive">
-            <AlertDescription>{state.message}</AlertDescription>
-          </Alert>
-        ) : null}
+        {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
 
         <Button
           type="submit"

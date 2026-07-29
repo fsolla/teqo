@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { ActivityStatusBadge } from '@/components/campaign/activity/ActivityStatusBadge'
 import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { activityKindLabels } from '@/lib/schemas/activity'
 import type { ActivityListViewModel } from '@/utilities/activityViewModels'
-import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 
 const formatWhen = (activity: ActivityListViewModel): string =>
   activity.startAt ? formatBahiaDateTimeLabel(activity.startAt) : 'Data a definir'

@@ -1,6 +1,7 @@
 import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
 import {
   canCreateLeadership,
@@ -11,7 +12,7 @@ import {
   canReadLeadership,
   canSetAdministrativeLeadershipField,
 } from '@/utilities/campaignAccess'
-import { relationshipId } from '@/utilities/relationship'
+import { stampCampaignCreatedBy, systemStampedActorField } from '@/utilities/campaignAuditFields'
 
 const requireAtLeastOneMunicipality: CollectionBeforeValidateHook = ({
   data,
@@ -59,15 +60,7 @@ export const Leadership: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [requireAtLeastOneMunicipality],
-    beforeChange: [
-      ({ data, operation, req }) => {
-        if (operation === 'create' && req.user?.collection === 'campaignUser') {
-          data.createdBy = req.user.id
-        }
-
-        return data
-      },
-    ],
+    beforeChange: [stampCampaignCreatedBy],
   },
   fields: [
     {
@@ -218,20 +211,9 @@ export const Leadership: CollectionConfig = {
         update: canManageCampaignStaffField,
       },
     },
-    {
-      name: 'createdBy',
-      type: 'relationship',
-      relationTo: 'campaignUser',
-      label: 'Criado por',
-      index: true,
-      admin: {
-        readOnly: true,
-      },
-      access: {
-        create: canSetAdministrativeLeadershipField,
-        read: canReadCampaignStaffField,
-        update: canSetAdministrativeLeadershipField,
-      },
-    },
+    systemStampedActorField({
+      readAccess: canReadCampaignStaffField,
+      setAccess: canSetAdministrativeLeadershipField,
+    }),
   ],
 }

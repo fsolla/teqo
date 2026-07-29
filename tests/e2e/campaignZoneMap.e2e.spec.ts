@@ -9,17 +9,10 @@ import { expect, test } from './fixtures/campaignE2EFixtures.js'
  */
 test('the dashboard map paints Salvador zone by zone and opens one', async ({ campaign, page }) => {
   const { fixtures } = campaign
-  const password = fixtures.value('senha')
-  const coordinator = await campaign.payload.create({
-    collection: 'campaignUser',
-    data: {
-      name: fixtures.value('Coordenadora Mapa'),
-      email: `${fixtures.value('map-coordinator')}@example.com`,
-      password,
-      role: 'coordinator',
-    },
-    depth: 0,
+  const coordinator = await fixtures.createCampaignUser('coordinator', {
+    name: fixtures.value('Coordenadora Mapa'),
   })
+  const password = coordinator.password
 
   await campaign.login(page, coordinator.email!, password)
 

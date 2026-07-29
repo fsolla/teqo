@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
 import { nextStateDeputyIdsAfterMunicipalityMembership } from '@/lib/municipalityStateDeputyMembership'
+import { uniqueRelationshipIds } from '@/lib/relationship'
 import {
   STATE_DEPUTY_CONFLICT_MESSAGE,
   STATE_DEPUTY_STAFF_MESSAGE,
@@ -18,10 +19,9 @@ import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
 import { runStaffEntityMutation, type StaffEntityPolicy } from '@/utilities/campaignEntityActions'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
-import { revalidateMunicipalityListPaths } from '@/utilities/municipalityRevalidation'
+import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
-import { uniqueRelationshipIds } from '@/utilities/relationship'
 
 const stateDeputyPolicy: StaffEntityPolicy = {
   staffMessage: STATE_DEPUTY_STAFF_MESSAGE,

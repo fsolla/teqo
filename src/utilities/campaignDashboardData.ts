@@ -3,19 +3,23 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import type { AccessibleMunicipality } from '@/lib/municipalityProximity'
+import { relationshipId, requireRelationshipId } from '@/lib/relationship'
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, VotePledge } from '@/payload-types'
-import { loadMunicipalityScope } from '@/utilities/campaignMunicipalityScope'
 import {
   type DashboardPriorityMunicipality,
   pickDashboardPriorityMunicipalities,
 } from '@/utilities/dashboardPriorityMunicipalities'
-import type { MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
+import {
+  loadCampaignUserNamesByIds,
+  loadLeadershipContactNamesByIds,
+} from '@/utilities/loadNamesByIds'
+import { loadMunicipalityScope } from '@/utilities/municipality/campaignMunicipalityScope'
+import type { MunicipalityGoalCoverage } from '@/utilities/municipality/goalCoverage'
 import {
   loadMunicipalityGoalCoverageBundle,
   loadStatewideSuggestedGoals,
-} from '@/utilities/municipalityGoalAccount'
-import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
+} from '@/utilities/municipality/municipalityGoalAccount'
 import { rollupMunicipalityStaffVotes } from '@/utilities/votePledgeViews'
 
 export type StaffDashboardView = {
@@ -54,25 +58,6 @@ export type StaffDashboardView = {
   }>
 }
 
-const resolveNames = async (
-  payload: Payload,
-  collection: 'municipality' | 'campaignUser' | 'leadership',
-  ids: number[],
-  select: Record<string, true>,
-) => {
-  if (ids.length === 0) return new Map<number, Record<string, unknown>>()
-  const result = await payload.find({
-    collection,
-    where: { id: { in: ids } },
-    depth: collection === 'leadership' ? 1 : 0,
-    limit: 0,
-    pagination: false,
-    select,
-    overrideAccess: true,
-  })
-  return new Map(result.docs.map((doc) => [doc.id, doc as unknown as Record<string, unknown>]))
-}
-
 /**
  * Staff dashboard data. Leaders never reach the dashboard — they are routed to
  * the supporter contact tool before this is called (see `/campanha` page).
@@ -108,6 +93,9 @@ export const getCampaignDashboardData = async (
           pagination: false,
           sort: '-declaredVotes',
           select: { municipality: true, leadership: true, declaredVotes: true },
+          // Intentional admin bypass: `municipalityIDs` came from the actor's
+          // own access-checked scope read above; the queue needs pledge rows
+          // even where the actor's votePledge row access is narrower.
           overrideAccess: true,
         })
       : Promise.resolve({ docs: [] as VotePledge[] }),
@@ -153,9 +141,9 @@ export const getCampaignDashboardData = async (
     ),
   ]
 
-  const [leadershipsById, authorsById] = await Promise.all([
-    resolveNames(payload, 'leadership', leadershipIDs, { contact: true }),
-    resolveNames(payload, 'campaignUser', authorIDs, { name: true }),
+  const [contactNameByLeadershipId, authorNameById] = await Promise.all([
+    loadLeadershipContactNamesByIds(payload, leadershipIDs),
+    loadCampaignUserNamesByIds(payload, authorIDs),
   ])
 
   const dashboardPriority = pickDashboardPriorityMunicipalities(
@@ -182,12 +170,8 @@ export const getCampaignDashboardData = async (
     goalCoverage: goalCoverageBundle.aggregateByScenario.central,
     missingEstimates: missingEstimatePledges.docs.map((pledge) => {
       const municipality = municipalityById.get(requireRelationshipId(pledge.municipality))
-      const leadership = leadershipsById.get(requireRelationshipId(pledge.leadership))
-      const contact = leadership?.contact
       const contactName =
-        typeof contact === 'object' && contact !== null && 'name' in contact
-          ? String((contact as { name?: string }).name ?? 'Contato')
-          : 'Contato'
+        contactNameByLeadershipId.get(requireRelationshipId(pledge.leadership)) ?? 'Contato'
       return {
         pledgeID: pledge.id,
         municipalityName: municipality?.name ?? 'Município',
@@ -201,12 +185,11 @@ export const getCampaignDashboardData = async (
     accessibleMunicipalities,
     recentUpdates: recentUpdatesResult.docs.map((update) => {
       const municipality = municipalityById.get(relationshipId(update.municipality) ?? -1)
-      const author = authorsById.get(relationshipId(update.author) ?? -1)
       return {
         id: update.id,
         municipalityName: municipality?.name ?? 'Município',
         municipalitySlug: municipality?.slug ?? '',
-        authorName: String(author?.name ?? 'Usuário'),
+        authorName: authorNameById.get(relationshipId(update.author) ?? -1) ?? 'Usuário',
         createdAt: update.createdAt,
       }
     }),

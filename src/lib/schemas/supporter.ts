@@ -1,13 +1,39 @@
 import { z } from 'zod'
 
-import { bahiaMunicipalities } from '@/lib/bahiaTerritories'
+import { resolveMunicipalityName } from '@/lib/municipalityNameAliases'
 import {
   brazilianMobile,
   optionalPersistedEmail,
   positiveRelationshipId,
   trimmedNullableText,
 } from '@/lib/schemas/primitives'
-import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
+
+/**
+ * Refusal messages matched by exact string in the routes' `safeMessages` —
+ * named once (B32+/B37 contract): a reworded literal at either end silently
+ * collapses the refusal into the generic error.
+ */
+export const SUPPORTER_STAFF_MESSAGE =
+  'Somente a coordenação e a assessoria podem gerenciar apoiadores.'
+export const SUPPORTER_UNSCOPED_COORDINATOR_MESSAGE =
+  'Somente o Coordenador Geral pode cadastrar apoiadores sem município.'
+export const SUPPORTER_DUPLICATE_MESSAGE =
+  'Esta pessoa já está cadastrada como apoiador neste município.'
+export const LEADER_SUPPORTER_ONLY_MESSAGE = 'Somente lideranças podem cadastrar contatos por aqui.'
+export const SUPPORTER_IMPORT_CSV_UNREADABLE_MESSAGE =
+  'Não foi possível ler o CSV. Verifique o formato e tente novamente.'
+export const SUPPORTER_IMPORT_CSV_EMPTY_MESSAGE = 'O CSV está vazio.'
+export const SUPPORTER_IMPORT_BATCH_EMPTY_MESSAGE =
+  'O lote de importação não contém apoiadores válidos.'
+
+/** Same contract for the two parameterized import refusals — builders, so the limit and the column policy are spelled once. */
+export const supporterImportCsvTooManyRowsMessage = (maxRows: number): string =>
+  `O CSV excede o limite de ${maxRows} linhas.`
+
+export const supporterImportCsvUnknownColumnsMessage = (unknownColumns: string[]): string =>
+  `Colunas não reconhecidas no CSV: ${unknownColumns
+    .map((column) => column.replace(/^__unknown_/, ''))
+    .join(', ')}. Use apenas nome, telefone, municipio e intencao.`
 
 const supporterVoteIntentions = ['certo', 'tende_a_certo', 'indeciso', 'outro'] as const
 
@@ -16,16 +42,7 @@ export type SupporterVoteIntention = (typeof supporterVoteIntentions)[number]
 export const isSupporterVoteIntention = (value: unknown): value is SupporterVoteIntention =>
   typeof value === 'string' && (supporterVoteIntentions as readonly string[]).includes(value)
 
-const canonicalMunicipalityBySearchValue = new Map(
-  bahiaMunicipalities.map((city) => [normalizeSearchPhrase(city), city]),
-)
-
-export const resolveBahiaMunicipality = (value: string | undefined | null): string | null => {
-  if (typeof value !== 'string') return null
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  return canonicalMunicipalityBySearchValue.get(normalizeSearchPhrase(trimmed)) ?? null
-}
+export const resolveBahiaMunicipality = resolveMunicipalityName
 
 const optionalBahiaCity = z
   .union([z.string().trim(), z.literal(''), z.null()])

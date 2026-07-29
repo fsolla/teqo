@@ -16,6 +16,7 @@ import { ActivityUpdateForm } from '@/components/campaign/activity/ActivityUpdat
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { activityKindLabels } from '@/lib/schemas/activity'
 import { getActivityDetailPageData } from '@/utilities/activityDetailPageData'
 import {
@@ -27,8 +28,7 @@ import {
   resolveAccessibleActivityContext,
 } from '@/utilities/activityPageData'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
-import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 
 import { ActivityOverviewTab } from './ActivityOverviewTab'
 
@@ -44,12 +44,9 @@ export default async function ActivityDetailPage({
   const [{ slug }, query, user, payload] = await Promise.all([
     params,
     searchParams,
-    getCampaignUser(),
+    requireCampaignPageActor({ gate: 'staff' }),
     getPayload({ config }),
   ])
-
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
   if (!slug) notFound()
 
   const activeTab = resolveActivityDetailTab(query)

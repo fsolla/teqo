@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { municipalityGeographyParts } from '@/utilities/municipalityLabels'
+import { municipalityGeographyParts } from '@/utilities/municipality/municipalityLabels'
 
 describe('municipalityGeographyParts', () => {
   it('returns only the region for whole municipalities', () => {

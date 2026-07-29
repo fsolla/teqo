@@ -13,6 +13,6 @@ export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   test: {
     environment: 'jsdom',
-    include: ['tests/unit/**/*.unit.spec.ts'],
+    include: ['tests/unit/**/*.unit.spec.{ts,tsx}'],
   },
 })

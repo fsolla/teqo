@@ -10,12 +10,14 @@ import {
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { isCampaignLeader } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
-import { loadTerritoryOverview } from '@/utilities/loadTerritoryOverview'
-import { resolveTerritoryListSort, resolveTerritoryListUrl } from '@/utilities/territoryListUrl'
-import { filterTerritoryRows, sortTerritoryRows } from '@/utilities/territoryOverview'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { loadTerritoryOverview } from '@/utilities/territory/loadTerritoryOverview'
+import {
+  resolveTerritoryListSort,
+  resolveTerritoryListUrl,
+} from '@/utilities/territory/territoryListUrl'
+import { filterTerritoryRows, sortTerritoryRows } from '@/utilities/territory/territoryOverview'
 
 type TerritoriesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -26,10 +28,10 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
   const resolvedUrl = resolveTerritoryListUrl(rawSearchParams)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
 
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-
-  if (!user) return null
-  if (isCampaignLeader(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'noLeader' }),
+    getPayload({ config }),
+  ])
 
   const allRows = await loadTerritoryOverview(payload, user)
   const columnVisibility = await readCampaignColumnVisibility('territorios')

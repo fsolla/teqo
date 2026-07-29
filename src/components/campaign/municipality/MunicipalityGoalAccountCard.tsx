@@ -21,15 +21,15 @@ import {
   formatRatioAsPercentLabel,
   goalCoverageProgressPercent,
   type MunicipalityGoalCoverage,
-} from '@/utilities/goalCoverage'
+} from '@/utilities/municipality/goalCoverage'
 import {
   formatTerritorialClassWhy,
   territorialClassBadgeVariant,
   territorialClassLabels,
-} from '@/utilities/municipalityLabels'
-import type { MunicipalityPotential, RollOff } from '@/utilities/municipalityPotential'
-import type { MunicipalityTerritorialClassification } from '@/utilities/municipalityTerritorialClass'
-import type { MunicipalityIntraTerritoryCaptureBenchmark } from '@/utilities/territoryIntraCaptureBenchmark'
+} from '@/utilities/municipality/municipalityLabels'
+import type { MunicipalityPotential, RollOff } from '@/utilities/municipality/municipalityPotential'
+import type { MunicipalityTerritorialClassification } from '@/utilities/municipality/municipalityTerritorialClass'
+import type { MunicipalityIntraTerritoryCaptureBenchmark } from '@/utilities/territory/territoryIntraCaptureBenchmark'
 import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
 /**

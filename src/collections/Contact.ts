@@ -1,5 +1,5 @@
 import { CitiesByState } from '@/lib/cities'
-import { normalizeBrazilianPhone } from '@/lib/phone'
+import { BRAZILIAN_PHONE_INVALID_MESSAGE, normalizeBrazilianPhone } from '@/lib/phone'
 import { canManageContacts, canReadContacts } from '@/utilities/campaignAccess'
 import {
   acquireContactPhoneLocks,
@@ -77,14 +77,14 @@ export const Contact: CollectionConfig = {
         const input = String(data.phone)
         if (/^\d{11}$/.test(input)) {
           if (!/^[1-9]{2}9\d{8}$/.test(input)) {
-            throw new APIError('Celular brasileiro inválido.', 400)
+            throw new APIError(BRAZILIAN_PHONE_INVALID_MESSAGE, 400)
           }
           return data
         }
 
         const phone = normalizeBrazilianPhone(input)
         if (!phone) {
-          throw new APIError('Celular brasileiro inválido.', 400)
+          throw new APIError(BRAZILIAN_PHONE_INVALID_MESSAGE, 400)
         }
 
         data.phone = phone

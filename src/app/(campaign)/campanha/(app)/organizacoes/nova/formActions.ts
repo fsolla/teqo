@@ -2,7 +2,12 @@
 
 import { createOrganization } from '@/app/(campaign)/campanha/actions/organization'
 import { optionalFormText, repeatedRelationshipFormValues, requiredFormText } from '@/lib/formData'
-import { organizationKinds, type OrganizationKind } from '@/lib/schemas/organization'
+import {
+  ORGANIZATION_CONFLICT_MESSAGE,
+  ORGANIZATION_STAFF_MESSAGE,
+  organizationKinds,
+  type OrganizationKind,
+} from '@/lib/schemas/organization'
 import {
   runCampaignRedirectFormAction,
   type CampaignFormActionState,
@@ -25,10 +30,7 @@ export const createOrganizationFormAction = async (
       })
     },
     redirectTo: (organization) => `/campanha/organizacoes/${organization.slug}`,
-    safeMessages: [
-      'Já existe uma organização com este nome.',
-      'Somente a coordenação e a assessoria gerenciam organizações.',
-    ],
+    safeMessages: [ORGANIZATION_CONFLICT_MESSAGE, ORGANIZATION_STAFF_MESSAGE],
     genericMessage:
       'Não foi possível cadastrar a organização. Verifique os dados e tente novamente.',
   })

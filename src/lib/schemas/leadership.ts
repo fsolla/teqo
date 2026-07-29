@@ -55,6 +55,14 @@ export const LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE = `Cada liderança aceita no 
 export const LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE =
   'Você só pode vincular lideranças aos municípios que assessora.'
 
+/** Same exact-string contract: the staff gate of every leadership write. */
+export const LEADERSHIP_STAFF_MESSAGE =
+  'Somente a coordenação e a assessoria podem gerenciar lideranças.'
+
+/** Same exact-string contract: one ficha per person (`contact` UNIQUE). */
+export const LEADERSHIP_DUPLICATE_MESSAGE =
+  'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novos municípios.'
+
 const municipalitiesArraySchema = z
   .array(positiveRelationshipId)
   .min(1, LEADERSHIP_MUNICIPALITY_FLOOR_MESSAGE)

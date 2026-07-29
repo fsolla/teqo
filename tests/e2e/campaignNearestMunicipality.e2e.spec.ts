@@ -97,18 +97,11 @@ test.describe('Município mais próximo', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const email = `${fixtures.value('geo-advisor')}@example.com`
-    const advisor = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Assessor Geo'),
-        email,
-        password,
-        role: 'advisor',
-      },
-      depth: 0,
+    const advisor = await fixtures.createCampaignUser('advisor', {
+      name: fixtures.value('Assessor Geo'),
     })
+    const password = advisor.password
+    const email = advisor.email!
     const municipality = await claimWholeMunicipality(() => fixtures.claimMunicipality())
     await campaign.payload.update({
       collection: 'municipality',
@@ -158,18 +151,11 @@ test.describe('Município mais próximo', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const email = `${fixtures.value('geo-coordinator')}@example.com`
-    await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenadora Geo'),
-        email,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geo'),
     })
+    const password = coordinator.password
+    const email = coordinator.email!
 
     await page.context().grantPermissions(['geolocation'])
     // A desk fix comes from the network, not the GPS: wide enough to be wrong about
@@ -188,7 +174,10 @@ test.describe('Município mais próximo', () => {
     await card.getByRole('link', { name: 'Ver zonas de Salvador' }).click()
 
     await expect(page).toHaveURL(/\/campanha\/municipios\?.*q=Salvador/)
+    // The deficit default sort can push a given zone off page 1 (P3-C root
+    // cause of the deterministic red here): narrow the list to the zone first.
     // Exact: "Salvador — ZE 1" is otherwise a prefix of ZE 12 and ZE 17.
+    await page.getByLabel('Buscar município').fill('Salvador — ZE 1')
     await expect(page.getByRole('link', { name: 'Salvador — ZE 1', exact: true })).toBeVisible()
   })
 
@@ -197,18 +186,11 @@ test.describe('Município mais próximo', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const email = `${fixtures.value('geo-blocked')}@example.com`
-    await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenadora Bloqueada'),
-        email,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const blockedUser = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Bloqueada'),
     })
+    const password = blockedUser.password
+    const email = blockedUser.email!
 
     // No grantPermissions: Chromium refuses the position, the same as a user tapping "Block".
     await campaign.login(page, email, password)

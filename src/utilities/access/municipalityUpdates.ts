@@ -4,14 +4,15 @@
 
 import type { Access, FieldAccess } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import { getAccessibleMunicipalityIds } from '@/utilities/access/municipalities'
 import {
   getFreshCampaignUser,
   isCampaignLeader,
   isCampaignUnrestricted,
   isPayloadAdmin,
+  resolveActorScopedRead,
 } from '@/utilities/access/shared'
-import { relationshipId } from '@/utilities/relationship'
 
 export const canCreateMunicipalityUpdate: Access = async ({ data, req }) => {
   if (isPayloadAdmin(req.user)) return true
@@ -27,21 +28,8 @@ export const canCreateMunicipalityUpdate: Access = async ({ data, req }) => {
   return municipalityIDs?.includes(municipalityID) ?? false
 }
 
-export const canReadMunicipalityUpdate: Access = async ({ req }) => {
-  if (isPayloadAdmin(req.user)) return true
-
-  const currentUser = await getFreshCampaignUser(req)
-  if (isCampaignLeader(currentUser)) return false
-  if (isCampaignUnrestricted(currentUser)) return true
-  if (!currentUser) return false
-
-  const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
-  return {
-    municipality: {
-      in: municipalityIDs ?? [],
-    },
-  }
-}
+export const canReadMunicipalityUpdate: Access = ({ req }) =>
+  resolveActorScopedRead(req, 'municipality', getAccessibleMunicipalityIds)
 
 export const canMutateMunicipalityUpdate: Access = ({ req }) => isPayloadAdmin(req.user)
 

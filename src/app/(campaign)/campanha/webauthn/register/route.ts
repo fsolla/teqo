@@ -11,8 +11,8 @@ import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute
 import {
   campaignWebAuthnSafeMessages,
   completeCampaignRegistration,
-} from '@/utilities/campaignWebAuthnCeremony'
-import { CAMPAIGN_WEBAUTHN_CHALLENGE_EXPIRED_MESSAGE } from '@/utilities/campaignWebAuthnChallenge'
+} from '@/utilities/webauthn/campaignWebAuthnCeremony'
+import { CAMPAIGN_WEBAUTHN_CHALLENGE_EXPIRED_MESSAGE } from '@/utilities/webauthn/campaignWebAuthnChallenge'
 
 export const dynamic = 'force-dynamic'
 

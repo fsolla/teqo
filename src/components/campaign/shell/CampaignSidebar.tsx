@@ -33,7 +33,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 import type { CampaignUserShellView } from '@/utilities/campaignUserProfile'
 import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
-import { clearMunicipalitySavedFilters } from '@/utilities/municipalitySavedFilters'
+import { clearMunicipalitySavedFilters } from '@/utilities/municipality/municipalitySavedFilters'
 import { clearRecentVisits } from '@/utilities/recentVisits'
 
 export type CampaignSidebarUser = CampaignUserShellView

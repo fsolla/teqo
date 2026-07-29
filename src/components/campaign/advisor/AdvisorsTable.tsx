@@ -33,6 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
+import { campaignInlineInputClassName } from '@/lib/campaignInlineInput'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import {
   formatBrazilianPhoneInput,
@@ -220,7 +221,7 @@ export const AdvisorsTable = ({
                       }}
                       placeholder="Nome"
                       aria-label="Nome do novo assessor"
-                      className="min-h-10 border-transparent bg-transparent px-2 shadow-none hover:border-input focus-visible:border-input"
+                      className={campaignInlineInputClassName}
                       autoFocus
                     />
                   </TableCell>
@@ -234,7 +235,7 @@ export const AdvisorsTable = ({
                       }}
                       placeholder="E-mail"
                       aria-label="E-mail do novo assessor"
-                      className="min-h-10 border-transparent bg-transparent px-2 shadow-none hover:border-input focus-visible:border-input"
+                      className={campaignInlineInputClassName}
                     />
                   </TableCell>
                   <TableCell>
@@ -250,7 +251,7 @@ export const AdvisorsTable = ({
                       }}
                       placeholder="Celular"
                       aria-label="Celular do novo assessor"
-                      className="min-h-10 border-transparent bg-transparent px-2 shadow-none hover:border-input focus-visible:border-input"
+                      className={campaignInlineInputClassName}
                     />
                   </TableCell>
                   <TableCell>

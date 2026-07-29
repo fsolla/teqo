@@ -13,15 +13,18 @@ import { VoteIntentionControl } from '@/components/campaign/supporter/VoteIntent
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import {
   loadSupporterDetailConsentData,
   loadSupporterDetailPageData,
   SupporterNotFoundError,
-} from '@/utilities/supporterPageData'
-import { canAccessSupporterArea, supporterVoteIntentionLabels } from '@/utilities/supporterUi'
-import { parseSupporterId } from '@/utilities/supporterViewModels'
+} from '@/utilities/supporter/supporterPageData'
+import {
+  canAccessSupporterArea,
+  supporterVoteIntentionLabels,
+} from '@/utilities/supporter/supporterUi'
+import { parseSupporterId } from '@/utilities/supporter/supporterViewModels'
 
 type SupporterDetailPageProps = {
   params: Promise<{ id: string }>
@@ -37,8 +40,7 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
   const supporterId = parseSupporterId(rawId)
   if (supporterId === null) notFound()
 
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
+  const [user, payload] = await Promise.all([requireCampaignPageActor(), getPayload({ config })])
   if (!canAccessSupporterArea(user.role)) redirect('/campanha')
 
   let supporter

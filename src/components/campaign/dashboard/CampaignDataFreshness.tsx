@@ -1,5 +1,5 @@
+import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { cn } from '@/lib/utils'
-import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 
 /** Request-time aggregate stamp — absolute Bahia time on hover. */
 export const CampaignDataFreshness = ({ asOf, className }: { asOf: Date; className?: string }) => {

@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import {
   buildListHref,
   firstValue,
@@ -9,7 +10,6 @@ import {
   strictDecimalInteger,
   type RawSearchParams,
 } from '@/utilities/campaignListUrl'
-import { relationshipId } from '@/utilities/relationship'
 
 const advisorPageSize = 25
 const advisorListBasePath = '/campanha/assessores'

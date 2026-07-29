@@ -6,7 +6,7 @@ import {
   DASHBOARD_PRIORITY_SAMPLE_LIMIT,
   pickDashboardPriorityMunicipalities,
 } from '@/utilities/dashboardPriorityMunicipalities'
-import type { MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
+import type { MunicipalityGoalCoverage } from '@/utilities/municipality/goalCoverage'
 import { stub } from '../helpers/stub'
 
 const centralCoverage = (goal: number, committed: number): MunicipalityGoalCoverage => ({

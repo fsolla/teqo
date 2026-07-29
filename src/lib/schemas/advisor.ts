@@ -38,12 +38,17 @@ export const ADVISOR_UNRESTRICTED_MESSAGE =
 
 export const ADVISOR_EMAIL_CONFLICT_MESSAGE = 'Já existe uma conta com este e-mail.'
 
+/** Same exact-string contract: refused writes on another account's role/self. */
+export const ADVISOR_ROLE_REQUIRED_MESSAGE =
+  'Só é possível gerenciar contas com papel de Assessor nesta tela.'
+export const ADVISOR_SELF_ACCOUNT_MESSAGE = 'Use Meu perfil para alterar a própria conta.'
+
 export const ADVISOR_ACTION_SAFE_MESSAGES = [
   ADVISOR_UNRESTRICTED_MESSAGE,
   ADVISOR_EMAIL_CONFLICT_MESSAGE,
   PLACEHOLDER_RESET_MESSAGE,
-  'Só é possível gerenciar contas com papel de Assessor nesta tela.',
-  'Use Meu perfil para alterar a própria conta.',
+  ADVISOR_ROLE_REQUIRED_MESSAGE,
+  ADVISOR_SELF_ACCOUNT_MESSAGE,
   MUNICIPALITY_ADVISORS_CAP_MESSAGE,
 ] as const
 
@@ -67,7 +72,12 @@ export const advisorProfileUpdateSchema = z
 
 export const advisorMunicipalitiesBatchSchema = z.object({
   advisorId: positiveRelationshipId,
-  municipalityIds: z.array(positiveRelationshipId).min(1).max(MAX_MUNICIPALITIES_PER_BATCH),
+  // Dedup at the boundary (P3-K): the action used to re-spell `[...new Set(…)]`.
+  municipalityIds: z
+    .array(positiveRelationshipId)
+    .min(1)
+    .max(MAX_MUNICIPALITIES_PER_BATCH)
+    .transform((ids) => [...new Set(ids)]),
   assigned: z.boolean(),
 })
 

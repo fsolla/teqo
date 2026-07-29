@@ -8,7 +8,7 @@ import { CampaignTableHead } from '@/components/campaign/shared/CampaignTable'
 import type {
   LeadershipFilterOption,
   LeadershipFilterParam,
-} from '@/utilities/leadershipListFilters'
+} from '@/utilities/leadership/leadershipListFilters'
 import {
   buildLeadershipSortHref,
   defaultLeadershipListSortDir,
@@ -16,7 +16,7 @@ import {
   resolveLeadershipListSort,
   type LeadershipListSortKey,
   type LeadershipListState,
-} from '@/utilities/leadershipListUrl'
+} from '@/utilities/leadership/leadershipListUrl'
 
 type LeadershipSortableHeadProps = {
   state: LeadershipListState

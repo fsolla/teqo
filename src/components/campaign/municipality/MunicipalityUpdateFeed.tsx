@@ -3,7 +3,7 @@ import {
   municipalitySignalTypeLabels,
   municipalityUpdateKindLabels,
 } from '@/lib/schemas/municipalityUpdate'
-import type { MunicipalityUpdateViewModel } from '@/utilities/municipalityUpdatePageData'
+import type { MunicipalityUpdateViewModel } from '@/utilities/municipality/municipalityUpdatePageData'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',

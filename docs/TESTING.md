@@ -32,7 +32,7 @@ Modules the 2026-07 hardening phases touch, and where their behavior is pinned:
 
 ## Characterization Backlog
 
-- [ ] `src/utilities/posts.ts` — dedicated spec for `isPostVisible` fail-closed matrix and cache wrappers.
-- [ ] `actionPlanViewModels.ts` + other `actionPlan*` utilities (~1k lines) — `actionPlanUi.ts` pinned 2026-07-25 (Pass 2 W0); view models still untested directly.
+- [ ] `src/utilities/posts.ts` — dedicated spec for `isPostVisible` fail-closed matrix and cache wrappers (confirmed 2026-07-28, Pass 3 audit).
+- [ ] `activityViewModels.ts` (ex-`actionPlanViewModels`, renamed by C13) — `activityUi.ts` pinned 2026-07-25 (Pass 2 W0); view models still untested directly (confirmed 2026-07-28, Pass 3 audit).
 - [x] `campaignDemandData.ts` / `leadershipData.ts` / `organizationData.ts` / `stateDeputyData.ts` list loaders — smoked 2026-07-25 (`campaignEntityListData.int.spec.ts`, Pass 2 W0).
 - [x] Election aggregate artifact (Phase 2): snapshot test pinning artifact ↔ `municipalityCatalog` key consistency — delivered as `bahiaElectionAggregates.unit.spec.ts`.

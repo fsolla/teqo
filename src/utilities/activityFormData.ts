@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { parseBahiaDateTimeInput } from '@/lib/campaignTime'
 import {
   boundedJsonFormValue,
   checkboxFormValue,
@@ -22,8 +23,7 @@ import {
   type ActivityUpdateInput,
   type TourStopDraft,
 } from '@/lib/schemas/activity'
-import { parseBahiaDateTimeInput } from '@/utilities/campaignTime'
-import { MAX_TOUR_NAME_LENGTH, TOUR_EMPTY_MESSAGE } from '@/utilities/visitPlannerViews'
+import { MAX_TOUR_NAME_LENGTH, TOUR_EMPTY_MESSAGE } from '@/utilities/visit/visitPlannerViews'
 
 type ParsedActivityTask = {
   title: string

@@ -1,6 +1,6 @@
 import config from '@payload-config'
 import Link from 'next/link'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 import { Suspense } from 'react'
 
@@ -8,22 +8,21 @@ import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitT
 import { MunicipalityTabNav } from '@/components/campaign/municipality/MunicipalityTabNav'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
-import { isCampaignLeader } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   resolveMunicipalityDetailTab,
   type MunicipalityDetailSearchParams,
-} from '@/utilities/municipalityDetailTabUi'
+} from '@/utilities/municipality/municipalityDetailTabUi'
 import {
   formatMunicipalityGeographyLabel,
   municipalityKindLabels,
-} from '@/utilities/municipalityLabels'
+} from '@/utilities/municipality/municipalityLabels'
 import {
   getMunicipalityDetailViewModel,
   MunicipalityNotFoundError,
   resolveAccessibleMunicipalityContext,
-} from '@/utilities/municipalityPageData'
-import { loadAdvisorSummaries } from '@/utilities/municipalityViewModels'
+} from '@/utilities/municipality/municipalityPageData'
+import { loadAdvisorSummaries } from '@/utilities/municipality/municipalityViewModels'
 
 import {
   DossierTab,
@@ -46,9 +45,10 @@ export default async function MunicipalityDetailPage({
   searchParams,
 }: MunicipalityDetailPageProps) {
   const [{ slug }, rawSearchParams] = await Promise.all([params, searchParams])
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (isCampaignLeader(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'noLeader' }),
+    getPayload({ config }),
+  ])
 
   let context
   try {

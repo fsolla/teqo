@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 // `loadMunicipalityElectoralBaseline` is wrapped in Next's `unstable_cache`,
 // which needs the Next server runtime (incrementalCache) — unavailable under
 // vitest. The dossier only forwards its result, so stub the module here.
-vi.mock('@/utilities/municipalityElectoralBaseline', () => ({
+vi.mock('@/utilities/municipality/municipalityElectoralBaseline', () => ({
   loadMunicipalityElectoralBaseline: vi.fn().mockResolvedValue(null),
 }))
 
@@ -18,11 +18,11 @@ import {
   DOSSIER_LEADERSHIP_LIMIT,
   DOSSIER_SIGNAL_LIMIT,
   loadMunicipalityDossierData,
-} from '@/utilities/municipalityDossierData'
+} from '@/utilities/municipality/municipalityDossierData'
 import {
   getMunicipalityDetailViewModel,
   resolveAccessibleMunicipalityContext,
-} from '@/utilities/municipalityPageData'
+} from '@/utilities/municipality/municipalityPageData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 

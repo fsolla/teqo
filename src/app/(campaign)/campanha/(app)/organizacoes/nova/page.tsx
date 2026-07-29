@@ -1,21 +1,20 @@
 import config from '@payload-config'
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { OrganizationForm } from '@/components/campaign/organization/OrganizationForm'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { createOrganizationFormAction } from './formActions'
 
 export default async function NewOrganizationPage() {
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
 
   const municipalityOptions = await loadMunicipalityOptions(payload, user)
 

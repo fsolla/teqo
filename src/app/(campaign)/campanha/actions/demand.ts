@@ -3,6 +3,14 @@
 import type { Payload } from 'payload'
 
 import {
+  CAMPAIGN_DEMAND_COST_STAFF_MESSAGE,
+  CAMPAIGN_DEMAND_RECEIPT_EMPTY_MESSAGE,
+  CAMPAIGN_DEMAND_RECEIPT_SIZE_MESSAGE,
+  CAMPAIGN_DEMAND_RECEIPT_STAFF_MESSAGE,
+  CAMPAIGN_DEMAND_RECEIPT_TYPE_MESSAGE,
+  CAMPAIGN_DEMAND_TRANSITION_STAFF_MESSAGE,
+} from '@/lib/schemas/campaignDemand'
+import {
   campaignDemandCostSchema,
   campaignDemandCreateSchema,
   campaignDemandTransitionSchema,
@@ -60,7 +68,7 @@ export const transitionCampaignDemandRecord = async (
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
       if (!isCampaignStaff(currentActor)) {
-        throw new Error('Somente a coordenação, a assessoria e o candidato movem demandas.')
+        throw new Error(CAMPAIGN_DEMAND_TRANSITION_STAFF_MESSAGE)
       }
       await acquireTextAdvisoryLocks(payload, req, [`campaign-demand:${id}`])
 
@@ -95,7 +103,7 @@ export const setCampaignDemandCostRecord = async (
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
       if (!isCampaignStaff(currentActor)) {
-        throw new Error('Somente a coordenação, a assessoria e o candidato registram custos.')
+        throw new Error(CAMPAIGN_DEMAND_COST_STAFF_MESSAGE)
       }
       await acquireTextAdvisoryLocks(payload, req, [`campaign-demand:${id}`])
 
@@ -123,10 +131,10 @@ export const attachCampaignDemandReceiptRecord = async (
   file: File,
 ) => {
   if (!RECEIPT_MIME_TYPES.has(file.type)) {
-    throw new Error('Envie uma imagem (JPEG, PNG, WebP) ou PDF.')
+    throw new Error(CAMPAIGN_DEMAND_RECEIPT_TYPE_MESSAGE)
   }
-  if (file.size === 0) throw new Error('O arquivo enviado está vazio.')
-  if (file.size > RECEIPT_MAX_BYTES) throw new Error('O comprovante deve ter no máximo 10 MB.')
+  if (file.size === 0) throw new Error(CAMPAIGN_DEMAND_RECEIPT_EMPTY_MESSAGE)
+  if (file.size > RECEIPT_MAX_BYTES) throw new Error(CAMPAIGN_DEMAND_RECEIPT_SIZE_MESSAGE)
 
   return withPayloadTransaction(
     payload,
@@ -134,7 +142,7 @@ export const attachCampaignDemandReceiptRecord = async (
       const currentActor = await reloadStaffActor(
         payload,
         actor,
-        'Somente a coordenação e a assessoria anexam comprovantes.',
+        CAMPAIGN_DEMAND_RECEIPT_STAFF_MESSAGE,
         req,
       )
       await acquireTextAdvisoryLocks(payload, req, [`campaign-demand:${demandID}`])

@@ -6,7 +6,7 @@ import { DeclareVotesForm } from '@/components/campaign/votePledge/DeclareVotesF
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import type { LeadershipRowViewModel } from '@/utilities/leadershipData'
+import type { LeadershipRowViewModel } from '@/utilities/leadership/leadershipData'
 import type { StaffPledgeRow } from '@/utilities/votePledgeViews'
 
 type MunicipalityLeadershipsPanelProps = {

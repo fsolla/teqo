@@ -13,20 +13,23 @@ import {
   requiredFormText,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
-import { campaignDemandStatuses, type CampaignDemandStatus } from '@/lib/schemas/campaignDemand'
+import {
+  CAMPAIGN_DEMAND_COST_STAFF_MESSAGE,
+  CAMPAIGN_DEMAND_INVALID_STATUS_MESSAGE,
+  CAMPAIGN_DEMAND_RECEIPT_SAFE_MESSAGES,
+  CAMPAIGN_DEMAND_TRANSITION_SAFE_MESSAGES,
+  campaignDemandStatuses,
+  type CampaignDemandStatus,
+} from '@/lib/schemas/campaignDemand'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
 
-const INVALID_STATUS_MESSAGE = 'Status de demanda inválido.'
+const INVALID_STATUS_MESSAGE = CAMPAIGN_DEMAND_INVALID_STATUS_MESSAGE
 
-const transitionSafeMessages = [
-  'Somente a coordenação e a assessoria movem demandas.',
-  'Demandas escaladas são decididas pelo Coordenador Geral.',
-  INVALID_STATUS_MESSAGE,
-] as const
+const transitionSafeMessages = CAMPAIGN_DEMAND_TRANSITION_SAFE_MESSAGES
 
 export const transitionDemandFormAction = async (
   _state: CampaignFormActionState,
@@ -74,7 +77,7 @@ export const setDemandCostFormAction = async (
       revalidatePath('/campanha/demandas/[slug]', 'page')
       return { message: 'Custo registrado.' }
     },
-    safeMessages: ['Somente a coordenação e a assessoria registram custos.'],
+    safeMessages: [CAMPAIGN_DEMAND_COST_STAFF_MESSAGE],
     genericMessage: 'Não foi possível registrar o custo. Tente novamente.',
   })
 
@@ -95,11 +98,6 @@ export const attachDemandReceiptFormAction = async (
       revalidatePath('/campanha/demandas/[slug]', 'page')
       return { message: 'Comprovante anexado.' }
     },
-    safeMessages: [
-      'Envie uma imagem (JPEG, PNG, WebP) ou PDF.',
-      'O arquivo enviado está vazio.',
-      'O comprovante deve ter no máximo 10 MB.',
-      'Somente a coordenação e a assessoria anexam comprovantes.',
-    ],
+    safeMessages: CAMPAIGN_DEMAND_RECEIPT_SAFE_MESSAGES,
     genericMessage: 'Não foi possível anexar o comprovante. Tente novamente.',
   })

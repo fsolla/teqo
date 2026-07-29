@@ -9,6 +9,8 @@ Esta skill transforma um item do `docs/roadmap.md` em um plano de implementaçã
 
 Superfícies de UI deste item passam pelo fluxo **`/impeccable`** (skill anexada ou em `~/.claude/skills/impeccable`): **shape → craft → critique → polish** (obrigatório em B/C/D), alinhado a `PRODUCT.md` / `DESIGN.md` e aos design-refs do roadmap. **`harden` e `optimize` não entram no pipeline fixo** — só sob gatilho (Passo 8). Itens só de schema/server/utilitário **não** inventam UI via Impeccable — veja Passo 8.
 
+**Modelo × effort:** antes de executar (Passo 10) ou despachar subagentes, aplique a skill `model-selection` — a classe do item (feature delivery, /simplify, migration, docs) define o modelo recomendado e o effort; subagentes já saem no slug certo via parâmetro `model` da tool Task.
+
 **Qualidade de decisão:** ao auditar e fatiar, aplique [decision-quality.md](../roadmap-item/decision-quality.md) — caro vs barato, Opções+Recomendação+rejeitadas, appetite do plano, rabbit holes, depth/classitis, tracer bullet cedo. Sem jornada de `design-code-architecture`.
 
 **Dados → decisão → apresentação:** ao auditar o plano e antes de craft de UI com métricas/mapas/listas analíticas, aplique [data-presentation.md](../roadmap-item/data-presentation.md). Se o plano omite a seção e o item claramente apresenta dados → marque **defasado** e complete no Passo 7. A forma escolhida (número / tabela / mapa / chart) é input do Impeccable — não trocar no polish sem reabrir a decisão.

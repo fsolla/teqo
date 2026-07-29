@@ -3,20 +3,16 @@ import {
   formatVoteSharePercent,
   oneDecimalFormatter,
 } from '@/lib/electionFormat'
+import {
+  ELECTION_YEAR_2014 as YEAR_2014,
+  ELECTION_YEAR_2018 as YEAR_2018,
+  ELECTION_YEAR_2022 as YEAR_2022,
+} from '@/lib/electionYears'
 import type { EngagementLevel } from '@/lib/engagementLevel'
 import { engagementLevelRank } from '@/lib/engagementLevel'
+import { DAY_MS } from '@/lib/text'
 import type { AllocationDecision } from '@/payload-types'
-import type { MunicipalityTerritorialClass } from '@/utilities/municipalityTerritorialClass'
-
-/**
- * Mirrors `ELECTION_YEAR_*` from `lib/electionResults` WITHOUT importing it:
- * that module's first import is `bahiaTerritories`, and this catalog ships in
- * the client card's chunk — three numbers must not drag the territory table
- * into the browser (the B14 lesson, again).
- */
-const YEAR_2014 = 2014
-const YEAR_2018 = 2018
-const YEAR_2022 = 2022
+import type { MunicipalityTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
 
 /**
  * E11 "motor de sugestões" — the versioned, curated catalog of data→decision
@@ -172,7 +168,6 @@ export const SUGGESTION_INPUT_WINDOWS = {
 } as const
 
 /** One place for the day math the suggestion modules share. */
-export const DAY_MS = 86_400_000
 
 const decisionSnapshotValue = (snapshot: unknown, key: string): unknown => {
   if (typeof snapshot !== 'object' || snapshot === null || Array.isArray(snapshot)) return null

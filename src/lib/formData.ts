@@ -2,6 +2,7 @@ import 'server-only'
 
 import { z, type ZodError } from 'zod'
 
+import { MAX_VOTE_COUNT } from '@/lib/schemas/primitives'
 import type { VoteEstimateScenarioFields } from '@/lib/voteEstimate'
 
 export class FormDataBoundaryError extends Error {
@@ -120,17 +121,17 @@ export const voteEstimateScenarioFromForm = (
   pessimistic:
     optionalNullableIntegerFormValue(formData, `${prefix}Pessimistic`, {
       minimum: 0,
-      maximum: 1_000_000,
+      maximum: MAX_VOTE_COUNT,
     }) ?? null,
   central:
     optionalNullableIntegerFormValue(formData, `${prefix}Central`, {
       minimum: 0,
-      maximum: 1_000_000,
+      maximum: MAX_VOTE_COUNT,
     }) ?? null,
   optimistic:
     optionalNullableIntegerFormValue(formData, `${prefix}Optimistic`, {
       minimum: 0,
-      maximum: 1_000_000,
+      maximum: MAX_VOTE_COUNT,
     }) ?? null,
 })
 

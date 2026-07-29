@@ -1,3 +1,4 @@
+import { latestIsoTimestamp } from '@/lib/campaignTime'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   effectivePledgeVotesForScenario,
@@ -8,7 +9,6 @@ import {
   type VoteEstimateScenarioFields,
   type VoteEstimateScenarioViewModel,
 } from '@/lib/voteEstimate'
-import { latestIsoTimestamp } from '@/utilities/campaignTime'
 
 /**
  * Pledge aggregation VIEWS — pure math and view models, client-safe (the
@@ -72,11 +72,6 @@ export const resolveMunicipalityStaffVoteTotal = (
 ): number =>
   resolveMunicipalityStaffVoteTotalForScenario(expectedVotes, pledgeEffectiveTotal, scenario)
 
-export const pledgeHasAnyEstimate = (
-  estimated: VoteEstimateScenarioFields | null | undefined,
-): boolean =>
-  estimated?.pessimistic != null || estimated?.central != null || estimated?.optimistic != null
-
 export const aggregateMunicipalityPledgesFromRows = (
   rows: ReadonlyArray<{
     declaredVotes: number
@@ -107,6 +102,10 @@ export const aggregateMunicipalityPledgesFromRows = (
 
   return aggregate
 }
+
+/** Internal to the fold above — unexported (P3-E orphan: no external callers remain). */
+const pledgeHasAnyEstimate = (estimated: VoteEstimateScenarioFields | null | undefined): boolean =>
+  estimated?.pessimistic != null || estimated?.central != null || estimated?.optimistic != null
 
 export type MunicipalityStaffVoteRollup = {
   staffVoteTotal: number

@@ -12,7 +12,7 @@ import {
   TOUR_MAX_STOPS_MESSAGE,
   TOUR_OUT_OF_SCOPE_MESSAGE,
   TOUR_STAFF_ONLY_MESSAGE,
-} from '@/utilities/visitPlannerViews'
+} from '@/utilities/visit/visitPlannerViews'
 
 const TOUR_SAFE_MESSAGES = [
   TOUR_EMPTY_MESSAGE,

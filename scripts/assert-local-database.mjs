@@ -3,23 +3,24 @@
  * Host allowlist + ALLOW_REMOTE_DB escape hatch.
  */
 
-const OVERRIDE_FLAG = 'ALLOW_REMOTE_DB'
-const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', 'postgres'])
+import {
+  dieWithLabel,
+  isRemoteDbOverrideSet,
+  LOCAL_HOSTS,
+  ALLOW_REMOTE_DB_FLAG as OVERRIDE_FLAG,
+} from './lib/cli.mjs'
 
 /**
  * @param {string} label Log/error prefix, e.g. "seed:tse"
  * @param {string} [usageHint] Extra lines shown when refusing a remote host
  */
 export const assertLocalDatabase = (label, usageHint = '') => {
-  const die = (message) => {
-    console.error(`\n[${label}] ${message}\n`)
-    process.exit(1)
-  }
+  const die = dieWithLabel(label)
 
   const databaseUrl = process.env.DATABASE_URL
   if (!databaseUrl) die('DATABASE_URL is not set. Refusing to continue.')
 
-  if (process.env[OVERRIDE_FLAG] === 'true' || process.env[OVERRIDE_FLAG] === '1') {
+  if (isRemoteDbOverrideSet()) {
     console.warn(
       `\n[${label}] ${OVERRIDE_FLAG} is set — connecting to a remote database on purpose. Be careful.\n`,
     )

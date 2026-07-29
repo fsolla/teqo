@@ -9,13 +9,12 @@
  *   ALLOW_REMOTE_DB=true pnpm db:seed:consent
  */
 
-import { config as loadEnv } from 'dotenv'
 import { getPayload } from 'payload'
+import { loadCliEnv } from './lib/cli.mjs'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
 
-loadEnv({ path: '.env.local' })
-loadEnv({ path: '.env' })
+loadCliEnv()
 
 assertLocalDatabase(
   'seed:consent',

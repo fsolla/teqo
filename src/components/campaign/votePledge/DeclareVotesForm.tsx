@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react'
 
-import { Alert, AlertDescription } from '@/components/ui/Alert'
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -62,16 +62,7 @@ export const DeclareVotesForm = ({
           <FieldError>{fieldError(state.fieldErrors, 'declaredVotes')}</FieldError>
         ) : null}
       </Field>
-      {state.message && state.status !== 'success' ? (
-        <Alert variant="destructive">
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      ) : null}
-      {state.status === 'success' ? (
-        <Alert>
-          <AlertDescription>{state.message ?? 'Declaração registrada.'}</AlertDescription>
-        </Alert>
-      ) : null}
+      <CampaignFormActionMessage state={state} successFallbackMessage="Declaração registrada." />
     </form>
   )
 }

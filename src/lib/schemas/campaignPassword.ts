@@ -3,7 +3,8 @@ import { z } from 'zod'
 
 export const CAMPAIGN_PASSWORD_RESET_TOKEN_MIN_LENGTH = 20
 
-const passwordSchema = z
+/** THE campaign password rule (P3-K — the invite schema copied it). */
+export const campaignPasswordSchema = z
   .string()
   .min(8, 'A senha deve ter pelo menos 8 caracteres.')
   .max(128, 'A senha deve ter no máximo 128 caracteres.')
@@ -28,16 +29,16 @@ export const campaignPasswordResetRequestSchema = z.object({
 export const campaignPasswordResetSchema = z
   .object({
     token: z.string().min(CAMPAIGN_PASSWORD_RESET_TOKEN_MIN_LENGTH).max(256),
-    password: passwordSchema,
-    passwordConfirmation: passwordSchema,
+    password: campaignPasswordSchema,
+    passwordConfirmation: campaignPasswordSchema,
   })
   .superRefine(refineMatchingPasswords)
 
 export const campaignChangePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Informe a senha atual.'),
-    password: passwordSchema,
-    passwordConfirmation: passwordSchema,
+    password: campaignPasswordSchema,
+    passwordConfirmation: campaignPasswordSchema,
   })
   .superRefine((data, context) => {
     refineMatchingPasswords(data, context)

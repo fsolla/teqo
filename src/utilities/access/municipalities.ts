@@ -4,6 +4,7 @@
 
 import type { Access, FieldAccess, Payload, PayloadRequest } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import type {
   CampaignActor,
   CampaignTransactionRequest,
@@ -16,8 +17,8 @@ import {
   isCampaignUser,
   isPayloadAdmin,
   memoizePerRequest,
+  resolveAccessibleIds,
 } from '@/utilities/access/shared'
-import { relationshipId } from '@/utilities/relationship'
 
 type MunicipalityID = number
 type AccessibleMunicipalityIDs = MunicipalityID[] | null
@@ -137,36 +138,25 @@ const getOwnEngagedLeadership = async (
  * authenticated campaign user can operate on: administered municipalities for an
  * advisor, linked (engaged) municipalities for a leader.
  */
-export const getAccessibleMunicipalityIds = async (
+export const getAccessibleMunicipalityIds = (
   req: PayloadRequest,
   user: CampaignActor = req.user,
-): Promise<AccessibleMunicipalityIDs> => {
-  const currentUser =
-    isCampaignUser(user) && user === req.user ? await getFreshCampaignUser(req, user) : user
+): Promise<AccessibleMunicipalityIDs> =>
+  resolveAccessibleIds(req, user, ACCESSIBLE_MUNICIPALITY_IDS_MEMO_KEY, async (currentUser) => {
+    const collections = req.payload.collections as Record<string, unknown>
+    let ids: MunicipalityID[] = []
 
-  if (!isCampaignUser(currentUser)) return []
-  if (isCampaignUnrestricted(currentUser)) return null
+    if (currentUser.role === 'advisor' && collections.municipality) {
+      ids = await getAdvisorMunicipalityIds(req.payload, currentUser.id, req)
+    }
 
-  return memoizePerRequest(
-    req,
-    `${ACCESSIBLE_MUNICIPALITY_IDS_MEMO_KEY}:${currentUser.id}:${currentUser.role}`,
-    async () => {
-      const collections = req.payload.collections as Record<string, unknown>
-      let ids: MunicipalityID[] = []
+    if (currentUser.role === 'leader') {
+      const ownLeadership = await getOwnEngagedLeadership(req, currentUser)
+      ids = ownLeadership?.municipalityIDs ?? []
+    }
 
-      if (currentUser.role === 'advisor' && collections.municipality) {
-        ids = await getAdvisorMunicipalityIds(req.payload, currentUser.id, req)
-      }
-
-      if (currentUser.role === 'leader') {
-        const ownLeadership = await getOwnEngagedLeadership(req, currentUser)
-        ids = ownLeadership?.municipalityIDs ?? []
-      }
-
-      return [...new Set(ids)]
-    },
-  )
-}
+    return [...new Set(ids)]
+  })
 
 /** Municipalities are seeded by migration; nobody creates or deletes them in the app. */
 export const canCreateMunicipality: Access = ({ req }) => isPayloadAdmin(req.user)

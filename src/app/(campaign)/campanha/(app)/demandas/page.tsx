@@ -1,7 +1,6 @@
 import config from '@payload-config'
 import { InboxIcon, PlusIcon } from 'lucide-react'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignFilterChips } from '@/components/campaign/shared/CampaignFilterChips'
@@ -21,8 +20,6 @@ import {
   campaignDemandStatuses,
   type CampaignDemandStatus,
 } from '@/lib/schemas/campaignDemand'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import {
   buildDemandListHref,
@@ -30,6 +27,7 @@ import {
   parseDemandListParams,
   type DemandRowViewModel,
 } from '@/utilities/campaignDemandData'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 
 type DemandsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -96,9 +94,10 @@ const demandColumns: Array<CampaignTableColumn<DemandRowViewModel>> = [
 
 export default async function DemandsPage({ searchParams }: DemandsPageProps) {
   const rawSearchParams = await searchParams
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
 
   const state = parseDemandListParams(rawSearchParams)
   const { rows, totalDocs, totalPages, openCount } = await loadDemandListPageData(

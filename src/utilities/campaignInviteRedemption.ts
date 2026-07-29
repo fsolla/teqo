@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { relationshipId, requireRelationshipId } from '@/lib/relationship'
 import {
   campaignInviteAutofillSchema,
   campaignInviteLoginSchema,
@@ -24,7 +25,6 @@ import {
 } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
 
 const MISSING_CONSENT_MESSAGE = 'Consentimento ainda não configurado.'
 

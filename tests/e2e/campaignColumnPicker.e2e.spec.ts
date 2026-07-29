@@ -27,18 +27,11 @@ test.describe('Seletor de colunas', () => {
     test.slow()
 
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const email = `${fixtures.value('colunas-coordinator')}@example.com`
-    await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenadora Colunas'),
-        email,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Colunas'),
     })
+    const password = coordinator.password
+    const email = coordinator.email!
 
     await campaign.login(page, email, password)
     await page.goto('/campanha/municipios')
@@ -75,18 +68,11 @@ test.describe('Seletor de colunas', () => {
 
   test('lists the mandatory column without letting it be unchecked', async ({ campaign, page }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const email = `${fixtures.value('colunas-mandatory')}@example.com`
-    await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenadora Obrigatória'),
-        email,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Obrigatória'),
     })
+    const password = coordinator.password
+    const email = coordinator.email!
 
     await campaign.login(page, email, password)
     await page.goto('/campanha/municipios')

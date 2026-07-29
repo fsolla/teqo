@@ -46,7 +46,7 @@ import {
   formatDominanceAgainstOwnStandard,
   territorialClassLabels,
   territorialClassMapFill,
-} from '@/utilities/municipalityLabels'
+} from '@/utilities/municipality/municipalityLabels'
 import {
   DEFAULT_MUNICIPALITY_MAP_SCALE_MODE,
   isMunicipalityMapScaleModeAvailable,
@@ -58,8 +58,8 @@ import {
   type MunicipalityMapBundle,
   type MunicipalityMapScaleMode,
   type MunicipalityMapYear,
-} from '@/utilities/municipalityMapContract'
-import type { MunicipalityTerritorialClass } from '@/utilities/municipalityTerritorialClass'
+} from '@/utilities/municipality/municipalityMapContract'
+import type { MunicipalityTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
 
 /** The legend's note doubles as the scale selector's description. */
 const SCALE_NOTE_ID = 'municipality-map-scale-note'

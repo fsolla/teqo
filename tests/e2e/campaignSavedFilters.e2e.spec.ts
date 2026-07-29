@@ -30,18 +30,11 @@ test.describe('Filtros salvos de Municípios', () => {
     test.slow()
 
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const email = `${fixtures.value('filtros-coordinator')}@example.com`
-    await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenadora Filtros'),
-        email,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Filtros'),
     })
+    const password = coordinator.password
+    const email = coordinator.email!
 
     await campaign.login(page, email, password)
 
@@ -101,18 +94,11 @@ test.describe('Filtros salvos de Municípios', () => {
     test.slow()
 
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const email = `${fixtures.value('filtros-disclosure')}@example.com`
-    await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenadora Disclosure'),
-        email,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Disclosure'),
     })
+    const password = coordinator.password
+    const email = coordinator.email!
 
     await campaign.login(page, email, password)
     await page.goto(SAVED_RECORTE)

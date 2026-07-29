@@ -2,8 +2,8 @@
 
 import { useActionState } from 'react'
 
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { VoteEstimateScenarioInputs } from '@/components/campaign/votePledge/VoteEstimateScenarioInputs'
-import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -71,11 +71,7 @@ export const PledgeEstimateForm = ({
             fieldError(state.fieldErrors, 'optimistic')}
         </FieldError>
       ) : null}
-      {state.message && state.status !== 'success' ? (
-        <Alert variant="destructive">
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      ) : null}
+      {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
     </form>
   )
 }

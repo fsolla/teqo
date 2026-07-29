@@ -10,8 +10,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { CAMPAIGN_CONCEPTS_PATH, campaignConceptHref } from '@/lib/campaignIntelligenceConcepts'
 import { SUGGESTION_STATUTE } from '@/lib/suggestionCatalog'
-import { formatSilenceAgeLabel } from '@/utilities/municipalitySignal'
-import type { MunicipalitySilenceEntry } from '@/utilities/municipalityTriggers'
+import { formatSilenceAgeLabel } from '@/utilities/municipality/municipalitySignal'
+import type { MunicipalitySilenceEntry } from '@/utilities/municipality/municipalityTriggers'
 
 /**
  * E11 — the suggestion queue as a panel: triage-ordered cards, each a

@@ -1,7 +1,7 @@
 import config from '@payload-config'
 import { ArrowLeftIcon, CalendarDaysIcon, HandshakeIcon } from 'lucide-react'
 import Link from 'next/link'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { ActivityStatusBadge } from '@/components/campaign/activity/ActivityStatusBadge'
@@ -10,8 +10,7 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { organizationKindLabels } from '@/lib/schemas/organization'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { loadOrganizationDetail } from '@/utilities/organizationData'
 import { updateOrganizationFormAction } from './formActions'
@@ -24,9 +23,10 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' })
 
 export default async function OrganizationDetailPage({ params }: OrganizationDetailPageProps) {
   const { slug } = await params
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
 
   const organization = await loadOrganizationDetail(payload, user, slug)
   if (!organization) notFound()

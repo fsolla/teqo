@@ -32,6 +32,13 @@ export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
   workers,
+  /*
+   * The 30 s default does not cover a whole journey (login + several dev-mode
+   * RSC navigations) when the dev server compiles cold under load — measured
+   * during P3-C: login's waitForURL blew the budget with the machine at load
+   * ~7. 60 s covers cold-compile journeys without masking real hangs.
+   */
+  timeout: 60_000,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
@@ -45,6 +52,16 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+  },
+  expect: {
+    /*
+     * The default 5 s does not cover a dev-mode RSC round-trip on the heavy
+     * campaign list routes once the machine is loaded (B17 measured this: the
+     * failing set drifted with load average, and the picker's own specs pass
+     * only with their own budgets). 10 s covers the cold dev compile without
+     * masking real regressions for a whole suite run.
+     */
+    timeout: 10_000,
   },
   projects: [
     {

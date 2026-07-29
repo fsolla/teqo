@@ -24,7 +24,7 @@ import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
-import { revalidateMunicipalityListPaths } from '@/utilities/municipalityRevalidation'
+import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
 
 import { municipalityStaffEditSafeMessages } from './municipalityStaffEditMessages'
 

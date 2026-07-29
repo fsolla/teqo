@@ -158,3 +158,64 @@ export const getFreshCampaignUser = (
     }
   })
 }
+
+// ---------------------------------------------------------------------------
+// Named scope policies (Pass 3 P3-D). The advisor-scope fragment and the
+// scoped-read prologue live ONCE here; the convention guard in
+// `codebaseConventions.unit.spec.ts` fails the build on a domain module that
+// re-spells `{ municipality(s): { in: ids ?? [] } }`.
+// ---------------------------------------------------------------------------
+
+/** `{ [field]: { in: ids ?? [] } }` — the ONE spelling of the advisor scope fragment. */
+export const advisorMunicipalityScopeWhere = (
+  field: 'municipality' | 'municipalities',
+  ids: readonly number[] | null,
+): Where => ({ [field]: { in: ids ?? [] } })
+
+/**
+ * The scoped-read prologue every staff collection shares: admin → all, leader →
+ * nothing, unrestricted → all, advisor → its municipality scope on `scopeField`,
+ * anyone else → nothing. `loadAccessibleIds` is a parameter because this module
+ * must not import the domain modules (cycle) — call sites pass
+ * `getAccessibleMunicipalityIds`.
+ */
+export const resolveActorScopedRead = async (
+  req: PayloadRequest,
+  scopeField: 'municipality' | 'municipalities',
+  loadAccessibleIds: (
+    req: PayloadRequest,
+    user: CampaignActor,
+  ) => Promise<readonly number[] | null>,
+): Promise<boolean | Where> => {
+  if (isPayloadAdmin(req.user)) return true
+
+  const currentUser = await getFreshCampaignUser(req)
+  if (isCampaignLeader(currentUser)) return false
+  if (isCampaignUnrestricted(currentUser)) return true
+  if (!currentUser || currentUser.role !== 'advisor') return false
+
+  return advisorMunicipalityScopeWhere(scopeField, await loadAccessibleIds(req, currentUser))
+}
+
+/**
+ * The memoized "accessible ids" engine the three scope resolvers share
+ * (municipalities, leaderships, contacts). Owns the fresh-user one-liner, the
+ * non-campaign → `[]` and unrestricted → `null` conventions, and the per-request
+ * memo key; `compute` runs the domain-specific query.
+ */
+export const resolveAccessibleIds = async <ID>(
+  req: PayloadRequest,
+  user: CampaignActor = req.user,
+  memoKey: string,
+  compute: (currentUser: CampaignUser) => Promise<ID[]>,
+): Promise<ID[] | null> => {
+  const currentUser =
+    isCampaignUser(user) && user === req.user ? await getFreshCampaignUser(req, user) : user
+
+  if (!isCampaignUser(currentUser)) return []
+  if (isCampaignUnrestricted(currentUser)) return null
+
+  return memoizePerRequest(req, `${memoKey}:${currentUser.id}:${currentUser.role}`, () =>
+    compute(currentUser),
+  )
+}

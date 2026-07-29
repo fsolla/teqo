@@ -15,10 +15,9 @@
  *   TSE_CACHE_DIR=./data/tse pnpm build:tse-city-codes
  */
 
-import { createHash } from 'node:crypto'
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { dieWithLabel, ensureCachedDownload, sha256Hex, writeRepoFile } from './lib/cli.mjs'
 
 const { canonicalizeMunicipalityName, UnknownMunicipalityError } =
   await import('../src/lib/electionResults.ts')
@@ -34,49 +33,31 @@ const SOURCE = {
   csvName: 'detalhe_votacao_munzona_2022_BA.csv',
 }
 
-const die = (message) => {
-  console.error(`\n[build:tse-city-codes] ${message}\n`)
-  process.exit(1)
-}
-
-const sha256 = (buffer) => createHash('sha256').update(buffer).digest('hex')
+const die = dieWithLabel('build:tse-city-codes')
 
 const cacheDir = () => process.env.TSE_CACHE_DIR || join(ROOT, 'data', 'tse')
 
-const ensureCachedZip = async () => {
-  const dir = cacheDir()
-  await mkdir(dir, { recursive: true })
-  const path = join(dir, `${SOURCE.key}.zip`)
-  try {
-    await access(path)
-    console.log(`[build:tse-city-codes] cache hit ${path}`)
-    const buffer = await readFile(path)
-    return { url: SOURCE.url, hash: sha256(buffer), buffer }
-  } catch (error) {
-    if (error?.code !== 'ENOENT') throw error
-  }
-  console.log(`[build:tse-city-codes] downloading ${SOURCE.url}`)
-  const buffer = await downloadToBuffer(SOURCE.url)
-  const hash = sha256(buffer)
-  await writeFile(path, buffer)
-  console.log(`[build:tse-city-codes] saved ${path} (${buffer.length} bytes, sha256=${hash})`)
-  return { url: SOURCE.url, hash, buffer }
-}
+const ensureCachedZip = () =>
+  ensureCachedDownload({
+    label: 'build:tse-city-codes',
+    key: SOURCE.key,
+    url: SOURCE.url,
+    ext: 'zip',
+    cacheDir: cacheDir(),
+    download: downloadToBuffer,
+  })
 
-const writeJson = async (relativePath, value) => {
-  const path = join(ROOT, relativePath)
-  await mkdir(dirname(path), { recursive: true })
-  const body = `${JSON.stringify(value, null, 2)}\n`
-  await writeFile(path, body)
-  console.log(`[build:tse-city-codes] wrote ${relativePath} (${Buffer.byteLength(body)} bytes)`)
-}
+const writeJson = (relativePath, value) =>
+  writeRepoFile({
+    label: 'build:tse-city-codes',
+    root: ROOT,
+    relativePath,
+    body: `${JSON.stringify(value, null, 2)}
+`,
+  })
 
-const writeText = async (relativePath, body) => {
-  const path = join(ROOT, relativePath)
-  await mkdir(dirname(path), { recursive: true })
-  await writeFile(path, body)
-  console.log(`[build:tse-city-codes] wrote ${relativePath} (${Buffer.byteLength(body)} bytes)`)
-}
+const writeText = (relativePath, body) =>
+  writeRepoFile({ label: 'build:tse-city-codes', root: ROOT, relativePath, body })
 
 const buildCityCodesModule = (entries, provenance) => {
   const lines = entries
@@ -176,7 +157,7 @@ const main = async () => {
   const assignmentRows = codeEntries
     .map(([municipality, code]) => `M\t${municipality}\t${code}\n`)
     .join('')
-  const evidenceSha256 = createHash('sha256').update(assignmentRows).digest('hex')
+  const evidenceSha256 = sha256Hex(assignmentRows)
 
   await writeJson('tests/fixtures/bahia-tse-city-codes.official.json', {
     provenance: {

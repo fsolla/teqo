@@ -31,23 +31,22 @@
  * writes only src/lib/electionAggregates/.
  */
 
-import { config as loadEnv } from 'dotenv'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getPayload } from 'payload'
+import { loadCliEnv } from './lib/cli.mjs'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
 
-loadEnv({ path: '.env.local' })
-loadEnv({ path: '.env' })
+loadCliEnv()
 
 const payloadConfig = (await import('../src/payload.config.ts')).default
 const { BASELINE_TICKET_2022, ELECTION_YEAR_2022, FEDERAL_DEPUTY_OFFICE, HISTORICAL_SERIES_YEARS } =
   await import('../src/lib/electionResults.ts')
 const { municipalityCatalog } = await import('../src/lib/municipalityCatalog.ts')
 const { municipalityElectionGeography } =
-  await import('../src/utilities/municipalityElectionGeography.ts')
+  await import('../src/utilities/municipality/municipalityElectionGeography.ts')
 const {
   loadCampoFederalVotesByCityZone,
   loadCandidateVotesByCityZone,
@@ -57,7 +56,7 @@ const {
   sumCandidateVotesForGeography,
   sumOfficeTallyForGeography,
   sumVotesForGeography,
-} = await import('../src/utilities/municipalityElectoralBaseline.ts')
+} = await import('../src/utilities/municipality/municipalityElectoralBaseline.ts')
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const OUTPUT_DIR = join(ROOT, 'src', 'lib', 'electionAggregates')

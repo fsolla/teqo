@@ -11,9 +11,14 @@ import {
   removeSupporterData,
   setSupporterVoteIntention,
 } from '@/app/(campaign)/campanha/actions/supporter'
+import { SUPPORTER_VOTE_INTENTION_CONSENT_MISSING_MESSAGE } from '@/lib/campaignConsentKeys'
 import { checkboxFormValue, requiredRelationshipFormValue } from '@/lib/formData'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
-import { supporterRemoveSchema, supporterVoteIntentionSchema } from '@/lib/schemas/supporter'
+import {
+  SUPPORTER_STAFF_MESSAGE,
+  supporterRemoveSchema,
+  supporterVoteIntentionSchema,
+} from '@/lib/schemas/supporter'
 import {
   mapCampaignFormActionError,
   type CampaignFormErrorState,
@@ -32,8 +37,8 @@ export type SupporterRemoveFormState = {
 }
 
 const safeVoteIntentionMessages = [
-  'Consentimento de intenção de voto ainda não configurado.',
-  'Somente a coordenação e a assessoria podem gerenciar apoiadores.',
+  SUPPORTER_VOTE_INTENTION_CONSENT_MISSING_MESSAGE,
+  SUPPORTER_STAFF_MESSAGE,
 ] as const
 
 const toMessageOnlyState = (mapped: CampaignFormErrorState<unknown>): { message?: string } => {

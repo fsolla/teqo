@@ -4,7 +4,7 @@ import {
   effectivePledgeVotesForScenario,
   formatVoteEstimateRange,
   getVoteEstimateForScenario,
-  hasAnyEstimate,
+  hasAnyVoteEstimate,
 } from '@/lib/voteEstimate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { type StaffPledgeRow } from '@/utilities/votePledgeViews'
@@ -80,7 +80,7 @@ export const MunicipalityPledgesPanel = ({
                           : ''}
                       </span>
                     </div>
-                    {!hasAnyEstimate(pledge.estimatedVotes) ? (
+                    {!hasAnyVoteEstimate(pledge.estimatedVotes) ? (
                       <Badge variant="estimate-pending">Sem estimativa</Badge>
                     ) : (
                       <Badge variant="estimate-confirmed">

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { CampaignAuthPageShell } from '@/components/campaign/auth/CampaignAuthPageShell'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { resolveCampaignWebAuthnRelyingParty } from '@/utilities/campaignWebAuthnConfig'
+import { resolveCampaignWebAuthnRelyingParty } from '@/utilities/webauthn/campaignWebAuthnConfig'
 import { LoginForm } from './LoginForm'
 
 export const metadata: Metadata = {

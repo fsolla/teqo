@@ -18,14 +18,17 @@ import { cn } from '@/lib/utils'
 import {
   clearTerritoryListFilters,
   type TerritoryFilterOption,
-} from '@/utilities/territoryListFilters'
+} from '@/utilities/territory/territoryListFilters'
 import {
   buildTerritoryListHref,
   formatTerritoryListSortSummary,
   resolveTerritoryListSort,
   type TerritoryListState,
-} from '@/utilities/territoryListUrl'
-import { flattenTerritoryRows, type TerritoryOverviewRow } from '@/utilities/territoryOverview'
+} from '@/utilities/territory/territoryListUrl'
+import {
+  flattenTerritoryRows,
+  type TerritoryOverviewRow,
+} from '@/utilities/territory/territoryOverview'
 
 const TerritoryListEmptyState = ({ state }: { state: TerritoryListState }) => (
   <Empty className="min-h-56 w-64 sm:w-80 md:w-auto">

@@ -1,3 +1,5 @@
+import { formatElectionNumber } from '@/lib/electionFormat'
+
 export const VOTE_ESTIMATE_SCENARIOS = ['pessimistic', 'central', 'optimistic'] as const
 
 export type VoteEstimateScenario = (typeof VOTE_ESTIMATE_SCENARIOS)[number]
@@ -22,10 +24,6 @@ export const zeroByVoteEstimateScenario = (): Record<VoteEstimateScenario, numbe
   central: 0,
   optimistic: 0,
 })
-
-/** True when at least one scenario has a recorded estimate. */
-export const hasAnyEstimate = (estimates: VoteEstimateScenarioViewModel): boolean =>
-  estimates.pessimistic != null || estimates.central != null || estimates.optimistic != null
 
 export const voteEstimateScenarioLabels: Record<VoteEstimateScenario, string> = {
   pessimistic: 'Pessimista',
@@ -99,7 +97,7 @@ export const formatVoteEstimateRange = (
 ): string | null => {
   const { pessimistic, optimistic } = estimates
   if (pessimistic == null || optimistic == null) return null
-  return `${pessimistic.toLocaleString('pt-BR')}–${optimistic.toLocaleString('pt-BR')}`
+  return `${formatElectionNumber(pessimistic)}–${formatElectionNumber(optimistic)}`
 }
 
 /** Staff-facing endpoints label: "Pessimista 1.200 · Otimista 1.800". */
@@ -109,7 +107,7 @@ export const formatVoteEstimateEndpointsLabel = (
   const pessimistic = estimates.pessimistic
   const optimistic = estimates.optimistic
   if (pessimistic == null || optimistic == null) return null
-  return `${voteEstimateScenarioLabels.pessimistic} ${pessimistic.toLocaleString('pt-BR')} · ${voteEstimateScenarioLabels.optimistic} ${optimistic.toLocaleString('pt-BR')}`
+  return `${voteEstimateScenarioLabels.pessimistic} ${formatElectionNumber(pessimistic)} · ${voteEstimateScenarioLabels.optimistic} ${formatElectionNumber(optimistic)}`
 }
 
 export const hasAnyVoteEstimate = (
@@ -123,7 +121,7 @@ export const formatVoteEstimateScenarioAriaLabel = (
   VOTE_ESTIMATE_SCENARIOS.map((scenario) => {
     const value = estimates[scenario]
     return `${voteEstimateScenarioLabels[scenario]}: ${
-      value == null ? 'não informado' : value.toLocaleString('pt-BR')
+      value == null ? 'não informado' : formatElectionNumber(value)
     }`
   }).join('; ')
 

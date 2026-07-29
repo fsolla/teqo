@@ -4,21 +4,27 @@ import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
 import { upsertContactByPhone } from '@/app/(campaign)/campanha/actions/supporter'
+import { SUPPORTER_REGISTRATION_CONSENT_MISSING_MESSAGE } from '@/lib/campaignConsentKeys'
 import { checkboxFormValue, nullableRelationshipFormValue, optionalFormText } from '@/lib/formData'
 import { sanitizeBrazilianPhoneInput } from '@/lib/phone'
-import { leaderSupporterCreateSchema } from '@/lib/schemas/supporter'
+import {
+  LEADER_SUPPORTER_ONLY_MESSAGE,
+  leaderSupporterCreateSchema,
+  SUPPORTER_DUPLICATE_MESSAGE,
+} from '@/lib/schemas/supporter'
 import type { CampaignUser, Supporter } from '@/payload-types'
 import { getEngagedLeaderMunicipalityIds, isCampaignLeader } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
-import {
-  requireConsentByKey,
-  SUPPORTER_REGISTRATION_CONSENT_KEY,
-} from '@/utilities/campaignConsent'
+import { requireSupporterRegistrationConsent } from '@/utilities/campaignConsent'
 import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
-import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
+import {
+  acquireContactPhoneLocks,
+  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
+} from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { isUniqueSupporterConflict } from '@/utilities/supporterErrors'
+import { POSTGRES_DEDUP_LOCK_MESSAGE } from '@/utilities/postgresTransactionLocks'
+import { isUniqueSupporterConflict } from '@/utilities/supporter/supporterErrors'
 
 export type LeaderSupporterFormState = {
   status?: 'success'
@@ -39,10 +45,10 @@ const MUNICIPALITY_OUT_OF_SCOPE_MESSAGE =
   'Você só pode cadastrar contatos nos municípios da sua liderança.'
 
 const safeActionMessages = [
-  'Esta pessoa já está cadastrada como apoiador neste município.',
-  'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.',
-  'Somente lideranças podem cadastrar contatos por aqui.',
-  'Consentimento de cadastro de apoiador ainda não configurado.',
+  SUPPORTER_DUPLICATE_MESSAGE,
+  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
+  LEADER_SUPPORTER_ONLY_MESSAGE,
+  SUPPORTER_REGISTRATION_CONSENT_MISSING_MESSAGE,
   MUNICIPALITY_OUT_OF_SCOPE_MESSAGE,
 ] as const
 
@@ -66,7 +72,7 @@ const getFreshLeaderActor = async (
 ): Promise<CampaignUser> => {
   const currentActor = await reloadCampaignActor(payload, actor, req)
   if (!isCampaignLeader(currentActor)) {
-    throw new Error('Somente lideranças podem cadastrar contatos por aqui.')
+    throw new Error(LEADER_SUPPORTER_ONLY_MESSAGE)
   }
   return currentActor
 }
@@ -96,15 +102,10 @@ export const createLeaderSupporterRecord = async (
           throw new Error(MUNICIPALITY_OUT_OF_SCOPE_MESSAGE)
         }
 
-        const registrationConsent = await requireConsentByKey(
-          payload,
-          SUPPORTER_REGISTRATION_CONSENT_KEY,
-          req,
-          'Consentimento de cadastro de apoiador ainda não configurado.',
-        )
+        const registrationConsent = await requireSupporterRegistrationConsent(payload, req)
 
         if (payload.db.name !== 'postgres') {
-          throw new Error('O bloqueio de deduplicação exige o adaptador PostgreSQL.')
+          throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
         }
 
         await acquireContactPhoneLocks(payload, req, [data.phone])
@@ -138,7 +139,7 @@ export const createLeaderSupporterRecord = async (
     )
   } catch (error) {
     if (isUniqueSupporterConflict(error)) {
-      throw new Error('Esta pessoa já está cadastrada como apoiador neste município.')
+      throw new Error(SUPPORTER_DUPLICATE_MESSAGE)
     }
     throw error
   }

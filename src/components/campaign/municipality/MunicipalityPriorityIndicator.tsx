@@ -4,7 +4,7 @@ import { FlagIcon } from 'lucide-react'
 
 import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import { cn } from '@/lib/utils'
-import { municipalityPriorityIndicatorLabel } from '@/utilities/municipalityLabels'
+import { municipalityPriorityIndicatorLabel } from '@/utilities/municipality/municipalityLabels'
 
 type MunicipalityPriorityIndicatorProps = {
   className?: string

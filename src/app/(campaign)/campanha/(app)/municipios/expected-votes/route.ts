@@ -7,13 +7,14 @@ import { positiveRelationshipId } from '@/lib/schemas/primitives'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute'
 
+import { MAX_VOTE_COUNT } from '@/lib/schemas/primitives'
 import type { MunicipalityListExpectedVotesResponse } from './types'
 
 export type { MunicipalityListExpectedVotesResponse } from './types'
 
 export const dynamic = 'force-dynamic'
 
-const optionalEstimate = z.number().int().min(0).max(1_000_000).nullable()
+const optionalEstimate = z.number().int().min(0).max(MAX_VOTE_COUNT).nullable()
 
 /** Unordered draft body — setMunicipalityExpectedVotes normalizes before persist. */
 const bodySchema = z.object({

@@ -15,10 +15,10 @@
  *   DEMOGRAPHICS_CACHE_DIR=./data/demographics pnpm build:demographics
  */
 
-import { createHash } from 'node:crypto'
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { dieWithLabel, ensureCachedDownload, writeRepoFile } from './lib/cli.mjs'
 
 const { bahiaMunicipalityCodes } = await import('../src/lib/bahiaMunicipalityCodes.ts')
 const { downloadToBuffer } = await import('../src/lib/electionResultsZip.ts')
@@ -50,41 +50,22 @@ const AGE_CATEGORY_TO_BAND = Object.fromEntries(
   ),
 )
 
-const die = (message) => {
-  console.error(`\n[build:demographics] ${message}\n`)
-  process.exit(1)
-}
-
-const sha256 = (buffer) => createHash('sha256').update(buffer).digest('hex')
+const die = dieWithLabel('build:demographics')
 
 const cacheDir = () => process.env.DEMOGRAPHICS_CACHE_DIR || join(ROOT, 'data', 'demographics')
 
-const ensureCachedJson = async ({ key, url }) => {
-  const dir = cacheDir()
-  await mkdir(dir, { recursive: true })
-  const path = join(dir, `${key}.json`)
-  try {
-    await access(path)
-    console.log(`[build:demographics] cache hit ${path}`)
-    const buffer = await readFile(path)
-    return { url, hash: sha256(buffer), json: JSON.parse(buffer.toString('utf8')) }
-  } catch (error) {
-    if (error?.code !== 'ENOENT') throw error
-  }
-  console.log(`[build:demographics] downloading ${url}`)
-  const buffer = await downloadToBuffer(url)
-  const hash = sha256(buffer)
-  await writeFile(path, buffer)
-  console.log(`[build:demographics] saved ${path} (${buffer.length} bytes, sha256=${hash})`)
-  return { url, hash, json: JSON.parse(buffer.toString('utf8')) }
-}
+const ensureCachedJson = ({ key, url }) =>
+  ensureCachedDownload({
+    label: 'build:demographics',
+    key,
+    url,
+    ext: 'json',
+    cacheDir: cacheDir(),
+    download: downloadToBuffer,
+  })
 
-const writeText = async (relativePath, body) => {
-  const path = join(ROOT, relativePath)
-  await mkdir(dirname(path), { recursive: true })
-  await writeFile(path, body)
-  console.log(`[build:demographics] wrote ${relativePath} (${Buffer.byteLength(body)} bytes)`)
-}
+const writeText = (relativePath, body) =>
+  writeRepoFile({ label: 'build:demographics', root: ROOT, relativePath, body })
 
 const parseSidraValue = (value) => {
   if (value === '...' || value === '-' || value === 'X' || value == null || value === '') return 0

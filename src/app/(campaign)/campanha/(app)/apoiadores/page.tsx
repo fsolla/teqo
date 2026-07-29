@@ -17,26 +17,25 @@ import { SupporterList } from '@/components/campaign/supporter/SupporterList'
 import { SupporterListOverview } from '@/components/campaign/supporter/SupporterListOverview'
 import { Button } from '@/components/ui/button'
 import { isCampaignCoordinator, isCampaignUnrestricted } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
-import { loadSupportersPageData } from '@/utilities/supporterPageData'
+import { loadSupportersPageData } from '@/utilities/supporter/supporterPageData'
 import {
   buildSupporterFiltersKey,
   buildSupporterListHref,
   canAccessSupporterArea,
   getSupporterScopeLabel,
-} from '@/utilities/supporterUi'
-import { toSupporterListItemViewModel } from '@/utilities/supporterViewModels'
+} from '@/utilities/supporter/supporterUi'
+import { toSupporterListItemViewModel } from '@/utilities/supporter/supporterViewModels'
 
 type SupportersPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
 export default async function SupportersPage({ searchParams }: SupportersPageProps) {
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
+  const [user, payload] = await Promise.all([requireCampaignPageActor(), getPayload({ config })])
 
-  if (!user) return null
   if (!canAccessSupporterArea(user.role)) redirect('/campanha')
 
   const rawSearchParams = await searchParams

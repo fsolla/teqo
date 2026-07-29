@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { getCampaignWebAuthnRelyingParty } from '@/utilities/campaignWebAuthnConfig'
+import { getCampaignWebAuthnRelyingParty } from '@/utilities/webauthn/campaignWebAuthnConfig'
 
 /**
  * The relying party decides whether biometric login (B40) is offered at all, and

@@ -10,6 +10,7 @@ import {
   engagementLevels,
   formatEngagementLevelLabel,
 } from '@/lib/engagementLevel'
+import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import { politicalTrendStatuses } from '@/lib/schemas/municipality'
 import {
   getVoteEstimateOrderViolation,
@@ -29,8 +30,7 @@ import {
   canUpdateMunicipality,
   eligibleCampaignStaffWhere,
 } from '@/utilities/campaignAccess'
-import { politicalTrendLabels } from '@/utilities/municipalityLabels'
-import { relationshipId, uniqueRelationshipIds } from '@/utilities/relationship'
+import { politicalTrendLabels } from '@/utilities/municipality/municipalityLabels'
 import {
   voteEstimateScenarioGroupAccess,
   voteEstimateScenarioGroupFields,

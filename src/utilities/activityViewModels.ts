@@ -1,7 +1,7 @@
+import { isPopulatedRelationship, relationshipId } from '@/lib/relationship'
 import type { ActivityOrigin } from '@/lib/schemas/activity'
 import type { Activity, CampaignUser, Contact, Municipality, Organization } from '@/payload-types'
 import type { ActivityDetailTab } from '@/utilities/activityDetailTabUi'
-import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 
 export type ActivityMunicipalitySummary = {
   id: number

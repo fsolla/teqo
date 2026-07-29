@@ -9,7 +9,7 @@ import {
   loadMunicipalityUpdatesPreview,
   municipalityUpdatesPageSize,
   parseMunicipalityUpdateFeedParams,
-} from '@/utilities/municipalityUpdatePageData'
+} from '@/utilities/municipality/municipalityUpdatePageData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 

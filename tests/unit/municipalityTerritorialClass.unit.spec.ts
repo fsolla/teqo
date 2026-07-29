@@ -10,7 +10,7 @@ import {
   territorialClassSortWeight,
   type MunicipalityTerritorialClass,
   type TerritorialClassInput,
-} from '@/utilities/municipalityTerritorialClass'
+} from '@/utilities/municipality/municipalityTerritorialClass'
 
 /**
  * Statewide reference: 100.000 own votes over 5.000.000 valid votes = a 2%

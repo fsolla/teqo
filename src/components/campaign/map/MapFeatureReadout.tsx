@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { BahiaMapFeatureInfo } from '@/components/campaign/map/BahiaMap'
 import { Button } from '@/components/ui/button'
 import { formatElectionNumber } from '@/lib/electionFormat'
-import type { MunicipalityMapScaleMode } from '@/utilities/municipalityMapContract'
+import type { MunicipalityMapScaleMode } from '@/utilities/municipality/municipalityMapContract'
 
 type MapFeatureReadoutProps = {
   feature: BahiaMapFeatureInfo | null

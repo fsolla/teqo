@@ -8,17 +8,10 @@ test.describe('Atividades — registro-fundação', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const coordinator = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenadora Geral'),
-        email: `${fixtures.value('coordinator')}@example.com`,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
     })
+    const password = coordinator.password
     const municipality = await fixtures.claimMunicipality()
     const activityTitle = fixtures.value('Giro territorial')
     const transportDemand = fixtures.value('Transporte para equipe')

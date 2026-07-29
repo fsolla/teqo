@@ -2,11 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import {
-  isPopulatedRelationship,
-  relationshipId,
-  requireRelationshipId,
-} from '@/utilities/relationship'
+import { isPopulatedRelationship, relationshipId, requireRelationshipId } from '@/lib/relationship'
 
 describe('relationship primitives', () => {
   it('accepts only positive safe integer IDs from raw and populated relationships', () => {

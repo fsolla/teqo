@@ -1,15 +1,14 @@
 import config from '@payload-config'
 import { ArrowLeftIcon, HandshakeIcon, MapPinIcon } from 'lucide-react'
 import Link from 'next/link'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { StateDeputyForm } from '@/components/campaign/stateDeputy/StateDeputyForm'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadStateDeputyDetail } from '@/utilities/stateDeputyData'
 import { updateStateDeputyFormAction } from './formActions'
 
@@ -19,9 +18,10 @@ type StateDeputyDetailPageProps = {
 
 export default async function StateDeputyDetailPage({ params }: StateDeputyDetailPageProps) {
   const { slug } = await params
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
 
   const stateDeputy = await loadStateDeputyDetail(payload, user, slug)
   if (!stateDeputy) notFound()

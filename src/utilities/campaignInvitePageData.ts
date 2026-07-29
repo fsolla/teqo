@@ -2,11 +2,11 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import type { Consent, Leadership } from '@/payload-types'
 import { getLeadershipConsent } from '@/utilities/campaignConsent'
 import type { CampaignInviteKind } from '@/utilities/campaignInvite'
 import { findActiveCampaignInvite } from '@/utilities/campaignInviteRepository'
-import { relationshipId } from '@/utilities/relationship'
 
 type CampaignInviteProfile = {
   name: string
@@ -46,6 +46,10 @@ export const getCampaignInvitePageData = async (
     const leadershipID = relationshipId(invite?.leadership)
     if (!invite || leadershipID === null) return invalidInvite()
 
+    // Intentional admin bypass (this read and the contact read below): the
+    // invitee is ANONYMOUS — the signed token resolved above is the
+    // authorization, and the page must render the invited person's own data
+    // before any session exists.
     const leadership = await payload.findByID({
       collection: 'leadership',
       id: leadershipID,
@@ -77,6 +81,8 @@ export const getCampaignInvitePageData = async (
           email: true,
           gender: true,
         },
+        // Intentional admin bypass: same anonymous-invitee policy as the
+        // leadership read above — the token is the authorization.
         overrideAccess: true,
       }),
       getLeadershipConsent(payload),

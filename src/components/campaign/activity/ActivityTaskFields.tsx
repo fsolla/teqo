@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { formatIsoAsBahiaDateTimeInput } from '@/utilities/campaignTime'
+import { formatIsoAsBahiaDateTimeInput } from '@/lib/campaignTime'
 
 export type ActivityTaskFieldValue = {
   key: string

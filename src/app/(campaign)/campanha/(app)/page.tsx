@@ -1,5 +1,4 @@
 import config from '@payload-config'
-import { redirect } from 'next/navigation'
 import { getPayload, type Payload } from 'payload'
 import { Suspense } from 'react'
 
@@ -13,12 +12,12 @@ import {
 } from '@/components/campaign/suggestion/SuggestionsPanel'
 import type { CampaignUser } from '@/payload-types'
 import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
 import { getCampaignDashboardData } from '@/utilities/campaignDashboardData'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'
 import { loadLeaderContactsPageData } from '@/utilities/leaderContactsPageData'
-import { loadMunicipalityMapBundle } from '@/utilities/municipalityMapData'
-import { loadMunicipalitySuggestions } from '@/utilities/municipalityTriggers'
+import { loadMunicipalityMapBundle } from '@/utilities/municipality/municipalityMapData'
+import { loadMunicipalitySuggestions } from '@/utilities/municipality/municipalityTriggers'
 
 import { resolveSuggestionFormAction } from './suggestionFormActions'
 
@@ -30,8 +29,7 @@ type CampaignHomePageProps = {
 
 export default async function CampaignHomePage({ searchParams }: CampaignHomePageProps) {
   const rawSearchParams = await searchParams
-  const [payload, user] = await Promise.all([getPayload({ config }), getCampaignUser()])
-  if (!user) redirect('/campanha/login')
+  const [payload, user] = await Promise.all([getPayload({ config }), requireCampaignPageActor()])
 
   if (isCampaignLeader(user)) {
     const view = await loadLeaderContactsPageData(payload, user)

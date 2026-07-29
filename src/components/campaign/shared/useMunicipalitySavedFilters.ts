@@ -6,7 +6,7 @@ import {
   listMunicipalitySavedFilters,
   subscribeMunicipalitySavedFilters,
   type MunicipalitySavedFilter,
-} from '@/utilities/municipalitySavedFilters'
+} from '@/utilities/municipality/municipalitySavedFilters'
 
 /**
  * Stable reference for the render that has no `localStorage` to read. Returning

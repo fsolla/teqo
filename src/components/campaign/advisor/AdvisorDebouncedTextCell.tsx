@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
+import { campaignInlineInputClassName } from '@/lib/campaignInlineInput'
 import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import {
   isPlanilhaPlaceholderEmail,
@@ -118,7 +119,7 @@ export const AdvisorDebouncedTextCell = ({
         placeholder={placeholder}
         aria-label={ariaLabel}
         aria-busy={isPending}
-        className="min-h-10 border-transparent bg-transparent px-2 shadow-none hover:border-input focus-visible:border-input"
+        className={campaignInlineInputClassName}
         onChange={(event: ChangeEvent<HTMLInputElement>) => {
           const next =
             type === 'tel'

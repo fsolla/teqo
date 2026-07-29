@@ -8,7 +8,7 @@ import {
   removeMunicipalitySavedFilter,
   saveMunicipalitySavedFilter,
   STORAGE_KEY,
-} from '@/utilities/municipalitySavedFilters'
+} from '@/utilities/municipality/municipalitySavedFilters'
 
 const hrefFor = (index: number) => `/campanha/municipios?q=recorte-${index}`
 

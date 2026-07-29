@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
-import { formatMunicipalityConcentrationHint } from '@/utilities/municipalityLabels'
+import { formatMunicipalityConcentrationHint } from '@/utilities/municipality/municipalityLabels'
 import {
   applyMunicipalityKindFilter,
   buildMunicipalityFilterHref,
@@ -12,7 +12,7 @@ import {
   toggleMunicipalityMultiFilterValue,
   toggleMunicipalityPriorityFilter,
   type MunicipalityMultiFilterParam,
-} from '@/utilities/municipalityListFilters'
+} from '@/utilities/municipality/municipalityListFilters'
 import {
   buildMunicipalityListHref,
   buildMunicipalityListWhere,
@@ -23,14 +23,14 @@ import {
   parseMunicipalitySortValue,
   resolveMunicipalityListSort,
   serializeMunicipalitySortValue,
-} from '@/utilities/municipalityListUrl'
+} from '@/utilities/municipality/municipalityListUrl'
 import {
   formatMunicipalitySignalAgeLabel,
   isMunicipalitySignalCold,
   MUNICIPALITY_COLD_SIGNAL_DAYS,
   municipalitySignalAgeInDays,
   resolveMunicipalityLastSignalAt,
-} from '@/utilities/municipalitySignal'
+} from '@/utilities/municipality/municipalitySignal'
 
 describe('municipality list sort params (A11 + B15 + E9)', () => {
   it('omits the default deficit/desc from the URL (E9 allocation queue order)', () => {

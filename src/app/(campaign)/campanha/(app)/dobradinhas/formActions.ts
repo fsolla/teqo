@@ -7,17 +7,17 @@ import {
   requiredFormBoolean,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
-import { LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE } from '@/lib/schemas/leadership'
+import {
+  LEADERSHIP_STAFF_MESSAGE,
+  LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE,
+} from '@/lib/schemas/leadership'
 import { STATE_DEPUTY_MUNICIPALITIES_SAFE_MESSAGES } from '@/lib/schemas/stateDeputy'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
 
-const safeMessages = [
-  'Somente a coordenação e a assessoria podem gerenciar lideranças.',
-  LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE,
-] as const
+const safeMessages = [LEADERSHIP_STAFF_MESSAGE, LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE] as const
 
 /** One chip toggle in the "Lideranças" column of `/campanha/dobradinhas` (B36). */
 export const setLeadershipStateDeputyMembershipFormAction = async (

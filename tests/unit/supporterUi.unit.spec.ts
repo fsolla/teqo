@@ -8,7 +8,7 @@ import {
   getSupporterScopeLabel,
   parseSupporterListParams,
   resolveSupporterListUrl,
-} from '@/utilities/supporterUi'
+} from '@/utilities/supporter/supporterUi'
 
 describe('parseSupporterListParams', () => {
   it('defaults to page 1 with no filters', () => {

@@ -31,6 +31,5 @@ export const createDemandFormAction = async (
       })
     },
     redirectTo: (demand) => `/campanha/demandas/${demand.slug}`,
-    safeMessages: ['Somente a coordenação e a assessoria podem abrir demandas.'],
     genericMessage: 'Não foi possível abrir a demanda. Verifique os dados e tente novamente.',
   })

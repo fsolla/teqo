@@ -7,6 +7,10 @@ export type PostgresTransactionDatabase = {
   execute: (query: ReturnType<typeof sql>) => Promise<unknown>
 }
 
+/** Thrown where the phone-dedup lock needs the Postgres adapter — one spelling for every action that guards on it. */
+export const POSTGRES_DEDUP_LOCK_MESSAGE =
+  'O bloqueio de deduplicação exige o adaptador PostgreSQL.'
+
 type TransactionPayload = Pick<Payload, 'db'>
 type TransactionRequest = {
   transactionID?: PayloadRequest['transactionID']

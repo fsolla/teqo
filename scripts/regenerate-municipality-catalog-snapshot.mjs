@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto'
 import { writeFileSync } from 'node:fs'
+import { sha256Hex } from './lib/cli.mjs'
 
 import { municipalityCatalog, ZONE_MUNICIPALITY_CITIES } from '../src/lib/municipalityCatalog.ts'
 
@@ -28,7 +28,7 @@ const snapshot = {
   generatedFrom: 'src/lib/municipalityCatalog.ts',
   municipalityCount: entries.length,
   zoneMunicipalityCities: [...ZONE_MUNICIPALITY_CITIES],
-  identitySha256: createHash('sha256').update(rows).digest('hex'),
+  identitySha256: sha256Hex(rows),
   entries,
 }
 writeFileSync(

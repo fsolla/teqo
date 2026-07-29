@@ -6,8 +6,8 @@ import {
 } from '@/lib/electionFormat'
 import { DEFAULT_VOTE_RANK_YEAR, getMunicipalityVoteRank } from '@/lib/municipalityVoteRank'
 import { computeVoteTrend } from '@/lib/voteTrend'
-import type { MunicipalityElectoralBaseline } from '@/utilities/municipalityElectoralBaseline'
-import { formatMunicipalityConcentrationHint } from '@/utilities/municipalityLabels'
+import type { MunicipalityElectoralBaseline } from '@/utilities/municipality/municipalityElectoralBaseline'
+import { formatMunicipalityConcentrationHint } from '@/utilities/municipality/municipalityLabels'
 
 const seriesVotes = (baseline: MunicipalityElectoralBaseline, year: number): number =>
   baseline.series.find((point) => point.year === year)?.votes ?? 0

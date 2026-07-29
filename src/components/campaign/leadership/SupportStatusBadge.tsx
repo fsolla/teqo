@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/Badge'
 import type { SupportStatus } from '@/lib/schemas/leadership'
-import { supportStatusLabels } from '@/utilities/leadershipLabels'
+import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 
 export type { SupportStatus } from '@/lib/schemas/leadership'
 

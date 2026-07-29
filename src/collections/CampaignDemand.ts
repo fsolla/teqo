@@ -5,7 +5,10 @@ import type {
 } from 'payload'
 import { APIError } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import {
+  CAMPAIGN_DEMAND_ESCALATED_DECISION_MESSAGE,
+  CAMPAIGN_DEMAND_INVALID_STATUS_MESSAGE,
   campaignDemandKindLabels,
   campaignDemandKinds,
   campaignDemandStatusLabels,
@@ -14,6 +17,7 @@ import {
   type CampaignDemandStatus,
 } from '@/lib/schemas/campaignDemand'
 import { slugify } from '@/lib/slug'
+import { trimmedText } from '@/lib/text'
 import {
   canCreateCampaignDemand,
   canDeleteCampaignDemand,
@@ -24,9 +28,7 @@ import {
   canUpdateCampaignDemand,
   isCampaignUnrestricted,
 } from '@/utilities/campaignAccess'
-import { relationshipId } from '@/utilities/relationship'
-
-const trimmedText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+import { systemStampedActorField } from '@/utilities/campaignAuditFields'
 
 const DEMAND_KIND_OPTIONS = campaignDemandKinds.map((value) => ({
   value,
@@ -90,7 +92,7 @@ const enforceDemandWorkflow: CollectionBeforeChangeHook = async ({
   const rawNextStatus: unknown = data.status === undefined ? previousStatus : data.status
 
   if (!isDemandStatus(rawNextStatus)) {
-    throw new APIError('Status de demanda inválido.', 400)
+    throw new APIError(CAMPAIGN_DEMAND_INVALID_STATUS_MESSAGE, 400)
   }
   const nextStatus: CampaignDemandStatus = rawNextStatus
 
@@ -109,10 +111,7 @@ const enforceDemandWorkflow: CollectionBeforeChangeHook = async ({
       actor &&
       !isCampaignUnrestricted(actor)
     ) {
-      throw new APIError(
-        'Demandas escaladas são decididas pelo Coordenador Geral ou Candidato.',
-        403,
-      )
+      throw new APIError(CAMPAIGN_DEMAND_ESCALATED_DECISION_MESSAGE, 403)
     }
 
     const history = Array.isArray(originalDoc?.statusHistory) ? [...originalDoc.statusHistory] : []
@@ -378,19 +377,6 @@ export const CampaignDemand: CollectionConfig = {
         },
       ],
     },
-    {
-      name: 'createdBy',
-      type: 'relationship',
-      relationTo: 'campaignUser',
-      label: 'Criado por',
-      index: true,
-      admin: {
-        readOnly: true,
-      },
-      access: {
-        create: canSetCampaignSystemField,
-        update: canSetCampaignSystemField,
-      },
-    },
+    systemStampedActorField({ setAccess: canSetCampaignSystemField }),
   ],
 }

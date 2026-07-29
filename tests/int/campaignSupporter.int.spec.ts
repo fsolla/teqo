@@ -19,8 +19,8 @@ import {
 import {
   loadSupporterListOverviewData,
   loadSupportersPageData,
-} from '@/utilities/supporterPageData'
-import { buildSupporterListWhere } from '@/utilities/supporterUi'
+} from '@/utilities/supporter/supporterPageData'
+import { buildSupporterListWhere } from '@/utilities/supporter/supporterUi'
 
 import { installCampaignFixtures, relationId } from '../helpers/campaignFixtures'
 import {

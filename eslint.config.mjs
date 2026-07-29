@@ -144,6 +144,34 @@ const eslintConfig = [
     },
   },
   {
+    // The 623 KB committed TSE artifact must never enter a client bundle.
+    // These three loaders carry it transitively; server components and other
+    // utilities import them freely, client components must not (P3-K — B13
+    // avoided it by discipline, not mechanism). Types stay safe.
+    files: ['src/components/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@/utilities/municipality/municipalityTerritorialClass',
+                '@/utilities/municipality/municipalityPotential',
+                '@/utilities/territory/territoryIntraCaptureBenchmark',
+                '@/lib/bahiaElectionAggregates',
+                '@/lib/electionAggregates/**',
+              ],
+              message:
+                'The committed TSE artifact (~623 KB) must not reach the browser bundle — resolve the values in the RSC and pass them down as props.',
+              allowTypeImports: true,
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Underscore-prefixed bindings are deliberate placeholders (unused action
     // state, ignored tuple slots); everything else unused is dead code.
     files: ['**/*.{js,mjs,jsx,ts,tsx}'],

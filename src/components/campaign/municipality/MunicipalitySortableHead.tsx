@@ -12,7 +12,7 @@ import {
 import type {
   MunicipalityFilterOption,
   MunicipalityFilterParam,
-} from '@/utilities/municipalityListFilters'
+} from '@/utilities/municipality/municipalityListFilters'
 import {
   buildMunicipalitySortHref,
   defaultMunicipalityListSortDir,
@@ -20,7 +20,7 @@ import {
   resolveMunicipalityListSort,
   type MunicipalityListSortKey,
   type MunicipalityListState,
-} from '@/utilities/municipalityListUrl'
+} from '@/utilities/municipality/municipalityListUrl'
 
 type MunicipalitySortableHeadProps = {
   state: MunicipalityListState

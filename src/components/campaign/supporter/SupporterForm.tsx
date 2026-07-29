@@ -1,12 +1,13 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useActionState, useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { useActionState, useState } from 'react'
 
 import type { SupporterFormState } from '@/app/(campaign)/campanha/(app)/apoiadores/novo/formActions'
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { StrictCombobox } from '@/components/campaign/shared/StrictCombobox'
+import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
 import { FormattedInput } from '@/components/FormattedInput'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
@@ -26,8 +27,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 import { errorProps as buildErrorProps, fieldError } from '@/utilities/campaignFormFields'
-import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
-import { municipalityComboboxOptions } from '@/utilities/territoryComboboxOptions'
+import { supporterVoteIntentionLabels } from '@/utilities/supporter/supporterUi'
+import { municipalityComboboxOptions } from '@/utilities/territory/territoryComboboxOptions'
 
 export type SupporterFormAction = (
   state: SupporterFormState,
@@ -110,13 +111,11 @@ export const SupporterForm = ({
   const [city, setCity] = useState<string>((state.values?.city as string | undefined) ?? '')
   const values = state.values
 
-  useEffect(() => {
-    if (state.status !== 'success') return
-    toast.success(state.message)
+  useCampaignFormSuccessToast(state, () => {
     if (state.supporterId) {
       router.push(`/campanha/apoiadores/${state.supporterId}`, { scroll: false })
     }
-  }, [router, state.message, state.status, state.supporterId])
+  })
 
   const nameField = errorProps(state.fieldErrors, 'name')
   const phoneField = errorProps(state.fieldErrors, 'phone')
@@ -127,16 +126,12 @@ export const SupporterForm = ({
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
-      {(state.message || state.fieldErrors?.form) && state.status !== 'success' ? (
-        <Alert variant="destructive" aria-live="polite">
-          <AlertTitle>Não foi possível cadastrar</AlertTitle>
-          <AlertDescription>
-            {state.message ? <p>{state.message}</p> : null}
-            {state.fieldErrors?.form?.map((error) => (
-              <p key={error}>{error}</p>
-            ))}
-          </AlertDescription>
-        </Alert>
+      {state.status !== 'success' ? (
+        <CampaignFormActionMessage
+          state={state}
+          errorTitle="Não foi possível cadastrar"
+          formFieldErrors={state.fieldErrors?.form}
+        />
       ) : null}
 
       <FieldGroup>

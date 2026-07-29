@@ -8,7 +8,7 @@ import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute
 import {
   buildCampaignRegistrationOptions,
   campaignWebAuthnSafeMessages,
-} from '@/utilities/campaignWebAuthnCeremony'
+} from '@/utilities/webauthn/campaignWebAuthnCeremony'
 
 export const dynamic = 'force-dynamic'
 

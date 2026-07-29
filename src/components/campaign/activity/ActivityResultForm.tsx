@@ -1,18 +1,18 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useActionState, useEffect } from 'react'
-import { toast } from 'sonner'
+import { useActionState } from 'react'
 
 import { registerActivityResultFormAction } from '@/app/(campaign)/campanha/(app)/atividades/[slug]/resultFormActions'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
+import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
+import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { fieldError } from '@/utilities/campaignFormFields'
-import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 
 type ActivityResultFormProps = {
   activityId: number
@@ -30,11 +30,7 @@ export const ActivityResultForm = ({
   const router = useRouter()
   const [state, formAction, pending] = useActionState(registerActivityResultFormAction, {})
 
-  useEffect(() => {
-    if (state.status !== 'success') return
-    toast.success(state.message)
-    router.refresh()
-  }, [router, state.message, state.status])
+  useCampaignFormSuccessToast(state, router.refresh)
 
   const summaryError = fieldError(state.fieldErrors, 'resultSummary')
   const recordedLabel = initialSummary
@@ -55,11 +51,8 @@ export const ActivityResultForm = ({
       <CardContent>
         <form action={formAction} className="flex flex-col gap-4">
           <input type="hidden" name="activityId" value={activityId} />
-          {state.message && state.status !== 'success' ? (
-            <Alert variant="destructive" aria-live="polite">
-              <AlertTitle>Não foi possível registrar</AlertTitle>
-              <AlertDescription>{state.message}</AlertDescription>
-            </Alert>
+          {state.status !== 'success' ? (
+            <CampaignFormActionMessage state={state} errorTitle="Não foi possível registrar" />
           ) : null}
           <Field data-invalid={Boolean(summaryError)}>
             <FieldLabel htmlFor="result-summary">O que aconteceu *</FieldLabel>

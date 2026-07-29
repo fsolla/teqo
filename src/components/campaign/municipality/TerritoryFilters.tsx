@@ -12,7 +12,7 @@ import {
   territoryCoverageLabels,
   toggleTerritoryRegionFilter,
   type TerritoryFilterOption,
-} from '@/utilities/territoryListFilters'
+} from '@/utilities/territory/territoryListFilters'
 import {
   buildTerritoryListHref,
   parseTerritorySortValue,
@@ -20,7 +20,7 @@ import {
   serializeTerritorySortValue,
   territoryListSortOptions,
   type TerritoryListState,
-} from '@/utilities/territoryListUrl'
+} from '@/utilities/territory/territoryListUrl'
 
 export const TerritoryFilters = ({
   state,

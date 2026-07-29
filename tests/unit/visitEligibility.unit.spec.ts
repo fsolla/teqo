@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { CALENDAR_PHASE_ANCHORS, CALENDAR_PHASES } from '@/lib/visitPlannerAnchors'
-import type { MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
-import type { MunicipalityTerritorialClass } from '@/utilities/municipalityTerritorialClass'
+import type { MunicipalityGoalCoverage } from '@/utilities/municipality/goalCoverage'
+import type { MunicipalityTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
 import {
   calendarPhaseLabels,
   calendarPhaseVisitProduct,
@@ -14,7 +14,7 @@ import {
   visitContraindicationLabels,
   type VisitConditionId,
   type VisitEligibilityInput,
-} from '@/utilities/visitEligibility'
+} from '@/utilities/visit/visitEligibility'
 import {
   compareVisitCandidates,
   composeTourSuggestion,
@@ -22,7 +22,7 @@ import {
   TOUR_MAX_SATELLITES,
   tourSuggestionSlugs,
   type VisitCandidateViewModel,
-} from '@/utilities/visitPlannerViews'
+} from '@/utilities/visit/visitPlannerViews'
 
 /** An eligible município: all five conditions met, no contraindication. */
 const input = (overrides: Partial<VisitEligibilityInput> = {}): VisitEligibilityInput => ({

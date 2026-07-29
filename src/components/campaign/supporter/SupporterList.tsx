@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
 import { formatBrazilianPhoneInput } from '@/lib/phone'
-import { supporterVoteIntentionLabels } from '@/utilities/supporterUi'
-import type { SupporterListItemViewModel } from '@/utilities/supporterViewModels'
+import { supporterVoteIntentionLabels } from '@/utilities/supporter/supporterUi'
+import type { SupporterListItemViewModel } from '@/utilities/supporter/supporterViewModels'
 
 export type SupporterListProps = {
   supporters: SupporterListItemViewModel[]

@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/Badge'
 import type { CalendarPhase } from '@/lib/visitPlannerAnchors'
-import { calendarPhaseLabels, calendarPhaseVisitProduct } from '@/utilities/visitEligibility'
+import { calendarPhaseLabels, calendarPhaseVisitProduct } from '@/utilities/visit/visitEligibility'
 
 /**
  * E13 — the phase never travels without what it changes. The same date can make

@@ -6,8 +6,8 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { getMunicipalityCatalogEntry, municipalityCatalog } from '@/lib/municipalityCatalog'
 import config from '@/payload.config'
-import { loadMunicipalityListPageBundle } from '@/utilities/municipalityPageData'
-import { computeMunicipalityTerritorialClass } from '@/utilities/municipalityTerritorialClass'
+import { loadMunicipalityListPageBundle } from '@/utilities/municipality/municipalityPageData'
+import { computeMunicipalityTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
 import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
 import { rollupMunicipalityStaffVotes } from '@/utilities/votePledgeViews'
 

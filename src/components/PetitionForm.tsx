@@ -52,15 +52,11 @@ export const PetitionForm = ({ id, petition, consentHTML, facebookPixelId }: Pet
   const [signatureNumber, setSignatureNumber] = useState<number | null>(null)
 
   const onSubmit: SubmitHandler<PetitionFormInput> = (input) => {
-    const consentId =
-      typeof petition.form?.consent === 'number' ? petition.form.consent : petition.form.consent.id
-
     startTransition(async () => {
       try {
         const result = await submitPetitionSignature({
           ...input,
           petitionId: petition.id,
-          consentId,
         })
         if (facebookPixelId) {
           trackMetaLead(facebookPixelId, petition.title, crypto.randomUUID())

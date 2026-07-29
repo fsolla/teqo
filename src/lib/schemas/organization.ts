@@ -45,5 +45,14 @@ export const organizationUpdateSchema = z.object({
   municipalities: municipalitiesArraySchema.optional(),
 })
 
+/**
+ * Refusal messages matched by exact string in the routes' `safeMessages` —
+ * named once (B32+/B37 contract): a reworded literal at either end silently
+ * collapses the refusal into the generic error.
+ */
+export const ORGANIZATION_STAFF_MESSAGE =
+  'Somente a coordenação e a assessoria gerenciam organizações.'
+export const ORGANIZATION_CONFLICT_MESSAGE = 'Já existe uma organização com este nome.'
+
 export type OrganizationCreateInput = z.input<typeof organizationCreateSchema>
 export type OrganizationUpdateInput = z.input<typeof organizationUpdateSchema>

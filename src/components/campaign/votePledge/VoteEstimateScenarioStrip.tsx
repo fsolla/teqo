@@ -13,8 +13,6 @@ type VoteEstimateScenarioStripProps = {
   values: VoteEstimateScenarioViewModel
   activeScenario?: VoteEstimateScenario
   className?: string
-  /** @deprecated Prefer labelMode */
-  showLabels?: boolean
   labelMode?: 'all' | 'endpoints' | 'none'
   markerMode?: 'all' | 'active-only'
   stretch?: boolean
@@ -24,12 +22,11 @@ export const VoteEstimateScenarioStrip = ({
   values,
   activeScenario = 'central',
   className,
-  showLabels = true,
   labelMode,
   markerMode = 'all',
   stretch = false,
 }: VoteEstimateScenarioStripProps) => {
-  const resolvedLabelMode = labelMode ?? (showLabels ? 'all' : 'none')
+  const resolvedLabelMode = labelMode ?? 'all'
   const activeOnlyMarkers = markerMode === 'active-only'
   const trackClassName = stretch
     ? 'w-full min-w-0 max-w-none'

@@ -30,6 +30,7 @@ Não reimplemente a lógica delas aqui — só orquestre + aplique o override de
 ## Checklist
 
 ```
+- [ ] 0. Gate de modelo (skill model-selection: pool model; pare se metered premium — mesmo critério do Passo 0 de ship-to-main)
 - [ ] 1. rebase-on-main (completo; pare se abortar/perguntar)
 - [ ] 2. capture-review-debts com auto-confirm (override do Passo 5)
 - [ ] 3. ship-to-main (completo)
@@ -58,15 +59,16 @@ Nesses casos: reporte o bloqueio, **não** rode `ship-to-main` ainda (working tr
 
 ## Regras de orquestração
 
-| Situação                             | Ação                                                                      |
-| ------------------------------------ | ------------------------------------------------------------------------- |
-| Rebase no-op (já sync)               | Siga para debts                                                           |
-| Rebase com conflitos resolvidos      | Siga para debts                                                           |
-| Rebase abortado / precisa decisão    | **Pare** — não debts, não ship                                            |
-| Debts auto-confirm OK (ou no-op)     | Siga para ship                                                            |
-| Debts bloqueado (lock / ambiguidade) | **Pare** — não ship                                                       |
-| Ship: feature atrás de main          | Não deve ocorrer se Passo 1 OK; se ocorrer, re-rode rebase antes de merge |
-| Ship: branch é `main`                | Pare (guard da filha)                                                     |
+| Situação                                 | Ação                                                                      |
+| ---------------------------------------- | ------------------------------------------------------------------------- |
+| Gate de modelo (Passo 0) sem confirmação | **Pare** — aguarde troca de modelo ou aceite explícito do custo           |
+| Rebase no-op (já sync)                   | Siga para debts                                                           |
+| Rebase com conflitos resolvidos          | Siga para debts                                                           |
+| Rebase abortado / precisa decisão        | **Pare** — não debts, não ship                                            |
+| Debts auto-confirm OK (ou no-op)         | Siga para ship                                                            |
+| Debts bloqueado (lock / ambiguidade)     | **Pare** — não ship                                                       |
+| Ship: feature atrás de main              | Não deve ocorrer se Passo 1 OK; se ocorrer, re-rode rebase antes de merge |
+| Ship: branch é `main`                    | Pare (guard da filha)                                                     |
 
 Commit das mudanças de roadmap/planos feitas no Passo 2 entra no **mesmo** `ship-to-main` (Passo 2 da filha — commit all).
 

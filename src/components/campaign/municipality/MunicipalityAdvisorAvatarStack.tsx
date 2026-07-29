@@ -4,7 +4,7 @@ import type { ReactElement } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { campaignUserInitials } from '@/utilities/campaignUserProfile'
-import { municipalityListCoverageLabels } from '@/utilities/municipalityLabels'
+import { municipalityListCoverageLabels } from '@/utilities/municipality/municipalityLabels'
 
 export type MunicipalityAdvisorAvatarEntry = {
   id: number

@@ -4,14 +4,15 @@
 
 import type { Access, Where } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import { getAccessibleMunicipalityIds } from '@/utilities/access/municipalities'
 import {
+  advisorMunicipalityScopeWhere,
   getFreshCampaignUser,
   isCampaignLeader,
   isCampaignUnrestricted,
   isPayloadAdmin,
 } from '@/utilities/access/shared'
-import { relationshipId } from '@/utilities/relationship'
 
 export const canCreateSupporter: Access = async ({ data, req }) => {
   if (isPayloadAdmin(req.user)) return true
@@ -22,12 +23,10 @@ export const canCreateSupporter: Access = async ({ data, req }) => {
   const municipalityID = relationshipId(data?.municipality)
   if (!municipalityID) return false
 
-  if (currentUser?.role === 'advisor') {
-    const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
-    return municipalityIDs?.includes(municipalityID) ?? false
-  }
-
-  if (isCampaignLeader(currentUser)) {
+  // Advisor and leader create through the same scope check: the municipality
+  // must be one `getAccessibleMunicipalityIds` resolves for THEIR role
+  // (administered for the advisor, engaged-leadership-linked for the leader).
+  if (currentUser?.role === 'advisor' || isCampaignLeader(currentUser)) {
     const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
     return municipalityIDs?.includes(municipalityID) ?? false
   }
@@ -43,12 +42,10 @@ export const canReadSupporter: Access = async ({ req }): Promise<boolean | Where
   if (isCampaignUnrestricted(currentUser)) return true
 
   if (currentUser.role === 'advisor') {
-    const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
-    return {
-      municipality: {
-        in: municipalityIDs ?? [],
-      },
-    }
+    return advisorMunicipalityScopeWhere(
+      'municipality',
+      await getAccessibleMunicipalityIds(req, currentUser),
+    )
   }
 
   if (isCampaignLeader(currentUser)) {

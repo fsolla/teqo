@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
   CAMPAIGN_SESSION_EXPIRED_MESSAGE,
@@ -17,7 +18,6 @@ import {
 } from '@/utilities/campaignUserProfile'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { relationshipId } from '@/utilities/relationship'
 
 const deleteAvatarMedia = async (
   payload: Payload,

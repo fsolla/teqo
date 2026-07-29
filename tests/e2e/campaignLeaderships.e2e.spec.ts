@@ -12,17 +12,10 @@ test.describe('campaign leaderships list', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const coordinator = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenador Status'),
-        email: `${fixtures.value('coordinator-status')}@example.com`,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Status'),
     })
+    const password = coordinator.password
 
     const municipality = await fixtures.claimMunicipality()
     const { contactName } = await fixtures.createStaffLeadership({
@@ -63,17 +56,10 @@ test.describe('campaign leaderships list', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const coordinator = await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenador Carteira'),
-        email: `${fixtures.value('coordinator-municipalities')}@example.com`,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Carteira'),
     })
+    const password = coordinator.password
 
     const linked = await fixtures.claimMunicipality()
     const added = await fixtures.claimMunicipality()
@@ -128,7 +114,12 @@ test.describe('campaign leaderships list', () => {
     // Whatever the catalog ranks first — the query may prefix-match siblings.
     const keyboardAdded = (await firstOption.innerText()).split('\n')[0]!.trim()
     await Promise.all([persisted(), search.press('Enter')])
-    await expect(page.getByRole('link', { name: keyboardAdded, exact: true })).toBeVisible()
+    // 30 s: the POST landed (persisted above), so this is purely the optimistic
+    // chip render + RSC refresh — under 2-worker load with a cold dev compile
+    // that round-trip has measured past the 10 s expect budget (P3-C).
+    await expect(page.getByRole('link', { name: keyboardAdded, exact: true })).toBeVisible({
+      timeout: 30_000,
+    })
 
     await Promise.all([
       persisted(),

@@ -50,29 +50,29 @@ import {
   territorialClassBadgeVariant,
   territorialClassLabels,
   type MunicipalityListColumnId,
-} from '@/utilities/municipalityLabels'
+} from '@/utilities/municipality/municipalityLabels'
 import {
   clearMunicipalityListFilters,
   type MunicipalityFilterOption,
-} from '@/utilities/municipalityListFilters'
+} from '@/utilities/municipality/municipalityListFilters'
 import {
   buildMunicipalityListHref,
   formatMunicipalityListSortSummary,
   municipalityColumnLabels,
   resolveMunicipalityListSort,
   type MunicipalityListState,
-} from '@/utilities/municipalityListUrl'
+} from '@/utilities/municipality/municipalityListUrl'
 import {
   formatMunicipalitySignalAgeLabel,
   isMunicipalitySignalCold,
   MUNICIPALITY_COLD_SIGNAL_DAYS,
   municipalitySignalAgeInDays,
-} from '@/utilities/municipalitySignal'
+} from '@/utilities/municipality/municipalitySignal'
 import type {
   EligibleAdvisorOption,
   MunicipalityAdvisorSummary,
   MunicipalityListViewModel,
-} from '@/utilities/municipalityViewModels'
+} from '@/utilities/municipality/municipalityViewModels'
 import { toMunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')

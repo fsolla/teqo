@@ -8,18 +8,11 @@ test('logs in with a remembered fourteen-day campaign session', async ({
 }) => {
   test.slow()
   const { fixtures } = campaign
-  const email = `${fixtures.value('remembered-user')}@example.com`
-  const password = fixtures.value('password')
-  await campaign.payload.create({
-    collection: 'campaignUser',
-    data: {
-      name: fixtures.value('Usuária lembrada'),
-      email,
-      password,
-      role: 'advisor',
-    },
-    depth: 0,
+  const rememberedUser = await fixtures.createCampaignUser('advisor', {
+    name: fixtures.value('Usuária lembrada'),
   })
+  const email = rememberedUser.email!
+  const password = rememberedUser.password
 
   await page.goto('/campanha/login')
   const rememberMe = page.getByRole('checkbox', {

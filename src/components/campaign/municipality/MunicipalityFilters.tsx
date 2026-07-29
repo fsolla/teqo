@@ -18,14 +18,14 @@ import {
   toggleMunicipalityExclusiveFilterValue,
   toggleMunicipalityMultiFilterValue,
   type MunicipalityFilterOption,
-} from '@/utilities/municipalityListFilters'
+} from '@/utilities/municipality/municipalityListFilters'
 import {
   municipalityListSortOptions,
   parseMunicipalitySortValue,
   resolveMunicipalityListSort,
   serializeMunicipalitySortValue,
   type MunicipalityListState,
-} from '@/utilities/municipalityListUrl'
+} from '@/utilities/municipality/municipalityListUrl'
 
 type MunicipalityFiltersProps = {
   state: MunicipalityListState

@@ -5,8 +5,8 @@ import { toast } from 'sonner'
 
 import { toggleActivityTaskAction } from '@/app/(campaign)/campanha/(app)/atividades/[slug]/taskActions'
 import { Checkbox } from '@/components/ui/Checkbox'
+import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import type { ActivityTaskViewModel } from '@/utilities/activityViewModels'
-import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 
 type ActivityTaskChecklistProps = {
   activityId: number

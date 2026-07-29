@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import type { OrganizationKind } from '@/lib/schemas/organization'
 import { organizationKinds } from '@/lib/schemas/organization'
 import type { CampaignUser, Organization } from '@/payload-types'
@@ -13,7 +14,7 @@ import {
   strictDecimalInteger,
   type RawSearchParams,
 } from '@/utilities/campaignListUrl'
-import { relationshipId } from '@/utilities/relationship'
+import { loadMunicipalityLabelsByIds } from '@/utilities/loadNamesByIds'
 
 const organizationPageSize = 25
 
@@ -65,17 +66,8 @@ const municipalityNamesByIds = async (
   payload: Payload,
   ids: number[],
 ): Promise<Map<number, string>> => {
-  if (ids.length === 0) return new Map()
-  const result = await payload.find({
-    collection: 'municipality',
-    where: { id: { in: ids } },
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    select: { name: true },
-    overrideAccess: true,
-  })
-  return new Map(result.docs.map((municipality) => [municipality.id, municipality.name]))
+  const labels = await loadMunicipalityLabelsByIds(payload, ids)
+  return new Map([...labels].map(([id, label]) => [id, label.name]))
 }
 
 export const loadOrganizationListPageData = async (

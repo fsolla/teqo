@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import {
   canCreateSupporter,
   canDeleteSupporter,
@@ -10,7 +11,7 @@ import {
   canReadSupporter,
   canSetAdministrativeLeadershipField,
 } from '@/utilities/campaignAccess'
-import { relationshipId } from '@/utilities/relationship'
+import { systemStampedActorField } from '@/utilities/campaignAuditFields'
 
 export const Supporter: CollectionConfig = {
   slug: 'supporter',
@@ -210,20 +211,9 @@ export const Supporter: CollectionConfig = {
         update: canManageCampaignStaffField,
       },
     },
-    {
-      name: 'createdBy',
-      type: 'relationship',
-      relationTo: 'campaignUser',
-      label: 'Criado por',
-      index: true,
-      admin: {
-        readOnly: true,
-      },
-      access: {
-        create: canSetAdministrativeLeadershipField,
-        read: canReadCampaignStaffField,
-        update: canSetAdministrativeLeadershipField,
-      },
-    },
+    systemStampedActorField({
+      readAccess: canReadCampaignStaffField,
+      setAccess: canSetAdministrativeLeadershipField,
+    }),
   ],
 }

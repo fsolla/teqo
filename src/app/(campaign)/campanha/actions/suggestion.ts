@@ -9,16 +9,16 @@ import {
   type SuggestionDecisionInput,
 } from '@/lib/schemas/suggestion'
 import {
-  DAY_MS,
   getSuggestionPattern,
   isSuggestionSuppressedByDecision,
   SUGGESTION_TEXT_MAX_LENGTH,
   suggestionPostponeDays,
 } from '@/lib/suggestionCatalog'
+import { DAY_MS } from '@/lib/text'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO } from '@/lib/voteEstimate'
 import type { AllocationDecision, CampaignUser } from '@/payload-types'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
-import { loadMunicipalitySuggestions } from '@/utilities/municipalityTriggers'
+import { loadMunicipalitySuggestions } from '@/utilities/municipality/municipalityTriggers'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 

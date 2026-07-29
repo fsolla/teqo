@@ -18,6 +18,7 @@ Conceitos e decisões: `docs/ARCHITECTURE.md`. Operação (setup/seeds/deploy/se
 - `src/app/(campaign)/campanha` — ferramenta interna (auth `campaignUser`, cookie `campaign-token`; barreira no layout de `(app)`). Server actions em `campanha/actions/*`; `formActions.ts` por rota são cascas sobre `runCampaignFormAction` / `runCampaignRedirectFormAction` (`utilities/campaignFormActionError.ts`).
 - `src/collections/` + `src/globals/` — modelo de dados Payload; TODA collection declara `access`; schema muda só por migration (`pnpm migrate:create`).
 - `src/utilities/access/` — RBAC por domínio; `campaignAccess.ts` é o barrel de re-export; predicados de role client-safe em `src/lib/campaignRoles.ts`.
+- `src/utilities/<domínio>/` — subpastas de domínio (P3-J, gatilho D1): `municipality/` (incl. `campaignMunicipalityScope`, `goalCoverage`), `supporter/`, `territory/` (incl. `loadTerritoryOverview`), `leadership/`, `visit/`, `webauthn/` (`campaignWebAuthn*`). Imports diretos, **sem barrels**. O top-level de `src/utilities/` é **pinado** (`codebaseConventions.unit.spec.ts`): módulo novo top-level falha o build até ser registrado — a 3º módulo novo de um domínio no mês, o domínio ganha subpasta. Helpers puros que estavam na camada errada moram em `lib/` (`campaignTime`, `relationship`).
 - `src/components/campaign/<domínio>/` — municipality, activity, supporter, leadership, advisor, demand, organization, stateDeputy, votePledge, invite, map, dashboard, auth, shell (sidebar/nav/PWA), shared (sistema de listas + widgets genéricos).
 - `src/components/ui/` — kit shadcn da casa (sem peças mortas; `shadcn add` re-adiciona).
 - `src/lib/schemas/` — zod de entrada; `src/lib/` também guarda catálogos estáticos e o artefato TSE (`electionAggregates/`).
@@ -31,7 +32,8 @@ Conceitos e decisões: `docs/ARCHITECTURE.md`. Operação (setup/seeds/deploy/se
 - Shells: `CampaignSearchForm`, `CampaignFilterChips`, `CampaignListFooter`, `CampaignListEmptyState`, `CampaignListPagination`, pending compartilhado em `CampaignListPending.tsx` (dima o resultado, não o controle).
 - Filtros salvos (B18) — só municípios: `utilities/municipalitySavedFilters.ts` (`localStorage`, identidade = href canônico, ordem alfabética) + hook `shared/useMunicipalitySavedFilters` + `municipality/SaveMunicipalityFilterControl` (barra) + `shell/MunicipalityNavSavedFilters` (submenu). O casamento URL↔salvo é `lib/listQueryMatch.ts` e **tem de continuar puro**: a sidebar está no layout de `(app)`, então importar o serializador de URL do domínio ali custa ~21 kB em toda rota `/campanha`.
 - Relação por chips numa célula: `shared/MunicipalityPortfolioCell` (B34) — sempre montada em `pointer-fine`, Drawer em `pointer-coarse`; costuras `minItems`/`maxItems`/`addableIds`/`draft`/`commitAction`. Serve lideranças e assessores; não escrever uma terceira. Lógica pura em `lib/municipalityPortfolio.ts`, índice em `utilities/municipalityPortfolioIndex.ts`.
-- Exceções documentadas: atividades = cards; `TerritoryOverviewTable` = sort no cliente; comparação de candidatos, LeaderContacts e preview de import ficam fora.
+- Exceções documentadas: atividades = cards; comparação de candidatos, LeaderContacts e preview de import ficam fora.
+- `src/lib/formData.ts` é o único módulo de `lib/` marcado `server-only` (FormData é fronteira server); todo o resto de `lib/` é client-safe.
 - Detalhe por tabs: `utilities/detailTabUi.ts` (factory) + sections RSC colocadas na rota (`municipios/[slug]/MunicipalityDetailTabs.tsx`, `atividades/[slug]/ActivityOverviewTab.tsx`).
 
 ## Achar o dono de uma feature

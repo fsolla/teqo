@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { isPopulatedRelationship, relationshipId } from '@/lib/relationship'
 import type { CampaignDemandKind, CampaignDemandStatus } from '@/lib/schemas/campaignDemand'
 import { campaignDemandKinds, campaignDemandStatuses } from '@/lib/schemas/campaignDemand'
 import type { Activity, CampaignDemand, CampaignUser } from '@/payload-types'
@@ -12,7 +13,11 @@ import {
   strictDecimalInteger,
   type RawSearchParams,
 } from '@/utilities/campaignListUrl'
-import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
+import {
+  loadCampaignUserNamesByIds,
+  loadLeadershipContactNamesByIds,
+  loadMunicipalityLabelsByIds,
+} from '@/utilities/loadNamesByIds'
 
 const demandPageSize = 25
 
@@ -85,49 +90,14 @@ const resolveMunicipalityAndRequesterNames = async (
     ),
   ]
 
-  const [municipalities, leaderships] = await Promise.all([
-    municipalityIDs.length
-      ? payload.find({
-          collection: 'municipality',
-          where: { id: { in: municipalityIDs } },
-          depth: 0,
-          limit: 0,
-          pagination: false,
-          select: { name: true, slug: true },
-          overrideAccess: true,
-        })
-      : { docs: [] },
-    leadershipIDs.length
-      ? payload.find({
-          collection: 'leadership',
-          where: { id: { in: leadershipIDs } },
-          depth: 1,
-          limit: 0,
-          pagination: false,
-          select: { contact: true },
-          overrideAccess: true,
-        })
-      : { docs: [] },
+  const [municipalityBy, contactNameByLeadershipId] = await Promise.all([
+    loadMunicipalityLabelsByIds(payload, municipalityIDs),
+    loadLeadershipContactNamesByIds(payload, leadershipIDs),
   ])
 
   return {
-    municipalityBy: new Map(
-      municipalities.docs.map((municipality) => [
-        municipality.id,
-        { name: municipality.name, slug: municipality.slug },
-      ]),
-    ),
-    requesterBy: new Map(
-      leaderships.docs.map((leadership) => {
-        const contact = leadership.contact
-        return [
-          leadership.id,
-          typeof contact === 'object' && contact !== null && 'name' in contact
-            ? String(contact.name)
-            : 'Liderança',
-        ]
-      }),
-    ),
+    municipalityBy,
+    requesterBy: contactNameByLeadershipId,
   }
 }
 
@@ -246,18 +216,7 @@ export const loadDemandDetail = async (
         .filter((id): id is number => id !== null),
     ),
   ]
-  const authors = authorIDs.length
-    ? await payload.find({
-        collection: 'campaignUser',
-        where: { id: { in: authorIDs } },
-        depth: 0,
-        limit: 0,
-        pagination: false,
-        select: { name: true },
-        overrideAccess: true,
-      })
-    : { docs: [] }
-  const authorNameById = new Map(authors.docs.map((author) => [author.id, author.name]))
+  const authorNameById = await loadCampaignUserNamesByIds(payload, authorIDs)
 
   return {
     ...row,

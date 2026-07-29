@@ -1,15 +1,13 @@
 import config from '@payload-config'
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { DemandForm } from '@/components/campaign/demand/DemandForm'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
 import { firstValue, strictDecimalInteger } from '@/utilities/campaignListUrl'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadActivityOptions, loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { createDemandFormAction } from './formActions'
 
@@ -19,12 +17,10 @@ type NewDemandPageProps = {
 
 export default async function NewDemandPage({ searchParams }: NewDemandPageProps) {
   const [user, payload, query] = await Promise.all([
-    getCampaignUser(),
+    requireCampaignPageActor({ gate: 'staff' }),
     getPayload({ config }),
     searchParams,
   ])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
 
   const [municipalityOptions, activityOptions] = await Promise.all([
     loadMunicipalityOptions(payload, user),

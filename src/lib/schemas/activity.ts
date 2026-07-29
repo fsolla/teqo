@@ -7,6 +7,21 @@ import {
   trimmedOptionalText,
 } from '@/lib/schemas/primitives'
 
+/**
+ * Refusal messages matched by exact string in the routes' `safeMessages` —
+ * named once (B32+/B37 contract): a reworded literal at either end silently
+ * collapses the refusal into the generic error.
+ */
+export const ACTIVITY_TASK_NOT_FOUND_MESSAGE = 'Tarefa não encontrada.'
+export const ACTIVITY_UPDATE_BODY_REQUIRED_MESSAGE = 'Informe o texto da atualização.'
+export const ACTIVITY_UPDATE_BODY_TOO_LONG_MESSAGE =
+  'Atualização muito longa. Reduza o texto e tente novamente.'
+export const ACTIVITY_RESULT_REQUIRED_MESSAGE = 'Informe o resultado da atividade.'
+export const ACTIVITY_RESULT_TOO_LONG_MESSAGE =
+  'Resultado muito longo. Reduza o texto e tente novamente.'
+export const ACTIVITY_RESULT_STAFF_MESSAGE =
+  'Apenas a equipe da campanha pode registrar o resultado da atividade.'
+
 export const activityKinds = [
   'caminhada',
   'comicio',

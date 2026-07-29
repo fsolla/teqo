@@ -1,6 +1,9 @@
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { Municipality } from '@/payload-types'
-import { centralDeficitSortValue, type MunicipalityGoalCoverage } from '@/utilities/goalCoverage'
+import {
+  centralDeficitSortValue,
+  type MunicipalityGoalCoverage,
+} from '@/utilities/municipality/goalCoverage'
 
 export const DASHBOARD_PRIORITY_SAMPLE_LIMIT = 8
 

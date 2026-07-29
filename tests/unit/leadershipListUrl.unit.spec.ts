@@ -9,7 +9,7 @@ import {
   toggleLeadershipAccessFilter,
   toggleLeadershipMunicipalityFilter,
   toggleLeadershipStatusFilter,
-} from '@/utilities/leadershipListFilters'
+} from '@/utilities/leadership/leadershipListFilters'
 import {
   buildLeadershipListHref,
   buildLeadershipSortHref,
@@ -18,7 +18,7 @@ import {
   resolveLeadershipListSort,
   resolveLeadershipListUrl,
   serializeCanonicalLeadershipListSearchParams,
-} from '@/utilities/leadershipListUrl'
+} from '@/utilities/leadership/leadershipListUrl'
 
 describe('leadership list URL contract', () => {
   it('defaults to page 1 with no sort/filters', () => {

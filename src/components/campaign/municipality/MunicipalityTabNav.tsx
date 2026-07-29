@@ -6,7 +6,7 @@ import {
   municipalityDetailTabs,
   type MunicipalityDetailSearchParams,
   type MunicipalityDetailTab,
-} from '@/utilities/municipalityDetailTabUi'
+} from '@/utilities/municipality/municipalityDetailTabUi'
 
 const tabLabels: Record<MunicipalityDetailTab, string> = {
   overview: 'Visão geral',

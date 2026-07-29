@@ -1,7 +1,7 @@
 import config from '@payload-config'
 import { ArrowLeftIcon, PaperclipIcon } from 'lucide-react'
 import Link from 'next/link'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { DemandWorkflowCard } from '@/components/campaign/demand/DemandWorkflowCard'
@@ -13,9 +13,9 @@ import {
   campaignDemandStatusLabels,
   type CampaignDemandStatus,
 } from '@/lib/schemas/campaignDemand'
-import { isCampaignStaff, isCampaignUnrestricted } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { loadDemandDetail } from '@/utilities/campaignDemandData'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   attachDemandReceiptFormAction,
   setDemandCostFormAction,
@@ -49,9 +49,10 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
 
 export default async function DemandDetailPage({ params }: DemandDetailPageProps) {
   const { slug } = await params
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
 
   const demand = await loadDemandDetail(payload, user, slug)
   if (!demand) notFound()

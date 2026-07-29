@@ -2,11 +2,11 @@
 
 import { useActionState } from 'react'
 
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import {
   RelationMultiSelect,
   type RelationOption,
 } from '@/components/campaign/shared/RelationMultiSelect'
-import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
@@ -15,8 +15,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { leadershipSectors, leadershipSupportStatuses } from '@/lib/schemas/leadership'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
-import type { LeadershipDetailViewModel } from '@/utilities/leadershipData'
-import { supportStatusLabels } from '@/utilities/leadershipLabels'
+import type { LeadershipDetailViewModel } from '@/utilities/leadership/leadershipData'
+import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 
 const sectorLabels: Record<(typeof leadershipSectors)[number], string> = {
   religioso: 'Religioso',
@@ -140,16 +140,7 @@ export const LeadershipInternalForm = ({
         />
       </Field>
 
-      {state.message && state.status !== 'success' ? (
-        <Alert variant="destructive">
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      ) : null}
-      {state.status === 'success' ? (
-        <Alert>
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      ) : null}
+      <CampaignFormActionMessage state={state} />
       <Button type="submit" disabled={isPending} className="min-h-11 self-start">
         {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
         Salvar

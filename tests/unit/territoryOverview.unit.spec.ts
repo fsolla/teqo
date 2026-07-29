@@ -8,7 +8,7 @@ import {
   meanCaptureRateOfMunicipalities,
   sortTerritoryRows,
   type TerritoryMunicipalityInput,
-} from '@/utilities/territoryOverview'
+} from '@/utilities/territory/territoryOverview'
 
 const emptyGoalCoverage = {
   goal: 0,

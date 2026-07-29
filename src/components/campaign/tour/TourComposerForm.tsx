@@ -22,13 +22,13 @@ import {
 } from '@/lib/schemas/activity'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
-import type { TourStopRole } from '@/utilities/visitPlannerViews'
+import type { TourStopRole } from '@/utilities/visit/visitPlannerViews'
 import {
   MAX_TOUR_NAME_LENGTH,
   MAX_TOUR_STOPS,
   tourStopRoleDescriptions,
   tourStopRoleLabels,
-} from '@/utilities/visitPlannerViews'
+} from '@/utilities/visit/visitPlannerViews'
 
 /** The composition came from the numbers; the coordination changes it per stop. */
 const DEFAULT_STOP_ORIGIN: ActivityOrigin = 'dado'

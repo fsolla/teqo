@@ -25,3 +25,19 @@ export const TERRITORIAL_CLASS_ANCHORS = {
 
 /** Band where the LQ multiple rounds to "1×", which says nothing — name it instead. */
 export const AT_STANDARD_LQ = { min: 0.95, max: 1.15 } as const
+
+/**
+ * The class vocabulary itself, single-sourced HERE (P3-K): the classifier,
+ * the labels, the URL filter and the map legend all derive from this tuple,
+ * so adding a class is a type error everywhere it must be handled — before
+ * the fold it compiled green and silently mis-sorted.
+ */
+export const TERRITORIAL_CLASSES = [
+  'reduto',
+  'expansao',
+  'manutencao',
+  'marginal',
+  'sem_base',
+] as const
+
+export type MunicipalityTerritorialClass = (typeof TERRITORIAL_CLASSES)[number]

@@ -11,7 +11,7 @@ import {
   CAMPAIGN_WEBAUTHN_ACCOUNT_LOCKED_MESSAGE,
   CAMPAIGN_WEBAUTHN_ACCOUNT_UNAVAILABLE_MESSAGE,
   issueCampaignWebAuthnSession,
-} from '@/utilities/campaignWebAuthnSession'
+} from '@/utilities/webauthn/campaignWebAuthnSession'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 

@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { getGlobalCacheTag } from '@/utilities/globals'
-import { MUNICIPALITY_CATALOG_CACHE_TAG } from '@/utilities/municipalityRevalidation'
+import { MUNICIPALITY_CATALOG_CACHE_TAG } from '@/utilities/municipality/municipalityCatalogCache'
 import {
   REVALIDATE_POSTS_TAG,
   REVALIDATE_PRIVACY_POLICY_CACHE_TAG,

@@ -2,7 +2,11 @@
 
 import type { Payload } from 'payload'
 
+import { requireRelationshipId } from '@/lib/relationship'
 import {
+  SUPPORTER_DUPLICATE_MESSAGE,
+  SUPPORTER_STAFF_MESSAGE,
+  SUPPORTER_UNSCOPED_COORDINATOR_MESSAGE,
   supporterCreateSchema,
   supporterRemoveSchema,
   supporterVoteIntentionSchema,
@@ -14,11 +18,14 @@ import {
   requireSupporterVoteIntentionConsent,
   type ConsentDescriptor,
 } from '@/utilities/campaignConsent'
-import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
+import {
+  acquireContactPhoneLocks,
+  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
+} from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { requireRelationshipId } from '@/utilities/relationship'
-import { isUniqueSupporterConflict } from '@/utilities/supporterErrors'
+import { POSTGRES_DEDUP_LOCK_MESSAGE } from '@/utilities/postgresTransactionLocks'
+import { isUniqueSupporterConflict } from '@/utilities/supporter/supporterErrors'
 
 import {
   confirmSupporterImport as confirmSupporterImportAction,
@@ -31,13 +38,7 @@ const getFreshStaffActor = (
   payload: Payload,
   actor: CampaignUser,
   req?: PayloadTransactionRequest,
-): Promise<CampaignUser> =>
-  reloadStaffActor(
-    payload,
-    actor,
-    'Somente a coordenação e a assessoria podem gerenciar apoiadores.',
-    req,
-  )
+): Promise<CampaignUser> => reloadStaffActor(payload, actor, SUPPORTER_STAFF_MESSAGE, req)
 
 const assertMunicipalityManagement = async (
   payload: Payload,
@@ -95,9 +96,7 @@ export const upsertContactByPhone = async ({
   })
 
   if (contacts.totalDocs > 1) {
-    throw new Error(
-      'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.',
-    )
+    throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
   }
 
   const existing = contacts.docs[0]
@@ -138,26 +137,18 @@ const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, i
         if (data.municipality) {
           await assertMunicipalityManagement(payload, currentActor, data.municipality, req)
         } else if (currentActor.role !== 'coordinator') {
-          throw new Error('Somente o Coordenador Geral pode cadastrar apoiadores sem município.')
+          throw new Error(SUPPORTER_UNSCOPED_COORDINATOR_MESSAGE)
         }
 
-        const registrationConsent = await requireSupporterRegistrationConsent(
-          payload,
-          req,
-          'Consentimento de cadastro de apoiador ainda não configurado.',
-        )
+        const registrationConsent = await requireSupporterRegistrationConsent(payload, req)
 
         let voteIntentionConsent: ConsentDescriptor | null = null
         if (data.voteIntention) {
-          voteIntentionConsent = await requireSupporterVoteIntentionConsent(
-            payload,
-            req,
-            'Consentimento de intenção de voto ainda não configurado.',
-          )
+          voteIntentionConsent = await requireSupporterVoteIntentionConsent(payload, req)
         }
 
         if (payload.db.name !== 'postgres') {
-          throw new Error('O bloqueio de deduplicação exige o adaptador PostgreSQL.')
+          throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
         }
 
         await acquireContactPhoneLocks(payload, req, [data.phone])
@@ -200,7 +191,7 @@ const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, i
     )
   } catch (error) {
     if (isUniqueSupporterConflict(error)) {
-      throw new Error('Esta pessoa já está cadastrada como apoiador neste município.')
+      throw new Error(SUPPORTER_DUPLICATE_MESSAGE)
     }
     throw error
   }
@@ -230,11 +221,7 @@ export const setSupporterVoteIntentionRecord = async (
       const currentActor = await getFreshStaffActor(payload, actor, req)
       await assertCanManageSupporter(payload, currentActor, data.id, req)
 
-      const voteIntentionConsent = await requireSupporterVoteIntentionConsent(
-        payload,
-        req,
-        'Consentimento de intenção de voto ainda não configurado.',
-      )
+      const voteIntentionConsent = await requireSupporterVoteIntentionConsent(payload, req)
 
       return payload.update({
         collection: 'supporter',
@@ -376,6 +363,12 @@ export const removeSupporterDataRecord = async (
       const supporter = await assertCanManageSupporter(payload, currentActor, data.id, req)
       const contactID = requireRelationshipId(supporter.contact)
 
+      // Intentional admin bypass (LGPD titular-rights path): `canDeleteSupporter`
+      // is admin-only by design, but THIS action is the staff-driven data-removal
+      // flow — the actor's manage scope was already proven by
+      // `assertCanManageSupporter` above, and the row being deleted is exactly the
+      // one that scope check loaded. The asymmetry is deliberate: day-to-day
+      // deletes stay admin-only while the documented removal request path works.
       await payload.delete({
         collection: 'supporter',
         id: data.id,

@@ -2,7 +2,6 @@ import config from '@payload-config'
 import { MapPinnedIcon } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
@@ -15,21 +14,20 @@ import { CalendarPhaseNote } from '@/components/campaign/tour/CalendarPhaseNote'
 import { TourComposerForm, type TourStopOption } from '@/components/campaign/tour/TourComposerForm'
 import { TourRegionPicker } from '@/components/campaign/tour/TourRegionPicker'
 import { Button } from '@/components/ui/button'
+import { formatBahiaDayLabel } from '@/lib/campaignTime'
 import { formatElectionNumber } from '@/lib/electionFormat'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
-import { formatBahiaDayLabel } from '@/utilities/campaignTime'
-import { buildMunicipalityDetailTabHref } from '@/utilities/municipalityDetailTabUi'
-import { visitConditionLabels } from '@/utilities/visitEligibility'
-import { loadVisitCandidates, loadVisitPlannerRegions } from '@/utilities/visitPlannerData'
-import { buildTourComposerHref, parseTourComposerParams } from '@/utilities/visitPlannerUrl'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { buildMunicipalityDetailTabHref } from '@/utilities/municipality/municipalityDetailTabUi'
+import { visitConditionLabels } from '@/utilities/visit/visitEligibility'
+import { loadVisitCandidates, loadVisitPlannerRegions } from '@/utilities/visit/visitPlannerData'
+import { buildTourComposerHref, parseTourComposerParams } from '@/utilities/visit/visitPlannerUrl'
 import {
   composeTourSuggestion,
   resolveTourStopRole,
   tourStopRoleActivityKind,
   tourSuggestionSlugs,
   type VisitCandidateViewModel,
-} from '@/utilities/visitPlannerViews'
+} from '@/utilities/visit/visitPlannerViews'
 
 import { createTourDraftsFormAction } from './formActions'
 
@@ -86,9 +84,10 @@ export default async function TourComposerPage({ searchParams }: TourComposerPag
   const rawSearchParams = await searchParams
   const { region } = parseTourComposerParams(rawSearchParams)
 
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) return null
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
 
   const now = new Date()
   const [regions, bundle] = await Promise.all([

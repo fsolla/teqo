@@ -2,6 +2,7 @@ import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
 import { slugify } from '@/lib/slug'
+import { trimmedText } from '@/lib/text'
 import {
   canCreateStateDeputy,
   canDeleteStateDeputy,
@@ -9,8 +10,7 @@ import {
   canReadStateDeputy,
   canSetCampaignSystemField,
 } from '@/utilities/campaignAccess'
-
-const trimmedText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+import { stampCampaignCreatedBy, systemStampedActorField } from '@/utilities/campaignAuditFields'
 
 const setCanonicalStateDeputySlug: CollectionBeforeValidateHook = ({
   data,
@@ -52,15 +52,7 @@ export const StateDeputy: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [setCanonicalStateDeputySlug],
-    beforeChange: [
-      ({ data, operation, req }) => {
-        if (operation === 'create' && req.user?.collection === 'campaignUser') {
-          data.createdBy = req.user.id
-        }
-
-        return data
-      },
-    ],
+    beforeChange: [stampCampaignCreatedBy],
   },
   fields: [
     {
@@ -101,19 +93,6 @@ export const StateDeputy: CollectionConfig = {
       label: 'Observações',
       maxLength: 4000,
     },
-    {
-      name: 'createdBy',
-      type: 'relationship',
-      relationTo: 'campaignUser',
-      label: 'Criado por',
-      index: true,
-      admin: {
-        readOnly: true,
-      },
-      access: {
-        create: canSetCampaignSystemField,
-        update: canSetCampaignSystemField,
-      },
-    },
+    systemStampedActorField({ setAccess: canSetCampaignSystemField }),
   ],
 }

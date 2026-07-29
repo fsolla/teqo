@@ -5,7 +5,7 @@ import {
   formatTerritoryActiveFiltersSummary,
   toggleTerritoryCoverageFilter,
   toggleTerritoryRegionFilter,
-} from '@/utilities/territoryListFilters'
+} from '@/utilities/territory/territoryListFilters'
 import {
   buildTerritoryListHref,
   buildTerritorySortHref,
@@ -13,7 +13,7 @@ import {
   resolveTerritoryListSort,
   resolveTerritoryListUrl,
   serializeTerritoryListSearchParams,
-} from '@/utilities/territoryListUrl'
+} from '@/utilities/territory/territoryListUrl'
 
 describe('territory list URL contract', () => {
   it('parses and canonicalizes supported filters', () => {

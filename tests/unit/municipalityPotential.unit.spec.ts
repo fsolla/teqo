@@ -17,7 +17,7 @@ import {
   rollOff,
   sanityCheckSuggestedGoalsByTerritory,
   type MunicipalityPotential,
-} from '@/utilities/municipalityPotential'
+} from '@/utilities/municipality/municipalityPotential'
 
 const baseline = (
   overrides: Partial<MunicipalityFederalBaseline> = {},
@@ -340,7 +340,8 @@ describe('sanityCheckSuggestedGoalsByTerritory', () => {
 
 describe('computeMunicipalityPotential / computeAllMunicipalityPotentials (real artifact)', () => {
   it('returns a well-shaped potential for a real catalog slug and a zeroed one for an unknown slug', async () => {
-    const { computeMunicipalityPotential } = await import('@/utilities/municipalityPotential')
+    const { computeMunicipalityPotential } =
+      await import('@/utilities/municipality/municipalityPotential')
 
     const realSlug = municipalityCatalog[0]!.slug
     const real: MunicipalityPotential = computeMunicipalityPotential(realSlug)
@@ -355,7 +356,8 @@ describe('computeMunicipalityPotential / computeAllMunicipalityPotentials (real 
   })
 
   it('computeAllMunicipalityPotentials covers exactly the municipality catalog', async () => {
-    const { computeAllMunicipalityPotentials } = await import('@/utilities/municipalityPotential')
+    const { computeAllMunicipalityPotentials } =
+      await import('@/utilities/municipality/municipalityPotential')
 
     const potentials = computeAllMunicipalityPotentials()
     expect(potentials).toHaveLength(municipalityCatalog.length)

@@ -5,6 +5,7 @@ import type { Page } from '@playwright/test'
 import { getPayload, type CollectionSlug, type Payload, type PayloadRequest } from 'payload'
 
 import { municipalityCatalog } from '../../../src/lib/municipalityCatalog.js'
+import type { CampaignUser } from '../../../src/payload-types.js'
 import config from '../../../src/payload.config.js'
 import { withPayloadTransaction } from '../../../src/utilities/payloadTransaction.js'
 import { assertTestDatabase } from '../../helpers/assertTestDatabase.js'
@@ -49,6 +50,13 @@ const deletionOrder: OwnedCollection[] = [
  * never create/delete them. `claimMunicipality` hands out a globally unique seeded
  * municipality per call (Postgres sequence — safe across parallel workers) and
  * cleanup resets the operational fields the test may have touched.
+ *
+ * OWNERSHIP CONTRACT: rows created through `fixtures.payload` (i.e. `campaign.payload`)
+ * are auto-owned by the proxy below and deleted at cleanup — never call `own()` for
+ * them (that is why the class exposes no public `own`). Rows created through the raw
+ * `rootPayload` are NOT tracked. Shared stable-key consent rows are NEVER created
+ * through the proxy: use `ensureLeasedConsent` (testDatabaseLease.ts) so cleanup
+ * cannot rob a parallel spec of the shared row.
  */
 class CampaignE2EOwnership {
   readonly payload: Payload
@@ -87,6 +95,30 @@ class CampaignE2EOwnership {
     const seed = BigInt(`0x${this.runID.replaceAll('-', '').slice(0, 12)}`)
     const suffix = ((seed + BigInt(this.counter)) % 90_000_000n) + 10_000_000n
     return `719${suffix}`
+  }
+
+  /**
+   * One campaign account with a deterministic generated password (returned for
+   * the UI login) — replaces the ~28 hand-written `payload.create` blocks the
+   * specs used to spell out per role. The proxy above auto-owns the row.
+   */
+  async createCampaignUser(
+    role: CampaignUser['role'],
+    input: { name?: string; email?: string; username?: string } = {},
+  ): Promise<CampaignUser & { password: string }> {
+    const password = this.value('password')
+    const user = await this.payload.create({
+      collection: 'campaignUser',
+      data: {
+        name: this.value(`Usuário ${role}`),
+        email: `${this.value(role)}@example.com`,
+        password,
+        role,
+        ...input,
+      },
+      depth: 0,
+    })
+    return { ...user, password }
   }
 
   async claimMunicipality(): Promise<{ id: number; name: string; slug: string }> {
@@ -352,15 +384,34 @@ class CampaignE2EOwnership {
           throw new AggregateError(result.errors, `Failed to clean owned ${collection} rows.`)
         }
       }
+      const touched = await this.rootPayload.find({
+        collection: 'municipality',
+        where: { id: { in: [...this.touchedMunicipalities] } },
+        depth: 0,
+        pagination: false,
+        select: { slug: true },
+      })
+      const catalogNameById = new Map(
+        touched.docs.map((municipality) => [
+          municipality.id,
+          municipalityCatalog.find((entry) => entry.slug === municipality.slug)?.name,
+        ]),
+      )
       for (const municipalityID of this.touchedMunicipalities) {
+        const catalogName = catalogNameById.get(municipalityID)
         await this.rootPayload.update({
           collection: 'municipality',
           id: municipalityID,
+          // Same reset set as the int cleanup (tests/helpers/campaignFixtures.ts):
+          // a field added there belongs here too — keep them in lockstep.
           data: {
+            ...(catalogName ? { name: catalogName } : {}),
             advisors: [],
             priority: 'normal',
             expectedVotes: { pessimistic: null, central: null, optimistic: null },
             politicalTrend: { status: null, note: null, recordedBy: null, recordedAt: null },
+            engagementLevel: null,
+            levelNote: null,
             strengths: [],
             risks: [],
             dobradinhaNotes: null,
@@ -403,6 +454,25 @@ export const expectPostResponse = (page: Page, urlFragment: string) =>
       response.request().method() === 'POST' &&
       response.ok(),
   )
+
+/**
+ * Checks a Radix Checkbox only once the page has hydrated. A Radix checkbox is
+ * a button whose hidden input is synced by React, so a click that lands BEFORE
+ * hydration is a silent no-op (the SSR button has no handler) — the B13/B17
+ * flake class. `toPass` retries the probe until the state sticks: pre-hydration
+ * clicks change nothing, so the loop survives them; once hydration attaches,
+ * the next click toggles and the loop ends. Safe because an already-checked
+ * state short-circuits before any click.
+ */
+export const checkRadixWhenHydrated = async (page: Page, label: string) => {
+  const checkbox = page.getByLabel(label)
+  await expect(async () => {
+    if ((await checkbox.getAttribute('data-state')) !== 'checked') {
+      await checkbox.click({ timeout: 1_000 })
+    }
+    await expect(checkbox).toHaveAttribute('data-state', 'checked', { timeout: 1_000 })
+  }).toPass({ timeout: 15_000 })
+}
 
 type CampaignE2EFixture = {
   baseURL: string

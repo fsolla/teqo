@@ -2,11 +2,11 @@
 
 import { useActionState } from 'react'
 
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import {
   RelationMultiSelect,
   type RelationOption,
 } from '@/components/campaign/shared/RelationMultiSelect'
-import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -101,16 +101,7 @@ export const OrganizationForm = ({
         />
       </Field>
 
-      {state.message && state.status !== 'success' ? (
-        <Alert variant="destructive">
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      ) : null}
-      {state.status === 'success' ? (
-        <Alert>
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      ) : null}
+      <CampaignFormActionMessage state={state} />
       <Button type="submit" disabled={isPending} className="min-h-11 self-start">
         {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
         {isEdit ? 'Salvar organização' : 'Cadastrar organização'}

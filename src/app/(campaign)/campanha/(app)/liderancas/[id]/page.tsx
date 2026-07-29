@@ -1,7 +1,7 @@
 import config from '@payload-config'
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { LeadershipInviteButtons } from '@/components/campaign/invite/LeadershipInviteButtons'
@@ -11,14 +11,13 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import { StateDeputyChips } from '@/components/campaign/stateDeputy/StateDeputyChips'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadMunicipalityOptions,
   loadOrganizationOptions,
   loadStateDeputyOptions,
 } from '@/utilities/campaignRelationOptions'
-import { loadLeadershipDetail } from '@/utilities/leadershipData'
+import { loadLeadershipDetail } from '@/utilities/leadership/leadershipData'
 import { updateLeadershipInternalFormAction } from './formActions'
 
 type LeadershipDetailPageProps = {
@@ -29,9 +28,10 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
   const { id } = await params
   if (!/^[1-9]\d*$/.test(id)) notFound()
 
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
 
   const leadership = await loadLeadershipDetail(payload, user, Number(id))
   if (!leadership) notFound()

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { redirect } from 'next/navigation'
 
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import {
@@ -7,8 +6,7 @@ import {
   campaignConceptsByCategory,
   type CampaignIntelligenceConcept,
 } from '@/lib/campaignIntelligenceConcepts'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 
 export const metadata: Metadata = {
   title: 'Conceitos de inteligência | Campanha',
@@ -63,9 +61,7 @@ const ConceptSection = ({ concept }: { concept: CampaignIntelligenceConcept }) =
  * goals, field ceiling) that a `leader` never sees — M4's dual vocabulary.
  */
 export default async function CampaignConceptsPage() {
-  const user = await getCampaignUser()
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  await requireCampaignPageActor({ gate: 'staff' })
 
   return (
     <CampaignPageShell>

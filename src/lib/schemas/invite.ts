@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { campaignPasswordSchema } from '@/lib/schemas/campaignPassword'
 import { leadershipGenders, leadershipSectors } from '@/lib/schemas/leadership'
 import {
   brazilianMobile,
@@ -36,7 +37,7 @@ export const campaignInviteAutofillSchema = campaignInviteProfileSchema.extend({
 })
 
 export const campaignInviteLoginSchema = campaignInviteProfileSchema.extend({
-  password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.').max(128),
+  password: campaignPasswordSchema,
   consentAccepted: z.boolean().optional(),
 })
 

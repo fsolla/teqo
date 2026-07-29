@@ -9,8 +9,8 @@ import {
   municipalityPriorityLabels,
   politicalTrendBadgeVariant,
   politicalTrendLabels,
-} from '@/utilities/municipalityLabels'
-import type { MunicipalityStrategyViewModel } from '@/utilities/municipalityViewModels'
+} from '@/utilities/municipality/municipalityLabels'
+import type { MunicipalityStrategyViewModel } from '@/utilities/municipality/municipalityViewModels'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 

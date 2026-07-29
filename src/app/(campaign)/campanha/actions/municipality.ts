@@ -8,6 +8,7 @@ import {
   getEngagementLevelViolations,
 } from '@/lib/engagementLevel'
 import { nextAdvisorIdsAfterMembership } from '@/lib/municipalityAdvisorMembership'
+import { uniqueRelationshipIds } from '@/lib/relationship'
 import {
   MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE,
   MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE,
@@ -34,7 +35,6 @@ import {
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
-import { uniqueRelationshipIds } from '@/utilities/relationship'
 
 const getFreshStaffActor = (
   payload: Payload,

@@ -14,7 +14,7 @@ import {
 
 import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import type { CampaignUser } from '@/payload-types'
-import { canAccessSupporterArea } from '@/utilities/supporterUi'
+import { canAccessSupporterArea } from '@/utilities/supporter/supporterUi'
 
 export type CampaignNavItem = {
   title: string

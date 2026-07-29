@@ -12,8 +12,11 @@ import {
   toggleTerritoryCoverageFilter,
   toggleTerritoryRegionFilter,
   type TerritoryFilterOption,
-} from '@/utilities/territoryListFilters'
-import { buildTerritoryListHref, type TerritoryListState } from '@/utilities/territoryListUrl'
+} from '@/utilities/territory/territoryListFilters'
+import {
+  buildTerritoryListHref,
+  type TerritoryListState,
+} from '@/utilities/territory/territoryListUrl'
 
 type TerritoryHeaderFilterProps =
   | {

@@ -2,8 +2,8 @@
 
 import { useActionState, useState } from 'react'
 
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
-import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -149,11 +149,7 @@ export const DemandForm = ({
         ) : null}
       </Field>
 
-      {state.message && state.status !== 'success' ? (
-        <Alert variant="destructive">
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      ) : null}
+      {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
       <Button type="submit" disabled={isPending} className="min-h-11 self-start">
         {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
         Abrir demanda

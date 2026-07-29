@@ -4,6 +4,7 @@ import { KeyRoundIcon } from 'lucide-react'
 import { useActionState, useEffect } from 'react'
 import { toast } from 'sonner'
 
+import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import { PLACEHOLDER_RESET_MESSAGE } from '@/lib/schemas/advisor'
@@ -31,11 +32,9 @@ export const AdvisorPasswordResetButton = ({
 }: AdvisorPasswordResetButtonProps) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
 
+  useCampaignFormSuccessToast({ status: state.status, message: state.message ?? 'Link enviado.' })
+
   useEffect(() => {
-    if (state.status === 'success') {
-      toast.success(state.message ?? 'Link enviado.')
-      return
-    }
     if (state.message && state.status !== 'success') {
       toast.error(state.message)
     }

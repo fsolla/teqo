@@ -32,6 +32,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
+import { formatIsoAsBahiaDateTimeInput } from '@/lib/campaignTime'
 import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 import {
   activityKindLabels,
@@ -41,8 +42,7 @@ import {
 import type { ActivityLeadershipOption } from '@/utilities/activityLeadershipOptions'
 import type { ActivityFormViewModel } from '@/utilities/activityViewModels'
 import { fieldError } from '@/utilities/campaignFormFields'
-import { formatIsoAsBahiaDateTimeInput } from '@/utilities/campaignTime'
-import type { EligibleAdvisorOption } from '@/utilities/municipalityViewModels'
+import type { EligibleAdvisorOption } from '@/utilities/municipality/municipalityViewModels'
 
 export type ActivityFormState = {
   message?: string

@@ -7,15 +7,14 @@ import { createSupporterFormAction } from '@/app/(campaign)/campanha/(app)/apoia
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { SupporterForm } from '@/components/campaign/supporter/SupporterForm'
 import { Button } from '@/components/ui/button'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
-import { loadSupporterCreatePageData } from '@/utilities/supporterPageData'
-import { canAccessSupporterArea } from '@/utilities/supporterUi'
+import { loadSupporterCreatePageData } from '@/utilities/supporter/supporterPageData'
+import { canAccessSupporterArea } from '@/utilities/supporter/supporterUi'
 
 export default async function NewSupporterPage() {
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
+  const [user, payload] = await Promise.all([requireCampaignPageActor(), getPayload({ config })])
 
-  if (!user) redirect('/campanha/login')
   if (!canAccessSupporterArea(user.role)) redirect('/campanha')
 
   const pageData = await loadSupporterCreatePageData(payload, user)

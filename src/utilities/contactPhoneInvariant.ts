@@ -7,6 +7,13 @@ import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 
 export const CONTACT_PHONE_CONFLICT_MESSAGE = 'Já existe outro contato com este celular.'
 
+/**
+ * Several contacts share the phone — a data-quality problem only an admin can
+ * resolve. Thrown by the upsert paths and matched verbatim by `safeMessages`.
+ */
+export const CONTACT_PHONE_AMBIGUOUS_MESSAGE =
+  'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.'
+
 type ContactPhonePayload = Pick<Payload, 'db' | 'find'>
 type ContactPhoneRequest = PayloadTransactionRequest | PayloadRequest
 
@@ -37,6 +44,9 @@ export const assertContactPhoneAvailable = async (
     depth: 0,
     limit: 1,
     pagination: false,
+    // Intentional admin bypass: the uniqueness invariant must see EVERY contact
+    // with the phone, including ones the actor cannot read — a scoped check
+    // would let duplicates slip in through the invisible half of the table.
     overrideAccess: true,
     req,
   })

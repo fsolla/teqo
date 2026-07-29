@@ -1,5 +1,4 @@
 import config from '@payload-config'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import {
@@ -8,19 +7,18 @@ import {
 } from '@/app/(campaign)/campanha/(app)/atividades/contactSearchActions'
 import { createActivityFormAction } from '@/app/(campaign)/campanha/(app)/atividades/formActions'
 import { ActivityForm } from '@/components/campaign/activity/ActivityForm'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadMunicipalityOptions,
   loadOrganizationOptions,
 } from '@/utilities/campaignRelationOptions'
-import { getEligibleAdvisorOptions } from '@/utilities/municipalityViewModels'
+import { getEligibleAdvisorOptions } from '@/utilities/municipality/municipalityViewModels'
 
 export default async function NewActivityPage() {
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha/atividades')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff', redirectTo: '/campanha/atividades' }),
+    getPayload({ config }),
+  ])
 
   const canManageAdvisors = user.role === 'coordinator'
   const [municipalityOptions, organizationOptions, advisorOptions] = await Promise.all([

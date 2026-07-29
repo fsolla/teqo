@@ -7,8 +7,8 @@ import {
   buildLeadershipFilterHref,
   clearLeadershipListFilters,
   formatLeadershipActiveFiltersSummary,
-} from '@/utilities/leadershipListFilters'
-import { type LeadershipListState } from '@/utilities/leadershipListUrl'
+} from '@/utilities/leadership/leadershipListFilters'
+import { type LeadershipListState } from '@/utilities/leadership/leadershipListUrl'
 
 export const LeadershipFilters = ({
   state,

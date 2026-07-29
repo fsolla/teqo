@@ -13,13 +13,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover
 import {
   buildMunicipalitySavedFilterHref,
   formatMunicipalityActiveFiltersSummary,
-} from '@/utilities/municipalityListFilters'
-import type { MunicipalityListState } from '@/utilities/municipalityListUrl'
+} from '@/utilities/municipality/municipalityListFilters'
+import type { MunicipalityListState } from '@/utilities/municipality/municipalityListUrl'
 import {
   MAX_ENTRIES,
   MAX_NAME_LENGTH,
   saveMunicipalitySavedFilter,
-} from '@/utilities/municipalitySavedFilters'
+} from '@/utilities/municipality/municipalitySavedFilters'
 
 type SaveMunicipalityFilterControlProps = {
   /** The APPLIED state — a search still inside the debounce window is not in the URL yet. */

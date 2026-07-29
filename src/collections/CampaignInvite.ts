@@ -6,6 +6,7 @@ import {
   canReadCampaignInvite,
   canSetCampaignInviteSystemField,
 } from '@/utilities/campaignAccess'
+import { systemStampedActorField } from '@/utilities/campaignAuditFields'
 import { campaignInviteExpiry } from '@/utilities/campaignInvite'
 
 export const CampaignInvite: CollectionConfig = {
@@ -103,20 +104,6 @@ export const CampaignInvite: CollectionConfig = {
         update: canSetCampaignInviteSystemField,
       },
     },
-    {
-      name: 'createdBy',
-      type: 'relationship',
-      relationTo: 'campaignUser',
-      label: 'Criado por',
-      required: true,
-      index: true,
-      admin: {
-        readOnly: true,
-      },
-      access: {
-        create: canSetCampaignInviteSystemField,
-        update: canSetCampaignInviteSystemField,
-      },
-    },
+    systemStampedActorField({ required: true, setAccess: canSetCampaignInviteSystemField }),
   ],
 }

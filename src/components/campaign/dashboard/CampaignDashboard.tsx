@@ -21,9 +21,9 @@ import {
   formatGoalCoverageDeficitLabel,
   formatGoalCoverageRatioLabel,
   goalCoverageProgressPercent,
-} from '@/utilities/goalCoverage'
-import { buildMunicipalityListHref } from '@/utilities/municipalityListUrl'
-import { buildMunicipalitiesByIbgeCode } from '@/utilities/municipalityMapNavigation'
+} from '@/utilities/municipality/goalCoverage'
+import { buildMunicipalityListHref } from '@/utilities/municipality/municipalityListUrl'
+import { buildMunicipalitiesByIbgeCode } from '@/utilities/municipality/municipalityMapNavigation'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',

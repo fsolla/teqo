@@ -16,23 +16,25 @@ import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBa
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import {
   isCampaignCoordinator,
-  isCampaignLeader,
   isCampaignStaff,
   isCampaignUnrestricted,
 } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
-import { getCampaignScopeLabel } from '@/utilities/municipalityLabels'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { getCampaignScopeLabel } from '@/utilities/municipality/municipalityLabels'
 import {
   buildMunicipalityListVisitHref,
   buildMunicipalityListVisitLabel,
-} from '@/utilities/municipalityListFilters'
+} from '@/utilities/municipality/municipalityListFilters'
 import {
   buildMunicipalityListHref,
   resolveMunicipalityListUrl,
-} from '@/utilities/municipalityListUrl'
-import { loadMunicipalityListPageBundle } from '@/utilities/municipalityPageData'
-import { getEligibleAdvisorOptions, loadAdvisorSummaries } from '@/utilities/municipalityViewModels'
+} from '@/utilities/municipality/municipalityListUrl'
+import { loadMunicipalityListPageBundle } from '@/utilities/municipality/municipalityPageData'
+import {
+  getEligibleAdvisorOptions,
+  loadAdvisorSummaries,
+} from '@/utilities/municipality/municipalityViewModels'
 import { createMunicipalityListSignalFormAction } from './municipalityStaffFormActions'
 
 type MunicipalitiesPageProps = {
@@ -44,10 +46,10 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
   const canonicalUrl = resolveMunicipalityListUrl(rawSearchParams)
   if (canonicalUrl.redirectHref) redirect(canonicalUrl.redirectHref)
 
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-
-  if (!user) return null
-  if (isCampaignLeader(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'noLeader' }),
+    getPayload({ config }),
+  ])
   const isStaffView = isCampaignStaff(user)
   const isCoordinator = isCampaignCoordinator(user)
   const canMoveEngagementLevel = isCampaignUnrestricted(user)

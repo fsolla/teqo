@@ -58,18 +58,11 @@ test('enrolls a passkey, signs in with it, then revokes it', async ({
 }) => {
   test.slow()
   const { fixtures } = campaign
-  const email = `${fixtures.value('biometric-user')}@example.com`
-  const password = fixtures.value('password')
-  await campaign.payload.create({
-    collection: 'campaignUser',
-    data: {
-      name: fixtures.value('Assessora com biometria'),
-      email,
-      password,
-      role: 'advisor',
-    },
-    depth: 0,
+  const biometricUser = await fixtures.createCampaignUser('advisor', {
+    name: fixtures.value('Assessora com biometria'),
   })
+  const email = biometricUser.email!
+  const password = biometricUser.password
 
   await silenceEnrollmentToast(context)
   await addVirtualAuthenticator(context, page)

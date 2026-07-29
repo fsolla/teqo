@@ -14,7 +14,7 @@ import { runCampaignFormAction } from '@/utilities/campaignFormActionError'
 import {
   CAMPAIGN_PASSKEY_REMOVE_DENIED_MESSAGE,
   removeCampaignPasskey,
-} from '@/utilities/campaignWebAuthnCeremony'
+} from '@/utilities/webauthn/campaignWebAuthnCeremony'
 
 /**
  * Revokes one enrolled device. The delete runs with `overrideAccess: false`, so

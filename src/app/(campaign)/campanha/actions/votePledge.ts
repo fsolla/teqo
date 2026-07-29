@@ -2,9 +2,14 @@
 
 import type { Payload } from 'payload'
 
+import { relationshipId, requireRelationshipId } from '@/lib/relationship'
 import {
   declareVotesSchema,
   estimateVotesSchema,
+  VOTE_PLEDGE_DECLARE_STAFF_MESSAGE,
+  VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE,
+  VOTE_PLEDGE_LEADERSHIP_REQUIRED_MESSAGE,
+  VOTE_PLEDGE_MUNICIPALITY_NOT_LINKED_MESSAGE,
   type DeclareVotesInput,
   type EstimateVotesInput,
 } from '@/lib/schemas/votePledge'
@@ -14,11 +19,6 @@ import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
-import { relationshipId, requireRelationshipId } from '@/utilities/relationship'
-
-const STAFF_DECLARE_REQUIRED = 'Somente a coordenação e a assessoria registram votos declarados.'
-const MUNICIPALITY_NOT_LINKED =
-  'A liderança precisa estar vinculada ao município para registrar votos declarados nele.'
 
 /**
  * Declare (or update) the votes a leadership is bringing in one municipality.
@@ -37,10 +37,10 @@ export const declareVotesRecord = async (
       const currentActor = await reloadCampaignActor(payload, actor, req)
 
       if (!isCampaignStaff(currentActor)) {
-        throw new Error(STAFF_DECLARE_REQUIRED)
+        throw new Error(VOTE_PLEDGE_DECLARE_STAFF_MESSAGE)
       }
 
-      if (!data.leadership) throw new Error('Informe a liderança da declaração.')
+      if (!data.leadership) throw new Error(VOTE_PLEDGE_LEADERSHIP_REQUIRED_MESSAGE)
       const leadershipID = data.leadership
 
       const leadership = await payload.findByID({
@@ -56,7 +56,7 @@ export const declareVotesRecord = async (
         .map(relationshipId)
         .filter((id): id is number => id !== null)
       if (!linkedMunicipalityIDs.includes(data.municipality)) {
-        throw new Error(MUNICIPALITY_NOT_LINKED)
+        throw new Error(VOTE_PLEDGE_MUNICIPALITY_NOT_LINKED_MESSAGE)
       }
 
       await payload.findByID({
@@ -140,7 +140,7 @@ export const estimateVotesRecord = async (
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
       if (!isCampaignStaff(currentActor)) {
-        throw new Error('Somente a coordenação, a assessoria e o candidato registram estimativas.')
+        throw new Error(VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE)
       }
 
       // Row access scopes the pledge to the actor (advisor: administered municipalities).

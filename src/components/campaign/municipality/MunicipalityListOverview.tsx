@@ -23,8 +23,8 @@ import {
   formatGoalCoverageDeficitLabel,
   formatGoalCoverageRatioLabel,
   goalCoverageProgressPercent,
-} from '@/utilities/goalCoverage'
-import type { MunicipalityListOverviewData } from '@/utilities/municipalityPageData'
+} from '@/utilities/municipality/goalCoverage'
+import type { MunicipalityListOverviewData } from '@/utilities/municipality/municipalityPageData'
 
 const SCENARIO_FLASH_MS = 420
 

@@ -5,10 +5,10 @@ import { ActivityResultForm } from '@/components/campaign/activity/ActivityResul
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { activityOriginLabels } from '@/lib/schemas/activity'
 import { campaignDemandKindLabels, campaignDemandStatusLabels } from '@/lib/schemas/campaignDemand'
 import type { getActivityDetailPageData } from '@/utilities/activityDetailPageData'
-import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',

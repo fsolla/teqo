@@ -19,12 +19,12 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import { createEmptyGoalCoverageByScenario } from '@/utilities/goalCoverage'
-import { municipalityPriorityIndicatorLabel } from '@/utilities/municipalityLabels'
+import { createEmptyGoalCoverageByScenario } from '@/utilities/municipality/goalCoverage'
+import { municipalityPriorityIndicatorLabel } from '@/utilities/municipality/municipalityLabels'
 import type {
   MunicipalityAdvisorSummary,
   MunicipalityListViewModel,
-} from '@/utilities/municipalityViewModels'
+} from '@/utilities/municipality/municipalityViewModels'
 import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 import { stub } from '../helpers/stub'

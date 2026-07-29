@@ -1,18 +1,14 @@
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { StateDeputyForm } from '@/components/campaign/stateDeputy/StateDeputyForm'
 import { Button } from '@/components/ui/button'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { createStateDeputyFormAction } from './formActions'
 
 export default async function NewStateDeputyPage() {
-  const user = await getCampaignUser()
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  await requireCampaignPageActor({ gate: 'staff' })
 
   return (
     <CampaignPageShell>

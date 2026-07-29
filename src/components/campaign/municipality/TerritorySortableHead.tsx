@@ -9,7 +9,7 @@ import {
   campaignHoverExplanationClassName,
   campaignHoverTooltipAlign,
 } from '@/lib/campaignHoverTooltip'
-import type { TerritoryFilterOption } from '@/utilities/territoryListFilters'
+import type { TerritoryFilterOption } from '@/utilities/territory/territoryListFilters'
 import {
   buildTerritorySortHref,
   defaultTerritoryListSortDir,
@@ -17,7 +17,7 @@ import {
   territoryListSortLabels,
   type TerritoryListSortKey,
   type TerritoryListState,
-} from '@/utilities/territoryListUrl'
+} from '@/utilities/territory/territoryListUrl'
 
 type TerritorySortableHeadProps = {
   state: TerritoryListState

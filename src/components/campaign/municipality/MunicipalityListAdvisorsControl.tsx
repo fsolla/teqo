@@ -25,7 +25,7 @@ import { matchesAtWordStart } from '@/lib/wordStartFilter'
 import type {
   EligibleAdvisorOption,
   MunicipalityAdvisorSummary,
-} from '@/utilities/municipalityViewModels'
+} from '@/utilities/municipality/municipalityViewModels'
 
 const ADVISORS_ENDPOINT = '/campanha/municipios/advisors'
 const SAVE_ERROR_MESSAGE = 'Não foi possível atualizar os assessores. Tente novamente.'

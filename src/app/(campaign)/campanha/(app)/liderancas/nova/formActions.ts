@@ -4,6 +4,7 @@ import { leadershipStaffEditSafeMessages } from '@/app/(campaign)/campanha/(app)
 import { createLeadership } from '@/app/(campaign)/campanha/actions/leadership'
 import { optionalFormText, repeatedRelationshipFormValues, requiredFormText } from '@/lib/formData'
 import {
+  LEADERSHIP_DUPLICATE_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
   leadershipSectors,
   leadershipSupportStatuses,
@@ -12,12 +13,13 @@ import {
   runCampaignRedirectFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
+import { CONTACT_PHONE_AMBIGUOUS_MESSAGE } from '@/utilities/contactPhoneInvariant'
 
 const safeMessages = [
-  'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novos municípios.',
+  LEADERSHIP_DUPLICATE_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
   ...leadershipStaffEditSafeMessages,
-  'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.',
+  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
 ] as const
 
 export const createLeadershipFormAction = async (

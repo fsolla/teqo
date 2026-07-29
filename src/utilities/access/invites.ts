@@ -4,13 +4,13 @@
 
 import type { Access, FieldAccess } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import { getAccessibleLeadershipIds } from '@/utilities/access/leaderships'
 import {
   getFreshCampaignUser,
   isCampaignUnrestricted,
   isPayloadAdmin,
 } from '@/utilities/access/shared'
-import { relationshipId } from '@/utilities/relationship'
 
 export const canCreateCampaignInvite: Access = async ({ data, req }) => {
   if (isPayloadAdmin(req.user)) return true

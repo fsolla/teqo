@@ -5,8 +5,11 @@ import type { Payload } from 'payload'
 
 import { nextMunicipalityIdsAfterLeadershipMembership } from '@/lib/leadershipMunicipalityMembership'
 import { nextStateDeputyIdsAfterMembership } from '@/lib/leadershipStateDeputyMembership'
+import { uniqueRelationshipIds } from '@/lib/relationship'
 import {
+  LEADERSHIP_DUPLICATE_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
+  LEADERSHIP_STAFF_MESSAGE,
   leadershipCreateSchema,
   leadershipInternalUpdateSchema,
   leadershipMunicipalitiesMembershipSchema,
@@ -18,23 +21,22 @@ import {
 import type { CampaignUser, Contact } from '@/payload-types'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
-import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
+import {
+  acquireContactPhoneLocks,
+  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
+} from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
-import { uniqueRelationshipIds } from '@/utilities/relationship'
+import {
+  acquireTextAdvisoryLocks,
+  POSTGRES_DEDUP_LOCK_MESSAGE,
+} from '@/utilities/postgresTransactionLocks'
 
 const getFreshStaffActor = (
   payload: Payload,
   actor: CampaignUser,
   req?: PayloadTransactionRequest,
-): Promise<CampaignUser> =>
-  reloadStaffActor(
-    payload,
-    actor,
-    'Somente a coordenação e a assessoria podem gerenciar lideranças.',
-    req,
-  )
+): Promise<CampaignUser> => reloadStaffActor(payload, actor, LEADERSHIP_STAFF_MESSAGE, req)
 
 /** Advisors may only link leaderships to municipalities they administer. */
 const assertMunicipalitiesWithinScope = async (
@@ -77,7 +79,7 @@ const createValidatedLeadershipRecord = async (
         const currentActor = await getFreshStaffActor(payload, actor, req)
         await assertMunicipalitiesWithinScope(payload, currentActor, data.municipalities, req)
         if (payload.db.name !== 'postgres') {
-          throw new Error('O bloqueio de deduplicação exige o adaptador PostgreSQL.')
+          throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
         }
         await acquireContactPhoneLocks(payload, req, [data.phone])
         // Intentional admin bypass: staff scope was freshly checked; these internal reads and
@@ -93,9 +95,7 @@ const createValidatedLeadershipRecord = async (
         })
 
         if (contacts.totalDocs > 1) {
-          throw new Error(
-            'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.',
-          )
+          throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
         }
 
         let contactID = contacts.docs[0]?.id
@@ -155,9 +155,7 @@ const createValidatedLeadershipRecord = async (
     )
   } catch (error) {
     if (isUniqueLeadershipConflict(error)) {
-      throw new Error(
-        'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novos municípios.',
-      )
+      throw new Error(LEADERSHIP_DUPLICATE_MESSAGE)
     }
 
     throw error

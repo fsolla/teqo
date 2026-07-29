@@ -6,18 +6,11 @@ test.describe('Territórios de Identidade', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const email = `${fixtures.value('territorios-coordinator')}@example.com`
-    await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenadora Territórios'),
-        email,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Territórios'),
     })
+    const password = coordinator.password
+    const email = coordinator.email!
 
     await campaign.login(page, email, password)
     await page.getByRole('link', { name: 'Territórios', exact: true }).click()
@@ -44,18 +37,11 @@ test.describe('Territórios de Identidade', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
-    const email = `${fixtures.value('territorios-anchors')}@example.com`
-    await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Coordenadora Âncoras'),
-        email,
-        password,
-        role: 'coordinator',
-      },
-      depth: 0,
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Âncoras'),
     })
+    const password = coordinator.password
+    const email = coordinator.email!
 
     await campaign.login(page, email, password)
     await page.goto('/campanha/territorios')
@@ -66,18 +52,12 @@ test.describe('Territórios de Identidade', () => {
 
   test('leader cannot open the territories page', async ({ campaign, page }) => {
     const { fixtures } = campaign
-    const password = fixtures.value('senha')
     const phone = fixtures.phone()
-    await campaign.payload.create({
-      collection: 'campaignUser',
-      data: {
-        name: fixtures.value('Liderança Territórios'),
-        username: phone,
-        password,
-        role: 'leader',
-      },
-      depth: 0,
+    const leader = await fixtures.createCampaignUser('leader', {
+      name: fixtures.value('Liderança Territórios'),
+      username: phone,
     })
+    const password = leader.password
 
     await campaign.login(page, phone, password)
     await expect(page.getByRole('link', { name: 'Territórios', exact: true })).toHaveCount(0)

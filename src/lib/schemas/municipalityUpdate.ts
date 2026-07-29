@@ -1,6 +1,10 @@
 import { z } from 'zod'
 
-import { positiveRelationshipId, trimmedOptionalText } from '@/lib/schemas/primitives'
+import {
+  MAX_VOTE_COUNT,
+  positiveRelationshipId,
+  trimmedOptionalText,
+} from '@/lib/schemas/primitives'
 
 export const municipalityUpdateKinds = ['semanal', 'urgente', 'nota', 'sinal'] as const
 export type MunicipalityUpdateKind = (typeof municipalityUpdateKinds)[number]
@@ -46,7 +50,7 @@ export const parseMunicipalitySignalType = (
     : undefined
 }
 
-const optionalCount = z.number().int().min(0).max(1_000_000).optional()
+const optionalCount = z.number().int().min(0).max(MAX_VOTE_COUNT).optional()
 
 export const municipalityUpdateCreateSchema = z
   .object({

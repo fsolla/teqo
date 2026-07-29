@@ -13,7 +13,7 @@ import {
   leadershipSupportStatuses,
   type SupportStatus,
 } from '@/lib/schemas/leadership'
-import { supportStatusLabels } from '@/utilities/leadershipLabels'
+import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 
 const STATUS_AUTOSAVE_MS = 150
 const SUPPORT_STATUS_ENDPOINT = '/campanha/liderancas/support-status'

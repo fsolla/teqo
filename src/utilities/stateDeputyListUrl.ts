@@ -10,6 +10,7 @@ import type { Where } from 'payload'
 import {
   allParamValues,
   buildListHref,
+  createSortToggleHref,
   firstValue,
   normalizedText,
   resolveListUrl,
@@ -175,20 +176,14 @@ const buildStateDeputyListSearchParams = (
 export const buildStateDeputyListHref = (state: StateDeputyListState, page: number): string =>
   buildListHref(state, buildStateDeputyListSearchParams, '/campanha/dobradinhas', page)
 
-export const buildStateDeputySortHref = (
-  state: StateDeputyListState,
-  nextKey: StateDeputyListSortKey,
-): string => {
-  const current = resolveStateDeputyListSort(state)
-  const dir =
-    current.sort === nextKey
-      ? current.dir === 'asc'
-        ? 'desc'
-        : 'asc'
-      : DEFAULT_STATE_DEPUTY_LIST_SORT_DIR
-
-  return buildStateDeputyListHref({ ...state, sort: nextKey, dir, page: 1 }, 1)
-}
+export const buildStateDeputySortHref = createSortToggleHref<
+  StateDeputyListState,
+  StateDeputyListSortKey
+>({
+  resolveCurrentSort: resolveStateDeputyListSort,
+  defaultDir: () => DEFAULT_STATE_DEPUTY_LIST_SORT_DIR,
+  buildHref: (state) => buildStateDeputyListHref(state, 1),
+})
 
 const sortOptionLabel = (key: StateDeputyListSortKey, dir: StateDeputyListSortDirection): string =>
   `${stateDeputyListSortLabels[key]} (${dir === 'asc' ? 'A–Z' : 'Z–A'})`

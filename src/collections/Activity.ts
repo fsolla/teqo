@@ -5,6 +5,7 @@ import type {
 } from 'payload'
 import { APIError } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import {
   activityKindLabels,
   activityKinds,
@@ -14,6 +15,7 @@ import {
   activityStatuses,
 } from '@/lib/schemas/activity'
 import { slugify } from '@/lib/slug'
+import { trimmedText } from '@/lib/text'
 import {
   canCreateActivity,
   canCreateActivityAdvisors,
@@ -27,9 +29,7 @@ import {
   canUpdateActivity,
   eligibleCampaignStaffWhere,
 } from '@/utilities/campaignAccess'
-import { relationshipId } from '@/utilities/relationship'
-
-const trimmedText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+import { systemStampedActorField } from '@/utilities/campaignAuditFields'
 
 const isActivityMutationShortcut = (context: Record<string, unknown> | undefined) =>
   context?.mutationKind === 'taskToggle' || context?.mutationKind === 'appendUpdate'
@@ -612,19 +612,6 @@ export const Activity: CollectionConfig = {
         update: canSetActivitySystemField,
       },
     },
-    {
-      name: 'createdBy',
-      type: 'relationship',
-      relationTo: 'campaignUser',
-      label: 'Criada por',
-      index: true,
-      admin: {
-        readOnly: true,
-      },
-      access: {
-        create: canSetActivitySystemField,
-        update: canSetActivitySystemField,
-      },
-    },
+    systemStampedActorField({ label: 'Criada por', setAccess: canSetActivitySystemField }),
   ],
 }

@@ -3,10 +3,20 @@
 import { revalidatePath } from 'next/cache'
 
 import { createSupporter } from '@/app/(campaign)/campanha/actions/supporter'
+import {
+  SUPPORTER_REGISTRATION_CONSENT_MISSING_MESSAGE,
+  SUPPORTER_VOTE_INTENTION_CONSENT_MISSING_MESSAGE,
+} from '@/lib/campaignConsentKeys'
 import { checkboxFormValue, nullableRelationshipFormValue, optionalFormText } from '@/lib/formData'
 import { sanitizeBrazilianPhoneInput } from '@/lib/phone'
-import { supporterCreateSchema } from '@/lib/schemas/supporter'
+import {
+  SUPPORTER_DUPLICATE_MESSAGE,
+  SUPPORTER_STAFF_MESSAGE,
+  SUPPORTER_UNSCOPED_COORDINATOR_MESSAGE,
+  supporterCreateSchema,
+} from '@/lib/schemas/supporter'
 import { runCampaignFormAction } from '@/utilities/campaignFormActionError'
+import { CONTACT_PHONE_AMBIGUOUS_MESSAGE } from '@/utilities/contactPhoneInvariant'
 
 export type SupporterFormState = {
   status?: 'success'
@@ -27,12 +37,12 @@ type SupporterFormValues = {
 }
 
 const safeActionMessages = [
-  'Esta pessoa já está cadastrada como apoiador neste município.',
-  'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.',
-  'Somente a coordenação e a assessoria podem gerenciar apoiadores.',
-  'Somente o Coordenador Geral pode cadastrar apoiadores sem município.',
-  'Consentimento de cadastro de apoiador ainda não configurado.',
-  'Consentimento de intenção de voto ainda não configurado.',
+  SUPPORTER_DUPLICATE_MESSAGE,
+  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
+  SUPPORTER_STAFF_MESSAGE,
+  SUPPORTER_UNSCOPED_COORDINATOR_MESSAGE,
+  SUPPORTER_REGISTRATION_CONSENT_MISSING_MESSAGE,
+  SUPPORTER_VOTE_INTENTION_CONSENT_MISSING_MESSAGE,
 ] as const
 
 export const createSupporterFormAction = async (

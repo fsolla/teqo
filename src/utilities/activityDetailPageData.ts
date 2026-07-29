@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import type { Activity, CampaignDemand, CampaignUser } from '@/payload-types'
 import type { ActivityDetailTab } from '@/utilities/activityDetailTabUi'
 import type { AccessibleActivityContext } from '@/utilities/activityPageData'
@@ -11,7 +12,6 @@ import {
   type ActivityDetailViewModel,
   type ActivityMunicipalitySummary,
 } from '@/utilities/activityViewModels'
-import { relationshipId } from '@/utilities/relationship'
 
 type ActivityDemandSummary = {
   id: number

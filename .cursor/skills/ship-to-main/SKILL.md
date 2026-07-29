@@ -21,6 +21,7 @@ Etapa final do fluxo de entrega Teqo em worktree: **commit all → push feature 
 ## Checklist
 
 ```
+- [ ] 0. Gate de modelo (skill model-selection: pool model; pare se metered premium)
 - [ ] 1. Detectar ambiente (branch, MAIN_ROOT, worktree path)
 - [ ] 2. Commit all (se houver mudanças; seguir protocolo de commit)
 - [ ] 3. Push da feature branch
@@ -28,6 +29,13 @@ Etapa final do fluxo de entrega Teqo em worktree: **commit all → push feature 
 - [ ] 5. Remover worktree da sessão + deletar feature branch
 - [ ] 6. Reportar URLs/SHAs e avisar se a sessão Cursor ficou em path morto
 ```
+
+## Passo 0 — Gate de modelo
+
+Esta skill é classe **docs/chores** (git mecânico, sem decisão de código) — skill `model-selection`: o modelo certo é **Grok 4.5 ou Composer 2.5 (pool Cursor Models)**, effort low. Skills não detectam o modelo ativo programaticamente, então o gate é declaratório:
+
+- Se esta sessão estiver rodando em **modelo metered premium** (Kimi K3, Gemini 3.1 Pro, GLM 5.2, GPT-5.6, Haiku), **PARE antes do Passo 1** e diga: _"ship-to-main é trabalho mecânico de git — o melhor custo/valor é Grok 4.5 / Composer 2.5 (pool). Troque no seletor de modelo, ou confirme que aceita o custo metered."_ Só continue após confirmação explícita do usuário.
+- Se já estiver em pool model ou metered barato (Kimi K2.7), siga sem mencionar.
 
 ## Passo 1 — Detectar ambiente
 

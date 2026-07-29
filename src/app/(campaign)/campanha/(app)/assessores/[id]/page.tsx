@@ -1,7 +1,7 @@
 import config from '@payload-config'
 import { ArrowLeftIcon, MapPinIcon } from 'lucide-react'
 import Link from 'next/link'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { AdvisorDebouncedTextCell } from '@/components/campaign/advisor/AdvisorDebouncedTextCell'
@@ -12,8 +12,7 @@ import { Button } from '@/components/ui/button'
 import { formatBrazilianPhoneInput } from '@/lib/phone'
 import { isPlanilhaPlaceholderEmail } from '@/lib/schemas/advisor'
 import { loadAdvisorDetail } from '@/utilities/advisorData'
-import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { sendAdvisorPasswordResetFormAction, updateAdvisorProfileFormAction } from '../formActions'
 
 type AdvisorDetailPageProps = {
@@ -25,9 +24,10 @@ export default async function AdvisorDetailPage({ params }: AdvisorDetailPagePro
   const advisorId = Number(rawId)
   if (!Number.isInteger(advisorId) || advisorId <= 0) notFound()
 
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignUnrestricted(user)) redirect('/campanha')
+  const [, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'unrestricted' }),
+    getPayload({ config }),
+  ])
 
   const advisor = await loadAdvisorDetail(payload, advisorId)
   if (!advisor) notFound()

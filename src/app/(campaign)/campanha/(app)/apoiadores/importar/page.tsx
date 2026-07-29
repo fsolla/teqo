@@ -5,12 +5,10 @@ import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBa
 import { SupporterImportWizard } from '@/components/campaign/supporter/SupporterImportWizard'
 import { Button } from '@/components/ui/button'
 import { isCampaignCoordinator } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 
 export default async function ImportSupportersPage() {
-  const user = await getCampaignUser()
-
-  if (!user) redirect('/campanha/login')
+  const user = await requireCampaignPageActor()
   if (!isCampaignCoordinator(user)) redirect('/campanha/apoiadores')
 
   return (

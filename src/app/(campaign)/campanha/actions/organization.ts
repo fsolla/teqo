@@ -3,6 +3,8 @@
 import type { Payload } from 'payload'
 
 import {
+  ORGANIZATION_CONFLICT_MESSAGE,
+  ORGANIZATION_STAFF_MESSAGE,
   organizationCreateSchema,
   organizationUpdateSchema,
   type OrganizationCreateInput,
@@ -14,9 +16,9 @@ import { runStaffEntityMutation, type StaffEntityPolicy } from '@/utilities/camp
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 
 const organizationPolicy: StaffEntityPolicy = {
-  staffMessage: 'Somente a coordenação e a assessoria gerenciam organizações.',
+  staffMessage: ORGANIZATION_STAFF_MESSAGE,
   conflictPattern: /organization_(name|slug)|duplicate key/i,
-  conflictMessage: 'Já existe uma organização com este nome.',
+  conflictMessage: ORGANIZATION_CONFLICT_MESSAGE,
 }
 
 const createOrganizationRecord = async (

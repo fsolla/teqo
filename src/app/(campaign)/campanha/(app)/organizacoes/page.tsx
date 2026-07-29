@@ -1,7 +1,6 @@
 import config from '@payload-config'
 import { PlusIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
@@ -16,9 +15,8 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { organizationKindLabels } from '@/lib/schemas/organization'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   buildOrganizationListHref,
   loadOrganizationListPageData,
@@ -65,9 +63,10 @@ const organizationColumns: Array<CampaignTableColumn<OrganizationRowViewModel>> 
 
 export default async function OrganizationsPage({ searchParams }: OrganizationsPageProps) {
   const rawSearchParams = await searchParams
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
 
   const state = parseOrganizationListParams(rawSearchParams)
   const { rows, totalDocs, totalPages } = await loadOrganizationListPageData(payload, user, state)
@@ -97,6 +96,12 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
           placeholder="Buscar por nome…"
           initialQuery={state.q ?? ''}
           basePath="/campanha/organizacoes"
+          // Canonical serialization of the ACTIVE filters minus q/page, so a
+          // search submit preserves `?kind=` instead of silently dropping it.
+          filterParams={buildOrganizationListHref({ ...state, q: undefined }, 1).replace(
+            /^\/campanha\/organizacoes\??/,
+            '',
+          )}
         />
 
         <CampaignListResults>

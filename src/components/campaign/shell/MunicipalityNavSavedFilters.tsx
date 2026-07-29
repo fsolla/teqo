@@ -20,7 +20,7 @@ import {
   saveMunicipalitySavedFilter,
   writeMunicipalitySavedFiltersOpen,
   type MunicipalitySavedFilter,
-} from '@/utilities/municipalitySavedFilters'
+} from '@/utilities/municipality/municipalitySavedFilters'
 
 /** A page is a position inside a recorte, not part of it. */
 const IGNORED_PARAMS = ['page']

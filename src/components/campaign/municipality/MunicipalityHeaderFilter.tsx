@@ -6,7 +6,7 @@ import {
   CampaignHeaderFilterPopover,
   type CampaignHeaderFilterRow,
 } from '@/components/campaign/shared/CampaignHeaderFilterPopover'
-import { municipalityPriorityLabels } from '@/utilities/municipalityLabels'
+import { municipalityPriorityLabels } from '@/utilities/municipality/municipalityLabels'
 import {
   applyMunicipalityKindFilter,
   buildMunicipalityFilterHref,
@@ -25,8 +25,8 @@ import {
   type MunicipalityFilterOption,
   type MunicipalityFilterParam,
   type MunicipalityMultiFilterParam,
-} from '@/utilities/municipalityListFilters'
-import { type MunicipalityListState } from '@/utilities/municipalityListUrl'
+} from '@/utilities/municipality/municipalityListFilters'
+import { type MunicipalityListState } from '@/utilities/municipality/municipalityListUrl'
 
 type MunicipalityHeaderFilterProps = {
   state: MunicipalityListState

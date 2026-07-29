@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import config from '@/payload.config'
-import { loadMunicipalityMapBundle } from '@/utilities/municipalityMapData'
+import { loadMunicipalityMapBundle } from '@/utilities/municipality/municipalityMapData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 

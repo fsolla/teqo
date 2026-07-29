@@ -9,7 +9,11 @@ import {
   repeatedRelationshipFormValues,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
-import { organizationKinds, type OrganizationKind } from '@/lib/schemas/organization'
+import {
+  ORGANIZATION_STAFF_MESSAGE,
+  organizationKinds,
+  type OrganizationKind,
+} from '@/lib/schemas/organization'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
@@ -33,7 +37,7 @@ export const updateOrganizationFormAction = async (
       revalidatePath('/campanha/organizacoes/[slug]', 'page')
       return { message: 'Organização atualizada.' }
     },
-    safeMessages: ['Somente a coordenação e a assessoria gerenciam organizações.'],
+    safeMessages: [ORGANIZATION_STAFF_MESSAGE],
     genericMessage:
       'Não foi possível salvar a organização. Verifique seu acesso e tente novamente.',
   })

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { MAX_VOTE_COUNT } from '@/lib/schemas/primitives'
+
 import { declareVotes, estimateVotes } from '@/app/(campaign)/campanha/actions/votePledge'
 import {
   nullableFormText,
@@ -10,15 +12,15 @@ import {
   voteEstimateScenarioFromForm,
 } from '@/lib/formData'
 import {
+  VOTE_PLEDGE_DECLARE_SAFE_MESSAGES,
+  VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE,
+} from '@/lib/schemas/votePledge'
+import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
 
-const declareSafeMessages = [
-  'Somente a coordenação e a assessoria registram votos declarados.',
-  'A liderança precisa estar vinculada ao município para registrar votos declarados nele.',
-  'Informe a liderança da declaração.',
-] as const
+const declareSafeMessages = VOTE_PLEDGE_DECLARE_SAFE_MESSAGES
 
 export const declareVotesFormAction = async (
   _state: CampaignFormActionState,
@@ -30,7 +32,7 @@ export const declareVotesFormAction = async (
       const leadership = requiredRelationshipFormValue(formData, 'leadershipId')
       const declaredVotes = requiredIntegerFormValue(formData, 'declaredVotes', {
         minimum: 0,
-        maximum: 1_000_000,
+        maximum: MAX_VOTE_COUNT,
       })
 
       await declareVotes({ municipality, leadership, declaredVotes })
@@ -60,7 +62,7 @@ export const estimateVotesFormAction = async (
       revalidatePath('/campanha/municipios/[slug]', 'page')
       return { message: 'Estimativa registrada.' }
     },
-    safeMessages: ['Somente a coordenação e a assessoria registram estimativas.'],
+    safeMessages: [VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE],
     genericMessage:
       'Não foi possível registrar a estimativa. Verifique seu acesso e tente novamente.',
   })

@@ -15,16 +15,14 @@ import {
   getActivityDetailSelect,
   toActivityFormViewModel,
 } from '@/utilities/activityViewModels'
+import { createEntityNotFoundError } from '@/utilities/entityNotFound'
 
 type ActivityListSearchParams = Record<string, string | string[] | undefined>
 
-export class ActivityNotFoundError extends Error {
-  override name = 'ActivityNotFoundError'
-
-  constructor() {
-    super('Atividade não encontrada.')
-  }
-}
+export const ActivityNotFoundError = createEntityNotFoundError(
+  'Activity',
+  'Atividade não encontrada.',
+)
 
 export type AccessibleActivityContext = {
   id: number

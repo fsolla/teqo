@@ -24,10 +24,13 @@ describe('campaign consent descriptor', () => {
 
     const consent = await getLeadershipConsent(payload, req)
 
+    // Since P3-D the leadership wrapper returns the full `ConsentDescriptor`
+    // (the deprecated key-less `LeadershipConsentDescriptor` alias is gone).
     expect(consent).toEqual({
       id: 9,
       text: { root: { children: [] } },
       contentHash: 'd800986181e1730e945e028853848395d8c34ccb95b54abbbaa50cb9539a845b',
+      key: CAMPAIGN_INVITE_CONSENT_KEY,
     })
     expect(find).toHaveBeenCalledWith(
       expect.objectContaining({

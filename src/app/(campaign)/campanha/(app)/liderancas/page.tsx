@@ -39,6 +39,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
+import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import {
   resolvedPortfolioEntriesById,
   type MunicipalityPortfolioIndexEntry,
@@ -46,19 +47,21 @@ import {
 import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
 import { MAX_LEADERSHIP_MUNICIPALITIES, isLeadershipSector } from '@/lib/schemas/leadership'
 import { cn } from '@/lib/utils'
-import { getAdvisorMunicipalityIds, isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
-import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 import { formatRelativeAge } from '@/utilities/formatRelativeAge'
-import { loadLeadershipListPageData, type LeadershipRowViewModel } from '@/utilities/leadershipData'
-import { leadershipAccessFilterLabels } from '@/utilities/leadershipLabels'
+import {
+  loadLeadershipListPageData,
+  type LeadershipRowViewModel,
+} from '@/utilities/leadership/leadershipData'
+import { leadershipAccessFilterLabels } from '@/utilities/leadership/leadershipLabels'
 import {
   buildLeadershipFilterHref,
   clearLeadershipListFilters,
   type LeadershipFilterOption,
-} from '@/utilities/leadershipListFilters'
+} from '@/utilities/leadership/leadershipListFilters'
 import {
   buildLeadershipListHref,
   formatLeadershipListSortSummary,
@@ -66,9 +69,9 @@ import {
   resolveLeadershipListSort,
   resolveLeadershipListUrl,
   type LeadershipListState,
-} from '@/utilities/leadershipListUrl'
-import { leadershipSectorLabels } from '@/utilities/leadershipUi'
-import { loadMunicipalityPortfolioIndex } from '@/utilities/municipalityPortfolioIndex'
+} from '@/utilities/leadership/leadershipListUrl'
+import { leadershipSectorLabels } from '@/utilities/leadership/leadershipUi'
+import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
 
 import {
   setLeadershipMunicipalitiesFormAction,
@@ -316,9 +319,10 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
   const canonicalUrl = resolveLeadershipListUrl(rawSearchParams)
   if (canonicalUrl.redirectHref) redirect(canonicalUrl.redirectHref)
 
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
 
   const [
     { rows, totalDocs, totalPages, filterFacets },

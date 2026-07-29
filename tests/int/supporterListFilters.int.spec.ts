@@ -2,8 +2,11 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { buildSupporterSearchTerms, toPayloadWhere } from '@/utilities/supporterListFilters'
-import { toAggregateSqlConditions } from '@/utilities/supporterListSqlFilters'
+import {
+  buildSupporterSearchTerms,
+  toPayloadWhere,
+} from '@/utilities/supporter/supporterListFilters'
+import { toAggregateSqlConditions } from '@/utilities/supporter/supporterListSqlFilters'
 
 describe('supporterListFilters', () => {
   it('ignores search terms shorter than the contact search minimum', () => {

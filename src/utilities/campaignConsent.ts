@@ -5,7 +5,9 @@ import type { Payload } from 'payload'
 import {
   CAMPAIGN_INVITE_CONSENT_KEY,
   SUPPORTER_REGISTRATION_CONSENT_KEY,
+  SUPPORTER_REGISTRATION_CONSENT_MISSING_MESSAGE,
   SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
+  SUPPORTER_VOTE_INTENTION_CONSENT_MISSING_MESSAGE,
 } from '@/lib/campaignConsentKeys'
 import type { Consent } from '@/payload-types'
 import { hashConsentContent } from '@/utilities/consentContentHash'
@@ -21,9 +23,6 @@ export type ConsentDescriptor = {
   contentHash: string
   key: string
 }
-
-/** @deprecated Prefer ConsentDescriptor — kept for leadership call sites. */
-export type LeadershipConsentDescriptor = Omit<ConsentDescriptor, 'key'>
 
 type ConsentRequest = { transactionID?: number | string }
 
@@ -78,6 +77,10 @@ export const getConsentByKey = async (
     limit: 1,
     pagination: false,
     select: { text: true, key: true },
+    // Intentional admin bypass: consent documents are legal configuration, not
+    // actor data — `consent` read access is admin-only, but every campaign flow
+    // must resolve the SAME published text by stable key, failing closed when
+    // it is absent. The key (not the actor) is the selector.
     overrideAccess: true,
     req,
   })
@@ -103,23 +106,17 @@ export const requireConsentByKey = async (
   return consent
 }
 
-export const getLeadershipConsent = async (
+export const getLeadershipConsent = (
   payload: Payload,
   req?: ConsentRequest,
-): Promise<LeadershipConsentDescriptor | null> => {
-  const consent = await getConsentByKey(payload, CAMPAIGN_INVITE_CONSENT_KEY, req)
-  if (!consent) return null
-  return { id: consent.id, text: consent.text, contentHash: consent.contentHash }
-}
+): Promise<ConsentDescriptor | null> => getConsentByKey(payload, CAMPAIGN_INVITE_CONSENT_KEY, req)
 
-export const requireLeadershipConsent = async (
+export const requireLeadershipConsent = (
   payload: Payload,
   req?: ConsentRequest,
   message = 'Consentimento ainda não configurado.',
-): Promise<LeadershipConsentDescriptor> => {
-  const consent = await requireConsentByKey(payload, CAMPAIGN_INVITE_CONSENT_KEY, req, message)
-  return { id: consent.id, text: consent.text, contentHash: consent.contentHash }
-}
+): Promise<ConsentDescriptor> =>
+  requireConsentByKey(payload, CAMPAIGN_INVITE_CONSENT_KEY, req, message)
 
 export const getSupporterRegistrationConsent = (
   payload: Payload,
@@ -130,7 +127,7 @@ export const getSupporterRegistrationConsent = (
 export const requireSupporterRegistrationConsent = (
   payload: Payload,
   req?: ConsentRequest,
-  message = 'Consentimento de cadastro de apoiador ainda não configurado.',
+  message = SUPPORTER_REGISTRATION_CONSENT_MISSING_MESSAGE,
 ): Promise<ConsentDescriptor> =>
   requireConsentByKey(payload, SUPPORTER_REGISTRATION_CONSENT_KEY, req, message)
 
@@ -143,6 +140,6 @@ export const getSupporterVoteIntentionConsent = (
 export const requireSupporterVoteIntentionConsent = (
   payload: Payload,
   req?: ConsentRequest,
-  message = 'Consentimento de intenção de voto ainda não configurado.',
+  message = SUPPORTER_VOTE_INTENTION_CONSENT_MISSING_MESSAGE,
 ): Promise<ConsentDescriptor> =>
   requireConsentByKey(payload, SUPPORTER_VOTE_INTENTION_CONSENT_KEY, req, message)

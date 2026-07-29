@@ -1,11 +1,11 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useActionState, useEffect, useRef } from 'react'
-import { toast } from 'sonner'
+import { useActionState, useRef } from 'react'
 
 import { createActivityUpdateFormAction } from '@/app/(campaign)/campanha/(app)/atividades/[slug]/updateFormActions'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
+import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -18,12 +18,10 @@ export const ActivityUpdateForm = ({ activityId }: { activityId: number }) => {
   const formRef = useRef<HTMLFormElement>(null)
   const [state, formAction, pending] = useActionState(createActivityUpdateFormAction, {})
 
-  useEffect(() => {
-    if (state.status !== 'success') return
-    toast.success(state.message)
+  useCampaignFormSuccessToast(state, () => {
     formRef.current?.reset()
     router.refresh()
-  }, [router, state.message, state.status])
+  })
 
   const bodyError = fieldError(state.fieldErrors, 'body')
 
@@ -35,11 +33,8 @@ export const ActivityUpdateForm = ({ activityId }: { activityId: number }) => {
       <CardContent>
         <form ref={formRef} action={formAction} className="flex flex-col gap-4">
           <input type="hidden" name="activityId" value={activityId} />
-          {state.message && state.status !== 'success' ? (
-            <Alert variant="destructive" aria-live="polite">
-              <AlertTitle>Não foi possível enviar</AlertTitle>
-              <AlertDescription>{state.message}</AlertDescription>
-            </Alert>
+          {state.status !== 'success' ? (
+            <CampaignFormActionMessage state={state} errorTitle="Não foi possível enviar" />
           ) : null}
           <Field data-invalid={Boolean(bodyError)}>
             <FieldLabel htmlFor="update-body">Texto da atualização *</FieldLabel>

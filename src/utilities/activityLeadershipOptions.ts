@@ -3,8 +3,8 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
+import { isPopulatedRelationship, relationshipId } from '@/lib/relationship'
 import type { CampaignUser, Contact, Leadership } from '@/payload-types'
-import { isPopulatedRelationship, relationshipId } from '@/utilities/relationship'
 
 export type ActivityLeadershipOption = {
   id: number

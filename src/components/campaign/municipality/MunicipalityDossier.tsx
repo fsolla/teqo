@@ -7,16 +7,16 @@ import { MunicipalityStrategyCard } from '@/components/campaign/municipality/Mun
 import { MunicipalityUpdateFeed } from '@/components/campaign/municipality/MunicipalityUpdateFeed'
 import { Badge } from '@/components/ui/Badge'
 import type { MunicipalityAgeBandKey } from '@/lib/bahiaMunicipalityDemographics'
+import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { formatElectionNumber } from '@/lib/electionFormat'
 import { activityKindLabels } from '@/lib/schemas/activity'
 import type { ActivityListViewModel } from '@/utilities/activityViewModels'
-import { formatBahiaDateTimeLabel } from '@/utilities/campaignTime'
 import {
   formatGoalCoverageDeficitLabel,
   formatGoalCoverageRatioLabel,
   formatRatioAsPercentLabel,
-} from '@/utilities/goalCoverage'
-import type { MunicipalityDossierData } from '@/utilities/municipalityDossierData'
+} from '@/utilities/municipality/goalCoverage'
+import type { MunicipalityDossierData } from '@/utilities/municipality/municipalityDossierData'
 import {
   formatMunicipalityGeographyLabel,
   formatTerritorialClassWhy,
@@ -26,11 +26,11 @@ import {
   politicalTrendLabels,
   territorialClassBadgeVariant,
   territorialClassLabels,
-} from '@/utilities/municipalityLabels'
+} from '@/utilities/municipality/municipalityLabels'
 import type {
   MunicipalityAdvisorSummary,
   MunicipalityDetailViewModel,
-} from '@/utilities/municipalityViewModels'
+} from '@/utilities/municipality/municipalityViewModels'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 

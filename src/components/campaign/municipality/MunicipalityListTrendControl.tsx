@@ -18,7 +18,10 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { parsePoliticalTrendStatusFormValue } from '@/lib/schemas/municipality'
-import { politicalTrendBadgeVariant, politicalTrendLabels } from '@/utilities/municipalityLabels'
+import {
+  politicalTrendBadgeVariant,
+  politicalTrendLabels,
+} from '@/utilities/municipality/municipalityLabels'
 
 const NOTE_AUTOSAVE_MS = 600
 const STATUS_AUTOSAVE_MS = 150

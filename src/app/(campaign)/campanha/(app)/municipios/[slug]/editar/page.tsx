@@ -8,15 +8,14 @@ import { MunicipalityAdvisorsForm } from '@/components/campaign/municipality/Mun
 import { MunicipalityStrategyForm } from '@/components/campaign/municipality/MunicipalityStrategyForm'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
 import {
   getMunicipalityDetailViewModel,
   MunicipalityNotFoundError,
   resolveAccessibleMunicipalityContext,
-} from '@/utilities/municipalityPageData'
-import { getEligibleAdvisorOptions } from '@/utilities/municipalityViewModels'
+} from '@/utilities/municipality/municipalityPageData'
+import { getEligibleAdvisorOptions } from '@/utilities/municipality/municipalityViewModels'
 import {
   assignMunicipalityAdvisorsFormAction,
   setMunicipalityExpectedVotesFormAction,
@@ -30,9 +29,10 @@ type MunicipalityEditPageProps = {
 
 export default async function MunicipalityEditPage({ params }: MunicipalityEditPageProps) {
   const { slug } = await params
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect(`/campanha/municipios/${slug}`)
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff', redirectTo: `/campanha/municipios/${slug}` }),
+    getPayload({ config }),
+  ])
 
   let context
   try {

@@ -8,7 +8,7 @@ import {
   TableRow,
 } from '@/components/ui/Table'
 import { HISTORICAL_SERIES_YEARS } from '@/lib/electionResults'
-import type { CandidateComparisonRow } from '@/utilities/municipalityCandidateComparison'
+import type { CandidateComparisonRow } from '@/utilities/municipality/municipalityCandidateComparison'
 
 const voteFormatter = new Intl.NumberFormat('pt-BR')
 

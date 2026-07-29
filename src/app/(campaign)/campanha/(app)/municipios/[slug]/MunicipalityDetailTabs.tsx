@@ -15,25 +15,25 @@ import { SuggestionsPanel } from '@/components/campaign/suggestion/SuggestionsPa
 import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'
-import { loadMunicipalityLeaderships } from '@/utilities/leadershipData'
+import { loadMunicipalityLeaderships } from '@/utilities/leadership/leadershipData'
 import {
   loadMunicipalityCandidateComparison,
   MAX_COMPARISON_CANDIDATES,
-} from '@/utilities/municipalityCandidateComparison'
-import type { MunicipalityDetailSearchParams } from '@/utilities/municipalityDetailTabUi'
-import { loadMunicipalityDossierData } from '@/utilities/municipalityDossierData'
-import { municipalityElectionGeographyForSlug } from '@/utilities/municipalityElectionGeography'
-import { loadMunicipalityElectoralBaseline } from '@/utilities/municipalityElectoralBaseline'
-import { loadMunicipalityGoalAccount } from '@/utilities/municipalityGoalAccount'
-import type { getMunicipalityDetailViewModel } from '@/utilities/municipalityPageData'
-import { formatSilenceAgeLabel } from '@/utilities/municipalitySignal'
-import { loadMunicipalitySuggestions } from '@/utilities/municipalityTriggers'
+} from '@/utilities/municipality/municipalityCandidateComparison'
+import type { MunicipalityDetailSearchParams } from '@/utilities/municipality/municipalityDetailTabUi'
+import { loadMunicipalityDossierData } from '@/utilities/municipality/municipalityDossierData'
+import { municipalityElectionGeographyForSlug } from '@/utilities/municipality/municipalityElectionGeography'
+import { loadMunicipalityElectoralBaseline } from '@/utilities/municipality/municipalityElectoralBaseline'
+import { loadMunicipalityGoalAccount } from '@/utilities/municipality/municipalityGoalAccount'
+import type { getMunicipalityDetailViewModel } from '@/utilities/municipality/municipalityPageData'
+import { formatSilenceAgeLabel } from '@/utilities/municipality/municipalitySignal'
+import { loadMunicipalitySuggestions } from '@/utilities/municipality/municipalityTriggers'
 import {
   loadMunicipalityUpdatesFeed,
   parseMunicipalityUpdateFeedParams,
-} from '@/utilities/municipalityUpdatePageData'
-import type { loadAdvisorSummaries } from '@/utilities/municipalityViewModels'
-import { loadMunicipalityVisitEligibility } from '@/utilities/visitPlannerData'
+} from '@/utilities/municipality/municipalityUpdatePageData'
+import type { loadAdvisorSummaries } from '@/utilities/municipality/municipalityViewModels'
+import { loadMunicipalityVisitEligibility } from '@/utilities/visit/visitPlannerData'
 import { loadMunicipalityPledges } from '@/utilities/votePledgeData'
 import {
   aggregateMunicipalityPledgesFromRows,

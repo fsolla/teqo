@@ -1,14 +1,12 @@
 import config from '@payload-config'
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { LeadershipForm } from '@/components/campaign/leadership/LeadershipForm'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadMunicipalityOptions,
   loadOrganizationOptions,
@@ -22,9 +20,10 @@ type NewLeadershipPageProps = {
 
 export default async function NewLeadershipPage({ searchParams }: NewLeadershipPageProps) {
   const rawSearchParams = await searchParams
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
 
   const [municipalityOptions, organizationOptions, stateDeputyOptions] = await Promise.all([
     loadMunicipalityOptions(payload, user),

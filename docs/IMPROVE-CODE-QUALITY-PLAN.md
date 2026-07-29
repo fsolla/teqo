@@ -1,6 +1,6 @@
 # Improve Code Quality Plan
 
-Two passes so far: **Pass 1** (2026-07-23/24, phases 0–6 below, all done) and **Pass 2** (started 2026-07-25, see [Pass 2](#pass-2--engineering-consolidation-2026-07-25)).
+Three passes so far: **Pass 1** (2026-07-23/24, phases 0–6 below, all done), **Pass 2** (2026-07-25, see [Pass 2](#pass-2--engineering-consolidation-2026-07-25)) and **Pass 3** (2026-07-28, audit + plan, see [Pass 3](#pass-3--engineering-audit--consolidation-2026-07-28)).
 
 ## Context
 
@@ -108,3 +108,57 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 - **PRODUCT.md** still describes surfaces with nuclei-era wording in places (e.g. references to the pre-remodel operational unit); the design principles and job statement remain accurate.
 - **DESIGN.md** component inventory misses the canonical shared components consolidated in Pass 2 (`CampaignTable` column system, `CampaignListFooter`, `CampaignListEmptyState`, `CampaignListPendingBoundary` family) — worth a section when DESIGN.md is next revised.
 - **docs/CUSTOMER.md** maps field request O6 to E13, but the shipped answer was **E16** (dossiê) — the mapping note should say "atendido por E16; E13 segue como evolução".
+
+---
+
+# Pass 3 — Engineering Audit & Consolidation (2026-07-28)
+
+## Context
+
+- **Started:** 2026-07-28 (audit executed and plan signed off same day).
+- **Trigger:** user-requested sweep for code smells + consolidation of similar components/hooks/functions (even when not identical — small behavior deltas accepted under the behavior-delta protocol), inspired by the engineering-standards skills catalog. The audit method is now codified as the reusable skill `.cursor/skills/engineering-audit/SKILL.md`.
+- **Method:** read-only audit. Canon loaded (rules, ARCHITECTURE, TECH-DEBT, TESTING, `escala-dry-pos-*` plans, consolidation precedents, rejected-with-reason list); hotspot map (churn × size × static gates); **five parallel sweeps** (lib+scripts, utilities+access, components, app+collections+globals, tests); consolidation hunt under the anti-DRY rule (knowledge, not text); 11 open ledger rows re-verified.
+- **Baseline:** green — `tsc` 0 errors, `lint` 0 warnings, `knip` 0 findings (known `payload.config.ts` load error, P3), madge 0 cycles (650 files).
+- **Audit headlines (all measured):**
+  - **0 P0.** Security invariants held in all five sweeps (access declarations, `overrideAccess: false`, transactions, WebAuthn B40 ×4, consent fail-closed).
+  - **1 P1:** the red e2e gate is still red — every ledgered locator verified live + newly measured root cause: unanchored municipality-name regex at `campaignMunicipalities.e2e.spec.ts:263` (23/435 prefix collisions in the catalog).
+  - **2 correctness P2s:** 4 `safeMessages` entries that can never match their thrown messages (1 user-reachable — advisor deciding an escalated demanda); `consentId` client-trusted in the public petition-signature flow.
+  - **~1,100+ lines of measured duplication** across 9 consolidation workstreams (scripts CLI ~150, e2e users ~280, access predicates ~120, page prologues ~110, filter shells ~100, Org/SD config ~58, names-by-ids ×7+, list-URL machines ×4 domains…).
+  - **Ledger hygiene:** B34+ F2 stale (resolved by B37 — close); MunicipalityHeaderFilter trigger closed (shared system shipped); e2e-thin row stale on count (15 specs/31 cases); `utilities/` subfoldering trigger **FIRED** (6 domains).
+  - **11 defer+trigger** registered without new IDs (YAGNI / deep modules — the B34+/B37 pattern).
+- **Plan:** [entrega-engenharia-p3.md](plans/entrega-engenharia-p3.md) (workstreams P3-A…P3-L, defer+trigger table, look-alikes rejected, execution rules).
+
+## Workstream Status
+
+| WS   | Content                                                                      | Plan file                                                  | Status                                                                               |
+| ---- | ---------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| P3-A | Refusal messages as constants + safeMessages↔throw correspondence guard      | [entrega-engenharia-p3.md](plans/entrega-engenharia-p3.md) | done 2026-07-29                                                                      |
+| P3-B | Petition signature consent resolved server-side                              | (same)                                                     | done 2026-07-29                                                                      |
+| P3-C | E2E gate green + e2e/int fixture alignment (P1)                              | (same)                                                     | done 2026-07-29                                                                      |
+| P3-D | Access layer: named policies (advisor-scope ×7, accessible-ids engine)       | (same)                                                     | done 2026-07-29                                                                      |
+| P3-E | Loaders: names-by-ids wrappers, cache-tag module, pledge fold, scope select  | (same)                                                     | done 2026-07-29                                                                      |
+| P3-F | List-URL factories + filter/search shells unification                        | (same)                                                     | done 2026-07-29 (codec/multi-toggle/round-trip tail deferred w/ trigger)             |
+| P3-G | Form feedback primitives (10 silent error alerts → a11y fix)                 | (same)                                                     | done 2026-07-29                                                                      |
+| P3-H | `scripts/lib/cli.mjs` + single municipality-name fold (import alias bug)     | (same)                                                     | done 2026-07-29                                                                      |
+| P3-I | Collections config factory + route layer (formActions finish, page prologue) | (same)                                                     | done 2026-07-29 (bespoke action ladders + advisors route schema deferred w/ trigger) |
+| P3-J | `utilities/` subfoldering — D1 trigger fired (6 domains)                     | (same)                                                     | done 2026-07-29                                                                      |
+| P3-K | Guard hardening + constants/type single-sourcing                             | (same)                                                     | done 2026-07-29                                                                      |
+| P3-L | Ledger + docs reconcile                                                      | (same)                                                     | done 2026-07-29                                                                      |
+
+Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<reason\> · skipped: \<reason\>
+
+## Pass 3 Decisions (signed off 2026-07-28)
+
+| ID  | Decision                                                                                                                                                                                                                                                                                                 | Rationale                                                                                                                                                                                                                                    |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Waves ordered correctness (A–C) → structure (D–J) → guards/docs (K–L); one consolidation per delivery                                                                                                                                                                                                    | Correction before structure; each delivery independently gated and revertable                                                                                                                                                                |
+| D2  | Behavior-delta protocol accepted                                                                                                                                                                                                                                                                         | The owner's "results may change a bit" license made safe: every delta listed per item; existing pins are the characterization net, updated deliberately — never silently                                                                     |
+| D3  | 11 two-call-site consolidation candidates registered as defer+trigger, not merged                                                                                                                                                                                                                        | The repo's abstraction gate (3+ call sites or a policy worth naming); anti-classitis — merges must reduce interface count                                                                                                                    |
+| D4  | Anti-DRY rule enforced: every merge names the duplicated knowledge; look-alikes serving different rules rejected                                                                                                                                                                                         | DRY is about knowledge, not text (pragmatic-programmer); the rejected list lives in the plan to prevent re-proposals                                                                                                                         |
+| D5  | No route/collection/migration and no URL-contract change in this pass                                                                                                                                                                                                                                    | B18 frozen contract; P3-F preserves it by construction (round-trip through each domain's own parser)                                                                                                                                         |
+| D6  | Prevention-first amendment (2026-07-28): every workstream item classifies its recurrence guard on the determinism ladder (type → ESLint → convention spec → CI analysis → behavioral pin → doc); new guards ship in the SAME delivery as the fix; existing guards' dodgeability is re-audited every pass | The audit itself found three dodgeable guards (accent-sensitive vocabulary regex, `next/*` value imports invisible to the `server-only` sweep, `*FormActions.ts` filename shape) — preventing recurrence is part of the fix, not a follow-up |
+
+## Next Actions
+
+- [ ] P3-A → P3-L as independent deliveries (full gate each; Aikido on edited files)
+- [ ] Leftovers and new debts → ledger via `capture-review-debts`; oversized items → roadmap via `roadmap-item`

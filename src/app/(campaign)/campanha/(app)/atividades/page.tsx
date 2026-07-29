@@ -23,9 +23,9 @@ import {
 } from '@/utilities/activityUi'
 import { toActivityListViewModel } from '@/utilities/activityViewModels'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
-import { TOUR_COMPOSER_PATH } from '@/utilities/visitPlannerUrl'
+import { TOUR_COMPOSER_PATH } from '@/utilities/visit/visitPlannerUrl'
 
 type ActivityListPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -36,9 +36,10 @@ export default async function ActivityListPage({ searchParams }: ActivityListPag
   const canonicalUrl = resolveActivityListUrl(rawSearchParams)
   if (canonicalUrl.redirectHref) redirect(canonicalUrl.redirectHref)
 
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) return null
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
 
   const now = new Date()
   const [{ result, state }, municipalityOptions] = await Promise.all([

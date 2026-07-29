@@ -339,6 +339,16 @@ export class CampaignFixtures {
   constructor(private readonly rootPayload: Payload) {
     builderCounter += 1
     this.runID = `${processRunID}-${builderCounter}`
+    // OWNERSHIP CONTRACT: rows created through `fixtures.payload` (the proxy
+    // below) are auto-owned at cleanup — calling `fixtures.own()` for them is
+    // redundant (kept harmless and idempotent for older specs). Rows made
+    // through actions, raw payload handles, or the `rootPayload` are NOT
+    // tracked — own those explicitly. Creates whose key is a LEASED consent
+    // key (`leasedConsentKeys`) are deliberately never owned: the lease
+    // system (testDatabaseLease.ts) owns their lifecycle, and owning them
+    // here would let this spec's cleanup rob a parallel spec of the row.
+    // Swapping/defineProperty-ing `payload.create` survives too — used by the
+    // vi.spyOn(payload, 'create') specs.
     const trackedCreate = async (args: Parameters<Payload['create']>[0]) => {
       const document = await rootPayload.create(args)
       const collection = args.collection

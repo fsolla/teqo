@@ -34,11 +34,11 @@ import {
 } from '@/components/ui/Empty'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import { cn } from '@/lib/utils'
-import { getAdvisorMunicipalityIds, isCampaignStaff } from '@/utilities/campaignAccess'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadLeadershipOptions } from '@/utilities/campaignRelationOptions'
-import { loadMunicipalityPortfolioIndex } from '@/utilities/municipalityPortfolioIndex'
+import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
 import {
   loadStateDeputyListPageData,
   type StateDeputyRowViewModel,
@@ -175,9 +175,10 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
   const canonicalUrl = resolveStateDeputyListUrl(rawSearchParams)
   if (canonicalUrl.redirectHref) redirect(canonicalUrl.redirectHref)
 
-  const [user, payload] = await Promise.all([getCampaignUser(), getPayload({ config })])
-  if (!user) redirect('/campanha/login')
-  if (!isCampaignStaff(user)) redirect('/campanha')
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
 
   const [
     { rows, totalDocs, totalPages, filterFacets },

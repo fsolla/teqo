@@ -1,6 +1,7 @@
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import {
   type VoteEstimateScenarioFields,
   getVoteEstimateOrderViolation,
@@ -16,7 +17,7 @@ import {
   canUpdateVotePledge,
   payloadAdminOnly,
 } from '@/utilities/campaignAccess'
-import { relationshipId } from '@/utilities/relationship'
+import { systemStampedActorField } from '@/utilities/campaignAuditFields'
 import {
   voteEstimateScenarioGroupAccess,
   voteEstimateScenarioGroupFields,
@@ -207,19 +208,12 @@ export const VotePledge: CollectionConfig = {
         update: canSetCampaignSystemField,
       },
     },
-    {
+    systemStampedActorField({
       name: 'declaredBy',
-      type: 'relationship',
-      relationTo: 'campaignUser',
       label: 'Declarado por',
-      admin: {
-        readOnly: true,
-      },
-      access: {
-        create: canSetCampaignSystemField,
-        update: canSetCampaignSystemField,
-      },
-    },
+      indexed: false,
+      setAccess: canSetCampaignSystemField,
+    }),
     {
       name: 'estimatedVotes',
       type: 'group',

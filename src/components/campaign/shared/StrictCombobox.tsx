@@ -11,7 +11,7 @@ import {
   ComboboxList,
 } from '@/components/ui/combobox'
 import { matchesAtWordStart, normalizeSearchPhrase } from '@/lib/wordStartFilter'
-import type { StrictComboboxOption } from '@/utilities/territoryComboboxOptions'
+import type { StrictComboboxOption } from '@/utilities/territory/territoryComboboxOptions'
 
 type StrictComboboxProps = {
   id: string

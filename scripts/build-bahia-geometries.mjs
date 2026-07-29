@@ -21,10 +21,9 @@
  *   GEOMETRIES_CACHE_DIR=./data/geometries pnpm build:geometries
  */
 
-import { createHash } from 'node:crypto'
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { dieWithLabel, ensureCachedDownload, sha256Hex, writeRepoFile } from './lib/cli.mjs'
 
 import { merge } from 'topojson-client'
 import { topology } from 'topojson-server'
@@ -56,42 +55,31 @@ const SOURCES = {
   },
 }
 
-const die = (message) => {
-  console.error(`\n[build:geometries] ${message}\n`)
-  process.exit(1)
-}
-
-const sha256 = (buffer) => createHash('sha256').update(buffer).digest('hex')
+const die = dieWithLabel('build:geometries')
 
 const cacheDir = () => process.env.GEOMETRIES_CACHE_DIR || join(ROOT, 'data', 'geometries')
 
-const ensureCachedJson = async ({ key, url, ext }) => {
-  const dir = cacheDir()
-  await mkdir(dir, { recursive: true })
-  const path = join(dir, `${key}.${ext}`)
-  try {
-    await access(path)
-    console.log(`[build:geometries] cache hit ${path}`)
-    const buffer = await readFile(path)
-    return { url, hash: sha256(buffer), json: JSON.parse(buffer.toString('utf8')) }
-  } catch (error) {
-    if (error?.code !== 'ENOENT') throw error
-  }
-  console.log(`[build:geometries] downloading ${url}`)
-  const buffer = await downloadToBuffer(url)
-  const hash = sha256(buffer)
-  await writeFile(path, buffer)
-  console.log(`[build:geometries] saved ${path} (${buffer.length} bytes, sha256=${hash})`)
-  return { url, hash, json: JSON.parse(buffer.toString('utf8')) }
-}
+const ensureCachedJson = ({ key, url, ext }) =>
+  ensureCachedDownload({
+    label: 'build:geometries',
+    key,
+    url,
+    ext,
+    cacheDir: cacheDir(),
+    download: downloadToBuffer,
+  })
 
-const writeJson = async (relativePath, value) => {
-  const path = join(ROOT, relativePath)
-  await mkdir(dirname(path), { recursive: true })
-  const body = typeof value === 'string' ? value : `${JSON.stringify(value)}\n`
-  await writeFile(path, body)
-  console.log(`[build:geometries] wrote ${relativePath} (${Buffer.byteLength(body)} bytes)`)
-}
+const writeJson = (relativePath, value) =>
+  writeRepoFile({
+    label: 'build:geometries',
+    root: ROOT,
+    relativePath,
+    body:
+      typeof value === 'string'
+        ? value
+        : `${JSON.stringify(value)}
+`,
+  })
 
 const buildMunicipalityCodesModule = (entries, provenance) => {
   const lines = entries
@@ -262,7 +250,7 @@ const main = async () => {
   const assignmentRows = codeEntries
     .map(([municipality, code]) => `M\t${municipality}\t${code}\n`)
     .join('')
-  const evidenceSha256 = createHash('sha256').update(assignmentRows).digest('hex')
+  const evidenceSha256 = sha256Hex(assignmentRows)
 
   const fixture = {
     provenance: {
