@@ -10,8 +10,8 @@ import {
   type VoteEstimateScenario,
 } from '@/lib/voteEstimate'
 
-export const VOTE_ESTIMATE_SCENARIO_OVERVIEW_HINT =
-  'Troca o total desta visão geral e os votos na lista. No mapa, a cor só muda com Ano 2026.'
+export const VOTE_ESTIMATE_SCENARIO_FILTERS_HINT =
+  'Troca o total da visão geral e os votos na lista. No mapa do Início, a cor só muda com Ano 2026.'
 
 export const VOTE_ESTIMATE_SCENARIO_MAP_HINT = 'Pinta o mapa e os totais da lista abaixo.'
 

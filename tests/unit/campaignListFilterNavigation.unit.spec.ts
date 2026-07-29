@@ -11,6 +11,7 @@ vi.mock('next/navigation', async (importActual) => ({
   useRouter: () => ({ replace: routerState.replace }),
 }))
 
+import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import { MunicipalityFilters } from '@/components/campaign/municipality/MunicipalityFilters'
 import { TerritoryFilters } from '@/components/campaign/municipality/TerritoryFilters'
 import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
@@ -85,19 +86,27 @@ const filterCases: FilterCase[] = [
     bareHref: '/campanha/municipios',
     sortValue: 'name|asc',
     element: (currentQuery) =>
-      createElement(MunicipalityFilters, {
-        state: { page: 1, ...(currentQuery ? { q: currentQuery } : {}) },
-        showStaffFilters: true,
-        regionFilterOptions: [],
-        advisorFilterOptions: [],
-      }),
+      createElement(
+        MunicipalityEstimateScenarioProvider,
+        null,
+        createElement(MunicipalityFilters, {
+          state: { page: 1, ...(currentQuery ? { q: currentQuery } : {}) },
+          showStaffFilters: true,
+          regionFilterOptions: [],
+          advisorFilterOptions: [],
+        }),
+      ),
     elementWithSort: () =>
-      createElement(MunicipalityFilters, {
-        state: { page: 1, sort: 'name', dir: 'asc' },
-        showStaffFilters: true,
-        regionFilterOptions: [],
-        advisorFilterOptions: [],
-      }),
+      createElement(
+        MunicipalityEstimateScenarioProvider,
+        null,
+        createElement(MunicipalityFilters, {
+          state: { page: 1, sort: 'name', dir: 'asc' },
+          showStaffFilters: true,
+          regionFilterOptions: [],
+          advisorFilterOptions: [],
+        }),
+      ),
   },
 ]
 

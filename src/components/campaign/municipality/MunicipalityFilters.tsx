@@ -1,9 +1,14 @@
 'use client'
 
+import { useMunicipalityEstimateScenario } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import { SaveMunicipalityFilterControl } from '@/components/campaign/municipality/SaveMunicipalityFilterControl'
 import { CampaignMobileMultiFilterField } from '@/components/campaign/shared/CampaignMobileMultiFilterField'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
+import {
+  VOTE_ESTIMATE_SCENARIO_FILTERS_HINT,
+  VoteEstimateScenarioField,
+} from '@/components/campaign/votePledge/VoteEstimateScenarioField'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
@@ -24,6 +29,25 @@ import {
   serializeMunicipalitySortValue,
   type MunicipalityListState,
 } from '@/utilities/municipality/municipalityListUrl'
+
+const MunicipalityFilterEstimateScenario = ({
+  className,
+  id,
+}: {
+  className?: string
+  id: string
+}) => {
+  const { scenario, setScenario } = useMunicipalityEstimateScenario()
+  return (
+    <VoteEstimateScenarioField
+      id={id}
+      value={scenario}
+      onChange={setScenario}
+      hint={VOTE_ESTIMATE_SCENARIO_FILTERS_HINT}
+      className={className}
+    />
+  )
+}
 
 type MunicipalityFiltersProps = {
   state: MunicipalityListState
@@ -78,6 +102,12 @@ export const MunicipalityFilters = ({
           <p className="hidden min-w-0 flex-1 text-sm text-muted-foreground md:block md:self-center md:pb-2 md:whitespace-normal">
             {activeFiltersSummary}
           </p>
+        ) : null}
+        {showStaffFilters ? (
+          <MunicipalityFilterEstimateScenario
+            id="municipality-filter-estimate-scenario"
+            className="hidden shrink-0 md:block md:self-end"
+          />
         ) : null}
         <SaveMunicipalityFilterControl state={state} />
         {hasActiveFilters ? (
@@ -205,6 +235,12 @@ export const MunicipalityFilters = ({
             onToggle={(value) =>
               navigateWithSearch(toggleMunicipalityMultiFilterValue(state, 'advisor', value))
             }
+          />
+        ) : null}
+        {showStaffFilters ? (
+          <MunicipalityFilterEstimateScenario
+            id="municipality-filter-estimate-scenario-mobile"
+            className="md:hidden"
           />
         ) : null}
         <Field>

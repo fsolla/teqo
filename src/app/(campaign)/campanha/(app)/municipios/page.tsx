@@ -146,19 +146,21 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
     </>
   )
 
-  // Shared transition: the filters navigate, the results dim ("Feel the action").
-  // The estimate-scenario provider wraps ONLY the results — a scenario switch
-  // re-renders the overview/list cells, never the filter controls.
+  // Shared transition: filters navigate, results dim. Staff provider wraps filters + results.
+  const listRegion = (
+    <>
+      {filters}
+      <CampaignListResults>{listBody}</CampaignListResults>
+    </>
+  )
+
   const main = (
     <CampaignListPendingBoundary>
-      {filters}
-      <CampaignListResults>
-        {isStaffView ? (
-          <MunicipalityEstimateScenarioProvider>{listBody}</MunicipalityEstimateScenarioProvider>
-        ) : (
-          listBody
-        )}
-      </CampaignListResults>
+      {isStaffView ? (
+        <MunicipalityEstimateScenarioProvider>{listRegion}</MunicipalityEstimateScenarioProvider>
+      ) : (
+        listRegion
+      )}
     </CampaignListPendingBoundary>
   )
 
