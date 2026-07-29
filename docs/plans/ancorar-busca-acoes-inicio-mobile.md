@@ -84,7 +84,7 @@ Componentes:
 ## Dependências
 
 - Dura de código: **B46 ✓** + **B47 ✓** (layout e slots existem). Nenhuma seta dura de item aberto.
-- Soft: **B58** (polimento visual da strip — independente da âncora); **B56** (resumo no topo — quando landar, o fill deve empurrar o dock, não o resumo, para baixo: spacer entre resumo e dock).
+- Soft: **B58** (polimento visual da strip — independente da âncora); **B56** (resumo no topo — quando landar, o fill deve empurrar o dock, não o resumo, para baixo: spacer entre resumo e dock); **B48 ✓** (hits no modo focado — âncora só no modo idle).
 
 ## Não escopo
 
