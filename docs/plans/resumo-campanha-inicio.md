@@ -115,3 +115,11 @@ Componentes:
 - `PRODUCT.md` / `DESIGN.md` — anti hero-metric; tipografia
 
 **Revisão 2026-07-29 (entrega):** loader slim colocado em `campaignDashboardData.ts`; `CampaignHomeSummary` + `summarySlot` no layout staff com ocultação no modo focado B47; specs `campaignHomeSummary.unit.spec.tsx` e extensão de `campaignHomeSearch.unit.spec.tsx`.
+
+## Explicitamente fora (pós-`/simplify`)
+
+- `CampaignMetricStrip` no Início — anti-goal do plano; Quadro já cobre multi-KPI.
+- Componente compartilhado Progress+label — só dois call sites (resumo + métricas); extrair quando ≥3.
+- Renomear rótulo para “Cobertura da meta” sem sign-off de produto (copy atual alinhada ao plano).
+- Helper E8 só-agregado / int test do loader — cobertura unit do componente + rollup existente bastam por ora.
+- Módulo top-level `campaignHomeSummaryData.ts` — loader permanece em `campaignDashboardData.ts` (pin + um call site).
