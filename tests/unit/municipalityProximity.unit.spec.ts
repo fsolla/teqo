@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { BahiaMunicipalityFeature } from '@/lib/bahiaGeometriesTypes'
+import type { BahiaMunicipalityFeature, MunicipalityZoneFeature } from '@/lib/bahiaGeometriesTypes'
 import {
   featureCentroid,
   featureContainsPoint,
@@ -19,6 +19,28 @@ const square = (
 ): BahiaMunicipalityFeature => ({
   type: 'Feature',
   properties: { codarea, name },
+  geometry: {
+    type: 'Polygon',
+    coordinates: [
+      [
+        [west, south],
+        [west + size, south],
+        [west + size, south + size],
+        [west, south + size],
+        [west, south],
+      ],
+    ],
+  },
+})
+
+const zoneSquare = (
+  municipalitySlug: string,
+  name: string,
+  ibgeCode: string,
+  { west, south, size }: { west: number; south: number; size: number },
+): MunicipalityZoneFeature => ({
+  type: 'Feature',
+  properties: { municipalitySlug, name, ibgeCode },
   geometry: {
     type: 'Polygon',
     coordinates: [
@@ -215,7 +237,7 @@ describe('municipalityProximity', () => {
       ).toEqual({ kind: 'inScope', municipality: seabraEntry })
     })
 
-    it('falls back to the filtered list for a multi-zone city', () => {
+    it('falls back to the filtered list for a multi-zone city without zone mesh', () => {
       expect(
         resolveNearbyMunicipality({
           point: { lat: -12.9, lng: -38.5 },
@@ -226,6 +248,67 @@ describe('municipalityProximity', () => {
           ],
         }),
       ).toEqual({ kind: 'zoneCity', city: 'Salvador', ibgeCode: '2927408', zoneCount: 2 })
+    })
+
+    it('resolves an accessible zone by containment when the zone mesh is present', () => {
+      const zoneOne = accessible('salvador-ze-1', 'Salvador — ZE 1', '2927408')
+      const zoneTwo = accessible('salvador-ze-2', 'Salvador — ZE 2', '2927408')
+      const zoneGeometry = {
+        features: [
+          zoneSquare('salvador-ze-1', 'Salvador — ZE 1', '2927408', {
+            west: -38.6,
+            south: -13,
+            size: 0.2,
+          }),
+          zoneSquare('salvador-ze-2', 'Salvador — ZE 2', '2927408', {
+            west: -38.4,
+            south: -13,
+            size: 0.2,
+          }),
+        ],
+      }
+
+      expect(
+        resolveNearbyMunicipality({
+          point: { lat: -12.9, lng: -38.55 },
+          geometry,
+          zoneGeometry,
+          accessible: [zoneOne, zoneTwo],
+        }),
+      ).toEqual({ kind: 'inScope', municipality: zoneOne, match: 'zoneContainment' })
+    })
+
+    it('offers the nearest accessible zone when the point is in the city but outside every zone polygon', () => {
+      const zoneOne = accessible('salvador-ze-1', 'Salvador — ZE 1', '2927408')
+      const zoneTwo = accessible('salvador-ze-2', 'Salvador — ZE 2', '2927408')
+      const zoneGeometry = {
+        features: [
+          zoneSquare('salvador-ze-1', 'Salvador — ZE 1', '2927408', {
+            west: -38.58,
+            south: -12.95,
+            size: 0.05,
+          }),
+          zoneSquare('salvador-ze-2', 'Salvador — ZE 2', '2927408', {
+            west: -38.45,
+            south: -12.95,
+            size: 0.05,
+          }),
+        ],
+      }
+
+      const resolution = resolveNearbyMunicipality({
+        // Inside the Salvador municipal square, outside both tiny zone squares.
+        point: { lat: -12.85, lng: -38.5 },
+        geometry,
+        zoneGeometry,
+        accessible: [zoneOne, zoneTwo],
+      })
+
+      expect(resolution.kind).toBe('inScope')
+      if (resolution.kind !== 'inScope') return
+      expect(resolution.match).toBe('nearestZone')
+      expect(['salvador-ze-1', 'salvador-ze-2']).toContain(resolution.municipality.slug)
+      expect(resolution.distanceKm).toBeGreaterThan(0)
     })
 
     it('names where the actor is and offers the closest município in scope', () => {

@@ -1,11 +1,18 @@
 import type { Locator, Page } from '@playwright/test'
-import { loadMunicipalityGeometryModule } from '../../src/lib/bahiaGeometries.js'
+import {
+  loadMunicipalityGeometryModule,
+  loadMunicipalityZoneGeometryModule,
+} from '../../src/lib/bahiaGeometries.js'
 import type { BahiaMunicipalityFeature } from '../../src/lib/bahiaGeometriesTypes.js'
-import { getMunicipalityCatalogEntry } from '../../src/lib/municipalityCatalog.js'
+import {
+  getMunicipalityCatalogEntry,
+  municipalityCatalog,
+} from '../../src/lib/municipalityCatalog.js'
 import {
   featureCentroid,
   featureContainsPoint,
   haversineKm,
+  resolveNearbyMunicipality,
   type GeoPoint,
 } from '../../src/lib/municipalityProximity.js'
 import { featureBounds } from '../helpers/featureBounds.js'
@@ -15,12 +22,33 @@ import { expect, test } from './fixtures/campaignE2EFixtures.js'
 /**
  * B14 — the geo shortcut on the staff dashboard. What these tests protect is the
  * contract the field depends on: a granted permission resolves the município the
- * user is standing in, Salvador degrades to its zone list instead of guessing a
- * ZE, a position outside the portfolio says so, and a refused permission leaves
+ * user is standing in (including a Salvador ZE when the zone mesh matches),
+ * a position outside the portfolio says so, and a refused permission leaves
  * a card the user can act on instead of a spinner.
  */
 
 const SALVADOR_CENTRE: GeoPoint = { lat: -12.973, lng: -38.5121 }
+
+const salvadorZoneAtCentre = async () => {
+  const geometry = await loadMunicipalityGeometryModule()
+  const zoneGeometry = await loadMunicipalityZoneGeometryModule()
+  const accessible = municipalityCatalog
+    .filter((entry) => entry.city === 'Salvador')
+    .map((entry) => ({ slug: entry.slug, name: entry.name, ibgeCode: entry.ibgeCode }))
+
+  const resolution = resolveNearbyMunicipality({
+    point: SALVADOR_CENTRE,
+    geometry,
+    zoneGeometry,
+    accessible,
+  })
+
+  if (resolution.kind !== 'inScope' || resolution.match !== 'zoneContainment') {
+    throw new Error('Expected Salvador centre to resolve to an in-scope zone for the e2e contract.')
+  }
+
+  return resolution.municipality
+}
 
 /**
  * The card mirrors its headline in an sr-only live region (so the outcome is
@@ -146,10 +174,8 @@ test.describe('Município mais próximo', () => {
     await expect(card.getByRole('link', { name: /^Abrir/ })).toHaveCount(0)
   })
 
-  test('coordinator in Salvador is sent to the zone list, never to a guessed ZE', async ({
-    campaign,
-    page,
-  }) => {
+  test('coordinator in Salvador opens the matching zone directly', async ({ campaign, page }) => {
+    const zone = await salvadorZoneAtCentre()
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geo'),
@@ -158,27 +184,20 @@ test.describe('Município mais próximo', () => {
     const email = coordinator.email!
 
     await page.context().grantPermissions(['geolocation'])
-    // A desk fix comes from the network, not the GPS: wide enough to be wrong about
-    // the município, so the card must hedge.
     await page.context().setGeolocation({
       latitude: SALVADOR_CENTRE.lat,
       longitude: SALVADOR_CENTRE.lng,
-      accuracy: 25_000,
     })
 
     await campaign.login(page, email, password)
 
     const card = geoCard(page)
-    await expect(visibleText(card, 'dividida por zona eleitoral')).toBeVisible()
-    await expect(card.getByText('Localização aproximada')).toBeVisible()
-    await card.getByRole('link', { name: 'Ver zonas de Salvador' }).click()
+    await expect(visibleText(card, zone.name)).toBeVisible()
+    await card.getByRole('link', { name: `Abrir ${zone.name}` }).click()
 
-    await expect(page).toHaveURL(/\/campanha\/municipios\?.*q=Salvador/)
-    // The deficit default sort can push a given zone off page 1 (P3-C root
-    // cause of the deterministic red here): narrow the list to the zone first.
-    // Exact: "Salvador — ZE 1" is otherwise a prefix of ZE 12 and ZE 17.
-    await page.getByLabel('Buscar município').fill('Salvador — ZE 1')
-    await expect(page.getByRole('link', { name: 'Salvador — ZE 1', exact: true })).toBeVisible()
+    await expect(page).toHaveURL(
+      new RegExp(`/campanha/municipios/${zone.slug.replace(/-/g, '\\-')}$`),
+    )
   })
 
   test('a refused permission leaves an actionable card instead of a spinner', async ({
