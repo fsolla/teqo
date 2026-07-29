@@ -1,4 +1,3 @@
-import type { FederalCompetitiveRank } from '@/lib/bahiaElectionAggregates'
 import { HISTORICAL_SERIES_YEARS } from '@/lib/electionResults'
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { MunicipalitiesByMapKey } from '@/utilities/municipality/municipalityMapNavigation'
@@ -86,6 +85,21 @@ export type MunicipalityMapComparison = {
   diffByYear: Record<string, Record<string, number>>
 }
 
+/** B13+ F4 — compact wire format for competitive placement in the RSC bundle. */
+export type FederalCompetitiveRankTuple = readonly [rank: number, candidates: number]
+
+const FEDERAL_COMPETITIVE_RANK_INDEX = {
+  rank: 0,
+  candidates: 1,
+} as const
+
+export const readFederalCompetitivePlacement = (
+  tuple: FederalCompetitiveRankTuple,
+): { rank: number; candidates: number } => ({
+  rank: tuple[FEDERAL_COMPETITIVE_RANK_INDEX.rank],
+  candidates: tuple[FEDERAL_COMPETITIVE_RANK_INDEX.candidates],
+})
+
 /**
  * Every record below is keyed by MAP KEY, not by IBGE codarea: since B8 F2 the
  * map paints one polygon per catalog unit, so Salvador's 19 zones are addressed
@@ -113,7 +127,7 @@ export type MunicipalityMapBundle = {
    * TSE artifact ranks by codarea only, so Salvador's zones all carry the city's
    * position (the legend says so).
    */
-  competitiveRankByYear: Record<string, Record<string, FederalCompetitiveRank>>
+  competitiveRankByYear: Record<string, Record<string, FederalCompetitiveRankTuple>>
   /** map key → projected 2026 valid votes (E8) — the size of the proportional symbol. */
   projectedValidVotesByMapKey: Record<string, number>
   /** map key → the municipality it opens on click. */

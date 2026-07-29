@@ -110,7 +110,11 @@ const DashboardMapSection = async ({
 
   return (
     <MunicipalityEstimateScenarioProvider>
-      <MunicipalityMapPanelDynamic bundle={mapBundle} candidateOptions={candidateOptions} />
+      <MunicipalityMapPanelDynamic
+        bundle={mapBundle}
+        candidateOptions={candidateOptions}
+        actorRole={user.role}
+      />
     </MunicipalityEstimateScenarioProvider>
   )
 }

@@ -6,7 +6,6 @@ import {
   getFederalCompetitiveRank,
   getMunicipalityFederalBaseline,
   getStatewideFederalTotals,
-  type FederalCompetitiveRank,
 } from '@/lib/bahiaElectionAggregates'
 import { BASELINE_TICKET_2022, HISTORICAL_SERIES_YEARS } from '@/lib/electionResults'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
@@ -33,6 +32,7 @@ import {
   type MunicipalityListState,
 } from '@/utilities/municipality/municipalityListUrl'
 import type {
+  FederalCompetitiveRankTuple,
   MunicipalityMapBundle,
   MunicipalityMapComparison,
 } from '@/utilities/municipality/municipalityMapContract'
@@ -105,7 +105,7 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
   const valuesByYear: Record<string, Record<string, number>> = {}
   const validVotesByYear: Record<string, Record<string, number>> = {}
   const statewideShareByYear: Record<string, number> = {}
-  const competitiveRankByYear: Record<string, Record<string, FederalCompetitiveRank>> = {}
+  const competitiveRankByYear: Record<string, Record<string, FederalCompetitiveRankTuple>> = {}
   // One polygon per catalog unit since B8 F2, so this index — the same one the
   // map navigates by — is also the key of every rollup below.
   const municipalitiesByMapKey = buildMunicipalitiesByMapKey(municipalities)
@@ -134,10 +134,10 @@ const buildMunicipalityMapBundleFromMunicipalities = async (
 
     // Rank exists per city only, so every zone of Salvador carries the city's
     // position — stated in the legend rather than faked per zone.
-    const ranks: Record<string, FederalCompetitiveRank> = {}
+    const ranks: Record<string, FederalCompetitiveRankTuple> = {}
     for (const municipality of municipalities) {
       const rank = getFederalCompetitiveRank(municipality.ibgeCode, year)
-      if (rank) ranks[mapKeyForMunicipality(municipality)] = rank
+      if (rank) ranks[mapKeyForMunicipality(municipality)] = [rank.rank, rank.candidates]
     }
     competitiveRankByYear[String(year)] = ranks
   }

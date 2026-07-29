@@ -48,7 +48,8 @@ const { municipalityCatalog } = await import('../src/lib/municipalityCatalog.ts'
 const { municipalityElectionGeography } =
   await import('../src/utilities/municipality/municipalityElectionGeography.ts')
 const {
-  loadCampoFederalVotesByCityZone,
+  campoFederalVotesByCityZoneFromFederalSlice,
+  candidateVotesByCityZoneFromFederalSlice,
   loadCandidateVotesByCityZone,
   loadFederalVotesByCityZoneAndCandidate,
   loadOfficeTallyByCityZone,
@@ -83,17 +84,30 @@ for (const entry of municipalityCatalog) {
   }
 }
 
+const geographiesByIbgeCode = new Map()
+for (const entry of municipalityCatalog) {
+  const geographies = geographiesByIbgeCode.get(entry.ibgeCode) ?? []
+  geographies.push(municipalityElectionGeography(entry))
+  geographiesByIbgeCode.set(entry.ibgeCode, geographies)
+}
+
+const federalRankByIbgeCode = {}
+
 for (const year of HISTORICAL_SERIES_YEARS) {
-  const [candidateVotes, validVotes, campoVotes, federalTally] = await Promise.all([
-    loadCandidateVotesByCityZone(payload, cliReader, { year, candidateNumber }),
+  const [federalNominalSlice, validVotes, federalTally] = await Promise.all([
+    loadFederalVotesByCityZoneAndCandidate(payload, cliReader, { year }),
     loadValidVotesByCityZone(payload, cliReader, { year }),
-    loadCampoFederalVotesByCityZone(payload, cliReader, { year }),
     loadOfficeTallyByCityZone(payload, cliReader, {
       year,
       office: FEDERAL_DEPUTY_OFFICE,
       turn: '1',
     }),
   ])
+  const candidateVotes = candidateVotesByCityZoneFromFederalSlice(
+    federalNominalSlice,
+    candidateNumber,
+  )
+  const campoVotes = campoFederalVotesByCityZoneFromFederalSlice(federalNominalSlice, year)
 
   if (candidateVotes.size === 0) {
     console.error(
@@ -121,6 +135,36 @@ for (const year of HISTORICAL_SERIES_YEARS) {
   console.log(
     `[build:election-aggregates] ${year}: ${yearTotal} votes for #${candidateNumber} ` +
       `(campo total: ${campoTotal}).`,
+  )
+
+  for (const [ibgeCode, geographies] of geographiesByIbgeCode) {
+    const byCandidate = new Map()
+    for (const geography of geographies) {
+      for (const [number, votes] of sumCandidateVotesForGeography(federalNominalSlice, geography)) {
+        byCandidate.set(number, (byCandidate.get(number) ?? 0) + votes)
+      }
+    }
+
+    const ownVotes = byCandidate.get(candidateNumber) ?? 0
+    if (ownVotes <= 0) continue
+
+    let ahead = 0
+    let candidates = 0
+    for (const votes of byCandidate.values()) {
+      if (votes <= 0) continue
+      candidates += 1
+      if (votes > ownVotes) ahead += 1
+    }
+
+    federalRankByIbgeCode[ibgeCode] ??= {}
+    federalRankByIbgeCode[ibgeCode][String(year)] = { rank: ahead + 1, candidates }
+  }
+
+  const ranked = Object.values(federalRankByIbgeCode).filter(
+    (byYear) => byYear[String(year)] !== undefined,
+  ).length
+  console.log(
+    `[build:election-aggregates] ${year}: placement computed for ${ranked}/${geographiesByIbgeCode.size} IBGE municipalities.`,
   )
 }
 
@@ -170,63 +214,6 @@ for (const entry of municipalityCatalog) {
 console.log(
   `[build:election-aggregates] 2022 majoritarian: ${presidentTotal} votes for president #${BASELINE_TICKET_2022.president.candidateNumber}.`,
 )
-
-// B13 "posição no município": where the candidate placed among every federal
-// deputy voted inside each municipality. Keyed by IBGE code rather than by
-// catalog slug because the competitive question only has an answer for a whole
-// city — Salvador's 19 zone municipalities are one placement, and the map
-// paints one polygon for them anyway.
-const geographiesByIbgeCode = new Map()
-for (const entry of municipalityCatalog) {
-  const geographies = geographiesByIbgeCode.get(entry.ibgeCode) ?? []
-  geographies.push(municipalityElectionGeography(entry))
-  geographiesByIbgeCode.set(entry.ibgeCode, geographies)
-}
-
-const federalRankByIbgeCode = {}
-for (const year of HISTORICAL_SERIES_YEARS) {
-  const votesByCityZoneAndCandidate = await loadFederalVotesByCityZoneAndCandidate(
-    payload,
-    cliReader,
-    { year },
-  )
-
-  for (const [ibgeCode, geographies] of geographiesByIbgeCode) {
-    const byCandidate = new Map()
-    for (const geography of geographies) {
-      for (const [number, votes] of sumCandidateVotesForGeography(
-        votesByCityZoneAndCandidate,
-        geography,
-      )) {
-        byCandidate.set(number, (byCandidate.get(number) ?? 0) + votes)
-      }
-    }
-
-    const ownVotes = byCandidate.get(candidateNumber) ?? 0
-    // No votes here means no placement — a last place would read as a fact
-    // when it is really absence of data.
-    if (ownVotes <= 0) continue
-
-    let ahead = 0
-    let candidates = 0
-    for (const votes of byCandidate.values()) {
-      if (votes <= 0) continue
-      candidates += 1
-      if (votes > ownVotes) ahead += 1
-    }
-
-    federalRankByIbgeCode[ibgeCode] ??= {}
-    // Competition rank: tied candidates share a placement.
-    federalRankByIbgeCode[ibgeCode][String(year)] = { rank: ahead + 1, candidates }
-  }
-
-  const ranked = Object.values(federalRankByIbgeCode).filter(
-    (byYear) => byYear[String(year)] !== undefined,
-  ).length
-  console.log(
-    `[build:election-aggregates] ${year}: placement computed for ${ranked}/${geographiesByIbgeCode.size} IBGE municipalities.`,
-  )
-}
 
 const artifact = {
   provenance:

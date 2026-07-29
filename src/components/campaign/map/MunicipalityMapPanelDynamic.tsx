@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic'
 
+import type { CampaignRole } from '@/lib/campaignRoles'
 import type { FederalCandidateOption } from '@/utilities/electionCandidateOptions'
 import type { MunicipalityMapBundle } from '@/utilities/municipality/municipalityMapContract'
 
@@ -24,7 +25,15 @@ const MunicipalityMapPanelLazy = dynamic(
 export const MunicipalityMapPanelDynamic = ({
   bundle,
   candidateOptions,
+  actorRole,
 }: {
   bundle: MunicipalityMapBundle
   candidateOptions: FederalCandidateOption[]
-}) => <MunicipalityMapPanelLazy bundle={bundle} candidateOptions={candidateOptions} />
+  actorRole: CampaignRole
+}) => (
+  <MunicipalityMapPanelLazy
+    bundle={bundle}
+    candidateOptions={candidateOptions}
+    actorRole={actorRole}
+  />
+)

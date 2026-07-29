@@ -1,7 +1,7 @@
 # Escala e DRY pós-B13 (escala relativa no mapa dos Municípios)
 
-Status: rascunho
-Atualizado em: 2026-07-26
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos, **B13+**, fill-in de engenharia)
 Impeccable: A — N/A (nenhuma superfície nova; as quatro fases preservam o comportamento visível do B13, exceto uma linha de copy em F2)
 Appetite: ~0,5–0,75 dia eng; quatro fases independentes, nenhuma com migration, collection ou `Consent`

@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import config from '@/payload.config'
+import { readFederalCompetitivePlacement } from '@/utilities/municipality/municipalityMapContract'
 import { loadMunicipalityMapBundle } from '@/utilities/municipality/municipalityMapData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
@@ -49,7 +50,15 @@ describe('loadMunicipalityMapBundle — list URL filters', () => {
 
     // The zones share the city's TSE rank — the artifact ranks by codarea only.
     const ranks = bundle!.competitiveRankByYear['2022'] ?? {}
-    const positions = new Set(mapKeys.map((key) => ranks[key]?.rank))
+    const sampleKey = mapKeys[0]
+    const sampleTuple = ranks[sampleKey]
+    expect(sampleTuple).toEqual([expect.any(Number), expect.any(Number)])
+    const positions = new Set(
+      mapKeys.map((key) => {
+        const tuple = ranks[key]
+        return tuple ? readFederalCompetitivePlacement(tuple).rank : undefined
+      }),
+    )
     expect(positions.size).toBe(1)
   })
 
