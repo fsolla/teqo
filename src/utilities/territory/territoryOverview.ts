@@ -12,18 +12,20 @@
  */
 
 import { medianOf } from '@/lib/median'
+import {
+  filterDemaisRmsSubgroup,
+  filterSalvadorSubgroup,
+  isSalvadorSubMunicipality,
+  METROPOLITANO_DEMAIS_SUB_ROW_LABEL,
+  METROPOLITANO_REGION,
+  METROPOLITANO_SALVADOR_SUB_ROW_LABEL,
+} from '@/lib/metropolitanoTerritoryPeers'
 import { territorialClassSortWeight } from '@/lib/territorialClassSortWeight'
 import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 import type { MunicipalityGoalCoverage } from '@/utilities/municipality/goalCoverage'
 import { aggregateGoalCoverage } from '@/utilities/municipality/goalCoverage'
 import type { MunicipalityTerritorialClassification } from '@/utilities/municipality/municipalityTerritorialClass'
 
-export const METROPOLITANO_REGION = 'Metropolitano de Salvador'
-export const SALVADOR_CITY = 'Salvador'
-/** Metropolitano sub-row label — shared with `loadTerritoryOverview` for aggregate class slugs. */
-export const METROPOLITANO_SALVADOR_SUB_ROW_LABEL = 'Salvador (19 zonas)'
-const SALVADOR_SUB_LABEL = METROPOLITANO_SALVADOR_SUB_ROW_LABEL
-const RMS_DEMAIS_SUB_LABEL = 'Demais municípios da RMS'
 const ELECTION_YEAR_2022 = '2022'
 
 type TerritoryCriticalMunicipality = {
@@ -240,16 +242,6 @@ const inputsInRegion = (
   region: string,
 ): TerritoryMunicipalityInput[] => inputs.filter((input) => input.region === region)
 
-const metropolitanoSalvadorInputs = (
-  inputs: ReadonlyArray<TerritoryMunicipalityInput>,
-): TerritoryMunicipalityInput[] =>
-  inputs.filter((input) => input.region === METROPOLITANO_REGION && input.city === SALVADOR_CITY)
-
-const metropolitanoDemaisInputs = (
-  inputs: ReadonlyArray<TerritoryMunicipalityInput>,
-): TerritoryMunicipalityInput[] =>
-  inputs.filter((input) => input.region === METROPOLITANO_REGION && input.city !== SALVADOR_CITY)
-
 /**
  * Computes the 27-TI comparative rollup. Rows are returned in first-seen order
  * (catalog order when fed from the loader); the Metropolitano de Salvador row
@@ -270,7 +262,7 @@ export const computeTerritoryRollup = (
 
   for (const input of inputs) {
     if (input.region === METROPOLITANO_REGION) {
-      if (input.city === SALVADOR_CITY) {
+      if (isSalvadorSubMunicipality(input)) {
         accumulateInto(metropolitanoSalvador, input)
       } else {
         accumulateInto(metropolitanoDemais, input)
@@ -289,16 +281,16 @@ export const computeTerritoryRollup = (
     if (acc.region === METROPOLITANO_REGION) {
       row.subRows = [
         finalizeSubRow(
-          SALVADOR_SUB_LABEL,
+          METROPOLITANO_SALVADOR_SUB_ROW_LABEL,
           metropolitanoSalvador,
           stateTotal2022,
-          computeTerritoryE12Rollup(metropolitanoSalvadorInputs(inputs)),
+          computeTerritoryE12Rollup(filterSalvadorSubgroup(regionInputs)),
         ),
         finalizeSubRow(
-          RMS_DEMAIS_SUB_LABEL,
+          METROPOLITANO_DEMAIS_SUB_ROW_LABEL,
           metropolitanoDemais,
           stateTotal2022,
-          computeTerritoryE12Rollup(metropolitanoDemaisInputs(inputs)),
+          computeTerritoryE12Rollup(filterDemaisRmsSubgroup(regionInputs)),
         ),
       ]
     }

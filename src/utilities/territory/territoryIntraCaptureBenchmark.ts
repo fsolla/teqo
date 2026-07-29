@@ -2,16 +2,13 @@
  * E12 — intra-TI capture benchmark (T4) for municipality detail.
  *
  * Pure over the committed TSE artifact + `municipalityCatalog` (client-safe).
- * Peers share the same Território de Identidade; Metropolitano de Salvador
- * splits Salvador (all zone slugs) vs demais RMS municipalities — same rule as
- * E17/E12 rollups.
+ * Peers share the same Território de Identidade (`catalogPeersForSlug`).
  */
 
 import { getMunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
 import { medianOf } from '@/lib/median'
-import { municipalityCatalog } from '@/lib/municipalityCatalog'
+import { catalogPeersForSlug } from '@/lib/metropolitanoTerritoryPeers'
 import { captureRate } from '@/utilities/municipality/municipalityPotential'
-import { METROPOLITANO_REGION, SALVADOR_CITY } from '@/utilities/territory/territoryOverview'
 
 type TerritoryCaptureBeacon = {
   slug: string
@@ -33,23 +30,6 @@ export type MunicipalityIntraTerritoryCaptureBenchmark = {
   beacon: TerritoryCaptureBeacon | null
 }
 
-const peersForSlug = (slug: string): ReadonlyArray<(typeof municipalityCatalog)[number]> => {
-  const entry = municipalityCatalog.find((row) => row.slug === slug)
-  if (!entry) return []
-
-  if (entry.region !== METROPOLITANO_REGION) {
-    return municipalityCatalog.filter((row) => row.region === entry.region)
-  }
-
-  const isSalvadorZone = entry.city === SALVADOR_CITY
-  return municipalityCatalog.filter((row) =>
-    isSalvadorZone
-      ? row.region === METROPOLITANO_REGION && row.city === SALVADOR_CITY
-      : row.region === METROPOLITANO_REGION && row.city !== SALVADOR_CITY,
-  )
-}
-
-/** T4 benchmark for one catalog slug — memoized per slug per process. */
 const benchmarkBySlug = new Map<string, MunicipalityIntraTerritoryCaptureBenchmark>()
 
 export const getMunicipalityIntraTerritoryCaptureBenchmark = (
@@ -58,7 +38,7 @@ export const getMunicipalityIntraTerritoryCaptureBenchmark = (
   const cached = benchmarkBySlug.get(slug)
   if (cached) return cached
 
-  const peers = peersForSlug(slug)
+  const peers = catalogPeersForSlug(slug)
   const rates: Array<{ slug: string; name: string; rate: number }> = []
 
   for (const peer of peers) {

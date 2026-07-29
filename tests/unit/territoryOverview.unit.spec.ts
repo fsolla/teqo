@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  METROPOLITANO_DEMAIS_SUB_ROW_LABEL,
+  METROPOLITANO_SALVADOR_SUB_ROW_LABEL,
+} from '@/lib/metropolitanoTerritoryPeers'
+import {
   computeTerritoryE12Rollup,
   computeTerritoryRollup,
   filterTerritoryRows,
@@ -134,8 +138,8 @@ describe('computeTerritoryRollup', () => {
     expect(metro.subRows).toHaveLength(2)
     const salvador = metro.subRows![0]
     const demais = metro.subRows![1]
-    expect(salvador.label).toBe('Salvador (19 zonas)')
-    expect(demais.label).toBe('Demais municípios da RMS')
+    expect(salvador.label).toBe(METROPOLITANO_SALVADOR_SUB_ROW_LABEL)
+    expect(demais.label).toBe(METROPOLITANO_DEMAIS_SUB_ROW_LABEL)
     expect(salvador.municipalityCount).toBe(1)
     expect(demais.municipalityCount).toBe(1)
     // Sub-rows sum to the Metropolitano total.
@@ -187,7 +191,7 @@ describe('flattenTerritoryRows', () => {
     expect(flattened[metroIndex + 1]).toMatchObject({
       variant: 'sub',
       parentRegion: 'Metropolitano de Salvador',
-      label: 'Salvador (19 zonas)',
+      label: METROPOLITANO_SALVADOR_SUB_ROW_LABEL,
     })
   })
 })
