@@ -189,14 +189,13 @@ export const formatMunicipalityGeographyLabel = (municipality: {
 }
 
 /**
- * The 12 real column ids in `/campanha/municipios` — 11 staff columns plus
+ * The 11 real column ids in `/campanha/municipios` — 10 staff columns plus
  * `lastUpdateAt`, which only the non-staff (leader) view renders. Closed union
  * so `municipalityColumnDescriptions` below can't silently drop a column.
  */
 export type MunicipalityListColumnId =
   | 'name'
   | 'region'
-  | 'kind'
   | 'votos'
   | 'classe'
   // Matches the column's own `id` and its `?level=` filter param; the SORT key
@@ -228,7 +227,6 @@ const CLASS_COLUMN_DESCRIPTION =
 export const municipalityColumnDescriptions: Record<MunicipalityListColumnId, string> = {
   name: 'Nome do município e prioridade da campanha.',
   region: 'Território de Identidade (Bahia) a que o município pertence.',
-  kind: 'Município inteiro ou zona eleitoral de Salvador (ZE 1–19).',
   votos: formatMunicipalityConcentrationHint(),
   classe: CLASS_COLUMN_DESCRIPTION,
   level: campaignConceptOneLiner('nivel-de-envolvimento'),

@@ -8,7 +8,6 @@ import { EMPTY_ENGAGEMENT_LEVEL_LABEL, formatEngagementLevelLabel } from '@/lib/
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import { truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import {
-  municipalityKindLabels,
   municipalityListCoverageLabels,
   municipalityPriorityLabels,
   politicalTrendLabels,
@@ -31,7 +30,6 @@ import type { MunicipalityTerritorialClass } from '@/utilities/municipality/muni
 export type MunicipalityFilterParam =
   | 'name'
   | 'region'
-  | 'kind'
   | 'coverage'
   | 'trend'
   | 'class'
@@ -74,16 +72,6 @@ export const municipalityFilterDefinitions: MunicipalityFilterDefinition[] = [
     label: 'Território',
     staffOnly: false,
     selection: 'multi',
-  },
-  {
-    param: 'kind',
-    label: 'Tipo',
-    allLabel: 'Todos',
-    staffOnly: false,
-    selection: 'single',
-    options: (
-      Object.keys(municipalityKindLabels) as Array<keyof typeof municipalityKindLabels>
-    ).map((kind) => ({ value: kind, label: municipalityKindLabels[kind] })),
   },
   {
     param: 'advisor',
@@ -149,11 +137,6 @@ export const getMunicipalityFilterDefinition = (
   param: MunicipalityFilterParam,
 ): MunicipalityFilterDefinition => municipalityFilterDefinitionByParam[param]
 
-export const getMunicipalitySingleFilterValue = (
-  state: MunicipalityListState,
-  param: 'kind' | 'coverage',
-): string | undefined => state[param]
-
 export type MunicipalityMultiFilterParam =
   | 'region'
   | 'slug'
@@ -176,16 +159,6 @@ export const getMunicipalityMultiFilterValues = (
 
 const withMunicipalityListPageReset = (state: MunicipalityListState): MunicipalityListState =>
   parseMunicipalityListParams(municipalityListStateToRawParams({ ...state, page: 1 }, 1))
-
-/** Exclusive single-value set/clear for `kind`. Empty (or invalid) clears. */
-export const applyMunicipalityKindFilter = (
-  state: MunicipalityListState,
-  value: string | undefined,
-): MunicipalityListState =>
-  parseMunicipalityListParams({
-    ...municipalityListStateToRawParams({ ...state, page: 1 }, 1),
-    kind: value || undefined,
-  })
 
 /** Toggle exclusivity: clicking the active value clears (coverage). */
 export const toggleMunicipalityExclusiveFilterValue = (
@@ -337,8 +310,6 @@ export const isMunicipalityColumnFilterActive = (
     case 'advisor':
       // The Assessores popover also owns the com/sem assessor toggle.
       return Boolean(state.advisors?.length || state.coverage)
-    case 'kind':
-      return Boolean(state.kind)
     case 'coverage':
       return Boolean(state.coverage)
     case 'trend':
@@ -363,7 +334,6 @@ export const formatMunicipalityActiveFiltersSummary = (
     )
   }
   if (state.regions?.length) parts.push(truncatedNamesLabel([...state.regions]))
-  if (state.kind) parts.push(municipalityKindLabels[state.kind])
   if (state.advisors?.length) {
     parts.push(state.advisors.length === 1 ? '1 assessor' : `${state.advisors.length} assessores`)
   }

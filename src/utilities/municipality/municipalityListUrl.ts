@@ -29,14 +29,11 @@ import {
 import type { MunicipalityTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
 import { parseTerritoryRegionsParam } from '@/utilities/territory/territoryRegionParam'
 
-import type { Municipality } from '@/payload-types'
-
 export const municipalityPageSize = 25
 
 export type MunicipalityListSortKey =
   | 'name'
   | 'region'
-  | 'kind'
   | 'trend'
   | 'expectedVotes'
   | 'lastUpdateAt'
@@ -80,7 +77,6 @@ const DEFAULT_MUNICIPALITY_LIST_SORT_KEY: MunicipalityListSortKey = 'deficit'
 export const municipalityListSortLabels: Record<MunicipalityListSortKey, string> = {
   name: 'Município',
   region: 'Território',
-  kind: 'Tipo',
   trend: 'Tendência',
   expectedVotes: 'Votos estimados',
   lastUpdateAt: 'Última atualização',
@@ -95,8 +91,8 @@ export const municipalityListSortLabels: Record<MunicipalityListSortKey, string>
 }
 
 /**
- * B17 — the name each column answers to in the column picker. Ten of the
- * twelve quote the sort label, and the header renders that same record
+ * B17 — the name each column answers to in the column picker. Nine of the
+ * eleven quote the sort label, and the header renders that same record
  * (`MunicipalitySortableHead` falls back to it when given no children, which
  * is why those heads pass none), so renaming a header renames the menu entry
  * with it. The two that differ do so on purpose: a header sits above its own
@@ -106,7 +102,6 @@ export const municipalityListSortLabels: Record<MunicipalityListSortKey, string>
 export const municipalityColumnLabels: Record<MunicipalityListColumnId, string> = {
   name: municipalityListSortLabels.name,
   region: municipalityListSortLabels.region,
-  kind: municipalityListSortLabels.kind,
   /** Header is the bare year, under the "2022" group of the table. */
   votos: 'Votação 2022',
   classe: municipalityListSortLabels.classe,
@@ -129,7 +124,6 @@ export type MunicipalityListState = {
   slugs?: string[]
   /** Multi-select (OR) campaignUser advisor IDs. */
   advisors?: number[]
-  kind?: Municipality['kind']
   coverage?: 'com_assessor' | 'sem_assessor'
   priority?: 'alta'
   /**
@@ -163,7 +157,6 @@ const municipalityListParamNames = [
   'region',
   'slug',
   'advisor',
-  'kind',
   'coverage',
   'priority',
   'trend',
@@ -279,7 +272,6 @@ export const municipalityListStateToRawParams = (
   region: state.regions,
   slug: state.slugs,
   advisor: state.advisors?.map(String),
-  kind: state.kind,
   coverage: state.coverage,
   priority: state.priority,
   trend: state.trends,
@@ -298,7 +290,6 @@ export const parseMunicipalityListParams = (
   const regions = parseRegionsParam(params.region)
   const slugs = parseSlugsParam(params.slug)
   const advisors = parseAdvisorsParam(params.advisor)
-  const rawKind = firstValue(params.kind)
   const rawCoverage = firstValue(params.coverage)
   const rawPriority = firstValue(params.priority)
   const trends = parseExhaustiveEnumParam<PoliticalTrendStatus>(
@@ -325,7 +316,6 @@ export const parseMunicipalityListParams = (
     ...(regions.length ? { regions } : {}),
     ...(slugs.length ? { slugs } : {}),
     ...(advisors.length ? { advisors } : {}),
-    ...(rawKind === 'municipio' || rawKind === 'zona' ? { kind: rawKind } : {}),
     ...(rawCoverage === 'com_assessor' || rawCoverage === 'sem_assessor'
       ? { coverage: rawCoverage }
       : {}),
@@ -353,7 +343,6 @@ export const buildMunicipalityListWhere = (state: MunicipalityListState): Where 
   if (state.regions?.length) filters.push({ region: { in: state.regions } })
   if (state.slugs?.length) filters.push({ slug: { in: state.slugs } })
   if (state.advisors?.length) filters.push({ advisors: { in: state.advisors } })
-  if (state.kind) filters.push({ kind: { equals: state.kind } })
   if (state.coverage) {
     filters.push({
       advisors: { exists: state.coverage === 'com_assessor' },
@@ -402,7 +391,6 @@ export const serializeCanonicalMunicipalityListSearchParams = (
   for (const region of canonicalState.regions ?? []) params.append('region', region)
   for (const slug of canonicalState.slugs ?? []) params.append('slug', slug)
   for (const advisor of canonicalState.advisors ?? []) params.append('advisor', String(advisor))
-  if (canonicalState.kind) params.set('kind', canonicalState.kind)
   if (canonicalState.coverage) params.set('coverage', canonicalState.coverage)
   if (canonicalState.priority) params.set('priority', canonicalState.priority)
   for (const trend of canonicalState.trends ?? []) params.append('trend', trend)

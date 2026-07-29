@@ -195,7 +195,6 @@ const loadMunicipalityListFilterFacets = async (
 const payloadSortFieldByKey: Partial<Record<MunicipalityListSortKey, string>> = {
   name: 'name',
   region: 'region',
-  kind: 'kind',
   lastUpdateAt: 'lastUpdateAt',
   trend: 'politicalTrend.status',
   // E9 (deficit, frescor), E10 (classe) and E14 (nivel) are absent on purpose:

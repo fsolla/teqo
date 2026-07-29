@@ -8,12 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import {
-  applyMunicipalityKindFilter,
   buildMunicipalityFilterHref,
   clearMunicipalityListFilters,
   formatMunicipalityActiveFiltersSummary,
   getMunicipalityFilterDefinition,
-  getMunicipalitySingleFilterValue,
   municipalityFilterDefinitions,
   toggleMunicipalityExclusiveFilterValue,
   toggleMunicipalityMultiFilterValue,
@@ -130,10 +128,7 @@ export const MunicipalityFilters = ({
           />
         ) : null}
         {mobileFilterDefinitions.map((definition) => {
-          const value =
-            definition.param === 'kind' || definition.param === 'coverage'
-              ? (getMunicipalitySingleFilterValue(state, definition.param) ?? '')
-              : ''
+          const value = definition.param === 'coverage' ? (state.coverage ?? '') : ''
           return (
             <Field key={definition.param}>
               <FieldLabel htmlFor={`municipality-filter-${definition.param}`}>
@@ -150,10 +145,6 @@ export const MunicipalityFilters = ({
                         ? toggleMunicipalityExclusiveFilterValue(state, 'coverage', selected)
                         : { ...state, coverage: undefined },
                     )
-                    return
-                  }
-                  if (definition.param === 'kind') {
-                    navigateWithSearch(applyMunicipalityKindFilter(state, selected))
                   }
                 }}
                 className="min-h-11 w-full"

@@ -8,7 +8,6 @@ import {
 } from '@/components/campaign/shared/CampaignHeaderFilterPopover'
 import { municipalityPriorityLabels } from '@/utilities/municipality/municipalityLabels'
 import {
-  applyMunicipalityKindFilter,
   buildMunicipalityFilterHref,
   buildMunicipalityFilterOptionHref,
   clearMunicipalityAdvisorFilters,
@@ -16,7 +15,6 @@ import {
   clearMunicipalityNameFilters,
   getMunicipalityFilterDefinition,
   getMunicipalityMultiFilterValues,
-  getMunicipalitySingleFilterValue,
   isMunicipalityColumnFilterActive,
   municipalityFilterOptionsForSlugs,
   toggleMunicipalityExclusiveFilterValue,
@@ -48,7 +46,6 @@ const multiParamByFilter = {
   trend: 'trend',
   class: 'class',
   level: 'level',
-  kind: null,
   coverage: null,
 } as const satisfies Record<MunicipalityFilterParam, MunicipalityMultiFilterParam | null>
 
@@ -123,35 +120,6 @@ export const MunicipalityHeaderFilter = ({
     onChoose: () => commit(row.next),
   }))
 
-  const singleRows: CampaignHeaderFilterRow[] =
-    definition.selection === 'single'
-      ? [
-          ...(definition.allLabel
-            ? [
-                {
-                  value: '',
-                  label: definition.allLabel,
-                  href: buildMunicipalityFilterHref(
-                    applyMunicipalityKindFilter(viewState, undefined),
-                  ),
-                  selected: !getMunicipalitySingleFilterValue(viewState, 'kind'),
-                  onChoose: () => commit(applyMunicipalityKindFilter(viewState, undefined)),
-                },
-              ]
-            : []),
-          ...options.map((option) => {
-            const next = applyMunicipalityKindFilter(viewState, option.value)
-            return {
-              value: option.value,
-              label: option.label,
-              href: buildMunicipalityFilterHref(next),
-              selected: getMunicipalitySingleFilterValue(viewState, 'kind') === option.value,
-              onChoose: () => commit(next),
-            }
-          }),
-        ]
-      : []
-
   const multiRows: CampaignHeaderFilterRow[] = multiParam
     ? options.map((option) => ({
         value: option.value,
@@ -171,7 +139,7 @@ export const MunicipalityHeaderFilter = ({
       active={isActive}
       closeOnChoose={definition.selection !== 'multi'}
       exclusiveRows={sharedExclusiveRows}
-      optionRows={definition.selection === 'single' ? singleRows : multiRows}
+      optionRows={multiRows}
       clear={
         hasSelection
           ? {

@@ -31,7 +31,9 @@ describe('loadMunicipalityMapBundle — list URL filters', () => {
   it('paints each zone under its own map key, never pooled under the city code', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
 
-    const bundle = await loadMunicipalityMapBundle(payload, coordinator, { kind: 'zona' })
+    const bundle = await loadMunicipalityMapBundle(payload, coordinator, {
+      slug: zoneMunicipalities.map((entry) => entry.slug),
+    })
 
     expect(bundle).not.toBeNull()
     expect(bundle!.hasZoneMunicipalities).toBe(true)
@@ -73,10 +75,9 @@ describe('loadMunicipalityMapBundle — list URL filters', () => {
     expect(Object.keys(included!.municipalitiesByMapKey)).toEqual([expectedMapKey])
     expect(Object.keys(included!.valuesByYear['2022'] ?? {})).toEqual([expectedMapKey])
 
-    const excluded =
-      administered.kind === 'zona'
-        ? await loadMunicipalityMapBundle(payload, advisor, { kind: 'municipio' })
-        : await loadMunicipalityMapBundle(payload, advisor, { kind: 'zona' })
+    const outsideSlug = municipalityCatalog.find((entry) => entry.slug !== administered.slug)!.slug
+
+    const excluded = await loadMunicipalityMapBundle(payload, advisor, { slug: [outsideSlug] })
     expect(excluded).toBeNull()
   })
 

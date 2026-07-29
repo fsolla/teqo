@@ -395,10 +395,11 @@ describe('loadMunicipalityListPageBundle', () => {
     expect(included.overview).not.toBeNull()
     expect(included.municipalities.some((row) => row.slug === administered.slug)).toBe(true)
 
-    const excluded =
-      administered.kind === 'zona'
-        ? await loadMunicipalityListPageBundle(payload, advisor, { kind: 'municipio' })
-        : await loadMunicipalityListPageBundle(payload, advisor, { kind: 'zona' })
+    const outsideSlug = municipalityCatalog.find((entry) => entry.slug !== administered.slug)!.slug
+
+    const excluded = await loadMunicipalityListPageBundle(payload, advisor, {
+      slug: [outsideSlug],
+    })
     expect(excluded.overview?.municipalityCount).toBe(0)
     expect(excluded.municipalities).toHaveLength(0)
   })

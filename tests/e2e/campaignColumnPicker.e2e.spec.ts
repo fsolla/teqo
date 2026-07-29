@@ -36,20 +36,20 @@ test.describe('Seletor de colunas', () => {
     await campaign.login(page, email, password)
     await page.goto('/campanha/municipios')
 
-    const kindHeader = page.getByRole('columnheader', { name: /Tipo/ })
-    await expect(kindHeader).toBeVisible()
+    const regionHeader = page.getByRole('columnheader', { name: /Território/ })
+    await expect(regionHeader).toBeVisible()
 
     const picker = page.getByRole('button', { name: /Mostrar ou ocultar colunas/ })
     await picker.click()
-    await page.getByRole('checkbox', { name: 'Tipo' }).click()
+    await page.getByRole('checkbox', { name: 'Território' }).click()
     // Closing flushes the batched cookie write and refreshes the RSC.
     await page.keyboard.press('Escape')
 
-    await expect(kindHeader).toHaveCount(0, REFRESH)
+    await expect(regionHeader).toHaveCount(0, REFRESH)
     await expect(page.getByRole('button', { name: /1 oculta/ })).toBeVisible()
 
     await page.reload()
-    await expect(page.getByRole('columnheader', { name: /Tipo/ })).toHaveCount(0, REFRESH)
+    await expect(page.getByRole('columnheader', { name: /Território/ })).toHaveCount(0, REFRESH)
 
     // The cookie carries one key per list: another list is untouched. The
     // territories list is the honest neighbour here — its 27 rows come from
@@ -63,7 +63,7 @@ test.describe('Seletor de colunas', () => {
     await page.getByRole('button', { name: 'Restaurar todas' }).click()
     await page.keyboard.press('Escape')
 
-    await expect(page.getByRole('columnheader', { name: /Tipo/ })).toBeVisible(REFRESH)
+    await expect(page.getByRole('columnheader', { name: /Território/ })).toBeVisible(REFRESH)
   })
 
   test('lists the mandatory column without letting it be unchecked', async ({ campaign, page }) => {
