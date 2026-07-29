@@ -1,7 +1,7 @@
 # Polimento visual da strip de ações do Início
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: rótulos curtos no catálogo; sem `h2` em `CampaignHomeActions`; scrollbar oculta na strip; escala no círculo (hover fine / press coarse) + `active:opacity-90`; e2e retarget de heading para `[data-slot="home-actions"]` / `Ações rápidas`.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — **B58**; chassis UX-1)
 Impeccable: B — encaixe na strip existente (`CampaignHomeActionButton` / `CampaignHomeActionStrip` / `campaignHomeActions.ts`)
 Appetite: ~0,5 dia eng (sem migration, sem action, sem URL)
@@ -109,6 +109,13 @@ Sem migration, sem collection, sem server action.
 ## Adiado com gatilho
 
 - **Fade nas bordas da strip** quando `scrollWidth > clientWidth`. Revisitar se, após scrollbar oculta, usuários não descobrirem mais ações (sessão observada ou suporte).
+- **Utilitário global `scrollbar-hide`** — manter classes arbitrárias na strip até um 2º call site justificar extrair para `styles.css`.
+- **`useMemo` do array `actions` no RSC pai** — só se medição mostrar re-render custoso na strip (hoje o catálogo é estático por request).
+
+## Já resolvido no simplify (não reabrir)
+
+- Estado `pressing` do feedback coarse no círculo vive em `useCampaignLongPress` (B44/B58).
+- Prop `children` morta removida de `CampaignHomeActionStrip`.
 
 ## Referências
 

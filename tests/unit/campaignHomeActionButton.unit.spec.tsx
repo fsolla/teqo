@@ -120,6 +120,33 @@ describe('CampaignHomeActionButton', () => {
     expect(onClick).not.toHaveBeenCalled()
     vi.useRealTimers()
   })
+
+  it('sets data-pressing on coarse pointer down before long-press fires', () => {
+    resetCampaignCoarsePointerForTests()
+    matchMediaMock.mockImplementation((query: string) => ({
+      matches: query.includes('coarse'),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
+
+    renderActionButton({
+      label: 'Ver cobertura',
+      icon: BarChart3,
+      description: 'Lista filtrada.',
+      href: '/campanha/municipios',
+    })
+
+    const target = screen.getByRole('link', { name: 'Ver cobertura' })
+    expect(target.getAttribute('data-pressing')).toBeNull()
+    fireEvent.pointerDown(target, { button: 0, clientX: 0, clientY: 0 })
+    expect(target.getAttribute('data-pressing')).toBe('true')
+    fireEvent.pointerUp(target)
+    expect(target.getAttribute('data-pressing')).toBeNull()
+  })
 })
 
 describe('CampaignHomeActionStrip', () => {
@@ -135,6 +162,7 @@ describe('CampaignHomeActionStrip', () => {
 
     const scroller = container.querySelector('[aria-label="Ações rápidas"]')
     expect(scroller?.className).toContain('overflow-x-auto')
+    expect(scroller?.className).toContain('scrollbar-width:none')
     expect(scroller?.querySelector('ul[role="list"]')).toBeTruthy()
   })
 })

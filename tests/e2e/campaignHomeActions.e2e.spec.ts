@@ -1,12 +1,12 @@
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
 const staffActionLabels = [
-  'Atualizar votos de um município',
-  'Registrar o que aconteceu',
+  'Ajustar votos',
+  'Registrar sinal',
   'Mudar tendência',
   'Atualizar liderança',
   'Registrar pedido',
-  'Ver quem ainda não está coberto',
+  'Ver esquecidos',
 ] as const
 
 test.describe('Início — busca global (B47)', () => {
@@ -37,14 +37,15 @@ test.describe('Início — busca global (B47)', () => {
     })
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    const heading = page.getByRole('heading', { name: 'O que você quer fazer?', exact: true })
-    await expect(heading).toBeVisible()
+    const actionsSlot = page.locator('[data-slot="home-actions"]')
+    await expect(actionsSlot).toBeVisible()
+    await expect(page.getByLabel('Ações rápidas')).toBeVisible()
 
     await page.getByLabel('Buscar na campanha').fill('ca')
-    await expect(heading).toBeHidden({ timeout: 5000 })
+    await expect(actionsSlot).toBeHidden({ timeout: 5000 })
 
     await page.getByLabel('Buscar na campanha').fill('')
-    await expect(heading).toBeVisible({ timeout: 5000 })
+    await expect(actionsSlot).toBeVisible({ timeout: 5000 })
   })
 
   test('staff search shows municipality hits and opens detail (B48)', async ({
@@ -80,9 +81,7 @@ test.describe('Início — catálogo de ações (B45)', () => {
     })
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await expect(
-      page.getByRole('heading', { name: 'O que você quer fazer?', exact: true }),
-    ).toBeVisible()
+    await expect(page.getByLabel('Ações rápidas')).toBeVisible()
 
     for (const label of staffActionLabels) {
       const link = page.getByRole('link', { name: label, exact: true })
@@ -90,7 +89,7 @@ test.describe('Início — catálogo de ações (B45)', () => {
       await expect(link.or(button)).toBeVisible()
     }
 
-    await page.getByRole('link', { name: 'Ver quem ainda não está coberto', exact: true }).click()
+    await page.getByRole('link', { name: 'Ver esquecidos', exact: true }).click()
     await page.waitForURL(/\/campanha\/municipios/)
     const url = new URL(page.url())
     expect(url.searchParams.get('coverage')).toBe('sem_assessor')
@@ -104,9 +103,7 @@ test.describe('Início — catálogo de ações (B45)', () => {
     })
 
     await campaign.login(page, leader.email!, leader.password)
-    await expect(
-      page.getByRole('heading', { name: 'O que você quer fazer?', exact: true }),
-    ).toBeVisible()
+    await expect(page.getByLabel('Ações rápidas')).toBeVisible()
 
     await expect(
       page.getByRole('button', { name: 'Cadastrar apoiador', exact: true }),

@@ -29,14 +29,14 @@ export type CampaignHomeActionButtonProps = {
 }
 
 const actionControlClassName =
-  'group flex min-h-11 w-[4.75rem] shrink-0 snap-start flex-col items-center gap-2 rounded-md text-center outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50'
+  'group flex min-h-11 w-[4.75rem] shrink-0 snap-start flex-col items-center gap-2 rounded-md text-center outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-90 disabled:pointer-events-none disabled:opacity-50'
+
+const circleClassName =
+  'flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-[transform,colors] duration-150 ease-out motion-reduce:transition-none pointer-fine:group-hover:scale-[1.05] pointer-coarse:group-data-[pressing=true]:scale-[1.05] motion-reduce:scale-100 group-hover:bg-muted/80 group-focus-visible:bg-muted/80'
 
 const ActionVisual = ({ label, icon: Icon }: { label: string; icon: LucideIcon }) => (
   <>
-    <span
-      aria-hidden
-      className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors group-hover:bg-muted/80 group-focus-visible:bg-muted/80"
-    >
+    <span aria-hidden className={circleClassName}>
       <Icon className="size-6" strokeWidth={1.75} />
     </span>
     <span className="line-clamp-2 w-full text-sm leading-snug font-medium text-foreground">
@@ -62,34 +62,29 @@ export const CampaignHomeActionButton = ({
     if (description) setDrawerOpen(true)
   }, [description])
 
-  const fireClick = useCallback(
-    (_event: MouseEvent) => {
-      onClick?.()
-    },
-    [onClick],
-  )
-
-  const useLongPress = Boolean(description) && isCoarsePointer && !disabled
+  const longPressEnabled = Boolean(description) && isCoarsePointer && !disabled
   const isInert = !disabled && !href && !onClick
-  const longPress = useCampaignLongPress({
-    enabled: useLongPress,
+  const { pressing, ...longPressHandlers } = useCampaignLongPress({
+    enabled: longPressEnabled,
     onLongPress: openDescription,
-    onClick: href ? undefined : onClick ? fireClick : undefined,
+    onClick:
+      href || !onClick
+        ? undefined
+        : (_event: MouseEvent) => {
+            onClick()
+          },
   })
 
-  const pointerHandlers = useLongPress ? longPress : undefined
   const className = cn(actionControlClassName, isInert && 'cursor-default')
   const aria = {
     'aria-label': label,
-    'aria-describedby': drawerOpen && useLongPress ? descriptionId : undefined,
+    'aria-describedby': drawerOpen && longPressEnabled ? descriptionId : undefined,
   }
 
-  const pointerProps = pointerHandlers
+  const longPressProps = longPressEnabled
     ? {
-        onPointerDown: pointerHandlers.onPointerDown,
-        onPointerMove: pointerHandlers.onPointerMove,
-        onPointerUp: pointerHandlers.onPointerUp,
-        onPointerCancel: pointerHandlers.onPointerCancel,
+        ...longPressHandlers,
+        'data-pressing': pressing ? true : undefined,
       }
     : undefined
 
@@ -103,13 +98,7 @@ export const CampaignHomeActionButton = ({
     )
   } else if (href) {
     control = (
-      <Link
-        href={href}
-        className={className}
-        {...aria}
-        {...pointerProps}
-        onClick={pointerHandlers?.onClick}
-      >
+      <Link href={href} className={className} {...aria} {...longPressProps}>
         <ActionVisual label={label} icon={icon} />
       </Link>
     )
@@ -119,8 +108,16 @@ export const CampaignHomeActionButton = ({
         type="button"
         className={className}
         {...aria}
-        {...pointerProps}
-        onClick={pointerHandlers?.onClick ?? (onClick ? fireClick : undefined)}
+        {...longPressProps}
+        onClick={
+          longPressEnabled
+            ? longPressHandlers.onClick
+            : onClick
+              ? () => {
+                  onClick()
+                }
+              : undefined
+        }
       >
         <ActionVisual label={label} icon={icon} />
       </button>
