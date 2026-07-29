@@ -45,32 +45,37 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
   if (redirectHref) redirect(redirectHref)
   const columnVisibility = await readCampaignColumnVisibility('apoiadores')
 
-  const listBody = result.docs.length ? (
+  const listBody = (
     <>
-      {overview ? <SupporterListOverview view={overview} now={now} /> : null}
+      {result.docs.length > 0 && overview ? (
+        <SupporterListOverview view={overview} now={now} />
+      ) : null}
       <SupporterList
         supporters={result.docs.map((supporter) => toSupporterListItemViewModel(supporter))}
         columnVisibility={columnVisibility}
+        empty={
+          <CampaignListEmptyState
+            icon={SearchXIcon}
+            title="Nenhum apoiador encontrado"
+            description="Ajuste a busca ou os filtros. Você só vê apoiadores dentro do seu escopo."
+          >
+            <Button asChild variant="outline" className="min-h-11">
+              <Link href="/campanha/apoiadores">Limpar busca e filtros</Link>
+            </Button>
+          </CampaignListEmptyState>
+        }
       />
-      <CampaignListFooter
-        totalDocs={result.totalDocs}
-        singular="apoiador encontrado"
-        plural="apoiadores encontrados"
-        page={state.page}
-        totalPages={result.totalPages}
-        hrefForPage={(page) => buildSupporterListHref(state, page)}
-      />
+      {result.docs.length > 0 ? (
+        <CampaignListFooter
+          totalDocs={result.totalDocs}
+          singular="apoiador encontrado"
+          plural="apoiadores encontrados"
+          page={state.page}
+          totalPages={result.totalPages}
+          hrefForPage={(page) => buildSupporterListHref(state, page)}
+        />
+      ) : null}
     </>
-  ) : (
-    <CampaignListEmptyState
-      icon={SearchXIcon}
-      title="Nenhum apoiador encontrado"
-      description="Ajuste a busca ou os filtros. Você só vê apoiadores dentro do seu escopo."
-    >
-      <Button asChild variant="outline" className="min-h-11">
-        <Link href="/campanha/apoiadores">Limpar busca e filtros</Link>
-      </Button>
-    </CampaignListEmptyState>
   )
 
   return (

@@ -1,8 +1,10 @@
 # Escala e DRY pós-B17 (seletor de colunas)
 
-Status: rascunho
-Atualizado em: 2026-07-28
+Status: entregue
+Atualizado em: 2026-07-29
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos, **B17+**)
+
+**Revisão (2026-07-29):** F1 implementado via condicionamento dos loaders em `dobradinhas/page.tsx` e `liderancas/page.tsx` à leitura prévia do cookie `campaign_columns`. F2 implementado movendo o `CampaignListEmptyState` para a prop `empty` nas tabelas de demandas, organizações e apoiadores.
 Impeccable: A — N/A na F1 (só loader); a F2 move um bloco já desenhado (`CampaignListEmptyState`) para dentro de um shell existente, sem pixel novo
 Appetite: ~0,5 dia eng, duas fases independentes. Se a F1 sozinha estourar meio dia, a F2 é cortável.
 Responsável: —
