@@ -3,7 +3,7 @@
   "hooks": {
     "preToolUse": [
       {
-        "command": "node \"/Users/francisco.solla/.cursor/skills/impeccable/scripts/hook-before-edit.mjs\"",
+        "command": "node \".cursor/hooks/guard-env-files.mjs\"",
         "timeout": 5
       }
     ]

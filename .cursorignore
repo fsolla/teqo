@@ -1,0 +1,20 @@
+# Cursor ignore — keep the always-on context lean (agentic ops, 2026-07-30).
+# Heavy reference material is read on demand, not indexed into every run.
+
+# Research corpus (~67 sources) and discovery material
+docs/research/
+docs/general-coordinator-interview/
+docs/design-refs/
+docs/sheets/
+
+# Committed derived artifacts (read through their loaders, never raw)
+src/lib/electionAggregates/
+src/lib/geometries/
+tests/fixtures/
+
+# Download caches and build output
+data/
+.next/
+
+# Historical changelog (read on demand)
+docs/CHANGELOG-AGENTS.md
