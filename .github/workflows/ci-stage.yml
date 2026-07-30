@@ -19,7 +19,12 @@ concurrency:
 jobs:
   stage-checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The int suite against a remote Neon snapshot is latency-bound (~120 ms
+    # RTT per query): the FULL suite blew the 30-minute timeout twice on
+    # 2026-07-30, so stage runs a curated smoke subset (schema reconciliation +
+    # access lockdown + consent-gated flows — the things a prod-snapshot run is
+    # FOR). The full int suite gates in ci-pr.yml against the local service DB.
+    timeout-minutes: 45
     environment: stage
     env:
       DATABASE_URL: ${{ secrets.STAGE_DATABASE_URL }}
@@ -51,8 +56,17 @@ jobs:
             echo "PAYLOAD_SECRET=${PAYLOAD_SECRET}"
           } > .env.test
 
-      - name: Integration tests against the stage snapshot
-        run: pnpm test:int
+      - name: Integration smoke tests against the stage snapshot
+        run: >
+          pnpm test:int
+          tests/int/campaignMigrationReconciliation.int.spec.ts
+          tests/int/collectionAccessLockdown.int.spec.ts
+          tests/int/campaignMunicipalityAccess.int.spec.ts
+          tests/int/campaignVotePledge.int.spec.ts
+          tests/int/campaignSupporter.int.spec.ts
+          tests/int/campaignDemandWorkflow.int.spec.ts
+          tests/int/submitWhatsapp.int.spec.ts
+          tests/int/onda0Provision.int.spec.ts
         env:
           # Documented escape hatch in tests/helpers/assertTestDatabase.ts —
           # only this workflow may set it (vitest.setup.ts loads .env.test
