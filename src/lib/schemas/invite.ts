@@ -1,12 +1,11 @@
 import { z } from 'zod'
 
 import { campaignPasswordSchema } from '@/lib/schemas/campaignPassword'
-import { leadershipGenders, leadershipSectors } from '@/lib/schemas/leadership'
+import { leadershipGenders } from '@/lib/schemas/leadership'
 import {
   brazilianMobile,
   nullablePersistedEmail,
   positiveRelationshipId,
-  trimmedNullableText,
 } from '@/lib/schemas/primitives'
 
 const tokenSchema = z.string().min(20).max(256)
@@ -23,8 +22,6 @@ const campaignInviteProfileSchema = z.object({
   phone: brazilianMobile,
   email: nullablePersistedEmail,
   gender: optionalEnum(leadershipGenders),
-  sector: optionalEnum(leadershipSectors),
-  sectorNotes: trimmedNullableText(1000),
 })
 
 export const campaignInviteCreateSchema = z.object({

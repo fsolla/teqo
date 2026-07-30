@@ -8,28 +8,16 @@ import {
   type RelationOption,
 } from '@/components/campaign/shared/RelationMultiSelect'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { leadershipSectors, leadershipSupportStatuses } from '@/lib/schemas/leadership'
+import { leadershipSupportStatuses } from '@/lib/schemas/leadership'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
-
-const sectorLabels: Record<(typeof leadershipSectors)[number], string> = {
-  religioso: 'Religioso',
-  sindical: 'Sindical',
-  comunitario: 'Comunitário',
-  rural: 'Rural',
-  empresarial: 'Empresarial',
-  juventude: 'Juventude',
-  saude: 'Saúde',
-  educacao: 'Educação',
-  cultura: 'Cultura',
-  outro: 'Outro',
-}
 
 type LeadershipFormProps = {
   municipalityOptions: RelationOption[]
@@ -118,22 +106,6 @@ export const LeadershipForm = ({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field>
-          <FieldLabel htmlFor="leadership-sector">Setor</FieldLabel>
-          <NativeSelect
-            id="leadership-sector"
-            name="sector"
-            defaultValue=""
-            className="min-h-11 w-full"
-          >
-            <NativeSelectOption value="">Não informado</NativeSelectOption>
-            {leadershipSectors.map((sector) => (
-              <NativeSelectOption key={sector} value={sector}>
-                {sectorLabels[sector]}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </Field>
-        <Field>
           <FieldLabel htmlFor="leadership-status">Status de apoio</FieldLabel>
           <NativeSelect
             id="leadership-status"
@@ -148,15 +120,18 @@ export const LeadershipForm = ({
             ))}
           </NativeSelect>
         </Field>
+        <Field orientation="horizontal" className="items-center gap-2 self-end pb-2">
+          <input type="hidden" name="exclusive" value="false" />
+          <Checkbox id="leadership-exclusive" name="exclusive" value="true" defaultChecked />
+          <FieldLabel htmlFor="leadership-exclusive" className="font-normal">
+            Apoio exclusivo
+          </FieldLabel>
+        </Field>
       </div>
 
       <Field>
         <FieldLabel htmlFor="leadership-notes">Observações internas</FieldLabel>
         <Textarea id="leadership-notes" name="notes" rows={3} maxLength={3000} />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="leadership-consent-note">Registro de consentimento externo</FieldLabel>
-        <Textarea id="leadership-consent-note" name="consentNote" rows={2} maxLength={2000} />
       </Field>
 
       {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}

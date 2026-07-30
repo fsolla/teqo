@@ -35,6 +35,7 @@ import * as migration_20260727_161752_add_municipality_engagement_level from './
 import * as migration_20260728_041547_add_allocation_decision_adiada_outcome from './20260728_041547_add_allocation_decision_adiada_outcome';
 import * as migration_20260728_041958_add_campaign_webauthn_credentials from './20260728_041958_add_campaign_webauthn_credentials';
 import * as migration_20260730_010601_simplify_municipality_signal_fields from './20260730_010601_simplify_municipality_signal_fields';
+import * as migration_20260730_043306_simplify_leadership_fields from './20260730_043306_simplify_leadership_fields';
 
 export const migrations = [
   {
@@ -220,6 +221,11 @@ export const migrations = [
   {
     up: migration_20260730_010601_simplify_municipality_signal_fields.up,
     down: migration_20260730_010601_simplify_municipality_signal_fields.down,
-    name: '20260730_010601_simplify_municipality_signal_fields'
+    name: '20260730_010601_simplify_municipality_signal_fields',
+  },
+  {
+    up: migration_20260730_043306_simplify_leadership_fields.up,
+    down: migration_20260730_043306_simplify_leadership_fields.down,
+    name: '20260730_043306_simplify_leadership_fields',
   },
 ];

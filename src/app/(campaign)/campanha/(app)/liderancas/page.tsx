@@ -46,7 +46,7 @@ import {
   type MunicipalityPortfolioIndexEntry,
 } from '@/lib/municipalityPortfolio'
 import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
-import { MAX_LEADERSHIP_MUNICIPALITIES, isLeadershipSector } from '@/lib/schemas/leadership'
+import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
 import { cn } from '@/lib/utils'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
@@ -71,7 +71,6 @@ import {
   resolveLeadershipListUrl,
   type LeadershipListState,
 } from '@/utilities/leadership/leadershipListUrl'
-import { leadershipSectorLabels } from '@/utilities/leadership/leadershipUi'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
 
 import {
@@ -175,13 +174,9 @@ const leadershipColumns = ({
     ),
   },
   {
-    id: 'sector',
-    label: leadershipListSortLabels.sector,
-    head: <LeadershipSortableHead state={state} sortKey="sector" filterParam="sector" />,
-    cell: (row) => {
-      if (!row.sector || !isLeadershipSector(row.sector)) return row.sector || '—'
-      return leadershipSectorLabels[row.sector]
-    },
+    id: 'exclusive',
+    label: 'Apoio exclusivo',
+    cell: (row) => (row.exclusive ? null : <Badge variant="outline">Não exclusivo</Badge>),
   },
   {
     id: 'municipalities',

@@ -24,7 +24,7 @@ export type LeadershipRowViewModel = {
   phone: string | null
   email: string | null
   supportStatus: SupportStatus | null
-  sector: string | null
+  exclusive: boolean
   /**
    * Ids only: the "Municípios" cell renders chips through
    * `buildMunicipalityPortfolioChips` over the shared portfolio index, which
@@ -88,7 +88,7 @@ const toLeadershipRows = async (
       phone: contact.phone,
       email: contact.email,
       supportStatus: isSupportStatus(doc.supportStatus) ? doc.supportStatus : null,
-      sector: doc.sector ?? null,
+      exclusive: doc.exclusive ?? true,
       municipalityIDs: (doc.municipalities ?? [])
         .map(relationshipId)
         .filter((id): id is number => id !== null),
@@ -157,7 +157,7 @@ export type LeadershipListFilterFacets = {
 }
 
 /**
- * Respects every OTHER filter (search, status, sector, access) but drops the
+ * Respects every OTHER filter (search, status, access) but drops the
  * municipality filter itself — same contract as `loadStateDeputyPartyFacet`:
  * a selected id is unioned in so it stays visible to undo.
  */
@@ -231,9 +231,7 @@ export type LeadershipDetailViewModel = LeadershipRowViewModel & {
   municipalityIDs: number[]
   organizationIDs: number[]
   stateDeputyIDs: number[]
-  sectorNotes: string | null
   notes: string | null
-  consentNote: string | null
 }
 
 export const loadLeadershipDetail = async (
@@ -265,8 +263,6 @@ export const loadLeadershipDetail = async (
       .map(relationshipId)
       .filter((id): id is number => id !== null),
     stateDeputyIDs: row.stateDeputies.map((summary) => summary.id),
-    sectorNotes: doc.sectorNotes ?? null,
     notes: doc.notes ?? null,
-    consentNote: doc.consentNote ?? null,
   }
 }

@@ -250,9 +250,6 @@ export const MunicipalityDossier = ({
                   {leadership.supportStatus ? (
                     <SupportStatusBadge status={leadership.supportStatus} />
                   ) : null}
-                  {leadership.sector ? (
-                    <span className="text-xs text-muted-foreground">{leadership.sector}</span>
-                  ) : null}
                   {leadership.phone ? (
                     <span className="text-xs tabular-nums text-muted-foreground">
                       {leadership.phone}

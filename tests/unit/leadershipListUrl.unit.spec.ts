@@ -38,37 +38,24 @@ describe('leadership list URL contract', () => {
     expect(parseLeadershipListParams({ q: ['primeiro', 'segundo'] }).q).toBe('primeiro')
   })
 
-  it('parses and dedupes known status/sector values and integer municipality ids', () => {
+  it('parses and dedupes known status values and integer municipality ids', () => {
     expect(
       parseLeadershipListParams({
         status: ['engajado', 'a_abordar', 'engajado', 'unknown'],
-        sector: ['religioso', 'clube', 'sindical'],
+        sector: ['religioso'],
         municipality: ['12', '12', '0', 'abc', '3'],
       }),
     ).toEqual({
       page: 1,
       statuses: ['engajado', 'a_abordar'],
-      sectors: ['religioso', 'sindical'],
       municipalities: [12, 3],
     })
   })
 
-  it('canonicalizes selecting every status/sector member to the absent filter (B18)', () => {
+  it('canonicalizes selecting every status member to the absent filter (B18)', () => {
     expect(
       parseLeadershipListParams({
         status: ['engajado', 'a_abordar', 'em_disputa', 'negativo'],
-        sector: [
-          'religioso',
-          'sindical',
-          'comunitario',
-          'rural',
-          'empresarial',
-          'juventude',
-          'saude',
-          'educacao',
-          'cultura',
-          'outro',
-        ],
       }),
     ).toEqual({ page: 1 })
   })
@@ -102,8 +89,16 @@ describe('leadership list URL contract', () => {
       dir: 'asc',
     })
     expect(buildLeadershipListHref(state, 1)).toBe(
-      '/campanha/liderancas?q=ana&status=a_abordar&sector=religioso&municipality=7&access=sem&sort=name',
+      '/campanha/liderancas?q=ana&status=a_abordar&municipality=7&access=sem&sort=name',
     )
+  })
+
+  it('drops the legacy sector param from the canonical query', () => {
+    expect(resolveLeadershipListUrl({ sector: 'religioso' })).toEqual({
+      state: { page: 1 },
+      href: '/campanha/liderancas',
+      redirectHref: '/campanha/liderancas',
+    })
   })
 
   it('preserves filters while toggling sort direction and resets to page 1', () => {
@@ -185,10 +180,10 @@ describe('leadership list filter state', () => {
         page: 4,
         q: 'ana',
         statuses: ['engajado'],
-        sort: 'sector',
+        sort: 'supportStatus',
         dir: 'asc',
       }),
-    ).toEqual({ page: 1, sort: 'sector', dir: 'asc' })
+    ).toEqual({ page: 1, sort: 'supportStatus', dir: 'asc' })
   })
 
   it('summarizes active filters with municipality labels when provided', () => {

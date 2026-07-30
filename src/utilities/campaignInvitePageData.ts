@@ -3,7 +3,7 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import { relationshipId } from '@/lib/relationship'
-import type { Consent, Leadership } from '@/payload-types'
+import type { Consent } from '@/payload-types'
 import { getLeadershipConsent } from '@/utilities/campaignConsent'
 import type { CampaignInviteKind } from '@/utilities/campaignInvite'
 import { findActiveCampaignInvite } from '@/utilities/campaignInviteRepository'
@@ -13,8 +13,6 @@ type CampaignInviteProfile = {
   phone: string
   email: string | null
   gender: 'feminino' | 'masculino' | 'outro' | 'nao_informado' | null
-  sector: Leadership['sector'] | null
-  sectorNotes: string | null
 }
 
 export type CampaignInvitePageData =
@@ -56,8 +54,6 @@ export const getCampaignInvitePageData = async (
       depth: 0,
       select: {
         contact: true,
-        sector: true,
-        sectorNotes: true,
         supportStatus: true,
         consent: true,
         consentContentHash: true,
@@ -96,8 +92,6 @@ export const getCampaignInvitePageData = async (
         phone: contact.phone ?? '',
         email: contact.email ?? null,
         gender: contact.gender ?? null,
-        sector: leadership.sector ?? null,
-        sectorNotes: leadership.sectorNotes ?? null,
       },
       requiresConsent:
         relationshipId(leadership.consent) !== consent.id ||

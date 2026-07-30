@@ -10,15 +10,12 @@ import {
   buildLeadershipFilterHref,
   clearLeadershipAccessFilter,
   clearLeadershipMunicipalityFilter,
-  clearLeadershipSectorFilter,
   clearLeadershipStatusFilter,
   isLeadershipColumnFilterActive,
   leadershipAccessFilterOptions,
-  leadershipSectorFilterOptions,
   leadershipStatusFilterOptions,
   toggleLeadershipAccessFilter,
   toggleLeadershipMunicipalityFilter,
-  toggleLeadershipSectorFilter,
   toggleLeadershipStatusFilter,
   type LeadershipFilterOption,
   type LeadershipFilterParam,
@@ -27,7 +24,6 @@ import { type LeadershipListState } from '@/utilities/leadership/leadershipListU
 
 const FILTER_LABELS: Record<LeadershipFilterParam, string> = {
   supportStatus: 'Status',
-  sector: 'Setor',
   municipality: 'Municípios',
   access: 'Acesso ao app',
 }
@@ -52,14 +48,6 @@ const resolveFilterBranch = (
         toggle: toggleLeadershipStatusFilter,
         clear: clearLeadershipStatusFilter,
         selected: (state, value) => Boolean(state.statuses?.some((status) => status === value)),
-        checkbox: true,
-      }
-    case 'sector':
-      return {
-        options: leadershipSectorFilterOptions,
-        toggle: toggleLeadershipSectorFilter,
-        clear: clearLeadershipSectorFilter,
-        selected: (state, value) => Boolean(state.sectors?.some((sector) => sector === value)),
         checkbox: true,
       }
     case 'municipality':

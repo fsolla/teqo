@@ -12,7 +12,6 @@ import {
 } from '@/lib/formData'
 import {
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
-  leadershipSectors,
   leadershipSupportStatuses,
 } from '@/lib/schemas/leadership'
 import {
@@ -31,7 +30,6 @@ export const updateLeadershipInternalFormAction = async (
 ): Promise<CampaignFormActionState> =>
   runCampaignFormAction({
     execute: async () => {
-      const sector = optionalFormText(formData, 'sector')
       const supportStatus = optionalFormText(formData, 'supportStatus')
 
       await updateLeadershipInternal({
@@ -39,16 +37,13 @@ export const updateLeadershipInternalFormAction = async (
         municipalities: repeatedRelationshipFormValues(formData, 'municipalities'),
         organizations: repeatedRelationshipFormValues(formData, 'organizations'),
         stateDeputies: repeatedRelationshipFormValues(formData, 'stateDeputies'),
-        sector: leadershipSectors.includes(sector as (typeof leadershipSectors)[number])
-          ? (sector as (typeof leadershipSectors)[number])
-          : null,
+        exclusive: formData.get('exclusive') === 'true',
         supportStatus: leadershipSupportStatuses.includes(
           supportStatus as (typeof leadershipSupportStatuses)[number],
         )
           ? (supportStatus as (typeof leadershipSupportStatuses)[number])
           : undefined,
         notes: nullableFormText(formData, 'notes'),
-        consentNote: nullableFormText(formData, 'consentNote'),
       })
       revalidatePath('/campanha/liderancas/[id]', 'page')
       return { message: 'Ficha da liderança atualizada.' }

@@ -1,8 +1,8 @@
 /**
- * Leadership list filter affordances: Status / Setor / Município / Acesso
+ * Leadership list filter affordances: Status / Município / Acesso
  * toggles, active-filter summary and clear-filters.
  */
-import { leadershipSectors, leadershipSupportStatuses } from '@/lib/schemas/leadership'
+import { leadershipSupportStatuses } from '@/lib/schemas/leadership'
 import { strictDecimalInteger, truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import {
   leadershipAccessFilterLabels,
@@ -14,23 +14,18 @@ import {
   parseLeadershipListParams,
   type LeadershipListState,
 } from '@/utilities/leadership/leadershipListUrl'
-import { leadershipSectorLabels } from '@/utilities/leadership/leadershipUi'
 
-export type LeadershipFilterParam = 'supportStatus' | 'sector' | 'municipality' | 'access'
+export type LeadershipFilterParam = 'supportStatus' | 'municipality' | 'access'
 
 export type LeadershipFilterOption = {
   value: string
   label: string
 }
 
-type LeadershipMultiFilterParam = 'status' | 'sector' | 'municipality'
+type LeadershipMultiFilterParam = 'status' | 'municipality'
 
 export const leadershipStatusFilterOptions: LeadershipFilterOption[] =
   leadershipSupportStatuses.map((value) => ({ value, label: supportStatusLabels[value] }))
-
-export const leadershipSectorFilterOptions: LeadershipFilterOption[] = leadershipSectors.map(
-  (value) => ({ value, label: leadershipSectorLabels[value] }),
-)
 
 export const leadershipAccessFilterOptions: LeadershipFilterOption[] = (
   Object.keys(leadershipAccessFilterLabels) as Array<keyof typeof leadershipAccessFilterLabels>
@@ -58,7 +53,6 @@ const getLeadershipMultiFilterValues = (
   param: LeadershipMultiFilterParam,
 ): string[] => {
   if (param === 'status') return state.statuses ?? []
-  if (param === 'sector') return state.sectors ?? []
   return (state.municipalities ?? []).map(String)
 }
 
@@ -82,14 +76,6 @@ export const toggleLeadershipStatusFilter = (
 
 export const clearLeadershipStatusFilter = (state: LeadershipListState): LeadershipListState =>
   setLeadershipMultiFilterValues(state, 'status', [])
-
-export const toggleLeadershipSectorFilter = (
-  state: LeadershipListState,
-  value: string,
-): LeadershipListState => toggleLeadershipMultiFilterValue(state, 'sector', value)
-
-export const clearLeadershipSectorFilter = (state: LeadershipListState): LeadershipListState =>
-  setLeadershipMultiFilterValues(state, 'sector', [])
 
 export const toggleLeadershipMunicipalityFilter = (
   state: LeadershipListState,
@@ -135,8 +121,6 @@ export const isLeadershipColumnFilterActive = (
   switch (filterParam) {
     case 'supportStatus':
       return Boolean(state.statuses?.length)
-    case 'sector':
-      return Boolean(state.sectors?.length)
     case 'municipality':
       return Boolean(state.municipalities?.length)
     case 'access':
@@ -161,9 +145,6 @@ export const formatLeadershipActiveFiltersSummary = (
   const parts: string[] = []
   if (state.statuses?.length) {
     parts.push(truncatedNamesLabel(state.statuses.map((status) => supportStatusLabels[status])))
-  }
-  if (state.sectors?.length) {
-    parts.push(truncatedNamesLabel(state.sectors.map((sector) => leadershipSectorLabels[sector])))
   }
   if (state.municipalities?.length) {
     parts.push(
