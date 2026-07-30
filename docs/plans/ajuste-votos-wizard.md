@@ -131,6 +131,25 @@ Componentes:
 
 - **Preview de cobertura E8 no rodapé do passo.** Revisitar se o CG pedir “isso fecha a meta?” durante o ajuste (sessão).
 
+## Já resolvido no simplify (não reabrir)
+
+- Ramo morto em `buildWizardVoteViolationMessage` (cenário `central` com `optimistic < central` — `getVoteEstimateOrderViolation` já devolve `'optimistic'`).
+- Estado duplicado de mensagem de violação (`violationReturn` → só `violationEditedScenario` + `activeViolation.message`).
+- Banner de violação obsoleto ao voltar de cenário (limpa `violationEditedScenario` na troca).
+- `parseWizardVoteDraft` duplicado em `handleConfirm`.
+- Alias `WizardVoteEditScenario` = `VoteEstimateScenario`; `getWizardVoteViolation` lazy.
+- Constante `MUNICIPALITY_EXPECTED_VOTES_ENDPOINT` compartilhada com `MunicipalityListExpectedVotesControl`.
+
+## Explicitamente fora (pós-/simplify, defer)
+
+| Achado | Gatilho para revisitar |
+| --- | --- |
+| Unificar `parseWizardVoteDraft` com `VoteEstimateScenarioInputs.parseScenarioInput` (pt-BR `"1.200"` difere) | 3ª superfície de input de votos **ou** passe repo-wide de parsing numérico pt-BR |
+| Extrair `SAVE_ERROR_MESSAGE` / copy de pending do wizard e da lista | 3º consumidor de POST JSON de célula **ou** helper `readCampaignJsonMutationResult` (precedente B32+) |
+| Validar body do wizard com `voteEstimateScenarioFieldsSchema` no client | Gravação por cenário (write parcial) em vez do batch único |
+| Helper genérico `readCampaignJsonMutationResult` | 3ª rota/painel wizard com o mesmo shape de resposta JSON |
+| Generalizar `parseWizardMunicipioParam` / `resolveWizardScenarioParam` num parser de query do wizard | B63/B64 reutilizarem `?cenario=` ou outro param de passo na mesma rota |
+
 ## Referências
 
 - [fluxos-acao-primeiro-inicio.md](fluxos-acao-primeiro-inicio.md) · [cenarios-estimativa-votos.md](cenarios-estimativa-votos.md) · `src/lib/voteEstimate.ts` · `MunicipalityListExpectedVotesControl.tsx` · `VoteEstimateScenarioInputs.tsx` · collection `Municipality` hook de ordem
