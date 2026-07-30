@@ -28,7 +28,7 @@ export const WIZARD_MUNICIPALITY_SEARCH_EMPTY = 'Nenhum município encontrado.' 
 
 export const WIZARD_VOTES_SAVED_MESSAGE = 'Votos estimados atualizados.' as const
 
-export const WIZARD_VOTES_NEXT_FLOW_PLACEHOLDER =
+const WIZARD_VOTES_NEXT_FLOW_PLACEHOLDER =
   'Próximo passo deste fluxo (sinal, tendência ou resumo) em breve.' as const
 
 export const WIZARD_VOTES_FINAL_CTA_LABEL = 'Salvar estimativas →' as const

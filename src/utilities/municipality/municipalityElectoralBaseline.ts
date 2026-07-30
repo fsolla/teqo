@@ -368,20 +368,6 @@ export const campoFederalVotesByCityZoneFromFederalSlice = (
   return votes
 }
 
-/**
- * cityCode:zone → sum of nominal deputado-federal T1 votes for campo parties
- * (E8 "share intracampo"). One DB scan via the federal nominal slice.
- */
-export const loadCampoFederalVotesByCityZone = async (
-  payload: Payload,
-  user: ElectionReader,
-  { year }: { year: number },
-): Promise<Map<string, number>> => {
-  assertCanReadElectionData(user)
-  const slice = await loadFederalVotesByCityZoneAndCandidate(payload, user, { year })
-  return campoFederalVotesByCityZoneFromFederalSlice(slice, year)
-}
-
 /** Folds `loadFederalVotesByCityZoneAndCandidate` over one municipality's cityCode×zones. */
 export const sumCandidateVotesForGeography = (
   votesByCityZoneAndCandidate: Map<string, Map<number, FederalNominalVoteCell>>,

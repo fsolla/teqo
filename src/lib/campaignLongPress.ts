@@ -13,7 +13,7 @@ import {
 export const CAMPAIGN_LONG_PRESS_MS = 450
 const CAMPAIGN_LONG_PRESS_SLOP_PX = 10
 
-export type CampaignLongPressPointerHandlers = {
+type CampaignLongPressPointerHandlers = {
   onPointerDown: (event: PointerEvent) => void
   onPointerMove: (event: PointerEvent) => void
   onPointerUp: (event: PointerEvent) => void

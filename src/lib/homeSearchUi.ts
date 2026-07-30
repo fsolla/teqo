@@ -1,5 +1,5 @@
 /** Mirrors `p-4` / `md:p-6` on `campanha/(app)/layout.tsx` for full-bleed hit rows. */
-export const HOME_SEARCH_HIT_BLEED_CLASS = '-mx-4 px-4 md:-mx-6 md:px-6'
+const HOME_SEARCH_HIT_BLEED_CLASS = '-mx-4 px-4 md:-mx-6 md:px-6'
 
 export const HOME_SEARCH_HIT_ROW_WRAPPER_CLASS = `${HOME_SEARCH_HIT_BLEED_CLASS} hover:bg-muted/60 focus-within:bg-muted/60`
 

@@ -53,7 +53,7 @@ type NearestInScope = {
   distanceKm: number
 }
 
-export type InScopeMunicipalityMatch = 'municipality' | 'zoneContainment' | 'nearestZone'
+type InScopeMunicipalityMatch = 'municipality' | 'zoneContainment' | 'nearestZone'
 
 export type NearbyMunicipalityResolution =
   /** The point falls inside a município the actor can open. */
@@ -190,7 +190,7 @@ export const featureCentroid = (feature: PolygonalFeature): GeoPoint => {
  * not by this scan's order: the mesh is TopoJSON-derived, so neighbours share
  * numerically identical arcs and never overlap.
  */
-export const findContainingFeature = <F extends PolygonalFeature>(
+const findContainingFeature = <F extends PolygonalFeature>(
   features: readonly F[],
   point: GeoPoint,
 ): F | undefined => features.find((feature) => featureContainsPoint(feature, point))
@@ -204,13 +204,13 @@ export const findContainingMunicipality = (
  * Past this, "o mais próximo na sua carteira" stops being a shortcut and starts
  * being noise — an advisor in Salvador does not need a link to Barreiras.
  */
-export const NEAREST_IN_SCOPE_MAX_KM = 150
+const NEAREST_IN_SCOPE_MAX_KM = 150
 
 /**
  * When the point is inside Salvador's municipal polygon but outside every ZE
  * polygon, only zones within this radius are offered as a direct link.
  */
-export const NEAREST_ZONE_MAX_KM = 30
+const NEAREST_ZONE_MAX_KM = 30
 
 const findNearestInScope = (
   getMunicipalityFeature: MunicipalityGeometryLookup['getMunicipalityFeature'],
