@@ -13,12 +13,12 @@ import { dieAgent, gh, issuesById, parseArgs, serializeFrontmatter } from './lib
 const die = dieAgent('register')
 const { flags } = parseArgs(
   process.argv.slice(2),
-  new Set(['id', 'title', 'prio', 'depends', 'kind', 'plan', 'body', 'labels']),
+  new Set(['id', 'title', 'prio', 'depends', 'kind', 'plan', 'body', 'labels', 'model']),
 )
 
 if (!flags.id || !flags.title)
   die(
-    'Usage: pnpm agent:register -- --id <ID> --title <title> [--prio P2] [--depends A,B] [--kind feature] [--plan path] [--body text] [--labels extra,labels] [--blocked]',
+    'Usage: pnpm agent:register -- --id <ID> --title <title> [--prio P2] [--depends A,B] [--kind feature] [--plan path] [--body text] [--labels extra,labels] [--model slug] [--blocked]',
   )
 
 const priority = /^P[0-3]$/.test(flags.prio ?? 'P2')
@@ -34,7 +34,13 @@ if (existing)
   die(`An issue with id ${flags.id} already exists: #${existing.number} — ${existing.title}`)
 
 const body = serializeFrontmatter(
-  { id: flags.id, depends, serializes: [], priority },
+  {
+    id: flags.id,
+    depends,
+    serializes: [],
+    priority,
+    ...(flags.model ? { model: flags.model } : {}),
+  },
   [flags.plan ? `Plano: [\`${flags.plan}\`](${flags.plan})` : null, flags.body ?? '']
     .filter((chunk) => chunk !== null)
     .join('\n\n'),

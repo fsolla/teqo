@@ -35,7 +35,7 @@ Além da **janela** eleitoral, declare um **appetite** (quanto o slice vale), n�
 
 - Exemplos: `~0,5 dia eng, só utility` · `~1–2 dias, migration + 1 action + encaixe em lista` · `~1 ciclo curto, UI nova 1 rota`.
 - Se a Abordagem proposta estourar o appetite → cortar rabbit holes / Não escopo, não inflar o item.
-- Em `implement-roadmap-item`, cada fase declara quanto do appetite consome; preferir um **tracer bullet** cedo (schema → uma action → uma superfície UI) antes de polish paralelo.
+- Em `work-issue`, cada fase declara quanto do appetite consome; preferir um **tracer bullet** cedo (schema → uma action → uma superfície UI) antes de polish paralelo.
 
 ## Rabbit holes
 

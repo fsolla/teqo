@@ -2,7 +2,7 @@
 
 Filtro obrigatório quando um item do roadmap **produz, agrega ou exibe** números, séries, rankings, mapas ou KPIs. Inspirado em `visualization-choice-reporting` (pergunta → tipo de chart → narrativa acionável) e no kernel Teqo (`PRODUCT.md` §5 + `docs/research/`). **Não** é um tour de dashboard design — são três perguntas com resposta registrada no plano. Decisão silenciosa (“só coloca um gráfico”) é defeito.
 
-Aplique em silêncio em `roadmap-item` (ao semear o plano) e em `implement-roadmap-item` (ao auditar e fatiar UI). Se o item **não** apresenta dados (ex.: migration de Consent, invite WhatsApp, form CRUD sem métrica), escreva `Dados: N/A` no plano e pule o resto.
+Aplique em silêncio em `plan-issue` (ao semear o plano) e em `work-issue` (ao auditar e fatiar UI). Se o item **não** apresenta dados (ex.: migration de Consent, invite WhatsApp, form CRUD sem métrica), escreva `Dados: N/A` no plano e pule o resto.
 
 ## As três perguntas (ordem fixa)
 
@@ -107,6 +107,6 @@ Antes de gravar o plano ou declarar a fase de UI pronta — 1 ponto cada; **&lt;
 
 ## Onde registrar
 
-- **`roadmap-item`:** seção **Dados → decisão → apresentação** no `docs/plans/<slug>.md` (template). Se N/A, uma linha basta.
-- **`implement-roadmap-item`:** auditar essa seção no Passo 4; se ausente e o item claramente apresenta dados → defasado (completar no Passo 7). Nas fases de UI, a escolha de forma é input do craft/critique — não reinventar no meio do polish.
+- **`plan-issue`:** seção **Dados → decisão → apresentação** no `docs/plans/<slug>.md` (template). Se N/A, uma linha basta.
+- **`work-issue`:** auditar essa seção no Passo 4; se ausente e o item claramente apresenta dados → defasado (completar no Passo 7). Nas fases de UI, a escolha de forma é input do craft/critique — não reinventar no meio do polish.
 - Skills externas (opcional, leitura sob demanda): `visualization-choice-reporting` (famílias de chart + narrativa); `.agents/skills/refactoring-ui/references/data-visualization.md` (quando NÃO chartar); Mapbox patterns só se o item for mapa Mapbox (hoje o mapa Teqo é Leaflet/`BahiaMap`).

@@ -1,6 +1,6 @@
 # Template de plano (`docs/plans/<slug>.md`)
 
-Estrutura extraída dos planos existentes (`overview-lista-nucleos.md`, `visitados-recentemente.md`, etc.). Manter as seções nesta ordem; omitir "Design (Impeccable)" apenas na classe **A** (só backend); **sempre** incluir "Dados → decisão → apresentação" (`N/A` se não houver superfície de dados); omitir a subseção "Referência visual (UX Pilot)" quando não houver design-ref; omitir "Wireframe (texto)" quando não houver layout a posicionar (ver skill `implement-roadmap-item`).
+Estrutura extraída dos planos existentes (`overview-lista-nucleos.md`, `visitados-recentemente.md`, etc.). Manter as seções nesta ordem; omitir "Design (Impeccable)" apenas na classe **A** (só backend); **sempre** incluir "Dados → decisão → apresentação" (`N/A` se não houver superfície de dados); omitir a subseção "Referência visual (UX Pilot)" quando não houver design-ref; omitir "Wireframe (texto)" quando não houver layout a posicionar (ver skill `work-issue`).
 
 Filtros de decisão (caro vs barato, appetite, rabbit holes, depth): [decision-quality.md](decision-quality.md).
 Filtro de dados (apresentar? decisão? forma?): [data-presentation.md](data-presentation.md) — obrigatório se houver KPI/mapa/série/ranking; senão `Dados: N/A`.
@@ -10,7 +10,9 @@ Filtro de dados (apresentar? decisão? forma?): [data-presentation.md](data-pres
 
 Status: rascunho
 Atualizado em: <YYYY-MM-DD>
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (<seção e/ou ID, ex.: "Trilha C, item C6">)
+Issue: #<N> (preencher após `pnpm agent:register`; enquanto não registrado: "—")
+Priority: <P0 | P1 | P2 | P3>
+Model: <slug sugerido por model-selection, ex.: composer-2.5>
 Impeccable: <A | B | C | D> — <uma linha: N/A sem UI | encaixe em tela X | UI nova em rota Y | ref Nome.png>
 Appetite: <ex.: ~1–2 dias eng; migration + 1 action + encaixe em lista existente>
 Responsável: —
@@ -21,7 +23,7 @@ Responsável: —
 
 Âncoras: `PRODUCT.md` / `DESIGN.md` (register <product|brand>) · tema `data-theme='campaign'` (ou tokens do site público).
 
-Na implementação (`implement-roadmap-item`): <shape → craft → critique → polish | craft compacto → critique → polish | shape compacto (ref) → craft → …>. Declarar `harden`/`optimize` só se o Passo 8 do implement acionar gatilho (não pipeline fixo).
+Na implementação (`work-issue`): <shape → craft → critique → polish | craft compacto → critique → polish | shape compacto (ref) → craft → …>. Declarar `harden`/`optimize` só se o Passo 8 do implement acionar gatilho (não pipeline fixo).
 
 Brief compacto (obrigatório em C; se B ambíguo):
 
@@ -33,7 +35,7 @@ Brief compacto (obrigatório em C; se B ambíguo):
 
 ### Wireframe (texto)
 
-<!-- Opcional no plano durável; obrigatório no plano de implementação (skill implement-roadmap-item)
+<!-- Opcional no plano durável; obrigatório no plano de implementação (skill work-issue)
      quando B/C/D posiciona blocos. Caixas ASCII + rótulos pt-BR; sem cores/pixels.
      Omitir se só copy/controle isolado ou se "seguir design-ref à risca" sem adaptação. -->
 
@@ -138,7 +140,7 @@ Componentes:
 
 ## Referências
 
-- `docs/roadmap.md` (<seção/linhas>)
+- GitHub Issue #<N> (spec + frontmatter `id/depends/serializes/priority/model`)
 - <arquivos-fonte reais que o implementador vai abrir, um por bullet, com o porquê>
 - AGENTS.md — <quais convenções se aplicam: Campaign auth, naming, overrideAccess, etc.>
 - <!-- Se B/C/D: --> `PRODUCT.md` / `DESIGN.md` — <o que deste item herda do Field Desk / register>
@@ -150,5 +152,5 @@ Notas:
 - Nível de detalhe alvo: ~100–130 linhas, como os planos existentes. Menos que isso costuma significar que o Passo 3 (exploração do código) foi pulado.
 - Classe **A**: omita a seção "Design (Impeccable)" e use no cabeçalho `Impeccable: A — N/A (sem superfície UI)`.
 - Seção **Dados → decisão → apresentação** é sempre presente (preenchida ou `Dados: N/A`); não omita.
-- Não rode `/impeccable craft|critique|polish` ao criar o plano — só classifique e semeie; a skill `implement-roadmap-item` executa o ciclo.
+- Não rode `/impeccable craft|critique|polish` ao criar o plano — só classifique e semeie; a skill `work-issue` executa o ciclo.
 - Self-score de qualidade de decisão (0–5) antes de gravar: ver [decision-quality.md](decision-quality.md). Se Dados ≠ N/A, self-check em [data-presentation.md](data-presentation.md) (≥3/5). Se Rabbit holes ou Adiado com gatilho estiverem vazios de propósito, escreva `Nenhum neste item.` — não omita a seção.
