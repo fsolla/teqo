@@ -103,6 +103,25 @@ Componentes:
 - **Persistir `?q=` na URL do Início.** Já adiado em B47 — reabrir só com pedido de shareable search.
 - **Gesture “puxar para baixo para fechar” no modo focado.** Revisitar se mesa pedir dismiss sem Escape/blur.
 
+## Já resolvido no simplify (não reabrir)
+
+- `HomeChromeRetractionShell` extrai o wrapper retrátil duplicado (summary/spacer + actions).
+- `data-slot="home-actions-chrome"` para queries de teste estáveis (sem `parentElement`).
+- `order-*` só nos filhos do dock; removido de nós internos mortos.
+- Testes de retração só em `campaignHomeLayout.unit.spec.tsx` (removidos duplicados de `campaignHomeSearch`).
+- Comentário cross-ref `RelationChipCell` em `HomeSearchHitRow` (`onMouseDown` blur→click).
+
+## Explicitamente fora (pós-/simplify, defer)
+
+| Achado | Gatilho para revisitar |
+| --- | --- |
+| Animar só opacity (sem `grid-rows` height) | jank medido no mobile com teclado aberto |
+| Extrair `homeChromeRetractionClass` para `lib/` | 3º call site de chrome retrátil |
+| Context split para cortar re-render a cada keystroke | perf medido com busca focada + digitação |
+| `onPointerDown` em vez de `onMouseDown` nos hits | QA reporta blur antes do tap em touch |
+| Helper `beforeEach` compartilhado no e2e de ações | descartado — boilerplate aceitável |
+| Alinhar margin/`flex-1` na transição do spacer | polish cosmético; só se critique visual pedir |
+
 ## Referências
 
 - [busca-global-inicio-input.md](busca-global-inicio-input.md) — decisão supersedida (“expand = query”)
