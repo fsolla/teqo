@@ -8,7 +8,19 @@ Three layers, all local-database-only (see `local-database` skill; tests refuse 
 - **Integration** (`tests/int/**/*.int.spec.ts`, 48 specs): real Payload + Postgres (`teqo_test`); campaign fixtures allocate seeded municipalities via a Postgres sequence so parallel spec files never share one, and purge residue on claim. Shared consent rows with stable keys are leased (`tests/helpers/testDatabaseLease.ts`), never owned.
 - **E2E** (`tests/e2e`, Playwright, 7 specs): smoke-level; most campaign behavior is pinned at the int layer.
 
-CI (`.github/workflows/ci.yml`) runs lint (zero warnings), typecheck, knip, unit, migrate, int against a Postgres 17 service.
+CI (`.github/workflows/ci-pr.yml`) runs lint (zero warnings), typecheck, knip, unit, migrate, **`db:seed:minimal`**, int and build against a Postgres 17 service.
+
+## Minimal test database (`pnpm db:seed:minimal`)
+
+The integration suite and any agent/Cloud environment boot from a **minimal synthetic database**: schema from `pnpm migrate` (which seeds the 435-município catalog) plus `pnpm db:seed:minimal` ([`scripts/seed-minimal.mjs`](../scripts/seed-minimal.mjs)), an idempotent upsert of the rows the app refuses to run without:
+
+- the four fail-closed `Consent` keys (`lideranca-autopreenchimento`, `apoiador-cadastro`, `apoiador-intencao-voto`, `whatsapp-inscricao`);
+- one `campaignUser` per role (synthetic `@teqo.invalid` emails / `719999999Xx` phones);
+- deterministic strategy pins (`priority` + `expectedVotes`) on 5 municípios (`salvador-ze-1`, `camacari`, `feira-de-santana`, `vitoria-da-conquista`, `itabuna`) — rows themselves come from the migration-seeded catalog;
+- 1 `organization`, 1 `stateDeputy`, 2 `leadership`, 3 `supporter` (all synthetic);
+- the `campaignGoals` global default.
+
+The content contract is data in [`scripts/lib/seed-minimal-manifest.mjs`](../scripts/lib/seed-minimal-manifest.mjs), pinned by `tests/unit/seedMinimalManifest.unit.spec.ts`. **Contract: a delivery that adds a migration, collection, Consent key or required boot data must update the manifest in the same PR** — PR CI runs migrate → seed → int, so a broken seed fails the gate. The seed refuses non-local `DATABASE_URL` (same `assertLocalDatabase` guard family as the other seeds); agents and Cloud environments never set `ALLOW_REMOTE_DB`.
 
 ## Safety Net Map
 
