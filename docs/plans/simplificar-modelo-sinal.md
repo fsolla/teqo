@@ -84,6 +84,9 @@ Componentes:
 
 - **Rename enum `proposta_broker`.** Revisitar se `broker` ainda aparecer em UI/admin após labels (grep pt-BR + admin).
 - **Novos signalType values.** Revisitar com evidência de mesa (tipos que caem sempre em `outro`).
+- **`FieldError` de `signalType` no detalhe (`MunicipalityUpdateForm`).** Gap pré-existente: o form inline não renderiza erro de servidor no select de tipo (a lista B26 já usa `MunicipalitySignalFields` com `FieldError`). **Gatilho:** **B63** (wizard + unificação dos dois forms de sinal).
+- **Unificar `MunicipalitySignalFields` + bloco inline do detalhe.** Duplicação aceitável pós-B62 (só tipo + textarea); **gatilho:** **B63** (3º call site do wizard).
+- **Consulta de existência de sinais no loader E11.** Hoje `limit: 0` na janela de 28d é barato; se o volume crescer, trocar por agregado/exists — **gatilho:** fila de sugestões lenta ou >N sinais/dia por município em produção.
 
 ## Referências
 
