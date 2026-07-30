@@ -1,0 +1,49 @@
+# Auto-merge for PRs targeting `stage`.
+#
+# Why this exists: the repo is private on the GitHub Free plan, so native
+# branch protection and native auto-merge are unavailable (both return 403
+# "Upgrade to GitHub Pro"). This workflow is the documented fallback: when a
+# check run completes, it finds open PRs whose head SHA matches and whose base
+# is `stage`, verifies EVERY check is green, and merges. If the repo is ever
+# upgraded (or made public), delete this file and enable native protection +
+# auto-merge on `stage` instead.
+name: Auto-merge to stage
+
+on:
+  check_run:
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+concurrency:
+  group: automerge-stage-${{ github.event.check_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Merge green stage PRs for this head SHA
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.check_run.head_sha }}
+        run: |
+          set -euo pipefail
+          prs=$(gh pr list --state open --base stage --limit 50 --json number,headRefOid \
+            --jq ".[] | select(.headRefOid == \"$HEAD_SHA\") | .number")
+          for pr in $prs; do
+            echo "Checking PR #$pr ($HEAD_SHA)"
+            # Fail (skip) if any check is not green.
+            if gh pr checks "$pr" --json name,state --jq '.[] | select(.state != "SUCCESS")' | grep -q .; then
+              echo "PR #$pr still has pending/failing checks — not merging."
+              continue
+            fi
+            gh pr merge "$pr" --merge --delete-branch=false
+            echo "Merged PR #$pr into stage."
+          done
