@@ -77,8 +77,12 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     >
       <body className="antialiased w-screen scrollbar-hide overflow-hidden">
         <ThemeProvider attribute="class">
-          <SpeedInsights />
-          <Analytics />
+          {process.env.VERCEL === '1' ? (
+            <>
+              <SpeedInsights />
+              <Analytics />
+            </>
+          ) : null}
           <RefreshRouteOnSave />
           {children}
         </ThemeProvider>

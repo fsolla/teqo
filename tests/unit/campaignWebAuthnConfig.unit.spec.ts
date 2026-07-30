@@ -46,6 +46,15 @@ describe('getCampaignWebAuthnRelyingParty', () => {
     ).toMatchObject({ rpID: 'localhost', origin: 'http://localhost:3100' })
   })
 
+  it('follows localhost when a production build is served there (CI e2e)', () => {
+    expect(
+      getCampaignWebAuthnRelyingParty({
+        configuredURL: 'https://pt.jorgesolla.com.br',
+        forwardedHost: 'localhost:3000',
+      }),
+    ).toMatchObject({ rpID: 'localhost', origin: 'http://localhost:3000' })
+  })
+
   it('refuses production without a configured site URL', () => {
     expect(
       getCampaignWebAuthnRelyingParty({ environment: 'production', configuredURL: undefined }),
