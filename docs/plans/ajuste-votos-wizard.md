@@ -142,13 +142,13 @@ Componentes:
 
 ## Explicitamente fora (pós-/simplify, defer)
 
-| Achado | Gatilho para revisitar |
-| --- | --- |
-| Unificar `parseWizardVoteDraft` com `VoteEstimateScenarioInputs.parseScenarioInput` (pt-BR `"1.200"` difere) | 3ª superfície de input de votos **ou** passe repo-wide de parsing numérico pt-BR |
-| Extrair `SAVE_ERROR_MESSAGE` / copy de pending do wizard e da lista | 3º consumidor de POST JSON de célula **ou** helper `readCampaignJsonMutationResult` (precedente B32+) |
-| Validar body do wizard com `voteEstimateScenarioFieldsSchema` no client | Gravação por cenário (write parcial) em vez do batch único |
-| Helper genérico `readCampaignJsonMutationResult` | 3ª rota/painel wizard com o mesmo shape de resposta JSON |
-| Generalizar `parseWizardMunicipioParam` / `resolveWizardScenarioParam` num parser de query do wizard | B63/B64 reutilizarem `?cenario=` ou outro param de passo na mesma rota |
+| Achado                                                                                                       | Gatilho para revisitar                                                                                |
+| ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Unificar `parseWizardVoteDraft` com `VoteEstimateScenarioInputs.parseScenarioInput` (pt-BR `"1.200"` difere) | 3ª superfície de input de votos **ou** passe repo-wide de parsing numérico pt-BR                      |
+| Extrair `SAVE_ERROR_MESSAGE` / copy de pending do wizard e da lista                                          | 3º consumidor de POST JSON de célula **ou** helper `readCampaignJsonMutationResult` (precedente B32+) |
+| Validar body do wizard com `voteEstimateScenarioFieldsSchema` no client                                      | Gravação por cenário (write parcial) em vez do batch único                                            |
+| Helper genérico `readCampaignJsonMutationResult`                                                             | 3ª rota/painel wizard com o mesmo shape de resposta JSON                                              |
+| Generalizar `parseWizardMunicipioParam` / `resolveWizardScenarioParam` num parser de query do wizard         | B63/B64 reutilizarem `?cenario=` ou outro param de passo na mesma rota                                |
 
 ## Referências
 
