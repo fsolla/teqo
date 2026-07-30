@@ -272,4 +272,30 @@ describe('CampaignHomeActionStrip', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Registrar' }))
     expect(onClick).toHaveBeenCalledTimes(1)
   })
+
+  it('allows wizard link navigation after pointerdown/up without a drag gesture', () => {
+    const onLinkClick = vi.fn()
+    const { container } = render(
+      <CampaignHomeActionStrip
+        actions={[
+          {
+            label: 'Ajustar votos',
+            icon: BarChart3,
+            description: 'Atualizar projeção.',
+            href: '/campanha/acoes/atualizar-votos',
+          },
+        ]}
+      />,
+    )
+    const scroller = getScroller(container)
+    mockScrollerOverflow(scroller)
+    const link = screen.getByRole('link', { name: 'Ajustar votos' })
+    link.onclick = onLinkClick
+
+    fireEvent.pointerDown(link, { button: 0, clientX: 40, pointerId: 5 })
+    fireEvent.pointerUp(link, { pointerId: 5 })
+    fireEvent.click(link)
+
+    expect(onLinkClick).toHaveBeenCalledTimes(1)
+  })
 })

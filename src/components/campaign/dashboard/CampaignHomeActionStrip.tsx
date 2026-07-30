@@ -74,9 +74,6 @@ export const CampaignHomeActionStrip = ({
         dragging: false,
       }
       suppressClickRef.current = false
-      if (typeof el.setPointerCapture === 'function') {
-        el.setPointerCapture(event.pointerId)
-      }
     },
     [isCoarsePointer],
   )
@@ -94,6 +91,11 @@ export const CampaignHomeActionStrip = ({
       if (Math.abs(deltaX) < HOME_ACTION_STRIP_DRAG_THRESHOLD_PX) return
       session.dragging = true
       setScrollerDragging(el, true)
+      // Capture only once pan is confirmed — capturing on pointerdown retargets
+      // pointerup to the scroller and child Links never receive the click (B67).
+      if (typeof el.setPointerCapture === 'function') {
+        el.setPointerCapture(event.pointerId)
+      }
     }
 
     el.scrollLeft = session.startScrollLeft - deltaX
