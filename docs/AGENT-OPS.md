@@ -21,7 +21,7 @@ stage → CI stage green → (humano) pnpm agent:promote --i-am-human → main �
 
 **Skills do fluxo (desde 2026-07-30):** `plan-issue` (ideia → plano completo + gate de confirmação + Issue via `agent:register --model`) → `work-issue` (claim → verificação de modelo → freshness audit → execução → /simplify → PR `--base stage` → acompanha CI até o merge) → `project-status` (overview/fila/mermaid/bloqueios/consolidação, read-only). `docs/roadmap.md` = **legado congelado** (stub); a fonte canônica são as GitHub Issues.
 
-- **Agente faz sozinho:** `pnpm agent:claim` (pega a próxima Issue `ready` desbloqueada por `prio:P0..P3`, lock otimista ready→in-progress) → implementa → `pnpm gate:fast` → `gh pr create --base stage` com `Closes #N` → acompanha `gh pr checks --watch` até o merge (falha → corrige na mesma branch). O flip `in-progress→done` é determinístico no CI (workflow `issue-done-on-stage-merge.yml`).
+- **Agente faz sozinho:** `pnpm agent:claim` → implementa → `pnpm gate:push` (hook pre-push = espelho ci-pr) → `gh pr create --base stage` com `Closes #N` (**Ready**, sem `--draft`) → `gh pr merge --auto --merge` → `gh pr checks --watch --required` até o merge. Regra PR: `.cursor/rules/agent-pr-workflow.mdc`.
 
 ### Dono do PR, dono do CI (desde 2026-07-30 — incidente PR #50)
 
@@ -51,6 +51,7 @@ Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:fe
 1. Se toca schema (migration, collection, Consent key, dado de boot) → **atualizar `db:seed:minimal` no mesmo PR** (label `needs:migration`). CI PR falha se `migrate + seed:minimal + test:int` não passam.
 2. ≤1 PR aberto tocando `src/migrations/` | `payload-types.ts` (job `migration-lock`).
 3. `docs/plans/<slug>.md` novo só para Issue nova — nunca recriar plans históricos no merge.
+4. **Ready + auto-merge:** ver `.cursor/rules/agent-pr-workflow.mdc` — `gh pr create --base stage` (sem `--draft`) → `gh pr merge --auto --merge`; acompanhar com `gh pr checks --watch --required` (Vercel não é gate).
 
 ## CI por alvo
 
@@ -60,7 +61,7 @@ Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:fe
 | `ci-stage.yml` | push em `stage`     | `STAGE_DATABASE_URL` (Environment `stage`) | **só** `migrate` + smoke int (subset curado — a suíte completa é lenta demais contra Neon remoto, estourou timeout 2× em 2026-07-30; a full fica no ci-pr/ci.yml) — **NUNCA `pnpm build`** (build migra o banco que vê), nunca seed:minimal                                                                                                                                                                            |
 | `ci.yml`       | push em `main`      | service Postgres                           | **gate completo sempre** (rede de segurança pós-promote): estático + unit + int full (com seed:minimal) + build + e2e full                                                                                                                                                                                                                                                                                             |
 
-Fast gate local do agente antes do push: `pnpm gate:fast` (lint + typecheck + test:unit); o hook `.husky/pre-push` roda `pnpm gate:push` (fast + format:check + check:cycles). Fonte única: scripts `gate:*` em `package.json`. knip fica fora do hook (grafo incompleto — ledger P3; CI o roda bloqueante). Escape para WIP: `git push --no-verify` (o CI repete tudo). **E2e afetado localmente (mesmo critério do PR):** `pnpm test:e2e:affected`. int/build/e2e = CI.
+Fast gate local do agente (iteração): `pnpm gate:fast` (lint + typecheck + test:unit). O hook `.husky/pre-push` roda `pnpm gate:push` → `scripts/gate-ci.mjs` — **espelho serial do `ci-pr.yml`**: estático + build sempre; unit/int/e2e no **mesmo blast radius** que o CI de feature (`test-affected.mjs` / `e2e-affected.mjs` vs `origin/stage`). Requer Postgres local com `teqo_test` (`pnpm db:start` ou `.cursor/ensure-postgres.sh` no Cloud). `migration-lock` só no GitHub. Escape WIP: `git push --no-verify`. Debug e2e isolado: `pnpm test:e2e:affected`.
 
 ## Stage DB — runbook de refresh (semanal, humano)
 

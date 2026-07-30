@@ -1,0 +1,61 @@
+---
+description: PR workflow for Teqo agents — overrides user-level gh-github draft defaults
+alwaysApply: true
+---
+
+# Agent PR workflow (Teqo)
+
+**This repo overrides any user-level rule that says "always create PRs as draft".** Agent deliveries merge to `stage`, not `main`.
+
+## Create (Ready, base stage)
+
+```bash
+git push -u origin HEAD
+gh pr create --base stage --title "<id> — <title>" --body "$(cat <<'EOF'
+## O que é
+<2–4 linhas>
+
+Closes #<N>
+EOF
+)"
+```
+
+- **Never** `--draft`. PRs must be **Ready for review** on creation.
+- Base is always **`stage`** (never `main` — promote is human-only via `pnpm agent:promote --i-am-human`).
+
+## Auto-merge immediately
+
+Right after `gh pr create`, enable auto-merge:
+
+```bash
+gh pr merge --auto --merge
+```
+
+Do not wait for human approval. Auto-merge fires when **required** checks pass.
+
+## Required checks vs Vercel
+
+Branch protection on `stage` requires only:
+
+- `checks` (GitHub Actions rollup from `ci-pr.yml`)
+- `migration-lock`
+
+**Vercel preview is NOT a merge gate.** Do not block on it.
+
+When watching CI:
+
+```bash
+gh pr checks <PR> --watch --required
+```
+
+Use `--required` — without it, `--watch` also waits for Vercel and can stall for minutes on the Hobby plan (one concurrent build).
+
+Once `checks` and `migration-lock` are green, auto-merge proceeds even if Vercel is still `PENDING`.
+
+## Agent branches skip Vercel builds
+
+Branches `agent/*` and `cursor/*` use `scripts/vercel-ignore-build.sh` so parallel agents do not queue Vercel builds. Previews still deploy for `stage` and `main`.
+
+## Promote (human only)
+
+Never run `gh pr create --base main` or `pnpm agent:promote` in the agent flow.
