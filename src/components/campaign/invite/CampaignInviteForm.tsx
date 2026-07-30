@@ -23,24 +23,18 @@ import {
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
-import { Textarea } from '@/components/ui/textarea'
 import { errorProps, fieldError } from '@/utilities/campaignFormFields'
-import { leadershipGenderLabels, leadershipSectorLabels } from '@/utilities/leadership/leadershipUi'
+import { leadershipGenderLabels } from '@/utilities/leadership/leadershipUi'
 
 type CampaignInviteProfile = {
   name: string
   phone: string
   email: string | null
   gender: keyof typeof leadershipGenderLabels | null
-  sector: keyof typeof leadershipSectorLabels | null | undefined
-  sectorNotes: string | null
 }
 
 const genderOptions = Object.entries(leadershipGenderLabels) as Array<
   [NonNullable<CampaignInviteProfile['gender']>, string]
->
-const sectorOptions = Object.entries(leadershipSectorLabels) as Array<
-  [NonNullable<CampaignInviteProfile['sector']>, string]
 >
 
 const CampaignInviteFeedback = ({ state }: { state: CampaignInviteFormState }) => {
@@ -102,8 +96,6 @@ const ProfileFields = ({
   const phone = inviteField('phone')
   const email = inviteField('email')
   const gender = inviteField('gender')
-  const sector = inviteField('sector')
-  const sectorNotes = inviteField('sectorNotes')
 
   return (
     <FieldGroup>
@@ -172,44 +164,7 @@ const ProfileFields = ({
           </NativeSelect>
           {gender.error ? <FieldError id={gender.describedBy}>{gender.error}</FieldError> : null}
         </Field>
-
-        <Field data-invalid={sector.invalid}>
-          <FieldLabel htmlFor="campaign-invite-sector">Setor</FieldLabel>
-          <NativeSelect
-            id="campaign-invite-sector"
-            name="sector"
-            className="w-full"
-            defaultValue={profile.sector ?? ''}
-            aria-invalid={sector.invalid}
-            aria-describedby={sector.describedBy}
-          >
-            <NativeSelectOption value="">Não informar</NativeSelectOption>
-            {sectorOptions.map(([value, label]) => (
-              <NativeSelectOption key={value} value={value}>
-                {label}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-          {sector.error ? <FieldError id={sector.describedBy}>{sector.error}</FieldError> : null}
-        </Field>
       </div>
-
-      <Field data-invalid={sectorNotes.invalid}>
-        <FieldLabel htmlFor="campaign-invite-sector-notes">
-          Como você atua nesse setor? (opcional)
-        </FieldLabel>
-        <Textarea
-          id="campaign-invite-sector-notes"
-          name="sectorNotes"
-          defaultValue={profile.sectorNotes ?? ''}
-          maxLength={1000}
-          aria-invalid={sectorNotes.invalid}
-          aria-describedby={sectorNotes.describedBy}
-        />
-        {sectorNotes.error ? (
-          <FieldError id={sectorNotes.describedBy}>{sectorNotes.error}</FieldError>
-        ) : null}
-      </Field>
     </FieldGroup>
   )
 }

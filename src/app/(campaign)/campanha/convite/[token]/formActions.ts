@@ -34,8 +34,6 @@ const profileFromForm = (formData: FormData) => ({
   phone: requiredFormText(formData, 'phone'),
   email: nullableFormText(formData, 'email'),
   gender: nullableFormText(formData, 'gender'),
-  sector: nullableFormText(formData, 'sector'),
-  sectorNotes: nullableFormText(formData, 'sectorNotes'),
 })
 
 const inviteFormError = (error: unknown): CampaignInviteFormState =>

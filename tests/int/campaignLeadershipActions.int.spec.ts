@@ -174,10 +174,8 @@ describe('campaign leadership exported form actions', () => {
     ).docs[0]!
     expect(leadership).toMatchObject({
       supportStatus: 'a_abordar',
-      sector: null,
-      sectorNotes: null,
+      exclusive: true,
       notes: null,
-      consentNote: null,
     })
   })
 
@@ -210,15 +208,13 @@ describe('campaign leadership exported form actions', () => {
       municipalities: [municipality.id],
       name: 'Liderança com campos internos',
       phone: campaignFixtures().phone(),
-      sectorNotes: 'Setor preservado',
+      exclusive: true,
       notes: 'Nota para limpar',
-      consentNote: 'Consentimento para limpar',
     })
     const formData = new FormData()
     formData.set('leadershipId', String(created.id))
     formData.append('municipalities', String(municipality.id))
     formData.set('notes', '   ')
-    formData.set('consentNote', '')
 
     await expect(updateLeadershipInternalFormAction({}, formData)).resolves.toMatchObject({
       status: 'success',
@@ -227,10 +223,28 @@ describe('campaign leadership exported form actions', () => {
     await expect(
       payload.findByID({ collection: 'leadership', id: created.id, depth: 0 }),
     ).resolves.toMatchObject({
-      sectorNotes: 'Setor preservado',
+      exclusive: false,
       notes: null,
-      consentNote: null,
     })
+  })
+
+  it('creates with exclusive true by default and honors an explicit false', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const municipality = await campaignFixtures().getMunicipality()
+    const defaulted = await createLeadershipRecord(payload, coordinator, {
+      municipalities: [municipality.id],
+      name: 'Liderança exclusiva default',
+      phone: campaignFixtures().phone(),
+    })
+    expect(defaulted.exclusive).toBe(true)
+
+    const divided = await createLeadershipRecord(payload, coordinator, {
+      municipalities: [municipality.id],
+      name: 'Liderança dividida',
+      phone: campaignFixtures().phone(),
+      exclusive: false,
+    })
+    expect(divided.exclusive).toBe(false)
   })
 
   it('returns denial states for out-of-scope advisor actions', async () => {

@@ -6,7 +6,6 @@ import { optionalFormText, repeatedRelationshipFormValues, requiredFormText } fr
 import {
   LEADERSHIP_DUPLICATE_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
-  leadershipSectors,
   leadershipSupportStatuses,
 } from '@/lib/schemas/leadership'
 import {
@@ -28,8 +27,11 @@ export const createLeadershipFormAction = async (
 ): Promise<CampaignFormActionState> =>
   runCampaignRedirectFormAction({
     execute: () => {
-      const sector = optionalFormText(formData, 'sector')
       const supportStatus = optionalFormText(formData, 'supportStatus')
+      // Checkbox ambiguity: unchecked submits nothing, so the form pairs the
+      // checkbox with a hidden "false"; last value wins. A genuinely absent
+      // key (tests, non-form callers) falls back to the schema default.
+      const exclusiveValues = formData.getAll('exclusive')
 
       return createLeadership({
         name: requiredFormText(formData, 'name'),
@@ -38,16 +40,13 @@ export const createLeadershipFormAction = async (
         municipalities: repeatedRelationshipFormValues(formData, 'municipalities'),
         organizations: repeatedRelationshipFormValues(formData, 'organizations'),
         stateDeputies: repeatedRelationshipFormValues(formData, 'stateDeputies'),
-        sector: leadershipSectors.includes(sector as (typeof leadershipSectors)[number])
-          ? (sector as (typeof leadershipSectors)[number])
-          : undefined,
+        exclusive: exclusiveValues.length === 0 ? undefined : exclusiveValues.at(-1) === 'true',
         supportStatus: leadershipSupportStatuses.includes(
           supportStatus as (typeof leadershipSupportStatuses)[number],
         )
           ? (supportStatus as (typeof leadershipSupportStatuses)[number])
           : 'a_abordar',
         notes: optionalFormText(formData, 'notes'),
-        consentNote: optionalFormText(formData, 'consentNote'),
       })
     },
     redirectTo: (leadership) => `/campanha/liderancas/${leadership.id}`,

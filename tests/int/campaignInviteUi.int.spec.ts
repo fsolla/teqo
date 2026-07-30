@@ -139,11 +139,8 @@ const createPublicInviteScenario = async (
     data: {
       contact: contact.id,
       municipalities: [municipality.id],
-      sector: 'comunitario',
-      sectorNotes: 'Associação do bairro',
       supportStatus: 'engajado',
       notes: 'Avaliação interna protegida',
-      consentNote: 'Registro interno protegido',
       consent: options.consent ? consent.id : null,
       consentContentHash: options.consent ? hashConsentContent(consent.text) : null,
       consentedAt: options.consent ? new Date().toISOString() : null,
@@ -222,8 +219,6 @@ describe('campaign invite UI contracts', () => {
           phone: fixture.contact.phone,
           email: fixture.contact.email,
           gender: fixture.contact.gender,
-          sector: 'comunitario',
-          sectorNotes: 'Associação do bairro',
         },
         requiresConsent: true,
         consentData: expect.objectContaining({ root: expect.any(Object) }),
@@ -409,8 +404,6 @@ describe('campaign invite UI contracts', () => {
       formData.set('phone', fixture.contact.phone!)
       formData.set('email', fixture.contact.email ?? '')
       formData.set('gender', 'feminino')
-      formData.set('sector', 'comunitario')
-      formData.set('sectorNotes', 'Dados revisados pela titular')
       formData.set('consentAccepted', 'on')
 
       await expect(

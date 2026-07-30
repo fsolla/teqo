@@ -5,11 +5,7 @@
  */
 import type { Where } from 'payload'
 
-import {
-  leadershipSectors,
-  leadershipSupportStatuses,
-  type SupportStatus,
-} from '@/lib/schemas/leadership'
+import { leadershipSupportStatuses, type SupportStatus } from '@/lib/schemas/leadership'
 import {
   allParamValues,
   buildListHref,
@@ -24,19 +20,16 @@ import {
 
 export const leadershipPageSize = 25
 
-export type LeadershipListSortKey = 'name' | 'supportStatus' | 'sector' | 'updatedAt'
+export type LeadershipListSortKey = 'name' | 'supportStatus' | 'updatedAt'
 export type LeadershipListSortDirection = 'asc' | 'desc'
 
 /** Acesso ao app — exclusive filter (com | sem), same shape as municipality coverage. */
 type LeadershipListAccessFilter = 'com' | 'sem'
 
-type LeadershipSector = (typeof leadershipSectors)[number]
-
 export type LeadershipListState = {
   page: number
   q?: string
   statuses?: SupportStatus[]
-  sectors?: LeadershipSector[]
   municipalities?: number[]
   access?: LeadershipListAccessFilter
   sort?: LeadershipListSortKey
@@ -48,7 +41,6 @@ export type LeadershipListSearchParams = RawSearchParams
 const leadershipListParamNames = [
   'q',
   'status',
-  'sector',
   'municipality',
   'access',
   'sort',
@@ -63,14 +55,12 @@ const DEFAULT_LEADERSHIP_LIST_SORT_DIR: LeadershipListSortDirection = 'desc'
 export const leadershipListSortLabels: Record<LeadershipListSortKey, string> = {
   name: 'Nome',
   supportStatus: 'Status',
-  sector: 'Setor',
   updatedAt: 'Última atualização',
 }
 
 const leadershipListSortKeySet = new Set<string>(Object.keys(leadershipListSortLabels))
 const leadershipListSortDirSet = new Set<LeadershipListSortDirection>(['asc', 'desc'])
 const supportStatusSet = new Set<string>(leadershipSupportStatuses)
-const sectorSet = new Set<string>(leadershipSectors)
 const accessFilterSet = new Set<LeadershipListAccessFilter>(['com', 'sem'])
 
 /** Temporal = newest first; categorical/name = A–Z. */
@@ -114,7 +104,6 @@ export const leadershipListStateToRawParams = (
   page: String(page),
   q: state.q,
   status: state.statuses,
-  sector: state.sectors,
   municipality: state.municipalities?.map(String),
   access: state.access,
   sort: state.sort,
@@ -127,7 +116,6 @@ export const parseLeadershipListParams = (
   const rawPage = strictDecimalInteger(firstValue(params.page))
   const q = normalizedText(firstValue(params.q))
   const statuses = parseExhaustiveEnumParam<SupportStatus>(params.status, supportStatusSet)
-  const sectors = parseExhaustiveEnumParam<LeadershipSector>(params.sector, sectorSet)
   const municipalities = allParamValues(params.municipality)
     .map((token) => strictDecimalInteger(token))
     .filter((id): id is number => typeof id === 'number' && id > 0)
@@ -151,7 +139,6 @@ export const parseLeadershipListParams = (
     page: rawPage ?? 1,
     ...(q ? { q } : {}),
     ...(statuses.length ? { statuses } : {}),
-    ...(sectors.length ? { sectors } : {}),
     ...(municipalities.length ? { municipalities } : {}),
     ...(access ? { access } : {}),
     ...(sort ? { sort } : {}),
@@ -163,7 +150,6 @@ export const buildLeadershipListWhere = (state: LeadershipListState): Where => {
   const filters: Where[] = []
   if (state.q) filters.push({ 'contact.name': { contains: state.q } })
   if (state.statuses?.length) filters.push({ supportStatus: { in: state.statuses } })
-  if (state.sectors?.length) filters.push({ sector: { in: state.sectors } })
   if (state.municipalities?.length) {
     filters.push({ municipalities: { in: state.municipalities } })
   }
@@ -186,7 +172,6 @@ export const serializeCanonicalLeadershipListSearchParams = (
 
   if (canonicalState.q) params.set('q', canonicalState.q)
   for (const status of canonicalState.statuses ?? []) params.append('status', status)
-  for (const sector of canonicalState.sectors ?? []) params.append('sector', sector)
   for (const municipality of canonicalState.municipalities ?? []) {
     params.append('municipality', String(municipality))
   }

@@ -8,28 +8,16 @@ import {
   type RelationOption,
 } from '@/components/campaign/shared/RelationMultiSelect'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { leadershipSectors, leadershipSupportStatuses } from '@/lib/schemas/leadership'
+import { leadershipSupportStatuses } from '@/lib/schemas/leadership'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 import type { LeadershipDetailViewModel } from '@/utilities/leadership/leadershipData'
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
-
-const sectorLabels: Record<(typeof leadershipSectors)[number], string> = {
-  religioso: 'Religioso',
-  sindical: 'Sindical',
-  comunitario: 'Comunitário',
-  rural: 'Rural',
-  empresarial: 'Empresarial',
-  juventude: 'Juventude',
-  saude: 'Saúde',
-  educacao: 'Educação',
-  cultura: 'Cultura',
-  outro: 'Outro',
-}
 
 type LeadershipInternalFormProps = {
   leadership: LeadershipDetailViewModel
@@ -85,22 +73,6 @@ export const LeadershipInternalForm = ({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field>
-          <FieldLabel htmlFor="leadership-internal-sector">Setor</FieldLabel>
-          <NativeSelect
-            id="leadership-internal-sector"
-            name="sector"
-            defaultValue={leadership.sector ?? ''}
-            className="min-h-11 w-full"
-          >
-            <NativeSelectOption value="">Não informado</NativeSelectOption>
-            {leadershipSectors.map((sector) => (
-              <NativeSelectOption key={sector} value={sector}>
-                {sectorLabels[sector]}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </Field>
-        <Field>
           <FieldLabel htmlFor="leadership-internal-status">Status de apoio</FieldLabel>
           <NativeSelect
             id="leadership-internal-status"
@@ -115,6 +87,17 @@ export const LeadershipInternalForm = ({
             ))}
           </NativeSelect>
         </Field>
+        <Field orientation="horizontal" className="items-center gap-2 self-end pb-2">
+          <Checkbox
+            id="leadership-internal-exclusive"
+            name="exclusive"
+            value="true"
+            defaultChecked={leadership.exclusive}
+          />
+          <FieldLabel htmlFor="leadership-internal-exclusive" className="font-normal">
+            Apoio exclusivo
+          </FieldLabel>
+        </Field>
       </div>
 
       <Field>
@@ -125,18 +108,6 @@ export const LeadershipInternalForm = ({
           rows={3}
           maxLength={3000}
           defaultValue={leadership.notes ?? undefined}
-        />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="leadership-internal-consent-note">
-          Registro de consentimento externo
-        </FieldLabel>
-        <Textarea
-          id="leadership-internal-consent-note"
-          name="consentNote"
-          rows={2}
-          maxLength={2000}
-          defaultValue={leadership.consentNote ?? undefined}
         />
       </Field>
 

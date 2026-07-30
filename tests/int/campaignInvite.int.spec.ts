@@ -586,7 +586,7 @@ describe('campaign invite domain', () => {
       email: 'maria@example.com',
       gender: 'feminino',
       sector: 'comunitario',
-      sectorNotes: '  Associação do bairro  ',
+      sectorNotes: 'forjado',
       consentAccepted: true,
       leadership: 999,
       supportStatus: 'engajado',
@@ -602,8 +602,6 @@ describe('campaign invite domain', () => {
       phone: '71999990000',
       email: 'maria@example.com',
       gender: 'feminino',
-      sector: 'comunitario',
-      sectorNotes: 'Associação do bairro',
       consentAccepted: true,
     })
   })
@@ -936,8 +934,6 @@ describe('campaign invite domain', () => {
         phone: campaignFixtures().phone(),
         email: 'confirmada@example.com',
         gender: 'feminino' as const,
-        sector: 'comunitario' as const,
-        sectorNotes: 'Associação local',
         consentAccepted: true as const,
         supportStatus: 'negativo',
         notes: 'tentativa de sobrescrita',
@@ -969,8 +965,6 @@ describe('campaign invite domain', () => {
         gender: 'feminino',
       })
       expect(updatedLeadership).toMatchObject({
-        sector: 'comunitario',
-        sectorNotes: 'Associação local',
         supportStatus: 'engajado',
         notes: 'Nota interna protegida',
         municipalities: [municipality.id],
@@ -1180,11 +1174,6 @@ describe('campaign invite domain', () => {
         id: cleared.contact.id,
         data: { email: 'antes@example.com', gender: 'feminino' },
       })
-      await payload.update({
-        collection: 'leadership',
-        id: cleared.leadership.id,
-        data: { sector: 'comunitario', sectorNotes: 'Antes' },
-      })
       const clearInvite = await createInviteThroughAction(coordinator, {
         leadership: cleared.leadership.id,
         kind: 'autopreenchimento',
@@ -1196,28 +1185,18 @@ describe('campaign invite domain', () => {
         phone: cleared.contact.phone,
         email: '',
         gender: '',
-        sector: '',
-        sectorNotes: '',
         consentAccepted: true,
       })
 
       await expect(
         payload.findByID({ collection: 'contact', id: cleared.contact.id, depth: 0 }),
       ).resolves.toMatchObject({ email: null, gender: null })
-      await expect(
-        payload.findByID({ collection: 'leadership', id: cleared.leadership.id, depth: 0 }),
-      ).resolves.toMatchObject({ sector: null, sectorNotes: null })
 
       const unchanged = await createInviteLeadershipGraph(coordinator, municipality.id)
       await payload.update({
         collection: 'contact',
         id: unchanged.contact.id,
         data: { email: 'mantido@example.com', gender: 'masculino' },
-      })
-      await payload.update({
-        collection: 'leadership',
-        id: unchanged.leadership.id,
-        data: { sector: 'sindical', sectorNotes: 'Mantido' },
       })
       const unchangedInvite = await createInviteThroughAction(coordinator, {
         leadership: unchanged.leadership.id,
@@ -1234,9 +1213,6 @@ describe('campaign invite domain', () => {
       await expect(
         payload.findByID({ collection: 'contact', id: unchanged.contact.id, depth: 0 }),
       ).resolves.toMatchObject({ email: 'mantido@example.com', gender: 'masculino' })
-      await expect(
-        payload.findByID({ collection: 'leadership', id: unchanged.leadership.id, depth: 0 }),
-      ).resolves.toMatchObject({ sector: 'sindical', sectorNotes: 'Mantido' })
     },
   )
 

@@ -355,28 +355,13 @@ export interface Leadership {
   municipalities: (number | Municipality)[];
   organizations?: (number | Organization)[] | null;
   stateDeputies?: (number | StateDeputy)[] | null;
-  sector?:
-    | (
-        | 'religioso'
-        | 'sindical'
-        | 'comunitario'
-        | 'rural'
-        | 'empresarial'
-        | 'juventude'
-        | 'saude'
-        | 'educacao'
-        | 'cultura'
-        | 'outro'
-      )
-    | null;
-  sectorNotes?: string | null;
+  exclusive?: boolean | null;
   supportStatus: 'engajado' | 'a_abordar' | 'em_disputa' | 'negativo';
   user?: (number | null) | CampaignUser;
   consent?: (number | null) | Consent;
   consentContentHash?: string | null;
   consentedAt?: string | null;
   notes?: string | null;
-  consentNote?: string | null;
   createdBy?: (number | null) | CampaignUser;
   updatedAt: string;
   createdAt: string;
@@ -1490,15 +1475,13 @@ export interface LeadershipSelect<T extends boolean = true> {
   municipalities?: T;
   organizations?: T;
   stateDeputies?: T;
-  sector?: T;
-  sectorNotes?: T;
+  exclusive?: T;
   supportStatus?: T;
   user?: T;
   consent?: T;
   consentContentHash?: T;
   consentedAt?: T;
   notes?: T;
-  consentNote?: T;
   createdBy?: T;
   updatedAt?: T;
   createdAt?: T;

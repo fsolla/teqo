@@ -94,15 +94,13 @@ describe('campaign leadership domain', () => {
     expect(
       leadershipInternalUpdateSchema.parse({
         id: 1,
-        sectorNotes: '   ',
-        notes: null,
-        consentNote: '  Registro removível  ',
+        notes: '   ',
+        exclusive: false,
       }),
     ).toEqual({
       id: 1,
-      sectorNotes: null,
       notes: null,
-      consentNote: 'Registro removível',
+      exclusive: false,
     })
     expect(leadershipInternalUpdateSchema.parse({ id: 1 })).toEqual({ id: 1 })
   })
@@ -128,7 +126,6 @@ describe('campaign leadership domain', () => {
       phone: `+55 ${phone}`,
       email: '',
       gender: 'feminino',
-      sector: 'comunitario',
       supportStatus: 'engajado',
     })
 

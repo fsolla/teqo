@@ -86,7 +86,7 @@ describe('loadLeadershipListPageData', () => {
     })
   })
 
-  it('filters by supportStatus, sector, access and municipality', async () => {
+  it('filters by supportStatus, access and municipality', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipalityA = await fixtures.getMunicipality()
@@ -99,13 +99,11 @@ describe('loadLeadershipListPageData', () => {
       contact: matchContact.id,
       municipalities: [municipalityA.id],
       supportStatus: 'a_abordar',
-      sector: 'religioso',
     })
     await fixtures.createLeadership({
       contact: missContact.id,
       municipalities: [municipalityB.id],
       supportStatus: 'engajado',
-      sector: 'sindical',
     })
 
     const byStatus = await loadLeadershipListPageData(payload, coordinator, {
@@ -114,13 +112,6 @@ describe('loadLeadershipListPageData', () => {
       statuses: ['a_abordar'],
     })
     expect(byStatus.rows.map((row) => row.id)).toEqual([match.id])
-
-    const bySector = await loadLeadershipListPageData(payload, coordinator, {
-      page: 1,
-      q: marker,
-      sectors: ['religioso'],
-    })
-    expect(bySector.rows.map((row) => row.id)).toEqual([match.id])
 
     const byMunicipality = await loadLeadershipListPageData(payload, coordinator, {
       page: 1,

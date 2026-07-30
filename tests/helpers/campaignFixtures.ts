@@ -68,15 +68,13 @@ type LeadershipInput = Partial<
     | 'contact'
     | 'municipalities'
     | 'organizations'
-    | 'sector'
-    | 'sectorNotes'
+    | 'exclusive'
     | 'supportStatus'
     | 'user'
     | 'consent'
     | 'consentContentHash'
     | 'consentedAt'
     | 'notes'
-    | 'consentNote'
     | 'createdBy'
   >
 > &

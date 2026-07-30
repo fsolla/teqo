@@ -10,19 +10,6 @@ import {
 
 export const leadershipGenders = ['feminino', 'masculino', 'outro', 'nao_informado'] as const
 
-export const leadershipSectors = [
-  'religioso',
-  'sindical',
-  'comunitario',
-  'rural',
-  'empresarial',
-  'juventude',
-  'saude',
-  'educacao',
-  'cultura',
-  'outro',
-] as const
-
 export const leadershipSupportStatuses = [
   'engajado',
   'a_abordar',
@@ -31,13 +18,9 @@ export const leadershipSupportStatuses = [
 ] as const
 
 export type SupportStatus = (typeof leadershipSupportStatuses)[number]
-export type LeadershipSector = (typeof leadershipSectors)[number]
 
 export const isSupportStatus = (value: unknown): value is SupportStatus =>
   typeof value === 'string' && leadershipSupportStatuses.some((status) => status === value)
-
-export const isLeadershipSector = (value: unknown): value is LeadershipSector =>
-  typeof value === 'string' && leadershipSectors.some((sector) => sector === value)
 
 export const MAX_LEADERSHIP_MUNICIPALITIES = 30
 const MAX_LEADERSHIP_ORGANIZATIONS = 20
@@ -87,11 +70,9 @@ export const leadershipCreateSchema = z.object({
   phone: brazilianMobile,
   email: optionalPersistedEmail,
   gender: z.enum(leadershipGenders).optional(),
-  sector: z.enum(leadershipSectors).optional(),
-  sectorNotes: trimmedOptionalText(1000),
+  exclusive: z.boolean().default(true),
   supportStatus: z.enum(leadershipSupportStatuses).default('a_abordar'),
   notes: trimmedOptionalText(3000),
-  consentNote: trimmedOptionalText(2000),
 })
 
 export const leadershipInternalUpdateSchema = z.object({
@@ -99,11 +80,9 @@ export const leadershipInternalUpdateSchema = z.object({
   municipalities: municipalitiesArraySchema.optional(),
   organizations: organizationsArraySchema.nullable().optional(),
   stateDeputies: stateDeputiesArraySchema.nullable().optional(),
-  sector: z.enum(leadershipSectors).nullable().optional(),
-  sectorNotes: trimmedNullableText(1000),
+  exclusive: z.boolean().optional(),
   supportStatus: z.enum(leadershipSupportStatuses).optional(),
   notes: trimmedNullableText(3000),
-  consentNote: trimmedNullableText(2000),
 })
 
 export type LeadershipInternalUpdateInput = z.input<typeof leadershipInternalUpdateSchema>

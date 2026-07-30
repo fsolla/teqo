@@ -50,7 +50,7 @@ export const Leadership: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'contact',
-    defaultColumns: ['contact', 'municipalities', 'sector', 'supportStatus', 'updatedAt'],
+    defaultColumns: ['contact', 'municipalities', 'exclusive', 'supportStatus', 'updatedAt'],
   },
   access: {
     create: canCreateLeadership,
@@ -102,28 +102,16 @@ export const Leadership: CollectionConfig = {
       index: true,
     },
     {
-      name: 'sector',
-      type: 'select',
-      label: 'Setor',
+      name: 'exclusive',
+      type: 'checkbox',
+      label: 'Apoio exclusivo',
+      defaultValue: true,
       index: true,
-      options: [
-        { label: 'Religioso', value: 'religioso' },
-        { label: 'Sindical', value: 'sindical' },
-        { label: 'Comunitário', value: 'comunitario' },
-        { label: 'Rural', value: 'rural' },
-        { label: 'Empresarial', value: 'empresarial' },
-        { label: 'Juventude', value: 'juventude' },
-        { label: 'Saúde', value: 'saude' },
-        { label: 'Educação', value: 'educacao' },
-        { label: 'Cultura', value: 'cultura' },
-        { label: 'Outro', value: 'outro' },
-      ],
-    },
-    {
-      name: 'sectorNotes',
-      type: 'textarea',
-      label: 'Observações do setor',
-      maxLength: 1000,
+      access: {
+        create: canManageCampaignStaffField,
+        read: canReadCampaignStaffField,
+        update: canManageCampaignStaffField,
+      },
     },
     {
       name: 'supportStatus',
@@ -194,17 +182,6 @@ export const Leadership: CollectionConfig = {
       type: 'textarea',
       label: 'Observações internas',
       maxLength: 3000,
-      access: {
-        create: canManageCampaignStaffField,
-        read: canReadCampaignStaffField,
-        update: canManageCampaignStaffField,
-      },
-    },
-    {
-      name: 'consentNote',
-      type: 'textarea',
-      label: 'Registro de consentimento externo',
-      maxLength: 2000,
       access: {
         create: canManageCampaignStaffField,
         read: canReadCampaignStaffField,

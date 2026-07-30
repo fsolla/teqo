@@ -9,7 +9,7 @@ import {
   type CampaignInviteAutofillInput,
   type CampaignInviteLoginInput,
 } from '@/lib/schemas/invite'
-import type { CampaignUser, Leadership } from '@/payload-types'
+import type { CampaignUser } from '@/payload-types'
 import { requireLeadershipConsent, resolveInviteConsent } from '@/utilities/campaignConsent'
 import {
   acquireCampaignInviteAccountLocks,
@@ -33,8 +33,6 @@ type ProfileInput = {
   phone: string
   email?: string | null
   gender?: 'feminino' | 'masculino' | 'outro' | 'nao_informado' | null
-  sector?: Leadership['sector']
-  sectorNotes?: string | null
 }
 
 const profileContactData = (data: ProfileInput) => ({
@@ -42,11 +40,6 @@ const profileContactData = (data: ProfileInput) => ({
   phone: data.phone,
   ...(data.email !== undefined ? { email: data.email } : {}),
   ...(data.gender !== undefined ? { gender: data.gender } : {}),
-})
-
-const profileLeadershipData = (data: ProfileInput) => ({
-  ...(data.sector !== undefined ? { sector: data.sector } : {}),
-  ...(data.sectorNotes !== undefined ? { sectorNotes: data.sectorNotes } : {}),
 })
 
 const consentUpdateData = (
@@ -154,10 +147,7 @@ export const redeemCampaignInviteAutofillRecord = async (
       await payload.update({
         collection: 'leadership',
         id: leadership.id,
-        data: {
-          ...profileLeadershipData(data),
-          ...consentUpdateData(consentResolution),
-        },
+        data: consentUpdateData(consentResolution),
         depth: 0,
         overrideAccess: true,
         req,
@@ -276,7 +266,6 @@ export const redeemCampaignInviteLoginRecord = async (
         collection: 'leadership',
         id: leadership.id,
         data: {
-          ...profileLeadershipData(data),
           ...consentUpdateData(consentResolution),
           user: account.id,
         },
