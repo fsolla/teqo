@@ -1,7 +1,7 @@
 # Busca global — layout dos resultados (grid + cap de viewport)
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-30)
+Atualizado em: 2026-07-30 — as-built: `HomeSearchResultsLayout` (grid 1/2/3 col + `HomeSearchHitBudgetContext`); cap v1 constante por breakpoint (`HOME_SEARCH_HIT_BUDGET` 8/12/15) via `allocateHitBudget` com prioridade Municípios; grupos B48–B53 fatiam via `useHomeSearchHitLimit`.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B54 — busca global)
 Impeccable: B — layout responsivo da região de resultados B47
 Appetite: ~0,5–0,75 dia eng; CSS grid + política de cap; sem provider novo

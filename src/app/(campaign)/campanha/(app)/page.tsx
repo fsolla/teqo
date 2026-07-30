@@ -11,6 +11,7 @@ import { HomeSearchAdvisorGroup } from '@/components/campaign/dashboard/HomeSear
 import { HomeSearchDemandGroup } from '@/components/campaign/dashboard/HomeSearchDemandGroup'
 import { HomeSearchLeadershipGroup } from '@/components/campaign/dashboard/HomeSearchLeadershipGroup'
 import { HomeSearchMunicipalityGroup } from '@/components/campaign/dashboard/HomeSearchMunicipalityGroup'
+import { HomeSearchResultsLayout } from '@/components/campaign/dashboard/HomeSearchResultsLayout'
 import { HomeSearchResultsShell } from '@/components/campaign/dashboard/HomeSearchResultsShell'
 import { HomeSearchStateDeputyGroup } from '@/components/campaign/dashboard/HomeSearchStateDeputyGroup'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
@@ -50,12 +51,14 @@ export default async function CampaignHomePage() {
           actions={actions}
           searchResults={
             <HomeSearchResultsShell>
-              <HomeSearchMunicipalityGroup />
-              <HomeSearchLeadershipGroup />
-              <HomeSearchAdvisorGroup />
-              <HomeSearchActivityGroup />
-              <HomeSearchStateDeputyGroup />
-              <HomeSearchDemandGroup />
+              <HomeSearchResultsLayout>
+                <HomeSearchMunicipalityGroup />
+                <HomeSearchLeadershipGroup />
+                <HomeSearchAdvisorGroup />
+                <HomeSearchActivityGroup />
+                <HomeSearchStateDeputyGroup />
+                <HomeSearchDemandGroup />
+              </HomeSearchResultsLayout>
             </HomeSearchResultsShell>
           }
           summarySlot={summarySlot}
