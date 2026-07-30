@@ -1,7 +1,7 @@
 # Modo focado da busca no focus (não na digitação)
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-30)
+Atualizado em: 2026-07-30 — as-built: predicado `homeSearchUiFocused` (`inputFocused || query.isActive`) já no contrato/hook (overlap B68); `CampaignHomeLayout` retrai summary+spacer (`data-slot="home-chrome"`) e actions (grid `0fr/1fr` + opacity 220ms ease-out, `motion-reduce:transition-none`) em vez de `hidden`; `md:flex-none` no chrome para não crescer no desktop; `HomeSearchHitRow` `onMouseDown` preventDefault (blur→click); e2e focus sem digitar + regressão com digitação; unit layout/search atualizados. Sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B66 — UX-1 busca Início)
 Impeccable: B — encaixe de motion/estado no chrome do Início (`CampaignHomeLayout` / `CampaignHomeStaffChrome`) sob tema `campaign`
 Appetite: ~0,5–0,75 dia eng; estado `focused` ≠ `query.isActive` + transição CSS; sem migration
@@ -102,6 +102,25 @@ Componentes:
 
 - **Persistir `?q=` na URL do Início.** Já adiado em B47 — reabrir só com pedido de shareable search.
 - **Gesture “puxar para baixo para fechar” no modo focado.** Revisitar se mesa pedir dismiss sem Escape/blur.
+
+## Já resolvido no simplify (não reabrir)
+
+- `HomeChromeRetractionShell` extrai o wrapper retrátil duplicado (summary/spacer + actions).
+- `data-slot="home-actions-chrome"` para queries de teste estáveis (sem `parentElement`).
+- `order-*` só nos filhos do dock; removido de nós internos mortos.
+- Testes de retração só em `campaignHomeLayout.unit.spec.tsx` (removidos duplicados de `campaignHomeSearch`).
+- Comentário cross-ref `RelationChipCell` em `HomeSearchHitRow` (`onMouseDown` blur→click).
+
+## Explicitamente fora (pós-/simplify, defer)
+
+| Achado                                               | Gatilho para revisitar                        |
+| ---------------------------------------------------- | --------------------------------------------- |
+| Animar só opacity (sem `grid-rows` height)           | jank medido no mobile com teclado aberto      |
+| Extrair `homeChromeRetractionClass` para `lib/`      | 3º call site de chrome retrátil               |
+| Context split para cortar re-render a cada keystroke | perf medido com busca focada + digitação      |
+| `onPointerDown` em vez de `onMouseDown` nos hits     | QA reporta blur antes do tap em touch         |
+| Helper `beforeEach` compartilhado no e2e de ações    | descartado — boilerplate aceitável            |
+| Alinhar margin/`flex-1` na transição do spacer       | polish cosmético; só se critique visual pedir |
 
 ## Referências
 

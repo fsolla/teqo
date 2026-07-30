@@ -31,7 +31,10 @@ test.describe('Início — busca global (B47)', () => {
     await expect(page.getByLabel('Buscar na campanha')).toHaveCount(0)
   })
 
-  test('staff focused search hides action strip after debounce', async ({ campaign, page }) => {
+  test('staff focused search hides action strip on input focus (B66)', async ({
+    campaign,
+    page,
+  }) => {
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
@@ -41,6 +44,26 @@ test.describe('Início — busca global (B47)', () => {
     const actionsSlot = page.locator('[data-slot="home-actions"]')
     await expect(actionsSlot).toBeVisible()
     await expect(page.getByLabel('Ações rápidas')).toBeVisible()
+
+    await page.getByLabel('Buscar na campanha').focus()
+    await expect(actionsSlot).toBeHidden({ timeout: 5000 })
+
+    await page.getByLabel('Buscar na campanha').blur()
+    await expect(actionsSlot).toBeVisible({ timeout: 5000 })
+  })
+
+  test('staff typing in search keeps action strip hidden after debounce', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    const actionsSlot = page.locator('[data-slot="home-actions"]')
+    await expect(actionsSlot).toBeVisible()
 
     await page.getByLabel('Buscar na campanha').fill('ca')
     await expect(actionsSlot).toBeHidden({ timeout: 5000 })
