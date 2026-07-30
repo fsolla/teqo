@@ -12,6 +12,7 @@ import { loadHomeSearchSuggestions } from '@/utilities/homeSearch/loadHomeSearch
 import { searchHomeAdvisors } from '@/utilities/homeSearch/searchHomeAdvisors'
 import { searchHomeLeaderships } from '@/utilities/homeSearch/searchHomeLeaderships'
 import { searchHomeMunicipalities } from '@/utilities/homeSearch/searchHomeMunicipalities'
+import { searchHomeStateDeputies } from '@/utilities/homeSearch/searchHomeStateDeputies'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,15 +30,17 @@ export const POST = campaignJsonMutationRoute(
       return NextResponse.json<HomeSearchSuccessResponse>(result)
     }
 
-    const [municipalityResult, advisors, leaderships] = await Promise.all([
+    const [municipalityResult, advisors, leaderships, stateDeputies] = await Promise.all([
       searchHomeMunicipalities(payload, actor, body.query),
       searchHomeAdvisors(payload, actor, body.query),
       searchHomeLeaderships(payload, actor, body.query),
+      searchHomeStateDeputies(payload, actor, body.query),
     ])
     return NextResponse.json<HomeSearchSuccessResponse>({
       ...municipalityResult,
       advisors,
       leaderships,
+      stateDeputies,
     })
   },
 )

@@ -1,7 +1,7 @@
 # Busca global — resultados Dobradinhas
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `searchHomeStateDeputies` (staff; word-start em nome ou partido; cap 25; `municipalityIdsByStateDeputyIds` exportado de `stateDeputyData`); `HomeSearchStateDeputyHit` + campo `stateDeputies` no `POST /campanha/home-search`; `HomeSearchStateDeputyGroup` após Assessores; secundário = partido · N municípios; sem WA (B55 — entidade sem telefone); int `homeSearchStateDeputies.int.spec.ts`.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B52 — busca global)
 Impeccable: B — grupo de hits no slot B47
 Appetite: ~0,5 dia eng; loader + grupo; WA = B55
@@ -51,7 +51,15 @@ WA → **B55**.
 
 ## Adiado com gatilho
 
-Nenhum neste item.
+- **Orquestrador único do POST / dedup de queries** — herdado de B48/B50; ver [busca-global-resultados-municipios.md](busca-global-resultados-municipios.md) § Adiado. **Gatilho:** após B51–B53 ou se latência do POST medir >~300 ms em dev.
+- **`collectByRelationIds` genérico** — só 2 call sites (`municipalityIdsByAdvisorIds`, `municipalityIdsByStateDeputyIds`). **Gatilho:** 3º agregado de relação ou refactor de `loadStateDeputyListPageData` leadership fan-out.
+- **Contagem de municípios só após top-25** — otimização marginal com catálogo pequeno. **Gatilho:** query por partido (`PT`) com dezenas de matches e latência perceptível.
+
+## Já resolvido no simplify (não reabrir)
+
+- Prefilter DB `contains` em nome **ou** partido + word-start em memória (B49 precedent).
+- `loadStateDeputyListPageData` reusa `municipalityIdsByStateDeputyIds`.
+- `HOME_SEARCH_RESULT_HIT_CAP` + `formatHomeSearchMunicipalityCount` compartilhados.
 
 ## Referências
 

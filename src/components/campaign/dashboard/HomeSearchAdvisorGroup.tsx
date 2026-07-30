@@ -2,11 +2,7 @@
 
 import { HomeSearchHitRow } from '@/components/campaign/dashboard/HomeSearchHitRow'
 import { useHomeSearchResults } from '@/components/campaign/dashboard/HomeSearchResultsContext'
-
-const formatMunicipalityCount = (count: number): string => {
-  if (count === 1) return '1 município'
-  return `${count} municípios`
-}
+import { formatHomeSearchMunicipalityCount } from '@/lib/campaignHomeSearchHits'
 
 export const HomeSearchAdvisorGroup = () => {
   const { results } = useHomeSearchResults()
@@ -27,7 +23,7 @@ export const HomeSearchAdvisorGroup = () => {
             <HomeSearchHitRow
               href={`/campanha/assessores/${hit.id}`}
               primary={hit.name}
-              secondary={formatMunicipalityCount(hit.municipalityCount)}
+              secondary={formatHomeSearchMunicipalityCount(hit.municipalityCount)}
             />
           </li>
         ))}

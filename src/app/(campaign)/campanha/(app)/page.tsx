@@ -10,6 +10,7 @@ import { HomeSearchAdvisorGroup } from '@/components/campaign/dashboard/HomeSear
 import { HomeSearchLeadershipGroup } from '@/components/campaign/dashboard/HomeSearchLeadershipGroup'
 import { HomeSearchMunicipalityGroup } from '@/components/campaign/dashboard/HomeSearchMunicipalityGroup'
 import { HomeSearchResultsShell } from '@/components/campaign/dashboard/HomeSearchResultsShell'
+import { HomeSearchStateDeputyGroup } from '@/components/campaign/dashboard/HomeSearchStateDeputyGroup'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { loadCampaignHomeSummary } from '@/utilities/campaignDashboardData'
@@ -50,6 +51,7 @@ export default async function CampaignHomePage() {
               <HomeSearchMunicipalityGroup />
               <HomeSearchLeadershipGroup />
               <HomeSearchAdvisorGroup />
+              <HomeSearchStateDeputyGroup />
             </HomeSearchResultsShell>
           }
           summarySlot={summarySlot}

@@ -29,6 +29,7 @@ export const searchHomeAdvisors = async (
 
   const normalizedQuery = normalizeHomeSearchName(query)
 
+  // Intentional admin bypass — unrestricted staff gate already ran in the route.
   const result = await payload.find({
     collection: 'campaignUser',
     where: { role: { equals: 'advisor' } },

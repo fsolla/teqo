@@ -4,6 +4,9 @@ export const HOME_SEARCH_DEBOUNCE_MS = 250
 /** Minimum trimmed length before focused mode and result providers run. */
 export const HOME_SEARCH_MIN_QUERY_LENGTH = 2
 
+/** Cap for capped home-search entity groups (leadership, dobradinhas). */
+export const HOME_SEARCH_RESULT_HIT_CAP = 25
+
 export type HomeSearchQuery = {
   raw: string
   debounced: string
