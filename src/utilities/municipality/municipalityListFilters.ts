@@ -54,6 +54,8 @@ export type MunicipalityFilterDefinition = {
   label: string
   /** Shown for exclusive single-select clear row; omitted for toggle/multi. */
   allLabel?: string
+  /** Shown for empty state in multi-selects. */
+  emptyLabel?: string
   staffOnly: boolean
   selection: MunicipalityFilterSelectionMode
   /** Absent for the params whose options are cross-filtered server-side. */
@@ -70,12 +72,14 @@ export const municipalityFilterDefinitions: MunicipalityFilterDefinition[] = [
   {
     param: 'region',
     label: 'Território',
+    emptyLabel: 'Todos',
     staffOnly: false,
     selection: 'multi',
   },
   {
     param: 'advisor',
     label: 'Assessores',
+    emptyLabel: 'Todos',
     staffOnly: true,
     selection: 'multi',
   },
@@ -93,6 +97,7 @@ export const municipalityFilterDefinitions: MunicipalityFilterDefinition[] = [
   {
     param: 'trend',
     label: 'Tendência',
+    emptyLabel: 'Todas',
     staffOnly: true,
     selection: 'multi',
     options: (Object.keys(politicalTrendLabels) as Array<keyof typeof politicalTrendLabels>).map(
@@ -102,6 +107,7 @@ export const municipalityFilterDefinitions: MunicipalityFilterDefinition[] = [
   {
     param: 'class',
     label: 'Classe',
+    emptyLabel: 'Todas',
     staffOnly: true,
     selection: 'multi',
     options: (
@@ -114,6 +120,7 @@ export const municipalityFilterDefinitions: MunicipalityFilterDefinition[] = [
   {
     param: 'level',
     label: 'Nível',
+    emptyLabel: 'Todos',
     staffOnly: true,
     selection: 'multi',
     // Static options, like `trend`: the ladder is a closed set, so offering

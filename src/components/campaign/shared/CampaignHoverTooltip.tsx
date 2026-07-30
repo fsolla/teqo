@@ -3,7 +3,7 @@
 import type { PointerEvent, ReactElement, ReactNode, Ref } from 'react'
 import { cloneElement, useEffect, useRef, useState } from 'react'
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 /**
  * Hover/focus explanation with no extra chrome — wraps an existing control,
@@ -92,19 +92,17 @@ export const CampaignHoverTooltip = ({
   })
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <Tooltip open={!disabled && open} onOpenChange={(next) => setOpen(disabled ? false : next)}>
-        <TooltipTrigger asChild>{trigger}</TooltipTrigger>
-        <TooltipContent
-          ref={contentRef}
-          side={side}
-          align={align}
-          sideOffset={sideOffset}
-          className="max-w-xs text-left font-normal"
-        >
-          {content}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip open={!disabled && open} onOpenChange={(next) => setOpen(disabled ? false : next)}>
+      <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+      <TooltipContent
+        ref={contentRef}
+        side={side}
+        align={align}
+        sideOffset={sideOffset}
+        className="max-w-xs text-left font-normal"
+      >
+        {content}
+      </TooltipContent>
+    </Tooltip>
   )
 }

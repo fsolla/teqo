@@ -16,7 +16,10 @@ import { type VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
 import { createEntityNotFoundError } from '@/utilities/entityNotFound'
-import { loadMunicipalityScope } from '@/utilities/municipality/campaignMunicipalityScope'
+import {
+  loadMunicipalityScope,
+  loadMunicipalityScopeFromDocs,
+} from '@/utilities/municipality/campaignMunicipalityScope'
 import {
   centralDeficitSortValue,
   type MunicipalityGoalCoverage,
@@ -354,7 +357,11 @@ export const loadMunicipalityListPageBundle = async (
 
   // Request-scoped shared load (docs + pledge aggregates in one place).
   const staffScopePromise = isStaff
-    ? loadMunicipalityScope(payload, user, where)
+    ? isPagedByPayload
+      ? loadMunicipalityScope(payload, user, where)
+      : listQuery.then((result) =>
+          loadMunicipalityScopeFromDocs(payload, result.docs as Municipality[]),
+        )
     : Promise.resolve(null)
 
   const [listResult, scopeCount, staffScope, filterFacets] = await Promise.all([
