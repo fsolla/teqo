@@ -129,19 +129,18 @@ Chrome: seta **Voltar** só mobile (**B59**). Também passo embutido de A1.
 
 ## Fluxo A4 — Atualizar liderança
 
-Cobre o pacote Cairu sem exigir que ele ache a ficha da pessoa primeiro.
+Cobre o pacote Cairu sem exigir que ele ache a ficha da pessoa primeiro. Modelo: **B69** (`exclusive` default true; sem org/setor/`consentNote`). UI: **B70**.
 
-| Passo | Pergunta                                                 | Nota                                                                                                                      |
-| ----- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| 1     | Em qual município?                                       |                                                                                                                           |
-| 2     | O que você quer fazer?                                   | **Trocar quem coordena** · **Mudar status de apoio** · **Anotar votos que a pessoa declara** · **Incluir nova liderança** |
-| 3a    | Quem?                                                    | Busca no município; se não achar → nome + telefone (create mínimo)                                                        |
-| 3b    | (ramo status) Novo status?                               | Engajado / … (labels atuais, plain language)                                                                              |
-| 3c    | (ramo votos) Quantos votos essa pessoa declara?          | `declaredVotes`; staff pode seguir com estimativa se quiser — **estimativa nunca como passo da liderança**                |
-| 3d    | (ramo troca) Quem deixa de ser o principal / quem entra? | Observação interna (“mordeu a isca”, “secundário”)                                                                        |
-| 4     | Resumo → **Registrar**                                   |                                                                                                                           |
+| Passo | Pergunta           | UI / nota                                                                                                                                                                                                 |
+| ----- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Em qual município? | Busca só municípios (**B60**; pular se veio de A1)                                                                                                                                                        |
+| 2     | Quem?              | Grid de tiles (2/3/4 cols) + tile **Adicionar**; status no canto; info/hover = `notes`; nome truncado por palavra; telefone∥e-mail (**B70**). Skip “Pular atualização de liderança →” se origem ≠ A4      |
+| 3     | Editar / criar     | Form curto: nome, celular, e-mail, status de apoio, observação, **apoio exclusivo**. Salvar → volta ao grid; se dirty, **Continuar** inferior direito. Focus no input principal ao abrir. Sem pledge aqui |
+| 4     | Continuar / fim    | Avança fluxo pai ou Início + toast (standalone)                                                                                                                                                           |
 
-**Corte 03/08:** ramos “status” + “observação / papel” + busca; create completo e pledge rico podem ser v1.1.
+**“Liderança é a dobradinha”:** reusar ficha `stateDeputy` + chips `stateDeputies` (B31 ✓) — sem campo novo. **Estimativa nunca neste fluxo.**
+
+**Corte 03/08:** grid + form curto (status/obs/exclusivo/create); pledge rico e atalho criar-dobradinha ficam fora.
 
 ---
 
@@ -222,10 +221,13 @@ Não competir com os botões.
 5. **B61** Ajuste votos (média→pessimista→otimista + atalhos + coerência) — [ajuste-votos-wizard.md](ajuste-votos-wizard.md)
 6. **B62** Simplificar modelo de sinal (tipo+texto; labels mesa) — [simplificar-modelo-sinal.md](simplificar-modelo-sinal.md)
 7. **B63** Wizard sinal (grid tipo + texto + pular) — [wizard-registro-sinal.md](wizard-registro-sinal.md)
-8. **A1** wiring (orquestrar B60+B61 + “quer também?” sinal/tendência + resumo/CTA)
+   7b. **B64** Wizard tendência — [wizard-mudar-tendencia.md](wizard-mudar-tendencia.md)
+   7c. **B69** Simplificar modelo de liderança (`exclusive` + limpeza) — [simplificar-modelo-lideranca.md](simplificar-modelo-lideranca.md)
+   7d. **B70** Wizard atualizar liderança (grid + form) — [wizard-atualizar-lideranca.md](wizard-atualizar-lideranca.md)
+8. **A1** wiring (orquestrar B60+B61 + “quer também?” sinal/tendência/liderança + resumo/CTA)
 9. **A6** — atalho já em B45 (`uncovered-municipalities`)
 10. **A2** standalone = B60+B63 (se não ficou bom só embutido em A1)
-11. **A4** curto · **A5** + edição de demanda · E11 → wizards · A3 standalone
+11. **A4** = B60+B70 · **A5** + edição de demanda · E11 → wizards · A3 standalone = B60+B64
 
 ---
 
