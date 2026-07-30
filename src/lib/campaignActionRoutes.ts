@@ -1,5 +1,10 @@
 /** Client-safe entry paths for UX-1 action wizards under `/campanha/acoes`. */
 
+import {
+  parseMunicipalitySignalType,
+  type MunicipalitySignalType,
+} from '@/lib/schemas/municipalityUpdate'
+
 export const CAMPAIGN_ACTIONS_HOME = '/campanha/acoes' as const
 
 export type CampaignWizardActionId =
@@ -41,6 +46,8 @@ export const WIZARD_MUNICIPIO_QUERY_KEY = 'municipio' as const
 
 /** Legacy B61 ritual param — canonical URLs omit it (B77). */
 export const WIZARD_SCENARIO_QUERY_KEY = 'cenario' as const
+
+export const WIZARD_SIGNAL_TYPE_QUERY_KEY = 'signalType' as const
 
 export const WIZARD_ENTRY_ACTION_QUERY_KEY = 'entry' as const
 
@@ -84,4 +91,42 @@ export const parseWizardEntryActionParam = (
     return undefined
   }
   return trimmed
+}
+
+export const wizardSignalHref = (
+  actionSlug: string,
+  municipalitySlug?: string,
+  signalType?: MunicipalitySignalType,
+  entryAction?: CampaignWizardActionId,
+): string => {
+  const base = `${CAMPAIGN_ACTIONS_HOME}/${actionSlug}`
+  if (!municipalitySlug) {
+    return base
+  }
+
+  const params = new URLSearchParams({ [WIZARD_MUNICIPIO_QUERY_KEY]: municipalitySlug })
+  if (signalType) {
+    params.set(WIZARD_SIGNAL_TYPE_QUERY_KEY, signalType)
+  }
+  if (entryAction) {
+    params.set(WIZARD_ENTRY_ACTION_QUERY_KEY, entryAction)
+  }
+  return `${base}?${params.toString()}`
+}
+
+export const resolveWizardSignalTypeParam = (
+  value: string | string[] | undefined,
+): { signalType?: MunicipalitySignalType; invalid: boolean } => {
+  const raw = Array.isArray(value) ? value[0] : value
+  const trimmed = raw?.trim()
+  if (!trimmed) {
+    return { signalType: undefined, invalid: false }
+  }
+
+  const signalType = parseMunicipalitySignalType(trimmed)
+  if (signalType) {
+    return { signalType, invalid: false }
+  }
+
+  return { signalType: undefined, invalid: true }
 }

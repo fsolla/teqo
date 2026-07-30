@@ -10,7 +10,9 @@ import {
   isCampaignWizardActionSlug,
   parseWizardEntryActionParam,
   parseWizardMunicipioParam,
+  resolveWizardSignalTypeParam,
   wizardActionHref,
+  wizardSignalHref,
 } from '@/lib/campaignActionRoutes'
 
 describe('campaignActionRoutes', () => {
@@ -62,7 +64,35 @@ describe('campaignActionRoutes', () => {
 
   it('parses entry action search param', () => {
     expect(parseWizardEntryActionParam('update-leadership')).toBe('update-leadership')
+    expect(parseWizardEntryActionParam('update-votes')).toBe('update-votes')
     expect(parseWizardEntryActionParam('invalid')).toBeUndefined()
     expect(parseWizardEntryActionParam(undefined)).toBeUndefined()
+  })
+
+  it('builds signal wizard hrefs with optional signalType and entry', () => {
+    expect(wizardSignalHref('registrar-sinal', 'cairu')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/registrar-sinal?municipio=cairu`,
+    )
+    expect(wizardSignalHref('registrar-sinal', 'cairu', 'invasao')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/registrar-sinal?municipio=cairu&signalType=invasao`,
+    )
+    expect(wizardSignalHref('registrar-sinal', 'cairu', 'esfriamento', 'update-votes')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/registrar-sinal?municipio=cairu&signalType=esfriamento&entry=update-votes`,
+    )
+  })
+
+  it('resolves signalType search param with invalid flag', () => {
+    expect(resolveWizardSignalTypeParam(undefined)).toEqual({
+      signalType: undefined,
+      invalid: false,
+    })
+    expect(resolveWizardSignalTypeParam('invasao')).toEqual({
+      signalType: 'invasao',
+      invalid: false,
+    })
+    expect(resolveWizardSignalTypeParam('invalid')).toEqual({
+      signalType: undefined,
+      invalid: true,
+    })
   })
 })

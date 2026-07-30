@@ -280,3 +280,76 @@ test.describe('Wizard — atualizar liderança (B70)', () => {
     await expect(page.getByLabel('Buscar na campanha')).toBeVisible()
   })
 })
+
+test.describe('Wizard — registrar sinal (B63)', () => {
+  test('standalone flow: type grid, body step, save returns to Início', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/acoes/registrar-sinal?municipio=cairu')
+
+    await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toBeVisible({
+      timeout: 15000,
+    })
+    await expect(page.getByRole('link', { name: 'Pular registro de sinal' })).toHaveCount(0)
+
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Invasão' })
+      .getByRole('button')
+      .first()
+      .click()
+    await page.waitForURL(/signalType=invasao/)
+
+    await expect(page.getByRole('heading', { name: /Detalhar sinal: Invasão/i })).toBeVisible()
+
+    const body = page.getByLabel('O que aconteceu?')
+    await body.fill('Adversário marcou presença no centro do município.')
+    await page.getByRole('button', { name: 'Salvar' }).click()
+
+    await page.waitForURL(/\/campanha$/)
+    await expect(page.getByText('Sinal registrado.')).toBeVisible()
+  })
+
+  test('info button opens drawer without advancing to body step', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/acoes/registrar-sinal?municipio=cairu')
+
+    await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toBeVisible({
+      timeout: 15000,
+    })
+
+    await page.getByRole('button', { name: /Informações sobre Invasão/i }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.getByText(/O adversário está ocupando espaço/i)).toBeVisible()
+    await expect(page).not.toHaveURL(/signalType=/)
+
+    await page.getByRole('button', { name: 'Fechar' }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+  })
+
+  test('embedded flow shows skip link', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/acoes/registrar-sinal?municipio=cairu&entryAction=update-votes')
+
+    await expect(page.getByRole('link', { name: 'Pular registro de sinal' })).toBeVisible({
+      timeout: 15000,
+    })
+  })
+})

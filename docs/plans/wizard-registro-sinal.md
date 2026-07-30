@@ -1,11 +1,29 @@
 # Wizard registrar sinal — escolher tipo + detalhar texto
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-30)
+Atualizado em: 2026-07-30
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B63 — UX-1 wizards)
 Impeccable: C — UI nova (grid de tipos + drawer de info + passo de texto)
 Appetite: ~1–1,25 dia eng; 2 etapas no B59; write via action `createMunicipalityUpdate` existente
 Responsável: —
+
+## Contrato de URL (as-built)
+
+```text
+/campanha/acoes/registrar-sinal
+  → B60 WizardMunicipalitySearchStep
+
+/campanha/acoes/registrar-sinal?municipio=<slug>
+  → WizardSignalTypeStep (grid)
+
+/campanha/acoes/registrar-sinal?municipio=<slug>&signalType=<enum>
+  → WizardSignalBodyStep (textarea + Salvar)
+
+Query opcional (propagar entre passos):
+  ?entryAction=register-signal|update-votes|…
+```
+
+Helpers em `src/lib/campaignActionRoutes.ts`: `WIZARD_SIGNAL_TYPE_QUERY_KEY`, `WIZARD_ENTRY_ACTION_QUERY_KEY`, `parseWizardEntryActionParam`, `resolveWizardSignalTypeParam`, `wizardSignalHref`. Skip: `shouldShowWizardSignalSkip` em `wizardSignalUi.ts` — oculto quando `entryAction` ausente ou `register-signal`; visível caso contrário (href → `/campanha` na v1).
 
 ## Design (Impeccable)
 

@@ -19,6 +19,7 @@ import {
   parsePoliticalTrendStatusFormValue,
 } from '@/lib/schemas/municipality'
 import { parseMunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
+import { WIZARD_SIGNAL_SAVED_MESSAGE } from '@/lib/wizardSignalUi'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
@@ -100,7 +101,7 @@ export const createMunicipalityListSignalFormAction = async (
         signalType: parseMunicipalitySignalType(optionalFormText(formData, 'signalType')),
       })
       revalidateMunicipalityListPaths({ slug: optionalMunicipalitySlugFromForm(formData) })
-      return { message: 'Sinal registrado.' }
+      return { message: WIZARD_SIGNAL_SAVED_MESSAGE }
     },
     genericMessage: 'Não foi possível registrar o sinal. Verifique seu acesso e tente novamente.',
   })
