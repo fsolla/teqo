@@ -36,6 +36,8 @@ Responsável: —
 ### Adiado
 
 - Chips de recentes/prioritários — módulo `recentVisits` não existe no repo; revisitar se o CG pedir atalho sem digitar.
+- Loader de escopo enxuto para busca (`loadMunicipalityScope` sem agregado de pledges) — hoje wizard e `searchStaffMunicipalityHits` pagam o custo completo do escopo; gatilho: latência perceptível no debounce ou 3º consumidor de busca municipality-only.
+- Hook compartilhado de fetch `POST /campanha/home-search` (seq/abort/loading) — wizard e `HomeSearchResultsContext` duplicam a máquina; gatilho: 3º consumidor além desses dois.
 
 ### Testes
 
