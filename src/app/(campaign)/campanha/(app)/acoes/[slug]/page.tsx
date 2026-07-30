@@ -1,14 +1,19 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 
+import { WizardExpectedVotesStep } from '@/components/campaign/shared/WizardExpectedVotesStep'
 import { WizardMunicipalitySearchStep } from '@/components/campaign/shared/WizardMunicipalitySearchStep'
 import { WizardMunicipalitySelectedStub } from '@/components/campaign/shared/WizardMunicipalitySelectedStub'
 import {
   CAMPAIGN_WIZARD_ACTION_SLUGS,
   isCampaignWizardActionSlug,
   parseWizardMunicipioParam,
+  resolveWizardScenarioParam,
   WIZARD_MUNICIPIO_QUERY_KEY,
+  WIZARD_SCENARIO_QUERY_KEY,
+  wizardActionHref,
 } from '@/lib/campaignActionRoutes'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
+import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import config from '@/payload.config'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadMunicipalityScope } from '@/utilities/municipality/campaignMunicipalityScope'
@@ -50,6 +55,26 @@ export default async function CampaignActionWizardPage({
   const municipality = municipalities[0]
   if (!municipality || municipality.slug !== municipalitySlug) {
     notFound()
+  }
+
+  if (slug === CAMPAIGN_WIZARD_ACTION_SLUGS['update-votes']) {
+    const { scenario, invalid } = resolveWizardScenarioParam(
+      resolvedSearchParams[WIZARD_SCENARIO_QUERY_KEY],
+    )
+    if (invalid) {
+      redirect(wizardActionHref(slug, municipalitySlug, 'central'))
+    }
+
+    return (
+      <WizardExpectedVotesStep
+        actionSlug={slug}
+        municipalityId={municipality.id}
+        municipalityName={municipality.name}
+        municipalitySlug={municipality.slug}
+        initialExpectedVotes={toVoteEstimateScenarioViewModel(municipality.expectedVotes)}
+        currentScenario={scenario}
+      />
+    )
   }
 
   return <WizardMunicipalitySelectedStub actionSlug={slug} municipalityName={municipality.name} />

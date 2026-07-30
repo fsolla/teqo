@@ -1,11 +1,40 @@
 # Etapa de ajuste de votos no wizard (cenários + atalhos)
 
-Status: rascunho
+Status: **entregue** (2026-07-29)
 Atualizado em: 2026-07-29
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B61 — UX-1 wizards)
 Impeccable: C — UI nova de passo numérico com coerência entre cenários
 Appetite: ~1–1,25 dia eng; 3 sub-passos de cenário + atalhos + navegação de violação; grava via action existente no wiring A1 (neste item: UI + validação client espelhando servidor)
 Responsável: —
+
+## As-built (entrega)
+
+### Contrato de URL e ordem de edição
+
+- `?cenario=central|pessimistic|optimistic` em `/campanha/acoes/atualizar-votos?municipio=<slug>`; default `central`; valor inválido → redirect canônico para `central`.
+- Ordem ritual **média → pessimista → otimista** (`WIZARD_VOTE_SCENARIO_EDIT_ORDER` em `src/lib/wizardVoteEstimate.ts`); invariante de armazenamento continua `pessimistic ≤ central ≤ optimistic` via `getVoteEstimateOrderViolation`.
+- Helpers: `applyVoteShortcut`, `getWizardVoteViolation`, `wizardActionHref(slug, municipio?, scenario?)`.
+
+### Gravação
+
+- **Um POST batch** ao concluir o passo otimista (`POST /campanha/municipios/expected-votes` → `setMunicipalityExpectedVotes`), não três writes por cenário.
+- Sucesso: mensagem + placeholder do próximo passo A1 (B63) + link "Voltar ao Início".
+
+### UI
+
+- `WizardExpectedVotesStep` substitui `WizardMunicipalitySelectedStub` **somente** em `atualizar-votos` com município escolhido.
+- Um cenário visível; input grande (`text-2xl`/`text-3xl`); atalhos `2×` · `±50` · `±100`; CTA nomeado por cenário.
+- Violação: banner warning + `router.replace` para o cenário quebrado + botão "Voltar para [cenário editado]".
+- `CampaignWizardShell`: caption sticky; `previousHref` = cenário anterior ou busca B60.
+
+### Testes
+
+- Unit: `tests/unit/wizardVoteEstimate.unit.spec.ts`, `campaignActionRoutes.unit.spec.ts`.
+- E2e: `campaignHomeActions.e2e.spec.ts` — avanço média→pessimista; violação pessimista> média → banner + retorno.
+
+### Fora (inalterado)
+
+- Preview cobertura E8 no passo; wiring completo A1 (sinal/tendência/resumo B63/B64).
 
 ## Design (Impeccable)
 

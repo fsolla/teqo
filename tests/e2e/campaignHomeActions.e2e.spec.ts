@@ -145,6 +145,57 @@ test.describe('Wizard — busca município (B60)', () => {
 
     await page.waitForURL(/\/campanha\/acoes\/atualizar-votos\?municipio=cairu/)
     await expect(page.getByLabel(/Município em atualização: Cairu/i)).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Qual a nova estimativa média/i })).toBeVisible()
+  })
+})
+
+test.describe('Wizard — ajuste de votos (B61)', () => {
+  test('confirming média advances to pessimista step', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/acoes/atualizar-votos?municipio=cairu')
+
+    await expect(page.getByRole('heading', { name: /Qual a nova estimativa média/i })).toBeVisible({
+      timeout: 15000,
+    })
+
+    const input = page.getByLabel(/Média em Cairu/i)
+    await input.fill('500')
+    await page.getByRole('button', { name: 'Ajustar estimativa média →' }).click()
+
+    await page.waitForURL(/cenario=pessimistic/)
+    await expect(
+      page.getByRole('heading', { name: /Qual a nova estimativa pessimista/i }),
+    ).toBeVisible()
+  })
+
+  test('incoherent pessimista shows warning and return link', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/acoes/atualizar-votos?municipio=cairu')
+
+    await expect(page.getByRole('heading', { name: /Qual a nova estimativa média/i })).toBeVisible({
+      timeout: 15000,
+    })
+
+    await page.getByLabel(/Média em Cairu/i).fill('200')
+    await page.getByRole('button', { name: 'Ajustar estimativa média →' }).click()
+    await page.waitForURL(/cenario=pessimistic/)
+
+    await page.getByLabel(/Pessimista em Cairu/i).fill('900')
+    await page.getByRole('button', { name: 'Ajustar estimativa pessimista →' }).click()
+
+    await page.waitForURL(/cenario=central/)
+    const step = page.getByRole('main', { name: /Qual a nova estimativa média/i })
+    await expect(step.getByRole('alert')).toContainText(/Pessimista/i)
+    await expect(step.getByRole('button', { name: /Voltar para pessimista/i })).toBeVisible()
   })
 })

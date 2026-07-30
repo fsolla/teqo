@@ -7,6 +7,7 @@ import {
   isCampaignWizardActionId,
   isCampaignWizardActionSlug,
   parseWizardMunicipioParam,
+  resolveWizardScenarioParam,
   wizardActionHref,
 } from '@/lib/campaignActionRoutes'
 
@@ -34,6 +35,18 @@ describe('campaignActionRoutes', () => {
     expect(wizardActionHref('atualizar-votos', 'cairu')).toBe(
       `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu`,
     )
+    expect(wizardActionHref('atualizar-votos', 'cairu', 'pessimistic')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu&cenario=pessimistic`,
+    )
+  })
+
+  it('resolves scenario search param with default and invalid flag', () => {
+    expect(resolveWizardScenarioParam(undefined)).toEqual({ scenario: 'central', invalid: false })
+    expect(resolveWizardScenarioParam('optimistic')).toEqual({
+      scenario: 'optimistic',
+      invalid: false,
+    })
+    expect(resolveWizardScenarioParam('invalid')).toEqual({ scenario: 'central', invalid: true })
   })
 
   it('parses municipio search param', () => {

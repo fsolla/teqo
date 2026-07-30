@@ -1,6 +1,9 @@
 'use client'
 
-import type { MunicipalityListExpectedVotesResponse } from '@/app/(campaign)/campanha/(app)/municipios/expected-votes/types'
+import {
+  MUNICIPALITY_EXPECTED_VOTES_ENDPOINT,
+  type MunicipalityListExpectedVotesResponse,
+} from '@/app/(campaign)/campanha/(app)/municipios/expected-votes/types'
 import { useMunicipalityEstimateScenarioOptional } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import { CampaignCellEditOverlay } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { useCampaignCellAutosave } from '@/components/campaign/shared/useCampaignCellAutosave'
@@ -18,7 +21,6 @@ import {
 import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
 const AUTOSAVE_MS = 600
-const EXPECTED_VOTES_ENDPOINT = '/campanha/municipios/expected-votes'
 const SAVE_ERROR_MESSAGE = 'Não foi possível salvar os votos estimados. Tente novamente.'
 
 /**
@@ -52,7 +54,7 @@ export const MunicipalityListExpectedVotesControl = ({
     useCampaignCellAutosave<VoteEstimateScenarioViewModel, MunicipalityListExpectedVotesResponse>({
       value: expectedVotes,
       equals: voteEstimatesEqual,
-      endpoint: EXPECTED_VOTES_ENDPOINT,
+      endpoint: MUNICIPALITY_EXPECTED_VOTES_ENDPOINT,
       buildBody: (values) => ({ municipalityId: municipalityID, expectedVotes: values }),
       readSaved: (payload) => payload.savedExpectedVotes,
       errorMessage: SAVE_ERROR_MESSAGE,
