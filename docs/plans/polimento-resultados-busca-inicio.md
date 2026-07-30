@@ -83,7 +83,7 @@ Componentes:
 
 ## Adiado com gatilho
 
-Nenhum neste item.
+- **Extrair `HomeSearchGroup` shell** — cinco grupos repetem `<section>` + heading + `<ul>`; gatilho: sexto grupo de resultados ou rota dedicada de busca (`>15` sugestões recorrentes no plano B48).
 
 ## Referências
 
