@@ -51,3 +51,7 @@ export const municipalitySignalTypeMeta: MunicipalitySignalTypeMetaEntry[] =
     infoContent: signalTypeInfoContent[type],
     icon: signalTypeIcons[type],
   }))
+
+export const municipalitySignalTypeMetaByType = Object.fromEntries(
+  municipalitySignalTypeMeta.map((entry) => [entry.type, entry]),
+) as Record<MunicipalitySignalType, MunicipalitySignalTypeMetaEntry>

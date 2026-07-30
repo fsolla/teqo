@@ -11,9 +11,18 @@ export const WIZARD_SIGNAL_SAVE_LABEL = 'Salvar' as const
 
 export const WIZARD_SIGNAL_SAVED_MESSAGE = 'Sinal registrado.' as const
 
-export const wizardSignalSkipHref = (): string => CAMPAIGN_HOME
+export type WizardSignalSkipAction = {
+  label: string
+  href: string
+}
 
-/** Skip is visible only when the wizard was embedded from another flow (not standalone register-signal). */
 export const shouldShowWizardSignalSkip = (
   entryAction: CampaignWizardActionId | undefined,
 ): boolean => entryAction != null && entryAction !== 'register-signal'
+
+export const resolveWizardSignalSkip = (
+  entryAction: CampaignWizardActionId | undefined,
+): WizardSignalSkipAction | undefined =>
+  shouldShowWizardSignalSkip(entryAction)
+    ? { label: WIZARD_SIGNAL_SKIP_LABEL, href: CAMPAIGN_HOME }
+    : undefined
