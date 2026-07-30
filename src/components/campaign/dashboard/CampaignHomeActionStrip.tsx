@@ -138,7 +138,7 @@ export const CampaignHomeActionStrip = ({
       >
         <ul
           role="list"
-          className="m-0 flex min-w-max list-none snap-x snap-proximity gap-6 p-0 pb-1"
+          className="m-0 flex min-w-max list-none snap-x snap-proximity gap-4 p-0 pb-1"
         >
           {actions?.map(({ id, ...button }) => (
             <li key={id ?? button.href ?? button.label} className="m-0 list-none p-0">

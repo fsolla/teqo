@@ -1,7 +1,7 @@
 # Reduzir espaçamento horizontal da strip de ações do Início
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `gap-6` → `gap-4` no `<ul>` de `CampaignHomeActionStrip`; botões/círculos/pan B67 inalterados.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — **B72**; chassis UX-1 / pós-B58)
 Impeccable: B — uma linha de layout em `CampaignHomeActionStrip`
 Appetite: ~0,25 dia eng (token Tailwind; sem migration, action ou URL)
