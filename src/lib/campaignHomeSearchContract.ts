@@ -14,3 +14,10 @@ export const homeSearchQueryIsActive = (trimmedDebounced: string): boolean =>
   trimmedDebounced.length >= HOME_SEARCH_MIN_QUERY_LENGTH
 
 export const normalizeHomeSearchRaw = (raw: string): string => raw.trim()
+
+/**
+ * B66/B68 — focused chrome vs active search query. Fetch uses `isActive`;
+ * layout hiding uses `uiFocused` (input focused or query active).
+ */
+export const homeSearchUiFocused = (input: { inputFocused: boolean; isActive: boolean }): boolean =>
+  input.inputFocused || input.isActive

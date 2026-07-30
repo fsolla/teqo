@@ -1,7 +1,7 @@
 # Sugestões na busca aberta (empty state por papel)
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `POST /campanha/home-search` com body discriminado `mode: 'search' | 'suggest'`; `loadHomeSearchSuggestions` + `rankHomeSearchSuggestMunicipalities` (assessor = carteira fria; CG/candidato = `priority === 'alta'` por déficit central + frescor); `homeSearchUiFocused` + fetch suggest quando `uiFocused && !query.isActive`; seção **Sugestões** reutilizando `HomeSearchHitRow` / grupo B48; `resultKind` na resposta; sem migration. **Overlap B66:** predicado `uiFocused` e chrome oculto no focus — animação de retração continua no plano B66.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B68** — UX-1 busca Início)
 Impeccable: B — região de resultados do Início (`HomeSearchResultsShell` / grupos B48) quando focus + query inativa
 Appetite: ~1–1,25 dia eng; loader de sugestões por role + UI reusando linhas B48; v1 só Municípios (lógica simples); sem migration
@@ -111,6 +111,8 @@ Componentes:
 - **Grupos Lideranças / Demandas / Atividades / Assessores no empty.** Revisitar quando **B49–B53** landarem **e** o empty de municípios já estiver em uso (evidência de “falta X”).
 - **Visitados recentes no topo do suggest.** Revisitar se sessão observada pedir continuidade de sessão no Início (não só no Quadro).
 - **Ranking “mais inteligente”** (déficit × classe E10 × nível E14). Revisitar após 2 semanas de uso real do v1 simples.
+- **RSC embed do suggest (evitar POST duplicado no focus).** Registrado como **B68+** F1 — revisitar se latência no focus for P1 em produção.
+- **Comparator compartilhado de déficit** (B20 vs B68 vs E9). Revisitar no 3º call site — ver **B68+** F2.
 - **Soft deadline UX-1 03/08:** se folga apertar, este item é cortável depois de B66 (busca ainda funciona digitando).
 
 ## Referências

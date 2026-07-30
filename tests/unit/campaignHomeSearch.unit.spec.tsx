@@ -10,6 +10,9 @@ const providerValue = {
   setRaw: vi.fn(),
   clear: vi.fn(),
   isDebouncing: false,
+  inputFocused: false,
+  setInputFocused: vi.fn(),
+  uiFocused: true,
 }
 
 describe('CampaignHomeLayout focused mode', () => {

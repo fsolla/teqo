@@ -8,22 +8,20 @@ import { homeSearchMunicipalityGroupHasHits } from '@/lib/campaignHomeSearchHits
 
 export const HomeSearchResultsShell = ({ children }: { children: ReactNode }) => {
   const { query } = useHomeSearch()
-  const { results } = useHomeSearchResults()
+  const { results, resultKind } = useHomeSearchResults()
 
   const showEmpty =
     query.isActive &&
+    resultKind === 'search' &&
     results.status === 'success' &&
     !homeSearchMunicipalityGroupHasHits(results.data)
-
-  const showError = results.status === 'error'
-  const errorMessage = results.status === 'error' ? results.message : null
 
   return (
     <>
       {children}
-      {showError && errorMessage ? (
+      {results.status === 'error' ? (
         <p className="text-sm text-destructive" role="alert">
-          {errorMessage}
+          {results.message}
         </p>
       ) : null}
       {showEmpty ? <p className="text-sm text-muted-foreground">Nenhum resultado.</p> : null}

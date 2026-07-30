@@ -26,6 +26,8 @@ type HomeSearchResultsState =
 export type HomeSearchResultsContextValue = {
   results: HomeSearchResultsState
   isFetching: boolean
+  /** B68 — whether the current success payload came from suggest vs search. */
+  resultKind: 'idle' | HomeSearchSuccessResponse['resultKind']
 }
 
 const HomeSearchResultsContext = createContext<HomeSearchResultsContextValue | null>(null)
@@ -51,12 +53,15 @@ export const useHomeSearchResults = (): HomeSearchResultsContextValue => {
 type HomeSearchErrorResponse = { status: 'error'; message: string }
 
 export const useHomeSearchResultsState = (): HomeSearchResultsContextValue => {
-  const { query, isDebouncing } = useHomeSearch()
+  const { query, isDebouncing, uiFocused } = useHomeSearch()
   const [results, setResults] = useState<HomeSearchResultsState>({ status: 'idle' })
   const requestSeq = useRef(0)
 
+  const suggestMode = uiFocused && !query.isActive
+  const searchMode = query.isActive
+
   useEffect(() => {
-    if (!query.isActive) {
+    if (!suggestMode && !searchMode) {
       requestSeq.current += 1
       setResults({ status: 'idle' })
       return
@@ -66,10 +71,14 @@ export const useHomeSearchResultsState = (): HomeSearchResultsContextValue => {
     const controller = new AbortController()
     setResults({ status: 'loading' })
 
+    const body = suggestMode
+      ? ({ mode: 'suggest' } as const)
+      : ({ mode: 'search', query: query.debounced } as const)
+
     void (async () => {
       const { ok, payload } = await postCampaignJson<
         HomeSearchSuccessResponse | HomeSearchErrorResponse
-      >(HOME_SEARCH_ROUTE, { query: query.debounced }, controller.signal)
+      >(HOME_SEARCH_ROUTE, body, controller.signal)
 
       if (seq !== requestSeq.current) return
 
@@ -100,7 +109,7 @@ export const useHomeSearchResultsState = (): HomeSearchResultsContextValue => {
     return () => {
       controller.abort()
     }
-  }, [query.debounced, query.isActive])
+  }, [query.debounced, searchMode, suggestMode])
 
   const isFetching = isDebouncing || results.status === 'loading'
 
@@ -108,6 +117,7 @@ export const useHomeSearchResultsState = (): HomeSearchResultsContextValue => {
     () => ({
       results,
       isFetching,
+      resultKind: results.status === 'success' ? results.data.resultKind : 'idle',
     }),
     [results, isFetching],
   )
