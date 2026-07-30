@@ -46,6 +46,13 @@ export type HomeSearchActivityHit = {
   secondary: string
 }
 
+export type HomeSearchDemandHit = {
+  id: number
+  slug: string
+  title: string
+  secondary: string
+}
+
 type HomeSearchResultKind = 'search' | 'suggest'
 
 export type HomeSearchSuccessResponse = {
@@ -57,6 +64,7 @@ export type HomeSearchSuccessResponse = {
   leaderships: HomeSearchLeadershipHit[]
   stateDeputies: HomeSearchStateDeputyHit[]
   activities: HomeSearchActivityHit[]
+  demands: HomeSearchDemandHit[]
 }
 
 export const homeSearchMunicipalityGroupHasHits = (
@@ -74,6 +82,10 @@ export const homeSearchStateDeputyGroupHasHits = (
 export const homeSearchActivityGroupHasHits = (
   data: Pick<HomeSearchSuccessResponse, 'activities'>,
 ): boolean => data.activities.length > 0
+
+export const homeSearchDemandGroupHasHits = (
+  data: Pick<HomeSearchSuccessResponse, 'demands'>,
+): boolean => data.demands.length > 0
 
 export const formatHomeSearchMunicipalityCount = (count: number): string => {
   if (count === 1) return '1 município'
@@ -99,7 +111,8 @@ export const homeSearchHasAnyHits = (data: HomeSearchSuccessResponse): boolean =
   data.advisors.length > 0 ||
   homeSearchLeadershipGroupHasHits(data) ||
   homeSearchStateDeputyGroupHasHits(data) ||
-  homeSearchActivityGroupHasHits(data)
+  homeSearchActivityGroupHasHits(data) ||
+  homeSearchDemandGroupHasHits(data)
 
 export type WizardMunicipalitySearchSuccessResponse = {
   status: 'success'

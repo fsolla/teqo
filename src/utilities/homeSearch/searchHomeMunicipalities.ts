@@ -29,6 +29,7 @@ const emptyResponse = (): HomeSearchSuccessResponse => ({
   leaderships: [],
   stateDeputies: [],
   activities: [],
+  demands: [],
 })
 
 export const searchHomeMunicipalities = async (
@@ -91,5 +92,6 @@ export const searchHomeMunicipalities = async (
     leaderships: [],
     stateDeputies: [],
     activities: [],
+    demands: [],
   }
 }

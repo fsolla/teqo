@@ -26,6 +26,7 @@ const searchResultsValue = (
       leaderships: [],
       stateDeputies: [],
       activities: [],
+      demands: [],
       ...data,
     },
   },

@@ -1,7 +1,7 @@
 # Busca global — resultados Demandas
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-30)
+Atualizado em: 2026-07-30 — as-built: `searchHomeDemands` (`isStaffCampaignRole` gate; word-start no `title`; access `campaignDemand` com `overrideAccess: false`; cap 25; desempate `createdAt` desc); `HomeSearchDemandHit` + campo `demands` no `POST /campanha/home-search`; `HomeSearchDemandGroup` após Dobradinhas; secundário `"{município} · {status}"`; empty via `homeSearchHasAnyHits`; int `homeSearchDemands.int.spec.ts`; sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B53 — busca global)
 Impeccable: B — grupo de hits no slot B47
 Appetite: ~0,5 dia eng; loader + grupo; share = B55
