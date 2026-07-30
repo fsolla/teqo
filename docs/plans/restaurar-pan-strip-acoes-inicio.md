@@ -1,7 +1,7 @@
 # Restaurar pan/scroll na strip de ações (scrollbar oculta)
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `pointer-fine` drag-to-scroll em `CampaignHomeActionStrip` (`HOME_ACTION_STRIP_DRAG_THRESHOLD_PX` 8); scrollbar oculta mantida; `onClickCapture` suprime navegação após arraste; touch `pan-x` nativo inalterado; fecha Adiado drag desktop de B44.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B67** — UX-1 chassis)
 Impeccable: B — encaixe em `CampaignHomeActionStrip` / `CampaignHomeActionButton`
 Appetite: ~0,25–0,5 dia eng; overflow + drag-to-scroll; sem migration
