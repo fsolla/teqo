@@ -261,6 +261,14 @@ jobs:
         if: steps.scope.outputs.mode != 'none'
         run: pnpm db:seed:minimal
 
+      # CI e2e runs against the production build (see playwright.config.ts
+      # webServer.command); the dist dir must match the webServer env.
+      - name: Build for e2e
+        if: steps.scope.outputs.mode != 'none'
+        run: pnpm build
+        env:
+          NEXT_DIST_DIR: .next/e2e
+
       - name: E2E tests (full suite)
         if: steps.scope.outputs.mode == 'full'
         run: pnpm test:e2e

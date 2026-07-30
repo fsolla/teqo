@@ -90,7 +90,14 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev',
+    /*
+     * CI serves the PRODUCTION build (`pnpm start` after a `pnpm build` step in
+     * the e2e job): dev-mode cold webpack compiles per route plus dev-server
+     * memory restarts made the full suite blow the 30-min job timeout on CI
+     * (measured 2026-07-30 — first full e2e run on the parallel pipeline).
+     * Locally `pnpm dev` stays: no build wait and hot reload while writing specs.
+     */
+    command: process.env.CI ? 'pnpm start' : 'pnpm dev',
     /*
      * Never reuse a dev server a developer may already have running against the
      * production database — always start a fresh one bound to the test DB.

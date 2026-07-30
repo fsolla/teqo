@@ -132,5 +132,10 @@ jobs:
       - run: pnpm migrate
       - run: pnpm db:seed:minimal
 
+      - name: Build for e2e
+        run: pnpm build
+        env:
+          NEXT_DIST_DIR: .next/e2e
+
       - name: E2E tests (full suite)
         run: pnpm test:e2e
