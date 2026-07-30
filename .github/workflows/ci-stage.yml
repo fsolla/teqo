@@ -21,9 +21,13 @@ jobs:
     runs-on: ubuntu-latest
     # The int suite against a remote Neon snapshot is latency-bound (~120 ms
     # RTT per query): the FULL suite blew the 30-minute timeout twice on
-    # 2026-07-30, so stage runs a curated smoke subset (schema reconciliation +
-    # access lockdown + consent-gated flows — the things a prod-snapshot run is
-    # FOR). The full int suite gates in ci-pr.yml against the local service DB.
+    # 2026-07-30, so stage runs a curated smoke subset (access lockdown +
+    # consent-gated flows — the things a prod-snapshot run is FOR). The full
+    # int suite gates in ci-pr.yml against the local service DB. Subset rule:
+    # only specs safe against REAL data — own-fixture creates are fine; specs
+    # that delete/mutate seeded rows are not (submitWhatsapp deletes the keyed
+    # Consent to test fail-closed, and campaignMigrationReconciliation creates
+    # scratch databases; both stay out).
     timeout-minutes: 45
     environment: stage
     env:
@@ -65,7 +69,6 @@ jobs:
           tests/int/campaignVotePledge.int.spec.ts
           tests/int/campaignSupporter.int.spec.ts
           tests/int/campaignDemandWorkflow.int.spec.ts
-          tests/int/submitWhatsapp.int.spec.ts
           tests/int/onda0Provision.int.spec.ts
         env:
           # Documented escape hatch in tests/helpers/assertTestDatabase.ts —
