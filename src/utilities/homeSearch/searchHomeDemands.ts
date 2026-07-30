@@ -17,7 +17,7 @@ import type { CampaignDemand, CampaignUser, Municipality } from '@/payload-types
 
 const HOME_SEARCH_DEMAND_HIT_CAP = 25
 
-export const formatDemandHomeSearchSecondary = (
+const formatDemandHomeSearchSecondary = (
   municipalityName: string | null,
   status: CampaignDemandStatus,
 ): string => {
