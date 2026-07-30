@@ -1,4 +1,4 @@
-# Continuous integration for the GitHub mirror (pushes go to Codeberg + GitHub).
+# Continuous integration on GitHub Actions (GitHub is the only home).
 # Runs the same gate as .husky/pre-push plus tests and dead-code analysis.
 name: CI
 

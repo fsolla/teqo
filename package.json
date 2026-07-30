@@ -9,13 +9,13 @@
     "white-label",
     "payload-cms"
   ],
-  "homepage": "https://codeberg.org/fsolla/teqo",
+  "homepage": "https://github.com/fsolla/teqo",
   "repository": {
     "type": "git",
-    "url": "https://codeberg.org/fsolla/teqo.git"
+    "url": "https://github.com/fsolla/teqo.git"
   },
   "bugs": {
-    "url": "https://codeberg.org/fsolla/teqo/issues"
+    "url": "https://github.com/fsolla/teqo/issues"
   },
   "author": "Francisco Solla",
   "license": "MIT",
