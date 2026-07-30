@@ -1,8 +1,5 @@
 /** Client-safe entry paths for UX-1 action wizards under `/campanha/acoes`. */
 
-import type { WizardVoteEditScenario } from '@/lib/wizardVoteEstimate'
-import { isWizardVoteEditScenario } from '@/lib/wizardVoteEstimate'
-
 export const CAMPAIGN_ACTIONS_HOME = '/campanha/acoes' as const
 
 export type CampaignWizardActionId =
@@ -42,21 +39,15 @@ export const campaignActionEntryHref = (id: CampaignWizardActionId): string =>
 
 export const WIZARD_MUNICIPIO_QUERY_KEY = 'municipio' as const
 
+/** Legacy B61 ritual param — canonical URLs omit it (B77). */
 export const WIZARD_SCENARIO_QUERY_KEY = 'cenario' as const
 
-export const wizardActionHref = (
-  actionSlug: string,
-  municipalitySlug?: string,
-  scenario?: WizardVoteEditScenario,
-): string => {
+export const wizardActionHref = (actionSlug: string, municipalitySlug?: string): string => {
   const base = `${CAMPAIGN_ACTIONS_HOME}/${actionSlug}`
   if (!municipalitySlug) {
     return base
   }
   const params = new URLSearchParams({ [WIZARD_MUNICIPIO_QUERY_KEY]: municipalitySlug })
-  if (scenario) {
-    params.set(WIZARD_SCENARIO_QUERY_KEY, scenario)
-  }
   return `${base}?${params.toString()}`
 }
 
@@ -68,16 +59,7 @@ export const parseWizardMunicipioParam = (
   return trimmed ? trimmed : undefined
 }
 
-export const resolveWizardScenarioParam = (
-  value: string | string[] | undefined,
-): { scenario: WizardVoteEditScenario; invalid: boolean } => {
+export const hasWizardScenarioParam = (value: string | string[] | undefined): boolean => {
   const raw = Array.isArray(value) ? value[0] : value
-  const trimmed = raw?.trim()
-  if (!trimmed) {
-    return { scenario: 'central', invalid: false }
-  }
-  if (isWizardVoteEditScenario(trimmed)) {
-    return { scenario: trimmed, invalid: false }
-  }
-  return { scenario: 'central', invalid: true }
+  return raw?.trim() ? true : false
 }

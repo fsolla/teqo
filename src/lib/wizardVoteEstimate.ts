@@ -8,15 +8,6 @@ import {
   type VoteEstimateScenarioViewModel,
 } from '@/lib/voteEstimate'
 
-/** Mesa ritual order: média → pessimista → otimista (≠ storage order pessimistic ≤ central ≤ optimistic). */
-export const WIZARD_VOTE_SCENARIO_EDIT_ORDER = [
-  'central',
-  'pessimistic',
-  'optimistic',
-] as const satisfies readonly VoteEstimateScenario[]
-
-export type WizardVoteEditScenario = VoteEstimateScenario
-
 export type VoteShortcut = 'double' | '+50' | '-50' | '+100' | '-100'
 
 export const VOTE_SHORTCUTS: readonly VoteShortcut[] = [
@@ -34,9 +25,6 @@ export const voteShortcutLabels: Record<VoteShortcut, string> = {
   '+100': '+100',
   '-100': '−100',
 }
-
-export const isWizardVoteEditScenario = (value: string): value is WizardVoteEditScenario =>
-  (WIZARD_VOTE_SCENARIO_EDIT_ORDER as readonly string[]).includes(value)
 
 export const applyVoteShortcut = (value: number | null, shortcut: VoteShortcut): number => {
   const base = value ?? 0
@@ -60,35 +48,6 @@ export const parseWizardVoteDraft = (raw: string): number | null => {
   return Math.min(Math.trunc(parsed), MAX_VOTE_COUNT)
 }
 
-export const draftTextForVoteValue = (value: number | null | undefined): string =>
-  value == null ? '' : String(value)
-
-export const getNextWizardVoteScenario = (
-  current: WizardVoteEditScenario,
-): WizardVoteEditScenario | null => {
-  const index = WIZARD_VOTE_SCENARIO_EDIT_ORDER.indexOf(current)
-  if (index < 0 || index >= WIZARD_VOTE_SCENARIO_EDIT_ORDER.length - 1) return null
-  return WIZARD_VOTE_SCENARIO_EDIT_ORDER[index + 1]!
-}
-
-export const getPreviousWizardVoteScenario = (
-  current: WizardVoteEditScenario,
-): WizardVoteEditScenario | null => {
-  const index = WIZARD_VOTE_SCENARIO_EDIT_ORDER.indexOf(current)
-  if (index <= 0) return null
-  return WIZARD_VOTE_SCENARIO_EDIT_ORDER[index - 1]!
-}
-
-export const wizardVoteStepTitle = (scenario: WizardVoteEditScenario): string => {
-  const label = voteEstimateScenarioLabels[scenario]
-  return `Qual a nova estimativa ${label.toLowerCase()}?`
-}
-
-export const wizardVoteStepCtaLabel = (scenario: WizardVoteEditScenario): string => {
-  const label = voteEstimateScenarioLabels[scenario]
-  return `Ajustar estimativa ${label.toLowerCase()} →`
-}
-
 export const wizardVoteFinalCtaLabel = 'Salvar estimativas →' as const
 
 export type WizardVoteViolation = {
@@ -106,6 +65,36 @@ export const getWizardVoteViolation = (
     violatingScenario,
     message: buildWizardVoteViolationMessage(estimates, violatingScenario),
   }
+}
+
+export const getWizardVoteViolationHighlights = (
+  estimates: VoteEstimateScenarioViewModel,
+): VoteEstimateScenario[] => {
+  const violation = getWizardVoteViolation(estimates)
+  if (!violation) return []
+
+  const { violatingScenario } = violation
+  const { pessimistic, central, optimistic } = estimates
+
+  if (
+    violatingScenario === 'central' &&
+    pessimistic != null &&
+    central != null &&
+    pessimistic > central
+  ) {
+    return ['pessimistic', 'central']
+  }
+
+  if (
+    violatingScenario === 'optimistic' &&
+    central != null &&
+    optimistic != null &&
+    optimistic < central
+  ) {
+    return ['optimistic', 'central']
+  }
+
+  return [violatingScenario]
 }
 
 const buildWizardVoteViolationMessage = (
@@ -134,12 +123,3 @@ const buildWizardVoteViolationMessage = (
 
   return VOTE_ESTIMATE_ORDER_ERROR_MESSAGE
 }
-
-export const mergeWizardVoteEstimate = (
-  base: VoteEstimateScenarioViewModel,
-  scenario: WizardVoteEditScenario,
-  value: number | null,
-): VoteEstimateScenarioViewModel => ({
-  ...base,
-  [scenario]: value,
-})

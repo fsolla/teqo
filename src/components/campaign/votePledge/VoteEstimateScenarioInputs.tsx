@@ -58,6 +58,10 @@ type VoteEstimateScenarioInputsProps = {
   idPrefix: string
   variant?: 'labeled' | 'compact'
   autoFocusScenario?: VoteEstimateScenario
+  activeScenario?: VoteEstimateScenario
+  onFocusScenario?: (scenario: VoteEstimateScenario) => void
+  errorScenarios?: ReadonlySet<VoteEstimateScenario>
+  disabled?: boolean
   onValuesChange?: (values: VoteEstimateScenarioViewModel) => void
 }
 
@@ -66,6 +70,10 @@ const CompactVoteEstimateScenarioInputs = ({
   values,
   idPrefix,
   autoFocusScenario,
+  activeScenario = 'central',
+  onFocusScenario,
+  errorScenarios,
+  disabled = false,
   onValuesChange,
 }: Omit<VoteEstimateScenarioInputsProps, 'variant'> & {
   onValuesChange: (values: VoteEstimateScenarioViewModel) => void
@@ -92,6 +100,7 @@ const CompactVoteEstimateScenarioInputs = ({
     <div className="flex flex-col gap-2.5">
       <VoteEstimateScenarioStrip
         values={values}
+        activeScenario={activeScenario}
         labelMode="none"
         markerMode="active-only"
         stretch
@@ -106,15 +115,22 @@ const CompactVoteEstimateScenarioInputs = ({
             inputMode="numeric"
             autoComplete="off"
             autoFocus={autoFocusScenario === scenario}
+            disabled={disabled}
             value={drafts[scenario]}
             onChange={(event) => handleDraftChange(scenario, event.currentTarget.value)}
-            onFocus={(event) => event.currentTarget.select()}
+            onFocus={(event) => {
+              onFocusScenario?.(scenario)
+              event.currentTarget.select()
+            }}
             aria-label={voteEstimateScenarioLabels[scenario]}
+            aria-invalid={errorScenarios?.has(scenario) ? true : undefined}
             className={cn(
               compactInputClassName,
-              scenario === 'central'
-                ? 'border-primary/50 bg-primary/5 font-medium ring-1 ring-primary/15'
-                : 'bg-muted/30',
+              errorScenarios?.has(scenario)
+                ? 'border-destructive ring-1 ring-destructive/30'
+                : scenario === 'central'
+                  ? 'border-primary/50 bg-primary/5 font-medium ring-1 ring-primary/15'
+                  : 'bg-muted/30',
             )}
           />
         ))}
@@ -129,6 +145,10 @@ export const VoteEstimateScenarioInputs = ({
   idPrefix,
   variant = 'labeled',
   autoFocusScenario,
+  activeScenario,
+  onFocusScenario,
+  errorScenarios,
+  disabled,
   onValuesChange,
 }: VoteEstimateScenarioInputsProps) => {
   if (variant === 'compact') {
@@ -141,6 +161,10 @@ export const VoteEstimateScenarioInputs = ({
         values={values}
         idPrefix={idPrefix}
         autoFocusScenario={autoFocusScenario}
+        activeScenario={activeScenario}
+        onFocusScenario={onFocusScenario}
+        errorScenarios={errorScenarios}
+        disabled={disabled}
         onValuesChange={onValuesChange}
       />
     )

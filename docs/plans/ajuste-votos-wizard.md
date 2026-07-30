@@ -40,9 +40,9 @@ Responsável: —
 
 ~~Jump+warning ao confirmar pessimista `> média` quebrava: `useEffect` limpava `violationEditedScenario` na troca de `?cenario=`.~~ **Corrigido em B76** — preservar estado no jump ao cenário violado; limpar ao editar draft/atalho.
 
-### Emenda UX (2026-07-30 → **B77**)
+### Emenda UX (2026-07-30 → ~~B77~~ ✓)
 
-Ritual de três passos `?cenario=` será **substituído** por uma tela com os três inputs + strip (como popover da lista); validação inline no confirm. Ver [simplificar-ajuste-votos-wizard.md](simplificar-ajuste-votos-wizard.md).
+Ritual de três passos `?cenario=` **substituído** por uma tela com os três inputs + strip (como popover da lista); validação inline no confirm. Ver [simplificar-ajuste-votos-wizard.md](simplificar-ajuste-votos-wizard.md).
 
 ## Design (Impeccable)
 

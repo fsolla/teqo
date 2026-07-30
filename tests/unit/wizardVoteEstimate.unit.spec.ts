@@ -3,13 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { MAX_VOTE_COUNT } from '@/lib/schemas/primitives'
 import {
   applyVoteShortcut,
-  getNextWizardVoteScenario,
-  getPreviousWizardVoteScenario,
   getWizardVoteViolation,
-  mergeWizardVoteEstimate,
+  getWizardVoteViolationHighlights,
   parseWizardVoteDraft,
-  WIZARD_VOTE_SCENARIO_EDIT_ORDER,
-  wizardVoteStepCtaLabel,
 } from '@/lib/wizardVoteEstimate'
 
 describe('applyVoteShortcut', () => {
@@ -32,23 +28,6 @@ describe('applyVoteShortcut', () => {
     expect(applyVoteShortcut(200, '-50')).toBe(150)
     expect(applyVoteShortcut(200, '+100')).toBe(300)
     expect(applyVoteShortcut(40, '-100')).toBe(0)
-  })
-})
-
-describe('wizard scenario navigation', () => {
-  it('walks média → pessimista → otimista', () => {
-    expect(WIZARD_VOTE_SCENARIO_EDIT_ORDER).toEqual(['central', 'pessimistic', 'optimistic'])
-    expect(getNextWizardVoteScenario('central')).toBe('pessimistic')
-    expect(getNextWizardVoteScenario('pessimistic')).toBe('optimistic')
-    expect(getNextWizardVoteScenario('optimistic')).toBeNull()
-    expect(getPreviousWizardVoteScenario('pessimistic')).toBe('central')
-    expect(getPreviousWizardVoteScenario('central')).toBeNull()
-  })
-
-  it('labels CTA per scenario', () => {
-    expect(wizardVoteStepCtaLabel('central')).toBe('Ajustar estimativa média →')
-    expect(wizardVoteStepCtaLabel('pessimistic')).toBe('Ajustar estimativa pessimista →')
-    expect(wizardVoteStepCtaLabel('optimistic')).toBe('Ajustar estimativa otimista →')
   })
 })
 
@@ -79,10 +58,22 @@ describe('getWizardVoteViolation', () => {
   })
 })
 
-describe('mergeWizardVoteEstimate', () => {
-  it('updates one scenario while keeping the rest', () => {
+describe('getWizardVoteViolationHighlights', () => {
+  it('highlights pessimista and média when pessimista is above média', () => {
     expect(
-      mergeWizardVoteEstimate({ pessimistic: 100, central: 200, optimistic: 300 }, 'central', 250),
-    ).toEqual({ pessimistic: 100, central: 250, optimistic: 300 })
+      getWizardVoteViolationHighlights({ pessimistic: 300, central: 200, optimistic: 400 }),
+    ).toEqual(['pessimistic', 'central'])
+  })
+
+  it('highlights otimista and média when otimista is below média', () => {
+    expect(
+      getWizardVoteViolationHighlights({ pessimistic: 100, central: 500, optimistic: 400 }),
+    ).toEqual(['optimistic', 'central'])
+  })
+
+  it('returns empty when estimates are ordered', () => {
+    expect(
+      getWizardVoteViolationHighlights({ pessimistic: 100, central: 200, optimistic: 300 }),
+    ).toEqual([])
   })
 })

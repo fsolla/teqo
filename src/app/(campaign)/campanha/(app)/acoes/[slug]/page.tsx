@@ -5,9 +5,9 @@ import { WizardMunicipalitySearchStep } from '@/components/campaign/shared/Wizar
 import { WizardMunicipalitySelectedStub } from '@/components/campaign/shared/WizardMunicipalitySelectedStub'
 import {
   CAMPAIGN_WIZARD_ACTION_SLUGS,
+  hasWizardScenarioParam,
   isCampaignWizardActionSlug,
   parseWizardMunicipioParam,
-  resolveWizardScenarioParam,
   WIZARD_MUNICIPIO_QUERY_KEY,
   WIZARD_SCENARIO_QUERY_KEY,
   wizardActionHref,
@@ -58,11 +58,8 @@ export default async function CampaignActionWizardPage({
   }
 
   if (slug === CAMPAIGN_WIZARD_ACTION_SLUGS['update-votes']) {
-    const { scenario, invalid } = resolveWizardScenarioParam(
-      resolvedSearchParams[WIZARD_SCENARIO_QUERY_KEY],
-    )
-    if (invalid) {
-      redirect(wizardActionHref(slug, municipalitySlug, 'central'))
+    if (hasWizardScenarioParam(resolvedSearchParams[WIZARD_SCENARIO_QUERY_KEY])) {
+      redirect(wizardActionHref(slug, municipalitySlug))
     }
 
     return (
@@ -72,7 +69,6 @@ export default async function CampaignActionWizardPage({
         municipalityName={municipality.name}
         municipalitySlug={municipality.slug}
         initialExpectedVotes={toVoteEstimateScenarioViewModel(municipality.expectedVotes)}
-        currentScenario={scenario}
       />
     )
   }
