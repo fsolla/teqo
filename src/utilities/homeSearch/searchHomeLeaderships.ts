@@ -20,6 +20,12 @@ import type { CampaignUser, Leadership } from '@/payload-types'
 import { truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import { buildLeadershipListWhere } from '@/utilities/leadership/leadershipListUrl'
 
+const populatedContactPhone = (contact: unknown): string | null => {
+  if (typeof contact !== 'object' || contact === null || !('phone' in contact)) return null
+  const { phone } = contact
+  return typeof phone === 'string' && phone.length > 0 ? phone : null
+}
+
 const municipalityNamesFromLeadership = (doc: Leadership): string[] => {
   const names = new Set<string>()
   for (const municipality of doc.municipalities ?? []) {
@@ -69,6 +75,7 @@ export const searchHomeLeaderships = async (
     tieBreakDesc: number
     id: number
     name: string
+    phone: string | null
     municipalityNames: string[]
   }> = []
 
@@ -84,6 +91,7 @@ export const searchHomeLeaderships = async (
       tieBreakDesc: Number.isFinite(tieBreakDesc) ? tieBreakDesc : 0,
       id: doc.id,
       name,
+      phone: populatedContactPhone(doc.contact),
       municipalityNames: municipalityNamesFromLeadership(doc),
     })
   }
@@ -96,6 +104,7 @@ export const searchHomeLeaderships = async (
         kind: 'leadership',
         id: row.id,
         name: row.name,
+        phone: row.phone,
         municipalitiesSummary: truncatedNamesLabel(row.municipalityNames),
       }),
     )

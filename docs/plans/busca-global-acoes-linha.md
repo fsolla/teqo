@@ -1,7 +1,7 @@
 # Busca global — ações de linha (WhatsApp / compartilhar)
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-30)
+Atualizado em: 2026-07-30 — as-built: `HomeSearchWhatsAppAction` + `HomeSearchShareAction`; `trailingAction` em `HomeSearchHitRow`; phone em hits de liderança/assessor; share nativo com fallback `wa.me` em demandas/atividades; dobradinhas sem telefone = sem ícone.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B55 — busca global)
 Impeccable: B — trailing actions nas linhas de resultado
 Appetite: ~0,5–0,75 dia eng; botões + Web Share / wa.me; sem migration

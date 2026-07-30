@@ -3,6 +3,7 @@
 import { useHomeSearchHitLimit } from '@/components/campaign/dashboard/HomeSearchHitBudgetContext'
 import { HomeSearchHitRow } from '@/components/campaign/dashboard/HomeSearchHitRow'
 import { useHomeSearchResults } from '@/components/campaign/dashboard/HomeSearchResultsContext'
+import { HomeSearchShareAction } from '@/components/campaign/dashboard/HomeSearchShareAction'
 import { homeSearchActivityGroupHasHits } from '@/lib/campaignHomeSearchHits'
 import { sliceHomeSearchHits } from '@/lib/homeSearchHitBudget'
 import { HOME_SEARCH_GROUP_HEADING_CLASS, HOME_SEARCH_GROUP_LIST_CLASS } from '@/lib/homeSearchUi'
@@ -28,6 +29,12 @@ export const HomeSearchActivityGroup = () => {
               href={`/campanha/atividades/${hit.slug}`}
               primary={hit.title}
               secondary={hit.secondary}
+              trailingAction={
+                <HomeSearchShareAction
+                  title={hit.title}
+                  detailPath={`/campanha/atividades/${hit.slug}`}
+                />
+              }
             />
           </li>
         ))}

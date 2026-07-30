@@ -37,7 +37,7 @@ export const searchHomeAdvisors = async (
     limit: 0,
     pagination: false,
     sort: 'name',
-    select: { name: true },
+    select: { name: true, phone: true },
     user,
     overrideAccess: false,
   })
@@ -48,7 +48,12 @@ export const searchHomeAdvisors = async (
       if (!matchesNormalizedAtWordStart(normalizedName, normalizedQuery)) {
         return null
       }
-      return { id: doc.id, name: doc.name, normalizedName }
+      return {
+        id: doc.id,
+        name: doc.name,
+        phone: doc.phone ?? null,
+        normalizedName,
+      }
     })
     .filter((row): row is NonNullable<typeof row> => row !== null)
 
@@ -65,6 +70,7 @@ export const searchHomeAdvisors = async (
       hit: {
         id: row.id,
         name: row.name,
+        phone: row.phone,
         municipalityCount: municipalityIdsByAdvisor.get(row.id)?.length ?? 0,
       },
     }))

@@ -22,6 +22,7 @@ export type HomeSearchTerritoryHit = {
 export type HomeSearchAdvisorHit = {
   id: number
   name: string
+  phone: string | null
   municipalityCount: number
 }
 
@@ -29,6 +30,7 @@ export type HomeSearchLeadershipHit = {
   kind: 'leadership'
   id: number
   name: string
+  phone: string | null
   municipalitiesSummary: string
 }
 
