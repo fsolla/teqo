@@ -1,63 +1,26 @@
 'use client'
 
-import Link from 'next/link'
-import type { ReactNode } from 'react'
-
+import { HomeSearchHitRow } from '@/components/campaign/dashboard/HomeSearchHitRow'
 import { useHomeSearchResults } from '@/components/campaign/dashboard/HomeSearchResultsContext'
-import { MunicipalityPriorityIndicator } from '@/components/campaign/municipality/MunicipalityPriorityIndicator'
 import { MunicipalityVotePositionReadout } from '@/components/campaign/municipality/MunicipalityVotePositionReadout'
 import { homeSearchMunicipalityGroupHasHits } from '@/lib/campaignHomeSearchHits'
 import { formatElectionNumber } from '@/lib/electionFormat'
 import { buildTerritoryPageHref } from '@/lib/territoryAnchor'
-import { cn } from '@/lib/utils'
-
-const PRIORITY_ICON_SLOT_CLASS = 'flex w-4 shrink-0 justify-center'
-
-const HomeSearchHitRow = ({
-  href,
-  primary,
-  secondary,
-  trailing,
-  showPriority,
-}: {
-  href: string
-  primary: string
-  secondary?: string
-  trailing: ReactNode
-  showPriority: boolean
-}) => (
-  <Link
-    href={href}
-    className={cn(
-      'flex min-h-11 items-center gap-3 py-2.5 text-foreground',
-      'rounded-md outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring',
-    )}
-  >
-    <span className={PRIORITY_ICON_SLOT_CLASS} aria-hidden={!showPriority}>
-      {showPriority ? <MunicipalityPriorityIndicator /> : null}
-    </span>
-    <span className="min-w-0 flex-1">
-      <span className="block truncate font-medium">{primary}</span>
-      {secondary ? (
-        <span className="block truncate text-xs text-muted-foreground">{secondary}</span>
-      ) : null}
-    </span>
-    <span className="shrink-0">{trailing}</span>
-  </Link>
-)
 
 export const HomeSearchMunicipalityGroup = () => {
-  const { results } = useHomeSearchResults()
+  const { results, resultKind } = useHomeSearchResults()
 
   if (results.status !== 'success') return null
 
   const { municipalities, territories } = results.data
   if (!homeSearchMunicipalityGroupHasHits(results.data)) return null
 
+  const sectionTitle = resultKind === 'suggest' ? 'Sugestões' : 'Municípios'
+
   return (
-    <section aria-label="Municípios" className="flex flex-col gap-1">
+    <section aria-label={sectionTitle} className="flex flex-col gap-1">
       <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Municípios
+        {sectionTitle}
       </h2>
       <ul className="flex flex-col">
         {municipalities.map((hit) => (
@@ -80,20 +43,22 @@ export const HomeSearchMunicipalityGroup = () => {
             />
           </li>
         ))}
-        {territories.map((hit) => (
-          <li key={`territory-${hit.region}`}>
-            <HomeSearchHitRow
-              href={buildTerritoryPageHref(hit.region)}
-              primary={hit.region}
-              showPriority={false}
-              trailing={
-                <span className="tabular-nums text-sm font-medium">
-                  {formatElectionNumber(hit.votes2022)}
-                </span>
-              }
-            />
-          </li>
-        ))}
+        {resultKind === 'search'
+          ? territories.map((hit) => (
+              <li key={`territory-${hit.region}`}>
+                <HomeSearchHitRow
+                  href={buildTerritoryPageHref(hit.region)}
+                  primary={hit.region}
+                  showPriority={false}
+                  trailing={
+                    <span className="tabular-nums text-sm font-medium">
+                      {formatElectionNumber(hit.votes2022)}
+                    </span>
+                  }
+                />
+              </li>
+            ))
+          : null}
       </ul>
     </section>
   )

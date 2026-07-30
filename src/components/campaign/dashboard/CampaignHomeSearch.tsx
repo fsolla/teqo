@@ -11,13 +11,14 @@ const HOME_SEARCH_LABEL = 'Buscar na campanha'
 
 export const CampaignHomeSearch = ({
   children,
-  resultsBusy = false,
+  resultsBusy,
 }: {
   children?: ReactNode
+  /** When set, must already fold debounce (see `useHomeSearchResultsState.isFetching`). */
   resultsBusy?: boolean
 }) => {
-  const { query, setRaw, clear, isDebouncing } = useHomeSearch()
-  const ariaBusy = isDebouncing || resultsBusy || undefined
+  const { query, setRaw, clear, isDebouncing, setInputFocused } = useHomeSearch()
+  const ariaBusy = (resultsBusy ?? isDebouncing) || undefined
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4">
@@ -27,6 +28,12 @@ export const CampaignHomeSearch = ({
         placeholder="Município, liderança, atividade…"
         value={query.raw}
         onChange={(event) => setRaw(event.target.value)}
+        onFocus={() => setInputFocused(true)}
+        onBlur={() => {
+          if (!query.isActive) {
+            setInputFocused(false)
+          }
+        }}
         onKeyDown={(event) => {
           if (event.key === 'Escape') {
             event.preventDefault()

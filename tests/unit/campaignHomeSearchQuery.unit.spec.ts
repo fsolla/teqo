@@ -97,5 +97,17 @@ describe('useHomeSearchQuery', () => {
     expect(result.current.query.debounced).toBe('')
     expect(result.current.query.isActive).toBe(false)
     expect(result.current.isDebouncing).toBe(false)
+    expect(result.current.inputFocused).toBe(false)
+  })
+
+  it('uiFocused is true when input is focused without an active query', () => {
+    const { result } = renderHook(() => useHomeSearchQuery())
+
+    act(() => {
+      result.current.setInputFocused(true)
+    })
+
+    expect(result.current.uiFocused).toBe(true)
+    expect(result.current.query.isActive).toBe(false)
   })
 })

@@ -35,7 +35,7 @@ export const CampaignHomeStaffChrome = ({
   summarySlot?: ReactNode
 }) => {
   const searchState = useHomeSearchQuery()
-  const focused = searchState.query.isActive
+  const focused = searchState.uiFocused
 
   return (
     <HomeSearchProvider value={searchState}>

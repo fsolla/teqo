@@ -8,6 +8,7 @@ import {
 import { homeSearchBodySchema } from '@/lib/schemas/homeSearch'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
 import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute'
+import { loadHomeSearchSuggestions } from '@/utilities/homeSearch/loadHomeSearchSuggestions'
 import { searchHomeMunicipalities } from '@/utilities/homeSearch/searchHomeMunicipalities'
 
 export const dynamic = 'force-dynamic'
@@ -18,9 +19,15 @@ export const POST = campaignJsonMutationRoute(
     safeMessages: [HOME_SEARCH_STAFF_ONLY_MESSAGE],
     genericMessage: HOME_SEARCH_GENERIC_ERROR_MESSAGE,
   },
-  async ({ query }) => {
+  async (body) => {
     const { payload, actor } = await getCampaignActionContext()
-    const result = await searchHomeMunicipalities(payload, actor, query)
+
+    if (body.mode === 'suggest') {
+      const result = await loadHomeSearchSuggestions(payload, actor)
+      return NextResponse.json<HomeSearchSuccessResponse>(result)
+    }
+
+    const result = await searchHomeMunicipalities(payload, actor, body.query)
     return NextResponse.json<HomeSearchSuccessResponse>(result)
   },
 )

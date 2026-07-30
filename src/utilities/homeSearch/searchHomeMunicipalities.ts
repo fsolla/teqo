@@ -3,10 +3,11 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import { homeSearchQueryIsActive, normalizeHomeSearchRaw } from '@/lib/campaignHomeSearchContract'
-import type {
-  HomeSearchMunicipalityHit,
-  HomeSearchSuccessResponse,
-  HomeSearchTerritoryHit,
+import {
+  toHomeSearchMunicipalityHit,
+  type HomeSearchMunicipalityHit,
+  type HomeSearchSuccessResponse,
+  type HomeSearchTerritoryHit,
 } from '@/lib/campaignHomeSearchHits'
 import { HOME_SEARCH_STAFF_ONLY_MESSAGE } from '@/lib/campaignHomeSearchMessages'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
@@ -14,7 +15,7 @@ import {
   compareHomeSearchNameRelevance,
   normalizeHomeSearchName,
 } from '@/lib/homeSearchMunicipalityMatch'
-import { DEFAULT_VOTE_RANK_YEAR, getMunicipalityVoteRank } from '@/lib/municipalityVoteRank'
+import { DEFAULT_VOTE_RANK_YEAR } from '@/lib/municipalityVoteRank'
 import { matchesNormalizedAtWordStart } from '@/lib/wordStartFilter'
 import type { CampaignUser } from '@/payload-types'
 import { loadMunicipalityScope } from '@/utilities/municipality/campaignMunicipalityScope'
@@ -22,6 +23,7 @@ import { loadTerritoryOverview } from '@/utilities/territory/loadTerritoryOvervi
 
 const emptyResponse = (): HomeSearchSuccessResponse => ({
   status: 'success',
+  resultKind: 'search',
   municipalities: [],
   territories: [],
 })
@@ -50,17 +52,9 @@ export const searchHomeMunicipalities = async (
       if (!matchesNormalizedAtWordStart(normalizedName, normalizedQuery)) {
         return null
       }
-      const votePosition2022 = getMunicipalityVoteRank(doc.slug, DEFAULT_VOTE_RANK_YEAR)
       return {
         normalizedName,
-        hit: {
-          kind: 'municipality' as const,
-          slug: doc.slug,
-          name: doc.name,
-          region: doc.region,
-          priority: doc.priority ?? null,
-          votePosition2022,
-        },
+        hit: toHomeSearchMunicipalityHit(doc),
       }
     })
     .filter((row): row is NonNullable<typeof row> => row !== null)
@@ -113,6 +107,7 @@ export const searchHomeMunicipalities = async (
 
   return {
     status: 'success',
+    resultKind: 'search',
     municipalities: municipalityHits,
     territories: territoryHits,
   }

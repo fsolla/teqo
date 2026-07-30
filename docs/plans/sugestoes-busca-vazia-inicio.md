@@ -1,7 +1,7 @@
 # Sugestões na busca aberta (empty state por papel)
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `POST /campanha/home-search` com body discriminado `mode: 'search' | 'suggest'`; `loadHomeSearchSuggestions` + `rankHomeSearchSuggestMunicipalities` (assessor = carteira fria; CG/candidato = `priority === 'alta'` por déficit central + frescor); `homeSearchUiFocused` + fetch suggest quando `uiFocused && !query.isActive`; seção **Sugestões** reutilizando `HomeSearchHitRow` / grupo B48; `resultKind` na resposta; sem migration. **Overlap B66:** predicado `uiFocused` e chrome oculto no focus — animação de retração continua no plano B66.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B68** — UX-1 busca Início)
 Impeccable: B — região de resultados do Início (`HomeSearchResultsShell` / grupos B48) quando focus + query inativa
 Appetite: ~1–1,25 dia eng; loader de sugestões por role + UI reusando linhas B48; v1 só Municípios (lógica simples); sem migration
