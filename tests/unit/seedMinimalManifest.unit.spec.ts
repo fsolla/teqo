@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-// @ts-expect-error — plain .mjs data module, intentionally untyped
+// Plain .mjs data module — TS infers its shape via allowJs.
 import {
   MINIMAL_CAMPAIGN_GOALS,
   MINIMAL_CAMPAIGN_USERS,
