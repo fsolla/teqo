@@ -21,8 +21,8 @@ Esta skill conduz UMA Issue rastreável do claim ao merge em `stage`. Substitui 
 - [ ] 3. Freshness audit (enxuto) do plano contra o repositório
 - [ ] 4. Executar as fases (schema/server → UI via /impeccable → gates de engenharia)
 - [ ] 5. /simplify no diff da sessão → capture-review-debts
-- [ ] 6. Fechar em stage: pnpm gate:push → branch → commit → gh pr create --base stage (Closes #N, sem --draft)
-       → gh pr merge --auto --merge → gh pr checks --watch --required até o merge → consolidar pontas soltas
+- [ ] 6. Fechar em stage: fast gate → branch → commit → gh pr create --base stage (Closes #N)
+       → gh pr merge --auto --merge → gh pr checks --watch até o merge → consolidar pontas soltas
 ```
 
 ## Passo 0 — Prep (deps)
@@ -81,7 +81,7 @@ Ordem fixa, fases pequenas e verificáveis, respeitando o appetite do plano:
 
 1. **Schema e server** — migrations (`pnpm migrate:create`, seguir `payload-migrations`), collections, utilities, server actions, testes de domínio. Guardrails do repo: Local API com `user` → `overrideAccess: false`; escrita multi-collection → transação com `req: { transactionID }`; pessoa → join com `Contact`; opt-in/PII → `Consent` por chave estável falhando fechado.
 2. **UI via /impeccable** (classes B/C/D — a classe está no plano; se A, declare "Impeccable: N/A" e siga só engenharia): shape conforme a classe → craft → critique → (harden/optimize **só sob gatilho**) → polish. Paleta = tokens `data-theme='campaign'`; reusar `src/components/ui` e shells existentes; shape obrigatório em C **para** para confirmação do brief antes do craft.
-3. **Gates de engenharia** — iteração: `pnpm gate:fast`. Antes do push o hook roda `pnpm gate:push` (= `gate:ci`: estático + build sempre; unit/int/e2e no blast radius do CI via `test-affected`/`e2e-affected`). Scan Aikido dos arquivos editados. Comandos bare, nunca piped. Escape WIP: `git push --no-verify`.
+3. **Gates de engenharia** — fast gate local: `pnpm gate:fast` (lint + typecheck + test:unit) e, antes do push, `pnpm gate:push` (fast + format:check + check:cycles — o pre-push hook roda exatamente isso) (+ `pnpm migrate && pnpm db:seed:minimal && pnpm test:int` se tocou schema). Scan Aikido dos arquivos editados. Comandos bare, nunca piped.
 
 Tracer bullet: se a Issue for grande, a primeira fatia vertical real (schema mínimo → uma action → uma superfície UI) vem cedo.
 
@@ -91,11 +91,11 @@ Rode `/simplify` sobre o diff da sessão. Follow-ups maiores que o cleanup → `
 
 ## Passo 6 — Fechar em stage
 
-1. `pnpm gate:push` verde (ou `pnpm gate:ci` — espelho do ci-pr; o hook pre-push roda na sequência do `git push`).
+1. Fast gate verde (Passo 4.3).
 2. Branch `agent/<id>-<slug>` (worktrees do Cursor são donos da criação; commits lógicos).
-3. `gh pr create --base stage` com `Closes #<N>` no body — **nunca `--draft`** (`.cursor/rules/agent-pr-workflow.mdc`).
-4. `gh pr merge --auto --merge <PR>` imediatamente após criar o PR.
-5. **Acompanhe só os checks obrigatórios** (`gh pr checks <PR> --watch --required`): gate = `checks` + `migration-lock`; Vercel não bloqueia. Falha no ci-pr → corrige na mesma branch.
+3. `gh pr create --base stage` com `Closes #<N>` no body.
+4. `gh pr merge --auto --merge <PR>`.
+5. **Acompanhe os checks até o merge** (`gh pr checks <PR> --watch`): falha no ci-pr → corrige na mesma branch e reempurra (o auto-merge dispara de novo quando verde). **Qualquer falha é tua** — infra do workflow, teste pré-existente ou regressão da feature; "fora do escopo da feature" não é critério de parada (política "Dono do PR, dono do CI" em `docs/AGENT-OPS.md`; exceção de blast radius: migration/access/Consent → para e escala).
 6. O flip `in-progress → done` é **determinístico no CI** (workflow `issue-done-on-stage-merge.yml` lê o `Closes #N` no merge em stage). O agente espera o merge apenas para verificar e **consolidar pontas soltas**: débitos não registrados, doc da sessão pendente (notebook do projeto + `docs/plans/<slug>.md` com Status/Atualizado em), comentário de fechamento na Issue com o que entrou. Se o agente falhar depois do merge, o status já está correto.
 
 ## Resumo final ao usuário
