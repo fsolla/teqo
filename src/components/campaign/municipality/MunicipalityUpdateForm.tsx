@@ -118,50 +118,34 @@ export const MunicipalityUpdateForm = ({
             ) : null}
           </Field>
           {kind === 'sinal' ? (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field>
-                  <FieldLabel htmlFor="municipality-update-signal-type">Tipo do sinal</FieldLabel>
-                  <NativeSelect
-                    id="municipality-update-signal-type"
-                    name="signalType"
-                    defaultValue=""
-                    required
-                  >
-                    <NativeSelectOption value="">Selecione</NativeSelectOption>
-                    {municipalitySignalTypes.map((entry) => (
-                      <NativeSelectOption key={entry} value={entry}>
-                        {municipalitySignalTypeLabels[entry]}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                  <FieldDescription>Escolha o fato político observado:</FieldDescription>
-                  <ul className="flex flex-col gap-1 text-xs text-muted-foreground">
-                    {municipalitySignalTypes.map((entry) => (
-                      <li key={entry}>
-                        <span className="font-medium text-foreground">
-                          {municipalitySignalTypeLabels[entry]}:
-                        </span>{' '}
-                        {municipalitySignalTypeDescriptions[entry]}
-                      </li>
-                    ))}
-                  </ul>
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="municipality-update-signal-source">Fonte</FieldLabel>
-                  <Input
-                    id="municipality-update-signal-source"
-                    name="signalSource"
-                    maxLength={160}
-                    required
-                  />
-                </Field>
-              </div>
-              <label className="flex min-h-11 items-center gap-2 text-sm">
-                <input name="triangulated" type="checkbox" className="size-4" />
-                Triangulado — confirmado por mais de uma fonte independente
-              </label>
-            </>
+            <Field>
+              <FieldLabel htmlFor="municipality-update-signal-type">Tipo do sinal</FieldLabel>
+              <NativeSelect
+                id="municipality-update-signal-type"
+                name="signalType"
+                defaultValue=""
+                required
+                className="sm:w-72"
+              >
+                <NativeSelectOption value="">Selecione</NativeSelectOption>
+                {municipalitySignalTypes.map((entry) => (
+                  <NativeSelectOption key={entry} value={entry}>
+                    {municipalitySignalTypeLabels[entry]}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+              <FieldDescription>Escolha o fato político observado:</FieldDescription>
+              <ul className="flex flex-col gap-1 text-xs text-muted-foreground">
+                {municipalitySignalTypes.map((entry) => (
+                  <li key={entry}>
+                    <span className="font-medium text-foreground">
+                      {municipalitySignalTypeLabels[entry]}:
+                    </span>{' '}
+                    {municipalitySignalTypeDescriptions[entry]}
+                  </li>
+                ))}
+              </ul>
+            </Field>
           ) : null}
         </>
       )}

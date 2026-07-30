@@ -27,18 +27,18 @@ export type MunicipalitySignalType = (typeof municipalitySignalTypes)[number]
 
 export const municipalitySignalTypeLabels: Record<MunicipalitySignalType, string> = {
   invasao: 'Invasão',
-  esfriamento: 'Esfriamento',
-  visita_adversario: 'Visita adversária',
-  proposta_broker: 'Proposta a broker',
+  esfriamento: 'Rede esfriou',
+  visita_adversario: 'Adversário apareceu',
+  proposta_broker: 'Alguém pediu algo',
   outro: 'Outro',
 }
 
 export const municipalitySignalTypeDescriptions: Record<MunicipalitySignalType, string> = {
-  invasao: 'Adversário ocupando ou ganhando espaço antes dominado pela campanha.',
-  esfriamento: 'Queda de mobilização, compromisso ou resposta dos aliados locais.',
-  visita_adversario: 'Agenda ou presença de adversário com possível impacto no município.',
-  proposta_broker: 'Pedido, oferta ou negociação feita por um intermediário político.',
-  outro: 'Fato político relevante que não se encaixa nos tipos anteriores.',
+  invasao: 'Adversário ocupando nosso espaço.',
+  esfriamento: 'Aliados pararam de responder ou caíram.',
+  visita_adversario: 'Visita ou agenda dele no município.',
+  proposta_broker: 'Liderança ou intermediário pediu ou ofereceu algo.',
+  outro: 'Fato importante que não encaixa acima.',
 }
 
 export const parseMunicipalitySignalType = (
@@ -63,8 +63,6 @@ export const municipalityUpdateCreateSchema = z
     activeVolunteers: optionalCount,
     newSupports: optionalCount,
     signalType: z.enum(municipalitySignalTypes).optional(),
-    signalSource: trimmedOptionalText(160),
-    triangulated: z.boolean().optional(),
   })
   .superRefine((data, context) => {
     if (data.kind === 'semanal') {
@@ -98,13 +96,6 @@ export const municipalityUpdateCreateSchema = z
           code: 'custom',
           message: 'Informe o tipo do sinal.',
           path: ['signalType'],
-        })
-      }
-      if (!data.signalSource) {
-        context.addIssue({
-          code: 'custom',
-          message: 'Informe a fonte do sinal.',
-          path: ['signalSource'],
         })
       }
     }

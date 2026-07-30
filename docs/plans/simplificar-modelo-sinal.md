@@ -1,11 +1,13 @@
 # Simplificar modelo de sinal (tipo + texto; sem fonte/triangulado)
 
-Status: rascunho
+Status: entregue em código 2026-07-29
 Atualizado em: 2026-07-29
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B62 — UX-1 / C12 sinais)
 Impeccable: B — schema + forms existentes (`MunicipalitySignalFields`, B26, admin); UI nova de escolha = **B63**
 Appetite: ~0,75–1 dia eng; migration drop + zod/collection/UI lista/detail; rename de labels; ajuste E11
 Responsável: —
+
+**Revisão 2026-07-29 (as-built):** entregue conforme o plano, com duas decisões da sessão e dois achados: (1) **E11 triage 1 por presença** — o usuário decidiu que sinal de adversário registrado lê como confirmado ("eles não vão adicionar sinais improváveis"), divergindo do default "ramo fonte única" abaixo; `adversarySignal: { present: true } | null`, P1 triage 1, fator único "Sinal de adversário registrado". (2) **scrub "broker" = só o modelo de sinal** — `activity.origin` (`Pedido de broker`) e as strings "broker" do suggestionCatalog (staff-only) ficaram para o gatilho já registrado. Achados da auditoria incorporados: form duplicado em `MunicipalityUpdateForm.tsx`, readouts `municipalityUpdatePageData.ts` + `MunicipalityUpdateFeed.tsx` (detalhe + dossiê), glossário `campaignIntelligenceConcepts.ts`; migration gerada reemitia `ADD VALUE 'adiada'` (drift de snapshot da cadeia `.json` — removido à mão; o snapshot desta migration sara a cadeia). Bônus de gate: e2e `campaignMunicipalities` "advisor scopes…" obsoleto desde B43 (home liderança → `/campanha/contatos`, redirect pós-B43) atualizado; pin de bypass do `municipalityElectoralBaseline` 9→8 (drift pré-existente em main). Gate: 876 unit / 489 int / e2e alvo verde / build; Aikido 0 findings.
 
 ## Dados → decisão → apresentação
 
@@ -33,7 +35,7 @@ E11 ✓ lê `triangulated` em sinais de adversário (`municipalityTriggers.ts` /
   | `outro`             | Outro               | Fato importante que não encaixa acima     |
 
 - Atualizar `MunicipalitySignalFields`, B26 form, detail/dossier readouts, int tests, seeds se houver.
-- E11: remover branch `triangulated` do input de sugestão; copy do catálogo que cita “triangulado” / “fonte única” no eixo de adversário → presença do sinal basta (recalibrar texto mínimo; **não** reabrir E15).
+- E11: remover branch `triangulated` do input de sugestão; copy do catálogo que cita "triangulado" / "fonte única" no eixo de adversário → presença do sinal basta e **lê como confirmada (triage 1 — decisão da sessão 2026-07-29)**; recalibrar texto mínimo; **não** reabrir E15.
 - Sem Consent novo. Sem UI de grid do wizard (isso é **B63**).
 
 ## Decisões travadas

@@ -293,10 +293,9 @@ describe('campaign cell edit overlay', () => {
     )
 
     const dialog = await screen.findByRole('dialog')
-    // Both selects are `required`: an invalid form never fires submit, and the
+    // The select is `required`: an invalid form never fires submit, and the
     // case would pass for the wrong reason.
     fireEvent.change(screen.getByLabelText('Tipo do sinal'), { target: { value: 'invasao' } })
-    fireEvent.change(screen.getByLabelText('Fonte'), { target: { value: 'Liderança local' } })
 
     const submit = dialog.querySelector<HTMLButtonElement>('[data-slot="drawer-footer"] button')
     expect(submit?.textContent).toContain('Registrar sinal')

@@ -796,11 +796,6 @@ export interface MunicipalityUpdate {
   newSupports?: number | null;
   body?: string | null;
   signalType?: ('invasao' | 'esfriamento' | 'visita_adversario' | 'proposta_broker' | 'outro') | null;
-  signalSource?: string | null;
-  /**
-   * Confirmado por mais de uma fonte de campo.
-   */
-  triangulated?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1652,8 +1647,6 @@ export interface MunicipalityUpdateSelect<T extends boolean = true> {
   newSupports?: T;
   body?: T;
   signalType?: T;
-  signalSource?: T;
-  triangulated?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -209,9 +209,6 @@ test.describe('Municípios — jornadas por papel', () => {
       .getByRole('textbox', { name: 'Texto' })
       .fill('Liderança local reportou visita adversária na feira.')
     await signalForm.getByLabel('Tipo do sinal').selectOption('visita_adversario')
-    await signalForm
-      .getByRole('textbox', { name: 'Fonte', exact: true })
-      .fill('Liderança local / WhatsApp')
     await signalForm.getByRole('button', { name: 'Registrar sinal', exact: true }).click()
 
     await expect(page.getByText('Sinal registrado.', { exact: true })).toBeVisible()
@@ -295,15 +292,20 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.getByRole('button', { name: 'Salvar estimativa' }).click()
     await expect(page.getByText('Média: 90')).toBeVisible()
 
-    // Leader home is the contact tool; municipalities redirect away.
+    // Leader home is the blank Início (B43); the contact tool lives at
+    // /campanha/contatos and municipalities redirect there.
     // Each `createCampaignUser` call mints its own password — the advisor's
     // `password` variable above does NOT unlock the leader account.
     await campaign.login(page, leaderPhone, leaderAccount.password)
-    await page.goto(`${campaign.baseURL}/campanha`)
+    await page.goto(`${campaign.baseURL}/campanha/contatos`)
     await expect(page.getByText('Cadastre apoiadores pelo celular.')).toBeVisible()
 
-    await page.goto(`${campaign.baseURL}/campanha/municipios`)
-    await expect(page).toHaveURL(`${campaign.baseURL}/campanha`)
+    // The leader redirect aborts `goto`'s load event (ERR_ABORTED); the
+    // redirect itself is the assertion, so navigate and wait for the target.
+    await Promise.all([
+      page.waitForURL(`${campaign.baseURL}/campanha/contatos`),
+      page.goto(`${campaign.baseURL}/campanha/municipios`).catch(() => {}),
+    ])
 
     const supporterName = fixtures.value('Apoiador Liderança')
     const supporterPhone = fixtures.phone()

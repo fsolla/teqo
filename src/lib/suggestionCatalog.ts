@@ -95,8 +95,8 @@ export type MunicipalityTriggerInput = {
   coverageRatio: number | null
   coverageDeficit: number
 
-  /** Most severe adversary signal within the window, if any (P1 variant). */
-  adversarySignal: { triangulated: boolean } | null
+  /** Adversary signal within the window, if any (P1 variant) — presence reads as confirmed. */
+  adversarySignal: { present: true } | null
   /** Any non-draft activity recently held or upcoming (the "agenda" leg of P1). */
   hasRecentOrUpcomingActivity: boolean
   /** Activities `realizado` within the effort window (K-A's "esforço no ciclo"). */
@@ -330,11 +330,7 @@ const patternP1: SuggestionPattern = {
       factors.push(`${formatLqMultiple(lq2022)} o padrão estadual do candidato`)
     }
     if (threatened) {
-      factors.push(
-        input.adversarySignal?.triangulated
-          ? 'Sinal de adversário registrado e triangulado'
-          : 'Sinal de adversário registrado (fonte única)',
-      )
+      factors.push('Sinal de adversário registrado')
     }
     if (dropped) {
       factors.push(
@@ -343,11 +339,7 @@ const patternP1: SuggestionPattern = {
     }
     if (dormant) factors.push(`${signalAgeFactor(input.lastSignalAgeDays)}, sem agenda no período`)
 
-    const triageLevel: SuggestionTriageLevel = input.adversarySignal
-      ? input.adversarySignal.triangulated
-        ? 1
-        : 2
-      : 3
+    const triageLevel: SuggestionTriageLevel = input.adversarySignal ? 1 : 3
     return { patternId: 'P1', triageLevel, factors }
   },
 }

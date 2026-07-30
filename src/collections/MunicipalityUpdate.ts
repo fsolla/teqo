@@ -18,9 +18,7 @@ import {
 } from '@/lib/schemas/municipalityUpdate'
 import {
   canCreateMunicipalityUpdate,
-  canManageCampaignStaffField,
   canMutateMunicipalityUpdate,
-  canReadCampaignStaffField,
   canReadMunicipalityUpdate,
   canSetMunicipalityUpdateAuthor,
 } from '@/utilities/campaignAccess'
@@ -58,15 +56,12 @@ const validateMunicipalityUpdateKind: CollectionBeforeValidateHook = ({
     if (typeof nextData.signalType !== 'string') {
       throw new APIError('Informe o tipo do sinal.', 400)
     }
-    if (!nonEmptyText(nextData.signalSource)) throw new APIError('Informe a fonte do sinal.', 400)
   } else if (!nonEmptyText(nextData.body)) {
     throw new APIError('Informe o texto da atualização.', 400)
   }
 
   if (kind !== 'sinal') {
     data.signalType = null
-    data.signalSource = null
-    data.triangulated = false
   }
 
   return data
@@ -294,30 +289,6 @@ export const MunicipalityUpdate: CollectionConfig = {
       options: MUNICIPALITY_SIGNAL_TYPE_OPTIONS,
       admin: {
         condition: (_, siblingData) => siblingData.kind === 'sinal',
-      },
-    },
-    {
-      name: 'signalSource',
-      type: 'text',
-      label: 'Fonte do sinal',
-      maxLength: 160,
-      admin: {
-        condition: (_, siblingData) => siblingData.kind === 'sinal',
-      },
-    },
-    {
-      name: 'triangulated',
-      type: 'checkbox',
-      label: 'Triangulado',
-      defaultValue: false,
-      access: {
-        create: canManageCampaignStaffField,
-        read: canReadCampaignStaffField,
-        update: canManageCampaignStaffField,
-      },
-      admin: {
-        condition: (_, siblingData) => siblingData.kind === 'sinal',
-        description: 'Confirmado por mais de uma fonte de campo.',
       },
     },
   ],

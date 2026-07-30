@@ -25,8 +25,6 @@ export type MunicipalityUpdateViewModel = {
   activeVolunteers: number | null
   newSupports: number | null
   signalType: MunicipalitySignalType | null
-  signalSource: string | null
-  triangulated: boolean
 }
 
 export type MunicipalityUpdateFeedState = {
@@ -101,8 +99,6 @@ export const loadMunicipalityUpdatesFeed = async (
         activeVolunteers: doc.activeVolunteers ?? null,
         newSupports: doc.newSupports ?? null,
         signalType: doc.signalType ?? null,
-        signalSource: doc.signalSource ?? null,
-        triangulated: Boolean(doc.triangulated),
       }
     }),
     totalDocs: result.totalDocs,

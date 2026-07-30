@@ -92,11 +92,8 @@ describe('P1 — reduto dormente ou ameaçado', () => {
     expect(evaluate('P1', reduto({ lastSignalAgeDays: null }))?.triageLevel).toBe(3)
   })
 
-  it('escalates to level 2 on a single-source adversary signal and 1 when triangulated', () => {
-    expect(evaluate('P1', reduto({ adversarySignal: { triangulated: false } }))?.triageLevel).toBe(
-      2,
-    )
-    expect(evaluate('P1', reduto({ adversarySignal: { triangulated: true } }))?.triageLevel).toBe(1)
+  it('escalates to level 1 on any adversary signal — presence reads as confirmed', () => {
+    expect(evaluate('P1', reduto({ adversarySignal: { present: true } }))?.triageLevel).toBe(1)
   })
 
   it('fires on a 2018→2022 vote drop even with a fresh signal', () => {
@@ -318,7 +315,7 @@ describe('evaluateMunicipalityTriggers — ordering and silence', () => {
         territorialClass: 'reduto',
         inCoreBlock: true,
         lqByYear: { 2014: 2.5, 2018: 2.6, 2022: 2.4 },
-        adversarySignal: { triangulated: true },
+        adversarySignal: { present: true },
         coverageRatio: 1.2,
       }),
     )

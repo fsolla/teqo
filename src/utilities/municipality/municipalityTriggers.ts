@@ -238,7 +238,7 @@ export const loadMunicipalitySuggestions = async (
       depth: 0,
       limit: 0,
       pagination: false,
-      select: { municipality: true, triangulated: true },
+      select: { municipality: true },
       user,
       overrideAccess: false,
     }),
@@ -283,14 +283,12 @@ export const loadMunicipalitySuggestions = async (
     }),
   ])
 
-  // Most severe adversary signal per município: triangulated wins.
-  const adversarySignalByMunicipality = new Map<number, { triangulated: boolean }>()
+  // Any adversary signal in the window reads as confirmed (B62: sinal = tipo + texto).
+  const adversarySignalByMunicipality = new Map<number, { present: true }>()
   for (const signal of signals.docs) {
     const id = relationshipId(signal.municipality)
     if (id === null) continue
-    const current = adversarySignalByMunicipality.get(id)
-    if (current?.triangulated) continue
-    adversarySignalByMunicipality.set(id, { triangulated: Boolean(signal.triangulated) })
+    adversarySignalByMunicipality.set(id, { present: true })
   }
 
   const agendaByMunicipality = new Map<number, { hasAgenda: boolean; completedCount: number }>()

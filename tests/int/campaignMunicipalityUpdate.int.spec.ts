@@ -105,7 +105,6 @@ describe('campaign municipality update domain', () => {
         kind: 'sinal',
         body: 'Ex-prefeito retirou o apoio na feira.',
         signalType: 'esfriamento',
-        signalSource: 'Assessora local',
       }).success,
     ).toBe(true)
     expect(
@@ -113,7 +112,6 @@ describe('campaign municipality update domain', () => {
         municipality: 1,
         kind: 'sinal',
         body: 'Visita adversária confirmada.',
-        signalSource: 'Equipe local',
       }).success,
     ).toBe(false)
   })

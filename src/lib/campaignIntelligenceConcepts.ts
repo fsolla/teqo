@@ -295,9 +295,9 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
     oneLiner:
       'A ordem da fila de sugestões: risco confirmado primeiro, otimização por último — nunca um score.',
     formula:
-      'Cada padrão do catálogo entra num nível fixo: 1 = estoque em risco confirmado (reduto com sinal de adversário triangulado), 2 = falha de canal, 3 = cobertura zero onde a meta exige, 4 = janela de oportunidade, 5 = otimização e higiene. Empate dentro do nível é decidido por votos em jogo (déficit da meta). Uma decisão registrada suprime o padrão por uma janela — exceto quando ele volta como nível 1.',
+      'Cada padrão do catálogo entra num nível fixo: 1 = estoque em risco confirmado (reduto com sinal de adversário registrado), 2 = falha de canal, 3 = cobertura zero onde a meta exige, 4 = janela de oportunidade, 5 = otimização e higiene. Empate dentro do nível é decidido por votos em jogo (déficit da meta). Uma decisão registrada suprime o padrão por uma janela — exceto quando ele volta como nível 1.',
     example:
-      'Um reduto do bloco central com sinal de invasão triangulado entra no nível 1 e fura qualquer supressão; um município grande sem rede entra no nível 3 quando priorizado; pledges parados são nível 5 até o diagnóstico.',
+      'Um reduto do bloco central com sinal de invasão registrado entra no nível 1 e fura qualquer supressão; um município grande sem rede entra no nível 3 quando priorizado; pledges parados são nível 5 até o diagnóstico.',
     whyItMatters:
       'A precedência vem de custos assimétricos: estoque quase-certo em risco vale mais que oportunidade hipotética, e mediação quebrada não se recompra em semanas. A sugestão é sempre um menu para o julgamento do staff — o produto nunca decide sozinho, e cada decisão (inclusive a leitura descartada) fica registrada para o backtest.',
     whereItAppears:
