@@ -54,9 +54,19 @@ WA → **B55**. Outros grupos / grid → B48–B54.
 
 **Expor e-mail `@planilha.invalid`.** **Mitigação:** não mostrar e-mail inválido; preferir nome + N municípios.
 
+## Já resolvido no simplify (2026-07-29 — não reabrir)
+
+- Prop `leading` morta removida de `HomeSearchHitRow`.
+- Campo de desempate do sort renomeado `votes2022` → `tieBreakDesc` em `homeSearchMunicipalityMatch.ts` (assessores usam `municipalityCount` como tie-break).
+- `select: { name: true }` no scan de assessores (`role` já filtrado no `where`).
+- Rebase com **B68**: `mode: suggest` intacto; assessores só no ramo `mode: search` (`Promise.all` com municípios).
+
 ## Adiado com gatilho
 
-Nenhum neste item.
+- **Orquestrador único do POST** (derivar contagem de municípios do `loadMunicipalityScope` já pago no ramo municípios, em vez de `municipalityIdsByAdvisorIds` extra). **Gatilho:** latência perceptível no Início **ou** antes de **B51+** se o mesmo POST continuar pesado.
+- **Scan completo de `campaignUser` advisor** (`limit: 0`) + filtro word-start em memória. **Gatilho:** roster de assessores crescer além do tamanho confortável da planilha / considerar `pg_trgm` ou prefixo SQL.
+- **`filterAndRankHomeSearchByName` / `HomeSearchResultGroup`.** **Gatilho:** 3º loader ou 3º grupo (B51+).
+- **Carga duplicada município+pledge no POST** (herdada de B48; B50 só adiciona ramo paralelo). Ver [busca-global-resultados-municipios.md](busca-global-resultados-municipios.md) § Adiado.
 
 ## Referências
 
