@@ -4,12 +4,8 @@ import Link from 'next/link'
 import { ActivityStatusBadge } from '@/components/campaign/activity/ActivityStatusBadge'
 import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { activityKindLabels } from '@/lib/schemas/activity'
-import type { ActivityListViewModel } from '@/utilities/activityViewModels'
-
-const formatWhen = (activity: ActivityListViewModel): string =>
-  activity.startAt ? formatBahiaDateTimeLabel(activity.startAt) : 'Data a definir'
+import { formatActivityWhenLabel, type ActivityListViewModel } from '@/utilities/activityViewModels'
 
 export const ActivityCard = ({ activity }: { activity: ActivityListViewModel }) => (
   <Card>
@@ -31,7 +27,7 @@ export const ActivityCard = ({ activity }: { activity: ActivityListViewModel }) 
     <CardContent className="flex flex-col gap-2">
       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <CalendarIcon aria-hidden="true" className="size-4 shrink-0" />
-        <span>{formatWhen(activity)}</span>
+        <span>{formatActivityWhenLabel(activity.startAt)}</span>
       </div>
       {activity.locationLabel ? (
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">

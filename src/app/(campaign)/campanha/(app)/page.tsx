@@ -6,6 +6,7 @@ import { CampaignHomeActions } from '@/components/campaign/dashboard/CampaignHom
 import { CampaignHomeLayout } from '@/components/campaign/dashboard/CampaignHomeLayout'
 import { CampaignHomeStaffChrome } from '@/components/campaign/dashboard/CampaignHomeStaffChrome'
 import { CampaignHomeSummary } from '@/components/campaign/dashboard/CampaignHomeSummary'
+import { HomeSearchActivityGroup } from '@/components/campaign/dashboard/HomeSearchActivityGroup'
 import { HomeSearchAdvisorGroup } from '@/components/campaign/dashboard/HomeSearchAdvisorGroup'
 import { HomeSearchLeadershipGroup } from '@/components/campaign/dashboard/HomeSearchLeadershipGroup'
 import { HomeSearchMunicipalityGroup } from '@/components/campaign/dashboard/HomeSearchMunicipalityGroup'
@@ -51,6 +52,7 @@ export default async function CampaignHomePage() {
               <HomeSearchMunicipalityGroup />
               <HomeSearchLeadershipGroup />
               <HomeSearchAdvisorGroup />
+              <HomeSearchActivityGroup />
               <HomeSearchStateDeputyGroup />
             </HomeSearchResultsShell>
           }

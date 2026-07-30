@@ -38,7 +38,8 @@ export const searchHomeAdvisors = async (
     pagination: false,
     sort: 'name',
     select: { name: true },
-    overrideAccess: true,
+    user,
+    overrideAccess: false,
   })
 
   const matched = result.docs
