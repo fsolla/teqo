@@ -10,8 +10,6 @@
  * seed only pins deterministic operational fields on a handful of them.
  */
 
-export const MINIMAL_SEED_VERSION = 1
-
 /** Consent keys that MUST exist after the seed (the four fail-closed keys). */
 export const MINIMAL_CONSENT_KEYS = [
   'lideranca-autopreenchimento',

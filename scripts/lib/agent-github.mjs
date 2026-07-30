@@ -21,8 +21,7 @@ import { execFileSync } from 'node:child_process'
 
 import { dieWithLabel } from './cli.mjs'
 
-export const STATE_LABELS = ['ready', 'in-progress', 'blocked', 'done', 'in-prod']
-export const PRIORITIES = ['P0', 'P1', 'P2', 'P3']
+const PRIORITIES = ['P0', 'P1', 'P2', 'P3']
 export const priorityRank = (priority) => PRIORITIES.indexOf(priority)
 
 export const dieAgent = (script) => dieWithLabel(`agent:${script}`)
