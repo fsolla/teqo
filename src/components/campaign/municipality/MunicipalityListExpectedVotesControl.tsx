@@ -2,6 +2,7 @@
 
 import {
   MUNICIPALITY_EXPECTED_VOTES_ENDPOINT,
+  MUNICIPALITY_EXPECTED_VOTES_SAVE_ERROR_MESSAGE,
   type MunicipalityListExpectedVotesResponse,
 } from '@/app/(campaign)/campanha/(app)/municipios/expected-votes/types'
 import { useMunicipalityEstimateScenarioOptional } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
@@ -21,7 +22,6 @@ import {
 import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
 const AUTOSAVE_MS = 600
-const SAVE_ERROR_MESSAGE = 'Não foi possível salvar os votos estimados. Tente novamente.'
 
 /**
  * `municipalityName` is the Drawer's subject line and part of the trigger's
@@ -57,7 +57,7 @@ export const MunicipalityListExpectedVotesControl = ({
       endpoint: MUNICIPALITY_EXPECTED_VOTES_ENDPOINT,
       buildBody: (values) => ({ municipalityId: municipalityID, expectedVotes: values }),
       readSaved: (payload) => payload.savedExpectedVotes,
-      errorMessage: SAVE_ERROR_MESSAGE,
+      errorMessage: MUNICIPALITY_EXPECTED_VOTES_SAVE_ERROR_MESSAGE,
       pendingMessage: 'Salvando votos estimados.',
     })
 

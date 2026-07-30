@@ -5,6 +5,7 @@ import { useState, useTransition } from 'react'
 
 import {
   MUNICIPALITY_EXPECTED_VOTES_ENDPOINT,
+  MUNICIPALITY_EXPECTED_VOTES_SAVE_ERROR_MESSAGE,
   type MunicipalityListExpectedVotesResponse,
 } from '@/app/(campaign)/campanha/(app)/municipios/expected-votes/types'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
@@ -16,28 +17,26 @@ import { wizardActionHref } from '@/lib/campaignActionRoutes'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
-  WIZARD_VOTES_NEXT_FLOW_PLACEHOLDER,
-  WIZARD_VOTES_SAVE_ERROR_MESSAGE,
+  WIZARD_VOTES_FINAL_CTA_LABEL,
   WIZARD_VOTES_SAVED_MESSAGE,
   wizardFlowTitleForSlug,
+  wizardNextStepPlaceholder,
   wizardNextStepTitle,
 } from '@/lib/campaignWizardCopy'
 import { type VoteEstimateScenario, type VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import {
   applyVoteShortcut,
   getWizardVoteViolation,
-  getWizardVoteViolationHighlights,
   VOTE_SHORTCUTS,
   voteShortcutLabels,
-  wizardVoteFinalCtaLabel,
   type VoteShortcut,
+  type WizardVoteViolation,
 } from '@/lib/wizardVoteEstimate'
 
 type WizardExpectedVotesStepProps = {
   actionSlug: string
   municipalityId: number
   municipalityName: string
-  municipalitySlug: string
   initialExpectedVotes: VoteEstimateScenarioViewModel
 }
 
@@ -45,22 +44,17 @@ export const WizardExpectedVotesStep = ({
   actionSlug,
   municipalityId,
   municipalityName,
-  municipalitySlug: _municipalitySlug,
   initialExpectedVotes,
 }: WizardExpectedVotesStepProps) => {
   const [isPending, startTransition] = useTransition()
   const [estimates, setEstimates] = useState(initialExpectedVotes)
   const [focusedScenario, setFocusedScenario] = useState<VoteEstimateScenario>('central')
-  const [violationMessage, setViolationMessage] = useState<string | null>(null)
-  const [highlightScenarios, setHighlightScenarios] = useState<ReadonlySet<VoteEstimateScenario>>(
-    new Set(),
-  )
+  const [violation, setViolation] = useState<WizardVoteViolation | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [phase, setPhase] = useState<'editing' | 'saved'>('editing')
 
   const clearViolationState = () => {
-    setViolationMessage(null)
-    setHighlightScenarios(new Set())
+    if (violation) setViolation(null)
   }
 
   const handleValuesChange = (next: VoteEstimateScenarioViewModel) => {
@@ -77,10 +71,9 @@ export const WizardExpectedVotesStep = ({
   const handleConfirm = () => {
     if (isPending) return
 
-    const violation = getWizardVoteViolation(estimates)
-    if (violation) {
-      setViolationMessage(violation.message)
-      setHighlightScenarios(new Set(getWizardVoteViolationHighlights(estimates)))
+    const nextViolation = getWizardVoteViolation(estimates)
+    if (nextViolation) {
+      setViolation(nextViolation)
       setSaveError(null)
       return
     }
@@ -97,7 +90,11 @@ export const WizardExpectedVotesStep = ({
       )
 
       if (!ok || payload.status !== 'success') {
-        setSaveError(payload.status === 'error' ? payload.message : WIZARD_VOTES_SAVE_ERROR_MESSAGE)
+        setSaveError(
+          payload.status === 'error'
+            ? payload.message
+            : MUNICIPALITY_EXPECTED_VOTES_SAVE_ERROR_MESSAGE,
+        )
         return
       }
 
@@ -118,7 +115,7 @@ export const WizardExpectedVotesStep = ({
       >
         <div className="flex flex-col gap-4" role="status" aria-live="polite">
           <p className="text-sm text-muted-foreground">{WIZARD_VOTES_SAVED_MESSAGE}</p>
-          <p className="text-sm text-muted-foreground">{WIZARD_VOTES_NEXT_FLOW_PLACEHOLDER}</p>
+          <p className="text-sm text-muted-foreground">{wizardNextStepPlaceholder(actionSlug)}</p>
           <Button asChild className="min-h-11 w-full sm:w-auto">
             <Link href={CAMPAIGN_HOME}>Voltar ao Início</Link>
           </Button>
@@ -149,7 +146,7 @@ export const WizardExpectedVotesStep = ({
           autoFocusScenario="central"
           activeScenario={focusedScenario}
           onFocusScenario={setFocusedScenario}
-          errorScenarios={highlightScenarios}
+          errorScenarios={violation ? new Set(violation.highlightScenarios) : undefined}
           disabled={isPending}
           onValuesChange={handleValuesChange}
         />
@@ -169,9 +166,9 @@ export const WizardExpectedVotesStep = ({
           ))}
         </div>
 
-        {violationMessage ? (
+        {violation ? (
           <Alert variant="pending" className="border-estimate-pending">
-            <AlertDescription className="text-sm">{violationMessage}</AlertDescription>
+            <AlertDescription className="text-sm">{violation.message}</AlertDescription>
           </Alert>
         ) : null}
 
@@ -197,7 +194,7 @@ export const WizardExpectedVotesStep = ({
               Salvando…
             </>
           ) : (
-            wizardVoteFinalCtaLabel
+            WIZARD_VOTES_FINAL_CTA_LABEL
           )}
         </Button>
       </div>

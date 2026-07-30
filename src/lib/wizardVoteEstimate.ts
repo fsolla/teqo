@@ -38,21 +38,10 @@ export const applyVoteShortcut = (value: number | null, shortcut: VoteShortcut):
   return Math.max(0, Math.min(base + delta, MAX_VOTE_COUNT))
 }
 
-export const parseWizardVoteDraft = (raw: string): number | null => {
-  const trimmed = raw.trim()
-  if (!trimmed) return null
-  const digitsOnly = trimmed.replace(/\D/g, '')
-  if (!digitsOnly) return null
-  const parsed = Number(digitsOnly)
-  if (!Number.isFinite(parsed)) return null
-  return Math.min(Math.trunc(parsed), MAX_VOTE_COUNT)
-}
-
-export const wizardVoteFinalCtaLabel = 'Salvar estimativas →' as const
-
 export type WizardVoteViolation = {
   violatingScenario: VoteEstimateScenario
   message: string
+  highlightScenarios: VoteEstimateScenario[]
 }
 
 export const getWizardVoteViolation = (
@@ -64,16 +53,14 @@ export const getWizardVoteViolation = (
   return {
     violatingScenario,
     message: buildWizardVoteViolationMessage(estimates, violatingScenario),
+    highlightScenarios: resolveWizardVoteHighlights(estimates, violatingScenario),
   }
 }
 
-export const getWizardVoteViolationHighlights = (
+const resolveWizardVoteHighlights = (
   estimates: VoteEstimateScenarioViewModel,
+  violatingScenario: VoteEstimateScenario,
 ): VoteEstimateScenario[] => {
-  const violation = getWizardVoteViolation(estimates)
-  if (!violation) return []
-
-  const { violatingScenario } = violation
   const { pessimistic, central, optimistic } = estimates
 
   if (

@@ -59,7 +59,5 @@ export const parseWizardMunicipioParam = (
   return trimmed ? trimmed : undefined
 }
 
-export const hasWizardScenarioParam = (value: string | string[] | undefined): boolean => {
-  const raw = Array.isArray(value) ? value[0] : value
-  return raw?.trim() ? true : false
-}
+export const hasWizardScenarioParam = (value: string | string[] | undefined): boolean =>
+  parseWizardMunicipioParam(value) !== undefined
