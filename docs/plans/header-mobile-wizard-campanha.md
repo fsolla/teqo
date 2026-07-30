@@ -32,15 +32,15 @@ Dados: N/A — chrome; conteúdo numérico nas etapas B60–B64 / B70.
 - sticky **branco** no topo do conteúdo: Voltar (`md:hidden`) | caption município | `trailingAction`;
 - `h1` = pergunta do passo no `<main>`.
 
-O layout `(app)` **sempre** renderiza acima disso o header vermelho mobile (`SidebarTrigger` + “Jorge Solla” / “Campanha · Bahia”) em [`layout.tsx`](../../src/app/(campaign)/campanha/(app)/layout.tsx). Em `/campanha/acoes/<slug>` o usuário vê **dois** chrome empilhados — o vermelho é irrelevante ao ritual e come viewport.
+O layout `(app)` **sempre** renderiza acima disso o header vermelho mobile (`SidebarTrigger` + “Jorge Solla” / “Campanha · Bahia”) em [`layout.tsx`](<../../src/app/(campaign)/campanha/(app)/layout.tsx>). Em `/campanha/acoes/<slug>` o usuário vê **dois** chrome empilhados — o vermelho é irrelevante ao ritual e come viewport.
 
 Pedido de produto (2026-07-30):
 
-| Estado | Esquerda | Centro (título / subtítulo) | Direita |
-| ------ | -------- | --------------------------- | ------- |
-| 1ª etapa do fluxo | — | **fluxo** (ex. “Ajustar votos”); subtítulo município **só depois** de escolhido | **X** (sair do wizard → Início / origem) |
-| 2ª+ etapa | **Voltar** | fluxo + município (se houver) | **X** |
-| Fluxo **encadeado** (ex. sinal depois de votos no A1) | Voltar (se não for 1ª do subfluxo) | título do **subfluxo** atual | **“Pular &lt;fluxo&gt;”** no lugar do X |
+| Estado                                                | Esquerda                           | Centro (título / subtítulo)                                                     | Direita                                  |
+| ----------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------- |
+| 1ª etapa do fluxo                                     | —                                  | **fluxo** (ex. “Ajustar votos”); subtítulo município **só depois** de escolhido | **X** (sair do wizard → Início / origem) |
+| 2ª+ etapa                                             | **Voltar**                         | fluxo + município (se houver)                                                   | **X**                                    |
+| Fluxo **encadeado** (ex. sinal depois de votos no A1) | Voltar (se não for 1ª do subfluxo) | título do **subfluxo** atual                                                    | **“Pular &lt;fluxo&gt;”** no lugar do X  |
 
 A pergunta do passo (“Em qual município?”, grid de tipos…) permanece no **conteúdo** (`h1`), não no header.
 
