@@ -32,7 +32,7 @@ Res. TSE 23.607/2019 + **23.752/2026**; Conta+JE substitui SPCE (cruzamento em t
 ## Threads abertas
 
 1. **Entrevista real com a gestora financeira — 2026-07-29 (amanhã).** Roteiro pronto em `docs/research/roteiro-entrevista-gestora-financeira-real.md`. Preparação obrigatória do entrevistador ANTES da sessão: ler a prestação de contas 2022 do candidato no DivulgaCandContas (levar impressa), reler §§2–3 e 9–10 do relatório, levar a linha do tempo financeira 2026, checar se o critério do PT (PJe 0601252-72.2026.6.00.0000) já está público.
-2. **Pós-entrevista:** preencher Interview Evidence + Snapshot em `docs/CUSTOMER.md`, veredito por aposta no §9 do relatório, e decidir abrir/adiar/matar a trilha. Se abrir, registrar itens via skill `roadmap-items` a partir do OST draft (OF1–OF8) e passar a spec do "registro seguro" pela revisão do advogado da campanha; os P0 podem entrar independentemente da trilha.
+2. **Pós-entrevista:** preencher Interview Evidence + Snapshot em `docs/CUSTOMER.md`, veredito por aposta no §9 do relatório, e decidir abrir/adiar/matar a trilha. Se abrir, registrar itens via skill `plan-issue` a partir do OST draft (OF1–OF8) e passar a spec do "registro seguro" pela revisão do advogado da campanha; os P0 podem entrar independentemente da trilha.
 3. Itens do compêndio marcados **[VERIFICAR]** (ex.: data exata da distribuição das cotas de gênero/raça em 2026) — confirmar com contador/advogado reais.
 
 ## Links

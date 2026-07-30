@@ -91,7 +91,7 @@ Siga o protocolo de commit do usuário (status/diff/log → mensagem → `git ad
 - Mensagem: 1–2 frases no estilo do `git log` da branch; foque no porquê (evitar “wip:” genérico salvo se o log local já usa isso).
 - Se o pre-commit hook **falhar**: corrija e faça um **novo** commit (não `--amend`, salvo as regras do usuário). Se ficar claro que o dirty não era commitável, e o commit desta invocação ainda é o tip local não-pushed que **você** criou agora: `git reset --soft HEAD~1`, então mude para **stash** e siga.
 - Depois do commit limpo → Passo 2 → rebase → conflitos do rebase → Passo 5.
-- Esse commit fica na branch (entra no `ship-to-main` depois). Não faça push aqui.
+- Esse commit fica na branch (o push acontece no fechamento da sessão — Passo 6 de `work-issue`). Não faça push aqui.
 
 ### Caminho B — stash + rebase + stash pop
 
@@ -132,7 +132,7 @@ git rebase origin/main
 
 **Não** use `git pull --rebase` no main checkout para “atualizar a feature” — o rebase é da **feature atual** sobre `origin/main`.
 
-**Não** force-push aqui. Se a branch já tinha sido pushed e o rebase reescreveu commits, o push (com `--force-with-lease` se necessário) fica para `ship-to-main` ou pedido explícito do usuário.
+**Não** force-push aqui. Se a branch já tinha sido pushed e o rebase reescreveu commits, o push (com `--force-with-lease` se necessário) fica para o fechamento em `work-issue` ou pedido explícito do usuário.
 
 ## Passo 4 — Resolver conflitos
 
@@ -183,14 +183,14 @@ Opcional e leve (se o rebase tocou schema/types): `pnpm exec tsc --noEmit` nos a
 3. Quantos commits rebased / se no-op
 4. Conflitos resolvidos — rebase e/ou stash pop (paths + uma linha de racional cada) **ou** “nenhum”
 5. Se abortou: por quê + o que precisa de decisão
-6. Próximo passo natural: `capture-review-debts` (se ainda não rodou), `ship-to-main`, ou o atalho `close-delivery` (rebase+debts+ship)
+6. Próximo passo natural: `capture-review-debts` (se ainda não rodou) e o fechamento da sessão no Passo 6 de `work-issue` (PR `--base stage` + CI até o merge)
 
 ## Anti-padrões
 
 | Nunca                                           | Em vez disso                                                                  |
 | ----------------------------------------------- | ----------------------------------------------------------------------------- |
 | Perguntar commit vs stash com árvore suja       | Decida pela tabela do Passo 1b e execute                                      |
-| `git push --force` sem pedido                   | Deixe force-with-lease para `ship-to-main` / pedido explícito                 |
+| `git push --force` sem pedido                   | Deixe force-with-lease para o fechamento `work-issue` / pedido explícito        |
 | Commitar `.env` / secrets para “limpar” a árvore | Stash (regra 1); nunca stageie secret                                        |
 | Stash sem `-u` deixando untracked no caminho    | `git stash push -u -m "rebase-on-main:<branch>"`                              |
 | Resolver conflito sem ler os dois lados         | Abra o arquivo + `git show :1/:2/:3:` se precisar                             |
@@ -203,7 +203,6 @@ Opcional e leve (se o rebase tocou schema/types): `pnpm exec tsc --noEmit` nos a
 ## Posição no fluxo
 
 ```
-suggest-next → implement-roadmap-item → /simplify+/impeccable
-  → rebase-on-main → capture-review-debts → ship-to-main
-  # ou atalho: close-delivery
+plan-issue → work-issue (claim → execução → /simplify+/impeccable
+  → rebase-on-main → capture-review-debts → PR --base stage → merge)
 ```

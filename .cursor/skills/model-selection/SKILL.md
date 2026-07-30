@@ -22,7 +22,7 @@ Dois eixos independentes, decididos nesta ordem: **(1) classe da tarefa → mode
 | Migrations, access control / RBAC, Consent, segurança (blast radius alto, história congelada)         | Kimi K3             | Gemini 3.1 Pro   | **High** |
 | Fixes pequenos e localizados (um arquivo, sintoma conhecido, repair de teste)                         | Kimi K2.7           | Haiku 4.5        | Medium   |
 | Ciclos de discovery / research (compêndios, personas, relatórios longos em pt-BR — write-heavy)       | GLM 5.2             | Gemini 3.6 Flash | Medium   |
-| Docs/bookkeeping (planos, TECH-DEBT, débitos no roadmap), Prettier, merges, rebase, chores            | Grok 4.5 (pool)     | Kimi K2.7        | **Low**  |
+| Docs/bookkeeping (planos, TECH-DEBT, débitos no backlog de Issues), Prettier, merges, rebase, chores | Grok 4.5 (pool)     | Kimi K2.7        | **Low**  |
 | Perf/infra (medição de bundle, waterfall, análise de queries)                                         | Gemini 3.1 Pro      | Composer 2.5     | Medium   |
 | Depuração travada ("horas sem progresso", bug intermitente com hipóteses esgotadas)                   | Kimi K3             | GPT-5.6 Luna     | **Max**  |
 
@@ -52,9 +52,9 @@ Dois eixos independentes, decididos nesta ordem: **(1) classe da tarefa → mode
 ## Gates por fluxo (onde a decisão de modelo entra no loop)
 
 - **`/simplify` (comando built-in, não editável):** seus três subagentes de review **herdam o modelo da sessão pai** — não há como despachá-los em outro modelo. Portanto a decisão acontece **antes** de invocar `/simplify`: se a sessão não estiver em Kimi K3 (effort High) ou Gemini 3.1 Pro, avise uma vez e sugira a troca — _"passes de /simplify são onde este repo acha os P0/P1 sutis; considere rodar em K3 High."_ Se o usuário optar por seguir no modelo barato, aceite — é escolha informada, não erro.
-- **`ship-to-main` / `close-delivery`:** têm Passo 0 com gate declaratório — param o fluxo se a sessão estiver em metered premium. São classe docs/chores; nunca justificam K3/Pro/GLM.
-- **`implement-roadmap-item`:** a classe pode mudar **por fase** — fases de schema/migration são High-effort (K3), fases de documentação da sessão são Low (pool model). Sessões longas: vale sugerir troca entre a fase de engenharia e a fase final de docs.
-- **`suggest-next-roadmap-items`:** leitura + ranqueamento — classe docs/análise; pool model (Grok 4.5) ou metered barato bastam. A recomendação de modelo que ele emite por item é para a **worktree de implementação**, não para a sessão de sugestão.
+- **`work-issue`:** a propriedade `model:` da Issue é **verificada, não recalculada** (regra assimétrica: sessão mais fraca → informa e segue; mais forte → informa e pausa). A classe pode mudar **por fase** — fases de schema/migration são High-effort (K3), fases de documentação da sessão são Low (pool model). Sessões longas: vale sugerir troca entre a fase de engenharia e a fase final de docs.
+- **`plan-issue`:** a sugestão de modelo × effort por item (esta tabela) vira a propriedade `model:` da Issue registrada via `agent:register --model`.
+- **`project-status`:** leitura + apresentação — classe docs/análise; pool model (Grok 4.5) ou metered barato bastam. O `model:` que ele exibe por item é para a **worktree de implementação**, não para a sessão de status.
 - **Discovery cycles (`docs/research/`):** write-heavy pt-BR — GLM 5.2 ou Gemini 3.6 Flash, Medium.
 
 ## Quando o effort faz diferença (critério de decisão)

@@ -1,27 +1,25 @@
 ---
 name: capture-review-debts
-description: Use when the user asks to register leftover /simplify or /impeccable findings on the Teqo roadmap, harvest session review debts, triage post-simplify or post-critique follow-ups, or says "registra os débitos", "o que ficou do simplify", "coloca no roadmap o que o critique apontou", "harvest debts".
+description: Use when the user asks to register leftover /simplify or /impeccable findings as trackable GitHub Issues, harvest session review debts, triage post-simplify or post-critique follow-ups, or says "registra os débitos", "o que ficou do simplify", "coloca como issue o que o critique apontou", "harvest debts".
 ---
 
-# Capturar débitos de /simplify e /impeccable no roadmap
+# Capturar débitos de /simplify e /impeccable em Issues
 
-Após um ciclo de entrega, `/simplify` e `/impeccable` deixam achados **maiores que o cleanup da sessão**. Esta skill **triageia** esses achados a partir do contexto da sessão, decide o que vira roadmap (e o que não), **mescla** o que for do mesmo lote, e só então registra via **`roadmap-item`**. Não implementa código.
+Após um ciclo de entrega, `/simplify` e `/impeccable` deixam achados **maiores que o cleanup da sessão**. Esta skill **triageia** esses achados a partir do contexto da sessão, decide o que vira Issue rastreável (e o que não), **mescla** o que for do mesmo lote, e só então registra via **`pnpm agent:register`** (lotes `kind:chore|defect`, com plano curto em `docs/plans/` quando score ≥3) ou **`pnpm agent:file-miss`** (`kind:agent-miss`, défice comportamental do fluxo de agentes). Não implementa código.
 
-**REQUIRED SUB-SKILL:** Use `roadmap-item` para qualquer inclusão/absorção no `docs/roadmap.md` + `docs/plans/`. Nunca edite roadmap/planos ad hoc neste fluxo.
+**Regra inviolável — nunca editar Issue `in-progress`.** Nem para absorver um débito do mesmo pai: registra como **Issue nova** com `depends: [<id-do-pai>]` no frontmatter — assim ela destrava sozinha na fila quando o pai flipar `done` — ou defer com gatilho. Editar a Issue que um agente está executando é esquecimento/conflito garantido.
 
-Precedente canônico: um plano `escala-dry-pos-*` (engenharia pós-simplify) e/ou um plano UX pós-critique (ex.: FD+ vs FD2) — tipos **separados**, fases internas mescladas.
-
-**Qualidade de decisão:** [decision-quality.md](../roadmap-item/decision-quality.md) — caro vs barato, defer+gatilho, depth/YAGNI. Score sozinho não basta: classifique o **tipo de decisão** na triage. Sem tour de fases.
+**Qualidade de decisão:** [decision-quality.md](../plan-issue/decision-quality.md) — caro vs barato, defer+gatilho, depth/YAGNI. Score sozinho não basta: classifique o **tipo de decisão** na triage. Sem tour de fases.
 
 ## Checklist
 
 ```
 - [ ] 1. Colher candidatos da sessão (simplify + impeccable)
-- [ ] 2. Deduplicar contra código, roadmap e planos
+- [ ] 2. Deduplicar contra código, Issues (gh issue list) e planos
 - [ ] 3. Pontuar importância e classificar destino
 - [ ] 4. Mesclar relacionados (mesmo lote / mesma superfície)
 - [ ] 5. Apresentar tabela de triage e obter confirmação
-- [ ] 6. Registrar só o aprovado via roadmap-item (1 invocação por item/plano)
+- [ ] 6. Registrar só o aprovado (agent:register / agent:file-miss; plano curto quando score ≥3)
 ```
 
 ## Passo 1 — Colher candidatos
@@ -52,7 +50,7 @@ Contra o repositório **antes** de pontuar:
 | Check                                                  | Ação se verdadeiro                                              |
 | ------------------------------------------------------ | --------------------------------------------------------------- |
 | Já no diff / código da sessão                          | → balde **já_resolvido** (não reabrir)                          |
-| Já em `docs/plans/*.md` ou roadmap (grep termos/paths) | → **absorver** no plano existente ou **descartar** como coberto |
+| Já em `docs/plans/*.md` ou numa Issue (grep + `gh issue list`) | → **absorver** no plano existente ou **descartar** como coberto |
 | Pré-existente em `main`, fora do escopo da entrega     | → **descartar** deste lote (bug separado só se o usuário pedir) |
 | Intentional em `DESIGN.md` / decisão travada           | → **descartar** (ex.: field-mode mobile documentado)            |
 
@@ -93,21 +91,21 @@ Preferir **defer+gatilho** a **registrar** para DRY prematuro — alinha a YAGNI
 **Separação de tipos (não misturar num único plano):**
 
 - **Engenharia / escala / DRY** → família `escala-dry-pos-<slug>.md`, IDs tipo `A7`, `C11`, `FD+`, `RS+`, `O0+` (fill-in ou próximo ID da trilha).
-- **UX / produto pós-critique** → plano tipo `*-ux-pos-critique.md` ou fases num FD2 existente (`Impeccable: B|C|D` no `roadmap-item`).
+- **UX / produto pós-critique** → plano tipo `*-ux-pos-critique.md` ou fases num FD2 existente (`Impeccable: B|C|D` no registro via `plan-issue`).
 - Nunca fundir N+1 SQL com "glossário de engajado" no mesmo item (precedente FD+ ≠ FD2).
 - Nunca fundir **expensive_lock** com **cheap_polish** no mesmo lote sem fases ordenadas (lock primeiro).
 
-**Impeccable no registro:** ao chamar `roadmap-item`, a classificação A–D dele vale — débitos só-backend são **A**; UX pós-critique são **B** (encaixe) ou **C** se fluxo novo.
+**Impeccable no registro:** a classificação A–D de `plan-issue` vale — débitos só-backend são **A**; UX pós-critique são **B** (encaixe) ou **C** se fluxo novo.
 
 ## Passo 4 — Mesclar
 
 Dentro do **mesmo tipo** (engenharia **ou** UX):
 
-- Mesclar se compartilham **superfície** (mesma rota/loader/shell) **ou** **pai** (mesmo item do roadmap que acabou de ser entregue).
+- Mesclar se compartilham **superfície** (mesma rota/loader/shell) **ou** **pai** (mesma Issue que acabou de ser entregue).
 - Um plano, várias **fases** ordenadas por ROI (expensive_lock / perf/access antes de DRY cosmético; P2 produto antes de P3 motion).
-- Declarar **appetite** do lote (ex. `~1 dia eng fill-in`) para o `roadmap-item` não virar epic sem teto.
+- Declarar **appetite** do lote (ex. `~1 dia eng fill-in`) para a Issue não virar epic sem teto.
 - Não mesclar across pais não relacionados (débito do C3 com débito do reset de senha → dois itens).
-- Se sobrar um único achado score ≥3, ainda assim um plano curto é melhor que linha órfã no roadmap sem plano.
+- Se sobrar um único achado score ≥3, ainda assim um plano curto é melhor que Issue órfã sem plano.
 
 Alvo de merge: **1 plano engenharia + no máximo 1 plano UX** por sessão de entrega, salvo pais distintos.
 
@@ -126,31 +124,31 @@ Mostre ao usuário **antes** de editar docs:
 
 Inclua baldes **já_resolvido**, **descartar** e **defer** com uma linha de racional/gatilho cada (transparência > silêncio).
 
-**Pare e confirme.** Só avance ao Passo 6 com aprovação explícita (ou ajuste pedido). Sem confirmação = não toca `docs/roadmap.md` / `docs/plans/`.
+**Pare e confirme.** Só avance ao Passo 6 com aprovação explícita (ou ajuste pedido). Sem confirmação = não cria Issue nem toca `docs/plans/`.
 
-## Passo 6 — Registrar via `roadmap-item`
+## Passo 6 — Registrar via `agent:register` / `agent:file-miss`
 
 Para cada lote com destino **registrar** ou **absorver**:
 
-1. Invoque **`roadmap-item`** com o escopo do lote (não um item por achado micro). Inclua **appetite** e **rabbit holes** do lote.
-2. Se **absorver**: peça à skill para editar o plano existente (nova fase/seção), não criar ID paralelo — mesmo precedente "Gap vs 2022".
-3. Se **registrar**: slug `escala-dry-pos-<pai>` ou `<surface>-ux-pos-critique`; posicione como fill-in (paralelo) salvo dependência dura de trilha. Appetite curto obrigatório — débito sem teto vira epic.
-4. Se **defer**: não chame `roadmap-item` só por isso; anote o gatilho no plano-pai (Adiado com gatilho / Explicitamente fora) ou na mensagem de triage confirmada.
+1. Lotes de engenharia/UX: `pnpm agent:register -- --id <ID> --title "<título>" --prio <P> --kind chore --plan docs/plans/<slug>.md` — **um lote mesclado, não um item por achado micro**. Inclua appetite e rabbit holes do lote no plano curto.
+2. Défice comportamental do fluxo de agentes (algo que o agente errou e a convenção não pegou): `pnpm agent:file-miss` (`kind:agent-miss`) — alimenta o harvest do `engineering-audit`.
+3. Se **absorver** num plano existente: edite o plano (nova fase/seção) — mesmo precedente "Gap vs 2022". **Se a Issue dona do plano estiver `in-progress`, NÃO a edite** — registra como Issue nova com `--depends <id-do-pai>` (destrava sozinha quando o pai flipar `done`).
+4. Se **defer**: anote o gatilho no plano-pai (Adiado com gatilho / Explicitamente fora) ou na mensagem de triage confirmada — não crie Issue só por isso.
 5. No plano, seções obrigatórias além do template:
    - **Já resolvido no simplify/critique (não reabrir)**
    - **Explicitamente fora** (skips dos revisores + descartes + defers com gatilho deste triage)
-6. Classe Impeccable A–D conforme `roadmap-item` Passo 4; self-score de decisão ≥4/5 antes de gravar.
+6. Self-score de decisão ≥4/5 antes de gravar; classe Impeccable A–D conforme o lote (só-backend = A; UX pós-critique = B/C).
 
-Não implemente as fases aqui. Apontar `implement-roadmap-item` só se o usuário pedir em seguida.
+Não implemente as fases aqui. Execução é via `work-issue` (claim → merge em stage), só se o usuário pedir em seguida.
 
-**Próximo no fluxo de entrega:** após a triage confirmada (ou no-op sem débitos), o passo natural é `ship-to-main` (commit all → push → merge main → apagar worktree). Para fechar rebase + debts + ship numa tacada (com auto-confirm desta triage), use `close-delivery`.
+**Próximo no fluxo de entrega:** após a triage confirmada (ou no-op sem débitos), o fechamento da sessão segue o Passo 6 da skill `work-issue` (fast gate → PR `--base stage` com `Closes #N` → acompanhar CI até o merge).
 
 ## Anti-padrões (baseline)
 
 | Desculpa                                 | Realidade                                                             |
 | ---------------------------------------- | --------------------------------------------------------------------- |
-| "Virou um item por achado"               | Mesclar no lote; roadmap poluído é pior que débito omitido de score 2 |
-| "Edito o roadmap na mão, é só um bullet" | Sempre `roadmap-item` (grafo, janela, plano, cortes)                  |
+| "Virou um item por achado"               | Mesclar no lote; backlog poluído é pior que débito omitido de score 2 |
+| "Registro ad hoc, é só um bullet" | Sempre `agent:register` com frontmatter completo (id/depends/priority/model) |
 | "Rename PascalCase / pureza merece ID"   | Score ≤2 → descartar, a menos que desbloqueie reuso real já pedido    |
 | "Junto DRY e UX num FD+"                 | Quebra o precedente FD+/FD2; tipos separados                          |
 | "DRY com 1 call site vira escala-dry"    | defer_trigger + gatilho; não registrar epic YAGNI                     |

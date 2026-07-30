@@ -5,14 +5,17 @@ description: Runs a Pass-style engineering audit of the Teqo codebase — code s
 
 # Engineering Audit (Pass N)
 
-Read-only audit that sweeps the Teqo codebase for code smells, drift from documented patterns, and consolidation opportunities, then produces a findings ledger and a remediation plan. **No fixes in the audit run** — deliverables are updated docs, presented for sign-off before writing.
+**Audit solitário (não paralelizável):** quando esta skill roda, o desenvolvimento paralelo **pausa** — nenhum outro agente trabalhando no repo. O agente do audit também **executa as remediações P0/P1 na mesma sessão** para trazer o projeto aos trilhos (não só registra); P2/P3 seguem o fluxo normal de ledger.
+
+Read-only audit that sweeps the Teqo codebase for code smells, drift from documented patterns, and consolidation opportunities, then produces a findings ledger and a remediation plan. **No fixes in the audit run** — deliverables are updated docs, presented for sign-off before writing — exceto as remediações P0/P1 declaradas acima.
 
 Method: the engineering skills this repo follows (improve-code-quality, clean-code, refactoring-patterns, software-design-philosophy, pragmatic-programmer, working-with-legacy-code, remove-technical-debt), specialized to Teqo's standards and history. The pass number is the next one after the last in `docs/IMPROVE-CODE-QUALITY-PLAN.md`.
 
 ## Checklist
 
 ```
-- [ ] 0. Load the canon and the history (before judging anything)
+- [ ] 0. Load the canon and the history (before judging anything) — incl. `docs/AGENT-OPS.md` (paradigma vigente)
+- [ ] 0b. Harvest `kind:agent-miss` → candidatos a guardrail (alimenta o Passo 4b)
 - [ ] 1. Hotspot map (churn × size × mechanical gates) — aim the sweep
 - [ ] 2. Smell sweep (Fowler families + Teqo-specific), parallelized per area
 - [ ] 3. Consolidation hunt (equivalence classes; name the duplicated KNOWLEDGE)
@@ -37,12 +40,23 @@ Read, in this order:
 2. `.cursor/rules/codebase-map.mdc` — dependency direction, where things live, the list system, invariants.
 3. `docs/ARCHITECTURE.md` — layers, bounded contexts, decision log.
 4. `AGENTS.md` — operational rules + "Recently resolved" history (Pass 1, Pass 2, every post-Pass-2 delivery's /simplify findings).
-5. `docs/IMPROVE-CODE-QUALITY-PLAN.md` — what the earlier passes already swept. Don't re-register what they fixed; verify fixes held.
-6. `docs/TECH-DEBT.md` — open ledger. New findings de-dup against it; verify each open row still exists, close stale ones.
-7. `docs/TESTING.md` — safety-net map: what is pinned, where the gaps are.
-8. `docs/plans/escala-dry-pos-*.md` — per-delivery debt registrations.
-9. Consolidation precedents (the quality bar for step 3): `runStaffEntityMutation` (`src/utilities/campaignEntityActions.ts` — dedup by POLICY, not generic plumbing), `runCampaignFormAction`/`runCampaignRedirectFormAction` (`src/utilities/campaignFormActionError.ts`), `CampaignTable` columns-as-data (`src/components/campaign/shared/CampaignTable.tsx`), `RelationChipCell` (B37: one engine, two thin domain wrappers), `useCampaignCellAutosave` + `campaignJsonMutationRoute` (B32+: wrapper > helper — a helper is a line someone can forget), `relationMembershipDelta.ts` (algorithm once, cap as data, three one-line wrappers).
-10. **Rejected-with-reason** (never re-propose): set-with-floor generic form (B37); `CampaignCellEditOverlay` Popover branch for comboboxes (dialog can't be an ARIA 1.2 combobox popup); `maxItems` on dobradinhas "for parity" (invents a rule); catalog-out-of-browser vs payload-minimal chips (B34+ — fixes oppose each other; chosen: payload-minimal); `src/domains/` + ports-and-adapters (Pass 2 D1 NO-GO).
+5. `docs/AGENT-OPS.md` — paradigma de agentes paralelos vigente (claim→PR→stage→promote humano, skills plan-issue/work-issue/project-status). O audit avalia o repo **contra** esse fluxo, não contra o fluxo legacy de roadmap.md.
+6. `docs/IMPROVE-CODE-QUALITY-PLAN.md` — what the earlier passes already swept. Don't re-register what they fixed; verify fixes held.
+7. `docs/TECH-DEBT.md` — open ledger. New findings de-dup against it; verify each open row still exists, close stale ones.
+8. `docs/TESTING.md` — safety-net map: what is pinned, where the gaps are.
+9. `docs/plans/escala-dry-pos-*.md` — per-delivery debt registrations.
+10. Consolidation precedents (the quality bar for step 3): `runStaffEntityMutation` (`src/utilities/campaignEntityActions.ts` — dedup by POLICY, not generic plumbing), `runCampaignFormAction`/`runCampaignRedirectFormAction` (`src/utilities/campaignFormActionError.ts`), `CampaignTable` columns-as-data (`src/components/campaign/shared/CampaignTable.tsx`), `RelationChipCell` (B37: one engine, two thin domain wrappers), `useCampaignCellAutosave` + `campaignJsonMutationRoute` (B32+: wrapper > helper — a helper is a line someone can forget), `relationMembershipDelta.ts` (algorithm once, cap as data, three one-line wrappers).
+11. **Rejected-with-reason** (never re-propose): set-with-floor generic form (B37); `CampaignCellEditOverlay` Popover branch for comboboxes (dialog can't be an ARIA 1.2 combobox popup); `maxItems` on dobradinhas "for parity" (invents a rule); catalog-out-of-browser vs payload-minimal chips (B34+ — fixes oppose each other; chosen: payload-minimal); `src/domains/` + ports-and-adapters (Pass 2 D1 NO-GO).
+
+## Step 0b — Harvest `kind:agent-miss` → guardrails
+
+Antes da varredura, colha os défices comportamentais registrados pelo fluxo:
+
+```bash
+gh issue list --label kind:agent-miss --state open
+```
+
+Cada Issue colhida alimenta o **Passo 4b (recurrence prevention)**: toda miss vira candidata a guardrail determinístico (tipo / ESLint / convention spec / CI / pin comportamental). O ledger desses guardrails vive em **`docs/GUARDRAILS.md`** (criar o arquivo na primeira execução): uma linha por guardrail — miss de origem (link da Issue), classe 1–6, mecanismo, status. Quando o guardrail mergeia, **feche as Issues colhidas** (`done`) com comentário apontando o guardrail. Miss que não admite guardrail determinístico vira convenção explícita marcada "judgment-only" — não fingir que doc é guarda.
 
 ## Step 1 — Hotspot map
 
@@ -138,7 +152,7 @@ Rules:
 
 1. `docs/IMPROVE-CODE-QUALITY-PLAN.md` — new Pass section (context, audit headlines with numbers, workstreams, decisions), matching earlier-pass format.
 2. `docs/TECH-DEBT.md` — new rows in the same tables/columns, marked `open — Pass N`; stale rows closed with evidence.
-3. `docs/plans/entrega-engenharia-pN.md` (pt-BR, like the other plans) — workstreams ordered P0→P1→P2; each item: goal, evidence, target shape, migration path (Branch by Abstraction / Parallel Change for wide merges), pins to write first, full gate, rollback. Items too big for one delivery → roadmap per the `roadmap-item` convention. Every workstream item declares its **Guarda determinística** (class 1–6, step 4b), and the plan carries a **guard map** section: new guards shipped / existing guards hardened / judgment-only residue with the convention that stands in.
+3. `docs/plans/entrega-engenharia-pN.md` (pt-BR, like the other plans) — workstreams ordered P0→P1→P2; each item: goal, evidence, target shape, migration path (Branch by Abstraction / Parallel Change for wide merges), pins to write first, full gate, rollback. Items too big for one delivery → Issue rastreável via `plan-issue`. Every workstream item declares its **Guarda determinística** (class 1–6, step 4b), and the plan carries a **guard map** section: new guards shipped / existing guards hardened / judgment-only residue with the convention that stands in.
 4. Present ALL THREE for sign-off before writing. Then write and stop.
 
 ## Execution rules for the eventual implementation (record in the plan)

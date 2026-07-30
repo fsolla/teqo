@@ -161,4 +161,4 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 ## Next Actions
 
 - [ ] P3-A → P3-L as independent deliveries (full gate each; Aikido on edited files)
-- [ ] Leftovers and new debts → ledger via `capture-review-debts`; oversized items → roadmap via `roadmap-item`
+- [ ] Leftovers and new debts → ledger via `capture-review-debts`; oversized items → Issue rastreável via `plan-issue`
