@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { WizardExpectedVotesStep } from '@/components/campaign/shared/WizardExpectedVotesStep'
+import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 
 const replace = vi.fn()
 
@@ -29,6 +30,13 @@ const defaultProps = {
   initialExpectedVotes: { pessimistic: 100, central: 200, optimistic: 300 },
 }
 
+const renderVotesStep = (props: React.ComponentProps<typeof WizardExpectedVotesStep>) =>
+  render(
+    <CampaignWizardChromeProvider>
+      <WizardExpectedVotesStep {...props} />
+    </CampaignWizardChromeProvider>,
+  )
+
 describe('WizardExpectedVotesStep', () => {
   afterEach(() => {
     cleanup()
@@ -36,16 +44,18 @@ describe('WizardExpectedVotesStep', () => {
   })
 
   it('shows violation banner on média immediately after pessimista breaks order', () => {
-    const { rerender } = render(
-      <WizardExpectedVotesStep {...defaultProps} currentScenario="pessimistic" />,
-    )
+    const { rerender } = renderVotesStep({ ...defaultProps, currentScenario: 'pessimistic' })
 
     fireEvent.change(screen.getByLabelText(/Pessimista em Cairu/i), { target: { value: '900' } })
     fireEvent.click(screen.getByRole('button', { name: 'Ajustar estimativa pessimista →' }))
 
     expect(replace).toHaveBeenCalledWith(expect.stringContaining('cenario=central'))
 
-    rerender(<WizardExpectedVotesStep {...defaultProps} currentScenario="central" />)
+    rerender(
+      <CampaignWizardChromeProvider>
+        <WizardExpectedVotesStep {...defaultProps} currentScenario="central" />
+      </CampaignWizardChromeProvider>,
+    )
 
     const step = screen.getByRole('main', { name: /Qual a nova estimativa média/i })
     expect(within(step).getByRole('alert').textContent).toMatch(/Pessimista/i)
@@ -53,13 +63,15 @@ describe('WizardExpectedVotesStep', () => {
   })
 
   it('clears violation banner when média draft is edited', () => {
-    const { rerender } = render(
-      <WizardExpectedVotesStep {...defaultProps} currentScenario="pessimistic" />,
-    )
+    const { rerender } = renderVotesStep({ ...defaultProps, currentScenario: 'pessimistic' })
 
     fireEvent.change(screen.getByLabelText(/Pessimista em Cairu/i), { target: { value: '900' } })
     fireEvent.click(screen.getByRole('button', { name: 'Ajustar estimativa pessimista →' }))
-    rerender(<WizardExpectedVotesStep {...defaultProps} currentScenario="central" />)
+    rerender(
+      <CampaignWizardChromeProvider>
+        <WizardExpectedVotesStep {...defaultProps} currentScenario="central" />
+      </CampaignWizardChromeProvider>,
+    )
 
     const step = screen.getByRole('main', { name: /Qual a nova estimativa média/i })
     expect(within(step).getByRole('alert')).toBeTruthy()

@@ -9,8 +9,10 @@ import {
   type BiometricEnrollmentOffer,
 } from '@/components/campaign/shell/BiometricEnrollmentToast'
 import { CampaignBottomNav } from '@/components/campaign/shell/CampaignBottomNav'
+import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import { CampaignSidebar } from '@/components/campaign/shell/CampaignSidebar'
 import { CampaignSidebarViewportDefault } from '@/components/campaign/shell/CampaignSidebarViewportDefault'
+import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { InstallPwaToast } from '@/components/campaign/shell/InstallPwaToast'
 import {
   SIDEBAR_COOKIE_NAME,
@@ -69,28 +71,22 @@ export default async function CampaignAppLayout({ children }: { children: React.
       <CampaignSidebarViewportDefault hasSidebarCookie={hasSidebarCookie} />
       <CampaignSidebar user={campaignUserShellView(user)} />
       <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
-        <header className="flex min-h-14 shrink-0 items-center gap-3 bg-primary px-4 text-primary-foreground md:hidden print:hidden">
-          <SidebarTrigger className="text-primary-foreground" />
-          <div className="min-w-0 leading-tight">
-            <span className="block truncate text-sm font-semibold">Jorge Solla</span>
-            <span className="block truncate text-xs text-primary-foreground/80">
-              Campanha · Bahia
-            </span>
+        <CampaignWizardChromeProvider>
+          <CampaignMobileTopBar />
+          <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
+            <SidebarTrigger />
+          </header>
+          <div
+            data-slot="campaign-content-scroll"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-24 md:p-6 md:pb-6 print:h-auto print:overflow-visible print:p-0"
+          >
+            <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
           </div>
-        </header>
-        <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
-          <SidebarTrigger />
-        </header>
-        <div
-          data-slot="campaign-content-scroll"
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-24 md:p-6 md:pb-6 print:h-auto print:overflow-visible print:p-0"
-        >
-          <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-        </div>
-        <CampaignBottomNav role={user.role} />
-        <Toaster position="top-center" />
-        <InstallPwaToast />
-        {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
+          <CampaignBottomNav role={user.role} />
+          <Toaster position="top-center" />
+          <InstallPwaToast />
+          {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
+        </CampaignWizardChromeProvider>
       </SidebarInset>
     </SidebarProvider>
   )

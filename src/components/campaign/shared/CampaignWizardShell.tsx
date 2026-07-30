@@ -1,25 +1,36 @@
 'use client'
 
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, type ReactNode } from 'react'
 
-import { Button } from '@/components/ui/button'
+import {
+  toCampaignWizardChromeState,
+  useSetCampaignWizardChrome,
+  type CampaignWizardChromeSkip,
+} from '@/components/campaign/shell/CampaignWizardChromeContext'
+import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import { cn } from '@/lib/utils'
 
 export type CampaignWizardShellProps = {
+  flowTitle: string
   stepTitle: string
+  isEntryStep: boolean
   previousHref: string
+  dismissHref?: string
   municipalityLabel?: string
+  skip?: CampaignWizardChromeSkip
   trailingAction?: ReactNode
   contentAlign?: 'start' | 'end'
   children: ReactNode
 }
 
 export const CampaignWizardShell = ({
+  flowTitle,
   stepTitle,
+  isEntryStep,
   previousHref,
+  dismissHref = CAMPAIGN_HOME,
   municipalityLabel,
+  skip,
   trailingAction,
   contentAlign = 'start',
   children,
@@ -27,40 +38,28 @@ export const CampaignWizardShell = ({
   const titleRef = useRef<HTMLHeadingElement>(null)
   const titleId = useId()
 
+  const chrome = useMemo(
+    () =>
+      toCampaignWizardChromeState({
+        flowTitle,
+        isEntryStep,
+        previousHref,
+        dismissHref,
+        municipalityLabel,
+        skip,
+      }),
+    [dismissHref, flowTitle, isEntryStep, municipalityLabel, previousHref, skip],
+  )
+
+  useSetCampaignWizardChrome(chrome)
+
   useEffect(() => {
     titleRef.current?.focus()
   }, [stepTitle])
 
   return (
     <div className="flex min-h-full w-full flex-col">
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="relative flex min-h-11 items-center justify-center gap-2 px-2 pb-1 pt-[max(0.25rem,env(safe-area-inset-top))]">
-          <div
-            className="absolute left-0 top-1/2 -translate-y-1/2 md:hidden"
-            data-slot="wizard-mobile-back"
-          >
-            <Button variant="ghost" size="sm" className="min-h-11 gap-1 px-2" asChild>
-              <Link href={previousHref}>
-                <ArrowLeft className="size-4 shrink-0" aria-hidden />
-                Voltar
-              </Link>
-            </Button>
-          </div>
-          {municipalityLabel ? (
-            <p
-              className="max-w-[min(100%,14rem)] truncate px-12 text-center text-sm text-muted-foreground sm:max-w-md"
-              aria-label={`Município em atualização: ${municipalityLabel}`}
-            >
-              {municipalityLabel}
-            </p>
-          ) : null}
-          {trailingAction ? (
-            <div className="absolute right-0 top-1/2 flex -translate-y-1/2 items-center">
-              {trailingAction}
-            </div>
-          ) : null}
-        </div>
-      </header>
+      {trailingAction ? <div className="hidden justify-end md:flex">{trailingAction}</div> : null}
 
       <main
         aria-labelledby={titleId}
@@ -69,6 +68,11 @@ export const CampaignWizardShell = ({
           contentAlign === 'end' ? 'justify-end md:justify-start' : 'justify-start',
         )}
       >
+        {municipalityLabel ? (
+          <p className="hidden max-w-prose truncate text-sm text-muted-foreground md:block">
+            {municipalityLabel}
+          </p>
+        ) : null}
         <h1
           ref={titleRef}
           id={titleId}

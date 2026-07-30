@@ -21,6 +21,7 @@ import {
   WIZARD_VOTES_NEXT_FLOW_PLACEHOLDER,
   WIZARD_VOTES_SAVE_ERROR_MESSAGE,
   WIZARD_VOTES_SAVED_MESSAGE,
+  wizardFlowTitleForSlug,
   wizardVoteReturnToScenarioLabel,
 } from '@/lib/campaignWizardCopy'
 import { formatElectionNumber } from '@/lib/electionFormat'
@@ -181,8 +182,11 @@ export const WizardExpectedVotesStep = ({
   if (phase === 'saved') {
     return (
       <CampaignWizardShell
+        flowTitle={wizardFlowTitleForSlug(actionSlug)}
         stepTitle="Votos atualizados"
+        isEntryStep={false}
         previousHref={CAMPAIGN_HOME}
+        dismissHref={CAMPAIGN_HOME}
         municipalityLabel={municipalityName}
       >
         <div className="flex flex-col gap-4" role="status" aria-live="polite">
@@ -198,8 +202,11 @@ export const WizardExpectedVotesStep = ({
 
   return (
     <CampaignWizardShell
+      flowTitle={wizardFlowTitleForSlug(actionSlug)}
       stepTitle={wizardVoteStepTitle(currentScenario)}
+      isEntryStep={false}
       previousHref={previousHref}
+      dismissHref={CAMPAIGN_HOME}
       municipalityLabel={municipalityName}
     >
       <div

@@ -1,6 +1,6 @@
 # Header mobile do wizard (chrome no Mandate Red)
 
-Status: rascunho
+Status: entregue (2026-07-30)
 Atualizado em: 2026-07-30
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — **B75**; chassis UX-1 / emenda a B59)
 Impeccable: C — chrome novo no shell `(app)` durante `/campanha/acoes/*`; brief abaixo
@@ -131,5 +131,13 @@ Componentes:
 - [fluxos-acao-primeiro-inicio.md](fluxos-acao-primeiro-inicio.md)
 - `PRODUCT.md` / `DESIGN.md` — Mandate Red / Field Desk
 - AGENTS.md — naming; sem Consent novo
+
+## As-built (2026-07-30)
+
+- `CampaignWizardChromeProvider` envolve o inset em `(app)/layout.tsx`; `CampaignMobileTopBar` troca modo app (sidebar+marca) ↔ modo wizard quando o shell publica chrome.
+- `CampaignWizardShell` chama `useSetCampaignWizardChrome` (cleanup no unmount); mobile sem `<header>` sticky branco; desktop mantém caption de município no `<main>` (`md:block`).
+- `wizardFlowTitleForSlug` deriva o título do catálogo B45 via `campaignWizardActionIdForSlug` + `wizardFlowTitleForActionId`.
+- Skip encadeado (B63/B64/B70) usa prop `skip` no shell — slot direito do header no mobile; desktop adiado (débito no plano).
+- Testes: unit `campaignMobileTopBar`, `campaignWizardShell`; e2e smoke `campaignWizardChrome.e2e.spec.ts`; prewarm `/campanha/acoes/atualizar-votos` no `setup.e2e`.
 
 Qualidade de decisão: 4/5
