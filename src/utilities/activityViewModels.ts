@@ -1,5 +1,5 @@
-import { isPopulatedRelationship, relationshipId } from '@/lib/relationship'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
+import { isPopulatedRelationship, relationshipId } from '@/lib/relationship'
 import type { ActivityOrigin } from '@/lib/schemas/activity'
 import type { Activity, CampaignUser, Contact, Municipality, Organization } from '@/payload-types'
 import type { ActivityDetailTab } from '@/utilities/activityDetailTabUi'
