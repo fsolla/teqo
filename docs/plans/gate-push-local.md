@@ -28,7 +28,7 @@ Decisão de produto (2026-07-30, brief do lote CI): scripts DRY (`gate:fast`, `g
 
 ## Decisões travadas
 
-- **knip fora do pre-push.** *(Revertido 2026-07-30 — `gate:ci` inclui knip para espelhar ci-pr.)* O grafo do knip é incompleto (não carrega `payload.config.ts`, ledger P3) e é lento para um hook; CI já o roda como erro bloqueante. **Rejeitado na v1:** knip no hook (custo por push + falsos positivos já fichados).
+- **knip fora do pre-push.** _(Revertido 2026-07-30 — `gate:ci` inclui knip para espelhar ci-pr.)_ O grafo do knip é incompleto (não carrega `payload.config.ts`, ledger P3) e é lento para um hook; CI já o roda como erro bloqueante. **Rejeitado na v1:** knip no hook (custo por push + falsos positivos já fichados).
 - **Sem pre-commit hook.** A divisão fica: nada no commit (commits intermediários de WIP são legítimos), tudo no push. **Rejeitado:** lint-staged no commit (adiciona toolchain e atrito sem pegar classe de erro que o push não pegue segundos depois).
 - **Escape hatch = `--no-verify` nativo, documentado; sem variável mágica própria.** **Rejeitado:** `SKIP_GATE=1` (mais uma convenção para manter; `--no-verify` é o padrão git que todo agente/humano já conhece).
 - **Hook chama `pnpm gate:push`, nunca inline de comandos.** Uma fonte de verdade editável em `package.json`. **Rejeitado:** manter a linha de shell no hook (foi o que causou o drift atual).
