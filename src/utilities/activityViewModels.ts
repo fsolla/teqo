@@ -1,4 +1,5 @@
 import { isPopulatedRelationship, relationshipId } from '@/lib/relationship'
+import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import type { ActivityOrigin } from '@/lib/schemas/activity'
 import type { Activity, CampaignUser, Contact, Municipality, Organization } from '@/payload-types'
 import type { ActivityDetailTab } from '@/utilities/activityDetailTabUi'
@@ -15,6 +16,18 @@ export const activityMunicipalitySummary = (
   isPopulatedRelationship<Municipality>(municipality)
     ? { id: municipality.id, name: municipality.name, slug: municipality.slug }
     : null
+
+export const formatActivityWhenLabel = (startAt: string | null | undefined): string =>
+  startAt ? formatBahiaDateTimeLabel(startAt) : 'Data a definir'
+
+export const formatActivityHomeSearchSecondary = (
+  municipalityName: string | null,
+  startAt: string | null | undefined,
+): string => {
+  const whenLabel = formatActivityWhenLabel(startAt)
+  if (!municipalityName) return whenLabel
+  return `${municipalityName} · ${whenLabel}`
+}
 
 /** Short "where" line, e.g. "Itabuna · Feira do Malhado". */
 const formatActivityLocationLabel = ({

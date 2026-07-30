@@ -1,7 +1,7 @@
 # Busca global — resultados Atividades
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `searchHomeActivities` (`isStaffCampaignRole` gate; word-start no `title`; access `activity` com `overrideAccess: false`; rascunhos incluídos; cap 25; desempate `startAt` desc); `HomeSearchActivityHit` + campo `activities` no `POST /campanha/home-search`; `HomeSearchActivityGroup` após Assessores; secundário `"{município} · {quando}"` (`formatBahiaDateTimeLabel` / `"Data a definir"`); empty via `homeSearchHasAnyHits`; int `homeSearchActivities.int.spec.ts`; sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B51 — busca global)
 Impeccable: B — grupo de hits no slot B47
 Appetite: ~0,5–0,75 dia eng; loader + grupo; share = B55
