@@ -1,0 +1,60 @@
+# Stage gate: runs AFTER a merge lands on `stage`, against the stage database
+# (Neon branch cloned from prod, secret STAGE_DATABASE_URL in the `stage`
+# GitHub Environment).
+#
+# HARD RULE: never `pnpm build` here — the build step runs `payload migrate`
+# against whatever DATABASE_URL it sees, and this workflow holds a stage URL.
+# No db:seed:minimal either: stage data is the prod snapshot, not the synthetic
+# minimal set.
+name: CI (stage)
+
+on:
+  push:
+    branches: [stage]
+
+concurrency:
+  group: ci-stage
+  cancel-in-progress: false
+
+jobs:
+  stage-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: stage
+    env:
+      DATABASE_URL: ${{ secrets.STAGE_DATABASE_URL }}
+      PAYLOAD_SECRET: ${{ secrets.STAGE_PAYLOAD_SECRET }}
+      NEXT_PUBLIC_SITE_URL: https://teqo-stage.vercel.app
+      # The seed/migrate guards refuse non-local hosts without this flag. Stage
+      # is the ONE documented remote target, and only this workflow may use it.
+      ALLOW_REMOTE_DB: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply pending migrations to the stage database
+        run: pnpm migrate
+
+      - name: Point the test env at the stage snapshot
+        run: |
+          {
+            echo "DATABASE_URL=${DATABASE_URL}"
+            echo "PAYLOAD_SECRET=${PAYLOAD_SECRET}"
+          } > .env.test
+
+      - name: Integration tests against the stage snapshot
+        run: pnpm test:int
+        env:
+          # Documented escape hatch in tests/helpers/assertTestDatabase.ts —
+          # only this workflow may set it (vitest.setup.ts loads .env.test
+          # with override: true, written by the step above).
+          ALLOW_STAGE_TEST_DB: "true"

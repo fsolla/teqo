@@ -1,11 +1,12 @@
 # Continuous integration on GitHub Actions (GitHub is the only home).
-# Runs the same gate as .husky/pre-push plus tests and dead-code analysis.
+# Post-merge gate on `main` (promote from stage already passed ci-pr on the PR).
+# PRs run in ci-pr.yml (with build + migration-lock); merges to `stage` run in
+# ci-stage.yml (stage Neon snapshot, never a build).
 name: CI
 
 on:
   push:
     branches: [main]
-  pull_request:
 
 concurrency:
   group: ci-${{ github.ref }}
