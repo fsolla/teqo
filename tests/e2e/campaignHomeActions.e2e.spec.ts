@@ -247,3 +247,36 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
     })
   })
 })
+
+test.describe('Wizard — atualizar liderança (B70)', () => {
+  test('create leadership, save, and continue to home', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+    const suffix = Date.now().toString().slice(-8).padStart(8, '0')
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/acoes/atualizar-lideranca?municipio=cairu')
+
+    await expect(page.getByRole('heading', { name: 'Quem coordena por aqui?' })).toBeVisible({
+      timeout: 15000,
+    })
+
+    await page.getByRole('button', { name: 'Adicionar liderança' }).click()
+    await expect(page.getByRole('heading', { name: 'Nova liderança' })).toBeVisible()
+
+    await page.getByLabel('Nome').fill(`Liderança B70 ${suffix}`)
+    await page.getByLabel('Celular').fill(`719${suffix}`)
+    await page.getByRole('button', { name: 'Salvar' }).click()
+
+    await expect(page.getByRole('heading', { name: 'Quem coordena por aqui?' })).toBeVisible({
+      timeout: 15000,
+    })
+    await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Continuar' }).click()
+    await page.waitForURL('/campanha')
+    await expect(page.getByLabel('Buscar na campanha')).toBeVisible()
+  })
+})

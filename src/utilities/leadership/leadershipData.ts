@@ -5,6 +5,7 @@ import type { Payload } from 'payload'
 import { relationshipId } from '@/lib/relationship'
 import type { SupportStatus } from '@/lib/schemas/leadership'
 import { isSupportStatus } from '@/lib/schemas/leadership'
+import type { WizardLeadershipTileViewModel } from '@/lib/wizardLeadershipContract'
 import type { CampaignUser, Leadership } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import {
@@ -51,6 +52,38 @@ const contactSummary = (
     }
   }
   return { id: Number(contact), name: 'Contato', phone: null, email: null }
+}
+
+const findMunicipalityLeadershipDocs = async (
+  payload: Payload,
+  user: CampaignUser,
+  municipalityID: number,
+  sort = 'createdAt',
+): Promise<Leadership[]> => {
+  const result = await payload.find({
+    collection: 'leadership',
+    where: { municipalities: { in: [municipalityID] } },
+    depth: 1,
+    limit: 0,
+    pagination: false,
+    sort,
+    user,
+    overrideAccess: false,
+  })
+  return result.docs as Leadership[]
+}
+
+const toWizardLeadershipTile = (doc: Leadership): WizardLeadershipTileViewModel => {
+  const contact = contactSummary(doc.contact)
+  return {
+    id: doc.id,
+    name: contact.name,
+    phone: contact.phone,
+    email: contact.email,
+    supportStatus: isSupportStatus(doc.supportStatus) ? doc.supportStatus : null,
+    exclusive: doc.exclusive ?? true,
+    notes: doc.notes ?? null,
+  }
 }
 
 const organizationNamesForIds = (payload: Payload, ids: number[]): Promise<Map<number, string>> =>
@@ -112,17 +145,19 @@ export const loadMunicipalityLeaderships = async (
   user: CampaignUser,
   municipalityID: number,
 ): Promise<LeadershipRowViewModel[]> => {
-  const result = await payload.find({
-    collection: 'leadership',
-    where: { municipalities: { in: [municipalityID] } },
-    depth: 1,
-    limit: 0,
-    pagination: false,
-    sort: 'createdAt',
-    user,
-    overrideAccess: false,
-  })
-  return toLeadershipRows(payload, result.docs as Leadership[])
+  const docs = await findMunicipalityLeadershipDocs(payload, user, municipalityID)
+  return toLeadershipRows(payload, docs)
+}
+
+export const loadWizardLeadershipTiles = async (
+  payload: Payload,
+  user: CampaignUser,
+  municipalityID: number,
+): Promise<WizardLeadershipTileViewModel[]> => {
+  const docs = await findMunicipalityLeadershipDocs(payload, user, municipalityID)
+  return docs
+    .map(toWizardLeadershipTile)
+    .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
 }
 
 /**

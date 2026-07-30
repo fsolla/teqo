@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 
+import { WizardLeadershipStep } from '@/components/campaign/leadership/WizardLeadershipStep'
 import { WizardExpectedVotesStep } from '@/components/campaign/shared/WizardExpectedVotesStep'
 import { WizardMunicipalitySearchStep } from '@/components/campaign/shared/WizardMunicipalitySearchStep'
 import { WizardMunicipalitySelectedStub } from '@/components/campaign/shared/WizardMunicipalitySelectedStub'
@@ -7,7 +8,9 @@ import {
   CAMPAIGN_WIZARD_ACTION_SLUGS,
   hasWizardScenarioParam,
   isCampaignWizardActionSlug,
+  parseWizardEntryActionParam,
   parseWizardMunicipioParam,
+  WIZARD_ENTRY_ACTION_QUERY_KEY,
   WIZARD_MUNICIPIO_QUERY_KEY,
   WIZARD_SCENARIO_QUERY_KEY,
   wizardActionHref,
@@ -16,6 +19,7 @@ import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import config from '@/payload.config'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { loadWizardLeadershipTiles } from '@/utilities/leadership/leadershipData'
 import { loadMunicipalityScope } from '@/utilities/municipality/campaignMunicipalityScope'
 import { getPayload } from 'payload'
 
@@ -68,6 +72,24 @@ export default async function CampaignActionWizardPage({
         municipalityId={municipality.id}
         municipalityName={municipality.name}
         initialExpectedVotes={toVoteEstimateScenarioViewModel(municipality.expectedVotes)}
+      />
+    )
+  }
+
+  if (slug === CAMPAIGN_WIZARD_ACTION_SLUGS['update-leadership']) {
+    const entryAction = parseWizardEntryActionParam(
+      resolvedSearchParams[WIZARD_ENTRY_ACTION_QUERY_KEY],
+    )
+    const tiles = await loadWizardLeadershipTiles(payload, user, municipality.id)
+
+    return (
+      <WizardLeadershipStep
+        actionSlug={slug}
+        municipalityId={municipality.id}
+        municipalityName={municipality.name}
+        municipalitySlug={municipality.slug}
+        entryAction={entryAction}
+        initialTiles={tiles}
       />
     )
   }
