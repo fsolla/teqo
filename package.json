@@ -46,6 +46,8 @@
     "devsafe": "rm -rf .next && node scripts/guard-dev-db.mjs && cross-env NODE_OPTIONS=--no-deprecation next dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "gate:fast": "pnpm lint && pnpm typecheck && pnpm test:unit",
+    "gate:push": "pnpm gate:fast && pnpm format:check && pnpm check:cycles",
     "check:cycles": "madge --circular --extensions ts,tsx --ts-config tsconfig.json src",
     "generate:importmap": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server\" payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server\" payload generate:types",

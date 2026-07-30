@@ -1,8 +1,14 @@
 # PR gate: feature → stage (and stage → main promote PRs).
-# Full gate against the MINIMAL synthetic database: service Postgres → migrate →
-# db:seed:minimal → test:int → build. Build runs here (local service DB only) and
-# NEVER in ci-stage.yml — `pnpm build` applies migrations to whatever DATABASE_URL
-# it sees, so it is forbidden anywhere near stage/prod URLs.
+# Parallel jobs with `needs` only where a real dependency exists (Postgres for
+# int/build/e2e). Build runs here (local service DB only) and NEVER in
+# ci-stage.yml — `pnpm build` applies migrations to whatever DATABASE_URL it
+# sees, so it is forbidden anywhere near stage/prod URLs.
+#
+# Test selection (OPS5): unit/int run `vitest --changed origin/$GITHUB_BASE_REF`
+# and e2e runs the manifest-selected specs; a diff touching a high-risk path
+# (schema, lockfile, test harness, seed manifest — see
+# scripts/lib/test-affected-core.mjs) falls back to the FULL suites. Push to
+# stage/main always runs everything (ci-stage.yml / ci.yml).
 name: CI (PR)
 
 on:
@@ -13,10 +19,115 @@ concurrency:
   group: ci-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+env:
+  DATABASE_URL: postgresql://teqo:teqo@localhost:5432/teqo_test
+  PAYLOAD_SECRET: test-only-secret-not-used-in-production
+  NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
 jobs:
-  checks:
+  lint:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+
+  typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+
+  knip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec knip
+
+  cycles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:cycles
+
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Compute affected test scope
+        id: scope
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: |
+          result=$(node scripts/test-affected.mjs)
+          echo "scope: $(echo "$result" | jq -r .reason)"
+          echo "mode=$(echo "$result" | jq -r .mode)" >> "$GITHUB_OUTPUT"
+
+      - name: Unit tests (full suite)
+        if: steps.scope.outputs.mode == 'full'
+        run: pnpm test:unit
+
+      - name: Unit tests (changed since PR base)
+        if: steps.scope.outputs.mode == 'changed'
+        run: pnpm test:unit -- --changed origin/${{ github.base_ref }} --passWithNoTests
+
+      - name: Unit tests skipped
+        if: steps.scope.outputs.mode == 'none'
+        run: echo "No src/ or tests/ changes in this PR — nothing to run."
+
+  int:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
     services:
       postgres:
         # Matches production Neon major (17) and docker-compose.yml.
@@ -32,54 +143,135 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
-    env:
-      # Tests load .env.test themselves (database teqo_test on localhost:5432).
-      # These are only for the migrate/seed/build steps, which read the process env.
-      DATABASE_URL: postgresql://teqo:teqo@localhost:5432/teqo_test
-      PAYLOAD_SECRET: test-only-secret-not-used-in-production
-      NEXT_PUBLIC_SITE_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
+      - run: pnpm install --frozen-lockfile
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint (zero warnings)
-        run: pnpm lint
-
-      - name: Format check (prettier)
-        run: pnpm format:check
-
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Dead code (knip)
-        run: pnpm exec knip
-
-      - name: Circular dependencies (madge)
-        run: pnpm check:cycles
-
-      - name: Unit tests
-        run: pnpm test:unit
+      - name: Compute affected test scope
+        id: scope
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: |
+          result=$(node scripts/test-affected.mjs)
+          echo "scope: $(echo "$result" | jq -r .reason)"
+          echo "mode=$(echo "$result" | jq -r .mode)" >> "$GITHUB_OUTPUT"
 
       - name: Migrate test database
+        if: steps.scope.outputs.mode != 'none'
         run: pnpm migrate
 
       - name: Seed minimal test database
+        if: steps.scope.outputs.mode != 'none'
         run: pnpm db:seed:minimal
 
-      - name: Integration tests
+      - name: Integration tests (full suite)
+        if: steps.scope.outputs.mode == 'full'
         run: pnpm test:int
+
+      - name: Integration tests (changed since PR base)
+        if: steps.scope.outputs.mode == 'changed'
+        run: pnpm test:int -- --changed origin/${{ github.base_ref }} --passWithNoTests
+
+      - name: Integration tests skipped
+        if: steps.scope.outputs.mode == 'none'
+        run: echo "No src/ or tests/ changes in this PR — nothing to run."
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: teqo
+          POSTGRES_PASSWORD: teqo
+          POSTGRES_DB: teqo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U teqo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
 
       - name: Build (against the local service database)
         run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: teqo
+          POSTGRES_PASSWORD: teqo
+          POSTGRES_DB: teqo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U teqo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Compute affected e2e scope
+        id: scope
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: |
+          result=$(node scripts/e2e-affected.mjs)
+          echo "scope: $(echo "$result" | jq -r .reason)"
+          echo "mode=$(echo "$result" | jq -r .mode)" >> "$GITHUB_OUTPUT"
+          echo "specs=$(echo "$result" | jq -r '[.specs[] | "tests/e2e/" + . + ".e2e.spec.ts"] | join(" ")')" >> "$GITHUB_OUTPUT"
+
+      - name: Migrate test database
+        if: steps.scope.outputs.mode != 'none'
+        run: pnpm migrate
+
+      - name: Seed minimal test database
+        if: steps.scope.outputs.mode != 'none'
+        run: pnpm db:seed:minimal
+
+      - name: E2E tests (full suite)
+        if: steps.scope.outputs.mode == 'full'
+        run: pnpm test:e2e
+
+      - name: E2E tests (manifest-selected specs)
+        if: steps.scope.outputs.mode == 'selected'
+        run: pnpm test:e2e -- ${{ steps.scope.outputs.specs }}
+
+      - name: E2E tests skipped
+        if: steps.scope.outputs.mode == 'none'
+        run: echo "No e2e-relevant changes in this PR — nothing to run."
 
   migration-lock:
     # At most ONE open PR may touch schema (migrations or generated types).

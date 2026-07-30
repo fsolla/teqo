@@ -1,7 +1,10 @@
 # Continuous integration on GitHub Actions (GitHub is the only home).
-# Post-merge gate on `main` (promote from stage already passed ci-pr on the PR).
-# PRs run in ci-pr.yml (with build + migration-lock); merges to `stage` run in
-# ci-stage.yml (stage Neon snapshot, never a build).
+# Post-merge gate on `main` — the FULL safety net, always: the promote PR
+# already passed ci-pr (possibly with affected-test selection), so this run
+# re-verifies everything against the minimal synthetic database, including
+# build and full e2e.
+# PRs run in ci-pr.yml; merges to `stage` run in ci-stage.yml (stage Neon
+# snapshot smoke — never a build there).
 name: CI
 
 on:
@@ -12,10 +15,35 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Tests load .env.test themselves (database teqo_test on localhost:5432).
+  # These are only for the migrate/seed/build steps, which read the process env.
+  DATABASE_URL: postgresql://teqo:teqo@localhost:5432/teqo_test
+  PAYLOAD_SECRET: test-only-secret-not-used-in-production
+  NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
 jobs:
-  checks:
+  static:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm exec knip
+      - run: pnpm check:cycles
+      - run: pnpm test:unit
+
+  int:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
     services:
       postgres:
         # Matches production Neon major (17) and docker-compose.yml.
@@ -31,45 +59,78 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
-    env:
-      # Tests load .env.test themselves (database teqo_test on localhost:5432).
-      # These are only for the migrate step, which reads the process env.
-      DATABASE_URL: postgresql://teqo:teqo@localhost:5432/teqo_test
-      PAYLOAD_SECRET: test-only-secret-not-used-in-production
-      NEXT_PUBLIC_SITE_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm migrate
+      - run: pnpm db:seed:minimal
+      - run: pnpm test:int
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: teqo
+          POSTGRES_PASSWORD: teqo
+          POSTGRES_DB: teqo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U teqo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
 
-      - name: Lint (zero warnings)
-        run: pnpm lint
+      - name: Build (against the local service database)
+        run: pnpm build
 
-      - name: Format check (prettier)
-        run: pnpm format:check
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: teqo
+          POSTGRES_PASSWORD: teqo
+          POSTGRES_DB: teqo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U teqo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
 
-      - name: Typecheck
-        run: pnpm typecheck
+      - name: Install Playwright chromium
+        run: pnpm exec playwright install --with-deps chromium
 
-      - name: Dead code (knip)
-        run: pnpm exec knip
+      - run: pnpm migrate
+      - run: pnpm db:seed:minimal
 
-      - name: Circular dependencies (madge)
-        run: pnpm check:cycles
-
-      - name: Unit tests
-        run: pnpm test:unit
-
-      - name: Migrate test database
-        run: pnpm migrate
-
-      - name: Integration tests
-        run: pnpm test:int
+      - name: E2E tests (full suite)
+        run: pnpm test:e2e
