@@ -32,6 +32,13 @@ export type HomeSearchLeadershipHit = {
   municipalitiesSummary: string
 }
 
+export type HomeSearchStateDeputyHit = {
+  slug: string
+  name: string
+  party: string | null
+  municipalityCount: number
+}
+
 type HomeSearchResultKind = 'search' | 'suggest'
 
 export type HomeSearchSuccessResponse = {
@@ -41,6 +48,7 @@ export type HomeSearchSuccessResponse = {
   territories: HomeSearchTerritoryHit[]
   advisors: HomeSearchAdvisorHit[]
   leaderships: HomeSearchLeadershipHit[]
+  stateDeputies: HomeSearchStateDeputyHit[]
 }
 
 export const homeSearchMunicipalityGroupHasHits = (
@@ -50,6 +58,15 @@ export const homeSearchMunicipalityGroupHasHits = (
 export const homeSearchLeadershipGroupHasHits = (
   data: Pick<HomeSearchSuccessResponse, 'leaderships'>,
 ): boolean => data.leaderships.length > 0
+
+export const homeSearchStateDeputyGroupHasHits = (
+  data: Pick<HomeSearchSuccessResponse, 'stateDeputies'>,
+): boolean => data.stateDeputies.length > 0
+
+export const formatHomeSearchMunicipalityCount = (count: number): string => {
+  if (count === 1) return '1 município'
+  return `${count} municípios`
+}
 
 export const toHomeSearchMunicipalityHit = (doc: {
   slug: string
@@ -68,4 +85,5 @@ export const toHomeSearchMunicipalityHit = (doc: {
 export const homeSearchHasAnyHits = (data: HomeSearchSuccessResponse): boolean =>
   homeSearchMunicipalityGroupHasHits(data) ||
   data.advisors.length > 0 ||
-  homeSearchLeadershipGroupHasHits(data)
+  homeSearchLeadershipGroupHasHits(data) ||
+  homeSearchStateDeputyGroupHasHits(data)

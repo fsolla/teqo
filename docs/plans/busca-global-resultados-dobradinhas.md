@@ -1,7 +1,7 @@
 # Busca global — resultados Dobradinhas
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `searchHomeStateDeputies` (staff; word-start em nome ou partido; cap 25; `municipalityIdsByStateDeputyIds` exportado de `stateDeputyData`); `HomeSearchStateDeputyHit` + campo `stateDeputies` no `POST /campanha/home-search`; `HomeSearchStateDeputyGroup` após Assessores; secundário = partido · N municípios; sem WA (B55 — entidade sem telefone); int `homeSearchStateDeputies.int.spec.ts`.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B52 — busca global)
 Impeccable: B — grupo de hits no slot B47
 Appetite: ~0,5 dia eng; loader + grupo; WA = B55

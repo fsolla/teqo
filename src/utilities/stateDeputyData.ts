@@ -34,6 +34,42 @@ export type StateDeputyListFilterFacets = {
 }
 
 /**
+ * Municipality ids per state deputy for the LIST / home search — aggregate
+ * only, same admin bypass as `loadStateDeputyListPageData`.
+ */
+export const municipalityIdsByStateDeputyIds = async (
+  payload: Payload,
+  stateDeputyIDs: number[],
+): Promise<Map<number, number[]>> => {
+  const byDeputy = new Map<number, number[]>()
+  if (stateDeputyIDs.length === 0) return byDeputy
+
+  const deputyIdSet = new Set(stateDeputyIDs)
+  const municipalities = await payload.find({
+    collection: 'municipality',
+    where: { stateDeputies: { in: stateDeputyIDs } },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { stateDeputies: true },
+    // Intentional admin bypass: aggregate counts only (B34 precedent).
+    overrideAccess: true,
+  })
+
+  for (const municipality of municipalities.docs) {
+    for (const deputy of municipality.stateDeputies ?? []) {
+      const id = relationshipId(deputy)
+      if (id === null || !deputyIdSet.has(id)) continue
+      const list = byDeputy.get(id) ?? []
+      list.push(municipality.id)
+      byDeputy.set(id, list)
+    }
+  }
+
+  return byDeputy
+}
+
+/**
  * Respects the search (an OTHER filter, from the popover's point of view) but
  * drops the party filter itself — same contract as
  * `loadMunicipalityListFilterFacets`: a selected value is unioned in so it
@@ -98,47 +134,26 @@ export const loadStateDeputyListPageData = async (
   ])
 
   const stateDeputyIDs = result.docs.map((doc) => doc.id)
-  const municipalityIDsByDeputy = new Map<number, number[]>()
   const leadershipsByDeputy = new Map<number, LeadershipRelationSummary[]>()
 
-  if (stateDeputyIDs.length) {
-    const [municipalities, leaderships] = await Promise.all([
-      // Intentional admin bypass: the chips render outside an advisor's scope
-      // on purpose (B34 precedent) — an advisor must be able to see and undo
-      // a município link even outside their own portfolio.
-      payload.find({
-        collection: 'municipality',
-        where: { stateDeputies: { in: stateDeputyIDs } },
-        depth: 0,
-        limit: 0,
-        pagination: false,
-        select: { stateDeputies: true },
-        overrideAccess: true,
-      }),
-      payload.find({
-        collection: 'leadership',
-        where: { stateDeputies: { in: stateDeputyIDs } },
-        depth: 1,
-        limit: 0,
-        pagination: false,
-        select: { stateDeputies: true, contact: true },
-        // Names ship in the list cell — honour canReadLeadership (unlike
-        // municipalityCounts above, which stays aggregate-only).
-        user,
-        overrideAccess: false,
-      }),
-    ])
+  const municipalityIDsByDeputy =
+    stateDeputyIDs.length > 0
+      ? await municipalityIdsByStateDeputyIds(payload, stateDeputyIDs)
+      : new Map<number, number[]>()
 
-    for (const municipality of municipalities.docs) {
-      for (const deputy of municipality.stateDeputies ?? []) {
-        const id = relationshipId(deputy)
-        if (id !== null && stateDeputyIDs.includes(id)) {
-          const list = municipalityIDsByDeputy.get(id) ?? []
-          list.push(municipality.id)
-          municipalityIDsByDeputy.set(id, list)
-        }
-      }
-    }
+  if (stateDeputyIDs.length) {
+    const leaderships = await payload.find({
+      collection: 'leadership',
+      where: { stateDeputies: { in: stateDeputyIDs } },
+      depth: 1,
+      limit: 0,
+      pagination: false,
+      select: { stateDeputies: true, contact: true },
+      // Names ship in the list cell — honour canReadLeadership (unlike
+      // municipalityCounts above, which stays aggregate-only).
+      user,
+      overrideAccess: false,
+    })
 
     for (const leadership of leaderships.docs) {
       const summary: LeadershipRelationSummary = {

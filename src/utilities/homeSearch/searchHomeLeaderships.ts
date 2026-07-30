@@ -2,7 +2,11 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import { homeSearchQueryIsActive, normalizeHomeSearchRaw } from '@/lib/campaignHomeSearchContract'
+import {
+  HOME_SEARCH_RESULT_HIT_CAP,
+  homeSearchQueryIsActive,
+  normalizeHomeSearchRaw,
+} from '@/lib/campaignHomeSearchContract'
 import type { HomeSearchLeadershipHit } from '@/lib/campaignHomeSearchHits'
 import { HOME_SEARCH_STAFF_ONLY_MESSAGE } from '@/lib/campaignHomeSearchMessages'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
@@ -15,8 +19,6 @@ import { matchesNormalizedAtWordStart } from '@/lib/wordStartFilter'
 import type { CampaignUser, Leadership } from '@/payload-types'
 import { truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import { buildLeadershipListWhere } from '@/utilities/leadership/leadershipListUrl'
-
-const HOME_SEARCH_LEADERSHIP_HIT_CAP = 25
 
 const municipalityNamesFromLeadership = (doc: Leadership): string[] => {
   const names = new Set<string>()
@@ -88,7 +90,7 @@ export const searchHomeLeaderships = async (
 
   return candidates
     .sort((left, right) => compareHomeSearchNameRelevance(left, right, normalizedQuery))
-    .slice(0, HOME_SEARCH_LEADERSHIP_HIT_CAP)
+    .slice(0, HOME_SEARCH_RESULT_HIT_CAP)
     .map(
       (row): HomeSearchLeadershipHit => ({
         kind: 'leadership',
