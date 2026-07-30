@@ -19,6 +19,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/Sidebar'
 import { Toaster } from '@/components/ui/Toaster'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { campaignUserShellView } from '@/utilities/campaignUserProfile'
@@ -84,7 +85,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
           data-slot="campaign-content-scroll"
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-24 md:p-6 md:pb-6 print:h-auto print:overflow-visible print:p-0"
         >
-          {children}
+          <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
         </div>
         <CampaignBottomNav role={user.role} />
         <Toaster position="top-center" />

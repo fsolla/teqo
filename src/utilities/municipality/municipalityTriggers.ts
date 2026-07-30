@@ -125,7 +125,7 @@ const isoDaysAgo = (now: Date, days: number): string =>
 let projectedValidVotesUpperCutMemo: number | null = null
 const projectedValidVotesUpperCut = (): number => {
   if (projectedValidVotesUpperCutMemo !== null) return projectedValidVotesUpperCutMemo
-  const values = computeAllMunicipalityPotentials()
+  const values = Array.from(computeAllMunicipalityPotentials().values())
     .map((potential) => potential.projectedValidVotes)
     .filter((value) => value > 0)
     .sort((left, right) => left - right)

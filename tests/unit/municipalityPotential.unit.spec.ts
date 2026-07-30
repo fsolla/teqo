@@ -360,6 +360,6 @@ describe('computeMunicipalityPotential / computeAllMunicipalityPotentials (real 
       await import('@/utilities/municipality/municipalityPotential')
 
     const potentials = computeAllMunicipalityPotentials()
-    expect(potentials).toHaveLength(municipalityCatalog.length)
+    expect(potentials.size).toBe(municipalityCatalog.length)
   })
 })

@@ -191,7 +191,7 @@ describe('loadMunicipalitySuggestions (E11)', () => {
 
     // The evaluator's own cut convention, recomputed here so a drifting
     // artifact fails this line, not the loop below.
-    const values = computeAllMunicipalityPotentials()
+    const values = Array.from(computeAllMunicipalityPotentials().values())
       .map((potential) => potential.projectedValidVotes)
       .filter((value) => value > 0)
       .sort((left, right) => left - right)

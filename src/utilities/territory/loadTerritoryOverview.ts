@@ -7,6 +7,7 @@ import { getMunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
 import { slugsForMetropolitanoSubRowLabel } from '@/lib/metropolitanoTerritoryPeers'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO, type VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, Municipality, User } from '@/payload-types'
+import { loadMunicipalityScopeFromDocs } from '@/utilities/municipality/campaignMunicipalityScope'
 import { loadMunicipalityGoalCoverageBundle } from '@/utilities/municipality/municipalityGoalAccount'
 import { fieldCeiling, ownVotes2022 } from '@/utilities/municipality/municipalityPotential'
 import { computeAggregateTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
@@ -15,7 +16,6 @@ import {
   type TerritoryMunicipalityInput,
   type TerritoryOverviewRow,
 } from '@/utilities/territory/territoryOverview'
-import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
 import {
   emptyMunicipalityPledgeAggregate,
   resolveMunicipalityStaffVoteTotal,
@@ -82,10 +82,7 @@ export const loadTerritoryOverview = cache(
     })
 
     const docs = result.docs as MunicipalityDoc[]
-    const aggregates = await aggregatePledgesByMunicipality(
-      payload,
-      docs.map((doc) => doc.id),
-    )
+    const { pledgeAggregates: aggregates } = await loadMunicipalityScopeFromDocs(payload, docs)
 
     const { coverageByMunicipalityID } = await loadMunicipalityGoalCoverageBundle(
       payload,

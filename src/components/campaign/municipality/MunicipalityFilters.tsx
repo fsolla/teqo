@@ -16,11 +16,12 @@ import {
   buildMunicipalityFilterHref,
   clearMunicipalityListFilters,
   formatMunicipalityActiveFiltersSummary,
-  getMunicipalityFilterDefinition,
+  getMunicipalityMultiFilterValues,
   municipalityFilterDefinitions,
   toggleMunicipalityExclusiveFilterValue,
   toggleMunicipalityMultiFilterValue,
   type MunicipalityFilterOption,
+  type MunicipalityMultiFilterParam,
 } from '@/utilities/municipality/municipalityListFilters'
 import {
   municipalityListSortOptions,
@@ -75,8 +76,8 @@ export const MunicipalityFilters = ({
 
   const mobileFilterDefinitions = municipalityFilterDefinitions.filter((definition) => {
     if (definition.staffOnly && !showStaffFilters) return false
-    // Header popovers own multi/name filters; mobile keeps exclusive selects.
-    return definition.selection === 'single' || definition.selection === 'toggle'
+    if (definition.param === 'name') return false
+    return true
   })
 
   return (
@@ -145,19 +146,47 @@ export const MunicipalityFilters = ({
             </NativeSelect>
           </Field>
         ) : null}
-        {regionFilterOptions.length ? (
-          <CampaignMobileMultiFilterField
-            id="municipality-filter-region"
-            label="Território"
-            emptyLabel="Todos"
-            options={regionFilterOptions}
-            selected={state.regions ?? []}
-            onToggle={(value) =>
-              navigateWithSearch(toggleMunicipalityMultiFilterValue(state, 'region', value))
-            }
-          />
-        ) : null}
         {mobileFilterDefinitions.map((definition) => {
+          if (definition.selection === 'multi') {
+            let options = definition.options ?? []
+            if (definition.param === 'region') options = regionFilterOptions
+            if (definition.param === 'advisor') options = advisorFilterOptions
+
+            if (options.length === 0) return null
+
+            let selected: string[] = []
+            if (definition.param !== 'region' && definition.param !== 'advisor') {
+              selected = getMunicipalityMultiFilterValues(
+                state,
+                definition.param as MunicipalityMultiFilterParam,
+              )
+            } else if (definition.param === 'region') {
+              selected = state.regions ?? []
+            } else if (definition.param === 'advisor') {
+              selected = (state.advisors ?? []).map(String)
+            }
+
+            return (
+              <CampaignMobileMultiFilterField
+                key={definition.param}
+                id={`municipality-filter-${definition.param}`}
+                label={definition.label}
+                emptyLabel={definition.emptyLabel ?? 'Todos'}
+                options={options}
+                selected={selected}
+                onToggle={(value) =>
+                  navigateWithSearch(
+                    toggleMunicipalityMultiFilterValue(
+                      state,
+                      definition.param as MunicipalityMultiFilterParam,
+                      value,
+                    ),
+                  )
+                }
+              />
+            )
+          }
+
           const value = definition.param === 'coverage' ? (state.coverage ?? '') : ''
           return (
             <Field key={definition.param}>
@@ -189,54 +218,6 @@ export const MunicipalityFilters = ({
             </Field>
           )
         })}
-        {showStaffFilters ? (
-          <CampaignMobileMultiFilterField
-            id="municipality-filter-trend"
-            label="Tendência"
-            emptyLabel="Todas"
-            options={getMunicipalityFilterDefinition('trend').options ?? []}
-            selected={state.trends ?? []}
-            onToggle={(value) =>
-              navigateWithSearch(toggleMunicipalityMultiFilterValue(state, 'trend', value))
-            }
-          />
-        ) : null}
-        {showStaffFilters ? (
-          <CampaignMobileMultiFilterField
-            id="municipality-filter-class"
-            label="Classe"
-            emptyLabel="Todas"
-            options={getMunicipalityFilterDefinition('class').options ?? []}
-            selected={state.classes ?? []}
-            onToggle={(value) =>
-              navigateWithSearch(toggleMunicipalityMultiFilterValue(state, 'class', value))
-            }
-          />
-        ) : null}
-        {showStaffFilters ? (
-          <CampaignMobileMultiFilterField
-            id="municipality-filter-level"
-            label="Nível"
-            emptyLabel="Todos"
-            options={getMunicipalityFilterDefinition('level').options ?? []}
-            selected={state.levels ?? []}
-            onToggle={(value) =>
-              navigateWithSearch(toggleMunicipalityMultiFilterValue(state, 'level', value))
-            }
-          />
-        ) : null}
-        {showStaffFilters && advisorFilterOptions.length ? (
-          <CampaignMobileMultiFilterField
-            id="municipality-filter-advisor"
-            label="Assessores"
-            emptyLabel="Todos"
-            options={advisorFilterOptions}
-            selected={(state.advisors ?? []).map(String)}
-            onToggle={(value) =>
-              navigateWithSearch(toggleMunicipalityMultiFilterValue(state, 'advisor', value))
-            }
-          />
-        ) : null}
         {showStaffFilters ? (
           <MunicipalityFilterEstimateScenario
             id="municipality-filter-estimate-scenario-mobile"

@@ -1,7 +1,7 @@
 # Escala e DRY pós-E10 (classificação territorial relativa)
 
-Status: rascunho
-Atualizado em: 2026-07-25
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos, **E10+**, fill-in de engenharia)
 Impeccable: A — N/A (sem superfície UI nova; as quatro fases preservam o comportamento visível de E10)
 Appetite: ~0,75–1 dia eng; quatro fases independentes, nenhuma com migration, collection ou `Consent`

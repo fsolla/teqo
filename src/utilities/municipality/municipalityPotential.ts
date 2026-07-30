@@ -149,9 +149,18 @@ export const computeMunicipalityPotential = (slug: string): MunicipalityPotentia
   }
 }
 
+let municipalityPotentialBySlugCache: Map<string, MunicipalityPotential> | null = null
+
 /** `computeMunicipalityPotential` for every catalog municipality (435 slugs). */
-export const computeAllMunicipalityPotentials = (): MunicipalityPotential[] =>
-  municipalityCatalog.map((entry) => computeMunicipalityPotential(entry.slug))
+export const computeAllMunicipalityPotentials = (): Map<string, MunicipalityPotential> => {
+  if (municipalityPotentialBySlugCache) return municipalityPotentialBySlugCache
+
+  municipalityPotentialBySlugCache = new Map()
+  for (const entry of municipalityCatalog) {
+    municipalityPotentialBySlugCache.set(entry.slug, computeMunicipalityPotential(entry.slug))
+  }
+  return municipalityPotentialBySlugCache
+}
 
 /** Fallback pessimistic haircut (as a share) when `campaignGoals.margin` is unset. */
 const DEFAULT_PESSIMISTIC_HAIRCUT = 0.1
@@ -350,12 +359,11 @@ export const computeStatewideSuggestedGoals = (
   potentialBySlug: Map<string, MunicipalityPotential>
   suggestedGoalBySlug: Map<string, SuggestedGoalByScenario>
 } => {
-  const potentials = computeAllMunicipalityPotentials()
+  const potentialBySlug = computeAllMunicipalityPotentials()
   const { suggestedGoalBySlug } = deriveSuggestedGoalsByScenario(
-    potentials.map((potential) => potential.slug),
+    Array.from(potentialBySlug.keys()),
     goals,
   )
-  const potentialBySlug = new Map(potentials.map((potential) => [potential.slug, potential]))
 
   return { potentialBySlug, suggestedGoalBySlug }
 }

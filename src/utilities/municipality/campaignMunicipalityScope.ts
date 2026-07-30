@@ -75,12 +75,7 @@ const loadScope = async (
   }
 
   const municipalities = await municipalitiesPromise
-  const pledgeAggregates = await aggregatePledgesByMunicipality(
-    payload,
-    municipalities.map((municipality) => municipality.id),
-  )
-
-  return { municipalities, pledgeAggregates }
+  return loadMunicipalityScopeFromDocs(payload, municipalities)
 }
 
 /**
@@ -112,6 +107,21 @@ const loadScopeCached = cache(
  * in the `cache()` key via its sorted key list — a widened call never receives
  * the base select's cached rows (P3-E pin: cache-key separation).
  */
+export const loadMunicipalityScopeFromDocs = async <Doc extends { id: number }>(
+  payload: Payload,
+  municipalities: Doc[],
+): Promise<{
+  municipalities: Doc[]
+  pledgeAggregates: Map<number, MunicipalityPledgeAggregate>
+}> => {
+  const pledgeAggregates = await aggregatePledgesByMunicipality(
+    payload,
+    municipalities.map((municipality) => municipality.id),
+  )
+
+  return { municipalities, pledgeAggregates }
+}
+
 export const loadMunicipalityScope = <ExtraSelect extends Record<string, true>>(
   payload: Payload,
   user: CampaignUser,
