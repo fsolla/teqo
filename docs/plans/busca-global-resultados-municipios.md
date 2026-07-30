@@ -97,6 +97,7 @@ Componentes:
 - **`reloadStaffActor` no handler** (JWT role stale). **Gatilho:** próxima rota JSON staff-only que toque o mesmo padrão.
 - **Builder compartilhado de href `/campanha/municipios/[slug]`.** **Gatilho:** 3º call site além de lista + busca.
 - **Coalescer POSTs abortados no servidor.** **Gatilho:** debounce 250 ms gerar carga Neon mensurável em produção.
+- **B50 assessores no mesmo POST (`searchHomeAdvisors` em paralelo com municípios).** v1 aceita query extra de portfolio só quando há match de nome. **Gatilho:** ver [busca-global-resultados-assessores.md](busca-global-resultados-assessores.md) § Adiado (orquestrador / scan de roster).
 
 ## Referências
 

@@ -13,7 +13,8 @@ export const homeSearchNameRelevanceTier = (
 
 export type HomeSearchNameSortable = {
   normalizedName: string
-  votes2022: number
+  /** Secondary sort key (higher sorts first after name relevance tier). */
+  tieBreakDesc: number
 }
 
 export const compareHomeSearchNameRelevance = (
@@ -25,7 +26,7 @@ export const compareHomeSearchNameRelevance = (
     homeSearchNameRelevanceTier(left.normalizedName, normalizedQuery) -
     homeSearchNameRelevanceTier(right.normalizedName, normalizedQuery)
   if (tierDelta !== 0) return tierDelta
-  return right.votes2022 - left.votes2022
+  return right.tieBreakDesc - left.tieBreakDesc
 }
 
 export const normalizeHomeSearchName = (name: string): string => normalizeSearchPhrase(name)

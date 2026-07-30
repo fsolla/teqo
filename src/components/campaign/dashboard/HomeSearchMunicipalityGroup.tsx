@@ -49,7 +49,6 @@ export const HomeSearchMunicipalityGroup = () => {
                 <HomeSearchHitRow
                   href={buildTerritoryPageHref(hit.region)}
                   primary={hit.region}
-                  showPriority={false}
                   trailing={
                     <span className="tabular-nums text-sm font-medium">
                       {formatElectionNumber(hit.votes2022)}
