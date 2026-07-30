@@ -17,6 +17,12 @@ export type CampaignWebAuthnRelyingParty = {
 
 const RP_NAME = 'Campanha Jorge Solla'
 
+/** Matches `LOCAL_AUTHORITY_PATTERN` in `campaignInviteOrigin` — kept local on purpose. */
+const LOCAL_REQUEST_HOST = /^(localhost|127\.0\.0\.1|\[::1\])(?::[0-9]{1,5})?$/i
+
+const isLocalRequestHost = (host: string | undefined): boolean =>
+  Boolean(host && LOCAL_REQUEST_HOST.test(host))
+
 /**
  * The authority the browser is actually talking to, which is what has to agree
  * with the relying party. Compared as `host` (name + port) and not as a full
@@ -61,9 +67,17 @@ const requestHostOf = ({
 export const getCampaignWebAuthnRelyingParty = (
   input: CampaignInviteOriginInput = {},
 ): CampaignWebAuthnRelyingParty | null => {
+  const requestHost = requestHostOf(input)
+  // `getCampaignInviteBaseURL` reads `process.env.NODE_ENV`, which Next inlines
+  // at build time as `"production"`. CI e2e serves that build on
+  // http://localhost:3000 (`pnpm start`), which would otherwise demand HTTPS
+  // DNS and hide biometrics. The request host is authoritative here.
+  const environment =
+    input.environment ?? (isLocalRequestHost(requestHost) ? ('test' as const) : undefined)
+
   let baseURL: string
   try {
-    baseURL = getCampaignInviteBaseURL(input)
+    baseURL = getCampaignInviteBaseURL(environment ? { ...input, environment } : input)
   } catch {
     return null
   }
@@ -74,7 +88,6 @@ export const getCampaignWebAuthnRelyingParty = (
 
   // Absent host: a non-request context (a script, a test) that cannot be
   // checked. The ceremonies always pass the headers.
-  const requestHost = requestHostOf(input)
   if (requestHost && requestHost !== url.host.toLowerCase()) return null
 
   return { rpID, rpName: RP_NAME, origin: url.origin }

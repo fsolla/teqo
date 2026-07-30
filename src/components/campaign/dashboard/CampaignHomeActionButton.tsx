@@ -4,10 +4,9 @@ import type { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useId, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 
-import { Button } from '@/components/ui/button'
 import {
   Drawer,
-  DrawerClose,
+  DrawerCloseButton,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -149,11 +148,7 @@ export const CampaignHomeActionButton = ({
               <DrawerDescription id={descriptionId}>{description}</DrawerDescription>
             </DrawerHeader>
             <DrawerFooter>
-              <DrawerClose
-                render={<Button type="button" variant="outline" className="min-h-11 w-full" />}
-              >
-                Fechar
-              </DrawerClose>
+              <DrawerCloseButton>Fechar</DrawerCloseButton>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>

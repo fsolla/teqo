@@ -44,7 +44,7 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: process.env.CI ? [['list'], ['github'], ['html', { open: 'never' }]] : 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -90,7 +90,16 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev',
+    /*
+     * CI and E2E_PROD=1 serve the PRODUCTION build (`pnpm start` after a
+     * `pnpm build` step in the e2e job): dev-mode cold webpack compiles per
+     * route plus dev-server memory restarts made the full suite blow the 30-min
+     * job timeout on CI (measured 2026-07-30). The municipalities-list React
+     * #130 was fixed by sharing one Drawer across the mobile cards
+     * (CampaignListSheetProvider, 2026-07-30). Locally `pnpm dev` stays the
+     * default: no build wait and hot reload while writing specs.
+     */
+    command: process.env.CI || process.env.E2E_PROD === '1' ? 'pnpm start' : 'pnpm dev',
     /*
      * Never reuse a dev server a developer may already have running against the
      * production database — always start a fresh one bound to the test DB.

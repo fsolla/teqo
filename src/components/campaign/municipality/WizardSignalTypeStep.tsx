@@ -9,7 +9,7 @@ import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizard
 import { Button } from '@/components/ui/button'
 import {
   Drawer,
-  DrawerClose,
+  DrawerCloseButton,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -104,9 +104,7 @@ export const WizardSignalTypeStep = ({
                 <p className="text-sm text-muted-foreground">{infoEntry.infoContent}</p>
               </div>
               <DrawerFooter>
-                <DrawerClose render={<Button variant="outline" className="min-h-11 w-full" />}>
-                  Fechar
-                </DrawerClose>
+                <DrawerCloseButton>Fechar</DrawerCloseButton>
               </DrawerFooter>
             </>
           ) : null}

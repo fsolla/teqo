@@ -39,7 +39,7 @@ test.describe('Wizard — header mobile (B75)', () => {
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto('/campanha/acoes/atualizar-votos?municipio=cairu')
 
-    await expect(page.getByRole('heading', { name: /Qual a nova estimativa média/i })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible({
       timeout: 15000,
     })
 

@@ -55,11 +55,14 @@ test.describe('Filtros salvos de Municípios', () => {
     await expect(shortcut).toHaveAttribute('aria-current', 'page')
 
     // A page is a position inside the recorte, not part of it.
-    await page.goto(`${SAVED_RECORTE}&page=2`)
+    await page.goto(`${SAVED_RECORTE}&page=2`, NAVIGATION)
     await expect(shortcut).toHaveAttribute('aria-current', 'page')
 
-    // Another recorte is not this one, and the shortcut brings it back.
-    await page.goto('/campanha/municipios')
+    // Another recorte is not this one, and the shortcut brings it back. Use the
+    // sidebar link — a bare `goto` here races an in-flight RSC navigation and
+    // flakes as net::ERR_ABORTED under prod load (measured in CI 2026-07-30).
+    await page.getByRole('link', { name: 'Municípios', exact: true }).click()
+    await expect(page).toHaveURL('/campanha/municipios', NAVIGATION)
     await expect(shortcut).not.toHaveAttribute('aria-current', 'page')
     await shortcut.click()
     await expect(page).toHaveURL(SAVED_RECORTE, NAVIGATION)
