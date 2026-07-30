@@ -19,23 +19,27 @@ claim → feature branch → PR --base stage → CI PR green → auto-merge em s
 stage → CI stage green → (humano) pnpm agent:promote --i-am-human → main → Vercel prod
 ```
 
-- **Agente faz sozinho:** `pnpm agent:claim` (pega a próxima Issue `ready` desbloqueada por `prio:P0..P3`, lock otimista ready→in-progress) → implementa → fast gate → `gh pr create --base stage` com `Closes #N` → **PARA**. PR para `stage` mergeia sozinho quando o CI fica verde (auto-merge nativo + protection em `stage`).
+**Skills do fluxo (desde 2026-07-30):** `plan-issue` (ideia → plano completo + gate de confirmação + Issue via `agent:register --model`) → `work-issue` (claim → verificação de modelo → freshness audit → execução → /simplify → PR `--base stage` → acompanha CI até o merge) → `project-status` (overview/fila/mermaid/bloqueios/consolidação, read-only). `docs/roadmap.md` = **legado congelado** (stub); a fonte canônica são as GitHub Issues.
+
+- **Agente faz sozinho:** `pnpm agent:claim` (pega a próxima Issue `ready` desbloqueada por `prio:P0..P3`, lock otimista ready→in-progress) → implementa → fast gate → `gh pr create --base stage` com `Closes #N` → acompanha `gh pr checks --watch` até o merge (falha → corrige na mesma branch). O flip `in-progress→done` é determinístico no CI (workflow `issue-done-on-stage-merge.yml`).
 - **Só humano:** `pnpm agent:promote --i-am-human` (PR `stage→main` + merge com CI stage + ci-pr green; recusa se `main` divergiu de `stage` — merge main em stage antes), `pnpm db:refresh:stage` (refresh semanal do snapshot), editar envs Vercel/Neon, rodar `pnpm build` contra qualquer banco remoto.
 - Se `main` divergir de `stage` (hotfix): merge/rebase de `main` em `stage` + CI stage green de novo, só depois promote.
+- **Engineering-audit é solitário:** quando roda, o paralelismo pausa (nenhum outro agente no repo) e o agente do audit executa as remediações P0/P1 na mesma sessão; inclui o harvest `kind:agent-miss` → guardrails.
 
 ## Comandos
 
-| Comando                                                                                        | Faz                                                                                                                                                                    |
-| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm agent:claim [-- --dry-run]`                                                              | Fila ready+unblocked por prio → `in-progress` + brief no stdout. Deps sem Issue = itens entregues do roadmap (satisfeitas, avisadas no brief)                          |
-| `pnpm agent:register -- --id X --title T [--prio P1] [--depends A,B] [--plan docs/plans/x.md]` | Cria Issue (spec + labels)                                                                                                                                             |
-| `pnpm agent:prioritize -- <issue> <P0..P3>`                                                    | Troca a label `prio:*`                                                                                                                                                 |
-| `pnpm agent:file-miss -- --title ...`                                                          | Issue `kind:agent-miss` → harvest em guardrail (`docs/GUARDRAILS.md`)                                                                                                  |
-| `pnpm agent:promote -- --i-am-human`                                                           | **Humano:** PR `stage→main` + merge se CI green                                                                                                                        |
-| `pnpm db:seed:minimal`                                                                         | DB mínimo sintético (contrato: [`scripts/lib/seed-minimal-manifest.mjs`](../scripts/lib/seed-minimal-manifest.mjs), pin `tests/unit/seedMinimalManifest.unit.spec.ts`) |
-| `pnpm db:refresh:stage`                                                                        | **Humano:** nova Neon branch `stage` de prod + swap do secret `STAGE_DATABASE_URL` (requer `NEON_API_KEY`)                                                             |
+| Comando                                                                                                       | Faz                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm agent:claim [-- --dry-run]`                                                                             | Fila ready+unblocked por prio → `in-progress` + brief no stdout. Deps sem Issue = itens entregues do roadmap (satisfeitas, avisadas no brief)                          |
+| `pnpm agent:register -- --id X --title T [--prio P1] [--depends A,B] [--plan docs/plans/x.md] [--model slug]` | Cria Issue (spec + labels + frontmatter com `model:` quando informado)                                                                                                 |
+| `pnpm agent:status`                                                                                           | Read-only: overview, fila na ordem do claim (com `model:`), mermaid, bloqueios, sugestões de consolidação                                                              |
+| `pnpm agent:prioritize -- <issue> <P0..P3>`                                                                   | Troca a label `prio:*`                                                                                                                                                 |
+| `pnpm agent:file-miss -- --title ...`                                                                         | Issue `kind:agent-miss` → harvest em guardrail (`docs/GUARDRAILS.md`)                                                                                                  |
+| `pnpm agent:promote -- --i-am-human`                                                                          | **Humano:** PR `stage→main` + merge se CI green                                                                                                                        |
+| `pnpm db:seed:minimal`                                                                                        | DB mínimo sintético (contrato: [`scripts/lib/seed-minimal-manifest.mjs`](../scripts/lib/seed-minimal-manifest.mjs), pin `tests/unit/seedMinimalManifest.unit.spec.ts`) |
+| `pnpm db:refresh:stage`                                                                                       | **Humano:** nova Neon branch `stage` de prod + swap do secret `STAGE_DATABASE_URL` (requer `NEON_API_KEY`)                                                             |
 
-Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:feature|defect|chore|agent-miss`, `needs:migration|consent`, `requirements-changed`. Issues carregam frontmatter `id/depends/serializes/priority` no body.
+Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:feature|defect|chore|agent-miss`, `needs:migration|consent`, `requirements-changed`. Issues carregam frontmatter `id/depends/serializes/priority/model` no body.
 
 ## Contrato de PR (toda entrega)
 

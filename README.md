@@ -124,4 +124,4 @@ Internal campaign tool for electoral nuclei, local leaderships, vote estimates, 
 
 ## Roadmap
 
-Backlog and future plans live in [`docs/roadmap.md`](docs/roadmap.md) (blockers, public site, `/campanha` next cycles, admin RBAC, white-label).
+Backlog and future plans live as tracked [GitHub Issues](https://github.com/fsolla/teqo/issues) (spec + deps + prio + model per issue; flow skills: `plan-issue` → `work-issue` → `project-status`; `docs/roadmap.md` is a frozen legacy stub).
