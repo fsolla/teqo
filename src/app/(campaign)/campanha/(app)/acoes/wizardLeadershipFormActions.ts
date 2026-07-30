@@ -10,7 +10,7 @@ import {
   LEADERSHIP_DUPLICATE_MESSAGE,
   LEADERSHIP_INVALID_CONTACT_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
-  leadershipSupportStatuses,
+  isSupportStatus,
 } from '@/lib/schemas/leadership'
 import {
   runCampaignFormAction,
@@ -38,11 +38,7 @@ const parseExclusive = (formData: FormData): boolean | undefined => {
 
 const parseSupportStatus = (formData: FormData) => {
   const supportStatus = optionalFormText(formData, 'supportStatus')
-  return leadershipSupportStatuses.includes(
-    supportStatus as (typeof leadershipSupportStatuses)[number],
-  )
-    ? (supportStatus as (typeof leadershipSupportStatuses)[number])
-    : 'a_abordar'
+  return isSupportStatus(supportStatus) ? supportStatus : 'a_abordar'
 }
 
 const wizardFieldsFromForm = (formData: FormData) => ({

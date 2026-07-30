@@ -363,16 +363,9 @@ export const createLeadershipWizard = async (
   municipalitySlug: string,
 ) => {
   const { payload, actor } = await getCampaignActionContext()
-  try {
-    const leadership = await createLeadershipWizardRecord(payload, actor, input)
-    revalidateLeadershipWizardPaths(leadership.id, municipalitySlug)
-    return leadership
-  } catch (error) {
-    if (isUniqueLeadershipConflict(error)) {
-      throw new Error(LEADERSHIP_DUPLICATE_MESSAGE)
-    }
-    throw error
-  }
+  const leadership = await createLeadershipWizardRecord(payload, actor, input)
+  revalidateLeadershipWizardPaths(leadership.id, municipalitySlug)
+  return leadership
 }
 
 /**

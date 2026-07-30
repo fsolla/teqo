@@ -3,7 +3,7 @@
 import { InfoIcon, PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useMemo, useState, useTransition } from 'react'
+import { useCallback, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
@@ -76,7 +76,7 @@ export const WizardLeadershipStep = ({
 
   const showSkip = showLeadershipWizardSkip(entryAction)
 
-  const skip = showSkip
+  const skipConfig = showSkip
     ? { label: WIZARD_LEADERSHIP_SKIP_LABEL, href: CAMPAIGN_HOME }
     : undefined
 
@@ -87,9 +87,9 @@ export const WizardLeadershipStep = ({
         ? WIZARD_LEADERSHIP_FORM_EDIT_TITLE
         : WIZARD_LEADERSHIP_FORM_CREATE_TITLE
 
-  const trailingAction = showSkip ? (
+  const trailingAction = skipConfig ? (
     <Button variant="ghost" size="sm" className="min-h-11 px-2 text-sm" asChild>
-      <Link href={CAMPAIGN_HOME}>{WIZARD_LEADERSHIP_SKIP_LABEL}</Link>
+      <Link href={skipConfig.href}>{skipConfig.label}</Link>
     </Button>
   ) : undefined
 
@@ -106,11 +106,6 @@ export const WizardLeadershipStep = ({
     })
   }
 
-  const sortedTiles = useMemo(
-    () => [...initialTiles].sort((left, right) => left.name.localeCompare(right.name, 'pt-BR')),
-    [initialTiles],
-  )
-
   return (
     <CampaignWizardShell
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
@@ -119,7 +114,7 @@ export const WizardLeadershipStep = ({
       previousHref={wizardActionHref(actionSlug)}
       dismissHref={CAMPAIGN_HOME}
       municipalityLabel={municipalityName}
-      skip={skip}
+      skip={skipConfig}
       trailingAction={trailingAction}
     >
       {mode.kind === 'form' ? (
@@ -133,11 +128,11 @@ export const WizardLeadershipStep = ({
       ) : (
         <TooltipProvider delayDuration={200}>
           <div className="flex flex-col gap-4">
-            {sortedTiles.length === 0 ? (
+            {initialTiles.length === 0 ? (
               <p className="text-sm text-muted-foreground">{WIZARD_LEADERSHIP_EMPTY_GRID}</p>
             ) : null}
             <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-              {sortedTiles.map((tile) => (
+              {initialTiles.map((tile) => (
                 <li key={tile.id}>
                   <LeadershipTileButton
                     tile={tile}
@@ -197,59 +192,48 @@ const LeadershipTileButton = ({ tile, onOpen, onInfo }: LeadershipTileButtonProp
   const noteText = notesLabel(tile.notes)
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'relative flex aspect-square w-full flex-col rounded-xl border border-border bg-transparent p-3 text-left transition-colors',
-            'hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            'pointer-coarse:hover:bg-transparent',
-          )}
-          onClick={onOpen}
-        >
-          <div className="flex items-start justify-between gap-1">
-            <div className="max-w-[calc(100%-2rem)]">
+    <div className="relative aspect-square w-full">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              'flex h-full w-full flex-col rounded-xl border border-border bg-transparent p-3 pr-11 text-left transition-colors',
+              'hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              'pointer-coarse:hover:bg-transparent',
+            )}
+            onClick={onOpen}
+          >
+            <div className="max-w-full">
               {tile.supportStatus ? <SupportStatusBadge status={tile.supportStatus} /> : null}
             </div>
-            <span
-              role="button"
-              tabIndex={0}
-              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={(event) => {
-                event.stopPropagation()
-                onInfo()
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  onInfo()
-                }
-              }}
-              aria-label={`Ver observação de ${tile.name}`}
-            >
-              <InfoIcon className="size-4" aria-hidden />
-            </span>
-          </div>
-          <div className="mt-auto flex flex-col gap-1">
-            <p className="text-sm font-medium leading-snug text-foreground">
-              {truncateNameAtWordBoundary(tile.name, 28)}
-            </p>
-            {secondary ? (
-              <p className="truncate text-xs text-muted-foreground">{secondary}</p>
-            ) : null}
-            {!tile.exclusive ? (
-              <Badge variant="outline" className="mt-1 w-fit text-xs">
-                Não exclusivo
-              </Badge>
-            ) : null}
-          </div>
-        </button>
-      </TooltipTrigger>
-      <TooltipContent className="pointer-coarse:hidden max-w-xs whitespace-pre-wrap">
-        {noteText}
-      </TooltipContent>
-    </Tooltip>
+            <div className="mt-auto flex flex-col gap-1">
+              <p className="text-sm font-medium leading-snug text-foreground">
+                {truncateNameAtWordBoundary(tile.name, 28)}
+              </p>
+              {secondary ? (
+                <p className="truncate text-xs text-muted-foreground">{secondary}</p>
+              ) : null}
+              {!tile.exclusive ? (
+                <Badge variant="outline" className="mt-1 w-fit text-xs">
+                  Não exclusivo
+                </Badge>
+              ) : null}
+            </div>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent className="pointer-coarse:hidden max-w-xs whitespace-pre-wrap">
+          {noteText}
+        </TooltipContent>
+      </Tooltip>
+      <button
+        type="button"
+        className="absolute top-3 right-3 inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={onInfo}
+        aria-label={`Ver observação de ${tile.name}`}
+      >
+        <InfoIcon className="size-4" aria-hidden />
+      </button>
+    </div>
   )
 }
