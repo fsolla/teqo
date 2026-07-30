@@ -458,7 +458,7 @@ Paralelizáveis agora: **B66** (focus limpa busca — após ~~B65~~ ✓); ~~**B7
 
 ### Sequência por janela (só pendentes)
 
-**Janela 1 — agora → 05/08 (convenções):** **prioridade pós-29/07 — ~~B43–B48~~ ✓ → ~~B67~~ ✓ (pan strip) **→ ~~B65~~ ✓** (âncora inferior) **→ B66** (focus limpa busca) **→ ~~B68~~ ✓** **→ ~~B71~~ ✓** (polish resultados) **· ~~B72~~ ✓** (gap strip) **→** **wizards B59** → B60∥B61∥B64 · ~~B62~~ ✓ → B63 · B69 → B70 (soft 03/08) · **B49–B55** · [fluxos](plans/fluxos-acao-primeiro-inicio.md); smoke + onboarding Onda 0; **E4R ✓** aplicar seed em produção após smoke; demais entregues/pendentes da janela inalterados no detalhe abaixo — foco operacional = polish Início B66 + busca B53–B55 + wizards B59–B64 + A4 B69/B70.
+**Janela 1 — agora → 05/08 (convenções):** **prioridade pós-29/07 — ~~B43–B48~~ ✓ → ~~B67~~ ✓ (pan strip) **→ ~~B65~~ ✓** (âncora inferior) **→ B66** (focus limpa busca) **→ ~~B68~~ ✓\*\* **→ ~~B71~~ ✓** (polish resultados) **· ~~B72~~ ✓** (gap strip) **→** **wizards B59** → B60∥B61∥B64 · ~~B62~~ ✓ → B63 · B69 → B70 (soft 03/08) · **B49–B55** · [fluxos](plans/fluxos-acao-primeiro-inicio.md); smoke + onboarding Onda 0; **E4R ✓** aplicar seed em produção após smoke; demais entregues/pendentes da janela inalterados no detalhe abaixo — foco operacional = polish Início B66 + busca B53–B55 + wizards B59–B64 + A4 B69/B70.
 
 **Janela 2 — 05/08 → 16/08 (pré-propaganda):** C2 dados reais assim que o jurídico liberar; ~~**E9** fila de alocação~~ (entregue 2026-07-24, antecipada da janela 2); ~~**E16** dossiê do município~~ (entregue 2026-07-25, antecipado da janela 2); D2 se sobrar folga.
 
