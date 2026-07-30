@@ -8,7 +8,6 @@ import {
   BiometricEnrollmentToast,
   type BiometricEnrollmentOffer,
 } from '@/components/campaign/shell/BiometricEnrollmentToast'
-import { CampaignBottomNav } from '@/components/campaign/shell/CampaignBottomNav'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import { CampaignSidebar } from '@/components/campaign/shell/CampaignSidebar'
 import { CampaignSidebarViewportDefault } from '@/components/campaign/shell/CampaignSidebarViewportDefault'
@@ -78,11 +77,10 @@ export default async function CampaignAppLayout({ children }: { children: React.
           </header>
           <div
             data-slot="campaign-content-scroll"
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-24 md:p-6 md:pb-6 print:h-auto print:overflow-visible print:p-0"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6 print:h-auto print:overflow-visible print:p-0"
           >
             <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
           </div>
-          <CampaignBottomNav role={user.role} />
           <Toaster position="top-center" />
           <InstallPwaToast />
           {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}

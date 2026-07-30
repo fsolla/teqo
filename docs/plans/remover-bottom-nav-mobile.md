@@ -1,6 +1,6 @@
 # Remover bottom navigation bar no mobile
 
-Status: rascunho
+Status: entregue (2026-07-30)
 Atualizado em: 2026-07-29
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — **B73**; chassis UX-1)
 Impeccable: B — encaixe no shell `(app)`; remove chrome, não cria rota nova
