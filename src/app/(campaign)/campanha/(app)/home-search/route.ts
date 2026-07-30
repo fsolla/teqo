@@ -14,6 +14,7 @@ import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute
 import { loadHomeSearchSuggestions } from '@/utilities/homeSearch/loadHomeSearchSuggestions'
 import { searchHomeActivities } from '@/utilities/homeSearch/searchHomeActivities'
 import { searchHomeAdvisors } from '@/utilities/homeSearch/searchHomeAdvisors'
+import { searchHomeDemands } from '@/utilities/homeSearch/searchHomeDemands'
 import { searchHomeLeaderships } from '@/utilities/homeSearch/searchHomeLeaderships'
 import { searchHomeMunicipalities } from '@/utilities/homeSearch/searchHomeMunicipalities'
 import { searchHomeStateDeputies } from '@/utilities/homeSearch/searchHomeStateDeputies'
@@ -43,13 +44,14 @@ export const POST = campaignJsonMutationRoute(
       })
     }
 
-    const [municipalityResult, advisors, leaderships, activities, stateDeputies] =
+    const [municipalityResult, advisors, leaderships, activities, stateDeputies, demands] =
       await Promise.all([
         searchHomeMunicipalities(payload, actor, body.query),
         searchHomeAdvisors(payload, actor, body.query),
         searchHomeLeaderships(payload, actor, body.query),
         searchHomeActivities(payload, actor, body.query),
         searchHomeStateDeputies(payload, actor, body.query),
+        searchHomeDemands(payload, actor, body.query),
       ])
     return NextResponse.json<HomeSearchSuccessResponse>({
       ...municipalityResult,
@@ -57,6 +59,7 @@ export const POST = campaignJsonMutationRoute(
       leaderships,
       activities,
       stateDeputies,
+      demands,
     })
   },
 )

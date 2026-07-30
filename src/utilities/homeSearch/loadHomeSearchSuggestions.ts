@@ -83,5 +83,6 @@ export const loadHomeSearchSuggestions = async (
     leaderships: [],
     stateDeputies: [],
     activities: [],
+    demands: [],
   }
 }

@@ -69,8 +69,11 @@ describe('searchHomeLeaderships (B49)', () => {
     const other = await fixtures.getMunicipality('feira-de-santana')
     await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
-    const inScope = await fixtures.createContact({ name: 'Lider Cairu' })
-    const outOfScope = await fixtures.createContact({ name: 'Lider Feira' })
+    // Unique token per run: the minimal seed ships leaderships whose contact
+    // names collide with fixed queries like 'Lider' (word-start match).
+    const scopeToken = fixtures.value('scope-lideranca')
+    const inScope = await fixtures.createContact({ name: `${scopeToken} Cairu` })
+    const outOfScope = await fixtures.createContact({ name: `${scopeToken} Feira` })
     const scopedLeadership = await fixtures.createLeadership({
       contact: inScope.id,
       municipalities: [administered.id],
@@ -80,10 +83,10 @@ describe('searchHomeLeaderships (B49)', () => {
       municipalities: [other.id],
     })
 
-    const advisorResult = await searchHomeLeaderships(payload, advisor, 'Lider')
+    const advisorResult = await searchHomeLeaderships(payload, advisor, scopeToken)
     expect(advisorResult.map((hit) => hit.id)).toEqual([scopedLeadership.id])
 
-    const coordinatorResult = await searchHomeLeaderships(payload, coordinator, 'Lider')
+    const coordinatorResult = await searchHomeLeaderships(payload, coordinator, scopeToken)
     expect(coordinatorResult.map((hit) => hit.id).sort((a, b) => a - b)).toEqual(
       [scopedLeadership.id, otherLeadership.id].sort((a, b) => a - b),
     )
