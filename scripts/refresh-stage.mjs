@@ -83,11 +83,14 @@ const created = await request('POST', `/projects/${PROJECT_ID}/branches`, {
 const stageBranch = created.branch
 log(`created stage branch ${stageBranch.id} from prod snapshot (${timestamp})`)
 
-// 3. Resolve the new pooled connection string.
+// 3. Resolve the new connection string. UNPOOLED on purpose: the int suite
+//    (and Payload's own advisory locks) need real session state, which the
+//    transaction-mode pooler does not guarantee — the suite hung and GitHub
+//    cancelled the run at the 1-hour mark on 2026-07-30 with the pooled URL.
 const { uri } = await request(
   'GET',
   `/projects/${PROJECT_ID}/connection_uri?branch_id=${stageBranch.id}` +
-    `&database_name=${DATABASE_NAME}&role_name=${ROLE_NAME}&pooled=true`,
+    `&database_name=${DATABASE_NAME}&role_name=${ROLE_NAME}&pooled=false`,
 )
 log(`new stage connection string: ${uri.replace(/:\/\/[^@]*@/, '://***@')}`)
 
