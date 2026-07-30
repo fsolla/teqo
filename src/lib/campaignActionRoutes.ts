@@ -26,3 +26,22 @@ export const isCampaignWizardActionId = (id: string): id is CampaignWizardAction
 
 export const campaignActionEntryHref = (id: CampaignWizardActionId): string =>
   `${CAMPAIGN_ACTIONS_HOME}/${CAMPAIGN_WIZARD_ACTION_SLUGS[id]}`
+
+export const WIZARD_MUNICIPIO_QUERY_KEY = 'municipio' as const
+
+export const wizardActionHref = (actionSlug: string, municipalitySlug?: string): string => {
+  const base = `${CAMPAIGN_ACTIONS_HOME}/${actionSlug}`
+  if (!municipalitySlug) {
+    return base
+  }
+  const params = new URLSearchParams({ [WIZARD_MUNICIPIO_QUERY_KEY]: municipalitySlug })
+  return `${base}?${params.toString()}`
+}
+
+export const parseWizardMunicipioParam = (
+  value: string | string[] | undefined,
+): string | undefined => {
+  const raw = Array.isArray(value) ? value[0] : value
+  const trimmed = raw?.trim()
+  return trimmed ? trimmed : undefined
+}

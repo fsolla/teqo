@@ -4,8 +4,6 @@ import type { Payload } from 'payload'
 
 import { homeSearchQueryIsActive, normalizeHomeSearchRaw } from '@/lib/campaignHomeSearchContract'
 import {
-  toHomeSearchMunicipalityHit,
-  type HomeSearchMunicipalityHit,
   type HomeSearchSuccessResponse,
   type HomeSearchTerritoryHit,
 } from '@/lib/campaignHomeSearchHits'
@@ -18,8 +16,9 @@ import {
 import { DEFAULT_VOTE_RANK_YEAR } from '@/lib/municipalityVoteRank'
 import { matchesNormalizedAtWordStart } from '@/lib/wordStartFilter'
 import type { CampaignUser } from '@/payload-types'
-import { loadMunicipalityScope } from '@/utilities/municipality/campaignMunicipalityScope'
 import { loadTerritoryOverview } from '@/utilities/territory/loadTerritoryOverview'
+
+import { searchStaffMunicipalityHits } from './searchStaffMunicipalityHits'
 
 const emptyResponse = (): HomeSearchSuccessResponse => ({
   status: 'success',
@@ -48,36 +47,10 @@ export const searchHomeMunicipalities = async (
 
   const normalizedQuery = normalizeHomeSearchName(query)
 
-  const { municipalities } = await loadMunicipalityScope(payload, user, {})
-
-  const municipalityHits: HomeSearchMunicipalityHit[] = municipalities
-    .map((doc) => {
-      const normalizedName = normalizeHomeSearchName(doc.name)
-      if (!matchesNormalizedAtWordStart(normalizedName, normalizedQuery)) {
-        return null
-      }
-      return {
-        normalizedName,
-        hit: toHomeSearchMunicipalityHit(doc),
-      }
-    })
-    .filter((row): row is NonNullable<typeof row> => row !== null)
-    .sort((left, right) =>
-      compareHomeSearchNameRelevance(
-        {
-          normalizedName: left.normalizedName,
-          tieBreakDesc: left.hit.votePosition2022?.votes ?? 0,
-        },
-        {
-          normalizedName: right.normalizedName,
-          tieBreakDesc: right.hit.votePosition2022?.votes ?? 0,
-        },
-        normalizedQuery,
-      ),
-    )
-    .map((row) => row.hit)
-
-  const territoryRows = await loadTerritoryOverview(payload, user)
+  const [municipalityHits, territoryRows] = await Promise.all([
+    searchStaffMunicipalityHits(payload, user, query),
+    loadTerritoryOverview(payload, user),
+  ])
   const territoryHits: HomeSearchTerritoryHit[] = territoryRows
     .map((row) => {
       const normalizedName = normalizeHomeSearchName(row.region)

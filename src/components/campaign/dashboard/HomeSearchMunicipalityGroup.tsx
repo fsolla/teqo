@@ -1,8 +1,8 @@
 'use client'
 
 import { HomeSearchHitRow } from '@/components/campaign/dashboard/HomeSearchHitRow'
+import { HomeSearchMunicipalityVoteTrailing } from '@/components/campaign/dashboard/HomeSearchMunicipalityVoteTrailing'
 import { useHomeSearchResults } from '@/components/campaign/dashboard/HomeSearchResultsContext'
-import { MunicipalityVotePositionReadout } from '@/components/campaign/municipality/MunicipalityVotePositionReadout'
 import { homeSearchMunicipalityGroupHasHits } from '@/lib/campaignHomeSearchHits'
 import { formatElectionNumber } from '@/lib/electionFormat'
 import { buildTerritoryPageHref } from '@/lib/territoryAnchor'
@@ -30,16 +30,7 @@ export const HomeSearchMunicipalityGroup = () => {
               primary={hit.name}
               secondary={hit.region}
               showPriority={hit.priority === 'alta'}
-              trailing={
-                hit.votePosition2022 ? (
-                  <MunicipalityVotePositionReadout
-                    position={hit.votePosition2022}
-                    layout="search"
-                  />
-                ) : (
-                  <span className="text-sm text-muted-foreground">—</span>
-                )
-              }
+              trailing={<HomeSearchMunicipalityVoteTrailing position={hit.votePosition2022} />}
             />
           </li>
         ))}
