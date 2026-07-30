@@ -14,6 +14,7 @@ import {
   requiredRelationshipFormValue,
   voteEstimateScenarioFromForm,
 } from '@/lib/formData'
+import { WIZARD_TREND_SAVED_MESSAGE } from '@/lib/politicalTrendWizardUi'
 import {
   MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE,
   parsePoliticalTrendStatusFormValue,
@@ -61,7 +62,7 @@ export const setMunicipalityPoliticalTrendFormAction = async (
         note: nullableFormText(formData, 'trendNote'),
       })
       revalidateMunicipalityListPaths({ slug: optionalMunicipalitySlugFromForm(formData) })
-      return { message: 'Tendência política registrada.' }
+      return { message: WIZARD_TREND_SAVED_MESSAGE }
     },
     safeMessages: municipalityStaffEditSafeMessages,
     genericMessage:

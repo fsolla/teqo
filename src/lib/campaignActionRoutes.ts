@@ -1,6 +1,10 @@
 /** Client-safe entry paths for UX-1 action wizards under `/campanha/acoes`. */
 
 import {
+  parsePoliticalTrendStatusFormValue,
+  type PoliticalTrendStatusValue,
+} from '@/lib/schemas/municipality'
+import {
   parseMunicipalitySignalType,
   type MunicipalitySignalType,
 } from '@/lib/schemas/municipalityUpdate'
@@ -50,6 +54,16 @@ export const WIZARD_SCENARIO_QUERY_KEY = 'cenario' as const
 export const WIZARD_SIGNAL_TYPE_QUERY_KEY = 'signalType' as const
 
 export const WIZARD_ENTRY_ACTION_QUERY_KEY = 'entry' as const
+
+export const WIZARD_TREND_STATUS_QUERY_KEY = 'trendStatus' as const
+
+export const WIZARD_NOTE_PREFILL_QUERY_KEY = 'notePrefill' as const
+
+export const WIZARD_SIGNAL_BODY_QUERY_KEY = 'signalBody' as const
+
+export const WIZARD_VOTE_FROM_QUERY_KEY = 'voteFrom' as const
+
+export const WIZARD_VOTE_TO_QUERY_KEY = 'voteTo' as const
 
 export type WizardActionHrefOptions = {
   entryAction?: CampaignWizardActionId
@@ -129,4 +143,48 @@ export const resolveWizardSignalTypeParam = (
   }
 
   return { signalType: undefined, invalid: true }
+}
+
+export const wizardTrendHref = (
+  actionSlug: string,
+  municipalitySlug?: string,
+  trendStatus?: PoliticalTrendStatusValue,
+  entryAction?: CampaignWizardActionId,
+  extraParams?: Record<string, string>,
+): string => {
+  const base = `${CAMPAIGN_ACTIONS_HOME}/${actionSlug}`
+  if (!municipalitySlug) {
+    return base
+  }
+
+  const params = new URLSearchParams({ [WIZARD_MUNICIPIO_QUERY_KEY]: municipalitySlug })
+  if (trendStatus) {
+    params.set(WIZARD_TREND_STATUS_QUERY_KEY, trendStatus)
+  }
+  if (entryAction) {
+    params.set(WIZARD_ENTRY_ACTION_QUERY_KEY, entryAction)
+  }
+  if (extraParams) {
+    for (const [key, value] of Object.entries(extraParams)) {
+      if (value) params.set(key, value)
+    }
+  }
+  return `${base}?${params.toString()}`
+}
+
+export const resolveWizardTrendStatusParam = (
+  value: string | string[] | undefined,
+): { trendStatus?: PoliticalTrendStatusValue; invalid: boolean } => {
+  const raw = Array.isArray(value) ? value[0] : value
+  const trimmed = raw?.trim()
+  if (!trimmed) {
+    return { trendStatus: undefined, invalid: false }
+  }
+
+  const trendStatus = parsePoliticalTrendStatusFormValue(trimmed)
+  if (trendStatus) {
+    return { trendStatus, invalid: false }
+  }
+
+  return { trendStatus: undefined, invalid: true }
 }

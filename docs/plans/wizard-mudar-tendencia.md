@@ -1,7 +1,7 @@
 # Wizard mudar tendência — escolher destino + justificativa
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-30)
+Atualizado em: 2026-07-30
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B64 — UX-1 wizards)
 Impeccable: C — UI nova (grid de tendências coloridas + Drawer de info + passo de justificativa)
 Appetite: ~1–1,25 dia eng; 2 etapas no B59; write via `POST /campanha/municipios/political-trend` / action B24 ✓
