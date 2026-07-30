@@ -93,6 +93,14 @@ Componentes:
 
 - **Persistência de rascunho (município + ação) ao reabrir.** Revisitar quando a 1ª sessão real for interrompida por Zap e o CG reclamar (UX-1 § contrato #8).
 - **Caption do município como `Link` para a ficha.** Revisitar se a mesa pedir “abrir município” sem sair do fluxo (ex. Sheet de leitura) — v1 é texto só.
+- **Split server shell + client focus island.** Revisitar em **B60** se o passo de busca não precisar hidratar o header inteiro (`CampaignWizardShell` hoje é `'use client'` por um `focus()` no `h1`).
+- **`backdrop-blur` no header sticky.** Revisitar se scroll longo em B60+ mostrar custo de paint; v1 mantém blur alinhado ao app chrome.
+
+## Já resolvido no simplify (não reabrir)
+
+- Cinco `page.tsx` duplicados → rota dinâmica `acoes/[slug]/page.tsx` + `WizardMunicipalityPlaceholderStep`.
+- `CAMPAIGN_HOME` em `campaignPaths.ts`; `WIZARD_MUNICIPALITY_STEP_TITLE` em `campaignWizardCopy.ts`.
+- `aria-labelledby` no `<main>`; `data-slot="wizard-mobile-back"` nos testes.
 
 ## Referências
 
