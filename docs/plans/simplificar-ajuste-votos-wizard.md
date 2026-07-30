@@ -1,11 +1,19 @@
 # Simplificar ajuste de votos no wizard (três cenários numa tela)
 
-Status: rascunho
+Status: **entregue** (2026-07-30)
 Atualizado em: 2026-07-30
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B77 — UX-1 wizards)
 Impeccable: B — encaixe em `WizardExpectedVotesStep` existente; espelha o popover da lista de municípios
 Appetite: ~0,75–1 dia eng; substituir ritual `?cenario=` por editor único + confirm; reuso de strip/inputs/atalhos; sem migration
 Responsável: —
+
+## As-built (entrega)
+
+- `WizardExpectedVotesStep`: uma tela com `VoteEstimateScenarioInputs` (`variant="compact"`) + atalhos no cenário focado + CTA único `Salvar estimativas →`; violação inline no confirm (`Alert` + `aria-invalid` no par conflitante via `getWizardVoteViolationHighlights`).
+- `VoteEstimateScenarioInputs` compact ganhou `activeScenario`, `onFocusScenario`, `errorScenarios`, `disabled` (lista inalterada — props opcionais).
+- `wizardVoteEstimate.ts`: novo `getWizardVoteViolationHighlights`; removidos helpers do ritual `?cenario=` (`getNextWizardVoteScenario`, `wizardVoteStepTitle`, …).
+- `campaignActionRoutes.ts`: `wizardActionHref` sem 3º arg `cenario`; `hasWizardScenarioParam` + redirect canônico em `acoes/[slug]/page.tsx`.
+- Testes: `wizardExpectedVotesStep.unit.spec.tsx`, `wizardVoteEstimate.unit.spec.ts`, `campaignActionRoutes.unit.spec.ts`, e2e `campaignHomeActions` (B61/B77).
 
 ## Design (Impeccable)
 

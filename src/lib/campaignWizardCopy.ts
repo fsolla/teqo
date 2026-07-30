@@ -31,14 +31,7 @@ export const WIZARD_VOTES_SAVED_MESSAGE = 'Votos estimados atualizados.' as cons
 export const WIZARD_VOTES_NEXT_FLOW_PLACEHOLDER =
   'Próximo passo deste fluxo (sinal, tendência ou resumo) em breve.' as const
 
-export const WIZARD_VOTES_SAVE_ERROR_MESSAGE =
-  'Não foi possível salvar os votos estimados. Tente novamente.' as const
-
-export const WIZARD_VOTES_INVALID_DRAFT_MESSAGE =
-  'Informe um número válido ou deixe em branco.' as const
-
-export const wizardVoteReturnToScenarioLabel = (scenarioLabel: string): string =>
-  `Voltar para ${scenarioLabel.toLowerCase()}`
+export const WIZARD_VOTES_FINAL_CTA_LABEL = 'Salvar estimativas →' as const
 
 const WIZARD_NEXT_STEP_GENERIC_PLACEHOLDER = 'Próximo passo deste fluxo em breve.' as const
 

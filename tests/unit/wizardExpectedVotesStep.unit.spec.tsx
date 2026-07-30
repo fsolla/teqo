@@ -1,14 +1,9 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { WizardExpectedVotesStep } from '@/components/campaign/shared/WizardExpectedVotesStep'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
-
-const replace = vi.fn()
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace }),
-}))
+import { postCampaignJson } from '@/lib/campaignJsonRequest'
 
 vi.mock('next/link', () => ({
   default: ({ children, href, ...props }: { children: React.ReactNode; href: string }) => (
@@ -26,7 +21,6 @@ const defaultProps = {
   actionSlug: 'atualizar-votos',
   municipalityId: 1,
   municipalityName: 'Cairu',
-  municipalitySlug: 'cairu',
   initialExpectedVotes: { pessimistic: 100, central: 200, optimistic: 300 },
 }
 
@@ -40,43 +34,70 @@ const renderVotesStep = (props: React.ComponentProps<typeof WizardExpectedVotesS
 describe('WizardExpectedVotesStep', () => {
   afterEach(() => {
     cleanup()
-    replace.mockClear()
+    vi.mocked(postCampaignJson).mockReset()
   })
 
-  it('shows violation banner on média immediately after pessimista breaks order', () => {
-    const { rerender } = renderVotesStep({ ...defaultProps, currentScenario: 'pessimistic' })
+  it('applies shortcuts to the focused scenario', () => {
+    renderVotesStep({ ...defaultProps })
 
-    fireEvent.change(screen.getByLabelText(/Pessimista em Cairu/i), { target: { value: '900' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Ajustar estimativa pessimista →' }))
+    fireEvent.focus(screen.getByLabelText('Pessimista'))
+    fireEvent.click(screen.getByRole('button', { name: '2×' }))
 
-    expect(replace).toHaveBeenCalledWith(expect.stringContaining('cenario=central'))
+    expect((screen.getByLabelText('Pessimista') as HTMLInputElement).value).toBe('200')
+    expect((screen.getByLabelText('Média') as HTMLInputElement).value).toBe('200')
+  })
 
-    rerender(
-      <CampaignWizardChromeProvider>
-        <WizardExpectedVotesStep {...defaultProps} currentScenario="central" />
-      </CampaignWizardChromeProvider>,
-    )
+  it('shows violation alert and highlights inputs without navigation', () => {
+    renderVotesStep({ ...defaultProps })
 
-    const step = screen.getByRole('main', { name: /Qual a nova estimativa média/i })
+    fireEvent.change(screen.getByLabelText('Pessimista'), { target: { value: '900' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar estimativas →' }))
+
+    const step = screen.getByRole('main', { name: /Ajustar votos estimados/i })
     expect(within(step).getByRole('alert').textContent).toMatch(/Pessimista/i)
-    expect(within(step).getByRole('button', { name: /Voltar para pessimista/i })).toBeTruthy()
+    expect(screen.getByLabelText('Pessimista').getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByLabelText('Média').getAttribute('aria-invalid')).toBe('true')
   })
 
-  it('clears violation banner when média draft is edited', () => {
-    const { rerender } = renderVotesStep({ ...defaultProps, currentScenario: 'pessimistic' })
+  it('clears violation when a draft is edited', () => {
+    renderVotesStep({ ...defaultProps })
 
-    fireEvent.change(screen.getByLabelText(/Pessimista em Cairu/i), { target: { value: '900' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Ajustar estimativa pessimista →' }))
-    rerender(
-      <CampaignWizardChromeProvider>
-        <WizardExpectedVotesStep {...defaultProps} currentScenario="central" />
-      </CampaignWizardChromeProvider>,
-    )
+    fireEvent.change(screen.getByLabelText('Pessimista'), { target: { value: '900' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar estimativas →' }))
 
-    const step = screen.getByRole('main', { name: /Qual a nova estimativa média/i })
+    const step = screen.getByRole('main', { name: /Ajustar votos estimados/i })
     expect(within(step).getByRole('alert')).toBeTruthy()
 
-    fireEvent.change(screen.getByLabelText(/Média em Cairu/i), { target: { value: '250' } })
+    fireEvent.change(screen.getByLabelText('Média'), { target: { value: '950' } })
     expect(within(step).queryByRole('alert')).toBeNull()
+    expect(screen.getByLabelText('Pessimista').getAttribute('aria-invalid')).toBeNull()
+  })
+
+  it('posts batch expected votes when estimates are coherent', async () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: {
+        status: 'success',
+        savedExpectedVotes: { pessimistic: 150, central: 250, optimistic: 350 },
+      },
+    })
+
+    renderVotesStep({ ...defaultProps })
+
+    fireEvent.change(screen.getByLabelText('Pessimista'), { target: { value: '150' } })
+    fireEvent.change(screen.getByLabelText('Média'), { target: { value: '250' } })
+    fireEvent.change(screen.getByLabelText('Otimista'), { target: { value: '350' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar estimativas →' }))
+
+    await waitFor(() => {
+      expect(postCampaignJson).toHaveBeenCalledWith('/campanha/municipios/expected-votes', {
+        municipalityId: 1,
+        expectedVotes: { pessimistic: 150, central: 250, optimistic: 350 },
+      })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole('status').textContent).toMatch(/Votos estimados atualizados/i)
+    })
   })
 })

@@ -40,9 +40,9 @@ Responsável: —
 
 ~~Jump+warning ao confirmar pessimista `> média` quebrava: `useEffect` limpava `violationEditedScenario` na troca de `?cenario=`.~~ **Corrigido em B76** — preservar estado no jump ao cenário violado; limpar ao editar draft/atalho.
 
-### Emenda UX (2026-07-30 → **B77**)
+### Emenda UX (2026-07-30 → ~~B77~~ ✓)
 
-Ritual de três passos `?cenario=` será **substituído** por uma tela com os três inputs + strip (como popover da lista); validação inline no confirm. Ver [simplificar-ajuste-votos-wizard.md](simplificar-ajuste-votos-wizard.md).
+Ritual de três passos `?cenario=` **substituído** por uma tela com os três inputs + strip (como popover da lista); validação inline no confirm. Ver [simplificar-ajuste-votos-wizard.md](simplificar-ajuste-votos-wizard.md).
 
 ## Design (Impeccable)
 
@@ -144,19 +144,22 @@ Componentes:
 - Ramo morto em `buildWizardVoteViolationMessage` (cenário `central` com `optimistic < central` — `getVoteEstimateOrderViolation` já devolve `'optimistic'`).
 - Estado duplicado de mensagem de violação (`violationReturn` → só `violationEditedScenario` + `activeViolation.message`).
 - Banner de violação obsoleto ao voltar de cenário (limpa `violationEditedScenario` na troca).
-- `parseWizardVoteDraft` duplicado em `handleConfirm`.
+- `parseWizardVoteDraft` removido (B77+); parsing fica só em `VoteEstimateScenarioInputs.parseScenarioInput`.
 - Alias `WizardVoteEditScenario` = `VoteEstimateScenario`; `getWizardVoteViolation` lazy.
 - Constante `MUNICIPALITY_EXPECTED_VOTES_ENDPOINT` compartilhada com `MunicipalityListExpectedVotesControl`.
+- **B77+:** `getWizardVoteViolation` devolve `highlightScenarios` num único pass; `MUNICIPALITY_EXPECTED_VOTES_SAVE_ERROR_MESSAGE` compartilhada wizard+lista; prop `municipalitySlug` morta no passo; `hasWizardScenarioParam` delega a `parseWizardMunicipioParam`; CTA `WIZARD_VOTES_FINAL_CTA_LABEL` em `campaignWizardCopy.ts`.
 
 ## Explicitamente fora (pós-/simplify, defer)
 
-| Achado                                                                                                       | Gatilho para revisitar                                                                                |
-| ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| Unificar `parseWizardVoteDraft` com `VoteEstimateScenarioInputs.parseScenarioInput` (pt-BR `"1.200"` difere) | 3ª superfície de input de votos **ou** passe repo-wide de parsing numérico pt-BR                      |
-| Extrair `SAVE_ERROR_MESSAGE` / copy de pending do wizard e da lista                                          | 3º consumidor de POST JSON de célula **ou** helper `readCampaignJsonMutationResult` (precedente B32+) |
-| Validar body do wizard com `voteEstimateScenarioFieldsSchema` no client                                      | Gravação por cenário (write parcial) em vez do batch único                                            |
-| Helper genérico `readCampaignJsonMutationResult`                                                             | 3ª rota/painel wizard com o mesmo shape de resposta JSON                                              |
-| Generalizar `parseWizardMunicipioParam` / `resolveWizardScenarioParam` num parser de query do wizard         | B63/B64 reutilizarem `?cenario=` ou outro param de passo na mesma rota                                |
+| Achado                                                                                               | Gatilho para revisitar                                                                                                  |
+| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Unificar `VoteEstimateScenarioInputs.parseScenarioInput` com clamp `MAX_VOTE_COUNT` no wizard        | 3ª superfície de input de votos **ou** passe repo-wide de parsing numérico pt-BR                                        |
+| Extrair shell `ExpectedVotesEditor` (wizard + lista)                                                 | `/simplify` medir duplicação &gt;~60 linhas **e** políticas de save alinhadas (hoje wizard = confirm, lista = autosave) |
+| Validar ordem pessimista/média/otimista no client na lista (popover)                                 | Produto pedir feedback inline antes do autosave **ou** 3º editor inline de votos estimados                              |
+| `useCampaignCellAutosave` no wizard                                                                  | **Não** — submit explícito é decisão de produto (`campanha-edit-where-you-see`); ver Não escopo B77                     |
+| Validar body do wizard com `voteEstimateScenarioFieldsSchema` no client                              | Gravação por cenário (write parcial) em vez do batch único                                                              |
+| Helper genérico `readCampaignJsonMutationResult`                                                     | 3ª rota/painel wizard com o mesmo shape de resposta JSON                                                                |
+| Generalizar `parseWizardMunicipioParam` / `resolveWizardScenarioParam` num parser de query do wizard | B63/B64 reutilizarem `?cenario=` ou outro param de passo na mesma rota                                                  |
 
 ## Referências
 
