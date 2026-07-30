@@ -10,6 +10,7 @@ import {
   Users,
 } from 'lucide-react'
 
+import { campaignActionEntryHref, isCampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
@@ -124,6 +125,8 @@ export const toHomeActionButtonProps = (
       href = LEADER_CONTACTS_HOME
     } else if (action.id === 'uncovered-municipalities') {
       href = uncoveredMunicipalitiesHref
+    } else if (isCampaignWizardActionId(action.id)) {
+      href = campaignActionEntryHref(action.id)
     }
     return {
       ...action,

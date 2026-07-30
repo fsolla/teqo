@@ -1,3 +1,4 @@
+import { WIZARD_MUNICIPALITY_STEP_TITLE } from '../../src/lib/campaignWizardCopy.js'
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
 const staffActionLabels = [
@@ -89,6 +90,11 @@ test.describe('Início — catálogo de ações (B45)', () => {
       await expect(link.or(button)).toBeVisible()
     }
 
+    await page.getByRole('link', { name: 'Ajustar votos', exact: true }).click()
+    await page.waitForURL(/\/campanha\/acoes\/atualizar-votos/)
+    await expect(page.getByRole('heading', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toBeVisible()
+
+    await page.goto('/campanha')
     await page.getByRole('link', { name: 'Ver esquecidos', exact: true }).click()
     await page.waitForURL(/\/campanha\/municipios/)
     const url = new URL(page.url())
