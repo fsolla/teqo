@@ -120,7 +120,9 @@ export const WizardMunicipalitySearchStep = ({
                     primary={hit.name}
                     secondary={hit.region}
                     showPriority={hit.priority === 'alta'}
-                    trailing={<HomeSearchMunicipalityVoteTrailing position={hit.votePosition2022} />}
+                    trailing={
+                      <HomeSearchMunicipalityVoteTrailing position={hit.votePosition2022} />
+                    }
                   />
                 </li>
               ))}
