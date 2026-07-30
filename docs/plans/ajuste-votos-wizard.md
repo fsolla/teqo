@@ -36,6 +36,10 @@ Responsável: —
 
 - Preview cobertura E8 no passo; wiring completo A1 (sinal/tendência/resumo B63/B64).
 
+### Regressão conhecida (2026-07-30 → ~~B76~~ ✓)
+
+~~Jump+warning ao confirmar pessimista `> média` quebrava: `useEffect` limpava `violationEditedScenario` na troca de `?cenario=`.~~ **Corrigido em B76** — preservar estado no jump ao cenário violado; limpar ao editar draft/atalho.
+
 ## Design (Impeccable)
 
 Âncoras: `PRODUCT.md` (Feel the action; Clarity under pressure) / `DESIGN.md` · `VoteEstimateScenarioInputs` / `MunicipalityListExpectedVotesControl` · tema `campaign`.

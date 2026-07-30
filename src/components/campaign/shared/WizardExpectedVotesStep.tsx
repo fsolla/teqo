@@ -76,11 +76,22 @@ export const WizardExpectedVotesStep = ({
 
   useEffect(() => {
     if (previousScenarioRef.current === currentScenario) return
+
     setDraft(draftTextForVoteValue(confirmed[currentScenario]))
     setDraftError(null)
-    setViolationEditedScenario(null)
+
+    const violation = violationEditedScenario != null ? getWizardVoteViolation(confirmed) : null
+    const keepViolationState =
+      violationEditedScenario != null &&
+      violation != null &&
+      violation.violatingScenario === currentScenario
+
+    if (!keepViolationState) {
+      setViolationEditedScenario(null)
+    }
+
     previousScenarioRef.current = currentScenario
-  }, [confirmed, currentScenario])
+  }, [confirmed, currentScenario, violationEditedScenario])
 
   const activeViolation = violationEditedScenario != null ? getWizardVoteViolation(confirmed) : null
   const showViolationBanner =
@@ -99,6 +110,7 @@ export const WizardExpectedVotesStep = ({
     setDraft(draftTextForVoteValue(nextValue))
     setDraftError(null)
     setSaveError(null)
+    setViolationEditedScenario(null)
     inputRef.current?.focus()
   }
 
@@ -214,6 +226,7 @@ export const WizardExpectedVotesStep = ({
               setDraft(event.currentTarget.value.replace(/\D/g, ''))
               setDraftError(null)
               setSaveError(null)
+              setViolationEditedScenario(null)
             }}
             onFocus={(event) => event.currentTarget.select()}
             disabled={isPending}
