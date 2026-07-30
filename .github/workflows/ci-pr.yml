@@ -88,6 +88,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # gh expands --json files via git, so it needs the repo checked out.
+      - uses: actions/checkout@v4
+
       - name: Count open PRs touching schema files
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
