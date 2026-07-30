@@ -1,6 +1,6 @@
 ---
 name: work-issue
-description: Conduz uma GitHub Issue rastreável do Teqo do claim ao merge em stage — claim (pnpm agent:claim), verificação do modelo declarado na Issue, freshness audit do plano, execução das fases (schema/server → UI via /impeccable → gates), /simplify + capture-review-debts, PR --base stage com Closes #N, acompanhamento do CI até o merge. Usar quando o usuário pedir para implementar/trabalhar uma Issue ("trabalha a issue #N", "implementa o B79", "pega a próxima issue", "vamos fazer o X", "continua a implementação").
+description: Conduz uma GitHub Issue rastreável do Teqo do claim ao merge em stage — prep (pnpm i), claim (pnpm agent:claim), abertura do plano no editor para o humano acompanhar, verificação do modelo declarado na Issue, freshness audit do plano, execução das fases (schema/server → UI via /impeccable → gates), /simplify + capture-review-debts, PR --base stage com Closes #N, acompanhamento do CI até o merge. Usar quando o usuário pedir para implementar/trabalhar uma Issue ("trabalha a issue #N", "implementa o B79", "pega a próxima issue", "vamos fazer o X", "continua a implementação").
 ---
 
 # Trabalhar uma Issue (claim → merge em stage)
@@ -14,7 +14,9 @@ Esta skill conduz UMA Issue rastreável do claim ao merge em `stage`. Substitui 
 ## Checklist do fluxo
 
 ```
+- [ ] 0. Prep: pnpm i (node_modules obrigatório para agent:claim)
 - [ ] 1. Claim: pnpm agent:claim (ou -- --issue <N>) — o brief do stdout é o contrato
+- [ ] 1b. Abrir o plano no editor (cursor-app-control open_resource) para o humano acompanhar
 - [ ] 2. Verificação de modelo (best effort): comparar model: da Issue com o modelo da sessão
 - [ ] 3. Freshness audit (enxuto) do plano contra o repositório
 - [ ] 4. Executar as fases (schema/server → UI via /impeccable → gates de engenharia)
@@ -22,6 +24,16 @@ Esta skill conduz UMA Issue rastreável do claim ao merge em `stage`. Substitui 
 - [ ] 6. Fechar em stage: fast gate → branch → commit → gh pr create --base stage (Closes #N)
        → gh pr merge --auto --merge → gh pr checks --watch até o merge → consolidar pontas soltas
 ```
+
+## Passo 0 — Prep (deps)
+
+`pnpm agent:claim` depende de `node_modules` (scripts em `scripts/` importam pacotes do projeto). Em worktree/clone fresco, ou quando `node_modules` não existir, rode **antes** do claim:
+
+```bash
+pnpm i
+```
+
+Não pule este passo — sem deps instaladas o claim falha antes de imprimir o brief.
 
 ## Passo 1 — Claim
 
@@ -31,6 +43,16 @@ pnpm agent:claim -- --issue <N>   # quando o usuário especifica
 ```
 
 O brief impresso no stdout é o contrato: id, priority, **model**, spec, link do plano. O claim faz o swap de label `ready → in-progress` com lock otimista. Se falhar ("claimed by someone else"), re-rodar — nunca forçar.
+
+### Abrir o plano para o humano
+
+Logo após o claim bem-sucedido, **abra o arquivo do plano no editor** para quem acompanha a sessão — não basta `Read` no chat.
+
+1. Extraia o caminho do plano do brief (`docs/plans/<slug>.md`) ou do link `Plano:` no body da Issue.
+2. Chame `cursor-app-control` → `open_resource` com URI absoluta, ex.: `file:///…/docs/plans/foo.md` (caminho relativo resolvido a partir da raiz do workspace).
+3. Informe em uma linha qual plano foi aberto (`B79 — docs/plans/…`).
+
+Se `open_resource` não estiver disponível (fora da Agents Window), diga o caminho absoluto do plano para o humano abrir manualmente — mas tente o MCP primeiro.
 
 ## Passo 2 — Verificação de modelo (best effort, não programática)
 
@@ -78,4 +100,4 @@ Rode `/simplify` sobre o diff da sessão. Follow-ups maiores que o cleanup → `
 
 ## Resumo final ao usuário
 
-Issue trabalhada + verificação de modelo (declarado vs sessão, ou registro do ausente), veredito do freshness audit, o que entrou por fase, resultado do critique/polish (se UI), simplify + débitos registrados, gates, link do PR e estado do merge em stage, pontas soltas consolidadas. Nunca anuncie promote — `in-prod` é humano (`pnpm agent:promote --i-am-human`).
+Issue trabalhada + plano aberto no editor + verificação de modelo (declarado vs sessão, ou registro do ausente), veredito do freshness audit, o que entrou por fase, resultado do critique/polish (se UI), simplify + débitos registrados, gates, link do PR e estado do merge em stage, pontas soltas consolidadas. Nunca anuncie promote — `in-prod` é humano (`pnpm agent:promote --i-am-human`).
