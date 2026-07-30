@@ -35,7 +35,6 @@ Teqo is the digital platform for deputado federal Jorge Solla (PT-BA): public si
 - To (re)populate news content, `pnpm db:seed:posts` fetches articles live from jorgesolla.com.br into the LOCAL db (same non-local `DATABASE_URL` guard as `pnpm dev`). It writes from a CLI process outside the deployed runtime, so after seeding — or after ANY direct-DB change — you must bust the production `posts` cache via `POST /api/revalidate`. See "Posts & Tags" below.
 - To (re)populate the TSE 2022 election baseline, `pnpm db:seed:tse` downloads TSE open data and imports the Bahia scope into the LOCAL db (same guard). Since the 2026-07-23 hardening, elections-tab reads are cached under the `election-tse` tag — after re-seeding a database the deployed app reads, bust it via `POST /api/revalidate?tag=election-tse`. See "Election baseline data (TSE 2022)" below.
 
-
 ## Histórico de entregas (movido)
 
 "Known Gaps" e os blocos "Recently resolved" saíram deste arquivo em 2026-07-30: vivem em [`docs/CHANGELOG-AGENTS.md`](docs/CHANGELOG-AGENTS.md). Novas entregas registram UMA entrada curta lá, não aqui. A referência genérica de Payload (config/collections/fields/hooks/queries/components) foi para [`docs/PAYLOAD-REFERENCE.md`](docs/PAYLOAD-REFERENCE.md) — consulta sob demanda, não always-on. Operação do paradigma de agentes paralelos (claim→PR→stage→promote humano): [`docs/AGENT-OPS.md`](docs/AGENT-OPS.md).
