@@ -1,7 +1,7 @@
 # Modo focado da busca no focus (não na digitação)
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-30)
+Atualizado em: 2026-07-30 — as-built: predicado `homeSearchUiFocused` (`inputFocused || query.isActive`) já no contrato/hook (overlap B68); `CampaignHomeLayout` retrai summary+spacer (`data-slot="home-chrome"`) e actions (grid `0fr/1fr` + opacity 220ms ease-out, `motion-reduce:transition-none`) em vez de `hidden`; `md:flex-none` no chrome para não crescer no desktop; `HomeSearchHitRow` `onMouseDown` preventDefault (blur→click); e2e focus sem digitar + regressão com digitação; unit layout/search atualizados. Sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B66 — UX-1 busca Início)
 Impeccable: B — encaixe de motion/estado no chrome do Início (`CampaignHomeLayout` / `CampaignHomeStaffChrome`) sob tema `campaign`
 Appetite: ~0,5–0,75 dia eng; estado `focused` ≠ `query.isActive` + transição CSS; sem migration

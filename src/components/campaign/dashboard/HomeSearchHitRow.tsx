@@ -23,6 +23,10 @@ export const HomeSearchHitRow = ({
 }) => (
   <Link
     href={href}
+    onMouseDown={(event) => {
+      // Combobox/list precedent: RelationChipCell — keep input focused until navigation (B66).
+      event.preventDefault()
+    }}
     className={cn(
       'flex min-h-11 w-full items-center gap-3 py-2.5 text-left text-foreground',
       'rounded-md outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring',

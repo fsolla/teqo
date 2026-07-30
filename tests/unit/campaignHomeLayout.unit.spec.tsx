@@ -40,18 +40,20 @@ describe('CampaignHomeLayout', () => {
     expect(container.querySelector('[data-slot="home-dock"]')).not.toBeNull()
   })
 
-  it('renders mobile thumb-zone spacer above home-dock', () => {
+  it('renders mobile thumb-zone spacer inside home-chrome above home-dock', () => {
     const { container } = render(<CampaignHomeLayout actions={<p>Actions block</p>} />)
 
-    const dock = container.querySelector('[data-slot="home-dock"]')
-    const spacer = dock?.previousElementSibling
-    expect(spacer?.getAttribute('data-slot')).toBe('home-thumb-spacer')
+    const chrome = container.querySelector('[data-slot="home-chrome"]')
+    const spacer = chrome?.querySelector('[data-slot="home-thumb-spacer"]')
+    expect(chrome).not.toBeNull()
+    expect(spacer).not.toBeNull()
     expect(spacer?.getAttribute('aria-hidden')).toBe('true')
     expect(spacer?.className).toContain('flex-1')
     expect(spacer?.className).toContain('md:hidden')
+    expect(chrome?.nextElementSibling?.getAttribute('data-slot')).toBe('home-dock')
   })
 
-  it('hides spacer, summary, and actions when focused but keeps search', () => {
+  it('retracts spacer, summary, and actions when focused but keeps search', () => {
     const { container } = render(
       <CampaignHomeLayout
         actions={<p>Actions block</p>}
@@ -61,11 +63,18 @@ describe('CampaignHomeLayout', () => {
       />,
     )
 
-    expect(container.querySelector('[data-slot="home-thumb-spacer"]')?.className).toContain(
-      'hidden',
-    )
-    expect(container.querySelector('[data-slot="home-summary"]')?.className).toContain('hidden')
-    expect(container.querySelector('[data-slot="home-actions"]')?.className).toContain('hidden')
+    const homeChrome = container.querySelector('[data-slot="home-chrome"]')
+    expect(homeChrome?.getAttribute('data-retracted')).toBe('true')
+    expect(homeChrome?.className).toContain('grid-rows-[0fr]')
+    expect(homeChrome?.className).toContain('opacity-0')
+
+    const actionsChrome = container.querySelector('[data-slot="home-actions-chrome"]')
+    expect(actionsChrome?.getAttribute('data-retracted')).toBe('true')
+    expect(actionsChrome?.className).toContain('grid-rows-[0fr]')
+
+    expect(container.querySelector('[data-slot="home-thumb-spacer"]')).not.toBeNull()
+    expect(container.querySelector('[data-slot="home-summary"]')).not.toBeNull()
+    expect(container.querySelector('[data-slot="home-actions"]')).not.toBeNull()
     expect(container.querySelector('[data-slot="home-search"]')).not.toBeNull()
     expect(container.querySelector('[data-slot="home-dock"]')).not.toBeNull()
   })
