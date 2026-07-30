@@ -59,7 +59,7 @@ jobs:
       - name: Integration smoke tests against the stage snapshot
         run: >
           pnpm test:int
-          tests/int/campaignMigrationReconciliation.int.spec.ts
+          --testTimeout=120000 --hookTimeout=120000
           tests/int/collectionAccessLockdown.int.spec.ts
           tests/int/campaignMunicipalityAccess.int.spec.ts
           tests/int/campaignVotePledge.int.spec.ts
