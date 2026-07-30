@@ -10,7 +10,6 @@ import {
   useHomeSearchResultsState,
 } from '@/components/campaign/dashboard/HomeSearchResultsContext'
 import { useHomeSearchQuery } from '@/components/campaign/dashboard/useHomeSearchQuery'
-import { cn } from '@/lib/utils'
 
 const CampaignHomeStaffSearchSlot = ({ searchResults }: { searchResults: ReactNode }) => {
   const searchResultsState = useHomeSearchResultsState()
@@ -39,10 +38,7 @@ export const CampaignHomeStaffChrome = ({
 
   return (
     <HomeSearchProvider value={searchState}>
-      <div
-        className={cn('flex min-h-full w-full flex-col', focused && 'md:min-h-0')}
-        data-home-focused={focused || undefined}
-      >
+      <div className="h-full min-h-0 w-full" data-home-focused={focused || undefined}>
         <CampaignHomeLayout
           actions={actions}
           focused={focused}

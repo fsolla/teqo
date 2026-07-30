@@ -1,7 +1,7 @@
 # Ancorar busca + ações do Início no limite inferior (mobile)
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: cadeia `h-full min-h-0` em `CampaignPageShell` + `CampaignHomeStaffChrome` + `CampaignHomeLayout`; wrapper `data-slot="home-dock"` agrupa strip + busca; spacer `flex-1` volta a empurrar o dock no mobile; `mt-auto` não foi necessário; modo focado B47/B66 intacto; unit `campaignHomeLayout` estendido (6 casos). Sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — **B65**; follow-up do chassis UX-1 / B46)
 Impeccable: B — encaixe de layout em `CampaignHomeLayout` / shell do Início sob tema `campaign`
 Appetite: ~0,25–0,5 dia eng; CSS/altura do chrome do Início; sem migration

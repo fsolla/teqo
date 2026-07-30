@@ -41,7 +41,7 @@ export default async function CampaignHomePage() {
   }
 
   return (
-    <CampaignPageShell aria-label="Início" className="min-h-full">
+    <CampaignPageShell aria-label="Início" className="h-full min-h-0">
       {staff ? (
         <CampaignHomeStaffChrome
           actions={actions}
