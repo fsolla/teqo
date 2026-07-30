@@ -151,15 +151,15 @@ Componentes:
 
 ## Explicitamente fora (pós-/simplify, defer)
 
-| Achado                                                                                                       | Gatilho para revisitar                                                                                |
-| ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| Unificar `VoteEstimateScenarioInputs.parseScenarioInput` com clamp `MAX_VOTE_COUNT` no wizard                | 3ª superfície de input de votos **ou** passe repo-wide de parsing numérico pt-BR                      |
-| Extrair shell `ExpectedVotesEditor` (wizard + lista)                                                         | `/simplify` medir duplicação &gt;~60 linhas **e** políticas de save alinhadas (hoje wizard = confirm, lista = autosave) |
-| Validar ordem pessimista/média/otimista no client na lista (popover)                                         | Produto pedir feedback inline antes do autosave **ou** 3º editor inline de votos estimados              |
-| `useCampaignCellAutosave` no wizard                                                                          | **Não** — submit explícito é decisão de produto (`campanha-edit-where-you-see`); ver Não escopo B77 |
-| Validar body do wizard com `voteEstimateScenarioFieldsSchema` no client                                      | Gravação por cenário (write parcial) em vez do batch único                                            |
-| Helper genérico `readCampaignJsonMutationResult`                                                             | 3ª rota/painel wizard com o mesmo shape de resposta JSON                                              |
-| Generalizar `parseWizardMunicipioParam` / `resolveWizardScenarioParam` num parser de query do wizard         | B63/B64 reutilizarem `?cenario=` ou outro param de passo na mesma rota                                |
+| Achado                                                                                               | Gatilho para revisitar                                                                                                  |
+| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Unificar `VoteEstimateScenarioInputs.parseScenarioInput` com clamp `MAX_VOTE_COUNT` no wizard        | 3ª superfície de input de votos **ou** passe repo-wide de parsing numérico pt-BR                                        |
+| Extrair shell `ExpectedVotesEditor` (wizard + lista)                                                 | `/simplify` medir duplicação &gt;~60 linhas **e** políticas de save alinhadas (hoje wizard = confirm, lista = autosave) |
+| Validar ordem pessimista/média/otimista no client na lista (popover)                                 | Produto pedir feedback inline antes do autosave **ou** 3º editor inline de votos estimados                              |
+| `useCampaignCellAutosave` no wizard                                                                  | **Não** — submit explícito é decisão de produto (`campanha-edit-where-you-see`); ver Não escopo B77                     |
+| Validar body do wizard com `voteEstimateScenarioFieldsSchema` no client                              | Gravação por cenário (write parcial) em vez do batch único                                                              |
+| Helper genérico `readCampaignJsonMutationResult`                                                     | 3ª rota/painel wizard com o mesmo shape de resposta JSON                                                                |
+| Generalizar `parseWizardMunicipioParam` / `resolveWizardScenarioParam` num parser de query do wizard | B63/B64 reutilizarem `?cenario=` ou outro param de passo na mesma rota                                                  |
 
 ## Referências
 
