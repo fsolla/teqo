@@ -71,6 +71,7 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/utilities/homeSearch',
       'src/utilities/campaignDashboardData',
       'src/lib/campaignHomeSearchHits',
+      'src/lib/homeSearchShare',
     ],
     specs: ['campaignHomeActions'],
   },

@@ -3,6 +3,7 @@
 import { useHomeSearchHitLimit } from '@/components/campaign/dashboard/HomeSearchHitBudgetContext'
 import { HomeSearchHitRow } from '@/components/campaign/dashboard/HomeSearchHitRow'
 import { useHomeSearchResults } from '@/components/campaign/dashboard/HomeSearchResultsContext'
+import { HomeSearchWhatsAppAction } from '@/components/campaign/dashboard/HomeSearchWhatsAppAction'
 import { homeSearchLeadershipGroupHasHits } from '@/lib/campaignHomeSearchHits'
 import { sliceHomeSearchHits } from '@/lib/homeSearchHitBudget'
 import { HOME_SEARCH_GROUP_HEADING_CLASS, HOME_SEARCH_GROUP_LIST_CLASS } from '@/lib/homeSearchUi'
@@ -29,6 +30,7 @@ export const HomeSearchLeadershipGroup = () => {
               href={`/campanha/liderancas/${hit.id}`}
               primary={hit.name}
               secondary={hit.municipalitiesSummary || undefined}
+              trailingAction={<HomeSearchWhatsAppAction phone={hit.phone} contactName={hit.name} />}
             />
           </li>
         ))}
