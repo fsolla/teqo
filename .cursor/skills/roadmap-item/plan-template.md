@@ -1,6 +1,6 @@
 # Template de plano (`docs/plans/<slug>.md`)
 
-Estrutura extraída dos planos existentes (`overview-lista-nucleos.md`, `visitados-recentemente.md`, etc.). Manter as seções nesta ordem; omitir "Design (Impeccable)" apenas na classe **A** (só backend); **sempre** incluir "Dados → decisão → apresentação" (`N/A` se não houver superfície de dados); omitir a subseção "Referência visual (UX Pilot)" quando não houver design-ref.
+Estrutura extraída dos planos existentes (`overview-lista-nucleos.md`, `visitados-recentemente.md`, etc.). Manter as seções nesta ordem; omitir "Design (Impeccable)" apenas na classe **A** (só backend); **sempre** incluir "Dados → decisão → apresentação" (`N/A` se não houver superfície de dados); omitir a subseção "Referência visual (UX Pilot)" quando não houver design-ref; omitir "Wireframe (texto)" quando não houver layout a posicionar (ver skill `implement-roadmap-item`).
 
 Filtros de decisão (caro vs barato, appetite, rabbit holes, depth): [decision-quality.md](decision-quality.md).
 Filtro de dados (apresentar? decisão? forma?): [data-presentation.md](data-presentation.md) — obrigatório se houver KPI/mapa/série/ranking; senão `Dados: N/A`.
@@ -30,6 +30,20 @@ Brief compacto (obrigatório em C; se B ambíguo):
 - **Estratégia de cor:** Restrained (default) | <exceção justificada>
 - **Edit where you see** (só `/campanha` staff, UI B/C/D): <sim — affordance no contexto + actions existentes | não — só leitura / `/editar` justificado> — princípio 3 de `PRODUCT.md`; rabbit hole: spreadsheet mode
 - **Anti-goals:** <o que esta superfície não deve ser>
+
+### Wireframe (texto)
+
+<!-- Opcional no plano durável; obrigatório no plano de implementação (skill implement-roadmap-item)
+     quando B/C/D posiciona blocos. Caixas ASCII + rótulos pt-BR; sem cores/pixels.
+     Omitir se só copy/controle isolado ou se "seguir design-ref à risca" sem adaptação. -->
+
+\```text
+┌─ <rota ou superfície> ───────────────────────────────┐
+│ <bloco / região>                                     │
+│ <…>                                                  │
+└──────────────────────────────────────────────────────┘
+  Fora do frame: <chrome compartilhado / tabs fora do item>.
+\```
 
 ### Referência visual (UX Pilot)
 
