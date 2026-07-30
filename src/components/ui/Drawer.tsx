@@ -195,7 +195,6 @@ const DrawerDescription = ({ className, ...props }: DrawerPrimitive.Description.
 
 export {
   Drawer,
-  DrawerClose,
   DrawerCloseButton,
   DrawerContent,
   DrawerDescription,
