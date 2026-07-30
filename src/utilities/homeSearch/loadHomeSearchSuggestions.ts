@@ -79,5 +79,6 @@ export const loadHomeSearchSuggestions = async (
     resultKind: 'suggest',
     municipalities: municipalityHits,
     territories: [],
+    advisors: [],
   }
 }

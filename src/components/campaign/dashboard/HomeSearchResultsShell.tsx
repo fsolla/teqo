@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 
 import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
 import { useHomeSearchResults } from '@/components/campaign/dashboard/HomeSearchResultsContext'
-import { homeSearchMunicipalityGroupHasHits } from '@/lib/campaignHomeSearchHits'
+import { homeSearchHasAnyHits } from '@/lib/campaignHomeSearchHits'
 
 export const HomeSearchResultsShell = ({ children }: { children: ReactNode }) => {
   const { query } = useHomeSearch()
@@ -14,7 +14,7 @@ export const HomeSearchResultsShell = ({ children }: { children: ReactNode }) =>
     query.isActive &&
     resultKind === 'search' &&
     results.status === 'success' &&
-    !homeSearchMunicipalityGroupHasHits(results.data)
+    !homeSearchHasAnyHits(results.data)
 
   return (
     <>

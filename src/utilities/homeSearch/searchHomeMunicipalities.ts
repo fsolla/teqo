@@ -26,6 +26,7 @@ const emptyResponse = (): HomeSearchSuccessResponse => ({
   resultKind: 'search',
   municipalities: [],
   territories: [],
+  advisors: [],
 })
 
 export const searchHomeMunicipalities = async (
@@ -62,11 +63,11 @@ export const searchHomeMunicipalities = async (
       compareHomeSearchNameRelevance(
         {
           normalizedName: left.normalizedName,
-          votes2022: left.hit.votePosition2022?.votes ?? 0,
+          tieBreakDesc: left.hit.votePosition2022?.votes ?? 0,
         },
         {
           normalizedName: right.normalizedName,
-          votes2022: right.hit.votePosition2022?.votes ?? 0,
+          tieBreakDesc: right.hit.votePosition2022?.votes ?? 0,
         },
         normalizedQuery,
       ),
@@ -94,11 +95,11 @@ export const searchHomeMunicipalities = async (
       compareHomeSearchNameRelevance(
         {
           normalizedName: left.normalizedName,
-          votes2022: left.hit.votes2022,
+          tieBreakDesc: left.hit.votes2022,
         },
         {
           normalizedName: right.normalizedName,
-          votes2022: right.hit.votes2022,
+          tieBreakDesc: right.hit.votes2022,
         },
         normalizedQuery,
       ),
@@ -110,5 +111,6 @@ export const searchHomeMunicipalities = async (
     resultKind: 'search',
     municipalities: municipalityHits,
     territories: territoryHits,
+    advisors: [],
   }
 }

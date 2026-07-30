@@ -11,12 +11,12 @@ describe('homeSearchMunicipalityMatch', () => {
     expect(homeSearchNameRelevanceTier('porto seguro', 'seg')).toBe(1)
   })
 
-  it('sorts by relevance tier then votes 2022 desc', () => {
+  it('sorts by relevance tier then tie-break desc', () => {
     const normalizedQuery = 'cai'
     const hits = [
-      { normalizedName: 'porto seguro', votes2022: 9000 },
-      { normalizedName: 'cairu', votes2022: 100 },
-      { normalizedName: 'caicara', votes2022: 5000 },
+      { normalizedName: 'porto seguro', tieBreakDesc: 9000 },
+      { normalizedName: 'cairu', tieBreakDesc: 100 },
+      { normalizedName: 'caicara', tieBreakDesc: 5000 },
     ]
     const sorted = [...hits].sort((a, b) => compareHomeSearchNameRelevance(a, b, normalizedQuery))
     expect(sorted.map((row) => row.normalizedName)).toEqual(['caicara', 'cairu', 'porto seguro'])

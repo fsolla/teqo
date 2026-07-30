@@ -104,7 +104,7 @@ O discovery literatura→persona→entrevista ([relatório aprovado](research/re
 - ~~**B48** Busca — resultados Municípios (+ TIs no mesmo grupo; flag de prioridade alinhada; “2022” / agregado à direita; sem card)~~ — **entregue 2026-07-29** (`POST /campanha/home-search`, `searchHomeMunicipalities`, `HomeSearchMunicipalityGroup`; word-start; assessor scoped; TIs via `loadTerritoryOverview`) · [plano](plans/busca-global-resultados-municipios.md)
 - ~~**B68** Sugestões na busca aberta (empty state por papel)~~ — **entregue 2026-07-29** (`POST /campanha/home-search` com `mode: 'suggest'`; `loadHomeSearchSuggestions` + `rankHomeSearchSuggestMunicipalities`; assessor = carteira fria; CG/candidato = `priority === 'alta'` por déficit central + frescor; `homeSearchUiFocused` + seção **Sugestões**; `resultKind`; sem migration) · [plano](plans/sugestoes-busca-vazia-inicio.md)
 - **B49** Busca — resultados Lideranças · Depende de B47 · ~0,5–0,75d · Janela 1 · Impeccable B · [plano](plans/busca-global-resultados-liderancas.md)
-- **B50** Busca — resultados Assessores (access B19) · Depende de B47 · ~0,5d · Janela 1 · Impeccable B · [plano](plans/busca-global-resultados-assessores.md)
+- **B50** ~~Busca — resultados Assessores (access B19)~~ — **entregue 2026-07-29** (`searchHomeAdvisors` + `HomeSearchAdvisorGroup`; unrestricted only; word-start no nome; contagem de municípios na linha; `POST /campanha/home-search` agrega `advisors`) · Depende de B47 ✓ · [plano](plans/busca-global-resultados-assessores.md)
 - **B51** Busca — resultados Atividades · Depende de B47 · ~0,5–0,75d · Janela 1 · Impeccable B · [plano](plans/busca-global-resultados-atividades.md)
 - **B52** Busca — resultados Dobradinhas · Depende de B47 · ~0,5d · Janela 1 · Impeccable B · [plano](plans/busca-global-resultados-dobradinhas.md)
 - **B53** Busca — resultados Demandas · Depende de B47 · ~0,5d · Janela 1 · Impeccable B · [plano](plans/busca-global-resultados-demandas.md)
@@ -225,7 +225,7 @@ flowchart TD
     B48n["B48 ✓ Busca<br/>Municípios + TIs"]
     B68n["B68 Sugestões busca<br/>vazia por papel"]
     B49n["B49 Busca Lideranças"]
-    B50n["B50 Busca Assessores"]
+    B50n["B50 ✓ Busca Assessores"]
     B51n["B51 Busca Atividades"]
     B52n["B52 Busca Dobradinhas"]
     B53n["B53 Busca Demandas"]

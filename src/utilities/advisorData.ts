@@ -88,7 +88,7 @@ const collectByAdvisor = <T>(
  * Intentional admin bypass: advisor rows already resolved after the unrestricted
  * route gate.
  */
-const municipalityIdsByAdvisorIds = async (
+export const municipalityIdsByAdvisorIds = async (
   payload: Payload,
   advisorIDs: number[],
 ): Promise<Map<number, number[]>> => {

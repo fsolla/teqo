@@ -1,7 +1,7 @@
 # Busca global — resultados Assessores
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `searchHomeAdvisors` (`isUnrestrictedCampaignRole` → `[]` para assessor; word-start no nome; `municipalityIdsByAdvisorIds` exportado de `advisorData`); `HomeSearchAdvisorHit` + campo `advisors` no `POST /campanha/home-search`; `HomeSearchAdvisorGroup` + `HomeSearchHitRow` compartilhado; empty via `homeSearchHasAnyHits`; secundário = contagem de municípios (sem e-mail); sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B50 — busca global)
 Impeccable: B — grupo de hits no slot B47
 Appetite: ~0,5 dia eng; loader + grupo; sem WA (B55)
@@ -40,7 +40,7 @@ Grupo “Assessores”. Clique → `/campanha/assessores/[id]`. WhatsApp = **B55
 
 ## Abordagem proposta
 
-Loader espelhando `advisorData`; grupo UI; pluga no registry B47.
+Loader espelhando `advisorData`; grupo UI como **child** do slot B47 + mesmo `POST` que B48 (não registry plugável).
 
 ## Dependências
 

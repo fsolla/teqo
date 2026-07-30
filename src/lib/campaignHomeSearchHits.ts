@@ -19,6 +19,12 @@ export type HomeSearchTerritoryHit = {
   votes2022: number
 }
 
+export type HomeSearchAdvisorHit = {
+  id: number
+  name: string
+  municipalityCount: number
+}
+
 type HomeSearchResultKind = 'search' | 'suggest'
 
 export type HomeSearchSuccessResponse = {
@@ -26,6 +32,7 @@ export type HomeSearchSuccessResponse = {
   resultKind: HomeSearchResultKind
   municipalities: HomeSearchMunicipalityHit[]
   territories: HomeSearchTerritoryHit[]
+  advisors: HomeSearchAdvisorHit[]
 }
 
 export const homeSearchMunicipalityGroupHasHits = (
@@ -45,3 +52,6 @@ export const toHomeSearchMunicipalityHit = (doc: {
   priority: doc.priority ?? null,
   votePosition2022: getMunicipalityVoteRank(doc.slug, DEFAULT_VOTE_RANK_YEAR),
 })
+
+export const homeSearchHasAnyHits = (data: HomeSearchSuccessResponse): boolean =>
+  homeSearchMunicipalityGroupHasHits(data) || data.advisors.length > 0
