@@ -16,6 +16,7 @@ import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBa
 import { Progress } from '@/components/ui/Progress'
 import { Toggle } from '@/components/ui/Toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
@@ -63,8 +64,19 @@ const mockAppRouter = stub<Parameters<typeof AppRouterContext.Provider>[0]['valu
   prefetch: () => Promise.resolve(),
 })
 
+// Cells render `CampaignHoverTooltip` (Radix), which refuses to render outside
+// a provider; production mounts it in the `(app)` layout.
+const renderWithTooltip = (element: React.ReactElement) =>
+  renderToStaticMarkup(createElement(TooltipProvider, null, element))
+
 const renderWithAppRouter = (element: React.ReactElement) =>
-  renderToStaticMarkup(createElement(AppRouterContext.Provider, { value: mockAppRouter }, element))
+  renderToStaticMarkup(
+    createElement(
+      AppRouterContext.Provider,
+      { value: mockAppRouter },
+      createElement(TooltipProvider, null, element),
+    ),
+  )
 
 describe('campaign visual foundation', () => {
   it('exposes the current progress value to assistive technology', () => {
@@ -579,7 +591,7 @@ describe('campaign visual foundation', () => {
         goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
       }
 
-      const withAdvisors = renderToStaticMarkup(
+      const withAdvisors = renderWithTooltip(
         createElement(MunicipalityList, {
           municipalities: [{ ...baseMunicipality, advisorIDs: [7] }],
           advisorNamesById: new Map([[7, { id: 7, name: 'Ana Bastos', phone: null }]]),
@@ -591,7 +603,7 @@ describe('campaign visual foundation', () => {
         HEADER_TOOLTIP_COUNT + 1,
       )
 
-      const withoutAdvisors = renderToStaticMarkup(
+      const withoutAdvisors = renderWithTooltip(
         createElement(MunicipalityList, {
           municipalities: [{ ...baseMunicipality, advisorIDs: [] }],
           advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
@@ -606,7 +618,7 @@ describe('campaign visual foundation', () => {
     })
 
     it("wraps the coordinator's advisor Popover trigger in a tooltip, never doubling the affordance", () => {
-      const withAdvisors = renderToStaticMarkup(
+      const withAdvisors = renderWithTooltip(
         createElement(MunicipalityListAdvisorsControl, {
           municipalityID: 1,
           municipalityName: 'Feira de Santana',
@@ -624,7 +636,7 @@ describe('campaign visual foundation', () => {
       // stays intact and functional.
       expect(withAdvisors).toContain('aria-haspopup="dialog"')
 
-      const withoutAdvisors = renderToStaticMarkup(
+      const withoutAdvisors = renderWithTooltip(
         createElement(MunicipalityListAdvisorsControl, {
           municipalityID: 1,
           municipalityName: 'Feira de Santana',
@@ -641,7 +653,7 @@ describe('campaign visual foundation', () => {
     })
 
     it('shows the trend justification on hover only when one was recorded', () => {
-      const withNote = renderToStaticMarkup(
+      const withNote = renderWithTooltip(
         createElement(MunicipalityListTrendControl, {
           municipalityID: 1,
           municipalityName: 'Feira de Santana',
@@ -657,7 +669,7 @@ describe('campaign visual foundation', () => {
       expect(withNote).toContain('aria-haspopup="dialog"')
       expect(withNote).not.toContain('Salvar')
 
-      const withoutNote = renderToStaticMarkup(
+      const withoutNote = renderWithTooltip(
         createElement(MunicipalityListTrendControl, {
           municipalityID: 1,
           municipalityName: 'Feira de Santana',

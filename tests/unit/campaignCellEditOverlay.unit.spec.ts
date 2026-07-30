@@ -9,6 +9,7 @@ import { MunicipalityListSignalControl } from '@/components/campaign/municipalit
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import type { CampaignCellEditOverlayVariant } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 
 /**
@@ -141,11 +142,16 @@ afterAll(() => {
   Reflect.deleteProperty(Element.prototype, 'scrollIntoView')
 })
 
+// The Popover variant wraps its trigger in `CampaignHoverTooltip` (Radix),
+// which refuses to render outside a provider; production mounts it in the
+// `(app)` layout.
+const renderWithTooltip = (ui: ReactElement) => render(createElement(TooltipProvider, null, ui))
+
 describe('campaign cell edit overlay', () => {
   it.each(overlayCases)(
     'opens $name in a Drawer that names the município on touch',
     async ({ triggerLabel, drawerTitle, footerLabel, element }) => {
-      render(element('sheet'))
+      renderWithTooltip(element('sheet'))
 
       fireEvent.click(screen.getByRole('button', { name: triggerLabel }))
 
@@ -176,7 +182,7 @@ describe('campaign cell edit overlay', () => {
   it.each(overlayCases)(
     'keeps $name in a Popover on the desktop table',
     async ({ triggerLabel, element }) => {
-      render(element('popover'))
+      renderWithTooltip(element('popover'))
 
       const trigger = screen.getByRole('button', { name: triggerLabel })
       expect(trigger.getAttribute('aria-haspopup')).toBe('dialog')
@@ -207,7 +213,7 @@ describe('campaign cell edit overlay', () => {
    * "Salvando…", which cannot happen before one.
    */
   it('does not mount the live region until the overlay has been opened once', () => {
-    render(
+    renderWithTooltip(
       createElement(MunicipalityListTrendControl, {
         municipalityID: 1,
         municipalityName: MUNICIPALITY_NAME,
@@ -237,7 +243,7 @@ describe('campaign cell edit overlay', () => {
     )
     vi.stubGlobal('fetch', fetchMock)
 
-    render(
+    renderWithTooltip(
       createElement(MunicipalityListTrendControl, {
         municipalityID: 1,
         municipalityName: MUNICIPALITY_NAME,
@@ -273,7 +279,7 @@ describe('campaign cell edit overlay', () => {
   it('submits the signal form from a button rendered in the sheet footer', async () => {
     const formAction = vi.fn(async () => ({}))
 
-    render(
+    renderWithTooltip(
       // `createElement`'s typing puts a required `children` in props, so the
       // rest-argument form this rule prefers does not type-check here.
       // eslint-disable-next-line react/no-children-prop
@@ -317,7 +323,7 @@ describe('campaign cell edit overlay', () => {
    * edited.
    */
   it('opens the município portfolio in a Drawer focused on its title', async () => {
-    render(
+    renderWithTooltip(
       createElement(MunicipalityPortfolioCell, {
         ownerId: 1,
         ownerName: 'Maria Souza',

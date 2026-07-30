@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { CampaignTable, CampaignTableHead } from '@/components/campaign/shared/CampaignTable'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 type Row = { id: number; name: string; note: string | null }
 
@@ -11,8 +12,13 @@ const rows: Row[] = [
   { id: 2, name: 'Itaberaba', note: null },
 ]
 
+// Cells/heads render `CampaignHoverTooltip` (Radix), which refuses to render
+// outside a provider; production mounts it in the `(app)` layout.
+const withTooltipProvider = (element: ReturnType<typeof createElement>) =>
+  renderToStaticMarkup(createElement(TooltipProvider, null, element))
+
 const renderTable = (cellTooltip?: (row: Row) => string | null) =>
-  renderToStaticMarkup(
+  withTooltipProvider(
     createElement(CampaignTable<Row>, {
       columns: [
         {
@@ -40,7 +46,7 @@ describe('CampaignTable head', () => {
   })
 
   it('lets a column own its header when it needs more than its name', () => {
-    const html = renderToStaticMarkup(
+    const html = withTooltipProvider(
       createElement(CampaignTable<Row>, {
         columns: [
           {
@@ -101,7 +107,7 @@ describe('CampaignTable cellTooltip', () => {
  */
 describe('CampaignTableHead description', () => {
   it('renders unchanged when no description is declared', () => {
-    const html = renderToStaticMarkup(createElement(CampaignTableHead, {}, 'Território'))
+    const html = withTooltipProvider(createElement(CampaignTableHead, {}, 'Território'))
 
     expect(html).toContain('Território')
     expect(html).not.toContain('data-slot="tooltip-trigger"')
@@ -109,7 +115,7 @@ describe('CampaignTableHead description', () => {
   })
 
   it('wraps the label in exactly one tooltip trigger when description is declared', () => {
-    const html = renderToStaticMarkup(
+    const html = withTooltipProvider(
       createElement(
         CampaignTableHead,
         { description: 'Território de Identidade a que o município pertence.' },
