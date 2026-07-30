@@ -1,7 +1,24 @@
-import { CAMPAIGN_WIZARD_ACTION_SLUGS } from '@/lib/campaignActionRoutes'
+import {
+  CAMPAIGN_WIZARD_ACTION_SLUGS,
+  campaignWizardActionIdForSlug,
+} from '@/lib/campaignActionRoutes'
+import { wizardFlowTitleForActionId } from '@/lib/campaignHomeActions'
 
-/** Shared copy for UX-1 wizard steps (B60 municipality search, B61 vote adjustment). */
 export const WIZARD_MUNICIPALITY_STEP_TITLE = 'Em qual município?' as const
+
+export const WIZARD_DISMISS_ARIA_LABEL = 'Sair da ação' as const
+
+export const WIZARD_APP_TOP_BAR_ARIA_LABEL = 'Campanha Jorge Solla' as const
+
+export const wizardMunicipalityChromeAriaLabel = (municipalityLabel: string): string =>
+  `Município em atualização: ${municipalityLabel}`
+
+export const wizardFlowChromeAriaLabel = (flowTitle: string): string => `Ação: ${flowTitle}`
+
+export const wizardFlowTitleForSlug = (actionSlug: string): string => {
+  const actionId = campaignWizardActionIdForSlug(actionSlug)
+  return actionId ? wizardFlowTitleForActionId(actionId) : 'Continuar'
+}
 
 export const WIZARD_MUNICIPALITY_SEARCH_LABEL = 'Buscar município' as const
 

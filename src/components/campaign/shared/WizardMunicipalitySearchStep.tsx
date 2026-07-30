@@ -19,6 +19,7 @@ import {
   WIZARD_MUNICIPALITY_SEARCH_LABEL,
   WIZARD_MUNICIPALITY_SEARCH_PLACEHOLDER,
   WIZARD_MUNICIPALITY_STEP_TITLE,
+  wizardFlowTitleForSlug,
 } from '@/lib/campaignWizardCopy'
 import { HOME_SEARCH_QUERY_MAX_LENGTH } from '@/lib/schemas/homeSearch'
 
@@ -86,7 +87,13 @@ export const WizardMunicipalitySearchStep = ({
     query.isActive && results.status === 'success' && results.municipalities.length === 0
 
   return (
-    <CampaignWizardShell stepTitle={WIZARD_MUNICIPALITY_STEP_TITLE} previousHref={previousHref}>
+    <CampaignWizardShell
+      flowTitle={wizardFlowTitleForSlug(actionSlug)}
+      stepTitle={WIZARD_MUNICIPALITY_STEP_TITLE}
+      isEntryStep
+      previousHref={previousHref}
+      dismissHref={previousHref}
+    >
       <div className="flex flex-col gap-4">
         <CampaignSearchInput
           id={WIZARD_MUNICIPALITY_SEARCH_INPUT_ID}

@@ -4,6 +4,7 @@ import {
   CAMPAIGN_ACTIONS_HOME,
   CAMPAIGN_WIZARD_ACTION_SLUGS,
   campaignActionEntryHref,
+  campaignWizardActionIdForSlug,
   isCampaignWizardActionId,
   isCampaignWizardActionSlug,
   parseWizardMunicipioParam,
@@ -54,5 +55,10 @@ describe('campaignActionRoutes', () => {
     expect(parseWizardMunicipioParam(['cairu', 'ignored'])).toBe('cairu')
     expect(parseWizardMunicipioParam(undefined)).toBeUndefined()
     expect(parseWizardMunicipioParam('  ')).toBeUndefined()
+  })
+
+  it('resolves wizard action id from slug', () => {
+    expect(campaignWizardActionIdForSlug('atualizar-votos')).toBe('update-votes')
+    expect(campaignWizardActionIdForSlug('inventado')).toBeUndefined()
   })
 })

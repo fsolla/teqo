@@ -10,7 +10,11 @@ import {
   Users,
 } from 'lucide-react'
 
-import { campaignActionEntryHref, isCampaignWizardActionId } from '@/lib/campaignActionRoutes'
+import {
+  campaignActionEntryHref,
+  isCampaignWizardActionId,
+  type CampaignWizardActionId,
+} from '@/lib/campaignActionRoutes'
 import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
@@ -103,6 +107,11 @@ const leaderHomeActions: readonly CampaignHomeAction[] = [
     description: 'Abrir a lista dos apoiadores que você cadastrou',
   },
 ]
+
+export const wizardFlowTitleForActionId = (id: CampaignWizardActionId): string => {
+  const action = staffHomeActionsCoordinator.find((entry) => entry.id === id)
+  return action?.label ?? 'Continuar'
+}
 
 export const homeActionsForRole = (role: CampaignRole): readonly CampaignHomeAction[] => {
   if (role === 'leader') return leaderHomeActions

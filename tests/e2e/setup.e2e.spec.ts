@@ -15,6 +15,7 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/demandas',
     '/campanha/liderancas',
     '/campanha/conceitos',
+    '/campanha/acoes/atualizar-votos',
     '/campanha/convite/e2e-prewarm',
     '/',
   ]) {

@@ -22,7 +22,17 @@ export const CAMPAIGN_WIZARD_ACTION_SLUGS: Record<CampaignWizardActionId, string
 
 const wizardActionSlugs = new Set(Object.values(CAMPAIGN_WIZARD_ACTION_SLUGS))
 
+const campaignWizardSlugToId = Object.fromEntries(
+  Object.entries(CAMPAIGN_WIZARD_ACTION_SLUGS).map(([id, actionSlug]) => [
+    actionSlug,
+    id as CampaignWizardActionId,
+  ]),
+) as Record<string, CampaignWizardActionId>
+
 export const isCampaignWizardActionSlug = (slug: string): boolean => wizardActionSlugs.has(slug)
+
+export const campaignWizardActionIdForSlug = (slug: string): CampaignWizardActionId | undefined =>
+  campaignWizardSlugToId[slug]
 
 export const isCampaignWizardActionId = (id: string): id is CampaignWizardActionId =>
   id in CAMPAIGN_WIZARD_ACTION_SLUGS

@@ -1,6 +1,6 @@
 # Header mobile do wizard (chrome no Mandate Red)
 
-Status: rascunho
+Status: entregue (2026-07-30)
 Atualizado em: 2026-07-30
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — **B75**; chassis UX-1 / emenda a B59)
 Impeccable: C — chrome novo no shell `(app)` durante `/campanha/acoes/*`; brief abaixo
@@ -131,5 +131,20 @@ Componentes:
 - [fluxos-acao-primeiro-inicio.md](fluxos-acao-primeiro-inicio.md)
 - `PRODUCT.md` / `DESIGN.md` — Mandate Red / Field Desk
 - AGENTS.md — naming; sem Consent novo
+
+## As-built (2026-07-30)
+
+- `CampaignWizardChromeProvider` envolve o inset em `(app)/layout.tsx`; `CampaignMobileTopBar` troca modo app (sidebar+marca) ↔ modo wizard quando o shell publica chrome.
+- `CampaignWizardShell` chama `useSetCampaignWizardChrome` (`useLayoutEffect` para publish + cleanup só no unmount; `/simplify` corrigiu flash app-mode entre passos); mobile sem `<header>` sticky branco; desktop mantém caption de município no `<main>` (`md:block`).
+- `wizardFlowTitleForSlug` deriva o título do catálogo B45 via `campaignWizardActionIdForSlug` + `wizardFlowTitleForActionId`.
+- Skip encadeado (B63/B64/B70) usa prop `skip` no shell — slot direito do header no mobile; desktop adiado (débito no plano).
+- Testes: unit `campaignMobileTopBar`, `campaignWizardShell`; e2e smoke `campaignWizardChrome.e2e.spec.ts`; prewarm `/campanha/acoes/atualizar-votos` no `setup.e2e`.
+
+## Explicitamente fora (pós-/simplify, auto-confirm close-delivery)
+
+- **Split read/write context do provider** — defer até medição de re-render no inset ao trocar passo (`setChrome` hoje re-renderiza filhos do provider).
+- **Mover provider só para `acoes/layout`** — defer; arquitetura maior que o appetite do B75.
+- **Mapa estático de títulos fora de `campaignHomeActions`** — defer até bundle do wizard medir custo do import Lucide na cadeia `wizardFlowTitleForSlug`.
+- **Skip no desktop** — já adiado; link textual no conteúdo quando B63+ precisar.
 
 Qualidade de decisão: 4/5
