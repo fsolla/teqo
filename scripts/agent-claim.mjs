@@ -79,7 +79,8 @@ const queue = openReady
 if (flags['dry-run'] || flags['dryrun']) {
   console.log(`[agent:claim] ${queue.length} unblocked ready issue(s):`)
   for (const entry of queue) {
-    console.log(`  #${entry.issue.number} [${entry.priority}] ${entry.issue.title}`)
+    const model = entry.meta.model ? ` model:${entry.meta.model}` : ''
+    console.log(`  #${entry.issue.number} [${entry.priority}]${model} ${entry.issue.title}`)
   }
   process.exit(0)
 }
@@ -119,6 +120,15 @@ gh([
 const { rest } = parseFrontmatter(pick.issue.body)
 console.log(`\n[agent:claim] Claimed #${pick.issue.number} — ${pick.issue.title}`)
 console.log(`  id: ${pick.meta.id ?? '(none)'}  priority: ${pick.priority}`)
+if (pick.meta.model) {
+  console.log(
+    `  model: ${pick.meta.model} (propriedade da Issue — verificar, não recalcular; ver skill model-selection)`,
+  )
+} else {
+  console.log(
+    '  model: ausente — aplicar model-selection uma vez e registrar na Issue (gh issue edit)',
+  )
+}
 if (pick.satisfiedWithoutIssue.length > 0) {
   console.log(
     `  deps sem issue (roadmap entregue, satisfeitas): ${pick.satisfiedWithoutIssue.join(', ')}`,

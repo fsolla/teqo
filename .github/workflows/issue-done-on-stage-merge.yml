@@ -1,0 +1,28 @@
+name: Stage merge flips claimed issues to done
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  issues: write
+  pull-requests: read
+  contents: read
+
+jobs:
+  issue-done:
+    if: github.event.pull_request.base.ref == 'stage' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Flip Closes/Fixes #N issues from in-progress to done
+        run: |
+          body="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json body --jq .body)"
+          numbers="$(printf '%s' "$body" | grep -oiE '(closes|fixes) #[0-9]+' | grep -oE '[0-9]+' | sort -u)"
+          for n in $numbers; do
+            gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --remove-label in-progress --add-label done || true
+            gh issue comment "$n" --repo "$GITHUB_REPOSITORY" \
+              --body "Merged em stage via PR #${PR_NUMBER} — done; \`in-prod\` entra no promote humano." || true
+          done
