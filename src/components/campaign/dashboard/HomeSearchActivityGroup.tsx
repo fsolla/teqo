@@ -3,6 +3,7 @@
 import { HomeSearchHitRow } from '@/components/campaign/dashboard/HomeSearchHitRow'
 import { useHomeSearchResults } from '@/components/campaign/dashboard/HomeSearchResultsContext'
 import { homeSearchActivityGroupHasHits } from '@/lib/campaignHomeSearchHits'
+import { HOME_SEARCH_GROUP_HEADING_CLASS, HOME_SEARCH_GROUP_LIST_CLASS } from '@/lib/homeSearchUi'
 
 export const HomeSearchActivityGroup = () => {
   const { results } = useHomeSearchResults()
@@ -13,11 +14,9 @@ export const HomeSearchActivityGroup = () => {
   const { activities } = results.data
 
   return (
-    <section aria-label="Atividades" className="flex flex-col gap-1">
-      <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Atividades
-      </h2>
-      <ul className="flex flex-col">
+    <section aria-label="Atividades" className="flex flex-col gap-0.5">
+      <h2 className={HOME_SEARCH_GROUP_HEADING_CLASS}>Atividades</h2>
+      <ul className={HOME_SEARCH_GROUP_LIST_CLASS}>
         {activities.map((hit) => (
           <li key={hit.id}>
             <HomeSearchHitRow

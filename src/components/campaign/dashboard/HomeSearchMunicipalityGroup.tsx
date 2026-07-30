@@ -5,6 +5,7 @@ import { HomeSearchMunicipalityVoteTrailing } from '@/components/campaign/dashbo
 import { useHomeSearchResults } from '@/components/campaign/dashboard/HomeSearchResultsContext'
 import { homeSearchMunicipalityGroupHasHits } from '@/lib/campaignHomeSearchHits'
 import { formatElectionNumber } from '@/lib/electionFormat'
+import { HOME_SEARCH_GROUP_HEADING_CLASS, HOME_SEARCH_GROUP_LIST_CLASS } from '@/lib/homeSearchUi'
 import { buildTerritoryPageHref } from '@/lib/territoryAnchor'
 
 export const HomeSearchMunicipalityGroup = () => {
@@ -18,11 +19,9 @@ export const HomeSearchMunicipalityGroup = () => {
   const sectionTitle = resultKind === 'suggest' ? 'Sugestões' : 'Municípios'
 
   return (
-    <section aria-label={sectionTitle} className="flex flex-col gap-1">
-      <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {sectionTitle}
-      </h2>
-      <ul className="flex flex-col">
+    <section aria-label={sectionTitle} className="flex flex-col gap-0.5">
+      <h2 className={HOME_SEARCH_GROUP_HEADING_CLASS}>{sectionTitle}</h2>
+      <ul className={HOME_SEARCH_GROUP_LIST_CLASS}>
         {municipalities.map((hit) => (
           <li key={`municipality-${hit.slug}`}>
             <HomeSearchHitRow

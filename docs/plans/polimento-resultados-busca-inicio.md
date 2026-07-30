@@ -1,7 +1,7 @@
 # Polimento visual dos resultados de busca no Início
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-30)
+Atualizado em: 2026-07-30 — as-built: `src/lib/homeSearchUi.ts` (bleed/heading/list); `HomeSearchHitRow` full-bleed `-mx-4 px-4 md:-mx-6 md:px-6` + hover na faixa; todos os `HomeSearch*Group` com `text-xs` sentence-case (sem `uppercase`) e `ul list-none`; unit `homeSearchUi.unit.spec.tsx`; sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — **B71**; chassis UX-1 / pós-B48)
 Impeccable: B — encaixe em `HomeSearchMunicipalityGroup` + `HomeSearchHitRow` (B48 ✓)
 Appetite: ~0,25–0,5 dia eng (CSS/markup; sem migration, action ou rota)
@@ -83,7 +83,7 @@ Componentes:
 
 ## Adiado com gatilho
 
-Nenhum neste item.
+- **Extrair `HomeSearchGroup` shell** — cinco grupos repetem `<section>` + heading + `<ul>`; gatilho: sexto grupo de resultados ou rota dedicada de busca (`>15` sugestões recorrentes no plano B48).
 
 ## Referências
 
