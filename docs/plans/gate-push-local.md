@@ -1,6 +1,6 @@
 # Gate local DRY — gate:fast / gate:push + pre-push completo
 
-Status: entregue (2026-07-30 — executado em sessão única, fora do fluxo agent:register, a pedido do humano)
+Status: entregue (2026-07-30) — **ampliado 2026-07-30**: `gate:push` → `gate:ci` espelha `ci-pr.yml` com seleção affected (`test-affected` / `e2e-affected` vs `origin/stage`), não suíte full por default.
 Atualizado em: 2026-07-30
 Issue: —
 Priority: P2
@@ -28,7 +28,7 @@ Decisão de produto (2026-07-30, brief do lote CI): scripts DRY (`gate:fast`, `g
 
 ## Decisões travadas
 
-- **knip fora do pre-push.** O grafo do knip é incompleto (não carrega `payload.config.ts`, ledger P3) e é lento para um hook; CI já o roda como erro bloqueante. **Rejeitado:** knip no hook (custo por push + falsos positivos já fichados); knip no `gate:fast` documentado como obrigatório (mesma razão).
+- **knip fora do pre-push.** _(Revertido 2026-07-30 — `gate:ci` inclui knip para espelhar ci-pr.)_ O grafo do knip é incompleto (não carrega `payload.config.ts`, ledger P3) e é lento para um hook; CI já o roda como erro bloqueante. **Rejeitado na v1:** knip no hook (custo por push + falsos positivos já fichados).
 - **Sem pre-commit hook.** A divisão fica: nada no commit (commits intermediários de WIP são legítimos), tudo no push. **Rejeitado:** lint-staged no commit (adiciona toolchain e atrito sem pegar classe de erro que o push não pegue segundos depois).
 - **Escape hatch = `--no-verify` nativo, documentado; sem variável mágica própria.** **Rejeitado:** `SKIP_GATE=1` (mais uma convenção para manter; `--no-verify` é o padrão git que todo agente/humano já conhece).
 - **Hook chama `pnpm gate:push`, nunca inline de comandos.** Uma fonte de verdade editável em `package.json`. **Rejeitado:** manter a linha de shell no hook (foi o que causou o drift atual).
@@ -41,7 +41,7 @@ Decisão de produto (2026-07-30, brief do lote CI): scripts DRY (`gate:fast`, `g
 
 Componentes:
 
-- **`package.json`** — scripts `gate:fast` e `gate:push` (comandos bare encadeados com `&&`, nunca piped — invariante do repo).
+- **`package.json`** — scripts `gate:fast`, `gate:ci` (`scripts/gate-ci.mjs`) e `gate:push` (= `gate:ci`).
 - **`.husky/pre-push`** — `pnpm gate:push`.
 - **`.cursor/rules/engineering-standards.mdc`** — item 3 do "After every change" passa a citar `pnpm gate:fast` / `pnpm gate:push`.
 - **`docs/AGENT-OPS.md`** — linha do fast gate local atualizada para os scripts.
