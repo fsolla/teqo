@@ -139,3 +139,20 @@ jobs:
 
       - name: E2E tests (full suite)
         run: pnpm test:e2e
+
+  # Same legacy branch-protection context as ci-pr.yml (see comment there).
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    needs: [static, int, build, e2e]
+    if: always()
+    steps:
+      - name: All parallel checks green
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$NEEDS" | jq -e '
+            to_entries
+            | all(.value.result == "success" or .value.result == "skipped")
+          '

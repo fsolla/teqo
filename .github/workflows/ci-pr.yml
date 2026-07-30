@@ -281,6 +281,35 @@ jobs:
         if: steps.scope.outputs.mode == 'none'
         run: echo "No e2e-relevant changes in this PR — nothing to run."
 
+  # Branch protection on `stage`/`main` still requires the legacy context name
+  # `checks` from the pre-parallel monolithic job. This rollup satisfies that
+  # contract without re-serializing the suite.
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - format
+      - typecheck
+      - knip
+      - cycles
+      - unit
+      - int
+      - build
+      - e2e
+      - migration-lock
+    if: always()
+    steps:
+      - name: All parallel checks green
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$NEEDS" | jq -e '
+            to_entries
+            | all(.value.result == "success" or .value.result == "skipped")
+          '
+
   migration-lock:
     # At most ONE open PR may touch schema (migrations or generated types).
     # Two in flight guarantees a broken rebase and a poisoned drizzle snapshot
