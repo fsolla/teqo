@@ -327,6 +327,7 @@ jobs:
       - name: Count open PRs touching schema files
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           count=$(gh pr list --state open --limit 100 --json number,files \

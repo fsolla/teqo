@@ -1,4 +1,4 @@
 {
   "install": "pnpm install --frozen-lockfile && bash ./.cursor/cloud-setup.sh",
-  "start": "sudo service docker start && pnpm db:start"
+  "start": "bash ./.cursor/ensure-postgres.sh"
 }

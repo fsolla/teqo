@@ -70,7 +70,7 @@ Fast gate local do agente antes do push: `pnpm gate:fast` (lint + typecheck + te
 
 ## Cursor Cloud
 
-`.cursor/environment.json` instala deps, sobe Postgres (compose), migra e roda `db:seed:minimal` — clone + `gh` + DB mínimo bastam. Sem secrets de stage/prod. Hooks do repo são portáteis (paths relativos em `.cursor/hooks.json`); hooks pessoais (ex.: impeccable) ficam no `~/.cursor/hooks.json` do usuário.
+`.cursor/environment.json` instala deps, sobe Postgres nativo (`ensure-postgres.sh` — VMs Cloud não rodam Docker/compose), migra e roda `db:seed:minimal` — clone + `gh` + DB mínimo bastam. Sem secrets de stage/prod. Hooks do repo são portáteis (paths relativos em `.cursor/hooks.json`); hooks pessoais (ex.: impeccable) ficam no `~/.cursor/hooks.json` do usuário.
 
 ## Guardrails progressivos
 
