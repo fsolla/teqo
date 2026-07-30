@@ -43,15 +43,14 @@ test.describe('Início — busca global (B47)', () => {
     })
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    const actionsSlot = page.locator('[data-slot="home-actions"]')
-    await expect(actionsSlot).toBeVisible()
+    const actionsChrome = page.locator('[data-slot="home-actions-chrome"]')
     await expect(page.getByLabel('Ações rápidas')).toBeVisible()
 
     await page.getByLabel('Buscar na campanha').focus()
-    await expect(actionsSlot).toBeHidden({ timeout: 5000 })
+    await expect(actionsChrome).toHaveAttribute('data-retracted', 'true', { timeout: 5000 })
 
     await page.getByLabel('Buscar na campanha').blur()
-    await expect(actionsSlot).toBeVisible({ timeout: 5000 })
+    await expect(actionsChrome).not.toHaveAttribute('data-retracted', 'true', { timeout: 5000 })
   })
 
   test('staff typing in search keeps action strip hidden after debounce', async ({
@@ -64,14 +63,15 @@ test.describe('Início — busca global (B47)', () => {
     })
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    const actionsSlot = page.locator('[data-slot="home-actions"]')
-    await expect(actionsSlot).toBeVisible()
+    const actionsChrome = page.locator('[data-slot="home-actions-chrome"]')
+    await expect(page.getByLabel('Ações rápidas')).toBeVisible()
 
     await page.getByLabel('Buscar na campanha').fill('ca')
-    await expect(actionsSlot).toBeHidden({ timeout: 5000 })
+    await expect(actionsChrome).toHaveAttribute('data-retracted', 'true', { timeout: 5000 })
 
     await page.getByLabel('Buscar na campanha').fill('')
-    await expect(actionsSlot).toBeVisible({ timeout: 5000 })
+    await page.getByLabel('Buscar na campanha').blur()
+    await expect(actionsChrome).not.toHaveAttribute('data-retracted', 'true', { timeout: 5000 })
   })
 
   test('staff search shows municipality hits and opens detail (B48)', async ({
@@ -148,6 +148,8 @@ test.describe('Início — catálogo de ações (B45)', () => {
 })
 
 test.describe('Wizard — busca município (B60)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
   test('selecting a municipality advances with ?municipio= and sticky caption', async ({
     campaign,
     page,
@@ -165,8 +167,8 @@ test.describe('Wizard — busca município (B60)', () => {
     await search.fill('Cairu')
 
     const results = page.getByRole('region', { name: 'Resultados da busca' })
-    await expect(results.getByRole('button', { name: /Cairu/i })).toBeVisible({ timeout: 15000 })
-    await results.getByRole('button', { name: /Cairu/i }).click()
+    await expect(results.getByRole('link', { name: /Cairu/i })).toBeVisible({ timeout: 15000 })
+    await results.getByRole('link', { name: /Cairu/i }).click()
 
     await page.waitForURL(/\/campanha\/acoes\/atualizar-votos\?municipio=cairu/)
     await expect(page.getByLabel(/Município em atualização: Cairu/i)).toBeVisible()
@@ -299,12 +301,7 @@ test.describe('Wizard — registrar sinal (B63)', () => {
     })
     await expect(page.getByRole('link', { name: 'Pular registro de sinal' })).toHaveCount(0)
 
-    await page
-      .getByRole('listitem')
-      .filter({ hasText: 'Invasão' })
-      .getByRole('button')
-      .first()
-      .click()
+    await page.getByRole('link', { name: /Invasão/i }).click()
     await page.waitForURL(/signalType=invasao/)
 
     await expect(page.getByRole('heading', { name: /Detalhar sinal: Invasão/i })).toBeVisible()

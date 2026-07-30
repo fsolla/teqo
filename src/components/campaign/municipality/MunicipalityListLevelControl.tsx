@@ -12,7 +12,7 @@ import { useCampaignCellFailureChannel } from '@/components/campaign/shared/useC
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
-import { DrawerClose } from '@/components/ui/Drawer'
+import { DrawerCloseButton } from '@/components/ui/Drawer'
 import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
@@ -236,14 +236,10 @@ export const MunicipalityListLevelControl = ({
       triggerBusy={isPending}
       statusMessage={isPending ? 'Registrando nível.' : (errorMessage ?? '')}
       footer={
-        isSheet ? (
+        isSheet && open ? (
           <>
             {submitButton}
-            <DrawerClose
-              render={<Button type="button" variant="outline" className="min-h-11 w-full" />}
-            >
-              Cancelar
-            </DrawerClose>
+            <DrawerCloseButton>Cancelar</DrawerCloseButton>
           </>
         ) : undefined
       }

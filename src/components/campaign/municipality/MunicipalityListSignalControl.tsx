@@ -10,7 +10,7 @@ import {
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
 import { Button } from '@/components/ui/button'
-import { DrawerClose } from '@/components/ui/Drawer'
+import { DrawerCloseButton } from '@/components/ui/Drawer'
 import { Spinner } from '@/components/ui/Spinner'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
@@ -82,14 +82,10 @@ export const MunicipalityListSignalControl = ({
       contentClassName="w-80"
       trigger={children}
       footer={
-        isSheet ? (
+        isSheet && open ? (
           <>
             {submitButton}
-            <DrawerClose
-              render={<Button type="button" variant="outline" className="min-h-11 w-full" />}
-            >
-              Cancelar
-            </DrawerClose>
+            <DrawerCloseButton>Cancelar</DrawerCloseButton>
           </>
         ) : undefined
       }

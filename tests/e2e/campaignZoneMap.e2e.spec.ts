@@ -15,6 +15,7 @@ test('the dashboard map paints Salvador zone by zone and opens one', async ({ ca
   const password = coordinator.password
 
   await campaign.login(page, coordinator.email!, password)
+  await page.goto('/campanha/quadro')
 
   await expect(page.getByRole('heading', { name: 'Mapa dos Municípios' })).toBeVisible({
     timeout: 60_000,

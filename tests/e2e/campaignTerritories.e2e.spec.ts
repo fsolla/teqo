@@ -63,6 +63,6 @@ test.describe('Territórios de Identidade', () => {
     await expect(page.getByRole('link', { name: 'Territórios', exact: true })).toHaveCount(0)
 
     await page.goto('/campanha/territorios')
-    await expect(page).toHaveURL(/\/campanha\/?$/)
+    await expect(page).toHaveURL(/\/campanha\/contatos/)
   })
 })

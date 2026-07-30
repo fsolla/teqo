@@ -1,12 +1,13 @@
 'use client'
 
-import { useRef, useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
-import { Button } from '@/components/ui/button'
+import { useCampaignListSheet } from '@/components/campaign/shared/CampaignListSheetHost'
 import {
   Drawer,
-  DrawerClose,
+  DrawerCloseButton,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -82,6 +83,10 @@ type CampaignCellEditOverlayProps = {
  * Only the container lives here. Each control keeps its own auto-save scaffold
  * (debounce, abort, flush on close), which is what `onOpenChange` carries — so
  * closing the Drawer commits exactly like dismissing the Popover does.
+ *
+ * When a `CampaignListSheetProvider` wraps the list (B42 mobile cards), sheet
+ * cells publish into that single Drawer instead of mounting one per row — prod
+ * was tripping React #130 with ~125 idle drawer roots on a 25-row page.
  */
 export const CampaignCellEditOverlay = ({
   variant,
@@ -102,6 +107,9 @@ export const CampaignCellEditOverlay = ({
   preventPopoverAutoFocus,
   children,
 }: CampaignCellEditOverlayProps) => {
+  const sharedSheet = useCampaignListSheet()
+  const wasOpenRef = useRef(open)
+
   /**
    * The region is mounted from the first open onwards and never unmounted
    * again — a live region has to exist BEFORE its text changes or most screen
@@ -152,50 +160,73 @@ export const CampaignCellEditOverlay = ({
       </p>
     )
 
+  useLayoutEffect(() => {
+    if (variant !== 'sheet' || !sharedSheet) return
+
+    const wasOpen = wasOpenRef.current
+    wasOpenRef.current = open
+
+    if (!open) {
+      if (wasOpen) sharedSheet.dismissSheet(onOpenChange)
+      return
+    }
+
+    sharedSheet.openSheet({
+      title,
+      description,
+      hasCustomFooter: Boolean(footer),
+      sheetBodyClassName,
+      onOpenChange,
+    })
+  }, [variant, sharedSheet, open, title, description, footer, sheetBodyClassName, onOpenChange])
+
+  if (variant === 'sheet' && sharedSheet) {
+    const showPortals = open && sharedSheet.isActiveSheet(onOpenChange)
+    const bodyTarget = showPortals ? sharedSheet.bodyPortalRef.current : null
+    const footerTarget = showPortals ? sharedSheet.footerPortalRef.current : null
+    // portalRevision keeps this render in sync after the drawer mounts its targets.
+    void sharedSheet.portalRevision
+
+    return (
+      <>
+        {triggerButton}
+        {liveRegion}
+        {showPortals && bodyTarget ? createPortal(children, bodyTarget) : null}
+        {showPortals && footerTarget && footer ? createPortal(footer, footerTarget) : null}
+      </>
+    )
+  }
+
   if (variant === 'sheet') {
     return (
       <>
         {triggerButton}
         {liveRegion}
-        <Drawer open={open} onOpenChange={onOpenChange}>
-          {/*
-           * Focus lands on the title, never on the first field: base-ui's
-           * default (first tabbable element) raises the virtual keyboard over
-           * the sheet before it can be read, and every one of these sheets is
-           * opened to look at a value at least as often as to type one. The
-           * title is focusable only programmatically (`tabIndex={-1}`), so it
-           * adds no stop to the tab order.
-           */}
-          <DrawerContent initialFocus={titleRef}>
-            <DrawerHeader>
-              <DrawerTitle ref={titleRef} tabIndex={-1} className="outline-none">
-                {title}
-              </DrawerTitle>
-              {/* Guarded, not required: every sheet today names its row, but one
-                  opened from under a heading that already does would pass none. */}
-              {description ? <DrawerDescription>{description}</DrawerDescription> : null}
-            </DrawerHeader>
-            <div
-              className={cn(
-                'flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-3 pb-2',
-                sheetBodyClassName,
-              )}
-            >
-              {children}
-            </div>
-            <DrawerFooter>
-              {footer ?? (
-                // Swiping down is the gesture, but it is not an affordance
-                // anyone sees.
-                <DrawerClose
-                  render={<Button type="button" variant="outline" className="min-h-11 w-full" />}
+        {open || everOpened ? (
+          <Drawer open={open} onOpenChange={onOpenChange}>
+            {open ? (
+              <DrawerContent initialFocus={titleRef}>
+                <DrawerHeader>
+                  <DrawerTitle ref={titleRef} tabIndex={-1} className="outline-none">
+                    {title}
+                  </DrawerTitle>
+                  {description ? <DrawerDescription>{description}</DrawerDescription> : null}
+                </DrawerHeader>
+                <div
+                  className={cn(
+                    'flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-3 pb-2',
+                    sheetBodyClassName,
+                  )}
                 >
-                  Fechar
-                </DrawerClose>
-              )}
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
+                  {children}
+                </div>
+                <DrawerFooter>
+                  {footer ?? <DrawerCloseButton>Fechar</DrawerCloseButton>}
+                </DrawerFooter>
+              </DrawerContent>
+            ) : null}
+          </Drawer>
+        ) : null}
       </>
     )
   }

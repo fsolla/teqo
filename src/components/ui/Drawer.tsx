@@ -1,8 +1,9 @@
 'use client'
 
-import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer'
+import { Drawer as DrawerPrimitive } from '@base-ui/react'
 import * as React from 'react'
 
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 type DrawerContextProps = {
@@ -60,6 +61,32 @@ const DrawerPortal = ({ ...props }: DrawerPrimitive.Portal.Props) => (
 
 const DrawerClose = ({ ...props }: DrawerPrimitive.Close.Props) => (
   <DrawerPrimitive.Close data-slot="drawer-close" {...props} />
+)
+
+/** Styled close control — uses a render callback so prod bundles never hit base-ui's element `render` prop. */
+const DrawerCloseButton = ({
+  className,
+  children,
+  onClick,
+  ...props
+}: React.ComponentProps<typeof Button>) => (
+  <DrawerClose
+    render={(closeProps) => (
+      <Button
+        type="button"
+        variant="outline"
+        className={cn('min-h-11 w-full', className)}
+        {...props}
+        {...closeProps}
+        onClick={(event) => {
+          closeProps.onClick?.(event)
+          onClick?.(event)
+        }}
+      />
+    )}
+  >
+    {children}
+  </DrawerClose>
 )
 
 const DrawerOverlay = ({ className, ...props }: DrawerPrimitive.Backdrop.Props) => (
@@ -169,6 +196,7 @@ const DrawerDescription = ({ className, ...props }: DrawerPrimitive.Description.
 export {
   Drawer,
   DrawerClose,
+  DrawerCloseButton,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,

@@ -60,7 +60,7 @@ Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:fe
 | `ci-stage.yml` | push em `stage`     | `STAGE_DATABASE_URL` (Environment `stage`) | **só** `migrate` + smoke int (subset curado — a suíte completa é lenta demais contra Neon remoto, estourou timeout 2× em 2026-07-30; a full fica no ci-pr/ci.yml) — **NUNCA `pnpm build`** (build migra o banco que vê), nunca seed:minimal                                                              |
 | `ci.yml`       | push em `main`      | service Postgres                           | **gate completo sempre** (rede de segurança pós-promote): estático + unit + int full (com seed:minimal) + build + e2e full                                                                                                                                                                               |
 
-Fast gate local do agente antes do push: `pnpm gate:fast` (lint + typecheck + test:unit); o hook `.husky/pre-push` roda `pnpm gate:push` (fast + format:check + check:cycles). Fonte única: scripts `gate:*` em `package.json`. knip fica fora do hook (grafo incompleto — ledger P3; CI o roda bloqueante). Escape para WIP: `git push --no-verify` (o CI repete tudo). int/build/e2e = CI.
+Fast gate local do agente antes do push: `pnpm gate:fast` (lint + typecheck + test:unit); o hook `.husky/pre-push` roda `pnpm gate:push` (fast + format:check + check:cycles). Fonte única: scripts `gate:*` em `package.json`. knip fica fora do hook (grafo incompleto — ledger P3; CI o roda bloqueante). Escape para WIP: `git push --no-verify` (o CI repete tudo). **E2e afetado localmente (mesmo critério do PR):** `pnpm test:e2e:affected`. int/build/e2e = CI.
 
 ## Stage DB — runbook de refresh (semanal, humano)
 

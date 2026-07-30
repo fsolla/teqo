@@ -3,10 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import { Button } from '@/components/ui/button'
 import {
   Drawer,
-  DrawerClose,
+  DrawerCloseButton,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -122,7 +121,7 @@ export const InstallPwaToast = () => {
     }
   }, [])
 
-  return (
+  return iosDrawerOpen ? (
     <Drawer open={iosDrawerOpen} onOpenChange={setIosDrawerOpen}>
       <DrawerContent>
         <DrawerHeader>
@@ -137,20 +136,9 @@ export const InstallPwaToast = () => {
           <li>Confirme tocando em Adicionar.</li>
         </ol>
         <DrawerFooter>
-          <DrawerClose
-            render={
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={dismissInstallToast}
-              />
-            }
-          >
-            Entendi
-          </DrawerClose>
+          <DrawerCloseButton onClick={dismissInstallToast}>Entendi</DrawerCloseButton>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
-  )
+  ) : null
 }
