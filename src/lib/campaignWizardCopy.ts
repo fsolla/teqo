@@ -1,6 +1,6 @@
 import { CAMPAIGN_WIZARD_ACTION_SLUGS } from '@/lib/campaignActionRoutes'
 
-/** Shared copy for UX-1 wizard municipality step (B60). */
+/** Shared copy for UX-1 wizard steps (B60 municipality search, B61 vote adjustment). */
 export const WIZARD_MUNICIPALITY_STEP_TITLE = 'Em qual município?' as const
 
 export const WIZARD_MUNICIPALITY_SEARCH_LABEL = 'Buscar município' as const
@@ -9,9 +9,19 @@ export const WIZARD_MUNICIPALITY_SEARCH_PLACEHOLDER = 'Nome do município…' as
 
 export const WIZARD_MUNICIPALITY_SEARCH_EMPTY = 'Nenhum município encontrado.' as const
 
-/** Placeholder until B61 ships vote adjustment. */
-const WIZARD_NEXT_STEP_VOTES_PLACEHOLDER =
-  'Próximo passo: ajuste de votos estimados neste município.' as const
+export const WIZARD_VOTES_SAVED_MESSAGE = 'Votos estimados atualizados.' as const
+
+export const WIZARD_VOTES_NEXT_FLOW_PLACEHOLDER =
+  'Próximo passo deste fluxo (sinal, tendência ou resumo) em breve.' as const
+
+export const WIZARD_VOTES_SAVE_ERROR_MESSAGE =
+  'Não foi possível salvar os votos estimados. Tente novamente.' as const
+
+export const WIZARD_VOTES_INVALID_DRAFT_MESSAGE =
+  'Informe um número válido ou deixe em branco.' as const
+
+export const wizardVoteReturnToScenarioLabel = (scenarioLabel: string): string =>
+  `Voltar para ${scenarioLabel.toLowerCase()}`
 
 const WIZARD_NEXT_STEP_GENERIC_PLACEHOLDER = 'Próximo passo deste fluxo em breve.' as const
 
@@ -24,7 +34,7 @@ export const wizardNextStepTitle = (actionSlug: string): string => {
 
 export const wizardNextStepPlaceholder = (actionSlug: string): string => {
   if (actionSlug === CAMPAIGN_WIZARD_ACTION_SLUGS['update-votes']) {
-    return WIZARD_NEXT_STEP_VOTES_PLACEHOLDER
+    return WIZARD_VOTES_NEXT_FLOW_PLACEHOLDER
   }
   return WIZARD_NEXT_STEP_GENERIC_PLACEHOLDER
 }
