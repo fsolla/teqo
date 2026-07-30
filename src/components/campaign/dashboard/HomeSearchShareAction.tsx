@@ -21,11 +21,10 @@ export const HomeSearchShareAction = ({
   title: string
   detailPath: string
 }) => {
-  const strategy = resolveHomeSearchShareStrategy()
-
   const handleShare = async () => {
     const absoluteUrl = buildHomeSearchDetailUrl(detailPath)
     const shareText = buildHomeSearchShareText(title, absoluteUrl)
+    const strategy = resolveHomeSearchShareStrategy()
 
     if (strategy === 'native') {
       try {

@@ -10,7 +10,9 @@ export const buildWhatsAppTextShareUrl = (message: string): string => {
 }
 
 const canUseNativeWebShare = (): boolean =>
-  typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+  typeof window !== 'undefined' &&
+  typeof navigator !== 'undefined' &&
+  typeof navigator.share === 'function'
 
 export type HomeSearchShareStrategy = 'native' | 'whatsapp'
 
