@@ -113,14 +113,14 @@ Componentes:
 
 ## Explicitamente fora (pós-/simplify, defer)
 
-| Achado | Gatilho para revisitar |
-| --- | --- |
-| Animar só opacity (sem `grid-rows` height) | jank medido no mobile com teclado aberto |
-| Extrair `homeChromeRetractionClass` para `lib/` | 3º call site de chrome retrátil |
-| Context split para cortar re-render a cada keystroke | perf medido com busca focada + digitação |
-| `onPointerDown` em vez de `onMouseDown` nos hits | QA reporta blur antes do tap em touch |
-| Helper `beforeEach` compartilhado no e2e de ações | descartado — boilerplate aceitável |
-| Alinhar margin/`flex-1` na transição do spacer | polish cosmético; só se critique visual pedir |
+| Achado                                               | Gatilho para revisitar                        |
+| ---------------------------------------------------- | --------------------------------------------- |
+| Animar só opacity (sem `grid-rows` height)           | jank medido no mobile com teclado aberto      |
+| Extrair `homeChromeRetractionClass` para `lib/`      | 3º call site de chrome retrátil               |
+| Context split para cortar re-render a cada keystroke | perf medido com busca focada + digitação      |
+| `onPointerDown` em vez de `onMouseDown` nos hits     | QA reporta blur antes do tap em touch         |
+| Helper `beforeEach` compartilhado no e2e de ações    | descartado — boilerplate aceitável            |
+| Alinhar margin/`flex-1` na transição do spacer       | polish cosmético; só se critique visual pedir |
 
 ## Referências
 
