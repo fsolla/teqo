@@ -1,14 +1,6 @@
-import {
-  Minus,
-  ThumbsDown,
-  ThumbsUp,
-  type LucideIcon,
-} from 'lucide-react'
+import { Minus, ThumbsDown, ThumbsUp, type LucideIcon } from 'lucide-react'
 
-import {
-  politicalTrendStatuses,
-  type PoliticalTrendStatusValue,
-} from '@/lib/schemas/municipality'
+import { politicalTrendStatuses, type PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
 
 const politicalTrendDisplayLabels: Record<PoliticalTrendStatusValue, string> = {
   favoravel: 'Favorável',

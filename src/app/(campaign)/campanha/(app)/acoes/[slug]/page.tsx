@@ -15,6 +15,7 @@ import {
   parseWizardEntryActionParam,
   parseWizardMunicipioParam,
   resolveWizardSignalTypeParam,
+  resolveWizardTrendStatusParam,
   WIZARD_ENTRY_ACTION_QUERY_KEY,
   WIZARD_MUNICIPIO_QUERY_KEY,
   WIZARD_NOTE_PREFILL_QUERY_KEY,
@@ -27,7 +28,6 @@ import {
   wizardActionHref,
   wizardSignalHref,
   wizardTrendHref,
-  resolveWizardTrendStatusParam,
 } from '@/lib/campaignActionRoutes'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
@@ -171,7 +171,9 @@ export default async function CampaignActionWizardPage({
         trendStatus === currentStatus ||
         !selectablePoliticalTrendStatuses(currentStatus).includes(trendStatus)
       ) {
-        redirect(wizardTrendHref(slug, municipalitySlug, undefined, entryAction, prefillExtraParams))
+        redirect(
+          wizardTrendHref(slug, municipalitySlug, undefined, entryAction, prefillExtraParams),
+        )
       }
 
       return (

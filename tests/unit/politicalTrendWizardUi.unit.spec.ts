@@ -10,9 +10,9 @@ import {
   resolvePoliticalTrendNotePrefillSource,
   resolveWizardTrendSkip,
   selectablePoliticalTrendStatuses,
-  wizardTrendChoiceStepTitle,
   WIZARD_TREND_SKIP_LABEL,
   WIZARD_TREND_UNREGISTERED_TITLE,
+  wizardTrendChoiceStepTitle,
 } from '@/lib/politicalTrendWizardUi'
 import { politicalTrendStatuses } from '@/lib/schemas/municipality'
 

@@ -1,9 +1,6 @@
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
-import {
-  politicalTrendStatuses,
-  type PoliticalTrendStatusValue,
-} from '@/lib/schemas/municipality'
+import { politicalTrendStatuses, type PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
 import {
   municipalitySignalTypeLabels,
   type MunicipalitySignalType,

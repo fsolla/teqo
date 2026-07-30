@@ -87,7 +87,9 @@ export const WizardTrendChoiceStep = ({
                   <Icon className="size-5 shrink-0" aria-hidden />
                   <div className="flex flex-col gap-0.5">
                     <span className="text-sm font-medium">{entry.label}</span>
-                    <span className="line-clamp-2 text-xs opacity-80">{entry.changeDescription}</span>
+                    <span className="line-clamp-2 text-xs opacity-80">
+                      {entry.changeDescription}
+                    </span>
                   </div>
                 </Link>
                 <Button
