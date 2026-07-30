@@ -15,6 +15,8 @@ Superfícies de UI deste item passam pelo fluxo **`/impeccable`** (skill anexada
 
 **Dados → decisão → apresentação:** ao auditar o plano e antes de craft de UI com métricas/mapas/listas analíticas, aplique [data-presentation.md](../roadmap-item/data-presentation.md). Se o plano omite a seção e o item claramente apresenta dados → marque **defasado** e complete no Passo 7. A forma escolhida (número / tabela / mapa / chart) é input do Impeccable — não trocar no polish sem reabrir a decisão.
 
+**Wireframe em texto (UI):** no plano de implementação (Passo 6), quando houver superfície B/C/D com layout a decidir ou a encaixar, inclua um **wireframe ASCII** da composição planejada — só posicionamento relativo dos blocos, para inspeção rápida antes do craft. Ver bloco no Passo 6.
+
 ## Checklist do fluxo
 
 ```
@@ -23,7 +25,7 @@ Superfícies de UI deste item passam pelo fluxo **`/impeccable`** (skill anexada
 - [ ] 3. Ler o plano detalhado linkado + fontes satélites
 - [ ] 4. Auditar o plano contra o repositório, afirmação por afirmação (incl. Dados → decisão → apresentação)
 - [ ] 5. Fechar as questões em aberto com evidência ou recomendação
-- [ ] 6. Escrever o plano de implementação em fases verificáveis (incl. fases Impeccable se houver UI; última fase = documentação da sessão)
+- [ ] 6. Escrever o plano de implementação em fases verificáveis (incl. fases Impeccable se houver UI; wireframe ASCII se B/C/D com layout; última fase = documentação da sessão)
 - [ ] 7. Atualizar docs/plans/ e roadmap se a auditoria achou divergência
 - [ ] 8. Classificar superfície UI e preparar gate Impeccable
 - [ ] 9. Parar e obter confirmação do plano (a menos que o usuário já tenha pedido implementação explícita)
@@ -131,6 +133,44 @@ Para cada fase:
 - **Migration** (se houver mudança de schema): nome proposto para `pnpm migrate:create <nome>`, o que adiciona, se tem backfill. Seguir a skill `payload-migrations`; `push` é `false` sempre.
 - **Como verificar a fase**: teste, tela, ou query específica — fase sem critério de verificação não é fase.
 - **Fase de UI**: marque explicitamente `Impeccable: shape|craft|critique|polish` e, se o Passo 8 acionar, `+ harden` / `+ optimize` (ver Passo 8). Não misture schema e layout na mesma fase. Se a seção **Dados → decisão → apresentação** do plano ≠ N/A, a fase de UI **cita a forma escolhida** (número / tabela / mapa / chart) e verifica que a tela responde à decisão nomeada — não “adicionar um gráfico” no polish.
+- **Wireframe em texto** (quando fizer sentido — ver abaixo): um desenho ASCII da superfície planejada, colocado **antes** das fases de UI (ou junto da primeira fase de UI), para o usuário inspecionar posicionamento sem abrir Figma.
+
+### Wireframe em texto (inspeção rápida de layout)
+
+Inclua no plano de implementação um **wireframe ASCII** quando a resposta for sim a pelo menos um:
+
+| Incluir se… | Pular se… |
+| ----------- | --------- |
+| Impeccable **B/C/D** e o item **posiciona** blocos (card novo, coluna, painel, popover, wizard step, empty state com CTAs, strip + lista, etc.) | Classe **A** (sem UI) |
+| Layout **novo ou rearranjado** — “onde fica X relativo a Y” ainda não é óbvio no código/design-ref | Só copy, badge, filtro URL, ou um controle isolado sem composição nova |
+| Design-ref existe mas o plano **mapeia** só um recorte / adapta a um shell existente (o wireframe rotula o recorte) | Design-ref já é o contrato de layout **e** o plano diz “seguir o ref à risca” sem adaptação — wireframe opcional |
+
+**O que é (e o que não é):**
+
+- **É** caixas + rótulos em pt-BR (papéis dos blocos / copy planejada curta), hierarquia top→bottom / left→right, anotações mínimas (`sticky`, `sr-only`, `sheet`, `overflow`).
+- **Não é** mock visual (cores, tipografia, ícones), pixel-perfect, nem substituto do design-ref ou do `/impeccable shape`.
+- **Não** inventa UI: o desenho reflete o que as fases de UI vão entregar; se o layout ainda tem Opções+Recomendação aberta, desenhe a **Recomendação** e diga isso numa linha.
+
+**Formato:** um (ou dois) blocos fenced com linguagem `text` — viewport principal; segundo só se mobile vs desktop **divergirem de forma material** (não duplicar o mesmo stack). Largura ~40–72 chars. Uma legenda de 1 linha: superfície + o que está fora do frame.
+
+Exemplo (ilustrativo — adaptar ao item):
+
+```text
+┌─ /campanha/municipios/[slug] · Overview ─────────────┐
+│ [Voltar]  Nome do município              [⋯]         │
+│ badges: prioridade · tendência · classe              │
+├──────────────────────────────────────────────────────┤
+│ Conta da cadeira (card)                              │
+│   meta · comprometido · déficit                      │
+├──────────────────────┬───────────────────────────────┤
+│ Sugestões (fila)     │ Elegibilidade visita          │
+│  · padrão P1         │  ✓ volume  — headroom …       │
+│  [Aceitar][Adiar]    │                               │
+└──────────────────────┴───────────────────────────────┘
+  Fora do frame: tabs Detalhe / Dossiê; sidebar do (app).
+```
+
+Se houver **mais de uma superfície** no item (lista + detalhe, ou wizard com passos distintos), um wireframe por superfície primária — não um mural de todo o `/campanha`.
 
 **Tracer bullet:** se o item for grande, a primeira fatia vertical real (schema mínimo → uma action → uma superfície UI) vem cedo — prova o wiring antes de polish paralelo ou fases cosméticas.
 
@@ -164,7 +204,9 @@ Sempre inclua como **última fase** do plano (após verificação AGENTS.md + Ai
 
 **Pedidos só de planejamento (Passos 1–8):** a fase entra no plano gerado como item futuro; **não** execute a documentação de entrega até haver trabalho real na sessão (exceto correções do Passo 7 por divergência de auditoria).
 
-Termine o plano com: dependências assumidas (e o que foi verificado no Passo 2), decisões assumidas _(validar com produto)_ no formato Opções+Recomendação+rejeitadas, classificação Impeccable do Passo 8, `Dados: N/A | <forma + decisão>` ([data-presentation.md](../roadmap-item/data-presentation.md)), rabbit holes / adiados com gatilho, self-score ≥4/5, o que fica explicitamente de fora (com o plano/item para onde vai), e a **fase final de documentação da sessão** (checklist das superfícies acima).
+Termine o plano com: dependências assumidas (e o que foi verificado no Passo 2), decisões assumidas _(validar com produto)_ no formato Opções+Recomendação+rejeitadas, classificação Impeccable do Passo 8, `Dados: N/A | <forma + decisão>` ([data-presentation.md](../roadmap-item/data-presentation.md)), **wireframe ASCII se B/C/D com layout** (ou `Wireframe: N/A — <motivo>`), rabbit holes / adiados com gatilho, self-score ≥4/5, o que fica explicitamente de fora (com o plano/item para onde vai), e a **fase final de documentação da sessão** (checklist das superfícies acima).
+
+Se o Passo 7 atualizar `docs/plans/<slug>.md` por divergência de UI/layout, **pode** colar o mesmo wireframe sob **Design (Impeccable)** (subseção “Wireframe (texto)”) — opcional; o obrigatório é no plano de implementação mostrado ao usuário.
 
 ## Passo 7 — Atualizar a documentação se houve divergência
 
@@ -203,7 +245,8 @@ Ordem quando os gatilhos disparam: `critique` → (`harden` se gatilho) → (`op
 4. **Dados na UI:** se Dados ≠ N/A, craft/critique validam a forma contratada no plano (escada de pobreza + decisão nomeável). Critique P0 se a tela mostrar métrica sem “vs quê” / sem próximo passo possível, ou se violar anti-goals (% estadual absoluto, gauge SaaS). Não “melhorar” trocando tabela por chart no polish sem reabrir Opções+Recomendação.
 5. **Gates do craft:** se shape for obrigatório (classe C, ou B/D sem brief confirmado), apresente o brief e **pare** até o usuário confirmar — não comprima shape → código numa única resposta.
 6. **Pós-UI:** após a fase de UI funcional, rode `/impeccable critique <alvo>` (path sob `src/app/(campaign)/...` ou frontend). Trate P0/P1 como bloqueadores de merge; aplique `harden`/`optimize` só se a tabela de gatilhos acima bater; feche com `/impeccable polish <alvo>` no mesmo escopo. Snapshot em `.impeccable/critique/` é artefato útil — não substitua o checklist AGENTS.md.
-7. **Itens classe A:** declare no resumo "Impeccable: N/A (sem superfície UI)" e siga só engenharia + Aikido. Se a classe A só entrega aggregate para UI futura, ainda assim a seção Dados do plano deve dizer quem consome e qual forma esperada (ou Adiado com gatilho).
+7. **Itens classe A:** declare no resumo "Impeccable: N/A (sem superfície UI)" e siga só engenharia + Aikido. Se a classe A só entrega aggregate para UI futura, ainda assim a seção Dados do plano deve dizer quem consome e qual forma esperada (ou Adiado com gatilho). Wireframe: N/A.
+8. **Wireframe vs shape:** o ASCII do Passo 6 é contrato de **posicionamento** para confirmação rápida; o `/impeccable shape` continua dono do brief visual. Se o craft divergir do wireframe, atualize o wireframe na confirmação ou trate como mudança de escopo — não ignore em silêncio.
 
 No plano de implementação, cada fase de UI deve citar o comando Impeccable e o **alvo** (path ou rota), e declarar explicitamente se harden/optimize estão **in** ou **out** (com o gatilho, se in), por exemplo:
 
@@ -221,6 +264,7 @@ Se o pedido foi só planejamento/revisão → entregue o resumo final (abaixo) e
 Se o pedido foi implementar ("vamos fazer", "implementa", "entrega o X"):
 
 - Apresente o plano em fases + classificação Impeccable (A/B/C/D) em forma compacta.
+- Se houver wireframe ASCII, **mostre-o nesta confirmação** (é o artefato mais barato para o usuário corrigir “isso fica embaixo, não do lado” antes do craft).
 - Peça confirmação **uma vez** (ou "segue" implícito se o usuário já listou as fases a executar). Não reabra o Passo 5 inteiro.
 - Só então avance ao Passo 10.
 
@@ -263,7 +307,7 @@ Não declare a implementação completa sem 10d.
 
 ## Resumo final ao usuário
 
-**Após planejamento (Passos 1–8):** (1) item e estado no roadmap (janela, appetite, dependências, bloqueios); (2) veredito da auditoria — confirmado / defasado / conflitante / awaiting-evidence, incl. achados de desenho e de **Dados → decisão → apresentação**; (3) o plano de implementação em fases (quota de appetite + tracer bullet), com fases Impeccable marcadas (`polish` obrigatório; `harden`/`optimize` in|out com gatilho) e **última fase = documentação da sessão**; (4) classificação A/B/C/D, `Dados: N/A | <forma>`, `Qualidade de decisão: N/5`, e decisões assumidas que merecem validação de produto.
+**Após planejamento (Passos 1–8):** (1) item e estado no roadmap (janela, appetite, dependências, bloqueios); (2) veredito da auditoria — confirmado / defasado / conflitante / awaiting-evidence, incl. achados de desenho e de **Dados → decisão → apresentação**; (3) o plano de implementação em fases (quota de appetite + tracer bullet), com fases Impeccable marcadas (`polish` obrigatório; `harden`/`optimize` in|out com gatilho), **wireframe ASCII se couber** (ou N/A), e **última fase = documentação da sessão**; (4) classificação A/B/C/D, `Dados: N/A | <forma>`, `Qualidade de decisão: N/5`, e decisões assumidas que merecem validação de produto.
 
 **Após implementação (Passo 10):** o que entrou em cada fase, resultado do critique/polish (score/P0–P1 se houver), se harden/optimize rodaram (gatilho + resultado) ou por que ficaram out, checklist AGENTS.md + Aikido, superfícies de doc atualizadas no 10d, e o que ficou de fora.
 
