@@ -1,11 +1,29 @@
 # Wizard registrar sinal — escolher tipo + detalhar texto
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-30)
+Atualizado em: 2026-07-30
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B63 — UX-1 wizards)
 Impeccable: C — UI nova (grid de tipos + drawer de info + passo de texto)
 Appetite: ~1–1,25 dia eng; 2 etapas no B59; write via action `createMunicipalityUpdate` existente
 Responsável: —
+
+## Contrato de URL (as-built)
+
+```text
+/campanha/acoes/registrar-sinal
+  → B60 WizardMunicipalitySearchStep
+
+/campanha/acoes/registrar-sinal?municipio=<slug>
+  → WizardSignalTypeStep (grid)
+
+/campanha/acoes/registrar-sinal?municipio=<slug>&signalType=<enum>
+  → WizardSignalBodyStep (textarea + Salvar)
+
+Query opcional (propagar entre passos):
+  ?entry=register-signal|update-votes|…
+```
+
+Helpers em `src/lib/campaignActionRoutes.ts`: `WIZARD_SIGNAL_TYPE_QUERY_KEY`, `WIZARD_ENTRY_ACTION_QUERY_KEY`, `parseWizardEntryActionParam`, `resolveWizardSignalTypeParam`, `wizardSignalHref`. Skip: `shouldShowWizardSignalSkip` em `wizardSignalUi.ts` — oculto quando `entryAction` ausente ou `register-signal`; visível caso contrário (href → `/campanha` na v1).
 
 ## Design (Impeccable)
 
@@ -105,6 +123,14 @@ Componentes:
 
 - **Grid de tipos no Popover B26.** Revisitar se o select pós-B62 ainda gerar dúvida de classificação em campo.
 - **Copy longa revisada pela assessoria.** Revisitar no R6.
+- **Fundir `wizardSignalHref` em `wizardActionHref`.** Revisitar quando B64+ compartilhar o mesmo builder de query (hoje são contratos distintos: `signalType` vs opções genéricas).
+
+## Já resolvido no simplify (não reabrir)
+
+- **B75 chrome:** `flowTitle`, `isEntryStep`, `skip` no `CampaignWizardShell` + `WizardSignalSkipTrailing` no desktop.
+- **Skip DRY:** `resolveWizardSignalSkip` em `wizardSignalUi.ts` (substitui `wizardSignalSkipHref`).
+- **Lookup O(1):** `municipalitySignalTypeMetaByType`; tiles com `<Link>` (prefetch) em vez de `router.push`.
+- **URL `?entry=`** alinhada a B70/B77 (não `?entryAction=`).
 
 ## Referências
 
