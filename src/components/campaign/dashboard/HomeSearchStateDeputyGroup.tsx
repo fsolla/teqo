@@ -6,6 +6,7 @@ import {
   formatHomeSearchMunicipalityCount,
   homeSearchStateDeputyGroupHasHits,
 } from '@/lib/campaignHomeSearchHits'
+import { HOME_SEARCH_GROUP_HEADING_CLASS, HOME_SEARCH_GROUP_LIST_CLASS } from '@/lib/homeSearchUi'
 
 const formatStateDeputySecondary = (
   party: string | null,
@@ -26,11 +27,9 @@ export const HomeSearchStateDeputyGroup = () => {
   if (!homeSearchStateDeputyGroupHasHits(results.data)) return null
 
   return (
-    <section aria-label="Dobradinhas" className="flex flex-col gap-1">
-      <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Dobradinhas
-      </h2>
-      <ul className="flex flex-col">
+    <section aria-label="Dobradinhas" className="flex flex-col gap-0.5">
+      <h2 className={HOME_SEARCH_GROUP_HEADING_CLASS}>Dobradinhas</h2>
+      <ul className={HOME_SEARCH_GROUP_LIST_CLASS}>
         {stateDeputies.map((hit) => (
           <li key={`state-deputy-${hit.slug}`}>
             <HomeSearchHitRow
