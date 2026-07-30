@@ -15,7 +15,9 @@ const die = dieAgent('file-miss')
 const { flags } = parseArgs(process.argv.slice(2), new Set(['title', 'body', 'kind']))
 
 if (!flags.title) {
-  die('Usage: pnpm agent:file-miss -- --title <what went wrong> [--body details] [--kind agent-miss|defect]')
+  die(
+    'Usage: pnpm agent:file-miss -- --title <what went wrong> [--body details] [--kind agent-miss|defect]',
+  )
 }
 
 const kind = flags.kind === 'defect' ? 'defect' : 'agent-miss'

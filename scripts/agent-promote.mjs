@@ -58,7 +58,11 @@ const stageRuns = ghJson([
   'headSha,status,conclusion,url',
 ])
 const latestStageRun = stageRuns.find((run) => run.headSha === stageSha)
-if (!latestStageRun || latestStageRun.status !== 'completed' || latestStageRun.conclusion !== 'success') {
+if (
+  !latestStageRun ||
+  latestStageRun.status !== 'completed' ||
+  latestStageRun.conclusion !== 'success'
+) {
   die(
     `CI stage não está verde no head de stage (${stageSha.slice(0, 8)}). ` +
       `Último run: ${latestStageRun ? `${latestStageRun.status}/${latestStageRun.conclusion} — ${latestStageRun.url}` : 'nenhum'}`,

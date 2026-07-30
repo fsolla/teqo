@@ -71,7 +71,8 @@ const queue = openReady
   })
   .filter((entry) => entry.blockedBy.length === 0)
   .sort((a, b) => {
-    const rank = priorityRank(a.priority.replace('prio:', '')) - priorityRank(b.priority.replace('prio:', ''))
+    const rank =
+      priorityRank(a.priority.replace('prio:', '')) - priorityRank(b.priority.replace('prio:', ''))
     return rank !== 0 ? rank : a.issue.createdAt.localeCompare(b.issue.createdAt)
   })
 
@@ -96,15 +97,13 @@ if (!pick) {
 }
 
 // Optimistic lock: re-read right before flipping.
-const fresh = ghJson([
-  'issue',
-  'view',
-  String(pick.issue.number),
-  '--json',
-  'number,labels,state',
-])
+const fresh = ghJson(['issue', 'view', String(pick.issue.number), '--json', 'number,labels,state'])
 const freshLabels = labelNames(fresh)
-if (fresh.state !== 'OPEN' || !freshLabels.includes('ready') || freshLabels.includes('in-progress')) {
+if (
+  fresh.state !== 'OPEN' ||
+  !freshLabels.includes('ready') ||
+  freshLabels.includes('in-progress')
+) {
   die(`Issue #${pick.issue.number} was just claimed or closed by someone else. Re-run claim.`)
 }
 
