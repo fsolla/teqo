@@ -65,7 +65,8 @@
     "test:unit": "cross-env NODE_OPTIONS=--no-deprecation DATABASE_URL=postgresql://invalid:invalid@127.0.0.1:1/unit_tests_must_not_connect vitest run --config ./vitest.unit.config.mts",
     "typecheck": "tsc --noEmit",
     "typecheck:tsc6": "tsc6 --noEmit",
-    "prepare": "husky"
+    "prepare": "husky",
+    "agent:status": "node scripts/agent-status.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
