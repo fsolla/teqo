@@ -565,7 +565,7 @@ describe('admin bypasses carry a justification comment', () => {
     ['src/utilities/electionCandidateOptions.ts', 1],
     ['src/utilities/territory/loadTerritoryOverview.ts', 1],
     ['src/utilities/municipality/municipalityCandidateComparison.ts', 2],
-    ['src/utilities/municipality/municipalityElectoralBaseline.ts', 9],
+    ['src/utilities/municipality/municipalityElectoralBaseline.ts', 8],
     ['src/utilities/onda0Provision.ts', 4],
     ['src/utilities/stateDeputyData.ts', 1],
     ['src/utilities/visit/visitPlannerData.ts', 1],

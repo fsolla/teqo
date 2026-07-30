@@ -6,7 +6,10 @@ import {
   CampaignHomeActionButton,
   type CampaignHomeActionButtonProps,
 } from '@/components/campaign/dashboard/CampaignHomeActionButton'
-import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
+import {
+  CampaignHomeActionStrip,
+  HOME_ACTION_STRIP_DRAG_THRESHOLD_PX,
+} from '@/components/campaign/dashboard/CampaignHomeActionStrip'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { resetCampaignCoarsePointerForTests } from '@/lib/campaignCoarsePointer'
 import { CAMPAIGN_LONG_PRESS_MS } from '@/lib/campaignLongPress'
@@ -150,6 +153,20 @@ describe('CampaignHomeActionButton', () => {
 })
 
 describe('CampaignHomeActionStrip', () => {
+  const manyActions = Array.from({ length: 8 }, (_, index) => ({
+    label: `Ação ${index + 1}`,
+    icon: BarChart3,
+  }))
+
+  const getScroller = (container: HTMLElement) =>
+    container.querySelector('[aria-label="Ações rápidas"]') as HTMLDivElement
+
+  const mockScrollerOverflow = (scroller: HTMLDivElement) => {
+    Object.defineProperty(scroller, 'scrollWidth', { value: 800, configurable: true })
+    Object.defineProperty(scroller, 'clientWidth', { value: 200, configurable: true })
+    scroller.scrollLeft = 0
+  }
+
   it('renders a horizontal scroller with list semantics', () => {
     const { container } = render(
       <CampaignHomeActionStrip
@@ -160,9 +177,99 @@ describe('CampaignHomeActionStrip', () => {
       />,
     )
 
-    const scroller = container.querySelector('[aria-label="Ações rápidas"]')
+    const scroller = getScroller(container)
     expect(scroller?.className).toContain('overflow-x-auto')
     expect(scroller?.className).toContain('scrollbar-width:none')
     expect(scroller?.querySelector('ul[role="list"]')).toBeTruthy()
+  })
+
+  it('scrolls horizontally on pointer-fine drag past the threshold', () => {
+    const { container } = render(<CampaignHomeActionStrip actions={manyActions} />)
+    const scroller = getScroller(container)
+    mockScrollerOverflow(scroller)
+
+    const startX = 120
+    const dragDelta = HOME_ACTION_STRIP_DRAG_THRESHOLD_PX + 20
+
+    fireEvent.pointerDown(scroller, { button: 0, clientX: startX, pointerId: 1 })
+    fireEvent.pointerMove(scroller, {
+      button: 0,
+      clientX: startX - dragDelta,
+      pointerId: 1,
+    })
+    expect(scroller.scrollLeft).toBe(dragDelta)
+    expect(scroller.dataset.dragging).toBe('true')
+
+    fireEvent.pointerUp(scroller, { pointerId: 1 })
+    expect(scroller.dataset.dragging).toBeUndefined()
+  })
+
+  it('does not pan on coarse pointer — touch uses native overflow scroll', () => {
+    resetCampaignCoarsePointerForTests()
+    matchMediaMock.mockImplementation((query: string) => ({
+      matches: query.includes('coarse'),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
+
+    const onClick = vi.fn()
+    const { container } = render(
+      <CampaignHomeActionStrip
+        actions={[{ label: 'Registrar', icon: BarChart3, onClick }, ...manyActions]}
+      />,
+    )
+    const scroller = getScroller(container)
+    mockScrollerOverflow(scroller)
+
+    fireEvent.pointerDown(scroller, { button: 0, clientX: 200, pointerId: 4 })
+    fireEvent.pointerMove(scroller, { button: 0, clientX: 50, pointerId: 4 })
+    fireEvent.pointerUp(scroller, { pointerId: 4 })
+    expect(scroller.scrollLeft).toBe(0)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar' }))
+    expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('suppresses child click after a drag gesture', () => {
+    const onClick = vi.fn()
+    const { container } = render(
+      <CampaignHomeActionStrip
+        actions={[{ label: 'Registrar', icon: BarChart3, onClick }, ...manyActions.slice(0, 3)]}
+      />,
+    )
+    const scroller = getScroller(container)
+    mockScrollerOverflow(scroller)
+
+    fireEvent.pointerDown(scroller, { button: 0, clientX: 200, pointerId: 2 })
+    fireEvent.pointerMove(scroller, { button: 0, clientX: 100, pointerId: 2 })
+    fireEvent.pointerUp(scroller, { pointerId: 2 })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar' }))
+    expect(onClick).not.toHaveBeenCalled()
+  })
+
+  it('allows child click when movement stays below the drag threshold', () => {
+    const onClick = vi.fn()
+    const { container } = render(
+      <CampaignHomeActionStrip actions={[{ label: 'Registrar', icon: BarChart3, onClick }]} />,
+    )
+    const scroller = getScroller(container)
+    mockScrollerOverflow(scroller)
+
+    const startX = 80
+    fireEvent.pointerDown(scroller, { button: 0, clientX: startX, pointerId: 3 })
+    fireEvent.pointerMove(scroller, {
+      button: 0,
+      clientX: startX - HOME_ACTION_STRIP_DRAG_THRESHOLD_PX + 2,
+      pointerId: 3,
+    })
+    fireEvent.pointerUp(scroller, { pointerId: 3 })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar' }))
+    expect(onClick).toHaveBeenCalledTimes(1)
   })
 })
