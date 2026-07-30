@@ -301,11 +301,9 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(page.getByText('Cadastre apoiadores pelo celular.')).toBeVisible()
 
     // The leader redirect aborts `goto`'s load event (ERR_ABORTED); the
-    // redirect itself is the assertion, so navigate and wait for the target.
-    await Promise.all([
-      page.waitForURL(`${campaign.baseURL}/campanha/contatos`),
-      page.goto(`${campaign.baseURL}/campanha/municipios`).catch(() => {}),
-    ])
+    // redirect itself is the assertion, and `toHaveURL` retries onto it.
+    await page.goto(`${campaign.baseURL}/campanha/municipios`).catch(() => {})
+    await expect(page).toHaveURL(`${campaign.baseURL}/campanha/contatos`)
 
     const supporterName = fixtures.value('Apoiador Liderança')
     const supporterPhone = fixtures.phone()

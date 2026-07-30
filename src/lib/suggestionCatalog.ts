@@ -95,8 +95,8 @@ export type MunicipalityTriggerInput = {
   coverageRatio: number | null
   coverageDeficit: number
 
-  /** Adversary signal within the window, if any (P1 variant) — presence reads as confirmed. */
-  adversarySignal: { present: true } | null
+  /** Adversary signal within the window (P1 variant) — presence reads as confirmed. */
+  hasAdversarySignal: boolean
   /** Any non-draft activity recently held or upcoming (the "agenda" leg of P1). */
   hasRecentOrUpcomingActivity: boolean
   /** Activities `realizado` within the effort window (K-A's "esforço no ciclo"). */
@@ -314,7 +314,7 @@ const patternP1: SuggestionPattern = {
   evaluate: (input) => {
     if (input.territorialClass !== 'reduto' || !input.inCoreBlock) return null
 
-    const threatened = input.adversarySignal !== null
+    const threatened = input.hasAdversarySignal
     const own2018 = input.ownVotesByYear[YEAR_2018] ?? 0
     const own2022 = input.ownVotesByYear[YEAR_2022] ?? 0
     const dropped = own2018 > 0 && own2022 <= own2018 * SUGGESTION_ANCHORS.voteDropRatio
@@ -339,7 +339,7 @@ const patternP1: SuggestionPattern = {
     }
     if (dormant) factors.push(`${signalAgeFactor(input.lastSignalAgeDays)}, sem agenda no período`)
 
-    const triageLevel: SuggestionTriageLevel = input.adversarySignal ? 1 : 3
+    const triageLevel: SuggestionTriageLevel = input.hasAdversarySignal ? 1 : 3
     return { patternId: 'P1', triageLevel, factors }
   },
 }

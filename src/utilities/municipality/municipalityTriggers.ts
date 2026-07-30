@@ -284,11 +284,11 @@ export const loadMunicipalitySuggestions = async (
   ])
 
   // Any adversary signal in the window reads as confirmed (B62: sinal = tipo + texto).
-  const adversarySignalByMunicipality = new Map<number, { present: true }>()
+  const adversarySignalMunicipalityIDs = new Set<number>()
   for (const signal of signals.docs) {
     const id = relationshipId(signal.municipality)
     if (id === null) continue
-    adversarySignalByMunicipality.set(id, { present: true })
+    adversarySignalMunicipalityIDs.add(id)
   }
 
   const agendaByMunicipality = new Map<number, { hasAgenda: boolean; completedCount: number }>()
@@ -369,7 +369,7 @@ export const loadMunicipalitySuggestions = async (
       lastPledgeAgeDays: municipalitySignalAgeInDays(pledgeAggregate.lastPledgeAt, now),
       coverageRatio: coverage.coverageRatio,
       coverageDeficit: coverage.deficit,
-      adversarySignal: adversarySignalByMunicipality.get(municipality.id) ?? null,
+      hasAdversarySignal: adversarySignalMunicipalityIDs.has(municipality.id),
       hasRecentOrUpcomingActivity: agenda?.hasAgenda ?? false,
       completedActivityCount: agenda?.completedCount ?? 0,
     }
