@@ -111,6 +111,8 @@ Componentes:
 - **Grupos Lideranças / Demandas / Atividades / Assessores no empty.** Revisitar quando **B49–B53** landarem **e** o empty de municípios já estiver em uso (evidência de “falta X”).
 - **Visitados recentes no topo do suggest.** Revisitar se sessão observada pedir continuidade de sessão no Início (não só no Quadro).
 - **Ranking “mais inteligente”** (déficit × classe E10 × nível E14). Revisitar após 2 semanas de uso real do v1 simples.
+- **RSC embed do suggest (evitar POST duplicado no focus).** Registrado como **B68+** F1 — revisitar se latência no focus for P1 em produção.
+- **Comparator compartilhado de déficit** (B20 vs B68 vs E9). Revisitar no 3º call site — ver **B68+** F2.
 - **Soft deadline UX-1 03/08:** se folga apertar, este item é cortável depois de B66 (busca ainda funciona digitando).
 
 ## Referências
