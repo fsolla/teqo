@@ -11,8 +11,10 @@ import {
   parseWizardEntryActionParam,
   parseWizardMunicipioParam,
   resolveWizardSignalTypeParam,
+  resolveWizardTrendStatusParam,
   wizardActionHref,
   wizardSignalHref,
+  wizardTrendHref,
 } from '@/lib/campaignActionRoutes'
 
 describe('campaignActionRoutes', () => {
@@ -92,6 +94,33 @@ describe('campaignActionRoutes', () => {
     })
     expect(resolveWizardSignalTypeParam('invalid')).toEqual({
       signalType: undefined,
+      invalid: true,
+    })
+  })
+
+  it('builds trend wizard hrefs with optional trendStatus and entry', () => {
+    expect(wizardTrendHref('mudar-tendencia', 'cairu')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu`,
+    )
+    expect(wizardTrendHref('mudar-tendencia', 'cairu', 'favoravel')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&trendStatus=favoravel`,
+    )
+    expect(wizardTrendHref('mudar-tendencia', 'cairu', 'neutra', 'update-votes')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&trendStatus=neutra&entry=update-votes`,
+    )
+  })
+
+  it('resolves trendStatus search param with invalid flag', () => {
+    expect(resolveWizardTrendStatusParam(undefined)).toEqual({
+      trendStatus: undefined,
+      invalid: false,
+    })
+    expect(resolveWizardTrendStatusParam('desfavoravel')).toEqual({
+      trendStatus: 'desfavoravel',
+      invalid: false,
+    })
+    expect(resolveWizardTrendStatusParam('invalid')).toEqual({
+      trendStatus: undefined,
       invalid: true,
     })
   })
