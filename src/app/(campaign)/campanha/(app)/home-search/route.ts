@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 
-import type { HomeSearchSuccessResponse } from '@/lib/campaignHomeSearchHits'
+import type {
+  HomeSearchSuccessResponse,
+  WizardMunicipalitySearchSuccessResponse,
+} from '@/lib/campaignHomeSearchHits'
 import {
   HOME_SEARCH_GENERIC_ERROR_MESSAGE,
   HOME_SEARCH_STAFF_ONLY_MESSAGE,
@@ -14,6 +17,7 @@ import { searchHomeAdvisors } from '@/utilities/homeSearch/searchHomeAdvisors'
 import { searchHomeLeaderships } from '@/utilities/homeSearch/searchHomeLeaderships'
 import { searchHomeMunicipalities } from '@/utilities/homeSearch/searchHomeMunicipalities'
 import { searchHomeStateDeputies } from '@/utilities/homeSearch/searchHomeStateDeputies'
+import { searchStaffMunicipalityHits } from '@/utilities/homeSearch/searchStaffMunicipalityHits'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +33,14 @@ export const POST = campaignJsonMutationRoute(
     if (body.mode === 'suggest') {
       const result = await loadHomeSearchSuggestions(payload, actor)
       return NextResponse.json<HomeSearchSuccessResponse>(result)
+    }
+
+    if (body.mode === 'wizard-municipality') {
+      const municipalities = await searchStaffMunicipalityHits(payload, actor, body.query)
+      return NextResponse.json<WizardMunicipalitySearchSuccessResponse>({
+        status: 'success',
+        municipalities,
+      })
     }
 
     const [municipalityResult, advisors, leaderships, activities, stateDeputies] =

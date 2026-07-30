@@ -18,4 +18,8 @@ export const homeSearchBodySchema = z.discriminatedUnion('mode', [
   z.object({
     mode: z.literal('suggest'),
   }),
+  z.object({
+    mode: z.literal('wizard-municipality'),
+    query: homeSearchQueryField,
+  }),
 ])

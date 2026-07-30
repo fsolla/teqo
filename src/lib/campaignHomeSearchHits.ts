@@ -100,3 +100,8 @@ export const homeSearchHasAnyHits = (data: HomeSearchSuccessResponse): boolean =
   homeSearchLeadershipGroupHasHits(data) ||
   homeSearchStateDeputyGroupHasHits(data) ||
   homeSearchActivityGroupHasHits(data)
+
+export type WizardMunicipalitySearchSuccessResponse = {
+  status: 'success'
+  municipalities: HomeSearchMunicipalityHit[]
+}

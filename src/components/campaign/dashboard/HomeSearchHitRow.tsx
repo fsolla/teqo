@@ -24,7 +24,7 @@ export const HomeSearchHitRow = ({
   <Link
     href={href}
     className={cn(
-      'flex min-h-11 items-center gap-3 py-2.5 text-foreground',
+      'flex min-h-11 w-full items-center gap-3 py-2.5 text-left text-foreground',
       'rounded-md outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring',
     )}
   >

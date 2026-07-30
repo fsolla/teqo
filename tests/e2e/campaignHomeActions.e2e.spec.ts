@@ -121,3 +121,30 @@ test.describe('Início — catálogo de ações (B45)', () => {
     await expect(page.getByRole('heading', { name: /Meus contatos/ })).toBeVisible()
   })
 })
+
+test.describe('Wizard — busca município (B60)', () => {
+  test('selecting a municipality advances with ?municipio= and sticky caption', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/acoes/atualizar-votos')
+    await expect(page.getByRole('heading', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toBeVisible()
+
+    const search = page.getByLabel('Buscar município')
+    await search.fill('Cairu')
+
+    const results = page.getByRole('region', { name: 'Resultados da busca' })
+    await expect(results.getByRole('button', { name: /Cairu/i })).toBeVisible({ timeout: 15000 })
+    await results.getByRole('button', { name: /Cairu/i }).click()
+
+    await page.waitForURL(/\/campanha\/acoes\/atualizar-votos\?municipio=cairu/)
+    await expect(page.getByLabel(/Município em atualização: Cairu/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible()
+  })
+})

@@ -6,6 +6,8 @@ import {
   campaignActionEntryHref,
   isCampaignWizardActionId,
   isCampaignWizardActionSlug,
+  parseWizardMunicipioParam,
+  wizardActionHref,
 } from '@/lib/campaignActionRoutes'
 
 describe('campaignActionRoutes', () => {
@@ -25,5 +27,19 @@ describe('campaignActionRoutes', () => {
 
   it('rejects unknown wizard slugs', () => {
     expect(isCampaignWizardActionSlug('inventado')).toBe(false)
+  })
+
+  it('builds wizard hrefs with optional municipio query', () => {
+    expect(wizardActionHref('atualizar-votos')).toBe(`${CAMPAIGN_ACTIONS_HOME}/atualizar-votos`)
+    expect(wizardActionHref('atualizar-votos', 'cairu')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu`,
+    )
+  })
+
+  it('parses municipio search param', () => {
+    expect(parseWizardMunicipioParam('cairu')).toBe('cairu')
+    expect(parseWizardMunicipioParam(['cairu', 'ignored'])).toBe('cairu')
+    expect(parseWizardMunicipioParam(undefined)).toBeUndefined()
+    expect(parseWizardMunicipioParam('  ')).toBeUndefined()
   })
 })
