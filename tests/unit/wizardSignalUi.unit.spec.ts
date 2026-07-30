@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
-import { municipalitySignalTypeMeta, municipalitySignalTypeMetaByType } from '@/lib/municipalitySignalTypeMeta'
+import {
+  municipalitySignalTypeMeta,
+  municipalitySignalTypeMetaByType,
+} from '@/lib/municipalitySignalTypeMeta'
 import { municipalitySignalTypes } from '@/lib/schemas/municipalityUpdate'
 import {
   resolveWizardSignalSkip,

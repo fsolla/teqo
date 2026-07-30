@@ -4,8 +4,8 @@ import { Info } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
-import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { WizardSignalSkipTrailing } from '@/components/campaign/municipality/WizardSignalSkipTrailing'
+import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { Button } from '@/components/ui/button'
 import {
   Drawer,
@@ -25,10 +25,7 @@ import {
 } from '@/lib/municipalitySignalTypeMeta'
 import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 import { cn } from '@/lib/utils'
-import {
-  resolveWizardSignalSkip,
-  WIZARD_SIGNAL_TYPE_STEP_TITLE,
-} from '@/lib/wizardSignalUi'
+import { resolveWizardSignalSkip, WIZARD_SIGNAL_TYPE_STEP_TITLE } from '@/lib/wizardSignalUi'
 
 type WizardSignalTypeStepProps = {
   actionSlug: string
