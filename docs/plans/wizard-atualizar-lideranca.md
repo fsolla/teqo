@@ -1,11 +1,18 @@
 # Wizard atualizar liderança — grid + formulário curto
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue (2026-07-30)
+Atualizado em: 2026-07-30
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B70 — UX-1 wizards / A4)
 Impeccable: C — UI nova (grid de lideranças + formulário de edição/criação no chassis B59)
 Appetite: ~1,25–1,5 dia eng; 2 “modos” no B59 (grid → form); writes via actions `leadership` existentes; focus + skip + Continuar
 Responsável: —
+
+## Revisão as-built (2026-07-30)
+
+- **Loader:** `loadWizardLeadershipTiles` em `utilities/leadership/leadershipData.ts` (view model `WizardLeadershipTileViewModel` em `lib/wizardLeadershipContract.ts`) — não `listMunicipalityLeaderships` das actions.
+- **Escrita:** `updateLeadershipWizard` / `createLeadershipWizard` (+ form actions em `acoes/wizardLeadershipFormActions.ts`) com transação Contact + Leadership; `updateLeadershipInternal` **não** cobre nome/celular/e-mail.
+- **`entryAction`:** `WIZARD_ENTRY_ACTION_QUERY_KEY` + `parseWizardEntryActionParam` em `campaignActionRoutes.ts`; skip oculto quando entry implícito (`update-leadership` standalone).
+- **Continuar:** após Salvar com dirty → `router.push(CAMPAIGN_HOME)` + toast (opção A do plano).
 
 ## Design (Impeccable)
 
@@ -55,11 +62,11 @@ Município sticky (**B59**) após escolha.
 ## Objetivos
 
 - Passos no shell B59: `WizardLeadershipGridStep` + `WizardLeadershipFormStep` (ou um client island com modo `grid | form`).
-- Loader: lideranças do município no escopo do ator (`loadMunicipalityLeaderships` / select enxuto: id, contact name/phone/email, supportStatus, notes, exclusive).
+- Loader: lideranças do município no escopo do ator (`loadWizardLeadershipTiles`; select enxuto: id, contact name/phone/email, supportStatus, notes, exclusive).
 - Info/hover: `notes` truncado com scroll no Drawer se longo; empty = “Sem observação.”
 - Truncamento de nome: helper puro em `lib/` (word-boundary ellipsis) + unit.
 - Skip: trailing slot B59; **hidden** se `entryAction === 'update-leadership'`.
-- Salvar edit: `updateLeadershipInternal` / action existente (contact name/phone/email + supportStatus + notes + exclusive); create: `createLeadership` mínimo + município atual.
+- Salvar edit: `updateLeadershipWizard` (contact + leadership em transação); create: `createLeadershipWizard` mínimo + município atual.
 - Dirty → `Continuar` no grid; Continuar **não** grava de novo — só avança (writes já no Salvar do form).
 - Pending nos botões Salvar/Continuar (Feel the action).
 - Sem migration (B69 já migrou). Sem Consent novo.

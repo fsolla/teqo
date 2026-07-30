@@ -46,6 +46,8 @@ export const LEADERSHIP_STAFF_MESSAGE =
 export const LEADERSHIP_DUPLICATE_MESSAGE =
   'Esta pessoa já está cadastrada como liderança. Edite a ficha existente para vincular novos municípios.'
 
+export const LEADERSHIP_INVALID_CONTACT_MESSAGE = 'Contato da liderança inválido.'
+
 const municipalitiesArraySchema = z
   .array(positiveRelationshipId)
   .min(1, LEADERSHIP_MUNICIPALITY_FLOOR_MESSAGE)
@@ -86,6 +88,26 @@ export const leadershipInternalUpdateSchema = z.object({
 })
 
 export type LeadershipInternalUpdateInput = z.input<typeof leadershipInternalUpdateSchema>
+
+const leadershipWizardFieldsSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  phone: brazilianMobile,
+  email: optionalPersistedEmail,
+  exclusive: z.boolean().default(true),
+  supportStatus: z.enum(leadershipSupportStatuses).default('a_abordar'),
+  notes: trimmedOptionalText(3000),
+})
+
+export const leadershipWizardCreateSchema = leadershipWizardFieldsSchema.extend({
+  municipalityId: positiveRelationshipId,
+})
+
+export const leadershipWizardUpdateSchema = leadershipWizardFieldsSchema.extend({
+  id: positiveRelationshipId,
+})
+
+export type LeadershipWizardCreateInput = z.input<typeof leadershipWizardCreateSchema>
+export type LeadershipWizardUpdateInput = z.input<typeof leadershipWizardUpdateSchema>
 
 /** Delta write for one chip in the "Dobradinhas" column of `/campanha/liderancas` (B31). */
 export const leadershipStateDeputyMembershipSchema = z.object({

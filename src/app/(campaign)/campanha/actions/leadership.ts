@@ -5,24 +5,30 @@ import type { Payload } from 'payload'
 
 import { nextMunicipalityIdsAfterLeadershipMembership } from '@/lib/leadershipMunicipalityMembership'
 import { nextStateDeputyIdsAfterMembership } from '@/lib/leadershipStateDeputyMembership'
-import { uniqueRelationshipIds } from '@/lib/relationship'
+import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import {
   LEADERSHIP_DUPLICATE_MESSAGE,
+  LEADERSHIP_INVALID_CONTACT_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
   LEADERSHIP_STAFF_MESSAGE,
   leadershipCreateSchema,
   leadershipInternalUpdateSchema,
   leadershipMunicipalitiesMembershipSchema,
   leadershipStateDeputyMembershipSchema,
+  leadershipWizardCreateSchema,
+  leadershipWizardUpdateSchema,
   type LeadershipInternalUpdateInput,
   type LeadershipMunicipalitiesMembershipInput,
   type LeadershipStateDeputyMembershipInput,
+  type LeadershipWizardCreateInput,
+  type LeadershipWizardUpdateInput,
 } from '@/lib/schemas/leadership'
 import type { CampaignUser, Contact } from '@/payload-types'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
 import {
   acquireContactPhoneLocks,
+  assertContactPhoneAvailable,
   CONTACT_PHONE_AMBIGUOUS_MESSAGE,
 } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
@@ -229,6 +235,144 @@ export const createLeadership = async (input: unknown) => {
 export const updateLeadershipInternal = async (input: LeadershipInternalUpdateInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return updateLeadershipInternalRecord(payload, actor, input)
+}
+
+const revalidateLeadershipWizardPaths = (leadershipId: number, municipalitySlug: string) => {
+  revalidatePath(`/campanha/liderancas/${leadershipId}`, 'page')
+  revalidatePath(`/campanha/municipios/${municipalitySlug}`, 'page')
+  revalidatePath('/campanha/liderancas', 'page')
+}
+
+const updateLeadershipWizardRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: LeadershipWizardUpdateInput,
+) => {
+  const data = leadershipWizardUpdateSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await getFreshStaffActor(payload, actor, req)
+
+      const current = await payload.findByID({
+        collection: 'leadership',
+        id: data.id,
+        depth: 1,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      const municipalityIDs = uniqueRelationshipIds(current.municipalities)
+      await assertMunicipalitiesWithinScope(payload, currentActor, municipalityIDs, req)
+
+      if (payload.db.name !== 'postgres') {
+        throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
+      }
+
+      const contactID = relationshipId(current.contact)
+      if (contactID === null) {
+        throw new Error(LEADERSHIP_INVALID_CONTACT_MESSAGE)
+      }
+
+      await acquireContactPhoneLocks(payload, req, [data.phone])
+
+      // Intentional admin bypass: staff scope was checked on the leadership; contact
+      // PII is updated atomically with the leadership fields in this transaction.
+      const contactsWithPhone = await payload.find({
+        collection: 'contact',
+        where: { phone: { equals: data.phone } },
+        depth: 0,
+        limit: 2,
+        pagination: false,
+        overrideAccess: true,
+        req,
+      })
+
+      if (contactsWithPhone.totalDocs > 1) {
+        throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
+      }
+
+      const phoneOwner = contactsWithPhone.docs[0]
+      if (phoneOwner && phoneOwner.id !== contactID) {
+        await assertContactPhoneAvailable(payload, req, data.phone, contactID)
+      }
+
+      // bypass: contact write is staff-scoped via leadership access check above.
+      await payload.update({
+        collection: 'contact',
+        id: contactID,
+        data: {
+          name: data.name,
+          phone: data.phone,
+          email: data.email,
+        },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+
+      return payload.update({
+        collection: 'leadership',
+        id: current.id,
+        data: {
+          exclusive: data.exclusive,
+          supportStatus: data.supportStatus,
+          notes: data.notes,
+        },
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+    },
+    { beginFailureMessage: 'Não foi possível atualizar a liderança.' },
+  )
+}
+
+const createLeadershipWizardRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: LeadershipWizardCreateInput,
+) => {
+  const data = leadershipWizardCreateSchema.parse(input)
+  return createValidatedLeadershipRecord(payload, actor, {
+    name: data.name,
+    phone: data.phone,
+    email: data.email,
+    municipalities: [data.municipalityId],
+    exclusive: data.exclusive,
+    supportStatus: data.supportStatus,
+    notes: data.notes,
+  })
+}
+
+export const updateLeadershipWizard = async (
+  input: LeadershipWizardUpdateInput,
+  municipalitySlug: string,
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const leadership = await updateLeadershipWizardRecord(payload, actor, input)
+  revalidateLeadershipWizardPaths(leadership.id, municipalitySlug)
+  return leadership
+}
+
+export const createLeadershipWizard = async (
+  input: LeadershipWizardCreateInput,
+  municipalitySlug: string,
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  try {
+    const leadership = await createLeadershipWizardRecord(payload, actor, input)
+    revalidateLeadershipWizardPaths(leadership.id, municipalitySlug)
+    return leadership
+  } catch (error) {
+    if (isUniqueLeadershipConflict(error)) {
+      throw new Error(LEADERSHIP_DUPLICATE_MESSAGE)
+    }
+    throw error
+  }
 }
 
 /**

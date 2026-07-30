@@ -8,6 +8,7 @@ import {
   hasWizardScenarioParam,
   isCampaignWizardActionId,
   isCampaignWizardActionSlug,
+  parseWizardEntryActionParam,
   parseWizardMunicipioParam,
   wizardActionHref,
 } from '@/lib/campaignActionRoutes'
@@ -36,6 +37,9 @@ describe('campaignActionRoutes', () => {
     expect(wizardActionHref('atualizar-votos', 'cairu')).toBe(
       `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu`,
     )
+    expect(wizardActionHref('atualizar-lideranca', 'cairu', { entryAction: 'update-votes' })).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu&entry=update-votes`,
+    )
   })
 
   it('detects legacy scenario search param', () => {
@@ -54,5 +58,11 @@ describe('campaignActionRoutes', () => {
   it('resolves wizard action id from slug', () => {
     expect(campaignWizardActionIdForSlug('atualizar-votos')).toBe('update-votes')
     expect(campaignWizardActionIdForSlug('inventado')).toBeUndefined()
+  })
+
+  it('parses entry action search param', () => {
+    expect(parseWizardEntryActionParam('update-leadership')).toBe('update-leadership')
+    expect(parseWizardEntryActionParam('invalid')).toBeUndefined()
+    expect(parseWizardEntryActionParam(undefined)).toBeUndefined()
   })
 })

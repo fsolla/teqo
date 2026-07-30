@@ -5,6 +5,7 @@ import type { Payload } from 'payload'
 import { relationshipId } from '@/lib/relationship'
 import type { SupportStatus } from '@/lib/schemas/leadership'
 import { isSupportStatus } from '@/lib/schemas/leadership'
+import type { WizardLeadershipTileViewModel } from '@/lib/wizardLeadershipContract'
 import type { CampaignUser, Leadership } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import {
@@ -123,6 +124,39 @@ export const loadMunicipalityLeaderships = async (
     overrideAccess: false,
   })
   return toLeadershipRows(payload, result.docs as Leadership[])
+}
+
+export const loadWizardLeadershipTiles = async (
+  payload: Payload,
+  user: CampaignUser,
+  municipalityID: number,
+): Promise<WizardLeadershipTileViewModel[]> => {
+  const result = await payload.find({
+    collection: 'leadership',
+    where: { municipalities: { in: [municipalityID] } },
+    depth: 1,
+    limit: 0,
+    pagination: false,
+    sort: 'createdAt',
+    user,
+    overrideAccess: false,
+  })
+
+  const rows = await toLeadershipRows(payload, result.docs as Leadership[])
+  const notesById = new Map(
+    (result.docs as Leadership[]).map((doc) => [doc.id, doc.notes ?? null] as const),
+  )
+
+  return rows.map((row) => ({
+    id: row.id,
+    contactID: row.contactID,
+    name: row.name,
+    phone: row.phone,
+    email: row.email,
+    supportStatus: row.supportStatus,
+    exclusive: row.exclusive,
+    notes: notesById.get(row.id) ?? null,
+  }))
 }
 
 /**

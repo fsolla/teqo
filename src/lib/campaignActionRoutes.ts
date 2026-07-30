@@ -42,12 +42,25 @@ export const WIZARD_MUNICIPIO_QUERY_KEY = 'municipio' as const
 /** Legacy B61 ritual param — canonical URLs omit it (B77). */
 export const WIZARD_SCENARIO_QUERY_KEY = 'cenario' as const
 
-export const wizardActionHref = (actionSlug: string, municipalitySlug?: string): string => {
+export const WIZARD_ENTRY_ACTION_QUERY_KEY = 'entry' as const
+
+export type WizardActionHrefOptions = {
+  entryAction?: CampaignWizardActionId
+}
+
+export const wizardActionHref = (
+  actionSlug: string,
+  municipalitySlug?: string,
+  options?: WizardActionHrefOptions,
+): string => {
   const base = `${CAMPAIGN_ACTIONS_HOME}/${actionSlug}`
   if (!municipalitySlug) {
     return base
   }
   const params = new URLSearchParams({ [WIZARD_MUNICIPIO_QUERY_KEY]: municipalitySlug })
+  if (options?.entryAction) {
+    params.set(WIZARD_ENTRY_ACTION_QUERY_KEY, options.entryAction)
+  }
   return `${base}?${params.toString()}`
 }
 
@@ -61,3 +74,14 @@ export const parseWizardMunicipioParam = (
 
 export const hasWizardScenarioParam = (value: string | string[] | undefined): boolean =>
   parseWizardMunicipioParam(value) !== undefined
+
+export const parseWizardEntryActionParam = (
+  value: string | string[] | undefined,
+): CampaignWizardActionId | undefined => {
+  const raw = Array.isArray(value) ? value[0] : value
+  const trimmed = raw?.trim()
+  if (!trimmed || !isCampaignWizardActionId(trimmed)) {
+    return undefined
+  }
+  return trimmed
+}

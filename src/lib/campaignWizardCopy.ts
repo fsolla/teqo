@@ -48,3 +48,22 @@ export const wizardNextStepPlaceholder = (actionSlug: string): string => {
   }
   return WIZARD_NEXT_STEP_GENERIC_PLACEHOLDER
 }
+
+export const WIZARD_LEADERSHIP_GRID_TITLE = 'Quem coordena por aqui?' as const
+
+export const WIZARD_LEADERSHIP_FORM_CREATE_TITLE = 'Nova liderança' as const
+
+export const WIZARD_LEADERSHIP_FORM_EDIT_TITLE = 'Atualizar liderança' as const
+
+export const WIZARD_LEADERSHIP_SKIP_LABEL = 'Pular atualização de liderança →' as const
+
+export const WIZARD_LEADERSHIP_CONTINUE_LABEL = 'Continuar' as const
+
+export const WIZARD_LEADERSHIP_ADD_TILE_LABEL = 'Adicionar liderança' as const
+
+export const WIZARD_LEADERSHIP_EMPTY_NOTES = 'Sem observação.' as const
+
+export const WIZARD_LEADERSHIP_EMPTY_GRID =
+  'Nenhuma liderança cadastrada neste município ainda.' as const
+
+export const WIZARD_LEADERSHIP_SAVED_TOAST = 'Liderança salva.' as const
