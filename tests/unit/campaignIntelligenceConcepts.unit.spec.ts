@@ -2,11 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import {
-  getCampaignBottomNav,
-  getCampaignNav,
-  getCampaignSecondaryNav,
-} from '@/components/campaign/shell/nav'
+import { getCampaignNav, getCampaignSecondaryNav } from '@/components/campaign/shell/nav'
 import {
   CAMPAIGN_CONCEPT_CATEGORIES,
   CAMPAIGN_CONCEPTS_PATH,
@@ -78,10 +74,8 @@ describe('concepts sidebar entry', () => {
     expect(getCampaignSecondaryNav('leader')).toHaveLength(0)
   })
 
-  it('stays out of the work destinations and the mobile bottom bar', () => {
-    const hrefs = [...getCampaignNav('coordinator'), ...getCampaignBottomNav('coordinator')].map(
-      (item) => item.href,
-    )
+  it('stays out of the work destinations in the sidebar', () => {
+    const hrefs = getCampaignNav('coordinator').map((item) => item.href)
 
     expect(hrefs).not.toContain(CAMPAIGN_CONCEPTS_PATH)
   })

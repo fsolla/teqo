@@ -46,7 +46,7 @@ const staffNav: CampaignNavItem[] = [
 
 /**
  * Reference material, not a place to work: sits in its own group at the foot
- * of the sidebar, below the destinations, and never in the mobile bottom bar.
+ * of the sidebar, below the destinations.
  * Staff-only — every documented number is one a `leader` never sees.
  *
  * The href is a literal, not an import from `campaignIntelligenceConcepts.ts`:
@@ -75,25 +75,6 @@ export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] =>
 
 export const getCampaignSecondaryNav = (role: CampaignUser['role']): CampaignNavItem[] =>
   isStaffCampaignRole(role) ? staffSecondaryNav : []
-
-/**
- * Compact set for the mobile bottom bar (max 5 items with a home slot).
- * Assessores stays sidebar-only (same as perfil/organizações).
- */
-export const getCampaignBottomNav = (role: CampaignUser['role']): CampaignNavItem[] => {
-  const nav = getCampaignNav(role)
-  if (role === 'leader') return nav
-
-  return nav
-    .filter(
-      (item) =>
-        item.href !== '/campanha/quadro' &&
-        item.href !== '/campanha/territorios' &&
-        item.href !== '/campanha/apoiadores' &&
-        item.href !== '/campanha/assessores',
-    )
-    .slice(0, 5)
-}
 
 /** Home matches only exactly; other items also match nested paths. */
 export const isCampaignNavActive = (pathname: string, href: string): boolean => {
