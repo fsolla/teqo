@@ -27,7 +27,7 @@ jobs:
       NEXT_PUBLIC_SITE_URL: https://teqo-stage.vercel.app
       # The seed/migrate guards refuse non-local hosts without this flag. Stage
       # is the ONE documented remote target, and only this workflow may use it.
-      ALLOW_REMOTE_DB: "true"
+      ALLOW_REMOTE_DB: 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -57,4 +57,4 @@ jobs:
           # Documented escape hatch in tests/helpers/assertTestDatabase.ts —
           # only this workflow may set it (vitest.setup.ts loads .env.test
           # with override: true, written by the step above).
-          ALLOW_STAGE_TEST_DB: "true"
+          ALLOW_STAGE_TEST_DB: 'true'

@@ -21,8 +21,8 @@
  */
 
 import { getPayload } from 'payload'
-import { loadCliEnv } from './lib/cli.mjs'
 import { assertLocalDatabase } from './assert-local-database.mjs'
+import { loadCliEnv } from './lib/cli.mjs'
 import {
   MINIMAL_CAMPAIGN_GOALS,
   MINIMAL_CAMPAIGN_USERS,
@@ -87,7 +87,9 @@ const upsert = async (collection, where, data, label) => {
 const municipalityIdBySlug = async (slug) => {
   const doc = await findOne('municipality', { slug: { equals: slug } })
   if (!doc) {
-    throw new Error(`Municipality "${slug}" missing — run pnpm migrate before pnpm db:seed:minimal.`)
+    throw new Error(
+      `Municipality "${slug}" missing — run pnpm migrate before pnpm db:seed:minimal.`,
+    )
   }
   return doc.id
 }
@@ -117,9 +119,7 @@ try {
   for (const user of MINIMAL_CAMPAIGN_USERS) {
     await upsert(
       'campaignUser',
-      user.email
-        ? { email: { equals: user.email } }
-        : { username: { equals: user.username } },
+      user.email ? { email: { equals: user.email } } : { username: { equals: user.username } },
       { ...user },
       `campaignUser ${user.role} (${user.email ?? user.username})`,
     )
