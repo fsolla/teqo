@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 
 import { createMunicipalityUpdate } from '@/app/(campaign)/campanha/actions/municipalityUpdate'
 import {
-  checkboxFormValue,
   optionalFormText,
   optionalIntegerFormValue,
   requiredFormText,
@@ -42,8 +41,6 @@ export const createMunicipalityUpdateFormAction = async (
         activeVolunteers: optionalIntegerFormValue(formData, 'activeVolunteers'),
         newSupports: optionalIntegerFormValue(formData, 'newSupports'),
         signalType: parseMunicipalitySignalType(optionalFormText(formData, 'signalType')),
-        signalSource: optionalFormText(formData, 'signalSource'),
-        triangulated: checkboxFormValue(formData, 'triangulated'),
       })
       revalidatePath('/campanha/municipios/[slug]', 'page')
       return { message: 'Atualização registrada com sucesso.' }

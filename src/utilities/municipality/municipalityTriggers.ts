@@ -238,7 +238,7 @@ export const loadMunicipalitySuggestions = async (
       depth: 0,
       limit: 0,
       pagination: false,
-      select: { municipality: true, triangulated: true },
+      select: { municipality: true },
       user,
       overrideAccess: false,
     }),
@@ -283,14 +283,12 @@ export const loadMunicipalitySuggestions = async (
     }),
   ])
 
-  // Most severe adversary signal per município: triangulated wins.
-  const adversarySignalByMunicipality = new Map<number, { triangulated: boolean }>()
+  // Any adversary signal in the window reads as confirmed (B62: sinal = tipo + texto).
+  const adversarySignalMunicipalityIDs = new Set<number>()
   for (const signal of signals.docs) {
     const id = relationshipId(signal.municipality)
     if (id === null) continue
-    const current = adversarySignalByMunicipality.get(id)
-    if (current?.triangulated) continue
-    adversarySignalByMunicipality.set(id, { triangulated: Boolean(signal.triangulated) })
+    adversarySignalMunicipalityIDs.add(id)
   }
 
   const agendaByMunicipality = new Map<number, { hasAgenda: boolean; completedCount: number }>()
@@ -371,7 +369,7 @@ export const loadMunicipalitySuggestions = async (
       lastPledgeAgeDays: municipalitySignalAgeInDays(pledgeAggregate.lastPledgeAt, now),
       coverageRatio: coverage.coverageRatio,
       coverageDeficit: coverage.deficit,
-      adversarySignal: adversarySignalByMunicipality.get(municipality.id) ?? null,
+      hasAdversarySignal: adversarySignalMunicipalityIDs.has(municipality.id),
       hasRecentOrUpcomingActivity: agenda?.hasAgenda ?? false,
       completedActivityCount: agenda?.completedCount ?? 0,
     }

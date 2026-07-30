@@ -7,7 +7,6 @@ import {
 } from '@/app/(campaign)/campanha/actions/municipality'
 import { createMunicipalityUpdate } from '@/app/(campaign)/campanha/actions/municipalityUpdate'
 import {
-  checkboxFormValue,
   nullableFormText,
   optionalFormText,
   optionalMunicipalitySlugFromForm,
@@ -99,8 +98,6 @@ export const createMunicipalityListSignalFormAction = async (
         kind: 'sinal',
         body: optionalFormText(formData, 'body'),
         signalType: parseMunicipalitySignalType(optionalFormText(formData, 'signalType')),
-        signalSource: optionalFormText(formData, 'signalSource'),
-        triangulated: checkboxFormValue(formData, 'triangulated'),
       })
       revalidateMunicipalityListPaths({ slug: optionalMunicipalitySlugFromForm(formData) })
       return { message: 'Sinal registrado.' }

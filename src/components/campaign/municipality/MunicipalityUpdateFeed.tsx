@@ -59,13 +59,9 @@ export const MunicipalityUpdateFeed = ({ updates }: { updates: MunicipalityUpdat
           ) : (
             <p className="whitespace-pre-wrap text-sm text-muted-foreground">{update.body}</p>
           )}
-          {update.kind === 'sinal' ? (
+          {update.kind === 'sinal' && update.signalType ? (
             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-              {update.signalType ? (
-                <Badge variant="outline">{municipalitySignalTypeLabels[update.signalType]}</Badge>
-              ) : null}
-              {update.signalSource ? <span>Fonte: {update.signalSource}</span> : null}
-              {update.triangulated ? <span>Triangulado</span> : null}
+              <Badge variant="outline">{municipalitySignalTypeLabels[update.signalType]}</Badge>
             </div>
           ) : null}
           {update.activeVolunteers != null || update.newSupports != null ? (

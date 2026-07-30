@@ -34,6 +34,7 @@ import * as migration_20260727_032523_add_users_roles from './20260727_032523_ad
 import * as migration_20260727_161752_add_municipality_engagement_level from './20260727_161752_add_municipality_engagement_level';
 import * as migration_20260728_041547_add_allocation_decision_adiada_outcome from './20260728_041547_add_allocation_decision_adiada_outcome';
 import * as migration_20260728_041958_add_campaign_webauthn_credentials from './20260728_041958_add_campaign_webauthn_credentials';
+import * as migration_20260730_010601_simplify_municipality_signal_fields from './20260730_010601_simplify_municipality_signal_fields';
 
 export const migrations = [
   {
@@ -209,11 +210,16 @@ export const migrations = [
   {
     up: migration_20260728_041547_add_allocation_decision_adiada_outcome.up,
     down: migration_20260728_041547_add_allocation_decision_adiada_outcome.down,
-    name: '20260728_041547_add_allocation_decision_adiada_outcome'
+    name: '20260728_041547_add_allocation_decision_adiada_outcome',
   },
   {
     up: migration_20260728_041958_add_campaign_webauthn_credentials.up,
     down: migration_20260728_041958_add_campaign_webauthn_credentials.down,
-    name: '20260728_041958_add_campaign_webauthn_credentials'
+    name: '20260728_041958_add_campaign_webauthn_credentials',
+  },
+  {
+    up: migration_20260730_010601_simplify_municipality_signal_fields.up,
+    down: migration_20260730_010601_simplify_municipality_signal_fields.down,
+    name: '20260730_010601_simplify_municipality_signal_fields'
   },
 ];

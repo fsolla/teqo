@@ -2,10 +2,7 @@
 
 import { useState } from 'react'
 
-import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -29,8 +26,6 @@ export const MunicipalitySignalFields = ({
   const [signalType, setSignalType] = useState<MunicipalitySignalType | ''>('')
   const bodyId = `${idPrefix}-body`
   const signalTypeId = `${idPrefix}-signal-type`
-  const signalSourceId = `${idPrefix}-signal-source`
-  const triangulatedId = `${idPrefix}-triangulated`
 
   return (
     <div className="flex flex-col gap-3">
@@ -65,23 +60,6 @@ export const MunicipalitySignalFields = ({
           <FieldError>{fieldError(fieldErrors, 'signalType')}</FieldError>
         ) : null}
       </Field>
-      <Field>
-        <FieldLabel htmlFor={signalSourceId}>Fonte</FieldLabel>
-        <Input
-          id={signalSourceId}
-          name="signalSource"
-          maxLength={160}
-          required
-          className="min-h-11"
-        />
-        {fieldError(fieldErrors, 'signalSource') ? (
-          <FieldError>{fieldError(fieldErrors, 'signalSource')}</FieldError>
-        ) : null}
-      </Field>
-      <Label htmlFor={triangulatedId} className="flex min-h-11 items-center gap-3 font-normal">
-        <Checkbox id={triangulatedId} name="triangulated" value="on" />
-        <span>Triangulado — confirmado por mais de uma fonte independente</span>
-      </Label>
     </div>
   )
 }

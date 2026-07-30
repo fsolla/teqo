@@ -48,11 +48,9 @@ test.describe('Atividades — registro-fundação', () => {
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}?tab=updates`)
     await page.getByLabel('Tipo', { exact: true }).selectOption('sinal')
     await expect(page.getByText('Invasão:', { exact: true })).toBeVisible()
-    await expect(
-      page.getByText('Adversário ocupando ou ganhando espaço antes dominado pela campanha.'),
-    ).toBeVisible()
-    await expect(page.getByText('Esfriamento:', { exact: true })).toBeVisible()
-    await expect(page.getByText('Visita adversária:', { exact: true })).toBeVisible()
-    await expect(page.getByText('Proposta a broker:', { exact: true })).toBeVisible()
+    await expect(page.getByText('Adversário ocupando nosso espaço.')).toBeVisible()
+    await expect(page.getByText('Rede esfriou:', { exact: true })).toBeVisible()
+    await expect(page.getByText('Adversário apareceu:', { exact: true })).toBeVisible()
+    await expect(page.getByText('Alguém pediu algo:', { exact: true })).toBeVisible()
   })
 })
