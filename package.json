@@ -37,6 +37,7 @@
     "agent:prioritize": "node scripts/agent-prioritize.mjs",
     "agent:file-miss": "node scripts/agent-file-miss.mjs",
     "agent:promote": "node scripts/agent-promote.mjs",
+    "agent:pool": "node scripts/agent-pool.mjs",
     "build:demographics": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-demographics.mjs",
     "build:election-aggregates": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/build-election-aggregates.mjs",
     "build:geometries": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-geometries.mjs",

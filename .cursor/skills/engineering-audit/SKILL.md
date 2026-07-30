@@ -5,7 +5,7 @@ description: Runs a Pass-style engineering audit of the Teqo codebase — code s
 
 # Engineering Audit (Pass N)
 
-**Audit solitário (não paralelizável):** quando esta skill roda, o desenvolvimento paralelo **pausa** — nenhum outro agente trabalhando no repo. O agente do audit também **executa as remediações P0/P1 na mesma sessão** para trazer o projeto aos trilhos (não só registra); P2/P3 seguem o fluxo normal de ledger.
+**Audit solitário (não paralelizável):** quando esta skill roda, o desenvolvimento paralelo **pausa** — nenhum outro agente trabalhando no repo. O agente do audit também **executa as remediações P0/P1 na mesma sessão** para trazer o projeto aos trilhos (não só registra); P2/P3 seguem o fluxo normal de ledger. Se o **agent-pool** estiver ligado, pause-o no início do audit (`gh workflow run agent-pool.yml -f action=pause`) e retome ao final (`-f action=resume`); o tick recusa spawn enquanto `POOL_PAUSED=true`.
 
 Read-only audit that sweeps the Teqo codebase for code smells, drift from documented patterns, and consolidation opportunities, then produces a findings ledger and a remediation plan. **No fixes in the audit run** — deliverables are updated docs, presented for sign-off before writing — exceto as remediações P0/P1 declaradas acima.
 

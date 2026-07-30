@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { HomeSearchHitRow } from '@/components/campaign/dashboard/HomeSearchHitRow'
 import { HomeSearchMunicipalityGroup } from '@/components/campaign/dashboard/HomeSearchMunicipalityGroup'
@@ -32,6 +32,14 @@ const searchResultsValue = (
   },
   isFetching: false,
   resultKind,
+})
+
+// next/link schedules viewport-prefetch work via the React scheduler; without
+// an explicit unmount the callback can fire after the jsdom teardown and crash
+// the run with "window is not defined" (CI flake 2026-07-30, run 30587862940 —
+// same afterEach(cleanup) pattern as the 14 sibling specs).
+afterEach(() => {
+  cleanup()
 })
 
 describe('HomeSearchHitRow', () => {

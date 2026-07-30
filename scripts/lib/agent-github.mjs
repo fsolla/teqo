@@ -82,6 +82,53 @@ export const issuesById = () => {
 
 export const labelNames = (issue) => issue.labels.map((label) => label.name)
 
+/**
+ * Claim queue shared by `agent:claim` and the agent pool: open `ready` issues
+ * filtered to UNBLOCKED (every frontmatter `depends` id is closed or labeled
+ * `done`/`in-prod`; a dep without an issue is a delivered roadmap item —
+ * satisfied, surfaced as a warning, never silently dropped), ordered by
+ * `prio:P0..P3` then oldest first. Extracted verbatim from agent-claim.mjs;
+ * behavior is pinned by agentPoolEligibility.unit.spec.ts.
+ *
+ * @param {Array<any>} openReady
+ * @param {Map<string, any>} byId
+ * @returns {Array<{ issue: any, meta: Record<string, any>, priority: string, satisfiedWithoutIssue: string[], blockedBy: string[] }>}
+ */
+export const buildClaimQueue = (openReady, byId) => {
+  const doneIds = new Set(
+    [...byId.entries()]
+      .filter(([, issue]) => {
+        const labels = labelNames(issue)
+        return issue.state === 'CLOSED' || labels.includes('done') || labels.includes('in-prod')
+      })
+      .map(([id]) => id),
+  )
+
+  return openReady
+    .map((issue) => {
+      const { meta } = parseFrontmatter(issue.body)
+      const depends = Array.isArray(meta.depends) ? meta.depends : []
+      // A dep without an issue is a delivered roadmap item (B43/B47/B59…): they
+      // predate the Issues era and are never reopened, so they are satisfied.
+      const satisfiedWithoutIssue = depends.filter((id) => !byId.has(id))
+      const blockedBy = depends.filter((id) => byId.has(id) && !doneIds.has(id))
+      return {
+        issue,
+        meta,
+        priority: labelNames(issue).find((label) => /^prio:P[0-3]$/.test(label)) ?? 'prio:P2',
+        satisfiedWithoutIssue,
+        blockedBy,
+      }
+    })
+    .filter((entry) => entry.blockedBy.length === 0)
+    .sort((a, b) => {
+      const rank =
+        priorityRank(a.priority.replace('prio:', '')) -
+        priorityRank(b.priority.replace('prio:', ''))
+      return rank !== 0 ? rank : a.issue.createdAt.localeCompare(b.issue.createdAt)
+    })
+}
+
 export const setLabels = (number, { add = [], remove = [] }) => {
   const args = ['issue', 'edit', String(number)]
   for (const label of add) args.push('--add-label', label)

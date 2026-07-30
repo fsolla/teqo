@@ -1,0 +1,75 @@
+# Agent pool supervisor (docs/plans/agent-pool-orchestrator.md).
+#
+# Stateless tick: reconciles pool claims and spawns Cursor Cloud workers up to
+# POOL_MAX_SLOTS over `ready` autonomous-eligible issues. Three triggers:
+#   - workflow_dispatch — the canonical human channel (start/stop/pause/resume)
+#   - schedule */10min — the periodic reconcile (default branch only)
+#   - pull_request closed on stage — immediate slot replenish after a merge
+# Schedule and PR triggers only run from the default branch: they activate
+# after the human promote to main; until then dispatch on the branch works.
+#
+# Secrets: CURSOR_API_KEY (repo secret) — Cursor Cloud Agents API key.
+# GITHUB_TOKEN needs actions: write (pool state lives in repo variables).
+name: Agent pool supervisor
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  pull_request:
+    types: [closed]
+    branches: [stage]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Ação do pool'
+        required: true
+        type: choice
+        options:
+          - start
+          - stop
+          - pause
+          - resume
+          - tick
+          - status
+      maxSlots:
+        description: 'Slots simultâneos (só com action=start; default 5, máx 8)'
+        required: false
+        type: string
+
+# Single-allocator invariant: ticks never overlap.
+concurrency:
+  group: agent-pool
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # The pool scripts are dependency-free .mjs (gh CLI + native fetch) — no
+      # pnpm install, ticks stay under a minute.
+      - name: agent:pool workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          ACTION: ${{ inputs.action }}
+          MAX_SLOTS: ${{ inputs.maxSlots }}
+        run: |
+          # schedule / pull_request closed → reconcile tick; dispatch → the chosen action.
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            args=(--action "$ACTION" --actor "$GITHUB_ACTOR")
+            if [ -n "$MAX_SLOTS" ]; then args+=(--max-slots "$MAX_SLOTS"); fi
+          else
+            args=(--action tick --actor "$GITHUB_ACTOR")
+          fi
+          node scripts/agent-pool.mjs workflow "${args[@]}"
