@@ -52,8 +52,10 @@ describe('toHomeActionButtonProps', () => {
     const props = toHomeActionButtonProps(homeActionsForRole('coordinator'), href)
     const uncovered = props.find((action) => action.id === 'uncovered-municipalities')
     expect(uncovered?.href).toBe(href)
-    const inert = props.find((action) => action.id === 'update-votes')
-    expect(inert?.href).toBeUndefined()
+    const updateVotes = props.find((action) => action.id === 'update-votes')
+    expect(updateVotes?.href).toBe('/campanha/acoes/atualizar-votos')
+    const registerSignal = props.find((action) => action.id === 'register-signal')
+    expect(registerSignal?.href).toBe('/campanha/acoes/registrar-sinal')
   })
 
   it('omits uncovered href when not provided', () => {

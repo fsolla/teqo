@@ -1,7 +1,7 @@
 # Chassis do wizard de campanha (shell + voltar)
 
-Status: rascunho
-Atualizado em: 2026-07-29 — absorve lembrete de produto: município em atualização sempre visível no topo (centro, semi-discreto)
+Status: entregue (2026-07-29)
+Atualizado em: 2026-07-29 — as-built: `CampaignWizardShell` (`shared/`), rotas `/campanha/acoes/<slug>` (cinco entradas staff com passo ponte “Em qual município?”), `campaignActionRoutes.ts` + hrefs no catálogo B45; caption sticky centro; Voltar só mobile; sem migration.
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B59 — UX-1 wizards)
 Impeccable: C — UI nova (shell de fluxo multi-passo sob `/campanha`)
 Appetite: ~0,75–1 dia eng; layout de passo + header mobile + slot de conteúdo + caption sticky do município; sem migration
@@ -93,6 +93,14 @@ Componentes:
 
 - **Persistência de rascunho (município + ação) ao reabrir.** Revisitar quando a 1ª sessão real for interrompida por Zap e o CG reclamar (UX-1 § contrato #8).
 - **Caption do município como `Link` para a ficha.** Revisitar se a mesa pedir “abrir município” sem sair do fluxo (ex. Sheet de leitura) — v1 é texto só.
+- **Split server shell + client focus island.** Revisitar em **B60** se o passo de busca não precisar hidratar o header inteiro (`CampaignWizardShell` hoje é `'use client'` por um `focus()` no `h1`).
+- **`backdrop-blur` no header sticky.** Revisitar se scroll longo em B60+ mostrar custo de paint; v1 mantém blur alinhado ao app chrome.
+
+## Já resolvido no simplify (não reabrir)
+
+- Cinco `page.tsx` duplicados → rota dinâmica `acoes/[slug]/page.tsx` + `WizardMunicipalityPlaceholderStep`.
+- `CAMPAIGN_HOME` em `campaignPaths.ts`; `WIZARD_MUNICIPALITY_STEP_TITLE` em `campaignWizardCopy.ts`.
+- `aria-labelledby` no `<main>`; `data-slot="wizard-mobile-back"` nos testes.
 
 ## Referências
 

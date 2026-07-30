@@ -1,6 +1,6 @@
 # Roadmap — Teqo
 
-Atualizado em: 2026-07-29 — **B69**–**B70** A4 liderança (exclusivo+limpeza → wizard grid); ~~**B56**~~ ✓; ~~**B67**~~ ✓; **B68**; **B66**; **B59** sticky; ~~**B58**~~ ✓; **B65**; B48 ✓; B49–B55; wizards B59–B64.
+Atualizado em: 2026-07-29 — **B69**–**B70** A4 liderança (exclusivo+limpeza → wizard grid); ~~**B56**~~ ✓ resumo; ~~**B67**~~ ✓; **B68**; **B66**; ~~**B59**~~ ✓ chassis wizard; ~~**B58**~~ ✓; **B65**; B48 ✓; B49–B55; wizards B60–B64.
 Registro canônico dos **próximos** planos e débitos. Histórico de entregas: resumo abaixo + planos em [`docs/plans/`](plans/) + notebook [`.cursor/rules/projects/nucleos-eleitorais.mdc`](../.cursor/rules/projects/nucleos-eleitorais.mdc).
 
 ## Âncoras do calendário eleitoral 2026 (Res. TSE 23.760/2026)
@@ -83,13 +83,13 @@ O discovery literatura→persona→entrevista ([relatório aprovado](research/re
 
 ### Demais itens abertos
 
-- **UX-1 fluxos ação-primeiro (prioridade pós-sessão 29/07)** — evidência: [snapshot](plans/sessao-observada-coordenador-2026-07-29-snapshot.md) · O9–O11 em CUSTOMER.md · **rascunho:** [fluxos-acao-primeiro-inicio.md](plans/fluxos-acao-primeiro-inicio.md). Soft deadline: **03/08**. **Chassis Início:** ~~**B43**~~ ✓ → ~~**B44**~~ ✓ → ~~**B45**~~ ✓ → ~~**B46**~~ ✓ → ~~**B47**~~ ✓ → ~~**B58**~~ ✓ → ~~**B67**~~ ✓ (pan strip) → **B65** (âncora inferior mobile) → **B66** (focus limpa tela + animação) → ~~**B48**~~ ✓ → **B68** (sugestões empty/focus por papel) → **B49–B55** · ~~**B56**~~ ✓ (resumo) · **B57** futuro. **Wizards:** **B59** → **B60**/**B61**/**B64** · **B62** → **B63** · **B69** → **B70** (A4 liderança).
+- **UX-1 fluxos ação-primeiro (prioridade pós-sessão 29/07)** — evidência: [snapshot](plans/sessao-observada-coordenador-2026-07-29-snapshot.md) · O9–O11 em CUSTOMER.md · **rascunho:** [fluxos-acao-primeiro-inicio.md](plans/fluxos-acao-primeiro-inicio.md). Soft deadline: **03/08**. **Chassis Início:** ~~**B43**~~ ✓ → ~~**B44**~~ ✓ → ~~**B45**~~ ✓ → ~~**B46**~~ ✓ → ~~**B47**~~ ✓ → ~~**B58**~~ ✓ → ~~**B67**~~ ✓ (pan strip) → **B65** (âncora inferior mobile) → **B66** (focus limpa tela + animação) → ~~**B48**~~ ✓ → **B68** (sugestões empty/focus por papel) → **B49–B55** · ~~**B56**~~ ✓ (resumo) · **B57** futuro. **Wizards:** ~~**B59**~~ ✓ → **B60**/**B61**/**B64** · **B62** → **B63** · **B69** → **B70** (A4 liderança).
 - ~~**B43** Início em branco + Quadro~~ — **entregue 2026-07-29** (`/campanha` blank; staff dashboard em `/campanha/quadro`; liderança em `/campanha/contatos`; nav Início+Quadro / Início+Meus contatos; `requireCampaignPageActor` manda leader bloqueado → `/campanha/contatos`; sem migration) · [plano](plans/inicio-em-branco-quadro.md)
 - ~~**B44** Botão de ação do Início + lista horizontal~~ — **entregue 2026-07-29** (`CampaignHomeActionButton` + `CampaignHomeActionStrip`; Tooltip fine / long-press Drawer coarse; montado no Início por B45 ✓) · ~1d · Janela 1 · Impeccable C · [plano](plans/botao-acao-inicio-strip.md)
 - ~~**B45** Catálogo de ações por persona~~ — **entregue 2026-07-29** (`src/lib/campaignHomeActions.ts` + `CampaignHomeActions`; staff 6 ações com `uncovered-municipalities` → `?coverage=sem_assessor&sort=votos`; leader 2 com `my-contacts` → `/campanha/contatos`; demais inertes; ilha client por limite RSC↔ícones Lucide) · [plano](plans/catalogo-acoes-inicio-por-persona.md)
 - **B58** Polimento visual da strip de ações do Início — ~~remover heading "O que você quer fazer?"; rótulos curtos (Ajustar votos, Registrar sinal, …; atalho → **"Ver esquecidos"** _(proposto — validar com produto)_); scale discreto no círculo (hover/long-press) + opacity no active; scrollbar horizontal oculta (pan preservado)~~ — **entregue 2026-07-29** (catálogo + strip + botão; e2e atualizado) · Depende de B45 ✓ · ~0,5d · Janela 1 · Impeccable B · [plano](plans/polimento-strip-acoes-inicio.md) · **regressão de pan → B67**
 - **B67** Restaurar pan/scroll na strip de ações — **entregue 2026-07-29** (scrollbar oculta mantida; `pointer-fine` click+arrasta + touch pan nativo; limiar 8px; unit drag vs click) · Depende de B44 ✓ / B58 ✓ · ~0,25–0,5d · Janela 1 · Impeccable B · [plano](plans/restaurar-pan-strip-acoes-inicio.md)
-- **B59** Chassis do wizard (shell de passo + seta Voltar só mobile; desktop = browser; **município sticky** no limite superior central, semi-discreto, após escolha) · Depende de B45 ✓ · ~0,75–1d · Janela 1 · Impeccable C · [plano](plans/chassis-wizard-campanha.md)
+- **B59** ~~Chassis do wizard~~ — **entregue 2026-07-29** (`CampaignWizardShell`; `/campanha/acoes/*` com layout staff-only; Voltar `md:hidden`; caption sticky de município; catálogo B45 com hrefs; passo ponte até B60) · [plano](plans/chassis-wizard-campanha.md)
 - **B60** Etapa busca município nos wizards (UX da busca do Início, só municípios; select → avança) · Depende de B59 · soft B48 · ~1d · Janela 1 · Impeccable B · [plano](plans/busca-municipio-wizard.md)
 - **B61** Etapa ajuste de votos (média→pessimista→otimista; atalhos 2×/±50/±100; coerência com jump+warning) · Depende de B59 · soft B60 · ~1–1,25d · Janela 1 · Impeccable C · [plano](plans/ajuste-votos-wizard.md)
 - **B62** Simplificar modelo de sinal (dropar Fonte/Triangulado; labels mesa sem “broker”; migration + E11) · Depende de C12 ✓ · ~0,75–1d · Janela 1 · Impeccable B · [plano](plans/simplificar-modelo-sinal.md)
@@ -232,7 +232,7 @@ flowchart TD
     B55n["B55 Busca ações<br/>WA / share"]
     B56n["B56 Resumo campanha<br/>total + cobertura ✓"]
     B57n["B57 Delta 7d estimativa<br/>(futuro / baixa prio)"]
-    B59n["B59 Chassis wizard<br/>shell + município sticky"]
+    B59n["B59 Chassis wizard ✓<br/>shell + município sticky"]
     B60n["B60 Busca município<br/>nos wizards"]
     B61n["B61 Ajuste votos<br/>cenários + atalhos"]
     B62n["B62 Simplificar<br/>modelo de sinal"]
