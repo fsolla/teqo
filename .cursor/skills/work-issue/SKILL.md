@@ -1,6 +1,6 @@
 ---
 name: work-issue
-description: Conduz uma GitHub Issue rastreável do Teqo do claim ao merge em stage — prep (pnpm i), claim (pnpm agent:claim), abertura do plano no editor para o humano acompanhar, verificação do modelo declarado na Issue, freshness audit do plano, execução das fases (schema/server → UI via /impeccable → gates), /simplify + capture-review-debts, PR --base stage com Closes #N, acompanhamento do CI até o merge. Usar quando o usuário pedir para implementar/trabalhar uma Issue ("trabalha a issue #N", "implementa o B79", "pega a próxima issue", "vamos fazer o X", "continua a implementação").
+description: Conduz uma GitHub Issue rastreável do Teqo do claim ao merge em stage — prep (pnpm i), claim (pnpm agent:claim), renomear a sessão + abrir o plano no editor, verificação do modelo declarado na Issue, freshness audit do plano, execução das fases (schema/server → UI via /impeccable → gates), /simplify (3 reviewers paralelos via Task) + capture-review-debts, PR --base stage com Closes #N, acompanhamento do CI até o merge. Usar quando o usuário pedir para implementar/trabalhar uma Issue ("trabalha a issue #N", "implementa o B79", "pega a próxima issue", "vamos fazer o X", "continua a implementação").
 ---
 
 # Trabalhar uma Issue (claim → merge em stage)
@@ -16,7 +16,8 @@ Esta skill conduz UMA Issue rastreável do claim ao merge em `stage`. Substitui 
 ```
 - [ ] 0. Prep: pnpm i (node_modules obrigatório para agent:claim)
 - [ ] 1. Claim: pnpm agent:claim (ou -- --issue <N>) — o brief do stdout é o contrato
-- [ ] 1b. Abrir o plano no editor (cursor-app-control open_resource) para o humano acompanhar
+- [ ] 1b. Renomear a sessão (cursor-app-control rename_chat) — padrão `#<N> <id> — <título>`
+- [ ] 1c. Abrir o plano no editor (cursor-app-control open_resource) para o humano acompanhar
 - [ ] 2. Verificação de modelo (best effort): comparar model: da Issue com o modelo da sessão
 - [ ] 3. Freshness audit (enxuto) do plano contra o repositório
 - [ ] 4. Executar as fases (schema/server → UI via /impeccable → gates de engenharia)
@@ -44,9 +45,36 @@ pnpm agent:claim -- --issue <N>   # quando o usuário especifica
 
 O brief impresso no stdout é o contrato: id, priority, **model**, spec, link do plano. O claim faz o swap de label `ready → in-progress` com lock otimista. Se falhar ("claimed by someone else"), re-rodar — nunca forçar.
 
+### Renomear a sessão
+
+Logo após o claim bem-sucedido, **renomeie a aba desta conversa** para o humano identificar o trabalho em curso — não espere ele pedir.
+
+**Padrão canônico** (decisão travada — use sempre este formato, sem variações):
+
+| Campo | Fonte no brief | Regra |
+| ----- | --------------- | ----- |
+| `#<N>` | linha `Claimed #<N> — …` | número GitHub da Issue; sempre presente |
+| `<id>` | linha `id: …` | id de roadmap (`B79`, `C11`, `FD2+`…); omita o segmento se `(none)` |
+| `<título>` | título da Issue (após `Claimed #<N> — `) | se começar com `<id> — `, remova esse prefixo para não duplicar |
+
+**Montagem:**
+
+- Com `id`: `#<N> <id> — <título>` — ex.: `#456 B79 — Mapa LQ na legenda`
+- Sem `id`: `#<N> — <título>` — ex.: `#789 — Hotfix cookie path`
+
+**Truncagem:** limite da ferramenta = 200 caracteres. Preserve intactos `#<N>` e `<id>`; encurte só o `<título>` no final (reticências opcionais).
+
+**Passos:**
+
+1. Monte o título pelo padrão acima a partir do stdout do claim.
+2. Chame `cursor-app-control` → `rename_chat` com `title`.
+3. Se `rename_chat` não estiver disponível (fora da Agents Window), informe em uma linha o título exato sugerido para o humano renomear manualmente — mas tente o MCP primeiro.
+
+Se a sessão continuar uma Issue já claimada (sem re-rodar claim), derive os mesmos campos do brief anterior na conversa ou de `gh issue view <N> --json number,title` + frontmatter `id:`.
+
 ### Abrir o plano para o humano
 
-Logo após o claim bem-sucedido, **abra o arquivo do plano no editor** para quem acompanha a sessão — não basta `Read` no chat.
+Em seguida, **abra o arquivo do plano no editor** para quem acompanha a sessão — não basta `Read` no chat.
 
 1. Extraia o caminho do plano do brief (`docs/plans/<slug>.md`) ou do link `Plano:` no body da Issue.
 2. Chame `cursor-app-control` → `open_resource` com URI absoluta, ex.: `file:///…/docs/plans/foo.md` (caminho relativo resolvido a partir da raiz do workspace).
@@ -87,7 +115,26 @@ Tracer bullet: se a Issue for grande, a primeira fatia vertical real (schema mí
 
 ## Passo 5 — /simplify + débitos
 
-Rode `/simplify` sobre o diff da sessão. Follow-ups maiores que o cleanup → `capture-review-debts` (registra via `agent:register`/`agent:file-miss`; **nunca** edita Issue `in-progress` — nem esta; débito do mesmo pai vira Issue nova com `depends: [<id-do-pai>]`).
+Rode `/simplify` sobre o diff da sessão **antes** do Passo 6. Não pule os reviewers — o simplify deste fluxo é o comando completo, não uma leitura manual do diff.
+
+### Escopo
+
+1. `git diff --no-color` + `git diff --cached --no-color` (diff combinado da sessão).
+2. Se vazio, arquivos/símbolos citados na conversa; se ainda vazio, `git show --stat --patch --no-color HEAD`.
+
+### Reviewers paralelos (obrigatório)
+
+Lance **três** subagentes via `Task` **em paralelo** na mesma mensagem — read-only, mesmo modelo da sessão, **sem editar arquivos**. Passe o diff combinado (ou lista de arquivos + hunks relevantes se o diff for grande):
+
+1. **Code quality** — comentários vazios, helpers de uso único, nullable desnecessário, try/catch amplos, abstração prematura, casts fracos, estado derivado duplicado, código morto.
+2. **Performance** — I/O bloqueante em hot path, recomputação sem cache, busy-wait, concatenação em loop, N+1, logging em loop.
+3. **Reuse** — padrões/helpers existentes no repo ou já presentes no diff que o escopo deveria reutilizar.
+
+### Fixes + débitos
+
+1. Agregue os achados dos três reviewers e aplique **fixes pontuais** no diff (comportamento preservado).
+2. Achados maiores que o cleanup da sessão → skill `capture-review-debts` (registra via `agent:register`/`agent:file-miss`; **nunca** edita Issue `in-progress` — nem esta; débito do mesmo pai vira Issue nova com `depends: [<id-do-pai>]`).
+3. Resuma o que corrigiu e o que ficou como recomendação/débito.
 
 ## Passo 6 — Fechar em stage
 
@@ -100,4 +147,4 @@ Rode `/simplify` sobre o diff da sessão. Follow-ups maiores que o cleanup → `
 
 ## Resumo final ao usuário
 
-Issue trabalhada + plano aberto no editor + verificação de modelo (declarado vs sessão, ou registro do ausente), veredito do freshness audit, o que entrou por fase, resultado do critique/polish (se UI), simplify + débitos registrados, gates, link do PR e estado do merge em stage, pontas soltas consolidadas. Nunca anuncie promote — `in-prod` é humano (`pnpm agent:promote --i-am-human`).
+Issue trabalhada + sessão renomeada + plano aberto no editor + verificação de modelo (declarado vs sessão, ou registro do ausente), veredito do freshness audit, o que entrou por fase, resultado do critique/polish (se UI), simplify (3 reviewers paralelos) + débitos registrados, gates, link do PR e estado do merge em stage, pontas soltas consolidadas. Nunca anuncie promote — `in-prod` é humano (`pnpm agent:promote --i-am-human`).
