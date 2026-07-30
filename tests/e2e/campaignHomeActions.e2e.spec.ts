@@ -346,7 +346,7 @@ test.describe('Wizard — registrar sinal (B63)', () => {
     })
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto('/campanha/acoes/registrar-sinal?municipio=cairu&entryAction=update-votes')
+    await page.goto('/campanha/acoes/registrar-sinal?municipio=cairu&entry=update-votes')
 
     await expect(page.getByRole('link', { name: 'Pular registro de sinal' })).toBeVisible({
       timeout: 15000,

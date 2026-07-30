@@ -20,7 +20,7 @@ Responsável: —
   → WizardSignalBodyStep (textarea + Salvar)
 
 Query opcional (propagar entre passos):
-  ?entryAction=register-signal|update-votes|…
+  ?entry=register-signal|update-votes|…
 ```
 
 Helpers em `src/lib/campaignActionRoutes.ts`: `WIZARD_SIGNAL_TYPE_QUERY_KEY`, `WIZARD_ENTRY_ACTION_QUERY_KEY`, `parseWizardEntryActionParam`, `resolveWizardSignalTypeParam`, `wizardSignalHref`. Skip: `shouldShowWizardSignalSkip` em `wizardSignalUi.ts` — oculto quando `entryAction` ausente ou `register-signal`; visível caso contrário (href → `/campanha` na v1).
@@ -123,6 +123,14 @@ Componentes:
 
 - **Grid de tipos no Popover B26.** Revisitar se o select pós-B62 ainda gerar dúvida de classificação em campo.
 - **Copy longa revisada pela assessoria.** Revisitar no R6.
+- **Fundir `wizardSignalHref` em `wizardActionHref`.** Revisitar quando B64+ compartilhar o mesmo builder de query (hoje são contratos distintos: `signalType` vs opções genéricas).
+
+## Já resolvido no simplify (não reabrir)
+
+- **B75 chrome:** `flowTitle`, `isEntryStep`, `skip` no `CampaignWizardShell` + `WizardSignalSkipTrailing` no desktop.
+- **Skip DRY:** `resolveWizardSignalSkip` em `wizardSignalUi.ts` (substitui `wizardSignalSkipHref`).
+- **Lookup O(1):** `municipalitySignalTypeMetaByType`; tiles com `<Link>` (prefetch) em vez de `router.push`.
+- **URL `?entry=`** alinhada a B70/B77 (não `?entryAction=`).
 
 ## Referências
 
