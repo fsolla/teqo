@@ -48,7 +48,7 @@ Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:fe
 | Workflow       | Trigger                                        | Banco                                      | Passos                                                                                                        |
 | -------------- | ---------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
 | `ci-pr.yml`    | PR → `stage`/`main`                            | service Postgres 17 (mínimo)               | lint, format, typecheck, knip, cycles, unit → migrate → **seed:minimal** → int → **build** + `migration-lock` |
-| `ci-stage.yml` | push em `stage`                                | `STAGE_DATABASE_URL` (Environment `stage`) | **só** `migrate` + `test:int` — **NUNCA `pnpm build`** (build migra o banco que vê), nunca seed:minimal       |
+| `ci-stage.yml` | push em `stage`                                | `STAGE_DATABASE_URL` (Environment `stage`) | **só** `migrate` + smoke int (subset curado — a suíte completa é lenta demais contra Neon remoto e fica no ci-pr) — **NUNCA `pnpm build`** (build migra o banco que vê), nunca seed:minimal       |
 | `ci.yml`       | push em `main`                                 | service Postgres                           | gate pós-promote                                                                                              |
 | E2E            | fora do caminho crítico (nightly/label futura) | —                                          | não bloqueia autonomia                                                                                        |
 
