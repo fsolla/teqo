@@ -1,3 +1,3 @@
-# Fast gate before push (source of truth: package.json `gate:push`).
-# Full gate = CI do PR (docs/AGENT-OPS.md). Escape hatch para WIP: `git push --no-verify`.
+# Full ci-pr mirror before push (source of truth: package.json `gate:push` → `gate:ci`).
+# Escape hatch para WIP: `git push --no-verify`.
 pnpm gate:push
