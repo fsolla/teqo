@@ -6,7 +6,6 @@ Os padrões CRÍTICOS de segurança também vivem em `.cursor/rules/security-cri
 
 ---
 
-
 ## Configuration
 
 ### Minimal Config Pattern

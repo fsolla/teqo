@@ -4,11 +4,11 @@ Uma página. Norte: simplicidade (só GitHub + Cursor), agente para no merge a `
 
 ## Ambientes de dados (test ladder — nunca misturar)
 
-| Ambiente | Conteúdo | Quem usa |
-| --- | --- | --- |
-| **Mínimo** (`teqo_test` local / service CI) | schema migrado + `pnpm db:seed:minimal` (sintético, sem PII) | agentes, Cursor Cloud, CI de PR |
-| **Stage** (Neon branch `stage`, clone de prod) | snapshot 100% de prod (PII!) | só CI `ci-stage.yml` + humanos em smoke controlado |
-| **Prod** (Neon prod) | real | deploy Vercel a partir de `main` apenas |
+| Ambiente                                       | Conteúdo                                                     | Quem usa                                           |
+| ---------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------- |
+| **Mínimo** (`teqo_test` local / service CI)    | schema migrado + `pnpm db:seed:minimal` (sintético, sem PII) | agentes, Cursor Cloud, CI de PR                    |
+| **Stage** (Neon branch `stage`, clone de prod) | snapshot 100% de prod (PII!)                                 | só CI `ci-stage.yml` + humanos em smoke controlado |
+| **Prod** (Neon prod)                           | real                                                         | deploy Vercel a partir de `main` apenas            |
 
 Agentes **nunca** recebem `DATABASE_URL` de stage/prod e nunca setam `ALLOW_REMOTE_DB`. O escape `ALLOW_STAGE_TEST_DB` (`tests/helpers/assertTestDatabase.ts`) só existe para o workflow `ci-stage.yml`.
 
@@ -25,15 +25,15 @@ stage → CI stage green → (humano) pnpm agent:promote --i-am-human → main �
 
 ## Comandos
 
-| Comando | Faz |
-| --- | --- |
-| `pnpm agent:claim [-- --dry-run]` | Fila ready+unblocked por prio → `in-progress` + brief no stdout. Deps sem Issue = itens entregues do roadmap (satisfeitas, avisadas no brief) |
-| `pnpm agent:register -- --id X --title T [--prio P1] [--depends A,B] [--plan docs/plans/x.md]` | Cria Issue (spec + labels) |
-| `pnpm agent:prioritize -- <issue> <P0..P3>` | Troca a label `prio:*` |
-| `pnpm agent:file-miss -- --title ...` | Issue `kind:agent-miss` → harvest em guardrail (`docs/GUARDRAILS.md`) |
-| `pnpm agent:promote -- --i-am-human` | **Humano:** PR `stage→main` + merge se CI green |
-| `pnpm db:seed:minimal` | DB mínimo sintético (contrato: [`scripts/lib/seed-minimal-manifest.mjs`](../scripts/lib/seed-minimal-manifest.mjs), pin `tests/unit/seedMinimalManifest.unit.spec.ts`) |
-| `pnpm db:refresh:stage` | **Humano:** nova Neon branch `stage` de prod + swap do secret `STAGE_DATABASE_URL` (requer `NEON_API_KEY`) |
+| Comando                                                                                        | Faz                                                                                                                                                                    |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm agent:claim [-- --dry-run]`                                                              | Fila ready+unblocked por prio → `in-progress` + brief no stdout. Deps sem Issue = itens entregues do roadmap (satisfeitas, avisadas no brief)                          |
+| `pnpm agent:register -- --id X --title T [--prio P1] [--depends A,B] [--plan docs/plans/x.md]` | Cria Issue (spec + labels)                                                                                                                                             |
+| `pnpm agent:prioritize -- <issue> <P0..P3>`                                                    | Troca a label `prio:*`                                                                                                                                                 |
+| `pnpm agent:file-miss -- --title ...`                                                          | Issue `kind:agent-miss` → harvest em guardrail (`docs/GUARDRAILS.md`)                                                                                                  |
+| `pnpm agent:promote -- --i-am-human`                                                           | **Humano:** PR `stage→main` + merge se CI green                                                                                                                        |
+| `pnpm db:seed:minimal`                                                                         | DB mínimo sintético (contrato: [`scripts/lib/seed-minimal-manifest.mjs`](../scripts/lib/seed-minimal-manifest.mjs), pin `tests/unit/seedMinimalManifest.unit.spec.ts`) |
+| `pnpm db:refresh:stage`                                                                        | **Humano:** nova Neon branch `stage` de prod + swap do secret `STAGE_DATABASE_URL` (requer `NEON_API_KEY`)                                                             |
 
 Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:feature|defect|chore|agent-miss`, `needs:migration|consent`, `requirements-changed`. Issues carregam frontmatter `id/depends/serializes/priority` no body.
 
@@ -45,12 +45,12 @@ Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:fe
 
 ## CI por alvo
 
-| Workflow | Trigger | Banco | Passos |
-| --- | --- | --- | --- |
-| `ci-pr.yml` | PR → `stage`/`main` | service Postgres 17 (mínimo) | lint, format, typecheck, knip, cycles, unit → migrate → **seed:minimal** → int → **build** + `migration-lock` |
-| `ci-stage.yml` | push em `stage` | `STAGE_DATABASE_URL` (Environment `stage`) | **só** `migrate` + `test:int` — **NUNCA `pnpm build`** (build migra o banco que vê), nunca seed:minimal |
-| `ci.yml` | push em `main` | service Postgres | gate pós-promote |
-| E2E | fora do caminho crítico (nightly/label futura) | — | não bloqueia autonomia |
+| Workflow       | Trigger                                        | Banco                                      | Passos                                                                                                        |
+| -------------- | ---------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `ci-pr.yml`    | PR → `stage`/`main`                            | service Postgres 17 (mínimo)               | lint, format, typecheck, knip, cycles, unit → migrate → **seed:minimal** → int → **build** + `migration-lock` |
+| `ci-stage.yml` | push em `stage`                                | `STAGE_DATABASE_URL` (Environment `stage`) | **só** `migrate` + `test:int` — **NUNCA `pnpm build`** (build migra o banco que vê), nunca seed:minimal       |
+| `ci.yml`       | push em `main`                                 | service Postgres                           | gate pós-promote                                                                                              |
+| E2E            | fora do caminho crítico (nightly/label futura) | —                                          | não bloqueia autonomia                                                                                        |
 
 Fast gate local do agente antes do push: `pnpm lint && pnpm exec tsc --noEmit && pnpm test:unit` (+ `pnpm format:check` e `pnpm check:cycles` antes de commitar; int/build = CI).
 

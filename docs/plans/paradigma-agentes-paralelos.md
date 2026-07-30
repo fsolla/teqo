@@ -1,30 +1,30 @@
 ---
 name: Paradigm parallel agents
-overview: "GitHub + Cursor only: Issues/PR/Actions; agents claim→PR→stage with minimal DB; stage = Neon prod snapshot (restricted); main/prod só via promote humano com CI; miss→guardrail progressivo."
+overview: 'GitHub + Cursor only: Issues/PR/Actions; agents claim→PR→stage with minimal DB; stage = Neon prod snapshot (restricted); main/prod só via promote humano com CI; miss→guardrail progressivo.'
 todos:
   - id: onda0-minimal-db
-    content: "Script db:seed:minimal idempotente (collections/fixtures mínimas) + contrato PR: schema/migration exige atualizar seed no mesmo PR"
+    content: 'Script db:seed:minimal idempotente (collections/fixtures mínimas) + contrato PR: schema/migration exige atualizar seed no mesmo PR'
     status: pending
   - id: onda0-ci-pr
-    content: "ci.yml PR: service Postgres 17 → migrate → seed:minimal → int → build; check 1 PR em migrations"
+    content: 'ci.yml PR: service Postgres 17 → migrate → seed:minimal → int → build; check 1 PR em migrations'
     status: pending
   - id: onda0-stage-git
-    content: "Branch stage + protection + merge→stage CI (int/e2e contra STAGE_DATABASE_URL, NUNCA build); labels/prio + scripts claim|register|prioritize|file-miss|promote; seed Issues"
+    content: 'Branch stage + protection + merge→stage CI (int/e2e contra STAGE_DATABASE_URL, NUNCA build); labels/prio + scripts claim|register|prioritize|file-miss|promote; seed Issues'
     status: pending
   - id: onda0-stage-data
-    content: "Neon prod snapshot → branch stage; runbook refresh (nova branch + swap secret) via workflow_dispatch humano"
+    content: 'Neon prod snapshot → branch stage; runbook refresh (nova branch + swap secret) via workflow_dispatch humano'
     status: pending
   - id: onda0-cursor-context
-    content: "AGENT-OPS.md + fatiar AGENTS + kernels + .cursorignore + Cloud env + hooks portáteis + standards fast-gate + PR template + README cheatsheet"
+    content: 'AGENT-OPS.md + fatiar AGENTS + kernels + .cursorignore + Cloud env + hooks portáteis + standards fast-gate + PR template + README cheatsheet'
     status: pending
   - id: onda0-remove-codeberg
-    content: "Remover Codeberg de package.json/AGENTS/TECH-DEBT/ci.yml e qualquer referência; GitHub = única casa"
+    content: 'Remover Codeberg de package.json/AGENTS/TECH-DEBT/ci.yml e qualquer referência; GitHub = única casa'
     status: pending
   - id: onda1-autonomy
-    content: "Skills claim→PR base stage; Automation requirements-changed; promote só humano; ship-to-main morto"
+    content: 'Skills claim→PR base stage; Automation requirements-changed; promote só humano; ship-to-main morto'
     status: pending
   - id: onda2-stage-ops-guardrails
-    content: "Harvest agent-miss→guardrails; compile-roadmap opcional; Vercel staging se necessário"
+    content: 'Harvest agent-miss→guardrails; compile-roadmap opcional; Vercel staging se necessário'
     status: pending
 isProject: false
 ---
@@ -41,14 +41,14 @@ isProject: false
 
 Stack exclusiva:
 
-| Papel | Onde |
-| --- | --- |
-| Spec + status + deps + miss + prio | **GitHub Issues** |
-| Integração contínua de features | Branch **`stage`** + PRs |
-| Produção | Branch **`main`** → Vercel prod (só promote humano) |
-| Qualidade | **GitHub Actions** (DB conforme o alvo) |
-| Execução | **Cursor** (Cloud/local) |
-| Doctrine | **Repo** (kernels) |
+| Papel                              | Onde                                                |
+| ---------------------------------- | --------------------------------------------------- |
+| Spec + status + deps + miss + prio | **GitHub Issues**                                   |
+| Integração contínua de features    | Branch **`stage`** + PRs                            |
+| Produção                           | Branch **`main`** → Vercel prod (só promote humano) |
+| Qualidade                          | **GitHub Actions** (DB conforme o alvo)             |
+| Execução                           | **Cursor** (Cloud/local)                            |
+| Doctrine                           | **Repo** (kernels)                                  |
 
 ```mermaid
 flowchart LR
@@ -73,11 +73,11 @@ Paralelismo hoje esbarra em roadmap/plans/ship-to-main/gate local; testes int de
 
 Três bancos, papéis distintos — não misturar:
 
-| Ambiente | Conteúdo | Quem usa |
-| --- | --- | --- |
-| **Mínimo** (`teqo_test` / service CI) | Schema migrado + seed sintético pequeno, sem PII real | Agentes, Cloud, CI de **PR → stage** |
-| **Stage** (Neon `teqo_stage` ou branch Neon) | Clone **100%** de prod, renovado periodicamente | Só CI pós-merge em `stage` + humanos em smoke controlado |
-| **Prod** (Neon prod) | Real | Deploy Vercel a partir de `main` apenas |
+| Ambiente                                     | Conteúdo                                              | Quem usa                                                 |
+| -------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------- |
+| **Mínimo** (`teqo_test` / service CI)        | Schema migrado + seed sintético pequeno, sem PII real | Agentes, Cloud, CI de **PR → stage**                     |
+| **Stage** (Neon `teqo_stage` ou branch Neon) | Clone **100%** de prod, renovado periodicamente       | Só CI pós-merge em `stage` + humanos em smoke controlado |
+| **Prod** (Neon prod)                         | Real                                                  | Deploy Vercel a partir de `main` apenas                  |
 
 **Invariante de agente/Cloud:** nunca `DATABASE_URL` de stage/prod; nunca `ALLOW_REMOTE_DB` salvo promote/refresh humano documentado. Guards existentes (`assert-local-database`, `guard-dev-db`) permanecem; stage CI usa secret só no runner GHA.
 
@@ -125,12 +125,12 @@ pnpm test:unit          # fast gate local
 
 ## Fluxo git: feature → stage → main
 
-| Passo | Quem | Regra |
-| --- | --- | --- |
-| PR feature → **`stage`** | Agente (`gh pr create --base stage`) | CI **PR** green (DB mínimo) |
-| Merge em `stage` | **Automático** quando CI PR green | **NUNCA** roda `pnpm build` (migra prod). CI stage = `migrate` + `int` (+ opcional e2e smoke) contra `STAGE_DATABASE_URL`. Fecha Issue / unblock deps. |
-| **`stage` → `main`** | **Só humano**: `pnpm agent:promote --i-am-human`, confirmação explícita em sessão de agente, ou `workflow_dispatch` manual | Requer CI stage green + CI do PR promote green (service Postgres + build). Antes: rebase/merge de `main` em `stage` se divergiu. |
-| `main` → prod | Vercel no push de `main` | Como hoje; migrate no build. |
+| Passo                    | Quem                                                                                                                       | Regra                                                                                                                                                  |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| PR feature → **`stage`** | Agente (`gh pr create --base stage`)                                                                                       | CI **PR** green (DB mínimo)                                                                                                                            |
+| Merge em `stage`         | **Automático** quando CI PR green                                                                                          | **NUNCA** roda `pnpm build` (migra prod). CI stage = `migrate` + `int` (+ opcional e2e smoke) contra `STAGE_DATABASE_URL`. Fecha Issue / unblock deps. |
+| **`stage` → `main`**     | **Só humano**: `pnpm agent:promote --i-am-human`, confirmação explícita em sessão de agente, ou `workflow_dispatch` manual | Requer CI stage green + CI do PR promote green (service Postgres + build). Antes: rebase/merge de `main` em `stage` se divergiu.                       |
+| `main` → prod            | Vercel no push de `main`                                                                                                   | Como hoje; migrate no build.                                                                                                                           |
 
 Agente **default: para no merge a stage**. Promote não é autónomo.
 
@@ -187,16 +187,15 @@ Fast gate local do agente (antes do push): `lint + typecheck + unit` (+ opcional
 
 ## Superfície de comandos
 
-
-| Comando | Faz |
-| --- | --- |
-| `pnpm agent:claim` | Fila ready+unblocked por prio → `in-progress` + brief |
-| `pnpm agent:register` | Cria Issue (spec + prio) |
-| `pnpm agent:prioritize` | Reajusta prio |
-| `pnpm agent:file-miss` | Issue kind:agent-miss/defect |
+| Comando                           | Faz                                                                                              |
+| --------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `pnpm agent:claim`                | Fila ready+unblocked por prio → `in-progress` + brief                                            |
+| `pnpm agent:register`             | Cria Issue (spec + prio)                                                                         |
+| `pnpm agent:prioritize`           | Reajusta prio                                                                                    |
+| `pnpm agent:file-miss`            | Issue kind:agent-miss/defect                                                                     |
 | `pnpm agent:promote --i-am-human` | **Humano:** PR `stage→main` + merge se CI green; recusa se `main` divergiu de `stage` sem rebase |
-| `pnpm db:seed:minimal` | DB mínimo para agentes/CI PR |
-| `pnpm db:refresh:stage` | **Humano/CI manual:** nova Neon branch stage + atualiza secret (não roda em agente) |
+| `pnpm db:seed:minimal`            | DB mínimo para agentes/CI PR                                                                     |
+| `pnpm db:refresh:stage`           | **Humano/CI manual:** nova Neon branch stage + atualiza secret (não roda em agente)              |
 
 Labels: estado `ready|in-progress|blocked|done`; `kind:*`; `prio:P0`…`P3`; `needs:migration|consent`; `requirements-changed`.
 
@@ -222,13 +221,13 @@ Cloud env: `gh` autenticado (Cursor GitHub integration); sem secrets de stage/pr
 
 ## Cursor Cloud readiness
 
-| Item | Ação |
-| --- | --- |
+| Item     | Ação                                                            |
+| -------- | --------------------------------------------------------------- |
 | Contexto | Fatiar AGENTS; kernels PRODUCT/DESIGN/CUSTOMER; `.cursorignore` |
-| Env | Compose Postgres + `migrate` + `db:seed:minimal` |
-| Hooks | Paths relativos |
-| Regra | PR base `stage`; nunca Neon; 1 Issue/run |
-| Brief | stdout do claim |
+| Env      | Compose Postgres + `migrate` + `db:seed:minimal`                |
+| Hooks    | Paths relativos                                                 |
+| Regra    | PR base `stage`; nunca Neon; 1 Issue/run                        |
+| Brief    | stdout do claim                                                 |
 
 ---
 
