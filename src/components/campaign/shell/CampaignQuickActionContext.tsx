@@ -3,7 +3,6 @@
 import {
   createContext,
   useContext,
-  useLayoutEffect,
   useMemo,
   useState,
   type Dispatch,
@@ -38,20 +37,4 @@ export const useCampaignQuickActionContext = (): CampaignQuickActionContextValue
     throw new Error('CampaignQuickActionContextProvider is required')
   }
   return value
-}
-
-/** B80+ — set page context for the current route (cleared on unmount). */
-export const useSetCampaignQuickActionContext = (next: CampaignQuickActionContext): void => {
-  const { setContext } = useCampaignQuickActionContext()
-
-  useLayoutEffect(() => {
-    setContext(next)
-  }, [next, setContext])
-
-  useLayoutEffect(
-    () => () => {
-      setContext(emptyCampaignQuickActionContext())
-    },
-    [setContext],
-  )
 }
