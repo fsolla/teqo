@@ -97,9 +97,9 @@ Supervisor **remoto** que mantém até 5 Cursor Cloud Agents rodando `work-issue
 
 O repo GitHub é **público** e proprietário (All Rights Reserved). Discovery de campo com áudio, transcrição bruta, nomes reais, deltas operacionais de voto e planilhas de projeção **não** sobem no tip público.
 
-| Quem | Onde grava | O que faz |
-|------|------------|-----------|
-| **Agente local** | `/private/` (gitignored; só `private/README.md` versionado) | Lê/escreve notas sensíveis aí. Publica em `docs/` só uma **versão limpa** (JTBD/insights sem PII operacional). Nunca `git add` de áudio/transcribe/sheets/notas verbatim. |
-| **Agente cloud** (Cursor Cloud, Devin, etc.) | Clone **sem** `/private/` | Baseia-se em `docs/CUSTOMER.md` e planos públicos limpos. Se o entregável for sensível, **informa no chat** e **não commitá** — o humano salva em `/private/` no checkout local. |
+| Quem                                         | Onde grava                                                  | O que faz                                                                                                                                                                        |
+| -------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Agente local**                             | `/private/` (gitignored; só `private/README.md` versionado) | Lê/escreve notas sensíveis aí. Publica em `docs/` só uma **versão limpa** (JTBD/insights sem PII operacional). Nunca `git add` de áudio/transcribe/sheets/notas verbatim.        |
+| **Agente cloud** (Cursor Cloud, Devin, etc.) | Clone **sem** `/private/`                                   | Baseia-se em `docs/CUSTOMER.md` e planos públicos limpos. Se o entregável for sensível, **informa no chat** e **não commitá** — o humano salva em `/private/` no checkout local. |
 
 Regra de ouro: o que um cloud agent não deveria ver no GitHub público também não deve ser commitado por um agente local.

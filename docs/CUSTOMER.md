@@ -22,37 +22,37 @@ Quando preciso coordenar uma campanha de deputado federal pelo estado da Bahia �
 
 ## Job Dimensions
 
-| Dimension  | Description | Where the app underdelivers today |
-| ---------- | ----------- | --------------------------------- |
+| Dimension  | Description                                                                                                                                        | Where the app underdelivers today                                                                                                                                                                                |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Functional | See municipalities (predefined territories), base, declared-vs-estimated votes, and agenda in one place; record updates and decide the next action | Entity-first screens invert the **Action → Place → Who** model; discovery requires scroll; confirmations invisible; fragmented forms. Hit: filtered “no advisor” lists × prior-cycle votes. Jargon still blocks. |
-| Emotional  | Feel in control and trust that the picture is current | **Worst today.** Competence anxiety (“I can’t see / handle it”), not only stale data. Without action-first flows, Little Hire does not start. |
-| Social     | Be seen as serious, aligned coordination | Real work still “wins” on WhatsApp; tool users can look bureaucratic while informal channels set the pace |
+| Emotional  | Feel in control and trust that the picture is current                                                                                              | **Worst today.** Competence anxiety (“I can’t see / handle it”), not only stale data. Without action-first flows, Little Hire does not start.                                                                    |
+| Social     | Be seen as serious, aligned coordination                                                                                                           | Real work still “wins” on WhatsApp; tool users can look bureaucratic while informal channels set the pace                                                                                                        |
 
 ## Competing Alternatives
 
-| Alternative | Why hired today | Weakness |
-| ----------- | --------------- | -------- |
-| WhatsApp groups / 1:1 | Fast, everyone is already there | Fragments; no analysis; useful history disappears |
-| Spreadsheets (projection maps) | Flexible; one advisor’s “source of truth” | Divergent versions; weak on phone |
-| Notebook / memory / phone calls | Zero tool friction | Doesn’t scale; doesn’t share |
-| Other campaign platforms (past attempts) | Promise of a single system | Team stops updating → stale data → abandonment |
-| Non-consumption | Avoids another login | Burns the 45-day window |
+| Alternative                              | Why hired today                           | Weakness                                          |
+| ---------------------------------------- | ----------------------------------------- | ------------------------------------------------- |
+| WhatsApp groups / 1:1                    | Fast, everyone is already there           | Fragments; no analysis; useful history disappears |
+| Spreadsheets (projection maps)           | Flexible; one advisor’s “source of truth” | Divergent versions; weak on phone                 |
+| Notebook / memory / phone calls          | Zero tool friction                        | Doesn’t scale; doesn’t share                      |
+| Other campaign platforms (past attempts) | Promise of a single system                | Team stops updating → stale data → abandonment    |
+| Non-consumption                          | Avoids another login                      | Burns the 45-day window                           |
 
 ## Big Hire vs Little Hire
 
-| Moment | What it is here | Status / intervention |
-| ------ | --------------- | --------------------- |
-| Big Hire | First login, trust the system enough to start | Mitigated offline: in-person onboarding; seed initial data when needed |
+| Moment      | What it is here                                        | Status / intervention                                                                   |
+| ----------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| Big Hire    | First login, trust the system enough to start          | Mitigated offline: in-person onboarding; seed initial data when needed                  |
 | Little Hire | Come back and update so the shared picture stays alive | **Primary leak.** Past tools died here. Reduce emotional cost of “updating again today” |
 
 ## Forces of Progress
 
-| Force | Notes |
-| ----- | ----- |
-| Push | Fragmentation; statewide scope; 45-day crunch; cannot follow dynamics by hand |
-| Pull | One operational picture; smarter targeting; instrument the team can update; territory dossier before agenda |
-| Habit | WhatsApp + spreadsheet as default — “Zap is the field”; projection sheet is the morning ritual |
-| Anxiety | “If others don’t update, I’m wasting time”; competence anxiety; LGPD / real-data hold; “legs” constraint |
+| Force   | Notes                                                                                                       |
+| ------- | ----------------------------------------------------------------------------------------------------------- |
+| Push    | Fragmentation; statewide scope; 45-day crunch; cannot follow dynamics by hand                               |
+| Pull    | One operational picture; smarter targeting; instrument the team can update; territory dossier before agenda |
+| Habit   | WhatsApp + spreadsheet as default — “Zap is the field”; projection sheet is the morning ritual              |
+| Anxiety | “If others don’t update, I’m wasting time”; competence anxiety; LGPD / real-data hold; “legs” constraint    |
 
 ## Opportunity Solution Tree (sanitized)
 
@@ -75,12 +75,12 @@ Outcome: weekly Little Hire
 
 ## Leap-of-Faith Assumptions
 
-| Assumption | Type | Cheap test | Success if |
-| ---------- | ---- | ---------- | ---------- |
-| Seeded picture + onboarding → returns within 7 days | Desirability / Little Hire | Count logins + ≥1 real update after action-first redesign | ≥1 spontaneous update in 7 days |
-| Action queues answer “where do I start?” | Usability | Filtered “no advisor” × prior-cycle votes | Finds queue/action without help |
-| Entity-first “edit where you see” is discoverable | Usability | Observed: editable cells not discovered in free exploration | Opens vote adjust without demo — **FAILED**; pivot O9 |
-| Inline glossary / plain language cuts confusion | Usability | Field jargon needed live translation | Zero “what is…?” in 2nd session after copy |
+| Assumption                                          | Type                       | Cheap test                                                  | Success if                                            |
+| --------------------------------------------------- | -------------------------- | ----------------------------------------------------------- | ----------------------------------------------------- |
+| Seeded picture + onboarding → returns within 7 days | Desirability / Little Hire | Count logins + ≥1 real update after action-first redesign   | ≥1 spontaneous update in 7 days                       |
+| Action queues answer “where do I start?”            | Usability                  | Filtered “no advisor” × prior-cycle votes                   | Finds queue/action without help                       |
+| Entity-first “edit where you see” is discoverable   | Usability                  | Observed: editable cells not discovered in free exploration | Opens vote adjust without demo — **FAILED**; pivot O9 |
+| Inline glossary / plain language cuts confusion     | Usability                  | Field jargon needed live translation                        | Zero “what is…?” in 2nd session after copy            |
 
 ## Discovery method (no raw evidence here)
 
