@@ -178,7 +178,9 @@ test.describe('Wizard — busca município (B60)', () => {
     await hit.click()
 
     await page.waitForURL(
-      new RegExp(`^https?://[^/]+/campanha/acoes/atualizar-votos\\?municipio=${municipality.slug}$`),
+      new RegExp(
+        `^https?://[^/]+/campanha/acoes/atualizar-votos\\?municipio=${municipality.slug}$`,
+      ),
     )
     await expect(
       page.getByLabel(new RegExp(`^Município em atualização: ${municipality.name}`, 'i')),
