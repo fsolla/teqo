@@ -2,7 +2,7 @@ import type { BrowserContext, Page } from '@playwright/test'
 
 import { CAMPAIGN_SESSION_TTL_LONG } from '../../src/lib/campaignSessionTtl.js'
 import { CAMPAIGN_BIOMETRICS_PROMPT_DISMISSED_KEY } from '../../src/utilities/campaignBiometricsPrompt.js'
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, expectCampaignBiometricsReady, test } from './fixtures/campaignE2EFixtures.js'
 
 /**
  * Biometric login (B40) end to end, against a **virtual authenticator** driven
@@ -68,8 +68,10 @@ test('enrolls a passkey, signs in with it, then revokes it', async ({
   await addVirtualAuthenticator(context, page)
 
   // 1. Enrollment is authenticated: the passkey card only exists behind a
-  //    password login.
+  //    password login. The platform answer is gated BEFORE the profile island
+  //    runs its one-shot probe (miss #53).
   await campaign.login(page, email, password)
+  await expectCampaignBiometricsReady(page)
   await page.goto('/campanha/perfil')
 
   await expect(page.getByText('Nenhum aparelho cadastrado ainda.')).toBeVisible()
@@ -86,6 +88,7 @@ test('enrolls a passkey, signs in with it, then revokes it', async ({
   //    the "remember me" opt-in, so there is no checkbox in this path.
   await context.clearCookies()
   await page.goto('/campanha/login')
+  await expectCampaignBiometricsReady(page)
   const biometricButton = page.getByRole('button', { name: 'Entrar com digital ou Face ID' })
   await expect(biometricButton).toBeVisible()
 

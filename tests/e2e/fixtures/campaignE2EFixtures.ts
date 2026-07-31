@@ -474,6 +474,25 @@ export const checkRadixWhenHydrated = async (page: Page, label: string) => {
   }).toPass({ timeout: 15_000 })
 }
 
+/**
+ * Miss #53: the app's biometrics probe is ONE-SHOT per island mount
+ * (`useCampaignBiometricsAvailable`) — if
+ * `isUserVerifyingPlatformAuthenticatorAvailable()` resolves before the CDP
+ * virtual authenticator is ready, the enrollment form / biometric button
+ * never mount and no amount of waiting flips them. Gate the ceremony on the
+ * platform answer BEFORE navigating into the surface whose island probes it,
+ * so the race is decided before the app even asks. Requires a loaded page
+ * (secure context) — call after `campaign.login` / `page.goto`.
+ */
+export const expectCampaignBiometricsReady = async (page: Page): Promise<void> => {
+  await expect(async () => {
+    const available = await page.evaluate(
+      () => window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable?.() ?? false,
+    )
+    expect(available).toBe(true)
+  }).toPass({ timeout: 15_000 })
+}
+
 type CampaignE2EFixture = {
   baseURL: string
   fixtures: CampaignE2EOwnership
