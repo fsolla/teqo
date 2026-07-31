@@ -9,6 +9,8 @@
  * one object so recalibration is a one-line diff.
  */
 
+import { DAY_MS } from '@/lib/text'
+
 export const engagementLevels = ['n0', 'n1', 'n2', 'n3', 'n4'] as const
 
 /** `allocationDecision.patternId` under which every level movement is filed. */
@@ -93,8 +95,6 @@ export type EngagementLevelMovementInput = {
   /** The coordinator declared a triangulated shock, which licenses a 2-level jump. */
   triangulatedShock: boolean
 }
-
-const DAY_MS = 24 * 60 * 60 * 1000
 
 const daysBetween = (from: Date, to: Date): number => (to.getTime() - from.getTime()) / DAY_MS
 

@@ -119,7 +119,10 @@ const eslintConfig = [
   {
     // src/lib is the pure, client-safe layer (docs/ARCHITECTURE.md): it must
     // never depend on Payload/Next server code, on utilities/, or on higher
-    // layers. Sharing types across the boundary is always fine.
+    // layers. Types shared with utilities live in lib contract modules and
+    // utilities re-export FROM lib — a lib module type-importing utilities
+    // inverts the direction anyway (Pass 4: suggestionCatalog did exactly
+    // that for a type whose source already lived in lib).
     files: ['src/lib/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-restricted-imports': [
@@ -129,8 +132,8 @@ const eslintConfig = [
             {
               group: ['@/utilities/**', '@/components/**', '@/app/**'],
               message:
-                'src/lib is the pure layer — it must not depend on utilities/components/app. Move the pure logic into lib/ or this module into utilities/.',
-              allowTypeImports: true,
+                'src/lib is the pure layer — it must not depend on utilities/components/app. Move the pure logic into lib/ or this module into utilities/. Shared types live in lib contract modules.',
+              allowTypeImports: false,
             },
             {
               group: ['payload', 'payload/**', '@payload-config', 'next', 'next/**'],
