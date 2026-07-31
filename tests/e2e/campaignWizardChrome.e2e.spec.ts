@@ -35,9 +35,12 @@ test.describe('Wizard — header mobile (B75)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
     })
+    // Claimed, never hardcoded: parallel specs sharing one seeded municipality
+    // raced each other's mutations on it (miss #73).
+    const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto('/campanha/acoes/atualizar-votos?municipio=cairu')
+    await page.goto(`/campanha/acoes/atualizar-votos?municipio=${municipality.slug}`)
 
     await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible({
       timeout: 15000,
@@ -45,7 +48,9 @@ test.describe('Wizard — header mobile (B75)', () => {
 
     const topBar = page.locator('[data-slot="campaign-mobile-top-bar"][data-mode="wizard"]')
     await expect(topBar.getByText('Ajustar votos', { exact: true })).toBeVisible()
-    await expect(topBar.getByLabel(/Município em atualização: Cairu/i)).toBeVisible()
+    await expect(
+      topBar.getByLabel(new RegExp(`^Município em atualização: ${municipality.name}`, 'i')),
+    ).toBeVisible()
     await expect(page.getByRole('link', { name: /Voltar/ })).toBeVisible()
 
     await page.getByRole('link', { name: /Voltar/ }).click()

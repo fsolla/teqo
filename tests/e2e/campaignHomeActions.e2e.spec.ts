@@ -82,17 +82,22 @@ test.describe('Início — busca global (B47)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
     })
+    // Claimed, never hardcoded: parallel specs sharing one seeded municipality
+    // raced each other's mutations on it (miss #73).
+    const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     const search = page.getByLabel('Buscar na campanha')
-    await search.fill('Cairu')
+    await search.fill(municipality.name)
 
     const group = page.getByRole('region', { name: 'Resultados da busca' })
     await expect(group.getByRole('heading', { name: 'Municípios' })).toBeVisible({
       timeout: 15000,
     })
-    await group.getByRole('link', { name: /Cairu/i }).click()
-    await page.waitForURL(/\/campanha\/municipios\/cairu/)
+    // Disambiguate by href, not by name: catalog names are not prefix-unique
+    // ("Conde" also matches "Condeúba" — the unanchored-regex lesson).
+    await group.locator(`a[href$="/campanha/municipios/${municipality.slug}"]`).click()
+    await page.waitForURL(new RegExp(`^https?://[^/]+/campanha/municipios/${municipality.slug}$`))
   })
 })
 
@@ -158,20 +163,26 @@ test.describe('Wizard — busca município (B60)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
     })
+    const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto('/campanha/acoes/atualizar-votos')
     await expect(page.getByRole('heading', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toBeVisible()
 
     const search = page.getByLabel('Buscar município')
-    await search.fill('Cairu')
+    await search.fill(municipality.name)
 
     const results = page.getByRole('region', { name: 'Resultados da busca' })
-    await expect(results.getByRole('link', { name: /Cairu/i })).toBeVisible({ timeout: 15000 })
-    await results.getByRole('link', { name: /Cairu/i }).click()
+    const hit = results.locator(`a[href*="municipio=${municipality.slug}"]`)
+    await expect(hit).toBeVisible({ timeout: 15000 })
+    await hit.click()
 
-    await page.waitForURL(/\/campanha\/acoes\/atualizar-votos\?municipio=cairu/)
-    await expect(page.getByLabel(/Município em atualização: Cairu/i)).toBeVisible()
+    await page.waitForURL(
+      new RegExp(`^https?://[^/]+/campanha/acoes/atualizar-votos\\?municipio=${municipality.slug}$`),
+    )
+    await expect(
+      page.getByLabel(new RegExp(`^Município em atualização: ${municipality.name}`, 'i')),
+    ).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible()
   })
 })
@@ -188,9 +199,10 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
     })
+    const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto('/campanha/acoes/atualizar-votos?municipio=cairu')
+    await page.goto(`/campanha/acoes/atualizar-votos?municipio=${municipality.slug}`)
 
     const step = wizardVoteStep(page)
     await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible({
@@ -217,9 +229,10 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
     })
+    const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto('/campanha/acoes/atualizar-votos?municipio=cairu')
+    await page.goto(`/campanha/acoes/atualizar-votos?municipio=${municipality.slug}`)
 
     await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible({
       timeout: 15000,
@@ -239,11 +252,18 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
     })
+    const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto('/campanha/acoes/atualizar-votos?municipio=cairu&cenario=pessimistic')
+    await page.goto(
+      `/campanha/acoes/atualizar-votos?municipio=${municipality.slug}&cenario=pessimistic`,
+    )
 
-    await page.waitForURL(/\/campanha\/acoes\/atualizar-votos\?municipio=cairu$/)
+    await page.waitForURL(
+      new RegExp(
+        `^https?://[^/]+/campanha/acoes/atualizar-votos\\?municipio=${municipality.slug}$`,
+      ),
+    )
     await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible({
       timeout: 15000,
     })
@@ -256,10 +276,11 @@ test.describe('Wizard — atualizar liderança (B70)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
     })
+    const municipality = await fixtures.claimMunicipality()
     const suffix = Date.now().toString().slice(-8).padStart(8, '0')
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto('/campanha/acoes/atualizar-lideranca?municipio=cairu')
+    await page.goto(`/campanha/acoes/atualizar-lideranca?municipio=${municipality.slug}`)
 
     await expect(page.getByRole('heading', { name: 'Quem coordena por aqui?' })).toBeVisible({
       timeout: 15000,
@@ -293,8 +314,10 @@ test.describe('Wizard — registrar sinal (B63)', () => {
       name: fixtures.value('Coordenadora Geral'),
     })
 
+    const municipality = await fixtures.claimMunicipality()
+
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto('/campanha/acoes/registrar-sinal?municipio=cairu')
+    await page.goto(`/campanha/acoes/registrar-sinal?municipio=${municipality.slug}`)
 
     await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toBeVisible({
       timeout: 15000,
@@ -319,9 +342,10 @@ test.describe('Wizard — registrar sinal (B63)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
     })
+    const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto('/campanha/acoes/registrar-sinal?municipio=cairu')
+    await page.goto(`/campanha/acoes/registrar-sinal?municipio=${municipality.slug}`)
 
     await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toBeVisible({
       timeout: 15000,
@@ -341,9 +365,12 @@ test.describe('Wizard — registrar sinal (B63)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
     })
+    const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto('/campanha/acoes/registrar-sinal?municipio=cairu&entry=update-votes')
+    await page.goto(
+      `/campanha/acoes/registrar-sinal?municipio=${municipality.slug}&entry=update-votes`,
+    )
 
     await expect(page.getByRole('link', { name: 'Pular registro de sinal' })).toBeVisible({
       timeout: 15000,
