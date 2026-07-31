@@ -9,8 +9,10 @@ import {
   BiometricEnrollmentToast,
   type BiometricEnrollmentOffer,
 } from '@/components/campaign/shell/BiometricEnrollmentToast'
+import { CampaignAppScrollChrome } from '@/components/campaign/shell/CampaignAppScrollChrome'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import { CampaignNotificationBellSlot } from '@/components/campaign/shell/CampaignNotificationBellSlot'
+import { CampaignQuickActionContextProvider } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { CampaignSidebar } from '@/components/campaign/shell/CampaignSidebar'
 import { CampaignSidebarViewportDefault } from '@/components/campaign/shell/CampaignSidebarViewportDefault'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
@@ -73,24 +75,25 @@ export default async function CampaignAppLayout({ children }: { children: React.
       <CampaignSidebar user={campaignUserShellView(user)} />
       <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
         <CampaignWizardChromeProvider>
-          <CampaignListPendingBoundary>
-            <CampaignMobileTopBar notificationBell={<CampaignNotificationBellSlot user={user} />} />
-            <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
-              <SidebarTrigger />
-              <div className="ml-auto">
-                <CampaignNotificationBellSlot user={user} />
-              </div>
-            </header>
-            <div
-              data-slot="campaign-content-scroll"
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6 print:h-auto print:overflow-visible print:p-0"
-            >
-              <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-            </div>
-            <Toaster position="top-center" />
-            <InstallPwaToast />
-            {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
-          </CampaignListPendingBoundary>
+          <CampaignQuickActionContextProvider>
+            <CampaignListPendingBoundary>
+              <CampaignMobileTopBar
+                notificationBell={<CampaignNotificationBellSlot user={user} />}
+              />
+              <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
+                <SidebarTrigger />
+                <div className="ml-auto">
+                  <CampaignNotificationBellSlot user={user} />
+                </div>
+              </header>
+              <CampaignAppScrollChrome role={user.role}>
+                <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+              </CampaignAppScrollChrome>
+              <Toaster position="top-center" />
+              <InstallPwaToast />
+              {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
+            </CampaignListPendingBoundary>
+          </CampaignQuickActionContextProvider>
         </CampaignWizardChromeProvider>
       </SidebarInset>
     </SidebarProvider>
