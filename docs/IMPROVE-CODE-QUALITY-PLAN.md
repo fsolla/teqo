@@ -1,6 +1,6 @@
 # Improve Code Quality Plan
 
-Three passes so far: **Pass 1** (2026-07-23/24, phases 0–6 below, all done), **Pass 2** (2026-07-25, see [Pass 2](#pass-2--engineering-consolidation-2026-07-25)) and **Pass 3** (2026-07-28, audit + plan, see [Pass 3](#pass-3--engineering-audit--consolidation-2026-07-28)).
+Four passes so far: **Pass 1** (2026-07-23/24, phases 0–6 below, all done), **Pass 2** (2026-07-25, see [Pass 2](#pass-2--engineering-consolidation-2026-07-25)), **Pass 3** (2026-07-28, audit + plan, see [Pass 3](#pass-3--engineering-audit--consolidation-2026-07-28)) and **Pass 4** (2026-07-31, audit + P0/P1 remediation + miss guardrails in-session, see [Pass 4](#pass-4--engineering-audit--remediation--guardrails-2026-07-31)).
 
 ## Context
 
@@ -162,3 +162,52 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 
 - [ ] P3-A → P3-L as independent deliveries (full gate each; Aikido on edited files)
 - [ ] Leftovers and new debts → ledger via `capture-review-debts`; oversized items → Issue rastreável via `plan-issue`
+
+---
+
+# Pass 4 — Engineering Audit + Remediation + Guardrails (2026-07-31)
+
+## Context
+
+- **Started:** 2026-07-31 — first **autonomous (Cursor Cloud)** execution of the `engineering-audit` skill, and the first harvest of `kind:agent-miss` (OPS2 scope: this pass also creates `docs/GUARDRAILS.md`).
+- **Precheck (fail-closed):** `agent:gh-doctor` OK (GH_TOKEN, Issues read/write); agent pool **desligado** — solitary audit confirmed.
+- **Delta anchor:** Pass 3 (2026-07-28). 880 files touched in 3 days of agent-paradigm work (homeSearch ×28 files, notifications/push ×7+, wizard ×12, WebAuthn ×8, 5 migrations).
+- **Method:** canon loaded; hotspot map (delta + churn + static gates); **five parallel sweeps** (lib+scripts, utilities+access, components, app+collections+globals, tests) with measured findings; consolidation hunt under the anti-DRY rule; 5 miss issues harvested and investigated; 16 open ledger rows re-verified; P0/P1 + miss guardrails remediated in-session, each in its own PR with full gate.
+- **Baseline:** green — `tsc` 0, `lint` 0 warnings, `knip` 0 findings (known `payload.config.ts` loader noise, ledger P3 — verified still true), madge 0 cycles (**774 files**, +124 since Pass 3).
+
+## Audit headlines (all measured)
+
+- **1 P0:** the four public globals (`site-settings`, `home`, `metadata`, `privacy-policy`) spelled `update: Boolean(user)` — campaign JWTs authenticate against `/api/*`, so any campaign session (leader included) could PATCH the public site. Collections were locked in Phase 0; globals were missed. **Remediated in-session** ([PR #91](https://github.com/fsolla/teqo/pull/91)).
+- **1 P1:** `scripts/seed-posts.mjs` called `dieWithLabel` **without importing it** — ReferenceError on the empty-fetch abort path; P3-H half-adoption in the same pass that created the CLI guard. **Remediated in-session** ([PR #92](https://github.com/fsolla/teqo/pull/92)).
+- **5 misses → 5 guardrails:** #73 deadlock class **reproduced** (7 int violations + 11 hardcoded e2e deep links) → allocator migration + 3-rule guard ([PR #93](https://github.com/fsolla/teqo/pull/93)); #52 residual per-cell Drawers on 3 chip lists → shared host ×3 + dev invariant + guard ([PR #94](https://github.com/fsolla/teqo/pull/94)); #53 one-shot probe race → readiness gate + pin; #54 measured **0 unsettled goto pairs** → calibrated guard + TESTING.md convention ([PR #95](https://github.com/fsolla/teqo/pull/95)); #83's guard (`agent:ship` + hooks, PR #89) verified alive → issue closed, no new guard.
+- **Flake honesty:** `campaignLeaderships` chip spec fails **deterministically in dev** on clean stage (instrumented: no POST in 60 s; not the hydration class) — prod green 48/48. Registered, **not** retry-fixed.
+- **Ledger hygiene:** rows 33/34 (safeMessages, petition consentId) verified fixed → closed; row 17 counts → 17 specs/48 cases; rows 35/40/45 updated with verified counts and trigger status (NOT fired); row 19 mitigated (unanchored literals gone + guarded); rows 10/12/14/21/23/28/31 verified still true (23 with updated path). **15 new rows** (P2/P3) with evidence.
+- **12 guard dodges measured:** 3 hardened in-session (ESLint lib zone type-imports, CLI import-presence, Local API omission + dynamic-import); the rest → workstreams or registered (map in the plan).
+- **Duplication for the plan:** ~500+ measured lines across P4-A…P4-E + P4-G; 12 defer+trigger entries; 6 look-alikes rejected with reason.
+
+## Remediation deliveries (done, full gate each)
+
+| WS        | Content                                                                                                                                       | PR                                            | Status                                              |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------- |
+| P4-P0     | Public globals lockdown ×4 + notification bell loaders actor-typed (no bypass) + int pins + `globalAccessConventions` guard                   | [#91](https://github.com/fsolla/teqo/pull/91) | open (Ready, base stage)                            |
+| P4-P1     | seed-posts import fix + `scriptCliConventions` (die-import, `DAY_MS`) + ESLint lib-zone type-import ban + `localApiOverrideAccessConventions` | [#92](https://github.com/fsolla/teqo/pull/92) | open (Ready, base stage)                            |
+| P4-M73    | Miss #73: allocator migration (int class-agnostic rewrite + e2e claim) + `testMunicipalityAllocatorConventions` (3 rules)                     | [#93](https://github.com/fsolla/teqo/pull/93) | open (Ready, base stage) — `Closes #73`             |
+| P4-M52    | Miss #52: `CampaignListSheetProvider` ×3 lists + dev invariant + `sharedSheetHostConventions`                                                 | [#94](https://github.com/fsolla/teqo/pull/94) | open (Ready, base stage) — `Closes #52`             |
+| P4-M53/54 | Misses #53+#54: `expectCampaignBiometricsReady` + unsettled-goto guard + TESTING.md convention                                                | [#95](https://github.com/fsolla/teqo/pull/95) | open (Ready, base stage) — `Closes #53, closes #54` |
+
+## Pass 4 Decisions
+
+| ID  | Decision                                                                          | Rationale                                                                                                                                        |
+| --- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| D1  | Each remediation in its own PR with the recurrence guard in the **same** delivery | Prevention-first (Pass 3 D6); guards that land later never land                                                                                  |
+| D2  | Editors lose writes to the four config globals (deliberate narrowing)             | They are site config, not editorial content; `canManagePublishedContent` untouched; widening later is a named-policy decision                    |
+| D3  | #54 guard calibrated to "unsettled goto pairs", not a `goto` ban                  | Measured: 58 gotos, 0 unsettled; the miss itself warned against a global ban                                                                     |
+| D4  | Dev-mode chip flake registered, not retry-fixed                                   | Instrumentation showed no POST ever fires — not a race; retry masks non-race bugs; prod is the gate                                              |
+| D5  | Class-agnostic int fixtures over class-pinned slugs                               | The pinned behavior (filter/sort by class) never needed reduto/marginal identity — allocation kills the deadlock class without weakening the pin |
+| D6  | Aikido scan not run (MCP unavailable in this Cloud environment)                   | The per-change scan stays mandatory where the server exists; the ledger row (exit-2/SCA-unverified) is unchanged                                 |
+
+## Next Actions
+
+- [ ] Human sign-off = merge of the artifacts PR (plan + ledger + GUARDRAILS.md); remediation PRs merge independently
+- [ ] P4-A → P4-L as independent deliveries ([entrega-engenharia-p4.md](plans/entrega-engenharia-p4.md)); oversized items → Issue rastreável via `plan-issue`
+- [ ] Leftovers → ledger via `capture-review-debts`

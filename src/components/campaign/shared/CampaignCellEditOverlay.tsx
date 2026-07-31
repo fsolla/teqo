@@ -1,6 +1,6 @@
 'use client'
 
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
@@ -109,6 +109,18 @@ export const CampaignCellEditOverlay = ({
 }: CampaignCellEditOverlayProps) => {
   const sharedSheet = useCampaignListSheet()
   const wasOpenRef = useRef(open)
+
+  // Miss #52: without the provider every opened cell keeps its own Drawer
+  // root. The fallback below stays for prod resilience, but in dev the
+  // missing provider is called out the moment a sheet cell mounts.
+  useEffect(() => {
+    if (variant !== 'sheet' || sharedSheet) return
+    if (process.env.NODE_ENV !== 'development') return
+    console.error(
+      'CampaignCellEditOverlay: variant="sheet" sem CampaignListSheetProvider — ' +
+        'cada célula aberta mantém um Drawer próprio (miss #52). Envolva a lista no provider.',
+    )
+  }, [variant, sharedSheet])
 
   /**
    * The region is mounted from the first open onwards and never unmounted
