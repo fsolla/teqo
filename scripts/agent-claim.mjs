@@ -88,8 +88,19 @@ gh([
 ])
 
 const { rest } = parseFrontmatter(pick.issue.body)
+const issueId = pick.meta.id ?? null
+let subject = pick.issue.title
+if (issueId) {
+  const idPrefix = `${issueId} — `
+  if (subject.startsWith(idPrefix)) subject = subject.slice(idPrefix.length)
+}
+const sessionTitle = issueId
+  ? `#${pick.issue.number} ${issueId} — ${subject}`
+  : `#${pick.issue.number} — ${subject}`
+
 console.log(`\n[agent:claim] Claimed #${pick.issue.number} — ${pick.issue.title}`)
-console.log(`  id: ${pick.meta.id ?? '(none)'}  priority: ${pick.priority}`)
+console.log(`  id: ${issueId ?? '(none)'}  priority: ${pick.priority}`)
+console.log(`  rename_chat: ${sessionTitle.slice(0, 200)}`)
 if (pick.meta.model) {
   console.log(
     `  model: ${pick.meta.model} (propriedade da Issue — verificar, não recalcular; ver skill model-selection)`,
@@ -108,6 +119,6 @@ console.log(`  url: https://github.com/fsolla/teqo/issues/${pick.issue.number}`)
 console.log('\n--- spec ---\n')
 console.log(rest.trim() || '(empty body — see linked plan)')
 console.log(
-  '\n[agent:claim] Fluxo: implementar → fast gate → gh pr create --base stage (Closes #' +
-    `${pick.issue.number}) → PARAR. Promote a main é humano (pnpm agent:promote --i-am-human).`,
+  '\n[agent:claim] Fluxo: rename_chat (cursor-app-control) → implementar → gate:fast → pnpm push -u origin HEAD → gh pr create --base stage (Closes #' +
+    `${pick.issue.number}) → PARAR. Promote stage→main é automático após CI stage green.`,
 )

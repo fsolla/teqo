@@ -14,9 +14,9 @@ Esta skill conduz UMA Issue rastreável do claim ao merge em `stage`. Substitui 
 ## Checklist do fluxo
 
 ```
-- [ ] 0. Prep: `pnpm i` antes do `agent:claim` (Cloud Agents já rodam via `.cursor/environment.json` → `install`; worktrees locais: obrigatório, ou deixe para o `ensure-repo-deps` do `pnpm push`)
+- [ ] 0. Prep: `pnpm i` antes do `agent:claim` (Cloud Agents já rodam via `.cursor/environment.json` → `install`; worktrees locais: obrigatório, ou deixe para o `ensure-repo-deps` do `pnpm push`). Cloud → §Prep Cloud (sem Docker; não use `db:start`)
 - [ ] 1. Claim: pnpm agent:claim (ou -- --issue <N>) — o brief do stdout é o contrato
-- [ ] 1b. Renomear a sessão (cursor-app-control rename_chat) — padrão `#<N> <id> — <título>`
+- [ ] 1b. Renomear a sessão (cursor-app-control rename_chat) — padrão `#<N> <id> — <título>` (linha `rename_chat:` do brief)
 - [ ] 1c. Abrir o plano no editor (cursor-app-control open_resource) para o humano acompanhar
 - [ ] 2. Verificação de modelo (best effort): comparar model: da Issue com o modelo da sessão
 - [ ] 3. Freshness audit (enxuto) do plano contra o repositório
@@ -36,6 +36,14 @@ pnpm i
 
 Não pule este passo — sem deps instaladas o claim falha antes de imprimir o brief.
 
+### Prep Cursor Cloud (sem Docker)
+
+VMs Cloud **não têm Docker** — `pnpm db:start` (docker compose) **não funciona** aqui. O ambiente já sobe Postgres nativo via `.cursor/environment.json` (`cloud-setup.sh` no install + `ensure-postgres.sh` no start): bancos `teqo` e `teqo_test` migrados e com `db:seed:minimal`.
+
+- **`pnpm gate:fast` e `pnpm gate:push` não precisam de Postgres** — `test:unit` usa `DATABASE_URL` inválida de propósito (sem conexão real).
+- Só `pnpm test:int` / `pnpm migrate` tocam o banco — já preparado no install; se conexão falhar: `bash ./.cursor/ensure-postgres.sh`.
+- **Proibido `git push --no-verify`** no fechamento da Issue. O pre-push roda `pnpm gate:push` (~1–2 min) — espere passar; CI não substitui o hook local.
+
 ## Passo 1 — Claim
 
 ```bash
@@ -47,7 +55,7 @@ O brief impresso no stdout é o contrato: id, priority, **model**, spec, link do
 
 ### Renomear a sessão
 
-Logo após o claim bem-sucedido, **renomeie a aba desta conversa** para o humano identificar o trabalho em curso — não espere ele pedir.
+Logo após o claim bem-sucedido, **renomeie a aba desta conversa** para o humano identificar o trabalho em curso — não espere ele pedir. Política do repo: no fluxo `work-issue` isso **não** é opcional — a descrição padrão da ferramenta MCP ("só quando o usuário pedir") não se aplica aqui.
 
 **Padrão canônico** (decisão travada — use sempre este formato, sem variações):
 
@@ -109,7 +117,7 @@ Ordem fixa, fases pequenas e verificáveis, respeitando o appetite do plano:
 
 1. **Schema e server** — migrations (`pnpm migrate:create`, seguir `payload-migrations`), collections, utilities, server actions, testes de domínio. Guardrails do repo: Local API com `user` → `overrideAccess: false`; escrita multi-collection → transação com `req: { transactionID }`; pessoa → join com `Contact`; opt-in/PII → `Consent` por chave estável falhando fechado.
 2. **UI via /impeccable** (classes B/C/D — a classe está no plano; se A, declare "Impeccable: N/A" e siga só engenharia): shape conforme a classe → craft → critique → (harden/optimize **só sob gatilho**) → polish. Paleta = tokens `data-theme='campaign'`; reusar `src/components/ui` e shells existentes; shape obrigatório em C **para** para confirmação do brief antes do craft.
-3. **Gates de engenharia** — iteração: `pnpm gate:fast`. Push: **`pnpm push`** (ensure-deps + `gate:push` no script — não depende do hook Husky). `pnpm gate:push` manual só para debug sem push. Scan Aikido dos arquivos editados. Comandos bare, nunca piped. Escape WIP: `git push --no-verify` sem passar por `pnpm push`.
+3. **Gates de engenharia** — iteração: `pnpm gate:fast`. Push: **`pnpm push -u origin HEAD`** (ensure-deps + `gate:push` no script — não depende do hook Husky). `pnpm gate:push` manual só para debug sem push. Scan Aikido dos arquivos editados. Comandos bare, nunca piped. **Nunca** `git push --no-verify` cru (pula o gate) — em Cloud não há Docker, mas `gate:fast`/`gate:push` não precisam de banco (ver §Prep Cloud).
 
 Tracer bullet: se a Issue for grande, a primeira fatia vertical real (schema mínimo → uma action → uma superfície UI) vem cedo.
 
@@ -147,4 +155,4 @@ Lance **três** subagentes via `Task` **em paralelo** na mesma mensagem — read
 
 ## Resumo final ao usuário
 
-Issue trabalhada + sessão renomeada + plano aberto no editor + verificação de modelo (declarado vs sessão, ou registro do ausente), veredito do freshness audit, o que entrou por fase, resultado do critique/polish (se UI), simplify (3 reviewers paralelos) + débitos registrados, gates, link do PR e estado do merge em stage, pontas soltas consolidadas. `in-prod` entra no auto-promote (`promote-stage-to-main.yml`) após CI stage green — não é passo do agente.
+Issue trabalhada + sessão renomeada + plano aberto no editor + verificação de modelo (declarado vs sessão, ou registro do ausente), veredito do freshness audit, o que entrou por fase, resultado do critique/polish (se UI), simplify (3 reviewers paralelos) + débitos registrados, gates (`pnpm push`, sem `--no-verify` cru), link do PR e estado do merge em stage, pontas soltas consolidadas. `in-prod` entra no auto-promote (`promote-stage-to-main.yml`) após CI stage green — não é passo do agente.

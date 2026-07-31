@@ -13,6 +13,10 @@ Production is a live **Neon Postgres** with real citizens' PII. Local developmen
 - Tests load `.env.test` (database `teqo_test`) and call `assertTestDatabase()` (`tests/helpers/assertTestDatabase.ts`), which **throws** unless the database name ends in `_test`.
 - Never repoint `DATABASE_URL` in `.env`, `.env.local`, or `.env.test` at Neon. `.env.test` is committed and local-only on purpose.
 
+## Cursor Cloud (sem Docker)
+
+VMs Cloud **não rodam** `docker compose` / `pnpm db:start`. Postgres nativo: `.cursor/environment.json` (`cloud-setup.sh` + `ensure-postgres.sh`). Mesmos URLs `localhost:5432/teqo` e `teqo_test`. Agentes em `work-issue`: não tente Docker; `gate:fast`/`gate:push` não precisam de banco.
+
 ## Local connection values
 
 - Dev database: `postgresql://teqo:teqo@localhost:5432/teqo`
