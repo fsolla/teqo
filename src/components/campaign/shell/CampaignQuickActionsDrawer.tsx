@@ -3,11 +3,7 @@
 import { useCallback, useState } from 'react'
 
 import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
-import {
-  Drawer,
-  DrawerContent,
-  DrawerTitle,
-} from '@/components/ui/Drawer'
+import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/Drawer'
 import type { ResolvedCampaignHomeAction } from '@/lib/campaignHomeActions'
 import {
   QUICK_ACTIONS_SNAP_COLLAPSED,
@@ -31,17 +27,22 @@ export const CampaignQuickActionsDrawer = ({
   const expanded = quickActionsSnapIsExpanded(snapPoint)
   const showActions = actions.length > 0
 
-  const handleSnapPointChange = useCallback((next: QuickActionsSnapPoint | string | number | null) => {
-    if (next === QUICK_ACTIONS_SNAP_COLLAPSED || next === QUICK_ACTIONS_SNAP_EXPANDED) {
-      setSnapPoint(next)
-      return
-    }
-    setSnapPoint(QUICK_ACTIONS_SNAP_COLLAPSED)
-  }, [])
+  const handleSnapPointChange = useCallback(
+    (next: QuickActionsSnapPoint | string | number | null) => {
+      if (next === QUICK_ACTIONS_SNAP_COLLAPSED || next === QUICK_ACTIONS_SNAP_EXPANDED) {
+        setSnapPoint(next)
+        return
+      }
+      setSnapPoint(QUICK_ACTIONS_SNAP_COLLAPSED)
+    },
+    [],
+  )
 
   const toggleSnap = useCallback(() => {
     setSnapPoint((current) =>
-      quickActionsSnapIsExpanded(current) ? QUICK_ACTIONS_SNAP_COLLAPSED : QUICK_ACTIONS_SNAP_EXPANDED,
+      quickActionsSnapIsExpanded(current)
+        ? QUICK_ACTIONS_SNAP_COLLAPSED
+        : QUICK_ACTIONS_SNAP_EXPANDED,
     )
   }, [])
 
