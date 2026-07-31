@@ -4,6 +4,10 @@ import { getPayload, type Payload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import config from '@/payload.config'
+import {
+  countUnreadNotifications,
+  loadNotificationList,
+} from '@/utilities/notification/notificationList'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -68,6 +72,42 @@ describe('notification access', () => {
     })
 
     expect(visible.docs.map((doc) => doc.id)).toEqual([own.id])
+  })
+
+  it('reads the bell loaders through owner-scoped access (no bypass)', async () => {
+    const fixtures = campaignFixtures()
+    const [owner, other] = await Promise.all([
+      fixtures.createCampaignUser('advisor'),
+      fixtures.createCampaignUser('advisor'),
+    ])
+
+    const own = await payload.create({
+      collection: 'notification',
+      data: {
+        recipient: owner.id,
+        type: 'municipality_update',
+        payload: { title: 'Sino — própria', detail: 'Detalhe', href: '/campanha' },
+      },
+      overrideAccess: true,
+    })
+    await payload.create({
+      collection: 'notification',
+      data: {
+        recipient: other.id,
+        type: 'new_supporter',
+        payload: { title: 'Sino — alheia', detail: 'Detalhe', href: '/campanha' },
+      },
+      overrideAccess: true,
+    })
+
+    // The loaders take the actor, not a recipientID — a caller cannot ask for
+    // someone else's inbox (Pass 4: the previous recipientID+bypass shape
+    // trusted every call site).
+    await expect(loadNotificationList(payload, owner)).resolves.toEqual([
+      expect.objectContaining({ id: own.id }),
+    ])
+    await expect(countUnreadNotifications(payload, owner)).resolves.toBe(1)
+    await expect(countUnreadNotifications(payload, other)).resolves.toBe(1)
   })
 })
 
