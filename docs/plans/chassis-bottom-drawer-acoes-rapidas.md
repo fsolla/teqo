@@ -1,6 +1,6 @@
 # Chassis do bottom drawer de ações rápidas + busca (mobile)
 
-Status: in-progress (Issue #15) — **fatiado 2026-07-31:** busca embutida → **B91**
+Status: entregue (B79 chassis — busca → B91)
 Atualizado em: 2026-07-31
 Issue: #15 (B79)
 Priority: P1

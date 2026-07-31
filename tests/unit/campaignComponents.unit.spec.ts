@@ -124,6 +124,10 @@ describe('campaign visual foundation', () => {
       resolve(process.cwd(), 'src/app/(campaign)/campanha/(app)/layout.tsx'),
       'utf8',
     )
+    const scrollChromeSource = readFileSync(
+      resolve(process.cwd(), 'src/components/campaign/shell/CampaignQuickActionsHost.tsx'),
+      'utf8',
+    )
     const sidebarSource = readFileSync(
       resolve(process.cwd(), 'src/components/campaign/shell/CampaignSidebar.tsx'),
       'utf8',
@@ -132,8 +136,8 @@ describe('campaign visual foundation', () => {
     expect(layoutSource).toContain(
       'className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible"',
     )
-    expect(layoutSource).toContain('data-slot="campaign-content-scroll"')
-    expect(layoutSource).toContain('min-h-0 flex-1 overflow-y-auto overscroll-contain')
+    expect(scrollChromeSource).toContain('data-slot="campaign-content-scroll"')
+    expect(scrollChromeSource).toContain('min-h-0 flex-1 overflow-y-auto overscroll-contain')
     expect(layoutSource).toContain(
       'hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden',
     )

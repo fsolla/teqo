@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 
 import { CampaignHomeLayout } from '@/components/campaign/dashboard/CampaignHomeLayout'
 import { CampaignHomeSearch } from '@/components/campaign/dashboard/CampaignHomeSearch'
+import { CampaignStaffGlobalSearchBody } from '@/components/campaign/dashboard/CampaignStaffGlobalSearch'
 import { HomeSearchProvider } from '@/components/campaign/dashboard/HomeSearchContext'
 import {
   HomeSearchResultsProvider,
@@ -29,7 +30,7 @@ export const CampaignHomeStaffChrome = ({
   summarySlot,
 }: {
   actions: ReactNode
-  /** Result groups plug in here from B48+. */
+  /** Result groups plug in here from B48+. Defaults to global search when omitted. */
   searchResults?: ReactNode
   summarySlot?: ReactNode
 }) => {
@@ -46,7 +47,7 @@ export const CampaignHomeStaffChrome = ({
             searchResults ? (
               <CampaignHomeStaffSearchSlot searchResults={searchResults} />
             ) : (
-              <CampaignHomeSearch />
+              <CampaignStaffGlobalSearchBody />
             )
           }
           summarySlot={summarySlot}
