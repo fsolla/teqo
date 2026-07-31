@@ -3,10 +3,7 @@ import { feature } from 'topojson-client'
 import type { BahiaFeature } from '@/lib/bahiaGeometriesTypes'
 import type { GeometryCollection, Topology } from 'topojson-specification'
 
-type GeometryModuleBase<
-  Properties extends Record<string, unknown>,
-  TObjectName extends string,
-> = {
+type GeometryModuleBase<Properties extends Record<string, unknown>, TObjectName extends string> = {
   topology: Topology<{ [key in TObjectName]: GeometryCollection<Properties> }>
   features: readonly BahiaFeature<Properties>[]
 }
@@ -69,9 +66,7 @@ export function buildGeometryModuleFromTopology<
     return base
   }
 
-  const featuresByKey = new Map(
-    features.map((entry) => [entry.properties[keyProperty], entry]),
-  )
+  const featuresByKey = new Map(features.map((entry) => [entry.properties[keyProperty], entry]))
 
   return {
     ...base,
