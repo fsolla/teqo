@@ -1,11 +1,12 @@
 // @vitest-environment node
 
-import { readFileSync, readdirSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
+import { checkTestLocations } from '../../scripts/check-test-locations.mjs'
 import { E2E_AFFECTED_MANIFEST } from '../../scripts/lib/e2e-affected-manifest.mjs'
 import {
   CANONICAL_E2E_SPEC_SUFFIX,
@@ -18,7 +19,6 @@ import {
   isCanonicalSpecPath,
   isMisplacedSpecPath,
 } from '../../scripts/lib/test-affected-core.mjs'
-import { checkTestLocations } from '../../scripts/check-test-locations.mjs'
 
 const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '../..')
 
