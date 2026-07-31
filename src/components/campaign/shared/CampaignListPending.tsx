@@ -93,8 +93,7 @@ export const CampaignTransitionAnchor = forwardRef<
         event.preventDefault()
         startTransition(() => {
           onNavigate?.()
-          if (replace) router.replace(href, { scroll })
-          else router.push(href, { scroll })
+          return replace ? router.replace(href, { scroll }) : router.push(href, { scroll })
         })
       }}
     >
@@ -107,9 +106,11 @@ export const CampaignTransitionAnchor = forwardRef<
 export const CampaignListResults = ({
   children,
   className,
+  pendingMessage = 'Atualizando resultados…',
 }: {
   children: ReactNode
   className?: string
+  pendingMessage?: string
 }) => {
   const shared = useContext(CampaignListPendingContext)
   const isPending = shared?.isPending ?? false
@@ -124,7 +125,7 @@ export const CampaignListResults = ({
       aria-busy={isPending}
     >
       <p className="sr-only" aria-live="polite">
-        {isPending ? 'Atualizando resultados…' : ''}
+        {isPending ? pendingMessage : ''}
       </p>
       {children}
     </div>

@@ -1,6 +1,13 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+  }),
+}))
+
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
@@ -125,7 +132,7 @@ describe('CampaignWizardShell', () => {
       children: null,
     })
 
-    const caption = container.querySelector('main p')
+    const caption = container.querySelector('main p.md\\:block')
     expect(caption?.textContent).toBe('Cairu')
     expect(caption?.className).toMatch(/md:block/)
   })

@@ -1,11 +1,13 @@
 'use client'
 
 import { ArrowLeft, X } from 'lucide-react'
-import Link from 'next/link'
 
+import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
+import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
 import { useCampaignWizardChrome } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { Button } from '@/components/ui/button'
 import { SidebarTrigger } from '@/components/ui/Sidebar'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   WIZARD_APP_TOP_BAR_ARIA_LABEL,
   WIZARD_DISMISS_ARIA_LABEL,
@@ -14,8 +16,20 @@ import {
 } from '@/lib/campaignWizardCopy'
 import { cn } from '@/lib/utils'
 
+const wizardNavButtonClass =
+  'min-h-11 shrink-0 gap-1 px-2 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'
+
+const wizardDismissButtonClass =
+  'size-11 shrink-0 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'
+
+const wizardSkipButtonClass =
+  'min-h-11 max-w-[9rem] px-2 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'
+
+const wizardTitleSkeletonClass = 'mx-auto motion-reduce:animate-none bg-primary-foreground/20'
+
 export const CampaignMobileTopBar = () => {
   const chrome = useCampaignWizardChrome()
+  const { isPending } = useCampaignListTransition()
 
   if (chrome) {
     return (
@@ -33,28 +47,40 @@ export const CampaignMobileTopBar = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="min-h-11 shrink-0 gap-1 px-2 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              className={wizardNavButtonClass}
               asChild
+              disabled={isPending}
             >
-              <Link href={chrome.previousHref}>
+              <CampaignWizardNavLink href={chrome.previousHref}>
                 <ArrowLeft className="size-4 shrink-0" aria-hidden />
                 Voltar
-              </Link>
+              </CampaignWizardNavLink>
             </Button>
           ) : (
             <div className="size-11 shrink-0" aria-hidden />
           )}
 
           <div className="min-w-0 flex-1 px-1 text-center leading-tight">
-            <span className="block truncate text-sm font-semibold">{chrome.flowTitle}</span>
-            {chrome.municipalityLabel ? (
-              <span
-                className="block truncate text-xs text-primary-foreground/80"
-                aria-label={wizardMunicipalityChromeAriaLabel(chrome.municipalityLabel)}
-              >
-                {chrome.municipalityLabel}
-              </span>
-            ) : null}
+            {isPending ? (
+              <>
+                <Skeleton className={cn(wizardTitleSkeletonClass, 'h-4 w-32 max-w-full')} />
+                {chrome.municipalityLabel ? (
+                  <Skeleton className={cn(wizardTitleSkeletonClass, 'mt-1 h-3 w-24 max-w-full')} />
+                ) : null}
+              </>
+            ) : (
+              <>
+                <span className="block truncate text-sm font-semibold">{chrome.flowTitle}</span>
+                {chrome.municipalityLabel ? (
+                  <span
+                    className="block truncate text-xs text-primary-foreground/80"
+                    aria-label={wizardMunicipalityChromeAriaLabel(chrome.municipalityLabel)}
+                  >
+                    {chrome.municipalityLabel}
+                  </span>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
 
@@ -63,23 +89,28 @@ export const CampaignMobileTopBar = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="min-h-11 max-w-[9rem] px-2 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              className={wizardSkipButtonClass}
               asChild
+              disabled={isPending}
             >
-              <Link href={chrome.skip.href} title={chrome.skip.label}>
+              <CampaignWizardNavLink href={chrome.skip.href} title={chrome.skip.label}>
                 {chrome.skip.label}
-              </Link>
+              </CampaignWizardNavLink>
             </Button>
           ) : (
             <Button
               variant="ghost"
               size="icon"
-              className="size-11 shrink-0 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              className={wizardDismissButtonClass}
               asChild
+              disabled={isPending}
             >
-              <Link href={chrome.dismissHref} aria-label={WIZARD_DISMISS_ARIA_LABEL}>
+              <CampaignWizardNavLink
+                href={chrome.dismissHref}
+                aria-label={WIZARD_DISMISS_ARIA_LABEL}
+              >
                 <X className="size-5" aria-hidden />
-              </Link>
+              </CampaignWizardNavLink>
             </Button>
           )}
         </div>

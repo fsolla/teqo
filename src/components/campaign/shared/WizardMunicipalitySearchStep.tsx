@@ -127,6 +127,7 @@ export const WizardMunicipalitySearchStep = ({
                     primary={hit.name}
                     secondary={hit.region}
                     showPriority={hit.priority === 'alta'}
+                    wizardNavigation
                     trailing={
                       <HomeSearchMunicipalityVoteTrailing position={hit.votePosition2022} />
                     }

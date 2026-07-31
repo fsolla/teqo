@@ -8,6 +8,8 @@ export const WIZARD_MUNICIPALITY_STEP_TITLE = 'Em qual município?' as const
 
 export const WIZARD_DISMISS_ARIA_LABEL = 'Sair da ação' as const
 
+export const WIZARD_STEP_PENDING_MESSAGE = 'Carregando passo…' as const
+
 export const WIZARD_APP_TOP_BAR_ARIA_LABEL = 'Campanha Jorge Solla' as const
 
 export const wizardMunicipalityChromeAriaLabel = (municipalityLabel: string): string =>

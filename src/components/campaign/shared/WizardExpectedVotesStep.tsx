@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useState, useTransition } from 'react'
 
 import {
@@ -8,6 +7,7 @@ import {
   MUNICIPALITY_EXPECTED_VOTES_SAVE_ERROR_MESSAGE,
   type MunicipalityListExpectedVotesResponse,
 } from '@/app/(campaign)/campanha/(app)/municipios/expected-votes/types'
+import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { VoteEstimateScenarioInputs } from '@/components/campaign/votePledge/VoteEstimateScenarioInputs'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
@@ -117,7 +117,7 @@ export const WizardExpectedVotesStep = ({
           <p className="text-sm text-muted-foreground">{WIZARD_VOTES_SAVED_MESSAGE}</p>
           <p className="text-sm text-muted-foreground">{wizardNextStepPlaceholder(actionSlug)}</p>
           <Button asChild className="min-h-11 w-full sm:w-auto">
-            <Link href={CAMPAIGN_HOME}>Voltar ao Início</Link>
+            <CampaignWizardNavLink href={CAMPAIGN_HOME}>Voltar ao Início</CampaignWizardNavLink>
           </Button>
         </div>
       </CampaignWizardShell>

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import React from 'react'
 
+import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
 import {
   BiometricEnrollmentToast,
   type BiometricEnrollmentOffer,
@@ -71,19 +72,21 @@ export default async function CampaignAppLayout({ children }: { children: React.
       <CampaignSidebar user={campaignUserShellView(user)} />
       <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
         <CampaignWizardChromeProvider>
-          <CampaignMobileTopBar />
-          <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
-            <SidebarTrigger />
-          </header>
-          <div
-            data-slot="campaign-content-scroll"
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6 print:h-auto print:overflow-visible print:p-0"
-          >
-            <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-          </div>
-          <Toaster position="top-center" />
-          <InstallPwaToast />
-          {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
+          <CampaignListPendingBoundary>
+            <CampaignMobileTopBar />
+            <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
+              <SidebarTrigger />
+            </header>
+            <div
+              data-slot="campaign-content-scroll"
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6 print:h-auto print:overflow-visible print:p-0"
+            >
+              <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+            </div>
+            <Toaster position="top-center" />
+            <InstallPwaToast />
+            {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
+          </CampaignListPendingBoundary>
         </CampaignWizardChromeProvider>
       </SidebarInset>
     </SidebarProvider>
