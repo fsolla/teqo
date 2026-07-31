@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-07-31):** **Consolidação de Issues (project-status)** — merge **B68+** (#39) → **O0+** (#35) (mesmo `model: kimi-k3-low`); **não** merge D3/D4/D5 (modelos mistos kimi vs composer); **não** merge B53–B55 (já `done`); fatia **B79** → chassis (#15) + **B91** busca no drawer (#76, `depends: [B79]`). Planos: `escala-dry-pos-onda0.md`, `busca-global-bottom-drawer.md`, `chassis-bottom-drawer-acoes-rapidas.md`.
+
 ## Known Gaps (as of 2026-07-24 — resolve before relying on this file for onboarding new devs)
 
 Backlog consolidado (bloqueadores, site, campanha, white-label): [`docs/roadmap.md`](docs/roadmap.md).

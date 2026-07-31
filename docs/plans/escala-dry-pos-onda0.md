@@ -1,8 +1,13 @@
-# Escala e DRY pós-Onda 0 (Consent / privacidade / cache)
+# Escala e DRY P2 — pós-Onda 0 + pós-B68 (consolidado)
 
-Status: Fase 1 entregue; fases 2–5 pendentes
-Atualizado em: 2026-07-19
-Item do roadmap: [docs/roadmap.md](../roadmap.md) (Onda 0+, fill-in de engenharia pós-MVP)
+Status: Fase 1 (Onda 0 revalidate) entregue; fases 2–5 O0 + F1–F2 B68 pendentes
+Atualizado em: 2026-07-31
+Issue: #35 (O0+) — absorveu **B68+** (#39) em 2026-07-31 (mesmo `model: kimi-k3-low`)
+Priority: P2
+Model: kimi-k3-low
+Item do roadmap: [docs/roadmap.md](../roadmap.md) (Onda 0+ + Fill-in B68+)
+Impeccable: A — perf/estrutura + DRY Consent/cache; sem pixel novo
+Appetite: ~1–1,5 dia eng (fases O0 restantes + F1 B68; F2 B68 cortável)
 Responsável: —
 
 ## Contexto
@@ -116,6 +121,24 @@ flowchart TD
 - `tests/int/onda0Provision.int.spec.ts` / `campaignMigrationReconciliation.int.spec.ts`
 - AGENTS.md — Consent por chave estável, `revalidateGlobal`, naming
 
+## Absorvido de B68+ (2026-07-31)
+
+Plano original: [escala-dry-pos-b68.md](escala-dry-pos-b68.md) (Issue #39 fechada como absorvida). Mesma classe de tarefa (simplify/escala-dry → `kimi-k3-low`); domínio distinto (busca do Início) mas consolidado sob O0+ por decisão humana 2026-07-31.
+
+### Fase B68-F1 — RSC embed do suggest (P1 perf)
+
+- Estender `loadCampaignHomeSummary` ou extrair `loadHomeSearchSuggestHits` reutilizável no mesmo request da página (`page.tsx`).
+- Passar `initialSuggest` para `CampaignHomeStaffChrome` → `useHomeSearchResultsState({ initialSuggest })`.
+- Client: usar payload inicial quando `uiFocused && !query.isActive` e não houver stale/error; POST só para revalidação explícita ou após TTL (opcional v1: só primeiro paint).
+- Sem mudar política de ranking (assessor = frescor; CG = déficit + frescor). Sem migration/collection/Consent.
+
+### Fase B68-F2 — Comparator compartilhado de déficit (cortável)
+
+- Extrair `compareNullableNumberDesc` + tiebreak hook para `lib/municipalitySort.ts` quando houver 3º call site com política diferente de tiebreak (hoje: B20 nome, B68 frescor, E9 lista).
+
+**Já resolvido no simplify B68 (não reabrir):** `aria-busy` duplicado; shell de erro; `id` no ranker; factory `toHomeSearchMunicipalityHit`; bundle E8 só em `priority === 'alta'`.
+
 ## Revisões
 
+- **2026-07-31:** Consolidação com B68+ (#39) — mesmo modelo `kimi-k3-low`; fases B68-F1/F2 absorvidas neste plano; Issue #39 fechada.
 - **2026-07-19:** Fase 1 entregue — endpoint allowlisted (`posts`, `global_privacy-policy`), `getGlobalCacheTag` exportado, curl no runbook Onda 0 e lembrete no `seed:consent`.
