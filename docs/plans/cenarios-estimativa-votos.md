@@ -148,5 +148,5 @@ Componentes:
 - `src/components/campaign/PledgeEstimateForm.tsx`, `PlazaListExpectedVotesControl.tsx`, `PlazaMapPanel.tsx`, `DeclareVotesForm.tsx`
 - AGENTS.md — staff-only estimates, naming, migrations, overrideAccess
 - `PRODUCT.md` / `DESIGN.md` — Field Desk; princípio 5 (métricas locais)
-- Feedback coordenação geral 2026-07-23 (áudio em `docs/general-coordinator-interview/` / `CUSTOMER.md` Interview Snapshot)
+- Feedback coordenação geral 2026-07-23 (áudio em `private/general-coordinator-interview/` / `CUSTOMER.md` Interview Snapshot)
 - Revisão auditoria 2026-07-23: path `voteGoals` corrigido; seletor de cenário → estado local (Ano/Escala não são URL); actions reais = `estimateVotes` / `setPlazaExpectedVotes`.

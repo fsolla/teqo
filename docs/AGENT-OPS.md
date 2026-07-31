@@ -71,7 +71,7 @@ Fast gate local do agente (iteração): `pnpm gate:fast` (lint + typecheck + tes
 
 ## Stage DB — runbook de refresh (semanal, humano)
 
-1. `export NEON_API_KEY=…` (console.neon.tech → API keys; projeto `jorgesolla` / `lively-math-34249863`).
+1. `export NEON_API_KEY=…` (console.neon.tech → API keys; projeto Neon da campanha (id via `NEON_PROJECT_ID`; não hardcodar no repo público)).
 2. `pnpm db:refresh:stage` — deleta a branch `stage` velha, cria nova do snapshot de prod, faz swap do secret `STAGE_DATABASE_URL` no Environment `stage`. `--dry-run` inspeciona.
 3. Próximo `ci-stage` já usa o snapshot novo. Preview Vercel da branch `stage` (`jorgesolla-git-stage-solla.vercel.app`) aponta para o mesmo banco via envs `Preview (stage)` — **atenção**: o endpoint muda a cada refresh; rode também `vercel env add DATABASE_URL preview stage` com a URL nova (o script imprime a URL mascarada; pegue a completa no console Neon ou rode `vercel env pull`).
 
@@ -92,3 +92,14 @@ Supervisor **remoto** que mantém até 5 Cursor Cloud Agents rodando `work-issue
 ## Leitura always-on (ordem)
 
 `AGENTS.md` (fatiado 2026-07-30) → `.cursor/rules/codebase-map.mdc` → `.cursor/rules/engineering-standards.mdc` → esta página → kernels [`PRODUCT.md`](../PRODUCT.md) / [`DESIGN.md`](../DESIGN.md) / [`CUSTOMER.md`](CUSTOMER.md) (kernel no topo). Histórico: [`CHANGELOG-AGENTS.md`](CHANGELOG-AGENTS.md). Referência Payload sob demanda: [`PAYLOAD-REFERENCE.md`](PAYLOAD-REFERENCE.md).
+
+## Material sensível: `/private/` (local) vs cloud
+
+O repo GitHub é **público** e proprietário (All Rights Reserved). Discovery de campo com áudio, transcrição bruta, nomes reais, deltas operacionais de voto e planilhas de projeção **não** sobem no tip público.
+
+| Quem | Onde grava | O que faz |
+|------|------------|-----------|
+| **Agente local** | `/private/` (gitignored; só `private/README.md` versionado) | Lê/escreve notas sensíveis aí. Publica em `docs/` só uma **versão limpa** (JTBD/insights sem PII operacional). Nunca `git add` de áudio/transcribe/sheets/notas verbatim. |
+| **Agente cloud** (Cursor Cloud, Devin, etc.) | Clone **sem** `/private/` | Baseia-se em `docs/CUSTOMER.md` e planos públicos limpos. Se o entregável for sensível, **informa no chat** e **não commitá** — o humano salva em `/private/` no checkout local. |
+
+Regra de ouro: o que um cloud agent não deveria ver no GitHub público também não deve ser commitado por um agente local.

@@ -1,5 +1,9 @@
 # Teqo
 
+> **License:** proprietary — **All Rights Reserved** (© Francisco Ignácio Fontoura Solla). Portfolio / demonstration only. **Not** open source. Use, copy, or redistribution requires prior written permission (`fsolla@pm.me`). See [`LICENSE`](LICENSE).
+>
+> **Sensitive field material** belongs in `/private/` on local checkouts (gitignored). Cloud agents: use public-clean docs; report sensitive deliverables in chat — do not commit them.
+
 > **Cheatsheet de operação agentic (humanos)** — o fluxo em 5 linhas:
 >
 > 1. O agente roda `pnpm agent:claim` e pega a próxima Issue `ready` por prioridade (`prio:P0..P3`).
