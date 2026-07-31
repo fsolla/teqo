@@ -1,38 +1,48 @@
 ---
 name: engineering-audit
-description: Runs a Pass-style engineering audit of the Teqo codebase — code smells, drift from documented patterns, and consolidation of near-duplicate components/hooks/functions/modules — producing a findings ledger and a remediation plan (read-only on code; docs only after sign-off). Use when the user asks for an engineering audit, code-smell sweep, architecture drift check, deduplication/consolidation pass, "Pass 3", "auditoria de engenharia", "varredura de code smells", "consolidação de duplicações", or to plan fixes against the repo's highest engineering standards.
+description: Runs a Pass-style engineering audit of the Teqo codebase — code smells, drift from documented patterns, and consolidation of near-duplicate components/hooks/functions/modules — producing a findings ledger and a remediation plan (read-only on code during the sweep; sign-off = apresentação interativa ou o PR dos artefatos em Cursor Cloud; remediações P0/P1 e guardrails de agent-miss executados na mesma sessão). Use when the user asks for an engineering audit, code-smell sweep, architecture drift check, deduplication/consolidation pass, "Pass 3", "auditoria de engenharia", "varredura de code smells", "consolidação de duplicações", or to plan fixes against the repo's highest engineering standards.
 ---
 
 # Engineering Audit (Pass N)
 
-**Audit solitário (não paralelizável):** quando esta skill roda, o desenvolvimento paralelo **pausa** — nenhum outro agente trabalhando no repo. O agente do audit também **executa as remediações P0/P1 na mesma sessão** para trazer o projeto aos trilhos (não só registra); P2/P3 seguem o fluxo normal de ledger. Se o **agent-pool** estiver ligado, pause-o no início do audit (`gh workflow run agent-pool.yml -f action=pause`) e retome ao final (`-f action=resume`); o tick recusa spawn enquanto `POOL_PAUSED=true`.
+**Audit solitário (não paralelizável):** quando esta skill roda, o desenvolvimento paralelo **pausa** — nenhum outro agente trabalhando no repo. O agente do audit também **executa as remediações P0/P1 na mesma sessão** para trazer o projeto aos trilhos (não só registra); P2/P3 seguem o fluxo normal de ledger. Se o **agent-pool** estiver ligado, pause-o no início do audit (`gh workflow run agent-pool.yml -f action=pause`) e retome ao final (`-f action=resume`); o tick recusa spawn enquanto `POOL_PAUSED=true`. Em **Cursor Cloud** o `gh` do agente é read-only e o pause por dispatch não está disponível — vale o precheck fail-closed da seção "Modo autônomo (Cursor Cloud)".
 
-Read-only audit that sweeps the Teqo codebase for code smells, drift from documented patterns, and consolidation opportunities, then produces a findings ledger and a remediation plan. **No fixes in the audit run** — deliverables are updated docs, presented for sign-off before writing — exceto as remediações P0/P1 declaradas acima.
+## Modo autônomo (Cursor Cloud)
+
+A skill roda sem supervisão humana no paradigma de agentes paralelos. Quatro diferenças em relação à execução interativa (desktop):
+
+1. **Precheck solitário, fail-closed.** Antes de qualquer varredura: `pnpm agent:pool -- status` (read-only). Pool `desligado` ou `pausado` → segue. Pool **ligado** → o agente Cloud não consegue pausá-lo (`gh workflow run` é escrita): **pare** com o remédio nomeado ("pause o pool — `pnpm agent:pool -- pause` — e re-dispare o audit"). Nunca rodar a varredura com o pool spawnando.
+2. **Sign-off = PR.** O gate "apresentar os três artefatos antes de escrever" (passo 5) não se aplica em modo autônomo — não há humano interativo na sessão. Os artefatos são escritos na branch e o **PR (Ready, base `stage`) é a superfície de sign-off**: merge humano = aprovação do plano; fechar o PR = rejeição (o ledger sobrevive no histórico da branch). As remediações **P0/P1 e os guardrails das misses colhidas não esperam esse sign-off** — são correctness/active-harm e seguem na mesma sessão, cada um em PR próprio com gate completo. P2/P3 continuam só ledger/plano.
+3. **`gh` read-only → canais substitutos determinísticos:** fechar miss colhida = `Closes #N` no body do PR do guardrail (o workflow `issue-done-on-stage-merge.yml` flippa para `done` no merge em `stage` — atenção: o regex exige a keyword adjacente a cada número, `Closes #52, closes #73`, nunca `Closes #52, #73`); PR criado pela tool de PR do ambiente, não `gh pr create`; **auto-merge não é habilitado pelo agente Cloud** — o merge humano é justamente o sign-off. Push: `pnpm push -u origin HEAD` (gate:push no script) ou `git push -u origin <branch>`, conforme a instrução do ambiente.
+4. **Delta desde o último audit é o foco declarado** (passo 1): a varredura cobre o repo inteiro, mas o esforço concentra-se no churn desde a data do último Pass — é o trabalho paralelo dos agentes desde o último audit que precisa ser consolidado.
+
+Read-only audit that sweeps the Teqo codebase for code smells, drift from documented patterns, and consolidation opportunities, then produces a findings ledger and a remediation plan. **No fixes in the audit run** — deliverables are updated docs, presented for sign-off before writing — exceto as remediações P0/P1 declaradas acima. Sign-off: interativo = apresentação prévia dos artefatos; autônomo (Cursor Cloud) = o PR dos artefatos (ver "Modo autônomo (Cursor Cloud)").
 
 Method: the engineering skills this repo follows (improve-code-quality, clean-code, refactoring-patterns, software-design-philosophy, pragmatic-programmer, working-with-legacy-code, remove-technical-debt), specialized to Teqo's standards and history. The pass number is the next one after the last in `docs/IMPROVE-CODE-QUALITY-PLAN.md`.
 
 ## Checklist
 
 ```
-- [ ] 0. Load the canon and the history (before judging anything) — incl. `docs/AGENT-OPS.md` (paradigma vigente)
+- [ ] 0. Precheck solitário (fail-closed) — pool off/paused; em Cloud, ver "Modo autônomo"
+- [ ] 0a. Load the canon and the history (before judging anything) — incl. `docs/AGENT-OPS.md` (paradigma vigente)
 - [ ] 0b. Harvest `kind:agent-miss` → candidatos a guardrail (alimenta o Passo 4b)
-- [ ] 1. Hotspot map (churn × size × mechanical gates) — aim the sweep
+- [ ] 1. Hotspot map (churn × size × mechanical gates) — aim the sweep; âncora de delta = data do último Pass
 - [ ] 2. Smell sweep (Fowler families + Teqo-specific), parallelized per area
 - [ ] 3. Consolidation hunt (equivalence classes; name the duplicated KNOWLEDGE)
 - [ ] 4. Triage (severity P0–P3; verify open ledger rows)
 - [ ] 4b. Recurrence prevention: classify a deterministic guard for every finding class
-- [ ] 5. Draft the three artifacts; sign-off; then write and stop
+- [ ] 5. Draft the three artifacts; sign-off (interativo = apresentar antes de escrever; autônomo = PR dos artefatos); then write and stop
 ```
 
 ## Ground rules (non-negotiable)
 
-1. Read-only on `src/`, `tests/`, `scripts/`. The only writes are the step-5 artifacts, after sign-off.
+1. Read-only on `src/`, `tests/`, `scripts/` durante a varredura. Os únicos writes da sessão são: os artefatos do passo 5 (após sign-off interativo; em modo autônomo, direto na branch do PR) e as remediações P0/P1 + guardrails de misses colhidas declarados no cabeçalho.
 2. Gate commands bare, never piped (`pnpm test | tail` swallows the exit code).
 3. Never `knip --fix` blind — verify with `git grep -w <symbol>` (knip cannot load `payload.config.ts`; ledgered P3).
 4. Production is live Neon with real PII. Local DB only, `teqo_test` for tests. The audit needs no DB writes.
 5. Every claim gets a number (lines, exports, call sites, ms, kB). "Rejected by measurement" is an acceptable outcome for any hypothesis, including the ones below.
 
-## Step 0 — Load the canon
+## Step 0a — Load the canon
 
 Read, in this order:
 
@@ -56,11 +66,14 @@ Antes da varredura, colha os défices comportamentais registrados pelo fluxo:
 gh issue list --label kind:agent-miss --state open
 ```
 
-Cada Issue colhida alimenta o **Passo 4b (recurrence prevention)**: toda miss vira candidata a guardrail determinístico (tipo / ESLint / convention spec / CI / pin comportamental). O ledger desses guardrails vive em **`docs/GUARDRAILS.md`** (criar o arquivo na primeira execução): uma linha por guardrail — miss de origem (link da Issue), classe 1–6, mecanismo, status. Quando o guardrail mergeia, **feche as Issues colhidas** (`done`) com comentário apontando o guardrail. Miss que não admite guardrail determinístico vira convenção explícita marcada "judgment-only" — não fingir que doc é guarda.
+**Investigue cada miss colhida** (`gh issue view <N>` — leitura, disponível no Cloud): o corpo registra causa raiz, fix aplicado e o guardrail proposto por `agent:file-miss`. Verifique no código se o fix segurou e se a classe do defeito ainda é reproduzível. Miss cuja classe já tem guarda viva não gera guardrail novo — gera item de hardening da guarda existente (o passo 2 já trata guarda dodgeable como finding).
+
+Cada Issue colhida alimenta o **Passo 4b (recurrence prevention)**: toda miss vira candidata a guardrail determinístico (tipo / ESLint / convention spec / CI / pin comportamental). O ledger desses guardrails vive em **`docs/GUARDRAILS.md`** (criar o arquivo na primeira execução — é o escopo da Issue OPS2): uma linha por guardrail — miss de origem (link da Issue), classe 1–6, mecanismo, status. Quando o guardrail mergeia, **feche as Issues colhidas** (`done`) com comentário apontando o guardrail. Em Cursor Cloud o fechamento é determinístico e não exige escrita `gh`: o PR do guardrail carrega `Closes #N` (keyword repetida por número — o regex do `issue-done-on-stage-merge.yml` não resolve `Closes #A, #B`) e o merge em `stage` flippa a miss para `done`; guardrails de várias misses podem ir no mesmo PR desde que cada uma tenha seu `closes`. Miss que não admite guardrail determinístico vira convenção explícita marcada "judgment-only" — não fingir que doc é guarda.
 
 ## Step 1 — Hotspot map
 
-- Churn: `git log --since="3 months ago" --name-only --format= | sort | uniq -c | sort -rn | head -40`. Three-axis heuristic: changing next × high churn × core domain.
+- **Âncora de delta (desde o último audit):** a data do último Pass está na seção mais recente de `docs/IMPROVE-CODE-QUALITY-PLAN.md`. Meça o delta com `git log --since="<data do último Pass>" --name-only --format= | sort -u` — esse conjunto é o **foco prioritário** da varredura (consolidação do trabalho paralelo dos agentes desde o último audit); a varredura estrutural continua cobrindo o repo inteiro.
+- Churn: `git log --since="3 months ago" --name-only --format= | sort | uniq -c | sort -rn | head -40` (e o mesmo comando com `--since` da âncora de delta). Three-axis heuristic: changing next × high churn × core domain.
 - Size: largest modules and widest interfaces (exports per module).
 - Static gates: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm exec knip`, `pnpm check:cycles` — record baseline. Pre-existing reds (e.g. the ledger's P1 e2e row) are noted as pre-existing, not the audit's.
 
@@ -153,7 +166,7 @@ Rules:
 1. `docs/IMPROVE-CODE-QUALITY-PLAN.md` — new Pass section (context, audit headlines with numbers, workstreams, decisions), matching earlier-pass format.
 2. `docs/TECH-DEBT.md` — new rows in the same tables/columns, marked `open — Pass N`; stale rows closed with evidence.
 3. `docs/plans/entrega-engenharia-pN.md` (pt-BR, like the other plans) — workstreams ordered P0→P1→P2; each item: goal, evidence, target shape, migration path (Branch by Abstraction / Parallel Change for wide merges), pins to write first, full gate, rollback. Items too big for one delivery → Issue rastreável via `plan-issue`. Every workstream item declares its **Guarda determinística** (class 1–6, step 4b), and the plan carries a **guard map** section: new guards shipped / existing guards hardened / judgment-only residue with the convention that stands in.
-4. Present ALL THREE for sign-off before writing. Then write and stop.
+4. **Interativo (desktop):** present ALL THREE for sign-off before writing. Then write and stop. **Autônomo (Cursor Cloud):** não há sign-off interativo — escreva os três na branch e abra o PR (Ready, base `stage`) com o resumo dos três no body; o merge humano é o sign-off ("Modo autônomo", item 2). As remediações P0/P1 e os guardrails das misses colhidas seguem na mesma sessão, em PRs próprios com gate completo, sem esperar esse merge.
 
 ## Execution rules for the eventual implementation (record in the plan)
 
@@ -166,4 +179,4 @@ Rules:
 
 ## Done when
 
-Canon read; hotspot map with numbers; sweep complete with ledger rows; every consolidation candidate classified (merge now / register with trigger / look-alike-not-duplication — duplicated KNOWLEDGE named for each merge); every open ledger row verified; every finding class carries a recurrence-guard classification and the plan carries the guard map; three artifacts presented for sign-off.
+Precheck solitário verde (ou parada fail-closed com remédio nomeado); canon read; hotspot map com âncora de delta desde o último Pass e números; sweep complete with ledger rows; every consolidation candidate classified (merge now / register with trigger / look-alike-not-duplication — duplicated KNOWLEDGE named for each merge); every open ledger row verified; every harvested miss classified (guardrail shipped com `Closes #N` / hardening de guarda viva / judgment-only); every finding class carries a recurrence-guard classification and the plan carries the guard map; three artifacts presented for sign-off (interativo) ou commitados na branch com PR aberto (autônomo).
