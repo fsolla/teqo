@@ -3,7 +3,6 @@
 import { CampaignHomeSearch } from '@/components/campaign/dashboard/CampaignHomeSearch'
 import { HomeSearchActivityGroup } from '@/components/campaign/dashboard/HomeSearchActivityGroup'
 import { HomeSearchAdvisorGroup } from '@/components/campaign/dashboard/HomeSearchAdvisorGroup'
-import { HomeSearchProvider } from '@/components/campaign/dashboard/HomeSearchContext'
 import { HomeSearchDemandGroup } from '@/components/campaign/dashboard/HomeSearchDemandGroup'
 import { HomeSearchLeadershipGroup } from '@/components/campaign/dashboard/HomeSearchLeadershipGroup'
 import { HomeSearchMunicipalityGroup } from '@/components/campaign/dashboard/HomeSearchMunicipalityGroup'
