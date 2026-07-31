@@ -33,7 +33,7 @@ describe('searchHomeLeaderships (B49)', () => {
   it('matches leaderships by word-start on contact name', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const municipality = await fixtures.getMunicipality('cairu')
+    const municipality = await fixtures.getMunicipality()
     const contact = await fixtures.createContact({ name: 'Zeca Pagodinho' })
     const leadership = await fixtures.createLeadership({
       contact: contact.id,
@@ -43,13 +43,13 @@ describe('searchHomeLeaderships (B49)', () => {
     const result = await searchHomeLeaderships(payload, coordinator, 'Zeca')
     const hit = result.find((row) => row.id === leadership.id)
     expect(hit?.name).toBe('Zeca Pagodinho')
-    expect(hit?.municipalitiesSummary).toContain('Cairu')
+    expect(hit?.municipalitiesSummary).toContain(municipality.name)
   })
 
   it('does not match mid-word without word-start boundary', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const municipality = await fixtures.getMunicipality('cairu')
+    const municipality = await fixtures.getMunicipality()
     const contact = await fixtures.createContact({ name: 'Maria Silva' })
     await fixtures.createLeadership({
       contact: contact.id,
@@ -65,15 +65,15 @@ describe('searchHomeLeaderships (B49)', () => {
     const advisor = await fixtures.createCampaignUser('advisor')
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
-    const administered = await fixtures.getMunicipality('cairu')
-    const other = await fixtures.getMunicipality('feira-de-santana')
+    const administered = await fixtures.getMunicipality()
+    const other = await fixtures.getMunicipality()
     await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
     // Unique token per run: the minimal seed ships leaderships whose contact
     // names collide with fixed queries like 'Lider' (word-start match).
     const scopeToken = fixtures.value('scope-lideranca')
-    const inScope = await fixtures.createContact({ name: `${scopeToken} Cairu` })
-    const outOfScope = await fixtures.createContact({ name: `${scopeToken} Feira` })
+    const inScope = await fixtures.createContact({ name: `${scopeToken} ${administered.name}` })
+    const outOfScope = await fixtures.createContact({ name: `${scopeToken} ${other.name}` })
     const scopedLeadership = await fixtures.createLeadership({
       contact: inScope.id,
       municipalities: [administered.id],

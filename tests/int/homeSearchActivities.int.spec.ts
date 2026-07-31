@@ -43,7 +43,7 @@ describe('searchHomeActivities (B51)', () => {
   it('matches activities by word-start on the title for staff', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const municipality = await fixtures.getMunicipality('cairu')
+    const municipality = await fixtures.getMunicipality()
     const title = fixtures.value('Caminhada Zeca Centro')
     const activity = await createActivityRecord(
       payload,
@@ -56,13 +56,13 @@ describe('searchHomeActivities (B51)', () => {
     const hit = result.find((row) => row.id === activity.id)
     expect(hit?.title).toBe(title)
     expect(hit?.slug).toBe(activity.slug)
-    expect(hit?.secondary).toContain('Cairu')
+    expect(hit?.secondary).toContain(municipality.name)
   })
 
   it('does not match mid-word without word-start boundary', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const municipality = await fixtures.getMunicipality('cairu')
+    const municipality = await fixtures.getMunicipality()
     const title = fixtures.value('Feira Comunitária')
     const activity = await createActivityRecord(
       payload,
@@ -80,22 +80,22 @@ describe('searchHomeActivities (B51)', () => {
     const advisor = await fixtures.createCampaignUser('advisor')
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
-    const administered = await fixtures.getMunicipality('cairu')
-    const other = await fixtures.getMunicipality('feira-de-santana')
+    const administered = await fixtures.getMunicipality()
+    const other = await fixtures.getMunicipality()
     await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
     const scopeToken = fixtures.value('scope-atividade')
     const inScope = await createActivityRecord(
       payload,
       coordinator,
-      validActivityInput(administered.id, `Caminhada ${scopeToken} Cairu`),
+      validActivityInput(administered.id, `Caminhada ${scopeToken} ${administered.name}`),
     )
     fixtures.own('activity', inScope.id)
 
     const outOfScope = await createActivityRecord(
       payload,
       coordinator,
-      validActivityInput(other.id, `Caminhada ${scopeToken} Feira`),
+      validActivityInput(other.id, `Caminhada ${scopeToken} ${other.name}`),
     )
     fixtures.own('activity', outOfScope.id)
 
@@ -111,7 +111,7 @@ describe('searchHomeActivities (B51)', () => {
   it('includes drafts without startAt with Data a definir secondary', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const municipality = await fixtures.getMunicipality('cairu')
+    const municipality = await fixtures.getMunicipality()
     const title = fixtures.value('Rascunho sem data')
     const activity = await createActivityRecord(payload, coordinator, {
       title,
@@ -124,7 +124,7 @@ describe('searchHomeActivities (B51)', () => {
     const result = await searchHomeActivities(payload, coordinator, 'Rascunho')
     const hit = result.find((row) => row.id === activity.id)
     expect(hit?.secondary).toContain('Data a definir')
-    expect(hit?.secondary).toContain('Cairu')
+    expect(hit?.secondary).toContain(municipality.name)
   })
 
   it('rejects leaders from home search', async () => {

@@ -39,11 +39,11 @@ describe('loadHomeSearchSuggestions (B68)', () => {
   it('scopes advisor suggestions to administered municipalities', async () => {
     const fixtures = campaignFixtures()
     const advisor = await fixtures.createCampaignUser('advisor')
-    const administered = await fixtures.getMunicipality('cairu')
+    const administered = await fixtures.getMunicipality()
     await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
     const result = await loadHomeSearchSuggestions(payload, advisor)
-    expect(result.municipalities.every((hit) => hit.slug === 'cairu')).toBe(true)
+    expect(result.municipalities.every((hit) => hit.slug === administered.slug)).toBe(true)
   })
 
   it('rejects leaders from home search suggestions', async () => {

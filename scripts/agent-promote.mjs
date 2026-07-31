@@ -1,20 +1,28 @@
 /**
  * `pnpm agent:promote -- --i-am-human` — manual override: promote `stage` → `main`.
  *
- * Normal path: `promote-stage-to-main.yml` auto-merges when ci-stage is green.
- * Use this only when the workflow failed or you need to promote out of band.
+ * Normal path: `promote-stage-to-main.yml` auto-merges when ci-stage is green on
+ * the current stage head. Use this when the workflow failed or you need to promote
+ * out of band — including when stage head is red but an older commit on stage
+ * already passed ci-stage.
  *
  * Checks (in order):
- *   1. `main` has not diverged from `stage` (hotfix direto em main exige antes
- *      merge/rebase de main em stage + CI stage green de novo).
- *   2. Latest ci-stage run on `stage` is green.
- *   3. Creates the PR stage→main if none is open, then merges (ci-stage is the
- *      pre-promote gate; ci.yml on main is the post-merge safety net).
+ *   1. `main` has not diverged from `stage` (hotfix direto em main exige merge
+ *      de main em stage antes).
+ *   2. Newest commit on `origin/main..origin/stage` with a successful ci-stage run.
+ *   3. PR into `main` from `stage` (head green) or `promote/last-green` (older green).
+ *   4. Merge (ci-stage on the promoted SHA is the pre-promote gate; ci.yml on main
+ *      is the post-merge safety net).
  */
 
 import { execFileSync } from 'node:child_process'
 
 import { dieAgent, gh, ghJson, parseArgs } from './lib/agent-github.mjs'
+import {
+  findLastGreenPromoteSha,
+  greenCiStageHeadShas,
+  PROMOTE_GREEN_BRANCH,
+} from './lib/agent-promote-target.mjs'
 
 const die = dieAgent('promote')
 const { flags } = parseArgs(process.argv.slice(2), new Set())
@@ -23,7 +31,7 @@ if (flags['i-am-human'] !== true) {
   die(
     'Refused: promote override is human-only. Re-run as a human with:\n' +
       '  pnpm agent:promote -- --i-am-human\n' +
-      'Auto-promote runs via promote-stage-to-main.yml when ci-stage is green.',
+      'Auto-promote runs via promote-stage-to-main.yml when ci-stage is green on stage head.',
   )
 }
 
@@ -41,8 +49,17 @@ try {
   )
 }
 
-// 2. CI stage green on the stage head.
 const stageSha = git(['rev-parse', 'origin/stage'])
+const mainSha = git(['rev-parse', 'origin/main'])
+
+if (stageSha === mainSha) {
+  die(`main já está no head de stage (${stageSha.slice(0, 8)}) — nada a promover.`)
+}
+
+const commitsAhead = git(['log', `origin/main..origin/stage`, '--format=%H'])
+  .split('\n')
+  .filter(Boolean)
+
 const stageRuns = ghJson([
   'run',
   'list',
@@ -51,24 +68,49 @@ const stageRuns = ghJson([
   '--workflow',
   'ci-stage.yml',
   '--limit',
-  '5',
+  '100',
   '--json',
   'headSha,status,conclusion,url',
 ])
-const latestStageRun = stageRuns.find((run) => run.headSha === stageSha)
-if (
-  !latestStageRun ||
-  latestStageRun.status !== 'completed' ||
-  latestStageRun.conclusion !== 'success'
-) {
+
+const promoteSha = findLastGreenPromoteSha(commitsAhead, greenCiStageHeadShas(stageRuns))
+
+if (!promoteSha) {
   die(
-    `CI stage não está verde no head de stage (${stageSha.slice(0, 8)}). ` +
-      `Último run: ${latestStageRun ? `${latestStageRun.status}/${latestStageRun.conclusion} — ${latestStageRun.url}` : 'nenhum'}`,
+    `Nenhum commit em stage à frente de main tem ci-stage verde (stage head ${stageSha.slice(0, 8)}). ` +
+      'Corrija stage ou espere um run verde antes do promote.',
   )
 }
-console.log('[agent:promote] CI stage green ✓')
 
-// 3. PR stage → main (create if needed).
+const promoteRun = stageRuns.find(
+  (run) => run.headSha === promoteSha && run.status === 'completed' && run.conclusion === 'success',
+)
+
+if (promoteSha === stageSha) {
+  console.log(`[agent:promote] CI stage green no head de stage (${stageSha.slice(0, 8)}) ✓`)
+} else {
+  console.log(
+    `[agent:promote] stage head ${stageSha.slice(0, 8)} não está verde; ` +
+      `promovendo último commit ci-stage green ${promoteSha.slice(0, 8)} ✓`,
+  )
+  if (promoteRun?.url) {
+    console.log(`[agent:promote] run: ${promoteRun.url}`)
+  }
+}
+
+const prHead = promoteSha === stageSha ? 'stage' : PROMOTE_GREEN_BRANCH
+
+if (prHead !== 'stage') {
+  execFileSync(
+    'git',
+    ['push', 'origin', `${promoteSha}:refs/heads/${PROMOTE_GREEN_BRANCH}`, '--force'],
+    {
+      stdio: 'inherit',
+    },
+  )
+}
+
+// 3. PR → main (create if needed).
 let pr = ghJson([
   'pr',
   'list',
@@ -77,22 +119,48 @@ let pr = ghJson([
   '--base',
   'main',
   '--head',
-  'stage',
+  prHead,
   '--json',
   'number,url',
 ])[0]
+
+if (!pr && prHead !== 'stage') {
+  const staleStagePr = ghJson([
+    'pr',
+    'list',
+    '--state',
+    'open',
+    '--base',
+    'main',
+    '--head',
+    'stage',
+    '--json',
+    'number,url',
+  ])[0]
+  if (staleStagePr) {
+    console.log(
+      `[agent:promote] fechando PR #${staleStagePr.number} stage→main (head vermelho; promote em ${promoteSha.slice(0, 8)})`,
+    )
+    gh(['pr', 'close', String(staleStagePr.number)])
+  }
+}
+
 if (!pr) {
+  const body =
+    promoteSha === stageSha
+      ? 'Override manual via `pnpm agent:promote --i-am-human`. CI stage green no head de stage.'
+      : `Override manual via \`pnpm agent:promote --i-am-human\`. Promove ci-stage green \`${promoteSha.slice(0, 8)}\` (stage head \`${stageSha.slice(0, 8)}\` não está verde).`
   const url = gh([
     'pr',
     'create',
     '--base',
     'main',
     '--head',
-    'stage',
+    prHead,
     '--title',
     `Promote stage → main (${new Date().toISOString().slice(0, 10)})`,
     '--body',
-    'Override manual via `pnpm agent:promote --i-am-human`. CI stage green verificado antes do merge.',
+    body,
   ])
   pr = { number: url.split('/').pop(), url }
   console.log(`[agent:promote] created PR ${pr.url}`)
@@ -100,6 +168,8 @@ if (!pr) {
   console.log(`[agent:promote] reusing open PR ${pr.url}`)
 }
 
-// 4. Merge (ci-stage was the pre-promote gate; ci.yml on main is the post-merge safety net).
+// 4. Merge (ci-stage on promoteSha was the pre-promote gate; ci.yml on main is the safety net).
 gh(['pr', 'merge', String(pr.number), '--admin', '--merge'])
-console.log(`[agent:promote] merged stage → main via PR #${pr.number}. Deploy Vercel a caminho.`)
+console.log(
+  `[agent:promote] merged ${prHead} (${promoteSha.slice(0, 8)}) → main via PR #${pr.number}. Deploy Vercel a caminho.`,
+)

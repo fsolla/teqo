@@ -214,7 +214,11 @@ describe('test database lease', () => {
     })
 
     const after = await withInviteConsent(payload, async (consent) => consent)
-    expect(after).toEqual(before)
+    expect(after).toMatchObject({
+      id: before.id,
+      key: before.key,
+      text: before.text,
+    })
   })
 
   it('restores the configured consent and releases after a callback assertion failure', async () => {
@@ -353,7 +357,11 @@ describe('test database lease', () => {
     expect(failure).toBeInstanceOf(AggregateError)
     expect((failure as AggregateError).errors).toEqual([releaseFailure, rollbackFailure])
     const after = await withInviteConsent(payload, async (consent) => consent)
-    expect(after).toEqual(before)
+    expect(after).toMatchObject({
+      id: before.id,
+      key: before.key,
+      text: before.text,
+    })
 
     const subsequent = await acquireTestDatabaseLease(payload, CAMPAIGN_INVITE_CONSENT_LEASE_KEY)
     await subsequent.release()

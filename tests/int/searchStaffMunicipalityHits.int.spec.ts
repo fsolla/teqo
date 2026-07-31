@@ -9,6 +9,7 @@ import config from '@/payload.config'
 import { searchStaffMunicipalityHits } from '@/utilities/homeSearch/searchStaffMunicipalityHits'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { distinctWordStartQuery } from '../helpers/distinctWordStartQuery'
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -50,8 +51,8 @@ describe('searchStaffMunicipalityHits (B60)', () => {
     const other = await fixtures.getMunicipality()
     await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
-    const otherQuery = other.name.split(/\s+/)[0]!
-    const administeredQuery = administered.name.split(/\s+/)[0]!
+    const otherQuery = distinctWordStartQuery(other.name, administered.name)
+    const administeredQuery = distinctWordStartQuery(administered.name, other.name)
 
     const advisorResult = await searchStaffMunicipalityHits(payload, advisor, otherQuery)
     expect(advisorResult.map((hit) => hit.slug)).toEqual([])
