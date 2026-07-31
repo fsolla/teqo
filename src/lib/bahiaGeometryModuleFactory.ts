@@ -1,19 +1,14 @@
 import { feature } from 'topojson-client'
 
-import type { Feature, MultiPolygon, Polygon } from 'geojson'
+import type { BahiaFeature } from '@/lib/bahiaGeometriesTypes'
 import type { GeometryCollection, Topology } from 'topojson-specification'
-
-type PolygonalFeature<Properties extends Record<string, unknown>> = Feature<
-  Polygon | MultiPolygon,
-  Properties
->
 
 type GeometryModuleBase<
   Properties extends Record<string, unknown>,
   TObjectName extends string,
 > = {
   topology: Topology<{ [key in TObjectName]: GeometryCollection<Properties> }>
-  features: readonly PolygonalFeature<Properties>[]
+  features: readonly BahiaFeature<Properties>[]
 }
 
 type IndexedGeometryModule<
@@ -21,7 +16,7 @@ type IndexedGeometryModule<
   TObjectName extends string,
   KeyProperty extends keyof Properties & string,
 > = GeometryModuleBase<Properties, TObjectName> & {
-  getFeatureByKey: (key: Properties[KeyProperty]) => PolygonalFeature<Properties> | undefined
+  getFeatureByKey: (key: Properties[KeyProperty]) => BahiaFeature<Properties> | undefined
 }
 
 type BuildGeometryModuleOptions<
@@ -63,7 +58,7 @@ export function buildGeometryModuleFromTopology<
   | GeometryModuleBase<Properties, TObjectName>
   | IndexedGeometryModule<Properties, TObjectName, KeyProperty> {
   const features = feature(topology, topology.objects[objectName])
-    .features as PolygonalFeature<Properties>[]
+    .features as BahiaFeature<Properties>[]
 
   const base: GeometryModuleBase<Properties, TObjectName> = {
     topology,

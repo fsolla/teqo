@@ -6,12 +6,15 @@ import type {
 import { buildGeometryModuleFromTopology } from '@/lib/bahiaGeometryModuleFactory'
 import territoryTopologyJson from '@/lib/geometries/bahia-identity-territories.topo.json'
 
-const { topology, features } = buildGeometryModuleFromTopology({
+const { topology, features } = buildGeometryModuleFromTopology<
+  BahiaTerritoryFeature['properties'],
+  'territories'
+>({
   topology: territoryTopologyJson as unknown as TerritoryTopology,
   objectName: 'territories',
 })
 
 export const territoryGeometryModule: TerritoryGeometryModule = {
   topology,
-  features: features as readonly BahiaTerritoryFeature[],
+  features,
 }

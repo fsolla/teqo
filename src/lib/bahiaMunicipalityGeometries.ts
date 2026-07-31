@@ -6,7 +6,11 @@ import type {
 import { buildGeometryModuleFromTopology } from '@/lib/bahiaGeometryModuleFactory'
 import municipalityTopologyJson from '@/lib/geometries/bahia-municipalities.topo.json'
 
-const { topology, features, getFeatureByKey } = buildGeometryModuleFromTopology({
+const { topology, features, getFeatureByKey } = buildGeometryModuleFromTopology<
+  BahiaMunicipalityFeature['properties'],
+  'municipalities',
+  'codarea'
+>({
   topology: municipalityTopologyJson as unknown as MunicipalityTopology,
   objectName: 'municipalities',
   keyProperty: 'codarea',
@@ -14,6 +18,6 @@ const { topology, features, getFeatureByKey } = buildGeometryModuleFromTopology(
 
 export const municipalityGeometryModule: MunicipalityGeometryModule = {
   topology,
-  features: features as readonly BahiaMunicipalityFeature[],
+  features,
   getMunicipalityFeature: getFeatureByKey,
 }
