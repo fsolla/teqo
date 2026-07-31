@@ -11,10 +11,7 @@ import {
 } from '@/components/campaign/shell/BiometricEnrollmentToast'
 import { CampaignAppScrollChrome } from '@/components/campaign/shell/CampaignAppScrollChrome'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
-<<<<<<< HEAD
 import { CampaignNotificationBellSlot } from '@/components/campaign/shell/CampaignNotificationBellSlot'
-=======
->>>>>>> a9fe297 (style: prettier)
 import { CampaignQuickActionContextProvider } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { CampaignSidebar } from '@/components/campaign/shell/CampaignSidebar'
 import { CampaignSidebarViewportDefault } from '@/components/campaign/shell/CampaignSidebarViewportDefault'
@@ -80,7 +77,9 @@ export default async function CampaignAppLayout({ children }: { children: React.
         <CampaignWizardChromeProvider>
           <CampaignQuickActionContextProvider>
             <CampaignListPendingBoundary>
-              <CampaignMobileTopBar notificationBell={<CampaignNotificationBellSlot user={user} />} />
+              <CampaignMobileTopBar
+                notificationBell={<CampaignNotificationBellSlot user={user} />}
+              />
               <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
                 <SidebarTrigger />
                 <div className="ml-auto">
