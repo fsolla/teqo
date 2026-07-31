@@ -2,7 +2,10 @@ import type { Feature, MultiPolygon, Polygon } from 'geojson'
 import type { GeometryCollection, Topology } from 'topojson-specification'
 
 /** Every committed mesh is polygonal; only the properties differ. */
-type BahiaFeature<Properties> = Feature<Polygon | MultiPolygon, Properties>
+export type BahiaFeature<Properties extends Record<string, unknown>> = Feature<
+  Polygon | MultiPolygon,
+  Properties
+>
 
 type BahiaMunicipalityProperties = {
   codarea: string

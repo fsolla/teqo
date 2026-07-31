@@ -1,18 +1,20 @@
-import { feature } from 'topojson-client'
-
 import type {
   BahiaTerritoryFeature,
   TerritoryGeometryModule,
   TerritoryTopology,
 } from '@/lib/bahiaGeometriesTypes'
+import { buildGeometryModuleFromTopology } from '@/lib/bahiaGeometryModuleFactory'
 import territoryTopologyJson from '@/lib/geometries/bahia-identity-territories.topo.json'
 
-const topology = territoryTopologyJson as unknown as TerritoryTopology
-
-const territoryFeatures = feature(topology, topology.objects.territories)
-  .features as BahiaTerritoryFeature[]
+const { topology, features } = buildGeometryModuleFromTopology<
+  BahiaTerritoryFeature['properties'],
+  'territories'
+>({
+  topology: territoryTopologyJson as unknown as TerritoryTopology,
+  objectName: 'territories',
+})
 
 export const territoryGeometryModule: TerritoryGeometryModule = {
   topology,
-  features: territoryFeatures,
+  features,
 }
