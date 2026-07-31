@@ -1,7 +1,7 @@
 # Escala e DRY pós-B2 (geometrias + scripts CLI)
 
-Status: Fase 1 entregue com B3 (2026-07-19); Fases 2–3 pendentes
-Atualizado em: 2026-07-27 (`capture-review-debts` pós-B8+: `scripts/lib/topology.mjs` resolve por precedente onde o helper da F2 vive — `scripts/lib/`, não `src/lib/`; 2026-07-26 pós-B8 F2: 5º call site; 2026-07-20 pós-A8: `build-bahia-demographics.mjs` reforça o gatilho da F2 como 4º call site)
+Status: Fases 1–3 entregues (F1 com B3 em 2026-07-19; F2 em P3-H/`scripts/lib/cli.mjs`; F3 em #28)
+Atualizado em: 2026-07-31 (F3: `bahiaGeometryModuleFactory.ts` + wrappers mun/TI)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B5)
 Responsável: —
 
