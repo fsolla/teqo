@@ -92,13 +92,14 @@ Se `open_resource` não estiver disponível (fora da Agents Window), diga o cami
 
 ## Passo 2 — Verificação de modelo (best effort, não programática)
 
-Leia a propriedade `model:` do brief e compare com o modelo da sessão atual pela tabela de capacidade de `model-selection`. Regra **assimétrica** (decisão travada 2026-07-30):
+Leia a propriedade `model:` do brief e compare com o modelo da sessão atual pela tabela de capacidade de `model-selection` (Composer 2.5 ↔ Grok 4.5 ↔ Kimi K3 Low). Regra **assimétrica** (decisão travada 2026-07-30):
 
 - Sessão **mais fraca** que o especificado → assume-se escolha consciente do humano: **informa em uma linha e continua, sem pausar**.
 - Sessão **mais forte** que o especificado → possível erro do humano: **informa e pausa** ("a Issue pede X, você está em Y — seguir mesmo assim?").
 - Propriedade **ausente** → aplique `model-selection` uma vez e registre a escolha na Issue (`gh issue edit <N>` no body, frontmatter `model:`).
+- Issue `{id}-exec` / `kimi-k3-low` sem a dep de plan `done` → **pare** (não execute sem plano fechado).
 
-Subagentes despachados via `Task` saem **no modelo da propriedade** quando couber (`Task.model`).
+Subagentes despachados via `Task` saem **no modelo da propriedade** quando couber (`Task.model` ∈ `composer-2.5` | `cursor-grok-4.5-high` | `kimi-k3-low`).
 
 ## Passo 3 — Freshness audit (enxuto)
 

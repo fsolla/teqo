@@ -41,12 +41,13 @@ Os wrappers disparam `gh workflow run agent-pool.yml -f action=…`; acompanhe c
 
 ## Smoke remoto (aceite — rodar na primeira ativação)
 
-1. 2 Issues `kind:chore` triviais, `ready`, sem `model:` → `start --max-slots 2` → 2 agents `pool-i<N>-…` em cursor.com/agents e as 2 Issues `in-progress` com comentário de claim. Zero duplicata.
+1. 2 Issues `kind:chore` triviais, `ready`, sem `model:` → `start --max-slots 2` → 2 agents `pool-i<N>-…` em cursor.com/agents e as 2 Issues `in-progress` com comentário de claim. Zero duplicata. Modelo efetivo = `composer-2.5`.
 2. 1 Issue `blocked` e 1 `needs:consent` plantadas na fila → permanecem intactas.
 3. 1 Issue com `model: cursor-grok-4.5-high` → run criado com esse modelo (doctor lista os ids válidos).
-4. Workers abrem PRs `--base stage`; merge → slot reposto automaticamente no tick seguinte (≤10 min).
-5. Fila drenada → `POOL_ENABLED=false` sozinho. `stop` → próximo tick sem spawns.
-6. Tudo com o laptop desligado (start pelo browser/celular).
+4. (Opcional) par bipartido: Issue plan (`cursor-grok-4.5-high`) + Issue exec (`kimi-k3-low`, `depends` no plan) — o tick só spawna a exec quando o plan estiver `done`.
+5. Workers abrem PRs na base canônica do pool; merge → slot reposto automaticamente no tick seguinte (≤10 min).
+6. Fila drenada → `POOL_ENABLED=false` sozinho. `stop` → próximo tick sem spawns.
+7. Tudo com o laptop desligado (start pelo browser/celular).
 
 ## Se algo quebrar
 
