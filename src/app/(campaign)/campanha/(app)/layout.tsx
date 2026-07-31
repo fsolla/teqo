@@ -11,7 +11,10 @@ import {
 } from '@/components/campaign/shell/BiometricEnrollmentToast'
 import { CampaignAppScrollChrome } from '@/components/campaign/shell/CampaignAppScrollChrome'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
+<<<<<<< HEAD
 import { CampaignNotificationBellSlot } from '@/components/campaign/shell/CampaignNotificationBellSlot'
+=======
+>>>>>>> a9fe297 (style: prettier)
 import { CampaignQuickActionContextProvider } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { CampaignSidebar } from '@/components/campaign/shell/CampaignSidebar'
 import { CampaignSidebarViewportDefault } from '@/components/campaign/shell/CampaignSidebarViewportDefault'

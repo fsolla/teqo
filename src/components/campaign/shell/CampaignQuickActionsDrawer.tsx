@@ -16,8 +16,7 @@ import {
   quickActionsSnapIsExpanded,
   type QuickActionsSnapPoint,
 } from '@/lib/campaignQuickActionSnap'
-import type { QuickActionsSnapPoint,
-} from '@/lib/campaignQuickActionSnap'
+import { cn } from '@/lib/utils'
 
 const SNAP_POINTS = [...QUICK_ACTIONS_SNAP_POINTS]
 

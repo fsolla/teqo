@@ -24,7 +24,9 @@ type CampaignQuickActionContextValue = {
 const QuickActionContext = createContext<CampaignQuickActionContextValue | null>(null)
 
 export const CampaignQuickActionContextProvider = ({ children }: { children: ReactNode }) => {
-  const [context, setContext] = useState<CampaignQuickActionContext>(emptyCampaignQuickActionContext)
+  const [context, setContext] = useState<CampaignQuickActionContext>(
+    emptyCampaignQuickActionContext,
+  )
   const value = useMemo(() => ({ context, setContext }), [context])
 
   return <QuickActionContext.Provider value={value}>{children}</QuickActionContext.Provider>

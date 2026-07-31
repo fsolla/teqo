@@ -45,7 +45,7 @@ export const CampaignQuickActionsHost = ({ role }: { role: CampaignRole }) => {
 
   const actions = resolveQuickActionsForPath(pathname, role, context)
 
-  return <CampaignQuickActionsDrawer role={role} actions={actions} />
+  return <CampaignQuickActionsDrawer actions={actions} />
 }
 
 export const useQuickActionsChromeActive = (role: CampaignRole): boolean => {
