@@ -43,40 +43,40 @@ export const HomeSearchHitRow = ({
   }
 
   return (
-  <div
-    className={cn(
-      HOME_SEARCH_HIT_ROW_WRAPPER_CLASS,
-      trailingAction ? 'flex items-center gap-0' : undefined,
-    )}
-  >
-    {wizardNavigation ? (
-      <CampaignWizardNavLink {...rowLinkProps}>
-        <span className={HOME_SEARCH_PRIORITY_ICON_SLOT_CLASS} aria-hidden={!showPriority}>
-          {showPriority ? <MunicipalityPriorityIndicator /> : null}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium">{primary}</span>
-          {secondary ? (
-            <span className="block truncate text-xs text-muted-foreground">{secondary}</span>
-          ) : null}
-        </span>
-        {trailing ? <span className="shrink-0">{trailing}</span> : null}
-      </CampaignWizardNavLink>
-    ) : (
-      <Link {...rowLinkProps}>
-        <span className={HOME_SEARCH_PRIORITY_ICON_SLOT_CLASS} aria-hidden={!showPriority}>
-          {showPriority ? <MunicipalityPriorityIndicator /> : null}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium">{primary}</span>
-          {secondary ? (
-            <span className="block truncate text-xs text-muted-foreground">{secondary}</span>
-          ) : null}
-        </span>
-        {trailing ? <span className="shrink-0">{trailing}</span> : null}
-      </Link>
-    )}
-    {trailingAction ? <span className="shrink-0">{trailingAction}</span> : null}
-  </div>
+    <div
+      className={cn(
+        HOME_SEARCH_HIT_ROW_WRAPPER_CLASS,
+        trailingAction ? 'flex items-center gap-0' : undefined,
+      )}
+    >
+      {wizardNavigation ? (
+        <CampaignWizardNavLink {...rowLinkProps}>
+          <span className={HOME_SEARCH_PRIORITY_ICON_SLOT_CLASS} aria-hidden={!showPriority}>
+            {showPriority ? <MunicipalityPriorityIndicator /> : null}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium">{primary}</span>
+            {secondary ? (
+              <span className="block truncate text-xs text-muted-foreground">{secondary}</span>
+            ) : null}
+          </span>
+          {trailing ? <span className="shrink-0">{trailing}</span> : null}
+        </CampaignWizardNavLink>
+      ) : (
+        <Link {...rowLinkProps}>
+          <span className={HOME_SEARCH_PRIORITY_ICON_SLOT_CLASS} aria-hidden={!showPriority}>
+            {showPriority ? <MunicipalityPriorityIndicator /> : null}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium">{primary}</span>
+            {secondary ? (
+              <span className="block truncate text-xs text-muted-foreground">{secondary}</span>
+            ) : null}
+          </span>
+          {trailing ? <span className="shrink-0">{trailing}</span> : null}
+        </Link>
+      )}
+      {trailingAction ? <span className="shrink-0">{trailingAction}</span> : null}
+    </div>
   )
 }

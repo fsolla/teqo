@@ -15,10 +15,10 @@ vi.mock('next/navigation', async (importActual) => ({
   }),
 }))
 
-import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
-import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
+import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
+import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { SidebarProvider } from '@/components/ui/Sidebar'
 import { WIZARD_STEP_PENDING_MESSAGE } from '@/lib/campaignWizardCopy'
 import { stubMatchMedia } from '../helpers/matchMedia'

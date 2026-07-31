@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import React from 'react'
 
+import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
 import {
   BiometricEnrollmentToast,
   type BiometricEnrollmentOffer,
@@ -12,7 +13,6 @@ import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobile
 import { CampaignSidebar } from '@/components/campaign/shell/CampaignSidebar'
 import { CampaignSidebarViewportDefault } from '@/components/campaign/shell/CampaignSidebarViewportDefault'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
-import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
 import { InstallPwaToast } from '@/components/campaign/shell/InstallPwaToast'
 import {
   SIDEBAR_COOKIE_NAME,

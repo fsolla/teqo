@@ -2,9 +2,9 @@
 
 import { ArrowLeft, X } from 'lucide-react'
 
-import { useCampaignWizardChrome } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
+import { useCampaignWizardChrome } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { Button } from '@/components/ui/button'
 import { SidebarTrigger } from '@/components/ui/Sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -25,8 +25,7 @@ const wizardDismissButtonClass =
 const wizardSkipButtonClass =
   'min-h-11 max-w-[9rem] px-2 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'
 
-const wizardTitleSkeletonClass =
-  'mx-auto motion-reduce:animate-none bg-primary-foreground/20'
+const wizardTitleSkeletonClass = 'mx-auto motion-reduce:animate-none bg-primary-foreground/20'
 
 export const CampaignMobileTopBar = () => {
   const chrome = useCampaignWizardChrome()
@@ -66,9 +65,7 @@ export const CampaignMobileTopBar = () => {
               <>
                 <Skeleton className={cn(wizardTitleSkeletonClass, 'h-4 w-32 max-w-full')} />
                 {chrome.municipalityLabel ? (
-                  <Skeleton
-                    className={cn(wizardTitleSkeletonClass, 'mt-1 h-3 w-24 max-w-full')}
-                  />
+                  <Skeleton className={cn(wizardTitleSkeletonClass, 'mt-1 h-3 w-24 max-w-full')} />
                 ) : null}
               </>
             ) : (
