@@ -1,13 +1,13 @@
 import 'server-only'
 
-/** Trusted server reads in this module use admin bypass (`overrideAccess: true`). */
+import type { Payload } from 'payload'
 
 import type {
   NotificationListItem,
   NotificationPayload,
   NotificationType,
 } from '@/lib/notificationContract'
-import type { Notification } from '@/payload-types'
+import type { CampaignUser, Notification } from '@/payload-types'
 
 export type { NotificationListItem } from '@/lib/notificationContract'
 
@@ -33,33 +33,40 @@ const toNotificationListItem = (doc: Notification): NotificationListItem | null 
   }
 }
 
+// Reads go through collection access (`canReadOwnNotifications` scopes to the
+// recipient) with the explicit recipient filter as a second fence: the actor
+// is the only thing these loaders accept, so a caller cannot ask for someone
+// else's inbox. No admin bypass — that is what the create/update paths are
+// for, and they live in the domain hooks/actions with their own justifications.
 export const countUnreadNotifications = async (
-  payload: import('payload').Payload,
-  recipientID: number,
+  payload: Payload,
+  user: CampaignUser,
 ): Promise<number> => {
   const result = await payload.count({
     collection: 'notification',
     where: {
-      and: [{ recipient: { equals: recipientID } }, { readAt: { exists: false } }],
+      and: [{ recipient: { equals: user.id } }, { readAt: { exists: false } }],
     },
-    overrideAccess: true,
+    user,
+    overrideAccess: false,
   })
 
   return result.totalDocs
 }
 
 export const loadNotificationList = async (
-  payload: import('payload').Payload,
-  recipientID: number,
+  payload: Payload,
+  user: CampaignUser,
   limit = 40,
 ): Promise<NotificationListItem[]> => {
   const result = await payload.find({
     collection: 'notification',
-    where: { recipient: { equals: recipientID } },
+    where: { recipient: { equals: user.id } },
     depth: 0,
     limit,
     sort: '-createdAt',
-    overrideAccess: true,
+    user,
+    overrideAccess: false,
   })
 
   return result.docs
