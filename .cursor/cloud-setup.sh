@@ -32,3 +32,4 @@ echo "[cloud-setup] seeding teqo_test..."
 DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test pnpm db:seed:minimal
 
 echo "[cloud-setup] OK — minimal database ready (dev + test)."
+echo "[cloud-setup] gate:fast/gate:push need no DB; use pnpm push (not raw git push --no-verify)."
