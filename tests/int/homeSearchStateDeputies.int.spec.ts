@@ -68,11 +68,13 @@ describe('searchHomeStateDeputies (B52)', () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const stateDeputy = await fixtures.createStateDeputy({ name: 'Carteira Dobradinha' })
-    const cairu = await fixtures.getMunicipality('cairu')
-    const feira = await fixtures.getMunicipality('feira-de-santana')
+    // Allocated, never pinned slugs: parallel specs mutating the same seeded
+    // municipality deadlocked municipality_rels (miss #73).
+    const first = await fixtures.getMunicipality()
+    const second = await fixtures.getMunicipality()
     await setStateDeputyMunicipalitiesBatchRecord(payload, coordinator, {
       stateDeputyId: stateDeputy.id,
-      municipalityIds: [cairu.id, feira.id],
+      municipalityIds: [first.id, second.id],
       assigned: true,
     })
 
