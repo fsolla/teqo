@@ -71,6 +71,8 @@ export interface Config {
     users: User;
     campaignUser: CampaignUser;
     campaignWebAuthnCredential: CampaignWebAuthnCredential;
+    notification: Notification;
+    pushSubscription: PushSubscription;
     campaignInvite: CampaignInvite;
     municipality: Municipality;
     leadership: Leadership;
@@ -107,6 +109,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     campaignUser: CampaignUserSelect<false> | CampaignUserSelect<true>;
     campaignWebAuthnCredential: CampaignWebAuthnCredentialSelect<false> | CampaignWebAuthnCredentialSelect<true>;
+    notification: NotificationSelect<false> | NotificationSelect<true>;
+    pushSubscription: PushSubscriptionSelect<false> | PushSubscriptionSelect<true>;
     campaignInvite: CampaignInviteSelect<false> | CampaignInviteSelect<true>;
     municipality: MunicipalitySelect<false> | MunicipalitySelect<true>;
     leadership: LeadershipSelect<false> | LeadershipSelect<true>;
@@ -330,82 +334,29 @@ export interface CampaignWebAuthnCredential {
   createdAt: string;
 }
 /**
+ * Avisos in-app e push da campanha. Cada linha pertence a um destinatário.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "campaignInvite".
+ * via the `definition` "notification".
  */
-export interface CampaignInvite {
+export interface Notification {
   id: number;
-  tokenHash: string;
-  leadership: number | Leadership;
-  kind: 'login' | 'autopreenchimento';
-  expiresAt: string;
-  usedAt?: string | null;
-  revokedAt?: string | null;
-  createdBy: number | CampaignUser;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "leadership".
- */
-export interface Leadership {
-  id: number;
-  contact: number | Contact;
-  municipalities: (number | Municipality)[];
-  organizations?: (number | Organization)[] | null;
-  stateDeputies?: (number | StateDeputy)[] | null;
-  exclusive?: boolean | null;
-  supportStatus: 'engajado' | 'a_abordar' | 'em_disputa' | 'negativo';
-  user?: (number | null) | CampaignUser;
-  consent?: (number | null) | Consent;
-  consentContentHash?: string | null;
-  consentedAt?: string | null;
-  notes?: string | null;
-  createdBy?: (number | null) | CampaignUser;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "contact".
- */
-export interface Contact {
-  id: number;
-  name: string;
-  email?: string | null;
-  phone?: string | null;
-  gender?: ('feminino' | 'masculino' | 'outro' | 'nao_informado') | null;
-  state:
-    | 'AC'
-    | 'AL'
-    | 'AM'
-    | 'AP'
-    | 'BA'
-    | 'CE'
-    | 'DF'
-    | 'ES'
-    | 'GO'
-    | 'MA'
-    | 'MG'
-    | 'MS'
-    | 'MT'
-    | 'PA'
-    | 'PB'
-    | 'PE'
-    | 'PI'
-    | 'PR'
-    | 'RJ'
-    | 'RN'
-    | 'RO'
-    | 'RR'
-    | 'RS'
-    | 'SC'
-    | 'SE'
-    | 'SP'
-    | 'TO';
-  city?: string | null;
-  postalCode?: string | null;
+  recipient: number | CampaignUser;
+  type: 'municipality_update' | 'new_supporter' | 'activity_attention' | 'invite_accepted';
+  /**
+   * Título, detalhe e href exibidos no sino e no push.
+   */
+  payload:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  municipality?: (number | null) | Municipality;
+  readAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -508,19 +459,22 @@ export interface StateDeputy {
   createdAt: string;
 }
 /**
- * Sindicatos, associações, movimentos e afins. Concentra lideranças associadas e atividades apoiadas.
+ * Endpoints Web Push por dispositivo. Não armazena dados biométricos.
  *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "organization".
+ * via the `definition` "pushSubscription".
  */
-export interface Organization {
+export interface PushSubscription {
   id: number;
-  name: string;
-  slug: string;
-  kind: 'sindicato' | 'associacao' | 'religioso' | 'movimento' | 'categoria_profissional' | 'outro';
-  municipalities?: (number | Municipality)[] | null;
-  notes?: string | null;
-  createdBy?: (number | null) | CampaignUser;
+  user: number | CampaignUser;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  expirationTime?: number | null;
+  consent: number | Consent;
+  consentContentHash: string;
+  consentedAt: string;
+  userAgent?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -549,6 +503,103 @@ export interface Consent {
     };
     [k: string]: unknown;
   };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaignInvite".
+ */
+export interface CampaignInvite {
+  id: number;
+  tokenHash: string;
+  leadership: number | Leadership;
+  kind: 'login' | 'autopreenchimento';
+  expiresAt: string;
+  usedAt?: string | null;
+  revokedAt?: string | null;
+  createdBy: number | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "leadership".
+ */
+export interface Leadership {
+  id: number;
+  contact: number | Contact;
+  municipalities: (number | Municipality)[];
+  organizations?: (number | Organization)[] | null;
+  stateDeputies?: (number | StateDeputy)[] | null;
+  exclusive?: boolean | null;
+  supportStatus: 'engajado' | 'a_abordar' | 'em_disputa' | 'negativo';
+  user?: (number | null) | CampaignUser;
+  consent?: (number | null) | Consent;
+  consentContentHash?: string | null;
+  consentedAt?: string | null;
+  notes?: string | null;
+  createdBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact".
+ */
+export interface Contact {
+  id: number;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  gender?: ('feminino' | 'masculino' | 'outro' | 'nao_informado') | null;
+  state:
+    | 'AC'
+    | 'AL'
+    | 'AM'
+    | 'AP'
+    | 'BA'
+    | 'CE'
+    | 'DF'
+    | 'ES'
+    | 'GO'
+    | 'MA'
+    | 'MG'
+    | 'MS'
+    | 'MT'
+    | 'PA'
+    | 'PB'
+    | 'PE'
+    | 'PI'
+    | 'PR'
+    | 'RJ'
+    | 'RN'
+    | 'RO'
+    | 'RR'
+    | 'RS'
+    | 'SC'
+    | 'SE'
+    | 'SP'
+    | 'TO';
+  city?: string | null;
+  postalCode?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Sindicatos, associações, movimentos e afins. Concentra lideranças associadas e atividades apoiadas.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "organization".
+ */
+export interface Organization {
+  id: number;
+  name: string;
+  slug: string;
+  kind: 'sindicato' | 'associacao' | 'religioso' | 'movimento' | 'categoria_profissional' | 'outro';
+  municipalities?: (number | Municipality)[] | null;
+  notes?: string | null;
+  createdBy?: (number | null) | CampaignUser;
   updatedAt: string;
   createdAt: string;
 }
@@ -1190,6 +1241,14 @@ export interface PayloadLockedDocument {
         value: number | CampaignWebAuthnCredential;
       } | null)
     | ({
+        relationTo: 'notification';
+        value: number | Notification;
+      } | null)
+    | ({
+        relationTo: 'pushSubscription';
+        value: number | PushSubscription;
+      } | null)
+    | ({
         relationTo: 'campaignInvite';
         value: number | CampaignInvite;
       } | null)
@@ -1395,6 +1454,36 @@ export interface CampaignWebAuthnCredentialSelect<T extends boolean = true> {
   transports?: T;
   deviceLabel?: T;
   lastUsedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification_select".
+ */
+export interface NotificationSelect<T extends boolean = true> {
+  recipient?: T;
+  type?: T;
+  payload?: T;
+  municipality?: T;
+  readAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pushSubscription_select".
+ */
+export interface PushSubscriptionSelect<T extends boolean = true> {
+  user?: T;
+  endpoint?: T;
+  p256dh?: T;
+  auth?: T;
+  expirationTime?: T;
+  consent?: T;
+  consentContentHash?: T;
+  consentedAt?: T;
+  userAgent?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2226,6 +2315,8 @@ export interface TaskCreateCollectionExport {
       | 'users'
       | 'campaignUser'
       | 'campaignWebAuthnCredential'
+      | 'notification'
+      | 'pushSubscription'
       | 'campaignInvite'
       | 'municipality'
       | 'leadership'

@@ -24,9 +24,11 @@ import { Leadership } from './collections/Leadership'
 import { Media } from './collections/Media'
 import { Municipality } from './collections/Municipality'
 import { MunicipalityUpdate } from './collections/MunicipalityUpdate'
+import { Notification } from './collections/Notification'
 import { Organization } from './collections/Organization'
 import { Petition } from './collections/Petition'
 import { Post } from './collections/Post'
+import { PushSubscription } from './collections/PushSubscription'
 import { Signature } from './collections/Signature'
 import { StateDeputy } from './collections/StateDeputy'
 import { Subscription } from './collections/Subscription'
@@ -87,6 +89,8 @@ export default buildConfig({
     Users,
     CampaignUser,
     CampaignWebAuthnCredential,
+    Notification,
+    PushSubscription,
     CampaignInvite,
     Municipality,
     Leadership,

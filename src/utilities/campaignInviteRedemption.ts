@@ -246,6 +246,7 @@ export const redeemCampaignInviteLoginRecord = async (
         password: data.password,
         ...(data.email !== undefined ? { email: data.email } : {}),
       }
+      const hadAccount = Boolean(account)
       account = account
         ? await payload.update({
             collection: 'campaignUser',
@@ -273,6 +274,20 @@ export const redeemCampaignInviteLoginRecord = async (
         overrideAccess: true,
         req,
       })
+      const updatedLeadership = await payload.findByID({
+        collection: 'leadership',
+        id: leadership.id,
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+      if (!hadAccount) {
+        const { notifyInviteAccepted } = await import('@/utilities/notification/notificationEvents')
+        await notifyInviteAccepted(
+          { payload, context: {}, transactionID: req.transactionID },
+          updatedLeadership,
+        )
+      }
       const login = await payload.login({
         collection: 'campaignUser',
         data: { username: data.phone, password: data.password },

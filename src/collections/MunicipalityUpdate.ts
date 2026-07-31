@@ -150,6 +150,7 @@ const lockMunicipalityBeforeDelete: CollectionBeforeDeleteHook = async ({ contex
 const recomputeChangedMunicipalities: CollectionAfterChangeHook = async ({
   context,
   doc,
+  operation,
   previousDoc,
   req,
 }) => {
@@ -163,6 +164,13 @@ const recomputeChangedMunicipalities: CollectionAfterChangeHook = async ({
 
   await acquireMunicipalityUpdateLocks(req, municipalityIDs)
   await recomputeMunicipalityLastUpdateAt(req, municipalityIDs)
+
+  if (operation === 'create') {
+    const { notifyMunicipalityUpdateCreated } =
+      await import('@/utilities/notification/notificationEvents')
+    await notifyMunicipalityUpdateCreated(req, doc)
+  }
+
   return doc
 }
 

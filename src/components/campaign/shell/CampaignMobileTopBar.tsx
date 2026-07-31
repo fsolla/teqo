@@ -1,6 +1,7 @@
 'use client'
 
 import { ArrowLeft, X } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
@@ -27,7 +28,7 @@ const wizardSkipButtonClass =
 
 const wizardTitleSkeletonClass = 'mx-auto motion-reduce:animate-none bg-primary-foreground/20'
 
-export const CampaignMobileTopBar = () => {
+export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: ReactNode }) => {
   const chrome = useCampaignWizardChrome()
   const { isPending } = useCampaignListTransition()
 
@@ -129,10 +130,11 @@ export const CampaignMobileTopBar = () => {
       )}
     >
       <SidebarTrigger className="text-primary-foreground" />
-      <div className="min-w-0 leading-tight">
+      <div className="min-w-0 flex-1 leading-tight">
         <span className="block truncate text-sm font-semibold">Jorge Solla</span>
         <span className="block truncate text-xs text-primary-foreground/80">Campanha · Bahia</span>
       </div>
+      {notificationBell ? <div className="shrink-0">{notificationBell}</div> : null}
     </header>
   )
 }

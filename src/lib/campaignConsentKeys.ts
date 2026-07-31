@@ -24,3 +24,7 @@ export const SUPPORTER_VOTE_INTENTION_CONSENT_MISSING_MESSAGE =
  * tags that live document with this stable key (Pass 2 D3).
  */
 export const WHATSAPP_SUBSCRIPTION_CONSENT_KEY = 'whatsapp-inscricao'
+
+export const CAMPAIGN_PUSH_CONSENT_KEY = 'campanha-notificacoes-push'
+export const CAMPAIGN_PUSH_CONSENT_MISSING_MESSAGE =
+  'Consentimento de notificações push ainda não configurado.'

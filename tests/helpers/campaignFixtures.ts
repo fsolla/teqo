@@ -333,6 +333,8 @@ export class CampaignFixtures {
   private readonly touchedMunicipalities = new Set<number>()
   private readonly ownedLockedDocuments = new Set<number>()
   private readonly ownedPreferences = new Set<number>()
+  private readonly ownedNotifications = new Set<number>()
+  private readonly ownedPushSubscriptions = new Set<number>()
 
   constructor(private readonly rootPayload: Payload) {
     builderCounter += 1
@@ -917,15 +919,35 @@ export class CampaignFixtures {
     }
 
     if (userIDs.length > 0) {
-      const updates = await this.rootPayload.find({
-        collection: 'municipalityUpdate',
-        where: { author: { in: userIDs } },
-        depth: 0,
-        pagination: false,
-      })
+      const [updates, notifications, pushSubscriptions] = await Promise.all([
+        this.rootPayload.find({
+          collection: 'municipalityUpdate',
+          where: { author: { in: userIDs } },
+          depth: 0,
+          pagination: false,
+        }),
+        this.rootPayload.find({
+          collection: 'notification',
+          where: { recipient: { in: userIDs } },
+          depth: 0,
+          pagination: false,
+        }),
+        this.rootPayload.find({
+          collection: 'pushSubscription',
+          where: { user: { in: userIDs } },
+          depth: 0,
+          pagination: false,
+        }),
+      ])
       for (const update of updates.docs) {
         this.own('municipalityUpdate', update)
         this.touchedMunicipalities.add(relationId(update.municipality))
+      }
+      for (const notification of notifications.docs) {
+        this.ownedNotifications.add(notification.id)
+      }
+      for (const subscription of pushSubscriptions.docs) {
+        this.ownedPushSubscriptions.add(subscription.id)
       }
     }
 
@@ -992,6 +1014,29 @@ export class CampaignFixtures {
         const preferenceID = Number(row.parent_id)
         if (Number.isInteger(preferenceID)) this.ownedPreferences.add(preferenceID)
       }
+    }
+  }
+
+  private async deleteNotificationOwned(req: { transactionID: number | string }): Promise<void> {
+    if (this.ownedNotifications.size > 0) {
+      await this.rootPayload.delete({
+        collection: 'notification',
+        where: { id: { in: [...this.ownedNotifications] } },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+      this.ownedNotifications.clear()
+    }
+    if (this.ownedPushSubscriptions.size > 0) {
+      await this.rootPayload.delete({
+        collection: 'pushSubscription',
+        where: { id: { in: [...this.ownedPushSubscriptions] } },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+      this.ownedPushSubscriptions.clear()
     }
   }
 
@@ -1079,10 +1124,11 @@ export class CampaignFixtures {
         'organization',
         'stateDeputy',
         'contact',
-        'campaignUser',
-        'consent',
-        'users',
       ] as const) {
+        await this.deleteOwned(collection, req)
+      }
+      await this.deleteNotificationOwned(req)
+      for (const collection of ['campaignUser', 'consent', 'users'] as const) {
         await this.deleteOwned(collection, req)
       }
       await this.resetTouchedMunicipalities(req)

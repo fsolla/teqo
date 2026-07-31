@@ -284,6 +284,20 @@ export const Activity: CollectionConfig = {
   hooks: {
     beforeValidate: [setCanonicalActivitySlug, validateActivitySchedule, validateActivityAdvisors],
     beforeChange: [deriveActivityFields],
+    afterChange: [
+      async ({ doc, operation, previousDoc, req }) => {
+        const becameVisible =
+          operation === 'create'
+            ? doc.status !== 'rascunho'
+            : previousDoc?.status === 'rascunho' && doc.status !== 'rascunho'
+        if (!becameVisible) return doc
+
+        const { notifyActivityNeedsAttention } =
+          await import('@/utilities/notification/notificationEvents')
+        await notifyActivityNeedsAttention(req, doc)
+        return doc
+      },
+    ],
   },
   fields: [
     {

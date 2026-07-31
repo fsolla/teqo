@@ -133,3 +133,12 @@ export {
   canReadOwnWebAuthnCredentials,
   canWriteWebAuthnCredentials,
 } from '@/utilities/access/webauthnCredentials'
+
+export {
+  canDeleteOwnNotifications,
+  canDeleteOwnPushSubscriptions,
+  canReadOwnNotifications,
+  canReadOwnPushSubscriptions,
+  canWriteNotifications,
+  canWritePushSubscriptions,
+} from '@/utilities/access/notifications'
