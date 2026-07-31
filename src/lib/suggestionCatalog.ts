@@ -10,9 +10,9 @@ import {
 } from '@/lib/electionYears'
 import type { EngagementLevel } from '@/lib/engagementLevel'
 import { engagementLevelRank } from '@/lib/engagementLevel'
+import type { MunicipalityTerritorialClass } from '@/lib/territorialClassAnchors'
 import { DAY_MS } from '@/lib/text'
 import type { AllocationDecision } from '@/payload-types'
-import type { MunicipalityTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
 
 /**
  * E11 "motor de sugestões" — the versioned, curated catalog of data→decision
