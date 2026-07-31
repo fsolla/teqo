@@ -1,7 +1,7 @@
 # Notificações (push PWA + sino in-app)
 
-Status: rascunho
-Atualizado em: 2026-07-17
+Status: entregue (D2, 2026-07-31)
+Atualizado em: 2026-07-31
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (seção "Campanha → Próximos ciclos")
 Responsável: —
 

@@ -116,6 +116,21 @@ const deleteCampaignUserPasskeys: CollectionBeforeDeleteHook = async ({ id, req 
   })
 }
 
+const deleteCampaignUserNotifications: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  await req.payload.delete({
+    collection: 'notification',
+    where: { recipient: { equals: id } },
+    overrideAccess: true,
+    req,
+  })
+  await req.payload.delete({
+    collection: 'pushSubscription',
+    where: { user: { equals: id } },
+    overrideAccess: true,
+    req,
+  })
+}
+
 export const CampaignUser: CollectionConfig = {
   slug: 'campaignUser',
   labels: {
@@ -169,7 +184,7 @@ export const CampaignUser: CollectionConfig = {
   },
   hooks: {
     beforeChange: [preventAssignedAdvisorDowngrade, preventSelfServicePrivilegedFields],
-    beforeDelete: [deleteCampaignUserPasskeys],
+    beforeDelete: [deleteCampaignUserPasskeys, deleteCampaignUserNotifications],
     afterRead: [removePrivateAuthFields],
   },
   fields: [

@@ -63,6 +63,15 @@ export const Supporter: CollectionConfig = {
         return data
       },
     ],
+    afterChange: [
+      async ({ doc, operation, req }) => {
+        if (operation !== 'create') return doc
+        const { notifySupporterCreated } =
+          await import('@/utilities/notification/notificationEvents')
+        await notifySupporterCreated(req, doc)
+        return doc
+      },
+    ],
   },
   fields: [
     {

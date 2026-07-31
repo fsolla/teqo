@@ -186,6 +186,46 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(networkFirst(request));
 });
 
-// Push / notificationclick handlers land in D2 (notifications.md).
+// Push / notificationclick handlers (D2).
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    return;
+  }
+  const title = payload && payload.title ? String(payload.title) : 'Campanha Jorge Solla';
+  const body = payload && payload.body ? String(payload.body) : '';
+  const url = payload && payload.url ? String(payload.url) : SCOPE;
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: '/campaign-icons/icon-192.png',
+      badge: '/campaign-icons/icon-192.png',
+      data: { url },
+      tag: url,
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data && event.notification.data.url
+    ? String(event.notification.data.url)
+    : SCOPE;
+  const target = url.startsWith('http') ? url : self.location.origin + url;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ('focus' in client && client.url.includes(SCOPE)) {
+          client.navigate(target);
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(target);
+    }),
+  );
+});
 `
 }
