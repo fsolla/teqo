@@ -382,7 +382,8 @@ test.describe('Municípios — cards no celular (B42)', () => {
     await expect(page.getByRole('link', { name: 'Abrir município' })).toHaveCount(0)
 
     await card.getByRole('button', { name: 'Editar tendência política' }).click()
-    const drawer = page.locator('[data-slot="drawer-popup"]')
+    // B79 keeps CampaignQuickActionsDrawer mounted (modal=false); scope to the trend dialog.
+    const drawer = page.getByRole('dialog', { name: 'Editar tendência' })
     await expect(drawer).toBeVisible()
     await expect(drawer.getByText(municipality.name, { exact: true })).toBeVisible()
     await expect(page).toHaveURL(listURL)
