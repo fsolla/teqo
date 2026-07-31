@@ -6,6 +6,7 @@ import { MunicipalityGoalAccountCard } from '@/components/campaign/municipality/
 import { MunicipalityLeadershipsPanel } from '@/components/campaign/municipality/MunicipalityLeadershipsPanel'
 import { MunicipalityPledgesPanel } from '@/components/campaign/municipality/MunicipalityPledgesPanel'
 import { MunicipalityStrategyCard } from '@/components/campaign/municipality/MunicipalityStrategyCard'
+import { MunicipalityTicketPartnersCard } from '@/components/campaign/municipality/MunicipalityTicketPartnersCard'
 import { MunicipalityUpdateFeed } from '@/components/campaign/municipality/MunicipalityUpdateFeed'
 import { MunicipalityUpdateForm } from '@/components/campaign/municipality/MunicipalityUpdateForm'
 import { MunicipalityVisitEligibilityCard } from '@/components/campaign/municipality/MunicipalityVisitEligibilityCard'
@@ -22,11 +23,15 @@ import {
 } from '@/utilities/municipality/municipalityCandidateComparison'
 import type { MunicipalityDetailSearchParams } from '@/utilities/municipality/municipalityDetailTabUi'
 import { loadMunicipalityDossierData } from '@/utilities/municipality/municipalityDossierData'
-import { municipalityElectionGeographyForSlug } from '@/utilities/municipality/municipalityElectionGeography'
+import {
+  municipalityElectionGeographyForSlug,
+  type MunicipalityElectionGeography,
+} from '@/utilities/municipality/municipalityElectionGeography'
 import { loadMunicipalityElectoralBaseline } from '@/utilities/municipality/municipalityElectoralBaseline'
 import { loadMunicipalityGoalAccount } from '@/utilities/municipality/municipalityGoalAccount'
 import type { getMunicipalityDetailViewModel } from '@/utilities/municipality/municipalityPageData'
 import { formatSilenceAgeLabel } from '@/utilities/municipality/municipalitySignal'
+import { loadMunicipalityTicketPartners } from '@/utilities/municipality/municipalityTicketPartnerData'
 import { loadMunicipalitySuggestions } from '@/utilities/municipality/municipalityTriggers'
 import {
   loadMunicipalityUpdatesFeed,
@@ -276,8 +281,34 @@ export const ElectionsTab = async ({
           <MunicipalityCandidateComparisonTable rows={comparisonRows} />
         ) : null}
       </section>
+      {/* A6 — its own registry/votes reads, so it streams instead of holding
+          the baseline card and the comparison table above. */}
+      <Suspense
+        fallback={
+          <div aria-hidden="true" className="h-56 animate-pulse rounded-xl border bg-muted/40" />
+        }
+      >
+        <TicketPartnersSection geography={geography} user={user} />
+      </Suspense>
     </div>
   )
+}
+
+/**
+ * A6 — dobradinha opportunities for 2026: who runs again, ranked by alignment
+ * and local 2022 force. Lives on the Elections tab with the other TSE-derived
+ * reads; until the post-15/08 reconcile the card reports the pending state.
+ */
+const TicketPartnersSection = async ({
+  geography,
+  user,
+}: {
+  geography: MunicipalityElectionGeography | null
+  user: PayloadUser['user']
+}) => {
+  if (!geography) return null
+  const result = await loadMunicipalityTicketPartners(user, geography)
+  return <MunicipalityTicketPartnersCard result={result} />
 }
 
 export const LeadershipsTab = async ({

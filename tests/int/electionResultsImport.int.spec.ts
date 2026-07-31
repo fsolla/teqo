@@ -8,12 +8,18 @@ import { FEDERAL_ONLY_OFFICES } from '@/lib/electionResultsBuild'
 import config from '@/payload.config'
 import { buildImportBundles, importElectionBundles } from '@/utilities/electionResultsImport'
 import {
+  acquireTestDatabaseLease,
+  ELECTION_COLLECTIONS_LEASE_KEY,
+  type TestDatabaseLease,
+} from '../helpers/testDatabaseLease'
+import {
   loadTseFixtureResults,
   loadTseFixtureResultsForYear,
   TSE_FIXTURE_EXPECTED,
 } from '../helpers/tseFixtures'
 
 let payload: Payload
+let electionCollectionsLease: TestDatabaseLease
 
 const deleteAllElectionData = async () => {
   for (const collection of [
@@ -39,14 +45,24 @@ const deleteAllElectionData = async () => {
 }
 
 describe('election results import', () => {
+  // The lease acquisition blocks until the other election spec finishes its
+  // whole file — far past the 10s default hook timeout under pool contention.
   beforeAll(async () => {
     payload = await getPayload({ config: await config })
+    // This file deletes EVERY election row; the lease keeps that wipe from
+    // deleting another election spec's fixtures mid-run (48-way file
+    // parallelism, one Postgres).
+    electionCollectionsLease = await acquireTestDatabaseLease(
+      payload,
+      ELECTION_COLLECTIONS_LEASE_KEY,
+    )
     await deleteAllElectionData()
-  })
+  }, 120_000)
 
   afterAll(async () => {
     await deleteAllElectionData()
-  })
+    await electionCollectionsLease.release()
+  }, 120_000)
 
   it('imports fixture totals, winners, elected flags, and is idempotent', async () => {
     const built = loadTseFixtureResults()

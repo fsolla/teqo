@@ -53,6 +53,12 @@ type ConsentSnapshot = {
 export const CAMPAIGN_INVITE_CONSENT_LEASE_KEY = 'campaign-invite-consent'
 export const SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY = 'supporter-registration-consent'
 export const SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY = 'supporter-vote-intention-consent'
+/**
+ * Serializes spec files that treat the election collections as test-owned:
+ * `electionResultsImport.int.spec.ts` wipes ALL election rows, which would
+ * delete another election spec's fixtures mid-assertion without the lease.
+ */
+export const ELECTION_COLLECTIONS_LEASE_KEY = 'election-collections'
 const CAMPAIGN_INVITE_CONSENT_KEY = 'lideranca-autopreenchimento'
 
 /** A consent row shared across spec files, protected by an advisory-lock lease. */
