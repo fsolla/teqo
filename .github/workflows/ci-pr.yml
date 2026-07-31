@@ -1,14 +1,13 @@
-# PR gate: feature → stage (and stage → main promote PRs).
-# Parallel jobs with `needs` only where a real dependency exists (Postgres for
-# int/build/e2e). Build runs here (local service DB only) and NEVER in
-# ci-stage.yml — `pnpm build` applies migrations to whatever DATABASE_URL it
-# sees, so it is forbidden anywhere near stage/prod URLs.
+# PR gate: feature → main (also stage until cutover). Two-phase cascade:
+#   Phase 1 (cheap, no Postgres): lint, format, typecheck, knip, cycles, unit
+#   Phase 2 (expensive, Postgres; needs phase 1 green/skipped): int, build, e2e
+# Job-level skips come from the `scope` classifier (scripts/ci-scope.mjs). A
+# phase-1 failure skips phase 2 via `needs` + explicit if. `migration-lock`
+# stays parallel to phase 1 (cheap, independent).
 #
-# Test selection (OPS5): unit/int run `vitest --changed origin/$GITHUB_BASE_REF`
-# and e2e runs the manifest-selected specs; a diff touching a high-risk path
-# (schema, lockfile, test harness, seed manifest — see
-# scripts/lib/test-affected-core.mjs) falls back to the FULL suites. Push to
-# stage/main always runs everything (ci-stage.yml / ci.yml).
+# High-risk diffs (schema, lockfile, classifiers — see
+# scripts/lib/test-affected-core.mjs) force full unit/int/e2e. Push to main
+# always runs the full suite in ci.yml (no affected skips).
 name: CI (PR)
 
 on:
@@ -25,6 +24,38 @@ env:
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code_mode: ${{ steps.classify.outputs.code_mode }}
+      build_mode: ${{ steps.classify.outputs.build_mode }}
+      test_mode: ${{ steps.classify.outputs.test_mode }}
+      e2e_mode: ${{ steps.classify.outputs.e2e_mode }}
+      e2e_specs: ${{ steps.classify.outputs.e2e_specs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Classify PR blast radius
+        id: classify
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: |
+          result=$(node scripts/ci-scope.mjs)
+          echo "scope: $(echo "$result" | jq -c '{code:.code.mode,build:.build.mode,test:.test.mode,e2e:.e2e.mode,reason:{code:.code.reason,build:.build.reason,test:.test.reason,e2e:.e2e.reason}}')"
+          echo "code_mode=$(echo "$result" | jq -r .code.mode)" >> "$GITHUB_OUTPUT"
+          echo "build_mode=$(echo "$result" | jq -r .build.mode)" >> "$GITHUB_OUTPUT"
+          echo "test_mode=$(echo "$result" | jq -r .test.mode)" >> "$GITHUB_OUTPUT"
+          echo "e2e_mode=$(echo "$result" | jq -r .e2e.mode)" >> "$GITHUB_OUTPUT"
+          echo "e2e_specs=$(echo "$result" | jq -r '[.e2e.specs[] | "tests/e2e/" + . + ".e2e.spec.ts"] | join(" ")')" >> "$GITHUB_OUTPUT"
+
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -36,6 +67,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Check test file locations
+        run: node scripts/check-test-locations.mjs
       - run: pnpm lint
 
   format:
@@ -54,6 +87,8 @@ jobs:
   typecheck:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [scope]
+    if: needs.scope.outputs.code_mode != 'none'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -67,6 +102,8 @@ jobs:
   knip:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [scope]
+    if: needs.scope.outputs.code_mode != 'none'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -80,6 +117,8 @@ jobs:
   cycles:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [scope]
+    if: needs.scope.outputs.code_mode != 'none'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -93,6 +132,8 @@ jobs:
   unit:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [scope]
+    if: needs.scope.outputs.test_mode != 'none'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -104,33 +145,30 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
-      - name: Compute affected test scope
-        id: scope
-        env:
-          GITHUB_BASE_REF: ${{ github.base_ref }}
-        run: |
-          result=$(node scripts/test-affected.mjs)
-          echo "scope: $(echo "$result" | jq -r .reason)"
-          echo "mode=$(echo "$result" | jq -r .mode)" >> "$GITHUB_OUTPUT"
-
       - name: Unit tests (full suite)
-        if: steps.scope.outputs.mode == 'full'
+        if: needs.scope.outputs.test_mode == 'full'
         run: pnpm test:unit
 
       - name: Unit tests (changed since PR base)
-        if: steps.scope.outputs.mode == 'changed'
+        if: needs.scope.outputs.test_mode == 'changed'
         run: pnpm test:unit -- --changed origin/${{ github.base_ref }} --passWithNoTests
-
-      - name: Unit tests skipped
-        if: steps.scope.outputs.mode == 'none'
-        run: echo "No src/ or tests/ changes in this PR — nothing to run."
 
   int:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    needs: [scope, lint, format, typecheck, knip, cycles, unit]
+    if: |
+      always()
+      && !cancelled()
+      && needs.scope.outputs.test_mode != 'none'
+      && needs.lint.result == 'success'
+      && needs.format.result == 'success'
+      && (needs.typecheck.result == 'success' || needs.typecheck.result == 'skipped')
+      && (needs.knip.result == 'success' || needs.knip.result == 'skipped')
+      && (needs.cycles.result == 'success' || needs.cycles.result == 'skipped')
+      && (needs.unit.result == 'success' || needs.unit.result == 'skipped')
     services:
       postgres:
-        # Matches production Neon major (17) and docker-compose.yml.
         image: postgres:17-alpine
         env:
           POSTGRES_USER: teqo
@@ -153,39 +191,31 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-
-      - name: Compute affected test scope
-        id: scope
-        env:
-          GITHUB_BASE_REF: ${{ github.base_ref }}
-        run: |
-          result=$(node scripts/test-affected.mjs)
-          echo "scope: $(echo "$result" | jq -r .reason)"
-          echo "mode=$(echo "$result" | jq -r .mode)" >> "$GITHUB_OUTPUT"
-
-      - name: Migrate test database
-        if: steps.scope.outputs.mode != 'none'
-        run: pnpm migrate
-
-      - name: Seed minimal test database
-        if: steps.scope.outputs.mode != 'none'
-        run: pnpm db:seed:minimal
+      - run: pnpm migrate
+      - run: pnpm db:seed:minimal
 
       - name: Integration tests (full suite)
-        if: steps.scope.outputs.mode == 'full'
+        if: needs.scope.outputs.test_mode == 'full'
         run: pnpm test:int
 
       - name: Integration tests (changed since PR base)
-        if: steps.scope.outputs.mode == 'changed'
+        if: needs.scope.outputs.test_mode == 'changed'
         run: pnpm test:int -- --changed origin/${{ github.base_ref }} --passWithNoTests
-
-      - name: Integration tests skipped
-        if: steps.scope.outputs.mode == 'none'
-        run: echo "No src/ or tests/ changes in this PR — nothing to run."
 
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    needs: [scope, lint, format, typecheck, knip, cycles, unit]
+    if: |
+      always()
+      && !cancelled()
+      && needs.scope.outputs.build_mode != 'none'
+      && needs.lint.result == 'success'
+      && needs.format.result == 'success'
+      && (needs.typecheck.result == 'success' || needs.typecheck.result == 'skipped')
+      && (needs.knip.result == 'success' || needs.knip.result == 'skipped')
+      && (needs.cycles.result == 'success' || needs.cycles.result == 'skipped')
+      && (needs.unit.result == 'success' || needs.unit.result == 'skipped')
     services:
       postgres:
         image: postgres:17-alpine
@@ -208,13 +238,23 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-
       - name: Build (against the local service database)
         run: pnpm build
 
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    needs: [scope, lint, format, typecheck, knip, cycles, unit]
+    if: |
+      always()
+      && !cancelled()
+      && needs.scope.outputs.e2e_mode != 'none'
+      && needs.lint.result == 'success'
+      && needs.format.result == 'success'
+      && (needs.typecheck.result == 'success' || needs.typecheck.result == 'skipped')
+      && (needs.knip.result == 'success' || needs.knip.result == 'skipped')
+      && (needs.cycles.result == 'success' || needs.cycles.result == 'skipped')
+      && (needs.unit.result == 'success' || needs.unit.result == 'skipped')
     services:
       postgres:
         image: postgres:17-alpine
@@ -239,91 +279,31 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-
       - name: Install Playwright chromium
         run: pnpm exec playwright install --with-deps chromium
-
-      - name: Compute affected e2e scope
-        id: scope
-        env:
-          GITHUB_BASE_REF: ${{ github.base_ref }}
-        run: |
-          result=$(node scripts/e2e-affected.mjs)
-          echo "scope: $(echo "$result" | jq -r .reason)"
-          echo "mode=$(echo "$result" | jq -r .mode)" >> "$GITHUB_OUTPUT"
-          echo "specs=$(echo "$result" | jq -r '[.specs[] | "tests/e2e/" + . + ".e2e.spec.ts"] | join(" ")')" >> "$GITHUB_OUTPUT"
-
-      - name: Migrate test database
-        if: steps.scope.outputs.mode != 'none'
-        run: pnpm migrate
-
-      - name: Seed minimal test database
-        if: steps.scope.outputs.mode != 'none'
-        run: pnpm db:seed:minimal
-
-      # CI e2e runs against the production build (see playwright.config.ts
-      # webServer.command); the dist dir must match the webServer env.
+      - run: pnpm migrate
+      - run: pnpm db:seed:minimal
       - name: Build for e2e
-        if: steps.scope.outputs.mode != 'none'
         run: pnpm build
         env:
           NEXT_DIST_DIR: .next/e2e
 
       - name: E2E tests (full suite)
-        if: steps.scope.outputs.mode == 'full'
+        if: needs.scope.outputs.e2e_mode == 'full'
         run: pnpm test:e2e
 
       - name: E2E tests (manifest-selected specs)
-        if: steps.scope.outputs.mode == 'selected'
-        run: pnpm test:e2e -- ${{ steps.scope.outputs.specs }}
-
-      - name: E2E tests skipped
-        if: steps.scope.outputs.mode == 'none'
-        run: echo "No e2e-relevant changes in this PR — nothing to run."
-
-  # Branch protection on `stage`/`main` still requires the legacy context name
-  # `checks` from the pre-parallel monolithic job. This rollup satisfies that
-  # contract without re-serializing the suite.
-  checks:
-    name: checks
-    runs-on: ubuntu-latest
-    needs:
-      - lint
-      - format
-      - typecheck
-      - knip
-      - cycles
-      - unit
-      - int
-      - build
-      - e2e
-      - migration-lock
-    if: always()
-    steps:
-      - name: All parallel checks green
-        env:
-          NEEDS: ${{ toJSON(needs) }}
-        run: |
-          set -euo pipefail
-          echo "$NEEDS" | jq -e '
-            to_entries
-            | all(.value.result == "success" or .value.result == "skipped")
-          '
+        if: needs.scope.outputs.e2e_mode == 'selected'
+        run: pnpm test:e2e -- ${{ needs.scope.outputs.e2e_specs }}
 
   migration-lock:
-    # At most ONE open PR may touch schema (migrations or generated types).
-    # Two in flight guarantees a broken rebase and a poisoned drizzle snapshot
-    # chain; the second PR must wait or rebase.
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      # gh pr list against the default GITHUB_TOKEN.
       contents: read
       pull-requests: read
     steps:
-      # gh expands --json files via git, so it needs the repo checked out.
       - uses: actions/checkout@v4
-
       - name: Count open PRs touching schema files
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -337,3 +317,30 @@ jobs:
             echo "::error::More than one open PR touches src/migrations/ or payload-types.ts. Merge or close the other first."
             exit 1
           fi
+
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    needs:
+      - scope
+      - lint
+      - format
+      - typecheck
+      - knip
+      - cycles
+      - unit
+      - int
+      - build
+      - e2e
+      - migration-lock
+    if: always()
+    steps:
+      - name: All cascade checks green
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$NEEDS" | jq -e '
+            to_entries
+            | all(.value.result == "success" or .value.result == "skipped")
+          '

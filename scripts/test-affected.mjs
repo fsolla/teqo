@@ -7,14 +7,14 @@
  *   mode=changed → run `vitest --changed <base>`
  *   mode=none    → nothing to run (docs-only diff); CI skips the step
  *
- * Base ref: $GITHUB_BASE_REF (PR target) or origin/stage locally. No DB, no
+ * Base ref: $GITHUB_BASE_REF (PR target) or origin/main locally. No DB, no
  * Payload — pure git + the pure core in scripts/lib/test-affected-core.mjs.
  */
 import { execFileSync } from 'node:child_process'
 
 import { classifyTestScope } from './lib/test-affected-core.mjs'
 
-const base = `origin/${process.env.GITHUB_BASE_REF ?? 'stage'}`
+const base = `origin/${process.env.GITHUB_BASE_REF ?? 'main'}`
 
 let mergeBase
 try {
