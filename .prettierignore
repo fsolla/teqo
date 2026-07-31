@@ -4,6 +4,10 @@ out/
 build/
 playwright-report/
 test-results/
+.playwright-cli/
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.v4/
 data/
 pnpm-lock.yaml
 .impeccable/hook.cache.json

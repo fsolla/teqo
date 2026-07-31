@@ -272,7 +272,9 @@ export function findUncoveredE2eDomainPrefixes(
   const missing = []
   const covered = []
   for (const path of required) {
-    const hit = prefixes.some((prefix) => prefix === path || prefix.startsWith(`${path}/`) || path.startsWith(prefix))
+    const hit = prefixes.some(
+      (prefix) => prefix === path || prefix.startsWith(`${path}/`) || path.startsWith(prefix),
+    )
     if (hit) covered.push(path)
     else missing.push(path)
   }
