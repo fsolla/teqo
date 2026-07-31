@@ -27,7 +27,7 @@ import { convertHTMLToLexical, editorConfigFactory } from '@payloadcms/richtext-
 import { del as blobDel } from '@vercel/blob'
 import { JSDOM } from 'jsdom'
 import { getPayload } from 'payload'
-import { loadCliEnv } from './lib/cli.mjs'
+import { dieWithLabel, loadCliEnv } from './lib/cli.mjs'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
 
