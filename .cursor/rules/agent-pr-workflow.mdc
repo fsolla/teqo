@@ -10,7 +10,7 @@ alwaysApply: true
 ## Create (Ready, base stage)
 
 ```bash
-git push -u origin HEAD
+pnpm push -u origin HEAD
 gh pr create --base stage --title "<id> — <title>" --body "$(cat <<'EOF'
 ## O que é
 <2–4 linhas>
@@ -21,7 +21,23 @@ EOF
 ```
 
 - **Never** `--draft`. PRs must be **Ready for review** on creation.
-- Base is always **`stage`** (never `main` — promote is human-only via `pnpm agent:promote --i-am-human`).
+- Base is always **`stage`** (never `main` — promote é automático via `promote-stage-to-main.yml` após CI stage green).
+
+## Push (determinístico)
+
+**Use `pnpm push`, never bare `git push`.** Não depende do Husky estar wired:
+
+1. `ensure-repo-deps` — `pnpm install` se `node_modules` faltar/stale + `pnpm run prepare` (Husky) se hooks não estiverem apontando para `.husky`
+2. `pnpm gate:push` — espelho do `ci-pr.yml` (inclui `format:check`)
+3. `git push --no-verify` — só porque o gate já rodou no passo 2 (não é escape hatch)
+
+Cursor Cloud já roda `pnpm install` em `.cursor/environment.json` (`install`); worktrees locais sem `pnpm i` dependem do passo 1.
+
+```bash
+pnpm push -u origin HEAD    # canonical
+git push                    # só depois de `pnpm i` — hook repete ensure-deps + gate:push
+git push --no-verify        # WIP escape — CI repete tudo
+```
 
 ## Auto-merge immediately
 

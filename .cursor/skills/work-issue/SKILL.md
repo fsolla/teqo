@@ -7,14 +7,14 @@ description: Conduz uma GitHub Issue rastreável do Teqo do claim ao merge em st
 
 Esta skill conduz UMA Issue rastreável do claim ao merge em `stage`. Substitui o antigo fluxo implement-roadmap-item + close-delivery + ship-to-main. **GitHub Issues são a fonte canônica** de spec/status/deps/prio/modelo; `docs/roadmap.md` é legado congelado e nunca é editado aqui (registro de entrega vai na Issue + `docs/plans/<slug>.md` + notebook do projeto).
 
-**Proibido neste fluxo:** `pnpm agent:promote` (promote stage→main é humano), qualquer acesso a DB de stage/prod, merge sem CI green, editar outras Issues `in-progress`.
+**Proibido neste fluxo:** qualquer acesso a DB de stage/prod, merge sem CI green, editar outras Issues `in-progress`. `pnpm agent:promote` é só override manual — o promote normal é automático após CI stage green.
 
 **Qualidade de decisão e dados:** aplique [decision-quality.md](../plan-issue/decision-quality.md) ao auditar e fatiar (caro vs barato, Opções+Recomendação+rejeitadas, appetite, rabbit holes, tracer bullet cedo) e [data-presentation.md](../plan-issue/data-presentation.md) ao auditar/fatiar superfícies com KPI/mapa/série/ranking.
 
 ## Checklist do fluxo
 
 ```
-- [ ] 0. Prep: pnpm i (node_modules obrigatório para agent:claim)
+- [ ] 0. Prep: `pnpm i` antes do `agent:claim` (Cloud Agents já rodam via `.cursor/environment.json` → `install`; worktrees locais: obrigatório, ou deixe para o `ensure-repo-deps` do `pnpm push`)
 - [ ] 1. Claim: pnpm agent:claim (ou -- --issue <N>) — o brief do stdout é o contrato
 - [ ] 1b. Renomear a sessão (cursor-app-control rename_chat) — padrão `#<N> <id> — <título>`
 - [ ] 1c. Abrir o plano no editor (cursor-app-control open_resource) para o humano acompanhar
@@ -22,7 +22,7 @@ Esta skill conduz UMA Issue rastreável do claim ao merge em `stage`. Substitui 
 - [ ] 3. Freshness audit (enxuto) do plano contra o repositório
 - [ ] 4. Executar as fases (schema/server → UI via /impeccable → gates de engenharia)
 - [ ] 5. /simplify no diff da sessão → capture-review-debts
-- [ ] 6. Fechar em stage: pnpm gate:push → branch → commit → gh pr create --base stage (Closes #N, sem --draft)
+- [ ] 6. Fechar em stage: branch → commit → **`pnpm push -u origin HEAD`** (não `git push` nu) → gh pr create --base stage (Closes #N, sem --draft)
        → gh pr merge --auto --merge → gh pr checks --watch --required até o merge → consolidar pontas soltas
 ```
 
@@ -109,7 +109,7 @@ Ordem fixa, fases pequenas e verificáveis, respeitando o appetite do plano:
 
 1. **Schema e server** — migrations (`pnpm migrate:create`, seguir `payload-migrations`), collections, utilities, server actions, testes de domínio. Guardrails do repo: Local API com `user` → `overrideAccess: false`; escrita multi-collection → transação com `req: { transactionID }`; pessoa → join com `Contact`; opt-in/PII → `Consent` por chave estável falhando fechado.
 2. **UI via /impeccable** (classes B/C/D — a classe está no plano; se A, declare "Impeccable: N/A" e siga só engenharia): shape conforme a classe → craft → critique → (harden/optimize **só sob gatilho**) → polish. Paleta = tokens `data-theme='campaign'`; reusar `src/components/ui` e shells existentes; shape obrigatório em C **para** para confirmação do brief antes do craft.
-3. **Gates de engenharia** — iteração: `pnpm gate:fast`. Antes do push o hook roda `pnpm gate:push` (= `gate:ci`: estático + build sempre; unit/int/e2e no blast radius do CI via `test-affected`/`e2e-affected`). Scan Aikido dos arquivos editados. Comandos bare, nunca piped. Escape WIP: `git push --no-verify`.
+3. **Gates de engenharia** — iteração: `pnpm gate:fast`. Push: **`pnpm push`** (ensure-deps + `gate:push` no script — não depende do hook Husky). `pnpm gate:push` manual só para debug sem push. Scan Aikido dos arquivos editados. Comandos bare, nunca piped. Escape WIP: `git push --no-verify` sem passar por `pnpm push`.
 
 Tracer bullet: se a Issue for grande, a primeira fatia vertical real (schema mínimo → uma action → uma superfície UI) vem cedo.
 
@@ -138,13 +138,13 @@ Lance **três** subagentes via `Task` **em paralelo** na mesma mensagem — read
 
 ## Passo 6 — Fechar em stage
 
-1. `pnpm gate:push` verde (ou `pnpm gate:ci` — espelho do ci-pr; o hook pre-push roda na sequência do `git push`).
-2. Branch `agent/<id>-<slug>` (worktrees do Cursor são donos da criação; commits lógicos).
+1. Branch `agent/<id>-<slug>` (worktrees do Cursor são donos da criação; commits lógicos).
+2. **`pnpm push -u origin HEAD`** — canonical; roda `ensure-repo-deps` + `gate:push` + push (não depende do Husky). Não use `git push` nu.
 3. `gh pr create --base stage` com `Closes #<N>` no body — **nunca `--draft`** (`.cursor/rules/agent-pr-workflow.mdc`).
-4. `gh pr merge --auto --merge <PR>` imediatamente após criar o PR.
-5. **Acompanhe só os checks obrigatórios** (`gh pr checks <PR> --watch --required`): gate = `checks` + `migration-lock`; Vercel não bloqueia. Falha no ci-pr → corrige na mesma branch.
+4. `gh pr merge --auto --merge <PR>` imediatamente após criar o PR (não precisa rebasear na head de `stage` se não houver conflito — `strict=false` na proteção de `stage`).
+5. **Acompanhe só os checks obrigatórios** (`gh pr checks <PR> --watch --required`): gate = `checks` + `migration-lock`; Vercel não bloqueia. Falha no ci-pr → corrige na mesma branch. **Conflito de merge** → rebase em `stage` e reempurre; não force-push salvo para destravar CI após rebase.
 6. O flip `in-progress → done` é **determinístico no CI** (workflow `issue-done-on-stage-merge.yml` lê o `Closes #N` no merge em stage). O agente espera o merge apenas para verificar e **consolidar pontas soltas**: débitos não registrados, doc da sessão pendente (notebook do projeto + `docs/plans/<slug>.md` com Status/Atualizado em), comentário de fechamento na Issue com o que entrou. Se o agente falhar depois do merge, o status já está correto.
 
 ## Resumo final ao usuário
 
-Issue trabalhada + sessão renomeada + plano aberto no editor + verificação de modelo (declarado vs sessão, ou registro do ausente), veredito do freshness audit, o que entrou por fase, resultado do critique/polish (se UI), simplify (3 reviewers paralelos) + débitos registrados, gates, link do PR e estado do merge em stage, pontas soltas consolidadas. Nunca anuncie promote — `in-prod` é humano (`pnpm agent:promote --i-am-human`).
+Issue trabalhada + sessão renomeada + plano aberto no editor + verificação de modelo (declarado vs sessão, ou registro do ausente), veredito do freshness audit, o que entrou por fase, resultado do critique/polish (se UI), simplify (3 reviewers paralelos) + débitos registrados, gates, link do PR e estado do merge em stage, pontas soltas consolidadas. `in-prod` entra no auto-promote (`promote-stage-to-main.yml`) após CI stage green — não é passo do agente.

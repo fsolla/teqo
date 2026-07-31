@@ -46,18 +46,21 @@ describe('searchStaffMunicipalityHits (B60)', () => {
     const advisor = await fixtures.createCampaignUser('advisor')
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
-    const administered = await fixtures.getMunicipality('cairu')
-    const other = await fixtures.getMunicipality('feira-de-santana')
+    const administered = await fixtures.getMunicipality()
+    const other = await fixtures.getMunicipality()
     await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
-    const advisorResult = await searchStaffMunicipalityHits(payload, advisor, 'Feira')
+    const otherQuery = other.name.split(/\s+/)[0]!
+    const administeredQuery = administered.name.split(/\s+/)[0]!
+
+    const advisorResult = await searchStaffMunicipalityHits(payload, advisor, otherQuery)
     expect(advisorResult.map((hit) => hit.slug)).toEqual([])
 
-    const coordinatorResult = await searchStaffMunicipalityHits(payload, coordinator, 'Feira')
+    const coordinatorResult = await searchStaffMunicipalityHits(payload, coordinator, otherQuery)
     expect(coordinatorResult.some((hit) => hit.slug === other.slug)).toBe(true)
 
-    const advisorCairu = await searchStaffMunicipalityHits(payload, advisor, 'Cairu')
-    expect(advisorCairu.map((hit) => hit.slug)).toEqual(['cairu'])
+    const advisorAdmin = await searchStaffMunicipalityHits(payload, advisor, administeredQuery)
+    expect(advisorAdmin.map((hit) => hit.slug)).toEqual([administered.slug])
   })
 
   it('rejects leaders from wizard municipality search', async () => {

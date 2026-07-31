@@ -1,0 +1,94 @@
+# Auto-promote: when ci-stage is green on the current `stage` head, merge stage → main.
+# Replaces the manual `pnpm agent:promote --i-am-human` gate. The human review on main
+# is replaced by ci-stage (Neon smoke) + ci.yml on main (full safety net post-merge).
+#
+# Stale runs are ignored: only the workflow run whose headSha still matches
+# origin/stage may promote (newest commit wins when ci-stage queues).
+name: Promote stage to main
+
+on:
+  workflow_run:
+    workflows: ['CI (stage)']
+    types: [completed]
+    branches: [stage]
+
+concurrency:
+  group: promote-stage-to-main
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # Admin PAT bypasses main branch protection (required review + status checks on
+      # the promote PR). Falls back to GITHUB_TOKEN when the PAT is not configured.
+      GH_TOKEN: ${{ secrets.PROMOTE_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+      RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Promote only when this run is still the stage head
+        id: gate
+        run: |
+          set -euo pipefail
+          git fetch origin main stage
+          stage_sha="$(git rev-parse origin/stage)"
+          main_sha="$(git rev-parse origin/main)"
+
+          if [ "$RUN_SHA" != "$stage_sha" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Stale ci-stage run ($RUN_SHA); current stage head is $stage_sha — skip."
+            exit 0
+          fi
+
+          if git merge-base --is-ancestor origin/main origin/stage; then
+            if [ "$main_sha" = "$stage_sha" ]; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "main already at stage head ($stage_sha) — nothing to promote."
+              exit 0
+            fi
+          else
+            echo "::error::main diverged from stage (hotfix on main?). Merge main into stage, wait for ci-stage green, then re-run."
+            exit 1
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "Promoting stage $stage_sha → main ($main_sha)."
+
+      - name: Merge stage into main
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          pr="$(gh pr list --state open --base main --head stage --json number --jq '.[0].number // empty')"
+          if [ -z "$pr" ]; then
+            gh pr create \
+              --base main \
+              --head stage \
+              --title "Promote stage → main (auto)" \
+              --body "Auto-promote após CI (stage) verde. Gate: ci-stage no head de stage. Rede pós-merge: ci.yml em main."
+            pr="$(gh pr list --state open --base main --head stage --json number --jq '.[0].number')"
+          fi
+
+          # --admin bypasses the human review + pre-merge status checks on main; ci-stage
+          # is the intentional pre-promote gate (see docs/AGENT-OPS.md).
+          gh pr merge "$pr" --admin --merge
+          echo "Promoted via PR #$pr."
+
+      - name: Label promoted issues in-prod
+        if: steps.gate.outputs.skip != 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          for n in $(gh issue list --state open --label done --limit 200 --json number --jq '.[].number'); do
+            gh issue edit "$n" --add-label in-prod --remove-label done || true
+          done

@@ -1,3 +1,3 @@
-# Full ci-pr mirror before push (source of truth: package.json `gate:push` → `gate:ci`).
-# Escape hatch para WIP: `git push --no-verify`.
+# For `git push` after `pnpm i` — same gate as `pnpm push`. Agents: use `pnpm push` (runs gate in-script; does not need this hook).
+node scripts/ensure-repo-deps.mjs
 pnpm gate:push

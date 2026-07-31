@@ -47,18 +47,21 @@ describe('searchHomeMunicipalities (B48)', () => {
     const advisor = await fixtures.createCampaignUser('advisor')
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
-    const administered = await fixtures.getMunicipality('cairu')
-    const other = await fixtures.getMunicipality('feira-de-santana')
+    const administered = await fixtures.getMunicipality()
+    const other = await fixtures.getMunicipality()
     await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
-    const advisorResult = await searchHomeMunicipalities(payload, advisor, 'Feira')
+    const otherQuery = other.name.split(/\s+/)[0]!
+    const administeredQuery = administered.name.split(/\s+/)[0]!
+
+    const advisorResult = await searchHomeMunicipalities(payload, advisor, otherQuery)
     expect(advisorResult.municipalities.map((hit) => hit.slug)).toEqual([])
 
-    const coordinatorResult = await searchHomeMunicipalities(payload, coordinator, 'Feira')
+    const coordinatorResult = await searchHomeMunicipalities(payload, coordinator, otherQuery)
     expect(coordinatorResult.municipalities.some((hit) => hit.slug === other.slug)).toBe(true)
 
-    const advisorCairu = await searchHomeMunicipalities(payload, advisor, 'Cairu')
-    expect(advisorCairu.municipalities.map((hit) => hit.slug)).toEqual(['cairu'])
+    const advisorAdmin = await searchHomeMunicipalities(payload, advisor, administeredQuery)
+    expect(advisorAdmin.municipalities.map((hit) => hit.slug)).toEqual([administered.slug])
   })
 
   it('rejects leaders from home search', async () => {

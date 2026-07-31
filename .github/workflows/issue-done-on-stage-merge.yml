@@ -24,5 +24,5 @@ jobs:
           for n in $numbers; do
             gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --remove-label in-progress --add-label done || true
             gh issue comment "$n" --repo "$GITHUB_REPOSITORY" \
-              --body "Merged em stage via PR #${PR_NUMBER} — done; \`in-prod\` entra no promote humano." || true
+              --body "Merged em stage via PR #${PR_NUMBER} — done; \`in-prod\` entra no auto-promote após CI stage green." || true
           done
