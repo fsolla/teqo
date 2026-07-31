@@ -4,6 +4,10 @@ import 'server-only'
 
 import type { PayloadRequest } from 'payload'
 
+import {
+  ENABLE_CAMPAIGN_NOTIFICATION_CONTEXT_KEY,
+  SKIP_CAMPAIGN_NOTIFICATION_CONTEXT_KEY,
+} from '@/lib/notificationContract'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import { municipalityUpdateKindLabels } from '@/lib/schemas/municipalityUpdate'
 import { createCampaignNotifications } from '@/utilities/notification/createCampaignNotification'
@@ -11,10 +15,13 @@ import { resolveMunicipalityStaffRecipientIds } from '@/utilities/notification/n
 
 export type NotificationEventRequest = Pick<PayloadRequest, 'payload' | 'context' | 'transactionID'>
 
-const SKIP_NOTIFICATION_CONTEXT = 'skipCampaignNotification'
-
-const shouldSkipCampaignNotification = (context: Record<string, unknown>): boolean =>
-  Boolean(context[SKIP_NOTIFICATION_CONTEXT])
+const shouldSkipCampaignNotification = (context: Record<string, unknown>): boolean => {
+  if (context[ENABLE_CAMPAIGN_NOTIFICATION_CONTEXT_KEY]) return false
+  if (context[SKIP_CAMPAIGN_NOTIFICATION_CONTEXT_KEY]) return true
+  // Int suite shares one Postgres across ~48 workers; hook side-effects (extra
+  // rows, coordinator fan-out reads) are tested in campaignNotifications.int.
+  return process.env.VITEST === 'true'
+}
 
 export const notifyMunicipalityUpdateCreated = async (
   req: NotificationEventRequest,

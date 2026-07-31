@@ -1,3 +1,9 @@
+/** Payload `req.context` flag — domain hooks skip creating notifications when true. */
+export const SKIP_CAMPAIGN_NOTIFICATION_CONTEXT_KEY = 'skipCampaignNotification'
+
+/** Opt back into hook-fired notifications inside Vitest (default: skipped). */
+export const ENABLE_CAMPAIGN_NOTIFICATION_CONTEXT_KEY = 'enableCampaignNotification'
+
 export const notificationTypes = [
   'municipality_update',
   'new_supporter',
