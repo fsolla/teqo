@@ -51,13 +51,18 @@ jobs:
   tick:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # pull_request closed WITHOUT merge is not a replenish signal — skip.
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      # The pool scripts are dependency-free .mjs (gh CLI + native fetch) — no
-      # pnpm install, ticks stay under a minute.
+          cache: pnpm
+      # The pool scripts import scripts/lib/cli.mjs (dotenv) via agent-github —
+      # they are NOT dependency-free, so install like every sibling workflow.
+      - run: pnpm install --frozen-lockfile
       - name: agent:pool workflow
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -65,7 +70,7 @@ jobs:
           ACTION: ${{ inputs.action }}
           MAX_SLOTS: ${{ inputs.maxSlots }}
         run: |
-          # schedule / pull_request closed → reconcile tick; dispatch → the chosen action.
+          # schedule / pull_request merged → reconcile tick; dispatch → the chosen action.
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             args=(--action "$ACTION" --actor "$GITHUB_ACTOR")
             if [ -n "$MAX_SLOTS" ]; then args+=(--max-slots "$MAX_SLOTS"); fi

@@ -229,8 +229,10 @@ Parâmetros (só relevantes ao backoff de retry de tick): `spawnRetryBackoff = p
 
 ## 6. API de controle
 
-`pnpm agent:pool -- < comando >` → `scripts/agent-pool.mjs` (Node 24, zero deps npm: `gh` CLI +
-`fetch` nativo; roda no runner GHA sem `pnpm install`):
+`pnpm agent:pool -- < comando >` → `scripts/agent-pool.mjs` (Node 24; `gh` CLI + `fetch` nativo,
+mas com a dependência transitiva habitual de `scripts/lib/cli.mjs` → `dotenv` — o workflow instala
+deps como os workflows irmãos; corrigido em 2026-07-31 após o ERR_MODULE_NOT_FOUND da primeira
+ativação):
 
 | Comando                 | Faz                                                                                                    |
 | ----------------------- | ------------------------------------------------------------------------------------------------------ |
