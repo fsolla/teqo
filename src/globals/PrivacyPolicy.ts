@@ -1,3 +1,4 @@
+import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { revalidateGlobal } from '@/utilities/globals'
 import type { GlobalConfig } from 'payload'
 
@@ -18,7 +19,9 @@ export const PrivacyPolicy: GlobalConfig = {
   },
   access: {
     read: () => true,
-    update: ({ req: { user } }) => Boolean(user),
+    // Legal text: admin-only like the other site globals (Pass 4) — campaign
+    // JWTs reach /api/*.
+    update: payloadAdminOnly,
   },
   hooks: {
     afterChange: [revalidate],

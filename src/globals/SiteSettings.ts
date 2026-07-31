@@ -1,3 +1,4 @@
+import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { revalidateGlobal } from '@/utilities/globals'
 import type { GlobalConfig } from 'payload'
 
@@ -13,7 +14,9 @@ export const SiteSettings: GlobalConfig = {
   },
   access: {
     read: () => true,
-    update: ({ req: { user } }) => Boolean(user),
+    // Site-wide config: campaign JWTs authenticate against /api/*, so "any
+    // authenticated user" here was a write path into the public site (Pass 4).
+    update: payloadAdminOnly,
   },
   hooks: {
     afterChange: [revalidate],
