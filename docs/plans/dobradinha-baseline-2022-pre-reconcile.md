@@ -7,7 +7,7 @@ Responsável: —
 
 ## Contexto
 
-O PR #82 (A6) entrega o card **"Dobradinhas potenciais para 2026"** na aba Eleições do detalhe do município: candidatos proporcionais com `runningAgain2026 = sim`, ranqueados por score `0,6 alinhamento + 0,4 força local 2022`. Enquanto o TSE não publica as candidaturas de 2026 e a Fase 5 não reconcilia `runningAgain2026`, o loader retorna `{ status: 'pending2026' }` e o card mostra *"Indisponível até as candidaturas de 2026"*.
+O PR #82 (A6) entrega o card **"Dobradinhas potenciais para 2026"** na aba Eleições do detalhe do município: candidatos proporcionais com `runningAgain2026 = sim`, ranqueados por score `0,6 alinhamento + 0,4 força local 2022`. Enquanto o TSE não publica as candidaturas de 2026 e a Fase 5 não reconcilia `runningAgain2026`, o loader retorna `{ status: 'pending2026' }` e o card mostra _"Indisponível até as candidaturas de 2026"_.
 
 Os dados de **2022 já estão no banco** (`electionCandidate` + `electionCandidateVote` via `pnpm db:seed:tse`). O staff precisa da inteligência **agora** — quem teve força local em 2022 e qual o alinhamento partidário — para priorizar dobradinhas antes de agosto.
 
@@ -30,7 +30,7 @@ Os dados de **2022 já estão no banco** (`electionCandidate` + `electionCandida
 
 ## Questões em aberto — RESOLVIDAS (proposta)
 
-- **Copy do estado provisório** — RESOLVIDA. Título mantém "Dobradinhas potenciais para 2026"; subtítulo/aviso: *"Lista provisória com base em quem concorreu aqui em 2022. Atualiza automaticamente quando o TSE publicar as candidaturas de 2026."*
+- **Copy do estado provisório** — RESOLVIDA. Título mantém "Dobradinhas potenciais para 2026"; subtítulo/aviso: _"Lista provisória com base em quem concorreu aqui em 2022. Atualiza automaticamente quando o TSE publicar as candidaturas de 2026."_
 - **Candidatos `runningAgain2026 = desconhecido` após reconcile** — RESOLVIDA. Fora da lista confirmada (mesmo critério conservador de A6: só `sim` entra). Não inventar parceiro sem confirmação.
 - **Badge "eleito em 2022"** — RESOLVIDA. Mantém no modo provisório e confirmado (campo `elected` já no registry).
 

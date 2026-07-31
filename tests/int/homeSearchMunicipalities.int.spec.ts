@@ -48,8 +48,8 @@ describe('searchHomeMunicipalities (B48)', () => {
     const advisor = await fixtures.createCampaignUser('advisor')
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
-    const administered = await fixtures.getMunicipality('cairu')
-    const other = await fixtures.getMunicipality('feira-de-santana')
+    const administered = await fixtures.getMunicipality()
+    const other = await fixtures.getMunicipality()
     await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
     const otherQuery = distinctWordStartQuery(other.name, administered.name)
