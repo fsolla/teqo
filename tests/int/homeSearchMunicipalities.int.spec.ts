@@ -48,12 +48,17 @@ describe('searchHomeMunicipalities (B48)', () => {
     const advisor = await fixtures.createCampaignUser('advisor')
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
-    const administered = await fixtures.getMunicipality()
-    const other = await fixtures.getMunicipality()
+    const administered = await fixtures.getMunicipality('cairu')
+    const other = await fixtures.getMunicipality('feira-de-santana')
     await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
+<<<<<<< HEAD
     const otherQuery = distinctWordStartQuery(other.name, administered.name)
     const administeredQuery = distinctWordStartQuery(administered.name, other.name)
+=======
+    const otherQuery = 'Feira'
+    const administeredQuery = 'Cairu'
+>>>>>>> 798c289 (test: pin home search municipality scope fixtures to distinct slugs)
 
     const advisorResult = await searchHomeMunicipalities(payload, advisor, otherQuery)
     expect(advisorResult.municipalities.map((hit) => hit.slug)).toEqual([])
