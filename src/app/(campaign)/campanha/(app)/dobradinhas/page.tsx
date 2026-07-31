@@ -10,6 +10,7 @@ import {
   CampaignListResults,
   CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
+import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
 import {
   CampaignTable,
   CampaignTableHead,
@@ -249,14 +250,18 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
           <p className="text-sm text-muted-foreground" aria-live="polite">
             {sortSummary}
           </p>
-          <CampaignTable
-            caption={`${sortSummary}. Deputados estaduais com quem a campanha dobra.`}
-            columns={columns}
-            columnVisibility={columnVisibility}
-            rows={rows}
-            rowKey={(row) => row.id}
-            empty={<StateDeputyListEmptyState state={state} />}
-          />
+          {/* One shared Drawer for every chip-cell sheet on coarse pointers
+              (miss #52 — never a Drawer root per opened cell). */}
+          <CampaignListSheetProvider>
+            <CampaignTable
+              caption={`${sortSummary}. Deputados estaduais com quem a campanha dobra.`}
+              columns={columns}
+              columnVisibility={columnVisibility}
+              rows={rows}
+              rowKey={(row) => row.id}
+              empty={<StateDeputyListEmptyState state={state} />}
+            />
+          </CampaignListSheetProvider>
           {rows.length ? (
             <CampaignListFooter
               totalDocs={totalDocs}

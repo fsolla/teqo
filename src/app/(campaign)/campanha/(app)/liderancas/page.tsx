@@ -18,6 +18,7 @@ import {
   CampaignListResults,
   CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
+import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
 import {
   CampaignTable,
   CampaignTableHead,
@@ -402,14 +403,18 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
           <p className="text-sm text-muted-foreground" aria-live="polite">
             {sortSummary}
           </p>
-          <CampaignTable
-            caption={`${sortSummary}. Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações.`}
-            columns={columns}
-            columnVisibility={columnVisibility}
-            rows={rows}
-            rowKey={(row) => row.id}
-            empty={<LeadershipListEmptyState state={state} />}
-          />
+          {/* One shared Drawer for every chip-cell sheet on coarse pointers
+              (miss #52 — never a Drawer root per opened cell). */}
+          <CampaignListSheetProvider>
+            <CampaignTable
+              caption={`${sortSummary}. Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações.`}
+              columns={columns}
+              columnVisibility={columnVisibility}
+              rows={rows}
+              rowKey={(row) => row.id}
+              empty={<LeadershipListEmptyState state={state} />}
+            />
+          </CampaignListSheetProvider>
           {rows.length ? (
             <CampaignListFooter
               totalDocs={totalDocs}

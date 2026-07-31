@@ -29,7 +29,8 @@ export const searchHomeAdvisors = async (
 
   const normalizedQuery = normalizeHomeSearchName(query)
 
-  // Intentional admin bypass — unrestricted staff gate already ran in the route.
+  // Under access (`overrideAccess: false`): the unrestricted-staff gate ran
+  // above, so the advisor directory is only queried for coordinator/candidate.
   const result = await payload.find({
     collection: 'campaignUser',
     where: { role: { equals: 'advisor' } },
