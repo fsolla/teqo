@@ -4,12 +4,13 @@
 # POOL_MAX_SLOTS over `ready` autonomous-eligible issues. Three triggers:
 #   - workflow_dispatch — the canonical human channel (start/stop/pause/resume)
 #   - schedule */10min — the periodic reconcile (default branch only)
-#   - pull_request closed on stage — immediate slot replenish after a merge
-# Schedule and PR triggers only run from the default branch: they activate
-# after the human promote to main; until then dispatch on the branch works.
+#   - pull_request closed on main — immediate slot replenish after a merge
 #
-# Secrets: CURSOR_API_KEY (repo secret) — Cursor Cloud Agents API key.
-# GITHUB_TOKEN needs actions: write (pool state lives in repo variables).
+# Secrets:
+#   CURSOR_API_KEY — Cursor Cloud Agents API key
+#   POOL_GITHUB_TOKEN — PAT with actions:write + issues:write (required to read/
+#     write repo Actions variables; default GITHUB_TOKEN often 403s — mirror of
+#     the old PROMOTE_GITHUB_TOKEN pattern)
 name: Agent pool supervisor
 
 on:
@@ -17,7 +18,7 @@ on:
     - cron: '*/10 * * * *'
   pull_request:
     types: [closed]
-    branches: [stage]
+    branches: [main]
   workflow_dispatch:
     inputs:
       action:
@@ -36,7 +37,6 @@ on:
         required: false
         type: string
 
-# Single-allocator invariant: ticks never overlap.
 concurrency:
   group: agent-pool
   cancel-in-progress: false
@@ -51,7 +51,6 @@ jobs:
   tick:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # pull_request closed WITHOUT merge is not a replenish signal — skip.
     if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v4
@@ -60,17 +59,14 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      # The pool scripts import scripts/lib/cli.mjs (dotenv) via agent-github —
-      # they are NOT dependency-free, so install like every sibling workflow.
       - run: pnpm install --frozen-lockfile
       - name: agent:pool workflow
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.POOL_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           ACTION: ${{ inputs.action }}
           MAX_SLOTS: ${{ inputs.maxSlots }}
         run: |
-          # schedule / pull_request merged → reconcile tick; dispatch → the chosen action.
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             args=(--action "$ACTION" --actor "$GITHUB_ACTOR")
             if [ -n "$MAX_SLOTS" ]; then args+=(--max-slots "$MAX_SLOTS"); fi

@@ -37,7 +37,7 @@ Teqo is the digital platform for deputado federal Jorge Solla (PT-BA): public si
 
 ## Histórico de entregas (movido)
 
-"Known Gaps" e os blocos "Recently resolved" saíram deste arquivo em 2026-07-30: vivem em [`docs/CHANGELOG-AGENTS.md`](docs/CHANGELOG-AGENTS.md). Novas entregas registram UMA entrada curta lá, não aqui. A referência genérica de Payload (config/collections/fields/hooks/queries/components) foi para [`docs/PAYLOAD-REFERENCE.md`](docs/PAYLOAD-REFERENCE.md) — consulta sob demanda, não always-on. Operação do paradigma de agentes paralelos (claim→PR→stage→promote humano): [`docs/AGENT-OPS.md`](docs/AGENT-OPS.md).
+"Known Gaps" e os blocos "Recently resolved" saíram deste arquivo em 2026-07-30: vivem em [`docs/CHANGELOG-AGENTS.md`](docs/CHANGELOG-AGENTS.md). Novas entregas registram UMA entrada curta lá, não aqui. A referência genérica de Payload (config/collections/fields/hooks/queries/components) foi para [`docs/PAYLOAD-REFERENCE.md`](docs/PAYLOAD-REFERENCE.md) — consulta sob demanda, não always-on. Operação do paradigma de agentes paralelos (claim→PR→main→deploy gated): [`docs/AGENT-OPS.md`](docs/AGENT-OPS.md).
 
 ## Posts & Tags (news / publications)
 

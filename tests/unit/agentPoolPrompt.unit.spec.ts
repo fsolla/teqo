@@ -19,15 +19,14 @@ describe('buildPoolWorkerPrompt', () => {
     expect(prompt).toContain('in-progress')
   })
 
-  it('pins the PR contract: base stage, Closes #N, auto-merge, CI watch', () => {
-    expect(prompt).toContain('gh pr create --base stage')
+  it('pins the PR contract: base main, Closes #N, auto-merge, CI watch', () => {
+    expect(prompt).toContain('gh pr create --base main')
     expect(prompt).toContain('Closes #42')
     expect(prompt).toContain('gh pr merge --auto --merge')
     expect(prompt).toContain('gh pr checks <PR> --watch')
   })
 
-  it('restates the hard prohibitions (promote humano, sem DB remota, escopo da Issue)', () => {
-    expect(prompt).toContain('pnpm agent:promote')
+  it('restates the hard prohibitions (sem DB remota, escopo da Issue)', () => {
     expect(prompt).toContain('DATABASE_URL')
     expect(prompt).toContain('ALLOW_REMOTE_DB')
     expect(prompt).toContain('trabalhar fora da Issue #42')

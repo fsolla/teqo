@@ -7,15 +7,15 @@
 > **Cheatsheet de operação agentic (humanos)** — o fluxo em 5 linhas:
 >
 > 1. O agente roda `pnpm agent:claim` e pega a próxima Issue `ready` por prioridade (`prio:P0..P3`).
-> 2. Ele implementa, roda o fast gate (`lint + typecheck + unit`) e abre **PR para `stage`** — sozinho, e para aí.
-> 3. CI verde → o PR mergeia em `stage` automaticamente; o merge roda o CI de stage contra o clone Neon de prod.
-> 4. **Você** promove quando quiser: `pnpm agent:promote -- --i-am-human` (PR `stage→main`, merge só com CI stage + PR green).
-> 5. Semanalmente: `pnpm db:refresh:stage` renova o snapshot do stage a partir de prod (humano, requer `NEON_API_KEY`).
+> 2. Ele implementa, roda o fast gate (`lint + typecheck + unit`) e abre **PR para `main`** — sozinho.
+> 3. CI verde → o PR mergeia em `main` automaticamente; o verificador `ci.yml` roda a suíte completa.
+> 4. Suíte verde → Action dispara `vercel deploy --prod` (Vercel Git builds estão desligados).
+> 5. Secrets humanos (uma vez): `VERCEL_*`, `POOL_GITHUB_TOKEN`; `pnpm configure:branch-protection`.
 >
-> Comandos: `pnpm agent:claim | agent:register | agent:prioritize | agent:file-miss | agent:promote` e `pnpm db:seed:minimal | db:refresh:stage`.
+> Comandos: `pnpm agent:claim | agent:register | agent:prioritize | agent:file-miss | agent:pool` e `pnpm db:seed:minimal`.
 > Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:*`, `needs:migration|consent`, `requirements-changed`.
-> **Agente faz sozinho:** claim → implementar → PR → stage. **Só humano:** promote `stage→main`, refresh do stage, envs Vercel/Neon, `pnpm build` contra banco remoto.
-> Tudo em detalhe: [`docs/AGENT-OPS.md`](docs/AGENT-OPS.md) · CI: `.github/workflows/ci-pr.yml` + `ci-stage.yml` + `ci.yml`.
+> **Agente faz sozinho:** claim → implementar → PR → main. **Só humano:** secrets Vercel/pool, branch protection, envs Neon.
+> Tudo em detalhe: [`docs/AGENT-OPS.md`](docs/AGENT-OPS.md) · CI: `.github/workflows/ci-pr.yml` + `ci.yml`.
 
 Teqo starts as the official digital platform for **deputado Jorge Solla** and evolves into a **white-label civic engagement platform** for politicians in Brazil.
 

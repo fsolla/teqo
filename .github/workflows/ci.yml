@@ -1,23 +1,19 @@
-# Continuous integration on GitHub Actions (GitHub is the only home).
-# Post-merge gate on `main` — the FULL safety net, always: the promote PR
-# already passed ci-pr (possibly with affected-test selection), so this run
-# re-verifies everything against the minimal synthetic database, including
-# build and full e2e.
-# PRs run in ci-pr.yml; merges to `stage` run in ci-stage.yml (stage Neon
-# snapshot smoke — never a build there).
+# Post-merge verifier on `main`: always the FULL suite (no affected skips).
+# When green, deploys production via `vercel deploy --prod` (Vercel Git builds
+# are ignored — see scripts/vercel-ignore-build.sh). If HEAD moved while this
+# run was in flight, `requeue` dispatches another run for the new tip.
 name: CI
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: main-verify
+  cancel-in-progress: false
 
 env:
-  # Tests load .env.test themselves (database teqo_test on localhost:5432).
-  # These are only for the migrate/seed/build steps, which read the process env.
   DATABASE_URL: postgresql://teqo:teqo@localhost:5432/teqo_test
   PAYLOAD_SECRET: test-only-secret-not-used-in-production
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
@@ -34,6 +30,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: node scripts/check-test-locations.mjs
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm typecheck
@@ -46,7 +43,6 @@ jobs:
     timeout-minutes: 25
     services:
       postgres:
-        # Matches production Neon major (17) and docker-compose.yml.
         image: postgres:17-alpine
         env:
           POSTGRES_USER: teqo
@@ -96,7 +92,6 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-
       - name: Build (against the local service database)
         run: pnpm build
 
@@ -125,29 +120,24 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-
       - name: Install Playwright chromium
         run: pnpm exec playwright install --with-deps chromium
-
       - run: pnpm migrate
       - run: pnpm db:seed:minimal
-
       - name: Build for e2e
         run: pnpm build
         env:
           NEXT_DIST_DIR: .next/e2e
-
       - name: E2E tests (full suite)
         run: pnpm test:e2e
 
-  # Same legacy branch-protection context as ci-pr.yml (see comment there).
   checks:
     name: checks
     runs-on: ubuntu-latest
     needs: [static, int, build, e2e]
     if: always()
     steps:
-      - name: All parallel checks green
+      - name: All main verifier checks green
         env:
           NEEDS: ${{ toJSON(needs) }}
         run: |
@@ -156,3 +146,78 @@ jobs:
             to_entries
             | all(.value.result == "success" or .value.result == "skipped")
           '
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [checks]
+    if: needs.checks.result == 'success'
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guard stale HEAD
+        id: tip
+        run: |
+          set -euo pipefail
+          git fetch origin main --quiet
+          tip=$(git rev-parse origin/main)
+          if [ "$tip" != "$GITHUB_SHA" ]; then
+            echo "Skip deploy: origin/main is $tip, this run verified $GITHUB_SHA"
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "stale=false" >> "$GITHUB_OUTPUT"
+      - name: Require Vercel credentials
+        if: steps.tip.outputs.stale != 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -z "${VERCEL_TOKEN:-}" ] && missing+=(VERCEL_TOKEN)
+          [ -z "${VERCEL_ORG_ID:-}" ] && missing+=(VERCEL_ORG_ID)
+          [ -z "${VERCEL_PROJECT_ID:-}" ] && missing+=(VERCEL_PROJECT_ID)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing repo secrets for gated deploy: ${missing[*]}. Add them under Settings → Secrets, then re-run this workflow."
+            exit 1
+          fi
+      - name: Deploy production
+        if: steps.tip.outputs.stale != 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          npx --yes vercel@41 pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@41 build --prod --token="$VERCEL_TOKEN"
+          npx --yes vercel@41 deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+  requeue:
+    runs-on: ubuntu-latest
+    needs: [checks, deploy]
+    if: always()
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Re-dispatch if main advanced
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          git fetch origin main --quiet
+          tip=$(git rev-parse origin/main)
+          if [ "$tip" = "$GITHUB_SHA" ]; then
+            echo "HEAD still $GITHUB_SHA — idle"
+            exit 0
+          fi
+          echo "origin/main moved to $tip (verified $GITHUB_SHA) — requeue ci.yml"
+          gh workflow run ci.yml --ref main

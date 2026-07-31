@@ -11,7 +11,7 @@
  *
  * Output: the brief on stdout (issue, id, priority, plan/spec body) — the
  * agent reads it and starts; it does NOT create the branch (Cursor worktrees
- * own that) and it never merges anywhere. PRs go `--base stage`.
+ * own that) and it never merges anywhere. PRs go `--base main`.
  */
 
 import {
@@ -119,6 +119,6 @@ console.log(`  url: https://github.com/fsolla/teqo/issues/${pick.issue.number}`)
 console.log('\n--- spec ---\n')
 console.log(rest.trim() || '(empty body — see linked plan)')
 console.log(
-  '\n[agent:claim] Fluxo: rename_chat (cursor-app-control) → implementar → gate:fast → pnpm push -u origin HEAD → gh pr create --base stage (Closes #' +
+  '\n[agent:claim] Fluxo: rename_chat (cursor-app-control) → implementar → gate:fast → pnpm push -u origin HEAD → gh pr create --base main (Closes #' +
     `${pick.issue.number}) → PARAR. Promote stage→main é automático após CI stage green.`,
 )

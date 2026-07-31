@@ -1,4 +1,4 @@
-# PR gate: feature → main (also stage until cutover). Two-phase cascade:
+# PR gate: feature → main. Two-phase cascade:
 #   Phase 1 (cheap, no Postgres): lint, format, typecheck, knip, cycles, unit
 #   Phase 2 (expensive, Postgres; needs phase 1 green/skipped): int, build, e2e
 # Job-level skips come from the `scope` classifier (scripts/ci-scope.mjs). A
@@ -12,7 +12,7 @@ name: CI (PR)
 
 on:
   pull_request:
-    branches: [stage, main]
+    branches: [main]
 
 concurrency:
   group: ci-pr-${{ github.event.pull_request.number }}
