@@ -84,7 +84,7 @@ flowchart TD
 ## Referências
 
 - `docs/roadmap.md` — Trilha D; Fora de escopo (Business API / massa)
-- Entrevista CG 2026-07-23 (`output/transcribe/general-coordinator-interview-20260723/`) — “ZAP é o campo”
+- Entrevista CG 2026-07-23 (`private/transcribe/general-coordinator-interview-20260723/`) — “ZAP é o campo”
 - `docs/IMPROVE-APP-PLAN.md` — Little Hire / leak WhatsApp
 - `PRODUCT.md` §1 soberania + atalho pragmático; §5 humano no loop
 - `docs/plans/notifications.md` (D2) — complementar

@@ -63,8 +63,8 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 - [x] Fase 1 → `docs/CUSTOMER.md` (2026-07-19)
 - [x] Fase 2 deferred até evidência de quarta
 - [x] continuous-discovery → cadência + OST + roteiro em `CUSTOMER.md` (2026-07-19)
-- [x] Rodar sessão âncora (Mom Test) → Interview Evidence + Snapshot preenchidos (2026-07-23; transcrição diarizada em `output/transcribe/general-coordinator-interview-20260723/`)
-- [x] Bloco B / uso observado — sessão 2026-07-29 (substitui áudio perdido); snapshot em `docs/plans/sessao-observada-coordenador-2026-07-29-snapshot.md`; transcrição em `output/transcribe/general-coordinator-observed-use-20260729/`
+- [x] Rodar sessão âncora (Mom Test) → Interview Evidence + Snapshot preenchidos (2026-07-23; transcrição diarizada em `private/transcribe/general-coordinator-interview-20260723/`)
+- [x] Bloco B / uso observado — sessão 2026-07-29 (substitui áudio perdido); snapshot em `docs/plans/sessao-observada-coordenador-2026-07-29-snapshot.md`; transcrição em `private/transcribe/general-coordinator-observed-use-20260729/`
 - [ ] Cobrar o compromisso: planilha/tabela de prioridades prometida pelo coordenador geral ("Eu te passo em uma tabela")
 - [ ] Little Hire: **não** medir no build atual — medir ≥1 update espontâneo nos 7 dias **após** o primeiro fluxo ação-primeiro em produção (meta soft: antes/na onda 03/08)
 - [ ] Abrir item de roadmap + plano: **fluxos ação-primeiro** (O9–O11) — Início com ações; wizard contínuo “Ajustar votos” / “Ajustar liderança” / …; listas permanecem para bulk; mapa desce a briefing · **rascunho:** `docs/plans/fluxos-acao-primeiro-inicio.md` (UX-1 no roadmap)

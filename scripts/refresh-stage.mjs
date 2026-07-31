@@ -24,7 +24,10 @@ import { dieWithLabel } from './lib/cli.mjs'
 const LABEL = 'refresh:stage'
 const die = dieWithLabel(LABEL)
 
-const PROJECT_ID = process.env.NEON_PROJECT_ID ?? 'lively-math-34249863'
+const PROJECT_ID = process.env.NEON_PROJECT_ID
+if (!PROJECT_ID) {
+  die('Set NEON_PROJECT_ID (Neon console → project id).')
+}
 const DATABASE_NAME = 'neondb'
 const ROLE_NAME = 'neondb_owner'
 const API = 'https://console.neon.tech/api/v2'

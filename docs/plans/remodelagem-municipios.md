@@ -30,7 +30,7 @@ Brief compacto:
 
 ## Contexto
 
-Reunião 2026-07-23 com coordenador geral e deputado Jorge Solla ([CUSTOMER.md](../CUSTOMER.md), entrevista `output/transcribe/general-coordinator-interview-20260723/`). A remodelagem Praças (R0–R5) está em código mas **não deployada** — janela para rename destrutivo barato.
+Reunião 2026-07-23 com coordenador geral e deputado Jorge Solla ([CUSTOMER.md](../CUSTOMER.md), entrevista `private/transcribe/general-coordinator-interview-20260723/`). A remodelagem Praças (R0–R5) está em código mas **não deployada** — janela para rename destrutivo barato.
 
 Mudanças acordadas:
 

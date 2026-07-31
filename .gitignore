@@ -56,14 +56,16 @@ next-env.d.ts
 # IBGE demographics download cache (pnpm build:demographics)
 /data/demographics/
 
-# Transcription intermediates (source audio lives under docs/)
-output/**/*.wav
+# Local-only sensitive material (agents may read; never commit content)
+/private/**
+!/private/README.md
 
-# Playwright
-node_modules/
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/.playwright-cli/
-.aider*
+# Former tracked sensitive locations — never re-add
+/docs/general-coordinator-interview/
+/docs/sheets/
+/output/
+
+# Audio / media field captures
+*.m4a
+*.mp3
+*.webm
