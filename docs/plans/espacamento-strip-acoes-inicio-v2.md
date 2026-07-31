@@ -1,7 +1,7 @@
 # Apertar mais o espaçamento da strip de ações do Início
 
-Status: rascunho
-Atualizado em: 2026-07-30
+Status: entregue (B74 — gap-3)
+Atualizado em: 2026-07-31
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B — **B74**; chassis UX-1 / pós-B72)
 Impeccable: B — uma linha de layout em `CampaignHomeActionStrip`
 Appetite: ~0,25d eng; token Tailwind; sem migration
