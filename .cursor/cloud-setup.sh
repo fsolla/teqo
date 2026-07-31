@@ -20,16 +20,35 @@ if [ ! -f .env ]; then
   echo "[cloud-setup] wrote .env from .env.example (local-only values)"
 fi
 
+TEQO_URL='postgresql://teqo:teqo@localhost:5432/teqo'
+TEQO_TEST_URL='postgresql://teqo:teqo@localhost:5432/teqo_test'
+
+assert_migrated() {
+  local db_url="$1"
+  local label="$2"
+  local count
+  count="$(PGPASSWORD=teqo psql "${db_url}" -Atc 'SELECT COUNT(*) FROM payload_migrations' 2>/dev/null || echo 0)"
+  if [ "${count}" -lt 1 ]; then
+    echo "[cloud-setup] ERROR: ${label} has no payload_migrations after migrate (got '${count}')" >&2
+    exit 1
+  fi
+  echo "[cloud-setup] ${label}: ${count} migrations applied"
+}
+
 # Dev database (teqo) and test database (teqo_test).
+# Pin DATABASE_URL on both — do not rely on dotenv alone (JIT snapshots have
+# seen a silent no-op migrate when the URL was only in a freshly written .env).
 echo "[cloud-setup] migrating teqo..."
-pnpm migrate
+DATABASE_URL="${TEQO_URL}" pnpm migrate
+assert_migrated "${TEQO_URL}" teqo
 echo "[cloud-setup] migrating teqo_test..."
-DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test pnpm migrate
+DATABASE_URL="${TEQO_TEST_URL}" pnpm migrate
+assert_migrated "${TEQO_TEST_URL}" teqo_test
 
 echo "[cloud-setup] seeding teqo..."
-pnpm db:seed:minimal
+DATABASE_URL="${TEQO_URL}" pnpm db:seed:minimal
 echo "[cloud-setup] seeding teqo_test..."
-DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test pnpm db:seed:minimal
+DATABASE_URL="${TEQO_TEST_URL}" pnpm db:seed:minimal
 
 echo "[cloud-setup] OK — minimal database ready (dev + test)."
 echo "[cloud-setup] gate:fast/gate:push need no DB; use pnpm push (not raw git push --no-verify)."
