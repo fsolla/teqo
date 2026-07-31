@@ -1,10 +1,10 @@
 'use client'
 
 import { Info } from 'lucide-react'
-import Link from 'next/link'
 import { useState } from 'react'
 
 import { WizardSignalSkipTrailing } from '@/components/campaign/municipality/WizardSignalSkipTrailing'
+import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { Button } from '@/components/ui/button'
 import {
@@ -61,7 +61,7 @@ export const WizardSignalTypeStep = ({
             const Icon = entry.icon
             return (
               <li key={entry.type} className="relative">
-                <Link
+                <CampaignWizardNavLink
                   href={wizardSignalHref(actionSlug, municipalitySlug, entry.type, entryAction)}
                   className={cn(
                     'flex aspect-square w-full flex-col justify-between rounded-lg border border-border bg-transparent p-3 pr-10 text-left',
@@ -75,7 +75,7 @@ export const WizardSignalTypeStep = ({
                       {entry.shortDescription}
                     </span>
                   </div>
-                </Link>
+                </CampaignWizardNavLink>
                 <Button
                   type="button"
                   variant="ghost"

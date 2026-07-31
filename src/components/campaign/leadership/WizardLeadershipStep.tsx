@@ -1,13 +1,13 @@
 'use client'
 
 import { InfoIcon, PlusIcon } from 'lucide-react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { WizardLeadershipForm } from '@/components/campaign/leadership/WizardLeadershipForm'
+import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -89,7 +89,7 @@ export const WizardLeadershipStep = ({
 
   const trailingAction = skipConfig ? (
     <Button variant="ghost" size="sm" className="min-h-11 px-2 text-sm" asChild>
-      <Link href={skipConfig.href}>{skipConfig.label}</Link>
+      <CampaignWizardNavLink href={skipConfig.href}>{skipConfig.label}</CampaignWizardNavLink>
     </Button>
   ) : undefined
 

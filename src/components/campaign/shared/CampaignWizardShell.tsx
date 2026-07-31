@@ -7,7 +7,9 @@ import {
   useSetCampaignWizardChrome,
   type CampaignWizardChromeSkip,
 } from '@/components/campaign/shell/CampaignWizardChromeContext'
+import { CampaignListResults } from '@/components/campaign/shared/CampaignListPending'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
+import { WIZARD_STEP_PENDING_MESSAGE } from '@/lib/campaignWizardCopy'
 import { cn } from '@/lib/utils'
 
 export type CampaignWizardShellProps = {
@@ -64,24 +66,32 @@ export const CampaignWizardShell = ({
       <main
         aria-labelledby={titleId}
         className={cn(
-          'flex flex-1 flex-col gap-6 py-6 md:justify-start',
+          'flex flex-1 flex-col py-6 md:justify-start',
           contentAlign === 'end' ? 'justify-end md:justify-start' : 'justify-start',
         )}
       >
-        {municipalityLabel ? (
-          <p className="hidden max-w-prose truncate text-sm text-muted-foreground md:block">
-            {municipalityLabel}
-          </p>
-        ) : null}
-        <h1
-          ref={titleRef}
-          id={titleId}
-          tabIndex={-1}
-          className="text-xl font-semibold tracking-tight outline-none md:text-2xl"
+        <CampaignListResults
+          pendingMessage={WIZARD_STEP_PENDING_MESSAGE}
+          className={cn(
+            'flex flex-1 flex-col gap-6',
+            contentAlign === 'end' ? 'justify-end md:justify-start' : 'justify-start',
+          )}
         >
-          {stepTitle}
-        </h1>
-        {children}
+          {municipalityLabel ? (
+            <p className="hidden max-w-prose truncate text-sm text-muted-foreground md:block">
+              {municipalityLabel}
+            </p>
+          ) : null}
+          <h1
+            ref={titleRef}
+            id={titleId}
+            tabIndex={-1}
+            className="text-xl font-semibold tracking-tight outline-none md:text-2xl"
+          >
+            {stepTitle}
+          </h1>
+          {children}
+        </CampaignListResults>
       </main>
     </div>
   )

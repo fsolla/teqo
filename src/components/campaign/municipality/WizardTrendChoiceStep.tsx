@@ -1,10 +1,10 @@
 'use client'
 
 import { Info } from 'lucide-react'
-import Link from 'next/link'
 import { useState } from 'react'
 
 import { WizardTrendSkipTrailing } from '@/components/campaign/municipality/WizardTrendSkipTrailing'
+import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { Button } from '@/components/ui/button'
 import {
@@ -70,7 +70,7 @@ export const WizardTrendChoiceStep = ({
             const Icon = entry.icon
             return (
               <li key={status} className="relative">
-                <Link
+                <CampaignWizardNavLink
                   href={wizardTrendHref(
                     actionSlug,
                     municipalitySlug,
@@ -91,7 +91,7 @@ export const WizardTrendChoiceStep = ({
                       {entry.changeDescription}
                     </span>
                   </div>
-                </Link>
+                </CampaignWizardNavLink>
                 <Button
                   type="button"
                   variant="ghost"

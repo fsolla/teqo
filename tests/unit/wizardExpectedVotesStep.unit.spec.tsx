@@ -5,12 +5,11 @@ import { WizardExpectedVotesStep } from '@/components/campaign/shared/WizardExpe
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 
-vi.mock('next/link', () => ({
-  default: ({ children, href, ...props }: { children: React.ReactNode; href: string }) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+  }),
 }))
 
 vi.mock('@/lib/campaignJsonRequest', () => ({
