@@ -1,20 +1,15 @@
-# Cutover checklist (main-only + gated deploy) — human, once
+# Cutover checklist (main-only + gated deploy) — done
 
-Status after agent delivery (2026-07-31):
+Completed 2026-08-01. Branch `stage` and GitHub Environment `stage` are deleted. Production deploys only from `ci.yml` after the full verifier is green.
 
-- [x] Code PR opened (main-only cutover) — see PR targeting `main`
+- [x] Code PR opened (main-only cutover) — merged to `main`
 - [x] `pnpm configure:branch-protection` applied on `main` (required: `checks` + `migration-lock`, `strict=false`, 0 reviews)
 - [x] No open PRs targeting `stage` at cutover time
 - [x] Repo secrets present (`VERCEL_*`, `POOL_GITHUB_TOKEN`)
 - [x] `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` synced from local `.vercel/project.json` (`vercel link`)
-- [ ] Confirm `ci.yml` deploy job green after token+IDs are correct
-  - Misleading CLI error _"Could not retrieve Project Settings"_ usually means **403** (bad/expired `VERCEL_TOKEN` or wrong IDs) — regenerate token at vercel.com/account/tokens if deploy still fails
+- [x] `ci.yml` deploy job green (`vercel@55`, Node `24.x`, alias https://pt.jorgesolla.com.br)
+- [x] Branch `stage` deleted
+- [x] GitHub Environment `stage` (and `STAGE_*` secrets) deleted
+- [x] Dead stage tooling removed (`db:refresh:stage`, `agent:promote`)
 
-After the cutover PR merges to `main`:
-
-1. Validate Vercel Git skip: push to `main` must **not** start a Vercel Git build (`ignoreCommand` exit 0). Production comes only from `ci.yml` → deploy.
-2. Confirm `ci.yml` runs full suite; deploy job runs or fails closed with a clear missing-secrets message until `VERCEL_*` are set.
-3. `POOL_GITHUB_TOKEN=… pnpm agent:pool -- doctor` must read repo variables.
-4. Optionally delete branch `stage` and its Environment/secrets when idle.
-
-See [AGENT-OPS.md](AGENT-OPS.md).
+Operational reference: [AGENT-OPS.md](AGENT-OPS.md).
