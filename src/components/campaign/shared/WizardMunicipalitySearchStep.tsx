@@ -177,7 +177,7 @@ export const WizardMunicipalitySearchStep = ({
       previousHref={previousHref}
       dismissHref={previousHref}
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         <CampaignSearchInput
           id={WIZARD_MUNICIPALITY_SEARCH_INPUT_ID}
           label={WIZARD_MUNICIPALITY_SEARCH_LABEL}
@@ -202,9 +202,9 @@ export const WizardMunicipalitySearchStep = ({
             </p>
           ) : null}
           {results.status === 'success' && displayRows.length > 0 ? (
-            <ul className="flex flex-col">
+            <ul className="m-0 flex list-none flex-col p-0">
               {displayRows.map(({ hit, continuityReason }) => (
-                <li key={hit.slug}>
+                <li key={hit.slug} className="m-0 list-none p-0">
                   <HomeSearchHitRow
                     href={wizardActionHref(actionSlug, hit.slug)}
                     primary={hit.name}

@@ -66,7 +66,7 @@ export const CampaignWizardShell = ({
       <main
         aria-labelledby={titleId}
         className={cn(
-          'flex flex-1 flex-col py-6 md:justify-start',
+          'flex flex-1 flex-col pt-3 pb-6 md:justify-start md:py-6',
           contentAlign === 'end' ? 'justify-end md:justify-start' : 'justify-start',
         )}
       >
