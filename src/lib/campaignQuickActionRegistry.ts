@@ -10,6 +10,10 @@ import {
   resolveDemandDetailQuickActions,
   resolveDemandsListQuickActions,
 } from '@/lib/campaignQuickActionDemands'
+import {
+  matchesDobradinhasQuickActionSurface,
+  resolveDobradinhasQuickActions,
+} from '@/lib/campaignQuickActionDobradinhas'
 import { isLeaderContactsPath } from '@/lib/campaignQuickActionMount'
 import {
   parseActivityQuickActionSurface,
@@ -56,6 +60,10 @@ export const resolveQuickActionsForPath = (
 
   const municipalityActions = resolveMunicipalityQuickActionsForPath(pathname, role, context)
   if (municipalityActions.length > 0) return municipalityActions
+
+  if (matchesDobradinhasQuickActionSurface(pathname)) {
+    return resolveDobradinhasQuickActions(pathname, role)
+  }
 
   const advisorActions = resolveAdvisorQuickActionsForPath(pathname, role, context)
   if (advisorActions.length > 0) return advisorActions

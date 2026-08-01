@@ -13,6 +13,11 @@ import {
   resolveDemandsListQuickActions,
 } from '@/lib/campaignQuickActionDemands'
 import {
+  matchesDobradinhasQuickActionSurface,
+  parseStateDeputyDetailSlug,
+  resolveDobradinhasQuickActions,
+} from '@/lib/campaignQuickActionDobradinhas'
+import {
   isCampaignActionsPath,
   isCampaignHomePath,
   isLeaderContactsPath,
@@ -79,6 +84,11 @@ describe('campaignQuickActionMount', () => {
     expect(shouldMountQuickActionsDrawer('/campanha/assessores/12', 'candidate')).toBe(true)
     expect(shouldMountQuickActionsDrawer('/campanha/assessores', 'advisor')).toBe(false)
     expect(shouldMountQuickActionsDrawer('/campanha/assessores/12', 'advisor')).toBe(false)
+  })
+
+  it('mounts on dobradinhas for staff (B83)', () => {
+    expect(shouldMountQuickActionsDrawer('/campanha/dobradinhas', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsDrawer('/campanha/dobradinhas/foo', 'advisor')).toBe(true)
   })
 })
 
@@ -182,6 +192,46 @@ describe('activityQuickActions (B84)', () => {
   })
 })
 
+describe('campaignQuickActionDobradinhas (B83)', () => {
+  const staffActionIds = homeActionsForRole('coordinator').map((action) => action.id)
+
+  it('recognizes list, create and detail surfaces', () => {
+    expect(matchesDobradinhasQuickActionSurface('/campanha/dobradinhas')).toBe(true)
+    expect(matchesDobradinhasQuickActionSurface('/campanha/dobradinhas/nova')).toBe(true)
+    expect(matchesDobradinhasQuickActionSurface('/campanha/dobradinhas/eduardo-alves')).toBe(true)
+    expect(matchesDobradinhasQuickActionSurface('/campanha/municipios')).toBe(false)
+  })
+
+  it('parses detail slug and rejects nova', () => {
+    expect(parseStateDeputyDetailSlug('/campanha/dobradinhas/eduardo-alves')).toBe('eduardo-alves')
+    expect(parseStateDeputyDetailSlug('/campanha/dobradinhas/nova')).toBeUndefined()
+  })
+
+  it('returns list catalog with Nova dobradinha plus staff Início actions without prefill', () => {
+    const actions = resolveDobradinhasQuickActions('/campanha/dobradinhas', 'coordinator')
+    expect(actions.map((action) => action.id)).toEqual(['new-state-deputy', ...staffActionIds])
+    expect(actions[0]?.href).toBe('/campanha/dobradinhas/nova')
+    expect(actions.find((action) => action.id === 'update-votes')?.href).toBe(
+      '/campanha/acoes/atualizar-votos',
+    )
+    expect(actions.find((action) => action.id === 'uncovered-municipalities')?.href).toBe(
+      UNCOVERED_MUNICIPALITIES_LIST_HREF,
+    )
+  })
+
+  it('returns staff actions without Nova on detail and create', () => {
+    for (const pathname of ['/campanha/dobradinhas/eduardo-alves', '/campanha/dobradinhas/nova']) {
+      const actions = resolveDobradinhasQuickActions(pathname, 'advisor')
+      expect(actions.map((action) => action.id)).toEqual(staffActionIds)
+      expect(actions.some((action) => action.id === 'new-state-deputy')).toBe(false)
+    }
+  })
+
+  it('returns empty for leader lockdown', () => {
+    expect(resolveDobradinhasQuickActions('/campanha/dobradinhas', 'leader')).toEqual([])
+  })
+})
+
 describe('campaignQuickActionRegistry', () => {
   const staffActionIds = homeActionsForRole('coordinator').map((action) => action.id)
 
@@ -219,6 +269,11 @@ describe('campaignQuickActionRegistry', () => {
   it('delegates activity routes to the B84 catalog', () => {
     const actions = resolveQuickActionsForPath(ACTIVITY_LIST_PATH, 'coordinator', {})
     expect(actions.map((action) => action.id)).toEqual(['new-activity', 'plan-tour'])
+  })
+
+  it('delegates dobradinhas paths to the B83 catalog', () => {
+    const actions = resolveQuickActionsForPath('/campanha/dobradinhas', 'coordinator', {})
+    expect(actions.some((action) => action.id === 'new-state-deputy')).toBe(true)
   })
 
   it('builds wizard hrefs with municipality slug from context', () => {
