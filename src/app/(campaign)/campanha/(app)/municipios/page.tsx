@@ -126,6 +126,8 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       ? null
       : buildMunicipalityListHref({ ...state, priority: 'alta', coverage: 'sem_assessor' }, 1)
 
+  // The overview and the table's filter header stay mounted even with zero
+  // results — only the rows are replaced by the empty state (inside MunicipalityList).
   const overviewNode =
     isStaffView && overview ? (
       <MunicipalityListOverview view={overview} shameHref={shameHref} />
@@ -158,31 +160,27 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
   )
 
   // Shared pieces; flag only switches the composition shell (CL3 tracer).
-  const main = resolveListUnifiedEnabled() ? (
-    wrapStaffListRegion(
-      isStaffView,
+  // Provider wraps both paths the same way (outside the pending boundary).
+  const main = wrapStaffListRegion(
+    isStaffView,
+    resolveListUnifiedEnabled() ? (
       <OpsListPage
         overview={overviewNode}
         toolbar={filters}
         table={tableNode}
         empty={null}
         footer={footerNode}
-      />,
-    )
-  ) : (
-    <CampaignListPendingBoundary>
-      {wrapStaffListRegion(
-        isStaffView,
-        <>
-          {filters}
-          <CampaignListResults>
-            {overviewNode}
-            {tableNode}
-            {footerNode}
-          </CampaignListResults>
-        </>,
-      )}
-    </CampaignListPendingBoundary>
+      />
+    ) : (
+      <CampaignListPendingBoundary>
+        {filters}
+        <CampaignListResults>
+          {overviewNode}
+          {tableNode}
+          {footerNode}
+        </CampaignListResults>
+      </CampaignListPendingBoundary>
+    ),
   )
 
   return (

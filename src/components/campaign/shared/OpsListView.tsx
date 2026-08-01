@@ -14,8 +14,8 @@ export type OpsListViewProps = {
   toolbar: ReactNode
   /** A tabela já resolvida (CampaignTable com colunas do domínio). */
   table: ReactNode
-  /** Empty state (CampaignListEmptyState ou Empty do domínio). */
-  empty: ReactNode
+  /** Empty state (CampaignListEmptyState ou Empty do domínio); null se o empty vive na tabela. */
+  empty: ReactNode | null
   /** Footer/paginação (CampaignListFooter / CampaignListPagination). */
   footer: ReactNode
 }
