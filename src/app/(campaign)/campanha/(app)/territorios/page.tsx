@@ -62,7 +62,13 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
   )
 
   const main = resolveListUnifiedEnabled() ? (
-    <OpsListPage overview={null} toolbar={filters} table={tableNode} empty={null} footer={footerNode} />
+    <OpsListPage
+      overview={null}
+      toolbar={filters}
+      table={tableNode}
+      empty={null}
+      footer={footerNode}
+    />
   ) : (
     <CampaignListPendingBoundary>
       {filters}

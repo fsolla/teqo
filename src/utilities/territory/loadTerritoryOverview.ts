@@ -11,11 +11,11 @@ import { loadMunicipalityScopeFromDocs } from '@/utilities/municipality/campaign
 import { loadMunicipalityGoalCoverageBundle } from '@/utilities/municipality/municipalityGoalAccount'
 import { fieldCeiling, ownVotes2022 } from '@/utilities/municipality/municipalityPotential'
 import { computeAggregateTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
+import type { TerritoryFilterOption } from '@/utilities/territory/territoryListFilters'
 import {
   resolveTerritoryListSort,
   type TerritoryListState,
 } from '@/utilities/territory/territoryListUrl'
-import type { TerritoryFilterOption } from '@/utilities/territory/territoryListFilters'
 import {
   computeTerritoryRollup,
   selectTerritoryOverviewPage,
