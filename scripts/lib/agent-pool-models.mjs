@@ -22,7 +22,7 @@
  * send `fast=false` whenever the model advertises that param.
  */
 
-export const POOL_DEFAULT_MODEL_SLUG = 'composer-2.5'
+const POOL_DEFAULT_MODEL_SLUG = 'composer-2.5'
 
 const GROK_EFFORT_SLUG = /^cursor-grok-4\.5-(low|medium|high)$/
 const KIMI_REASONING_SLUG = /^kimi-k3-(low|high|max)$/
