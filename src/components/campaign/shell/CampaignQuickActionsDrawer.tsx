@@ -14,6 +14,7 @@ import {
   type QuickActionsSnapPoint,
 } from '@/lib/campaignQuickActionSnap'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
+import { cn } from '@/lib/utils'
 
 const SNAP_POINTS = [...QUICK_ACTIONS_SNAP_POINTS]
 
@@ -67,20 +68,14 @@ export const CampaignQuickActionsDrawer = ({
         className="border-t border-border bg-background text-foreground shadow-[0_-4px_24px_-8px_rgb(0_0_0/0.12)] print:hidden"
       >
         <DrawerTitle className="sr-only">Ações rápidas</DrawerTitle>
-        <button
-          type="button"
-          onClick={toggleSnap}
-          aria-expanded={isDock}
-          aria-controls="quickActionContext"
-          className="flex w-full shrink-0 cursor-grab flex-col items-center border-0 bg-transparent px-4 pt-2 pb-1 active:cursor-grabbing"
-          aria-label={isDock ? 'Ocultar ações rápidas' : 'Mostrar ações rápidas'}
-        >
-          <span aria-hidden className="mb-1 block h-1 w-12 rounded-full bg-muted" />
-        </button>
         <div
           id="quickActionContext"
-          className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
+          className={cn(
+            'flex min-h-0 flex-col gap-4 overflow-hidden px-4 pt-2',
+            isDock ? 'flex-1' : 'hidden',
+          )}
           data-snap={isDock ? 'dock' : 'collapsed'}
+          aria-hidden={!isDock}
         >
           {showActions ? (
             <CampaignHomeActionStrip
@@ -96,6 +91,16 @@ export const CampaignQuickActionsDrawer = ({
           ) : null}
           <CampaignGlobalSearchBody />
         </div>
+        <button
+          type="button"
+          onClick={toggleSnap}
+          aria-expanded={isDock}
+          aria-controls="quickActionContext"
+          className="flex w-full shrink-0 cursor-grab flex-col items-center border-0 bg-transparent px-4 pt-2 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))] active:cursor-grabbing"
+          aria-label={isDock ? 'Ocultar ações rápidas' : 'Mostrar ações rápidas'}
+        >
+          <span aria-hidden className="mb-1 block h-1 w-12 rounded-full bg-muted" />
+        </button>
       </DrawerContent>
     </Drawer>
   )

@@ -8,10 +8,7 @@ import {
   CampaignQuickActionsHost,
   useQuickActionsChromeActive,
 } from '@/components/campaign/shell/CampaignQuickActionsHost'
-import {
-  CampaignQuickActionsScrollCollapse,
-  CampaignQuickActionsSnapProvider,
-} from '@/components/campaign/shell/CampaignQuickActionsSnapContext'
+import { CampaignQuickActionsSnapProvider } from '@/components/campaign/shell/CampaignQuickActionsSnapContext'
 import type { CampaignRole } from '@/lib/campaignRoles'
 
 export const CampaignAppScrollChrome = ({
@@ -30,7 +27,6 @@ export const CampaignAppScrollChrome = ({
   return (
     <CampaignQuickActionsSnapProvider>
       <CampaignGlobalSearchProvider>
-        <CampaignQuickActionsScrollCollapse />
         <CampaignContentScroll quickActionsPeek>{children}</CampaignContentScroll>
         <CampaignQuickActionsHost role={role} />
       </CampaignGlobalSearchProvider>

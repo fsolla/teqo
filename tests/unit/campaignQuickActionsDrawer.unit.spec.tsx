@@ -6,7 +6,6 @@ import { CampaignGlobalSearchProvider } from '@/components/campaign/dashboard/Ca
 import { CampaignQuickActionsDrawer } from '@/components/campaign/shell/CampaignQuickActionsDrawer'
 import { CampaignContentScroll } from '@/components/campaign/shell/CampaignQuickActionsHost'
 import {
-  CampaignQuickActionsScrollCollapse,
   CampaignQuickActionsSnapProvider,
   useCampaignQuickActionsSnap,
 } from '@/components/campaign/shell/CampaignQuickActionsSnapContext'
@@ -41,10 +40,7 @@ const idleSuggestPayload = {
 const renderQuickActionsChrome = (ui: ReactNode) =>
   render(
     <CampaignQuickActionsSnapProvider>
-      <CampaignGlobalSearchProvider>
-        <CampaignQuickActionsScrollCollapse />
-        {ui}
-      </CampaignGlobalSearchProvider>
+      <CampaignGlobalSearchProvider>{ui}</CampaignGlobalSearchProvider>
     </CampaignQuickActionsSnapProvider>,
   )
 
@@ -68,7 +64,7 @@ describe('CampaignQuickActionsDrawer (B100)', () => {
     renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
 
     const context = document.getElementById('quickActionContext')
-    expect(context?.className).not.toContain('hidden')
+    expect(context?.className.split(/\s+/)).not.toContain('hidden')
     expect(context?.getAttribute('data-snap')).toBe('dock')
     expect(screen.getByLabelText('Buscar na campanha')).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Resultados da busca' })).toBeTruthy()
@@ -106,6 +102,7 @@ describe('CampaignQuickActionsDrawer (B100)', () => {
     expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe(
       'collapsed',
     )
+    expect(document.getElementById('quickActionContext')?.className).toContain('hidden')
     expect(screen.getByRole('button', { name: 'Mostrar ações rápidas' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Mostrar ações rápidas' }))
@@ -113,7 +110,7 @@ describe('CampaignQuickActionsDrawer (B100)', () => {
   })
 })
 
-describe('CampaignQuickActionsScrollCollapse (B100)', () => {
+describe('CampaignContentScroll quick-actions collapse (B100)', () => {
   it('collapses on content scroll down but not when scrolling back to top', () => {
     renderQuickActionsChrome(
       <>

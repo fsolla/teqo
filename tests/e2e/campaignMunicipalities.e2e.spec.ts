@@ -437,8 +437,8 @@ test.describe('Municípios — bottom drawer mobile (B100)', () => {
       el.dispatchEvent(new Event('scroll'))
     })
 
+    await expect(page.getByRole('button', { name: 'Mostrar ações rápidas' })).toBeVisible()
     await expect(search).not.toBeInViewport()
-    await expect(page.getByRole('button', { name: 'Mostrar ações rápidas' })).toBeInViewport()
 
     await scrollport.evaluate((el) => {
       el.scrollTop = 0

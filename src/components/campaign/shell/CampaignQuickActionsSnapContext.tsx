@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation'
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -13,10 +12,7 @@ import {
   type SetStateAction,
 } from 'react'
 
-import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
 import {
-  QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX,
-  QUICK_ACTIONS_SNAP_COLLAPSED,
   QUICK_ACTIONS_SNAP_DOCK,
   quickActionsSnapIsDock,
   type QuickActionsSnapPoint,
@@ -62,33 +58,4 @@ export const useCampaignQuickActionsSnap = (): CampaignQuickActionsSnapContextVa
     throw new Error('CampaignQuickActionsSnapProvider is required')
   }
   return value
-}
-
-/** Collapses the dock when the main content scrollport moves down past the threshold. */
-export const CampaignQuickActionsScrollCollapse = () => {
-  const { setSnapPoint } = useCampaignQuickActionsSnap()
-  const { uiFocused } = useHomeSearch()
-
-  const collapseIfScrolled = useCallback(() => {
-    if (uiFocused) return
-
-    const scrollport = document.querySelector('[data-slot="campaign-content-scroll"]')
-    if (!(scrollport instanceof HTMLElement)) return
-
-    if (scrollport.scrollTop > QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX) {
-      setSnapPoint(QUICK_ACTIONS_SNAP_COLLAPSED)
-    }
-  }, [setSnapPoint, uiFocused])
-
-  useEffect(() => {
-    const scrollport = document.querySelector('[data-slot="campaign-content-scroll"]')
-    if (!(scrollport instanceof HTMLElement)) return
-
-    scrollport.addEventListener('scroll', collapseIfScrolled, { passive: true })
-    return () => {
-      scrollport.removeEventListener('scroll', collapseIfScrolled)
-    }
-  }, [collapseIfScrolled])
-
-  return null
 }
