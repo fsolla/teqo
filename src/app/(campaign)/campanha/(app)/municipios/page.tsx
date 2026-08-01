@@ -5,6 +5,7 @@ import {
 import config from '@payload-config'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
+import type { ReactNode } from 'react'
 
 import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitTracker'
 import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
@@ -13,7 +14,9 @@ import { MunicipalityList } from '@/components/campaign/municipality/Municipalit
 import { MunicipalityListOverview } from '@/components/campaign/municipality/MunicipalityListOverview'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
+import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import {
   isCampaignCoordinator,
   isCampaignStaff,
@@ -40,6 +43,13 @@ import { createMunicipalityListSignalFormAction } from './municipalityStaffFormA
 type MunicipalitiesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
+
+const wrapStaffListRegion = (isStaffView: boolean, listRegion: ReactNode): ReactNode =>
+  isStaffView ? (
+    <MunicipalityEstimateScenarioProvider>{listRegion}</MunicipalityEstimateScenarioProvider>
+  ) : (
+    listRegion
+  )
 
 export default async function MunicipalitiesPage({ searchParams }: MunicipalitiesPageProps) {
   const rawSearchParams = await searchParams
@@ -117,51 +127,60 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       : buildMunicipalityListHref({ ...state, priority: 'alta', coverage: 'sem_assessor' }, 1)
 
   // The overview and the table's filter header stay mounted even with zero
-  // results — only the rows are replaced by the empty state.
-  const listBody = (
-    <>
-      {isStaffView && overview ? (
-        <MunicipalityListOverview view={overview} shameHref={shameHref} />
-      ) : null}
-      <MunicipalityList
-        municipalities={listMunicipalities}
-        advisorNamesById={advisorNamesById}
-        isStaffView={isStaffView}
-        isCoordinator={isCoordinator}
-        canMoveEngagementLevel={canMoveEngagementLevel}
-        advisorOptions={advisorOptions}
-        columnFilterOptions={columnFilterOptions}
-        signalFormAction={createMunicipalityListSignalFormAction}
-        state={state}
-        columnVisibility={columnVisibility}
-      />
-      <CampaignListFooter
-        totalDocs={totalDocs}
-        singular="município encontrado"
-        plural="municípios encontrados"
-        page={state.page}
-        totalPages={totalPages}
-        hrefForPage={(page) => buildMunicipalityListHref(state, page)}
-      />
-    </>
+  // results — only the rows are replaced by the empty state (inside MunicipalityList).
+  const overviewNode =
+    isStaffView && overview ? (
+      <MunicipalityListOverview view={overview} shameHref={shameHref} />
+    ) : null
+
+  const tableNode = (
+    <MunicipalityList
+      municipalities={listMunicipalities}
+      advisorNamesById={advisorNamesById}
+      isStaffView={isStaffView}
+      isCoordinator={isCoordinator}
+      canMoveEngagementLevel={canMoveEngagementLevel}
+      advisorOptions={advisorOptions}
+      columnFilterOptions={columnFilterOptions}
+      signalFormAction={createMunicipalityListSignalFormAction}
+      state={state}
+      columnVisibility={columnVisibility}
+    />
   )
 
-  // Shared transition: filters navigate, results dim. Staff provider wraps filters + results.
-  const listRegion = (
-    <>
-      {filters}
-      <CampaignListResults>{listBody}</CampaignListResults>
-    </>
+  const footerNode = (
+    <CampaignListFooter
+      totalDocs={totalDocs}
+      singular="município encontrado"
+      plural="municípios encontrados"
+      page={state.page}
+      totalPages={totalPages}
+      hrefForPage={(page) => buildMunicipalityListHref(state, page)}
+    />
   )
 
-  const main = (
-    <CampaignListPendingBoundary>
-      {isStaffView ? (
-        <MunicipalityEstimateScenarioProvider>{listRegion}</MunicipalityEstimateScenarioProvider>
-      ) : (
-        listRegion
-      )}
-    </CampaignListPendingBoundary>
+  // Shared pieces; flag only switches the composition shell (CL3 tracer).
+  // Provider wraps both paths the same way (outside the pending boundary).
+  const main = wrapStaffListRegion(
+    isStaffView,
+    resolveListUnifiedEnabled() ? (
+      <OpsListPage
+        overview={overviewNode}
+        toolbar={filters}
+        table={tableNode}
+        empty={null}
+        footer={footerNode}
+      />
+    ) : (
+      <CampaignListPendingBoundary>
+        {filters}
+        <CampaignListResults>
+          {overviewNode}
+          {tableNode}
+          {footerNode}
+        </CampaignListResults>
+      </CampaignListPendingBoundary>
+    ),
   )
 
   return (
