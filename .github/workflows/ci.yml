@@ -212,6 +212,10 @@ jobs:
         if: steps.tip.outputs.stale != 'true'
         run: |
           set -euo pipefail
+          # Workflow-level env points at the CI teqo_test service. Drop it so
+          # `vercel build` uses `.vercel/.env.production.local` from `vercel pull`
+          # (otherwise Payload migrate hits 127.0.0.1:5432 → ECONNREFUSED).
+          unset DATABASE_URL PAYLOAD_SECRET NEXT_PUBLIC_SITE_URL
           # Canonical CI link (Vercel KB): env VERCEL_*_ID + pull → build → deploy --prebuilt.
           # "Could not retrieve Project Settings" usually means bad/expired token or wrong IDs (403).
           vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
