@@ -47,11 +47,11 @@ Dados: N/A — chrome de fluxo.
 
 Hoje:
 
-| Fluxo | Skip quando? | Comportamento |
-| ----- | ------------ | ------------- |
-| Sinal | `entryAction` ≠ `register-signal` | Correto (standalone = X) |
-| Liderança | `showLeadershipWizardSkip(entryAction)` | Alinhado ao sinal |
-| **Tendência** | `resolveWizardTrendSkip()` **sempre** | **Errado** — standalone mostra “Pular mudança de tendência →” |
+| Fluxo         | Skip quando?                            | Comportamento                                                 |
+| ------------- | --------------------------------------- | ------------------------------------------------------------- |
+| Sinal         | `entryAction` ≠ `register-signal`       | Correto (standalone = X)                                      |
+| Liderança     | `showLeadershipWizardSkip(entryAction)` | Alinhado ao sinal                                             |
+| **Tendência** | `resolveWizardTrendSkip()` **sempre**   | **Errado** — standalone mostra “Pular mudança de tendência →” |
 
 Pedido de produto (2026-08-01): na **primeira configuração** da ação disparada (após município), o direito é **X** (sair sem executar a config principal). Configurações **encadeadas** (após a principal concluída) recebem **“Pular”**. Vale para **todos** os fluxos até a principal fechar.
 

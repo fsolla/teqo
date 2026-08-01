@@ -63,14 +63,15 @@ Pedido (2026-08-01): ao iniciar uma ação → município → **ajuste principal
 - **Cadeia = navegação entre rotas/passos existentes + `entryAction`, não um mega-form único.** Reusa B61/B63/B64/B70. **Rejeitado:** um só POST transacional de tudo (caro; quebra skip parcial); checkboxes “Quer também?” sem subfluxo (raso demais vs tiles já feitos).
 - **Matriz v1 (assumida — validar com produto):**
 
-  | Entry (botão Início) | Principal | Encadeadas (ordem) |
-  | -------------------- | --------- | ------------------ |
-  | `update-votes` | votos | tendência → sinal → liderança |
-  | `register-signal` | sinal | tendência |
-  | `change-trend` | tendência | sinal |
-  | `update-leadership` | liderança | — (sem cadeia v1) |
+  | Entry (botão Início) | Principal | Encadeadas (ordem)            |
+  | -------------------- | --------- | ----------------------------- |
+  | `update-votes`       | votos     | tendência → sinal → liderança |
+  | `register-signal`    | sinal     | tendência                     |
+  | `change-trend`       | tendência | sinal                         |
+  | `update-leadership`  | liderança | — (sem cadeia v1)             |
 
   **Rejeitado:** incluir nível de envolvimento (E14) / assessor na v1 (A7/A8 do UX-1 — raros no ritual 7h); cadeia simétrica completa em todo entry.
+
 - **Pular / Salvar avançam a fila; X só na principal (B96).** Encadeada nunca usa X como “pular um elo” — X abortaria o ritual inteiro só se quisermos dismiss global; **recomendação:** nas encadeadas dismiss/skip = próximo ou fim (Pular), sem X que descarte a principal já salva sem aviso. **Rejeitado:** X nas encadeadas = Início (ok como dismiss explícito se B75 mantiver — produto pediu Pular no lugar do X).
 - **Gravação por elo (já existente), não commit único no fim.** **Rejeitado:** rascunho multi-collection até o CTA final (appetite + U4).
 - **i18n:** `wizardChain`, `entryAction`, `nextChainHref`; copy pt-BR nos títulos de fluxo já do catálogo.
