@@ -1,6 +1,8 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
+import { toast } from 'sonner'
 
 import {
   MUNICIPALITY_EXPECTED_VOTES_ENDPOINT,
@@ -13,18 +15,23 @@ import { VoteEstimateScenarioInputs } from '@/components/campaign/votePledge/Vot
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
+import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { wizardActionHref } from '@/lib/campaignActionRoutes'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
+  resolveWizardVotesSkip,
   WIZARD_VOTES_FINAL_CTA_LABEL,
   WIZARD_VOTES_SAVED_MESSAGE,
   wizardFlowTitleForSlug,
-  wizardNextStepPlaceholder,
   wizardNextStepTitle,
 } from '@/lib/campaignWizardCopy'
 import { type VoteEstimateScenario, type VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
+import {
+  resolveWizardChainEntry,
+  wizardChainContinueHref,
+} from '@/lib/wizardActionChain'
 import {
   applyVoteShortcut,
   getWizardVoteViolation,
@@ -40,6 +47,7 @@ type WizardExpectedVotesStepProps = {
   municipalityName: string
   municipalitySlug: string
   initialExpectedVotes: VoteEstimateScenarioViewModel
+  entryAction?: CampaignWizardActionId
 }
 
 export const WizardExpectedVotesStep = ({
@@ -48,13 +56,15 @@ export const WizardExpectedVotesStep = ({
   municipalityName,
   municipalitySlug,
   initialExpectedVotes,
+  entryAction,
 }: WizardExpectedVotesStepProps) => {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [estimates, setEstimates] = useState(initialExpectedVotes)
   const [focusedScenario, setFocusedScenario] = useState<VoteEstimateScenario>('central')
   const [violation, setViolation] = useState<WizardVoteViolation | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [phase, setPhase] = useState<'editing' | 'saved'>('editing')
+  const skip = resolveWizardVotesSkip(entryAction, municipalitySlug)
 
   const clearViolationState = () => {
     if (violation) setViolation(null)
@@ -69,6 +79,11 @@ export const WizardExpectedVotesStep = ({
   const handleShortcut = (shortcut: VoteShortcut) => {
     const nextValue = applyVoteShortcut(estimates[focusedScenario], shortcut)
     handleValuesChange({ ...estimates, [focusedScenario]: nextValue })
+  }
+
+  const continueAfterVotes = () => {
+    const sessionEntry = resolveWizardChainEntry(entryAction, 'update-votes')
+    router.replace(wizardChainContinueHref(sessionEntry, 'update-votes', municipalitySlug))
   }
 
   const handleConfirm = () => {
@@ -103,30 +118,16 @@ export const WizardExpectedVotesStep = ({
 
       setEstimates(payload.savedExpectedVotes)
       recordLastActedMunicipality(municipalitySlug)
-      setPhase('saved')
+      toast.success(WIZARD_VOTES_SAVED_MESSAGE)
+      continueAfterVotes()
     })
   }
 
-  if (phase === 'saved') {
-    return (
-      <CampaignWizardShell
-        flowTitle={wizardFlowTitleForSlug(actionSlug)}
-        stepTitle="Votos atualizados"
-        isEntryStep={false}
-        previousHref={CAMPAIGN_HOME}
-        dismissHref={CAMPAIGN_HOME}
-        municipalityLabel={municipalityName}
-      >
-        <div className="flex flex-col gap-4" role="status" aria-live="polite">
-          <p className="text-sm text-muted-foreground">{WIZARD_VOTES_SAVED_MESSAGE}</p>
-          <p className="text-sm text-muted-foreground">{wizardNextStepPlaceholder(actionSlug)}</p>
-          <Button asChild className="min-h-11 w-full sm:w-auto">
-            <CampaignWizardNavLink href={CAMPAIGN_HOME}>Voltar ao Início</CampaignWizardNavLink>
-          </Button>
-        </div>
-      </CampaignWizardShell>
-    )
-  }
+  const trailingAction = skip ? (
+    <Button variant="ghost" size="sm" className="min-h-11 px-2 text-sm" asChild>
+      <CampaignWizardNavLink href={skip.href}>{skip.label}</CampaignWizardNavLink>
+    </Button>
+  ) : undefined
 
   return (
     <CampaignWizardShell
@@ -136,6 +137,8 @@ export const WizardExpectedVotesStep = ({
       previousHref={wizardActionHref(actionSlug)}
       dismissHref={CAMPAIGN_HOME}
       municipalityLabel={municipalityName}
+      skip={skip}
+      trailingAction={trailingAction}
     >
       <div
         className="flex flex-col gap-6"

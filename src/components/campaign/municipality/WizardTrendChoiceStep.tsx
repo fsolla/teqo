@@ -49,7 +49,7 @@ export const WizardTrendChoiceStep = ({
   prefillExtraParams,
 }: WizardTrendChoiceStepProps) => {
   const [infoEntry, setInfoEntry] = useState<PoliticalTrendWizardMetaEntry | null>(null)
-  const skip = resolveWizardTrendSkip(entryAction)
+  const skip = resolveWizardTrendSkip(entryAction, municipalitySlug)
   const options = selectablePoliticalTrendStatuses(currentStatus)
 
   return (

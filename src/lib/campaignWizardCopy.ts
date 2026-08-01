@@ -1,8 +1,10 @@
 import {
   CAMPAIGN_WIZARD_ACTION_SLUGS,
   campaignWizardActionIdForSlug,
+  type CampaignWizardActionId,
 } from '@/lib/campaignActionRoutes'
 import { wizardFlowTitleForActionId } from '@/lib/campaignHomeActions'
+import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 
 export const WIZARD_MUNICIPALITY_STEP_TITLE = 'Em qual município?' as const
 
@@ -30,12 +32,35 @@ export const WIZARD_MUNICIPALITY_SEARCH_EMPTY = 'Nenhum município encontrado.' 
 
 export const WIZARD_VOTES_SAVED_MESSAGE = 'Votos estimados atualizados.' as const
 
-const WIZARD_VOTES_NEXT_FLOW_PLACEHOLDER =
-  'Próximo passo deste fluxo (sinal, tendência ou resumo) em breve.' as const
+export const WIZARD_VOTES_SKIP_LABEL = 'Pular ajuste de votos →' as const
 
 export const WIZARD_VOTES_FINAL_CTA_LABEL = 'Salvar estimativas →' as const
 
 const WIZARD_NEXT_STEP_GENERIC_PLACEHOLDER = 'Próximo passo deste fluxo em breve.' as const
+
+export type WizardVotesSkipAction = {
+  label: string
+  href: string
+}
+
+export const shouldShowWizardVotesSkip = (
+  entryAction: CampaignWizardActionId | undefined,
+): boolean => entryAction != null && entryAction !== 'update-votes'
+
+export const resolveWizardVotesSkip = (
+  entryAction: CampaignWizardActionId | undefined,
+  municipalitySlug: string,
+): WizardVotesSkipAction | undefined =>
+  shouldShowWizardVotesSkip(entryAction)
+    ? {
+        label: WIZARD_VOTES_SKIP_LABEL,
+        href: wizardChainContinueHref(
+          resolveWizardChainEntry(entryAction, 'update-votes'),
+          'update-votes',
+          municipalitySlug,
+        ),
+      }
+    : undefined
 
 export const wizardNextStepTitle = (actionSlug: string): string => {
   if (actionSlug === CAMPAIGN_WIZARD_ACTION_SLUGS['update-votes']) {
@@ -44,12 +69,8 @@ export const wizardNextStepTitle = (actionSlug: string): string => {
   return 'Continuar'
 }
 
-export const wizardNextStepPlaceholder = (actionSlug: string): string => {
-  if (actionSlug === CAMPAIGN_WIZARD_ACTION_SLUGS['update-votes']) {
-    return WIZARD_VOTES_NEXT_FLOW_PLACEHOLDER
-  }
-  return WIZARD_NEXT_STEP_GENERIC_PLACEHOLDER
-}
+export const wizardNextStepPlaceholder = (_actionSlug: string): string =>
+  WIZARD_NEXT_STEP_GENERIC_PLACEHOLDER
 
 export const WIZARD_LEADERSHIP_GRID_TITLE = 'Quem coordena por aqui?' as const
 

@@ -14,10 +14,13 @@ import { Textarea } from '@/components/ui/textarea'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { wizardSignalHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
-import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 import { municipalitySignalTypeLabels } from '@/lib/schemas/municipalityUpdate'
+import {
+  resolveWizardChainEntry,
+  wizardChainContinueHref,
+} from '@/lib/wizardActionChain'
 import {
   resolveWizardSignalSkip,
   WIZARD_SIGNAL_BODY_STEP_TITLE_PREFIX,
@@ -46,12 +49,13 @@ export const WizardSignalBodyStep = ({
     createMunicipalityListSignalFormAction,
     {},
   )
-  const skip = resolveWizardSignalSkip(entryAction)
+  const skip = resolveWizardSignalSkip(entryAction, municipalitySlug)
   const stepTitle = `${WIZARD_SIGNAL_BODY_STEP_TITLE_PREFIX}: ${municipalitySignalTypeLabels[signalType]}`
 
   useCampaignFormSuccessToast(state, () => {
     recordLastActedMunicipality(municipalitySlug)
-    router.push(CAMPAIGN_HOME)
+    const sessionEntry = resolveWizardChainEntry(entryAction, 'register-signal')
+    router.replace(wizardChainContinueHref(sessionEntry, 'register-signal', municipalitySlug))
   })
 
   return (

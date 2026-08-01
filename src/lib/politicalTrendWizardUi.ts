@@ -1,10 +1,10 @@
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
-import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import { politicalTrendStatuses, type PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
 import {
   municipalitySignalTypeLabels,
   type MunicipalitySignalType,
 } from '@/lib/schemas/municipalityUpdate'
+import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 
 const politicalTrendDisplayLabels: Record<PoliticalTrendStatusValue, string> = {
   favoravel: 'Favorável',
@@ -69,9 +69,17 @@ export const shouldShowWizardTrendSkip = (
 
 export const resolveWizardTrendSkip = (
   entryAction: CampaignWizardActionId | undefined,
+  municipalitySlug: string,
 ): WizardTrendSkipAction | undefined =>
   shouldShowWizardTrendSkip(entryAction)
-    ? { label: WIZARD_TREND_SKIP_LABEL, href: CAMPAIGN_HOME }
+    ? {
+        label: WIZARD_TREND_SKIP_LABEL,
+        href: wizardChainContinueHref(
+          resolveWizardChainEntry(entryAction, 'change-trend'),
+          'change-trend',
+          municipalitySlug,
+        ),
+      }
     : undefined
 
 export type PoliticalTrendNotePrefillSource =
