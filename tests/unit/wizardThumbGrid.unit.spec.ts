@@ -1,18 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  municipalitySignalTypeMetaByType,
-} from '@/lib/municipalitySignalTypeMeta'
+import { municipalitySignalTypeMetaByType } from '@/lib/municipalitySignalTypeMeta'
 import {
   politicalTrendWizardMeta,
   politicalTrendWizardMetaByStatus,
 } from '@/lib/politicalTrendWizardMeta'
 import { politicalTrendStatuses } from '@/lib/schemas/municipality'
 import { municipalitySignalTypes } from '@/lib/schemas/municipalityUpdate'
-import {
-  WIZARD_THUMB_TILE_GRID_CLASS,
-  wizardSignalTypesThumbOrder,
-} from '@/lib/wizardThumbGrid'
+import { WIZARD_THUMB_TILE_GRID_CLASS, wizardSignalTypesThumbOrder } from '@/lib/wizardThumbGrid'
 
 describe('wizardThumbGrid', () => {
   it('pins thumb-zone grid classes for mobile RTL fill and desktop LTR grid', () => {
@@ -55,9 +50,7 @@ describe('politicalTrendWizardMeta icon colors', () => {
       expect(entry.icon).toBeTruthy()
     }
 
-    expect(politicalTrendWizardMetaByStatus.favoravel.iconClassName).toContain(
-      'estimate-confirmed',
-    )
+    expect(politicalTrendWizardMetaByStatus.favoravel.iconClassName).toContain('estimate-confirmed')
     expect(politicalTrendWizardMetaByStatus.desfavoravel.iconClassName).toContain('destructive')
     expect(politicalTrendWizardMetaByStatus.neutra.iconClassName).toContain('muted-foreground')
   })

@@ -109,11 +109,7 @@ export const WizardSignalBodyStep = ({
         {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
 
         <div className="flex justify-end">
-          <Button
-            type="submit"
-            disabled={!canSave}
-            className="min-h-11 min-w-[7rem]"
-          >
+          <Button type="submit" disabled={!canSave} className="min-h-11 min-w-[7rem]">
             {isPending ? (
               <>
                 <Spinner data-icon="inline-start" aria-hidden="true" />

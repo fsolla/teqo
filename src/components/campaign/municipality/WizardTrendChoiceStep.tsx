@@ -32,11 +32,15 @@ import {
 import type { PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
 import { cn } from '@/lib/utils'
 import { wizardChainEndHref } from '@/lib/wizardActionChain'
+<<<<<<< HEAD
 import { wizardStepPreviousHref } from '@/lib/wizardBack'
 import {
   WIZARD_THUMB_TILE_GRID_CLASS,
   WIZARD_THUMB_TILE_ITEM_CLASS,
 } from '@/lib/wizardThumbGrid'
+=======
+import { WIZARD_THUMB_TILE_GRID_CLASS, WIZARD_THUMB_TILE_ITEM_CLASS } from '@/lib/wizardThumbGrid'
+>>>>>>> 06332987 (style: Prettier format B113 files)
 
 type WizardTrendChoiceStepProps = {
   actionSlug: string
