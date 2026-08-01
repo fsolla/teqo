@@ -5,8 +5,8 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { DemandWorkflowCard } from '@/components/campaign/demand/DemandWorkflowCard'
-import { CampaignQuickActionContextSync } from '@/components/campaign/shell/CampaignQuickActionContextSync'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { CampaignQuickActionContextSync } from '@/components/campaign/shell/CampaignQuickActionContextSync'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import {

@@ -275,9 +275,9 @@ describe('campaignQuickActionRegistry', () => {
   })
 
   it('returns empty catalog on demand detail without municipality context', () => {
-    expect(resolveQuickActionsForPath('/campanha/demandas/pedido-cairu', 'coordinator', {})).toEqual(
-      [],
-    )
+    expect(
+      resolveQuickActionsForPath('/campanha/demandas/pedido-cairu', 'coordinator', {}),
+    ).toEqual([])
   })
 })
 
