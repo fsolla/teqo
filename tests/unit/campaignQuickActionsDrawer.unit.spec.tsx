@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { BarChart3 } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CampaignGlobalSearchProvider } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
 import { CampaignQuickActionsDrawer } from '@/components/campaign/shell/CampaignQuickActionsDrawer'
@@ -37,6 +38,27 @@ const idleSuggestPayload = {
   demands: [],
 }
 
+const matchMediaMock = vi.fn()
+
+beforeEach(() => {
+  matchMediaMock.mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }))
+  vi.stubGlobal('matchMedia', matchMediaMock)
+})
+
+afterEach(() => {
+  cleanup()
+  vi.mocked(postCampaignJson).mockReset()
+  vi.unstubAllGlobals()
+})
+
 const renderQuickActionsChrome = (ui: ReactNode) =>
   render(
     <CampaignQuickActionsSnapProvider>
@@ -48,11 +70,6 @@ const SnapReadout = () => {
   const { snapPoint } = useCampaignQuickActionsSnap()
   return <div data-testid="snap">{snapPoint ?? 'null'}</div>
 }
-
-afterEach(() => {
-  cleanup()
-  vi.mocked(postCampaignJson).mockReset()
-})
 
 describe('CampaignQuickActionsDrawer (B100)', () => {
   it('loads in dock snap with global search visible', () => {
@@ -69,6 +86,33 @@ describe('CampaignQuickActionsDrawer (B100)', () => {
     expect(screen.getByLabelText('Buscar na campanha')).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Resultados da busca' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Ocultar ações rápidas' })).toBeTruthy()
+  })
+
+  it('bleeds the action strip edge-to-edge inside the drawer gutter (B101)', () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
+
+    renderQuickActionsChrome(
+      <CampaignQuickActionsDrawer
+        actions={[
+          {
+            id: 'test',
+            label: 'Registrar',
+            icon: BarChart3,
+            description: 'Teste.',
+            href: '/campanha',
+          },
+        ]}
+      />,
+    )
+
+    const context = document.getElementById('quickActionContext')
+    const stripBleed = context?.firstElementChild
+    expect(stripBleed?.className).toContain('-mx-4')
+    expect(stripBleed?.className).toContain('w-[calc(100%+2rem)]')
+    expect(stripBleed?.querySelector('[aria-label="Ações rápidas"]')).not.toBeNull()
   })
 
   it('posts home-search when the drawer query is active', async () => {

@@ -78,16 +78,18 @@ export const CampaignQuickActionsDrawer = ({
           aria-hidden={!isDock}
         >
           {showActions ? (
-            <CampaignHomeActionStrip
-              actions={actions.map((action) => ({
-                id: action.id,
-                label: action.label,
-                icon: action.icon,
-                description: action.description,
-                href: action.href,
-              }))}
-              className="w-full"
-            />
+            <div className="-mx-4 w-[calc(100%+2rem)]">
+              <CampaignHomeActionStrip
+                actions={actions.map((action) => ({
+                  id: action.id,
+                  label: action.label,
+                  icon: action.icon,
+                  description: action.description,
+                  href: action.href,
+                }))}
+                className="w-full"
+              />
+            </div>
           ) : null}
           <CampaignGlobalSearchBody />
         </div>
