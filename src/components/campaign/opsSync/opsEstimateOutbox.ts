@@ -15,6 +15,7 @@ import {
   type EnqueueEstimateVotesInput,
   type OpsEstimateOutboxRow,
 } from '@/components/campaign/opsSync/opsEstimateOutboxModel'
+import { opsOutboxKey, type OpsOutboxKey } from '@/lib/campaignOps/opsContract'
 import {
   isOpsEstimateConflictMessage,
   parseOpsEstimateConflictServerEstimatedAt,
@@ -153,4 +154,15 @@ export const discardOpsEstimateOutboxRow = (pledgeId: number): void => {
   if (opsEstimateOutboxCollection.has(pledgeId)) {
     opsEstimateOutboxCollection.delete(pledgeId)
   }
+}
+
+/** Pending/conflict pledge ids as merge outbox keys (OH5 — protect local rows). */
+export const collectOpsEstimateOutboxKeys = (): Set<OpsOutboxKey> => {
+  const keys = new Set<OpsOutboxKey>()
+  for (const row of opsEstimateOutboxCollection.toArray) {
+    if (row.status === 'pending' || row.status === 'conflict') {
+      keys.add(opsOutboxKey('votePledges', row.pledgeId))
+    }
+  }
+  return keys
 }

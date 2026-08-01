@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import React from 'react'
 
+import { CampaignOpsSyncProvider } from '@/components/campaign/opsSync/CampaignOpsSyncProvider'
+import { OpsSyncStatusChrome } from '@/components/campaign/opsSync/OpsSyncStatusChrome'
 import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
 import {
   BiometricEnrollmentToast,
@@ -26,6 +28,8 @@ import {
 } from '@/components/ui/Sidebar'
 import { Toaster } from '@/components/ui/Toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
+import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
 import { getCampaignUserWithAvatar } from '@/utilities/campaignAuth'
 import { campaignUserShellView } from '@/utilities/campaignUserProfile'
@@ -43,6 +47,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
   const sidebarStateCookie = cookieStore.get(SIDEBAR_COOKIE_NAME)
   const hasSidebarCookie = sidebarStateCookie !== undefined
   const defaultOpen = sidebarStateCookie ? sidebarStateCookie.value === 'true' : true
+  const opsSyncEnabled = resolveOpsHybridEnabled() && isStaffCampaignRole(user.role)
 
   // B40 discovery. The relying party is decided from headers alone, so it is
   // resolved first and this layout — which runs on every authenticated
@@ -72,40 +77,46 @@ export default async function CampaignAppLayout({ children }: { children: React.
       defaultOpen={defaultOpen}
       className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible"
     >
-      <CampaignSidebarViewportDefault hasSidebarCookie={hasSidebarCookie} />
-      <CampaignSidebar user={campaignUserShellView(user)} />
-      <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
-        <CampaignWizardChromeProvider>
-          <CampaignHomeSearchChromeProvider>
-            <CampaignQuickActionContextProvider>
-              <CampaignListPendingBoundary>
-                <CampaignMobileTopBar
-                  notificationBell={<CampaignNotificationBellSlot user={user} />}
-                />
-                <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
-                  <SidebarTrigger />
-                  <div className="ml-auto">
-                    <CampaignNotificationBellSlot user={user} />
-                  </div>
-                </header>
-                {/*
+      <CampaignOpsSyncProvider enabled={opsSyncEnabled}>
+        <CampaignSidebarViewportDefault hasSidebarCookie={hasSidebarCookie} />
+        <CampaignSidebar user={campaignUserShellView(user)} />
+        <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
+          <CampaignWizardChromeProvider>
+            <CampaignHomeSearchChromeProvider>
+              <CampaignQuickActionContextProvider>
+                <CampaignListPendingBoundary>
+                  <CampaignMobileTopBar
+                    notificationBell={<CampaignNotificationBellSlot user={user} />}
+                    opsSyncStatus={
+                      opsSyncEnabled ? <OpsSyncStatusChrome className="max-w-[11rem]" /> : null
+                    }
+                  />
+                  <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
+                    <SidebarTrigger />
+                    <div className="ml-auto flex items-center gap-3">
+                      {opsSyncEnabled ? <OpsSyncStatusChrome /> : null}
+                      <CampaignNotificationBellSlot user={user} />
+                    </div>
+                  </header>
+                  {/*
                 Provider must wrap CampaignAppScrollChrome, not only page children:
                 the mobile quick-actions drawer (B91/B100) mounts as a sibling of
                 the scrollport and renders search hits with CampaignHoverTooltip
                 (priority flag). Nested only around {children} left focus→suggest
                 without a provider and crashed the page (B102).
               */}
-                <TooltipProvider delayDuration={300}>
-                  <CampaignAppScrollChrome role={user.role}>{children}</CampaignAppScrollChrome>
-                </TooltipProvider>
-                <Toaster position="top-center" />
-                <InstallPwaToast />
-                {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
-              </CampaignListPendingBoundary>
-            </CampaignQuickActionContextProvider>
-          </CampaignHomeSearchChromeProvider>
-        </CampaignWizardChromeProvider>
-      </SidebarInset>
+                  <TooltipProvider delayDuration={300}>
+                    <CampaignAppScrollChrome role={user.role}>{children}</CampaignAppScrollChrome>
+                  </TooltipProvider>
+                  <Toaster position="top-center" />
+                  <InstallPwaToast />
+                  {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
+                </CampaignListPendingBoundary>
+              </CampaignQuickActionContextProvider>
+            </CampaignHomeSearchChromeProvider>
+          </CampaignWizardChromeProvider>
+        </SidebarInset>
+      </CampaignOpsSyncProvider>
     </SidebarProvider>
   )
 }
