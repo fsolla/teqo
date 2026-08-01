@@ -19,7 +19,9 @@ test.describe('Wizard — header mobile (B75)', () => {
     const topBar = page.locator('[data-slot="campaign-mobile-top-bar"][data-mode="wizard"]')
     await expect(topBar).toBeVisible()
     await expect(topBar.getByText('Ajustar votos', { exact: true })).toBeVisible()
-    await expect(page.getByRole('heading', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toBeVisible()
+    await expect(page.getByRole('heading', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toHaveCount(0)
+    await expect(page.getByLabel('Buscar município')).toBeVisible()
+    await expect(page.getByRole('region', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Sair da ação' })).toBeVisible()
     await expect(page.getByRole('link', { name: /Voltar/ })).toHaveCount(0)
 
@@ -55,6 +57,7 @@ test.describe('Wizard — header mobile (B75)', () => {
 
     await page.getByRole('link', { name: /Voltar/ }).click()
     await page.waitForURL(/\/campanha\/acoes\/atualizar-votos\/?$/)
-    await expect(page.getByRole('heading', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toBeVisible()
+    await expect(page.getByRole('heading', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toHaveCount(0)
+    await expect(page.getByLabel('Buscar município')).toBeVisible()
   })
 })

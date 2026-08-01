@@ -12,7 +12,7 @@ import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizard
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { SidebarProvider } from '@/components/ui/Sidebar'
-import { WIZARD_MUNICIPALITY_STEP_TITLE } from '@/lib/campaignWizardCopy'
+import { WIZARD_MUNICIPALITY_STEP_TITLE, wizardFlowChromeAriaLabel } from '@/lib/campaignWizardCopy'
 import { stubMatchMedia } from '../helpers/matchMedia'
 
 const renderWizardShell = (props: React.ComponentProps<typeof CampaignWizardShell>) =>
@@ -84,6 +84,37 @@ describe('CampaignWizardShell', () => {
     const main = within(container).getByRole('main')
     const heading = within(container).getByRole('heading', { level: 1, name: 'Pergunta' })
     expect(main.getAttribute('aria-labelledby')).toBe(heading.id)
+  })
+
+  it('omits step heading when stepTitle is null and labels main with flow title', () => {
+    const { container } = renderWizardShell({
+      flowTitle: 'Ajustar votos',
+      stepTitle: null,
+      isEntryStep: true,
+      previousHref: '/campanha',
+      children: 'Corpo',
+    })
+
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull()
+    const main = within(container).getByRole('main')
+    expect(main.getAttribute('aria-labelledby')).toBeNull()
+    expect(main.getAttribute('aria-label')).toBe(wizardFlowChromeAriaLabel('Ajustar votos'))
+  })
+
+  it('uses tighter top padding on mobile when step title is omitted', () => {
+    const { container } = renderWizardShell({
+      flowTitle: 'Ajustar votos',
+      stepTitle: null,
+      isEntryStep: true,
+      previousHref: '/campanha',
+      children: null,
+    })
+
+    const main = container.querySelector('main')
+    expect(main?.className).toMatch(/pt-2/)
+    expect(main?.className).not.toMatch(/pt-3/)
+    expect(main?.className).toMatch(/pb-6/)
+    expect(main?.className).toMatch(/md:py-6/)
   })
 
   it('moves focus to the step title when stepTitle changes', () => {

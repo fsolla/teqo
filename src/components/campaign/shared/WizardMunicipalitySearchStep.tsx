@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { HomeSearchHitRow } from '@/components/campaign/dashboard/HomeSearchHitRow'
+import { HomeSearchHitRowsSkeleton } from '@/components/campaign/dashboard/HomeSearchHitRowsSkeleton'
 import { HomeSearchMunicipalityVoteTrailing } from '@/components/campaign/dashboard/HomeSearchMunicipalityVoteTrailing'
 import { useHomeSearchQuery } from '@/components/campaign/dashboard/useHomeSearchQuery'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
@@ -170,30 +171,35 @@ export const WizardMunicipalitySearchStep = ({
     results.mode === 'search' &&
     results.municipalities.length === 0
 
+  const showSkeleton =
+    resultsBusy && displayRows.length === 0 && results.status !== 'error' && !showEmpty
+
   return (
     <CampaignWizardShell
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
-      stepTitle={WIZARD_MUNICIPALITY_STEP_TITLE}
+      stepTitle={null}
       isEntryStep
       previousHref={previousHref}
       dismissHref={previousHref}
     >
-      <div className="flex flex-col gap-2">
-        <CampaignSearchInput
-          id={WIZARD_MUNICIPALITY_SEARCH_INPUT_ID}
-          label={WIZARD_MUNICIPALITY_SEARCH_LABEL}
-          placeholder={WIZARD_MUNICIPALITY_SEARCH_PLACEHOLDER}
-          value={query.raw}
-          onChange={(event) => setRaw(event.target.value)}
-          autoComplete="off"
-          enterKeyHint="search"
-          aria-busy={resultsBusy || undefined}
-          maxLength={HOME_SEARCH_QUERY_MAX_LENGTH}
-        />
+      <div className="flex flex-col">
+        <div className="sticky top-0 z-10 -mx-4 bg-background px-4 pb-2 md:-mx-6 md:px-6">
+          <CampaignSearchInput
+            id={WIZARD_MUNICIPALITY_SEARCH_INPUT_ID}
+            label={WIZARD_MUNICIPALITY_SEARCH_LABEL}
+            placeholder={WIZARD_MUNICIPALITY_SEARCH_PLACEHOLDER}
+            value={query.raw}
+            onChange={(event) => setRaw(event.target.value)}
+            autoComplete="off"
+            enterKeyHint="search"
+            aria-busy={resultsBusy || undefined}
+            maxLength={HOME_SEARCH_QUERY_MAX_LENGTH}
+          />
+        </div>
         <div
           role="region"
           aria-live="polite"
-          aria-label="Resultados da busca"
+          aria-label={WIZARD_MUNICIPALITY_STEP_TITLE}
           aria-busy={resultsBusy || undefined}
           className="min-w-0"
         >
@@ -202,6 +208,7 @@ export const WizardMunicipalitySearchStep = ({
               {results.message}
             </p>
           ) : null}
+          {showSkeleton ? <HomeSearchHitRowsSkeleton /> : null}
           {results.status === 'success' && displayRows.length > 0 ? (
             <ul className={HOME_SEARCH_GROUP_LIST_CLASS}>
               {displayRows.map(({ hit, continuityReason }) => (
