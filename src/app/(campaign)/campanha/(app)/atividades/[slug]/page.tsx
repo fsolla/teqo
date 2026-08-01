@@ -13,6 +13,7 @@ import { ActivityTabNav } from '@/components/campaign/activity/ActivityTabNav'
 import { ActivityTaskChecklist } from '@/components/campaign/activity/ActivityTaskChecklist'
 import { ActivityUpdateFeed } from '@/components/campaign/activity/ActivityUpdateFeed'
 import { ActivityUpdateForm } from '@/components/campaign/activity/ActivityUpdateForm'
+import { CampaignQuickActionContextBridge } from '@/components/campaign/shell/CampaignQuickActionContextBridge'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -65,6 +66,10 @@ export default async function ActivityDetailPage({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <CampaignQuickActionContextBridge
+        activitySlug={view.slug}
+        municipalitySlug={view.municipality?.slug}
+      />
       <header className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex min-w-0 flex-col gap-2">

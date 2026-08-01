@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react'
 
 import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/Drawer'
-import type { ResolvedCampaignHomeAction } from '@/lib/campaignHomeActions'
+import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
 import {
   QUICK_ACTIONS_SNAP_COLLAPSED,
   QUICK_ACTIONS_SNAP_EXPANDED,
@@ -19,7 +19,7 @@ const SNAP_POINTS = [...QUICK_ACTIONS_SNAP_POINTS]
 export const CampaignQuickActionsDrawer = ({
   actions,
 }: {
-  actions: readonly ResolvedCampaignHomeAction[]
+  actions: readonly CampaignQuickAction[]
 }) => {
   const [snapPoint, setSnapPoint] = useState<QuickActionsSnapPoint | null>(
     QUICK_ACTIONS_SNAP_COLLAPSED,

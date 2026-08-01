@@ -1,4 +1,5 @@
 import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
+import { isActivityTourComposerPath } from '@/lib/campaignQuickActionPaths'
 import { CAMPAIGN_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 
@@ -19,6 +20,8 @@ export const isLeaderContactsPath = (pathname: string): boolean =>
 export const shouldMountQuickActionsDrawer = (pathname: string, role: CampaignRole): boolean => {
   if (isCampaignHomePath(pathname)) return false
   if (isCampaignActionsPath(pathname)) return false
+  // B84: E13 compositor already exposes primary CTAs — skip competing drawer chrome.
+  if (isActivityTourComposerPath(pathname)) return false
   if (role === 'leader') return isLeaderContactsPath(pathname)
   return isStaffCampaignRole(role)
 }
