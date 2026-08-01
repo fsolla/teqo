@@ -143,7 +143,7 @@ export const WizardLeadershipStep = ({
       skip={skipConfig}
       trailingAction={trailingAction}
       contentFocus={mode.kind === 'form' ? 'none' : 'title'}
-      clientLayer={mode.kind === 'form' ? WIZARD_LEADERSHIP_FORM_LAYER : null}
+      clientLayer={mode.kind === 'form' ? WIZARD_LEADERSHIP_FORM_LAYER : undefined}
       onPopClientLayer={handlePopFormLayer}
     >
       {mode.kind === 'form' ? (

@@ -9,7 +9,6 @@ import {
   wizardTrendHref,
   type CampaignWizardActionId,
 } from '@/lib/campaignActionRoutes'
-import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 
 /** Synthetic history mark for URL-step / entry back interception. */
 export const WIZARD_BACK_HISTORY_KEY = 'teqoWizardBack' as const
@@ -106,38 +105,21 @@ export const wizardStepPreviousHref = (input: WizardStepPreviousHrefInput): stri
   }
 }
 
-/** `signalType` is unused for previous — body always returns to the type step. */
-export const wizardSignalBodyPreviousHref = (
-  actionSlug: string,
-  municipalitySlug: string,
-  _signalType: MunicipalitySignalType,
-  entryAction?: CampaignWizardActionId,
-  returnPath?: string,
-): string =>
-  wizardStepPreviousHref({
-    step: 'signal-body',
-    actionSlug,
-    municipalitySlug,
-    entryAction,
-    returnPath,
-  })
-
 export const isWizardBackHistoryState = (state: unknown): state is WizardBackHistoryState =>
   typeof state === 'object' &&
   state !== null &&
-  WIZARD_BACK_HISTORY_KEY in state &&
-  (state as WizardBackHistoryState)[WIZARD_BACK_HISTORY_KEY] === true
+  (state as Record<string, unknown>)[WIZARD_BACK_HISTORY_KEY] === true
 
 export const isWizardLayerHistoryState = (
   state: unknown,
 ): state is WizardBackHistoryState & { [WIZARD_LAYER_HISTORY_KEY]: WizardClientLayer } =>
   typeof state === 'object' &&
   state !== null &&
-  (state as WizardBackHistoryState)[WIZARD_LAYER_HISTORY_KEY] === WIZARD_LEADERSHIP_FORM_LAYER
+  (state as Record<string, unknown>)[WIZARD_LAYER_HISTORY_KEY] === WIZARD_LEADERSHIP_FORM_LAYER
 
 /**
  * After popstate, handle when we had pushed a synthetic wizard entry and
- * are not closing that entry ourselves (header dismiss cleanup).
+ * are not closing that entry ourselves.
  */
 export const shouldHandleWizardBackPopstate = (input: {
   wasHistoryPushed: boolean

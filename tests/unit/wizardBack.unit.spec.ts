@@ -9,7 +9,6 @@ import {
   WIZARD_BACK_HISTORY_KEY,
   WIZARD_LAYER_HISTORY_KEY,
   WIZARD_LEADERSHIP_FORM_LAYER,
-  wizardSignalBodyPreviousHref,
   wizardStepPreviousHref,
 } from '@/lib/wizardBack'
 
@@ -57,13 +56,12 @@ describe('wizardBack', () => {
     })
     expect(search).toBe(`/campanha/acoes/${signalSlug}?from=%2Fcampanha`)
 
-    const type = wizardSignalBodyPreviousHref(
-      signalSlug,
-      'cairu',
-      'invasao',
-      undefined,
-      '/campanha',
-    )
+    const type = wizardStepPreviousHref({
+      step: 'signal-body',
+      actionSlug: signalSlug,
+      municipalitySlug: 'cairu',
+      returnPath: '/campanha',
+    })
     expect(type).toBe(`/campanha/acoes/${signalSlug}?municipio=cairu&from=%2Fcampanha`)
 
     expect(

@@ -21,7 +21,7 @@ import {
   wizardChainContinueHref,
   wizardChainEndHref,
 } from '@/lib/wizardActionChain'
-import { wizardSignalBodyPreviousHref } from '@/lib/wizardBack'
+import { wizardStepPreviousHref } from '@/lib/wizardBack'
 import {
   resolveWizardSignalSkip,
   WIZARD_SIGNAL_BODY_STEP_TITLE_PREFIX,
@@ -68,13 +68,13 @@ export const WizardSignalBodyStep = ({
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
       isEntryStep={false}
       stepTitle={stepTitle}
-      previousHref={wizardSignalBodyPreviousHref(
+      previousHref={wizardStepPreviousHref({
+        step: 'signal-body',
         actionSlug,
         municipalitySlug,
-        signalType,
         entryAction,
         returnPath,
-      )}
+      })}
       dismissHref={wizardChainEndHref(returnPath)}
       municipalityLabel={municipalityName}
       skip={skip}

@@ -28,7 +28,7 @@ export type CampaignWizardShellProps = {
   /** When `'none'`, the shell does not move focus to the step title — use on form steps that autofocus an input. */
   contentFocus?: 'title' | 'none'
   /** Client-only layer (e.g. leadership form) — Voltar / Android pop this before leaving the URL step. */
-  clientLayer?: WizardClientLayer | null
+  clientLayer?: WizardClientLayer
   onPopClientLayer?: () => void
   children: ReactNode
 }
@@ -44,7 +44,7 @@ export const CampaignWizardShell = ({
   trailingAction,
   contentAlign = 'start',
   contentFocus = 'title',
-  clientLayer = null,
+  clientLayer,
   onPopClientLayer,
   children,
 }: CampaignWizardShellProps) => {
@@ -56,7 +56,7 @@ export const CampaignWizardShell = ({
     stepKind: isEntryStep ? 'entry' : 'continue',
     previousHref: isEntryStep ? undefined : previousHref,
     dismissHref,
-    clientLayer,
+    clientLayer: clientLayer ?? null,
     onPopClientLayer,
   })
 

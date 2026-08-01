@@ -35,7 +35,6 @@ export const useWizardBackHistory = (
 
   const backPushedRef = useRef(false)
   const layerPushedRef = useRef(false)
-  const closingBackProgrammaticallyRef = useRef(false)
   const closingLayerProgrammaticallyRef = useRef(false)
   const onPopClientLayerRef = useRef(onPopClientLayer)
   const navigateHrefRef = useRef(dismissHref)
@@ -130,12 +129,6 @@ export const useWizardBackHistory = (
       ) {
         layerPushedRef.current = false
         onPopClientLayerRef.current?.()
-        return
-      }
-
-      if (closingBackProgrammaticallyRef.current) {
-        closingBackProgrammaticallyRef.current = false
-        backPushedRef.current = false
         return
       }
 
