@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
+import { WIZARD_CHAIN_SKIP_LABEL } from '@/lib/campaignWizardCopy'
 import {
   politicalTrendWizardMeta,
   politicalTrendWizardMetaByStatus,
@@ -12,7 +13,6 @@ import {
   resolveWizardTrendSkip,
   selectablePoliticalTrendStatuses,
   shouldShowWizardTrendSkip,
-  WIZARD_TREND_SKIP_LABEL,
   WIZARD_TREND_UNREGISTERED_TITLE,
   wizardTrendChoiceStepTitle,
 } from '@/lib/politicalTrendWizardUi'
@@ -47,7 +47,7 @@ describe('politicalTrendWizardUi', () => {
     expect(shouldShowWizardTrendSkip('update-votes')).toBe(true)
     expect(shouldShowWizardTrendSkip('register-signal')).toBe(true)
     expect(resolveWizardTrendSkip('update-votes', 'cairu')).toEqual({
-      label: WIZARD_TREND_SKIP_LABEL,
+      label: WIZARD_CHAIN_SKIP_LABEL,
       href: `${CAMPAIGN_ACTIONS_HOME}/registrar-sinal?municipio=cairu&entry=update-votes`,
     })
   })

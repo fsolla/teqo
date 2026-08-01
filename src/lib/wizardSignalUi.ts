@@ -1,11 +1,10 @@
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
+import { WIZARD_CHAIN_SKIP_LABEL } from '@/lib/campaignWizardCopy'
 import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 
 export const WIZARD_SIGNAL_TYPE_STEP_TITLE = 'Que tipo de sinal?' as const
 
 export const WIZARD_SIGNAL_BODY_STEP_TITLE_PREFIX = 'Detalhar sinal' as const
-
-export const WIZARD_SIGNAL_SKIP_LABEL = 'Pular registro de sinal' as const
 
 export const WIZARD_SIGNAL_SAVE_LABEL = 'Salvar' as const
 
@@ -26,7 +25,7 @@ export const resolveWizardSignalSkip = (
 ): WizardSignalSkipAction | undefined =>
   shouldShowWizardSignalSkip(entryAction)
     ? {
-        label: WIZARD_SIGNAL_SKIP_LABEL,
+        label: WIZARD_CHAIN_SKIP_LABEL,
         href: wizardChainContinueHref(
           resolveWizardChainEntry(entryAction, 'register-signal'),
           'register-signal',

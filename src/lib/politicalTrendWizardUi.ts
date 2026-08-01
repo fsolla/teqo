@@ -1,4 +1,5 @@
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
+import { WIZARD_CHAIN_SKIP_LABEL } from '@/lib/campaignWizardCopy'
 import { politicalTrendStatuses, type PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
 import {
   municipalitySignalTypeLabels,
@@ -11,8 +12,6 @@ const politicalTrendDisplayLabels: Record<PoliticalTrendStatusValue, string> = {
   neutra: 'Neutra',
   desfavoravel: 'Desfavorável',
 }
-
-export const WIZARD_TREND_SKIP_LABEL = 'Pular mudança de tendência →' as const
 
 export const WIZARD_TREND_SAVE_LABEL = 'Salvar' as const
 
@@ -73,7 +72,7 @@ export const resolveWizardTrendSkip = (
 ): WizardTrendSkipAction | undefined =>
   shouldShowWizardTrendSkip(entryAction)
     ? {
-        label: WIZARD_TREND_SKIP_LABEL,
+        label: WIZARD_CHAIN_SKIP_LABEL,
         href: wizardChainContinueHref(
           resolveWizardChainEntry(entryAction, 'change-trend'),
           'change-trend',

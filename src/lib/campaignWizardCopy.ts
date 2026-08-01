@@ -32,7 +32,7 @@ export const WIZARD_MUNICIPALITY_SEARCH_EMPTY = 'Nenhum município encontrado.' 
 
 export const WIZARD_VOTES_SAVED_MESSAGE = 'Votos estimados atualizados.' as const
 
-const WIZARD_VOTES_SKIP_LABEL = 'Pular ajuste de votos →' as const
+export const WIZARD_CHAIN_SKIP_LABEL = 'Pular' as const
 
 export const WIZARD_VOTES_FINAL_CTA_LABEL = 'Salvar estimativas →' as const
 
@@ -52,7 +52,7 @@ export const resolveWizardVotesSkip = (
 ): WizardVotesSkipAction | undefined =>
   shouldShowWizardVotesSkip(entryAction)
     ? {
-        label: WIZARD_VOTES_SKIP_LABEL,
+        label: WIZARD_CHAIN_SKIP_LABEL,
         href: wizardChainContinueHref(
           resolveWizardChainEntry(entryAction, 'update-votes'),
           'update-votes',
@@ -76,8 +76,6 @@ export const WIZARD_LEADERSHIP_GRID_TITLE = 'Quem coordena por aqui?' as const
 export const WIZARD_LEADERSHIP_FORM_CREATE_TITLE = 'Nova liderança' as const
 
 export const WIZARD_LEADERSHIP_FORM_EDIT_TITLE = 'Atualizar liderança' as const
-
-export const WIZARD_LEADERSHIP_SKIP_LABEL = 'Pular atualização de liderança →' as const
 
 export const WIZARD_LEADERSHIP_CONTINUE_LABEL = 'Continuar' as const
 

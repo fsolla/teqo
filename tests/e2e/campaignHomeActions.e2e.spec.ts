@@ -333,7 +333,7 @@ test.describe('Wizard — registrar sinal (B63)', () => {
     await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toBeVisible({
       timeout: 15000,
     })
-    await expect(page.getByRole('link', { name: 'Pular registro de sinal' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Pular' })).toHaveCount(0)
 
     await page.getByRole('link', { name: /Invasão/i }).click()
     await page.waitForURL(/signalType=invasao/)
@@ -387,7 +387,7 @@ test.describe('Wizard — registrar sinal (B63)', () => {
       `/campanha/acoes/registrar-sinal?municipio=${municipality.slug}&entry=update-votes`,
     )
 
-    const skip = page.getByRole('link', { name: 'Pular registro de sinal' })
+    const skip = page.getByRole('link', { name: 'Pular' })
     await expect(skip).toBeVisible({ timeout: 15000 })
     await expect(skip).toHaveAttribute(
       'href',
