@@ -38,8 +38,8 @@ import {
 import { resolveQuickActionsForPath } from '@/lib/campaignQuickActionRegistry'
 import {
   QUICK_ACTIONS_SNAP_COLLAPSED,
-  QUICK_ACTIONS_SNAP_EXPANDED,
-  quickActionsSnapIsExpanded,
+  QUICK_ACTIONS_SNAP_DOCK,
+  quickActionsSnapIsDock,
 } from '@/lib/campaignQuickActionSnap'
 import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
 
@@ -395,9 +395,9 @@ describe('campaignQuickActionDemands resolvers', () => {
 })
 
 describe('campaignQuickActionSnap', () => {
-  it('detects expanded snap', () => {
-    expect(quickActionsSnapIsExpanded(QUICK_ACTIONS_SNAP_EXPANDED)).toBe(true)
-    expect(quickActionsSnapIsExpanded(QUICK_ACTIONS_SNAP_COLLAPSED)).toBe(false)
-    expect(quickActionsSnapIsExpanded(null)).toBe(false)
+  it('detects dock snap', () => {
+    expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_DOCK)).toBe(true)
+    expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_COLLAPSED)).toBe(false)
+    expect(quickActionsSnapIsDock(null)).toBe(false)
   })
 })
