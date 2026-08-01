@@ -8,12 +8,12 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
-import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import {
   CampaignHomeSearchChromeProvider,
   useSetCampaignHomeSearchChrome,
   type CampaignHomeSearchChromeState,
 } from '@/components/campaign/shell/CampaignHomeSearchChromeContext'
+import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import {
   CampaignWizardChromeProvider,
   useSetCampaignWizardChrome,

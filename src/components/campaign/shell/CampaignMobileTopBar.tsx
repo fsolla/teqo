@@ -10,13 +10,13 @@ import { useCampaignWizardChrome } from '@/components/campaign/shell/CampaignWiz
 import { Button } from '@/components/ui/button'
 import { SidebarTrigger } from '@/components/ui/Sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
+import { HOME_SEARCH_COLLAPSE_ARIA_LABEL } from '@/lib/campaignHomeSearchContract'
 import {
   WIZARD_APP_TOP_BAR_ARIA_LABEL,
   WIZARD_DISMISS_ARIA_LABEL,
   wizardFlowChromeAriaLabel,
   wizardMunicipalityChromeAriaLabel,
 } from '@/lib/campaignWizardCopy'
-import { HOME_SEARCH_COLLAPSE_ARIA_LABEL } from '@/lib/campaignHomeSearchContract'
 import { cn } from '@/lib/utils'
 
 const wizardNavButtonClass =

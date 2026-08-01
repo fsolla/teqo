@@ -3,16 +3,15 @@
 import type { ReactNode } from 'react'
 
 import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
-import { HomeSearchSuggestSkeleton } from '@/components/campaign/dashboard/HomeSearchSuggestSkeleton'
 import { useHomeSearchResults } from '@/components/campaign/dashboard/HomeSearchResultsContext'
+import { HomeSearchSuggestSkeleton } from '@/components/campaign/dashboard/HomeSearchSuggestSkeleton'
 import { homeSearchHasAnyHits } from '@/lib/campaignHomeSearchHits'
 
 export const HomeSearchResultsShell = ({ children }: { children: ReactNode }) => {
   const { query } = useHomeSearch()
   const { results, resultKind, isFetching } = useHomeSearchResults()
 
-  const hasRenderableHits =
-    results.status === 'success' && homeSearchHasAnyHits(results.data)
+  const hasRenderableHits = results.status === 'success' && homeSearchHasAnyHits(results.data)
   const showSkeleton = isFetching && !hasRenderableHits && results.status !== 'error'
 
   const showEmpty =

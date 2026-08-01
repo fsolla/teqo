@@ -5,7 +5,9 @@ export type HomeSearchFocusHistoryState = {
   [HOME_SEARCH_FOCUS_HISTORY_KEY]?: true
 }
 
-export const isHomeSearchFocusHistoryState = (state: unknown): state is HomeSearchFocusHistoryState =>
+export const isHomeSearchFocusHistoryState = (
+  state: unknown,
+): state is HomeSearchFocusHistoryState =>
   typeof state === 'object' &&
   state !== null &&
   HOME_SEARCH_FOCUS_HISTORY_KEY in state &&
