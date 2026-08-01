@@ -182,13 +182,23 @@ const promoteProductionDeployment = async ({
 }
 
 /**
+ * @typedef {{
+ *   name: string
+ *   gitBranch: string | null
+ *   verified: boolean | null
+ *   redirect: string | null
+ *   customEnvironmentId: string | null
+ * }} ProjectDomainRow
+ */
+
+/**
  * @param {{
  *   token: string
  *   projectId: string
  *   teamId: string
  *   fetchImpl?: typeof fetch
  * }} options
- * @returns {Promise<string[]>}
+ * @returns {Promise<ProjectDomainRow[]>}
  */
 const fetchProjectDomains = async ({ token, projectId, teamId, fetchImpl = fetch }) => {
   const params = new URLSearchParams({ teamId })
@@ -214,8 +224,66 @@ const fetchProjectDomains = async ({ token, projectId, teamId, fetchImpl = fetch
   }
   const rows = Array.isArray(body.domains) ? body.domains : Array.isArray(body) ? body : []
   return rows
-    .map((row) => (row && typeof row.name === 'string' ? normalizeHostname(row.name) : ''))
-    .filter(Boolean)
+    .filter((row) => row && typeof row.name === 'string' && row.name.trim())
+    .map((row) => ({
+      name: normalizeHostname(row.name),
+      gitBranch: typeof row.gitBranch === 'string' && row.gitBranch.trim() ? row.gitBranch : null,
+      verified: typeof row.verified === 'boolean' ? row.verified : null,
+      redirect: typeof row.redirect === 'string' && row.redirect.trim() ? row.redirect : null,
+      customEnvironmentId:
+        typeof row.customEnvironmentId === 'string' && row.customEnvironmentId.trim()
+          ? row.customEnvironmentId
+          : null,
+    }))
+}
+
+/**
+ * Domains with a Git Branch set only auto-alias via Git Integration — CLI `--prod`
+ * deploys (our Actions path) will not move them until the branch binding is cleared.
+ * @param {{
+ *   token: string
+ *   projectId: string
+ *   teamId: string
+ *   domain: string
+ *   fetchImpl?: typeof fetch
+ * }} options
+ */
+const clearProjectDomainGitBranch = async ({
+  token,
+  projectId,
+  teamId,
+  domain,
+  fetchImpl = fetch,
+}) => {
+  const host = normalizeHostname(domain)
+  const params = new URLSearchParams({ teamId })
+  const response = await fetchImpl(
+    `${VERCEL_API_BASE}/v9/projects/${projectId}/domains/${encodeURIComponent(host)}?${params}`,
+    {
+      method: 'PATCH',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+      },
+      // JSON null clears the branch binding (returns domain to Production).
+      body: JSON.stringify({ gitBranch: null }),
+    },
+  )
+  const bodyText = await response.text()
+  let body
+  try {
+    body = bodyText ? JSON.parse(bodyText) : {}
+  } catch {
+    throw new Error(`Vercel domain PATCH returned non-JSON (${response.status})`)
+  }
+  if (!response.ok) {
+    const message =
+      typeof body?.error?.message === 'string'
+        ? body.error.message
+        : bodyText || `HTTP ${response.status}`
+    throw new Error(`Vercel domain PATCH ${response.status}: ${message}`)
+  }
+  return body
 }
 
 /**
@@ -249,13 +317,19 @@ const assignDeploymentAlias = async ({ token, teamId, deploymentId, alias, fetch
   } catch {
     body = { raw: bodyText }
   }
-  if (response.ok) return { ok: true, body }
+  if (response.ok) {
+    const assigned =
+      typeof body?.alias === 'string' ? normalizeHostname(body.alias) : normalizeHostname(alias)
+    return { ok: true, body, assigned, already: false }
+  }
   const message =
     typeof body?.error?.message === 'string'
       ? body.error.message
       : bodyText || `HTTP ${response.status}`
+  // Only treat the exact "already on this deployment" 409 as success — other 409s
+  // (e.g. "domain is not allowed") must fail loudly.
   if (response.status === 409 && /already assigned to (the )?given deployment/i.test(message)) {
-    return { ok: true, body, already: true }
+    return { ok: true, body, assigned: normalizeHostname(alias), already: true }
   }
   throw new Error(`Vercel alias API ${response.status}: ${message}`)
 }
@@ -476,13 +550,49 @@ export const ensureProductionCustomDomain = async ({
   const projectDomains = await fetchProjectDomains({ token, projectId, teamId, fetchImpl })
   note(
     projectDomains.length > 0
-      ? `project domains: ${projectDomains.join(', ')}`
+      ? `project domains: ${projectDomains
+          .map((d) => {
+            const flags = [
+              d.gitBranch ? `gitBranch=${d.gitBranch}` : null,
+              d.redirect ? `redirect=${d.redirect}` : null,
+              d.customEnvironmentId ? `customEnv=${d.customEnvironmentId}` : null,
+              d.verified === false ? 'unverified' : null,
+            ].filter(Boolean)
+            return flags.length > 0 ? `${d.name}(${flags.join(',')})` : d.name
+          })
+          .join(', ')}`
       : 'project domains: (none)',
   )
-  if (!projectDomains.includes(normalizeHostname(expectedHost))) {
+  const expected = normalizeHostname(expectedHost)
+  const domainRow = projectDomains.find((d) => d.name === expected)
+  if (!domainRow) {
     throw new Error(
-      `${expectedHost} is not attached to this Vercel project. Add it under Project → Settings → Domains, then re-run. Domains seen: ${JSON.stringify(projectDomains)}`,
+      `${expectedHost} is not attached to this Vercel project. Add it under Project → Settings → Domains, then re-run. Domains seen: ${JSON.stringify(projectDomains.map((d) => d.name))}`,
     )
+  }
+  if (domainRow.verified === false) {
+    throw new Error(
+      `${expectedHost} is on the project but not verified — finish DNS/TXT verification in Vercel Domains before aliasing.`,
+    )
+  }
+  if (domainRow.redirect) {
+    note(
+      `warning: ${expectedHost} redirects to ${domainRow.redirect} — alias may not serve app traffic`,
+    )
+  }
+  // Git-branch-bound domains only move with Git Integration deploys. We deploy via
+  // CLI (`vercel deploy --prebuilt --prod`), so clear the binding first.
+  if (domainRow.gitBranch) {
+    note(
+      `${expectedHost} had gitBranch=${domainRow.gitBranch} — clearing so CLI/Actions deploys can own Production`,
+    )
+    await clearProjectDomainGitBranch({
+      token,
+      projectId,
+      teamId,
+      domain: expected,
+      fetchImpl,
+    })
   }
 
   const deployment = await fetchDeploymentAliases({
@@ -517,11 +627,13 @@ export const ensureProductionCustomDomain = async ({
       promoted: false,
       aliased: false,
       autoAssignWasFalse: autoAssign === false,
+      clearedGitBranch: Boolean(domainRow.gitBranch),
       deployment,
       steps,
     }
   }
 
+  let promoted = false
   try {
     note(`promoting ${deployment.id}`)
     await promoteProductionDeployment({
@@ -531,6 +643,7 @@ export const ensureProductionCustomDomain = async ({
       deploymentId: deployment.id,
       fetchImpl,
     })
+    promoted = true
   } catch (error) {
     note(`promote skipped: ${error instanceof Error ? error.message : String(error)}`)
   }
@@ -540,13 +653,22 @@ export const ensureProductionCustomDomain = async ({
     token,
     teamId,
     deploymentId: deployment.id,
-    alias: normalizeHostname(expectedHost),
+    alias: expected,
     fetchImpl,
   })
+  const assignedHost = assignResult.assigned ?? expected
+  if (assignedHost !== expected) {
+    throw new Error(
+      `Alias API returned unexpected host ${JSON.stringify(assignedHost)} (wanted ${expected}). body=${JSON.stringify(assignResult.body)}`,
+    )
+  }
   note(
     assignResult.already
       ? `alias API: already on this deployment`
-      : `alias API: assigned ${expectedHost}`,
+      : `alias API: assigned ${expectedHost}` +
+          (assignResult.body?.oldDeploymentId
+            ? ` (was ${String(assignResult.body.oldDeploymentId)})`
+            : ''),
   )
 
   let verified = false
@@ -573,16 +695,19 @@ export const ensureProductionCustomDomain = async ({
     })
     throw new Error(
       `After alias assign, ${expectedHost} is still not on deployment ${deployment.id}. ` +
-        `deployment aliases=${JSON.stringify(hosts)}; domain points to=${JSON.stringify(domainTarget)}`,
+        `deployment aliases=${JSON.stringify(hosts)}; domain points to=${JSON.stringify(domainTarget)}; ` +
+        `aliasApiBody=${JSON.stringify(assignResult.body)}. ` +
+        `Check Vercel → Settings → Domains: Git Branch must be empty, and Environments → Production → Auto-assign Custom Production Domains must be ON.`,
     )
   }
 
   note(`verified alias ${expectedHost}`)
   return {
     alreadyAssigned: false,
-    promoted: true,
+    promoted,
     aliased: true,
     autoAssignWasFalse: autoAssign === false,
+    clearedGitBranch: Boolean(domainRow.gitBranch),
     deployment,
     steps,
   }
