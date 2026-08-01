@@ -12,6 +12,7 @@ import { homeSearchBodySchema } from '@/lib/schemas/homeSearch'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
 import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute'
 import { loadHomeSearchSuggestions } from '@/utilities/homeSearch/loadHomeSearchSuggestions'
+import { loadWizardMunicipalitySuggestions } from '@/utilities/homeSearch/loadWizardMunicipalitySuggestions'
 import { searchHomeActivities } from '@/utilities/homeSearch/searchHomeActivities'
 import { searchHomeAdvisors } from '@/utilities/homeSearch/searchHomeAdvisors'
 import { searchHomeDemands } from '@/utilities/homeSearch/searchHomeDemands'
@@ -34,6 +35,11 @@ export const POST = campaignJsonMutationRoute(
     if (body.mode === 'suggest') {
       const result = await loadHomeSearchSuggestions(payload, actor)
       return NextResponse.json<HomeSearchSuccessResponse>(result)
+    }
+
+    if (body.mode === 'wizard-municipality-suggest') {
+      const result = await loadWizardMunicipalitySuggestions(payload, actor)
+      return NextResponse.json<WizardMunicipalitySearchSuccessResponse>(result)
     }
 
     if (body.mode === 'wizard-municipality') {

@@ -44,10 +44,12 @@ export const WizardMunicipalitySearchStep = ({
   const { query, setRaw, isDebouncing } = useHomeSearchQuery()
   const [results, setResults] = useState<WizardSearchResultsState>({ status: 'idle' })
   const requestSeq = useRef(0)
+  const suggestMode = !query.isActive
+  const searchMode = query.isActive
   const resultsBusy = isDebouncing || results.status === 'loading'
 
   useEffect(() => {
-    if (!query.isActive) {
+    if (!suggestMode && !searchMode) {
       requestSeq.current += 1
       setResults({ status: 'idle' })
       return
@@ -57,10 +59,14 @@ export const WizardMunicipalitySearchStep = ({
     const controller = new AbortController()
     setResults({ status: 'loading' })
 
+    const body = suggestMode
+      ? ({ mode: 'wizard-municipality-suggest' } as const)
+      : ({ mode: 'wizard-municipality', query: query.debounced } as const)
+
     void (async () => {
       const { ok, payload } = await postCampaignJson<WizardMunicipalitySearchSuccessResponse>(
         HOME_SEARCH_ROUTE,
-        { mode: 'wizard-municipality', query: query.debounced },
+        body,
         controller.signal,
       )
 
@@ -81,7 +87,7 @@ export const WizardMunicipalitySearchStep = ({
     return () => {
       controller.abort()
     }
-  }, [query.debounced, query.isActive])
+  }, [query.debounced, searchMode, suggestMode])
 
   const showEmpty =
     query.isActive && results.status === 'success' && results.municipalities.length === 0

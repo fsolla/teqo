@@ -118,5 +118,6 @@ export const homeSearchHasAnyHits = (data: HomeSearchSuccessResponse): boolean =
 
 export type WizardMunicipalitySearchSuccessResponse = {
   status: 'success'
+  resultKind?: 'wizard-suggest'
   municipalities: HomeSearchMunicipalityHit[]
 }
