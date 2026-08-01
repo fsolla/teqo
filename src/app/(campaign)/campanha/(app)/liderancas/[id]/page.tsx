@@ -51,8 +51,7 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
   const municipalitySlugs = leadership.municipalityIDs
     .map((id) => municipalityById.get(id)?.slug)
     .filter((slug): slug is string => slug !== undefined)
-  const singleMunicipalitySlug =
-    municipalitySlugs.length === 1 ? municipalitySlugs[0] : undefined
+  const singleMunicipalitySlug = municipalitySlugs.length === 1 ? municipalitySlugs[0] : undefined
 
   return (
     <CampaignPageShell>

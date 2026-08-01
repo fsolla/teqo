@@ -18,6 +18,10 @@ export const CampaignQuickActionContextSync = ({
   demandSlug,
 }: CampaignQuickActionContext) => {
   const { setContext } = useCampaignQuickActionContext()
+<<<<<<< HEAD
+=======
+  const { activitySlug, demandSlug, leadershipId, municipalitySlug, organizationSlug } = context
+>>>>>>> 0837151 (style: Prettier on B82 files)
 
   useEffect(() => {
     setContext({
@@ -29,6 +33,7 @@ export const CampaignQuickActionContextSync = ({
       demandSlug,
     })
     return () => setContext(emptyCampaignQuickActionContext())
+<<<<<<< HEAD
   }, [
     setContext,
     municipalitySlug,
@@ -38,6 +43,9 @@ export const CampaignQuickActionContextSync = ({
     activitySlug,
     demandSlug,
   ])
+=======
+  }, [activitySlug, demandSlug, leadershipId, municipalitySlug, organizationSlug, setContext])
+>>>>>>> 0837151 (style: Prettier on B82 files)
 
   return null
 }

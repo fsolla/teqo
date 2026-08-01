@@ -1,8 +1,8 @@
 import {
   CAMPAIGN_WIZARD_ACTION_SLUGS,
   campaignActionEntryHref,
-  type CampaignWizardActionId,
   wizardActionHref,
+  type CampaignWizardActionId,
 } from '@/lib/campaignActionRoutes'
 import {
   homeActionsForRole,
@@ -32,7 +32,9 @@ const parseLeadershipDetailId = (pathname: string): number | undefined => {
   return Number(match[1])
 }
 
-const resolveLeadershipListActions = (role: CampaignRole): readonly ResolvedCampaignHomeAction[] => {
+const resolveLeadershipListActions = (
+  role: CampaignRole,
+): readonly ResolvedCampaignHomeAction[] => {
   const actions = homeActionsForRole(role).filter((action) => action.id === 'update-leadership')
   return actions.map((action) => ({
     ...action,

@@ -44,9 +44,7 @@ describe('resolveLeadershipQuickActions', () => {
   })
 
   it('returns null outside leadership routes', () => {
-    expect(
-      resolveLeadershipQuickActions('/campanha/municipios', 'coordinator', {}),
-    ).toBeNull()
+    expect(resolveLeadershipQuickActions('/campanha/municipios', 'coordinator', {})).toBeNull()
     expect(resolveLeadershipQuickActions('/campanha/liderancas/nova', 'coordinator', {})).toBeNull()
     expect(resolveLeadershipQuickActions('/campanha/liderancas', 'leader', {})).toBeNull()
   })
