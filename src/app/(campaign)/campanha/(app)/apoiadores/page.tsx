@@ -1,7 +1,3 @@
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-} from '@/components/campaign/shared/CampaignListPending'
 import config from '@payload-config'
 import { FileUpIcon, PlusIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -10,12 +6,18 @@ import { getPayload } from 'payload'
 
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import {
+  CampaignListPendingBoundary,
+  CampaignListResults,
+} from '@/components/campaign/shared/CampaignListPending'
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
+import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { SupporterFilters } from '@/components/campaign/supporter/SupporterFilters'
 import { SupporterList } from '@/components/campaign/supporter/SupporterList'
 import { SupporterListOverview } from '@/components/campaign/supporter/SupporterListOverview'
 import { Button } from '@/components/ui/button'
+import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { isCampaignCoordinator, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -45,37 +47,65 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
   if (redirectHref) redirect(redirectHref)
   const columnVisibility = await readCampaignColumnVisibility('apoiadores')
 
-  const listBody = (
-    <>
-      {result.docs.length > 0 && overview ? (
-        <SupporterListOverview view={overview} now={now} />
-      ) : null}
-      <SupporterList
-        supporters={result.docs.map((supporter) => toSupporterListItemViewModel(supporter))}
-        columnVisibility={columnVisibility}
-        empty={
-          <CampaignListEmptyState
-            icon={SearchXIcon}
-            title="Nenhum apoiador encontrado"
-            description="Ajuste a busca ou os filtros. Você só vê apoiadores dentro do seu escopo."
-          >
-            <Button asChild variant="outline" className="min-h-11">
-              <Link href="/campanha/apoiadores">Limpar busca e filtros</Link>
-            </Button>
-          </CampaignListEmptyState>
-        }
-      />
-      {result.docs.length > 0 ? (
-        <CampaignListFooter
-          totalDocs={result.totalDocs}
-          singular="apoiador encontrado"
-          plural="apoiadores encontrados"
-          page={state.page}
-          totalPages={result.totalPages}
-          hrefForPage={(page) => buildSupporterListHref(state, page)}
-        />
-      ) : null}
-    </>
+  const overviewNode =
+    result.docs.length > 0 && overview ? (
+      <SupporterListOverview view={overview} now={now} />
+    ) : null
+
+  const toolbarNode = (
+    <SupporterFilters
+      key={buildSupporterFiltersKey(state)}
+      state={state}
+      municipalityOptions={municipalityOptions}
+    />
+  )
+
+  const tableNode = (
+    <SupporterList
+      supporters={result.docs.map((supporter) => toSupporterListItemViewModel(supporter))}
+      columnVisibility={columnVisibility}
+      empty={
+        <CampaignListEmptyState
+          icon={SearchXIcon}
+          title="Nenhum apoiador encontrado"
+          description="Ajuste a busca ou os filtros. Você só vê apoiadores dentro do seu escopo."
+        >
+          <Button asChild variant="outline" className="min-h-11">
+            <Link href="/campanha/apoiadores">Limpar busca e filtros</Link>
+          </Button>
+        </CampaignListEmptyState>
+      }
+    />
+  )
+
+  const footerNode = result.docs.length > 0 ? (
+    <CampaignListFooter
+      totalDocs={result.totalDocs}
+      singular="apoiador encontrado"
+      plural="apoiadores encontrados"
+      page={state.page}
+      totalPages={result.totalPages}
+      hrefForPage={(page) => buildSupporterListHref(state, page)}
+    />
+  ) : null
+
+  const main = resolveListUnifiedEnabled() ? (
+    <OpsListPage
+      overview={overviewNode}
+      toolbar={toolbarNode}
+      table={tableNode}
+      empty={null}
+      footer={footerNode}
+    />
+  ) : (
+    <CampaignListPendingBoundary>
+      {toolbarNode}
+      <CampaignListResults>
+        {overviewNode}
+        {tableNode}
+        {footerNode}
+      </CampaignListResults>
+    </CampaignListPendingBoundary>
   )
 
   return (
@@ -110,15 +140,7 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
         </div>
       </header>
 
-      <CampaignListPendingBoundary>
-        <SupporterFilters
-          key={buildSupporterFiltersKey(state)}
-          state={state}
-          municipalityOptions={municipalityOptions}
-        />
-
-        <CampaignListResults>{listBody}</CampaignListResults>
-      </CampaignListPendingBoundary>
+      {main}
     </CampaignPageShell>
   )
 }
