@@ -20,6 +20,16 @@ describe('CampaignHomeLayout', () => {
     expect(actions?.closest('[data-slot="home-dock"]')).not.toBeNull()
   })
 
+  it('bleeds home-actions edge-to-edge on mobile (compensates scroll p-4)', () => {
+    const { container } = render(<CampaignHomeLayout actions={<p>Actions block</p>} />)
+
+    const actions = container.querySelector('[data-slot="home-actions"]')
+    expect(actions?.className).toContain('-mx-4')
+    expect(actions?.className).toContain('w-[calc(100%+2rem)]')
+    expect(actions?.className).toContain('md:mx-0')
+    expect(actions?.className).toContain('md:w-auto')
+  })
+
   it('renders search slot inside home-dock when provided', () => {
     render(
       <CampaignHomeLayout
