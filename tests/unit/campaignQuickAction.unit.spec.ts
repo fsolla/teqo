@@ -4,6 +4,8 @@ import { resolveActivityQuickActions } from '@/lib/activityQuickActions'
 import { CAMPAIGN_WIZARD_ACTION_SLUGS } from '@/lib/campaignActionRoutes'
 import { advisorQuickCreateHref } from '@/lib/campaignAdvisorQuickActions'
 import { UNCOVERED_MUNICIPALITIES_LIST_HREF, homeActionsForRole } from '@/lib/campaignHomeActions'
+import { CAMPAIGN_CONCEPTS_PATH } from '@/lib/campaignIntelligenceConcepts'
+import { CAMPAIGN_PROFILE_HOME } from '@/lib/campaignPaths'
 import {
   CAMPAIGN_DEMANDS_CREATE_HREF,
   demandCreateHref,
@@ -34,8 +36,6 @@ import {
   parseOrganizationQuickActionSurface,
 } from '@/lib/campaignQuickActionPaths'
 import { resolveQuickActionsForPath } from '@/lib/campaignQuickActionRegistry'
-import { CAMPAIGN_CONCEPTS_PATH } from '@/lib/campaignIntelligenceConcepts'
-import { CAMPAIGN_PROFILE_HOME } from '@/lib/campaignPaths'
 import {
   QUICK_ACTIONS_SNAP_COLLAPSED,
   QUICK_ACTIONS_SNAP_EXPANDED,

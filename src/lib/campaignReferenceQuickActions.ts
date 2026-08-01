@@ -1,7 +1,7 @@
 import { CAMPAIGN_CONCEPTS_PATH } from '@/lib/campaignIntelligenceConcepts'
+import { CAMPAIGN_PROFILE_HOME } from '@/lib/campaignPaths'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
-import { CAMPAIGN_PROFILE_HOME } from '@/lib/campaignPaths'
 import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 
 export const isConceptsPath = (pathname: string): boolean =>

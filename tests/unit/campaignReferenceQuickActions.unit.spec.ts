@@ -31,15 +31,13 @@ describe('campaignReferenceQuickActions paths', () => {
 
 describe('resolveReferenceQuickActionsForPath (B90)', () => {
   it('returns empty catalog for staff on conceitos and perfil', () => {
-    expect(
-      resolveReferenceQuickActionsForPath(CAMPAIGN_CONCEPTS_PATH, 'coordinator', {}),
-    ).toEqual([])
+    expect(resolveReferenceQuickActionsForPath(CAMPAIGN_CONCEPTS_PATH, 'coordinator', {})).toEqual(
+      [],
+    )
     expect(resolveReferenceQuickActionsForPath(CAMPAIGN_PROFILE_HOME, 'advisor', {})).toEqual([])
   })
 
   it('returns empty catalog for leader lockdown', () => {
-    expect(
-      resolveReferenceQuickActionsForPath(CAMPAIGN_PROFILE_HOME, 'leader', {}),
-    ).toEqual([])
+    expect(resolveReferenceQuickActionsForPath(CAMPAIGN_PROFILE_HOME, 'leader', {})).toEqual([])
   })
 })

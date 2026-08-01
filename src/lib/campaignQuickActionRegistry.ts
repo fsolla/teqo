@@ -20,10 +20,13 @@ import {
   parseOrganizationQuickActionSurface,
 } from '@/lib/campaignQuickActionPaths'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
+import {
+  isReferenceQuickActionPath,
+  resolveReferenceQuickActionsForPath,
+} from '@/lib/campaignReferenceQuickActions'
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { resolveLeaderContactsQuickActions } from '@/lib/leaderContactsQuickActions'
 import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
-import { resolveReferenceQuickActionsForPath, isReferenceQuickActionPath } from '@/lib/campaignReferenceQuickActions'
 
 const isTerritoriesListPath = (pathname: string): boolean =>
   pathname === CAMPAIGN_TERRITORIES_HOME || pathname.startsWith(`${CAMPAIGN_TERRITORIES_HOME}/`)

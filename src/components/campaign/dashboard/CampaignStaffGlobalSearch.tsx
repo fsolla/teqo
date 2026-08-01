@@ -1,7 +1,6 @@
 'use client'
 
 import { CampaignHomeSearch } from '@/components/campaign/dashboard/CampaignHomeSearch'
-import { HomeSearchProvider } from '@/components/campaign/dashboard/HomeSearchContext'
 import { HomeSearchActivityGroup } from '@/components/campaign/dashboard/HomeSearchActivityGroup'
 import { HomeSearchAdvisorGroup } from '@/components/campaign/dashboard/HomeSearchAdvisorGroup'
 import { HomeSearchDemandGroup } from '@/components/campaign/dashboard/HomeSearchDemandGroup'
@@ -14,7 +13,6 @@ import {
 import { HomeSearchResultsLayout } from '@/components/campaign/dashboard/HomeSearchResultsLayout'
 import { HomeSearchResultsShell } from '@/components/campaign/dashboard/HomeSearchResultsShell'
 import { HomeSearchStateDeputyGroup } from '@/components/campaign/dashboard/HomeSearchStateDeputyGroup'
-import { useHomeSearchQuery } from '@/components/campaign/dashboard/useHomeSearchQuery'
 
 const CampaignStaffGlobalSearchResults = () => {
   const searchResultsState = useHomeSearchResultsState()
@@ -39,14 +37,3 @@ const CampaignStaffGlobalSearchResults = () => {
 
 /** Result groups + input — requires an ancestor `HomeSearchProvider`. */
 export const CampaignStaffGlobalSearchBody = CampaignStaffGlobalSearchResults
-
-/** Self-contained staff global search for surfaces outside Início (B90 drawer, future B91). */
-export const CampaignStaffGlobalSearch = () => {
-  const searchState = useHomeSearchQuery()
-
-  return (
-    <HomeSearchProvider value={searchState}>
-      <CampaignStaffGlobalSearchResults />
-    </HomeSearchProvider>
-  )
-}
