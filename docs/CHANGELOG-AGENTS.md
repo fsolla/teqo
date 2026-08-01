@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-01):** **Pool pin `fast=false`** — `resolvePoolModel` agora envia `fast=false` em todo spawn cuja família Cloud anuncia o param (`composer-2.5`, `grok-4.5`, …). Antes o supervisor pedia só `{ id: "composer-2.5" }`; a API Create-Agent resolve o default da variante (`fast=true`) e o usage dashboard mostrava `composer-2.5-fast` em todos os workers do pool. Skills `model-selection` / `agent-pool` + plano do orquestrador atualizados.
+
 **Recently resolved (2026-08-01):** **C8 F1–F2** (Issue #37) — freshness audit confirmou entrega em código desde 2026-07-19: locks advisory em batch (`acquireTextAdvisoryLocks`), bulk import com `.returning()` + leituras drizzle, overview derivando `total` de `totalDocs`, migration `pg_trgm`, guard `contactSearchQuery` (mín. 2 chars). Plano [`escala-dry-pos-c6.md`](docs/plans/escala-dry-pos-c6.md) fechado; follow-ups de filtros/forms permanecem no C9.
 
 **Recently resolved (2026-08-01):** **Cutover residue cleanup** — removed dead `pnpm db:refresh:stage` / `scripts/refresh-stage.mjs` and `pnpm agent:promote` / `scripts/agent-promote.mjs`; closed `docs/CUTOVER-MAIN-ONLY.md`; scrubbed PR template `STAGE_DATABASE_URL` checklist item. Branch + Environment `stage` already deleted.

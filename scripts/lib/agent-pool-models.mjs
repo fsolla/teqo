@@ -15,6 +15,11 @@
  * A slug ending in `-fast` is rejected (stripped + warn, then resolve the
  * base). Anything else unknown falls back to composer-2.5. The fallback
  * never crashes a tick.
+ *
+ * **Pin `fast=false`:** Cursor's Create-Agent API defaults omitted `fast` to
+ * `true` (variant `composer-2.5-fast` / `…-fast` on the usage dashboard —
+ * forum confirmation 2026-06). "Never send fast=true" is not enough; we must
+ * send `fast=false` whenever the model advertises that param.
  */
 
 export const POOL_DEFAULT_MODEL_SLUG = 'composer-2.5'
@@ -34,6 +39,22 @@ const paramSupportsValue = (model, paramId, value) => {
 }
 
 /**
+ * Append `fast=false` when the live (or offline) model supports it.
+ * @param {{ id: string, params?: Array<{ id: string, value: string }> }} model
+ * @param {{ id: string, parameters?: Array<{ id: string, values?: Array<{ value: string }> }> } | null} apiModel
+ */
+const pinFastFalse = (model, apiModel) => {
+  const supportsFast =
+    apiModel != null
+      ? paramSupportsValue(apiModel, 'fast', 'false')
+      : // Offline / empty table: pin for families that advertise `fast` live.
+        model.id === 'composer-2.5' || model.id === 'grok-4.5' || model.id === 'cursor-grok-4.5'
+  if (!supportsFast) return model
+  const params = (model.params ?? []).filter((param) => param.id !== 'fast')
+  return { ...model, params: [...params, { id: 'fast', value: 'false' }] }
+}
+
+/**
  * Resolve a canonical (non-fast) slug against the live table.
  * @returns {{ model: { id: string, params?: Array<{ id: string, value: string }> }, ok: true } | { ok: false }}
  */
@@ -44,11 +65,13 @@ const resolveCanonical = (slug, apiModels) => {
     const base =
       findModel(apiModels, 'grok-4.5') ??
       findModel(apiModels, 'cursor-grok-4.5') ??
-      (apiModels.length === 0 ? { id: 'grok-4.5', parameters: [{ id: 'effort' }] } : null)
+      (apiModels.length === 0
+        ? { id: 'grok-4.5', parameters: [{ id: 'effort' }, { id: 'fast' }] }
+        : null)
     if (base && paramSupportsValue(base, 'effort', effort)) {
       return {
         ok: true,
-        model: { id: base.id, params: [{ id: 'effort', value: effort }] },
+        model: pinFastFalse({ id: base.id, params: [{ id: 'effort', value: effort }] }, base),
       }
     }
     return { ok: false }
@@ -63,14 +86,22 @@ const resolveCanonical = (slug, apiModels) => {
     if (base && paramSupportsValue(base, 'reasoning', reasoning)) {
       return {
         ok: true,
-        model: { id: base.id, params: [{ id: 'reasoning', value: reasoning }] },
+        model: pinFastFalse({ id: base.id, params: [{ id: 'reasoning', value: reasoning }] }, base),
       }
     }
     return { ok: false }
   }
 
   const direct = findModel(apiModels, slug)
-  if (direct) return { ok: true, model: { id: direct.id } }
+  if (direct) return { ok: true, model: pinFastFalse({ id: direct.id }, direct) }
+
+  // Offline table: still emit the canonical composer shape with fast pinned.
+  if (apiModels.length === 0 && (slug === POOL_DEFAULT_MODEL_SLUG || slug === 'composer-latest')) {
+    return {
+      ok: true,
+      model: pinFastFalse({ id: POOL_DEFAULT_MODEL_SLUG }, null),
+    }
+  }
   return { ok: false }
 }
 
@@ -87,7 +118,7 @@ export const resolvePoolModel = (issueModel, apiModels = []) => {
     const known = findModel(apiModels, POOL_DEFAULT_MODEL_SLUG)
     const tableNote = apiModels.length === 0 ? ' (tabela /v1/models indisponível)' : ''
     return {
-      model: { id: known?.id ?? POOL_DEFAULT_MODEL_SLUG },
+      model: pinFastFalse({ id: known?.id ?? POOL_DEFAULT_MODEL_SLUG }, known),
       requested,
       usedFallback: requested !== null,
       ...(requested

@@ -91,7 +91,7 @@ Os wrappers disparam `gh workflow run agent-pool.yml -f action=…`; acompanhe c
 
 ## Ciclo de vida de uma Issue no pool
 
-`ready` → (tick: claim coordenado, flip + marcador) → `in-progress` → worker spawnado com o `model:` da Issue (fallback `composer-2.5`) → PR `--base main` com `Closes #N` → CI green → auto-merge → `done`+`in-prod` (flip determinístico do CI) → tick arquiva o agente e repõe o slot.
+`ready` → (tick: claim coordenado, flip + marcador) → `in-progress` → worker spawnado com o `model:` da Issue (fallback `composer-2.5` + **`fast=false`** — omitir `fast` na API vira `composer-2.5-fast` no usage) → PR `--base main` com `Closes #N` → CI green → auto-merge → `done`+`in-prod` (flip determinístico do CI) → tick arquiva o agente e repõe o slot.
 
 - **Falha terminal** (run ERROR/CANCELLED/EXPIRED ou fim sem PR): tick comenta, move a Issue para `blocked` e arquiva o agente. **Triage humana**: ler o run em cursor.com/agents, decidir — re-`ready` manual se transitório (o circuit breaker recusa a 3ª tentativa automática), corrigir a spec se sistêmico.
 - **Worker travado**: archive em cursor.com/agents → o próximo tick reconcilia como falha documentada.
@@ -101,7 +101,7 @@ Os wrappers disparam `gh workflow run agent-pool.yml -f action=…`; acompanhe c
 
 ## Smoke remoto (aceite — rodar na primeira ativação)
 
-1. 2 Issues `kind:chore` triviais, `ready`, sem `model:` → `start --max-slots 2` → 2 agents `pool-i<N>-…` em cursor.com/agents e as 2 Issues `in-progress` com comentário de claim. Zero duplicata. Modelo efetivo = `composer-2.5`.
+1. 2 Issues `kind:chore` triviais, `ready`, sem `model:` → `start --max-slots 2` → 2 agents `pool-i<N>-…` em cursor.com/agents e as 2 Issues `in-progress` com comentário de claim. Zero duplicata. Modelo efetivo = `composer-2.5` **sem** `-fast` (`originalModelName` / usage dashboard = `composer-2.5`, não `composer-2.5-fast`).
 2. 1 Issue `blocked` e 1 `needs:consent` plantadas na fila → permanecem intactas.
 3. 1 Issue com `model: cursor-grok-4.5-high` → run criado com esse modelo (doctor lista os ids válidos).
 4. (Opcional) par bipartido: Issue plan (`cursor-grok-4.5-high`) + Issue exec (`kimi-k3-low`, `depends` no plan) — o tick só spawna a exec quando o plan estiver `done`.

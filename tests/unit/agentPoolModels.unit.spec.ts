@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { POOL_DEFAULT_MODEL_SLUG, resolvePoolModel } from '../../scripts/lib/agent-pool-models.mjs'
+import { resolvePoolModel } from '../../scripts/lib/agent-pool-models.mjs'
 
 const API_MODELS = [
   {
@@ -31,29 +31,40 @@ const API_MODELS = [
   },
 ]
 
+const composerStandard = {
+  id: 'composer-2.5',
+  params: [{ id: 'fast', value: 'false' }],
+}
+
 describe('resolvePoolModel', () => {
-  it('resolves composer by exact id and alias', () => {
+  it('resolves composer by exact id and alias, pinning fast=false', () => {
     expect(resolvePoolModel('composer-2.5', API_MODELS)).toEqual({
-      model: { id: 'composer-2.5' },
+      model: composerStandard,
       requested: 'composer-2.5',
       usedFallback: false,
     })
-    expect(resolvePoolModel('composer-latest', API_MODELS).model).toEqual({ id: 'composer-2.5' })
+    expect(resolvePoolModel('composer-latest', API_MODELS).model).toEqual(composerStandard)
   })
 
   it.each([
     ['cursor-grok-4.5-low', 'low'],
     ['cursor-grok-4.5-medium', 'medium'],
     ['cursor-grok-4.5-high', 'high'],
-  ] as const)('maps %s → grok-4.5 effort=%s', (slug, effort) => {
+  ] as const)('maps %s → grok-4.5 effort=%s + fast=false', (slug, effort) => {
     expect(resolvePoolModel(slug, API_MODELS)).toEqual({
-      model: { id: 'grok-4.5', params: [{ id: 'effort', value: effort }] },
+      model: {
+        id: 'grok-4.5',
+        params: [
+          { id: 'effort', value: effort },
+          { id: 'fast', value: 'false' },
+        ],
+      },
       requested: slug,
       usedFallback: false,
     })
   })
 
-  it('maps kimi-k3-low → kimi-k3 reasoning=low', () => {
+  it('maps kimi-k3-low → kimi-k3 reasoning=low (no fast param on kimi)', () => {
     expect(resolvePoolModel('kimi-k3-low', API_MODELS)).toEqual({
       model: { id: 'kimi-k3', params: [{ id: 'reasoning', value: 'low' }] },
       requested: 'kimi-k3-low',
@@ -61,31 +72,34 @@ describe('resolvePoolModel', () => {
     })
   })
 
-  it('rejects -fast: strips suffix, resolves base, warns', () => {
+  it('rejects -fast: strips suffix, resolves base with fast=false, warns', () => {
     const composerFast = resolvePoolModel('composer-2.5-fast', API_MODELS)
-    expect(composerFast.model).toEqual({ id: 'composer-2.5' })
+    expect(composerFast.model).toEqual(composerStandard)
     expect(composerFast.usedFallback).toBe(false)
     expect(composerFast.warn).toContain('-fast')
 
     const grokFast = resolvePoolModel('cursor-grok-4.5-high-fast', API_MODELS)
     expect(grokFast.model).toEqual({
       id: 'grok-4.5',
-      params: [{ id: 'effort', value: 'high' }],
+      params: [
+        { id: 'effort', value: 'high' },
+        { id: 'fast', value: 'false' },
+      ],
     })
     expect(grokFast.warn).toContain('-fast')
-    expect(grokFast.model.params?.some((param) => param.id === 'fast')).toBeFalsy()
+    expect(grokFast.model.params?.find((param) => param.id === 'fast')?.value).toBe('false')
   })
 
   it('falls back when -fast base is also unknown', () => {
     const result = resolvePoolModel('modelo-inventado-fast', API_MODELS)
-    expect(result.model).toEqual({ id: POOL_DEFAULT_MODEL_SLUG })
+    expect(result.model).toEqual(composerStandard)
     expect(result.usedFallback).toBe(true)
     expect(result.warn).toContain('-fast')
   })
 
-  it('falls back to composer-2.5 with a warn for unknown slugs', () => {
+  it('falls back to composer-2.5 (fast=false) with a warn for unknown slugs', () => {
     const result = resolvePoolModel('modelo-inventado-9', API_MODELS)
-    expect(result.model).toEqual({ id: POOL_DEFAULT_MODEL_SLUG })
+    expect(result.model).toEqual(composerStandard)
     expect(result.requested).toBe('modelo-inventado-9')
     expect(result.usedFallback).toBe(true)
     expect(result.warn).toContain('fallback')
@@ -94,15 +108,26 @@ describe('resolvePoolModel', () => {
   it('uses the default silently when the issue declares no model', () => {
     for (const absent of [undefined, null, '', '   ']) {
       const result = resolvePoolModel(absent, API_MODELS)
-      expect(result.model).toEqual({ id: POOL_DEFAULT_MODEL_SLUG })
+      expect(result.model).toEqual(composerStandard)
       expect(result.usedFallback).toBe(false)
       expect(result.warn).toBeUndefined()
     }
   })
 
-  it('still emits canonical Cloud shapes for known slugs when the table is empty', () => {
+  it('still emits canonical Cloud shapes (incl. fast=false) when the table is empty', () => {
+    expect(resolvePoolModel('composer-2.5', [])).toEqual({
+      model: composerStandard,
+      requested: 'composer-2.5',
+      usedFallback: false,
+    })
     expect(resolvePoolModel('cursor-grok-4.5-medium', [])).toEqual({
-      model: { id: 'grok-4.5', params: [{ id: 'effort', value: 'medium' }] },
+      model: {
+        id: 'grok-4.5',
+        params: [
+          { id: 'effort', value: 'medium' },
+          { id: 'fast', value: 'false' },
+        ],
+      },
       requested: 'cursor-grok-4.5-medium',
       usedFallback: false,
     })
@@ -114,13 +139,13 @@ describe('resolvePoolModel', () => {
 
   it('falls back for unknown slugs when the live table is unavailable', () => {
     const result = resolvePoolModel('qualquer-coisa', [])
-    expect(result.model).toEqual({ id: POOL_DEFAULT_MODEL_SLUG })
+    expect(result.model).toEqual(composerStandard)
     expect(result.warn).toContain('/v1/models')
   })
 
   it('ignores non-string frontmatter values', () => {
     const result = resolvePoolModel(42, API_MODELS)
-    expect(result.model).toEqual({ id: POOL_DEFAULT_MODEL_SLUG })
+    expect(result.model).toEqual(composerStandard)
     expect(result.usedFallback).toBe(false)
   })
 })
