@@ -152,7 +152,9 @@ describe('CampaignWizardShell', () => {
       </SidebarProvider>,
     )
 
-    expect(document.activeElement).not.toBe(screen.getByRole('heading', { level: 1, name: 'Passo 2' }))
+    expect(document.activeElement).not.toBe(
+      screen.getByRole('heading', { level: 1, name: 'Passo 2' }),
+    )
   })
 
   it('moves focus to the step title when stepTitle changes', () => {
