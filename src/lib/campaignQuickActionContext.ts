@@ -9,6 +9,7 @@ export type CampaignQuickActionContext = {
   organizationSlug?: string
   activitySlug?: string
   demandSlug?: string
+  advisorId?: number
 }
 
 export const emptyCampaignQuickActionContext = (): CampaignQuickActionContext => ({})

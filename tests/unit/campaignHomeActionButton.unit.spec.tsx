@@ -91,14 +91,13 @@ describe('CampaignHomeActionButton', () => {
     expect(screen.getByLabelText('Em breve').getAttribute('aria-disabled')).toBe('true')
   })
 
-  it('uses horizontal padding for hit area without shrinking the visual column (B101)', () => {
+  it('uses a wider control column for two-line labels (B109)', () => {
     renderActionButton({ label: 'Registrar', icon: BarChart3 })
     const control = screen.getByRole('button', { name: 'Registrar' })
-    expect(control.className).toContain('px-2')
     expect(control.className).toContain('box-content')
-    expect(control.className).toContain('w-[4.75rem]')
-    expect(actionControlClassName).toContain('px-2')
+    expect(control.className).toContain('w-[5.5rem]')
     expect(actionControlClassName).toContain('box-content')
+    expect(actionControlClassName).toContain('w-[5.5rem]')
   })
 
   it('opens the description drawer on long-press when the pointer is coarse', () => {

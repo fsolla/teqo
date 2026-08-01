@@ -11,9 +11,11 @@ import {
 } from 'react'
 
 import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
+import { useHomeSearchExcludeContext } from '@/components/campaign/dashboard/HomeSearchExcludeContext'
 import type { HomeSearchSuccessResponse } from '@/lib/campaignHomeSearchHits'
 import { HOME_SEARCH_GENERIC_ERROR_MESSAGE } from '@/lib/campaignHomeSearchMessages'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
+import { filterHomeSearchResponseForContext } from '@/lib/homeSearchExcludeCurrentEntity'
 
 const HOME_SEARCH_ROUTE = '/campanha/home-search'
 
@@ -70,6 +72,7 @@ type HomeSearchErrorResponse = { status: 'error'; message: string }
 
 export const useHomeSearchResultsState = (): HomeSearchResultsContextValue => {
   const { query, isDebouncing, uiFocused } = useHomeSearch()
+  const excludeContext = useHomeSearchExcludeContext()
   const initialSuggest = useContext(InitialHomeSearchSuggestContext)
   const [results, setResults] = useState<HomeSearchResultsState>({ status: 'idle' })
   const requestSeq = useRef(0)
@@ -136,12 +139,20 @@ export const useHomeSearchResultsState = (): HomeSearchResultsContextValue => {
 
   const isFetching = isDebouncing || results.status === 'loading'
 
+  const filteredResults = useMemo((): HomeSearchResultsState => {
+    if (results.status !== 'success' || !excludeContext) return results
+    return {
+      status: 'success',
+      data: filterHomeSearchResponseForContext(results.data, excludeContext),
+    }
+  }, [excludeContext, results])
+
   return useMemo(
     () => ({
-      results,
+      results: filteredResults,
       isFetching,
-      resultKind: results.status === 'success' ? results.data.resultKind : 'idle',
+      resultKind: filteredResults.status === 'success' ? filteredResults.data.resultKind : 'idle',
     }),
-    [results, isFetching],
+    [filteredResults, isFetching],
   )
 }
