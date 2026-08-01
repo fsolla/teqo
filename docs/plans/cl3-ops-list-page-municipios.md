@@ -1,6 +1,6 @@
 # CL3 — `OpsListPage`/`OpsListView` + municípios na arquitetura nova (tracer)
 
-Status: in-progress
+Status: ready-for-review
 Atualizado em: 2026-08-01
 Issue: #157
 Priority: P1
