@@ -64,8 +64,6 @@ export const loadWizardMunicipalitySuggestions = async (
   return {
     status: 'success',
     resultKind: 'wizard-suggest',
-    municipalities: ranked.map((input) =>
-      toHomeSearchMunicipalityHit(docBySlug.get(input.slug)!),
-    ),
+    municipalities: ranked.map((input) => toHomeSearchMunicipalityHit(docBySlug.get(input.slug)!)),
   }
 }

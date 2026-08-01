@@ -33,8 +33,7 @@ const compareEngagementLevel = (
   right: WizardMunicipalitySuggestInput,
 ): number => {
   const leftRank = left.engagementLevel === null ? -1 : engagementLevelRank[left.engagementLevel]
-  const rightRank =
-    right.engagementLevel === null ? -1 : engagementLevelRank[right.engagementLevel]
+  const rightRank = right.engagementLevel === null ? -1 : engagementLevelRank[right.engagementLevel]
   if (leftRank !== rightRank) return rightRank - leftRank
   return 0
 }
@@ -43,7 +42,8 @@ const comparePoliticalTrend = (
   left: WizardMunicipalitySuggestInput,
   right: WizardMunicipalitySuggestInput,
 ): number => {
-  const leftWeight = left.politicalTrend === null ? 0 : politicalTrendSortWeight[left.politicalTrend]
+  const leftWeight =
+    left.politicalTrend === null ? 0 : politicalTrendSortWeight[left.politicalTrend]
   const rightWeight =
     right.politicalTrend === null ? 0 : politicalTrendSortWeight[right.politicalTrend]
   if (leftWeight !== rightWeight) return rightWeight - leftWeight
