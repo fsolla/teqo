@@ -48,7 +48,19 @@ describe('searchStaffMunicipalityHits (B60)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
     const administered = await fixtures.getMunicipality()
-    const other = await fixtures.getMunicipality()
+    let other = await fixtures.getMunicipality()
+    for (let attempt = 0; attempt < 30; attempt++) {
+      try {
+        distinctWordStartQuery(other.name, administered.name)
+        distinctWordStartQuery(administered.name, other.name)
+        break
+      } catch {
+        other = await fixtures.getMunicipality()
+      }
+      if (attempt === 29) {
+        throw new Error('could not allocate two municipalities with distinct word-start queries')
+      }
+    }
     await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
     const otherQuery = distinctWordStartQuery(other.name, administered.name)
