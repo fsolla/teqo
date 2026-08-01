@@ -264,6 +264,8 @@ jobs:
           # Domains" is also OFF, --prod only stages *.vercel.app and leaves
           # pt.jorgesolla.com.br on the previous Current — promote + verify here.
           node scripts/vercel-ensure-production-alias.mjs "$deploy_url"
+          # CLI alias when Git Integration is disabled (Vercel docs).
+          vercel alias set "$deploy_url" pt.jorgesolla.com.br --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID" --yes
 
   requeue:
     runs-on: ubuntu-latest

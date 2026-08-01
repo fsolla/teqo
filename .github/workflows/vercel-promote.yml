@@ -40,13 +40,20 @@ jobs:
             echo "::error::Missing secrets: ${missing[*]}"
             exit 1
           fi
+      - name: Install Vercel CLI
+        run: npm install --global vercel@55
       - name: Promote to custom production domain
         env:
           DEPLOYMENT_REF: ${{ inputs.deployment }}
         run: |
           set -euo pipefail
           if [ -n "${DEPLOYMENT_REF:-}" ]; then
-            node scripts/vercel-ensure-production-alias.mjs "$DEPLOYMENT_REF"
+            ref="$DEPLOYMENT_REF"
+            node scripts/vercel-ensure-production-alias.mjs "$ref"
           else
             node scripts/vercel-ensure-production-alias.mjs --latest
+          fi
+          # Belt-and-suspenders: CLI alias set (docs recommend this when Git Integration is off).
+          if [ -n "${DEPLOYMENT_REF:-}" ]; then
+            vercel alias set "$DEPLOYMENT_REF" pt.jorgesolla.com.br --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID" --yes
           fi
