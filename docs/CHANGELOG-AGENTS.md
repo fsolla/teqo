@@ -4,11 +4,9 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
-<<<<<<< HEAD
-**Recently resolved (2026-08-01):** **OH6** (Issue #167) — tracer `estimateVotesCas` (CAS opt-in via `baseEstimatedAt`) + outbox mínimo (`@tanstack/offline-transactions`) + toasts Sonner de conflito na ilha `PledgeEstimateForm` quando `OPS_HYBRID=1`; flag OFF mantém `formAction`. Plano: [`oh6-estimatevotes-cas-outbox.md`](docs/plans/oh6-estimatevotes-cas-outbox.md).
-=======
 **Recently resolved (2026-08-01):** **CL5** (Issue #160) — assessores no sistema de listas: `AdvisorsTable` → `CampaignTable` + picker (`assessores` em `CAMPAIGN_LIST_IDS`); `resolveAdvisorListUrl` (canonical + preserva `criar=1`); registry `columnListId`/`canonicalRedirect`; page atrás de `LIST_UNIFIED`/`OpsListPage`. Plano: [`cl5-assessores-factory.md`](docs/plans/cl5-assessores-factory.md).
->>>>>>> 7ebf891 (CL5: Assessores CampaignTable + URL canónico + OpsListPage)
+
+**Recently resolved (2026-08-01):** **OH6** (Issue #167) — tracer `estimateVotesCas` (CAS opt-in via `baseEstimatedAt`) + outbox mínimo (`@tanstack/offline-transactions`) + toasts Sonner de conflito na ilha `PledgeEstimateForm` quando `OPS_HYBRID=1`; flag OFF mantém `formAction`. Plano: [`oh6-estimatevotes-cas-outbox.md`](docs/plans/oh6-estimatevotes-cas-outbox.md).
 
 **Recently resolved (2026-08-01):** **CL3** (Issue #157) — tracer da factory de listas unificadas: `OpsListView` (slots) + `OpsListPage` (casca server); `/campanha/municipios` atrás de `LIST_UNIFIED` com paridade OFF. Plano: [`cl3-ops-list-page-municipios.md`](docs/plans/cl3-ops-list-page-municipios.md).
 
