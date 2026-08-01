@@ -13,6 +13,10 @@ concurrency:
   group: main-verify
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  actions: write
+
 env:
   DATABASE_URL: postgresql://teqo:teqo@localhost:5432/teqo_test
   PAYLOAD_SECRET: test-only-secret-not-used-in-production
@@ -37,6 +41,9 @@ jobs:
       - run: pnpm exec knip
       - run: pnpm check:cycles
       - run: pnpm test:unit
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   int:
     runs-on: ubuntu-latest
@@ -66,6 +73,9 @@ jobs:
       - run: pnpm migrate
       - run: pnpm db:seed:minimal
       - run: pnpm test:int
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   build:
     runs-on: ubuntu-latest
@@ -94,6 +104,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build (against the local service database)
         run: pnpm build
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   e2e:
     runs-on: ubuntu-latest
@@ -130,6 +143,9 @@ jobs:
           NEXT_DIST_DIR: .next/e2e
       - name: E2E tests (full suite)
         run: pnpm test:e2e
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   checks:
     name: checks
