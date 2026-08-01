@@ -80,10 +80,10 @@ export const opsListRegistry: Record<OpsListDomainId, OpsListDomainMeta> = {
     id: 'assessores',
     routePath: '/campanha/assessores',
     gate: 'unrestricted',
-    columnListId: null,
+    columnListId: 'assessores',
     savedFilters: false,
     sortModel: 'fixed',
-    canonicalRedirect: false,
+    canonicalRedirect: true,
     layout: 'table',
   },
   territorios: {

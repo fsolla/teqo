@@ -40,22 +40,22 @@ Predecessor entregue: Pass 2 W1 ([`sistema-listas-campanha.md`](sistema-listas-c
 
 Tabela canónica dos metadados v1. Planos filhos (**CL2+**) citam esta secção — **não** reescrevem as células. Ordem estável = **por `routePath`** (não alfabética). `gate` = valor as-built de `requireCampaignPageActor` (ou alvo documentado).
 
-| slug           | routePath                | gate           | columnListId                    | savedFilters | sortModel                | canonicalRedirect                        |
-| -------------- | ------------------------ | -------------- | ------------------------------- | ------------ | ------------------------ | ---------------------------------------- |
-| `municipios`   | `/campanha/municipios`   | `noLeader`     | `municipios`                    | `true`       | `url`                    | `true`                                   |
-| `liderancas`   | `/campanha/liderancas`   | `staff`        | `liderancas`                    | `false`      | `url`                    | `true`                                   |
-| `dobradinhas`  | `/campanha/dobradinhas`  | `staff`        | `dobradinhas`                   | `false`      | `url`                    | `true`                                   |
-| `demandas`     | `/campanha/demandas`     | `staff`        | `demandas`                      | `false`      | `fixed` (`-createdAt`)   | `false`                                  |
-| `assessores`   | `/campanha/assessores`   | `unrestricted` | `null` → `'assessores'` em CL5a | `false`      | `fixed` → `url` em CL5a  | `false` → `true` em CL5a                 |
-| `territorios`  | `/campanha/territorios`  | `noLeader`     | `territorios`                   | `false`      | `memory` → `url` em CL6a | `true` (sem `page` → com `page` em CL6a) |
-| `apoiadores`   | `/campanha/apoiadores`   | `staff` †      | `apoiadores`                    | `false`      | `url`                    | `true`                                   |
-| `organizacoes` | `/campanha/organizacoes` | `staff`        | `organizacoes`                  | `false`      | `fixed` (`name`)         | `false`                                  |
+| slug           | routePath                | gate           | columnListId         | savedFilters | sortModel                | canonicalRedirect                        |
+| -------------- | ------------------------ | -------------- | -------------------- | ------------ | ------------------------ | ---------------------------------------- |
+| `municipios`   | `/campanha/municipios`   | `noLeader`     | `municipios`         | `true`       | `url`                    | `true`                                   |
+| `liderancas`   | `/campanha/liderancas`   | `staff`        | `liderancas`         | `false`      | `url`                    | `true`                                   |
+| `dobradinhas`  | `/campanha/dobradinhas`  | `staff`        | `dobradinhas`        | `false`      | `url`                    | `true`                                   |
+| `demandas`     | `/campanha/demandas`     | `staff`        | `demandas`           | `false`      | `fixed` (`-createdAt`)   | `false`                                  |
+| `assessores`   | `/campanha/assessores`   | `unrestricted` | `'assessores'` (CL5) | `false`      | `fixed` (sort `name`)    | `true` (CL5)                             |
+| `territorios`  | `/campanha/territorios`  | `noLeader`     | `territorios`        | `false`      | `memory` → `url` em CL6a | `true` (sem `page` → com `page` em CL6a) |
+| `apoiadores`   | `/campanha/apoiadores`   | `staff` †      | `apoiadores`         | `false`      | `url`                    | `true`                                   |
+| `organizacoes` | `/campanha/organizacoes` | `staff`        | `organizacoes`       | `false`      | `fixed` (`name`)         | `false`                                  |
 
 † `apoiadores` hoje: `requireCampaignPageActor()` sem gate + `canAccessSupporterArea` (= staff). Registry pina `staff` como alvo da factory.
 
 `atividades` **não** entra em `opsListDomains` — cards + tabs (`ActivityList` / `ActivityCard`); rota intocada. Documentar a razão no comentário do registry (Pass 2 D5).
 
-`CampaignListId` hoje (`CAMPAIGN_LIST_IDS`): `municipios`, `liderancas`, `dobradinhas`, `organizacoes`, `demandas`, `apoiadores`, `territorios`. **Falta `'assessores'`** — entra em CL5a; até lá `columnListId: null`.
+`CampaignListId` (`CAMPAIGN_LIST_IDS`): `municipios`, `liderancas`, `dobradinhas`, `organizacoes`, `demandas`, `apoiadores`, `territorios`, `assessores` (CL5).
 
 Campos de implementação (CL2), fora desta tabela: `layout: 'table'`, tipagem `OpsListDomainMeta` — sem `status: 'excluded'`.
 
@@ -78,17 +78,17 @@ Campos de implementação (CL2), fora desta tabela: `layout: 'table'`, tipagem `
 
 Estado **hoje** (não o contrato-alvo). Para sortModel / canonicalRedirect / columnListId alvo, ver § Escopo.
 
-| Rota                     | Layout         | URL hoje                                                      | Paginação hoje                            | Tabela hoje                                 |
-| ------------------------ | -------------- | ------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------- |
-| `/campanha/municipios`   | table          | `resolveMunicipalityListUrl` (canonical)                      | server                                    | `CampaignTable` + picker                    |
-| `/campanha/liderancas`   | table          | `resolveLeadershipListUrl`                                    | server                                    | `CampaignTable`                             |
-| `/campanha/dobradinhas`  | table          | `resolveStateDeputyListUrl`                                   | server                                    | `CampaignTable`                             |
-| `/campanha/demandas`     | table          | `parseDemandListParams` (sem resolve canónico)                | server                                    | `CampaignTable`                             |
-| `/campanha/assessores`   | table (custom) | `parseAdvisorListParams` (sem redirect)                       | server                                    | **`AdvisorsTable`** (`ui/Table` cru) — CL5a |
-| `/campanha/territorios`  | table          | `resolveTerritoryListUrl` (sem `page`); sort/filter in-memory | **fake** (`page=1`/`totalPages=1`) — CL6a | `CampaignTable`                             |
-| `/campanha/apoiadores`   | table          | resolve via `supporterUi`                                     | server                                    | `CampaignTable`                             |
-| `/campanha/organizacoes` | table          | `parseOrganizationListParams` (sem resolve canónico)          | server                                    | `CampaignTable`                             |
-| `/campanha/atividades`   | **cards**      | `resolveActivityListUrl`                                      | server                                    | `ActivityList` — **excluída**               |
+| Rota                     | Layout    | URL hoje                                                      | Paginação hoje                            | Tabela hoje                             |
+| ------------------------ | --------- | ------------------------------------------------------------- | ----------------------------------------- | --------------------------------------- |
+| `/campanha/municipios`   | table     | `resolveMunicipalityListUrl` (canonical)                      | server                                    | `CampaignTable` + picker                |
+| `/campanha/liderancas`   | table     | `resolveLeadershipListUrl`                                    | server                                    | `CampaignTable`                         |
+| `/campanha/dobradinhas`  | table     | `resolveStateDeputyListUrl`                                   | server                                    | `CampaignTable`                         |
+| `/campanha/demandas`     | table     | `parseDemandListParams` (sem resolve canónico)                | server                                    | `CampaignTable`                         |
+| `/campanha/assessores`   | table     | `resolveAdvisorListUrl` (CL5)                                 | server                                    | `AdvisorsTable` → `CampaignTable` (CL5) |
+| `/campanha/territorios`  | table     | `resolveTerritoryListUrl` (sem `page`); sort/filter in-memory | **fake** (`page=1`/`totalPages=1`) — CL6a | `CampaignTable`                         |
+| `/campanha/apoiadores`   | table     | resolve via `supporterUi`                                     | server                                    | `CampaignTable`                         |
+| `/campanha/organizacoes` | table     | `parseOrganizationListParams` (sem resolve canónico)          | server                                    | `CampaignTable`                         |
+| `/campanha/atividades`   | **cards** | `resolveActivityListUrl`                                      | server                                    | `ActivityList` — **excluída**           |
 
 ## Boundaries Teqo
 
@@ -134,19 +134,19 @@ Números GitHub (#156–#162) **não** seguem a ordem de execução (CL5=#160, C
 
 ## Mapa de ficheiros (as-built → alvo)
 
-| Domínio                | Parser / URL hoje                                                                                       | Loader / page data                                                | UI                                                                |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
-| municípios             | `utilities/municipality/municipalityListUrl.ts`                                                         | `municipality*Data`                                               | `components/campaign/municipality/`                               |
-| lideranças             | `utilities/leadership/leadershipListUrl.ts`                                                             | `leadership*Data`                                                 | `components/campaign/leadership/`                                 |
-| dobradinhas            | `utilities/stateDeputyListUrl.ts`                                                                       | state-deputy loaders                                              | `components/campaign/stateDeputy/`                                |
-| demandas               | `utilities/campaignDemandData.ts` (`parseDemandListParams`)                                             | idem                                                              | `components/campaign/demand/`                                     |
-| assessores             | `utilities/advisorData.ts` (`parseAdvisorListParams`) → **CL5a:** `utilities/advisor/advisorListUrl.ts` | `loadAdvisorListPageData`                                         | `components/campaign/advisor/AdvisorsTable.tsx` → `CampaignTable` |
-| territórios            | `utilities/territory/territoryListUrl.ts`                                                               | `loadTerritoryOverview.ts` + `territoryOverview.ts` (filter/sort) | `components/campaign/territory/`                                  |
-| apoiadores             | `utilities/supporter/supporterUi.ts`                                                                    | `supporter/*Data`                                                 | `components/campaign/supporter/`                                  |
-| organizações           | `utilities/organizationData.ts` (`parseOrganizationListParams`)                                         | idem                                                              | `components/campaign/organization/`                               |
-| atividades             | `utilities/activityUi.ts`                                                                               | `activityPageData`                                                | `ActivityList` (excluída)                                         |
-| comum                  | `utilities/campaignListUrl.ts`, `lib/campaignColumnVisibility.ts`                                       | —                                                                 | `shared/CampaignTable.tsx` + shells                               |
-| registry (novo em CL2) | —                                                                                                       | —                                                                 | `src/lib/opsListRegistry/`                                        |
+| Domínio                | Parser / URL hoje                                                 | Loader / page data                                                | UI                                                                |
+| ---------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
+| municípios             | `utilities/municipality/municipalityListUrl.ts`                   | `municipality*Data`                                               | `components/campaign/municipality/`                               |
+| lideranças             | `utilities/leadership/leadershipListUrl.ts`                       | `leadership*Data`                                                 | `components/campaign/leadership/`                                 |
+| dobradinhas            | `utilities/stateDeputyListUrl.ts`                                 | state-deputy loaders                                              | `components/campaign/stateDeputy/`                                |
+| demandas               | `utilities/campaignDemandData.ts` (`parseDemandListParams`)       | idem                                                              | `components/campaign/demand/`                                     |
+| assessores             | `utilities/advisor/advisorListUrl.ts`                             | `loadAdvisorListPageData`                                         | `components/campaign/advisor/AdvisorsTable.tsx` (`CampaignTable`) |
+| territórios            | `utilities/territory/territoryListUrl.ts`                         | `loadTerritoryOverview.ts` + `territoryOverview.ts` (filter/sort) | `components/campaign/territory/`                                  |
+| apoiadores             | `utilities/supporter/supporterUi.ts`                              | `supporter/*Data`                                                 | `components/campaign/supporter/`                                  |
+| organizações           | `utilities/organizationData.ts` (`parseOrganizationListParams`)   | idem                                                              | `components/campaign/organization/`                               |
+| atividades             | `utilities/activityUi.ts`                                         | `activityPageData`                                                | `ActivityList` (excluída)                                         |
+| comum                  | `utilities/campaignListUrl.ts`, `lib/campaignColumnVisibility.ts` | —                                                                 | `shared/CampaignTable.tsx` + shells                               |
+| registry (novo em CL2) | —                                                                 | —                                                                 | `src/lib/opsListRegistry/`                                        |
 
 ## Referências
 
