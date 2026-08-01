@@ -1,6 +1,6 @@
 # OH6 — `estimateVotesCas` + outbox mínimo + toasts (tracer bullet)
 
-Status: rascunho
+Status: em implementação
 Atualizado em: 2026-08-01
 Issue: #167
 Priority: P1
@@ -10,13 +10,19 @@ Appetite: ~2–3 dias eng
 Depends: OH1
 Responsável: —
 
+## Freshness audit (2026-08-01)
+
+- OH1 (#164) `done`/`in-prod`. Paths e assinaturas (`estimateVotesRecord`, `PledgeEstimateForm`, `estimateVotesSchema`, `estimatedAt` no hook) batem.
+- `OPS_HYBRID` / `lib/campaignOps` ainda não existem (OH2 #163 in-progress em paralelo) — OH6 lê `OPS_HYBRID` via `next.config` `env` + helper local em `opsSync/` (sem abrir o pacote OH2).
+- `@tanstack/offline-transactions@1.0.42` exige collection TanStack DB — tracer usa `localOnlyCollectionOptions` (OH7 troca pelo mirror).
+
 ## Premissas
 
 1. Tracer prova a dor do carro **antes** do mirror completo: outbox auto-contido (storage simples), sem depender de OH5.
 2. Semântica actual preservada quando `baseEstimatedAt` **não** é enviado (último write ganha).
 3. `PledgeEstimateForm` usa `useActionState` + `formAction` por rota — o outbox chama a action de domínio directamente, não o wrapper de form.
 
-→ Corrija agora ou sigo com estas.
+→ Confirmadas; a implementar.
 
 ## Objetivos
 

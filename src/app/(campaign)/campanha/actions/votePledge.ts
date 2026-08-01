@@ -6,6 +6,7 @@ import { relationshipId, requireRelationshipId } from '@/lib/relationship'
 import {
   declareVotesSchema,
   estimateVotesSchema,
+  opsEstimateConflictError,
   VOTE_PLEDGE_DECLARE_STAFF_MESSAGE,
   VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE,
   VOTE_PLEDGE_LEADERSHIP_REQUIRED_MESSAGE,
@@ -127,6 +128,7 @@ export const estimateVotesRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: EstimateVotesInput,
+  options?: { cas?: boolean },
 ) => {
   const data = estimateVotesSchema.parse({
     ...input,
@@ -134,6 +136,7 @@ export const estimateVotesRecord = async (
       toVoteEstimateScenarioViewModel(input.estimatedVotes),
     ),
   })
+  const enforceCas = options?.cas === true
 
   return withPayloadTransaction(
     payload,
@@ -157,9 +160,27 @@ export const estimateVotesRecord = async (
         `vote-pledge:${requireRelationshipId(pledge.leadership)}:${requireRelationshipId(pledge.municipality)}`,
       ])
 
-      return payload.update({
+      // Re-read under the lock so CAS sees the committed `estimatedAt`, not a
+      // pre-lock snapshot that another writer may have already bumped.
+      const lockedPledge = await payload.findByID({
         collection: 'votePledge',
         id: pledge.id,
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      if (enforceCas && data.baseEstimatedAt !== undefined) {
+        const currentEstimatedAt = lockedPledge.estimatedAt ?? null
+        if (currentEstimatedAt !== data.baseEstimatedAt) {
+          throw opsEstimateConflictError(currentEstimatedAt)
+        }
+      }
+
+      return payload.update({
+        collection: 'votePledge',
+        id: lockedPledge.id,
         data: {
           estimatedVotes: data.estimatedVotes,
           estimateNote: data.estimateNote,
@@ -178,3 +199,20 @@ export const estimateVotes = async (input: EstimateVotesInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return estimateVotesRecord(payload, actor, input)
 }
+
+/**
+ * OH6 — estimate with optional CAS on `estimatedAt`. Without `baseEstimatedAt`
+ * this matches `estimateVotes` (last-write-wins). With a base, a stale token
+ * refuses the write so the outbox can surface a conflict toast.
+ */
+export const estimateVotesCas = async (input: EstimateVotesInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return estimateVotesRecord(payload, actor, input, { cas: true })
+}
+
+/** Test/helpers entry that enforces CAS without minting a campaign session. */
+export const estimateVotesCasRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: EstimateVotesInput,
+) => estimateVotesRecord(payload, actor, input, { cas: true })
