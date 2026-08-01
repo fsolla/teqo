@@ -4,6 +4,7 @@
  */
 export type CampaignQuickActionContext = {
   municipalitySlug?: string
+  municipalityId?: number
   leadershipId?: number
   organizationSlug?: string
   activitySlug?: string

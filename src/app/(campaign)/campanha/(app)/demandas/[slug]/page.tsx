@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { DemandWorkflowCard } from '@/components/campaign/demand/DemandWorkflowCard'
+import { CampaignQuickActionContextSync } from '@/components/campaign/shell/CampaignQuickActionContextSync'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -59,6 +60,11 @@ export default async function DemandDetailPage({ params }: DemandDetailPageProps
 
   return (
     <CampaignPageShell>
+      <CampaignQuickActionContextSync
+        municipalitySlug={demand.municipalitySlug}
+        municipalityId={demand.municipalityId > 0 ? demand.municipalityId : undefined}
+        demandSlug={demand.slug}
+      />
       <header className="flex flex-col gap-2">
         <Button asChild variant="ghost" className="min-h-11 self-start">
           <Link href="/campanha/demandas">
