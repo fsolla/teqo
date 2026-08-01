@@ -32,7 +32,7 @@ export const WIZARD_MUNICIPALITY_SEARCH_EMPTY = 'Nenhum município encontrado.' 
 
 export const WIZARD_VOTES_SAVED_MESSAGE = 'Votos estimados atualizados.' as const
 
-export const WIZARD_VOTES_SKIP_LABEL = 'Pular ajuste de votos →' as const
+const WIZARD_VOTES_SKIP_LABEL = 'Pular ajuste de votos →' as const
 
 export const WIZARD_VOTES_FINAL_CTA_LABEL = 'Salvar estimativas →' as const
 
@@ -43,9 +43,8 @@ export type WizardVotesSkipAction = {
   href: string
 }
 
-export const shouldShowWizardVotesSkip = (
-  entryAction: CampaignWizardActionId | undefined,
-): boolean => entryAction != null && entryAction !== 'update-votes'
+const shouldShowWizardVotesSkip = (entryAction: CampaignWizardActionId | undefined): boolean =>
+  entryAction != null && entryAction !== 'update-votes'
 
 export const resolveWizardVotesSkip = (
   entryAction: CampaignWizardActionId | undefined,
