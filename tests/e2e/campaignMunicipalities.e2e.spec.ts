@@ -493,9 +493,10 @@ test.describe('Municípios — bottom drawer polish (B109)', () => {
     expect(handleBox).toBeTruthy()
     expect(handleBox!.y).toBeLessThan(40)
 
-    await expect(page.getByRole('region', { name: 'Sugestões' })).toBeVisible()
-    await expect(
-      page.getByRole('region', { name: 'Sugestões' }).getByText(municipality.name, { exact: true }),
-    ).toHaveCount(0)
+    // Scope to the drawer: the município detail page also has a "Sugestões" region.
+    const drawer = page.getByRole('dialog', { name: 'Ações rápidas' })
+    const drawerSuggestions = drawer.getByRole('region', { name: 'Sugestões' })
+    await expect(drawerSuggestions).toBeVisible()
+    await expect(drawerSuggestions.getByText(municipality.name, { exact: true })).toHaveCount(0)
   })
 })
