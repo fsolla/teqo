@@ -5,8 +5,14 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { parseDemandListParams } from '@/utilities/campaignDemandData'
-import { parseOrganizationListParams } from '@/utilities/organizationData'
+import {
+  parseDemandListParams,
+  resolveDemandListUrl,
+} from '@/utilities/campaignDemandData'
+import {
+  parseOrganizationListParams,
+  resolveOrganizationListUrl,
+} from '@/utilities/organizationData'
 
 describe('parseOrganizationListParams', () => {
   it('keeps only known organization kinds', () => {
@@ -21,6 +27,14 @@ describe('parseOrganizationListParams', () => {
       kind: 'sindicato',
     })
   })
+
+  it('redirects junk params to the canonical form', () => {
+    expect(resolveOrganizationListUrl({ foo: 'bar', q: ' cut ', page: '01' })).toEqual({
+      state: { page: 1, q: 'cut' },
+      href: '/campanha/organizacoes?q=cut',
+      redirectHref: '/campanha/organizacoes?q=cut',
+    })
+  })
 })
 
 describe('parseDemandListParams', () => {
@@ -33,5 +47,21 @@ describe('parseDemandListParams', () => {
 
   it('defaults to page 1 with no filters', () => {
     expect(parseDemandListParams({})).toEqual({ page: 1 })
+  })
+
+  it('redirects junk params to the canonical form', () => {
+    expect(resolveDemandListUrl({ foo: 'bar', status: 'aberta', page: '01' })).toEqual({
+      state: { page: 1, status: 'aberta' },
+      href: '/campanha/demandas?status=aberta',
+      redirectHref: '/campanha/demandas?status=aberta',
+    })
+  })
+
+  it('clamps page above totalPages', () => {
+    expect(resolveDemandListUrl({ page: '9' }, 2)).toEqual({
+      state: { page: 2 },
+      href: '/campanha/demandas?page=2',
+      redirectHref: '/campanha/demandas?page=2',
+    })
   })
 })

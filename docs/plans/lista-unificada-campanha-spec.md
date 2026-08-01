@@ -45,11 +45,11 @@ Tabela canónica dos metadados v1. Planos filhos (**CL2+**) citam esta secção 
 | `municipios`   | `/campanha/municipios`   | `noLeader`     | `municipios`         | `true`       | `url`                    | `true`                                   |
 | `liderancas`   | `/campanha/liderancas`   | `staff`        | `liderancas`         | `false`      | `url`                    | `true`                                   |
 | `dobradinhas`  | `/campanha/dobradinhas`  | `staff`        | `dobradinhas`        | `false`      | `url`                    | `true`                                   |
-| `demandas`     | `/campanha/demandas`     | `staff`        | `demandas`           | `false`      | `fixed` (`-createdAt`)   | `false`                                  |
+| `demandas`     | `/campanha/demandas`     | `staff`        | `demandas`           | `false`      | `fixed` (`-createdAt`)   | `true` (CL8)                             |
 | `assessores`   | `/campanha/assessores`   | `unrestricted` | `'assessores'` (CL5) | `false`      | `fixed` (sort `name`)    | `true` (CL5)                             |
 | `territorios`  | `/campanha/territorios`  | `noLeader`     | `territorios`        | `false`      | `memory` → `url` em CL6a | `true` (sem `page` → com `page` em CL6a) |
 | `apoiadores`   | `/campanha/apoiadores`   | `staff` †      | `apoiadores`         | `false`      | `url`                    | `true`                                   |
-| `organizacoes` | `/campanha/organizacoes` | `staff`        | `organizacoes`       | `false`      | `fixed` (`name`)         | `false`                                  |
+| `organizacoes` | `/campanha/organizacoes` | `staff`        | `organizacoes`       | `false`      | `fixed` (`name`)         | `true` (CL8)                             |
 
 † `apoiadores` hoje: `requireCampaignPageActor()` sem gate + `canAccessSupporterArea` (= staff). Registry pina `staff` como alvo da factory.
 
@@ -63,7 +63,7 @@ Campos de implementação (CL2), fora desta tabela: `layout: 'table'`, tipagem `
 
 | Conflito                                                        | Resolução travada                                                                                                                                                                                                   |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Canonical redirect ausente (assessores, demandas, organizações) | Assessores: criar `resolveAdvisorListUrl` no pré-work (CL5a). Demandas/organizações: manter parse actual na v1 (`canonicalRedirect: false` no registry); migrar redirect só se CL8 medir custo máximo 0,5d/domínio. |
+| Canonical redirect ausente (assessores, demandas, organizações) | Assessores: `resolveAdvisorListUrl` (CL5). Demandas/organizações: `resolveDemandListUrl` / `resolveOrganizationListUrl` (CL8). |
 | Sort divergente (URL vs fixo vs memória)                        | Não unificar. Registry declara `sortModel: 'url' \| 'fixed' \| 'memory'`.                                                                                                                                           |
 | Territórios sem paginação real                                  | CL6a obrigatório: paginação server 25 + sort no loader antes de migrar.                                                                                                                                             |
 | Assessores fora de `CampaignTable`                              | CL5a obrigatório: reescrever em `CampaignTable` + URL canónico.                                                                                                                                                     |

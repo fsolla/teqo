@@ -73,7 +73,7 @@ export const opsListRegistry: Record<OpsListDomainId, OpsListDomainMeta> = {
     columnListId: 'demandas',
     savedFilters: false,
     sortModel: 'fixed',
-    canonicalRedirect: false,
+    canonicalRedirect: true,
     layout: 'table',
   },
   assessores: {
@@ -113,7 +113,7 @@ export const opsListRegistry: Record<OpsListDomainId, OpsListDomainMeta> = {
     columnListId: 'organizacoes',
     savedFilters: false,
     sortModel: 'fixed',
-    canonicalRedirect: false,
+    canonicalRedirect: true,
     layout: 'table',
   },
 }

@@ -1,6 +1,7 @@
 import config from '@payload-config'
 import { PlusIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
@@ -22,7 +23,7 @@ import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   buildOrganizationListHref,
   loadOrganizationListPageData,
-  parseOrganizationListParams,
+  resolveOrganizationListUrl,
   type OrganizationRowViewModel,
 } from '@/utilities/organizationData'
 
@@ -65,13 +66,22 @@ const organizationColumns: Array<CampaignTableColumn<OrganizationRowViewModel>> 
 
 export default async function OrganizationsPage({ searchParams }: OrganizationsPageProps) {
   const rawSearchParams = await searchParams
+  const canonicalUrl = resolveOrganizationListUrl(rawSearchParams)
+  if (canonicalUrl.redirectHref) redirect(canonicalUrl.redirectHref)
+
   const [user, payload] = await Promise.all([
     requireCampaignPageActor({ gate: 'staff' }),
     getPayload({ config }),
   ])
 
-  const state = parseOrganizationListParams(rawSearchParams)
-  const { rows, totalDocs, totalPages } = await loadOrganizationListPageData(payload, user, state)
+  const { rows, totalDocs, totalPages } = await loadOrganizationListPageData(
+    payload,
+    user,
+    canonicalUrl.state,
+  )
+  const resolvedUrl = resolveOrganizationListUrl(rawSearchParams, totalPages)
+  if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
+  const { state } = resolvedUrl
   const columnVisibility = await readCampaignColumnVisibility('organizacoes')
 
   const toolbarNode = (

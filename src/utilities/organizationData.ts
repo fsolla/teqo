@@ -11,6 +11,7 @@ import {
   buildListHref,
   firstValue,
   normalizedText,
+  resolveListUrl,
   strictDecimalInteger,
   type RawSearchParams,
 } from '@/utilities/campaignListUrl'
@@ -33,6 +34,11 @@ export type OrganizationListState = {
   kind?: OrganizationKind
 }
 
+export type OrganizationListSearchParams = RawSearchParams
+
+const organizationListParamNames = ['q', 'kind', 'page'] as const
+const organizationListParamNameSet = new Set<string>(organizationListParamNames)
+
 export const parseOrganizationListParams = (
   searchParams: RawSearchParams,
 ): OrganizationListState => {
@@ -48,19 +54,52 @@ export const parseOrganizationListParams = (
   }
 }
 
-const buildOrganizationListSearchParams = (
+const organizationListStateToRawParams = (
   state: OrganizationListState,
   page = state.page,
+): OrganizationListSearchParams => ({
+  page: String(page),
+  q: state.q,
+  kind: state.kind,
+})
+
+const serializeCanonicalOrganizationListSearchParams = (
+  canonicalState: OrganizationListState,
 ): URLSearchParams => {
   const params = new URLSearchParams()
-  if (state.q) params.set('q', state.q)
-  if (state.kind) params.set('kind', state.kind)
-  if (page > 1) params.set('page', String(page))
+  if (canonicalState.q) params.set('q', canonicalState.q)
+  if (canonicalState.kind) params.set('kind', canonicalState.kind)
+  if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
   return params
 }
 
+const buildOrganizationListSearchParams = (
+  state: OrganizationListState,
+  page = state.page,
+): URLSearchParams =>
+  serializeCanonicalOrganizationListSearchParams(
+    parseOrganizationListParams(organizationListStateToRawParams(state, page)),
+  )
+
 export const buildOrganizationListHref = (state: OrganizationListState, page: number): string =>
   buildListHref(state, buildOrganizationListSearchParams, '/campanha/organizacoes', page)
+
+export const resolveOrganizationListUrl = (
+  params: OrganizationListSearchParams,
+  totalPages?: number,
+): {
+  state: OrganizationListState
+  href: string
+  redirectHref?: string
+} =>
+  resolveListUrl({
+    params,
+    paramNameSet: organizationListParamNameSet,
+    parse: parseOrganizationListParams,
+    buildSearchParams: buildOrganizationListSearchParams,
+    basePath: '/campanha/organizacoes',
+    totalPages,
+  })
 
 const municipalityNamesByIds = async (
   payload: Payload,
