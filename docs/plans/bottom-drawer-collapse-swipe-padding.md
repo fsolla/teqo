@@ -1,6 +1,6 @@
 # Bottom drawer — colapso (blur vazio / nav / handle), swipe ↓ e padding inferior
 
-Status: registrado
+Status: implementado (PR)
 Atualizado em: 2026-08-01
 Issue: #193
 Priority: P0
