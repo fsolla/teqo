@@ -123,9 +123,7 @@ test.describe('Início — catálogo de ações (B45)', () => {
     await page.getByRole('link', { name: 'Ajustar votos', exact: true }).click()
     await page.waitForURL(/\/campanha\/acoes\/atualizar-votos/)
     await expect(page.getByLabel('Buscar município')).toBeVisible()
-    await expect(
-      page.getByRole('region', { name: WIZARD_MUNICIPALITY_STEP_TITLE }),
-    ).toBeVisible()
+    await expect(page.getByRole('region', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toBeVisible()
 
     await page.goto('/campanha')
     await page.getByRole('link', { name: 'Ver esquecidos', exact: true }).click()
@@ -171,9 +169,7 @@ test.describe('Wizard — busca município (B60)', () => {
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto('/campanha/acoes/atualizar-votos')
     await expect(page.getByLabel('Buscar município')).toBeVisible()
-    await expect(
-      page.getByRole('region', { name: WIZARD_MUNICIPALITY_STEP_TITLE }),
-    ).toBeVisible()
+    await expect(page.getByRole('region', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toBeVisible()
 
     const search = page.getByLabel('Buscar município')
     await search.fill(municipality.name)

@@ -21,9 +21,7 @@ test.describe('Wizard — header mobile (B75)', () => {
     await expect(topBar.getByText('Ajustar votos', { exact: true })).toBeVisible()
     await expect(page.getByRole('heading', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toHaveCount(0)
     await expect(page.getByLabel('Buscar município')).toBeVisible()
-    await expect(
-      page.getByRole('region', { name: WIZARD_MUNICIPALITY_STEP_TITLE }),
-    ).toBeVisible()
+    await expect(page.getByRole('region', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Sair da ação' })).toBeVisible()
     await expect(page.getByRole('link', { name: /Voltar/ })).toHaveCount(0)
 
