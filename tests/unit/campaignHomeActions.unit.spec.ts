@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { homeActionsForRole, toHomeActionButtonProps } from '@/lib/campaignHomeActions'
+import {
+  homeActionsForRole,
+  toHomeActionButtonProps,
+  UNCOVERED_MUNICIPALITIES_LIST_HREF,
+} from '@/lib/campaignHomeActions'
 import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
+import { buildMunicipalityListHref } from '@/utilities/municipality/municipalityListUrl'
 
 const staffActionIds = [
   'update-votes',
@@ -48,10 +53,12 @@ describe('toHomeActionButtonProps', () => {
   })
 
   it('wires uncovered-municipalities when href is provided', () => {
-    const href = '/campanha/municipios?coverage=sem_assessor&sort=votos'
-    const props = toHomeActionButtonProps(homeActionsForRole('coordinator'), href)
+    const props = toHomeActionButtonProps(
+      homeActionsForRole('coordinator'),
+      UNCOVERED_MUNICIPALITIES_LIST_HREF,
+    )
     const uncovered = props.find((action) => action.id === 'uncovered-municipalities')
-    expect(uncovered?.href).toBe(href)
+    expect(uncovered?.href).toBe(UNCOVERED_MUNICIPALITIES_LIST_HREF)
     const updateVotes = props.find((action) => action.id === 'update-votes')
     expect(updateVotes?.href).toBe('/campanha/acoes/atualizar-votos')
     const registerSignal = props.find((action) => action.id === 'register-signal')
@@ -61,5 +68,13 @@ describe('toHomeActionButtonProps', () => {
   it('omits uncovered href when not provided', () => {
     const props = toHomeActionButtonProps(homeActionsForRole('coordinator'))
     expect(props.find((action) => action.id === 'uncovered-municipalities')?.href).toBeUndefined()
+  })
+})
+
+describe('UNCOVERED_MUNICIPALITIES_LIST_HREF', () => {
+  it('matches canonical municipality list builder (client/server parity)', () => {
+    expect(buildMunicipalityListHref({ page: 1, coverage: 'sem_assessor', sort: 'votos' }, 1)).toBe(
+      UNCOVERED_MUNICIPALITIES_LIST_HREF,
+    )
   })
 })

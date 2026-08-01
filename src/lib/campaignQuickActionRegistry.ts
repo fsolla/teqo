@@ -1,6 +1,13 @@
-import type { ResolvedCampaignHomeAction } from '@/lib/campaignHomeActions'
+import {
+  resolveStaffHomeQuickActions,
+  type ResolvedCampaignHomeAction,
+} from '@/lib/campaignHomeActions'
+import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import type { CampaignRole } from '@/lib/campaignRoles'
+
+const isTerritoriesListPath = (pathname: string): boolean =>
+  pathname === CAMPAIGN_TERRITORIES_HOME || pathname.startsWith(`${CAMPAIGN_TERRITORIES_HOME}/`)
 
 /**
  * Pathname + role + page context → contextual quick actions.
@@ -8,7 +15,12 @@ import type { CampaignRole } from '@/lib/campaignRoles'
  * this helper returns (empty until those items register providers).
  */
 export const resolveQuickActionsForPath = (
-  _pathname: string,
-  _role: CampaignRole,
+  pathname: string,
+  role: CampaignRole,
   _context: CampaignQuickActionContext,
-): readonly ResolvedCampaignHomeAction[] => []
+): readonly ResolvedCampaignHomeAction[] => {
+  if (isTerritoriesListPath(pathname)) {
+    return resolveStaffHomeQuickActions(role)
+  }
+  return []
+}
