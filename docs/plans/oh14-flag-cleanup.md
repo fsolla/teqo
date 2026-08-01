@@ -15,8 +15,6 @@ Responsável: —
 1. Feature verde em staging (e2e offline + CI) — é hora de ligar por omissão ou decidir manter flag.
 2. Prod ainda está em desenvolvimento: a decisão é “remover a flag e ligar sempre” **ou** “manter flag até data X” — registrar explicitamente.
 
-→ Corrija agora ou sigo com estas.
-
 ## Objetivos
 
 - Decisão registada e aplicada: remover `OPS_HYBRID` (sync sempre ON para staff) **ou** manter com default documentado.
@@ -31,7 +29,7 @@ Dados: N/A.
 
 - **Se remover:** deletar `opsHybridFlag.ts`, props `enabled` do provider/boundary, branches OFF mortos; e2e deixa de precisar da env.
 - **Se manter:** documentar default e o caminho de remoção futura; NADA muda em código.
-- **Doc de referência:** `docs/plans/ops-hibrido-rsc-local.md` actualizada para “Status: implementado” + secção “Como adicionar uma nova write offline” (receita: schema base → action Cas → mutationFn → controle).
+- **Doc de referência:** `docs/plans/ops-hibrido-rsc-local-spec.md` actualizada para “Status: implementado” + secção “Como adicionar uma nova write offline” (receita: schema base → action Cas → mutationFn → controle).
 
 ## Fases verificáveis
 
