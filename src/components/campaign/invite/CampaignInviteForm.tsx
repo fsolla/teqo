@@ -7,8 +7,8 @@ import type {
   BoundCampaignInviteFormAction,
   CampaignInviteFormState,
 } from '@/app/(campaign)/campanha/convite/[token]/formActions'
-import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { CampaignPasswordFields } from '@/components/campaign/auth/CampaignPasswordFields'
+import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

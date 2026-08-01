@@ -1,9 +1,6 @@
 import { z } from 'zod'
 
-import {
-  campaignPasswordSchema,
-  refineMatchingPasswords,
-} from '@/lib/schemas/campaignPassword'
+import { campaignPasswordSchema, refineMatchingPasswords } from '@/lib/schemas/campaignPassword'
 import { leadershipGenders } from '@/lib/schemas/leadership'
 import {
   brazilianMobile,

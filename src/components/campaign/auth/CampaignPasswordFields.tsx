@@ -44,7 +44,9 @@ export const CampaignPasswordFields = ({
         {showPasswordHint ? (
           <FieldDescription id={passwordHelpId}>Use pelo menos 8 caracteres.</FieldDescription>
         ) : null}
-        {password.error ? <FieldError id={password.describedBy}>{password.error}</FieldError> : null}
+        {password.error ? (
+          <FieldError id={password.describedBy}>{password.error}</FieldError>
+        ) : null}
       </Field>
       <Field data-invalid={passwordConfirmation.invalid}>
         <FieldLabel htmlFor={`${idPrefix}-password-confirmation`}>{confirmationLabel}</FieldLabel>
@@ -61,7 +63,9 @@ export const CampaignPasswordFields = ({
           aria-describedby={passwordConfirmation.describedBy}
         />
         {passwordConfirmation.error ? (
-          <FieldError id={passwordConfirmation.describedBy}>{passwordConfirmation.error}</FieldError>
+          <FieldError id={passwordConfirmation.describedBy}>
+            {passwordConfirmation.error}
+          </FieldError>
         ) : null}
       </Field>
     </FieldGroup>

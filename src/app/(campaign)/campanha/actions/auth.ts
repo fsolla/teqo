@@ -29,7 +29,9 @@ const isLockedAuthError = (error: unknown): boolean =>
   'name' in error &&
   (error as { name: unknown }).name === 'LockedAuth'
 
-export const loginCampaign = async (input: CampaignLoginInput): Promise<CampaignFormActionState> => {
+export const loginCampaign = async (
+  input: CampaignLoginInput,
+): Promise<CampaignFormActionState> => {
   const parsed = campaignLoginSchema.safeParse(input)
 
   if (!parsed.success) {
