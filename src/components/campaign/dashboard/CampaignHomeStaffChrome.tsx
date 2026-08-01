@@ -11,8 +11,10 @@ import { CampaignHomeSearch } from '@/components/campaign/dashboard/CampaignHome
 import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
 import {
   HomeSearchResultsProvider,
+  InitialHomeSearchSuggestProvider,
   useHomeSearchResultsState,
 } from '@/components/campaign/dashboard/HomeSearchResultsContext'
+import type { HomeSearchSuccessResponse } from '@/lib/campaignHomeSearchHits'
 
 const CampaignHomeStaffSearchSlot = ({ searchResults }: { searchResults: ReactNode }) => {
   const searchResultsState = useHomeSearchResultsState()
@@ -58,18 +60,23 @@ const CampaignHomeStaffChromeInner = ({
 
 export const CampaignHomeStaffChrome = ({
   actions,
+  initialSuggest,
   searchResults,
   summarySlot,
 }: {
   actions: ReactNode
+  /** B68 — RSC-loaded suggest hits; skips the first client POST on Início. */
+  initialSuggest?: HomeSearchSuccessResponse
   searchResults?: ReactNode
   summarySlot?: ReactNode
 }) => (
   <CampaignGlobalSearchProvider>
-    <CampaignHomeStaffChromeInner
-      actions={actions}
-      searchResults={searchResults}
-      summarySlot={summarySlot}
-    />
+    <InitialHomeSearchSuggestProvider initialSuggest={initialSuggest}>
+      <CampaignHomeStaffChromeInner
+        actions={actions}
+        searchResults={searchResults}
+        summarySlot={summarySlot}
+      />
+    </InitialHomeSearchSuggestProvider>
   </CampaignGlobalSearchProvider>
 )

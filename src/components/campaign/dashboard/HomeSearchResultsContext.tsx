@@ -32,6 +32,22 @@ export type HomeSearchResultsContextValue = {
 
 const HomeSearchResultsContext = createContext<HomeSearchResultsContextValue | null>(null)
 
+const InitialHomeSearchSuggestContext = createContext<HomeSearchSuccessResponse | undefined>(
+  undefined,
+)
+
+export const InitialHomeSearchSuggestProvider = ({
+  initialSuggest,
+  children,
+}: {
+  initialSuggest: HomeSearchSuccessResponse | undefined
+  children: ReactNode
+}) => (
+  <InitialHomeSearchSuggestContext.Provider value={initialSuggest}>
+    {children}
+  </InitialHomeSearchSuggestContext.Provider>
+)
+
 export const HomeSearchResultsProvider = ({
   value,
   children,
@@ -54,6 +70,7 @@ type HomeSearchErrorResponse = { status: 'error'; message: string }
 
 export const useHomeSearchResultsState = (): HomeSearchResultsContextValue => {
   const { query, isDebouncing, uiFocused } = useHomeSearch()
+  const initialSuggest = useContext(InitialHomeSearchSuggestContext)
   const [results, setResults] = useState<HomeSearchResultsState>({ status: 'idle' })
   const requestSeq = useRef(0)
 
@@ -64,6 +81,12 @@ export const useHomeSearchResultsState = (): HomeSearchResultsContextValue => {
     if (!suggestMode && !searchMode) {
       requestSeq.current += 1
       setResults({ status: 'idle' })
+      return
+    }
+
+    if (suggestMode && initialSuggest) {
+      requestSeq.current += 1
+      setResults({ status: 'success', data: initialSuggest })
       return
     }
 
@@ -109,7 +132,7 @@ export const useHomeSearchResultsState = (): HomeSearchResultsContextValue => {
     return () => {
       controller.abort()
     }
-  }, [query.debounced, searchMode, suggestMode])
+  }, [initialSuggest, query.debounced, searchMode, suggestMode])
 
   const isFetching = isDebouncing || results.status === 'loading'
 

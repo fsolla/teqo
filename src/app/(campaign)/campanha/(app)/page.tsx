@@ -10,6 +10,7 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import { UNCOVERED_MUNICIPALITIES_LIST_HREF } from '@/lib/campaignHomeActions'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { loadCampaignHomeSummary } from '@/utilities/campaignDashboardData'
+import { loadHomeSearchSuggestions } from '@/utilities/homeSearch/loadHomeSearchSuggestions'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 
 export const dynamic = 'force-dynamic'
@@ -29,15 +30,24 @@ export default async function CampaignHomePage() {
   )
 
   let summarySlot: ReactNode | undefined
+  let initialSuggest: Awaited<ReturnType<typeof loadHomeSearchSuggestions>> | undefined
   if (staff) {
-    const summaryView = await loadCampaignHomeSummary(payload, user)
+    const [summaryView, suggest] = await Promise.all([
+      loadCampaignHomeSummary(payload, user),
+      loadHomeSearchSuggestions(payload, user),
+    ])
     summarySlot = <CampaignHomeSummary view={summaryView} />
+    initialSuggest = suggest
   }
 
   return (
     <CampaignPageShell aria-label="Início" className="h-full min-h-0">
       {staff ? (
-        <CampaignHomeStaffChrome actions={actions} summarySlot={summarySlot} />
+        <CampaignHomeStaffChrome
+          actions={actions}
+          initialSuggest={initialSuggest}
+          summarySlot={summarySlot}
+        />
       ) : (
         <CampaignHomeLayout actions={actions} />
       )}

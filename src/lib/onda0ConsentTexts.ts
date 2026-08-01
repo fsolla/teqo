@@ -1,5 +1,6 @@
 import {
   CAMPAIGN_INVITE_CONSENT_KEY,
+  CAMPAIGN_PUSH_CONSENT_KEY,
   SUPPORTER_REGISTRATION_CONSENT_KEY,
   SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
 } from '@/lib/campaignConsentKeys'
@@ -12,7 +13,7 @@ const ONDA0_CONSENT_KEYS = {
   leadershipAutofill: CAMPAIGN_INVITE_CONSENT_KEY,
   supporterRegistration: SUPPORTER_REGISTRATION_CONSENT_KEY,
   supporterVoteIntention: SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
-  campaignPush: 'campanha-notificacoes-push',
+  campaignPush: CAMPAIGN_PUSH_CONSENT_KEY,
 } as const
 
 export type Onda0ConsentKey = (typeof ONDA0_CONSENT_KEYS)[keyof typeof ONDA0_CONSENT_KEYS]
