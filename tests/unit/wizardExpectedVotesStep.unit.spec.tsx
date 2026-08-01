@@ -114,7 +114,7 @@ describe('WizardExpectedVotesStep', () => {
   it('shows skip to the next chain step when votes is chained', () => {
     renderVotesStep({ ...defaultProps, entryAction: 'register-signal' })
 
-    const skip = screen.getByRole('link', { name: /Pular ajuste de votos/i })
+    const skip = screen.getByRole('link', { name: /^Pular$/i })
     expect(skip.getAttribute('href')).toBe(
       `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu&entry=register-signal`,
     )

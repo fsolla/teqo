@@ -1,5 +1,5 @@
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
-import { WIZARD_LEADERSHIP_SKIP_LABEL } from '@/lib/campaignWizardCopy'
+import { WIZARD_CHAIN_SKIP_LABEL } from '@/lib/campaignWizardCopy'
 import type { SupportStatus } from '@/lib/schemas/leadership'
 import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 
@@ -30,7 +30,7 @@ export const resolveWizardLeadershipSkip = (
 ): WizardLeadershipSkipAction | undefined =>
   showLeadershipWizardSkip(entryAction)
     ? {
-        label: WIZARD_LEADERSHIP_SKIP_LABEL,
+        label: WIZARD_CHAIN_SKIP_LABEL,
         href: wizardChainContinueHref(
           resolveWizardChainEntry(entryAction, 'update-leadership'),
           'update-leadership',

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
-import { WIZARD_LEADERSHIP_SKIP_LABEL } from '@/lib/campaignWizardCopy'
+import { WIZARD_CHAIN_SKIP_LABEL } from '@/lib/campaignWizardCopy'
 import {
   resolveWizardLeadershipSkip,
   showLeadershipWizardSkip,
@@ -30,7 +30,7 @@ describe('resolveWizardLeadershipSkip', () => {
   it('points skip to Início when leadership is the last chained step', () => {
     // In the v1 matrix, leadership is always the final chained elo.
     expect(resolveWizardLeadershipSkip('update-votes', 'cairu')).toEqual({
-      label: WIZARD_LEADERSHIP_SKIP_LABEL,
+      label: WIZARD_CHAIN_SKIP_LABEL,
       href: CAMPAIGN_HOME,
     })
   })

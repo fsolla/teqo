@@ -99,12 +99,12 @@ describe('CampaignMobileTopBar', () => {
       previousHref: '/campanha/acoes/atualizar-votos?municipio=cairu',
       dismissHref: '/campanha',
       skip: {
-        label: 'Pular registro de sinal',
+        label: 'Pular',
         href: '/campanha/acoes/mudar-tendencia?municipio=cairu',
       },
     })
 
-    expect(screen.getByRole('link', { name: 'Pular registro de sinal' }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: 'Pular' }).getAttribute('href')).toBe(
       '/campanha/acoes/mudar-tendencia?municipio=cairu',
     )
     expect(screen.queryByRole('link', { name: 'Sair da ação' })).toBeNull()

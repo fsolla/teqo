@@ -1,16 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
+import { WIZARD_CHAIN_SKIP_LABEL } from '@/lib/campaignWizardCopy'
 import {
   municipalitySignalTypeMeta,
   municipalitySignalTypeMetaByType,
 } from '@/lib/municipalitySignalTypeMeta'
 import { municipalitySignalTypes } from '@/lib/schemas/municipalityUpdate'
-import {
-  resolveWizardSignalSkip,
-  shouldShowWizardSignalSkip,
-  WIZARD_SIGNAL_SKIP_LABEL,
-} from '@/lib/wizardSignalUi'
+import { resolveWizardSignalSkip, shouldShowWizardSignalSkip } from '@/lib/wizardSignalUi'
 
 describe('wizardSignalUi', () => {
   it('hides skip for standalone register-signal entry', () => {
@@ -24,11 +21,11 @@ describe('wizardSignalUi', () => {
     expect(shouldShowWizardSignalSkip('update-votes')).toBe(true)
     expect(shouldShowWizardSignalSkip('change-trend')).toBe(true)
     expect(resolveWizardSignalSkip('update-votes', 'cairu')).toEqual({
-      label: WIZARD_SIGNAL_SKIP_LABEL,
+      label: WIZARD_CHAIN_SKIP_LABEL,
       href: `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu&entry=update-votes`,
     })
     expect(resolveWizardSignalSkip('change-trend', 'cairu')).toEqual({
-      label: WIZARD_SIGNAL_SKIP_LABEL,
+      label: WIZARD_CHAIN_SKIP_LABEL,
       href: `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu&entry=change-trend`,
     })
   })
