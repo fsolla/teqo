@@ -13,8 +13,11 @@ import {
   ACTIVITY_LIST_PATH,
   ACTIVITY_NEW_PATH,
   ACTIVITY_TOUR_COMPOSER_PATH,
+  ORGANIZATIONS_LIST_PATH,
+  ORGANIZATION_NEW_PATH,
   isActivityTourComposerPath,
   parseActivityQuickActionSurface,
+  parseOrganizationQuickActionSurface,
 } from '@/lib/campaignQuickActionPaths'
 import { resolveQuickActionsForPath } from '@/lib/campaignQuickActionRegistry'
 import {
@@ -22,6 +25,7 @@ import {
   QUICK_ACTIONS_SNAP_EXPANDED,
   quickActionsSnapIsExpanded,
 } from '@/lib/campaignQuickActionSnap'
+import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
 
 describe('campaignQuickActionMount', () => {
   it('treats Início as exact match only', () => {
@@ -77,6 +81,44 @@ describe('campaignQuickActionPaths (activities)', () => {
   })
 })
 
+describe('organizationQuickActions (B88)', () => {
+  it('parses list and detail surfaces', () => {
+    expect(parseOrganizationQuickActionSurface(ORGANIZATIONS_LIST_PATH)).toEqual({ kind: 'list' })
+    expect(parseOrganizationQuickActionSurface(`${ORGANIZATIONS_LIST_PATH}/`)).toEqual({
+      kind: 'list',
+    })
+    expect(parseOrganizationQuickActionSurface('/campanha/organizacoes/sindmed')).toEqual({
+      kind: 'detail',
+      organizationSlug: 'sindmed',
+    })
+  })
+
+  it('ignores nova and nested routes', () => {
+    expect(parseOrganizationQuickActionSurface(ORGANIZATION_NEW_PATH)).toBeNull()
+    expect(parseOrganizationQuickActionSurface('/campanha/organizacoes/foo/editar')).toBeNull()
+  })
+
+  it('lists new-organization on the catalog page', () => {
+    const actions = resolveOrganizationQuickActions({ kind: 'list' }, 'coordinator', {})
+    expect(actions.map((action) => action.id)).toEqual(['new-organization'])
+    expect(actions[0]?.href).toBe(ORGANIZATION_NEW_PATH)
+  })
+
+  it('returns empty detail catalog without leadership filter URL', () => {
+    expect(
+      resolveOrganizationQuickActions(
+        { kind: 'detail', organizationSlug: 'sindmed' },
+        'coordinator',
+        { organizationSlug: 'sindmed' },
+      ),
+    ).toEqual([])
+  })
+
+  it('returns empty catalog for leader lockdown', () => {
+    expect(resolveOrganizationQuickActions({ kind: 'list' }, 'leader', {})).toEqual([])
+  })
+})
+
 describe('activityQuickActions (B84)', () => {
   it('lists vertical verbs on the activity list', () => {
     const actions = resolveActivityQuickActions({ kind: 'list' }, 'coordinator', {})
@@ -124,6 +166,20 @@ describe('activityQuickActions (B84)', () => {
 
 describe('campaignQuickActionRegistry', () => {
   const staffActionIds = homeActionsForRole('coordinator').map((action) => action.id)
+
+  it('delegates organization routes to the B88 catalog', () => {
+    const actions = resolveQuickActionsForPath(ORGANIZATIONS_LIST_PATH, 'coordinator', {})
+    expect(actions.map((action) => action.id)).toEqual(['new-organization'])
+    expect(actions[0]?.href).toBe(ORGANIZATION_NEW_PATH)
+  })
+
+  it('returns empty organization detail catalog in the registry', () => {
+    expect(
+      resolveQuickActionsForPath('/campanha/organizacoes/sindmed', 'advisor', {
+        organizationSlug: 'sindmed',
+      }),
+    ).toEqual([])
+  })
 
   it('returns empty catalog for unregistered paths', () => {
     expect(resolveQuickActionsForPath('/campanha/apoiadores', 'coordinator', {})).toEqual([])
