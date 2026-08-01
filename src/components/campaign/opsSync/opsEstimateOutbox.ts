@@ -22,7 +22,7 @@ import {
 
 const ESTIMATE_MUTATION_FN = 'estimateVotes'
 
-export const opsEstimateOutboxCollection = createCollection(
+const opsEstimateOutboxCollection = createCollection(
   localOnlyCollectionOptions<OpsEstimateOutboxRow, number>({
     id: 'ops-estimate-outbox',
     getKey: (row) => row.pledgeId,
