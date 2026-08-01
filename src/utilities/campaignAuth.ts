@@ -140,8 +140,8 @@ export const getCampaignUserRaw = (): Promise<AuthenticatedCampaignUser | null> 
 
 export const getCampaignUser = cache(getCampaignUserRaw)
 
-export const getCampaignUserWithAvatar = cache((): Promise<AuthenticatedCampaignUser | null> =>
-  readAuthenticatedCampaignUser(1),
+export const getCampaignUserWithAvatar = cache(
+  (): Promise<AuthenticatedCampaignUser | null> => readAuthenticatedCampaignUser(1),
 )
 
 /** Public auth routes — session probe without reloading the user document. */
