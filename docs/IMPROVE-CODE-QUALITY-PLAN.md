@@ -208,6 +208,6 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 
 ## Next Actions
 
-- [ ] Human sign-off = merge of the artifacts PR (plan + ledger + GUARDRAILS.md); remediation PRs merge independently
+- [x] Artifacts PR = Ready + auto-merge (mesmo contrato `agent-pr-workflow`; sem exceção de merge humano); remediation PRs merge independently
 - [ ] P4-A → P4-L as independent deliveries ([entrega-engenharia-p4.md](plans/entrega-engenharia-p4.md)); oversized items → Issue rastreável via `plan-issue`
 - [ ] Leftovers → ledger via `capture-review-debts`

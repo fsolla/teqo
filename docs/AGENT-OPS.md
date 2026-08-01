@@ -61,6 +61,7 @@ main → ci.yml full suite → vercel deploy --prod (se verde) → requeue se HE
 | `ci-pr.yml`                    | PR → `main`                            | service Postgres 17 | Fase 1 barata → fase 2 cara; skips via `ci-scope.mjs`; rollup `checks`    |
 | `ci.yml`                       | push / dispatch `main`                 | service Postgres    | Full sempre → `deploy` (`vercel deploy --prod`) → `requeue` se HEAD andou |
 | `issue-done-on-main-merge.yml` | PR merged → `main`                     | —                   | `in-progress` → `done` + `in-prod`                                        |
+| `agent-pr-ready-automerge.yml` | PR `cursor/*` → `main` (open/sync/…)   | —                   | Draft→Ready + `gh pr merge --auto --merge` (safety net; audit incluso)    |
 | `agent-pool.yml`               | schedule / PR closed `main` / dispatch | —                   | Supervisor do pool (`POOL_GITHUB_TOKEN`)                                  |
 
 Fast gate: `pnpm gate:fast`. Push: `pnpm push`.
