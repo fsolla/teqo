@@ -101,9 +101,7 @@ export const CampaignQuickActionsDrawer = ({
               }))}
               className="w-full"
             />
-          ) : (
-            <p className="text-sm text-muted-foreground">Nenhuma ação rápida nesta página.</p>
-          )}
+          ) : null}
           {expanded ? <CampaignGlobalSearchMount /> : null}
         </div>
       </DrawerContent>
