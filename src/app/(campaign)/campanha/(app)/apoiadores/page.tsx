@@ -48,9 +48,7 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
   const columnVisibility = await readCampaignColumnVisibility('apoiadores')
 
   const overviewNode =
-    result.docs.length > 0 && overview ? (
-      <SupporterListOverview view={overview} now={now} />
-    ) : null
+    result.docs.length > 0 && overview ? <SupporterListOverview view={overview} now={now} /> : null
 
   const toolbarNode = (
     <SupporterFilters
@@ -78,16 +76,17 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
     />
   )
 
-  const footerNode = result.docs.length > 0 ? (
-    <CampaignListFooter
-      totalDocs={result.totalDocs}
-      singular="apoiador encontrado"
-      plural="apoiadores encontrados"
-      page={state.page}
-      totalPages={result.totalPages}
-      hrefForPage={(page) => buildSupporterListHref(state, page)}
-    />
-  ) : null
+  const footerNode =
+    result.docs.length > 0 ? (
+      <CampaignListFooter
+        totalDocs={result.totalDocs}
+        singular="apoiador encontrado"
+        plural="apoiadores encontrados"
+        page={state.page}
+        totalPages={result.totalPages}
+        hrefForPage={(page) => buildSupporterListHref(state, page)}
+      />
+    ) : null
 
   const main = resolveListUnifiedEnabled() ? (
     <OpsListPage
