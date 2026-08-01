@@ -2,6 +2,7 @@ import { PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import { ActivityResultForm } from '@/components/campaign/activity/ActivityResultForm'
+import { CampaignListPagination } from '@/components/campaign/shared/CampaignListPagination'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,6 +17,12 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
 })
 
 type ActivityDetailView = Awaited<ReturnType<typeof getActivityDetailPageData>>
+
+const hrefForLinkedDemandsPage = (activitySlug: string, page: number) => {
+  const params = new URLSearchParams({ tab: 'overview' })
+  if (page > 1) params.set('demandsPage', String(page))
+  return `/campanha/atividades/${activitySlug}?${params.toString()}`
+}
 
 /** The "Visão geral" tab: details, team/orgs, linked demands and the result block. */
 export const ActivityOverviewTab = ({
@@ -128,47 +135,67 @@ export const ActivityOverviewTab = ({
           <CardTitle>Demandas vinculadas</CardTitle>
           <p className="text-sm text-muted-foreground">
             Custo estimado: {currencyFormatter.format(view.demandCostTotal)}
+            {view.totalDocs > 0 ? (
+              <>
+                {' '}
+                · {view.totalDocs} {view.totalDocs === 1 ? 'demanda' : 'demandas'}
+              </>
+            ) : null}
           </p>
         </div>
-        {view.municipality ? (
-          <Button asChild variant="outline" className="min-h-11 shrink-0">
-            <Link
-              href={`/campanha/demandas/nova?activity=${view.id}&municipality=${view.municipality.id}`}
-            >
-              <PlusIcon data-icon="inline-start" aria-hidden="true" />
-              Adicionar demanda
-            </Link>
-          </Button>
-        ) : null}
-      </CardHeader>
-      <CardContent>
-        {view.demands.length ? (
-          <ul role="list" className="divide-y">
-            {view.demands.map((demand) => (
-              <li
-                key={demand.id}
-                className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+        <div className="flex shrink-0 flex-wrap gap-2">
+          {view.totalDocs > view.demands.length ? (
+            <Button asChild variant="ghost" className="min-h-11">
+              <Link href={`/campanha/demandas?activity=${view.id}`}>Ver todas</Link>
+            </Button>
+          ) : null}
+          {view.municipality ? (
+            <Button asChild variant="outline" className="min-h-11 shrink-0">
+              <Link
+                href={`/campanha/demandas/nova?activity=${view.id}&municipality=${view.municipality.id}`}
               >
-                <div className="min-w-0">
-                  <Link
-                    href={`/campanha/demandas/${demand.slug}`}
-                    className="font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {demand.title}
-                  </Link>
-                  <p className="text-sm text-muted-foreground">
-                    {campaignDemandKindLabels[demand.kind]} ·{' '}
-                    {campaignDemandStatusLabels[demand.status]}
-                  </p>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {demand.cost == null
-                    ? 'Custo não registrado'
-                    : currencyFormatter.format(demand.cost)}
-                </span>
-              </li>
-            ))}
-          </ul>
+                <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                Adicionar demanda
+              </Link>
+            </Button>
+          ) : null}
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        {view.demands.length ? (
+          <>
+            <ul role="list" className="divide-y">
+              {view.demands.map((demand) => (
+                <li
+                  key={demand.id}
+                  className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <Link
+                      href={`/campanha/demandas/${demand.slug}`}
+                      className="font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      {demand.title}
+                    </Link>
+                    <p className="text-sm text-muted-foreground">
+                      {campaignDemandKindLabels[demand.kind]} ·{' '}
+                      {campaignDemandStatusLabels[demand.status]}
+                    </p>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {demand.cost == null
+                      ? 'Custo não registrado'
+                      : currencyFormatter.format(demand.cost)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <CampaignListPagination
+              page={view.page}
+              totalPages={view.totalPages}
+              hrefForPage={(page) => hrefForLinkedDemandsPage(view.slug, page)}
+            />
+          </>
         ) : (
           <p className="text-sm text-muted-foreground">
             Nenhuma demanda vinculada a esta atividade.

@@ -366,6 +366,7 @@ describe('src/utilities top-level is pinned', () => {
     'activityFormData.ts',
     'activityLeadershipOptions.ts',
     'activityPageData.ts',
+    'activityRelationOptions.ts',
     'activityUi.ts',
     'activityViewModels.ts',
     'advisorData.ts',

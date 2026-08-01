@@ -3,12 +3,14 @@ import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 
+import { searchDemandActivityOptions } from '@/app/(campaign)/campanha/(app)/demandas/activitySearchActions'
 import { DemandForm } from '@/components/campaign/demand/DemandForm'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
+import { loadActivityRelationOptionById } from '@/utilities/activityRelationOptions'
 import { firstValue, strictDecimalInteger } from '@/utilities/campaignListUrl'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { loadActivityOptions, loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { createDemandFormAction } from './formActions'
 
 type NewDemandPageProps = {
@@ -22,16 +24,16 @@ export default async function NewDemandPage({ searchParams }: NewDemandPageProps
     searchParams,
   ])
 
-  const [municipalityOptions, activityOptions] = await Promise.all([
-    loadMunicipalityOptions(payload, user),
-    loadActivityOptions(payload, user),
-  ])
-  const requestedActivity = activityOptions.find(
-    (activity) => activity.id === strictDecimalInteger(firstValue(query.activity)),
-  )
+  const requestedActivityId = strictDecimalInteger(firstValue(query.activity))
   const requestedMunicipalityId = strictDecimalInteger(firstValue(query.municipality))
+  const [municipalityOptions, initialActivity] = await Promise.all([
+    loadMunicipalityOptions(payload, user),
+    requestedActivityId
+      ? loadActivityRelationOptionById(payload, user, requestedActivityId)
+      : Promise.resolve(null),
+  ])
   const initialMunicipalityId =
-    requestedActivity?.municipalityId ??
+    initialActivity?.municipalityId ??
     municipalityOptions.find((option) => option.id === requestedMunicipalityId)?.id
 
   return (
@@ -52,9 +54,9 @@ export default async function NewDemandPage({ searchParams }: NewDemandPageProps
 
       <DemandForm
         municipalityOptions={municipalityOptions}
-        activityOptions={activityOptions}
+        initialActivity={initialActivity}
         initialMunicipalityId={initialMunicipalityId}
-        initialActivityId={requestedActivity?.id}
+        searchActivities={searchDemandActivityOptions}
         formAction={createDemandFormAction}
       />
     </CampaignPageShell>

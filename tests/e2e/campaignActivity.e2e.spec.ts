@@ -42,7 +42,8 @@ test.describe('Atividades — registro-fundação', () => {
     await expect(page.getByRole('link', { name: materialDemand })).toBeVisible()
 
     await page.getByRole('link', { name: 'Adicionar demanda' }).click()
-    await expect(page.getByLabel('Atividade relacionada')).toHaveValue(/\d+/)
+    await expect(page.locator('input[name="activityId"]')).toHaveValue(/\d+/)
+    await expect(page.getByLabel('Atividade relacionada')).toContainText(activityTitle)
     await expect(page.getByLabel('Município')).toHaveValue(String(municipality.id))
 
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}?tab=updates`)

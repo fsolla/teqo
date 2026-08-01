@@ -1,7 +1,8 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useCallback, useState } from 'react'
 
+import { AsyncSearchCombobox } from '@/components/campaign/shared/AsyncSearchCombobox'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { Button } from '@/components/ui/button'
@@ -11,15 +12,18 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { campaignDemandKindLabels, campaignDemandKinds } from '@/lib/schemas/campaignDemand'
+import type { ActivityRelationOption } from '@/utilities/activityRelationOptions'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
-import type { ActivityRelationOption } from '@/utilities/campaignRelationOptions'
 
 type DemandFormProps = {
   municipalityOptions: RelationOption[]
-  activityOptions: ActivityRelationOption[]
+  initialActivity?: ActivityRelationOption | null
   initialMunicipalityId?: number
-  initialActivityId?: number
+  searchActivities: (
+    query: string,
+    municipalityId: number | null,
+  ) => Promise<Array<{ id: number; label: string }>>
   formAction: (
     state: CampaignFormActionState,
     formData: FormData,
@@ -28,19 +32,32 @@ type DemandFormProps = {
 
 export const DemandForm = ({
   municipalityOptions,
-  activityOptions,
+  initialActivity = null,
   initialMunicipalityId,
-  initialActivityId,
+  searchActivities,
   formAction,
 }: DemandFormProps) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
   const [municipalityId, setMunicipalityId] = useState(
     initialMunicipalityId ? String(initialMunicipalityId) : '',
   )
-  const [activityId, setActivityId] = useState(initialActivityId ? String(initialActivityId) : '')
-  const visibleActivities = municipalityId
-    ? activityOptions.filter((activity) => String(activity.municipalityId) === municipalityId)
-    : activityOptions
+  const [activity, setActivity] = useState<{ id: number; label: string } | null>(
+    initialActivity ? { id: initialActivity.id, label: initialActivity.label } : null,
+  )
+
+  const parsedMunicipalityId = municipalityId ? Number(municipalityId) : null
+  const searchActivitiesForMunicipality = useCallback(
+    (query: string) => searchActivities(query, parsedMunicipalityId),
+    [parsedMunicipalityId, searchActivities],
+  )
+  const activityQueryReady = useCallback(
+    () => parsedMunicipalityId !== null,
+    [parsedMunicipalityId],
+  )
+
+  const activityFieldDescription = parsedMunicipalityId
+    ? 'Opcional. Busque atividades do município selecionado.'
+    : 'Opcional. Escolha o município antes de vincular uma atividade.'
 
   return (
     <form action={submitAction} className="flex max-w-2xl flex-col gap-4">
@@ -82,17 +99,8 @@ export const DemandForm = ({
             required
             value={municipalityId}
             onChange={(event) => {
-              const nextMunicipalityId = event.target.value
-              setMunicipalityId(nextMunicipalityId)
-              const selectedActivity = activityOptions.find(
-                (activity) => String(activity.id) === activityId,
-              )
-              if (
-                selectedActivity &&
-                String(selectedActivity.municipalityId) !== nextMunicipalityId
-              ) {
-                setActivityId('')
-              }
+              setMunicipalityId(event.target.value)
+              setActivity(null)
             }}
             className="min-h-11 w-full"
           >
@@ -112,31 +120,29 @@ export const DemandForm = ({
       </div>
       <Field>
         <FieldLabel htmlFor="demand-activity">Atividade relacionada</FieldLabel>
-        <NativeSelect
-          id="demand-activity"
-          name="activityId"
-          value={activityId}
-          onChange={(event) => {
-            const nextActivityId = event.target.value
-            setActivityId(nextActivityId)
-            const selectedActivity = activityOptions.find(
-              (activity) => String(activity.id) === nextActivityId,
-            )
-            if (selectedActivity) setMunicipalityId(String(selectedActivity.municipalityId))
-          }}
-          className="min-h-11 w-full"
-        >
-          <NativeSelectOption value="">Nenhuma atividade</NativeSelectOption>
-          {visibleActivities.map((option) => (
-            <NativeSelectOption key={option.id} value={String(option.id)}>
-              {option.name}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
-        <FieldDescription>
-          Opcional. Ao escolher uma atividade, o município correspondente é preenchido
-          automaticamente.
-        </FieldDescription>
+        {parsedMunicipalityId ? (
+          <AsyncSearchCombobox
+            name="activityId"
+            label="Atividade relacionada"
+            value={activity}
+            emptyOptionLabel="Nenhuma atividade"
+            dialogDescription="Busque atividades do município selecionado por título."
+            isQueryReady={activityQueryReady}
+            queryTooShortMessage="Selecione o município para buscar atividades."
+            search={searchActivitiesForMunicipality}
+            onChange={setActivity}
+          />
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            disabled
+            className="min-h-11 w-full justify-between font-normal opacity-70"
+          >
+            Selecione o município primeiro…
+          </Button>
+        )}
+        <FieldDescription>{activityFieldDescription}</FieldDescription>
         {fieldError(state.fieldErrors, 'activity') ? (
           <FieldError>{fieldError(state.fieldErrors, 'activity')}</FieldError>
         ) : null}
