@@ -49,11 +49,23 @@ jobs:
           set -euo pipefail
           if [ -n "${DEPLOYMENT_REF:-}" ]; then
             ref="$DEPLOYMENT_REF"
-            node scripts/vercel-ensure-production-alias.mjs "$ref"
           else
-            node scripts/vercel-ensure-production-alias.mjs --latest
+            ref=$(node --input-type=module -e '
+              import { fetchLatestProductionReadyDeployment } from "./scripts/lib/vercel-production-alias.mjs";
+              const d = await fetchLatestProductionReadyDeployment({
+                token: process.env.VERCEL_TOKEN,
+                projectId: process.env.VERCEL_PROJECT_ID,
+                teamId: process.env.VERCEL_ORG_ID,
+              });
+              if (!d) {
+                console.error("no READY production deployment");
+                process.exit(1);
+              }
+              process.stdout.write(d.url ? `https://${d.url}` : d.id);
+            ')
+            echo "Latest READY production: $ref"
           fi
-          # Belt-and-suspenders: CLI alias set (docs recommend this when Git Integration is off).
-          if [ -n "${DEPLOYMENT_REF:-}" ]; then
-            vercel alias set "$DEPLOYMENT_REF" pt.jorgesolla.com.br --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID" --yes
-          fi
+          node scripts/vercel-ensure-production-alias.mjs "$ref"
+          # Docs: when Auto-assign is/was OFF, prefer `vercel promote` then `alias set`.
+          vercel promote "$ref" --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID" --yes || true
+          vercel alias set "$ref" pt.jorgesolla.com.br --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID" --yes

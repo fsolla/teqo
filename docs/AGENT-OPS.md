@@ -81,8 +81,9 @@ Vercel Git builds: `scripts/vercel-ignore-build.sh` skipeia **todas** as branche
 
 **Dois toggles distintos no dashboard Vercel (não confundir):**
 
-1. **Git / Branch tracking — não disparar build em push** — o que queremos OFF (já pinado em `vercel.json` `git.deploymentEnabled: false` + ignore script).
-2. **Auto-assign Custom Production Domains** (Environments → Production → Branch Tracking) — deve ficar **ON**. Se OFF, `vercel deploy --prod` no Actions cria um deployment "staged" que só recebe `*.vercel.app` e **não** move `pt.jorgesolla.com.br`. Mesmo com ON, domínios amarrados só ao Git Integration podem exigir alias explícito — o step pós-deploy `scripts/vercel-ensure-production-alias.mjs` reativa o flag, faz `promote` e `POST /v2/deployments/{id}/aliases`. Emergência sem rebuild: workflow `Vercel promote production`.
+1. **Git / Branch tracking — não disparar build em push** — o que queremos OFF (já pinado em `vercel.json` `git.deploymentEnabled: false` + ignore script). Desligar “automatic deploy from main” no dashboard é o mesmo eixo — **não** confunda com o item 2.
+2. **Auto-assign Custom Production Domains** (Environments → Production → Branch Tracking) — deve ficar **ON**. Se OFF, `vercel deploy --prod` no Actions cria um deployment "staged" que só recebe `*.vercel.app` e **não** move `pt.jorgesolla.com.br`.
+3. **Domains → `pt.jorgesolla.com.br` → Git Branch** — deve ficar **vazio** (Production). Domínio com Git Branch só auto-alia via Git Integration; com Git deploy OFF + CLI `--prod`, o host fica preso no Current antigo. O step pós-deploy `scripts/vercel-ensure-production-alias.mjs` reativa auto-assign, **limpa gitBranch**, faz `promote` + `POST /v2/deployments/{id}/aliases` + `vercel alias set`. Emergência sem rebuild: workflow `Vercel promote production`.
 
 ## Cursor Cloud
 
