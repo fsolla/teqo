@@ -50,7 +50,7 @@ describe('vercelProductionAlias', () => {
     expect(parseDeploymentRef('dpl_abc123')).toEqual({ kind: 'id', value: 'dpl_abc123' })
   })
 
-  it('ensureProductionCustomDomain enables auto-assign and promotes when domain missing', async () => {
+  it('ensureProductionCustomDomain enables auto-assign, promotes, and aliases explicitly', async () => {
     const calls: string[] = []
     let aliases = ['jorgesolla-solla.vercel.app']
     const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
@@ -58,6 +58,9 @@ describe('vercelProductionAlias', () => {
       const method = init?.method ?? 'GET'
       calls.push(`${method} ${href}`)
 
+      if (href.includes('/v9/projects/') && href.includes('/domains') && method === 'GET') {
+        return jsonResponse(true, 200, { domains: [{ name: 'pt.jorgesolla.com.br' }] })
+      }
       if (href.includes('/v9/projects/') && method === 'GET') {
         return jsonResponse(true, 200, { autoAssignCustomDomains: false, name: 'jorgesolla' })
       }
@@ -75,8 +78,17 @@ describe('vercelProductionAlias', () => {
         })
       }
       if (href.includes('/promote/') && method === 'POST') {
-        aliases = ['jorgesolla-solla.vercel.app', 'pt.jorgesolla.com.br']
         return jsonResponse(true, 200, {})
+      }
+      if (href.includes('/aliases') && method === 'POST') {
+        const body = JSON.parse(String(init?.body ?? '{}'))
+        expect(body.alias).toBe('pt.jorgesolla.com.br')
+        aliases = ['jorgesolla-solla.vercel.app', 'pt.jorgesolla.com.br']
+        return jsonResponse(true, 200, {
+          alias: body.alias,
+          uid: 'alias_1',
+          created: new Date().toISOString(),
+        })
       }
       throw new Error(`unexpected fetch ${method} ${href}`)
     }) as typeof fetch
@@ -90,17 +102,21 @@ describe('vercelProductionAlias', () => {
       sleepImpl: async () => {},
     })
 
-    expect(result.promoted).toBe(true)
+    expect(result.aliased).toBe(true)
     expect(result.autoAssignWasFalse).toBe(true)
     expect(result.alreadyAssigned).toBe(false)
     expect(calls.some((c) => c.startsWith('PATCH '))).toBe(true)
     expect(calls.some((c) => c.includes('/promote/'))).toBe(true)
+    expect(calls.some((c) => c.includes('/aliases'))).toBe(true)
   })
 
-  it('ensureProductionCustomDomain skips promote when alias already present', async () => {
+  it('ensureProductionCustomDomain skips work when alias already present', async () => {
     const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
       const href = String(url)
       const method = init?.method ?? 'GET'
+      if (href.includes('/v9/projects/') && href.includes('/domains') && method === 'GET') {
+        return jsonResponse(true, 200, { domains: [{ name: 'pt.jorgesolla.com.br' }] })
+      }
       if (href.includes('/v9/projects/') && method === 'GET') {
         return jsonResponse(true, 200, { autoAssignCustomDomains: true })
       }
@@ -125,5 +141,30 @@ describe('vercelProductionAlias', () => {
 
     expect(result.promoted).toBe(false)
     expect(result.alreadyAssigned).toBe(true)
+  })
+
+  it('ensureProductionCustomDomain fails when the hostname is not on the project', async () => {
+    const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
+      const href = String(url)
+      const method = init?.method ?? 'GET'
+      if (href.includes('/v9/projects/') && href.includes('/domains') && method === 'GET') {
+        return jsonResponse(true, 200, { domains: [{ name: 'other.example.com' }] })
+      }
+      if (href.includes('/v9/projects/') && method === 'GET') {
+        return jsonResponse(true, 200, { autoAssignCustomDomains: true })
+      }
+      throw new Error(`unexpected fetch ${method} ${href}`)
+    }) as typeof fetch
+
+    await expect(
+      ensureProductionCustomDomain({
+        token: 'tok',
+        projectId: 'prj_x',
+        teamId: 'team_x',
+        deploymentRef: 'dpl_test',
+        fetchImpl,
+        sleepImpl: async () => {},
+      }),
+    ).rejects.toThrow(/not attached to this Vercel project/)
   })
 })
