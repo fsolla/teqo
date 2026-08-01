@@ -104,6 +104,7 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/campaign/suggestion',
       'src/components/campaign/supporter',
       'src/components/campaign/votePledge',
+      'src/components/campaign/opsSync',
       'src/components/campaign/auth',
       `${CAMPAIGN_APP}/acoes`,
       'src/components/campaign/shared/WizardMunicipality',
@@ -118,6 +119,6 @@ export const E2E_AFFECTED_MANIFEST = [
       `${CAMPAIGN_APP}/perfil`,
       `${CAMPAIGN_APP}/quadro`,
     ],
-    specs: ['campaignHomeActions'],
+    specs: ['campaignHomeActions', 'campaignMunicipalities', 'campaignOpsEstimateOutbox'],
   },
 ]

@@ -13,7 +13,7 @@ import {
 } from '@/lib/formData'
 import {
   VOTE_PLEDGE_DECLARE_SAFE_MESSAGES,
-  VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE,
+  VOTE_PLEDGE_ESTIMATE_SAFE_MESSAGES,
 } from '@/lib/schemas/votePledge'
 import {
   runCampaignFormAction,
@@ -62,7 +62,7 @@ export const estimateVotesFormAction = async (
       revalidatePath('/campanha/municipios/[slug]', 'page')
       return { message: 'Estimativa registrada.' }
     },
-    safeMessages: [VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE],
+    safeMessages: VOTE_PLEDGE_ESTIMATE_SAFE_MESSAGES,
     genericMessage:
       'Não foi possível registrar a estimativa. Verifique seu acesso e tente novamente.',
   })

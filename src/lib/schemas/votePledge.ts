@@ -41,6 +41,11 @@ export const estimateVotesSchema = z.object({
   pledge: positiveRelationshipId,
   estimatedVotes: voteEstimateScenarioFieldsSchema,
   estimateNote: trimmedNullableText(1000),
+  /**
+   * OH6 CAS opt-in. Absent → last-write-wins (legacy). Present (including
+   * `null`) → refuse when the row's `estimatedAt` differs.
+   */
+  baseEstimatedAt: z.string().datetime().nullable().optional(),
 })
 
 /**
@@ -57,10 +62,40 @@ export const VOTE_PLEDGE_MUNICIPALITY_NOT_LINKED_MESSAGE =
 export const VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE =
   'Somente a coordenação, a assessoria e o candidato registram estimativas.'
 
+/**
+ * OH6 — CAS conflict. Exact match for `safeMessages`; outbox may append a
+ * second line with the server's `estimatedAt` (see `opsEstimateConflictError`).
+ */
+export const OPS_ESTIMATE_CONFLICT_MESSAGE =
+  'Esta estimativa foi alterada por outra pessoa. Escolha manter a sua ou usar a nova.'
+
+export const opsEstimateConflictError = (serverEstimatedAt: string | null): Error =>
+  new Error(
+    serverEstimatedAt == null
+      ? OPS_ESTIMATE_CONFLICT_MESSAGE
+      : `${OPS_ESTIMATE_CONFLICT_MESSAGE}\n${serverEstimatedAt}`,
+  )
+
+export const isOpsEstimateConflictMessage = (message: string): boolean =>
+  message === OPS_ESTIMATE_CONFLICT_MESSAGE ||
+  message.startsWith(`${OPS_ESTIMATE_CONFLICT_MESSAGE}\n`)
+
+export const parseOpsEstimateConflictServerEstimatedAt = (message: string): string | null => {
+  if (!isOpsEstimateConflictMessage(message)) return null
+  if (message === OPS_ESTIMATE_CONFLICT_MESSAGE) return null
+  const stamped = message.slice(OPS_ESTIMATE_CONFLICT_MESSAGE.length + 1)
+  return stamped === '' ? null : stamped
+}
+
 export const VOTE_PLEDGE_DECLARE_SAFE_MESSAGES = [
   VOTE_PLEDGE_DECLARE_STAFF_MESSAGE,
   VOTE_PLEDGE_MUNICIPALITY_NOT_LINKED_MESSAGE,
   VOTE_PLEDGE_LEADERSHIP_REQUIRED_MESSAGE,
+] as const
+
+export const VOTE_PLEDGE_ESTIMATE_SAFE_MESSAGES = [
+  VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE,
+  OPS_ESTIMATE_CONFLICT_MESSAGE,
 ] as const
 
 export type DeclareVotesInput = z.input<typeof declareVotesSchema>

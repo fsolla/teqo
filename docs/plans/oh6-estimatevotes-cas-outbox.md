@@ -1,6 +1,6 @@
 # OH6 — `estimateVotesCas` + outbox mínimo + toasts (tracer bullet)
 
-Status: rascunho
+Status: implementado
 Atualizado em: 2026-08-01
 Issue: #167
 Priority: P1
@@ -10,13 +10,19 @@ Appetite: ~2–3 dias eng
 Depends: OH1
 Responsável: —
 
+## Freshness audit (2026-08-01)
+
+- OH1 (#164) `done`/`in-prod`. Paths e assinaturas (`estimateVotesRecord`, `PledgeEstimateForm`, `estimateVotesSchema`, `estimatedAt` no hook) batem.
+- OH2 (#163) mergeou durante a entrega — OH6 reusa `resolveOpsHybridEnabled` de `lib/campaignOps/opsHybridFlag.ts` + `OPS_HYBRID` via `next.config` `env`.
+- `@tanstack/offline-transactions@1.0.42` exige collection TanStack DB — tracer usa `localOnlyCollectionOptions` (OH7 troca pelo mirror).
+
 ## Premissas
 
 1. Tracer prova a dor do carro **antes** do mirror completo: outbox auto-contido (storage simples), sem depender de OH5.
 2. Semântica actual preservada quando `baseEstimatedAt` **não** é enviado (último write ganha).
 3. `PledgeEstimateForm` usa `useActionState` + `formAction` por rota — o outbox chama a action de domínio directamente, não o wrapper de form.
 
-→ Corrija agora ou sigo com estas.
+→ Confirmadas; a implementar.
 
 ## Objetivos
 
@@ -60,9 +66,9 @@ Componentes:
 - **Quota:** ~0,4
 - **Entrega:** schema + action + pins int.
 - **Aceite:**
-  - [ ] sem `baseEstimatedAt`: escreve como hoje
-  - [ ] com base stale: lança conflito, **não** escreve
-  - [ ] com base igual: escreve e hook actualiza `estimatedAt/estimatedBy`
+  - [x] sem `baseEstimatedAt`: escreve como hoje
+  - [x] com base stale: lança conflito, **não** escreve
+  - [x] com base igual: escreve e hook actualiza `estimatedAt/estimatedBy`
 - **Verify:** `pnpm gate:fast` + `tests/int/votePledgeCas.int.spec.ts`
 - **Files:** schema, action, spec int
 - **Tamanho:** M
@@ -72,9 +78,9 @@ Componentes:
 - **Quota:** ~0,6
 - **Entrega:** outbox ligado à ilha; estados; toasts; resolução de conflito (re-enviar com base nova = “Manter o meu”; descartar = “Usar o novo”).
 - **Aceite:**
-  - [ ] editar com rede cortada → badge pending; reload da página → mutação ainda na fila; online → aplica
-  - [ ] conflito → toast com escolha; “Manter o meu” re-envia com `baseEstimatedAt` do server mais recente
-  - [ ] flag OFF: form comporta-se exactamente como hoje (pin e2e existente)
+  - [x] editar com rede cortada → badge pending; reload da página → mutação ainda na fila; online → aplica
+  - [x] conflito → toast com escolha; “Manter o meu” re-envia com `baseEstimatedAt` do server mais recente
+  - [x] flag OFF: form comporta-se exactamente como hoje (pin e2e existente)
 - **Verify:** `pnpm gate:fast` + teste e2e flaky-network (Playwright route abort)
 - **Files:** `opsEstimateOutbox.ts`, form, spec e2e
 - **Tamanho:** M

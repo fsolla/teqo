@@ -14,6 +14,7 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
 type MunicipalityPledgesPanelProps = {
   pledges: StaffPledgeRow[]
+  opsHybridEnabled: boolean
   estimateFormAction: (
     state: CampaignFormActionState,
     formData: FormData,
@@ -23,6 +24,7 @@ type MunicipalityPledgesPanelProps = {
 /** Staff-only: declared vs estimated votes per leadership in this municipality. */
 export const MunicipalityPledgesPanel = ({
   pledges,
+  opsHybridEnabled,
   estimateFormAction,
 }: MunicipalityPledgesPanelProps) => {
   const declaredTotal = pledges.reduce((total, pledge) => total + pledge.declaredVotes, 0)
@@ -95,6 +97,8 @@ export const MunicipalityPledgesPanel = ({
                     pledgeID={pledge.id}
                     currentEstimatedVotes={pledge.estimatedVotes}
                     currentEstimateNote={pledge.estimateNote}
+                    currentEstimatedAt={pledge.estimatedAt}
+                    opsHybridEnabled={opsHybridEnabled}
                     formAction={estimateFormAction}
                   />
                 </li>

@@ -13,6 +13,7 @@ import { MunicipalityVisitEligibilityCard } from '@/components/campaign/municipa
 import { MunicipalityZoneNeighborhoodsCard } from '@/components/campaign/municipality/MunicipalityZoneNeighborhoodsCard'
 import { CampaignListPagination } from '@/components/campaign/shared/CampaignListPagination'
 import { SuggestionsPanel } from '@/components/campaign/suggestion/SuggestionsPanel'
+import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'
@@ -122,7 +123,11 @@ export const OverviewTab = async ({
           </Suspense>
         </>
       ) : null}
-      <MunicipalityPledgesPanel pledges={pledges} estimateFormAction={estimateVotesFormAction} />
+      <MunicipalityPledgesPanel
+        pledges={pledges}
+        opsHybridEnabled={resolveOpsHybridEnabled()}
+        estimateFormAction={estimateVotesFormAction}
+      />
     </div>
   )
 }

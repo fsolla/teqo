@@ -88,9 +88,23 @@ afterEach(async () => {
   database = undefined
   databasePool = undefined
 
-  if (databaseName) {
-    const adminPool = new Pool({ connectionString: adminUrl })
-    await adminPool.query(`DROP DATABASE IF EXISTS ${quoteIdentifier(databaseName)} WITH (FORCE)`)
+  if (!databaseName) return
+
+  const adminPool = new Pool({ connectionString: adminUrl })
+  try {
+    // WITH (FORCE) needs rights some Cloud Postgres roles lack when another
+    // backend still holds the DB; fall back to a plain DROP, then warn.
+    try {
+      await adminPool.query(`DROP DATABASE IF EXISTS ${quoteIdentifier(databaseName)} WITH (FORCE)`)
+    } catch {
+      await adminPool.query(`DROP DATABASE IF EXISTS ${quoteIdentifier(databaseName)}`)
+    }
+  } catch (error) {
+    console.warn(
+      `[campaignMigrationReconciliation] could not drop disposable DB ${databaseName}:`,
+      error,
+    )
+  } finally {
     await adminPool.end()
   }
 })
