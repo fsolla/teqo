@@ -54,12 +54,12 @@ export const CampaignQuickActionsDrawer = ({
     [setSnapPoint],
   )
 
-  // Focus / active query on the peek search expands to dock (B105).
+  // Active search focus keeps the drawer docked (B105) — same gate as scroll.
   useEffect(() => {
-    if (uiFocused) {
+    if (uiFocused && !isDock) {
       setSnapPoint(QUICK_ACTIONS_SNAP_DOCK)
     }
-  }, [setSnapPoint, uiFocused])
+  }, [isDock, setSnapPoint, uiFocused])
 
   return (
     <Drawer

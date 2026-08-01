@@ -26,14 +26,15 @@ const CampaignContentScrollWithPeek = ({ children }: { children: ReactNode }) =>
   const peekHeight = isDock ? QUICK_ACTIONS_SNAP_DOCK : QUICK_ACTIONS_SNAP_COLLAPSED
 
   const syncSnapFromScroll = useCallback(() => {
-    if (uiFocused) return
-
     const scrollport = scrollRef.current
     if (!scrollport) return
 
     const nextTop = scrollport.scrollTop
     const direction = quickActionsScrollDirection(lastScrollTopRef.current, nextTop)
     lastScrollTopRef.current = nextTop
+
+    // Keep the scroll baseline fresh while search is focused; only gate snap writes.
+    if (uiFocused) return
 
     if (direction === 'down') {
       setSnapPoint(QUICK_ACTIONS_SNAP_COLLAPSED)
