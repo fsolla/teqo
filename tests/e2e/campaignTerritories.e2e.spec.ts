@@ -32,6 +32,21 @@ test.describe('Territórios de Identidade', () => {
     await expect(page).toHaveURL(/\/campanha\/municipios\?region=Irec%C3%AA/)
   })
 
+  test('staff pagination reaches page 2 of the territory list', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Paginação TI'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/territorios')
+    await expect(page.getByText(/27 territórios encontrados/)).toBeVisible()
+
+    await page.getByRole('link', { name: 'Ir para a página 2' }).click()
+    await expect(page).toHaveURL(/\/campanha\/territorios\?page=2/)
+    await expect(page.getByText(/27 territórios encontrados/)).toBeVisible()
+  })
+
   test('parent territory rows expose hash anchor ids for deep links', async ({
     campaign,
     page,

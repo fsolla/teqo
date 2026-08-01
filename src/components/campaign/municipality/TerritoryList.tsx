@@ -16,11 +16,11 @@ import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
 import { territoryAnchorId } from '@/lib/territoryAnchor'
 import { cn } from '@/lib/utils'
 import {
+  buildTerritoryFilterHref,
   clearTerritoryListFilters,
   type TerritoryFilterOption,
 } from '@/utilities/territory/territoryListFilters'
 import {
-  buildTerritoryListHref,
   formatTerritoryListSortSummary,
   resolveTerritoryListSort,
   type TerritoryListState,
@@ -43,7 +43,7 @@ const TerritoryListEmptyState = ({ state }: { state: TerritoryListState }) => (
     </EmptyHeader>
     <EmptyContent>
       <CampaignTransitionAnchor
-        href={buildTerritoryListHref(clearTerritoryListFilters(state))}
+        href={buildTerritoryFilterHref(clearTerritoryListFilters(state))}
         replace
         scroll={false}
         className={cn(buttonVariants({ variant: 'outline' }), 'min-h-11')}

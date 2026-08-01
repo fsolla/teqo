@@ -394,3 +394,37 @@ export const flattenTerritoryRows = (
       parentRegion: row.region,
     })),
   ])
+
+/** Page size for `/campanha/territorios` — same default as the other campaign lists. */
+const TERRITORY_LIST_PAGE_SIZE = 25
+
+/**
+ * CL6a — filter → sort → page slice over the 27-TI rollup.
+ * Out-of-range `page` yields an empty slice; the URL resolver clamps + redirects.
+ */
+export const selectTerritoryOverviewPage = (
+  allRows: ReadonlyArray<TerritoryOverviewRow>,
+  options: {
+    filters: TerritoryRowFilters
+    sort: TerritorySortKey
+    dir: TerritorySortDir
+    page: number
+    pageSize?: number
+  },
+): { rows: TerritoryOverviewRow[]; totalDocs: number; totalPages: number } => {
+  const filtered = sortTerritoryRows(
+    filterTerritoryRows(allRows, options.filters),
+    options.sort,
+    options.dir,
+  )
+  const pageSize = options.pageSize ?? TERRITORY_LIST_PAGE_SIZE
+  const totalDocs = filtered.length
+  const totalPages = totalDocs === 0 ? 0 : Math.ceil(totalDocs / pageSize)
+  const page = Math.max(1, options.page)
+  const start = (page - 1) * pageSize
+  return {
+    rows: filtered.slice(start, start + pageSize),
+    totalDocs,
+    totalPages,
+  }
+}

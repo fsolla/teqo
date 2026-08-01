@@ -70,12 +70,12 @@ const filterCases: FilterCase[] = [
     sortValue: 'region|asc',
     element: (currentQuery) =>
       createElement(TerritoryFilters, {
-        state: { ...(currentQuery ? { q: currentQuery } : {}) },
+        state: { page: 1, ...(currentQuery ? { q: currentQuery } : {}) },
         regionOptions: [],
       }),
     elementWithSort: () =>
       createElement(TerritoryFilters, {
-        state: { sort: 'region', dir: 'asc' },
+        state: { page: 1, sort: 'region', dir: 'asc' },
         regionOptions: [],
       }),
   },

@@ -1,9 +1,11 @@
 import { type BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import {
+  buildListHref,
   createSortToggleHref,
   firstValue,
-  inspectRawListParams,
   normalizedText,
+  resolveListUrl,
+  strictDecimalInteger,
   type RawSearchParams,
 } from '@/utilities/campaignListUrl'
 import type { TerritorySortDir, TerritorySortKey } from '@/utilities/territory/territoryOverview'
@@ -14,6 +16,7 @@ export type TerritoryListSortDirection = TerritorySortDir
 export type TerritoryCoverage = 'com_assessor' | 'sem_assessor'
 
 export type TerritoryListState = {
+  page: number
   q?: string
   regions?: BahiaIdentityTerritory[]
   coverage?: TerritoryCoverage
@@ -23,7 +26,7 @@ export type TerritoryListState = {
 
 export type TerritoryListSearchParams = RawSearchParams
 
-const territoryListParamNames = ['q', 'region', 'coverage', 'sort', 'dir'] as const
+const territoryListParamNames = ['q', 'region', 'coverage', 'sort', 'dir', 'page'] as const
 const territoryListParamNameSet = new Set<string>(territoryListParamNames)
 const territoryListSortKeys: TerritoryListSortKey[] = [
   'region',
@@ -81,7 +84,20 @@ export const formatTerritoryListSortSummary = (
   return `Ordenado por ${territoryListSortLabels[sort]} (${dir === 'asc' ? 'menor primeiro' : 'maior primeiro'})`
 }
 
+export const territoryListStateToRawParams = (
+  state: TerritoryListState,
+  page = state.page,
+): TerritoryListSearchParams => ({
+  page: String(page),
+  q: state.q,
+  region: state.regions,
+  coverage: state.coverage,
+  sort: state.sort,
+  dir: state.dir,
+})
+
 export const parseTerritoryListParams = (params: TerritoryListSearchParams): TerritoryListState => {
+  const rawPage = strictDecimalInteger(firstValue(params.page))
   const q = normalizedText(firstValue(params.q))
   const regions = parseRegions(params.region)
   const rawCoverage = firstValue(params.coverage)
@@ -89,6 +105,7 @@ export const parseTerritoryListParams = (params: TerritoryListSearchParams): Ter
   const rawDir = firstValue(params.dir)
 
   return {
+    page: rawPage ?? 1,
     ...(q ? { q } : {}),
     ...(regions.length ? { regions } : {}),
     ...(rawCoverage === 'com_assessor' || rawCoverage === 'sem_assessor'
@@ -103,16 +120,6 @@ export const parseTerritoryListParams = (params: TerritoryListSearchParams): Ter
   }
 }
 
-export const territoryListStateToRawParams = (
-  state: TerritoryListState,
-): TerritoryListSearchParams => ({
-  q: state.q,
-  region: state.regions,
-  coverage: state.coverage,
-  sort: state.sort,
-  dir: state.dir,
-})
-
 export const serializeTerritoryListSearchParams = (state: TerritoryListState): URLSearchParams => {
   const canonical = parseTerritoryListParams(territoryListStateToRawParams(state))
   const { sort, dir } = resolveTerritoryListSort(canonical)
@@ -125,13 +132,20 @@ export const serializeTerritoryListSearchParams = (state: TerritoryListState): U
     params.set('sort', sort)
     if (dir !== defaultTerritoryListSortDir(sort)) params.set('dir', dir)
   }
+  if (canonical.page > 1) params.set('page', String(canonical.page))
   return params
 }
 
-export const buildTerritoryListHref = (state: TerritoryListState): string => {
-  const query = serializeTerritoryListSearchParams(state).toString()
-  return query ? `/campanha/territorios?${query}` : '/campanha/territorios'
-}
+const buildTerritoryListSearchParams = (
+  state: TerritoryListState,
+  page = state.page,
+): URLSearchParams =>
+  serializeTerritoryListSearchParams(
+    parseTerritoryListParams(territoryListStateToRawParams(state, page)),
+  )
+
+export const buildTerritoryListHref = (state: TerritoryListState, page: number): string =>
+  buildListHref(state, buildTerritoryListSearchParams, '/campanha/territorios', page)
 
 export const buildTerritorySortHref = createSortToggleHref<
   TerritoryListState,
@@ -139,22 +153,21 @@ export const buildTerritorySortHref = createSortToggleHref<
 >({
   resolveCurrentSort: resolveTerritoryListSort,
   defaultDir: defaultTerritoryListSortDir,
-  buildHref: buildTerritoryListHref,
+  buildHref: (state) => buildTerritoryListHref(state, 1),
 })
 
 export const resolveTerritoryListUrl = (
   params: TerritoryListSearchParams,
-): { state: TerritoryListState; href: string; redirectHref?: string } => {
-  const state = parseTerritoryListParams(params)
-  const href = buildTerritoryListHref(state)
-  const canonicalQuery = serializeTerritoryListSearchParams(state).toString()
-  const raw = inspectRawListParams(params, territoryListParamNameSet)
-  return {
-    state,
-    href,
-    ...(raw.hasUnsupportedParams || raw.query !== canonicalQuery ? { redirectHref: href } : {}),
-  }
-}
+  totalPages?: number,
+): { state: TerritoryListState; href: string; redirectHref?: string } =>
+  resolveListUrl({
+    params,
+    paramNameSet: territoryListParamNameSet,
+    parse: parseTerritoryListParams,
+    buildSearchParams: buildTerritoryListSearchParams,
+    basePath: '/campanha/territorios',
+    totalPages,
+  })
 
 const sortOptionLabel = (key: TerritoryListSortKey, dir: TerritoryListSortDirection): string => {
   const label = territoryListSortLabels[key]

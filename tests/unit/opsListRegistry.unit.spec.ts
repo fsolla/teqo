@@ -63,6 +63,14 @@ describe('opsListRegistry v1', () => {
     expect(meta?.canonicalRedirect).toBe(true)
   })
 
+  it('pins territorios to url sort after CL6a (no memory stub)', () => {
+    const meta = getOpsListDomain('territorios')
+    expect(meta).not.toBeNull()
+    expect(meta?.sortModel).toBe('url')
+    expect(meta?.canonicalRedirect).toBe(true)
+    expect(meta?.columnListId).toBe('territorios')
+  })
+
   it('returns null for atividades (cards layout — excluded from factory)', () => {
     expect(getOpsListDomain('atividades')).toBeNull()
     expect(getOpsListDomain('unknown-slug')).toBeNull()

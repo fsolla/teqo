@@ -10,6 +10,7 @@ import {
   filterTerritoryRows,
   flattenTerritoryRows,
   meanCaptureRateOfMunicipalities,
+  selectTerritoryOverviewPage,
   sortTerritoryRows,
   type TerritoryMunicipalityInput,
 } from '@/utilities/territory/territoryOverview'
@@ -220,6 +221,48 @@ describe('filterTerritoryRows', () => {
   it('keeps Metropolitano sub-rows attached when the parent matches', () => {
     const [metropolitano] = filterTerritoryRows(rows, { q: 'metropolitano' })
     expect(metropolitano.subRows).toHaveLength(2)
+  })
+})
+
+describe('selectTerritoryOverviewPage (CL6a)', () => {
+  const rows = computeTerritoryRollup(fixture)
+
+  it('paginates after sort so page=2 shows a different slice', () => {
+    const sorted = sortTerritoryRows(rows, 'region', 'asc')
+    const page1 = selectTerritoryOverviewPage(rows, {
+      filters: {},
+      sort: 'region',
+      dir: 'asc',
+      page: 1,
+      pageSize: 2,
+    })
+    const page2 = selectTerritoryOverviewPage(rows, {
+      filters: {},
+      sort: 'region',
+      dir: 'asc',
+      page: 2,
+      pageSize: 2,
+    })
+
+    expect(page1.totalDocs).toBe(sorted.length)
+    expect(page1.totalPages).toBe(2)
+    expect(page1.rows.map((row) => row.region)).toEqual(sorted.slice(0, 2).map((row) => row.region))
+    expect(page2.rows.map((row) => row.region)).toEqual(sorted.slice(2, 4).map((row) => row.region))
+    expect(page1.rows[0].region).not.toBe(page2.rows[0].region)
+  })
+
+  it('filters before paging and reports real totalPages', () => {
+    const result = selectTerritoryOverviewPage(rows, {
+      filters: { regions: ['Irecê'] },
+      sort: 'pct',
+      dir: 'desc',
+      page: 1,
+      pageSize: 25,
+    })
+    expect(result.totalDocs).toBe(1)
+    expect(result.totalPages).toBe(1)
+    expect(result.rows).toHaveLength(1)
+    expect(result.rows[0].region).toBe('Irecê')
   })
 })
 

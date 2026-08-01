@@ -1,5 +1,6 @@
 import { truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import {
+  buildTerritoryListHref,
   parseTerritoryListParams,
   territoryListStateToRawParams,
   type TerritoryCoverage,
@@ -31,7 +32,7 @@ export const toggleTerritoryRegionFilter = (
     ? current.filter((entry) => entry !== region)
     : [...current, region]
   return parseTerritoryListParams({
-    ...territoryListStateToRawParams(state),
+    ...territoryListStateToRawParams({ ...state, page: 1 }, 1),
     region: regions,
   })
 }
@@ -41,14 +42,19 @@ export const toggleTerritoryCoverageFilter = (
   coverage: TerritoryCoverage,
 ): TerritoryListState =>
   parseTerritoryListParams({
-    ...territoryListStateToRawParams(state),
+    ...territoryListStateToRawParams({ ...state, page: 1 }, 1),
     coverage: state.coverage === coverage ? undefined : coverage,
   })
 
 export const clearTerritoryListFilters = (state: TerritoryListState): TerritoryListState => ({
+  page: 1,
   sort: state.sort,
   dir: state.dir,
 })
+
+/** Every filter/search change resets pagination — sibling of `buildMunicipalityFilterHref`. */
+export const buildTerritoryFilterHref = (next: TerritoryListState): string =>
+  buildTerritoryListHref(next, 1)
 
 export const isTerritoryFilterActive = (
   state: TerritoryListState,

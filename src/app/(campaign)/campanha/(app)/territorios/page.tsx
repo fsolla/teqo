@@ -9,15 +9,16 @@ import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
+import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { loadTerritoryOverview } from '@/utilities/territory/loadTerritoryOverview'
+import { loadTerritoryOverviewPage } from '@/utilities/territory/loadTerritoryOverview'
 import {
-  resolveTerritoryListSort,
+  buildTerritoryListHref,
   resolveTerritoryListUrl,
 } from '@/utilities/territory/territoryListUrl'
-import { filterTerritoryRows, sortTerritoryRows } from '@/utilities/territory/territoryOverview'
 
 type TerritoriesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -25,22 +26,58 @@ type TerritoriesPageProps = {
 
 export default async function TerritoriesPage({ searchParams }: TerritoriesPageProps) {
   const rawSearchParams = await searchParams
-  const resolvedUrl = resolveTerritoryListUrl(rawSearchParams)
-  if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
+  const canonicalUrl = resolveTerritoryListUrl(rawSearchParams)
+  if (canonicalUrl.redirectHref) redirect(canonicalUrl.redirectHref)
 
   const [user, payload] = await Promise.all([
     requireCampaignPageActor({ gate: 'noLeader' }),
     getPayload({ config }),
   ])
 
-  const allRows = await loadTerritoryOverview(payload, user)
-  const columnVisibility = await readCampaignColumnVisibility('territorios')
+  const pageResult = await loadTerritoryOverviewPage(payload, user, canonicalUrl.state)
+  const { rows, totalDocs, totalPages, regionOptions } = pageResult
+  const resolvedUrl = resolveTerritoryListUrl(rawSearchParams, totalPages)
+  if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
-  const { sort, dir } = resolveTerritoryListSort(state)
-  const rows = sortTerritoryRows(filterTerritoryRows(allRows, state), sort, dir)
-  const regionOptions = allRows
-    .map((row) => ({ value: row.region, label: row.region }))
-    .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
+  const columnVisibility = await readCampaignColumnVisibility('territorios')
+
+  const filters = <TerritoryFilters state={state} regionOptions={regionOptions} />
+  const tableNode = (
+    <TerritoryList
+      rows={rows}
+      state={state}
+      regionOptions={regionOptions}
+      columnVisibility={columnVisibility}
+    />
+  )
+  const footerNode = (
+    <CampaignListFooter
+      totalDocs={totalDocs}
+      singular="território encontrado"
+      plural="territórios encontrados"
+      page={state.page}
+      totalPages={totalPages}
+      hrefForPage={(page) => buildTerritoryListHref(state, page)}
+    />
+  )
+
+  const main = resolveListUnifiedEnabled() ? (
+    <OpsListPage
+      overview={null}
+      toolbar={filters}
+      table={tableNode}
+      empty={null}
+      footer={footerNode}
+    />
+  ) : (
+    <CampaignListPendingBoundary>
+      {filters}
+      <CampaignListResults>
+        {tableNode}
+        {footerNode}
+      </CampaignListResults>
+    </CampaignListPendingBoundary>
+  )
 
   return (
     <CampaignPageShell>
@@ -53,25 +90,7 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
           território para ver seus municípios.
         </p>
       </header>
-      <CampaignListPendingBoundary>
-        <TerritoryFilters state={state} regionOptions={regionOptions} />
-        <CampaignListResults>
-          <TerritoryList
-            rows={rows}
-            state={state}
-            regionOptions={regionOptions}
-            columnVisibility={columnVisibility}
-          />
-          <CampaignListFooter
-            totalDocs={rows.length}
-            singular="território encontrado"
-            plural="territórios encontrados"
-            page={1}
-            totalPages={1}
-            hrefForPage={() => resolvedUrl.href}
-          />
-        </CampaignListResults>
-      </CampaignListPendingBoundary>
+      {main}
     </CampaignPageShell>
   )
 }
