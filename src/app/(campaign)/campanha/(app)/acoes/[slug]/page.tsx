@@ -38,6 +38,7 @@ import {
   resolveWizardTrendNoteDestination,
 } from '@/lib/politicalTrendWizardUi'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
+import { isWizardChainActionId, wizardChainContinueHref } from '@/lib/wizardActionChain'
 import config from '@/payload.config'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadWizardLeadershipTiles } from '@/utilities/leadership/leadershipData'
@@ -129,6 +130,10 @@ export default async function CampaignActionWizardPage({
       redirect(wizardActionHref(slug, municipalitySlug))
     }
 
+    const entryAction = parseWizardEntryActionParam(
+      resolvedSearchParams[WIZARD_ENTRY_ACTION_QUERY_KEY],
+    )
+
     return (
       <WizardExpectedVotesStep
         actionSlug={slug}
@@ -136,6 +141,7 @@ export default async function CampaignActionWizardPage({
         municipalityName={municipality.name}
         municipalitySlug={municipality.slug}
         initialExpectedVotes={toVoteEstimateScenarioViewModel(municipality.expectedVotes)}
+        entryAction={entryAction}
       />
     )
   }
@@ -192,6 +198,10 @@ export default async function CampaignActionWizardPage({
       const noteDestination = resolveWizardTrendNoteDestination(trendStatus, currentStatus)
 
       if (noteDestination === 'home') {
+        // Chained session: advance the queue (B98). Standalone stale deep-link: Início (B97).
+        if (isWizardChainActionId(entryAction)) {
+          redirect(wizardChainContinueHref(entryAction, 'change-trend', municipalitySlug))
+        }
         redirect(CAMPAIGN_HOME)
       }
 

@@ -42,7 +42,7 @@ export const WizardSignalTypeStep = ({
 }: WizardSignalTypeStepProps) => {
   const [infoType, setInfoType] = useState<MunicipalitySignalType | null>(null)
   const infoEntry = infoType ? municipalitySignalTypeMetaByType[infoType] : null
-  const skip = resolveWizardSignalSkip(entryAction)
+  const skip = resolveWizardSignalSkip(entryAction, municipalitySlug)
 
   return (
     <>

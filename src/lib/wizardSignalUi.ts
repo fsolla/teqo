@@ -1,5 +1,5 @@
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
-import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
+import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 
 export const WIZARD_SIGNAL_TYPE_STEP_TITLE = 'Que tipo de sinal?' as const
 
@@ -22,7 +22,15 @@ export const shouldShowWizardSignalSkip = (
 
 export const resolveWizardSignalSkip = (
   entryAction: CampaignWizardActionId | undefined,
+  municipalitySlug: string,
 ): WizardSignalSkipAction | undefined =>
   shouldShowWizardSignalSkip(entryAction)
-    ? { label: WIZARD_SIGNAL_SKIP_LABEL, href: CAMPAIGN_HOME }
+    ? {
+        label: WIZARD_SIGNAL_SKIP_LABEL,
+        href: wizardChainContinueHref(
+          resolveWizardChainEntry(entryAction, 'register-signal'),
+          'register-signal',
+          municipalitySlug,
+        ),
+      }
     : undefined

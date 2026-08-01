@@ -32,13 +32,13 @@ import {
   WIZARD_LEADERSHIP_FORM_EDIT_TITLE,
   WIZARD_LEADERSHIP_GRID_TITLE,
   WIZARD_LEADERSHIP_SAVED_TOAST,
-  WIZARD_LEADERSHIP_SKIP_LABEL,
   wizardFlowTitleForSlug,
 } from '@/lib/campaignWizardCopy'
 import { truncateNameAtWordBoundary } from '@/lib/leadershipNameTruncate'
 import { cn } from '@/lib/utils'
+import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 import {
-  showLeadershipWizardSkip,
+  resolveWizardLeadershipSkip,
   type WizardLeadershipTileViewModel,
 } from '@/lib/wizardLeadershipContract'
 
@@ -84,11 +84,12 @@ export const WizardLeadershipStep = ({
   const [dirty, setDirty] = useState(false)
   const [infoTile, setInfoTile] = useState<WizardLeadershipTileViewModel | null>(null)
 
-  const showSkip = showLeadershipWizardSkip(entryAction)
-
-  const skipConfig = showSkip
-    ? { label: WIZARD_LEADERSHIP_SKIP_LABEL, href: CAMPAIGN_HOME }
-    : undefined
+  const skipConfig = resolveWizardLeadershipSkip(entryAction, municipalitySlug)
+  const chainContinueHref = wizardChainContinueHref(
+    resolveWizardChainEntry(entryAction, 'update-leadership'),
+    'update-leadership',
+    municipalitySlug,
+  )
 
   const stepTitle =
     mode.kind === 'grid'
@@ -113,7 +114,7 @@ export const WizardLeadershipStep = ({
 
   const handleContinue = () => {
     startContinueTransition(() => {
-      router.push(CAMPAIGN_HOME)
+      router.replace(chainContinueHref)
     })
   }
 

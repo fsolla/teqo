@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
+import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
 import {
   politicalTrendWizardMeta,
   politicalTrendWizardMetaByStatus,
@@ -39,16 +39,16 @@ describe('politicalTrendWizardUi', () => {
   it('hides skip for standalone change-trend entry', () => {
     expect(shouldShowWizardTrendSkip(undefined)).toBe(false)
     expect(shouldShowWizardTrendSkip('change-trend')).toBe(false)
-    expect(resolveWizardTrendSkip(undefined)).toBeUndefined()
-    expect(resolveWizardTrendSkip('change-trend')).toBeUndefined()
+    expect(resolveWizardTrendSkip(undefined, 'cairu')).toBeUndefined()
+    expect(resolveWizardTrendSkip('change-trend', 'cairu')).toBeUndefined()
   })
 
-  it('shows skip when embedded from another wizard action', () => {
+  it('shows skip to the next chain step when embedded from another wizard', () => {
     expect(shouldShowWizardTrendSkip('update-votes')).toBe(true)
     expect(shouldShowWizardTrendSkip('register-signal')).toBe(true)
-    expect(resolveWizardTrendSkip('update-votes')).toEqual({
+    expect(resolveWizardTrendSkip('update-votes', 'cairu')).toEqual({
       label: WIZARD_TREND_SKIP_LABEL,
-      href: CAMPAIGN_HOME,
+      href: `${CAMPAIGN_ACTIONS_HOME}/registrar-sinal?municipio=cairu&entry=update-votes`,
     })
   })
 

@@ -1,6 +1,6 @@
 # Encadear ajustes após a ação principal do wizard
 
-Status: registrado
+Status: em implementação
 Atualizado em: 2026-08-01
 Issue: #106
 Priority: P1
@@ -47,7 +47,7 @@ Dados: N/A como métrica nova — encadeia writes já existentes (votos, tendên
 
 O rascunho UX-1 ([fluxos-acao-primeiro-inicio.md](fluxos-acao-primeiro-inicio.md)) pediu continuidade no fim de A1 (“Quer também…?: sinal / tendência / liderança”). Os wizards standalone existem (votos, sinal, tendência, liderança), com `entryAction` query **já** usada para skip (sinal/liderança) e prefill de nota de tendência — mas **ninguém navega** de um fluxo ao próximo após o save.
 
-`WizardExpectedVotesStep` tem fase `saved` com placeholder: _“Próximo passo deste fluxo (sinal, tendência ou resumo) em breve.”_ — gancho explícito.
+`WizardExpectedVotesStep` tinha fase `saved` com placeholder — B98 substitui por redirect imediato ao próximo elo.
 
 Pedido (2026-08-01): ao iniciar uma ação → município → **ajuste principal** → **encadear** outros ajustes que façam sentido (ex. votos → tendência).
 
@@ -79,7 +79,7 @@ Pedido (2026-08-01): ao iniciar uma ação → município → **ajuste principal
 
 ## Questões em aberto
 
-- **Tela “Votos atualizados” intermediária some?** **Opções:** A pular direto à 1ª encadeada | B 1 toque “Continuar” na fase saved. **Recomendação:** **A** — menos atrito; Feel the action. _(assumido — validar no craft)_
+- _(nenhuma — Option A da tela intermediária de votos fechada no craft 2026-08-01)_
 
 ## Abordagem proposta
 
@@ -102,7 +102,7 @@ Componentes:
 
 ## Dependências
 
-- Duras: **B96** (Pular nas encadeadas), **B97** (Salvar tendência não loopa). Soft: B61/B63/B64/B70 ✓, placeholder de votos.
+- Duras: **B96** (Pular nas encadeadas) ✓ done/in-prod (#104), **B97** (Salvar tendência não loopa) ✓ done/in-prod (#105). Soft: B61/B63/B64/B70 ✓.
 - Soft: OPS11 só para ver em prod.
 
 ## Não escopo
@@ -123,11 +123,19 @@ Componentes:
 - **Tela de resumo antes do fim.** Revisitar se CG reportar “não sei o que gravei”.
 - **Cadeia a partir de sugestão E11.** Quando E11 deep-linkar wizards com município pré-escolhido.
 
+## Freshness audit (2026-08-01)
+
+- Arquivos do plano existem; `entryAction` / skip resolvers / href builders batem com o código.
+- B96 (#104) e B97 (#105) `done`+`in-prod`.
+- Skip ainda apontava para Início — B98 redefine para o próximo elo.
+- Votos não recebia `entryAction` — wiring adicionado na page do wizard.
+- **Tela intermediária de votos:** Option A (redirect direto) confirmada no craft.
+
 ## Referências
 
 - [fluxos-acao-primeiro-inicio.md](fluxos-acao-primeiro-inicio.md)
-- `src/components/campaign/shared/WizardExpectedVotesStep.tsx` (fase `saved` + placeholder)
-- `src/lib/campaignActionRoutes.ts` · `campaignWizardCopy.ts`
+- `src/components/campaign/shared/WizardExpectedVotesStep.tsx`
+- `src/lib/campaignActionRoutes.ts` · `campaignWizardCopy.ts` · `wizardActionChain.ts`
 - [wizard-header-x-vs-pular.md](wizard-header-x-vs-pular.md) (B96) · [bug-salvar-tendencia-fecha-wizard.md](bug-salvar-tendencia-fecha-wizard.md) (B97)
 - `PRODUCT.md` / `DESIGN.md`
 

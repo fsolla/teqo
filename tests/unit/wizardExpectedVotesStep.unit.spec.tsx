@@ -3,17 +3,24 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { WizardExpectedVotesStep } from '@/components/campaign/shared/WizardExpectedVotesStep'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
+import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
+
+const replaceMock = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),
-    replace: vi.fn(),
+    replace: replaceMock,
   }),
 }))
 
 vi.mock('@/lib/campaignJsonRequest', () => ({
   postCampaignJson: vi.fn(),
+}))
+
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn() },
 }))
 
 const defaultProps = {
@@ -35,6 +42,7 @@ describe('WizardExpectedVotesStep', () => {
   afterEach(() => {
     cleanup()
     vi.mocked(postCampaignJson).mockReset()
+    replaceMock.mockReset()
   })
 
   it('applies shortcuts to the focused scenario', () => {
@@ -73,7 +81,7 @@ describe('WizardExpectedVotesStep', () => {
     expect(screen.getByLabelText('Pessimista').getAttribute('aria-invalid')).toBeNull()
   })
 
-  it('posts batch expected votes when estimates are coherent', async () => {
+  it('posts batch expected votes and continues the wizard chain', async () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: {
@@ -97,7 +105,18 @@ describe('WizardExpectedVotesStep', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByRole('status').textContent).toMatch(/Votos estimados atualizados/i)
+      expect(replaceMock).toHaveBeenCalledWith(
+        `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&entry=update-votes`,
+      )
     })
+  })
+
+  it('shows skip to the next chain step when votes is chained', () => {
+    renderVotesStep({ ...defaultProps, entryAction: 'register-signal' })
+
+    const skip = screen.getByRole('link', { name: /Pular ajuste de votos/i })
+    expect(skip.getAttribute('href')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu&entry=register-signal`,
+    )
   })
 })

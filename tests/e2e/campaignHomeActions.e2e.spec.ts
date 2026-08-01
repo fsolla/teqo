@@ -219,6 +219,11 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
     await step.getByRole('textbox', { name: 'Otimista' }).fill('350')
     await page.getByRole('button', { name: 'Salvar estimativas →' }).click()
 
+    await page.waitForURL(
+      new RegExp(
+        `/campanha/acoes/mudar-tendencia\\?municipio=${municipality.slug}&entry=update-votes`,
+      ),
+    )
     await expect(page.getByText('Votos estimados atualizados.')).toBeVisible({ timeout: 15000 })
     expect(page.url()).not.toContain('cenario=')
   })
@@ -273,7 +278,7 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
 })
 
 test.describe('Wizard — atualizar liderança (B70)', () => {
-  test('create leadership, save, and continue to home', async ({ campaign, page }) => {
+  test('create leadership, save, and continue into the chain', async ({ campaign, page }) => {
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
@@ -301,13 +306,17 @@ test.describe('Wizard — atualizar liderança (B70)', () => {
     await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible()
 
     await page.getByRole('button', { name: 'Continuar' }).click()
-    await page.waitForURL('/campanha')
-    await expect(page.getByLabel('Buscar na campanha')).toBeVisible()
+    await page.waitForURL(
+      new RegExp(
+        `/campanha/acoes/registrar-sinal\\?municipio=${municipality.slug}&entry=update-leadership`,
+      ),
+    )
+    await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toBeVisible()
   })
 })
 
 test.describe('Wizard — registrar sinal (B63)', () => {
-  test('standalone flow: type grid, body step, save returns to Início', async ({
+  test('standalone flow: type grid, body step, save continues the chain', async ({
     campaign,
     page,
   }) => {
@@ -335,7 +344,11 @@ test.describe('Wizard — registrar sinal (B63)', () => {
     await body.fill('Adversário marcou presença no centro do município.')
     await page.getByRole('button', { name: 'Salvar' }).click()
 
-    await page.waitForURL(/\/campanha$/)
+    await page.waitForURL(
+      new RegExp(
+        `/campanha/acoes/mudar-tendencia\\?municipio=${municipality.slug}&entry=register-signal`,
+      ),
+    )
     await expect(page.getByText('Sinal registrado.')).toBeVisible()
   })
 
@@ -362,7 +375,7 @@ test.describe('Wizard — registrar sinal (B63)', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0)
   })
 
-  test('embedded flow shows skip link', async ({ campaign, page }) => {
+  test('embedded flow shows skip link to the next chain step', async ({ campaign, page }) => {
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
@@ -374,8 +387,11 @@ test.describe('Wizard — registrar sinal (B63)', () => {
       `/campanha/acoes/registrar-sinal?municipio=${municipality.slug}&entry=update-votes`,
     )
 
-    await expect(page.getByRole('link', { name: 'Pular registro de sinal' })).toBeVisible({
-      timeout: 15000,
-    })
+    const skip = page.getByRole('link', { name: 'Pular registro de sinal' })
+    await expect(skip).toBeVisible({ timeout: 15000 })
+    await expect(skip).toHaveAttribute(
+      'href',
+      `/campanha/acoes/atualizar-lideranca?municipio=${municipality.slug}&entry=update-votes`,
+    )
   })
 })

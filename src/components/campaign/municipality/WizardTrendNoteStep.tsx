@@ -14,7 +14,6 @@ import { Textarea } from '@/components/ui/textarea'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { wizardTrendHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
-import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import {
   resolveWizardTrendSkip,
@@ -22,6 +21,7 @@ import {
   WIZARD_TREND_SAVE_LABEL,
 } from '@/lib/politicalTrendWizardUi'
 import type { PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
+import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 import { politicalTrendLabels } from '@/utilities/municipality/municipalityLabels'
 
 type WizardTrendNoteStepProps = {
@@ -49,12 +49,13 @@ export const WizardTrendNoteStep = ({
     setMunicipalityPoliticalTrendFormAction,
     {},
   )
-  const skip = resolveWizardTrendSkip(entryAction)
+  const skip = resolveWizardTrendSkip(entryAction, municipalitySlug)
   const stepTitle = `Mudar tendência para ${politicalTrendLabels[trendStatus]}`
 
   useCampaignFormSuccessToast(state, () => {
     recordLastActedMunicipality(municipalitySlug)
-    router.replace(CAMPAIGN_HOME)
+    const sessionEntry = resolveWizardChainEntry(entryAction, 'change-trend')
+    router.replace(wizardChainContinueHref(sessionEntry, 'change-trend', municipalitySlug))
   })
 
   return (
