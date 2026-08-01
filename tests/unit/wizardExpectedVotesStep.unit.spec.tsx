@@ -55,6 +55,21 @@ describe('WizardExpectedVotesStep', () => {
     expect((screen.getByLabelText('Média') as HTMLInputElement).value).toBe('200')
   })
 
+  it('highlights the last focused scenario in compact inputs', () => {
+    renderVotesStep({ ...defaultProps })
+
+    const central = screen.getByLabelText('Média')
+    const optimistic = screen.getByLabelText('Otimista')
+
+    expect(central.className).toMatch(/border-primary/)
+    expect(optimistic.className).toMatch(/bg-muted/)
+
+    fireEvent.focus(optimistic)
+
+    expect(central.className).toMatch(/bg-muted/)
+    expect(optimistic.className).toMatch(/border-primary/)
+  })
+
   it('shows violation alert and highlights inputs without navigation', () => {
     renderVotesStep({ ...defaultProps })
 

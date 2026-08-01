@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+
 import {
   MUNICIPALITY_EXPECTED_VOTES_ENDPOINT,
   MUNICIPALITY_EXPECTED_VOTES_SAVE_ERROR_MESSAGE,
@@ -17,6 +19,7 @@ import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   voteEstimateScenarioLabels,
   voteEstimatesEqual,
+  type VoteEstimateScenario,
   type VoteEstimateScenarioViewModel,
 } from '@/lib/voteEstimate'
 import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
@@ -50,6 +53,7 @@ export const MunicipalityListExpectedVotesControl = ({
 }: MunicipalityListExpectedVotesControlProps) => {
   const scenarioContext = useMunicipalityEstimateScenarioOptional()
   const activeScenario = scenarioContext?.scenario ?? DEFAULT_VOTE_ESTIMATE_SCENARIO
+  const [focusedScenario, setFocusedScenario] = useState<VoteEstimateScenario>('central')
   const { open, onOpenChange, value, change, isPending, errorMessage, statusMessage } =
     useCampaignCellAutosave<VoteEstimateScenarioViewModel, MunicipalityListExpectedVotesResponse>({
       value: expectedVotes,
@@ -114,6 +118,8 @@ export const MunicipalityListExpectedVotesControl = ({
           // point. On touch the Drawer would raise the virtual keyboard before
           // the field is even read, so the first tap picks the scenario.
           autoFocusScenario={variant === 'sheet' ? undefined : 'central'}
+          activeScenario={focusedScenario}
+          onFocusScenario={setFocusedScenario}
           onValuesChange={(values) => change(values, AUTOSAVE_MS)}
         />
         {errorMessage ? (

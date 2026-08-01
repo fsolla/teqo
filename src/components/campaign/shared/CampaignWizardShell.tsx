@@ -22,6 +22,8 @@ export type CampaignWizardShellProps = {
   skip?: CampaignWizardChromeSkip
   trailingAction?: ReactNode
   contentAlign?: 'start' | 'end'
+  /** When `'none'`, the shell does not move focus to the step title — use on form steps that autofocus an input. */
+  contentFocus?: 'title' | 'none'
   children: ReactNode
 }
 
@@ -35,6 +37,7 @@ export const CampaignWizardShell = ({
   skip,
   trailingAction,
   contentAlign = 'start',
+  contentFocus = 'title',
   children,
 }: CampaignWizardShellProps) => {
   const hasStepTitle = stepTitle != null && stepTitle !== ''
@@ -57,9 +60,9 @@ export const CampaignWizardShell = ({
   useSetCampaignWizardChrome(chrome)
 
   useEffect(() => {
-    if (!hasStepTitle) return
+    if (!hasStepTitle || contentFocus === 'none') return
     titleRef.current?.focus()
-  }, [hasStepTitle, stepTitle])
+  }, [contentFocus, hasStepTitle, stepTitle])
 
   return (
     <div className="flex min-h-full w-full flex-col">
