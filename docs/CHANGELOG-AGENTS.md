@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-01):** **B102** (Issue #129) — crash na busca do bottom drawer (focus/digitação): `TooltipProvider` do layout `(app)` envolvia só `{children}` e o drawer (irmão do scrollport) renderizava hits `priority:alta` via `CampaignHoverTooltip` sem provider. Fix: provider envolve `CampaignAppScrollChrome`; pins unit focus→suggest e type→search. Plano: [`crash-busca-bottom-drawer.md`](docs/plans/crash-busca-bottom-drawer.md).
+
 **Recently resolved (2026-08-01):** **Pool pin `fast=false`** — `resolvePoolModel` agora envia `fast=false` em todo spawn cuja família Cloud anuncia o param (`composer-2.5`, `grok-4.5`, …). Antes o supervisor pedia só `{ id: "composer-2.5" }`; a API Create-Agent resolve o default da variante (`fast=true`) e o usage dashboard mostrava `composer-2.5-fast` em todos os workers do pool. Skills `model-selection` / `agent-pool` + plano do orquestrador atualizados.
 
 **Recently resolved (2026-08-01):** **C8 F1–F2** (Issue #37) — freshness audit confirmou entrega em código desde 2026-07-19: locks advisory em batch (`acquireTextAdvisoryLocks`), bulk import com `.returning()` + leituras drizzle, overview derivando `total` de `totalDocs`, migration `pg_trgm`, guard `contactSearchQuery` (mín. 2 chars). Plano [`escala-dry-pos-c6.md`](docs/plans/escala-dry-pos-c6.md) fechado; follow-ups de filtros/forms permanecem no C9.

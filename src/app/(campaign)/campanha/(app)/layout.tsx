@@ -86,9 +86,16 @@ export default async function CampaignAppLayout({ children }: { children: React.
                   <CampaignNotificationBellSlot user={user} />
                 </div>
               </header>
-              <CampaignAppScrollChrome role={user.role}>
-                <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-              </CampaignAppScrollChrome>
+              {/*
+                Provider must wrap CampaignAppScrollChrome, not only page children:
+                the mobile quick-actions drawer (B91/B100) mounts as a sibling of
+                the scrollport and renders search hits with CampaignHoverTooltip
+                (priority flag). Nested only around {children} left focus→suggest
+                without a provider and crashed the page (B102).
+              */}
+              <TooltipProvider delayDuration={300}>
+                <CampaignAppScrollChrome role={user.role}>{children}</CampaignAppScrollChrome>
+              </TooltipProvider>
               <Toaster position="top-center" />
               <InstallPwaToast />
               {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}

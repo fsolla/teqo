@@ -10,6 +10,8 @@ import {
   CampaignQuickActionsSnapProvider,
   useCampaignQuickActionsSnap,
 } from '@/components/campaign/shell/CampaignQuickActionsSnapContext'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import type { HomeSearchSuccessResponse } from '@/lib/campaignHomeSearchHits'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import {
   QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX,
@@ -26,9 +28,9 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/campanha/municipios/foo',
 }))
 
-const idleSuggestPayload = {
-  status: 'success' as const,
-  resultKind: 'suggest' as const,
+const idleSuggestPayload: HomeSearchSuccessResponse = {
+  status: 'success',
+  resultKind: 'suggest',
   municipalities: [],
   territories: [],
   advisors: [],
@@ -36,6 +38,26 @@ const idleSuggestPayload = {
   stateDeputies: [],
   activities: [],
   demands: [],
+}
+
+/** Priority-alta hit — mounts MunicipalityPriorityIndicator → CampaignHoverTooltip. */
+const suggestWithPriorityPayload: HomeSearchSuccessResponse = {
+  ...idleSuggestPayload,
+  municipalities: [
+    {
+      kind: 'municipality',
+      slug: 'cairu',
+      name: 'Cairu',
+      region: 'Baixo Sul',
+      priority: 'alta',
+      votePosition2022: null,
+    },
+  ],
+}
+
+const searchWithPriorityPayload: HomeSearchSuccessResponse = {
+  ...suggestWithPriorityPayload,
+  resultKind: 'search',
 }
 
 const matchMediaMock = vi.fn()
@@ -59,11 +81,17 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+/**
+ * Mirrors campaign (app) layout: TooltipProvider wraps chrome that includes the
+ * drawer (B102). Nested only around page children left focus→suggest crashing.
+ */
 const renderQuickActionsChrome = (ui: ReactNode) =>
   render(
-    <CampaignQuickActionsSnapProvider>
-      <CampaignGlobalSearchProvider>{ui}</CampaignGlobalSearchProvider>
-    </CampaignQuickActionsSnapProvider>,
+    <TooltipProvider delayDuration={300}>
+      <CampaignQuickActionsSnapProvider>
+        <CampaignGlobalSearchProvider>{ui}</CampaignGlobalSearchProvider>
+      </CampaignQuickActionsSnapProvider>
+    </TooltipProvider>,
   )
 
 const SnapReadout = () => {
@@ -131,6 +159,60 @@ describe('CampaignQuickActionsDrawer (B100)', () => {
         { mode: 'search', query: 'cairu' },
         expect.any(AbortSignal),
       )
+    })
+  })
+
+  it('focus posts suggest and renders priority hits without crashing (B102)', async () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: suggestWithPriorityPayload,
+    })
+
+    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+
+    fireEvent.focus(screen.getByLabelText('Buscar na campanha'))
+
+    await waitFor(() => {
+      expect(postCampaignJson).toHaveBeenCalledWith(
+        '/campanha/home-search',
+        { mode: 'suggest' },
+        expect.any(AbortSignal),
+      )
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Sugestões' })).toBeTruthy()
+      expect(screen.getByText('Cairu')).toBeTruthy()
+      expect(screen.getByLabelText('Município prioritário')).toBeTruthy()
+    })
+  })
+
+  it('typing keeps search results with priority hits mounted (B102)', async () => {
+    vi.mocked(postCampaignJson).mockImplementation(async (_url, body) => {
+      if (typeof body === 'object' && body !== null && 'mode' in body && body.mode === 'search') {
+        return { ok: true, payload: searchWithPriorityPayload }
+      }
+      return { ok: true, payload: idleSuggestPayload }
+    })
+
+    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+
+    const input = screen.getByLabelText('Buscar na campanha')
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: 'ca' } })
+
+    await waitFor(() => {
+      expect(postCampaignJson).toHaveBeenCalledWith(
+        '/campanha/home-search',
+        { mode: 'search', query: 'ca' },
+        expect.any(AbortSignal),
+      )
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Municípios' })).toBeTruthy()
+      expect(screen.getByText('Cairu')).toBeTruthy()
+      expect(screen.getByLabelText('Município prioritário')).toBeTruthy()
     })
   })
 

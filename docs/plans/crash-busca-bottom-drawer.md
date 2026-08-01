@@ -1,13 +1,19 @@
 # Crash — busca no bottom drawer (focus / digitação)
 
-Status: registrado
+Status: done
 Atualizado em: 2026-08-01
-Issue: #129 (file-miss #133)
+Issue: #129 (file-miss plan #133 · delivery #135)
 Priority: P0
 Model: cursor-grok-4.5-medium
 Impeccable: B — `CampaignQuickActionsDrawer` + `CampaignGlobalSearchBody`
 Appetite: ~0,5–1d eng; root-cause + fix + pin focus/type; sem migration
 Responsável: —
+
+## Freshness audit (2026-08-01)
+
+- Arquivos citados existem; assinaturas de `useHomeSearch` / `useHomeSearchResultsState` / drawer intactas.
+- Sem migration; deps soft B91/B100 done.
+- **Root cause confirmada (repro unit):** `TooltipProvider` no layout `(app)` envolvia só `{children}` dentro de `CampaignAppScrollChrome`. O drawer monta como **irmão** do scrollport → fora do provider. Focus → `mode:suggest` → hits `priority:'alta'` → `MunicipalityPriorityIndicator` → `CampaignHoverTooltip` → throw ``Tooltip` must be used within `TooltipProvider`` → página cai. Início não crasha porque o drawer não monta lá e a busca vive sob o provider dos children. Digitar com hits prioritários crashava pelo mesmo motivo; o pin B100 só mudava query com payload vazio (sem flag).
 
 ## Design (Impeccable)
 
@@ -66,10 +72,11 @@ Diagnóstico preliminar (código em `main`):
 - **Fix mínimo no caminho focus→suggest→render; não redesenhar snap.** Geometria/gesto → **B105**. **Rejeitado:** reescrever busca só para o drawer.
 - **File-miss obrigatório** com causa + PR culpado quando conhecido. **Rejeitado:** só Issue de feature sem harvest.
 - **i18n:** ids existentes; sem copy nova.
+- **Fix (as-built):** elevar `TooltipProvider` no layout `(app)` para envolver `CampaignAppScrollChrome` inteiro (scroll + drawer). Harness unit espelha isso.
 
 ## Questões em aberto
 
-- **Causa raiz exata antes do claim?** **Opções:** A) fechar no `work-issue` com repro primeiro | B) bipartir plan/exec. **Recomendação:** **A** — appetite cabe; hypothese já estreita. _(assumido)_
+- _(nenhuma — root cause fechada no repro unit; fix as-built acima)_
 
 ## Abordagem proposta
 
