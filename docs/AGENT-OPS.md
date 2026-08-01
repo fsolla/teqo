@@ -64,6 +64,8 @@ Labels: `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`.
 | `agent-pr-ready-automerge.yml` | PR `cursor/*` → `main` (open/sync/…)   | —                   | Draft→Ready + `gh pr merge --auto --merge` (safety net; audit incluso)                                                |
 | `agent-pool.yml`               | schedule / PR closed `main` / dispatch | —                   | Supervisor do pool (`POOL_GITHUB_TOKEN`)                                                                              |
 
+Action runtimes: `actions/checkout@v5`, `actions/setup-node@v5`, `pnpm/action-setup@v6` e `styfle/cancel-workflow-action@0.13.1` usam Node 24 nativo — sem `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`.
+
 Fast gate: `pnpm gate:fast`. Push: `pnpm push`.
 
 ### Secrets (humano, uma vez)

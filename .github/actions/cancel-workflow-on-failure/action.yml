@@ -4,4 +4,4 @@ runs:
   using: composite
   steps:
     - name: Cancel workflow run
-      uses: styfle/cancel-workflow-action@0.12.1
+      uses: styfle/cancel-workflow-action@0.13.1
