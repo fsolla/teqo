@@ -16,8 +16,7 @@ import {
   type CampaignWizardActionId,
 } from '@/lib/campaignActionRoutes'
 import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
-import type { CampaignRole } from '@/lib/campaignRoles'
-import { isStaffCampaignRole } from '@/lib/campaignRoles'
+import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 
 type CampaignHomeActionId =
   | 'update-votes'
@@ -129,11 +128,23 @@ export const UNCOVERED_MUNICIPALITIES_LIST_HREF =
   '/campanha/municipios?coverage=sem_assessor&sort=votos' as const
 
 /** Staff Início catalog with hrefs — shared by quick-action registries (B81+). */
+const staffHomeQuickActionsByRole = new Map<
+  CampaignRole,
+  readonly ResolvedCampaignHomeAction[]
+>()
+
 export const resolveStaffHomeQuickActions = (
   role: CampaignRole,
 ): readonly ResolvedCampaignHomeAction[] => {
   if (!isStaffCampaignRole(role)) return []
-  return toHomeActionButtonProps(homeActionsForRole(role), UNCOVERED_MUNICIPALITIES_LIST_HREF)
+  const cached = staffHomeQuickActionsByRole.get(role)
+  if (cached) return cached
+  const actions = toHomeActionButtonProps(
+    homeActionsForRole(role),
+    UNCOVERED_MUNICIPALITIES_LIST_HREF,
+  )
+  staffHomeQuickActionsByRole.set(role, actions)
+  return actions
 }
 
 export const toHomeActionButtonProps = (
