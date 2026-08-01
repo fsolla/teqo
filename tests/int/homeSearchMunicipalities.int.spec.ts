@@ -48,7 +48,7 @@ describe('searchHomeMunicipalities (B48)', () => {
     const advisor = await fixtures.createCampaignUser('advisor')
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
-    let administered = await fixtures.getMunicipality()
+    const administered = await fixtures.getMunicipality()
     let other = await fixtures.getMunicipality()
     for (let attempt = 0; attempt < 30; attempt++) {
       try {
