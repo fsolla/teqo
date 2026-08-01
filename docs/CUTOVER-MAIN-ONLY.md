@@ -8,7 +8,7 @@ Status after agent delivery (2026-07-31):
 - [x] Repo secrets present (`VERCEL_*`, `POOL_GITHUB_TOKEN`)
 - [x] `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` synced from local `.vercel/project.json` (`vercel link`)
 - [ ] Confirm `ci.yml` deploy job green after token+IDs are correct
-  - Misleading CLI error *"Could not retrieve Project Settings"* usually means **403** (bad/expired `VERCEL_TOKEN` or wrong IDs) — regenerate token at vercel.com/account/tokens if deploy still fails
+  - Misleading CLI error _"Could not retrieve Project Settings"_ usually means **403** (bad/expired `VERCEL_TOKEN` or wrong IDs) — regenerate token at vercel.com/account/tokens if deploy still fails
 
 After the cutover PR merges to `main`:
 
