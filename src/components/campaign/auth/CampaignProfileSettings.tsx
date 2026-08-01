@@ -7,6 +7,7 @@ import {
   removeCampaignAvatarFormAction,
   updateCampaignAvatarFormAction,
 } from '@/app/(campaign)/campanha/actions/profile'
+import { CampaignPasswordFields } from '@/components/campaign/auth/CampaignPasswordFields'
 import { CampaignUserAvatar } from '@/components/campaign/shared/CampaignUserAvatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -177,41 +178,10 @@ export const CampaignProfileSettings = ({
                   className="min-h-11"
                 />
               </Field>
-              <Field>
-                <FieldLabel htmlFor="password">Nova senha</FieldLabel>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  minLength={8}
-                  className="min-h-11"
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="passwordConfirmation">Confirmar nova senha</FieldLabel>
-                <Input
-                  id="passwordConfirmation"
-                  name="passwordConfirmation"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  minLength={8}
-                  className="min-h-11"
-                />
-              </Field>
+              <CampaignPasswordFields fieldErrors={passwordState.fieldErrors} idPrefix="profile" />
               <FormActionStatus state={passwordState} />
               {fieldError(passwordState.fieldErrors, 'currentPassword') ? (
                 <FieldError>{fieldError(passwordState.fieldErrors, 'currentPassword')}</FieldError>
-              ) : null}
-              {fieldError(passwordState.fieldErrors, 'password') ? (
-                <FieldError>{fieldError(passwordState.fieldErrors, 'password')}</FieldError>
-              ) : null}
-              {fieldError(passwordState.fieldErrors, 'passwordConfirmation') ? (
-                <FieldError>
-                  {fieldError(passwordState.fieldErrors, 'passwordConfirmation')}
-                </FieldError>
               ) : null}
               <Button type="submit" className="min-h-11" disabled={passwordPending}>
                 {passwordPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}

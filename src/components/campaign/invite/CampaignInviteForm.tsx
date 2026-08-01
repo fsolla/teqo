@@ -8,6 +8,7 @@ import type {
   CampaignInviteFormState,
 } from '@/app/(campaign)/campanha/convite/[token]/formActions'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
+import { CampaignPasswordFields } from '@/components/campaign/auth/CampaignPasswordFields'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -184,8 +185,6 @@ export const CampaignInviteForm = ({
 }) => {
   const [state, formAction, pending] = useActionState(action, {})
   const consentError = fieldError(state.fieldErrors, 'consentAccepted')
-  const passwordError = fieldError(state.fieldErrors, 'password')
-  const confirmationError = fieldError(state.fieldErrors, 'passwordConfirmation')
 
   if (state.status === 'success') {
     return (
@@ -234,55 +233,13 @@ export const CampaignInviteForm = ({
           )}
 
           {kind === 'login' ? (
-            <FieldGroup>
-              <Field data-invalid={Boolean(passwordError)}>
-                <FieldLabel htmlFor="campaign-invite-password">Nova senha *</FieldLabel>
-                <Input
-                  id="campaign-invite-password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={8}
-                  maxLength={128}
-                  required
-                  aria-invalid={Boolean(passwordError)}
-                  aria-describedby={
-                    passwordError
-                      ? 'campaign-invite-password-error'
-                      : 'campaign-invite-password-help'
-                  }
-                />
-                <FieldDescription id="campaign-invite-password-help">
-                  Use pelo menos 8 caracteres.
-                </FieldDescription>
-                {passwordError ? (
-                  <FieldError id="campaign-invite-password-error">{passwordError}</FieldError>
-                ) : null}
-              </Field>
-              <Field data-invalid={Boolean(confirmationError)}>
-                <FieldLabel htmlFor="campaign-invite-password-confirmation">
-                  Confirme a nova senha *
-                </FieldLabel>
-                <Input
-                  id="campaign-invite-password-confirmation"
-                  name="passwordConfirmation"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={8}
-                  maxLength={128}
-                  required
-                  aria-invalid={Boolean(confirmationError)}
-                  aria-describedby={
-                    confirmationError ? 'campaign-invite-password-confirmation-error' : undefined
-                  }
-                />
-                {confirmationError ? (
-                  <FieldError id="campaign-invite-password-confirmation-error">
-                    {confirmationError}
-                  </FieldError>
-                ) : null}
-              </Field>
-            </FieldGroup>
+            <CampaignPasswordFields
+              fieldErrors={state.fieldErrors}
+              idPrefix="campaign-invite"
+              passwordLabel="Nova senha *"
+              confirmationLabel="Confirme a nova senha *"
+              showPasswordHint
+            />
           ) : null}
 
           <Button type="submit" className="min-h-11 w-full" disabled={pending}>

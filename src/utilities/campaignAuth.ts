@@ -16,6 +16,16 @@ type CampaignAuthPayload = Pick<Payload, 'auth' | 'findByID'>
 type CampaignCookiePayload = Pick<Payload, 'secret'>
 export type AuthenticatedCampaignUser = CampaignUser & { email: string }
 
+/** Gate reload — no `media` join; avatar stays a bare relationship id. */
+export const CAMPAIGN_AUTH_GATE_SELECT = {
+  id: true,
+  name: true,
+  role: true,
+  email: true,
+  username: true,
+  avatar: true,
+} as const
+
 type CampaignTokenClaims = Record<string, unknown> & {
   collection: 'campaignUser'
   id: number | string
@@ -97,7 +107,8 @@ export const authenticateCampaignToken = async (
     const currentUser = await payload.findByID({
       collection: 'campaignUser',
       id: user.id,
-      depth: 1,
+      depth: 0,
+      select: CAMPAIGN_AUTH_GATE_SELECT,
     })
 
     return {
@@ -109,18 +120,58 @@ export const authenticateCampaignToken = async (
   }
 }
 
-export const getCampaignUserRaw = async (): Promise<AuthenticatedCampaignUser | null> => {
+const readAuthenticatedCampaignUser = async (
+  depth: 0 | 1,
+): Promise<AuthenticatedCampaignUser | null> => {
   const cookieStore = await cookies()
   const token = cookieStore.get(CAMPAIGN_TOKEN_COOKIE)?.value
 
   if (!token) return null
 
   const payload = await getPayload({ config: configPromise })
+  const user = await authenticateCampaignToken(token, payload)
+  if (!user) return null
 
-  return authenticateCampaignToken(token, payload)
+  if (depth === 0) return user
+
+  const withAvatar = await payload.findByID({
+    collection: 'campaignUser',
+    id: user.id,
+    depth: 1,
+    select: CAMPAIGN_AUTH_GATE_SELECT,
+  })
+
+  return {
+    ...withAvatar,
+    email: withAvatar.email ?? '',
+  }
 }
 
+export const getCampaignUserRaw = (): Promise<AuthenticatedCampaignUser | null> =>
+  readAuthenticatedCampaignUser(0)
+
 export const getCampaignUser = cache(getCampaignUserRaw)
+
+export const getCampaignUserWithAvatarRaw = (): Promise<AuthenticatedCampaignUser | null> =>
+  readAuthenticatedCampaignUser(1)
+
+export const getCampaignUserWithAvatar = cache(getCampaignUserWithAvatarRaw)
+
+/** Public auth routes — session probe without reloading the user document. */
+export const hasCampaignSession = cache(async (): Promise<boolean> => {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(CAMPAIGN_TOKEN_COOKIE)?.value
+  if (!token) return false
+
+  try {
+    const payload = await getPayload({ config: configPromise })
+    const headers = new Headers({ Authorization: `JWT ${token}` })
+    const { user } = await payload.auth({ headers })
+    return user?.collection === 'campaignUser'
+  } catch {
+    return false
+  }
+})
 
 const campaignCookieOptions = (maxAge: number) => ({
   httpOnly: true,

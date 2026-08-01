@@ -169,7 +169,7 @@ describe('campaign login composition', () => {
   })
 
   it('links auth errors to both credential fields and shows leadership recovery copy', async () => {
-    mocks.loginAction.mockResolvedValue({ error: 'E-mail, celular ou senha inválidos.' })
+    mocks.loginAction.mockResolvedValue({ message: 'E-mail, celular ou senha inválidos.' })
     render(createElement(LoginForm))
 
     fireEvent.change(screen.getByLabelText('E-mail ou celular'), {
@@ -197,10 +197,10 @@ describe('campaign login composition', () => {
   })
 
   it('shows the pending spinner and announces an action error', async () => {
-    let resolveAction: ((value: { error: string }) => void) | undefined
+    let resolveAction: ((value: { message: string }) => void) | undefined
     mocks.loginAction.mockImplementation(
       () =>
-        new Promise<{ error: string }>((resolve) => {
+        new Promise<{ message: string }>((resolve) => {
           resolveAction = resolve
         }),
     )
@@ -223,7 +223,7 @@ describe('campaign login composition', () => {
     expect((pendingButton as HTMLButtonElement).disabled).toBe(true)
 
     await act(async () => {
-      resolveAction?.({ error: 'E-mail, celular ou senha inválidos.' })
+      resolveAction?.({ message: 'E-mail, celular ou senha inválidos.' })
     })
 
     await waitFor(() =>

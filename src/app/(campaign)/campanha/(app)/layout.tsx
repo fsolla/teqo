@@ -26,13 +26,13 @@ import {
 import { Toaster } from '@/components/ui/Toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { getCampaignUserWithAvatar } from '@/utilities/campaignAuth'
 import { campaignUserShellView } from '@/utilities/campaignUserProfile'
 import { loadCampaignPasskeys } from '@/utilities/webauthn/campaignWebAuthnCeremony'
 import { resolveCampaignWebAuthnRelyingParty } from '@/utilities/webauthn/campaignWebAuthnConfig'
 
 export default async function CampaignAppLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCampaignUser()
+  const user = await getCampaignUserWithAvatar()
 
   if (!user) {
     redirect('/campanha/login')

@@ -1,6 +1,9 @@
 import { z } from 'zod'
 
-import { campaignPasswordSchema } from '@/lib/schemas/campaignPassword'
+import {
+  campaignPasswordSchema,
+  refineMatchingPasswords,
+} from '@/lib/schemas/campaignPassword'
 import { leadershipGenders } from '@/lib/schemas/leadership'
 import {
   brazilianMobile,
@@ -33,10 +36,13 @@ export const campaignInviteAutofillSchema = campaignInviteProfileSchema.extend({
   consentAccepted: z.boolean().optional(),
 })
 
-export const campaignInviteLoginSchema = campaignInviteProfileSchema.extend({
-  password: campaignPasswordSchema,
-  consentAccepted: z.boolean().optional(),
-})
+export const campaignInviteLoginSchema = campaignInviteProfileSchema
+  .extend({
+    password: campaignPasswordSchema,
+    passwordConfirmation: campaignPasswordSchema,
+    consentAccepted: z.boolean().optional(),
+  })
+  .superRefine(refineMatchingPasswords)
 
 export type CampaignInviteCreateInput = z.input<typeof campaignInviteCreateSchema>
 export type CampaignInviteAutofillInput = z.input<typeof campaignInviteAutofillSchema>

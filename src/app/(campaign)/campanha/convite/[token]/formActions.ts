@@ -67,24 +67,12 @@ export const redeemCampaignInviteLoginFormAction = async (
   _state: CampaignInviteFormState,
   formData: FormData,
 ): Promise<CampaignInviteFormState> => {
-  let password: string
-  try {
-    password = requiredFormSecret(formData, 'password')
-    if (password !== requiredFormSecret(formData, 'passwordConfirmation')) {
-      return {
-        fieldErrors: {
-          passwordConfirmation: ['As senhas não coincidem.'],
-        },
-      }
-    }
-  } catch (error) {
-    return inviteFormError(error)
-  }
   try {
     const input = campaignInviteLoginSchema.parse({
       token,
       ...profileFromForm(formData),
-      password,
+      password: requiredFormSecret(formData, 'password'),
+      passwordConfirmation: requiredFormSecret(formData, 'passwordConfirmation'),
       consentAccepted: checkboxFormValue(formData, 'consentAccepted'),
     })
     await redeemCampaignInviteLogin(input)

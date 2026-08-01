@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useActionState, useState } from 'react'
 
-import { loginCampaignFormAction, type LoginResult } from '@/app/(campaign)/campanha/actions/auth'
+import { loginCampaignFormAction } from '@/app/(campaign)/campanha/actions/auth'
 import { CampaignAuthCardHeader } from '@/components/campaign/auth/CampaignAuthCardHeader'
 import { CampaignBiometricLoginButton } from '@/components/campaign/auth/CampaignBiometricLoginButton'
 import { Button } from '@/components/ui/button'
@@ -28,6 +28,8 @@ import {
   campaignAuthTextLinkClassName,
 } from '@/lib/campaignAuthCopy'
 import { cn } from '@/lib/utils'
+import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
+import { firstFormActionMessage } from '@/utilities/campaignFormFields'
 
 const LOGIN_ERROR_ID = 'login-credentials-error'
 
@@ -48,10 +50,11 @@ type LoginFormProps = {
 export const LoginForm = ({ biometricsConfigured }: LoginFormProps) => {
   const [state, formAction, pending] = useActionState(
     loginCampaignFormAction,
-    {} satisfies LoginResult,
+    {} satisfies CampaignFormActionState,
   )
   const [identifier, setIdentifier] = useState('')
-  const hasAuthError = Boolean(state.error)
+  const authError = firstFormActionMessage(state)
+  const hasAuthError = Boolean(authError)
 
   return (
     <Card>
@@ -117,7 +120,7 @@ export const LoginForm = ({ biometricsConfigured }: LoginFormProps) => {
               ) : null}
             </div>
             <Field>
-              {state.error ? <FieldError id={LOGIN_ERROR_ID}>{state.error}</FieldError> : null}
+              {authError ? <FieldError id={LOGIN_ERROR_ID}>{authError}</FieldError> : null}
               <Button type="submit" className="min-h-11 w-full" disabled={pending}>
                 {pending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
                 <span aria-live="polite">{pending ? 'Entrando...' : 'Entrar'}</span>
