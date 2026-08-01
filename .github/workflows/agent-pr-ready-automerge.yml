@@ -1,0 +1,44 @@
+# Safety net: agent PRs (cursor/* → main) must be Ready + auto-merge.
+# Covers Cloud ManagePullRequest defaulting to draft and agents that forget
+# `gh pr merge --auto --merge`. No skill opt-out (engineering-audit included).
+name: Agent PR Ready + auto-merge
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  ready-automerge:
+    if: >-
+      github.event.pull_request.state == 'open' &&
+      startsWith(github.event.pull_request.head.ref, 'cursor/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Mark Ready and enable auto-merge
+        run: |
+          set -euo pipefail
+          is_draft="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)"
+          if [ "$is_draft" = "true" ]; then
+            echo "PR #$PR_NUMBER is draft — marking Ready"
+            gh pr ready "$PR_NUMBER" --repo "$GITHUB_REPOSITORY"
+          else
+            echo "PR #$PR_NUMBER already Ready"
+          fi
+          # Arm auto-merge (idempotent when already enabled; fails only on hard blocks).
+          if gh pr merge --auto --merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY"; then
+            echo "Auto-merge armed for PR #$PR_NUMBER"
+          else
+            # Already merged / already armed / race — succeed only if request exists or merged.
+            armed="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json autoMergeRequest,state --jq '(.autoMergeRequest != null) or (.state == "MERGED")')"
+            echo "gh pr merge --auto exited non-zero; armed_or_merged=$armed"
+            [ "$armed" = "true" ]
+          fi

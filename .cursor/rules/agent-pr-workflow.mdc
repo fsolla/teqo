@@ -29,7 +29,7 @@ When the environment says to use `ManagePullRequest` instead of `gh pr create`:
 
 - **`draft: false`** (or omit only if the tool’s default is Ready — today Cloud defaults to draft, so **always pass `draft: false`**).
 - Right after create (or on `update_pr` if you opened draft by mistake): mark Ready if still draft, then enable auto-merge with `gh pr merge --auto --merge <url|number>` (write allowed for this step — same as `agent-pr-workflow`; do not leave the PR waiting on a human).
-- Never end a turn with an open agent PR left as **Draft** or without **auto-merge** armed (exception: `engineering-audit` sign-off PR only — see that skill).
+- Never end a turn with an open agent PR left as **Draft** or without **auto-merge** armed — inclui PRs do `engineering-audit` (artefatos e remediações).
 
 ## Push (determinístico)
 
@@ -80,6 +80,6 @@ All branches skip Vercel Git builds via `scripts/vercel-ignore-build.sh` (deploy
 
 There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` verifies and deploys.
 
-## Exception (narrow)
+## Safety net (GitHub Action)
 
-`engineering-audit` artifact PR: Ready, **no** auto-merge — human merge is the sign-off. All other agent PRs (work-issue, pool workers, chores, docs) use auto-merge.
+`agent-pr-ready-automerge.yml` — PRs `cursor/*` → `main`: se Draft → `gh pr ready`; sempre arma `gh pr merge --auto --merge`. Cobre o caso em que o agente (ou o default draft do Cloud) esqueceu. Não há opt-out por skill (audit incluído).

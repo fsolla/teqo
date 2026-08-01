@@ -2,7 +2,7 @@
 
 ## Contexto e manchetes
 
-- **Executado em 2026-07-31, no modo autônomo (Cursor Cloud)** da skill `engineering-audit`: precheck solitário verde (`agent:gh-doctor` OK; pool **desligado**), varredura completa, remediações P0/P1 e guardrails das misses colhidas na mesma sessão, cada um em PR próprio com gate completo. O sign-off dos artefatos é o merge humano deste PR.
+- **Executado em 2026-07-31, no modo autônomo (Cursor Cloud)** da skill `engineering-audit`: precheck solitário verde (`agent:gh-doctor` OK; pool **desligado**), varredura completa, remediações P0/P1 e guardrails das misses colhidas na mesma sessão, cada um em PR próprio com gate completo. **Política atual (2026-08-01):** o PR dos artefatos também é Ready + auto-merge — não há mais exceção de merge humano para audit.
 - **Âncora de delta:** Pass 3 (2026-07-28). Em 3 dias o paradigma de agentes tocou **880 arquivos** — homeSearch (8 módulos + ~20 componentes), notificações/push (2 collections + 5 módulos), wizard (~12 componentes), WebAuthn (4 rotas + 4 módulos), 5 migrations. A varredura cobriu o repo inteiro com esforço concentrado no delta.
 - **Baseline verde:** `tsc` 0 erros, `lint` 0 warnings, `knip` 0 findings (ruído conhecido do `payload.config.ts`, ledger P3), madge 0 ciclos (**774 arquivos**, +124 desde o Pass 3).
 - **Manchetes (todas medidas):**
