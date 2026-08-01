@@ -16,16 +16,6 @@ type CampaignAuthPayload = Pick<Payload, 'auth' | 'findByID'>
 type CampaignCookiePayload = Pick<Payload, 'secret'>
 export type AuthenticatedCampaignUser = CampaignUser & { email: string }
 
-/** Gate reload fields — kept as documentation for future partial selects. */
-export const CAMPAIGN_AUTH_GATE_SELECT = {
-  id: true,
-  name: true,
-  role: true,
-  email: true,
-  username: true,
-  avatar: true,
-} as const
-
 type CampaignTokenClaims = Record<string, unknown> & {
   collection: 'campaignUser'
   id: number | string
@@ -150,10 +140,9 @@ export const getCampaignUserRaw = (): Promise<AuthenticatedCampaignUser | null> 
 
 export const getCampaignUser = cache(getCampaignUserRaw)
 
-export const getCampaignUserWithAvatarRaw = (): Promise<AuthenticatedCampaignUser | null> =>
-  readAuthenticatedCampaignUser(1)
-
-export const getCampaignUserWithAvatar = cache(getCampaignUserWithAvatarRaw)
+export const getCampaignUserWithAvatar = cache((): Promise<AuthenticatedCampaignUser | null> =>
+  readAuthenticatedCampaignUser(1),
+)
 
 /** Public auth routes — session probe without reloading the user document. */
 export const hasCampaignSession = cache(async (): Promise<boolean> => {
