@@ -5,8 +5,6 @@ import type { Payload } from 'payload'
 import { relationshipId } from '@/lib/relationship'
 import type { AdvisorListState } from '@/utilities/advisor/advisorListUrl'
 
-export type { AdvisorListState } from '@/utilities/advisor/advisorListUrl'
-
 const advisorPageSize = 25
 
 type AdvisorMunicipalityViewModel = {

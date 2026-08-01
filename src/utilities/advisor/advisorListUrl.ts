@@ -38,7 +38,7 @@ export const parseAdvisorListParams = (params: AdvisorListSearchParams): Advisor
   }
 }
 
-export const advisorListStateToRawParams = (
+const advisorListStateToRawParams = (
   state: AdvisorListState,
   page = state.page,
 ): AdvisorListSearchParams => ({

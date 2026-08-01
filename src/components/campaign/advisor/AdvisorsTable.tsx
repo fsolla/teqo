@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { AdvisorDebouncedTextCell } from '@/components/campaign/advisor/AdvisorDebouncedTextCell'
@@ -108,13 +108,6 @@ export const AdvisorsTable = ({
   const [isCreating, startCreate] = useTransition()
 
   const refresh = () => router.refresh()
-
-  // One array per row per render of `rows`, not per render of this table: the
-  // cell reconciles its optimistic state against this prop by identity.
-  const municipalityIdsByAdvisor = useMemo(
-    () => new Map(rows.map((row) => [row.id, row.municipalityIDs])),
-    [rows],
-  )
 
   const startDraft = () => {
     setEditing(true)
@@ -323,7 +316,7 @@ export const AdvisorsTable = ({
           <MunicipalityPortfolioCell
             ownerId={advisor.id}
             ownerName={advisor.name}
-            municipalityIds={municipalityIdsByAdvisor.get(advisor.id) ?? []}
+            municipalityIds={advisor.municipalityIDs}
             municipalityIndex={municipalityIndex}
             commitAction={municipalitiesAction}
             drawerTitle="Carteira do assessor"
