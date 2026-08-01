@@ -27,7 +27,6 @@ import {
   resolveWizardTrendSkip,
   selectablePoliticalTrendStatuses,
   wizardTrendChoiceStepTitle,
-  type WizardTrendSkipAction,
 } from '@/lib/politicalTrendWizardUi'
 import type { PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
 import { cn } from '@/lib/utils'
@@ -50,7 +49,7 @@ export const WizardTrendChoiceStep = ({
   prefillExtraParams,
 }: WizardTrendChoiceStepProps) => {
   const [infoEntry, setInfoEntry] = useState<PoliticalTrendWizardMetaEntry | null>(null)
-  const skip: WizardTrendSkipAction = resolveWizardTrendSkip()
+  const skip = resolveWizardTrendSkip(entryAction)
   const options = selectablePoliticalTrendStatuses(currentStatus)
 
   return (
@@ -62,7 +61,7 @@ export const WizardTrendChoiceStep = ({
         previousHref={wizardActionHref(actionSlug, municipalitySlug, { entryAction })}
         municipalityLabel={municipalityName}
         skip={skip}
-        trailingAction={<WizardTrendSkipTrailing skip={skip} />}
+        trailingAction={skip ? <WizardTrendSkipTrailing skip={skip} /> : undefined}
       >
         <ul className="grid list-none grid-cols-2 gap-3 md:grid-cols-3">
           {options.map((status) => {

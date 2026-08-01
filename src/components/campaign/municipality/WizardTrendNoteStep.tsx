@@ -49,7 +49,7 @@ export const WizardTrendNoteStep = ({
     setMunicipalityPoliticalTrendFormAction,
     {},
   )
-  const skip = resolveWizardTrendSkip()
+  const skip = resolveWizardTrendSkip(entryAction)
   const stepTitle = `Mudar tendência para ${politicalTrendLabels[trendStatus]}`
 
   useCampaignFormSuccessToast(state, () => {
@@ -65,7 +65,7 @@ export const WizardTrendNoteStep = ({
       previousHref={wizardTrendHref(actionSlug, municipalitySlug, undefined, entryAction)}
       municipalityLabel={municipalityName}
       skip={skip}
-      trailingAction={<WizardTrendSkipTrailing skip={skip} />}
+      trailingAction={skip ? <WizardTrendSkipTrailing skip={skip} /> : undefined}
     >
       <form
         action={submitAction}

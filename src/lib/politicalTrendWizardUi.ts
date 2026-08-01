@@ -63,10 +63,16 @@ export const resolveWizardTrendNoteDestination = (
   return 'note'
 }
 
-export const resolveWizardTrendSkip = (): WizardTrendSkipAction => ({
-  label: WIZARD_TREND_SKIP_LABEL,
-  href: CAMPAIGN_HOME,
-})
+export const shouldShowWizardTrendSkip = (
+  entryAction: CampaignWizardActionId | undefined,
+): boolean => entryAction != null && entryAction !== 'change-trend'
+
+export const resolveWizardTrendSkip = (
+  entryAction: CampaignWizardActionId | undefined,
+): WizardTrendSkipAction | undefined =>
+  shouldShowWizardTrendSkip(entryAction)
+    ? { label: WIZARD_TREND_SKIP_LABEL, href: CAMPAIGN_HOME }
+    : undefined
 
 export type PoliticalTrendNotePrefillSource =
   | { kind: 'none' }
