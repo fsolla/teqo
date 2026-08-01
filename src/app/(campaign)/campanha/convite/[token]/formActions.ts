@@ -12,7 +12,7 @@ import {
   requiredFormSecret,
   requiredFormText,
 } from '@/lib/formData'
-import { campaignInviteAutofillSchema, campaignInviteLoginSchema } from '@/lib/schemas/invite'
+import { campaignInviteAutofillSchema, campaignInviteLoginFormSchema } from '@/lib/schemas/invite'
 import {
   mapCampaignFormActionError,
   runCampaignFormAction,
@@ -68,7 +68,7 @@ export const redeemCampaignInviteLoginFormAction = async (
   formData: FormData,
 ): Promise<CampaignInviteFormState> => {
   try {
-    const input = campaignInviteLoginSchema.parse({
+    const input = campaignInviteLoginFormSchema.parse({
       token,
       ...profileFromForm(formData),
       password: requiredFormSecret(formData, 'password'),

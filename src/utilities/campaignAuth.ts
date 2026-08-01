@@ -16,7 +16,7 @@ type CampaignAuthPayload = Pick<Payload, 'auth' | 'findByID'>
 type CampaignCookiePayload = Pick<Payload, 'secret'>
 export type AuthenticatedCampaignUser = CampaignUser & { email: string }
 
-/** Gate reload — no `media` join; avatar stays a bare relationship id. */
+/** Gate reload fields — kept as documentation for future partial selects. */
 export const CAMPAIGN_AUTH_GATE_SELECT = {
   id: true,
   name: true,
@@ -108,7 +108,6 @@ export const authenticateCampaignToken = async (
       collection: 'campaignUser',
       id: user.id,
       depth: 0,
-      select: CAMPAIGN_AUTH_GATE_SELECT,
     })
 
     return {
@@ -138,7 +137,6 @@ const readAuthenticatedCampaignUser = async (
     collection: 'campaignUser',
     id: user.id,
     depth: 1,
-    select: CAMPAIGN_AUTH_GATE_SELECT,
   })
 
   return {

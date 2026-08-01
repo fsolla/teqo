@@ -8,7 +8,7 @@ import { CampaignAuthCardHeader } from '@/components/campaign/auth/CampaignAuthC
 import { CampaignPasswordFields } from '@/components/campaign/auth/CampaignPasswordFields'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Field, FieldError, FieldGroup } from '@/components/ui/field'
+import { FieldError, FieldGroup } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/Spinner'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 

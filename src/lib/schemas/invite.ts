@@ -36,11 +36,14 @@ export const campaignInviteAutofillSchema = campaignInviteProfileSchema.extend({
   consentAccepted: z.boolean().optional(),
 })
 
-export const campaignInviteLoginSchema = campaignInviteProfileSchema
+export const campaignInviteLoginSchema = campaignInviteProfileSchema.extend({
+  password: campaignPasswordSchema,
+  consentAccepted: z.boolean().optional(),
+})
+
+export const campaignInviteLoginFormSchema = campaignInviteLoginSchema
   .extend({
-    password: campaignPasswordSchema,
     passwordConfirmation: campaignPasswordSchema,
-    consentAccepted: z.boolean().optional(),
   })
   .superRefine(refineMatchingPasswords)
 

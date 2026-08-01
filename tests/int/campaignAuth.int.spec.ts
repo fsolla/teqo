@@ -181,14 +181,6 @@ describe('campaign authentication foundation', () => {
       collection: 'campaignUser',
       id: staleJwtUser.id,
       depth: 0,
-      select: expect.objectContaining({
-        id: true,
-        name: true,
-        role: true,
-        email: true,
-        username: true,
-        avatar: true,
-      }),
     })
     expect(result?.email).toBe('')
     expect(result?.role).toBe('advisor')
