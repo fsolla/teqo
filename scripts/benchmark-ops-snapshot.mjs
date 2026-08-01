@@ -38,6 +38,7 @@ const {
   OPS_SNAPSHOT_GZIP_TARGET_BYTES,
   OPS_SNAPSHOT_PROD_GZIP_RATIO_ESTIMATE,
   OPS_SNAPSHOT_PROD_MEASURED_JSON_BYTES,
+  truncateMunicipalityUpdates,
 } = await import('../src/lib/campaignOps/opsSnapshotPolicy.ts')
 const { relationshipId, uniqueRelationshipIds } = await import('../src/lib/relationship.ts')
 const { MINIMAL_CAMPAIGN_USERS } = await import('./lib/seed-minimal-manifest.mjs')
@@ -283,31 +284,6 @@ const mapGoals = (doc) =>
         updatedAt: toIso(doc.updatedAt),
       }
     : null
-
-/**
- * @param {Array<{ municipality: number; updatedAt: string }>} updates
- * @param {number} limitPerMunicipality
- */
-const truncateMunicipalityUpdates = (updates, limitPerMunicipality) => {
-  if (limitPerMunicipality <= 0) return []
-
-  /** @type {Map<number, typeof updates>} */
-  const byMunicipality = new Map()
-
-  for (const update of updates) {
-    const bucket = byMunicipality.get(update.municipality) ?? []
-    bucket.push(update)
-    byMunicipality.set(update.municipality, bucket)
-  }
-
-  const kept = []
-  for (const bucket of byMunicipality.values()) {
-    bucket.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
-    kept.push(...bucket.slice(0, limitPerMunicipality))
-  }
-
-  return kept
-}
 
 const measureJson = (value) => {
   const json = typeof value === 'string' ? value : JSON.stringify(value)

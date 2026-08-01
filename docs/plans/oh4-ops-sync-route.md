@@ -1,6 +1,6 @@
 # OH4 — Route `GET /campanha/api/ops-sync` FULL + scoped + int access
 
-Status: em execução
+Status: done
 Atualizado em: 2026-08-01
 Issue: #166
 Priority: P1
@@ -50,9 +50,9 @@ flowchart LR
 
 Componentes:
 
-- **`src/utilities/campaignOps/buildOpsSnapshot.ts`** (novo, `import 'server-only'`): uma função por collection. Todas `payload.find` com `user: actor`, `overrideAccess: false`, `depth: 0`, `select` mínimo dos DTOs de OH2 (`opsContract.ts` — campos exactos definidos lá; esta issue importa os tipos, não redefine). Escopo advisor: reusar `resolveActorScopedRead` / `advisorMunicipalityScopeWhere` ([`src/utilities/access/shared.ts`](src/utilities/access/shared.ts)) para o where de municípios e derivados — **não** reimplementar RBAC. Devolve `OpsSnapshot` com `revisedAt` e `schemaVersion`.
-- **`src/app/(campaign)/campanha/api/ops-sync/route.ts`** (novo): `export async function GET()` — auth, role check, `Response.json(snapshot, { headers: { 'Cache-Control': 'no-store' } })`.
-- **Defense in depth:** o `select` de `vote_pledge` **nunca** inclui `estimatedVotes` quando o actor não for staff (hoje só staff consome o endpoint; o pin int cobre leader 403 antes disto importar).
+- **`src/utilities/campaignOps/buildOpsSnapshot.ts`** (novo, `import 'server-only'`): queries em paralelo (`Promise.all`) com `user: actor`, `overrideAccess: false`, `select` mínimo dos DTOs OH2. Escopo via access modules — **não** re-spellar RBAC. Truncamento via `truncateMunicipalityUpdates` (lib). Devolve `OpsSnapshot` com `revisedAt` e `schemaVersion`.
+- **`src/app/(campaign)/campanha/api/ops-sync/route.ts`** (novo): `GET()` — auth, staff check, `Response.json(snapshot, { headers: { 'Cache-Control': 'no-store' } })`.
+- **Defense in depth:** o `select` de `vote_pledge` **nunca** inclui `estimatedVotes` quando o actor não for staff.
 
 ## Fases verificáveis
 
@@ -61,9 +61,9 @@ Componentes:
 - **Quota:** ~0,4
 - **Entrega:** route devolve `{ revisedAt, schemaVersion, municipalities }` scoped.
 - **Aceite:**
-  - [ ] 401 sem sessão; 403 leader; 200 coordinator/advisor/candidate
-  - [ ] advisor recebe só municípios da carteira (pin int com fixtures)
-- **Verify:** `pnpm gate:fast` + `tests/int/campaignOpsSync.int.spec.ts` (municipalities)
+  - [x] 401 sem sessão; 403 leader; 200 coordinator/advisor/candidate
+  - [x] advisor recebe só municípios da carteira (pin int com fixtures)
+- **Verify:** `pnpm gate:fast` + `tests/int/campaignOpsSync.int.spec.ts`
 - **Files:** builder, route, spec int
 - **Tamanho:** M
 
@@ -72,9 +72,9 @@ Componentes:
 - **Quota:** ~0,6
 - **Entrega:** snapshot completo conforme OH2 + updates truncadas (N de OH3).
 - **Aceite:**
-  - [ ] todas as collections presentes com select mínimo (sem `estimatedVotes` em payload destinado a roles que não devem ver — defense in depth além do client)
-  - [ ] `municipality_update` limitado a N/município (pin int)
-  - [ ] shape bate com `OpsSnapshot` (validação zod ou type-level no teste)
+  - [x] todas as collections presentes com select mínimo (sem `estimatedVotes` para non-staff — defense in depth)
+  - [x] `municipality_update` limitado a N/município (pin int)
+  - [x] shape bate com `OpsSnapshot` (type-level no teste)
 - **Verify:** `pnpm gate:fast` + spec int completa
 - **Files:** builder, spec int
 - **Tamanho:** M
@@ -89,8 +89,12 @@ Componentes:
 
 ## Rabbit holes
 
-- **`depth: 1` “para facilitar joins”.** Explode tamanho e vaza shape para o client. **Mitigação:** IDs + `depth: 0`; joins no client (OH5/OH12).
+- **`depth: 1` “para facilitar joins”.** Explode tamanho e vaza shape para o client. **Mitigação:** IDs + `depth: 0`; joins no client (OH5/OH12). Exceção documentada: `leadership` depth:1 só para `OpsLeadershipContact`.
 - **Bypass de access “porque é endpoint interno”.** Invariante do repo. **Mitigação:** pin int de advisor/leader.
+
+## Débitos pós-simplify (defer)
+
+- Benchmark OH3 ainda duplica mappers/`toIso` — apontar `scripts/benchmark-ops-snapshot.mjs` a `buildOpsSnapshot` quando o timing por-collection deixar de precisar do pipeline paralelo (gatilho: OH11 sizing / drift). Issue de follow-up com `depends: [OH4]`.
 
 ## Referências
 

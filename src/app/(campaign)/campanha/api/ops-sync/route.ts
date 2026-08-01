@@ -1,8 +1,9 @@
 import config from '@payload-config'
 import { getPayload } from 'payload'
 
-import { isCampaignLeader, isCampaignStaff } from '@/utilities/access/shared'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignUser } from '@/utilities/campaignAuth'
+import { CAMPAIGN_AUTH_REQUIRED_MESSAGE } from '@/utilities/campaignFormActionError'
 import { buildOpsSnapshot } from '@/utilities/campaignOps/buildOpsSnapshot'
 
 export const dynamic = 'force-dynamic'
@@ -14,10 +15,10 @@ export const dynamic = 'force-dynamic'
 export async function GET(): Promise<Response> {
   const user = await getCampaignUser()
   if (!user) {
-    return Response.json({ error: 'Não autenticado.' }, { status: 401 })
+    return Response.json({ error: CAMPAIGN_AUTH_REQUIRED_MESSAGE }, { status: 401 })
   }
 
-  if (isCampaignLeader(user) || !isCampaignStaff(user)) {
+  if (!isCampaignStaff(user)) {
     return Response.json({ error: 'Sem permissão.' }, { status: 403 })
   }
 

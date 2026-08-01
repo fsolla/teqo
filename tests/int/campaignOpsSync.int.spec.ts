@@ -4,13 +4,9 @@ import { getPayload, type Payload } from 'payload'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { OPS_MIRROR_SCHEMA_VERSION } from '@/lib/campaignOps/opsMirrorVersion'
-import { OPS_MUNICIPALITY_UPDATE_LIMIT_PER_MUNICIPALITY } from '@/lib/campaignOps/opsSnapshotPolicy'
 import type { CampaignUser } from '@/payload-types'
 import config from '@/payload.config'
-import {
-  buildOpsSnapshot,
-  truncateMunicipalityUpdates,
-} from '@/utilities/campaignOps/buildOpsSnapshot'
+import { buildOpsSnapshot } from '@/utilities/campaignOps/buildOpsSnapshot'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -30,52 +26,6 @@ const campaignFixtures = installCampaignFixtures({
   setPayload: (nextPayload) => {
     payload = nextPayload
   },
-})
-
-describe('truncateMunicipalityUpdates', () => {
-  it(`keeps the latest ${OPS_MUNICIPALITY_UPDATE_LIMIT_PER_MUNICIPALITY} rows per municipality by default`, () => {
-    expect(OPS_MUNICIPALITY_UPDATE_LIMIT_PER_MUNICIPALITY).toBe(50)
-  })
-
-  it('keeps the newest N updates per municipality (updatedAt desc)', () => {
-    const updates = [
-      {
-        id: 1,
-        municipality: 10,
-        author: 1,
-        kind: 'nota' as const,
-        updatedAt: '2026-08-01T10:00:00.000Z',
-        createdAt: '2026-08-01T10:00:00.000Z',
-      },
-      {
-        id: 2,
-        municipality: 10,
-        author: 1,
-        kind: 'nota' as const,
-        updatedAt: '2026-08-01T12:00:00.000Z',
-        createdAt: '2026-08-01T12:00:00.000Z',
-      },
-      {
-        id: 3,
-        municipality: 10,
-        author: 1,
-        kind: 'nota' as const,
-        updatedAt: '2026-08-01T11:00:00.000Z',
-        createdAt: '2026-08-01T11:00:00.000Z',
-      },
-      {
-        id: 4,
-        municipality: 20,
-        author: 1,
-        kind: 'nota' as const,
-        updatedAt: '2026-08-01T09:00:00.000Z',
-        createdAt: '2026-08-01T09:00:00.000Z',
-      },
-    ]
-
-    const truncated = truncateMunicipalityUpdates(updates, 2)
-    expect(truncated.map((row) => row.id).sort()).toEqual([2, 3, 4])
-  })
 })
 
 describe('GET /campanha/api/ops-sync', () => {

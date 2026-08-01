@@ -17,12 +17,18 @@ import {
   type OpsVoteEstimateScenarioFields,
   type OpsVotePledge,
 } from '@/lib/campaignOps/opsContract'
-import { OPS_MUNICIPALITY_UPDATE_LIMIT_PER_MUNICIPALITY } from '@/lib/campaignOps/opsSnapshotPolicy'
-import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
+import {
+  OPS_MUNICIPALITY_UPDATE_LIMIT_PER_MUNICIPALITY,
+  truncateMunicipalityUpdates,
+} from '@/lib/campaignOps/opsSnapshotPolicy'
+import {
+  populatedContactName,
+  relationshipId,
+  requireRelationshipId,
+  uniqueRelationshipIds,
+} from '@/lib/relationship'
 import type { CampaignUser } from '@/payload-types'
-import { isCampaignStaff } from '@/utilities/access/shared'
-
-type OpsActor = CampaignUser
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 
 const toIso = (value: unknown): string | null => {
   if (value === null || value === undefined || value === '') return null
@@ -33,19 +39,13 @@ const toIso = (value: unknown): string | null => {
 
 const requireIso = (value: unknown): string => toIso(value) ?? new Date(0).toISOString()
 
-const requireId = (value: unknown, label: string): number => {
-  const id = relationshipId(value)
-  if (id === null) throw new Error(`Ops snapshot: missing ${label}`)
-  return id
-}
-
 const asEstimateFields = (value: unknown): OpsVoteEstimateScenarioFields | null => {
   if (typeof value !== 'object' || value === null) return null
   return value as OpsVoteEstimateScenarioFields
 }
 
 const mapMunicipality = (doc: Record<string, unknown>): OpsMunicipality => ({
-  id: requireId(doc.id, 'municipality.id'),
+  id: requireRelationshipId(doc.id, 'Ops snapshot: missing municipality.id'),
   name: String(doc.name ?? ''),
   slug: String(doc.slug ?? ''),
   kind: doc.kind === 'zona' ? 'zona' : 'municipio',
@@ -90,18 +90,18 @@ const mapMunicipality = (doc: Record<string, unknown>): OpsMunicipality => ({
 
 const mapLeadershipContact = (contact: unknown): OpsLeadershipContact => {
   if (typeof contact !== 'object' || contact === null) {
-    return { id: relationshipId(contact) ?? 0, name: 'Contato' }
+    return { id: relationshipId(contact) ?? 0, name: populatedContactName(contact) }
   }
   const doc = contact as Record<string, unknown>
   return {
-    id: requireId(doc.id, 'leadership.contact.id'),
-    name: typeof doc.name === 'string' && doc.name.length > 0 ? doc.name : 'Contato',
+    id: requireRelationshipId(doc.id, 'Ops snapshot: missing leadership.contact.id'),
+    name: populatedContactName(contact),
     phone: typeof doc.phone === 'string' ? doc.phone : null,
   }
 }
 
 const mapLeadership = (doc: Record<string, unknown>): OpsLeadership => ({
-  id: requireId(doc.id, 'leadership.id'),
+  id: requireRelationshipId(doc.id, 'Ops snapshot: missing leadership.id'),
   contact: mapLeadershipContact(doc.contact),
   municipalities: uniqueRelationshipIds(
     doc.municipalities as readonly unknown[] | null | undefined,
@@ -120,14 +120,17 @@ const mapLeadership = (doc: Record<string, unknown>): OpsLeadership => ({
   updatedAt: requireIso(doc.updatedAt),
 })
 
-const mapVotePledge = (
-  doc: Record<string, unknown>,
-  includeEstimates: boolean,
-): OpsVotePledge => {
+const mapVotePledge = (doc: Record<string, unknown>, includeEstimates: boolean): OpsVotePledge => {
   const base = {
-    id: requireId(doc.id, 'votePledge.id'),
-    leadership: requireId(doc.leadership, 'votePledge.leadership'),
-    municipality: requireId(doc.municipality, 'votePledge.municipality'),
+    id: requireRelationshipId(doc.id, 'Ops snapshot: missing votePledge.id'),
+    leadership: requireRelationshipId(
+      doc.leadership,
+      'Ops snapshot: missing votePledge.leadership',
+    ),
+    municipality: requireRelationshipId(
+      doc.municipality,
+      'Ops snapshot: missing votePledge.municipality',
+    ),
     declaredVotes: typeof doc.declaredVotes === 'number' ? doc.declaredVotes : 0,
     declaredAt: toIso(doc.declaredAt),
     declaredBy: relationshipId(doc.declaredBy),
@@ -146,7 +149,7 @@ const mapVotePledge = (
 }
 
 const mapActivity = (doc: Record<string, unknown>): OpsActivity => ({
-  id: requireId(doc.id, 'activity.id'),
+  id: requireRelationshipId(doc.id, 'Ops snapshot: missing activity.id'),
   title: String(doc.title ?? ''),
   slug: String(doc.slug ?? ''),
   kind: doc.kind as OpsActivity['kind'],
@@ -154,7 +157,10 @@ const mapActivity = (doc: Record<string, unknown>): OpsActivity => ({
   deputyPresent: typeof doc.deputyPresent === 'boolean' ? doc.deputyPresent : null,
   startAt: toIso(doc.startAt),
   endAt: toIso(doc.endAt),
-  municipality: requireId(doc.municipality, 'activity.municipality'),
+  municipality: requireRelationshipId(
+    doc.municipality,
+    'Ops snapshot: missing activity.municipality',
+  ),
   locality: typeof doc.locality === 'string' ? doc.locality : null,
   organizations: uniqueRelationshipIds(doc.organizations as readonly unknown[] | null | undefined),
   advisors: uniqueRelationshipIds(doc.advisors as readonly unknown[] | null | undefined),
@@ -165,7 +171,7 @@ const mapActivity = (doc: Record<string, unknown>): OpsActivity => ({
 })
 
 const mapStateDeputy = (doc: Record<string, unknown>): OpsStateDeputy => ({
-  id: requireId(doc.id, 'stateDeputy.id'),
+  id: requireRelationshipId(doc.id, 'Ops snapshot: missing stateDeputy.id'),
   name: String(doc.name ?? ''),
   slug: String(doc.slug ?? ''),
   party: typeof doc.party === 'string' ? doc.party : null,
@@ -174,7 +180,7 @@ const mapStateDeputy = (doc: Record<string, unknown>): OpsStateDeputy => ({
 })
 
 const mapOrganization = (doc: Record<string, unknown>): OpsOrganization => ({
-  id: requireId(doc.id, 'organization.id'),
+  id: requireRelationshipId(doc.id, 'Ops snapshot: missing organization.id'),
   name: String(doc.name ?? ''),
   slug: String(doc.slug ?? ''),
   kind: doc.kind as OpsOrganization['kind'],
@@ -186,11 +192,14 @@ const mapOrganization = (doc: Record<string, unknown>): OpsOrganization => ({
 })
 
 const mapDemand = (doc: Record<string, unknown>): OpsDemand => ({
-  id: requireId(doc.id, 'campaignDemand.id'),
+  id: requireRelationshipId(doc.id, 'Ops snapshot: missing campaignDemand.id'),
   title: String(doc.title ?? ''),
   slug: String(doc.slug ?? ''),
   kind: doc.kind as OpsDemand['kind'],
-  municipality: requireId(doc.municipality, 'campaignDemand.municipality'),
+  municipality: requireRelationshipId(
+    doc.municipality,
+    'Ops snapshot: missing campaignDemand.municipality',
+  ),
   activity: relationshipId(doc.activity),
   leadership: relationshipId(doc.leadership),
   status: doc.status as OpsDemand['status'],
@@ -198,9 +207,12 @@ const mapDemand = (doc: Record<string, unknown>): OpsDemand => ({
 })
 
 const mapMunicipalityUpdate = (doc: Record<string, unknown>): OpsMunicipalityUpdate => ({
-  id: requireId(doc.id, 'municipalityUpdate.id'),
-  municipality: requireId(doc.municipality, 'municipalityUpdate.municipality'),
-  author: requireId(doc.author, 'municipalityUpdate.author'),
+  id: requireRelationshipId(doc.id, 'Ops snapshot: missing municipalityUpdate.id'),
+  municipality: requireRelationshipId(
+    doc.municipality,
+    'Ops snapshot: missing municipalityUpdate.municipality',
+  ),
+  author: requireRelationshipId(doc.author, 'Ops snapshot: missing municipalityUpdate.author'),
   kind: doc.kind as OpsMunicipalityUpdate['kind'],
   body: typeof doc.body === 'string' ? doc.body : null,
   signalType:
@@ -226,33 +238,9 @@ const mapGoals = (doc: Record<string, unknown> | null | undefined): OpsGoals | n
   }
 }
 
-/** Keep the latest N municipality_update rows per municipality (updatedAt desc). */
-export const truncateMunicipalityUpdates = (
-  updates: OpsMunicipalityUpdate[],
-  limitPerMunicipality: number = OPS_MUNICIPALITY_UPDATE_LIMIT_PER_MUNICIPALITY,
-): OpsMunicipalityUpdate[] => {
-  if (limitPerMunicipality <= 0) return []
-
-  const byMunicipality = new Map<number, OpsMunicipalityUpdate[]>()
-
-  for (const update of updates) {
-    const bucket = byMunicipality.get(update.municipality) ?? []
-    bucket.push(update)
-    byMunicipality.set(update.municipality, bucket)
-  }
-
-  const kept: OpsMunicipalityUpdate[] = []
-  for (const bucket of byMunicipality.values()) {
-    bucket.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
-    kept.push(...bucket.slice(0, limitPerMunicipality))
-  }
-
-  return kept
-}
-
 const findAllDocs = async (
   payload: Payload,
-  actor: OpsActor,
+  actor: CampaignUser,
   collection:
     | 'municipality'
     | 'leadership'
@@ -288,15 +276,41 @@ const findAllDocs = async (
  */
 export const buildOpsSnapshot = async (
   payload: Payload,
-  actor: OpsActor,
+  actor: CampaignUser,
   options: { municipalityUpdateLimit?: number } = {},
 ): Promise<OpsSnapshot> => {
   const includeEstimates = isCampaignStaff(actor)
   const updateLimit =
     options.municipalityUpdateLimit ?? OPS_MUNICIPALITY_UPDATE_LIMIT_PER_MUNICIPALITY
 
-  const municipalities = (
-    await findAllDocs(payload, actor, 'municipality', {
+  const votePledgeSelect: Record<string, true> = {
+    leadership: true,
+    municipality: true,
+    declaredVotes: true,
+    declaredAt: true,
+    declaredBy: true,
+    updatedAt: true,
+  }
+  // Defense in depth: never select staff-only estimate fields for non-staff.
+  if (includeEstimates) {
+    votePledgeSelect.estimatedVotes = true
+    votePledgeSelect.estimateNote = true
+    votePledgeSelect.estimatedBy = true
+    votePledgeSelect.estimatedAt = true
+  }
+
+  const [
+    municipalityDocs,
+    leadershipDocs,
+    votePledgeDocs,
+    activityDocs,
+    stateDeputyDocs,
+    organizationDocs,
+    demandDocs,
+    updateDocs,
+    goalsDoc,
+  ] = await Promise.all([
+    findAllDocs(payload, actor, 'municipality', {
       select: {
         name: true,
         slug: true,
@@ -316,11 +330,8 @@ export const buildOpsSnapshot = async (
         lastUpdateAt: true,
         updatedAt: true,
       },
-    })
-  ).map(mapMunicipality)
-
-  const leaderships = (
-    await findAllDocs(payload, actor, 'leadership', {
+    }),
+    findAllDocs(payload, actor, 'leadership', {
       // Contact name/phone are part of OpsLeadership — single depth:1 exception.
       depth: 1,
       select: {
@@ -333,31 +344,9 @@ export const buildOpsSnapshot = async (
         notes: true,
         updatedAt: true,
       },
-    })
-  ).map(mapLeadership)
-
-  const votePledgeSelect: Record<string, true> = {
-    leadership: true,
-    municipality: true,
-    declaredVotes: true,
-    declaredAt: true,
-    declaredBy: true,
-    updatedAt: true,
-  }
-  // Defense in depth: never select staff-only estimate fields for non-staff.
-  if (includeEstimates) {
-    votePledgeSelect.estimatedVotes = true
-    votePledgeSelect.estimateNote = true
-    votePledgeSelect.estimatedBy = true
-    votePledgeSelect.estimatedAt = true
-  }
-
-  const votePledges = (
-    await findAllDocs(payload, actor, 'votePledge', { select: votePledgeSelect })
-  ).map((doc) => mapVotePledge(doc, includeEstimates))
-
-  const activities = (
-    await findAllDocs(payload, actor, 'activity', {
+    }),
+    findAllDocs(payload, actor, 'votePledge', { select: votePledgeSelect }),
+    findAllDocs(payload, actor, 'activity', {
       select: {
         title: true,
         slug: true,
@@ -375,11 +364,8 @@ export const buildOpsSnapshot = async (
         taskDoneCount: true,
         updatedAt: true,
       },
-    })
-  ).map(mapActivity)
-
-  const stateDeputies = (
-    await findAllDocs(payload, actor, 'stateDeputy', {
+    }),
+    findAllDocs(payload, actor, 'stateDeputy', {
       select: {
         name: true,
         slug: true,
@@ -387,11 +373,8 @@ export const buildOpsSnapshot = async (
         notes: true,
         updatedAt: true,
       },
-    })
-  ).map(mapStateDeputy)
-
-  const organizations = (
-    await findAllDocs(payload, actor, 'organization', {
+    }),
+    findAllDocs(payload, actor, 'organization', {
       select: {
         name: true,
         slug: true,
@@ -400,11 +383,8 @@ export const buildOpsSnapshot = async (
         notes: true,
         updatedAt: true,
       },
-    })
-  ).map(mapOrganization)
-
-  const demands = (
-    await findAllDocs(payload, actor, 'campaignDemand', {
+    }),
+    findAllDocs(payload, actor, 'campaignDemand', {
       select: {
         title: true,
         slug: true,
@@ -415,11 +395,8 @@ export const buildOpsSnapshot = async (
         status: true,
         updatedAt: true,
       },
-    })
-  ).map(mapDemand)
-
-  const allUpdates = (
-    await findAllDocs(payload, actor, 'municipalityUpdate', {
+    }),
+    findAllDocs(payload, actor, 'municipalityUpdate', {
       select: {
         municipality: true,
         author: true,
@@ -430,29 +407,29 @@ export const buildOpsSnapshot = async (
         createdAt: true,
       },
       sort: '-updatedAt',
-    })
-  ).map(mapMunicipalityUpdate)
-  const municipalityUpdates = truncateMunicipalityUpdates(allUpdates, updateLimit)
-
-  const goalsDoc = await payload.findGlobal({
-    slug: 'campaignGoals',
-    depth: 0,
-    user: actor,
-    overrideAccess: false,
-  })
-  const goals = mapGoals(goalsDoc as unknown as Record<string, unknown>)
+    }),
+    payload.findGlobal({
+      slug: 'campaignGoals',
+      depth: 0,
+      user: actor,
+      overrideAccess: false,
+    }),
+  ])
 
   const snapshot = createEmptyOpsSnapshot(new Date().toISOString())
   return {
     ...snapshot,
-    municipalities,
-    leaderships,
-    votePledges,
-    activities,
-    stateDeputies,
-    organizations,
-    demands,
-    municipalityUpdates,
-    goals,
+    municipalities: municipalityDocs.map(mapMunicipality),
+    leaderships: leadershipDocs.map(mapLeadership),
+    votePledges: votePledgeDocs.map((doc) => mapVotePledge(doc, includeEstimates)),
+    activities: activityDocs.map(mapActivity),
+    stateDeputies: stateDeputyDocs.map(mapStateDeputy),
+    organizations: organizationDocs.map(mapOrganization),
+    demands: demandDocs.map(mapDemand),
+    municipalityUpdates: truncateMunicipalityUpdates(
+      updateDocs.map(mapMunicipalityUpdate),
+      updateLimit,
+    ),
+    goals: mapGoals(goalsDoc as unknown as Record<string, unknown>),
   }
 }
