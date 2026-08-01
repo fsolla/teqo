@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   CampaignHomeActionButton,
+  actionControlClassName,
   type CampaignHomeActionButtonProps,
 } from '@/components/campaign/dashboard/CampaignHomeActionButton'
 import {
@@ -88,6 +89,16 @@ describe('CampaignHomeActionButton', () => {
   it('marks disabled actions without a focusable control', () => {
     renderActionButton({ label: 'Em breve', icon: BarChart3, disabled: true })
     expect(screen.getByLabelText('Em breve').getAttribute('aria-disabled')).toBe('true')
+  })
+
+  it('uses horizontal padding for hit area without shrinking the visual column (B101)', () => {
+    renderActionButton({ label: 'Registrar', icon: BarChart3 })
+    const control = screen.getByRole('button', { name: 'Registrar' })
+    expect(control.className).toContain('px-2')
+    expect(control.className).toContain('box-content')
+    expect(control.className).toContain('w-[4.75rem]')
+    expect(actionControlClassName).toContain('px-2')
+    expect(actionControlClassName).toContain('box-content')
   })
 
   it('opens the description drawer on long-press when the pointer is coarse', () => {
@@ -180,7 +191,12 @@ describe('CampaignHomeActionStrip', () => {
     const scroller = getScroller(container)
     expect(scroller?.className).toContain('overflow-x-auto')
     expect(scroller?.className).toContain('scrollbar-width:none')
-    expect(scroller?.querySelector('ul[role="list"]')).toBeTruthy()
+    const list = scroller?.querySelector('ul[role="list"]')
+    expect(list).toBeTruthy()
+    expect(list?.className).toContain('gap-0')
+    expect(list?.className).toContain('px-4')
+    expect(list?.className).toContain('md:px-0')
+    expect(list?.className).not.toContain('gap-2')
   })
 
   it('scrolls horizontally on pointer-fine drag past the threshold', () => {
