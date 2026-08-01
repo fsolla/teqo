@@ -15,6 +15,7 @@ import {
   resolveTerritoryListSort,
   type TerritoryListState,
 } from '@/utilities/territory/territoryListUrl'
+import type { TerritoryFilterOption } from '@/utilities/territory/territoryListFilters'
 import {
   computeTerritoryRollup,
   selectTerritoryOverviewPage,
@@ -31,7 +32,7 @@ export type TerritoryOverviewPageResult = {
   totalDocs: number
   totalPages: number
   /** Unfiltered TI labels for the region filter (full 27-row rollup). */
-  regionOptions: Array<{ value: string; label: string }>
+  regionOptions: TerritoryFilterOption[]
 }
 
 type MunicipalityDoc = Pick<
@@ -155,7 +156,11 @@ export const loadTerritoryOverviewPage = cache(
     const allRows = await loadTerritoryOverview(payload, user, scenario)
     const { sort, dir } = resolveTerritoryListSort(state)
     const { rows, totalDocs, totalPages } = selectTerritoryOverviewPage(allRows, {
-      filters: state,
+      filters: {
+        q: state.q,
+        regions: state.regions,
+        coverage: state.coverage,
+      },
       sort,
       dir,
       page: state.page,

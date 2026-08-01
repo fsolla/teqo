@@ -23,9 +23,6 @@ export const territoryCoverageOptions = (
   ['com_assessor', 'sem_assessor'] as const satisfies readonly TerritoryCoverage[]
 ).map((value) => ({ value, label: territoryCoverageLabels[value] }))
 
-const withTerritoryListPageReset = (state: TerritoryListState): TerritoryListState =>
-  parseTerritoryListParams(territoryListStateToRawParams({ ...state, page: 1 }, 1))
-
 export const toggleTerritoryRegionFilter = (
   state: TerritoryListState,
   region: string,
@@ -44,8 +41,8 @@ export const toggleTerritoryCoverageFilter = (
   state: TerritoryListState,
   coverage: TerritoryCoverage,
 ): TerritoryListState =>
-  withTerritoryListPageReset({
-    ...state,
+  parseTerritoryListParams({
+    ...territoryListStateToRawParams({ ...state, page: 1 }, 1),
     coverage: state.coverage === coverage ? undefined : coverage,
   })
 
