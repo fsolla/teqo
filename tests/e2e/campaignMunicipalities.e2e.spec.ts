@@ -406,3 +406,47 @@ test.describe('Municípios — cards no celular (B42)', () => {
     await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
   })
 })
+
+/**
+ * B100: bottom drawer loads docked with search visible, collapses on page scroll,
+ * and reopens only from the handle — not when scrolling back to the top.
+ */
+test.describe('Municípios — bottom drawer mobile (B100)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('dock on load, collapse on scroll down, reopen on handle tap', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Drawer'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
+    await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
+
+    const search = page.getByLabel('Buscar na campanha')
+    await expect(search).toBeInViewport()
+
+    const scrollport = page.locator('[data-slot="campaign-content-scroll"]')
+    await scrollport.evaluate((el) => {
+      el.scrollTop = 80
+      el.dispatchEvent(new Event('scroll'))
+    })
+
+    await expect(page.getByRole('button', { name: 'Mostrar ações rápidas' })).toBeVisible()
+    await expect(search).not.toBeInViewport()
+
+    await scrollport.evaluate((el) => {
+      el.scrollTop = 0
+      el.dispatchEvent(new Event('scroll'))
+    })
+    await expect(search).not.toBeInViewport()
+
+    await page.getByRole('button', { name: 'Mostrar ações rápidas' }).click()
+    await expect(search).toBeInViewport()
+  })
+})

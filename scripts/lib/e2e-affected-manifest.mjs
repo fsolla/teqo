@@ -83,13 +83,14 @@ export const E2E_AFFECTED_MANIFEST = [
   {
     prefixes: [
       'src/components/campaign/shell',
+      'src/components/ui/Drawer',
       `${CAMPAIGN_APP}/layout.tsx`,
       'src/utilities/campaignPwa',
       'src/lib/campaignQuickAction',
       'src/lib/campaignReferenceQuickActions',
       'src/lib/campaignPaths.ts',
     ],
-    specs: ['campaign-pwa', 'campaignWizardChrome'],
+    specs: ['campaign-pwa', 'campaignWizardChrome', 'campaignMunicipalities'],
   },
   // Domains without a dedicated e2e family still wake campaign home smoke so
   // the affected classifier cannot return mode=none on an unmapped domain dir.
