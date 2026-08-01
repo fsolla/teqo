@@ -18,7 +18,6 @@ import {
   CampaignListResults,
   CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
-import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
 import {
   CampaignTable,
@@ -30,6 +29,7 @@ import {
   type RelationCellOption,
 } from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
+import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -42,12 +42,12 @@ import {
   EmptyTitle,
 } from '@/components/ui/Empty'
 import { resolveVisibleColumns } from '@/lib/campaignColumnVisibility'
-import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import {
   resolvedPortfolioEntriesById,
   type MunicipalityPortfolioIndexEntry,
 } from '@/lib/municipalityPortfolio'
+import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
 import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
 import { cn } from '@/lib/utils'

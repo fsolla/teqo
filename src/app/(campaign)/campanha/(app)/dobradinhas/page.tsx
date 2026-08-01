@@ -10,7 +10,6 @@ import {
   CampaignListResults,
   CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
-import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
 import {
   CampaignTable,
@@ -22,6 +21,7 @@ import {
   type RelationCellOption,
 } from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
+import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { StateDeputyFilters } from '@/components/campaign/stateDeputy/StateDeputyFilters'
 import { StateDeputySortableHead } from '@/components/campaign/stateDeputy/StateDeputySortableHead'
@@ -35,8 +35,8 @@ import {
   EmptyTitle,
 } from '@/components/ui/Empty'
 import { resolveVisibleColumns } from '@/lib/campaignColumnVisibility'
-import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
+import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { cn } from '@/lib/utils'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'

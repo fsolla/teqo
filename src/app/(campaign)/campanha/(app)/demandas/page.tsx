@@ -10,18 +10,18 @@ import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
-import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
+import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import {
   campaignDemandKindLabels,
   campaignDemandStatusLabels,
   campaignDemandStatuses,
   type CampaignDemandStatus,
 } from '@/lib/schemas/campaignDemand'
-import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import {
   buildDemandListHref,
