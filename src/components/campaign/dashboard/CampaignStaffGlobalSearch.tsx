@@ -14,11 +14,22 @@ import { HomeSearchResultsLayout } from '@/components/campaign/dashboard/HomeSea
 import { HomeSearchResultsShell } from '@/components/campaign/dashboard/HomeSearchResultsShell'
 import { HomeSearchStateDeputyGroup } from '@/components/campaign/dashboard/HomeSearchStateDeputyGroup'
 
-const CampaignStaffGlobalSearchResults = () => {
+export const CampaignStaffGlobalSearchBody = ({
+  placeholder,
+  showResults = true,
+}: {
+  /** Forwarded to `CampaignHomeSearch` — empty string for collapsed discreet peek. */
+  placeholder?: string
+  showResults?: boolean
+}) => {
   const searchResultsState = useHomeSearchResultsState()
 
   return (
-    <CampaignHomeSearch resultsBusy={searchResultsState.isFetching}>
+    <CampaignHomeSearch
+      resultsBusy={searchResultsState.isFetching}
+      placeholder={placeholder}
+      showResults={showResults}
+    >
       <HomeSearchResultsProvider value={searchResultsState}>
         <HomeSearchResultsShell>
           <HomeSearchResultsLayout>
@@ -34,6 +45,3 @@ const CampaignStaffGlobalSearchResults = () => {
     </CampaignHomeSearch>
   )
 }
-
-/** Result groups + input — requires an ancestor `HomeSearchProvider`. */
-export const CampaignStaffGlobalSearchBody = CampaignStaffGlobalSearchResults

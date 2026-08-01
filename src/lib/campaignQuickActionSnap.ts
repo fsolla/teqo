@@ -1,10 +1,13 @@
-/** Collapsed peek — swipe handle only (replaces legacy bottom-nav `pb-24`). */
-export const QUICK_ACTIONS_SNAP_COLLAPSED = '3rem' as const
+/** Collapsed peek — handle + discreet search (no action strip). */
+export const QUICK_ACTIONS_SNAP_COLLAPSED = '6.5rem' as const
 
-/** Dock — action strip + global search visible on load and after navigation. */
-export const QUICK_ACTIONS_SNAP_DOCK = '12rem' as const
+/** Dock — handle + action strip (2-line labels) + global search. */
+export const QUICK_ACTIONS_SNAP_DOCK = '15rem' as const
 
-/** Scroll down past this threshold on `campaign-content-scroll` collapses the drawer. */
+/**
+ * Scroll delta past this threshold on `campaign-content-scroll` collapses (↓)
+ * or re-docks (↑) the drawer.
+ */
 export const QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX = 24
 
 export const QUICK_ACTIONS_SNAP_POINTS = [
@@ -14,5 +17,19 @@ export const QUICK_ACTIONS_SNAP_POINTS = [
 
 export type QuickActionsSnapPoint = (typeof QUICK_ACTIONS_SNAP_POINTS)[number]
 
+export type QuickActionsScrollDirection = 'up' | 'down' | 'none'
+
 export const quickActionsSnapIsDock = (snap: QuickActionsSnapPoint | null): boolean =>
   snap === QUICK_ACTIONS_SNAP_DOCK
+
+/** Pure scroll-direction detector for the quick-actions peek (B105). */
+export const quickActionsScrollDirection = (
+  previousScrollTop: number,
+  nextScrollTop: number,
+  thresholdPx: number = QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX,
+): QuickActionsScrollDirection => {
+  const delta = nextScrollTop - previousScrollTop
+  if (delta > thresholdPx) return 'down'
+  if (delta < -thresholdPx) return 'up'
+  return 'none'
+}

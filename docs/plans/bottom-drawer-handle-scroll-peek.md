@@ -1,6 +1,6 @@
 # Bottom drawer — handle, gesto, scroll, peek discreto, labels 2 linhas
 
-Status: registrado
+Status: implementado (PR)
 Atualizado em: 2026-08-01
 Issue: #132
 Priority: P1
@@ -82,8 +82,8 @@ Dados: N/A — chrome; hits = B48+ via provider existente.
 
 ## Questões em aberto
 
-- **Limiar scroll-up para abrir?** **Opções:** A) espelhar 24 px de delta ↑ | B) `scrollTop < 24` (só perto do topo). **Recomendação:** **A** (simétrico ao collapse). _(assumido)_
-- **Focus no input collapsed:** expande para dock automaticamente? **Opções:** A) sim | B) só digitar. **Recomendação:** **A**. _(assumido)_
+- **Limiar scroll-up para abrir?** **Opções:** A) espelhar 24 px de delta ↑ | B) `scrollTop < 24` (só perto do topo). **Recomendação:** **A** (simétrico ao collapse). ✅ travado em craft (`quickActionsScrollDirection`).
+- **Focus no input collapsed:** expande para dock automaticamente? **Opções:** A) sim | B) só digitar. **Recomendação:** **A**. ✅ travado em craft (`uiFocused` → dock).
 
 ## Abordagem proposta
 

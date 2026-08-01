@@ -11,27 +11,37 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { shouldMountQuickActionsDrawer } from '@/lib/campaignQuickActionMount'
 import { resolveQuickActionsForPath } from '@/lib/campaignQuickActionRegistry'
 import {
-  QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX,
   QUICK_ACTIONS_SNAP_COLLAPSED,
   QUICK_ACTIONS_SNAP_DOCK,
+  quickActionsScrollDirection,
 } from '@/lib/campaignQuickActionSnap'
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { cn } from '@/lib/utils'
 
 const CampaignContentScrollWithPeek = ({ children }: { children: ReactNode }) => {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const lastScrollTopRef = useRef(0)
   const { isDock, setSnapPoint } = useCampaignQuickActionsSnap()
   const { uiFocused } = useHomeSearch()
   const peekHeight = isDock ? QUICK_ACTIONS_SNAP_DOCK : QUICK_ACTIONS_SNAP_COLLAPSED
 
-  const collapseIfScrolled = useCallback(() => {
-    if (uiFocused) return
-
+  const syncSnapFromScroll = useCallback(() => {
     const scrollport = scrollRef.current
     if (!scrollport) return
 
-    if (scrollport.scrollTop > QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX) {
+    const nextTop = scrollport.scrollTop
+    const direction = quickActionsScrollDirection(lastScrollTopRef.current, nextTop)
+    lastScrollTopRef.current = nextTop
+
+    // Keep the scroll baseline fresh while search is focused; only gate snap writes.
+    if (uiFocused) return
+
+    if (direction === 'down') {
       setSnapPoint(QUICK_ACTIONS_SNAP_COLLAPSED)
+      return
+    }
+    if (direction === 'up') {
+      setSnapPoint(QUICK_ACTIONS_SNAP_DOCK)
     }
   }, [setSnapPoint, uiFocused])
 
@@ -39,11 +49,12 @@ const CampaignContentScrollWithPeek = ({ children }: { children: ReactNode }) =>
     const scrollport = scrollRef.current
     if (!scrollport) return
 
-    scrollport.addEventListener('scroll', collapseIfScrolled, { passive: true })
+    lastScrollTopRef.current = scrollport.scrollTop
+    scrollport.addEventListener('scroll', syncSnapFromScroll, { passive: true })
     return () => {
-      scrollport.removeEventListener('scroll', collapseIfScrolled)
+      scrollport.removeEventListener('scroll', syncSnapFromScroll)
     }
-  }, [collapseIfScrolled])
+  }, [syncSnapFromScroll])
 
   return (
     <div
