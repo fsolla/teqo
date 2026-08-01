@@ -124,6 +124,18 @@ export type ResolvedCampaignHomeAction = CampaignHomeAction & {
   href?: string
 }
 
+/** Mirrors Início `buildMunicipalityListHref({ coverage: 'sem_assessor', sort: 'votos' }, 1)`. */
+export const UNCOVERED_MUNICIPALITIES_LIST_HREF =
+  '/campanha/municipios?coverage=sem_assessor&sort=votos' as const
+
+/** Staff Início catalog with hrefs — shared by quick-action registries (B81+). */
+export const resolveStaffHomeQuickActions = (
+  role: CampaignRole,
+): readonly ResolvedCampaignHomeAction[] => {
+  if (!isStaffCampaignRole(role)) return []
+  return toHomeActionButtonProps(homeActionsForRole(role), UNCOVERED_MUNICIPALITIES_LIST_HREF)
+}
+
 export const toHomeActionButtonProps = (
   actions: readonly CampaignHomeAction[],
   uncoveredMunicipalitiesHref?: string,

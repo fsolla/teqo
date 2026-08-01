@@ -12,6 +12,10 @@ import {
   QUICK_ACTIONS_SNAP_EXPANDED,
   quickActionsSnapIsExpanded,
 } from '@/lib/campaignQuickActionSnap'
+import {
+  UNCOVERED_MUNICIPALITIES_LIST_HREF,
+  homeActionsForRole,
+} from '@/lib/campaignHomeActions'
 
 describe('campaignQuickActionMount', () => {
   it('treats Início as exact match only', () => {
@@ -34,6 +38,7 @@ describe('campaignQuickActionMount', () => {
 
   it('mounts for staff outside Início and acoes', () => {
     expect(shouldMountQuickActionsDrawer('/campanha/municipios', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsDrawer('/campanha/territorios', 'coordinator')).toBe(true)
     expect(shouldMountQuickActionsDrawer('/campanha', 'coordinator')).toBe(false)
     expect(shouldMountQuickActionsDrawer('/campanha/acoes/registrar-sinal', 'advisor')).toBe(false)
   })
@@ -45,12 +50,32 @@ describe('campaignQuickActionMount', () => {
 })
 
 describe('campaignQuickActionRegistry', () => {
-  it('returns empty catalog until B80+ register providers', () => {
+  const staffActionIds = homeActionsForRole('coordinator').map((action) => action.id)
+
+  it('returns empty catalog for unregistered paths', () => {
     expect(
       resolveQuickActionsForPath('/campanha/municipios/foo', 'coordinator', {
         municipalitySlug: 'foo',
       }),
     ).toEqual([])
+  })
+
+  it('returns staff Início catalog on territorios without municipality prefill (B81)', () => {
+    const actions = resolveQuickActionsForPath('/campanha/territorios', 'coordinator', {})
+    expect(actions.map((action) => action.id)).toEqual(staffActionIds)
+    expect(actions.find((action) => action.id === 'update-votes')?.href).toBe(
+      '/campanha/acoes/atualizar-votos',
+    )
+    expect(actions.find((action) => action.id === 'uncovered-municipalities')?.href).toBe(
+      UNCOVERED_MUNICIPALITIES_LIST_HREF,
+    )
+    for (const action of actions) {
+      expect(action.href).not.toContain('municipio=')
+    }
+  })
+
+  it('returns empty catalog on territorios for leader lockdown', () => {
+    expect(resolveQuickActionsForPath('/campanha/territorios', 'leader', {})).toEqual([])
   })
 })
 
