@@ -1,5 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CampaignQuickActionsDrawer } from '@/components/campaign/shell/CampaignQuickActionsDrawer'
@@ -27,19 +26,22 @@ afterEach(() => {
 })
 
 describe('CampaignQuickActionsDrawer (B91)', () => {
-  it('shows global search in the expanded snap', async () => {
+  it('shows global search in the expanded snap', () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: idleSuggestPayload,
     })
 
-    const user = userEvent.setup()
     render(<CampaignQuickActionsDrawer actions={[]} />)
 
-    expect(screen.queryByLabelText('Buscar na campanha')).toBeNull()
+    const context = document.getElementById('quickActionContext')
+    expect(context?.className).toContain('hidden')
+    expect(context?.getAttribute('data-snap')).toBe('collapsed')
 
-    await user.click(screen.getByRole('button', { name: 'Mostrar ações rápidas' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar ações rápidas' }))
 
+    expect(context?.className).not.toContain('hidden')
+    expect(context?.getAttribute('data-snap')).toBe('expanded')
     expect(screen.getByLabelText('Buscar na campanha')).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Resultados da busca' })).toBeTruthy()
   })
@@ -50,13 +52,12 @@ describe('CampaignQuickActionsDrawer (B91)', () => {
       payload: idleSuggestPayload,
     })
 
-    const user = userEvent.setup()
     render(<CampaignQuickActionsDrawer actions={[]} />)
 
-    await user.click(screen.getByRole('button', { name: 'Mostrar ações rápidas' }))
-    await user.type(screen.getByLabelText('Buscar na campanha'), 'cairu')
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar ações rápidas' }))
+    fireEvent.change(screen.getByLabelText('Buscar na campanha'), { target: { value: 'cairu' } })
 
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(postCampaignJson).toHaveBeenCalledWith(
         '/campanha/home-search',
         { mode: 'search', query: 'cairu' },
