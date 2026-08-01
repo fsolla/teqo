@@ -6,14 +6,7 @@ import type { ReactNode } from 'react'
 import { useCampaignQuickActionContext } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { CampaignQuickActionsDrawer } from '@/components/campaign/shell/CampaignQuickActionsDrawer'
 import { useIsMobile } from '@/hooks/use-mobile'
-<<<<<<< HEAD
 import { shouldMountQuickActionsDrawer } from '@/lib/campaignQuickActionMount'
-=======
-import {
-  shouldMountQuickActionsDrawer,
-  shouldShowStaffGlobalSearchInDrawer,
-} from '@/lib/campaignQuickActionMount'
->>>>>>> 4666fc6 (style: Prettier (B90))
 import { resolveQuickActionsForPath } from '@/lib/campaignQuickActionRegistry'
 import { QUICK_ACTIONS_SNAP_COLLAPSED } from '@/lib/campaignQuickActionSnap'
 import type { CampaignRole } from '@/lib/campaignRoles'
