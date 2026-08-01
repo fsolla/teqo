@@ -4,7 +4,11 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+<<<<<<< HEAD
 **Recently resolved (2026-08-01):** **OH1** (Issue #164) — spec-mãe Ops híbrido RSC/local aprovada: decisões (mirror completo + GET `ops-sync` + full-only + CAS opt-in + OPFS→IDB + leader sem mirror), escopo do snapshot, critérios de aceite do projecto e mapa OH2–OH14. Plano: [`ops-hibrido-rsc-local-spec.md`](docs/plans/ops-hibrido-rsc-local-spec.md).
+=======
+**Recently resolved (2026-08-01):** **CL1** (Issue #155) — spec-mãe da Lista Unificada Campanha: decisões travadas (factory = prólogo+slots, não data path; registry em `lib/opsListRegistry`; 8 slugs v1 + atividades excluída; conflitos por domínio; CL5a/CL6a obrigatórios). Inventário as-built + index CL2–CL8 + acoplamento OH. Plano: [`lista-unificada-campanha-spec.md`](docs/plans/lista-unificada-campanha-spec.md).
+>>>>>>> 426018d (CL1: travar spec-mãe da lista unificada + SSOT para CL2)
 
 **Recently resolved (2026-08-01):** **B102** (Issue #129) — crash na busca do bottom drawer (focus/digitação): `TooltipProvider` do layout `(app)` envolvia só `{children}` e o drawer (irmão do scrollport) renderizava hits `priority:alta` via `CampaignHoverTooltip` sem provider. Fix: provider envolve `CampaignAppScrollChrome`; pins unit focus→suggest e type→search. Plano: [`crash-busca-bottom-drawer.md`](docs/plans/crash-busca-bottom-drawer.md).
 
