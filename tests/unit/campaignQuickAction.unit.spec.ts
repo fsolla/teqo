@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import { resolveActivityQuickActions } from '@/lib/activityQuickActions'
-import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
 import { CAMPAIGN_WIZARD_ACTION_SLUGS } from '@/lib/campaignActionRoutes'
 import { UNCOVERED_MUNICIPALITIES_LIST_HREF, homeActionsForRole } from '@/lib/campaignHomeActions'
 import {
@@ -14,8 +13,8 @@ import {
   ACTIVITY_LIST_PATH,
   ACTIVITY_NEW_PATH,
   ACTIVITY_TOUR_COMPOSER_PATH,
-  ORGANIZATION_NEW_PATH,
   ORGANIZATIONS_LIST_PATH,
+  ORGANIZATION_NEW_PATH,
   isActivityTourComposerPath,
   parseActivityQuickActionSurface,
   parseOrganizationQuickActionSurface,
@@ -26,6 +25,7 @@ import {
   QUICK_ACTIONS_SNAP_EXPANDED,
   quickActionsSnapIsExpanded,
 } from '@/lib/campaignQuickActionSnap'
+import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
 
 describe('campaignQuickActionMount', () => {
   it('treats Início as exact match only', () => {

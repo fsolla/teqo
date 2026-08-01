@@ -1,13 +1,15 @@
 import { resolveActivityQuickActions } from '@/lib/activityQuickActions'
 import { resolveStaffHomeQuickActions } from '@/lib/campaignHomeActions'
 import { resolveMunicipalityQuickActionsForPath } from '@/lib/campaignMunicipalityQuickActions'
-import { parseOrganizationQuickActionSurface } from '@/lib/campaignQuickActionPaths'
-import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
 import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
-import { parseActivityQuickActionSurface } from '@/lib/campaignQuickActionPaths'
+import {
+  parseActivityQuickActionSurface,
+  parseOrganizationQuickActionSurface,
+} from '@/lib/campaignQuickActionPaths'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
 import type { CampaignRole } from '@/lib/campaignRoles'
+import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
 
 const isTerritoriesListPath = (pathname: string): boolean =>
   pathname === CAMPAIGN_TERRITORIES_HOME || pathname.startsWith(`${CAMPAIGN_TERRITORIES_HOME}/`)
