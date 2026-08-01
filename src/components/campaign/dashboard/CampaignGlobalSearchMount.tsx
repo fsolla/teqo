@@ -14,10 +14,3 @@ export const CampaignGlobalSearchProvider = ({ children }: { children: ReactNode
 
 /** Input + result groups — requires `CampaignGlobalSearchProvider` unless using the mount. */
 export const CampaignGlobalSearchBody = CampaignStaffGlobalSearchBody
-
-/** Provider + default global search body (drawer, smoke tests). */
-export const CampaignGlobalSearchMount = () => (
-  <CampaignGlobalSearchProvider>
-    <CampaignGlobalSearchBody />
-  </CampaignGlobalSearchProvider>
-)
