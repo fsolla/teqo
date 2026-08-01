@@ -66,6 +66,8 @@ describe('Onda 0 provision (integration)', () => {
         ),
       ),
     )
+  })
+
   it('provisionOnda0ConsentAndPrivacyDb upserts and removes via SQL', async () => {
     await withSharedTestDatabaseLease(payload, CAMPAIGN_INVITE_CONSENT_LEASE_KEY, () =>
       withSharedTestDatabaseLease(payload, SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY, () =>
