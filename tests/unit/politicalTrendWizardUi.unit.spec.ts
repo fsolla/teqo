@@ -8,6 +8,7 @@ import {
 import {
   buildPoliticalTrendNotePrefill,
   resolvePoliticalTrendNotePrefillSource,
+  resolveWizardTrendNoteDestination,
   resolveWizardTrendSkip,
   selectablePoliticalTrendStatuses,
   WIZARD_TREND_SKIP_LABEL,
@@ -26,6 +27,12 @@ describe('politicalTrendWizardUi', () => {
     expect(selectablePoliticalTrendStatuses(null)).toEqual(politicalTrendStatuses)
     expect(selectablePoliticalTrendStatuses('neutra')).toEqual(['favoravel', 'desfavoravel'])
     expect(selectablePoliticalTrendStatuses('desfavoravel')).toEqual(['favoravel', 'neutra'])
+  })
+
+  it('resolves the note-step destination without looping to choice after save', () => {
+    expect(resolveWizardTrendNoteDestination('favoravel', 'neutra')).toBe('note')
+    expect(resolveWizardTrendNoteDestination('favoravel', 'favoravel')).toBe('home')
+    expect(resolveWizardTrendNoteDestination('favoravel', null)).toBe('note')
   })
 
   it('always exposes skip to abandon the trend change', () => {

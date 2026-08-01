@@ -35,7 +35,7 @@ import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
   buildPoliticalTrendNotePrefill,
   resolvePoliticalTrendNotePrefillSource,
-  selectablePoliticalTrendStatuses,
+  resolveWizardTrendNoteDestination,
 } from '@/lib/politicalTrendWizardUi'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import config from '@/payload.config'
@@ -189,10 +189,13 @@ export default async function CampaignActionWizardPage({
     }
 
     if (trendStatus) {
-      if (
-        trendStatus === currentStatus ||
-        !selectablePoliticalTrendStatuses(currentStatus).includes(trendStatus)
-      ) {
+      const noteDestination = resolveWizardTrendNoteDestination(trendStatus, currentStatus)
+
+      if (noteDestination === 'home') {
+        redirect(CAMPAIGN_HOME)
+      }
+
+      if (noteDestination === 'choice') {
         redirect(
           wizardTrendHref(slug, municipalitySlug, undefined, entryAction, prefillExtraParams),
         )

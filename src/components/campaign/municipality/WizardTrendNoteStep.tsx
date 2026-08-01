@@ -54,7 +54,7 @@ export const WizardTrendNoteStep = ({
 
   useCampaignFormSuccessToast(state, () => {
     recordLastActedMunicipality(municipalitySlug)
-    router.push(CAMPAIGN_HOME)
+    router.replace(CAMPAIGN_HOME)
   })
 
   return (
