@@ -44,9 +44,7 @@ const pruneOldCampaignVoteSummarySnapshots = async (
  * Intentional admin bypass: internal aggregate not tied to the requesting actor's
  * municipality scope — the snapshot is always statewide.
  */
-export const loadStatewideStaffVoteTotalCentral = async (
-  payload: Payload,
-): Promise<number> => {
+export const loadStatewideStaffVoteTotalCentral = async (payload: Payload): Promise<number> => {
   const [municipalities, pledgeAggregates] = await Promise.all([
     payload
       .find({
@@ -125,10 +123,7 @@ export const loadCampaignHomeSummaryDelta = async (
   const target = await payload.find({
     collection: SNAPSHOT_COLLECTION,
     where: {
-      and: [
-        { day: { equals: targetDayIso } },
-        { scopeKey: { equals: SNAPSHOT_SCOPE_STATEWIDE } },
-      ],
+      and: [{ day: { equals: targetDayIso } }, { scopeKey: { equals: SNAPSHOT_SCOPE_STATEWIDE } }],
     },
     depth: 0,
     limit: 1,

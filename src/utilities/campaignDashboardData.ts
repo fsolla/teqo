@@ -2,11 +2,16 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import type { AccessibleMunicipality } from '@/lib/municipalityProximity'
 import { isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
+import type { AccessibleMunicipality } from '@/lib/municipalityProximity'
 import { relationshipId, requireRelationshipId } from '@/lib/relationship'
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, VotePledge } from '@/payload-types'
+import {
+  loadCampaignHomeSummaryDelta,
+  loadStatewideStaffVoteTotalCentral,
+  recordCampaignVoteSummarySnapshotIfNeeded,
+} from '@/utilities/campaignVoteSummarySnapshot'
 import {
   pickDashboardPriorityMunicipalities,
   type DashboardPriorityMunicipality,
@@ -22,11 +27,6 @@ import {
   loadStatewideSuggestedGoals,
   type MunicipalityGoalCoverageBundle,
 } from '@/utilities/municipality/municipalityGoalAccount'
-import {
-  loadCampaignHomeSummaryDelta,
-  loadStatewideStaffVoteTotalCentral,
-  recordCampaignVoteSummarySnapshotIfNeeded,
-} from '@/utilities/campaignVoteSummarySnapshot'
 import {
   rollupMunicipalityStaffVotes,
   type MunicipalityPledgeAggregate,
