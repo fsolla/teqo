@@ -6,10 +6,7 @@ import {
   loadMunicipalityGeometryModule,
   loadMunicipalityZoneGeometryModule,
 } from '@/lib/bahiaGeometries'
-import {
-  resolveNearbyMunicipality,
-  type AccessibleMunicipality,
-} from '@/lib/municipalityProximity'
+import { resolveNearbyMunicipality, type AccessibleMunicipality } from '@/lib/municipalityProximity'
 import type { WizardGeoMunicipalitySuggestion } from '@/lib/wizardMunicipalitySuggestMerge'
 import {
   readGeolocationPermissionState,

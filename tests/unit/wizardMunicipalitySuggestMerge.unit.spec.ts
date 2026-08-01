@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
 import type { HomeSearchMunicipalityHit } from '@/lib/campaignHomeSearchHits'
-<<<<<<< HEAD
 import { HOME_SEARCH_SUGGEST_LIMIT } from '@/lib/homeSearchSuggest'
 import {
+  formatWizardGeoSecondary,
   listWizardContinuitySlugs,
   mergeWizardMunicipalitySuggestions,
   municipalitySlugFromRecentVisitHref,
   WIZARD_CONTINUITY_LAST_ACTED_LABEL,
   WIZARD_CONTINUITY_VISITED_LABEL,
+  WIZARD_GEO_NEARBY_REASON,
   type WizardContinuityVisitInput,
 } from '@/lib/wizardMunicipalitySuggestMerge'
 
@@ -17,31 +18,35 @@ const hit = (
 ): HomeSearchMunicipalityHit => ({
   kind: 'municipality',
   region: 'Região',
-=======
-import {
-  formatWizardGeoSecondary,
-  mergeWizardMunicipalitySuggestions,
-  WIZARD_GEO_NEARBY_REASON,
-} from '@/lib/wizardMunicipalitySuggestMerge'
-
-const serverHit = (
-  partial: Partial<HomeSearchMunicipalityHit> & Pick<HomeSearchMunicipalityHit, 'slug' | 'name'>,
-): HomeSearchMunicipalityHit => ({
-  kind: 'municipality',
-  region: 'Costa do Dendê',
->>>>>>> 076bd2f (B94 — wizard empty state: município mais próximo (geo))
   priority: null,
   votePosition2022: null,
   ...partial,
 })
 
-<<<<<<< HEAD
 const visit = (
   overrides: Partial<WizardContinuityVisitInput> = {},
 ): WizardContinuityVisitInput => ({
   href: '/campanha/municipios/cairu',
   kind: 'municipality',
   ...overrides,
+})
+
+describe('formatWizardGeoSecondary', () => {
+  it('formats reason without distance', () => {
+    expect(formatWizardGeoSecondary(undefined)).toBe(WIZARD_GEO_NEARBY_REASON)
+    expect(formatWizardGeoSecondary('Costa do Dendê')).toBe(
+      `Costa do Dendê · ${WIZARD_GEO_NEARBY_REASON}`,
+    )
+  })
+
+  it('formats reason with distance', () => {
+    expect(formatWizardGeoSecondary('Costa do Dendê', 1.2)).toBe(
+      `Costa do Dendê · ${WIZARD_GEO_NEARBY_REASON} (~1,2 km)`,
+    )
+    expect(formatWizardGeoSecondary(undefined, 0.4)).toBe(
+      `${WIZARD_GEO_NEARBY_REASON} (~menos de 1 km)`,
+    )
+  })
 })
 
 describe('municipalitySlugFromRecentVisitHref', () => {
@@ -98,54 +103,40 @@ describe('listWizardContinuitySlugs', () => {
     })
 
     expect(continuity.map((item) => item.slug)).toEqual(['a', 'b', 'c'])
-=======
-describe('formatWizardGeoSecondary', () => {
-  it('formats reason without distance', () => {
-    expect(formatWizardGeoSecondary(undefined)).toBe(WIZARD_GEO_NEARBY_REASON)
-    expect(formatWizardGeoSecondary('Costa do Dendê')).toBe(
-      `Costa do Dendê · ${WIZARD_GEO_NEARBY_REASON}`,
-    )
-  })
-
-  it('formats reason with distance', () => {
-    expect(formatWizardGeoSecondary('Costa do Dendê', 1.2)).toBe(
-      `Costa do Dendê · ${WIZARD_GEO_NEARBY_REASON} (~1,2 km)`,
-    )
-    expect(formatWizardGeoSecondary(undefined, 0.4)).toBe(
-      `${WIZARD_GEO_NEARBY_REASON} (~menos de 1 km)`,
-    )
->>>>>>> 076bd2f (B94 — wizard empty state: município mais próximo (geo))
   })
 })
 
 describe('mergeWizardMunicipalitySuggestions', () => {
-<<<<<<< HEAD
   const hitBySlug = new Map(
     [
       hit({ slug: 'geo', name: 'Geo' }),
       hit({ slug: 'acted', name: 'Acted' }),
       hit({ slug: 'visited', name: 'Visited' }),
-      hit({ slug: 'forgot-a', name: 'Forgot A' }),
+      hit({ slug: 'forgot-a', name: 'Forgot A', region: 'Costa do Dendê' }),
       hit({ slug: 'forgot-b', name: 'Forgot B' }),
     ].map((row) => [row.slug, row]),
   )
 
   it('dedupes in geo > continuity > server order with reason labels', () => {
     const merged = mergeWizardMunicipalitySuggestions({
-      geoSlug: 'forgot-a',
+      geo: { slug: 'forgot-a', name: 'Forgot A', distanceKm: 2.5 },
       continuity: [
         { source: 'last-acted', slug: 'acted' },
         { source: 'visited', slug: 'visited' },
         { source: 'visited', slug: 'forgot-a' },
       ],
       serverHits: [
-        hit({ slug: 'forgot-a', name: 'Forgot A' }),
+        hit({ slug: 'forgot-a', name: 'Forgot A', region: 'Costa do Dendê' }),
         hit({ slug: 'forgot-b', name: 'Forgot B' }),
       ],
       hitBySlug,
     })
 
     expect(merged.map((row) => row.hit.slug)).toEqual(['forgot-a', 'acted', 'visited', 'forgot-b'])
+    expect(merged.find((row) => row.hit.slug === 'forgot-a')?.hit.region).toContain(
+      WIZARD_GEO_NEARBY_REASON,
+    )
+    expect(merged.find((row) => row.hit.slug === 'forgot-a')?.hit.region).toContain('~2,5 km')
     expect(merged.find((row) => row.hit.slug === 'acted')?.continuityReason).toBe(
       WIZARD_CONTINUITY_LAST_ACTED_LABEL,
     )
@@ -168,43 +159,5 @@ describe('mergeWizardMunicipalitySuggestions', () => {
     })
 
     expect(merged).toHaveLength(HOME_SEARCH_SUGGEST_LIMIT)
-=======
-  it('returns server hits unchanged when geo is null', () => {
-    const hits = [serverHit({ slug: 'cairu', name: 'Cairu' })]
-
-    expect(mergeWizardMunicipalitySuggestions(hits, null)).toEqual(hits)
-  })
-
-  it('prepends geo hit and dedupes by slug', () => {
-    const hits = [
-      serverHit({ slug: 'cairu', name: 'Cairu', priority: 'alta' }),
-      serverHit({ slug: 'valenca', name: 'Valença' }),
-    ]
-
-    const merged = mergeWizardMunicipalitySuggestions(hits, {
-      slug: 'valenca',
-      name: 'Valença',
-      distanceKm: 2.5,
-    })
-
-    expect(merged).toHaveLength(2)
-    expect(merged[0]?.slug).toBe('valenca')
-    expect(merged[0]?.region).toContain(WIZARD_GEO_NEARBY_REASON)
-    expect(merged[0]?.region).toContain('~2,5 km')
-    expect(merged[1]?.slug).toBe('cairu')
-  })
-
-  it('preserves server metadata when geo slug was not in the suggest list', () => {
-    const hits = [serverHit({ slug: 'cairu', name: 'Cairu' })]
-
-    const merged = mergeWizardMunicipalitySuggestions(hits, {
-      slug: 'itabuna',
-      name: 'Itabuna',
-    })
-
-    expect(merged).toHaveLength(2)
-    expect(merged[0]?.slug).toBe('itabuna')
-    expect(merged[0]?.region).toBe(WIZARD_GEO_NEARBY_REASON)
->>>>>>> 076bd2f (B94 — wizard empty state: município mais próximo (geo))
   })
 })
