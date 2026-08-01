@@ -88,14 +88,13 @@ describe('campaignQuickActionMount', () => {
     expect(shouldMountQuickActionsDrawer('/campanha/assessores/12', 'advisor')).toBe(false)
   })
 
-<<<<<<< HEAD
   it('mounts on dobradinhas for staff (B83)', () => {
     expect(shouldMountQuickActionsDrawer('/campanha/dobradinhas', 'coordinator')).toBe(true)
     expect(shouldMountQuickActionsDrawer('/campanha/dobradinhas/foo', 'advisor')).toBe(true)
-=======
+  })
+
   it('omits drawer on perfil for leader (B90)', () => {
     expect(shouldMountQuickActionsDrawer(CAMPAIGN_PROFILE_HOME, 'leader')).toBe(false)
->>>>>>> 2291493 (B90 — Ações rápidas Conceitos + Perfil (só busca staff))
   })
 })
 
