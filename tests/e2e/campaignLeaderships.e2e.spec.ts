@@ -6,6 +6,24 @@ import { expect, expectPostResponse, test } from './fixtures/campaignE2EFixtures
  * pointer — no "Salvar", the "×" only on hover).
  */
 
+/**
+ * OH8 — list shell pins (title, search, result count) before OH12 reuses the factory.
+ */
+test.describe('Lideranças — shell (OH8)', () => {
+  test('exposes title, search, and result count on the list', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Shell Lideranças'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/liderancas`)
+    await expect(page.getByRole('heading', { name: 'Lideranças', exact: true })).toBeVisible()
+    await expect(page.getByLabel('Buscar liderança por nome')).toBeVisible()
+    await expect(page.getByText(/\d+ lideranças/)).toBeVisible()
+  })
+})
+
 test.describe('campaign leaderships list', () => {
   test('coordinator edits support status in the cell with auto-save (B32)', async ({
     campaign,
