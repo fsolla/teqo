@@ -2,7 +2,10 @@
 
 import type { ReactNode } from 'react'
 
-import { CampaignGlobalSearchBody, CampaignGlobalSearchProvider } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
+import {
+  CampaignGlobalSearchBody,
+  CampaignGlobalSearchProvider,
+} from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
 import { CampaignHomeLayout } from '@/components/campaign/dashboard/CampaignHomeLayout'
 import { CampaignHomeSearch } from '@/components/campaign/dashboard/CampaignHomeSearch'
 import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'

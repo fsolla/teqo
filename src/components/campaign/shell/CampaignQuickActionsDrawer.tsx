@@ -2,8 +2,8 @@
 
 import { useCallback, useState } from 'react'
 
-import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
 import { CampaignGlobalSearchMount } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
+import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/Drawer'
 import {
   QUICK_ACTIONS_SNAP_COLLAPSED,

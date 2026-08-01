@@ -3,13 +3,13 @@ import { resolveStaffHomeQuickActions } from '@/lib/campaignHomeActions'
 import { resolveMunicipalityQuickActionsForPath } from '@/lib/campaignMunicipalityQuickActions'
 import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
-import { isLeaderContactsPath } from '@/lib/campaignQuickActionMount'
 import {
   isDemandDetailPath,
   isDemandsListPath,
   resolveDemandDetailQuickActions,
   resolveDemandsListQuickActions,
 } from '@/lib/campaignQuickActionDemands'
+import { isLeaderContactsPath } from '@/lib/campaignQuickActionMount'
 import {
   parseActivityQuickActionSurface,
   parseOrganizationQuickActionSurface,
