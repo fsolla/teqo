@@ -30,8 +30,9 @@ type LeaderContactsPanelProps = {
 
 const LeaderContactsList = ({ contacts }: { contacts: LeaderContactListItem[] }) => (
   <section
+    id="leader-contacts-list"
     aria-labelledby="leader-contacts-list-title"
-    className="flex flex-col gap-3 rounded-xl border p-4"
+    className="flex flex-col gap-3 rounded-xl border p-4 scroll-mt-4"
   >
     <h2 id="leader-contacts-list-title" className="text-base font-medium">
       Meus contatos ({contacts.length})

@@ -3,12 +3,14 @@ import { resolveStaffHomeQuickActions } from '@/lib/campaignHomeActions'
 import { resolveMunicipalityQuickActionsForPath } from '@/lib/campaignMunicipalityQuickActions'
 import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
+import { isLeaderContactsPath } from '@/lib/campaignQuickActionMount'
 import {
   parseActivityQuickActionSurface,
   parseOrganizationQuickActionSurface,
 } from '@/lib/campaignQuickActionPaths'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
 import type { CampaignRole } from '@/lib/campaignRoles'
+import { resolveLeaderContactsQuickActions } from '@/lib/leaderContactsQuickActions'
 import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
 
 const isTerritoriesListPath = (pathname: string): boolean =>
@@ -24,6 +26,10 @@ export const resolveQuickActionsForPath = (
   role: CampaignRole,
   context: CampaignQuickActionContext,
 ): readonly CampaignQuickAction[] => {
+  if (isLeaderContactsPath(pathname)) {
+    return resolveLeaderContactsQuickActions(role, context)
+  }
+
   const activitySurface = parseActivityQuickActionSurface(pathname)
   if (activitySurface) {
     return resolveActivityQuickActions(activitySurface, role, context)
