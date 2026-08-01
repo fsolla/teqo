@@ -1,7 +1,7 @@
 # Início mobile — Voltar no header + Android back + skeleton das sugestões
 
-Status: registrado
-Atualizado em: 2026-08-01
+Status: done
+Atualizado em: 2026-08-01 — as-built: `CampaignHomeSearchChromeContext` + publisher no Início; `CampaignMobileTopBar` troca `SidebarTrigger` por Voltar quando `uiFocused`; `useHomeSearchFocusHistory` com `pushState`/`popstate` (marca `teqoHomeSearchFocus`); `HomeSearchSuggestSkeleton` (3 rows) enquanto `isFetching` sem hits; unit `homeSearchFocusHistory`, `campaignMobileTopBar`, `campaignHomeSearch`. Sem migration.
 Issue: #141
 Priority: P1
 Model: composer-2.5
