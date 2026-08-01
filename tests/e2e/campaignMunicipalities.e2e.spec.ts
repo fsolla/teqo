@@ -408,13 +408,13 @@ test.describe('Municípios — cards no celular (B42)', () => {
 })
 
 /**
- * B100: bottom drawer loads docked with search visible, collapses on page scroll,
- * and reopens only from the handle — not when scrolling back to the top.
+ * B105: bottom drawer loads docked with search visible, collapses on page scroll down
+ * (discreet search peek remains), and re-docks on scroll up; handle sits above the search.
  */
-test.describe('Municípios — bottom drawer mobile (B100)', () => {
+test.describe('Municípios — bottom drawer mobile (B105)', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
-  test('dock on load, collapse on scroll down, reopen on handle tap', async ({
+  test('dock on load, collapse on scroll down with search peek, reopen on scroll up', async ({
     campaign,
     page,
   }) => {
@@ -430,6 +430,14 @@ test.describe('Municípios — bottom drawer mobile (B100)', () => {
 
     const search = page.getByLabel('Buscar na campanha')
     await expect(search).toBeInViewport()
+    await expect(search).toHaveAttribute('placeholder', 'Município, liderança, atividade…')
+
+    const handle = page.getByRole('button', { name: 'Ocultar ações rápidas' })
+    const handleBox = await handle.boundingBox()
+    const searchBox = await search.boundingBox()
+    expect(handleBox).toBeTruthy()
+    expect(searchBox).toBeTruthy()
+    expect(handleBox!.y).toBeLessThan(searchBox!.y)
 
     const scrollport = page.locator('[data-slot="campaign-content-scroll"]')
     await scrollport.evaluate((el) => {
@@ -438,15 +446,15 @@ test.describe('Municípios — bottom drawer mobile (B100)', () => {
     })
 
     await expect(page.getByRole('button', { name: 'Mostrar ações rápidas' })).toBeVisible()
-    await expect(search).not.toBeInViewport()
+    await expect(search).toBeInViewport()
+    await expect(search).toHaveAttribute('placeholder', '')
 
     await scrollport.evaluate((el) => {
       el.scrollTop = 0
       el.dispatchEvent(new Event('scroll'))
     })
-    await expect(search).not.toBeInViewport()
-
-    await page.getByRole('button', { name: 'Mostrar ações rápidas' }).click()
+    await expect(page.getByRole('button', { name: 'Ocultar ações rápidas' })).toBeVisible()
     await expect(search).toBeInViewport()
+    await expect(search).toHaveAttribute('placeholder', 'Município, liderança, atividade…')
   })
 })

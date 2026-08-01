@@ -17,6 +17,7 @@ import {
   QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX,
   QUICK_ACTIONS_SNAP_COLLAPSED,
   QUICK_ACTIONS_SNAP_DOCK,
+  quickActionsScrollDirection,
   quickActionsSnapIsDock,
 } from '@/lib/campaignQuickActionSnap'
 
@@ -99,8 +100,8 @@ const SnapReadout = () => {
   return <div data-testid="snap">{snapPoint ?? 'null'}</div>
 }
 
-describe('CampaignQuickActionsDrawer (B100)', () => {
-  it('loads in dock snap with global search visible', () => {
+describe('CampaignQuickActionsDrawer (B105)', () => {
+  it('loads in dock snap with handle above search and placeholder visible', () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: idleSuggestPayload,
@@ -109,11 +110,35 @@ describe('CampaignQuickActionsDrawer (B100)', () => {
     renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
 
     const context = document.getElementById('quickActionContext')
-    expect(context?.className.split(/\s+/)).not.toContain('hidden')
     expect(context?.getAttribute('data-snap')).toBe('dock')
-    expect(screen.getByLabelText('Buscar na campanha')).toBeTruthy()
+    expect(context?.hasAttribute('hidden')).toBe(false)
+
+    const handle = screen.getByRole('button', { name: 'Ocultar ações rápidas' })
+    const search = screen.getByLabelText('Buscar na campanha')
+    expect(handle.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(search.getAttribute('placeholder')).toBe('Município, liderança, atividade…')
     expect(screen.getByRole('region', { name: 'Resultados da busca' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Ocultar ações rápidas' })).toBeTruthy()
+  })
+
+  it('collapsed peek keeps discreet search without placeholder; actions stay hidden', () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
+
+    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar ações rápidas' }))
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe(
+      'collapsed',
+    )
+
+    const search = screen.getByLabelText('Buscar na campanha')
+    expect(search.getAttribute('placeholder')).toBe('')
+    const results = document.querySelector('[data-slot="home-search-results"]')
+    expect(results).toBeTruthy()
+    expect((results as HTMLElement).hidden).toBe(true)
+    expect(screen.getByRole('button', { name: 'Mostrar ações rápidas' })).toBeTruthy()
   })
 
   it('bleeds the action strip edge-to-edge inside the drawer gutter (B101)', () => {
@@ -216,6 +241,36 @@ describe('CampaignQuickActionsDrawer (B100)', () => {
     })
   })
 
+  it('expands to dock when the peek search is focused', () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
+
+    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar ações rápidas' }))
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe(
+      'collapsed',
+    )
+
+    fireEvent.focus(screen.getByLabelText('Buscar na campanha'))
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('dock')
+  })
+
+  it('stays docked while search remains focused even if the handle collapses', () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
+
+    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+
+    fireEvent.focus(screen.getByLabelText('Buscar na campanha'))
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar ações rápidas' }))
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('dock')
+  })
+
   it('toggles between dock and collapsed from the handle', () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
@@ -228,7 +283,6 @@ describe('CampaignQuickActionsDrawer (B100)', () => {
     expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe(
       'collapsed',
     )
-    expect(document.getElementById('quickActionContext')?.className).toContain('hidden')
     expect(screen.getByRole('button', { name: 'Mostrar ações rápidas' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Mostrar ações rápidas' }))
@@ -236,8 +290,8 @@ describe('CampaignQuickActionsDrawer (B100)', () => {
   })
 })
 
-describe('CampaignContentScroll quick-actions collapse (B100)', () => {
-  it('collapses on content scroll down but not when scrolling back to top', () => {
+describe('CampaignContentScroll quick-actions direction (B105)', () => {
+  it('collapses on scroll down and re-docks on scroll up', () => {
     renderQuickActionsChrome(
       <>
         <CampaignContentScroll quickActionsPeek>
@@ -256,7 +310,6 @@ describe('CampaignContentScroll quick-actions collapse (B100)', () => {
       value: QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX + 1,
     })
     fireEvent.scroll(scrollport!)
-
     expect(screen.getByTestId('snap').textContent).toBe(QUICK_ACTIONS_SNAP_COLLAPSED)
 
     Object.defineProperty(scrollport, 'scrollTop', {
@@ -264,8 +317,7 @@ describe('CampaignContentScroll quick-actions collapse (B100)', () => {
       value: 0,
     })
     fireEvent.scroll(scrollport!)
-
-    expect(screen.getByTestId('snap').textContent).toBe(QUICK_ACTIONS_SNAP_COLLAPSED)
+    expect(screen.getByTestId('snap').textContent).toBe(QUICK_ACTIONS_SNAP_DOCK)
   })
 })
 
@@ -274,5 +326,11 @@ describe('campaignQuickActionSnap', () => {
     expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_DOCK)).toBe(true)
     expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_COLLAPSED)).toBe(false)
     expect(quickActionsSnapIsDock(null)).toBe(false)
+  })
+
+  it('resolves scroll direction from delta threshold', () => {
+    expect(quickActionsScrollDirection(0, 25)).toBe('down')
+    expect(quickActionsScrollDirection(80, 50)).toBe('up')
+    expect(quickActionsScrollDirection(40, 50)).toBe('none')
   })
 })

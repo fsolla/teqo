@@ -8,14 +8,21 @@ import { HOME_SEARCH_QUERY_MAX_LENGTH } from '@/lib/schemas/homeSearch'
 
 const HOME_SEARCH_INPUT_ID = 'homeSearchQuery'
 const HOME_SEARCH_LABEL = 'Buscar na campanha'
+const HOME_SEARCH_PLACEHOLDER = 'Município, liderança, atividade…'
 
 export const CampaignHomeSearch = ({
   children,
   resultsBusy,
+  placeholder = HOME_SEARCH_PLACEHOLDER,
+  showResults = true,
 }: {
   children?: ReactNode
   /** When set, must already fold debounce (see `useHomeSearchResultsState.isFetching`). */
   resultsBusy?: boolean
+  /** Empty string = discreet peek (collapsed drawer); sr-only label stays. */
+  placeholder?: string
+  /** When false, keeps the live region mounted but visually hidden (collapsed peek). */
+  showResults?: boolean
 }) => {
   const { query, setRaw, clear, isDebouncing, setInputFocused } = useHomeSearch()
   const ariaBusy = (resultsBusy ?? isDebouncing) || undefined
@@ -25,7 +32,7 @@ export const CampaignHomeSearch = ({
       <CampaignSearchInput
         id={HOME_SEARCH_INPUT_ID}
         label={HOME_SEARCH_LABEL}
-        placeholder="Município, liderança, atividade…"
+        placeholder={placeholder}
         value={query.raw}
         onChange={(event) => setRaw(event.target.value)}
         onFocus={() => setInputFocused(true)}
@@ -52,6 +59,7 @@ export const CampaignHomeSearch = ({
         aria-busy={ariaBusy}
         className="min-w-0"
         data-slot="home-search-results"
+        hidden={!showResults}
       >
         {children}
       </div>
