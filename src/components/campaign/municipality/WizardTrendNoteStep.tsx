@@ -13,6 +13,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { wizardTrendHref } from '@/lib/campaignActionRoutes'
+import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import {
@@ -52,6 +53,7 @@ export const WizardTrendNoteStep = ({
   const stepTitle = `Mudar tendência para ${politicalTrendLabels[trendStatus]}`
 
   useCampaignFormSuccessToast(state, () => {
+    recordLastActedMunicipality(municipalitySlug)
     router.push(CAMPAIGN_HOME)
   })
 

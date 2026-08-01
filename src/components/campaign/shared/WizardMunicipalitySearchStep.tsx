@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { HomeSearchHitRow } from '@/components/campaign/dashboard/HomeSearchHitRow'
 import { HomeSearchMunicipalityVoteTrailing } from '@/components/campaign/dashboard/HomeSearchMunicipalityVoteTrailing'
@@ -8,10 +8,12 @@ import { useHomeSearchQuery } from '@/components/campaign/dashboard/useHomeSearc
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { wizardActionHref } from '@/lib/campaignActionRoutes'
+import { getLastActedMunicipalitySlug } from '@/lib/campaignLastActedMunicipality'
 import type {
   HomeSearchMunicipalityHit,
   WizardMunicipalitySearchSuccessResponse,
 } from '@/lib/campaignHomeSearchHits'
+import { toHomeSearchMunicipalityHit } from '@/lib/campaignHomeSearchHits'
 import { HOME_SEARCH_GENERIC_ERROR_MESSAGE } from '@/lib/campaignHomeSearchMessages'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import {
@@ -22,19 +24,44 @@ import {
   wizardFlowTitleForSlug,
 } from '@/lib/campaignWizardCopy'
 import { HOME_SEARCH_QUERY_MAX_LENGTH } from '@/lib/schemas/homeSearch'
+import {
+  listWizardContinuitySlugs,
+  mergeWizardMunicipalitySuggestions,
+  type WizardContinuitySlug,
+} from '@/lib/wizardMunicipalitySuggestMerge'
+import { listRecentVisits } from '@/utilities/recentVisits'
 
 const HOME_SEARCH_ROUTE = '/campanha/home-search'
 const WIZARD_MUNICIPALITY_SEARCH_INPUT_ID = 'wizardMunicipalitySearchQuery'
 
+type WizardSuggestSuccessState = {
+  municipalities: HomeSearchMunicipalityHit[]
+  hitBySlug: ReadonlyMap<string, HomeSearchMunicipalityHit>
+}
+
 type WizardSearchResultsState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'success'; municipalities: HomeSearchMunicipalityHit[] }
+  | { status: 'success'; mode: 'search'; municipalities: HomeSearchMunicipalityHit[] }
+  | { status: 'success'; mode: 'suggest'; suggest: WizardSuggestSuccessState }
   | { status: 'error'; message: string }
 
 type WizardMunicipalitySearchStepProps = {
   actionSlug: string
   previousHref: string
+}
+
+const buildSuggestSuccessState = (
+  payload: WizardMunicipalitySearchSuccessResponse,
+): WizardSuggestSuccessState => {
+  const scopeMunicipalities = payload.scopeMunicipalities ?? []
+  const hitBySlug = new Map(
+    scopeMunicipalities.map((doc) => [doc.slug, toHomeSearchMunicipalityHit(doc)]),
+  )
+  return {
+    municipalities: payload.municipalities,
+    hitBySlug,
+  }
 }
 
 export const WizardMunicipalitySearchStep = ({
@@ -43,10 +70,30 @@ export const WizardMunicipalitySearchStep = ({
 }: WizardMunicipalitySearchStepProps) => {
   const { query, setRaw, isDebouncing } = useHomeSearchQuery()
   const [results, setResults] = useState<WizardSearchResultsState>({ status: 'idle' })
+  const [continuitySlugs, setContinuitySlugs] = useState<WizardContinuitySlug[]>([])
+  const [continuityReady, setContinuityReady] = useState(false)
   const requestSeq = useRef(0)
   const suggestMode = !query.isActive
   const searchMode = query.isActive
   const resultsBusy = isDebouncing || results.status === 'loading'
+
+  useEffect(() => {
+    if (!suggestMode || results.status !== 'success' || results.mode !== 'suggest') {
+      setContinuitySlugs([])
+      setContinuityReady(false)
+      return
+    }
+
+    const scopeSlugs = new Set(results.suggest.hitBySlug.keys())
+    setContinuitySlugs(
+      listWizardContinuitySlugs({
+        lastActedSlug: getLastActedMunicipalitySlug(),
+        recentVisits: listRecentVisits(),
+        scopeSlugs,
+      }),
+    )
+    setContinuityReady(true)
+  }, [results, suggestMode])
 
   useEffect(() => {
     if (!suggestMode && !searchMode) {
@@ -77,7 +124,20 @@ export const WizardMunicipalitySearchStep = ({
         return
       }
 
-      setResults({ status: 'success', municipalities: payload.municipalities })
+      if (suggestMode) {
+        setResults({
+          status: 'success',
+          mode: 'suggest',
+          suggest: buildSuggestSuccessState(payload),
+        })
+        return
+      }
+
+      setResults({
+        status: 'success',
+        mode: 'search',
+        municipalities: payload.municipalities,
+      })
     })().catch((error: unknown) => {
       if (seq !== requestSeq.current) return
       if (error instanceof DOMException && error.name === 'AbortError') return
@@ -89,8 +149,29 @@ export const WizardMunicipalitySearchStep = ({
     }
   }, [query.debounced, searchMode, suggestMode])
 
+  const displayRows = useMemo(() => {
+    if (results.status !== 'success') return []
+
+    if (results.mode === 'search') {
+      return results.municipalities.map((hit) => ({ hit, continuityReason: undefined }))
+    }
+
+    if (!continuityReady) {
+      return results.suggest.municipalities.map((hit) => ({ hit, continuityReason: undefined }))
+    }
+
+    return mergeWizardMunicipalitySuggestions({
+      continuity: continuitySlugs,
+      serverHits: results.suggest.municipalities,
+      hitBySlug: results.suggest.hitBySlug,
+    })
+  }, [continuityReady, continuitySlugs, results])
+
   const showEmpty =
-    query.isActive && results.status === 'success' && results.municipalities.length === 0
+    query.isActive &&
+    results.status === 'success' &&
+    results.mode === 'search' &&
+    results.municipalities.length === 0
 
   return (
     <CampaignWizardShell
@@ -124,14 +205,14 @@ export const WizardMunicipalitySearchStep = ({
               {results.message}
             </p>
           ) : null}
-          {results.status === 'success' && results.municipalities.length > 0 ? (
+          {results.status === 'success' && displayRows.length > 0 ? (
             <ul className="flex flex-col">
-              {results.municipalities.map((hit) => (
+              {displayRows.map(({ hit, continuityReason }) => (
                 <li key={hit.slug}>
                   <HomeSearchHitRow
                     href={wizardActionHref(actionSlug, hit.slug)}
                     primary={hit.name}
-                    secondary={hit.region}
+                    secondary={continuityReason ?? hit.region}
                     showPriority={hit.priority === 'alta'}
                     wizardNavigation
                     trailing={

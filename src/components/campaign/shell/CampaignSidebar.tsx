@@ -34,6 +34,7 @@ import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 import type { CampaignUserShellView } from '@/utilities/campaignUserProfile'
 import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { clearMunicipalitySavedFilters } from '@/utilities/municipality/municipalitySavedFilters'
+import { clearLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { clearRecentVisits } from '@/utilities/recentVisits'
 
 export type CampaignSidebarUser = CampaignUserShellView
@@ -76,6 +77,7 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
     if (isLoggingOut) return
     setIsLoggingOut(true)
     clearRecentVisits()
+    clearLastActedMunicipality()
     clearMunicipalitySavedFilters()
     await clearCampaignPwaCaches()
     // logoutCampaign redirects — no need to reset the pending flag on success.
