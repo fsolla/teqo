@@ -57,7 +57,7 @@ describe('VoteEstimateScenarioInputs compact', () => {
 
     const optimistic = screen.getByLabelText('Otimista')
     expect(optimistic.className).toMatch(/border-destructive/)
-    expect(optimistic.className).not.toMatch(/border-primary/)
+    expect(optimistic.className).not.toMatch(/bg-primary\/5/)
     expect(optimistic.getAttribute('aria-invalid')).toBe('true')
   })
 
