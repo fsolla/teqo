@@ -15,12 +15,14 @@ import {
   parseWizardEntryActionParam,
   parseWizardLeadershipIdParam,
   parseWizardMunicipioParam,
+  parseWizardReturnPath,
   resolveWizardSignalTypeParam,
   resolveWizardTrendStatusParam,
   WIZARD_ENTRY_ACTION_QUERY_KEY,
   WIZARD_LEADERSHIP_ID_QUERY_KEY,
   WIZARD_MUNICIPIO_QUERY_KEY,
   WIZARD_NOTE_PREFILL_QUERY_KEY,
+  WIZARD_RETURN_PATH_QUERY_KEY,
   WIZARD_SCENARIO_QUERY_KEY,
   WIZARD_SIGNAL_BODY_QUERY_KEY,
   WIZARD_SIGNAL_TYPE_QUERY_KEY,
@@ -31,14 +33,13 @@ import {
   wizardSignalHref,
   wizardTrendHref,
 } from '@/lib/campaignActionRoutes'
-import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
   buildPoliticalTrendNotePrefill,
   resolvePoliticalTrendNotePrefillSource,
   resolveWizardTrendNoteDestination,
 } from '@/lib/politicalTrendWizardUi'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
-import { isWizardChainActionId, wizardChainContinueHref } from '@/lib/wizardActionChain'
+import { isWizardChainActionId, wizardChainContinueHref, wizardChainEndHref } from '@/lib/wizardActionChain'
 import config from '@/payload.config'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadWizardLeadershipTiles } from '@/utilities/leadership/leadershipData'
@@ -83,6 +84,7 @@ export default async function CampaignActionWizardPage({
 }: CampaignActionWizardPageProps) {
   const { slug } = await params
   const resolvedSearchParams = await searchParams
+  const returnPath = parseWizardReturnPath(resolvedSearchParams[WIZARD_RETURN_PATH_QUERY_KEY])
 
   if (!isCampaignWizardActionSlug(slug)) {
     notFound()
@@ -104,7 +106,8 @@ export default async function CampaignActionWizardPage({
     return (
       <WizardMunicipalitySearchStep
         actionSlug={slug}
-        previousHref={CAMPAIGN_HOME}
+        previousHref={wizardChainEndHref(returnPath)}
+        returnPath={returnPath}
         accessibleMunicipalities={accessibleMunicipalities}
       />
     )
@@ -142,6 +145,7 @@ export default async function CampaignActionWizardPage({
         municipalitySlug={municipality.slug}
         initialExpectedVotes={toVoteEstimateScenarioViewModel(municipality.expectedVotes)}
         entryAction={entryAction}
+        returnPath={returnPath}
       />
     )
   }
@@ -164,6 +168,7 @@ export default async function CampaignActionWizardPage({
         entryAction={entryAction}
         initialTiles={tiles}
         initialLeadershipId={initialLeadershipId}
+        returnPath={returnPath}
       />
     )
   }
@@ -200,9 +205,11 @@ export default async function CampaignActionWizardPage({
       if (noteDestination === 'home') {
         // Chained session: advance the queue (B98). Standalone stale deep-link: Início (B97).
         if (isWizardChainActionId(entryAction)) {
-          redirect(wizardChainContinueHref(entryAction, 'change-trend', municipalitySlug))
+          redirect(
+            wizardChainContinueHref(entryAction, 'change-trend', municipalitySlug, returnPath),
+          )
         }
-        redirect(CAMPAIGN_HOME)
+        redirect(wizardChainEndHref(returnPath))
       }
 
       if (noteDestination === 'choice') {
@@ -220,6 +227,7 @@ export default async function CampaignActionWizardPage({
           trendStatus={trendStatus}
           initialNote={initialNote}
           entryAction={entryAction}
+          returnPath={returnPath}
         />
       )
     }
@@ -232,6 +240,7 @@ export default async function CampaignActionWizardPage({
         currentStatus={currentStatus}
         entryAction={entryAction}
         prefillExtraParams={prefillExtraParams}
+        returnPath={returnPath}
       />
     )
   }
@@ -257,6 +266,7 @@ export default async function CampaignActionWizardPage({
           municipalitySlug={municipality.slug}
           signalType={signalType}
           entryAction={entryAction}
+          returnPath={returnPath}
         />
       )
     }
@@ -267,9 +277,16 @@ export default async function CampaignActionWizardPage({
         municipalityName={municipality.name}
         municipalitySlug={municipality.slug}
         entryAction={entryAction}
+        returnPath={returnPath}
       />
     )
   }
 
-  return <WizardMunicipalitySelectedStub actionSlug={slug} municipalityName={municipality.name} />
+  return (
+    <WizardMunicipalitySelectedStub
+      actionSlug={slug}
+      municipalityName={municipality.name}
+      returnPath={returnPath}
+    />
+  )
 }

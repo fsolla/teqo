@@ -53,6 +53,7 @@ type WizardSearchResultsState =
 type WizardMunicipalitySearchStepProps = {
   actionSlug: string
   previousHref: string
+  returnPath?: string
   accessibleMunicipalities: AccessibleMunicipality[]
 }
 
@@ -72,6 +73,7 @@ const buildSuggestSuccessState = (
 export const WizardMunicipalitySearchStep = ({
   actionSlug,
   previousHref,
+  returnPath,
   accessibleMunicipalities,
 }: WizardMunicipalitySearchStepProps) => {
   const { query, setRaw, isDebouncing } = useHomeSearchQuery()
@@ -216,7 +218,7 @@ export const WizardMunicipalitySearchStep = ({
               {displayRows.map(({ hit, continuityReason }) => (
                 <li key={hit.slug}>
                   <HomeSearchHitRow
-                    href={wizardActionHref(actionSlug, hit.slug)}
+                    href={wizardActionHref(actionSlug, hit.slug, { returnPath })}
                     primary={hit.name}
                     secondary={continuityReason ?? hit.region}
                     showPriority={hit.priority === 'alta'}

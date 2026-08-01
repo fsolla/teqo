@@ -72,6 +72,16 @@ describe('wizardActionChain', () => {
     expect(wizardChainContinueHref('register-demand', 'update-votes', 'cairu')).toBe(CAMPAIGN_HOME)
   })
 
+  it('honors allowlisted return path when the chain ends', () => {
+    const origin = '/campanha/municipios/cairu'
+    expect(
+      wizardChainContinueHref('change-trend', 'update-leadership', 'cairu', origin),
+    ).toBe(origin)
+    expect(
+      wizardChainContinueHref('update-votes', 'change-trend', 'cairu', origin),
+    ).toBe(`${CAMPAIGN_ACTIONS_HOME}/registrar-sinal?municipio=cairu&entry=update-votes&from=${encodeURIComponent(origin)}`)
+  })
+
   it('resolves session entry from query or current principal', () => {
     expect(resolveWizardChainEntry(undefined, 'update-votes')).toBe('update-votes')
     expect(resolveWizardChainEntry('register-signal', 'update-votes')).toBe('register-signal')

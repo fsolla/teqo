@@ -8,7 +8,9 @@ describe('resolveLeadershipQuickActions', () => {
     const actions = resolveLeadershipQuickActions('/campanha/liderancas', 'coordinator', {})
     expect(actions).toHaveLength(1)
     expect(actions?.[0]?.id).toBe('update-leadership')
-    expect(actions?.[0]?.href).toBe(`${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca`)
+    expect(actions?.[0]?.href).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?from=%2Fcampanha%2Fliderancas`,
+    )
   })
 
   it('returns five wizard actions on detail with municipality prefill when N=1', () => {
@@ -24,10 +26,10 @@ describe('resolveLeadershipQuickActions', () => {
       'register-demand',
     ])
     expect(actions?.find((action) => action.id === 'update-votes')?.href).toBe(
-      `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu`,
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu&from=%2Fcampanha%2Fliderancas%2F42`,
     )
     expect(actions?.find((action) => action.id === 'update-leadership')?.href).toBe(
-      `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu&leadershipId=42`,
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu&leadershipId=42&from=%2Fcampanha%2Fliderancas%2F42`,
     )
   })
 
@@ -39,7 +41,7 @@ describe('resolveLeadershipQuickActions', () => {
       '/campanha/liderancas/7',
     )
     expect(actions?.find((action) => action.id === 'update-votes')?.href).toBe(
-      `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos`,
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?from=%2Fcampanha%2Fliderancas%2F7`,
     )
   })
 

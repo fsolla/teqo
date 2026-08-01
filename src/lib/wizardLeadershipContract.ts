@@ -27,6 +27,7 @@ export const showLeadershipWizardSkip = (entryAction?: CampaignWizardActionId): 
 export const resolveWizardLeadershipSkip = (
   entryAction: CampaignWizardActionId | undefined,
   municipalitySlug: string,
+  returnPath?: string,
 ): WizardLeadershipSkipAction | undefined =>
   showLeadershipWizardSkip(entryAction)
     ? {
@@ -35,6 +36,7 @@ export const resolveWizardLeadershipSkip = (
           resolveWizardChainEntry(entryAction, 'update-leadership'),
           'update-leadership',
           municipalitySlug,
+          returnPath,
         ),
       }
     : undefined

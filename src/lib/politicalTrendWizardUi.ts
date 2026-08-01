@@ -69,6 +69,7 @@ export const shouldShowWizardTrendSkip = (
 export const resolveWizardTrendSkip = (
   entryAction: CampaignWizardActionId | undefined,
   municipalitySlug: string,
+  returnPath?: string,
 ): WizardTrendSkipAction | undefined =>
   shouldShowWizardTrendSkip(entryAction)
     ? {
@@ -77,6 +78,7 @@ export const resolveWizardTrendSkip = (
           resolveWizardChainEntry(entryAction, 'change-trend'),
           'change-trend',
           municipalitySlug,
+          returnPath,
         ),
       }
     : undefined

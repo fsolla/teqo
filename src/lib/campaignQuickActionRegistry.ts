@@ -48,7 +48,7 @@ export const resolveQuickActionsForPath = (
 
   const activitySurface = parseActivityQuickActionSurface(pathname)
   if (activitySurface) {
-    return resolveActivityQuickActions(activitySurface, role, context)
+    return resolveActivityQuickActions(activitySurface, role, context, pathname)
   }
 
   const organizationSurface = parseOrganizationQuickActionSurface(pathname)
@@ -60,7 +60,7 @@ export const resolveQuickActionsForPath = (
     return resolveDemandsListQuickActions(role)
   }
   if (isDemandDetailPath(pathname)) {
-    return resolveDemandDetailQuickActions(role, context)
+    return resolveDemandDetailQuickActions(role, context, pathname)
   }
 
   const municipalityActions = resolveMunicipalityQuickActionsForPath(pathname, role, context)
@@ -79,7 +79,7 @@ export const resolveQuickActionsForPath = (
   if (advisorActions.length > 0) return advisorActions
 
   if (isTerritoriesListPath(pathname)) {
-    return resolveStaffHomeQuickActions(role)
+    return resolveStaffHomeQuickActions(role, pathname)
   }
 
   const referenceActions = resolveReferenceQuickActionsForPath(pathname, role, context)

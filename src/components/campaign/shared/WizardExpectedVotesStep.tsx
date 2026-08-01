@@ -19,7 +19,6 @@ import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { wizardActionHref } from '@/lib/campaignActionRoutes'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
-import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
   resolveWizardVotesSkip,
   WIZARD_VOTES_FINAL_CTA_LABEL,
@@ -28,7 +27,7 @@ import {
   wizardNextStepTitle,
 } from '@/lib/campaignWizardCopy'
 import { type VoteEstimateScenario, type VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
-import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
+import { resolveWizardChainEntry, wizardChainContinueHref, wizardChainEndHref } from '@/lib/wizardActionChain'
 import {
   applyVoteShortcut,
   getWizardVoteViolation,
@@ -45,6 +44,7 @@ type WizardExpectedVotesStepProps = {
   municipalitySlug: string
   initialExpectedVotes: VoteEstimateScenarioViewModel
   entryAction?: CampaignWizardActionId
+  returnPath?: string
 }
 
 export const WizardExpectedVotesStep = ({
@@ -54,6 +54,7 @@ export const WizardExpectedVotesStep = ({
   municipalitySlug,
   initialExpectedVotes,
   entryAction,
+  returnPath,
 }: WizardExpectedVotesStepProps) => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -61,7 +62,7 @@ export const WizardExpectedVotesStep = ({
   const [focusedScenario, setFocusedScenario] = useState<VoteEstimateScenario>('central')
   const [violation, setViolation] = useState<WizardVoteViolation | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const skip = resolveWizardVotesSkip(entryAction, municipalitySlug)
+  const skip = resolveWizardVotesSkip(entryAction, municipalitySlug, returnPath)
 
   const clearViolationState = () => {
     if (violation) setViolation(null)
@@ -80,7 +81,9 @@ export const WizardExpectedVotesStep = ({
 
   const continueAfterVotes = () => {
     const sessionEntry = resolveWizardChainEntry(entryAction, 'update-votes')
-    router.replace(wizardChainContinueHref(sessionEntry, 'update-votes', municipalitySlug))
+    router.replace(
+      wizardChainContinueHref(sessionEntry, 'update-votes', municipalitySlug, returnPath),
+    )
   }
 
   const handleConfirm = () => {
@@ -131,8 +134,8 @@ export const WizardExpectedVotesStep = ({
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
       stepTitle={wizardNextStepTitle(actionSlug)}
       isEntryStep={false}
-      previousHref={wizardActionHref(actionSlug)}
-      dismissHref={CAMPAIGN_HOME}
+      previousHref={wizardActionHref(actionSlug, municipalitySlug, { returnPath })}
+      dismissHref={wizardChainEndHref(returnPath)}
       municipalityLabel={municipalityName}
       skip={skip}
       trailingAction={trailingAction}

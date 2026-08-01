@@ -49,6 +49,7 @@ const shouldShowWizardVotesSkip = (entryAction: CampaignWizardActionId | undefin
 export const resolveWizardVotesSkip = (
   entryAction: CampaignWizardActionId | undefined,
   municipalitySlug: string,
+  returnPath?: string,
 ): WizardVotesSkipAction | undefined =>
   shouldShowWizardVotesSkip(entryAction)
     ? {
@@ -57,6 +58,7 @@ export const resolveWizardVotesSkip = (
           resolveWizardChainEntry(entryAction, 'update-votes'),
           'update-votes',
           municipalitySlug,
+          returnPath,
         ),
       }
     : undefined

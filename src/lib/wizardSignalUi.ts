@@ -22,6 +22,7 @@ export const shouldShowWizardSignalSkip = (
 export const resolveWizardSignalSkip = (
   entryAction: CampaignWizardActionId | undefined,
   municipalitySlug: string,
+  returnPath?: string,
 ): WizardSignalSkipAction | undefined =>
   shouldShowWizardSignalSkip(entryAction)
     ? {
@@ -30,6 +31,7 @@ export const resolveWizardSignalSkip = (
           resolveWizardChainEntry(entryAction, 'register-signal'),
           'register-signal',
           municipalitySlug,
+          returnPath,
         ),
       }
     : undefined
