@@ -164,10 +164,25 @@ export const WizardMunicipalitySearchStep = ({
   }, [continuityReady, continuitySlugs, nearestMunicipality, results])
 
   const showEmpty =
+<<<<<<< HEAD
     query.isActive &&
     results.status === 'success' &&
     results.mode === 'search' &&
     results.municipalities.length === 0
+=======
+    query.isActive && results.status === 'success' && results.municipalities.length === 0
+
+  const displayMunicipalities = useMemo((): HomeSearchMunicipalityHit[] => {
+    if (searchMode) {
+      return results.status === 'success' ? results.municipalities : []
+    }
+
+    if (!suggestMode) return []
+
+    const serverHits = results.status === 'success' ? results.municipalities : []
+    return mergeWizardMunicipalitySuggestions(serverHits, nearestMunicipality)
+  }, [nearestMunicipality, results, searchMode, suggestMode])
+>>>>>>> 7ede30b (fix(B94): restore typed search results in wizard municipality step)
 
   return (
     <CampaignWizardShell
