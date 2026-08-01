@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { UNCOVERED_MUNICIPALITIES_LIST_HREF, homeActionsForRole } from '@/lib/campaignHomeActions'
 import {
   isCampaignActionsPath,
   isCampaignHomePath,
@@ -12,10 +13,6 @@ import {
   QUICK_ACTIONS_SNAP_EXPANDED,
   quickActionsSnapIsExpanded,
 } from '@/lib/campaignQuickActionSnap'
-import {
-  UNCOVERED_MUNICIPALITIES_LIST_HREF,
-  homeActionsForRole,
-} from '@/lib/campaignHomeActions'
 
 describe('campaignQuickActionMount', () => {
   it('treats Início as exact match only', () => {

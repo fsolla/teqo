@@ -73,8 +73,8 @@ describe('toHomeActionButtonProps', () => {
 
 describe('UNCOVERED_MUNICIPALITIES_LIST_HREF', () => {
   it('matches canonical municipality list builder (client/server parity)', () => {
-    expect(
-      buildMunicipalityListHref({ page: 1, coverage: 'sem_assessor', sort: 'votos' }, 1),
-    ).toBe(UNCOVERED_MUNICIPALITIES_LIST_HREF)
+    expect(buildMunicipalityListHref({ page: 1, coverage: 'sem_assessor', sort: 'votos' }, 1)).toBe(
+      UNCOVERED_MUNICIPALITIES_LIST_HREF,
+    )
   })
 })

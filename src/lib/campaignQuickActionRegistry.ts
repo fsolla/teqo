@@ -2,13 +2,12 @@ import {
   resolveStaffHomeQuickActions,
   type ResolvedCampaignHomeAction,
 } from '@/lib/campaignHomeActions'
-import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
+import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import type { CampaignRole } from '@/lib/campaignRoles'
 
 const isTerritoriesListPath = (pathname: string): boolean =>
-  pathname === CAMPAIGN_TERRITORIES_HOME ||
-  pathname.startsWith(`${CAMPAIGN_TERRITORIES_HOME}/`)
+  pathname === CAMPAIGN_TERRITORIES_HOME || pathname.startsWith(`${CAMPAIGN_TERRITORIES_HOME}/`)
 
 /**
  * Pathname + role + page context → contextual quick actions.

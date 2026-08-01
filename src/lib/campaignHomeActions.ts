@@ -128,10 +128,7 @@ export const UNCOVERED_MUNICIPALITIES_LIST_HREF =
   '/campanha/municipios?coverage=sem_assessor&sort=votos' as const
 
 /** Staff Início catalog with hrefs — shared by quick-action registries (B81+). */
-const staffHomeQuickActionsByRole = new Map<
-  CampaignRole,
-  readonly ResolvedCampaignHomeAction[]
->()
+const staffHomeQuickActionsByRole = new Map<CampaignRole, readonly ResolvedCampaignHomeAction[]>()
 
 export const resolveStaffHomeQuickActions = (
   role: CampaignRole,
