@@ -1,7 +1,7 @@
 # Delta de 7 dias do total de estimativas (Início)
 
-Status: rascunho
-Atualizado em: 2026-07-29
+Status: entregue
+Atualizado em: 2026-08-01
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item B57 — baixa prioridade / futuro)
 Impeccable: B — encaixe de seta + Δ no bloco **B56** (quando existir trajetória)
 Appetite: ~1,5–2 dias eng quando aberto; **snapshot diário** + reader + UI; migration leve
