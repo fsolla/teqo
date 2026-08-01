@@ -50,6 +50,15 @@ const snapshot = (partial: Partial<OpsSnapshot> = {}): OpsSnapshot => ({
   ...partial,
 })
 
+describe('opsSnapshotPolicy', () => {
+  it('pins OH3 truncation and gzip budget for OH4', async () => {
+    const policy = await import('@/lib/campaignOps/opsSnapshotPolicy')
+    expect(policy.OPS_MUNICIPALITY_UPDATE_LIMIT_PER_MUNICIPALITY).toBe(50)
+    expect(policy.OPS_SNAPSHOT_GZIP_TARGET_BYTES).toBe(2 * 1024 * 1024)
+    expect(policy.OPS_SNAPSHOT_PROD_MEASURED_JSON_BYTES).toBe(4 * 1024 * 1024)
+  })
+})
+
 describe('OPS_MIRROR_SCHEMA_VERSION', () => {
   it('is pinned at 1', () => {
     expect(OPS_MIRROR_SCHEMA_VERSION).toBe(1)

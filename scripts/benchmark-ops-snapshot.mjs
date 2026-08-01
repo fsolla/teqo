@@ -32,13 +32,23 @@ assertLocalDatabase(
 )
 
 const { OPS_MIRROR_SCHEMA_VERSION } = await import('../src/lib/campaignOps/opsMirrorVersion.ts')
+const { serializeOpsSnapshot } = await import('../src/lib/campaignOps/opsContract.ts')
+const {
+  OPS_MUNICIPALITY_UPDATE_LIMIT_PER_MUNICIPALITY,
+  OPS_SNAPSHOT_GZIP_TARGET_BYTES,
+  OPS_SNAPSHOT_PROD_GZIP_RATIO_ESTIMATE,
+  OPS_SNAPSHOT_PROD_MEASURED_JSON_BYTES,
+} = await import('../src/lib/campaignOps/opsSnapshotPolicy.ts')
 const { relationshipId, uniqueRelationshipIds } = await import('../src/lib/relationship.ts')
+const { MINIMAL_CAMPAIGN_USERS } = await import('./lib/seed-minimal-manifest.mjs')
 
 const payloadConfig = (await import('../src/payload.config.ts')).default
 
 /** @typedef {import('../src/lib/campaignOps/opsContract.ts').OpsSnapshot} OpsSnapshot */
 
-const COORDINATOR_EMAIL = 'seed-coordenador@teqo.invalid'
+const COORDINATOR_EMAIL =
+  MINIMAL_CAMPAIGN_USERS.find((user) => user.role === 'coordinator')?.email ??
+  'seed-coordenador@teqo.invalid'
 
 /** Prod row estimates for projection (2026-08-01 ops-hibrido spec + campaign scale). */
 const PROD_ROW_ESTIMATES = {
@@ -55,12 +65,12 @@ const PROD_ROW_ESTIMATES = {
  * Measured prod JSON size (2026-08-01, ops-hibrido spec) — anchor for projection sanity.
  * @see docs/plans/ops-hibrido-rsc-local-spec.md
  */
-const PROD_MEASURED_JSON_BYTES = 4 * 1024 * 1024
+const PROD_MEASURED_JSON_BYTES = OPS_SNAPSHOT_PROD_MEASURED_JSON_BYTES
 
 /** Conservative gzip ratio for prod ops JSON (text-heavy updates; not the sparse-local 6%). */
-const PROD_GZIP_RATIO_ESTIMATE = 0.5
+const PROD_GZIP_RATIO_ESTIMATE = OPS_SNAPSHOT_PROD_GZIP_RATIO_ESTIMATE
 
-const GZIP_TARGET_BYTES = 2 * 1024 * 1024
+const GZIP_TARGET_BYTES = OPS_SNAPSHOT_GZIP_TARGET_BYTES
 
 /**
  * Fallback bytes/row when the minimal seed has no rows (local cannot extrapolate).
@@ -79,7 +89,7 @@ const PROD_FALLBACK_BYTES_PER_ROW = {
 
 const parseCliArgs = (argv) => {
   /** @type {Record<string, number>} */
-  const rowLimits = { municipality_update: 50 }
+  const rowLimits = { municipality_update: OPS_MUNICIPALITY_UPDATE_LIMIT_PER_MUNICIPALITY }
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]
@@ -300,7 +310,7 @@ const truncateMunicipalityUpdates = (updates, limitPerMunicipality) => {
 }
 
 const measureJson = (value) => {
-  const json = JSON.stringify(value)
+  const json = typeof value === 'string' ? value : JSON.stringify(value)
   const gzip = gzipSync(json)
   return { jsonBytes: Buffer.byteLength(json, 'utf8'), gzipBytes: gzip.length }
 }
@@ -565,7 +575,7 @@ const buildSnapshotSections = async (payload, actor, rowLimits) => {
     goals,
   }
 
-  const totalSize = measureJson(snapshot)
+  const totalSize = measureJson(serializeOpsSnapshot(snapshot))
   const totalQueryMs = sections.reduce((sum, section) => sum + section.queryMs, 0)
 
   return { snapshot, sections, totalSize, totalQueryMs }
@@ -610,18 +620,11 @@ const projectProdSnapshot = (sections, rowLimits) => {
         sections.reduce((sum, section) => sum + section.jsonBytes, 0)
       : PROD_GZIP_RATIO_ESTIMATE
 
-  const estimatedGzipBytes = Math.round(projectedJsonBytes * PROD_GZIP_RATIO_ESTIMATE)
   const prodMeasuredGzipEstimate = Math.round(
     PROD_MEASURED_JSON_BYTES * PROD_GZIP_RATIO_ESTIMATE,
   )
 
-  return {
-    projectedRows,
-    projectedJsonBytes,
-    estimatedGzipBytes,
-    localGzipRatio,
-    prodMeasuredGzipEstimate,
-  }
+  return { projectedRows, projectedJsonBytes, prodMeasuredGzipEstimate, localGzipRatio }
 }
 
 const printReport = (sections, totalSize, totalQueryMs, rowLimits, projection) => {
