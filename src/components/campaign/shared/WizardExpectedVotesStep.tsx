@@ -27,7 +27,11 @@ import {
   wizardNextStepTitle,
 } from '@/lib/campaignWizardCopy'
 import { type VoteEstimateScenario, type VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
-import { resolveWizardChainEntry, wizardChainContinueHref, wizardChainEndHref } from '@/lib/wizardActionChain'
+import {
+  resolveWizardChainEntry,
+  wizardChainContinueHref,
+  wizardChainEndHref,
+} from '@/lib/wizardActionChain'
 import {
   applyVoteShortcut,
   getWizardVoteViolation,

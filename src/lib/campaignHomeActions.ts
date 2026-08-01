@@ -11,9 +11,9 @@ import {
 } from 'lucide-react'
 
 import {
+  appendWizardReturnPath,
   CAMPAIGN_WIZARD_ACTION_SLUGS,
   campaignActionEntryHref,
-  appendWizardReturnPath,
   isCampaignWizardActionId,
   wizardActionHref,
   type CampaignWizardActionId,
@@ -173,9 +173,13 @@ export const toHomeActionButtonProps = (
       href = resolved.uncoveredMunicipalitiesHref
     } else if (isCampaignWizardActionId(action.id)) {
       if (resolved.municipalitySlug) {
-        href = wizardActionHref(CAMPAIGN_WIZARD_ACTION_SLUGS[action.id], resolved.municipalitySlug, {
-          returnPath: resolved.returnPath,
-        })
+        href = wizardActionHref(
+          CAMPAIGN_WIZARD_ACTION_SLUGS[action.id],
+          resolved.municipalitySlug,
+          {
+            returnPath: resolved.returnPath,
+          },
+        )
       } else {
         href = appendWizardReturnPath(campaignActionEntryHref(action.id), resolved.returnPath)
       }

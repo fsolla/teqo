@@ -1,11 +1,11 @@
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { wizardActionHref } from '@/lib/campaignActionRoutes'
-import { wizardChainEndHref } from '@/lib/wizardActionChain'
 import {
   wizardFlowTitleForSlug,
   wizardNextStepPlaceholder,
   wizardNextStepTitle,
 } from '@/lib/campaignWizardCopy'
+import { wizardChainEndHref } from '@/lib/wizardActionChain'
 
 type WizardMunicipalitySelectedStubProps = {
   actionSlug: string

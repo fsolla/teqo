@@ -65,7 +65,14 @@ const wizardHrefForChainStep = (
     case 'register-signal':
       return wizardSignalHref(actionSlug, municipalitySlug, undefined, entryAction, returnPath)
     case 'change-trend':
-      return wizardTrendHref(actionSlug, municipalitySlug, undefined, entryAction, undefined, returnPath)
+      return wizardTrendHref(
+        actionSlug,
+        municipalitySlug,
+        undefined,
+        entryAction,
+        undefined,
+        returnPath,
+      )
     default: {
       const exhaustive: never = action
       return exhaustive

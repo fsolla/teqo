@@ -25,8 +25,8 @@ import {
 } from '@/lib/municipalitySignalTypeMeta'
 import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 import { cn } from '@/lib/utils'
-import { resolveWizardSignalSkip, WIZARD_SIGNAL_TYPE_STEP_TITLE } from '@/lib/wizardSignalUi'
 import { wizardChainEndHref } from '@/lib/wizardActionChain'
+import { resolveWizardSignalSkip, WIZARD_SIGNAL_TYPE_STEP_TITLE } from '@/lib/wizardSignalUi'
 
 type WizardSignalTypeStepProps = {
   actionSlug: string

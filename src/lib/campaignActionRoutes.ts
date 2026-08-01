@@ -86,9 +86,7 @@ export const isWizardReturnPath = (pathname: string): boolean => {
   return true
 }
 
-export const parseWizardReturnPath = (
-  value: string | string[] | undefined,
-): string | undefined => {
+export const parseWizardReturnPath = (value: string | string[] | undefined): string | undefined => {
   const raw = Array.isArray(value) ? value[0] : value
   const trimmed = raw?.trim()
   if (!trimmed) return undefined

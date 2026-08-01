@@ -99,10 +99,14 @@ export const resolveLeadershipQuickActions = (
 
   const leadershipId = parseLeadershipDetailId(pathname)
   if (leadershipId !== undefined) {
-    return resolveLeadershipDetailActions(role, {
-      ...context,
-      leadershipId: context.leadershipId ?? leadershipId,
-    }, pathname)
+    return resolveLeadershipDetailActions(
+      role,
+      {
+        ...context,
+        leadershipId: context.leadershipId ?? leadershipId,
+      },
+      pathname,
+    )
   }
 
   return null
