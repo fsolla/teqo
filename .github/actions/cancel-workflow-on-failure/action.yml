@@ -1,0 +1,7 @@
+name: Cancel workflow on failure
+description: Cancels the entire workflow run when invoked after a job failure (fail-fast).
+runs:
+  using: composite
+  steps:
+    - name: Cancel workflow run
+      uses: styfle/cancel-workflow-action@0.12.1

@@ -18,6 +18,11 @@ concurrency:
   group: ci-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  actions: write
+  pull-requests: read
+
 env:
   DATABASE_URL: postgresql://teqo:teqo@localhost:5432/teqo_test
   PAYLOAD_SECRET: test-only-secret-not-used-in-production
@@ -55,6 +60,9 @@ jobs:
           echo "test_mode=$(echo "$result" | jq -r .test.mode)" >> "$GITHUB_OUTPUT"
           echo "e2e_mode=$(echo "$result" | jq -r .e2e.mode)" >> "$GITHUB_OUTPUT"
           echo "e2e_specs=$(echo "$result" | jq -r '[.e2e.specs[] | "tests/e2e/" + . + ".e2e.spec.ts"] | join(" ")')" >> "$GITHUB_OUTPUT"
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   lint:
     runs-on: ubuntu-latest
@@ -70,6 +78,9 @@ jobs:
       - name: Check test file locations
         run: node scripts/check-test-locations.mjs
       - run: pnpm lint
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   format:
     runs-on: ubuntu-latest
@@ -83,6 +94,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   typecheck:
     runs-on: ubuntu-latest
@@ -98,6 +112,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   knip:
     runs-on: ubuntu-latest
@@ -113,6 +130,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec knip
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   cycles:
     runs-on: ubuntu-latest
@@ -128,6 +148,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check:cycles
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   unit:
     runs-on: ubuntu-latest
@@ -152,6 +175,9 @@ jobs:
       - name: Unit tests (changed since PR base)
         if: needs.scope.outputs.test_mode == 'changed'
         run: pnpm test:unit -- --changed origin/${{ github.base_ref }} --passWithNoTests
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   int:
     runs-on: ubuntu-latest
@@ -201,6 +227,9 @@ jobs:
       - name: Integration tests (changed since PR base)
         if: needs.scope.outputs.test_mode == 'changed'
         run: pnpm test:int -- --changed origin/${{ github.base_ref }} --passWithNoTests
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   build:
     runs-on: ubuntu-latest
@@ -240,6 +269,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build (against the local service database)
         run: pnpm build
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   e2e:
     runs-on: ubuntu-latest
@@ -295,13 +327,13 @@ jobs:
       - name: E2E tests (manifest-selected specs)
         if: needs.scope.outputs.e2e_mode == 'selected'
         run: pnpm test:e2e -- ${{ needs.scope.outputs.e2e_specs }}
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   migration-lock:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    permissions:
-      contents: read
-      pull-requests: read
     steps:
       - uses: actions/checkout@v5
       - name: Count open PRs touching schema files
@@ -317,6 +349,9 @@ jobs:
             echo "::error::More than one open PR touches src/migrations/ or payload-types.ts. Merge or close the other first."
             exit 1
           fi
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
 
   checks:
     name: checks

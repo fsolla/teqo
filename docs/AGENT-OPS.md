@@ -58,8 +58,8 @@ Labels: `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`.
 
 | Workflow                       | Trigger                                | Banco               | Passos                                                                    |
 | ------------------------------ | -------------------------------------- | ------------------- | ------------------------------------------------------------------------- |
-| `ci-pr.yml`                    | PR → `main`                            | service Postgres 17 | Fase 1 barata → fase 2 cara; skips via `ci-scope.mjs`; rollup `checks`    |
-| `ci.yml`                       | push / dispatch `main`                 | service Postgres    | Full sempre → `deploy` (`vercel deploy --prod`) → `requeue` se HEAD andou |
+| `ci-pr.yml`                    | PR → `main`                            | service Postgres 17 | Fase 1 barata → fase 2 cara; skips via `ci-scope.mjs`; fail-fast cancela o run no 1º job vermelho; rollup `checks` |
+| `ci.yml`                       | push / dispatch `main`                 | service Postgres    | Full sempre; fail-fast cancela o run no 1º job vermelho → `deploy` (`vercel deploy --prod`) → `requeue` se HEAD andou |
 | `issue-done-on-main-merge.yml` | PR merged → `main`                     | —                   | `in-progress` → `done` + `in-prod`                                        |
 | `agent-pr-ready-automerge.yml` | PR `cursor/*` → `main` (open/sync/…)   | —                   | Draft→Ready + `gh pr merge --auto --merge` (safety net; audit incluso)    |
 | `agent-pool.yml`               | schedule / PR closed `main` / dispatch | —                   | Supervisor do pool (`POOL_GITHUB_TOKEN`)                                  |
