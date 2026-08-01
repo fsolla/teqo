@@ -207,7 +207,7 @@ jobs:
           cache: pnpm
       - name: Install Vercel CLI
         if: steps.tip.outputs.stale != 'true'
-        run: npm install --global vercel@41
+        run: npm install --global vercel@55
       - name: Deploy production
         if: steps.tip.outputs.stale != 'true'
         run: |
