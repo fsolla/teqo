@@ -2,6 +2,7 @@ import {
   resolveStaffHomeQuickActions,
   type ResolvedCampaignHomeAction,
 } from '@/lib/campaignHomeActions'
+import { resolveMunicipalityQuickActionsForPath } from '@/lib/campaignMunicipalityQuickActions'
 import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import type { CampaignRole } from '@/lib/campaignRoles'
@@ -12,15 +13,19 @@ const isTerritoriesListPath = (pathname: string): boolean =>
 /**
  * Pathname + role + page context → contextual quick actions.
  * Catalogs per vertical land in B80–B90; the B79 chassis renders whatever
- * this helper returns (empty until those items register providers).
+ * this helper returns.
  */
 export const resolveQuickActionsForPath = (
   pathname: string,
   role: CampaignRole,
-  _context: CampaignQuickActionContext,
+  context: CampaignQuickActionContext,
 ): readonly ResolvedCampaignHomeAction[] => {
+  const municipalityActions = resolveMunicipalityQuickActionsForPath(pathname, role, context)
+  if (municipalityActions.length > 0) return municipalityActions
+
   if (isTerritoriesListPath(pathname)) {
     return resolveStaffHomeQuickActions(role)
   }
+
   return []
 }

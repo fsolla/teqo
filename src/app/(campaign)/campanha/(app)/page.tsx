@@ -7,10 +7,10 @@ import { CampaignHomeLayout } from '@/components/campaign/dashboard/CampaignHome
 import { CampaignHomeStaffChrome } from '@/components/campaign/dashboard/CampaignHomeStaffChrome'
 import { CampaignHomeSummary } from '@/components/campaign/dashboard/CampaignHomeSummary'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { UNCOVERED_MUNICIPALITIES_LIST_HREF } from '@/lib/campaignHomeActions'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { loadCampaignHomeSummary } from '@/utilities/campaignDashboardData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { buildMunicipalityListHref } from '@/utilities/municipality/municipalityListUrl'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,9 +19,7 @@ export default async function CampaignHomePage() {
 
   const staff = isStaffCampaignRole(user.role)
 
-  const uncoveredMunicipalitiesHref = staff
-    ? buildMunicipalityListHref({ page: 1, coverage: 'sem_assessor', sort: 'votos' }, 1)
-    : undefined
+  const uncoveredMunicipalitiesHref = staff ? UNCOVERED_MUNICIPALITIES_LIST_HREF : undefined
 
   const actions = (
     <CampaignHomeActions
