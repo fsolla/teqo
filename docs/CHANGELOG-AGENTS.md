@@ -7,13 +7,10 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 **Recently resolved (2026-08-01):** **CL6** (Issue #159) — territórios: paginação real + sort no loader (`selectTerritoryOverviewPage` / `loadTerritoryOverviewPage`), `page` no contrato URL, registry `sortModel: 'url'`, `/campanha/territorios` atrás de `LIST_UNIFIED` com paridade OFF. Plano: [`cl6-territorios-factory.md`](docs/plans/cl6-territorios-factory.md).
 **Recently resolved (2026-08-01):** **OH4** (Issue #166) — `GET /campanha/api/ops-sync` full snapshot: `buildOpsSnapshot` (`overrideAccess: false`, queries em paralelo, truncamento 50 updates/município), 401/403 staff gate, pins int advisor/leader. Plano: [`oh4-ops-sync-route.md`](docs/plans/oh4-ops-sync-route.md).
 
-<<<<<<< HEAD
 **Recently resolved (2026-08-01):** **CL5** (Issue #160) — assessores no sistema de listas: `AdvisorsTable` → `CampaignTable` + picker (`assessores` em `CAMPAIGN_LIST_IDS`); `resolveAdvisorListUrl` (canonical + preserva `criar=1`); registry `columnListId`/`canonicalRedirect`; page atrás de `LIST_UNIFIED`/`OpsListPage`. Plano: [`cl5-assessores-factory.md`](docs/plans/cl5-assessores-factory.md).
 
 **Recently resolved (2026-08-01):** **OH6** (Issue #167) — tracer `estimateVotesCas` (CAS opt-in via `baseEstimatedAt`) + outbox mínimo (`@tanstack/offline-transactions`) + toasts Sonner de conflito na ilha `PledgeEstimateForm` quando `OPS_HYBRID=1`; flag OFF mantém `formAction`. Plano: [`oh6-estimatevotes-cas-outbox.md`](docs/plans/oh6-estimatevotes-cas-outbox.md).
 
-=======
->>>>>>> 47f9c57 (fix(OH4): remove leftover rebase conflict markers in changelog)
 **Recently resolved (2026-08-01):** **CL3** (Issue #157) — tracer da factory de listas unificadas: `OpsListView` (slots) + `OpsListPage` (casca server); `/campanha/municipios` atrás de `LIST_UNIFIED` com paridade OFF. Plano: [`cl3-ops-list-page-municipios.md`](docs/plans/cl3-ops-list-page-municipios.md).
 
 **Recently resolved (2026-08-01):** **CL1** (Issue #155) — spec-mãe da Lista Unificada Campanha: decisões travadas (factory = prólogo+slots, não data path; registry em `lib/opsListRegistry`; 8 slugs v1 + atividades excluída; conflitos por domínio; CL5a/CL6a obrigatórios). Inventário as-built + index CL2–CL8 + acoplamento OH. Plano: [`lista-unificada-campanha-spec.md`](docs/plans/lista-unificada-campanha-spec.md).
