@@ -36,6 +36,23 @@ export const aliasesIncludeHost = (aliases, expectedHost) => {
 }
 
 /**
+ * Vercel deployment ids appear as `dpl_…` or bare ids depending on the endpoint.
+ * @param {string | null | undefined} a
+ * @param {string | null | undefined} b
+ */
+export const sameDeploymentId = (a, b) => {
+  const left = String(a ?? '')
+    .trim()
+    .replace(/^dpl_/i, '')
+    .toLowerCase()
+  const right = String(b ?? '')
+    .trim()
+    .replace(/^dpl_/i, '')
+    .toLowerCase()
+  return Boolean(left) && left === right
+}
+
+/**
  * Normalize a CLI stdout URL / inspect path / bare id into something the
  * deployments GET endpoint accepts (`dpl_…`, short id, or hostname).
  * @param {string} deploymentRef
@@ -610,17 +627,31 @@ export const ensureProductionCustomDomain = async ({
       deploymentId: deployment.id,
       fetchImpl,
     })
-    if (aliasesIncludeHost(hosts, expectedHost)) return true
+    if (aliasesIncludeHost(hosts, expectedHost)) {
+      return { onDeployment: true, hosts, domainTarget: null }
+    }
     const domainTarget = await fetchDomainAliasTarget({
       token,
       teamId,
       domain: expectedHost,
       fetchImpl,
     })
-    return domainTarget?.deploymentId === deployment.id
+    return {
+      onDeployment: sameDeploymentId(domainTarget?.deploymentId, deployment.id),
+      hosts,
+      domainTarget,
+    }
   }
 
-  if (aliasesIncludeHost(deployment.aliases, expectedHost) || (await hostAlreadyOnDeployment())) {
+  // Do NOT trust GET /v13 `alias` — it can list the production hostname on a
+  // fresh --prod deploy even when the custom domain still points at an older
+  // Current (observed: ensure short-circuited and left pt.jorgesolla.com.br stale).
+  const ownership = await hostAlreadyOnDeployment()
+  note(
+    `domain ${expectedHost} → ${ownership.domainTarget?.deploymentId ?? '(via deployment aliases)'} ` +
+      `(this=${deployment.id}; listed=${JSON.stringify(ownership.hosts)})`,
+  )
+  if (ownership.onDeployment) {
     note(`already aliased to ${expectedHost}`)
     return {
       alreadyAssigned: true,
@@ -631,6 +662,11 @@ export const ensureProductionCustomDomain = async ({
       deployment,
       steps,
     }
+  }
+  if (ownership.domainTarget?.deploymentId) {
+    note(
+      `${expectedHost} still on ${ownership.domainTarget.deploymentId} — will promote/alias onto ${deployment.id}`,
+    )
   }
 
   let promoted = false
@@ -673,7 +709,8 @@ export const ensureProductionCustomDomain = async ({
 
   let verified = false
   for (let attempt = 0; attempt < 10; attempt += 1) {
-    if (await hostAlreadyOnDeployment()) {
+    const check = await hostAlreadyOnDeployment()
+    if (check.onDeployment) {
       verified = true
       break
     }
@@ -681,21 +718,10 @@ export const ensureProductionCustomDomain = async ({
   }
 
   if (!verified) {
-    const hosts = await listDeploymentAliasHosts({
-      token,
-      teamId,
-      deploymentId: deployment.id,
-      fetchImpl,
-    })
-    const domainTarget = await fetchDomainAliasTarget({
-      token,
-      teamId,
-      domain: expectedHost,
-      fetchImpl,
-    })
+    const check = await hostAlreadyOnDeployment()
     throw new Error(
       `After alias assign, ${expectedHost} is still not on deployment ${deployment.id}. ` +
-        `deployment aliases=${JSON.stringify(hosts)}; domain points to=${JSON.stringify(domainTarget)}; ` +
+        `deployment aliases=${JSON.stringify(check.hosts)}; domain points to=${JSON.stringify(check.domainTarget)}; ` +
         `aliasApiBody=${JSON.stringify(assignResult.body)}. ` +
         `Check Vercel → Settings → Domains: Git Branch must be empty, and Environments → Production → Auto-assign Custom Production Domains must be ON.`,
     )
