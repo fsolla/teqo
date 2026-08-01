@@ -1,0 +1,52 @@
+# Promote a READY production deployment to custom domains (no rebuild).
+# Use when `vercel deploy --prod` staged a deployment but left pt.jorgesolla.com.br
+# on an older Current (Auto-assign Custom Production Domains OFF).
+name: Vercel promote production
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment:
+        description: 'Deployment URL or id (empty = latest READY production)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Require Vercel credentials
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -z "${VERCEL_TOKEN:-}" ] && missing+=(VERCEL_TOKEN)
+          [ -z "${VERCEL_ORG_ID:-}" ] && missing+=(VERCEL_ORG_ID)
+          [ -z "${VERCEL_PROJECT_ID:-}" ] && missing+=(VERCEL_PROJECT_ID)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing secrets: ${missing[*]}"
+            exit 1
+          fi
+      - name: Promote to custom production domain
+        env:
+          DEPLOYMENT_REF: ${{ inputs.deployment }}
+        run: |
+          set -euo pipefail
+          if [ -n "${DEPLOYMENT_REF:-}" ]; then
+            node scripts/vercel-ensure-production-alias.mjs "$DEPLOYMENT_REF"
+          else
+            node scripts/vercel-ensure-production-alias.mjs --latest
+          fi

@@ -256,7 +256,14 @@ jobs:
           # "Could not retrieve Project Settings" usually means bad/expired token or wrong IDs (403).
           vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
           vercel build --prod --token="$VERCEL_TOKEN"
-          vercel deploy --prebuilt --prod --archive=tgz --token="$VERCEL_TOKEN"
+          # stdout is always the deployment URL (CLI contract). Capture it — do not
+          # pipe the whole CLI log or the exit code / URL get lost.
+          deploy_url=$(vercel deploy --prebuilt --prod --archive=tgz --token="$VERCEL_TOKEN")
+          echo "Deployed: $deploy_url"
+          # Git auto-deploy OFF is intentional. If "Auto-assign Custom Production
+          # Domains" is also OFF, --prod only stages *.vercel.app and leaves
+          # pt.jorgesolla.com.br on the previous Current — promote + verify here.
+          node scripts/vercel-ensure-production-alias.mjs "$deploy_url"
 
   requeue:
     runs-on: ubuntu-latest
