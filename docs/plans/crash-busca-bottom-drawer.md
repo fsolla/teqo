@@ -1,8 +1,8 @@
 # Crash — busca no bottom drawer (focus / digitação)
 
-Status: em implementação
+Status: done
 Atualizado em: 2026-08-01
-Issue: #129 (file-miss #133)
+Issue: #129 (file-miss plan #133 · delivery #135)
 Priority: P0
 Model: cursor-grok-4.5-medium
 Impeccable: B — `CampaignQuickActionsDrawer` + `CampaignGlobalSearchBody`
@@ -76,7 +76,7 @@ Diagnóstico preliminar (código em `main`):
 
 ## Questões em aberto
 
-- **Causa raiz exata antes do claim?** **Opções:** A) fechar no `work-issue` com repro primeiro | B) bipartir plan/exec. **Recomendação:** **A** — appetite cabe; hypothese já estreita. _(assumido — fechado no freshness/repro)_
+- _(nenhuma — root cause fechada no repro unit; fix as-built acima)_
 
 ## Abordagem proposta
 

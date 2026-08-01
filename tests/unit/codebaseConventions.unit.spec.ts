@@ -667,3 +667,22 @@ describe('public site metadata global access', () => {
     expect(offenders, 'import and call resolveSiteMetadata from @/utilities/seo').toEqual([])
   })
 })
+
+describe('campaign TooltipProvider wraps quick-actions chrome (B102)', () => {
+  // B91/B100 mount the drawer as a sibling of the scrollport inside
+  // CampaignAppScrollChrome. Nesting TooltipProvider only around {children}
+  // left focus→suggest priority hits (CampaignHoverTooltip) without a
+  // provider and crashed the page.
+  it('lifts TooltipProvider around CampaignAppScrollChrome in the app layout', () => {
+    const layoutPath = resolve(repoRoot, 'src/app/(campaign)/campanha/(app)/layout.tsx')
+    expect(existsSync(layoutPath)).toBe(true)
+    const source = readFileSync(layoutPath, 'utf8')
+
+    expect(source).toMatch(
+      /<TooltipProvider[^>]*>\s*<CampaignAppScrollChrome[\s\S]*?<\/CampaignAppScrollChrome>\s*<\/TooltipProvider>/,
+    )
+    expect(source).not.toMatch(
+      /<CampaignAppScrollChrome[^>]*>\s*<TooltipProvider[\s\S]*?<\/TooltipProvider>\s*<\/CampaignAppScrollChrome>/,
+    )
+  })
+})
