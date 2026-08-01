@@ -11,9 +11,11 @@ import {
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
+import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import {
   campaignDemandKindLabels,
   campaignDemandStatusLabels,
@@ -110,6 +112,72 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
   const hrefForStatus = (status?: CampaignDemandStatus) =>
     buildDemandListHref({ ...state, status }, 1)
 
+  const statusChips = (
+    <CampaignFilterChips
+      ariaLabel="Filtrar por status"
+      chips={[
+        { href: hrefForStatus(undefined), label: 'Todas', active: state.status === undefined },
+        ...campaignDemandStatuses.map((status) => ({
+          href: hrefForStatus(status),
+          label: campaignDemandStatusLabels[status],
+          active: state.status === status,
+        })),
+      ]}
+    />
+  )
+
+  const tableNode = (
+    <CampaignTable
+      columns={demandColumns}
+      columnVisibility={columnVisibility}
+      rows={rows}
+      rowKey={(row) => row.id}
+      empty={
+        <CampaignListEmptyState
+          icon={InboxIcon}
+          title="Nenhuma demanda por aqui"
+          description="Abra uma demanda quando precisar de material, transporte, espaço ou apoio para uma ação."
+        >
+          <Button asChild className="min-h-11">
+            <Link href="/campanha/demandas/nova">
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Nova demanda
+            </Link>
+          </Button>
+        </CampaignListEmptyState>
+      }
+    />
+  )
+
+  const footerNode = rows.length ? (
+    <CampaignListFooter
+      totalDocs={totalDocs}
+      singular="demanda"
+      plural="demandas"
+      page={state.page}
+      totalPages={totalPages}
+      hrefForPage={(page) => buildDemandListHref(state, page)}
+    />
+  ) : null
+
+  const main = resolveListUnifiedEnabled() ? (
+    <OpsListPage
+      overview={null}
+      toolbar={statusChips}
+      table={tableNode}
+      empty={null}
+      footer={footerNode}
+    />
+  ) : (
+    <CampaignListPendingBoundary>
+      {statusChips}
+      <CampaignListResults>
+        {tableNode}
+        {footerNode}
+      </CampaignListResults>
+    </CampaignListPendingBoundary>
+  )
+
   return (
     <CampaignPageShell>
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -131,52 +199,7 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
         </Button>
       </header>
 
-      <CampaignListPendingBoundary>
-        <CampaignFilterChips
-          ariaLabel="Filtrar por status"
-          chips={[
-            { href: hrefForStatus(undefined), label: 'Todas', active: state.status === undefined },
-            ...campaignDemandStatuses.map((status) => ({
-              href: hrefForStatus(status),
-              label: campaignDemandStatusLabels[status],
-              active: state.status === status,
-            })),
-          ]}
-        />
-
-        <CampaignListResults>
-          <CampaignTable
-            columns={demandColumns}
-            columnVisibility={columnVisibility}
-            rows={rows}
-            rowKey={(row) => row.id}
-            empty={
-              <CampaignListEmptyState
-                icon={InboxIcon}
-                title="Nenhuma demanda por aqui"
-                description="Abra uma demanda quando precisar de material, transporte, espaço ou apoio para uma ação."
-              >
-                <Button asChild className="min-h-11">
-                  <Link href="/campanha/demandas/nova">
-                    <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                    Nova demanda
-                  </Link>
-                </Button>
-              </CampaignListEmptyState>
-            }
-          />
-          {rows.length ? (
-            <CampaignListFooter
-              totalDocs={totalDocs}
-              singular="demanda"
-              plural="demandas"
-              page={state.page}
-              totalPages={totalPages}
-              hrefForPage={(page) => buildDemandListHref(state, page)}
-            />
-          ) : null}
-        </CampaignListResults>
-      </CampaignListPendingBoundary>
+      {main}
     </CampaignPageShell>
   )
 }

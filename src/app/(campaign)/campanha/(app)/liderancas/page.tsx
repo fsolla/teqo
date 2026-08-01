@@ -29,6 +29,7 @@ import {
   type RelationCellOption,
 } from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
+import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -46,6 +47,7 @@ import {
   resolvedPortfolioEntriesById,
   type MunicipalityPortfolioIndexEntry,
 } from '@/lib/municipalityPortfolio'
+import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
 import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
 import { cn } from '@/lib/utils'
@@ -379,6 +381,59 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     nowMs: Date.now(),
   })
 
+  const filters = (
+    <LeadershipFilters state={state} municipalityLabelsById={municipalityLabelsById} />
+  )
+
+  const sortSummaryNode = (
+    <p className="text-sm text-muted-foreground" aria-live="polite">
+      {sortSummary}
+    </p>
+  )
+
+  const tableNode = (
+    <CampaignListSheetProvider>
+      <CampaignTable
+        caption={`${sortSummary}. Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações.`}
+        columns={columns}
+        columnVisibility={columnVisibility}
+        rows={rows}
+        rowKey={(row) => row.id}
+        empty={<LeadershipListEmptyState state={state} />}
+      />
+    </CampaignListSheetProvider>
+  )
+
+  const footerNode = rows.length ? (
+    <CampaignListFooter
+      totalDocs={totalDocs}
+      singular="liderança"
+      plural="lideranças"
+      page={state.page}
+      totalPages={totalPages}
+      hrefForPage={(page) => buildLeadershipListHref(state, page)}
+    />
+  ) : null
+
+  const main = resolveListUnifiedEnabled() ? (
+    <OpsListPage
+      overview={sortSummaryNode}
+      toolbar={filters}
+      table={tableNode}
+      empty={null}
+      footer={footerNode}
+    />
+  ) : (
+    <CampaignListPendingBoundary>
+      {filters}
+      <CampaignListResults>
+        {sortSummaryNode}
+        {tableNode}
+        {footerNode}
+      </CampaignListResults>
+    </CampaignListPendingBoundary>
+  )
+
   return (
     <CampaignPageShell>
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -396,37 +451,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
         </Button>
       </header>
 
-      <CampaignListPendingBoundary>
-        <LeadershipFilters state={state} municipalityLabelsById={municipalityLabelsById} />
-
-        <CampaignListResults>
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {sortSummary}
-          </p>
-          {/* One shared Drawer for every chip-cell sheet on coarse pointers
-              (miss #52 — never a Drawer root per opened cell). */}
-          <CampaignListSheetProvider>
-            <CampaignTable
-              caption={`${sortSummary}. Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações.`}
-              columns={columns}
-              columnVisibility={columnVisibility}
-              rows={rows}
-              rowKey={(row) => row.id}
-              empty={<LeadershipListEmptyState state={state} />}
-            />
-          </CampaignListSheetProvider>
-          {rows.length ? (
-            <CampaignListFooter
-              totalDocs={totalDocs}
-              singular="liderança"
-              plural="lideranças"
-              page={state.page}
-              totalPages={totalPages}
-              hrefForPage={(page) => buildLeadershipListHref(state, page)}
-            />
-          ) : null}
-        </CampaignListResults>
-      </CampaignListPendingBoundary>
+      {main}
     </CampaignPageShell>
   )
 }

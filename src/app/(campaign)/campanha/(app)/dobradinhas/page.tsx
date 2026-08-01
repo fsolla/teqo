@@ -21,6 +21,7 @@ import {
   type RelationCellOption,
 } from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
+import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { StateDeputyFilters } from '@/components/campaign/stateDeputy/StateDeputyFilters'
 import { StateDeputySortableHead } from '@/components/campaign/stateDeputy/StateDeputySortableHead'
@@ -35,6 +36,7 @@ import {
 } from '@/components/ui/Empty'
 import { resolveVisibleColumns } from '@/lib/campaignColumnVisibility'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
+import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { cn } from '@/lib/utils'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
@@ -221,6 +223,63 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
     administeredIds ? new Set(administeredIds) : undefined,
   )
 
+  const filters = (
+    <StateDeputyFilters
+      state={state}
+      partyOptions={partyFilterOptions}
+      hasNoParty={filterFacets.hasNoParty}
+    />
+  )
+
+  const sortSummaryNode = (
+    <p className="text-sm text-muted-foreground" aria-live="polite">
+      {sortSummary}
+    </p>
+  )
+
+  const tableNode = (
+    <CampaignListSheetProvider>
+      <CampaignTable
+        caption={`${sortSummary}. Deputados estaduais com quem a campanha dobra.`}
+        columns={columns}
+        columnVisibility={columnVisibility}
+        rows={rows}
+        rowKey={(row) => row.id}
+        empty={<StateDeputyListEmptyState state={state} />}
+      />
+    </CampaignListSheetProvider>
+  )
+
+  const footerNode = rows.length ? (
+    <CampaignListFooter
+      totalDocs={totalDocs}
+      singular="dobradinha"
+      plural="dobradinhas"
+      page={state.page}
+      totalPages={totalPages}
+      hrefForPage={(page) => buildStateDeputyListHref(state, page)}
+    />
+  ) : null
+
+  const main = resolveListUnifiedEnabled() ? (
+    <OpsListPage
+      overview={sortSummaryNode}
+      toolbar={filters}
+      table={tableNode}
+      empty={null}
+      footer={footerNode}
+    />
+  ) : (
+    <CampaignListPendingBoundary>
+      {filters}
+      <CampaignListResults>
+        {sortSummaryNode}
+        {tableNode}
+        {footerNode}
+      </CampaignListResults>
+    </CampaignListPendingBoundary>
+  )
+
   return (
     <CampaignPageShell>
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -239,41 +298,7 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
         </Button>
       </header>
 
-      <CampaignListPendingBoundary>
-        <StateDeputyFilters
-          state={state}
-          partyOptions={partyFilterOptions}
-          hasNoParty={filterFacets.hasNoParty}
-        />
-
-        <CampaignListResults>
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {sortSummary}
-          </p>
-          {/* One shared Drawer for every chip-cell sheet on coarse pointers
-              (miss #52 — never a Drawer root per opened cell). */}
-          <CampaignListSheetProvider>
-            <CampaignTable
-              caption={`${sortSummary}. Deputados estaduais com quem a campanha dobra.`}
-              columns={columns}
-              columnVisibility={columnVisibility}
-              rows={rows}
-              rowKey={(row) => row.id}
-              empty={<StateDeputyListEmptyState state={state} />}
-            />
-          </CampaignListSheetProvider>
-          {rows.length ? (
-            <CampaignListFooter
-              totalDocs={totalDocs}
-              singular="dobradinha"
-              plural="dobradinhas"
-              page={state.page}
-              totalPages={totalPages}
-              hrefForPage={(page) => buildStateDeputyListHref(state, page)}
-            />
-          ) : null}
-        </CampaignListResults>
-      </CampaignListPendingBoundary>
+      {main}
     </CampaignPageShell>
   )
 }
