@@ -9,10 +9,7 @@
 import { appendFileSync } from 'node:fs'
 
 import { dieWithLabel } from './lib/cli.mjs'
-import {
-  DEPLOY_COOLDOWN_MS,
-  evaluateDeployCooldown,
-} from './lib/vercel-deploy-cooldown.mjs'
+import { DEPLOY_COOLDOWN_MS, evaluateDeployCooldown } from './lib/vercel-deploy-cooldown.mjs'
 
 const die = dieWithLabel('vercel-deploy-cooldown')
 
