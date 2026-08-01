@@ -103,9 +103,7 @@ export const getOpsEstimateOfflineExecutor = async (): Promise<OfflineExecutor> 
   return initPromise
 }
 
-export const enqueueEstimateVotes = async (
-  input: EnqueueEstimateVotesInput,
-): Promise<void> => {
+export const enqueueEstimateVotes = async (input: EnqueueEstimateVotesInput): Promise<void> => {
   const executor = await getOpsEstimateOfflineExecutor()
 
   const run = executor.createOfflineAction<EnqueueEstimateVotesInput>({

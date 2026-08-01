@@ -8,11 +8,7 @@ import {
 import { resolveOpsHybridEnabled } from '@/components/campaign/opsSync/opsHybridEnabled'
 import type { OfflineTransaction } from '@tanstack/offline-transactions'
 
-const tx = (
-  id: string,
-  pledgeId: number,
-  createdAtMs: number,
-): OfflineTransaction =>
+const tx = (id: string, pledgeId: number, createdAtMs: number): OfflineTransaction =>
   ({
     id,
     mutationFnName: 'estimateVotes',

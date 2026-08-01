@@ -27,9 +27,7 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
-import {
-  OPS_ESTIMATE_CONFLICT_MESSAGE,
-} from '@/lib/schemas/votePledge'
+import { OPS_ESTIMATE_CONFLICT_MESSAGE } from '@/lib/schemas/votePledge'
 import {
   toVoteEstimateScenarioViewModel,
   type VoteEstimateScenarioViewModel,
@@ -241,9 +239,7 @@ const HybridPledgeEstimateForm = ({
             },
             (error: unknown) => {
               setFormError(
-                error instanceof Error
-                  ? error.message
-                  : 'Não foi possível reenviar a estimativa.',
+                error instanceof Error ? error.message : 'Não foi possível reenviar a estimativa.',
               )
             },
           )
@@ -294,9 +290,7 @@ const HybridPledgeEstimateForm = ({
       (error: unknown) => {
         setIsSubmitting(false)
         setFormError(
-          error instanceof Error
-            ? error.message
-            : 'Não foi possível enfileirar a estimativa.',
+          error instanceof Error ? error.message : 'Não foi possível enfileirar a estimativa.',
         )
       },
     )
