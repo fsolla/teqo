@@ -8,9 +8,10 @@
  */
 import { createHash } from 'node:crypto'
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 
-import { config as loadEnv } from 'dotenv'
+const require = createRequire(import.meta.url)
 
 /** Labelled `die` factory: `dieWithLabel('seed:tse')` → the script's `die`. */
 export const dieWithLabel = (label) => (message) => {
@@ -22,6 +23,7 @@ export const sha256Hex = (buffer) => createHash('sha256').update(buffer).digest(
 
 /** The dotenv preamble every DB-touching script needs (.env.local wins over .env). */
 export const loadCliEnv = () => {
+  const { config: loadEnv } = require('dotenv')
   loadEnv({ path: '.env.local' })
   loadEnv({ path: '.env' })
 }
