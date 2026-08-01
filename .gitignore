@@ -11,6 +11,12 @@
 
 # testing
 /coverage
+/playwright-report/
+/test-results/
+/.playwright-cli/
+
+# Aider (local agent history + tag cache)
+.aider*
 
 # next.js
 /.next/
