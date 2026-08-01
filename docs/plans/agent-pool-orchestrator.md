@@ -215,15 +215,17 @@ Parâmetros (só relevantes ao backoff de retry de tick): `spawnRetryBackoff = p
 
 - Fonte: frontmatter `model:` da Issue (escrito por `agent:register --model`, tabela de slugs
   em `.cursor/skills/model-selection/SKILL.md`).
-- Spawn: `model: { id: <slug> }` no body do `POST /v1/agents`. A API valida contra
-  `GET /v1/models` (ids + aliases + params, ex.: `composer-2` com param `fast=true`).
+- Spawn: `model: { id: <slug>, params: [...] }` no body do `POST /v1/agents`. A API valida contra
+  `GET /v1/models` (ids + aliases + params, ex.: `composer-2.5` com param `fast`).
 - **Namespace:** os slugs do repo (Task tool) e os da Cloud API são tabelas irmãs, não idênticas.
   O spike (Fase 0) despeja `GET /v1/models` e codifica o mapeamento explícito em
   `scripts/lib/agent-pool-models.mjs`: `Map<repoSlug, cloudModelId>` com entradas conhecidas
-  (`composer-2.5` → id composer 2.5 da API,
-  `cursor-grok-4.5-{low,medium,high}` → `grok-4.5` + `effort`,
+  (`composer-2.5` → id composer 2.5 da API + **`fast=false`**,
+  `cursor-grok-4.5-{low,medium,high}` → `grok-4.5` + `effort` + **`fast=false`**,
   `kimi-k3-low` → `kimi-k3` + `reasoning=low`; **sem** variantes `-fast`).
-- **Fallback:** `model:` ausente, desconhecido ou rejeitado pela API → **`composer-2.5`**
+  Omitir `fast` faz a API cair no default da variante (`fast=true` → usage `composer-2.5-fast`);
+  o resolver pina `fast=false` sempre que o modelo anuncia o param.
+- **Fallback:** `model:` ausente, desconhecido ou rejeitado pela API → **`composer-2.5` + `fast=false`**
   (pool "Cursor Models", custo incluído — regra 1 da model-selection). Warn no sumário do tick.
 - Validação: o tick consulta `GET /v1/models` uma vez por tick (cache em memória do processo)
   e nunca spawna com slug fora da lista — erro de validação não pode derrubar o tick.
@@ -320,8 +322,8 @@ ou deixar bloqueada.
 - Derivação de ativos (fixtures de Issues + runs): occupied / freed-by-done / waiting-auto-merge /
   failure-path / circuit breaker (2ª falha → blocked permanente).
 - Cálculo de `gap` e cap hard (nunca spawna além de `maxSlots` mesmo com fila longa).
-- Model mapping: slug válido → id Cloud (+ effort/reasoning); `-fast` **proibido** (strip + warn);
-  ausente/inválido → `composer-2.5`; slug fora do `GET /v1/models` → fallback + warn.
+- Model mapping: slug válido → id Cloud (+ effort/reasoning) **+ `fast=false` quando o param existe**; `-fast` **proibido** (strip + warn + pin `fast=false`);
+  ausente/inválido → `composer-2.5` + `fast=false`; slug fora do `GET /v1/models` → fallback + warn.
 - Prompt: contém `#N`, instrução de não-claim, `gh pr create --base stage`, `Closes #N`.
 - State: parse/serialize de variables; defaults.
 

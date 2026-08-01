@@ -44,7 +44,7 @@ Depois de escolher Grok, **obrigatório** pickar um effort. Escreva o slug compl
 | **Medium** | `cursor-grok-4.5-medium` | Cursor Grok 4.5 · Effort Medium | **Discovery / análise moderada**, critique/polish visual, harvest de padrões → guardrail, glossário a partir de evidência, chores de processo com trade-offs claros. Default quando Grok cabe e **não** é multi-domínio de alto risco. |
 | **High** | `cursor-grok-4.5-high` | Cursor Grok 4.5 · Effort High | **Multi-domínio ou design não óbvio** com custo de falha alto: fundações (auth/sessão/schema), Consent/LGPD, plan half de bipartição, arquitetura nova. |
 
-**Proibido:** sufixo `-fast` em qualquer slug (`composer-2.5-fast`, `cursor-grok-4.5-high-fast`, …). O pool **não** envia `fast=true`; se a Issue trouxer `-fast`, o resolver remove o sufixo, resolve a base e emite warn.
+**Proibido:** sufixo `-fast` em qualquer slug (`composer-2.5-fast`, `cursor-grok-4.5-high-fast`, …). O pool **pina `fast=false`** em todo spawn cuja família Cloud exponha o param `fast` (Composer, Grok, …). Só omitir o param **não basta**: a API Create-Agent resolve o default da variante, que hoje é `fast=true` (`composer-2.5-fast` no usage dashboard). Se a Issue trouxer `-fast`, o resolver remove o sufixo, resolve a base + `fast=false` e emite warn.
 
 **Heurística anti-viés:** se você ia marcar High por hábito, pergunte “a falha é cara **e** o desenho é aberto?”. Se só uma das duas → Medium (ou Low). Se nenhuma → Composer.
 
@@ -52,11 +52,11 @@ Depois de escolher Grok, **obrigatório** pickar um effort. Escreva o slug compl
 
 | Slug na Issue | API `model.id` | params |
 | ------------- | -------------- | ------ |
-| `cursor-grok-4.5-low` | `grok-4.5` | `effort=low` |
-| `cursor-grok-4.5-medium` | `grok-4.5` | `effort=medium` |
-| `cursor-grok-4.5-high` | `grok-4.5` | `effort=high` |
+| `cursor-grok-4.5-low` | `grok-4.5` | `effort=low`, `fast=false` |
+| `cursor-grok-4.5-medium` | `grok-4.5` | `effort=medium`, `fast=false` |
+| `cursor-grok-4.5-high` | `grok-4.5` | `effort=high`, `fast=false` |
 | `kimi-k3-low` | `kimi-k3` | `reasoning=low` |
-| `composer-2.5` | `composer-2.5` | — |
+| `composer-2.5` | `composer-2.5` | `fast=false` |
 
 ## Issues muito complexas (bipartir)
 
@@ -81,7 +81,7 @@ Não despachar Kimi K3 Low sem plano fechado na Issue de plan.
 - **Frontmatter da Issue / pool:** use exatamente os slugs da tabela (incl. `-low`/`-medium`/`-high`).
 - **Subagentes (`Task.model`):** prefira o slug da Issue quando o enum do produto listar (`composer-2.5`, `cursor-grok-4.5-high`, `kimi-k3-low`, …). **Nunca** escolha variantes `-fast` do enum. Se a Issue é `-low`/`-medium` e o enum não tem o slug, use `inherit` (sessão já no effort certo) ou `cursor-grok-4.5-high` só se a subtarefa for a parte difícil — **não** “promova” a Issue inteira para High.
 - **Sessão principal:** o agente não troca o próprio modelo. Se o atual não for o da tabela, diga em uma linha e siga.
-- **Pool:** `POOL_DEFAULT_MODEL_SLUG` = `composer-2.5`; `resolvePoolModel` mapeia os slugs canônicos → API.
+- **Pool:** `POOL_DEFAULT_MODEL_SLUG` = `composer-2.5`; `resolvePoolModel` mapeia os slugs canônicos → API e **sempre** inclui `fast=false` quando o modelo Cloud aceita o param (senão o dashboard fatura `*-fast`).
 
 ## Gates por fluxo
 
