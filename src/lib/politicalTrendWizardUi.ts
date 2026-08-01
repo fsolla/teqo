@@ -41,6 +41,28 @@ export const selectablePoliticalTrendStatuses = (
     ? politicalTrendStatuses.filter((status) => status !== currentStatus)
     : [...politicalTrendStatuses]
 
+/** Where the change-trend wizard should land when `tendencia=` is present. */
+export type WizardTrendNoteDestination = 'note' | 'choice' | 'home'
+
+/**
+ * `home` when the query trend already matches the persisted status — covers
+ * post-save RSC refresh (B97) and stale deep-links; never loops back to choice.
+ */
+export const resolveWizardTrendNoteDestination = (
+  trendStatus: PoliticalTrendStatusValue,
+  currentStatus: PoliticalTrendStatusValue | null,
+): WizardTrendNoteDestination => {
+  if (trendStatus === currentStatus) {
+    return 'home'
+  }
+
+  if (!selectablePoliticalTrendStatuses(currentStatus).includes(trendStatus)) {
+    return 'choice'
+  }
+
+  return 'note'
+}
+
 export const resolveWizardTrendSkip = (): WizardTrendSkipAction => ({
   label: WIZARD_TREND_SKIP_LABEL,
   href: CAMPAIGN_HOME,
