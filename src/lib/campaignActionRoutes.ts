@@ -65,8 +65,11 @@ export const WIZARD_VOTE_FROM_QUERY_KEY = 'voteFrom' as const
 
 export const WIZARD_VOTE_TO_QUERY_KEY = 'voteTo' as const
 
+export const WIZARD_LEADERSHIP_ID_QUERY_KEY = 'leadershipId' as const
+
 export type WizardActionHrefOptions = {
   entryAction?: CampaignWizardActionId
+  leadershipId?: number
 }
 
 export const wizardActionHref = (
@@ -75,12 +78,18 @@ export const wizardActionHref = (
   options?: WizardActionHrefOptions,
 ): string => {
   const base = `${CAMPAIGN_ACTIONS_HOME}/${actionSlug}`
-  if (!municipalitySlug) {
+  if (!municipalitySlug && !options?.leadershipId && !options?.entryAction) {
     return base
   }
-  const params = new URLSearchParams({ [WIZARD_MUNICIPIO_QUERY_KEY]: municipalitySlug })
+  const params = new URLSearchParams()
+  if (municipalitySlug) {
+    params.set(WIZARD_MUNICIPIO_QUERY_KEY, municipalitySlug)
+  }
   if (options?.entryAction) {
     params.set(WIZARD_ENTRY_ACTION_QUERY_KEY, options.entryAction)
+  }
+  if (options?.leadershipId !== undefined) {
+    params.set(WIZARD_LEADERSHIP_ID_QUERY_KEY, String(options.leadershipId))
   }
   return `${base}?${params.toString()}`
 }
@@ -91,6 +100,17 @@ export const parseWizardMunicipioParam = (
   const raw = Array.isArray(value) ? value[0] : value
   const trimmed = raw?.trim()
   return trimmed ? trimmed : undefined
+}
+
+export const parseWizardLeadershipIdParam = (
+  value: string | string[] | undefined,
+): number | undefined => {
+  const raw = Array.isArray(value) ? value[0] : value
+  const trimmed = raw?.trim()
+  if (!trimmed || !/^[1-9]\d*$/.test(trimmed)) {
+    return undefined
+  }
+  return Number(trimmed)
 }
 
 export const hasWizardScenarioParam = (value: string | string[] | undefined): boolean =>

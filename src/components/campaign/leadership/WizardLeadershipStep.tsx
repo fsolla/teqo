@@ -2,7 +2,7 @@
 
 import { InfoIcon, PlusIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useCallback, useState, useTransition } from 'react'
+import { useCallback, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
@@ -48,6 +48,7 @@ type WizardLeadershipStepProps = {
   municipalitySlug: string
   entryAction?: CampaignWizardActionId
   initialTiles: WizardLeadershipTileViewModel[]
+  initialLeadershipId?: number
 }
 
 type WizardLeadershipMode =
@@ -67,10 +68,18 @@ export const WizardLeadershipStep = ({
   municipalitySlug,
   entryAction,
   initialTiles,
+  initialLeadershipId,
 }: WizardLeadershipStepProps) => {
   const router = useRouter()
   const [isContinuing, startContinueTransition] = useTransition()
-  const [mode, setMode] = useState<WizardLeadershipMode>({ kind: 'grid' })
+  const initialMode = useMemo((): WizardLeadershipMode => {
+    if (initialLeadershipId === undefined) {
+      return { kind: 'grid' }
+    }
+    const leadership = initialTiles.find((tile) => tile.id === initialLeadershipId)
+    return leadership ? { kind: 'form', leadership } : { kind: 'grid' }
+  }, [initialLeadershipId, initialTiles])
+  const [mode, setMode] = useState<WizardLeadershipMode>(initialMode)
   const [dirty, setDirty] = useState(false)
   const [infoTile, setInfoTile] = useState<WizardLeadershipTileViewModel | null>(null)
 

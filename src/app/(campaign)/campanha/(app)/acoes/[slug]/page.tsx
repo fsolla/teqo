@@ -13,6 +13,7 @@ import {
   hasWizardScenarioParam,
   isCampaignWizardActionSlug,
   parseWizardEntryActionParam,
+  parseWizardLeadershipIdParam,
   parseWizardMunicipioParam,
   resolveWizardSignalTypeParam,
   resolveWizardTrendStatusParam,
@@ -126,6 +127,9 @@ export default async function CampaignActionWizardPage({
     const entryAction = parseWizardEntryActionParam(
       resolvedSearchParams[WIZARD_ENTRY_ACTION_QUERY_KEY],
     )
+    const initialLeadershipId = parseWizardLeadershipIdParam(
+      resolvedSearchParams.leadershipId,
+    )
     const tiles = await loadWizardLeadershipTiles(payload, user, municipality.id)
 
     return (
@@ -136,6 +140,7 @@ export default async function CampaignActionWizardPage({
         municipalitySlug={municipality.slug}
         entryAction={entryAction}
         initialTiles={tiles}
+        initialLeadershipId={initialLeadershipId}
       />
     )
   }

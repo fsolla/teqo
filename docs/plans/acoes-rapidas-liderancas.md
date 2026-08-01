@@ -1,7 +1,7 @@
 # Ações rápidas — Lideranças (lista + detalhe)
 
-Status: rascunho
-Atualizado em: 2026-07-30
+Status: entregue (B82 — 2026-08-01)
+Atualizado em: 2026-08-01
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B82**)
 Impeccable: B — catálogo drawer B79 em `/liderancas` e `/liderancas/[id]`
 Appetite: ~0,5 dia eng; prefills A4 + município(s) da liderança; sem migration
@@ -38,7 +38,15 @@ Se B70 ainda não expuser query de liderança, o agente deve (1) propor o param 
 
 ## Questões em aberto
 
-- **Query `?lideranca=` no wizard A4?** **Opções:** A) sim no B70/B82 | B) só município. **Recomendação:** **A** quando B70 estiver no ar — senão degradar.
+- **Query `?lideranca=` no wizard A4?** **Resolvido (as-built):** param **`leadershipId`** (inglês) em `wizardActionHref` + `WizardLeadershipStep` abre o form quando o id bate com um tile do município; sem município único, `update-leadership` degrada para `/campanha/liderancas/[id]`.
+
+## As-built (2026-08-01)
+
+- Registry: `src/lib/campaignQuickActionLeadership.ts` — lista = só `update-leadership`; detalhe = cinco wizards com prefill de município quando N=1.
+- Contexto: `CampaignQuickActionContextSync` na ficha `[id]` (slug único via portfolio index).
+- Wizard: `WIZARD_LEADERSHIP_ID_QUERY_KEY` + auto-abertura do form no B70.
+
+## Questões em aberto (histórico)
 
 ## Abordagem proposta
 
