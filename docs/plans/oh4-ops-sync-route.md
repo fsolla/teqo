@@ -1,6 +1,6 @@
 # OH4 — Route `GET /campanha/api/ops-sync` FULL + scoped + int access
 
-Status: rascunho
+Status: em execução
 Atualizado em: 2026-08-01
 Issue: #166
 Priority: P1
@@ -10,13 +10,21 @@ Appetite: ~1,5–2 dias eng
 Depends: OH3
 Responsável: —
 
+## Freshness audit (2026-08-01)
+
+- OH3 `#165` `done`/`in-prod`; truncamento = `OPS_MUNICIPALITY_UPDATE_LIMIT_PER_MUNICIPALITY` (**50**) em [`src/lib/campaignOps/opsSnapshotPolicy.ts`](../../src/lib/campaignOps/opsSnapshotPolicy.ts).
+- DTOs OH2 vivem em [`src/lib/campaignOps/`](../../src/lib/campaignOps/) (client-safe) — o builder é `server-only` em `src/utilities/campaignOps/` (não misturar).
+- Escopo advisor: `overrideAccess: false` + access modules (já usam `resolveActorScopedRead`); não re-spellar where no builder.
+- Exceção `depth: 1` só em `leadership` (DTO embute `OpsLeadershipContact`); demais collections `depth: 0`.
+- Benchmark OH3 ([`scripts/benchmark-ops-snapshot.mjs`](../../scripts/benchmark-ops-snapshot.mjs)) é a referência de selects/mappers — extrair a lógica canônica para o builder.
+
 ## Premissas
 
 1. Full-only: sem `?since=`, sem delta, sem gzip obrigatório (decisão de compressão fica para OH11 se o benchmark mandar).
-2. Truncamento de `municipality_update` usa o número travado em OH3.
+2. Truncamento de `municipality_update` usa o número travado em OH3 (`50`/município).
 3. Leader recebe 403 (sem mirror de ops).
 
-→ Corrija agora ou sigo com estas.
+→ Confirmadas.
 
 ## Objetivos
 
