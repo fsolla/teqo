@@ -21,6 +21,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { wizardActionHref } from '@/lib/campaignActionRoutes'
+import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
   WIZARD_LEADERSHIP_ADD_TILE_LABEL,
@@ -103,11 +104,12 @@ export const WizardLeadershipStep = ({
   ) : undefined
 
   const handleSaved = useCallback(() => {
+    recordLastActedMunicipality(municipalitySlug)
     setDirty(true)
     setMode({ kind: 'grid' })
     router.refresh()
     toast.success(WIZARD_LEADERSHIP_SAVED_TOAST)
-  }, [router])
+  }, [municipalitySlug, router])
 
   const handleContinue = () => {
     startContinueTransition(() => {

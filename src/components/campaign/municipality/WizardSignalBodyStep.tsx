@@ -13,6 +13,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { wizardSignalHref } from '@/lib/campaignActionRoutes'
+import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
@@ -49,6 +50,7 @@ export const WizardSignalBodyStep = ({
   const stepTitle = `${WIZARD_SIGNAL_BODY_STEP_TITLE_PREFIX}: ${municipalitySignalTypeLabels[signalType]}`
 
   useCampaignFormSuccessToast(state, () => {
+    recordLastActedMunicipality(municipalitySlug)
     router.push(CAMPAIGN_HOME)
   })
 

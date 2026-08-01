@@ -30,6 +30,7 @@ describe('loadWizardMunicipalitySuggestions (B92)', () => {
     expect(result.resultKind).toBe('wizard-suggest')
     expect(result.municipalities.length).toBeGreaterThan(0)
     expect(result.municipalities.length).toBeLessThanOrEqual(8)
+    expect(result.scopeMunicipalities?.length).toBeGreaterThan(0)
   })
 
   it('scopes advisor suggestions to administered municipalities', async () => {

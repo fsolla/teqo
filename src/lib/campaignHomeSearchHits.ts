@@ -120,4 +120,11 @@ export type WizardMunicipalitySearchSuccessResponse = {
   status: 'success'
   resultKind?: 'wizard-suggest'
   municipalities: HomeSearchMunicipalityHit[]
+  /** Present on `wizard-municipality-suggest` for client continuity merge (B93). */
+  scopeMunicipalities?: {
+    slug: string
+    name: string
+    region: string
+    priority: 'alta' | 'normal' | null
+  }[]
 }

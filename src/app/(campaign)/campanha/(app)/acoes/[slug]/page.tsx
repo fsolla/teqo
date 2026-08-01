@@ -119,6 +119,7 @@ export default async function CampaignActionWizardPage({
         actionSlug={slug}
         municipalityId={municipality.id}
         municipalityName={municipality.name}
+        municipalitySlug={municipality.slug}
         initialExpectedVotes={toVoteEstimateScenarioViewModel(municipality.expectedVotes)}
       />
     )

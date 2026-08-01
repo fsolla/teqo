@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import { wizardActionHref } from '@/lib/campaignActionRoutes'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
+import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
   WIZARD_VOTES_FINAL_CTA_LABEL,
@@ -37,6 +38,7 @@ type WizardExpectedVotesStepProps = {
   actionSlug: string
   municipalityId: number
   municipalityName: string
+  municipalitySlug: string
   initialExpectedVotes: VoteEstimateScenarioViewModel
 }
 
@@ -44,6 +46,7 @@ export const WizardExpectedVotesStep = ({
   actionSlug,
   municipalityId,
   municipalityName,
+  municipalitySlug,
   initialExpectedVotes,
 }: WizardExpectedVotesStepProps) => {
   const [isPending, startTransition] = useTransition()
@@ -99,6 +102,7 @@ export const WizardExpectedVotesStep = ({
       }
 
       setEstimates(payload.savedExpectedVotes)
+      recordLastActedMunicipality(municipalitySlug)
       setPhase('saved')
     })
   }
