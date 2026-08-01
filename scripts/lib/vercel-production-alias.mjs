@@ -184,6 +184,83 @@ const promoteProductionDeployment = async ({
 /**
  * @param {{
  *   token: string
+ *   projectId: string
+ *   teamId: string
+ *   fetchImpl?: typeof fetch
+ * }} options
+ * @returns {Promise<string[]>}
+ */
+const fetchProjectDomains = async ({ token, projectId, teamId, fetchImpl = fetch }) => {
+  const params = new URLSearchParams({ teamId })
+  const response = await fetchImpl(
+    `${VERCEL_API_BASE}/v9/projects/${projectId}/domains?${params}`,
+    {
+      headers: { authorization: `Bearer ${token}` },
+    },
+  )
+  const bodyText = await response.text()
+  let body
+  try {
+    body = bodyText ? JSON.parse(bodyText) : {}
+  } catch {
+    throw new Error(`Vercel project domains API returned non-JSON (${response.status})`)
+  }
+  if (!response.ok) {
+    const message =
+      typeof body?.error?.message === 'string'
+        ? body.error.message
+        : bodyText || `HTTP ${response.status}`
+    throw new Error(`Vercel project domains API ${response.status}: ${message}`)
+  }
+  const rows = Array.isArray(body.domains) ? body.domains : Array.isArray(body) ? body : []
+  return rows
+    .map((row) => (row && typeof row.name === 'string' ? normalizeHostname(row.name) : ''))
+    .filter(Boolean)
+}
+
+/**
+ * Explicit alias assignment — required when custom domains don't ride Git Integration
+ * auto-assign (CLI / prebuilt deploys).
+ * @param {{
+ *   token: string
+ *   teamId: string
+ *   deploymentId: string
+ *   alias: string
+ *   fetchImpl?: typeof fetch
+ * }} options
+ */
+const assignDeploymentAlias = async ({ token, teamId, deploymentId, alias, fetchImpl = fetch }) => {
+  const params = new URLSearchParams({ teamId })
+  const response = await fetchImpl(
+    `${VERCEL_API_BASE}/v2/deployments/${encodeURIComponent(deploymentId)}/aliases?${params}`,
+    {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ alias }),
+    },
+  )
+  const bodyText = await response.text()
+  let body
+  try {
+    body = bodyText ? JSON.parse(bodyText) : {}
+  } catch {
+    body = { raw: bodyText }
+  }
+  // 409 = already assigned to this deployment — success for our purposes.
+  if (response.ok || response.status === 409) return body
+  const message =
+    typeof body?.error?.message === 'string'
+      ? body.error.message
+      : bodyText || `HTTP ${response.status}`
+  throw new Error(`Vercel alias API ${response.status}: ${message}`)
+}
+
+/**
+ * @param {{
+ *   token: string
  *   teamId: string
  *   deploymentIdOrUrl: string
  *   fetchImpl?: typeof fetch
@@ -311,6 +388,18 @@ export const ensureProductionCustomDomain = async ({
     steps.push(`autoAssignCustomDomains=${String(autoAssign)}`)
   }
 
+  const projectDomains = await fetchProjectDomains({ token, projectId, teamId, fetchImpl })
+  steps.push(
+    projectDomains.length > 0
+      ? `project domains: ${projectDomains.join(', ')}`
+      : 'project domains: (none)',
+  )
+  if (!projectDomains.includes(normalizeHostname(expectedHost))) {
+    throw new Error(
+      `${expectedHost} is not attached to this Vercel project. Add it under Project → Settings → Domains, then re-run.`,
+    )
+  }
+
   const deployment = await fetchDeploymentAliases({
     token,
     teamId,
@@ -323,22 +412,37 @@ export const ensureProductionCustomDomain = async ({
     return {
       alreadyAssigned: true,
       promoted: false,
+      aliased: false,
       autoAssignWasFalse: autoAssign === false,
       deployment,
       steps,
     }
   }
 
-  steps.push(`promoting ${deployment.id} so ${expectedHost} points at this deployment`)
-  await promoteProductionDeployment({
+  // Best-effort promote (marks Current). CLI deploys often still need an explicit alias
+  // for custom hostnames that only auto-apply via Git Integration.
+  try {
+    steps.push(`promoting ${deployment.id}`)
+    await promoteProductionDeployment({
+      token,
+      projectId,
+      teamId,
+      deploymentId: deployment.id,
+      fetchImpl,
+    })
+  } catch (error) {
+    steps.push(`promote skipped: ${error instanceof Error ? error.message : String(error)}`)
+  }
+
+  steps.push(`assigning alias ${expectedHost} → ${deployment.id}`)
+  await assignDeploymentAlias({
     token,
-    projectId,
     teamId,
     deploymentId: deployment.id,
+    alias: normalizeHostname(expectedHost),
     fetchImpl,
   })
 
-  // Promote is async on some accounts — poll briefly for the alias.
   let verified = deployment
   for (let attempt = 0; attempt < 8; attempt += 1) {
     verified = await fetchDeploymentAliases({
@@ -353,7 +457,7 @@ export const ensureProductionCustomDomain = async ({
 
   if (!aliasesIncludeHost(verified.aliases, expectedHost)) {
     throw new Error(
-      `After promote, ${expectedHost} is still not on deployment ${deployment.id}. Aliases: ${JSON.stringify(verified.aliases)}`,
+      `After alias assign, ${expectedHost} is still not on deployment ${deployment.id}. Aliases: ${JSON.stringify(verified.aliases)}`,
     )
   }
 
@@ -361,6 +465,7 @@ export const ensureProductionCustomDomain = async ({
   return {
     alreadyAssigned: false,
     promoted: true,
+    aliased: true,
     autoAssignWasFalse: autoAssign === false,
     deployment: verified,
     steps,
