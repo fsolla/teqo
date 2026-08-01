@@ -14,6 +14,7 @@ import { AllocationDecision } from './collections/AllocationDecision'
 import { CampaignDemand } from './collections/CampaignDemand'
 import { CampaignInvite } from './collections/CampaignInvite'
 import { CampaignUser } from './collections/CampaignUser'
+import { CampaignVoteSummarySnapshot } from './collections/CampaignVoteSummarySnapshot'
 import { CampaignWebAuthnCredential } from './collections/CampaignWebAuthnCredential'
 import { Consent } from './collections/Consent'
 import { Contact } from './collections/Contact'
@@ -92,6 +93,7 @@ export default buildConfig({
     Notification,
     PushSubscription,
     CampaignInvite,
+    CampaignVoteSummarySnapshot,
     Municipality,
     Leadership,
     Organization,

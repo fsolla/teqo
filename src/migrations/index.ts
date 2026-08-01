@@ -37,6 +37,7 @@ import * as migration_20260728_041958_add_campaign_webauthn_credentials from './
 import * as migration_20260730_010601_simplify_municipality_signal_fields from './20260730_010601_simplify_municipality_signal_fields';
 import * as migration_20260730_043306_simplify_leadership_fields from './20260730_043306_simplify_leadership_fields';
 import * as migration_20260731_014319_add_campaign_notifications from './20260731_014319_add_campaign_notifications';
+import * as migration_20260801_062558_add_campaign_vote_summary_snapshot from './20260801_062558_add_campaign_vote_summary_snapshot';
 
 export const migrations = [
   {
@@ -232,6 +233,11 @@ export const migrations = [
   {
     up: migration_20260731_014319_add_campaign_notifications.up,
     down: migration_20260731_014319_add_campaign_notifications.down,
-    name: '20260731_014319_add_campaign_notifications'
+    name: '20260731_014319_add_campaign_notifications',
+  },
+  {
+    up: migration_20260801_062558_add_campaign_vote_summary_snapshot.up,
+    down: migration_20260801_062558_add_campaign_vote_summary_snapshot.down,
+    name: '20260801_062558_add_campaign_vote_summary_snapshot'
   },
 ];

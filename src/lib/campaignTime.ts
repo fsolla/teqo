@@ -124,6 +124,25 @@ const bahiaDateDisplayFormatter = new Intl.DateTimeFormat('pt-BR', {
 /** Formats an instant as `dd/mm` in Bahia civil time — the day the staff names things by. */
 export const formatBahiaDayLabel = (date: Date): string => bahiaDateDisplayFormatter.format(date)
 
+/** UTC midnight ISO for a Bahia civil date anchor (`aaaa-mm-dd`). */
+export const civilDateToUtcMidnightIso = (civilDate: string): string => `${civilDate}T00:00:00.000Z`
+
+/** Calendar-day difference between two Bahia civil dates (`later − earlier`). */
+export const civilDateDaysBetween = (earlier: string, later: string): number => {
+  const [y1, m1, d1] = earlier.split('-').map(Number)
+  const [y2, m2, d2] = later.split('-').map(Number)
+  const msPerDay = 86_400_000
+  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / msPerDay)
+}
+
+/** Subtract whole civil days from a Bahia civil date anchor (`aaaa-mm-dd`). */
+export const subtractBahiaCivilDays = (civilDate: string, days: number): string => {
+  const [year, month, day] = civilDate.split('-').map(Number)
+  const anchor = new Date(Date.UTC(year, month - 1, day))
+  anchor.setUTCDate(anchor.getUTCDate() - days)
+  return `${anchor.getUTCFullYear()}-${pad(anchor.getUTCMonth() + 1)}-${pad(anchor.getUTCDate())}`
+}
+
 /**
  * Latest of two ISO timestamps, ignoring nulls. String comparison is only
  * sound because every writer here produces fixed-width UTC — Payload's own

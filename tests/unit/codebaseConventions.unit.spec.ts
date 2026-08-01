@@ -377,6 +377,7 @@ describe('src/utilities top-level is pinned', () => {
     'campaignColumnVisibilityCookie.ts',
     'campaignConsent.ts',
     'campaignDashboardData.ts',
+    'campaignVoteSummarySnapshot.ts',
     'campaignDemandData.ts',
     'campaignEntityActions.ts',
     'campaignFormActionError.ts',
