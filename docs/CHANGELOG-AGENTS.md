@@ -5,6 +5,7 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 ---
 
 **Recently resolved (2026-08-01):** **CL6** (Issue #159) — territórios: paginação real + sort no loader (`selectTerritoryOverviewPage` / `loadTerritoryOverviewPage`), `page` no contrato URL, registry `sortModel: 'url'`, `/campanha/territorios` atrás de `LIST_UNIFIED` com paridade OFF. Plano: [`cl6-territorios-factory.md`](docs/plans/cl6-territorios-factory.md).
+**Recently resolved (2026-08-01):** **OH4** (Issue #166) — `GET /campanha/api/ops-sync` full snapshot: `buildOpsSnapshot` (`overrideAccess: false`, queries em paralelo, truncamento 50 updates/município), 401/403 staff gate, pins int advisor/leader. Plano: [`oh4-ops-sync-route.md`](docs/plans/oh4-ops-sync-route.md).
 
 **Recently resolved (2026-08-01):** **CL5** (Issue #160) — assessores no sistema de listas: `AdvisorsTable` → `CampaignTable` + picker (`assessores` em `CAMPAIGN_LIST_IDS`); `resolveAdvisorListUrl` (canonical + preserva `criar=1`); registry `columnListId`/`canonicalRedirect`; page atrás de `LIST_UNIFIED`/`OpsListPage`. Plano: [`cl5-assessores-factory.md`](docs/plans/cl5-assessores-factory.md).
 

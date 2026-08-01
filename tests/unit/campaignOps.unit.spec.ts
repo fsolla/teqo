@@ -59,6 +59,49 @@ describe('opsSnapshotPolicy', () => {
   })
 })
 
+describe('truncateMunicipalityUpdates', () => {
+  it('keeps the newest N updates per municipality (updatedAt desc)', async () => {
+    const { truncateMunicipalityUpdates } = await import('@/lib/campaignOps/opsSnapshotPolicy')
+    const updates = [
+      {
+        id: 1,
+        municipality: 10,
+        author: 1,
+        kind: 'nota' as const,
+        updatedAt: '2026-08-01T10:00:00.000Z',
+        createdAt: '2026-08-01T10:00:00.000Z',
+      },
+      {
+        id: 2,
+        municipality: 10,
+        author: 1,
+        kind: 'nota' as const,
+        updatedAt: '2026-08-01T12:00:00.000Z',
+        createdAt: '2026-08-01T12:00:00.000Z',
+      },
+      {
+        id: 3,
+        municipality: 10,
+        author: 1,
+        kind: 'nota' as const,
+        updatedAt: '2026-08-01T11:00:00.000Z',
+        createdAt: '2026-08-01T11:00:00.000Z',
+      },
+      {
+        id: 4,
+        municipality: 20,
+        author: 1,
+        kind: 'nota' as const,
+        updatedAt: '2026-08-01T09:00:00.000Z',
+        createdAt: '2026-08-01T09:00:00.000Z',
+      },
+    ]
+
+    const truncated = truncateMunicipalityUpdates(updates, 2)
+    expect(truncated.map((row) => row.id).sort()).toEqual([2, 3, 4])
+  })
+})
+
 describe('OPS_MIRROR_SCHEMA_VERSION', () => {
   it('is pinned at 1', () => {
     expect(OPS_MIRROR_SCHEMA_VERSION).toBe(1)
