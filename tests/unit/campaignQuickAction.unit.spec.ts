@@ -249,6 +249,12 @@ describe('campaignQuickActionRegistry', () => {
     ).toEqual([])
   })
 
+  it('returns leadership list catalog on /liderancas (B82)', () => {
+    const actions = resolveQuickActionsForPath('/campanha/liderancas', 'coordinator', {})
+    expect(actions).toHaveLength(1)
+    expect(actions[0]?.id).toBe('update-leadership')
+  })
+
   it('returns empty catalog for unregistered paths', () => {
     expect(resolveQuickActionsForPath('/campanha/apoiadores', 'coordinator', {})).toEqual([])
   })

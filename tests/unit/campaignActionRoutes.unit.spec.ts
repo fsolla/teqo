@@ -9,6 +9,7 @@ import {
   isCampaignWizardActionId,
   isCampaignWizardActionSlug,
   parseWizardEntryActionParam,
+  parseWizardLeadershipIdParam,
   parseWizardMunicipioParam,
   resolveWizardSignalTypeParam,
   resolveWizardTrendStatusParam,
@@ -44,6 +45,17 @@ describe('campaignActionRoutes', () => {
     expect(wizardActionHref('atualizar-lideranca', 'cairu', { entryAction: 'update-votes' })).toBe(
       `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu&entry=update-votes`,
     )
+    expect(wizardActionHref('atualizar-lideranca', 'cairu', { leadershipId: 42 })).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu&leadershipId=42`,
+    )
+  })
+
+  it('parses leadershipId search param', () => {
+    expect(parseWizardLeadershipIdParam('42')).toBe(42)
+    expect(parseWizardLeadershipIdParam(['99'])).toBe(99)
+    expect(parseWizardLeadershipIdParam(undefined)).toBeUndefined()
+    expect(parseWizardLeadershipIdParam('0')).toBeUndefined()
+    expect(parseWizardLeadershipIdParam('abc')).toBeUndefined()
   })
 
   it('detects legacy scenario search param', () => {

@@ -8,9 +8,11 @@ import { LeadershipInviteButtons } from '@/components/campaign/invite/Leadership
 import { LeadershipInternalForm } from '@/components/campaign/leadership/LeadershipInternalForm'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { CampaignQuickActionContextSync } from '@/components/campaign/shell/CampaignQuickActionContextSync'
 import { StateDeputyChips } from '@/components/campaign/stateDeputy/StateDeputyChips'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { resolvedPortfolioEntriesById } from '@/lib/municipalityPortfolio'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadMunicipalityOptions,
@@ -18,6 +20,7 @@ import {
   loadStateDeputyOptions,
 } from '@/utilities/campaignRelationOptions'
 import { loadLeadershipDetail } from '@/utilities/leadership/leadershipData'
+import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
 import { updateLeadershipInternalFormAction } from './formActions'
 
 type LeadershipDetailPageProps = {
@@ -36,14 +39,26 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
   const leadership = await loadLeadershipDetail(payload, user, Number(id))
   if (!leadership) notFound()
 
-  const [municipalityOptions, organizationOptions, stateDeputyOptions] = await Promise.all([
-    loadMunicipalityOptions(payload, user),
-    loadOrganizationOptions(payload, user),
-    loadStateDeputyOptions(payload, user),
-  ])
+  const [municipalityOptions, organizationOptions, stateDeputyOptions, municipalityIndex] =
+    await Promise.all([
+      loadMunicipalityOptions(payload, user),
+      loadOrganizationOptions(payload, user),
+      loadStateDeputyOptions(payload, user),
+      loadMunicipalityPortfolioIndex(),
+    ])
+
+  const municipalityById = resolvedPortfolioEntriesById(municipalityIndex)
+  const municipalitySlugs = leadership.municipalityIDs
+    .map((id) => municipalityById.get(id)?.slug)
+    .filter((slug): slug is string => slug !== undefined)
+  const singleMunicipalitySlug = municipalitySlugs.length === 1 ? municipalitySlugs[0] : undefined
 
   return (
     <CampaignPageShell>
+      <CampaignQuickActionContextSync
+        leadershipId={leadership.id}
+        municipalitySlug={singleMunicipalitySlug}
+      />
       <header className="flex flex-col gap-2">
         <Button asChild variant="ghost" className="min-h-11 self-start">
           <Link href="/campanha/liderancas">
