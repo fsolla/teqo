@@ -1,8 +1,8 @@
 # Empty state do wizard — município mais próximo (geo)
 
-Status: rascunho
+Status: ready
 Atualizado em: 2026-08-01
-Issue: —
+Issue: #94
 Priority: P2
 Model: composer-2.5
 Impeccable: B — 1 linha prefixada no empty de `WizardMunicipalitySearchStep` (após B92)
@@ -28,13 +28,13 @@ Brief compacto:
 ```text
 ┌─ Wizard passo município (idle) ────────────────────────┐
 │ [input…]                                               │
-│ Prováveis                                              │
 │ · Salvador — ZE 5 · … · Perto de você (~1,2 km)        │
 │ · … (B93 continuity)                                   │
 │ · … (B92 esquecidos)                                   │
 └────────────────────────────────────────────────────────┘
-  Sem permissão / fora da BA / unsupported: linha some;
-  lista B92/B93 permanece.
+  Sem título de seção. Só resolve se permission já granted
+  (prompt de geo já ocorre ao abrir o Quadro — produto 2026-08-01).
+  Sem permissão / fora da BA / unsupported: linha some.
 ```
 
 ## Dados → decisão → apresentação
@@ -55,8 +55,8 @@ O pedido (2026-08-01) inclui o mesmo sinal no empty do **wizard**. O passo 1 hoj
 
 - No idle do wizard, tentar resolver município mais próximo **no escopo do ator** reusando `requestCurrentPosition` / `resolveNearbyMunicipality` / loaders lazy de geometria.
 - Página `acoes/[slug]` (passo busca) passa prop `accessibleMunicipalities: AccessibleMunicipality[]` (slug/name/ibgeCode) a partir do scope — ou o client usa só os slugs do suggest B92 **mais** um payload mínimo RSC (recomendação: prop RSC, porque suggest é top-8 e o nearest pode estar fora do top frio).
-- Prompt automático: **respeitar** `hasPromptedThisSession` de B14 (não re-assaltar se o Quadro já pediu; se wizard é a 1ª superfície da sessão, um prompt basta).
-- Falhas (`denied` / `timeout` / `unsupported` / fora da BA / outOfScope sem nearest): **silêncio** — não montar linha de erro no ritual (diferente do card do Quadro que explica); usuário digita.
+- **Só resolve se a permissão já está `granted`** (gate 2026-08-01): o prompt de geo já ocorre ao abrir (Quadro B14). Wizard **não** dispara `requestCurrentPosition` em `prompt`/`denied`/`unknown` — zero surpresa no ritual.
+- Falhas / não-granted / fora da BA / outOfScope sem nearest: **silêncio** — não montar linha de erro nem CTA; usuário digita.
 - `kind: 'inScope'` → uma hit row com reason; select = auto-avanço.
 - Sem migration / Consent / POST de coordenadas.
 
@@ -64,14 +64,15 @@ O pedido (2026-08-01) inclui o mesmo sinal no empty do **wizard**. O passo 1 hoj
 
 - **Client-only matching (paridade B14).** **Rejeitado:** POST lat/lng; PostGIS; artefato de centroides commitado (já revertido em B14).
 - **Prop RSC de municípios acessíveis** para o matcher (não só top-8 do suggest). **Rejeitado:** resolver só dentro dos 8 esquecidos (falso “perto” se o município real ficou de fora do rank frio).
+- **Geo no wizard = só `granted` (produto 2026-08-01).** Prompt já foi dado ao abrir o app/Quadro; não re-pedir nem CTA no ritual. **Rejeitado:** prompt automático no mount do wizard; CTA “Usar localização” neste item.
 - **Fail soft sem UI de erro no wizard.** Ritual não deve virar troubleshooting de GPS. **Rejeitado:** copiar o card B14 inteiro para dentro do shell.
-- **Uma linha, não card.** **Rejeitado:** embutir `NearestMunicipalityCard`.
+- **Uma linha, não card; sem título de seção.** **Rejeitado:** embutir `NearestMunicipalityCard`; heading “Prováveis”.
+- **Salvador multi-ZE `zoneCity` / ambíguo: omitir a linha** — wizard exige `municipality` atômico. **Rejeitado:** deep-link para lista filtrada (sai do ritual).
 - **i18n:** reusar `formatDistanceKm`; reason “Perto de você”; helpers `useWizardNearestMunicipality` se o efeito merecer nome (senão lógica no step até extrair no 2º call site).
 
 ## Questões em aberto
 
-- **Prompt automático no mount do wizard se a sessão ainda não pediu?** **Opções:** A sim (paridade Quadro) | B só se permissão já `granted` | C CTA explícito “Usar minha localização”. **Recomendação:** **B** no v1 do wizard (zero surpresa no meio do ritual) + se `granted`, resolve quieto; CTA curto se `prompt`/`denied` e craft quiser. _(assumido — validar com produto; se campo pedir paridade total com Quadro, subir para A)_
-- **Salvador multi-ZE outOfScope / zoneCity:** seguir B14 (lista filtrada no Quadro). No wizard: **Opções:** A omitir linha | B deep-link impossível sem município. **Recomendação:** **A** omitir — wizard exige `municipality` atômico. _(assumido)_
+- Nenhuma após gate 2026-08-01.
 
 ## Abordagem proposta
 
@@ -113,12 +114,12 @@ Componentes:
 
 ## Adiado com gatilho
 
-- **CTA “Usar localização” quando permission ≠ granted.** Revisitar se sessão observada mostrar staff recusando o prompt silencioso e pedindo botão.
+- **CTA “Usar localização” quando permission ≠ granted.** Revisitar se sessão observada pedir botão explícito no wizard (hoje o prompt vive só no Quadro).
 - **Centroid artifact** só se o lazy da malha pesar no mid-tier Android em campo.
 
 ## Referências
 
-- GitHub Issue — (após register)
+- GitHub Issue #94
 - [`municipio-mais-proximo.md`](municipio-mais-proximo.md) (B14)
 - [`campaignGeolocation.ts`](../../src/utilities/campaignGeolocation.ts) · [`municipalityProximity.ts`](../../src/lib/municipalityProximity.ts)
 - [`wizard-municipio-sugestoes-chassis.md`](wizard-municipio-sugestoes-chassis.md) (B92)

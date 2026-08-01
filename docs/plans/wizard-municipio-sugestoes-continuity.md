@@ -1,8 +1,8 @@
 # Empty state do wizard — continuity (visitados + última ação)
 
-Status: rascunho
+Status: ready
 Atualizado em: 2026-08-01
-Issue: —
+Issue: #93
 Priority: P2
 Model: composer-2.5
 Impeccable: B — prefixo client no empty de `WizardMunicipalitySearchStep` (após B92)
@@ -28,13 +28,12 @@ Brief compacto:
 ```text
 ┌─ Wizard passo município (idle, pós-B92) ───────────────┐
 │ [input busca…]                                         │
-│ Prováveis                                              │
 │ · Itabuna · … · Última ação                            │
 │ · Cairu · … · Visitado                                 │
 │ · Valença · … · Visitado                               │
 │ · … (fill B92 esquecidos, dedup)                       │
 └────────────────────────────────────────────────────────┘
-  Geo (B94) pode ocupar 1 slot acima de Continuity.
+  Sem título de seção. Geo (B94) pode ocupar 1 slot acima.
 ```
 
 ## Dados → decisão → apresentação
@@ -69,12 +68,13 @@ Já existe `teqo:campaign:recent-visits` (`recentVisits.ts`, Quadro). B68 **adio
 - **Gravar última ação no success do write, não no select do passo 1.** Select sem commit não é “executou ação”. **Rejeitado:** gravar no `router.push(?municipio=)` (falso positivo se abandonar).
 - **Reusar `recentVisits` para acessos; storage separado para last-acted.** Semânticas diferentes (dwell 2s vs write). **Rejeitado:** sobrecarregar `RecentVisitEntry` com `kind: 'acted'`.
 - **Merge só no idle; search tipado ignora continuity.** Paridade B68/B92.
+- **Sem título de seção** (gate 2026-08-01) — só linhas na região de resultados, com reason na secondary.
 - **i18n:** `campaignLastActedMunicipality` / `recordLastActedMunicipality` / `listWizardContinuitySlugs`; copy “Última ação”, “Visitado”.
+- **Prefixo: 1 last-acted + até 3 visitados**; filtrar fora da carteira. Cap total da lista ~8 com B92/B94.
 
 ## Questões em aberto
 
-- **Quantos visitados no prefixo?** **Opções:** A 3 | B 5 | C todos os 8 do storage. **Recomendação:** **A** (3) — deixa espaço para esquecidos/geo no cap 8. _(assumido)_
-- **Escopo assessor:** visitado fora da carteira (mudança de advisors)? **Opções:** A ocultar | B mostrar e falhar no select. **Recomendação:** **A** — filtrar contra slugs do payload suggest ou prop `accessibleSlugs`. _(assumido)_
+- Nenhuma após gate 2026-08-01.
 
 ## Abordagem proposta
 
@@ -120,7 +120,7 @@ Componentes:
 
 ## Referências
 
-- GitHub Issue — (após register)
+- GitHub Issue #93
 - [`recentVisits.ts`](../../src/utilities/recentVisits.ts) · [`visitados-recentemente.md`](visitados-recentemente.md)
 - [`wizard-municipio-sugestoes-chassis.md`](wizard-municipio-sugestoes-chassis.md) (B92)
 - AGENTS.md — sem Consent para storage local de UX autenticada (precedente B14/visitados)

@@ -1,8 +1,8 @@
 # Empty state do wizard — chassis + ranking de esquecidos
 
-Status: rascunho
+Status: ready
 Atualizado em: 2026-08-01
-Issue: —
+Issue: #92
 Priority: P1
 Model: composer-2.5
 Impeccable: B — encaixe em `WizardMunicipalitySearchStep` (passo 1 dos wizards `/campanha/acoes/<slug>`)
@@ -32,13 +32,12 @@ Brief compacto:
 │ ┌─ Buscar município ─────────────────────────────────┐ │
 │ │ Nome do município…                                 │ │
 │ └────────────────────────────────────────────────────┘ │
-│ Prováveis                                              │
 │ · Cairu · Baixo Sul · 2022 …              [alta?]      │
 │ · Valença · …                                          │
 │ · … (até ~8; select = avança com ?municipio=)          │
 └────────────────────────────────────────────────────────┘
-  Fora do frame: strip de ações do Início; Continuity (B93)
-  e geo (B94) entram depois como linhas prefixadas.
+  Sem título de seção — mesma região de resultados da busca.
+  Continuity (B93) e geo (B94) entram depois como linhas prefixadas.
 ```
 
 ## Dados → decisão → apresentação
@@ -61,7 +60,7 @@ Este item é o **chassis + ranking server de esquecidos**. Continuity (visitados
 
 ## Objetivos
 
-- Quando `!query.isActive` no passo de município do wizard: mostrar seção **Prováveis** (copy craft; default “Prováveis”), não o deserto.
+- Quando `!query.isActive` no passo de município do wizard: preencher a **mesma região de resultados** com hits sugeridos (sem título de seção — decisão de produto 2026-08-01), não o deserto.
 - Novo modo tipado no `home-search` (recomendação: `mode: 'wizard-municipality-suggest'`) distinto de `suggest` (B68) e de `wizard-municipality` (B60 search) — política e payload próprios; staff-only (layout `acoes/` já gateia).
 - Rank puro client-safe em `src/lib/` (irmão de `homeSearchSuggest.ts`), pinado em unit:
   1. **Primário:** mais dias sem sinal primeiro (`lastSignalAt` via `resolveMunicipalityLastSignalAt`; `null` = mais frio).
@@ -76,14 +75,14 @@ Este item é o **chassis + ranking server de esquecidos**. Continuity (visitados
 - **Modo dedicado `wizard-municipality-suggest`, não reusar `suggest` do Início.** Wizard é ritual ação→local; B68 filtra CG a `priority === 'alta'` e usa déficit — aqui o pedido é **esquecidos do escopo inteiro** com desempates E14/tendência/classe/votos. **Rejeitado:** chamar `loadHomeSearchSuggestions` no wizard (política errada); search com `q=""` (contradiz B66/B68).
 - **Primário = frescor (`lastSignalAt`), não só `lastUpdateAt`.** Mesma semântica E9/B68 (max update × pledge). **Rejeitado:** só `municipality.updatedAt` do Payload (ruído de admin); só `lastUpdateAt` (ignora pledges).
 - **Desempates na ordem do pedido de produto** (envolvimento → tendência → classe → votos), com pesos já existentes (`engagementLevelRank`, ordem de tendência acima, `territorialClassSortWeight`, votos nominais 2022 do artifact/scope). **Rejeitado:** déficit de meta como desempate neste item (B68 já cobre no Início; misturar duas “inteligências” no mesmo empty confunde); LQ contínuo no lugar da classe.
-- **Lista flat com título de seção; reason labels por linha ficam para B93/B94** (neste slice todas as linhas são “esquecidos”). **Rejeitado:** cards; multi-grupo neste appetite.
-- **i18n / naming:** identificadores `wizardMunicipalitySuggest`, `rankWizardMunicipalitySuggestions`, `loadWizardMunicipalitySuggestions`; strings pt-BR (“Prováveis”, …).
+- **Lista flat na região de resultados, sem título de seção** (produto 2026-08-01). Reason labels por linha ficam para B93/B94 (neste slice todas as linhas são “esquecidos”). **Rejeitado:** heading “Prováveis”/“Sugestões”; cards; multi-grupo neste appetite.
+- **CG = escopo completo frio-primeiro** (não filtrar a `priority === 'alta'`). Prioridade alta continua só como indicador na linha. **Rejeitado:** copiar filtro B68 (política de omnibox, não de ritual).
+- **Votos de desempate = nominais 2022 do candidato (artifact).** **Rejeitado:** estimado central (live/cache).
+- **i18n / naming:** identificadores `wizardMunicipalitySuggest`, `rankWizardMunicipalitySuggestions`, `loadWizardMunicipalitySuggestions`; copy de empty tipado permanece a de B60.
 
 ## Questões em aberto
 
-- **Título da seção?** **Opções:** A “Prováveis” | B “Sugestões” (paridade B68) | C “Para esta ação”. **Recomendação:** **A** — distingue do omnibox do Início. _(assumido — craft)_
-- **CG inclui municípios `priority !== 'alta'`?** **Opções:** A sim, escopo completo frio-primeiro | B só `alta` como B68. **Recomendação:** **A** — o pedido é esquecidos + desempates de investimento; prioridade alta já é sinal na linha (`showPriority`). _(assumido — validar com produto)_
-- **Votos = série Solla 2022 no município (artifact) vs estimativa central de pledges?** **Opções:** A votos 2022 nominais | B estimado central. **Recomendação:** **A** — estável, sem live cache, já no readout do hit. _(assumido)_
+- Nenhuma após gate 2026-08-01.
 
 ## Abordagem proposta
 
@@ -102,7 +101,7 @@ Componentes:
 - **`src/lib/wizardMunicipalitySuggest.ts`** (puro): input tipado (`slug`, `name`, `lastSignalAt`, `engagementLevel`, `politicalTrend`, `territorialClass`, `votes2022`) + `rankWizardMunicipalitySuggestions(inputs, limit)` + constantes de ordem de tendência; unit-pinned.
 - **`src/utilities/homeSearch/loadWizardMunicipalitySuggestions.ts`** (`server-only`): `loadMunicipalityScope` com `extraSelect` (`lastUpdateAt`, `engagementLevel`, `politicalTrend`, …); classe via helper E10 já usado na lista/map; votos 2022 do artifact/`bahiaElectionAggregates` (ou campo já no scope se existir); `overrideAccess: false`.
 - **Rota** `home-search/route.ts` + schema zod discriminado: ramificar o novo mode; resposta no shape `WizardMunicipalitySearchSuccessResponse` (ou irmão com `resultKind: 'wizard-suggest'`).
-- **`WizardMunicipalitySearchStep`**: fetch suggest no idle; cancelar ao digitar; render seção + hits; empty tipado só quando search ativo e 0 hits.
+- **`WizardMunicipalitySearchStep`**: fetch suggest no idle; cancelar ao digitar; render hits na região de resultados (sem heading); empty tipado só quando search ativo e 0 hits.
 - **Reuse:** `HomeSearchHitRow`, `HomeSearchMunicipalityVoteTrailing`, `postCampaignJson`, `useHomeSearchQuery`, copy em `campaignWizardCopy.ts`.
 - **Migration:** Sem migration, sem collection, sem Consent.
 
@@ -133,7 +132,7 @@ Componentes:
 
 ## Referências
 
-- GitHub Issue — (após register)
+- GitHub Issue #92
 - [`WizardMunicipalitySearchStep.tsx`](../../src/components/campaign/shared/WizardMunicipalitySearchStep.tsx)
 - [`homeSearchSuggest.ts`](../../src/lib/homeSearchSuggest.ts) / [`loadHomeSearchSuggestions.ts`](../../src/utilities/homeSearch/loadHomeSearchSuggestions.ts)
 - [`busca-municipio-wizard.md`](busca-municipio-wizard.md) (B60 — adiados)
