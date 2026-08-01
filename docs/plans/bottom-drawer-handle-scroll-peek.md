@@ -1,6 +1,6 @@
 # Bottom drawer — handle, gesto, scroll, peek discreto, labels 2 linhas
 
-Status: em implementação
+Status: implementado (PR)
 Atualizado em: 2026-08-01
 Issue: #132
 Priority: P1

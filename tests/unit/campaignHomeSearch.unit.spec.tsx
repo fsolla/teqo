@@ -29,9 +29,9 @@ describe('CampaignHomeSearch', () => {
     )
 
     expect(screen.getByLabelText('Buscar na campanha')).toBeTruthy()
-    expect(
-      (screen.getByLabelText('Buscar na campanha') as HTMLInputElement).placeholder,
-    ).toBe('Município, liderança, atividade…')
+    expect((screen.getByLabelText('Buscar na campanha') as HTMLInputElement).placeholder).toBe(
+      'Município, liderança, atividade…',
+    )
     expect(screen.getByRole('region', { name: 'Resultados da busca' })).toBeTruthy()
     expect(screen.getByText('Group stub')).toBeTruthy()
   })
