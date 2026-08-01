@@ -96,8 +96,8 @@ export const CampaignQuickActionsDrawer = ({
       open
       modal={false}
       swipeDirection="down"
-      snapPoints={SNAP_POINTS}
-      snapPoint={snapPoint}
+      snapPoints={uiFocused ? [QUICK_ACTIONS_SNAP_FULL] : SNAP_POINTS}
+      snapPoint={uiFocused ? QUICK_ACTIONS_SNAP_FULL : snapPoint}
       onSnapPointChange={handleSnapPointChange}
       onOpenChange={handleOpenChange}
       disablePointerDismissal
@@ -106,7 +106,7 @@ export const CampaignQuickActionsDrawer = ({
         id="CampaignQuickActionsDrawer"
         className={cn(
           'border-t border-border bg-background text-foreground shadow-[0_-4px_24px_-8px_rgb(0_0_0/0.12)] print:hidden',
-          isFull && 'z-[60]',
+          isFull && 'z-[60] h-dvh max-h-dvh [--drawer-height:100dvh]',
         )}
       >
         <DrawerTitle className="sr-only">Ações rápidas</DrawerTitle>
