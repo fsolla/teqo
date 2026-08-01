@@ -24,3 +24,6 @@ export const normalizeHomeSearchRaw = (raw: string): string => raw.trim()
  */
 export const homeSearchUiFocused = (input: { inputFocused: boolean; isActive: boolean }): boolean =>
   input.inputFocused || input.isActive
+
+/** B106 — mobile top bar back control when Início search is expanded. */
+export const HOME_SEARCH_COLLAPSE_ARIA_LABEL = 'Fechar busca' as const

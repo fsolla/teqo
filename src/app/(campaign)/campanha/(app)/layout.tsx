@@ -10,6 +10,7 @@ import {
   type BiometricEnrollmentOffer,
 } from '@/components/campaign/shell/BiometricEnrollmentToast'
 import { CampaignAppScrollChrome } from '@/components/campaign/shell/CampaignAppScrollChrome'
+import { CampaignHomeSearchChromeProvider } from '@/components/campaign/shell/CampaignHomeSearchChromeContext'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import { CampaignNotificationBellSlot } from '@/components/campaign/shell/CampaignNotificationBellSlot'
 import { CampaignQuickActionContextProvider } from '@/components/campaign/shell/CampaignQuickActionContext'
@@ -75,32 +76,34 @@ export default async function CampaignAppLayout({ children }: { children: React.
       <CampaignSidebar user={campaignUserShellView(user)} />
       <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
         <CampaignWizardChromeProvider>
-          <CampaignQuickActionContextProvider>
-            <CampaignListPendingBoundary>
-              <CampaignMobileTopBar
-                notificationBell={<CampaignNotificationBellSlot user={user} />}
-              />
-              <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
-                <SidebarTrigger />
-                <div className="ml-auto">
-                  <CampaignNotificationBellSlot user={user} />
-                </div>
-              </header>
-              {/*
+          <CampaignHomeSearchChromeProvider>
+            <CampaignQuickActionContextProvider>
+              <CampaignListPendingBoundary>
+                <CampaignMobileTopBar
+                  notificationBell={<CampaignNotificationBellSlot user={user} />}
+                />
+                <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
+                  <SidebarTrigger />
+                  <div className="ml-auto">
+                    <CampaignNotificationBellSlot user={user} />
+                  </div>
+                </header>
+                {/*
                 Provider must wrap CampaignAppScrollChrome, not only page children:
                 the mobile quick-actions drawer (B91/B100) mounts as a sibling of
                 the scrollport and renders search hits with CampaignHoverTooltip
                 (priority flag). Nested only around {children} left focus→suggest
                 without a provider and crashed the page (B102).
               */}
-              <TooltipProvider delayDuration={300}>
-                <CampaignAppScrollChrome role={user.role}>{children}</CampaignAppScrollChrome>
-              </TooltipProvider>
-              <Toaster position="top-center" />
-              <InstallPwaToast />
-              {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
-            </CampaignListPendingBoundary>
-          </CampaignQuickActionContextProvider>
+                <TooltipProvider delayDuration={300}>
+                  <CampaignAppScrollChrome role={user.role}>{children}</CampaignAppScrollChrome>
+                </TooltipProvider>
+                <Toaster position="top-center" />
+                <InstallPwaToast />
+                {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
+              </CampaignListPendingBoundary>
+            </CampaignQuickActionContextProvider>
+          </CampaignHomeSearchChromeProvider>
         </CampaignWizardChromeProvider>
       </SidebarInset>
     </SidebarProvider>

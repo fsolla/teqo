@@ -8,6 +8,7 @@ import {
 } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
 import { CampaignHomeLayout } from '@/components/campaign/dashboard/CampaignHomeLayout'
 import { CampaignHomeSearch } from '@/components/campaign/dashboard/CampaignHomeSearch'
+import { CampaignHomeSearchChromePublisher } from '@/components/campaign/dashboard/CampaignHomeSearchChromePublisher'
 import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
 import {
   HomeSearchResultsProvider,
@@ -42,6 +43,7 @@ const CampaignHomeStaffChromeInner = ({
 
   return (
     <div className="h-full min-h-0 w-full" data-home-focused={focused || undefined}>
+      <CampaignHomeSearchChromePublisher />
       <CampaignHomeLayout
         actions={actions}
         focused={focused}

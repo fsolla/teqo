@@ -5,10 +5,12 @@ import type { ReactNode } from 'react'
 
 import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
+import { useCampaignHomeSearchChrome } from '@/components/campaign/shell/CampaignHomeSearchChromeContext'
 import { useCampaignWizardChrome } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { Button } from '@/components/ui/button'
 import { SidebarTrigger } from '@/components/ui/Sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
+import { HOME_SEARCH_COLLAPSE_ARIA_LABEL } from '@/lib/campaignHomeSearchContract'
 import {
   WIZARD_APP_TOP_BAR_ARIA_LABEL,
   WIZARD_DISMISS_ARIA_LABEL,
@@ -30,6 +32,7 @@ const wizardTitleSkeletonClass = 'mx-auto motion-reduce:animate-none bg-primary-
 
 export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: ReactNode }) => {
   const chrome = useCampaignWizardChrome()
+  const homeSearchChrome = useCampaignHomeSearchChrome()
   const { isPending } = useCampaignListTransition()
 
   if (chrome) {
@@ -123,13 +126,28 @@ export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: 
     <header
       data-slot="campaign-mobile-top-bar"
       data-mode="app"
+      data-home-search-focused={homeSearchChrome?.focused || undefined}
       aria-label={WIZARD_APP_TOP_BAR_ARIA_LABEL}
       className={cn(
         'flex min-h-14 shrink-0 items-center gap-3 bg-primary px-4 text-primary-foreground md:hidden print:hidden',
         'pt-[max(0px,env(safe-area-inset-top))]',
       )}
     >
-      <SidebarTrigger className="text-primary-foreground" />
+      {homeSearchChrome?.focused ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className={wizardNavButtonClass}
+          aria-label={HOME_SEARCH_COLLAPSE_ARIA_LABEL}
+          onClick={homeSearchChrome.collapse}
+        >
+          <ArrowLeft className="size-4 shrink-0" aria-hidden />
+          Voltar
+        </Button>
+      ) : (
+        <SidebarTrigger className="text-primary-foreground" />
+      )}
       <div className="min-w-0 flex-1 leading-tight">
         <span className="block truncate text-sm font-semibold">Jorge Solla</span>
         <span className="block truncate text-xs text-primary-foreground/80">Campanha · Bahia</span>
