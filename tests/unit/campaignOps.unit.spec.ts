@@ -5,14 +5,25 @@ import {
   opsOutboxKey,
   parseOpsSnapshot,
   serializeOpsSnapshot,
+  type OpsActivity,
+  type OpsCollectionKey,
+  type OpsDemand,
+  type OpsGoals,
+  type OpsLeadership,
+  type OpsLeadershipContact,
   type OpsMunicipality,
+  type OpsMunicipalityUpdate,
+  type OpsOrganization,
   type OpsSnapshot,
+  type OpsStateDeputy,
+  type OpsVoteEstimateScenarioFields,
   type OpsVotePledge,
   type OpsVotePledgeLeaderView,
 } from '@/lib/campaignOps/opsContract'
 import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
-import { diffOpsIds, mergeOpsSnapshot } from '@/lib/campaignOps/opsMerge'
+import { diffOpsIds, mergeOpsSnapshot, type OpsCollectionIdDiff } from '@/lib/campaignOps/opsMerge'
 import { OPS_MIRROR_SCHEMA_VERSION } from '@/lib/campaignOps/opsMirrorVersion'
+import type { OpsSyncState, OpsSyncStatus } from '@/lib/campaignOps/opsSyncMeta'
 
 const municipality = (
   partial: Partial<OpsMunicipality> & Pick<OpsMunicipality, 'id' | 'slug'>,
@@ -42,6 +53,76 @@ const snapshot = (partial: Partial<OpsSnapshot> = {}): OpsSnapshot => ({
 describe('OPS_MIRROR_SCHEMA_VERSION', () => {
   it('is pinned at 1', () => {
     expect(OPS_MIRROR_SCHEMA_VERSION).toBe(1)
+  })
+})
+
+describe('contract surface (knip + OH4 consumers)', () => {
+  it('exports DTO and sync meta types for downstream issues', () => {
+    const collectionKey: OpsCollectionKey = 'municipalities'
+    const estimate: OpsVoteEstimateScenarioFields = { central: 1 }
+    const contact: OpsLeadershipContact = { id: 1, name: 'Test' }
+    const leadership: OpsLeadership = {
+      id: 1,
+      contact,
+      municipalities: [1],
+      supportStatus: 'engajado',
+      updatedAt: '2026-08-01T12:00:00.000Z',
+    }
+    const activity: OpsActivity = {
+      id: 1,
+      title: 'A',
+      slug: 'a',
+      kind: 'caminhada',
+      status: 'planejado',
+      municipality: 1,
+      updatedAt: '2026-08-01T12:00:00.000Z',
+    }
+    const stateDeputy: OpsStateDeputy = {
+      id: 1,
+      name: 'D',
+      slug: 'd',
+      updatedAt: '2026-08-01T12:00:00.000Z',
+    }
+    const organization: OpsOrganization = {
+      id: 1,
+      name: 'O',
+      slug: 'o',
+      kind: 'sindicato',
+      updatedAt: '2026-08-01T12:00:00.000Z',
+    }
+    const demand: OpsDemand = {
+      id: 1,
+      title: 'D',
+      slug: 'd',
+      kind: 'material',
+      municipality: 1,
+      status: 'aberta',
+      updatedAt: '2026-08-01T12:00:00.000Z',
+    }
+    const update: OpsMunicipalityUpdate = {
+      id: 1,
+      municipality: 1,
+      author: 1,
+      kind: 'nota',
+      updatedAt: '2026-08-01T12:00:00.000Z',
+      createdAt: '2026-08-01T12:00:00.000Z',
+    }
+    const goals: OpsGoals = { stateGoal: 100_000 }
+    const idDiff: OpsCollectionIdDiff = { added: [], removed: [] }
+    const syncStatus: OpsSyncStatus = 'idle'
+    const syncState: OpsSyncState = { status: syncStatus, lastSyncedAt: null }
+
+    expect(collectionKey).toBe('municipalities')
+    expect(estimate.central).toBe(1)
+    expect(leadership.contact.name).toBe('Test')
+    expect(activity.slug).toBe('a')
+    expect(stateDeputy.slug).toBe('d')
+    expect(organization.kind).toBe('sindicato')
+    expect(demand.status).toBe('aberta')
+    expect(update.kind).toBe('nota')
+    expect(goals.stateGoal).toBe(100_000)
+    expect(idDiff.added).toEqual([])
+    expect(syncState.status).toBe('idle')
   })
 })
 
