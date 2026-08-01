@@ -45,15 +45,12 @@ const main = async () => {
     teamId,
     deploymentRef,
     expectedHost: PRODUCTION_CUSTOM_DOMAIN,
+    onStep: (message) => console.log(`[vercel-ensure-production-alias] ${message}`),
   })
-
-  for (const step of result.steps) {
-    console.log(`[vercel-ensure-production-alias] ${step}`)
-  }
 
   console.log(
     `[vercel-ensure-production-alias] ok — ${PRODUCTION_CUSTOM_DOMAIN} → ${result.deployment.id}` +
-      (result.promoted ? ' (promoted)' : ' (already assigned)'),
+      (result.aliased ? ' (aliased)' : result.alreadyAssigned ? ' (already assigned)' : ''),
   )
 }
 
