@@ -1,6 +1,6 @@
 # OH8 — Caracterização das rotas piloto (detalhe município + listas-chave)
 
-Status: rascunho
+Status: entregue
 Atualizado em: 2026-08-01
 Issue: #170
 Priority: P1
@@ -38,8 +38,8 @@ Dados: N/A.
 
 - **Quota:** ~0,6
 - **Aceite:**
-  - [ ] int spec do detalhe verde em main
-  - [ ] e2e caracterização verde em main (staff e leader)
+  - [x] int spec do detalhe verde em main
+  - [x] e2e caracterização verde em main (staff e leader)
 - **Verify:** `pnpm gate:fast` + specs novos
 - **Files:** os dois specs
 - **Tamanho:** M
@@ -48,7 +48,7 @@ Dados: N/A.
 
 - **Quota:** ~0,4
 - **Aceite:**
-  - [ ] asserts de shell presentes nas specs e2e de municipios e liderancas
+  - [x] asserts de shell presentes nas specs e2e de municipios e liderancas
 - **Verify:** `pnpm gate:fast` + e2e
 - **Files:** specs e2e existentes (edição)
 - **Tamanho:** S
