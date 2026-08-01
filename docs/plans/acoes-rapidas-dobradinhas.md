@@ -1,7 +1,7 @@
 # Ações rápidas — Dobradinhas
 
-Status: rascunho
-Atualizado em: 2026-07-30
+Status: entregue (B83 — #19)
+Atualizado em: 2026-08-01
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Trilha B, item **B83**)
 Impeccable: B — drawer B79 em `/dobradinhas` (+ detalhe se houver)
 Appetite: ~0,25–0,5 dia eng; sem migration
@@ -63,3 +63,9 @@ Nenhum neste item.
 ## Referências
 
 `dobradinhas/**` · B79 · `campaignHomeActions.ts`
+
+## As-built (#19)
+
+- Registry: `campaignQuickActionDobradinhas.ts` — lista (`Nova dobradinha` + 6 ações Início sem prefill), detalhe/nova (só Início).
+- Atalho “Municípios desta dobradinha” **omitido** — `municipalityListUrl` não expõe filtro por `stateDeputy`.
+- WA share (B55) **omitido** no drawer (recomendação A do plano).
