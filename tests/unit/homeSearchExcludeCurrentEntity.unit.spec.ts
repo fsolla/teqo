@@ -29,7 +29,9 @@ const sampleResponse = (): HomeSearchSuccessResponse => ({
   ],
   territories: [],
   advisors: [{ id: 9, name: 'Assessor', phone: null, municipalityCount: 2 }],
-  leaderships: [{ kind: 'leadership', id: 42, name: 'Líder', phone: null, municipalitiesSummary: '' }],
+  leaderships: [
+    { kind: 'leadership', id: 42, name: 'Líder', phone: null, municipalitiesSummary: '' },
+  ],
   stateDeputies: [],
   activities: [{ id: 1, slug: 'comicio', title: 'Comício', secondary: '' }],
   demands: [{ id: 2, slug: 'pedido', title: 'Pedido', secondary: '' }],
@@ -37,9 +39,9 @@ const sampleResponse = (): HomeSearchSuccessResponse => ({
 
 describe('homeSearchExcludeCurrentEntity (B109)', () => {
   it('merges municipality slug from pathname when context is empty', () => {
-    expect(
-      resolveHomeSearchExcludeContext('/campanha/municipios/cairu', {}).municipalitySlug,
-    ).toBe('cairu')
+    expect(resolveHomeSearchExcludeContext('/campanha/municipios/cairu', {}).municipalitySlug).toBe(
+      'cairu',
+    )
   })
 
   it('filters the current municipality from suggest and search hits', () => {

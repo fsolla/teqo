@@ -1,5 +1,5 @@
-import type { HomeSearchSuccessResponse } from '@/lib/campaignHomeSearchHits'
 import { parseAdvisorDetailId } from '@/lib/campaignAdvisorQuickActions'
+import type { HomeSearchSuccessResponse } from '@/lib/campaignHomeSearchHits'
 import { parseMunicipalityDetailSlug } from '@/lib/campaignMunicipalityQuickActions'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import { isDemandDetailPath } from '@/lib/campaignQuickActionDemands'
@@ -47,11 +47,11 @@ export const resolveHomeSearchExcludeContext = (
 const hasExcludeTarget = (context: CampaignQuickActionContext): boolean =>
   Boolean(
     context.municipalitySlug ||
-      context.leadershipId !== undefined ||
-      context.organizationSlug ||
-      context.activitySlug ||
-      context.demandSlug ||
-      context.advisorId !== undefined,
+    context.leadershipId !== undefined ||
+    context.organizationSlug ||
+    context.activitySlug ||
+    context.demandSlug ||
+    context.advisorId !== undefined,
   )
 
 export const filterHomeSearchResponseForContext = (

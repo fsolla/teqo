@@ -14,8 +14,8 @@ import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext
 import { useHomeSearchExcludeContext } from '@/components/campaign/dashboard/HomeSearchExcludeContext'
 import type { HomeSearchSuccessResponse } from '@/lib/campaignHomeSearchHits'
 import { HOME_SEARCH_GENERIC_ERROR_MESSAGE } from '@/lib/campaignHomeSearchMessages'
-import { filterHomeSearchResponseForContext } from '@/lib/homeSearchExcludeCurrentEntity'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
+import { filterHomeSearchResponseForContext } from '@/lib/homeSearchExcludeCurrentEntity'
 
 const HOME_SEARCH_ROUTE = '/campanha/home-search'
 

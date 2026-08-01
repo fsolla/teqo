@@ -4,9 +4,9 @@ import { usePathname } from 'next/navigation'
 import { useCallback, useEffect } from 'react'
 
 import { CampaignGlobalSearchBody } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
-import { HomeSearchExcludeProvider } from '@/components/campaign/dashboard/HomeSearchExcludeContext'
 import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
 import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
+import { HomeSearchExcludeProvider } from '@/components/campaign/dashboard/HomeSearchExcludeContext'
 import { useCampaignQuickActionContext } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { useCampaignQuickActionsSnap } from '@/components/campaign/shell/CampaignQuickActionsSnapContext'
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/Drawer'
@@ -116,9 +116,7 @@ export const CampaignQuickActionsDrawer = ({
           aria-expanded={isDock || isFull}
           aria-controls="quickActionContext"
           className="flex w-full shrink-0 cursor-grab flex-col items-center border-0 bg-transparent px-4 pt-2 pb-0.5 active:cursor-grabbing"
-          aria-label={
-            isDock || isFull ? 'Ocultar ações rápidas' : 'Mostrar ações rápidas'
-          }
+          aria-label={isDock || isFull ? 'Ocultar ações rápidas' : 'Mostrar ações rápidas'}
         >
           <span aria-hidden className="mb-1 block h-1 w-12 rounded-full bg-muted" />
         </button>
