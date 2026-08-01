@@ -2,10 +2,9 @@
 
 import type { ReactNode } from 'react'
 
-import { CampaignGlobalSearchProvider } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
+import { CampaignGlobalSearchBody, CampaignGlobalSearchProvider } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
 import { CampaignHomeLayout } from '@/components/campaign/dashboard/CampaignHomeLayout'
 import { CampaignHomeSearch } from '@/components/campaign/dashboard/CampaignHomeSearch'
-import { CampaignStaffGlobalSearchBody } from '@/components/campaign/dashboard/CampaignStaffGlobalSearch'
 import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
 import {
   HomeSearchResultsProvider,
@@ -45,7 +44,7 @@ const CampaignHomeStaffChromeInner = ({
           searchResults ? (
             <CampaignHomeStaffSearchSlot searchResults={searchResults} />
           ) : (
-            <CampaignStaffGlobalSearchBody />
+            <CampaignGlobalSearchBody />
           )
         }
         summarySlot={summarySlot}

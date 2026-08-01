@@ -34,12 +34,11 @@ describe('CampaignQuickActionsDrawer (B91)', () => {
 
     render(<CampaignQuickActionsDrawer actions={[]} />)
 
-    const context = document.getElementById('quickActionContext')
-    expect(context?.className).toContain('hidden')
-    expect(context?.getAttribute('data-snap')).toBe('collapsed')
+    expect(screen.queryByLabelText('Buscar na campanha')).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Mostrar ações rápidas' }))
 
+    const context = document.getElementById('quickActionContext')
     expect(context?.className).not.toContain('hidden')
     expect(context?.getAttribute('data-snap')).toBe('expanded')
     expect(screen.getByLabelText('Buscar na campanha')).toBeTruthy()
