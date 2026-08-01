@@ -26,10 +26,11 @@ export const HomeSearchMunicipalityGroup = () => {
   if (visibleMunicipalities.length === 0 && visibleTerritories.length === 0) return null
 
   const sectionTitle = resultKind === 'suggest' ? 'Sugestões' : 'Municípios'
+  const showHeading = resultKind !== 'suggest'
 
   return (
     <section aria-label={sectionTitle} className="flex flex-col gap-0.5">
-      <h2 className={HOME_SEARCH_GROUP_HEADING_CLASS}>{sectionTitle}</h2>
+      {showHeading ? <h2 className={HOME_SEARCH_GROUP_HEADING_CLASS}>{sectionTitle}</h2> : null}
       <ul className={HOME_SEARCH_GROUP_LIST_CLASS}>
         {visibleMunicipalities.map((hit) => (
           <li key={`municipality-${hit.slug}`}>
