@@ -69,6 +69,16 @@ describe('toHomeActionButtonProps', () => {
     const props = toHomeActionButtonProps(homeActionsForRole('coordinator'))
     expect(props.find((action) => action.id === 'uncovered-municipalities')?.href).toBeUndefined()
   })
+
+  it('prefills wizard hrefs when municipalitySlug is provided', () => {
+    const props = toHomeActionButtonProps(homeActionsForRole('coordinator'), {
+      municipalitySlug: 'cairu',
+    })
+    expect(props.find((action) => action.id === 'update-votes')?.href).toBe(
+      '/campanha/acoes/atualizar-votos?municipio=cairu',
+    )
+    expect(props.find((action) => action.id === 'uncovered-municipalities')?.href).toBeUndefined()
+  })
 })
 
 describe('UNCOVERED_MUNICIPALITIES_LIST_HREF', () => {

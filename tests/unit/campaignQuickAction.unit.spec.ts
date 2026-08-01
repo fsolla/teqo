@@ -126,11 +126,20 @@ describe('campaignQuickActionRegistry', () => {
   const staffActionIds = homeActionsForRole('coordinator').map((action) => action.id)
 
   it('returns empty catalog for unregistered paths', () => {
-    expect(
-      resolveQuickActionsForPath('/campanha/municipios/foo', 'coordinator', {
-        municipalitySlug: 'foo',
-      }),
-    ).toEqual([])
+    expect(resolveQuickActionsForPath('/campanha/apoiadores', 'coordinator', {})).toEqual([])
+  })
+
+  it('delegates municipality list and detail catalogs (B80)', () => {
+    const list = resolveQuickActionsForPath('/campanha/municipios', 'coordinator', {})
+    expect(list).toHaveLength(6)
+
+    const detail = resolveQuickActionsForPath('/campanha/municipios/foo', 'coordinator', {
+      municipalitySlug: 'foo',
+    })
+    expect(detail).toHaveLength(5)
+    expect(detail.find((action) => action.id === 'update-votes')?.href).toBe(
+      '/campanha/acoes/atualizar-votos?municipio=foo',
+    )
   })
 
   it('delegates activity routes to the B84 catalog', () => {

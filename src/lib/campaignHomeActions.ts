@@ -11,8 +11,10 @@ import {
 } from 'lucide-react'
 
 import {
+  CAMPAIGN_WIZARD_ACTION_SLUGS,
   campaignActionEntryHref,
   isCampaignWizardActionId,
+  wizardActionHref,
   type CampaignWizardActionId,
 } from '@/lib/campaignActionRoutes'
 import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
@@ -127,7 +129,12 @@ export type ResolvedCampaignHomeAction = CampaignHomeAction & {
 export const UNCOVERED_MUNICIPALITIES_LIST_HREF =
   '/campanha/municipios?coverage=sem_assessor&sort=votos' as const
 
-/** Staff Início catalog with hrefs — shared by quick-action registries (B81+). */
+export type HomeActionButtonPropsOptions = {
+  uncoveredMunicipalitiesHref?: string
+  municipalitySlug?: string
+}
+
+/** Staff Início catalog with hrefs — shared by quick-action registries (B80+). */
 const staffHomeQuickActionsByRole = new Map<CampaignRole, readonly ResolvedCampaignHomeAction[]>()
 
 export const resolveStaffHomeQuickActions = (
@@ -136,29 +143,34 @@ export const resolveStaffHomeQuickActions = (
   if (!isStaffCampaignRole(role)) return []
   const cached = staffHomeQuickActionsByRole.get(role)
   if (cached) return cached
-  const actions = toHomeActionButtonProps(
-    homeActionsForRole(role),
-    UNCOVERED_MUNICIPALITIES_LIST_HREF,
-  )
+  const actions = toHomeActionButtonProps(homeActionsForRole(role), {
+    uncoveredMunicipalitiesHref: UNCOVERED_MUNICIPALITIES_LIST_HREF,
+  })
   staffHomeQuickActionsByRole.set(role, actions)
   return actions
 }
 
 export const toHomeActionButtonProps = (
   actions: readonly CampaignHomeAction[],
-  uncoveredMunicipalitiesHref?: string,
-): ResolvedCampaignHomeAction[] =>
-  actions.map((action) => {
+  options?: string | HomeActionButtonPropsOptions,
+): ResolvedCampaignHomeAction[] => {
+  const resolved =
+    typeof options === 'string' ? { uncoveredMunicipalitiesHref: options } : (options ?? {})
+
+  return actions.map((action) => {
     let href: string | undefined
     if (action.id === 'my-contacts') {
       href = LEADER_CONTACTS_HOME
     } else if (action.id === 'uncovered-municipalities') {
-      href = uncoveredMunicipalitiesHref
+      href = resolved.uncoveredMunicipalitiesHref
     } else if (isCampaignWizardActionId(action.id)) {
-      href = campaignActionEntryHref(action.id)
+      href = resolved.municipalitySlug
+        ? wizardActionHref(CAMPAIGN_WIZARD_ACTION_SLUGS[action.id], resolved.municipalitySlug)
+        : campaignActionEntryHref(action.id)
     }
     return {
       ...action,
       ...(href ? { href } : {}),
     }
   })
+}
