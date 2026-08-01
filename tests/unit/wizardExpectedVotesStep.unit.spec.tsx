@@ -20,6 +20,7 @@ const defaultProps = {
   actionSlug: 'atualizar-votos',
   municipalityId: 1,
   municipalityName: 'Cairu',
+  municipalitySlug: 'cairu',
   initialExpectedVotes: { pessimistic: 100, central: 200, optimistic: 300 },
 }
 

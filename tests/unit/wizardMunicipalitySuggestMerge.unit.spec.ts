@@ -36,7 +36,7 @@ describe('municipalitySlugFromRecentVisitHref', () => {
 })
 
 describe('listWizardContinuitySlugs', () => {
-  const scope = new Set(['itabuna', 'cairu', 'valenca', 'fora'])
+  const scope = new Set(['itabuna', 'cairu', 'valenca'])
 
   it('orders last-acted before visited and filters out of scope', () => {
     const continuity = listWizardContinuitySlugs({
