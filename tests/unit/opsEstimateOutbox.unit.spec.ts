@@ -5,7 +5,6 @@ import {
   resolveEstimateTransactionPledgeKey,
   toOpsEstimateOutboxRow,
 } from '@/components/campaign/opsSync/opsEstimateOutboxModel'
-import { resolveOpsHybridEnabled } from '@/components/campaign/opsSync/opsHybridEnabled'
 import type { OfflineTransaction } from '@tanstack/offline-transactions'
 
 const tx = (id: string, pledgeId: number, createdAtMs: number): OfflineTransaction =>
@@ -50,16 +49,5 @@ describe('opsEstimateOutboxModel (OH6)', () => {
       baseEstimatedAt: '2026-08-01T00:00:00.000Z',
       status: 'pending',
     })
-  })
-})
-
-describe('resolveOpsHybridEnabled (OH6)', () => {
-  it('accepts 1/true and rejects absent/other values', () => {
-    expect(resolveOpsHybridEnabled({ OPS_HYBRID: '1' })).toBe(true)
-    expect(resolveOpsHybridEnabled({ OPS_HYBRID: 'true' })).toBe(true)
-    expect(resolveOpsHybridEnabled({ OPS_HYBRID: 'TRUE' })).toBe(true)
-    expect(resolveOpsHybridEnabled({ OPS_HYBRID: '0' })).toBe(false)
-    expect(resolveOpsHybridEnabled({ OPS_HYBRID: '' })).toBe(false)
-    expect(resolveOpsHybridEnabled({})).toBe(false)
   })
 })

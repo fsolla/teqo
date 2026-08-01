@@ -13,7 +13,7 @@ Responsável: —
 ## Freshness audit (2026-08-01)
 
 - OH1 (#164) `done`/`in-prod`. Paths e assinaturas (`estimateVotesRecord`, `PledgeEstimateForm`, `estimateVotesSchema`, `estimatedAt` no hook) batem.
-- `OPS_HYBRID` / `lib/campaignOps` ainda não existem (OH2 #163 in-progress em paralelo) — OH6 lê `OPS_HYBRID` via `next.config` `env` + helper local em `opsSync/` (sem abrir o pacote OH2).
+- OH2 (#163) mergeou durante a entrega — OH6 reusa `resolveOpsHybridEnabled` de `lib/campaignOps/opsHybridFlag.ts` + `OPS_HYBRID` via `next.config` `env`.
 - `@tanstack/offline-transactions@1.0.42` exige collection TanStack DB — tracer usa `localOnlyCollectionOptions` (OH7 troca pelo mirror).
 
 ## Premissas
