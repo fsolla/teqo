@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react'
 
 import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/Drawer'
-import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
 import {
   QUICK_ACTIONS_SNAP_COLLAPSED,
   QUICK_ACTIONS_SNAP_EXPANDED,
@@ -12,6 +11,7 @@ import {
   quickActionsSnapIsExpanded,
   type QuickActionsSnapPoint,
 } from '@/lib/campaignQuickActionSnap'
+import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
 import { cn } from '@/lib/utils'
 
 const SNAP_POINTS = [...QUICK_ACTIONS_SNAP_POINTS]

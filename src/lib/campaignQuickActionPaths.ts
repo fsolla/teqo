@@ -6,9 +6,7 @@ export const ACTIVITY_NEW_PATH = '/campanha/atividades/nova' as const
 
 export const ACTIVITY_TOUR_COMPOSER_PATH = '/campanha/atividades/giros' as const
 
-export type ActivityQuickActionSurface =
-  | { kind: 'list' }
-  | { kind: 'detail'; activitySlug: string }
+export type ActivityQuickActionSurface = { kind: 'list' } | { kind: 'detail'; activitySlug: string }
 
 const normalizePathname = (pathname: string): string =>
   pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname

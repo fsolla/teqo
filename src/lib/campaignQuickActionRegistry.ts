@@ -1,15 +1,9 @@
-<<<<<<< HEAD
-import {
-  resolveStaffHomeQuickActions,
-  type ResolvedCampaignHomeAction,
-} from '@/lib/campaignHomeActions'
-import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
-=======
 import { resolveActivityQuickActions } from '@/lib/activityQuickActions'
->>>>>>> ccc5faf (B84 — Ações rápidas na vertical Atividades (lista + detalhe))
+import { resolveStaffHomeQuickActions } from '@/lib/campaignHomeActions'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import { parseActivityQuickActionSurface } from '@/lib/campaignQuickActionPaths'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
+import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
 import type { CampaignRole } from '@/lib/campaignRoles'
 
 const isTerritoriesListPath = (pathname: string): boolean =>
@@ -23,13 +17,6 @@ const isTerritoriesListPath = (pathname: string): boolean =>
 export const resolveQuickActionsForPath = (
   pathname: string,
   role: CampaignRole,
-<<<<<<< HEAD
-  _context: CampaignQuickActionContext,
-): readonly ResolvedCampaignHomeAction[] => {
-  if (isTerritoriesListPath(pathname)) {
-    return resolveStaffHomeQuickActions(role)
-  }
-=======
   context: CampaignQuickActionContext,
 ): readonly CampaignQuickAction[] => {
   const activitySurface = parseActivityQuickActionSurface(pathname)
@@ -37,6 +24,9 @@ export const resolveQuickActionsForPath = (
     return resolveActivityQuickActions(activitySurface, role, context)
   }
 
->>>>>>> ccc5faf (B84 — Ações rápidas na vertical Atividades (lista + detalhe))
+  if (isTerritoriesListPath(pathname)) {
+    return resolveStaffHomeQuickActions(role)
+  }
+
   return []
 }

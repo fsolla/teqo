@@ -1,6 +1,6 @@
 import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
-import { isActivityTourComposerPath } from '@/lib/campaignQuickActionPaths'
 import { CAMPAIGN_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
+import { isActivityTourComposerPath } from '@/lib/campaignQuickActionPaths'
 import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 
 /** Início matches only exactly — same rule as sidebar nav. */
