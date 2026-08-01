@@ -55,11 +55,9 @@ const createEstimateOfflineExecutor = (): OfflineExecutor =>
           })
           opsEstimateOutboxCollection.utils.acceptMutations(transaction)
           if (opsEstimateOutboxCollection.has(row.pledgeId)) {
-            opsEstimateOutboxCollection.update(row.pledgeId, (draft) => {
-              draft.status = 'synced'
-              draft.serverEstimatedAt = undefined
-              draft.errorMessage = undefined
-            })
+            // Drop the local row so RSC props win after refresh (OH7 will
+            // patch the mirror instead of keeping a synced stub).
+            opsEstimateOutboxCollection.delete(row.pledgeId)
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error)
@@ -135,10 +133,14 @@ export const enqueueEstimateVotes = async (
 }
 
 export const subscribeOpsEstimateOutboxRow = (
-  _pledgeId: number,
+  pledgeId: number,
   onStoreChange: () => void,
 ): (() => void) => {
+  let previous = opsEstimateOutboxCollection.get(pledgeId)
   const subscription = opsEstimateOutboxCollection.subscribeChanges(() => {
+    const next = opsEstimateOutboxCollection.get(pledgeId)
+    if (next === previous) return
+    previous = next
     onStoreChange()
   })
   return () => {

@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import {
   discardOpsEstimateOutboxRow,
   enqueueEstimateVotes,
+  getOpsEstimateOfflineExecutor,
   readOpsEstimateOutboxRow,
   subscribeOpsEstimateOutboxRow,
 } from '@/components/campaign/opsSync/opsEstimateOutbox'
@@ -180,9 +181,12 @@ const HybridPledgeEstimateForm = ({
   const router = useRouter()
   const liveRegionId = useId()
   const formRef = useRef<HTMLFormElement>(null)
+  const previousStatusRef = useRef<OpsEstimateSyncStatus | undefined>(undefined)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-  const [baseEstimatedAt, setBaseEstimatedAt] = useState<string | null>(currentEstimatedAt)
+  // Override only until RSC props catch up after "Manter o meu".
+  const [baseOverride, setBaseOverride] = useState<string | null | undefined>(undefined)
+  const baseEstimatedAt = baseOverride !== undefined ? baseOverride : currentEstimatedAt
 
   const outboxRow = useSyncExternalStore(
     (onStoreChange) => subscribeOpsEstimateOutboxRow(pledgeID, onStoreChange),
@@ -191,13 +195,21 @@ const HybridPledgeEstimateForm = ({
   )
 
   useEffect(() => {
-    setBaseEstimatedAt(currentEstimatedAt)
+    // Restore IndexedDB outbox + optimistic rows across reload.
+    void getOpsEstimateOfflineExecutor()
+  }, [])
+
+  useEffect(() => {
+    setBaseOverride(undefined)
   }, [currentEstimatedAt])
 
   useEffect(() => {
-    if (outboxRow?.status !== 'synced') return
-    router.refresh()
-  }, [outboxRow?.status, router])
+    const previous = previousStatusRef.current
+    previousStatusRef.current = outboxRow?.status
+    if (previous === 'pending' && outboxRow === undefined) {
+      router.refresh()
+    }
+  }, [outboxRow, router])
 
   useEffect(() => {
     if (outboxRow?.status !== 'conflict') return
@@ -224,7 +236,7 @@ const HybridPledgeEstimateForm = ({
             baseEstimatedAt: outboxRow.serverEstimatedAt ?? null,
           }).then(
             () => {
-              setBaseEstimatedAt(outboxRow.serverEstimatedAt ?? null)
+              setBaseOverride(outboxRow.serverEstimatedAt ?? null)
               setFormError(null)
             },
             (error: unknown) => {
@@ -254,6 +266,7 @@ const HybridPledgeEstimateForm = ({
 
   const status = outboxRow?.status
   const pending = isSubmitting || status === 'pending'
+  const fieldsKey = `pledge-estimate-fields-${pledgeID}-${outboxRow?.status ?? 'rsc'}-${currentEstimatedAt ?? 'none'}`
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -300,23 +313,25 @@ const HybridPledgeEstimateForm = ({
           {pending ? 'Salvando estimativa…' : null}
         </span>
       </div>
-      <VoteEstimateScenarioInputs
-        fieldPrefix="estimatedVotes"
-        values={outboxRow?.estimatedVotes ?? currentEstimatedVotes}
-        idPrefix={`pledge-estimate-${pledgeID}`}
-      />
-      <Field>
-        <FieldLabel htmlFor={`pledge-note-${pledgeID}`} className="text-xs">
-          Justificativa
-        </FieldLabel>
-        <Input
-          id={`pledge-note-${pledgeID}`}
-          name="estimateNote"
-          maxLength={1000}
-          defaultValue={outboxRow?.estimateNote ?? currentEstimateNote ?? undefined}
-          className="min-h-11"
+      <div key={fieldsKey} className="flex flex-col gap-3">
+        <VoteEstimateScenarioInputs
+          fieldPrefix="estimatedVotes"
+          values={outboxRow?.estimatedVotes ?? currentEstimatedVotes}
+          idPrefix={`pledge-estimate-${pledgeID}`}
         />
-      </Field>
+        <Field>
+          <FieldLabel htmlFor={`pledge-note-${pledgeID}`} className="text-xs">
+            Justificativa
+          </FieldLabel>
+          <Input
+            id={`pledge-note-${pledgeID}`}
+            name="estimateNote"
+            maxLength={1000}
+            defaultValue={outboxRow?.estimateNote ?? currentEstimateNote ?? undefined}
+            className="min-h-11"
+          />
+        </Field>
+      </div>
       <Button type="submit" variant="secondary" disabled={pending} className="min-h-11 self-start">
         {pending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
         Salvar estimativa

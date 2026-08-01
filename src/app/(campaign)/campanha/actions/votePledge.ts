@@ -160,16 +160,19 @@ export const estimateVotesRecord = async (
         `vote-pledge:${requireRelationshipId(pledge.leadership)}:${requireRelationshipId(pledge.municipality)}`,
       ])
 
-      // Re-read under the lock so CAS sees the committed `estimatedAt`, not a
-      // pre-lock snapshot that another writer may have already bumped.
-      const lockedPledge = await payload.findByID({
-        collection: 'votePledge',
-        id: pledge.id,
-        depth: 0,
-        user: currentActor,
-        overrideAccess: false,
-        req,
-      })
+      // Re-read under the lock only when CAS is armed — LWW callers keep the
+      // pre-lock row (same access check + advisory lock as before OH6).
+      const lockedPledge =
+        enforceCas && data.baseEstimatedAt !== undefined
+          ? await payload.findByID({
+              collection: 'votePledge',
+              id: pledge.id,
+              depth: 0,
+              user: currentActor,
+              overrideAccess: false,
+              req,
+            })
+          : pledge
 
       if (enforceCas && data.baseEstimatedAt !== undefined) {
         const currentEstimatedAt = lockedPledge.estimatedAt ?? null
