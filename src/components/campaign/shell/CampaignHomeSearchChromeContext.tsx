@@ -36,6 +36,11 @@ export const CampaignHomeSearchChromeProvider = ({ children }: { children: React
   )
 }
 
+export const useCampaignHomeSearchChrome = (): CampaignHomeSearchChromeState | null => {
+  const value = useContext(CampaignHomeSearchChromeContext)
+  return value?.chrome ?? null
+}
+
 const useCampaignHomeSearchChromeContext = (): CampaignHomeSearchChromeContextValue => {
   const value = useContext(CampaignHomeSearchChromeContext)
   if (!value) {
@@ -43,9 +48,6 @@ const useCampaignHomeSearchChromeContext = (): CampaignHomeSearchChromeContextVa
   }
   return value
 }
-
-export const useCampaignHomeSearchChrome = (): CampaignHomeSearchChromeState | null =>
-  useCampaignHomeSearchChromeContext().chrome
 
 export const useSetCampaignHomeSearchChrome = (
   state: CampaignHomeSearchChromeState | null,
