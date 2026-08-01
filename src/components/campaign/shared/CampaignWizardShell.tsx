@@ -9,10 +9,7 @@ import {
   type CampaignWizardChromeSkip,
 } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
-import {
-  WIZARD_STEP_PENDING_MESSAGE,
-  wizardFlowChromeAriaLabel,
-} from '@/lib/campaignWizardCopy'
+import { WIZARD_STEP_PENDING_MESSAGE, wizardFlowChromeAriaLabel } from '@/lib/campaignWizardCopy'
 import { cn } from '@/lib/utils'
 
 export type CampaignWizardShellProps = {

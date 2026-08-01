@@ -12,10 +12,7 @@ import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizard
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { SidebarProvider } from '@/components/ui/Sidebar'
-import {
-  WIZARD_MUNICIPALITY_STEP_TITLE,
-  wizardFlowChromeAriaLabel,
-} from '@/lib/campaignWizardCopy'
+import { WIZARD_MUNICIPALITY_STEP_TITLE, wizardFlowChromeAriaLabel } from '@/lib/campaignWizardCopy'
 import { stubMatchMedia } from '../helpers/matchMedia'
 
 const renderWizardShell = (props: React.ComponentProps<typeof CampaignWizardShell>) =>
