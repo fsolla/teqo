@@ -136,4 +136,19 @@ describe('CampaignWizardShell', () => {
     expect(caption?.textContent).toBe('Cairu')
     expect(caption?.className).toMatch(/md:block/)
   })
+
+  it('uses tighter top padding on mobile main content', () => {
+    const { container } = renderWizardShell({
+      flowTitle: 'Ajustar votos',
+      stepTitle: WIZARD_MUNICIPALITY_STEP_TITLE,
+      isEntryStep: true,
+      previousHref: '/campanha',
+      children: null,
+    })
+
+    const main = container.querySelector('main')
+    expect(main?.className).toMatch(/pt-3/)
+    expect(main?.className).toMatch(/pb-6/)
+    expect(main?.className).toMatch(/md:py-6/)
+  })
 })
