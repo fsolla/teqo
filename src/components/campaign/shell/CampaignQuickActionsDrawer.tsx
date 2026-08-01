@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import { CampaignGlobalSearchBody } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
 import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
@@ -11,11 +11,11 @@ import { useCampaignQuickActionContext } from '@/components/campaign/shell/Campa
 import { useCampaignQuickActionsSnap } from '@/components/campaign/shell/CampaignQuickActionsSnapContext'
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/Drawer'
 import {
-  QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX,
   QUICK_ACTIONS_SNAP_COLLAPSED,
   QUICK_ACTIONS_SNAP_DOCK,
   QUICK_ACTIONS_SNAP_FULL,
   QUICK_ACTIONS_SNAP_POINTS,
+  quickActionsSnapAfterDismiss,
   quickActionsSnapIsDock,
   quickActionsSnapIsFull,
   type QuickActionsSnapPoint,
@@ -26,14 +26,6 @@ import { cn } from '@/lib/utils'
 
 const SNAP_POINTS = [...QUICK_ACTIONS_SNAP_POINTS]
 
-const restoreSnapAfterSearch = (): QuickActionsSnapPoint => {
-  const scrollport = document.querySelector('[data-slot="campaign-content-scroll"]')
-  const scrollTop = scrollport instanceof HTMLElement ? scrollport.scrollTop : 0
-  return scrollTop > QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX
-    ? QUICK_ACTIONS_SNAP_COLLAPSED
-    : QUICK_ACTIONS_SNAP_DOCK
-}
-
 export const CampaignQuickActionsDrawer = ({
   actions,
 }: {
@@ -43,52 +35,77 @@ export const CampaignQuickActionsDrawer = ({
   const { context } = useCampaignQuickActionContext()
   const excludeContext = resolveHomeSearchExcludeContext(pathname, context)
   const { snapPoint, setSnapPoint, isDock, isFull } = useCampaignQuickActionsSnap()
-  const { uiFocused } = useHomeSearch()
+  const { uiFocused, clear } = useHomeSearch()
   const showActions = actions.length > 0 && isDock && !isFull
   const showSearchResults = isDock || isFull
+  const skipNextPathCollapseRef = useRef(true)
+  const wasUiFocusedRef = useRef(false)
+
+  const dismissToCollapsed = useCallback(() => {
+    // Clear first so the uiFocused→FULL effect cannot reopen on the same tick.
+    clear()
+    setSnapPoint(quickActionsSnapAfterDismiss())
+  }, [clear, setSnapPoint])
 
   const handleSnapPointChange = useCallback(
     (next: QuickActionsSnapPoint | string | number | null) => {
-      if (
-        next === QUICK_ACTIONS_SNAP_COLLAPSED ||
-        next === QUICK_ACTIONS_SNAP_DOCK ||
-        next === QUICK_ACTIONS_SNAP_FULL
-      ) {
+      if (next === QUICK_ACTIONS_SNAP_COLLAPSED) {
+        dismissToCollapsed()
+        return
+      }
+      if (next === QUICK_ACTIONS_SNAP_DOCK || next === QUICK_ACTIONS_SNAP_FULL) {
         setSnapPoint(next)
         return
       }
-      setSnapPoint(QUICK_ACTIONS_SNAP_COLLAPSED)
+      dismissToCollapsed()
     },
-    [setSnapPoint],
+    [dismissToCollapsed, setSnapPoint],
   )
 
   const toggleSnap = useCallback(() => {
-    setSnapPoint((current) => {
-      if (quickActionsSnapIsFull(current)) return restoreSnapAfterSearch()
-      if (quickActionsSnapIsDock(current)) return QUICK_ACTIONS_SNAP_COLLAPSED
-      return QUICK_ACTIONS_SNAP_DOCK
-    })
-  }, [setSnapPoint])
+    if (uiFocused || quickActionsSnapIsFull(snapPoint)) {
+      dismissToCollapsed()
+      return
+    }
+    if (quickActionsSnapIsDock(snapPoint)) {
+      setSnapPoint(QUICK_ACTIONS_SNAP_COLLAPSED)
+      return
+    }
+    setSnapPoint(QUICK_ACTIONS_SNAP_DOCK)
+  }, [dismissToCollapsed, setSnapPoint, snapPoint, uiFocused])
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (!open) {
-        setSnapPoint(QUICK_ACTIONS_SNAP_COLLAPSED)
+        dismissToCollapsed()
       }
     },
-    [setSnapPoint],
+    [dismissToCollapsed],
   )
 
   useEffect(() => {
+    if (skipNextPathCollapseRef.current) {
+      skipNextPathCollapseRef.current = false
+      return
+    }
+    dismissToCollapsed()
+  }, [dismissToCollapsed, pathname])
+
+  useEffect(() => {
     if (!uiFocused) return
+    wasUiFocusedRef.current = true
     if (!quickActionsSnapIsFull(snapPoint)) {
       setSnapPoint(QUICK_ACTIONS_SNAP_FULL)
     }
   }, [snapPoint, setSnapPoint, uiFocused])
 
+  // Empty blur (uiFocused true→false) → collapsed. Skip the never-focused load path
+  // so the initial dock from B100 survives.
   useEffect(() => {
     if (uiFocused) return
-    setSnapPoint(restoreSnapAfterSearch())
+    if (!wasUiFocusedRef.current) return
+    wasUiFocusedRef.current = false
+    setSnapPoint(quickActionsSnapAfterDismiss())
   }, [setSnapPoint, uiFocused])
 
   return (
@@ -96,8 +113,8 @@ export const CampaignQuickActionsDrawer = ({
       open
       modal={false}
       swipeDirection="down"
-      snapPoints={uiFocused ? [QUICK_ACTIONS_SNAP_FULL] : SNAP_POINTS}
-      snapPoint={uiFocused ? QUICK_ACTIONS_SNAP_FULL : snapPoint}
+      snapPoints={SNAP_POINTS}
+      snapPoint={snapPoint}
       onSnapPointChange={handleSnapPointChange}
       onOpenChange={handleOpenChange}
       disablePointerDismissal
@@ -124,10 +141,11 @@ export const CampaignQuickActionsDrawer = ({
           id="quickActionContext"
           className={cn(
             'flex min-h-0 flex-col overflow-y-auto px-4',
+            // B112 — dock/collapsed bottom gap ≈ ⅓ of prior gap-2 (keep safe-area).
             isFull
-              ? 'flex-1 gap-2 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))]'
+              ? 'flex-1 gap-1 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))]'
               : cn(
-                  'gap-2 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))]',
+                  'gap-1 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))]',
                   isDock ? 'flex-1' : 'shrink-0',
                 ),
           )}
@@ -151,6 +169,8 @@ export const CampaignQuickActionsDrawer = ({
             <CampaignGlobalSearchBody
               placeholder={isDock || isFull ? undefined : ''}
               showResults={showSearchResults}
+              blurUnfocusPolicy="whenEmpty"
+              compactStack
             />
           </HomeSearchExcludeProvider>
         </div>

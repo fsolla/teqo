@@ -25,5 +25,20 @@ export const normalizeHomeSearchRaw = (raw: string): string => raw.trim()
 export const homeSearchUiFocused = (input: { inputFocused: boolean; isActive: boolean }): boolean =>
   input.inputFocused || input.isActive
 
+/**
+ * B112 drawer — blur with any typed text keeps the ritual; only empty blur
+ * unfocuses (Início still uses `whenInactive` via the default prop).
+ */
+export const homeSearchShouldUnfocusOnBlur = (
+  raw: string,
+  policy: 'whenInactive' | 'whenEmpty',
+  isActive: boolean,
+): boolean => {
+  if (policy === 'whenEmpty') {
+    return normalizeHomeSearchRaw(raw).length === 0
+  }
+  return !isActive
+}
+
 /** B106 — mobile top bar back control when Início search is expanded. */
 export const HOME_SEARCH_COLLAPSE_ARIA_LABEL = 'Fechar busca' as const

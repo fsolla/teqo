@@ -17,10 +17,16 @@ import { HomeSearchStateDeputyGroup } from '@/components/campaign/dashboard/Home
 export const CampaignStaffGlobalSearchBody = ({
   placeholder,
   showResults = true,
+  blurUnfocusPolicy = 'whenInactive',
+  compactStack = false,
 }: {
   /** Forwarded to `CampaignHomeSearch` — empty string for collapsed discreet peek. */
   placeholder?: string
   showResults?: boolean
+  /** Drawer passes `whenEmpty` (B112); Início keeps `whenInactive`. */
+  blurUnfocusPolicy?: 'whenInactive' | 'whenEmpty'
+  /** Drawer passes true for ~⅓ gap (B112); Início keeps the default stack. */
+  compactStack?: boolean
 }) => {
   const searchResultsState = useHomeSearchResultsState()
 
@@ -29,6 +35,8 @@ export const CampaignStaffGlobalSearchBody = ({
       resultsBusy={searchResultsState.isFetching}
       placeholder={placeholder}
       showResults={showResults}
+      blurUnfocusPolicy={blurUnfocusPolicy}
+      compactStack={compactStack}
     >
       <HomeSearchResultsProvider value={searchResultsState}>
         <HomeSearchResultsShell>
