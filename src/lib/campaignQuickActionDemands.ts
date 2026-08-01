@@ -66,6 +66,7 @@ export const resolveDemandsListQuickActions = (
 export const resolveDemandDetailQuickActions = (
   role: CampaignRole,
   context: CampaignQuickActionContext,
+  returnPath: string,
 ): readonly CampaignQuickAction[] => {
   if (!isStaffCampaignRole(role)) {
     return []
@@ -93,7 +94,9 @@ export const resolveDemandDetailQuickActions = (
     return [
       {
         ...action,
-        href: wizardActionHref(CAMPAIGN_WIZARD_ACTION_SLUGS[id], municipalitySlug),
+        href: wizardActionHref(CAMPAIGN_WIZARD_ACTION_SLUGS[id], municipalitySlug, {
+          returnPath,
+        }),
       },
     ]
   })

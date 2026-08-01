@@ -42,7 +42,7 @@ export const resolveDobradinhasQuickActions = (
     return []
   }
 
-  const staffActions = resolveStaffHomeQuickActions(role)
+  const staffActions = resolveStaffHomeQuickActions(role, pathname)
 
   if (isStateDeputyListPath(pathname)) {
     return [newStateDeputyAction(), ...staffActions]

@@ -30,6 +30,7 @@ import {
 } from '@/lib/politicalTrendWizardUi'
 import type { PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
 import { cn } from '@/lib/utils'
+import { wizardChainEndHref } from '@/lib/wizardActionChain'
 
 type WizardTrendChoiceStepProps = {
   actionSlug: string
@@ -38,6 +39,7 @@ type WizardTrendChoiceStepProps = {
   currentStatus: PoliticalTrendStatusValue | null
   entryAction?: CampaignWizardActionId
   prefillExtraParams?: Record<string, string>
+  returnPath?: string
 }
 
 export const WizardTrendChoiceStep = ({
@@ -47,9 +49,10 @@ export const WizardTrendChoiceStep = ({
   currentStatus,
   entryAction,
   prefillExtraParams,
+  returnPath,
 }: WizardTrendChoiceStepProps) => {
   const [infoEntry, setInfoEntry] = useState<PoliticalTrendWizardMetaEntry | null>(null)
-  const skip = resolveWizardTrendSkip(entryAction, municipalitySlug)
+  const skip = resolveWizardTrendSkip(entryAction, municipalitySlug, returnPath)
   const options = selectablePoliticalTrendStatuses(currentStatus)
 
   return (
@@ -58,7 +61,8 @@ export const WizardTrendChoiceStep = ({
         flowTitle={wizardFlowTitleForSlug(actionSlug)}
         isEntryStep={false}
         stepTitle={wizardTrendChoiceStepTitle(currentStatus)}
-        previousHref={wizardActionHref(actionSlug, municipalitySlug, { entryAction })}
+        previousHref={wizardActionHref(actionSlug, municipalitySlug, { entryAction, returnPath })}
+        dismissHref={wizardChainEndHref(returnPath)}
         municipalityLabel={municipalityName}
         skip={skip}
         trailingAction={skip ? <WizardTrendSkipTrailing skip={skip} /> : undefined}
@@ -76,6 +80,7 @@ export const WizardTrendChoiceStep = ({
                     status,
                     entryAction,
                     prefillExtraParams,
+                    returnPath,
                   )}
                   className={cn(
                     'flex aspect-square w-full flex-col justify-between rounded-lg border bg-background p-3 pr-10 text-left',

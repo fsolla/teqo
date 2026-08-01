@@ -25,6 +25,7 @@ import {
 } from '@/lib/municipalitySignalTypeMeta'
 import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 import { cn } from '@/lib/utils'
+import { wizardChainEndHref } from '@/lib/wizardActionChain'
 import { resolveWizardSignalSkip, WIZARD_SIGNAL_TYPE_STEP_TITLE } from '@/lib/wizardSignalUi'
 
 type WizardSignalTypeStepProps = {
@@ -32,6 +33,7 @@ type WizardSignalTypeStepProps = {
   municipalityName: string
   municipalitySlug: string
   entryAction?: CampaignWizardActionId
+  returnPath?: string
 }
 
 export const WizardSignalTypeStep = ({
@@ -39,10 +41,11 @@ export const WizardSignalTypeStep = ({
   municipalityName,
   municipalitySlug,
   entryAction,
+  returnPath,
 }: WizardSignalTypeStepProps) => {
   const [infoType, setInfoType] = useState<MunicipalitySignalType | null>(null)
   const infoEntry = infoType ? municipalitySignalTypeMetaByType[infoType] : null
-  const skip = resolveWizardSignalSkip(entryAction, municipalitySlug)
+  const skip = resolveWizardSignalSkip(entryAction, municipalitySlug, returnPath)
 
   return (
     <>
@@ -50,7 +53,8 @@ export const WizardSignalTypeStep = ({
         flowTitle={wizardFlowTitleForSlug(actionSlug)}
         isEntryStep={false}
         stepTitle={WIZARD_SIGNAL_TYPE_STEP_TITLE}
-        previousHref={wizardActionHref(actionSlug)}
+        previousHref={wizardActionHref(actionSlug, undefined, { returnPath })}
+        dismissHref={wizardChainEndHref(returnPath)}
         municipalityLabel={municipalityName}
         contentAlign="end"
         skip={skip}
@@ -62,7 +66,13 @@ export const WizardSignalTypeStep = ({
             return (
               <li key={entry.type} className="relative">
                 <CampaignWizardNavLink
-                  href={wizardSignalHref(actionSlug, municipalitySlug, entry.type, entryAction)}
+                  href={wizardSignalHref(
+                    actionSlug,
+                    municipalitySlug,
+                    entry.type,
+                    entryAction,
+                    returnPath,
+                  )}
                   className={cn(
                     'flex aspect-square w-full flex-col justify-between rounded-lg border border-border bg-transparent p-3 pr-10 text-left',
                     'transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',

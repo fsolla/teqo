@@ -22,7 +22,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { wizardActionHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
-import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
   WIZARD_LEADERSHIP_ADD_TILE_LABEL,
   WIZARD_LEADERSHIP_CONTINUE_LABEL,
@@ -36,7 +35,11 @@ import {
 } from '@/lib/campaignWizardCopy'
 import { truncateNameAtWordBoundary } from '@/lib/leadershipNameTruncate'
 import { cn } from '@/lib/utils'
-import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
+import {
+  resolveWizardChainEntry,
+  wizardChainContinueHref,
+  wizardChainEndHref,
+} from '@/lib/wizardActionChain'
 import {
   resolveWizardLeadershipSkip,
   type WizardLeadershipTileViewModel,
@@ -50,6 +53,7 @@ type WizardLeadershipStepProps = {
   entryAction?: CampaignWizardActionId
   initialTiles: WizardLeadershipTileViewModel[]
   initialLeadershipId?: number
+  returnPath?: string
 }
 
 type WizardLeadershipMode =
@@ -70,6 +74,7 @@ export const WizardLeadershipStep = ({
   entryAction,
   initialTiles,
   initialLeadershipId,
+  returnPath,
 }: WizardLeadershipStepProps) => {
   const router = useRouter()
   const [isContinuing, startContinueTransition] = useTransition()
@@ -84,11 +89,12 @@ export const WizardLeadershipStep = ({
   const [dirty, setDirty] = useState(false)
   const [infoTile, setInfoTile] = useState<WizardLeadershipTileViewModel | null>(null)
 
-  const skipConfig = resolveWizardLeadershipSkip(entryAction, municipalitySlug)
+  const skipConfig = resolveWizardLeadershipSkip(entryAction, municipalitySlug, returnPath)
   const chainContinueHref = wizardChainContinueHref(
     resolveWizardChainEntry(entryAction, 'update-leadership'),
     'update-leadership',
     municipalitySlug,
+    returnPath,
   )
 
   const stepTitle =
@@ -123,8 +129,8 @@ export const WizardLeadershipStep = ({
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
       stepTitle={stepTitle}
       isEntryStep={false}
-      previousHref={wizardActionHref(actionSlug)}
-      dismissHref={CAMPAIGN_HOME}
+      previousHref={wizardActionHref(actionSlug, undefined, { returnPath })}
+      dismissHref={wizardChainEndHref(returnPath)}
       municipalityLabel={municipalityName}
       skip={skipConfig}
       trailingAction={trailingAction}

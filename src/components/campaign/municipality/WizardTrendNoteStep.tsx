@@ -21,7 +21,11 @@ import {
   WIZARD_TREND_SAVE_LABEL,
 } from '@/lib/politicalTrendWizardUi'
 import type { PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
-import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
+import {
+  resolveWizardChainEntry,
+  wizardChainContinueHref,
+  wizardChainEndHref,
+} from '@/lib/wizardActionChain'
 import { politicalTrendLabels } from '@/utilities/municipality/municipalityLabels'
 
 type WizardTrendNoteStepProps = {
@@ -32,6 +36,7 @@ type WizardTrendNoteStepProps = {
   trendStatus: PoliticalTrendStatusValue
   initialNote: string
   entryAction?: CampaignWizardActionId
+  returnPath?: string
 }
 
 export const WizardTrendNoteStep = ({
@@ -42,6 +47,7 @@ export const WizardTrendNoteStep = ({
   trendStatus,
   initialNote,
   entryAction,
+  returnPath,
 }: WizardTrendNoteStepProps) => {
   const router = useRouter()
   const [note, setNote] = useState(initialNote)
@@ -49,13 +55,15 @@ export const WizardTrendNoteStep = ({
     setMunicipalityPoliticalTrendFormAction,
     {},
   )
-  const skip = resolveWizardTrendSkip(entryAction, municipalitySlug)
+  const skip = resolveWizardTrendSkip(entryAction, municipalitySlug, returnPath)
   const stepTitle = `Mudar tendência para ${politicalTrendLabels[trendStatus]}`
 
   useCampaignFormSuccessToast(state, () => {
     recordLastActedMunicipality(municipalitySlug)
     const sessionEntry = resolveWizardChainEntry(entryAction, 'change-trend')
-    router.replace(wizardChainContinueHref(sessionEntry, 'change-trend', municipalitySlug))
+    router.replace(
+      wizardChainContinueHref(sessionEntry, 'change-trend', municipalitySlug, returnPath),
+    )
   })
 
   return (
@@ -63,7 +71,15 @@ export const WizardTrendNoteStep = ({
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
       isEntryStep={false}
       stepTitle={stepTitle}
-      previousHref={wizardTrendHref(actionSlug, municipalitySlug, undefined, entryAction)}
+      previousHref={wizardTrendHref(
+        actionSlug,
+        municipalitySlug,
+        undefined,
+        entryAction,
+        undefined,
+        returnPath,
+      )}
+      dismissHref={wizardChainEndHref(returnPath)}
       municipalityLabel={municipalityName}
       skip={skip}
       trailingAction={skip ? <WizardTrendSkipTrailing skip={skip} /> : undefined}

@@ -43,6 +43,7 @@ const listQuickActions = (): readonly CampaignQuickAction[] => [
 const wizardActionsWithMunicipalityPrefill = (
   role: CampaignRole,
   municipalitySlug: string,
+  returnPath: string,
 ): readonly CampaignQuickAction[] => {
   const homeActions = homeActionsForRole(role).filter((action) =>
     WIZARD_ACTION_IDS.includes(action.id as CampaignWizardActionId),
@@ -55,7 +56,9 @@ const wizardActionsWithMunicipalityPrefill = (
       label: action.label,
       icon: action.icon,
       description: action.description,
-      href: wizardActionHref(CAMPAIGN_WIZARD_ACTION_SLUGS[wizardId], municipalitySlug),
+      href: wizardActionHref(CAMPAIGN_WIZARD_ACTION_SLUGS[wizardId], municipalitySlug, {
+        returnPath,
+      }),
     }
   })
 }
@@ -93,6 +96,7 @@ export const resolveActivityQuickActions = (
   surface: ActivityQuickActionSurface,
   role: CampaignRole,
   context: CampaignQuickActionContext,
+  pathname?: string,
 ): readonly CampaignQuickAction[] => {
   if (!isStaffCampaignRole(role)) return []
 
@@ -102,6 +106,7 @@ export const resolveActivityQuickActions = (
 
   const activitySlug = context.activitySlug ?? surface.activitySlug
   const municipalitySlug = context.municipalitySlug
+  const returnPath = pathname ?? `/campanha/atividades/${activitySlug}`
 
   const detailActions = detailVerticalQuickActions(activitySlug)
 
@@ -109,5 +114,8 @@ export const resolveActivityQuickActions = (
     return detailActions
   }
 
-  return [...wizardActionsWithMunicipalityPrefill(role, municipalitySlug), ...detailActions]
+  return [
+    ...wizardActionsWithMunicipalityPrefill(role, municipalitySlug, returnPath),
+    ...detailActions,
+  ]
 }

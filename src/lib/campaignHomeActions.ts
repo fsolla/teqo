@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 
 import {
+  appendWizardReturnPath,
   CAMPAIGN_WIZARD_ACTION_SLUGS,
   campaignActionEntryHref,
   isCampaignWizardActionId,
@@ -132,6 +133,7 @@ export const UNCOVERED_MUNICIPALITIES_LIST_HREF =
 export type HomeActionButtonPropsOptions = {
   uncoveredMunicipalitiesHref?: string
   municipalitySlug?: string
+  returnPath?: string
 }
 
 /** Staff Início catalog with hrefs — shared by quick-action registries (B80+). */
@@ -139,14 +141,20 @@ const staffHomeQuickActionsByRole = new Map<CampaignRole, readonly ResolvedCampa
 
 export const resolveStaffHomeQuickActions = (
   role: CampaignRole,
+  returnPath?: string,
 ): readonly ResolvedCampaignHomeAction[] => {
   if (!isStaffCampaignRole(role)) return []
-  const cached = staffHomeQuickActionsByRole.get(role)
-  if (cached) return cached
+  if (!returnPath) {
+    const cached = staffHomeQuickActionsByRole.get(role)
+    if (cached) return cached
+  }
   const actions = toHomeActionButtonProps(homeActionsForRole(role), {
     uncoveredMunicipalitiesHref: UNCOVERED_MUNICIPALITIES_LIST_HREF,
+    returnPath,
   })
-  staffHomeQuickActionsByRole.set(role, actions)
+  if (!returnPath) {
+    staffHomeQuickActionsByRole.set(role, actions)
+  }
   return actions
 }
 
@@ -164,9 +172,17 @@ export const toHomeActionButtonProps = (
     } else if (action.id === 'uncovered-municipalities') {
       href = resolved.uncoveredMunicipalitiesHref
     } else if (isCampaignWizardActionId(action.id)) {
-      href = resolved.municipalitySlug
-        ? wizardActionHref(CAMPAIGN_WIZARD_ACTION_SLUGS[action.id], resolved.municipalitySlug)
-        : campaignActionEntryHref(action.id)
+      if (resolved.municipalitySlug) {
+        href = wizardActionHref(
+          CAMPAIGN_WIZARD_ACTION_SLUGS[action.id],
+          resolved.municipalitySlug,
+          {
+            returnPath: resolved.returnPath,
+          },
+        )
+      } else {
+        href = appendWizardReturnPath(campaignActionEntryHref(action.id), resolved.returnPath)
+      }
     }
     return {
       ...action,

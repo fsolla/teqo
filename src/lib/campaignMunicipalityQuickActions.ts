@@ -22,18 +22,20 @@ export const parseMunicipalityDetailSlug = (pathname: string): string | undefine
 
 export const resolveMunicipalityListQuickActions = (
   role: CampaignRole,
-): readonly ResolvedCampaignHomeAction[] => resolveStaffHomeQuickActions(role)
+  returnPath?: string,
+): readonly ResolvedCampaignHomeAction[] => resolveStaffHomeQuickActions(role, returnPath)
 
 export const resolveMunicipalityDetailQuickActions = (
   role: CampaignRole,
   municipalitySlug: string,
+  returnPath?: string,
 ): readonly ResolvedCampaignHomeAction[] => {
   if (!isStaffCampaignRole(role)) return []
 
   const actions = homeActionsForRole(role).filter(
     (action) => action.id !== 'uncovered-municipalities',
   )
-  return toHomeActionButtonProps(actions, { municipalitySlug })
+  return toHomeActionButtonProps(actions, { municipalitySlug, returnPath })
 }
 
 export const resolveMunicipalityQuickActionsForPath = (
@@ -42,12 +44,12 @@ export const resolveMunicipalityQuickActionsForPath = (
   context: CampaignQuickActionContext,
 ): readonly ResolvedCampaignHomeAction[] => {
   if (isMunicipalitiesListPath(pathname)) {
-    return resolveMunicipalityListQuickActions(role)
+    return resolveMunicipalityListQuickActions(role, pathname)
   }
 
   const slug = context.municipalitySlug ?? parseMunicipalityDetailSlug(pathname)
   if (slug) {
-    return resolveMunicipalityDetailQuickActions(role, slug)
+    return resolveMunicipalityDetailQuickActions(role, slug, pathname)
   }
 
   return []

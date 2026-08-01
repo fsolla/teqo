@@ -2,6 +2,7 @@
 
 import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
 import { homeActionsForRole, toHomeActionButtonProps } from '@/lib/campaignHomeActions'
+import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import type { CampaignRole } from '@/lib/campaignRoles'
 
 export const CampaignHomeActions = ({
@@ -11,7 +12,10 @@ export const CampaignHomeActions = ({
   role: CampaignRole
   uncoveredMunicipalitiesHref?: string
 }) => {
-  const actions = toHomeActionButtonProps(homeActionsForRole(role), uncoveredMunicipalitiesHref)
+  const actions = toHomeActionButtonProps(homeActionsForRole(role), {
+    uncoveredMunicipalitiesHref,
+    returnPath: CAMPAIGN_HOME,
+  })
 
   if (actions.length === 0) return null
 

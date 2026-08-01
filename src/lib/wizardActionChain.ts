@@ -6,6 +6,7 @@
 import {
   CAMPAIGN_WIZARD_ACTION_SLUGS,
   type CampaignWizardActionId,
+  isWizardReturnPath,
   wizardActionHref,
   wizardSignalHref,
   wizardTrendHref,
@@ -54,16 +55,24 @@ const wizardHrefForChainStep = (
   action: WizardChainActionId,
   municipalitySlug: string,
   entryAction: WizardChainActionId,
+  returnPath?: string,
 ): string => {
   const actionSlug = CAMPAIGN_WIZARD_ACTION_SLUGS[action]
   switch (action) {
     case 'update-votes':
     case 'update-leadership':
-      return wizardActionHref(actionSlug, municipalitySlug, { entryAction })
+      return wizardActionHref(actionSlug, municipalitySlug, { entryAction, returnPath })
     case 'register-signal':
-      return wizardSignalHref(actionSlug, municipalitySlug, undefined, entryAction)
+      return wizardSignalHref(actionSlug, municipalitySlug, undefined, entryAction, returnPath)
     case 'change-trend':
-      return wizardTrendHref(actionSlug, municipalitySlug, undefined, entryAction)
+      return wizardTrendHref(
+        actionSlug,
+        municipalitySlug,
+        undefined,
+        entryAction,
+        undefined,
+        returnPath,
+      )
     default: {
       const exhaustive: never = action
       return exhaustive
@@ -71,23 +80,28 @@ const wizardHrefForChainStep = (
   }
 }
 
+/** Chain end or dismiss target: allowlisted `from`, else Início (B110). */
+export const wizardChainEndHref = (returnPath?: string): string =>
+  returnPath && isWizardReturnPath(returnPath) ? returnPath : CAMPAIGN_HOME
+
 /**
  * Href for the next chained wizard after completing/skipping `completedAction`,
- * or Início when the queue is empty / entry is not chainable.
+ * or the return path (default Início) when the queue is empty / entry is not chainable.
  */
 export const wizardChainContinueHref = (
   entryAction: CampaignWizardActionId,
   completedAction: WizardChainActionId,
   municipalitySlug: string,
+  returnPath?: string,
 ): string => {
   if (!isWizardChainActionId(entryAction)) {
-    return CAMPAIGN_HOME
+    return wizardChainEndHref(returnPath)
   }
   const next = nextWizardChainStep(entryAction, completedAction)
   if (!next) {
-    return CAMPAIGN_HOME
+    return wizardChainEndHref(returnPath)
   }
-  return wizardHrefForChainStep(next, municipalitySlug, entryAction)
+  return wizardHrefForChainStep(next, municipalitySlug, entryAction, returnPath)
 }
 
 /** Session owner for navigation: explicit `entry` query, else the current principal. */

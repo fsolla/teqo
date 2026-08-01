@@ -67,9 +67,48 @@ export const WIZARD_VOTE_TO_QUERY_KEY = 'voteTo' as const
 
 export const WIZARD_LEADERSHIP_ID_QUERY_KEY = 'leadershipId' as const
 
+export const WIZARD_RETURN_PATH_QUERY_KEY = 'from' as const
+
+const WIZARD_RETURN_PATH_AUTH_PREFIXES = [
+  '/campanha/login',
+  '/campanha/convite',
+  '/campanha/redefinir-senha',
+  '/campanha/webauthn',
+] as const
+
+/** Allowlisted internal return paths for wizard dismiss / chain end (B110). */
+export const isWizardReturnPath = (pathname: string): boolean => {
+  if (!pathname.startsWith('/campanha')) return false
+  if (pathname.startsWith('/campanha/acoes')) return false
+  for (const prefix of WIZARD_RETURN_PATH_AUTH_PREFIXES) {
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) return false
+  }
+  return true
+}
+
+export const parseWizardReturnPath = (value: string | string[] | undefined): string | undefined => {
+  const raw = Array.isArray(value) ? value[0] : value
+  const trimmed = raw?.trim()
+  if (!trimmed) return undefined
+  if (trimmed.includes('://') || trimmed.startsWith('//')) return undefined
+  const path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+  if (path.includes('?') || path.includes('#')) return undefined
+  return isWizardReturnPath(path) ? path : undefined
+}
+
+export const appendWizardReturnPath = (href: string, returnPath?: string): string => {
+  if (!returnPath || !isWizardReturnPath(returnPath)) return href
+  const queryIndex = href.indexOf('?')
+  const base = queryIndex === -1 ? href : href.slice(0, queryIndex)
+  const params = new URLSearchParams(queryIndex === -1 ? '' : href.slice(queryIndex + 1))
+  params.set(WIZARD_RETURN_PATH_QUERY_KEY, returnPath)
+  return `${base}?${params.toString()}`
+}
+
 export type WizardActionHrefOptions = {
   entryAction?: CampaignWizardActionId
   leadershipId?: number
+  returnPath?: string
 }
 
 export const wizardActionHref = (
@@ -79,7 +118,7 @@ export const wizardActionHref = (
 ): string => {
   const base = `${CAMPAIGN_ACTIONS_HOME}/${actionSlug}`
   if (!municipalitySlug && !options?.leadershipId && !options?.entryAction) {
-    return base
+    return appendWizardReturnPath(base, options?.returnPath)
   }
   const params = new URLSearchParams()
   if (municipalitySlug) {
@@ -91,7 +130,8 @@ export const wizardActionHref = (
   if (options?.leadershipId !== undefined) {
     params.set(WIZARD_LEADERSHIP_ID_QUERY_KEY, String(options.leadershipId))
   }
-  return `${base}?${params.toString()}`
+  const href = params.size > 0 ? `${base}?${params.toString()}` : base
+  return appendWizardReturnPath(href, options?.returnPath)
 }
 
 export const parseWizardMunicipioParam = (
@@ -132,10 +172,11 @@ export const wizardSignalHref = (
   municipalitySlug?: string,
   signalType?: MunicipalitySignalType,
   entryAction?: CampaignWizardActionId,
+  returnPath?: string,
 ): string => {
   const base = `${CAMPAIGN_ACTIONS_HOME}/${actionSlug}`
   if (!municipalitySlug) {
-    return base
+    return appendWizardReturnPath(base, returnPath)
   }
 
   const params = new URLSearchParams({ [WIZARD_MUNICIPIO_QUERY_KEY]: municipalitySlug })
@@ -145,7 +186,7 @@ export const wizardSignalHref = (
   if (entryAction) {
     params.set(WIZARD_ENTRY_ACTION_QUERY_KEY, entryAction)
   }
-  return `${base}?${params.toString()}`
+  return appendWizardReturnPath(`${base}?${params.toString()}`, returnPath)
 }
 
 export const resolveWizardSignalTypeParam = (
@@ -171,10 +212,11 @@ export const wizardTrendHref = (
   trendStatus?: PoliticalTrendStatusValue,
   entryAction?: CampaignWizardActionId,
   extraParams?: Record<string, string>,
+  returnPath?: string,
 ): string => {
   const base = `${CAMPAIGN_ACTIONS_HOME}/${actionSlug}`
   if (!municipalitySlug) {
-    return base
+    return appendWizardReturnPath(base, returnPath)
   }
 
   const params = new URLSearchParams({ [WIZARD_MUNICIPIO_QUERY_KEY]: municipalitySlug })
@@ -189,7 +231,7 @@ export const wizardTrendHref = (
       if (value) params.set(key, value)
     }
   }
-  return `${base}?${params.toString()}`
+  return appendWizardReturnPath(`${base}?${params.toString()}`, returnPath)
 }
 
 export const resolveWizardTrendStatusParam = (

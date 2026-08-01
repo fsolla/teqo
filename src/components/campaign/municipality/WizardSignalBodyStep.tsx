@@ -17,7 +17,11 @@ import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 import { municipalitySignalTypeLabels } from '@/lib/schemas/municipalityUpdate'
-import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
+import {
+  resolveWizardChainEntry,
+  wizardChainContinueHref,
+  wizardChainEndHref,
+} from '@/lib/wizardActionChain'
 import {
   resolveWizardSignalSkip,
   WIZARD_SIGNAL_BODY_STEP_TITLE_PREFIX,
@@ -31,6 +35,7 @@ type WizardSignalBodyStepProps = {
   municipalitySlug: string
   signalType: MunicipalitySignalType
   entryAction?: CampaignWizardActionId
+  returnPath?: string
 }
 
 export const WizardSignalBodyStep = ({
@@ -40,19 +45,22 @@ export const WizardSignalBodyStep = ({
   municipalitySlug,
   signalType,
   entryAction,
+  returnPath,
 }: WizardSignalBodyStepProps) => {
   const router = useRouter()
   const [state, submitAction, isPending] = useActionState(
     createMunicipalityListSignalFormAction,
     {},
   )
-  const skip = resolveWizardSignalSkip(entryAction, municipalitySlug)
+  const skip = resolveWizardSignalSkip(entryAction, municipalitySlug, returnPath)
   const stepTitle = `${WIZARD_SIGNAL_BODY_STEP_TITLE_PREFIX}: ${municipalitySignalTypeLabels[signalType]}`
 
   useCampaignFormSuccessToast(state, () => {
     recordLastActedMunicipality(municipalitySlug)
     const sessionEntry = resolveWizardChainEntry(entryAction, 'register-signal')
-    router.replace(wizardChainContinueHref(sessionEntry, 'register-signal', municipalitySlug))
+    router.replace(
+      wizardChainContinueHref(sessionEntry, 'register-signal', municipalitySlug, returnPath),
+    )
   })
 
   return (
@@ -60,7 +68,14 @@ export const WizardSignalBodyStep = ({
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
       isEntryStep={false}
       stepTitle={stepTitle}
-      previousHref={wizardSignalHref(actionSlug, municipalitySlug, undefined, entryAction)}
+      previousHref={wizardSignalHref(
+        actionSlug,
+        municipalitySlug,
+        undefined,
+        entryAction,
+        returnPath,
+      )}
+      dismissHref={wizardChainEndHref(returnPath)}
       municipalityLabel={municipalityName}
       skip={skip}
       trailingAction={skip ? <WizardSignalSkipTrailing skip={skip} /> : undefined}

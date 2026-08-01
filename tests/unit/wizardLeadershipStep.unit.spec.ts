@@ -27,8 +27,12 @@ describe('resolveWizardLeadershipSkip', () => {
     expect(resolveWizardLeadershipSkip('update-leadership', 'cairu')).toBeUndefined()
   })
 
-  it('points skip to Início when leadership is the last chained step', () => {
-    // In the v1 matrix, leadership is always the final chained elo.
+  it('points skip to origin when from is set, else Início at chain end', () => {
+    const origin = '/campanha/liderancas/7'
+    expect(resolveWizardLeadershipSkip('update-votes', 'cairu', origin)).toEqual({
+      label: WIZARD_CHAIN_SKIP_LABEL,
+      href: origin,
+    })
     expect(resolveWizardLeadershipSkip('update-votes', 'cairu')).toEqual({
       label: WIZARD_CHAIN_SKIP_LABEL,
       href: CAMPAIGN_HOME,

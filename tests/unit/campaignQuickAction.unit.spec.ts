@@ -218,7 +218,7 @@ describe('campaignQuickActionDobradinhas (B83)', () => {
     expect(actions.map((action) => action.id)).toEqual(['new-state-deputy', ...staffActionIds])
     expect(actions[0]?.href).toBe('/campanha/dobradinhas/nova')
     expect(actions.find((action) => action.id === 'update-votes')?.href).toBe(
-      '/campanha/acoes/atualizar-votos',
+      '/campanha/acoes/atualizar-votos?from=%2Fcampanha%2Fdobradinhas',
     )
     expect(actions.find((action) => action.id === 'uncovered-municipalities')?.href).toBe(
       UNCOVERED_MUNICIPALITIES_LIST_HREF,
@@ -279,7 +279,7 @@ describe('campaignQuickActionRegistry', () => {
     })
     expect(detail).toHaveLength(5)
     expect(detail.find((action) => action.id === 'update-votes')?.href).toBe(
-      '/campanha/acoes/atualizar-votos?municipio=foo',
+      '/campanha/acoes/atualizar-votos?municipio=foo&from=%2Fcampanha%2Fmunicipios%2Ffoo',
     )
   })
 
@@ -303,7 +303,7 @@ describe('campaignQuickActionRegistry', () => {
     )
     const registerSignal = actions.find((action) => action.id === 'register-signal')
     expect(registerSignal?.href).toBe(
-      `/campanha/acoes/${CAMPAIGN_WIZARD_ACTION_SLUGS['register-signal']}?municipio=salvador-ze-01`,
+      `/campanha/acoes/${CAMPAIGN_WIZARD_ACTION_SLUGS['register-signal']}?municipio=salvador-ze-01&from=%2Fcampanha%2Fatividades%2Fevento-zona-1`,
     )
   })
 
@@ -311,7 +311,7 @@ describe('campaignQuickActionRegistry', () => {
     const actions = resolveQuickActionsForPath('/campanha/territorios', 'coordinator', {})
     expect(actions.map((action) => action.id)).toEqual(staffActionIds)
     expect(actions.find((action) => action.id === 'update-votes')?.href).toBe(
-      '/campanha/acoes/atualizar-votos',
+      '/campanha/acoes/atualizar-votos?from=%2Fcampanha%2Fterritorios',
     )
     expect(actions.find((action) => action.id === 'uncovered-municipalities')?.href).toBe(
       UNCOVERED_MUNICIPALITIES_LIST_HREF,
@@ -346,7 +346,7 @@ describe('campaignQuickActionRegistry', () => {
       'register-demand',
     ])
     expect(actions.find((action) => action.id === 'update-votes')?.href).toBe(
-      '/campanha/acoes/atualizar-votos?municipio=cairu',
+      '/campanha/acoes/atualizar-votos?municipio=cairu&from=%2Fcampanha%2Fdemandas%2Fpedido-cairu',
     )
     expect(actions.find((action) => action.id === 'register-demand')?.href).toBe(
       demandCreateHref(42),
@@ -389,7 +389,11 @@ describe('campaignQuickActionDemands resolvers', () => {
   it('returns empty catalog for leader lockdown', () => {
     expect(resolveDemandsListQuickActions('leader')).toEqual([])
     expect(
-      resolveDemandDetailQuickActions('leader', { municipalitySlug: 'cairu', municipalityId: 1 }),
+      resolveDemandDetailQuickActions(
+        'leader',
+        { municipalitySlug: 'cairu', municipalityId: 1 },
+        '/campanha/demandas/foo',
+      ),
     ).toEqual([])
   })
 })
