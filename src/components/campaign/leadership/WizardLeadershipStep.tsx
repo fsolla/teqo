@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/Drawer'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
-import { wizardActionHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import {
   WIZARD_LEADERSHIP_ADD_TILE_LABEL,
@@ -40,6 +39,7 @@ import {
   wizardChainContinueHref,
   wizardChainEndHref,
 } from '@/lib/wizardActionChain'
+import { WIZARD_LEADERSHIP_FORM_LAYER, wizardStepPreviousHref } from '@/lib/wizardBack'
 import {
   resolveWizardLeadershipSkip,
   type WizardLeadershipTileViewModel,
@@ -118,6 +118,10 @@ export const WizardLeadershipStep = ({
     toast.success(WIZARD_LEADERSHIP_SAVED_TOAST)
   }, [municipalitySlug, router])
 
+  const handlePopFormLayer = useCallback(() => {
+    setMode({ kind: 'grid' })
+  }, [])
+
   const handleContinue = () => {
     startContinueTransition(() => {
       router.replace(chainContinueHref)
@@ -129,12 +133,18 @@ export const WizardLeadershipStep = ({
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
       stepTitle={stepTitle}
       isEntryStep={false}
-      previousHref={wizardActionHref(actionSlug, undefined, { returnPath })}
+      previousHref={wizardStepPreviousHref({
+        step: 'leadership-grid',
+        actionSlug,
+        returnPath,
+      })}
       dismissHref={wizardChainEndHref(returnPath)}
       municipalityLabel={municipalityName}
       skip={skipConfig}
       trailingAction={trailingAction}
       contentFocus={mode.kind === 'form' ? 'none' : 'title'}
+      clientLayer={mode.kind === 'form' ? WIZARD_LEADERSHIP_FORM_LAYER : null}
+      onPopClientLayer={handlePopFormLayer}
     >
       {mode.kind === 'form' ? (
         <WizardLeadershipForm
@@ -142,7 +152,7 @@ export const WizardLeadershipStep = ({
           municipalitySlug={municipalitySlug}
           leadership={mode.leadership}
           onSaved={handleSaved}
-          onCancel={() => setMode({ kind: 'grid' })}
+          onCancel={handlePopFormLayer}
         />
       ) : (
         <TooltipProvider delayDuration={200}>

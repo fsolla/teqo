@@ -3,14 +3,17 @@
 import { useEffect, useId, useMemo, useRef, type ReactNode } from 'react'
 
 import { CampaignListResults } from '@/components/campaign/shared/CampaignListPending'
+import { useWizardBackHistory } from '@/components/campaign/shared/useWizardBackHistory'
 import {
   toCampaignWizardChromeState,
+  useSetCampaignWizardBackHandler,
   useSetCampaignWizardChrome,
   type CampaignWizardChromeSkip,
 } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import { WIZARD_STEP_PENDING_MESSAGE, wizardFlowChromeAriaLabel } from '@/lib/campaignWizardCopy'
 import { cn } from '@/lib/utils'
+import type { WizardClientLayer } from '@/lib/wizardBack'
 
 export type CampaignWizardShellProps = {
   flowTitle: string
@@ -24,6 +27,9 @@ export type CampaignWizardShellProps = {
   contentAlign?: 'start' | 'end'
   /** When `'none'`, the shell does not move focus to the step title — use on form steps that autofocus an input. */
   contentFocus?: 'title' | 'none'
+  /** Client-only layer (e.g. leadership form) — Voltar / Android pop this before leaving the URL step. */
+  clientLayer?: WizardClientLayer | null
+  onPopClientLayer?: () => void
   children: ReactNode
 }
 
@@ -38,11 +44,21 @@ export const CampaignWizardShell = ({
   trailingAction,
   contentAlign = 'start',
   contentFocus = 'title',
+  clientLayer = null,
+  onPopClientLayer,
   children,
 }: CampaignWizardShellProps) => {
   const hasStepTitle = stepTitle != null && stepTitle !== ''
   const titleRef = useRef<HTMLHeadingElement>(null)
   const titleId = useId()
+
+  const { requestBack } = useWizardBackHistory({
+    stepKind: isEntryStep ? 'entry' : 'continue',
+    previousHref: isEntryStep ? undefined : previousHref,
+    dismissHref,
+    clientLayer,
+    onPopClientLayer,
+  })
 
   const chrome = useMemo(
     () =>
@@ -58,6 +74,7 @@ export const CampaignWizardShell = ({
   )
 
   useSetCampaignWizardChrome(chrome)
+  useSetCampaignWizardBackHandler(requestBack)
 
   useEffect(() => {
     if (!hasStepTitle || contentFocus === 'none') return

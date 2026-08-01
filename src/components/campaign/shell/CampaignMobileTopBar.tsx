@@ -6,7 +6,10 @@ import type { ReactNode } from 'react'
 import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
 import { useCampaignHomeSearchChrome } from '@/components/campaign/shell/CampaignHomeSearchChromeContext'
-import { useCampaignWizardChrome } from '@/components/campaign/shell/CampaignWizardChromeContext'
+import {
+  useCampaignWizardChrome,
+  useCampaignWizardRequestBack,
+} from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { Button } from '@/components/ui/button'
 import { SidebarTrigger } from '@/components/ui/Sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -39,6 +42,7 @@ export const CampaignMobileTopBar = ({
   opsSyncStatus?: ReactNode
 }) => {
   const chrome = useCampaignWizardChrome()
+  const requestWizardBack = useCampaignWizardRequestBack()
   const homeSearchChrome = useCampaignHomeSearchChrome()
   const { isPending } = useCampaignListTransition()
 
@@ -56,16 +60,15 @@ export const CampaignMobileTopBar = ({
         <div className="flex min-w-0 flex-1 items-center">
           {chrome.stepKind === 'continue' && chrome.previousHref ? (
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               className={wizardNavButtonClass}
-              asChild
               disabled={isPending}
+              onClick={requestWizardBack}
             >
-              <CampaignWizardNavLink href={chrome.previousHref}>
-                <ArrowLeft className="size-4 shrink-0" aria-hidden />
-                Voltar
-              </CampaignWizardNavLink>
+              <ArrowLeft className="size-4 shrink-0" aria-hidden />
+              Voltar
             </Button>
           ) : (
             <div className="size-11 shrink-0" aria-hidden />
