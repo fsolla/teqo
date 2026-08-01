@@ -91,7 +91,22 @@ export default async function CampaignActionWizardPage({
     resolvedSearchParams[WIZARD_MUNICIPIO_QUERY_KEY],
   )
   if (!municipalitySlug) {
-    return <WizardMunicipalitySearchStep actionSlug={slug} previousHref={CAMPAIGN_HOME} />
+    const user = await requireCampaignPageActor()
+    const payload = await getPayload({ config: await config })
+    const { municipalities } = await loadMunicipalityScope(payload, user, {})
+    const accessibleMunicipalities = municipalities.map(({ slug, name, ibgeCode }) => ({
+      slug,
+      name,
+      ibgeCode,
+    }))
+
+    return (
+      <WizardMunicipalitySearchStep
+        actionSlug={slug}
+        previousHref={CAMPAIGN_HOME}
+        accessibleMunicipalities={accessibleMunicipalities}
+      />
+    )
   }
 
   const needsPoliticalTrend = slug === CAMPAIGN_WIZARD_ACTION_SLUGS['change-trend']

@@ -3,11 +3,13 @@ import { describe, expect, it } from 'vitest'
 import type { HomeSearchMunicipalityHit } from '@/lib/campaignHomeSearchHits'
 import { HOME_SEARCH_SUGGEST_LIMIT } from '@/lib/homeSearchSuggest'
 import {
+  formatWizardGeoSecondary,
   listWizardContinuitySlugs,
   mergeWizardMunicipalitySuggestions,
   municipalitySlugFromRecentVisitHref,
   WIZARD_CONTINUITY_LAST_ACTED_LABEL,
   WIZARD_CONTINUITY_VISITED_LABEL,
+  WIZARD_GEO_NEARBY_REASON,
   type WizardContinuityVisitInput,
 } from '@/lib/wizardMunicipalitySuggestMerge'
 
@@ -27,6 +29,24 @@ const visit = (
   href: '/campanha/municipios/cairu',
   kind: 'municipality',
   ...overrides,
+})
+
+describe('formatWizardGeoSecondary', () => {
+  it('formats reason without distance', () => {
+    expect(formatWizardGeoSecondary(undefined)).toBe(WIZARD_GEO_NEARBY_REASON)
+    expect(formatWizardGeoSecondary('Costa do Dendê')).toBe(
+      `Costa do Dendê · ${WIZARD_GEO_NEARBY_REASON}`,
+    )
+  })
+
+  it('formats reason with distance', () => {
+    expect(formatWizardGeoSecondary('Costa do Dendê', 1.2)).toBe(
+      `Costa do Dendê · ${WIZARD_GEO_NEARBY_REASON} (~1,2 km)`,
+    )
+    expect(formatWizardGeoSecondary(undefined, 0.4)).toBe(
+      `${WIZARD_GEO_NEARBY_REASON} (~menos de 1 km)`,
+    )
+  })
 })
 
 describe('municipalitySlugFromRecentVisitHref', () => {
@@ -92,27 +112,31 @@ describe('mergeWizardMunicipalitySuggestions', () => {
       hit({ slug: 'geo', name: 'Geo' }),
       hit({ slug: 'acted', name: 'Acted' }),
       hit({ slug: 'visited', name: 'Visited' }),
-      hit({ slug: 'forgot-a', name: 'Forgot A' }),
+      hit({ slug: 'forgot-a', name: 'Forgot A', region: 'Costa do Dendê' }),
       hit({ slug: 'forgot-b', name: 'Forgot B' }),
     ].map((row) => [row.slug, row]),
   )
 
   it('dedupes in geo > continuity > server order with reason labels', () => {
     const merged = mergeWizardMunicipalitySuggestions({
-      geoSlug: 'forgot-a',
+      geo: { slug: 'forgot-a', name: 'Forgot A', distanceKm: 2.5 },
       continuity: [
         { source: 'last-acted', slug: 'acted' },
         { source: 'visited', slug: 'visited' },
         { source: 'visited', slug: 'forgot-a' },
       ],
       serverHits: [
-        hit({ slug: 'forgot-a', name: 'Forgot A' }),
+        hit({ slug: 'forgot-a', name: 'Forgot A', region: 'Costa do Dendê' }),
         hit({ slug: 'forgot-b', name: 'Forgot B' }),
       ],
       hitBySlug,
     })
 
     expect(merged.map((row) => row.hit.slug)).toEqual(['forgot-a', 'acted', 'visited', 'forgot-b'])
+    expect(merged.find((row) => row.hit.slug === 'forgot-a')?.hit.region).toContain(
+      WIZARD_GEO_NEARBY_REASON,
+    )
+    expect(merged.find((row) => row.hit.slug === 'forgot-a')?.hit.region).toContain('~2,5 km')
     expect(merged.find((row) => row.hit.slug === 'acted')?.continuityReason).toBe(
       WIZARD_CONTINUITY_LAST_ACTED_LABEL,
     )

@@ -7,6 +7,7 @@ import { HomeSearchMunicipalityVoteTrailing } from '@/components/campaign/dashbo
 import { useHomeSearchQuery } from '@/components/campaign/dashboard/useHomeSearchQuery'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
+import { useWizardNearestMunicipality } from '@/components/campaign/shared/useWizardNearestMunicipality'
 import { wizardActionHref } from '@/lib/campaignActionRoutes'
 import type {
   HomeSearchMunicipalityHit,
@@ -23,6 +24,7 @@ import {
   WIZARD_MUNICIPALITY_STEP_TITLE,
   wizardFlowTitleForSlug,
 } from '@/lib/campaignWizardCopy'
+import type { AccessibleMunicipality } from '@/lib/municipalityProximity'
 import { HOME_SEARCH_QUERY_MAX_LENGTH } from '@/lib/schemas/homeSearch'
 import {
   listWizardContinuitySlugs,
@@ -49,6 +51,7 @@ type WizardSearchResultsState =
 type WizardMunicipalitySearchStepProps = {
   actionSlug: string
   previousHref: string
+  accessibleMunicipalities: AccessibleMunicipality[]
 }
 
 const buildSuggestSuccessState = (
@@ -67,6 +70,7 @@ const buildSuggestSuccessState = (
 export const WizardMunicipalitySearchStep = ({
   actionSlug,
   previousHref,
+  accessibleMunicipalities,
 }: WizardMunicipalitySearchStepProps) => {
   const { query, setRaw, isDebouncing } = useHomeSearchQuery()
   const [results, setResults] = useState<WizardSearchResultsState>({ status: 'idle' })
@@ -76,6 +80,7 @@ export const WizardMunicipalitySearchStep = ({
   const suggestMode = !query.isActive
   const searchMode = query.isActive
   const resultsBusy = isDebouncing || results.status === 'loading'
+  const nearestMunicipality = useWizardNearestMunicipality(accessibleMunicipalities, suggestMode)
 
   useEffect(() => {
     if (!suggestMode || results.status !== 'success' || results.mode !== 'suggest') {
@@ -96,12 +101,6 @@ export const WizardMunicipalitySearchStep = ({
   }, [results, suggestMode])
 
   useEffect(() => {
-    if (!suggestMode && !searchMode) {
-      requestSeq.current += 1
-      setResults({ status: 'idle' })
-      return
-    }
-
     const seq = ++requestSeq.current
     const controller = new AbortController()
     setResults({ status: 'loading' })
@@ -156,16 +155,13 @@ export const WizardMunicipalitySearchStep = ({
       return results.municipalities.map((hit) => ({ hit, continuityReason: undefined }))
     }
 
-    if (!continuityReady) {
-      return results.suggest.municipalities.map((hit) => ({ hit, continuityReason: undefined }))
-    }
-
     return mergeWizardMunicipalitySuggestions({
-      continuity: continuitySlugs,
+      continuity: continuityReady ? continuitySlugs : [],
+      geo: nearestMunicipality,
       serverHits: results.suggest.municipalities,
       hitBySlug: results.suggest.hitBySlug,
     })
-  }, [continuityReady, continuitySlugs, results])
+  }, [continuityReady, continuitySlugs, nearestMunicipality, results])
 
   const showEmpty =
     query.isActive &&
