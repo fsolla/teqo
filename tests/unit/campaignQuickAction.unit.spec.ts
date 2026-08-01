@@ -4,6 +4,8 @@ import { resolveActivityQuickActions } from '@/lib/activityQuickActions'
 import { CAMPAIGN_WIZARD_ACTION_SLUGS } from '@/lib/campaignActionRoutes'
 import { advisorQuickCreateHref } from '@/lib/campaignAdvisorQuickActions'
 import { UNCOVERED_MUNICIPALITIES_LIST_HREF, homeActionsForRole } from '@/lib/campaignHomeActions'
+import { CAMPAIGN_CONCEPTS_PATH } from '@/lib/campaignIntelligenceConcepts'
+import { CAMPAIGN_PROFILE_HOME } from '@/lib/campaignPaths'
 import {
   CAMPAIGN_DEMANDS_CREATE_HREF,
   demandCreateHref,
@@ -89,6 +91,10 @@ describe('campaignQuickActionMount', () => {
   it('mounts on dobradinhas for staff (B83)', () => {
     expect(shouldMountQuickActionsDrawer('/campanha/dobradinhas', 'coordinator')).toBe(true)
     expect(shouldMountQuickActionsDrawer('/campanha/dobradinhas/foo', 'advisor')).toBe(true)
+  })
+
+  it('omits drawer on perfil for leader (B90)', () => {
+    expect(shouldMountQuickActionsDrawer(CAMPAIGN_PROFILE_HOME, 'leader')).toBe(false)
   })
 })
 
@@ -257,6 +263,11 @@ describe('campaignQuickActionRegistry', () => {
 
   it('returns empty catalog for unregistered paths', () => {
     expect(resolveQuickActionsForPath('/campanha/apoiadores', 'coordinator', {})).toEqual([])
+  })
+
+  it('returns empty catalog on conceitos and perfil for staff (B90)', () => {
+    expect(resolveQuickActionsForPath(CAMPAIGN_CONCEPTS_PATH, 'coordinator', {})).toEqual([])
+    expect(resolveQuickActionsForPath(CAMPAIGN_PROFILE_HOME, 'candidate', {})).toEqual([])
   })
 
   it('delegates municipality list and detail catalogs (B80)', () => {

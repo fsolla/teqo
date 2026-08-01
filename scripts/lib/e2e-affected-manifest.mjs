@@ -86,6 +86,8 @@ export const E2E_AFFECTED_MANIFEST = [
       `${CAMPAIGN_APP}/layout.tsx`,
       'src/utilities/campaignPwa',
       'src/lib/campaignQuickAction',
+      'src/lib/campaignReferenceQuickActions',
+      'src/lib/campaignPaths.ts',
     ],
     specs: ['campaign-pwa', 'campaignWizardChrome'],
   },

@@ -21,6 +21,10 @@ import {
   parseOrganizationQuickActionSurface,
 } from '@/lib/campaignQuickActionPaths'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
+import {
+  isReferenceQuickActionPath,
+  resolveReferenceQuickActionsForPath,
+} from '@/lib/campaignReferenceQuickActions'
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { resolveLeaderContactsQuickActions } from '@/lib/leaderContactsQuickActions'
 import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
@@ -77,5 +81,9 @@ export const resolveQuickActionsForPath = (
   if (isTerritoriesListPath(pathname)) {
     return resolveStaffHomeQuickActions(role)
   }
+
+  const referenceActions = resolveReferenceQuickActionsForPath(pathname, role, context)
+  if (isReferenceQuickActionPath(pathname)) return referenceActions
+
   return []
 }
