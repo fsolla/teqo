@@ -20,7 +20,7 @@ Responsável: —
 4. “Diminuir para um terço (33%) do atual” aplica-se ao **espaçamento busca → limite inferior** (padding/gap abaixo do input no dock), não à altura total do snap.
 5. Puxar o drawer para baixo **tem** de recolher (pedido pela 3ª vez; B105 ✓ declarou, mas o gesto ainda falha no campo).
 6. `safe-area-inset-bottom` permanece — o corte de 33% é no padding/gap **além** do inset mínimo do OS.
-→ Corrija no gate ou o implementador segue com estas.
+   → Corrija no gate ou o implementador segue com estas.
 
 ## Design (Impeccable)
 

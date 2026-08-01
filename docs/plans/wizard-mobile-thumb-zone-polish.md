@@ -16,7 +16,7 @@ Responsável: —
 3. Cores de sinal/tendência aplicam-se **só aos ícones**, não ao fill/borda colorida do tile inteiro.
 4. Card “Atual” na tendência ocupa **2 colunas** do grid (equivalente a dois quadrados) + chip “Atual”.
 5. Bullets na liderança = `list-style` default do `<ul>` sem `list-none` (já corrigido nos grids de sinal/tendência).
-→ Corrija no gate ou o implementador segue com estas.
+   → Corrija no gate ou o implementador segue com estas.
 
 ## Design (Impeccable)
 
@@ -115,15 +115,16 @@ Estado atual relevante:
 - **Thumb-zone = ordem visual a partir do canto inferior direito no mobile; desktop mantém leitura LTR/top.** **Rejeitado:** só `justify-end` sem reordenar; espelhar desktop.
 - **Cores de sinal (ícone only) — mapa sentimento × intenção (produto 2026-08-01):**
 
-  | Tipo | Sentimento | Cor (token/classe craft) |
-  | ---- | ---------- | ------------------------ |
-  | `invasao` | ameaça / urgência | destructive / vermelho |
-  | `esfriamento` | frio / retração | azul/ciano muted (`text-sky-…` ou token se existir) |
-  | `visita_adversario` | cautela / adversário | âmbar/laranja |
-  | `proposta_broker` | oportunidade / troca | verde/teal (positivo controlado) |
-  | `outro` | neutro | `text-muted-foreground` |
+  | Tipo                | Sentimento           | Cor (token/classe craft)                            |
+  | ------------------- | -------------------- | --------------------------------------------------- |
+  | `invasao`           | ameaça / urgência    | destructive / vermelho                              |
+  | `esfriamento`       | frio / retração      | azul/ciano muted (`text-sky-…` ou token se existir) |
+  | `visita_adversario` | cautela / adversário | âmbar/laranja                                       |
+  | `proposta_broker`   | oportunidade / troca | verde/teal (positivo controlado)                    |
+  | `outro`             | neutro               | `text-muted-foreground`                             |
 
   **Rejeitado:** colorir o tile inteiro; inventar 5 fills saturados de fundo.
+
 - **Tendência:** reusar semântica atual (`favoravel` verde, `neutra` neutro, `desfavoravel` destructive) **só no ícone**; tile `border-border` + texto foreground. **Rejeitado:** manter `tileClassName` no container.
 - **Card “Atual”:** substitui o título; 2 colunas; chip “Atual”. **Rejeitado:** título + card; chip sem card.
 - **Salvar sinal:** disabled visual + `disabled` real enquanto body vazio. **Rejeitado:** só `required` HTML com botão “ativo”.

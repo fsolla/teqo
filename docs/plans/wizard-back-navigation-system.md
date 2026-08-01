@@ -16,7 +16,7 @@ Responsável: —
 3. Precedente a reusar: `useHomeSearchFocusHistory` (B106) — `pushState` + `popstate` para camadas sem mudar a rota App Router.
 4. `previousHref` hoje é calculado **por passo** de forma inconsistente (ex. liderança form herda o mesmo href do grid → header Voltar pula o grid; Android back sai para a ação/URL anterior no history).
 5. Escopo = **navegação**; polish visual de tiles → **B113**.
-→ Corrija no gate ou o implementador segue com estas.
+   → Corrija no gate ou o implementador segue com estas.
 
 ## Design (Impeccable)
 
@@ -56,13 +56,13 @@ Dados: N/A — navegação.
 
 **Evidência no código (depth check pré-implementação):**
 
-| Superfície | Header Voltar (`previousHref`) | Android back (history) | Problema |
-| ---------- | ------------------------------ | ---------------------- | -------- |
-| Entry busca município | (entry: sem Voltar; X = dismiss) | URL anterior à entrada no wizard | OK se dismiss alinhado a B110 |
-| Passo tipo sinal | `wizardActionHref` **sem** município | history = busca c/ município | **diverge** |
-| Tendência choice | href **com** município | history | pode divergir se query/chain |
-| Liderança **form** | mesmo href do grid (busca município) | history = página/ação anterior | **form não é passo de URL** — back abandona o grid |
-| Encadeados + `returnPath` | misturam chain | stack real do browser | “ações aleatórias” |
+| Superfície                | Header Voltar (`previousHref`)       | Android back (history)           | Problema                                           |
+| ------------------------- | ------------------------------------ | -------------------------------- | -------------------------------------------------- |
+| Entry busca município     | (entry: sem Voltar; X = dismiss)     | URL anterior à entrada no wizard | OK se dismiss alinhado a B110                      |
+| Passo tipo sinal          | `wizardActionHref` **sem** município | history = busca c/ município     | **diverge**                                        |
+| Tendência choice          | href **com** município               | history                          | pode divergir se query/chain                       |
+| Liderança **form**        | mesmo href do grid (busca município) | history = página/ação anterior   | **form não é passo de URL** — back abandona o grid |
+| Encadeados + `returnPath` | misturam chain                       | stack real do browser            | “ações aleatórias”                                 |
 
 Chrome: `CampaignMobileTopBar` só faz `CampaignWizardNavLink` → `previousHref`. **Não há** interceptor `popstate` no wizard (só no Início search, B106).
 
