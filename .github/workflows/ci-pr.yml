@@ -331,6 +331,22 @@ jobs:
         if: failure()
         uses: ./.github/actions/cancel-workflow-on-failure
 
+  plans-only-closes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Block Closes/Fixes/Resolves on plans-only PRs
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/check-plans-only-pr-closes.mjs
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
+
   migration-lock:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -368,6 +384,7 @@ jobs:
       - build
       - e2e
       - migration-lock
+      - plans-only-closes
     if: always()
     steps:
       - name: All cascade checks green

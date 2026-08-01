@@ -22,6 +22,7 @@ EOF
 
 - **Never** `--draft`. PRs must be **Ready for review** on creation.
 - Base is always **`main`**.
+- **Plans-only PRs** (diff só em `docs/plans/`): **nunca** `Closes #N` — use `Related #N`; CI falha com keywords de fechamento (`plans-only-closes` em `ci-pr.yml`).
 
 ### Cursor Cloud / `ManagePullRequest`
 

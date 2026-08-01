@@ -2,7 +2,7 @@
 
 <!-- 2–4 linhas: o que muda e por quê. Link do plano se houver. -->
 
-Closes #<!-- número da Issue (claim) -->
+Closes #<!-- número da Issue (claim) — omita em PRs que alteram só docs/plans/; use Related #N -->
 
 ## Contrato da entrega
 
