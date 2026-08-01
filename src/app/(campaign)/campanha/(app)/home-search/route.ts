@@ -12,6 +12,7 @@ import { homeSearchBodySchema } from '@/lib/schemas/homeSearch'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
 import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute'
 import { loadHomeSearchSuggestions } from '@/utilities/homeSearch/loadHomeSearchSuggestions'
+import { loadWizardMunicipalitySuggestions } from '@/utilities/homeSearch/loadWizardMunicipalitySuggestions'
 import { searchHomeActivities } from '@/utilities/homeSearch/searchHomeActivities'
 import { searchHomeAdvisors } from '@/utilities/homeSearch/searchHomeAdvisors'
 import { searchHomeDemands } from '@/utilities/homeSearch/searchHomeDemands'
@@ -22,23 +23,32 @@ import { searchStaffMunicipalityHits } from '@/utilities/homeSearch/searchStaffM
 
 export const dynamic = 'force-dynamic'
 
+type HomeSearchRouteSuccessBody =
+  | HomeSearchSuccessResponse
+  | WizardMunicipalitySearchSuccessResponse
+
 export const POST = campaignJsonMutationRoute(
   {
     bodySchema: homeSearchBodySchema,
     safeMessages: [HOME_SEARCH_STAFF_ONLY_MESSAGE],
     genericMessage: HOME_SEARCH_GENERIC_ERROR_MESSAGE,
   },
-  async (body) => {
+  async (body): Promise<NextResponse<HomeSearchRouteSuccessBody>> => {
     const { payload, actor } = await getCampaignActionContext()
 
     if (body.mode === 'suggest') {
       const result = await loadHomeSearchSuggestions(payload, actor)
-      return NextResponse.json<HomeSearchSuccessResponse>(result)
+      return NextResponse.json(result)
+    }
+
+    if (body.mode === 'wizard-municipality-suggest') {
+      const result = await loadWizardMunicipalitySuggestions(payload, actor)
+      return NextResponse.json(result)
     }
 
     if (body.mode === 'wizard-municipality') {
       const municipalities = await searchStaffMunicipalityHits(payload, actor, body.query)
-      return NextResponse.json<WizardMunicipalitySearchSuccessResponse>({
+      return NextResponse.json({
         status: 'success',
         municipalities,
       })
@@ -53,7 +63,7 @@ export const POST = campaignJsonMutationRoute(
         searchHomeStateDeputies(payload, actor, body.query),
         searchHomeDemands(payload, actor, body.query),
       ])
-    return NextResponse.json<HomeSearchSuccessResponse>({
+    return NextResponse.json({
       ...municipalityResult,
       advisors,
       leaderships,
