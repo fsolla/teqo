@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-<<<<<<< HEAD
-import { UNCOVERED_MUNICIPALITIES_LIST_HREF, homeActionsForRole } from '@/lib/campaignHomeActions'
-=======
 import { resolveActivityQuickActions } from '@/lib/activityQuickActions'
+import { CAMPAIGN_WIZARD_ACTION_SLUGS } from '@/lib/campaignActionRoutes'
+import {
+  UNCOVERED_MUNICIPALITIES_LIST_HREF,
+  homeActionsForRole,
+} from '@/lib/campaignHomeActions'
+import {
+  isCampaignActionsPath,
+  isCampaignHomePath,
+  isLeaderContactsPath,
+  shouldMountQuickActionsDrawer,
+} from '@/lib/campaignQuickActionMount'
 import {
   ACTIVITY_LIST_PATH,
   ACTIVITY_NEW_PATH,
@@ -11,20 +19,12 @@ import {
   isActivityTourComposerPath,
   parseActivityQuickActionSurface,
 } from '@/lib/campaignQuickActionPaths'
->>>>>>> ccc5faf (B84 — Ações rápidas na vertical Atividades (lista + detalhe))
-import {
-  isCampaignActionsPath,
-  isCampaignHomePath,
-  isLeaderContactsPath,
-  shouldMountQuickActionsDrawer,
-} from '@/lib/campaignQuickActionMount'
 import { resolveQuickActionsForPath } from '@/lib/campaignQuickActionRegistry'
 import {
   QUICK_ACTIONS_SNAP_COLLAPSED,
   QUICK_ACTIONS_SNAP_EXPANDED,
   quickActionsSnapIsExpanded,
 } from '@/lib/campaignQuickActionSnap'
-import { CAMPAIGN_WIZARD_ACTION_SLUGS } from '@/lib/campaignActionRoutes'
 
 describe('campaignQuickActionMount', () => {
   it('treats Início as exact match only', () => {
@@ -97,7 +97,9 @@ describe('activityQuickActions (B84)', () => {
 
     expect(actions.some((action) => action.id === 'update-votes')).toBe(true)
     expect(
-      actions.find((action) => action.id === 'update-votes')?.href?.includes('municipio=feira-de-santana'),
+      actions
+        .find((action) => action.id === 'update-votes')
+        ?.href?.includes('municipio=feira-de-santana'),
     ).toBe(true)
     expect(actions.find((action) => action.id === 'edit-activity')?.href).toBe(
       '/campanha/atividades/comicio-feira/editar',
@@ -124,7 +126,6 @@ describe('activityQuickActions (B84)', () => {
 })
 
 describe('campaignQuickActionRegistry', () => {
-<<<<<<< HEAD
   const staffActionIds = homeActionsForRole('coordinator').map((action) => action.id)
 
   it('returns empty catalog for unregistered paths', () => {
@@ -133,9 +134,6 @@ describe('campaignQuickActionRegistry', () => {
         municipalitySlug: 'foo',
       }),
     ).toEqual([])
-=======
-  it('returns empty catalog on unrelated staff routes', () => {
-    expect(resolveQuickActionsForPath('/campanha/municipios/foo', 'coordinator', {})).toEqual([])
   })
 
   it('delegates activity routes to the B84 catalog', () => {
@@ -144,16 +142,13 @@ describe('campaignQuickActionRegistry', () => {
   })
 
   it('builds wizard hrefs with municipality slug from context', () => {
-    const actions = resolveQuickActionsForPath(
-      '/campanha/atividades/evento-zona-1',
-      'coordinator',
-      { municipalitySlug: 'salvador-ze-01' },
-    )
+    const actions = resolveQuickActionsForPath('/campanha/atividades/evento-zona-1', 'coordinator', {
+      municipalitySlug: 'salvador-ze-01',
+    })
     const registerSignal = actions.find((action) => action.id === 'register-signal')
     expect(registerSignal?.href).toBe(
       `/campanha/acoes/${CAMPAIGN_WIZARD_ACTION_SLUGS['register-signal']}?municipio=salvador-ze-01`,
     )
->>>>>>> ccc5faf (B84 — Ações rápidas na vertical Atividades (lista + detalhe))
   })
 
   it('returns staff Início catalog on territorios without municipality prefill (B81)', () => {
