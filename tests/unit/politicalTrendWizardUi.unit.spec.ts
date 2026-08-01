@@ -11,6 +11,7 @@ import {
   resolveWizardTrendNoteDestination,
   resolveWizardTrendSkip,
   selectablePoliticalTrendStatuses,
+  shouldShowWizardTrendSkip,
   WIZARD_TREND_SKIP_LABEL,
   WIZARD_TREND_UNREGISTERED_TITLE,
   wizardTrendChoiceStepTitle,
@@ -35,8 +36,17 @@ describe('politicalTrendWizardUi', () => {
     expect(resolveWizardTrendNoteDestination('favoravel', null)).toBe('note')
   })
 
-  it('always exposes skip to abandon the trend change', () => {
-    expect(resolveWizardTrendSkip()).toEqual({
+  it('hides skip for standalone change-trend entry', () => {
+    expect(shouldShowWizardTrendSkip(undefined)).toBe(false)
+    expect(shouldShowWizardTrendSkip('change-trend')).toBe(false)
+    expect(resolveWizardTrendSkip(undefined)).toBeUndefined()
+    expect(resolveWizardTrendSkip('change-trend')).toBeUndefined()
+  })
+
+  it('shows skip when embedded from another wizard action', () => {
+    expect(shouldShowWizardTrendSkip('update-votes')).toBe(true)
+    expect(shouldShowWizardTrendSkip('register-signal')).toBe(true)
+    expect(resolveWizardTrendSkip('update-votes')).toEqual({
       label: WIZARD_TREND_SKIP_LABEL,
       href: CAMPAIGN_HOME,
     })
