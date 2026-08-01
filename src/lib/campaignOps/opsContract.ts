@@ -111,13 +111,7 @@ export type OpsOrganization = {
   id: number
   name: string
   slug: string
-  kind:
-    | 'sindicato'
-    | 'associacao'
-    | 'religioso'
-    | 'movimento'
-    | 'categoria_profissional'
-    | 'outro'
+  kind: 'sindicato' | 'associacao' | 'religioso' | 'movimento' | 'categoria_profissional' | 'outro'
   municipalities?: number[] | null
   notes?: string | null
   updatedAt: string
@@ -150,7 +144,9 @@ export type OpsMunicipalityUpdate = {
   author: number
   kind: 'semanal' | 'urgente' | 'nota' | 'sinal'
   body?: string | null
-  signalType?: ('invasao' | 'esfriamento' | 'visita_adversario' | 'proposta_broker' | 'outro') | null
+  signalType?:
+    | ('invasao' | 'esfriamento' | 'visita_adversario' | 'proposta_broker' | 'outro')
+    | null
   updatedAt: string
   createdAt: string
 }

@@ -14,7 +14,9 @@ import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import { diffOpsIds, mergeOpsSnapshot } from '@/lib/campaignOps/opsMerge'
 import { OPS_MIRROR_SCHEMA_VERSION } from '@/lib/campaignOps/opsMirrorVersion'
 
-const municipality = (partial: Partial<OpsMunicipality> & Pick<OpsMunicipality, 'id' | 'slug'>): OpsMunicipality => ({
+const municipality = (
+  partial: Partial<OpsMunicipality> & Pick<OpsMunicipality, 'id' | 'slug'>,
+): OpsMunicipality => ({
   name: partial.slug,
   kind: 'municipio',
   city: partial.slug,

@@ -80,12 +80,37 @@ export const mergeOpsSnapshot = (
 ): OpsSnapshot => ({
   revisedAt: incoming.revisedAt,
   schemaVersion: incoming.schemaVersion,
-  municipalities: mergeRowCollection(local.municipalities, incoming.municipalities, 'municipalities', outboxKeys),
-  leaderships: mergeRowCollection(local.leaderships, incoming.leaderships, 'leaderships', outboxKeys),
-  votePledges: mergeRowCollection(local.votePledges, incoming.votePledges, 'votePledges', outboxKeys),
+  municipalities: mergeRowCollection(
+    local.municipalities,
+    incoming.municipalities,
+    'municipalities',
+    outboxKeys,
+  ),
+  leaderships: mergeRowCollection(
+    local.leaderships,
+    incoming.leaderships,
+    'leaderships',
+    outboxKeys,
+  ),
+  votePledges: mergeRowCollection(
+    local.votePledges,
+    incoming.votePledges,
+    'votePledges',
+    outboxKeys,
+  ),
   activities: mergeRowCollection(local.activities, incoming.activities, 'activities', outboxKeys),
-  stateDeputies: mergeRowCollection(local.stateDeputies, incoming.stateDeputies, 'stateDeputies', outboxKeys),
-  organizations: mergeRowCollection(local.organizations, incoming.organizations, 'organizations', outboxKeys),
+  stateDeputies: mergeRowCollection(
+    local.stateDeputies,
+    incoming.stateDeputies,
+    'stateDeputies',
+    outboxKeys,
+  ),
+  organizations: mergeRowCollection(
+    local.organizations,
+    incoming.organizations,
+    'organizations',
+    outboxKeys,
+  ),
   demands: mergeRowCollection(local.demands, incoming.demands, 'demands', outboxKeys),
   municipalityUpdates: mergeRowCollection(
     local.municipalityUpdates,
