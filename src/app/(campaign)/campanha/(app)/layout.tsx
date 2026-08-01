@@ -10,6 +10,7 @@ import {
   type BiometricEnrollmentOffer,
 } from '@/components/campaign/shell/BiometricEnrollmentToast'
 import { CampaignAppScrollChrome } from '@/components/campaign/shell/CampaignAppScrollChrome'
+import { CampaignHomeSearchChromeProvider } from '@/components/campaign/shell/CampaignHomeSearchChromeContext'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import { CampaignNotificationBellSlot } from '@/components/campaign/shell/CampaignNotificationBellSlot'
 import { CampaignQuickActionContextProvider } from '@/components/campaign/shell/CampaignQuickActionContext'
@@ -75,7 +76,8 @@ export default async function CampaignAppLayout({ children }: { children: React.
       <CampaignSidebar user={campaignUserShellView(user)} />
       <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
         <CampaignWizardChromeProvider>
-          <CampaignQuickActionContextProvider>
+          <CampaignHomeSearchChromeProvider>
+            <CampaignQuickActionContextProvider>
             <CampaignListPendingBoundary>
               <CampaignMobileTopBar
                 notificationBell={<CampaignNotificationBellSlot user={user} />}
@@ -100,7 +102,8 @@ export default async function CampaignAppLayout({ children }: { children: React.
               <InstallPwaToast />
               {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
             </CampaignListPendingBoundary>
-          </CampaignQuickActionContextProvider>
+            </CampaignQuickActionContextProvider>
+          </CampaignHomeSearchChromeProvider>
         </CampaignWizardChromeProvider>
       </SidebarInset>
     </SidebarProvider>
