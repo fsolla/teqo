@@ -46,7 +46,7 @@ main → ci.yml full suite → vercel deploy --prod (se verde) → requeue se HE
 | `pnpm configure:branch-protection [-- --dry-run]`                                                             | Proteção de `main`: `checks` + `migration-lock`, `strict=false`, 0 reviews |
 | `pnpm db:seed:minimal`                                                                                        | DB mínimo sintético                                                        |
 
-`pnpm agent:promote` e `pnpm db:refresh:stage` são **legado** (recusam / não fazem parte do fluxo). Labels: `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`.
+Labels: `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`.
 
 ## Contrato de PR
 

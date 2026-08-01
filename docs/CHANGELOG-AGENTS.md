@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-01):** **Cutover residue cleanup** — removed dead `pnpm db:refresh:stage` / `scripts/refresh-stage.mjs` and `pnpm agent:promote` / `scripts/agent-promote.mjs`; closed `docs/CUTOVER-MAIN-ONLY.md`; scrubbed PR template `STAGE_DATABASE_URL` checklist item. Branch + Environment `stage` already deleted.
+
 **Recently resolved (2026-08-01):** **PRs de agente = Ready + auto-merge (audit incluso)** — removida a exceção do `engineering-audit` (artefatos também armam `gh pr merge --auto --merge`). Safety net GHA `agent-pr-ready-automerge.yml`: PRs `cursor/*` → `main` Draft→Ready + auto-merge. Rule always-on `agent-pr-workflow.mdc`.
 
 **Recently resolved (2026-07-31):** **Cloud `ensure-postgres` falso negativo no start** — o script tratava “role/DBs `teqo` prontos” como “Postgres aceitando conexões”. Em snapshot warm o cluster já está `online` sem role/DBs; `start_postgres` falhava com `postgres is installed but not accepting connections` **antes** de `bootstrap_databases`, o `start` do `environment.json` saía ≠0 e a UI marcava `INSTALL_FAILED` mesmo com o agente utilizável. Fix: separar `server_ready` (`pg_isready` / peer) de `teqo_ready`, bootstrap após o server up, retry no wait; `cloud-setup.sh` pina `DATABASE_URL` e asserta `payload_migrations` pós-migrate (no-op silencioso visto no JIT). Ruído cosmético no mesmo log (dirs de recording, `.installed` de plugins ENOENT) é race do exec-daemon — não é do Teqo.
