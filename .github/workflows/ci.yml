@@ -193,10 +193,13 @@ jobs:
             exit 0
           fi
           echo "stale=false" >> "$GITHUB_OUTPUT"
+      # Cooldown script is plain Node — no pnpm. Disable package-manager-cache
+      # here: setup-node@v5 defaults to true and looks for pnpm before action-setup.
       - uses: actions/setup-node@v5
         if: steps.tip.outputs.stale != 'true'
         with:
           node-version: 24
+          package-manager-cache: false
       - name: Require Vercel credentials
         if: steps.tip.outputs.stale != 'true'
         run: |
