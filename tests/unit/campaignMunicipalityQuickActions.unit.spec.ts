@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import { CAMPAIGN_WIZARD_ACTION_SLUGS } from '@/lib/campaignActionRoutes'
 import { UNCOVERED_MUNICIPALITIES_LIST_HREF } from '@/lib/campaignHomeActions'
+import {
+  isMunicipalitiesListPath,
+  parseMunicipalityDetailSlug,
+  resolveMunicipalityDetailQuickActions,
+  resolveMunicipalityListQuickActions,
+  resolveMunicipalityQuickActionsForPath,
+} from '@/lib/campaignMunicipalityQuickActions'
 
 const wizardActionIds = [
   'update-votes',

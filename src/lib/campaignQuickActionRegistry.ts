@@ -3,8 +3,8 @@ import {
   type ResolvedCampaignHomeAction,
 } from '@/lib/campaignHomeActions'
 import { resolveMunicipalityQuickActionsForPath } from '@/lib/campaignMunicipalityQuickActions'
-import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
+import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import type { CampaignRole } from '@/lib/campaignRoles'
 
 const isTerritoriesListPath = (pathname: string): boolean =>
