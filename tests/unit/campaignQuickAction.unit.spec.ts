@@ -4,6 +4,14 @@ import { resolveActivityQuickActions } from '@/lib/activityQuickActions'
 import { CAMPAIGN_WIZARD_ACTION_SLUGS } from '@/lib/campaignActionRoutes'
 import { UNCOVERED_MUNICIPALITIES_LIST_HREF, homeActionsForRole } from '@/lib/campaignHomeActions'
 import {
+  CAMPAIGN_DEMANDS_CREATE_HREF,
+  demandCreateHref,
+  isDemandDetailPath,
+  isDemandsListPath,
+  resolveDemandDetailQuickActions,
+  resolveDemandsListQuickActions,
+} from '@/lib/campaignQuickActionDemands'
+import {
   isCampaignActionsPath,
   isCampaignHomePath,
   isLeaderContactsPath,
@@ -49,6 +57,8 @@ describe('campaignQuickActionMount', () => {
   it('mounts for staff outside Início and acoes', () => {
     expect(shouldMountQuickActionsDrawer('/campanha/municipios', 'coordinator')).toBe(true)
     expect(shouldMountQuickActionsDrawer('/campanha/territorios', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsDrawer('/campanha/demandas', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsDrawer('/campanha/demandas/foo', 'coordinator')).toBe(true)
     expect(shouldMountQuickActionsDrawer('/campanha', 'coordinator')).toBe(false)
     expect(shouldMountQuickActionsDrawer('/campanha/acoes/registrar-sinal', 'advisor')).toBe(false)
   })
@@ -233,6 +243,60 @@ describe('campaignQuickActionRegistry', () => {
 
   it('returns empty catalog on territorios for leader lockdown', () => {
     expect(resolveQuickActionsForPath('/campanha/territorios', 'leader', {})).toEqual([])
+  })
+
+  it('returns single register-demand launcher on demandas list (B85)', () => {
+    const actions = resolveQuickActionsForPath('/campanha/demandas', 'coordinator', {})
+    expect(actions.map((action) => action.id)).toEqual(['register-demand'])
+    expect(actions[0]?.href).toBe(CAMPAIGN_DEMANDS_CREATE_HREF)
+    expect(actions[0]?.href).not.toContain('municipio=')
+  })
+
+  it('returns A1–A5 prefilled on demand detail when municipality context is set (B85)', () => {
+    const actions = resolveQuickActionsForPath('/campanha/demandas/pedido-cairu', 'coordinator', {
+      municipalitySlug: 'cairu',
+      municipalityId: 42,
+      demandSlug: 'pedido-cairu',
+    })
+    expect(actions.map((action) => action.id)).toEqual([
+      'update-votes',
+      'register-signal',
+      'change-trend',
+      'update-leadership',
+      'register-demand',
+    ])
+    expect(actions.find((action) => action.id === 'update-votes')?.href).toBe(
+      '/campanha/acoes/atualizar-votos?municipio=cairu',
+    )
+    expect(actions.find((action) => action.id === 'register-demand')?.href).toBe(
+      demandCreateHref(42),
+    )
+    expect(actions.some((action) => action.id === 'uncovered-municipalities')).toBe(false)
+  })
+
+  it('returns empty catalog on demand detail without municipality context', () => {
+    expect(
+      resolveQuickActionsForPath('/campanha/demandas/pedido-cairu', 'coordinator', {}),
+    ).toEqual([])
+  })
+})
+
+describe('campaignQuickActionDemands paths', () => {
+  it('matches list and detail paths but not nova', () => {
+    expect(isDemandsListPath('/campanha/demandas')).toBe(true)
+    expect(isDemandsListPath('/campanha/demandas/')).toBe(true)
+    expect(isDemandDetailPath('/campanha/demandas/pedido-cairu')).toBe(true)
+    expect(isDemandDetailPath('/campanha/demandas/nova')).toBe(false)
+    expect(isDemandDetailPath('/campanha/demandas')).toBe(false)
+  })
+})
+
+describe('campaignQuickActionDemands resolvers', () => {
+  it('returns empty catalog for leader lockdown', () => {
+    expect(resolveDemandsListQuickActions('leader')).toEqual([])
+    expect(
+      resolveDemandDetailQuickActions('leader', { municipalitySlug: 'cairu', municipalityId: 1 }),
+    ).toEqual([])
   })
 })
 

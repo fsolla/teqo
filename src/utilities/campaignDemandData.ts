@@ -27,6 +27,7 @@ export type DemandRowViewModel = {
   slug: string
   kind: CampaignDemandKind
   status: CampaignDemandStatus
+  municipalityId: number
   municipalityName: string
   municipalitySlug: string
   requesterName: string | null
@@ -107,6 +108,7 @@ const toDemandRow = (
   requesterBy: Map<number, string>,
 ): DemandRowViewModel => {
   const municipality = municipalityBy.get(relationshipId(demand.municipality) ?? -1)
+  const municipalityID = relationshipId(demand.municipality)
   const leadershipID = relationshipId(demand.leadership)
   return {
     id: demand.id,
@@ -114,6 +116,7 @@ const toDemandRow = (
     slug: demand.slug,
     kind: demand.kind as CampaignDemandKind,
     status: demand.status as CampaignDemandStatus,
+    municipalityId: municipalityID ?? 0,
     municipalityName: municipality?.name ?? 'Município',
     municipalitySlug: municipality?.slug ?? '',
     requesterName: leadershipID ? (requesterBy.get(leadershipID) ?? null) : null,

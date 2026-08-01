@@ -5,6 +5,12 @@ import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import { isLeaderContactsPath } from '@/lib/campaignQuickActionMount'
 import {
+  isDemandDetailPath,
+  isDemandsListPath,
+  resolveDemandDetailQuickActions,
+  resolveDemandsListQuickActions,
+} from '@/lib/campaignQuickActionDemands'
+import {
   parseActivityQuickActionSurface,
   parseOrganizationQuickActionSurface,
 } from '@/lib/campaignQuickActionPaths'
@@ -40,12 +46,18 @@ export const resolveQuickActionsForPath = (
     return resolveOrganizationQuickActions(organizationSurface, role, context)
   }
 
+  if (isDemandsListPath(pathname)) {
+    return resolveDemandsListQuickActions(role)
+  }
+  if (isDemandDetailPath(pathname)) {
+    return resolveDemandDetailQuickActions(role, context)
+  }
+
   const municipalityActions = resolveMunicipalityQuickActionsForPath(pathname, role, context)
   if (municipalityActions.length > 0) return municipalityActions
 
   if (isTerritoriesListPath(pathname)) {
     return resolveStaffHomeQuickActions(role)
   }
-
   return []
 }

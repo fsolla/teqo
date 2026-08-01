@@ -61,10 +61,11 @@ describe('searchStaffMunicipalityHits (B60)', () => {
         throw new Error('could not allocate two municipalities with distinct word-start queries')
       }
     }
-    await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
     const otherQuery = distinctWordStartQuery(other.name, administered.name)
     const administeredQuery = distinctWordStartQuery(administered.name, other.name)
+
+    await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
     const advisorResult = await searchStaffMunicipalityHits(payload, advisor, otherQuery)
     expect(advisorResult.map((hit) => hit.slug)).toEqual([])
