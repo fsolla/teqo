@@ -7,11 +7,29 @@
       "skillPath": "37signals-way/SKILL.md",
       "computedHash": "273edc6f4d589ce20fb1e50caef0ce36e6151df147f6a9908f08fff755638665"
     },
+    "api-and-interface-design": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/api-and-interface-design/SKILL.md",
+      "computedHash": "3cf54553433e55875c664baf78f9c769820bdfac155f09bf2989d70e20e6e147"
+    },
     "blue-ocean-strategy": {
       "source": "wondelai/skills",
       "sourceType": "github",
       "skillPath": "blue-ocean-strategy/SKILL.md",
       "computedHash": "4bae95c323ca42e89e3b50170f22da9508fbf9db9ddd3e045887ee7d66ce3a77"
+    },
+    "browser-testing-with-devtools": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/browser-testing-with-devtools/SKILL.md",
+      "computedHash": "639950ea71851d9c4919608cba8b6276cd1ba30cd82acdc4949c701537eed661"
+    },
+    "ci-cd-and-automation": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ci-cd-and-automation/SKILL.md",
+      "computedHash": "578b098a7d2352ccdac8b8abdc40eb6803538e81cf8382f138da6188a655087c"
     },
     "clean-architecture": {
       "source": "wondelai/skills",
@@ -25,6 +43,18 @@
       "skillPath": "clean-code/SKILL.md",
       "computedHash": "917f01d5f5800f1f575c6701a4a34939647e74c423bd3108e894191abb0593f6"
     },
+    "code-review-and-quality": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/code-review-and-quality/SKILL.md",
+      "computedHash": "ae7a873053c84dd5a76f70c05a21efc4095017e95b8f5db778eb826809859cac"
+    },
+    "code-simplification": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/code-simplification/SKILL.md",
+      "computedHash": "7973e746e8e2ea5004d520da970c15a106824b8d6be1bcff48908aec021f3677"
+    },
     "cold-start-problem": {
       "source": "wondelai/skills",
       "sourceType": "github",
@@ -36,6 +66,12 @@
       "sourceType": "github",
       "skillPath": "contagious/SKILL.md",
       "computedHash": "e804f739e7e9ca15fa264824a8371a0a7a07a91beb1af91546f49bde3e251ae7"
+    },
+    "context-engineering": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/context-engineering/SKILL.md",
+      "computedHash": "bb8864454c5a24636cab86c4b3c4b29e7e7431c80485bfd7c9c0a19a01936510"
     },
     "continuous-discovery": {
       "source": "wondelai/skills",
@@ -79,6 +115,18 @@
       "skillPath": "ddia-systems/SKILL.md",
       "computedHash": "89cf913d3fc28b9a883a32f2d2795a83f4bae694857a2b01cb01dfe8ccd4bdd2"
     },
+    "debugging-and-error-recovery": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/debugging-and-error-recovery/SKILL.md",
+      "computedHash": "1a119d27e8f1d27ed6317adf3115826336491346780dcb7d7a7a7f79fe3ffe10"
+    },
+    "deprecation-and-migration": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/deprecation-and-migration/SKILL.md",
+      "computedHash": "55a559781ae92cacd6b75acd509e61b577c2660212d1808da2fbb8dbadc90196"
+    },
     "design-code-architecture": {
       "source": "wondelai/skills",
       "sourceType": "github",
@@ -97,17 +145,41 @@
       "skillPath": "design-sprint/SKILL.md",
       "computedHash": "a62001708960552d7fba815944a0eb05b20388f01d695de8fc1c351ea1da60dc"
     },
+    "documentation-and-adrs": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/documentation-and-adrs/SKILL.md",
+      "computedHash": "7464fd2950b99fb00bbf65cab27653e0a049eef00c98927713ffdfe232a9daa9"
+    },
     "domain-driven-design": {
       "source": "wondelai/skills",
       "sourceType": "github",
       "skillPath": "domain-driven-design/SKILL.md",
       "computedHash": "3a84c4c48b3d1bcdf07e6ba096749679f97915dd6b4f9c87ab8a715b936fed30"
     },
+    "doubt-driven-development": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/doubt-driven-development/SKILL.md",
+      "computedHash": "f6094460ebc9512285c85790e49f612081b9dd6a2b77d874fe2d960ef50a9ef1"
+    },
     "drive-motivation": {
       "source": "wondelai/skills",
       "sourceType": "github",
       "skillPath": "drive-motivation/SKILL.md",
       "computedHash": "2c3d2855cf0593bb76e9afce2926478c117f42b2f17d493b7973378c11f54079"
+    },
+    "frontend-ui-engineering": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-ui-engineering/SKILL.md",
+      "computedHash": "3a5d4a84e52710f2d724ff68813fba0d61db4f2a232a9d0b0050a8fec08b3e82"
+    },
+    "git-workflow-and-versioning": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/git-workflow-and-versioning/SKILL.md",
+      "computedHash": "8b53153892a21c3a486831bf608970b040ad0e9da698505af58c659242cf835c"
     },
     "good-strategy-bad-strategy": {
       "source": "wondelai/skills",
@@ -157,6 +229,12 @@
       "skillPath": "hundred-million-offers/SKILL.md",
       "computedHash": "eab55c351d55c5797747d7d6a9258d2f76ef2f9d579fcfbedc4b7f31e48009e8"
     },
+    "idea-refine": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/idea-refine/SKILL.md",
+      "computedHash": "9fc0ae5d8a074872a636d22f9c6fe71e041b86cddc9fe5af90ef654f5032ec5d"
+    },
     "improve-app": {
       "source": "wondelai/skills",
       "sourceType": "github",
@@ -187,6 +265,12 @@
       "skillPath": "improve-website/SKILL.md",
       "computedHash": "c03894aadf4d3d562a71ba70c5a0e7f3628c54a0f3b654a40820177d7e5597e8"
     },
+    "incremental-implementation": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/incremental-implementation/SKILL.md",
+      "computedHash": "d83e705bd54b0a4b02a75cdda0a3f2a28b935286e31eb945e13aafe079c87b59"
+    },
     "influence-psychology": {
       "source": "wondelai/skills",
       "sourceType": "github",
@@ -198,6 +282,12 @@
       "sourceType": "github",
       "skillPath": "inspired-product/SKILL.md",
       "computedHash": "e334c58c654e3bd073d79febda635f3d8170c42da047b20e2c3d8b2987d1ab24"
+    },
+    "interview-me": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/interview-me/SKILL.md",
+      "computedHash": "efded91ac7f7626239b338ce8622afeb557151b86532b632f3c9eb5b2ff9048f"
     },
     "ios-hig-design": {
       "source": "wondelai/skills",
@@ -259,6 +349,12 @@
       "skillPath": "negotiation/SKILL.md",
       "computedHash": "0455504db949beb0ee17088b9315a614ac2b6764b8011ee19e8ffa7d6abf4baa"
     },
+    "observability-and-instrumentation": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/observability-and-instrumentation/SKILL.md",
+      "computedHash": "9bfc314353e4a55d691faca5b1a894e38a9897d88aabff34ea2c6a039d86bf8d"
+    },
     "obviously-awesome": {
       "source": "wondelai/skills",
       "sourceType": "github",
@@ -270,6 +366,18 @@
       "sourceType": "github",
       "skillPath": "one-page-marketing/SKILL.md",
       "computedHash": "cbc08098c36bf7c2f5ed67eebf6730ecac03ddca71861878ac20bd202b8a802a"
+    },
+    "performance-optimization": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/performance-optimization/SKILL.md",
+      "computedHash": "3881a49f910607b36f4fb1f9f17b4ef703293c6073986bcfa9f7839d44680aba"
+    },
+    "planning-and-task-breakdown": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/planning-and-task-breakdown/SKILL.md",
+      "computedHash": "ecc29e854ff27b26a2e6b3e4f15ec5b9bd74f65c7e434515eb0e4ac23cc6cdee"
     },
     "pragmatic-programmer": {
       "source": "wondelai/skills",
@@ -313,11 +421,35 @@
       "skillPath": "scorecard-marketing/SKILL.md",
       "computedHash": "a7fea37b6ac442c20dd9b43e5bc32847a0a24f0a38eeaadcc813241426f96355"
     },
+    "security-and-hardening": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/security-and-hardening/SKILL.md",
+      "computedHash": "a0246e67cf8f8a18687a7736442738318b1997715fbdf53dfcf767082c51cca5"
+    },
+    "shipping-and-launch": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/shipping-and-launch/SKILL.md",
+      "computedHash": "005e89054a4bbe27e991c58aa2ddcede4285a7128eb452aaaae351832ebc8a88"
+    },
     "software-design-philosophy": {
       "source": "wondelai/skills",
       "sourceType": "github",
       "skillPath": "software-design-philosophy/SKILL.md",
       "computedHash": "49d8a7413e4fda7dbbe86efbc9f91a33a5516f2372703cbcf5aaa9d5030286a0"
+    },
+    "source-driven-development": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/source-driven-development/SKILL.md",
+      "computedHash": "235fb43569e9b21ec5d209818ff1ad3da9682be33c4e464ffa89ed348e7094a0"
+    },
+    "spec-driven-development": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/spec-driven-development/SKILL.md",
+      "computedHash": "2dee9aa940633b7b5e0f45be34839ab31c0de98d482e16772c5cd350f4b91b4b"
     },
     "steve-jobs-design-review": {
       "source": "wondelai/skills",
@@ -343,6 +475,12 @@
       "skillPath": "team-topologies/SKILL.md",
       "computedHash": "da6456e01225ea4cd093e3def66f4f95f6fec910c04863fa446cbcfcdb27044e"
     },
+    "test-driven-development": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-driven-development/SKILL.md",
+      "computedHash": "133428ac28fa75cf6f8cf5dafea8d603022852ce59a0520620784c7e3dc7e519"
+    },
     "top-design": {
       "source": "wondelai/skills",
       "sourceType": "github",
@@ -354,6 +492,12 @@
       "sourceType": "github",
       "skillPath": "traction-eos/SKILL.md",
       "computedHash": "71ef96428f433991e19a32cef1c61c0909944748486e94811217ba05d393380a"
+    },
+    "using-agent-skills": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/using-agent-skills/SKILL.md",
+      "computedHash": "531902008625dafa3710a5a4730766455273ad6ea9beca0b4129be9f358de61f"
     },
     "ux-heuristics": {
       "source": "wondelai/skills",
