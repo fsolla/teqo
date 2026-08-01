@@ -13,16 +13,31 @@ import {
   CANONICAL_E2E_TEST_DIR,
   CANONICAL_INT_INCLUDE,
   CANONICAL_UNIT_INCLUDE,
+  E2E_MANIFEST_DOMAIN_EXEMPT,
   findMisplacedSpecPaths,
   findUncoveredE2eDomainPrefixes,
   HIGH_RISK_EXACT,
+  isBuildPath,
   isCanonicalSpecPath,
+  isCodePath,
+  isHighRisk,
   isMisplacedSpecPath,
+  isSrcPath,
+  isTestPath,
 } from '../../scripts/lib/test-affected-core.mjs'
 
 const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '../..')
 
 describe('ciSkipInvariants', () => {
+  it('exports shared path predicates used by classifiers and the lint guard', () => {
+    expect(isSrcPath('src/lib/x.ts')).toBe(true)
+    expect(isTestPath('tests/unit/x.unit.spec.ts')).toBe(true)
+    expect(isCodePath('tsconfig.json')).toBe(true)
+    expect(isBuildPath('public/favicon.ico')).toBe(true)
+    expect(isHighRisk('src/migrations/x.ts')).toBe(true)
+    expect(E2E_MANIFEST_DOMAIN_EXEMPT.has('shared')).toBe(true)
+  })
+
   it('rejects misplaced *.spec|*.test files outside the three canonical trees', () => {
     expect(isCanonicalSpecPath('tests/unit/foo.unit.spec.ts')).toBe(true)
     expect(isCanonicalSpecPath('tests/unit/foo.unit.spec.tsx')).toBe(true)
