@@ -14,8 +14,8 @@
  * Prerequisite: `pnpm migrate && pnpm db:seed:minimal` (coordinator actor).
  */
 
-import { gzipSync } from 'node:zlib'
 import { performance } from 'node:perf_hooks'
+import { gzipSync } from 'node:zlib'
 import { getPayload } from 'payload'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
@@ -527,10 +527,7 @@ const buildSnapshotSections = async (payload, actor, rowLimits) => {
     sort: '-updatedAt',
   })
   const allUpdates = updatesResult.docs.map(mapMunicipalityUpdate)
-  const municipalityUpdates = truncateMunicipalityUpdates(
-    allUpdates,
-    rowLimits.municipality_update,
-  )
+  const municipalityUpdates = truncateMunicipalityUpdates(allUpdates, rowLimits.municipality_update)
   const municipalityUpdatesSize = measureJson(municipalityUpdates)
   sections.push({
     key: 'municipalityUpdates',
@@ -601,8 +598,7 @@ const projectProdSnapshot = (sections, rowLimits) => {
     stateDeputies: PROD_ROW_ESTIMATES.stateDeputies,
     organizations: PROD_ROW_ESTIMATES.organizations,
     demands: PROD_ROW_ESTIMATES.demands,
-    municipalityUpdates:
-      PROD_ROW_ESTIMATES.municipalities * rowLimits.municipality_update,
+    municipalityUpdates: PROD_ROW_ESTIMATES.municipalities * rowLimits.municipality_update,
     goals: 1,
   }
 
@@ -620,9 +616,7 @@ const projectProdSnapshot = (sections, rowLimits) => {
         sections.reduce((sum, section) => sum + section.jsonBytes, 0)
       : PROD_GZIP_RATIO_ESTIMATE
 
-  const prodMeasuredGzipEstimate = Math.round(
-    PROD_MEASURED_JSON_BYTES * PROD_GZIP_RATIO_ESTIMATE,
-  )
+  const prodMeasuredGzipEstimate = Math.round(PROD_MEASURED_JSON_BYTES * PROD_GZIP_RATIO_ESTIMATE)
 
   return { projectedRows, projectedJsonBytes, prodMeasuredGzipEstimate, localGzipRatio }
 }
@@ -685,11 +679,7 @@ const printReport = (sections, totalSize, totalQueryMs, rowLimits, projection) =
 const rowLimits = parseCliArgs(process.argv.slice(2))
 const payload = await getPayload({ config: payloadConfig })
 const actor = await loadCoordinatorActor(payload)
-const { sections, totalSize, totalQueryMs } = await buildSnapshotSections(
-  payload,
-  actor,
-  rowLimits,
-)
+const { sections, totalSize, totalQueryMs } = await buildSnapshotSections(payload, actor, rowLimits)
 const projection = projectProdSnapshot(sections, rowLimits)
 
 printReport(sections, totalSize, totalQueryMs, rowLimits, projection)
