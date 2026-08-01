@@ -1,7 +1,12 @@
 import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
+import { isAdvisorsPath } from '@/lib/campaignAdvisorQuickActions'
 import { CAMPAIGN_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import { isActivityTourComposerPath } from '@/lib/campaignQuickActionPaths'
-import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
+import {
+  isStaffCampaignRole,
+  isUnrestrictedCampaignRole,
+  type CampaignRole,
+} from '@/lib/campaignRoles'
 
 /** Início matches only exactly — same rule as sidebar nav. */
 export const isCampaignHomePath = (pathname: string): boolean =>
@@ -23,5 +28,6 @@ export const shouldMountQuickActionsDrawer = (pathname: string, role: CampaignRo
   // B84: E13 compositor already exposes primary CTAs — skip competing drawer chrome.
   if (isActivityTourComposerPath(pathname)) return false
   if (role === 'leader') return isLeaderContactsPath(pathname)
+  if (isAdvisorsPath(pathname)) return isUnrestrictedCampaignRole(role)
   return isStaffCampaignRole(role)
 }
