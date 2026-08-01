@@ -49,11 +49,7 @@ describe('searchStaffMunicipalityHits (B60)', () => {
 
     const administered = await fixtures.getMunicipality()
     let other = await fixtures.getMunicipality()
-<<<<<<< HEAD
     for (let attempt = 0; attempt < 30; attempt++) {
-=======
-    for (let attempt = 0; attempt < 24; attempt += 1) {
->>>>>>> 8e4385e (test: retry municipality pair when word-start queries collide)
       try {
         distinctWordStartQuery(other.name, administered.name)
         distinctWordStartQuery(administered.name, other.name)
@@ -61,15 +57,10 @@ describe('searchStaffMunicipalityHits (B60)', () => {
       } catch {
         other = await fixtures.getMunicipality()
       }
-<<<<<<< HEAD
       if (attempt === 29) {
         throw new Error('could not allocate two municipalities with distinct word-start queries')
       }
     }
-    await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
-=======
-    }
->>>>>>> 8e4385e (test: retry municipality pair when word-start queries collide)
 
     const otherQuery = distinctWordStartQuery(other.name, administered.name)
     const administeredQuery = distinctWordStartQuery(administered.name, other.name)

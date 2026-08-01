@@ -1,19 +1,19 @@
 import { resolveActivityQuickActions } from '@/lib/activityQuickActions'
 import { resolveStaffHomeQuickActions } from '@/lib/campaignHomeActions'
 import { resolveMunicipalityQuickActionsForPath } from '@/lib/campaignMunicipalityQuickActions'
+import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
+import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import {
   isDemandDetailPath,
   isDemandsListPath,
   resolveDemandDetailQuickActions,
   resolveDemandsListQuickActions,
 } from '@/lib/campaignQuickActionDemands'
-import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import {
   parseActivityQuickActionSurface,
   parseOrganizationQuickActionSurface,
 } from '@/lib/campaignQuickActionPaths'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
-import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
 
