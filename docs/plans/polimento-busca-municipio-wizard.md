@@ -1,8 +1,8 @@
 # Polimento — busca de município no wizard (bullets, gaps, título mobile)
 
-Status: rascunho
+Status: registrado
 Atualizado em: 2026-08-01
-Issue: —
+Issue: #103
 Priority: P1
 Model: composer-2.5
 Impeccable: B — encaixe em `WizardMunicipalitySearchStep` + padding do `CampaignWizardShell`

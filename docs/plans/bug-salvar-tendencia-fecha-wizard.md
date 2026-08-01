@@ -1,8 +1,8 @@
 # Bug — Salvar tendência fecha o wizard (não volta ao começo)
 
-Status: rascunho
+Status: registrado
 Atualizado em: 2026-08-01
-Issue: —
+Issue: #105
 Priority: P0
 Model: composer-2.5
 Impeccable: B — pós-submit de `WizardTrendNoteStep`

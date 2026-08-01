@@ -1,8 +1,8 @@
 # Header do wizard — X na config principal, “Pular” só nas encadeadas
 
-Status: rascunho
+Status: registrado
 Atualizado em: 2026-08-01
-Issue: —
+Issue: #104
 Priority: P1
 Model: composer-2.5
 Impeccable: B — chrome direito do `CampaignMobileTopBar` / prop `skip` do shell
