@@ -21,7 +21,9 @@ const hit = (
   ...partial,
 })
 
-const visit = (overrides: Partial<WizardContinuityVisitInput> = {}): WizardContinuityVisitInput => ({
+const visit = (
+  overrides: Partial<WizardContinuityVisitInput> = {},
+): WizardContinuityVisitInput => ({
   href: '/campanha/municipios/cairu',
   kind: 'municipality',
   ...overrides,

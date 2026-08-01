@@ -8,7 +8,6 @@ import { useHomeSearchQuery } from '@/components/campaign/dashboard/useHomeSearc
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { wizardActionHref } from '@/lib/campaignActionRoutes'
-import { getLastActedMunicipalitySlug } from '@/lib/campaignLastActedMunicipality'
 import type {
   HomeSearchMunicipalityHit,
   WizardMunicipalitySearchSuccessResponse,
@@ -16,6 +15,7 @@ import type {
 import { toHomeSearchMunicipalityHit } from '@/lib/campaignHomeSearchHits'
 import { HOME_SEARCH_GENERIC_ERROR_MESSAGE } from '@/lib/campaignHomeSearchMessages'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
+import { getLastActedMunicipalitySlug } from '@/lib/campaignLastActedMunicipality'
 import {
   WIZARD_MUNICIPALITY_SEARCH_EMPTY,
   WIZARD_MUNICIPALITY_SEARCH_LABEL,

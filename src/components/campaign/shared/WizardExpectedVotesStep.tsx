@@ -14,8 +14,8 @@ import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import { wizardActionHref } from '@/lib/campaignActionRoutes'
-import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
+import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
   WIZARD_VOTES_FINAL_CTA_LABEL,
