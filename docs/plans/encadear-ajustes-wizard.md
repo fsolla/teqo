@@ -1,8 +1,8 @@
 # Encadear ajustes após a ação principal do wizard
 
-Status: rascunho
+Status: registrado
 Atualizado em: 2026-08-01
-Issue: —
+Issue: #106
 Priority: P1
 Model: cursor-grok-4.5-medium
 Impeccable: C — orquestração multi-fluxo no chassis `/campanha/acoes`
@@ -27,15 +27,16 @@ Brief compacto:
 
 ```text
 Ajustar votos (entry)
-  1. Busca município
-  2. Config principal: votos → Salvar
-  3. Encadeada: tendência?  [Pular] … Salvar
-  4. Encadeada: sinal?      [Pular] … Salvar
-  5. (opcional) liderança?  [Pular]
-  → Início / “Atualização registrada em {município}”
+  Município → votos (X) → tendência [Pular] → sinal [Pular] → liderança [Pular] → Início
+
+Registrar sinal (entry)
+  Município → sinal (X) → tendência [Pular] → votos [Pular] → liderança [Pular] → Início
 
 Mudar tendência (entry)
-  1. Município → 2. tendência (X até salvar) → 3. encadeadas leves (sinal?) → fim
+  Município → tendência (X) → sinal [Pular] → votos [Pular] → liderança [Pular] → Início
+
+Atualizar liderança (entry)
+  Município → liderança (X) → sinal [Pular] → votos [Pular] → tendência [Pular] → Início
 ```
 
 ## Dados → decisão → apresentação
@@ -61,16 +62,16 @@ Pedido (2026-08-01): ao iniciar uma ação → município → **ajuste principal
 ## Decisões travadas
 
 - **Cadeia = navegação entre rotas/passos existentes + `entryAction`, não um mega-form único.** Reusa B61/B63/B64/B70. **Rejeitado:** um só POST transacional de tudo (caro; quebra skip parcial); checkboxes “Quer também?” sem subfluxo (raso demais vs tiles já feitos).
-- **Matriz v1 (assumida — validar com produto):**
+- **Matriz v1 (confirmada com produto 2026-08-01):** cada entry encadeia os **outros três** fluxos na ordem abaixo (a principal não se repete na fila).
 
   | Entry (botão Início) | Principal | Encadeadas (ordem)            |
   | -------------------- | --------- | ----------------------------- |
   | `update-votes`       | votos     | tendência → sinal → liderança |
-  | `register-signal`    | sinal     | tendência                     |
-  | `change-trend`       | tendência | sinal                         |
-  | `update-leadership`  | liderança | — (sem cadeia v1)             |
+  | `register-signal`    | sinal     | tendência → votos → liderança |
+  | `change-trend`       | tendência | sinal → votos → liderança     |
+  | `update-leadership`  | liderança | sinal → votos → tendência     |
 
-  **Rejeitado:** incluir nível de envolvimento (E14) / assessor na v1 (A7/A8 do UX-1 — raros no ritual 7h); cadeia simétrica completa em todo entry.
+  **Rejeitado:** incluir nível de envolvimento (E14) / assessor na v1 (A7/A8 do UX-1); cadeia só parcial (ex. liderança sem elos) — produto pediu os quatro caminhos completos.
 
 - **Pular / Salvar avançam a fila; X só na principal (B96).** Encadeada nunca usa X como “pular um elo” — X abortaria o ritual inteiro só se quisermos dismiss global; **recomendação:** nas encadeadas dismiss/skip = próximo ou fim (Pular), sem X que descarte a principal já salva sem aviso. **Rejeitado:** X nas encadeadas = Início (ok como dismiss explícito se B75 mantiver — produto pediu Pular no lugar do X).
 - **Gravação por elo (já existente), não commit único no fim.** **Rejeitado:** rascunho multi-collection até o CTA final (appetite + U4).
@@ -78,8 +79,7 @@ Pedido (2026-08-01): ao iniciar uma ação → município → **ajuste principal
 
 ## Questões em aberto
 
-- **Sinal antes ou depois de tendência na cadeia de votos?** **Opções:** A tendência→sinal (tabela acima) | B sinal→tendência (UX-1 A1 passos 5–6). **Recomendação:** **A** — tendência é leitura política rápida; sinal é texto. _(assumido — validar)_
-- **Tela “Votos atualizados” intermediária some?** **Opções:** A pular direto à 1ª encadeada | B 1 toque “Continuar” na fase saved. **Recomendação:** **A** — menos atrito; Feel the action. _(assumido)_
+- **Tela “Votos atualizados” intermediária some?** **Opções:** A pular direto à 1ª encadeada | B 1 toque “Continuar” na fase saved. **Recomendação:** **A** — menos atrito; Feel the action. _(assumido — validar no craft)_
 
 ## Abordagem proposta
 
@@ -131,4 +131,4 @@ Componentes:
 - [wizard-header-x-vs-pular.md](wizard-header-x-vs-pular.md) (B96) · [bug-salvar-tendencia-fecha-wizard.md](bug-salvar-tendencia-fecha-wizard.md) (B97)
 - `PRODUCT.md` / `DESIGN.md`
 
-Qualidade de decisão: 4/5 (matriz v1 assumida — validar no gate)
+Qualidade de decisão: 5/5 (matriz v1 confirmada no gate 2026-08-01)

@@ -1,8 +1,8 @@
 # Strip de ações do Início — edge-to-edge no mobile + gap menor
 
-Status: rascunho
+Status: registrado
 Atualizado em: 2026-08-01
-Issue: —
+Issue: #107
 Priority: P1
 Model: composer-2.5
 Impeccable: B — layout `CampaignHomeActionStrip` / dock do Início

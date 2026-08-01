@@ -1,8 +1,8 @@
 # CI — cooldown mínimo de 30 min entre deploys de produção (Vercel)
 
-Status: rascunho
+Status: registrado
 Atualizado em: 2026-08-01
-Issue: —
+Issue: #102
 Priority: P0
 Model: composer-2.5
 Impeccable: A — N/A (sem superfície UI)
