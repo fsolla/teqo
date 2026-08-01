@@ -4,6 +4,7 @@ import {
   formatHomeSummaryDeltaMagnitude,
   homeSummaryDeltaAriaLabel,
   resolveHomeSummaryDeltaDirection,
+  shouldShowHomeSummaryDelta,
 } from '@/lib/campaignHomeSummaryDelta'
 
 describe('campaignHomeSummaryDelta', () => {
@@ -29,5 +30,12 @@ describe('campaignHomeSummaryDelta', () => {
     expect(homeSummaryDeltaAriaLabel(-500)).toBe('Queda de 500 votos nos últimos 7 dias')
     expect(homeSummaryDeltaAriaLabel(0)).toBe('Sem variação nos últimos 7 dias')
     expect(homeSummaryDeltaAriaLabel(null)).toBe('Variação nos últimos 7 dias indisponível')
+  })
+
+  it('shows the delta chip only when movement occurred', () => {
+    expect(shouldShowHomeSummaryDelta(500)).toBe(true)
+    expect(shouldShowHomeSummaryDelta(-200)).toBe(true)
+    expect(shouldShowHomeSummaryDelta(0)).toBe(false)
+    expect(shouldShowHomeSummaryDelta(null)).toBe(false)
   })
 })

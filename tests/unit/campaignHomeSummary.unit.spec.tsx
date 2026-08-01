@@ -50,7 +50,29 @@ describe('CampaignHomeSummary', () => {
       />,
     )
 
-    expect(screen.getByLabelText('Variação nos últimos 7 dias indisponível')).toBeTruthy()
+    expect(screen.queryByLabelText(/nos últimos 7 dias/)).toBeNull()
     expect(screen.queryByRole('progressbar')).toBeNull()
+  })
+
+  it('omits the delta chip and period caption when delta is flat', () => {
+    render(
+      <CampaignHomeSummary
+        view={{
+          staffVoteTotalCentral: 12_345,
+          homeSummaryDelta: 0,
+          goalCoverage: {
+            goal: 0,
+            committed: 0,
+            coverageRatio: null,
+            deficit: 0,
+          },
+        }}
+      />,
+    )
+
+    expect(screen.getByText('12.345')).toBeTruthy()
+    expect(screen.queryByLabelText(/nos últimos 7 dias/)).toBeNull()
+    expect(screen.queryByText('nos últimos 7 dias')).toBeNull()
+    expect(screen.queryByText('0')).toBeNull()
   })
 })
