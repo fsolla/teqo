@@ -80,6 +80,8 @@ describe('ciSkipInvariants', () => {
       'scripts/lib/test-affected-core.mjs',
       'scripts/ci-scope.mjs',
       'scripts/check-test-locations.mjs',
+      'scripts/check-plans-only-pr-closes.mjs',
+      'scripts/lib/plansOnlyClosesGuard.mjs',
       'scripts/test-affected.mjs',
       'scripts/e2e-affected.mjs',
       'tests/unit/ciSkipInvariants.unit.spec.ts',

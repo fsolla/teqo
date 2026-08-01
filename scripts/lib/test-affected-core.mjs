@@ -28,6 +28,8 @@ export const HIGH_RISK_EXACT = new Set([
   'scripts/e2e-affected.mjs',
   'scripts/ci-scope.mjs',
   'scripts/check-test-locations.mjs',
+  'scripts/check-plans-only-pr-closes.mjs',
+  'scripts/lib/plansOnlyClosesGuard.mjs',
   'scripts/gate-ci.mjs',
   'tests/unit/ciSkipInvariants.unit.spec.ts',
   'tests/unit/testAffected.unit.spec.ts',

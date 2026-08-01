@@ -88,6 +88,8 @@ pnpm agent:register -- --id <ID> --title "<título>" --prio <P0..P3> \
 
 A Issue nasce `ready` (ou `blocked`) com frontmatter `id/depends/serializes/priority/model` + spec + link do plano. Atualize o cabeçalho do plano (`Issue: #N`). Commit dos planos (commits lógicos por item ou por lote).
 
+**PR só de plano (`docs/plans/` exclusivamente):** nunca use `Closes #N` / `Fixes` / `Resolves` no body — use `Related #N`. O CI (`plans-only-closes`) bloqueia keywords de fechamento; a implementação fecha a Issue em outro PR (`work-issue`).
+
 **NÃO faz:** editar `docs/roadmap.md` (legado congelado), implementar código, claim (`pnpm agent:claim` é de `work-issue`).
 
 ## Resumo final

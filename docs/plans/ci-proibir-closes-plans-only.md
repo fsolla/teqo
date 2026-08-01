@@ -1,6 +1,6 @@
 # CI — proibir `Closes`/`Fixes` em PR só `docs/plans`
 
-Status: registrado
+Status: entregue (OPS12 — PR em merge)
 Atualizado em: 2026-08-01
 Issue: #116 (OPS12)
 Priority: P1
