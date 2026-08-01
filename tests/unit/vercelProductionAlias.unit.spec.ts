@@ -59,12 +59,14 @@ describe('vercelProductionAlias', () => {
       calls.push(`${method} ${href}`)
 
       if (href.includes('/v9/projects/') && href.includes('/domains') && method === 'GET') {
-        return jsonResponse(true, 200, { domains: [{ name: 'pt.jorgesolla.com.br' }] })
+        return jsonResponse(true, 200, {
+          domains: [{ name: 'pt.jorgesolla.com.br', verified: true, gitBranch: null }],
+        })
       }
       if (href.includes('/v9/projects/') && method === 'GET') {
         return jsonResponse(true, 200, { autoAssignCustomDomains: false, name: 'jorgesolla' })
       }
-      if (href.includes('/v9/projects/') && method === 'PATCH') {
+      if (href.includes('/v9/projects/') && method === 'PATCH' && !href.includes('/domains/')) {
         return jsonResponse(true, 200, { autoAssignCustomDomains: true })
       }
       if (href.includes('/v13/deployments/')) {
@@ -108,6 +110,7 @@ describe('vercelProductionAlias', () => {
         return jsonResponse(true, 200, {
           alias: 'pt.jorgesolla.com.br',
           uid: 'alias_1',
+          oldDeploymentId: 'dpl_old',
           created: new Date().toISOString(),
         })
       }
@@ -125,7 +128,89 @@ describe('vercelProductionAlias', () => {
 
     expect(result.aliased).toBe(true)
     expect(result.autoAssignWasFalse).toBe(true)
+    expect(result.clearedGitBranch).toBe(false)
     expect(calls.some((c) => c.includes('/aliases') && c.startsWith('POST '))).toBe(true)
+  })
+
+  it('ensureProductionCustomDomain clears gitBranch before aliasing CLI deploys', async () => {
+    const calls: string[] = []
+    let aliasHosts = ['jorgesolla-solla.vercel.app']
+    let domainGitBranch: string | null = 'main'
+    const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
+      const href = String(url)
+      const method = init?.method ?? 'GET'
+      calls.push(`${method} ${href}`)
+
+      if (href.includes('/v9/projects/') && href.includes('/domains') && method === 'GET') {
+        return jsonResponse(true, 200, {
+          domains: [
+            {
+              name: 'pt.jorgesolla.com.br',
+              verified: true,
+              gitBranch: domainGitBranch,
+            },
+          ],
+        })
+      }
+      if (
+        href.includes('/v9/projects/') &&
+        href.includes('/domains/pt.jorgesolla.com.br') &&
+        method === 'PATCH'
+      ) {
+        domainGitBranch = null
+        return jsonResponse(true, 200, { name: 'pt.jorgesolla.com.br', gitBranch: null })
+      }
+      if (href.includes('/v9/projects/') && method === 'GET') {
+        return jsonResponse(true, 200, { autoAssignCustomDomains: true, name: 'jorgesolla' })
+      }
+      if (href.includes('/v13/deployments/')) {
+        return jsonResponse(true, 200, {
+          id: 'dpl_test',
+          alias: aliasHosts,
+          readyState: 'READY',
+        })
+      }
+      if (href.includes('/v2/deployments/') && href.includes('/aliases') && method === 'GET') {
+        return jsonResponse(true, 200, {
+          aliases: aliasHosts.map((alias) => ({ alias, uid: alias, created: '' })),
+        })
+      }
+      if (href.includes('/v4/aliases') && method === 'GET') {
+        const assigned = aliasHosts.includes('pt.jorgesolla.com.br')
+        return jsonResponse(true, 200, {
+          aliases: assigned
+            ? [{ alias: 'pt.jorgesolla.com.br', deploymentId: 'dpl_test', uid: 'a1', created: '' }]
+            : [],
+        })
+      }
+      if (href.includes('/promote/') && method === 'POST') {
+        return jsonResponse(true, 200, {})
+      }
+      if (href.includes('/aliases') && method === 'POST') {
+        aliasHosts = ['jorgesolla-solla.vercel.app', 'pt.jorgesolla.com.br']
+        return jsonResponse(true, 200, {
+          alias: 'pt.jorgesolla.com.br',
+          uid: 'alias_1',
+          created: new Date().toISOString(),
+        })
+      }
+      throw new Error(`unexpected fetch ${method} ${href}`)
+    }) as typeof fetch
+
+    const result = await ensureProductionCustomDomain({
+      token: 'tok',
+      projectId: 'prj_x',
+      teamId: 'team_x',
+      deploymentRef: 'dpl_test',
+      fetchImpl,
+      sleepImpl: async () => {},
+    })
+
+    expect(result.aliased).toBe(true)
+    expect(result.clearedGitBranch).toBe(true)
+    expect(
+      calls.some((c) => c.startsWith('PATCH ') && c.includes('/domains/pt.jorgesolla.com.br')),
+    ).toBe(true)
   })
 
   it('ensureProductionCustomDomain skips work when alias already present', async () => {
@@ -133,7 +218,9 @@ describe('vercelProductionAlias', () => {
       const href = String(url)
       const method = init?.method ?? 'GET'
       if (href.includes('/v9/projects/') && href.includes('/domains') && method === 'GET') {
-        return jsonResponse(true, 200, { domains: [{ name: 'pt.jorgesolla.com.br' }] })
+        return jsonResponse(true, 200, {
+          domains: [{ name: 'pt.jorgesolla.com.br', verified: true }],
+        })
       }
       if (href.includes('/v9/projects/') && method === 'GET') {
         return jsonResponse(true, 200, { autoAssignCustomDomains: true })
