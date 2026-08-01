@@ -75,8 +75,6 @@ export const wizardNextStepTitle = (actionSlug: string): string => {
 export const wizardNextStepPlaceholder = (_actionSlug: string): string =>
   WIZARD_NEXT_STEP_GENERIC_PLACEHOLDER
 
-export const WIZARD_LEADERSHIP_GRID_TITLE = 'Quem coordena por aqui?' as const
-
 export const WIZARD_LEADERSHIP_FORM_CREATE_TITLE = 'Nova liderança' as const
 
 export const WIZARD_LEADERSHIP_FORM_EDIT_TITLE = 'Atualizar liderança' as const
