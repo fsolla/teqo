@@ -67,5 +67,6 @@ jobs:
           fi
           node scripts/vercel-ensure-production-alias.mjs "$ref"
           # Docs: when Auto-assign is/was OFF, prefer `vercel promote` then `alias set`.
-          vercel promote "$ref" --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID" --yes || true
-          vercel alias set "$ref" pt.jorgesolla.com.br --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID" --yes
+          vercel promote "$ref" --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID" || true
+          # `--yes` is only valid for `alias rm`, not `alias set` (CLI 55).
+          vercel alias set "$ref" pt.jorgesolla.com.br --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID"

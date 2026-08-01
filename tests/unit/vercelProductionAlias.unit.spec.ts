@@ -8,6 +8,7 @@ import {
   normalizeHostname,
   parseDeploymentRef,
   PRODUCTION_CUSTOM_DOMAIN,
+  sameDeploymentId,
 } from '../../scripts/lib/vercel-production-alias.mjs'
 
 const jsonResponse = (ok: boolean, status: number, payload: unknown) =>
@@ -34,6 +35,82 @@ describe('vercelProductionAlias', () => {
       ),
     ).toBe(true)
     expect(aliasesIncludeHost(['jorgesolla-solla.vercel.app'], 'pt.jorgesolla.com.br')).toBe(false)
+  })
+
+  it('sameDeploymentId ignores dpl_ prefix', () => {
+    expect(sameDeploymentId('dpl_abc', 'abc')).toBe(true)
+    expect(sameDeploymentId('dpl_abc', 'dpl_abc')).toBe(true)
+    expect(sameDeploymentId('dpl_abc', 'dpl_other')).toBe(false)
+  })
+
+  it('ensureProductionCustomDomain does not trust GET /v13 alias alone', async () => {
+    // v13 lists the custom host (false positive observed in CI) while the domain
+    // alias target still points at an older deployment — must promote/alias.
+    let aliasHosts = ['jorgesolla-solla.vercel.app']
+    let domainTargetId = 'dpl_old'
+    const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
+      const href = String(url)
+      const method = init?.method ?? 'GET'
+      if (href.includes('/v9/projects/') && href.includes('/domains') && method === 'GET') {
+        return jsonResponse(true, 200, {
+          domains: [{ name: 'pt.jorgesolla.com.br', verified: true }],
+        })
+      }
+      if (href.includes('/v9/projects/') && method === 'GET') {
+        return jsonResponse(true, 200, { autoAssignCustomDomains: true })
+      }
+      if (href.includes('/v13/deployments/')) {
+        return jsonResponse(true, 200, {
+          id: 'dpl_new',
+          // Misleading: listed even though domain still points at dpl_old.
+          alias: ['pt.jorgesolla.com.br', 'jorgesolla-solla.vercel.app'],
+          readyState: 'READY',
+        })
+      }
+      if (href.includes('/v2/deployments/') && href.includes('/aliases') && method === 'GET') {
+        return jsonResponse(true, 200, {
+          aliases: aliasHosts.map((alias) => ({ alias, uid: alias, created: '' })),
+        })
+      }
+      if (href.includes('/v4/aliases') && method === 'GET') {
+        return jsonResponse(true, 200, {
+          aliases: [
+            {
+              alias: 'pt.jorgesolla.com.br',
+              deploymentId: domainTargetId,
+              uid: 'a1',
+              created: '',
+            },
+          ],
+        })
+      }
+      if (href.includes('/promote/') && method === 'POST') {
+        return jsonResponse(true, 200, {})
+      }
+      if (href.includes('/aliases') && method === 'POST') {
+        aliasHosts = ['jorgesolla-solla.vercel.app', 'pt.jorgesolla.com.br']
+        domainTargetId = 'dpl_new'
+        return jsonResponse(true, 200, {
+          alias: 'pt.jorgesolla.com.br',
+          uid: 'alias_1',
+          oldDeploymentId: 'dpl_old',
+          created: new Date().toISOString(),
+        })
+      }
+      throw new Error(`unexpected fetch ${method} ${href}`)
+    }) as typeof fetch
+
+    const result = await ensureProductionCustomDomain({
+      token: 'tok',
+      projectId: 'prj_x',
+      teamId: 'team_x',
+      deploymentRef: 'dpl_new',
+      fetchImpl,
+      sleepImpl: async () => {},
+    })
+
+    expect(result.alreadyAssigned).toBe(false)
+    expect(result.aliased).toBe(true)
   })
 
   it('parseDeploymentRef accepts inspect paths and vercel.app hosts', () => {
