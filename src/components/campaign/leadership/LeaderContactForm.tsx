@@ -63,8 +63,9 @@ export const LeaderContactForm = ({
 
   return (
     <section
+      id="leader-contact-form"
       aria-labelledby="leader-contact-form-title"
-      className="flex flex-col gap-4 rounded-xl border p-4"
+      className="flex flex-col gap-4 rounded-xl border p-4 scroll-mt-4"
     >
       <div className="flex items-center gap-2">
         <UserPlusIcon className="size-5 text-muted-foreground" aria-hidden="true" />
