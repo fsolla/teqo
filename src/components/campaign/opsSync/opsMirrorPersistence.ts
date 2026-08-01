@@ -111,7 +111,7 @@ export const createIdbOpsMirrorStore = (): OpsMirrorStore => ({
 const canUseOpfs = (): boolean =>
   typeof navigator !== 'undefined' && typeof navigator.storage?.getDirectory === 'function'
 
-export const createOpfsOpsMirrorStore = (): OpsMirrorStore => {
+const createOpfsOpsMirrorStore = (): OpsMirrorStore => {
   const getFileHandle = async (create: boolean): Promise<FileSystemFileHandle> => {
     const root = await navigator.storage.getDirectory()
     const dir = await root.getDirectoryHandle(OPFS_DIR, { create })

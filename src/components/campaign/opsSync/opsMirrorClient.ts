@@ -37,13 +37,13 @@ const createRowCollection = <T extends { id: number }>(id: string) =>
   )
 
 export const municipalitiesCollection = createRowCollection<OpsMunicipality>('ops-municipalities')
-export const leadershipsCollection = createRowCollection<OpsLeadership>('ops-leaderships')
+const leadershipsCollection = createRowCollection<OpsLeadership>('ops-leaderships')
 export const votePledgesCollection = createRowCollection<OpsVotePledge>('ops-vote-pledges')
-export const activitiesCollection = createRowCollection<OpsActivity>('ops-activities')
-export const stateDeputiesCollection = createRowCollection<OpsStateDeputy>('ops-state-deputies')
-export const organizationsCollection = createRowCollection<OpsOrganization>('ops-organizations')
-export const demandsCollection = createRowCollection<OpsDemand>('ops-demands')
-export const municipalityUpdatesCollection = createRowCollection<OpsMunicipalityUpdate>(
+const activitiesCollection = createRowCollection<OpsActivity>('ops-activities')
+const stateDeputiesCollection = createRowCollection<OpsStateDeputy>('ops-state-deputies')
+const organizationsCollection = createRowCollection<OpsOrganization>('ops-organizations')
+const demandsCollection = createRowCollection<OpsDemand>('ops-demands')
+const municipalityUpdatesCollection = createRowCollection<OpsMunicipalityUpdate>(
   'ops-municipality-updates',
 )
 
@@ -104,7 +104,7 @@ export const applyOpsMirrorSnapshot = (snapshot: OpsSnapshot): void => {
   replaceCollectionRows(municipalityUpdatesCollection, snapshot.municipalityUpdates)
 }
 
-export const wipeOpsMirrorCollections = (): void => {
+const wipeOpsMirrorCollections = (): void => {
   applyOpsMirrorSnapshot(createEmptyOpsSnapshot(new Date(0).toISOString()))
   lastSyncedAtMirror = null
 }
