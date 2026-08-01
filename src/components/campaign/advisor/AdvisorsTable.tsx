@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useMemo, useState, useTransition } from 'react'
+import { useMemo, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
 
 import { AdvisorDebouncedTextCell } from '@/components/campaign/advisor/AdvisorDebouncedTextCell'
@@ -73,6 +73,7 @@ type AdvisorsTableProps = {
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
+  autoCreateDraft?: boolean
 }
 
 const emptyDraft = (): DraftAdvisor => ({
@@ -95,6 +96,7 @@ export const AdvisorsTable = ({
   municipalitiesAction,
   createAction,
   passwordResetAction,
+  autoCreateDraft = false,
 }: AdvisorsTableProps) => {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -114,6 +116,10 @@ export const AdvisorsTable = ({
     setEditing(true)
     setDraft(emptyDraft())
   }
+
+  useEffect(() => {
+    if (autoCreateDraft) setDraft(emptyDraft())
+  }, [autoCreateDraft])
 
   const cancelDraft = () => setDraft(null)
 

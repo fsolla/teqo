@@ -11,6 +11,7 @@ import {
   resolveDemandDetailQuickActions,
   resolveDemandsListQuickActions,
 } from '@/lib/campaignQuickActionDemands'
+import { advisorQuickCreateHref } from '@/lib/campaignAdvisorQuickActions'
 import {
   isCampaignActionsPath,
   isCampaignHomePath,
@@ -71,6 +72,13 @@ describe('campaignQuickActionMount', () => {
   it('skips the E13 tour composer (B84)', () => {
     expect(isActivityTourComposerPath(ACTIVITY_TOUR_COMPOSER_PATH)).toBe(true)
     expect(shouldMountQuickActionsDrawer(ACTIVITY_TOUR_COMPOSER_PATH, 'coordinator')).toBe(false)
+  })
+
+  it('mounts assessores only for unrestricted roles (B87)', () => {
+    expect(shouldMountQuickActionsDrawer('/campanha/assessores', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsDrawer('/campanha/assessores/12', 'candidate')).toBe(true)
+    expect(shouldMountQuickActionsDrawer('/campanha/assessores', 'advisor')).toBe(false)
+    expect(shouldMountQuickActionsDrawer('/campanha/assessores/12', 'advisor')).toBe(false)
   })
 })
 
@@ -245,6 +253,7 @@ describe('campaignQuickActionRegistry', () => {
     expect(resolveQuickActionsForPath('/campanha/territorios', 'leader', {})).toEqual([])
   })
 
+<<<<<<< HEAD
   it('returns single register-demand launcher on demandas list (B85)', () => {
     const actions = resolveQuickActionsForPath('/campanha/demandas', 'coordinator', {})
     expect(actions.map((action) => action.id)).toEqual(['register-demand'])
@@ -278,6 +287,20 @@ describe('campaignQuickActionRegistry', () => {
     expect(
       resolveQuickActionsForPath('/campanha/demandas/pedido-cairu', 'coordinator', {}),
     ).toEqual([])
+  })
+
+  it('delegates assessores list and detail catalogs (B87)', () => {
+    const list = resolveQuickActionsForPath('/campanha/assessores', 'coordinator', {})
+    expect(list.map((action) => action.id)).toEqual(['new-advisor'])
+    expect(list[0]?.href).toBe(advisorQuickCreateHref)
+
+    const detail = resolveQuickActionsForPath('/campanha/assessores/9', 'candidate', {})
+    expect(detail.map((action) => action.id)).toEqual(['new-advisor'])
+    expect(detail[0]?.href).toBe(advisorQuickCreateHref)
+  })
+
+  it('returns empty catalog on assessores for advisor lockdown', () => {
+    expect(resolveQuickActionsForPath('/campanha/assessores', 'advisor', {})).toEqual([])
   })
 })
 

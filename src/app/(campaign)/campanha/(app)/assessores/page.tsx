@@ -1,3 +1,5 @@
+import { ADVISOR_QUICK_CREATE_PARAM } from '@/lib/campaignAdvisorQuickActions'
+import { CAMPAIGN_ADVISORS_HOME } from '@/lib/campaignPaths'
 import config from '@payload-config'
 import { getPayload } from 'payload'
 
@@ -14,6 +16,7 @@ import {
   loadAdvisorListPageData,
   parseAdvisorListParams,
 } from '@/utilities/advisorData'
+import { firstValue } from '@/utilities/campaignListUrl'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
 import {
@@ -35,6 +38,7 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
   ])
 
   const state = parseAdvisorListParams(rawSearchParams)
+  const autoCreateDraft = firstValue(rawSearchParams[ADVISOR_QUICK_CREATE_PARAM]) === '1'
   const [{ rows, totalDocs, totalPages }, municipalityIndex] = await Promise.all([
     loadAdvisorListPageData(payload, state),
     loadMunicipalityPortfolioIndex(),
@@ -55,7 +59,7 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
           ariaLabel="Buscar assessor por nome ou e-mail"
           placeholder="Buscar por nome ou e-mail…"
           initialQuery={state.q ?? ''}
-          basePath="/campanha/assessores"
+          basePath={CAMPAIGN_ADVISORS_HOME}
         />
 
         <CampaignListResults>
@@ -67,6 +71,7 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
             municipalitiesAction={setAdvisorMunicipalitiesFormAction}
             createAction={createAdvisorFormAction}
             passwordResetAction={sendAdvisorPasswordResetFormAction}
+            autoCreateDraft={autoCreateDraft}
           />
 
           {totalDocs > 0 ? (

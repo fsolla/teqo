@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 
-/** Inline create lives on the assessors list — keep old bookmarks working. */
+import { advisorQuickCreateHref } from '@/lib/campaignAdvisorQuickActions'
+
+/** Inline create lives on the assessores list — keep old bookmarks working. */
 export default function AdvisorNewRedirectPage() {
-  redirect('/campanha/assessores')
+  redirect(advisorQuickCreateHref)
 }
