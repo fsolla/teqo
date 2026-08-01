@@ -8,6 +8,8 @@ Completed 2026-08-01. Branch `stage` and GitHub Environment `stage` are deleted.
 - [x] Repo secrets present (`VERCEL_*`, `POOL_GITHUB_TOKEN`)
 - [x] `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` synced from local `.vercel/project.json` (`vercel link`)
 - [x] `ci.yml` deploy job green (`vercel@55`, Node `24.x`, alias https://pt.jorgesolla.com.br)
+- [x] **Git auto-deploy OFF** (`vercel.json` `git.deploymentEnabled: false` + ignore script) — correct for Actions-gated deploys
+- [x] **Auto-assign Custom Production Domains ON** (Project → Settings → Environments → Production → Branch Tracking). Turning this OFF stages CLI `--prod` deploys without moving `pt.jorgesolla.com.br`; CI now re-enables + `promote`s via `scripts/vercel-ensure-production-alias.mjs`. Emergency: Actions → "Vercel promote production".
 - [x] Branch `stage` deleted
 - [x] GitHub Environment `stage` (and `STAGE_*` secrets) deleted
 - [x] Dead stage tooling removed (`db:refresh:stage`, `agent:promote`)
