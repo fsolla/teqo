@@ -105,8 +105,9 @@ const loadClaimQueue = () =>
       'ready',
       '--limit',
       '200',
+      // `state` is required: isAutonomousClaimable rejects missing/non-OPEN as not-open.
       '--json',
-      'number,title,body,labels,createdAt',
+      'number,title,body,labels,createdAt,state',
     ]),
     issuesById(),
   )

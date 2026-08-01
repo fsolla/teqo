@@ -38,8 +38,9 @@ const openReady = ghJson([
   'ready',
   '--limit',
   '200',
+  // Include `state` for parity with the pool queue (isAutonomousClaimable).
   '--json',
-  'number,title,body,labels,createdAt',
+  'number,title,body,labels,createdAt,state',
 ])
 
 // Queue builder lives in agent-github.mjs (shared with the agent pool —
