@@ -5,10 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import {
-  parseDemandListParams,
-  resolveDemandListUrl,
-} from '@/utilities/campaignDemandData'
+import { parseDemandListParams, resolveDemandListUrl } from '@/utilities/campaignDemandData'
 import {
   parseOrganizationListParams,
   resolveOrganizationListUrl,

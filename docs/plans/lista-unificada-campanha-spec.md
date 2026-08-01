@@ -61,18 +61,18 @@ Campos de implementação (CL2), fora desta tabela: `layout: 'table'`, tipagem `
 
 ## Resolução de conflitos por domínio
 
-| Conflito                                                        | Resolução travada                                                                                                                                                                                                   |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Conflito                                                        | Resolução travada                                                                                                              |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Canonical redirect ausente (assessores, demandas, organizações) | Assessores: `resolveAdvisorListUrl` (CL5). Demandas/organizações: `resolveDemandListUrl` / `resolveOrganizationListUrl` (CL8). |
-| Sort divergente (URL vs fixo vs memória)                        | Não unificar. Registry declara `sortModel: 'url' \| 'fixed' \| 'memory'`.                                                                                                                                           |
-| Territórios sem paginação real                                  | CL6a obrigatório: paginação server 25 + sort no loader antes de migrar.                                                                                                                                             |
-| Assessores fora de `CampaignTable`                              | CL5a obrigatório: reescrever em `CampaignTable` + URL canónico.                                                                                                                                                     |
-| Seletor de colunas (allowlist fixa)                             | Registry mapeia slug → `columnListId`; pré-work adiciona `assessores` à allowlist se usar picker.                                                                                                                   |
-| Saved filters (só municípios)                                   | Registry declara `savedFilters: boolean`; slot só para municípios; **não** generalizar B18.                                                                                                                         |
-| Edit model divergente                                           | Não unificar; células/editores ficam nas colunas do domínio.                                                                                                                                                        |
-| Toolbar heterogénea                                             | Factory expõe `toolbarSlot` por domínio.                                                                                                                                                                            |
-| Gate de papel diferente                                         | Registry declara `gate`; factory resolve actor e delega ao predicado existente.                                                                                                                                     |
-| Atividades cards                                                | Fora de `opsListDomains`; rota intocada.                                                                                                                                                                            |
+| Sort divergente (URL vs fixo vs memória)                        | Não unificar. Registry declara `sortModel: 'url' \| 'fixed' \| 'memory'`.                                                      |
+| Territórios sem paginação real                                  | CL6a obrigatório: paginação server 25 + sort no loader antes de migrar.                                                        |
+| Assessores fora de `CampaignTable`                              | CL5a obrigatório: reescrever em `CampaignTable` + URL canónico.                                                                |
+| Seletor de colunas (allowlist fixa)                             | Registry mapeia slug → `columnListId`; pré-work adiciona `assessores` à allowlist se usar picker.                              |
+| Saved filters (só municípios)                                   | Registry declara `savedFilters: boolean`; slot só para municípios; **não** generalizar B18.                                    |
+| Edit model divergente                                           | Não unificar; células/editores ficam nas colunas do domínio.                                                                   |
+| Toolbar heterogénea                                             | Factory expõe `toolbarSlot` por domínio.                                                                                       |
+| Gate de papel diferente                                         | Registry declara `gate`; factory resolve actor e delega ao predicado existente.                                                |
+| Atividades cards                                                | Fora de `opsListDomains`; rota intocada.                                                                                       |
 
 ## Inventário as-built (2026-08-01)
 

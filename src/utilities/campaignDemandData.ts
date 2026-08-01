@@ -85,10 +85,7 @@ const serializeCanonicalDemandListSearchParams = (
   return params
 }
 
-const buildDemandListSearchParams = (
-  state: DemandListState,
-  page = state.page,
-): URLSearchParams =>
+const buildDemandListSearchParams = (state: DemandListState, page = state.page): URLSearchParams =>
   serializeCanonicalDemandListSearchParams(
     parseDemandListParams(demandListStateToRawParams(state, page)),
   )
