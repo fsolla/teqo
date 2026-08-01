@@ -1,19 +1,16 @@
 'use client'
 
 import {
+  createContext,
   useCallback,
   useContext,
   useEffect,
   useRef,
   useState,
-  createContext,
   type ReactNode,
 } from 'react'
 
-import {
-  bootstrapOpsMirror,
-  syncOpsMirror,
-} from '@/components/campaign/opsSync/opsMirrorClient'
+import { bootstrapOpsMirror, syncOpsMirror } from '@/components/campaign/opsSync/opsMirrorClient'
 import type { OpsSyncState, OpsSyncStatus } from '@/lib/campaignOps/opsSyncMeta'
 
 const POLL_INTERVAL_MS = 3 * 60 * 1000

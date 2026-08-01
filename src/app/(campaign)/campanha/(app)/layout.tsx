@@ -110,7 +110,9 @@ export default async function CampaignAppLayout({ children }: { children: React.
                   </TooltipProvider>
                   <Toaster position="top-center" />
                   <InstallPwaToast />
-                  {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
+                  {biometricEnrollment ? (
+                    <BiometricEnrollmentToast {...biometricEnrollment} />
+                  ) : null}
                 </CampaignListPendingBoundary>
               </CampaignQuickActionContextProvider>
             </CampaignHomeSearchChromeProvider>

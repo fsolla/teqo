@@ -2,9 +2,7 @@
 
 import { createCollection, localOnlyCollectionOptions } from '@tanstack/db'
 
-import {
-  collectOpsEstimateOutboxKeys,
-} from '@/components/campaign/opsSync/opsEstimateOutbox'
+import { collectOpsEstimateOutboxKeys } from '@/components/campaign/opsSync/opsEstimateOutbox'
 import {
   openOpsMirrorStore,
   type OpsMirrorPersistenceMode,
@@ -45,8 +43,9 @@ export const activitiesCollection = createRowCollection<OpsActivity>('ops-activi
 export const stateDeputiesCollection = createRowCollection<OpsStateDeputy>('ops-state-deputies')
 export const organizationsCollection = createRowCollection<OpsOrganization>('ops-organizations')
 export const demandsCollection = createRowCollection<OpsDemand>('ops-demands')
-export const municipalityUpdatesCollection =
-  createRowCollection<OpsMunicipalityUpdate>('ops-municipality-updates')
+export const municipalityUpdatesCollection = createRowCollection<OpsMunicipalityUpdate>(
+  'ops-municipality-updates',
+)
 
 let goalsMirror: OpsGoals | null = null
 let revisedAtMirror: string = new Date(0).toISOString()
@@ -122,9 +121,7 @@ export const resetOpsMirrorClientForTests = async (): Promise<void> => {
   persistenceMode = null
 }
 
-const resolveOutboxKeys = (
-  explicit?: ReadonlySet<OpsOutboxKey>,
-): ReadonlySet<OpsOutboxKey> => {
+const resolveOutboxKeys = (explicit?: ReadonlySet<OpsOutboxKey>): ReadonlySet<OpsOutboxKey> => {
   if (explicit) return explicit
   return collectOpsEstimateOutboxKeys()
 }
@@ -155,8 +152,7 @@ export const bootstrapOpsMirror = async (
   if (bootPromise && !options.store && !options.forceMode) return bootPromise
 
   const run = async () => {
-    const store =
-      options.store ?? (await openOpsMirrorStore({ forceMode: options.forceMode }))
+    const store = options.store ?? (await openOpsMirrorStore({ forceMode: options.forceMode }))
     storeSingleton = store
     persistenceMode = store.mode
 
@@ -198,9 +194,7 @@ export type SyncOpsMirrorOptions = {
   store?: OpsMirrorStore
 }
 
-export const syncOpsMirror = async (
-  options: SyncOpsMirrorOptions = {},
-): Promise<OpsSyncState> => {
+export const syncOpsMirror = async (options: SyncOpsMirrorOptions = {}): Promise<OpsSyncState> => {
   const fetchImpl = options.fetchImpl ?? fetch
   const store = options.store ?? storeSingleton
 
