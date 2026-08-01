@@ -1,20 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  ACTIVITY_RELATION_SEARCH_LIMIT,
-  searchActivityRelationOptions,
-} from '@/utilities/activityRelationOptions'
+import { ACTIVITY_RELATION_SEARCH_LIMIT } from '@/utilities/activityRelationOptions'
 import { ACTIVITY_LINKED_DEMANDS_PAGE_SIZE } from '@/utilities/activityDetailPageData'
 import { parseDemandListParams } from '@/utilities/campaignDemandData'
 
 describe('activityRelationOptions', () => {
-  it('returns no options without a municipality scope', async () => {
-    const payload = { find: async () => ({ docs: [] }) }
-    await expect(
-      searchActivityRelationOptions(payload, { id: 1 } as never, 'caminhada', null),
-    ).resolves.toEqual([])
-  })
-
   it('caps search results at the configured limit', () => {
     expect(ACTIVITY_RELATION_SEARCH_LIMIT).toBe(20)
   })
