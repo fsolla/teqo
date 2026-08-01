@@ -20,6 +20,25 @@ import {
  * delete the row a parallel spec is using.
  */
 
+/**
+ * OH8 — list shell pins (title, search, pagination footer) before OH12 reuses the factory.
+ */
+test.describe('Municípios — shell (OH8)', () => {
+  test('exposes title, search, and pagination on the list', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Shell'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/municipios`)
+    await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
+    await expect(page.getByLabel('Buscar município')).toBeVisible()
+    await expect(page.getByText(/\d+ municípios encontrados/)).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Ir para a próxima página' })).toBeVisible()
+  })
+})
+
 test.describe('Municípios — jornadas por papel', () => {
   test('coordinator opens the municipalities list, edits strategy and assigns an advisor', async ({
     campaign,
