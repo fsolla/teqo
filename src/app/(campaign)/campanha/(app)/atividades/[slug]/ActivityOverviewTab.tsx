@@ -149,46 +149,46 @@ export const ActivityOverviewTab = ({
               <Link href={`/campanha/demandas?activity=${view.id}`}>Ver todas</Link>
             </Button>
           ) : null}
-        {view.municipality ? (
-          <Button asChild variant="outline" className="min-h-11 shrink-0">
-            <Link
-              href={`/campanha/demandas/nova?activity=${view.id}&municipality=${view.municipality.id}`}
-            >
-              <PlusIcon data-icon="inline-start" aria-hidden="true" />
-              Adicionar demanda
-            </Link>
-          </Button>
-        ) : null}
+          {view.municipality ? (
+            <Button asChild variant="outline" className="min-h-11 shrink-0">
+              <Link
+                href={`/campanha/demandas/nova?activity=${view.id}&municipality=${view.municipality.id}`}
+              >
+                <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                Adicionar demanda
+              </Link>
+            </Button>
+          ) : null}
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {view.demands.length ? (
           <>
             <ul role="list" className="divide-y">
-            {view.demands.map((demand) => (
-              <li
-                key={demand.id}
-                className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <Link
-                    href={`/campanha/demandas/${demand.slug}`}
-                    className="font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {demand.title}
-                  </Link>
-                  <p className="text-sm text-muted-foreground">
-                    {campaignDemandKindLabels[demand.kind]} ·{' '}
-                    {campaignDemandStatusLabels[demand.status]}
-                  </p>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {demand.cost == null
-                    ? 'Custo não registrado'
-                    : currencyFormatter.format(demand.cost)}
-                </span>
-              </li>
-            ))}
+              {view.demands.map((demand) => (
+                <li
+                  key={demand.id}
+                  className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <Link
+                      href={`/campanha/demandas/${demand.slug}`}
+                      className="font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      {demand.title}
+                    </Link>
+                    <p className="text-sm text-muted-foreground">
+                      {campaignDemandKindLabels[demand.kind]} ·{' '}
+                      {campaignDemandStatusLabels[demand.status]}
+                    </p>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {demand.cost == null
+                      ? 'Custo não registrado'
+                      : currencyFormatter.format(demand.cost)}
+                  </span>
+                </li>
+              ))}
             </ul>
             <CampaignListPagination
               page={view.page}

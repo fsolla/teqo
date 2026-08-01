@@ -12,9 +12,9 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { campaignDemandKindLabels, campaignDemandKinds } from '@/lib/schemas/campaignDemand'
+import type { ActivityRelationOption } from '@/utilities/activityRelationOptions'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
-import type { ActivityRelationOption } from '@/utilities/activityRelationOptions'
 
 type DemandFormProps = {
   municipalityOptions: RelationOption[]
@@ -50,7 +50,10 @@ export const DemandForm = ({
     (query: string) => searchActivities(query, parsedMunicipalityId),
     [parsedMunicipalityId, searchActivities],
   )
-  const activityQueryReady = useCallback(() => parsedMunicipalityId !== null, [parsedMunicipalityId])
+  const activityQueryReady = useCallback(
+    () => parsedMunicipalityId !== null,
+    [parsedMunicipalityId],
+  )
 
   const activityFieldDescription = parsedMunicipalityId
     ? 'Opcional. Busque atividades do município selecionado.'

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { ACTIVITY_RELATION_SEARCH_LIMIT } from '@/utilities/activityRelationOptions'
 import { ACTIVITY_LINKED_DEMANDS_PAGE_SIZE } from '@/utilities/activityDetailPageData'
+import { ACTIVITY_RELATION_SEARCH_LIMIT } from '@/utilities/activityRelationOptions'
 import { parseDemandListParams } from '@/utilities/campaignDemandData'
 
 describe('activityRelationOptions', () => {
