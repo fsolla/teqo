@@ -6,6 +6,7 @@ import { MunicipalityGoalAccountCard } from '@/components/campaign/municipality/
 import { MunicipalityLeadershipsPanel } from '@/components/campaign/municipality/MunicipalityLeadershipsPanel'
 import { MunicipalityPledgesPanel } from '@/components/campaign/municipality/MunicipalityPledgesPanel'
 import { MunicipalityStrategyCard } from '@/components/campaign/municipality/MunicipalityStrategyCard'
+import { resolveOpsHybridEnabled } from '@/components/campaign/opsSync/opsHybridEnabled'
 import { MunicipalityTicketPartnersCard } from '@/components/campaign/municipality/MunicipalityTicketPartnersCard'
 import { MunicipalityUpdateFeed } from '@/components/campaign/municipality/MunicipalityUpdateFeed'
 import { MunicipalityUpdateForm } from '@/components/campaign/municipality/MunicipalityUpdateForm'
@@ -122,7 +123,11 @@ export const OverviewTab = async ({
           </Suspense>
         </>
       ) : null}
-      <MunicipalityPledgesPanel pledges={pledges} estimateFormAction={estimateVotesFormAction} />
+      <MunicipalityPledgesPanel
+        pledges={pledges}
+        opsHybridEnabled={resolveOpsHybridEnabled()}
+        estimateFormAction={estimateVotesFormAction}
+      />
     </div>
   )
 }
