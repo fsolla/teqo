@@ -1,15 +1,11 @@
 /**
- * One-time / drift repair for branch protection aligned with auto-promote + parallel agents.
+ * One-time / drift repair for branch protection (main-only).
  *
  *   pnpm configure:branch-protection           # apply
  *   pnpm configure:branch-protection -- --dry-run
  *
- * Changes:
- *   - stage: strict=false (allow merge without being up-to-date; conflicts still block)
- *   - main: required_approving_review_count=0 (auto-promote replaces human review)
- *
- * Auto-promote still needs secrets.PROMOTE_GITHUB_TOKEN (admin PAT) on the repo if
- * GITHUB_TOKEN cannot bypass main protection — see docs/AGENT-OPS.md.
+ * main: required checks `checks` + `migration-lock`, strict=false, 0 reviews.
+ * Feature PRs auto-merge when those contexts are green.
  */
 
 import { execFileSync } from 'node:child_process'
@@ -41,13 +37,20 @@ const ghApiJson = (method, path, body) => {
 
 console.log(`[configure:branch-protection] repo ${repo}${dryRun ? ' (dry-run)' : ''}`)
 
-ghApiJson('PATCH', `repos/${repo}/branches/stage/protection/required_status_checks`, {
-  strict: false,
-  contexts: ['checks', 'migration-lock'],
+ghApiJson('PUT', `repos/${repo}/branches/main/protection`, {
+  required_status_checks: {
+    strict: false,
+    contexts: ['checks', 'migration-lock'],
+  },
+  enforce_admins: false,
+  required_pull_request_reviews: {
+    required_approving_review_count: 0,
+  },
+  restrictions: null,
+  allow_force_pushes: false,
+  allow_deletions: false,
 })
 
-ghApiJson('PATCH', `repos/${repo}/branches/main/protection/required_pull_request_reviews`, {
-  required_approving_review_count: 0,
-})
-
-console.log('[configure:branch-protection] done.')
+console.log(
+  '[configure:branch-protection] done (main: checks + migration-lock, strict=false, 0 reviews).',
+)

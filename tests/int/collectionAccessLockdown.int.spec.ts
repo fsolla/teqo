@@ -12,9 +12,13 @@ import { createLeaderSupporterRecord } from '@/app/(campaign)/campanha/actions/l
 import { Media } from '@/collections/Media'
 import { Post } from '@/collections/Post'
 import { Tag } from '@/collections/Tag'
+import { HomePage } from '@/globals/HomePage'
+import { Metadata } from '@/globals/Metadata'
+import { PrivacyPolicy } from '@/globals/PrivacyPolicy'
+import { SiteSettings } from '@/globals/SiteSettings'
 import { relationshipId } from '@/lib/relationship'
 import config from '@/payload.config'
-import { canManagePublishedContent } from '@/utilities/access/shared'
+import { canManagePublishedContent, payloadAdminOnly } from '@/utilities/access/shared'
 import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '@/utilities/campaignConsent'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
@@ -242,6 +246,75 @@ describe('CMS/PII collection access lockdown', () => {
       ).resolves.toMatchObject({ totalDocs: expect.any(Number) })
     },
   )
+})
+
+/**
+ * The globals sibling of the collection lockdown above: until Pass 4 the four
+ * public globals spelled `update` as "any authenticated user", and campaign
+ * JWTs authenticate against `/api/*` — a campaign session (leader included)
+ * could PATCH the public site's settings, home, metadata and privacy policy.
+ * The allow path is asserted on the access function itself because a real
+ * `updateGlobal` fires the afterChange `revalidateTag` outside Next.
+ */
+describe('public globals update lockdown', () => {
+  const publicGlobals = [
+    { config: SiteSettings, slug: 'site-settings' },
+    { config: HomePage, slug: 'home' },
+    { config: Metadata, slug: 'metadata' },
+    { config: PrivacyPolicy, slug: 'privacy-policy' },
+  ] as const
+
+  beforeAll(async () => {
+    payload = await getPayload({ config: await config })
+  })
+
+  it('spells update as payloadAdminOnly on every public global', () => {
+    for (const { config: globalConfig } of publicGlobals) {
+      expect(globalConfig.access?.update).toBe(payloadAdminOnly)
+    }
+  })
+
+  it.each(publicGlobals)('denies campaign users update on global %s', async ({ slug }) => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+
+    await expect(
+      payload.updateGlobal({
+        slug,
+        data: {},
+        user: coordinator,
+        overrideAccess: false,
+      }),
+    ).rejects.toThrow(/permissão|not allowed/i)
+  })
+
+  it.each(publicGlobals)('denies editors update on global %s', async ({ slug }) => {
+    const editor = await campaignFixtures().createEditorUser()
+
+    await expect(
+      payload.updateGlobal({
+        slug,
+        data: {},
+        user: editor,
+        overrideAccess: false,
+      }),
+    ).rejects.toThrow(/permissão|not allowed/i)
+  })
+
+  it('lets payload admins update through the access function', async () => {
+    const admin = await campaignFixtures().createAdminUser()
+
+    for (const { config: globalConfig } of publicGlobals) {
+      expect(globalConfig.access?.update?.({ req: stub<PayloadRequest>({ user: admin }) })).toBe(
+        true,
+      )
+    }
+  })
+
+  it.each(publicGlobals)('keeps anonymous read access on global %s', async ({ slug }) => {
+    // Never-saved globals resolve with field defaults (no id) — the pin is
+    // that anonymous read is not denied, not the document shape.
+    await expect(payload.findGlobal({ slug, overrideAccess: false })).resolves.toBeDefined()
+  })
 })
 
 describe('leader supporter creation scope', () => {

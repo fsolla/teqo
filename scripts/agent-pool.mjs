@@ -14,8 +14,8 @@
  *   pnpm agent:pool -- doctor             # pré-requisitos (gh, variables, CURSOR_API_KEY, modelos)
  *   pnpm agent:pool -- start|stop|pause|resume [-- --ref <branch>] [-- --max-slots N]
  *
- * Promote stage→main is never part of the pool — it stays human
- * (`pnpm agent:promote -- --i-am-human`).
+ * Promote is not part of the pool — workers PR directly to main.
+ * (legacy; removed from the happy path).
  */
 
 import { appendFileSync } from 'node:fs'
@@ -68,7 +68,7 @@ import {
 } from './lib/agent-pool-state.mjs'
 
 const REPO_URL = 'https://github.com/fsolla/teqo'
-const POOL_BASE_REF = 'stage'
+const POOL_BASE_REF = 'main'
 
 const die = dieAgent('pool')
 const { flags, positional } = parseArgs(
@@ -348,7 +348,7 @@ const runTick = async ({ dryRun }) => {
       await archiveCursorAgent(spawn.agentId).catch(() => {})
     }
     log(`  merge concluído #${claim.issue.number} — slot livre, agente arquivado.`)
-    summary(`- #${claim.issue.number} mergeada em stage — slot livre`)
+    summary(`- #${claim.issue.number} mergeada em main — slot livre`)
   }
 
   const active = reconciliation.active
@@ -478,12 +478,22 @@ const runDoctor = async () => {
   } catch {
     log('  gh auth: FALHOU (rode `gh auth login`)')
   }
+  if (process.env.POOL_GITHUB_TOKEN) {
+    log('  POOL_GITHUB_TOKEN: presente no env (usará este token para variables)')
+  } else if (process.env.GH_TOKEN || process.env.GITHUB_TOKEN) {
+    log(
+      '  POOL_GITHUB_TOKEN: ausente — usando GH_TOKEN/GITHUB_TOKEN (GHA: configure o secret POOL_GITHUB_TOKEN se variables der 403)',
+    )
+  } else {
+    log('  POOL_GITHUB_TOKEN / GH_TOKEN: ausente')
+  }
   try {
     const vars = readPoolVariables()
     log(`  repo variables: OK (${Object.keys(vars).length} lidas)`)
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
     log(
-      '  repo variables: SEM PERMISSÃO (precisa de actions:read; GHA usa GITHUB_TOKEN com actions:write)',
+      `  repo variables: FALHOU (${message}). No Actions, use secrets.POOL_GITHUB_TOKEN (PAT com actions:write + issues:write) — GITHUB_TOKEN costuma 403 em /actions/variables.`,
     )
   }
   if (!process.env.CURSOR_API_KEY) {

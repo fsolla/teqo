@@ -56,7 +56,11 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['campaignLeaderships'],
   },
   {
-    prefixes: [`${CAMPAIGN_APP}/territorios`, 'src/utilities/territory'],
+    prefixes: [
+      `${CAMPAIGN_APP}/territorios`,
+      'src/components/campaign/tour',
+      'src/utilities/territory',
+    ],
     specs: ['campaignTerritories'],
   },
   {
@@ -82,5 +86,30 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/utilities/campaignPwa',
     ],
     specs: ['campaign-pwa', 'campaignWizardChrome'],
+  },
+  // Domains without a dedicated e2e family still wake campaign home smoke so
+  // the affected classifier cannot return mode=none on an unmapped domain dir.
+  {
+    prefixes: [
+      'src/components/campaign/advisor',
+      'src/components/campaign/demand',
+      'src/components/campaign/invite',
+      'src/components/campaign/organization',
+      'src/components/campaign/stateDeputy',
+      'src/components/campaign/suggestion',
+      'src/components/campaign/supporter',
+      'src/components/campaign/votePledge',
+      'src/components/campaign/auth',
+      `${CAMPAIGN_APP}/acoes`,
+      `${CAMPAIGN_APP}/apoiadores`,
+      `${CAMPAIGN_APP}/assessores`,
+      `${CAMPAIGN_APP}/contatos`,
+      `${CAMPAIGN_APP}/demandas`,
+      `${CAMPAIGN_APP}/dobradinhas`,
+      `${CAMPAIGN_APP}/organizacoes`,
+      `${CAMPAIGN_APP}/perfil`,
+      `${CAMPAIGN_APP}/quadro`,
+    ],
+    specs: ['campaignHomeActions'],
   },
 ]

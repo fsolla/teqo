@@ -1,13 +1,13 @@
 ---
 name: work-issue
-description: Conduz uma GitHub Issue rastreável do Teqo do claim ao merge em stage — prep (pnpm i), claim (pnpm agent:claim), renomear a sessão + abrir o plano no editor, verificação do modelo declarado na Issue, freshness audit do plano, execução das fases (schema/server → UI via /impeccable → gates), /simplify (3 reviewers paralelos via Task) + capture-review-debts, PR --base stage com Closes #N, acompanhamento do CI até o merge. Usar quando o usuário pedir para implementar/trabalhar uma Issue ("trabalha a issue #N", "implementa o B79", "pega a próxima issue", "vamos fazer o X", "continua a implementação").
+description: Conduz uma GitHub Issue rastreável do Teqo do claim ao merge em main — prep (pnpm i), claim (pnpm agent:claim), renomear a sessão + abrir o plano no editor, verificação do modelo declarado na Issue, freshness audit do plano, execução das fases (schema/server → UI via /impeccable → gates), /simplify (3 reviewers paralelos via Task) + capture-review-debts, PR --base main com Closes #N, acompanhamento do CI até o merge. Usar quando o usuário pedir para implementar/trabalhar uma Issue ("trabalha a issue #N", "implementa o B79", "pega a próxima issue", "vamos fazer o X", "continua a implementação").
 ---
 
-# Trabalhar uma Issue (claim → merge em stage)
+# Trabalhar uma Issue (claim → merge em main)
 
-Esta skill conduz UMA Issue rastreável do claim ao merge em `stage`. Substitui o antigo fluxo implement-roadmap-item + close-delivery + ship-to-main. **GitHub Issues são a fonte canônica** de spec/status/deps/prio/modelo; `docs/roadmap.md` é legado congelado e nunca é editado aqui (registro de entrega vai na Issue + `docs/plans/<slug>.md` + notebook do projeto).
+Esta skill conduz UMA Issue rastreável do claim ao merge em `main`. Substitui o antigo fluxo implement-roadmap-item + close-delivery + ship-to-main. **GitHub Issues são a fonte canônica** de spec/status/deps/prio/modelo; `docs/roadmap.md` é legado congelado e nunca é editado aqui (registro de entrega vai na Issue + `docs/plans/<slug>.md` + notebook do projeto).
 
-**Proibido neste fluxo:** qualquer acesso a DB de stage/prod, merge sem CI green, editar outras Issues `in-progress`. `pnpm agent:promote` é só override manual — o promote normal é automático após CI stage green.
+**Proibido neste fluxo:** qualquer acesso a DB de prod, merge sem CI green, editar outras Issues `in-progress`.
 
 **Qualidade de decisão e dados:** aplique [decision-quality.md](../plan-issue/decision-quality.md) ao auditar e fatiar (caro vs barato, Opções+Recomendação+rejeitadas, appetite, rabbit holes, tracer bullet cedo) e [data-presentation.md](../plan-issue/data-presentation.md) ao auditar/fatiar superfícies com KPI/mapa/série/ranking.
 
@@ -22,7 +22,7 @@ Esta skill conduz UMA Issue rastreável do claim ao merge em `stage`. Substitui 
 - [ ] 3. Freshness audit (enxuto) do plano contra o repositório
 - [ ] 4. Executar as fases (schema/server → UI via /impeccable → gates de engenharia)
 - [ ] 5. /simplify no diff da sessão → capture-review-debts
-- [ ] 6. Fechar em stage: branch → commit → **`pnpm push -u origin HEAD`** (não `git push` nu) → gh pr create --base stage (Closes #N, sem --draft)
+- [ ] 6. Fechar em main: branch → commit → **`pnpm push -u origin HEAD`** (não `git push` nu) → gh pr create --base main (Closes #N, sem --draft)
        → gh pr merge --auto --merge → gh pr checks --watch --required até o merge → consolidar pontas soltas
 ```
 
@@ -92,13 +92,14 @@ Se `open_resource` não estiver disponível (fora da Agents Window), diga o cami
 
 ## Passo 2 — Verificação de modelo (best effort, não programática)
 
-Leia a propriedade `model:` do brief e compare com o modelo da sessão atual pela tabela de capacidade de `model-selection`. Regra **assimétrica** (decisão travada 2026-07-30):
+Leia a propriedade `model:` do brief e compare com o modelo da sessão atual pela tabela de capacidade de `model-selection` (Composer 2.5 ↔ Grok 4.5 ↔ Kimi K3 Low). Regra **assimétrica** (decisão travada 2026-07-30):
 
 - Sessão **mais fraca** que o especificado → assume-se escolha consciente do humano: **informa em uma linha e continua, sem pausar**.
 - Sessão **mais forte** que o especificado → possível erro do humano: **informa e pausa** ("a Issue pede X, você está em Y — seguir mesmo assim?").
 - Propriedade **ausente** → aplique `model-selection` uma vez e registre a escolha na Issue (`gh issue edit <N>` no body, frontmatter `model:`).
+- Issue `{id}-exec` / `kimi-k3-low` sem a dep de plan `done` → **pare** (não execute sem plano fechado).
 
-Subagentes despachados via `Task` saem **no modelo da propriedade** quando couber (`Task.model`).
+Subagentes despachados via `Task` saem **no modelo da propriedade** quando couber (`Task.model` ∈ `composer-2.5` | `cursor-grok-4.5-high` | `kimi-k3-low`).
 
 ## Passo 3 — Freshness audit (enxuto)
 
@@ -144,15 +145,15 @@ Lance **três** subagentes via `Task` **em paralelo** na mesma mensagem — read
 2. Achados maiores que o cleanup da sessão → skill `capture-review-debts` (registra via `agent:register`/`agent:file-miss`; **nunca** edita Issue `in-progress` — nem esta; débito do mesmo pai vira Issue nova com `depends: [<id-do-pai>]`).
 3. Resuma o que corrigiu e o que ficou como recomendação/débito.
 
-## Passo 6 — Fechar em stage
+## Passo 6 — Fechar em main
 
 1. Branch `agent/<id>-<slug>` (worktrees do Cursor são donos da criação; commits lógicos).
 2. **`pnpm push -u origin HEAD`** — canonical; roda `ensure-repo-deps` + `gate:push` + push (não depende do Husky). Não use `git push` nu.
-3. `gh pr create --base stage` com `Closes #<N>` no body — **nunca `--draft`** (`.cursor/rules/agent-pr-workflow.mdc`).
-4. `gh pr merge --auto --merge <PR>` imediatamente após criar o PR (não precisa rebasear na head de `stage` se não houver conflito — `strict=false` na proteção de `stage`).
-5. **Acompanhe só os checks obrigatórios** (`gh pr checks <PR> --watch --required`): gate = `checks` + `migration-lock`; Vercel não bloqueia. Falha no ci-pr → corrige na mesma branch. **Conflito de merge** → rebase em `stage` e reempurre; não force-push salvo para destravar CI após rebase.
-6. O flip `in-progress → done` é **determinístico no CI** (workflow `issue-done-on-stage-merge.yml` lê o `Closes #N` no merge em stage). O agente espera o merge apenas para verificar e **consolidar pontas soltas**: débitos não registrados, doc da sessão pendente (notebook do projeto + `docs/plans/<slug>.md` com Status/Atualizado em), comentário de fechamento na Issue com o que entrou. Se o agente falhar depois do merge, o status já está correto.
+3. `gh pr create --base main` com `Closes #<N>` no body — **nunca `--draft`** (`.cursor/rules/agent-pr-workflow.mdc`).
+4. `gh pr merge --auto --merge <PR>` imediatamente após criar o PR (`strict=false` na proteção de `main`).
+5. **Acompanhe só os checks obrigatórios** (`gh pr checks <PR> --watch --required`): gate = `checks` + `migration-lock`; Vercel Git não bloqueia. Falha no ci-pr → corrige na mesma branch. **Conflito de merge** → rebase em `main` e reempurre.
+6. O flip `in-progress → done` + `in-prod` é **determinístico no CI** (`issue-done-on-main-merge.yml`). Deploy gated fica em `ci.yml` — não é passo do agente. Consolide pontas soltas após o merge.
 
 ## Resumo final ao usuário
 
-Issue trabalhada + sessão renomeada + plano aberto no editor + verificação de modelo (declarado vs sessão, ou registro do ausente), veredito do freshness audit, o que entrou por fase, resultado do critique/polish (se UI), simplify (3 reviewers paralelos) + débitos registrados, gates (`pnpm push`, sem `--no-verify` cru), link do PR e estado do merge em stage, pontas soltas consolidadas. `in-prod` entra no auto-promote (`promote-stage-to-main.yml`) após CI stage green — não é passo do agente.
+Issue trabalhada + sessão renomeada + plano aberto no editor + verificação de modelo (declarado vs sessão, ou registro do ausente), veredito do freshness audit, o que entrou por fase, resultado do critique/polish (se UI), simplify (3 reviewers paralelos) + débitos registrados, gates (`pnpm push`, sem `--no-verify` cru), link do PR e estado do merge em main, pontas soltas consolidadas. `done`+`in-prod` no merge; deploy gated em `ci.yml`.

@@ -1,13 +1,15 @@
 /**
  * Pure selection logic for affected-test CI jobs (OPS5). No git, no fs, no
  * process — the CLI wrappers feed it the changed file list and it decides.
- * Unit-pinned in tests/unit/testAffected.unit.spec.ts and
+ * Unit-pinned in tests/unit/testAffected.unit.spec.ts,
+ * tests/unit/ciSkipInvariants.unit.spec.ts, and
  * tests/unit/e2eAffectedManifest.unit.spec.ts.
  */
 
 /**
- * Paths whose blast radius is the whole app: schema, test harness, lockfile.
- * Any diff touching them runs the FULL suites — selection is unsafe there.
+ * Paths whose blast radius is the whole app: schema, test harness, lockfile,
+ * skip classifiers. Any diff touching them runs the FULL suites — selection
+ * is unsafe there.
  */
 export const HIGH_RISK_EXACT = new Set([
   'package.json',
@@ -20,6 +22,15 @@ export const HIGH_RISK_EXACT = new Set([
   'src/payload.config.ts',
   'scripts/seed-minimal.mjs',
   'scripts/lib/seed-minimal-manifest.mjs',
+  'scripts/lib/test-affected-core.mjs',
+  'scripts/lib/e2e-affected-manifest.mjs',
+  'scripts/test-affected.mjs',
+  'scripts/e2e-affected.mjs',
+  'scripts/ci-scope.mjs',
+  'scripts/check-test-locations.mjs',
+  'scripts/gate-ci.mjs',
+  'tests/unit/ciSkipInvariants.unit.spec.ts',
+  'tests/unit/testAffected.unit.spec.ts',
   '.env.test',
 ])
 
@@ -31,18 +42,105 @@ export const HIGH_RISK_PREFIXES = [
   'tests/e2e/fixtures/',
 ]
 
-function isHighRisk(path) {
+/** Canonical vitest/playwright globs — keep in sync with config files. */
+export const CANONICAL_UNIT_INCLUDE = 'tests/unit/**/*.unit.spec.{ts,tsx}'
+export const CANONICAL_INT_INCLUDE = 'tests/int/**/*.int.spec.ts'
+export const CANONICAL_E2E_TEST_DIR = 'tests/e2e'
+export const CANONICAL_E2E_SPEC_SUFFIX = '.e2e.spec.ts'
+
+const CODE_CONFIG_EXACT = new Set([
+  'package.json',
+  'pnpm-lock.yaml',
+  'tsconfig.json',
+  'tsconfig.tsbuildinfo',
+  'eslint.config.mjs',
+  'eslint.config.js',
+  'knip.json',
+  'knip.ts',
+  'knip.config.ts',
+  '.eslintrc.cjs',
+  '.eslintrc.js',
+])
+
+const CODE_CONFIG_PREFIXES = ['tsconfig']
+
+const BUILD_SURFACE_EXACT = new Set([
+  'package.json',
+  'pnpm-lock.yaml',
+  'next.config.js',
+  'next.config.mjs',
+  'next.config.ts',
+  'src/payload.config.ts',
+  'src/payload-types.ts',
+  'tsconfig.json',
+])
+
+const BUILD_SURFACE_PREFIXES = [
+  'src/',
+  'public/',
+  'src/migrations/',
+  'src/collections/',
+  'src/globals/',
+  'tsconfig',
+]
+
+const SPEC_FILE_RE = /\.(?:spec|test)\.(?:ts|tsx)$/
+const UNIT_SPEC_RE = /^tests\/unit\/.+\.unit\.spec\.(?:ts|tsx)$/
+const INT_SPEC_RE = /^tests\/int\/.+\.int\.spec\.ts$/
+const E2E_SPEC_RE = /^tests\/e2e\/[^/]+\.e2e\.spec\.ts$/
+
+/** Cross-cutting dirs under campaign components (no dedicated e2e family). */
+export const E2E_MANIFEST_DOMAIN_EXEMPT = new Set(['shared'])
+
+export function isHighRisk(path) {
   return HIGH_RISK_EXACT.has(path) || HIGH_RISK_PREFIXES.some((prefix) => path.startsWith(prefix))
+}
+
+export function isTestPath(path) {
+  return path.startsWith('tests/')
+}
+
+export function isSrcPath(path) {
+  return path.startsWith('src/')
+}
+
+/**
+ * Paths that affect typecheck / knip / madge (and therefore those PR jobs).
+ */
+export function isCodePath(path) {
+  if (isSrcPath(path) || isTestPath(path)) return true
+  if (CODE_CONFIG_EXACT.has(path)) return true
+  if (CODE_CONFIG_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}.`))) {
+    return true
+  }
+  if (path.startsWith('eslint') || path.includes('eslint.config')) return true
+  if (path.startsWith('knip')) return true
+  return false
+}
+
+/**
+ * Paths that affect `pnpm build` (Next + Payload surface).
+ */
+export function isBuildPath(path) {
+  if (BUILD_SURFACE_EXACT.has(path)) return true
+  if (isSrcPath(path) || path.startsWith('public/')) return true
+  if (path.startsWith('next.config')) return true
+  if (BUILD_SURFACE_PREFIXES.some((prefix) => path.startsWith(prefix))) return true
+  return false
+}
+
+export function isCanonicalSpecPath(path) {
+  return UNIT_SPEC_RE.test(path) || INT_SPEC_RE.test(path) || E2E_SPEC_RE.test(path)
+}
+
+export function isMisplacedSpecPath(path) {
+  return SPEC_FILE_RE.test(path) && !isCanonicalSpecPath(path)
 }
 
 /**
  * Decide vitest scope for a PR diff.
  * @param {{ path: string, status: string }[]} files git diff --name-status rows.
  * @returns {{ mode: 'full' | 'changed' | 'none', reason: string }}
- *   full    — high-risk path or new src file (nothing imports it yet, so
- *             --changed cannot find it; silent green otherwise);
- *   changed — vitest --changed <base> is meaningful;
- *   none    — no src/tests touched (docs-only PR); skip the jobs.
  */
 export function classifyTestScope(files) {
   if (files.some(({ path }) => isHighRisk(path))) {
@@ -57,6 +155,31 @@ export function classifyTestScope(files) {
   return { mode: 'none', reason: 'no src/ or tests/ changes' }
 }
 
+/**
+ * Decide whether typecheck / knip / cycles should run.
+ * @returns {{ mode: 'code' | 'none', reason: string }}
+ */
+export function classifyStaticScope(files) {
+  if (files.some(({ path }) => isCodePath(path))) {
+    return { mode: 'code', reason: 'diff touches src/tests or type/graph config' }
+  }
+  return { mode: 'none', reason: 'no code/type/graph surface changes' }
+}
+
+/**
+ * Decide whether the PR build job should run.
+ * @returns {{ mode: 'build' | 'none', reason: string }}
+ */
+export function classifyBuildScope(files) {
+  if (files.some(({ path }) => isHighRisk(path) && isBuildPath(path))) {
+    return { mode: 'build', reason: 'diff touches a high-risk build surface path' }
+  }
+  if (files.some(({ path }) => isBuildPath(path))) {
+    return { mode: 'build', reason: 'diff touches build surface' }
+  }
+  return { mode: 'none', reason: 'no build surface changes' }
+}
+
 const E2E_SPEC_PATTERN = /^tests\/e2e\/[^/]+\.e2e\.spec\.ts$/
 
 /**
@@ -65,9 +188,6 @@ const E2E_SPEC_PATTERN = /^tests\/e2e\/[^/]+\.e2e\.spec\.ts$/
  * @param {{ prefixes: string[], specs: string[] }[]} manifest prefix → spec names.
  * @returns {{ mode: 'full' | 'selected' | 'none', specs: string[], reason: string,
  *             unmapped: string[] }}
- *   `specs` are spec NAMES (no path, no .e2e.spec.ts). `unmapped` lists src/
- *   files with no manifest prefix — logged in CI, never a failure (e2e is a
- *   thin layer over int; the gap is for a human to judge).
  */
 export function selectE2eSpecs(files, manifest) {
   if (files.some(({ path }) => isHighRisk(path))) {
@@ -112,4 +232,51 @@ export function selectE2eSpecs(files, manifest) {
     reason: `${specs.size} spec(s) selected via manifest and changed specs`,
     unmapped,
   }
+}
+
+/**
+ * Walk a list of repo-relative paths and return misplaced spec/test files.
+ * @param {string[]} paths
+ * @returns {string[]}
+ */
+export function findMisplacedSpecPaths(paths) {
+  return paths.filter(isMisplacedSpecPath).sort()
+}
+
+/**
+ * Domain folders that must appear in the e2e affected manifest (or be exempt).
+ * @param {string[]} componentDirs immediate children of src/components/campaign
+ * @param {string[]} appRouteDirs immediate children of src/app/(campaign)/campanha/(app)
+ * @param {{ prefixes: string[] }[]} manifest
+ * @param {Set<string>} [exempt]
+ * @returns {{ missing: string[], covered: string[] }}
+ */
+export function findUncoveredE2eDomainPrefixes(
+  componentDirs,
+  appRouteDirs,
+  manifest,
+  exempt = E2E_MANIFEST_DOMAIN_EXEMPT,
+) {
+  const prefixes = manifest.flatMap((entry) => entry.prefixes)
+  const required = []
+
+  for (const dir of componentDirs) {
+    if (exempt.has(dir)) continue
+    required.push(`src/components/campaign/${dir}`)
+  }
+  for (const dir of appRouteDirs) {
+    if (dir.includes('.')) continue // files like page.tsx / error.tsx
+    required.push(`src/app/(campaign)/campanha/(app)/${dir}`)
+  }
+
+  const missing = []
+  const covered = []
+  for (const path of required) {
+    const hit = prefixes.some(
+      (prefix) => prefix === path || prefix.startsWith(`${path}/`) || path.startsWith(prefix),
+    )
+    if (hit) covered.push(path)
+    else missing.push(path)
+  }
+  return { missing: missing.sort(), covered: covered.sort() }
 }

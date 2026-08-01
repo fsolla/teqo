@@ -43,7 +43,7 @@ export const loadNotificationBellData = async (): Promise<NotificationBellData |
   if (!user) return null
 
   const payload = await getPayload({ config })
-  const unreadCount = await countUnreadNotifications(payload, user.id)
+  const unreadCount = await countUnreadNotifications(payload, user)
 
   return {
     unreadCount,
@@ -56,7 +56,7 @@ export const listCampaignNotifications = async (): Promise<NotificationListItem[
   if (!user) return []
 
   const payload = await getPayload({ config })
-  return loadNotificationList(payload, user.id)
+  return loadNotificationList(payload, user)
 }
 
 export const markAllCampaignNotificationsRead = async () =>

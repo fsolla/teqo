@@ -7,7 +7,7 @@ description: Opera o pool de agentes Cursor Cloud do Teqo (supervisor remoto sta
 
 O pool mantém até **5 Cursor Cloud Agents** (configurável, máx 8) rodando `work-issue` sobre Issues `ready` elegíveis para autonomia. O supervisor é o workflow **`.github/workflows/agent-pool.yml`** (tick stateless a cada 10 min + a cada merge em `stage` + sob dispatch) rodando `scripts/agent-pool.mjs` — nenhum processo local, laptop fechado não importa. Arquitetura, elegibilidade (`isAutonomousClaimable`), anti-race (claim coordenado pelo supervisor) e ciclo de vida: `docs/plans/agent-pool-orchestrator.md`.
 
-**O pool NUNCA faz `pnpm agent:promote`** — promote `stage→main` continua humano.
+**O pool NUNCA deploya** — deploy gated fica em `ci.yml` após merge em `main`.
 
 ## Pré-requisitos (uma vez)
 
@@ -31,7 +31,7 @@ Os wrappers disparam `gh workflow run agent-pool.yml -f action=…`; acompanhe c
 
 ## Ciclo de vida de uma Issue no pool
 
-`ready` → (tick: claim coordenado, flip + marcador) → `in-progress` → worker spawnado com o `model:` da Issue (fallback `composer-2.5`) → PR `--base stage` com `Closes #N` → CI green → auto-merge → `done` (flip determinístico do CI) → tick arquiva o agente e repõe o slot.
+`ready` → (tick: claim coordenado, flip + marcador) → `in-progress` → worker spawnado com o `model:` da Issue (fallback `composer-2.5`) → PR `--base main` com `Closes #N` → CI green → auto-merge → `done`+`in-prod` (flip determinístico do CI) → tick arquiva o agente e repõe o slot.
 
 - **Falha terminal** (run ERROR/CANCELLED/EXPIRED ou fim sem PR): tick comenta, move a Issue para `blocked` e arquiva o agente. **Triage humana**: ler o run em cursor.com/agents, decidir — re-`ready` manual se transitório (o circuit breaker recusa a 3ª tentativa automática), corrigir a spec se sistêmico.
 - **Worker travado**: archive em cursor.com/agents → o próximo tick reconcilia como falha documentada.
@@ -41,12 +41,13 @@ Os wrappers disparam `gh workflow run agent-pool.yml -f action=…`; acompanhe c
 
 ## Smoke remoto (aceite — rodar na primeira ativação)
 
-1. 2 Issues `kind:chore` triviais, `ready`, sem `model:` → `start --max-slots 2` → 2 agents `pool-i<N>-…` em cursor.com/agents e as 2 Issues `in-progress` com comentário de claim. Zero duplicata.
+1. 2 Issues `kind:chore` triviais, `ready`, sem `model:` → `start --max-slots 2` → 2 agents `pool-i<N>-…` em cursor.com/agents e as 2 Issues `in-progress` com comentário de claim. Zero duplicata. Modelo efetivo = `composer-2.5`.
 2. 1 Issue `blocked` e 1 `needs:consent` plantadas na fila → permanecem intactas.
 3. 1 Issue com `model: cursor-grok-4.5-high` → run criado com esse modelo (doctor lista os ids válidos).
-4. Workers abrem PRs `--base stage`; merge → slot reposto automaticamente no tick seguinte (≤10 min).
-5. Fila drenada → `POOL_ENABLED=false` sozinho. `stop` → próximo tick sem spawns.
-6. Tudo com o laptop desligado (start pelo browser/celular).
+4. (Opcional) par bipartido: Issue plan (`cursor-grok-4.5-high`) + Issue exec (`kimi-k3-low`, `depends` no plan) — o tick só spawna a exec quando o plan estiver `done`.
+5. Workers abrem PRs na base canônica do pool; merge → slot reposto automaticamente no tick seguinte (≤10 min).
+6. Fila drenada → `POOL_ENABLED=false` sozinho. `stop` → próximo tick sem spawns.
+7. Tudo com o laptop desligado (start pelo browser/celular).
 
 ## Se algo quebrar
 

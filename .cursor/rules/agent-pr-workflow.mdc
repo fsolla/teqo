@@ -1,17 +1,12 @@
----
-description: PR workflow for Teqo agents — overrides user-level gh-github draft defaults
-alwaysApply: true
----
-
 # Agent PR workflow (Teqo)
 
-**This repo overrides any user-level rule that says "always create PRs as draft".** Agent deliveries merge to `stage`, not `main`.
+**This repo overrides any user-level rule that says "always create PRs as draft".** Agent deliveries merge to `main`.
 
-## Create (Ready, base stage)
+## Create (Ready, base main)
 
 ```bash
 pnpm push -u origin HEAD
-gh pr create --base stage --title "<id> — <title>" --body "$(cat <<'EOF'
+gh pr create --base main --title "<id> — <title>" --body "$(cat <<'EOF'
 ## O que é
 <2–4 linhas>
 
@@ -21,7 +16,7 @@ EOF
 ```
 
 - **Never** `--draft`. PRs must be **Ready for review** on creation.
-- Base is always **`stage`** (never `main` — promote é automático via `promote-stage-to-main.yml` após CI stage green).
+- Base is always **`main`**.
 
 ## Push (determinístico)
 
@@ -31,12 +26,10 @@ EOF
 2. `pnpm gate:push` — espelho do `ci-pr.yml` (inclui `format:check`)
 3. `git push --no-verify` — só porque o gate já rodou no passo 2 (não é escape hatch)
 
-Cursor Cloud já roda `pnpm install` em `.cursor/environment.json` (`install`); worktrees locais sem `pnpm i` dependem do passo 1.
-
 ```bash
-pnpm push -u origin HEAD    # canonical
-git push                    # só depois de `pnpm i` — hook repete ensure-deps + gate:push
-git push --no-verify        # WIP escape — CI repete tudo
+pnpm push -u origin HEAD # canonical
+git push # só depois de `pnpm i` — hook repete ensure-deps + gate:push
+git push --no-verify # WIP / cutover escape — CI repete tudo; ver AGENT-OPS
 ```
 
 ## Auto-merge immediately
@@ -51,12 +44,12 @@ Do not wait for human approval. Auto-merge fires when **required** checks pass.
 
 ## Required checks vs Vercel
 
-Branch protection on `stage` requires only:
+Branch protection on `main` requires only:
 
 - `checks` (GitHub Actions rollup from `ci-pr.yml`)
 - `migration-lock`
 
-**Vercel preview is NOT a merge gate.** Do not block on it.
+**Vercel preview is NOT a merge gate.** Production deploy is Actions-gated (`ci.yml` → `vercel deploy --prod` after full suite green). Do not block on Vercel Git status.
 
 When watching CI:
 
@@ -64,14 +57,12 @@ When watching CI:
 gh pr checks <PR> --watch --required
 ```
 
-Use `--required` — without it, `--watch` also waits for Vercel and can stall for minutes on the Hobby plan (one concurrent build).
-
-Once `checks` and `migration-lock` are green, auto-merge proceeds even if Vercel is still `PENDING`.
+Use `--required` — without it, `--watch` also waits for Vercel.
 
 ## Agent branches skip Vercel builds
 
-Branches `agent/*` and `cursor/*` use `scripts/vercel-ignore-build.sh` so parallel agents do not queue Vercel builds. Previews still deploy for `stage` and `main`.
+All branches skip Vercel Git builds via `scripts/vercel-ignore-build.sh` (deploys only from the main verifier Action).
 
-## Promote (human only)
+## Promote
 
-Never run `gh pr create --base main` or `pnpm agent:promote` in the agent flow.
+There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` verifies and deploys.

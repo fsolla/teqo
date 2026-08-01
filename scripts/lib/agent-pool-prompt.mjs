@@ -5,8 +5,8 @@
  * The supervisor claims the issue BEFORE spawning (label flip + pool-worker
  * marker comment — the coordinated-claim anti-race), so the worker SKIPS the
  * claim step of work-issue and starts at step 1b. Everything else — gates, PR
- * base stage with Closes #N, auto-merge + CI watch, never promote — is the
- * standard skill contract restated so the worker cannot miss it.
+ * base main with Closes #N, auto-merge + CI watch — is the standard skill
+ * contract restated so the worker cannot miss it.
  */
 
 /** First docs/plans/*.md path in the issue body (the linked plan), if any. */
@@ -37,13 +37,12 @@ export const buildPoolWorkerPrompt = ({ issueNumber, issueTitle, issueId, planPa
       ? `2. Plano: \`${planPath}\` — freshness audit enxuto (passo 3 da skill).`
       : '2. O body da Issue é a spec (não há plano linkado — avalie se ele basta para trabalhar).',
     '3. Execute as fases com os gates do repo: `pnpm gate:fast` antes do push (o pre-push roda `pnpm gate:push`). Comandos bare, nunca piped.',
-    `4. PR obrigatoriamente com \`gh pr create --base stage\` e "Closes #${issueNumber}" no body.`,
-    '5. `gh pr merge --auto --merge <PR>` e acompanhe `gh pr checks <PR> --watch` até o merge. Falha de CI no seu PR é sua (docs/AGENT-OPS.md — "Dono do PR, dono do CI"): corrija na mesma branch.',
+    `4. PR obrigatoriamente com \`gh pr create --base main\` e "Closes #${issueNumber}" no body.`,
+    '5. `gh pr merge --auto --merge <PR>` e acompanhe `gh pr checks <PR> --watch --required` até o merge. Falha de CI no seu PR é sua (docs/AGENT-OPS.md — "Dono do PR, dono do CI"): corrija na mesma branch.',
     '',
     '## Proibido',
     '',
-    '- `pnpm agent:promote` — promote stage→main é humano.',
-    '- `DATABASE_URL` de stage/prod ou `ALLOW_REMOTE_DB` — o setup local (`.cursor/cloud-setup.sh` + seed mínimo) cobre tudo.',
+    '- `DATABASE_URL` de prod ou `ALLOW_REMOTE_DB` — o setup local (`.cursor/cloud-setup.sh` + seed mínimo) cobre tudo.',
     `- Editar outras Issues \`in-progress\` ou trabalhar fora da Issue #${issueNumber}.`,
     '',
     modelSlug

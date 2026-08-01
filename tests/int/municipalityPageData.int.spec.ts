@@ -5,6 +5,7 @@ import { getPayload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { getMunicipalityCatalogEntry, municipalityCatalog } from '@/lib/municipalityCatalog'
+import { territorialClassSortWeight } from '@/lib/territorialClassSortWeight'
 import config from '@/payload.config'
 import { loadMunicipalityListPageBundle } from '@/utilities/municipality/municipalityPageData'
 import { computeMunicipalityTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
@@ -287,19 +288,27 @@ describe('loadMunicipalityListPageBundle', () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
-    const redutoEntry = municipalityCatalog.find(
-      (entry) => computeMunicipalityTerritorialClass(entry.slug).class === 'reduto',
-    )!
-    const marginalEntry = municipalityCatalog.find(
-      (entry) => computeMunicipalityTerritorialClass(entry.slug).class === 'marginal',
-    )!
-    const reduto = await fixtures.getMunicipality(redutoEntry.slug)
-    const marginal = await fixtures.getMunicipality(marginalEntry.slug)
+    // Two allocated municipalities with DISTINCT territorial classes: the
+    // behavior pinned here (class filter narrows, totals stay honest, classe
+    // sort follows the weight table) does not care WHICH classes they are —
+    // and pinning fixed catalog slugs raced parallel specs mutating the same
+    // seeded rows (deadlock on municipality_rels, miss #73).
+    const first = await fixtures.getMunicipality()
+    const firstClass = computeMunicipalityTerritorialClass(first.slug).class
+    let second = await fixtures.getMunicipality()
+    let secondClass = computeMunicipalityTerritorialClass(second.slug).class
+    for (let attempt = 0; secondClass === firstClass && attempt < 20; attempt++) {
+      second = await fixtures.getMunicipality()
+      secondClass = computeMunicipalityTerritorialClass(second.slug).class
+    }
+    if (secondClass === firstClass) {
+      throw new Error('could not allocate municipalities of two distinct classes')
+    }
 
     const marker = `e10-classe-${Date.now()}`
     for (const [municipality, suffix] of [
-      [reduto, 'reduto'],
-      [marginal, 'marginal'],
+      [first, 'filtrada'],
+      [second, 'fora'],
     ] as const) {
       await payload.update({
         collection: 'municipality',
@@ -313,29 +322,39 @@ describe('loadMunicipalityListPageBundle', () => {
 
     const filtered = await loadMunicipalityListPageBundle(payload, coordinator, {
       q: marker,
-      class: 'reduto',
+      class: firstClass,
     })
-    expect(filtered.municipalities.map((row) => row.slug)).toEqual([reduto.slug])
+    expect(filtered.municipalities.map((row) => row.slug)).toEqual([first.slug])
     expect(filtered.totalDocs).toBe(1)
     expect(filtered.overview?.municipalityCount).toBe(1)
-    expect(filtered.municipalities[0]!.territorialClass).toBe('reduto')
+    expect(filtered.municipalities[0]!.territorialClass).toBe(firstClass)
     expect(filtered.municipalities[0]!.territorialClassFactors.length).toBeGreaterThan(0)
 
     // A native sort key would otherwise let Payload paginate before the class
     // filter runs, which would hand back a short page with an inflated total.
     const byName = await loadMunicipalityListPageBundle(payload, coordinator, {
       q: marker,
-      class: 'reduto',
+      class: firstClass,
       sort: 'name',
     })
-    expect(byName.municipalities.map((row) => row.slug)).toEqual([reduto.slug])
+    expect(byName.municipalities.map((row) => row.slug)).toEqual([first.slug])
     expect(byName.totalDocs).toBe(1)
 
     const sorted = await loadMunicipalityListPageBundle(payload, coordinator, {
       q: marker,
       sort: 'classe',
     })
-    expect(sorted.municipalities.map((row) => row.slug)).toEqual([reduto.slug, marginal.slug])
+    // `classe` sorts strongest class first (reduto 4 … marginal 1; every
+    // catalog row classes into a weighted class, so no null weight exists).
+    const expectedOrder = [first, second]
+      .map((municipality) => ({
+        slug: municipality.slug,
+        weight:
+          territorialClassSortWeight[computeMunicipalityTerritorialClass(municipality.slug).class],
+      }))
+      .sort((left, right) => (right.weight ?? 0) - (left.weight ?? 0))
+      .map((entry) => entry.slug)
+    expect(sorted.municipalities.map((row) => row.slug)).toEqual(expectedOrder)
   })
 
   /**
@@ -348,9 +367,9 @@ describe('loadMunicipalityListPageBundle', () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
 
-    const low = await fixtures.getMunicipality(municipalityCatalog[0]!.slug)
-    const high = await fixtures.getMunicipality(municipalityCatalog[1]!.slug)
-    const none = await fixtures.getMunicipality(municipalityCatalog[2]!.slug)
+    const low = await fixtures.getMunicipality()
+    const high = await fixtures.getMunicipality()
+    const none = await fixtures.getMunicipality()
 
     const marker = `e14-nivel-${Date.now()}`
     for (const [municipality, suffix, engagementLevel] of [
@@ -446,9 +465,7 @@ describe('loadMunicipalityListPageBundle', () => {
       data: { priority: 'alta' },
       overrideAccess: true,
     })
-    const covered = await fixtures.getMunicipality(
-      municipalityCatalog.find((entry) => entry.slug !== priorityMunicipality.slug)!.slug,
-    )
+    const covered = await fixtures.getMunicipality()
     await fixtures.assignMunicipalityAdvisors(covered.id, [advisor.id])
 
     // "Prioritária" lives in the Município popover, so it must not hide the

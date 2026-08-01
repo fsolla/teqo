@@ -16,7 +16,7 @@ import { execFileSync } from 'node:child_process'
 import { E2E_AFFECTED_MANIFEST } from './lib/e2e-affected-manifest.mjs'
 import { selectE2eSpecs } from './lib/test-affected-core.mjs'
 
-const base = `origin/${process.env.GITHUB_BASE_REF ?? 'stage'}`
+const base = `origin/${process.env.GITHUB_BASE_REF ?? 'main'}`
 
 let mergeBase
 try {

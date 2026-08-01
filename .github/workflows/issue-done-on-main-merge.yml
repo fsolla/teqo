@@ -1,4 +1,4 @@
-name: Stage merge flips claimed issues to done
+name: Main merge flips claimed issues to done + in-prod
 
 on:
   pull_request:
@@ -11,18 +11,18 @@ permissions:
 
 jobs:
   issue-done:
-    if: github.event.pull_request.base.ref == 'stage' && github.event.pull_request.merged == true
+    if: github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
-      - name: Flip Closes/Fixes #N issues from in-progress to done
+      - name: Flip Closes/Fixes #N issues to done and in-prod
         run: |
           body="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json body --jq .body)"
           numbers="$(printf '%s' "$body" | grep -oiE '(closes|fixes) #[0-9]+' | grep -oE '[0-9]+' | sort -u)"
           for n in $numbers; do
-            gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --remove-label in-progress --add-label done || true
+            gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --remove-label in-progress --add-label done --add-label in-prod || true
             gh issue comment "$n" --repo "$GITHUB_REPOSITORY" \
-              --body "Merged em stage via PR #${PR_NUMBER} — done; \`in-prod\` entra no auto-promote após CI stage green." || true
+              --body "Merged em main via PR #${PR_NUMBER} — \`done\` + \`in-prod\`. Deploy de produção segue o verificador \`ci.yml\` (gated)." || true
           done

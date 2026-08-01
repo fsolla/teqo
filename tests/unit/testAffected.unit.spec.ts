@@ -3,6 +3,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  classifyBuildScope,
+  classifyStaticScope,
   classifyTestScope,
   HIGH_RISK_EXACT,
   HIGH_RISK_PREFIXES,
@@ -19,7 +21,9 @@ describe('classifyTestScope (OPS5)', () => {
       'pnpm-lock.yaml',
       'src/collections/Post.ts',
       'scripts/lib/seed-minimal-manifest.mjs',
+      'scripts/lib/test-affected-core.mjs',
       'tests/helpers/campaignFixtures.ts',
+      'tests/unit/ciSkipInvariants.unit.spec.ts',
     ]) {
       expect(classifyTestScope([changed(path)]).mode, path).toBe('full')
     }
@@ -46,6 +50,32 @@ describe('classifyTestScope (OPS5)', () => {
     expect(HIGH_RISK_EXACT.has('vitest.config.mts')).toBe(true)
     expect(HIGH_RISK_EXACT.has('playwright.config.ts')).toBe(true)
     expect(HIGH_RISK_PREFIXES).toContain('tests/e2e/fixtures/')
+  })
+})
+
+describe('classifyStaticScope', () => {
+  it('runs for src/tests and type/graph config diffs', () => {
+    expect(classifyStaticScope([changed('src/lib/foo.ts')]).mode).toBe('code')
+    expect(classifyStaticScope([changed('tsconfig.json')]).mode).toBe('code')
+    expect(classifyStaticScope([changed('package.json')]).mode).toBe('code')
+    expect(classifyStaticScope([changed('eslint.config.mjs')]).mode).toBe('code')
+  })
+
+  it('skips for docs-only diffs', () => {
+    expect(classifyStaticScope([changed('docs/AGENT-OPS.md')]).mode).toBe('none')
+  })
+})
+
+describe('classifyBuildScope', () => {
+  it('runs for build surface diffs', () => {
+    expect(classifyBuildScope([changed('src/app/(frontend)/page.tsx')]).mode).toBe('build')
+    expect(classifyBuildScope([changed('public/favicon.ico')]).mode).toBe('build')
+    expect(classifyBuildScope([changed('next.config.mjs')]).mode).toBe('build')
+    expect(classifyBuildScope([changed('package.json')]).mode).toBe('build')
+  })
+
+  it('skips for docs-only diffs', () => {
+    expect(classifyBuildScope([changed('docs/AGENT-OPS.md')]).mode).toBe('none')
   })
 })
 
