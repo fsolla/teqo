@@ -149,8 +149,8 @@ Lance **três** subagentes via `Task` **em paralelo** na mesma mensagem — read
 
 1. Branch `agent/<id>-<slug>` (worktrees do Cursor são donos da criação; commits lógicos).
 2. **`pnpm push -u origin HEAD`** — canonical; roda `ensure-repo-deps` + `gate:push` + push (não depende do Husky). Não use `git push` nu.
-3. `gh pr create --base main` com `Closes #<N>` no body — **nunca `--draft`** (`.cursor/rules/agent-pr-workflow.mdc`).
-4. `gh pr merge --auto --merge <PR>` imediatamente após criar o PR (`strict=false` na proteção de `main`).
+3. Abrir PR **Ready** (nunca draft) com `Closes #<N>` — `.cursor/rules/agent-pr-workflow.mdc` (alwaysApply). Canal: `gh pr create --base main` **ou**, em Cloud, `ManagePullRequest` com **`draft: false`**.
+4. `gh pr merge --auto --merge <PR>` **imediatamente** após o PR existir Ready (`strict=false` na proteção de `main`). Não encerre o turn com PR Draft ou sem auto-merge armado.
 5. **Acompanhe só os checks obrigatórios** (`gh pr checks <PR> --watch --required`): gate = `checks` + `migration-lock`; Vercel Git não bloqueia. Falha no ci-pr → corrige na mesma branch. **Conflito de merge** → rebase em `main` e reempurre.
 6. O flip `in-progress → done` + `in-prod` é **determinístico no CI** (`issue-done-on-main-merge.yml`). Deploy gated fica em `ci.yml` — não é passo do agente. Consolide pontas soltas após o merge.
 

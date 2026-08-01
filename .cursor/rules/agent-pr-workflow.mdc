@@ -1,6 +1,11 @@
+---
+description: PRs de agente — Ready (nunca draft), base main, auto-merge imediato
+alwaysApply: true
+---
+
 # Agent PR workflow (Teqo)
 
-**This repo overrides any user-level rule that says "always create PRs as draft".** Agent deliveries merge to `main`.
+**This repo overrides any user-level or Cloud-tool default that says "create PRs as draft".** Agent deliveries merge to `main` via required checks + auto-merge.
 
 ## Create (Ready, base main)
 
@@ -18,6 +23,14 @@ EOF
 - **Never** `--draft`. PRs must be **Ready for review** on creation.
 - Base is always **`main`**.
 
+### Cursor Cloud / `ManagePullRequest`
+
+When the environment says to use `ManagePullRequest` instead of `gh pr create`:
+
+- **`draft: false`** (or omit only if the tool’s default is Ready — today Cloud defaults to draft, so **always pass `draft: false`**).
+- Right after create (or on `update_pr` if you opened draft by mistake): mark Ready if still draft, then enable auto-merge with `gh pr merge --auto --merge <url|number>` (write allowed for this step — same as `agent-pr-workflow`; do not leave the PR waiting on a human).
+- Never end a turn with an open agent PR left as **Draft** or without **auto-merge** armed (exception: `engineering-audit` sign-off PR only — see that skill).
+
 ## Push (determinístico)
 
 **Use `pnpm push`, never bare `git push`.** Não depende do Husky estar wired:
@@ -34,13 +47,13 @@ git push --no-verify # WIP / cutover escape — CI repete tudo; ver AGENT-OPS
 
 ## Auto-merge immediately
 
-Right after `gh pr create`, enable auto-merge:
+Right after the PR exists and is **Ready**:
 
 ```bash
 gh pr merge --auto --merge
 ```
 
-Do not wait for human approval. Auto-merge fires when **required** checks pass.
+Do not wait for human approval on normal deliveries. Auto-merge fires when **required** checks pass.
 
 ## Required checks vs Vercel
 
@@ -66,3 +79,7 @@ All branches skip Vercel Git builds via `scripts/vercel-ignore-build.sh` (deploy
 ## Promote
 
 There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` verifies and deploys.
+
+## Exception (narrow)
+
+`engineering-audit` artifact PR: Ready, **no** auto-merge — human merge is the sign-off. All other agent PRs (work-issue, pool workers, chores, docs) use auto-merge.

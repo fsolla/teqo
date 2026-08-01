@@ -20,7 +20,7 @@ main → ci.yml full suite → vercel deploy --prod (se verde) → requeue se HE
 
 **Skills:** `plan-issue` → `work-issue` (claim → modelo → freshness → execução → /simplify → PR `--base main` → CI até o merge) → `project-status`. `docs/roadmap.md` = legado congelado; fonte canônica = GitHub Issues.
 
-- **Agente faz sozinho:** `pnpm agent:claim` → implementa → **`pnpm push`** → `gh pr create --base main` com `Closes #N` (**Ready**) → `gh pr merge --auto --merge` → `gh pr checks --watch --required`. Regra: `.cursor/rules/agent-pr-workflow.mdc`.
+- **Agente faz sozinho:** `pnpm agent:claim` → implementa → **`pnpm push`** → PR **Ready** (nunca draft) com `Closes #N` → `gh pr merge --auto --merge` → `gh pr checks --watch --required`. Regra always-on: `.cursor/rules/agent-pr-workflow.mdc`. Em Cursor Cloud: `ManagePullRequest` com `draft: false`, depois armar auto-merge via `gh pr merge --auto --merge` (o default draft da tool **não** vale neste repo).
 - **Só humano:** secrets Vercel (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`), `POOL_GITHUB_TOKEN`, `pnpm configure:branch-protection`, editar envs Neon/Vercel.
 
 ### Dono do PR, dono do CI
