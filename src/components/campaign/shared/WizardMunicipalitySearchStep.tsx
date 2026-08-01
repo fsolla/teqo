@@ -24,6 +24,7 @@ import {
   WIZARD_MUNICIPALITY_STEP_TITLE,
   wizardFlowTitleForSlug,
 } from '@/lib/campaignWizardCopy'
+import { HOME_SEARCH_GROUP_LIST_CLASS } from '@/lib/homeSearchUi'
 import type { AccessibleMunicipality } from '@/lib/municipalityProximity'
 import { HOME_SEARCH_QUERY_MAX_LENGTH } from '@/lib/schemas/homeSearch'
 import {
@@ -202,9 +203,9 @@ export const WizardMunicipalitySearchStep = ({
             </p>
           ) : null}
           {results.status === 'success' && displayRows.length > 0 ? (
-            <ul className="m-0 flex list-none flex-col p-0">
+            <ul className={HOME_SEARCH_GROUP_LIST_CLASS}>
               {displayRows.map(({ hit, continuityReason }) => (
-                <li key={hit.slug} className="m-0 list-none p-0">
+                <li key={hit.slug}>
                   <HomeSearchHitRow
                     href={wizardActionHref(actionSlug, hit.slug)}
                     primary={hit.name}
