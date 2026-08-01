@@ -4,9 +4,9 @@ import { HOME_SEARCH_SUGGEST_LIMIT } from '@/lib/homeSearchSuggest'
 export const WIZARD_CONTINUITY_LAST_ACTED_LABEL = 'Última ação' as const
 export const WIZARD_CONTINUITY_VISITED_LABEL = 'Visitado' as const
 
-export const WIZARD_CONTINUITY_MAX_VISITED = 3
+const WIZARD_CONTINUITY_MAX_VISITED = 3
 
-export type WizardContinuitySource = 'last-acted' | 'visited'
+type WizardContinuitySource = 'last-acted' | 'visited'
 
 export type WizardContinuitySlug = {
   source: WizardContinuitySource
