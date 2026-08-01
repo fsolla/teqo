@@ -38,10 +38,7 @@ import {
   resolveWizardTrendNoteDestination,
 } from '@/lib/politicalTrendWizardUi'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
-import {
-  isWizardChainActionId,
-  wizardChainContinueHref,
-} from '@/lib/wizardActionChain'
+import { isWizardChainActionId, wizardChainContinueHref } from '@/lib/wizardActionChain'
 import config from '@/payload.config'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadWizardLeadershipTiles } from '@/utilities/leadership/leadershipData'

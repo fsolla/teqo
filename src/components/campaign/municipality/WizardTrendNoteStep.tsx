@@ -21,10 +21,7 @@ import {
   WIZARD_TREND_SAVE_LABEL,
 } from '@/lib/politicalTrendWizardUi'
 import type { PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
-import {
-  resolveWizardChainEntry,
-  wizardChainContinueHref,
-} from '@/lib/wizardActionChain'
+import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 import { politicalTrendLabels } from '@/utilities/municipality/municipalityLabels'
 
 type WizardTrendNoteStepProps = {

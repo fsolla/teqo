@@ -94,5 +94,4 @@ export const wizardChainContinueHref = (
 export const resolveWizardChainEntry = (
   entryAction: CampaignWizardActionId | undefined,
   currentAction: WizardChainActionId,
-): WizardChainActionId =>
-  isWizardChainActionId(entryAction) ? entryAction : currentAction
+): WizardChainActionId => (isWizardChainActionId(entryAction) ? entryAction : currentAction)

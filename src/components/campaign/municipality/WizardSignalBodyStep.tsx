@@ -17,10 +17,7 @@ import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 import { municipalitySignalTypeLabels } from '@/lib/schemas/municipalityUpdate'
-import {
-  resolveWizardChainEntry,
-  wizardChainContinueHref,
-} from '@/lib/wizardActionChain'
+import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 import {
   resolveWizardSignalSkip,
   WIZARD_SIGNAL_BODY_STEP_TITLE_PREFIX,

@@ -69,9 +69,7 @@ describe('wizardActionChain', () => {
     expect(wizardChainContinueHref('change-trend', 'update-leadership', 'cairu')).toBe(
       CAMPAIGN_HOME,
     )
-    expect(wizardChainContinueHref('register-demand', 'update-votes', 'cairu')).toBe(
-      CAMPAIGN_HOME,
-    )
+    expect(wizardChainContinueHref('register-demand', 'update-votes', 'cairu')).toBe(CAMPAIGN_HOME)
   })
 
   it('resolves session entry from query or current principal', () => {

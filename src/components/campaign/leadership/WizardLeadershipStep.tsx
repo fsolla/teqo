@@ -36,10 +36,7 @@ import {
 } from '@/lib/campaignWizardCopy'
 import { truncateNameAtWordBoundary } from '@/lib/leadershipNameTruncate'
 import { cn } from '@/lib/utils'
-import {
-  resolveWizardChainEntry,
-  wizardChainContinueHref,
-} from '@/lib/wizardActionChain'
+import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 import {
   resolveWizardLeadershipSkip,
   type WizardLeadershipTileViewModel,
