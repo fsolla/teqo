@@ -77,34 +77,6 @@ export const CampaignQuickActionsDrawer = ({
         className="border-t border-border bg-background text-foreground shadow-[0_-4px_24px_-8px_rgb(0_0_0/0.12)] print:hidden"
       >
         <DrawerTitle className="sr-only">Ações rápidas</DrawerTitle>
-<<<<<<< HEAD
-        <div
-          id="quickActionContext"
-          className={cn(
-            'flex min-h-0 flex-col gap-4 overflow-hidden px-4 pt-2',
-            isDock ? 'flex-1' : 'hidden',
-          )}
-          data-snap={isDock ? 'dock' : 'collapsed'}
-          aria-hidden={!isDock}
-        >
-          {showActions ? (
-            <div className="-mx-4 w-[calc(100%+2rem)]">
-              <CampaignHomeActionStrip
-                actions={actions.map((action) => ({
-                  id: action.id,
-                  label: action.label,
-                  icon: action.icon,
-                  description: action.description,
-                  href: action.href,
-                }))}
-                className="w-full"
-              />
-            </div>
-          ) : null}
-          <CampaignGlobalSearchBody />
-        </div>
-=======
->>>>>>> 303e0e2 (B105: bottom drawer handle top, scroll-up dock, discreet search peek)
         <button
           type="button"
           onClick={toggleSnap}
@@ -124,7 +96,7 @@ export const CampaignQuickActionsDrawer = ({
           data-snap={isDock ? 'dock' : 'collapsed'}
         >
           {showActions ? (
-            <div hidden={!isDock}>
+            <div hidden={!isDock} className="-mx-4 w-[calc(100%+2rem)]">
               <CampaignHomeActionStrip
                 actions={actions.map((action) => ({
                   id: action.id,
