@@ -1,6 +1,6 @@
 # CL7 — Migrar apoiadores e organizações para a factory
 
-Status: rascunho
+Status: entregue
 Atualizado em: 2026-08-01
 Issue: #161
 Priority: P1

@@ -9,6 +9,8 @@ const ROUTE_PAGES = {
   dobradinhas: join(process.cwd(), 'src/app/(campaign)/campanha/(app)/dobradinhas/page.tsx'),
   demandas: join(process.cwd(), 'src/app/(campaign)/campanha/(app)/demandas/page.tsx'),
   assessores: join(process.cwd(), 'src/app/(campaign)/campanha/(app)/assessores/page.tsx'),
+  apoiadores: join(process.cwd(), 'src/app/(campaign)/campanha/(app)/apoiadores/page.tsx'),
+  organizacoes: join(process.cwd(), 'src/app/(campaign)/campanha/(app)/organizacoes/page.tsx'),
 } as const
 
 const expectOpsListPageWiring = (source: string) => {
@@ -39,4 +41,13 @@ describe('OpsListPage assessores (CL5)', () => {
     expectOpsListPageWiring(source)
     expect(source).toContain('resolveAdvisorListUrl')
   })
+})
+
+describe('OpsListPage CL7 routes', () => {
+  it.each(['apoiadores', 'organizacoes'] as const)(
+    'wires LIST_UNIFIED behind OpsListPage on the %s route',
+    (route) => {
+      expectOpsListPageWiring(readFileSync(ROUTE_PAGES[route], 'utf8'))
+    },
+  )
 })
