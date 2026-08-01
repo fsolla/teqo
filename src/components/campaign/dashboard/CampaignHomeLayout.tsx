@@ -64,7 +64,10 @@ export const CampaignHomeLayout = ({
         slot="home-actions-chrome"
         className="order-1 md:order-2"
       >
-        <div data-slot="home-actions" className="min-w-0">
+        <div
+          data-slot="home-actions"
+          className="min-w-0 -mx-4 w-[calc(100%+2rem)] md:mx-0 md:w-auto"
+        >
           {actions}
         </div>
       </HomeChromeRetractionShell>
