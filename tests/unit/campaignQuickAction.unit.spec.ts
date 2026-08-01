@@ -2,10 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { resolveActivityQuickActions } from '@/lib/activityQuickActions'
 import { CAMPAIGN_WIZARD_ACTION_SLUGS } from '@/lib/campaignActionRoutes'
-import {
-  UNCOVERED_MUNICIPALITIES_LIST_HREF,
-  homeActionsForRole,
-} from '@/lib/campaignHomeActions'
+import { UNCOVERED_MUNICIPALITIES_LIST_HREF, homeActionsForRole } from '@/lib/campaignHomeActions'
 import {
   isCampaignActionsPath,
   isCampaignHomePath,
@@ -142,9 +139,13 @@ describe('campaignQuickActionRegistry', () => {
   })
 
   it('builds wizard hrefs with municipality slug from context', () => {
-    const actions = resolveQuickActionsForPath('/campanha/atividades/evento-zona-1', 'coordinator', {
-      municipalitySlug: 'salvador-ze-01',
-    })
+    const actions = resolveQuickActionsForPath(
+      '/campanha/atividades/evento-zona-1',
+      'coordinator',
+      {
+        municipalitySlug: 'salvador-ze-01',
+      },
+    )
     const registerSignal = actions.find((action) => action.id === 'register-signal')
     expect(registerSignal?.href).toBe(
       `/campanha/acoes/${CAMPAIGN_WIZARD_ACTION_SLUGS['register-signal']}?municipio=salvador-ze-01`,
