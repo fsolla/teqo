@@ -39,6 +39,7 @@
     "configure:branch-protection": "node scripts/configure-branch-protection.mjs",
     "build:demographics": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-demographics.mjs",
     "build:election-aggregates": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/build-election-aggregates.mjs",
+    "benchmark:ops-snapshot": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/benchmark-ops-snapshot.mjs",
     "build:geometries": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-geometries.mjs",
     "build:municipality-zone-geometries": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-municipality-zone-geometries.mjs",
     "build:tse-city-codes": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-tse-city-codes.mjs",
