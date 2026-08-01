@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { resolveActivityQuickActions } from '@/lib/activityQuickActions'
 import { CAMPAIGN_WIZARD_ACTION_SLUGS } from '@/lib/campaignActionRoutes'
+import { advisorQuickCreateHref } from '@/lib/campaignAdvisorQuickActions'
 import { UNCOVERED_MUNICIPALITIES_LIST_HREF, homeActionsForRole } from '@/lib/campaignHomeActions'
 import {
   CAMPAIGN_DEMANDS_CREATE_HREF,
@@ -11,7 +12,6 @@ import {
   resolveDemandDetailQuickActions,
   resolveDemandsListQuickActions,
 } from '@/lib/campaignQuickActionDemands'
-import { advisorQuickCreateHref } from '@/lib/campaignAdvisorQuickActions'
 import {
   isCampaignActionsPath,
   isCampaignHomePath,
@@ -253,7 +253,6 @@ describe('campaignQuickActionRegistry', () => {
     expect(resolveQuickActionsForPath('/campanha/territorios', 'leader', {})).toEqual([])
   })
 
-<<<<<<< HEAD
   it('returns single register-demand launcher on demandas list (B85)', () => {
     const actions = resolveQuickActionsForPath('/campanha/demandas', 'coordinator', {})
     expect(actions.map((action) => action.id)).toEqual(['register-demand'])

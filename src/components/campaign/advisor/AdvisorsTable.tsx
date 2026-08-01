@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useMemo, useState, useTransition, useEffect } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { AdvisorDebouncedTextCell } from '@/components/campaign/advisor/AdvisorDebouncedTextCell'

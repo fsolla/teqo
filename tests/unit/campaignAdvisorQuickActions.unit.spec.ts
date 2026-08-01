@@ -56,8 +56,6 @@ describe('resolveAdvisorQuickActionsForPath', () => {
   })
 
   it('returns empty catalog for advisor role even on assessores paths', () => {
-    expect(
-      resolveAdvisorQuickActionsForPath('/campanha/assessores', 'advisor', {}),
-    ).toEqual([])
+    expect(resolveAdvisorQuickActionsForPath('/campanha/assessores', 'advisor', {})).toEqual([])
   })
 })
