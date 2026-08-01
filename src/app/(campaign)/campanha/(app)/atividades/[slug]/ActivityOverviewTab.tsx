@@ -2,6 +2,7 @@ import { PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import { ActivityResultForm } from '@/components/campaign/activity/ActivityResultForm'
+import { CampaignListPagination } from '@/components/campaign/shared/CampaignListPagination'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,6 +17,12 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
 })
 
 type ActivityDetailView = Awaited<ReturnType<typeof getActivityDetailPageData>>
+
+const hrefForLinkedDemandsPage = (activitySlug: string, page: number) => {
+  const params = new URLSearchParams({ tab: 'overview' })
+  if (page > 1) params.set('demandsPage', String(page))
+  return `/campanha/atividades/${activitySlug}?${params.toString()}`
+}
 
 /** The "Visão geral" tab: details, team/orgs, linked demands and the result block. */
 export const ActivityOverviewTab = ({
@@ -128,8 +135,20 @@ export const ActivityOverviewTab = ({
           <CardTitle>Demandas vinculadas</CardTitle>
           <p className="text-sm text-muted-foreground">
             Custo estimado: {currencyFormatter.format(view.demandCostTotal)}
+            {view.totalDocs > 0 ? (
+              <>
+                {' '}
+                · {view.totalDocs} {view.totalDocs === 1 ? 'demanda' : 'demandas'}
+              </>
+            ) : null}
           </p>
         </div>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          {view.totalDocs > view.demands.length ? (
+            <Button asChild variant="ghost" className="min-h-11">
+              <Link href={`/campanha/demandas?activity=${view.id}`}>Ver todas</Link>
+            </Button>
+          ) : null}
         {view.municipality ? (
           <Button asChild variant="outline" className="min-h-11 shrink-0">
             <Link
@@ -140,10 +159,12 @@ export const ActivityOverviewTab = ({
             </Link>
           </Button>
         ) : null}
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col gap-4">
         {view.demands.length ? (
-          <ul role="list" className="divide-y">
+          <>
+            <ul role="list" className="divide-y">
             {view.demands.map((demand) => (
               <li
                 key={demand.id}
@@ -168,7 +189,13 @@ export const ActivityOverviewTab = ({
                 </span>
               </li>
             ))}
-          </ul>
+            </ul>
+            <CampaignListPagination
+              page={view.page}
+              totalPages={view.totalPages}
+              hrefForPage={(page) => hrefForLinkedDemandsPage(view.slug, page)}
+            />
+          </>
         ) : (
           <p className="text-sm text-muted-foreground">
             Nenhuma demanda vinculada a esta atividade.

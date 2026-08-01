@@ -38,11 +38,13 @@ export type DemandListState = {
   page: number
   status?: CampaignDemandStatus
   kind?: CampaignDemandKind
+  activityId?: number
 }
 
 export const parseDemandListParams = (searchParams: RawSearchParams): DemandListState => {
   const rawStatus = firstValue(searchParams.status)
   const rawKind = firstValue(searchParams.kind)
+  const activityId = strictDecimalInteger(firstValue(searchParams.activity))
 
   return {
     page: strictDecimalInteger(firstValue(searchParams.page)) ?? 1,
@@ -52,6 +54,7 @@ export const parseDemandListParams = (searchParams: RawSearchParams): DemandList
     ...(campaignDemandKinds.includes(rawKind as CampaignDemandKind)
       ? { kind: rawKind as CampaignDemandKind }
       : {}),
+    ...(activityId ? { activityId } : {}),
   }
 }
 
@@ -62,6 +65,7 @@ const buildDemandListSearchParams = (
   const params = new URLSearchParams()
   if (state.status) params.set('status', state.status)
   if (state.kind) params.set('kind', state.kind)
+  if (state.activityId) params.set('activity', String(state.activityId))
   if (page > 1) params.set('page', String(page))
   return params
 }
@@ -141,6 +145,7 @@ export const loadDemandListPageData = async (
         and: [
           ...(state.status ? [{ status: { equals: state.status } }] : []),
           ...(state.kind ? [{ kind: { equals: state.kind } }] : []),
+          ...(state.activityId ? [{ activity: { equals: state.activityId } }] : []),
         ],
       },
       depth: 0,

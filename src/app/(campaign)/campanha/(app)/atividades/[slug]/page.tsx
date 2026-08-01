@@ -29,6 +29,7 @@ import {
   resolveAccessibleActivityContext,
 } from '@/utilities/activityPageData'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
+import { firstValue, strictDecimalInteger } from '@/utilities/campaignListUrl'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 
 import { ActivityOverviewTab } from './ActivityOverviewTab'
@@ -57,7 +58,13 @@ export default async function ActivityDetailPage({
       throw error
     },
   )
-  const view = await getActivityDetailPageData(payload, user, context, activeTab)
+  const view = await getActivityDetailPageData(
+    payload,
+    user,
+    context,
+    activeTab,
+    strictDecimalInteger(firstValue(query.demandsPage)) ?? 1,
+  )
   const canonicalTabRedirect = getActivityDetailTabRedirect(view.slug, query)
   if (canonicalTabRedirect) redirect(canonicalTabRedirect)
 

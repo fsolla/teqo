@@ -13,6 +13,8 @@ import {
   type ActivityMunicipalitySummary,
 } from '@/utilities/activityViewModels'
 
+export const ACTIVITY_LINKED_DEMANDS_PAGE_SIZE = 10
+
 type ActivityDemandSummary = {
   id: number
   title: string
@@ -21,6 +23,22 @@ type ActivityDemandSummary = {
   status: CampaignDemand['status']
   cost: number | null
 }
+
+export type ActivityLinkedDemandsPage = {
+  demands: ActivityDemandSummary[]
+  page: number
+  totalPages: number
+  totalDocs: number
+  demandCostTotal: number
+}
+
+const emptyLinkedDemandsPage = (): ActivityLinkedDemandsPage => ({
+  demands: [],
+  page: 1,
+  totalPages: 1,
+  totalDocs: 0,
+  demandCostTotal: 0,
+})
 
 const loadActivityUpdateAuthorNames = async (
   payload: Pick<Payload, 'find'>,
@@ -75,17 +93,63 @@ const loadActivityMunicipalitySummaryById = async (
     : null
 }
 
+const loadLinkedDemandsPage = async (
+  payload: Pick<Payload, 'find'>,
+  user: CampaignUser,
+  activityId: number,
+  page: number,
+): Promise<ActivityLinkedDemandsPage> => {
+  const where = { activity: { equals: activityId } }
+
+  const [pageResult, costRows] = await Promise.all([
+    payload.find({
+      collection: 'campaignDemand',
+      where,
+      depth: 0,
+      limit: ACTIVITY_LINKED_DEMANDS_PAGE_SIZE,
+      page,
+      sort: '-createdAt',
+      select: { title: true, slug: true, kind: true, status: true, cost: true },
+      user,
+      overrideAccess: false,
+    }),
+    payload.find({
+      collection: 'campaignDemand',
+      where,
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      select: { cost: true },
+      user,
+      overrideAccess: false,
+    }),
+  ])
+
+  const demands = pageResult.docs.map((demand) => ({
+    id: demand.id,
+    title: demand.title,
+    slug: demand.slug,
+    kind: demand.kind,
+    status: demand.status,
+    cost: demand.cost ?? null,
+  }))
+
+  return {
+    demands,
+    page: pageResult.page ?? page,
+    totalPages: pageResult.totalPages,
+    totalDocs: pageResult.totalDocs,
+    demandCostTotal: costRows.docs.reduce((total, demand) => total + (demand.cost ?? 0), 0),
+  }
+}
+
 export const getActivityDetailPageData = async (
   payload: Pick<Payload, 'find'>,
   user: CampaignUser,
   context: AccessibleActivityContext,
   activeTab: ActivityDetailTab,
-): Promise<
-  ActivityDetailViewModel & {
-    demands: ActivityDemandSummary[]
-    demandCostTotal: number
-  }
-> => {
+  linkedDemandsPage = 1,
+): Promise<ActivityDetailViewModel & ActivityLinkedDemandsPage> => {
   const municipalityId = relationshipId(context.document.municipality)
   const populatedMunicipalitySummary =
     activityMunicipalitySummary(context.document.municipality) ?? null
@@ -98,39 +162,18 @@ export const getActivityDetailPageData = async (
     activeTab === 'updates' && context.document.updates?.length
       ? loadActivityUpdateAuthorNames(payload, user, context.document.updates)
       : Promise.resolve(new Map<number, string>())
-  const demandSummariesPromise: Promise<ActivityDemandSummary[]> =
+  const linkedDemandsPromise =
     activeTab === 'overview'
-      ? payload
-          .find({
-            collection: 'campaignDemand',
-            where: { activity: { equals: context.id } },
-            depth: 0,
-            pagination: false,
-            sort: 'createdAt',
-            select: { title: true, slug: true, kind: true, status: true, cost: true },
-            user,
-            overrideAccess: false,
-          })
-          .then(({ docs }) =>
-            docs.map((demand) => ({
-              id: demand.id,
-              title: demand.title,
-              slug: demand.slug,
-              kind: demand.kind,
-              status: demand.status,
-              cost: demand.cost ?? null,
-            })),
-          )
-      : Promise.resolve([])
-  const [municipalitySummary, authorNames, demands] = await Promise.all([
+      ? loadLinkedDemandsPage(payload, user, context.id, linkedDemandsPage)
+      : Promise.resolve(emptyLinkedDemandsPage())
+  const [municipalitySummary, authorNames, linkedDemands] = await Promise.all([
     municipalitySummaryPromise,
     authorNamesPromise,
-    demandSummariesPromise,
+    linkedDemandsPromise,
   ])
 
   return {
     ...toActivityDetailViewModel(context.document, activeTab, authorNames, municipalitySummary),
-    demands,
-    demandCostTotal: demands.reduce((total, demand) => total + (demand.cost ?? 0), 0),
+    ...linkedDemands,
   }
 }

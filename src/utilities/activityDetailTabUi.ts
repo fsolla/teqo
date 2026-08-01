@@ -9,7 +9,7 @@ const helpers = createDetailTabHelpers<ActivityDetailTab>({
   tabs: activityDetailTabs,
   defaultTab: 'overview',
   tabQueryKeys: {
-    overview: [],
+    overview: ['demandsPage'],
     tasks: [],
     updates: ['newUpdate'],
   },
