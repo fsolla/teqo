@@ -41,15 +41,6 @@ describe('resolvePoolModel', () => {
     expect(resolvePoolModel('composer-latest', API_MODELS).model).toEqual({ id: 'composer-2.5' })
   })
 
-  it('maps the repo -fast suffix to the fast param when the table supports it', () => {
-    const result = resolvePoolModel('composer-2.5-fast', API_MODELS)
-    expect(result.model).toEqual({
-      id: 'composer-2.5',
-      params: [{ id: 'fast', value: 'true' }],
-    })
-    expect(result.usedFallback).toBe(false)
-  })
-
   it.each([
     ['cursor-grok-4.5-low', 'low'],
     ['cursor-grok-4.5-medium', 'medium'],
@@ -62,20 +53,6 @@ describe('resolvePoolModel', () => {
     })
   })
 
-  it('maps cursor-grok-4.5-high-fast → effort high + fast', () => {
-    expect(resolvePoolModel('cursor-grok-4.5-high-fast', API_MODELS)).toEqual({
-      model: {
-        id: 'grok-4.5',
-        params: [
-          { id: 'effort', value: 'high' },
-          { id: 'fast', value: 'true' },
-        ],
-      },
-      requested: 'cursor-grok-4.5-high-fast',
-      usedFallback: false,
-    })
-  })
-
   it('maps kimi-k3-low → kimi-k3 reasoning=low', () => {
     expect(resolvePoolModel('kimi-k3-low', API_MODELS)).toEqual({
       model: { id: 'kimi-k3', params: [{ id: 'reasoning', value: 'low' }] },
@@ -84,10 +61,26 @@ describe('resolvePoolModel', () => {
     })
   })
 
-  it('falls back when a -fast slug base lacks the fast param', () => {
-    const result = resolvePoolModel('kimi-k3-fast', API_MODELS)
+  it('rejects -fast: strips suffix, resolves base, warns', () => {
+    const composerFast = resolvePoolModel('composer-2.5-fast', API_MODELS)
+    expect(composerFast.model).toEqual({ id: 'composer-2.5' })
+    expect(composerFast.usedFallback).toBe(false)
+    expect(composerFast.warn).toContain('-fast')
+
+    const grokFast = resolvePoolModel('cursor-grok-4.5-high-fast', API_MODELS)
+    expect(grokFast.model).toEqual({
+      id: 'grok-4.5',
+      params: [{ id: 'effort', value: 'high' }],
+    })
+    expect(grokFast.warn).toContain('-fast')
+    expect(grokFast.model.params?.some((param) => param.id === 'fast')).toBeFalsy()
+  })
+
+  it('falls back when -fast base is also unknown', () => {
+    const result = resolvePoolModel('modelo-inventado-fast', API_MODELS)
     expect(result.model).toEqual({ id: POOL_DEFAULT_MODEL_SLUG })
     expect(result.usedFallback).toBe(true)
+    expect(result.warn).toContain('-fast')
   })
 
   it('falls back to composer-2.5 with a warn for unknown slugs', () => {

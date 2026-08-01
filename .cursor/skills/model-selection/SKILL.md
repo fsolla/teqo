@@ -17,7 +17,7 @@ Dois eixos, nesta ordem: **(1) classe da tarefa → família de modelo**, **(2) 
 
 | Prioridade | Família | Slug(s) no frontmatter `model:` | Quando |
 | ---------- | ------- | -------------------------------- | ------ |
-| 1 (default) | **Composer 2.5** | `composer-2.5` (evitar `-fast` salvo pedido explícito) | Features, chores simples, fixes localizados, docs leves — sempre que couber |
+| 1 (default) | **Composer 2.5** | `composer-2.5` | Features, chores simples, fixes localizados, docs leves — sempre que couber |
 | 2 | **Grok 4.5** | `cursor-grok-4.5-low` \| `cursor-grok-4.5-medium` \| `cursor-grok-4.5-high` | Precisa de deliberação além do Composer (abaixo) |
 | 3 | **Kimi K3 Low** | `kimi-k3-low` | Só na **fase de execução** de issues bipartidas (refactor grande / simplify / migrations+RBAC de blast radius alto), depois de um plano fechado |
 
@@ -44,7 +44,7 @@ Depois de escolher Grok, **obrigatório** pickar um effort. Escreva o slug compl
 | **Medium** | `cursor-grok-4.5-medium` | Cursor Grok 4.5 · Effort Medium | **Discovery / análise moderada**, critique/polish visual, harvest de padrões → guardrail, glossário a partir de evidência, chores de processo com trade-offs claros. Default quando Grok cabe e **não** é multi-domínio de alto risco. |
 | **High** | `cursor-grok-4.5-high` | Cursor Grok 4.5 · Effort High | **Multi-domínio ou design não óbvio** com custo de falha alto: fundações (auth/sessão/schema), Consent/LGPD, plan half de bipartição, arquitetura nova. |
 
-Opcional: sufixo `-fast` (`cursor-grok-4.5-high-fast`) só sob pedido explícito — o pool mapeia para `fast=true` na API.
+**Proibido:** sufixo `-fast` em qualquer slug (`composer-2.5-fast`, `cursor-grok-4.5-high-fast`, …). O pool **não** envia `fast=true`; se a Issue trouxer `-fast`, o resolver remove o sufixo, resolve a base e emite warn.
 
 **Heurística anti-viés:** se você ia marcar High por hábito, pergunte “a falha é cara **e** o desenho é aberto?”. Se só uma das duas → Medium (ou Low). Se nenhuma → Composer.
 
@@ -71,14 +71,15 @@ Não despachar Kimi K3 Low sem plano fechado na Issue de plan.
 
 1. **Composer 2.5 é o default.** Se a tarefa cabe nele, não suba de modelo.
 2. **Grok exige effort explícito** (`-low` / `-medium` / `-high` no slug). Não deixe `cursor-grok-4.5` sem sufixo; não use High como coringa.
-3. **Kimi K3 Low só na exec bipartida** (ou quando a Issue já declara `kimi-k3-low` após um plan).
-4. **Nunca economizar em:** migrations (história congelada), access control (`overrideAccess: false`), Consent/LGPD — se for uma Issue só disso e complexa, bipartir (plan Grok High → exec K3).
-5. **Usuário pediu modelo específico:** a escolha dele vence; avise uma vez se houver desperdício claro.
+3. **Nunca `-fast`.** Nem em Issue, nem em `Task.model`, nem sob pedido — recusar e usar o slug sem `-fast`.
+4. **Kimi K3 Low só na exec bipartida** (ou quando a Issue já declara `kimi-k3-low` após um plan).
+5. **Nunca economizar em:** migrations (história congelada), access control (`overrideAccess: false`), Consent/LGPD — se for uma Issue só disso e complexa, bipartir (plan Grok High → exec K3).
+6. **Usuário pediu modelo específico:** a escolha dele vence (exceto `-fast`, sempre recusado); avise uma vez se houver desperdício claro.
 
 ## Como aplicar
 
 - **Frontmatter da Issue / pool:** use exatamente os slugs da tabela (incl. `-low`/`-medium`/`-high`).
-- **Subagentes (`Task.model`):** prefira o slug da Issue quando o enum do produto listar; hoje o enum costuma expor `composer-2.5`, `cursor-grok-4.5-high`, `cursor-grok-4.5-high-fast`, `kimi-k3-low`. Se a Issue é `-low`/`-medium` e o enum não tem o slug, use `inherit` (sessão já no effort certo) ou `cursor-grok-4.5-high` só se a subtarefa for a parte difícil — **não** “promova” a Issue inteira para High.
+- **Subagentes (`Task.model`):** prefira o slug da Issue quando o enum do produto listar (`composer-2.5`, `cursor-grok-4.5-high`, `kimi-k3-low`, …). **Nunca** escolha variantes `-fast` do enum. Se a Issue é `-low`/`-medium` e o enum não tem o slug, use `inherit` (sessão já no effort certo) ou `cursor-grok-4.5-high` só se a subtarefa for a parte difícil — **não** “promova” a Issue inteira para High.
 - **Sessão principal:** o agente não troca o próprio modelo. Se o atual não for o da tabela, diga em uma linha e siga.
 - **Pool:** `POOL_DEFAULT_MODEL_SLUG` = `composer-2.5`; `resolvePoolModel` mapeia os slugs canônicos → API.
 
