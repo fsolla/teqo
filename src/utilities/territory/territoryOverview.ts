@@ -396,7 +396,7 @@ export const flattenTerritoryRows = (
   ])
 
 /** Page size for `/campanha/territorios` — same default as the other campaign lists. */
-export const TERRITORY_LIST_PAGE_SIZE = 25
+const TERRITORY_LIST_PAGE_SIZE = 25
 
 /**
  * CL6a — filter → sort → page slice over the 27-TI rollup.
