@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-01):** **C8 F1–F2** (Issue #37) — freshness audit confirmou entrega em código desde 2026-07-19: locks advisory em batch (`acquireTextAdvisoryLocks`), bulk import com `.returning()` + leituras drizzle, overview derivando `total` de `totalDocs`, migration `pg_trgm`, guard `contactSearchQuery` (mín. 2 chars). Plano [`escala-dry-pos-c6.md`](docs/plans/escala-dry-pos-c6.md) fechado; follow-ups de filtros/forms permanecem no C9.
+
 **Recently resolved (2026-08-01):** **Cutover residue cleanup** — removed dead `pnpm db:refresh:stage` / `scripts/refresh-stage.mjs` and `pnpm agent:promote` / `scripts/agent-promote.mjs`; closed `docs/CUTOVER-MAIN-ONLY.md`; scrubbed PR template `STAGE_DATABASE_URL` checklist item. Branch + Environment `stage` already deleted.
 
 **Recently resolved (2026-08-01):** **PRs de agente = Ready + auto-merge (audit incluso)** — removida a exceção do `engineering-audit` (artefatos também armam `gh pr merge --auto --merge`). Safety net GHA `agent-pr-ready-automerge.yml`: PRs `cursor/*` → `main` Draft→Ready + auto-merge. Rule always-on `agent-pr-workflow.mdc`.

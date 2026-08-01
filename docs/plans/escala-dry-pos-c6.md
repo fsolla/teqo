@@ -1,11 +1,13 @@
 # Escala e DRY pós-C6 (apoiadores / import / listas)
 
-Status: F4 (DRY de forms) **entregue** — twin praça 2026-07-21 + hardening 2026-07-23; **o resto do F4 (10 escadas hand-rolled escritas depois) fechou em 2026-07-25 no Pass 2 W4d** (`runCampaignFormAction`, exceções documentadas em comentário); **F3 (parsers das listas de entidade) fechou no Pass 2 W1-D2**; **F4b entregue 2026-07-27** (guard ampliado para `*FormActions.ts` + `taskActions.ts`; 6 irmãos migrados; `taskActions.ts` allowlisted); F1–F2 abertos com gatilho (volume real de import/base nominal pós-Onda 0)
-Atualizado em: 2026-07-27 (F4b entregue — guard + migração dos irmãos)
+Status: **F1–F2 entregues** (2026-07-19, código em `main`; plano fechado 2026-08-01 Issue #37); F4 (DRY de forms) **entregue** — twin praça 2026-07-21 + hardening 2026-07-23; **o resto do F4 (10 escadas hand-rolled escritas depois) fechou em 2026-07-25 no Pass 2 W4d** (`runCampaignFormAction`, exceções documentadas em comentário); **F3 (parsers das listas de entidade) fechou no Pass 2 W1-D2**; **F4b entregue 2026-07-27** (guard ampliado para `*FormActions.ts` + `taskActions.ts`; 6 irmãos migrados; `taskActions.ts` allowlisted); F3 (helpers DRY restantes — `CampaignListEmptyState`, `firstValue` local) com gatilho
+Atualizado em: 2026-08-01 (F1–F2 fechados — Issue #37)
 Item do roadmap: [docs/roadmap.md](../roadmap.md) (Fill-ins abertos, item C8)
 Responsável: —
 
-> **Revisão 2026-07-24:** a remodelagem M1 renomeou `plaza*`/`nucleus*` → `municipality*` (paths `pracas/` → `municipios/`), e o hardening 2026-07-23 (Fase 5) completou a **Fase 4**: os 4 ladders `*/nova` migraram para `runCampaignRedirectFormAction`, os demais `formActions` já usam `mapCampaignFormActionError` + `campaignFormFields` (única exceção: `planos/[slug]/lifecycleFormActions.ts`, que só retorna safe-messages fixas — sem ladder para migrar), e `CampaignInviteForm` já importa `fieldError`/`errorProps` de `campaignFormFields`. O split de access também entregou parte da F3: `getAdvisorMunicipalityIds` (`src/utilities/access/municipalities.ts`) é a variante sem `PayloadRequest`, com cache request-scoped por contexto, e `supporterListOverviewAggregate` recebe os IDs pré-carregados. Restam F1 (perf do import) e o restante de F2/F3 — verificar contra o código no PR.
+> **Revisão 2026-07-24:** a remodelagem M1 renomeou `plaza*`/`nucleus*` → `municipality*` (paths `pracas/` → `municipios/`), e o hardening 2026-07-23 (Fase 5) completou a **Fase 4**: os 4 ladders `*/nova` migraram para `runCampaignRedirectFormAction`, os demais `formActions` já usam `mapCampaignFormActionError` + `campaignFormFields` (única exceção: `planos/[slug]/lifecycleFormActions.ts`, que só retorna safe-messages fixas — sem ladder para migrar), e `CampaignInviteForm` já importa `fieldError`/`errorProps` de `campaignFormFields`. O split de access também entregou parte da F3: `getAdvisorMunicipalityIds` (`src/utilities/access/municipalities.ts`) é a variante sem `PayloadRequest`, com cache request-scoped por contexto, e `supporterListOverviewAggregate` recebe os IDs pré-carregados.
+>
+> **Revisão 2026-08-01 (Issue #37 — freshness audit):** F1–F2 já estavam implementados desde 2026-07-19 (`1e23b27`) e sobreviveram ao Pass 3 (módulos em `src/utilities/supporter/`). As-built confirmado: locks em batch via `acquireTextAdvisoryLocks`, bulk com `.returning()` + leituras drizzle, overview derivando `total` de `totalDocs`, migration `pg_trgm`, `contactSearchQuery` nos filtros, `advisorMunicipalityIds` pré-carregados em `loadSupportersPageData`. Int specs: `campaignSupporter.int.spec.ts`, `postgresTransactionLocks.int.spec.ts`, `supporterListFilters.int.spec.ts`. Follow-ups de filtros/forms → C9 ([escala-dry-pos-c8.md](escala-dry-pos-c8.md)).
 
 ## Contexto
 
@@ -47,9 +49,9 @@ Sem este item, a importação funciona em volume baixo, mas: (a) o gargalo de im
 
 ```mermaid
 flowchart TD
-    F1["Fase 1 — Perf import<br/>locks em 1 RT · .returning · drizzle reads"]
-    F2["Fase 2 — Perf lista<br/>1 COUNT · trgm · memo accessible nuclei"]
-    F3["Fase 3 — DRY helpers<br/>drizzleBulk · getAdvisorMunicipalityIds ✓ · DrizzleTx assertion"]
+    F1["Fase 1 — Perf import ✓<br/>locks em 1 RT · .returning · drizzle reads"]
+    F2["Fase 2 — Perf lista ✓<br/>totalDocs · trgm · advisorMunicipalityIds"]
+    F3["Fase 3 — DRY helpers<br/>drizzleBulk ✓ · getAdvisorMunicipalityIds ✓ · DrizzleTx assertion ✓"]
     F4["Fase 4 — DRY forms ✓<br/>(entregue 2026-07-21 + 2026-07-23)"]
 
     C6["C6 apoiadores ✓"] --> F1
@@ -58,18 +60,22 @@ flowchart TD
     F3 --> F4
 ```
 
-### Fase 1 — Perf do caminho quente de import
+### Fase 1 — Perf do caminho quente de import — **ENTREGUE** (2026-07-19)
 
-- **`acquireContactPhoneLocks`** (`src/utilities/contactPhoneInvariant.ts` / `postgresTransactionLocks.ts`): trocar o loop `for (const key of sortedKeys) await database.execute(...)` por uma query única `SELECT pg_advisory_xact_lock(hashtextextended(k, 0)) FROM unnest(ARRAY[...]) AS k` (ordenar para evitar deadlock). Contrato `acquireContactPhoneLocks(payload, req, phones[])` inalterado — callers (bulk, single-create, hook) não mudam.
-- **`bulkInsertSupporterImport`** (`src/utilities/supporterImportBulk.ts`): `tx.insert(contactTable).values(...).returning({ id: true, phone: true })` em vez do re-`payload.find` por chunk para recuperar IDs (elimina ~10 round-trips no cap de 5k). Widen o tipo `DrizzleTx` local para tipar `.returning()`.
-- Substituir os dois `payload.find` de existência (contacts por phone, supporters por contact_id) por `SELECT ... FROM contact WHERE phone = ANY($)` / `SELECT contact_id FROM supporter WHERE contact_id = ANY($) AND municipality_id IS NULL` na mesma sessão drizzle da txn.
+**As-built:**
 
-### Fase 2 — Perf de leitura da lista
+- **`acquireContactPhoneLocks`** → `acquireTextAdvisoryLocks` em `src/utilities/postgresTransactionLocks.ts`: uma query `SELECT pg_advisory_xact_lock(hashtextextended(k, 0)) FROM unnest(ARRAY[...])` por batch (chaves deduplicadas e ordenadas). Contrato inalterado; pinado em `tests/int/postgresTransactionLocks.int.spec.ts`.
+- **`bulkInsertSupporterImport`** (`src/utilities/supporter/supporterImportBulk.ts`): `.returning()` para IDs de contacts novos; leituras de existência via SQL drizzle (`phone IN (...)` / `contact_id IN (...) AND municipality_id IS NULL`) — zero `payload.find` na txn. `assertDrizzleColumns` no init.
+- Import CSV end-to-end: `tests/int/campaignSupporter.int.spec.ts` (preview→confirm, token HMAC).
 
-- **`loadSupporterListOverviewData`** (`src/utilities/supporterPageData.ts`): derivar `total` do `result.totalDocs` da lista (já computado por Payload); o overview roda só os dois `COUNT(*) FILTER` (certo+tende, indeciso). Elimina um COUNT filtrado completo por navegação.
-- **`computeSupporterListOverviewAggregate`** (`src/utilities/supporterListOverviewAggregate.ts`): ~~memoizar o lookup de municípios acessíveis por request~~ — **largamente absorvido** (2026-07-23): `getAccessibleMunicipalityIds` tem cache request-scoped por contexto e o aggregate recebe `advisorMunicipalityIds` pré-carregados; conferir no PR se lista e overview compartilham de fato uma única query `municipality`.
-- **Migration** `add_contact_trgm_index`: `CREATE EXTENSION IF NOT EXISTS pg_trgm` + `CREATE INDEX ... USING gin (name gin_trgm_ops)` e `(city gin_trgm_ops)` em `contact`. Torna `ILIKE '%q%'` sargable. Única migration do item.
-- Avaliar restringir `q` a mínimo 2–3 chars no cliente (reduz seq scans inúteis) — opcional, sem migration.
+### Fase 2 — Perf de leitura da lista — **ENTREGUE** (2026-07-19)
+
+**As-built:**
+
+- **`loadSupportersPageData`** (`src/utilities/supporter/supporterPageData.ts`): overview recebe `result.totalDocs`; aggregate roda só os dois `COUNT(*) FILTER` (certo+tende, indeciso). Retorna `null` quando `total <= 0`.
+- **`computeSupporterListOverviewAggregate`** (`src/utilities/supporter/supporterListOverviewAggregate.ts`): `advisorMunicipalityIds` pré-carregados uma vez por render (advisor); filtros unificados via `supporterListFilters.ts` / `supporterListSqlFilters.ts` (entregue no C9).
+- **Migration** `20260719_020000_add_contact_trgm_index`: extensão `pg_trgm` + GIN em `contact.name` e `contact.city`.
+- **`contactSearchQuery`**: `isContactSearchQueryReady` (mín. 2 chars) em `buildSupporterSearchTerms` — lista e overview ignoram `q` de 1 caractere. Pinado em `tests/int/supporterListFilters.int.spec.ts` e `campaignSupporter.int.spec.ts`.
 
 ### Fase 3 — DRY de helpers
 
@@ -108,7 +114,7 @@ Appetite: **~2h eng, fill-in.** O `/simplify` do C13 mostrou que a invariante do
 - `actions/password.ts` / `profile.ts` / `leaderSupporter.ts` exportam `*FormAction` com ladder hand-rolled fora do filtro `*FormActions.ts` — gatilho: próximo toque nesses arquivos **ou** decisão de expandir o guard além de route-level FormActions.
 - `convite/[token]/formActions.ts` login half ainda hand-rolled (password-confirm + redirect) — gatilho: próximo toque no convite; autofill já usa o wrapper.
 
-**Revisão 2026-07-27:** F4b fechada; F1–F2 seguem com gatilho de volume.
+**Revisão 2026-07-27:** F4b fechada; F1–F2 seguiam com gatilho de volume — **fechadas 2026-08-01** (Issue #37; código já em `main` desde 2026-07-19).
 
 **Migration:** Fases 1, 3, 4, 4b sem schema. Fase 2: `pnpm migrate:create add_contact_trgm_index` (extensão + 2 GIN indexes). Sem Consent novo.
 
@@ -132,10 +138,10 @@ Appetite: **~2h eng, fill-in.** O `/simplify` do C13 mostrou que a invariante do
 - [escala-dry-pos-b2.md](escala-dry-pos-b2.md) — precedente B5 (pós-B2 simplify)
 - [escala-dry-pos-c3.md](escala-dry-pos-c3.md) — precedente C7 (pós-C3 simplify)
 - Review `/simplify` 2026-07-19 (quality / reuse / performance) — origem das fases
-- `src/utilities/supporterImportBulk.ts` — bulk insert (locks, .returning, drizzle reads)
-- `src/utilities/postgresTransactionLocks.ts` — `acquireContactPhoneLocks` (loop por telefone)
-- `src/utilities/supporterListOverviewAggregate.ts` — aggregate SQL + `resolveAccessConstraint`
-- `src/utilities/supporterPageData.ts` — `loadSupporterListOverviewData` (duplo COUNT)
+- `src/utilities/supporter/supporterImportBulk.ts` — bulk insert (locks, .returning, drizzle reads)
+- `src/utilities/postgresTransactionLocks.ts` — `acquireTextAdvisoryLocks` (batch advisory locks)
+- `src/utilities/supporter/supporterListOverviewAggregate.ts` — aggregate SQL + `resolveAccessConstraint`
+- `src/utilities/supporter/supporterPageData.ts` — `loadSupportersPageData` (overview derivado de `totalDocs`)
 - `src/utilities/electionResultsImport.ts` — `chunk`/`requireTable`/`INSERT_CHUNK_SIZE` duplicados
 - `src/utilities/access/municipalities.ts` — `getAccessibleMunicipalityIds` / `getAdvisorMunicipalityIds`
 - `src/utilities/campaignFormActionError.ts` / `campaignFormFields.ts` — helpers adotados por 2 forms
