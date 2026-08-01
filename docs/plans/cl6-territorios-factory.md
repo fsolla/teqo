@@ -1,6 +1,6 @@
 # CL6 — Territórios: paginação real + sort server, depois factory
 
-Status: rascunho
+Status: ready-for-review
 Atualizado em: 2026-08-01
 Issue: #159
 Priority: P1
@@ -10,13 +10,20 @@ Appetite: ~2 dias eng
 Depends: CL3
 Responsável: —
 
+## Freshness audit (2026-08-01)
+
+- CL3 (#157) `done`/`in-prod`; `OpsListPage`/`OpsListView` + `resolveListUnifiedEnabled` existem; municípios já usam flag ON/OFF.
+- Paths citados existem; `territorios` no registry ainda tem `sortModel: 'memory'`; page footer ainda stub (`page=1`/`totalPages=1`).
+- Premissas 1–3 mantêm-se; `createSortToggleHref` já pinna `page: 1` — o state precisa ganhar `page`.
+- Sem divergência material; sigo.
+
 ## Premissas
 
 1. Hoje `territorios` carrega tudo e filtra/ordena **em memória** na page; o footer de paginação é cosmético (`page=1`, `totalPages=1`).
 2. O parser `resolveTerritoryListUrl` não tem `page` — terá de ganhar (contrato interno da rota, não URL pública nova para utilizadores).
 3. São 27 territórios — paginação é arquitetura para o padrão da factory, não necessidade de escala.
 
-→ Corrija agora ou sigo com estas.
+→ Corrigidas / confirmadas no freshness audit; sigo.
 
 ## Objetivos
 
@@ -49,10 +56,10 @@ Componentes:
 - **Quota:** ~0,5
 - **Entrega:** loader pagina/ordena; page renderiza slice; footer real.
 - **Aceite:**
-  - [ ] `?page=2` muda as linhas visíveis
-  - [ ] sort por URL ordena no loader (não no client)
-  - [ ] `totalPages` calculado do total real
-- **Verify:** `pnpm gate:fast` + pin int do loader + e2e territórios
+  - [x] `?page=2` muda as linhas visíveis
+  - [x] sort por URL ordena no loader (não no client)
+  - [x] `totalPages` calculado do total real
+- **Verify:** `pnpm gate:fast` + pin unit do loader (`selectTerritoryOverviewPage`) + e2e territórios
 - **Files:** `territoryOverview.ts`, `territoryListUrl.ts`, page
 - **Tamanho:** M
 

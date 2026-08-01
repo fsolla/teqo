@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import {
+  buildTerritoryFilterHref,
   clearTerritoryListFilters,
   formatTerritoryActiveFiltersSummary,
   territoryCoverageLabels,
@@ -14,7 +15,6 @@ import {
   type TerritoryFilterOption,
 } from '@/utilities/territory/territoryListFilters'
 import {
-  buildTerritoryListHref,
   parseTerritorySortValue,
   resolveTerritoryListSort,
   serializeTerritorySortValue,
@@ -30,7 +30,7 @@ export const TerritoryFilters = ({
   regionOptions: TerritoryFilterOption[]
 }) => {
   const { search, onSearchChange, draftQ, isPending, navigateWithSearch, clearSearchAndNavigate } =
-    useCampaignListFilterNavigation({ state, toHref: buildTerritoryListHref })
+    useCampaignListFilterNavigation({ state, toHref: buildTerritoryFilterHref })
   const { sort, dir } = resolveTerritoryListSort(state)
   const activeSummary = formatTerritoryActiveFiltersSummary({ ...state, q: draftQ })
 

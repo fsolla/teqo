@@ -7,16 +7,14 @@ import {
   type CampaignHeaderFilterRow,
 } from '@/components/campaign/shared/CampaignHeaderFilterPopover'
 import {
+  buildTerritoryFilterHref,
   isTerritoryFilterActive,
   territoryCoverageOptions,
   toggleTerritoryCoverageFilter,
   toggleTerritoryRegionFilter,
   type TerritoryFilterOption,
 } from '@/utilities/territory/territoryListFilters'
-import {
-  buildTerritoryListHref,
-  type TerritoryListState,
-} from '@/utilities/territory/territoryListUrl'
+import { type TerritoryListState } from '@/utilities/territory/territoryListUrl'
 
 type TerritoryHeaderFilterProps =
   | {
@@ -45,7 +43,7 @@ export const TerritoryHeaderFilter = ({
           return {
             value: option.value,
             label: option.label,
-            href: buildTerritoryListHref(next),
+            href: buildTerritoryFilterHref(next),
             selected: Boolean(viewState.regions?.some((region) => region === option.value)),
             checkbox: true,
             onChoose: () => setOptimisticState(next),
@@ -56,7 +54,7 @@ export const TerritoryHeaderFilter = ({
           return {
             value: option.value,
             label: option.label,
-            href: buildTerritoryListHref(next),
+            href: buildTerritoryFilterHref(next),
             selected: viewState.coverage === option.value,
             checkbox: false,
             onChoose: () => setOptimisticState(next),
@@ -65,8 +63,8 @@ export const TerritoryHeaderFilter = ({
 
   const clearedState: TerritoryListState =
     filterParam === 'region'
-      ? { ...viewState, regions: undefined }
-      : { ...viewState, coverage: undefined }
+      ? { ...viewState, regions: undefined, page: 1 }
+      : { ...viewState, coverage: undefined, page: 1 }
 
   return (
     <CampaignHeaderFilterPopover
@@ -78,7 +76,7 @@ export const TerritoryHeaderFilter = ({
       clear={
         active
           ? {
-              href: buildTerritoryListHref(clearedState),
+              href: buildTerritoryFilterHref(clearedState),
               onChoose: () => setOptimisticState(clearedState),
             }
           : undefined

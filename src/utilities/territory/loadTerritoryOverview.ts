@@ -12,7 +12,12 @@ import { loadMunicipalityGoalCoverageBundle } from '@/utilities/municipality/mun
 import { fieldCeiling, ownVotes2022 } from '@/utilities/municipality/municipalityPotential'
 import { computeAggregateTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
 import {
+  resolveTerritoryListSort,
+  type TerritoryListState,
+} from '@/utilities/territory/territoryListUrl'
+import {
   computeTerritoryRollup,
+  selectTerritoryOverviewPage,
   type TerritoryMunicipalityInput,
   type TerritoryOverviewRow,
 } from '@/utilities/territory/territoryOverview'
@@ -20,6 +25,14 @@ import {
   emptyMunicipalityPledgeAggregate,
   resolveMunicipalityStaffVoteTotal,
 } from '@/utilities/votePledgeViews'
+
+export type TerritoryOverviewPageResult = {
+  rows: TerritoryOverviewRow[]
+  totalDocs: number
+  totalPages: number
+  /** Unfiltered TI labels for the region filter (full 27-row rollup). */
+  regionOptions: Array<{ value: string; label: string }>
+}
 
 type MunicipalityDoc = Pick<
   Municipality,
@@ -125,5 +138,32 @@ export const loadTerritoryOverview = cache(
 
     const rows = computeTerritoryRollup(inputs)
     return attachTerritorialClasses(inputs, rows)
+  },
+)
+
+/**
+ * CL6a — filter/sort/page applied in the loader (not the page). Region options
+ * stay unfiltered so the header popover still lists every TI.
+ */
+export const loadTerritoryOverviewPage = cache(
+  async (
+    payload: Payload,
+    user: TerritoryReader,
+    state: TerritoryListState,
+    scenario: VoteEstimateScenario = DEFAULT_VOTE_ESTIMATE_SCENARIO,
+  ): Promise<TerritoryOverviewPageResult> => {
+    const allRows = await loadTerritoryOverview(payload, user, scenario)
+    const { sort, dir } = resolveTerritoryListSort(state)
+    const { rows, totalDocs, totalPages } = selectTerritoryOverviewPage(allRows, {
+      filters: state,
+      sort,
+      dir,
+      page: state.page,
+    })
+    const regionOptions = allRows
+      .map((row) => ({ value: row.region, label: row.region }))
+      .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
+
+    return { rows, totalDocs, totalPages, regionOptions }
   },
 )

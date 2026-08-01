@@ -92,7 +92,7 @@ export const opsListRegistry: Record<OpsListDomainId, OpsListDomainMeta> = {
     gate: 'noLeader',
     columnListId: 'territorios',
     savedFilters: false,
-    sortModel: 'memory',
+    sortModel: 'url',
     canonicalRedirect: true,
     layout: 'table',
   },

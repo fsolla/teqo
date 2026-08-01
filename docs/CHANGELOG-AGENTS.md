@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-01):** **CL6** (Issue #159) — territórios: paginação real + sort no loader (`selectTerritoryOverviewPage` / `loadTerritoryOverviewPage`), `page` no contrato URL, registry `sortModel: 'url'`, `/campanha/territorios` atrás de `LIST_UNIFIED` com paridade OFF. Plano: [`cl6-territorios-factory.md`](docs/plans/cl6-territorios-factory.md).
+
 **Recently resolved (2026-08-01):** **CL5** (Issue #160) — assessores no sistema de listas: `AdvisorsTable` → `CampaignTable` + picker (`assessores` em `CAMPAIGN_LIST_IDS`); `resolveAdvisorListUrl` (canonical + preserva `criar=1`); registry `columnListId`/`canonicalRedirect`; page atrás de `LIST_UNIFIED`/`OpsListPage`. Plano: [`cl5-assessores-factory.md`](docs/plans/cl5-assessores-factory.md).
 
 **Recently resolved (2026-08-01):** **OH6** (Issue #167) — tracer `estimateVotesCas` (CAS opt-in via `baseEstimatedAt`) + outbox mínimo (`@tanstack/offline-transactions`) + toasts Sonner de conflito na ilha `PledgeEstimateForm` quando `OPS_HYBRID=1`; flag OFF mantém `formAction`. Plano: [`oh6-estimatevotes-cas-outbox.md`](docs/plans/oh6-estimatevotes-cas-outbox.md).
