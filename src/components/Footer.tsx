@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
-import { SocialLinks } from './socialLinks'
 import { getCachedGlobal } from '@/utilities/globalReads'
+import { SocialLinks } from './socialLinks'
 
 export const Footer = async () => {
   const privacy = await getCachedGlobal('privacy-policy', 0)()

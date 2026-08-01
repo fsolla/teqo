@@ -10,8 +10,8 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import { UNCOVERED_MUNICIPALITIES_LIST_HREF } from '@/lib/campaignHomeActions'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { loadCampaignHomeSummary } from '@/utilities/campaignDashboardData'
-import { loadHomeSearchSuggestions } from '@/utilities/homeSearch/loadHomeSearchSuggestions'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { loadHomeSearchSuggestions } from '@/utilities/homeSearch/loadHomeSearchSuggestions'
 
 export const dynamic = 'force-dynamic'
 
