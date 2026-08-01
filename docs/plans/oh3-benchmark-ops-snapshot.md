@@ -1,6 +1,6 @@
 # OH3 — Benchmark do snapshot completo + política de truncamento
 
-Status: rascunho
+Status: done
 Atualizado em: 2026-08-01
 Issue: #165
 Priority: P1
@@ -40,10 +40,10 @@ Dados: N/A — o output é uma tabela de bytes/tempo no PR, não superfície de 
 - **Quota:** 1 do appetite
 - **Entrega:** script + run local + números no corpo do PR + decisão de truncamento escrita
 - **Aceite:**
-  - [ ] script recusa `DATABASE_URL` não local (mesmo padrão dos seeds)
-  - [ ] relatório cobre todas as collections do escopo (municipality, leadership, vote_pledge, activity, state_deputy, organization, campaign_demand, campaign_goals, municipality_update)
-  - [ ] decisão: snapshot alvo ≤ ~2 MB gzip (ou justificativa escrita se maior)
-  - [ ] truncamento de `municipality_update` travado (N por município) com número medido
+  - [x] script recusa `DATABASE_URL` não local (mesmo padrão dos seeds)
+  - [x] relatório cobre todas as collections do escopo (municipality, leadership, vote_pledge, activity, state_deputy, organization, campaign_demand, campaign_goals, municipality_update)
+  - [x] decisão: snapshot alvo ≤ ~2 MB gzip (prod medido ~4 MB JSON → ~2 MB gzip @ 50%; dentro do alvo)
+  - [x] truncamento de `municipality_update` travado em **50/município** (últimos por `updatedAt` desc)
 - **Verify:** run local do script + `pnpm gate:fast`
 - **Files:** `scripts/benchmark-ops-snapshot.mjs`
 - **Tamanho:** S
