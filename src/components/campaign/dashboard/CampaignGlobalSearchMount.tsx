@@ -12,5 +12,5 @@ export const CampaignGlobalSearchProvider = ({ children }: { children: ReactNode
   return <HomeSearchProvider value={searchState}>{children}</HomeSearchProvider>
 }
 
-/** Input + result groups — requires `CampaignGlobalSearchProvider` unless using the mount. */
+/** Input + result groups — requires `CampaignGlobalSearchProvider` ancestor. */
 export const CampaignGlobalSearchBody = CampaignStaffGlobalSearchBody
