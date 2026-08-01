@@ -1,14 +1,22 @@
 # CL5 — Assessores: pré-work `CampaignTable` + URL canónico, depois factory
 
-Status: rascunho
+Status: em execução
 Atualizado em: 2026-08-01
 Issue: #160
 Priority: P1
 Model: cursor-grok-4.5-medium
 Impeccable: B — mesma superfície `/campanha/assessores`, tabela reescrita no sistema da casa
 Appetite: ~2–3 dias eng
-Depends: CL3
+Depends: CL3 (done / in-prod — #157)
 Responsável: —
+
+## Freshness audit (2026-08-01)
+
+- CL3 (#157) `done`/`in-prod`; `OpsListPage`/`OpsListView` + flag `LIST_UNIFIED` existem; registry já tem slug `assessores` com `columnListId: null`, `sortModel: 'fixed'`, `canonicalRedirect: false`.
+- Paths citados existem (`AdvisorsTable`, `advisorData.ts`, `leadershipListUrl.ts` como padrão). Pasta `utilities/advisor/` ainda não existe — criar `advisorListUrl.ts` lá.
+- **Correção:** registry alvo `sortModel` permanece `'fixed'` (sort server sempre `name`; fases não adicionam sort por URL). Só `columnListId: 'assessores'` + `canonicalRedirect: true`. O SSOT `lista-unificada` que dizia `fixed → url` estava à frente do appetite.
+- **Param `criar=1`:** quick-create (B87) — `resolveAdvisorListUrl` deve preservá-lo no canónico (senão o redirect mata o draft).
+- Fase 3 “`status: 'v1'`”: registry actual não tem campo `status` — paridade = page delega a `OpsListPage` com `resolveListUnifiedEnabled()` (padrão CL3/municípios).
 
 ## Premissas
 
@@ -16,7 +24,7 @@ Responsável: —
 2. O toggle “Editar nome e contato” permanece (produto não pediu mudança).
 3. Gate `unrestricted` (coordinator/candidate) mantido.
 
-→ Corrija agora ou sigo com estas.
+→ Premissas confirmadas; sigo.
 
 ## Objetivos
 
@@ -51,7 +59,7 @@ Componentes:
   | Toggle “Editar nome e contato” (`editing` state)                                                      | permanece no topo da tabela (fora das colunas — controla read vs edit das células de texto) |
   | `CampaignListEmptyState` / `CampaignListSheetProvider`                                                | empty slot + provider envolvendo a tabela                                                   |
 
-- **Registry:** adicionar `assessores` (`sortModel: 'url'`, `canonicalRedirect: true`, `columnListId: 'assessores'`).
+- **Registry:** actualizar `assessores` (`sortModel: 'fixed'`, `canonicalRedirect: true`, `columnListId: 'assessores'`).
 - **Column visibility:** registar `'assessores'` em `CAMPAIGN_LIST_IDS` ([`src/lib/campaignColumnVisibility.ts`](src/lib/campaignColumnVisibility.ts)); colunas novas nascem visíveis (regra: só ocultas persistidas).
 
 ## Fases verificáveis
@@ -61,8 +69,8 @@ Componentes:
 - **Quota:** ~0,5
 - **Entrega:** reescrita da tabela sem mexer em URL; paridade visual desktop/mobile.
 - **Aceite:**
-  - [ ] mesmas linhas/colunas/ações visíveis
-  - [ ] seletor de colunas funciona com cookie próprio
+  - [x] mesmas linhas/colunas/ações visíveis
+  - [x] seletor de colunas funciona com cookie próprio
 - **Verify:** `pnpm gate:fast` + e2e assessores
 - **Files:** `AdvisorsTable.tsx`, `src/lib/campaignColumnVisibility.ts`, page assessores
 - **Tamanho:** M
@@ -72,8 +80,8 @@ Componentes:
 - **Quota:** ~0,3
 - **Entrega:** `resolveAdvisorListUrl` + redirect na page; pins unit do parser.
 - **Aceite:**
-  - [ ] params lixo redirecionam para a forma canónica
-  - [ ] sort/filtros sobrevivem ao redirect
+  - [x] params lixo redirecionam para a forma canónica
+  - [x] sort/filtros sobrevivem ao redirect
 - **Verify:** `pnpm gate:fast` + pin unit `advisorListUrl`
 - **Files:** `advisorListUrl.ts`, `tests/unit/advisorListUrl.unit.spec.ts`, page
 - **Tamanho:** M
@@ -81,10 +89,10 @@ Componentes:
 ### Fase 3 — Factory (CL5b)
 
 - **Quota:** ~0,2
-- **Entrega:** registry `status: 'v1'`; page delega com flag ON.
+- **Entrega:** page delega a `OpsListPage` com `LIST_UNIFIED` (registry sem campo `status`).
 - **Aceite:** paridade com flag ON/OFF
-- **Verify:** `pnpm gate:fast` + e2e assessores com env
-- **Files:** registry, page
+- **Verify:** `pnpm gate:fast` + pin unit `opsListPage`
+- **Files:** registry (`columnListId`/`canonicalRedirect`), page
 - **Tamanho:** S
 
 ### Checkpoint

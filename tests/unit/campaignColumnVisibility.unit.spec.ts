@@ -27,11 +27,18 @@ describe('parseCampaignHiddenColumns', () => {
   })
 
   it('drops unknown lists and column ids that are not identifiers', () => {
-    expect(parseCampaignHiddenColumns('assessores:email|municipios:kind')).toEqual({
+    expect(parseCampaignHiddenColumns('desconhecidos:email|municipios:kind')).toEqual({
       municipios: ['kind'],
     })
     expect(parseCampaignHiddenColumns('municipios:kind~<script>~trend')).toEqual({
       municipios: ['kind', 'trend'],
+    })
+  })
+
+  it('accepts assessores as a column-picker list id (CL5)', () => {
+    expect(parseCampaignHiddenColumns('assessores:email|municipios:kind')).toEqual({
+      assessores: ['email'],
+      municipios: ['kind'],
     })
   })
 

@@ -17,6 +17,7 @@ const CAMPAIGN_LIST_IDS: readonly CampaignListId[] = [
   'demandas',
   'apoiadores',
   'territorios',
+  'assessores',
 ]
 
 const isCampaignListId = (value: string): value is CampaignListId =>
@@ -73,7 +74,8 @@ describe('opsListRegistry v1', () => {
       if (columnListId === null) continue
       expect(isCampaignListId(columnListId)).toBe(true)
     }
-    expect(opsListRegistry.assessores.columnListId).toBeNull()
+    expect(opsListRegistry.assessores.columnListId).toBe('assessores')
+    expect(opsListRegistry.assessores.canonicalRedirect).toBe(true)
   })
 
   it('requires every meta field (no partial entries)', () => {
