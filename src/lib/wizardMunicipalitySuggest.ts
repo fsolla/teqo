@@ -76,19 +76,17 @@ const compareVotes2022 = (
   return 0
 }
 
-/** Older signal first; null = coldest. */
+/** Older signal first; null = coldest; equal timestamps defer to later tie-breakers. */
 const compareSignalOldestFirst = (
   left: WizardMunicipalitySuggestInput,
   right: WizardMunicipalitySuggestInput,
 ): number => {
-  if (left.lastSignalAt === null && right.lastSignalAt === null) {
-    return municipalityNameCompare(left, right)
-  }
+  if (left.lastSignalAt === null && right.lastSignalAt === null) return 0
   if (left.lastSignalAt === null) return -1
   if (right.lastSignalAt === null) return 1
   const byTime = left.lastSignalAt.localeCompare(right.lastSignalAt)
   if (byTime !== 0) return byTime
-  return municipalityNameCompare(left, right)
+  return 0
 }
 
 const compareWizardMunicipalitySuggest = (

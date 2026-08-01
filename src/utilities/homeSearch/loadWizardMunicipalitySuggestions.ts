@@ -59,10 +59,13 @@ export const loadWizardMunicipalitySuggestions = async (
   })
 
   const ranked = rankWizardMunicipalitySuggestions(inputs)
+  const docBySlug = new Map(municipalities.map((doc) => [doc.slug, doc]))
 
   return {
     status: 'success',
     resultKind: 'wizard-suggest',
-    municipalities: ranked.map(toHomeSearchMunicipalityHit),
+    municipalities: ranked.map((input) =>
+      toHomeSearchMunicipalityHit(docBySlug.get(input.slug)!),
+    ),
   }
 }
