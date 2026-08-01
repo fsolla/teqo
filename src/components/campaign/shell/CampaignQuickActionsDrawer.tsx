@@ -140,14 +140,9 @@ export const CampaignQuickActionsDrawer = ({
         <div
           id="quickActionContext"
           className={cn(
-            'flex min-h-0 flex-col overflow-y-auto px-4',
             // B112 — dock/collapsed bottom gap ≈ ⅓ of prior gap-2 (keep safe-area).
-            isFull
-              ? 'flex-1 gap-1 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))]'
-              : cn(
-                  'gap-1 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))]',
-                  isDock ? 'flex-1' : 'shrink-0',
-                ),
+            'flex min-h-0 flex-col gap-1 overflow-y-auto px-4 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))]',
+            isFull || isDock ? 'flex-1' : 'shrink-0',
           )}
           data-snap={isFull ? 'full' : isDock ? 'dock' : 'collapsed'}
         >

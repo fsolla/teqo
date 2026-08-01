@@ -21,7 +21,6 @@ import {
   QUICK_ACTIONS_SNAP_FULL,
   quickActionsScrollDirection,
   quickActionsSnapAfterDismiss,
-  quickActionsSnapIsCollapsed,
   quickActionsSnapIsDock,
   quickActionsSnapIsFull,
 } from '@/lib/campaignQuickActionSnap'
@@ -462,14 +461,13 @@ describe('CampaignContentScroll quick-actions direction (B105)', () => {
 })
 
 describe('campaignQuickActionSnap', () => {
-  it('detects dock, full, and collapsed snaps', () => {
+  it('detects dock and full snaps; dismiss lands collapsed', () => {
     expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_DOCK)).toBe(true)
     expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_COLLAPSED)).toBe(false)
     expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_FULL)).toBe(false)
     expect(quickActionsSnapIsDock(null)).toBe(false)
     expect(quickActionsSnapIsFull(QUICK_ACTIONS_SNAP_FULL)).toBe(true)
     expect(quickActionsSnapIsFull(QUICK_ACTIONS_SNAP_DOCK)).toBe(false)
-    expect(quickActionsSnapIsCollapsed(QUICK_ACTIONS_SNAP_COLLAPSED)).toBe(true)
     expect(quickActionsSnapAfterDismiss()).toBe(QUICK_ACTIONS_SNAP_COLLAPSED)
   })
 

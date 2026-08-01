@@ -29,9 +29,6 @@ export const quickActionsSnapIsFull = (snap: QuickActionsSnapPoint | null): bool
 export const quickActionsSnapIsDock = (snap: QuickActionsSnapPoint | null): boolean =>
   snap === QUICK_ACTIONS_SNAP_DOCK
 
-export const quickActionsSnapIsCollapsed = (snap: QuickActionsSnapPoint | null): boolean =>
-  snap === QUICK_ACTIONS_SNAP_COLLAPSED
-
 /**
  * B112 — empty blur, handle tap/swipe ↓, and in-chrome navigation all land on
  * collapsed (clear search separately so `uiFocused → FULL` cannot reopen).
