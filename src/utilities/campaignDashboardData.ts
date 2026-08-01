@@ -3,6 +3,7 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import type { AccessibleMunicipality } from '@/lib/municipalityProximity'
+import { isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import { relationshipId, requireRelationshipId } from '@/lib/relationship'
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, VotePledge } from '@/payload-types'
@@ -21,6 +22,11 @@ import {
   loadStatewideSuggestedGoals,
   type MunicipalityGoalCoverageBundle,
 } from '@/utilities/municipality/municipalityGoalAccount'
+import {
+  loadCampaignHomeSummaryDelta,
+  loadStatewideStaffVoteTotalCentral,
+  recordCampaignVoteSummarySnapshotIfNeeded,
+} from '@/utilities/campaignVoteSummarySnapshot'
 import {
   rollupMunicipalityStaffVotes,
   type MunicipalityPledgeAggregate,
@@ -224,9 +230,11 @@ export const getCampaignDashboardData = async (
 /** Staff Início: central staff vote total + E8 aggregate coverage (Quadro KPI contract). */
 export type CampaignHomeSummaryView = Pick<StaffDashboardView, 'goalCoverage'> & {
   staffVoteTotalCentral: StaffDashboardView['staffVoteTotalByScenario']['central']
+  /** Statewide Δ over 7 Bahia civil days; null until enough daily snapshots exist. */
+  homeSummaryDelta: number | null
 }
 
-/** Slim loader for `/campanha` — scope + rollup + coverage only (no map, suggestions, or queues). */
+/** Slim loader for `/campanha` — scope + rollup + coverage + B57 delta. */
 export const loadCampaignHomeSummary = async (
   payload: Payload,
   user: CampaignUser,
@@ -239,8 +247,19 @@ export const loadCampaignHomeSummary = async (
     scope.pledgeAggregates,
   )
 
+  const statewideTotal = isUnrestrictedCampaignRole(user.role)
+    ? rollup.staffVoteTotalByScenario.central
+    : await loadStatewideStaffVoteTotalCentral(payload)
+
+  // B57 option A: hero stays actor-scoped; delta compares statewide live vs T−7d snapshot.
+  const [homeSummaryDelta] = await Promise.all([
+    loadCampaignHomeSummaryDelta(payload, statewideTotal),
+    recordCampaignVoteSummarySnapshotIfNeeded(payload, statewideTotal),
+  ])
+
   return {
     staffVoteTotalCentral: rollup.staffVoteTotalByScenario.central,
     goalCoverage: goalCoverageBundle.aggregateByScenario.central,
+    homeSummaryDelta,
   }
 }

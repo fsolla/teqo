@@ -74,6 +74,7 @@ export interface Config {
     notification: Notification;
     pushSubscription: PushSubscription;
     campaignInvite: CampaignInvite;
+    campaignVoteSummarySnapshot: CampaignVoteSummarySnapshot;
     municipality: Municipality;
     leadership: Leadership;
     organization: Organization;
@@ -112,6 +113,7 @@ export interface Config {
     notification: NotificationSelect<false> | NotificationSelect<true>;
     pushSubscription: PushSubscriptionSelect<false> | PushSubscriptionSelect<true>;
     campaignInvite: CampaignInviteSelect<false> | CampaignInviteSelect<true>;
+    campaignVoteSummarySnapshot: CampaignVoteSummarySnapshotSelect<false> | CampaignVoteSummarySnapshotSelect<true>;
     municipality: MunicipalitySelect<false> | MunicipalitySelect<true>;
     leadership: LeadershipSelect<false> | LeadershipSelect<true>;
     organization: OrganizationSelect<false> | OrganizationSelect<true>;
@@ -600,6 +602,21 @@ export interface Organization {
   municipalities?: (number | Municipality)[] | null;
   notes?: string | null;
   createdBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaignVoteSummarySnapshot".
+ */
+export interface CampaignVoteSummarySnapshot {
+  id: number;
+  /**
+   * Dia civil America/Bahia (`aaaa-mm-dd`), armazenado como meia-noite UTC.
+   */
+  day: string;
+  scopeKey: string;
+  staffVoteTotalCentral: number;
   updatedAt: string;
   createdAt: string;
 }
@@ -1253,6 +1270,10 @@ export interface PayloadLockedDocument {
         value: number | CampaignInvite;
       } | null)
     | ({
+        relationTo: 'campaignVoteSummarySnapshot';
+        value: number | CampaignVoteSummarySnapshot;
+      } | null)
+    | ({
         relationTo: 'municipality';
         value: number | Municipality;
       } | null)
@@ -1499,6 +1520,17 @@ export interface CampaignInviteSelect<T extends boolean = true> {
   usedAt?: T;
   revokedAt?: T;
   createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaignVoteSummarySnapshot_select".
+ */
+export interface CampaignVoteSummarySnapshotSelect<T extends boolean = true> {
+  day?: T;
+  scopeKey?: T;
+  staffVoteTotalCentral?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2318,6 +2350,7 @@ export interface TaskCreateCollectionExport {
       | 'notification'
       | 'pushSubscription'
       | 'campaignInvite'
+      | 'campaignVoteSummarySnapshot'
       | 'municipality'
       | 'leadership'
       | 'organization'

@@ -13,6 +13,7 @@ describe('CampaignHomeSummary', () => {
       <CampaignHomeSummary
         view={{
           staffVoteTotalCentral: 125_430,
+          homeSummaryDelta: 5_000,
           goalCoverage: {
             goal: 200_000,
             committed: 80_000,
@@ -26,6 +27,8 @@ describe('CampaignHomeSummary', () => {
     expect(screen.getByRole('region', { name: 'Resumo da campanha' })).toBeTruthy()
     expect(screen.getByText('Votos estimados')).toBeTruthy()
     expect(screen.getByText('125.430')).toBeTruthy()
+    expect(screen.getByLabelText('Aumento de 5.000 votos nos últimos 7 dias')).toBeTruthy()
+    expect(screen.getByText('nos últimos 7 dias')).toBeTruthy()
     expect(screen.getByText('Cobertura por lideranças')).toBeTruthy()
     expect(screen.getByText('40%')).toBeTruthy()
     expect(screen.getByRole('progressbar', { name: 'Cobertura por lideranças: 40%' })).toBeTruthy()
@@ -36,6 +39,7 @@ describe('CampaignHomeSummary', () => {
       <CampaignHomeSummary
         view={{
           staffVoteTotalCentral: 0,
+          homeSummaryDelta: null,
           goalCoverage: {
             goal: 0,
             committed: 0,
@@ -46,7 +50,7 @@ describe('CampaignHomeSummary', () => {
       />,
     )
 
-    expect(screen.getByText('—')).toBeTruthy()
+    expect(screen.getByLabelText('Variação nos últimos 7 dias indisponível')).toBeTruthy()
     expect(screen.queryByRole('progressbar')).toBeNull()
   })
 })
