@@ -181,6 +181,7 @@ export const WizardMunicipalitySearchStep = ({
       isEntryStep
       previousHref={previousHref}
       dismissHref={previousHref}
+      contentFocus="none"
     >
       <div className="flex flex-col">
         <div className="sticky top-0 z-10 -mx-4 bg-background px-4 pb-2 md:-mx-6 md:px-6">
@@ -191,6 +192,7 @@ export const WizardMunicipalitySearchStep = ({
             value={query.raw}
             onChange={(event) => setRaw(event.target.value)}
             autoComplete="off"
+            autoFocus
             enterKeyHint="search"
             aria-busy={resultsBusy || undefined}
             maxLength={HOME_SEARCH_QUERY_MAX_LENGTH}

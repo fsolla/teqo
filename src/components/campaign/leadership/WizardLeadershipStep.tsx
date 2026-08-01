@@ -128,6 +128,7 @@ export const WizardLeadershipStep = ({
       municipalityLabel={municipalityName}
       skip={skipConfig}
       trailingAction={trailingAction}
+      contentFocus={mode.kind === 'form' ? 'none' : 'title'}
     >
       {mode.kind === 'form' ? (
         <WizardLeadershipForm

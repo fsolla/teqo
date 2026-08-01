@@ -67,6 +67,7 @@ export const WizardTrendNoteStep = ({
       municipalityLabel={municipalityName}
       skip={skip}
       trailingAction={skip ? <WizardTrendSkipTrailing skip={skip} /> : undefined}
+      contentFocus="none"
     >
       <form
         action={submitAction}
@@ -91,6 +92,7 @@ export const WizardTrendNoteStep = ({
             maxLength={2000}
             required
             disabled={isPending}
+            autoFocus
             className="min-h-28"
             placeholder="Descreva o que mudou na leitura política do município."
           />

@@ -117,6 +117,46 @@ describe('CampaignWizardShell', () => {
     expect(main?.className).toMatch(/md:py-6/)
   })
 
+  it('skips title focus when contentFocus is none', () => {
+    const { rerender } = render(
+      <SidebarProvider>
+        <CampaignWizardChromeProvider>
+          <CampaignMobileTopBar />
+          <CampaignWizardShell
+            flowTitle="Ajustar votos"
+            stepTitle="Passo 1"
+            isEntryStep
+            previousHref="/campanha"
+            contentFocus="none"
+          >
+            <input aria-label="Primeiro campo" />
+          </CampaignWizardShell>
+        </CampaignWizardChromeProvider>
+      </SidebarProvider>,
+    )
+
+    rerender(
+      <SidebarProvider>
+        <CampaignWizardChromeProvider>
+          <CampaignMobileTopBar />
+          <CampaignWizardShell
+            flowTitle="Ajustar votos"
+            stepTitle="Passo 2"
+            isEntryStep
+            previousHref="/campanha"
+            contentFocus="none"
+          >
+            <input aria-label="Primeiro campo" />
+          </CampaignWizardShell>
+        </CampaignWizardChromeProvider>
+      </SidebarProvider>,
+    )
+
+    expect(document.activeElement).not.toBe(
+      screen.getByRole('heading', { level: 1, name: 'Passo 2' }),
+    )
+  })
+
   it('moves focus to the step title when stepTitle changes', () => {
     const { rerender } = render(
       <SidebarProvider>

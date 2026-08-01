@@ -136,6 +136,7 @@ export const WizardExpectedVotesStep = ({
       municipalityLabel={municipalityName}
       skip={skip}
       trailingAction={trailingAction}
+      contentFocus="none"
     >
       <div
         className="flex flex-col gap-6"

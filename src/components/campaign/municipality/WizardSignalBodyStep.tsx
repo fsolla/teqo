@@ -64,6 +64,7 @@ export const WizardSignalBodyStep = ({
       municipalityLabel={municipalityName}
       skip={skip}
       trailingAction={skip ? <WizardSignalSkipTrailing skip={skip} /> : undefined}
+      contentFocus="none"
     >
       <form
         action={submitAction}
@@ -86,6 +87,7 @@ export const WizardSignalBodyStep = ({
             maxLength={5000}
             required
             disabled={isPending}
+            autoFocus
             className="min-h-28"
             placeholder="Descreva o fato com o contexto que a equipe precisa lembrar depois."
           />

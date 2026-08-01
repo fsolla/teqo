@@ -128,7 +128,7 @@ const CompactVoteEstimateScenarioInputs = ({
               compactInputClassName,
               errorScenarios?.has(scenario)
                 ? 'border-destructive ring-1 ring-destructive/30'
-                : scenario === 'central'
+                : scenario === activeScenario
                   ? 'border-primary/50 bg-primary/5 font-medium ring-1 ring-primary/15'
                   : 'bg-muted/30',
             )}
