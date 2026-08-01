@@ -5,9 +5,10 @@ Status after agent delivery (2026-07-31):
 - [x] Code PR opened (main-only cutover) — see PR targeting `main`
 - [x] `pnpm configure:branch-protection` applied on `main` (required: `checks` + `migration-lock`, `strict=false`, 0 reviews)
 - [x] No open PRs targeting `stage` at cutover time
-- [ ] Repo secrets still needed:
-  - `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (deploy job fail-closed until set)
-  - `POOL_GITHUB_TOKEN` (PAT: `actions:write` + `issues:write` + `contents:read`) — `PROMOTE_GITHUB_TOKEN` already exists; reuse/rename if scopes cover Actions variables, else mint a new PAT
+- [x] Repo secrets present (`VERCEL_*`, `POOL_GITHUB_TOKEN`)
+- [x] `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` synced from local `.vercel/project.json` (`vercel link`)
+- [ ] Confirm `ci.yml` deploy job green after token+IDs are correct
+  - Misleading CLI error _"Could not retrieve Project Settings"_ usually means **403** (bad/expired `VERCEL_TOKEN` or wrong IDs) — regenerate token at vercel.com/account/tokens if deploy still fails
 
 After the cutover PR merges to `main`:
 
