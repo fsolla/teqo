@@ -99,7 +99,7 @@ Leia a propriedade `model:` do brief e compare com o modelo da sessão atual pel
 - Propriedade **ausente** → aplique `model-selection` uma vez e registre a escolha na Issue (`gh issue edit <N>` no body, frontmatter `model:`).
 - Issue `{id}-exec` / `kimi-k3-low` sem a dep de plan `done` → **pare** (não execute sem plano fechado).
 
-Subagentes despachados via `Task` saem **no modelo da propriedade** quando couber (`Task.model` ∈ `composer-2.5` | `cursor-grok-4.5-high` | `kimi-k3-low`).
+Subagentes despachados via `Task` saem **no modelo da propriedade** quando couber (`Task.model` ∈ `composer-2.5` | `cursor-grok-4.5-high` | `kimi-k3-low`; se a Issue for `-low`/`-medium` e o enum não listar, `inherit` — ver model-selection).
 
 ## Passo 3 — Freshness audit (enxuto)
 

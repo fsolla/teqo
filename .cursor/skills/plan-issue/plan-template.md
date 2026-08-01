@@ -12,7 +12,7 @@ Status: rascunho
 Atualizado em: <YYYY-MM-DD>
 Issue: #<N> (preencher após `pnpm agent:register`; enquanto não registrado: "—")
 Priority: <P0 | P1 | P2 | P3>
-Model: <slug sugerido por model-selection: composer-2.5 | cursor-grok-4.5-high | kimi-k3-low>
+Model: <slug sugerido por model-selection: composer-2.5 | cursor-grok-4.5-low|medium|high | kimi-k3-low>
 Impeccable: <A | B | C | D> — <uma linha: N/A sem UI | encaixe em tela X | UI nova em rota Y | ref Nome.png>
 Appetite: <ex.: ~1–2 dias eng; migration + 1 action + encaixe em lista existente>
 Responsável: —

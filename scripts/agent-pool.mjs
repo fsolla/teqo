@@ -272,7 +272,10 @@ const spawnPoolWorker = async ({ entry, workerUuid, models }) => {
       { event: 'spawn', agentId: agent.id, runId: run.id, url: agent.url },
       `Worker do pool em execução: ${agent.url}`,
     )
-    log(`  spawn #${entry.issue.number} → ${agent.url} (modelo ${chosen.model.id})`)
+    const modelLabel = chosen.model.params?.length
+      ? `${chosen.model.id}(${chosen.model.params.map((param) => `${param.id}=${param.value}`).join(',')})`
+      : chosen.model.id
+    log(`  spawn #${entry.issue.number} → ${agent.url} (modelo ${modelLabel})`)
   } catch (error) {
     if (error instanceof CursorApiError && error.status === 409) {
       const existing = await getCursorAgent(agentId)

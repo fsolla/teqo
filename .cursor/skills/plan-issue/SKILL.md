@@ -61,7 +61,7 @@ Ordem topológica intra-lote (o plano do dependente cita o ID do dependido, que 
 Aplique a skill `model-selection` (tabela canônica) por item e registre a sugestão no cabeçalho do plano (`Model:`) e no resumo do gate. Caminho feliz único:
 
 - `composer-2.5` — default (features, chores simples, fixes localizados, docs leves)
-- `cursor-grok-4.5-high` — issues complexas / discovery (effort High); Low/Medium via seletor para bookkeeping
+- `cursor-grok-4.5-low` | `cursor-grok-4.5-medium` | `cursor-grok-4.5-high` — Grok com **effort explícito** (ver model-selection: Low = mecânico com julgamento; Medium = discovery/análise; High = multi-domínio / falha cara)
 - `kimi-k3-low` — **só** fase de execução de issues bipartidas (refactor / simplify / migration+RBAC de blast radius alto)
 
 **Issues muito complexas:** registre **duas** Issues encadeadas — `{id}-plan` (`model: cursor-grok-4.5-high`, entregável = plano + critérios de aceite) e `{id}`/`{id}-exec` (`model: kimi-k3-low`, `depends: [{id}-plan]`). O valor vai ao frontmatter `model:` — propriedade da Issue, verificada (não recalculada) por `work-issue`.
