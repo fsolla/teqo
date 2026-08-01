@@ -41,6 +41,7 @@ describe('municipalitySignalTypeMeta', () => {
       expect(entry?.shortDescription.length).toBeGreaterThan(0)
       expect(entry?.infoContent.length).toBeGreaterThan(20)
       expect(entry?.icon).toBeTruthy()
+      expect(entry?.iconClassName.length).toBeGreaterThan(0)
     }
   })
 })

@@ -21,6 +21,8 @@ export const WIZARD_TREND_SAVED_MESSAGE = 'Tendência política registrada.' as 
 
 export const WIZARD_TREND_UNREGISTERED_TITLE = 'Tendência não registrada' as const
 
+export const WIZARD_CURRENT_TREND_CHIP_LABEL = 'Atual' as const
+
 export type WizardTrendSkipAction = {
   label: string
   href: string

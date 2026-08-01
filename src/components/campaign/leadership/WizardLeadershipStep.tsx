@@ -45,7 +45,6 @@ import {
   WIZARD_LEADERSHIP_EMPTY_NOTES,
   WIZARD_LEADERSHIP_FORM_CREATE_TITLE,
   WIZARD_LEADERSHIP_FORM_EDIT_TITLE,
-  WIZARD_LEADERSHIP_GRID_TITLE,
   WIZARD_LEADERSHIP_SAVED_TOAST,
   WIZARD_LEADERSHIP_STATUS_DRAWER_TITLE,
   WIZARD_LEADERSHIP_STATUS_PENDING,
@@ -62,6 +61,10 @@ import {
   type SupportStatus,
 } from '@/lib/schemas/leadership'
 import { cn } from '@/lib/utils'
+import {
+  WIZARD_THUMB_TILE_GRID_CLASS,
+  WIZARD_THUMB_TILE_ITEM_CLASS,
+} from '@/lib/wizardThumbGrid'
 import {
   resolveWizardChainEntry,
   wizardChainContinueHref,
@@ -143,11 +146,11 @@ export const WizardLeadershipStep = ({
   )
 
   const stepTitle =
-    mode.kind === 'grid'
-      ? WIZARD_LEADERSHIP_GRID_TITLE
-      : mode.leadership
+    mode.kind === 'form'
+      ? mode.leadership
         ? WIZARD_LEADERSHIP_FORM_EDIT_TITLE
         : WIZARD_LEADERSHIP_FORM_CREATE_TITLE
+      : null
 
   const trailingAction = skipConfig ? (
     <Button variant="ghost" size="sm" className="min-h-11 px-2 text-sm" asChild>
@@ -213,7 +216,8 @@ export const WizardLeadershipStep = ({
       municipalityLabel={municipalityName}
       skip={skipConfig}
       trailingAction={trailingAction}
-      contentFocus={mode.kind === 'form' ? 'none' : 'title'}
+      contentAlign={mode.kind === 'grid' ? 'end' : 'start'}
+      contentFocus={mode.kind === 'form' ? 'none' : undefined}
       clientLayer={mode.kind === 'form' ? WIZARD_LEADERSHIP_FORM_LAYER : undefined}
       onPopClientLayer={handlePopFormLayer}
     >
@@ -231,9 +235,20 @@ export const WizardLeadershipStep = ({
             {tiles.length === 0 ? (
               <p className="text-sm text-muted-foreground">{WIZARD_LEADERSHIP_EMPTY_GRID}</p>
             ) : null}
+<<<<<<< HEAD
             <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
               {tiles.map((tile) => (
                 <li key={tile.id}>
+=======
+            <ul
+              className={cn(
+                WIZARD_THUMB_TILE_GRID_CLASS,
+                'md:grid-cols-3 lg:grid-cols-4',
+              )}
+            >
+              {initialTiles.map((tile) => (
+                <li key={tile.id} className={WIZARD_THUMB_TILE_ITEM_CLASS}>
+>>>>>>> 30522269 (B113 — Wizard mobile thumb-zone, títulos e cores nos ícones)
                   <LeadershipTileButton
                     tile={tile}
                     onOpen={() => setMode({ kind: 'form', leadership: tile })}
@@ -243,7 +258,7 @@ export const WizardLeadershipStep = ({
                   />
                 </li>
               ))}
-              <li>
+              <li className={WIZARD_THUMB_TILE_ITEM_CLASS}>
                 <button
                   type="button"
                   className="flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-transparent p-3 text-center text-sm text-muted-foreground transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

@@ -76,7 +76,7 @@ describe('WizardExpectedVotesStep', () => {
     fireEvent.change(screen.getByLabelText('Pessimista'), { target: { value: '900' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salvar estimativas →' }))
 
-    const step = screen.getByRole('main', { name: /Ajustar votos estimados/i })
+    const step = screen.getByRole('main', { name: /Ação: Ajustar votos/i })
     expect(within(step).getByRole('alert').textContent).toMatch(/Pessimista/i)
     expect(screen.getByLabelText('Pessimista').getAttribute('aria-invalid')).toBe('true')
     expect(screen.getByLabelText('Média').getAttribute('aria-invalid')).toBe('true')
@@ -88,7 +88,7 @@ describe('WizardExpectedVotesStep', () => {
     fireEvent.change(screen.getByLabelText('Pessimista'), { target: { value: '900' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salvar estimativas →' }))
 
-    const step = screen.getByRole('main', { name: /Ajustar votos estimados/i })
+    const step = screen.getByRole('main', { name: /Ação: Ajustar votos/i })
     expect(within(step).getByRole('alert')).toBeTruthy()
 
     fireEvent.change(screen.getByLabelText('Média'), { target: { value: '950' } })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 
 import { createMunicipalityListSignalFormAction } from '@/app/(campaign)/campanha/(app)/municipios/municipalityStaffFormActions'
 import { WizardSignalSkipTrailing } from '@/components/campaign/municipality/WizardSignalSkipTrailing'
@@ -15,18 +15,13 @@ import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
-import { municipalitySignalTypeLabels } from '@/lib/schemas/municipalityUpdate'
 import {
   resolveWizardChainEntry,
   wizardChainContinueHref,
   wizardChainEndHref,
 } from '@/lib/wizardActionChain'
 import { wizardStepPreviousHref } from '@/lib/wizardBack'
-import {
-  resolveWizardSignalSkip,
-  WIZARD_SIGNAL_BODY_STEP_TITLE_PREFIX,
-  WIZARD_SIGNAL_SAVE_LABEL,
-} from '@/lib/wizardSignalUi'
+import { resolveWizardSignalSkip, WIZARD_SIGNAL_SAVE_LABEL } from '@/lib/wizardSignalUi'
 
 type WizardSignalBodyStepProps = {
   actionSlug: string
@@ -48,12 +43,13 @@ export const WizardSignalBodyStep = ({
   returnPath,
 }: WizardSignalBodyStepProps) => {
   const router = useRouter()
+  const [body, setBody] = useState('')
   const [state, submitAction, isPending] = useActionState(
     createMunicipalityListSignalFormAction,
     {},
   )
   const skip = resolveWizardSignalSkip(entryAction, municipalitySlug, returnPath)
-  const stepTitle = `${WIZARD_SIGNAL_BODY_STEP_TITLE_PREFIX}: ${municipalitySignalTypeLabels[signalType]}`
+  const canSave = body.trim().length > 0 && !isPending
 
   useCampaignFormSuccessToast(state, () => {
     recordLastActedMunicipality(municipalitySlug)
@@ -67,7 +63,7 @@ export const WizardSignalBodyStep = ({
     <CampaignWizardShell
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
       isEntryStep={false}
-      stepTitle={stepTitle}
+      stepTitle={null}
       previousHref={wizardStepPreviousHref({
         step: 'signal-body',
         actionSlug,
@@ -98,6 +94,8 @@ export const WizardSignalBodyStep = ({
           <Textarea
             id="wizard-signal-body"
             name="body"
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
             rows={5}
             maxLength={5000}
             required
@@ -111,7 +109,11 @@ export const WizardSignalBodyStep = ({
         {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={isPending} className="min-h-11 min-w-[7rem]">
+          <Button
+            type="submit"
+            disabled={!canSave}
+            className="min-h-11 min-w-[7rem]"
+          >
             {isPending ? (
               <>
                 <Spinner data-icon="inline-start" aria-hidden="true" />
