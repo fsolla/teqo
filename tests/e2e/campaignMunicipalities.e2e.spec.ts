@@ -414,7 +414,10 @@ test.describe('Municípios — cards no celular (B42)', () => {
 test.describe('Municípios — bottom drawer mobile (B100)', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
-  test('dock on load, collapse on scroll down, reopen on handle tap', async ({ campaign, page }) => {
+  test('dock on load, collapse on scroll down, reopen on handle tap', async ({
+    campaign,
+    page,
+  }) => {
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenador Drawer'),

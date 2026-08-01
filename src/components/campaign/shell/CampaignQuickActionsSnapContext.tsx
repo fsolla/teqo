@@ -34,9 +34,7 @@ const CampaignQuickActionsSnapContext = createContext<CampaignQuickActionsSnapCo
 
 export const CampaignQuickActionsSnapProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname()
-  const [snapPoint, setSnapPoint] = useState<QuickActionsSnapPoint | null>(
-    QUICK_ACTIONS_SNAP_DOCK,
-  )
+  const [snapPoint, setSnapPoint] = useState<QuickActionsSnapPoint | null>(QUICK_ACTIONS_SNAP_DOCK)
 
   useEffect(() => {
     setSnapPoint(QUICK_ACTIONS_SNAP_DOCK)

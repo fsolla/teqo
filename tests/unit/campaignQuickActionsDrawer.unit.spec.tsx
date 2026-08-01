@@ -3,8 +3,8 @@ import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CampaignGlobalSearchProvider } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
-import { CampaignContentScroll } from '@/components/campaign/shell/CampaignQuickActionsHost'
 import { CampaignQuickActionsDrawer } from '@/components/campaign/shell/CampaignQuickActionsDrawer'
+import { CampaignContentScroll } from '@/components/campaign/shell/CampaignQuickActionsHost'
 import {
   CampaignQuickActionsScrollCollapse,
   CampaignQuickActionsSnapProvider,
