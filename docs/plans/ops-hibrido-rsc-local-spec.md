@@ -128,21 +128,21 @@ Sem migration, sem collection, sem server action **nesta** Issue (só spec).
 
 ## Mapa do projecto (Issues filhas)
 
-| ID   | Issue | Depende de     | Entrega curta                                      |
-| ---- | ----- | -------------- | -------------------------------------------------- |
-| OH2  | #163  | OH1            | `lib/campaignOps` contrato + merge + flag          |
-| OH3  | #165  | OH2            | Benchmark snapshot + truncamento                   |
-| OH4  | #166  | OH3            | `GET /campanha/api/ops-sync` FULL + access         |
-| OH5  | #168  | OH4            | SyncProvider + OPFS→IDB + poll + chrome            |
-| OH6  | #167  | OH1            | `estimateVotesCas` + outbox (tracer, paralelo)     |
-| OH7  | #169  | OH5, OH6       | Estimativas ligadas ao mirror completo             |
-| OH8  | #170  | OH1, CL3       | Caracterização rotas piloto (só testes)            |
-| OH9  | #172  | OH8, OH5       | Detalhe município dual-path + OfflineBoundary      |
-| OH10 | #171  | OH7, OH9       | Writes municipality staff CAS                      |
-| OH11 | #173  | OH9, OH10      | SW `/_next/static` + e2e offline + docs            |
-| OH12 | #174  | OH9, OH5, CL8  | OpsListLocal via registry + mirror                 |
-| OH13 | #176  | OH10, OH12     | Writes CAS leadership/stateDeputy/activity/demand  |
-| OH14 | #175  | OH13, OH11     | Limpeza `OPS_HYBRID` + doc final                   |
+| ID   | Issue | Depende de    | Entrega curta                                     |
+| ---- | ----- | ------------- | ------------------------------------------------- |
+| OH2  | #163  | OH1           | `lib/campaignOps` contrato + merge + flag         |
+| OH3  | #165  | OH2           | Benchmark snapshot + truncamento                  |
+| OH4  | #166  | OH3           | `GET /campanha/api/ops-sync` FULL + access        |
+| OH5  | #168  | OH4           | SyncProvider + OPFS→IDB + poll + chrome           |
+| OH6  | #167  | OH1           | `estimateVotesCas` + outbox (tracer, paralelo)    |
+| OH7  | #169  | OH5, OH6      | Estimativas ligadas ao mirror completo            |
+| OH8  | #170  | OH1, CL3      | Caracterização rotas piloto (só testes)           |
+| OH9  | #172  | OH8, OH5      | Detalhe município dual-path + OfflineBoundary     |
+| OH10 | #171  | OH7, OH9      | Writes municipality staff CAS                     |
+| OH11 | #173  | OH9, OH10     | SW `/_next/static` + e2e offline + docs           |
+| OH12 | #174  | OH9, OH5, CL8 | OpsListLocal via registry + mirror                |
+| OH13 | #176  | OH10, OH12    | Writes CAS leadership/stateDeputy/activity/demand |
+| OH14 | #175  | OH13, OH11    | Limpeza `OPS_HYBRID` + doc final                  |
 
 Paralelas OK após OH1: OH2→OH5 em série; OH6 em paralelo a OH2–OH5; OH1–OH7 com CL1–CL3.
 
