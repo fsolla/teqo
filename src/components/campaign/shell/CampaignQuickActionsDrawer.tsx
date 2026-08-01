@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react'
 
+import { CampaignGlobalSearchMount } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
 import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/Drawer'
 import {
@@ -103,6 +104,7 @@ export const CampaignQuickActionsDrawer = ({
           ) : (
             <p className="text-sm text-muted-foreground">Nenhuma ação rápida nesta página.</p>
           )}
+          {expanded ? <CampaignGlobalSearchMount /> : null}
         </div>
       </DrawerContent>
     </Drawer>
