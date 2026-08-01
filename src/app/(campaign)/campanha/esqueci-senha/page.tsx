@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { ForgotPasswordForm } from '@/app/(campaign)/campanha/esqueci-senha/ForgotPasswordForm'
 import { CampaignAuthPageShell } from '@/components/campaign/auth/CampaignAuthPageShell'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { hasCampaignSession } from '@/utilities/campaignAuth'
 
 export const metadata: Metadata = {
   title: 'Esqueci a senha | Campanha',
@@ -14,9 +14,9 @@ export const metadata: Metadata = {
 }
 
 export default async function CampaignForgotPasswordPage() {
-  const user = await getCampaignUser()
+  const hasSession = await hasCampaignSession()
 
-  if (user) {
+  if (hasSession) {
     redirect('/campanha/perfil')
   }
 

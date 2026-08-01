@@ -18,8 +18,10 @@ import {
   revokeCampaignSession,
   setCampaignAuthCookie,
 } from '@/utilities/campaignAuth'
-
-export type LoginResult = { error?: string }
+import {
+  mapCampaignFormActionError,
+  type CampaignFormActionState,
+} from '@/utilities/campaignFormActionError'
 
 const isLockedAuthError = (error: unknown): boolean =>
   typeof error === 'object' &&
@@ -27,11 +29,16 @@ const isLockedAuthError = (error: unknown): boolean =>
   'name' in error &&
   (error as { name: unknown }).name === 'LockedAuth'
 
-export const loginCampaign = async (input: CampaignLoginInput): Promise<LoginResult> => {
+export const loginCampaign = async (
+  input: CampaignLoginInput,
+): Promise<CampaignFormActionState> => {
   const parsed = campaignLoginSchema.safeParse(input)
 
   if (!parsed.success) {
-    return { error: 'Dados inválidos.' }
+    return mapCampaignFormActionError({
+      error: parsed.error,
+      genericMessage: 'Dados inválidos.',
+    })
   }
 
   const payload = await getPayload({ config })
@@ -52,13 +59,13 @@ export const loginCampaign = async (input: CampaignLoginInput): Promise<LoginRes
     token = result.token
   } catch (error) {
     if (isLockedAuthError(error)) {
-      return { error: CAMPAIGN_ACCOUNT_LOCKED_MESSAGE }
+      return { message: CAMPAIGN_ACCOUNT_LOCKED_MESSAGE }
     }
-    return { error: CAMPAIGN_LOGIN_INVALID_CREDENTIALS_MESSAGE }
+    return { message: CAMPAIGN_LOGIN_INVALID_CREDENTIALS_MESSAGE }
   }
 
   if (!token) {
-    return { error: CAMPAIGN_LOGIN_INVALID_CREDENTIALS_MESSAGE }
+    return { message: CAMPAIGN_LOGIN_INVALID_CREDENTIALS_MESSAGE }
   }
 
   await setCampaignAuthCookie(
@@ -71,17 +78,22 @@ export const loginCampaign = async (input: CampaignLoginInput): Promise<LoginRes
 }
 
 export const loginCampaignFormAction = async (
-  _previousState: LoginResult,
+  _previousState: CampaignFormActionState,
   formData: FormData,
-): Promise<LoginResult> => {
+): Promise<CampaignFormActionState> => {
   try {
-    return loginCampaign({
+    const result = await loginCampaign({
       identifier: requiredFormText(formData, 'identifier'),
       password: requiredFormSecret(formData, 'password'),
       rememberMe: checkboxFormValue(formData, 'rememberMe'),
     })
-  } catch {
-    return { error: 'Dados inválidos.' }
+    return result
+  } catch (error) {
+    if (error instanceof Error && error.message === 'NEXT_REDIRECT') throw error
+    return mapCampaignFormActionError({
+      error,
+      genericMessage: 'Dados inválidos.',
+    })
   }
 }
 

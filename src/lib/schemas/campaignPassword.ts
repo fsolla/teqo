@@ -9,7 +9,7 @@ export const campaignPasswordSchema = z
   .min(8, 'A senha deve ter pelo menos 8 caracteres.')
   .max(128, 'A senha deve ter no máximo 128 caracteres.')
 
-const refineMatchingPasswords = (
+export const refineMatchingPasswords = (
   data: { password: string; passwordConfirmation: string },
   context: RefinementCtx,
 ) => {

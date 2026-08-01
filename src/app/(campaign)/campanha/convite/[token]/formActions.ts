@@ -12,7 +12,7 @@ import {
   requiredFormSecret,
   requiredFormText,
 } from '@/lib/formData'
-import { campaignInviteAutofillSchema, campaignInviteLoginSchema } from '@/lib/schemas/invite'
+import { campaignInviteAutofillSchema, campaignInviteLoginFormSchema } from '@/lib/schemas/invite'
 import {
   mapCampaignFormActionError,
   runCampaignFormAction,
@@ -67,24 +67,12 @@ export const redeemCampaignInviteLoginFormAction = async (
   _state: CampaignInviteFormState,
   formData: FormData,
 ): Promise<CampaignInviteFormState> => {
-  let password: string
   try {
-    password = requiredFormSecret(formData, 'password')
-    if (password !== requiredFormSecret(formData, 'passwordConfirmation')) {
-      return {
-        fieldErrors: {
-          passwordConfirmation: ['As senhas não coincidem.'],
-        },
-      }
-    }
-  } catch (error) {
-    return inviteFormError(error)
-  }
-  try {
-    const input = campaignInviteLoginSchema.parse({
+    const input = campaignInviteLoginFormSchema.parse({
       token,
       ...profileFromForm(formData),
-      password,
+      password: requiredFormSecret(formData, 'password'),
+      passwordConfirmation: requiredFormSecret(formData, 'passwordConfirmation'),
       consentAccepted: checkboxFormValue(formData, 'consentAccepted'),
     })
     await redeemCampaignInviteLogin(input)

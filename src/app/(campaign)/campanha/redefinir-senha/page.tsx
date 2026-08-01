@@ -8,7 +8,7 @@ import { CampaignAuthPageShell } from '@/components/campaign/auth/CampaignAuthPa
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { CAMPAIGN_PASSWORD_RESET_TOKEN_MIN_LENGTH } from '@/lib/schemas/campaignPassword'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { hasCampaignSession } from '@/utilities/campaignAuth'
 import { CAMPAIGN_PASSWORD_RESET_INVALID_TOKEN_MESSAGE } from '@/utilities/campaignPasswordReset'
 
 export const metadata: Metadata = {
@@ -26,8 +26,8 @@ type CampaignResetPasswordPageProps = {
 export default async function CampaignResetPasswordPage({
   searchParams,
 }: CampaignResetPasswordPageProps) {
-  const user = await getCampaignUser()
-  if (user) {
+  const hasSession = await hasCampaignSession()
+  if (hasSession) {
     redirect('/campanha/perfil')
   }
 

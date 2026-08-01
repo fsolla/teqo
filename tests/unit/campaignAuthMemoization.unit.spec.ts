@@ -40,7 +40,11 @@ vi.mock('payload', () => ({
   })),
 }))
 
-import { getCampaignUser, getCampaignUserRaw } from '@/utilities/campaignAuth'
+import {
+  getCampaignUser,
+  getCampaignUserRaw,
+  getCampaignUserWithAvatar,
+} from '@/utilities/campaignAuth'
 
 describe('campaign auth request memoization', () => {
   beforeEach(() => {
@@ -73,6 +77,17 @@ describe('campaign auth request memoization', () => {
     await getCampaignUser()
 
     expect(state.auth).toHaveBeenCalledTimes(2)
+    expect(state.findByID).toHaveBeenCalledTimes(2)
+  })
+
+  it('shares avatar reload within one request', async () => {
+    const [fromLayout, fromSidebar] = await Promise.all([
+      getCampaignUserWithAvatar(),
+      getCampaignUserWithAvatar(),
+    ])
+
+    expect(fromLayout).toBe(fromSidebar)
+    expect(state.auth).toHaveBeenCalledTimes(1)
     expect(state.findByID).toHaveBeenCalledTimes(2)
   })
 

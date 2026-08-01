@@ -141,8 +141,8 @@ describe('loginCampaign credential mapping', () => {
     formData.set('identifier', 'not-an-identifier')
     formData.set('password', '')
 
-    await expect(loginCampaignFormAction({}, formData)).resolves.toEqual({
-      error: 'Dados inválidos.',
+    await expect(loginCampaignFormAction({}, formData)).resolves.toMatchObject({
+      fieldErrors: expect.any(Object),
     })
     expect(mocks.login).not.toHaveBeenCalled()
   })
@@ -156,7 +156,7 @@ describe('loginCampaign credential mapping', () => {
         password: 'wrong-password',
       }),
     ).resolves.toEqual({
-      error: 'E-mail, celular ou senha inválidos.',
+      message: 'E-mail, celular ou senha inválidos.',
     })
   })
 
@@ -171,7 +171,7 @@ describe('loginCampaign credential mapping', () => {
         password: 'any-password',
       }),
     ).resolves.toEqual({
-      error:
+      message:
         'Conta temporariamente bloqueada após várias tentativas. Aguarde alguns minutos e tente de novo.',
     })
   })

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
 import { CampaignAuthPageShell } from '@/components/campaign/auth/CampaignAuthPageShell'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { hasCampaignSession } from '@/utilities/campaignAuth'
 import { resolveCampaignWebAuthnRelyingParty } from '@/utilities/webauthn/campaignWebAuthnConfig'
 import { LoginForm } from './LoginForm'
 
@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 }
 
 export default async function CampaignLoginPage() {
-  const user = await getCampaignUser()
+  const hasSession = await hasCampaignSession()
 
-  if (user) {
+  if (hasSession) {
     redirect('/campanha')
   }
 
