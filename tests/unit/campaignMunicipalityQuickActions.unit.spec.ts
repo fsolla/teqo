@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import { CAMPAIGN_WIZARD_ACTION_SLUGS } from '@/lib/campaignActionRoutes'
-import {
-  isMunicipalitiesListPath,
-  parseMunicipalityDetailSlug,
-  resolveMunicipalityDetailQuickActions,
-  resolveMunicipalityListQuickActions,
-  resolveMunicipalityQuickActionsForPath,
-} from '@/lib/campaignMunicipalityQuickActions'
 import { UNCOVERED_MUNICIPALITIES_LIST_HREF } from '@/lib/campaignHomeActions'
 
 const wizardActionIds = [
@@ -83,6 +76,8 @@ describe('resolveMunicipalityQuickActionsForPath', () => {
       'coordinator',
       { municipalitySlug: 'cairu' },
     )
-    expect(actions.find((action) => action.id === 'update-votes')?.href).toContain('municipio=cairu')
+    expect(actions.find((action) => action.id === 'update-votes')?.href).toContain(
+      'municipio=cairu',
+    )
   })
 })
