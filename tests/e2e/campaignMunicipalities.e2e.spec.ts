@@ -458,3 +458,44 @@ test.describe('Municípios — bottom drawer mobile (B105)', () => {
     await expect(search).toHaveAttribute('placeholder', 'Município, liderança, atividade…')
   })
 })
+
+/**
+ * B109: dock labels readable, search focus goes fullscreen (strip hidden), current
+ * entity excluded from suggest/results.
+ */
+test.describe('Municípios — bottom drawer polish (B109)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('dock labels readable, search fullscreen hides strip, excludes current município', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador B109'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
+    await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
+
+    const changeTrend = page.getByRole('link', { name: 'Mudar tendência' })
+    await expect(changeTrend).toBeVisible()
+    await expect(changeTrend).toContainText('Mudar tendência')
+
+    const search = page.getByLabel('Buscar na campanha')
+    await search.focus()
+    await expect(page.getByRole('link', { name: 'Mudar tendência' })).toBeHidden()
+
+    const handle = page.getByRole('button', { name: 'Ocultar ações rápidas' })
+    const handleBox = await handle.boundingBox()
+    expect(handleBox).toBeTruthy()
+    expect(handleBox!.y).toBeLessThan(40)
+
+    await expect(page.getByRole('region', { name: 'Sugestões' })).toBeVisible()
+    await expect(
+      page.getByRole('region', { name: 'Sugestões' }).getByText(municipality.name, { exact: true }),
+    ).toHaveCount(0)
+  })
+})

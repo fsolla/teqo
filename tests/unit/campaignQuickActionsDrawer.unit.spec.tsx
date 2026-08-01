@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CampaignGlobalSearchProvider } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
 import { CampaignQuickActionsDrawer } from '@/components/campaign/shell/CampaignQuickActionsDrawer'
+import { CampaignQuickActionContextProvider } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { CampaignContentScroll } from '@/components/campaign/shell/CampaignQuickActionsHost'
 import {
   CampaignQuickActionsSnapProvider,
@@ -17,8 +18,10 @@ import {
   QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX,
   QUICK_ACTIONS_SNAP_COLLAPSED,
   QUICK_ACTIONS_SNAP_DOCK,
+  QUICK_ACTIONS_SNAP_FULL,
   quickActionsScrollDirection,
   quickActionsSnapIsDock,
+  quickActionsSnapIsFull,
 } from '@/lib/campaignQuickActionSnap'
 
 vi.mock('@/lib/campaignJsonRequest', () => ({
@@ -89,9 +92,11 @@ afterEach(() => {
 const renderQuickActionsChrome = (ui: ReactNode) =>
   render(
     <TooltipProvider delayDuration={300}>
-      <CampaignQuickActionsSnapProvider>
-        <CampaignGlobalSearchProvider>{ui}</CampaignGlobalSearchProvider>
-      </CampaignQuickActionsSnapProvider>
+      <CampaignQuickActionContextProvider>
+        <CampaignQuickActionsSnapProvider>
+          <CampaignGlobalSearchProvider>{ui}</CampaignGlobalSearchProvider>
+        </CampaignQuickActionsSnapProvider>
+      </CampaignQuickActionContextProvider>
     </TooltipProvider>,
   )
 
@@ -241,7 +246,7 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
     })
   })
 
-  it('expands to dock when the peek search is focused', () => {
+  it('expands to full snap when the peek search is focused (B109)', () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: idleSuggestPayload,
@@ -255,10 +260,10 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
     )
 
     fireEvent.focus(screen.getByLabelText('Buscar na campanha'))
-    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('dock')
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('full')
   })
 
-  it('stays docked while search remains focused even if the handle collapses', () => {
+  it('stays full while search remains focused even if the handle collapses (B109)', () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: idleSuggestPayload,
@@ -268,7 +273,7 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
 
     fireEvent.focus(screen.getByLabelText('Buscar na campanha'))
     fireEvent.click(screen.getByRole('button', { name: 'Ocultar ações rápidas' }))
-    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('dock')
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('full')
   })
 
   it('toggles between dock and collapsed from the handle', () => {
@@ -287,6 +292,35 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Mostrar ações rápidas' }))
     expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('dock')
+  })
+
+  it('hides the current municipality from drawer suggest hits (B109)', async () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: {
+        ...suggestWithPriorityPayload,
+        municipalities: [
+          ...suggestWithPriorityPayload.municipalities,
+          {
+            kind: 'municipality' as const,
+            slug: 'foo',
+            name: 'Município Atual',
+            region: 'Teste',
+            priority: null,
+            votePosition2022: null,
+          },
+        ],
+      },
+    })
+
+    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+
+    fireEvent.focus(screen.getByLabelText('Buscar na campanha'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Cairu')).toBeTruthy()
+      expect(screen.queryByText('Município Atual')).toBeNull()
+    })
   })
 })
 
@@ -322,10 +356,13 @@ describe('CampaignContentScroll quick-actions direction (B105)', () => {
 })
 
 describe('campaignQuickActionSnap', () => {
-  it('detects dock snap', () => {
+  it('detects dock and full snaps', () => {
     expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_DOCK)).toBe(true)
     expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_COLLAPSED)).toBe(false)
+    expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_FULL)).toBe(false)
     expect(quickActionsSnapIsDock(null)).toBe(false)
+    expect(quickActionsSnapIsFull(QUICK_ACTIONS_SNAP_FULL)).toBe(true)
+    expect(quickActionsSnapIsFull(QUICK_ACTIONS_SNAP_DOCK)).toBe(false)
   })
 
   it('resolves scroll direction from delta threshold', () => {

@@ -21,9 +21,13 @@ import { cn } from '@/lib/utils'
 const CampaignContentScrollWithPeek = ({ children }: { children: ReactNode }) => {
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastScrollTopRef = useRef(0)
-  const { isDock, setSnapPoint } = useCampaignQuickActionsSnap()
+  const { isDock, isFull, setSnapPoint } = useCampaignQuickActionsSnap()
   const { uiFocused } = useHomeSearch()
-  const peekHeight = isDock ? QUICK_ACTIONS_SNAP_DOCK : QUICK_ACTIONS_SNAP_COLLAPSED
+  const peekHeight = isFull
+    ? '0px'
+    : isDock
+      ? QUICK_ACTIONS_SNAP_DOCK
+      : QUICK_ACTIONS_SNAP_COLLAPSED
 
   const syncSnapFromScroll = useCallback(() => {
     const scrollport = scrollRef.current

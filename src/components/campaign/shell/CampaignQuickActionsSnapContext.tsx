@@ -15,6 +15,7 @@ import {
 import {
   QUICK_ACTIONS_SNAP_DOCK,
   quickActionsSnapIsDock,
+  quickActionsSnapIsFull,
   type QuickActionsSnapPoint,
 } from '@/lib/campaignQuickActionSnap'
 
@@ -22,6 +23,7 @@ type CampaignQuickActionsSnapContextValue = {
   snapPoint: QuickActionsSnapPoint | null
   setSnapPoint: Dispatch<SetStateAction<QuickActionsSnapPoint | null>>
   isDock: boolean
+  isFull: boolean
 }
 
 const CampaignQuickActionsSnapContext = createContext<CampaignQuickActionsSnapContextValue | null>(
@@ -41,6 +43,7 @@ export const CampaignQuickActionsSnapProvider = ({ children }: { children: React
       snapPoint,
       setSnapPoint,
       isDock: quickActionsSnapIsDock(snapPoint),
+      isFull: quickActionsSnapIsFull(snapPoint),
     }),
     [snapPoint],
   )
