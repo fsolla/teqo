@@ -15,6 +15,10 @@ export const resolveHomeSummaryDeltaDirection = (
   return delta > 0 ? 'up' : 'down'
 }
 
+/** B111 — render the Δ chip only when there was movement in the window. */
+export const shouldShowHomeSummaryDelta = (delta: number | null): boolean =>
+  delta !== null && delta !== 0
+
 /** Absolute magnitude for display; null when unavailable; "0" when flat. */
 export const formatHomeSummaryDeltaMagnitude = (delta: number | null): string | null => {
   if (delta === null) return null

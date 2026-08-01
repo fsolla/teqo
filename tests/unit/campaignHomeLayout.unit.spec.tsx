@@ -30,6 +30,16 @@ describe('CampaignHomeLayout', () => {
     expect(actions?.className).toContain('md:w-auto')
   })
 
+  it('does not clip horizontal bleed on the actions retraction shell', () => {
+    const { container } = render(<CampaignHomeLayout actions={<p>Actions block</p>} />)
+
+    const actionsChrome = container.querySelector('[data-slot="home-actions-chrome"]')
+    const bleedWrapper = actionsChrome?.querySelector('[data-allow-horizontal-bleed="true"]')
+    expect(bleedWrapper).not.toBeNull()
+    expect(bleedWrapper?.className).toContain('overflow-y-hidden')
+    expect(bleedWrapper?.className).not.toContain('overflow-hidden')
+  })
+
   it('renders search slot inside home-dock when provided', () => {
     render(
       <CampaignHomeLayout
