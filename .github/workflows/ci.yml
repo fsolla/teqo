@@ -151,7 +151,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [checks]
     if: needs.checks.result == 'success'
-    timeout-minutes: 20
+    # pull → local `vercel build` (pnpm install + Next/Payload build against prod env) → upload.
+    timeout-minutes: 35
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -195,6 +196,15 @@ jobs:
             exit 1
             ;;
           esac
+      # `vercel build` shells out to pnpm (packageManager in package.json); without
+      # these steps the runner only has npm → spawn pnpm ENOENT.
+      - uses: pnpm/action-setup@v4
+        if: steps.tip.outputs.stale != 'true'
+      - uses: actions/setup-node@v4
+        if: steps.tip.outputs.stale != 'true'
+        with:
+          node-version: 24
+          cache: pnpm
       - name: Install Vercel CLI
         if: steps.tip.outputs.stale != 'true'
         run: npm install --global vercel@41
