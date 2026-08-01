@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 
 import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
+import { CampaignGlobalSearchMount } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/Drawer'
 import {
   QUICK_ACTIONS_SNAP_COLLAPSED,
@@ -103,6 +104,7 @@ export const CampaignQuickActionsDrawer = ({
           ) : (
             <p className="text-sm text-muted-foreground">Nenhuma ação rápida nesta página.</p>
           )}
+          <CampaignGlobalSearchMount />
         </div>
       </DrawerContent>
     </Drawer>
