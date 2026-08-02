@@ -2,25 +2,23 @@
 
 import { Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 
-import { useMunicipalitySavedFilters } from '@/components/campaign/shared/useMunicipalitySavedFilters'
+import {
+  useActiveMunicipalitySavedFilter,
+  useMunicipalitySavedFilters,
+} from '@/components/campaign/shared/useMunicipalitySavedFilters'
 import {
   SidebarMenuAction,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/Sidebar'
-import { isSameListHref } from '@/lib/listQueryMatch'
 import {
   removeMunicipalitySavedFilter,
   saveMunicipalitySavedFilter,
   type MunicipalitySavedFilter,
 } from '@/utilities/municipality/municipalitySavedFilters'
-
-/** A page is a position inside a recorte, not part of it. */
-const IGNORED_PARAMS = ['page']
 
 /**
  * The saved filters of `/campanha/municipios` (B18), hung under that nav item.
@@ -31,14 +29,7 @@ const IGNORED_PARAMS = ['page']
  */
 export const MunicipalityNavSavedFilters = ({ onNavigate }: { onNavigate: () => void }) => {
   const savedFilters = useMunicipalitySavedFilters()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-
-  const query = searchParams.toString()
-  const currentHref = query ? `${pathname}?${query}` : pathname
-  const activeHref = savedFilters.find((entry) =>
-    isSameListHref(currentHref, entry.href, IGNORED_PARAMS),
-  )?.href
+  const activeFilter = useActiveMunicipalitySavedFilter()
 
   if (!savedFilters.length) return null
 
@@ -75,7 +66,7 @@ export const MunicipalityNavSavedFilters = ({ onNavigate }: { onNavigate: () => 
   return (
     <SidebarMenuSub aria-label="Filtros salvos de Municípios" className="-mt-0.5 py-0">
       {savedFilters.map((entry) => {
-        const isActive = entry.href === activeHref
+        const isActive = entry.href === activeFilter?.href
 
         return (
           <SidebarMenuSubItem key={entry.href}>

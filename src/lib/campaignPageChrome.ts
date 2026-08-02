@@ -17,87 +17,56 @@ const normalizePathname = (pathname: string): string => {
   return pathname
 }
 
-const quadroSubtitle = (role: CampaignRole): string =>
-  role === 'advisor'
-    ? 'Quadro dos municípios sob sua assessoria.'
-    : 'Quadro geral da campanha por município.'
-
 /** Client-safe vocabulary for shell chrome and tab titles (B123). */
 export const campaignPageChromeCatalog = {
   home: null,
   quadro: {
     title: 'Quadro',
-    subtitle: quadroSubtitle,
   },
   municipios: {
     title: 'Municípios',
-    subtitle:
-      'Os 435 municípios da campanha: um por município da Bahia — em Salvador, uma zona eleitoral cada.',
   },
   territorios: {
     title: 'Territórios de Identidade',
-    subtitle:
-      'Compare a concentração histórica e a cobertura de assessoria das regiões da Bahia. Abra um território para ver seus municípios.',
   },
   liderancas: {
     title: 'Lideranças',
-    subtitle:
-      'Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações.',
   },
   liderancasNova: {
     title: 'Nova liderança',
-    subtitle:
-      'O contato é reaproveitado pelo celular quando já existe. Registre o consentimento antes de inserir dados reais.',
   },
   dobradinhas: {
     title: 'Dobradinhas',
-    subtitle:
-      'Deputados estaduais com quem a campanha dobra — vincule lideranças e municípios direto na lista.',
   },
   dobradinhasNova: {
     title: 'Nova dobradinha',
-    subtitle:
-      'Cadastre deputados estaduais com quem a campanha dobra. Vincule a municípios e lideranças nas fichas correspondentes.',
   },
   atividades: {
     title: 'Atividades',
-    subtitle: 'Organize caminhadas, comícios, panfletagens e demais ações de campanha.',
   },
   atividadesNova: {
     title: 'Nova atividade',
-    subtitle: 'Defina a ação, quando e onde ela acontece e quem responde por ela.',
   },
   atividadesGiros: {
     title: 'Planejar giro',
-    subtitle:
-      'Um giro por território: o ato onde o voto comprometido já está, as paradas com rede para receber, e uma semente de expansão para o giro não repetir só a base. A proposta é sugestão — você edita antes de gerar.',
   },
   demandas: {
     title: 'Demandas',
-    subtitle:
-      'Necessidades da campanha abertas pelas lideranças, revisadas pela assessoria e — quando preciso — decididas pelo Coordenador Geral.',
   },
   demandasNova: {
     title: 'Nova demanda',
-    subtitle:
-      'Descreva a necessidade (material, transporte, espaço, apoio…) e o município. A assessoria revisa e responde por aqui.',
   },
   apoiadores: {
     title: 'Apoiadores',
-    subtitle: 'Base nominal de apoio com intenção de voto e vínculo opcional a municípios.',
   },
   apoiadoresNovo: {
     title: 'Novo apoiador',
-    subtitle: 'Cadastre um apoiador com telefone obrigatório e consentimento LGPD.',
   },
   apoiadoresImportar: {
     title: 'Importar apoiadores via CSV',
-    subtitle: 'Envie uma planilha, confira a prévia e confirme a importação em lote.',
   },
   assessores: {
     title: 'Assessores',
-    subtitle:
-      'Consulte na tabela; ative Editar para alterar campos e carteira. Nome abre a ficha; e-mail/celular copiam; município abre o município.',
   },
   organizacoes: {
     title: 'Organizações',
@@ -122,25 +91,22 @@ export const campaignPageChromeCatalog = {
     title: 'Meu perfil',
     subtitle: 'Gerencie sua foto, sua senha e a entrada por biometria.',
   },
-} as const satisfies Record<
-  string,
-  CampaignPageChrome | { title: string; subtitle: (role: CampaignRole) => string } | null
->
+} as const satisfies Record<string, CampaignPageChrome | null>
 
 const resolveCatalogEntry = (
   entry: (typeof campaignPageChromeCatalog)[keyof typeof campaignPageChromeCatalog],
-  role: CampaignRole,
 ): CampaignPageChrome | null => {
   if (!entry) return null
-  const subtitle = typeof entry.subtitle === 'function' ? entry.subtitle(role) : entry.subtitle
-  return { title: entry.title, subtitle }
+  return 'subtitle' in entry && entry.subtitle
+    ? { title: entry.title, subtitle: entry.subtitle }
+    : { title: entry.title }
 }
 
 const sectionOnly = (title: string): CampaignPageChrome => ({ title })
 
 type PathRule = {
   match: (pathname: string) => boolean
-  resolve: (role: CampaignRole) => CampaignPageChrome | null
+  resolve: () => CampaignPageChrome | null
 }
 
 const pathRules: PathRule[] = [
@@ -150,11 +116,11 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => pathname === '/campanha/quadro',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.quadro, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.quadro),
   },
   {
     match: (pathname) => pathname === '/campanha/municipios',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.municipios, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.municipios),
   },
   {
     match: (pathname) => /^\/campanha\/municipios\/[^/]+\/editar$/.test(pathname),
@@ -166,11 +132,11 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => pathname === '/campanha/territorios',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.territorios, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.territorios),
   },
   {
     match: (pathname) => pathname === '/campanha/liderancas/nova',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.liderancasNova, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.liderancasNova),
   },
   {
     match: (pathname) => /^\/campanha\/liderancas\/[^/]+$/.test(pathname),
@@ -178,11 +144,11 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => pathname === '/campanha/liderancas',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.liderancas, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.liderancas),
   },
   {
     match: (pathname) => pathname === '/campanha/dobradinhas/nova',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.dobradinhasNova, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.dobradinhasNova),
   },
   {
     match: (pathname) => /^\/campanha\/dobradinhas\/[^/]+$/.test(pathname),
@@ -190,15 +156,15 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => pathname === '/campanha/dobradinhas',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.dobradinhas, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.dobradinhas),
   },
   {
     match: (pathname) => pathname === '/campanha/atividades/nova',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.atividadesNova, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.atividadesNova),
   },
   {
     match: (pathname) => pathname === '/campanha/atividades/giros',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.atividadesGiros, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.atividadesGiros),
   },
   {
     match: (pathname) => /^\/campanha\/atividades\/[^/]+\/editar$/.test(pathname),
@@ -210,11 +176,11 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => pathname === '/campanha/atividades',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.atividades, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.atividades),
   },
   {
     match: (pathname) => pathname === '/campanha/demandas/nova',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.demandasNova, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.demandasNova),
   },
   {
     match: (pathname) => /^\/campanha\/demandas\/[^/]+$/.test(pathname),
@@ -222,15 +188,15 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => pathname === '/campanha/demandas',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.demandas, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.demandas),
   },
   {
     match: (pathname) => pathname === '/campanha/apoiadores/novo',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.apoiadoresNovo, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.apoiadoresNovo),
   },
   {
     match: (pathname) => pathname === '/campanha/apoiadores/importar',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.apoiadoresImportar, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.apoiadoresImportar),
   },
   {
     match: (pathname) => /^\/campanha\/apoiadores\/[^/]+$/.test(pathname),
@@ -238,7 +204,7 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => pathname === '/campanha/apoiadores',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.apoiadores, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.apoiadores),
   },
   {
     match: (pathname) => /^\/campanha\/assessores\/[^/]+$/.test(pathname),
@@ -246,11 +212,11 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => pathname === '/campanha/assessores',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.assessores, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.assessores),
   },
   {
     match: (pathname) => pathname === '/campanha/organizacoes/nova',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.organizacoesNova, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.organizacoesNova),
   },
   {
     match: (pathname) => /^\/campanha\/organizacoes\/[^/]+$/.test(pathname),
@@ -258,30 +224,30 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => pathname === '/campanha/organizacoes',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.organizacoes, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.organizacoes),
   },
   {
     match: (pathname) => pathname === '/campanha/conceitos',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.conceitos, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.conceitos),
   },
   {
     match: (pathname) => pathname === LEADER_CONTACTS_HOME,
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.contatos, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.contatos),
   },
   {
     match: (pathname) => pathname === '/campanha/perfil',
-    resolve: (role) => resolveCatalogEntry(campaignPageChromeCatalog.perfil, role),
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.perfil),
   },
 ]
 
 export const resolveCampaignPageChrome = (
   pathname: string,
-  role: CampaignRole,
+  _role: CampaignRole,
 ): CampaignPageChrome | null => {
   const normalized = normalizePathname(pathname)
   for (const rule of pathRules) {
     if (rule.match(normalized)) {
-      return rule.resolve(role)
+      return rule.resolve()
     }
   }
   return null
@@ -301,5 +267,4 @@ export const campaignPageMetadata = (chrome: CampaignPageChrome | null): Metadat
 
 export const campaignPageMetadataFromCatalog = (
   key: keyof typeof campaignPageChromeCatalog,
-  role: CampaignRole = 'coordinator',
-): Metadata => campaignPageMetadata(resolveCatalogEntry(campaignPageChromeCatalog[key], role))
+): Metadata => campaignPageMetadata(resolveCatalogEntry(campaignPageChromeCatalog[key]))

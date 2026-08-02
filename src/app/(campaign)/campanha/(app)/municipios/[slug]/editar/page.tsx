@@ -29,9 +29,6 @@ type MunicipalityEditPageProps = {
   params: Promise<{ slug: string }>
 }
 
-const municipalityEditSubtitle =
-  'A geografia do município é pré-definida e não pode ser alterada. Aqui você edita metas, votos estimados, inteligência e tendência política.'
-
 export async function generateMetadata({ params }: MunicipalityEditPageProps) {
   const { slug } = await params
   const payload = await getPayload({ config })
@@ -43,12 +40,9 @@ export async function generateMetadata({ params }: MunicipalityEditPageProps) {
   try {
     const context = await resolveAccessibleMunicipalityContext(payload, user, slug)
     const view = await getMunicipalityDetailViewModel(payload, context, user)
-    return campaignPageMetadata({
-      title: `Editar ${view.name}`,
-      subtitle: municipalityEditSubtitle,
-    })
+    return campaignPageMetadata({ title: `Editar ${view.name}` })
   } catch {
-    return campaignPageMetadata({ title: 'Editar município', subtitle: municipalityEditSubtitle })
+    return campaignPageMetadata({ title: 'Editar município' })
   }
 }
 
@@ -76,9 +70,7 @@ export default async function MunicipalityEditPage({ params }: MunicipalityEditP
 
   return (
     <CampaignPageShell>
-      <SetCampaignPageChrome
-        chrome={{ title: `Editar ${view.name}`, subtitle: municipalityEditSubtitle }}
-      />
+      <SetCampaignPageChrome chrome={{ title: `Editar ${view.name}` }} />
       <Button asChild variant="ghost" className="min-h-11 self-start">
         <Link href={`/campanha/municipios/${view.slug}`}>
           <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
