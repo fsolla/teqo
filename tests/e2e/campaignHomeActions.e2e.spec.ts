@@ -1,12 +1,12 @@
 import type { Page } from '@playwright/test'
 
 import { WIZARD_MUNICIPALITY_STEP_TITLE } from '../../src/lib/campaignWizardCopy.js'
+import { expect, test } from './fixtures/campaignE2EFixtures.js'
 import {
   assertThreeColumnActionGrid,
   collectActionBoundingBoxes,
   groupActionsByRow,
 } from './helpers/actionGridGeometry.js'
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
 const staffActionLabels = [
   'Ajustar votos',

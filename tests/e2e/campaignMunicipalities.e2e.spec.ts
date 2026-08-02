@@ -4,17 +4,17 @@ import {
   SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
 } from '../helpers/testDatabaseLease.js'
 import {
-  assertThreeColumnActionGrid,
-  collectActionBoundingBoxes,
-  groupActionsByRow,
-} from './helpers/actionGridGeometry.js'
-import {
   campaignPageChrome,
   checkRadixWhenHydrated,
   expect,
   expectPostResponse,
   test,
 } from './fixtures/campaignE2EFixtures.js'
+import {
+  assertThreeColumnActionGrid,
+  collectActionBoundingBoxes,
+  groupActionsByRow,
+} from './helpers/actionGridGeometry.js'
 
 /**
  * Core municipality-model journeys per role: coordinator strategy editing, advisor

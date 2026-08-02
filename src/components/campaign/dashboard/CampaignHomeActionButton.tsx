@@ -41,10 +41,7 @@ const actionResponsiveControlClassName = cn(
   'w-full min-w-0 max-w-full md:box-content md:w-[5.5rem] md:max-w-none md:shrink-0 md:snap-start',
 )
 
-const actionGridControlClassName = cn(
-  actionControlBaseClassName,
-  'w-full min-w-0 max-w-full',
-)
+const actionGridControlClassName = cn(actionControlBaseClassName, 'w-full min-w-0 max-w-full')
 
 const circleClassName =
   'flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-[transform,colors] duration-150 ease-out motion-reduce:transition-none pointer-fine:group-hover:scale-[1.05] pointer-coarse:group-data-[pressing=true]:scale-[1.05] motion-reduce:scale-100 group-hover:bg-muted/80 group-focus-visible:bg-muted/80'
