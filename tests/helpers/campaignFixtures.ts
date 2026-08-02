@@ -466,16 +466,10 @@ export class CampaignFixtures {
    * left behind by a previously crashed run are purged on claim (allocation
    * uniqueness makes this safe: nothing live can reference this municipality).
    */
-  async getMunicipality(slug?: string): Promise<Municipality> {
-    let requestedSlug = slug
-    if (!requestedSlug) {
-      const index = await nextAllocatedMunicipalityIndex(
-        this.rootPayload,
-        municipalityCatalog.length,
-      )
-      requestedSlug = municipalityCatalog[index]!.slug
-      this.municipalityCursor += 1
-    }
+  async getMunicipality(): Promise<Municipality> {
+    const index = await nextAllocatedMunicipalityIndex(this.rootPayload, municipalityCatalog.length)
+    const requestedSlug = municipalityCatalog[index]!.slug
+    this.municipalityCursor += 1
 
     const result = await this.rootPayload.find({
       collection: 'municipality',
@@ -490,7 +484,7 @@ export class CampaignFixtures {
         `Seeded municipality "${requestedSlug}" not found — run migrations on the test database.`,
       )
     }
-    if (!slug) await purgeMunicipalityResidue(this.rootPayload, municipality.id)
+    await purgeMunicipalityResidue(this.rootPayload, municipality.id)
     this.touchedMunicipalities.add(municipality.id)
     return municipality
   }

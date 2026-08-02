@@ -4,16 +4,13 @@ import { describe, expect, it } from 'vitest'
 
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 
-// Miss #73 (2026-07-31): int specs pinning seeded municipality slugs
-// (`getMunicipality('cairu')` et al.) and mutating them deadlocked
-// `municipality_rels` under the parallel suite (Postgres 40P01), and e2e specs
-// deep-linking `?municipio=cairu` raced the same row from two workers. The
-// allocator (`getMunicipality()` / `claimMunicipality()`, Postgres sequence)
+// Miss #54 (public reopen of archive #73, 2026-07-31): int specs pinning seeded
+// municipality slugs (`getMunicipality('cairu')` et al.) and mutating them
+// deadlocked `municipality_rels` under the parallel suite (Postgres 40P01), and
+// e2e specs deep-linking `?municipio=cairu` raced the same row from two workers.
+// The allocator (`getMunicipality()` / `claimMunicipality()`, Postgres sequence)
 // hands out a unique row per claim; pinning is what breaks the contract.
-//
-// Rule 3 is the literal-regex sibling of the anchored-template guard (P3-C):
-// `new RegExp(\`…\`)` was hardened there, but `/Cairu/i` literals dodged it —
-// and catalog names are not prefix-unique (Conde/Condeúba, Barra ×4, Laje ×3).
+// Pass 5: `getMunicipality()` no longer accepts a slug argument (type-level).
 
 const repoRoot = process.cwd()
 const repoPath = (absolute: string) => relative(repoRoot, absolute)
@@ -38,7 +35,7 @@ const MUTATION_PATTERN = new RegExp(
   ].join('|'),
 )
 
-describe('municipality allocator discipline (miss #73)', () => {
+describe('municipality allocator discipline (miss #54)', () => {
   it('never pins a fixed-slug municipality in a spec that mutates municipalities', () => {
     const offenders: string[] = []
 
