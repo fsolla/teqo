@@ -54,6 +54,12 @@ const searchWithPriorityPayload: HomeSearchSuccessResponse = {
 
 const matchMediaMock = vi.fn()
 
+let innerWidthSpy: ReturnType<typeof vi.spyOn> | undefined
+
+const stubMobileViewport = () => {
+  innerWidthSpy = vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(375)
+}
+
 beforeEach(() => {
   matchMediaMock.mockImplementation((query: string) => ({
     matches: false,
@@ -69,6 +75,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  innerWidthSpy?.mockRestore()
+  innerWidthSpy = undefined
   vi.mocked(postCampaignJson).mockReset()
   vi.unstubAllGlobals()
 })
@@ -358,6 +366,7 @@ describe('CampaignQuickActionsOverlay (B126)', () => {
   })
 
   it('shows swipe handle and no dialog close on mobile (B146)', () => {
+    stubMobileViewport()
     matchMediaMock.mockImplementation((query: string) => ({
       matches: query.includes('max-width'),
       media: query,
@@ -393,6 +402,7 @@ describe('CampaignQuickActionsOverlay (B126)', () => {
   })
 
   it('uses mobile drawer with actions above search', () => {
+    stubMobileViewport()
     matchMediaMock.mockImplementation((query: string) => ({
       matches: query.includes('max-width'),
       media: query,
