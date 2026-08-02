@@ -38,6 +38,10 @@ export const toAggregateSqlConditions = (
     conditions.push(sql`"supporter"."vote_intention" = ${state.voteIntention}`)
   }
 
+  if (state.source) {
+    conditions.push(sql`"supporter"."source" = ${state.source}`)
+  }
+
   if (state.municipality) {
     conditions.push(sql`"supporter"."municipality_id" = ${state.municipality}`)
   }

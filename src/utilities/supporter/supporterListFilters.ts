@@ -2,7 +2,7 @@ import type { Where } from 'payload'
 
 import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
 import { normalizeBrazilianPhone } from '@/lib/phone'
-import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
+import type { SupporterSource, SupporterVoteIntention } from '@/lib/schemas/supporter'
 
 /**
  * The filters the where-builder actually reads — a structural subset of
@@ -12,6 +12,7 @@ import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 export type SupporterListFilterInput = {
   q?: string
   voteIntention?: SupporterVoteIntention
+  source?: SupporterSource
   city?: string
   municipality?: number
 }
@@ -59,6 +60,9 @@ export const toPayloadWhere = (state: SupporterListFilterInput): Where => {
 
   if (state.voteIntention) {
     filters.push({ voteIntention: { equals: state.voteIntention } })
+  }
+  if (state.source) {
+    filters.push({ source: { equals: state.source } })
   }
   if (state.city) {
     filters.push({ 'contact.city': { equals: state.city } })

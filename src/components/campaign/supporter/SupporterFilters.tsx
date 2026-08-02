@@ -91,7 +91,7 @@ export const SupporterFilters = ({
       <CampaignListOmnibox
         id="supporter-omnibox"
         label="Filtrar apoiadores"
-        placeholder="Digite para filtrar (nome, intenção, cidade, município…)"
+        placeholder="Digite para filtrar (nome, intenção, fonte, cidade, município…)"
         chips={chips}
         suggestions={suggestions}
         query={query}

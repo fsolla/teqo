@@ -105,6 +105,30 @@ describe('list omnibox adapters (B128)', () => {
     expect(chips[0]?.id).toBe('voteIntention:indeciso')
   })
 
+  it('supporter applies source exclusively and builds chips', () => {
+    const base = parseSupporterListParams({})
+    const applied = applySupporterOmniboxSuggestion({
+      state: base,
+      suggestionId: 'source:import_csv',
+    })
+    expect(applied.kind).toBe('url')
+    if (applied.kind === 'url') expect(applied.state.source).toBe('import_csv')
+
+    const toggled = applySupporterOmniboxSuggestion({
+      state: parseSupporterListParams({ source: 'import_csv' }),
+      suggestionId: 'source:import_csv',
+    })
+    expect(toggled.kind).toBe('url')
+    if (toggled.kind === 'url') expect(toggled.state.source).toBeUndefined()
+
+    const chips = buildSupporterOmniboxChips({
+      state: parseSupporterListParams({ source: 'lideranca' }),
+      municipalityLabelsById: new Map(),
+    })
+    expect(chips[0]?.id).toBe('source:lideranca')
+    expect(chips[0]?.label).toContain('Liderança')
+  })
+
   it('activity clears filters but keeps tab', () => {
     const state = parseActivityListParams({ tab: 'todos', kind: 'comicio', status: 'planejado' })
     const chips = buildActivityOmniboxChips({ state, municipalityLabelsById: new Map() })

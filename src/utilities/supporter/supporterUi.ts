@@ -2,8 +2,10 @@ import type { Where } from 'payload'
 
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import {
+  isSupporterSource,
   isSupporterVoteIntention,
   resolveBahiaMunicipality,
+  type SupporterSource,
   type SupporterVoteIntention,
 } from '@/lib/schemas/supporter'
 import type { CampaignUser, Supporter } from '@/payload-types'
@@ -38,13 +40,21 @@ export type SupporterListState = {
   page: number
   q?: string
   voteIntention?: SupporterVoteIntention
+  source?: SupporterSource
   city?: string
   municipality?: number
 }
 
 type RawSearchParams = CampaignListRawSearchParams
 
-const supporterListParamNames = ['q', 'voteIntention', 'city', 'municipality', 'page'] as const
+const supporterListParamNames = [
+  'q',
+  'voteIntention',
+  'source',
+  'city',
+  'municipality',
+  'page',
+] as const
 
 const supporterListParamNameSet = new Set<string>(supporterListParamNames)
 
@@ -54,12 +64,15 @@ export const parseSupporterListParams = (params: RawSearchParams): SupporterList
   const city = resolveBahiaMunicipality(firstValue(params.city)) ?? undefined
   const rawVoteIntention = firstValue(params.voteIntention)
   const voteIntention = isSupporterVoteIntention(rawVoteIntention) ? rawVoteIntention : undefined
+  const rawSource = firstValue(params.source)
+  const source = isSupporterSource(rawSource) ? rawSource : undefined
   const municipality = strictDecimalInteger(firstValue(params.municipality))
 
   return {
     page: rawPage ?? 1,
     ...(q ? { q } : {}),
     ...(voteIntention ? { voteIntention } : {}),
+    ...(source ? { source } : {}),
     ...(city ? { city } : {}),
     ...(municipality ? { municipality } : {}),
   }
@@ -75,6 +88,7 @@ export const buildSupporterListSearchParams = (
     page: String(page),
     q: state.q,
     voteIntention: state.voteIntention,
+    source: state.source,
     city: state.city,
     municipality: state.municipality === undefined ? undefined : String(state.municipality),
   })
@@ -82,6 +96,7 @@ export const buildSupporterListSearchParams = (
 
   if (canonicalState.q) params.set('q', canonicalState.q)
   if (canonicalState.voteIntention) params.set('voteIntention', canonicalState.voteIntention)
+  if (canonicalState.source) params.set('source', canonicalState.source)
   if (canonicalState.city) params.set('city', canonicalState.city)
   if (canonicalState.municipality) params.set('municipality', String(canonicalState.municipality))
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
