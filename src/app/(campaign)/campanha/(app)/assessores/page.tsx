@@ -11,6 +11,8 @@ import {
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import { hasAdvisorListActiveFilters } from '@/utilities/advisor/advisorListFilters'
 import {
   advisorListHrefForPage,
   loadAdvisorListPageData,
@@ -46,16 +48,23 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
     loadMunicipalityPortfolioIndex(),
   ])
 
+  const municipalityFilterOptions = municipalityIndex.map((entry) => ({
+    value: String(entry.id),
+    label: getMunicipalityCatalogEntry(entry.slug)?.name ?? entry.slug,
+  }))
+
+  const hasActiveFilters = hasAdvisorListActiveFilters(state)
+
   return (
     <CampaignPageShell>
       <CampaignListPendingBoundary>
-        <AdvisorFilters state={state} />
+        <AdvisorFilters state={state} municipalityFilterOptions={municipalityFilterOptions} />
 
         <CampaignListResults>
           <AdvisorsTable
             rows={rows}
             municipalityIndex={municipalityIndex}
-            hasQuery={Boolean(state.q)}
+            hasQuery={hasActiveFilters}
             updateProfileAction={updateAdvisorProfileFormAction}
             municipalitiesAction={setAdvisorMunicipalitiesFormAction}
             createAction={createAdvisorFormAction}

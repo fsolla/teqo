@@ -40,6 +40,36 @@ export type AdvisorDetailViewModel = AdvisorAccountViewModel & {
 
 const advisorPageSize = 25
 
+/** Union of advisors linked on any of the given municipalities (OR semantics). */
+const advisorIdsForMunicipalityFilter = async (
+  payload: Payload,
+  municipalityIds: number[],
+): Promise<number[]> => {
+  if (municipalityIds.length === 0) return []
+
+  // Intentional admin bypass: same rationale as `municipalityIdsByAdvisorIds` — the
+  // unrestricted route gate already asserted staff; this read only resolves filter ids.
+  const municipalities = await payload.find({
+    collection: 'municipality',
+    where: { id: { in: municipalityIds } },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { advisors: true },
+    overrideAccess: true,
+  })
+
+  const advisorIds = new Set<number>()
+  for (const municipality of municipalities.docs) {
+    for (const advisor of municipality.advisors ?? []) {
+      const id = relationshipId(advisor)
+      if (id !== null) advisorIds.add(id)
+    }
+  }
+
+  return [...advisorIds]
+}
+
 /** Fan a município out to each of the advisors the caller asked about. */
 const collectByAdvisor = <T>(
   advisors: readonly unknown[] | null | undefined,
@@ -133,11 +163,20 @@ export const loadAdvisorListPageData = async (
   payload: Payload,
   state: AdvisorListState,
 ): Promise<{ rows: AdvisorRowViewModel[]; totalDocs: number; totalPages: number }> => {
+  const municipalityAdvisorIds = state.municipalities?.length
+    ? await advisorIdsForMunicipalityFilter(payload, state.municipalities)
+    : undefined
+
+  if (municipalityAdvisorIds && municipalityAdvisorIds.length === 0) {
+    return { rows: [], totalDocs: 0, totalPages: 0 }
+  }
+
   const result = await payload.find({
     collection: 'campaignUser',
     where: {
       and: [
         { role: { equals: 'advisor' } },
+        ...(municipalityAdvisorIds ? [{ id: { in: municipalityAdvisorIds } }] : []),
         ...(state.q
           ? [
               {

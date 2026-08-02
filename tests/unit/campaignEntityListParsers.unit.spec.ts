@@ -31,6 +31,14 @@ describe.each(qAndPageParsers)('%s list parser (q + page)', (_name, parse) => {
     expect(parse({ q: '   ' }).q).toBeUndefined()
     expect(parse({ q: ['primeiro', 'segundo'] }).q).toBe('primeiro')
   })
+
+  it('parses repeatable municipality ids and drops invalid tokens', () => {
+    expect(parseAdvisorListParams({ municipality: ['12', 'bad', '0'] }).municipalities).toEqual([
+      12,
+    ])
+    expect(parseAdvisorListParams({ municipality: ['3', '7'] }).municipalities).toEqual([3, 7])
+    expect(parseAdvisorListParams({}).municipalities).toBeUndefined()
+  })
 })
 
 describe('parseOrganizationListParams', () => {
@@ -71,6 +79,15 @@ describe('advisorListHrefForPage', () => {
     expect(advisorListHrefForPage({ page: 1 }, 1)).toBe('/campanha/assessores')
     expect(advisorListHrefForPage({ page: 1, q: 'edi' }, 3)).toBe(
       '/campanha/assessores?q=edi&page=3',
+    )
+  })
+
+  it('serializes repeatable municipality filters', () => {
+    expect(advisorListHrefForPage({ page: 1, municipalities: [4, 9] }, 1)).toBe(
+      '/campanha/assessores?municipality=4&municipality=9',
+    )
+    expect(advisorListHrefForPage({ page: 1, q: 'ana', municipalities: [2] }, 2)).toBe(
+      '/campanha/assessores?q=ana&municipality=2&page=2',
     )
   })
 })

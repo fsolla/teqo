@@ -1,6 +1,6 @@
 /**
  * Degenerate omnibox for lists that only expose free-text search (B128:
- * organizações, assessores). Pure / client-safe.
+ * organizações). Pure / client-safe.
  */
 import {
   filterOmniboxSuggestionSeeds,

@@ -543,4 +543,34 @@ describe('loadAdvisorListPageData', () => {
     // Ids only: the list's chips resolve their labels from the static catalog.
     expect(result.rows[0]!.municipalityIDs).toEqual([municipality.id])
   })
+
+  it('narrows by municipality portfolio with OR semantics', async () => {
+    const fixtures = campaignFixtures()
+    const advisorA = await fixtures.createCampaignUser('advisor')
+    const advisorB = await fixtures.createCampaignUser('advisor')
+    const municipalityA = await fixtures.getMunicipality()
+    const municipalityB = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(municipalityA.id, [advisorA.id])
+    await fixtures.assignMunicipalityAdvisors(municipalityB.id, [advisorB.id])
+
+    const onlyA = await loadAdvisorListPageData(payload, {
+      page: 1,
+      municipalities: [municipalityA.id],
+    })
+    expect(onlyA.totalDocs).toBe(1)
+    expect(onlyA.rows[0]?.id).toBe(advisorA.id)
+
+    const either = await loadAdvisorListPageData(payload, {
+      page: 1,
+      municipalities: [municipalityA.id, municipalityB.id],
+    })
+    expect(either.totalDocs).toBe(2)
+    expect(either.rows.map((row) => row.id).sort()).toEqual([advisorA.id, advisorB.id].sort())
+
+    const none = await loadAdvisorListPageData(payload, {
+      page: 1,
+      municipalities: [999_999],
+    })
+    expect(none.totalDocs).toBe(0)
+  })
 })
