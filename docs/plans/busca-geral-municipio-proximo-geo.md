@@ -1,6 +1,6 @@
 # Busca geral — município mais próximo (geo) na 1ª sugestão
 
-Status: ready
+Status: in-prod
 Atualizado em: 2026-08-01
 Issue: #204
 Priority: P1

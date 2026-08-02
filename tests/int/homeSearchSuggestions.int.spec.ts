@@ -44,6 +44,7 @@ describe('loadHomeSearchSuggestions (B68)', () => {
 
     const result = await loadHomeSearchSuggestions(payload, advisor)
     expect(result.municipalities.every((hit) => hit.slug === administered.slug)).toBe(true)
+    expect(result.scopeMunicipalities?.map((row) => row.slug)).toEqual([administered.slug])
   })
 
   it('rejects leaders from home search suggestions', async () => {
