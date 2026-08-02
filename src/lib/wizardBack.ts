@@ -82,13 +82,7 @@ export const wizardStepPreviousHref = (input: WizardStepPreviousHrefInput): stri
     case 'leadership-grid':
       return wizardActionHref(actionSlug, undefined, { returnPath })
     case 'signal-body':
-      return wizardSignalHref(
-        actionSlug,
-        municipalitySlug,
-        undefined,
-        entryAction,
-        returnPath,
-      )
+      return wizardSignalHref(actionSlug, municipalitySlug, undefined, entryAction, returnPath)
     case 'trend-note':
       return wizardTrendHref(
         actionSlug,

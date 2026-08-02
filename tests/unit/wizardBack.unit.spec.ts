@@ -80,9 +80,7 @@ describe('wizardBack', () => {
       entryAction: 'update-votes',
       returnPath: '/campanha/municipios/cairu',
     })
-    expect(previous).toBe(
-      `/campanha/acoes/${trendSlug}?from=%2Fcampanha%2Fmunicipios%2Fcairu`,
-    )
+    expect(previous).toBe(`/campanha/acoes/${trendSlug}?from=%2Fcampanha%2Fmunicipios%2Fcairu`)
     expect(previous).not.toContain('municipio=')
   })
 

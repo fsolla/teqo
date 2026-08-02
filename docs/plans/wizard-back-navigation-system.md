@@ -56,17 +56,17 @@ Dados: N/A — navegação.
 
 ### Investigação (Fase 1 — 2026-08-01)
 
-| Superfície | Header Voltar (`previousHref`) | Android back (history) | Problema | Fix B114 |
-| --- | --- | --- | --- | --- |
-| Entry busca município | (sem Voltar; X = dismiss/`returnPath`) | URL anterior à entrada | Android ≠ X se veio de deep link | pushState + pop → dismissHref |
-| Passo tipo sinal | busca **sem** município ✓ | stack real (pode divergir se replace/chain) | header Link **push** poluía stack | contrato + `history.back` → replace canônico |
-| Body sinal | tipo (c/ município) ✓ | idem | idem | mapa `wizardStepPreviousHref` |
-| Tendência choice | **mesmo URL** (c/ município) ✗ | stack | Voltar no-op / refresh | previous → busca sem município |
-| Tendência note | choice ✓ | idem | push vs back | contrato |
-| Votos | busca sem município ✓ | idem | push vs back | contrato |
-| Liderança **grid** | busca sem município ✓ | idem | push vs back | contrato |
-| Liderança **form** | mesmo href do grid ✗ | página/ação anterior | form não é URL — back abandona grid | `pushState` layer → pop → grid |
-| Encadeados + `returnPath` | misturam chain | stack real | “ações aleatórias” | alvo canônico por passo + intercept |
+| Superfície                | Header Voltar (`previousHref`)         | Android back (history)                      | Problema                            | Fix B114                                     |
+| ------------------------- | -------------------------------------- | ------------------------------------------- | ----------------------------------- | -------------------------------------------- |
+| Entry busca município     | (sem Voltar; X = dismiss/`returnPath`) | URL anterior à entrada                      | Android ≠ X se veio de deep link    | pushState + pop → dismissHref                |
+| Passo tipo sinal          | busca **sem** município ✓              | stack real (pode divergir se replace/chain) | header Link **push** poluía stack   | contrato + `history.back` → replace canônico |
+| Body sinal                | tipo (c/ município) ✓                  | idem                                        | idem                                | mapa `wizardStepPreviousHref`                |
+| Tendência choice          | **mesmo URL** (c/ município) ✗         | stack                                       | Voltar no-op / refresh              | previous → busca sem município               |
+| Tendência note            | choice ✓                               | idem                                        | push vs back                        | contrato                                     |
+| Votos                     | busca sem município ✓                  | idem                                        | push vs back                        | contrato                                     |
+| Liderança **grid**        | busca sem município ✓                  | idem                                        | push vs back                        | contrato                                     |
+| Liderança **form**        | mesmo href do grid ✗                   | página/ação anterior                        | form não é URL — back abandona grid | `pushState` layer → pop → grid               |
+| Encadeados + `returnPath` | misturam chain                         | stack real                                  | “ações aleatórias”                  | alvo canônico por passo + intercept          |
 
 Chrome pré-B114: `CampaignMobileTopBar` só fazia `CampaignWizardNavLink` → `previousHref`. **Não havia** interceptor `popstate` no wizard (só no Início search, B106).
 
