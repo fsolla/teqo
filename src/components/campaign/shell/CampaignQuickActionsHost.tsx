@@ -92,7 +92,7 @@ export const CampaignContentScroll = ({
         data-home-compact-bottom-padding={compactHomeBottomPadding || undefined}
         className={cn(
           'min-h-0 flex-1 overflow-y-auto overscroll-contain md:p-6 print:h-auto print:overflow-visible print:p-0',
-          compactHomeBottomPadding ? 'px-4 pt-4 pb-2' : 'p-4',
+          compactHomeBottomPadding ? 'pt-4 pb-2' : 'p-4',
         )}
       >
         {children}
