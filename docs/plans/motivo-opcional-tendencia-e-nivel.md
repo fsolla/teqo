@@ -57,7 +57,7 @@ Nível (lista/detalhe):
 
 - **Vou apresentar dados?** Não (classificações já existentes; este item muda portão de escrita e o shape do rito de nível).
 - **Decisões desbloqueadas:** staff registra tendência/nível sem articular o porquê; se quiser contexto (inclusive “quando reavaliar”), usa Motivo.
-- **Forma:** *adiada ao plano de implementação*.
+- **Forma:** _adiada ao plano de implementação_.
 - **Persistência:** “O que faria voltar atrás” / sinais de reversão **saem do modelo persistido** — apagar do banco (campo/dado nas decisões de nível já gravadas), não só esconder na UI. Motivo (`levelNote` / texto do movimento) permanece como único texto livre opcional.
 
 ## Direção no codebase (hipótese)
