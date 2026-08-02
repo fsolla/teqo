@@ -16,10 +16,11 @@ const campaignFixtures = installCampaignFixtures({
   },
 })
 
-/** Counts pool statements matching `fragment` while `run` executes. */
+/** Counts pool statements matching `fragment` (or `match`) while `run` executes. */
 const countStatements = async <T>(
   fragment: string,
   run: () => Promise<T>,
+  match?: (text: string, params: unknown) => boolean,
 ): Promise<{ result: T; count: number }> => {
   const pool = (payload.db as unknown as { pool: { query: (...args: unknown[]) => unknown } }).pool
   const originalQuery = pool.query.bind(pool)
@@ -33,7 +34,12 @@ const countStatements = async <T>(
         : typeof (first as { text?: unknown })?.text === 'string'
           ? ((first as { text: string }).text as string)
           : ''
-    if (text.includes(fragment)) count += 1
+    const params =
+      typeof first === 'string'
+        ? args[1]
+        : ((first as { values?: unknown })?.values ?? args[1])
+    const hits = match ? match(text, params) : text.includes(fragment)
+    if (hits) count += 1
     return originalQuery(...args)
   }
 
@@ -67,29 +73,41 @@ describe('access-control per-request memo', () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
+    const leadershipIds: number[] = []
 
     for (let index = 0; index < 3; index += 1) {
       const contact = await fixtures.createContact()
-      await fixtures.createLeadership({
+      const leadership = await fixtures.createLeadership({
         contact: contact.id,
         municipalities: [municipality.id],
         supportStatus: 'engajado',
       })
+      leadershipIds.push(leadership.id)
     }
 
-    const { result, count } = await countStatements('from "campaign_user"', () =>
-      payload.find({
-        collection: 'leadership',
-        // depth 1 is what the list loaders use; it is also what multiplies the
-        // field-level access checks across every populated relation.
-        depth: 1,
-        limit: 25,
-        user: coordinator,
-        overrideAccess: false,
-      }),
+    // Count only SELECT … WHERE id = <actor>. Other `campaign_user` rows can
+    // appear at depth 1 when leftover docs in the same municipality have
+    // `user` set — that is populate, not a broken memo.
+    const { result, count } = await countStatements(
+      `from "campaign_user"`,
+      () =>
+        payload.find({
+          collection: 'leadership',
+          // depth 1 is what the list loaders use; it is also what multiplies the
+          // field-level access checks across every populated relation.
+          depth: 1,
+          limit: 25,
+          user: coordinator,
+          overrideAccess: false,
+          where: { id: { in: leadershipIds } },
+        }),
+      (text, params) =>
+        text.includes('from "campaign_user"') &&
+        Array.isArray(params) &&
+        params.includes(coordinator.id),
     )
 
-    expect(result.docs.length).toBeGreaterThan(0)
+    expect(result.docs).toHaveLength(3)
     // One read for the whole operation. Before the fix this was in the hundreds
     // and grew with rows × populated fields.
     expect(count).toBe(1)
