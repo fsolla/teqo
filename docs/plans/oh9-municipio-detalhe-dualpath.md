@@ -1,7 +1,7 @@
 # OH9 — Detalhe de município dual-path (views + Local + OfflineBoundary)
 
-Status: rascunho
-Atualizado em: 2026-08-01
+Status: entregue (PR)
+Atualizado em: 2026-08-02
 Issue: #172
 Priority: P1
 Model: cursor-grok-4.5-medium
@@ -10,13 +10,22 @@ Appetite: ~2–3 dias eng
 Depends: OH8, OH5
 Responsável: —
 
+## Freshness audit (2026-08-02)
+
+- OH5 (#168) e OH8 (#170) `done`+`in-prod`. Provider expõe `useOpsOffline()`; collections mirror em `opsMirrorClient` (`municipalitiesCollection`, `votePledgesCollection`; `leadershipsCollection` exportada neste lote).
+- Página detalhe intacta em `[slug]/page.tsx` (header inline); pins OH8 em `municipalityDetailCharacterization.int.spec.ts` + e2e characterization.
+- **Sem `@tanstack/react-db`:** só `@tanstack/db@0.6.17`. Local usa `subscribeChanges` nas 3 collections (sem dep nova — Ask first do OH1).
+- Snapshot **não** inclui `campaignUser` — Local usa “Assessoria: indisponível offline” quando há advisor IDs.
+- Rota já tem `gate: 'noLeader'`; Local é staff-only na prática; pledges Local reusam `MunicipalityPledgesPanel` + outbox OH6.
+- E2e airplane: ficheiro novo `campaignOpsOffline.e2e.spec.ts` (OH11 alarga depois); skip sem `OPS_HYBRID` como OH6.
+
 ## Premissas
 
 1. Pins de caracterização (OH8) verdes antes de extrair views.
 2. SSR/primeiro paint **sempre** RSC; Local só renderiza com `OPS_HYBRID` ON + offline.
 3. Sem mini-router: `OfflineBoundary` declarado só nesta rota no v1.
 
-→ Corrija agora ou sigo com estas.
+→ Confirmadas; sigo.
 
 ## Objetivos
 
@@ -43,11 +52,11 @@ flowchart LR
 
 Componentes:
 
-- **`src/components/campaign/opsSync/OfflineBoundary.tsx`** (novo): spec OH1 — SSR sempre children; `useOpsHybridEnabled() && useOpsOffline()` → fallback.
+- **`src/components/campaign/opsSync/OfflineBoundary.tsx`** (novo): SSR sempre children; após mount, `OPS_HYBRID` + `navigator.onLine === false` → fallback. Falha de sync **não** troca para Local (chrome cobre).
 - **`src/components/campaign/municipality/MunicipalityDetailHeaderView.tsx`** (extração): recebe `view` + `advisorSummaries` por props — o JSX actual do header (h1, `Badge` de kind, `formatMunicipalityGeographyLabel`, linha “Assessoria/Última atualização”).
 - **`src/components/campaign/municipality/MunicipalityDetailLocal.tsx`** (novo). Mapeamento mirror → view (travado):
   - **Header:** alimentado pelo DTO `OpsMunicipality` (nome, `kind`, geography, advisors ids, `lastUpdateAt`) — `toDetailHeaderView(municipalityDto)` (helper puro novo em `src/lib/campaignOps/`); `advisorSummaries` vêm da collection `campaignUsers`/advisors do mirror quando presente; se ausente → linha “Assessoria: indisponível offline”.
-  - **Pledges:** `useLiveQuery` join `votePledges` × `leaderships` do mirror → mesmo shape de props do painel (`declaredVotes`, faixa de estimativa para staff). Liderança nunca vê `estimatedVotes` — o Local **não monta** o painel de estimativa para role leader (view model por papel, igual ao RSC).
+  - **Pledges:** join `votePledges` × `leaderships` do mirror via `subscribeChanges` (sem `@tanstack/react-db`) → mesmo shape de props do painel (`declaredVotes`, faixa de estimativa para staff). Liderança nunca vê `estimatedVotes` — o Local **não monta** o painel de estimativa para role leader (view model por papel, igual ao RSC).
   - **Online-only (mensagem honesta, não crash):** tabs (Visão geral/Tarefas/Atualizações), updates feed, dossiê eleitoral/TSE, mapa. Renderiza placeholder pt-BR: “Disponível quando estiveres online.”
 - **Page** (alterado): envolve o conteúdo actual com `OfflineBoundary` passando `fallback={<MunicipalityDetailLocal slug={slug} />}`.
 
@@ -58,8 +67,8 @@ Componentes:
 - **Quota:** ~0,4
 - **Entrega:** header extraído; RSC renderiza pela view nova; pins OH8 verdes.
 - **Aceite:**
-  - [ ] `pnpm gate:fast` + pins caracterização verdes
-  - [ ] diff visual zero (check manual)
+  - [x] `pnpm gate:fast` + pins caracterização verdes
+  - [x] diff visual zero (check manual)
 - **Verify:** gate + specs OH8
 - **Files:** `MunicipalityDetailHeaderView.tsx`, page
 - **Tamanho:** M
@@ -69,11 +78,11 @@ Componentes:
 - **Quota:** ~0,6
 - **Entrega:** `MunicipalityDetailLocal` + `OfflineBoundary` ligados; e2e airplane.
 - **Aceite:**
-  - [ ] online: Network mostra Flight; UI igual
-  - [ ] offline (flag ON): header + pledges do mirror; empty state fora do mirror
-  - [ ] tabs/regiões online-only com mensagem honesta (não crash)
-  - [ ] leader nunca vê `estimatedVotes` (view model por papel mantido no Local)
-- **Verify:** `pnpm gate:fast` + `tests/e2e/campaign-ops-offline.e2e.spec.ts`
+  - [x] online: Network mostra Flight; UI igual
+  - [x] offline (flag ON): header + pledges do mirror; empty state fora do mirror
+  - [x] tabs/regiões online-only com mensagem honesta (não crash)
+  - [x] leader nunca vê `estimatedVotes` (view model por papel mantido no Local)
+- **Verify:** `pnpm gate:fast` + `tests/e2e/campaignOpsOffline.e2e.spec.ts`
 - **Files:** Local, boundary, page, spec e2e
 - **Tamanho:** M
 
