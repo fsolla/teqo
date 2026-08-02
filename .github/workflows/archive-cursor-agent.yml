@@ -1,0 +1,50 @@
+# One-shot operator helper — do not merge; run with --ref then delete branch.
+name: Archive Cursor agent (ops)
+on:
+  workflow_dispatch:
+    inputs:
+      agent_id:
+        description: Cursor agent id (bc-…)
+        required: true
+        type: string
+      run_id:
+        description: Cursor run id (run-…) optional cancel first
+        required: false
+        type: string
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - name: Cancel run (if any) + archive agent
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          AGENT_ID: ${{ inputs.agent_id }}
+          RUN_ID: ${{ inputs.run_id }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {
+            archiveCursorAgent,
+            cancelCursorRun,
+          } from './scripts/lib/agent-pool-cursor.mjs'
+
+          const agentId = process.env.AGENT_ID
+          const runId = process.env.RUN_ID?.trim()
+          if (!process.env.CURSOR_API_KEY) {
+            console.error('CURSOR_API_KEY missing')
+            process.exit(1)
+          }
+          if (runId) {
+            try {
+              await cancelCursorRun(agentId, runId)
+              console.log('cancelled', runId)
+            } catch (error) {
+              console.warn('cancel failed (continuing):', error.message)
+            }
+          }
+          await archiveCursorAgent(agentId)
+          console.log('archived', agentId)
+          NODE
