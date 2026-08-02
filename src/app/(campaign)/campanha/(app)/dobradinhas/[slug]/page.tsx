@@ -8,8 +8,8 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import { StateDeputyForm } from '@/components/campaign/stateDeputy/StateDeputyForm'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadStateDeputyDetail } from '@/utilities/stateDeputyData'
 import { updateStateDeputyFormAction } from './formActions'
 

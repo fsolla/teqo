@@ -16,8 +16,8 @@ import {
   useSetCampaignHomeSearchChrome,
   type CampaignHomeSearchChromeState,
 } from '@/components/campaign/shell/CampaignHomeSearchChromeContext'
-import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
+import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
 import {
   CampaignWizardChromeProvider,
   useSetCampaignWizardChrome,

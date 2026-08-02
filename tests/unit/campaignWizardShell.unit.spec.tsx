@@ -10,8 +10,8 @@ vi.mock('next/navigation', () => ({
 }))
 
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
-import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
+import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { SidebarProvider } from '@/components/ui/Sidebar'
 import { WIZARD_MUNICIPALITY_STEP_TITLE, wizardFlowChromeAriaLabel } from '@/lib/campaignWizardCopy'

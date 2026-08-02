@@ -2,11 +2,11 @@
 
 import { usePathname } from 'next/navigation'
 
-import { CampaignPageChromeText } from '@/components/campaign/shell/CampaignPageChromeText'
 import {
   useCampaignPageChromeOverride,
   useCampaignPageChromeRole,
 } from '@/components/campaign/shell/CampaignPageChromeContext'
+import { CampaignPageChromeText } from '@/components/campaign/shell/CampaignPageChromeText'
 import { resolveCampaignPageChrome } from '@/lib/campaignPageChrome'
 
 export const useEffectiveCampaignPageChrome = () => {

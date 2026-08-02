@@ -8,8 +8,8 @@ import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitT
 import { MunicipalityTabNav } from '@/components/campaign/municipality/MunicipalityTabNav'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
-import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   resolveMunicipalityDetailTab,
   type MunicipalityDetailSearchParams,

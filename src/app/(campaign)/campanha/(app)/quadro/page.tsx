@@ -9,10 +9,10 @@ import {
   SuggestionSilenceStrip,
   SuggestionsPanel,
 } from '@/components/campaign/suggestion/SuggestionsPanel'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignDashboardData } from '@/utilities/campaignDashboardData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'
 import { loadMunicipalityMapBundle } from '@/utilities/municipality/municipalityMapData'
 import { loadMunicipalitySuggestions } from '@/utilities/municipality/municipalityTriggers'

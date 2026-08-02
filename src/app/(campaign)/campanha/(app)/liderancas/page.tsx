@@ -41,6 +41,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/Empty'
 import { resolveVisibleColumns } from '@/lib/campaignColumnVisibility'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import {
   resolvedPortfolioEntriesById,
@@ -52,7 +53,6 @@ import { cn } from '@/lib/utils'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
 import { formatRelativeAge } from '@/utilities/formatRelativeAge'
 import {

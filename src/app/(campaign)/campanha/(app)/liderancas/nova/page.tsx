@@ -5,8 +5,8 @@ import { getPayload } from 'payload'
 
 import { LeadershipForm } from '@/components/campaign/leadership/LeadershipForm'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadMunicipalityOptions,

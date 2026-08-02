@@ -41,7 +41,8 @@ export const campaignPageChromeCatalog = {
   },
   liderancas: {
     title: 'Lideranças',
-    subtitle: 'Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações.',
+    subtitle:
+      'Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações.',
   },
   liderancasNova: {
     title: 'Nova liderança',
@@ -131,8 +132,7 @@ const resolveCatalogEntry = (
   role: CampaignRole,
 ): CampaignPageChrome | null => {
   if (!entry) return null
-  const subtitle =
-    typeof entry.subtitle === 'function' ? entry.subtitle(role) : entry.subtitle
+  const subtitle = typeof entry.subtitle === 'function' ? entry.subtitle(role) : entry.subtitle
   return { title: entry.title, subtitle }
 }
 

@@ -6,8 +6,8 @@ import { getPayload } from 'payload'
 
 import { MunicipalityAdvisorsForm } from '@/components/campaign/municipality/MunicipalityAdvisorsForm'
 import { MunicipalityStrategyForm } from '@/components/campaign/municipality/MunicipalityStrategyForm'
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -35,12 +35,18 @@ const municipalityEditSubtitle =
 export async function generateMetadata({ params }: MunicipalityEditPageProps) {
   const { slug } = await params
   const payload = await getPayload({ config })
-  const user = await requireCampaignPageActor({ gate: 'staff', redirectTo: `/campanha/municipios/${slug}` })
+  const user = await requireCampaignPageActor({
+    gate: 'staff',
+    redirectTo: `/campanha/municipios/${slug}`,
+  })
 
   try {
     const context = await resolveAccessibleMunicipalityContext(payload, user, slug)
     const view = await getMunicipalityDetailViewModel(payload, context, user)
-    return campaignPageMetadata({ title: `Editar ${view.name}`, subtitle: municipalityEditSubtitle })
+    return campaignPageMetadata({
+      title: `Editar ${view.name}`,
+      subtitle: municipalityEditSubtitle,
+    })
   } catch {
     return campaignPageMetadata({ title: 'Editar município', subtitle: municipalityEditSubtitle })
   }

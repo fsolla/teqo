@@ -2,9 +2,9 @@ import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { StateDeputyForm } from '@/components/campaign/stateDeputy/StateDeputyForm'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { createStateDeputyFormAction } from './formActions'
 

@@ -6,6 +6,7 @@ import { getPayload } from 'payload'
 import { CampaignPasskeysCard } from '@/components/campaign/auth/CampaignPasskeysCard'
 import { CampaignProfileSettings } from '@/components/campaign/auth/CampaignProfileSettings'
 import { CampaignPushNotificationsCard } from '@/components/campaign/auth/CampaignPushNotificationsCard'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
 import { getCampaignUserWithAvatar } from '@/utilities/campaignAuth'
 import { getCampaignPushConsent } from '@/utilities/campaignConsent'
@@ -13,7 +14,6 @@ import { campaignUserShellView } from '@/utilities/campaignUserProfile'
 import { getCampaignVapidPublicKey } from '@/utilities/notification/sendCampaignPush'
 import { loadCampaignPasskeys } from '@/utilities/webauthn/campaignWebAuthnCeremony'
 import { resolveCampaignWebAuthnRelyingParty } from '@/utilities/webauthn/campaignWebAuthnConfig'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 
 export const metadata = campaignPageMetadataFromCatalog('perfil')
 

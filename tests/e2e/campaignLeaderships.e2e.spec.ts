@@ -1,4 +1,9 @@
-import { campaignPageChrome, expect, expectPostResponse, test } from './fixtures/campaignE2EFixtures.js'
+import {
+  campaignPageChrome,
+  expect,
+  expectPostResponse,
+  test,
+} from './fixtures/campaignE2EFixtures.js'
 
 /**
  * `/campanha/liderancas` journeys: the B32 support-status quick edit (Popover +

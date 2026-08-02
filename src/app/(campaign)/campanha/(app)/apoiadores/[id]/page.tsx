@@ -12,8 +12,8 @@ import { VoteIntentionControl } from '@/components/campaign/supporter/VoteIntent
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadSupporterDetailConsentData,
   loadSupporterDetailPageData,

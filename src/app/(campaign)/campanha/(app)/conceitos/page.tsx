@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   CAMPAIGN_CONCEPT_CATEGORIES,
   campaignConceptsByCategory,
   type CampaignIntelligenceConcept,
 } from '@/lib/campaignIntelligenceConcepts'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 
 export const metadata: Metadata = campaignPageMetadataFromCatalog('conceitos')

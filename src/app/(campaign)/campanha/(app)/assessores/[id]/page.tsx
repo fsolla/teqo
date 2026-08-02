@@ -9,12 +9,12 @@ import { AdvisorPasswordResetButton } from '@/components/campaign/advisor/Adviso
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { formatBrazilianPhoneInput } from '@/lib/phone'
 import { isPlanilhaPlaceholderEmail } from '@/lib/schemas/advisor'
 import { loadAdvisorDetail } from '@/utilities/advisorData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { sendAdvisorPasswordResetFormAction, updateAdvisorProfileFormAction } from '../formActions'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 
 export const metadata = campaignPageMetadataFromCatalog('assessores')
 

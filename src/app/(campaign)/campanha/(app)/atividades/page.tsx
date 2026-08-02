@@ -14,6 +14,7 @@ import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignLis
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import type { Activity } from '@/payload-types'
 import { loadActivityListPageData } from '@/utilities/activityPageData'
 import {
@@ -24,7 +25,6 @@ import {
 import { toActivityListViewModel } from '@/utilities/activityViewModels'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { TOUR_COMPOSER_PATH } from '@/utilities/visit/visitPlannerUrl'
 

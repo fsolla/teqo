@@ -14,6 +14,7 @@ import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/s
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   campaignDemandKindLabels,
   campaignDemandStatusLabels,
@@ -28,7 +29,6 @@ import {
   type DemandRowViewModel,
 } from '@/utilities/campaignDemandData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 
 export const metadata = campaignPageMetadataFromCatalog('demandas')
 
@@ -103,11 +103,7 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
   ])
 
   const state = parseDemandListParams(rawSearchParams)
-  const { rows, totalDocs, totalPages } = await loadDemandListPageData(
-    payload,
-    user,
-    state,
-  )
+  const { rows, totalDocs, totalPages } = await loadDemandListPageData(payload, user, state)
   const columnVisibility = await readCampaignColumnVisibility('demandas')
 
   const hrefForStatus = (status?: CampaignDemandStatus) =>

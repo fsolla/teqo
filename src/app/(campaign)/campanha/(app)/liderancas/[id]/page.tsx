@@ -12,9 +12,9 @@ import { CampaignQuickActionContextSync } from '@/components/campaign/shell/Camp
 import { StateDeputyChips } from '@/components/campaign/stateDeputy/StateDeputyChips'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { resolvedPortfolioEntriesById } from '@/lib/municipalityPortfolio'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   loadMunicipalityOptions,
   loadOrganizationOptions,

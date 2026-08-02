@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { SupporterImportWizard } from '@/components/campaign/supporter/SupporterImportWizard'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { isCampaignCoordinator } from '@/utilities/campaignAccess'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 

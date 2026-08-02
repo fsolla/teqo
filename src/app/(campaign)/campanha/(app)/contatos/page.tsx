@@ -3,10 +3,10 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { LeaderContactsPanel } from '@/components/campaign/leadership/LeaderContactsPanel'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { isCampaignLeader } from '@/utilities/campaignAccess'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadLeaderContactsPageData } from '@/utilities/leaderContactsPageData'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 
 export const dynamic = 'force-dynamic'
 

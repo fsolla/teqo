@@ -18,8 +18,8 @@ vi.mock('next/navigation', async (importActual) => ({
 
 import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
-import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
+import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { SidebarProvider } from '@/components/ui/Sidebar'
 import { WIZARD_STEP_PENDING_MESSAGE } from '@/lib/campaignWizardCopy'
@@ -33,17 +33,17 @@ const mountWizardNavigation = () =>
           <CampaignListPendingBoundary>
             <CampaignMobileTopBar />
             <CampaignWizardShell
-            flowTitle="Ajustar votos"
-            stepTitle="Quantos votos?"
-            isEntryStep={false}
-            previousHref="/campanha/acoes/atualizar-votos"
-            dismissHref="/campanha"
-            municipalityLabel="Cairu"
-          >
-            Corpo do passo
-          </CampaignWizardShell>
-        </CampaignListPendingBoundary>
-      </CampaignWizardChromeProvider>
+              flowTitle="Ajustar votos"
+              stepTitle="Quantos votos?"
+              isEntryStep={false}
+              previousHref="/campanha/acoes/atualizar-votos"
+              dismissHref="/campanha"
+              municipalityLabel="Cairu"
+            >
+              Corpo do passo
+            </CampaignWizardShell>
+          </CampaignListPendingBoundary>
+        </CampaignWizardChromeProvider>
       </CampaignPageChromeProvider>
     </SidebarProvider>,
   )

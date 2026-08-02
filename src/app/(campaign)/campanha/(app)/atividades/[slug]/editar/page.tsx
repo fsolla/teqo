@@ -22,12 +22,12 @@ type EditActivityPageProps = {
   params: Promise<{ slug: string }>
 }
 
-const activityEditSubtitle =
-  'Atualize os detalhes da atividade sem alterar o título original.'
+const activityEditSubtitle = 'Atualize os detalhes da atividade sem alterar o título original.'
 
 export async function generateMetadata({ params }: EditActivityPageProps) {
   const { slug } = await params
-  if (!slug) return campaignPageMetadata({ title: 'Editar atividade', subtitle: activityEditSubtitle })
+  if (!slug)
+    return campaignPageMetadata({ title: 'Editar atividade', subtitle: activityEditSubtitle })
 
   const [user, payload] = await Promise.all([
     requireCampaignPageActor({ gate: 'staff', redirectTo: '/campanha/atividades' }),

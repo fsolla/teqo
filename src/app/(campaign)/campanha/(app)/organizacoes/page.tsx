@@ -14,10 +14,10 @@ import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/s
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   buildOrganizationListHref,
   loadOrganizationListPageData,
