@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-01):** **CL8** (Issue #162) — contrato das 8 listas v1: pin slug↔rota (`opsListRegistryRoutes`), saved filters municípios intactos com `LIST_UNIFIED` (e2e tracer), `resolveDemandListUrl` + `resolveOrganizationListUrl` (redirect canónico; registry `canonicalRedirect: true`). Plano: [`cl8-contrato-cleanup.md`](docs/plans/cl8-contrato-cleanup.md).
+
 **Recently resolved (2026-08-01):** **CL6** (Issue #159) — territórios: paginação real + sort no loader (`selectTerritoryOverviewPage` / `loadTerritoryOverviewPage`), `page` no contrato URL, registry `sortModel: 'url'`, `/campanha/territorios` atrás de `LIST_UNIFIED` com paridade OFF. Plano: [`cl6-territorios-factory.md`](docs/plans/cl6-territorios-factory.md).
 **Recently resolved (2026-08-01):** **OH4** (Issue #166) — `GET /campanha/api/ops-sync` full snapshot: `buildOpsSnapshot` (`overrideAccess: false`, queries em paralelo, truncamento 50 updates/município), 401/403 staff gate, pins int advisor/leader. Plano: [`oh4-ops-sync-route.md`](docs/plans/oh4-ops-sync-route.md).
 

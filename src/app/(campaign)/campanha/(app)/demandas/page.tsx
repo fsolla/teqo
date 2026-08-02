@@ -1,6 +1,7 @@
 import config from '@payload-config'
 import { InboxIcon, PlusIcon } from 'lucide-react'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignFilterChips } from '@/components/campaign/shared/CampaignFilterChips'
@@ -26,7 +27,7 @@ import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibili
 import {
   buildDemandListHref,
   loadDemandListPageData,
-  parseDemandListParams,
+  resolveDemandListUrl,
   type DemandRowViewModel,
 } from '@/utilities/campaignDemandData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -96,17 +97,22 @@ const demandColumns: Array<CampaignTableColumn<DemandRowViewModel>> = [
 
 export default async function DemandsPage({ searchParams }: DemandsPageProps) {
   const rawSearchParams = await searchParams
+  const canonicalUrl = resolveDemandListUrl(rawSearchParams)
+  if (canonicalUrl.redirectHref) redirect(canonicalUrl.redirectHref)
+
   const [user, payload] = await Promise.all([
     requireCampaignPageActor({ gate: 'staff' }),
     getPayload({ config }),
   ])
 
-  const state = parseDemandListParams(rawSearchParams)
   const { rows, totalDocs, totalPages, openCount } = await loadDemandListPageData(
     payload,
     user,
-    state,
+    canonicalUrl.state,
   )
+  const resolvedUrl = resolveDemandListUrl(rawSearchParams, totalPages)
+  if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
+  const { state } = resolvedUrl
   const columnVisibility = await readCampaignColumnVisibility('demandas')
 
   const hrefForStatus = (status?: CampaignDemandStatus) =>

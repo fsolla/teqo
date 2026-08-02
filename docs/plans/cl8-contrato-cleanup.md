@@ -1,6 +1,6 @@
 # CL8 — Contrato, saved filters, cleanup e decisão de canonical redirect
 
-Status: rascunho
+Status: entregue (CL8, #162)
 Atualizado em: 2026-08-01
 Issue: #162
 Priority: P1

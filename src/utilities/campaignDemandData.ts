@@ -10,6 +10,7 @@ import { isCampaignStaff } from '@/utilities/campaignAccess'
 import {
   buildListHref,
   firstValue,
+  resolveListUrl,
   strictDecimalInteger,
   type RawSearchParams,
 } from '@/utilities/campaignListUrl'
@@ -41,6 +42,11 @@ export type DemandListState = {
   activityId?: number
 }
 
+export type DemandListSearchParams = RawSearchParams
+
+const demandListParamNames = ['status', 'kind', 'activity', 'page'] as const
+const demandListParamNameSet = new Set<string>(demandListParamNames)
+
 export const parseDemandListParams = (searchParams: RawSearchParams): DemandListState => {
   const rawStatus = firstValue(searchParams.status)
   const rawKind = firstValue(searchParams.kind)
@@ -58,20 +64,51 @@ export const parseDemandListParams = (searchParams: RawSearchParams): DemandList
   }
 }
 
-const buildDemandListSearchParams = (
+const demandListStateToRawParams = (
   state: DemandListState,
   page = state.page,
+): DemandListSearchParams => ({
+  page: String(page),
+  status: state.status,
+  kind: state.kind,
+  activity: state.activityId ? String(state.activityId) : undefined,
+})
+
+const serializeCanonicalDemandListSearchParams = (
+  canonicalState: DemandListState,
 ): URLSearchParams => {
   const params = new URLSearchParams()
-  if (state.status) params.set('status', state.status)
-  if (state.kind) params.set('kind', state.kind)
-  if (state.activityId) params.set('activity', String(state.activityId))
-  if (page > 1) params.set('page', String(page))
+  if (canonicalState.status) params.set('status', canonicalState.status)
+  if (canonicalState.kind) params.set('kind', canonicalState.kind)
+  if (canonicalState.activityId) params.set('activity', String(canonicalState.activityId))
+  if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
   return params
 }
 
+const buildDemandListSearchParams = (state: DemandListState, page = state.page): URLSearchParams =>
+  serializeCanonicalDemandListSearchParams(
+    parseDemandListParams(demandListStateToRawParams(state, page)),
+  )
+
 export const buildDemandListHref = (state: DemandListState, page: number): string =>
   buildListHref(state, buildDemandListSearchParams, '/campanha/demandas', page)
+
+export const resolveDemandListUrl = (
+  params: DemandListSearchParams,
+  totalPages?: number,
+): {
+  state: DemandListState
+  href: string
+  redirectHref?: string
+} =>
+  resolveListUrl({
+    params,
+    paramNameSet: demandListParamNameSet,
+    parse: parseDemandListParams,
+    buildSearchParams: buildDemandListSearchParams,
+    basePath: '/campanha/demandas',
+    totalPages,
+  })
 
 const resolveMunicipalityAndRequesterNames = async (
   payload: Payload,

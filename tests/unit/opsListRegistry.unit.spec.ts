@@ -71,6 +71,11 @@ describe('opsListRegistry v1', () => {
     expect(meta?.columnListId).toBe('territorios')
   })
 
+  it('pins demandas and organizacoes canonical redirect after CL8', () => {
+    expect(getOpsListDomain('demandas')?.canonicalRedirect).toBe(true)
+    expect(getOpsListDomain('organizacoes')?.canonicalRedirect).toBe(true)
+  })
+
   it('returns null for atividades (cards layout — excluded from factory)', () => {
     expect(getOpsListDomain('atividades')).toBeNull()
     expect(getOpsListDomain('unknown-slug')).toBeNull()
