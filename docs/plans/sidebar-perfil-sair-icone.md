@@ -44,7 +44,7 @@ No rodapé da sidebar de `/campanha`, o botão “Sair” ocupa uma linha inteir
 
 - **Vou apresentar dados?** Não — só rótulo de papel já conhecido da sessão.
 - **Decisões desbloqueadas:** N/A (identidade visual / densidade de shell, não decisão operacional).
-- **Forma:** *adiada ao plano de implementação*.
+- **Forma:** _adiada ao plano de implementação_.
 
 ## Direção no codebase (hipótese)
 
