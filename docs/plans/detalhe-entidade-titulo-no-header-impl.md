@@ -70,8 +70,7 @@ flowchart LR
 - **E2E que asserta `h1`:** atualizar para chrome slot
 - **Atividade sem locationLabel:** fallback para `municipality?.name`
 
-## Aceite de engenharia
+## Débitos deferidos (capture-review-debts autônomo)
 
-- [x] Aceite de produto da intenção ainda coberto
-- [x] Invariantes AGENTS/engineering-standards
-- [x] Testes de domínio previstos (unit chrome + e2e zone map)
+- **Domain `*DetailPageChrome` builders** (score 4, defer_trigger): quando um 3º detalhe precisar de lógica de subtítulo compartilhada além do padrão SetCampaignPageChrome — extrair no módulo dono do view model, não HOF genérico.
+- **`cache()` em loaders de detalhe** (score 3, defer_trigger): edit routes já duplicam fetch MD+página; otimizar loaders no dono quando houver evidência de custo em prod.

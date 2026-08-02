@@ -119,28 +119,28 @@ export default async function ActivityDetailPage({
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
-            {isStaff ? (
-              <Button asChild variant="outline" className="min-h-11">
-                <Link href={`/campanha/atividades/${view.slug}/editar`}>
-                  <PencilIcon data-icon="inline-start" aria-hidden="true" />
-                  Editar
-                </Link>
-              </Button>
-            ) : null}
+          {isStaff ? (
             <Button asChild variant="outline" className="min-h-11">
-              <Link href={`/campanha/atividades/${view.slug}?tab=updates&newUpdate=1`}>
-                <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                Nova atualização
+              <Link href={`/campanha/atividades/${view.slug}/editar`}>
+                <PencilIcon data-icon="inline-start" aria-hidden="true" />
+                Editar
               </Link>
             </Button>
-            {canManageLifecycle ? (
-              <>
-                <MarkActivityRealizedDialog activityId={view.id} />
-                <CancelActivityDialog activityId={view.id} />
-              </>
-            ) : null}
-          </div>
+          ) : null}
+          <Button asChild variant="outline" className="min-h-11">
+            <Link href={`/campanha/atividades/${view.slug}?tab=updates&newUpdate=1`}>
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Nova atualização
+            </Link>
+          </Button>
+          {canManageLifecycle ? (
+            <>
+              <MarkActivityRealizedDialog activityId={view.id} />
+              <CancelActivityDialog activityId={view.id} />
+            </>
+          ) : null}
         </div>
+      </div>
 
       <ActivityTabNav activeTab={activeTab} activitySlug={view.slug} searchParams={query} />
 
