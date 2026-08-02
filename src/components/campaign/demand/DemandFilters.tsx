@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
-import { buildDemandListHref } from '@/utilities/demand/demandListUrl'
+import { buildDemandListHref, type DemandListState } from '@/utilities/demand/demandListUrl'
 import {
   applyDemandOmniboxSuggestion,
   buildDemandOmniboxChips,
@@ -12,7 +12,6 @@ import {
   clearDemandOmnibox,
   filterDemandOmniboxSuggestions,
   removeDemandOmniboxChip,
-  type DemandListState,
   type DemandOmniboxAction,
 } from '@/utilities/demand/demandOmnibox'
 
@@ -59,6 +58,9 @@ export const DemandFilters = ({ state }: { state: DemandListState }) => {
         isPending={isPending}
         onSelectSuggestion={(suggestionId) => {
           runAction(applyDemandOmniboxSuggestion({ state, suggestionId }))
+        }}
+        onCommitQuery={(text) => {
+          runAction(applyDemandOmniboxSuggestion({ state, suggestionId: `q:${text}` }))
         }}
         onRemoveChip={(chipId) => {
           runAction(removeDemandOmniboxChip({ state, chipId }))

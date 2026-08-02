@@ -18,8 +18,6 @@ import {
 } from '@/lib/schemas/campaignDemand'
 import type { DemandListState } from '@/utilities/demand/demandListUrl'
 
-export type { DemandListState }
-
 export type DemandOmniboxAction =
   | { kind: 'url'; state: DemandListState }
   | { kind: 'clear'; state: DemandListState }

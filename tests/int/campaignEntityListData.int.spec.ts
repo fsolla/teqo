@@ -485,6 +485,13 @@ describe('loadDemandListPageData', () => {
     })
     expect(requesterHits.rows.some((row) => row.slug === byRequester.slug)).toBe(true)
     expect(requesterHits.rows.some((row) => row.slug === byTitle.slug)).toBe(false)
+
+    const noMatch = await loadDemandListPageData(payload, coordinator, {
+      page: 1,
+      q: 'zzznomatch',
+    })
+    expect(noMatch.rows.some((row) => row.slug === byTitle.slug)).toBe(false)
+    expect(noMatch.rows.some((row) => row.slug === byRequester.slug)).toBe(false)
   })
 })
 
