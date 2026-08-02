@@ -74,7 +74,7 @@ export type MunicipalityListViewModel = {
    * ordering.
    */
   lastSignalAt: string | null
-  /** OH10 — CAS token for staff writes when OPS_HYBRID is on. */
+  /** OH10 — CAS token for staff outbox writes. */
   updatedAt: string
   expectedVotes: VoteEstimateScenarioViewModel
   politicalTrendStatus: PoliticalTrendStatus | null
@@ -153,7 +153,7 @@ export type MunicipalityDetailViewModel = {
   tseZones: number[]
   advisorIDs: number[]
   lastUpdateAt: string | null
-  /** OH10 — CAS token for staff writes when OPS_HYBRID is on. */
+  /** OH10 — CAS token for staff outbox writes. */
   updatedAt: string
   /** Staff-only block — null for the leader view model. */
   strategy: MunicipalityStrategyViewModel | null

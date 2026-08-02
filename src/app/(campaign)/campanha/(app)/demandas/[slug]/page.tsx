@@ -20,7 +20,6 @@ import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   attachDemandReceiptFormAction,
   setDemandCostFormAction,
-  transitionDemandFormAction,
 } from './formActions'
 
 type DemandDetailPageProps = {
@@ -129,7 +128,6 @@ export default async function DemandDetailPage({ params }: DemandDetailPageProps
         canDecideEscalated={isCampaignUnrestricted(user)}
         currentCost={demand.cost}
         updatedAt={demand.updatedAt}
-        transitionFormAction={transitionDemandFormAction}
         costFormAction={setDemandCostFormAction}
         receiptFormAction={attachDemandReceiptFormAction}
       />

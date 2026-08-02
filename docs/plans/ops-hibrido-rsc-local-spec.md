@@ -1,7 +1,7 @@
 # Ops híbrido RSC/local — spec-mãe e critérios
 
-Status: aprovado
-Atualizado em: 2026-08-01
+Status: implementado
+Atualizado em: 2026-08-02
 Issue: #164
 Priority: P1
 Model: cursor-grok-4.5-high
@@ -16,7 +16,7 @@ Responsável: —
 3. Persistence OPFS/WA-SQLite pode falhar em iOS antigo — fallback IndexedDB obrigatório.
 4. Sync full-only v1; deletes podem ficar no mirror até ao próximo full sync.
 5. Leader sem mirror de ops (lockdown actual).
-6. `OPS_HYBRID` compile-time env; sem rollout/cohort/kill switch.
+6. **OH14 (#175):** sync híbrido **sempre ligado para staff** — a flag compile-time `OPS_HYBRID` foi removida após e2e offline verde (OH11) e writes CAS completos (OH13).
 
 Premissas confirmadas no gate de registo das Issues OH2–OH14 (2026-08-01).
 
@@ -44,7 +44,7 @@ Brief:
 │            └──────────────────────────────────────────┘ │
 │            ┌─ detalhe município / lista ──────────────┐ │
 │            │ online → RSC children                    │ │
-│            │ offline + OPS_HYBRID → Local + OfflineBoundary │
+│            │ offline → Local + OfflineBoundary          │
 │            │ região online-only → “Indisponível offline” │
 │            └──────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────┘
@@ -55,8 +55,8 @@ Brief:
 
 - Documento-mãe que trava: arquitetura híbrida, escopo do snapshot, CAS/outbox, boundaries, critérios de aceite do projecto e ordem das Issues OH2–OH14.
 - Engenheiro júnior lê este doc + o plano da sua Issue e executa sem reunião.
-- Com `OPS_HYBRID=1` (entregas filhas): abrir `/campanha` sincroniza o snapshot; chrome “Actualizado”; offline renderiza do mirror; writes via outbox + CAS.
-- CI sem `OPS_HYBRID` idêntica a `main`; jornada offline completa em `campaignOpsOffline.e2e.spec.ts` com `OPS_HYBRID=1` (OH11).
+- Abrir `/campanha` (staff): sincroniza o snapshot; chrome “Actualizado”; offline renderiza do mirror; writes via outbox + CAS.
+- CI inclui `campaignOpsOffline.e2e.spec.ts` e `campaignOpsEstimateOutbox.e2e.spec.ts` sem env extra (OH14).
 
 ## Dados → decisão → apresentação
 
@@ -76,10 +76,10 @@ Ops em prod medidas em 2026-08-01: campanha ~4 MB vs TSE ~128 MB (não sincroniz
 - **Tracer = estimativas antes do mirror completo (OH6 paralelo a OH2–OH5).** **Rejeitado:** mirror primeiro (atraso no feedback da dor real).
 - **Persistência OPFS primeiro, fallback IDB.** **Rejeitado:** só OPFS (iOS antigo falha); só localStorage (limite/estrutura).
 - **Leader sem mirror.** **Rejeitado:** mirror parcial para `leader` (ex. só supporters `createdBy`) — abre lockdown e fatia LGPD.
-- **`OPS_HYBRID` compile-time env.** Sem cohort/rollout/kill switch runtime. **Rejeitado:** feature flag remote / percentage rollout.
+- **OH14 — flag removida; staff sempre ON.** Durante OH2–OH13 usámos `OPS_HYBRID` compile-time para rollout seguro. Com OH11/OH13 verdes, removemos a flag: `CampaignOpsSyncProvider` liga por `isStaffCampaignRole` no layout; `OfflineBoundary` troca só com `navigator.onLine === false`. **Rejeitado:** manter flag “para sempre” sem doc; kill switch runtime.
 - **Poll 3 min só em foreground** (`visibilityState === 'visible'`); re-sync em `visibilitychange`/`online`; sync in-flight coalescido (timer + focus + online). **Rejeitado:** poll em background; busy-wait / `setTimeout(0)`.
 - **Orçamento do snapshot:** alvo ≤ ~2 MB gzip (número final medido/justificado em OH3); construção do snapshot = **uma (ou poucas) query(s) por collection**, nunca I/O por município no hot path. **Rejeitado:** N+1 por município; sync que bloqueia o paint RSC (fire-and-forget + chrome “A sincronizar…”).
-- **i18n:** identificadores em inglês (`OPS_HYBRID`, `ops-sync`, `campaignOps`, `OfflineBoundary`); strings de chrome/toast em pt-BR. **Rejeitado:** identificadores em pt-BR / mistos.
+- **i18n:** identificadores em inglês (`ops-sync`, `campaignOps`, `OfflineBoundary`); strings de chrome/toast em pt-BR. **Rejeitado:** identificadores em pt-BR / mistos.
 
 ## Escopo do snapshot (travado)
 
@@ -94,19 +94,17 @@ Fora: TSE/`election_*`, geometries, media blobs, `supporter`, site público, `/a
 
 ## Questões em aberto
 
-- **Remover `OPS_HYBRID` após verde em staging?** **Opções:** A) remover e ligar sempre para staff; B) manter flag com default documentado até data X. **Recomendação:** decidir em OH14 com evidência e2e offline + staging — não nesta Issue.
+_(Nenhuma — OH14 fechou a remoção da flag.)_
 
 ## Abordagem proposta
 
 ```mermaid
 flowchart TB
-  Open["/campanha open"] --> Flag{OPS_HYBRID?}
-  Flag -->|off| RSC[RSC actual — CI = main]
-  Flag -->|on| Prov[CampaignOpsSyncProvider]
+  Open["/campanha open (staff)"] --> Prov[CampaignOpsSyncProvider]
   Prov --> GET["GET /campanha/api/ops-sync"]
   GET --> Merge[mergeOpsSnapshot]
   Merge --> Mirror[(OPFS / IDB mirror)]
-  Online[Online] --> RSC
+  Online[Online] --> RSC[RSC children]
   Offline[Offline] --> Local[Local views + OfflineBoundary]
   Mirror --> Local
   Write[Staff write] --> Outbox[outbox + CAS]
@@ -116,7 +114,7 @@ flowchart TB
 
 Componentes (entregues pelas Issues filhas — não nesta Issue):
 
-- **`src/lib/campaignOps/*`** (OH2): DTOs, merge, flag, schema version.
+- **`src/lib/campaignOps/*`** (OH2): DTOs, merge, schema version.
 - **`scripts/benchmark-ops-snapshot.mjs`** (OH3): bytes/tempo → trunca `municipality_update`.
 - **`GET …/api/ops-sync`** (OH4): snapshot scoped, 403 leader, `no-store`.
 - **`CampaignOpsSyncProvider` + persistence + chrome** (OH5).
@@ -130,7 +128,7 @@ Sem migration, sem collection, sem server action **nesta** Issue (só spec).
 
 | ID   | Issue | Depende de    | Entrega curta                                     |
 | ---- | ----- | ------------- | ------------------------------------------------- |
-| OH2  | #163  | OH1           | `lib/campaignOps` contrato + merge + flag         |
+| OH2  | #163  | OH1           | `lib/campaignOps` contrato + merge                  |
 | OH3  | #165  | OH2           | Benchmark snapshot + truncamento                  |
 | OH4  | #166  | OH3           | `GET /campanha/api/ops-sync` FULL + access        |
 | OH5  | #168  | OH4           | SyncProvider + OPFS→IDB + poll + chrome           |
@@ -164,12 +162,12 @@ Paralelas OK após OH1: OH2→OH5 em série; OH6 em paralelo a OH2–OH5; OH1–
 
 ## Critérios de aceite do projecto
 
-1. Sem `OPS_HYBRID`: CI idêntica a `main` (e2e existentes).
-2. Com env, online: GET `ops-sync` 200 com snapshot (alvo ≤ ~2 MB gzip ou justificativa OH3); chrome “Actualizado”; sync não bloqueia paint RSC.
+1. Staff: `CampaignOpsSyncProvider` activo no layout; leader no-op.
+2. Online: GET `ops-sync` 200 com snapshot (alvo ≤ ~2 MB gzip ou justificativa OH3); chrome “Actualizado”; sync não bloqueia paint RSC.
 3. Airplane: detalhe no mirror renderiza via Local; regiões online-only com estado honesto.
 4. Write offline → pending → online → aplica ou conflict UI; outbox sobrevive reload.
 5. Advisor nunca recebe municípios fora da carteira; leader sem mirror.
-6. `pnpm gate:fast` + specs novos verdes.
+6. `pnpm gate:fast` + e2e offline (`campaignOpsOffline`, `campaignOpsEstimateOutbox`) verdes em CI.
 
 ## Dependências
 
@@ -194,8 +192,19 @@ Paralelas OK após OH1: OH2→OH5 em série; OH6 em paralelo a OH2–OH5; OH1–
 ## Adiado com gatilho
 
 - **Delta sync + tombstones.** Revisitar quando: OH3 reportar gzip ≫ ~2 MB **ou** poll full for inviável em campo.
-- **Remoção da flag `OPS_HYBRID`.** Revisitar em OH14 com e2e offline verde em staging.
 - **Compressão no wire.** Revisitar se OH3/OH11 medirem necessidade após full sync.
+
+## Como adicionar uma nova write offline
+
+Receita mínima para staff (após OH13 — copiar um vizinho do mesmo domínio):
+
+1. **Schema / action server** — adicionar `baseUpdatedAt` (ou `baseEstimatedAt`) opcional na zod da action existente; implementar `*Cas` com `assertCampaignDocCas` quando `base*` presente; manter caminho sem `base*` para call sites legados fora do outbox.
+2. **`mutationFn` no outbox** — em `opsMunicipalityOutbox`, `opsDomainOutbox` ou `opsEstimateOutbox`: chamar a action Cas com o token; em conflito, guardar `serverUpdatedAt` na row para o toast.
+3. **Controle UI** — ilha client: `enqueue*` no submit; `useSyncExternalStore` na row do outbox; toast Sonner “Manter o meu / Usar o novo” no `status === 'conflict'`; badge Pendente/Conflito; **não** levantar estado para spreadsheet mode.
+4. **Mirror** — se a write altera dados já no snapshot, garantir que o merge/outbox actualiza a collection TanStack (`opsMirrorClient`) ou que o próximo full sync reflecte (full-only v1).
+5. **Testes** — unit no parser/enqueue; int na action Cas; e2e só se a jornada offline for user-visible (padrão OH6/OH11).
+
+Vizinhos por domínio: município (`MunicipalityListTrendControl`, `MunicipalityUpdateForm`), estimativa (`PledgeEstimateForm`), liderança (`LeadershipInternalForm`, `LeadershipListSupportStatusControl`), demanda (`DemandWorkflowCard`), atividade (`ActivityForm` update).
 
 ## Referências
 

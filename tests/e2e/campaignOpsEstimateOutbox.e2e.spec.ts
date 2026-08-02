@@ -1,16 +1,7 @@
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
-/**
- * OH6 — flaky-network outbox for estimateVotes. Requires `OPS_HYBRID=1` on the
- * Playwright webServer (compile-time). Default CI keeps the flag off so
- * `campaignMunicipalities` continues to pin the legacy formAction path.
- */
-const opsHybridEnabled =
-  process.env.OPS_HYBRID === '1' || process.env.OPS_HYBRID?.toLowerCase() === 'true'
-
-test.describe('OH6 estimate outbox (OPS_HYBRID)', () => {
-  test.skip(!opsHybridEnabled, 'Set OPS_HYBRID=1 on the e2e webServer to run this tracer.')
-
+/** OH6 — flaky-network outbox for estimateVotes. */
+test.describe('OH6 estimate outbox', () => {
   test('offline edit stays queued across reload and flushes when online', async ({
     campaign,
     page,

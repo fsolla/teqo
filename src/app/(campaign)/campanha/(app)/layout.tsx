@@ -28,7 +28,6 @@ import {
 } from '@/components/ui/Sidebar'
 import { Toaster } from '@/components/ui/Toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
 import { getCampaignUserWithAvatar } from '@/utilities/campaignAuth'
@@ -47,7 +46,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
   const sidebarStateCookie = cookieStore.get(SIDEBAR_COOKIE_NAME)
   const hasSidebarCookie = sidebarStateCookie !== undefined
   const defaultOpen = sidebarStateCookie ? sidebarStateCookie.value === 'true' : true
-  const opsSyncEnabled = resolveOpsHybridEnabled() && isStaffCampaignRole(user.role)
+  const opsSyncEnabled = isStaffCampaignRole(user.role)
 
   // B40 discovery. The relying party is decided from headers alone, so it is
   // resolved first and this layout — which runs on every authenticated

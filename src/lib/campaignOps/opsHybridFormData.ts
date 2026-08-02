@@ -1,4 +1,4 @@
-/** Client-safe FormData helpers for OPS_HYBRID enqueue paths (OH13). */
+/** Client-safe FormData helpers for ops hybrid enqueue paths (OH13). */
 
 export const readFormRelationshipIds = (data: FormData, name: string): number[] => {
   const ids: number[] = []

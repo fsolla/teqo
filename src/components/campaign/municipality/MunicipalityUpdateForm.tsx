@@ -1,18 +1,16 @@
 'use client'
 
-import { useActionState, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 
 import { municipalitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
 import { enqueueMunicipalityUpdate } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
-import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import {
   municipalitySignalTypeDescriptions,
   municipalitySignalTypeLabels,
@@ -22,27 +20,17 @@ import {
   parseMunicipalitySignalType,
   type MunicipalityUpdateKind,
 } from '@/lib/schemas/municipalityUpdate'
-import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import { fieldError } from '@/utilities/campaignFormFields'
 
 type MunicipalityUpdateFormProps = {
   municipalityID: number
-  /** OH10 — parent municipality `updatedAt` for CAS when OPS_HYBRID is on. */
+  /** Parent municipality `updatedAt` for CAS. */
   municipalityUpdatedAt?: string
-  opsHybridEnabled?: boolean
-  formAction: (
-    state: CampaignFormActionState,
-    formData: FormData,
-  ) => Promise<CampaignFormActionState>
 }
 
 export const MunicipalityUpdateForm = ({
   municipalityID,
   municipalityUpdatedAt,
-  opsHybridEnabled = resolveOpsHybridEnabled(),
-  formAction,
 }: MunicipalityUpdateFormProps) => {
-  const [state, submitAction, isPending] = useActionState(formAction, {})
   const [kind, setKind] = useState<MunicipalityUpdateKind>('semanal')
   const [hybridPending, setHybridPending] = useState(false)
   const [hybridMessage, setHybridMessage] = useState<string | null>(null)
@@ -99,14 +87,8 @@ export const MunicipalityUpdateForm = ({
     )
   }
 
-  const pending = opsHybridEnabled ? hybridPending : isPending
-
   return (
-    <form
-      action={opsHybridEnabled ? undefined : submitAction}
-      onSubmit={opsHybridEnabled ? onHybridSubmit : undefined}
-      className="flex flex-col gap-4 rounded-xl border p-4"
-    >
+    <form onSubmit={onHybridSubmit} className="flex flex-col gap-4 rounded-xl border p-4">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-base font-medium">Registrar atualização</h3>
         {hybridPending ? <Badge variant="estimate-pending">Pendente</Badge> : null}
@@ -133,23 +115,14 @@ export const MunicipalityUpdateForm = ({
           <Field>
             <FieldLabel htmlFor="municipality-update-worked">O que funcionou</FieldLabel>
             <Textarea id="municipality-update-worked" name="worked" rows={3} maxLength={3000} />
-            {fieldError(state.fieldErrors, 'worked') ? (
-              <FieldError>{fieldError(state.fieldErrors, 'worked')}</FieldError>
-            ) : null}
           </Field>
           <Field>
             <FieldLabel htmlFor="municipality-update-failed">O que não funcionou</FieldLabel>
             <Textarea id="municipality-update-failed" name="failed" rows={3} maxLength={3000} />
-            {fieldError(state.fieldErrors, 'failed') ? (
-              <FieldError>{fieldError(state.fieldErrors, 'failed')}</FieldError>
-            ) : null}
           </Field>
           <Field>
             <FieldLabel htmlFor="municipality-update-needs">O que preciso</FieldLabel>
             <Textarea id="municipality-update-needs" name="needs" rows={3} maxLength={3000} />
-            {fieldError(state.fieldErrors, 'needs') ? (
-              <FieldError>{fieldError(state.fieldErrors, 'needs')}</FieldError>
-            ) : null}
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
@@ -186,9 +159,6 @@ export const MunicipalityUpdateForm = ({
               rows={kind === 'sinal' ? 2 : 4}
               maxLength={5000}
             />
-            {fieldError(state.fieldErrors, 'body') ? (
-              <FieldError>{fieldError(state.fieldErrors, 'body')}</FieldError>
-            ) : null}
           </Field>
           {kind === 'sinal' ? (
             <Field>
@@ -222,15 +192,13 @@ export const MunicipalityUpdateForm = ({
           ) : null}
         </>
       )}
-      {!opsHybridEnabled ? (
-        <CampaignFormActionMessage state={state} successFallbackMessage="Atualização registrada." />
-      ) : hybridMessage ? (
+      {hybridMessage ? (
         <p className="text-sm text-muted-foreground" aria-live="polite">
           {hybridMessage}
         </p>
       ) : null}
-      <Button type="submit" disabled={pending} className="min-h-11 self-start">
-        {pending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
+      <Button type="submit" disabled={hybridPending} className="min-h-11 self-start">
+        {hybridPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
         Registrar atualização
       </Button>
     </form>

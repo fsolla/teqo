@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-02):** **OH14** (Issue #175) — removida flag compile-time `OPS_HYBRID`: sync híbrido sempre ON para staff (`isStaffCampaignRole` no layout); ramificações legacy OFF apagadas nos forms/controles; e2e offline em CI sem env; spec-mãe `ops-hibrido-rsc-local-spec.md` em **implementado** com receita de nova write offline. Plano: [`oh14-flag-cleanup.md`](docs/plans/oh14-flag-cleanup.md).
+
 **Recently resolved (2026-08-02):** **OH13** (Issue #176) — writes CAS por domínio: `baseUpdatedAt` + `*Cas` em leadership / demand transition / activity update / stateDeputy vínculos; helper `assertCampaignDocCas`; outbox `opsDomainOutbox` com Manter/Usar nos forms; flag OFF intacto. Plano: [`oh13-domain-writes-cas.md`](docs/plans/oh13-domain-writes-cas.md).
 
 **Recently resolved (2026-08-02):** **OH12** (Issue #174) — `OpsListLocal` read-only via registry + mirror: `OfflineBoundary` nas 8 rotas de lista; Local com `CampaignTable` + parsers canónicos sobre o mirror (municípios/lideranças/dobradinhas/orgs/demandas); assessores/territórios/apoiadores com estado honesto; saved filters create/delete disabled offline; e2e lista `?q=`. Plano: [`oh12-ops-list-local.md`](docs/plans/oh12-ops-list-local.md).

@@ -1,9 +1,8 @@
 'use client'
 
-import { useActionState, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 
 import { enqueueLeadershipCreate } from '@/components/campaign/opsSync/opsDomainOutbox'
-import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import {
   RelationMultiSelect,
   type RelationOption,
@@ -11,20 +10,17 @@ import {
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import { readFormRelationshipIds, readOptionalFormText } from '@/lib/campaignOps/opsHybridFormData'
 import {
   isSupportStatus,
   leadershipSupportStatuses,
   type SupportStatus,
 } from '@/lib/schemas/leadership'
-import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import { fieldError } from '@/utilities/campaignFormFields'
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 
 type LeadershipFormProps = {
@@ -32,11 +28,6 @@ type LeadershipFormProps = {
   organizationOptions: RelationOption[]
   stateDeputyOptions: RelationOption[]
   initialMunicipalityIDs: number[]
-  formAction: (
-    state: CampaignFormActionState,
-    formData: FormData,
-  ) => Promise<CampaignFormActionState>
-  opsHybridEnabled?: boolean
 }
 
 export const LeadershipForm = ({
@@ -44,10 +35,7 @@ export const LeadershipForm = ({
   organizationOptions,
   stateDeputyOptions,
   initialMunicipalityIDs,
-  formAction,
-  opsHybridEnabled = resolveOpsHybridEnabled(),
 }: LeadershipFormProps) => {
-  const [state, submitAction, isPending] = useActionState(formAction, {})
   const [hybridPending, setHybridPending] = useState(false)
   const [hybridMessage, setHybridMessage] = useState<string | null>(null)
 
@@ -102,14 +90,8 @@ export const LeadershipForm = ({
     )
   }
 
-  const pending = opsHybridEnabled ? hybridPending : isPending
-
   return (
-    <form
-      action={opsHybridEnabled ? undefined : submitAction}
-      onSubmit={opsHybridEnabled ? onHybridSubmit : undefined}
-      className="flex max-w-2xl flex-col gap-4"
-    >
+    <form onSubmit={onHybridSubmit} className="flex max-w-2xl flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         {hybridPending ? <Badge variant="estimate-pending">Pendente</Badge> : null}
       </div>
@@ -123,9 +105,6 @@ export const LeadershipForm = ({
           maxLength={120}
           className="min-h-11"
         />
-        {fieldError(state.fieldErrors, 'name') ? (
-          <FieldError>{fieldError(state.fieldErrors, 'name')}</FieldError>
-        ) : null}
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field>
@@ -138,16 +117,10 @@ export const LeadershipForm = ({
             autoComplete="tel-national"
             className="min-h-11"
           />
-          {fieldError(state.fieldErrors, 'phone') ? (
-            <FieldError>{fieldError(state.fieldErrors, 'phone')}</FieldError>
-          ) : null}
         </Field>
         <Field>
           <FieldLabel htmlFor="leadership-email">E-mail (opcional)</FieldLabel>
           <Input id="leadership-email" name="email" type="email" className="min-h-11" />
-          {fieldError(state.fieldErrors, 'email') ? (
-            <FieldError>{fieldError(state.fieldErrors, 'email')}</FieldError>
-          ) : null}
         </Field>
       </div>
 
@@ -156,7 +129,6 @@ export const LeadershipForm = ({
         label="Municípios em que atua"
         options={municipalityOptions}
         initialSelectedIDs={initialMunicipalityIDs}
-        error={fieldError(state.fieldErrors, 'municipalities')}
         placeholder="Adicionar município…"
       />
 
@@ -164,7 +136,6 @@ export const LeadershipForm = ({
         name="organizations"
         label="Organizações (sindicatos, associações…)"
         options={organizationOptions}
-        error={fieldError(state.fieldErrors, 'organizations')}
         placeholder="Adicionar organização…"
       />
 
@@ -172,7 +143,6 @@ export const LeadershipForm = ({
         name="stateDeputies"
         label="Dobradinhas"
         options={stateDeputyOptions}
-        error={fieldError(state.fieldErrors, 'stateDeputies')}
         placeholder="Adicionar dobradinha…"
       />
 
@@ -206,16 +176,13 @@ export const LeadershipForm = ({
         <Textarea id="leadership-notes" name="notes" rows={3} maxLength={3000} />
       </Field>
 
-      {!opsHybridEnabled && state.status !== 'success' ? (
-        <CampaignFormActionMessage state={state} />
-      ) : null}
       {hybridMessage ? (
         <p className="text-sm text-muted-foreground" role="status">
           {hybridMessage}
         </p>
       ) : null}
-      <Button type="submit" disabled={pending} className="min-h-11 self-start">
-        {pending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
+      <Button type="submit" disabled={hybridPending} className="min-h-11 self-start">
+        {hybridPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
         Cadastrar liderança
       </Button>
     </form>

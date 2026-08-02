@@ -49,7 +49,6 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import { readFormRelationshipIds, readOptionalFormText } from '@/lib/campaignOps/opsHybridFormData'
 import { formatIsoAsBahiaDateTimeInput, parseBahiaDateTimeInput } from '@/lib/campaignTime'
 import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
@@ -495,18 +494,16 @@ export const ActivityForm = ({
   submitLabel,
   searchContacts,
   searchLeaderships,
-  opsHybridEnabled = resolveOpsHybridEnabled(),
 }: ActivityFormFieldsProps & {
   action: ActivityFormAction
   submitLabel: string
-  opsHybridEnabled?: boolean
 }) => {
   const router = useRouter()
   const [state, formAction, pending] = useActionState(action, {})
   const [hybridPending, setHybridPending] = useState(false)
   const [hybridMessage, setHybridMessage] = useState<string | null>(null)
   const previousOutboxStatusRef = useRef<string | undefined>(undefined)
-  const hybridUpdate = Boolean(opsHybridEnabled && activity)
+  const hybridUpdate = Boolean(activity)
 
   const outboxRow = useSyncExternalStore(
     (onStoreChange) =>

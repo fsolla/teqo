@@ -20,7 +20,6 @@ import {
   type OpsVotePledge,
   type OpsVotePledgeLeaderView,
 } from '@/lib/campaignOps/opsContract'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import { diffOpsIds, mergeOpsSnapshot, type OpsCollectionIdDiff } from '@/lib/campaignOps/opsMerge'
 import { OPS_MIRROR_SCHEMA_VERSION } from '@/lib/campaignOps/opsMirrorVersion'
 import type { OpsSyncState, OpsSyncStatus } from '@/lib/campaignOps/opsSyncMeta'
@@ -175,20 +174,6 @@ describe('contract surface (knip + OH4 consumers)', () => {
     expect(goals.stateGoal).toBe(100_000)
     expect(idDiff.added).toEqual([])
     expect(syncState.status).toBe('idle')
-  })
-})
-
-describe('resolveOpsHybridEnabled', () => {
-  it.each([
-    ['1', true],
-    ['true', true],
-    ['0', false],
-    ['false', false],
-    ['', false],
-    [undefined, false],
-    ['yes', false],
-  ] as const)('parses OPS_HYBRID=%j as %s', (value, expected) => {
-    expect(resolveOpsHybridEnabled({ OPS_HYBRID: value })).toBe(expected)
   })
 })
 

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import { estimateVotesFormAction } from '@/app/(campaign)/campanha/(app)/municipios/[slug]/pledgeFormActions'
 import { MunicipalityDetailHeaderView } from '@/components/campaign/municipality/MunicipalityDetailHeaderView'
 import { MunicipalityPledgesPanel } from '@/components/campaign/municipality/MunicipalityPledgesPanel'
 import {
@@ -98,11 +97,7 @@ export const MunicipalityDetailLocal = ({ slug }: MunicipalityDetailLocalProps) 
         advisorsUnavailable={advisorsUnavailable}
       />
 
-      <MunicipalityPledgesPanel
-        pledges={pledges}
-        opsHybridEnabled
-        estimateFormAction={estimateVotesFormAction}
-      />
+      <MunicipalityPledgesPanel pledges={pledges} />
 
       <section aria-label="Conteúdo disponível só online" className="rounded-xl border px-4 py-6">
         <p className="text-sm text-muted-foreground">{ONLINE_ONLY_MESSAGE}</p>

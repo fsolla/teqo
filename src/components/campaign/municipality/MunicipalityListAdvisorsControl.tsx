@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 
-import type { MunicipalityListAdvisorsResponse } from '@/app/(campaign)/campanha/(app)/municipios/advisors/types'
 import {
   advisorEntriesFromIds,
   formatAdvisorNamesTooltip,
@@ -28,18 +27,15 @@ import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
 import { Command, CommandInput, CommandItem, CommandList } from '@/components/ui/Command'
 import { Spinner } from '@/components/ui/Spinner'
-import { postCampaignJson } from '@/lib/campaignJsonRequest'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
-import { sameIdSet } from '@/lib/sameIdSet'
-import { OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
 import { cn } from '@/lib/utils'
+import { OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
+import { sameIdSet } from '@/lib/sameIdSet'
 import { matchesAtWordStart } from '@/lib/wordStartFilter'
 import type {
   EligibleAdvisorOption,
   MunicipalityAdvisorSummary,
 } from '@/utilities/municipality/municipalityViewModels'
 
-const ADVISORS_ENDPOINT = '/campanha/municipios/advisors'
 const SAVE_ERROR_MESSAGE = 'Não foi possível atualizar os assessores. Tente novamente.'
 const CONFLICT_TOAST_ID_PREFIX = 'ops-advisors-conflict:'
 
@@ -51,7 +47,7 @@ type MunicipalityListAdvisorsControlProps = {
   isPriority: boolean
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>
   options: EligibleAdvisorOption[]
-  /** OH10 — CAS base when OPS_HYBRID outbox path is on. */
+  /** CAS base for outbox writes. */
   updatedAt?: string
   variant: CampaignCellEditOverlayVariant
 }
@@ -67,7 +63,6 @@ export const MunicipalityListAdvisorsControl = ({
   variant,
 }: MunicipalityListAdvisorsControlProps) => {
   const router = useRouter()
-  const opsHybrid = resolveOpsHybridEnabled()
   const [open, setOpen] = useState(false)
   const [selectedIDs, setSelectedIDs] = useState<number[]>(currentAdvisorIDs)
   const [query, setQuery] = useState('')
@@ -90,9 +85,8 @@ export const MunicipalityListAdvisorsControl = ({
   const previousOutboxStatusRef = useRef<OpsMunicipalityWriteSyncStatus | undefined>(undefined)
 
   const outboxRow = useSyncExternalStore(
-    (onStoreChange) =>
-      opsHybrid ? subscribeOpsAdvisorsOutboxRow(municipalityID, onStoreChange) : () => undefined,
-    () => (opsHybrid ? readOpsAdvisorsOutboxRow(municipalityID) : undefined),
+    (onStoreChange) => subscribeOpsAdvisorsOutboxRow(municipalityID, onStoreChange),
+    () => readOpsAdvisorsOutboxRow(municipalityID),
     () => undefined,
   )
 
@@ -119,7 +113,7 @@ export const MunicipalityListAdvisorsControl = ({
   }, [outboxRow, router])
 
   useEffect(() => {
-    if (!opsHybrid || outboxRow?.status !== 'conflict') return
+    if (outboxRow?.status !== 'conflict') return
     const toastId = `${CONFLICT_TOAST_ID_PREFIX}${municipalityID}`
     toast.message(OPS_UPDATED_AT_CONFLICT_MESSAGE, {
       id: toastId,
@@ -153,7 +147,7 @@ export const MunicipalityListAdvisorsControl = ({
     return () => {
       toast.dismiss(toastId)
     }
-  }, [opsHybrid, outboxRow, municipalityID, router, reportFailure, setErrorMessage])
+  }, [outboxRow, municipalityID, router, reportFailure, setErrorMessage])
 
   // Every eligible account (coordinator/advisor/candidate) is listed here
   // regardless of current assignment, so it doubles as the name lookup for an
@@ -230,34 +224,14 @@ export const MunicipalityListAdvisorsControl = ({
       }
 
       try {
-        if (opsHybrid) {
-          const mirrorUpdatedAt = municipalitiesCollection.get(municipalityID)?.updatedAt
-          await enqueueAdvisorsAssignment({
-            municipalityId: municipalityID,
-            advisors: nextIds,
-            baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
-          })
-          if (requestSeq > (latestConfirmedRef.current?.seq ?? 0)) {
-            latestConfirmedRef.current = { seq: requestSeq, advisors: nextIds }
-          }
-          finishRequest()
-          return
-        }
-
-        const { ok, payload } = await postCampaignJson<MunicipalityListAdvisorsResponse>(
-          ADVISORS_ENDPOINT,
-          { municipalityId: municipalityID, advisorId, assigned },
-        )
-
-        if (!ok || payload.status !== 'success') {
-          revertDelta()
-          reportFailure(payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE)
-          finishRequest()
-          return
-        }
-
+        const mirrorUpdatedAt = municipalitiesCollection.get(municipalityID)?.updatedAt
+        await enqueueAdvisorsAssignment({
+          municipalityId: municipalityID,
+          advisors: nextIds,
+          baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
+        })
         if (requestSeq > (latestConfirmedRef.current?.seq ?? 0)) {
-          latestConfirmedRef.current = { seq: requestSeq, advisors: payload.advisors }
+          latestConfirmedRef.current = { seq: requestSeq, advisors: nextIds }
         }
         finishRequest()
       } catch {

@@ -6,7 +6,6 @@ import {
   getVoteEstimateForScenario,
   hasAnyVoteEstimate,
 } from '@/lib/voteEstimate'
-import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { type StaffPledgeRow } from '@/utilities/votePledgeViews'
 
 const voteFormatter = new Intl.NumberFormat('pt-BR')
@@ -14,19 +13,10 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
 type MunicipalityPledgesPanelProps = {
   pledges: StaffPledgeRow[]
-  opsHybridEnabled: boolean
-  estimateFormAction: (
-    state: CampaignFormActionState,
-    formData: FormData,
-  ) => Promise<CampaignFormActionState>
 }
 
 /** Staff-only: declared vs estimated votes per leadership in this municipality. */
-export const MunicipalityPledgesPanel = ({
-  pledges,
-  opsHybridEnabled,
-  estimateFormAction,
-}: MunicipalityPledgesPanelProps) => {
+export const MunicipalityPledgesPanel = ({ pledges }: MunicipalityPledgesPanelProps) => {
   const declaredTotal = pledges.reduce((total, pledge) => total + pledge.declaredVotes, 0)
   const effectiveTotal = pledges.reduce(
     (total, pledge) =>
@@ -93,14 +83,7 @@ export const MunicipalityPledgesPanel = ({
                       </Badge>
                     )}
                   </div>
-                  <PledgeEstimateForm
-                    pledgeID={pledge.id}
-                    currentEstimatedVotes={pledge.estimatedVotes}
-                    currentEstimateNote={pledge.estimateNote}
-                    currentEstimatedAt={pledge.estimatedAt}
-                    opsHybridEnabled={opsHybridEnabled}
-                    formAction={estimateFormAction}
-                  />
+                  <PledgeEstimateForm pledgeID={pledge.id} />
                 </li>
               )
             })}
@@ -108,7 +91,7 @@ export const MunicipalityPledgesPanel = ({
         </>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Nenhuma liderança declarou votos neste município ainda.
+          Nenhuma liderança vinculada a este município declarou votos ainda.
         </p>
       )}
     </section>

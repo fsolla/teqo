@@ -143,7 +143,7 @@ export type ActivityFormViewModel = {
   responsible: { id: number; name: string; phone: string | null } | null
   leadership: { id: number; label: string } | null
   tasks: ActivityFormTaskViewModel[]
-  /** OH13 — CAS token for staff updates when OPS_HYBRID is on. */
+  /** OH13 — CAS token for staff update outbox writes. */
   updatedAt: string
 }
 

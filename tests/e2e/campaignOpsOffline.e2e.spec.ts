@@ -1,17 +1,7 @@
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
-/**
- * OH9/OH11/OH12 — dual-path municipality detail + offline journey + list Local.
- * Requires `OPS_HYBRID=1` on the Playwright webServer (compile-time). Default CI
- * keeps the flag off so characterization / municipalities specs continue to pin
- * the RSC path.
- */
-const opsHybridEnabled =
-  process.env.OPS_HYBRID === '1' || process.env.OPS_HYBRID?.toLowerCase() === 'true'
-
-test.describe('OH9/OH11 campaign ops offline (OPS_HYBRID)', () => {
-  test.skip(!opsHybridEnabled, 'Set OPS_HYBRID=1 on the e2e webServer to run this dual-path.')
-
+/** OH9/OH11/OH12 — dual-path municipality detail + offline journey + list Local. */
+test.describe('OH9/OH11 campaign ops offline', () => {
   test('offline swaps to Local header + pledges with honest online-only placeholder', async ({
     campaign,
     page,
@@ -125,9 +115,7 @@ test.describe('OH9/OH11 campaign ops offline (OPS_HYBRID)', () => {
   })
 })
 
-test.describe('OH12 municipality list Local (OPS_HYBRID)', () => {
-  test.skip(!opsHybridEnabled, 'Set OPS_HYBRID=1 on the e2e webServer to run this dual-path.')
-
+test.describe('OH12 municipality list Local', () => {
   test('offline list renders mirror rows and filters by ?q=', async ({ campaign, page }) => {
     const { fixtures } = campaign
     const municipality = await fixtures.claimMunicipality()

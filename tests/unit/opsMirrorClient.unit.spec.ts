@@ -276,7 +276,7 @@ describe('opsMirrorClient', () => {
 })
 
 describe('leader defense in depth (layout gate)', () => {
-  it('treats leader as non-staff so provider stays no-op even with OPS_HYBRID', () => {
+  it('treats leader as non-staff so provider stays no-op', () => {
     expect(isStaffCampaignRole('leader')).toBe(false)
     expect(isStaffCampaignRole('advisor')).toBe(true)
     expect(isStaffCampaignRole('coordinator')).toBe(true)

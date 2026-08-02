@@ -1,15 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import {
-  useActionState,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type FormEvent,
-} from 'react'
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type FormEvent } from 'react'
 import { toast } from 'sonner'
 
 import {
@@ -24,7 +16,6 @@ import {
   readOpsVotePledge,
   subscribeOpsVotePledge,
 } from '@/components/campaign/opsSync/opsVotePledgeMirror'
-import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { VoteEstimateScenarioInputs } from '@/components/campaign/votePledge/VoteEstimateScenarioInputs'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -36,20 +27,9 @@ import {
   toVoteEstimateScenarioViewModel,
   type VoteEstimateScenarioViewModel,
 } from '@/lib/voteEstimate'
-import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import { fieldError } from '@/utilities/campaignFormFields'
 
 type PledgeEstimateFormProps = {
   pledgeID: number
-  currentEstimatedVotes: VoteEstimateScenarioViewModel
-  currentEstimateNote: string | null
-  /** RSC `estimatedAt` used as CAS base when the hybrid outbox path is on. */
-  currentEstimatedAt: string | null
-  opsHybridEnabled: boolean
-  formAction: (
-    state: CampaignFormActionState,
-    formData: FormData,
-  ) => Promise<CampaignFormActionState>
 }
 
 const syncStatusLabel: Record<OpsEstimateSyncStatus, string> = {
@@ -87,82 +67,7 @@ const readScenarioFromForm = (form: HTMLFormElement): VoteEstimateScenarioViewMo
 const CONFLICT_TOAST_ID_PREFIX = 'ops-estimate-conflict:'
 
 /** Staff-only inline estimate. The leader never sees these fields. */
-export const PledgeEstimateForm = ({
-  pledgeID,
-  currentEstimatedVotes,
-  currentEstimateNote,
-  currentEstimatedAt: _currentEstimatedAt,
-  opsHybridEnabled,
-  formAction,
-}: PledgeEstimateFormProps) => {
-  if (!opsHybridEnabled) {
-    return (
-      <LegacyPledgeEstimateForm
-        pledgeID={pledgeID}
-        currentEstimatedVotes={currentEstimatedVotes}
-        currentEstimateNote={currentEstimateNote}
-        formAction={formAction}
-      />
-    )
-  }
-
-  return <HybridPledgeEstimateForm pledgeID={pledgeID} />
-}
-
-const LegacyPledgeEstimateForm = ({
-  pledgeID,
-  currentEstimatedVotes,
-  currentEstimateNote,
-  formAction,
-}: Omit<PledgeEstimateFormProps, 'opsHybridEnabled' | 'currentEstimatedAt'>) => {
-  const [state, submitAction, isPending] = useActionState(formAction, {})
-
-  return (
-    <form action={submitAction} className="flex flex-col gap-3">
-      <input type="hidden" name="pledgeId" value={pledgeID} />
-      <VoteEstimateScenarioInputs
-        fieldPrefix="estimatedVotes"
-        values={currentEstimatedVotes}
-        idPrefix={`pledge-estimate-${pledgeID}`}
-      />
-      <Field>
-        <FieldLabel htmlFor={`pledge-note-${pledgeID}`} className="text-xs">
-          Justificativa
-        </FieldLabel>
-        <Input
-          id={`pledge-note-${pledgeID}`}
-          name="estimateNote"
-          maxLength={1000}
-          defaultValue={currentEstimateNote ?? undefined}
-          className="min-h-11"
-        />
-      </Field>
-      <Button
-        type="submit"
-        variant="secondary"
-        disabled={isPending}
-        className="min-h-11 self-start"
-      >
-        {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
-        Salvar estimativa
-      </Button>
-      {fieldError(state.fieldErrors, 'estimatedVotes') ||
-      fieldError(state.fieldErrors, 'pessimistic') ||
-      fieldError(state.fieldErrors, 'central') ||
-      fieldError(state.fieldErrors, 'optimistic') ? (
-        <FieldError>
-          {fieldError(state.fieldErrors, 'estimatedVotes') ||
-            fieldError(state.fieldErrors, 'pessimistic') ||
-            fieldError(state.fieldErrors, 'central') ||
-            fieldError(state.fieldErrors, 'optimistic')}
-        </FieldError>
-      ) : null}
-      {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
-    </form>
-  )
-}
-
-const HybridPledgeEstimateForm = ({ pledgeID }: { pledgeID: number }) => {
+export const PledgeEstimateForm = ({ pledgeID }: PledgeEstimateFormProps) => {
   const router = useRouter()
   const liveRegionId = useId()
   const formRef = useRef<HTMLFormElement>(null)
