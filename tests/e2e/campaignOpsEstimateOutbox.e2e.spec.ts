@@ -1,5 +1,8 @@
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
+/** Offline specs intentionally hit blocked network resources — allowlist for the guard. */
+test.use({ expectedRequestFailurePaths: ['/campanha/api/ops-sync', '/favicon.ico'] })
+
 /** OH6 — flaky-network outbox for estimateVotes. */
 test.describe('OH6 estimate outbox', () => {
   test('offline edit stays queued across reload and flushes when online', async ({
@@ -36,6 +39,12 @@ test.describe('OH6 estimate outbox', () => {
 
     await campaign.login(page, advisor.email!, advisor.password)
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
+
+    await page.waitForResponse(
+      (response) =>
+        response.url().includes('/campanha/api/ops-sync') && response.request().method() === 'GET',
+      { timeout: 30_000 },
+    )
 
     await page.context().setOffline(true)
     await page.getByLabel('Média', { exact: true }).fill('55')

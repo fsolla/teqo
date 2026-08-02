@@ -1,5 +1,8 @@
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
+/** Offline specs intentionally hit blocked network resources — allowlist for the guard. */
+test.use({ expectedRequestFailurePaths: ['/campanha/api/ops-sync', '/favicon.ico'] })
+
 /** OH9/OH11/OH12 — dual-path municipality detail + offline journey + list Local. */
 test.describe('OH9/OH11 campaign ops offline', () => {
   test('offline swaps to Local header + pledges with honest online-only placeholder', async ({
@@ -141,9 +144,7 @@ test.describe('OH12 municipality list Local', () => {
     )
 
     await page.context().setOffline(true)
-    await page.goto(
-      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
-    )
+    await page.getByLabel('Buscar município').fill(municipality.name)
 
     await expect(page.getByRole('heading', { name: 'Municípios' })).toBeVisible()
     await expect(

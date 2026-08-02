@@ -163,7 +163,10 @@ test.describe('Municípios — jornadas por papel', () => {
     // no-op, so the probe retries until the chip sticks.
     await expect(async () => {
       await search.fill(searchNamePart)
-      await option.click({ timeout: 1_000 })
+      await Promise.all([
+        expectPostResponse(page, '/campanha/municipios'),
+        option.click({ timeout: 1_000 }),
+      ])
       await expect(chip).toBeVisible({ timeout: 4_000 })
     }).toPass({ timeout: 20_000 })
 
