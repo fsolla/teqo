@@ -18,7 +18,7 @@ Isto **revisa** a regra de detalhe do B123 (#250): lá o header ficou com o nome
 ## Persona e fluxo
 
 - **Persona / contexto:** staff (coordenador, candidato, assessor) abrindo dossiês no celular ou no desktop, muitas vezes em sequência.
-- **Job principal:** saber *onde está* (qual registro) sem rolar um hero; ir direto ao trabalho (abas, ficha, ações).
+- **Job principal:** saber _onde está_ (qual registro) sem rolar um hero; ir direto ao trabalho (abas, ficha, ações).
 - **Fluxo desejado:** abre o detalhe → header mostra título + subtítulo do registro → corpo começa nas abas/seções/chips operacionais → volta à lista pela sidebar ou pelo histórico do browser (sem “Voltar para…” no corpo).
 - **Anti-goals de produto:** não redesenhar listas, wizards ou a sidebar; não inventar um segundo lugar para “Assessoria” só porque saiu do hero; não trocar copy de seções da lista.
 
@@ -45,27 +45,27 @@ Isto **revisa** a regra de detalhe do B123 (#250): lá o header ficou com o nome
 
 - **Vou apresentar dados?** Não — só reorganização de chrome/orientação.
 - **Decisões desbloqueadas:** staff reconhece o registro aberto sem gastar a primeira dobra com título duplicado.
-- **Forma:** *adiada ao plano de implementação* — restrição de produto: header com título + subtítulo opcional; corpo sem hero de identidade.
+- **Forma:** _adiada ao plano de implementação_ — restrição de produto: header com título + subtítulo opcional; corpo sem hero de identidade.
 
 ## Mapeamento por página (aceite)
 
 Dois padrões:
 
-| Padrão | Header título | Header subtítulo |
-| ------ | ------------- | ---------------- |
+| Padrão                   | Header título    | Header subtítulo                  |
+| ------------------------ | ---------------- | --------------------------------- |
 | Lugar / registro nomeado | nome do registro | contexto (território, tipo, meta) |
-| Pessoa | tipo singular | nome da pessoa |
+| Pessoa                   | tipo singular    | nome da pessoa                    |
 
-| Rota | Header título | Header subtítulo | Sai do corpo |
-| ---- | ------------- | ---------------- | ------------ |
-| `/campanha/municipios/[slug]` | nome do município | território / geografia | `h1`, chip Município/Zona, linha Assessoria (+ última atualização do mesmo bloco) |
-| `/campanha/liderancas/[id]` | `Liderança` | nome | “Voltar para lideranças”, `h1` |
-| `/campanha/atividades/[slug]` | título da atividade | município (+ localidade se houver) | `h1` |
-| `/campanha/demandas/[slug]` | título da demanda | `tipo · município` | “Voltar…”, `h1` |
-| `/campanha/dobradinhas/[slug]` | nome do deputado | partido (se houver) | “Voltar…”, `h1`, chip de partido se virou subtítulo |
-| `/campanha/organizacoes/[slug]` | nome | tipo (Sindicato, …) | “Voltar…”, `h1`, chip de tipo |
-| `/campanha/apoiadores/[id]` | `Apoiador` | nome | “Voltar…”, `h1` |
-| `/campanha/assessores/[id]` | `Assessor` | nome | “Voltar…”, `h1` |
+| Rota                            | Header título       | Header subtítulo                   | Sai do corpo                                                                      |
+| ------------------------------- | ------------------- | ---------------------------------- | --------------------------------------------------------------------------------- |
+| `/campanha/municipios/[slug]`   | nome do município   | território / geografia             | `h1`, chip Município/Zona, linha Assessoria (+ última atualização do mesmo bloco) |
+| `/campanha/liderancas/[id]`     | `Liderança`         | nome                               | “Voltar para lideranças”, `h1`                                                    |
+| `/campanha/atividades/[slug]`   | título da atividade | município (+ localidade se houver) | `h1`                                                                              |
+| `/campanha/demandas/[slug]`     | título da demanda   | `tipo · município`                 | “Voltar…”, `h1`                                                                   |
+| `/campanha/dobradinhas/[slug]`  | nome do deputado    | partido (se houver)                | “Voltar…”, `h1`, chip de partido se virou subtítulo                               |
+| `/campanha/organizacoes/[slug]` | nome                | tipo (Sindicato, …)                | “Voltar…”, `h1`, chip de tipo                                                     |
+| `/campanha/apoiadores/[id]`     | `Apoiador`          | nome                               | “Voltar…”, `h1`                                                                   |
+| `/campanha/assessores/[id]`     | `Assessor`          | nome                               | “Voltar…”, `h1`                                                                   |
 
 ## Direção no codebase (hipótese)
 
