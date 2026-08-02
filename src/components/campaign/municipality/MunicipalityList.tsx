@@ -430,7 +430,9 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
 
   return (
     <>
-      <p className="text-sm text-muted-foreground" aria-live="polite">
+      {/* B120: mobile drops the sort notice (combobox carries sort); desktop keeps
+          the live region + table caption. */}
+      <p className="hidden text-sm text-muted-foreground md:block" aria-live="polite">
         {sortSummary}
       </p>
 

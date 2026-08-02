@@ -123,6 +123,12 @@ export const useCampaignListFilterNavigation = <State extends { q?: string }>({
 
   return {
     search,
+    /**
+     * Raw box write with no debounce/navigation — used after a typeahead pick
+     * so the URL can keep the committed `q` while the input is ready for the
+     * next filter keyword.
+     */
+    setSearch,
     onSearchChange,
     /**
      * What the active-filters summary should describe. The draft wins while the

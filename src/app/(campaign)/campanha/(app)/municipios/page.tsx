@@ -129,9 +129,12 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
 
   // The overview and the table's filter header stay mounted even with zero
   // results — only the rows are replaced by the empty state (inside MunicipalityList).
+  // B120: hide the KPI strip on mobile (viewport budget); keep it on md+.
   const overviewNode =
     isStaffView && overview ? (
-      <MunicipalityListOverview view={overview} shameHref={shameHref} />
+      <div className="hidden md:block">
+        <MunicipalityListOverview view={overview} shameHref={shameHref} />
+      </div>
     ) : null
 
   const tableNode = (
