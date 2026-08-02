@@ -14,6 +14,8 @@ export const WIZARD_STEP_PENDING_MESSAGE = 'Carregando passo…' as const
 
 export const WIZARD_APP_TOP_BAR_ARIA_LABEL = 'Campanha Jorge Solla' as const
 
+export const CAMPAIGN_HOME_TOP_BAR_LINK_ARIA_LABEL = 'Ir para o início' as const
+
 export const wizardMunicipalityChromeAriaLabel = (municipalityLabel: string): string =>
   `Município em atualização: ${municipalityLabel}`
 

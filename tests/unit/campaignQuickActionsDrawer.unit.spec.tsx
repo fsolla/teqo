@@ -430,6 +430,20 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
 })
 
 describe('CampaignContentScroll quick-actions direction (B105)', () => {
+  it('uses compact bottom padding on Início when quick-actions peek is off (B116)', () => {
+    render(
+      <CampaignContentScroll quickActionsPeek={false} compactHomeBottomPadding>
+        <div />
+      </CampaignContentScroll>,
+    )
+
+    const scrollport = document.querySelector('[data-slot="campaign-content-scroll"]')
+    expect(scrollport?.getAttribute('data-home-compact-bottom-padding')).toBe('true')
+    expect(scrollport?.className).toContain('pb-2')
+    expect(scrollport?.className).toContain('px-4')
+    expect(scrollport?.className).not.toContain(' p-4')
+  })
+
   it('collapses on scroll down and re-docks on scroll up', () => {
     renderQuickActionsChrome(
       <>
