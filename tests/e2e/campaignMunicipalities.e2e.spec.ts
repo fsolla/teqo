@@ -94,7 +94,11 @@ test.describe('Municípios — jornadas por papel', () => {
     )
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
-    const advisorsTrigger = page.getByRole('button', { name: 'Editar assessores' }).first()
+    // Name includes the município — a substring search can return neighbors
+    // (strict-mode flake when two "Editar assessores …" buttons match).
+    const advisorsTrigger = page.getByRole('button', {
+      name: `Editar assessores em ${municipality.name}`,
+    })
     await advisorsTrigger.click()
 
     const advisorsPopover = page.locator('[data-slot="popover-content"]')
@@ -119,12 +123,24 @@ test.describe('Municípios — jornadas por papel', () => {
 
     // The popover stays open after the write (auto-save, not submit+close).
     await expect(advisorsPopover).toBeVisible()
+    // Trigger label flips from "sem assessor" only after the write lands —
+    // wait for that before Escape/reload so we do not race optimistic chips.
+    await expect(
+      page.getByRole('button', {
+        name: `Editar assessores em ${municipality.name} — ${advisor.name}`,
+      }),
+    ).toBeVisible()
     await page.keyboard.press('Escape')
 
     // Persistence: reload and reopen to confirm the server, not just local
     // state, now holds the assignment.
     await page.reload()
-    await page.getByRole('button', { name: 'Editar assessores' }).first().click()
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+    await page
+      .getByRole('button', {
+        name: `Editar assessores em ${municipality.name} — ${advisor.name}`,
+      })
+      .click()
     await expect(
       page.locator('[data-slot="popover-content"]').getByRole('button', {
         name: `Remover ${advisor.name}`,
@@ -498,6 +514,7 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
     await suggestResponse
     await expect(overlay.getByRole('link', { name: 'Registrar sinal' })).toBeHidden()
 
+    // Overlay scopes search suggest — list page has no E11 SuggestionsPanel.
     await expect(overlay.getByRole('region', { name: 'Sugestões' })).toBeVisible()
   })
 })
