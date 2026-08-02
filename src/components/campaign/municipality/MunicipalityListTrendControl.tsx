@@ -11,6 +11,7 @@ import {
   type CampaignCellEditOverlayVariant,
 } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { useCampaignCellAutosave } from '@/components/campaign/shared/useCampaignCellAutosave'
+import { municipalitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
 import { enqueuePoliticalTrend } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
@@ -81,11 +82,12 @@ export const MunicipalityListTrendControl = ({
       pendingMessage: 'Salvando tendência.',
       persist: opsHybrid
         ? async (trend) => {
+            const mirrorUpdatedAt = municipalitiesCollection.get(municipalityID)?.updatedAt
             await enqueuePoliticalTrend({
               municipalityId: municipalityID,
               status: trend.status,
               note: trend.note,
-              baseUpdatedAt: updatedAt,
+              baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
             })
             return {
               ok: true,

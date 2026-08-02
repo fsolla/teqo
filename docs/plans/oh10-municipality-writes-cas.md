@@ -1,6 +1,6 @@
 # OH10 — Writes municipality staff CAS: update, declareVotes, tendência, engagement, advisors
 
-Status: em implementação
+Status: pronto para PR
 Atualizado em: 2026-08-02
 Issue: #171
 Priority: P1
@@ -9,6 +9,11 @@ Impeccable: B — mesmos controles in-context, estados novos offline
 Appetite: ~2–3 dias eng
 Depends: OH7, OH9
 Responsável: —
+
+## Débitos pós-/simplify (não bloqueiam OH10)
+
+- Toast de conflito CAS em tendência/nível da lista (só advisors + declareVotes têm escolha Manter/Usar).
+- Unificar executores OH6+OH10 (já previsto em OH13).
 
 ## Freshness audit (2026-08-02)
 

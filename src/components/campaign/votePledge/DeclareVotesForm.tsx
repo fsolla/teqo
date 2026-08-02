@@ -39,6 +39,8 @@ type DeclareVotesFormProps = {
   municipalityID: number
   /** Present when staff declare on behalf of a leadership. */
   leadershipID?: number
+  /** Mirror / outbox key when a pledge row already exists (OH10). */
+  pledgeId?: number
   currentDeclaredVotes: number | null
   /** Pledge row `updatedAt` for CAS when a pledge already exists. */
   currentUpdatedAt?: string | null
@@ -61,6 +63,7 @@ const CONFLICT_TOAST_ID_PREFIX = 'ops-declare-conflict:'
 export const DeclareVotesForm = ({
   municipalityID,
   leadershipID,
+  pledgeId,
   currentDeclaredVotes,
   currentUpdatedAt = null,
   opsHybridEnabled = resolveOpsHybridEnabled(),
@@ -81,6 +84,7 @@ export const DeclareVotesForm = ({
     <HybridDeclareVotesForm
       municipalityID={municipalityID}
       leadershipID={leadershipID}
+      pledgeId={pledgeId}
       currentDeclaredVotes={currentDeclaredVotes}
       currentUpdatedAt={currentUpdatedAt}
     />
@@ -136,11 +140,13 @@ const LegacyDeclareVotesForm = ({
 const HybridDeclareVotesForm = ({
   municipalityID,
   leadershipID,
+  pledgeId: initialPledgeId,
   currentDeclaredVotes,
   currentUpdatedAt,
 }: {
   municipalityID: number
   leadershipID: number
+  pledgeId?: number
   currentDeclaredVotes: number | null
   currentUpdatedAt: string | null
 }) => {
@@ -152,21 +158,27 @@ const HybridDeclareVotesForm = ({
   const [formError, setFormError] = useState<string | null>(null)
   const [baseOverride, setBaseOverride] = useState<string | null | undefined>(undefined)
 
+  const resolvedPledgeId =
+    initialPledgeId ??
+    votePledgesCollection.toArray.find(
+      (row) => row.leadership === leadershipID && row.municipality === municipalityID,
+    )?.id
+
   const mirrorPledge = useSyncExternalStore(
     (onStoreChange) => {
-      const pledge = votePledgesCollection.toArray.find(
-        (row) => row.leadership === leadershipID && row.municipality === municipalityID,
-      )
-      if (!pledge) return () => undefined
-      return subscribeOpsVotePledge(pledge.id, onStoreChange)
+      if (resolvedPledgeId === undefined) return () => undefined
+      return subscribeOpsVotePledge(resolvedPledgeId, onStoreChange)
     },
     () =>
-      votePledgesCollection.toArray.find(
-        (row) => row.leadership === leadershipID && row.municipality === municipalityID,
-      ),
+      resolvedPledgeId !== undefined
+        ? votePledgesCollection.get(resolvedPledgeId)
+        : votePledgesCollection.toArray.find(
+            (row) => row.leadership === leadershipID && row.municipality === municipalityID,
+          ),
     () => undefined,
   )
 
+  const pledgeId = initialPledgeId ?? mirrorPledge?.id
   const displayVotes = mirrorPledge?.declaredVotes ?? currentDeclaredVotes
   const mirrorUpdatedAt = mirrorPledge?.updatedAt ?? currentUpdatedAt
   const baseUpdatedAt = baseOverride !== undefined ? baseOverride : mirrorUpdatedAt
@@ -211,6 +223,7 @@ const HybridDeclareVotesForm = ({
           void enqueueDeclareVotes({
             municipalityId: municipalityID,
             leadershipId: leadershipID,
+            pledgeId,
             declaredVotes: Math.trunc(declaredVotes),
             baseUpdatedAt: outboxRow.serverUpdatedAt ?? null,
           }).then(
@@ -238,7 +251,7 @@ const HybridDeclareVotesForm = ({
     return () => {
       toast.dismiss(toastId)
     }
-  }, [outboxRow, leadershipID, municipalityID, router])
+  }, [outboxRow, leadershipID, municipalityID, pledgeId, router])
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -254,6 +267,7 @@ const HybridDeclareVotesForm = ({
     void enqueueDeclareVotes({
       municipalityId: municipalityID,
       leadershipId: leadershipID,
+      pledgeId,
       declaredVotes: Math.trunc(declaredVotes),
       baseUpdatedAt,
     }).then(

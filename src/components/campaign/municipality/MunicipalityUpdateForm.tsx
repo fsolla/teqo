@@ -2,6 +2,7 @@
 
 import { useActionState, useState, type FormEvent } from 'react'
 
+import { municipalitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
 import { enqueueMunicipalityUpdate } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { Badge } from '@/components/ui/Badge'
@@ -69,6 +70,7 @@ export const MunicipalityUpdateForm = ({
 
     setHybridPending(true)
     setHybridMessage(null)
+    const mirrorUpdatedAt = municipalitiesCollection.get(municipalityID)?.updatedAt
     void enqueueMunicipalityUpdate({
       clientId: crypto.randomUUID(),
       municipalityId: municipalityID,
@@ -80,7 +82,7 @@ export const MunicipalityUpdateForm = ({
       activeVolunteers: readCount('activeVolunteers'),
       newSupports: readCount('newSupports'),
       signalType: parseMunicipalitySignalType(readText('signalType')),
-      baseUpdatedAt: municipalityUpdatedAt,
+      baseUpdatedAt: mirrorUpdatedAt ?? municipalityUpdatedAt,
     }).then(
       () => {
         setHybridPending(false)

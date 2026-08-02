@@ -1,7 +1,9 @@
 'use client'
 
 import { XIcon } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { toast } from 'sonner'
 
 import type { MunicipalityListAdvisorsResponse } from '@/app/(campaign)/campanha/(app)/municipios/advisors/types'
 import {
@@ -14,13 +16,21 @@ import {
   type CampaignCellEditOverlayVariant,
 } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { useCampaignCellFailureChannel } from '@/components/campaign/shared/useCampaignCellFailureChannel'
-import { enqueueAdvisorsAssignment } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
+import { municipalitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
+import {
+  discardOpsAdvisorsOutboxRow,
+  enqueueAdvisorsAssignment,
+  readOpsAdvisorsOutboxRow,
+  subscribeOpsAdvisorsOutboxRow,
+} from '@/components/campaign/opsSync/opsMunicipalityOutbox'
+import type { OpsMunicipalityWriteSyncStatus } from '@/components/campaign/opsSync/opsMunicipalityOutboxModel'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
 import { Command, CommandInput, CommandItem, CommandList } from '@/components/ui/Command'
 import { Spinner } from '@/components/ui/Spinner'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
+import { OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
 import { sameIdSet } from '@/lib/sameIdSet'
 import { cn } from '@/lib/utils'
 import { matchesAtWordStart } from '@/lib/wordStartFilter'
@@ -31,6 +41,7 @@ import type {
 
 const ADVISORS_ENDPOINT = '/campanha/municipios/advisors'
 const SAVE_ERROR_MESSAGE = 'Não foi possível atualizar os assessores. Tente novamente.'
+const CONFLICT_TOAST_ID_PREFIX = 'ops-advisors-conflict:'
 
 type MunicipalityListAdvisorsControlProps = {
   municipalityID: number
@@ -55,6 +66,8 @@ export const MunicipalityListAdvisorsControl = ({
   updatedAt,
   variant,
 }: MunicipalityListAdvisorsControlProps) => {
+  const router = useRouter()
+  const opsHybrid = resolveOpsHybridEnabled()
   const [open, setOpen] = useState(false)
   const [selectedIDs, setSelectedIDs] = useState<number[]>(currentAdvisorIDs)
   const [query, setQuery] = useState('')
@@ -74,6 +87,14 @@ export const MunicipalityListAdvisorsControl = ({
   // clobber the optimistic state back to it.
   const requestSeqRef = useRef(0)
   const latestConfirmedRef = useRef<{ seq: number; advisors: number[] } | null>(null)
+  const previousOutboxStatusRef = useRef<OpsMunicipalityWriteSyncStatus | undefined>(undefined)
+
+  const outboxRow = useSyncExternalStore(
+    (onStoreChange) =>
+      opsHybrid ? subscribeOpsAdvisorsOutboxRow(municipalityID, onStoreChange) : () => undefined,
+    () => (opsHybrid ? readOpsAdvisorsOutboxRow(municipalityID) : undefined),
+    () => undefined,
+  )
 
   const handleOpenChange = (nextOpen: boolean) => {
     noteOpenChange(nextOpen)
@@ -88,6 +109,51 @@ export const MunicipalityListAdvisorsControl = ({
     lastPropsIDsRef.current = currentAdvisorIDs
     setSelectedIDs(currentAdvisorIDs)
   }, [currentAdvisorIDs])
+
+  useEffect(() => {
+    const previous = previousOutboxStatusRef.current
+    previousOutboxStatusRef.current = outboxRow?.status
+    if (previous === 'pending' && outboxRow === undefined) {
+      router.refresh()
+    }
+  }, [outboxRow, router])
+
+  useEffect(() => {
+    if (!opsHybrid || outboxRow?.status !== 'conflict') return
+    const toastId = `${CONFLICT_TOAST_ID_PREFIX}${municipalityID}`
+    toast.message(OPS_UPDATED_AT_CONFLICT_MESSAGE, {
+      id: toastId,
+      duration: Infinity,
+      action: {
+        label: 'Manter o meu',
+        onClick: () => {
+          void enqueueAdvisorsAssignment({
+            municipalityId: municipalityID,
+            advisors: outboxRow.advisors,
+            baseUpdatedAt: outboxRow.serverUpdatedAt ?? null,
+          }).then(
+            () => setErrorMessage(null),
+            (error: unknown) => {
+              reportFailure(
+                error instanceof Error ? error.message : 'Não foi possível reenviar os assessores.',
+              )
+            },
+          )
+        },
+      },
+      cancel: {
+        label: 'Usar o novo',
+        onClick: () => {
+          discardOpsAdvisorsOutboxRow(municipalityID)
+          setErrorMessage(null)
+          router.refresh()
+        },
+      },
+    })
+    return () => {
+      toast.dismiss(toastId)
+    }
+  }, [opsHybrid, outboxRow, municipalityID, router, reportFailure, setErrorMessage])
 
   // Every eligible account (coordinator/advisor/candidate) is listed here
   // regardless of current assignment, so it doubles as the name lookup for an
@@ -164,11 +230,12 @@ export const MunicipalityListAdvisorsControl = ({
       }
 
       try {
-        if (resolveOpsHybridEnabled()) {
+        if (opsHybrid) {
+          const mirrorUpdatedAt = municipalitiesCollection.get(municipalityID)?.updatedAt
           await enqueueAdvisorsAssignment({
             municipalityId: municipalityID,
             advisors: nextIds,
-            baseUpdatedAt: updatedAt,
+            baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
           })
           if (requestSeq > (latestConfirmedRef.current?.seq ?? 0)) {
             latestConfirmedRef.current = { seq: requestSeq, advisors: nextIds }
@@ -201,7 +268,12 @@ export const MunicipalityListAdvisorsControl = ({
     })()
   }
 
-  const statusMessage = errorMessage ? errorMessage : isPending ? 'Salvando assessores.' : ''
+  const outboxPending = outboxRow?.status === 'pending' || outboxRow?.status === 'conflict'
+  const statusMessage = errorMessage
+    ? errorMessage
+    : isPending || outboxPending
+      ? 'Salvando assessores.'
+      : ''
   // The body pads its own sections (`px-4`, aligned with the Drawer header) so
   // the `Command` can stay full-bleed in both containers — hence `px-0` on the
   // sheet body and `p-0` on the popover content.
@@ -217,7 +289,7 @@ export const MunicipalityListAdvisorsControl = ({
       // The avatar stack reads as initials at best, and an `aria-label` replaces
       // even those — so who is assigned goes in the label, by extenso.
       triggerLabel={`Editar assessores em ${municipalityName} — ${assignedLabel}`}
-      triggerBusy={isPending}
+      triggerBusy={isPending || outboxPending}
       statusMessage={statusMessage}
       tooltipContent={tooltipContent}
       contentClassName="w-80 p-0"
@@ -232,7 +304,7 @@ export const MunicipalityListAdvisorsControl = ({
         <p className={cn('text-xs text-muted-foreground', isSheet && 'pr-6')}>
           O assessor vê e gerencia somente os municípios que administra.
         </p>
-        {isPending ? (
+        {isPending || outboxPending ? (
           <Spinner
             className={cn(
               'absolute size-3.5 text-muted-foreground',

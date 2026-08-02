@@ -13,6 +13,8 @@ export type OpsDeclareVotesOutboxRow = {
   id: string
   municipalityId: number
   leadershipId: number
+  /** Mirror pledge id when known — avoids O(n) lookup in collectOutboxKeys. */
+  pledgeId?: number
   declaredVotes: number
   baseUpdatedAt?: string | null
   status: OpsMunicipalityWriteSyncStatus

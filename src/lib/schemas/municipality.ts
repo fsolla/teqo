@@ -101,10 +101,6 @@ export const MUNICIPALITY_ENGAGEMENT_LEVEL_SAFE_MESSAGES = [
   OPS_UPDATED_AT_CONFLICT_MESSAGE,
 ] as const
 
-export const MUNICIPALITY_POLITICAL_TREND_SAFE_MESSAGES = [
-  OPS_UPDATED_AT_CONFLICT_MESSAGE,
-] as const
-
 /**
  * E14 — a movement is never just the new level: the motivo and the signals
  * that would reverse it are what make the decision auditable later, so both
@@ -126,8 +122,6 @@ export const municipalityEngagementLevelSchema = z.object({
 export const municipalityExpectedVotesSchema = z.object({
   municipality: positiveRelationshipId,
   expectedVotes: voteEstimateScenarioFieldsSchema,
-  /** OH10 CAS opt-in on municipality `updatedAt`. Absent → last-write-wins. */
-  baseUpdatedAt: optionalBaseUpdatedAtSchema,
 })
 
 export type MunicipalityStrategyUpdateInput = z.input<typeof municipalityStrategyUpdateSchema>

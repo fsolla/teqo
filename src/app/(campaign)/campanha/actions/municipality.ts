@@ -412,13 +412,6 @@ export const setMunicipalityAdvisorMembership = async (
   return setMunicipalityAdvisorMembershipRecord(payload, actor, input)
 }
 
-export const setMunicipalityAdvisorMembershipCas = async (
-  input: MunicipalityAdvisorMembershipInput,
-) => {
-  const { payload, actor } = await getCampaignActionContext()
-  return setMunicipalityAdvisorMembershipRecord(payload, actor, input, { cas: true })
-}
-
 export const setMunicipalityAdvisorMembershipCasRecord = async (
   payload: Payload,
   actor: CampaignUser,

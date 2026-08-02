@@ -369,13 +369,18 @@ export const enqueueDeclareVotes = async (input: {
   municipalityId: number
   leadershipId: number
   declaredVotes: number
+  pledgeId?: number
   baseUpdatedAt?: string | null
 }): Promise<void> => {
   const executor = await getOpsMunicipalityOfflineExecutor()
   const id = declareVotesOutboxKey(input.leadershipId, input.municipalityId)
-  const mirrorPledge = votePledgesCollection.toArray.find(
-    (row) => row.leadership === input.leadershipId && row.municipality === input.municipalityId,
-  )
+  const mirrorPledge =
+    input.pledgeId !== undefined
+      ? votePledgesCollection.get(input.pledgeId)
+      : votePledgesCollection.toArray.find(
+          (row) => row.leadership === input.leadershipId && row.municipality === input.municipalityId,
+        )
+  const pledgeId = input.pledgeId ?? mirrorPledge?.id
   const baseUpdatedAt =
     input.baseUpdatedAt !== undefined ? input.baseUpdatedAt : (mirrorPledge?.updatedAt ?? null)
 
@@ -386,18 +391,20 @@ export const enqueueDeclareVotes = async (input: {
         id,
         municipalityId: variables.municipalityId,
         leadershipId: variables.leadershipId,
+        pledgeId,
         declaredVotes: variables.declaredVotes,
         baseUpdatedAt: variables.baseUpdatedAt ?? baseUpdatedAt,
         status: 'pending',
       }
-      if (mirrorPledge && votePledgesCollection.has(mirrorPledge.id)) {
-        votePledgesCollection.update(mirrorPledge.id, (draft) => {
+      if (pledgeId !== undefined && votePledgesCollection.has(pledgeId)) {
+        votePledgesCollection.update(pledgeId, (draft) => {
           draft.declaredVotes = variables.declaredVotes
         })
       }
       if (declareVotesOutboxCollection.has(id)) {
         declareVotesOutboxCollection.update(id, (draft) => {
           draft.declaredVotes = next.declaredVotes
+          draft.pledgeId = next.pledgeId
           draft.baseUpdatedAt = next.baseUpdatedAt
           draft.status = 'pending'
           draft.serverUpdatedAt = undefined
@@ -408,7 +415,7 @@ export const enqueueDeclareVotes = async (input: {
       }
     },
   })
-  run({ ...input, baseUpdatedAt })
+  run({ ...input, baseUpdatedAt, pledgeId })
 }
 
 export const enqueueMunicipalityUpdate = async (input: {
@@ -560,10 +567,14 @@ export const collectOpsMunicipalityOutboxKeys = (): Set<OpsOutboxKey> => {
   const keys = new Set<OpsOutboxKey>()
   for (const row of declareVotesOutboxCollection.toArray) {
     if (row.status === 'pending' || row.status === 'conflict') {
-      const pledge = votePledgesCollection.toArray.find(
-        (p) => p.leadership === row.leadershipId && p.municipality === row.municipalityId,
-      )
-      if (pledge) keys.add(opsOutboxKey('votePledges', pledge.id))
+      if (row.pledgeId !== undefined) {
+        keys.add(opsOutboxKey('votePledges', row.pledgeId))
+      } else {
+        const pledge = votePledgesCollection.toArray.find(
+          (p) => p.leadership === row.leadershipId && p.municipality === row.municipalityId,
+        )
+        if (pledge) keys.add(opsOutboxKey('votePledges', pledge.id))
+      }
     }
   }
   for (const row of municipalityUpdateOutboxCollection.toArray) {
@@ -619,43 +630,23 @@ export const discardOpsDeclareVotesOutboxRow = (
   if (declareVotesOutboxCollection.has(id)) declareVotesOutboxCollection.delete(id)
 }
 
-export const readOpsPoliticalTrendOutboxRow = (
+export const readOpsAdvisorsOutboxRow = (
   municipalityId: number,
-): OpsPoliticalTrendOutboxRow | undefined => politicalTrendOutboxCollection.get(municipalityId)
+): OpsAdvisorsOutboxRow | undefined => advisorsOutboxCollection.get(municipalityId)
 
-export const subscribeOpsPoliticalTrendOutboxRow = (
+export const subscribeOpsAdvisorsOutboxRow = (
   municipalityId: number,
   onStoreChange: () => void,
 ): (() => void) => {
-  let previous = politicalTrendOutboxCollection.get(municipalityId)
-  const subscription = politicalTrendOutboxCollection.subscribeChanges(() => {
-    const next = politicalTrendOutboxCollection.get(municipalityId)
+  let previous = advisorsOutboxCollection.get(municipalityId)
+  const subscription = advisorsOutboxCollection.subscribeChanges(() => {
+    const next = advisorsOutboxCollection.get(municipalityId)
     if (next === previous) return
     previous = next
     onStoreChange()
   })
   return () => subscription.unsubscribe()
 }
-
-export const discardOpsPoliticalTrendOutboxRow = (municipalityId: number): void => {
-  if (politicalTrendOutboxCollection.has(municipalityId)) {
-    politicalTrendOutboxCollection.delete(municipalityId)
-  }
-}
-
-export const readOpsEngagementLevelOutboxRow = (
-  municipalityId: number,
-): OpsEngagementLevelOutboxRow | undefined => engagementLevelOutboxCollection.get(municipalityId)
-
-export const discardOpsEngagementLevelOutboxRow = (municipalityId: number): void => {
-  if (engagementLevelOutboxCollection.has(municipalityId)) {
-    engagementLevelOutboxCollection.delete(municipalityId)
-  }
-}
-
-export const readOpsAdvisorsOutboxRow = (
-  municipalityId: number,
-): OpsAdvisorsOutboxRow | undefined => advisorsOutboxCollection.get(municipalityId)
 
 export const discardOpsAdvisorsOutboxRow = (municipalityId: number): void => {
   if (advisorsOutboxCollection.has(municipalityId)) {

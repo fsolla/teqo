@@ -9,6 +9,7 @@ import {
   type CampaignCellEditOverlayVariant,
 } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { useCampaignCellFailureChannel } from '@/components/campaign/shared/useCampaignCellFailureChannel'
+import { municipalitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
 import { enqueueEngagementLevel } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
@@ -170,6 +171,7 @@ export const MunicipalityListLevelControl = ({
 
     try {
       if (resolveOpsHybridEnabled()) {
+        const mirrorUpdatedAt = municipalitiesCollection.get(municipalityID)?.updatedAt
         await enqueueEngagementLevel({
           municipalityId: municipalityID,
           level: draftLevel,
@@ -177,7 +179,7 @@ export const MunicipalityListLevelControl = ({
           reversalSignals,
           triangulatedShock,
           override,
-          baseUpdatedAt: updatedAt,
+          baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
         })
         setSaved({
           level: draftLevel,
