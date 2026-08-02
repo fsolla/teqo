@@ -78,15 +78,22 @@ const CampaignContentScrollWithPeek = ({ children }: { children: ReactNode }) =>
 export const CampaignContentScroll = ({
   children,
   quickActionsPeek,
+  compactHomeBottomPadding = false,
 }: {
   children: ReactNode
   quickActionsPeek: boolean
+  /** B116 — Início mobile: half the default scrollport padding below the search dock. */
+  compactHomeBottomPadding?: boolean
 }) => {
   if (!quickActionsPeek) {
     return (
       <div
         data-slot="campaign-content-scroll"
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6 print:h-auto print:overflow-visible print:p-0"
+        data-home-compact-bottom-padding={compactHomeBottomPadding || undefined}
+        className={cn(
+          'min-h-0 flex-1 overflow-y-auto overscroll-contain md:p-6 print:h-auto print:overflow-visible print:p-0',
+          compactHomeBottomPadding ? 'px-4 pt-4 pb-2' : 'p-4',
+        )}
       >
         {children}
       </div>

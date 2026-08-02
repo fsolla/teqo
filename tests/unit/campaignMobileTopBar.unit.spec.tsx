@@ -20,6 +20,7 @@ import {
   type CampaignWizardChromeState,
 } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { SidebarProvider } from '@/components/ui/Sidebar'
+import { CAMPAIGN_HOME_TOP_BAR_LINK_ARIA_LABEL } from '@/lib/campaignWizardCopy'
 import { stubMatchMedia } from '../helpers/matchMedia'
 
 const WizardChromeProbe = ({ chrome }: { chrome: CampaignWizardChromeState | null }) => {
@@ -64,6 +65,11 @@ describe('CampaignMobileTopBar', () => {
     const topBar = container.querySelector('[data-slot="campaign-mobile-top-bar"]')
     expect(topBar?.getAttribute('data-mode')).toBe('app')
     expect(screen.getByText('Jorge Solla')).toBeTruthy()
+    expect(
+      screen
+        .getByRole('link', { name: CAMPAIGN_HOME_TOP_BAR_LINK_ARIA_LABEL })
+        .getAttribute('href'),
+    ).toBe('/campanha')
     expect(screen.queryByRole('link', { name: /Voltar/ })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Fechar busca' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Sair da ação' })).toBeNull()

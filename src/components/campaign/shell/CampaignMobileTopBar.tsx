@@ -1,6 +1,7 @@
 'use client'
 
 import { ArrowLeft, X } from 'lucide-react'
+import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
@@ -11,7 +12,9 @@ import { Button } from '@/components/ui/button'
 import { SidebarTrigger } from '@/components/ui/Sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { HOME_SEARCH_COLLAPSE_ARIA_LABEL } from '@/lib/campaignHomeSearchContract'
+import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
+  CAMPAIGN_HOME_TOP_BAR_LINK_ARIA_LABEL,
   WIZARD_APP_TOP_BAR_ARIA_LABEL,
   WIZARD_DISMISS_ARIA_LABEL,
   wizardFlowChromeAriaLabel,
@@ -156,8 +159,16 @@ export const CampaignMobileTopBar = ({
         <SidebarTrigger className="text-primary-foreground" />
       )}
       <div className="min-w-0 flex-1 leading-tight">
-        <span className="block truncate text-sm font-semibold">Jorge Solla</span>
-        <span className="block truncate text-xs text-primary-foreground/80">Campanha · Bahia</span>
+        <Link
+          href={CAMPAIGN_HOME}
+          aria-label={CAMPAIGN_HOME_TOP_BAR_LINK_ARIA_LABEL}
+          className="block rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/60"
+        >
+          <span className="block truncate text-sm font-semibold">Jorge Solla</span>
+          <span className="block truncate text-xs text-primary-foreground/80">
+            Campanha · Bahia
+          </span>
+        </Link>
         {opsSyncStatus ? (
           <div className="mt-0.5 text-primary-foreground/70 [&_[role=status]]:text-inherit">
             {opsSyncStatus}
