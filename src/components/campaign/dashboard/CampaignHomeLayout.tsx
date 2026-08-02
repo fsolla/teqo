@@ -71,7 +71,6 @@ export const CampaignHomeLayout = ({
         retracted={focused}
         slot="home-actions-chrome"
         className="order-1 md:order-2"
-        allowHorizontalBleed
       >
         <div
           data-slot="home-actions"

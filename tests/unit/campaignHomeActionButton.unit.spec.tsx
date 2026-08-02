@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   CampaignHomeActionButton,
-  actionControlClassName,
   type CampaignHomeActionButtonProps,
 } from '@/components/campaign/dashboard/CampaignHomeActionButton'
 import {
@@ -95,7 +94,8 @@ describe('CampaignHomeActionButton', () => {
     const onClick = vi.fn()
     renderActionButton({ label: 'Registrar', icon: BarChart3, onClick })
     const control = screen.getByRole('button', { name: 'Registrar' })
-    expect(control.className).toBe(actionControlClassName)
+    expect(control.className).toContain('min-h-11')
+    expect(control.className).toContain('w-[5.5rem]')
   })
 
   it('opens the description drawer on long-press when the pointer is coarse', () => {

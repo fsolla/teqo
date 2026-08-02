@@ -104,7 +104,7 @@ test.describe('Início — busca global (B47)', () => {
 test.describe('Início — catálogo de ações (B45)', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
-  test('staff sees all six home actions in the mobile grid without horizontal scroll', async ({
+  test('staff sees six home actions and can open municipalities without coverage', async ({
     campaign,
     page,
   }) => {
@@ -118,33 +118,14 @@ test.describe('Início — catálogo de ações (B45)', () => {
     await expect(actionsRegion).toBeVisible()
 
     for (const label of staffActionLabels) {
-      await expect(page.getByRole('link', { name: label, exact: true }).or(
-        page.getByRole('button', { name: label, exact: true }),
-      )).toBeVisible()
+      const link = page.getByRole('link', { name: label, exact: true })
+      const button = page.getByRole('button', { name: label, exact: true })
+      await expect(link.or(button)).toBeVisible()
     }
 
     const overflowX = await actionsRegion.evaluate((el) => getComputedStyle(el).overflowX)
     expect(overflowX).not.toBe('auto')
     expect(overflowX).not.toBe('scroll')
-  })
-
-  test('staff sees six home actions and can open municipalities without coverage', async ({
-    campaign,
-    page,
-  }) => {
-    const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
-
-    await campaign.login(page, coordinator.email!, coordinator.password)
-    await expect(page.getByLabel('Ações rápidas')).toBeVisible()
-
-    for (const label of staffActionLabels) {
-      const link = page.getByRole('link', { name: label, exact: true })
-      const button = page.getByRole('button', { name: label, exact: true })
-      await expect(link.or(button)).toBeVisible()
-    }
 
     await page.getByRole('link', { name: 'Ajustar votos', exact: true }).click()
     await page.waitForURL(/\/campanha\/acoes\/atualizar-votos/)
