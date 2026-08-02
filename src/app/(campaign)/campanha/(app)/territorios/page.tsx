@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { TerritoryFilters } from '@/components/campaign/municipality/TerritoryFilters'
-import { territoryListPickerColumns } from '@/components/campaign/municipality/TerritoryListColumns'
+import { territoryListColumns } from '@/components/campaign/municipality/TerritoryListColumns'
 import { TerritoryList } from '@/components/campaign/municipality/TerritoryList'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
@@ -13,6 +13,7 @@ import {
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadTerritoryOverview } from '@/utilities/territory/loadTerritoryOverview'
@@ -56,7 +57,9 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
           trailing={
             <CampaignColumnPickerTrailing
               columnVisibility={columnVisibility}
-              columns={territoryListPickerColumns}
+              columns={toCampaignColumnPickerColumns(
+                territoryListColumns({ state, regionOptions: regionOptions }),
+              )}
             />
           }
         />

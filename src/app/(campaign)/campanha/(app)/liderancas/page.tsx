@@ -41,7 +41,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { resolveVisibleColumns, toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
+import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import {
@@ -328,8 +328,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
   ])
 
   const columnVisibility = await readCampaignColumnVisibility('liderancas')
-  const isStateDeputyVisible =
-    resolveVisibleColumns([{ id: 'stateDeputies' }], columnVisibility.hiddenColumnIds).length > 0
+  const isStateDeputyVisible = !columnVisibility.hiddenColumnIds.includes('stateDeputies')
 
   const [
     { rows, totalDocs, totalPages, filterFacets },

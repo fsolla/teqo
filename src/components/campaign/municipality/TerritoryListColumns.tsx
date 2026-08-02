@@ -4,7 +4,6 @@ import { TerritorySortableHead } from '@/components/campaign/municipality/Territ
 import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
 import type { CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import { Badge } from '@/components/ui/Badge'
-import type { CampaignColumnPickerColumn } from '@/lib/campaignColumnVisibility'
 import { formatElectionNumber } from '@/lib/electionFormat'
 import {
   formatGoalCoverageDeficitShortLabel,
@@ -139,19 +138,6 @@ const captureTooltipContent = (row: TerritoryTableRow) => {
     </div>
   )
 }
-
-export const territoryListPickerColumns: CampaignColumnPickerColumn[] = [
-  { id: 'region', label: territoryListSortLabels.region, mandatory: true },
-  { id: 'municipalities', label: territoryListSortLabels.municipalities },
-  { id: 'votes2022', label: territoryListSortLabels.votes2022 },
-  { id: 'pct', label: territoryListSortLabels.pct },
-  { id: 'validVotes2022', label: territoryListSortLabels.validVotes2022 },
-  { id: 'estimate2026', label: territoryListSortLabels.estimate2026 },
-  { id: 'cobertura', label: territoryListSortLabels.cobertura },
-  { id: 'captura', label: territoryListSortLabels.captura },
-  { id: 'classe', label: territoryListSortLabels.classe },
-  { id: 'coverage', label: territoryListSortLabels.coverage },
-]
 
 export const territoryListColumns = ({
   state,

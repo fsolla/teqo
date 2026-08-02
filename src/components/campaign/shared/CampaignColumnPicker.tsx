@@ -15,15 +15,10 @@ import {
   parseCampaignHiddenColumns,
   serializeCampaignHiddenColumns,
   toggleHiddenColumn,
+  type CampaignColumnPickerColumn,
   type CampaignListId,
 } from '@/lib/campaignColumnVisibility'
 import { sameIdSet } from '@/lib/sameIdSet'
-
-type CampaignColumnPickerColumn = {
-  id: string
-  label: string
-  mandatory?: boolean
-}
 
 type CampaignColumnPickerProps = {
   listId: CampaignListId

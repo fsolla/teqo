@@ -34,7 +34,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { resolveVisibleColumns, toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
+import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import { cn } from '@/lib/utils'
@@ -187,8 +187,7 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
   ])
 
   const columnVisibility = await readCampaignColumnVisibility('dobradinhas')
-  const isLeadershipVisible =
-    resolveVisibleColumns([{ id: 'leaderships' }], columnVisibility.hiddenColumnIds).length > 0
+  const isLeadershipVisible = !columnVisibility.hiddenColumnIds.includes('leaderships')
 
   const [
     { rows, totalDocs, totalPages, filterFacets },

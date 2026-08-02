@@ -177,8 +177,7 @@ export const CampaignTable = <Row,>({
   const visibleColumns = resolveVisibleColumns(columns, columnVisibility?.hiddenColumnIds)
 
   return (
-    <>
-      <div className={cn('overflow-hidden rounded-xl border', className)}>
+    <div className={cn('overflow-hidden rounded-xl border', className)}>
         <Table containerClassName={containerClassName}>
           {caption ? <TableCaption className="sr-only">{caption}</TableCaption> : null}
           <TableHeader className={headerClassName}>
@@ -229,7 +228,6 @@ export const CampaignTable = <Row,>({
             ))}
           </TableBody>
         </Table>
-      </div>
-    </>
+    </div>
   )
 }
