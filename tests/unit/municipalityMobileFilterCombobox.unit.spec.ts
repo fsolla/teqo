@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO } from '@/lib/voteEstimate'
+import { buildMunicipalityFilterHref } from '@/utilities/municipality/municipalityListFilters'
+import type { MunicipalityListState } from '@/utilities/municipality/municipalityListUrl'
 import {
   applyMunicipalityMobileFilterOption,
   buildMunicipalityMobileFilterChips,
@@ -8,8 +10,6 @@ import {
   dismissMunicipalityMobileFilterChip,
   findMunicipalityMobileFilterOption,
 } from '@/utilities/municipality/municipalityMobileFilterCombobox'
-import { buildMunicipalityFilterHref } from '@/utilities/municipality/municipalityListFilters'
-import type { MunicipalityListState } from '@/utilities/municipality/municipalityListUrl'
 
 const baseState = (): MunicipalityListState => ({ page: 1 })
 
@@ -119,7 +119,10 @@ describe('municipalityMobileFilterCombobox', () => {
     const chips = buildMunicipalityMobileFilterChips(state, options)
     expect(chips.some((chip) => chip.id.startsWith('sort:'))).toBe(true)
 
-    const sortChip = findMunicipalityMobileFilterOption(options, chips.find((c) => c.id.startsWith('sort:'))!.id)!
+    const sortChip = findMunicipalityMobileFilterOption(
+      options,
+      chips.find((c) => c.id.startsWith('sort:'))!.id,
+    )!
     state = dismissMunicipalityMobileFilterChip(state, sortChip) as MunicipalityListState
     expect(state.sort).toBeUndefined()
     expect(state.dir).toBeUndefined()

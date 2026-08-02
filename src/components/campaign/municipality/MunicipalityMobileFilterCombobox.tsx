@@ -12,8 +12,8 @@ import {
   ComboboxList,
 } from '@/components/ui/combobox'
 import { InputGroupAddon } from '@/components/ui/input-group'
-import { DEFAULT_VOTE_ESTIMATE_SCENARIO } from '@/lib/voteEstimate'
 import { cn } from '@/lib/utils'
+import { DEFAULT_VOTE_ESTIMATE_SCENARIO } from '@/lib/voteEstimate'
 import { matchesAtWordStart, normalizeSearchPhrase } from '@/lib/wordStartFilter'
 import type { MunicipalityFilterOption } from '@/utilities/municipality/municipalityListFilters'
 import type { MunicipalityListState } from '@/utilities/municipality/municipalityListUrl'
