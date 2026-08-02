@@ -124,39 +124,17 @@ export const removeMunicipalitySavedFilter = (href: string): void => {
   write(next)
 }
 
+/** Legacy B18 disclosure key — removed by B124; cleared on logout. */
+const LEGACY_OPEN_STORAGE_KEY = 'teqo:campaign:municipality-saved-filters-open'
+
 export const clearMunicipalitySavedFilters = (): void => {
   if (typeof window === 'undefined') return
   try {
-    localStorage.removeItem(OPEN_STORAGE_KEY)
+    localStorage.removeItem(LEGACY_OPEN_STORAGE_KEY)
   } catch {
-    // Same reason as below: the preference is a nicety.
+    // A stale preference is a nicety.
   }
   write([])
-}
-
-const OPEN_STORAGE_KEY = 'teqo:campaign:municipality-saved-filters-open'
-
-/**
- * The submenu's disclosure. Open by default — a shortcut nobody can see is a
- * shortcut nobody uses, and the group only exists once something is in it.
- */
-export const readMunicipalitySavedFiltersOpen = (): boolean => {
-  if (typeof window === 'undefined') return true
-  try {
-    return localStorage.getItem(OPEN_STORAGE_KEY) !== 'false'
-  } catch {
-    return true
-  }
-}
-
-export const writeMunicipalitySavedFiltersOpen = (open: boolean): void => {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(OPEN_STORAGE_KEY, open ? 'true' : 'false')
-  } catch {
-    // A remembered disclosure is a nicety; a full quota must not break the
-    // toggle itself, which works from React state either way.
-  }
 }
 
 export const subscribeMunicipalitySavedFilters = (onChange: () => void): (() => void) => {
