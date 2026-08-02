@@ -79,8 +79,14 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/utilities/campaignDashboardData',
       'src/lib/campaignHomeSearchHits',
       'src/lib/homeSearchShare',
+      'src/lib/homeSearchExcludeCurrentEntity',
+      'src/lib/homeSearchNearestMunicipalityMerge',
+      'src/lib/homeSearchSuggest',
+      'src/lib/homeSearchUi',
     ],
-    specs: ['campaignHomeActions'],
+    // Home search suggest/exclude is exercised on municipality detail (B109)
+    // as well as the home action suite.
+    specs: ['campaignHomeActions', 'campaignMunicipalities'],
   },
   {
     prefixes: [
