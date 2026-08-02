@@ -50,7 +50,12 @@ test.describe('Municípios — list header mobile (B118)', () => {
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
-    await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeHidden()
+    const heading = page.getByRole('heading', { name: 'Municípios', exact: true })
+    await expect(heading).toHaveClass(/sr-only/)
+    const headingBox = await heading.boundingBox()
+    expect(headingBox?.height ?? 0).toBeLessThanOrEqual(2)
+    await expect(page.locator('header p')).toBeHidden()
+    await expect(page.locator('[data-scope="campaign"]')).toBeHidden()
     await expect(page.getByLabel('Buscar município')).toBeVisible()
     await expect(page.getByText(/\d+ municípios encontrados/)).toBeVisible()
   })
