@@ -130,7 +130,7 @@ Inclua baldes **já_resolvido**, **descartar** e **defer** com uma linha de raci
 
 Para cada lote com destino **registrar** ou **absorver**:
 
-1. Lotes de engenharia/UX: `pnpm agent:register -- --id <ID> --title "<título>" --prio <P> --kind chore --plan docs/plans/<slug>.md` — **um lote mesclado, não um item por achado micro**. Inclua appetite e rabbit holes do lote no plano curto.
+1. Lotes de engenharia/UX: `pnpm agent:register -- --id <ID> --title "<título>" --prio <P> --kind chore --plan docs/plans/<slug>.md` — **um lote mesclado, não um item por achado micro**. Inclua appetite e rabbit holes do lote no plano curto. Com `--plan`, a Issue nasce `blocked` (OPS17) até o plano estar em `main` e `pnpm agent:ready -- --issue <N>` (no fechamento da sessão após o merge, ou via OPS18).
 2. Défice comportamental do fluxo de agentes (algo que o agente errou e a convenção não pegou): `pnpm agent:file-miss` (`kind:agent-miss`) — alimenta o harvest do `engineering-audit`.
 3. Se **absorver** num plano existente: edite o plano (nova fase/seção) — mesmo precedente "Gap vs 2022". **Se a Issue dona do plano estiver `in-progress`, NÃO a edite** — registra como Issue nova com `--depends <id-do-pai>` (destrava sozinha quando o pai flipar `done`).
 4. Se **defer**: anote o gatilho no plano-pai (Adiado com gatilho / Explicitamente fora) ou na mensagem de triage confirmada — não crie Issue só por isso.

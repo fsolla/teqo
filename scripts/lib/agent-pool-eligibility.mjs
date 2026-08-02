@@ -15,7 +15,7 @@ import { labelNames } from './agent-github.mjs'
 export const POOL_CIRCUIT_BREAKER_FAILURES = 2
 
 const EXCLUDED_STATE_LABELS = ['in-progress', 'blocked', 'done', 'in-prod']
-const HUMAN_GATE_LABELS = ['requirements-changed', 'needs:consent']
+export const HUMAN_GATE_LABELS = ['requirements-changed', 'needs:consent']
 
 /**
  * @param {ReturnType<import('./agent-github.mjs').buildClaimQueue>[number]} entry queue entry from buildClaimQueue
@@ -47,7 +47,8 @@ export const isAutonomousClaimable = (
   return { ok: true }
 }
 
-/** Plan link is a preference, never a blocker (v1) — status surfaces it as a warn. */
+/** Plan link is a preference for claim/pool status (warn), never a claim blocker.
+ *  Promote-to-ready (`canPromotePlanIssue`) requires the link — different concern. */
 export const issueHasPlanLink = (issue) => /docs\/plans\//.test(issue?.body ?? '')
 
 /**

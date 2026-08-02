@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 Esta skill transforma ideias soltas em: (1) um **plano de intenção** em `docs/plans/<slug>.md` por item, e (2) uma **GitHub Issue rastreável** (`pnpm agent:register`, frontmatter `id/depends/serializes/priority/model`). GitHub Issues são a fonte canônica de spec/status/deps/prio/modelo — `docs/roadmap.md` é legado congelado e **nunca** é editado aqui.
 
-**Gate de confirmação (obrigatório):** nenhuma Issue é criada no GitHub antes do usuário aprovar o overview do lote (Passo 5). Planos locais podem ser rascunhados antes; Issues, não.
+**Gate de confirmação (obrigatório):** nenhuma Issue é criada no GitHub e nenhum PR de planos é aberto antes do usuário **confirmar explicitamente o lote** após o overview (Passo 5). Planos locais podem ser rascunhados antes (`Issue: —`); Issues e PRs, não. “Ok” ambíguo no meio da edição **não** conta — só após o overview apresentado + OK ao lote (ex. “confirma o lote” / “pode registrar”).
 
 ## Divisão com as skills de execução
 
@@ -36,8 +36,8 @@ Aqui **não** se implementa código, **não** se escreve plano de implementaçã
 - [ ] 2. Reserva de IDs de uma vez por trilha (roadmap legacy + issuesById())
 - [ ] 3. Por item (ordem topológica): classificar → fatiar → explorar só o suficiente → intenção completa
 - [ ] 4. Sugestão de modelo × effort via model-selection (uma linha por item)
-- [ ] 5. GATE: overview do lote + esboços de fluxo (B/C/D) → confirmar/iterar
-- [ ] 6. Registro: pnpm agent:register (com --model) por item + commit dos planos de intenção
+- [ ] 5. GATE: overview do lote + esboços de fluxo (B/C/D) → confirmar/iterar (**sem** Issue/PR até OK explícito)
+- [ ] 6. Registro: `agent:register` (com `--plan` → `blocked`) → PR `Related #N` → merge → `agent:ready`
 ```
 
 ## Passo 1 — Parse e dedup
@@ -98,27 +98,38 @@ Skill `model-selection`. Registre no cabeçalho (`Model:`) e no gate.
 
 ## Passo 5 — GATE
 
-Antes de criar Issues:
+Antes de criar Issues **ou** abrir PR de planos:
 
 - Overview: ID, título, prio, depends, appetite, modelo, link do plano local
 - Esboços de fluxo persona para superfícies B/C/D (se houver)
 - Perguntas acumuladas numa rodada, recomendação de produto primeiro
 
-Itere até confirmação. Só então Passo 6.
+Itere até confirmação **explícita do lote** (não basta um “ok” solto durante a edição). Só então Passo 6.
 
-## Passo 6 — Registro
+## Passo 6 — Registro (não claimável até plano em `main`)
+
+Ordem obrigatória (OPS17):
+
+1. **Registrar Issues** (ainda `blocked` quando há `--plan` — o script enforça; chores sem `--plan` nascem `ready`):
 
 ```bash
 pnpm agent:register -- --id <ID> --title "<título>" --prio <P0..P3> \
   --depends <A,B> --kind <feature|chore|...> --plan docs/plans/<slug>.md \
-  --model <slug> [--blocked] [--labels extra]
+  --model <slug> [--labels extra]
 ```
 
-Atualize `Issue: #N` no plano. Commit dos planos de intenção.
+Atualize `Issue: #N` no plano.
 
-**PR só de plano:** nunca `Closes #N` — use `Related #N` (`plans-only-closes`).
+2. **Commit + PR só de planos** com `Related #N` (nunca `Closes #N` — `plans-only-closes`). Base `main`, Ready, auto-merge.
+3. **Após o merge em `main`**, promover para a fila claimável:
 
-**NÃO faz:** editar `docs/roadmap.md`, implementar, claim, escrever `*-impl.md`.
+```bash
+pnpm agent:ready -- --issue <N[,N…]>
+```
+
+(`blocked` → `ready` só se o body linka `docs/plans/`; Issues `blocked` sem plano não são promovidas.) Safety net Action no merge = OPS18 (fora deste fluxo se ainda não existir).
+
+**NÃO faz:** editar `docs/roadmap.md`, implementar, claim, escrever `*-impl.md`, registrar/abrir PR antes do gate, deixar Issue com plano em `ready` antes do plano existir em `main`.
 
 ## Resumo final
 

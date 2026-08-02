@@ -1,6 +1,6 @@
 # Ciclo de vida do plan-issue — colaboração fechada antes de claim
 
-Status: registrado (blocked até plano em main)
+Status: em execução (impl em andamento)
 Atualizado em: 2026-08-02
 Issue: #292
 Priority: P1
