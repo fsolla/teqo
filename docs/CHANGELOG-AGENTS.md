@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-01):** **B114** (Issue #195) — wizard Voltar header = Android back: contrato `wizardBack` + `useWizardBackHistory` (pushState/popstate), previousHrefs canônicos, layer form liderança. Plano: [`wizard-back-navigation-system.md`](docs/plans/wizard-back-navigation-system.md).
+
 **Recently resolved (2026-08-01):** **OH5** (Issue #168) — `CampaignOpsSyncProvider` no layout `(app)`: bootstrap mirror (OPFS file → IDB dump/hydrate + TanStack `localOnly` collections), poll 3 min foreground + `visibilitychange`/`online`, chrome “Actualizado…” / “A sincronizar…” / “Dados podem estar desatualizados”; leader no-op. Plano: [`oh5-sync-provider-mirror.md`](docs/plans/oh5-sync-provider-mirror.md).
 
 **Recently resolved (2026-08-01):** **CL8** (Issue #162) — contrato das 8 listas v1: pin slug↔rota (`opsListRegistryRoutes`), saved filters municípios intactos com `LIST_UNIFIED` (e2e tracer), `resolveDemandListUrl` + `resolveOrganizationListUrl` (redirect canónico; registry `canonicalRedirect: true`). Plano: [`cl8-contrato-cleanup.md`](docs/plans/cl8-contrato-cleanup.md).

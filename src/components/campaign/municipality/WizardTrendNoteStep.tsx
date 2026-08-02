@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
-import { wizardTrendHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import {
@@ -26,6 +25,7 @@ import {
   wizardChainContinueHref,
   wizardChainEndHref,
 } from '@/lib/wizardActionChain'
+import { wizardStepPreviousHref } from '@/lib/wizardBack'
 import { politicalTrendLabels } from '@/utilities/municipality/municipalityLabels'
 
 type WizardTrendNoteStepProps = {
@@ -71,14 +71,13 @@ export const WizardTrendNoteStep = ({
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
       isEntryStep={false}
       stepTitle={stepTitle}
-      previousHref={wizardTrendHref(
+      previousHref={wizardStepPreviousHref({
+        step: 'trend-note',
         actionSlug,
         municipalitySlug,
-        undefined,
         entryAction,
-        undefined,
         returnPath,
-      )}
+      })}
       dismissHref={wizardChainEndHref(returnPath)}
       municipalityLabel={municipalityName}
       skip={skip}

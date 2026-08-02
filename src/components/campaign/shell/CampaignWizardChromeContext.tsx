@@ -2,9 +2,11 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
@@ -28,13 +30,28 @@ export type CampaignWizardChromeState = {
 type CampaignWizardChromeContextValue = {
   chrome: CampaignWizardChromeState | null
   setChrome: Dispatch<SetStateAction<CampaignWizardChromeState | null>>
+  requestBack: () => void
+  setBackHandler: (handler: (() => void) | null) => void
 }
 
 const CampaignWizardChromeContext = createContext<CampaignWizardChromeContextValue | null>(null)
 
 export const CampaignWizardChromeProvider = ({ children }: { children: ReactNode }) => {
   const [chrome, setChrome] = useState<CampaignWizardChromeState | null>(null)
-  const value = useMemo(() => ({ chrome, setChrome }), [chrome])
+  const backHandlerRef = useRef<(() => void) | null>(null)
+
+  const setBackHandler = useCallback((handler: (() => void) | null) => {
+    backHandlerRef.current = handler
+  }, [])
+
+  const requestBack = useCallback(() => {
+    backHandlerRef.current?.()
+  }, [])
+
+  const value = useMemo(
+    () => ({ chrome, setChrome, requestBack, setBackHandler }),
+    [chrome, requestBack, setBackHandler],
+  )
 
   return (
     <CampaignWizardChromeContext.Provider value={value}>
@@ -53,6 +70,9 @@ const useCampaignWizardChromeContext = (): CampaignWizardChromeContextValue => {
 
 export const useCampaignWizardChrome = (): CampaignWizardChromeState | null =>
   useCampaignWizardChromeContext().chrome
+
+export const useCampaignWizardRequestBack = (): (() => void) =>
+  useCampaignWizardChromeContext().requestBack
 
 type CampaignWizardChromeInput = {
   flowTitle: string
@@ -92,4 +112,16 @@ export const useSetCampaignWizardChrome = (state: CampaignWizardChromeState | nu
     },
     [setChrome],
   )
+}
+
+/** Registers the shared Voltar / Android back handler for the active wizard shell (B114). */
+export const useSetCampaignWizardBackHandler = (handler: (() => void) | null): void => {
+  const { setBackHandler } = useCampaignWizardChromeContext()
+
+  useLayoutEffect(() => {
+    setBackHandler(handler)
+    return () => {
+      setBackHandler(null)
+    }
+  }, [handler, setBackHandler])
 }

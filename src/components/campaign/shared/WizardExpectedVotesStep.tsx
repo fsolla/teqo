@@ -16,7 +16,6 @@ import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
-import { wizardActionHref } from '@/lib/campaignActionRoutes'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import {
@@ -32,6 +31,7 @@ import {
   wizardChainContinueHref,
   wizardChainEndHref,
 } from '@/lib/wizardActionChain'
+import { wizardStepPreviousHref } from '@/lib/wizardBack'
 import {
   applyVoteShortcut,
   getWizardVoteViolation,
@@ -138,7 +138,11 @@ export const WizardExpectedVotesStep = ({
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
       stepTitle={wizardNextStepTitle(actionSlug)}
       isEntryStep={false}
-      previousHref={wizardActionHref(actionSlug, undefined, { returnPath })}
+      previousHref={wizardStepPreviousHref({
+        step: 'expected-votes',
+        actionSlug,
+        returnPath,
+      })}
       dismissHref={wizardChainEndHref(returnPath)}
       municipalityLabel={municipalityName}
       skip={skip}

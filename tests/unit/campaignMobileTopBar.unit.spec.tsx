@@ -99,7 +99,7 @@ describe('CampaignMobileTopBar', () => {
     expect(screen.queryByRole('link', { name: /Voltar/ })).toBeNull()
   })
 
-  it('renders wizard continue mode with back link and municipality subtitle', () => {
+  it('renders wizard continue mode with Voltar button (B114)', () => {
     renderTopBar({
       wizardChrome: {
         flowTitle: 'Ajustar votos',
@@ -110,9 +110,8 @@ describe('CampaignMobileTopBar', () => {
       },
     })
 
-    expect(screen.getByRole('link', { name: /Voltar/ }).getAttribute('href')).toBe(
-      '/campanha/acoes/atualizar-votos',
-    )
+    expect(screen.getByRole('button', { name: /Voltar/ })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: /Voltar/ })).toBeNull()
     expect(screen.getByLabelText('Município em atualização: Cairu').textContent).toBe('Cairu')
     expect(screen.getByRole('link', { name: 'Sair da ação' })).toBeTruthy()
   })

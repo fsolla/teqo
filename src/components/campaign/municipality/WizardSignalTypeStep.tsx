@@ -17,7 +17,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/Drawer'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
-import { wizardActionHref, wizardSignalHref } from '@/lib/campaignActionRoutes'
+import { wizardSignalHref } from '@/lib/campaignActionRoutes'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import {
   municipalitySignalTypeMeta,
@@ -26,6 +26,7 @@ import {
 import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 import { cn } from '@/lib/utils'
 import { wizardChainEndHref } from '@/lib/wizardActionChain'
+import { wizardStepPreviousHref } from '@/lib/wizardBack'
 import { resolveWizardSignalSkip, WIZARD_SIGNAL_TYPE_STEP_TITLE } from '@/lib/wizardSignalUi'
 
 type WizardSignalTypeStepProps = {
@@ -53,7 +54,11 @@ export const WizardSignalTypeStep = ({
         flowTitle={wizardFlowTitleForSlug(actionSlug)}
         isEntryStep={false}
         stepTitle={WIZARD_SIGNAL_TYPE_STEP_TITLE}
-        previousHref={wizardActionHref(actionSlug, undefined, { returnPath })}
+        previousHref={wizardStepPreviousHref({
+          step: 'signal-type',
+          actionSlug,
+          returnPath,
+        })}
         dismissHref={wizardChainEndHref(returnPath)}
         municipalityLabel={municipalityName}
         contentAlign="end"

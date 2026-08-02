@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
-import { wizardSignalHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
@@ -22,6 +21,7 @@ import {
   wizardChainContinueHref,
   wizardChainEndHref,
 } from '@/lib/wizardActionChain'
+import { wizardStepPreviousHref } from '@/lib/wizardBack'
 import {
   resolveWizardSignalSkip,
   WIZARD_SIGNAL_BODY_STEP_TITLE_PREFIX,
@@ -68,13 +68,13 @@ export const WizardSignalBodyStep = ({
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
       isEntryStep={false}
       stepTitle={stepTitle}
-      previousHref={wizardSignalHref(
+      previousHref={wizardStepPreviousHref({
+        step: 'signal-body',
         actionSlug,
         municipalitySlug,
-        undefined,
         entryAction,
         returnPath,
-      )}
+      })}
       dismissHref={wizardChainEndHref(returnPath)}
       municipalityLabel={municipalityName}
       skip={skip}

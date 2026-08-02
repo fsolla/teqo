@@ -46,9 +46,9 @@ describe('CampaignWizardShell', () => {
       children: 'Corpo',
     })
 
-    expect(screen.getByRole('link', { name: /Voltar/ }).getAttribute('href')).toBe(
-      '/campanha/acoes/atualizar-votos',
-    )
+    // B114 — Voltar is a button that shares the Android back contract (not a Link).
+    expect(screen.getByRole('button', { name: /Voltar/ })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: /Voltar/ })).toBeNull()
     const topBar = document.querySelector(
       '[data-slot="campaign-mobile-top-bar"][data-mode="wizard"]',
     )
@@ -69,6 +69,7 @@ describe('CampaignWizardShell', () => {
     })
 
     expect(screen.getByRole('link', { name: 'Sair da ação' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Voltar/ })).toBeNull()
     expect(screen.queryByRole('link', { name: /Voltar/ })).toBeNull()
   })
 

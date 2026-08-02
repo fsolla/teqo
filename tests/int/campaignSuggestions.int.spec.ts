@@ -276,9 +276,10 @@ describe('loadMunicipalitySuggestions (E11)', () => {
 
     // A quiet município cannot be staged — quietness means NO artifact-anchored
     // pattern fires — so claim through the allocator until one qualifies
-    // (measured: 205 of 435 with zeroed rows).
+    // (measured: 205 of 435 with zeroed rows). Under a full parallel int suite
+    // the first 10 claims can all be "noisy" from other workers — keep trying.
     let municipality: Municipality | null = null
-    for (let attempt = 0; attempt < 10; attempt += 1) {
+    for (let attempt = 0; attempt < 40; attempt += 1) {
       const candidate = await fixtures.getMunicipality()
       await normalizeMunicipality(candidate, { priority: 'alta' })
       fixtures.touchMunicipality(candidate.id)
@@ -289,7 +290,7 @@ describe('loadMunicipalitySuggestions (E11)', () => {
         break
       }
     }
-    if (!municipality) throw new Error('Nenhum município silencioso em 10 alocações.')
+    if (!municipality) throw new Error('Nenhum município silencioso em 40 alocações.')
 
     const author = await fixtures.createCampaignUser('coordinator')
     await fixtures.createMunicipalityUpdate({

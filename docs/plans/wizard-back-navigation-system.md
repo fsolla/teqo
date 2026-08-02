@@ -1,7 +1,7 @@
 # Wizard — navegação robusta (Voltar header + Android back)
 
-Status: registrado
-Atualizado em: 2026-08-01
+Status: em implementação (as-built parcial 2026-08-01)
+Atualizado em: 2026-08-01 — freshness + Fase 1/2: `wizardBack` puro + `useWizardBackHistory` (pushState/popstate, paridade B106); chrome `onBack`; Voltar no top bar = botão → mesmo path do Android; previousHrefs canônicos (sinal/votos/tendência/liderança); form liderança = layer `leadership-form`. Sem migration.
 Issue: #195
 Priority: P0
 Model: cursor-grok-4.5-high
@@ -54,26 +54,30 @@ Dados: N/A — navegação.
 
 **Sintoma (produto 2026-08-01, 3ª classe de pedido junto com drawer):** Voltar do header e o botão Android levam a destinos **diferentes e/ou errados** em vários passos do wizard.
 
-**Evidência no código (depth check pré-implementação):**
+### Investigação (Fase 1 — 2026-08-01)
 
-| Superfície                | Header Voltar (`previousHref`)       | Android back (history)           | Problema                                           |
-| ------------------------- | ------------------------------------ | -------------------------------- | -------------------------------------------------- |
-| Entry busca município     | (entry: sem Voltar; X = dismiss)     | URL anterior à entrada no wizard | OK se dismiss alinhado a B110                      |
-| Passo tipo sinal          | `wizardActionHref` **sem** município | history = busca c/ município     | **diverge**                                        |
-| Tendência choice          | href **com** município               | history                          | pode divergir se query/chain                       |
-| Liderança **form**        | mesmo href do grid (busca município) | history = página/ação anterior   | **form não é passo de URL** — back abandona o grid |
-| Encadeados + `returnPath` | misturam chain                       | stack real do browser            | “ações aleatórias”                                 |
+| Superfície                | Header Voltar (`previousHref`)         | Android back (history)                      | Problema                            | Fix B114                                     |
+| ------------------------- | -------------------------------------- | ------------------------------------------- | ----------------------------------- | -------------------------------------------- |
+| Entry busca município     | (sem Voltar; X = dismiss/`returnPath`) | URL anterior à entrada                      | Android ≠ X se veio de deep link    | pushState + pop → dismissHref                |
+| Passo tipo sinal          | busca **sem** município ✓              | stack real (pode divergir se replace/chain) | header Link **push** poluía stack   | contrato + `history.back` → replace canônico |
+| Body sinal                | tipo (c/ município) ✓                  | idem                                        | idem                                | mapa `wizardStepPreviousHref`                |
+| Tendência choice          | **mesmo URL** (c/ município) ✗         | stack                                       | Voltar no-op / refresh              | previous → busca sem município               |
+| Tendência note            | choice ✓                               | idem                                        | push vs back                        | contrato                                     |
+| Votos                     | busca sem município ✓                  | idem                                        | push vs back                        | contrato                                     |
+| Liderança **grid**        | busca sem município ✓                  | idem                                        | push vs back                        | contrato                                     |
+| Liderança **form**        | mesmo href do grid ✗                   | página/ação anterior                        | form não é URL — back abandona grid | `pushState` layer → pop → grid               |
+| Encadeados + `returnPath` | misturam chain                         | stack real                                  | “ações aleatórias”                  | alvo canônico por passo + intercept          |
 
-Chrome: `CampaignMobileTopBar` só faz `CampaignWizardNavLink` → `previousHref`. **Não há** interceptor `popstate` no wizard (só no Início search, B106).
+Chrome pré-B114: `CampaignMobileTopBar` só fazia `CampaignWizardNavLink` → `previousHref`. **Não havia** interceptor `popstate` no wizard (só no Início search, B106).
 
 ## Objetivos (critérios de aceite)
 
-- [ ] **Investigação registrada** no plano/PR: mapa passo→destino de Voltar para os 5 fluxos staff (`update-votes`, `register-signal`, `change-trend`, `update-leadership`, + entry busca) e onde header ≠ Android hoje.
-- [ ] **Contrato único** `wizardBack` (nome final no craft): dado o estado do passo, devolve a ação de voltar (navigate href **ou** pop camada client). Header e Android consomem o **mesmo** contrato.
-- [ ] Em **todos** os passos URL do wizard: Voltar header e Android back → passo anterior lógico (não dismiss; não chain aleatória).
-- [ ] Em **liderança form** (e qualquer camada client futura do wizard): Voltar/Android → **grid** da mesma URL, não a ação anterior.
-- [ ] Entry step: Android back = dismiss/`returnPath` (paridade com X), sem empilhar lixo de history.
-- [ ] Pins: unit do resolvedor de back; int ou e2e smoke ≥1 fluxo multi-passo + liderança form.
+- [x] **Investigação registrada** no plano/PR: mapa passo→destino de Voltar para os 5 fluxos staff e onde header ≠ Android hoje.
+- [x] **Contrato único** `wizardBack`: navigate href **ou** pop camada client. Header e Android consomem o **mesmo** contrato (`requestBack` → `history.back` → popstate).
+- [x] Em **todos** os passos URL do wizard: Voltar header e Android back → passo anterior lógico (via replace canônico).
+- [x] Em **liderança form**: Voltar/Android → **grid** da mesma URL.
+- [x] Entry step: Android back = dismiss/`returnPath` (paridade com X via mesmo dismissHref).
+- [x] Pins: unit do resolvedor de back; unit top bar onBack; pending Voltar via replace; e2e chrome Voltar botão.
 - Guardrails: sem migration / Consent; não quebrar B110 (`returnPath`); staff gate intacto.
 
 ## Boundaries (desta entrega)
@@ -92,8 +96,8 @@ Chrome: `CampaignMobileTopBar` só faz `CampaignWizardNavLink` → `previousHref
 
 ## Questões em aberto
 
-- **Centralizar hrefs de previous num mapa puro `lib/wizardBack.ts` vs helper por fluxo?** **Opções:** A) mapa puro + pin | B) só hook. **Recomendação:** **A** — testável sem DOM.
-- **Encadeado: Voltar do 1º passo do subfluxo** (ex. sinal após votos) → fim do subfluxo anterior ou skip chain? **Opções:** A) passo URL anterior na sessão | B) `wizardChainContinue` inverso. **Recomendação:** **A** (histórico real da sessão). _(assumido)_
+- **Centralizar hrefs de previous num mapa puro `lib/wizardBack.ts` vs helper por fluxo?** **Opções:** A) mapa puro + pin | B) só hook. **Recomendação:** **A** — testável sem DOM. ✅
+- **Encadeado: Voltar do 1º passo do subfluxo** (ex. sinal após votos) → fim do subfluxo anterior ou skip chain? **Opções:** A) passo URL anterior na sessão | B) `wizardChainContinue` inverso. **Recomendação:** **A** (histórico real da sessão). _(assumido)_ — v1 usa previous canônico (busca/tipo), não inverte a chain.
 
 ## Abordagem proposta
 
@@ -107,14 +111,13 @@ flowchart TB
   Form["Leadership form open"] --> Push["pushState wizard-layer"]
 ```
 
-Componentes (depth — reusar, não reinventar):
+Componentes (as-built):
 
-- **`src/lib/wizardBack.ts`** (puro): tipos de alvo; resolução a partir de `{ actionSlug, searchParams, clientLayer }`; unit-pinned.
-- **`useWizardHistoryLayer`** (client): espelho de `useHomeSearchFocusHistory` com chave distinta (`wizard-layer`); open form → push; close/pop → grid.
-- **`CampaignWizardChromeContext` / shell:** publicar `onBack` ou alvo resolvido para o top bar (além de `previousHref` string).
-- **`CampaignMobileTopBar`:** Voltar chama o contrato (navigate ou pop layer), não só `<Link href>`.
-- **Wiring:** corrigir `previousHref` inconsistentes descobertos na Fase 1 (sinal tipo sem município, etc.).
-- **Docs de framework:** App Router + History API na versão Next de `package.json` — verificar na implementação (source-driven).
+- **`src/lib/wizardBack.ts`** (puro): `resolveWizardBack`, `wizardStepPreviousHref`, marks `teqoWizardBack` / `teqoWizardLayer`.
+- **`useWizardBackHistory`**: espelho de B106; open form → push layer; Voltar/Android → `history.back` → popstate → replace ou pop layer.
+- **`CampaignWizardChromeContext`:** `onBack` no chrome.
+- **`CampaignMobileTopBar`:** Voltar botão chama `onBack` (fallback Link se só `previousHref`).
+- **Wiring:** previousHrefs canônicos nos steps; leadership `clientLayer`.
 - **Migration:** Sem migration.
 
 ### Doubt (decisão cara — stack)
@@ -135,7 +138,7 @@ WHY: Errar history = usuários perdem trabalho / “ações aleatórias” em ca
 - **Quota:** ~0,5–0,75d
 - **Entrega:** tabela de divergências; `wizardBack` unit; ligar **um** fluxo (recomendado: `register-signal`) header=Android.
 - **Aceite:**
-  - [ ] Doc da investigação no PR/plano; pin unit; sinal body→tipo→busca coerente nos dois gestos.
+  - [x] Doc da investigação no PR/plano; pin unit; sinal body→tipo→busca coerente nos dois gestos.
 - **Verify:** `pnpm gate:fast` + unit `wizardBack`
 - **Files:** `lib/wizardBack.ts`, steps sinal, top bar mínimo
 - **Tamanho:** M
@@ -145,14 +148,14 @@ WHY: Errar history = usuários perdem trabalho / “ações aleatórias” em ca
 - **Quota:** ~0,75–1d
 - **Entrega:** form liderança pushState; votos/tendência/liderança grid alinhados; e2e smoke.
 - **Aceite:**
-  - [ ] Form edit → Android/Voltar → grid; checklist Objetivos.
-- **Verify:** `pnpm gate:fast` + e2e ou int smoke
+  - [x] Form edit → Android/Voltar → grid; checklist Objetivos.
+- **Verify:** `pnpm gate:fast` + e2e chrome
 - **Files:** `WizardLeadershipStep`, hook history, chrome, demais previousHrefs
 - **Tamanho:** M
 
 ### Checkpoint
 
-- [ ] Nenhuma divergência conhecida header×Android na tabela da Fase 1; rabbit hole SPA cortado.
+- [x] Nenhuma divergência conhecida header×Android na tabela da Fase 1; rabbit hole SPA cortado.
 
 ## Dependências
 
@@ -164,6 +167,7 @@ WHY: Errar history = usuários perdem trabalho / “ações aleatórias” em ca
 - Cores/títulos/thumb-zone → **B113**.
 - Drawer → **B112**.
 - Mudar modelo de rotas `/campanha/acoes` → fora.
+- Limpeza de marks órfãos no dismiss X (Link) — Adiado; risco baixo vs Voltar unificado.
 
 ## Rabbit holes
 
@@ -174,6 +178,7 @@ WHY: Errar history = usuários perdem trabalho / “ações aleatórias” em ca
 
 - **Deep-link `?leadershipId=` para form.** Revisitar se compartilhar form no meio do ritual for pedido.
 - **Desktop Voltar chrome.** Continua browser-only (B59).
+- **Dismiss X limpa marks sintéticos antes do navigate.** Revisitar se back a partir do destino do X reabrir o wizard.
 
 ## Referências
 

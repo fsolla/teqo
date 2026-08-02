@@ -115,7 +115,9 @@ test.describe('Municípios — jornadas por papel', () => {
     )
     await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
 
-    const advisorsTrigger = page.getByRole('button', { name: 'Editar assessores' })
+    const advisorsTrigger = page.getByRole('button', {
+      name: new RegExp(`^Editar assessores em ${municipality.name}\\b`),
+    })
     await advisorsTrigger.click()
 
     const advisorsPopover = page.locator('[data-slot="popover-content"]')
@@ -145,7 +147,11 @@ test.describe('Municípios — jornadas por papel', () => {
     // Persistence: reload and reopen to confirm the server, not just local
     // state, now holds the assignment.
     await page.reload()
-    await page.getByRole('button', { name: 'Editar assessores' }).click()
+    await page
+      .getByRole('button', {
+        name: new RegExp(`^Editar assessores em ${municipality.name}\\b`),
+      })
+      .click()
     await expect(
       page.locator('[data-slot="popover-content"]').getByRole('button', {
         name: `Remover ${advisor.name}`,
@@ -506,14 +512,18 @@ test.describe('Municípios — bottom drawer polish (B109)', () => {
     const search = page.getByLabel('Buscar na campanha')
     await search.focus()
     await expect(page.getByRole('link', { name: 'Mudar tendência' })).toBeHidden()
-
+    // Wait for the FULL snap to settle — measuring mid-animation flakes in CI
+    // (handle y hovered ~60–100px before the sheet finished covering the viewport).
+    await expect(page.locator('[data-snap="full"]')).toBeVisible()
     const handle = page.getByRole('button', { name: 'Ocultar ações rápidas' })
-    const handleBox = await handle.boundingBox()
-    expect(handleBox).toBeTruthy()
-    // Fullscreen search docks the strip under the safe-area top bar; allow a
-    // few px of layout jitter (subpixel / font metrics) without losing the
-    // "near the top" assertion.
-    expect(handleBox!.y).toBeLessThan(48)
+    await expect
+      .poll(async () => {
+        const box = await handle.boundingBox()
+        return box?.y ?? Number.POSITIVE_INFINITY
+      })
+      // Fullscreen docks under the safe-area top bar; allow a few px of layout
+      // jitter once the FULL snap has settled (mid-animation y hovered ~60–100).
+      .toBeLessThan(48)
 
     // Scope to the drawer: the município detail page also has a "Sugestões" region.
     const drawer = page.getByRole('dialog', { name: 'Ações rápidas' })
