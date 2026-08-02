@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
-import { assertCampaignDocCas } from '@/app/(campaign)/campanha/actions/assertCampaignDocCas'
 import { nextMunicipalityIdsAfterLeadershipMembership } from '@/lib/leadershipMunicipalityMembership'
 import { nextStateDeputyIdsAfterMembership } from '@/lib/leadershipStateDeputyMembership'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
@@ -437,7 +436,7 @@ const openLeadershipForRelationDelta = async <
     collection: 'leadership',
     id: leadershipId,
     depth: 0,
-    select: { [relation]: true } as Record<Relation, true>,
+    select: { [relation]: true, updatedAt: true } as Record<Relation | 'updatedAt', true>,
     user: currentActor,
     overrideAccess: false,
     req,
@@ -474,14 +473,7 @@ export const setLeadershipStateDeputyMembershipRecord = async (
         'stateDeputies',
       )
 
-      await assertCampaignDocCas(payload, {
-        collection: 'leadership',
-        id: leadershipId,
-        actor: currentActor,
-        enforceCas,
-        baseUpdatedAt,
-        req,
-      })
+      assertOpsUpdatedAtCas(enforceCas, baseUpdatedAt, current.updatedAt)
 
       const currentStateDeputyIDs = uniqueRelationshipIds(current.stateDeputies)
       const nextStateDeputyIDs = nextStateDeputyIdsAfterMembership(
@@ -540,6 +532,7 @@ export const setLeadershipStateDeputyMembership = async (
   return leadership
 }
 
+/** @public CAS entry for offline/hybrid membership writes (OH13). */
 export const setLeadershipStateDeputyMembershipCas = async (
   input: LeadershipStateDeputyMembershipInput,
 ) => {
@@ -607,14 +600,7 @@ export const setLeadershipMunicipalitiesMembershipRecord = async (
         'municipalities',
       )
 
-      await assertCampaignDocCas(payload, {
-        collection: 'leadership',
-        id: leadershipId,
-        actor: currentActor,
-        enforceCas,
-        baseUpdatedAt,
-        req,
-      })
+      assertOpsUpdatedAtCas(enforceCas, baseUpdatedAt, current.updatedAt)
 
       const change = nextMunicipalityIdsAfterLeadershipMembership(
         uniqueRelationshipIds(current.municipalities),
@@ -679,6 +665,7 @@ export const setLeadershipMunicipalitiesMembership = async (
   return leadership
 }
 
+/** @public CAS entry for offline/hybrid membership writes (OH13). */
 export const setLeadershipMunicipalitiesMembershipCas = async (
   input: LeadershipMunicipalitiesMembershipInput,
 ) => {

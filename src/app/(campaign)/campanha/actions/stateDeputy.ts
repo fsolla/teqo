@@ -3,9 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
-import { assertCampaignDocCas } from '@/app/(campaign)/campanha/actions/assertCampaignDocCas'
 import { nextStateDeputyIdsAfterMunicipalityMembership } from '@/lib/municipalityStateDeputyMembership'
 import { uniqueRelationshipIds } from '@/lib/relationship'
+import { assertOpsUpdatedAtCas } from '@/lib/schemas/opsCas'
 import {
   STATE_DEPUTY_CONFLICT_MESSAGE,
   STATE_DEPUTY_STAFF_MESSAGE,
@@ -138,27 +138,22 @@ export const setStateDeputyMunicipalitiesBatchRecord = async (
 
       for (const municipalityId of uniqueMunicipalityIds) {
         const baseForMunicipality = municipalityBaseUpdatedAt?.[String(municipalityId)]
-        await assertCampaignDocCas(payload, {
-          collection: 'municipality',
-          id: municipalityId,
-          actor: currentActor,
-          enforceCas,
-          baseUpdatedAt: baseForMunicipality,
-          req,
-        })
 
         // Row + field access verify the município is in the actor's scope
         // (`canUpdateMunicipality` for advisors, `canManageCampaignStaffField`
         // for the field) — an out-of-scope município throws here.
+        // CAS stamp rides the same load (OH13) — avoid a second findByID.
         const municipality = await payload.findByID({
           collection: 'municipality',
           id: municipalityId,
           depth: 0,
-          select: { stateDeputies: true, slug: true },
+          select: { stateDeputies: true, slug: true, updatedAt: true },
           user: currentActor,
           overrideAccess: false,
           req,
         })
+
+        assertOpsUpdatedAtCas(enforceCas, baseForMunicipality, municipality.updatedAt)
 
         const currentStateDeputyIDs = uniqueRelationshipIds(municipality.stateDeputies)
         const nextStateDeputyIDs = nextStateDeputyIdsAfterMunicipalityMembership(
@@ -218,6 +213,7 @@ export const setStateDeputyMunicipalitiesBatch = async (
   return result
 }
 
+/** @public CAS entry for offline/hybrid batch municipality writes (OH13). */
 export const setStateDeputyMunicipalitiesBatchCas = async (
   input: StateDeputyMunicipalitiesBatchInput,
 ) => {

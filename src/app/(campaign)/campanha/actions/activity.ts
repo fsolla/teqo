@@ -375,7 +375,10 @@ export const createActivity = async (
   return createActivityRecord(payload, actor, input, demandDrafts)
 }
 
-/** Outbox entry for create — no CAS (new doc). */
+/**
+ * Outbox / hybrid entry for create — no CAS (new doc).
+ * @public Kept as the CAS-named twin of `createActivity` for offline enqueue.
+ */
 export const createActivityCas = async (
   input: ActivityCreateInput,
   demandDrafts: ActivityDemandDraft[] = [],
