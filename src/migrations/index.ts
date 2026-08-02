@@ -38,6 +38,7 @@ import * as migration_20260730_010601_simplify_municipality_signal_fields from '
 import * as migration_20260730_043306_simplify_leadership_fields from './20260730_043306_simplify_leadership_fields';
 import * as migration_20260731_014319_add_campaign_notifications from './20260731_014319_add_campaign_notifications';
 import * as migration_20260801_062558_add_campaign_vote_summary_snapshot from './20260801_062558_add_campaign_vote_summary_snapshot';
+import * as migration_20260802_230000_strip_engagement_reversal_signals from './20260802_230000_strip_engagement_reversal_signals';
 
 export const migrations = [
   {
@@ -239,5 +240,10 @@ export const migrations = [
     up: migration_20260801_062558_add_campaign_vote_summary_snapshot.up,
     down: migration_20260801_062558_add_campaign_vote_summary_snapshot.down,
     name: '20260801_062558_add_campaign_vote_summary_snapshot'
+  },
+  {
+    up: migration_20260802_230000_strip_engagement_reversal_signals.up,
+    down: migration_20260802_230000_strip_engagement_reversal_signals.down,
+    name: '20260802_230000_strip_engagement_reversal_signals',
   },
 ];
