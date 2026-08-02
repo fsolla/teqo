@@ -11,7 +11,7 @@ import {
 } from '@/utilities/municipality/municipalitySavedFilters'
 
 /** A page is a position inside a recorte, not part of it (B18). */
-export const MUNICIPALITY_SAVED_FILTER_IGNORED_PARAMS = ['page'] as const
+const MUNICIPALITY_SAVED_FILTER_IGNORED_PARAMS = ['page'] as const
 
 /**
  * Stable reference for the render that has no `localStorage` to read. Returning
