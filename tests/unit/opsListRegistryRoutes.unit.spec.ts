@@ -11,10 +11,10 @@ const routePagePath = (routePath: string): string => {
 }
 
 const expectOpsListFactoryWiring = (source: string) => {
-  expect(source).toContain('resolveListUnifiedEnabled')
   expect(source).toContain('OpsListPage')
   expect(source).toContain("from '@/components/campaign/shared/OpsListPage'")
-  expect(source).toContain("from '@/lib/opsListRegistry/opsListFlag'")
+  expect(source).not.toContain('resolveListUnifiedEnabled')
+  expect(source).not.toContain('opsListFlag')
 }
 
 describe('opsListRegistry v1 routes (CL8)', () => {

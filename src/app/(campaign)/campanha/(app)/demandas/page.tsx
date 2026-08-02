@@ -10,16 +10,11 @@ import { CampaignFilterChips } from '@/components/campaign/shared/CampaignFilter
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-} from '@/components/campaign/shared/CampaignListPending'
 import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import {
   campaignDemandKindLabels,
   campaignDemandStatusLabels,
@@ -169,7 +164,7 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
     />
   ) : null
 
-  const main = resolveListUnifiedEnabled() ? (
+  const main = (
     <OpsListPage
       overview={null}
       toolbar={statusChips}
@@ -177,14 +172,6 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
       empty={null}
       footer={footerNode}
     />
-  ) : (
-    <CampaignListPendingBoundary>
-      {statusChips}
-      <CampaignListResults>
-        {tableNode}
-        {footerNode}
-      </CampaignListResults>
-    </CampaignListPendingBoundary>
   )
 
   return (

@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-02):** **CL9** — removida flag compile-time `LIST_UNIFIED`: 8 rotas de lista sempre via `OpsListPage`; apagados `opsListFlag.ts` / env / Playwright; spec-mãe `lista-unificada-campanha-spec.md` em **implementado**. Plano: [`cl9-list-unified-flag-cleanup.md`](docs/plans/cl9-list-unified-flag-cleanup.md).
+
 **Recently resolved (2026-08-02):** **OH14** (Issue #175) — removida flag compile-time `OPS_HYBRID`: sync híbrido sempre ON para staff (`isStaffCampaignRole` no layout); ramificações legacy OFF apagadas nos forms/controles; e2e offline em CI sem env; spec-mãe `ops-hibrido-rsc-local-spec.md` em **implementado** com receita de nova write offline. Plano: [`oh14-flag-cleanup.md`](docs/plans/oh14-flag-cleanup.md).
 
 **Recently resolved (2026-08-02):** **OH13** (Issue #176) — writes CAS por domínio: `baseUpdatedAt` + `*Cas` em leadership / demand transition / activity update / stateDeputy vínculos; helper `assertCampaignDocCas`; outbox `opsDomainOutbox` com Manter/Usar nos forms; flag OFF intacto. Plano: [`oh13-domain-writes-cas.md`](docs/plans/oh13-domain-writes-cas.md).

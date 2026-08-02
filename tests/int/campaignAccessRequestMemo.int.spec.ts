@@ -68,13 +68,15 @@ describe('access-control per-request memo', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
 
+    const leadershipIds: number[] = []
     for (let index = 0; index < 3; index += 1) {
       const contact = await fixtures.createContact()
-      await fixtures.createLeadership({
+      const leadership = await fixtures.createLeadership({
         contact: contact.id,
         municipalities: [municipality.id],
         supportStatus: 'engajado',
       })
+      leadershipIds.push(leadership.id)
     }
 
     const { result, count } = await countStatements('from "campaign_user"', () =>
@@ -84,12 +86,16 @@ describe('access-control per-request memo', () => {
         // field-level access checks across every populated relation.
         depth: 1,
         limit: 25,
+        // Scope to this test's rows — an unscoped find can pick up other suites'
+        // leaderships with `user` set and inflate the campaign_user SQL count via
+        // populate (not via the actor memo).
+        where: { id: { in: leadershipIds } },
         user: coordinator,
         overrideAccess: false,
       }),
     )
 
-    expect(result.docs.length).toBeGreaterThan(0)
+    expect(result.docs).toHaveLength(3)
     // One read for the whole operation. Before the fix this was in the hundreds
     // and grew with rows × populated fields.
     expect(count).toBe(1)

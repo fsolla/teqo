@@ -8,9 +8,6 @@ import { expect, test } from './fixtures/campaignE2EFixtures.js'
  * there must not be read as a regression here.
  */
 
-const listUnifiedEnabled =
-  process.env.LIST_UNIFIED === '1' || process.env.LIST_UNIFIED?.toLowerCase() === 'true'
-
 /** 416 whole municipalities — deep enough that `?page=2` is a real page. */
 const SAVED_RECORTE = '/campanha/municipios?priority=alta'
 
@@ -130,33 +127,5 @@ test.describe('Filtros salvos de Municípios', () => {
       .getByRole('button', { name: 'Mostrar os filtros salvos de Municípios' })
       .click(NAVIGATION)
     await expect(page.getByRole('link', { name: SAVED_NAME })).toBeVisible()
-  })
-})
-
-test.describe('Filtros salvos com LIST_UNIFIED (CL8)', () => {
-  test.skip(
-    !listUnifiedEnabled,
-    'Set LIST_UNIFIED=1 on the e2e webServer to run the unified-list tracer.',
-  )
-
-  test('saved filters stay intact behind OpsListPage', async ({ campaign, page }) => {
-    test.slow()
-
-    const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Filtros Unificados'),
-    })
-
-    await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto(SAVED_RECORTE)
-    await page.getByRole('button', { name: 'Salvar filtro', exact: true }).click()
-    await page.getByLabel('Nome do filtro').fill(SAVED_NAME)
-    await page.getByRole('button', { name: 'Salvar', exact: true }).click()
-
-    const shortcut = page.getByRole('link', { name: SAVED_NAME })
-    await expect(shortcut).toBeVisible()
-    await shortcut.click()
-    await expect(page).toHaveURL(SAVED_RECORTE, NAVIGATION)
-    await expect(shortcut).toHaveAttribute('aria-current', 'page', NAVIGATION)
   })
 })

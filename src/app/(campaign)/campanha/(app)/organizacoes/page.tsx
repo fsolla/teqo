@@ -8,17 +8,12 @@ import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
 import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-} from '@/components/campaign/shared/CampaignListPending'
 import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
 import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -135,7 +130,7 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
     />
   ) : null
 
-  const main = resolveListUnifiedEnabled() ? (
+  const main = (
     <OpsListPage
       overview={null}
       toolbar={toolbarNode}
@@ -143,14 +138,6 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
       empty={null}
       footer={footerNode}
     />
-  ) : (
-    <CampaignListPendingBoundary>
-      {toolbarNode}
-      <CampaignListResults>
-        {tableNode}
-        {footerNode}
-      </CampaignListResults>
-    </CampaignListPendingBoundary>
   )
 
   return (

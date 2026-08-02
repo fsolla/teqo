@@ -32,10 +32,13 @@ test.describe('Municípios — shell (OH8)', () => {
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
-    await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
-    await expect(page.getByLabel('Buscar município')).toBeVisible()
-    await expect(page.getByText(/\d+ municípios encontrados/)).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Ir para a próxima página' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Municípios', exact: true }).first(),
+    ).toBeVisible()
+    await expect(page.getByLabel('Buscar município').first()).toBeVisible()
+    // OfflineBoundary dual-path can leave RSC + Local markers in the tree (OH14 flake).
+    await expect(page.getByText(/\d+ municípios encontrados/).first()).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Ir para a próxima página' }).first()).toBeVisible()
   })
 })
 
@@ -119,7 +122,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // unique, unambiguous string rather than a bare "5.000" substring —
     // that also matches the (opacity-0 but DOM-visible) hover-preview span.
     await expect(page.getByText('Otimista: 5.000').first()).toBeVisible()
-    await expect(page.getByText(`Assessoria: ${advisor.name}`)).toBeVisible()
+    await expect(page.getByText(`Assessoria: ${advisor.name}`).first()).toBeVisible()
   })
 
   test('coordinator assigns an advisor from the list combobox with auto-save (B27)', async ({

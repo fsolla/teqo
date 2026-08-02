@@ -8,15 +8,10 @@ import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
 import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-} from '@/components/campaign/shared/CampaignListPending'
 import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { CAMPAIGN_ADVISORS_HOME } from '@/lib/campaignPaths'
-import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { advisorListHrefForPage, resolveAdvisorListUrl } from '@/utilities/advisor/advisorListUrl'
 import { loadAdvisorListPageData } from '@/utilities/advisorData'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
@@ -88,7 +83,7 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
     />
   )
 
-  const main: ReactNode = resolveListUnifiedEnabled() ? (
+  const main: ReactNode = (
     <OpsListPage
       overview={null}
       toolbar={toolbar}
@@ -96,14 +91,6 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
       empty={null}
       footer={footerNode}
     />
-  ) : (
-    <CampaignListPendingBoundary>
-      {toolbar}
-      <CampaignListResults>
-        {tableNode}
-        {footerNode}
-      </CampaignListResults>
-    </CampaignListPendingBoundary>
   )
 
   return (

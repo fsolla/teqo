@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import type { CampaignListId } from '@/lib/campaignColumnVisibility'
-import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import {
   getOpsListDomain,
   opsListDomains,
@@ -109,23 +108,5 @@ describe('opsListRegistry v1', () => {
         expect(meta[key], `${slug}.${key}`).toBeDefined()
       }
     }
-  })
-})
-
-describe('resolveListUnifiedEnabled', () => {
-  it('is false when LIST_UNIFIED is absent', () => {
-    expect(resolveListUnifiedEnabled({})).toBe(false)
-    expect(resolveListUnifiedEnabled({ LIST_UNIFIED: undefined })).toBe(false)
-  })
-
-  it('is true for "1" and "true"', () => {
-    expect(resolveListUnifiedEnabled({ LIST_UNIFIED: '1' })).toBe(true)
-    expect(resolveListUnifiedEnabled({ LIST_UNIFIED: 'true' })).toBe(true)
-  })
-
-  it('is false for "0" and other values', () => {
-    expect(resolveListUnifiedEnabled({ LIST_UNIFIED: '0' })).toBe(false)
-    expect(resolveListUnifiedEnabled({ LIST_UNIFIED: 'false' })).toBe(false)
-    expect(resolveListUnifiedEnabled({ LIST_UNIFIED: 'yes' })).toBe(false)
   })
 })

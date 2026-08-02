@@ -8,13 +8,8 @@ import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
 import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-} from '@/components/campaign/shared/CampaignListPending'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadTerritoryOverviewPage } from '@/utilities/territory/loadTerritoryOverview'
@@ -64,7 +59,7 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
     />
   )
 
-  const main = resolveListUnifiedEnabled() ? (
+  const main = (
     <OpsListPage
       overview={null}
       toolbar={filters}
@@ -72,14 +67,6 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
       empty={null}
       footer={footerNode}
     />
-  ) : (
-    <CampaignListPendingBoundary>
-      {filters}
-      <CampaignListResults>
-        {tableNode}
-        {footerNode}
-      </CampaignListResults>
-    </CampaignListPendingBoundary>
   )
 
   return (
