@@ -92,9 +92,9 @@ Componentes:
 - **`depth: 1` “para facilitar joins”.** Explode tamanho e vaza shape para o client. **Mitigação:** IDs + `depth: 0`; joins no client (OH5/OH12). Exceção documentada: `leadership` depth:1 só para `OpsLeadershipContact`.
 - **Bypass de access “porque é endpoint interno”.** Invariante do repo. **Mitigação:** pin int de advisor/leader.
 
-## Débitos pós-simplify (defer)
+## Débitos pós-simplify (resolvido em OH4+ #186)
 
-- Benchmark OH3 ainda duplica mappers/`toIso` — apontar `scripts/benchmark-ops-snapshot.mjs` a `buildOpsSnapshot` quando o timing por-collection deixar de precisar do pipeline paralelo (gatilho: OH11 sizing / drift). Issue de follow-up com `depends: [OH4]`.
+- ~~Benchmark OH3 ainda duplica mappers/`toIso` — apontar `scripts/benchmark-ops-snapshot.mjs` a `buildOpsSnapshot` quando o timing por-collection deixar de precisar do pipeline paralelo (gatilho: OH11 sizing / drift).~~ Resolvido: benchmark consome `buildOpsSnapshot` com `onSectionLoaded` para relatório por-collection.
 
 ## Referências
 

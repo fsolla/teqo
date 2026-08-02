@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { performance } from 'node:perf_hooks'
+
 import type { Payload } from 'payload'
 
 import {
@@ -238,6 +240,32 @@ const mapGoals = (doc: Record<string, unknown> | null | undefined): OpsGoals | n
   }
 }
 
+type OpsSnapshotSectionKey =
+  | 'municipalities'
+  | 'leaderships'
+  | 'votePledges'
+  | 'activities'
+  | 'stateDeputies'
+  | 'organizations'
+  | 'demands'
+  | 'municipalityUpdates'
+  | 'goals'
+
+export type OpsSnapshotSectionTiming = {
+  key: OpsSnapshotSectionKey
+  /** Payload collection / global slug for the benchmark table. */
+  label: string
+  rows: number
+  queryMs: number
+  truncatedFrom?: number
+}
+
+export type BuildOpsSnapshotOptions = {
+  municipalityUpdateLimit?: number
+  /** Optional per-section query timing (benchmark OH3/OH4+). */
+  onSectionLoaded?: (section: OpsSnapshotSectionTiming) => void
+}
+
 const findAllDocs = async (
   payload: Payload,
   actor: CampaignUser,
@@ -274,10 +302,35 @@ const findAllDocs = async (
  * `user: actor` + `overrideAccess: false` so collection access (advisor
  * portfolio, leader deny) is the scoping authority — never bypassed.
  */
+const reportSection = (
+  options: BuildOpsSnapshotOptions,
+  section: OpsSnapshotSectionTiming,
+): void => {
+  options.onSectionLoaded?.(section)
+}
+
+const timedSection = async <T>(
+  options: BuildOpsSnapshotOptions,
+  meta: Pick<OpsSnapshotSectionTiming, 'key' | 'label'>,
+  load: () => Promise<T>,
+  rows: (result: T) => Pick<OpsSnapshotSectionTiming, 'rows' | 'truncatedFrom'>,
+): Promise<T> => {
+  if (!options.onSectionLoaded) return load()
+
+  const started = performance.now()
+  const result = await load()
+  reportSection(options, {
+    ...meta,
+    queryMs: performance.now() - started,
+    ...rows(result),
+  })
+  return result
+}
+
 export const buildOpsSnapshot = async (
   payload: Payload,
   actor: CampaignUser,
-  options: { municipalityUpdateLimit?: number } = {},
+  options: BuildOpsSnapshotOptions = {},
 ): Promise<OpsSnapshot> => {
   const includeEstimates = isCampaignStaff(actor)
   const updateLimit =
@@ -307,113 +360,175 @@ export const buildOpsSnapshot = async (
     stateDeputyDocs,
     organizationDocs,
     demandDocs,
-    updateDocs,
+    municipalityUpdates,
     goalsDoc,
   ] = await Promise.all([
-    findAllDocs(payload, actor, 'municipality', {
-      select: {
-        name: true,
-        slug: true,
-        kind: true,
-        city: true,
-        region: true,
-        ibgeCode: true,
-        zoneNumber: true,
-        advisors: true,
-        priority: true,
-        engagementLevel: true,
-        levelNote: true,
-        levelChangedAt: true,
-        expectedVotes: true,
-        politicalTrend: true,
-        stateDeputies: true,
-        lastUpdateAt: true,
-        updatedAt: true,
-      },
-    }),
-    findAllDocs(payload, actor, 'leadership', {
-      // Contact name/phone are part of OpsLeadership — single depth:1 exception.
-      depth: 1,
-      select: {
-        contact: true,
-        municipalities: true,
-        organizations: true,
-        stateDeputies: true,
-        exclusive: true,
-        supportStatus: true,
-        notes: true,
-        updatedAt: true,
-      },
-    }),
-    findAllDocs(payload, actor, 'votePledge', { select: votePledgeSelect }),
-    findAllDocs(payload, actor, 'activity', {
-      select: {
-        title: true,
-        slug: true,
-        kind: true,
-        status: true,
-        deputyPresent: true,
-        startAt: true,
-        endAt: true,
-        municipality: true,
-        locality: true,
-        organizations: true,
-        advisors: true,
-        leadership: true,
-        taskTotal: true,
-        taskDoneCount: true,
-        updatedAt: true,
-      },
-    }),
-    findAllDocs(payload, actor, 'stateDeputy', {
-      select: {
-        name: true,
-        slug: true,
-        party: true,
-        notes: true,
-        updatedAt: true,
-      },
-    }),
-    findAllDocs(payload, actor, 'organization', {
-      select: {
-        name: true,
-        slug: true,
-        kind: true,
-        municipalities: true,
-        notes: true,
-        updatedAt: true,
-      },
-    }),
-    findAllDocs(payload, actor, 'campaignDemand', {
-      select: {
-        title: true,
-        slug: true,
-        kind: true,
-        municipality: true,
-        activity: true,
-        leadership: true,
-        status: true,
-        updatedAt: true,
-      },
-    }),
-    findAllDocs(payload, actor, 'municipalityUpdate', {
-      select: {
-        municipality: true,
-        author: true,
-        kind: true,
-        body: true,
-        signalType: true,
-        updatedAt: true,
-        createdAt: true,
-      },
-      sort: '-updatedAt',
-    }),
-    payload.findGlobal({
-      slug: 'campaignGoals',
-      depth: 0,
-      user: actor,
-      overrideAccess: false,
-    }),
+    timedSection(
+      options,
+      { key: 'municipalities', label: 'municipality' },
+      () =>
+        findAllDocs(payload, actor, 'municipality', {
+          select: {
+            name: true,
+            slug: true,
+            kind: true,
+            city: true,
+            region: true,
+            ibgeCode: true,
+            zoneNumber: true,
+            advisors: true,
+            priority: true,
+            engagementLevel: true,
+            levelNote: true,
+            levelChangedAt: true,
+            expectedVotes: true,
+            politicalTrend: true,
+            stateDeputies: true,
+            lastUpdateAt: true,
+            updatedAt: true,
+          },
+        }),
+      (docs) => ({ rows: docs.length }),
+    ),
+    timedSection(
+      options,
+      { key: 'leaderships', label: 'leadership' },
+      () =>
+        findAllDocs(payload, actor, 'leadership', {
+          // Contact name/phone are part of OpsLeadership — single depth:1 exception.
+          depth: 1,
+          select: {
+            contact: true,
+            municipalities: true,
+            organizations: true,
+            stateDeputies: true,
+            exclusive: true,
+            supportStatus: true,
+            notes: true,
+            updatedAt: true,
+          },
+        }),
+      (docs) => ({ rows: docs.length }),
+    ),
+    timedSection(
+      options,
+      { key: 'votePledges', label: 'vote_pledge' },
+      () => findAllDocs(payload, actor, 'votePledge', { select: votePledgeSelect }),
+      (docs) => ({ rows: docs.length }),
+    ),
+    timedSection(
+      options,
+      { key: 'activities', label: 'activity' },
+      () =>
+        findAllDocs(payload, actor, 'activity', {
+          select: {
+            title: true,
+            slug: true,
+            kind: true,
+            status: true,
+            deputyPresent: true,
+            startAt: true,
+            endAt: true,
+            municipality: true,
+            locality: true,
+            organizations: true,
+            advisors: true,
+            leadership: true,
+            taskTotal: true,
+            taskDoneCount: true,
+            updatedAt: true,
+          },
+        }),
+      (docs) => ({ rows: docs.length }),
+    ),
+    timedSection(
+      options,
+      { key: 'stateDeputies', label: 'state_deputy' },
+      () =>
+        findAllDocs(payload, actor, 'stateDeputy', {
+          select: {
+            name: true,
+            slug: true,
+            party: true,
+            notes: true,
+            updatedAt: true,
+          },
+        }),
+      (docs) => ({ rows: docs.length }),
+    ),
+    timedSection(
+      options,
+      { key: 'organizations', label: 'organization' },
+      () =>
+        findAllDocs(payload, actor, 'organization', {
+          select: {
+            name: true,
+            slug: true,
+            kind: true,
+            municipalities: true,
+            notes: true,
+            updatedAt: true,
+          },
+        }),
+      (docs) => ({ rows: docs.length }),
+    ),
+    timedSection(
+      options,
+      { key: 'demands', label: 'campaign_demand' },
+      () =>
+        findAllDocs(payload, actor, 'campaignDemand', {
+          select: {
+            title: true,
+            slug: true,
+            kind: true,
+            municipality: true,
+            activity: true,
+            leadership: true,
+            status: true,
+            updatedAt: true,
+          },
+        }),
+      (docs) => ({ rows: docs.length }),
+    ),
+    (async () => {
+      const started = options.onSectionLoaded ? performance.now() : 0
+      const docs = await findAllDocs(payload, actor, 'municipalityUpdate', {
+        select: {
+          municipality: true,
+          author: true,
+          kind: true,
+          body: true,
+          signalType: true,
+          updatedAt: true,
+          createdAt: true,
+        },
+        sort: '-updatedAt',
+      })
+      const mapped = docs.map(mapMunicipalityUpdate)
+      const truncated = truncateMunicipalityUpdates(mapped, updateLimit)
+      if (options.onSectionLoaded) {
+        reportSection(options, {
+          key: 'municipalityUpdates',
+          label: 'municipality_update',
+          rows: truncated.length,
+          queryMs: performance.now() - started,
+          truncatedFrom: mapped.length,
+        })
+      }
+      return truncated
+    })(),
+    timedSection(
+      options,
+      { key: 'goals', label: 'campaign_goals' },
+      () =>
+        payload.findGlobal({
+          slug: 'campaignGoals',
+          depth: 0,
+          user: actor,
+          overrideAccess: false,
+        }),
+      (doc) => ({ rows: doc ? 1 : 0 }),
+    ),
   ])
 
   const snapshot = createEmptyOpsSnapshot(new Date().toISOString())
@@ -426,10 +541,7 @@ export const buildOpsSnapshot = async (
     stateDeputies: stateDeputyDocs.map(mapStateDeputy),
     organizations: organizationDocs.map(mapOrganization),
     demands: demandDocs.map(mapDemand),
-    municipalityUpdates: truncateMunicipalityUpdates(
-      updateDocs.map(mapMunicipalityUpdate),
-      updateLimit,
-    ),
+    municipalityUpdates,
     goals: mapGoals(goalsDoc as unknown as Record<string, unknown>),
   }
 }
