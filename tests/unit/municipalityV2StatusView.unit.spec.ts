@@ -17,6 +17,19 @@ describe('municipalityV2StatusView', () => {
     expect(state.label).toContain('Sem sinal')
   })
 
+  it('does not claim frio when frescor is warm but typeless', () => {
+    const state = resolveMunicipalityV2SignalSelectState(
+      {
+        signalType: null,
+        lastSignalAt: '2026-08-01T12:00:00.000Z',
+      },
+      new Date('2026-08-02T12:00:00.000Z'),
+    )
+    expect(state.value).toBe(MUNICIPALITY_V2_SIGNAL_COLD_VALUE)
+    expect(state.isCold).toBe(false)
+    expect(state.label).toBe('Sem tipo de sinal')
+  })
+
   it('keeps the typed signal when still warm', () => {
     const state = resolveMunicipalityV2SignalSelectState(
       {

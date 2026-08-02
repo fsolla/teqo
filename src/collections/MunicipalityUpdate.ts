@@ -52,7 +52,7 @@ const validateMunicipalityUpdateKind: CollectionBeforeValidateHook = ({
     if (!nonEmptyText(nextData.failed)) throw new APIError('Informe o que não funcionou.', 400)
     if (!nonEmptyText(nextData.needs)) throw new APIError('Informe o que você precisa.', 400)
   } else if (kind === 'sinal') {
-    if (!nonEmptyText(nextData.body)) throw new APIError('Informe o texto da atualização.', 400)
+    // Motivo/body is optional (B147/B134); type is the required discriminator.
     if (typeof nextData.signalType !== 'string') {
       throw new APIError('Informe o tipo do sinal.', 400)
     }

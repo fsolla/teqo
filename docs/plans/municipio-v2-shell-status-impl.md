@@ -65,11 +65,11 @@ flowchart LR
 
 - **`MunicipalityV2Page`** (`src/app/(campaign)/campanha/(app)/municipio/[slug]/v2/page.tsx`): RSC; `requireCampaignPageActor({ gate: 'noLeader' })`; status strip; empty slots for conta/rede/agora (children).
 - **`loadMunicipalityV2StatusData`** (`src/utilities/municipality/municipalityV2StatusData.ts`): server-only composer.
-- **`buildMunicipalityV2StatusAggregate`** (`src/lib/municipalityV2Status.ts`): pure aggregate text + cold sentinel helpers (unit-tested).
+- **`buildMunicipalityV2StatusAggregate`** (`src/utilities/municipality/municipalityV2StatusView.ts`): pure aggregate text + cold sentinel helpers (unit-tested). Client-safe utilities (depends on `municipalitySignal`).
 - **`MunicipalityV2StatusStrip`** + **`MunicipalityV2StatusReasonDialog`** (`src/components/campaign/municipality/`): client strip + shared Dialog (motivo opcional).
-- **Schema/action/list level:** `municipalityEngagementLevelSchema` note → optional; `reversalSignals` optional/default `''`; list control drops reversal field; int tests updated.
+- **Schema/action/list level:** `municipalityEngagementLevelSchema` note → optional; drop `reversalSignals` from write; list control drops reversal field; int tests updated.
 - **Chrome:** path rule `/campanha/municipio/[^/]+/v2`.
-- **Form action:** reuse `createMunicipalityListSignalFormAction` (or thin v2 wrapper colocated under the new route).
+- **Form action:** thin alias over `createMunicipalityListSignalFormAction`.
 - **Migration:** nenhuma.
 - **Access / Consent:** existing municipality access; no Consent; leader blocked by page gate.
 - **UI:** Impeccable C — shape → craft → critique → polish; tokens `data-theme='campaign'`; `CampaignHoverTooltip` + `campaignConceptHref` / `campaignConceptOneLiner`.

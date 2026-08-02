@@ -393,7 +393,7 @@ export const MunicipalityV2StatusStrip = ({
                 return
               }
               const next = parseMunicipalitySignalType(raw)
-              if (!next || next === signalType) {
+              if (!next || next === signalSelect.value) {
                 event.target.value = signalSelect.value
                 return
               }

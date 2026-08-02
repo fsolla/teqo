@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useState } from 'react'
 
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
@@ -37,7 +37,6 @@ export type MunicipalityV2StatusReasonDialogProps = {
   override?: boolean
   onOverrideChange?: (value: boolean) => void
   onConfirm: (reason: string) => void
-  children?: ReactNode
 }
 
 /**

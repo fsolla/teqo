@@ -41,7 +41,8 @@ export const E2E_AFFECTED_MANIFEST = [
       'campaignSavedFilters',
       'campaignColumnPicker',
     ],
-  },  {
+  },
+  {
     prefixes: [
       `${CAMPAIGN_APP}/atividades`,
       'src/components/campaign/activity',

@@ -58,7 +58,8 @@ export type MunicipalityV2SignalSelectState = {
 
 /**
  * Product assumption (intention open Q): cold → sentinel “Sem sinal / frio”
- * in the strip; age lives in aggregate/tooltip.
+ * in the strip; age lives in aggregate/tooltip. Warm but typeless → “Sem tipo”
+ * without claiming frio (frescor can still be warm from notes/pledges).
  */
 export const resolveMunicipalityV2SignalSelectState = (
   input: {
@@ -70,7 +71,7 @@ export const resolveMunicipalityV2SignalSelectState = (
   const ageInDays = municipalitySignalAgeInDays(input.lastSignalAt, now)
   const isCold = isMunicipalitySignalCold(ageInDays)
 
-  if (isCold || !input.signalType) {
+  if (isCold) {
     const daysLabel =
       ageInDays === null ? `frio (≥${MUNICIPALITY_COLD_SIGNAL_DAYS} d)` : `frio (${ageInDays} d)`
     return {
@@ -78,6 +79,15 @@ export const resolveMunicipalityV2SignalSelectState = (
       label: `Sem sinal / ${daysLabel}`,
       ageInDays,
       isCold: true,
+    }
+  }
+
+  if (!input.signalType) {
+    return {
+      value: MUNICIPALITY_V2_SIGNAL_COLD_VALUE,
+      label: 'Sem tipo de sinal',
+      ageInDays,
+      isCold: false,
     }
   }
 
