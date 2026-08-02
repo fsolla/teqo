@@ -4,6 +4,8 @@ import { getPayload } from 'payload'
 import type { ReactNode } from 'react'
 
 import { AdvisorsTable } from '@/components/campaign/advisor/AdvisorsTable'
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import {
@@ -106,12 +108,14 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
 
   return (
     <CampaignPageShell>
-      <CampaignListPageHeader
-        title="Assessores"
-        description="Consulte na tabela; ative Editar para alterar campos e carteira. Nome abre a ficha; e-mail/celular copiam; município abre o município."
-      />
+      <OfflineBoundary fallback={<OpsListLocal slug="assessores" />}>
+        <CampaignListPageHeader
+          title="Assessores"
+          description="Consulte na tabela; ative Editar para alterar campos e carteira. Nome abre a ficha; e-mail/celular copiam; município abre o município."
+        />
 
-      {main}
+        {main}
+      </OfflineBoundary>
     </CampaignPageShell>
   )
 }

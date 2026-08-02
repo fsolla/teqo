@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-02):** **OH12** (Issue #174) — `OpsListLocal` read-only via registry + mirror: `OfflineBoundary` nas 8 rotas de lista; Local com `CampaignTable` + parsers canónicos sobre o mirror (municípios/lideranças/dobradinhas/orgs/demandas); assessores/territórios/apoiadores com estado honesto; saved filters create/delete disabled offline; e2e lista `?q=`. Plano: [`oh12-ops-list-local.md`](docs/plans/oh12-ops-list-local.md).
+
 **Recently resolved (2026-08-02):** **OH11** (Issue #173) — SW cache-first para `/_next/static/` (chunks hashed, prefixo `campanha-<buildId>`); logout limpa campaignOps na ordem abort sync → outbox → persistence → Cache API (`clearCampaignOpsStorage` + `clearCampaignPwaCaches`); e2e `campaignOpsOffline` com jornada write→reload→online→sync (`OPS_HYBRID=1`). Plano: [`oh11-sw-e2e-docs.md`](docs/plans/oh11-sw-e2e-docs.md).
 
 **Recently resolved (2026-08-02):** **B120** (Issue #207) — municípios mobile: combobox multi-filtro (chips + typeahead) no lugar da pilha NativeSelect; overview KPI + aviso de sort só em `md+`; cards densificados (cobertura/nível + controles compactos). URL B18 intacta. Plano: [`municipios-mobile-filtro-combobox-densificar.md`](docs/plans/municipios-mobile-filtro-combobox-densificar.md).

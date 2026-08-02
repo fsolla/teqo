@@ -41,9 +41,9 @@ export const municipalitiesCollection = createRowCollection<OpsMunicipality>('op
 export const leadershipsCollection = createRowCollection<OpsLeadership>('ops-leaderships')
 export { votePledgesCollection }
 const activitiesCollection = createRowCollection<OpsActivity>('ops-activities')
-const stateDeputiesCollection = createRowCollection<OpsStateDeputy>('ops-state-deputies')
-const organizationsCollection = createRowCollection<OpsOrganization>('ops-organizations')
-const demandsCollection = createRowCollection<OpsDemand>('ops-demands')
+export const stateDeputiesCollection = createRowCollection<OpsStateDeputy>('ops-state-deputies')
+export const organizationsCollection = createRowCollection<OpsOrganization>('ops-organizations')
+export const demandsCollection = createRowCollection<OpsDemand>('ops-demands')
 const municipalityUpdatesCollection = createRowCollection<OpsMunicipalityUpdate>(
   'ops-municipality-updates',
 )

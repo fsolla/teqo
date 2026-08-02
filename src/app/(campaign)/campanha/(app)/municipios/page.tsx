@@ -12,6 +12,8 @@ import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/muni
 import { MunicipalityFilters } from '@/components/campaign/municipality/MunicipalityFilters'
 import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
 import { MunicipalityListOverview } from '@/components/campaign/municipality/MunicipalityListOverview'
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
@@ -189,24 +191,26 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
 
   return (
     <CampaignPageShell>
-      <CampaignListPageHeader
-        title="Municípios"
-        description="Os 435 municípios da campanha: um por município da Bahia — em Salvador, uma zona eleitoral cada."
-        scope={
-          <CampaignScopeBadge>{getCampaignScopeLabel(user.role, scopeTotal)}</CampaignScopeBadge>
-        }
-      />
-
-      {main}
-      {listVisitLabel ? (
-        <RecentVisitTracker
-          entry={{
-            href: buildMunicipalityListVisitHref(state),
-            label: listVisitLabel,
-            kind: 'municipalityList',
-          }}
+      <OfflineBoundary fallback={<OpsListLocal slug="municipios" />}>
+        <CampaignListPageHeader
+          title="Municípios"
+          description="Os 435 municípios da campanha: um por município da Bahia — em Salvador, uma zona eleitoral cada."
+          scope={
+            <CampaignScopeBadge>{getCampaignScopeLabel(user.role, scopeTotal)}</CampaignScopeBadge>
+          }
         />
-      ) : null}
+
+        {main}
+        {listVisitLabel ? (
+          <RecentVisitTracker
+            entry={{
+              href: buildMunicipalityListVisitHref(state),
+              label: listVisitLabel,
+              kind: 'municipalityList',
+            }}
+          />
+        ) : null}
+      </OfflineBoundary>
     </CampaignPageShell>
   )
 }

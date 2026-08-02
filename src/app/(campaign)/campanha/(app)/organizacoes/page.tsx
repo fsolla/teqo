@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
@@ -153,23 +155,25 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Organizações</h1>
-          <p className="text-muted-foreground">
-            Sindicatos, associações e movimentos que apoiam a campanha — com suas lideranças e
-            atividades.
-          </p>
-        </div>
-        <Button asChild className="min-h-11">
-          <Link href="/campanha/organizacoes/nova">
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Nova organização
-          </Link>
-        </Button>
-      </header>
+      <OfflineBoundary fallback={<OpsListLocal slug="organizacoes" />}>
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">Organizações</h1>
+            <p className="text-muted-foreground">
+              Sindicatos, associações e movimentos que apoiam a campanha — com suas lideranças e
+              atividades.
+            </p>
+          </div>
+          <Button asChild className="min-h-11">
+            <Link href="/campanha/organizacoes/nova">
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Nova organização
+            </Link>
+          </Button>
+        </header>
 
-      {main}
+        {main}
+      </OfflineBoundary>
     </CampaignPageShell>
   )
 }

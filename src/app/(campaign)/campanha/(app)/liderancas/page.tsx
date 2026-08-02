@@ -11,6 +11,8 @@ import {
   LeadershipFilterHead,
   LeadershipSortableHead,
 } from '@/components/campaign/leadership/LeadershipSortableHead'
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignCopyableCell } from '@/components/campaign/shared/CampaignCopyableCell'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
@@ -437,20 +439,22 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
 
   return (
     <CampaignPageShell>
-      <CampaignListPageHeader
-        title="Lideranças"
-        description="Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações."
-        actions={
-          <Button asChild className="min-h-11">
-            <Link href="/campanha/liderancas/nova">
-              <PlusIcon data-icon="inline-start" aria-hidden="true" />
-              Nova liderança
-            </Link>
-          </Button>
-        }
-      />
+      <OfflineBoundary fallback={<OpsListLocal slug="liderancas" />}>
+        <CampaignListPageHeader
+          title="Lideranças"
+          description="Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações."
+          actions={
+            <Button asChild className="min-h-11">
+              <Link href="/campanha/liderancas/nova">
+                <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                Nova liderança
+              </Link>
+            </Button>
+          }
+        />
 
-      {main}
+        {main}
+      </OfflineBoundary>
     </CampaignPageShell>
   )
 }

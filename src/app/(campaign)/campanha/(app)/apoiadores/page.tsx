@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
@@ -110,37 +112,39 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
 
   return (
     <CampaignPageShell>
-      <CampaignListPageHeader
-        title="Apoiadores"
-        description="Base nominal de apoio com intenção de voto e vínculo opcional a municípios."
-        scope={
-          <CampaignScopeBadge>
-            {isCampaignUnrestricted(user)
-              ? `${campaignRoleLabels[user.role]} · todos os apoiadores`
-              : getSupporterScopeLabel(result.totalDocs)}
-          </CampaignScopeBadge>
-        }
-        actions={
-          <div className="flex flex-col gap-2 sm:flex-row">
-            {isCampaignCoordinator(user) ? (
-              <Button asChild variant="outline" className="min-h-11">
-                <Link href="/campanha/apoiadores/importar">
-                  <FileUpIcon data-icon="inline-start" aria-hidden="true" />
-                  Importar CSV
+      <OfflineBoundary fallback={<OpsListLocal slug="apoiadores" />}>
+        <CampaignListPageHeader
+          title="Apoiadores"
+          description="Base nominal de apoio com intenção de voto e vínculo opcional a municípios."
+          scope={
+            <CampaignScopeBadge>
+              {isCampaignUnrestricted(user)
+                ? `${campaignRoleLabels[user.role]} · todos os apoiadores`
+                : getSupporterScopeLabel(result.totalDocs)}
+            </CampaignScopeBadge>
+          }
+          actions={
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {isCampaignCoordinator(user) ? (
+                <Button asChild variant="outline" className="min-h-11">
+                  <Link href="/campanha/apoiadores/importar">
+                    <FileUpIcon data-icon="inline-start" aria-hidden="true" />
+                    Importar CSV
+                  </Link>
+                </Button>
+              ) : null}
+              <Button asChild className="min-h-11">
+                <Link href="/campanha/apoiadores/novo">
+                  <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                  Novo
                 </Link>
               </Button>
-            ) : null}
-            <Button asChild className="min-h-11">
-              <Link href="/campanha/apoiadores/novo">
-                <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                Novo
-              </Link>
-            </Button>
-          </div>
-        }
-      />
+            </div>
+          }
+        />
 
-      {main}
+        {main}
+      </OfflineBoundary>
     </CampaignPageShell>
   )
 }
