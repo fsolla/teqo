@@ -3,7 +3,7 @@
  * (docs/plans/agent-pool-orchestrator.md).
  *
  * The pool keeps up to POOL_MAX_SLOTS (default 5) Cursor Cloud Agents running
- * work-issue over `ready` autonomous-eligible issues. The supervisor is
+ * agent-work-issue over `ready` autonomous-eligible issues. The supervisor is
  * REMOTE: a stateless GitHub Actions tick (`.github/workflows/agent-pool.yml`)
  * runs `workflow --action …` / `tick --live`; humans drive it via
  * `gh workflow run` (canonical channel). Local usage is inspection +

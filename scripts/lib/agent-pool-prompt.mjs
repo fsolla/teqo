@@ -3,10 +3,9 @@
  * (docs/plans/agent-pool-orchestrator.md §4/§5).
  *
  * The supervisor claims the issue BEFORE spawning (label flip + pool-worker
- * marker comment — the coordinated-claim anti-race), so the worker SKIPS the
- * claim step of work-issue and starts at step 1b. Everything else — gates, PR
- * base main with Closes #N, auto-merge + CI watch — is the standard skill
- * contract restated so the worker cannot miss it.
+ * marker comment — the coordinated-claim anti-race), so the worker SKIPS
+ * claim and runs `agent-work-issue` (autonomous: impl plan → execute →
+ * simplify → capture-review-debts → PR). Human-supervised path is `work-issue`.
  */
 
 /** First docs/plans/*.md path in the issue body (the linked plan), if any. */
@@ -31,22 +30,24 @@ export const buildPoolWorkerPrompt = ({ issueNumber, issueTitle, issueId, planPa
     '',
     '## Fluxo',
     '',
-    'Siga a skill `.cursor/skills/work-issue/SKILL.md` a partir do passo 1b, PULANDO o passo 1 (claim):',
+    'Siga a skill `.cursor/skills/agent-work-issue/SKILL.md` por completo (Issue já claimada):',
     '1. Rode `pnpm i` se `node_modules` não existir.',
     planPath
-      ? `2. Plano: \`${planPath}\` — freshness audit enxuto (passo 3 da skill).`
-      : '2. O body da Issue é a spec (não há plano linkado — avalie se ele basta para trabalhar).',
-    '3. Execute as fases com os gates do repo: `pnpm gate:fast` antes do push (o pre-push roda `pnpm gate:push`). Comandos bare, nunca piped.',
-    `4. PR obrigatoriamente com \`gh pr create --base main\` e "Closes #${issueNumber}" no body.`,
-    '5. `gh pr merge --auto --merge <PR>` e acompanhe `gh pr checks <PR> --watch --required` até o merge. Falha de CI no seu PR é sua (docs/AGENT-OPS.md — "Dono do PR, dono do CI"): corrija na mesma branch.',
+      ? `2. Plano de intenção: \`${planPath}\` — abra-o; depois Plan mode e escreva \`docs/plans/<slug>-impl.md\` (engenharia deliberada; pode divergir da hipótese de direção se o aceite de produto se mantiver).`
+      : '2. O body da Issue é a spec de intenção (não há plano linkado). Em Plan mode, escreva mesmo assim um `docs/plans/<id>-impl.md` a partir do body.',
+    '3. Execute o impl plan. Gates: `pnpm gate:fast` na iteração; entrega com `pnpm push` (não `git push` nu). Comandos bare, nunca piped.',
+    '4. Rode `/simplify` completo; `capture-review-debts` em modo autônomo (só expensive_lock ≥4).',
+    `5. PR obrigatoriamente com \`gh pr create --base main\` e "Closes #${issueNumber}" no body (Ready, nunca draft).`,
+    '6. `gh pr merge --auto --merge <PR>` e acompanhe `gh pr checks <PR> --watch --required` até o merge. Falha de CI no seu PR é sua (docs/AGENT-OPS.md — "Dono do PR, dono do CI"): corrija na mesma branch.',
     '',
     '## Proibido',
     '',
     '- `DATABASE_URL` de prod ou `ALLOW_REMOTE_DB` — o setup local (`.cursor/cloud-setup.sh` + seed mínimo) cobre tudo.',
     `- Editar outras Issues \`in-progress\` ou trabalhar fora da Issue #${issueNumber}.`,
+    '- Tratar o plano de intenção como contrato de engenharia — ele é intenção; o `*-impl.md` é a engenharia.',
     '',
     modelSlug
-      ? `Modelo declarado da Issue: \`${modelSlug}\` — você foi spawnado nele (ou no fallback documentado pelo pool); a verificação assimétrica do passo 2 não se aplica.`
+      ? `Modelo declarado da Issue: \`${modelSlug}\` — você foi spawnado nele (ou no fallback documentado pelo pool); a verificação assimétrica de work-issue não se aplica.`
       : 'A Issue não declara `model:` — você foi spawnado no default do pool (composer-2.5).',
     '',
     `Ao terminar — merge concluído ou falha terminal — comente na Issue #${issueNumber} o desfecho em uma linha e encerre.`,
