@@ -23,6 +23,7 @@ flowchart LR
 ```
 
 **Opções consideradas:**
+
 - A — Estender `searchOnlyListOmnibox` com dimensão genérica
 - B — Adapter `organizationOmnibox.ts` no domínio (precedente B128)
 - C — Inline na componente `OrganizationFilters`

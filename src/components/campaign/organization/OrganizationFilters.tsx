@@ -5,6 +5,10 @@ import { useMemo, useState } from 'react'
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import {
+  buildOrganizationListHref,
+  type OrganizationListState,
+} from '@/utilities/organization/organizationListUrl'
+import {
   applyOrganizationOmniboxSuggestion,
   buildOrganizationOmniboxChips,
   buildOrganizationOmniboxSuggestionSeeds,
@@ -13,10 +17,6 @@ import {
   removeOrganizationOmniboxChip,
   type OrganizationOmniboxAction,
 } from '@/utilities/organization/organizationOmnibox'
-import {
-  buildOrganizationListHref,
-  type OrganizationListState,
-} from '@/utilities/organization/organizationListUrl'
 
 export const OrganizationFilters = ({ state }: { state: OrganizationListState }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({

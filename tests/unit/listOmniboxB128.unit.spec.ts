@@ -16,6 +16,12 @@ import {
   buildDemandOmniboxChips,
   clearDemandOmnibox,
 } from '@/utilities/demand/demandOmnibox'
+import { parseLeadershipListParams } from '@/utilities/leadership/leadershipListUrl'
+import {
+  applyLeadershipOmniboxSuggestion,
+  buildLeadershipOmniboxSuggestionSeeds,
+  filterLeadershipOmniboxSuggestions,
+} from '@/utilities/leadership/leadershipOmnibox'
 import { parseOrganizationListParams } from '@/utilities/organization/organizationListUrl'
 import {
   applyOrganizationOmniboxSuggestion,
@@ -25,12 +31,6 @@ import {
   filterOrganizationOmniboxSuggestions,
   removeOrganizationOmniboxChip,
 } from '@/utilities/organization/organizationOmnibox'
-import { parseLeadershipListParams } from '@/utilities/leadership/leadershipListUrl'
-import {
-  applyLeadershipOmniboxSuggestion,
-  buildLeadershipOmniboxSuggestionSeeds,
-  filterLeadershipOmniboxSuggestions,
-} from '@/utilities/leadership/leadershipOmnibox'
 import { parseStateDeputyListParams } from '@/utilities/stateDeputyListUrl'
 import {
   applyStateDeputyOmniboxSuggestion,
