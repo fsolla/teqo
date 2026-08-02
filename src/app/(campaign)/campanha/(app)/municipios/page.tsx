@@ -189,7 +189,9 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       <CampaignListPageHeader
         title="Municípios"
         description="Os 435 municípios da campanha: um por município da Bahia — em Salvador, uma zona eleitoral cada."
-        scope={<CampaignScopeBadge>{getCampaignScopeLabel(user.role, scopeTotal)}</CampaignScopeBadge>}
+        scope={
+          <CampaignScopeBadge>{getCampaignScopeLabel(user.role, scopeTotal)}</CampaignScopeBadge>
+        }
       />
 
       {main}
