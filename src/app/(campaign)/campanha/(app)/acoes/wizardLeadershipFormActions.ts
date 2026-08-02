@@ -1,11 +1,22 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
+
 import { leadershipStaffEditSafeMessages } from '@/app/(campaign)/campanha/(app)/liderancas/leadershipStaffEditMessages'
 import {
   createLeadershipWizard,
   updateLeadershipWizard,
 } from '@/app/(campaign)/campanha/actions/leadership'
-import { optionalFormText, requiredFormText, requiredRelationshipFormValue } from '@/lib/formData'
+import { declareVotes } from '@/app/(campaign)/campanha/actions/votePledge'
+import {
+  optionalFormText,
+  requiredFormText,
+  requiredIntegerFormValue,
+  requiredRelationshipFormValue,
+} from '@/lib/formData'
+import { MAX_VOTE_COUNT } from '@/lib/schemas/primitives'
+import { WIZARD_LEADERSHIP_VOTES_SAVED } from '@/lib/campaignWizardCopy'
+import { VOTE_PLEDGE_DECLARE_SAFE_MESSAGES } from '@/lib/schemas/votePledge'
 import {
   LEADERSHIP_DUPLICATE_MESSAGE,
   LEADERSHIP_INVALID_CONTACT_MESSAGE,
@@ -86,4 +97,26 @@ export const updateLeadershipWizardFormAction = async (
     },
     safeMessages,
     genericMessage: 'Não foi possível salvar a liderança. Verifique os dados e tente novamente.',
+  })
+
+export const declareVotesWizardFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      const municipality = requiredRelationshipFormValue(formData, 'municipalityId')
+      const leadership = requiredRelationshipFormValue(formData, 'leadershipId')
+      const declaredVotes = requiredIntegerFormValue(formData, 'declaredVotes', {
+        minimum: 0,
+        maximum: MAX_VOTE_COUNT,
+      })
+
+      await declareVotes({ municipality, leadership, declaredVotes })
+      revalidatePath('/campanha/acoes/atualizar-lideranca', 'page')
+      return { message: WIZARD_LEADERSHIP_VOTES_SAVED }
+    },
+    safeMessages: VOTE_PLEDGE_DECLARE_SAFE_MESSAGES,
+    genericMessage:
+      'Não foi possível registrar a declaração. Verifique seu acesso e tente novamente.',
   })

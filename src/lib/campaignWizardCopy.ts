@@ -91,3 +91,21 @@ export const WIZARD_LEADERSHIP_EMPTY_GRID =
   'Nenhuma liderança cadastrada neste município ainda.' as const
 
 export const WIZARD_LEADERSHIP_SAVED_TOAST = 'Liderança salva.' as const
+
+export const WIZARD_LEADERSHIP_STATUS_DRAWER_TITLE = 'Status de apoio' as const
+
+export const WIZARD_LEADERSHIP_VOTES_DRAWER_TITLE = 'Votos declarados' as const
+
+export const WIZARD_LEADERSHIP_DECLARE_VOTES_LABEL = 'Declarar votos' as const
+
+export const WIZARD_LEADERSHIP_STATUS_SAVE_ERROR =
+  'Não foi possível salvar o status. Tente novamente.' as const
+
+export const WIZARD_LEADERSHIP_VOTES_SAVE_ERROR =
+  'Não foi possível registrar a declaração. Verifique seu acesso e tente novamente.' as const
+
+export const WIZARD_LEADERSHIP_STATUS_PENDING = 'Salvando status de apoio.' as const
+
+export const WIZARD_LEADERSHIP_VOTES_PENDING = 'Salvando declaração de votos.' as const
+
+export const WIZARD_LEADERSHIP_VOTES_SAVED = 'Declaração registrada.' as const

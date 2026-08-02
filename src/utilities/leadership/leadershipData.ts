@@ -5,7 +5,10 @@ import type { Payload } from 'payload'
 import { relationshipId } from '@/lib/relationship'
 import type { SupportStatus } from '@/lib/schemas/leadership'
 import { isSupportStatus } from '@/lib/schemas/leadership'
-import type { WizardLeadershipTileViewModel } from '@/lib/wizardLeadershipContract'
+import {
+  declaredVotesByLeadershipFromPledges,
+  type WizardLeadershipTileViewModel,
+} from '@/lib/wizardLeadershipContract'
 import type { CampaignUser, Leadership } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import {
@@ -73,7 +76,10 @@ const findMunicipalityLeadershipDocs = async (
   return result.docs as Leadership[]
 }
 
-const toWizardLeadershipTile = (doc: Leadership): WizardLeadershipTileViewModel => {
+const toWizardLeadershipTile = (
+  doc: Leadership,
+  declaredVotes: number,
+): WizardLeadershipTileViewModel => {
   const contact = contactSummary(doc.contact)
   return {
     id: doc.id,
@@ -83,6 +89,7 @@ const toWizardLeadershipTile = (doc: Leadership): WizardLeadershipTileViewModel 
     supportStatus: isSupportStatus(doc.supportStatus) ? doc.supportStatus : null,
     exclusive: doc.exclusive ?? true,
     notes: doc.notes ?? null,
+    declaredVotes,
   }
 }
 
@@ -155,8 +162,33 @@ export const loadWizardLeadershipTiles = async (
   municipalityID: number,
 ): Promise<WizardLeadershipTileViewModel[]> => {
   const docs = await findMunicipalityLeadershipDocs(payload, user, municipalityID)
+  const leadershipIDs = docs.map((doc) => doc.id)
+
+  const declaredVotesByLeadership =
+    leadershipIDs.length === 0
+      ? new Map<number, number>()
+      : declaredVotesByLeadershipFromPledges(
+          (
+            await payload.find({
+              collection: 'votePledge',
+              where: {
+                and: [
+                  { municipality: { equals: municipalityID } },
+                  { leadership: { in: leadershipIDs } },
+                ],
+              },
+              depth: 0,
+              limit: 0,
+              pagination: false,
+              select: { leadership: true, declaredVotes: true },
+              user,
+              overrideAccess: false,
+            })
+          ).docs,
+        )
+
   return docs
-    .map(toWizardLeadershipTile)
+    .map((doc) => toWizardLeadershipTile(doc, declaredVotesByLeadership.get(doc.id) ?? 0))
     .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
 }
 
