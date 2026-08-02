@@ -3,7 +3,9 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { TerritoryFilters } from '@/components/campaign/municipality/TerritoryFilters'
+import { territoryListPickerColumns } from '@/components/campaign/municipality/TerritoryListColumns'
 import { TerritoryList } from '@/components/campaign/municipality/TerritoryList'
+import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
@@ -48,7 +50,16 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
   return (
     <CampaignPageShell>
       <CampaignListPendingBoundary>
-        <TerritoryFilters state={state} regionOptions={regionOptions} />
+        <TerritoryFilters
+          state={state}
+          regionOptions={regionOptions}
+          trailing={
+            <CampaignColumnPickerTrailing
+              columnVisibility={columnVisibility}
+              columns={territoryListPickerColumns}
+            />
+          }
+        />
         <CampaignListResults>
           <TerritoryList
             rows={rows}

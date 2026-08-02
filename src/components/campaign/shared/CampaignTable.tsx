@@ -1,7 +1,6 @@
 import { Fragment, type ReactNode } from 'react'
 
 import { CampaignCellTooltip } from '@/components/campaign/shared/CampaignCellTooltip'
-import { CampaignColumnPicker } from '@/components/campaign/shared/CampaignColumnPicker'
 import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import {
   Table,
@@ -140,9 +139,9 @@ export const CampaignTableHead = ({
 type CampaignTableProps<Row> = {
   columns: Array<CampaignTableColumn<Row>>
   /**
-   * B17 — passing this turns the column picker on. The caller reads the cookie
-   * (`readCampaignColumnVisibility`) and hands the result over whole: hidden
-   * columns are never rendered, so they cost nothing in the RSC payload either.
+   * B17 — hidden column ids from the cookie (`readCampaignColumnVisibility`).
+   * The picker itself renders in the omnibox `trailing` (B137); this prop only
+   * filters which columns the table paints.
    */
   columnVisibility?: CampaignColumnVisibility
   rows: readonly Row[]
@@ -179,21 +178,6 @@ export const CampaignTable = <Row,>({
 
   return (
     <>
-      {columnVisibility ? (
-        // Gated at `md:` because municípios and apoiadores hide this table
-        // below that width (`className="hidden md:block"`) and show curated
-        // cards instead — a picker over a table nobody can see is noise. The
-        // cost is that the five surfaces which DO scroll this table on a phone
-        // have no picker there; giving them one needs a per-caller seam, not a
-        // breakpoint (registered as a fill-in in the B17 plan).
-        <div className="hidden justify-end md:flex">
-          <CampaignColumnPicker
-            listId={columnVisibility.listId}
-            columns={columns.map(({ id, label, mandatory }) => ({ id, label, mandatory }))}
-            hiddenColumnIds={columnVisibility.hiddenColumnIds}
-          />
-        </div>
-      ) : null}
       <div className={cn('overflow-hidden rounded-xl border', className)}>
         <Table containerClassName={containerClassName}>
           {caption ? <TableCaption className="sr-only">{caption}</TableCaption> : null}

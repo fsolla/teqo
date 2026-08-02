@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
@@ -15,7 +15,13 @@ import {
   type DemandOmniboxAction,
 } from '@/utilities/demand/demandOmnibox'
 
-export const DemandFilters = ({ state }: { state: DemandListState }) => {
+export const DemandFilters = ({
+  state,
+  trailing,
+}: {
+  state: DemandListState
+  trailing?: ReactNode
+}) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
     toHref: (next) => buildDemandListHref(next, 1),
@@ -68,6 +74,7 @@ export const DemandFilters = ({ state }: { state: DemandListState }) => {
         onClearAll={() => {
           runAction(clearDemandOmnibox(state))
         }}
+        trailing={trailing}
       />
     </form>
   )

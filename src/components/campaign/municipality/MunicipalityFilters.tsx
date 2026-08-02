@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import { useMunicipalityEstimateScenarioOptional } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import { SaveMunicipalityFilterControl } from '@/components/campaign/municipality/SaveMunicipalityFilterControl'
@@ -32,6 +32,8 @@ type MunicipalityFiltersProps = {
   advisorFilterOptions: MunicipalityFilterOption[]
   /** Facet slugs (labeled from the catalog on the client). */
   slugFilterValues?: readonly string[]
+  /** Beside the omnibox (B137): column picker, save bookmark, … */
+  trailing?: ReactNode
 }
 
 export const MunicipalityFilters = ({
@@ -40,6 +42,7 @@ export const MunicipalityFilters = ({
   regionFilterOptions,
   advisorFilterOptions,
   slugFilterValues = [],
+  trailing,
 }: MunicipalityFiltersProps) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
@@ -133,7 +136,12 @@ export const MunicipalityFilters = ({
         onClearAll={() => {
           runAction(clearMunicipalityOmnibox(state))
         }}
-        trailing={<SaveMunicipalityFilterControl state={state} />}
+        trailing={
+          <>
+            {trailing}
+            <SaveMunicipalityFilterControl state={state} />
+          </>
+        }
       />
     </form>
   )

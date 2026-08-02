@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 
 import { DemandFilters } from '@/components/campaign/demand/DemandFilters'
+import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
@@ -15,6 +16,7 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import {
   campaignDemandKindLabels,
   campaignDemandStatusLabels,
@@ -117,7 +119,15 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
       </div>
 
       <CampaignListPendingBoundary>
-        <DemandFilters state={state} />
+        <DemandFilters
+          state={state}
+          trailing={
+            <CampaignColumnPickerTrailing
+              columnVisibility={columnVisibility}
+              columns={toCampaignColumnPickerColumns(demandColumns)}
+            />
+          }
+        />
 
         <CampaignListResults>
           <CampaignTable

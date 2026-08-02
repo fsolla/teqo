@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
@@ -24,11 +24,13 @@ export const LeadershipFilters = ({
   municipalityFilterOptions,
   organizationFilterOptions,
   stateDeputyFilterOptions,
+  trailing,
 }: {
   state: LeadershipListState
   municipalityFilterOptions: LeadershipFilterOption[]
   organizationFilterOptions: LeadershipFilterOption[]
   stateDeputyFilterOptions: LeadershipFilterOption[]
+  trailing?: ReactNode
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
@@ -132,6 +134,7 @@ export const LeadershipFilters = ({
         onClearAll={() => {
           runAction(clearLeadershipOmnibox(state))
         }}
+        trailing={trailing}
       />
     </form>
   )

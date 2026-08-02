@@ -6,6 +6,7 @@ import { getPayload } from 'payload'
 
 import { LeadershipInviteRowAction } from '@/components/campaign/invite/LeadershipInviteRowAction'
 import { LeadershipFilters } from '@/components/campaign/leadership/LeadershipFilters'
+import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { LeadershipListSupportStatusControl } from '@/components/campaign/leadership/LeadershipListSupportStatusControl'
 import {
   LeadershipFilterHead,
@@ -40,7 +41,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
-import { resolveVisibleColumns } from '@/lib/campaignColumnVisibility'
+import { resolveVisibleColumns, toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import {
@@ -415,12 +416,15 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
           municipalityFilterOptions={municipalityFilterOptions}
           organizationFilterOptions={organizationFilterOptions}
           stateDeputyFilterOptions={stateDeputyFilterOptions}
+          trailing={
+            <CampaignColumnPickerTrailing
+              columnVisibility={columnVisibility}
+              columns={toCampaignColumnPickerColumns(columns)}
+            />
+          }
         />
 
         <CampaignListResults>
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {sortSummary}
-          </p>
           {/* One shared Drawer for every chip-cell sheet on coarse pointers
               (miss #52 — never a Drawer root per opened cell). */}
           <CampaignListSheetProvider>

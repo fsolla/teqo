@@ -5,7 +5,10 @@ import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/s
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
+import {
+  toCampaignColumnPickerColumns,
+  type CampaignColumnVisibility,
+} from '@/lib/campaignColumnVisibility'
 import { formatBrazilianPhoneInput } from '@/lib/phone'
 import { supporterVoteIntentionLabels } from '@/utilities/supporter/supporterUi'
 import type { SupporterListItemViewModel } from '@/utilities/supporter/supporterViewModels'
@@ -138,6 +141,8 @@ const supporterColumns: Array<CampaignTableColumn<SupporterListItemViewModel>> =
     cell: (supporter) => (supporter.phone ? formatBrazilianPhoneInput(supporter.phone) : '—'),
   },
 ]
+
+export const supporterPickerColumns = toCampaignColumnPickerColumns(supporterColumns)
 
 export const SupporterList = ({ supporters, columnVisibility, empty }: SupporterListProps) => (
   <>
