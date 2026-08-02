@@ -1,7 +1,7 @@
 'use client'
 
 import { Info } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { WizardSignalSkipTrailing } from '@/components/campaign/municipality/WizardSignalSkipTrailing'
 import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
@@ -20,14 +20,19 @@ import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { wizardSignalHref } from '@/lib/campaignActionRoutes'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import {
-  municipalitySignalTypeMeta,
   municipalitySignalTypeMetaByType,
+  type MunicipalitySignalTypeMetaEntry,
 } from '@/lib/municipalitySignalTypeMeta'
 import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 import { cn } from '@/lib/utils'
 import { wizardChainEndHref } from '@/lib/wizardActionChain'
 import { wizardStepPreviousHref } from '@/lib/wizardBack'
-import { resolveWizardSignalSkip, WIZARD_SIGNAL_TYPE_STEP_TITLE } from '@/lib/wizardSignalUi'
+import { resolveWizardSignalSkip } from '@/lib/wizardSignalUi'
+import {
+  WIZARD_THUMB_TILE_GRID_CLASS,
+  WIZARD_THUMB_TILE_ITEM_CLASS,
+  wizardSignalTypesThumbOrder,
+} from '@/lib/wizardThumbGrid'
 
 type WizardSignalTypeStepProps = {
   actionSlug: string
@@ -48,12 +53,20 @@ export const WizardSignalTypeStep = ({
   const infoEntry = infoType ? municipalitySignalTypeMetaByType[infoType] : null
   const skip = resolveWizardSignalSkip(entryAction, municipalitySlug, returnPath)
 
+  const thumbOrderedEntries = useMemo(
+    () =>
+      wizardSignalTypesThumbOrder.map(
+        (type) => municipalitySignalTypeMetaByType[type],
+      ) satisfies MunicipalitySignalTypeMetaEntry[],
+    [],
+  )
+
   return (
     <>
       <CampaignWizardShell
         flowTitle={wizardFlowTitleForSlug(actionSlug)}
         isEntryStep={false}
-        stepTitle={WIZARD_SIGNAL_TYPE_STEP_TITLE}
+        stepTitle={null}
         previousHref={wizardStepPreviousHref({
           step: 'signal-type',
           actionSlug,
@@ -65,11 +78,11 @@ export const WizardSignalTypeStep = ({
         skip={skip}
         trailingAction={skip ? <WizardSignalSkipTrailing skip={skip} /> : undefined}
       >
-        <ul className="grid list-none grid-cols-2 gap-3 md:grid-cols-3">
-          {municipalitySignalTypeMeta.map((entry) => {
+        <ul className={WIZARD_THUMB_TILE_GRID_CLASS}>
+          {thumbOrderedEntries.map((entry) => {
             const Icon = entry.icon
             return (
-              <li key={entry.type} className="relative">
+              <li key={entry.type} className={cn('relative', WIZARD_THUMB_TILE_ITEM_CLASS)}>
                 <CampaignWizardNavLink
                   href={wizardSignalHref(
                     actionSlug,
@@ -79,13 +92,13 @@ export const WizardSignalTypeStep = ({
                     returnPath,
                   )}
                   className={cn(
-                    'flex aspect-square w-full flex-col justify-between rounded-lg border border-border bg-transparent p-3 pr-10 text-left',
+                    'flex aspect-square w-full flex-col justify-between rounded-lg border border-border bg-background p-3 pr-10 text-left text-foreground',
                     'transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   )}
                 >
-                  <Icon className="size-5 shrink-0 text-foreground" aria-hidden />
+                  <Icon className={cn('size-5 shrink-0', entry.iconClassName)} aria-hidden />
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium text-foreground">{entry.label}</span>
+                    <span className="text-sm font-medium">{entry.label}</span>
                     <span className="line-clamp-2 text-xs text-muted-foreground">
                       {entry.shortDescription}
                     </span>

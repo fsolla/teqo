@@ -23,7 +23,6 @@ import {
   WIZARD_VOTES_FINAL_CTA_LABEL,
   WIZARD_VOTES_SAVED_MESSAGE,
   wizardFlowTitleForSlug,
-  wizardNextStepTitle,
 } from '@/lib/campaignWizardCopy'
 import { type VoteEstimateScenario, type VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import {
@@ -136,7 +135,7 @@ export const WizardExpectedVotesStep = ({
   return (
     <CampaignWizardShell
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
-      stepTitle={wizardNextStepTitle(actionSlug)}
+      stepTitle={null}
       isEntryStep={false}
       previousHref={wizardStepPreviousHref({
         step: 'expected-votes',

@@ -14,7 +14,7 @@ export type PoliticalTrendWizardMetaEntry = {
   changeDescription: string
   infoContent: string
   icon: LucideIcon
-  tileClassName: string
+  iconClassName: string
 }
 
 const trendIcons: Record<PoliticalTrendStatusValue, LucideIcon> = {
@@ -23,10 +23,10 @@ const trendIcons: Record<PoliticalTrendStatusValue, LucideIcon> = {
   desfavoravel: ThumbsDown,
 }
 
-const trendTileClassNames: Record<PoliticalTrendStatusValue, string> = {
-  favoravel: 'border-estimate-confirmed-foreground text-estimate-confirmed-foreground',
-  neutra: 'border-border text-foreground',
-  desfavoravel: 'border-destructive text-destructive',
+const trendIconClassNames: Record<PoliticalTrendStatusValue, string> = {
+  favoravel: 'text-estimate-confirmed-foreground',
+  neutra: 'text-muted-foreground',
+  desfavoravel: 'text-destructive',
 }
 
 const trendInfoContent: Record<PoliticalTrendStatusValue, string> = {
@@ -45,7 +45,7 @@ export const politicalTrendWizardMeta: PoliticalTrendWizardMetaEntry[] = politic
     changeDescription: `Mudar tendência para ${politicalTrendDisplayLabels[status]}`,
     infoContent: trendInfoContent[status],
     icon: trendIcons[status],
-    tileClassName: trendTileClassNames[status],
+    iconClassName: trendIconClassNames[status],
   }),
 )
 

@@ -20,6 +20,7 @@ export type MunicipalitySignalTypeMetaEntry = {
   shortDescription: string
   infoContent: string
   icon: LucideIcon
+  iconClassName: string
 }
 
 const signalTypeIcons: Record<MunicipalitySignalType, LucideIcon> = {
@@ -28,6 +29,14 @@ const signalTypeIcons: Record<MunicipalitySignalType, LucideIcon> = {
   visita_adversario: UserRoundX,
   proposta_broker: Handshake,
   outro: CircleHelp,
+}
+
+const signalTypeIconClassNames: Record<MunicipalitySignalType, string> = {
+  invasao: 'text-destructive',
+  esfriamento: 'text-sky-600',
+  visita_adversario: 'text-amber-600',
+  proposta_broker: 'text-teal-600',
+  outro: 'text-muted-foreground',
 }
 
 const signalTypeInfoContent: Record<MunicipalitySignalType, string> = {
@@ -50,6 +59,7 @@ export const municipalitySignalTypeMeta: MunicipalitySignalTypeMetaEntry[] =
     shortDescription: municipalitySignalTypeDescriptions[type],
     infoContent: signalTypeInfoContent[type],
     icon: signalTypeIcons[type],
+    iconClassName: signalTypeIconClassNames[type],
   }))
 
 export const municipalitySignalTypeMetaByType = Object.fromEntries(
