@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
@@ -282,21 +283,18 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Dobradinhas</h1>
-          <p className="text-muted-foreground">
-            Deputados estaduais com quem a campanha dobra — vincule lideranças e municípios direto
-            na lista.
-          </p>
-        </div>
-        <Button asChild className="min-h-11">
-          <Link href="/campanha/dobradinhas/nova">
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Nova dobradinha
-          </Link>
-        </Button>
-      </header>
+      <CampaignListPageHeader
+        title="Dobradinhas"
+        description="Deputados estaduais com quem a campanha dobra — vincule lideranças e municípios direto na lista."
+        actions={
+          <Button asChild className="min-h-11">
+            <Link href="/campanha/dobradinhas/nova">
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Nova dobradinha
+            </Link>
+          </Button>
+        }
+      />
 
       {main}
     </CampaignPageShell>

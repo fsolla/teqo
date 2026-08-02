@@ -39,6 +39,23 @@ test.describe('Municípios — shell (OH8)', () => {
   })
 })
 
+test.describe('Municípios — list header mobile (B118)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('hides page title chrome on mobile but keeps list tools', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Mobile Header'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/municipios`)
+    await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeHidden()
+    await expect(page.getByLabel('Buscar município')).toBeVisible()
+    await expect(page.getByText(/\d+ municípios encontrados/)).toBeVisible()
+  })
+})
+
 test.describe('Municípios — jornadas por papel', () => {
   test('coordinator opens the municipalities list, edits strategy and assigns an advisor', async ({
     campaign,

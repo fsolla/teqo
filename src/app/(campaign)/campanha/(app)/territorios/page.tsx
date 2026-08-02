@@ -5,6 +5,7 @@ import { getPayload } from 'payload'
 import { TerritoryFilters } from '@/components/campaign/municipality/TerritoryFilters'
 import { TerritoryList } from '@/components/campaign/municipality/TerritoryList'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
@@ -81,15 +82,13 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
 
   return (
     <CampaignPageShell>
-      <header className="flex max-w-prose flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-balance">
-          Territórios de Identidade
-        </h1>
-        <p className="text-muted-foreground text-pretty">
-          Compare a concentração histórica e a cobertura de assessoria das regiões da Bahia. Abra um
-          território para ver seus municípios.
-        </p>
-      </header>
+      <CampaignListPageHeader
+        className="max-w-prose"
+        title="Territórios de Identidade"
+        titleClassName="text-balance"
+        description="Compare a concentração histórica e a cobertura de assessoria das regiões da Bahia. Abra um território para ver seus municípios."
+        descriptionClassName="text-pretty"
+      />
       {main}
     </CampaignPageShell>
   )

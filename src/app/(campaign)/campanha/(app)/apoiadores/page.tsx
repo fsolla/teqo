@@ -6,6 +6,7 @@ import { getPayload } from 'payload'
 
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
@@ -109,35 +110,35 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Apoiadores</h1>
-          <p className="text-muted-foreground">
-            Base nominal de apoio com intenção de voto e vínculo opcional a municípios.
-          </p>
+      <CampaignListPageHeader
+        title="Apoiadores"
+        description="Base nominal de apoio com intenção de voto e vínculo opcional a municípios."
+        scope={
           <CampaignScopeBadge>
             {isCampaignUnrestricted(user)
               ? `${campaignRoleLabels[user.role]} · todos os apoiadores`
               : getSupporterScopeLabel(result.totalDocs)}
           </CampaignScopeBadge>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          {isCampaignCoordinator(user) ? (
-            <Button asChild variant="outline" className="min-h-11">
-              <Link href="/campanha/apoiadores/importar">
-                <FileUpIcon data-icon="inline-start" aria-hidden="true" />
-                Importar CSV
+        }
+        actions={
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {isCampaignCoordinator(user) ? (
+              <Button asChild variant="outline" className="min-h-11">
+                <Link href="/campanha/apoiadores/importar">
+                  <FileUpIcon data-icon="inline-start" aria-hidden="true" />
+                  Importar CSV
+                </Link>
+              </Button>
+            ) : null}
+            <Button asChild className="min-h-11">
+              <Link href="/campanha/apoiadores/novo">
+                <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                Novo
               </Link>
             </Button>
-          ) : null}
-          <Button asChild className="min-h-11">
-            <Link href="/campanha/apoiadores/novo">
-              <PlusIcon data-icon="inline-start" aria-hidden="true" />
-              Novo
-            </Link>
-          </Button>
-        </div>
-      </header>
+          </div>
+        }
+      />
 
       {main}
     </CampaignPageShell>
