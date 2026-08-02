@@ -102,6 +102,8 @@ test.describe('Início — busca global (B47)', () => {
 })
 
 test.describe('Início — catálogo de ações (B45)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
   test('staff sees six home actions and can open municipalities without coverage', async ({
     campaign,
     page,
@@ -112,13 +114,18 @@ test.describe('Início — catálogo de ações (B45)', () => {
     })
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await expect(page.getByLabel('Ações rápidas')).toBeVisible()
+    const actionsRegion = page.getByLabel('Ações rápidas')
+    await expect(actionsRegion).toBeVisible()
 
     for (const label of staffActionLabels) {
       const link = page.getByRole('link', { name: label, exact: true })
       const button = page.getByRole('button', { name: label, exact: true })
       await expect(link.or(button)).toBeVisible()
     }
+
+    const overflowX = await actionsRegion.evaluate((el) => getComputedStyle(el).overflowX)
+    expect(overflowX).not.toBe('auto')
+    expect(overflowX).not.toBe('scroll')
 
     await page.getByRole('link', { name: 'Ajustar votos', exact: true }).click()
     await page.waitForURL(/\/campanha\/acoes\/atualizar-votos/)
