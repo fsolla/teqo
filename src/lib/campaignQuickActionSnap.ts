@@ -29,6 +29,13 @@ export const quickActionsSnapIsFull = (snap: QuickActionsSnapPoint | null): bool
 export const quickActionsSnapIsDock = (snap: QuickActionsSnapPoint | null): boolean =>
   snap === QUICK_ACTIONS_SNAP_DOCK
 
+/**
+ * B112 — empty blur, handle tap/swipe ↓, and in-chrome navigation all land on
+ * collapsed (clear search separately so `uiFocused → FULL` cannot reopen).
+ */
+export const quickActionsSnapAfterDismiss = (): QuickActionsSnapPoint =>
+  QUICK_ACTIONS_SNAP_COLLAPSED
+
 /** Pure scroll-direction detector for the quick-actions peek (B105). */
 export const quickActionsScrollDirection = (
   previousScrollTop: number,

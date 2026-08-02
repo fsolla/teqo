@@ -4,7 +4,9 @@ import type { ReactNode } from 'react'
 
 import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
+import { homeSearchShouldUnfocusOnBlur } from '@/lib/campaignHomeSearchContract'
 import { HOME_SEARCH_QUERY_MAX_LENGTH } from '@/lib/schemas/homeSearch'
+import { cn } from '@/lib/utils'
 
 const HOME_SEARCH_INPUT_ID = 'homeSearchQuery'
 const HOME_SEARCH_LABEL = 'Buscar na campanha'
@@ -15,6 +17,8 @@ export const CampaignHomeSearch = ({
   resultsBusy,
   placeholder = HOME_SEARCH_PLACEHOLDER,
   showResults = true,
+  blurUnfocusPolicy = 'whenInactive',
+  compactStack = false,
 }: {
   children?: ReactNode
   /** When set, must already fold debounce (see `useHomeSearchResultsState.isFetching`). */
@@ -23,12 +27,19 @@ export const CampaignHomeSearch = ({
   placeholder?: string
   /** When false, keeps the live region mounted but visually hidden (collapsed peek). */
   showResults?: boolean
+  /**
+   * Início: unfocus when query inactive. Drawer (B112): unfocus only when raw
+   * is empty so blur-with-text keeps FULL.
+   */
+  blurUnfocusPolicy?: 'whenInactive' | 'whenEmpty'
+  /** B112 — ~⅓ of the default input→results gap in the bottom drawer. */
+  compactStack?: boolean
 }) => {
   const { query, setRaw, clear, isDebouncing, setInputFocused } = useHomeSearch()
   const ariaBusy = (resultsBusy ?? isDebouncing) || undefined
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-4">
+    <div className={cn('flex w-full min-w-0 flex-col', compactStack ? 'gap-1.5' : 'gap-4')}>
       <CampaignSearchInput
         id={HOME_SEARCH_INPUT_ID}
         label={HOME_SEARCH_LABEL}
@@ -37,7 +48,7 @@ export const CampaignHomeSearch = ({
         onChange={(event) => setRaw(event.target.value)}
         onFocus={() => setInputFocused(true)}
         onBlur={() => {
-          if (!query.isActive) {
+          if (homeSearchShouldUnfocusOnBlur(query.raw, blurUnfocusPolicy, query.isActive)) {
             setInputFocused(false)
           }
         }}

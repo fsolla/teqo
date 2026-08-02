@@ -20,6 +20,7 @@ import {
   QUICK_ACTIONS_SNAP_DOCK,
   QUICK_ACTIONS_SNAP_FULL,
   quickActionsScrollDirection,
+  quickActionsSnapAfterDismiss,
   quickActionsSnapIsDock,
   quickActionsSnapIsFull,
 } from '@/lib/campaignQuickActionSnap'
@@ -28,8 +29,10 @@ vi.mock('@/lib/campaignJsonRequest', () => ({
   postCampaignJson: vi.fn(),
 }))
 
+const pathnameState = vi.hoisted(() => ({ current: '/campanha/municipios/foo' }))
+
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/campanha/municipios/foo',
+  usePathname: () => pathnameState.current,
 }))
 
 const idleSuggestPayload: HomeSearchSuccessResponse = {
@@ -67,6 +70,7 @@ const searchWithPriorityPayload: HomeSearchSuccessResponse = {
 const matchMediaMock = vi.fn()
 
 beforeEach(() => {
+  pathnameState.current = '/campanha/municipios/foo'
   matchMediaMock.mockImplementation((query: string) => ({
     matches: false,
     media: query,
@@ -263,7 +267,7 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
     expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('full')
   })
 
-  it('stays full while search remains focused even if the handle collapses (B109)', () => {
+  it('handle with live query clears and collapses (B112)', async () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: idleSuggestPayload,
@@ -271,9 +275,110 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
 
     renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
 
-    fireEvent.focus(screen.getByLabelText('Buscar na campanha'))
-    fireEvent.click(screen.getByRole('button', { name: 'Ocultar ações rápidas' }))
+    const input = screen.getByLabelText('Buscar na campanha')
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: 'cairu' } })
+
+    await waitFor(() => {
+      expect((input as HTMLInputElement).value).toBe('cairu')
+    })
     expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('full')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar ações rápidas' }))
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe(
+      'collapsed',
+    )
+    expect((screen.getByLabelText('Buscar na campanha') as HTMLInputElement).value).toBe('')
+  })
+
+  it('empty blur collapses; blur with text stays full (B112)', async () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
+
+    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+
+    const input = screen.getByLabelText('Buscar na campanha')
+    fireEvent.focus(input)
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('full')
+
+    fireEvent.blur(input)
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe(
+      'collapsed',
+    )
+
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: 'ca' } })
+    await waitFor(() => {
+      expect((input as HTMLInputElement).value).toBe('ca')
+    })
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('full')
+
+    fireEvent.blur(input)
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('full')
+    expect((input as HTMLInputElement).value).toBe('ca')
+  })
+
+  it('in-chrome pathname update clears and collapses without remounting providers (B112)', async () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
+
+    const { rerender } = render(
+      <TooltipProvider delayDuration={300}>
+        <CampaignQuickActionContextProvider>
+          <CampaignQuickActionsSnapProvider>
+            <CampaignGlobalSearchProvider>
+              <CampaignQuickActionsDrawer actions={[]} />
+            </CampaignGlobalSearchProvider>
+          </CampaignQuickActionsSnapProvider>
+        </CampaignQuickActionContextProvider>
+      </TooltipProvider>,
+    )
+
+    const input = screen.getByLabelText('Buscar na campanha')
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: 'cairu' } })
+    await waitFor(() => {
+      expect((input as HTMLInputElement).value).toBe('cairu')
+    })
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('full')
+
+    pathnameState.current = '/campanha/liderancas/1'
+    rerender(
+      <TooltipProvider delayDuration={300}>
+        <CampaignQuickActionContextProvider>
+          <CampaignQuickActionsSnapProvider>
+            <CampaignGlobalSearchProvider>
+              <CampaignQuickActionsDrawer actions={[]} />
+            </CampaignGlobalSearchProvider>
+          </CampaignQuickActionsSnapProvider>
+        </CampaignQuickActionContextProvider>
+      </TooltipProvider>,
+    )
+
+    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe(
+      'collapsed',
+    )
+    expect((screen.getByLabelText('Buscar na campanha') as HTMLInputElement).value).toBe('')
+  })
+
+  it('uses compact bottom stack spacing in the drawer (B112)', () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
+
+    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+
+    const context = document.getElementById('quickActionContext')
+    expect(context?.className).toContain('gap-1')
+    expect(context?.className).toContain('pb-[max(0.25rem,env(safe-area-inset-bottom,0px))]')
+
+    const searchStack = document.querySelector('[data-slot="home-search-results"]')?.parentElement
+    expect(searchStack?.className).toContain('gap-1.5')
   })
 
   it('toggles between dock and collapsed from the handle', () => {
@@ -356,13 +461,14 @@ describe('CampaignContentScroll quick-actions direction (B105)', () => {
 })
 
 describe('campaignQuickActionSnap', () => {
-  it('detects dock and full snaps', () => {
+  it('detects dock and full snaps; dismiss lands collapsed', () => {
     expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_DOCK)).toBe(true)
     expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_COLLAPSED)).toBe(false)
     expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_FULL)).toBe(false)
     expect(quickActionsSnapIsDock(null)).toBe(false)
     expect(quickActionsSnapIsFull(QUICK_ACTIONS_SNAP_FULL)).toBe(true)
     expect(quickActionsSnapIsFull(QUICK_ACTIONS_SNAP_DOCK)).toBe(false)
+    expect(quickActionsSnapAfterDismiss()).toBe(QUICK_ACTIONS_SNAP_COLLAPSED)
   })
 
   it('resolves scroll direction from delta threshold', () => {
