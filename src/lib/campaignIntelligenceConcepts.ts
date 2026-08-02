@@ -194,11 +194,11 @@ export const campaignIntelligenceConcepts: ReadonlyArray<CampaignIntelligenceCon
     oneLiner:
       'Quanto a campanha decidiu investir neste município: N0 monitorar, N1 presença de mandato, N2 rede sem agenda, N3 rede com agenda, N4 investimento pleno.',
     formula:
-      'Não é calculado: é declarado pela coordenação geral. Todo movimento exige motivo e os sinais que o fariam ser revertido, e fica registrado em Decisões de alocação com o nível anterior, o novo e a data. Três regras seguram a oscilação: pular dois níveis de uma vez só com choque triangulado, não rebaixar um nível decidido há menos de três semanas, e um movimento por mês. A coordenação pode passar por cima delas — o override é gravado com as regras que contrariou.',
+      'Não é calculado: é declarado pela coordenação geral. Todo movimento fica registrado em Decisões de alocação com o nível anterior, o novo, a data e um motivo opcional. Três regras seguram a oscilação: pular dois níveis de uma vez só com choque triangulado, não rebaixar um nível decidido há menos de três semanas, e um movimento por mês. A coordenação pode passar por cima delas — o override é gravado com as regras que contrariou.',
     example:
       'Um município em N1 que recebeu rede e entrou na agenda de giro sobe para N3; nas três semanas seguintes um pedido de rebaixamento fica bloqueado até a janela de proteção fechar, salvo override justificado.',
     whyItMatters:
-      'Separa o que a campanha SABE sobre o município (classe, captura, cobertura da meta) do que a campanha DECIDIU fazer nele. Sem esse registro, a alocação de presença vira memória de reunião: ninguém sabe quem prometeu o quê, nem por quê, nem o que faria voltar atrás. Os cortes das regras de estabilidade são ilustrativos até o backtest calibrá-los.',
+      'Separa o que a campanha SABE sobre o município (classe, captura, cobertura da meta) do que a campanha DECIDIU fazer nele. Sem esse registro, a alocação de presença vira memória de reunião: ninguém sabe quem prometeu o quê nem por quê. Os cortes das regras de estabilidade são ilustrativos até o backtest calibrá-los.',
     whereItAppears:
       'Coluna "Nível" da lista de municípios (com filtro, ordenação e edição pela coordenação) e bloco de estratégia no detalhe do município.',
   },

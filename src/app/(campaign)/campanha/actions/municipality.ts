@@ -149,7 +149,7 @@ export const setMunicipalityEngagementLevelRecord = async (
   actor: CampaignUser,
   input: MunicipalityEngagementLevelInput,
 ) => {
-  const { municipality, level, note, reversalSignals, triangulatedShock, override } =
+  const { municipality, level, note, triangulatedShock, override } =
     municipalityEngagementLevelSchema.parse(input)
 
   return withPayloadTransaction(
@@ -187,10 +187,12 @@ export const setMunicipalityEngagementLevelRecord = async (
 
       if (violations.length > 0 && !override) throw new EngagementLevelBlockedError(violations)
 
+      const levelNote = note ?? null
+
       const updated = await payload.update({
         collection: 'municipality',
         id: municipality,
-        data: { engagementLevel: level, levelNote: note },
+        data: { engagementLevel: level, levelNote },
         depth: 0,
         user: currentActor,
         overrideAccess: false,
@@ -203,13 +205,12 @@ export const setMunicipalityEngagementLevelRecord = async (
           municipality,
           patternId: ENGAGEMENT_LEVEL_PATTERN_ID,
           outcome: 'movimento',
-          rationale: note,
+          rationale: levelNote ?? '',
           // Only the values the decision was taken on — no document dumps
           // (the collection caps the serialized snapshot at 16 KB).
           snapshot: {
             from,
             to: level,
-            reversalSignals,
             triangulatedShock,
             violations: violations.map((violation) => violation.id),
             overridden: violations.length > 0,

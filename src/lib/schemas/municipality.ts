@@ -1,7 +1,11 @@
 import { z } from 'zod'
 
 import { ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH, engagementLevels } from '@/lib/engagementLevel'
-import { positiveRelationshipId, trimmedNullableText } from '@/lib/schemas/primitives'
+import {
+  positiveRelationshipId,
+  trimmedNullableText,
+  trimmedOptionalText,
+} from '@/lib/schemas/primitives'
 import { voteEstimateScenarioFieldsSchema } from '@/lib/schemas/votePledge'
 
 export const politicalTrendStatuses = ['favoravel', 'neutra', 'desfavoravel'] as const
@@ -88,16 +92,11 @@ export const MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES = [
 export const MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE =
   'Somente a coordenação geral ou o candidato move o nível de envolvimento.'
 
-/**
- * E14 — a movement is never just the new level: the motivo and the signals
- * that would reverse it are what make the decision auditable later, so both
- * are required by the schema rather than by the form alone.
- */
+/** E14 — movement of the N0–N4 ladder; motivo is optional (B134). */
 export const municipalityEngagementLevelSchema = z.object({
   municipality: positiveRelationshipId,
   level: z.enum(engagementLevels),
-  note: z.string().trim().min(1).max(ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH),
-  reversalSignals: z.string().trim().min(1).max(ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH),
+  note: trimmedOptionalText(ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH),
   /** Licenses a two-level jump (research §6.8). */
   triangulatedShock: z.boolean().default(false),
   /** Accepts the listed violations knowingly; recorded in the decision snapshot. */
