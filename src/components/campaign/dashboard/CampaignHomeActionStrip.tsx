@@ -133,8 +133,6 @@ export const CampaignHomeActionStrip = ({
         onClickCapture,
       }
 
-  const isGridLikeLayout = isGridLayout || !isStripLayout
-
   const listClassName = cn(
     'm-0 list-none p-0',
     isStripLayout
@@ -165,7 +163,7 @@ export const CampaignHomeActionStrip = ({
         <ul
           role="list"
           className={listClassName}
-          data-layout={isGridLikeLayout ? 'grid-3' : undefined}
+          data-layout={!isStripLayout ? 'grid-3' : undefined}
         >
           {actions?.map(({ id, ...button }) => (
             <li key={id ?? button.href ?? button.label} className="m-0 min-w-0 list-none p-0">
