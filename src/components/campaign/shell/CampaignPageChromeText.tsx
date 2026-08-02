@@ -16,7 +16,7 @@ export const CampaignPageChromeText = ({
         data-slot="campaign-page-chrome"
         className={cn('min-w-0 truncate text-sm font-medium text-foreground', className)}
       >
-        {chrome.title}
+        <span data-slot="campaign-page-chrome-title">{chrome.title}</span>
         {chrome.subtitle ? (
           <span className="font-normal text-muted-foreground"> {chrome.subtitle}</span>
         ) : null}
@@ -26,7 +26,9 @@ export const CampaignPageChromeText = ({
 
   return (
     <div data-slot="campaign-page-chrome" className={cn('min-w-0 flex-1 leading-tight', className)}>
-      <span className="block truncate text-sm font-semibold">{chrome.title}</span>
+      <span data-slot="campaign-page-chrome-title" className="block truncate text-sm font-semibold">
+        {chrome.title}
+      </span>
       {chrome.subtitle ? (
         <span className="block truncate text-xs text-primary-foreground/80">{chrome.subtitle}</span>
       ) : null}

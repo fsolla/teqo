@@ -565,11 +565,6 @@ export const campaignPageChrome = (page: Page, title: string) =>
   page
     .locator('[data-slot="campaign-page-chrome"]')
     .filter({ visible: true })
-<<<<<<< HEAD
-    .getByText(title)
-    .first()
-=======
     .getByText(title, { exact: true })
->>>>>>> ce710645 (fix(e2e): exact match in campaignPageChrome for mobile subtitles)
 
 export { expect }
