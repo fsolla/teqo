@@ -427,10 +427,6 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
 
   return (
     <>
-      <p className="text-sm text-muted-foreground" aria-live="polite">
-        {sortSummary}
-      </p>
-
       <MunicipalityListMobileSection
         municipalities={municipalities}
         advisorNamesById={advisorNamesById}

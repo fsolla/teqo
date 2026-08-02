@@ -40,12 +40,9 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
-    // E9 allocation queue: the list opens on the uncovered deficit and exposes
-    // the freshness column the ordering is paired with. `exact` keeps this off
-    // the table caption, which embeds the same summary plus column glossary.
-    await expect(
-      page.getByText('Ordenado por Cobertura (maior déficit primeiro)', { exact: true }),
-    ).toBeVisible()
+    // B127: primary filter entry is the omnibox; default sort is no longer a
+    // free-standing "Ordenado por …" line (only a non-default sort chip).
+    await expect(page.getByLabel('Filtrar municípios')).toBeVisible()
     await expect(
       page.getByRole('columnheader', { name: /Ordenar por Frescor do sinal/ }),
     ).toBeVisible()
@@ -97,7 +94,7 @@ test.describe('Municípios — jornadas por papel', () => {
     )
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
-    const advisorsTrigger = page.getByRole('button', { name: 'Editar assessores' })
+    const advisorsTrigger = page.getByRole('button', { name: 'Editar assessores' }).first()
     await advisorsTrigger.click()
 
     const advisorsPopover = page.locator('[data-slot="popover-content"]')
@@ -127,7 +124,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // Persistence: reload and reopen to confirm the server, not just local
     // state, now holds the assignment.
     await page.reload()
-    await page.getByRole('button', { name: 'Editar assessores' }).click()
+    await page.getByRole('button', { name: 'Editar assessores' }).first().click()
     await expect(
       page.locator('[data-slot="popover-content"]').getByRole('button', {
         name: `Remover ${advisor.name}`,

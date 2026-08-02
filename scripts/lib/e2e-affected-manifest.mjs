@@ -29,6 +29,8 @@ export const E2E_AFFECTED_MANIFEST = [
       `${CAMPAIGN_APP}/municipios`,
       'src/components/campaign/municipality',
       'src/components/campaign/map',
+      'src/components/campaign/shared/CampaignListOmnibox',
+      'src/lib/campaignListOmnibox',
       'src/utilities/municipality',
     ],
     specs: [
@@ -107,6 +109,7 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/campaign/auth',
       `${CAMPAIGN_APP}/acoes`,
       'src/components/campaign/shared/WizardMunicipality',
+      'src/components/campaign/shared/useCampaignListFilterNavigation',
       'src/components/campaign/shared/useNearestMunicipalitySlug',
       'src/lib/wizardMunicipalitySuggestMerge',
       `${CAMPAIGN_APP}/apoiadores`,

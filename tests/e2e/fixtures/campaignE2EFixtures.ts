@@ -565,7 +565,7 @@ export const campaignPageChrome = (page: Page, title: string) =>
   page
     .locator('[data-slot="campaign-page-chrome"]')
     .filter({ visible: true })
-    .getByText(title)
-    .first()
+    .locator('[data-slot="campaign-page-chrome-title"]')
+    .getByText(title, { exact: true })
 
 export { expect }
