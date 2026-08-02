@@ -15,6 +15,7 @@ Appetite restante: herdado (~0,5–1 dia eng)
 ## Abordagem recomendada
 
 **Opções consideradas:**
+
 - A) Manter picker em `CampaignTable` com CSS `absolute` ao lado da omnibox — rejeitada: DOM distinto, frágil entre listas com/sem cards mobile.
 - B) Slot `trailing` nos `*Filters` + remover picker de `CampaignTable` — **recomendada**: precedente B127 (`SaveMunicipalityFilterControl`), boundary de pending intacto.
 - C) Novo shell `CampaignListToolbar` — rejeitada: twin desnecessário.

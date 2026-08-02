@@ -6,12 +6,12 @@ import { getPayload } from 'payload'
 
 import { LeadershipInviteRowAction } from '@/components/campaign/invite/LeadershipInviteRowAction'
 import { LeadershipFilters } from '@/components/campaign/leadership/LeadershipFilters'
-import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { LeadershipListSupportStatusControl } from '@/components/campaign/leadership/LeadershipListSupportStatusControl'
 import {
   LeadershipFilterHead,
   LeadershipSortableHead,
 } from '@/components/campaign/leadership/LeadershipSortableHead'
+import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignCopyableCell } from '@/components/campaign/shared/CampaignCopyableCell'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {

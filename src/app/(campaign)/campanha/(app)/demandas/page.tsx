@@ -15,8 +15,8 @@ import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/s
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   campaignDemandKindLabels,
   campaignDemandStatusLabels,

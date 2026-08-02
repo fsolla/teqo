@@ -178,56 +178,56 @@ export const CampaignTable = <Row,>({
 
   return (
     <div className={cn('overflow-hidden rounded-xl border', className)}>
-        <Table containerClassName={containerClassName}>
-          {caption ? <TableCaption className="sr-only">{caption}</TableCaption> : null}
-          <TableHeader className={headerClassName}>
-            <TableRow>
-              {visibleColumns.map((column) => (
-                <Fragment key={column.id}>
-                  {column.head ?? <CampaignTableHead>{column.label}</CampaignTableHead>}
-                </Fragment>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 && empty ? (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={visibleColumns.length} className="whitespace-normal">
-                  {empty}
-                </TableCell>
-              </TableRow>
-            ) : null}
-            {rows.map((row) => (
-              <TableRow
-                key={rowKey(row)}
-                id={rowId?.(row)}
-                className={typeof rowClassName === 'function' ? rowClassName(row) : rowClassName}
-              >
-                {visibleColumns.map((column) => {
-                  const cell = column.cell(row)
-                  const tooltip = column.cellTooltip?.(row)
-
-                  return (
-                    <TableCell
-                      key={column.id}
-                      className={
-                        typeof column.cellClassName === 'function'
-                          ? column.cellClassName(row)
-                          : column.cellClassName
-                      }
-                    >
-                      {tooltip ? (
-                        <CampaignCellTooltip content={tooltip}>{cell}</CampaignCellTooltip>
-                      ) : (
-                        cell
-                      )}
-                    </TableCell>
-                  )
-                })}
-              </TableRow>
+      <Table containerClassName={containerClassName}>
+        {caption ? <TableCaption className="sr-only">{caption}</TableCaption> : null}
+        <TableHeader className={headerClassName}>
+          <TableRow>
+            {visibleColumns.map((column) => (
+              <Fragment key={column.id}>
+                {column.head ?? <CampaignTableHead>{column.label}</CampaignTableHead>}
+              </Fragment>
             ))}
-          </TableBody>
-        </Table>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.length === 0 && empty ? (
+            <TableRow className="hover:bg-transparent">
+              <TableCell colSpan={visibleColumns.length} className="whitespace-normal">
+                {empty}
+              </TableCell>
+            </TableRow>
+          ) : null}
+          {rows.map((row) => (
+            <TableRow
+              key={rowKey(row)}
+              id={rowId?.(row)}
+              className={typeof rowClassName === 'function' ? rowClassName(row) : rowClassName}
+            >
+              {visibleColumns.map((column) => {
+                const cell = column.cell(row)
+                const tooltip = column.cellTooltip?.(row)
+
+                return (
+                  <TableCell
+                    key={column.id}
+                    className={
+                      typeof column.cellClassName === 'function'
+                        ? column.cellClassName(row)
+                        : column.cellClassName
+                    }
+                  >
+                    {tooltip ? (
+                      <CampaignCellTooltip content={tooltip}>{cell}</CampaignCellTooltip>
+                    ) : (
+                      cell
+                    )}
+                  </TableCell>
+                )
+              })}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   )
 }

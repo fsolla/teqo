@@ -3,8 +3,8 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { TerritoryFilters } from '@/components/campaign/municipality/TerritoryFilters'
-import { territoryListColumns } from '@/components/campaign/municipality/TerritoryListColumns'
 import { TerritoryList } from '@/components/campaign/municipality/TerritoryList'
+import { territoryListColumns } from '@/components/campaign/municipality/TerritoryListColumns'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
@@ -12,8 +12,8 @@ import {
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadTerritoryOverview } from '@/utilities/territory/loadTerritoryOverview'
