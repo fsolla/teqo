@@ -11,6 +11,7 @@ import {
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   advisorListHrefForPage,
   loadAdvisorListPageData,
@@ -25,6 +26,8 @@ import {
   setAdvisorMunicipalitiesFormAction,
   updateAdvisorProfileFormAction,
 } from './formActions'
+
+export const metadata = campaignPageMetadataFromCatalog('assessores')
 
 type AdvisorsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -46,14 +49,6 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Assessores</h1>
-        <p className="text-muted-foreground">
-          Consulte na tabela; ative Editar para alterar campos e carteira. Nome abre a ficha;
-          e-mail/celular copiam; município abre o município.
-        </p>
-      </header>
-
       <CampaignListPendingBoundary>
         <CampaignSearchForm
           ariaLabel="Buscar assessor por nome ou e-mail"

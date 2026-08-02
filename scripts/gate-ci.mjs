@@ -77,7 +77,7 @@ const main = async () => {
     console.log('\n[gate:ci] ⊘ typecheck/knip/cycles skipped (no code surface)')
   } else {
     run('typecheck', 'pnpm', ['typecheck'])
-    run('knip', 'pnpm', ['exec', 'knip'])
+    run('knip', 'pnpm', ['knip'])
     run('check:cycles', 'pnpm', ['check:cycles'])
   }
 

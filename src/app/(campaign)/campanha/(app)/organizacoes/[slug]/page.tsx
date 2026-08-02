@@ -9,11 +9,14 @@ import { OrganizationForm } from '@/components/campaign/organization/Organizatio
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { loadOrganizationDetail } from '@/utilities/organizationData'
 import { updateOrganizationFormAction } from './formActions'
+
+export const metadata = campaignPageMetadataFromCatalog('organizacoes')
 
 type OrganizationDetailPageProps = {
   params: Promise<{ slug: string }>

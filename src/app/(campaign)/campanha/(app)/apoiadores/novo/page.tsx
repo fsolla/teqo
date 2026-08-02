@@ -4,13 +4,14 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { createSupporterFormAction } from '@/app/(campaign)/campanha/(app)/apoiadores/novo/formActions'
-import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { SupporterForm } from '@/components/campaign/supporter/SupporterForm'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { loadSupporterCreatePageData } from '@/utilities/supporter/supporterPageData'
 import { canAccessSupporterArea } from '@/utilities/supporter/supporterUi'
+
+export const metadata = campaignPageMetadataFromCatalog('apoiadoresNovo')
 
 export default async function NewSupporterPage() {
   const [user, payload] = await Promise.all([requireCampaignPageActor(), getPayload({ config })])
@@ -21,16 +22,9 @@ export default async function NewSupporterPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <Button asChild variant="ghost" className="w-fit px-0">
-          <Link href="/campanha/apoiadores">← Voltar para apoiadores</Link>
-        </Button>
-        <CampaignScopeBadge>{campaignRoleLabels[user.role]}</CampaignScopeBadge>
-        <h1 className="text-2xl font-semibold tracking-tight">Novo apoiador</h1>
-        <p className="text-muted-foreground">
-          Cadastre um apoiador com telefone obrigatório e consentimento LGPD.
-        </p>
-      </header>
+      <Button asChild variant="ghost" className="w-fit px-0">
+        <Link href="/campanha/apoiadores">← Voltar para apoiadores</Link>
+      </Button>
 
       <SupporterForm
         action={createSupporterFormAction}

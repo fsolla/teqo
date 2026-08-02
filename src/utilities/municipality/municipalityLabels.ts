@@ -14,7 +14,7 @@ import {
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import { AT_STANDARD_LQ } from '@/lib/territorialClassAnchors'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO, voteEstimateScenarioLabels } from '@/lib/voteEstimate'
-import type { CampaignUser, Municipality } from '@/payload-types'
+import type { Municipality } from '@/payload-types'
 import { formatRatioAsPercentLabel } from '@/utilities/municipality/goalCoverage'
 import { MUNICIPALITY_COLD_SIGNAL_DAYS } from '@/utilities/municipality/municipalitySignal'
 import type {
@@ -152,19 +152,6 @@ export const formatMunicipalityConcentrationHint = (
   totalUnits: number = municipalityCatalog.length,
 ): string =>
   `Percentual da votação estadual do candidato neste município — não o % dos válidos locais. Colocação: posição no catálogo de ${formatElectionNumber(totalUnits)} unidades.`
-
-export const getCampaignScopeLabel = (
-  role: CampaignUser['role'],
-  municipalityCount: number,
-): string => {
-  if (role === 'advisor') {
-    return `${municipalityCount} ${municipalityCount === 1 ? 'município sob sua assessoria' : 'municípios sob sua assessoria'}`
-  }
-  if (role === 'leader') {
-    return `${municipalityCount} ${municipalityCount === 1 ? 'município em que você atua' : 'municípios em que você atua'}`
-  }
-  return `${municipalityCount} ${municipalityCount === 1 ? 'município' : 'municípios'}`
-}
 
 export const municipalityGeographyParts = (municipality: {
   region: string

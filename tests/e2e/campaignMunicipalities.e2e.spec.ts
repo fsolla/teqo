@@ -4,6 +4,7 @@ import {
   SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
 } from '../helpers/testDatabaseLease.js'
 import {
+  campaignPageChrome,
   checkRadixWhenHydrated,
   expect,
   expectPostResponse,
@@ -37,7 +38,7 @@ test.describe('Municípios — jornadas por papel', () => {
 
     await campaign.login(page, coordinator.email!, password)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
-    await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
     // E9 allocation queue: the list opens on the uncovered deficit and exposes
     // the freshness column the ordering is paired with. `exact` keeps this off
@@ -94,7 +95,7 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-    await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
     const advisorsTrigger = page.getByRole('button', { name: 'Editar assessores' })
     await advisorsTrigger.click()
@@ -150,7 +151,7 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-    await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
     await page.getByRole('button', { name: 'Editar tendência política' }).click()
     const trendPopover = page.locator('[data-slot="popover-content"]')
@@ -191,7 +192,7 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-    await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
     // Anchored: a bare template regex on a municipality name collides with
     // prefix-shared names (Conde/Condeúba — 23/435 measured in the catalog),
@@ -298,7 +299,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // `password` variable above does NOT unlock the leader account.
     await campaign.login(page, leaderPhone, leaderAccount.password)
     await page.goto(`${campaign.baseURL}/campanha/contatos`)
-    await expect(page.getByText('Cadastre apoiadores pelo celular.')).toBeVisible()
+    await expect(campaignPageChrome(page, 'Contatos')).toBeVisible()
 
     // The leader redirect aborts `goto`'s load event (ERR_ABORTED); the
     // redirect itself is the assertion, and `toHaveURL` retries onto it.
@@ -427,8 +428,6 @@ test.describe('Municípios — FAB ações rápidas mobile (B126)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-    await expect(page.getByRole('heading', { name: 'Municípios' })).toBeVisible()
-
     const fab = page.getByRole('button', { name: 'Ações rápidas' })
     await expect(fab).toBeVisible()
     await expect(page.getByLabel('Buscar na campanha')).toHaveCount(0)
@@ -479,7 +478,7 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
-    await expect(page.getByRole('heading', { name: 'Municípios' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Ações rápidas' })).toBeVisible()
 
     await page.getByRole('button', { name: 'Ações rápidas' }).click()
     const overlay = page.locator('#CampaignQuickActionsOverlay')

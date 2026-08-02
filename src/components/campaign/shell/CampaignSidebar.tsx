@@ -7,9 +7,7 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import { LogOutIcon } from 'lucide-react'
 
 import { logoutCampaign } from '@/app/(campaign)/campanha/actions/auth'
-import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { CampaignUserAvatar } from '@/components/campaign/shared/CampaignUserAvatar'
-import { CampaignLogo } from '@/components/campaign/shell/campaign-logo'
 import { MunicipalityNavSavedFilters } from '@/components/campaign/shell/MunicipalityNavSavedFilters'
 import {
   getCampaignNav,
@@ -25,7 +23,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -35,7 +32,6 @@ import { Spinner } from '@/components/ui/Spinner'
 import { clearLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 import type { CampaignUserShellView } from '@/utilities/campaignUserProfile'
-import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { clearMunicipalitySavedFilters } from '@/utilities/municipality/municipalitySavedFilters'
 import { clearRecentVisits } from '@/utilities/recentVisits'
 
@@ -88,20 +84,8 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
 
   return (
     <Sidebar collapsible="offcanvas" className="print:hidden">
-      <SidebarHeader className="border-b border-sidebar-border">
-        <Link
-          href="/campanha"
-          className="block w-full rounded-md outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-        >
-          <CampaignLogo />
-        </Link>
-      </SidebarHeader>
-
       <SidebarContent>
         <SidebarGroup>
-          <CampaignScopeBadge className="mb-3 w-fit">
-            {campaignRoleLabels[user.role]}
-          </CampaignScopeBadge>
           <SidebarGroupContent>
             <SidebarMenu>
               {getCampaignNav(user.role).map((item) => (

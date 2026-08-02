@@ -8,12 +8,15 @@ import { CampaignHomeStaffChrome } from '@/components/campaign/dashboard/Campaig
 import { CampaignHomeSummary } from '@/components/campaign/dashboard/CampaignHomeSummary'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { UNCOVERED_MUNICIPALITIES_LIST_HREF } from '@/lib/campaignHomeActions'
+import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { loadCampaignHomeSummary } from '@/utilities/campaignDashboardData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadHomeSearchSuggestions } from '@/utilities/homeSearch/loadHomeSearchSuggestions'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata = campaignPageMetadata(null)
 
 export default async function CampaignHomePage() {
   const [payload, user] = await Promise.all([getPayload({ config }), requireCampaignPageActor()])

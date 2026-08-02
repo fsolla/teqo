@@ -64,13 +64,6 @@ export const CampaignProfileSettings = ({
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Meu perfil</h1>
-        <p className="text-sm text-muted-foreground">
-          Gerencie sua foto, sua senha e a entrada por biometria.
-        </p>
-      </div>
-
       {passwordResetBanner ? (
         <p className="rounded-md border border-border bg-muted/50 px-4 py-3 text-sm" role="status">
           Senha redefinida com sucesso. Você já está autenticado.

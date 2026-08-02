@@ -10,20 +10,17 @@ import {
   type BiometricEnrollmentOffer,
 } from '@/components/campaign/shell/BiometricEnrollmentToast'
 import { CampaignAppScrollChrome } from '@/components/campaign/shell/CampaignAppScrollChrome'
+import { CampaignDesktopHeader } from '@/components/campaign/shell/CampaignDesktopHeader'
 import { CampaignHomeSearchChromeProvider } from '@/components/campaign/shell/CampaignHomeSearchChromeContext'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import { CampaignNotificationBellSlot } from '@/components/campaign/shell/CampaignNotificationBellSlot'
+import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignQuickActionContextProvider } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { CampaignSidebar } from '@/components/campaign/shell/CampaignSidebar'
 import { CampaignSidebarViewportDefault } from '@/components/campaign/shell/CampaignSidebarViewportDefault'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { InstallPwaToast } from '@/components/campaign/shell/InstallPwaToast'
-import {
-  SIDEBAR_COOKIE_NAME,
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from '@/components/ui/Sidebar'
+import { SIDEBAR_COOKIE_NAME, SidebarInset, SidebarProvider } from '@/components/ui/Sidebar'
 import { Toaster } from '@/components/ui/Toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
@@ -75,36 +72,37 @@ export default async function CampaignAppLayout({ children }: { children: React.
       <CampaignSidebarViewportDefault hasSidebarCookie={hasSidebarCookie} />
       <CampaignSidebar user={campaignUserShellView(user)} />
       <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
-        <CampaignWizardChromeProvider>
-          <CampaignHomeSearchChromeProvider>
-            <CampaignQuickActionContextProvider>
-              <CampaignListPendingBoundary>
-                <CampaignMobileTopBar
-                  notificationBell={<CampaignNotificationBellSlot user={user} />}
-                />
-                <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
-                  <SidebarTrigger />
-                  <div className="ml-auto">
-                    <CampaignNotificationBellSlot user={user} />
-                  </div>
-                </header>
-                {/*
+        <CampaignPageChromeProvider role={user.role}>
+          <CampaignWizardChromeProvider>
+            <CampaignHomeSearchChromeProvider>
+              <CampaignQuickActionContextProvider>
+                <CampaignListPendingBoundary>
+                  <CampaignMobileTopBar
+                    notificationBell={<CampaignNotificationBellSlot user={user} />}
+                  />
+                  <CampaignDesktopHeader
+                    notificationBell={<CampaignNotificationBellSlot user={user} />}
+                  />
+                  {/*
                 Provider must wrap CampaignAppScrollChrome, not only page children:
                 the quick-actions FAB overlay (B126) mounts as a sibling of
                 the scrollport and renders search hits with CampaignHoverTooltip
                 (priority flag). Nested only around {children} left focus→suggest
                 without a provider and crashed the page (B102).
               */}
-                <TooltipProvider delayDuration={300}>
-                  <CampaignAppScrollChrome role={user.role}>{children}</CampaignAppScrollChrome>
-                </TooltipProvider>
-                <Toaster position="top-center" />
-                <InstallPwaToast />
-                {biometricEnrollment ? <BiometricEnrollmentToast {...biometricEnrollment} /> : null}
-              </CampaignListPendingBoundary>
-            </CampaignQuickActionContextProvider>
-          </CampaignHomeSearchChromeProvider>
-        </CampaignWizardChromeProvider>
+                  <TooltipProvider delayDuration={300}>
+                    <CampaignAppScrollChrome role={user.role}>{children}</CampaignAppScrollChrome>
+                  </TooltipProvider>
+                  <Toaster position="top-center" />
+                  <InstallPwaToast />
+                  {biometricEnrollment ? (
+                    <BiometricEnrollmentToast {...biometricEnrollment} />
+                  ) : null}
+                </CampaignListPendingBoundary>
+              </CampaignQuickActionContextProvider>
+            </CampaignHomeSearchChromeProvider>
+          </CampaignWizardChromeProvider>
+        </CampaignPageChromeProvider>
       </SidebarInset>
     </SidebarProvider>
   )

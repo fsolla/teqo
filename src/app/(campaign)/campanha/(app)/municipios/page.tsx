@@ -12,8 +12,8 @@ import { MunicipalityFilters } from '@/components/campaign/municipality/Municipa
 import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
 import { MunicipalityListOverview } from '@/components/campaign/municipality/MunicipalityListOverview'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
-import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   isCampaignCoordinator,
   isCampaignStaff,
@@ -21,7 +21,6 @@ import {
 } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { getCampaignScopeLabel } from '@/utilities/municipality/municipalityLabels'
 import {
   buildMunicipalityListVisitHref,
   buildMunicipalityListVisitLabel,
@@ -36,6 +35,8 @@ import {
   loadAdvisorSummaries,
 } from '@/utilities/municipality/municipalityViewModels'
 import { createMunicipalityListSignalFormAction } from './municipalityStaffFormActions'
+
+export const metadata = campaignPageMetadataFromCatalog('municipios')
 
 type MunicipalitiesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -59,7 +60,6 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
     municipalities: listMunicipalities,
     totalDocs,
     totalPages,
-    scopeTotal,
     overview,
     filterFacets,
   } = pageBundle
@@ -166,15 +166,6 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Municípios</h1>
-        <p className="text-muted-foreground">
-          Os 435 municípios da campanha: um por município da Bahia — em Salvador, uma zona eleitoral
-          cada.
-        </p>
-        <CampaignScopeBadge>{getCampaignScopeLabel(user.role, scopeTotal)}</CampaignScopeBadge>
-      </header>
-
       {main}
       {listVisitLabel ? (
         <RecentVisitTracker

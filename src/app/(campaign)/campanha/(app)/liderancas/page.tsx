@@ -41,6 +41,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/Empty'
 import { resolveVisibleColumns } from '@/lib/campaignColumnVisibility'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import {
   resolvedPortfolioEntriesById,
@@ -78,6 +79,8 @@ import {
   setLeadershipMunicipalitiesFormAction,
   setLeadershipStateDeputyMembershipFormAction,
 } from './formActions'
+
+export const metadata = campaignPageMetadataFromCatalog('liderancas')
 
 type LeadershipsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -381,20 +384,14 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Lideranças</h1>
-          <p className="text-muted-foreground">
-            Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <Button asChild className="min-h-11">
           <Link href="/campanha/liderancas/nova">
             <PlusIcon data-icon="inline-start" aria-hidden="true" />
             Nova liderança
           </Link>
         </Button>
-      </header>
+      </div>
 
       <CampaignListPendingBoundary>
         <LeadershipFilters state={state} municipalityLabelsById={municipalityLabelsById} />

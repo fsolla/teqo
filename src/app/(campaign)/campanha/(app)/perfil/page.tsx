@@ -1,5 +1,4 @@
 import config from '@payload-config'
-import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
@@ -7,6 +6,7 @@ import { getPayload } from 'payload'
 import { CampaignPasskeysCard } from '@/components/campaign/auth/CampaignPasskeysCard'
 import { CampaignProfileSettings } from '@/components/campaign/auth/CampaignProfileSettings'
 import { CampaignPushNotificationsCard } from '@/components/campaign/auth/CampaignPushNotificationsCard'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
 import { getCampaignUserWithAvatar } from '@/utilities/campaignAuth'
 import { getCampaignPushConsent } from '@/utilities/campaignConsent'
@@ -15,13 +15,7 @@ import { getCampaignVapidPublicKey } from '@/utilities/notification/sendCampaign
 import { loadCampaignPasskeys } from '@/utilities/webauthn/campaignWebAuthnCeremony'
 import { resolveCampaignWebAuthnRelyingParty } from '@/utilities/webauthn/campaignWebAuthnConfig'
 
-export const metadata: Metadata = {
-  title: 'Meu perfil | Campanha',
-  robots: {
-    index: false,
-    follow: false,
-  },
-}
+export const metadata = campaignPageMetadataFromCatalog('perfil')
 
 type CampaignProfilePageProps = {
   searchParams: Promise<{ passwordReset?: string }>

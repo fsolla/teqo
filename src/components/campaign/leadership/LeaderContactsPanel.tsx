@@ -20,7 +20,6 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
 })
 
 type LeaderContactsPanelProps = {
-  userName: string
   municipalityOptions: RelationOption[]
   defaultMunicipalityId: number | null
   showMunicipalitySelect: boolean
@@ -93,7 +92,6 @@ const LeaderContactsList = ({ contacts }: { contacts: LeaderContactListItem[] })
  * (`LeaderContactForm` is the client island).
  */
 export const LeaderContactsPanel = ({
-  userName,
   municipalityOptions,
   defaultMunicipalityId,
   showMunicipalitySelect,
@@ -101,13 +99,6 @@ export const LeaderContactsPanel = ({
   contacts,
 }: LeaderContactsPanelProps) => (
   <CampaignPageShell>
-    <header className="flex flex-col gap-1">
-      <h1 className="text-2xl font-semibold tracking-tight">Olá, {userName}</h1>
-      <p className="text-muted-foreground">
-        Cadastre apoiadores pelo celular. Só você vê os contatos que criou aqui.
-      </p>
-    </header>
-
     {municipalityOptions.length === 0 ? (
       <p className="rounded-xl border px-4 py-6 text-sm text-muted-foreground">
         Você ainda não está vinculada a nenhum município. Fale com a assessoria da campanha.

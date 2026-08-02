@@ -6,6 +6,7 @@ import { getPayload } from 'payload'
 import { LeadershipForm } from '@/components/campaign/leadership/LeadershipForm'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadMunicipalityOptions,
@@ -13,6 +14,8 @@ import {
   loadStateDeputyOptions,
 } from '@/utilities/campaignRelationOptions'
 import { createLeadershipFormAction } from './formActions'
+
+export const metadata = campaignPageMetadataFromCatalog('liderancasNova')
 
 type NewLeadershipPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -46,19 +49,12 @@ export default async function NewLeadershipPage({ searchParams }: NewLeadershipP
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-2">
-        <Button asChild variant="ghost" className="min-h-11 self-start">
-          <Link href="/campanha/liderancas">
-            <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
-            Voltar para lideranças
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-semibold tracking-tight">Nova liderança</h1>
-        <p className="text-muted-foreground">
-          O contato é reaproveitado pelo celular quando já existe. Registre o consentimento antes de
-          inserir dados reais.
-        </p>
-      </header>
+      <Button asChild variant="ghost" className="min-h-11 self-start">
+        <Link href="/campanha/liderancas">
+          <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
+          Voltar para lideranças
+        </Link>
+      </Button>
 
       <LeadershipForm
         municipalityOptions={municipalityOptions}
