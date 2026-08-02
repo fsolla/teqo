@@ -110,16 +110,27 @@ export const buildMunicipalityMobileFilterOptions = ({
       if (definition.param === 'advisor') filterOptions = advisorFilterOptions
       if (filterOptions.length === 0) continue
 
-      const param: MunicipalityMultiFilterParam =
-        definition.param === 'region'
-          ? 'region'
-          : definition.param === 'advisor'
-            ? 'advisor'
-            : definition.param === 'trend'
-              ? 'trend'
-              : definition.param === 'class'
-                ? 'class'
-                : 'level'
+      const param = ((): MunicipalityMultiFilterParam => {
+        switch (definition.param) {
+          case 'region':
+            return 'region'
+          case 'advisor':
+            return 'advisor'
+          case 'trend':
+            return 'trend'
+          case 'class':
+            return 'class'
+          case 'level':
+            return 'level'
+          case 'name':
+          case 'coverage':
+            throw new Error(`Unexpected multi filter param: ${definition.param}`)
+          default: {
+            const _exhaustive: never = definition.param
+            return _exhaustive
+          }
+        }
+      })()
 
       const selected = new Set(getMunicipalityMultiFilterValues(state, param))
       for (const option of filterOptions) {
@@ -213,12 +224,25 @@ export const dismissMunicipalityMobileFilterChip = (
   state: MunicipalityListState,
   option: MunicipalityMobileFilterOption,
 ): MunicipalityListState | 'scenario-default' => {
-  if (option.kind === 'sort') {
-    return { ...state, page: 1, sort: undefined, dir: undefined }
+  switch (option.kind) {
+    case 'sort':
+      return { ...state, page: 1, sort: undefined, dir: undefined }
+    case 'scenario':
+      return 'scenario-default'
+    case 'priority':
+    case 'multi':
+    case 'coverage': {
+      const next = applyMunicipalityMobileFilterOption(state, option)
+      if (next === 'scenario') {
+        throw new Error(`Unexpected scenario result for ${option.kind}`)
+      }
+      return next
+    }
+    default: {
+      const _exhaustive: never = option
+      return _exhaustive
+    }
   }
-  if (option.kind === 'scenario') return 'scenario-default'
-  const next = applyMunicipalityMobileFilterOption(state, option)
-  return next === 'scenario' ? state : next
 }
 
 /**

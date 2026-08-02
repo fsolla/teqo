@@ -90,6 +90,7 @@ export const MunicipalityFilters = ({
           onSearchChange={onSearchChange}
           clearSearchBox={() => setSearch('')}
           onNavigate={navigateWithSearch}
+          onNavigateClearingSearch={clearSearchAndNavigate}
         />
       </div>
 

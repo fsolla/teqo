@@ -14,7 +14,7 @@ import {
 import { InputGroupAddon } from '@/components/ui/input-group'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO } from '@/lib/voteEstimate'
 import { cn } from '@/lib/utils'
-import { matchesAtWordStart } from '@/lib/wordStartFilter'
+import { matchesAtWordStart, normalizeSearchPhrase } from '@/lib/wordStartFilter'
 import type { MunicipalityFilterOption } from '@/utilities/municipality/municipalityListFilters'
 import type { MunicipalityListState } from '@/utilities/municipality/municipalityListUrl'
 import {
@@ -37,6 +37,8 @@ type MunicipalityMobileFilterComboboxProps = {
   /** Clear the box without arming the search debounce / URL write. */
   clearSearchBox: () => void
   onNavigate: (next: MunicipalityListState) => void
+  /** Drop draft search and navigate (option pick — typeahead text must not become `q`). */
+  onNavigateClearingSearch: (next: MunicipalityListState) => void
 }
 
 /**
@@ -53,6 +55,7 @@ export const MunicipalityMobileFilterCombobox = ({
   onSearchChange,
   clearSearchBox,
   onNavigate,
+  onNavigateClearingSearch,
 }: MunicipalityMobileFilterComboboxProps) => {
   const scenarioContext = useMunicipalityEstimateScenarioOptional()
   const scenario = scenarioContext?.scenario ?? DEFAULT_VOTE_ESTIMATE_SCENARIO
@@ -66,18 +69,24 @@ export const MunicipalityMobileFilterCombobox = ({
     scenario,
   })
   const chips = buildMunicipalityMobileFilterChips(state, options)
+  // One scan per keystroke: when the draft matches no option label it is a name
+  // search — keep the full catalog so a filter can still be picked.
+  const normalizedDraft = normalizeSearchPhrase(search)
+  const draftMatchesOption = normalizedDraft
+    ? options.some((option) => matchesAtWordStart(option.label, search))
+    : false
 
   const applyOption = (option: MunicipalityMobileFilterOption) => {
     const next = applyMunicipalityMobileFilterOption(state, option)
     if (next === 'scenario') {
-      setScenario?.(option.kind === 'scenario' ? option.scenario : scenario)
+      if (option.kind === 'scenario') setScenario?.(option.scenario)
       clearSearchBox()
       return
     }
-    // Carry whatever is in the box as `q` (same contract as the old sort select),
-    // then empty the typeahead for the next keyword.
-    onNavigate(next)
-    clearSearchBox()
+    // Keep only the committed URL `q` — the box text may be a typeahead prefix
+    // ("Prior", "Tendência"), not a município name. Drop the draft with Limpar's
+    // clear path so the debounce cannot re-commit it after the pick.
+    onNavigateClearingSearch({ ...next, q: state.q })
   }
 
   const dismissChip = (chipId: string) => {
@@ -120,13 +129,8 @@ export const MunicipalityMobileFilterCombobox = ({
           if (option) applyOption(option)
         }}
         filter={(option, query) => {
-          if (!query) return true
-          // When the box is a name search (no option label matches), keep the
-          // full catalog so a filter can still be picked while `q` is pending.
-          const anyMatch = options.some((candidate) =>
-            matchesAtWordStart(candidate.label, query),
-          )
-          return anyMatch ? matchesAtWordStart(option.label, query) : true
+          if (!query || !draftMatchesOption) return true
+          return matchesAtWordStart(option.label, query)
         }}
         isItemEqualToValue={(left, right) => left?.id === right?.id}
         itemToStringLabel={(option) => option.label}

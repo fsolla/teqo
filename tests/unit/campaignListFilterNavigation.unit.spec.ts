@@ -113,7 +113,7 @@ const filterCases: FilterCase[] = [
     hrefWithQuery: '/campanha/municipios?q=silva',
     bareHref: '/campanha/municipios',
     sortValue: 'name|asc',
-    hrefWithQueryAndSecondary: '/campanha/municipios?q=silva&priority=alta',
+    hrefWithQueryAndSecondary: '/campanha/municipios?priority=alta',
     hrefWithSecondary: '/campanha/municipios?priority=alta',
     navigateSecondary: navigateViaMunicipalityPriorityOption,
     element: (currentQuery) =>
@@ -266,7 +266,7 @@ describe('campaign list filter navigation', () => {
   it.each(filterCases)(
     '$name: carries the uncommitted search when another control navigates',
     (filterCase) => {
-      const { searchLabel, navigateSecondary, hrefWithQueryAndSecondary } = filterCase
+      const { searchLabel, navigateSecondary, hrefWithQueryAndSecondary, name } = filterCase
       mountCase(filterCase)
 
       typeSearch(searchLabel, 'silva')
@@ -276,6 +276,14 @@ describe('campaign list filter navigation', () => {
       expect(routerState.replace).toHaveBeenCalledWith(hrefWithQueryAndSecondary, {
         scroll: false,
       })
+
+      // Municípios B120: a combobox pick must NOT commit the typeahead draft as
+      // `q` (prefix text ≠ município name). Other shells still carry the draft.
+      if (name !== 'municípios') {
+        expect(hrefWithQueryAndSecondary).toContain('q=silva')
+      } else {
+        expect(hrefWithQueryAndSecondary).not.toContain('q=')
+      }
 
       // The secondary control consumed the pending search; the timer must not
       // fire a second navigation.
