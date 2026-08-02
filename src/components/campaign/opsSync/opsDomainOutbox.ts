@@ -1,6 +1,6 @@
 'use client'
 
-import { createCollection, localOnlyCollectionOptions } from '@tanstack/db'
+import { createCollection, localOnlyCollectionOptions, type Transaction } from '@tanstack/db'
 import {
   IndexedDBAdapter,
   NonRetriableError,
@@ -42,6 +42,14 @@ const LEADERSHIP_UPDATE_FN = 'updateLeadershipInternal'
 const LEADERSHIP_CREATE_FN = 'createLeadership'
 const DEMAND_TRANSITION_FN = 'transitionCampaignDemand'
 const ACTIVITY_UPDATE_FN = 'updateActivity'
+
+const outboxMutationRow = <TRow>(transaction: Transaction, collectionId: string): TRow => {
+  const mutation = transaction.mutations.find((entry) => entry.collection?.id === collectionId)
+  if (!mutation) {
+    throw new NonRetriableError(`Mutação de outbox ausente (${collectionId}).`)
+  }
+  return mutation.modified as TRow
+}
 
 const leadershipUpdateOutboxCollection = createCollection(
   localOnlyCollectionOptions<OpsLeadershipUpdateOutboxRow, number>({
@@ -129,14 +137,19 @@ const createDomainOfflineExecutor = (): OfflineExecutor =>
       leadershipCreateOutbox: leadershipCreateOutboxCollection,
       demandTransitionOutbox: demandTransitionOutboxCollection,
       activityUpdateOutbox: activityUpdateOutboxCollection,
+      // Mirror rows touched in onMutate must be registered for persistence.
+      leaderships: leadershipsCollection,
+      demands: demandsCollection,
+      activities: activitiesCollection,
     },
     storage: new IndexedDBAdapter('teqo-ops-domain', 'outbox'),
     beforeRetry: collapseAllDomainOutbox,
     mutationFns: {
       [LEADERSHIP_UPDATE_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) throw new NonRetriableError('Mutação de liderança vazia.')
-        const row = mutation.modified as OpsLeadershipUpdateOutboxRow
+        const row = outboxMutationRow<OpsLeadershipUpdateOutboxRow>(
+          transaction,
+          'ops-leadership-update-outbox',
+        )
         try {
           const updated = await updateLeadershipInternalCas({
             id: row.leadershipId,
@@ -193,9 +206,10 @@ const createDomainOfflineExecutor = (): OfflineExecutor =>
         }
       },
       [LEADERSHIP_CREATE_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) throw new NonRetriableError('Mutação de cadastro vazia.')
-        const row = mutation.modified as OpsLeadershipCreateOutboxRow
+        const row = outboxMutationRow<OpsLeadershipCreateOutboxRow>(
+          transaction,
+          'ops-leadership-create-outbox',
+        )
         try {
           await createLeadershipCas({
             name: row.name,
@@ -224,9 +238,10 @@ const createDomainOfflineExecutor = (): OfflineExecutor =>
         }
       },
       [DEMAND_TRANSITION_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) throw new NonRetriableError('Mutação de demanda vazia.')
-        const row = mutation.modified as OpsDemandTransitionOutboxRow
+        const row = outboxMutationRow<OpsDemandTransitionOutboxRow>(
+          transaction,
+          'ops-demand-transition-outbox',
+        )
         try {
           const updated = await transitionCampaignDemandCas({
             id: row.demandId,
@@ -267,9 +282,10 @@ const createDomainOfflineExecutor = (): OfflineExecutor =>
         }
       },
       [ACTIVITY_UPDATE_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) throw new NonRetriableError('Mutação de atividade vazia.')
-        const row = mutation.modified as OpsActivityUpdateOutboxRow
+        const row = outboxMutationRow<OpsActivityUpdateOutboxRow>(
+          transaction,
+          'ops-activity-update-outbox',
+        )
         try {
           const updated = await updateActivityCas({
             id: row.activityId,

@@ -1,16 +1,19 @@
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import {
+  expect,
+  reloadWhileOffline,
+  test,
+  waitForCampaignServiceWorker,
+} from './fixtures/campaignE2EFixtures.js'
 
-/**
- * OH6 — flaky-network outbox for estimateVotes. Requires `OPS_HYBRID=1` on the
- * Playwright webServer (compile-time). Default CI keeps the flag off so
- * `campaignMunicipalities` continues to pin the legacy formAction path.
- */
-const opsHybridEnabled =
-  process.env.OPS_HYBRID === '1' || process.env.OPS_HYBRID?.toLowerCase() === 'true'
+/** Offline specs intentionally hit blocked network resources — allowlist for the guard. */
+test.use({
+  expectedRequestFailurePaths: ['/campanha/api/ops-sync', '/favicon.ico'],
+  expectedRequestFailurePathPrefixes: ['/campanha'],
+  allowOfflineRscPrefetchErrors: true,
+})
 
-test.describe('OH6 estimate outbox (OPS_HYBRID)', () => {
-  test.skip(!opsHybridEnabled, 'Set OPS_HYBRID=1 on the e2e webServer to run this tracer.')
-
+/** OH6 — flaky-network outbox for estimateVotes. */
+test.describe('OH6 estimate outbox', () => {
   test('offline edit stays queued across reload and flushes when online', async ({
     campaign,
     page,
@@ -46,13 +49,20 @@ test.describe('OH6 estimate outbox (OPS_HYBRID)', () => {
     await campaign.login(page, advisor.email!, advisor.password)
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
 
+    await page.waitForResponse(
+      (response) =>
+        response.url().includes('/campanha/api/ops-sync') && response.request().method() === 'GET',
+      { timeout: 30_000 },
+    )
+    await waitForCampaignServiceWorker(page)
+
     await page.context().setOffline(true)
     await page.getByLabel('Média', { exact: true }).fill('55')
     await page.getByLabel('Justificativa').fill('Editado na estrada.')
     await page.getByRole('button', { name: 'Salvar estimativa' }).click()
     await expect(page.getByText('Pendente', { exact: true })).toBeVisible()
 
-    await page.reload()
+    await reloadWhileOffline(page)
     await expect(page.getByText('Pendente', { exact: true })).toBeVisible()
 
     await page.context().setOffline(false)

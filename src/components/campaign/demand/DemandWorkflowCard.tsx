@@ -25,7 +25,6 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import {
   campaignDemandStatuses,
   campaignDemandTransitionLabels,
@@ -47,10 +46,8 @@ type DemandWorkflowCardProps = {
   /** Coordinator or candidate — the roles allowed to decide escalated demands. */
   canDecideEscalated: boolean
   currentCost: number | null
-  /** OH13 — CAS base when OPS_HYBRID outbox path is on. */
+  /** CAS base for transition outbox writes. */
   updatedAt?: string
-  opsHybridEnabled?: boolean
-  transitionFormAction: FormAction
   costFormAction: FormAction
   receiptFormAction: FormAction
 }
@@ -67,16 +64,10 @@ export const DemandWorkflowCard = ({
   canDecideEscalated,
   currentCost,
   updatedAt,
-  opsHybridEnabled = resolveOpsHybridEnabled(),
-  transitionFormAction,
   costFormAction,
   receiptFormAction,
 }: DemandWorkflowCardProps) => {
   const router = useRouter()
-  const [transitionState, submitTransition, transitionPending] = useActionState(
-    transitionFormAction,
-    {},
-  )
   const [costState, submitCost, costPending] = useActionState(costFormAction, {})
   const [receiptState, submitReceipt, receiptPending] = useActionState(receiptFormAction, {})
   const [hybridPending, setHybridPending] = useState(false)
@@ -84,11 +75,8 @@ export const DemandWorkflowCard = ({
   const previousOutboxStatusRef = useRef<string | undefined>(undefined)
 
   const outboxRow = useSyncExternalStore(
-    (onStoreChange) =>
-      opsHybridEnabled
-        ? subscribeOpsDemandTransitionOutboxRow(demandID, onStoreChange)
-        : () => undefined,
-    () => (opsHybridEnabled ? readOpsDemandTransitionOutboxRow(demandID) : undefined),
+    (onStoreChange) => subscribeOpsDemandTransitionOutboxRow(demandID, onStoreChange),
+    () => readOpsDemandTransitionOutboxRow(demandID),
     () => undefined,
   )
 
@@ -101,7 +89,7 @@ export const DemandWorkflowCard = ({
   }, [outboxRow, router])
 
   useEffect(() => {
-    if (!opsHybridEnabled || outboxRow?.statusSync !== 'conflict') return
+    if (outboxRow?.statusSync !== 'conflict') return
     const toastId = `${CONFLICT_TOAST_ID_PREFIX}${demandID}`
     toast.message(OPS_UPDATED_AT_CONFLICT_MESSAGE, {
       id: toastId,
@@ -128,7 +116,7 @@ export const DemandWorkflowCard = ({
     return () => {
       toast.dismiss(toastId)
     }
-  }, [opsHybridEnabled, outboxRow, demandID, router])
+  }, [outboxRow, demandID, router])
 
   const availableTransitions = campaignDemandTransitions[status].filter(
     (target) =>
@@ -181,9 +169,7 @@ export const DemandWorkflowCard = ({
     )
   }
 
-  const transitionBusy = opsHybridEnabled
-    ? hybridPending || outboxRow?.statusSync === 'pending'
-    : transitionPending
+  const transitionBusy = hybridPending || outboxRow?.statusSync === 'pending'
 
   return (
     <section
@@ -209,11 +195,7 @@ export const DemandWorkflowCard = ({
       </div>
 
       {availableTransitions.length ? (
-        <form
-          action={opsHybridEnabled ? undefined : submitTransition}
-          onSubmit={opsHybridEnabled ? onHybridTransition : undefined}
-          className="flex flex-col gap-3"
-        >
+        <form onSubmit={onHybridTransition} className="flex flex-col gap-3">
           <input type="hidden" name="demandId" value={demandID} />
           <Field>
             <FieldLabel htmlFor={`demand-note-${demandID}`}>Nota da decisão</FieldLabel>
@@ -241,16 +223,6 @@ export const DemandWorkflowCard = ({
               </Button>
             ))}
           </div>
-          {!opsHybridEnabled && transitionState.message && transitionState.status !== 'success' ? (
-            <Alert variant="destructive">
-              <AlertDescription>{transitionState.message}</AlertDescription>
-            </Alert>
-          ) : null}
-          {!opsHybridEnabled && transitionState.status === 'success' ? (
-            <Alert>
-              <AlertDescription>{transitionState.message}</AlertDescription>
-            </Alert>
-          ) : null}
           {hybridMessage ? (
             <p className="text-sm text-muted-foreground" role="status">
               {hybridMessage}

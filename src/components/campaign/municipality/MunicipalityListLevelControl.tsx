@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import type { MunicipalityListEngagementLevelResponse } from '@/app/(campaign)/campanha/(app)/municipios/engagement-level/types'
 import { MunicipalityLevelBadge } from '@/components/campaign/municipality/MunicipalityLevelBadge'
 import { municipalitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
 import { enqueueEngagementLevel } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
@@ -18,8 +17,6 @@ import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { postCampaignJson } from '@/lib/campaignJsonRequest'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import {
   EMPTY_ENGAGEMENT_LEVEL_LABEL,
   ENGAGEMENT_LEVEL_RULES,
@@ -33,7 +30,6 @@ import {
   type EngagementLevelViolation,
 } from '@/lib/engagementLevel'
 
-const ENGAGEMENT_LEVEL_ENDPOINT = '/campanha/municipios/engagement-level'
 const SAVE_ERROR_MESSAGE = 'Não foi possível registrar o nível. Tente novamente.'
 
 type MunicipalityListLevelControlProps = {
@@ -42,7 +38,7 @@ type MunicipalityListLevelControlProps = {
   level: EngagementLevel | null
   levelNote: string | null
   levelChangedAt: string | null
-  /** OH10 — CAS base when OPS_HYBRID outbox path is on. */
+  /** CAS base for outbox writes. */
   updatedAt?: string
   variant: CampaignCellEditOverlayVariant
 }
@@ -170,56 +166,22 @@ export const MunicipalityListLevelControl = ({
     setServerBlock(null)
 
     try {
-      if (resolveOpsHybridEnabled()) {
-        const mirrorUpdatedAt = municipalitiesCollection.get(municipalityID)?.updatedAt
-        await enqueueEngagementLevel({
-          municipalityId: municipalityID,
-          level: draftLevel,
-          note,
-          reversalSignals,
-          triangulatedShock,
-          override,
-          baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
-        })
-        setSaved({
-          level: draftLevel,
-          note,
-          changedAt: new Date().toISOString(),
-        })
-        handleOpenChange(false)
-        return
-      }
-
-      // Deliberately ignores the transport's `ok` the way the siblings do not:
-      // `blocked` arrives as a 409 carrying the violations the coordinator may
-      // override, so the status line is not the signal here — the discriminant is.
-      const { payload } = await postCampaignJson<MunicipalityListEngagementLevelResponse>(
-        ENGAGEMENT_LEVEL_ENDPOINT,
-        {
-          municipalityId: municipalityID,
-          level: draftLevel,
-          note,
-          reversalSignals,
-          triangulatedShock,
-          override,
-        },
-        controller.signal,
-      )
-
-      if (payload.status === 'success') {
-        setSaved(payload.savedLevel)
-        handleOpenChange(false)
-        return
-      }
-
-      // A blocked movement keeps the overlay open with the draft intact: the
-      // next click is "override", not "type it all again".
-      if (payload.status === 'blocked') {
-        setServerBlock({ level: draftLevel, violations: payload.violations })
-        return
-      }
-
-      reportFailure(payload.message)
+      const mirrorUpdatedAt = municipalitiesCollection.get(municipalityID)?.updatedAt
+      await enqueueEngagementLevel({
+        municipalityId: municipalityID,
+        level: draftLevel,
+        note,
+        reversalSignals,
+        triangulatedShock,
+        override,
+        baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
+      })
+      setSaved({
+        level: draftLevel,
+        note,
+        changedAt: new Date().toISOString(),
+      })
+      handleOpenChange(false)
     } catch {
       // Network failure, a non-JSON error page, or the unmount abort below —
       // only the first two have anyone left to tell.

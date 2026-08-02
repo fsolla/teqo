@@ -456,6 +456,27 @@ export const expectPostResponse = (page: Page, urlFragment: string) =>
   )
 
 /**
+ * Production e2e (`pnpm start`) registers the campaign SW; offline reload
+ * specs need a controlling worker so navigation is served from Cache Storage.
+ */
+export const waitForCampaignServiceWorker = async (page: Page): Promise<void> => {
+  await expect(async () => {
+    const ready = await page.evaluate(async () => {
+      if (!('serviceWorker' in navigator)) return false
+      await navigator.serviceWorker.ready
+      return navigator.serviceWorker.controller !== null
+    })
+    expect(ready).toBe(true)
+  }).toPass({ timeout: 30_000 })
+}
+
+/** Reload while the browser context is offline — requires SW (production e2e). */
+export const reloadWhileOffline = async (page: Page): Promise<void> => {
+  await waitForCampaignServiceWorker(page)
+  await page.reload({ waitUntil: 'domcontentloaded' })
+}
+
+/**
  * Checks a Radix Checkbox only once the page has hydrated. A Radix checkbox is
  * a button whose hidden input is synced by React, so a click that lands BEFORE
  * hydration is a silent no-op (the SSR button has no handler) — the B13/B17

@@ -41,7 +41,7 @@ export const CampaignMobileTopBar = ({
   opsSyncStatus,
 }: {
   notificationBell?: ReactNode
-  /** OH5 — discreet sync chrome; only passed when OPS_HYBRID + staff. */
+  /** OH5 — discreet sync chrome; staff layout only. */
   opsSyncStatus?: ReactNode
 }) => {
   const chrome = useCampaignWizardChrome()

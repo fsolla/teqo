@@ -19,7 +19,6 @@ import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import {
   isSupportStatus,
   leadershipSupportStatuses,
@@ -37,7 +36,7 @@ const CONFLICT_TOAST_ID_PREFIX = 'ops-leadership-status-conflict:'
 type LeadershipListSupportStatusControlProps = {
   leadershipID: number
   status: SupportStatus | null
-  /** OH13 — CAS base when OPS_HYBRID outbox path is on. */
+  /** CAS base for outbox writes. */
   updatedAt?: string
 }
 
@@ -47,15 +46,11 @@ export const LeadershipListSupportStatusControl = ({
   updatedAt,
 }: LeadershipListSupportStatusControlProps) => {
   const router = useRouter()
-  const opsHybrid = resolveOpsHybridEnabled()
   const previousOutboxStatusRef = useRef<string | undefined>(undefined)
 
   const outboxRow = useSyncExternalStore(
-    (onStoreChange) =>
-      opsHybrid
-        ? subscribeOpsLeadershipUpdateOutboxRow(leadershipID, onStoreChange)
-        : () => undefined,
-    () => (opsHybrid ? readOpsLeadershipUpdateOutboxRow(leadershipID) : undefined),
+    (onStoreChange) => subscribeOpsLeadershipUpdateOutboxRow(leadershipID, onStoreChange),
+    () => readOpsLeadershipUpdateOutboxRow(leadershipID),
     () => undefined,
   )
 
@@ -68,7 +63,7 @@ export const LeadershipListSupportStatusControl = ({
   }, [outboxRow, router])
 
   useEffect(() => {
-    if (!opsHybrid || outboxRow?.status !== 'conflict') return
+    if (outboxRow?.status !== 'conflict') return
     const toastId = `${CONFLICT_TOAST_ID_PREFIX}${leadershipID}`
     toast.message(OPS_UPDATED_AT_CONFLICT_MESSAGE, {
       id: toastId,
@@ -99,7 +94,7 @@ export const LeadershipListSupportStatusControl = ({
     return () => {
       toast.dismiss(toastId)
     }
-  }, [opsHybrid, outboxRow, leadershipID, router])
+  }, [outboxRow, leadershipID, router])
 
   const { open, onOpenChange, value, change, isPending, errorMessage, statusMessage } =
     useCampaignCellAutosave<SupportStatus, LeadershipListSupportStatusResponse>({
@@ -110,24 +105,22 @@ export const LeadershipListSupportStatusControl = ({
       readSaved: (payload) => payload.savedSupportStatus,
       errorMessage: SAVE_ERROR_MESSAGE,
       pendingMessage: 'Salvando status de apoio.',
-      persist: opsHybrid
-        ? async (supportStatus) => {
-            const mirrorUpdatedAt = leadershipsCollection.get(leadershipID)?.updatedAt
-            await enqueueLeadershipUpdate({
-              leadershipId: leadershipID,
-              supportStatus,
-              baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
-            })
-            return {
-              ok: true,
-              payload: {
-                status: 'success',
-                message: 'Status de apoio atualizado.',
-                savedSupportStatus: supportStatus,
-              },
-            }
-          }
-        : undefined,
+      persist: async (supportStatus) => {
+        const mirrorUpdatedAt = leadershipsCollection.get(leadershipID)?.updatedAt
+        await enqueueLeadershipUpdate({
+          leadershipId: leadershipID,
+          supportStatus,
+          baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
+        })
+        return {
+          ok: true,
+          payload: {
+            status: 'success',
+            message: 'Status de apoio atualizado.',
+            savedSupportStatus: supportStatus,
+          },
+        }
+      },
     })
 
   const handleStatusChange = (raw: string) => {

@@ -1,17 +1,19 @@
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import {
+  expect,
+  reloadWhileOffline,
+  test,
+  waitForCampaignServiceWorker,
+} from './fixtures/campaignE2EFixtures.js'
 
-/**
- * OH9/OH11/OH12 — dual-path municipality detail + offline journey + list Local.
- * Requires `OPS_HYBRID=1` on the Playwright webServer (compile-time). Default CI
- * keeps the flag off so characterization / municipalities specs continue to pin
- * the RSC path.
- */
-const opsHybridEnabled =
-  process.env.OPS_HYBRID === '1' || process.env.OPS_HYBRID?.toLowerCase() === 'true'
+/** Offline specs intentionally hit blocked network resources — allowlist for the guard. */
+test.use({
+  expectedRequestFailurePaths: ['/campanha/api/ops-sync', '/favicon.ico'],
+  expectedRequestFailurePathPrefixes: ['/campanha'],
+  allowOfflineRscPrefetchErrors: true,
+})
 
-test.describe('OH9/OH11 campaign ops offline (OPS_HYBRID)', () => {
-  test.skip(!opsHybridEnabled, 'Set OPS_HYBRID=1 on the e2e webServer to run this dual-path.')
-
+/** OH9/OH11/OH12 — dual-path municipality detail + offline journey + list Local. */
+test.describe('OH9/OH11 campaign ops offline', () => {
   test('offline swaps to Local header + pledges with honest online-only placeholder', async ({
     campaign,
     page,
@@ -54,6 +56,7 @@ test.describe('OH9/OH11 campaign ops offline (OPS_HYBRID)', () => {
         response.url().includes('/campanha/api/ops-sync') && response.request().method() === 'GET',
       { timeout: 30_000 },
     )
+    await waitForCampaignServiceWorker(page)
 
     await page.context().setOffline(true)
 
@@ -108,6 +111,7 @@ test.describe('OH9/OH11 campaign ops offline (OPS_HYBRID)', () => {
         response.url().includes('/campanha/api/ops-sync') && response.request().method() === 'GET',
       { timeout: 30_000 },
     )
+    await waitForCampaignServiceWorker(page)
 
     await page.context().setOffline(true)
 
@@ -117,7 +121,7 @@ test.describe('OH9/OH11 campaign ops offline (OPS_HYBRID)', () => {
     await page.getByRole('button', { name: 'Salvar estimativa' }).click()
     await expect(page.getByText('Pendente', { exact: true })).toBeVisible()
 
-    await page.reload()
+    await reloadWhileOffline(page)
     await expect(page.getByText('Pendente', { exact: true })).toBeVisible()
 
     await page.context().setOffline(false)
@@ -125,9 +129,7 @@ test.describe('OH9/OH11 campaign ops offline (OPS_HYBRID)', () => {
   })
 })
 
-test.describe('OH12 municipality list Local (OPS_HYBRID)', () => {
-  test.skip(!opsHybridEnabled, 'Set OPS_HYBRID=1 on the e2e webServer to run this dual-path.')
-
+test.describe('OH12 municipality list Local', () => {
   test('offline list renders mirror rows and filters by ?q=', async ({ campaign, page }) => {
     const { fixtures } = campaign
     const municipality = await fixtures.claimMunicipality()
@@ -151,13 +153,22 @@ test.describe('OH12 municipality list Local (OPS_HYBRID)', () => {
         response.url().includes('/campanha/api/ops-sync') && response.request().method() === 'GET',
       { timeout: 30_000 },
     )
+    await waitForCampaignServiceWorker(page)
 
     await page.context().setOffline(true)
-    await page.goto(
-      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
-    )
+    await expect(
+      page.getByText('Edição na lista disponível quando estiveres online.'),
+    ).toBeVisible()
 
-    await expect(page.getByRole('heading', { name: 'Municípios' })).toBeVisible()
+    const search = page.getByLabel('Buscar município')
+    await search.fill(municipality.name)
+    await expect(page.getByRole('link', { name: municipality.name })).toBeVisible({
+      timeout: 15_000,
+    })
+
+    await expect(
+      page.getByRole('heading', { name: 'Municípios', exact: true }).first(),
+    ).toBeVisible()
     await expect(
       page.getByText('Edição na lista disponível quando estiveres online.'),
     ).toBeVisible()

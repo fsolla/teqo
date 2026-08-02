@@ -27,6 +27,10 @@ type E2EFailureGuardFixtures = {
    * mid-test.
    */
   expectedRequestFailurePaths: string[]
+  /** Pathname prefix allowlist for intentional offline prefetch failures. */
+  expectedRequestFailurePathPrefixes: string[]
+  /** Next.js RSC prefetch console noise while the browser context is offline. */
+  allowOfflineRscPrefetchErrors: boolean
 }
 
 const loadFailurePrefix = 'Failed to load resource'
@@ -49,6 +53,8 @@ const isAllowedConsoleError = (
   message: ConsoleMessage,
   origin: string | null,
   expectedRequestFailurePaths: string[],
+  expectedRequestFailurePathPrefixes: string[],
+  allowOfflineRscPrefetchErrors: boolean,
 ): boolean => {
   const { url } = message.location()
   if (!url || origin === null) return false
@@ -59,23 +65,50 @@ const isAllowedConsoleError = (
   // The app intentionally has no /favicon.ico asset yet.
   if (message.text() === missingFaviconConsoleError) return location.pathname === '/favicon.ico'
 
-  return (
-    message.text().startsWith(loadFailurePrefix) &&
-    expectedRequestFailurePaths.includes(location.pathname)
-  )
+  if (
+    allowOfflineRscPrefetchErrors &&
+    message.text().includes('Failed to fetch RSC payload') &&
+    message.text().includes('/campanha')
+  ) {
+    return true
+  }
+
+  const pathAllowed =
+    expectedRequestFailurePaths.includes(location.pathname) ||
+    expectedRequestFailurePathPrefixes.some((prefix) => location.pathname.startsWith(prefix))
+
+  return message.text().startsWith(loadFailurePrefix) && pathAllowed
 }
 
 export const test = base.extend<E2EFailureGuardFixtures>({
   expectedRequestFailurePaths: [[], { option: true }],
+  expectedRequestFailurePathPrefixes: [[], { option: true }],
+  allowOfflineRscPrefetchErrors: [false, { option: true }],
   e2eFailureGuard: [
-    async ({ baseURL, context, expectedRequestFailurePaths, page }, use) => {
+    async (
+      {
+        baseURL,
+        context,
+        expectedRequestFailurePaths,
+        expectedRequestFailurePathPrefixes,
+        allowOfflineRscPrefetchErrors,
+        page,
+      },
+      use,
+    ) => {
       const failures: BrowserFailure[] = []
       const origin = baseURL ? new URL(baseURL).origin : null
 
       const onConsole = (message: ConsoleMessage) => {
         if (
           message.type() !== 'error' ||
-          isAllowedConsoleError(message, origin, expectedRequestFailurePaths)
+          isAllowedConsoleError(
+            message,
+            origin,
+            expectedRequestFailurePaths,
+            expectedRequestFailurePathPrefixes,
+            allowOfflineRscPrefetchErrors,
+          )
         ) {
           return
         }

@@ -5,54 +5,17 @@ import { revalidatePath } from 'next/cache'
 import {
   attachCampaignDemandReceiptRecord,
   setCampaignDemandCost,
-  transitionCampaignDemand,
 } from '@/app/(campaign)/campanha/actions/demand'
-import {
-  FormDataBoundaryError,
-  nullableFormText,
-  requiredFormText,
-  requiredRelationshipFormValue,
-} from '@/lib/formData'
+import { FormDataBoundaryError, requiredRelationshipFormValue } from '@/lib/formData'
 import {
   CAMPAIGN_DEMAND_COST_STAFF_MESSAGE,
-  CAMPAIGN_DEMAND_INVALID_STATUS_MESSAGE,
   CAMPAIGN_DEMAND_RECEIPT_SAFE_MESSAGES,
-  CAMPAIGN_DEMAND_TRANSITION_SAFE_MESSAGES,
-  campaignDemandStatuses,
-  type CampaignDemandStatus,
 } from '@/lib/schemas/campaignDemand'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
-
-const INVALID_STATUS_MESSAGE = CAMPAIGN_DEMAND_INVALID_STATUS_MESSAGE
-
-const transitionSafeMessages = CAMPAIGN_DEMAND_TRANSITION_SAFE_MESSAGES
-
-export const transitionDemandFormAction = async (
-  _state: CampaignFormActionState,
-  formData: FormData,
-): Promise<CampaignFormActionState> =>
-  runCampaignFormAction({
-    execute: async () => {
-      const rawStatus = requiredFormText(formData, 'status')
-      if (!campaignDemandStatuses.includes(rawStatus as CampaignDemandStatus)) {
-        throw new Error(INVALID_STATUS_MESSAGE)
-      }
-
-      await transitionCampaignDemand({
-        id: requiredRelationshipFormValue(formData, 'demandId'),
-        status: rawStatus as CampaignDemandStatus,
-        decisionNote: nullableFormText(formData, 'decisionNote'),
-      })
-      revalidatePath('/campanha/demandas/[slug]', 'page')
-      return { message: 'Demanda atualizada.' }
-    },
-    safeMessages: transitionSafeMessages,
-    genericMessage: 'Não foi possível mover a demanda. Verifique seu acesso e tente novamente.',
-  })
 
 export const setDemandCostFormAction = async (
   _state: CampaignFormActionState,

@@ -1,14 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import {
-  useActionState,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type FormEvent,
-} from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react'
 import { toast } from 'sonner'
 
 import {
@@ -18,7 +11,6 @@ import {
   subscribeOpsLeadershipUpdateOutboxRow,
 } from '@/components/campaign/opsSync/opsDomainOutbox'
 import { leadershipsCollection } from '@/components/campaign/opsSync/opsMirrorClient'
-import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import {
   RelationMultiSelect,
   type RelationOption,
@@ -30,7 +22,6 @@ import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import { readFormRelationshipIds, readOptionalFormText } from '@/lib/campaignOps/opsHybridFormData'
 import {
   isSupportStatus,
@@ -38,8 +29,6 @@ import {
   type SupportStatus,
 } from '@/lib/schemas/leadership'
 import { OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
-import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import { fieldError } from '@/utilities/campaignFormFields'
 import type { LeadershipDetailViewModel } from '@/utilities/leadership/leadershipData'
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 
@@ -50,11 +39,6 @@ type LeadershipInternalFormProps = {
   municipalityOptions: RelationOption[]
   organizationOptions: RelationOption[]
   stateDeputyOptions: RelationOption[]
-  formAction: (
-    state: CampaignFormActionState,
-    formData: FormData,
-  ) => Promise<CampaignFormActionState>
-  opsHybridEnabled?: boolean
 }
 
 /** Staff-only internal evaluation + links (municipalities, organizations). */
@@ -63,21 +47,15 @@ export const LeadershipInternalForm = ({
   municipalityOptions,
   organizationOptions,
   stateDeputyOptions,
-  formAction,
-  opsHybridEnabled = resolveOpsHybridEnabled(),
 }: LeadershipInternalFormProps) => {
   const router = useRouter()
-  const [state, submitAction, isPending] = useActionState(formAction, {})
   const [hybridPending, setHybridPending] = useState(false)
   const [hybridMessage, setHybridMessage] = useState<string | null>(null)
   const previousOutboxStatusRef = useRef<string | undefined>(undefined)
 
   const outboxRow = useSyncExternalStore(
-    (onStoreChange) =>
-      opsHybridEnabled
-        ? subscribeOpsLeadershipUpdateOutboxRow(leadership.id, onStoreChange)
-        : () => undefined,
-    () => (opsHybridEnabled ? readOpsLeadershipUpdateOutboxRow(leadership.id) : undefined),
+    (onStoreChange) => subscribeOpsLeadershipUpdateOutboxRow(leadership.id, onStoreChange),
+    () => readOpsLeadershipUpdateOutboxRow(leadership.id),
     () => undefined,
   )
 
@@ -90,7 +68,7 @@ export const LeadershipInternalForm = ({
   }, [outboxRow, router])
 
   useEffect(() => {
-    if (!opsHybridEnabled || outboxRow?.status !== 'conflict') return
+    if (outboxRow?.status !== 'conflict') return
     const toastId = `${CONFLICT_TOAST_ID_PREFIX}${leadership.id}`
     toast.message(OPS_UPDATED_AT_CONFLICT_MESSAGE, {
       id: toastId,
@@ -121,7 +99,7 @@ export const LeadershipInternalForm = ({
     return () => {
       toast.dismiss(toastId)
     }
-  }, [opsHybridEnabled, outboxRow, leadership.id, router])
+  }, [outboxRow, leadership.id, router])
 
   const onHybridSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -159,14 +137,10 @@ export const LeadershipInternalForm = ({
     )
   }
 
-  const pending = opsHybridEnabled ? hybridPending || outboxRow?.status === 'pending' : isPending
+  const pending = hybridPending || outboxRow?.status === 'pending'
 
   return (
-    <form
-      action={opsHybridEnabled ? undefined : submitAction}
-      onSubmit={opsHybridEnabled ? onHybridSubmit : undefined}
-      className="flex max-w-2xl flex-col gap-4"
-    >
+    <form onSubmit={onHybridSubmit} className="flex max-w-2xl flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <input type="hidden" name="leadershipId" value={leadership.id} />
         {outboxRow?.status === 'pending' ? (
@@ -180,7 +154,6 @@ export const LeadershipInternalForm = ({
         label="Municípios em que atua"
         options={municipalityOptions}
         initialSelectedIDs={leadership.municipalityIDs}
-        error={fieldError(state.fieldErrors, 'municipalities')}
         placeholder="Adicionar município…"
       />
 
@@ -189,7 +162,6 @@ export const LeadershipInternalForm = ({
         label="Organizações"
         options={organizationOptions}
         initialSelectedIDs={leadership.organizationIDs}
-        error={fieldError(state.fieldErrors, 'organizations')}
         placeholder="Adicionar organização…"
       />
 
@@ -198,7 +170,6 @@ export const LeadershipInternalForm = ({
         label="Dobradinhas"
         options={stateDeputyOptions}
         initialSelectedIDs={leadership.stateDeputyIDs}
-        error={fieldError(state.fieldErrors, 'stateDeputies')}
         placeholder="Adicionar dobradinha…"
       />
 
@@ -242,7 +213,6 @@ export const LeadershipInternalForm = ({
         />
       </Field>
 
-      {!opsHybridEnabled ? <CampaignFormActionMessage state={state} /> : null}
       {hybridMessage ? (
         <p className="text-sm text-muted-foreground" role="status">
           {hybridMessage}

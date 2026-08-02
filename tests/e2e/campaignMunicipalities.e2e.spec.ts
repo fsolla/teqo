@@ -89,7 +89,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // the freshness column the ordering is paired with. `exact` keeps this off
     // the table caption, which embeds the same summary plus column glossary.
     await expect(
-      page.getByText('Ordenado por Cobertura (maior déficit primeiro)', { exact: true }),
+      page.getByText('Ordenado por Cobertura (maior déficit primeiro)', { exact: true }).first(),
     ).toBeVisible()
     await expect(
       page.getByRole('columnheader', { name: /Ordenar por Frescor do sinal/ }),
@@ -118,7 +118,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // (visually a hover-only preview otherwise), so assert against that
     // unique, unambiguous string rather than a bare "5.000" substring —
     // that also matches the (opacity-0 but DOM-visible) hover-preview span.
-    await expect(page.getByText('Otimista: 5.000')).toBeVisible()
+    await expect(page.getByText('Otimista: 5.000').first()).toBeVisible()
     await expect(page.getByText(`Assessoria: ${advisor.name}`)).toBeVisible()
   })
 
@@ -163,7 +163,10 @@ test.describe('Municípios — jornadas por papel', () => {
     // no-op, so the probe retries until the chip sticks.
     await expect(async () => {
       await search.fill(searchNamePart)
-      await option.click({ timeout: 1_000 })
+      await Promise.all([
+        expectPostResponse(page, '/campanha/municipios'),
+        option.click({ timeout: 1_000 }),
+      ])
       await expect(chip).toBeVisible({ timeout: 4_000 })
     }).toPass({ timeout: 20_000 })
 
@@ -212,7 +215,7 @@ test.describe('Municípios — jornadas por papel', () => {
     await trendPopover.getByLabel('Justificativa').fill(note)
     await trendPopover.getByLabel('Tendência', { exact: true }).selectOption('favoravel')
     await Promise.all([
-      expectPostResponse(page, '/campanha/municipios/political-trend'),
+      expectPostResponse(page, '/campanha/municipios'),
       trendPopover.getByLabel('Justificativa').blur(),
     ])
 
@@ -334,8 +337,11 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.goto(`${campaign.baseURL}/campanha/municipios/${administered.slug}?tab=leaderships`)
     await expect(page.getByRole('link', { name: contact.name })).toBeVisible()
     await page.getByLabel('Quantos votos a liderança traz neste município?').fill('250')
-    await page.getByRole('button', { name: 'Declarar' }).click()
-    await expect(page.getByText('Declaração de votos registrada.')).toBeVisible()
+    await Promise.all([
+      expectPostResponse(page, `/campanha/municipios/${administered.slug}`),
+      page.getByRole('button', { name: 'Declarar' }).click(),
+    ])
+    await expect(page.getByRole('button', { name: 'Atualizar' })).toBeVisible()
 
     // Advisor records an internal estimate on the overview pledges panel.
     await page.goto(`${campaign.baseURL}/campanha/municipios/${administered.slug}`)

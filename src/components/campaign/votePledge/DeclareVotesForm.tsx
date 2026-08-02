@@ -30,7 +30,6 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import { OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
@@ -44,7 +43,6 @@ type DeclareVotesFormProps = {
   currentDeclaredVotes: number | null
   /** Pledge row `updatedAt` for CAS when a pledge already exists. */
   currentUpdatedAt?: string | null
-  opsHybridEnabled?: boolean
   formAction: (
     state: CampaignFormActionState,
     formData: FormData,
@@ -66,10 +64,9 @@ export const DeclareVotesForm = ({
   pledgeId,
   currentDeclaredVotes,
   currentUpdatedAt = null,
-  opsHybridEnabled = resolveOpsHybridEnabled(),
   formAction,
 }: DeclareVotesFormProps) => {
-  if (!opsHybridEnabled || leadershipID === undefined) {
+  if (leadershipID === undefined) {
     return (
       <LegacyDeclareVotesForm
         municipalityID={municipalityID}
@@ -96,7 +93,7 @@ const LegacyDeclareVotesForm = ({
   leadershipID,
   currentDeclaredVotes,
   formAction,
-}: Omit<DeclareVotesFormProps, 'opsHybridEnabled' | 'currentUpdatedAt'>) => {
+}: Omit<DeclareVotesFormProps, 'currentUpdatedAt'>) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
 
   return (

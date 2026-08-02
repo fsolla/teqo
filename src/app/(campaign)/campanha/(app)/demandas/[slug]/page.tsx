@@ -17,11 +17,7 @@ import {
 import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { loadDemandDetail } from '@/utilities/campaignDemandData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import {
-  attachDemandReceiptFormAction,
-  setDemandCostFormAction,
-  transitionDemandFormAction,
-} from './formActions'
+import { attachDemandReceiptFormAction, setDemandCostFormAction } from './formActions'
 
 type DemandDetailPageProps = {
   params: Promise<{ slug: string }>
@@ -129,7 +125,6 @@ export default async function DemandDetailPage({ params }: DemandDetailPageProps
         canDecideEscalated={isCampaignUnrestricted(user)}
         currentCost={demand.cost}
         updatedAt={demand.updatedAt}
-        transitionFormAction={transitionDemandFormAction}
         costFormAction={setDemandCostFormAction}
         receiptFormAction={attachDemandReceiptFormAction}
       />

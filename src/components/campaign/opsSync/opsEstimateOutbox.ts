@@ -1,6 +1,6 @@
 'use client'
 
-import { createCollection, localOnlyCollectionOptions } from '@tanstack/db'
+import { createCollection, localOnlyCollectionOptions, type Transaction } from '@tanstack/db'
 import {
   IndexedDBAdapter,
   NonRetriableError,
@@ -19,6 +19,7 @@ import {
   applyOpsVotePledgeEstimateWrite,
   patchOpsVotePledgeEstimateOptimistic,
   readOpsVotePledge,
+  votePledgesCollection,
 } from '@/components/campaign/opsSync/opsVotePledgeMirror'
 import { opsOutboxKey, type OpsOutboxKey } from '@/lib/campaignOps/opsContract'
 import {
@@ -27,6 +28,14 @@ import {
 } from '@/lib/schemas/votePledge'
 
 const ESTIMATE_MUTATION_FN = 'estimateVotes'
+
+const outboxMutationRow = <TRow>(transaction: Transaction, collectionId: string): TRow => {
+  const mutation = transaction.mutations.find((entry) => entry.collection?.id === collectionId)
+  if (!mutation) {
+    throw new NonRetriableError(`Mutação de outbox ausente (${collectionId}).`)
+  }
+  return mutation.modified as TRow
+}
 
 const opsEstimateOutboxCollection = createCollection(
   localOnlyCollectionOptions<OpsEstimateOutboxRow, number>({
@@ -40,17 +49,16 @@ let initPromise: Promise<OfflineExecutor> | null = null
 
 const createEstimateOfflineExecutor = (): OfflineExecutor =>
   startOfflineExecutor({
-    collections: { estimateOutbox: opsEstimateOutboxCollection },
+    collections: {
+      estimateOutbox: opsEstimateOutboxCollection,
+      // Mirror rows touched in onMutate must be registered for persistence.
+      votePledges: votePledgesCollection,
+    },
     storage: new IndexedDBAdapter('teqo-ops-estimate', 'outbox'),
     beforeRetry: collapseEstimateOutboxByPledge,
     mutationFns: {
       [ESTIMATE_MUTATION_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) {
-          throw new NonRetriableError('Mutação de estimativa vazia.')
-        }
-
-        const row = mutation.modified as OpsEstimateOutboxRow
+        const row = outboxMutationRow<OpsEstimateOutboxRow>(transaction, 'ops-estimate-outbox')
 
         try {
           const updated = await estimateVotesCas({

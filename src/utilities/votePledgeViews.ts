@@ -162,6 +162,6 @@ export type StaffPledgeRow = {
   estimatedVotes: VoteEstimateScenarioViewModel
   estimateNote: string | null
   estimatedAt: string | null
-  /** OH10 — CAS token for declareVotes when OPS_HYBRID is on. */
+  /** OH10 — CAS token for declareVotes outbox writes. */
   updatedAt: string
 }

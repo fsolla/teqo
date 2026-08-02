@@ -19,7 +19,6 @@ import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import { parsePoliticalTrendStatusFormValue } from '@/lib/schemas/municipality'
 import {
   politicalTrendBadgeVariant,
@@ -47,7 +46,7 @@ type MunicipalityListTrendControlProps = {
   municipalityName: string
   status: MunicipalityListSavedPoliticalTrend['status']
   trendNote: string | null
-  /** OH10 — CAS base when OPS_HYBRID outbox path is on. */
+  /** CAS base for outbox writes. */
   updatedAt?: string
   variant: CampaignCellEditOverlayVariant
 }
@@ -60,7 +59,6 @@ export const MunicipalityListTrendControl = ({
   updatedAt,
   variant,
 }: MunicipalityListTrendControlProps) => {
-  const opsHybrid = resolveOpsHybridEnabled()
   const { open, onOpenChange, value, change, flush, isPending, errorMessage, statusMessage } =
     useCampaignCellAutosave<
       MunicipalityListSavedPoliticalTrend,
@@ -80,25 +78,23 @@ export const MunicipalityListTrendControl = ({
       readSaved: (payload) => payload.savedTrend,
       errorMessage: SAVE_ERROR_MESSAGE,
       pendingMessage: 'Salvando tendência.',
-      persist: opsHybrid
-        ? async (trend) => {
-            const mirrorUpdatedAt = municipalitiesCollection.get(municipalityID)?.updatedAt
-            await enqueuePoliticalTrend({
-              municipalityId: municipalityID,
-              status: trend.status,
-              note: trend.note,
-              baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
-            })
-            return {
-              ok: true,
-              payload: {
-                status: 'success',
-                message: 'Tendência política registrada.',
-                savedTrend: trend,
-              },
-            }
-          }
-        : undefined,
+      persist: async (trend) => {
+        const mirrorUpdatedAt = municipalitiesCollection.get(municipalityID)?.updatedAt
+        await enqueuePoliticalTrend({
+          municipalityId: municipalityID,
+          status: trend.status,
+          note: trend.note,
+          baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
+        })
+        return {
+          ok: true,
+          payload: {
+            status: 'success',
+            message: 'Tendência política registrada.',
+            savedTrend: trend,
+          },
+        }
+      },
     })
 
   // The only state the hook cannot hold: the textarea's raw text, which the

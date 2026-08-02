@@ -12,7 +12,6 @@ import {
   loadOrganizationOptions,
   loadStateDeputyOptions,
 } from '@/utilities/campaignRelationOptions'
-import { createLeadershipFormAction } from './formActions'
 
 type NewLeadershipPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -65,7 +64,6 @@ export default async function NewLeadershipPage({ searchParams }: NewLeadershipP
         organizationOptions={organizationOptions}
         stateDeputyOptions={stateDeputyOptions}
         initialMunicipalityIDs={initialMunicipalityIDs}
-        formAction={createLeadershipFormAction}
       />
     </CampaignPageShell>
   )

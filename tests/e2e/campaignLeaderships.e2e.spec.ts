@@ -20,7 +20,7 @@ test.describe('Lideranças — shell (OH8)', () => {
     await page.goto(`${campaign.baseURL}/campanha/liderancas`)
     await expect(page.getByRole('heading', { name: 'Lideranças', exact: true })).toBeVisible()
     await expect(page.getByLabel('Buscar liderança por nome')).toBeVisible()
-    await expect(page.getByText(/\d+ lideranças/)).toBeVisible()
+    await expect(page.getByText(/\d+ lideranças/).first()).toBeVisible()
   })
 })
 
@@ -50,12 +50,12 @@ test.describe('campaign leaderships list', () => {
     await expect(statusPopover).toBeVisible()
     await expect(statusPopover.getByRole('button', { name: 'Salvar' })).toHaveCount(0)
 
-    // Auto-save (150 ms debounce): wait for the actual POST response — the
+    // Auto-save (150 ms debounce): wait for the CAS server action POST — the
     // badge text updates optimistically before the request even lands, so a
     // text-only assertion here would race the reload below against a save
     // that hasn't reached the database yet.
     await Promise.all([
-      expectPostResponse(page, '/campanha/liderancas/support-status'),
+      expectPostResponse(page, '/campanha/liderancas'),
       statusPopover.getByLabel('Status de apoio', { exact: true }).selectOption('engajado'),
     ])
     await expect(page.getByRole('button', { name: 'Editar status de apoio' })).toContainText(

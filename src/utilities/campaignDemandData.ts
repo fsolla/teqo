@@ -153,7 +153,7 @@ export type DemandDetailViewModel = DemandRowViewModel & {
   }>
   canLeaderEdit: boolean
   activity: { title: string; slug: string } | null
-  /** OH13 — CAS token for staff transitions when OPS_HYBRID is on. */
+  /** OH13 — CAS token for staff transition outbox writes. */
   updatedAt: string
 }
 

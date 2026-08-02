@@ -21,7 +21,6 @@ import {
 } from '@/utilities/campaignRelationOptions'
 import { loadLeadershipDetail } from '@/utilities/leadership/leadershipData'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
-import { updateLeadershipInternalFormAction } from './formActions'
 
 type LeadershipDetailPageProps = {
   params: Promise<{ id: string }>
@@ -111,7 +110,6 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
           municipalityOptions={municipalityOptions}
           organizationOptions={organizationOptions}
           stateDeputyOptions={stateDeputyOptions}
-          formAction={updateLeadershipInternalFormAction}
         />
       </section>
     </CampaignPageShell>

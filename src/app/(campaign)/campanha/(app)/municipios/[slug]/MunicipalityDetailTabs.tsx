@@ -13,7 +13,6 @@ import { MunicipalityVisitEligibilityCard } from '@/components/campaign/municipa
 import { MunicipalityZoneNeighborhoodsCard } from '@/components/campaign/municipality/MunicipalityZoneNeighborhoodsCard'
 import { CampaignListPagination } from '@/components/campaign/shared/CampaignListPagination'
 import { SuggestionsPanel } from '@/components/campaign/suggestion/SuggestionsPanel'
-import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'
@@ -52,8 +51,7 @@ import type { getPayload } from 'payload'
 import { Suspense } from 'react'
 
 import { resolveSuggestionFormAction } from '../../suggestionFormActions'
-import { declareVotesFormAction, estimateVotesFormAction } from './pledgeFormActions'
-import { createMunicipalityUpdateFormAction } from './updateFormActions'
+import { declareVotesFormAction } from './pledgeFormActions'
 
 type PayloadUser = {
   payload: Awaited<ReturnType<typeof getPayload>>
@@ -123,11 +121,7 @@ export const OverviewTab = async ({
           </Suspense>
         </>
       ) : null}
-      <MunicipalityPledgesPanel
-        pledges={pledges}
-        opsHybridEnabled={resolveOpsHybridEnabled()}
-        estimateFormAction={estimateVotesFormAction}
-      />
+      <MunicipalityPledgesPanel pledges={pledges} />
     </div>
   )
 }
@@ -359,7 +353,6 @@ export const UpdatesTab = async ({
       <MunicipalityUpdateForm
         municipalityID={municipalityID}
         municipalityUpdatedAt={municipalityUpdatedAt}
-        formAction={createMunicipalityUpdateFormAction}
       />
       <MunicipalityUpdateFeed updates={feed.updates} />
       <CampaignListPagination
