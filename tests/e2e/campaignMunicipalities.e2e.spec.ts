@@ -513,6 +513,13 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
 
     const actionsRegion = overlay.getByLabel('Ações rápidas')
     await expect(actionsRegion.locator('ul[data-layout="grid-3"]')).toBeVisible()
+    for (const label of staffActionLabels) {
+      await expect(
+        actionsRegion
+          .getByRole('link', { name: label, exact: true })
+          .or(actionsRegion.getByRole('button', { name: label, exact: true })),
+      ).toBeVisible()
+    }
 
     const boxes = await collectActionBoundingBoxes(actionsRegion, staffActionLabels)
     assertThreeColumnActionGrid(groupActionsByRow(boxes), 2)
