@@ -13,7 +13,25 @@ disable-model-invocation: true
 
 Esta skill transforma ideias soltas em: (1) um **plano de intenção** em `docs/plans/<slug>.md` por item, e (2) uma **GitHub Issue rastreável** (`pnpm agent:register`, frontmatter `id/depends/serializes/priority/model`). GitHub Issues são a fonte canônica de spec/status/deps/prio/modelo — `docs/roadmap.md` é legado congelado e **nunca** é editado aqui.
 
-**Gate de confirmação (obrigatório):** nenhuma Issue é criada no GitHub antes do usuário aprovar o overview do lote (Passo 5). Planos locais podem ser rascunhados antes; Issues, não.
+## Ciclo de vida (obrigatório)
+
+```text
+rascunho local (Issue: —)
+  → GATE (Passo 5) + confirmação explícita do lote
+  → register com --plan → Issue NÃO claimável (blocked)
+  → commit + PR dos planos (Related #N, nunca Closes)
+  → merge em main
+  → promote blocked→ready (agente no Passo 6 + Action no merge — dual, idempotente)
+  → fila / pool
+```
+
+**Regras duras:**
+
+1. **Nada no GitHub antes do gate.** Antes da confirmação explícita do Passo 5: proibido `pnpm agent:register`, `gh issue create`, `gh pr create` / push de PR de planos. Planos locais (`Issue: —`) ok.
+2. **Confirmação = OK ao overview do lote** (ex. “confirma”, “pode registrar”). “Ok” ambíguo no meio da edição **não** dispara o Passo 6.
+3. **Register com `--plan` não nasce `ready`.** Use `--blocked` (ou o default futuro de `agent:register --plan`) até o plano estar em `main`. Sem `--plan` (chore body-only / `file-miss`), pode nascer `ready`.
+4. **Promote só depois do plano em `main`.** Nunca flipar para `ready` com o PR ainda aberto — isso recria a race de claim. Caminhos: (A) agente no fim do Passo 6 após merge; (B) Action determinística no merge que lê `Related #N` (OPS18). Ambos idempotentes.
+5. **Planos de Issues `in-progress` / `done` / `in-prod` são imutáveis.** Não editar `docs/plans/<slug>.md` nem o body de intenção dessas Issues. Refino → **plano + Issue novos** (sucessor; `depends` no pai se fizer sentido). Enquanto a Issue ainda é só `blocked`/`ready` (sem claim), editar o mesmo plano ainda é barato.
 
 ## Divisão com as skills de execução
 
@@ -36,8 +54,8 @@ Aqui **não** se implementa código, **não** se escreve plano de implementaçã
 - [ ] 2. Reserva de IDs de uma vez por trilha (roadmap legacy + issuesById())
 - [ ] 3. Por item (ordem topológica): classificar → fatiar → explorar só o suficiente → intenção completa
 - [ ] 4. Sugestão de modelo × effort via model-selection (uma linha por item)
-- [ ] 5. GATE: overview do lote + esboços de fluxo (B/C/D) → confirmar/iterar
-- [ ] 6. Registro: pnpm agent:register (com --model) por item + commit dos planos de intenção
+- [ ] 5. GATE: overview do lote + esboços de fluxo (B/C/D) → confirmar/iterar (PARAR aqui até o humano confirmar)
+- [ ] 6. Registro: register --blocked (se --plan) → PR Related → merge → promote ready
 ```
 
 ## Passo 1 — Parse e dedup
@@ -45,11 +63,15 @@ Aqui **não** se implementa código, **não** se escreve plano de implementaçã
 1. **Separe os itens.** Entrada pode ser 1 ideia ou N. Se ambíguo, assuma a leitura mais provável e liste — a confirmação vai no gate.
 2. **Fatia mínima útil.** Prefira várias Issues pequenas a um epic. Cada item deve caber num appetite curto e entregar um outcome verificável sozinho. Mesclar só quando separar criaria trabalho inútil (mesmo fluxo, mesma persona, mesma superfície sem valor incremental).
 3. **Dedup intra-lote:** mesclar | absorver (fase de plano existente, sem ID novo) | manter separados com `depends`.
-4. **Dedup contra o existente:** `gh issue list --state all` + `issuesById()` + grep em `docs/plans/*.md` e `docs/roadmap.md` (legado). Já coberto → apontar e não criar; fase de plano existente → editar aquele plano; novo → seguir.
+4. **Dedup contra o existente:** `gh issue list --state all` + `issuesById()` + grep em `docs/plans/*.md` e `docs/roadmap.md` (legado).
+   - Já coberto / entregue → apontar e não criar.
+   - Issue **`in-progress` / `done` / `in-prod`:** **não** editar o plano dela — se a intenção mudou, item **sucessor** (plano + Issue novos).
+   - Issue só `blocked` / `ready` (ainda não claimada): pode editar o plano existente (fase de plano) sem ID novo.
+   - Novo → seguir.
 
 ## Passo 2 — Reserva de IDs
 
-Último ID por trilha (A/B/C/D/E) via roadmap legacy + `issuesById()`; distribua **antes** de escrever planos. Fora de trilha: prefixos `O0+`, `FD+`, `RS+` ou trilha temática mais próxima.
+Último ID por trilha (A/B/C/D/E) via roadmap legacy + `issuesById()`; distribua **antes** de escrever planos. Fora de trilha: prefixos `O0+`, `FD+`, `RS+`, `OPS+` ou trilha temática mais próxima.
 
 ## Passo 3 — Por item: intenção completa
 
@@ -98,28 +120,33 @@ Skill `model-selection`. Registre no cabeçalho (`Model:`) e no gate.
 
 ## Passo 5 — GATE
 
-Antes de criar Issues:
+Antes de criar Issues **ou** abrir PR de planos:
 
 - Overview: ID, título, prio, depends, appetite, modelo, link do plano local
 - Esboços de fluxo persona para superfícies B/C/D (se houver)
 - Perguntas acumuladas numa rodada, recomendação de produto primeiro
 
-Itere até confirmação. Só então Passo 6.
+**Pare e espere.** Itere até confirmação explícita do lote. Só então Passo 6.
 
-## Passo 6 — Registro
+## Passo 6 — Registro (ordem fixa)
+
+1. **Register** (com `--model`; com `--plan` → **`--blocked`** até o plano em `main`):
 
 ```bash
 pnpm agent:register -- --id <ID> --title "<título>" --prio <P0..P3> \
   --depends <A,B> --kind <feature|chore|...> --plan docs/plans/<slug>.md \
-  --model <slug> [--blocked] [--labels extra]
+  --model <slug> --blocked
 ```
 
-Atualize `Issue: #N` no plano. Commit dos planos de intenção.
+Sem `--plan`: omita `--blocked` se a Issue deve nascer claimável.
 
-**PR só de plano:** nunca `Closes #N` — use `Related #N` (`plans-only-closes`).
+2. Atualize `Issue: #N` (e status) no plano local.
+3. Commit + **`pnpm push`** + PR **Ready** `--base main` com **`Related #N`** (nunca `Closes #N` em PR só de `docs/plans/` — `plans-only-closes`).
+4. Auto-merge (`gh pr merge --auto --merge`); espere o merge em `main`.
+5. **Promote** `blocked`→`ready` na Issue (e comente o motivo). A Action de merge (OPS18) é safety net se este passo falhar — não pule o promote do agente no caminho feliz.
 
-**NÃO faz:** editar `docs/roadmap.md`, implementar, claim, escrever `*-impl.md`.
+**NÃO faz:** editar `docs/roadmap.md`; implementar código; claim; escrever `*-impl.md`; editar plano de Issue `in-progress`/`done`/`in-prod`; marcar `ready` antes do plano em `main`.
 
 ## Resumo final
 
-Tabela do lote + mesclados/absorvidos/descartados + decisões de produto assumidas _(validar)_ + o que o gate decidiu.
+Tabela do lote + mesclados/absorvidos/descartados + decisões de produto assumidas _(validar)_ + o que o gate decidiu + Issues `#N` + PRs de plano.
