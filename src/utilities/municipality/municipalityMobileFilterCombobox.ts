@@ -122,10 +122,8 @@ export const buildMunicipalityMobileFilterOptions = ({
             return 'class'
           case 'level':
             return 'level'
-          case 'name':
-          case 'coverage':
-            throw new Error(`Unexpected multi filter param: ${definition.param}`)
           default: {
+            // `name` is skipped above; `coverage` is toggle-only.
             const _exhaustive: never = definition.param
             return _exhaustive
           }
