@@ -133,7 +133,7 @@ describe('CampaignQuickActionsOverlay (B126)', () => {
     expect(screen.getByRole('region', { name: 'Resultados da busca' })).toBeTruthy()
   })
 
-  it('bleeds the action strip edge-to-edge inside the overlay gutter', () => {
+  it('renders actions in a 3-column grid inside the overlay chrome', () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: idleSuggestPayload,
@@ -152,9 +152,10 @@ describe('CampaignQuickActionsOverlay (B126)', () => {
     })
 
     const chrome = document.querySelector('[data-slot="quick-actions-chrome"]')
-    const stripBleed = chrome?.firstElementChild?.firstElementChild
-    expect(stripBleed?.className).toContain('-mx-4')
-    expect(stripBleed?.querySelector('[aria-label="Ações rápidas"]')).not.toBeNull()
+    const list = chrome?.querySelector('ul[role="list"]')
+    expect(list?.className).toContain('grid-cols-3')
+    expect(list?.className).not.toMatch(/flex/)
+    expect(chrome?.querySelector('[aria-label="Ações rápidas"]')).not.toBeNull()
   })
 
   it('posts home-search when the overlay query is active', async () => {
@@ -257,6 +258,77 @@ describe('CampaignQuickActionsOverlay (B126)', () => {
       expect(screen.getByText('Cairu')).toBeTruthy()
       expect(screen.queryByText('Município Atual')).toBeNull()
     })
+  })
+
+  it('adds top padding when search is focused in the overlay', async () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
+
+    renderOverlay({
+      actions: [
+        {
+          id: 'test',
+          label: 'Registrar',
+          icon: BarChart3,
+          description: 'Teste.',
+          href: '/campanha',
+        },
+      ],
+    })
+
+    const searchChrome = document.querySelector('[data-slot="quick-actions-search"]')
+    const input = screen.getByLabelText('Buscar na campanha')
+
+    fireEvent.blur(input)
+    await waitFor(() => {
+      expect(searchChrome?.className).toContain('mt-4')
+    })
+
+    fireEvent.focus(input)
+
+    await waitFor(() => {
+      expect(searchChrome?.className).toContain('pt-4')
+      expect(searchChrome?.className).not.toContain('mt-4')
+    })
+  })
+
+  it('clears overlay search when closed', async () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
+
+    const onOpenChange = vi.fn()
+    const { rerender } = renderQuickActionsChrome(
+      <CampaignQuickActionsOverlay open onOpenChange={onOpenChange} actions={[]} />,
+    )
+
+    const input = screen.getByLabelText('Buscar na campanha') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'cairu' } })
+    expect(input.value).toBe('cairu')
+
+    rerender(
+      <TooltipProvider delayDuration={300}>
+        <CampaignQuickActionContextProvider>
+          <CampaignGlobalSearchProvider>
+            <CampaignQuickActionsOverlay open={false} onOpenChange={onOpenChange} actions={[]} />
+          </CampaignGlobalSearchProvider>
+        </CampaignQuickActionContextProvider>
+      </TooltipProvider>,
+    )
+    rerender(
+      <TooltipProvider delayDuration={300}>
+        <CampaignQuickActionContextProvider>
+          <CampaignGlobalSearchProvider>
+            <CampaignQuickActionsOverlay open onOpenChange={onOpenChange} actions={[]} />
+          </CampaignGlobalSearchProvider>
+        </CampaignQuickActionContextProvider>
+      </TooltipProvider>,
+    )
+
+    expect((screen.getByLabelText('Buscar na campanha') as HTMLInputElement).value).toBe('')
   })
 
   it('uses mobile drawer with actions above search', () => {

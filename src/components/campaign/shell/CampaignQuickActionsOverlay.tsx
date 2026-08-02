@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { useEffect } from 'react'
 
 import { CampaignGlobalSearchBody } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
 import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
@@ -45,19 +46,17 @@ const OverlayActionsChrome = ({
       aria-hidden={retracted || undefined}
     >
       <div className="min-h-0 overflow-hidden">
-        <div className="-mx-4 w-[calc(100%+2rem)] md:mx-0 md:w-auto">
-          <CampaignHomeActionStrip
-            variant="strip"
-            actions={actions.map((action) => ({
-              id: action.id,
-              label: action.label,
-              icon: action.icon,
-              description: action.description,
-              href: action.href,
-            }))}
-            className="w-full"
-          />
-        </div>
+        <CampaignHomeActionStrip
+          variant="grid"
+          actions={actions.map((action) => ({
+            id: action.id,
+            label: action.label,
+            icon: action.icon,
+            description: action.description,
+            href: action.href,
+          }))}
+          className="w-full"
+        />
       </div>
     </div>
   )
@@ -82,7 +81,10 @@ const CampaignQuickActionsOverlayBody = ({
         <OverlayActionsChrome actions={actions} retracted={focused} />
       </div>
       <OverlaySearchChrome
-        className={cn('order-2 min-w-0 md:order-1', focused ? 'mt-0' : 'mt-4 md:mt-0 md:mb-4')}
+        className={cn(
+          'order-2 min-w-0 md:order-1',
+          focused ? 'mt-0 pt-4' : 'mt-4 md:mt-0 md:mb-4',
+        )}
       />
     </div>
   )
@@ -114,19 +116,24 @@ export const CampaignQuickActionsOverlay = ({
   actions: readonly CampaignQuickAction[]
 }) => {
   const isMobile = useIsMobile()
+  const { clear } = useHomeSearch()
+
+  useEffect(() => {
+    if (!open) clear()
+  }, [open, clear])
 
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent
           id="CampaignQuickActionsOverlay"
-          className="max-h-[85dvh] border-t border-border bg-background text-foreground"
+          className="max-h-[85dvh] border-t border-border bg-background text-foreground [--drawer-height:auto]"
         >
           <DrawerTitle className="sr-only">Ações rápidas</DrawerTitle>
           <DrawerDescription className="sr-only">
             Ações do contexto e busca na campanha
           </DrawerDescription>
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="flex flex-col overflow-y-auto px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
             <CampaignQuickActionsOverlayContent actions={actions} />
           </div>
         </DrawerContent>
@@ -144,7 +151,7 @@ export const CampaignQuickActionsOverlay = ({
           <DialogTitle>Ações rápidas</DialogTitle>
           <DialogDescription>Ações do contexto e busca na campanha</DialogDescription>
         </DialogHeader>
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <div className="flex flex-col overflow-y-auto">
           <CampaignQuickActionsOverlayContent actions={actions} />
         </div>
       </DialogContent>
