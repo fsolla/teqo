@@ -22,7 +22,9 @@ B102 (#129 / miss #133/#135): o drawer de ações rápidas monta como **irmão**
 **Guarda adicionada** em `tests/unit/codebaseConventions.unit.spec.ts` (`campaign TooltipProvider wraps quick-actions chrome (B102)`): regex que exige
 
 ```tsx
-<TooltipProvider>…<CampaignAppScrollChrome>…</CampaignAppScrollChrome>…</TooltipProvider>
+<TooltipProvider>
+  …<CampaignAppScrollChrome>…</CampaignAppScrollChrome>…
+</TooltipProvider>
 ```
 
 e proíbe o nesting invertido **no source** de `layout.tsx`.
