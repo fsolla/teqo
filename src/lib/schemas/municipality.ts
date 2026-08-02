@@ -89,15 +89,13 @@ export const MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE =
   'Somente a coordenação geral ou o candidato move o nível de envolvimento.'
 
 /**
- * E14 — a movement is never just the new level: the motivo and the signals
- * that would reverse it are what make the decision auditable later, so both
- * are required by the schema rather than by the form alone.
+ * E14 — a movement records the new level plus an optional motivo; hysteresis,
+ * triangulated shock and override stay on the write path (B134).
  */
 export const municipalityEngagementLevelSchema = z.object({
   municipality: positiveRelationshipId,
   level: z.enum(engagementLevels),
-  note: z.string().trim().min(1).max(ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH),
-  reversalSignals: z.string().trim().min(1).max(ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH),
+  note: trimmedNullableText(ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH),
   /** Licenses a two-level jump (research §6.8). */
   triangulatedShock: z.boolean().default(false),
   /** Accepts the listed violations knowingly; recorded in the decision snapshot. */

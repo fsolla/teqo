@@ -45,9 +45,9 @@ type MunicipalityListLevelControlProps = {
 
 /**
  * E14 — unlike the trend and estimate cells next to it, this one submits
- * explicitly: a movement carries a motivo AND the signals that would reverse
- * it, and it may need an override. Auto-saving half of that would file an
- * incomplete decision under the coordinator's name.
+ * explicitly: a movement may need an override, and the motivo is optional.
+ * Auto-saving half of that would file an incomplete decision under the
+ * coordinator's name.
  */
 export const MunicipalityListLevelControl = ({
   municipalityID,
@@ -73,7 +73,6 @@ export const MunicipalityListLevelControl = ({
   // with it the select — is not mounted.
   const [draftLevel, setDraftLevel] = useState<EngagementLevel | ''>('')
   const [note, setNote] = useState('')
-  const [reversalSignals, setReversalSignals] = useState('')
   const [triangulatedShock, setTriangulatedShock] = useState(false)
   const [override, setOverride] = useState(false)
   const [isPending, setIsPending] = useState(false)
@@ -142,7 +141,6 @@ export const MunicipalityListLevelControl = ({
   const resetDraft = () => {
     setDraftLevel(currentLevel ?? '')
     setNote('')
-    setReversalSignals('')
     setTriangulatedShock(false)
     setOverride(false)
     setErrorMessage(null)
@@ -174,7 +172,6 @@ export const MunicipalityListLevelControl = ({
           municipalityId: municipalityID,
           level: draftLevel,
           note,
-          reversalSignals,
           triangulatedShock,
           override,
         },
@@ -205,11 +202,7 @@ export const MunicipalityListLevelControl = ({
     }
   }
 
-  const canSubmit =
-    isMovement &&
-    note.trim().length > 0 &&
-    reversalSignals.trim().length > 0 &&
-    (violations.length === 0 || override)
+  const canSubmit = isMovement && (violations.length === 0 || override)
   const fieldId = (suffix: string) => `municipality-list-level-${suffix}-${municipalityID}`
   const isSheet = variant === 'sheet'
   const submitButton = (
@@ -283,7 +276,7 @@ export const MunicipalityListLevelControl = ({
           </NativeSelect>
         </Field>
         <Field>
-          <FieldLabel htmlFor={fieldId('note')}>Motivo</FieldLabel>
+          <FieldLabel htmlFor={fieldId('note')}>Motivo (opcional)</FieldLabel>
           <Textarea
             id={fieldId('note')}
             value={note}
@@ -292,18 +285,6 @@ export const MunicipalityListLevelControl = ({
             rows={2}
             className="min-h-16 resize-y"
             placeholder="O que mudou para justificar este nível?"
-          />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor={fieldId('reversal')}>O que faria voltar atrás</FieldLabel>
-          <Textarea
-            id={fieldId('reversal')}
-            value={reversalSignals}
-            onChange={(event) => setReversalSignals(event.target.value)}
-            maxLength={ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH}
-            rows={2}
-            className="min-h-16 resize-y"
-            placeholder="Sinais que fariam rever esta decisão."
           />
         </Field>
         {isJump ? (

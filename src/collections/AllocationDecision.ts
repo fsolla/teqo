@@ -32,6 +32,13 @@ const validateAllocationDecision: CollectionBeforeValidateHook = ({
     throw new APIError('Informe a leitura alternativa ao descartar a sugestão.', 400)
   }
 
+  if (
+    nextData.outcome !== 'movimento' &&
+    (typeof nextData.rationale !== 'string' || !nextData.rationale.trim())
+  ) {
+    throw new APIError('Informe a justificativa.', 400)
+  }
+
   try {
     const serializedSnapshot = JSON.stringify(nextData.snapshot)
     if (
@@ -116,7 +123,8 @@ export const AllocationDecision: CollectionConfig = {
       name: 'rationale',
       type: 'textarea',
       label: 'Justificativa',
-      required: true,
+      // E14 movimento may omit motivo (B134); triage outcomes validate in beforeValidate.
+      required: false,
       maxLength: 2000,
     },
     {
