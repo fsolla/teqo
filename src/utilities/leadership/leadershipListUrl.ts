@@ -31,6 +31,8 @@ export type LeadershipListState = {
   q?: string
   statuses?: SupportStatus[]
   municipalities?: number[]
+  organizations?: number[]
+  stateDeputies?: number[]
   access?: LeadershipListAccessFilter
   sort?: LeadershipListSortKey
   dir?: LeadershipListSortDirection
@@ -42,6 +44,8 @@ const leadershipListParamNames = [
   'q',
   'status',
   'municipality',
+  'organization',
+  'stateDeputy',
   'access',
   'sort',
   'dir',
@@ -105,6 +109,8 @@ export const leadershipListStateToRawParams = (
   q: state.q,
   status: state.statuses,
   municipality: state.municipalities?.map(String),
+  organization: state.organizations?.map(String),
+  stateDeputy: state.stateDeputies?.map(String),
   access: state.access,
   sort: state.sort,
   dir: state.dir,
@@ -117,6 +123,12 @@ export const parseLeadershipListParams = (
   const q = normalizedText(firstValue(params.q))
   const statuses = parseExhaustiveEnumParam<SupportStatus>(params.status, supportStatusSet)
   const municipalities = allParamValues(params.municipality)
+    .map((token) => strictDecimalInteger(token))
+    .filter((id): id is number => typeof id === 'number' && id > 0)
+  const organizations = allParamValues(params.organization)
+    .map((token) => strictDecimalInteger(token))
+    .filter((id): id is number => typeof id === 'number' && id > 0)
+  const stateDeputies = allParamValues(params.stateDeputy)
     .map((token) => strictDecimalInteger(token))
     .filter((id): id is number => typeof id === 'number' && id > 0)
   const rawAccess = firstValue(params.access)
@@ -140,6 +152,8 @@ export const parseLeadershipListParams = (
     ...(q ? { q } : {}),
     ...(statuses.length ? { statuses } : {}),
     ...(municipalities.length ? { municipalities } : {}),
+    ...(organizations.length ? { organizations } : {}),
+    ...(stateDeputies.length ? { stateDeputies } : {}),
     ...(access ? { access } : {}),
     ...(sort ? { sort } : {}),
     ...(dir ? { dir } : {}),
@@ -152,6 +166,12 @@ export const buildLeadershipListWhere = (state: LeadershipListState): Where => {
   if (state.statuses?.length) filters.push({ supportStatus: { in: state.statuses } })
   if (state.municipalities?.length) {
     filters.push({ municipalities: { in: state.municipalities } })
+  }
+  if (state.organizations?.length) {
+    filters.push({ organizations: { in: state.organizations } })
+  }
+  if (state.stateDeputies?.length) {
+    filters.push({ stateDeputies: { in: state.stateDeputies } })
   }
   if (state.access) {
     filters.push({ user: { exists: state.access === 'com' } })
@@ -174,6 +194,12 @@ export const serializeCanonicalLeadershipListSearchParams = (
   for (const status of canonicalState.statuses ?? []) params.append('status', status)
   for (const municipality of canonicalState.municipalities ?? []) {
     params.append('municipality', String(municipality))
+  }
+  for (const organization of canonicalState.organizations ?? []) {
+    params.append('organization', String(organization))
+  }
+  for (const stateDeputy of canonicalState.stateDeputies ?? []) {
+    params.append('stateDeputy', String(stateDeputy))
   }
   if (canonicalState.access) params.set('access', canonicalState.access)
   if (!isSortDefault) {

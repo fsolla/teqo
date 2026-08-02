@@ -189,6 +189,10 @@ export const loadFreshestMunicipalityLeaderships = async (
 export type LeadershipListFilterFacets = {
   /** Municipality ids present under the other active filters (cross-filtered). */
   municipalityIDs: number[]
+  /** Organization ids present under the other active filters (cross-filtered). */
+  organizationIDs: number[]
+  /** State deputy ids present under the other active filters (cross-filtered). */
+  stateDeputyIDs: number[]
 }
 
 /**
@@ -200,7 +204,7 @@ const loadLeadershipMunicipalityFacet = async (
   payload: Payload,
   user: CampaignUser,
   state: LeadershipListState,
-): Promise<LeadershipListFilterFacets> => {
+): Promise<number[]> => {
   const result = await payload.find({
     collection: 'leadership',
     where: buildLeadershipListWhere({ ...state, municipalities: undefined }),
@@ -220,9 +224,74 @@ const loadLeadershipMunicipalityFacet = async (
     }
   }
 
-  return {
-    municipalityIDs: [...available].sort((left, right) => left - right),
+  return [...available].sort((left, right) => left - right)
+}
+
+const loadLeadershipOrganizationFacet = async (
+  payload: Payload,
+  user: CampaignUser,
+  state: LeadershipListState,
+): Promise<number[]> => {
+  const result = await payload.find({
+    collection: 'leadership',
+    where: buildLeadershipListWhere({ ...state, organizations: undefined }),
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { organizations: true },
+    user,
+    overrideAccess: false,
+  })
+
+  const available = new Set<number>(state.organizations ?? [])
+  for (const doc of result.docs) {
+    for (const organization of doc.organizations ?? []) {
+      const id = relationshipId(organization)
+      if (id !== null) available.add(id)
+    }
   }
+
+  return [...available].sort((left, right) => left - right)
+}
+
+const loadLeadershipStateDeputyFacet = async (
+  payload: Payload,
+  user: CampaignUser,
+  state: LeadershipListState,
+): Promise<number[]> => {
+  const result = await payload.find({
+    collection: 'leadership',
+    where: buildLeadershipListWhere({ ...state, stateDeputies: undefined }),
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { stateDeputies: true },
+    user,
+    overrideAccess: false,
+  })
+
+  const available = new Set<number>(state.stateDeputies ?? [])
+  for (const doc of result.docs) {
+    for (const stateDeputy of doc.stateDeputies ?? []) {
+      const id = relationshipId(stateDeputy)
+      if (id !== null) available.add(id)
+    }
+  }
+
+  return [...available].sort((left, right) => left - right)
+}
+
+const loadLeadershipFilterFacets = async (
+  payload: Payload,
+  user: CampaignUser,
+  state: LeadershipListState,
+): Promise<LeadershipListFilterFacets> => {
+  const [municipalityIDs, organizationIDs, stateDeputyIDs] = await Promise.all([
+    loadLeadershipMunicipalityFacet(payload, user, state),
+    loadLeadershipOrganizationFacet(payload, user, state),
+    loadLeadershipStateDeputyFacet(payload, user, state),
+  ])
+  return { municipalityIDs, organizationIDs, stateDeputyIDs }
 }
 
 export const loadLeadershipListPageData = async (
@@ -236,7 +305,12 @@ export const loadLeadershipListPageData = async (
   filterFacets: LeadershipListFilterFacets
 }> => {
   if (!isCampaignStaff(user)) {
-    return { rows: [], totalDocs: 0, totalPages: 0, filterFacets: { municipalityIDs: [] } }
+    return {
+      rows: [],
+      totalDocs: 0,
+      totalPages: 0,
+      filterFacets: { municipalityIDs: [], organizationIDs: [], stateDeputyIDs: [] },
+    }
   }
 
   const { sort, dir } = resolveLeadershipListSort(state)
@@ -251,7 +325,7 @@ export const loadLeadershipListPageData = async (
       user,
       overrideAccess: false,
     }),
-    loadLeadershipMunicipalityFacet(payload, user, state),
+    loadLeadershipFilterFacets(payload, user, state),
   ])
 
   return {

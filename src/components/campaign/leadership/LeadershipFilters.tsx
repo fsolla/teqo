@@ -22,9 +22,13 @@ import {
 export const LeadershipFilters = ({
   state,
   municipalityFilterOptions,
+  organizationFilterOptions,
+  stateDeputyFilterOptions,
 }: {
   state: LeadershipListState
   municipalityFilterOptions: LeadershipFilterOption[]
+  organizationFilterOptions: LeadershipFilterOption[]
+  stateDeputyFilterOptions: LeadershipFilterOption[]
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
@@ -41,14 +45,49 @@ export const LeadershipFilters = ({
     return map
   }, [municipalityFilterOptions])
 
+  const organizationLabelsById = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const option of organizationFilterOptions) {
+      const id = Number(option.value)
+      if (Number.isSafeInteger(id) && id > 0) map.set(id, option.label)
+    }
+    for (const organizationId of state.organizations ?? []) {
+      if (!map.has(organizationId)) map.set(organizationId, `Organização #${organizationId}`)
+    }
+    return map
+  }, [organizationFilterOptions, state.organizations])
+
+  const stateDeputyLabelsById = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const option of stateDeputyFilterOptions) {
+      const id = Number(option.value)
+      if (Number.isSafeInteger(id) && id > 0) map.set(id, option.label)
+    }
+    for (const stateDeputyId of state.stateDeputies ?? []) {
+      if (!map.has(stateDeputyId)) map.set(stateDeputyId, `Dobradinha #${stateDeputyId}`)
+    }
+    return map
+  }, [stateDeputyFilterOptions, state.stateDeputies])
+
   const chips = useMemo(
-    () => buildLeadershipOmniboxChips({ state, municipalityLabelsById }),
-    [state, municipalityLabelsById],
+    () =>
+      buildLeadershipOmniboxChips({
+        state,
+        municipalityLabelsById,
+        organizationLabelsById,
+        stateDeputyLabelsById,
+      }),
+    [state, municipalityLabelsById, organizationLabelsById, stateDeputyLabelsById],
   )
 
   const suggestionSeeds = useMemo(
-    () => buildLeadershipOmniboxSuggestionSeeds({ municipalityFilterOptions }),
-    [municipalityFilterOptions],
+    () =>
+      buildLeadershipOmniboxSuggestionSeeds({
+        municipalityFilterOptions,
+        organizationFilterOptions,
+        stateDeputyFilterOptions,
+      }),
+    [municipalityFilterOptions, organizationFilterOptions, stateDeputyFilterOptions],
   )
 
   const suggestions = useMemo(
@@ -75,7 +114,7 @@ export const LeadershipFilters = ({
       <CampaignListOmnibox
         id="leadership-omnibox"
         label="Filtrar lideranças"
-        placeholder="Digite para filtrar (status, município, acesso…)"
+        placeholder="Digite para filtrar (status, município, organização, dobradinha…)"
         chips={chips}
         suggestions={suggestions}
         query={query}

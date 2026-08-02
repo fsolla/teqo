@@ -73,7 +73,9 @@ import {
   resolveLeadershipListUrl,
   type LeadershipListState,
 } from '@/utilities/leadership/leadershipListUrl'
+import { loadOrganizationNamesByIds } from '@/utilities/loadNamesByIds'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
+import { loadStateDeputySummaries } from '@/utilities/stateDeputyData'
 
 import {
   setLeadershipMunicipalitiesFormAction,
@@ -352,6 +354,30 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     .filter((option): option is LeadershipFilterOption => option !== null)
     .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
 
+  const [organizationNames, stateDeputySummaries] = await Promise.all([
+    loadOrganizationNamesByIds(payload, filterFacets.organizationIDs),
+    loadStateDeputySummaries(payload, filterFacets.stateDeputyIDs),
+  ])
+
+  const organizationFilterOptions: LeadershipFilterOption[] = filterFacets.organizationIDs
+    .map((id) => {
+      const label = organizationNames.get(id)
+      return label ? { value: String(id), label } : null
+    })
+    .filter((option): option is LeadershipFilterOption => option !== null)
+    .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
+
+  const stateDeputyById = new Map(stateDeputySummaries.map((summary) => [summary.id, summary]))
+  const stateDeputyFilterOptions: LeadershipFilterOption[] = filterFacets.stateDeputyIDs
+    .map((id) => {
+      const summary = stateDeputyById.get(id)
+      if (!summary) return null
+      const label = summary.party ? `${summary.name} (${summary.party})` : summary.name
+      return { value: String(id), label }
+    })
+    .filter((option): option is LeadershipFilterOption => option !== null)
+    .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
+
   const { sort, dir } = resolveLeadershipListSort(state)
   const sortSummary = formatLeadershipListSortSummary(sort, dir)
   const columns = leadershipColumns({
@@ -384,7 +410,12 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
       </div>
 
       <CampaignListPendingBoundary>
-        <LeadershipFilters state={state} municipalityFilterOptions={municipalityFilterOptions} />
+        <LeadershipFilters
+          state={state}
+          municipalityFilterOptions={municipalityFilterOptions}
+          organizationFilterOptions={organizationFilterOptions}
+          stateDeputyFilterOptions={stateDeputyFilterOptions}
+        />
 
         <CampaignListResults>
           <p className="text-sm text-muted-foreground" aria-live="polite">
