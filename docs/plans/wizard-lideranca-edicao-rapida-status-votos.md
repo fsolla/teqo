@@ -17,7 +17,7 @@ Responsável: —
 4. Staff-only (já é o wizard); access e actions existentes; sem Consent novo.
 5. Drawer em **todos** os viewports do wizard (ritual mobile-first; sem variante Popover desktop neste item). _(assumido)_
 6. `declaredVotes === 0` **ou** ausência de pledge → leitura `0` + chip amarelo “Declarar votos”. _(assumido — validar com produto se “sem pledge” deve diferir de “declarou 0”)_
-→ Corrija no gate ou o implementador segue com estas.
+   → Corrija no gate ou o implementador segue com estas.
 
 ## Design (Impeccable)
 
