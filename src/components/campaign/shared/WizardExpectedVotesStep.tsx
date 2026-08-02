@@ -85,9 +85,7 @@ export const WizardExpectedVotesStep = ({
 
   const continueAfterVotes = () => {
     const sessionEntry = resolveWizardChainEntry(entryAction, 'update-votes')
-    router.push(
-      wizardChainContinueHref(sessionEntry, 'update-votes', municipalitySlug, returnPath),
-    )
+    router.push(wizardChainContinueHref(sessionEntry, 'update-votes', municipalitySlug, returnPath))
   }
 
   const handleConfirm = () => {

@@ -132,9 +132,7 @@ describe('wizardActionChain', () => {
           municipalitySlug: 'cairu',
           entryAction: 'update-votes',
         }),
-      ).toBe(
-        `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&entry=update-votes`,
-      )
+      ).toBe(`${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&entry=update-votes`)
       expect(
         wizardPreviousHref({
           actionSlug: 'atualizar-lideranca',

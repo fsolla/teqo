@@ -6,11 +6,11 @@
 import {
   CAMPAIGN_WIZARD_ACTION_SLUGS,
   campaignWizardActionIdForSlug,
-  type CampaignWizardActionId,
   isWizardReturnPath,
   wizardActionHref,
   wizardSignalHref,
   wizardTrendHref,
+  type CampaignWizardActionId,
 } from '@/lib/campaignActionRoutes'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 
@@ -198,7 +198,14 @@ export const wizardPreviousHref = (input: WizardPreviousHrefInput): string => {
   }
 
   if (stepKind === 'trend-note') {
-    return wizardTrendHref(actionSlug, municipalitySlug, undefined, entryAction, undefined, returnPath)
+    return wizardTrendHref(
+      actionSlug,
+      municipalitySlug,
+      undefined,
+      entryAction,
+      undefined,
+      returnPath,
+    )
   }
 
   if (stepKind === 'signal-body') {

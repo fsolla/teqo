@@ -61,9 +61,7 @@ export const WizardTrendNoteStep = ({
   useCampaignFormSuccessToast(state, () => {
     recordLastActedMunicipality(municipalitySlug)
     const sessionEntry = resolveWizardChainEntry(entryAction, 'change-trend')
-    router.push(
-      wizardChainContinueHref(sessionEntry, 'change-trend', municipalitySlug, returnPath),
-    )
+    router.push(wizardChainContinueHref(sessionEntry, 'change-trend', municipalitySlug, returnPath))
   })
 
   return (
