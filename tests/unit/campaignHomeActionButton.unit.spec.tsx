@@ -210,8 +210,9 @@ describe('CampaignHomeActionStrip', () => {
     expect(list).toBeTruthy()
     expect(list?.className).toMatch(/grid-cols-2/)
     expect(list?.className).toMatch(/md:flex/)
-    expect(region?.className).not.toMatch(/overflow-x-auto/)
-    expect(region?.className).toMatch(/md:overflow-x-auto/)
+    const regionClasses = region?.className.split(/\s+/) ?? []
+    expect(regionClasses).not.toContain('overflow-x-auto')
+    expect(regionClasses.some((token) => token.includes('md:overflow-x-auto'))).toBe(true)
   })
 
   it('scrolls horizontally on pointer-fine drag past the threshold', () => {
