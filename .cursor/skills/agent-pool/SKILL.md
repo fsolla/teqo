@@ -11,7 +11,7 @@ description: >-
 
 # Agent pool — operação do supervisor remoto
 
-O pool mantém até **5 Cursor Cloud Agents** (configurável, máx 12) rodando `work-issue` sobre Issues `ready` elegíveis para autonomia. O supervisor é **determinístico** (não é um agente): workflow **`.github/workflows/agent-pool.yml`** (tick stateless a cada 10 min + a cada merge em `main` + sob dispatch) rodando `scripts/agent-pool.mjs`. Arquitetura e elegibilidade: `docs/plans/agent-pool-orchestrator.md`.
+O pool mantém até **5 Cursor Cloud Agents** (configurável, máx 12) rodando `agent-work-issue` sobre Issues `ready` elegíveis para autonomia. O supervisor é **determinístico** (não é um agente): workflow **`.github/workflows/agent-pool.yml`** (tick stateless a cada 10 min + a cada merge em `main` + sob dispatch) rodando `scripts/agent-pool.mjs`. Arquitetura e elegibilidade: `docs/plans/agent-pool-orchestrator.md`.
 
 **O pool NUNCA deploya** — deploy gated fica em `ci.yml` após merge em `main`.
 

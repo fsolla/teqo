@@ -9,7 +9,7 @@ Após um ciclo de entrega, `/simplify` e `/impeccable` deixam achados **maiores 
 
 **Regra inviolável — nunca editar Issue `in-progress`.** Nem para absorver um débito do mesmo pai: registra como **Issue nova** com `depends: [<id-do-pai>]` no frontmatter — assim ela destrava sozinha na fila quando o pai flipar `done` — ou defer com gatilho. Editar a Issue que um agente está executando é esquecimento/conflito garantido.
 
-**Qualidade de decisão:** [decision-quality.md](../plan-issue/decision-quality.md) — caro vs barato, defer+gatilho, depth/YAGNI. Score sozinho não basta: classifique o **tipo de decisão** na triage. Sem tour de fases.
+**Qualidade de decisão:** [decision-quality.md](../work-issue/decision-quality.md) — caro vs barato, defer+gatilho, depth/YAGNI. Score sozinho não basta: classifique o **tipo de decisão** na triage. Sem tour de fases.
 
 ## Checklist
 
@@ -124,7 +124,7 @@ Mostre ao usuário **antes** de editar docs:
 
 Inclua baldes **já_resolvido**, **descartar** e **defer** com uma linha de racional/gatilho cada (transparência > silêncio).
 
-**Pare e confirme.** Só avance ao Passo 6 com aprovação explícita (ou ajuste pedido). Sem confirmação = não cria Issue nem toca `docs/plans/`.
+**Pare e confirme** — exceto em **modo autônomo** (`agent-work-issue` / pool): aí aplique a seção Modo autônomo abaixo e pule o AskQuestion. Só avance ao Passo 6 com aprovação explícita (humano) ou com as regras do modo autônomo. Sem isso = não cria Issue nem toca `docs/plans/`.
 
 ## Passo 6 — Registrar via `agent:register` / `agent:file-miss`
 
@@ -139,9 +139,18 @@ Para cada lote com destino **registrar** ou **absorver**:
    - **Explicitamente fora** (skips dos revisores + descartes + defers com gatilho deste triage)
 6. Self-score de decisão ≥4/5 antes de gravar; classe Impeccable A–D conforme o lote (só-backend = A; UX pós-critique = B/C).
 
-Não implemente as fases aqui. Execução é via `work-issue` (claim → merge em stage), só se o usuário pedir em seguida.
+Não implemente as fases aqui. Execução é via `work-issue` / `agent-work-issue`, só se o usuário (ou o pipeline autônomo) seguir.
 
-**Próximo no fluxo de entrega:** após a triage confirmada (ou no-op sem débitos), o fechamento da sessão segue o Passo 6 da skill `work-issue` (fast gate → PR `--base stage` com `Closes #N` → acompanhar CI até o merge).
+**Próximo no fluxo de entrega:** após a triage (confirmada ou modo autônomo), o fechamento segue o Passo 6 de `agent-work-issue` / `work-issue` (`pnpm push` → PR `--base main` com `Closes #N` → auto-merge → CI).
+
+## Modo autônomo (`agent-work-issue` / pool)
+
+Quando não há humano no gate (Passo 5):
+
+1. Faça colheita, dedup, score e tipo como de costume.
+2. **Registre** só itens `expensive_lock` com score ≥4 (Issue nova + `depends` no pai se preciso; plano curto se score ≥3 eng).
+3. Todo o resto → **defer** (gatilho no `*-impl.md` / Explicitamente fora) ou **descartar** — não abra AskQuestion.
+4. Resuma no comentário/fechamento o que registrou vs deferiu.
 
 ## Anti-padrões (baseline)
 

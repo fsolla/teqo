@@ -203,6 +203,7 @@ Opcional e leve (se o rebase tocou schema/types): `pnpm exec tsc --noEmit` nos a
 ## Posição no fluxo
 
 ```
-plan-issue → work-issue (claim → execução → /simplify+/impeccable
-  → rebase-on-main → capture-review-debts → PR --base stage → merge)
+plan-issue → work-issue | agent-work-issue
+  (impl plan → execução → /simplify → rebase-on-main?
+   → capture-review-debts → PR --base main → merge)
 ```

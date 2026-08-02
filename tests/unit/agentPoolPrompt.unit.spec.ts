@@ -19,6 +19,12 @@ describe('buildPoolWorkerPrompt', () => {
     expect(prompt).toContain('in-progress')
   })
 
+  it('points workers at agent-work-issue and forbids treating intention as engineering contract', () => {
+    expect(prompt).toContain('agent-work-issue/SKILL.md')
+    expect(prompt).toContain('*-impl.md')
+    expect(prompt).toContain('plano de intenção como contrato de engenharia')
+  })
+
   it('pins the PR contract: base main, Closes #N, auto-merge, CI watch', () => {
     expect(prompt).toContain('gh pr create --base main')
     expect(prompt).toContain('Closes #42')

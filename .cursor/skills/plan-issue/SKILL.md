@@ -1,114 +1,112 @@
 ---
 name: plan-issue
-description: Registra uma ou VÁRIAS ideias/features/débitos do Teqo como GitHub Issues rastreáveis — classifica, explora o código, produz plano completo em docs/plans/<slug>.md por item (premissas, critérios de aceite, fases verticais, tracer bullet), sugere modelo × effort (model-selection) e passa por um GATE de confirmação (overview + wireframes ASCII + premissas) antes de criar qualquer Issue via `pnpm agent:register`. Usar quando o usuário pedir para adicionar/registrar algo ("adiciona ao roadmap", "registra essa ideia", "cria um plano para", "planeja a issue", "registra tudo isso"), em lote ou avulso.
+description: >-
+  Transforma ideias humanas em Issues GitHub + planos de intenção em
+  docs/plans/ (persona, fluxo, objetivo, direção suave no código — sem
+  decisões duras de engenharia). Divide o pedido nas menores tarefas que
+  ainda fazem sentido. Use quando o usuário pedir /plan-issue, planejar
+  features, fatiar um pedido em Issues, ou registrar trabalho novo na fila.
+disable-model-invocation: true
 ---
 
-# Planejar e registrar Issues (1..N ideias)
+# Planejar Issues (intenção, não engenharia)
 
-Esta skill transforma ideias soltas em: (1) um **plano completo** em `docs/plans/<slug>.md` por item, e (2) uma **GitHub Issue rastreável** por item (`pnpm agent:register`, frontmatter `id/depends/serializes/priority/model`). **GitHub Issues são a fonte canônica** de spec/status/deps/prio/modelo — `docs/roadmap.md` é legado congelado e **nunca** é editado aqui.
+Esta skill transforma ideias soltas em: (1) um **plano de intenção** em `docs/plans/<slug>.md` por item, e (2) uma **GitHub Issue rastreável** (`pnpm agent:register`, frontmatter `id/depends/serializes/priority/model`). GitHub Issues são a fonte canônica de spec/status/deps/prio/modelo — `docs/roadmap.md` é legado congelado e **nunca** é editado aqui.
 
 **Gate de confirmação (obrigatório):** nenhuma Issue é criada no GitHub antes do usuário aprovar o overview do lote (Passo 5). Planos locais podem ser rascunhados antes; Issues, não.
 
-**Divisão com `work-issue`:** aqui se classifica a superfície UI (A–D), semeia âncoras de design, escreve o plano (spec + fatias). **Não** se implementa código nem se roda Impeccable craft/critique/polish — isso pertence a `work-issue` (incremental + TDD + gates).
+## Divisão com as skills de execução
 
-**Mapa das skills de planejamento:** o que absorver vs. rotear — [skills-map.md](skills-map.md). Princípios em silêncio; sem tour.
+| Skill | Papel |
+| ----- | ----- |
+| **`plan-issue` (esta)** | Intenção humana: o quê / para quem / por quê / outcome. Direção suave no codebase. **Proibido** travar schema, signatures, migrations, abstrações ou “Abordagem” de engenharia. |
+| **`work-issue`** | Humano supervisiona: claim → plano de **implementação** (Plan mode) → **pausa** para confirmação → executa. |
+| **`agent-work-issue`** | Pool / autonomia: Issue já claimada → plano de implementação → executa sem pausa → `/simplify` → `capture-review-debts` → PR Ready + auto-merge. |
 
-**Qualidade de decisão (não é tour):** aplique [decision-quality.md](decision-quality.md) em silêncio — filtro caro vs barato, Opções+Recomendação+rejeitadas, appetite, rabbit holes, depth check, fatias verticais, doubt em decisão cara, self-score ≥4 antes de gravar.
+Aqui **não** se implementa código, **não** se escreve plano de implementação, **não** se roda Impeccable craft/critique/polish.
 
-**Dados → decisão → apresentação:** se o item produz, agrega ou exibe números/séries/mapas/KPIs, aplique [data-presentation.md](data-presentation.md) em silêncio antes de travar a Abordagem. Se não há superfície de dados, `Dados: N/A` no plano.
+**Shaping (não tour):** aplique [shaping.md](shaping.md) em silêncio — appetite, fatia mínima útil, rabbit holes de produto, self-score ≥4 antes de gravar.
 
-## Checklist do fluxo
+**Dados (intenção):** se o item envolve números/KPIs/mapas, aplique [data-presentation.md](data-presentation.md) só até “quem decide o quê com este dado”. A **forma** (chart/mapa/KPI) fica para o plano de implementação.
+
+## Checklist
 
 ```
 - [ ] 1. Parse do lote + dedup (intra-lote, Issues existentes, docs/plans, roadmap legacy)
-- [ ] 1b. Clareza: ideia vaga → idea-refine leve / perguntar; senão premissas explícitas
 - [ ] 2. Reserva de IDs de uma vez por trilha (roadmap legacy + issuesById())
-- [ ] 3. Por item (ordem topológica): classificar → explorar código → Impeccable A–D → dados
-      → decisões (doubt se caro) → fases verticais + tracer → posicionamento → plano completo
+- [ ] 3. Por item (ordem topológica): classificar → fatiar → explorar só o suficiente → intenção completa
 - [ ] 4. Sugestão de modelo × effort via model-selection (uma linha por item)
-- [ ] 5. GATE: overview do lote + premissas + wireframes ASCII (B/C/D) → confirmar/iterar
-- [ ] 6. Registro: pnpm agent:register (com --model) por item + commit dos planos
+- [ ] 5. GATE: overview do lote + esboços de fluxo (B/C/D) → confirmar/iterar
+- [ ] 6. Registro: pnpm agent:register (com --model) por item + commit dos planos de intenção
 ```
 
-## Passo 1 — Parse do lote e dedup
+## Passo 1 — Parse e dedup
 
-1. **Separe os itens.** A entrada pode vir como 1 ideia ou N (lista, parágrafo, notas). Se a separação for ambígua, assuma a leitura mais provável e liste como você entendeu — a confirmação vai junto do gate.
-2. **Deduplique dentro do lote.** Desfechos: **mesclar** (um item, plano único), **absorver** (vira fase de plano existente, sem ID novo), ou **manter separados** com dependência explícita.
-3. **Deduplique contra o que já existe:** `gh issue list --state all` (frontmatter `id` via `issuesById()` em `scripts/lib/agent-github.mjs`), grep em `docs/plans/*.md` e em `docs/roadmap.md` (legado). Três desfechos por item: **já coberto** → aponte a Issue/plano existente e não crie nada; **é fase de plano existente** → adicione ao plano existente; **realmente novo** → siga.
-
-## Passo 1b — Clareza e premissas (antes de reservar ID / escrever plano)
-
-Inspirado em `idea-refine` + `spec-driven-development` + `using-agent-skills` (“Surface Assumptions”) — **leve**, sem sessão divergente completa.
-
-1. **Ideia ainda vaga?** (não dá para escrever Objetivos testáveis, persona, ou 1 fatia vertical). Desfechos:
-   - **Roteiar** para `idea-refine` / `interview-me` se o usuário quiser explorar; ou
-   - **Uma rodada** de 3–5 sharpening questions (quem, sucesso, constraints, o que já tentou, por quê agora) + recomendação; **não** avance ao Passo 2 até haver um HMW / problema em uma frase e um MVP óbvio.
-2. **Premissas explícitas.** Antes de redigir o plano, liste o que está assumindo (produto, schema, papel, escopo). Formato no plano e no gate:
-
-   ```text
-   PREMISSAS:
-   1. …
-   2. …
-   → Corrija agora ou sigo com estas.
-   ```
-
-   Não preencha ambiguidade em silêncio. Assunções que forem default de produto ficam marcadas _(assumido — validar com produto)_ nas Questões em aberto.
-3. **Pedido vago → critérios de sucesso.** Reframe (“deixar o dashboard mais rápido”) em condições testáveis antes da Abordagem. Se não der para medir/verificar → ainda está vago (voltar ao item 1).
+1. **Separe os itens.** Entrada pode ser 1 ideia ou N. Se ambíguo, assuma a leitura mais provável e liste — a confirmação vai no gate.
+2. **Fatia mínima útil.** Prefira várias Issues pequenas a um epic. Cada item deve caber num appetite curto e entregar um outcome verificável sozinho. Mesclar só quando separar criaria trabalho inútil (mesmo fluxo, mesma persona, mesma superfície sem valor incremental).
+3. **Dedup intra-lote:** mesclar | absorver (fase de plano existente, sem ID novo) | manter separados com `depends`.
+4. **Dedup contra o existente:** `gh issue list --state all` + `issuesById()` + grep em `docs/plans/*.md` e `docs/roadmap.md` (legado). Já coberto → apontar e não criar; fase de plano existente → editar aquele plano; novo → seguir.
 
 ## Passo 2 — Reserva de IDs
 
-Levante o último ID usado por trilha (A/B/C/D/E) olhando o roadmap legacy + `issuesById()` e distribua sequencialmente para os itens do lote **antes de escrever qualquer plano** (ex.: trilha B em `B78` → os dois itens de B viram `B79`, `B80`). IDs fora de trilha (chore/ops) seguem o prefixo do seu domínio conforme precedentes (`O0+`, `FD+`, `RS+`) ou a trilha temática mais próxima.
+Último ID por trilha (A/B/C/D/E) via roadmap legacy + `issuesById()`; distribua **antes** de escrever planos. Fora de trilha: prefixos `O0+`, `FD+`, `RS+` ou trilha temática mais próxima.
 
-## Passo 3 — Por item: do tipo ao plano completo
+## Passo 3 — Por item: intenção completa
 
-Ordem topológica intra-lote (o plano do dependente cita o ID do dependido, que já existe). Por item:
+Ordem topológica (dependente cita ID do dependido). Por item:
 
-1. **Classificar o tipo:**
+1. **Tipo**
 
 | Tipo | Destino |
 | ---- | ------- |
-| Feature de `/campanha` ou site público com escopo próprio | Issue `kind:feature` com plano |
-| Tarefa pequena / chore / débito de engenharia | Issue `kind:chore` + plano curto (ou body direto se trivial) |
-| Défice comportamental do fluxo de agentes | `pnpm agent:file-miss` (`kind:agent-miss`), não aqui |
-| Bloqueio externo (jurídico/LGPD) | Issue `blocked` + label `needs:consent`/`needs:migration`; texto novo entra no lote jurídico existente, nunca rodada separada |
-| Evidência de usuário ainda inexistente (discovery) | `blocked` / defer+gatilho — não inventar feature; ver `continuous-discovery` só se o usuário pedir discovery |
+| Feature `/campanha` ou site com escopo próprio | `kind:feature` + plano de intenção |
+| Chore / débito pequeno | `kind:chore` + plano curto (ou body se trivial) |
+| Défice do fluxo de agentes | `pnpm agent:file-miss` (`kind:agent-miss`) — não aqui |
+| Bloqueio externo (jurídico/LGPD) | `blocked` + `needs:consent`/`needs:migration`; texto no lote jurídico existente |
 | Decisão de NÃO fazer | Comentário/doc, não Issue |
 
-2. **Explorar o código** (depth check): onde a feature se pluga, o que reusar de `src/utilities/*`, `src/components/campaign/*`, `src/lib/*`; schema novo → migration (caro de reverter → Decisão travada com rejeitadas); pessoa → join com `Contact`; opt-in/PII → `Consent` por chave estável falhando fechado. Precedente análogo em `docs/plans/` dita o nível de detalhe. Cite **caminhos reais** (context-engineering: plano legível sem dump do repo).
-3. **Classificar superfície UI (A–D)** e semear âncoras: `PRODUCT.md`/`DESIGN.md`, design-ref em `docs/design-refs/latest/` se houver, shells existentes. Classe C exige **brief compacto** (persona, job, estratégia de cor, anti-goals) no plano. Proibido: rodar craft/critique/polish aqui.
-4. **Dados → decisão → apresentação** ([data-presentation.md](data-presentation.md)) ou `Dados: N/A`.
-5. **Decisões caras + doubt (quando couber):** para cada decisão caro-de-reverter (schema, access, Consent, URL imutável, multi-collection), use a forma Opções+Recomendação+rejeitadas. Se a decisão for **não trivial** no sentido de [decision-quality.md](decision-quality.md) § Doubt, faça um ciclo curto CLAIM → adversarial self-check (ou `Task` fresh-context) **antes** de gravar como Decisão travada. Não doubt em rename/copy.
-6. **Posicionamento:** prioridade `P0..P3` (jurídico/caminho crítico > base de dados > operação de campo > inteligência > plataforma), `depends` (IDs duros), appetite, janela do calendário eleitoral quando relevante, `serializes` quando toca recurso compartilhado (ex.: migrations).
-7. **Fatiar em fases verticais** ([decision-quality.md](decision-quality.md) § Fatias): não “toda a DB → toda a API → toda a UI”. Cada fase = caminho fino ponta a ponta (ou o pedaço mínimo que deixa o sistema verde), com **aceite**, **verify** (`pnpm gate:fast` / pin unit|int / check manual), arquivos prováveis, tamanho S/M. **Fase 1 = tracer bullet** (schema mínimo → uma action → uma superfície, ou o menor path que prova a aposta). High-risk / incerteza primeiro. Se a fatia seria L/XL (≫5 arquivos ou >1 sessão focada) → mais fases **ou** Issue bipartida `{id}-plan` / `{id}-exec`.
-8. **Boundaries Teqo** no plano (sempre, compacto): o que esta entrega **Always** / **Ask first** / **Never** — ver template. Defaults do repo (overrideAccess, transação, Consent fail-closed, sem Neon) entram em Always/Never sem inventário genérico.
-9. **Source-driven (flag, não fetch):** se a Abordagem depende de API de framework (Payload Local API, Next App Router, WebAuthn), anote na fase: “na implementação, verificar docs oficiais da versão em `package.json`” — o fetch é de `work-issue` / `source-driven-development`.
-10. **Plano completo** em `docs/plans/<slug>.md` seguindo [plan-template.md](plan-template.md) à risca — cabeçalho, Premissas, Objetivos como aceite, Decisões, Fases verificáveis (quota do appetite), Dados, wireframe ASCII se B/C/D com layout, guardrails, rabbit holes, adiados. Self-score ≥4/5 antes de gravar.
+2. **Explorar o código o mínimo** — só para apontar **direção** (rotas/pastas/domínios prováveis) e evitar duplicar algo já entregue. Não inventar signatures, collections novas como decisão travada, nem diagramas de componentes.
+3. **Superfície UI (A–D)** como dica para quem for executar — não semear brief Impeccable completo nem wireframe de implementação. Classe C/D: esboço de fluxo persona (ASCII curto) no gate, não especificação de layout.
+4. **Dados (intenção)** ou `Dados: N/A`.
+5. **Posicionamento:** `P0..P3`, `depends`, appetite, janela eleitoral se relevante, `serializes` se tocar recurso compartilhado (ex. migrations) — sem detalhar a migration.
+6. **Plano de intenção** em `docs/plans/<slug>.md` via [intention-template.md](intention-template.md). Self-score ≥4/5 ([shaping.md](shaping.md)).
 
-## Passo 4 — Sugestão de modelo × effort
+### O que é proibido no plano de intenção
 
-Aplique a skill `model-selection` (tabela canônica) por item e registre a sugestão no cabeçalho do plano (`Model:`) e no resumo do gate. Caminho feliz único:
+- Decisões de schema / collection / unicidade / Consent key concreta como “travadas”
+- Assinaturas de funções, nomes de arquivos novos obrigatórios, mermaid de arquitetura de solução
+- “Abordagem proposta” com componentes e migration nomeada
+- Fases de implementação verificáveis com quota de engenharia
+- Forçar o executor a uma única forma técnica
 
-- `composer-2.5` — default (features, chores simples, fixes localizados, docs leves)
-- `cursor-grok-4.5-low` | `cursor-grok-4.5-medium` | `cursor-grok-4.5-high` — Grok com **effort explícito** (ver model-selection: Low = mecânico com julgamento; Medium = discovery/análise; High = multi-domínio / falha cara)
-- `kimi-k3-low` — **só** fase de execução de issues bipartidas (refactor / simplify / migration+RBAC de blast radius alto)
+### O que é obrigatório
 
-**Issues muito complexas:** registre **duas** Issues encadeadas — `{id}-plan` (`model: cursor-grok-4.5-high`, entregável = plano + critérios de aceite) e `{id}`/`{id}-exec` (`model: kimi-k3-low`, `depends: [{id}-plan]`). O valor vai ao frontmatter `model:` — propriedade da Issue, verificada (não recalculada) por `work-issue`.
+- Intenção do humano (problema/oportunidade)
+- Persona(s) e fluxo desejado (job / outcome)
+- Critérios de aceite em linguagem de produto
+- Appetite e fora de escopo (produto)
+- **Direção provável no codebase** (pastas/rotas/domínios — hipotética, revisável)
+- Questões em aberto com **Opções + Recomendação de produto** (não de engenharia)
 
-## Passo 5 — GATE de confirmação (obrigatório)
+## Passo 4 — Modelo × effort
 
-Apresente no chat, **antes de criar qualquer Issue**:
+Skill `model-selection`. Registre no cabeçalho (`Model:`) e no gate.
 
-- **Overview do lote** — uma linha por plano: ID, título, prio, depends, appetite, modelo sugerido, link do plano local.
-- **Premissas** por item (ou bloco compartilhado do lote) — “corrija agora ou sigo”.
-- **Wireframes ASCII** das superfícies B/C/D (copiados dos planos).
-- **Fases em uma linha** (F1 tracer → …) quando o item tiver >1 fase.
-- Perguntas acumuladas (se houver) em uma única rodada, recomendação primeiro.
+- Default: `composer-2.5`
+- Grok com effort explícito quando discovery/multi-domínio / falha cara de **produto**
+- Não crie par `{id}-plan` / `{id}-exec` por default — o plano de implementação nasce em `work-issue` / `agent-work-issue`. Reserve bipartição só para blast radius extremo (refactor repo-wide) se o humano pedir.
 
-O usuário confirma ou pede modificações; itere até confirmar. **Só depois** avance ao Passo 6. Planos em `docs/plans/` podem ser rascunhados antes do gate (arquivos locais isolados); ajuste-os conforme a resposta.
+## Passo 5 — GATE
+
+Antes de criar Issues:
+
+- Overview: ID, título, prio, depends, appetite, modelo, link do plano local
+- Esboços de fluxo persona para superfícies B/C/D (se houver)
+- Perguntas acumuladas numa rodada, recomendação de produto primeiro
+
+Itere até confirmação. Só então Passo 6.
 
 ## Passo 6 — Registro
-
-Por item confirmado:
 
 ```bash
 pnpm agent:register -- --id <ID> --title "<título>" --prio <P0..P3> \
@@ -116,12 +114,12 @@ pnpm agent:register -- --id <ID> --title "<título>" --prio <P0..P3> \
   --model <slug> [--blocked] [--labels extra]
 ```
 
-A Issue nasce `ready` (ou `blocked`) com frontmatter `id/depends/serializes/priority/model` + spec + link do plano. Atualize o cabeçalho do plano (`Issue: #N`). Commit dos planos (commits lógicos por item ou por lote).
+Atualize `Issue: #N` no plano. Commit dos planos de intenção.
 
-**PR só de plano (`docs/plans/` exclusivamente):** nunca use `Closes #N` / `Fixes` / `Resolves` no body — use `Related #N`. O CI (`plans-only-closes`) bloqueia keywords de fechamento; a implementação fecha a Issue em outro PR (`work-issue`).
+**PR só de plano:** nunca `Closes #N` — use `Related #N` (`plans-only-closes`).
 
-**NÃO faz:** editar `docs/roadmap.md` (legado congelado), implementar código, claim (`pnpm agent:claim` é de `work-issue`), abrir jornada `design-code-architecture`, gravar `tasks/plan.md` / `tasks/todo.md` (artefato Teqo = `docs/plans/<slug>.md`).
+**NÃO faz:** editar `docs/roadmap.md`, implementar, claim, escrever `*-impl.md`.
 
 ## Resumo final
 
-Tabela do lote (ID, título, prio, depends, appetite, modelo, Issue #N, plano) + em prosa: mesclados/absorvidos/descartados por duplicidade, premissas que o gate confirmou ou corrigiu, decisões assumidas _(validar com produto)_, e o que o gate decidiu.
+Tabela do lote + mesclados/absorvidos/descartados + decisões de produto assumidas _(validar)_ + o que o gate decidiu.

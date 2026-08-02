@@ -50,7 +50,7 @@ Read, in this order:
 2. `.cursor/rules/codebase-map.mdc` — dependency direction, where things live, the list system, invariants.
 3. `docs/ARCHITECTURE.md` — layers, bounded contexts, decision log.
 4. `AGENTS.md` — operational rules + "Recently resolved" history (Pass 1, Pass 2, every post-Pass-2 delivery's /simplify findings).
-5. `docs/AGENT-OPS.md` — paradigma de agentes paralelos vigente (claim→PR→stage→promote humano, skills plan-issue/work-issue/project-status). O audit avalia o repo **contra** esse fluxo, não contra o fluxo legacy de roadmap.md.
+5. `docs/AGENT-OPS.md` — paradigma de agentes paralelos vigente (claim→PR→main, skills plan-issue / work-issue / agent-work-issue / project-status). O audit avalia o repo **contra** esse fluxo, não contra o fluxo legacy de roadmap.md.
 6. `docs/IMPROVE-CODE-QUALITY-PLAN.md` — what the earlier passes already swept. Don't re-register what they fixed; verify fixes held.
 7. `docs/TECH-DEBT.md` — open ledger. New findings de-dup against it; verify each open row still exists, close stale ones.
 8. `docs/TESTING.md` — safety-net map: what is pinned, where the gaps are.

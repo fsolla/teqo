@@ -58,14 +58,11 @@ Depois de escolher Grok, **obrigatório** pickar um effort. Escreva o slug compl
 | `kimi-k3-low` | `kimi-k3` | `reasoning=low` |
 | `composer-2.5` | `composer-2.5` | `fast=false` |
 
-## Issues muito complexas (bipartir)
+## Issues muito complexas
 
-Quando o blast radius é alto (refactor amplo, simplify repo-wide, migration+RBAC), `plan-issue` **registra duas Issues encadeadas**:
+O plano de **implementação** nasce em `work-issue` / `agent-work-issue` (`*-impl.md`), não em `plan-issue`. Preferir **uma** Issue de intenção + Grok no `model:` quando a deliberação de engenharia for cara.
 
-1. `{id}-plan` — `model: cursor-grok-4.5-high` — entregável = plano em `docs/plans/…` + critérios de aceite da execução
-2. `{id}` ou `{id}-exec` — `model: kimi-k3-low`, `depends: [{id}-plan]` — executa o plano
-
-Não despachar Kimi K3 Low sem plano fechado na Issue de plan.
+Bipartir (`{id}-plan` Grok High → `{id}-exec` `kimi-k3-low`) só sob pedido explícito ou blast radius extremo (refactor repo-wide / simplify amplo). Não despachar Kimi K3 Low sem plano de implementação fechado.
 
 ## Regras
 
@@ -86,6 +83,7 @@ Não despachar Kimi K3 Low sem plano fechado na Issue de plan.
 ## Gates por fluxo
 
 - **`/simplify`:** herda o modelo da sessão. Preferir sessão em Kimi K3 Low **só** quando houver Issue de exec bipartida; caso contrário Composer ou Grok (effort pela tabela) conforme complexidade.
-- **`work-issue`:** verifica `model:` da Issue (assimétrico: sessão mais fraca → informa e segue; mais forte → informa e pausa). Ausente → aplica esta tabela **incluindo** o effort Grok.
-- **`plan-issue`:** sugere via esta tabela (slug completo com effort); em issues muito complexas, registra o par plan/exec.
+- **`work-issue`:** verifica `model:` (assimétrico: mais fraca → informa e segue; mais forte → informa e **pausa**). Ausente → aplica esta tabela.
+- **`agent-work-issue`:** pool já fixou o modelo no spawn; sessão mais forte → informa e segue.
+- **`plan-issue`:** sugere via esta tabela (slug completo com effort); bipartição só sob blast radius extremo / pedido explícito.
 - **`agent-pool` smoke:** Composer default; Grok com effort explícito / Kimi K3 Low em Issues de teste bipartidas.
