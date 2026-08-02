@@ -129,7 +129,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec knip
+      - run: pnpm knip
       - name: Cancel workflow on failure
         if: failure()
         uses: ./.github/actions/cancel-workflow-on-failure
