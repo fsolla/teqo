@@ -68,7 +68,7 @@ describe('loadLeadershipListPageData', () => {
       rows: [],
       totalDocs: 0,
       totalPages: 0,
-      filterFacets: { municipalityIDs: [] },
+      filterFacets: { municipalityIDs: [], organizationIDs: [], stateDeputyIDs: [] },
     })
   })
 
@@ -82,8 +82,38 @@ describe('loadLeadershipListPageData', () => {
       rows: [],
       totalDocs: 0,
       totalPages: 0,
-      filterFacets: { municipalityIDs: [] },
+      filterFacets: { municipalityIDs: [], organizationIDs: [], stateDeputyIDs: [] },
     })
+  })
+
+  it('filters by organization with inclusive OR within the dimension', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const marker = fixtures.value('lead-org-filter')
+    const organizationA = await fixtures.createOrganization({ name: `Org A ${marker}` })
+    const organizationB = await fixtures.createOrganization({ name: `Org B ${marker}` })
+    const matchContact = await fixtures.createContact({ name: `Ana ${marker}` })
+    const missContact = await fixtures.createContact({ name: `Bruno ${marker}` })
+    const match = await fixtures.createLeadership({
+      contact: matchContact.id,
+      municipalities: [municipality.id],
+      organizations: [organizationA.id],
+    })
+    await fixtures.createLeadership({
+      contact: missContact.id,
+      municipalities: [municipality.id],
+      organizations: [organizationB.id],
+    })
+
+    const byOrganization = await loadLeadershipListPageData(payload, coordinator, {
+      page: 1,
+      q: marker,
+      organizations: [organizationA.id],
+    })
+    expect(byOrganization.rows.map((row) => row.id)).toEqual([match.id])
+    expect(byOrganization.filterFacets.organizationIDs).toContain(organizationA.id)
+    expect(byOrganization.filterFacets.organizationIDs).toContain(organizationB.id)
   })
 
   it('filters by supportStatus, access and municipality', async () => {

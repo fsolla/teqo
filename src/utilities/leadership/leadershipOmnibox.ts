@@ -17,6 +17,8 @@ import {
   leadershipStatusFilterOptions,
   toggleLeadershipAccessFilter,
   toggleLeadershipMunicipalityFilter,
+  toggleLeadershipOrganizationFilter,
+  toggleLeadershipStateDeputyFilter,
   toggleLeadershipStatusFilter,
   type LeadershipFilterOption,
 } from '@/utilities/leadership/leadershipListFilters'
@@ -64,9 +66,13 @@ const leadershipListSortOptions = (
 export const buildLeadershipOmniboxChips = ({
   state,
   municipalityLabelsById,
+  organizationLabelsById,
+  stateDeputyLabelsById,
 }: {
   state: LeadershipListState
   municipalityLabelsById: ReadonlyMap<number, string>
+  organizationLabelsById: ReadonlyMap<number, string>
+  stateDeputyLabelsById: ReadonlyMap<number, string>
 }): CampaignListOmniboxChip[] => {
   const chips: CampaignListOmniboxChip[] = []
 
@@ -82,6 +88,26 @@ export const buildLeadershipOmniboxChips = ({
       label: chipLabel(
         'Município',
         municipalityLabelsById.get(municipalityId) ?? `Município #${municipalityId}`,
+      ),
+    })
+  }
+
+  for (const organizationId of state.organizations ?? []) {
+    chips.push({
+      id: `organization:${organizationId}`,
+      label: chipLabel(
+        'Organização',
+        organizationLabelsById.get(organizationId) ?? `Organização #${organizationId}`,
+      ),
+    })
+  }
+
+  for (const stateDeputyId of state.stateDeputies ?? []) {
+    chips.push({
+      id: `stateDeputy:${stateDeputyId}`,
+      label: chipLabel(
+        'Dobradinha',
+        stateDeputyLabelsById.get(stateDeputyId) ?? `Dobradinha #${stateDeputyId}`,
       ),
     })
   }
@@ -109,8 +135,12 @@ export const buildLeadershipOmniboxChips = ({
 
 export const buildLeadershipOmniboxSuggestionSeeds = ({
   municipalityFilterOptions,
+  organizationFilterOptions,
+  stateDeputyFilterOptions,
 }: {
   municipalityFilterOptions: readonly LeadershipFilterOption[]
+  organizationFilterOptions: readonly LeadershipFilterOption[]
+  stateDeputyFilterOptions: readonly LeadershipFilterOption[]
 }) => {
   const seeds = []
 
@@ -135,6 +165,28 @@ export const buildLeadershipOmniboxSuggestionSeeds = ({
         group: 'Município',
         label: option.label,
         keywords: ['municipio'],
+      }),
+    )
+  }
+
+  for (const option of organizationFilterOptions) {
+    seeds.push(
+      createOmniboxSuggestionSeed({
+        id: `organization:${option.value}`,
+        group: 'Organização',
+        label: option.label,
+        keywords: ['organizacao', 'org', 'sindicato'],
+      }),
+    )
+  }
+
+  for (const option of stateDeputyFilterOptions) {
+    seeds.push(
+      createOmniboxSuggestionSeed({
+        id: `stateDeputy:${option.value}`,
+        group: 'Dobradinha',
+        label: option.label,
+        keywords: ['dobradinha', 'deputado'],
       }),
     )
   }
@@ -198,6 +250,20 @@ export const applyLeadershipOmniboxSuggestion = ({
     }
   }
 
+  if (suggestionId.startsWith('organization:')) {
+    return {
+      kind: 'url',
+      state: toggleLeadershipOrganizationFilter(state, suggestionId.slice(13)),
+    }
+  }
+
+  if (suggestionId.startsWith('stateDeputy:')) {
+    return {
+      kind: 'url',
+      state: toggleLeadershipStateDeputyFilter(state, suggestionId.slice(12)),
+    }
+  }
+
   if (suggestionId.startsWith('access:')) {
     return {
       kind: 'url',
@@ -249,6 +315,20 @@ export const removeLeadershipOmniboxChip = ({
     return {
       kind: 'url',
       state: toggleLeadershipMunicipalityFilter(state, chipId.slice(13)),
+    }
+  }
+
+  if (chipId.startsWith('organization:')) {
+    return {
+      kind: 'url',
+      state: toggleLeadershipOrganizationFilter(state, chipId.slice(13)),
+    }
+  }
+
+  if (chipId.startsWith('stateDeputy:')) {
+    return {
+      kind: 'url',
+      state: toggleLeadershipStateDeputyFilter(state, chipId.slice(12)),
     }
   }
 

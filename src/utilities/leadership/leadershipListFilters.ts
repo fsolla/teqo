@@ -22,7 +22,7 @@ export type LeadershipFilterOption = {
   label: string
 }
 
-type LeadershipMultiFilterParam = 'status' | 'municipality'
+type LeadershipMultiFilterParam = 'status' | 'municipality' | 'organization' | 'stateDeputy'
 
 export const leadershipStatusFilterOptions: LeadershipFilterOption[] =
   leadershipSupportStatuses.map((value) => ({ value, label: supportStatusLabels[value] }))
@@ -53,6 +53,8 @@ const getLeadershipMultiFilterValues = (
   param: LeadershipMultiFilterParam,
 ): string[] => {
   if (param === 'status') return state.statuses ?? []
+  if (param === 'organization') return (state.organizations ?? []).map(String)
+  if (param === 'stateDeputy') return (state.stateDeputies ?? []).map(String)
   return (state.municipalities ?? []).map(String)
 }
 
@@ -88,6 +90,30 @@ export const toggleLeadershipMunicipalityFilter = (
 export const clearLeadershipMunicipalityFilter = (
   state: LeadershipListState,
 ): LeadershipListState => setLeadershipMultiFilterValues(state, 'municipality', [])
+
+export const toggleLeadershipOrganizationFilter = (
+  state: LeadershipListState,
+  value: string,
+): LeadershipListState => {
+  if (strictDecimalInteger(value) === undefined) return state
+  return toggleLeadershipMultiFilterValue(state, 'organization', value)
+}
+
+export const clearLeadershipOrganizationFilter = (
+  state: LeadershipListState,
+): LeadershipListState => setLeadershipMultiFilterValues(state, 'organization', [])
+
+export const toggleLeadershipStateDeputyFilter = (
+  state: LeadershipListState,
+  value: string,
+): LeadershipListState => {
+  if (strictDecimalInteger(value) === undefined) return state
+  return toggleLeadershipMultiFilterValue(state, 'stateDeputy', value)
+}
+
+export const clearLeadershipStateDeputyFilter = (
+  state: LeadershipListState,
+): LeadershipListState => setLeadershipMultiFilterValues(state, 'stateDeputy', [])
 
 /** Exclusive toggle — selecting the active value clears; selecting the other replaces. */
 export const toggleLeadershipAccessFilter = (

@@ -4,10 +4,14 @@ import {
   clearLeadershipAccessFilter,
   clearLeadershipListFilters,
   clearLeadershipMunicipalityFilter,
+  clearLeadershipOrganizationFilter,
+  clearLeadershipStateDeputyFilter,
   clearLeadershipStatusFilter,
   formatLeadershipActiveFiltersSummary,
   toggleLeadershipAccessFilter,
   toggleLeadershipMunicipalityFilter,
+  toggleLeadershipOrganizationFilter,
+  toggleLeadershipStateDeputyFilter,
   toggleLeadershipStatusFilter,
 } from '@/utilities/leadership/leadershipListFilters'
 import {
@@ -44,11 +48,15 @@ describe('leadership list URL contract', () => {
         status: ['engajado', 'a_abordar', 'engajado', 'unknown'],
         sector: ['religioso'],
         municipality: ['12', '12', '0', 'abc', '3'],
+        organization: ['5', '5', '0', 'abc', '8'],
+        stateDeputy: ['21', '21', '0', 'abc', '34'],
       }),
     ).toEqual({
       page: 1,
       statuses: ['engajado', 'a_abordar'],
       municipalities: [12, 3],
+      organizations: [5, 8],
+      stateDeputies: [21, 34],
     })
   })
 
@@ -84,12 +92,14 @@ describe('leadership list URL contract', () => {
       status: ['a_abordar'],
       sector: ['religioso'],
       municipality: ['7'],
+      organization: ['5', '8'],
+      stateDeputy: ['21'],
       access: 'sem',
       sort: 'name',
       dir: 'asc',
     })
     expect(buildLeadershipListHref(state, 1)).toBe(
-      '/campanha/liderancas?q=ana&status=a_abordar&municipality=7&access=sem&sort=name',
+      '/campanha/liderancas?q=ana&status=a_abordar&municipality=7&organization=5&organization=8&stateDeputy=21&access=sem&sort=name',
     )
   })
 
@@ -155,6 +165,16 @@ describe('leadership list filter state', () => {
     expect(clearLeadershipAccessFilter(withAccess)).toEqual({ page: 1 })
   })
 
+  it('toggles organization and stateDeputy filters and resets the page', () => {
+    const withOrganization = toggleLeadershipOrganizationFilter({ page: 2 }, '15')
+    expect(withOrganization).toEqual({ page: 1, organizations: [15] })
+    expect(toggleLeadershipOrganizationFilter(withOrganization, '15')).toEqual({ page: 1 })
+
+    const withStateDeputy = toggleLeadershipStateDeputyFilter({ page: 2 }, '9')
+    expect(withStateDeputy).toEqual({ page: 1, stateDeputies: [9] })
+    expect(toggleLeadershipStateDeputyFilter(withStateDeputy, '9')).toEqual({ page: 1 })
+  })
+
   it('clears only one filter, keeping q and sort', () => {
     expect(
       clearLeadershipStatusFilter({
@@ -172,6 +192,21 @@ describe('leadership list filter state', () => {
         access: 'sem',
       }),
     ).toEqual({ page: 1, access: 'sem' })
+    expect(
+      clearLeadershipOrganizationFilter({
+        page: 1,
+        organizations: [5],
+        q: 'ana',
+      }),
+    ).toEqual({ page: 1, q: 'ana' })
+    expect(
+      clearLeadershipStateDeputyFilter({
+        page: 1,
+        stateDeputies: [3],
+        sort: 'name',
+        dir: 'asc',
+      }),
+    ).toEqual({ page: 1, sort: 'name', dir: 'asc' })
   })
 
   it('clears every filter and the search, keeping sort', () => {

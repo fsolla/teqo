@@ -55,6 +55,7 @@ import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibili
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
 import { formatRelativeAge } from '@/utilities/formatRelativeAge'
+import { loadOrganizationNamesByIds } from '@/utilities/loadNamesByIds'
 import {
   loadLeadershipListPageData,
   type LeadershipRowViewModel,
@@ -74,6 +75,7 @@ import {
   type LeadershipListState,
 } from '@/utilities/leadership/leadershipListUrl'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
+import { loadStateDeputySummaries } from '@/utilities/stateDeputyData'
 
 import {
   setLeadershipMunicipalitiesFormAction,
@@ -352,6 +354,29 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     .filter((option): option is LeadershipFilterOption => option !== null)
     .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
 
+  const [organizationNames, stateDeputySummaries] = await Promise.all([
+    loadOrganizationNamesByIds(payload, filterFacets.organizationIDs),
+    loadStateDeputySummaries(payload, filterFacets.stateDeputyIDs),
+  ])
+
+  const organizationFilterOptions: LeadershipFilterOption[] = filterFacets.organizationIDs
+    .map((id) => {
+      const label = organizationNames.get(id)
+      return label ? { value: String(id), label } : null
+    })
+    .filter((option): option is LeadershipFilterOption => option !== null)
+    .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
+
+  const stateDeputyFilterOptions: LeadershipFilterOption[] = filterFacets.stateDeputyIDs
+    .map((id) => {
+      const summary = stateDeputySummaries.find((entry) => entry.id === id)
+      if (!summary) return null
+      const label = summary.party ? `${summary.name} (${summary.party})` : summary.name
+      return { value: String(id), label }
+    })
+    .filter((option): option is LeadershipFilterOption => option !== null)
+    .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
+
   const { sort, dir } = resolveLeadershipListSort(state)
   const sortSummary = formatLeadershipListSortSummary(sort, dir)
   const columns = leadershipColumns({
@@ -384,7 +409,12 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
       </div>
 
       <CampaignListPendingBoundary>
-        <LeadershipFilters state={state} municipalityFilterOptions={municipalityFilterOptions} />
+        <LeadershipFilters
+          state={state}
+          municipalityFilterOptions={municipalityFilterOptions}
+          organizationFilterOptions={organizationFilterOptions}
+          stateDeputyFilterOptions={stateDeputyFilterOptions}
+        />
 
         <CampaignListResults>
           <p className="text-sm text-muted-foreground" aria-live="polite">

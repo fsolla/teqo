@@ -69,9 +69,34 @@ describe('list omnibox adapters (B128)', () => {
       expect(applied.state.statuses).toContain('engajado')
     }
 
-    const seeds = buildLeadershipOmniboxSuggestionSeeds({ municipalityFilterOptions: [] })
+    const seeds = buildLeadershipOmniboxSuggestionSeeds({
+      municipalityFilterOptions: [],
+      organizationFilterOptions: [],
+      stateDeputyFilterOptions: [],
+    })
     const suggestions = filterLeadershipOmniboxSuggestions(seeds, 'ordenar')
     expect(suggestions.some((entry) => entry.group === 'Ordenação')).toBe(true)
+  })
+
+  it('leadership applies organization and stateDeputy toggles', () => {
+    const base = parseLeadershipListParams({})
+    const organization = applyLeadershipOmniboxSuggestion({
+      state: base,
+      suggestionId: 'organization:12',
+    })
+    expect(organization.kind).toBe('url')
+    if (organization.kind === 'url') {
+      expect(organization.state.organizations).toEqual([12])
+    }
+
+    const stateDeputy = applyLeadershipOmniboxSuggestion({
+      state: base,
+      suggestionId: 'stateDeputy:7',
+    })
+    expect(stateDeputy.kind).toBe('url')
+    if (stateDeputy.kind === 'url') {
+      expect(stateDeputy.state.stateDeputies).toEqual([7])
+    }
   })
 
   it('state deputy toggles party filter', () => {
