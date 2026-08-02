@@ -1,7 +1,7 @@
 # OH13 — Writes CAS por domínio: leadership, stateDeputy, activity, demand
 
-Status: rascunho
-Atualizado em: 2026-08-01
+Status: em implementação
+Atualizado em: 2026-08-02
 Issue: #176
 Priority: P1
 Model: cursor-grok-4.5-medium
@@ -10,13 +10,21 @@ Appetite: ~2–3 dias eng
 Depends: OH10, OH12
 Responsável: —
 
+## Freshness audit (2026-08-02)
+
+- OH10 (#171) e OH12 (#174) `done`+`in-prod`. Padrão CAS (`optionalBaseUpdatedAtSchema` + `assertOpsUpdatedAtCas`) e outbox irmão (`opsMunicipalityOutbox`) intactos; mirror já tem `updatedAt` em `OpsLeadership` / `OpsActivity` / `OpsStateDeputy` / `OpsDemand`.
+- Actions citadas batem: `updateLeadershipInternalRecord`, `createLeadership`/`createValidatedLeadershipRecord`, `transitionCampaignDemandRecord`, `setStateDeputyMunicipalitiesBatchRecord`, `updateActivity`/`createActivityRecord`. Sem `baseUpdatedAt` ainda — a implementar.
+- Controles: `LeadershipInternalForm`, `LeadershipForm`, `LeadershipListSupportStatusControl`, `DemandWorkflowCard`, `ActivityForm`, `MunicipalityPortfolioCell` (dobradinhas). Flag `OPS_HYBRID` via `resolveOpsHybridEnabled`.
+- Helper `runCampaignCasMutation` / `assertCampaignDocCas` ainda não existe — extrair após 3+ call sites OH13.
+- Premissas confirmadas; a implementar.
+
 ## Premissas
 
 1. Padrão estabilizado em OH6/OH10 — agora com 3+ call sites, avaliar extração de helper `*Cas` (regra do repo).
 2. Cada write respeita access por papel (advisor scoped, coordinator/candidate unrestricted) — o CAS é adicional, nunca substitui RBAC.
 3. Sem migration: todas estas writes usam collections existentes.
 
-→ Corrija agora ou sigo com estas.
+→ Confirmadas; a implementar.
 
 ## Objetivos
 
@@ -49,8 +57,8 @@ Componentes:
 
 - **Quota:** ~0,5
 - **Aceite:**
-  - [ ] criar/editar leadership offline → pending → aplica; conflito com escolha
-  - [ ] decisão de demanda offline → pending → aplica; access advisor respeitado (pin int)
+  - [x] criar/editar leadership offline → pending → aplica; conflito com escolha
+  - [x] decisão de demanda offline → pending → aplica; access advisor respeitado (pin int)
 - **Verify:** `pnpm gate:fast` + int CAS + e2e flaky
 - **Files:** schemas, actions, outbox, specs
 - **Tamanho:** M
@@ -59,11 +67,11 @@ Componentes:
 
 - **Quota:** ~0,5
 - **Aceite:**
-  - [ ] vínculos offline aplicam; conflito UI
-  - [ ] campos de activity offline aplicam
-  - [ ] helper extraído **só se** 3+ call sites (senão, nota no PR por que não)
+  - [x] vínculos offline aplicam; conflito UI (CAS server + outbox; listas Local read-only OH12)
+  - [x] campos de activity offline aplicam
+  - [x] helper extraído: `assertCampaignDocCas` (3+ call sites OH13)
 - **Verify:** `pnpm gate:fast` + int + e2e
-- **Files:** idem + helper condicional
+- **Files:** idem + helper
 - **Tamanho:** M
 
 ## Dependências

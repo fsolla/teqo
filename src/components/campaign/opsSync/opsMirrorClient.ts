@@ -3,6 +3,7 @@
 import { createCollection, localOnlyCollectionOptions } from '@tanstack/db'
 
 import { collectOpsEstimateOutboxKeys } from '@/components/campaign/opsSync/opsEstimateOutbox'
+import { collectOpsDomainOutboxKeys } from '@/components/campaign/opsSync/opsDomainOutbox'
 import {
   openOpsMirrorStore,
   type OpsMirrorPersistenceMode,
@@ -40,7 +41,7 @@ const createRowCollection = <T extends { id: number }>(id: string) =>
 export const municipalitiesCollection = createRowCollection<OpsMunicipality>('ops-municipalities')
 export const leadershipsCollection = createRowCollection<OpsLeadership>('ops-leaderships')
 export { votePledgesCollection }
-const activitiesCollection = createRowCollection<OpsActivity>('ops-activities')
+export const activitiesCollection = createRowCollection<OpsActivity>('ops-activities')
 export const stateDeputiesCollection = createRowCollection<OpsStateDeputy>('ops-state-deputies')
 export const organizationsCollection = createRowCollection<OpsOrganization>('ops-organizations')
 export const demandsCollection = createRowCollection<OpsDemand>('ops-demands')
@@ -143,6 +144,7 @@ const resolveOutboxKeys = (explicit?: ReadonlySet<OpsOutboxKey>): ReadonlySet<Op
   if (explicit) return explicit
   const keys = collectOpsEstimateOutboxKeys()
   for (const key of collectOpsMunicipalityOutboxKeys()) keys.add(key)
+  for (const key of collectOpsDomainOutboxKeys()) keys.add(key)
   return keys
 }
 

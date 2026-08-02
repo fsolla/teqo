@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
+import { assertCampaignDocCas } from '@/app/(campaign)/campanha/actions/assertCampaignDocCas'
 import { nextMunicipalityIdsAfterLeadershipMembership } from '@/lib/leadershipMunicipalityMembership'
 import { nextStateDeputyIdsAfterMembership } from '@/lib/leadershipStateDeputyMembership'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
@@ -23,6 +24,7 @@ import {
   type LeadershipWizardCreateInput,
   type LeadershipWizardUpdateInput,
 } from '@/lib/schemas/leadership'
+import { assertOpsUpdatedAtCas } from '@/lib/schemas/opsCas'
 import type { CampaignUser, Contact } from '@/payload-types'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
@@ -176,9 +178,11 @@ export const updateLeadershipInternalRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: LeadershipInternalUpdateInput,
+  options?: { cas?: boolean },
 ) => {
-  const { id, municipalities, organizations, stateDeputies, ...data } =
+  const { id, municipalities, organizations, stateDeputies, baseUpdatedAt, ...data } =
     leadershipInternalUpdateSchema.parse(input)
+  const enforceCas = options?.cas === true
   const currentActor = await getFreshStaffActor(payload, actor)
 
   // Row access verifies the current record is in the actor's scope.
@@ -189,6 +193,9 @@ export const updateLeadershipInternalRecord = async (
     user: currentActor,
     overrideAccess: false,
   })
+
+  // Stamp already loaded with the row — avoid a second find via assertCampaignDocCas.
+  assertOpsUpdatedAtCas(enforceCas, baseUpdatedAt, current.updatedAt)
 
   if (municipalities !== undefined) {
     await assertMunicipalitiesWithinScope(payload, currentActor, municipalities)
@@ -232,10 +239,24 @@ export const createLeadership = async (input: unknown) => {
   return createValidatedLeadershipRecord(payload, actor, data)
 }
 
+/** Outbox entry for create — no CAS (new doc). Same write path as `createLeadership`. */
+export const createLeadershipCas = async (input: unknown) => createLeadership(input)
+
 export const updateLeadershipInternal = async (input: LeadershipInternalUpdateInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return updateLeadershipInternalRecord(payload, actor, input)
 }
+
+export const updateLeadershipInternalCas = async (input: LeadershipInternalUpdateInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return updateLeadershipInternalRecord(payload, actor, input, { cas: true })
+}
+
+export const updateLeadershipInternalCasRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: LeadershipInternalUpdateInput,
+) => updateLeadershipInternalRecord(payload, actor, input, { cas: true })
 
 const revalidateLeadershipWizardPaths = (leadershipId: number, municipalitySlug: string) => {
   revalidatePath(`/campanha/liderancas/${leadershipId}`, 'page')
@@ -436,9 +457,11 @@ export const setLeadershipStateDeputyMembershipRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: LeadershipStateDeputyMembershipInput,
+  options?: { cas?: boolean },
 ) => {
-  const { leadershipId, stateDeputyId, assigned } =
+  const { leadershipId, stateDeputyId, assigned, baseUpdatedAt } =
     leadershipStateDeputyMembershipSchema.parse(input)
+  const enforceCas = options?.cas === true
 
   return withPayloadTransaction(
     payload,
@@ -450,6 +473,15 @@ export const setLeadershipStateDeputyMembershipRecord = async (
         leadershipId,
         'stateDeputies',
       )
+
+      await assertCampaignDocCas(payload, {
+        collection: 'leadership',
+        id: leadershipId,
+        actor: currentActor,
+        enforceCas,
+        baseUpdatedAt,
+        req,
+      })
 
       const currentStateDeputyIDs = uniqueRelationshipIds(current.stateDeputies)
       const nextStateDeputyIDs = nextStateDeputyIdsAfterMembership(
@@ -508,6 +540,20 @@ export const setLeadershipStateDeputyMembership = async (
   return leadership
 }
 
+export const setLeadershipStateDeputyMembershipCas = async (
+  input: LeadershipStateDeputyMembershipInput,
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const { leadership, stateDeputySlug } = await setLeadershipStateDeputyMembershipRecord(
+    payload,
+    actor,
+    input,
+    { cas: true },
+  )
+  if (stateDeputySlug) revalidateLeadershipStateDeputyPaths(input.leadershipId, stateDeputySlug)
+  return leadership
+}
+
 /**
  * `/campanha/liderancas` is deliberately absent: the chip cell that calls this
  * IS on that list, and it already shows the result optimistically, so
@@ -544,9 +590,11 @@ export const setLeadershipMunicipalitiesMembershipRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: LeadershipMunicipalitiesMembershipInput,
+  options?: { cas?: boolean },
 ) => {
-  const { leadershipId, municipalityIds, assigned } =
+  const { leadershipId, municipalityIds, assigned, baseUpdatedAt } =
     leadershipMunicipalitiesMembershipSchema.parse(input)
+  const enforceCas = options?.cas === true
 
   return withPayloadTransaction(
     payload,
@@ -558,6 +606,15 @@ export const setLeadershipMunicipalitiesMembershipRecord = async (
         leadershipId,
         'municipalities',
       )
+
+      await assertCampaignDocCas(payload, {
+        collection: 'leadership',
+        id: leadershipId,
+        actor: currentActor,
+        enforceCas,
+        baseUpdatedAt,
+        req,
+      })
 
       const change = nextMunicipalityIdsAfterLeadershipMembership(
         uniqueRelationshipIds(current.municipalities),
@@ -616,6 +673,22 @@ export const setLeadershipMunicipalitiesMembership = async (
     input,
   )
   // No-op writes nothing, so there is nothing to revalidate.
+  if (municipalitySlugs.length > 0) {
+    revalidateLeadershipMunicipalityPaths(input.leadershipId, municipalitySlugs)
+  }
+  return leadership
+}
+
+export const setLeadershipMunicipalitiesMembershipCas = async (
+  input: LeadershipMunicipalitiesMembershipInput,
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const { leadership, municipalitySlugs } = await setLeadershipMunicipalitiesMembershipRecord(
+    payload,
+    actor,
+    input,
+    { cas: true },
+  )
   if (municipalitySlugs.length > 0) {
     revalidateLeadershipMunicipalityPaths(input.leadershipId, municipalitySlugs)
   }

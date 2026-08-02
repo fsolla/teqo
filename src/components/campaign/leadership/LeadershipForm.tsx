@@ -1,12 +1,14 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState, type FormEvent } from 'react'
 
+import { enqueueLeadershipCreate } from '@/components/campaign/opsSync/opsDomainOutbox'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import {
   RelationMultiSelect,
   type RelationOption,
 } from '@/components/campaign/shared/RelationMultiSelect'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -14,7 +16,12 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { leadershipSupportStatuses } from '@/lib/schemas/leadership'
+import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
+import {
+  isSupportStatus,
+  leadershipSupportStatuses,
+  type SupportStatus,
+} from '@/lib/schemas/leadership'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
@@ -28,6 +35,17 @@ type LeadershipFormProps = {
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
+  opsHybridEnabled?: boolean
+}
+
+const readRelationshipIds = (data: FormData, name: string): number[] => {
+  const ids: number[] = []
+  for (const raw of data.getAll(name)) {
+    if (typeof raw !== 'string' || raw.trim() === '') continue
+    const value = Number(raw)
+    if (Number.isInteger(value) && value > 0) ids.push(value)
+  }
+  return [...new Set(ids)]
 }
 
 export const LeadershipForm = ({
@@ -36,11 +54,76 @@ export const LeadershipForm = ({
   stateDeputyOptions,
   initialMunicipalityIDs,
   formAction,
+  opsHybridEnabled = resolveOpsHybridEnabled(),
 }: LeadershipFormProps) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
+  const [hybridPending, setHybridPending] = useState(false)
+  const [hybridMessage, setHybridMessage] = useState<string | null>(null)
+
+  const onHybridSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = event.currentTarget
+    const data = new FormData(form)
+    const name = data.get('name')
+    const phone = data.get('phone')
+    if (typeof name !== 'string' || name.trim().length < 2) {
+      setHybridMessage('Informe o nome completo.')
+      return
+    }
+    if (typeof phone !== 'string' || phone.trim() === '') {
+      setHybridMessage('Informe o celular.')
+      return
+    }
+    const supportStatusRaw = data.get('supportStatus')
+    const supportStatus =
+      typeof supportStatusRaw === 'string' && isSupportStatus(supportStatusRaw)
+        ? (supportStatusRaw as SupportStatus)
+        : 'a_abordar'
+    const exclusiveValues = data.getAll('exclusive')
+    const emailRaw = data.get('email')
+    const notesRaw = data.get('notes')
+
+    setHybridPending(true)
+    setHybridMessage(null)
+    void enqueueLeadershipCreate({
+      clientId: crypto.randomUUID(),
+      name: name.trim(),
+      phone: phone.trim(),
+      email: typeof emailRaw === 'string' && emailRaw.trim() !== '' ? emailRaw.trim() : null,
+      municipalities: readRelationshipIds(data, 'municipalities'),
+      organizations: readRelationshipIds(data, 'organizations'),
+      stateDeputies: readRelationshipIds(data, 'stateDeputies'),
+      exclusive: exclusiveValues.length === 0 ? true : exclusiveValues.at(-1) === 'true',
+      supportStatus,
+      notes: typeof notesRaw === 'string' && notesRaw.trim() !== '' ? notesRaw.trim() : undefined,
+    }).then(
+      () => {
+        setHybridPending(false)
+        setHybridMessage(
+          'Cadastro enfileirado. Será enviado ao reconectar — a ficha aparece depois da sincronização.',
+        )
+        form.reset()
+      },
+      (error: unknown) => {
+        setHybridPending(false)
+        setHybridMessage(
+          error instanceof Error ? error.message : 'Não foi possível enfileirar o cadastro.',
+        )
+      },
+    )
+  }
+
+  const pending = opsHybridEnabled ? hybridPending : isPending
 
   return (
-    <form action={submitAction} className="flex max-w-2xl flex-col gap-4">
+    <form
+      action={opsHybridEnabled ? undefined : submitAction}
+      onSubmit={opsHybridEnabled ? onHybridSubmit : undefined}
+      className="flex max-w-2xl flex-col gap-4"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        {hybridPending ? <Badge variant="estimate-pending">Pendente</Badge> : null}
+      </div>
       <Field>
         <FieldLabel htmlFor="leadership-name">Nome completo</FieldLabel>
         <Input
@@ -134,9 +217,16 @@ export const LeadershipForm = ({
         <Textarea id="leadership-notes" name="notes" rows={3} maxLength={3000} />
       </Field>
 
-      {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
-      <Button type="submit" disabled={isPending} className="min-h-11 self-start">
-        {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
+      {!opsHybridEnabled && state.status !== 'success' ? (
+        <CampaignFormActionMessage state={state} />
+      ) : null}
+      {hybridMessage ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          {hybridMessage}
+        </p>
+      ) : null}
+      <Button type="submit" disabled={pending} className="min-h-11 self-start">
+        {pending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
         Cadastrar liderança
       </Button>
     </form>

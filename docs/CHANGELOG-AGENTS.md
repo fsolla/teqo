@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-02):** **OH13** (Issue #176) — writes CAS por domínio: `baseUpdatedAt` + `*Cas` em leadership / demand transition / activity update / stateDeputy vínculos; helper `assertCampaignDocCas`; outbox `opsDomainOutbox` com Manter/Usar nos forms; flag OFF intacto. Plano: [`oh13-domain-writes-cas.md`](docs/plans/oh13-domain-writes-cas.md).
+
 **Recently resolved (2026-08-02):** **OH12** (Issue #174) — `OpsListLocal` read-only via registry + mirror: `OfflineBoundary` nas 8 rotas de lista; Local com `CampaignTable` + parsers canónicos sobre o mirror (municípios/lideranças/dobradinhas/orgs/demandas); assessores/territórios/apoiadores com estado honesto; saved filters create/delete disabled offline; e2e lista `?q=`. Plano: [`oh12-ops-list-local.md`](docs/plans/oh12-ops-list-local.md).
 
 **Recently resolved (2026-08-02):** **OH11** (Issue #173) — SW cache-first para `/_next/static/` (chunks hashed, prefixo `campanha-<buildId>`); logout limpa campaignOps na ordem abort sync → outbox → persistence → Cache API (`clearCampaignOpsStorage` + `clearCampaignPwaCaches`); e2e `campaignOpsOffline` com jornada write→reload→online→sync (`OPS_HYBRID=1`). Plano: [`oh11-sw-e2e-docs.md`](docs/plans/oh11-sw-e2e-docs.md).

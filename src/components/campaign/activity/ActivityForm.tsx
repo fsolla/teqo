@@ -1,10 +1,19 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 import { ActivityDemandFields } from '@/components/campaign/activity/ActivityDemandFields'
 import { ActivityTaskFields } from '@/components/campaign/activity/ActivityTaskFields'
+import {
+  discardOpsActivityUpdateOutboxRow,
+  enqueueActivityUpdate,
+  readOpsActivityUpdateOutboxRow,
+  subscribeOpsActivityUpdateOutboxRow,
+} from '@/components/campaign/opsSync/opsDomainOutbox'
+import { activitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
 import { AsyncSearchCombobox } from '@/components/campaign/shared/AsyncSearchCombobox'
 import {
   ContactCombobox,
@@ -15,6 +24,7 @@ import {
   type RelationOption,
 } from '@/components/campaign/shared/RelationMultiSelect'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -33,12 +43,19 @@ import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import { formatIsoAsBahiaDateTimeInput } from '@/lib/campaignTime'
+import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 import {
   activityKindLabels,
+  activityKinds,
   activityOriginLabels,
+  activityOrigins,
   activityStatusLabels,
+  activityStatuses,
+  type ActivityKind,
+  type ActivityOrigin,
 } from '@/lib/schemas/activity'
+import { OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
 import type { ActivityLeadershipOption } from '@/utilities/activityLeadershipOptions'
 import type { ActivityFormViewModel } from '@/utilities/activityViewModels'
 import { fieldError } from '@/utilities/campaignFormFields'
@@ -458,6 +475,23 @@ const ActivityFormFields = ({
   )
 }
 
+const CONFLICT_TOAST_ID_PREFIX = 'ops-activity-update-conflict:'
+
+const readOptionalText = (data: FormData, name: string): string | undefined => {
+  const raw = data.get(name)
+  return typeof raw === 'string' && raw.trim() !== '' ? raw.trim() : undefined
+}
+
+const readRelationshipIds = (data: FormData, name: string): number[] => {
+  const ids: number[] = []
+  for (const raw of data.getAll(name)) {
+    if (typeof raw !== 'string' || raw.trim() === '') continue
+    const value = Number(raw)
+    if (Number.isInteger(value) && value > 0) ids.push(value)
+  }
+  return [...new Set(ids)]
+}
+
 export const ActivityForm = ({
   action,
   municipalityOptions,
@@ -468,25 +502,153 @@ export const ActivityForm = ({
   submitLabel,
   searchContacts,
   searchLeaderships,
+  opsHybridEnabled = resolveOpsHybridEnabled(),
 }: ActivityFormFieldsProps & {
   action: ActivityFormAction
   submitLabel: string
+  opsHybridEnabled?: boolean
 }) => {
+  const router = useRouter()
   const [state, formAction, pending] = useActionState(action, {})
+  const [hybridPending, setHybridPending] = useState(false)
+  const [hybridMessage, setHybridMessage] = useState<string | null>(null)
+  const previousOutboxStatusRef = useRef<string | undefined>(undefined)
+  const hybridUpdate = Boolean(opsHybridEnabled && activity)
+
+  const outboxRow = useSyncExternalStore(
+    (onStoreChange) =>
+      hybridUpdate && activity
+        ? subscribeOpsActivityUpdateOutboxRow(activity.id, onStoreChange)
+        : () => undefined,
+    () =>
+      hybridUpdate && activity ? readOpsActivityUpdateOutboxRow(activity.id) : undefined,
+    () => undefined,
+  )
+
+  useEffect(() => {
+    const previous = previousOutboxStatusRef.current
+    previousOutboxStatusRef.current = outboxRow?.status
+    if (previous === 'pending' && outboxRow === undefined) {
+      router.refresh()
+    }
+  }, [outboxRow, router])
+
+  useEffect(() => {
+    if (!hybridUpdate || !activity || outboxRow?.status !== 'conflict') return
+    const toastId = `${CONFLICT_TOAST_ID_PREFIX}${activity.id}`
+    toast.message(OPS_UPDATED_AT_CONFLICT_MESSAGE, {
+      id: toastId,
+      duration: Infinity,
+      action: {
+        label: 'Manter o meu',
+        onClick: () => {
+          void enqueueActivityUpdate({
+            activityId: activity.id,
+            payload: outboxRow.payload,
+            baseUpdatedAt: outboxRow.serverUpdatedAt ?? null,
+          })
+        },
+      },
+      cancel: {
+        label: 'Usar o novo',
+        onClick: () => {
+          discardOpsActivityUpdateOutboxRow(activity.id)
+          router.refresh()
+        },
+      },
+    })
+    return () => {
+      toast.dismiss(toastId)
+    }
+  }, [hybridUpdate, activity, outboxRow, router])
+
+  const onHybridSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!activity) return
+    const data = new FormData(event.currentTarget)
+    const kindRaw = data.get('kind')
+    const statusRaw = data.get('status')
+    const kind =
+      typeof kindRaw === 'string' && activityKinds.includes(kindRaw as ActivityKind)
+        ? (kindRaw as ActivityKind)
+        : undefined
+    const status =
+      typeof statusRaw === 'string' &&
+      activityStatuses.includes(statusRaw as (typeof activityStatuses)[number])
+        ? (statusRaw as (typeof activityStatuses)[number])
+        : undefined
+    const originRaw = data.get('origin')
+    const origin =
+      typeof originRaw === 'string' && activityOrigins.includes(originRaw as ActivityOrigin)
+        ? (originRaw as ActivityOrigin)
+        : undefined
+    const municipalityRaw = data.get('municipality')
+    const municipality =
+      typeof municipalityRaw === 'string' && Number.isInteger(Number(municipalityRaw))
+        ? Number(municipalityRaw)
+        : undefined
+    const mirrorUpdatedAt = activitiesCollection.get(activity.id)?.updatedAt
+
+    setHybridPending(true)
+    setHybridMessage(null)
+    void enqueueActivityUpdate({
+      activityId: activity.id,
+      payload: {
+        ...(kind ? { kind } : {}),
+        ...(status ? { status } : {}),
+        ...(origin ? { origin } : {}),
+        ...(municipality ? { municipality } : {}),
+        description: readOptionalText(data, 'description') ?? null,
+        locality: readOptionalText(data, 'locality') ?? null,
+        organizations: readRelationshipIds(data, 'organizations'),
+        advisors: readRelationshipIds(data, 'advisors'),
+        deputyPresent: data.get('deputyPresent') === 'true' || data.get('deputyPresent') === 'on',
+      },
+      baseUpdatedAt: mirrorUpdatedAt ?? activity.updatedAt,
+    }).then(
+      () => {
+        setHybridPending(false)
+        setHybridMessage(
+          'Alterações enfileiradas (campos principais). Tarefas e novas demandas exigem conexão.',
+        )
+      },
+      (error: unknown) => {
+        setHybridPending(false)
+        setHybridMessage(
+          error instanceof Error ? error.message : 'Não foi possível enfileirar as alterações.',
+        )
+      },
+    )
+  }
+
+  const busy = hybridUpdate ? hybridPending || outboxRow?.status === 'pending' : pending
 
   return (
-    <form action={formAction} className="flex max-w-3xl flex-col gap-6">
+    <form
+      action={hybridUpdate ? undefined : formAction}
+      onSubmit={hybridUpdate ? onHybridSubmit : undefined}
+      className="flex max-w-3xl flex-col gap-6"
+    >
       {activity ? <input type="hidden" name="id" value={activity.id} /> : null}
-      {state.message ? (
+      <div className="flex flex-wrap items-center gap-2">
+        {outboxRow?.status === 'pending' ? <Badge variant="estimate-pending">Pendente</Badge> : null}
+        {outboxRow?.status === 'conflict' ? <Badge variant="destructive">Conflito</Badge> : null}
+      </div>
+      {!hybridUpdate && state.message ? (
         <Alert variant="destructive" aria-live="polite">
           <AlertTitle>Não foi possível salvar</AlertTitle>
           <AlertDescription>{state.message}</AlertDescription>
         </Alert>
       ) : null}
-      {state.existingHref ? (
+      {!hybridUpdate && state.existingHref ? (
         <Button asChild variant="outline" className="min-h-11 w-fit">
           <Link href={state.existingHref}>Abrir atividade existente</Link>
         </Button>
+      ) : null}
+      {hybridMessage ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          {hybridMessage}
+        </p>
       ) : null}
       <ActivityFormFields
         municipalityOptions={municipalityOptions}
@@ -505,9 +667,9 @@ export const ActivityForm = ({
             Cancelar
           </Link>
         </Button>
-        <Button type="submit" className="min-h-11" disabled={pending}>
-          {pending ? <Spinner data-icon="inline-start" /> : null}
-          {pending ? 'Salvando…' : submitLabel}
+        <Button type="submit" className="min-h-11" disabled={busy}>
+          {busy ? <Spinner data-icon="inline-start" /> : null}
+          {busy ? 'Salvando…' : submitLabel}
         </Button>
       </div>
     </form>

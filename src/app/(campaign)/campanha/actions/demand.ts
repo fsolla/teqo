@@ -2,6 +2,7 @@
 
 import type { Payload } from 'payload'
 
+import { assertCampaignDocCas } from '@/app/(campaign)/campanha/actions/assertCampaignDocCas'
 import {
   CAMPAIGN_DEMAND_COST_STAFF_MESSAGE,
   CAMPAIGN_DEMAND_RECEIPT_EMPTY_MESSAGE,
@@ -60,8 +61,10 @@ export const transitionCampaignDemandRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: CampaignDemandTransitionInput,
+  options?: { cas?: boolean },
 ) => {
-  const { id, status, decisionNote } = campaignDemandTransitionSchema.parse(input)
+  const { id, status, decisionNote, baseUpdatedAt } = campaignDemandTransitionSchema.parse(input)
+  const enforceCas = options?.cas === true
 
   return withPayloadTransaction(
     payload,
@@ -71,6 +74,15 @@ export const transitionCampaignDemandRecord = async (
         throw new Error(CAMPAIGN_DEMAND_TRANSITION_STAFF_MESSAGE)
       }
       await acquireTextAdvisoryLocks(payload, req, [`campaign-demand:${id}`])
+
+      await assertCampaignDocCas(payload, {
+        collection: 'campaignDemand',
+        id,
+        actor: currentActor,
+        enforceCas,
+        baseUpdatedAt,
+        req,
+      })
 
       // Transition validity + coordinator-only escalated decisions are
       // enforced by the collection hook.
@@ -198,6 +210,17 @@ export const transitionCampaignDemand = async (input: CampaignDemandTransitionIn
   const { payload, actor } = await getCampaignActionContext()
   return transitionCampaignDemandRecord(payload, actor, input)
 }
+
+export const transitionCampaignDemandCas = async (input: CampaignDemandTransitionInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return transitionCampaignDemandRecord(payload, actor, input, { cas: true })
+}
+
+export const transitionCampaignDemandCasRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: CampaignDemandTransitionInput,
+) => transitionCampaignDemandRecord(payload, actor, input, { cas: true })
 
 export const setCampaignDemandCost = async (input: CampaignDemandCostInput) => {
   const { payload, actor } = await getCampaignActionContext()

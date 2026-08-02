@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
+import { assertCampaignDocCas } from '@/app/(campaign)/campanha/actions/assertCampaignDocCas'
 import { nextStateDeputyIdsAfterMunicipalityMembership } from '@/lib/municipalityStateDeputyMembership'
 import { uniqueRelationshipIds } from '@/lib/relationship'
 import {
@@ -108,9 +109,11 @@ export const setStateDeputyMunicipalitiesBatchRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: StateDeputyMunicipalitiesBatchInput,
+  options?: { cas?: boolean },
 ) => {
-  const { stateDeputyId, municipalityIds, assigned } =
+  const { stateDeputyId, municipalityIds, assigned, municipalityBaseUpdatedAt } =
     stateDeputyMunicipalitiesBatchSchema.parse(input)
+  const enforceCas = options?.cas === true
   // Already deduped by the schema's `.transform`; sorted only so a batch applies
   // and reports in a stable order — `acquireTextAdvisoryLocks` sorts its own keys,
   // so the deadlock-avoidance ordering does not depend on this line.
@@ -134,6 +137,16 @@ export const setStateDeputyMunicipalitiesBatchRecord = async (
       const changedSlugs: string[] = []
 
       for (const municipalityId of uniqueMunicipalityIds) {
+        const baseForMunicipality = municipalityBaseUpdatedAt?.[String(municipalityId)]
+        await assertCampaignDocCas(payload, {
+          collection: 'municipality',
+          id: municipalityId,
+          actor: currentActor,
+          enforceCas,
+          baseUpdatedAt: baseForMunicipality,
+          req,
+        })
+
         // Row + field access verify the município is in the actor's scope
         // (`canUpdateMunicipality` for advisors, `canManageCampaignStaffField`
         // for the field) — an out-of-scope município throws here.
@@ -204,3 +217,22 @@ export const setStateDeputyMunicipalitiesBatch = async (
   }
   return result
 }
+
+export const setStateDeputyMunicipalitiesBatchCas = async (
+  input: StateDeputyMunicipalitiesBatchInput,
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const result = await setStateDeputyMunicipalitiesBatchRecord(payload, actor, input, {
+    cas: true,
+  })
+  if (result.slugs.length > 0) {
+    revalidateStateDeputyMunicipalityPaths(result.stateDeputySlug, result.slugs)
+  }
+  return result
+}
+
+export const setStateDeputyMunicipalitiesBatchCasRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: StateDeputyMunicipalitiesBatchInput,
+) => setStateDeputyMunicipalitiesBatchRecord(payload, actor, input, { cas: true })

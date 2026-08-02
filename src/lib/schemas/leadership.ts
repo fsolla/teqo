@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { optionalBaseUpdatedAtSchema } from '@/lib/schemas/opsCas'
 import {
   brazilianMobile,
   optionalPersistedEmail,
@@ -85,6 +86,8 @@ export const leadershipInternalUpdateSchema = z.object({
   exclusive: z.boolean().optional(),
   supportStatus: z.enum(leadershipSupportStatuses).optional(),
   notes: trimmedNullableText(3000),
+  /** OH13 — CAS token; absent → last-write-wins. */
+  baseUpdatedAt: optionalBaseUpdatedAtSchema,
 })
 
 export type LeadershipInternalUpdateInput = z.input<typeof leadershipInternalUpdateSchema>
@@ -114,6 +117,7 @@ export const leadershipStateDeputyMembershipSchema = z.object({
   leadershipId: positiveRelationshipId,
   stateDeputyId: positiveRelationshipId,
   assigned: z.boolean(),
+  baseUpdatedAt: optionalBaseUpdatedAtSchema,
 })
 
 export type LeadershipStateDeputyMembershipInput = z.input<
@@ -134,6 +138,7 @@ export const leadershipMunicipalitiesMembershipSchema = z.object({
     .max(MAX_LEADERSHIP_MUNICIPALITIES)
     .transform((ids) => [...new Set(ids)]),
   assigned: z.boolean(),
+  baseUpdatedAt: optionalBaseUpdatedAtSchema,
 })
 
 export type LeadershipMunicipalitiesMembershipInput = z.input<

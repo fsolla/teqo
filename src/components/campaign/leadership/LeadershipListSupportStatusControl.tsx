@@ -2,12 +2,15 @@
 
 import type { LeadershipListSupportStatusResponse } from '@/app/(campaign)/campanha/(app)/liderancas/support-status/types'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
+import { enqueueLeadershipUpdate } from '@/components/campaign/opsSync/opsDomainOutbox'
+import { leadershipsCollection } from '@/components/campaign/opsSync/opsMirrorClient'
 import { CampaignCellEditOverlay } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { useCampaignCellAutosave } from '@/components/campaign/shared/useCampaignCellAutosave'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
+import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import {
   isSupportStatus,
   leadershipSupportStatuses,
@@ -23,12 +26,16 @@ const DEFAULT_STATUS: SupportStatus = 'a_abordar'
 type LeadershipListSupportStatusControlProps = {
   leadershipID: number
   status: SupportStatus | null
+  /** OH13 — CAS base when OPS_HYBRID outbox path is on. */
+  updatedAt?: string
 }
 
 export const LeadershipListSupportStatusControl = ({
   leadershipID,
   status,
+  updatedAt,
 }: LeadershipListSupportStatusControlProps) => {
+  const opsHybrid = resolveOpsHybridEnabled()
   const { open, onOpenChange, value, change, isPending, errorMessage, statusMessage } =
     useCampaignCellAutosave<SupportStatus, LeadershipListSupportStatusResponse>({
       value: status ?? DEFAULT_STATUS,
@@ -38,6 +45,24 @@ export const LeadershipListSupportStatusControl = ({
       readSaved: (payload) => payload.savedSupportStatus,
       errorMessage: SAVE_ERROR_MESSAGE,
       pendingMessage: 'Salvando status de apoio.',
+      persist: opsHybrid
+        ? async (supportStatus) => {
+            const mirrorUpdatedAt = leadershipsCollection.get(leadershipID)?.updatedAt
+            await enqueueLeadershipUpdate({
+              leadershipId: leadershipID,
+              supportStatus,
+              baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
+            })
+            return {
+              ok: true,
+              payload: {
+                status: 'success',
+                message: 'Status de apoio atualizado.',
+                savedSupportStatus: supportStatus,
+              },
+            }
+          }
+        : undefined,
     })
 
   const handleStatusChange = (raw: string) => {
