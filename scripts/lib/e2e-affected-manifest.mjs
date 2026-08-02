@@ -107,7 +107,7 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/campaign/auth',
       `${CAMPAIGN_APP}/acoes`,
       'src/components/campaign/shared/WizardMunicipality',
-      'src/components/campaign/shared/useWizardNearestMunicipality',
+      'src/components/campaign/shared/useNearestMunicipalitySlug',
       'src/lib/wizardMunicipalitySuggestMerge',
       `${CAMPAIGN_APP}/apoiadores`,
       `${CAMPAIGN_APP}/assessores`,

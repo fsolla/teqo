@@ -34,6 +34,8 @@ describe('loadHomeSearchSuggestions (B68)', () => {
     for (const hit of result.municipalities) {
       expect(hit.priority).toBe('alta')
     }
+    expect(result.scopeMunicipalities?.length).toBeGreaterThan(0)
+    expect(result.scopeMunicipalities?.every((row) => row.ibgeCode.length > 0)).toBe(true)
   })
 
   it('scopes advisor suggestions to administered municipalities', async () => {

@@ -1,8 +1,5 @@
 import type { HomeSearchMunicipalityHit } from '@/lib/campaignHomeSearchHits'
 import { HOME_SEARCH_SUGGEST_LIMIT } from '@/lib/homeSearchSuggest'
-import { formatDistanceKm } from '@/lib/municipalityProximity'
-
-export const WIZARD_GEO_NEARBY_REASON = 'Perto de você' as const
 
 export const WIZARD_CONTINUITY_LAST_ACTED_LABEL = 'Última ação' as const
 export const WIZARD_CONTINUITY_VISITED_LABEL = 'Visitado' as const
@@ -21,12 +18,6 @@ export type WizardContinuityVisitInput = {
   kind: 'municipality' | 'municipalityList'
 }
 
-export type WizardGeoMunicipalitySuggestion = {
-  slug: string
-  name: string
-  distanceKm?: number
-}
-
 export type WizardMunicipalityMergedRow = {
   hit: HomeSearchMunicipalityHit
   continuityReason?: string
@@ -38,19 +29,6 @@ export const municipalitySlugFromRecentVisitHref = (href: string): string | null
   if (!href.startsWith(MUNICIPALITY_DETAIL_HREF_PREFIX)) return null
   const slug = href.slice(MUNICIPALITY_DETAIL_HREF_PREFIX.length).split('/')[0]?.trim()
   return slug ? slug : null
-}
-
-/** Secondary line for a geo-resolved wizard hit — region first when known. */
-export const formatWizardGeoSecondary = (
-  region: string | undefined,
-  distanceKm?: number,
-): string => {
-  const reason =
-    distanceKm !== undefined
-      ? `${WIZARD_GEO_NEARBY_REASON} (~${formatDistanceKm(distanceKm)})`
-      : WIZARD_GEO_NEARBY_REASON
-
-  return region ? `${region} · ${reason}` : reason
 }
 
 const continuityReasonForSource = (source: WizardContinuitySource): string => {
@@ -103,12 +81,12 @@ export const listWizardContinuitySlugs = (input: {
 }
 
 /**
- * B93 + B94 — merge geo (B94), continuity (B93) and server suggestions (B92).
- * Dedup order: geo → last-acted → visited → forgotten.
+ * B93 + B125 — merge geo prefix, continuity (B93) and server suggestions (B92).
+ * Dedup order: geo → last-acted → visited → forgotten. Geo row has no proximity copy.
  */
 export const mergeWizardMunicipalitySuggestions = (input: {
   continuity: WizardContinuitySlug[]
-  geo?: WizardGeoMunicipalitySuggestion | null
+  geoSlug?: string | null
   serverHits: HomeSearchMunicipalityHit[]
   hitBySlug: ReadonlyMap<string, HomeSearchMunicipalityHit>
   limit?: number
@@ -117,23 +95,17 @@ export const mergeWizardMunicipalitySuggestions = (input: {
   const merged: WizardMunicipalityMergedRow[] = []
   const seen = new Set<string>()
 
-  const pushHit = (slug: string, continuityReason?: string, regionOverride?: string) => {
+  const pushHit = (slug: string, continuityReason?: string) => {
     if (seen.has(slug)) return
     const hit = input.hitBySlug.get(slug)
     if (!hit) return
     seen.add(slug)
-    merged.push({
-      hit: regionOverride ? { ...hit, region: regionOverride } : hit,
-      continuityReason,
-    })
+    merged.push({ hit, continuityReason })
   }
 
-  const geoSlug = input.geo?.slug.trim()
+  const geoSlug = input.geoSlug?.trim()
   if (geoSlug) {
-    const baseHit = input.hitBySlug.get(geoSlug)
-    if (baseHit) {
-      pushHit(geoSlug, undefined, formatWizardGeoSecondary(baseHit.region, input.geo?.distanceKm))
-    }
+    pushHit(geoSlug)
   }
 
   for (const item of input.continuity) {

@@ -57,6 +57,15 @@ export type HomeSearchDemandHit = {
 
 type HomeSearchResultKind = 'search' | 'suggest'
 
+/** Scope rows for client geo merge (B117 / B125) — full portfolio, not only top-8 suggest. */
+export type HomeSearchScopeMunicipality = {
+  slug: string
+  name: string
+  region: string
+  priority: 'alta' | 'normal' | null
+  ibgeCode: string
+}
+
 export type HomeSearchSuccessResponse = {
   status: 'success'
   resultKind: HomeSearchResultKind
@@ -67,6 +76,8 @@ export type HomeSearchSuccessResponse = {
   stateDeputies: HomeSearchStateDeputyHit[]
   activities: HomeSearchActivityHit[]
   demands: HomeSearchDemandHit[]
+  /** Present on `suggest` for client nearest-municipality prefix (B117 / B125). */
+  scopeMunicipalities?: HomeSearchScopeMunicipality[]
 }
 
 export const homeSearchMunicipalityGroupHasHits = (

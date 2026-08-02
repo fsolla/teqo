@@ -8,7 +8,7 @@ import { HomeSearchMunicipalityVoteTrailing } from '@/components/campaign/dashbo
 import { useHomeSearchQuery } from '@/components/campaign/dashboard/useHomeSearchQuery'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
-import { useWizardNearestMunicipality } from '@/components/campaign/shared/useWizardNearestMunicipality'
+import { useNearestMunicipalitySlug } from '@/components/campaign/shared/useNearestMunicipalitySlug'
 import { wizardActionHref } from '@/lib/campaignActionRoutes'
 import type {
   HomeSearchMunicipalityHit,
@@ -84,7 +84,7 @@ export const WizardMunicipalitySearchStep = ({
   const suggestMode = !query.isActive
   const searchMode = query.isActive
   const resultsBusy = isDebouncing || results.status === 'loading'
-  const nearestMunicipality = useWizardNearestMunicipality(accessibleMunicipalities, suggestMode)
+  const nearestSlug = useNearestMunicipalitySlug(accessibleMunicipalities, suggestMode)
 
   useEffect(() => {
     if (!suggestMode || results.status !== 'success' || results.mode !== 'suggest') {
@@ -161,11 +161,11 @@ export const WizardMunicipalitySearchStep = ({
 
     return mergeWizardMunicipalitySuggestions({
       continuity: continuityReady ? continuitySlugs : [],
-      geo: nearestMunicipality,
+      geoSlug: nearestSlug,
       serverHits: results.suggest.municipalities,
       hitBySlug: results.suggest.hitBySlug,
     })
-  }, [continuityReady, continuitySlugs, nearestMunicipality, results])
+  }, [continuityReady, continuitySlugs, nearestSlug, results])
 
   const showEmpty =
     query.isActive &&
