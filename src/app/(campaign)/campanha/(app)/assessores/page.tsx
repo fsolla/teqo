@@ -4,6 +4,8 @@ import { getPayload } from 'payload'
 import type { ReactNode } from 'react'
 
 import { AdvisorsTable } from '@/components/campaign/advisor/AdvisorsTable'
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import {
@@ -12,8 +14,6 @@ import {
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
-import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
-import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { CAMPAIGN_ADVISORS_HOME } from '@/lib/campaignPaths'
 import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'

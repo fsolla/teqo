@@ -4,6 +4,8 @@ import { getPayload } from 'payload'
 
 import { TerritoryFilters } from '@/components/campaign/municipality/TerritoryFilters'
 import { TerritoryList } from '@/components/campaign/municipality/TerritoryList'
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import {
@@ -11,8 +13,6 @@ import {
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
-import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
-import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'

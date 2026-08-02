@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import {
@@ -23,8 +25,6 @@ import {
 } from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
-import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
-import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { StateDeputyFilters } from '@/components/campaign/stateDeputy/StateDeputyFilters'
 import { StateDeputySortableHead } from '@/components/campaign/stateDeputy/StateDeputySortableHead'
