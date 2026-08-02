@@ -450,7 +450,7 @@ describe('loadDemandListPageData', () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
-    const marker = fixtures.marker('demand-q')
+    const marker = fixtures.value('demand-q')
 
     const contact = await fixtures.createContact({ name: `${marker} solicitante` })
     const leadership = await fixtures.createLeadership({
