@@ -100,10 +100,5 @@ export const VOTE_PLEDGE_DECLARE_SAFE_MESSAGES = [
   OPS_UPDATED_AT_CONFLICT_MESSAGE,
 ] as const
 
-export const VOTE_PLEDGE_ESTIMATE_SAFE_MESSAGES = [
-  VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE,
-  OPS_ESTIMATE_CONFLICT_MESSAGE,
-] as const
-
 export type DeclareVotesInput = z.input<typeof declareVotesSchema>
 export type EstimateVotesInput = z.input<typeof estimateVotesSchema>

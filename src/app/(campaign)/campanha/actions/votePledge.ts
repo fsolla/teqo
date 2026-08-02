@@ -222,11 +222,6 @@ export const estimateVotesRecord = async (
   )
 }
 
-export const estimateVotes = async (input: EstimateVotesInput) => {
-  const { payload, actor } = await getCampaignActionContext()
-  return estimateVotesRecord(payload, actor, input)
-}
-
 /**
  * OH6 — estimate with optional CAS on `estimatedAt`. Without `baseEstimatedAt`
  * this matches `estimateVotes` (last-write-wins). With a base, a stale token
