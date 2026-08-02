@@ -474,10 +474,11 @@ EXPIRED`, com `git.branches[].prUrl`. SSE stream existe mas não é necessária 
    Webhooks v1: "coming soon" — o trigger `pull_request` closed do GHA cobre o evento de merge.
 3. **Validação de modelos:** `GET /v1/models` retorna ids, aliases e `params` aceitos
    (ex.: `composer-2` + `fast`). O mapeamento repo→API é codificado na Fase 0/2.
-4. **Limites de concorrência:** plano Pro = **8 agentes simultâneos** (staff Cursor, forum
+4. **Limites de concorrência:** plano Pro historicamente = **8 agentes simultâneos** (staff Cursor, forum
    2026-04-16); múltiplos agentes no mesmo repo são permitidos; bug de agentes fantasma no
    contador corrigido em 2026-06-17 — remediação: arquivar em cursor.com/agents (o tick já
-   arquiva terminais). Cap 5 deixa 3 slots para humanos.
+   arquiva terminais). Soft default do pool = 5; hard clamp `POOL_HARD_MAX_SLOTS` = **12**
+   (2026-08-02) — spawn falha fechado se o plano Cursor estiver abaixo.
    Fonte: <https://forum.cursor.com/t/clarification-on-cloud-agent-limits-simultaneous-agents-vs-environments-repos/157584>.
 5. **Branches por worker:** o agente Cloud trabalha em branch própria gerada a partir de
    `startingRef` (`workOnCurrentBranch: false`, default) — exatamente o modelo `agent/<id>-<slug>`
