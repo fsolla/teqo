@@ -39,6 +39,8 @@ No Teqo: **idea-refine / interview** antes se vago; **spec + plan + tasks** = es
 
 `frontend-ui-engineering`, `security-and-hardening`, `performance-optimization`, `code-review-and-quality`, `code-simplification`, `observability-and-instrumentation`, `shipping-and-launch`, `ci-cd-and-automation`, `git-workflow-and-versioning`, `deprecation-and-migration`, `debugging-and-error-recovery`, `browser-testing-with-devtools` — entram em `work-issue` / gates do repo, não no registro da Issue.
 
+**Exceção de superfície:** a skill Cursor **`canvas`** é usada no `plan-issue` só para o **rascunho UI/UX do gate** quando o item muda UI ([ui-draft-canvas.md](ui-draft-canvas.md)). Não é implementação de `/campanha` nem substituto de Impeccable.
+
 ## Precedência quando conflita
 
 1. Convenções Teqo (`AGENTS.md`, access, migrations, Consent fail-closed)  
