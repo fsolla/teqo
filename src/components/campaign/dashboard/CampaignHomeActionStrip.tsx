@@ -138,9 +138,9 @@ export const CampaignHomeActionStrip = ({
         )}
         {...finePointerPanProps}
       >
-        {/* B115 — px-0 deliberado: os botões entram da borda do aparelho; o bleed
-            -mx-4 do slot já leva o scroller à borda. Não re-adicionar inset lateral
-            (B101 revertido pelo produto). */}
+        {/* B115 — deliberate px-0: buttons enter from the device edge; the slot's
+            -mx-4 bleed already takes the scroller to the edge. Do not re-add a
+            lateral inset here (product reverted the B101 ul inset). */}
         <ul
           role="list"
           className="m-0 flex min-w-max list-none snap-x snap-proximity gap-0 px-0 pb-1"
