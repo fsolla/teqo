@@ -32,7 +32,7 @@ const omniboxQueryMatches = (
 export const omniboxGroupMatches = (group: string, needle: string): boolean =>
   omniboxQueryMatches(group, needle)
 
-export const SUGGESTION_CAP_PER_GROUP = 8
+const SUGGESTION_CAP_PER_GROUP = 8
 
 export type OmniboxSuggestionSeed = CampaignListOmniboxSuggestion & {
   /** When true, show even with an empty query (dimension shortcuts). */
