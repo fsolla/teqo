@@ -55,17 +55,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
   const canMoveEngagementLevel = isCampaignUnrestricted(user)
 
   const pageBundle = await loadMunicipalityListPageBundle(payload, user, rawSearchParams)
-  const {
-    municipalities: listMunicipalities,
-    totalDocs,
-    totalPages,
-<<<<<<< HEAD
-    overview,
-=======
-    scopeTotal,
->>>>>>> c432f439 (B129 — Remove municipality list overview panel)
-    filterFacets,
-  } = pageBundle
+  const { municipalities: listMunicipalities, totalDocs, totalPages, filterFacets } = pageBundle
   const resolvedUrl = resolveMunicipalityListUrl(rawSearchParams, totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
