@@ -110,25 +110,13 @@ export const buildMunicipalityMobileFilterOptions = ({
       if (definition.param === 'advisor') filterOptions = advisorFilterOptions
       if (filterOptions.length === 0) continue
 
-      const param = ((): MunicipalityMultiFilterParam => {
-        switch (definition.param) {
-          case 'region':
-            return 'region'
-          case 'advisor':
-            return 'advisor'
-          case 'trend':
-            return 'trend'
-          case 'class':
-            return 'class'
-          case 'level':
-            return 'level'
-          default: {
-            // `name` is skipped above; `coverage` is toggle-only.
-            const _exhaustive: never = definition.param
-            return _exhaustive
-          }
-        }
-      })()
+      let param: MunicipalityMultiFilterParam
+      if (definition.param === 'region') param = 'region'
+      else if (definition.param === 'advisor') param = 'advisor'
+      else if (definition.param === 'trend') param = 'trend'
+      else if (definition.param === 'class') param = 'class'
+      else if (definition.param === 'level') param = 'level'
+      else continue // `name` skipped above; `coverage` is toggle-only
 
       const selected = new Set(getMunicipalityMultiFilterValues(state, param))
       for (const option of filterOptions) {
