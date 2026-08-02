@@ -1,6 +1,6 @@
 # OH13 — Writes CAS por domínio: leadership, stateDeputy, activity, demand
 
-Status: em implementação
+Status: pronto para PR
 Atualizado em: 2026-08-02
 Issue: #176
 Priority: P1
@@ -67,9 +67,9 @@ Componentes:
 
 - **Quota:** ~0,5
 - **Aceite:**
-  - [x] vínculos offline aplicam; conflito UI (CAS server + outbox; listas Local read-only OH12)
+  - [x] vínculos offline aplicam; conflito UI (CAS server + `*Cas` entry points; list chips stay online form — OH12 Local read-only; outbox trimmed to used surfaces)
   - [x] campos de activity offline aplicam
-  - [x] helper extraído: `assertCampaignDocCas` (3+ call sites OH13)
+  - [x] helper extraído: `assertCampaignDocCas` (demand/activity) + inline `assertOpsUpdatedAtCas` when stamp already loaded
 - **Verify:** `pnpm gate:fast` + int + e2e
 - **Files:** idem + helper
 - **Tamanho:** M

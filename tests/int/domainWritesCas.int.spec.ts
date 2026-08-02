@@ -5,15 +5,18 @@ import { getPayload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import {
-  updateLeadershipInternalCasRecord,
-  updateLeadershipInternalRecord,
-} from '@/app/(campaign)/campanha/actions/leadership'
+  createActivityRecord,
+  updateActivityCasRecord,
+} from '@/app/(campaign)/campanha/actions/activity'
 import {
   createCampaignDemandRecord,
   transitionCampaignDemandCasRecord,
   transitionCampaignDemandRecord,
 } from '@/app/(campaign)/campanha/actions/demand'
-import { updateActivityCasRecord, createActivityRecord } from '@/app/(campaign)/campanha/actions/activity'
+import {
+  updateLeadershipInternalCasRecord,
+  updateLeadershipInternalRecord,
+} from '@/app/(campaign)/campanha/actions/leadership'
 import {
   setStateDeputyMunicipalitiesBatchCasRecord,
   setStateDeputyMunicipalitiesBatchRecord,

@@ -1,8 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+} from 'react'
 import { toast } from 'sonner'
 
 import { ActivityDemandFields } from '@/components/campaign/activity/ActivityDemandFields'
@@ -42,8 +49,9 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
-import { formatIsoAsBahiaDateTimeInput } from '@/lib/campaignTime'
 import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
+import { readFormRelationshipIds, readOptionalFormText } from '@/lib/campaignOps/opsHybridFormData'
+import { formatIsoAsBahiaDateTimeInput, parseBahiaDateTimeInput } from '@/lib/campaignTime'
 import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 import {
   activityKindLabels,
@@ -477,21 +485,6 @@ const ActivityFormFields = ({
 
 const CONFLICT_TOAST_ID_PREFIX = 'ops-activity-update-conflict:'
 
-const readOptionalText = (data: FormData, name: string): string | undefined => {
-  const raw = data.get(name)
-  return typeof raw === 'string' && raw.trim() !== '' ? raw.trim() : undefined
-}
-
-const readRelationshipIds = (data: FormData, name: string): number[] => {
-  const ids: number[] = []
-  for (const raw of data.getAll(name)) {
-    if (typeof raw !== 'string' || raw.trim() === '') continue
-    const value = Number(raw)
-    if (Number.isInteger(value) && value > 0) ids.push(value)
-  }
-  return [...new Set(ids)]
-}
-
 export const ActivityForm = ({
   action,
   municipalityOptions,
@@ -520,8 +513,7 @@ export const ActivityForm = ({
       hybridUpdate && activity
         ? subscribeOpsActivityUpdateOutboxRow(activity.id, onStoreChange)
         : () => undefined,
-    () =>
-      hybridUpdate && activity ? readOpsActivityUpdateOutboxRow(activity.id) : undefined,
+    () => (hybridUpdate && activity ? readOpsActivityUpdateOutboxRow(activity.id) : undefined),
     () => undefined,
   )
 
@@ -587,6 +579,22 @@ export const ActivityForm = ({
       typeof municipalityRaw === 'string' && Number.isInteger(Number(municipalityRaw))
         ? Number(municipalityRaw)
         : undefined
+    const responsibleRaw = data.get('responsible')
+    const responsible =
+      typeof responsibleRaw === 'string' && Number.isInteger(Number(responsibleRaw))
+        ? Number(responsibleRaw)
+        : undefined
+    const leadershipRaw = data.get('leadership')
+    const leadershipId =
+      typeof leadershipRaw === 'string' && Number.isInteger(Number(leadershipRaw))
+        ? Number(leadershipRaw)
+        : undefined
+    const startAtRaw = readOptionalFormText(data, 'startAt')
+    const endAtRaw = readOptionalFormText(data, 'endAt')
+    const deadlineRaw = readOptionalFormText(data, 'deadline')
+    const startAt = startAtRaw ? (parseBahiaDateTimeInput(startAtRaw) ?? null) : null
+    const endAt = endAtRaw ? (parseBahiaDateTimeInput(endAtRaw) ?? null) : null
+    const deadline = deadlineRaw ? (parseBahiaDateTimeInput(deadlineRaw) ?? null) : null
     const mirrorUpdatedAt = activitiesCollection.get(activity.id)?.updatedAt
 
     setHybridPending(true)
@@ -598,11 +606,16 @@ export const ActivityForm = ({
         ...(status ? { status } : {}),
         ...(origin ? { origin } : {}),
         ...(municipality ? { municipality } : {}),
-        description: readOptionalText(data, 'description') ?? null,
-        locality: readOptionalText(data, 'locality') ?? null,
-        organizations: readRelationshipIds(data, 'organizations'),
-        advisors: readRelationshipIds(data, 'advisors'),
+        description: readOptionalFormText(data, 'description') ?? null,
+        locality: readOptionalFormText(data, 'locality') ?? null,
+        organizations: readFormRelationshipIds(data, 'organizations'),
+        advisors: readFormRelationshipIds(data, 'advisors'),
         deputyPresent: data.get('deputyPresent') === 'true' || data.get('deputyPresent') === 'on',
+        startAt,
+        endAt,
+        deadline,
+        ...(responsible !== undefined ? { responsible } : {}),
+        ...(leadershipId !== undefined ? { leadership: leadershipId } : {}),
       },
       baseUpdatedAt: mirrorUpdatedAt ?? activity.updatedAt,
     }).then(
@@ -631,7 +644,9 @@ export const ActivityForm = ({
     >
       {activity ? <input type="hidden" name="id" value={activity.id} /> : null}
       <div className="flex flex-wrap items-center gap-2">
-        {outboxRow?.status === 'pending' ? <Badge variant="estimate-pending">Pendente</Badge> : null}
+        {outboxRow?.status === 'pending' ? (
+          <Badge variant="estimate-pending">Pendente</Badge>
+        ) : null}
         {outboxRow?.status === 'conflict' ? <Badge variant="destructive">Conflito</Badge> : null}
       </div>
       {!hybridUpdate && state.message ? (

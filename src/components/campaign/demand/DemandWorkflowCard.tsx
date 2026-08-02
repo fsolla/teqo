@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import {
   useActionState,
   useEffect,
@@ -8,7 +9,6 @@ import {
   useSyncExternalStore,
   type FormEvent,
 } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
 import {
@@ -181,10 +181,9 @@ export const DemandWorkflowCard = ({
     )
   }
 
-  const transitionBusy =
-    opsHybridEnabled
-      ? hybridPending || outboxRow?.statusSync === 'pending'
-      : transitionPending
+  const transitionBusy = opsHybridEnabled
+    ? hybridPending || outboxRow?.statusSync === 'pending'
+    : transitionPending
 
   return (
     <section

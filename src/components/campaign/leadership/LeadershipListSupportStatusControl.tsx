@@ -1,8 +1,17 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { toast } from 'sonner'
+
 import type { LeadershipListSupportStatusResponse } from '@/app/(campaign)/campanha/(app)/liderancas/support-status/types'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
-import { enqueueLeadershipUpdate } from '@/components/campaign/opsSync/opsDomainOutbox'
+import {
+  discardOpsLeadershipUpdateOutboxRow,
+  enqueueLeadershipUpdate,
+  readOpsLeadershipUpdateOutboxRow,
+  subscribeOpsLeadershipUpdateOutboxRow,
+} from '@/components/campaign/opsSync/opsDomainOutbox'
 import { leadershipsCollection } from '@/components/campaign/opsSync/opsMirrorClient'
 import { CampaignCellEditOverlay } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { useCampaignCellAutosave } from '@/components/campaign/shared/useCampaignCellAutosave'
@@ -16,12 +25,14 @@ import {
   leadershipSupportStatuses,
   type SupportStatus,
 } from '@/lib/schemas/leadership'
+import { OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 
 const STATUS_AUTOSAVE_MS = 150
 const SUPPORT_STATUS_ENDPOINT = '/campanha/liderancas/support-status'
 const SAVE_ERROR_MESSAGE = 'Não foi possível salvar o status. Tente novamente.'
 const DEFAULT_STATUS: SupportStatus = 'a_abordar'
+const CONFLICT_TOAST_ID_PREFIX = 'ops-leadership-status-conflict:'
 
 type LeadershipListSupportStatusControlProps = {
   leadershipID: number
@@ -35,7 +46,61 @@ export const LeadershipListSupportStatusControl = ({
   status,
   updatedAt,
 }: LeadershipListSupportStatusControlProps) => {
+  const router = useRouter()
   const opsHybrid = resolveOpsHybridEnabled()
+  const previousOutboxStatusRef = useRef<string | undefined>(undefined)
+
+  const outboxRow = useSyncExternalStore(
+    (onStoreChange) =>
+      opsHybrid
+        ? subscribeOpsLeadershipUpdateOutboxRow(leadershipID, onStoreChange)
+        : () => undefined,
+    () => (opsHybrid ? readOpsLeadershipUpdateOutboxRow(leadershipID) : undefined),
+    () => undefined,
+  )
+
+  useEffect(() => {
+    const previous = previousOutboxStatusRef.current
+    previousOutboxStatusRef.current = outboxRow?.status
+    if (previous === 'pending' && outboxRow === undefined) {
+      router.refresh()
+    }
+  }, [outboxRow, router])
+
+  useEffect(() => {
+    if (!opsHybrid || outboxRow?.status !== 'conflict') return
+    const toastId = `${CONFLICT_TOAST_ID_PREFIX}${leadershipID}`
+    toast.message(OPS_UPDATED_AT_CONFLICT_MESSAGE, {
+      id: toastId,
+      duration: Infinity,
+      action: {
+        label: 'Manter o meu',
+        onClick: () => {
+          void enqueueLeadershipUpdate({
+            leadershipId: leadershipID,
+            supportStatus: outboxRow.supportStatus,
+            municipalities: outboxRow.municipalities,
+            organizations: outboxRow.organizations,
+            stateDeputies: outboxRow.stateDeputies,
+            exclusive: outboxRow.exclusive,
+            notes: outboxRow.notes,
+            baseUpdatedAt: outboxRow.serverUpdatedAt ?? null,
+          })
+        },
+      },
+      cancel: {
+        label: 'Usar o novo',
+        onClick: () => {
+          discardOpsLeadershipUpdateOutboxRow(leadershipID)
+          router.refresh()
+        },
+      },
+    })
+    return () => {
+      toast.dismiss(toastId)
+    }
+  }, [opsHybrid, outboxRow, leadershipID, router])
+
   const { open, onOpenChange, value, change, isPending, errorMessage, statusMessage } =
     useCampaignCellAutosave<SupportStatus, LeadershipListSupportStatusResponse>({
       value: status ?? DEFAULT_STATUS,

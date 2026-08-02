@@ -17,6 +17,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
+import { readFormRelationshipIds, readOptionalFormText } from '@/lib/campaignOps/opsHybridFormData'
 import {
   isSupportStatus,
   leadershipSupportStatuses,
@@ -36,16 +37,6 @@ type LeadershipFormProps = {
     formData: FormData,
   ) => Promise<CampaignFormActionState>
   opsHybridEnabled?: boolean
-}
-
-const readRelationshipIds = (data: FormData, name: string): number[] => {
-  const ids: number[] = []
-  for (const raw of data.getAll(name)) {
-    if (typeof raw !== 'string' || raw.trim() === '') continue
-    const value = Number(raw)
-    if (Number.isInteger(value) && value > 0) ids.push(value)
-  }
-  return [...new Set(ids)]
 }
 
 export const LeadershipForm = ({
@@ -80,8 +71,6 @@ export const LeadershipForm = ({
         ? (supportStatusRaw as SupportStatus)
         : 'a_abordar'
     const exclusiveValues = data.getAll('exclusive')
-    const emailRaw = data.get('email')
-    const notesRaw = data.get('notes')
 
     setHybridPending(true)
     setHybridMessage(null)
@@ -89,13 +78,13 @@ export const LeadershipForm = ({
       clientId: crypto.randomUUID(),
       name: name.trim(),
       phone: phone.trim(),
-      email: typeof emailRaw === 'string' && emailRaw.trim() !== '' ? emailRaw.trim() : null,
-      municipalities: readRelationshipIds(data, 'municipalities'),
-      organizations: readRelationshipIds(data, 'organizations'),
-      stateDeputies: readRelationshipIds(data, 'stateDeputies'),
+      email: readOptionalFormText(data, 'email') ?? null,
+      municipalities: readFormRelationshipIds(data, 'municipalities'),
+      organizations: readFormRelationshipIds(data, 'organizations'),
+      stateDeputies: readFormRelationshipIds(data, 'stateDeputies'),
       exclusive: exclusiveValues.length === 0 ? true : exclusiveValues.at(-1) === 'true',
       supportStatus,
-      notes: typeof notesRaw === 'string' && notesRaw.trim() !== '' ? notesRaw.trim() : undefined,
+      notes: readOptionalFormText(data, 'notes'),
     }).then(
       () => {
         setHybridPending(false)

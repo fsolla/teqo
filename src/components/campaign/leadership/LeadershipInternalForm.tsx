@@ -1,7 +1,14 @@
 'use client'
 
-import { useActionState, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+} from 'react'
 import { toast } from 'sonner'
 
 import {
@@ -24,6 +31,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
+import { readFormRelationshipIds, readOptionalFormText } from '@/lib/campaignOps/opsHybridFormData'
 import {
   isSupportStatus,
   leadershipSupportStatuses,
@@ -36,16 +44,6 @@ import type { LeadershipDetailViewModel } from '@/utilities/leadership/leadershi
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 
 const CONFLICT_TOAST_ID_PREFIX = 'ops-leadership-update-conflict:'
-
-const readRelationshipIds = (data: FormData, name: string): number[] => {
-  const ids: number[] = []
-  for (const raw of data.getAll(name)) {
-    if (typeof raw !== 'string' || raw.trim() === '') continue
-    const value = Number(raw)
-    if (Number.isInteger(value) && value > 0) ids.push(value)
-  }
-  return [...new Set(ids)]
-}
 
 type LeadershipInternalFormProps = {
   leadership: LeadershipDetailViewModel
@@ -140,15 +138,12 @@ export const LeadershipInternalForm = ({
     setHybridMessage(null)
     void enqueueLeadershipUpdate({
       leadershipId: leadership.id,
-      municipalities: readRelationshipIds(data, 'municipalities'),
-      organizations: readRelationshipIds(data, 'organizations'),
-      stateDeputies: readRelationshipIds(data, 'stateDeputies'),
+      municipalities: readFormRelationshipIds(data, 'municipalities'),
+      organizations: readFormRelationshipIds(data, 'organizations'),
+      stateDeputies: readFormRelationshipIds(data, 'stateDeputies'),
       exclusive: data.get('exclusive') === 'true',
       supportStatus,
-      notes: (() => {
-        const raw = data.get('notes')
-        return typeof raw === 'string' ? raw : null
-      })(),
+      notes: readOptionalFormText(data, 'notes') ?? null,
       baseUpdatedAt: mirrorUpdatedAt ?? leadership.updatedAt,
     }).then(
       () => {
@@ -174,10 +169,10 @@ export const LeadershipInternalForm = ({
     >
       <div className="flex flex-wrap items-center gap-2">
         <input type="hidden" name="leadershipId" value={leadership.id} />
-        {outboxRow?.status === 'pending' ? <Badge variant="estimate-pending">Pendente</Badge> : null}
-        {outboxRow?.status === 'conflict' ? (
-          <Badge variant="destructive">Conflito</Badge>
+        {outboxRow?.status === 'pending' ? (
+          <Badge variant="estimate-pending">Pendente</Badge>
         ) : null}
+        {outboxRow?.status === 'conflict' ? <Badge variant="destructive">Conflito</Badge> : null}
       </div>
 
       <RelationMultiSelect
