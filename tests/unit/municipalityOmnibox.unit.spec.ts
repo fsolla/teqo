@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO } from '@/lib/voteEstimate'
+import { parseMunicipalityListParams } from '@/utilities/municipality/municipalityListUrl'
 import {
   applyMunicipalityOmniboxSuggestion,
   buildMunicipalityOmniboxChips,
@@ -8,7 +9,6 @@ import {
   clearMunicipalityOmnibox,
   removeMunicipalityOmniboxChip,
 } from '@/utilities/municipality/municipalityOmnibox'
-import { parseMunicipalityListParams } from '@/utilities/municipality/municipalityListUrl'
 
 describe('municipality omnibox (B127)', () => {
   const base = parseMunicipalityListParams({})
