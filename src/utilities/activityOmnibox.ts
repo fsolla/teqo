@@ -2,13 +2,13 @@
  * Activity list omnibox adapter (B128). Pure / client-safe.
  * Tab preset stays outside the omnibox (product map).
  */
-import { activityKindLabels, activityStatusLabels } from '@/lib/schemas/activity'
 import {
   createOmniboxSuggestionSeed,
   filterOmniboxSuggestionSeeds,
   type CampaignListOmniboxChip,
   type CampaignListOmniboxSuggestion,
 } from '@/lib/campaignListOmnibox'
+import { activityKindLabels, activityStatusLabels } from '@/lib/schemas/activity'
 import {
   buildActivityListSearchParams,
   parseActivityListParams,
@@ -29,8 +29,9 @@ const chipLabel = (dimension: string, value: string): string => `${dimension}: $
 
 const withPageReset = (state: ActivityListState): ActivityListState => ({ ...state, page: 1 })
 
-const parseStateFromParams = (raw: Record<string, string | string[] | undefined>): ActivityListState =>
-  parseActivityListParams(raw)
+const parseStateFromParams = (
+  raw: Record<string, string | string[] | undefined>,
+): ActivityListState => parseActivityListParams(raw)
 
 const setExclusiveField = (
   state: ActivityListState,

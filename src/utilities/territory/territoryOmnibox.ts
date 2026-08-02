@@ -36,7 +36,9 @@ const isDefaultTerritoryListSort = (state: TerritoryListState): boolean => {
   return sort === DEFAULT_TERRITORY_LIST_SORT_KEY && dir === DEFAULT_TERRITORY_LIST_SORT_DIR
 }
 
-export const buildTerritoryOmniboxChips = (state: TerritoryListState): CampaignListOmniboxChip[] => {
+export const buildTerritoryOmniboxChips = (
+  state: TerritoryListState,
+): CampaignListOmniboxChip[] => {
   const chips: CampaignListOmniboxChip[] = []
 
   if (state.q) chips.push({ id: 'q', label: chipLabel('Busca', state.q) })
@@ -161,7 +163,8 @@ export const removeTerritoryOmniboxChip = ({
   chipId: string
 }): TerritoryOmniboxAction => {
   if (chipId === 'q') return { kind: 'url', state: { ...state, q: undefined } }
-  if (chipId === 'sort') return { kind: 'url', state: { ...state, sort: undefined, dir: undefined } }
+  if (chipId === 'sort')
+    return { kind: 'url', state: { ...state, sort: undefined, dir: undefined } }
 
   if (chipId.startsWith('region:')) {
     return {

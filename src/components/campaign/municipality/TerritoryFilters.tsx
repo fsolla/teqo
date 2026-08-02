@@ -4,8 +4,11 @@ import { useMemo, useState } from 'react'
 
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
-import { buildTerritoryListHref, type TerritoryListState } from '@/utilities/territory/territoryListUrl'
 import type { TerritoryFilterOption } from '@/utilities/territory/territoryListFilters'
+import {
+  buildTerritoryListHref,
+  type TerritoryListState,
+} from '@/utilities/territory/territoryListUrl'
 import {
   applyTerritoryOmniboxSuggestion,
   buildTerritoryOmniboxChips,

@@ -2,10 +2,9 @@
 
 import { useMemo, useState } from 'react'
 
-import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
+import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
-import { municipalityComboboxOptions } from '@/utilities/territory/territoryComboboxOptions'
 import {
   applySupporterOmniboxSuggestion,
   buildSupporterOmniboxChips,
@@ -16,6 +15,7 @@ import {
   type SupporterOmniboxAction,
 } from '@/utilities/supporter/supporterOmnibox'
 import { buildSupporterListHref, type SupporterListState } from '@/utilities/supporter/supporterUi'
+import { municipalityComboboxOptions } from '@/utilities/territory/territoryComboboxOptions'
 
 export const SupporterFilters = ({
   state,
@@ -39,7 +39,8 @@ export const SupporterFilters = ({
   }, [municipalityOptions])
 
   const cityOptions = useMemo(
-    () => municipalityComboboxOptions().map((option) => ({ value: option.value, label: option.label })),
+    () =>
+      municipalityComboboxOptions().map((option) => ({ value: option.value, label: option.label })),
     [],
   )
 

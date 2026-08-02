@@ -8,6 +8,10 @@ import {
   type CampaignListOmniboxSuggestion,
 } from '@/lib/campaignListOmnibox'
 import {
+  leadershipAccessFilterLabels,
+  supportStatusLabels,
+} from '@/utilities/leadership/leadershipLabels'
+import {
   clearLeadershipListFilters,
   leadershipAccessFilterOptions,
   leadershipStatusFilterOptions,
@@ -23,10 +27,6 @@ import {
   type LeadershipListSortKey,
   type LeadershipListState,
 } from '@/utilities/leadership/leadershipListUrl'
-import {
-  leadershipAccessFilterLabels,
-  supportStatusLabels,
-} from '@/utilities/leadership/leadershipLabels'
 
 const DEFAULT_LEADERSHIP_LIST_SORT_KEY: LeadershipListSortKey = 'updatedAt'
 const DEFAULT_LEADERSHIP_LIST_SORT_DIR: LeadershipListSortDirection = 'desc'
@@ -95,7 +95,9 @@ export const buildLeadershipOmniboxChips = ({
 
   if (!isDefaultLeadershipListSort(state)) {
     const { sort, dir } = resolveLeadershipListSort(state)
-    const option = leadershipListSortOptions.find((entry) => entry.key === sort && entry.dir === dir)
+    const option = leadershipListSortOptions.find(
+      (entry) => entry.key === sort && entry.dir === dir,
+    )
     chips.push({
       id: 'sort',
       label: chipLabel('Ordenação', option?.label ?? `${sort} ${dir}`),

@@ -24,7 +24,10 @@ export const OrganizationFilters = ({ state }: { state: OrganizationListState })
   })
   const [query, setQuery] = useState('')
 
-  const withPageReset = (next: OrganizationListState): OrganizationListState => ({ ...next, page: 1 })
+  const withPageReset = (next: OrganizationListState): OrganizationListState => ({
+    ...next,
+    page: 1,
+  })
 
   const chips = useMemo(() => buildSearchOnlyOmniboxChips(state), [state])
 

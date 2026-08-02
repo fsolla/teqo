@@ -6,15 +6,15 @@ import { relationshipId } from '@/lib/relationship'
 import type { OrganizationKind } from '@/lib/schemas/organization'
 import type { CampaignUser, Organization } from '@/payload-types'
 import type { ActivityStatus } from '@/utilities/activityUi'
+import { loadMunicipalityLabelsByIds } from '@/utilities/loadNamesByIds'
 import {
   buildOrganizationListHref,
   parseOrganizationListParams,
   type OrganizationListState,
 } from '@/utilities/organization/organizationListUrl'
-import { loadMunicipalityLabelsByIds } from '@/utilities/loadNamesByIds'
 
-export type { OrganizationListState }
 export { buildOrganizationListHref, parseOrganizationListParams }
+export type { OrganizationListState }
 
 const organizationPageSize = 25
 

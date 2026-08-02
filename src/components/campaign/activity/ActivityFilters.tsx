@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
-import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
+import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import { Button } from '@/components/ui/button'
 import {

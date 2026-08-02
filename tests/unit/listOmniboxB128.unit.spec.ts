@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseActivityListParams } from '@/utilities/activityUi'
+import {
+  applySearchOnlyOmniboxSuggestion,
+  buildSearchOnlyOmniboxChips,
+} from '@/lib/searchOnlyListOmnibox'
 import {
   applyActivityOmniboxSuggestion,
   buildActivityOmniboxChips,
   clearActivityOmnibox,
 } from '@/utilities/activityOmnibox'
+import { parseActivityListParams } from '@/utilities/activityUi'
 import { parseDemandListParams } from '@/utilities/demand/demandListUrl'
 import {
   applyDemandOmniboxSuggestion,
@@ -23,11 +27,11 @@ import {
   applyStateDeputyOmniboxSuggestion,
   buildStateDeputyOmniboxChips,
 } from '@/utilities/stateDeputyOmnibox'
-import { parseSupporterListParams } from '@/utilities/supporter/supporterUi'
 import {
   applySupporterOmniboxSuggestion,
   buildSupporterOmniboxChips,
 } from '@/utilities/supporter/supporterOmnibox'
+import { parseSupporterListParams } from '@/utilities/supporter/supporterUi'
 import { parseTerritoryListParams } from '@/utilities/territory/territoryListUrl'
 import {
   applyTerritoryOmniboxSuggestion,
@@ -35,10 +39,6 @@ import {
   buildTerritoryOmniboxSuggestionSeeds,
   filterTerritoryOmniboxSuggestions,
 } from '@/utilities/territory/territoryOmnibox'
-import {
-  applySearchOnlyOmniboxSuggestion,
-  buildSearchOnlyOmniboxChips,
-} from '@/lib/searchOnlyListOmnibox'
 
 describe('list omnibox adapters (B128)', () => {
   it('territory builds chips and applies search', () => {

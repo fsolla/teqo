@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
+import { buildDemandListHref } from '@/utilities/demand/demandListUrl'
 import {
   applyDemandOmniboxSuggestion,
   buildDemandOmniboxChips,
@@ -14,7 +15,6 @@ import {
   type DemandListState,
   type DemandOmniboxAction,
 } from '@/utilities/demand/demandOmnibox'
-import { buildDemandListHref } from '@/utilities/demand/demandListUrl'
 
 export const DemandFilters = ({ state }: { state: DemandListState }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({

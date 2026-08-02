@@ -9,8 +9,8 @@ import {
   type AdvisorListState,
 } from '@/utilities/advisor/advisorListUrl'
 
-export type { AdvisorListState }
 export { advisorListHrefForPage, parseAdvisorListParams }
+export type { AdvisorListState }
 
 type AdvisorMunicipalityViewModel = {
   id: number

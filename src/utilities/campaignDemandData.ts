@@ -17,8 +17,8 @@ import {
   loadMunicipalityLabelsByIds,
 } from '@/utilities/loadNamesByIds'
 
-export type { DemandListState }
 export { buildDemandListHref, parseDemandListParams }
+export type { DemandListState }
 
 const demandPageSize = 25
 

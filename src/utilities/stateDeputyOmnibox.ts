@@ -43,7 +43,9 @@ const isDefaultStateDeputyListSort = (state: StateDeputyListState): boolean => {
 const partyChipLabel = (party: string): string =>
   party === NO_PARTY_FILTER_VALUE ? noPartyFilterLabel : party
 
-export const buildStateDeputyOmniboxChips = (state: StateDeputyListState): CampaignListOmniboxChip[] => {
+export const buildStateDeputyOmniboxChips = (
+  state: StateDeputyListState,
+): CampaignListOmniboxChip[] => {
   const chips: CampaignListOmniboxChip[] = []
 
   if (state.q) chips.push({ id: 'q', label: chipLabel('Busca', state.q) })
@@ -127,7 +129,9 @@ export const applyStateDeputyOmniboxSuggestion = ({
   if (suggestionId.startsWith('sort:')) {
     const raw = suggestionId.slice(5)
     const [key, dir] = raw.split('|')
-    const option = stateDeputyListSortOptions.find((entry) => entry.key === key && entry.dir === dir)
+    const option = stateDeputyListSortOptions.find(
+      (entry) => entry.key === key && entry.dir === dir,
+    )
     if (!option) return { kind: 'url', state }
     const next = withPageReset({ ...state, sort: option.key, dir: option.dir })
     if (isDefaultStateDeputyListSort(next)) {

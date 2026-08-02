@@ -3,16 +3,16 @@
  * stay URL-only without new list UI. Pure / client-safe.
  */
 import {
-  campaignDemandStatusLabels,
-  campaignDemandStatuses,
-  type CampaignDemandStatus,
-} from '@/lib/schemas/campaignDemand'
-import {
   createOmniboxSuggestionSeed,
   filterOmniboxSuggestionSeeds,
   type CampaignListOmniboxChip,
   type CampaignListOmniboxSuggestion,
 } from '@/lib/campaignListOmnibox'
+import {
+  campaignDemandStatusLabels,
+  campaignDemandStatuses,
+  type CampaignDemandStatus,
+} from '@/lib/schemas/campaignDemand'
 import type { DemandListState } from '@/utilities/demand/demandListUrl'
 
 export type { DemandListState }

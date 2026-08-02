@@ -27,8 +27,9 @@ const chipLabel = (dimension: string, value: string): string => `${dimension}: $
 
 const withPageReset = (state: SupporterListState): SupporterListState => ({ ...state, page: 1 })
 
-const parseStateFromParams = (raw: Record<string, string | string[] | undefined>): SupporterListState =>
-  parseSupporterListParams(raw)
+const parseStateFromParams = (
+  raw: Record<string, string | string[] | undefined>,
+): SupporterListState => parseSupporterListParams(raw)
 
 export const buildSupporterOmniboxChips = ({
   state,

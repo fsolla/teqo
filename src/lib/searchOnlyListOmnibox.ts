@@ -19,12 +19,12 @@ export type SearchOnlyOmniboxAction<T extends SearchOnlyListState> =
 
 const chipLabel = (dimension: string, value: string): string => `${dimension}: ${value}`
 
-export const buildSearchOnlyOmniboxChips = (state: SearchOnlyListState): CampaignListOmniboxChip[] =>
-  state.q ? [{ id: 'q', label: chipLabel('Busca', state.q) }] : []
+export const buildSearchOnlyOmniboxChips = (
+  state: SearchOnlyListState,
+): CampaignListOmniboxChip[] => (state.q ? [{ id: 'q', label: chipLabel('Busca', state.q) }] : [])
 
-export const buildSearchOnlyOmniboxSuggestions = (
-  query: string,
-): CampaignListOmniboxSuggestion[] => filterOmniboxSuggestionSeeds([], query)
+export const buildSearchOnlyOmniboxSuggestions = (query: string): CampaignListOmniboxSuggestion[] =>
+  filterOmniboxSuggestionSeeds([], query)
 
 export const applySearchOnlyOmniboxSuggestion = <T extends SearchOnlyListState>({
   state,
