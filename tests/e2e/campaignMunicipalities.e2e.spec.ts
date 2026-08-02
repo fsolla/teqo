@@ -522,7 +522,7 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
     }
 
     const boxes = await collectActionBoundingBoxes(actionsRegion, staffActionLabels)
-    assertThreeColumnActionGrid(groupActionsByRow(boxes), 2)
+    assertThreeColumnActionGrid(boxes, 2)
   })
 
   test('overlay labels readable and search focus hides action strip', async ({

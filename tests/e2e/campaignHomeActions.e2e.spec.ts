@@ -135,7 +135,7 @@ test.describe('Início — catálogo de ações (B45)', () => {
     const actionList = actionsRegion.locator('ul[data-layout="grid-3"]')
     await expect(actionList).toBeVisible()
     const boxes = await collectActionBoundingBoxes(actionsRegion, staffActionLabels)
-    assertThreeColumnActionGrid(groupActionsByRow(boxes), 2)
+    assertThreeColumnActionGrid(boxes, 2)
 
     await page.getByRole('link', { name: 'Ajustar votos', exact: true }).click()
     await page.waitForURL(/\/campanha\/acoes\/atualizar-votos/)
