@@ -10,24 +10,24 @@ import { getPayload } from 'payload'
 
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
-import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { SupporterFilters } from '@/components/campaign/supporter/SupporterFilters'
 import { SupporterList } from '@/components/campaign/supporter/SupporterList'
 import { SupporterListOverview } from '@/components/campaign/supporter/SupporterListOverview'
 import { Button } from '@/components/ui/button'
-import { isCampaignCoordinator, isCampaignUnrestricted } from '@/utilities/campaignAccess'
+import { isCampaignCoordinator } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { loadSupportersPageData } from '@/utilities/supporter/supporterPageData'
 import {
   buildSupporterFiltersKey,
   buildSupporterListHref,
   canAccessSupporterArea,
-  getSupporterScopeLabel,
 } from '@/utilities/supporter/supporterUi'
 import { toSupporterListItemViewModel } from '@/utilities/supporter/supporterViewModels'
+
+export const metadata = campaignPageMetadataFromCatalog('apoiadores')
 
 type SupportersPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -80,35 +80,22 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Apoiadores</h1>
-          <p className="text-muted-foreground">
-            Base nominal de apoio com intenção de voto e vínculo opcional a municípios.
-          </p>
-          <CampaignScopeBadge>
-            {isCampaignUnrestricted(user)
-              ? `${campaignRoleLabels[user.role]} · todos os apoiadores`
-              : getSupporterScopeLabel(result.totalDocs)}
-          </CampaignScopeBadge>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          {isCampaignCoordinator(user) ? (
-            <Button asChild variant="outline" className="min-h-11">
-              <Link href="/campanha/apoiadores/importar">
-                <FileUpIcon data-icon="inline-start" aria-hidden="true" />
-                Importar CSV
-              </Link>
-            </Button>
-          ) : null}
-          <Button asChild className="min-h-11">
-            <Link href="/campanha/apoiadores/novo">
-              <PlusIcon data-icon="inline-start" aria-hidden="true" />
-              Novo
+      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        {isCampaignCoordinator(user) ? (
+          <Button asChild variant="outline" className="min-h-11">
+            <Link href="/campanha/apoiadores/importar">
+              <FileUpIcon data-icon="inline-start" aria-hidden="true" />
+              Importar CSV
             </Link>
           </Button>
-        </div>
-      </header>
+        ) : null}
+        <Button asChild className="min-h-11">
+          <Link href="/campanha/apoiadores/novo">
+            <PlusIcon data-icon="inline-start" aria-hidden="true" />
+            Novo
+          </Link>
+        </Button>
+      </div>
 
       <CampaignListPendingBoundary>
         <SupporterFilters

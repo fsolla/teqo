@@ -9,8 +9,11 @@ import { StateDeputyForm } from '@/components/campaign/stateDeputy/StateDeputyFo
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { loadStateDeputyDetail } from '@/utilities/stateDeputyData'
 import { updateStateDeputyFormAction } from './formActions'
+
+export const metadata = campaignPageMetadataFromCatalog('dobradinhas')
 
 type StateDeputyDetailPageProps = {
   params: Promise<{ slug: string }>

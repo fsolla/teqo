@@ -11,7 +11,9 @@ import {
 } from '@/components/campaign/shell/BiometricEnrollmentToast'
 import { CampaignAppScrollChrome } from '@/components/campaign/shell/CampaignAppScrollChrome'
 import { CampaignHomeSearchChromeProvider } from '@/components/campaign/shell/CampaignHomeSearchChromeContext'
+import { CampaignDesktopHeader } from '@/components/campaign/shell/CampaignDesktopHeader'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
+import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignNotificationBellSlot } from '@/components/campaign/shell/CampaignNotificationBellSlot'
 import { CampaignQuickActionContextProvider } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { CampaignSidebar } from '@/components/campaign/shell/CampaignSidebar'
@@ -22,7 +24,6 @@ import {
   SIDEBAR_COOKIE_NAME,
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger,
 } from '@/components/ui/Sidebar'
 import { Toaster } from '@/components/ui/Toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -75,6 +76,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
       <CampaignSidebarViewportDefault hasSidebarCookie={hasSidebarCookie} />
       <CampaignSidebar user={campaignUserShellView(user)} />
       <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
+        <CampaignPageChromeProvider role={user.role}>
         <CampaignWizardChromeProvider>
           <CampaignHomeSearchChromeProvider>
             <CampaignQuickActionContextProvider>
@@ -82,12 +84,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
                 <CampaignMobileTopBar
                   notificationBell={<CampaignNotificationBellSlot user={user} />}
                 />
-                <header className="hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden">
-                  <SidebarTrigger />
-                  <div className="ml-auto">
-                    <CampaignNotificationBellSlot user={user} />
-                  </div>
-                </header>
+                <CampaignDesktopHeader user={user} />
                 {/*
                 Provider must wrap CampaignAppScrollChrome, not only page children:
                 the mobile quick-actions drawer (B91/B100) mounts as a sibling of
@@ -105,6 +102,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
             </CampaignQuickActionContextProvider>
           </CampaignHomeSearchChromeProvider>
         </CampaignWizardChromeProvider>
+      </CampaignPageChromeProvider>
       </SidebarInset>
     </SidebarProvider>
   )

@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { resolvedPortfolioEntriesById } from '@/lib/municipalityPortfolio'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   loadMunicipalityOptions,
   loadOrganizationOptions,
@@ -22,6 +23,8 @@ import {
 import { loadLeadershipDetail } from '@/utilities/leadership/leadershipData'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
 import { updateLeadershipInternalFormAction } from './formActions'
+
+export const metadata = campaignPageMetadataFromCatalog('liderancas')
 
 type LeadershipDetailPageProps = {
   params: Promise<{ id: string }>

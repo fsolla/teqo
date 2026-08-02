@@ -5,7 +5,6 @@ import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { setSupporterVoteIntentionFormAction } from '@/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions'
-import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { ConsentText } from '@/components/campaign/shared/ConsentText'
 import { RemoveSupporterDataButton } from '@/components/campaign/supporter/RemoveSupporterDataButton'
 import { SupporterShareKit } from '@/components/campaign/supporter/SupporterShareKit'
@@ -14,7 +13,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   loadSupporterDetailConsentData,
   loadSupporterDetailPageData,
@@ -25,6 +24,8 @@ import {
   supporterVoteIntentionLabels,
 } from '@/utilities/supporter/supporterUi'
 import { parseSupporterId } from '@/utilities/supporter/supporterViewModels'
+
+export const metadata = campaignPageMetadataFromCatalog('apoiadores')
 
 type SupporterDetailPageProps = {
   params: Promise<{ id: string }>
@@ -71,7 +72,6 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
             Voltar para apoiadores
           </Link>
         </Button>
-        <CampaignScopeBadge>{campaignRoleLabels[user.role]}</CampaignScopeBadge>
         <h1 className="text-2xl font-semibold tracking-tight">{supporter.name}</h1>
         <p className="text-muted-foreground">
           {supporter.city ?? 'Cidade não informada'}

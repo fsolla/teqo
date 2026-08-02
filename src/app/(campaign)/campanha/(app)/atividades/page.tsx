@@ -24,8 +24,11 @@ import {
 import { toActivityListViewModel } from '@/utilities/activityViewModels'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { TOUR_COMPOSER_PATH } from '@/utilities/visit/visitPlannerUrl'
+
+export const metadata = campaignPageMetadataFromCatalog('atividades')
 
 type ActivityListPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -53,32 +56,22 @@ export default async function ActivityListPage({ searchParams }: ActivityListPag
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Atividades</h1>
-          <p className="text-muted-foreground">
-            Organize caminhadas, comícios, panfletagens e demais ações de campanha.
-          </p>
+      {canCreate ? (
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button asChild variant="outline" className="min-h-11">
+            <Link href={TOUR_COMPOSER_PATH}>
+              <MapPinnedIcon data-icon="inline-start" aria-hidden="true" />
+              Planejar giro
+            </Link>
+          </Button>
+          <Button asChild className="min-h-11">
+            <Link href="/campanha/atividades/nova">
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Nova atividade
+            </Link>
+          </Button>
         </div>
-        {canCreate ? (
-          <div className="flex flex-wrap gap-2">
-            {/* E13: the planner generates several drafts at once, so it sits next
-                to "Nova atividade" rather than replacing it. */}
-            <Button asChild variant="outline" className="min-h-11">
-              <Link href={TOUR_COMPOSER_PATH}>
-                <MapPinnedIcon data-icon="inline-start" aria-hidden="true" />
-                Planejar giro
-              </Link>
-            </Button>
-            <Button asChild className="min-h-11">
-              <Link href="/campanha/atividades/nova">
-                <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                Nova atividade
-              </Link>
-            </Button>
-          </div>
-        ) : null}
-      </header>
+      ) : null}
 
       <CampaignListPendingBoundary>
         <ActivityFilters

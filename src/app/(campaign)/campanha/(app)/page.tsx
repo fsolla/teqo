@@ -12,8 +12,11 @@ import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { loadCampaignHomeSummary } from '@/utilities/campaignDashboardData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadHomeSearchSuggestions } from '@/utilities/homeSearch/loadHomeSearchSuggestions'
+import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata = campaignPageMetadata(null)
 
 export default async function CampaignHomePage() {
   const [payload, user] = await Promise.all([getPayload({ config }), requireCampaignPageActor()])

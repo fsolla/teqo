@@ -1,5 +1,5 @@
 import { campaignConceptHref } from '../../src/lib/campaignIntelligenceConcepts.js'
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures.js'
 
 /**
  * E18 — `/campanha/conceitos` documents staff-only numbers (estimates, goals,
@@ -41,9 +41,7 @@ test.describe('Conceitos de inteligência', () => {
     await page.getByRole('link', { name: 'Como cada número é calculado' }).click()
 
     await expect(page).toHaveURL(/\/campanha\/conceitos$/)
-    await expect(
-      page.getByRole('heading', { level: 1, name: 'Conceitos de inteligência' }),
-    ).toBeVisible()
+    await expect(campaignPageChrome(page, 'Conceitos de inteligência')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Cobertura da meta' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Teto do campo (projetado)' })).toBeVisible()
 
@@ -67,8 +65,6 @@ test.describe('Conceitos de inteligência', () => {
     await page.goto('/campanha/conceitos')
 
     await expect(page).toHaveURL(/\/campanha\/contatos\/?$/)
-    await expect(
-      page.getByRole('heading', { level: 1, name: 'Conceitos de inteligência' }),
-    ).toHaveCount(0)
+    await expect(campaignPageChrome(page, 'Conceitos de inteligência')).toHaveCount(0)
   })
 })

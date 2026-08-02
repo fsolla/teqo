@@ -12,11 +12,14 @@ import {
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignDashboardData } from '@/utilities/campaignDashboardData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'
 import { loadMunicipalityMapBundle } from '@/utilities/municipality/municipalityMapData'
 import { loadMunicipalitySuggestions } from '@/utilities/municipality/municipalityTriggers'
 
 import { resolveSuggestionFormAction } from '../suggestionFormActions'
+
+export const metadata = campaignPageMetadataFromCatalog('quadro')
 
 export const dynamic = 'force-dynamic'
 
@@ -36,7 +39,6 @@ export default async function CampaignQuadroPage({ searchParams }: CampaignQuadr
   return (
     <CampaignDashboard
       view={view}
-      userName={user.name}
       mapSlot={
         <Suspense
           fallback={

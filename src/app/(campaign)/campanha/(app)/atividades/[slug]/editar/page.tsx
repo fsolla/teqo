@@ -8,6 +8,8 @@ import {
 } from '@/app/(campaign)/campanha/(app)/atividades/contactSearchActions'
 import { updateActivityFormAction } from '@/app/(campaign)/campanha/(app)/atividades/formActions'
 import { ActivityForm } from '@/components/campaign/activity/ActivityForm'
+import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
+import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { ActivityNotFoundError, getActivityEditPageData } from '@/utilities/activityPageData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
@@ -18,6 +20,26 @@ import { getEligibleAdvisorOptions } from '@/utilities/municipality/municipality
 
 type EditActivityPageProps = {
   params: Promise<{ slug: string }>
+}
+
+const activityEditSubtitle =
+  'Atualize os detalhes da atividade sem alterar o título original.'
+
+export async function generateMetadata({ params }: EditActivityPageProps) {
+  const { slug } = await params
+  if (!slug) return campaignPageMetadata({ title: 'Editar atividade', subtitle: activityEditSubtitle })
+
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff', redirectTo: '/campanha/atividades' }),
+    getPayload({ config }),
+  ])
+
+  try {
+    const view = await getActivityEditPageData(payload, user, slug)
+    return campaignPageMetadata({ title: `Editar ${view.title}`, subtitle: activityEditSubtitle })
+  } catch {
+    return campaignPageMetadata({ title: 'Editar atividade', subtitle: activityEditSubtitle })
+  }
 }
 
 export default async function EditActivityPage({ params }: EditActivityPageProps) {
@@ -41,13 +63,9 @@ export default async function EditActivityPage({ params }: EditActivityPageProps
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <p className="text-sm font-medium text-primary">Atividades</p>
-        <h1 className="text-2xl font-semibold tracking-tight">Editar {view.title}</h1>
-        <p className="text-muted-foreground">
-          Atualize os detalhes da atividade sem alterar o título original.
-        </p>
-      </header>
+      <SetCampaignPageChrome
+        chrome={{ title: `Editar ${view.title}`, subtitle: activityEditSubtitle }}
+      />
       <ActivityForm
         action={updateActivityFormAction}
         activity={view}

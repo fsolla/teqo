@@ -31,8 +31,11 @@ import {
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { firstValue, strictDecimalInteger } from '@/utilities/campaignListUrl'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 
 import { ActivityOverviewTab } from './ActivityOverviewTab'
+
+export const metadata = campaignPageMetadataFromCatalog('atividades')
 
 type ActivityDetailPageProps = {
   params: Promise<{ slug: string }>

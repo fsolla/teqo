@@ -56,27 +56,16 @@ const buildZoneCityHrefs = (
 
 export const CampaignDashboard = ({
   view,
-  userName,
   mapSlot = null,
   suggestionsSlot = null,
 }: {
   view: StaffDashboardView
-  userName: string
   /** Server-streamed map section (composition keeps this component map-agnostic). */
   mapSlot?: ReactNode
   /** Server-streamed suggestion queue (E11) — right after the KPIs: it is the "onde ajo". */
   suggestionsSlot?: ReactNode
 }) => (
   <CampaignPageShell>
-    <header className="flex flex-col gap-1">
-      <h1 className="text-2xl font-semibold tracking-tight">Olá, {userName}</h1>
-      <p className="text-muted-foreground">
-        {view.role === 'advisor'
-          ? 'Quadro dos municípios sob sua assessoria.'
-          : 'Quadro geral da campanha por município.'}
-      </p>
-    </header>
-
     {mapSlot}
 
     <section

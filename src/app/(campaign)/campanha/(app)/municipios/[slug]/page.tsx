@@ -9,6 +9,7 @@ import { MunicipalityTabNav } from '@/components/campaign/municipality/Municipal
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   resolveMunicipalityDetailTab,
   type MunicipalityDetailSearchParams,
@@ -32,6 +33,8 @@ import {
   OverviewTab,
   UpdatesTab,
 } from './MunicipalityDetailTabs'
+
+export const metadata = campaignPageMetadataFromCatalog('municipios')
 
 type MunicipalityDetailPageProps = {
   params: Promise<{ slug: string }>

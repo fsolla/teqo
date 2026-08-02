@@ -14,6 +14,9 @@ import { isPlanilhaPlaceholderEmail } from '@/lib/schemas/advisor'
 import { loadAdvisorDetail } from '@/utilities/advisorData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { sendAdvisorPasswordResetFormAction, updateAdvisorProfileFormAction } from '../formActions'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+
+export const metadata = campaignPageMetadataFromCatalog('assessores')
 
 type AdvisorDetailPageProps = {
   params: Promise<{ id: string }>

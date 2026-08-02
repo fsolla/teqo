@@ -17,12 +17,15 @@ import { Button } from '@/components/ui/button'
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   buildOrganizationListHref,
   loadOrganizationListPageData,
   parseOrganizationListParams,
   type OrganizationRowViewModel,
 } from '@/utilities/organizationData'
+
+export const metadata = campaignPageMetadataFromCatalog('organizacoes')
 
 type OrganizationsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -74,21 +77,14 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Organizações</h1>
-          <p className="text-muted-foreground">
-            Sindicatos, associações e movimentos que apoiam a campanha — com suas lideranças e
-            atividades.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <Button asChild className="min-h-11">
           <Link href="/campanha/organizacoes/nova">
             <PlusIcon data-icon="inline-start" aria-hidden="true" />
             Nova organização
           </Link>
         </Button>
-      </header>
+      </div>
 
       <CampaignListPendingBoundary>
         <CampaignSearchForm

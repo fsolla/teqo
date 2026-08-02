@@ -11,9 +11,12 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { loadOrganizationDetail } from '@/utilities/organizationData'
 import { updateOrganizationFormAction } from './formActions'
+
+export const metadata = campaignPageMetadataFromCatalog('organizacoes')
 
 type OrganizationDetailPageProps = {
   params: Promise<{ slug: string }>

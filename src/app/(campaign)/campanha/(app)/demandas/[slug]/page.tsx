@@ -17,11 +17,14 @@ import {
 import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { loadDemandDetail } from '@/utilities/campaignDemandData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   attachDemandReceiptFormAction,
   setDemandCostFormAction,
   transitionDemandFormAction,
 } from './formActions'
+
+export const metadata = campaignPageMetadataFromCatalog('demandas')
 
 type DemandDetailPageProps = {
   params: Promise<{ slug: string }>

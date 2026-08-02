@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures.js'
 
 test.describe('Territórios de Identidade', () => {
   test('staff sorts, filters and opens the municipality queue for a territory', async ({
@@ -16,9 +16,7 @@ test.describe('Territórios de Identidade', () => {
     await page.getByRole('link', { name: 'Territórios', exact: true }).click()
 
     await expect(page).toHaveURL(/\/campanha\/territorios$/)
-    await expect(
-      page.getByRole('heading', { level: 1, name: 'Territórios de Identidade' }),
-    ).toBeVisible()
+    await expect(campaignPageChrome(page, 'Territórios de Identidade')).toBeVisible()
 
     await page.getByRole('link', { name: /Ordenar por Votos 2022/ }).click()
     await expect(page).toHaveURL(/\/campanha\/territorios\?sort=votes2022/)
