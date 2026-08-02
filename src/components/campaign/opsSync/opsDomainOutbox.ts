@@ -129,6 +129,10 @@ const createDomainOfflineExecutor = (): OfflineExecutor =>
       leadershipCreateOutbox: leadershipCreateOutboxCollection,
       demandTransitionOutbox: demandTransitionOutboxCollection,
       activityUpdateOutbox: activityUpdateOutboxCollection,
+      // Mirror rows touched in onMutate must be registered for persistence.
+      leaderships: leadershipsCollection,
+      demands: demandsCollection,
+      activities: activitiesCollection,
     },
     storage: new IndexedDBAdapter('teqo-ops-domain', 'outbox'),
     beforeRetry: collapseAllDomainOutbox,

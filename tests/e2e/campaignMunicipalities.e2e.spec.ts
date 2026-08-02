@@ -212,7 +212,7 @@ test.describe('Municípios — jornadas por papel', () => {
     await trendPopover.getByLabel('Justificativa').fill(note)
     await trendPopover.getByLabel('Tendência', { exact: true }).selectOption('favoravel')
     await Promise.all([
-      expectPostResponse(page, '/campanha/municipios/political-trend'),
+      expectPostResponse(page, '/campanha/municipios'),
       trendPopover.getByLabel('Justificativa').blur(),
     ])
 

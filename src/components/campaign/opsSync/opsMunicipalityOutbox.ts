@@ -148,6 +148,8 @@ const createMunicipalityOfflineExecutor = (): OfflineExecutor =>
       politicalTrendOutbox: politicalTrendOutboxCollection,
       engagementLevelOutbox: engagementLevelOutboxCollection,
       advisorsOutbox: advisorsOutboxCollection,
+      // Mirror rows touched in onMutate must be registered for persistence.
+      votePledges: votePledgesCollection,
     },
     storage: new IndexedDBAdapter('teqo-ops-municipality', 'outbox'),
     beforeRetry: collapseAllMunicipalityOutbox,
