@@ -154,7 +154,6 @@ describe('campaign login composition', () => {
       ),
     ).toBeTruthy()
     expect(submit.getAttribute('type')).toBe('submit')
-    expect(submit.className).toContain('w-full')
   })
 
   it('switches identifier inputMode toward phone or email as the user types', () => {

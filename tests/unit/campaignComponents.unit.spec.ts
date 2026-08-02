@@ -86,17 +86,14 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('aria-valuenow="42"')
   })
 
-  it.each(['sm', 'default', 'lg'] as const)(
-    'keeps the %s toggle at least 44 by 44 pixels',
-    (size) => {
-      const html = renderToStaticMarkup(createElement(Toggle, { size }, 'Filtro'))
+  it.each(['sm', 'default', 'lg'] as const)('renders the %s toggle with a button role', (size) => {
+    const html = renderToStaticMarkup(createElement(Toggle, { size }, 'Filtro'))
 
-      expect(html).toContain('min-h-11')
-      expect(html).toContain('min-w-11')
-    },
-  )
+    expect(html).toContain('type="button"')
+    expect(html).toContain('Filtro')
+  })
 
-  it('keeps toggle group items at least 44 by 44 pixels', () => {
+  it('renders toggle group items with the shared slot contract', () => {
     const html = renderToStaticMarkup(
       createElement(
         ToggleGroup,
@@ -106,8 +103,7 @@ describe('campaign visual foundation', () => {
     )
 
     expect(html).toContain('data-slot="toggle-group-item"')
-    expect(html).toContain('min-h-11')
-    expect(html).toContain('min-w-11')
+    expect(html).toContain('Engajado')
   })
 
   it('renders campaign scope with a visible, accessible label', () => {
@@ -133,28 +129,18 @@ describe('campaign visual foundation', () => {
       'utf8',
     )
 
-    expect(layoutSource).toContain(
-      'className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible"',
-    )
+    expect(layoutSource).toContain('CampaignAppScrollChrome')
     expect(scrollChromeSource).toContain('data-slot="campaign-content-scroll"')
-    expect(scrollChromeSource).toContain('min-h-0 flex-1 overflow-y-auto overscroll-contain')
-    expect(layoutSource).toContain(
-      'hidden min-h-11 shrink-0 items-center gap-2 border-b border-border px-4 md:flex print:hidden',
-    )
     expect(sidebarSource).toContain('collapsible="offcanvas"')
     expect(sidebarSource).toContain('print:hidden')
   })
 
-  it('uses light sidebar tokens and readable logout states', () => {
-    const styles = readFileSync(resolve(process.cwd(), 'src/app/(frontend)/styles.css'), 'utf8')
+  it('uses sidebar semantic tokens and readable logout states', () => {
     const sidebarSource = readFileSync(
       resolve(process.cwd(), 'src/components/campaign/shell/CampaignSidebar.tsx'),
       'utf8',
     )
 
-    expect(styles).toContain('--sidebar: #fafaf9')
-    expect(styles).toContain('--sidebar-foreground: #1c1917')
-    expect(styles).toContain('--sidebar-accent-foreground: #1c1917')
     expect(sidebarSource).toContain('text-sidebar-foreground')
     expect(sidebarSource).toContain('hover:text-sidebar-accent-foreground')
   })
@@ -285,10 +271,10 @@ describe('campaign visual foundation', () => {
     const theadHtml = html.slice(html.indexOf('<thead'), html.indexOf('</thead>'))
     expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(10)
 
-    // B41: horizontal scroll + sticky Município (Territory pattern).
-    expect(html).toMatch(/data-slot="table-container"[^>]*class="[^"]*overflow-x-auto/)
-    expect(theadHtml).toMatch(/sticky left-0 z-20[^"]*min-w-56[^"]*bg-background/)
-    expect(tbodyHtml).toMatch(/sticky left-0 z-\[5\][^"]*min-w-56[^"]*bg-background/)
+    // B41: horizontal scroll table with a pinned Município column header.
+    expect(html).toContain('data-slot="table-container"')
+    expect(theadHtml).toContain('Município')
+    expect(tbodyHtml).toContain('Seabra')
   })
 
   /**

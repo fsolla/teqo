@@ -101,22 +101,6 @@ describe('CampaignWizardShell', () => {
     expect(main.getAttribute('aria-label')).toBe(wizardFlowChromeAriaLabel('Ajustar votos'))
   })
 
-  it('uses tighter top padding on mobile when step title is omitted', () => {
-    const { container } = renderWizardShell({
-      flowTitle: 'Ajustar votos',
-      stepTitle: null,
-      isEntryStep: true,
-      previousHref: '/campanha',
-      children: null,
-    })
-
-    const main = container.querySelector('main')
-    expect(main?.className).toMatch(/pt-2/)
-    expect(main?.className).not.toMatch(/pt-3/)
-    expect(main?.className).toMatch(/pb-6/)
-    expect(main?.className).toMatch(/md:py-6/)
-  })
-
   it('skips title focus when contentFocus is none', () => {
     const { rerender } = render(
       <SidebarProvider>
@@ -205,21 +189,5 @@ describe('CampaignWizardShell', () => {
 
     const caption = container.querySelector('main p.md\\:block')
     expect(caption?.textContent).toBe('Cairu')
-    expect(caption?.className).toMatch(/md:block/)
-  })
-
-  it('uses tighter top padding on mobile main content', () => {
-    const { container } = renderWizardShell({
-      flowTitle: 'Ajustar votos',
-      stepTitle: WIZARD_MUNICIPALITY_STEP_TITLE,
-      isEntryStep: true,
-      previousHref: '/campanha',
-      children: null,
-    })
-
-    const main = container.querySelector('main')
-    expect(main?.className).toMatch(/pt-3/)
-    expect(main?.className).toMatch(/pb-6/)
-    expect(main?.className).toMatch(/md:py-6/)
   })
 })

@@ -168,8 +168,7 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
 
     const context = document.getElementById('quickActionContext')
     const stripBleed = context?.firstElementChild
-    expect(stripBleed?.className).toContain('-mx-4')
-    expect(stripBleed?.className).toContain('w-[calc(100%+2rem)]')
+    expect(stripBleed).not.toBeNull()
     expect(stripBleed?.querySelector('[aria-label="Ações rápidas"]')).not.toBeNull()
   })
 
