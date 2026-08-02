@@ -5,6 +5,7 @@ Atualizado em: 2026-08-02
 Issue: #289
 Priority: P1
 Model: composer-2.5
+<<<<<<< HEAD
 Impeccable: B — chrome/navegação nos passos `/campanha/acoes/*` (Voltar + back do SO)
 Appetite: ~0,5–1 dia eng; um contrato de “passo anterior” coerente na cadeia B98; sem migration
 Responsável: —
@@ -92,3 +93,56 @@ Mesma regra nos outros elos: do 1º passo de um subfluxo encadeado, Voltar = úl
 - Issue B98 #106 · B110 #149 · UX-1 A5 em `fluxos-acao-primeiro-inicio.md` (stub hoje)
 - `docs/plans/encadear-ajustes-wizard.md` · `docs/plans/fluxos-acao-primeiro-inicio.md`
 - Rotas `/campanha/acoes/atualizar-votos`, `/campanha/acoes/mudar-tendencia` (e demais elos B98); `registrar-pedido` só como consumidor futuro
+=======
+Impeccable: B — chrome do wizard (header mobile B75)
+Appetite: ~0,25d eng; helper puro + pins; sem migration
+Responsável: —
+
+## Design (Impeccable)
+
+Âncoras: `PRODUCT.md` · B75 header · B98 encadeamento · tema `campaign`.
+
+Brief:
+
+- **Persona:** staff no meio do wizard (principal ou encadeado).
+- **Job principal:** **Voltar** no header leva ao **passo imediatamente anterior** do ritual — busca de município, ajuste anterior na cadeia B98, ou sub-passo do mesmo fluxo (ex. nota → escolha de tendência).
+- **Anti-goals:** Voltar pular para busca de município quando o passo anterior é outro ajuste já visitado; Voltar para o mesmo passo (bug atual em tendência); gesture-only back.
+
+### Wireframe (texto)
+
+```text
+Cadeia votos → tendência → sinal (entry=update-votes):
+
+  [Voltar] em sinal     → tendência (último passo)
+  [Voltar] em tendência → votos (principal)
+  [Voltar] em votos     → busca município
+
+Sub-fluxo tendência (escolha → nota):
+
+  [Voltar] em nota      → escolha (mesmo fluxo)
+```
+
+## Contexto
+
+B98 encadeia ajustes após a principal; B75/B96 definem chrome com **Voltar** nas etapas `continue`. Hoje vários passos usam `wizardActionHref(slug, undefined)` ou `wizardActionHref(slug, municipio)` como `previousHref`, o que **ignora a fila** — ex. em tendência encadeada após votos, Voltar deveria ir a votos, não à busca de município; em escolha de tendência, `previousHref` com `municipio` aponta para o **mesmo** passo.
+
+## Objetivos
+
+- Helper puro `wizardChainPreviousHref` (ou equivalente no dono `wizardActionChain.ts`) derivado da mesma matriz B98 que `wizardChainContinueHref`.
+- Atualizar passos **raiz** de cada fluxo encadeável (votos, escolha tendência, tipo sinal, grid liderança) para usar o helper.
+- Sub-passos intra-fluxo (nota, corpo sinal) mantêm Voltar ao sub-passo anterior **dentro** do fluxo.
+- Unit pins na matriz anterior/continuar simétrica.
+
+## Decisões travadas
+
+- **Dono = `wizardActionChain.ts`.** Reusa `wizardChainAfter` / `resolveWizardChainEntry`; não duplicar matriz. **Rejeitado:** `previousHref` ad hoc por componente.
+- **Principal → busca município; encadeado → elo anterior.** **Rejeitado:** sempre Início; sempre busca município.
+- **Sem migration / sem server.**
+
+## Aceite
+
+- [ ] Voltar no passo encadeado N leva ao passo N−1 da sessão (principal + fila B98).
+- [ ] Voltar na principal leva à busca de município (com `entry` preservado quando houver).
+- [ ] Sub-passos (nota/corpo) inalterados na semântica intra-fluxo.
+- [ ] `pnpm gate:fast` verde.
+>>>>>>> befa3a8c (B135 — Wizard Voltar aponta ao passo anterior na cadeia)

@@ -17,7 +17,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/Drawer'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
-import { wizardActionHref, wizardTrendHref } from '@/lib/campaignActionRoutes'
+import { wizardTrendHref } from '@/lib/campaignActionRoutes'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import {
   politicalTrendWizardMetaByStatus,
@@ -30,7 +30,7 @@ import {
 } from '@/lib/politicalTrendWizardUi'
 import type { PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
 import { cn } from '@/lib/utils'
-import { wizardChainEndHref } from '@/lib/wizardActionChain'
+import { wizardChainEndHref, wizardChainPreviousHref } from '@/lib/wizardActionChain'
 
 type WizardTrendChoiceStepProps = {
   actionSlug: string
@@ -61,7 +61,12 @@ export const WizardTrendChoiceStep = ({
         flowTitle={wizardFlowTitleForSlug(actionSlug)}
         isEntryStep={false}
         stepTitle={wizardTrendChoiceStepTitle(currentStatus)}
-        previousHref={wizardActionHref(actionSlug, municipalitySlug, { entryAction, returnPath })}
+        previousHref={wizardChainPreviousHref(
+          entryAction,
+          'change-trend',
+          municipalitySlug,
+          returnPath,
+        )}
         dismissHref={wizardChainEndHref(returnPath)}
         municipalityLabel={municipalityName}
         skip={skip}

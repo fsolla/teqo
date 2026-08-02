@@ -5,9 +5,12 @@ import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
   isWizardChainActionId,
   nextWizardChainStep,
+  previousWizardChainStep,
   resolveWizardChainEntry,
   wizardChainAfter,
   wizardChainContinueHref,
+  wizardChainPreviousHref,
+  wizardChainSessionSteps,
 } from '@/lib/wizardActionChain'
 
 describe('wizardActionChain', () => {
@@ -86,5 +89,40 @@ describe('wizardActionChain', () => {
     expect(resolveWizardChainEntry(undefined, 'update-votes')).toBe('update-votes')
     expect(resolveWizardChainEntry('register-signal', 'update-votes')).toBe('register-signal')
     expect(resolveWizardChainEntry('register-demand', 'change-trend')).toBe('change-trend')
+  })
+
+  it('lists session steps as principal then queue', () => {
+    expect(wizardChainSessionSteps('update-votes')).toEqual([
+      'update-votes',
+      'change-trend',
+      'register-signal',
+      'update-leadership',
+    ])
+  })
+
+  it('resolves the previous step in a session', () => {
+    expect(previousWizardChainStep('update-votes', 'update-votes')).toBe('municipality-search')
+    expect(previousWizardChainStep('update-votes', 'change-trend')).toBe('update-votes')
+    expect(previousWizardChainStep('update-votes', 'register-signal')).toBe('change-trend')
+    expect(previousWizardChainStep('register-signal', 'update-votes')).toBe('change-trend')
+  })
+
+  it('builds previous hrefs for principal and chained steps', () => {
+    expect(wizardChainPreviousHref(undefined, 'update-votes', 'cairu')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?entry=update-votes`,
+    )
+    expect(wizardChainPreviousHref('update-votes', 'change-trend', 'cairu')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu&entry=update-votes`,
+    )
+    expect(wizardChainPreviousHref('update-votes', 'register-signal', 'cairu')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&entry=update-votes`,
+    )
+    expect(wizardChainPreviousHref('update-votes', 'update-leadership', 'cairu')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/registrar-sinal?municipio=cairu&entry=update-votes`,
+    )
+    const origin = '/campanha/municipios/cairu'
+    expect(wizardChainPreviousHref('update-votes', 'change-trend', 'cairu', origin)).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu&entry=update-votes&from=${encodeURIComponent(origin)}`,
+    )
   })
 })

@@ -51,6 +51,26 @@ export const nextWizardChainStep = (
   completedAction: WizardChainActionId,
 ): WizardChainActionId | undefined => wizardChainAfter(entryAction, completedAction)[0]
 
+/** Principal plus remaining queue — the ordered session (B98). */
+export const wizardChainSessionSteps = (
+  entryAction: WizardChainActionId,
+): readonly WizardChainActionId[] => [entryAction, ...wizardChainAfter(entryAction)]
+
+export type WizardChainPreviousTarget = WizardChainActionId | 'municipality-search'
+
+/** Step immediately before `currentAction` in a B98 session, or municipality search at the principal. */
+export const previousWizardChainStep = (
+  entryAction: WizardChainActionId,
+  currentAction: WizardChainActionId,
+): WizardChainPreviousTarget => {
+  const steps = wizardChainSessionSteps(entryAction)
+  const index = steps.indexOf(currentAction)
+  if (index <= 0) {
+    return 'municipality-search'
+  }
+  return steps[index - 1]
+}
+
 const wizardHrefForChainStep = (
   action: WizardChainActionId,
   municipalitySlug: string,
@@ -109,3 +129,24 @@ export const resolveWizardChainEntry = (
   entryAction: CampaignWizardActionId | undefined,
   currentAction: WizardChainActionId,
 ): WizardChainActionId => (isWizardChainActionId(entryAction) ? entryAction : currentAction)
+
+/**
+ * Href for the wizard header Voltar on a root step of a chainable flow (B135).
+ * Sub-steps (trend note, signal body) keep intra-flow previous links.
+ */
+export const wizardChainPreviousHref = (
+  entryAction: CampaignWizardActionId | undefined,
+  currentAction: WizardChainActionId,
+  municipalitySlug: string,
+  returnPath?: string,
+): string => {
+  const sessionEntry = resolveWizardChainEntry(entryAction, currentAction)
+  const previous = previousWizardChainStep(sessionEntry, currentAction)
+
+  if (previous === 'municipality-search') {
+    const entrySlug = CAMPAIGN_WIZARD_ACTION_SLUGS[sessionEntry]
+    return wizardActionHref(entrySlug, undefined, { entryAction: sessionEntry, returnPath })
+  }
+
+  return wizardHrefForChainStep(previous, municipalitySlug, sessionEntry, returnPath)
+}
