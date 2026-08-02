@@ -122,8 +122,8 @@ export const CampaignQuickActionsDrawer = ({
       <DrawerContent
         id="CampaignQuickActionsDrawer"
         className={cn(
-          'border-t border-border bg-background text-foreground shadow-[0_-4px_24px_-8px_rgb(0_0_0/0.12)] print:hidden',
-          isFull && 'z-[60] h-dvh max-h-dvh [--drawer-height:100dvh]',
+          'border-t border-border bg-background text-foreground shadow-[0_-4px_24px_-8px_rgb(0_0_0/0.12)] print:hidden h-auto',
+          isFull && 'z-60 h-dvh max-h-dvh [--drawer-height:100dvh]',
         )}
       >
         <DrawerTitle className="sr-only">Ações rápidas</DrawerTitle>
@@ -168,6 +168,7 @@ export const CampaignQuickActionsDrawer = ({
               compactStack
             />
           </HomeSearchExcludeProvider>
+          <div className="h-2" />
         </div>
       </DrawerContent>
     </Drawer>
