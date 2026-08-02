@@ -31,3 +31,68 @@ const omniboxQueryMatches = (
 
 export const omniboxGroupMatches = (group: string, needle: string): boolean =>
   omniboxQueryMatches(group, needle)
+
+const SUGGESTION_CAP_PER_GROUP = 8
+
+export type OmniboxSuggestionSeed = CampaignListOmniboxSuggestion & {
+  /** When true, show even with an empty query (dimension shortcuts). */
+  emptyQueryVisible?: boolean
+  normalizedLabel: string
+  normalizedKeywords: readonly string[]
+}
+
+export const createOmniboxSuggestionSeed = (
+  suggestion: CampaignListOmniboxSuggestion,
+  extras?: { emptyQueryVisible?: boolean },
+): OmniboxSuggestionSeed => ({
+  ...suggestion,
+  ...extras,
+  normalizedLabel: normalizeSearchPhrase(suggestion.label),
+  normalizedKeywords: (suggestion.keywords ?? []).map((keyword) => normalizeSearchPhrase(keyword)),
+})
+
+export const filterOmniboxSuggestionSeeds = (
+  seeds: readonly OmniboxSuggestionSeed[],
+  query: string,
+): CampaignListOmniboxSuggestion[] => {
+  const suggestions: CampaignListOmniboxSuggestion[] = []
+  const trimmed = query.trim()
+  const normalizedNeedle = normalizeSearchPhrase(trimmed)
+
+  if (trimmed) {
+    suggestions.push({
+      id: `q:${trimmed}`,
+      group: 'Busca',
+      label: `Busca: ${trimmed}`,
+      keywords: ['busca', 'pesquisar', 'texto'],
+    })
+  }
+
+  const groupCounts = new Map<string, number>()
+
+  for (const seed of seeds) {
+    const count = groupCounts.get(seed.group) ?? 0
+    if (count >= SUGGESTION_CAP_PER_GROUP) continue
+
+    if (!normalizedNeedle) {
+      if (!seed.emptyQueryVisible) continue
+    } else {
+      const groupHit = omniboxGroupMatches(seed.group, trimmed)
+      const labelHit =
+        seed.normalizedLabel.includes(normalizedNeedle) ||
+        seed.normalizedKeywords.some((keyword) => keyword.includes(normalizedNeedle))
+      if (!groupHit && !labelHit) continue
+    }
+
+    const {
+      emptyQueryVisible: _visible,
+      normalizedLabel: _label,
+      normalizedKeywords: _kw,
+      ...suggestion
+    } = seed
+    suggestions.push(suggestion)
+    groupCounts.set(seed.group, count + 1)
+  }
+
+  return suggestions
+}

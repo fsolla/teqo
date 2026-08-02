@@ -165,17 +165,3 @@ const sortOptionLabel = (key: TerritoryListSortKey, dir: TerritoryListSortDirect
 export const territoryListSortOptions = territoryListSortKeys.flatMap((key) =>
   (['asc', 'desc'] as const).map((dir) => ({ key, dir, label: sortOptionLabel(key, dir) })),
 )
-
-export const serializeTerritorySortValue = (
-  key: TerritoryListSortKey,
-  dir: TerritoryListSortDirection,
-): string => `${key}|${dir}`
-
-export const parseTerritorySortValue = (
-  value: string,
-): { key: TerritoryListSortKey; dir: TerritoryListSortDirection } | null => {
-  const [key, dir] = value.split('|')
-  if (!territoryListSortKeySet.has(key)) return null
-  if (!territoryListSortDirSet.has(dir as TerritoryListSortDirection)) return null
-  return { key: key as TerritoryListSortKey, dir: dir as TerritoryListSortDirection }
-}

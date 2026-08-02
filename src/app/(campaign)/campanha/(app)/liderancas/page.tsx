@@ -352,16 +352,6 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     .filter((option): option is LeadershipFilterOption => option !== null)
     .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
 
-  const municipalityLabelsById: Record<number, string> = {}
-  for (const option of municipalityFilterOptions) {
-    municipalityLabelsById[Number(option.value)] = option.label
-  }
-  for (const id of state.municipalities ?? []) {
-    if (!municipalityLabelsById[id]) {
-      municipalityLabelsById[id] = municipalityById.get(id)?.name ?? `Município #${id}`
-    }
-  }
-
   const { sort, dir } = resolveLeadershipListSort(state)
   const sortSummary = formatLeadershipListSortSummary(sort, dir)
   const columns = leadershipColumns({
@@ -394,7 +384,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
       </div>
 
       <CampaignListPendingBoundary>
-        <LeadershipFilters state={state} municipalityLabelsById={municipalityLabelsById} />
+        <LeadershipFilters state={state} municipalityFilterOptions={municipalityFilterOptions} />
 
         <CampaignListResults>
           <p className="text-sm text-muted-foreground" aria-live="polite">

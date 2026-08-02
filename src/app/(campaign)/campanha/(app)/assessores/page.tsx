@@ -1,15 +1,14 @@
 import { ADVISOR_QUICK_CREATE_PARAM } from '@/lib/campaignAdvisorQuickActions'
-import { CAMPAIGN_ADVISORS_HOME } from '@/lib/campaignPaths'
 import config from '@payload-config'
 import { getPayload } from 'payload'
 
+import { AdvisorFilters } from '@/components/campaign/advisor/AdvisorFilters'
 import { AdvisorsTable } from '@/components/campaign/advisor/AdvisorsTable'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
-import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
@@ -50,12 +49,7 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
   return (
     <CampaignPageShell>
       <CampaignListPendingBoundary>
-        <CampaignSearchForm
-          ariaLabel="Buscar assessor por nome ou e-mail"
-          placeholder="Buscar por nome ou e-mail…"
-          initialQuery={state.q ?? ''}
-          basePath={CAMPAIGN_ADVISORS_HOME}
-        />
+        <AdvisorFilters state={state} />
 
         <CampaignListResults>
           <AdvisorsTable

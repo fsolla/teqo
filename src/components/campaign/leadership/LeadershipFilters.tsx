@@ -1,69 +1,99 @@
 'use client'
 
-import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
+import { useMemo, useState } from 'react'
+
+import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
-import { Button } from '@/components/ui/button'
 import {
   buildLeadershipFilterHref,
-  clearLeadershipListFilters,
-  formatLeadershipActiveFiltersSummary,
+  type LeadershipFilterOption,
 } from '@/utilities/leadership/leadershipListFilters'
-import { type LeadershipListState } from '@/utilities/leadership/leadershipListUrl'
+import type { LeadershipListState } from '@/utilities/leadership/leadershipListUrl'
+import {
+  applyLeadershipOmniboxSuggestion,
+  buildLeadershipOmniboxChips,
+  buildLeadershipOmniboxSuggestionSeeds,
+  clearLeadershipOmnibox,
+  filterLeadershipOmniboxSuggestions,
+  removeLeadershipOmniboxChip,
+  type LeadershipOmniboxAction,
+} from '@/utilities/leadership/leadershipOmnibox'
 
 export const LeadershipFilters = ({
   state,
-  municipalityLabelsById,
+  municipalityFilterOptions,
 }: {
   state: LeadershipListState
-  /** Labels for the active municipality filter chips in the summary. */
-  municipalityLabelsById?: Readonly<Record<number, string>>
+  municipalityFilterOptions: LeadershipFilterOption[]
 }) => {
-  const { search, onSearchChange, draftQ, isPending, navigateWithSearch, clearSearchAndNavigate } =
-    useCampaignListFilterNavigation({ state, toHref: buildLeadershipFilterHref })
-  const activeSummary = formatLeadershipActiveFiltersSummary(
-    { ...state, q: draftQ },
-    municipalityLabelsById,
+  const { navigate, isPending } = useCampaignListFilterNavigation({
+    state,
+    toHref: buildLeadershipFilterHref,
+  })
+  const [query, setQuery] = useState('')
+
+  const municipalityLabelsById = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const option of municipalityFilterOptions) {
+      const id = Number(option.value)
+      if (Number.isSafeInteger(id) && id > 0) map.set(id, option.label)
+    }
+    return map
+  }, [municipalityFilterOptions])
+
+  const chips = useMemo(
+    () => buildLeadershipOmniboxChips({ state, municipalityLabelsById }),
+    [state, municipalityLabelsById],
   )
+
+  const suggestionSeeds = useMemo(
+    () => buildLeadershipOmniboxSuggestionSeeds({ municipalityFilterOptions }),
+    [municipalityFilterOptions],
+  )
+
+  const suggestions = useMemo(
+    () => filterLeadershipOmniboxSuggestions(suggestionSeeds, query),
+    [suggestionSeeds, query],
+  )
+
+  const runAction = (action: LeadershipOmniboxAction) => {
+    if (action.kind === 'clear') {
+      setQuery('')
+      navigate(action.state)
+      return
+    }
+    navigate(action.state)
+  }
 
   return (
     <form
       role="search"
-      className="flex flex-col gap-3 transition-opacity data-[pending=true]:opacity-70"
-      data-pending={isPending}
-      aria-busy={isPending}
       onSubmit={(event) => {
         event.preventDefault()
-        navigateWithSearch(state)
       }}
     >
-      <div className="flex flex-col gap-3 md:flex-row md:items-end">
-        <CampaignSearchInput
-          id="leadership-search"
-          label="Buscar liderança por nome"
-          placeholder="Buscar por nome…"
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-        />
-        {activeSummary ? (
-          <p className="hidden min-w-0 flex-1 text-sm text-muted-foreground md:block md:self-center md:pb-2">
-            {activeSummary}
-          </p>
-        ) : null}
-        {activeSummary ? (
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11 md:self-end"
-            onClick={() => clearSearchAndNavigate(clearLeadershipListFilters(state))}
-          >
-            Limpar
-          </Button>
-        ) : null}
-      </div>
-
-      {activeSummary ? (
-        <p className="text-sm text-muted-foreground md:hidden">{activeSummary}</p>
-      ) : null}
+      <CampaignListOmnibox
+        id="leadership-omnibox"
+        label="Filtrar lideranças"
+        placeholder="Digite para filtrar (status, município, acesso…)"
+        chips={chips}
+        suggestions={suggestions}
+        query={query}
+        onQueryChange={setQuery}
+        isPending={isPending}
+        onSelectSuggestion={(suggestionId) => {
+          runAction(applyLeadershipOmniboxSuggestion({ state, suggestionId }))
+        }}
+        onCommitQuery={(text) => {
+          runAction(applyLeadershipOmniboxSuggestion({ state, suggestionId: `q:${text}` }))
+        }}
+        onRemoveChip={(chipId) => {
+          runAction(removeLeadershipOmniboxChip({ state, chipId }))
+        }}
+        onClearAll={() => {
+          runAction(clearLeadershipOmnibox(state))
+        }}
+      />
     </form>
   )
 }
