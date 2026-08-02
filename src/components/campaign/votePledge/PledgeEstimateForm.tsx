@@ -106,11 +106,7 @@ export const PledgeEstimateForm = ({
     )
   }
 
-  return (
-    <HybridPledgeEstimateForm
-      pledgeID={pledgeID}
-    />
-  )
+  return <HybridPledgeEstimateForm pledgeID={pledgeID} />
 }
 
 const LegacyPledgeEstimateForm = ({

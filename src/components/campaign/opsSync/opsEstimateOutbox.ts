@@ -93,15 +93,6 @@ const createEstimateOfflineExecutor = (): OfflineExecutor =>
     },
   })
 
-/** Test/DI seam — reset module singletons between unit cases. */
-export const resetOpsEstimateOutboxForTests = (): void => {
-  for (const key of [...opsEstimateOutboxCollection.keys()]) {
-    opsEstimateOutboxCollection.delete(key)
-  }
-  executorSingleton = null
-  initPromise = null
-}
-
 export const getOpsEstimateOfflineExecutor = async (): Promise<OfflineExecutor> => {
   if (executorSingleton) {
     await executorSingleton.waitForInit()
@@ -131,15 +122,8 @@ export const enqueueEstimateVotes = async (input: EnqueueEstimateVotesInput): Pr
         variables.baseEstimatedAt !== undefined
           ? variables.baseEstimatedAt
           : (mirrorRow?.estimatedAt ?? null)
-      const next = toOpsEstimateOutboxRow(
-        { ...variables, baseEstimatedAt },
-        'pending',
-      )
-      patchOpsVotePledgeEstimateOptimistic(
-        next.pledgeId,
-        next.estimatedVotes,
-        next.estimateNote,
-      )
+      const next = toOpsEstimateOutboxRow({ ...variables, baseEstimatedAt }, 'pending')
+      patchOpsVotePledgeEstimateOptimistic(next.pledgeId, next.estimatedVotes, next.estimateNote)
       if (opsEstimateOutboxCollection.has(next.pledgeId)) {
         opsEstimateOutboxCollection.update(next.pledgeId, (draft) => {
           draft.estimatedVotes = next.estimatedVotes

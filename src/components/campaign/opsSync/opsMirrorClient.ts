@@ -9,6 +9,10 @@ import {
   type OpsMirrorStore,
 } from '@/components/campaign/opsSync/opsMirrorPersistence'
 import {
+  mapVotePledgeWriteToOps,
+  type VotePledgeEstimateWriteResult,
+} from '@/lib/campaignOps/mapVotePledgeWriteToOps'
+import {
   createEmptyOpsSnapshot,
   type OpsActivity,
   type OpsDemand,
@@ -22,10 +26,6 @@ import {
   type OpsStateDeputy,
   type OpsVotePledge,
 } from '@/lib/campaignOps/opsContract'
-import {
-  mapVotePledgeWriteToOps,
-  type VotePledgeEstimateWriteResult,
-} from '@/lib/campaignOps/mapVotePledgeWriteToOps'
 import { mergeOpsSnapshot } from '@/lib/campaignOps/opsMerge'
 import { OPS_MIRROR_SCHEMA_VERSION } from '@/lib/campaignOps/opsMirrorVersion'
 import type { OpsSyncState } from '@/lib/campaignOps/opsSyncMeta'
