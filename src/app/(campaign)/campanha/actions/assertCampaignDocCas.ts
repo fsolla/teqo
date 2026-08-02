@@ -3,13 +3,19 @@ import type { Payload } from 'payload'
 import { assertOpsUpdatedAtCas } from '@/lib/schemas/opsCas'
 import type { CampaignUser } from '@/payload-types'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
+import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 
 type CasCollection = 'leadership' | 'campaignDemand' | 'activity' | 'stateDeputy' | 'municipality'
 
+/** Shared advisory-lock key for document CAS — form + relation writers must agree. */
+export const campaignDocCasLockKey = (collection: CasCollection, id: number): string =>
+  `campaign-doc-cas:${collection}:${id}`
+
 /**
- * OH13 — shared CAS gate used by domain writes (3+ call sites). When armed,
- * loads the doc's `updatedAt` under the actor's row access and refuses on
- * mismatch. Does not replace RBAC or wrap the mutation itself.
+ * OH13 / Pass 5 P1b — shared CAS gate. When armed, acquires a per-document
+ * advisory lock, re-reads `updatedAt` under the actor's row access, and refuses
+ * on mismatch. Callers must pass an active transaction `req` whenever CAS is
+ * enforced — check-then-write without a lock is not CAS.
  */
 export const assertCampaignDocCas = async (
   payload: Payload,
@@ -19,10 +25,14 @@ export const assertCampaignDocCas = async (
     actor: CampaignUser
     enforceCas: boolean
     baseUpdatedAt: string | null | undefined
-    req?: PayloadTransactionRequest
+    req: PayloadTransactionRequest
   },
 ): Promise<void> => {
   if (!args.enforceCas || args.baseUpdatedAt === undefined) return
+
+  await acquireTextAdvisoryLocks(payload, args.req, [
+    campaignDocCasLockKey(args.collection, args.id),
+  ])
 
   const current = await payload.findByID({
     collection: args.collection,
@@ -31,7 +41,7 @@ export const assertCampaignDocCas = async (
     select: { updatedAt: true },
     user: args.actor,
     overrideAccess: false,
-    ...(args.req ? { req: args.req } : {}),
+    req: args.req,
   })
 
   assertOpsUpdatedAtCas(true, args.baseUpdatedAt, current.updatedAt)

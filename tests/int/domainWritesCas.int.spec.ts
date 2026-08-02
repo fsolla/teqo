@@ -124,6 +124,53 @@ describe('updateLeadershipInternalCas (OH13)', () => {
     expect(updated.supportStatus).toBe('engajado')
     expect(updated.updatedAt).not.toBe(leadership.updatedAt)
   })
+
+  it('serializes concurrent CAS writers — exactly one wins, the other conflicts', async () => {
+    const fixtures = campaignFixtures()
+    const municipality = await fixtures.getMunicipality()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    await fixtures.assignMunicipalityAdvisors(municipality.id, [advisor.id])
+    const contact = await fixtures.createContact()
+    const leadership = await fixtures.createLeadership({
+      contact: contact.id,
+      municipalities: [municipality.id],
+      supportStatus: 'a_abordar',
+    })
+    const baseUpdatedAt = leadership.updatedAt
+
+    const results = await Promise.allSettled([
+      updateLeadershipInternalCasRecord(payload, advisor, {
+        id: leadership.id,
+        supportStatus: 'engajado',
+        baseUpdatedAt,
+      }),
+      updateLeadershipInternalCasRecord(payload, advisor, {
+        id: leadership.id,
+        supportStatus: 'em_disputa',
+        baseUpdatedAt,
+      }),
+    ])
+
+    const fulfilled = results.filter((r) => r.status === 'fulfilled')
+    const rejected = results.filter((r) => r.status === 'rejected')
+    expect(fulfilled).toHaveLength(1)
+    expect(rejected).toHaveLength(1)
+
+    const conflict = (rejected[0] as PromiseRejectedResult).reason
+    expect(conflict).toBeInstanceOf(Error)
+    expect(isOpsUpdatedAtConflictMessage((conflict as Error).message)).toBe(true)
+
+    const current = await payload.findByID({
+      collection: 'leadership',
+      id: leadership.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    const winnerStatus = (fulfilled[0] as PromiseFulfilledResult<{ supportStatus: string }>).value
+      .supportStatus
+    expect(current.supportStatus).toBe(winnerStatus)
+    expect(['engajado', 'em_disputa']).toContain(current.supportStatus)
+  })
 })
 
 describe('transitionCampaignDemandCas (OH13)', () => {

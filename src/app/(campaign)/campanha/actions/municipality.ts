@@ -2,6 +2,7 @@
 
 import type { Payload } from 'payload'
 
+import { assertCampaignDocCas } from '@/app/(campaign)/campanha/actions/assertCampaignDocCas'
 import {
   ENGAGEMENT_LEVEL_PATTERN_ID,
   EngagementLevelBlockedError,
@@ -89,29 +90,30 @@ export const setMunicipalityPoliticalTrendRecord = async (
   const { municipality, status, note, baseUpdatedAt } =
     municipalityPoliticalTrendSchema.parse(input)
   const enforceCas = options?.cas === true
-  const currentActor = await getFreshStaffActor(payload, actor)
 
-  if (enforceCas && baseUpdatedAt !== undefined) {
-    const current = await payload.findByID({
+  return withPayloadTransaction(payload, async ({ req }) => {
+    const currentActor = await getFreshStaffActor(payload, actor, req)
+
+    await assertCampaignDocCas(payload, {
       collection: 'municipality',
       id: municipality,
+      actor: currentActor,
+      enforceCas,
+      baseUpdatedAt,
+      req,
+    })
+
+    return payload.update({
+      collection: 'municipality',
+      id: municipality,
+      data: {
+        politicalTrend: { status, note },
+      },
       depth: 0,
-      select: { updatedAt: true },
       user: currentActor,
       overrideAccess: false,
+      req,
     })
-    assertOpsUpdatedAtCas(true, baseUpdatedAt, current.updatedAt)
-  }
-
-  return payload.update({
-    collection: 'municipality',
-    id: municipality,
-    data: {
-      politicalTrend: { status, note },
-    },
-    depth: 0,
-    user: currentActor,
-    overrideAccess: false,
   })
 }
 
