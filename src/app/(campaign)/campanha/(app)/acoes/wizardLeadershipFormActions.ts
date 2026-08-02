@@ -8,21 +8,21 @@ import {
   updateLeadershipWizard,
 } from '@/app/(campaign)/campanha/actions/leadership'
 import { declareVotes } from '@/app/(campaign)/campanha/actions/votePledge'
+import { WIZARD_LEADERSHIP_VOTES_SAVED } from '@/lib/campaignWizardCopy'
 import {
   optionalFormText,
   requiredFormText,
   requiredIntegerFormValue,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
-import { MAX_VOTE_COUNT } from '@/lib/schemas/primitives'
-import { WIZARD_LEADERSHIP_VOTES_SAVED } from '@/lib/campaignWizardCopy'
-import { VOTE_PLEDGE_DECLARE_SAFE_MESSAGES } from '@/lib/schemas/votePledge'
 import {
   LEADERSHIP_DUPLICATE_MESSAGE,
   LEADERSHIP_INVALID_CONTACT_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
   isSupportStatus,
 } from '@/lib/schemas/leadership'
+import { MAX_VOTE_COUNT } from '@/lib/schemas/primitives'
+import { VOTE_PLEDGE_DECLARE_SAFE_MESSAGES } from '@/lib/schemas/votePledge'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,

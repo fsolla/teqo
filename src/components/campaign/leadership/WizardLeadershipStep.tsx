@@ -2,11 +2,19 @@
 
 import { CheckIcon, InfoIcon, PlusIcon, TriangleAlertIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useActionState, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import {
+  useActionState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react'
 import { toast } from 'sonner'
 
-import type { LeadershipListSupportStatusResponse } from '@/app/(campaign)/campanha/(app)/liderancas/support-status/types'
 import { declareVotesWizardFormAction } from '@/app/(campaign)/campanha/(app)/acoes/wizardLeadershipFormActions'
+import type { LeadershipListSupportStatusResponse } from '@/app/(campaign)/campanha/(app)/liderancas/support-status/types'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { WizardLeadershipForm } from '@/components/campaign/leadership/WizardLeadershipForm'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
@@ -54,8 +62,6 @@ import {
   type SupportStatus,
 } from '@/lib/schemas/leadership'
 import { cn } from '@/lib/utils'
-import { fieldError } from '@/utilities/campaignFormFields'
-import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 import {
   resolveWizardChainEntry,
   wizardChainContinueHref,
@@ -66,6 +72,8 @@ import {
   resolveWizardLeadershipSkip,
   type WizardLeadershipTileViewModel,
 } from '@/lib/wizardLeadershipContract'
+import { fieldError } from '@/utilities/campaignFormFields'
+import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 
 const SUPPORT_STATUS_ENDPOINT = '/campanha/liderancas/support-status'
 const DEFAULT_STATUS: SupportStatus = 'a_abordar'
@@ -91,8 +99,10 @@ const notesLabel = (notes: string | null): string =>
 const secondaryContact = (tile: WizardLeadershipTileViewModel): string | null =>
   tile.phone?.trim() || tile.email?.trim() || null
 
-const drawerContextLabel = (tile: WizardLeadershipTileViewModel, municipalityName: string): string =>
-  `${tile.name} · ${municipalityName}`
+const drawerContextLabel = (
+  tile: WizardLeadershipTileViewModel,
+  municipalityName: string,
+): string => `${tile.name} · ${municipalityName}`
 
 export const WizardLeadershipStep = ({
   actionSlug,
