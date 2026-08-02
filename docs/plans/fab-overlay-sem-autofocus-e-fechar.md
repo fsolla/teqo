@@ -81,7 +81,7 @@ Dados: N/A — atalho de intenção; sem métricas novas.
 
 ## Questões em aberto (produto)
 
-- *(Resolvidas no gate 2026-08-02.)*
+- _(Resolvidas no gate 2026-08-02.)_
 - **Abrir sem foco na busca:** **ambos** (mobile drawer + desktop dialog).
 - **Fechar:**
   - **Desktop/tablet:** X explícito **sem** cobrir a busca (offset/faixa — forma no impl).
