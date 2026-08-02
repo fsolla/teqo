@@ -101,9 +101,6 @@ export const WIZARD_LEADERSHIP_DECLARE_VOTES_LABEL = 'Declarar votos' as const
 export const WIZARD_LEADERSHIP_STATUS_SAVE_ERROR =
   'Não foi possível salvar o status. Tente novamente.' as const
 
-export const WIZARD_LEADERSHIP_VOTES_SAVE_ERROR =
-  'Não foi possível registrar a declaração. Verifique seu acesso e tente novamente.' as const
-
 export const WIZARD_LEADERSHIP_STATUS_PENDING = 'Salvando status de apoio.' as const
 
 export const WIZARD_LEADERSHIP_VOTES_PENDING = 'Salvando declaração de votos.' as const
