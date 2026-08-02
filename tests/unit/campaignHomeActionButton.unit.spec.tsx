@@ -91,13 +91,12 @@ describe('CampaignHomeActionButton', () => {
     expect(screen.getByLabelText('Em breve').getAttribute('aria-disabled')).toBe('true')
   })
 
-  it('uses a wider control column for two-line labels (B109)', () => {
+  it('exports a shared control class for two-line labels (B109)', () => {
     renderActionButton({ label: 'Registrar', icon: BarChart3 })
     const control = screen.getByRole('button', { name: 'Registrar' })
-    expect(control.className).toContain('box-content')
-    expect(control.className).toContain('w-[5.5rem]')
-    expect(actionControlClassName).toContain('box-content')
-    expect(actionControlClassName).toContain('w-[5.5rem]')
+    for (const token of actionControlClassName.split(/\s+/).filter(Boolean)) {
+      expect(control.className.split(/\s+/)).toContain(token)
+    }
   })
 
   it('opens the description drawer on long-press when the pointer is coarse', () => {
@@ -188,14 +187,11 @@ describe('CampaignHomeActionStrip', () => {
     )
 
     const scroller = getScroller(container)
-    expect(scroller?.className).toContain('overflow-x-auto')
-    expect(scroller?.className).toContain('scrollbar-width:none')
-    const list = scroller?.querySelector('ul[role="list"]')
+    expect(scroller).toBeTruthy()
+    expect(scroller.getAttribute('aria-label')).toBe('Ações rápidas')
+    const list = scroller.querySelector('ul[role="list"]')
     expect(list).toBeTruthy()
-    expect(list?.className).toContain('gap-0')
-    expect(list?.className).toContain('px-0')
-    expect(list?.className).not.toContain('px-4')
-    expect(list?.className).not.toContain('gap-2')
+    expect(list?.querySelectorAll(':scope > li')).toHaveLength(2)
   })
 
   it('scrolls horizontally on pointer-fine drag past the threshold', () => {

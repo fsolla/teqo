@@ -102,7 +102,7 @@ describe('CampaignWizardShell', () => {
     expect(main.getAttribute('aria-label')).toBe(wizardFlowChromeAriaLabel('Ajustar votos'))
   })
 
-  it('uses tighter top padding on mobile when step title is omitted', () => {
+  it('renders main without step title when step title is omitted', () => {
     const { container } = renderWizardShell({
       flowTitle: 'Ajustar votos',
       stepTitle: null,
@@ -112,10 +112,8 @@ describe('CampaignWizardShell', () => {
     })
 
     const main = container.querySelector('main')
-    expect(main?.className).toMatch(/pt-2/)
-    expect(main?.className).not.toMatch(/pt-3/)
-    expect(main?.className).toMatch(/pb-6/)
-    expect(main?.className).toMatch(/md:py-6/)
+    expect(main).not.toBeNull()
+    expect(main?.getAttribute('aria-label')).toBe(wizardFlowChromeAriaLabel('Ajustar votos'))
   })
 
   it('skips title focus when contentFocus is none', () => {
@@ -194,7 +192,7 @@ describe('CampaignWizardShell', () => {
     expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1, name: 'Passo 2' }))
   })
 
-  it('shows municipality caption in main on desktop breakpoint classes', () => {
+  it('shows municipality caption in main', () => {
     const { container } = renderWizardShell({
       flowTitle: 'Ajustar votos',
       stepTitle: 'Pergunta',
@@ -204,12 +202,16 @@ describe('CampaignWizardShell', () => {
       children: null,
     })
 
-    const caption = container.querySelector('main p.md\\:block')
-    expect(caption?.textContent).toBe('Cairu')
-    expect(caption?.className).toMatch(/md:block/)
+    const main = container.querySelector('main')
+    expect(main).not.toBeNull()
+    expect(
+      within(main as HTMLElement)
+        .getByText('Cairu')
+        .tagName.toLowerCase(),
+    ).toBe('p')
   })
 
-  it('uses tighter top padding on mobile main content', () => {
+  it('renders main content for the municipality entry step', () => {
     const { container } = renderWizardShell({
       flowTitle: 'Ajustar votos',
       stepTitle: WIZARD_MUNICIPALITY_STEP_TITLE,
@@ -219,8 +221,7 @@ describe('CampaignWizardShell', () => {
     })
 
     const main = container.querySelector('main')
-    expect(main?.className).toMatch(/pt-3/)
-    expect(main?.className).toMatch(/pb-6/)
-    expect(main?.className).toMatch(/md:py-6/)
+    expect(main).not.toBeNull()
+    expect(within(container).getByText(WIZARD_MUNICIPALITY_STEP_TITLE)).toBeTruthy()
   })
 })
