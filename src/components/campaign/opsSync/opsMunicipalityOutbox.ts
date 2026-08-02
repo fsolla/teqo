@@ -381,7 +381,6 @@ export const enqueueDeclareVotes = async (input: {
 
   const run = executor.createOfflineAction<typeof input>({
     mutationFnName: DECLARE_MUTATION_FN,
-    metadata: { declareKey: id },
     onMutate: (variables) => {
       const next: OpsDeclareVotesOutboxRow = {
         id,
@@ -428,7 +427,6 @@ export const enqueueMunicipalityUpdate = async (input: {
   const executor = await getOpsMunicipalityOfflineExecutor()
   const run = executor.createOfflineAction<typeof input>({
     mutationFnName: MUNICIPALITY_UPDATE_MUTATION_FN,
-    metadata: { clientId: input.clientId },
     onMutate: (variables) => {
       const next: OpsMunicipalityUpdateOutboxRow = {
         id: variables.clientId,
@@ -465,7 +463,6 @@ export const enqueuePoliticalTrend = async (input: {
   const executor = await getOpsMunicipalityOfflineExecutor()
   const run = executor.createOfflineAction<typeof input>({
     mutationFnName: TREND_MUTATION_FN,
-    metadata: { municipalityId: input.municipalityId },
     onMutate: (variables) => {
       const next: OpsPoliticalTrendOutboxRow = {
         municipalityId: variables.municipalityId,
@@ -503,7 +500,6 @@ export const enqueueEngagementLevel = async (input: {
   const executor = await getOpsMunicipalityOfflineExecutor()
   const run = executor.createOfflineAction<typeof input>({
     mutationFnName: ENGAGEMENT_MUTATION_FN,
-    metadata: { municipalityId: input.municipalityId },
     onMutate: (variables) => {
       const next: OpsEngagementLevelOutboxRow = {
         municipalityId: variables.municipalityId,
@@ -537,7 +533,6 @@ export const enqueueAdvisorsAssignment = async (input: {
   const executor = await getOpsMunicipalityOfflineExecutor()
   const run = executor.createOfflineAction<typeof input>({
     mutationFnName: ADVISORS_MUTATION_FN,
-    metadata: { municipalityId: input.municipalityId },
     onMutate: (variables) => {
       const next: OpsAdvisorsOutboxRow = {
         municipalityId: variables.municipalityId,

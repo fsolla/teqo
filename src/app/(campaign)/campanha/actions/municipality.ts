@@ -297,6 +297,8 @@ export const assignMunicipalityAdvisorsRecord = async (
       await acquireTextAdvisoryLocks(payload, req, [`municipality-advisors:${municipality}`])
 
       if (enforceCas && baseUpdatedAt !== undefined) {
+        // Intentional admin bypass: unrestricted role verified above; advisors
+        // field access would otherwise hide `updatedAt` from some actors.
         const current = await payload.findByID({
           collection: 'municipality',
           id: municipality,

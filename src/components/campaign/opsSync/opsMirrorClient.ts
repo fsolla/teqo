@@ -48,8 +48,6 @@ const municipalityUpdatesCollection = createRowCollection<OpsMunicipalityUpdate>
   'ops-municipality-updates',
 )
 
-export { municipalityUpdatesCollection }
-
 let goalsMirror: OpsGoals | null = null
 let revisedAtMirror: string = new Date(0).toISOString()
 let schemaVersionMirror: number = OPS_MIRROR_SCHEMA_VERSION
