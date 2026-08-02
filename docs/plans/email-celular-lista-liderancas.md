@@ -111,7 +111,7 @@ Depth check: reusa `CampaignTable`, `phone` helpers, padrão visual do B19; extr
 - Editar contato na ficha interna / action `updateLeadershipContact` — Adiado.
 - Busca por e-mail/telefone; filtros novos; sort por coluna.
 - Painel de lideranças no município (`MunicipalityLeadershipsPanel`) / dossiê.
-- Programa WhatsApp interno **D3–D5** (bridge) — aqui é só `wa.me` 1:1 como no B19.
+- Bridge WhatsApp / sessão pareada (D3–D5 descartados) — aqui é só `wa.me` 1:1 como no B19.
 - Seletor de colunas (**B17**) — se existir, estas colunas entram como `defaultVisible` quando B17 chegar às lideranças (fora deste item).
 
 ## Rabbit holes

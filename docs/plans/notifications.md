@@ -24,7 +24,7 @@ Coordenadores e lideranças precisam ser avisados de eventos da campanha (convit
 - **Push web** via Push API + Service Worker + VAPID (entrega em segundo plano, inclusive com o app fechado).
 - **Sino de notificações in-app** dentro do `/campanha` (central de avisos lidos/não lidos).
 
-Notificações por WhatsApp Business API ficam **fora** deste plano (Meta + Res. TSE 23.610 art. 33). Canal WhatsApp **1:1 interno** staff↔lideranças (bridge não oficial) é o programa **D3–D5** — [whatsapp-interno-campanha.md](whatsapp-interno-campanha.md) — complementar a push/sino, não substituto.
+Notificações por WhatsApp Business API ficam **fora** deste plano (Meta + Res. TSE 23.610 art. 33). Bridge WhatsApp não oficial (Baileys/Evolution/WAHA / linked device) também ficou **fora** — Issues D3–D5 (#30–#32) `wontfix`: risco de ban do número pessoal do staff. Canal WhatsApp no produto = só deep link `wa.me` (humano envia no app dele).
 
 ## Objetivos
 
