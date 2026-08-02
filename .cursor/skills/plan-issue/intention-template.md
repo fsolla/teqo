@@ -13,6 +13,7 @@ Issue: #<N> (após `pnpm agent:register`; senão "—")
 Priority: <P0 | P1 | P2 | P3>
 Model: <slug model-selection>
 Impeccable: <A | B | C | D> — <N/A sem UI | encaixe em tela X | fluxo novo em Y>
+Canvas UI: <N/A — sem UI | path absoluto do plan-<id>-ui-draft.canvas.tsx>
 Appetite: <ex.: ~0,5–1 dia eng; um outcome verificável>
 Responsável: —
 
@@ -29,7 +30,8 @@ Responsável: —
 
 ### Esboço de fluxo (B/C/D)
 
-<!-- ASCII de jornada, não layout de implementação. Omitir se A ou só controle isolado. -->
+<!-- Opcional se houver Canvas UI. ASCII de jornada (backup textual), não layout de implementação.
+     Omitir se A / sem UI. O artefato obrigatório do gate para UI é o Cursor canvas — ver ui-draft-canvas.md. -->
 
 \```text
 [início] → … → [outcome]
@@ -77,6 +79,7 @@ Responsável: —
 ## Referências
 
 - GitHub Issue #<N>
+- Canvas UI (gate): <link/path do `.canvas.tsx` ou N/A>
 - <arquivos/rotas úteis para o executor abrir primeiro — como pista, não contrato>
 - `AGENTS.md` / `docs/ARCHITECTURE.md` — só se o item toca convenção já travada no repo
 ````
@@ -84,6 +87,7 @@ Responsável: —
 Notas:
 
 - Alvo: ~60–100 linhas. Mais que isso costuma significar engenharia vazando para a intenção.
-- Classe **A:** `Impeccable: A — N/A`; omita esboço de fluxo.
+- Classe **A:** `Impeccable: A — N/A`; `Canvas UI: N/A`; omita esboço de fluxo.
+- Classe **B/C/D:** canvas obrigatório no gate ([ui-draft-canvas.md](ui-draft-canvas.md)); leia a skill `canvas` ao escrever o `.canvas.tsx`.
 - Não rode `/impeccable` aqui.
 - Self-score shaping ≥4/5 antes de gravar.
