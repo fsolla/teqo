@@ -23,6 +23,7 @@ flowchart LR
 ```
 
 **Opções consideradas:**
+
 - A) Tab como chip de apresentação (não-URL, como scenario em municípios)
 - B) Tab permanece em `?tab=` com chip/sugestões na omnibox
 - C) Tab vira filtro de status composto (rejeitado pelo produto)

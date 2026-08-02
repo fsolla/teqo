@@ -206,8 +206,7 @@ export const applyActivityOmniboxSuggestion = ({
   if (suggestionId.startsWith('tab:')) {
     const value = suggestionId.slice(4) as ActivityTab
     if (!activityTabs.includes(value)) return { kind: 'url', state }
-    const next =
-      state.tab === value ? setTab(state, 'proximos') : setTab(state, value)
+    const next = state.tab === value ? setTab(state, 'proximos') : setTab(state, value)
     return { kind: 'url', state: next }
   }
 
