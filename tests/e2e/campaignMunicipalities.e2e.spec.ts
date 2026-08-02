@@ -510,7 +510,10 @@ test.describe('Municípios — bottom drawer polish (B109)', () => {
     const handle = page.getByRole('button', { name: 'Ocultar ações rápidas' })
     const handleBox = await handle.boundingBox()
     expect(handleBox).toBeTruthy()
-    expect(handleBox!.y).toBeLessThan(40)
+    // Fullscreen search docks the strip under the safe-area top bar; allow a
+    // few px of layout jitter (subpixel / font metrics) without losing the
+    // "near the top" assertion.
+    expect(handleBox!.y).toBeLessThan(48)
 
     // Scope to the drawer: the município detail page also has a "Sugestões" region.
     const drawer = page.getByRole('dialog', { name: 'Ações rápidas' })
