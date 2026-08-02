@@ -90,6 +90,8 @@ export type ActivityFormFieldsProps = {
   submittedTitle?: string
   searchContacts: (query: string) => Promise<ContactComboboxOption[]>
   searchLeaderships: (query: string) => Promise<ActivityLeadershipOption[]>
+  /** When true (hybrid/offline edit), hide tasks/demands — outbox cannot persist them. */
+  deferOfflineUnsupportedFields?: boolean
 }
 
 const editableStatuses = ['rascunho', 'planejado'] as const
@@ -104,6 +106,7 @@ const ActivityFormFields = ({
   submittedTitle,
   searchContacts,
   searchLeaderships,
+  deferOfflineUnsupportedFields = false,
 }: ActivityFormFieldsProps) => {
   const errorFor = (name: string) => fieldError(fieldErrors, name)
   const statusIsEditable =
@@ -457,27 +460,39 @@ const ActivityFormFields = ({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Tarefas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ActivityTaskFields
-            initialTasks={activity?.tasks ?? []}
-            searchContacts={searchContacts}
-            error={errorFor('tasksJson')}
-          />
-        </CardContent>
-      </Card>
+      {deferOfflineUnsupportedFields ? (
+        <Alert>
+          <AlertTitle>Tarefas e demandas</AlertTitle>
+          <AlertDescription>
+            Edição offline grava só os campos principais. Para alterar tarefas ou criar demandas,
+            use a atividade com conexão.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Tarefas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ActivityTaskFields
+                initialTasks={activity?.tasks ?? []}
+                searchContacts={searchContacts}
+                error={errorFor('tasksJson')}
+              />
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Demandas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ActivityDemandFields error={errorFor('demandsJson')} />
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Demandas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ActivityDemandFields error={errorFor('demandsJson')} />
+            </CardContent>
+          </Card>
+        </>
+      )}
     </FieldGroup>
   )
 }
@@ -580,12 +595,12 @@ export const ActivityForm = ({
     const responsible =
       typeof responsibleRaw === 'string' && Number.isInteger(Number(responsibleRaw))
         ? Number(responsibleRaw)
-        : undefined
+        : null
     const leadershipRaw = data.get('leadership')
     const leadershipId =
       typeof leadershipRaw === 'string' && Number.isInteger(Number(leadershipRaw))
         ? Number(leadershipRaw)
-        : undefined
+        : null
     const startAtRaw = readOptionalFormText(data, 'startAt')
     const endAtRaw = readOptionalFormText(data, 'endAt')
     const deadlineRaw = readOptionalFormText(data, 'deadline')
@@ -611,16 +626,14 @@ export const ActivityForm = ({
         startAt,
         endAt,
         deadline,
-        ...(responsible !== undefined ? { responsible } : {}),
-        ...(leadershipId !== undefined ? { leadership: leadershipId } : {}),
+        responsible,
+        leadership: leadershipId,
       },
       baseUpdatedAt: mirrorUpdatedAt ?? activity.updatedAt,
     }).then(
       () => {
         setHybridPending(false)
-        setHybridMessage(
-          'Alterações enfileiradas (campos principais). Tarefas e novas demandas exigem conexão.',
-        )
+        setHybridMessage('Alterações enfileiradas.')
       },
       (error: unknown) => {
         setHybridPending(false)
@@ -672,6 +685,7 @@ export const ActivityForm = ({
         submittedTitle={state.submittedTitle}
         searchContacts={searchContacts}
         searchLeaderships={searchLeaderships}
+        deferOfflineUnsupportedFields={hybridUpdate}
       />
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Button asChild variant="outline" className="min-h-11">
