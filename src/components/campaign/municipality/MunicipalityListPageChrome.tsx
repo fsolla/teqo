@@ -15,7 +15,7 @@ const IGNORED_PARAMS = ['page']
  * When the current URL matches a saved municipality filter, the filter name
  * becomes the page subtitle (B133) — the bar keeps chips as the editable recorte.
  */
-export const MunicipalityListPageChrome = (): null => {
+export const MunicipalityListPageChrome = () => {
   const savedFilters = useMunicipalitySavedFilters()
   const pathname = usePathname()
   const searchParams = useSearchParams()

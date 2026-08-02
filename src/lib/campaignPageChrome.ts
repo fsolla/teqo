@@ -97,7 +97,9 @@ const resolveCatalogEntry = (
   entry: (typeof campaignPageChromeCatalog)[keyof typeof campaignPageChromeCatalog],
 ): CampaignPageChrome | null => {
   if (!entry) return null
-  return { title: entry.title, subtitle: entry.subtitle }
+  return 'subtitle' in entry && entry.subtitle
+    ? { title: entry.title, subtitle: entry.subtitle }
+    : { title: entry.title }
 }
 
 const sectionOnly = (title: string): CampaignPageChrome => ({ title })
