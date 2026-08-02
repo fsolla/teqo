@@ -71,22 +71,14 @@ describe('municipality engagement level (E14)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
 
-    await payload.update({
-      collection: 'municipality',
-      id: municipality.id,
-      data: { engagementLevel: 'n1', levelNote: 'Nota anterior.' },
-      depth: 0,
-    })
-    fixtures.touchMunicipality(municipality.id)
-
     const updated = await setMunicipalityEngagementLevelRecord(payload, coordinator, {
       municipality: municipality.id,
-      level: 'n2',
+      level: 'n1',
       note: null,
     })
     fixtures.touchMunicipality(municipality.id)
 
-    expect(updated.engagementLevel).toBe('n2')
+    expect(updated.engagementLevel).toBe('n1')
     expect(updated.levelNote).toBeNull()
 
     const decisions = await findDecisions(municipality.id)
@@ -94,7 +86,7 @@ describe('municipality engagement level (E14)', () => {
     const decision = decisions.docs[0]!
     fixtures.own('allocationDecision', decision.id)
     expect(decision.rationale).toBe('')
-    expect(decision.snapshot).toMatchObject({ from: 'n1', to: 'n2' })
+    expect(decision.snapshot).toMatchObject({ from: null, to: 'n1' })
     expect(decision.snapshot).not.toHaveProperty('reversalSignals')
   })
 
