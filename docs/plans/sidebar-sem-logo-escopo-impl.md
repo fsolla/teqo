@@ -23,6 +23,7 @@ flowchart LR
 ```
 
 **Opções consideradas:**
+
 - A — Remover `SidebarHeader` inteiro e o badge do primeiro `SidebarGroup` em `CampaignSidebar.tsx`
 - B — Esconder via CSS (`hidden`) mantendo DOM
 - C — Mover logo para o rodapé
