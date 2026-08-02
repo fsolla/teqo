@@ -79,8 +79,8 @@ test.describe('Filtros salvos de Municípios', () => {
     const remove = page.getByRole('button', { name: `Apagar o filtro salvo ${RENAMED}` })
     await remove.click()
     await expect(page.getByRole('link', { name: RENAMED })).toHaveCount(0)
-    // Emptying the group unmounts the disclosure too, so focus lands on the
-    // nav link rather than falling to <body>.
+    // Emptying the group unmounts the sub-list, so focus lands on the nav link
+    // rather than falling to <body>.
     await expect(page.getByRole('link', { name: 'Municípios', exact: true })).toBeFocused()
 
     // Deleting is undoable, which is why it never asks for confirmation.
@@ -88,17 +88,14 @@ test.describe('Filtros salvos de Municípios', () => {
     await expect(page.getByRole('link', { name: RENAMED })).toBeVisible()
   })
 
-  test('survives a reload and hides the shortcuts behind the disclosure', async ({
-    campaign,
-    page,
-  }) => {
+  test('survives a reload with shortcuts always visible', async ({ campaign, page }) => {
     // Three loads of a heavy list route, against a dev server shared with the
     // other worker — the login redirect alone can outrun the 30 s default.
     test.slow()
 
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Disclosure'),
+      name: fixtures.value('Coordenadora Sidebar'),
     })
     const password = coordinator.password
     const email = coordinator.email!
@@ -114,18 +111,8 @@ test.describe('Filtros salvos de Municípios', () => {
 
     await page.reload()
     await expect(shortcut).toBeVisible(NAVIGATION)
-
-    await page
-      .getByRole('button', { name: 'Ocultar os filtros salvos de Municípios' })
-      .click(NAVIGATION)
-    await expect(shortcut).toBeHidden()
-
-    // The collapsed disclosure is remembered across a reload.
-    await page.reload()
-    await expect(page.getByRole('link', { name: SAVED_NAME })).toBeHidden(NAVIGATION)
-    await page
-      .getByRole('button', { name: 'Mostrar os filtros salvos de Municípios' })
-      .click(NAVIGATION)
-    await expect(page.getByRole('link', { name: SAVED_NAME })).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: /filtros salvos de Municípios/i }),
+    ).toHaveCount(0)
   })
 })

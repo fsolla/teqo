@@ -48,7 +48,7 @@ const CampaignSidebarLink = ({
   item: CampaignNavItem
   isActive: boolean
   onNavigate: () => void
-  /** Row affordances that sit beside the link — B18's disclosure and sub-list. */
+  /** Row affordances below the link — B18's saved-filter sub-list (B124: always on). */
   children?: ReactNode
 }) => (
   <SidebarMenuItem>
