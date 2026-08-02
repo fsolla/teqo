@@ -11,7 +11,7 @@ description: >-
 
 # Agent pool — operação do supervisor remoto
 
-O pool mantém até **5 Cursor Cloud Agents** (configurável, máx 8) rodando `work-issue` sobre Issues `ready` elegíveis para autonomia. O supervisor é **determinístico** (não é um agente): workflow **`.github/workflows/agent-pool.yml`** (tick stateless a cada 10 min + a cada merge em `main` + sob dispatch) rodando `scripts/agent-pool.mjs`. Arquitetura e elegibilidade: `docs/plans/agent-pool-orchestrator.md`.
+O pool mantém até **5 Cursor Cloud Agents** (configurável, máx 12) rodando `work-issue` sobre Issues `ready` elegíveis para autonomia. O supervisor é **determinístico** (não é um agente): workflow **`.github/workflows/agent-pool.yml`** (tick stateless a cada 10 min + a cada merge em `main` + sob dispatch) rodando `scripts/agent-pool.mjs`. Arquitetura e elegibilidade: `docs/plans/agent-pool-orchestrator.md`.
 
 **O pool NUNCA deploya** — deploy gated fica em `ci.yml` após merge em `main`.
 
@@ -112,4 +112,4 @@ Os wrappers disparam `gh workflow run agent-pool.yml -f action=…`; acompanhe c
 ## Se algo quebrar
 
 - `tick` vermelho no Actions: ler o log do job — gh sem `actions:write` (permissões do workflow), `CURSOR_API_KEY` ausente/errada, ou API da Cursor fora. O tick seguinte re-tenta; nada fica em estado intermediário perigoso (claim revertido em falha de spawn).
-- "You’ve reached the limit" no spawn: arquivar agents antigos em cursor.com/agents (cap do plano: 8 simultâneos no Pro; o pool usa ≤5 para deixar margem a humanos).
+- "You’ve reached the limit" no spawn: arquivar agents antigos em cursor.com/agents (cap do plano Cursor; o pool hard-clamp é 12 e o default é 5 — margem a humanos e a outros agents).
