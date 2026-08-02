@@ -5,10 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { MAX_VOTE_COUNT } from '@/lib/schemas/primitives'
 
 import { declareVotes } from '@/app/(campaign)/campanha/actions/votePledge'
-import {
-  requiredIntegerFormValue,
-  requiredRelationshipFormValue,
-} from '@/lib/formData'
+import { requiredIntegerFormValue, requiredRelationshipFormValue } from '@/lib/formData'
 import { VOTE_PLEDGE_DECLARE_SAFE_MESSAGES } from '@/lib/schemas/votePledge'
 import {
   runCampaignFormAction,
