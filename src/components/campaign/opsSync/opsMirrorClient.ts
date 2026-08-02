@@ -55,6 +55,13 @@ let lastSyncedAtMirror: string | null = null
 let persistenceMode: OpsMirrorPersistenceMode | null = null
 let storeSingleton: OpsMirrorStore | null = null
 let bootPromise: Promise<{ mode: OpsMirrorPersistenceMode; hydrated: boolean }> | null = null
+let activeSyncAbort: AbortController | null = null
+
+/** Abort an in-flight ops-sync fetch (logout — OH11). */
+export const abortOpsMirrorSync = (): void => {
+  activeSyncAbort?.abort()
+  activeSyncAbort = null
+}
 
 const replaceCollectionRows = <T extends { id: number }>(
   collection: {
@@ -114,12 +121,22 @@ export const getOpsMirrorPersistenceMode = (): OpsMirrorPersistenceMode | null =
 
 export const getOpsMirrorLastSyncedAt = (): string | null => lastSyncedAtMirror
 
+/** Logout wipe — persistence only; outbox cleared separately (OH11 order). */
+export const clearOpsMirrorPersistenceForLogout = async (): Promise<void> => {
+  wipeOpsMirrorCollections()
+  bootPromise = null
+  const store = storeSingleton
+  storeSingleton = null
+  persistenceMode = null
+  if (store) {
+    await store.clear()
+  }
+}
+
 /** Test/DI seam — reset module singletons between unit cases. */
 export const resetOpsMirrorClientForTests = async (): Promise<void> => {
-  wipeOpsMirrorCollections()
-  storeSingleton = null
-  bootPromise = null
-  persistenceMode = null
+  abortOpsMirrorSync()
+  await clearOpsMirrorPersistenceForLogout()
 }
 
 const resolveOutboxKeys = (explicit?: ReadonlySet<OpsOutboxKey>): ReadonlySet<OpsOutboxKey> => {
@@ -200,6 +217,8 @@ export type SyncOpsMirrorOptions = {
 export const syncOpsMirror = async (options: SyncOpsMirrorOptions = {}): Promise<OpsSyncState> => {
   const fetchImpl = options.fetchImpl ?? fetch
   const store = options.store ?? storeSingleton
+  const controller = new AbortController()
+  activeSyncAbort = controller
 
   try {
     const response = await fetchImpl(OPS_SYNC_PATH, {
@@ -207,6 +226,7 @@ export const syncOpsMirror = async (options: SyncOpsMirrorOptions = {}): Promise
       credentials: 'same-origin',
       headers: { Accept: 'application/json' },
       cache: 'no-store',
+      signal: controller.signal,
     })
 
     if (!response.ok) {
@@ -251,11 +271,16 @@ export const syncOpsMirror = async (options: SyncOpsMirrorOptions = {}): Promise
 
     return { status: 'idle', lastSyncedAt: syncedAt }
   } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return { status: 'idle', lastSyncedAt: lastSyncedAtMirror }
+    }
     const message = error instanceof Error ? error.message : String(error)
     return {
       status: 'error',
       lastSyncedAt: lastSyncedAtMirror,
       lastError: message,
     }
+  } finally {
+    if (activeSyncAbort === controller) activeSyncAbort = null
   }
 }

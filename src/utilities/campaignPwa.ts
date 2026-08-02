@@ -123,6 +123,8 @@ const isInvitePath = (pathname) => pathname.startsWith(SCOPE + '/convite');
 
 const isCampaignIconPath = (pathname) => pathname.startsWith('/campaign-icons/');
 
+const isNextStaticPath = (pathname) => pathname.startsWith('/_next/static/');
+
 const isRscRequest = (request) =>
   request.headers.get('RSC') === '1' || request.headers.has('Next-Router-State-Tree');
 
@@ -169,6 +171,12 @@ self.addEventListener('fetch', (event) => {
   if (isInvitePath(url.pathname)) return;
 
   if (isCampaignIconPath(url.pathname)) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  // Hashed build chunks — cache-first so a revisit works offline (never RSC/Flight).
+  if (isNextStaticPath(url.pathname)) {
     event.respondWith(cacheFirst(request));
     return;
   }

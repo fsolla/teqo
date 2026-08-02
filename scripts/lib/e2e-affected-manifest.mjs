@@ -95,7 +95,7 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/campaign/shared/Wizard',
       'src/components/campaign/shared/useWizardBackHistory',
     ],
-    specs: ['campaign-pwa', 'campaignWizardChrome', 'campaignMunicipalities'],
+    specs: ['campaign-pwa', 'campaignWizardChrome', 'campaignMunicipalities', 'campaignOpsOffline'],
   },
   // Domains without a dedicated e2e family still wake campaign home smoke so
   // the affected classifier cannot return mode=none on an unmapped domain dir.
@@ -131,6 +131,6 @@ export const E2E_AFFECTED_MANIFEST = [
       `${CAMPAIGN_APP}/perfil`,
       `${CAMPAIGN_APP}/quadro`,
     ],
-    specs: ['campaignHomeActions', 'campaignMunicipalities', 'campaignOpsEstimateOutbox'],
+    specs: ['campaignHomeActions', 'campaignMunicipalities', 'campaignOpsEstimateOutbox', 'campaignOpsOffline'],
   },
 ]

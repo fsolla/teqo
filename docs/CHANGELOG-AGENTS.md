@@ -4,7 +4,11 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+<<<<<<< HEAD
 **Recently resolved (2026-08-02):** **B120** (Issue #207) — municípios mobile: combobox multi-filtro (chips + typeahead) no lugar da pilha NativeSelect; overview KPI + aviso de sort só em `md+`; cards densificados (cobertura/nível + controles compactos). URL B18 intacta. Plano: [`municipios-mobile-filtro-combobox-densificar.md`](docs/plans/municipios-mobile-filtro-combobox-densificar.md).
+=======
+**Recently resolved (2026-08-02):** **OH11** (Issue #173) — SW cache-first para `/_next/static/` (chunks hashed, prefixo `campanha-<buildId>`); logout limpa campaignOps na ordem abort sync → outbox → persistence → Cache API (`clearCampaignOpsStorage` + `clearCampaignPwaCaches`); e2e `campaignOpsOffline` com jornada write→reload→online→sync (`OPS_HYBRID=1`). Plano: [`oh11-sw-e2e-docs.md`](docs/plans/oh11-sw-e2e-docs.md).
+>>>>>>> 66a7da6c (OH11 — SW static cache-first, logout campaignOps wipe, offline e2e)
 
 **Recently resolved (2026-08-02):** **OH10** (Issue #171) — writes municipality staff CAS (`baseUpdatedAt`) + outbox irmão (`opsMunicipalityOutbox`) para municipalityUpdate, declareVotes, tendência, engagement e advisors; flag OFF mantém caminhos actuais. Plano: [`oh10-municipality-writes-cas.md`](docs/plans/oh10-municipality-writes-cas.md).
 
