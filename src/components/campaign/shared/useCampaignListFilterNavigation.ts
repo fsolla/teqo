@@ -13,9 +13,9 @@ import { normalizedText } from '@/utilities/campaignListUrl'
 export const SEARCH_DEBOUNCE_MS = 1000
 
 /**
- * Navigation scaffold shared by the list filter shells (municípios,
- * territórios, dobradinhas): debounced search, no-op deduplication and the
- * pending transition the results region dims with.
+ * Navigation scaffold shared by the list filter shells that still use a
+ * debounced search box (territórios, dobradinhas). Municípios moved to the
+ * omnibox in B127 but still calls `navigateWithSearch` from the same hook.
  *
  * The hook never decides what is canonical — `toHref` comes from the domain's
  * own URL module (`buildXListHref`, which already canonicalizes), so the three
