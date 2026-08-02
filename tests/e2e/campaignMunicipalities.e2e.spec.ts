@@ -154,9 +154,7 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
     const trendButton = page.getByRole('button', {
-      name: new RegExp(
-        `^Editar tendência política em ${municipality.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
-      ),
+      name: new RegExp(`^Editar tendência política em ${municipality.name}`),
     })
     await trendButton.click()
     const trendPopover = page.locator('[data-slot="popover-content"]')
@@ -174,14 +172,7 @@ test.describe('Municípios — jornadas por papel', () => {
 
     await page.keyboard.press('Escape')
     await page.reload()
-    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
-    await page
-      .getByRole('button', {
-        name: new RegExp(
-          `^Editar tendência política em ${municipality.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
-        ),
-      })
-      .click()
+    await trendButton.click()
     const reopened = page.locator('[data-slot="popover-content"]')
     await expect(reopened.getByLabel('Tendência', { exact: true })).toHaveValue('favoravel')
     await expect(reopened.getByLabel('Justificativa')).toHaveValue(note)
@@ -438,11 +429,8 @@ test.describe('Municípios — FAB ações rápidas mobile (B126)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-<<<<<<< HEAD
-=======
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
->>>>>>> 29b49e63 (B129 — Align municipality E2E with page chrome and scoped trend control)
     const fab = page.getByRole('button', { name: 'Ações rápidas' })
     await expect(fab).toBeVisible()
     await expect(page.getByLabel('Buscar na campanha')).toHaveCount(0)
@@ -493,11 +481,7 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
-<<<<<<< HEAD
-    await expect(page.getByRole('button', { name: 'Ações rápidas' })).toBeVisible()
-=======
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
->>>>>>> 29b49e63 (B129 — Align municipality E2E with page chrome and scoped trend control)
 
     await page.getByRole('button', { name: 'Ações rápidas' }).click()
     const overlay = page.locator('#CampaignQuickActionsOverlay')
