@@ -2,10 +2,10 @@
 
 import { useMemo } from 'react'
 
+import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
 import { useHomeSearchHitLimit } from '@/components/campaign/dashboard/HomeSearchHitBudgetContext'
 import { HomeSearchHitRow } from '@/components/campaign/dashboard/HomeSearchHitRow'
 import { HomeSearchMunicipalityVoteTrailing } from '@/components/campaign/dashboard/HomeSearchMunicipalityVoteTrailing'
-import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
 import { useHomeSearchResults } from '@/components/campaign/dashboard/HomeSearchResultsContext'
 import { useHomeSearchNearestMunicipality } from '@/components/campaign/dashboard/useHomeSearchNearestMunicipality'
 import {
@@ -14,14 +14,15 @@ import {
   type HomeSearchScopeMunicipality,
 } from '@/lib/campaignHomeSearchHits'
 import { formatElectionNumber } from '@/lib/electionFormat'
-import { mergeHomeSearchNearestMunicipality } from '@/lib/homeSearchNearestMunicipalityMerge'
 import { sliceHomeSearchMunicipalityGroup } from '@/lib/homeSearchHitBudget'
+import { mergeHomeSearchNearestMunicipality } from '@/lib/homeSearchNearestMunicipalityMerge'
 import { HOME_SEARCH_GROUP_HEADING_CLASS, HOME_SEARCH_GROUP_LIST_CLASS } from '@/lib/homeSearchUi'
 import type { AccessibleMunicipality } from '@/lib/municipalityProximity'
 import { buildTerritoryPageHref } from '@/lib/territoryAnchor'
 
-const scopeToAccessible = (scope: readonly HomeSearchScopeMunicipality[]): AccessibleMunicipality[] =>
-  scope.map(({ slug, name, ibgeCode }) => ({ slug, name, ibgeCode }))
+const scopeToAccessible = (
+  scope: readonly HomeSearchScopeMunicipality[],
+): AccessibleMunicipality[] => scope.map(({ slug, name, ibgeCode }) => ({ slug, name, ibgeCode }))
 
 const buildHitBySlug = (scope: readonly HomeSearchScopeMunicipality[]) =>
   new Map(scope.map((doc) => [doc.slug, toHomeSearchMunicipalityHit(doc)]))
@@ -34,7 +35,7 @@ export const HomeSearchMunicipalityGroup = () => {
   const suggestMode = uiFocused && !query.isActive
 
   const scopeMunicipalities = useMemo(
-    () => (results.status === 'success' ? results.data.scopeMunicipalities ?? [] : []),
+    () => (results.status === 'success' ? (results.data.scopeMunicipalities ?? []) : []),
     [results],
   )
 
@@ -62,7 +63,12 @@ export const HomeSearchMunicipalityGroup = () => {
 
   const includeTerritories = resultKind === 'search'
   const { municipalities: visibleMunicipalities, territories: visibleTerritories } =
-    sliceHomeSearchMunicipalityGroup(mergedMunicipalities, territories, hitLimit, includeTerritories)
+    sliceHomeSearchMunicipalityGroup(
+      mergedMunicipalities,
+      territories,
+      hitLimit,
+      includeTerritories,
+    )
 
   if (visibleMunicipalities.length === 0 && visibleTerritories.length === 0) return null
 
