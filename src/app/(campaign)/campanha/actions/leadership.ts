@@ -207,7 +207,7 @@ export const updateLeadershipInternalRecord = async (
           collection: 'leadership',
           id,
           depth: 0,
-          select: { id: true },
+          select: { updatedAt: true },
           user: currentActor,
           overrideAccess: false,
           req,
