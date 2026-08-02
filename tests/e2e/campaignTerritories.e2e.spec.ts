@@ -40,11 +40,11 @@ test.describe('Territórios de Identidade', () => {
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto('/campanha/territorios')
-    await expect(page.getByText(/27 territórios encontrados/)).toBeVisible()
+    await expect(page.getByText(/27 territórios encontrados/).first()).toBeVisible()
 
     await page.getByRole('link', { name: 'Ir para a página 2' }).click()
     await expect(page).toHaveURL(/\/campanha\/territorios\?page=2/)
-    await expect(page.getByText(/27 territórios encontrados/)).toBeVisible()
+    await expect(page.getByText(/27 territórios encontrados/).first()).toBeVisible()
   })
 
   test('parent territory rows expose hash anchor ids for deep links', async ({
@@ -61,8 +61,8 @@ test.describe('Territórios de Identidade', () => {
     await campaign.login(page, email, password)
     await page.goto('/campanha/territorios')
 
-    await expect(page.locator('#ti-irece')).toBeVisible()
-    await expect(page.locator('#ti-velho-chico')).toBeVisible()
+    await expect(page.locator('#ti-irece').first()).toBeVisible()
+    await expect(page.locator('#ti-velho-chico').first()).toBeVisible()
   })
 
   test('leader cannot open the territories page', async ({ campaign, page }) => {

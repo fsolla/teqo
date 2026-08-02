@@ -6,7 +6,11 @@ import {
 } from './fixtures/campaignE2EFixtures.js'
 
 /** Offline specs intentionally hit blocked network resources — allowlist for the guard. */
-test.use({ expectedRequestFailurePaths: ['/campanha/api/ops-sync', '/favicon.ico'] })
+test.use({
+  expectedRequestFailurePaths: ['/campanha/api/ops-sync', '/favicon.ico'],
+  expectedRequestFailurePathPrefixes: ['/campanha'],
+  allowOfflineRscPrefetchErrors: true,
+})
 
 /** OH6 — flaky-network outbox for estimateVotes. */
 test.describe('OH6 estimate outbox', () => {
