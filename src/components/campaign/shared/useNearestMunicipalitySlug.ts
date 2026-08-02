@@ -7,22 +7,23 @@ import {
   loadMunicipalityZoneGeometryModule,
 } from '@/lib/bahiaGeometries'
 import { resolveNearbyMunicipality, type AccessibleMunicipality } from '@/lib/municipalityProximity'
-import type { WizardGeoMunicipalitySuggestion } from '@/lib/wizardMunicipalitySuggestMerge'
 import {
+  hasPromptedThisSession,
+  markPromptedThisSession,
   readGeolocationPermissionState,
   requestCurrentPosition,
 } from '@/utilities/campaignGeolocation'
 
 /**
- * B94 — resolves the nearest in-scope município for the wizard idle state.
- * Only runs when geolocation permission is already `granted` (prompt lives on the Quadro).
+ * B125 — nearest in-scope município slug for suggest surfaces (home search + wizard).
+ * Prompts once per tab session (B14 key) on first enable when permission is not denied.
  * Fail-soft: every other outcome returns `null` with no error UI.
  */
-export const useWizardNearestMunicipality = (
+export const useNearestMunicipalitySlug = (
   accessible: readonly AccessibleMunicipality[],
   enabled: boolean,
-): WizardGeoMunicipalitySuggestion | null => {
-  const [geo, setGeo] = useState<WizardGeoMunicipalitySuggestion | null>(null)
+): string | null => {
+  const [nearestSlug, setNearestSlug] = useState<string | null>(null)
   const autoStartedRef = useRef(false)
 
   useEffect(() => {
@@ -31,10 +32,7 @@ export const useWizardNearestMunicipality = (
 
     let cancelled = false
 
-    const resolve = async () => {
-      const permission = await readGeolocationPermissionState()
-      if (permission !== 'granted') return
-
+    const resolveNearest = async () => {
       const loaded = await Promise.all([
         requestCurrentPosition(),
         loadMunicipalityGeometryModule(),
@@ -56,19 +54,29 @@ export const useWizardNearestMunicipality = (
 
       if (cancelled || resolution.kind !== 'inScope') return
 
-      setGeo({
-        slug: resolution.municipality.slug,
-        name: resolution.municipality.name,
-        distanceKm: resolution.match === 'nearestZone' ? resolution.distanceKm : undefined,
-      })
+      setNearestSlug(resolution.municipality.slug)
     }
 
-    void resolve()
+    const start = async () => {
+      const permission = await readGeolocationPermissionState()
+
+      if (permission === 'granted') {
+        void resolveNearest()
+        return
+      }
+
+      if (permission !== 'denied' && !hasPromptedThisSession()) {
+        markPromptedThisSession()
+        void resolveNearest()
+      }
+    }
+
+    void start()
 
     return () => {
       cancelled = true
     }
   }, [accessible, enabled])
 
-  return geo
+  return nearestSlug
 }

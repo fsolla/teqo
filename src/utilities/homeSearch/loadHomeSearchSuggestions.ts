@@ -78,6 +78,13 @@ export const loadHomeSearchSuggestions = async (
     status: 'success',
     resultKind: 'suggest',
     municipalities: municipalityHits,
+    scopeMunicipalities: municipalities.map((doc) => ({
+      slug: doc.slug,
+      name: doc.name,
+      region: doc.region,
+      priority: doc.priority ?? null,
+      ibgeCode: doc.ibgeCode,
+    })),
     territories: [],
     advisors: [],
     leaderships: [],
