@@ -60,8 +60,7 @@ flowchart LR
 - **Tab + status em Todos:** ao mudar tab, limpar `status` se sair de `todos` (mesmo comportamento do antigo `buildTabHref`).
 - **`q` + tab:** filtros AND — busca restringe dentro da janela ativa.
 
-## Aceite de engenharia
+## Débitos deferidos (simplify B138)
 
-- [x] Aceite de produto da intenção ainda coberto
-- [x] Invariantes AGENTS/engineering-standards
-- [x] Testes de domínio previstos (unit) onde URL/where mudam
+- **DRY municipality/setExclusiveField helpers** (score 3, `defer_trigger`): extrair quando 3º domínio omnibox precisar do mesmo padrão — já ledgerado em B128; não bloqueia B138.
+- **Int test `responsible.name` contains** (score 3, `defer_trigger`): where JSON coberto em unit; int espelhando supporter quando houver fixture de activity com responsável.

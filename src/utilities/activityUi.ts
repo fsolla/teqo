@@ -1,5 +1,6 @@
 import type { Where } from 'payload'
 
+import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
 import { activityKinds, activityStatuses, type ActivityKind } from '@/lib/schemas/activity'
 import {
   buildListHref,
@@ -48,9 +49,15 @@ const isActivityKind = (value: string | undefined): value is ActivityKind =>
 const isActivityStatus = (value: string | undefined): value is ActivityStatus =>
   activityStatuses.includes(value as ActivityStatus)
 
+const isActivityListSearchReady = (raw: string | undefined): string | undefined => {
+  if (!raw) return undefined
+  const { trimmed } = normalizeContactSearchQuery(raw)
+  return isContactSearchQueryReady(trimmed) ? trimmed : undefined
+}
+
 export const parseActivityListParams = (params: RawSearchParams): ActivityListState => {
   const rawPage = strictDecimalInteger(firstValue(params.page))
-  const q = normalizedText(firstValue(params.q))
+  const q = isActivityListSearchReady(normalizedText(firstValue(params.q)))
   const rawTab = firstValue(params.tab)
   const tab = isActivityTab(rawTab) ? rawTab : 'proximos'
   const rawKind = firstValue(params.kind)
@@ -73,9 +80,12 @@ export const buildActivityListWhere = (state: ActivityListState, now: Date): Whe
   const filters: Where[] = []
 
   if (state.q) {
-    filters.push({
-      or: [{ title: { contains: state.q } }, { 'responsible.name': { contains: state.q } }],
-    })
+    const q = isActivityListSearchReady(state.q)
+    if (q) {
+      filters.push({
+        or: [{ title: { contains: q } }, { 'responsible.name': { contains: q } }],
+      })
+    }
   }
 
   if (state.kind) filters.push({ kind: { equals: state.kind } })

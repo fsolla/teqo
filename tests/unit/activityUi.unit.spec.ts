@@ -43,6 +43,7 @@ describe('parseActivityListParams', () => {
   it('parses and trims q', () => {
     expect(parseActivityListParams({ q: '  comício  ' }).q).toBe('comício')
     expect(parseActivityListParams({ q: '   ' }).q).toBeUndefined()
+    expect(parseActivityListParams({ q: 'a' }).q).toBeUndefined()
   })
 })
 

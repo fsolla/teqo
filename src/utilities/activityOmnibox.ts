@@ -8,6 +8,7 @@ import {
   type CampaignListOmniboxChip,
   type CampaignListOmniboxSuggestion,
 } from '@/lib/campaignListOmnibox'
+import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
 import { activityKindLabels, activityStatusLabels } from '@/lib/schemas/activity'
 import {
   activityTabLabels,
@@ -197,8 +198,9 @@ export const applyActivityOmniboxSuggestion = ({
   suggestionId: string
 }): ActivityOmniboxAction => {
   if (suggestionId.startsWith('q:')) {
-    const q = suggestionId.slice(2)
-    return { kind: 'url', state: withPageReset({ ...state, q: q || undefined }) }
+    const { trimmed } = normalizeContactSearchQuery(suggestionId.slice(2))
+    const q = isContactSearchQueryReady(trimmed) ? trimmed : undefined
+    return { kind: 'url', state: withPageReset({ ...state, q }) }
   }
 
   if (suggestionId.startsWith('tab:')) {
