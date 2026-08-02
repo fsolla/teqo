@@ -154,7 +154,9 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
     const trendButton = page.getByRole('button', {
-      name: new RegExp(`^Editar tendência política em ${municipality.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
+      name: new RegExp(
+        `^Editar tendência política em ${municipality.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+      ),
     })
     await trendButton.click()
     const trendPopover = page.locator('[data-slot="popover-content"]')
@@ -175,7 +177,9 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
     await page
       .getByRole('button', {
-        name: new RegExp(`^Editar tendência política em ${municipality.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
+        name: new RegExp(
+          `^Editar tendência política em ${municipality.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+        ),
       })
       .click()
     const reopened = page.locator('[data-slot="popover-content"]')
