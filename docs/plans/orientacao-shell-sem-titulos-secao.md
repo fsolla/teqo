@@ -54,7 +54,7 @@ exceção detalhe:
 
 - **Vou apresentar dados?** Não.
 - **Decisões desbloqueadas:** nenhuma decisão de alocação/voto — só orientação espacial da UI.
-- **Forma:** *adiada ao plano de implementação*.
+- **Forma:** _adiada ao plano de implementação_.
 
 ## Direção no codebase (hipótese)
 
