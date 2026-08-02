@@ -5,17 +5,18 @@ import { useMemo, useState } from 'react'
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import {
-  applySearchOnlyOmniboxSuggestion,
-  buildSearchOnlyOmniboxChips,
-  buildSearchOnlyOmniboxSuggestions,
-  clearSearchOnlyOmnibox,
-  removeSearchOnlyOmniboxChip,
-  type SearchOnlyOmniboxAction,
-} from '@/lib/searchOnlyListOmnibox'
-import {
   buildOrganizationListHref,
   type OrganizationListState,
 } from '@/utilities/organization/organizationListUrl'
+import {
+  applyOrganizationOmniboxSuggestion,
+  buildOrganizationOmniboxChips,
+  buildOrganizationOmniboxSuggestionSeeds,
+  clearOrganizationOmnibox,
+  filterOrganizationOmniboxSuggestions,
+  removeOrganizationOmniboxChip,
+  type OrganizationOmniboxAction,
+} from '@/utilities/organization/organizationOmnibox'
 
 export const OrganizationFilters = ({ state }: { state: OrganizationListState }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
@@ -24,16 +25,16 @@ export const OrganizationFilters = ({ state }: { state: OrganizationListState })
   })
   const [query, setQuery] = useState('')
 
-  const withPageReset = (next: OrganizationListState): OrganizationListState => ({
-    ...next,
-    page: 1,
-  })
+  const chips = useMemo(() => buildOrganizationOmniboxChips(state), [state])
 
-  const chips = useMemo(() => buildSearchOnlyOmniboxChips(state), [state])
+  const suggestionSeeds = useMemo(() => buildOrganizationOmniboxSuggestionSeeds(), [])
 
-  const suggestions = useMemo(() => buildSearchOnlyOmniboxSuggestions(query), [query])
+  const suggestions = useMemo(
+    () => filterOrganizationOmniboxSuggestions(suggestionSeeds, query),
+    [suggestionSeeds, query],
+  )
 
-  const runAction = (action: SearchOnlyOmniboxAction<OrganizationListState>) => {
+  const runAction = (action: OrganizationOmniboxAction) => {
     if (action.kind === 'clear') {
       setQuery('')
       navigate(action.state)
@@ -51,41 +52,29 @@ export const OrganizationFilters = ({ state }: { state: OrganizationListState })
     >
       <CampaignListOmnibox
         id="organization-omnibox"
-        label="Buscar organização por nome"
-        placeholder="Digite para buscar por nome…"
+        label="Buscar organização por nome ou tipo"
+        placeholder="Digite para buscar por nome ou tipo…"
         chips={chips}
         suggestions={suggestions}
         query={query}
         onQueryChange={setQuery}
         isPending={isPending}
         onSelectSuggestion={(suggestionId) => {
-          runAction(
-            applySearchOnlyOmniboxSuggestion({
-              state,
-              suggestionId,
-              withPageReset,
-            }),
-          )
+          runAction(applyOrganizationOmniboxSuggestion({ state, suggestionId }))
         }}
         onCommitQuery={(text) => {
           runAction(
-            applySearchOnlyOmniboxSuggestion({
+            applyOrganizationOmniboxSuggestion({
               state,
               suggestionId: `q:${text}`,
-              withPageReset,
             }),
           )
         }}
         onRemoveChip={(chipId) => {
-          runAction(removeSearchOnlyOmniboxChip({ state, chipId, withPageReset }))
+          runAction(removeOrganizationOmniboxChip({ state, chipId }))
         }}
         onClearAll={() => {
-          runAction(
-            clearSearchOnlyOmnibox({
-              state,
-              cleared: withPageReset({ page: 1, ...(state.kind ? { kind: state.kind } : {}) }),
-            }),
-          )
+          runAction(clearOrganizationOmnibox(state))
         }}
       />
     </form>
