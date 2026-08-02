@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
 import { useCampaignQuickActionContext } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { CampaignQuickActionsFab } from '@/components/campaign/shell/CampaignQuickActionsFab'
@@ -30,14 +30,18 @@ export const CampaignQuickActionsHost = ({ role }: { role: CampaignRole }) => {
     setOpen(false)
   }, [pathname])
 
+  const handleOpenChange = useCallback((next: boolean) => {
+    setOpen(next)
+  }, [])
+
   if (!mounted) return null
 
   const actions = resolveQuickActionsForPath(pathname, role, context)
 
   return (
     <>
-      <CampaignQuickActionsFab open={open} onOpenChange={setOpen} />
-      <CampaignQuickActionsOverlay open={open} onOpenChange={setOpen} actions={actions} />
+      <CampaignQuickActionsFab open={open} onOpenChange={handleOpenChange} />
+      <CampaignQuickActionsOverlay open={open} onOpenChange={handleOpenChange} actions={actions} />
     </>
   )
 }

@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 /** Horizontal pan threshold (px) — below this, child link/button clicks still fire. */
 export const HOME_ACTION_STRIP_DRAG_THRESHOLD_PX = 8
 
-export type CampaignHomeActionStripVariant = 'strip' | 'responsive'
+export type CampaignHomeActionStripVariant = 'strip' | 'responsive' | 'grid'
 
 type DragSession = {
   pointerId: number
@@ -40,7 +40,7 @@ export const CampaignHomeActionStrip = ({
   actions?: readonly (CampaignHomeActionButtonProps & { id?: string })[]
   ariaLabel?: string
   className?: string
-  /** `responsive`: 2×3 grid on mobile, horizontal strip on md+. `strip`: always horizontal. */
+  /** `responsive`: 3×2 grid on mobile, horizontal strip on md+. `grid`: always 3×2. `strip`: always horizontal. */
   variant?: CampaignHomeActionStripVariant
 }) => {
   const isCoarsePointer = useCoarsePointer()
@@ -48,6 +48,7 @@ export const CampaignHomeActionStrip = ({
   const dragRef = useRef<DragSession | null>(null)
   const suppressClickRef = useRef(false)
   const isStripLayout = variant === 'strip'
+  const isGridLayout = variant === 'grid'
 
   const endDragSession = useCallback((pointerId: number) => {
     const session = dragRef.current
@@ -136,14 +137,18 @@ export const CampaignHomeActionStrip = ({
     'm-0 list-none p-0',
     isStripLayout
       ? 'flex min-w-max snap-x snap-proximity gap-0 px-4 pb-1 md:px-0'
-      : 'grid grid-cols-2 gap-3 md:flex md:min-w-max md:snap-x md:snap-proximity md:gap-0 md:px-0 md:pb-1',
+      : isGridLayout
+        ? 'grid grid-cols-3 gap-3'
+        : 'grid grid-cols-3 gap-3 md:flex md:min-w-max md:snap-x md:snap-proximity md:gap-0 md:px-0 md:pb-1',
   )
 
   const scrollerClassName = cn(
     'min-w-0',
     isStripLayout
       ? 'overflow-x-auto overflow-y-hidden overscroll-x-contain [touch-action:pan-x] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pointer-fine:cursor-grab pointer-fine:data-[dragging=true]:cursor-grabbing pointer-fine:data-[dragging=true]:select-none'
-      : 'md:overflow-x-auto md:overflow-y-hidden md:overscroll-x-contain md:[touch-action:pan-x] md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden md:pointer-fine:cursor-grab md:pointer-fine:data-[dragging=true]:cursor-grabbing md:pointer-fine:data-[dragging=true]:select-none',
+      : isGridLayout
+        ? undefined
+        : 'md:overflow-x-auto md:overflow-y-hidden md:overscroll-x-contain md:[touch-action:pan-x] md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden md:pointer-fine:cursor-grab md:pointer-fine:data-[dragging=true]:cursor-grabbing md:pointer-fine:data-[dragging=true]:select-none',
     className,
   )
 

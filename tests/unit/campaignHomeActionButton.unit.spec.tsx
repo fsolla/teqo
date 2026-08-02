@@ -193,7 +193,7 @@ describe('CampaignHomeActionStrip', () => {
     expect(list?.className).toMatch(/flex/)
   })
 
-  it('renders a 2-column grid on mobile when variant is responsive', () => {
+  it('renders a 3-column grid on mobile when variant is responsive', () => {
     const { container } = render(
       <CampaignHomeActionStrip
         variant="responsive"
@@ -208,11 +208,29 @@ describe('CampaignHomeActionStrip', () => {
     expect(region).toBeTruthy()
     const list = region?.querySelector('ul[role="list"]')
     expect(list).toBeTruthy()
-    expect(list?.className).toMatch(/grid-cols-2/)
+    expect(list?.className).toMatch(/grid-cols-3/)
     expect(list?.className).toMatch(/md:flex/)
     const regionClasses = region?.className.split(/\s+/) ?? []
     expect(regionClasses).not.toContain('overflow-x-auto')
     expect(regionClasses.some((token) => token.includes('md:overflow-x-auto'))).toBe(true)
+  })
+
+  it('renders a 3-column grid when variant is grid', () => {
+    const { container } = render(
+      <CampaignHomeActionStrip
+        variant="grid"
+        actions={[
+          { label: 'Um', icon: BarChart3 },
+          { label: 'Dois', icon: BarChart3 },
+        ]}
+      />,
+    )
+
+    const region = container.querySelector('[aria-label="Ações rápidas"]')
+    const list = region?.querySelector('ul[role="list"]')
+    expect(list?.className).toMatch(/grid-cols-3/)
+    expect(list?.className).not.toMatch(/md:flex/)
+    expect(region?.className).not.toMatch(/overflow-x-auto/)
   })
 
   it('scrolls horizontally on pointer-fine drag past the threshold', () => {
