@@ -1,8 +1,8 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { HomeSearchHitRow } from '@/components/campaign/dashboard/HomeSearchHitRow'
 import { HomeSearchProvider } from '@/components/campaign/dashboard/HomeSearchContext'
+import { HomeSearchHitRow } from '@/components/campaign/dashboard/HomeSearchHitRow'
 import { HomeSearchMunicipalityGroup } from '@/components/campaign/dashboard/HomeSearchMunicipalityGroup'
 import { HomeSearchResultsProvider } from '@/components/campaign/dashboard/HomeSearchResultsContext'
 import type { HomeSearchSuccessResponse } from '@/lib/campaignHomeSearchHits'
