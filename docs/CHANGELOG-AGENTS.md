@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-02):** **B147** (Issue #330) — rota paralela `/campanha/municipio/<slug>/v2` com faixa de status (nível · tendência · sinal · classe · frescor) e modal de motivo opcional; soft-dep B134 no write de nível (motivo opcional, sem “voltar atrás”). Intenção [`municipio-v2-shell-status.md`](docs/plans/municipio-v2-shell-status.md); impl [`municipio-v2-shell-status-impl.md`](docs/plans/municipio-v2-shell-status-impl.md). Filhos B148–B152.
+
 **Recently resolved (2026-08-02):** **B127** (Issue #264) — barra omnibox de filtros no piloto Municípios + chassis `CampaignListOmnibox` (chips + sugestões; URL como fonte de verdade; cenário/sort como chips de apresentação). Planos: [`barra-filtros-omnibox-listas.md`](docs/plans/barra-filtros-omnibox-listas.md), impl [`barra-filtros-omnibox-listas-impl.md`](docs/plans/barra-filtros-omnibox-listas-impl.md). Adoção nas demais listas = B128.
 
 **Recently resolved (2026-08-02):** **Skills plan/work reescritas** — `plan-issue` agora só gera planos de **intenção** (persona/fluxo/aceite + direção suave no código; sem decisões duras de engenharia). Execução: `agent-work-issue` (pool — Plan mode → `*-impl.md` → executa → `/simplify` → `capture-review-debts` autônomo → PR Ready + auto-merge) e `work-issue` (humano — claim + **pausa** após o impl plan). Prompt do pool aponta para `agent-work-issue`.
