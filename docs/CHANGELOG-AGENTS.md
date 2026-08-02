@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-02):** **OH9** (Issue #172) — detalhe de município dual-path: `MunicipalityDetailHeaderView` partilhado; `OfflineBoundary` (SSR=RSC; offline+`OPS_HYBRID`→Local); `MunicipalityDetailLocal` lê mirror (município + pledges×leaderships); regiões online-only com “Disponível quando estiveres online.”; e2e `campaignOpsOffline` (skip sem flag). Plano: [`oh9-municipio-detalhe-dualpath.md`](docs/plans/oh9-municipio-detalhe-dualpath.md).
+
 **Recently resolved (2026-08-01):** **B114** (Issue #195) — wizard Voltar header = Android back: contrato `wizardBack` + `useWizardBackHistory` (pushState/popstate), previousHrefs canônicos, layer form liderança. Plano: [`wizard-back-navigation-system.md`](docs/plans/wizard-back-navigation-system.md).
 
 **Recently resolved (2026-08-01):** **OH5** (Issue #168) — `CampaignOpsSyncProvider` no layout `(app)`: bootstrap mirror (OPFS file → IDB dump/hydrate + TanStack `localOnly` collections), poll 3 min foreground + `visibilitychange`/`online`, chrome “Actualizado…” / “A sincronizar…” / “Dados podem estar desatualizados”; leader no-op. Plano: [`oh5-sync-provider-mirror.md`](docs/plans/oh5-sync-provider-mirror.md).
