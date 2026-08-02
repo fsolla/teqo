@@ -1,6 +1,6 @@
 # Improve Code Quality Plan
 
-Four passes so far: **Pass 1** (2026-07-23/24, phases 0–6 below, all done), **Pass 2** (2026-07-25, see [Pass 2](#pass-2--engineering-consolidation-2026-07-25)), **Pass 3** (2026-07-28, audit + plan, see [Pass 3](#pass-3--engineering-audit--consolidation-2026-07-28)) and **Pass 4** (2026-07-31, audit + P0/P1 remediation + miss guardrails in-session, see [Pass 4](#pass-4--engineering-audit--remediation--guardrails-2026-07-31)).
+Five passes so far: **Pass 1** (2026-07-23/24, phases 0–6 below, all done), **Pass 2** (2026-07-25, see [Pass 2](#pass-2--engineering-consolidation-2026-07-25)), **Pass 3** (2026-07-28, audit + plan, see [Pass 3](#pass-3--engineering-audit--consolidation-2026-07-28)), **Pass 4** (2026-07-31, audit + P0/P1 remediation + miss guardrails in-session, see [Pass 4](#pass-4--engineering-audit--remediation--guardrails-2026-07-31)) and **Pass 5** (2026-08-02, audit + P0/P1 remediation + remapped-miss guardrail provenance, see [Pass 5](#pass-5--engineering-audit--offlinehybrid-remediation--guardrails-2026-08-02)).
 
 ## Context
 
@@ -210,4 +210,52 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 
 - [x] Artifacts PR = Ready + auto-merge (mesmo contrato `agent-pr-workflow`; sem exceção de merge humano); remediation PRs merge independently
 - [ ] P4-A → P4-L as independent deliveries ([entrega-engenharia-p4.md](plans/entrega-engenharia-p4.md)); oversized items → Issue rastreável via `plan-issue`
+- [ ] Leftovers → ledger via `capture-review-debts`
+
+---
+
+# Pass 5 — Engineering Audit + Offline/Hybrid Remediation + Guardrails (2026-08-02)
+
+## Context
+
+- **Started:** 2026-08-02 — second **autonomous (Cursor Cloud)** execution of `engineering-audit`.
+- **Precheck (fail-closed):** agent pool **desligado** (`pnpm agent:pool -- status`); solitary audit confirmed.
+- **Delta anchor:** Pass 4 (2026-07-31). **573 files / 442 commits** in ~2 days — dominant churn is the offline/hybrid ops surface (OH11–OH14, CL9 list unified, quick actions, B57 vote-summary snapshots): `src/lib` ×132 touches, `opsSync` ×65, `shell` ×53, **89 new `src/` modules**.
+- **Method:** canon loaded; hotspot map (delta + churn + static gates); **five parallel sweeps** (lib+scripts, utilities+access, components, app+collections+globals, tests/guards); consolidation hunt under anti-DRY; 4 remapped `kind:agent-miss` issues harvested (+ OPS2 #41); open ledger rows re-verified; P0/P1 + miss provenance remediations in-session.
+- **Baseline:** green — `tsc` 0, `lint` 0 warnings, `knip` 0 findings (known `payload.config.ts` loader noise, ledger P3), madge 0 cycles (**858 files**, +84 since Pass 4). Unit inventory **173 files / 1,383 tests**; e2e **20 specs / 61 cases** (was 17/48 at Pass 4).
+
+## Audit headlines (all measured)
+
+- **1 P0:** logout wipe for campaignOps outboxes/mirror is gated on in-memory singletons — after a cold reload (singleton null) IndexedDB/`teqo-ops-*` + mirror OPFS/IDB survive `clearCampaignOpsStorage`, so the next user on a shared device can hydrate another actor's queued writes / operational mirror. **Remediated in-session.**
+- **2 P1s:** (a) activity hybrid edit silently drops `tasks`/`demandsJson` while still rendering those fields, and omits `responsible`/`leadership` when cleared (null never sent); (b) `assertCampaignDocCas` is check-then-write TOCTOU without a document advisory lock — concurrent writers both pass CAS (**0 concurrent pins**). Push `queueMicrotask` before transaction commit remains a third P1 (ledgered + workstream — full transactional outbox is M).
+- **Rejected-by-product (not P0):** B57 option A intentionally shows advisors the **statewide** Δ while hero stays portfolio-scoped (`docs/plans/delta-7-dias-estimativa-inicio.md`); collection `read: isCampaignStaff` matches the plan. Optional REST absolute-history tightening → P2 workstream.
+- **Miss harvest:** open issues #48/#49/#50/#54 are **archive remaps** of Pass 4's #52/#53/#54/#73 — guards already ship, but `docs/GUARDRAILS.md` still cites old numbers and claims an empty harvest queue. **Hardening + provenance repair + `Closes`** in-session. OPS2 #41 functionally done (`GUARDRAILS.md` exists) — close with the same PR.
+- **Pass 4 carry-forward:** P4-A…P4-E, P4-G, P4-H, P4-D still open in code (verified); **P4-F closed by measurement** (mobile cards no longer value-import `municipalityListUrl`); LeadershipStateDeputy twin already closed by B37 (re-confirmed).
+- **Duplication for the plan:** ~1,850 LOC outbox runtimes ×3; ~300 LOC outbox UI lifecycle ×7; OpsListLocal 686 (5 lists); wizard action-id list ×3; homeSearch runners still twins; notification names-by-id ×7; Wizard info Drawer ×3.
+- **Guard dodges measured:** sharedSheetHost substring; e2e goto settle tokens; allocator optional slug still representable; Local API shorthand `user,`; bypass header comment; safeMessages local-array form; affected-e2e `mode:none` for unmapped `src/lib/campaignOps`.
+
+## Remediation deliveries (in-session)
+
+| WS     | Content                                                                                             | Status        |
+| ------ | --------------------------------------------------------------------------------------------------- | ------------- |
+| P5-P0  | Logout always clears persisted outbox+mirror adapters (singleton-independent) + pins                | in-session PR |
+| P5-P1a | Activity hybrid: disable offline-unsupported fields; send null on cleared relations + pins          | in-session PR |
+| P5-P1b | CAS: advisory lock around assert+mutate paths (document key) + concurrent int pin                   | in-session PR |
+| P5-M\* | GUARDRAILS provenance → public issue #s; harden dodgeable miss guards; `Closes #48 #49 #50 #54 #41` | in-session PR |
+
+## Pass 5 Decisions
+
+| ID  | Decision                                                                                            | Rationale                                                                |
+| --- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| D1  | B57 advisor statewide Δ is **not** a security regression — product option A                         | Plan locked recommendation; hero remains actor-scoped                    |
+| D2  | Logout wipe must open adapters even when executor/store singletons are null                         | Shared-device PII / queued mutations survive reload otherwise            |
+| D3  | Hybrid activity edit must not offer unsavable fields; clearing a relation is an explicit null write | UI that edits what the outbox cannot persist is a silent data-loss class |
+| D4  | CAS without a lock is incomplete — lock+re-read is the minimal honest implementation                | Check-then-write alone cannot characterize conflict under concurrency    |
+| D5  | Remapped miss issues close via guard hardening + provenance, not new feature work                   | Guards already exist; archive rewrite left Issues OPEN with new numbers  |
+
+## Next Actions
+
+- [x] Artifacts PR Ready + auto-merge
+- [ ] P5-A → P5-L as independent deliveries ([entrega-engenharia-p5.md](plans/entrega-engenharia-p5.md)); oversized → `plan-issue`
+- [ ] Continue unfinished Pass 4 workstreams where not superseded
 - [ ] Leftovers → ledger via `capture-review-debts`
