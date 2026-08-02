@@ -1,6 +1,6 @@
 'use client'
 
-import { createCollection, localOnlyCollectionOptions } from '@tanstack/db'
+import { createCollection, localOnlyCollectionOptions, type Transaction } from '@tanstack/db'
 import {
   IndexedDBAdapter,
   NonRetriableError,
@@ -49,6 +49,14 @@ const MUNICIPALITY_UPDATE_MUTATION_FN = 'createMunicipalityUpdate'
 const TREND_MUTATION_FN = 'setPoliticalTrend'
 const ENGAGEMENT_MUTATION_FN = 'setEngagementLevel'
 const ADVISORS_MUTATION_FN = 'assignAdvisors'
+
+const outboxMutationRow = <TRow>(transaction: Transaction, collectionId: string): TRow => {
+  const mutation = transaction.mutations.find((entry) => entry.collection?.id === collectionId)
+  if (!mutation) {
+    throw new NonRetriableError(`Mutação de outbox ausente (${collectionId}).`)
+  }
+  return mutation.modified as TRow
+}
 
 const declareVotesOutboxCollection = createCollection(
   localOnlyCollectionOptions<OpsDeclareVotesOutboxRow, string>({
@@ -155,9 +163,10 @@ const createMunicipalityOfflineExecutor = (): OfflineExecutor =>
     beforeRetry: collapseAllMunicipalityOutbox,
     mutationFns: {
       [DECLARE_MUTATION_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) throw new NonRetriableError('Mutação de declaração vazia.')
-        const row = mutation.modified as OpsDeclareVotesOutboxRow
+        const row = outboxMutationRow<OpsDeclareVotesOutboxRow>(
+          transaction,
+          'ops-declare-votes-outbox',
+        )
         try {
           const updated = await declareVotesCas({
             municipality: row.municipalityId,
@@ -193,9 +202,10 @@ const createMunicipalityOfflineExecutor = (): OfflineExecutor =>
         }
       },
       [MUNICIPALITY_UPDATE_MUTATION_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) throw new NonRetriableError('Mutação de atualização vazia.')
-        const row = mutation.modified as OpsMunicipalityUpdateOutboxRow
+        const row = outboxMutationRow<OpsMunicipalityUpdateOutboxRow>(
+          transaction,
+          'ops-municipality-update-outbox',
+        )
         try {
           await createMunicipalityUpdateCas({
             municipality: row.municipalityId,
@@ -236,9 +246,10 @@ const createMunicipalityOfflineExecutor = (): OfflineExecutor =>
         }
       },
       [TREND_MUTATION_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) throw new NonRetriableError('Mutação de tendência vazia.')
-        const row = mutation.modified as OpsPoliticalTrendOutboxRow
+        const row = outboxMutationRow<OpsPoliticalTrendOutboxRow>(
+          transaction,
+          'ops-political-trend-outbox',
+        )
         try {
           await setMunicipalityPoliticalTrendCas({
             municipality: row.municipalityId,
@@ -273,9 +284,10 @@ const createMunicipalityOfflineExecutor = (): OfflineExecutor =>
         }
       },
       [ENGAGEMENT_MUTATION_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) throw new NonRetriableError('Mutação de nível vazia.')
-        const row = mutation.modified as OpsEngagementLevelOutboxRow
+        const row = outboxMutationRow<OpsEngagementLevelOutboxRow>(
+          transaction,
+          'ops-engagement-level-outbox',
+        )
         try {
           await setMunicipalityEngagementLevelCas({
             municipality: row.municipalityId,
@@ -313,9 +325,7 @@ const createMunicipalityOfflineExecutor = (): OfflineExecutor =>
         }
       },
       [ADVISORS_MUTATION_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) throw new NonRetriableError('Mutação de assessores vazia.')
-        const row = mutation.modified as OpsAdvisorsOutboxRow
+        const row = outboxMutationRow<OpsAdvisorsOutboxRow>(transaction, 'ops-advisors-outbox')
         try {
           await assignMunicipalityAdvisorsCas({
             municipality: row.municipalityId,
