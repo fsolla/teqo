@@ -11,7 +11,7 @@ Responsável: —
 
 ## Intenção
 
-Enquanto se colabora no `/plan-issue`, o agente às vezes registra Issues e abre o PR de planos **antes** do lote estar fechado. Como `agent:register` nasce com label `ready`, o pool (ou outro claim) pode pegar a Issue — e o humano ainda está mudando a intenção. Pior: a ordem atual (Issue `ready` → depois PR do plano) permite claim **antes** do plano existir em `main`; o link de plano hoje é só *warn*, não bloqueio.
+Enquanto se colabora no `/plan-issue`, o agente às vezes registra Issues e abre o PR de planos **antes** do lote estar fechado. Como `agent:register` nasce com label `ready`, o pool (ou outro claim) pode pegar a Issue — e o humano ainda está mudando a intenção. Pior: a ordem atual (Issue `ready` → depois PR do plano) permite claim **antes** do plano existir em `main`; o link de plano hoje é só _warn_, não bloqueio.
 
 Queremos um ciclo em que colaborar é barato de reverter, e só vira trabalho claimável quando a intenção está confirmada **e** o plano de intenção está em `main`.
 
@@ -42,7 +42,7 @@ Omitido — superfície A (processo).
 
 - **Vou apresentar dados?** Não
 - **Decisões desbloqueadas:** N/A — processo do paradigma, não métrica de campanha.
-- **Forma:** *adiada ao plano de implementação*
+- **Forma:** _adiada ao plano de implementação_
 
 ## Direção no codebase (hipótese)
 
