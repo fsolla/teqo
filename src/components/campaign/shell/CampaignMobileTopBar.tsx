@@ -30,7 +30,14 @@ const wizardSkipButtonClass =
 
 const wizardTitleSkeletonClass = 'mx-auto motion-reduce:animate-none bg-primary-foreground/20'
 
-export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: ReactNode }) => {
+export const CampaignMobileTopBar = ({
+  notificationBell,
+  opsSyncStatus,
+}: {
+  notificationBell?: ReactNode
+  /** OH5 — discreet sync chrome; only passed when OPS_HYBRID + staff. */
+  opsSyncStatus?: ReactNode
+}) => {
   const chrome = useCampaignWizardChrome()
   const homeSearchChrome = useCampaignHomeSearchChrome()
   const { isPending } = useCampaignListTransition()
@@ -151,6 +158,11 @@ export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: 
       <div className="min-w-0 flex-1 leading-tight">
         <span className="block truncate text-sm font-semibold">Jorge Solla</span>
         <span className="block truncate text-xs text-primary-foreground/80">Campanha · Bahia</span>
+        {opsSyncStatus ? (
+          <div className="mt-0.5 text-primary-foreground/70 [&_[role=status]]:text-inherit">
+            {opsSyncStatus}
+          </div>
+        ) : null}
       </div>
       {notificationBell ? <div className="shrink-0">{notificationBell}</div> : null}
     </header>
