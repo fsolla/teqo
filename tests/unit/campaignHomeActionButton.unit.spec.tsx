@@ -193,8 +193,8 @@ describe('CampaignHomeActionStrip', () => {
     const list = scroller?.querySelector('ul[role="list"]')
     expect(list).toBeTruthy()
     expect(list?.className).toContain('gap-0')
-    expect(list?.className).toContain('px-4')
-    expect(list?.className).toContain('md:px-0')
+    expect(list?.className).toContain('px-0')
+    expect(list?.className).not.toContain('px-4')
     expect(list?.className).not.toContain('gap-2')
   })
 

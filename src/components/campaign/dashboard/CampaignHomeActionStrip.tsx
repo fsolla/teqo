@@ -138,9 +138,12 @@ export const CampaignHomeActionStrip = ({
         )}
         {...finePointerPanProps}
       >
+        {/* B115 — px-0 deliberado: os botões entram da borda do aparelho; o bleed
+            -mx-4 do slot já leva o scroller à borda. Não re-adicionar inset lateral
+            (B101 revertido pelo produto). */}
         <ul
           role="list"
-          className="m-0 flex min-w-max list-none snap-x snap-proximity gap-0 px-4 pb-1 md:px-0"
+          className="m-0 flex min-w-max list-none snap-x snap-proximity gap-0 px-0 pb-1"
         >
           {actions?.map(({ id, ...button }) => (
             <li key={id ?? button.href ?? button.label} className="m-0 list-none p-0">
