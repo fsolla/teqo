@@ -58,13 +58,8 @@ Aqui **não** se implementa código de produto, **não** se escreve plano de imp
 - [ ] 2. Reserva de IDs de uma vez por trilha (roadmap legacy + issuesById())
 - [ ] 3. Por item (ordem topológica): classificar → fatiar → explorar só o suficiente → intenção completa
 - [ ] 4. Sugestão de modelo × effort via model-selection (uma linha por item)
-<<<<<<< HEAD
-- [ ] 5. GATE: overview do lote + canvas UI/UX (se muda UI) + esboços de fluxo → confirmar/iterar (PARAR aqui até o humano confirmar)
-- [ ] 6. Registro: register --blocked (se --plan) → PR Related → merge → promote ready
-=======
-- [ ] 5. GATE: overview do lote + esboços de fluxo (B/C/D) → confirmar/iterar (PARAR aqui até o humano confirmar; sem Issue/PR)
+- [ ] 5. GATE: overview do lote + canvas UI/UX (se muda UI) + esboços de fluxo → confirmar/iterar (PARAR aqui até o humano confirmar; sem Issue/PR)
 - [ ] 6. Registro: `agent:register` (`--plan` → `blocked`) → PR `Related #N` → merge → `pnpm agent:ready`
->>>>>>> 8fb041f4 (feat(ops): OPS17 — plan-issue blocked até plano em main)
 ```
 
 ## Passo 1 — Parse e dedup
@@ -137,11 +132,7 @@ Antes de criar Issues **ou** abrir PR de planos:
 - Esboço textual de fluxo só se ajudar; não substitui o canvas quando há UI
 - Perguntas acumuladas numa rodada, recomendação de produto primeiro
 
-<<<<<<< HEAD
-**Pare e espere.** Itere (incluindo o canvas, se houver UI) até confirmação explícita do lote. Só então Passo 6.
-=======
-**Pare e espere.** Itere até confirmação explícita do lote (não basta um “ok” solto durante a edição). Só então Passo 6.
->>>>>>> 8fb041f4 (feat(ops): OPS17 — plan-issue blocked até plano em main)
+**Pare e espere.** Itere (incluindo o canvas, se houver UI) até confirmação explícita do lote (não basta um “ok” solto durante a edição). Só então Passo 6.
 
 ## Passo 6 — Registro (não claimável até plano em `main`)
 
