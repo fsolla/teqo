@@ -23,16 +23,6 @@ export const MunicipalityEstimateScenarioProvider = ({ children }: { children: R
   )
 }
 
-export const useMunicipalityEstimateScenario = (): MunicipalityEstimateScenarioContextValue => {
-  const value = useContext(MunicipalityEstimateScenarioContext)
-  if (!value) {
-    throw new Error(
-      'useMunicipalityEstimateScenario must be used within MunicipalityEstimateScenarioProvider',
-    )
-  }
-  return value
-}
-
 export const useMunicipalityEstimateScenarioOptional =
   (): MunicipalityEstimateScenarioContextValue | null =>
     useContext(MunicipalityEstimateScenarioContext)
