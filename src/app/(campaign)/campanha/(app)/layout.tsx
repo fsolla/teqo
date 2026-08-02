@@ -90,7 +90,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
                 </header>
                 {/*
                 Provider must wrap CampaignAppScrollChrome, not only page children:
-                the mobile quick-actions drawer (B91/B100) mounts as a sibling of
+                the quick-actions FAB overlay (B126) mounts as a sibling of
                 the scrollport and renders search hits with CampaignHoverTooltip
                 (priority flag). Nested only around {children} left focus→suggest
                 without a provider and crashed the page (B102).

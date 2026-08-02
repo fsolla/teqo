@@ -5,24 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CampaignGlobalSearchProvider } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
 import { CampaignQuickActionContextProvider } from '@/components/campaign/shell/CampaignQuickActionContext'
-import { CampaignQuickActionsDrawer } from '@/components/campaign/shell/CampaignQuickActionsDrawer'
-import { CampaignContentScroll } from '@/components/campaign/shell/CampaignQuickActionsHost'
-import {
-  CampaignQuickActionsSnapProvider,
-  useCampaignQuickActionsSnap,
-} from '@/components/campaign/shell/CampaignQuickActionsSnapContext'
+import { CampaignQuickActionsFab } from '@/components/campaign/shell/CampaignQuickActionsFab'
+import { CampaignQuickActionsHost } from '@/components/campaign/shell/CampaignQuickActionsHost'
+import { CampaignQuickActionsOverlay } from '@/components/campaign/shell/CampaignQuickActionsOverlay'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import type { HomeSearchSuccessResponse } from '@/lib/campaignHomeSearchHits'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
-import {
-  QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX,
-  QUICK_ACTIONS_SNAP_COLLAPSED,
-  QUICK_ACTIONS_SNAP_DOCK,
-  QUICK_ACTIONS_SNAP_FULL,
-  quickActionsScrollDirection,
-  quickActionsSnapIsDock,
-  quickActionsSnapIsFull,
-} from '@/lib/campaignQuickActionSnap'
 
 vi.mock('@/lib/campaignJsonRequest', () => ({
   postCampaignJson: vi.fn(),
@@ -87,98 +75,97 @@ afterEach(() => {
 
 /**
  * Mirrors campaign (app) layout: TooltipProvider wraps chrome that includes the
- * drawer (B102). Nested only around page children left focus→suggest crashing.
+ * overlay (B126). Nested only around page children left focus→suggest crashing.
  */
 const renderQuickActionsChrome = (ui: ReactNode) =>
   render(
     <TooltipProvider delayDuration={300}>
       <CampaignQuickActionContextProvider>
-        <CampaignQuickActionsSnapProvider>
-          <CampaignGlobalSearchProvider>{ui}</CampaignGlobalSearchProvider>
-        </CampaignQuickActionsSnapProvider>
+        <CampaignGlobalSearchProvider>{ui}</CampaignGlobalSearchProvider>
       </CampaignQuickActionContextProvider>
     </TooltipProvider>,
   )
 
-const SnapReadout = () => {
-  const { snapPoint } = useCampaignQuickActionsSnap()
-  return <div data-testid="snap">{snapPoint ?? 'null'}</div>
-}
+const renderOverlay = (
+  props: Partial<React.ComponentProps<typeof CampaignQuickActionsOverlay>> = {},
+) =>
+  renderQuickActionsChrome(
+    <CampaignQuickActionsOverlay open actions={[]} onOpenChange={vi.fn()} {...props} />,
+  )
 
-describe('CampaignQuickActionsDrawer (B105)', () => {
-  it('loads in dock snap with handle above search and placeholder visible', () => {
+describe('CampaignQuickActionsFab (B126)', () => {
+  it('renders when closed and hides when overlay is open', () => {
+    const { rerender } = render(
+      <CampaignQuickActionsFab open={false} onOpenChange={vi.fn()} />,
+    )
+    expect(screen.getByRole('button', { name: 'Ações rápidas' })).toBeTruthy()
+
+    rerender(<CampaignQuickActionsFab open onOpenChange={vi.fn()} />)
+    expect(screen.queryByRole('button', { name: 'Ações rápidas' })).toBeNull()
+  })
+})
+
+describe('CampaignQuickActionsOverlay (B126)', () => {
+  it('opens desktop dialog with search above actions', () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: idleSuggestPayload,
     })
 
-    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+    renderOverlay({
+      actions: [
+        {
+          id: 'test',
+          label: 'Registrar',
+          icon: BarChart3,
+          description: 'Teste.',
+          href: '/campanha',
+        },
+      ],
+    })
 
-    const context = document.getElementById('quickActionContext')
-    expect(context?.getAttribute('data-snap')).toBe('dock')
-    expect(context?.hasAttribute('hidden')).toBe(false)
-
-    const handle = screen.getByRole('button', { name: 'Ocultar ações rápidas' })
     const search = screen.getByLabelText('Buscar na campanha')
-    expect(handle.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const actionsChrome = document.querySelector('[data-slot="quick-actions-chrome"]')
+    const searchChrome = document.querySelector('[data-slot="quick-actions-search"]')
+    expect(actionsChrome).not.toBeNull()
+    expect(searchChrome).not.toBeNull()
+    expect(actionsChrome?.parentElement?.className).toContain('md:order-2')
+    expect(searchChrome?.className).toContain('md:order-1')
     expect(search.getAttribute('placeholder')).toBe('Município, liderança, atividade…')
     expect(screen.getByRole('region', { name: 'Resultados da busca' })).toBeTruthy()
   })
 
-  it('collapsed peek keeps discreet search without placeholder; actions stay hidden', () => {
+  it('bleeds the action strip edge-to-edge inside the overlay gutter', () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: idleSuggestPayload,
     })
 
-    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Ocultar ações rápidas' }))
-    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe(
-      'collapsed',
-    )
-
-    const search = screen.getByLabelText('Buscar na campanha')
-    expect(search.getAttribute('placeholder')).toBe('')
-    const results = document.querySelector('[data-slot="home-search-results"]')
-    expect(results).toBeTruthy()
-    expect((results as HTMLElement).hidden).toBe(true)
-    expect(screen.getByRole('button', { name: 'Mostrar ações rápidas' })).toBeTruthy()
-  })
-
-  it('bleeds the action strip edge-to-edge inside the drawer gutter (B101)', () => {
-    vi.mocked(postCampaignJson).mockResolvedValue({
-      ok: true,
-      payload: idleSuggestPayload,
+    renderOverlay({
+      actions: [
+        {
+          id: 'test',
+          label: 'Registrar',
+          icon: BarChart3,
+          description: 'Teste.',
+          href: '/campanha',
+        },
+      ],
     })
 
-    renderQuickActionsChrome(
-      <CampaignQuickActionsDrawer
-        actions={[
-          {
-            id: 'test',
-            label: 'Registrar',
-            icon: BarChart3,
-            description: 'Teste.',
-            href: '/campanha',
-          },
-        ]}
-      />,
-    )
-
-    const context = document.getElementById('quickActionContext')
-    const stripBleed = context?.firstElementChild
-    expect(stripBleed).not.toBeNull()
+    const chrome = document.querySelector('[data-slot="quick-actions-chrome"]')
+    const stripBleed = chrome?.firstElementChild?.firstElementChild
+    expect(stripBleed?.className).toContain('-mx-4')
     expect(stripBleed?.querySelector('[aria-label="Ações rápidas"]')).not.toBeNull()
   })
 
-  it('posts home-search when the drawer query is active', async () => {
+  it('posts home-search when the overlay query is active', async () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: idleSuggestPayload,
     })
 
-    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+    renderOverlay()
 
     fireEvent.change(screen.getByLabelText('Buscar na campanha'), { target: { value: 'cairu' } })
 
@@ -197,7 +184,7 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
       payload: suggestWithPriorityPayload,
     })
 
-    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+    renderOverlay()
 
     fireEvent.focus(screen.getByLabelText('Buscar na campanha'))
 
@@ -224,7 +211,7 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
       return { ok: true, payload: idleSuggestPayload }
     })
 
-    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+    renderOverlay()
 
     const input = screen.getByLabelText('Buscar na campanha')
     fireEvent.focus(input)
@@ -245,55 +232,7 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
     })
   })
 
-  it('expands to full snap when the peek search is focused (B109)', () => {
-    vi.mocked(postCampaignJson).mockResolvedValue({
-      ok: true,
-      payload: idleSuggestPayload,
-    })
-
-    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Ocultar ações rápidas' }))
-    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe(
-      'collapsed',
-    )
-
-    fireEvent.focus(screen.getByLabelText('Buscar na campanha'))
-    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('full')
-  })
-
-  it('stays full while search remains focused even if the handle collapses (B109)', () => {
-    vi.mocked(postCampaignJson).mockResolvedValue({
-      ok: true,
-      payload: idleSuggestPayload,
-    })
-
-    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
-
-    fireEvent.focus(screen.getByLabelText('Buscar na campanha'))
-    fireEvent.click(screen.getByRole('button', { name: 'Ocultar ações rápidas' }))
-    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('full')
-  })
-
-  it('toggles between dock and collapsed from the handle', () => {
-    vi.mocked(postCampaignJson).mockResolvedValue({
-      ok: true,
-      payload: idleSuggestPayload,
-    })
-
-    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Ocultar ações rápidas' }))
-    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe(
-      'collapsed',
-    )
-    expect(screen.getByRole('button', { name: 'Mostrar ações rápidas' })).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar ações rápidas' }))
-    expect(document.getElementById('quickActionContext')?.getAttribute('data-snap')).toBe('dock')
-  })
-
-  it('hides the current municipality from drawer suggest hits (B109)', async () => {
+  it('hides the current municipality from overlay suggest hits (B109)', async () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: {
@@ -312,7 +251,7 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
       },
     })
 
-    renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
+    renderOverlay()
 
     fireEvent.focus(screen.getByLabelText('Buscar na campanha'))
 
@@ -321,52 +260,59 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
       expect(screen.queryByText('Município Atual')).toBeNull()
     })
   })
-})
 
-describe('CampaignContentScroll quick-actions direction (B105)', () => {
-  it('collapses on scroll down and re-docks on scroll up', () => {
-    renderQuickActionsChrome(
-      <>
-        <CampaignContentScroll quickActionsPeek>
-          <div style={{ height: '2000px' }} />
-        </CampaignContentScroll>
-        <SnapReadout />
-      </>,
-    )
+  it('uses mobile drawer with actions above search', () => {
+    matchMediaMock.mockImplementation((query: string) => ({
+      matches: query.includes('max-width'),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
 
-    const scrollport = document.querySelector('[data-slot="campaign-content-scroll"]')
-    expect(scrollport).toBeTruthy()
-    expect(screen.getByTestId('snap').textContent).toBe(QUICK_ACTIONS_SNAP_DOCK)
-
-    Object.defineProperty(scrollport, 'scrollTop', {
-      configurable: true,
-      value: QUICK_ACTIONS_SCROLL_COLLAPSE_THRESHOLD_PX + 1,
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
     })
-    fireEvent.scroll(scrollport!)
-    expect(screen.getByTestId('snap').textContent).toBe(QUICK_ACTIONS_SNAP_COLLAPSED)
 
-    Object.defineProperty(scrollport, 'scrollTop', {
-      configurable: true,
-      value: 0,
+    renderOverlay({
+      actions: [
+        {
+          id: 'test',
+          label: 'Registrar',
+          icon: BarChart3,
+          description: 'Teste.',
+          href: '/campanha',
+        },
+      ],
     })
-    fireEvent.scroll(scrollport!)
-    expect(screen.getByTestId('snap').textContent).toBe(QUICK_ACTIONS_SNAP_DOCK)
+
+    const actionsChrome = document.querySelector('[data-slot="quick-actions-chrome"]')
+    const searchChrome = document.querySelector('[data-slot="quick-actions-search"]')
+    expect(actionsChrome).not.toBeNull()
+    expect(searchChrome).not.toBeNull()
+    expect(
+      actionsChrome!.compareDocumentPosition(searchChrome!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 })
 
-describe('campaignQuickActionSnap', () => {
-  it('detects dock and full snaps', () => {
-    expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_DOCK)).toBe(true)
-    expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_COLLAPSED)).toBe(false)
-    expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_FULL)).toBe(false)
-    expect(quickActionsSnapIsDock(null)).toBe(false)
-    expect(quickActionsSnapIsFull(QUICK_ACTIONS_SNAP_FULL)).toBe(true)
-    expect(quickActionsSnapIsFull(QUICK_ACTIONS_SNAP_DOCK)).toBe(false)
-  })
+describe('CampaignQuickActionsHost (B126)', () => {
+  it('opens overlay from FAB and does not render persistent drawer chrome', () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
 
-  it('resolves scroll direction from delta threshold', () => {
-    expect(quickActionsScrollDirection(0, 25)).toBe('down')
-    expect(quickActionsScrollDirection(80, 50)).toBe('up')
-    expect(quickActionsScrollDirection(40, 50)).toBe('none')
+    renderQuickActionsChrome(<CampaignQuickActionsHost role="coordinator" />)
+
+    expect(screen.getByRole('button', { name: 'Ações rápidas' })).toBeTruthy()
+    expect(document.getElementById('CampaignQuickActionsOverlay')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ações rápidas' }))
+    expect(document.getElementById('CampaignQuickActionsOverlay')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: 'Ações rápidas' })).toBeNull()
   })
 })

@@ -19,10 +19,9 @@ export const isLeaderContactsPath = (pathname: string): boolean =>
   pathname === LEADER_CONTACTS_HOME || pathname.startsWith(`${LEADER_CONTACTS_HOME}/`)
 
 /**
- * Whether the mobile quick-actions drawer should mount on this navigation.
- * Desktop (`md+`) is gated in the host via `useIsMobile`.
+ * Whether the quick-actions FAB should mount on this navigation (all viewports).
  */
-export const shouldMountQuickActionsDrawer = (pathname: string, role: CampaignRole): boolean => {
+export const shouldMountQuickActionsFab = (pathname: string, role: CampaignRole): boolean => {
   if (isCampaignHomePath(pathname)) return false
   if (isCampaignActionsPath(pathname)) return false
   // B84: E13 compositor already exposes primary CTAs — skip competing drawer chrome.

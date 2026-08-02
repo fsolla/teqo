@@ -23,7 +23,7 @@ import {
   isCampaignActionsPath,
   isCampaignHomePath,
   isLeaderContactsPath,
-  shouldMountQuickActionsDrawer,
+  shouldMountQuickActionsFab,
 } from '@/lib/campaignQuickActionMount'
 import {
   ACTIVITY_LIST_PATH,
@@ -36,11 +36,6 @@ import {
   parseOrganizationQuickActionSurface,
 } from '@/lib/campaignQuickActionPaths'
 import { resolveQuickActionsForPath } from '@/lib/campaignQuickActionRegistry'
-import {
-  QUICK_ACTIONS_SNAP_COLLAPSED,
-  QUICK_ACTIONS_SNAP_DOCK,
-  quickActionsSnapIsDock,
-} from '@/lib/campaignQuickActionSnap'
 import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
 
 describe('campaignQuickActionMount', () => {
@@ -63,38 +58,38 @@ describe('campaignQuickActionMount', () => {
   })
 
   it('mounts for staff outside Início and acoes', () => {
-    expect(shouldMountQuickActionsDrawer('/campanha/municipios', 'coordinator')).toBe(true)
-    expect(shouldMountQuickActionsDrawer('/campanha/territorios', 'coordinator')).toBe(true)
-    expect(shouldMountQuickActionsDrawer('/campanha/demandas', 'coordinator')).toBe(true)
-    expect(shouldMountQuickActionsDrawer('/campanha/demandas/foo', 'coordinator')).toBe(true)
-    expect(shouldMountQuickActionsDrawer('/campanha', 'coordinator')).toBe(false)
-    expect(shouldMountQuickActionsDrawer('/campanha/acoes/registrar-sinal', 'advisor')).toBe(false)
+    expect(shouldMountQuickActionsFab('/campanha/municipios', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsFab('/campanha/territorios', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsFab('/campanha/demandas', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsFab('/campanha/demandas/foo', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsFab('/campanha', 'coordinator')).toBe(false)
+    expect(shouldMountQuickActionsFab('/campanha/acoes/registrar-sinal', 'advisor')).toBe(false)
   })
 
   it('mounts for leader only on contacts', () => {
-    expect(shouldMountQuickActionsDrawer('/campanha/contatos', 'leader')).toBe(true)
-    expect(shouldMountQuickActionsDrawer('/campanha/municipios', 'leader')).toBe(false)
+    expect(shouldMountQuickActionsFab('/campanha/contatos', 'leader')).toBe(true)
+    expect(shouldMountQuickActionsFab('/campanha/municipios', 'leader')).toBe(false)
   })
 
   it('skips the E13 tour composer (B84)', () => {
     expect(isActivityTourComposerPath(ACTIVITY_TOUR_COMPOSER_PATH)).toBe(true)
-    expect(shouldMountQuickActionsDrawer(ACTIVITY_TOUR_COMPOSER_PATH, 'coordinator')).toBe(false)
+    expect(shouldMountQuickActionsFab(ACTIVITY_TOUR_COMPOSER_PATH, 'coordinator')).toBe(false)
   })
 
   it('mounts assessores only for unrestricted roles (B87)', () => {
-    expect(shouldMountQuickActionsDrawer('/campanha/assessores', 'coordinator')).toBe(true)
-    expect(shouldMountQuickActionsDrawer('/campanha/assessores/12', 'candidate')).toBe(true)
-    expect(shouldMountQuickActionsDrawer('/campanha/assessores', 'advisor')).toBe(false)
-    expect(shouldMountQuickActionsDrawer('/campanha/assessores/12', 'advisor')).toBe(false)
+    expect(shouldMountQuickActionsFab('/campanha/assessores', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsFab('/campanha/assessores/12', 'candidate')).toBe(true)
+    expect(shouldMountQuickActionsFab('/campanha/assessores', 'advisor')).toBe(false)
+    expect(shouldMountQuickActionsFab('/campanha/assessores/12', 'advisor')).toBe(false)
   })
 
   it('mounts on dobradinhas for staff (B83)', () => {
-    expect(shouldMountQuickActionsDrawer('/campanha/dobradinhas', 'coordinator')).toBe(true)
-    expect(shouldMountQuickActionsDrawer('/campanha/dobradinhas/foo', 'advisor')).toBe(true)
+    expect(shouldMountQuickActionsFab('/campanha/dobradinhas', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsFab('/campanha/dobradinhas/foo', 'advisor')).toBe(true)
   })
 
-  it('omits drawer on perfil for leader (B90)', () => {
-    expect(shouldMountQuickActionsDrawer(CAMPAIGN_PROFILE_HOME, 'leader')).toBe(false)
+  it('omits FAB on perfil for leader (B90)', () => {
+    expect(shouldMountQuickActionsFab(CAMPAIGN_PROFILE_HOME, 'leader')).toBe(false)
   })
 })
 
@@ -395,13 +390,5 @@ describe('campaignQuickActionDemands resolvers', () => {
         '/campanha/demandas/foo',
       ),
     ).toEqual([])
-  })
-})
-
-describe('campaignQuickActionSnap', () => {
-  it('detects dock snap', () => {
-    expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_DOCK)).toBe(true)
-    expect(quickActionsSnapIsDock(QUICK_ACTIONS_SNAP_COLLAPSED)).toBe(false)
-    expect(quickActionsSnapIsDock(null)).toBe(false)
   })
 })
