@@ -34,6 +34,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/Empty'
 import { resolveVisibleColumns } from '@/lib/campaignColumnVisibility'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import { cn } from '@/lib/utils'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
@@ -63,6 +64,8 @@ import {
   setLeadershipStateDeputyMembershipFormAction,
   setStateDeputyMunicipalitiesFormAction,
 } from './formActions'
+
+export const metadata = campaignPageMetadataFromCatalog('dobradinhas')
 
 type StateDeputiesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -223,21 +226,14 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Dobradinhas</h1>
-          <p className="text-muted-foreground">
-            Deputados estaduais com quem a campanha dobra — vincule lideranças e municípios direto
-            na lista.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <Button asChild className="min-h-11">
           <Link href="/campanha/dobradinhas/nova">
             <PlusIcon data-icon="inline-start" aria-hidden="true" />
             Nova dobradinha
           </Link>
         </Button>
-      </header>
+      </div>
 
       <CampaignListPendingBoundary>
         <StateDeputyFilters

@@ -6,9 +6,12 @@ import { getPayload } from 'payload'
 import { OrganizationForm } from '@/components/campaign/organization/OrganizationForm'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { createOrganizationFormAction } from './formActions'
+
+export const metadata = campaignPageMetadataFromCatalog('organizacoesNova')
 
 export default async function NewOrganizationPage() {
   const [user, payload] = await Promise.all([
@@ -20,19 +23,12 @@ export default async function NewOrganizationPage() {
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-2">
-        <Button asChild variant="ghost" className="min-h-11 self-start">
-          <Link href="/campanha/organizacoes">
-            <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
-            Voltar para organizações
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-semibold tracking-tight">Nova organização</h1>
-        <p className="text-muted-foreground">
-          Cadastre sindicatos, associações, movimentos e afins para vincular lideranças e
-          atividades.
-        </p>
-      </header>
+      <Button asChild variant="ghost" className="min-h-11 self-start">
+        <Link href="/campanha/organizacoes">
+          <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
+          Voltar para organizações
+        </Link>
+      </Button>
 
       <OrganizationForm
         municipalityOptions={municipalityOptions}

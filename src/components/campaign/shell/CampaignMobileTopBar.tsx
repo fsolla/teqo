@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
 import { useCampaignHomeSearchChrome } from '@/components/campaign/shell/CampaignHomeSearchChromeContext'
+import { CampaignPageChromeDisplay } from '@/components/campaign/shell/CampaignPageChromeDisplay'
 import { useCampaignWizardChrome } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { Button } from '@/components/ui/button'
 import { SidebarTrigger } from '@/components/ui/Sidebar'
@@ -148,10 +149,7 @@ export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: 
       ) : (
         <SidebarTrigger className="text-primary-foreground" />
       )}
-      <div className="min-w-0 flex-1 leading-tight">
-        <span className="block truncate text-sm font-semibold">Jorge Solla</span>
-        <span className="block truncate text-xs text-primary-foreground/80">Campanha · Bahia</span>
-      </div>
+      <CampaignPageChromeDisplay layout="mobile" />
       {notificationBell ? <div className="shrink-0">{notificationBell}</div> : null}
     </header>
   )

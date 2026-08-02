@@ -1,6 +1,5 @@
 import config from '@payload-config'
 import { MapPinnedIcon } from 'lucide-react'
-import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 
@@ -14,6 +13,7 @@ import { CalendarPhaseNote } from '@/components/campaign/tour/CalendarPhaseNote'
 import { TourComposerForm, type TourStopOption } from '@/components/campaign/tour/TourComposerForm'
 import { TourRegionPicker } from '@/components/campaign/tour/TourRegionPicker'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { formatBahiaDayLabel } from '@/lib/campaignTime'
 import { formatElectionNumber } from '@/lib/electionFormat'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -31,10 +31,7 @@ import {
 
 import { createTourDraftsFormAction } from './formActions'
 
-export const metadata: Metadata = {
-  title: 'Planejar giro | Campanha',
-  robots: { index: false, follow: false },
-}
+export const metadata = campaignPageMetadataFromCatalog('atividadesGiros')
 
 type TourComposerPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -113,19 +110,11 @@ export default async function TourComposerPage({ searchParams }: TourComposerPag
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Planejar giro</h1>
-          <p className="max-w-prose text-muted-foreground">
-            Um giro por território: o ato onde o voto comprometido já está, as paradas com rede para
-            receber, e uma semente de expansão para o giro não repetir só a base. A proposta é
-            sugestão — você edita antes de gerar.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <Button asChild variant="outline" className="min-h-11">
           <Link href="/campanha/atividades">Voltar para Atividades</Link>
         </Button>
-      </header>
+      </div>
 
       {/* Shared transition: the picker navigates, the proposal dims ("Feel the action"). */}
       <CampaignListPendingBoundary>

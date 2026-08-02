@@ -9,6 +9,7 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import { CampaignQuickActionContextSync } from '@/components/campaign/shell/CampaignQuickActionContextSync'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   campaignDemandKindLabels,
   campaignDemandStatusLabels,
@@ -22,6 +23,8 @@ import {
   setDemandCostFormAction,
   transitionDemandFormAction,
 } from './formActions'
+
+export const metadata = campaignPageMetadataFromCatalog('demandas')
 
 type DemandDetailPageProps = {
   params: Promise<{ slug: string }>

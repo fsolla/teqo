@@ -6,15 +6,10 @@ import {
   campaignConceptsByCategory,
   type CampaignIntelligenceConcept,
 } from '@/lib/campaignIntelligenceConcepts'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 
-export const metadata: Metadata = {
-  title: 'Conceitos de inteligência | Campanha',
-  robots: {
-    index: false,
-    follow: false,
-  },
-}
+export const metadata: Metadata = campaignPageMetadataFromCatalog('conceitos')
 
 /**
  * One documented number: what it measures, how it is calculated, why it
@@ -65,14 +60,6 @@ export default async function CampaignConceptsPage() {
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Conceitos de inteligência</h1>
-        <p className="max-w-prose text-muted-foreground">
-          O que cada número da campanha mede e como é calculado. Só o que o produto já calcula hoje
-          — a lista cresce conforme novas análises entram.
-        </p>
-      </header>
-
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-start lg:gap-10">
         {/*
           Desktop-only index: on a phone it would push all seven sections below

@@ -10,6 +10,7 @@ import {
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadTerritoryOverview } from '@/utilities/territory/loadTerritoryOverview'
@@ -18,6 +19,8 @@ import {
   resolveTerritoryListUrl,
 } from '@/utilities/territory/territoryListUrl'
 import { filterTerritoryRows, sortTerritoryRows } from '@/utilities/territory/territoryOverview'
+
+export const metadata = campaignPageMetadataFromCatalog('territorios')
 
 type TerritoriesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -44,15 +47,6 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
 
   return (
     <CampaignPageShell>
-      <header className="flex max-w-prose flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-balance">
-          Territórios de Identidade
-        </h1>
-        <p className="text-muted-foreground text-pretty">
-          Compare a concentração histórica e a cobertura de assessoria das regiões da Bahia. Abra um
-          território para ver seus municípios.
-        </p>
-      </header>
       <CampaignListPendingBoundary>
         <TerritoryFilters state={state} regionOptions={regionOptions} />
         <CampaignListResults>

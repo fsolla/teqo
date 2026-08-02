@@ -10,7 +10,10 @@ import '../(frontend)/styles.css'
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
 export const metadata: Metadata = {
-  title: 'Campanha',
+  title: {
+    default: 'Campanha',
+    template: 'Solla - Campanha - %s',
+  },
   robots: {
     index: false,
     follow: false,

@@ -6,8 +6,10 @@ import { getPayload } from 'payload'
 
 import { MunicipalityAdvisorsForm } from '@/components/campaign/municipality/MunicipalityAdvisorsForm'
 import { MunicipalityStrategyForm } from '@/components/campaign/municipality/MunicipalityStrategyForm'
+import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
+import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
 import {
@@ -25,6 +27,29 @@ import { updateMunicipalityStrategyFormAction } from './formActions'
 
 type MunicipalityEditPageProps = {
   params: Promise<{ slug: string }>
+}
+
+const municipalityEditSubtitle =
+  'A geografia do município é pré-definida e não pode ser alterada. Aqui você edita metas, votos estimados, inteligência e tendência política.'
+
+export async function generateMetadata({ params }: MunicipalityEditPageProps) {
+  const { slug } = await params
+  const payload = await getPayload({ config })
+  const user = await requireCampaignPageActor({
+    gate: 'staff',
+    redirectTo: `/campanha/municipios/${slug}`,
+  })
+
+  try {
+    const context = await resolveAccessibleMunicipalityContext(payload, user, slug)
+    const view = await getMunicipalityDetailViewModel(payload, context, user)
+    return campaignPageMetadata({
+      title: `Editar ${view.name}`,
+      subtitle: municipalityEditSubtitle,
+    })
+  } catch {
+    return campaignPageMetadata({ title: 'Editar município', subtitle: municipalityEditSubtitle })
+  }
 }
 
 export default async function MunicipalityEditPage({ params }: MunicipalityEditPageProps) {
@@ -51,19 +76,15 @@ export default async function MunicipalityEditPage({ params }: MunicipalityEditP
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-2">
-        <Button asChild variant="ghost" className="min-h-11 self-start">
-          <Link href={`/campanha/municipios/${view.slug}`}>
-            <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
-            Voltar para {view.name}
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-semibold tracking-tight">Editar {view.name}</h1>
-        <p className="text-muted-foreground">
-          A geografia do município é pré-definida e não pode ser alterada. Aqui você edita metas,
-          votos estimados, inteligência e tendência política.
-        </p>
-      </header>
+      <SetCampaignPageChrome
+        chrome={{ title: `Editar ${view.name}`, subtitle: municipalityEditSubtitle }}
+      />
+      <Button asChild variant="ghost" className="min-h-11 self-start">
+        <Link href={`/campanha/municipios/${view.slug}`}>
+          <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
+          Voltar para {view.name}
+        </Link>
+      </Button>
 
       {user.role === 'coordinator' ? (
         <MunicipalityAdvisorsForm

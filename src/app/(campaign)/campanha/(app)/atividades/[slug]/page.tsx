@@ -17,6 +17,7 @@ import { CampaignQuickActionContextBridge } from '@/components/campaign/shell/Ca
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { activityKindLabels } from '@/lib/schemas/activity'
 import { getActivityDetailPageData } from '@/utilities/activityDetailPageData'
@@ -33,6 +34,8 @@ import { firstValue, strictDecimalInteger } from '@/utilities/campaignListUrl'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 
 import { ActivityOverviewTab } from './ActivityOverviewTab'
+
+export const metadata = campaignPageMetadataFromCatalog('atividades')
 
 type ActivityDetailPageProps = {
   params: Promise<{ slug: string }>

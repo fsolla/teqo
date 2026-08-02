@@ -3,11 +3,14 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { LeaderContactsPanel } from '@/components/campaign/leadership/LeaderContactsPanel'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { isCampaignLeader } from '@/utilities/campaignAccess'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadLeaderContactsPageData } from '@/utilities/leaderContactsPageData'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata = campaignPageMetadataFromCatalog('contatos')
 
 export default async function CampaignContatosPage() {
   const [payload, user] = await Promise.all([getPayload({ config }), requireCampaignPageActor()])
@@ -20,7 +23,6 @@ export default async function CampaignContatosPage() {
 
   return (
     <LeaderContactsPanel
-      userName={user.name}
       municipalityOptions={view.municipalityOptions}
       defaultMunicipalityId={view.defaultMunicipalityId}
       showMunicipalitySelect={view.showMunicipalitySelect}

@@ -8,6 +8,7 @@ import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitT
 import { MunicipalityTabNav } from '@/components/campaign/municipality/MunicipalityTabNav'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
+import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   resolveMunicipalityDetailTab,
@@ -32,6 +33,8 @@ import {
   OverviewTab,
   UpdatesTab,
 } from './MunicipalityDetailTabs'
+
+export const metadata = campaignPageMetadataFromCatalog('municipios')
 
 type MunicipalityDetailPageProps = {
   params: Promise<{ slug: string }>
