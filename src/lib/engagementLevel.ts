@@ -19,6 +19,9 @@ export const ENGAGEMENT_LEVEL_PATTERN_ID = 'nivel'
 /** Cap shared by the field, the schema and the textareas, so they agree. */
 export const ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH = 2000
 
+/** Filed on `allocationDecision.rationale` when the coordinator omits a motivo (B134). */
+export const ENGAGEMENT_LEVEL_NO_RATIONALE_LABEL = 'Sem justificativa registrada.'
+
 export type EngagementLevel = (typeof engagementLevels)[number]
 
 /**

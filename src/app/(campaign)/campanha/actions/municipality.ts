@@ -3,6 +3,7 @@
 import type { Payload } from 'payload'
 
 import {
+  ENGAGEMENT_LEVEL_NO_RATIONALE_LABEL,
   ENGAGEMENT_LEVEL_PATTERN_ID,
   EngagementLevelBlockedError,
   getEngagementLevelViolations,
@@ -205,7 +206,7 @@ export const setMunicipalityEngagementLevelRecord = async (
           municipality,
           patternId: ENGAGEMENT_LEVEL_PATTERN_ID,
           outcome: 'movimento',
-          rationale: levelNote ?? '',
+          rationale: levelNote?.trim() ? levelNote : ENGAGEMENT_LEVEL_NO_RATIONALE_LABEL,
           // Only the values the decision was taken on — no document dumps
           // (the collection caps the serialized snapshot at 16 KB).
           snapshot: {

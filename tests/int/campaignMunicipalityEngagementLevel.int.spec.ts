@@ -84,7 +84,7 @@ describe('municipality engagement level (E14)', () => {
     const decision = decisions.docs[0]!
     fixtures.own('allocationDecision', decision.id)
 
-    expect(decision.rationale).toBe('')
+    expect(decision.rationale).toBe('Sem justificativa registrada.')
     expect(decision.snapshot).toMatchObject({
       from: null,
       to: 'n1',
