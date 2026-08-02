@@ -63,10 +63,12 @@ export const mapCampaignFormActionError = <Values>(
  * success state (`message` plus extras like created ids). Pre-parsed `values`
  * and `revision` are echoed on failure so forms can repopulate.
  *
- * Documented exceptions that deliberately stay hand-rolled:
+ * Documented exceptions that deliberately stay hand-rolled (allowlisted in
+ * `codebaseConventions.unit.spec.ts`):
  * `atividades/formActions.ts` (custom unique-violation mapping + async
- * duplicate-title fallback) and `apoiadores/[id]/formActions.ts` (flattens
- * field errors into message-only states for its inline controls).
+ * duplicate-title fallback), `apoiadores/[id]/formActions.ts` (flattens
+ * field errors into message-only states for its inline controls),
+ * `actions/auth.ts` and `actions/password.ts` (bespoke login/password flows).
  */
 export const runCampaignFormAction = async <
   Success extends { message: string },

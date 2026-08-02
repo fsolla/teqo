@@ -16,7 +16,7 @@ import type { CampaignUser, Supporter } from '@/payload-types'
 import { getEngagedLeaderMunicipalityIds, isCampaignLeader } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { requireSupporterRegistrationConsent } from '@/utilities/campaignConsent'
-import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
+import { runCampaignFormAction } from '@/utilities/campaignFormActionError'
 import { LEADER_CONTACTS_HOME } from '@/utilities/campaignPageActor'
 import {
   acquireContactPhoneLocks,
@@ -52,19 +52,6 @@ const safeActionMessages = [
   SUPPORTER_REGISTRATION_CONSENT_MISSING_MESSAGE,
   MUNICIPALITY_OUT_OF_SCOPE_MESSAGE,
 ] as const
-
-const getLeaderSupporterFormError = (
-  error: unknown,
-  values?: LeaderSupporterFormValues,
-  revision?: number,
-): LeaderSupporterFormState =>
-  mapCampaignFormActionError({
-    error,
-    safeMessages: safeActionMessages,
-    genericMessage: 'Não foi possível cadastrar o contato. Verifique os dados e tente novamente.',
-    values,
-    revision,
-  })
 
 const getFreshLeaderActor = async (
   payload: Payload,
@@ -155,38 +142,38 @@ export const createLeaderSupporterFormAction = async (
   state: LeaderSupporterFormState,
   formData: FormData,
 ): Promise<LeaderSupporterFormState> => {
-  let values: LeaderSupporterFormValues | undefined
-  const revision = (state.revision ?? 0) + 1
-
-  try {
-    values = {
-      name: optionalFormText(formData, 'name'),
-      phone: optionalFormText(formData, 'phone'),
-      city: optionalFormText(formData, 'city'),
-      municipality: optionalFormText(formData, 'municipality'),
-    }
-
-    const phone = sanitizeBrazilianPhoneInput(values.phone ?? '')
-    const municipality = nullableRelationshipFormValue(formData, 'municipality')
-    const input = leaderSupporterCreateSchema.parse({
-      name: values.name ?? '',
-      phone,
-      city: values.city,
-      municipality,
-      consentAccepted: checkboxFormValue(formData, 'consentAccepted') ? true : undefined,
-    })
-
-    const supporter = await createLeaderSupporter(input)
-    revalidatePath(LEADER_CONTACTS_HOME)
-
-    return {
-      status: 'success',
-      message: supporter.contactReused
-        ? 'Contato cadastrado. O celular já existia e foi reutilizado.'
-        : 'Contato cadastrado com sucesso.',
-      revision,
-    }
-  } catch (error) {
-    return getLeaderSupporterFormError(error, values, revision)
+  const values: LeaderSupporterFormValues = {
+    name: optionalFormText(formData, 'name'),
+    phone: optionalFormText(formData, 'phone'),
+    city: optionalFormText(formData, 'city'),
+    municipality: optionalFormText(formData, 'municipality'),
   }
+
+  return runCampaignFormAction({
+    execute: async () => {
+      const phone = sanitizeBrazilianPhoneInput(values.phone ?? '')
+      const municipality = nullableRelationshipFormValue(formData, 'municipality')
+      const input = leaderSupporterCreateSchema.parse({
+        name: values.name ?? '',
+        phone,
+        city: values.city,
+        municipality,
+        consentAccepted: checkboxFormValue(formData, 'consentAccepted') ? true : undefined,
+      })
+
+      const supporter = await createLeaderSupporter(input)
+      revalidatePath(LEADER_CONTACTS_HOME)
+
+      return {
+        message: supporter.contactReused
+          ? 'Contato cadastrado. O celular já existia e foi reutilizado.'
+          : 'Contato cadastrado com sucesso.',
+        revision: (state.revision ?? 0) + 1,
+      }
+    },
+    safeMessages: safeActionMessages,
+    genericMessage: 'Não foi possível cadastrar o contato. Verifique os dados e tente novamente.',
+    values,
+    revision: (state.revision ?? 0) + 1,
+  })
 }
