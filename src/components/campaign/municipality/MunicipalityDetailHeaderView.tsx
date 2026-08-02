@@ -7,7 +7,7 @@ import {
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
-export type MunicipalityDetailHeaderAdvisorSummary = {
+type MunicipalityDetailHeaderAdvisorSummary = {
   name: string
 }
 
