@@ -95,9 +95,7 @@ const renderOverlay = (
 
 describe('CampaignQuickActionsFab (B126)', () => {
   it('renders when closed and hides when overlay is open', () => {
-    const { rerender } = render(
-      <CampaignQuickActionsFab open={false} onOpenChange={vi.fn()} />,
-    )
+    const { rerender } = render(<CampaignQuickActionsFab open={false} onOpenChange={vi.fn()} />)
     expect(screen.getByRole('button', { name: 'Ações rápidas' })).toBeTruthy()
 
     rerender(<CampaignQuickActionsFab open onOpenChange={vi.fn()} />)

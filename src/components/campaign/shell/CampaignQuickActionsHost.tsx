@@ -3,9 +3,9 @@
 import { usePathname } from 'next/navigation'
 import { useEffect, useState, type ReactNode } from 'react'
 
+import { useCampaignQuickActionContext } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { CampaignQuickActionsFab } from '@/components/campaign/shell/CampaignQuickActionsFab'
 import { CampaignQuickActionsOverlay } from '@/components/campaign/shell/CampaignQuickActionsOverlay'
-import { useCampaignQuickActionContext } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { shouldMountQuickActionsFab } from '@/lib/campaignQuickActionMount'
 import { resolveQuickActionsForPath } from '@/lib/campaignQuickActionRegistry'
 import type { CampaignRole } from '@/lib/campaignRoles'
