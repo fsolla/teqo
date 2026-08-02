@@ -35,9 +35,7 @@ const countStatements = async <T>(
           ? ((first as { text: string }).text as string)
           : ''
     const params =
-      typeof first === 'string'
-        ? args[1]
-        : ((first as { values?: unknown })?.values ?? args[1])
+      typeof first === 'string' ? args[1] : ((first as { values?: unknown })?.values ?? args[1])
     const hits = match ? match(text, params) : text.includes(fragment)
     if (hits) count += 1
     return originalQuery(...args)
