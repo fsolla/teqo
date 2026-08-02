@@ -160,7 +160,7 @@ Sem `--plan`: nasce `ready` (use `--blocked` só se quiser não-claimável sem p
 2. Atualize `Issue: #N` (e status) no plano local.
 3. Commit + **`pnpm push`** + PR **Ready** `--base main` com **`Related #N`** (nunca `Closes #N` em PR só de `docs/plans/` — `plans-only-closes`).
 4. Auto-merge (`gh pr merge --auto --merge`); espere o merge em `main`.
-5. **Promote** com o script (idempotente; só Issues `blocked` + link `docs/plans/`):
+5. **Promote** com o script (idempotente se já `ready`; só Issues `blocked` + link `docs/plans/`, sem gates humanos `needs:*` nem `in-progress`/`done`/`in-prod`):
 
 ```bash
 pnpm agent:ready -- --issue <N[,N…]>

@@ -5,9 +5,10 @@
  *   pnpm agent:ready -- --issue 292
  *   pnpm agent:ready -- --issue 292,293
  *
- * Fail-closed: only Issues that are open, labeled `blocked`, and link
- * `docs/plans/` in the body. Does not promote product-blocked Issues without
- * a plan link (those stay for human triage).
+ * Fail-closed via `canPromotePlanIssue`: open + `blocked` + `docs/plans/` link,
+ * and not `needs:consent` / `requirements-changed` / `in-progress`|`done`|`in-prod`.
+ * Idempotent skip when already `ready`. Product-blocked Issues without a plan
+ * link stay for human triage.
  */
 
 import { dieAgent, gh, ghJson, labelNames, parseArgs, setLabels } from './lib/agent-github.mjs'

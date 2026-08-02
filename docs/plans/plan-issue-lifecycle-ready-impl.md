@@ -70,6 +70,8 @@ flowchart LR
 - **Label `needs:plan`.**
 - **Reescrever `capture-review-debts` para auto-promote** (só nota + defer para OPS18).
 - **Rename cosmético `canPromotePlanIssue` → `canMarkPlanIssueReady`** — defer; API estável para OPS18 Action.
+- **Hoist `HUMAN_GATE_LABELS` / `issueHasPlanLink` / lista ativa-ou-terminal para módulo neutro** — defer até OPS18 (#296) precisar do mesmo predicado fora de `agent-pool-eligibility` (2 call sites hoje; gatilho = 3º consumidor ou Action dual).
+- **Batch `agent:ready` acumular falhas** — defer; v1 fail-fast no primeiro reject não-skip é ok.
 
 ## Riscos e mitigação
 
