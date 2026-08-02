@@ -175,7 +175,8 @@ test.describe('Wizard — busca município (B60)', () => {
     await search.fill(municipality.name)
 
     const results = page.getByRole('region', { name: WIZARD_MUNICIPALITY_STEP_TITLE })
-    const hit = results.locator(`a[href*="municipio=${municipality.slug}"]`)
+    // Exact slug query — a substring href*= match also hits longer sibling slugs.
+    const hit = results.locator(`a[href$="municipio=${municipality.slug}"]`)
     await expect(hit).toBeVisible({ timeout: 15000 })
     await hit.click()
 

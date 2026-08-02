@@ -115,9 +115,14 @@ test.describe('Municípios — jornadas por papel', () => {
     )
     await expect(page.getByRole('heading', { name: 'Municípios', exact: true })).toBeVisible()
 
+    // Do not use `\b` after the name: JS word boundaries break on accented
+    // endings (Macururé, Camaçari, …) and the control never matches.
     const advisorsTrigger = page.getByRole('button', {
-      name: new RegExp(`^Editar assessores em ${municipality.name}\\b`),
+      name: new RegExp(
+        `^Editar assessores em ${municipality.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} — `,
+      ),
     })
+    await expect(advisorsTrigger).toBeVisible()
     await advisorsTrigger.click()
 
     const advisorsPopover = page.locator('[data-slot="popover-content"]')
@@ -149,7 +154,9 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.reload()
     await page
       .getByRole('button', {
-        name: new RegExp(`^Editar assessores em ${municipality.name}\\b`),
+        name: new RegExp(
+          `^Editar assessores em ${municipality.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} — `,
+        ),
       })
       .click()
     await expect(
