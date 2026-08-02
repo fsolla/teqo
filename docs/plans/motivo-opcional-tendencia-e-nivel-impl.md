@@ -51,7 +51,7 @@ flowchart LR
 
 ## Riscos e mitigação
 
-- `rationale` required no Payload com nota vazia → enviar `''` (válido para textarea required)
+- `rationale` required no Payload com nota vazia → placeholder `ENGAGEMENT_LEVEL_NO_RATIONALE_LABEL` no snapshot; `levelNote` permanece nulo no município
 - Testes int que passam `reversalSignals` → remover do fixture
 
 ## Aceite de engenharia
