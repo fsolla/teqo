@@ -6,17 +6,15 @@ import { Suspense } from 'react'
 
 import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitTracker'
 import { MunicipalityTabNav } from '@/components/campaign/municipality/MunicipalityTabNav'
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   resolveMunicipalityDetailTab,
   type MunicipalityDetailSearchParams,
 } from '@/utilities/municipality/municipalityDetailTabUi'
-import {
-  formatMunicipalityGeographyLabel,
-} from '@/utilities/municipality/municipalityLabels'
+import { formatMunicipalityGeographyLabel } from '@/utilities/municipality/municipalityLabels'
 import {
   getMunicipalityDetailViewModel,
   MunicipalityNotFoundError,

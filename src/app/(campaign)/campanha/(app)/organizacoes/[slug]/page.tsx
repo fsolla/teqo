@@ -6,8 +6,8 @@ import { getPayload } from 'payload'
 
 import { ActivityStatusBadge } from '@/components/campaign/activity/ActivityStatusBadge'
 import { OrganizationForm } from '@/components/campaign/organization/OrganizationForm'
-import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
+import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { organizationKindLabels } from '@/lib/schemas/organization'
@@ -59,9 +59,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
         }}
       />
       {organization.municipalityNames.length ? (
-        <p className="text-muted-foreground">
-          Atua em {organization.municipalityNames.join(', ')}
-        </p>
+        <p className="text-muted-foreground">Atua em {organization.municipalityNames.join(', ')}</p>
       ) : null}
       {organization.notes ? (
         <p className="whitespace-pre-wrap text-sm text-muted-foreground">{organization.notes}</p>

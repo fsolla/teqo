@@ -5,9 +5,9 @@ import { getPayload } from 'payload'
 import { LeadershipInviteButtons } from '@/components/campaign/invite/LeadershipInviteButtons'
 import { LeadershipInternalForm } from '@/components/campaign/leadership/LeadershipInternalForm'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
+import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { CampaignQuickActionContextSync } from '@/components/campaign/shell/CampaignQuickActionContextSync'
-import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { StateDeputyChips } from '@/components/campaign/stateDeputy/StateDeputyChips'
 import { Badge } from '@/components/ui/Badge'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
@@ -75,9 +75,7 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
         municipalitySlug={singleMunicipalitySlug}
       />
       <div className="flex flex-wrap items-center gap-2">
-        {leadership.supportStatus ? (
-          <SupportStatusBadge status={leadership.supportStatus} />
-        ) : null}
+        {leadership.supportStatus ? <SupportStatusBadge status={leadership.supportStatus} /> : null}
         <Badge variant={leadership.hasAppAccess ? 'estimate-confirmed' : 'outline'}>
           {leadership.hasAppAccess ? 'Com acesso ao app' : 'Sem acesso ao app'}
         </Badge>

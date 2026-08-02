@@ -23,6 +23,7 @@ flowchart LR
 ```
 
 **Opções consideradas:**
+
 - A) Estender `resolveCampaignPageChrome` com dados de entidade (impossível — catálogo é estático/client-safe)
 - B) `SetCampaignPageChrome` + `generateMetadata` por rota (precedente edit routes)
 - C) Novo provider server-side de chrome
@@ -41,16 +42,16 @@ flowchart LR
 
 ### Mapeamento chrome por rota
 
-| Rota | title | subtitle |
-| ---- | ----- | -------- |
-| municipios/[slug] | view.name | formatMunicipalityGeographyLabel(view) |
-| liderancas/[id] | Liderança | leadership.name |
-| atividades/[slug] | view.title | view.locationLabel ou municipality.name |
-| demandas/[slug] | demand.title | `${kind} · ${municipalityName}` |
-| dobradinhas/[slug] | stateDeputy.name | party (opcional) |
-| organizacoes/[slug] | organization.name | organizationKindLabels[kind] |
-| apoiadores/[id] | Apoiador | supporter.name |
-| assessores/[id] | Assessor | advisor.name |
+| Rota                | title             | subtitle                                |
+| ------------------- | ----------------- | --------------------------------------- |
+| municipios/[slug]   | view.name         | formatMunicipalityGeographyLabel(view)  |
+| liderancas/[id]     | Liderança         | leadership.name                         |
+| atividades/[slug]   | view.title        | view.locationLabel ou municipality.name |
+| demandas/[slug]     | demand.title      | `${kind} · ${municipalityName}`         |
+| dobradinhas/[slug]  | stateDeputy.name  | party (opcional)                        |
+| organizacoes/[slug] | organization.name | organizationKindLabels[kind]            |
+| apoiadores/[id]     | Apoiador          | supporter.name                          |
+| assessores/[id]     | Assessor          | advisor.name                            |
 
 ## Fases verificáveis
 

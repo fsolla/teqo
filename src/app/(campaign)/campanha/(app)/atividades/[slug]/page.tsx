@@ -13,8 +13,8 @@ import { ActivityTabNav } from '@/components/campaign/activity/ActivityTabNav'
 import { ActivityTaskChecklist } from '@/components/campaign/activity/ActivityTaskChecklist'
 import { ActivityUpdateFeed } from '@/components/campaign/activity/ActivityUpdateFeed'
 import { ActivityUpdateForm } from '@/components/campaign/activity/ActivityUpdateForm'
-import { CampaignQuickActionContextBridge } from '@/components/campaign/shell/CampaignQuickActionContextBridge'
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
+import { CampaignQuickActionContextBridge } from '@/components/campaign/shell/CampaignQuickActionContextBridge'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -50,9 +50,7 @@ export async function generateMetadata({ params }: ActivityDetailPageProps) {
     const context = await resolveAccessibleActivityContext(payload, user, slug, activeTab)
     const view = await getActivityDetailPageData(payload, user, context, activeTab, 1)
     const subtitle = view.locationLabel || view.municipality?.name
-    return campaignPageMetadata(
-      subtitle ? { title: view.title, subtitle } : { title: view.title },
-    )
+    return campaignPageMetadata(subtitle ? { title: view.title, subtitle } : { title: view.title })
   } catch {
     return campaignPageMetadata({ title: 'Atividade' })
   }
@@ -100,9 +98,7 @@ export default async function ActivityDetailPage({
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <SetCampaignPageChrome
         chrome={
-          chromeSubtitle
-            ? { title: view.title, subtitle: chromeSubtitle }
-            : { title: view.title }
+          chromeSubtitle ? { title: view.title, subtitle: chromeSubtitle } : { title: view.title }
         }
       />
       <CampaignQuickActionContextBridge

@@ -5,9 +5,9 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { DemandWorkflowCard } from '@/components/campaign/demand/DemandWorkflowCard'
+import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { CampaignQuickActionContextSync } from '@/components/campaign/shell/CampaignQuickActionContextSync'
-import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { Badge } from '@/components/ui/Badge'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import {
