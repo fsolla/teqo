@@ -219,6 +219,19 @@ describe('campaign municipality update domain', () => {
     expect(visible.docs.map(({ id }) => id)).toContain(created.id)
   })
 
+  it('accepts a sinal with type and empty motivo', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const municipality = await campaignFixtures().getMunicipality()
+
+    const created = await createMunicipalityUpdateRecord(payload, coordinator, {
+      municipality: municipality.id,
+      kind: 'sinal',
+      signalType: 'invasao',
+    })
+    expect(created.signalType).toBe('invasao')
+    expect(created.body).toBeFalsy()
+  })
+
   it('limits advisors to administered municipalities for create and read', async () => {
     const advisor = await campaignFixtures().createCampaignUser('advisor')
     const otherAdvisor = await campaignFixtures().createCampaignUser('advisor')

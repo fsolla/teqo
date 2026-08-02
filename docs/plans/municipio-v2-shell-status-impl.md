@@ -91,6 +91,7 @@ flowchart LR
 - Scrub histórico de `reversalSignals` em snapshots.
 - Dual-path / ops-sync.
 - Redesign hysteresis UI beyond override/shock checkboxes already in list (keep minimal in modal when violations apply).
+- Extrair helper compartilhado `confirmLevel`/`ListLevelControl.submit` — 2 call sites; gatilho: 3º writer do mesmo endpoint+blocked path.
 
 ## Riscos e mitigação
 
