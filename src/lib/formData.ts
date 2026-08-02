@@ -93,16 +93,6 @@ export const requiredIntegerFormValue = (
   return parsed
 }
 
-export const optionalIntegerFormValue = (
-  formData: FormData,
-  field: string,
-  options?: { minimum?: number; maximum?: number },
-): number | undefined => {
-  const entry = formEntry(formData, field)
-  if (!entry.present || !entry.value.trim()) return undefined
-  return requiredIntegerFormValue(formData, field, options)
-}
-
 const optionalNullableIntegerFormValue = (
   formData: FormData,
   field: string,

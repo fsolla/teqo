@@ -206,11 +206,6 @@ export const createCampaignDemand = async (input: CampaignDemandCreateInput) => 
   return createCampaignDemandRecord(payload, actor, input)
 }
 
-export const transitionCampaignDemand = async (input: CampaignDemandTransitionInput) => {
-  const { payload, actor } = await getCampaignActionContext()
-  return transitionCampaignDemandRecord(payload, actor, input)
-}
-
 export const transitionCampaignDemandCas = async (input: CampaignDemandTransitionInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return transitionCampaignDemandRecord(payload, actor, input, { cas: true })
