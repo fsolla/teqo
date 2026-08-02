@@ -128,7 +128,7 @@ Sem migration, sem collection, sem server action **nesta** Issue (só spec).
 
 | ID   | Issue | Depende de    | Entrega curta                                     |
 | ---- | ----- | ------------- | ------------------------------------------------- |
-| OH2  | #163  | OH1           | `lib/campaignOps` contrato + merge                  |
+| OH2  | #163  | OH1           | `lib/campaignOps` contrato + merge                |
 | OH3  | #165  | OH2           | Benchmark snapshot + truncamento                  |
 | OH4  | #166  | OH3           | `GET /campanha/api/ops-sync` FULL + access        |
 | OH5  | #168  | OH4           | SyncProvider + OPFS→IDB + poll + chrome           |

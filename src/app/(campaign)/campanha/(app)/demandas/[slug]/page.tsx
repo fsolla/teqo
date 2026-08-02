@@ -17,10 +17,7 @@ import {
 import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { loadDemandDetail } from '@/utilities/campaignDemandData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import {
-  attachDemandReceiptFormAction,
-  setDemandCostFormAction,
-} from './formActions'
+import { attachDemandReceiptFormAction, setDemandCostFormAction } from './formActions'
 
 type DemandDetailPageProps = {
   params: Promise<{ slug: string }>

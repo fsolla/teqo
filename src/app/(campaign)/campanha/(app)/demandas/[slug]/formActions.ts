@@ -6,10 +6,7 @@ import {
   attachCampaignDemandReceiptRecord,
   setCampaignDemandCost,
 } from '@/app/(campaign)/campanha/actions/demand'
-import {
-  FormDataBoundaryError,
-  requiredRelationshipFormValue,
-} from '@/lib/formData'
+import { FormDataBoundaryError, requiredRelationshipFormValue } from '@/lib/formData'
 import {
   CAMPAIGN_DEMAND_COST_STAFF_MESSAGE,
   CAMPAIGN_DEMAND_RECEIPT_SAFE_MESSAGES,
