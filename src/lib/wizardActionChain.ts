@@ -112,7 +112,7 @@ export const resolveWizardChainEntry = (
 ): WizardChainActionId => (isWizardChainActionId(entryAction) ? entryAction : currentAction)
 
 /** Discriminates wizard chrome steps for `wizardPreviousHref` (B135). */
-export type WizardStepKind =
+type WizardStepKind =
   | 'municipality-search'
   | 'votes'
   | 'trend-choice'
