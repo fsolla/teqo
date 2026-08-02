@@ -3,18 +3,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   applyOpsMirrorSnapshot,
-  applyOpsVotePledgeEstimateWrite,
   bootstrapOpsMirror,
   getOpsMirrorLastSyncedAt,
   getOpsMirrorPersistenceMode,
   municipalitiesCollection,
   OPS_SYNC_PATH,
-  patchOpsVotePledgeEstimateOptimistic,
   readOpsMirrorSnapshot,
   resetOpsMirrorClientForTests,
   syncOpsMirror,
   votePledgesCollection,
 } from '@/components/campaign/opsSync/opsMirrorClient'
+import {
+  applyOpsVotePledgeEstimateWrite,
+  patchOpsVotePledgeEstimateOptimistic,
+} from '@/components/campaign/opsSync/opsVotePledgeMirror'
 import { createMemoryOpsMirrorStore } from '@/components/campaign/opsSync/opsMirrorPersistence'
 import {
   formatOpsSyncRelative,

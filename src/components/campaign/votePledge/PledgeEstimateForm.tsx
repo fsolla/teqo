@@ -23,7 +23,7 @@ import type { OpsEstimateSyncStatus } from '@/components/campaign/opsSync/opsEst
 import {
   readOpsVotePledge,
   subscribeOpsVotePledge,
-} from '@/components/campaign/opsSync/opsMirrorClient'
+} from '@/components/campaign/opsSync/opsVotePledgeMirror'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { VoteEstimateScenarioInputs } from '@/components/campaign/votePledge/VoteEstimateScenarioInputs'
 import { Badge } from '@/components/ui/Badge'

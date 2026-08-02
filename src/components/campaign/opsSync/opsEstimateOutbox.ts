@@ -19,7 +19,7 @@ import {
   applyOpsVotePledgeEstimateWrite,
   patchOpsVotePledgeEstimateOptimistic,
   readOpsVotePledge,
-} from '@/components/campaign/opsSync/opsMirrorClient'
+} from '@/components/campaign/opsSync/opsVotePledgeMirror'
 import { opsOutboxKey, type OpsOutboxKey } from '@/lib/campaignOps/opsContract'
 import {
   isOpsEstimateConflictMessage,
