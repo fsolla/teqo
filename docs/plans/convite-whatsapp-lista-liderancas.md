@@ -88,7 +88,7 @@ Componentes:
 - Convite de acesso ao app (`kind: 'login'`) na lista — só existe no detalhe hoje (condicionado a `supportStatus === 'engajado'`); o pedido do usuário é só o convite de completar cadastro. Se precisar, é extensão trivial do mesmo componente, mas fora deste item.
 - Disparo em massa / seleção múltipla de lideranças para convite em lote — vedado por Res. TSE 23.610 art. 33 e fora do desenho do produto (ver `docs/roadmap.md` § Fora de escopo); esta ação é sempre 1:1, uma linha por vez.
 - Editar/validar o telefone da liderança a partir da lista — isso é o formulário de edição existente (`/campanha/liderancas/[id]/editar` ou equivalente); esta ação só lê `contact.phone`.
-- Programa WhatsApp interno D3–D5 (bridge de sessão, inbox) — este item usa o mesmo `wa.me` manual de sempre, não abre canal novo.
+- Bridge WhatsApp / inbox interno — **wont do** (2026-08-01); este item usa só `wa.me` manual.
 
 ## Rabbit holes
 
