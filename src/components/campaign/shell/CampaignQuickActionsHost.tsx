@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
-import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext'
 import { useCampaignQuickActionContext } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { CampaignQuickActionsFab } from '@/components/campaign/shell/CampaignQuickActionsFab'
 import { CampaignQuickActionsOverlay } from '@/components/campaign/shell/CampaignQuickActionsOverlay'
@@ -24,22 +23,16 @@ export const CampaignQuickActionsHost = ({ role }: { role: CampaignRole }) => {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const { context } = useCampaignQuickActionContext()
-  const { clear } = useHomeSearch()
 
   const mounted = shouldMountQuickActionsFab(pathname, role)
 
   useEffect(() => {
     setOpen(false)
-    clear()
-  }, [pathname, clear])
+  }, [pathname])
 
-  const handleOpenChange = useCallback(
-    (next: boolean) => {
-      setOpen(next)
-      if (!next) clear()
-    },
-    [clear],
-  )
+  const handleOpenChange = useCallback((next: boolean) => {
+    setOpen(next)
+  }, [])
 
   if (!mounted) return null
 
