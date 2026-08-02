@@ -33,7 +33,7 @@ Pedido novo (2026-08-02): **baixar esse intervalo para 15 minutos**. Com o pool 
 
 - **Vou apresentar dados?** Não
 - **Decisões desbloqueadas:** N/A — gate de infra; não há KPI de produto nesta superfície.
-- **Forma:** *adiada ao plano de implementação* — N/A.
+- **Forma:** _adiada ao plano de implementação_ — N/A.
 
 Dados: N/A — ajuste de política de CI/deploy; sem superfície de métrica.
 
