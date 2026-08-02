@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 
 import { AdvisorsTable } from '@/components/campaign/advisor/AdvisorsTable'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
@@ -105,13 +106,10 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Assessores</h1>
-        <p className="text-muted-foreground">
-          Consulte na tabela; ative Editar para alterar campos e carteira. Nome abre a ficha;
-          e-mail/celular copiam; município abre o município.
-        </p>
-      </header>
+      <CampaignListPageHeader
+        title="Assessores"
+        description="Consulte na tabela; ative Editar para alterar campos e carteira. Nome abre a ficha; e-mail/celular copiam; município abre o município."
+      />
 
       {main}
     </CampaignPageShell>

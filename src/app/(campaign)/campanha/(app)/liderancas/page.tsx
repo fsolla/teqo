@@ -13,6 +13,7 @@ import {
 } from '@/components/campaign/leadership/LeadershipSortableHead'
 import { CampaignCopyableCell } from '@/components/campaign/shared/CampaignCopyableCell'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
@@ -436,20 +437,18 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Lideranças</h1>
-          <p className="text-muted-foreground">
-            Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações.
-          </p>
-        </div>
-        <Button asChild className="min-h-11">
-          <Link href="/campanha/liderancas/nova">
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Nova liderança
-          </Link>
-        </Button>
-      </header>
+      <CampaignListPageHeader
+        title="Lideranças"
+        description="Uma ficha por pessoa — cada liderança pode atuar em vários municípios e organizações."
+        actions={
+          <Button asChild className="min-h-11">
+            <Link href="/campanha/liderancas/nova">
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Nova liderança
+            </Link>
+          </Button>
+        }
+      />
 
       {main}
     </CampaignPageShell>

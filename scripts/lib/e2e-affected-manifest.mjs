@@ -83,6 +83,7 @@ export const E2E_AFFECTED_MANIFEST = [
   {
     prefixes: [
       'src/components/campaign/shell',
+      'src/components/campaign/shared/CampaignListPageHeader',
       'src/components/ui/Drawer',
       `${CAMPAIGN_APP}/layout.tsx`,
       'src/utilities/campaignPwa',

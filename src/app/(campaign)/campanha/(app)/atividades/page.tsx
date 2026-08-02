@@ -12,6 +12,7 @@ import { ActivityFilters } from '@/components/campaign/activity/ActivityFilters'
 import { ActivityList } from '@/components/campaign/activity/ActivityList'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
 import type { Activity } from '@/payload-types'
@@ -53,32 +54,30 @@ export default async function ActivityListPage({ searchParams }: ActivityListPag
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Atividades</h1>
-          <p className="text-muted-foreground">
-            Organize caminhadas, comícios, panfletagens e demais ações de campanha.
-          </p>
-        </div>
-        {canCreate ? (
-          <div className="flex flex-wrap gap-2">
-            {/* E13: the planner generates several drafts at once, so it sits next
-                to "Nova atividade" rather than replacing it. */}
-            <Button asChild variant="outline" className="min-h-11">
-              <Link href={TOUR_COMPOSER_PATH}>
-                <MapPinnedIcon data-icon="inline-start" aria-hidden="true" />
-                Planejar giro
-              </Link>
-            </Button>
-            <Button asChild className="min-h-11">
-              <Link href="/campanha/atividades/nova">
-                <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                Nova atividade
-              </Link>
-            </Button>
-          </div>
-        ) : null}
-      </header>
+      <CampaignListPageHeader
+        title="Atividades"
+        description="Organize caminhadas, comícios, panfletagens e demais ações de campanha."
+        actions={
+          canCreate ? (
+            <div className="flex flex-wrap gap-2">
+              {/* E13: the planner generates several drafts at once, so it sits next
+                  to "Nova atividade" rather than replacing it. */}
+              <Button asChild variant="outline" className="min-h-11">
+                <Link href={TOUR_COMPOSER_PATH}>
+                  <MapPinnedIcon data-icon="inline-start" aria-hidden="true" />
+                  Planejar giro
+                </Link>
+              </Button>
+              <Button asChild className="min-h-11">
+                <Link href="/campanha/atividades/nova">
+                  <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                  Nova atividade
+                </Link>
+              </Button>
+            </div>
+          ) : null
+        }
+      />
 
       <CampaignListPendingBoundary>
         <ActivityFilters

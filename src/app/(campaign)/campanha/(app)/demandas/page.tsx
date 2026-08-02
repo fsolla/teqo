@@ -7,6 +7,7 @@ import { getPayload } from 'payload'
 import { CampaignFilterChips } from '@/components/campaign/shared/CampaignFilterChips'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
@@ -186,24 +187,23 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Demandas</h1>
-          <p className="text-muted-foreground">
-            Necessidades da campanha abertas pelas lideranças, revisadas pela assessoria e — quando
-            preciso — decididas pelo Coordenador Geral.
-          </p>
+      <CampaignListPageHeader
+        title="Demandas"
+        description="Necessidades da campanha abertas pelas lideranças, revisadas pela assessoria e — quando preciso — decididas pelo Coordenador Geral."
+        scope={
           <Badge variant="estimate-pending" className="w-fit">
             {openCount} {openCount === 1 ? 'demanda em aberto' : 'demandas em aberto'}
           </Badge>
-        </div>
-        <Button asChild className="min-h-11">
-          <Link href="/campanha/demandas/nova">
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Nova demanda
-          </Link>
-        </Button>
-      </header>
+        }
+        actions={
+          <Button asChild className="min-h-11">
+            <Link href="/campanha/demandas/nova">
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Nova demanda
+            </Link>
+          </Button>
+        }
+      />
 
       {main}
     </CampaignPageShell>

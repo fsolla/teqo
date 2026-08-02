@@ -13,6 +13,7 @@ import { MunicipalityFilters } from '@/components/campaign/municipality/Municipa
 import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
 import { MunicipalityListOverview } from '@/components/campaign/municipality/MunicipalityListOverview'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
@@ -185,14 +186,13 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Municípios</h1>
-        <p className="text-muted-foreground">
-          Os 435 municípios da campanha: um por município da Bahia — em Salvador, uma zona eleitoral
-          cada.
-        </p>
-        <CampaignScopeBadge>{getCampaignScopeLabel(user.role, scopeTotal)}</CampaignScopeBadge>
-      </header>
+      <CampaignListPageHeader
+        title="Municípios"
+        description="Os 435 municípios da campanha: um por município da Bahia — em Salvador, uma zona eleitoral cada."
+        scope={
+          <CampaignScopeBadge>{getCampaignScopeLabel(user.role, scopeTotal)}</CampaignScopeBadge>
+        }
+      />
 
       {main}
       {listVisitLabel ? (
