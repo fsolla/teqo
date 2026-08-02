@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-02):** **B127** (Issue #264) — barra omnibox de filtros no piloto Municípios + chassis `CampaignListOmnibox` (chips + sugestões; URL como fonte de verdade; cenário/sort como chips de apresentação). Planos: [`barra-filtros-omnibox-listas.md`](docs/plans/barra-filtros-omnibox-listas.md), impl [`barra-filtros-omnibox-listas-impl.md`](docs/plans/barra-filtros-omnibox-listas-impl.md). Adoção nas demais listas = B128.
+
 **Recently resolved (2026-08-02):** **Skills plan/work reescritas** — `plan-issue` agora só gera planos de **intenção** (persona/fluxo/aceite + direção suave no código; sem decisões duras de engenharia). Execução: `agent-work-issue` (pool — Plan mode → `*-impl.md` → executa → `/simplify` → `capture-review-debts` autônomo → PR Ready + auto-merge) e `work-issue` (humano — claim + **pausa** após o impl plan). Prompt do pool aponta para `agent-work-issue`.
 
 **Recently resolved (2026-08-02):** **WhatsApp interno D3–D5 descartado** — Issues #30–#32 `wontfix` (bridge Baileys/Evolution/WAHA / linked device): risco de ban do número pessoal do staff. Canal no produto = só `wa.me`. Planos `whatsapp-interno-campanha.md`, `whatsapp-canal-fundacao.md`, `whatsapp-envio-liderancas.md`, `whatsapp-sugestao-atualizacoes.md` removidos; refs em `notifications.md` / convite·email listas / fluxos-ação / regra `nucleos-eleitorais` atualizadas.
