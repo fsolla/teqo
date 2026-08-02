@@ -38,7 +38,7 @@ Na lista de municípios (`/campanha/municipios`), o painel de visão geral acima
 
 - **Vou apresentar dados?** Não — este item **remove** uma superfície de agregados; não cria métrica nova.
 - **Decisões desbloqueadas:** Coordenador escolhe o próximo município / filtro / edição na lista sem o custo visual do painel. Agregados de campanha (quando necessários) continuam em superfícies já existentes (ex.: Início / detalhe), não nesta remoção.
-- **Forma:** *adiada ao plano de implementação* — restrição de produto: não substituir o bloco removido por outro resumo agregado nesta página neste item.
+- **Forma:** _adiada ao plano de implementação_ — restrição de produto: não substituir o bloco removido por outro resumo agregado nesta página neste item.
 
 ## Direção no codebase (hipótese)
 
