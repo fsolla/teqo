@@ -24,6 +24,7 @@ flowchart TD
 ```
 
 **Opções consideradas:**
+
 - **A:** Só esconder chevron mas manter estado open — rejeitada (viola aceite).
 - **B:** Mover sub-lista para fora do `SidebarMenuItem` de Municípios — rejeitada (quebra semântica de filho; mais churn).
 - **C (recomendada):** Remover disclosure no componente existente; apagar API de open; apertar `mt`/`py` no `SidebarMenuSub` localmente.

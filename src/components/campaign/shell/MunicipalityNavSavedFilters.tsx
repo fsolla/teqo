@@ -50,9 +50,9 @@ export const MunicipalityNavSavedFilters = ({ onNavigate }: { onNavigate: () => 
     const menuItem = row?.closest('[data-sidebar="menu-item"]')
     const successor =
       savedFilters.length > 1
-        ? (row?.nextElementSibling ?? row?.previousElementSibling)?.querySelector<HTMLElement>(
+        ? ((row?.nextElementSibling ?? row?.previousElementSibling)?.querySelector<HTMLElement>(
             '[data-sidebar="menu-sub-button"]',
-          ) ?? menuItem?.querySelector<HTMLElement>('a')
+          ) ?? menuItem?.querySelector<HTMLElement>('a'))
         : menuItem?.querySelector<HTMLElement>('a')
 
     removeMunicipalitySavedFilter(entry.href)
@@ -91,9 +91,7 @@ export const MunicipalityNavSavedFilters = ({ onNavigate }: { onNavigate: () => 
             </SidebarMenuSubButton>
             <SidebarMenuAction
               type="button"
-              onClick={(event) =>
-                handleRemove(entry, event.currentTarget.closest('li'))
-              }
+              onClick={(event) => handleRemove(entry, event.currentTarget.closest('li'))}
               aria-label={`Apagar o filtro salvo ${entry.name}`}
               className="top-1 group-focus-within/menu-sub-item:opacity-100 group-hover/menu-sub-item:opacity-100 md:opacity-0"
             >
