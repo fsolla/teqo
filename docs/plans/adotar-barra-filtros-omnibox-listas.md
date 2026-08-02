@@ -37,7 +37,7 @@ Depois do piloto em Municípios (B127), o staff ainda encontra a pilha antiga na
 
 - **Vou apresentar dados?** Não.
 - **Decisões desbloqueadas:** mesma do B127 em outras superfícies.
-- **Forma:** *adiada*.
+- **Forma:** _adiada_.
 
 ## Direção no codebase (hipótese)
 

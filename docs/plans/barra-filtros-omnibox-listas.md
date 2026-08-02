@@ -55,96 +55,96 @@ Queremos **uma** barra de filtro estilo omnibox (GitHub PR filters, Datadog, etc
 
 - **Vou apresentar dados?** Não — este item só muda **como** o staff monta o recorte sobre dados que a lista já mostra.
 - **Decisões desbloqueadas:** CG/Assessor — “quais linhas entram neste recorte agora?” com menos atrito de UI.
-- **Forma:** *adiada ao plano de implementação* — restrição de produto: a barra comunica o recorte ativo (chips legíveis), não esconde filtros “mágicos” sem affordance de remoção.
+- **Forma:** _adiada ao plano de implementação_ — restrição de produto: a barra comunica o recorte ativo (chips legíveis), não esconde filtros “mágicos” sem affordance de remoção.
 
 ## Mapa de variantes de filtro (produto)
 
 Legenda de comportamento:
 
-| Comportamento | Significado |
-| ------------- | ----------- |
-| **Texto (`q`)** | Busca livre; sem termo = sem restrição de texto. |
+| Comportamento      | Significado                                                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Texto (`q`)**    | Busca livre; sem termo = sem restrição de texto.                                                                                      |
 | **Inclusivo (OR)** | Um ou mais valores da mesma dimensão; linha entra se casar **qualquer** valor; **dimensão ausente = todas as linhas** nessa dimensão. |
-| **Exclusivo** | No máximo um valor; ausente = todas; escolher outro substitui (ou re-escolher limpa, conforme UX atual). |
-| **Único (select)** | Um valor ou vazio (= todas). |
-| **Preset de aba** | Aba define janela/status; não é chip de filtro livre (pode coexistir fora da omnibox). |
+| **Exclusivo**      | No máximo um valor; ausente = todas; escolher outro substitui (ou re-escolher limpa, conforme UX atual).                              |
+| **Único (select)** | Um valor ou vazio (= todas).                                                                                                          |
+| **Preset de aba**  | Aba define janela/status; não é chip de filtro livre (pode coexistir fora da omnibox).                                                |
 
 ### `/campanha/municipios` (piloto)
 
-| Variante (rótulo sugerido) | Comportamento | Notas de produto |
-| -------------------------- | ------------- | ---------------- |
-| Busca / texto | Texto (`q`) | Nome contém; zona numérica quando fizer sentido. Confirmado → chip **“Busca: …”**; sem chip de busca = sem restrição de texto. |
-| Prioritária | Exclusivo | Só municípios marcados prioritários; ausente = todos. |
-| Município | Inclusivo (OR) | Lista de slugs; ausente = todos os municípios do escopo. |
-| Território | Inclusivo (OR) | Territórios de identidade. |
-| Classe | Inclusivo (OR) | Classes territoriais relativas. |
-| Nível | Inclusivo (OR) | Inclui “Sem nível”. |
-| Assessor | Inclusivo (OR) | Assessores nomeados. |
-| Assessoria (com/sem) | Exclusivo | Cobertura de assessoria; mutuamente exclusivo com “sem filtro de cobertura”. |
-| Tendência | Inclusivo (OR) | Valores de tendência. |
-| Cenário (estimativa) | Chip de **apresentação** (não filtra linhas) | Valores pessimista / central / otimista. Ausente ou removido → **central (médio)**. Digitar “cenário” (ou equivalente) sugere as opções. Não entra no bookmark B18. |
-| Ordenação | Chip / sugestão de apresentação | Digitar “ordenar” sugere as opções de sort da lista; escolher aplica `sort`/`dir` (mesma fonte que o clique no header). Some o rótulo solto “Ordenado por …”. |
-| Filtros salvos (B18) | Bookmark de href | Ver Questão 5 — distinto dos chips do recorte **atual**. |
+| Variante (rótulo sugerido) | Comportamento                                | Notas de produto                                                                                                                                                    |
+| -------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Busca / texto              | Texto (`q`)                                  | Nome contém; zona numérica quando fizer sentido. Confirmado → chip **“Busca: …”**; sem chip de busca = sem restrição de texto.                                      |
+| Prioritária                | Exclusivo                                    | Só municípios marcados prioritários; ausente = todos.                                                                                                               |
+| Município                  | Inclusivo (OR)                               | Lista de slugs; ausente = todos os municípios do escopo.                                                                                                            |
+| Território                 | Inclusivo (OR)                               | Territórios de identidade.                                                                                                                                          |
+| Classe                     | Inclusivo (OR)                               | Classes territoriais relativas.                                                                                                                                     |
+| Nível                      | Inclusivo (OR)                               | Inclui “Sem nível”.                                                                                                                                                 |
+| Assessor                   | Inclusivo (OR)                               | Assessores nomeados.                                                                                                                                                |
+| Assessoria (com/sem)       | Exclusivo                                    | Cobertura de assessoria; mutuamente exclusivo com “sem filtro de cobertura”.                                                                                        |
+| Tendência                  | Inclusivo (OR)                               | Valores de tendência.                                                                                                                                               |
+| Cenário (estimativa)       | Chip de **apresentação** (não filtra linhas) | Valores pessimista / central / otimista. Ausente ou removido → **central (médio)**. Digitar “cenário” (ou equivalente) sugere as opções. Não entra no bookmark B18. |
+| Ordenação                  | Chip / sugestão de apresentação              | Digitar “ordenar” sugere as opções de sort da lista; escolher aplica `sort`/`dir` (mesma fonte que o clique no header). Some o rótulo solto “Ordenado por …”.       |
+| Filtros salvos (B18)       | Bookmark de href                             | Ver Questão 5 — distinto dos chips do recorte **atual**.                                                                                                            |
 
 ### `/campanha/territorios`
 
-| Variante | Comportamento |
-| -------- | ------------- |
-| Busca / texto | Texto (`q`) |
-| Território | Inclusivo (OR) |
-| Assessoria (com/sem) | Exclusivo |
-| Ordenação | Chip / sugestão (“ordenar …”) — mesma regra do piloto |
+| Variante             | Comportamento                                         |
+| -------------------- | ----------------------------------------------------- |
+| Busca / texto        | Texto (`q`)                                           |
+| Território           | Inclusivo (OR)                                        |
+| Assessoria (com/sem) | Exclusivo                                             |
+| Ordenação            | Chip / sugestão (“ordenar …”) — mesma regra do piloto |
 
 ### `/campanha/liderancas`
 
-| Variante | Comportamento |
-| -------- | ------------- |
-| Busca / texto | Texto (`q`) |
-| Status | Inclusivo (OR) |
-| Município | Inclusivo (OR) |
-| Acesso ao app | Exclusivo (`com` / `sem`) |
-| Ordenação | Chip / sugestão (“ordenar …”) — mesma regra do piloto |
+| Variante      | Comportamento                                         |
+| ------------- | ----------------------------------------------------- |
+| Busca / texto | Texto (`q`)                                           |
+| Status        | Inclusivo (OR)                                        |
+| Município     | Inclusivo (OR)                                        |
+| Acesso ao app | Exclusivo (`com` / `sem`)                             |
+| Ordenação     | Chip / sugestão (“ordenar …”) — mesma regra do piloto |
 
 ### `/campanha/dobradinhas`
 
-| Variante | Comportamento |
-| -------- | ------------- |
-| Busca / texto | Texto (`q`) |
-| Partido | Inclusivo (OR) (incl. “sem partido”) |
-| Ordenação | Chip / sugestão (“ordenar …”) — mesma regra do piloto |
+| Variante      | Comportamento                                         |
+| ------------- | ----------------------------------------------------- |
+| Busca / texto | Texto (`q`)                                           |
+| Partido       | Inclusivo (OR) (incl. “sem partido”)                  |
+| Ordenação     | Chip / sugestão (“ordenar …”) — mesma regra do piloto |
 
 ### `/campanha/apoiadores`
 
-| Variante | Comportamento |
-| -------- | ------------- |
-| Busca / texto | Texto (`q`) |
-| Intenção de voto | Único |
-| Cidade | Único |
-| Município | Único |
+| Variante         | Comportamento |
+| ---------------- | ------------- |
+| Busca / texto    | Texto (`q`)   |
+| Intenção de voto | Único         |
+| Cidade           | Único         |
+| Município        | Único         |
 
 ### `/campanha/atividades`
 
-| Variante | Comportamento |
-| -------- | ------------- |
-| Aba (Próximos / Todos / …) | Preset de aba — **fora** da omnibox (navegação de modo) |
-| Tipo | Único |
-| Status | Único (só quando a aba permitir) |
-| Município | Único |
-| Busca | Hoje inexistente — **não inventar** neste lote salvo pedido explícito |
+| Variante                   | Comportamento                                                         |
+| -------------------------- | --------------------------------------------------------------------- |
+| Aba (Próximos / Todos / …) | Preset de aba — **fora** da omnibox (navegação de modo)               |
+| Tipo                       | Único                                                                 |
+| Status                     | Único (só quando a aba permitir)                                      |
+| Município                  | Único                                                                 |
+| Busca                      | Hoje inexistente — **não inventar** neste lote salvo pedido explícito |
 
 ### `/campanha/demandas`
 
-| Variante | Comportamento |
-| -------- | ------------- |
-| Status | Exclusivo (hoje chips “Todas” + status) — candidato a chips/omnibox na adoção |
-| Tipo / atividade | Existem na URL sem UI de lista — **não inventar** superfície nova neste lote |
+| Variante         | Comportamento                                                                 |
+| ---------------- | ----------------------------------------------------------------------------- |
+| Status           | Exclusivo (hoje chips “Todas” + status) — candidato a chips/omnibox na adoção |
+| Tipo / atividade | Existem na URL sem UI de lista — **não inventar** superfície nova neste lote  |
 
 ### `/campanha/organizacoes` · `/campanha/assessores`
 
-| Variante | Comportamento |
-| -------- | ------------- |
+| Variante      | Comportamento                                                                       |
+| ------------- | ----------------------------------------------------------------------------------- |
 | Busca / texto | Texto (`q`) — omnibox degenera para “só busca + chips se no futuro houver dimensão” |
-| Demais | Sem dimensões de filtro expostas hoje |
+| Demais        | Sem dimensões de filtro expostas hoje                                               |
 
 ## Direção no codebase (hipótese)
 
