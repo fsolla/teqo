@@ -3,7 +3,6 @@
 import { Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { useId } from 'react'
 import { toast } from 'sonner'
 
 import { useMunicipalitySavedFilters } from '@/components/campaign/shared/useMunicipalitySavedFilters'
@@ -34,7 +33,6 @@ export const MunicipalityNavSavedFilters = ({ onNavigate }: { onNavigate: () => 
   const savedFilters = useMunicipalitySavedFilters()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const listId = useId()
 
   const query = searchParams.toString()
   const currentHref = query ? `${pathname}?${query}` : pathname
@@ -49,10 +47,13 @@ export const MunicipalityNavSavedFilters = ({ onNavigate }: { onNavigate: () => 
     // <body> and strand a keyboard user at the top of the page. Resolve the
     // survivor BEFORE the removal: emptying the group unmounts this whole
     // component, so the fallback has to be the nav link.
+    const menuItem = row?.closest('[data-sidebar="menu-item"]')
     const successor =
       savedFilters.length > 1
-        ? row?.querySelector<HTMLElement>('[data-sidebar="menu-sub-button"]')
-        : row?.closest('li')?.querySelector<HTMLElement>('a')
+        ? (row?.nextElementSibling ?? row?.previousElementSibling)?.querySelector<HTMLElement>(
+            '[data-sidebar="menu-sub-button"]',
+          ) ?? menuItem?.querySelector<HTMLElement>('a')
+        : menuItem?.querySelector<HTMLElement>('a')
 
     removeMunicipalitySavedFilter(entry.href)
     successor?.focus()
@@ -72,11 +73,7 @@ export const MunicipalityNavSavedFilters = ({ onNavigate }: { onNavigate: () => 
   }
 
   return (
-    <SidebarMenuSub
-      id={listId}
-      aria-label="Filtros salvos de Municípios"
-      className="-mt-0.5 py-0"
-    >
+    <SidebarMenuSub aria-label="Filtros salvos de Municípios" className="-mt-0.5 py-0">
       {savedFilters.map((entry) => {
         const isActive = entry.href === activeHref
 

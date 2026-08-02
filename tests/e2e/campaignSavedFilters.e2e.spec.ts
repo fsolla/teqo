@@ -112,6 +112,9 @@ test.describe('Filtros salvos de Municípios', () => {
     await page.reload()
     await expect(shortcut).toBeVisible(NAVIGATION)
     await expect(
+      page.getByRole('list', { name: 'Filtros salvos de Municípios' }),
+    ).toBeVisible()
+    await expect(
       page.getByRole('button', { name: /filtros salvos de Municípios/i }),
     ).toHaveCount(0)
   })
