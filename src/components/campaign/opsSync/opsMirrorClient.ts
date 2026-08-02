@@ -3,12 +3,12 @@
 import { createCollection, localOnlyCollectionOptions } from '@tanstack/db'
 
 import { collectOpsEstimateOutboxKeys } from '@/components/campaign/opsSync/opsEstimateOutbox'
-import { collectOpsMunicipalityOutboxKeys } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import {
   openOpsMirrorStore,
   type OpsMirrorPersistenceMode,
   type OpsMirrorStore,
 } from '@/components/campaign/opsSync/opsMirrorPersistence'
+import { collectOpsMunicipalityOutboxKeys } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import { votePledgesCollection } from '@/components/campaign/opsSync/opsVotePledgeMirror'
 import {
   createEmptyOpsSnapshot,

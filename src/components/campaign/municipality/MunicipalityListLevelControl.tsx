@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { MunicipalityListEngagementLevelResponse } from '@/app/(campaign)/campanha/(app)/municipios/engagement-level/types'
 import { MunicipalityLevelBadge } from '@/components/campaign/municipality/MunicipalityLevelBadge'
+import { municipalitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
+import { enqueueEngagementLevel } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import {
   CampaignCellEditOverlay,
   type CampaignCellEditOverlayVariant,
 } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { useCampaignCellFailureChannel } from '@/components/campaign/shared/useCampaignCellFailureChannel'
-import { municipalitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
-import { enqueueEngagementLevel } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'

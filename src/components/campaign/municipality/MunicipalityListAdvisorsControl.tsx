@@ -11,11 +11,6 @@ import {
   formatAdvisorNamesTooltip,
   MunicipalityAdvisorAvatarStack,
 } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
-import {
-  CampaignCellEditOverlay,
-  type CampaignCellEditOverlayVariant,
-} from '@/components/campaign/shared/CampaignCellEditOverlay'
-import { useCampaignCellFailureChannel } from '@/components/campaign/shared/useCampaignCellFailureChannel'
 import { municipalitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
 import {
   discardOpsAdvisorsOutboxRow,
@@ -24,14 +19,19 @@ import {
   subscribeOpsAdvisorsOutboxRow,
 } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import type { OpsMunicipalityWriteSyncStatus } from '@/components/campaign/opsSync/opsMunicipalityOutboxModel'
+import {
+  CampaignCellEditOverlay,
+  type CampaignCellEditOverlayVariant,
+} from '@/components/campaign/shared/CampaignCellEditOverlay'
+import { useCampaignCellFailureChannel } from '@/components/campaign/shared/useCampaignCellFailureChannel'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
 import { Command, CommandInput, CommandItem, CommandList } from '@/components/ui/Command'
 import { Spinner } from '@/components/ui/Spinner'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
-import { OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
 import { sameIdSet } from '@/lib/sameIdSet'
+import { OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
 import { cn } from '@/lib/utils'
 import { matchesAtWordStart } from '@/lib/wordStartFilter'
 import type {

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { optionalBaseUpdatedAtSchema, OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
+import { OPS_UPDATED_AT_CONFLICT_MESSAGE, optionalBaseUpdatedAtSchema } from '@/lib/schemas/opsCas'
 import {
   MAX_VOTE_COUNT,
   positiveRelationshipId,
@@ -107,8 +107,6 @@ export const municipalityUpdateCreateSchema = z
     }
   })
 
-export const MUNICIPALITY_UPDATE_CREATE_SAFE_MESSAGES = [
-  OPS_UPDATED_AT_CONFLICT_MESSAGE,
-] as const
+export const MUNICIPALITY_UPDATE_CREATE_SAFE_MESSAGES = [OPS_UPDATED_AT_CONFLICT_MESSAGE] as const
 
 export type MunicipalityUpdateCreateInput = z.input<typeof municipalityUpdateCreateSchema>

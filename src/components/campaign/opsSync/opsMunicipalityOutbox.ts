@@ -32,8 +32,8 @@ import {
   applyOpsVotePledgeEstimateWrite,
   votePledgesCollection,
 } from '@/components/campaign/opsSync/opsVotePledgeMirror'
-import type { EngagementLevel } from '@/lib/engagementLevel'
 import { opsOutboxKey, type OpsOutboxKey } from '@/lib/campaignOps/opsContract'
+import type { EngagementLevel } from '@/lib/engagementLevel'
 import type { PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
 import type {
   MunicipalitySignalType,
@@ -378,7 +378,8 @@ export const enqueueDeclareVotes = async (input: {
     input.pledgeId !== undefined
       ? votePledgesCollection.get(input.pledgeId)
       : votePledgesCollection.toArray.find(
-          (row) => row.leadership === input.leadershipId && row.municipality === input.municipalityId,
+          (row) =>
+            row.leadership === input.leadershipId && row.municipality === input.municipalityId,
         )
   const pledgeId = input.pledgeId ?? mirrorPledge?.id
   const baseUpdatedAt =

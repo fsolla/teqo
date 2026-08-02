@@ -27,10 +27,7 @@ type UseCampaignCellAutosaveOptions<TValue, TResponse extends CampaignCellAutosa
    * OH10 — optional persist path (outbox). When set, replaces the JSON POST.
    * Must resolve a success-shaped payload so `readSaved` can adopt the value.
    */
-  persist?: (
-    value: TValue,
-    signal: AbortSignal,
-  ) => Promise<{ ok: boolean; payload: TResponse }>
+  persist?: (value: TValue, signal: AbortSignal) => Promise<{ ok: boolean; payload: TResponse }>
 }
 
 /**

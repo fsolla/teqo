@@ -86,7 +86,8 @@ export const setMunicipalityPoliticalTrendRecord = async (
   input: MunicipalityPoliticalTrendInput,
   options?: { cas?: boolean },
 ) => {
-  const { municipality, status, note, baseUpdatedAt } = municipalityPoliticalTrendSchema.parse(input)
+  const { municipality, status, note, baseUpdatedAt } =
+    municipalityPoliticalTrendSchema.parse(input)
   const enforceCas = options?.cas === true
   const currentActor = await getFreshStaffActor(payload, actor)
 
@@ -263,7 +264,9 @@ export const setMunicipalityEngagementLevel = async (input: MunicipalityEngageme
   return setMunicipalityEngagementLevelRecord(payload, actor, input)
 }
 
-export const setMunicipalityEngagementLevelCas = async (input: MunicipalityEngagementLevelInput) => {
+export const setMunicipalityEngagementLevelCas = async (
+  input: MunicipalityEngagementLevelInput,
+) => {
   const { payload, actor } = await getCampaignActionContext()
   return setMunicipalityEngagementLevelRecord(payload, actor, input, { cas: true })
 }
@@ -281,7 +284,8 @@ export const assignMunicipalityAdvisorsRecord = async (
   input: MunicipalityAdvisorsAssignmentInput,
   options?: { cas?: boolean },
 ) => {
-  const { municipality, advisors, baseUpdatedAt } = municipalityAdvisorsAssignmentSchema.parse(input)
+  const { municipality, advisors, baseUpdatedAt } =
+    municipalityAdvisorsAssignmentSchema.parse(input)
   const enforceCas = options?.cas === true
 
   return withPayloadTransaction(

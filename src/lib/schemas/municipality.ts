@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH, engagementLevels } from '@/lib/engagementLevel'
-import { optionalBaseUpdatedAtSchema, OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
+import { OPS_UPDATED_AT_CONFLICT_MESSAGE, optionalBaseUpdatedAtSchema } from '@/lib/schemas/opsCas'
 import { positiveRelationshipId, trimmedNullableText } from '@/lib/schemas/primitives'
 import { voteEstimateScenarioFieldsSchema } from '@/lib/schemas/votePledge'
 

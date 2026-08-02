@@ -6,13 +6,13 @@ import type {
   MunicipalityListPoliticalTrendResponse,
   MunicipalityListSavedPoliticalTrend,
 } from '@/app/(campaign)/campanha/(app)/municipios/political-trend/types'
+import { municipalitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
+import { enqueuePoliticalTrend } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import {
   CampaignCellEditOverlay,
   type CampaignCellEditOverlayVariant,
 } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { useCampaignCellAutosave } from '@/components/campaign/shared/useCampaignCellAutosave'
-import { municipalitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
-import { enqueuePoliticalTrend } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
 import { Field, FieldLabel } from '@/components/ui/field'

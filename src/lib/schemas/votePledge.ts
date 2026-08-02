@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { optionalBaseUpdatedAtSchema, OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
+import { OPS_UPDATED_AT_CONFLICT_MESSAGE, optionalBaseUpdatedAtSchema } from '@/lib/schemas/opsCas'
 import {
   MAX_VOTE_COUNT,
   positiveRelationshipId,

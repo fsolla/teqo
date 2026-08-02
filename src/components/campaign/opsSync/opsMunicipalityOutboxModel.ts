@@ -89,9 +89,8 @@ export const collapseEngagementLevelOutbox = (
   transactions: OfflineTransaction[],
 ): OfflineTransaction[] => collapseByMetadataKey(transactions, 'municipalityId')
 
-export const collapseAdvisorsOutbox = (
-  transactions: OfflineTransaction[],
-): OfflineTransaction[] => collapseByMetadataKey(transactions, 'municipalityId')
+export const collapseAdvisorsOutbox = (transactions: OfflineTransaction[]): OfflineTransaction[] =>
+  collapseByMetadataKey(transactions, 'municipalityId')
 
 const collapseByMetadataKey = (
   transactions: OfflineTransaction[],
