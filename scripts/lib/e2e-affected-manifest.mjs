@@ -131,6 +131,11 @@ export const E2E_AFFECTED_MANIFEST = [
       `${CAMPAIGN_APP}/perfil`,
       `${CAMPAIGN_APP}/quadro`,
     ],
-    specs: ['campaignHomeActions', 'campaignMunicipalities', 'campaignOpsEstimateOutbox', 'campaignOpsOffline'],
+    specs: [
+      'campaignHomeActions',
+      'campaignMunicipalities',
+      'campaignOpsEstimateOutbox',
+      'campaignOpsOffline',
+    ],
   },
 ]
